@@ -72,7 +72,8 @@ describe("Economy/ItemRegistry", function()
 			expect(ok).toBe(true)
 		end)
 
-		it("holds every config item in config order and is cached", function()
+		it("errors until a game registers its items, then holds every item in config order", function()
+			ItemRegistry.setDefault(Items)
 			local registry = ItemRegistry.default()
 			expect(ItemRegistry.default()).toBe(registry)
 			local all = registry:all()
@@ -81,32 +82,36 @@ describe("Economy/ItemRegistry", function()
 				expect(all[index].id).toBe(def.id)
 				expect(registry:get(def.id)).toBe(all[index])
 			end
+			expect(ItemRegistry.setDefault(registry)).toBe(registry) -- a built registry is kept as is
 		end)
 
 		it("returns deep-frozen copies and leaves the config tables unfrozen and unchanged", function()
-			local registry = ItemRegistry.default()
-			local townhall = registry:require("townhall")
-			local source
-			for _, def in Items do
-				if def.id == "townhall" then
-					source = def
-				end
-			end
-			expect(townhall).never.toBe(source)
-			expect(townhall).toEqual(source) -- building sub-table passed through with the same contents
-			expect(table.isfrozen(townhall)).toBe(true)
-			expect(table.isfrozen(townhall.building)).toBe(true)
-			expect(table.isfrozen((townhall.building :: any).levels[2].cost)).toBe(true)
-			expect(table.isfrozen(source)).toBe(false)
-			expect(table.isfrozen(source.building)).toBe(false)
+			local keep = {
+				id = "keep",
+				kind = "building",
+				name = "Keep",
+				description = "d",
+				icon = "kingdom",
+				rarity = "Common",
+				building = { levels = { { cost = {} }, { cost = { wood = 150 } } } },
+			}
+			local registry = ItemRegistry.new({ keep })
+			local copy = registry:require("keep")
+			expect(copy).never.toBe(keep)
+			expect(copy).toEqual(keep) -- building sub-table passed through with the same contents
+			expect(table.isfrozen(copy)).toBe(true)
+			expect(table.isfrozen(copy.building)).toBe(true)
+			expect(table.isfrozen((copy.building :: any).levels[2].cost)).toBe(true)
+			expect(table.isfrozen(keep)).toBe(false)
+			expect(table.isfrozen(keep.building)).toBe(false)
 			expect(function()
-				(townhall :: any).name = "Changed"
+				(copy :: any).name = "Changed"
 			end).toThrow()
 			expect(table.isfrozen(registry:all())).toBe(true)
 		end)
 
 		it("groups items by kind in config order", function()
-			local registry = ItemRegistry.default()
+			local registry = ItemRegistry.setDefault(Items)
 			local ids = {}
 			for _, def in registry:ofKind("cosmetic") do
 				table.insert(ids, def.id)

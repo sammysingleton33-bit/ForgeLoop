@@ -9,7 +9,7 @@
 		Currencies.SCOPES = { "match", "profile" }
 		Currencies.validate(defs) -> (ok: boolean, problems: { string })   every problem, named
 		Currencies.new(defs) -> registry                                    errors listing problems
-		Currencies.default() -> registry                                    Config.Currencies (cached)
+		Currencies.setDefault(defsOrRegistry) / Currencies.default()       the game's registry (errors until set)
 		registry:get(id) -> def?            registry:require(id) -> def (errors when unknown)
 		registry:all() -> { def }           config order (= display order)
 		registry:ids(scope?) -> { string }  config order, optionally one scope
@@ -20,7 +20,6 @@
 ]]
 
 local Bundle = require("./Bundle")
-local Config = require("@game/ReplicatedStorage/Forge/Config/Currencies")
 
 export type CurrencyDef = {
 	id: string,
@@ -120,10 +119,20 @@ function Currencies.new(defs: { CurrencyDef })
 	return setmetatable({ _byId = byId, _list = list }, Currencies)
 end
 
+-- Framework code never requires game config: the game registers its currencies (setDefault).
 local cached = nil
+function Currencies.setDefault(defsOrRegistry: any)
+	if type(defsOrRegistry) == "table" and getmetatable(defsOrRegistry) == Currencies then
+		cached = defsOrRegistry
+	else
+		cached = Currencies.new(defsOrRegistry)
+	end
+	return cached
+end
+
 function Currencies.default()
 	if cached == nil then
-		cached = Currencies.new(Config :: any)
+		error("Currencies.default: call Currencies.setDefault(<the game's Config.Currencies>) first", 2)
 	end
 	return cached
 end

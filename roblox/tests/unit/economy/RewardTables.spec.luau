@@ -30,7 +30,7 @@ local function mixedTable(): { [string]: any }
 	return {
 		id = "mixed",
 		name = "Mixed",
-		cost = { currency = "crowns", amount = 5 },
+		cost = { currency = "coins", amount = 5 },
 		pity = { afterOpens = 3, minRarity = "Rare" },
 		tiers = {
 			{ rarity = "Epic", weight = 2, items = { { itemId = "e1", weight = 1 }, { itemId = "e2", weight = 3 } } },
@@ -78,13 +78,15 @@ local function thirdsTable(): { [string]: any }
 	}
 end
 
-local fixture = RewardTables.new({ mixedTable(), simpleTable("simple"), thirdsTable() }, registry, { "crowns" })
-local default = RewardTables.default()
-
+local fixture = RewardTables.new({ mixedTable(), simpleTable("simple"), thirdsTable() }, registry, { "coins" })
 local CURRENCY_IDS = {}
 for _, currency in ConfigCurrencies do
 	table.insert(CURRENCY_IDS, currency.id)
 end
+-- The framework never loads game config itself: register the sandbox set like a game would.
+local ConfigItems = require("@game/ReplicatedStorage/Forge/Config/Items")
+local default =
+	RewardTables.setDefault(RewardTables.new(ConfigRewardTables, ItemRegistry.setDefault(ConfigItems), CURRENCY_IDS))
 
 -- Every (set, tableId) pair whose every reachable pity state the distribution specs walk.
 local CASES = {
@@ -138,9 +140,9 @@ local function parseHundredths(text: string): number
 	return tonumber(whole) :: number * 100 + tonumber(frac) :: number
 end
 
--- Problems for a fixture config validated against the fixture registry and currencies {"crowns"}.
+-- Problems for a fixture config validated against the fixture registry and currencies {"coins"}.
 local function problemsOf(config: any): { string }
-	local ok, problems = RewardTables.validate(config, registry, { "crowns" })
+	local ok, problems = RewardTables.validate(config, registry, { "coins" })
 	expect(ok).toBe(#problems == 0)
 	return problems
 end
@@ -174,7 +176,7 @@ describe("Economy/RewardTables", function()
 			expect(field(RewardTables.all(), "id")).toEqual({ "chest_banners", "match_reward" })
 			local chest = RewardTables.get("chest_banners") :: any
 			expect(chest.name).toBe("Royal Chest")
-			expect(chest.cost).toEqual({ currency = "crowns", amount = 100 })
+			expect(chest.cost).toEqual({ currency = "coins", amount = 100 })
 			expect(chest.pity).toEqual({ afterOpens = 10, minRarity = "Epic" })
 			local match = RewardTables.get("match_reward") :: any
 			expect(match.cost).toBeNil()
@@ -967,7 +969,7 @@ describe("Economy/RewardTables", function()
 					t.pity.afterOpens = 0
 				end),
 				registry,
-				{ "crowns" }
+				{ "coins" }
 			)
 			expect(ok).toBe(false)
 			expect(tostring(err)).toContain("invalid reward tables (2)")

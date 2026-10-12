@@ -1,7 +1,7 @@
 --!strict
 --[[
 	Economy/Bundle — maths on resource bundles ({ [currencyId]: integer }), shared by the server
-	ledger (Wallet, EconomyTreasuryService) and the UI (costs, shortfalls). Pure; never mutates
+	ledger (Wallet, game TreasuryService) and the UI (costs, shortfalls). Pure; never mutates
 	its inputs.
 
 	API

@@ -21,9 +21,9 @@
 
 	Policy (interfaces §7, AGENTS.md): every table shows its possible outcomes and its numerical odds,
 	taken from RewardTables.odds — the exact distribution the server samples. Validation rejects a
-	table where any possible outcome would be shown as 0.00%. Crowns are not robuxPurchasable
+	table where any possible outcome would be shown as 0.00%. Coins are not robuxPurchasable
 	(Currencies.luau), so both tables are earned / soft-currency random rewards, not paid random;
-	making Crowns purchasable with Robux would turn the Royal Chest into a paid random item that needs
+	making Coins purchasable with Robux would turn the Royal Chest into a paid random item that needs
 	the PolicyService gate (canBuyPaidRandom).
 
 	Proposed odds (from the weights; the UI shows the computed values, not these comments)
@@ -47,7 +47,7 @@ local RewardTables: { RewardTableDef } = {
 	{
 		id = "chest_banners",
 		name = "Royal Chest",
-		cost = { currency = "crowns", amount = 100 },
+		cost = { currency = "coins", amount = 100 },
 		pity = { afterOpens = 10, minRarity = "Epic" }, -- "Epic or better guaranteed within 10 opens"
 		tiers = {
 			{ rarity = "Common", weight = 60, items = { { itemId = "banner_oak", weight = 1 } } },

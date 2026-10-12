@@ -189,14 +189,33 @@ describe("Economy/Inventory", function()
 		end)
 	end)
 
-	describe("with the default registry (Config.Items)", function()
+	describe("with the sandbox registry (Config.Items) plus a building and a unit", function()
 		it("stores cosmetics and refuses buildings and units", function()
-			local own = Inventory.new(ItemRegistry.default())
+			local defs = table.clone(require("@game/ReplicatedStorage/Forge/Config/Items"))
+			table.insert(defs, {
+				id = "keep",
+				kind = "building",
+				name = "Keep",
+				description = "d",
+				icon = "kingdom",
+				rarity = "Common",
+				building = {},
+			})
+			table.insert(defs, {
+				id = "militia",
+				kind = "unit",
+				name = "Militia",
+				description = "d",
+				icon = "militia",
+				rarity = "Common",
+				unit = {},
+			})
+			local own = Inventory.new(ItemRegistry.setDefault(defs))
 			expect({ own:add("banner_oak", 1) }).toEqual({ true })
 			expect({ own:add("banner_oak", 1) }).toEqual({ false, "stack_full" })
 			expect({ own:equip("banner_oak") }).toEqual({ true })
 			expect(own:equipped("banner")).toBe("banner_oak")
-			expect({ own:add("townhall", 1) }).toEqual({ false, "not_storable" })
+			expect({ own:add("keep", 1) }).toEqual({ false, "not_storable" })
 			expect({ own:add("militia", 1) }).toEqual({ false, "not_storable" })
 		end)
 	end)

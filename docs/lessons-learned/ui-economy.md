@@ -27,3 +27,8 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **The default Roblox top bar can hold your timer:** `ScreenInsets.TopbarSafeInsets` gives the
   free part of the top bar (creator-docs ScreenInsets.yaml), which saves a row on phones in
   landscape. Studio confirmation pending (U7). `observed-once` (docs only).
+- **Framework modules must not require game config.** Static `require(Config.Items)` in shared
+  economy modules passed every sandbox gate and broke the game-001 build the moment a second project
+  existed (its config folder has no Items). Pattern: `X.setDefault(<the game's config>)` /
+  `X.default()` that errors until set; only files every project provides (UITheme) may be required.
+  `observed-once` (2026-10-12).

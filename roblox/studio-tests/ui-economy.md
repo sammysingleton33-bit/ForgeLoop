@@ -1,5 +1,9 @@
 # Studio tests — UI & Economy (FORGE-03, gate G6)
 
+> **Not runnable yet (2026-10-12).** The pre-contract framework kingdom UI these steps describe was
+> removed. The kingdom HUD and build menu are being rebuilt in `games/game-001` against CONTRACTS G8
+> (FL-0059); this file is rewritten with that PR. Do not run U1–U8 below until then.
+
 Run by the user in Roblox Studio on the integrated build (`main`), setup as in
 `roblox/STUDIO_TEST_PLAN.md`. Quote the BuildInfo sha in every report. Headless checks
 (`check.sh`, the Lune specs and the snapshot screenshots in `design/ui/screenshots/`) are **not**

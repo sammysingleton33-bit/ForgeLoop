@@ -2,10 +2,8 @@
 --[[
 	Currencies (ReplicatedStorage.Forge.Config.Currencies). Owned by FORGE-03.
 
-	Content: Game #1 "AI Kingdoms" (user directive 2026-10-12). It lives in the sandbox config
-	until FORGE-00 creates games/game-001 and FORGE-05 maps it (handoff
-	production/handoffs/2026-10-12-forge-03-to-forge-00-ai-kingdoms.md). Numbers are provisional
-	balance proposals, not approved values.
+	Sandbox integration place: one generic soft currency for the framework economy (FL-0018).
+	Game #1's kingdom resources live in games/game-001/config/Resources.luau.
 
 	Fields
 		id                string  [a-z][a-z0-9_]*, unique
@@ -34,54 +32,14 @@ export type CurrencyDef = {
 
 local Currencies: { CurrencyDef } = {
 	{
-		id = "food",
-		name = "Food",
-		scope = "match",
-		icon = "food",
-		start = 100,
-		cap = 500,
-		robuxPurchasable = false,
-		description = "Feeds citizens and soldiers. Farms produce it.",
-	},
-	{
-		id = "wood",
-		name = "Wood",
-		scope = "match",
-		icon = "wood",
-		start = 150,
-		cap = 500,
-		robuxPurchasable = false,
-		description = "Used for almost every building. Lumber Camps produce it.",
-	},
-	{
-		id = "stone",
-		name = "Stone",
-		scope = "match",
-		icon = "stone",
-		start = 50,
-		cap = 300,
-		robuxPurchasable = false,
-		description = "Needed for upgrades and defences. Quarries produce it.",
-	},
-	{
-		id = "gold",
-		name = "Gold",
-		scope = "match",
-		icon = "gold",
-		start = 50,
-		cap = 300,
-		robuxPurchasable = false,
-		description = "Pays for soldiers and advanced buildings. Gold Mines produce it.",
-	},
-	{
-		id = "crowns",
-		name = "Crowns",
+		id = "coins",
+		name = "Coins",
 		scope = "profile",
-		icon = "crown",
+		icon = "gold",
 		start = 0,
 		cap = 1000000000,
 		robuxPurchasable = false,
-		description = "Earned by playing matches. Spent on kingdom banners and crests.",
+		description = "Earned by playing. Spent on banners and crests.",
 	},
 }
 

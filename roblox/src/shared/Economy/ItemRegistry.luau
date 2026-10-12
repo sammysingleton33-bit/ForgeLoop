@@ -11,7 +11,8 @@
 		ItemRegistry.isValidId(value: any): boolean    -- string, ^[a-z][a-z0-9_]*$, at most 32 bytes
 		ItemRegistry.validate(defs: any): (boolean, { string })  -- every problem, each naming the item and field
 		ItemRegistry.new(defs: { ItemDef }): Registry            -- errors listing every problem
-		ItemRegistry.default(): Registry                         -- from Config.Items, built once and cached
+		ItemRegistry.setDefault(defsOrRegistry)                  -- the game's registry (e.g. its Config.Items)
+		ItemRegistry.default(): Registry                         -- errors until setDefault was called
 		registry:get(id: string): ItemDef?
 		registry:require(id: string): ItemDef                    -- errors on an unknown id
 		registry:all(): { ItemDef }                              -- config order
@@ -27,13 +28,14 @@
 		building     a table when kind = "building", absent otherwise
 		unit         a table when kind = "unit", absent otherwise
 		Any other top-level field is rejected (typo guard). The contents of `building` and `unit` are
-		validated by Economy/Construction, not here.
+		validated by the game that uses them, not here.
 
 	Returned definitions and lists are deep-frozen copies made at construction: the config tables are
 	never mutated, and `building` / `unit` keep their contents unchanged.
 ]]
 
-local Items = require("@game/ReplicatedStorage/Forge/Config/Items")
+-- Framework code never requires game config (it differs per game and may be absent): the game
+-- registers its items once with ItemRegistry.setDefault(require(<its Config/Items>)).
 
 export type Rarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary"
 export type Kind = "building" | "unit" | "cosmetic"
@@ -297,9 +299,18 @@ end
 
 local cachedDefault: Registry? = nil
 
+function ItemRegistry.setDefault(defsOrRegistry: any): Registry
+	if type(defsOrRegistry) == "table" and getmetatable(defsOrRegistry) ~= nil then
+		cachedDefault = defsOrRegistry
+	else
+		cachedDefault = ItemRegistry.new(defsOrRegistry)
+	end
+	return cachedDefault :: Registry
+end
+
 function ItemRegistry.default(): Registry
 	if cachedDefault == nil then
-		cachedDefault = ItemRegistry.new(Items :: any)
+		error("ItemRegistry.default: call ItemRegistry.setDefault(<the game's Config.Items>) first", 2)
 	end
 	return cachedDefault :: Registry
 end

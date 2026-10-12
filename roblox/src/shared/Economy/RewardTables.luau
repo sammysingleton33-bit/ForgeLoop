@@ -9,7 +9,8 @@
 	same functions as methods (tables:odds(tableId, pityState), ...), so specs can use fixtures.
 		RewardTables.validate(config, itemRegistry, currencyIds: { string }?): (boolean, { string })
 		RewardTables.new(config, itemRegistry, currencyIds: { string }?): Tables  -- errors listing every problem
-		RewardTables.default(): Tables   -- Config.RewardTables + ItemRegistry.default() + Config.Currencies ids; cached
+		RewardTables.setDefault(tables)   -- the game's set: RewardTables.new(<Config.RewardTables>, registry, currencyIds)
+		RewardTables.default(): Tables   -- errors until setDefault was called
 		odds(tableId, pityState: PityState?): { OddsEntry }   -- frozen { rarity, itemId, qty, probability }
 		pityRule(tableId): string?            -- "Epic or better guaranteed within 10 opens"; nil without pity
 		pityStates(tableId): { PityState }    -- every reachable state: opensSinceHit 0 .. afterOpens - 1
@@ -44,8 +45,6 @@
 
 local ItemRegistry = require("./ItemRegistry")
 local Types = require("../Contracts/Types")
-local ConfigCurrencies = require("@game/ReplicatedStorage/Forge/Config/Currencies")
-local ConfigRewardTables = require("@game/ReplicatedStorage/Forge/Config/RewardTables")
 
 export type RewardResult = Types.RewardResult
 export type PityState = { opensSinceHit: number }
@@ -635,15 +634,17 @@ end
 
 -- ---------------------------------------------------------------- default set (module functions)
 
+-- Framework code never requires game config: the game registers its set once (setDefault).
 local cachedDefault: Tables? = nil
+
+function RewardTables.setDefault(tables: Tables): Tables
+	cachedDefault = tables
+	return tables
+end
 
 function RewardTables.default(): Tables
 	if cachedDefault == nil then
-		local currencyIds: { string } = {}
-		for _, currency in ConfigCurrencies do
-			table.insert(currencyIds, currency.id)
-		end
-		cachedDefault = RewardTables.new(ConfigRewardTables :: any, ItemRegistry.default(), currencyIds)
+		error("RewardTables.default: call RewardTables.setDefault(RewardTables.new(...)) first", 2)
 	end
 	return cachedDefault :: Tables
 end
