@@ -14,7 +14,7 @@ UVs change. Bump PALETTE_VERSION when appending.
 No bpy import here, so tests and tools can use it with plain Python.
 """
 
-PALETTE_VERSION = 1  # values tuned 2026-10-12 (muted thatch, true-gold kingdom); indices unchanged
+PALETTE_VERSION = 1  # values tuned 2026-10-12 (muted thatch and straw, saturated kingdom gold, jewel-green kingdom apart from foliage); indices unchanged
 SIZE = 512
 SWATCH = 32
 GRID = SIZE // SWATCH  # 16 x 16 swatches
@@ -31,7 +31,7 @@ _ENTRIES = [
     ("bark_dark", "4A3222"), ("bark", "6B4A30"), ("bark_light", "8A6442"), ("birch_white", "E8E2D2"),
     ("birch_mark", "3B3530"), ("wood_dark", "5C3B22"), ("wood", "8B5A33"), ("wood_light", "B07B4A"),
     ("wood_pale", "CFA171"), ("timber", "4B3020"), ("thatch_dark", "9C8556"), ("thatch", "BFA36C"),
-    ("thatch_light", "D6C08E"), ("straw", "EDD58A"), ("hay", "D8B85A"), ("rope", "B89A6A"),
+    ("thatch_light", "D6C08E"), ("straw", "E6D49A"), ("hay", "CDB373"), ("rope", "B89A6A"),
     # row 2: stone, plaster, slate
     ("stone_dark", "6F6A63"), ("stone", "8F8A82"), ("stone_light", "B3ADA3"), ("stone_pale", "CFC9BE"),
     ("sandstone_dark", "8A7558"), ("sandstone", "B39A74"), ("sandstone_light", "D6BE95"), ("stone_cool_dark", "5E6772"),
@@ -58,17 +58,17 @@ _ENTRIES = [
     ("blue_shutter", "3A5F8F"), ("blue_stone", "8A929C"), ("blue_stone_dark", "636B75"), ("blue_stone_light", "B0B7BF"),
     ("blue_accent", "E3ECF5"), ("blue_wood", "5E4A3A"), ("blue_emblem", "F2F5FA"), ("blue_glow", "8FD3F2"),
 
-    ("green_roof_dark", "2D5E34"), ("green_roof", "3F8447"), ("green_roof_light", "63A35E"), ("green_cloth_dark", "1F4A2A"),
-    ("green_cloth", "2F7A3D"), ("green_cloth_light", "5AA35A"), ("green_trim", "C9873A"), ("green_trim_dark", "8F5A24"),
-    ("green_shutter", "4A6E35"), ("green_stone", "8C8E7C"), ("green_stone_dark", "66695A"), ("green_stone_light", "B2B39E"),
+    ("green_roof_dark", "175443"), ("green_roof", "23805F"), ("green_roof_light", "45A383"), ("green_cloth_dark", "16503F"),
+    ("green_cloth", "1E7A58"), ("green_cloth_light", "48A684"), ("green_trim", "C9873A"), ("green_trim_dark", "8F5A24"),
+    ("green_shutter", "2C6A52"), ("green_stone", "8C8E7C"), ("green_stone_dark", "66695A"), ("green_stone_light", "B2B39E"),
     ("green_accent", "E9DFAF"), ("green_wood", "6A4A2A"), ("green_emblem", "F0E2B0"), ("green_glow", "B8E06A"),
 
-    ("yellow_roof_dark", "A87F14"), ("yellow_roof", "E0B12E"), ("yellow_roof_light", "F2CF5C"), ("yellow_cloth_dark", "9A7012"),
-    ("yellow_cloth", "E6B52A"), ("yellow_cloth_light", "F6D768"), ("yellow_trim", "6E3F92"), ("yellow_trim_dark", "4A2868"),
-    ("yellow_shutter", "5E4598"), ("yellow_stone", "C4A47A"), ("yellow_stone_dark", "9A7D58"), ("yellow_stone_light", "DEC79F"),
+    ("yellow_roof_dark", "B08408"), ("yellow_roof", "EBB910"), ("yellow_roof_light", "F7D447"), ("yellow_cloth_dark", "A87A06"),
+    ("yellow_cloth", "F0BE14"), ("yellow_cloth_light", "FADA5A"), ("yellow_trim", "6E3F92"), ("yellow_trim_dark", "4A2868"),
+    ("yellow_shutter", "B8860B"), ("yellow_stone", "C4A47A"), ("yellow_stone_dark", "9A7D58"), ("yellow_stone_light", "DEC79F"),
     ("yellow_accent", "FFF2CF"), ("yellow_wood", "8A5A30"), ("yellow_emblem", "FFF6DD"), ("yellow_glow", "FFD86B"),
     # row 9: crops, flowers, canvas, fire
-    ("wheat", "E6C25A"), ("wheat_dark", "C49A3A"), ("crop_green", "7DB043"), ("crop_dark", "4F7F2C"),
+    ("wheat", "D9BC6A"), ("wheat_dark", "C49A3A"), ("crop_green", "7DB043"), ("crop_dark", "4F7F2C"),
     ("pumpkin", "E07B26"), ("cabbage", "9BC768"), ("apple_red", "C8322B"), ("flower_red", "D9343A"),
     ("flower_yellow", "F4D03F"), ("flower_white", "F5F3EA"), ("flower_purple", "8E5CC2"), ("flower_blue", "4F8FE0"),
     ("canvas", "E8DCC0"), ("canvas_dark", "C8B793"), ("fire", "F2742B"), ("ember", "FFC14A"),
@@ -81,7 +81,7 @@ _ENTRIES = [
     ("tunic_brown", "8B5E3C"), ("tunic_green", "5E7F3A"), ("tunic_blue", "4F6E9A"), ("tunic_red", "9E4A3A"),
     ("tunic_cream", "D9CBA6"), ("apron", "BFAF8E"), ("armor", "8E99A4"), ("armor_dark", "5D6670"),
     ("armor_light", "C3CCD4"), ("chainmail", "7A828A"), ("siege_wood", "9A6A3E"), ("siege_wood_dark", "6A4528"),
-    ("road", "B89A70"), ("road_dark", "927652"), ("hay_dark", "B8963E"), ("clay", "C26E4A"),
+    ("road", "B89A70"), ("road_dark", "927652"), ("hay_dark", "A98F4E"), ("clay", "C26E4A"),
 ]
 # fmt: on
 

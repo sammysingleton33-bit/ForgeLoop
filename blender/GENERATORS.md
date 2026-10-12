@@ -61,3 +61,27 @@ Outputs: `exports/<id>.fbx` + `.validation.json` (git-ignored), `renders/<name>/
 ## Review loop (D-019) — mandatory
 Render → open the image (Read the PNG/JPG) → score with the rubric in `reviews/README.md` → refine.
 At least two critique→refine rounds per generator, logged in `reviews/<name>.md`. Script success is not quality.
+
+## Library backlog (requests from the generator workers, 2026-10-12)
+Apply after the current worker rounds finish, because `lib/` changes rebuild every generator. In priority order:
+1. **Hash stability.** Some bmesh ops order their output by memory address, so the first build in a process can
+   triangulate differently and change the geometry hash that pins reviews (seen on rocks; fixed locally in
+   `_rock_common.canonical()`). Make `asset.geometry_hash` order-independent (sort triangles canonically),
+   migrate the recorded review hashes once, and add a test that builds one generator twice in one process.
+2. **Gameplay stats in the manifest.** `b.stats` values gameplay needs (`harvest_radius`, socket radii) reach only
+   the validation JSON. Export them per asset in the manifest (schema bump) for FORGE-01.
+3. **Kit helpers to share:**
+   - `ashlar_plane` / `ashlar_ring` / `annulus` (now in `_castle_common.py`);
+   - a cart wheel, wide double barn doors and per-band lathe colours (now in `_farm_common.py`);
+   - a smooth geodesic option for `geo.icosphere` (now in `_vegetation_common.py`).
+   - `emblem()` (crown, star, oak leaf, sun) from `_kingdom_props_common.py` into `lib/kit.py`. farm_* already
+     import it across generator families; every kingdom banner and shield should share one emblem source.
+4. **Kit options:**
+   - `gable_roof(..., flush_ridge=True)`, a ridge cap without the 0.2 overshoot;
+   - a cheap voussoir mode for `kit.door` (about 12 tris per stone, not ~540 per door).
+5. **Bug.** Clamping a whole sphere to the ground folds it flat, and `recalc_normals` then flips the shell inward (black render). Guard the clamp, or skip normal recalculation on degenerate shells.
+6. **Data.**
+   - a `cliff` budget class (1500); rock_cliff uses `ruin` today;
+   - a cool `snow` swatch (append-only), where tree_pine uses `foam` today.
+7. **Variation check.** Modular pieces that share end posts (fences, walls) score as near-identical side
+   silhouettes. Compare front and top silhouettes only for classes tagged `modular`.

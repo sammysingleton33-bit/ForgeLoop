@@ -18,8 +18,8 @@
         "validation": "exports/plant_grass_01.validation.json"
       },
       "generator": "plant_grass",
-      "generator_version": 1,
-      "geometry_hash": "84011b0eff4a9cbe",
+      "generator_version": 2,
+      "geometry_hash": "231f3a7064f04a4f",
       "id": "plant_grass_01",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -29,6 +29,8 @@
       "preview": "previews/plant_grass.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/plant_grass.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7019,
@@ -36,8 +38,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 546,
-        "lod1": 190
+        "lod0": 366,
+        "lod1": 128
       },
       "validation_pass": true
     },
@@ -59,8 +61,8 @@
         "validation": "exports/plant_grass_02.validation.json"
       },
       "generator": "plant_grass",
-      "generator_version": 1,
-      "geometry_hash": "bbb959bae7702b99",
+      "generator_version": 2,
+      "geometry_hash": "73674340d6c2ae5e",
       "id": "plant_grass_02",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -70,6 +72,8 @@
       "preview": "previews/plant_grass.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/plant_grass.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7056,
@@ -77,8 +81,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 506,
-        "lod1": 176
+        "lod0": 326,
+        "lod1": 114
       },
       "validation_pass": true
     },
@@ -100,8 +104,8 @@
         "validation": "exports/plant_grass_03.validation.json"
       },
       "generator": "plant_grass",
-      "generator_version": 1,
-      "geometry_hash": "491cf455b4c14264",
+      "generator_version": 2,
+      "geometry_hash": "d3af237993a233af",
       "id": "plant_grass_03",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -111,6 +115,8 @@
       "preview": "previews/plant_grass.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/plant_grass.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7093,
@@ -118,8 +124,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 666,
-        "lod1": 232
+        "lod0": 426,
+        "lod1": 148
       },
       "validation_pass": true
     },
@@ -141,8 +147,8 @@
         "validation": "exports/plant_grass_04.validation.json"
       },
       "generator": "plant_grass",
-      "generator_version": 1,
-      "geometry_hash": "fe28753ccc8c86f6",
+      "generator_version": 2,
+      "geometry_hash": "c0e5f060b78f1b2f",
       "id": "plant_grass_04",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -152,6 +158,8 @@
       "preview": "previews/plant_grass.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/plant_grass.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7130,
@@ -159,8 +167,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 538,
-        "lod1": 188
+        "lod0": 346,
+        "lod1": 120
       },
       "validation_pass": true
     },
@@ -182,8 +190,8 @@
         "validation": "exports/plant_grass_05.validation.json"
       },
       "generator": "plant_grass",
-      "generator_version": 1,
-      "geometry_hash": "7adc8a9685a261d8",
+      "generator_version": 2,
+      "geometry_hash": "4bc546a8d8fe9336",
       "id": "plant_grass_05",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -193,6 +201,8 @@
       "preview": "previews/plant_grass.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/plant_grass.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7167,
@@ -200,8 +210,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 674,
-        "lod1": 234
+        "lod0": 530,
+        "lod1": 184
       },
       "validation_pass": true
     },
@@ -223,8 +233,8 @@
         "validation": "exports/plant_grass_06.validation.json"
       },
       "generator": "plant_grass",
-      "generator_version": 1,
-      "geometry_hash": "20de8af1933503d5",
+      "generator_version": 2,
+      "geometry_hash": "ff05ddfc32143f3e",
       "id": "plant_grass_06",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -234,6 +244,8 @@
       "preview": "previews/plant_grass.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/plant_grass.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7204,
@@ -241,8 +253,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 532,
-        "lod1": 186
+        "lod0": 412,
+        "lod1": 144
       },
       "validation_pass": true
     }
@@ -257,8 +269,8 @@
       "plant_grass_03",
       "plant_grass_04"
     ],
-    "mean_pair_diff": 0.591,
-    "min_pair_diff": 0.3801,
+    "mean_pair_diff": 0.5917,
+    "min_pair_diff": 0.3768,
     "pass": true,
     "threshold": 0.08
   }

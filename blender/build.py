@@ -211,9 +211,13 @@ def render_previews(gen, objs, entries, rdir, sc, hero_px, samples, quick):
         x += w + gap
     front = max(d for _, d in sizes) / 2
     rig.add_character_proxy(sc, 0, -front - 5.0, 0, 0)
-    # gameplay band 40-80 studs: as close as possible while the whole lineup fits (16:9, 70 deg vFOV)
+    # gameplay band 40-80 studs (or the generator's GAMEPLAY_DISTANCE): as close as possible, but never closer
+    # than the distance at which every variant fits the 16:9 frame (70 deg vFOV), so no variant is cut off
     half_h = math.tan(math.radians(rig.ROBLOX_FOV_DEG) / 2) * 16 / 9
-    dist = getattr(gen, "GAMEPLAY_DISTANCE", min(80.0, max(40.0, (total / 2 + 6) / half_h + front)))
+    fit = (total / 2 + 6) / half_h + front
+    preferred = getattr(gen, "GAMEPLAY_DISTANCE", None) or min(80.0, max(40.0, fit))
+    dist = max(preferred, fit)
+    widened = dist > preferred + 0.5
     hgt = getattr(gen, "GAMEPLAY_HEIGHT", 12.0)
     tallest = max(rig.world_bounds([o])[1].z for o in objs)
     rig.gameplay_camera(sc, cam, (0, 0, min(tallest * 0.45, 25)), dist, hgt, 0)
@@ -224,8 +228,9 @@ def render_previews(gen, objs, entries, rdir, sc, hero_px, samples, quick):
         print("contact sheet skipped: Pillow not available (renders are in", rdir, ")")
         return None
     title = f"{gen.NAME} v{gen.VERSION}  -  {len(objs)} variants  -  FORGE-02"
-    sub = (f"hero 3/4 views with a 5.5-stud character proxy; bottom: gameplay view, {dist:.0f} studs, "
-           f"70 deg FOV, single-sided like Roblox")
+    sub = (f"hero 3/4 views with a 5.5-stud character proxy; bottom: gameplay view, {dist:.0f} studs"
+           + (f" (widened from {preferred:.0f} to fit all {len(objs)} variants)" if widened else "")
+           + ", 70 deg FOV, single-sided like Roblox")
     res = contact.sheet(title, tiles, (strip, f"gameplay distance ~{dist:.0f} studs (Roblox default FOV)"),
                         cols=3, tile_px=300 if quick else 420, out=HERE / "previews" / f"{gen.NAME}.jpg",
                         subtitle=sub)

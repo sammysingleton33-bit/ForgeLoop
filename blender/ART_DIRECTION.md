@@ -43,20 +43,25 @@ Identity comes from **four levers**, used on castles/military always and on vill
 
 | Lever | Red — *Emberhold* | Blue — *Frostmere* | Green — *Thornwood* | Yellow — *Sunspire* |
 |---|---|---|---|---|
-| Roof colour (`<k>_roof*`) | brick red | slate blue | moss green | saffron gold |
+| Roof colour (`<k>_roof*`) | brick red | slate blue | jewel emerald | rich gold |
 | Stone (`<k>_stone*`) | warm grey | cool blue-grey | mossy grey-green | sandstone |
 | Trim metal (`<k>_trim*`) | gold | silver | bronze | royal purple + ivory |
 | Tower roof shape | tall **conical spires** with finials | **square pyramid** roofs, crisp | **timber hoardings** (wooden fighting galleries) + low cones | **domes / onion domes** with gold finials |
-| Emblem (banners, shields) | flame / crown | star | oak leaf | sun disc |
+| Emblem (banners, shields) | crown | star | oak leaf | sun disc |
 
 Rules (tuned after the first reviews, 2026-10-12):
 - Straw thatch is deliberately **muted** (`thatch*`) so it never reads as the gold kingdom; every thatch
   building carries its kingdom on a large element that reads at 80 studs (ridge pennant, gable banner, door banner).
-- The gold kingdom is **gold, not orange** (`yellow_roof*`, `yellow_cloth*`); purple is only a small trim accent.
+- The gold kingdom is **gold, not orange** (`yellow_roof*`, `yellow_cloth*`, saturation ≥ 0.85); straw, hay, wheat and
+  thatch stay desaturated tan (saturation ≤ 0.55), so gold never reads as hay. Purple is only a small trim accent;
+  gold-kingdom shutters are dark goldenrod.
+- The green kingdom is a **jewel emerald** (hue ~160°, `green_roof*`, `green_cloth*`), clearly bluer than foliage and
+  grass (hue 95–115°), so green roofs never melt into trees.
 - One emblem per kingdom everywhere (banners, shields, flags): crimson **crown**, azure **star**, emerald **oak leaf**,
   gold **sun**. (The flame is retired.)
 - Every building sits on a stone plinth or kit plinth; no flat dirt decals under buildings.
-- Kingdom colour covers at most ~35 % of a building's visible surface besides the roof. Village
+- Kingdom colour covers at most ~35 % of a building's visible surface besides the roof: walls are neutral (plaster,
+  natural wood, stone), never painted in the kingdom colour (this applies to barns, sheds and windmills too). Village
 buildings: roofs ~50/50 thatch vs kingdom tiles, shutters and doors always in the kingdom colour, plus banners.
 Castles and military buildings: always kingdom roofs, stone and banners.
 

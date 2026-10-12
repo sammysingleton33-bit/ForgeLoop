@@ -45,7 +45,21 @@
       "preview": "previews/tree_pine.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
@@ -113,7 +127,21 @@
       "preview": "previews/tree_pine.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7050,
       "sockets": {
@@ -181,7 +209,21 @@
       "preview": "previews/tree_pine.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7097,
       "sockets": {
@@ -249,7 +291,21 @@
       "preview": "previews/tree_pine.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7144,
       "sockets": {
@@ -317,7 +373,21 @@
       "preview": "previews/tree_pine.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7191,
       "sockets": {
@@ -385,7 +455,21 @@
       "preview": "previews/tree_pine.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7238,
       "sockets": {
