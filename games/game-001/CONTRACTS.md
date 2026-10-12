@@ -489,6 +489,7 @@ ReputationService:get(userId: number): { values: { [Category]: number }, history
 ReputationService:apply(userId: number, source: string, delta: { [Category]: number }, text: string)   -- delta is already decayed by ContentQuery.fireDecision; clamps 0..100
 ```
 - `Kingdom` (G2) gains `happiness`, `stability` and `morale` (0–100). They are kingdom conditions and are kept separate from reputation.
+- **Time units.** Every history and memory time `t` is **server time**, on the same scale as G3 `endsAt` (`workspace:GetServerTimeNow()`). The server converts the sim's injected clock to that scale. Clients show `GetServerTimeNow() - t` as "x min ago". Match-relative times appear only where a field says so explicitly.
 - Remotes:
   - `Kingdom.Reputation`: serverEvent to the ruler.
   - `Kingdom.GetReputation`: function returning `{ values, history (latest 30), kingdom: { happiness, stability, morale } }`.
@@ -542,7 +543,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `population.reseed <seed>`
 
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
+- v0.4-g4 (2026-10-12) FORGE-00: G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
   - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
   - G13.2 chemistry drift ±5 and pinned memories;
   - G13.3 `cue` event and option cost/risks;
