@@ -45,7 +45,7 @@ end
 -- optional on the instance: self:start() (may spawn threads), self:destroy()
 return Def
 ```
-The loader discovers every module in `Services/` (server) or `Controllers/` (client), sorts by `dependencies`, calls `new` in order, then `start`. Optional dependencies: `registry:find(name)` returns nil when absent. Adding a service never edits another file.
+The loader discovers every module in `Services/` (server) or `Controllers/` (client), sorts by `dependencies`, calls `new` in order, then `start`. Optional dependencies: `registry:find(name)` returns nil when absent — call it in `start()` or later (every service is constructed by then), not in `new()`. Adding a service never edits another file.
 
 ## 4. Game event bus (`Contracts/GameEvents.luau`)
 Server-side signals that decouple producers from consumers (quests, analytics, onboarding, rewards).
@@ -130,7 +130,7 @@ SettingsService:get(player, key: string): any
 NotificationController:show({ title: string, body: string?, kind: "info" | "reward" | "warning" | "achievement", durationSec: number? })
 AudioController:play(soundId: string, opts: { volume: number?, position: Vector3? }?)  -- ids from shared/Experience/Sounds.luau
 ```
-EconomyService calls `registry:find("AnalyticsService")` and reports sources/sinks when present.
+EconomyService calls `registry:find("AnalyticsService")` in `start()` and reports sources/sinks when present.
 
 ## 9. UI (FORGE-03 owns components; FORGE-04 consumes)
 - No external UI framework in v0: a small builder `client/UI/Create.luau` (`Create(className, props, children)`) + theme tokens `client/UI/Theme.luau` (colors, fonts, text sizes, corner radius, spacing scale). FORGE-03 may propose a framework with evidence in its first PR.

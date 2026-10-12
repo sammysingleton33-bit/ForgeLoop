@@ -1,0 +1,7 @@
+# FORGELOOP build outputs (reproducible; never commit)
+roblox/build/
+roblox/src/shared/BuildInfo.json
+blender/exports/
+**/__pycache__/
+.pytest_cache/
+*.blend1

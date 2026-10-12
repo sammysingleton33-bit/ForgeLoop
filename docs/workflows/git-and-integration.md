@@ -11,12 +11,21 @@
 ## Starting a worker session
 Cloud session (Claude app / claude.ai/code): the session has its own assigned branch and container.
 ```bash
+BR=<the branch your session instructions assign you>   # e.g. claude/xyz-123 — never main, never forge/integration
 git fetch origin forge/integration
 git status                      # fresh session: no local work
-git checkout -B "$(git branch --show-current)" origin/forge/integration
-git push -u origin "$(git branch --show-current)"
+git checkout -B "$BR" origin/forge/integration
+git push -u origin "$BR"
 ```
+A fresh cloud session may start on `main`; `git branch --show-current` is therefore not a safe source for `BR`.
 If your branch already has commits, merge instead: `git merge origin/forge/integration`.
+
+Toolchain (Linux cloud sessions; ~10 min the first time, so run it in the background and read docs meanwhile):
+```bash
+nohup bash forgeloop/tools/setup/cloud-setup.sh > /tmp/forge-setup.log 2>&1 &            # Roblox tools
+nohup bash forgeloop/tools/setup/cloud-setup.sh --blender > /tmp/forge-setup.log 2>&1 &  # FORGE-02: + Blender
+tail -3 /tmp/forge-setup.log   # "FORGE SETUP DONE" when ready
+```
 
 Local session (Claude Code CLI/desktop on the user's PC): one worktree per worker, so sessions never share a working directory.
 ```bash
