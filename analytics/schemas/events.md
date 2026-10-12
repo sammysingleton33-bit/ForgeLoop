@@ -87,7 +87,7 @@ Resolver errors are caught and warned once per minute; analytics never breaks ga
 ### Funnels
 | Funnel | Roblox method | Kind / session id | Steps | Logged by |
 |---|---|---|---|---|
-| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau`: `Spawn` (KingdomJoined), `Gather` (ruler's ResourceGathered), `PlaceBuilding` (BuildingPlaced, placedBy), `BuildingComplete`, `Recruit` (UnitsRecruited), `Capture` (ObjectiveCaptured) | OnboardingService only; nothing after a skip |
+| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau` (v2, D-030): `Spawn` (KingdomJoined), `InspectCitizen` (client action `CitizenInspected`), `BuildOnPlot` (BuildingPlaced, placedBy), `AnswerCitizen` (client action `CitizenAnswered`; G9 `CitizenAnswered` proposed), `Recruit` (UnitsRecruited), `Capture` (ObjectiveCaptured) | OnboardingService only; nothing after a skip |
 | VS1 | `LogFunnelStepEvent(player, "VS1", nil, step, name, fields)` | once | BRIEF §13: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture (G9 attribution, §4) | declared now; track rules land in FL-0063 |
 | Return | `LogFunnelStepEvent(player, "Return", nil, ...)` | once | 1 FirstSession (first join today, UTC) · 2 ReturnNextDay | AnalyticsService on `PlayerReady` (needs DataService `core.createdAt`; inactive in VS-1, D-027) |
 

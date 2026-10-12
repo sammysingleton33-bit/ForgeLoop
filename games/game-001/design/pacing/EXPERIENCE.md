@@ -18,15 +18,17 @@ Contracts:
 5. **Honest rewards.** Rewards are earned by playing and granted server-side. Random outcomes show their odds. There are no pressure timers and no fake near-misses (`intelligence/retention/variable-rewards.md` §8).
 
 ## 2. First session: the VS-1 slice, minute by minute (*targets*; numbers in PACING.md §3)
+_Onboarding v2 (D-030, FL-0092)._ The player rules from the throne in the aerial view (G13.6). Gathering by the ruler is optional.
+
 | Time | Player experiences | System |
 |---|---|---|
-| 0:00 | Spawns at their own keep (regalia in kingdom colours). Founding horn; card "Welcome, ruler. Your citizens are already at work." Calm music | onboarding step `Spawn` on `KingdomJoined` (auto); FeedbackController founding cue; MusicController `Founding → calm` |
-| 0:02–0:25 | Card "Gather from a tree or rock", arrow over the nearest resource node. The ruler walks up and taps: chop sound, wood chips, "+3 Wood", and the treasury rises | step `Gather` (G9 `ResourceGathered`, source ruler); `InteractionController.gathered` → feedback |
-| ~0:25 | **First meaningful interaction** (≤ 30 s, enforced by `Onboarding.validate`) | |
-| 0:25–1:10 | "Build a House or a Farm", Build button outlined. Ghost placement, then a thunk and dust | step `PlaceBuilding` (G9 `BuildingPlaced`, `placedBy`) |
-| 1:10–2:10 | Builders walk over, hammer through visible stages; completion flourish, sparkle, toast | step `BuildingComplete` (G9, credited to every member) |
-| 2:10–5:00 | Builds a Barracks, then recruits 3 soldiers: horn and armour rattle at the Rally | step `Recruit` (G9 `UnitsRecruited`) |
-| 5:00–7:00 | "Send your soldiers to the watchtower"; a capture bar fills; capture sting, tower recolours, border flags, celebration, slice summary | step `Capture` (G9 `ObjectiveCaptured`); `OnboardingCompleted`; announcer |
+| 0:00 | The view opens high above their own keep, with the ruler seated on the throne (regalia in kingdom colours). Founding horn; card "Welcome, ruler. Your kingdom awaits." Calm music | step `Spawn` on `KingdomJoined` (auto); RulerCameraController `overview`; MusicController `Founding → calm` |
+| 0:02–0:20 | "Tap a citizen to see what they think". A tap opens the citizen card: name, job, mood, loyalty | step `InspectCitizen` (client action `CitizenInspected`, sent by InputModeController's selection) |
+| ~0:20 | **First meaningful interaction** (≤ 30 s, enforced by `Onboarding.validate`) | |
+| 0:20–1:10 | "Build on a free plot", with the nearest plot marker highlighted. Pick a House or a Farm and confirm: a thunk and dust, then builders walk over | step `BuildOnPlot` (G9 `BuildingPlaced`, `placedBy`; BuildSlot tag) |
+| 1:10–2:40 | A citizen shows a "!" request bubble. Tap them and choose an answer: the reaction line, the citizen's pose, and the visible consequence (resources, loyalty, a work boost or a strike) | step `AnswerCitizen` (client action `CitizenAnswered` from FORGE-03's panel until the proposed G9 `CitizenAnswered`); FL-0091 bubbles |
+| 2:40–5:10 | Builds a Barracks, then recruits 3 soldiers: horn and armour rattle at the Rally | step `Recruit` (G9 `UnitsRecruited`) |
+| 5:10–7:10 | "Send your soldiers to the watchtower"; a capture bar fills; capture sting, tower recolours, border flags, celebration, slice summary | step `Capture` (G9 `ObjectiveCaptured`); `OnboardingCompleted`; announcer |
 
 Teaching rules (built into `Experience/Onboarding`, specs prove each one):
 - One line per card: title ≤ 60 characters, body ≤ 140.

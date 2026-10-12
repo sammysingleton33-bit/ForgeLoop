@@ -67,6 +67,22 @@ describe("PacingService (CONTRACTS G11)", function()
 		expect(match.Founding + match.Expansion + match.Conflict).toBe(35 * 60)
 	end)
 
+	it("match30 is the ≈ 30-minute evaluation profile with the VS-2 Arena phase, and not the default", function()
+		local pacing = boot(MockEnv.new())
+		local d = pacing:phaseDurations("match30")
+		expect(d.Lobby).toBe(20)
+		expect(d.Founding + d.Expansion + d.Conflict + d.Endgame).toBe(25 * 60) -- kingdom play
+		expect(d.Arena).toBe(270)
+		expect(d.Results).toBe(30)
+		local total = 0
+		for _, seconds in d do
+			total += seconds
+		end
+		expect(total).toBe(1820) -- 30 min 20 s with the countdown and results
+		expect(pacing:phaseDurations("match").Arena).toBeNil() -- match has no Arena until VS-2
+		expect(pacing:phaseDurations("slice").Arena).toBeNil()
+	end)
+
 	it("returns a fresh table each call (callers may change it)", function()
 		local pacing = boot(MockEnv.new())
 		local a = pacing:phaseDurations("match")
@@ -78,7 +94,7 @@ describe("PacingService (CONTRACTS G11)", function()
 		local pacing = boot(MockEnv.new())
 		expect(function()
 			pacing:phaseDurations("ranked")
-		end).toThrow('mode must be "slice" or "match"')
+		end).toThrow("mode must be one of slice, match, match30, got ranked")
 	end)
 
 	it("an invalid config never breaks the match: it logs an error and serves the defaults", function()
@@ -141,5 +157,14 @@ describe("PacingService (CONTRACTS G11)", function()
 		expect(problemsOf(function(c)
 			c.modes.slice = nil
 		end)).toContain("modes.slice missing")
+		expect(problemsOf(function(c)
+			c.modes.match30.Arena = 40 * 60
+		end)).toContain("match30 Founding..Arena lasts")
+		expect(problemsOf(function(c)
+			c.modes.match30.Arena = nil
+		end)).toContain("match30 Arena must be a positive finite")
+		expect(problemsOf(function(c)
+			c.modes.match.Arena = -1
+		end)).toContain("modes.match.Arena must be seconds")
 	end)
 end)
