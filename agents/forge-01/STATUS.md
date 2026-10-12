@@ -5,10 +5,10 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/01-gameplay` (PR branches `forge/01-gameplay-fl00xx`) |
-| Open PR | #31 FL-0048 (REVIEW; main merged, gates PASS) · FL-0049 entity replication + client rigs (REVIEW, stacked on #31). Merged: #26 Types stub |
+| Open PR | #31 FL-0048 · #39 FL-0049 (stacked on #31) · living-kingdom groundwork (stacked on #39): Kit buildings at anchors, CitizenService + upkeep, Population/Reputation cores |
 | Merged | #4 FL-0007, #5 FL-0009, #8 review follow-ups (Validate cframe/record/oneOf) |
 | Current task | D-030 VS-1 v2: FL-0078 population (sub-worker on the pure generator) → FL-0080 reputation → FL-0079 conversations → FL-0081 plots + throne |
-| Last verified check | `check.sh` OVERALL PASS on the FL-0049 head: framework 485/0, game-001 412/0, Selene 0/0 |
+| Last verified check | `check.sh` OVERALL PASS on 5478da6: framework 485/0, game-001 479/0 (42 files), Selene 0/0 |
 | Blockers | FL-0078/80/79 consume FORGE-00's content library (FL-0083, branch forge/00-content-library, not on main yet): built as pure modules on fixture tables until it lands. Studio evidence for FL-0048/FL-0049 needs a user run |
 | Needs from others | FORGE-02: WorldService `ready` shape + regalia attachments (handoff 2026-10-12-forge-01-to-forge-02-05-fl0048-spawn). FORGE-04: KingdomJoined once-per-session? (handoff …-fl0048-pacing-wired) |
 
