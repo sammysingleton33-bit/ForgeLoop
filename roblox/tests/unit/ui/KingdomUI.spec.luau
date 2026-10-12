@@ -74,6 +74,20 @@ describe("AI Kingdoms UI end to end (desktop)", function()
 		expect(ui.guis.notices.DisplayOrder).toBe(70)
 		expect(ui.guis.hud.Parent:IsA("PlayerGui")).toBe(true)
 		expect(ui.guis.hud.Root.Scale.Scale).toBeNear(1.2, 0.01)
+		expect(ui.guis.hud.Enabled).toBe(true)
+	end)
+
+	it("stays hidden for a player without a kingdom", function()
+		local other = KingdomWorld.new({ clientDefinitions = { UIControllerDef }, userId = 2 })
+		local otherUi = other.client:get("UIController")
+		-- this world's player has a kingdom too; close it to model a lobby player
+		other.treasury:close(other.kingdomId)
+		otherUi.state.kingdom = nil
+		otherUi.state.treasury = nil
+		otherUi:render()
+		expect(otherUi.guis.hud.Enabled).toBe(false)
+		expect(otherUi.guis.menus.Enabled).toBe(false)
+		other:destroy()
 	end)
 
 	it("1. shows the kingdom's resources and citizens from the server", function()

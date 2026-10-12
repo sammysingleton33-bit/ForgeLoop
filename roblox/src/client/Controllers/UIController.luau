@@ -16,7 +16,8 @@
 		RemoteClient (FORGE-01 Core, via env.sharedModules("RemoteClient").Core)
 		    Economy.Treasury / Economy.GetTreasury (FORGE-03), Gameplay.RoundState / GetRoundState (§4)
 		NotificationController (FORGE-04)          :show(...) for toasts, else UI/ToastStack
-	The client never decides outcomes: Build sends Gameplay.Build; balances change only when the
+	The HUD and menus stay disabled until the player has a kingdom or a treasury (lobby, games
+	without kingdoms). The client never decides outcomes: Build sends Gameplay.Build; balances change only when the
 	server's Economy.Treasury arrives, which also drives the pill deltas (visual confirmation).
 
 	Methods (also the hooks specs and the snapshot tool use)
