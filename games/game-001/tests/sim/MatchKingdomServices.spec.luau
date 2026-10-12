@@ -770,8 +770,14 @@ describe("Kingdom and Match remotes (G8)", function()
 		expect(#pushed).toBe(before + 1)
 		expect(pushed[#pushed][1].mine).toBe("crimson")
 		expect(pushed[#pushed][1].kingdoms[2].rulers).toEqual({ 2 })
+		-- a membership change goes out on the next tick even inside the 0.5 s throttle window
+		env.mock.players:add({ userId = 3 })
+		env.mock:advance(TICK)
+		pushed = received(env, "Kingdom.State", p1)
+		expect(#pushed).toBe(before + 2)
+		expect(pushed[#pushed][1].kingdoms[3].rulers).toEqual({ 3 })
 		env.mock:advance(30)
-		expect(#received(env, "Kingdom.State", p1)).toBe(before + 1) -- nothing changed, nothing sent
+		expect(#received(env, "Kingdom.State", p1)).toBe(before + 2) -- nothing changed, nothing sent
 	end)
 
 	it("Kingdom.SetJobQuota returns a boolean and validates its arguments", function()
