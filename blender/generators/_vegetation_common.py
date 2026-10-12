@@ -25,7 +25,7 @@ SCHEMES = {
     "autumn_yellow": ("autumn_orange", "hay_dark", "autumn_yellow", "flower_yellow"),
     "autumn_red": ("red_roof_dark", "autumn_red", "autumn_orange", "autumn_yellow"),
     "birch": ("oak_mid", "leaf_light", "birch_leaf", "birch_leaf_light"),
-    "birch_gold": ("autumn_orange", "autumn_yellow", "leaf_yellow", "straw"),
+    "birch_gold": ("autumn_red", "autumn_orange", "autumn_yellow", "flower_yellow"),
     "bush": ("leaf_dark", "leaf_mid", "leaf_light", "leaf_bright"),
     "hedge": ("leaf_dark", "oak_dark", "oak_mid", "oak_light"),
     "pine": ("pine_dark", "pine_mid", "pine_light", "pine_tip"),
@@ -199,29 +199,35 @@ def flower_head(rng, r, color, center="flower_yellow", petals=5, thick=0.14, cup
     return [plate, dome]
 
 
-def blade(rng, base, h, w, lean, ang, colors=("grass_dark", "grass", "grass_light"), thick=0.35, curl=1.0):
+def blade(rng, base, h, w, lean, ang, colors=("grass_dark", "grass", "grass_light"), thick=0.35, curl=1.0, rings=3):
     """Tapered solid grass blade: flat triangular cross-section (width w, thickness w*thick)
     along a spine that bends outward (lean) and droops at the tip; base on z=0.
-    Colour bands by height (dark base -> light tip). 16 tris."""
+    Colour bands by height (dark base -> light tip). rings=3: 16 tris (two bends);
+    rings=2: 10 tris (one bend, for the most-instanced ground cover)."""
     d = Vector((math.cos(ang), math.sin(ang), 0))
     side = Vector((-d.y, d.x, 0))
     p0 = Vector(base)
-    p1 = p0 + d * (lean * 0.32) + Vector((0, 0, h * 0.42))
-    p2 = p0 + d * (lean * 0.68) + Vector((0, 0, h * 0.78))
     tip = p0 + d * (lean * (1.0 + 0.25 * curl)) + Vector((0, 0, h * (1.0 - 0.12 * curl)))
+    if rings == 2:
+        ring_pts = ((p0, w), (p0 + d * (lean * 0.42) + Vector((0, 0, h * 0.58)), w * 0.68))
+    else:
+        ring_pts = ((p0, w), (p0 + d * (lean * 0.32) + Vector((0, 0, h * 0.42)), w * 0.82),
+                    (p0 + d * (lean * 0.68) + Vector((0, 0, h * 0.78)), w * 0.5))
     verts = []
-    for c, ww in ((p0, w), (p1, w * 0.82), (p2, w * 0.5)):
+    for c, ww in ring_pts:
         t = w * thick * (ww / w)
         verts += [c - side * ww, c + side * ww, c - d * t]  # flat front, ridge at the back
     verts.append(tip)
+    nr = len(ring_pts)
     faces = []
-    for r in range(2):
+    for r in range(nr - 1):
         a, b_ = r * 3, (r + 1) * 3
         for k in range(3):
             k2 = (k + 1) % 3
             faces.append((a + k, a + k2, b_ + k2, b_ + k))
+    last = (nr - 1) * 3
     for k in range(3):
-        faces.append((6 + k, 6 + (k + 1) % 3, 9))
+        faces.append((last + k, last + (k + 1) % 3, nr * 3))
     faces.append((2, 1, 0))
     p = recalc_normals(Piece(verts, faces, colors[1], grad=("range", 0.1, 1.0), tag="blade"))
     zs = [v.z for v in p.verts]

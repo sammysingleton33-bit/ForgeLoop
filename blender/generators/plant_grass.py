@@ -11,7 +11,7 @@ from lib.geo import TAU, Vector, lathe, look_rot, tube
 from generators import _vegetation_common as vc
 
 NAME = "plant_grass"
-VERSION = 1
+VERSION = 2
 CATEGORY = "plant"
 BUDGET = "prop_small"
 COLLISION = {"fidelity": "None"}
@@ -65,7 +65,7 @@ def build(b, p):
         if kind == "reeds":
             w = 0.2 * rng.uniform(0.9, 1.2)
         curl = 1.0 if kind != "reeds" else 0.45
-        b.add(vc.blade(rng, base, h, w, lean, ang, cols, thick=0.38, curl=curl))
+        b.add(vc.blade(rng, base, h, w, lean, ang, cols, thick=0.38, curl=curl, rings=2))
         blades += 1
     # root crown: a low dark disc that hides where the blades meet the ground
     rc = lathe([(crown * 0.85 + 0.15, 0.0), (crown * 0.55 + 0.1, 0.12), (0.0, 0.16)], 7, cols[0])

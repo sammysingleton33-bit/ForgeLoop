@@ -24,3 +24,9 @@ Scores: 4 / 4 / 3 / 4 / 4 / 4 / 4 / 4
 Seen: tufts fan out like stylized game grass, seed heads and cattails add a third detail level; 506-674 / 800 tris.
 Remaining weaknesses: tiny at 40 studs (readability 3 is expected for ground cover; meant to be scattered in
 groups); blades have a flat front + ridge, so very close up they look slightly faceted.
+
+## Round 4 (triangle trim requested by FORGE-02; v2)
+Change: grass tufts use the 10-tri blade (one bend: ring at 58 % height + tip) instead of 16 tris (two bends).
+Tufts 506-674 -> 326-530 tris (-21 % on the seed-head tuft with its stalks, -33 to -36 % on the rest).
+Seen (`previews/plant_grass.jpg`): fan shape, colour ramp and silhouettes are effectively unchanged at hero and
+gameplay distance. Scores unchanged.

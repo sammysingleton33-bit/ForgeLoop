@@ -34,3 +34,9 @@ Seen: 8 readable variants: two round mounds (light / dark), pink and mixed flowe
 bushes, plain and flowering hedge segments (16 long). Accents read at 40 studs.
 Remaining weaknesses: round_01 and round_02 differ mainly by size and green; clumps still show soft facets at hero
 distance; the hedge ends are rounded, so segments butted together show a small notch.
+
+## Round 4 (triangle trim requested by FORGE-02; v2)
+Change: hedge loft 12 stations (was 16) with 3-point rounded corners (was 4), 5 top lumps (was 6), 2 side lumps
+(was 3): mostly faces hidden inside overlapping lumps. hedge_07 1100 -> 796 tris (-28 %), hedge_08 1388 -> 1084.
+Seen (`renders/bush/bush_hedge_07_hero.png`): same trimmed-hedge read, corners marginally more faceted. Round,
+flowering and berry bushes unchanged. Scores unchanged (all 4).
