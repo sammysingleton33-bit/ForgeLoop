@@ -13,6 +13,8 @@ local Panel = require(UI .. "Components/Panel")
 local ProgressBar = require(UI .. "Components/ProgressBar")
 local Tabs = require(UI .. "Components/Tabs")
 local Toast = require(UI .. "Components/Toast")
+local MockEnv = require("../../mocks/MockEnv")
+local Motion = require(UI .. "Motion")
 
 local function find(root, name)
 	for _, d in root:GetDescendants() do
@@ -116,6 +118,13 @@ describe("UI kit components", function()
 		expect(find(pill.instance, "Amount").Text).toBe("—")
 		pill:pulse(-50)
 		expect(find(pill.instance, "Delta").Text).toBe("−50")
+		-- Reduced motion / no TweenService: the delta stays readable, then goes after PULSE_SEC.
+		local env = MockEnv.new({})
+		local still = CurrencyPill.new({ currency = "wood", amount = 50 }, Motion.new(env, { reduced = true }))
+		still:pulse(-50)
+		expect(find(still.instance, "Delta").TextTransparency).toBe(0)
+		env.mock:advance(CurrencyPill.PULSE_SEC + 0.1)
+		expect(find(still.instance, "Delta")).toBeNil()
 	end)
 
 	it("ProgressBar clamps progress and shows a label", function()
