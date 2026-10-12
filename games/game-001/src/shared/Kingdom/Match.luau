@@ -209,6 +209,7 @@ function Match:_newWorld()
 		})
 	end
 	sim.active = false
+	sim.fedByUpkeep = self.options.fedByUpkeep == true
 	self.sim = sim
 	self.participants = {} :: { [number]: { kingdomId: string, joinedAt: number, leftAt: number? } }
 	self.lastKingdom = {} :: { [number]: string }

@@ -158,6 +158,7 @@ function Simulation.new(options: { [string]: any })
 	self._accum = 0
 	self._quotaAccum = 0
 	self._decisionBudget = 2 -- per tick; set by step() (staggered decisions)
+	self.fedByUpkeep = false -- true: citizens never buy meals; hunger follows kingdom.fedRatio (G7)
 	self._systems = {} :: { any } -- extra per-tick systems: { beforeCitizens?(sim, dt), afterCitizens?(sim, dt) }
 	self.extraCommands = {} :: { [string]: any } -- installed by Military/Diplomacy (Commands.install)
 	return self
@@ -238,6 +239,7 @@ function Simulation:addKingdom(def: { [string]: any })
 		eliminatedAt = nil :: number?,
 		eliminatedBy = nil :: string?,
 		nextBirthAt = tuning.birthInterval,
+		fedRatio = 1, -- 0..1, set by CitizenService:setFedRatio (G7 upkeep) when fedByUpkeep
 		popCap = 0,
 		territory = 0,
 		threats = {} :: { any },
@@ -1256,7 +1258,14 @@ end
 function Simulation:_stepCitizen(c: any, dt: number)
 	local tuning = self.catalog.tuning
 	local kingdom = self.kingdoms[c.kingdomId]
-	c.hunger += dt * tuning.hungerPerDay / tuning.dayLength
+	if self.fedByUpkeep then
+		-- G7: the kingdom's upkeep feeds its citizens (ProductionService sets fedRatio each interval):
+		-- fully fed, hunger falls; half fed, it holds; unfed, it rises at the normal rate
+		local rate = tuning.hungerPerDay / tuning.dayLength * (1 - 2 * kingdom.fedRatio)
+		c.hunger = math.max(0, c.hunger + dt * rate)
+	else
+		c.hunger += dt * tuning.hungerPerDay / tuning.dayLength
+	end
 	if c.hunger >= tuning.starveDeathHunger then
 		self:killCitizen(c, "starvation")
 		return
