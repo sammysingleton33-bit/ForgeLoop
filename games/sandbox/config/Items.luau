@@ -263,7 +263,12 @@ local Items: { ItemDef } = {
 		description = "Cheap spear-carriers. Quick to train.",
 		icon = "militia",
 		rarity = "Common",
-		unit = { cost = { food = 20, gold = 5 }, trainSec = 8, housing = 1, requires = { { building = "barracks", level = 1 } } },
+		unit = {
+			cost = { food = 20, gold = 5 },
+			trainSec = 8,
+			housing = 1,
+			requires = { { building = "barracks", level = 1 } },
+		},
 	},
 	{
 		id = "archer",
@@ -286,7 +291,12 @@ local Items: { ItemDef } = {
 		description = "Armoured cavalry. Expensive and powerful.",
 		icon = "knight",
 		rarity = "Common",
-		unit = { cost = { food = 40, gold = 30 }, trainSec = 15, housing = 2, requires = { { building = "barracks", level = 2 } } },
+		unit = {
+			cost = { food = 40, gold = 30 },
+			trainSec = 15,
+			housing = 2,
+			requires = { { building = "barracks", level = 2 } },
+		},
 	},
 	-- Cosmetics (persistent, earned with Crowns or reward tables) -----------------------------
 	{
