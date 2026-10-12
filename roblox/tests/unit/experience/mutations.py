@@ -9,7 +9,7 @@ Prints one line per row: CAUGHT / NOT CAUGHT / MUTATION NOT APPLIED. Needs lune 
 import subprocess, sys, re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[4]  # repository root
 S = "roblox/src/server/Services/"; C = "roblox/src/client/Controllers/"; X = "roblox/src/shared/Experience/"
-G = "games/game-001/"; C2 = G + "src/client/Controllers/"
+G = "games/game-001/"; C2 = G + "src/client/Controllers/"; F = G + "src/shared/Feedback/"; C2 = G + "src/client/Controllers/"
 RUN = {
     "fw": ["lune", "run", "roblox/tests/harness/run.luau"],
     "game": ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-001/default.project.json", "--specs", "games/game-001/tests"],
@@ -91,6 +91,16 @@ M = [
  ("FL-0090", C2+"InputModeController.luau", 'if okId and buildingId ~= nil then', 'if false then', "InputMode", "selects the building through", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),
  ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
+ ("FL-0062", F+"Moments.luau", 'rival.position = nil', 'local _ = rival', "KingdomFeedback", "without its location", "game"),
+ ("FL-0062", F+"Moments.luau", 'if member ~= player then', 'if true then', "KingdomFeedback", "the other members learn who joined", "game"),
+ ("FL-0062", F+"Moments.luau", 'won = mine ~= nil and mine == winner,', 'won = true,', "KingdomFeedback", "whether their kingdom won", "game"),
+ ("FL-0062", F+"Moments.luau", 'if not isMember(members, player) then', 'if true then', "KingdomFeedback", "members celebrate, everyone else is warned", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", 'silent = presentation.sound ~= nil,', 'silent = false,', "KingdomFeedback", "silently when they have a sound", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", 'celebrated = notifications:celebrate(presentation.celebrate, moment) == true', 'celebrated = false', "KingdomFeedback", "celebrations celebrate", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if now - self._lastDeposit < Def.DEPOSIT_GAP_SEC or not self:_near(position) then', 'if not self:_near(position) then', "KingdomFeedback", "deposits coalesce", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'pcall(self._vfx.stop, self._vfx, effect)', 'local _ = effect', "KingdomFeedback", "a released rig loses every effect", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if sound == nil or type(id) ~= "number" or not self:_near(position) then', 'if sound == nil or type(id) ~= "number" then', "KingdomFeedback", "culled by distance", "game"),
+ ("FL-0062", C2+"MusicController.luau", 'if type(phase) ~= "string" or Def.PHASE_STATES[phase] == nil then', 'if type(phase) ~= "string" then', "KingdomFeedback", "the match result wins at once", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

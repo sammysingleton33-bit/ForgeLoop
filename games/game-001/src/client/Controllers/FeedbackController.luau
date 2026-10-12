@@ -1,0 +1,257 @@
+--!strict
+--[[
+	FeedbackController (game-001, FORGE-04, FL-0062; CONTRACTS G4.1): citizens and the ruler get an
+	answer for their work. Hooks only the G4.1 client signals (never Sim.*), found with registry:find:
+		InteractionController.gathered(nodeId, resource, amount)
+		    -> gather sound + chips at the node (Layout.resourceNodes) + "+N Wood" float
+		EntityController.event(id, cue, payload, model)
+		    "deposit"   -> a small clink + glint at the citizen, coalesced (DEPOSIT_GAP_SEC)
+		    "celebrate" -> a cheer (G5: keep level 2) at the citizen
+		    "swing"     -> the citizen's work sound by job, at most one per SWING_GAP_SEC per citizen,
+		                   only within MAX_STUDS of the camera (proposed client-only cue, FORGE-01)
+		EntityController.released(id, model) -> stops every effect attached to that rig (pooled rigs
+		    must not carry effects to their next citizen)
+	Registers the kingdom presets (Feedback/Presets) with VFXController at start; presets already
+	registered are skipped, so a second boot never fails.
+	Every sound here has a visual counterpart (the effect or the float), the accessibility rule.
+]]
+
+local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local Presets = require("@game/ReplicatedStorage/Game/Feedback/Presets")
+local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
+
+local FeedbackController = {}
+FeedbackController.__index = FeedbackController
+
+local Def = { name = "FeedbackController", dependencies = {} }
+
+Def.DEPOSIT_GAP_SEC = 1.5
+Def.SWING_GAP_SEC = 1.5
+Def.MAX_STUDS = 150
+Def.RESOURCE = table.freeze({
+	wood = table.freeze({ sound = "kingdom.chop", vfx = "kingdom.harvest.wood", label = "Wood" }),
+	stone = table.freeze({ sound = "kingdom.mine", vfx = "kingdom.harvest.stone", label = "Stone" }),
+	food = table.freeze({ sound = "kingdom.harvest", vfx = "kingdom.harvest.food", label = "Food" }),
+	gold = table.freeze({ sound = "kingdom.pickup", vfx = "reward.burst", label = "Gold" }),
+})
+Def.JOB_SOUND = table.freeze({
+	woodcutter = "kingdom.chop",
+	miner = "kingdom.mine",
+	farmer = "kingdom.harvest",
+	builder = "kingdom.hammer",
+})
+
+local function connect(target: any, name: string, handler: (...any) -> ()): any
+	local signal = target and target[name]
+	if signal == nil then
+		return nil
+	end
+	local ok, connection = pcall(function()
+		return signal:connect(handler)
+	end)
+	return if ok then connection else nil
+end
+
+local function pivotOf(model: any): Vector3?
+	local ok, position = pcall(function()
+		local primary = model.PrimaryPart
+		return if primary then primary.CFrame.Position else model:GetPivot().Position
+	end)
+	return if ok then position else nil
+end
+
+-- opts (specs): { layout, origin = () -> Vector3 }
+function Def.create(env: any, registry: any, opts: { [string]: any }?)
+	local options = opts or {}
+	local nodes = {}
+	for _, node in ((options.layout or Layout).resourceNodes or {}) do
+		if type(node) == "table" and type(node.id) == "string" and typeof(node.cframe) == "CFrame" then
+			nodes[node.id] = node.cframe.Position
+		end
+	end
+	return setmetatable({
+		_env = env,
+		_registry = registry,
+		_origin = options.origin,
+		_nodes = nodes,
+		_connections = {},
+		_attached = {} :: { [number]: { any } },
+		_lastDeposit = -math.huge,
+		_lastSwing = {} :: { [number]: number },
+		registered = {} :: { string },
+	}, FeedbackController)
+end
+
+function Def.new(env: any, registry: any)
+	return Def.create(env, registry, nil)
+end
+
+function FeedbackController:start()
+	local registry = self._registry
+	self._audio = registry:find("AudioController")
+	self._vfx = registry:find("VFXController")
+	self:_registerPresets()
+	local interaction = registry:find("InteractionController")
+	local entities = registry:find("EntityController")
+	for _, connection in
+		{
+			connect(interaction, "gathered", function(nodeId, resource, amount)
+				self:gathered(nodeId, resource, amount)
+			end),
+			connect(entities, "event", function(id, cue, payload, model)
+				self:onEntityEvent(id, cue, payload, model)
+			end),
+			connect(entities, "released", function(id)
+				self:released(id)
+			end),
+		}
+	do
+		table.insert(self._connections, connection)
+	end
+	if entities == nil then
+		self._env.log("info", "FeedbackController: no EntityController yet; citizen work feedback waits for FORGE-01")
+	end
+end
+
+function FeedbackController:destroy()
+	for _, connection in self._connections do
+		pcall(function()
+			connection:disconnect()
+		end)
+	end
+	table.clear(self._connections)
+	for id in self._attached do
+		self:released(id)
+	end
+end
+
+function FeedbackController:_registerPresets()
+	local vfx = self._vfx
+	if vfx == nil or vfx.register == nil then
+		return
+	end
+	local missing = {}
+	for _, preset in Presets do
+		if VfxPresets.get(preset.id) == nil then
+			table.insert(missing, preset)
+		end
+	end
+	if #missing == 0 then
+		return
+	end
+	local problems = vfx:register(missing)
+	if #problems > 0 then
+		self._env.log("warn", "FeedbackController: presets rejected", { problems = table.concat(problems, "; ") })
+		return
+	end
+	for _, preset in missing do
+		table.insert(self.registered, preset.id)
+	end
+end
+
+function FeedbackController:_near(position: Vector3?): boolean
+	if position == nil then
+		return false
+	end
+	local origin
+	if self._origin then
+		origin = self._origin()
+	else
+		local ok, camera = pcall(function()
+			return self._env.Workspace.CurrentCamera.CFrame.Position
+		end)
+		origin = if ok then camera else nil
+	end
+	return origin == nil or (position - origin).Magnitude <= Def.MAX_STUDS
+end
+
+function FeedbackController:gathered(nodeId: any, resource: any, amount: any)
+	local spec = Def.RESOURCE[resource]
+	if spec == nil then
+		return
+	end
+	local position = if type(nodeId) == "string" then self._nodes[nodeId] else nil
+	if self._audio then
+		self._audio:play(spec.sound, { position = position })
+	end
+	if self._vfx then
+		if position then
+			self._vfx:play(spec.vfx, { position = position })
+		end
+		if type(amount) == "number" and amount > 0 then
+			self._vfx:float(`+{amount} {spec.label}`, position)
+		end
+	end
+end
+
+function FeedbackController:onEntityEvent(id: any, cue: string, payload: any, model: any)
+	local position = if model then pivotOf(model) else nil
+	if cue == "deposit" then
+		local now = self._env.clock()
+		if now - self._lastDeposit < Def.DEPOSIT_GAP_SEC or not self:_near(position) then
+			return
+		end
+		self._lastDeposit = now
+		if self._audio then
+			self._audio:play("kingdom.deposit", { position = position })
+		end
+		self:_attach(id, "kingdom.deposit", model, position)
+	elseif cue == "celebrate" then
+		if self._audio then
+			self._audio:play("kingdom.cheer", { position = position })
+		end
+		self:_attach(id, "reward.burst", model, position)
+	elseif cue == "swing" then
+		local job = type(payload) == "table" and payload.job or nil
+		local sound = Def.JOB_SOUND[job]
+		if sound == nil or type(id) ~= "number" or not self:_near(position) then
+			return
+		end
+		local now = self._env.clock()
+		if now - (self._lastSwing[id] or -math.huge) < Def.SWING_GAP_SEC then
+			return
+		end
+		self._lastSwing[id] = now
+		if self._audio then
+			self._audio:play(sound, { position = position })
+		end
+		if job == "woodcutter" or job == "miner" or job == "farmer" then
+			local vfx = if job == "woodcutter"
+				then "kingdom.harvest.wood"
+				elseif job == "miner" then "kingdom.harvest.stone"
+				else "kingdom.harvest.food"
+			self:_attach(id, vfx, model, position)
+		end
+	end
+end
+
+function FeedbackController:_attach(id: any, presetId: string, model: any, position: Vector3?)
+	local vfx = self._vfx
+	if vfx == nil or position == nil then
+		return
+	end
+	local effect = vfx:play(presetId, { position = position, parent = model })
+	if effect ~= nil and type(id) == "number" then
+		local list = self._attached[id]
+		if list == nil then
+			list = {}
+			self._attached[id] = list
+		end
+		table.insert(list, effect)
+	end
+end
+
+-- The rig goes back to the pool: stop every effect attached to it.
+function FeedbackController:released(id: any)
+	local list = self._attached[id]
+	self._attached[id] = nil
+	self._lastSwing[id] = nil
+	if list == nil or self._vfx == nil then
+		return
+	end
+	for _, effect in list do
+		pcall(self._vfx.stop, self._vfx, effect)
+	end
+end
+
+return Def

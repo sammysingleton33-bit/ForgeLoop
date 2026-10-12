@@ -61,8 +61,39 @@ Steps (until a debug panel exists, FORGE-05's tools or a temporary LocalScript c
 4. Turn the in-game Reduced Motion setting on (or the Roblox menu's Reduce Motion): a preset with shake (`levelup.column` has none; use a game preset with `shake`) shows fewer particles and **no** camera shake request.
 Pass: screenshots reviewed (G5 note committed by FORGE-04 after the user shares them), FPS on the low-end profile ≥ 30 with the stress case, reduced motion behaves as above.
 
-## E5 — AI Kingdoms feedback (moved)
-The kingdom-specific feedback moved to the game tree with CONTRACTS v0.4-g2 (D-026): sounds and VFX on citizens' work, the announcer, the music by match phase, and citizen reactions. That is FL-0062 (`games/game-001/src/{shared/Feedback,client/Controllers/{Feedback,Music,Announcer}*}`). Its Studio steps go into `games/game-001/STUDIO_PLAYTEST.md` through FORGE-05. The framework parts it uses are checked by E3 and E4.
+## E5 — AI Kingdoms feedback: announcer, work sounds and effects, music (FL-0062, game-001)
+Needs:
+- the game-001 build with AnnouncerService, AnnouncerController, FeedbackController and MusicController;
+- for real moments: FORGE-01's G9 producers (KingdomJoined, BuildingPlaced/Completed/Upgraded, UnitsRecruited, ObjectiveCaptured, MatchPhaseChanged, MatchEnded);
+- for citizens' work: EntityController (G4.1) with the cues `deposit`, `celebrate` and the proposed client-only `swing`;
+- InteractionController.gathered for the ruler's own gather;
+- sounds chosen or uploaded (user sounds handoff). Until then every sound is skipped on purpose, and the effects and toasts still show.
+
+The Studio debug panel (F8) has two commands for this section:
+- `fx.announce <kind>`: one sample moment. Kinds: buildingCompleted, buildingPlaced, defeat, keepUpgraded, kingdomFounded, objectiveCaptured, phase, rivalCaptured, unitsRecruited, victory.
+- `fx.burst`: six notices at once.
+
+Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Audience (G9 attribution) | buildings, recruits, captures: the kingdom's members; a keep upgrade and a capture are also reported to rivals (a rival keep without its location); phases and the match end: everyone |
+| Celebrations | kingdom founded, keep upgraded, watchtower captured, victory, defeat |
+| Toasts | one line each; repeats coalesce ("House placed ×3"); silent when the moment has its own sound |
+| Deposits | at most one clink per 1.5 s |
+| Citizens' work sounds | at most one per citizen per 1.5 s, only within 150 studs of the camera |
+| Pooled rigs | a released rig keeps no effect |
+| Music | Founding calm, Expansion build, Conflict/Endgame tension, Results calm; victory/defeat at once |
+
+Steps
+1. Play Solo. In F8, run `fx.announce kingdomFounded`: a gold burst over the ruler and "Emberhold is yours" with the founding horn (when chosen).
+2. Run `fx.burst`: at most 3 toasts, "House placed ×2", the newest on top, the warning ("Frostmere took a watchtower") above info.
+3. Run `fx.announce keepUpgraded`, then `objectiveCaptured`, then `victory`: each is a celebration (sound, effect, toast). The music changes to victory.
+4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. A co-ruler sees the same toasts, with your name on "placed".
+5. Watch citizens work from close up (40 studs) and far away (more than 150 studs): close up you hear the chops and hammering, with chips; far away, silence. Deposits at the storehouse clink at most about once a second and a half.
+6. Phase changes (with FORGE-01's MatchService, or its `match.phase` debug command): an announcement for Expansion, "War is declared" with the war horn at Conflict, and the music changes after its minimum dwell.
+
+Pass: all six hold. Note any sound that is too loud or repeats too often (the E3 levels), and any toast text that does not fit on a phone.
 
 ## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 VS-1 flow)
 Needs:
@@ -109,3 +140,4 @@ Pass: all timings recorded and within target; the log order matches; skip and co
 ## Changelog
 - 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2 and D-027. Session-only settings and progress; E5 moved to FL-0062 (game tree); E6 rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture).
+- 2026-10-12 FORGE-04: E5 back in this file for FL-0062 (game-001 feedback, announcer, music) with the fx.announce and fx.burst debug commands.
