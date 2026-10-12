@@ -9,7 +9,7 @@ local function dist(a, b)
 end
 
 describe("Kingdom/Simulation: a new kingdom", function()
-	it("has a level-1 keep, a working farm, ten citizens and the start stock", function()
+	it("has a level-1 keep, a working farm, twelve citizens and the start treasury", function()
 		local sim, k = F.kingdom()
 		local buildings = sim:buildingsOf(k)
 		expect(#buildings).toBe(2)
@@ -18,11 +18,15 @@ describe("Kingdom/Simulation: a new kingdom", function()
 		expect(buildings[1].pendingLevel).toBeNil()
 		expect(buildings[2].kind).toBe("farm")
 		expect(buildings[2].level).toBe(1)
-		expect(#k.citizenIds).toBe(10)
-		expect(F.jobs(sim, k)).toEqual({ farmer = 3, woodcutter = 3, miner = 2, builder = 2 })
-		expect(k.popCap).toBe(10)
-		expect(F.stock(sim, k):capacity()).toBe(400)
+		expect(#k.citizenIds).toBe(12)
+		expect(F.jobs(sim, k)).toEqual({ farmer = 3, woodcutter = 3, miner = 2, builder = 2, hauler = 2 })
+		expect(k.popCap).toBe(12)
 		expect(k.territory).toBe(130)
+		expect(k.crownPoints).toBe(0)
+		-- G2 ids: numbers for buildings and entities, never reused
+		expect(type(k.keepId)).toBe("number")
+		expect(type(k.citizenIds[1])).toBe("number")
+		expect(sim:citizensOf(k)[1].kind).toBe("citizen")
 		expect(sim.treasury:get(k.id)).toEqual({ food = 120, wood = 100, stone = 50, gold = 0 })
 		for _, c in sim:citizensOf(k) do
 			expect(c.home).toBe(k.keepId)
@@ -60,7 +64,7 @@ describe("Kingdom/Simulation: production", function()
 		for _, e in delivered do
 			expect(e.resource).toBe("food")
 			expect(e.amount).toBe(10) -- two harvests of 5 fill a carry of 10
-			expect(e.wasted).toBe(0)
+			expect(e.source).toBe("citizen")
 			total += e.amount
 		end
 		expect(sim:balance(k.id, "food")).toBe(120 + total)
@@ -116,9 +120,6 @@ describe("Kingdom/Simulation: production", function()
 				deliveredByRes[e.resource] += e.amount
 			end
 			F.assertInvariants(sim)
-			for _, res in sim.catalog.resources do
-				expect(sim:balance(k.id, res) <= math.max(F.stock(sim, k):capacity(), 120)).toBe(true)
-			end
 		end
 		local flows = F.stock(sim, k):flows()
 		for res, amount in deliveredByRes do
@@ -148,28 +149,50 @@ describe("Kingdom/Simulation: production", function()
 		expect(idleOrOther).toBeGreaterThanOrEqual(4)
 	end)
 
-	it("wastes deliveries above storage capacity and remembers that storage is full", function()
+	it("deposits each trip once through the treasury with a dep:<entityId>:<tripSeq> txId (G5)", function()
 		local sim, k = F.kingdom({
 			tuning = { startCitizens = { woodcutter = 2 }, hungerPerDay = 0.001, birthInterval = 1e6 },
 		})
-		F.stock(sim, k):setCapacity(105) -- 100 wood already stored
-		sim:advance(90)
-		local wasted = 0
-		for _, e in F.events(sim, "ResourceGathered") do
-			wasted += e.wasted
-		end
-		expect(wasted).toBeGreaterThan(0)
-		expect(sim:balance(k.id, "wood")).toBe(105)
-		local remembered = F.count(sim:citizensOf(k), function(c)
-			for _, m in c.memory do
-				if m.kind == "storage_full" and m.ref == "wood" then
-					return true
-				end
+		sim:advance(85)
+		local deposits = {}
+		for _, entry in sim.treasury:ledger(k.id) do
+			if entry.kind == "deposit" then
+				table.insert(deposits, entry)
 			end
-			return false
-		end)
-		expect(remembered).toBeGreaterThan(0)
+		end
+		expect(#deposits).toBeGreaterThanOrEqual(4)
+		local seen = {}
+		for _, entry in deposits do
+			expect(string.match(entry.txId, "^dep:%d+:%d+$")).toBeTruthy()
+			expect(entry.source).toBe("citizen:woodcutter")
+			expect(seen[entry.txId]).toBeNil()
+			seen[entry.txId] = true
+		end
+		-- a replayed delivery (same txId) changes nothing
+		local wood = sim:balance(k.id, "wood")
+		sim.treasury:deposit(k.id, "wood", 10, deposits[1].txId, "citizen:woodcutter")
+		expect(sim:balance(k.id, "wood")).toBe(wood)
 		F.assertInvariants(sim)
+	end)
+
+	it("delivers to the nearest drop-off that accepts the resource (lumber camp: wood only)", function()
+		local sim, k = F.kingdom({
+			nodes = false,
+			tuning = { startCitizens = { woodcutter = 1, farmer = 1 }, hungerPerDay = 0.001, birthInterval = 1e6 },
+		})
+		sim:addNode("tree", 100, 0)
+		local camp = sim:placeBuilding(k, "lumbercamp", 88, 0)
+		sim:_completeInstantly(camp)
+		local keep = sim.buildings[k.keepId]
+		expect(sim:nearestDropoff(k, 100, 0, "wood")).toBe(camp)
+		expect(sim:nearestDropoff(k, 100, 0, "food")).toBe(keep)
+		expect(sim:nearestDropoff(k, 100, 0)).toBe(camp)
+		sim:advance(40)
+		local woodcutter = F.count(sim:citizensOf(k), function(c)
+			return c.job == "woodcutter" and math.abs(c.x - 100) < 20
+		end)
+		expect(woodcutter).toBe(1) -- it never walked back to the keep 100 studs away
+		expect(sim:balance(k.id, "wood")).toBeGreaterThan(60)
 	end)
 
 	it("regrows a depleted tree after its regrow time, and depleted trees still block placement", function()
@@ -210,7 +233,8 @@ describe("Kingdom/Simulation: construction", function()
 		expect(house.level).toBe(1)
 		expect(house.pendingLevel).toBeNil()
 		expect(house.hp).toBe(300)
-		expect(k.popCap).toBe(14)
+		expect(k.popCap).toBe(16)
+		expect(k.crownPoints).toBe(sim.catalog.crown.buildingLevel) -- a completed level pays Crown Points
 		local done = F.events(sim, "BuildingCompleted")
 		expect(#done).toBe(1)
 		expect(done[1].buildingId).toBe(house.id)
@@ -370,11 +394,34 @@ describe("Kingdom/Simulation: daily life", function()
 		local house = sim:placeBuilding(k, "house", 0, -35)
 		sim:_completeInstantly(house)
 		sim:_recompute(k)
-		expect(k.popCap).toBe(14)
+		expect(k.popCap).toBe(16)
 		sim:advance(120)
-		expect(#k.citizenIds).toBe(14)
+		expect(#k.citizenIds).toBe(16)
 		expect(#F.events(sim, "CitizenBorn")).toBe(4)
 		expect(F.stock(sim, k):flows().expense.birth.food).toBe(20)
+	end)
+
+	it("keeps a bed free for every recruit still training (no births over the cap)", function()
+		local Military = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Military")
+		local sim, k = F.kingdom({ tuning = { birthInterval = 5, birthFood = 5 } })
+		Military.install(sim)
+		F.stock(sim, k):add("food", 500)
+		F.stock(sim, k):add("wood", 400)
+		F.stock(sim, k):add("stone", 400)
+		local house = sim:placeBuilding(k, "house", 0, -35)
+		sim:_completeInstantly(house)
+		local barracks = sim:placeBuilding(k, "barracks", 0, 30)
+		sim:_completeInstantly(barracks)
+		sim:_recompute(k)
+		expect(k.popCap).toBe(16)
+		local Commands = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Commands")
+		expect(Commands.executeFor(sim, k, nil, "Recruit", "soldier", 4)).toBe(true) -- 12 + 4 queued = 16
+		for _ = 1, 40 do
+			sim:advance(1)
+			expect(sim:population(k) + sim:queuedUnits(k) <= k.popCap).toBe(true)
+		end
+		expect(#k.unitIds).toBe(4)
+		expect(#F.events(sim, "CitizenBorn")).toBe(0)
 	end)
 
 	it("follows the rulers' job quotas, moving citizens through the Laborer pool", function()

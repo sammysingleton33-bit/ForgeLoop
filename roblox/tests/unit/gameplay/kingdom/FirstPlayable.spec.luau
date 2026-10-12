@@ -1,12 +1,14 @@
 --[[
 	The first playable milestone, end to end on the server path a real client uses:
 	MockEnv players -> RemoteService (validation, rate limits) -> MatchHost -> Match/Simulation ->
-	WorldView parts + snapshots back to clients.
+	treasury (G7 double) -> WorldView parts + snapshots back to clients.
 
-	1. A player spawns as a ruler in a small kingdom with about ten citizens.
-	2. A farmer produces food; a worker gathers resources; the balance updates correctly.
-	3. The player orders a building; the resources are consumed and the change appears in the world.
-	4. Another player joins through the multiplayer path without corrupting kingdom state.
+	1. A player spawns as a ruler in a small kingdom with twelve citizens (VS-1 rows 3-4).
+	2. Farmers produce food; workers gather; the treasury ledger matches every delivery (row 4).
+	3. The ruler harvests a node by hand (row 5).
+	4. The ruler orders a building; it is paid, raised by builders and appears in the world (row 6).
+	5. A second player joins through the multiplayer path without corrupting kingdom state.
+	6. Rulers standing on the neutral watchtower capture it (row 7, capture rules G8).
 ]]
 
 local T = require("../../../harness/Test")
@@ -19,14 +21,28 @@ local MatchHost = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/MatchH
 local Snapshot = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Snapshot")
 local RemoteServiceDef = require("@game/ServerScriptService/Forge/Services/RemoteService")
 
+-- Characters do not exist in Lune: specs place rulers through this table (userId -> { x, z }).
+local positions = {}
+
 local function setup(matchOptions)
+	table.clear(positions)
 	local env = MockEnv.new({ seed = 3, sharedModules = { Remotes = { Gameplay = GameplayRemotes } } })
 	local remotes = RemoteServiceDef.new(env, {})
 	local options = { countdownSec = 3 }
 	for k, v in matchOptions or {} do
 		options[k] = v
 	end
-	local host = MatchHost.new(env, remotes, { seed = 7, match = options })
+	local host = MatchHost.new(env, remotes, {
+		seed = 7,
+		match = options,
+		positionOf = function(player)
+			local p = positions[player.UserId]
+			if p then
+				return p.x, p.z
+			end
+			return nil, nil
+		end,
+	})
 	host:start()
 	return env, remotes, host
 end
@@ -61,13 +77,13 @@ local function collect(host)
 	return events
 end
 
--- kingdom snapshots without the ruler list, for "nothing else changed" comparisons
+-- kingdom snapshots without the ruler lists, for "nothing else changed" comparisons
 local function worldState(sim)
 	local out = {}
 	for _, kid in sim.kingdomOrder do
 		local snap = Snapshot.kingdom(sim, kid, 0)
 		snap.kingdom.rulers = nil
-		snap.kingdom.score = nil
+		snap.kingdom.isAI = nil
 		out[kid] = snap
 	end
 	return out
@@ -83,71 +99,101 @@ describe("AI Kingdoms first playable", function()
 		local events = collect(host)
 		local p1 = env.mock.players:add({ userId = 101, name = "Ruler1" })
 
-		-- 1. joined as a ruler, on the kingdom's team, match counting down then active
+		-- 1. joined as a ruler on the kingdom's team; countdown, then Founding
 		local kid = host:kingdomOf(p1)
 		expect(kid).toBe("crimson")
-		expect(p1.Team).toBeTruthy()
 		expect(p1.Team:GetAttribute("KingdomId")).toBe("crimson")
 		expect(host.match.state).toBe("Lobby")
 		env.mock:advance(0.5)
-		expect(host.match.state).toBe("Countdown")
+		expect(host:roundState()).toBe("Countdown")
 		env.mock:advance(3.5)
-		expect(host.match.state).toBe("Active")
+		expect(host.match.state).toBe("Founding")
+		local phases = sentTo(env, "MatchPhase", p1)
+		expect(phases[#phases][1]).toBe("Founding")
+		expect(phases[#phases][2]).toBeTruthy() -- a serverTimeNow deadline for the HUD timer
 		local roundStates = sentTo(env, "RoundState", p1)
 		expect(roundStates[#roundStates][1]).toBe("Active")
 		expect(roundStates[#roundStates][4]).toBe(4) -- four kingdoms standing
 
 		local sim = host.match.sim
 		local k = sim.kingdoms[kid]
-		expect(#k.citizenIds).toBe(10)
+		expect(#k.citizenIds).toBe(12)
 		expect(k.rulers).toEqual({ 101 })
 		local view = host._view
 		for _, cid in k.citizenIds do
-			expect(view:find(cid)).toBeTruthy()
+			expect(view:find("entity", cid)).toBeTruthy()
 		end
 		local state = invoke(env, p1, "Gameplay.GetKingdomState")
 		expect(state.kingdomId).toBe("crimson")
-		expect(#state.kingdom.citizens).toBe(10)
-		expect(state.round.state).toBe("Active")
+		expect(#state.kingdom.citizens).toBe(12)
+		expect(state.round.phase).toBe("Founding")
 
-		-- 2. farmers and workers fill the stockpile; the ledger matches every delivery
+		-- 2. farmers and workers fill the treasury; the ledger matches every delivery
 		env.mock:advance(60)
 		local delivered = { food = 0, wood = 0, stone = 0, gold = 0 }
 		for _, e in events.list do
-			if e.name == "ResourceGathered" and e.kingdomId == kid then
+			if e.name == "ResourceGathered" and e.kingdomId == kid and e.source == "citizen" then
 				delivered[e.resource] += e.amount
 			end
 		end
 		expect(delivered.food).toBeGreaterThan(0)
 		expect(delivered.wood).toBeGreaterThan(0)
 		expect(delivered.stone).toBeGreaterThan(0)
-		local flows = F.stock(sim, k):flows()
-		for res, amount in delivered do
-			expect((flows.income.gathered or {})[res] or 0).toBe(amount)
+		local ledgerIn = { food = 0, wood = 0, stone = 0, gold = 0 }
+		for _, entry in sim.treasury:ledger(kid) do
+			if entry.kind == "deposit" and string.sub(entry.source, 1, 8) == "citizen:" then
+				for res, amount in entry.bag do
+					ledgerIn[res] += amount
+				end
+			end
 		end
-		expect(sim.treasury:audit(k.id)).toBe(true)
+		expect(ledgerIn).toEqual(delivered)
+		expect(sim.treasury:audit(kid)).toBe(true)
 		local snapshots = sentTo(env, "KingdomSnapshot", p1)
 		expect(#snapshots).toBeGreaterThan(100) -- about two per second
-		local latest = snapshots[#snapshots][1]
-		expect(latest.kingdom.resources).toEqual(sim.treasury:get(k.id))
+		expect(snapshots[#snapshots][1].kingdom.resources).toEqual(sim.treasury:get(kid))
 
-		-- 3. order a House: exact cost, a site appears, builders finish it, the world shows it
-		local before = sim.treasury:get(k.id)
+		-- 3. the ruler harvests a tree by hand: range and cooldown are enforced on the server
+		local tree
+		for _, nid in k.nearNodes do
+			local node = sim.nodes[nid]
+			if node.resource == "wood" and node.amount >= 10 then
+				tree = node
+				break
+			end
+		end
+		local woodBefore = sim:balance(kid, "wood")
+		local ok, err = invoke(env, p1, "Gameplay.Gather", tree.id)
+		expect(ok).toBe(false)
+		expect(err).toBe("no_character")
+		positions[101] = { x = tree.x + 200, z = tree.z }
+		expect(select(2, invoke(env, p1, "Gameplay.Gather", tree.id))).toBe("too_far")
+		positions[101] = { x = tree.x + 4, z = tree.z }
+		local result
+		ok, err, result = invoke(env, p1, "Gameplay.Gather", tree.id)
+		expect(err).toBeNil()
+		expect(result).toEqual({ resource = "wood", amount = 2 })
+		expect(select(2, invoke(env, p1, "Gameplay.Gather", tree.id))).toBe("cooldown")
+		expect(sim:balance(kid, "wood") >= woodBefore + 2).toBe(true)
+
+		-- 4. order a House: exact cost, a site appears, builders finish it, the world shows it
+		local before = sim.treasury:get(kid)
 		local keep = sim.buildings[k.keepId]
-		local ok, err, result = invoke(env, p1, "Gameplay.PlaceBuilding", "house", keep.x, keep.z)
+		ok, err = invoke(env, p1, "Gameplay.PlaceBuilding", "house", keep.x, keep.z)
 		expect(ok).toBe(false)
 		expect(err).toBe("blocked") -- on the keep: rejected, nothing spent
 		ok, err = invoke(env, p1, "Gameplay.PlaceBuilding", "house", 0, 0)
 		expect(err).toBe("out_of_territory") -- the map centre is no one's land
-		expect(sim.treasury:get(k.id)).toEqual(before)
+		expect(sim.treasury:get(kid)).toEqual(before)
 		local hx, hz = keep.x + 30, keep.z + 30
 		ok, err, result = invoke(env, p1, "Gameplay.PlaceBuilding", "house", hx, hz)
 		expect(err).toBeNil()
 		expect(ok).toBe(true)
-		local after = sim.treasury:get(k.id)
+		local after = sim.treasury:get(kid)
 		expect(after.wood).toBe(before.wood - 40)
 		expect(after.food).toBe(before.food)
 		local houseId = result.buildingId
+		expect(type(houseId)).toBe("number")
 		-- the ruler gets an immediate snapshot with the site
 		local fresh = sentTo(env, "KingdomSnapshot", p1)
 		local site
@@ -159,7 +205,7 @@ describe("AI Kingdoms first playable", function()
 		expect(site).toBeTruthy()
 		expect(site.level).toBe(0)
 		env.mock:advance(0.25)
-		local part = view:find(houseId)
+		local part = view:find("building", houseId)
 		expect(part).toBeTruthy()
 		expect(part:GetAttribute("Level")).toBe(0)
 		expect(part.Transparency).toBeNear(0.55, 1e-6) -- float32 property
@@ -168,17 +214,16 @@ describe("AI Kingdoms first playable", function()
 		expect(part:GetAttribute("Level")).toBe(1)
 		expect(part.Transparency).toBe(0)
 		expect(math.abs(part.CFrame.Position.X - hx) < 0.01).toBe(true)
-		expect(k.popCap).toBe(14)
-		local notices = sentTo(env, "KingdomEvent", p1)
+		expect(k.popCap).toBe(16)
 		local completed = false
-		for _, args in notices do
+		for _, args in sentTo(env, "KingdomEvent", p1) do
 			if args[1].name == "BuildingCompleted" and args[1].buildingId == houseId then
 				completed = true
 			end
 		end
 		expect(completed).toBe(true)
 
-		-- 4. a second player joins: assigned to another kingdom, nothing else changes
+		-- 5. a second player joins: assigned to another kingdom, nothing else changes
 		local beforeJoin = worldState(sim)
 		local p2 = env.mock.players:add({ userId = 202, name = "Ruler2" })
 		local kid2 = host:kingdomOf(p2)
@@ -188,17 +233,44 @@ describe("AI Kingdoms first playable", function()
 		expect(k.rulers).toEqual({ 101 })
 		local state2 = invoke(env, p2, "Gameplay.GetKingdomState")
 		expect(state2.kingdomId).toBe("azure")
-		expect(state2.round.state).toBe("Active") -- mid-match joiner learns the round
+		expect(state2.round.phase).toBe("Founding") -- a mid-match joiner learns the phase
 		-- the newcomer cannot command someone else's kingdom
 		ok, err = invoke(env, p2, "Gameplay.UpgradeBuilding", houseId)
 		expect(ok).toBe(false)
 		expect(err).toBe("not_owner")
 		env.mock:advance(30)
 		for _, kingdomId in sim.kingdomOrder do
-			expect(F.stock(sim, sim.kingdoms[kingdomId]):audit()).toBe(true)
+			expect(sim.treasury:audit(kingdomId)).toBe(true)
 		end
 		expect(env.mock:hasLog("error", "tick failed")).toBe(false)
-		expect(events.counts.MatchStateChanged).toBe(2)
+	end)
+
+	it("captures the neutral watchtower with rulers standing on it (G8)", function()
+		local env, _, host = setup()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(4)
+		local sim = host.match.sim
+		local tower = sim.objectives.list[1]
+		positions[1] = { x = tower.x + 2, z = tower.z }
+		local captured = {}
+		host.events:connect(function(name, event)
+			if name == "ObjectiveCaptured" then
+				table.insert(captured, event)
+			end
+		end)
+		env.mock:advance(tower.captureSeconds + 1)
+		expect(tower.owner).toBe("crimson")
+		expect(#captured).toBe(1)
+		expect(sim.kingdoms.crimson.crownPoints).toBeGreaterThanOrEqual(tower.crownPoints)
+		local global = false
+		for _, args in sentTo(env, "KingdomEvent", p1) do
+			if args[1].name == "ObjectiveCaptured" then
+				global = true
+			end
+		end
+		expect(global).toBe(true)
+		local snap = invoke(env, p1, "Gameplay.GetKingdomState")
+		expect(snap.kingdom.objectives[1].owner).toBe("crimson")
 	end)
 
 	it("lets two rulers share one kingdom and keeps the ledger exact under both", function()
@@ -213,7 +285,7 @@ describe("AI Kingdoms first playable", function()
 		expect(host:kingdomOf(p2)).toBe("crimson")
 		expect(p2.Team).toBe(p1.Team)
 		env.mock:advance(4)
-		expect(host.match.state).toBe("Active")
+		expect(host.match.state).toBe("Founding")
 		ok, err = invoke(env, p2, "Gameplay.ChooseKingdom", "emerald")
 		expect(ok).toBe(false)
 		expect(err).toBe("too_late")
@@ -223,15 +295,15 @@ describe("AI Kingdoms first playable", function()
 		local keep = sim.buildings[k.keepId]
 		local wood = sim:balance(k.id, "wood")
 		expect(invoke(env, p1, "Gameplay.PlaceBuilding", "house", keep.x + 30, keep.z + 30)).toBe(true)
-		expect(invoke(env, p2, "Gameplay.PlaceBuilding", "farm", keep.x - 35, keep.z + 25)).toBe(true)
-		expect(sim:balance(k.id, "wood")).toBe(wood - 40 - 50)
+		expect(invoke(env, p2, "Gameplay.PlaceBuilding", "lumbercamp", keep.x - 35, keep.z + 25)).toBe(true)
+		expect(sim:balance(k.id, "wood")).toBe(wood - 40 - 40)
 		local placed = {}
 		for _, e in sim:drainEvents() do
 			if e.name == "BuildingPlaced" then
 				placed[e.by] = e.kind
 			end
 		end
-		expect(placed).toEqual({ [1] = "house", [2] = "farm" })
+		expect(placed).toEqual({ [1] = "house", [2] = "lumbercamp" })
 		expect(sim.treasury:audit(k.id)).toBe(true)
 	end)
 
@@ -239,17 +311,18 @@ describe("AI Kingdoms first playable", function()
 		local env, remotes, host = setup()
 		local p1 = env.mock.players:add({ userId = 1 })
 		env.mock:advance(4)
-		local k = host.match.sim.kingdoms.crimson
-		local before = sim.treasury:get(k.id)
+		local sim = host.match.sim
+		local before = sim.treasury:get("crimson")
 		expect(invoke(env, p1, "Gameplay.PlaceBuilding", "house", 0 / 0, 5)).toBeNil()
 		expect(invoke(env, p1, "Gameplay.PlaceBuilding", "house", math.huge, 5)).toBeNil()
 		expect(invoke(env, p1, "Gameplay.PlaceBuilding", "keep", 30, 30)).toBeNil()
 		expect(invoke(env, p1, "Gameplay.PlaceBuilding", "house", 30, 30, "extra")).toBeNil()
 		expect(invoke(env, p1, "Gameplay.SetPriority", "wood", 7)).toBeNil()
+		expect(invoke(env, p1, "Gameplay.UpgradeBuilding", "b1")).toBeNil() -- ids are integers
 		expect(invoke(env, p1, "Gameplay.SetAlarm", "yes")).toBeNil()
-		expect(sim.treasury:get(k.id)).toEqual(before)
+		expect(sim.treasury:get("crimson")).toEqual(before)
 		local stats = remotes:stats()
-		expect(stats.dropped.invalidArgs).toBe(5)
+		expect(stats.dropped.invalidArgs).toBe(6)
 		expect(stats.dropped.extraArgs).toBe(1)
 		-- burst then rate limit (SetAlarm: burst 3)
 		local accepted = 0
@@ -284,7 +357,10 @@ describe("AI Kingdoms first playable", function()
 	end)
 
 	it("ends the match, reports the result once, and starts a fresh world for everyone", function()
-		local env, _, host = setup({ durationSec = 60, resultsSec = 20 })
+		local env, _, host = setup({
+			phaseDurations = { Founding = 15, Expansion = 15, Conflict = 15, Endgame = 15 },
+			resultsSec = 20,
+		})
 		local ended = {}
 		GameEvents.RoundEnded:connect(function(result)
 			table.insert(ended, result)
@@ -301,17 +377,18 @@ describe("AI Kingdoms first playable", function()
 		expect(ended[1].roundId).toBe("km-1")
 		expect(#ended[1].participants).toBe(1)
 		expect(ended[1].participants[1].userId).toBe(5)
-		local results = sentTo(env, "RoundResult", p1)
-		expect(#results).toBe(1)
+		expect(#sentTo(env, "RoundResult", p1)).toBe(1)
 		local firstTeam = p1.Team
 		env.mock:advance(15)
-		expect(host.match.state).toBe("Countdown")
+		expect(host.match.state).toBe("Lobby")
+		expect(host:roundState()).toBe("Countdown")
 		expect(host.match.roundId).toBe("km-2")
 		expect(host:kingdomOf(p1)).toBe("crimson")
 		expect(p1.Team).toBeTruthy()
 		expect(rawequal(p1.Team, firstTeam)).toBe(false) -- teams were rebuilt with the new world
 		expect(table.find(env.Teams:GetChildren(), firstTeam)).toBeNil()
 		expect(#env.Teams:GetChildren()).toBe(4)
+		-- phase changes inside "Active" (Founding -> ... -> Endgame) do not re-fire RoundStateChanged
 		expect(states).toEqual({ "Countdown", "Active", "Results", "Lobby", "Countdown" })
 		expect(#ended).toBe(1)
 	end)

@@ -15,6 +15,7 @@
 		growth    upgrade the Keep from day 3; upgrade Houses when wood and stone are plentiful
 		military  build a Barracks from day 4, keep an army of about a quarter of the population,
 		          Watchtowers after Keep level 2
+		objective with 3+ soldiers and no war, march on the nearest capture point it does not own
 		war       after the grace period, an aggressive AI declares war on the weakest neighbour and
 		          attacks once its army is large enough; it proposes peace when its army is gone and
 		          accepts peace when it is behind on score
@@ -257,6 +258,28 @@ function RulerAI.think(sim: any, kingdom: any): string?
 				if Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Attack", target.id) then
 					return "ArmyOrder:Attack"
 				end
+			end
+		end
+	end
+
+	-- objectives: a standing army at peace marches on the nearest capture point it does not own
+	if sim.objectives and #enemies == 0 and army >= 3 then
+		local best, bestDistance = nil, math.huge
+		for _, o in sim.objectives.list do
+			if o.owner ~= kingdom.id then
+				local dx, dz = o.x - kingdom.x, o.z - kingdom.z
+				local d = dx * dx + dz * dz
+				if d < bestDistance then
+					best, bestDistance = o, d
+				end
+			end
+		end
+		if best then
+			local unit = sim.units[kingdom.unitIds[1]]
+			local order = unit.order
+			local already = order.kind == "Move" and order.x == best.x and order.z == best.z
+			if not already and Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Move", best.x, best.z) then
+				return "ArmyOrder:Objective"
 			end
 		end
 	end

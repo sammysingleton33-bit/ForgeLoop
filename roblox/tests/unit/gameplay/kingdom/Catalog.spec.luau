@@ -36,12 +36,42 @@ describe("Kingdom/Catalog", function()
 		expect(b.tuning.startCitizens.farmer).toBe(3)
 	end)
 
-	it("starts every kingdom with about ten citizens", function()
+	it("starts every kingdom with the twelve working citizens of VS-1 row 4", function()
 		local total = 0
 		for _, n in Catalog.default().tuning.startCitizens do
 			total += n
 		end
-		expect(total).toBe(10)
+		expect(total).toBe(12)
+		expect(Catalog.default().buildings.keep.levels[1].popCap).toBe(12)
+	end)
+
+	it("uses only CONTRACTS G2 ids for buildings and jobs", function()
+		local Types = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Types")
+		local c = Catalog.default()
+		for id in c.buildings do
+			expect(Types.is("BUILDING_TYPES", id)).toBe(true)
+		end
+		for id in c.jobs do
+			expect(Types.is("JOB_IDS", id)).toBe(true)
+		end
+		local errors = errorsOf(function(bad)
+			bad.buildings.castle = table.clone(bad.buildings.house)
+			bad.buildings.castle.id = "castle"
+			table.insert(bad.buildingOrder, "castle")
+			bad.jobs.wizard = { id = "wizard", resources = {}, affinity = {} }
+			table.insert(bad.jobOrder, "wizard")
+		end)
+		expect(anyContains(errors, "buildings.castle: not a building type")).toBe(true)
+		expect(anyContains(errors, "jobs.wizard: not a citizen job")).toBe(true)
+	end)
+
+	it("provides a G6-shaped costs double", function()
+		local costs = Catalog.costs(Catalog.default())
+		expect(costs.building("house", 1)).toEqual({ cost = { wood = 40 }, buildSeconds = 15 })
+		expect(costs.building("keep", 2).buildSeconds).toBe(60)
+		expect(costs.building("house", 9)).toBeNil()
+		expect(costs.unit("soldier")).toEqual({ cost = { food = 30, wood = 10 }, trainSeconds = 8 })
+		expect(costs.unit("dragon")).toBeNil()
 	end)
 
 	it("rejects a non-table catalog", function()
@@ -58,23 +88,23 @@ describe("Kingdom/Catalog", function()
 		expect(anyContains(errors, "cost of wood must be a non-negative integer")).toBe(true)
 	end)
 
-	it("requires a Keep with territory and a Laborer fallback", function()
+	it("requires a keep with territory and a hauler pool", function()
 		local errors = errorsOf(function(c)
 			c.buildings.keep.levels[1].territory = 0
-			c.occupations.hauler = nil
+			c.jobs.hauler = nil
 			table.remove(c.jobOrder, table.find(c.jobOrder, "hauler"))
 		end)
-		expect(anyContains(errors, "Keep: level 1 needs a positive territory")).toBe(true)
-		expect(anyContains(errors, "hauler")).toBe(true)
+		expect(anyContains(errors, "keep: level 1 needs a positive territory")).toBe(true)
+		expect(anyContains(errors, "a hauler (the generalist pool) is required")).toBe(true)
 	end)
 
 	it("keeps the order lists and maps in sync", function()
 		local errors = errorsOf(function(c)
-			table.insert(c.buildingOrder, "Castle")
+			table.insert(c.buildingOrder, "castle")
 			table.remove(c.unitOrder, 1)
 		end)
-		expect(anyContains(errors, "'Castle' is not in buildings")).toBe(true)
-		expect(anyContains(errors, "'Militia' missing from unitOrder")).toBe(true)
+		expect(anyContains(errors, "'castle' is not in buildings")).toBe(true)
+		expect(anyContains(errors, "'soldier' missing from unitOrder")).toBe(true)
 	end)
 
 	it("rejects farms without workers, units with zero stats and bad tuning", function()
@@ -90,7 +120,7 @@ describe("Kingdom/Catalog", function()
 		expect(anyContains(errors, "units.archer: range must be positive")).toBe(true)
 		expect(anyContains(errors, "nightStart")).toBe(true)
 		expect(anyContains(errors, "tuning.dayLength must be positive")).toBe(true)
-		expect(anyContains(errors, "unknown occupation 'Wizard'")).toBe(true)
+		expect(anyContains(errors, "unknown job 'Wizard'")).toBe(true)
 		expect(anyContains(errors, "trains unknown unit 'Dragon'")).toBe(true)
 	end)
 
@@ -100,7 +130,7 @@ describe("Kingdom/Catalog", function()
 			c.tuning.startBuildings = { { kind = "keep", angle = 0, distance = 10 } }
 		end)
 		expect(anyContains(errors, "placeable buildings need work > 0")).toBe(true)
-		expect(anyContains(errors, "unknown or unplaceable building 'Keep'")).toBe(true)
+		expect(anyContains(errors, "unknown or unplaceable building 'keep'")).toBe(true)
 	end)
 
 	it("levelOf and isResource answer lookups", function()

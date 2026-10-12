@@ -87,14 +87,15 @@ describe("Kingdom/Snapshot", function()
 		expect(Snapshot.kingdom(sim, "nope", 1)).toBeNil()
 	end)
 
-	it("scores population, building levels, conquests, kills and gathering", function()
+	it("scores a kingdom by its Crown Points", function()
 		local sim, k = F.kingdom()
-		-- 10 citizens, keep L1 + farm L1
-		expect(Snapshot.score(sim, k)).toBe(10 * 10 + 2 * 20)
-		k.stats.conquered = 1
-		k.stats.unitsKilled = 2
-		k.stats.gathered.wood = 50
-		expect(Snapshot.score(sim, k)).toBe(100 + 40 + 300 + 10 + 2)
+		expect(Snapshot.score(sim, k)).toBe(0)
+		sim:addCrownPoints(k.id, 25, "test")
+		expect(Snapshot.score(sim, k)).toBe(25)
+		expect(Snapshot.kingdom(sim, k.id, 1).kingdom.crownPoints).toBe(25)
+		local events = F.events(sim, "CrownPoints")
+		expect(#events).toBe(1)
+		expect(events[1].total).toBe(25)
 	end)
 
 	it("summarises every kingdom in the overview", function()
