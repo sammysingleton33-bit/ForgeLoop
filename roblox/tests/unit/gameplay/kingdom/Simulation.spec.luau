@@ -93,6 +93,19 @@ describe("Kingdom/Simulation: production", function()
 		F.assertInvariants(sim)
 	end)
 
+	it("gatherers keep making trips instead of stopping after the first delivery", function()
+		local sim = F.kingdom({
+			tuning = { startCitizens = { Farmer = 1, Woodcutter = 1 }, hungerPerDay = 0.001, birthInterval = 1e6 },
+		})
+		sim:advance(85) -- before nightfall at 90 s
+		local trips = { food = 0, wood = 0 }
+		for _, e in F.events(sim, "ResourceDelivered") do
+			trips[e.resource] += 1
+		end
+		expect(trips.food).toBeGreaterThanOrEqual(4)
+		expect(trips.wood).toBeGreaterThanOrEqual(3)
+	end)
+
 	it("keeps the resource balance exact over ten minutes of a busy kingdom", function()
 		local sim, k = F.kingdom({ seed = 4 })
 		local deliveredByRes = { food = 0, wood = 0, stone = 0, gold = 0 }
