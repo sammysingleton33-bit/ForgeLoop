@@ -58,6 +58,10 @@ M = [
  ("FL-0061", G+"src/server/Services/PacingService.luau", '		config = Def.DEFAULTS\n', '', "PacingService", "an invalid config never breaks the match", "game"),
  ("FL-0061", G+"src/server/Services/PacingService.luau", 'if durations == nil or not table.find(Def.MODES, mode) then', 'if false then', "PacingService", "rejects an unknown mode", "game"),
  ("FL-0024", G+"config/Sounds.luau", 'id = "music.tension"', 'id = "music.tense"', "Sounds", "registers a track for every music state", "game"),
+ ("FL-0092", G+"src/server/Services/PacingService.luau", 'if minutes < Def.MATCH30_MINUTES.min or minutes > Def.MATCH30_MINUTES.max then', 'if false then', "PacingService", "validation catches each broken rule", "game"),
+ ("FL-0092", G+"src/server/Services/PacingService.luau", 'out[phase] = durations[phase] -- nil unless', 'out[phase] = nil -- nil unless', "PacingService", "match30 is the", "game"),
+ ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", 'trigger = { client = "CitizenInspected" }', 'trigger = { client = "CitizenAnswered" }', "Onboarding", "a client action completes only the current step", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

@@ -11,6 +11,10 @@
 	  (MatchService moves to Results). Later phases are not reached in the slice; Results stays up.
 	- match: the full 30-45 minute match of BRIEF §3 (Founding 0-8, Expansion 8-20, Conflict 20-35,
 	  Endgame 35-45 min). Victory may end Endgame early; victory rules are the user's (§16.4).
+	- match30: an evaluation profile, NOT the default (D-030 (6), design/living-kingdom.md §6): the
+	  user prefers about 25 minutes of kingdom play and a 5-minute final phase. Founding 5, Expansion 7,
+	  Conflict 8, Endgame 5, Arena 4.5 min (+ Lobby 20 s, Results 30 s: about 30 min). Arena is the
+	  VS-2 phase (CONTRACTS G12); MatchService uses match30 only when someone selects it.
 	targets: when a typical new player should reach each VS-1 milestone (seconds after spawn). They
 	are tuning goals for playtests and analytics (FL-0063), not rules the game enforces.
 ]]
@@ -33,6 +37,15 @@ return table.freeze({
 			Expansion = 12 * 60,
 			Conflict = 15 * 60,
 			Endgame = 10 * 60,
+			Results = 30,
+		}),
+		match30 = table.freeze({
+			Lobby = 20,
+			Founding = 5 * 60,
+			Expansion = 7 * 60,
+			Conflict = 8 * 60,
+			Endgame = 5 * 60,
+			Arena = 4.5 * 60,
 			Results = 30,
 		}),
 	}),

@@ -24,7 +24,12 @@ PacingService.__index = PacingService
 local Def = { name = "PacingService", dependencies = {} }
 
 Def.PHASES = table.freeze({ "Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Results" })
-Def.MODES = table.freeze({ "slice", "match" })
+Def.MODES = table.freeze({ "slice", "match", "match30" })
+-- MatchPhase values added later (CONTRACTS G12: Arena between Endgame and Results at VS-2). A mode may
+-- carry them; phaseDurations returns them when present; VS-1's MatchService ignores keys it lacks.
+Def.LATER_PHASES = table.freeze({ "Arena" })
+-- match30 (D-030 (6), design/living-kingdom.md §6): a non-default evaluation profile, ≈ 30 minutes.
+Def.MATCH30_MINUTES = table.freeze({ min = 25, max = 35 })
 local TIMED = { "Founding", "Expansion", "Conflict", "Endgame" }
 local TARGET_ORDER =
 	{ "firstGatherSec", "firstBuildPlacedSec", "firstBuildingCompleteSec", "firstRecruitSec", "firstCaptureSec" }
@@ -45,6 +50,15 @@ Def.DEFAULTS = table.freeze({
 			Expansion = 720,
 			Conflict = 900,
 			Endgame = 600,
+			Results = 30,
+		}),
+		match30 = table.freeze({
+			Lobby = 20,
+			Founding = 300,
+			Expansion = 420,
+			Conflict = 480,
+			Endgame = 300,
+			Arena = 270,
 			Results = 30,
 		}),
 	}),
@@ -78,9 +92,11 @@ function Def.validate(config: any): { string }
 				table.insert(problems, `Pacing: modes.{mode}.{phase} must be seconds >= 0 (math.huge = untimed)`)
 			end
 		end
-		for key in durations do
-			if not table.find(Def.PHASES, key) then
+		for key, value in durations do
+			if not table.find(Def.PHASES, key) and not table.find(Def.LATER_PHASES, key) then
 				table.insert(problems, `Pacing: modes.{mode}.{tostring(key)} is not a MatchPhase`)
+			elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then
+				table.insert(problems, `Pacing: modes.{mode}.{tostring(key)} must be seconds >= 0`)
 			end
 		end
 	end
@@ -121,6 +137,25 @@ function Def.validate(config: any): { string }
 			table.insert(problems, "Pacing: match Lobby (countdown) must be finite")
 		end
 	end
+	local match30 = config.modes.match30
+	if type(match30) == "table" then
+		local total = 0
+		for _, phase in { "Founding", "Expansion", "Conflict", "Endgame", "Arena" } do
+			local value = match30[phase]
+			if not seconds(value) or value == math.huge or value <= 0 then
+				table.insert(problems, `Pacing: match30 {phase} must be a positive finite number of seconds`)
+			else
+				total += value
+			end
+		end
+		local minutes = total / 60
+		if minutes < Def.MATCH30_MINUTES.min or minutes > Def.MATCH30_MINUTES.max then
+			table.insert(
+				problems,
+				`Pacing: match30 Founding..Arena lasts {minutes} min; target {Def.MATCH30_MINUTES.min}-{Def.MATCH30_MINUTES.max} min`
+			)
+		end
+	end
 	if config.targets ~= nil then
 		local previous = 0
 		for _, key in TARGET_ORDER do
@@ -152,11 +187,17 @@ end
 function PacingService:phaseDurations(mode: string): { [string]: number }
 	local durations = self._config.modes[mode]
 	if durations == nil or not table.find(Def.MODES, mode) then
-		error(`PacingService:phaseDurations: mode must be "slice" or "match", got {tostring(mode)}`, 2)
+		error(
+			`PacingService:phaseDurations: mode must be one of {table.concat(Def.MODES, ", ")}, got {tostring(mode)}`,
+			2
+		)
 	end
 	local out = {}
 	for _, phase in Def.PHASES do
 		out[phase] = durations[phase]
+	end
+	for _, phase in Def.LATER_PHASES do
+		out[phase] = durations[phase] -- nil unless the mode has it (match30's Arena)
 	end
 	return out
 end

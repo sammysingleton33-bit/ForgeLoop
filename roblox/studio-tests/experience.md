@@ -64,32 +64,39 @@ Pass: screenshots reviewed (G5 note committed by FORGE-04 after the user shares 
 ## E5 — AI Kingdoms feedback (moved)
 The kingdom-specific feedback moved to the game tree with CONTRACTS v0.4-g2 (D-026): sounds and VFX on citizens' work, the announcer, the music by match phase, and citizen reactions. That is FL-0062 (`games/game-001/src/{shared/Feedback,client/Controllers/{Feedback,Music,Announcer}*}`). Its Studio steps go into `games/game-001/STUDIO_PLAYTEST.md` through FORGE-05. The framework parts it uses are checked by E3 and E4.
 
-## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 VS-1 flow)
+## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 onboarding v2, FL-0092)
 Needs:
 - RemoteService (on `main`).
-- FORGE-01: KingdomService (`KingdomJoined`, `getKingdom().rulers`), the G9 producers (`ResourceGathered`, `BuildingPlaced`, `BuildingCompleted`, `UnitsRecruited`, `ObjectiveCaptured`), and WorldService's tags (`ResourceNode`, `BuildZone`, `ObjectiveZone`).
-- FORGE-03: the HUD targets `HUD.BuildButton` and `HUD.Recruit`.
+- FORGE-01: KingdomService (`KingdomJoined`, `getKingdom().rulers`), the throne seat, EntityController (`pick` for citizen selection), and the G9 producers (`BuildingPlaced`, `UnitsRecruited`, `ObjectiveCaptured`); WorldService's tags (`BuildSlot`, `ObjectiveZone`).
+- FORGE-04: InputModeController's selection (FL-0090, PR #29). It reports `CitizenInspected`.
+- FORGE-03:
+  - the citizen card;
+  - the plot menu;
+  - the conversation panel, which reports `CitizenAnswered` after a successful `Kingdom.Choose`;
+  - the HUD target `HUD.Recruit`.
 - DataService is not needed (session-only progress, D-027).
+
+If the conversation panel is not on the build yet, step 4 cannot complete: use Skip, and write "blocked: no CitizenAnswered".
 
 Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions).
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
-2. At spawn: the card "Welcome, ruler. Your citizens are already at work.", then "Gather from a tree or rock", with an arrow and highlight on the **nearest** resource node.
-3. Gather once. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The card moves to "Build a House or a Farm" and the Build button is outlined.
-4. Place a House or Farm. The card says "Your builders are on their way" until it completes.
-5. Build a Barracks, recruit 3 soldiers, press Send to capture. The card points at the objective until the capture.
-6. On any step with a target, wait 30–60 s without acting: the card border and arrow turn gold (escalation).
+2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
+3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
+4. Build a House or Farm on a plot. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
+5. Build a Barracks, recruit 3 soldiers, press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
+6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
 
 Expected `env.log` order (the adapter writes every call; `sent=true` means it was handed to Roblox, which records nothing from Studio):
 ```
 info onboarding step ... flow=vs1 step=1 stepId=Spawn via=auto
 info analytics funnel Onboarding ... step=1 stepName=Spawn sent=true
-info onboarding step ... step=2 stepId=Gather via=bus
-info analytics funnel Onboarding ... step=2 stepName=Gather sent=true
-... step=3 PlaceBuilding (via=bus), 4 BuildingComplete (via=bus or via=satisfied when a co-ruler built first),
-    5 Recruit (via=bus), 6 Capture (via=bus)
+info onboarding step ... step=2 stepId=InspectCitizen via=client
+info analytics funnel Onboarding ... step=2 stepName=InspectCitizen sent=true
+... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=client), 5 Recruit (via=bus),
+    6 Capture (via=bus, or via=satisfied when a co-ruler captured first)
 info analytics event OnboardingCompleted ... CustomField01=vs1 sent=true
 ```
-The same order is asserted headlessly by `games/game-001/tests/experience/Onboarding.spec.luau` ("runs the whole slice for co-rulers with the G9 attribution rules").
+The same order is asserted headlessly by `games/game-001/tests/experience/Onboarding.spec.luau` ("runs the whole v2 slice for co-rulers with the G9 attribution rules").
 
 **Skip path** (new session): at step 2 press **Skip tutorial**. Expect:
 - `onboarding skipped ... lastStep=1`;
@@ -97,10 +104,10 @@ The same order is asserted headlessly by `games/game-001/tests/experience/Onboar
 - the card disappears;
 - **no further** `analytics funnel Onboarding` line for the rest of the session.
 
-**Co-rulers** (Studio Party Simulator, 2 players in one party): both see their own card. When one ruler's building completes, the other's "BuildingComplete" step completes as soon as they reach it.
+**Co-rulers** (Studio Party Simulator, 2 players in one party): both see their own card. When one ruler's soldiers capture the tower, the other's "Capture" step completes as soon as they reach it. Each player's own build counts only for them.
 
 **Phone check** (Studio device emulator, a small phone):
-- the card fits the width with margins and does not cover the thumbstick or jump button;
+- the card fits the width with margins and does not cover the HUD;
 - Skip is tappable (≥ 44 px);
 - the text is readable.
 
@@ -109,3 +116,4 @@ Pass: all timings recorded and within target; the log order matches; skip and co
 ## Changelog
 - 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2 and D-027. Session-only settings and progress; E5 moved to FL-0062 (game tree); E6 rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture).
+- 2026-10-12 FORGE-04: E6 rewritten for onboarding v2 (D-030, FL-0092): inspect → build on a plot → answer → recruit → capture.
