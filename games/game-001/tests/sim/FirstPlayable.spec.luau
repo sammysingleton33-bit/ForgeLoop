@@ -233,7 +233,12 @@ describe("AI Kingdoms first playable", function()
 		expect(part).toBeTruthy()
 		expect(part:GetAttribute("Level")).toBe(0)
 		expect(part.Transparency).toBeNear(0.55, 1e-6) -- float32 property
-		env.mock:advance(70)
+		-- Costs.building("house", 1).buildSeconds builder-seconds; builders also eat and rest
+		local waited = 0
+		while sim.buildings[houseId].level < 1 and waited < 6 * sim:workFor("house", 1) do
+			env.mock:advance(1)
+			waited += 1
+		end
 		expect(sim.buildings[houseId].level).toBe(1)
 		expect(part:GetAttribute("Level")).toBe(1)
 		expect(part.Transparency).toBe(0)

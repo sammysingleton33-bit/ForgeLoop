@@ -2,6 +2,8 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
 local Catalog = require("@game/ReplicatedStorage/Game/Sim/Catalog")
+local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
+local Types = require("@game/ReplicatedStorage/Game/Kingdom/Types")
 
 local function errorsOf(mutate: (any) -> ()): { string }
 	local catalog = Catalog.default()
@@ -29,10 +31,10 @@ describe("Kingdom/Catalog", function()
 
 	it("default() returns an independent deep copy", function()
 		local a = Catalog.default()
-		a.buildings.house.levels[1].cost.wood = 1
+		a.buildings.house.levels[1].hp = 1
 		a.tuning.startCitizens.farmer = 99
 		local b = Catalog.default()
-		expect(b.buildings.house.levels[1].cost.wood).toBe(40)
+		expect(b.buildings.house.levels[1].hp).toBe(300)
 		expect(b.tuning.startCitizens.farmer).toBe(3)
 	end)
 
@@ -46,7 +48,6 @@ describe("Kingdom/Catalog", function()
 	end)
 
 	it("uses only CONTRACTS G2 ids for buildings and jobs", function()
-		local Types = require("@game/ReplicatedStorage/Game/Kingdom/Types")
 		local c = Catalog.default()
 		for id in c.buildings do
 			expect(Types.is("BUILDING_TYPES", id)).toBe(true)
@@ -65,13 +66,45 @@ describe("Kingdom/Catalog", function()
 		expect(anyContains(errors, "jobs.wizard: not a citizen job")).toBe(true)
 	end)
 
-	it("provides a G6-shaped costs double", function()
+	it("reads every cost and build time from FORGE-03's Costs.luau (CONTRACTS G13.5)", function()
 		local costs = Catalog.costs(Catalog.default())
-		expect(costs.building("house", 1)).toEqual({ cost = { wood = 40 }, buildSeconds = 15 })
-		expect(costs.building("keep", 2).buildSeconds).toBe(60)
-		expect(costs.building("house", 9)).toBeNil()
-		expect(costs.unit("soldier")).toEqual({ cost = { food = 30, wood = 10 }, trainSeconds = 8 })
+		for _, kind in Types.BUILDING_TYPES do
+			for level = 1, Costs.maxLevel(kind) + 1 do
+				local want = Costs.building(kind, level)
+				expect(costs.building(kind, level)).toEqual(
+					if want then { cost = want.cost, buildSeconds = want.buildSeconds } else nil
+				)
+			end
+		end
+		local soldier = assert(Costs.unit("soldier"))
+		expect(costs.unit("soldier")).toEqual({ cost = soldier.cost, trainSeconds = soldier.trainSeconds })
+		local c = Catalog.default() -- Costs.luau wins over config Military for the units it lists
+		c.units.soldier.cost = { gold = 999 }
+		c.units.soldier.trainTime = 99
+		expect(Catalog.costs(c).unit("soldier")).toEqual({ cost = soldier.cost, trainSeconds = soldier.trainSeconds })
 		expect(costs.unit("dragon")).toBeNil()
+	end)
+
+	it("falls back to config Military for units Costs.luau does not list yet (VS-2)", function()
+		local c = Catalog.default()
+		expect(Costs.unit("knight")).toBeNil()
+		expect(Catalog.costs(c).unit("knight")).toEqual({
+			cost = c.units.knight.cost,
+			trainSeconds = c.units.knight.trainTime,
+		})
+	end)
+
+	it("has stats for exactly levels 1..Costs.maxLevel of every building type, and no cost or time", function()
+		local c = Catalog.default()
+		for _, kind in Types.BUILDING_TYPES do
+			local def = c.buildings[kind]
+			expect(def).never.toBeNil()
+			expect(#def.levels).toBe(Costs.maxLevel(kind))
+			for _, stats in def.levels do
+				expect(stats.cost).toBeNil()
+				expect(stats.work).toBeNil()
+			end
+		end
 	end)
 
 	it("rejects a non-table catalog", function()
@@ -80,9 +113,18 @@ describe("Kingdom/Catalog", function()
 		expect(#errors).toBe(1)
 	end)
 
-	it("reports unknown resources and non-integer costs", function()
+	it("rejects a cost or a build time on a building level: those belong to Costs.luau", function()
 		local errors = errorsOf(function(c)
-			c.buildings.house.levels[1].cost = { mana = 5, wood = 2.5 }
+			c.buildings.house.levels[1].cost = { wood = 40 }
+			c.buildings.farm.levels[2].work = 25
+		end)
+		expect(anyContains(errors, "house.levels[1]: cost and build time belong to Costs.luau")).toBe(true)
+		expect(anyContains(errors, "farm.levels[2]: cost and build time belong to Costs.luau")).toBe(true)
+	end)
+
+	it("reports unknown resources and non-integer unit costs", function()
+		local errors = errorsOf(function(c)
+			c.units.archer.cost = { mana = 5, wood = 2.5 }
 		end)
 		expect(anyContains(errors, "unknown resource 'mana'")).toBe(true)
 		expect(anyContains(errors, "cost of wood must be a non-negative integer")).toBe(true)
@@ -124,18 +166,20 @@ describe("Kingdom/Catalog", function()
 		expect(anyContains(errors, "trains unknown unit 'Dragon'")).toBe(true)
 	end)
 
-	it("rejects placeable buildings that need no work and unplaceable start buildings", function()
+	it("rejects bad barracks stats and unplaceable start buildings", function()
 		local errors = errorsOf(function(c)
-			c.buildings.house.levels[1].work = 0
+			c.buildings.barracks.levels[1].recruitCap = 2.5
+			c.buildings.barracks.levels[2].trainSpeed = 0
 			c.tuning.startBuildings = { { kind = "keep", angle = 0, distance = 10 } }
 		end)
-		expect(anyContains(errors, "placeable buildings need work > 0")).toBe(true)
+		expect(anyContains(errors, "barracks.levels[1]: recruitCap must be a non-negative integer")).toBe(true)
+		expect(anyContains(errors, "barracks.levels[2]: trainSpeed must be positive")).toBe(true)
 		expect(anyContains(errors, "unknown or unplaceable building 'keep'")).toBe(true)
 	end)
 
 	it("levelOf and isResource answer lookups", function()
 		local c = Catalog.default()
-		expect(Catalog.levelOf(c, "house", 2).popCap).toBe(7)
+		expect(Catalog.levelOf(c, "house", 2).popCap).toBe(8)
 		expect(Catalog.levelOf(c, "house", 9)).toBeNil()
 		expect(Catalog.levelOf(c, "Nope", 1)).toBeNil()
 		expect(Catalog.isResource("gold")).toBe(true)
