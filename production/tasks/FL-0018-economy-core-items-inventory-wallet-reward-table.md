@@ -4,7 +4,7 @@ title: "Economy core: items, inventory, wallet, reward tables with odds and pity
 track: build
 owner: forge-03
 status: REVIEW
-priority: P0
+priority: P2
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -33,5 +33,6 @@ Lune specs: odds sum to 1, seeded determinism, distribution within tolerance ove
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.
 - 2026-10-12 forge-03: READY → BUILDING. Started on forge/03-ui-economy (AI Kingdoms directive).
 - 2026-10-12 forge-03: BUILDING → REVIEW. Economy core done: Bundle, Wallet (all-or-nothing, capped, idempotent per txId), Currencies (robuxPurchasable), Construction (AI Kingdoms buildings/units), ItemRegistry, Inventory, RewardTables (odds = sampled distribution incl. pity, largest-remainder display). Config: games/sandbox/config/{Items,Currencies,RewardTables}.luau (AI Kingdoms, provisional numbers). Open: duplicate-cosmetic policy for RewardService (FL-0045).

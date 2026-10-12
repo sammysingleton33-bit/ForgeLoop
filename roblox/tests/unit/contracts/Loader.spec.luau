@@ -280,6 +280,43 @@ describe("Contracts/Loader", function()
 			expect(registry.order).toEqual({})
 		end)
 
+		it("boots services from several trees together, in dependency order across trees (D-022)", function()
+			local log = {}
+			local forge = folderWith({ "DataService" })
+			local gameTree = folderWith({ "KingdomService" })
+			gameTree.Name = "GameServices"
+			local registry = Loader.boot(MockEnv.new(), { forge, gameTree }, function(module)
+				if module.Name == "KingdomService" then
+					return def(log, "KingdomService", { "DataService" })
+				end
+				return def(log, module.Name)
+			end)
+			expect(registry.order).toEqual({ "DataService", "KingdomService" })
+		end)
+
+		it("rejects one name defined in two trees, naming both folders", function()
+			local forge = folderWith({ "DataService" })
+			local gameTree = folderWith({ "DataService" })
+			gameTree.Name = "GameServices"
+			expect(function()
+				Loader.discoverAll({ forge, gameTree }, function(module)
+					return def({}, module.Name)
+				end)
+			end).toThrow("'DataService' is defined in both Services and GameServices")
+		end)
+
+		it("boot accepts one folder, a list, or nil", function()
+			local function req(module)
+				return def({}, module.Name)
+			end
+			expect(Loader.boot(MockEnv.new(), folderWith({ "A" }), req).order).toEqual({ "A" })
+			expect(Loader.boot(MockEnv.new(), { folderWith({ "A" }), folderWith({ "B" }) }, req).order).toEqual({
+				"A",
+				"B",
+			})
+			expect(Loader.boot(MockEnv.new(), nil, req).order).toEqual({})
+		end)
+
 		it("rejects a module whose definition name differs from the module name", function()
 			expect(function()
 				Loader.discover(folderWith({ "RoundService" }), function()

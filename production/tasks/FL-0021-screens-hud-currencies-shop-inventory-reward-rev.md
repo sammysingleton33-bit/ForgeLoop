@@ -4,7 +4,7 @@ title: "Screens: HUD currencies, Shop, Inventory, Reward reveal with odds panel"
 track: build
 owner: forge-03
 status: READY
-priority: P1
+priority: P2
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -31,3 +31,4 @@ Prototype screenshots; Studio checklist (phone emulator + desktop)
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.

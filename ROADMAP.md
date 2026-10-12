@@ -1,24 +1,14 @@
 # Roadmap
 
-Targets, not promises. Quality and functional completeness gate every milestone.
+Targets, not promises. Quality and functional completeness gate every milestone; gameplay milestones are accepted only by a user Studio playtest.
 
-## Phase 0 — Factory bootstrap (now)
-- ✅ Contract, team, ownership, task tooling (FL-0001); toolchain verified (FL-0002)
-- ✅ Dedicated private repo `sammysingleton33-bit/ForgeLoop` with full history (FL-0038)
-- ◐ Shared skeleton green (FL-0003) → merged to `main`, worker branches created
-- ◐ Platform/provider research (FL-0004), market research + Game #1 shortlist (FL-0005)
-- ◐ Worker prompts (FL-0006); workers launched; Codex launched (FL-0037)
-- User: Windows inventory (FL-0034), Studio smoke test (FL-0036)
+## Phase 0 — Factory bootstrap ✅ (2026-10-12)
+Contract, team, task tooling, toolchain, dedicated repo, research and shortlist, worker prompts, shared skeleton (PR #1, CI green, awaiting FORGE-05 merge).
 
-## Phase 1 — Reusable foundation (parallel, until Game #1 is approved)
-- FORGE-01: Core utilities, DataService, RemoteService, RoundService, HazardService (real flood)
-- FORGE-02: Blender pipeline core, jungle foliage, rocks + ruins, vignette, import pack
-- FORGE-03: Economy core, PurchaseService, UI kit, core screens
-- FORGE-04: Analytics, onboarding, settings/audio/VFX, retention, notifications
-- FORGE-05: CI, merge pipeline, sandbox place, Studio test plan, budgets
+## Phase 1 — Game #1: AI Kingdoms (D-020)
+- **VS-1 first playable** (target ≈24 h of productive work): enter the world, third-person ruler, belong to a kingdom, ≥12 AI citizens working, gather, build/upgrade, recruit + capture the Watchtower, guided first two minutes (`games/game-001/BRIEF.md` §4).
+- **VS-2:** four dressed kingdoms, AI governors, raids, walls/gates, a simple siege, match timer with phases, victory screen.
+- **VS-3:** alliances/betrayal, trade, persistent progression, polish, mobile performance pass, release checklist → user approval → publish.
 
-## Phase 2 — Game #1 (target ~7 days from approval)
-Day 1 concept + playable foundation · Day 2 core gameplay · Day 3 visual production · Day 4 progression/economy · Day 5 polish · Day 6 testing/fixes · Day 7 release readiness → user approval → publish.
-
-## Phase 3 — Game #2 (target 3–4 days) and the improvement loop
-Post-release analytics review, lessons promoted to standards, prompt v2 (FL-0042), time-per-phase measured against estimates.
+## Phase 2 — Live improvement and Game #2
+Post-release analytics, lessons promoted to standards, prompt v2 (FL-0042), reusable systems extracted from game-001, faster Game #2.

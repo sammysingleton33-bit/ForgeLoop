@@ -3,15 +3,14 @@ id: FL-0045
 title: "Economy server services: EconomyService, InventoryService, RewardService, ShopService"
 track: build
 owner: forge-03
-status: BUILDING
-priority: P0
+status: READY
+priority: P2
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0018]
 estimate_h: 6
-evidence:
-  - EconomyTreasuryService.spec 10 pass; mutation 'fire on replay' fails 'fires changed exactly once'
+evidence: []
 ---
 
 # Economy server services: EconomyService, InventoryService, RewardService, ShopService
@@ -34,4 +33,5 @@ Lune specs with DataService test double / real module: idempotent replay fires n
 
 ## Log
 - 2026-10-12 forge-00: created from the second prompt review (READY).
-- 2026-10-12 forge-03: READY → BUILDING. EconomyTreasuryService (in-match kingdom treasuries, Economy.Treasury/GetTreasury remotes, exactly-once changed signal) done for AI Kingdoms. Not started: EconomyService profile wallets (needs DataService), InventoryService, RewardService, ShopService.
+- 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.
+- 2026-10-12 forge-03: the kingdom treasury built here moved to FL-0058 (game-001 TreasuryService, CONTRACTS G7); FL-0045 stays READY at P2 for the player meta-economy.
