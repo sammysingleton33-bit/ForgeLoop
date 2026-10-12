@@ -9,7 +9,8 @@
 	changes no other module.
 
 	API
-		Layout.KINGDOMS: { { id, name, color } }   -- the four kingdom identities (stable ids k1..k4)
+		Layout.KINGDOMS: { { id, name, color, teamColor } }  -- the four kingdom identities (ids k1..k4;
+		                                           teamColor = BrickColor name, unique per kingdom)
 		Layout.generate(sim, options?): { kingdoms: { Kingdom } }
 			options.kingdoms   number of kingdoms, 1..4 (default 4)
 			options.spacing    distance from the map centre to each keep on X and Z (default 260)
@@ -20,10 +21,10 @@
 local Layout = {}
 
 Layout.KINGDOMS = table.freeze({
-	table.freeze({ id = "k1", name = "Aldmere", color = { 196, 64, 52 } }),
-	table.freeze({ id = "k2", name = "Brightvale", color = { 52, 104, 196 } }),
-	table.freeze({ id = "k3", name = "Corvath", color = { 60, 150, 72 } }),
-	table.freeze({ id = "k4", name = "Dunmarch", color = { 214, 170, 40 } }),
+	table.freeze({ id = "k1", name = "Aldmere", color = { 196, 64, 52 }, teamColor = "Bright red" }),
+	table.freeze({ id = "k2", name = "Brightvale", color = { 52, 104, 196 }, teamColor = "Bright blue" }),
+	table.freeze({ id = "k3", name = "Corvath", color = { 60, 150, 72 }, teamColor = "Bright green" }),
+	table.freeze({ id = "k4", name = "Dunmarch", color = { 214, 170, 40 }, teamColor = "Bright yellow" }),
 })
 
 -- corner signs for k1..k4: NW, NE, SE, SW (clockwise, so neighbours are adjacent indices)

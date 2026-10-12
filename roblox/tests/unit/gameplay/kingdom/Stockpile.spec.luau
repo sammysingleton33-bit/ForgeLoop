@@ -67,8 +67,8 @@ describe("Kingdom/Stockpile", function()
 	end)
 
 	it("detects a balance changed behind the ledger's back", function()
-		local s = Stockpile.new(RES, { food = 10 }, 100)
-		;(s :: any)._amounts.food = 11
+		local s = Stockpile.new(RES, { food = 10 }, 100);
+		(s :: any)._amounts.food = 11
 		local ok, why = s:audit()
 		expect(ok).toBe(false)
 		expect(why).toContain("food")

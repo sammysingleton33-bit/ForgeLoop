@@ -32,6 +32,8 @@
 		match.state, match.sim, match.roundId
 		match:join(userId, preferredKingdomId?): (boolean, string)   -- (true, kingdomId) | (false, error)
 		match:leave(userId)
+		match:choose(userId, kingdomId): (boolean, string)   -- switch kingdom before Active; errors:
+		                                   too_late, not_in_match, unknown_kingdom, kingdom_full
 		match:kingdomOf(userId): string?
 		match:update(dt)                 -- drive from the server's fixed tick
 		match:remaining(): number?       -- seconds left in the current timed phase
@@ -194,6 +196,32 @@ function Match:leave(userId: number)
 	if self.state == "Countdown" and #self.players < self.options.minPlayers then
 		self:_setState("Lobby")
 	end
+end
+
+-- Moves a ruler to another kingdom; only before the match is Active (no defecting mid-war).
+function Match:choose(userId: number, kingdomId: string): (boolean, string)
+	if self.state ~= "Lobby" and self.state ~= "Countdown" then
+		return false, "too_late"
+	end
+	local current = self.sim.rulerOf[userId]
+	if current == nil then
+		return false, "not_in_match"
+	end
+	if current == kingdomId then
+		return true, kingdomId
+	end
+	local target = self.sim.kingdoms[kingdomId]
+	if target == nil or not target.alive then
+		return false, "unknown_kingdom"
+	end
+	if #target.rulers >= self.options.maxRulersPerKingdom then
+		return false, "kingdom_full"
+	end
+	self.sim:removeRuler(userId)
+	assert(self.sim:addRuler(kingdomId, userId))
+	self.lastKingdom[userId] = kingdomId
+	self.participants[userId] = { kingdomId = kingdomId, joinedAt = self.sim.time, leftAt = nil }
+	return true, kingdomId
 end
 
 function Match:command(userId: number, name: any, ...: any): (boolean, string?, any?)
