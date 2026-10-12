@@ -20,7 +20,7 @@ The game-001 boot gate passes on each of these heads (`check.sh` step "game-001 
 3. Optional: **MockAnalyticsService caps** (100 event names, 10 funnels, steps 1–100, 3 custom-field keys). My adapter enforces them itself, so this is defence in depth only.
 
 ## Evidence
-- Per-PR `check.sh` results are in each PR body. `python3 roblox/tests/unit/experience/mutations.py` → 41/41 named specs proven to fail (framework and game-001 rows).
+- Per-PR `check.sh` results are in each PR body. `python3 roblox/tests/unit/experience/mutations.py` → 39/39 named specs proven to fail (framework and game-001 rows).
 
 ## Interfaces touched
 Additive: `Experience/Remotes.luau` (5 remotes) and the `experience` namespace v1. GameEvents is unchanged: everything runs on the G9 events already on `main`.
