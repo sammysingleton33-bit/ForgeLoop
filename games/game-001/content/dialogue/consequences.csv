@@ -1,0 +1,46 @@
+consequence_id,kind,target,magnitude,param,duration_s,delay_s,chance,cue_id,notice_text,notes
+cheer_speaker,cue,speaker,,,0,0,1,cheer,,DRAFT
+grumble_speaker,cue,speaker,,,0,0,1,grumble,,DRAFT
+salute_speaker,cue,speaker,,,0,0,1,salute,,DRAFT
+bow_speaker,cue,speaker,,,0,0,1,bow,,DRAFT
+speaker_cower,cue,speaker,,,0,0,1,cower,,DRAFT
+kingdom_cower,cue,kingdom,,,0,0,1,cower,Citizens lower their eyes as you pass.,DRAFT
+farmers_work_up,productivity,occupation:farmer,0.15,,120,0,1,work_fast,Farmers work 15% faster for 2 minutes.,DRAFT
+speaker_work_push,productivity,speaker,0.25,,90,0,1,work_fast,"Spurred by your promise, {name} works 25% faster for 90 s.",DRAFT
+speaker_work_fear,productivity,speaker,0.1,,60,0,1,work_fast,Fear drives {name}: 10% faster for 1 minute.,DRAFT
+speaker_work_down,productivity,speaker,-0.15,,300,0,1,grumble,"Working a cracked forge, {name} is 15% slower for 5 minutes.",DRAFT
+builders_rest,productivity,occupation:builder,-0.5,,60,0,1,rest,Builders rest: half pace for 1 minute.,DRAFT
+builders_refreshed,productivity,occupation:builder,0.2,,120,60,1,work_fast,Rested builders work 20% faster for 2 minutes.,DRAFT: starts when the rest ends.
+builders_work_up,productivity,occupation:builder,0.1,,120,0,1,work_fast,Well-fed builders work 10% faster for 2 minutes.,DRAFT
+builders_push,productivity,occupation:builder,0.1,,60,0,1,work_fast,Builders push on: 10% faster for 1 minute.,DRAFT
+woodcutters_work_up,productivity,occupation:woodcutter,0.15,,120,0,1,work_fast,"Warm and grateful, woodcutters work 15% faster for 2 minutes.",DRAFT
+woodcutters_push_hard,productivity,occupation:woodcutter,0.2,,60,0,1,work_fast,Woodcutters race to earn their logs: 20% faster for 1 minute.,DRAFT
+miners_slow_shoring,productivity,occupation:miner,-0.2,,60,0,1,hammer,Miners shore up the rock face: 20% slower for 1 minute.,DRAFT
+miners_push,productivity,occupation:miner,0.1,,120,0,1,work_fast,Miners dig on: 10% faster for 2 minutes.,DRAFT
+miners_reassured,productivity,occupation:miner,0.1,,120,0,1,cheer,Reassured miners work 10% faster for 2 minutes.,DRAFT
+haulers_work_up,productivity,occupation:hauler,0.15,,180,0,1,work_fast,"Two carts, no quarrel: haulers 15% faster for 3 minutes.",DRAFT
+haulers_bicker,productivity,occupation:hauler,-0.1,,120,0,1,grumble,The quarrel drags on: haulers 10% slower for 2 minutes.,DRAFT
+speaker_refuses_work,strike,speaker,1,,60,0,1,strike_placard,{name} lays down their tools for 1 minute.,DRAFT
+speaker_walkout_risk,strike,speaker,1,,45,10,0.5,strike_placard,Risk (50%): {name} may lay down tools for 45 s.,"DRAFT: visible risk, shown on the choice (model decision 7)."
+farmers_unrest,unrest_pressure,occupation:farmer,5,,240,0,1,grumble,Farmers grumble. Unrest +5 for 4 minutes.,DRAFT
+farmers_unrest_high,unrest_pressure,occupation:farmer,10,,300,0,1,grumble,Word of your threat spreads. Farmer unrest +10 for 5 minutes.,DRAFT
+builders_unrest,unrest_pressure,occupation:builder,8,,300,0,1,grumble,Tired builders mutter. Unrest +8 for 5 minutes.,DRAFT
+woodcutters_unrest,unrest_pressure,occupation:woodcutter,5,,240,0,1,grumble,Woodcutters feel cheated. Unrest +5 for 4 minutes.,DRAFT
+kingdom_calm,unrest_pressure,kingdom,-5,,300,0,1,bow,People speak their minds. Unrest -5 for 5 minutes.,DRAFT: negative pressure is relief.
+kingdom_unrest_small,unrest_pressure,kingdom,4,,300,0,1,grumble,Quiet resentment. Unrest +4 for 5 minutes.,DRAFT
+kingdom_unrest_medium,unrest_pressure,kingdom,6,,300,0,1,grumble,Whispers turn to mutters. Unrest +6 for 5 minutes.,DRAFT
+soldiers_morale_up,morale,soldiers,5,,300,0,1,salute,Soldiers' morale +5 for 5 minutes.,DRAFT
+soldiers_morale_small,morale,soldiers,3,,300,0,1,salute,Better blades! Soldiers' morale +3 for 5 minutes.,DRAFT
+soldiers_drilled,morale,soldiers,6,,300,60,1,salute,"After your dawn drill, soldiers' morale +6 for 5 minutes.",DRAFT: starts after the drill.
+soldiers_fed_well,morale,soldiers,4,,240,0,1,cheer,Full bellies: soldiers' morale +4 for 4 minutes.,DRAFT
+soldiers_morale_down,morale,soldiers,-4,,240,0,1,grumble,Soldiers' morale -4 for 4 minutes.,DRAFT
+soldiers_cowed,morale,soldiers,-3,,240,0,1,cower,The recruits sulk. Soldiers' morale -3 for 4 minutes.,DRAFT
+quarry_rockfall_risk,happiness,kingdom,-4,,180,60,0.2,cower,Risk (20%): a rockfall may hurt a miner. Happiness -4 for 3 minutes.,"DRAFT: visible risk, shown on the choice (model decision 7)."
+kingdom_festive,happiness,kingdom,5,,300,0,1,cheer,Feast at the keep! Happiness +5 for 5 minutes.,DRAFT
+kingdom_small_cheer,happiness,kingdom,2,,180,0,1,cheer,A warm supper: happiness +2 for 3 minutes.,DRAFT
+kingdom_order,stability,kingdom,2,,300,0,1,bow,Equal rations for all: stability +2 for 5 minutes.,DRAFT
+soldiers_desertion_pressure,desertion_risk,soldiers,0.1,,300,0,1,grumble,Soldiers whisper about leaving. Desertion risk up for 5 minutes.,DRAFT
+friends_hear_kept_word,loyalty,friends,2,,0,30,1,cheer,Word of your kept promise spreads among {name}'s friends.,DRAFT
+family_remembers_bread,memory,family,,fed_by_ruler,0,0,1,,{name}'s family will remember who fed them.,DRAFT: memory usable later as citizen.memory.fed_by_ruler.
+unlock_promise_due,unlock_scenario,speaker,,farmer_promise_due,0,0,1,,{name} will remind you of this promise.,DRAFT: follow-up; its trigger also checks the memory.
+unlock_pay_due,unlock_scenario,speaker,,soldier_pay_due,0,0,1,,{name} will expect that gold when the tower falls.,DRAFT: follow-up; its trigger also checks the memory.

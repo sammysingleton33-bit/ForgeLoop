@@ -1,0 +1,39 @@
+decision_id,farm_key,repeat_decay,repeat_window_s,cost,resource_effects,rep_compassion,rep_honor,rep_competence,rep_courage,rep_authority,rep_fear,speaker_loyalty,speaker_chemistry,family_loyalty,friends_loyalty,rivals_loyalty,audience,audience_loyalty,happiness,stability,morale,trait_overrides,consequences,memory_tag,notes
+grain_open_store,handout_food,0.6,600,food:25,,3,0,0,0,-1,0,6,1,4,2,0,occupation,2,2,1,0,,farmers_work_up;family_remembers_bread;cheer_speaker,,DRAFT: compassionate; costs food and a little authority.
+grain_promise_harvest,promise,0.5,900,,,0,1,2,0,0,0,1,0,1,0,0,none,0,0,0,0,,speaker_work_push;unlock_promise_due,promised_harvest,"DRAFT: pragmatic; free now, creates a promise (follow-up farmer_promise_due)."
+grain_equal_rations,firm_ruling,0.6,600,,,-1,1,0,0,2,0,-3,0,-2,0,0,occupation,-1,-1,1,0,honest:+2;content:+1;lazy:-1,farmers_unrest;kingdom_order;grumble_speaker,,"DRAFT: authoritative and fair; saves food, costs farmer loyalty."
+grain_threaten,threat,0.5,600,,,-2,0,0,0,1,3,-6,-2,-3,-2,0,occupation,-1,-2,0,0,timid:+2;cruel:+2;proud:-3,speaker_cower;speaker_work_fear;farmers_unrest_high,,"DRAFT: fearful; short work boost, big unrest pressure."
+builder_rest,rest_break,0.5,600,,,2,0,0,0,-1,0,5,1,0,2,0,occupation,2,1,0,0,lazy:+2;hardworking:-1,builders_rest;builders_refreshed;cheer_speaker,,DRAFT: compassionate; costs construction time and a little authority.
+builder_stew,handout_food,0.6,600,food:20,,1,0,1,0,0,0,3,0,1,1,0,occupation,2,1,0,0,,builders_work_up;cheer_speaker,,"DRAFT: pragmatic; costs food, keeps the pace."
+builder_push_on,firm_ruling,0.6,600,,,-1,0,0,0,2,1,-4,0,-1,-2,0,occupation,-2,-1,0,0,hardworking:+2;ambitious:+1;lazy:-3,builders_push;builders_unrest;speaker_walkout_risk,,"DRAFT: authoritative; short boost, unrest and a visible walk-out risk."
+soldier_double_rations,handout_food,0.6,600,food:20,,1,0,1,0,0,0,4,0,0,2,0,occupation,3,0,0,3,,soldiers_morale_up;salute_speaker,,DRAFT: generous; costs food.
+soldier_promise_pay,promise,0.5,900,,,0,1,0,1,0,0,1,0,0,0,0,occupation,1,0,0,1,ambitious:+2;skeptical:-1,salute_speaker;unlock_pay_due,promised_pay,DRAFT: a promise; follow-up soldier_pay_due when an objective falls.
+soldier_discipline,firm_ruling,0.6,600,,,0,0,0,0,2,0,-2,0,0,-1,0,occupation,-1,0,0,-2,loyal:+2;proud:-2,soldiers_morale_down;grumble_speaker,,"DRAFT: authoritative; free, costs morale."
+soldier_threaten,threat,0.5,600,,,-1,0,0,0,1,3,-5,-2,0,-2,0,occupation,-2,0,0,-3,timid:+2;cruel:+2;proud:-3,speaker_cower;soldiers_desertion_pressure,,"DRAFT: fearful; obedience up, desertion pressure up."
+logs_give,grant_materials,0.6,600,wood:20,,2,0,0,0,-1,0,4,0,3,1,0,occupation,2,2,0,0,,woodcutters_work_up;cheer_speaker,,DRAFT: compassionate; costs wood and a little authority.
+logs_earn,grant_materials,0.6,600,wood:10,,0,1,2,0,0,0,1,0,1,0,0,occupation,1,0,0,0,hardworking:+2;lazy:-2,woodcutters_push_hard,,"DRAFT: pragmatic trade; smaller cost, work boost."
+logs_refuse,firm_ruling,0.6,600,,,-1,0,0,0,2,0,-3,0,-1,-1,0,occupation,-2,-1,0,0,honest:+2;cunning:-2,woodcutters_unrest;grumble_speaker,,"DRAFT: authoritative; keeps every log, costs loyalty."
+miner_shore_up,safety_work,0.6,900,wood:30,,2,0,2,0,0,0,6,1,1,1,0,occupation,3,0,1,0,timid:+2,miners_slow_shoring;cheer_speaker,quarry_shored,"DRAFT: careful; costs wood and mining time, ends the worry."
+miner_dig_on,firm_ruling,0.6,600,,stone:10,-2,0,-1,0,1,1,-5,-1,-1,-1,0,occupation,-2,0,0,0,timid:-2;brave:+1,miners_push;quarry_rockfall_risk;grumble_speaker,,"DRAFT: harsh; more stone now, visible 20% rockfall risk."
+miner_inspect,ruler_present,0.4,900,,,1,0,0,3,0,0,5,1,0,1,0,occupation,2,0,0,0,brave:+2,miners_reassured;cheer_speaker,,DRAFT: courageous; free but the worry returns later (no fix).
+hauler_side_with_speaker,judgement,0.6,600,,,0,1,0,0,1,0,5,1,0,1,-4,none,0,0,0,0,,cheer_speaker,,DRAFT: takes a side; the rival resents it.
+hauler_two_carts,grant_materials,0.6,600,wood:25,,1,0,2,0,0,0,2,0,0,0,2,occupation,1,0,0,0,,haulers_work_up,,"DRAFT: pragmatic; costs wood, both sides calm down."
+hauler_settle_yourselves,firm_ruling,0.6,600,,,0,0,0,0,2,1,-3,0,0,0,-3,occupation,0,0,0,0,,haulers_bicker;grumble_speaker,,"DRAFT: authoritative; free, the quarrel slows hauling."
+smith_forge_full,key_petition,0.7,900,stone:40,,0,1,2,0,0,0,8,2,0,1,0,none,0,0,0,2,,soldiers_morale_small;cheer_speaker,forge_reinforced,DRAFT: fulfils the Crown Arena petition (40 stone).
+smith_forge_half,key_petition,0.7,900,stone:20,,0,1,1,0,0,0,3,0,0,0,0,none,0,0,0,0,,bow_speaker,forge_half_promise,"DRAFT: half now, a promise for the rest."
+smith_forge_clay,firm_ruling,0.6,600,,,0,0,0,0,1,0,-3,-1,0,-1,0,none,0,0,0,0,,speaker_work_down;grumble_speaker,,DRAFT: keeps the stone for walls; the smith works slower.
+captain_drill_personally,ruler_present,0.4,900,,,0,0,1,2,1,0,5,1,0,0,0,none,0,0,0,0,brave:+2;lazy:-1,soldiers_drilled;salute_speaker,,"DRAFT: courageous; free, morale arrives after the drill."
+captain_extra_rations,handout_food,0.6,600,food:30,,1,0,1,0,0,0,3,0,0,0,0,none,0,0,0,4,,soldiers_fed_well;salute_speaker,,"DRAFT: generous; costs food, morale right away."
+captain_punish_slowest,threat,0.5,600,,,-2,0,0,0,2,3,0,0,0,0,0,none,0,0,0,-2,cruel:+4;loyal:+2;kind:-4;proud:-3,soldiers_cowed;soldiers_desertion_pressure,,"DRAFT: fearful; obedience up, morale and desertion risk worse."
+feast_for_all,feast,0.4,900,food:60,,2,0,0,0,1,0,5,1,0,1,0,kingdom,2,5,1,2,,kingdom_festive,,DRAFT: generous; big food cost. Repeated feasts decay fast.
+feast_modest,feast,0.4,900,food:25,,1,0,1,0,0,0,2,0,0,0,0,kingdom,1,2,0,0,content:+1,kingdom_small_cheer,,DRAFT: balanced; smaller cost and effect.
+feast_after_victory,firm_ruling,0.6,600,,,0,0,0,1,1,0,-2,0,0,0,0,none,0,-1,0,0,ambitious:+2;cheerful:-1,grumble_speaker,feast_promised,"DRAFT: saves food, promises a victory feast."
+elder_open_court,open_court,0.3,1800,,,2,1,0,0,-1,-2,5,1,0,1,0,kingdom,1,0,2,0,,kingdom_calm;bow_speaker,,DRAFT: compassionate and honest; lowers fear and authority.
+elder_keep_methods,firm_ruling,0.6,600,,,0,0,0,0,2,1,-4,0,0,-1,0,none,0,0,0,0,timid:+1;cruel:+2;kind:-2;proud:-2,kingdom_unrest_small;grumble_speaker,,DRAFT: authoritative; unrest keeps building.
+elder_name_whisperers,threat,0.5,600,,,-2,-2,0,0,1,4,-7,-3,-2,-2,0,kingdom,-1,-2,-1,0,cruel:+3;timid:+1;kind:-3;honest:-2,kingdom_unrest_medium;kingdom_cower,,"DRAFT: fearful; obedience up, affection and stability down."
+promise_sacks_keep,promise_kept,0.8,900,food:15,,0,3,0,0,0,0,6,1,3,1,0,occupation,1,0,0,0,,farmers_work_up;friends_hear_kept_word;cheer_speaker,harvest_promise_kept,DRAFT: honorable; costs food.
+promise_sacks_delay,promise,0.5,900,,,0,-1,0,0,0,0,-2,0,-1,0,0,none,0,0,0,0,,grumble_speaker,,DRAFT: delays; the farmer will ask again.
+promise_sacks_break,broken_promise,1,900,,,0,-3,0,0,1,0,-8,-2,-4,-2,0,occupation,-2,0,0,0,cunning:+1;honest:-3,farmers_unrest;speaker_refuses_work,harvest_promise_broken,"DRAFT: keeps the grain, breaks your word."
+pay_due_full,promise_kept,0.8,900,gold:15,,0,3,0,0,0,0,6,1,0,2,0,occupation,3,0,0,4,,soldiers_morale_up;salute_speaker,paid_in_full,DRAFT: honorable; costs gold.
+pay_due_half,promise_kept,0.8,900,gold:6,,0,-1,1,0,0,0,-1,0,0,0,0,occupation,0,0,0,0,skeptical:+1,grumble_speaker,paid_half,DRAFT: compromise; part payment.
+pay_due_refuse,broken_promise,1,900,,,0,-4,0,0,1,0,-8,-2,0,-3,0,occupation,-3,0,0,-5,cruel:+1;honest:-2,soldiers_morale_down;soldiers_desertion_pressure,pay_refused,"DRAFT: keeps the gold, breaks your word."

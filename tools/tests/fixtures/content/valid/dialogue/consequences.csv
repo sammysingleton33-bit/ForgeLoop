@@ -1,0 +1,7 @@
+consequence_id,kind,target,magnitude,param,duration_s,delay_s,chance,cue_id,notice_text,notes
+c_farmers_slow,productivity,occupation:farmer,-0.2,,120,0,1,,Farmers work slower for a while.,
+c_grain_trickle,resource_over_time,kingdom,30,food,90,10,1,,Extra grain arrives over the next minute and a half.,
+c_unlock_followup,unlock_scenario,speaker,0,s_smith_tools,0,0,1,,,
+c_remember_kindness,memory,family,0,shown_kindness,0,0,1,,,
+c_desert_risk,desertion_risk,soldiers,0.1,,300,0,0.5,cue_grumble,Some soldiers may desert (50% chance).,
+c_cheer,cue,speaker,0,,0,0,1,cue_cheer,,

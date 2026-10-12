@@ -1,0 +1,229 @@
+[
+ {
+  "name": "malformed condition",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fed_ratio < 0.6 & citizen.hunger >=",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "malformed"
+  ]
+ },
+ {
+  "name": "unknown variable",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fod < 50",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "unknown variable 'kingdom.fod'",
+   "did you mean 'kingdom.food'"
+  ]
+ },
+ {
+  "name": "unknown decision id",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "decision_id",
+  "value": "d_ration_strikt",
+  "expect": [
+   "dialogue/responses.csv:3:6:",
+   "unknown decision 'd_ration_strikt'"
+  ]
+ },
+ {
+  "name": "over-length text",
+  "file": "dialogue/scenarios.csv",
+  "row": 3,
+  "column": "thought_text",
+  "value": "My hearth is cold and my children cry all night!!",
+  "expect": [
+   "dialogue/scenarios.csv:3:7:",
+   "49 characters; the limit is 48"
+  ]
+ },
+ {
+  "name": "out-of-range rep value",
+  "file": "dialogue/decisions.csv",
+  "row": 2,
+  "column": "rep_fear",
+  "value": "11",
+  "expect": [
+   "dialogue/decisions.csv:2:12:",
+   "11 is out of range (-10..10)"
+  ]
+ },
+ {
+  "name": "condition value outside the variable range",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fed_ratio < 50",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "outside the range of 'kingdom.fed_ratio' (0..1)"
+  ]
+ },
+ {
+  "name": "double equals",
+  "file": "dialogue/scenarios.csv",
+  "row": 4,
+  "column": "trigger",
+  "value": "occupation == soldier",
+  "expect": [
+   "dialogue/scenarios.csv:4:3:",
+   "use '=' instead of '=='"
+  ]
+ },
+ {
+  "name": "unknown trait in a trigger",
+  "file": "dialogue/scenarios.csv",
+  "row": 4,
+  "column": "trigger",
+  "value": "citizen.trait.greddy",
+  "expect": [
+   "dialogue/scenarios.csv:4:3:",
+   "unknown trait 'greddy'",
+   "'greedy'"
+  ]
+ },
+ {
+  "name": "unknown decision in a trigger",
+  "file": "dialogue/scenarios.csv",
+  "row": 4,
+  "column": "trigger",
+  "value": "!decision.d_nope",
+  "expect": [
+   "dialogue/scenarios.csv:4:3:",
+   "unknown decision 'd_nope'"
+  ]
+ },
+ {
+  "name": "OR is not supported",
+  "file": "dialogue/scenarios.csv",
+  "row": 4,
+  "column": "trigger",
+  "value": "rep.fear > 50 | rep.authority > 50",
+  "expect": [
+   "dialogue/scenarios.csv:4:3:",
+   "only AND"
+  ]
+ },
+ {
+  "name": "citizen variable in a kingdom condition",
+  "file": "reputation/actions.csv",
+  "row": 2,
+  "column": "condition",
+  "value": "citizen.hunger > 0.5",
+  "expect": [
+   "reputation/actions.csv:2:3:",
+   "describes a citizen"
+  ]
+ },
+ {
+  "name": "unknown consequence id",
+  "file": "dialogue/decisions.csv",
+  "row": 3,
+  "column": "consequences",
+  "value": "c_farmers_slow;c_missing",
+  "expect": [
+   "dialogue/decisions.csv:3:24:",
+   "unknown consequence 'c_missing'"
+  ]
+ },
+ {
+  "name": "kingdom-wide strike from one decision",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "target",
+  "value": "kingdom",
+  "expect": [
+   "dialogue/consequences.csv:2:3:",
+   "a single decision may not stop a whole kingdom"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "kind",
+    "value": "strike"
+   }
+  ]
+ },
+ {
+  "name": "asymmetric opposite",
+  "file": "citizens/traits.csv",
+  "row": 3,
+  "column": "opposite",
+  "value": "brave",
+  "expect": [
+   "citizens/traits.csv:",
+   "opposites must be symmetric"
+  ]
+ },
+ {
+  "name": "duplicate id",
+  "file": "dialogue/decisions.csv",
+  "row": 3,
+  "column": "decision_id",
+  "value": "d_share_grain",
+  "expect": [
+   "dialogue/decisions.csv:3:1:",
+   "duplicate id 'd_share_grain' (first used on row 2)"
+  ]
+ },
+ {
+  "name": "unknown placeholder",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless you, {king}!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "unknown placeholder '{king}'"
+  ]
+ },
+ {
+  "name": "scenario left with one response",
+  "file": "dialogue/responses.csv",
+  "row": 6,
+  "column": "scenario_id",
+  "value": "s_soldier_pay",
+  "expect": [
+   "dialogue/scenarios.csv:3:1:",
+   "has 1 responses; it needs 2-4"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 6,
+    "column": "order",
+    "value": "3"
+   }
+  ]
+ },
+ {
+  "name": "cost written as a negative number",
+  "file": "dialogue/decisions.csv",
+  "row": 2,
+  "column": "cost",
+  "value": "food:-20",
+  "expect": [
+   "dialogue/decisions.csv:2:5:",
+   "cost amounts are the positive amount paid"
+  ]
+ },
+ {
+  "name": "unknown column",
+  "file": "dialogue/scenarios.csv",
+  "row": 1,
+  "column": "notes",
+  "value": "note",
+  "expect": [
+   "dialogue/scenarios.csv:1:9:",
+   "unknown column 'note'"
+  ]
+ }
+]
