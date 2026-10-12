@@ -91,6 +91,7 @@ M = [
  ("FL-0090", C2+"InputModeController.luau", 'if okId and buildingId ~= nil then', 'if false then', "InputMode", "selects the building through", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),
  ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
+ ("FL-0092", C2+"InputModeController.luau", 'if kind == "citizen" then\n		local onboarding', 'if false then\n		local onboarding', "InputMode", "reports CitizenInspected", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
