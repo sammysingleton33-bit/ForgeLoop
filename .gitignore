@@ -9,3 +9,6 @@ node_modules/
 blender/**/*.blend
 !blender/source-assets/**/*.blend
 blender/renders/
+
+# FL-0083: the content workbook is generated on demand (tools/content/content.py export-xlsx); CSVs are canonical
+games/game-001/content/*.xlsx

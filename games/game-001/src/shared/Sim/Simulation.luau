@@ -15,7 +15,8 @@
 			          default Catalog.costs(catalog), the double of FORGE-03's Costs.luau
 
 	World setup
-		sim:addKingdom({ id, name, color: {number}, x, z, populate? }): Kingdom   -- keep + start buildings +
+		sim:addKingdom({ id, name, color: {number}, x, z, yaw?, startAt?, populate? }): Kingdom   -- keep + start
+		                                       buildings (startAt = { { kind, x, z, yaw? } }, else tuning) +
 		                                       citizens (populate = false: none until sim:populate(id));
 		                                       seeds the treasury when it is the double
 		sim:populate(kingdomId): boolean       -- spawns the starting citizens once (slice mode: on first ruler)
@@ -157,6 +158,7 @@ function Simulation.new(options: { [string]: any })
 	self._accum = 0
 	self._quotaAccum = 0
 	self._decisionBudget = 2 -- per tick; set by step() (staggered decisions)
+	self.fedByUpkeep = false -- true: citizens never buy meals; hunger follows kingdom.fedRatio (G7)
 	self._systems = {} :: { any } -- extra per-tick systems: { beforeCitizens?(sim, dt), afterCitizens?(sim, dt) }
 	self.extraCommands = {} :: { [string]: any } -- installed by Military/Diplomacy (Commands.install)
 	return self
@@ -237,6 +239,7 @@ function Simulation:addKingdom(def: { [string]: any })
 		eliminatedAt = nil :: number?,
 		eliminatedBy = nil :: string?,
 		nextBirthAt = tuning.birthInterval,
+		fedRatio = 1, -- 0..1, set by CitizenService:setFedRatio (G7 upkeep) when fedByUpkeep
 		popCap = 0,
 		territory = 0,
 		threats = {} :: { any },
@@ -263,20 +266,27 @@ function Simulation:addKingdom(def: { [string]: any })
 		end
 	end
 
-	local keep = self:_createBuilding(kingdom, "keep", def.x, def.z)
+	local keep = self:_createBuilding(kingdom, "keep", def.x, def.z, def.yaw)
 	self:_completeInstantly(keep)
 	kingdom.keepId = keep.id
-	-- starting buildings (a farm), placed relative to the direction toward the map centre
-	local toCentre = if def.x == 0 and def.z == 0 then 0 else math.atan2(-def.z, -def.x)
-	for _, entry in tuning.startBuildings or {} do
-		local angle = toCentre + entry.angle
-		local b = self:_createBuilding(
-			kingdom,
-			entry.kind,
-			def.x + math.cos(angle) * entry.distance,
-			def.z + math.sin(angle) * entry.distance
-		)
-		self:_completeInstantly(b)
+	if def.startAt then
+		-- starting buildings at given spots (the world Layout's plot anchors, G6)
+		for _, spot in def.startAt do
+			self:_completeInstantly(self:_createBuilding(kingdom, spot.kind, spot.x, spot.z, spot.yaw))
+		end
+	else
+		-- starting buildings (tuning.startBuildings), placed relative to the direction toward the map centre
+		local toCentre = if def.x == 0 and def.z == 0 then 0 else math.atan2(-def.z, -def.x)
+		for _, entry in tuning.startBuildings or {} do
+			local angle = toCentre + entry.angle
+			local b = self:_createBuilding(
+				kingdom,
+				entry.kind,
+				def.x + math.cos(angle) * entry.distance,
+				def.z + math.sin(angle) * entry.distance
+			)
+			self:_completeInstantly(b)
+		end
 	end
 	self:_recompute(kingdom)
 	kingdom.populated = false
@@ -340,15 +350,26 @@ function Simulation:addNode(kind: string, x: number, z: number, id: string?)
 	return node
 end
 
-function Simulation:_createBuilding(kingdom: any, kind: string, x: number, z: number)
+-- yaw: facing in radians (CFrame.Angles(0, yaw, 0); Kit models face -Z). Default: the front towards
+-- the kingdom's keep, or for the keep itself towards the map centre.
+function Simulation:_createBuilding(kingdom: any, kind: string, x: number, z: number, yaw: number?)
 	local def = self.catalog.buildings[kind]
 	self._nextBuilding += 1
+	local facing = yaw
+	if facing == nil then
+		local tx, tz = kingdom.x, kingdom.z
+		if kind == "keep" or (math.abs(tx - x) < 1e-6 and math.abs(tz - z) < 1e-6) then
+			tx, tz = 0, 0
+		end
+		facing = if math.abs(tx - x) + math.abs(tz - z) < 1e-6 then 0 else math.atan2(-(tx - x), -(tz - z))
+	end
 	local building = {
 		id = self._nextBuilding,
 		kind = kind,
 		kingdomId = kingdom.id,
 		x = x,
 		z = z,
+		yaw = facing,
 		footprint = def.footprint,
 		level = 0,
 		pendingLevel = 1 :: number?,
@@ -784,7 +805,7 @@ function Simulation:viewOf(b: any): { [string]: any }
 		kingdom = b.kingdomId,
 		type = b.kind,
 		level = b.level,
-		cframe = CFrame.new(b.x, 0, b.z),
+		cframe = CFrame.new(b.x, 0, b.z) * CFrame.Angles(0, b.yaw or 0, 0),
 		footprint = Vector2.new(b.footprint * 2, b.footprint * 2),
 		state = state,
 		progress = progress,
@@ -1237,7 +1258,14 @@ end
 function Simulation:_stepCitizen(c: any, dt: number)
 	local tuning = self.catalog.tuning
 	local kingdom = self.kingdoms[c.kingdomId]
-	c.hunger += dt * tuning.hungerPerDay / tuning.dayLength
+	if self.fedByUpkeep then
+		-- G7: the kingdom's upkeep feeds its citizens (ProductionService sets fedRatio each interval):
+		-- fully fed, hunger falls; half fed, it holds; unfed, it rises at the normal rate
+		local rate = tuning.hungerPerDay / tuning.dayLength * (1 - 2 * kingdom.fedRatio)
+		c.hunger = math.max(0, c.hunger + dt * rate)
+	else
+		c.hunger += dt * tuning.hungerPerDay / tuning.dayLength
+	end
 	if c.hunger >= tuning.starveDeathHunger then
 		self:killCitizen(c, "starvation")
 		return

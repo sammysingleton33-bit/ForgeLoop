@@ -157,8 +157,11 @@ function KingdomStore:slots(): { any }
 	return out
 end
 
+-- Ids from a tap arrive from an instance attribute (FORGE-04's InputModeController reads
+-- `BuildingId`), which may be a number or its string.
 function KingdomStore:building(id: any): any
-	return if type(id) == "number" then self._buildings[id] else nil
+	local n = if type(id) == "string" then tonumber(id) else id
+	return if type(n) == "number" then self._buildings[n] else nil
 end
 
 function KingdomStore:mine(): any
