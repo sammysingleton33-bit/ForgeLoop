@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+			<g transform="rotate(45 24 24)"><rect x="22" y="2" width="4.5" height="30" rx="1.5" fill="#CBD5E1" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+			<rect x="16" y="31" width="16.5" height="4" rx="1.5" fill="#D6A84A" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" /><rect x="22" y="35" width="4.5" height="7" fill="#7E5230" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+			<circle cx="24.25" cy="44" r="2.4" fill="#D6A84A" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.6"/></g>
+			<g transform="rotate(-45 24 24)"><rect x="21.5" y="2" width="4.5" height="30" rx="1.5" fill="#DCE4EE" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+			<rect x="15.5" y="31" width="16.5" height="4" rx="1.5" fill="#D6A84A" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" /><rect x="21.5" y="35" width="4.5" height="7" fill="#7E5230" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+			<circle cx="23.75" cy="44" r="2.4" fill="#D6A84A" stroke="#24190E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.6"/></g></svg>

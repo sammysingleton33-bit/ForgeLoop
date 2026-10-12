@@ -1,0 +1,52 @@
+/* FL-0059 additions to design/ui/prototype/proto.css (same tokens). */
+.crest.k-crimson { --k: var(--tincture-crimson, #B8402E); }
+.crest.k-azure { --k: var(--tincture-azure, #3F72B5); }
+.crest.k-emerald { --k: var(--tincture-emerald, #3E8A4B); }
+.crest.k-gold { --k: var(--tincture-gold, #C99A36); }
+.crest.tinted { background: linear-gradient(180deg, color-mix(in srgb, var(--k) 85%, white) 0%, color-mix(in srgb, var(--k) 70%, black) 100%) !important; }
+.crest .pop.cp { color: var(--color-gold300); }
+.members { position: absolute; display: flex; gap: 6px; }
+.member { display: flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px 0 3px; border-radius: 999px;
+	background: color-mix(in srgb, var(--color-ink950) 82%, transparent); border: 1px solid color-mix(in srgb, var(--color-gold600) 55%, transparent);
+	font: 700 11px var(--font-body); color: var(--color-textPrimary); }
+.member .av { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font: 800 9px var(--font-body); color: var(--color-ink950); background: var(--k); }
+.member.you { border-color: var(--color-gold400); }
+.member .tag { color: var(--color-gold400); font-weight: 800; }
+.timer .ph { font: 800 11px var(--font-body); color: var(--color-gold400); letter-spacing: 0.04em; text-transform: uppercase; }
+.placebar { position: absolute; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: 14px;
+	background: linear-gradient(180deg, var(--color-ink700), var(--color-ink950)); border: 1.5px solid var(--color-gold600);
+	box-shadow: 0 4px 0 rgba(5, 7, 12, 0.55); }
+.placebar .pinfo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.placebar .pname { font: 700 14px var(--font-heading); color: var(--color-parchment100); white-space: nowrap; }
+.placebar .pstatus { display: flex; align-items: center; gap: 4px; font: 700 11px var(--font-body); white-space: nowrap; }
+.placebar .pstatus.ok { color: #A9E57C; }
+.placebar .pstatus.bad { color: #FF8A73; }
+.placebar .pstatus.wait { color: var(--color-textSecondary); }
+.placebar .pbtns { display: flex; gap: 8px; align-items: center; margin-left: 6px; }
+.placebar .hint { position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; text-align: center; font: 700 11px var(--font-body); color: var(--color-parchment100); text-shadow: 0 1px 2px #000; }
+.iconbtn { display: grid; place-items: center; border-radius: 10px; background: linear-gradient(180deg, var(--color-ink600), var(--color-ink800)); border: 1.5px solid var(--color-gold600); }
+.ghost { position: absolute; transform: translate(-50%, -50%) rotateX(58deg) rotateZ(var(--rot, 0deg)); transform-origin: 50% 50%; border-radius: 3px; border: 3px solid; }
+.ghost.ok { background: rgba(91, 174, 95, 0.42); border-color: #A9E57C; }
+.ghost.bad { background: rgba(217, 87, 63, 0.42); border-color: #FF8A73; }
+.ghost .arrow { position: absolute; left: 50%; top: -3px; width: 0; height: 0; transform: translate(-50%, -100%); border: 10px solid transparent; border-bottom: 14px solid currentColor; }
+.ghost.ok .arrow { color: #A9E57C; } .ghost.bad .arrow { color: #FF8A73; }
+.stand { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 8px; font: 700 12px var(--font-body); color: var(--color-textPrimary); }
+.stand.me { background: color-mix(in srgb, var(--color-gold500) 16%, transparent); outline: 1px solid color-mix(in srgb, var(--color-gold500) 50%, transparent); }
+.stand .rk { width: 16px; color: var(--color-textMuted); }
+.stand .nm { flex: 1; }
+.stand .cp { color: var(--color-gold300); font-weight: 800; }
+.stand .crest { border-radius: 6px !important; }
+.mrow { display: flex; align-items: center; gap: 8px; height: 28px; font: 700 12px var(--font-body); color: var(--color-textPrimary); }
+.mrow .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 800 11px var(--font-body); color: var(--color-ink950); background: var(--k); }
+.mrow .role { margin-left: auto; color: var(--color-textSecondary); font-weight: 600; }
+.stand .rg { display: inline-flex; align-items: center; gap: 2px; color: var(--color-textSecondary); width: 34px; }
+/* FL-0087: plot markers in the aerial view, benefits in the detail pane */
+.plot { position: absolute; transform: translate(-50%, -50%) skewX(-14deg); border: 2.5px dashed rgba(247, 239, 220, 0.85); border-radius: 6px; background: rgba(11, 15, 24, 0.18); display: grid; place-items: center; }
+.plot span { transform: skewX(14deg); font: 800 13px var(--font-body); color: var(--color-parchment100); text-shadow: 0 1px 2px #000; }
+.plot.sel { border: 3px solid var(--color-gold400); background: rgba(234, 196, 108, 0.28); box-shadow: 0 0 0 3px rgba(234, 196, 108, 0.35); }
+.plot.used { border-style: solid; border-color: rgba(247, 239, 220, 0.35); background: rgba(217, 201, 163, 0.5); }
+.benefits { display: flex; flex-direction: column; gap: 4px; }
+.ben { display: flex; gap: 8px; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: 6px; background: color-mix(in srgb, var(--color-scrim) 55%, transparent); font: 600 12px var(--font-body); color: var(--color-textPrimary); }
+.ben .bl { flex: 0 0 52px; font-weight: 800; color: var(--color-textSecondary); }
+.ben.next { background: color-mix(in srgb, var(--color-vert) 18%, transparent); outline: 1px solid color-mix(in srgb, var(--color-vert) 45%, transparent); }
+.ben.next .bl { color: #A9E57C; }

@@ -3,7 +3,7 @@ id: FL-0093
 title: "VS-1 v2 integration: build cadence to the user, playtest rows 1-9, G13.7 debug presets"
 track: qa
 owner: forge-05
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,8 @@ updated: 2026-10-12
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 5
-evidence: []
+evidence:
+  - "B1: run 38310484338 green, artifact forgeloop-game001-b6f252f id 11774113089; recorded in studio-runs.md"
 ---
 
 # "VS-1 v2 integration: build cadence to the user, playtest rows 1-9, G13.7 debug presets"
@@ -36,3 +37,4 @@ A negative test for each new preset. CI artifact present on main.
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-12 forge-05: READY → BUILDING. Build cadence started: B1 forgeloop-game001-b6f252f (first visible build: world v0 + lighting) sent to FORGE-00 for the user; Lighting.Technology=Future merged (#30). Next: playtest rows 1-9, G13.7 presets (ownership PR #32 first).
