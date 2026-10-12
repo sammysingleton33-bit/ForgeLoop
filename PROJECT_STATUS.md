@@ -183,6 +183,7 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+335fb16 2026-10-12 CONTRACTS G4.1/G13.6 camera names aligned (overview default, follow = walk), tap selects, Kingdom.Population remote; D-031 screenshot size rule
 005873b 2026-10-12 D-030 production priorities: VS-1 v2 (nine first-playable items), living-kingdom requirements, CONTRACTS G13, tasks FL-0078..FL-0096
 c390de2 2026-10-12 [FORGE-01] FL-0048 hour-0 stub: Kingdom/Types (G2)
 5348570 2026-10-12 Integration bookkeeping: PR #18 (6f3ce4b) FL-0076 scaffold merged
@@ -190,7 +191,6 @@ aeb1c84 2026-10-12 [FORGE-05] FL-0076 Crown Arena fairness harness scaffold: cap
 7193edc 2026-10-12 Integration bookkeeping: PR #17 (db58aa8), PR #12 (d1910dd), PR #14 (5eb33ae); FL-0068 evidence
 5eb33ae 2026-10-12 Merge PR #14: [FORGE-05] FL-0068 Studio debug panel (DebugCommands, Studio-only DebugServer, DebugPanel F8)
 9559534 2026-10-12 Merge branch 'main' into forge/03-ui-economy-fl0058
-2afc519 2026-10-12 [FORGE-05] FL-0029 G8: diff PRs against the test merge commit's first parent, not a stale base.sha
 ```
 
 <!-- forge:auto:end -->
