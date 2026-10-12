@@ -1,0 +1,21 @@
+{
+	"name": "IdentityFixture",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Forge": {
+				"$path": "shared",
+				"Config": {
+					"$path": "config"
+				}
+			}
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"Forge": {
+				"$path": "server"
+			}
+		}
+	}
+}

@@ -15,15 +15,23 @@ want_roblox=1
 [[ "${1:-}" == "--blender-only" ]] && { want_blender=1; want_roblox=0; }
 fail=0
 
-need() { # name crate version
+need() { # name crate version [cargo features]
 	local have
 	have="$("$1" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
-	if [[ "$have" == "$3" ]]; then
+	if [[ "$have" == "$3" ]] && ! stylua_lacks_luau "$1"; then
 		echo "ok   $1 $have"
 	else
 		echo "inst $1 $3 (have: ${have:-none})"
-		cargo install --locked "$2@$3" || { echo "FAIL $1"; fail=1; }
+		cargo install --locked --force "$2@$3" ${4:+--features "$4"} || { echo "FAIL $1"; fail=1; }
 	fi
+}
+
+# StyLua's default cargo features have no Luau parser (it panics on type annotations and silently
+# skips .luau files when given directories). Release binaries are built with every syntax.
+STYLUA_FEATURES="lua52,lua53,lua54,luau,luajit,cfxlua"
+stylua_lacks_luau() {
+	[[ "$1" == "stylua" ]] || return 1
+	! printf 'local x: number = 1\nreturn x\n' | stylua --check - >/dev/null 2>&1
 }
 
 if [[ $want_roblox == 0 ]]; then
@@ -34,7 +42,7 @@ elif ! command -v cargo >/dev/null; then
 else
 	need rojo rojo 7.7.1
 	need selene selene 0.31.0
-	need stylua stylua 2.6.0
+	need stylua stylua 2.6.0 "$STYLUA_FEATURES"
 	need lune lune 0.11.0
 fi
 

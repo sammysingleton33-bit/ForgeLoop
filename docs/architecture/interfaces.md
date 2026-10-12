@@ -2,7 +2,7 @@
 
 These contracts let five workers build at the same time. Code against them; use mocks for parts not built yet. Additive changes are fine in your own area; breaking changes need a PR reviewed by FORGE-05 and approved by FORGE-00, with the version bumped below.
 
-Contract version: **0.3** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
+Contract version: **0.3.1** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
 
 ## 1. Code layout and requires
 - Rojo project `roblox/default.project.json` maps:
@@ -12,10 +12,12 @@ Contract version: **0.3** · custodian FORGE-05 · Luau files in `roblox/src/sha
   - `games/<game>/config` → `ReplicatedStorage.Forge.Config` (the sandbox until Game #1 is approved)
   - `roblox/assets` → `ReplicatedStorage.Forge.Assets` (each `<asset_id>.rbxm` becomes a child named by asset id)
   - `games/<game>/map` → `Workspace` (FORGE-05 adds this mapping once the skeleton is merged)
-- Requires use **require-by-string with relative paths** (`require("../Core/Signal")`), at the top of the module only (not inside functions). No aliases. This runs identically in Lune tests and in Roblox ([announcement](https://devforum.roblox.com/t/introducing-require-by-string/3405078)). Studio confirmation is smoke test S1 in `roblox/STUDIO_TEST_PLAN.md`.
+- Requires use **require-by-string**, at the top level of the module only (not inside functions or blocks), in exactly two forms (D-017; as built and documented in `roblox/README.md`, "Requires"):
+  - **inside one source tree** (one Rojo `$path` mount above): relative paths, `require("../Core/Signal")`;
+  - **across trees**: the `@game` alias with the full DataModel path, and only into `ReplicatedStorage.Forge` (shared code, `Config`, `Assets`): `require("@game/ReplicatedStorage/Forge/Core/Signal")`, `require("@game/ReplicatedStorage/Forge/Config/Game")`. Server and client trees never require each other (server content does not replicate to clients).
+  No other alias (`@self`, custom aliases) and no `require(instance)` outside `Contracts/`. Roblox documents both forms (creator-docs `LuaGlobals.yaml`, `require`; [announcement](https://devforum.roblox.com/t/introducing-require-by-string/3405078)). The Lune harness does not map `@game` to a mirror directory: `roblox/tests/harness/ModuleLoader.luau` resolves every require over `roblox/default.project.json` the way Roblox resolves it in the DataModel, so each module has one identity however it is required, and `roblox/scripts/check_place.luau` checks the built place with the same rules. Studio confirmation is smoke test S1 in `roblox/STUDIO_TEST_PLAN.md` (pending).
 - One module per file, `PascalCase.luau`. Shared logic is `--!strict`. Entry scripts: `*.server.luau`, `*.client.luau`.
 - No `init.luau` modules with children that require each other (Rojo/Luau semantics differ historically). Prefer flat folders.
-- **Cross-tree requires** (server or client code → `shared/`, anything → `Config`) cannot use plain relative paths, because the folders sit under different services in the DataModel. The skeleton (FL-0003) defines and tests the one allowed form (expected: Roblox's built-in `@game` alias, e.g. `require("@game/ReplicatedStorage/Forge/Core/Signal")`, mapped for Lune by the harness) and documents it in `roblox/README.md`. Until it is on `main`, keep code that needs cross-tree requires on your branch.
 
 ## 2. Environment injection (`Contracts/Env.luau`)
 Every service/controller receives an `Env` instead of calling `game:GetService` directly, so Lune tests pass mocks.
@@ -57,6 +59,7 @@ end
 -- optional on the instance: self:start() (may spawn threads), self:destroy()
 return Def
 ```
+`registry:destroy()` calls every instance's `destroy()` in reverse construction order (all run even if one errors; idempotent). Specs use it to tear services down; `Main` does not call it (shutdown work goes through `env.bindToClose`).
 The loader discovers every module in `Services/` (server) or `Controllers/` (client), sorts by `dependencies`, calls `new` in order, then `start`. Optional dependencies: `registry:find(name)` returns nil when absent — call it in `start()` or later (every service is constructed by then), not in `new()`. Adding a service never edits another file.
 
 ## 4. Game event bus (`Contracts/GameEvents.luau`)
@@ -81,6 +84,7 @@ export type RoundResult = {
 }
 export type RewardResult = { tableId: string, rarity: string, itemId: string, qty: number, pityTriggered: boolean }
 ```
+These types (and `RoundState`) are defined in `Contracts/Types.luau` and re-exported by `Contracts/GameEvents.luau`, so `GameEvents.RoundResult` and `Types.RoundResult` are the same type.
 **Exactly-once rule:** producers fire an event once per successful action — never on an idempotent replay (same txId/PurchaseId), a failed grant or a partial grant.
 
 Round states are exactly `"Lobby" | "Intermission" | "Countdown" | "Active" | "Results"` (exported type `RoundState`). Add events by appending to the table (additive). Payloads are server-only; clients learn via remotes, all broadcast to every player and declared by FORGE-01:
@@ -182,5 +186,6 @@ EconomyService calls `registry:find("AnalyticsService")` in `start()` and report
 
 ## Changelog
 - 0.1 (2026-10-12) FORGE-00: first version.
+- 0.3.1 (2026-10-12) FORGE-00, clarification + additive (skeleton FL-0003 review): §1 states the require rule as built (relative inside a tree, `@game/ReplicatedStorage/Forge/...` across trees, harness resolution over the Rojo project, no mirror mapping); §3 `registry:destroy()`; §4 payload types re-exported by GameEvents.
 - 0.3 (2026-10-12) FORGE-00, additive (second prompt review): Assets/map mappings; Env services + `service()`; `ShopViewed`; exactly-once rule; round remote payloads, `GetRoundState`, client Round/Spectate API; pity-aware odds + display rounding; paid-random definition incl. Robux-purchasable currency; single economy-analytics path; funnel sessionId/custom-field mapping; one `experience` registrant; toast/celebration boundary; asset structure + id regex.
 - 0.2 (2026-10-12) FORGE-00, additive (prompt review): cross-tree require rule; Env `bindToClose`, `serverTimeNow`, `newInstance`, `sharedModules`, non-empty `jobId`; round state strings + client remotes; step-wise migrations, lock check on every save, UTF-8; remote discovery/instance layout/default rate; Validate byte/UTF-8/array rules.
