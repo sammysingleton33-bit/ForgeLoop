@@ -3,14 +3,16 @@ id: FL-0009
 title: "RemoteService: declarative per-area remotes with validation and rate limits"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0007]
 estimate_h: 5
-evidence: []
+evidence:
+  - check.sh OVERALL PASS at merge with main; 23 RemoteService specs (wrong types, NaN/inf, oversized, extra args, burst+refill, unknown names, handler isolation, duplicate/bad declarations, departed player, memory freed)
+  - each guard proven red by a mutation (see PR)
 ---
 
 # RemoteService: declarative per-area remotes with validation and rate limits
@@ -32,3 +34,5 @@ Lune specs: wrong types, NaN/inf, oversized tables, burst over limit, unknown re
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-01: READY → BUILDING. started: RemoteService for the AI Kingdoms remotes
+- 2026-10-12 forge-01: BUILDING → REVIEW. PR from forge/01-gameplay-fl0009 (stacked on FL-0007)
