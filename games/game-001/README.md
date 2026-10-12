@@ -97,6 +97,19 @@ framework areas.
 If your service needs something `MockEnv` does not provide, write a handoff to FORGE-05; do not
 work around the gate.
 
+## Studio debug commands and presets (FL-0068)
+Register your own commands and the playtest presets for your rows from your service's `start()`
+(`roblox/src/shared/Debug/DebugCommands.luau` has the full API):
+```lua
+local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
+DebugCommands.register({ name = "treasury.grant", label = "Grant 500 of each resource",
+	args = { Validate.integer(0, 100000) }, run = function(player, amount) ... return "granted" end })
+DebugCommands.registerPreset({ name = "vs1.row6", label = "Row 6 start", steps = { { "treasury.grant", 500 } } })
+```
+Commands run only in Studio (no remotes exist on live servers), arguments are validated fail-closed
+and every command runs under `pcall`. Names are `area.action`; preset names `vs1.row<N>`.
+Requested commands per owner: `production/handoffs/2026-10-12-forge-05-to-all-debug-commands.md`.
+
 ## Network mocks for entity replication (FL-0067)
 `env.mock.remotes` behaves like Roblox for `UnreliableRemoteEvent` payloads:
 - a buffer counts exactly `buffer.len` bytes; payloads over **1000 bytes are dropped** (logged with
