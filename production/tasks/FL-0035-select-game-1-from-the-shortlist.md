@@ -3,7 +3,7 @@ id: FL-0035
 title: Select Game #1 from the shortlist
 track: design
 owner: user
-status: SPECIFIED
+status: READY
 priority: P0
 game: factory
 created: 2026-10-12
@@ -29,3 +29,4 @@ Decision recorded in DECISIONS.md by FORGE-00
 
 ## Log
 - 2026-10-12 forge-00: created (SPECIFIED).
+- 2026-10-12 forge-00: SPECIFIED → READY. Shortlist ready for the user's decision (options A-E in section 8)
