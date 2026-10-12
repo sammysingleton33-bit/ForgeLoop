@@ -1,0 +1,8 @@
+decision_id,farm_key,repeat_decay,repeat_window_s,cost,resource_effects,rep_compassion,rep_honor,rep_competence,rep_courage,rep_authority,rep_fear,speaker_loyalty,speaker_chemistry,family_loyalty,friends_loyalty,rivals_loyalty,audience,audience_loyalty,happiness,stability,morale,trait_overrides,consequences,memory_tag,notes
+d_share_grain,grain_relief,0.5,600,food:20,,+3,+1,0,0,0,0,+4,+1,+2,+1,-1,occupation,+1,+2,0,0,greedy:-2,c_remember_kindness;c_cheer,fed_by_ruler,generous; costs food the kingdom may need
+d_ration_strict,grain_relief,0.5,600,,food:10,-2,0,+2,0,+2,+1,-3,0,-1,0,+1,occupation,-1,-2,+1,0,cruel:+2,c_farmers_slow,,
+d_grain_gift,,1,0,,food:30,+1,0,0,0,0,0,+1,0,0,0,0,none,0,0,0,0,,c_grain_trickle,,no farm_key on purpose (lint fixture)
+d_buy_tools,tools,0.7,900,gold:15,,0,0,+3,0,0,0,+3,0,0,0,0,none,0,0,0,0,,c_unlock_followup,,
+d_promise_later,promises,0.5,900,,,0,-1,0,0,0,0,-1,0,0,0,0,none,0,0,0,0,devout:-2,,promised_tools,
+d_pay_bonus,army_pay,0.6,600,gold:30,,0,+1,0,+1,0,0,+4,0,0,0,0,occupation,+2,0,0,+3,greedy:+2,,,
+d_threaten,threats,0.5,600,,,-1,0,0,0,+2,+3,-4,-2,-2,-1,0,occupation,0,-1,0,+1,cruel:+3;kind:-3,c_desert_risk,,

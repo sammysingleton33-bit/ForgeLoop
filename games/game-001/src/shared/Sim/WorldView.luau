@@ -18,13 +18,22 @@
 
 	API
 		WorldView.new(env, options?): WorldView
-			options: { groundY = 0, parent = env.Workspace, createGround = true }
+			options: { groundY = 0, parent = env.Workspace, createGround = true, entities = true,
+			           buildings = "parts" }
+			buildings = "kit": each building is FORGE-02's Kit.build(type, level, stage, colour) model (G6/G10):
+			  stage 1..3 by progress while first being built, then "complete"; a model is replaced whole
+			  when its (type, level, stage) changes, placed at the building's position and yaw, and carries
+			  the attributes BuildingId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
+			  (G13.6 selection reads BuildingId)
+			entities = false: no citizen/soldier parts (clients render them with EntityController, D-023)
 		view:sync(sim)                 -- create, update and remove parts to match the simulation
 		view:find(kind, id): Instance?    -- kind "node" | "building" | "entity"
 		view:count(): number           -- live entity parts (specs)
 		view:destroy()
 	Positions: simulation X/Z map to world X/Z; Y is groundY plus half the part height.
 ]]
+
+local Kit = require("../Kit/Kit")
 
 local WorldView = {}
 WorldView.__index = WorldView
@@ -63,6 +72,9 @@ function WorldView.new(env: any, options: { [string]: any }?)
 	self._env = env
 	self._groundY = opts.groundY or 0
 	self._createGround = if opts.createGround == nil then true else opts.createGround
+	self._entities = if opts.entities == nil then true else opts.entities
+	self._kitBuildings = opts.buildings == "kit"
+	self._kitKey = {} :: { [string]: string } -- building key -> "<type>|<level>|<stage>" of its model
 	self._parts = {} :: { [string]: any }
 	local root = env.newInstance("Folder")
 	root.Name = "ForgeKingdoms"
@@ -99,6 +111,58 @@ function WorldView:_kingdom(kingdom: any): { [string]: any }
 		self._kingdomFolders[kingdom.id] = folders
 	end
 	return folders
+end
+
+-- Moves a Kit model (built at the origin, pivot at its base centre) so the pivot lands on `cf`;
+-- no PivotTo, so the same code runs in Lune (as WorldService does).
+local function placeModel(model: any, cf: CFrame)
+	local primary = model.PrimaryPart
+	if not primary then
+		return
+	end
+	local delta = cf * (primary.CFrame * primary.PivotOffset):Inverse()
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CFrame = delta * d.CFrame
+		end
+	end
+end
+
+-- The Kit stage for a building: 1..3 while it is first being built, else "complete".
+function WorldView.stageOf(sim: any, b: any): number | string
+	if b.level == 0 and b.pendingLevel ~= nil then
+		local fraction = math.clamp(b.progress / sim:workFor(b.kind, b.pendingLevel), 0, 1)
+		return math.clamp(math.floor(fraction * 3) + 1, 1, 3)
+	end
+	return "complete"
+end
+
+function WorldView:_kitBuilding(sim: any, b: any, parent: any, kingdomColor: Color3)
+	local key = "building:" .. b.id
+	local level = math.max(1, b.level)
+	local stage = WorldView.stageOf(sim, b)
+	local signature = `{b.kind}|{level}|{stage}`
+	local model = self._parts[key]
+	if model == nil or self._kitKey[key] ~= signature then
+		if model then
+			model:Destroy()
+		end
+		model = Kit.build(b.kind, level, stage, kingdomColor)
+		model.Name = key
+		placeModel(model, CFrame.new(b.x, self._groundY, b.z) * CFrame.Angles(0, b.yaw or 0, 0))
+		model:SetAttribute("BuildingId", b.id)
+		model:SetAttribute("EntityId", b.id)
+		model.Parent = parent
+		self._parts[key] = model
+		self._kitKey[key] = signature
+	end
+	model:SetAttribute("KingdomId", b.kingdomId)
+	model:SetAttribute("Kind", b.kind)
+	model:SetAttribute("Level", b.level)
+	model:SetAttribute("PendingLevel", b.pendingLevel)
+	model:SetAttribute("Progress", if b.pendingLevel then b.progress / sim:workFor(b.kind, b.pendingLevel) else 1)
+	model:SetAttribute("Hp", b.hp)
+	model:SetAttribute("MaxHp", b.maxHp)
 end
 
 -- Parts are keyed "node:<id>", "building:<id>" and "entity:<id>": buildings and entities have
@@ -182,6 +246,11 @@ function WorldView:sync(sim: any)
 		local kingdomColor = rgb(kingdom.color)
 		for _, bid in kingdom.buildingIds do
 			local b = sim.buildings[bid]
+			if self._kitBuildings then
+				self:_kitBuilding(sim, b, folders.Buildings, kingdomColor)
+				live["building:" .. bid] = true
+				continue
+			end
 			local style = BUILDING_STYLE[b.kind] or { height = 8, material = "Plastic" }
 			local width = b.footprint * 1.6
 			local fullHeight = style.height * (1 + 0.25 * math.max(0, b.level - 1))
@@ -210,7 +279,7 @@ function WorldView:sync(sim: any)
 			self:_place(part, b.x, b.z, height)
 			live["building:" .. bid] = true
 		end
-		for _, cid in kingdom.citizenIds do
+		for _, cid in if self._entities then kingdom.citizenIds else {} do
 			local c = sim.citizens[cid]
 			local part = self:_part(
 				"entity:" .. cid,
@@ -227,7 +296,7 @@ function WorldView:sync(sim: any)
 			self:_place(part, c.x, c.z, 4.5)
 			live["entity:" .. cid] = true
 		end
-		for _, uid in kingdom.unitIds do
+		for _, uid in if self._entities then kingdom.unitIds else {} do
 			local u = sim.units[uid]
 			local part = self:_part("entity:" .. uid, uid, folders.Units, Vector3.new(2, 5, 2), kingdomColor, "Metal")
 			part:SetAttribute("KingdomId", kid)
@@ -243,6 +312,7 @@ function WorldView:sync(sim: any)
 		if not live[id] then
 			part:Destroy()
 			self._parts[id] = nil
+			self._kitKey[id] = nil
 		end
 	end
 end

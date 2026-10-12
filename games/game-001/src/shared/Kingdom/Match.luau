@@ -71,6 +71,7 @@ local Commands = require("../Sim/Commands")
 local Diplomacy = require("../Sim/Diplomacy")
 local Layout = require("./Layout")
 local Military = require("../Sim/Military")
+local Nav = require("../Sim/Nav")
 local Objectives = require("../Sim/Objectives")
 local RulerAI = require("../Sim/RulerAI")
 local Simulation = require("../Sim/Simulation")
@@ -183,6 +184,10 @@ function Match:_newWorld()
 		spacing = self.options.spacing,
 		populate = not self.options.populateOnJoin,
 	})
+	if self.options.spacing == nil then
+		sim.nav = Nav.new(Layout.WORLD.nav) -- roads and bridges of the world Layout (G10.1)
+		sim.groundY = Layout.groundY -- entities stand on the terrain and the bridge decks (G4 y = feet)
+	end
 	Military.install(sim)
 	if self.options.pvp then
 		Diplomacy.install(sim, {
@@ -205,6 +210,7 @@ function Match:_newWorld()
 		})
 	end
 	sim.active = false
+	sim.fedByUpkeep = self.options.fedByUpkeep == true
 	self.sim = sim
 	self.participants = {} :: { [number]: { kingdomId: string, joinedAt: number, leftAt: number? } }
 	self.lastKingdom = {} :: { [number]: string }

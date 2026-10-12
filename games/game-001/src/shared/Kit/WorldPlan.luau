@@ -431,11 +431,11 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placem
 		end, "forest")
 	end
 	-- lone trees and bushes across the valley, rocks at the hill feet, flowers near plots
-	scatter(90, 20, 0, 640, 6, function()
+	scatter(60, 20, 0, 640, 6, function()
 		local s = if rng.next() < 0.7 then "tree_oak" else "tree_birch"
 		return assetId(s, rng.int(1, SPECIES_VARIANTS[s]))
 	end, "lone_tree")
-	scatter(150, 20, 0, 640, 2.5, function()
+	scatter(110, 20, 0, 640, 2.5, function()
 		return assetId("bush", rng.int(1, 8))
 	end, "bush")
 	for _, b in hillBalls(layout) do

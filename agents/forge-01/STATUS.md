@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/01-gameplay` (PR branches `forge/01-gameplay-fl00xx`) |
-| Open PR | #26 FL-0048 hour-0 Types stub (CI green) · FL-0048 Match + Kingdom core (REVIEW, branch `forge/01-gameplay-fl0048`) |
+| Open PR | #31 FL-0048 · #39 FL-0049 (stacked on #31) · living-kingdom groundwork (stacked on #39): Kit buildings at anchors, CitizenService + upkeep, Population/Reputation cores |
 | Merged | #4 FL-0007, #5 FL-0009, #8 review follow-ups (Validate cframe/record/oneOf) |
-| Current task | FL-0048 in review → next FL-0049 entity sim, codec v2, replication, client rendering |
-| Last verified check | `check.sh` OVERALL PASS on the FL-0048 head: framework 328/0, game-001 305/0, Selene 0/0; 18/18 mutations caught |
-| Blockers | None for FL-0049. Studio evidence for FL-0048 needs a user run (K1/K2/K7 in `roblox/studio-tests/gameplay.md`) |
+| Current task | D-030 VS-1 v2: FL-0078 population (sub-worker on the pure generator) → FL-0080 reputation → FL-0079 conversations → FL-0081 plots + throne |
+| Last verified check | `check.sh` OVERALL PASS on 5478da6: framework 485/0, game-001 479/0 (42 files), Selene 0/0 |
+| Blockers | FL-0078/80/79 consume FORGE-00's content library (FL-0083, branch forge/00-content-library, not on main yet): built as pure modules on fixture tables until it lands. Studio evidence for FL-0048/FL-0049 needs a user run |
 | Needs from others | FORGE-02: WorldService `ready` shape + regalia attachments (handoff 2026-10-12-forge-01-to-forge-02-05-fl0048-spawn). FORGE-04: KingdomJoined once-per-session? (handoff …-fl0048-pacing-wired) |
 
 ## What exists (headless-verified only; nothing run in Studio)
@@ -24,14 +24,13 @@ _Maintained by the worker. Keep it short and current._
 - Snapshot codec v1 (G4 v1 layout) — to be replaced by v2 (D-025) in FL-0049.
 
 ## Next
-1. FL-0049: codec v2 (8 B header, 10 B records, ≤ 80 per event, ≤ 900 B), `Sim.Snapshot/Events/GetEntities`,
-   EntityService, EntityController (Kit.character rigs, procedural Motor6D poses, BulkMoveTo), perf log line.
-2. FL-0050 → FL-0052 per PROMPT §0 (citizens on Layout nodes and fed ratio, Build/Army remotes, Send-to-capture).
-3. Crown Arena (FL-0069+) only after FL-0052.
+1. FL-0078: wire Sim/Population (sub-worker) into CitizenService (G5 getPopulation / setFedRatio / inspect → CitizenView) and the spawn record (look), on top of the content library once it merges.
+2. FL-0080 ReputationService + Society.luau; FL-0079 ConversationService; FL-0081 build slots, upgrade times, throne seat.
+3. FL-0050 to FL-0052 rows that VS-1 v2 still needs (fed ratio, Build/Army remotes, Send-to-capture).
 
 ## Last report
-Done: FL-0048 (re-scoped to CONTRACTS v0.4-g3) incl. debug commands match.phase / kingdom.respawn /
-preset vs1.row3 and a spec on FORGE-03's real TreasuryService; #26 Types stub; handoffs to FORGE-04, FORGE-02/05.
-Verified: check.sh PASS, 18/18 mutations caught. Unverified: everything in Studio.
-Interim: citizens still pay their own meals from the treasury until FL-0050 adds CitizenService + fed ratio
-(ProductionService charges nothing while CitizenService is absent, so nothing is charged twice).
+Done: FL-0049: SnapshotCodec v2, EventCodec, EntityService (diffed spawns/despawns/jobs, cues, reset,
+10 Hz snapshots ≤ 900 B), EntityController with pooled Kit rigs and procedural poses (sub-worker),
+16 Hz fixed tick with staggered decisions, Layout.nav routing, sim.spawn debug command.
+Verified: check.sh PASS; mutations caught (EntityService 6/6, client 23/23, tick/staggering 2/2, Nav 1/1).
+Unverified: everything in Studio (K1/K2/K7/K8, PERF.md).

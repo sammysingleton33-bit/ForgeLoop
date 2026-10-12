@@ -12,13 +12,16 @@
 		world.server:get("SlotService"):occupy("m1", buildingId)
 
 	Plots of crimson (the local player's kingdom): m1 M, s1 S, l1 L, m2 M (built on: a house).
-	The double's own fit rule (largest side of the biggest footprint: S <= 18, M <= 26, L larger),
-	so a client that offers a misfit gets "zone" back. Costs from config Costs; refusals use the
+	The double's own fit check, written apart from the client's UI/SlotFit: the biggest footprint
+	over the type's levels must fit the slot's width and depth from FORGE-02's world Layout
+	(`slotSizes`), so a client that offers a misfit gets "zone" back. Costs from config Costs; refusals use the
 	reason vocabulary of production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md.
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
+local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local SlotDoubles = {}
 
@@ -38,17 +41,20 @@ SlotDoubles.REMOTES = {
 	},
 }
 
--- Size class per type, as the double's server sees it.
-SlotDoubles.SIZE = {
-	watchtower = "S",
-	house = "M",
-	storehouse = "M",
-	lumbercamp = "M",
-	quarry = "M",
-	farm = "L",
-	barracks = "L",
-}
-local RANK = { S = 1, M = 2, L = 3 }
+-- Whether a type fits a slot size, as the double's server sees it.
+function SlotDoubles.fits(size: string, buildingType: string): boolean
+	local slot = WorldLayout.slotSizes[size]
+	if slot == nil then
+		return false
+	end
+	for level = 1, math.max(1, Costs.maxLevel(buildingType)) do
+		local ok, footprint = pcall(Kit.footprint, buildingType, level)
+		if not ok or typeof(footprint) ~= "Vector2" or footprint.X > slot.X or footprint.Y > slot.Y then
+			return false
+		end
+	end
+	return true
+end
 
 function SlotDoubles.service(world)
 	return {
@@ -110,8 +116,7 @@ function SlotDoubles.service(world)
 					elseif slot.occupiedBy then
 						return nil, "overlap"
 					end
-					local size = SlotDoubles.SIZE[buildingType]
-					if size == nil or RANK[size] > RANK[slot.size] then
+					if not SlotDoubles.fits(slot.size, buildingType) then
 						return nil, "zone"
 					end
 					local entry = Costs.building(buildingType, 1)

@@ -1,149 +1,160 @@
 --!strict
 --[[
-	Sim/SnapshotCodec — the binary entity snapshot of CONTRACTS G4 (D-023).
+	Sim/SnapshotCodec — the binary entity snapshot of CONTRACTS G4, wire format v2 (D-025).
 
-	Wire layout (little-endian, Luau `buffer`):
-		header   version u8 · seq u32 · serverTime f64 · count u16                     (15 bytes)
-		entity   id u32 · x f32 · y f32 · z f32 · yaw u8 · action u8 · job u8 · kingdom u8 ·
-		         carrying u8 · hpPct u8                                               (22 bytes each)
-	Codes (index in the list; 0 = none/unknown where noted):
-		ACTIONS   idle walk work carry fight flee celebrate dead                        (1..8)
-		JOBS      idle farmer woodcutter miner builder hauler soldier                    (1..7)
-		KINGDOMS  0 = none, crimson azure emerald gold                                   (1..4)
-		CARRYING  0 = nothing, food wood stone gold                                      (1..4)
-	yaw: radians wrapped to [0, 2π) in 256 steps (1.4°). hpPct: 0..100.
+	One UnreliableRemoteEvent payload (`Sim.Snapshot`) is one buffer, little-endian:
+		header (8 B)   serverTime f32 · seq u16 · chunk u8 · n u8
+		               serverTime: seconds since match start (Match.State carries startedAtServerTime)
+		               seq: per snapshot tick, compared with wrap-around (SnapshotCodec.newer)
+		               chunk: index << 4 | count (both 0..15; count 0 means 16)
+		               n: records in this buffer (≤ MAX_RECORDS)
+		record (10 B)  id u16 · x i16 · y i16 · z i16 · yaw u8 · state u8
+		               x/y/z: studs × 8 (1/8 stud; |coordinate| ≤ 4095.875, the world fits in ±4,000)
+		               yaw: radians wrapped to [0, 2π) in 256 steps (1.4°)
+		               state: action (bits 0-2) | carrying << 3 (bits 3-5)
+	Codes (index in the list, from 0)
+		ACTIONS   idle walk work carry fight flee celebrate dead      (0..7, 3 bits)
+		CARRYING  0 = nothing, food wood stone gold                    (0..4, 3 bits)
+	Kind, job and kingdom never change per tick, so they travel reliably in `Sim.Events` (EventCodec).
 
-	Snapshots travel on an UnreliableRemoteEvent, whose payloads over 1000 bytes are dropped, so
-	encodeChunks splits a frame into self-contained buffers of at most `maxBytes` (default 900:
-	(900 - 15) / 22 = 40 entities per chunk). Every chunk carries the same seq and serverTime.
+	Size: at most MAX_RECORDS = 80 records per buffer (8 + 800 = 808 B). The engine drops unreliable
+	payloads over 1,000 B, so encode asserts the raw size ≤ MAX_BYTES (900) and never counts on
+	compression. encodeChunks splits a tick into ≤ 16 self-contained buffers (≤ 1,280 entities).
 
 	API
-		SnapshotCodec.encode(entities, seq, serverTime): buffer
-		SnapshotCodec.encodeChunks(entities, seq, serverTime, maxBytes?): { buffer }
+		SnapshotCodec.encode(records, seq, serverTime, chunkIndex?, chunkCount?): buffer
+		SnapshotCodec.encodeChunks(records, seq, serverTime): { buffer }
 		SnapshotCodec.decode(buf): (Frame?, string?)        -- nil + reason for a malformed buffer
-		SnapshotCodec.HEADER_BYTES, ENTITY_BYTES, VERSION, ACTIONS, JOBS, KINGDOMS, CARRYING
-	Entity (input and decoded output):
-		{ id: number, x: number, y: number, z: number, yaw: number, action: string, job: string,
-		  kingdom: string?, carrying: string?, hpPct: number }
-	encode errors on programming mistakes (unknown action/job/kingdom/resource, id outside u32,
-	non-finite position): the server must never send garbage. decode never errors.
+		SnapshotCodec.newer(a, b): boolean                  -- seq a is newer than seq b (u16 wrap)
+		SnapshotCodec.quantize(coordinate): number          -- what a client decodes for a coordinate
+		SnapshotCodec.HEADER_BYTES, RECORD_BYTES, MAX_RECORDS, MAX_BYTES, MAX_COORD, ACTIONS, CARRYING
+	Record (input and decoded output):
+		{ id: number, x: number, y: number, z: number, yaw: number, action: string, carrying: string? }
+	encode errors on programming mistakes (unknown action or resource, id outside 1..65535, a
+	coordinate outside ±MAX_COORD, non-finite numbers, too many records): the server must never send
+	garbage. decode never errors.
 ]]
 
-export type Entity = {
+export type Record = {
 	id: number,
 	x: number,
 	y: number,
 	z: number,
 	yaw: number,
 	action: string,
-	job: string,
-	kingdom: string?,
 	carrying: string?,
-	hpPct: number,
 }
 
-export type Frame = { version: number, seq: number, serverTime: number, entities: { Entity } }
+export type Frame = {
+	serverTime: number,
+	seq: number,
+	chunkIndex: number,
+	chunkCount: number,
+	records: { Record },
+}
 
 local SnapshotCodec = {}
 
-SnapshotCodec.VERSION = 1
-SnapshotCodec.HEADER_BYTES = 15
-SnapshotCodec.ENTITY_BYTES = 22
-SnapshotCodec.DEFAULT_MAX_BYTES = 900
+SnapshotCodec.HEADER_BYTES = 8
+SnapshotCodec.RECORD_BYTES = 10
+SnapshotCodec.MAX_RECORDS = 80
+SnapshotCodec.MAX_BYTES = 900
+SnapshotCodec.MAX_CHUNKS = 16
+SnapshotCodec.SCALE = 8
+SnapshotCodec.MAX_COORD = 32767 / 8 -- 4095.875
 SnapshotCodec.ACTIONS = table.freeze({ "idle", "walk", "work", "carry", "fight", "flee", "celebrate", "dead" })
-SnapshotCodec.JOBS = table.freeze({ "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" })
-SnapshotCodec.KINGDOMS = table.freeze({ "crimson", "azure", "emerald", "gold" })
 SnapshotCodec.CARRYING = table.freeze({ "food", "wood", "stone", "gold" })
 
 local TWO_PI = math.pi * 2
-local U32_MAX = 4294967295
+local ACTION_CODE: { [string]: number } = {}
+for i, name in SnapshotCodec.ACTIONS do
+	ACTION_CODE[name] = i - 1
+end
+local CARRY_CODE: { [string]: number } = {}
+for i, name in SnapshotCodec.CARRYING do
+	CARRY_CODE[name] = i
+end
 
-local function index(list: { string }, value: string?, what: string, allowNone: boolean): number
-	if value == nil then
-		if allowNone then
-			return 0
+local function finite(n: any): boolean
+	return type(n) == "number" and n == n and n ~= math.huge and n ~= -math.huge
+end
+
+local function coordinate(value: number, field: string, id: number): number
+	assert(finite(value), `SnapshotCodec: entity {id} {field} is not a finite number`)
+	assert(
+		math.abs(value) <= SnapshotCodec.MAX_COORD,
+		`SnapshotCodec: entity {id} {field} = {value} is outside ±{SnapshotCodec.MAX_COORD} studs`
+	)
+	return math.round(value * SnapshotCodec.SCALE)
+end
+
+function SnapshotCodec.quantize(value: number): number
+	return math.round(value * SnapshotCodec.SCALE) / SnapshotCodec.SCALE
+end
+
+-- seq a is newer than seq b when it is ahead by less than half the u16 range.
+function SnapshotCodec.newer(a: number, b: number): boolean
+	local diff = (a - b) % 65536
+	return diff ~= 0 and diff < 32768
+end
+
+function SnapshotCodec.encode(
+	records: { Record },
+	seq: number,
+	serverTime: number,
+	chunkIndex: number?,
+	chunkCount: number?
+): buffer
+	local n = #records
+	assert(n <= SnapshotCodec.MAX_RECORDS, `SnapshotCodec.encode: {n} records > {SnapshotCodec.MAX_RECORDS}`)
+	assert(finite(serverTime) and serverTime >= 0, "SnapshotCodec.encode: serverTime must be finite and >= 0")
+	assert(finite(seq), "SnapshotCodec.encode: seq must be a number")
+	local index, count = chunkIndex or 0, chunkCount or 1
+	assert(index >= 0 and index < count and count >= 1 and count <= 16, "SnapshotCodec.encode: bad chunk")
+	local size = SnapshotCodec.HEADER_BYTES + n * SnapshotCodec.RECORD_BYTES
+	assert(size <= SnapshotCodec.MAX_BYTES, `SnapshotCodec.encode: {size} B > {SnapshotCodec.MAX_BYTES} B`)
+	local buf = buffer.create(size)
+	buffer.writef32(buf, 0, serverTime)
+	buffer.writeu16(buf, 4, seq % 65536)
+	buffer.writeu8(buf, 6, bit32.bor(bit32.lshift(index, 4), count % 16))
+	buffer.writeu8(buf, 7, n)
+	local offset = SnapshotCodec.HEADER_BYTES
+	for _, r in records do
+		local id = r.id
+		assert(
+			type(id) == "number" and id >= 1 and id <= 65535 and id % 1 == 0,
+			`SnapshotCodec: id {tostring(id)} outside 1..65535`
+		)
+		local action = ACTION_CODE[r.action]
+		assert(action ~= nil, `SnapshotCodec: entity {id} has unknown action '{tostring(r.action)}'`)
+		local carry = 0
+		if r.carrying ~= nil then
+			carry = CARRY_CODE[r.carrying] :: number
+			assert(carry ~= nil, `SnapshotCodec: entity {id} carries unknown resource '{tostring(r.carrying)}'`)
 		end
-		error(`SnapshotCodec: {what} is required`, 3)
-	end
-	local i = table.find(list, value)
-	if i == nil then
-		error(`SnapshotCodec: unknown {what} '{tostring(value)}'`, 3)
-	end
-	return i
-end
-
-local function finite(v: any): boolean
-	return type(v) == "number" and v == v and math.abs(v) ~= math.huge
-end
-
-local function writeEntity(buf: buffer, offset: number, e: Entity)
-	if type(e.id) ~= "number" or e.id < 0 or e.id > U32_MAX or math.floor(e.id) ~= e.id then
-		error(`SnapshotCodec: id must be a u32 integer (got {tostring(e.id)})`, 3)
-	end
-	if not (finite(e.x) and finite(e.y) and finite(e.z) and finite(e.yaw)) then
-		error(`SnapshotCodec: entity {e.id} has a non-finite position or yaw`, 3)
-	end
-	buffer.writeu32(buf, offset, e.id)
-	buffer.writef32(buf, offset + 4, e.x)
-	buffer.writef32(buf, offset + 8, e.y)
-	buffer.writef32(buf, offset + 12, e.z)
-	local turn = (e.yaw % TWO_PI) / TWO_PI
-	buffer.writeu8(buf, offset + 16, math.floor(turn * 256 + 0.5) % 256)
-	buffer.writeu8(buf, offset + 17, index(SnapshotCodec.ACTIONS, e.action, "action", false))
-	buffer.writeu8(buf, offset + 18, index(SnapshotCodec.JOBS, e.job, "job", false))
-	buffer.writeu8(buf, offset + 19, index(SnapshotCodec.KINGDOMS, e.kingdom, "kingdom", true))
-	buffer.writeu8(buf, offset + 20, index(SnapshotCodec.CARRYING, e.carrying, "carrying", true))
-	local hp = if finite(e.hpPct) then e.hpPct else 0
-	buffer.writeu8(buf, offset + 21, math.clamp(math.floor(hp + 0.5), 0, 100))
-end
-
-function SnapshotCodec.encode(entities: { Entity }, seq: number, serverTime: number): buffer
-	local count = #entities
-	if count > 65535 then
-		error("SnapshotCodec: at most 65535 entities per buffer", 2)
-	end
-	if not finite(serverTime) then
-		error("SnapshotCodec: serverTime must be finite", 2)
-	end
-	local buf = buffer.create(SnapshotCodec.HEADER_BYTES + count * SnapshotCodec.ENTITY_BYTES)
-	buffer.writeu8(buf, 0, SnapshotCodec.VERSION)
-	buffer.writeu32(buf, 1, seq % (U32_MAX + 1))
-	buffer.writef64(buf, 5, serverTime)
-	buffer.writeu16(buf, 13, count)
-	for i, e in entities do
-		writeEntity(buf, SnapshotCodec.HEADER_BYTES + (i - 1) * SnapshotCodec.ENTITY_BYTES, e)
+		assert(finite(r.yaw), `SnapshotCodec: entity {id} yaw is not a finite number`)
+		buffer.writeu16(buf, offset, id)
+		buffer.writei16(buf, offset + 2, coordinate(r.x, "x", id))
+		buffer.writei16(buf, offset + 4, coordinate(r.y, "y", id))
+		buffer.writei16(buf, offset + 6, coordinate(r.z, "z", id))
+		buffer.writeu8(buf, offset + 8, math.round((r.yaw % TWO_PI) / TWO_PI * 256) % 256)
+		buffer.writeu8(buf, offset + 9, bit32.bor(action, bit32.lshift(carry, 3)))
+		offset += SnapshotCodec.RECORD_BYTES
 	end
 	return buf
 end
 
-function SnapshotCodec.encodeChunks(
-	entities: { Entity },
-	seq: number,
-	serverTime: number,
-	maxBytes: number?
-): { buffer }
-	local limit = maxBytes or SnapshotCodec.DEFAULT_MAX_BYTES
-	local perChunk = math.floor((limit - SnapshotCodec.HEADER_BYTES) / SnapshotCodec.ENTITY_BYTES)
-	if perChunk < 1 then
-		error("SnapshotCodec: maxBytes too small for one entity", 2)
+function SnapshotCodec.encodeChunks(records: { Record }, seq: number, serverTime: number): { buffer }
+	local total = #records
+	local count = math.max(1, math.ceil(total / SnapshotCodec.MAX_RECORDS))
+	assert(count <= SnapshotCodec.MAX_CHUNKS, `SnapshotCodec.encodeChunks: {total} entities need {count} chunks > 16`)
+	local out = {}
+	for index = 0, count - 1 do
+		local first = index * SnapshotCodec.MAX_RECORDS + 1
+		local last = math.min(total, first + SnapshotCodec.MAX_RECORDS - 1)
+		table.insert(out, SnapshotCodec.encode(table.move(records, first, last, 1, {}), seq, serverTime, index, count))
 	end
-	local chunks = {}
-	if #entities == 0 then
-		table.insert(chunks, SnapshotCodec.encode({}, seq, serverTime))
-		return chunks
-	end
-	for first = 1, #entities, perChunk do
-		local slice = table.move(entities, first, math.min(first + perChunk - 1, #entities), 1, {})
-		table.insert(chunks, SnapshotCodec.encode(slice, seq, serverTime))
-	end
-	return chunks
-end
-
-local function lookup(list: { string }, code: number): string?
-	if code == 0 then
-		return nil
-	end
-	return list[code]
+	return out
 end
 
 function SnapshotCodec.decode(buf: any): (Frame?, string?)
@@ -154,47 +165,50 @@ function SnapshotCodec.decode(buf: any): (Frame?, string?)
 	if len < SnapshotCodec.HEADER_BYTES then
 		return nil, "too short"
 	end
-	local version = buffer.readu8(buf, 0)
-	if version ~= SnapshotCodec.VERSION then
-		return nil, `unsupported version {version}`
+	local n = buffer.readu8(buf, 7)
+	if n > SnapshotCodec.MAX_RECORDS or len ~= SnapshotCodec.HEADER_BYTES + n * SnapshotCodec.RECORD_BYTES then
+		return nil, "length does not match the record count"
 	end
-	local count = buffer.readu16(buf, 13)
-	if len ~= SnapshotCodec.HEADER_BYTES + count * SnapshotCodec.ENTITY_BYTES then
-		return nil, "length does not match entity count"
+	local chunk = buffer.readu8(buf, 6)
+	local count = bit32.band(chunk, 15)
+	if count == 0 then
+		count = 16
 	end
-	local entities = table.create(count)
-	for i = 1, count do
-		local o = SnapshotCodec.HEADER_BYTES + (i - 1) * SnapshotCodec.ENTITY_BYTES
-		local action = lookup(SnapshotCodec.ACTIONS, buffer.readu8(buf, o + 17))
-		local job = lookup(SnapshotCodec.JOBS, buffer.readu8(buf, o + 18))
-		if action == nil or job == nil then
-			return nil, `entity {i}: unknown action or job code`
+	local index = bit32.rshift(chunk, 4)
+	if index >= count then
+		return nil, "bad chunk index"
+	end
+	local records = table.create(n)
+	local offset = SnapshotCodec.HEADER_BYTES
+	for i = 1, n do
+		local state = buffer.readu8(buf, offset + 9)
+		local carry = bit32.rshift(state, 3)
+		if carry > #SnapshotCodec.CARRYING or bit32.rshift(state, 6) ~= 0 then
+			return nil, `record {i}: bad state byte`
 		end
-		local kingdomCode = buffer.readu8(buf, o + 19)
-		local carryCode = buffer.readu8(buf, o + 20)
-		if kingdomCode > #SnapshotCodec.KINGDOMS or carryCode > #SnapshotCodec.CARRYING then
-			return nil, `entity {i}: unknown kingdom or carrying code`
+		local id = buffer.readu16(buf, offset)
+		if id == 0 then
+			return nil, `record {i}: id 0`
 		end
-		entities[i] = {
-			id = buffer.readu32(buf, o),
-			x = buffer.readf32(buf, o + 4),
-			y = buffer.readf32(buf, o + 8),
-			z = buffer.readf32(buf, o + 12),
-			yaw = buffer.readu8(buf, o + 16) / 256 * TWO_PI,
-			action = action,
-			job = job,
-			kingdom = lookup(SnapshotCodec.KINGDOMS, kingdomCode),
-			carrying = lookup(SnapshotCodec.CARRYING, carryCode),
-			hpPct = math.min(100, buffer.readu8(buf, o + 21)),
+		records[i] = {
+			id = id,
+			x = buffer.readi16(buf, offset + 2) / SnapshotCodec.SCALE,
+			y = buffer.readi16(buf, offset + 4) / SnapshotCodec.SCALE,
+			z = buffer.readi16(buf, offset + 6) / SnapshotCodec.SCALE,
+			yaw = buffer.readu8(buf, offset + 8) / 256 * TWO_PI,
+			action = SnapshotCodec.ACTIONS[bit32.band(state, 7) + 1],
+			carrying = if carry > 0 then SnapshotCodec.CARRYING[carry] else nil,
 		}
+		offset += SnapshotCodec.RECORD_BYTES
 	end
 	return {
-		version = version,
-		seq = buffer.readu32(buf, 1),
-		serverTime = buffer.readf64(buf, 5),
-		entities = entities,
+		serverTime = buffer.readf32(buf, 0),
+		seq = buffer.readu16(buf, 4),
+		chunkIndex = index,
+		chunkCount = count,
+		records = records,
 	},
 		nil
 end
 
-return SnapshotCodec
+return table.freeze(SnapshotCodec)
