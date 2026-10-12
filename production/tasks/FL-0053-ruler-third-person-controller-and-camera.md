@@ -16,6 +16,7 @@ evidence:
   - "specs: InputMode 6 (arbitration: one change per set, nested set ordering, accepts() settle window, leave-build keys only in build mode), Ruler 11, RulerCamera 14 (camera mode state, build-mode overview, shake rules)"
   - "mutation check: 18/18 FL-0053 rows CAUGHT (rows listed in the PR; folded into mutations.py after #20-#22 merge)"
   - "unverified: feel on PC and phone emulator, AlignOrientation turning, CAS touch button layout (Studio, user G6)"
+  - check.sh OVERALL PASS @9e4fb27 (with FL-0090); FL-0053 mutation rows 18/18 CAUGHT after the rework
 ---
 
 # Ruler third-person controller, camera and input modes
@@ -43,3 +44,4 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-12 forge-04: READY → BUILDING. Started on forge/04-experience-fl0053 from main (PROMPT §0 queue item 2).
 - 2026-10-12 forge-04: BUILDING → TESTING. Controllers and specs committed; headless gates on 5f58718.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0053 (independent of #20-#22). Keys and Studio checklist in the PR; handoff forge-04-to-forge-01-03-05-ruler-camera-input.
+- 2026-10-12 forge-04: REVIEW → REVIEW. D-030: amended by FL-0090 in the same PR (#29); walk mode = follow.
