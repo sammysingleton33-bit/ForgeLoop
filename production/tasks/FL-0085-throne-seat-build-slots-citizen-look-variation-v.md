@@ -3,7 +3,7 @@ id: FL-0085
 title: Throne seat, build slots, citizen look variation, visible building levels (G13)
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,7 @@ updated: 2026-10-12
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 6
-evidence: []
+evidence: ["PR #37 (build slots): check.sh OVERALL PASS, game-001 91 specs, BuildSlots.spec 8 specs"]
 ---
 
 # Throne seat, build slots, citizen look variation, visible building levels (G13)
@@ -43,3 +43,4 @@ A preview sheet per level is reviewed under D-019.
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-12 forge-02: BUILDING. Part 1 (build slots: Layout.buildSlots, slotSizes, BuildSlot markers, plot towns) in PR #37, check.sh OVERALL PASS. Part 2 (throne seat, citizen looks, visible levels, thatch pennants) in progress in the Kit.
