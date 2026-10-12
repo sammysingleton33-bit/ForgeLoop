@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_smithy_01": {
+      "geometry_hash": "fdc9aee6816a51e2",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_smithy_02": {
+      "geometry_hash": "83c4f7ee5b59ce02",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_smithy_03": {
+      "geometry_hash": "21e9a159f73a5115",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_smithy_04": {
+      "geometry_hash": "b06204c350b9ea72",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_smithy_05": {
+      "geometry_hash": "6e566be34f3d343a",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_smithy_06": {
+      "geometry_hash": "6c5239ab4e2a6031",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "building_smithy",
+  "generator_version": 1,
+  "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 3,
+    "palette": 4,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 3,
+    "triangle_cost": 3,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

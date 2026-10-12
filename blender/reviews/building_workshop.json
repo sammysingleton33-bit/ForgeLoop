@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_workshop_01": {
+      "geometry_hash": "fb85de305dd76c20",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_workshop_02": {
+      "geometry_hash": "ff3ab522b48db16a",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_workshop_03": {
+      "geometry_hash": "938e45a1fa5def40",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_workshop_04": {
+      "geometry_hash": "d1782ad83d6e6542",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_workshop_05": {
+      "geometry_hash": "1a7b2c4eb969b96e",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_workshop_06": {
+      "geometry_hash": "c713c6154e41b716",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "building_workshop",
+  "generator_version": 1,
+  "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 3,
+    "palette": 3,
+    "proportions": 3,
+    "readability": 2,
+    "silhouette": 3,
+    "triangle_cost": 3,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

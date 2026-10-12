@@ -1,0 +1,68 @@
+{
+  "assets": {
+    "char_soldier_01": {
+      "geometry_hash": "fcf2b7626172f069",
+      "verdict": "PASS"
+    },
+    "char_soldier_02": {
+      "geometry_hash": "67817a51e2cdd701",
+      "verdict": "PASS"
+    },
+    "char_soldier_03": {
+      "geometry_hash": "9f2b0fbba6185326",
+      "verdict": "PASS"
+    },
+    "char_soldier_04": {
+      "geometry_hash": "e93f93cbddcbf0d2",
+      "verdict": "PASS"
+    },
+    "char_soldier_05": {
+      "geometry_hash": "f350991516674e96",
+      "verdict": "PASS"
+    },
+    "char_soldier_06": {
+      "geometry_hash": "8f736bb54a888891",
+      "verdict": "PASS"
+    },
+    "char_soldier_07": {
+      "geometry_hash": "c9553afe3d1a7597",
+      "verdict": "PASS"
+    },
+    "char_soldier_08": {
+      "geometry_hash": "6f51e3db76665a3f",
+      "verdict": "PASS"
+    },
+    "char_soldier_09": {
+      "geometry_hash": "5222b497b4c131c1",
+      "verdict": "PASS"
+    },
+    "char_soldier_10": {
+      "geometry_hash": "52e1729f0c8cbaf9",
+      "verdict": "PASS"
+    },
+    "char_soldier_11": {
+      "geometry_hash": "b11d58f21764ca50",
+      "verdict": "PASS"
+    },
+    "char_soldier_12": {
+      "geometry_hash": "717413c4e728b7af",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "char_soldier",
+  "generator_version": 1,
+  "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

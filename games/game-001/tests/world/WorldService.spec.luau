@@ -148,6 +148,45 @@ describe("WorldPlan (FL-0055)", function()
 		end
 	end)
 
+	it(
+		"puts every gameplay point (nav, nodes, work spots, objective, zones) on flat ground at its Layout height",
+		function()
+			local bad = {}
+			local function check(label: string, p: Vector3)
+				local g = WorldPlan.groundHeight(Layout, p.X, p.Z)
+				if math.abs(g - p.Y) > 0.5 then
+					table.insert(bad, `{label} at ({math.floor(p.X)}, {math.floor(p.Z)}): ground {g}, layout y {p.Y}`)
+				end
+			end
+			local decks = {}
+			for _, br in Layout.features.river.bridges do
+				decks[br.navNodes[2]] = br.deckY
+			end
+			for i, n in Layout.nav.nodes do
+				if decks[i] then
+					expect(n.Y).toBeNear(decks[i], 1e-3) -- on the bridge deck, above the river
+				else
+					check(`nav {i}`, n)
+				end
+			end
+			for _, r in Layout.resourceNodes do
+				check(r.id, r.cframe.Position)
+				for j, s in r.workSpots do
+					check(`{r.id} spot {j}`, s)
+				end
+			end
+			for _, o in Layout.objectives do
+				check(o.id, o.cframe.Position)
+			end
+			for _, k in { "crimson", "azure", "emerald", "gold" } do
+				for _, z in Layout.plots[k].buildZones do
+					check(z.id, z.center)
+				end
+			end
+			expect(table.concat(bad, "; ")).toBe("")
+		end
+	)
+
 	it("dresses only the requested kingdoms", function()
 		local none, one = 0, 0
 		for _, p in WorldPlan.props(Layout, {}) do
