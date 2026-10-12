@@ -89,8 +89,34 @@ local function fakeWorld(options)
 	function forge:GetChildren()
 		return { gameplay, economy }
 	end
+	-- options.gameAreas: { [areaName] = hasRemotes } builds ReplicatedStorage.Game (D-022)
+	local gameRoot = nil
+	if options.gameAreas then
+		gameRoot = {}
+		local areas = {}
+		for areaName, hasRemotes in options.gameAreas do
+			local area = { Name = areaName }
+			function area:IsA(className)
+				return className == "Folder"
+			end
+			function area:FindFirstChild(name)
+				return if hasRemotes and name == "Remotes"
+					then { Name = "Remotes:" .. areaName, IsA = remotesModule.IsA }
+					else nil
+			end
+			table.insert(areas, area)
+		end
+		function gameRoot:GetChildren()
+			return areas
+		end
+	end
 	function services.ReplicatedStorage:FindFirstChild(name)
-		return if name == "Forge" then forge else nil
+		if name == "Forge" then
+			return forge
+		elseif name == "Game" then
+			return gameRoot
+		end
+		return nil
 	end
 
 	local game = setmetatable({}, {
@@ -222,6 +248,25 @@ describe("Env.live() against a fake game", function()
 		local env = loader:requireFile(T.root .. ENV_FILE).live()
 		expect(env.sharedModules("Remotes")).toEqual({ Gameplay = { required = "Remotes" } })
 		expect(env.sharedModules("Nothing")).toEqual({})
+	end)
+
+	it("sharedModules spans ReplicatedStorage.Forge and ReplicatedStorage.Game (D-022)", function()
+		local loader = fakeWorld({ isServer = true, jobId = "j", gameAreas = { Kingdom = true, Sim = false } })
+		local env = loader:requireFile(T.root .. ENV_FILE).live()
+		expect(env.sharedModules("Remotes")).toEqual({
+			Gameplay = { required = "Remotes" },
+			Kingdom = { required = "Remotes:Kingdom" },
+		})
+	end)
+
+	it("sharedModules rejects an area that has the module in both trees", function()
+		local loader = fakeWorld({ isServer = true, jobId = "j", gameAreas = { Gameplay = true } })
+		local env = loader:requireFile(T.root .. ENV_FILE).live()
+		expect(function()
+			env.sharedModules("Remotes")
+		end).toThrow(
+			"area 'Gameplay' has a Remotes module in both ReplicatedStorage.Forge and ReplicatedStorage.Game"
+		)
 	end)
 
 	it("wait/spawn/random delegate to task and Random", function()

@@ -1,25 +1,33 @@
 --[[
 	check_place — verifies the Rojo-built place (headless; Lune + @lune/roblox).
 
-		lune run roblox/scripts/check_place.luau [place.rbxl] [--require-stamp]
+		lune run roblox/scripts/check_place.luau [place.rbxl] [--require-stamp] [--project <file>]
+
+	--project: the Rojo project the place was built from (default roblox/default.project.json); game
+	projects (games/game-001/default.project.json, D-022) add the Game trees.
 
 	Checks
 	  1. Expected tree: ReplicatedStorage.Forge with Contracts (Env, Loader, GameEvents, Types,
 	     BuildStamp), Core.Signal, Config (Folder) with Game, Assets (Folder); ServerScriptService.Forge.Main
 	     (Script) and .Services (Folder); StarterPlayer.StarterPlayerScripts.Forge.Main (LocalScript) and
-	     .Controllers (Folder). (Workspace / games/sandbox/map comes with FL-0044, interfaces §1.)
+	     .Controllers (Folder); plus every "$path" mount of the project (game projects: ReplicatedStorage.Game,
+	     ServerScriptService.Game, StarterPlayerScripts.Game) and their Services/Controllers folders
+	     when those directories exist.
 	  2. Every Script/LocalScript/ModuleScript has non-empty source.
 	  3. Every string require in every script resolves to a ModuleScript in this place (relative
 	     from the script, or "@game/..."), with no ambiguous names on the way. This is the server's
 	     view of the place; which side may see what is rule 4.
-	  4. The D-017 policy (RequirePath.checkPolicy, also applied by the Lune module loader):
-	     relative paths stay inside one source tree (Rojo "$path" mount); "@game/..." is used only
-	     to reach another tree, and only ReplicatedStorage/Forge/... (shared, Config, Assets) — never
-	     ServerScriptService, ServerStorage or StarterPlayer. Requires sit at the top level of the
+	  4. The D-017 policy as extended by D-022 (RequirePath.checkPolicy, also applied by the Lune
+	     module loader): relative paths stay inside one source tree (Rojo "$path" mount); "@game/..."
+	     is used only to reach another tree, and only ReplicatedStorage/Forge/... (shared, Config,
+	     Assets) or ReplicatedStorage/Game/... (game shared code) — never ServerScriptService,
+	     ServerStorage or StarterPlayer; framework (Forge) code never reaches Game code. Requires sit at the top level of the
 	     module (block depth 0 from a tokenizer, so StyLua-wrapped lines are fine); non-literal
 	     requires (require(instance), aliasing `require`) only inside Contracts/.
 	  5. BuildInfo: if roblox/src/shared/BuildInfo.json exists, ReplicatedStorage.Forge.BuildInfo must
 	     be a ModuleScript carrying the same sha (with --require-stamp the stamp is mandatory).
+	  6. Area names: no area folder in ReplicatedStorage.Game has a Remotes module when the same-named
+	     area in ReplicatedStorage.Forge has one (env.sharedModules would collide at run time).
 	Exit code 1 on any problem.
 ]]
 
@@ -41,12 +49,20 @@ local function scriptDir(): string
 end
 
 local ROOT = Path.normalize(scriptDir() .. "/../..")
-local placeArg, requireStamp = nil, false
-for _, arg in process.args do
-	if arg == "--require-stamp" then
-		requireStamp = true
-	else
-		placeArg = arg
+local placeArg, requireStamp, projectArg = nil, false, nil
+do
+	local i = 1
+	while i <= #process.args do
+		local arg = process.args[i]
+		if arg == "--require-stamp" then
+			requireStamp = true
+		elseif arg == "--project" then
+			projectArg = process.args[i + 1]
+			i += 1
+		else
+			placeArg = arg
+		end
+		i += 1
 	end
 end
 local placeFile = if placeArg then Path.join(process.cwd, placeArg) else ROOT .. "/roblox/build/sandbox.rbxl"
@@ -62,7 +78,12 @@ if not fs.isFile(placeFile) then
 end
 
 local game = roblox.deserializePlace(fs.readFile(placeFile))
-local project = Project.load(ROOT .. "/roblox/default.project.json")
+local projectFile = if projectArg then Path.join(process.cwd, projectArg) else ROOT .. "/roblox/default.project.json"
+if not fs.isFile(projectFile) then
+	print(`place check: FAIL — project file {projectFile} not found`)
+	process.exit(1)
+end
+local project = Project.load(projectFile)
 
 local function pathOf(instance): { string }
 	local names = {}
@@ -118,6 +139,28 @@ local EXPECTED = {
 	{ "StarterPlayer.StarterPlayerScripts.Forge.Main", "LocalScript" },
 	{ "StarterPlayer.StarterPlayerScripts.Forge.Controllers", "Folder" },
 }
+-- Every "$path" mount of the project must be in the place, plus the Services/Controllers folders of
+-- the server/client mounts when they exist on disk (an empty folder still builds into a Folder).
+do
+	local seen = {}
+	for _, expected in EXPECTED do
+		seen[expected[1]] = true
+	end
+	for _, mount in project.mounts do
+		local path = table.concat(mount.dm, ".")
+		if not seen[path] then
+			seen[path] = true
+			table.insert(EXPECTED, { path, if fs.isDir(mount.fs) then "Folder" else "ModuleScript" })
+		end
+		for _, sub in { "Services", "Controllers" } do
+			local subPath = path .. "." .. sub
+			if fs.isDir(mount.fs .. "/" .. sub) and not seen[subPath] then
+				seen[subPath] = true
+				table.insert(EXPECTED, { subPath, "Folder" })
+			end
+		end
+	end
+end
 for _, expected in EXPECTED do
 	local instance, err = lookup(string.split(expected[1], "."))
 	if not instance then
@@ -199,6 +242,29 @@ for _, instance in game:GetDescendants() do
 	end
 end
 
+-- ------------------------------------------------------------------ 6. area names across Forge and Game
+do
+	local forge = lookup({ "ReplicatedStorage", "Forge" })
+	local gameShared = lookup({ "ReplicatedStorage", "Game" })
+	if forge and gameShared then
+		for _, area in gameShared:GetChildren() do
+			local twin = forge:FindFirstChild(area.Name)
+			if
+				area:IsA("Folder")
+				and twin
+				and twin:IsA("Folder")
+				and area:FindFirstChild("Remotes")
+				and twin:FindFirstChild("Remotes")
+			then
+				problem(
+					`areas: ReplicatedStorage.Forge.{area.Name} and ReplicatedStorage.Game.{area.Name} both declare `
+						.. "Remotes; env.sharedModules keys areas by name, so one would shadow the other (rename one area)"
+				)
+			end
+		end
+	end
+end
+
 -- ------------------------------------------------------------------ 5. BuildInfo
 local stampFile = ROOT .. "/roblox/src/shared/BuildInfo.json"
 local buildInfo = lookup({ "ReplicatedStorage", "Forge", "BuildInfo" })
@@ -230,6 +296,6 @@ if #problems > 0 then
 	process.exit(1)
 end
 print(
-	`place check: PASS — {relativePlace}: {#EXPECTED} expected instances, {scripts} scripts, `
+	`place check: PASS — {relativePlace} ({project.name}): {#EXPECTED} expected instances, {scripts} scripts, `
 		.. `{requiresChecked} string requires resolved, {dynamicRequires} dynamic (Contracts only), BuildInfo {stampNote}`
 )

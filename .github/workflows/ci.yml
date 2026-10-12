@@ -8,8 +8,9 @@
 #            draft PRs (D-016: drafts are never merged; marking a PR ready for review runs it) and,
 #            via its first step, when nothing Roblox-related changed (e.g. D-014/D-018 bookkeeping
 #            pushes to main), so metered minutes (D-015) go to code. On pushes to main that run it,
-#            the place is stamped (BuildInfo) and uploaded as artifact forgeloop-main-<short sha>,
-#            which contains forgeloop-main-<short sha>.rbxl.
+#            the places are stamped (BuildInfo) and uploaded as artifacts forgeloop-main-<short sha>
+#            (framework sandbox, forgeloop-main-<short sha>.rbxl) and forgeloop-game001-<short sha>
+#            (AI Kingdoms, forgeloop-game001-<short sha>.rbxl — the place for Studio playtests).
 name: CI
 
 on:
@@ -119,6 +120,7 @@ jobs:
         run: |
           short="${GITHUB_SHA::7}"
           cp roblox/build/sandbox.rbxl "roblox/build/forgeloop-main-$short.rbxl"
+          cp roblox/build/game-001.rbxl "roblox/build/forgeloop-game001-$short.rbxl"
           echo "short=$short" >> "$GITHUB_OUTPUT"
       - name: Upload integrated place
         if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -126,5 +128,13 @@ jobs:
         with:
           name: forgeloop-main-${{ steps.place.outputs.short }}
           path: roblox/build/forgeloop-main-${{ steps.place.outputs.short }}.rbxl
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload game-001 place (AI Kingdoms)
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v6
+        with:
+          name: forgeloop-game001-${{ steps.place.outputs.short }}
+          path: roblox/build/forgeloop-game001-${{ steps.place.outputs.short }}.rbxl
           if-no-files-found: error
           retention-days: 30

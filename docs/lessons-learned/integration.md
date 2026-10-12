@@ -60,6 +60,26 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   return 403 and GitHub release downloads are blocked; release asset names can still be checked in
   each tag's release workflow via `raw.githubusercontent.com`, and tags via `git ls-remote`. ·
   `.github/workflows/ci.yml` asset notes · `observed-once`
+- 2026-10-12 · Rojo 7.7.1 accepts a `"Position"` property in a `.model.json` and builds without a
+  warning, but the part lands at the origin. Write `"CFrame": {"CFrame": {"position": [...],
+  "orientation": [[row1], [row2], [row3]]}}` (row-major). `"Tags"` and `"attributes"` round-trip. ·
+  `rojo build` + `@lune/roblox` read-back (FORGE-05, closed PR #2) · `observed-once`
+- 2026-10-12 · Rojo 7.7.1 fails the whole build when a project `$path` does not exist ("could not be
+  turned into a Roblox Instance"), so a game project can only mount folders that already exist in
+  git: keep an empty-folder placeholder (`.gitkeep`) or add the mount in the PR that creates the
+  folder. · scratch project with a missing `$path` · `observed-once`
+- 2026-10-12 · Lune 0.11 `fs.isFile(path)` raises "Not a directory (os error 20)" instead of
+  returning false when a component of `path` is a file (e.g. `.gitkeep/Remotes.luau`). Check
+  `fs.isDir(parent)` first. · `games/game-001/tests/integration/Boot.spec.luau` first run · `observed-once`
+- 2026-10-12 · Never restore temporary test edits with `git checkout -- .` in a worktree that holds
+  uncommitted work: it reverts every tracked file (FORGE-05 lost a block of FL-0046 edits this way and
+  re-applied them from the session's edit scripts). Commit WIP first, then delete only the temporary
+  files and confirm `git status` is clean. · FL-0046 negative-test run · `observed-once`
+- 2026-10-12 · GitHub release downloads worked from a cloud session through the agent proxy
+  (`roblox/scripts/ci_install_tools.sh` fetched all four pinned tools in seconds) where an earlier
+  session found them blocked; Actions artifact downloads (`*.blob.core.windows.net`) were refused.
+  Try release binaries before compiling with cargo; read artifact facts from the CI log. · FORGE-05
+  session · `observed-once`
 
 ## Mock change log (FL-0028)
 - 2026-10-12 FL-0003 (FORGE-00 skeleton): first versions of MockEnv, MockDataStoreService,
