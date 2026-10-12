@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "siege_ballista_blue_01": {
+      "geometry_hash": "9fc5adc8a0e84377",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_ballista_green_01": {
+      "geometry_hash": "74bf41f8bf038f78",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_ballista_red_01": {
+      "geometry_hash": "90f33729b0f149dd",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_ballista_yellow_01": {
+      "geometry_hash": "11dfee79fef75a8d",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "siege_ballista",
+  "generator_version": 1,
+  "notes": "blue_01 and green_01 are the same ballista behind the same plank mantlet and are indistinguishable except by colour at 40 studs; red_01 and yellow_01 carry no emblem at all (flag only), and yellow_01 uses purple tips and onion-like gold caps. Tri cost (1954-2686) is comfortable.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 3,
+    "triangle_cost": 5,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "siege_catapult_blue_01": {
+      "geometry_hash": "0f326ba7726711f6",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_catapult_green_01": {
+      "geometry_hash": "286ea587ec8a4538",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_catapult_red_01": {
+      "geometry_hash": "7aedccd151022c21",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_catapult_yellow_01": {
+      "geometry_hash": "bdb13b6969ba888d",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "siege_catapult",
+  "generator_version": 1,
+  "notes": "Pennants read well at 40 studs, but red_01 shield shows a flame not a crown and yellow_01 shield shows a purple ring/crescent that does not read as a sun and is hidden behind the A-frame; red/green share one chassis and blue/yellow share the counterweight A-frame. green_01 at 3956 tris is at the 4000 cap.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "siege_ram_blue_01": {
+      "geometry_hash": "69ebdb0b355c86d3",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_ram_green_01": {
+      "geometry_hash": "8e0b9b11d54867bc",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_ram_red_01": {
+      "geometry_hash": "77147afc5c140ef2",
+      "verdict": "NEEDS-WORK"
+    },
+    "siege_ram_yellow_01": {
+      "geometry_hash": "240cc57e2bf428ea",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "siege_ram",
+  "generator_version": 1,
+  "notes": "red_01, green_01 and yellow_01 are the same gable shed with a different roof; blue_01 drops the roof for an open A-frame that reads as a catapult. red_01 shield is a flame not a crown, yellow_01 shield sun reads as a purple ring/crescent, and yellow_01 makes the whole roof pale gold/cream stripes (hay-like) with purple trim, so kingdom colour is the dominant surface.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 2,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

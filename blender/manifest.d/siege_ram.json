@@ -1,0 +1,259 @@
+{
+  "assets": [
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 9.4,
+        "y": 12.057,
+        "z": 17.32
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_blue_01.fbx",
+        "validation": "exports/siege_ram_blue_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "701cf320fbd38c15",
+      "id": "siege_ram_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "roof": "tortoise"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ram.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7001,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.903
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.903
+        ],
+        "ram_head": [
+          -0.0,
+          4.514,
+          -8.66
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2744,
+        "lod1": 960
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.2,
+        "y": 12.835,
+        "z": 17.036
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_green_01.fbx",
+        "validation": "exports/siege_ram_green_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "4ee334b86064b7aa",
+      "id": "siege_ram_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "roof": "planks"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ram.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7002,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.244
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.244
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -8.518
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3632,
+        "lod1": 1270
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.2,
+        "y": 14.667,
+        "z": 16.393
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_red_01.fbx",
+        "validation": "exports/siege_ram_red_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "da592177b34fbfff",
+      "id": "siege_ram_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "roof": "hides"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ram.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7000,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.175
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.175
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -8.197
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3484,
+        "lod1": 1218
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.2,
+        "y": 9.628,
+        "z": 16.416
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_yellow_01.fbx",
+        "validation": "exports/siege_ram_yellow_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "0f64150c92906ee6",
+      "id": "siege_ram_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "roof": "cloak"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ram.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7003,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.021
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.021
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -8.208
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3396,
+        "lod1": 1188
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "siege_ram",
+  "variation": {
+    "closest_pair": [
+      "siege_ram_green_01",
+      "siege_ram_red_01"
+    ],
+    "mean_pair_diff": 0.3804,
+    "min_pair_diff": 0.2665,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

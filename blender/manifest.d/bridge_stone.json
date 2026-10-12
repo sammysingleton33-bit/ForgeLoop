@@ -1,0 +1,223 @@
+{
+  "assets": [
+    {
+      "budget_class": "bridge",
+      "category": "bridge",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 40.3,
+        "y": 11.903,
+        "z": 16.831
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bridge_stone_1arch_01.fbx",
+        "validation": "exports/bridge_stone_1arch_01.validation.json"
+      },
+      "generator": "bridge_stone",
+      "generator_version": 1,
+      "geometry_hash": "c2fa1337d3b407df",
+      "id": "bridge_stone_1arch_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "arches": 1,
+        "length": 40.0,
+        "palette": 0
+      },
+      "preview": "previews/bridge_stone.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "1/2/3-arch progression reads clearly at 78 studs. 1arch_01 is a very steep hump with heavy flat spandrels, 3arch_01 stone is cold slate-blue (could be misread as blue-kingdom coded), and the large flat parapet planes are sparse for 3020-3828 tris.",
+        "review_file": "reviews/bridge_stone.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "end_a": [
+          20.0,
+          0.0,
+          0.795
+        ],
+        "end_b": [
+          -20.0,
+          0.0,
+          0.795
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3020,
+        "lod1": 1056
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bridge",
+      "category": "bridge",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 48.3,
+        "y": 11.233,
+        "z": 19.6
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bridge_stone_2arch_01.fbx",
+        "validation": "exports/bridge_stone_2arch_01.validation.json"
+      },
+      "generator": "bridge_stone",
+      "generator_version": 1,
+      "geometry_hash": "62f977b67d351888",
+      "id": "bridge_stone_2arch_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "arches": 2,
+        "length": 48.0,
+        "palette": 1
+      },
+      "preview": "previews/bridge_stone.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "1/2/3-arch progression reads clearly at 78 studs. 1arch_01 is a very steep hump with heavy flat spandrels, 3arch_01 stone is cold slate-blue (could be misread as blue-kingdom coded), and the large flat parapet planes are sparse for 3020-3828 tris.",
+        "review_file": "reviews/bridge_stone.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "end_a": [
+          24.0,
+          0.0,
+          0.0
+        ],
+        "end_b": [
+          -24.0,
+          0.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3636,
+        "lod1": 1272
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bridge",
+      "category": "bridge",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 56.3,
+        "y": 11.603,
+        "z": 19.6
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bridge_stone_3arch_01.fbx",
+        "validation": "exports/bridge_stone_3arch_01.validation.json"
+      },
+      "generator": "bridge_stone",
+      "generator_version": 1,
+      "geometry_hash": "f06c6713f241f2ed",
+      "id": "bridge_stone_3arch_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "arches": 3,
+        "length": 56.0,
+        "palette": 2
+      },
+      "preview": "previews/bridge_stone.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "1/2/3-arch progression reads clearly at 78 studs. 1arch_01 is a very steep hump with heavy flat spandrels, 3arch_01 stone is cold slate-blue (could be misread as blue-kingdom coded), and the large flat parapet planes are sparse for 3020-3828 tris.",
+        "review_file": "reviews/bridge_stone.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "end_a": [
+          28.0,
+          0.0,
+          0.0
+        ],
+        "end_b": [
+          -28.0,
+          0.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3828,
+        "lod1": 1338
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 3
+  },
+  "generator": "bridge_stone",
+  "variation": {
+    "closest_pair": [
+      "bridge_stone_2arch_01",
+      "bridge_stone_3arch_01"
+    ],
+    "mean_pair_diff": 0.3372,
+    "min_pair_diff": 0.2625,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

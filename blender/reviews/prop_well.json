@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "prop_well_01": {
+      "geometry_hash": "f48be06986b288e3",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_well_02": {
+      "geometry_hash": "76692ac45bce3c96",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_well_03": {
+      "geometry_hash": "3c743ce9b88baa59",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_well_04": {
+      "geometry_hash": "dfb2a7c8d17065a3",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "prop_well",
+  "generator_version": 1,
+  "notes": "well_02 (blue) and well_03 (green) are the same tan tarp-roof well differing only by a tiny pennant and a trough; well_04 (gold) is an orange onion-style dome with a purple band (orange not gold, off-palette purple) and well_01 is a fully kingdom-red roof. The tan roofs read as draped cloth, not thatch, and 1642-1778 tris is near the 1800 cap for a simple well.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 2,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 3,
+    "triangle_cost": 3,
+    "variation": 2
+  },
+  "verdict": "NEEDS-WORK"
+}

@@ -1,0 +1,259 @@
+{
+  "assets": [
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.404,
+        "y": 10.825,
+        "z": 13.863
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_blue_01.fbx",
+        "validation": "exports/siege_ballista_blue_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "d4b27b904624fc6e",
+      "id": "siege_ballista_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "mount": "dais"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ballista.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7001,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.0,
+          6.449
+        ],
+        "crew_2": [
+          -2.6,
+          0.0,
+          6.449
+        ],
+        "projectile": [
+          -0.0,
+          5.045,
+          1.333
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1798,
+        "lod1": 628
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.58,
+        "y": 10.924,
+        "z": 15.264
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_green_01.fbx",
+        "validation": "exports/siege_ballista_green_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "b46dd46dba5a0bb1",
+      "id": "siege_ballista_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "mount": "carriage"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ballista.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7002,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.086,
+          7.049
+        ],
+        "crew_2": [
+          -2.6,
+          0.086,
+          7.049
+        ],
+        "projectile": [
+          -0.0,
+          4.93,
+          1.42
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2686,
+        "lod1": 940
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.404,
+        "y": 10.532,
+        "z": 14.668
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_red_01.fbx",
+        "validation": "exports/siege_ballista_red_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "d3a7548560f2c8ed",
+      "id": "siege_ballista_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "mount": "carriage"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ballista.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7000,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.045,
+          6.046
+        ],
+        "crew_2": [
+          -2.6,
+          0.045,
+          6.046
+        ],
+        "projectile": [
+          -0.0,
+          4.753,
+          0.931
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2290,
+        "lod1": 800
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.58,
+        "y": 11.315,
+        "z": 15.164
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_yellow_01.fbx",
+        "validation": "exports/siege_ballista_yellow_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "14163f148ae668bb",
+      "id": "siege_ballista_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "mount": "stand"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_ballista.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7003,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.125,
+          7.099
+        ],
+        "crew_2": [
+          -2.6,
+          0.125,
+          7.099
+        ],
+        "projectile": [
+          -0.0,
+          5.321,
+          1.47
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1942,
+        "lod1": 678
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "siege_ballista",
+  "variation": {
+    "closest_pair": [
+      "siege_ballista_green_01",
+      "siege_ballista_red_01"
+    ],
+    "mean_pair_diff": 0.3808,
+    "min_pair_diff": 0.2731,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

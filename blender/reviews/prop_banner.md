@@ -1,0 +1,66 @@
+# prop_banner — author review log (D-019)
+
+Images: `previews/prop_banner.jpg` (contact sheet), `renders/prop_banner/prop_banner_red_01_hero.png`,
+`renders/prop_banner/prop_banner_green_01_hero.png`, `renders/prop_banner/prop_banner_green_02_hero.png`,
+`renders/prop_banner/prop_banner_gameplay.png` (overwritten each round; scores were taken from the images of that
+round). Rubric order: silhouette / variation / readability / proportions / palette / detail / kit cohesion / tris.
+
+Types (2 per kingdom, each type twice): pole (red, yellow), mast (red, blue), wall (blue, green),
+standard (green, yellow). Emblems: red flame + crown, blue star, green oak leaf, yellow sun.
+
+## Round 1 (first quick build)
+Scores: 4 / 3 / 3 / 3 / 4 / 3 / 4 / 2
+Problems seen:
+- Pole banners: the cloth hung *behind* the pole, so the pole cut through the middle of the cloth and hid the
+  emblem (red_01).
+- Emblems too small (0.62 x width) and blobby: the flame read as a tulip; the oak leaf as a thin feather.
+- Standards: two narrow streamers beside the gonfalon read as a three-panel screen; "tails" bottom with tassels
+  on the green wall banner looked torn/ragged.
+- 4 of 8 over the 800 budget (rope lashing alone 160 tris, emblems up to 432); degenerate faces on the oak
+  topper (collinear cap triangles in the strip solid); green_02 vs yellow_01 silhouette diff 0.048 (FAIL).
+Changes: cloth + crossbar moved in front of the pole with a forward lean; emblems 0.74 x width; new flame
+outline with a glowing inner tongue; fan solids without the mid ring where they stay flat; one-turn lashing;
+3-sided tassels; streamers removed; standards given different heights/cloth sizes; strip-solid caps fixed.
+
+## Round 2
+Scores: 4 / 4 / 4 / 4 / 4 / 3 / 4 / 4
+Problems seen:
+- Oak leaf still reads as a feather (lobes under-sampled by the 10-station strip); cream leaf on green is weak.
+- Green standard gonfalon small for its 15-stud pole; mast flags a little small next to their 20+ stud masts.
+Changes: oak leaf rebuilt as a hand-drawn 22-point lobed outline (fan solid), bronze leaf with cream midrib and
+veins; green standard cloth 5.6-6.0 x 6.6-7.0; mast flags 8.4-10.4 long, 4.6-5.5 high.
+
+## Round 3
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4
+Seen: every emblem reads at 43 studs (flame, crown, star, oak leaf, sun); pointed / swallow-tailed / three-tailed
+cuts and trim bands give each banner its own outline; wall banners have pelmet, rod and brackets.
+Change after review: thinner, fewer oak veins (the cream veins looked like a fishbone).
+Remaining weaknesses: the two mast flags share one silhouette family; cloth thickness (0.3) shows as a dark rim
+in close-ups (intended: solid geometry); the sun disc is purple (yellow trim) which reads heraldic, not literal.
+
+## Round 4 (cross-set emblem legibility, FORGE-02 lead review at 80 studs)
+Problems reported: the oak leaf read as a symmetric scalloped oval (rosette/egg); the sun read as a white
+8-10 point burst that competes with the blue star.
+Changes in `_kingdom_props_common.emblem()` (signature unchanged, also used by farm/props):
+- Oak: elongated leaf with 4 rounded lobes per side staggered between the sides (no mirror symmetry), deep
+  sinuses, midrib, a visible stem, whole leaf tilted ~14 deg; concave outline built as a prism.
+- Sun: purple roundel field + 8 short broad orange rays + large solid 12-sided gold disc; fixed colours so it
+  contrasts with yellow cloth and is never white.
+Budget: green standard cairn base made a plain box (half hidden) to fit two new leaves (788/800).
+Seen (`prop_banner_green_01_hero.png`, `prop_banner_yellow_02_hero.png`): leaf reads as an oak leaf, sun reads
+as a sun disc with rays and is clearly different from the star at gameplay distance. Scores unchanged
+(4 / 4 / 4 / 4 / 4 / 4 / 4 / 4); tris 560-788 / 800.
+
+## Fresh-review round 2 (FORGE-02 lead: NEEDS-WORK, cohesion 3 / palette 3 / readability 3)
+Problems reported: red_01 flame (retired, reads as a fifth faction); yellow sun on a heavy purple roundel
+(medallion / rosette) with butter-yellow cloth and purple trim.
+Changes:
+- red_01 now carries the crown (one emblem per kingdom); spear finial kept for red, pointed cut kept.
+- Sun redesigned in `_kingdom_props_common.emblem()`: no roundel, no purple. 8 short broad dark-gold rays,
+  a bright gold disc with a thin deep-bronze rim that covers the ray roots, so it reads as a sun, not a star.
+- Gold cloth now comes from the palette's saturated `yellow_cloth`; trim / fringe deep bronze; gold finials.
+- New helpers `field(k)` / `border(k)`: emerald banners use the bright `green_cloth_light` field with an ivory
+  border (ART_DIRECTION 3); shared by every cloth/shield in this family.
+Seen (`prop_banner_red_01_hero.png`, `prop_banner_yellow_01_hero.png`, `prop_banner_yellow_02_hero.png`):
+crown / star / oak / sun each read at 43 studs; no purple anywhere; gold is saturated, not butter.
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4. Tris 560-788 / 800.

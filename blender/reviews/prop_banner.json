@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "prop_banner_blue_01": {
+      "geometry_hash": "078a1cb5a572aef8",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_blue_02": {
+      "geometry_hash": "371e1bc049bfd40c",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_green_01": {
+      "geometry_hash": "6e20df099aaaef90",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_green_02": {
+      "geometry_hash": "11521f14bdebd09a",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_red_01": {
+      "geometry_hash": "5d03ba91a18b6111",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_red_02": {
+      "geometry_hash": "e9882550e94c5d3f",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_yellow_01": {
+      "geometry_hash": "b5813563a09c66c4",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_banner_yellow_02": {
+      "geometry_hash": "8e65d8902935f7ac",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "prop_banner",
+  "generator_version": 1,
+  "notes": "red_01 carries a flame emblem instead of the crown, so at 43 studs it reads as a fifth faction; yellow_01/02 set the sun on a heavy off-palette purple disc and trim that turns it into a medallion/rosette and the gold reads butter-yellow. Silhouettes and tri counts (560-788) are good.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

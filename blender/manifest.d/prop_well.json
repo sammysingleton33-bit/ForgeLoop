@@ -1,0 +1,235 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 8.6,
+        "y": 12.205,
+        "z": 7.727
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_01.fbx",
+        "validation": "exports/prop_well_01.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "02449662d6c979a9",
+      "id": "prop_well_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": false,
+        "curb_h": 3.0,
+        "kingdom": "red",
+        "radius": 3.1,
+        "roof": "tile",
+        "trough": false
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_well.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7000,
+      "sockets": {
+        "interact": [
+          0.125,
+          0.0,
+          -4.9
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1460,
+        "lod1": 510
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 10.038,
+        "y": 14.009,
+        "z": 10.025
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_02.fbx",
+        "validation": "exports/prop_well_02.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "e5a03641e34c617b",
+      "id": "prop_well_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": true,
+        "curb_h": 2.6,
+        "kingdom": "blue",
+        "radius": 3.5,
+        "roof": "pyramid",
+        "trough": false
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_well.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7001,
+      "sockets": {
+        "interact": [
+          -0.0,
+          0.0,
+          -5.303
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1364,
+        "lod1": 476
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 10.975,
+        "y": 12.098,
+        "z": 6.953
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_03.fbx",
+        "validation": "exports/prop_well_03.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "927e47ac4c15b820",
+      "id": "prop_well_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": false,
+        "curb_h": 3.2,
+        "kingdom": "green",
+        "radius": 3.0,
+        "roof": "frame",
+        "trough": true
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_well.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7002,
+      "sockets": {
+        "interact": [
+          -0.712,
+          0.076,
+          -4.728
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1728,
+        "lod1": 604
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 9.751,
+        "y": 16.051,
+        "z": 9.88
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_04.fbx",
+        "validation": "exports/prop_well_04.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "8f7ab84d133051dd",
+      "id": "prop_well_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": true,
+        "curb_h": 2.8,
+        "kingdom": "yellow",
+        "radius": 3.3,
+        "roof": "thatch",
+        "trough": false
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_well.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7003,
+      "sockets": {
+        "interact": [
+          -0.062,
+          0.0,
+          -5.098
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1780,
+        "lod1": 622
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "prop_well",
+  "variation": {
+    "closest_pair": [
+      "prop_well_01",
+      "prop_well_04"
+    ],
+    "mean_pair_diff": 0.4013,
+    "min_pair_diff": 0.2958,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

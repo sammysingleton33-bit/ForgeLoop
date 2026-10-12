@@ -1,0 +1,259 @@
+{
+  "assets": [
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.553,
+        "y": 14.256,
+        "z": 16.552
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_blue_01.fbx",
+        "validation": "exports/siege_catapult_blue_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "ee4360638519641e",
+      "id": "siege_catapult_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "counterweight",
+        "kingdom": "blue"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_catapult.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7001,
+      "sockets": {
+        "crew_1": [
+          6.152,
+          -0.075,
+          6.815
+        ],
+        "crew_2": [
+          -4.177,
+          -0.075,
+          6.815
+        ],
+        "projectile": [
+          0.987,
+          6.325,
+          5.215
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3742,
+        "lod1": 1308
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.058,
+        "y": 13.181,
+        "z": 19.321
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_green_01.fbx",
+        "validation": "exports/siege_catapult_green_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "6594f48485707f34",
+      "id": "siege_catapult_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "torsion",
+        "kingdom": "green"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_catapult.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7002,
+      "sockets": {
+        "crew_1": [
+          5.404,
+          0.0,
+          8.06
+        ],
+        "crew_2": [
+          -5.404,
+          0.0,
+          8.06
+        ],
+        "projectile": [
+          -0.0,
+          9.007,
+          6.96
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3416,
+        "lod1": 1194
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.761,
+        "y": 12.777,
+        "z": 15.852
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_red_01.fbx",
+        "validation": "exports/siege_catapult_red_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "69d3a6d58e3434a7",
+      "id": "siege_catapult_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "torsion",
+        "kingdom": "red"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_catapult.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7000,
+      "sockets": {
+        "crew_1": [
+          5.755,
+          -0.078,
+          6.326
+        ],
+        "crew_2": [
+          -4.38,
+          -0.078,
+          6.326
+        ],
+        "projectile": [
+          0.687,
+          7.455,
+          5.226
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3526,
+        "lod1": 1234
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.1,
+        "y": 16.969,
+        "z": 18.629
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_yellow_01.fbx",
+        "validation": "exports/siege_catapult_yellow_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "81864e39ad9e2b8f",
+      "id": "siege_catapult_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "counterweight",
+        "kingdom": "yellow"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/siege_catapult.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7003,
+      "sockets": {
+        "crew_1": [
+          5.425,
+          -0.075,
+          7.854
+        ],
+        "crew_2": [
+          -5.425,
+          -0.075,
+          7.854
+        ],
+        "projectile": [
+          -0.0,
+          6.325,
+          6.254
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3982,
+        "lod1": 1392
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "siege_catapult",
+  "variation": {
+    "closest_pair": [
+      "siege_catapult_blue_01",
+      "siege_catapult_red_01"
+    ],
+    "mean_pair_diff": 0.4774,
+    "min_pair_diff": 0.4158,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

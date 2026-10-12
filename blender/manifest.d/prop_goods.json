@@ -1,0 +1,367 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 5.254,
+        "y": 2.805,
+        "z": 6.324
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_goods_barrels_01.fbx",
+        "validation": "exports/prop_goods_barrels_01.validation.json"
+      },
+      "generator": "prop_goods",
+      "generator_version": 1,
+      "geometry_hash": "5b16465b4dbed5da",
+      "id": "prop_goods_barrels_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "type": "barrels"
+      },
+      "preview": "previews/prop_goods.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "review_file": "reviews/prop_goods.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 2,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7001,
+      "sockets": {
+        "interact": [
+          0.346,
+          0.225,
+          -3.319
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 788,
+        "lod1": 274
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 6.813,
+        "y": 4.318,
+        "z": 4.368
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_goods_crates_01.fbx",
+        "validation": "exports/prop_goods_crates_01.validation.json"
+      },
+      "generator": "prop_goods",
+      "generator_version": 1,
+      "geometry_hash": "4ec783e2dc9e233c",
+      "id": "prop_goods_crates_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "type": "crates"
+      },
+      "preview": "previews/prop_goods.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "review_file": "reviews/prop_goods.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 2,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7000,
+      "sockets": {
+        "interact": [
+          -0.093,
+          0.104,
+          -2.615
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 896,
+        "lod1": 312
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 6.572,
+        "y": 3.221,
+        "z": 3.451
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_goods_merchant_01.fbx",
+        "validation": "exports/prop_goods_merchant_01.validation.json"
+      },
+      "generator": "prop_goods",
+      "generator_version": 1,
+      "geometry_hash": "ede846e17b0f54bd",
+      "id": "prop_goods_merchant_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "type": "merchant"
+      },
+      "preview": "previews/prop_goods.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "review_file": "reviews/prop_goods.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 2,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7004,
+      "sockets": {
+        "interact": [
+          0.155,
+          0.0,
+          -3.104
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 792,
+        "lod1": 276
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.092,
+        "y": 2.443,
+        "z": 4.607
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_goods_produce_01.fbx",
+        "validation": "exports/prop_goods_produce_01.validation.json"
+      },
+      "generator": "prop_goods",
+      "generator_version": 1,
+      "geometry_hash": "fd1d8875d68d9650",
+      "id": "prop_goods_produce_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "type": "produce"
+      },
+      "preview": "previews/prop_goods.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "review_file": "reviews/prop_goods.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 2,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7003,
+      "sockets": {
+        "interact": [
+          0.846,
+          0.0,
+          -2.849
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1108,
+        "lod1": 386
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.619,
+        "y": 2.977,
+        "z": 4.349
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_goods_sacks_01.fbx",
+        "validation": "exports/prop_goods_sacks_01.validation.json"
+      },
+      "generator": "prop_goods",
+      "generator_version": 1,
+      "geometry_hash": "df49ab43697f1bcd",
+      "id": "prop_goods_sacks_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "type": "sacks"
+      },
+      "preview": "previews/prop_goods.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_goods.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7002,
+      "sockets": {
+        "interact": [
+          -0.38,
+          0.0,
+          -3.02
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1222,
+        "lod1": 426
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.35,
+        "y": 6.81,
+        "z": 6.179
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_goods_storehouse_01.fbx",
+        "validation": "exports/prop_goods_storehouse_01.validation.json"
+      },
+      "generator": "prop_goods",
+      "generator_version": 1,
+      "geometry_hash": "6e5b8a5dd6294066",
+      "id": "prop_goods_storehouse_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "type": "storehouse"
+      },
+      "preview": "previews/prop_goods.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_goods.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7005,
+      "sockets": {
+        "interact": [
+          0.125,
+          0.16,
+          -3.522
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1120,
+        "lod1": 392
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "prop_goods",
+  "variation": {
+    "closest_pair": [
+      "prop_goods_produce_01",
+      "prop_goods_sacks_01"
+    ],
+    "mean_pair_diff": 0.4422,
+    "min_pair_diff": 0.256,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

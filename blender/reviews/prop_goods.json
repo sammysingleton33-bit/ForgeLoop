@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "prop_goods_barrels_01": {
+      "geometry_hash": "5b16465b4dbed5da",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_goods_crates_01": {
+      "geometry_hash": "4ec783e2dc9e233c",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_goods_merchant_01": {
+      "geometry_hash": "ede846e17b0f54bd",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_goods_produce_01": {
+      "geometry_hash": "fd1d8875d68d9650",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_goods_sacks_01": {
+      "geometry_hash": "5233144ec18554b4",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_goods_storehouse_01": {
+      "geometry_hash": "0ea9ce0c3bd815bc",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "prop_goods",
+  "generator_version": 1,
+  "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 2,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 5,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}
