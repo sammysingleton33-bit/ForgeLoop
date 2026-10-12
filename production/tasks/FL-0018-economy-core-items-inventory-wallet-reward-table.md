@@ -4,7 +4,7 @@ title: "Economy core: items, inventory, wallet, reward tables with odds and pity
 track: build
 owner: forge-03
 status: READY
-priority: P0
+priority: P2
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -31,3 +31,4 @@ Lune specs: odds sum to 1, seeded determinism, distribution within tolerance ove
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.

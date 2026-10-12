@@ -3,7 +3,7 @@ id: FL-0015
 title: Rock and ruins kit generators
 track: asset
 owner: forge-02
-status: READY
+status: REJECTED
 priority: P1
 game: factory
 created: 2026-10-12
@@ -31,3 +31,4 @@ Contact sheets inspected; validation within budget
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: READY -> REJECTED. Superseded by AI Kingdoms (D-020); kept for history. Medieval rocks: FL-0057.

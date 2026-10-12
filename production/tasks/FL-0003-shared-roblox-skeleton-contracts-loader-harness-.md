@@ -18,6 +18,8 @@ evidence:
   - "review: 27 independent-review findings reproduced and fixed (MockEnv scheduler, WaitForChild/ChildAdded, datatypes, DataStore budgets, require policy + tokenizer, Loader registry:destroy, GameEvents type re-exports, runner late errors, ownership in team.md, interfaces 0.3.1 + D-017, Workspace mapping left to FL-0044, .gitattributes, CI actions v6 / pinned selene asset / artifact file name / change filter); the new specs fail on the pre-fix code"
   - "pytest tools/tests 32 passed; forge.py validate 45 tasks 0 errors; actionlint 1.7.12 with shellcheck: ci.yml clean; shellcheck clean on roblox/scripts/*.sh; luau-analyze strict: Contracts + Core clean with the new solver (old solver: one pre-existing pcall arity note in Env.luau; Roblox globals unknown to the analyzer)"
   - "unverified: Studio S1-S3 incl. @game in live Studio (G6); CI has never run on GitHub (actions v6, change filter, release downloads); selene asset name checked in its release workflow only; bash 3.2 and Windows paths not run on those systems (simulated)"
+  - "FORGE-05 integration 2026-10-12: merged PR #1 as merge commit f9e9b0a. PR CI run 38209213389 green on head 26fbf66. Merge result (head + main 798b94d) check.sh OVERALL PASS: Lune 179 passed 0 failed 16 files, Selene 0 errors, StyLua 69 files, Rojo build, place check PASS; pytest 32 passed; forge validate 45 tasks 0 errors. Negative gates re-run independently by FORGE-05 (failing spec, broken @game require, unformatted file: each exit 1)."
+  - "CI on main: https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38295342210 green (roblox + tools); artifact forgeloop-main-f9e9b0a uploaded, place check --require-stamp: BuildInfo stamped f9e9b0ad71a4."
 ---
 
 # Shared Roblox skeleton: contracts, loader, harness, mocks, checks, CI
@@ -43,3 +45,4 @@ bash roblox/scripts/check.sh (Lune tests, Selene, StyLua, Rojo build, place chec
 - 2026-10-12 forge-00: BUILDING → TESTING. Skeleton implemented (contracts v0.3 §1-§4, §11; harness, mocks, place check, check.sh, CI); running gates and negative tests.
 - 2026-10-12 forge-00: TESTING → REVIEW. check.sh green from any cwd; each gate proven able to fail; uncommitted in worktree forge/00-skeleton (base 2cd819b). G6 Studio S1-S3 and CI-on-GitHub pending; hand-over to FORGE-05 (FL-0028).
 - 2026-10-12 forge-00: review round: 27 findings from independent reviewers reproduced and fixed; check.sh green; three negative gates re-run; stays REVIEW (G6 Studio S1-S3 and CI on GitHub pending).
+- 2026-10-12 forge-05: merged PR #1 (f9e9b0a) after green PR CI, merge-result checks and three negative gates; CI green on main with stamped artifact. Stays REVIEW: G6 pending (Studio S1-S3, FL-0036). ACCEPTED after the user's S1 pass.
