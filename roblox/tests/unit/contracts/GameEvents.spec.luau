@@ -7,7 +7,7 @@ local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Types = require("@game/ReplicatedStorage/Forge/Contracts/Types")
 
--- interfaces.md §4 (contract v0.3), in table order
+-- interfaces.md §4 (contract v0.3), then games/game-001/CONTRACTS.md G9, in table order
 local CONTRACT_EVENTS = {
 	"PlayerReady",
 	"RoundStateChanged",
@@ -19,6 +19,17 @@ local CONTRACT_EVENTS = {
 	"RewardRolled",
 	"OnboardingStep",
 	"ShopViewed",
+	"KingdomJoined",
+	"MatchPhaseChanged",
+	"BuildingPlaced",
+	"BuildingCompleted",
+	"BuildingUpgraded",
+	"BuildingDestroyed",
+	"ResourceGathered",
+	"UnitsRecruited",
+	"ObjectiveCaptured",
+	"KingdomEliminated",
+	"MatchEnded",
 }
 
 describe("Contracts/GameEvents", function()
@@ -26,7 +37,7 @@ describe("Contracts/GameEvents", function()
 		GameEvents.disconnectAll()
 	end)
 
-	it("declares exactly the §4 events, in order", function()
+	it("declares exactly the §4 + G9 events, in order", function()
 		expect(GameEvents.EVENT_NAMES).toEqual(CONTRACT_EVENTS)
 	end)
 
