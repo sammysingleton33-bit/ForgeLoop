@@ -1,0 +1,321 @@
+--!strict
+--[[
+	Gameplay/Kingdom/RulerAI — an AI ruler for kingdoms without human rulers.
+
+	Every kingdom always has someone in charge: when no player rules it (empty slot, or every ruler
+	left), the AI ruler issues the same validated Commands a player would — it cannot cheat. When a
+	player joins that kingdom the AI steps back on its next think. Citizens run themselves either way;
+	the ruler (human or AI) only sets direction.
+
+	Behaviour (one action per think, every `interval` seconds, staggered per kingdom):
+		defence   ring the alarm while enemies are inside the territory and no army defends it
+		housing   build a House when population is within 1 of the cap
+		food      build Farms to keep about one farm per 5 citizens; farmer quota follows farm slots
+		storage   build a Storehouse when any resource is above 85% of capacity
+		growth    upgrade the Keep from day 3; upgrade Houses when wood and stone are plentiful
+		military  build a Barracks from day 4, keep an army of about a quarter of the population,
+		          Watchtowers after Keep level 2
+		war       after the grace period, an aggressive AI declares war on the weakest neighbour and
+		          attacks once its army is large enough; it proposes peace when its army is gone and
+		          accepts peace when it is behind on score
+	Aggression is seeded per kingdom (0.3..1.0) so AI kingdoms differ but stay deterministic.
+
+	API
+		RulerAI.install(sim, options?)  -- options: { interval = 6, assistHumans = false }
+		RulerAI.think(sim, kingdom): string?    -- one decision now; returns the command issued (specs)
+		RulerAI.findSpot(sim, kingdom, kind): (number?, number?)  -- a valid placement, or nil
+]]
+
+local Commands = require("./Commands")
+local Snapshot = require("./Snapshot")
+
+local RulerAI = {}
+
+local function count(sim: any, kingdom: any, kind: string, includeSites: boolean): number
+	local n = 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == kind and (includeSites or b.level >= 1) then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function hasSite(sim: any, kingdom: any, kind: string?): boolean
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.pendingLevel ~= nil and (kind == nil or b.kind == kind) then
+			return true
+		end
+	end
+	return false
+end
+
+function RulerAI.findSpot(sim: any, kingdom: any, kind: string): (number?, number?)
+	local def = sim.catalog.buildings[kind]
+	local keep = sim.buildings[kingdom.keepId]
+	if def == nil or keep == nil then
+		return nil, nil
+	end
+	local offset = sim.rng:NextNumber() * math.pi * 2
+	local radius = keep.footprint + def.footprint + 6
+	while radius + def.footprint <= kingdom.territory do
+		local steps = math.max(8, math.floor(radius / 6))
+		for i = 0, steps - 1 do
+			local angle = offset + i / steps * math.pi * 2
+			local x, z = kingdom.x + math.cos(angle) * radius, kingdom.z + math.sin(angle) * radius
+			if sim:canPlace(kingdom, kind, x, z) then
+				return x, z
+			end
+		end
+		radius += 8
+	end
+	return nil, nil
+end
+
+local function place(sim: any, kingdom: any, kind: string): string?
+	local def = sim.catalog.buildings[kind]
+	if not kingdom.stock:canAfford(def.levels[1].cost) then
+		return nil
+	end
+	local x, z = RulerAI.findSpot(sim, kingdom, kind)
+	if x == nil then
+		return nil
+	end
+	local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", kind, x, z)
+	return if ok then "PlaceBuilding:" .. kind else nil
+end
+
+local function tryUpgrade(sim: any, kingdom: any, kind: string, maxLevel: number): string?
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == kind and b.level >= 1 and b.level < maxLevel and b.pendingLevel == nil then
+			local nextStats = sim.catalog.buildings[kind].levels[b.level + 1]
+			if nextStats and kingdom.stock:canAfford(nextStats.cost) then
+				local ok = Commands.executeFor(sim, kingdom, nil, "UpgradeBuilding", bid)
+				return if ok then "UpgradeBuilding:" .. kind else nil
+			end
+		end
+	end
+	return nil
+end
+
+local function warsOf(sim: any, kingdom: any): number
+	local n = 0
+	for _, kid in sim.kingdomOrder do
+		if kid ~= kingdom.id and sim.kingdoms[kid].alive and sim:atWar(kingdom.id, kid) then
+			n += 1
+		end
+	end
+	return n
+end
+
+-- Neighbours are the kingdoms next to this one around the map (k1-k2-k3-k4-k1), so an AI never
+-- marches across the centre while a neighbour stands. Kingdoms already fighting two wars are
+-- left alone (no dog-piling a single kingdom, human or AI).
+local function weakestEnemy(sim: any, kingdom: any): any?
+	local n = #sim.kingdomOrder
+	local neighbours = {}
+	for _, kid in sim.kingdomOrder do
+		local other = sim.kingdoms[kid]
+		local gap = math.abs(other.index - kingdom.index)
+		if other.alive and kid ~= kingdom.id and (n <= 3 or gap == 1 or gap == n - 1) then
+			table.insert(neighbours, other)
+		end
+	end
+	if #neighbours == 0 then
+		-- every neighbour has fallen: anyone still standing is fair game
+		for _, kid in sim.kingdomOrder do
+			if kid ~= kingdom.id and sim.kingdoms[kid].alive then
+				table.insert(neighbours, sim.kingdoms[kid])
+			end
+		end
+	end
+	local best, bestScore = nil, math.huge
+	for _, other in neighbours do
+		if warsOf(sim, other) < 2 then
+			local score = Snapshot.score(sim, other)
+			if score < bestScore then
+				best, bestScore = other, score
+			end
+		end
+	end
+	return best
+end
+
+local function enemiesAtWar(sim: any, kingdom: any): { any }
+	local out = {}
+	for _, kid in sim.kingdomOrder do
+		if kid ~= kingdom.id and sim.kingdoms[kid].alive and sim:atWar(kingdom.id, kid) then
+			table.insert(out, sim.kingdoms[kid])
+		end
+	end
+	return out
+end
+
+function RulerAI.think(sim: any, kingdom: any): string?
+	if not kingdom.alive then
+		return nil
+	end
+	local ai = sim.rulerAI
+	local aggression = ai.aggression[kingdom.id]
+	local day = sim:day()
+	local stock = kingdom.stock
+	local capacity = stock:capacity()
+	local pop = sim:population(kingdom)
+	local army = #kingdom.unitIds
+
+	-- defence
+	local threatened = #kingdom.threats > 0
+	if threatened ~= kingdom.alarm and (not threatened or army < 2) then
+		Commands.executeFor(sim, kingdom, nil, "SetAlarm", threatened)
+		return "SetAlarm"
+	end
+
+	-- war and peace (only when diplomacy is installed)
+	local enemies = enemiesAtWar(sim, kingdom)
+	if sim.diplomacy then
+		for _, enemy in enemies do
+			local proposedAt = sim.diplomacy.proposals[enemy.id .. ">" .. kingdom.id]
+			if proposedAt and Snapshot.score(sim, kingdom) < Snapshot.score(sim, enemy) then
+				if Commands.executeFor(sim, kingdom, nil, "AcceptPeace", enemy.id) then
+					return "AcceptPeace"
+				end
+			end
+		end
+		if #enemies > 0 and army == 0 then
+			-- one open proposal at a time: wait for it to expire before proposing again
+			local enemy = enemies[1]
+			local mine = sim.diplomacy.proposals[kingdom.id .. ">" .. enemy.id]
+			if mine == nil or sim.time - mine > sim.diplomacy.proposalSeconds then
+				if Commands.executeFor(sim, kingdom, nil, "ProposePeace", enemy.id) then
+					return "ProposePeace"
+				end
+			end
+		end
+		local warDay = 9 - math.floor(aggression * 4) -- day 5 (aggressive) .. day 8 (cautious)
+		if #enemies == 0 and day >= warDay and army >= 6 then
+			local target = weakestEnemy(sim, kingdom)
+			if target and Commands.executeFor(sim, kingdom, nil, "DeclareWar", target.id) then
+				return "DeclareWar"
+			end
+		end
+		if #enemies > 0 and army >= 8 then
+			local unit = sim.units[kingdom.unitIds[1]]
+			if unit.order.kind ~= "Attack" then
+				local target = enemies[1]
+				if Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Attack", target.id) then
+					return "ArmyOrder:Attack"
+				end
+			end
+		end
+	end
+
+	-- housing
+	if pop >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "House") then
+		local issued = place(sim, kingdom, "House")
+		if issued then
+			return issued
+		end
+	end
+	-- food
+	local farms = count(sim, kingdom, "Farm", true)
+	if farms < math.ceil(#kingdom.citizenIds / 5) and not hasSite(sim, kingdom, "Farm") then
+		local issued = place(sim, kingdom, "Farm")
+		if issued then
+			return issued
+		end
+	end
+	local slots = 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "Farm" and b.level >= 1 then
+			slots += sim.catalog.buildings.Farm.levels[b.level].workers or 0
+		end
+	end
+	if slots > 0 and kingdom.quotas.Farmer ~= slots then
+		Commands.executeFor(sim, kingdom, nil, "SetJobQuota", "Farmer", slots)
+		return "SetJobQuota:Farmer"
+	end
+	-- storage
+	for _, res in sim.catalog.resources do
+		if stock:get(res) >= capacity * 0.85 and count(sim, kingdom, "Storehouse", true) < 3 then
+			if not hasSite(sim, kingdom, "Storehouse") then
+				local issued = place(sim, kingdom, "Storehouse")
+				if issued then
+					return issued
+				end
+			end
+			break
+		end
+	end
+	-- growth
+	if day >= 3 and not hasSite(sim, kingdom) then
+		local issued = tryUpgrade(sim, kingdom, "Keep", 3)
+		if issued then
+			return issued
+		end
+	end
+	-- military
+	if day >= 4 then
+		if count(sim, kingdom, "Barracks", true) == 0 then
+			local issued = place(sim, kingdom, "Barracks")
+			if issued then
+				return issued
+			end
+		elseif army < math.max(2, math.floor(pop * (0.15 + 0.2 * aggression))) then
+			local kind = if army % 2 == 0 then "Militia" else "Archer"
+			if Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2) then
+				return "Recruit:" .. kind
+			end
+		end
+		if sim:keepLevel(kingdom) >= 2 and count(sim, kingdom, "Tower", true) < 2 then
+			local issued = place(sim, kingdom, "Tower")
+			if issued then
+				return issued
+			end
+		end
+	end
+	if stock:get("wood") > 150 and stock:get("stone") > 120 then
+		local issued = tryUpgrade(sim, kingdom, "House", 3)
+		if issued then
+			return issued
+		end
+	end
+	return nil
+end
+
+function RulerAI.install(sim: any, options: { [string]: any }?)
+	assert(sim.rulerAI == nil, "RulerAI.install: already installed")
+	local opts = options or {}
+	local state = {
+		interval = opts.interval or 6,
+		assistHumans = opts.assistHumans == true,
+		nextThink = {} :: { [string]: number },
+		aggression = {} :: { [string]: number },
+		lastAction = {} :: { [string]: string? },
+	}
+	sim.rulerAI = state
+	sim:addSystem({
+		afterCitizens = function(s: any, _dt: number)
+			for i, kid in s.kingdomOrder do
+				local kingdom = s.kingdoms[kid]
+				if state.aggression[kid] == nil then
+					state.aggression[kid] = 0.3 + 0.7 * s.rng:NextNumber()
+					state.nextThink[kid] = i * state.interval / math.max(1, #s.kingdomOrder)
+				end
+				if
+					kingdom.alive
+					and (#kingdom.rulers == 0 or state.assistHumans)
+					and s.time >= state.nextThink[kid]
+				then
+					state.nextThink[kid] = s.time + state.interval
+					state.lastAction[kid] = RulerAI.think(s, kingdom)
+				end
+			end
+		end,
+	})
+end
+
+return RulerAI
