@@ -58,7 +58,8 @@ def test_rules_file_loads_and_every_pattern_is_reachable(rules):
         ("docs/research/a/b.md", "forge-00"),
         ("ROADMAP2.md", "forge-00"),
         ("tools/forge.py", "forge-00"),
-        ("games/game-001/README.md", "forge-00"),
+        ("games/game-001/README.md", "forge-05"),
+        ("games/game-002/README.md", "forge-00"),
         # FORGE-01
         ("roblox/src/shared/Core/Signal.luau", "forge-01"),
         ("roblox/src/server/Services/DataService.luau", "forge-01"),
@@ -128,6 +129,54 @@ def test_rules_cover_every_path_in_team_md(rules):
     overrides = {"intelligence/zz-sample.luau": "codex"}  # Codex row supersedes FORGE-00's "until Codex is live"
     wrong = [(p, o, rules.owner_of(p)) for p, o in samples if rules.owner_of(p) != overrides.get(p, o)]
     assert wrong == []
+
+
+def _game001_samples():
+    """(sample path, owner) for every path in the 'game-001' section of team.md ('src/' and 'config' expanded)."""
+    text = (REPO / "docs" / "workflows" / "team.md").read_text(encoding="utf-8")
+    section = text.split("## game-001", 1)[1]
+    out = []
+    for line in section.splitlines():
+        m = re.match(r"^\| (FORGE-0\d) \|(.*)\|\s*$", line)
+        if not m:
+            continue
+        owner = m.group(1).lower()
+        for token in re.findall(r"`([^`]+)`", m.group(2)):
+            if token.startswith("src/"):
+                token = "games/game-001/" + token
+            elif token.startswith("{") and token.endswith(".luau"):
+                token = "games/game-001/config/" + token
+            if not token.startswith("games/game-001/"):
+                continue  # e.g. FORGE-02's `blender/**`, covered by the main table
+            brace = re.search(r"\{([^}]*)\}", token)
+            names = [token.replace(brace.group(0), n) for n in brace.group(1).split(",")] if brace else [token]
+            for name in names:
+                path = name.rstrip("*") + ("Zz.luau" if name.endswith("*") and not name.endswith("**") else "")
+                out.append(((path + "zz-sample.luau") if path.endswith("/") else path, owner))
+    return out
+
+
+def test_rules_cover_every_game001_path_in_team_md(rules):
+    """The game-001 section of team.md (D-022) is mirrored in the rules, prefix ties included."""
+    samples = _game001_samples()
+    assert len(samples) > 50
+    wrong = [(p, o, rules.owner_of(p)) for p, o in samples if rules.owner_of(p) != o]
+    assert wrong == []
+
+
+@pytest.mark.parametrize(
+    "path, owner",
+    [
+        ("games/game-001/src/server/Services/MatchAnalyticsService.luau", "forge-04"),
+        ("games/game-001/src/server/Services/MatchService.luau", "forge-01"),
+        ("games/game-001/src/server/Services/.gitkeep", "forge-05"),
+        ("games/game-001/src/shared/Sim/.gitkeep", "forge-01"),
+        ("games/game-001/config/Game.luau", "forge-05"),
+        ("games/game-001/src/server/Services/UnlistedService.luau", "forge-00"),
+    ],
+)
+def test_game001_prefix_and_scaffold_rules(rules, path, owner):
+    assert rules.owner_of(path) == owner
 
 
 def test_codex_intelligence_exception_is_backed_by_rules(rules):

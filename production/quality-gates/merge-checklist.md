@@ -26,7 +26,7 @@ python tools/check_ownership.py --base origin/main --title "<PR title>" --branch
 - [ ] New specs/gates: the PR shows each can fail (negative test), or reproduce one.
 
 ## 4. Review
-- [ ] Contracts (`roblox/src/shared/Contracts/`, `docs/architecture/interfaces.md`, `games/*/config/Map.luau`): additive is fine; breaking needs an approved `DECISIONS.md` entry.
+- [ ] Contracts (`roblox/src/shared/Contracts/`, `docs/architecture/interfaces.md`, `games/game-001/CONTRACTS.md`): additive is fine; breaking needs an approved `DECISIONS.md` entry.
 - [ ] Server authority for anything valuable; remote arguments validated and rate-limited; idempotent grants (G4).
 - [ ] Mocks used by new specs behave like Roblox (docs cited); no `game`, `task.wait`, `os.time` in services (use `env`).
 - [ ] Visual work: a render/screenshot was opened and reviewed (G5); otherwise "unverified".
