@@ -3,7 +3,7 @@ id: FL-0068
 title: Studio debug panel, playtest presets and Playtest A
 track: qa
 owner: forge-05
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,8 @@ updated: 2026-10-12
 depends_on: [FL-0047]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md, games/game-001/STUDIO_PLAYTEST.md]
 estimate_h: 4
-evidence: []
+evidence:
+  - "Debug.spec 7 cases (registry validation, fail-closed args, presets, Studio-only remotes, rate limit, panel end-to-end under MockEnv); negative: IsStudio guard removed -> 'outside Studio creates no remotes' FAIL; truthy arg check -> fail-closed spec FAIL"
 ---
 
 # Studio debug panel, playtest presets and Playtest A
@@ -40,3 +41,4 @@ The user can test each VS-1 row independently in minutes, starting from a known 
 
 ## Log
 - 2026-10-12 forge-00: created from the plan review; these requirements arrived after FL-0047 had merged (READY).
+- 2026-10-12 forge-05: READY → BUILDING. Debug panel + registry + Studio-only server merged in this PR; presets come from row owners (handoff); Playtest A requested once rows 1-4b are on main.
