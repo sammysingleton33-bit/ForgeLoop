@@ -594,6 +594,7 @@ end
 
 -- exposed for specs and the match host
 Military.destroyBuilding = destroyBuilding
+Military.killUnit = killUnit
 Military.eliminate = eliminate
 
 return Military
