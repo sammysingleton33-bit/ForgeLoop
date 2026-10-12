@@ -13,7 +13,7 @@ context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 8
 evidence:
   - bash roblox/scripts/check.sh OVERALL PASS (331 Lune, game-001 82)
-  - games/game-001/design/ui/REVIEW.md; screenshots/prototype (33) and screenshots/luau (27)
+  - games/game-001/design/ui/REVIEW.md; screenshots/prototype (15 of 33 committed) and screenshots/luau (27)
   - 8 mutations of placement/upgrade/visibility rules each fail a spec
 ---
 

@@ -45,7 +45,7 @@ Merriweather, Montserrat); emoji from the system Noto Color Emoji.
 
 ## Devices
 
-`devices.json` (same numbers as `design/ui/prototype/proto.js`). `<W>x<H>` (e.g. `1280x720`) is
+`devices.json` (same numbers as the HTML prototypes' `DEVICES`). `<W>x<H>` (e.g. `1280x720`) is
 also accepted: no device insets, same top bar.
 
 | Device | Size | Insets L / R / T / B | Top bar | Core (CoreUISafeInsets) | Top bar area (TopbarSafeInsets) |

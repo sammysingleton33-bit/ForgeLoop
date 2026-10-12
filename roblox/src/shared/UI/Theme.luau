@@ -86,6 +86,22 @@ end
 
 local raw = merge(DEFAULTS, Config :: any)
 
+-- Fail at require with the token's name, not later in the middle of a render (a bad config hex).
+for _, group in { "colors", "resources", "rarity", "tinctures" } do
+	for key, value in raw[group] or {} do
+		if type(value) ~= "string" or not string.match(value, "^#%x%x%x%x%x%x$") then
+			error(`UITheme: {group}.{tostring(key)} = {tostring(value)} is not #RRGGBB`, 0)
+		end
+	end
+end
+for key, pair in raw.categories or {} do
+	for _, value in pair do
+		if type(value) ~= "string" or not string.match(value, "^#%x%x%x%x%x%x$") then
+			error(`UITheme: categories.{tostring(key)} has {tostring(value)}, not #RRGGBB`, 0)
+		end
+	end
+end
+
 local Theme = {}
 Theme.raw = raw
 Theme.TOUCH = raw.touchTarget
@@ -117,8 +133,7 @@ end
 
 function Theme.rarity(name: string): Color3
 	local value = raw.rarity[name]
-	assert(value, `Theme.rarity: unknown rarity '{name}'`)
-	return Theme.hex(value)
+	return if value then Theme.hex(value) else Theme.hex(raw.rarity.Common or raw.colors.textMuted)
 end
 
 function Theme.tincture(name: string): Color3

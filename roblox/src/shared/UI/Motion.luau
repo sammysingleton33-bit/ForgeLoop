@@ -18,6 +18,10 @@ local Motion = {}
 Motion.__index = Motion
 
 function Motion.new(env: any, opts: { reduced: boolean? }?)
+	assert(
+		type(env) == "table" and type(env.spawn) == "function" and type(env.wait) == "function",
+		"Motion.new(env): env must provide spawn and wait (interfaces §2)"
+	)
 	local tweenService = nil
 	local ok, service = pcall(function()
 		local s = env.TweenService

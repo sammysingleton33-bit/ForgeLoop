@@ -7,7 +7,9 @@ Studio evidence is still the user's (`roblox/studio-tests/ui-economy.md`).
 ## 1. HTML prototype (reviewed first)
 `kingdom.html?size=…&scene=…` (`node shoot.js`) → `screenshots/prototype/<scene>-<size>.png`, scenes:
 `hud` (+`hud-guides`), `build`, `build-detail`, `build-short`, `placing`, `placing-bad`, `placed`,
-`kingdom`, `kingdom-buildings`, `upgrade` — 33 screenshots.
+`kingdom`, `kingdom-buildings`, `upgrade` (33 screenshots when shot). Committed, palette-compressed
+(D-007): `hud`, `build-detail`, `placing`, `placing-bad`, `kingdom` at 3 sizes (15); the rest are
+regenerated with `node shoot.js`.
 
 What the prototype settled:
 - **Top-left stack** crest → name plate ("Keep Lv 1 · 1 region · 12 Crown Points") → four pills →
@@ -36,7 +38,8 @@ the spec world: real RemoteService + TreasuryService, FORGE-01 doubles):
 PROJECT=games/game-001/default.project.json RENDER_FLAGS="--shots=games/game-001/design/ui/screenshots/luau" \
   bash design/ui/render/shoot-luau.sh games/game-001/design/ui/scenes/{hud,build,build-short,placing,placing-bad,placed,kingdom,upgrade,confirm}.luau
 ```
-→ `screenshots/luau/<scene>-{phone,tablet,desktop}.png` (27).
+→ `screenshots/luau/<scene>-{phone,tablet,desktop}.png` (27, committed palette-compressed with
+`design/ui/compress-shots.py`).
 
 Found by the Luau render, not by the prototype (fixed):
 - The drawer's ✕ stopped ~150 px short of the right edge with short titles ("Build"): the kit Panel
@@ -53,7 +56,7 @@ Prototype ↔ Luau differences that remain (on purpose):
 ## 3. Checklist
 | Check | Result |
 |---|---|
-| Nothing under the notch / home bar / Roblox buttons | CoreUISafeInsets for HUD and menus, TopbarSafeInsets for the clock, DeviceSafeInsets for modals |
+| Nothing under the notch / home bar / Roblox buttons | CoreUISafeInsets for HUD and menus, TopbarSafeInsets for the clock; the modal layer is full screen (its scrim must cover the notch strips, seen in the phone render) with the panel centred |
 | Touch targets ≥ 44 px on phones | rail 48, placement buttons 44, CTA 44, Upgrade 44 on phones (32 on desktop) |
 | World stays visible | HUD in corners; drawer on the right; placement bar 60 px at the bottom; chips hidden while placing |
 | Every refusal explained | CTA text for shortfalls; server reasons as sentences (`UI/Text`); unknown reasons get a generic line |

@@ -56,7 +56,7 @@ function ToastStack:show(spec: { title: string, body: string?, kind: string?, du
 		table.remove(self._items):destroy()
 	end
 	self._motion:after(spec.durationSec or 3.5, function()
-		local index = table.find(self._items, toast)
+		local index = table.find(self._items, toast) -- nil once the stack was destroyed
 		if index then
 			table.remove(self._items, index)
 			toast:destroy()
@@ -67,6 +67,11 @@ end
 
 function ToastStack:count(): number
 	return #self._items
+end
+
+function ToastStack:destroy()
+	self._items = {}
+	self.instance:Destroy()
 end
 
 return ToastStack

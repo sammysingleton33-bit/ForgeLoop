@@ -1086,7 +1086,7 @@
 			.sort((a, b) => num(a.n.p.DisplayOrder) - num(b.n.p.DisplayOrder) || a.i - b.i);
 		for (const { n } of order) paintLayer(n, vp);
 
-		// Roblox's own top-bar buttons (CoreGui, drawn above every ScreenGui), as in proto.js.
+		// Roblox's own top-bar buttons (CoreGui, drawn above every ScreenGui), as in the HTML prototypes.
 		const i = DEV.inset;
 		vp.insertAdjacentHTML(
 			"beforeend",

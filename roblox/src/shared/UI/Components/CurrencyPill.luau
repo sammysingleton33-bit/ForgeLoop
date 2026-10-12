@@ -143,6 +143,12 @@ function CurrencyPill:pulse(delta: number)
 		return
 	end
 	local negative = delta < 0
+	-- One delta at a time: a new change replaces the previous float, so a pill without Motion
+	-- (which cannot schedule the removal) never piles labels up.
+	local previous = self.instance:FindFirstChild("Delta")
+	if previous then
+		previous:Destroy()
+	end
 	local label = Create("TextLabel", {
 		Name = "Delta",
 		BackgroundTransparency = 1,
@@ -171,6 +177,9 @@ function CurrencyPill:pulse(delta: number)
 			self._motion:to(label, { Position = UDim2.new(1, -6, 1, 10), TextTransparency = 1 }, CurrencyPill.PULSE_SEC)
 		end
 		self._motion:after(CurrencyPill.PULSE_SEC, function()
+			if self._destroyed or label.Parent == nil then
+				return -- the pill went away, or a newer pulse replaced this float
+			end
 			label:Destroy()
 			self:update({})
 		end)
@@ -178,6 +187,7 @@ function CurrencyPill:pulse(delta: number)
 end
 
 function CurrencyPill:destroy()
+	self._destroyed = true
 	self.instance:Destroy()
 end
 

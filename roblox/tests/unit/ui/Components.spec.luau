@@ -15,6 +15,7 @@ local Tabs = require(UI .. "Components/Tabs")
 local Toast = require(UI .. "Components/Toast")
 local MockEnv = require("../../mocks/MockEnv")
 local Motion = require(UI .. "Motion")
+local ToastStack = require(UI .. "ToastStack")
 
 local function find(root, name)
 	for _, d in root:GetDescendants() do
@@ -54,6 +55,18 @@ describe("UI kit components", function()
 		expect(button:FindFirstChild("Label")).toBeTruthy()
 		expect(Create.fire(button, "Activated")).toBe(1)
 		expect(fired).toBe(1)
+		-- C1: a child that is not an Instance is a mistake, not something to drop silently
+		expect(function()
+			Create("Frame", {}, { Oops = "text" })
+		end).toThrow("not an Instance")
+		-- U7: the toast stand-in can be torn down, and its pending timers then do nothing
+		local env = MockEnv.new({})
+		local stack = ToastStack.new(Instance.new("Frame"), Motion.new(env))
+		stack:show({ title = "Built" })
+		stack:destroy()
+		expect(stack:count()).toBe(0)
+		env.mock:advance(5)
+		expect(#env.mock.threadErrors).toBe(0)
 	end)
 
 	it("Button runs onActivated only when enabled, and shows each state", function()
@@ -125,6 +138,24 @@ describe("UI kit components", function()
 		expect(find(still.instance, "Delta").TextTransparency).toBe(0)
 		env.mock:advance(CurrencyPill.PULSE_SEC + 0.1)
 		expect(find(still.instance, "Delta")).toBeNil()
+		-- U1: without Motion nothing can schedule the removal; one float at a time, never a pile
+		local bare = CurrencyPill.new({ currency = "food", amount = 5 })
+		for _ = 1, 50 do
+			bare:pulse(-1)
+		end
+		local deltas = 0
+		for _, child in bare.instance:GetChildren() do
+			if child.Name == "Delta" then
+				deltas += 1
+			end
+		end
+		expect(deltas).toBe(1)
+		-- U2: a pill destroyed while its float is pending is left alone afterwards
+		local gone = CurrencyPill.new({ currency = "wood", amount = 50 }, Motion.new(env, { reduced = true }))
+		gone:pulse(-5)
+		gone:destroy()
+		env.mock:advance(CurrencyPill.PULSE_SEC + 0.1)
+		expect(#env.mock.threadErrors).toBe(0)
 	end)
 
 	it("ProgressBar clamps progress and shows a label", function()
@@ -178,10 +209,26 @@ describe("UI kit components", function()
 				cancelled += 1
 			end,
 		})
+		-- U5: a modal answers once; a double tap or a later scrim tap does nothing
+		Create.fire(modal.confirm.face, "Activated")
 		Create.fire(modal.confirm.face, "Activated")
 		Create.fire(modal.instance.Scrim, "Activated")
 		expect(confirmed).toBe(1)
+		expect(cancelled).toBe(0)
+		local dismissed = Modal.new({
+			title = "Upgrade?",
+			confirmText = "Upgrade",
+			onConfirm = function()
+				confirmed += 1
+			end,
+			onCancel = function()
+				cancelled += 1
+			end,
+		})
+		Create.fire(dismissed.instance.Scrim, "Activated")
+		Create.fire(dismissed.confirm.face, "Activated")
 		expect(cancelled).toBe(1)
+		expect(confirmed).toBe(1)
 		local toast = Toast.new({ kind = "error", title = "Couldn't start construction", body = "Need 20 more Wood" })
 		expect(toast.instance:GetAttribute("kind")).toBe("error")
 		local stacked = Toast.new({ kind = "achievement", title = "First building", count = 3 })
@@ -207,6 +254,7 @@ describe("UI kit components", function()
 		local grid = Grid.new({ empty = "No banners yet" })
 		expect(grid.instance.Empty.Visible).toBe(true)
 		grid:add(ItemCard.new({ name = "Oak Banner", icon = "banner", rarity = "Common", owned = true }).instance)
+		expect(ItemCard.new({ name = "Odd", rarity = "Mythic" }).instance).toBeTruthy() -- U3
 		grid:add(ItemCard.new({ empty = true }).instance)
 		expect(grid:count()).toBe(2)
 		expect(grid.instance.Empty.Visible).toBe(false)

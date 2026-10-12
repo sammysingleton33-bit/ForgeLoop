@@ -130,6 +130,7 @@ describe("Kingdom HUD (desktop)", function()
 		expect(hud.guis.hud.DisplayOrder).toBe(10)
 		expect(hud.guis.hud.ScreenInsets).toBe(Enum.ScreenInsets.CoreUISafeInsets)
 		expect(hud.guis.topbar.ScreenInsets).toBe(Enum.ScreenInsets.TopbarSafeInsets)
+		expect(hud.guis.modals.ScreenInsets).toBe(Enum.ScreenInsets.None) -- the scrim covers the notch strips
 		expect(hud.guis.menus.DisplayOrder).toBe(20)
 		expect(hud.guis.modals.DisplayOrder).toBe(40)
 		expect(hud.guis.notices.DisplayOrder).toBe(70)

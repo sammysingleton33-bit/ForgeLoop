@@ -126,6 +126,9 @@ local function build(className: string, props: { [any]: any }?, children: { [any
 	if children then
 		for key, child in children do
 			if child then
+				if typeof(child) ~= "Instance" then
+					error(`Create({className}): child {tostring(key)} is a {typeof(child)}, not an Instance`, 2)
+				end
 				if type(key) == "string" then
 					child.Name = key
 				end

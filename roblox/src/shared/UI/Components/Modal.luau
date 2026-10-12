@@ -11,8 +11,10 @@
 		confirmIcon: string?
 		width: number?                px (default 400)
 		onConfirm: () -> ()           onCancel: (() -> ())?   (also called by tapping the scrim)
-	Modal.new(props) -> handle { instance: Frame (full-screen: scrim + panel), destroy() }
-	Put it in a DeviceSafeInsets ScreenGui in the modals DisplayOrder band (40-59).
+	Modal.new(props) -> handle { instance: Frame (full-screen: scrim + panel), answered: boolean?, destroy() }
+	Confirm, Cancel and the scrim answer once; later taps are ignored.
+	Put it in a ScreenInsets.None ScreenGui in the modals DisplayOrder band (40-59): the scrim then
+	covers the whole screen, notch strips included, and the centred panel stays clear of them.
 ]]
 
 local Button = require("./Button")
@@ -92,9 +94,7 @@ function Modal.new(props: { [string]: any })
 		width = half,
 		layoutOrder = 1,
 		onActivated = function()
-			if props.onCancel then
-				props.onCancel()
-			end
+			self:_finish(props.onCancel)
 		end,
 	})
 	self.cancel.instance.Parent = buttons
@@ -104,7 +104,9 @@ function Modal.new(props: { [string]: any })
 		variant = props.confirmVariant or "primary",
 		width = half,
 		layoutOrder = 2,
-		onActivated = props.onConfirm,
+		onActivated = function()
+			self:_finish(props.onConfirm)
+		end,
 	})
 	self.confirm.instance.Parent = buttons
 	self.instance = Create("Frame", {
@@ -119,14 +121,24 @@ function Modal.new(props: { [string]: any })
 			BackgroundTransparency = 0.4,
 			Size = UDim2.fromScale(1, 1),
 			[Create.Event.Activated] = function()
-				if props.onCancel then
-					props.onCancel()
-				end
+				self:_finish(props.onCancel)
 			end,
 		}),
 		Panel = panel.instance,
 	})
 	return self
+end
+
+-- Confirm, Cancel and the scrim answer once: a second tap (a double tap on a large spend) is
+-- ignored, so onConfirm can never run twice for one modal.
+function Modal:_finish(fn: (() -> ())?)
+	if self.answered then
+		return
+	end
+	self.answered = true
+	if fn then
+		fn()
+	end
 end
 
 function Modal:destroy()

@@ -7,7 +7,7 @@ declarations and payloads match on the first integration. Nothing here changes t
 except item 8 (an additive request for FL-0065).
 
 ## Done (with commits)
-- Branch `forge/03-ui-economy-fl0059` (PR: FL-0059, stacked on #12 FL-0058 and #13 FL-0020):
+- Branch `forge/03-ui-economy-fl0059b` (PR #25 FL-0059, stacked on #24 FL-0020):
   `games/game-001/src/client/Controllers/{KingdomHudController,BuildMenuController}.luau`,
   `games/game-001/src/client/UI/*`, specs in `games/game-001/tests/economy/`.
 - Your services are doubled in `games/game-001/tests/economy/doubles/KingdomWorld.luau` (my test

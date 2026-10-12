@@ -7,7 +7,8 @@
 		KingdomHUD      10  CoreUISafeInsets   crest, name plate, resource pills, rulers, rail, chips, placement bar
 		KingdomTopbar   11  TopbarSafeInsets   phase and match clock in the free part of the Roblox top bar
 		KingdomMenus    20  CoreUISafeInsets   Build drawer (BuildMenuController), Kingdom panel
-		KingdomModals   40  DeviceSafeInsets   large-spend confirmation
+		KingdomModals   40  None               large-spend confirmation (scrim covers the notch strips;
+		                                       the panel is centred, clear of them)
 		KingdomNotices  70  CoreUISafeInsets   toast fallback (until FORGE-04's NotificationController)
 	Each scaled ScreenGui holds a Root frame sized fromScale(1/s, 1/s) with a UIScale of s, so all
 	layout is in logical pixels (UI/Layout).
@@ -135,7 +136,7 @@ function KingdomHudController:mount(parent: Instance)
 	g.hud = screenGui("KingdomHUD", 10, Enum.ScreenInsets.CoreUISafeInsets)
 	g.topbar = screenGui("KingdomTopbar", 11, Enum.ScreenInsets.TopbarSafeInsets)
 	g.menus = screenGui("KingdomMenus", 20, Enum.ScreenInsets.CoreUISafeInsets)
-	g.modals = screenGui("KingdomModals", 40, Enum.ScreenInsets.DeviceSafeInsets)
+	g.modals = screenGui("KingdomModals", 40, Enum.ScreenInsets.None)
 	g.notices = screenGui("KingdomNotices", 70, Enum.ScreenInsets.CoreUISafeInsets)
 	g.modals.Enabled = true
 	g.notices.Enabled = true

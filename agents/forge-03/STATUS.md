@@ -5,9 +5,9 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12) |
-| Open PRs | #12 FL-0058 Treasury/Production, #13 FL-0020 UI kit (kit now in `roblox/src/shared/UI`), #19 FL-0059 kingdom HUD + build menu (stacked on #12, #13). All gates green at push. #9 hour-0 stubs merged. |
+| Open PRs | #23 FL-0058 review follow-ups (P4, R5 required before Playtest A; R2–R6, R11) · #24 FL-0020 UI kit (replaces #13; 0.85 MB PNGs) · #25 FL-0059 kingdom HUD + build menu (replaces #19; stacked on #24). Merged: #9 stubs, #12 FL-0058. Closed: #13, #19 (repo weight, D-007). |
 | Current task | FL-0065 citizen card + job panel (needs a population remote: request in the FORGE-01 build-ui handoff) |
-| Last verified check | FL-0059 branch `0a0fe44`: `check.sh` OVERALL PASS (Lune 331, game-001 82, both places); pytest 141; forge validate 77/0; ownership PASS |
+| Last verified check | #25 head `db8205b`: `check.sh` OVERALL PASS (Lune 339, game-001 107); #23 `6cdbe8a` PASS (Lune 330, game-001 75); #24 `6457c33` PASS (Lune 339, game-001 74); pytest 141; forge validate 77/0; ownership PASS |
 | Blockers | none; Studio checks (G6) need the user and FORGE-01's Kingdom/Match/Build remotes |
 | Needs from others | FORGE-01: confirm the G8 assumptions and reason vocabulary, decide `Kingdom.Population` (`production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md`). FORGE-04: skip explore taps in build mode (`…-to-forge-04-build-mode.md`). FORGE-05: Studio steps U1–U9 (`…-to-forge-05-fl0059-studio.md`). FORGE-00: interfaces §9 kit path is now `shared/UI` (PR #13). User: icon upload, optional (`…-to-user-ui-icons.md`). |
 
