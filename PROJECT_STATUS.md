@@ -183,14 +183,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+a1c4023 2026-10-12 Integration bookkeeping: #52, #53, #46
+4a67058 2026-10-12 Merge PR #57: [FORGE-05] FL-0029 CI tools job installs openpyxl so the content workbook tests run
+8685b4a 2026-10-12 Merge PR #48: [FORGE-03] FL-0087 follow-ups: slot fit by real slot sizes (M2), one order per plot (L2), build mode closes panels (L3)
+efa81fe 2026-10-12 Merge PR #46: [FORGE-01] Living-kingdom groundwork: Kit buildings at plot anchors, CitizenService + upkeep (G5/G7), Population and Reputation cores
+b95d3a9 2026-10-12 Tasks FL-0078..FL-0096: restore content/SPEC.md context now that FL-0083 (PR #53) is on main
+ee0693f 2026-10-12 [FORGE-05] FL-0029 CI tools job installs openpyxl so the content workbook tests run
 4d880a4 2026-10-12 Merge PR #53: [FORGE-00] FL-0083 content library: editable CSVs, spreadsheet round-trip, generated Content modules, ContentQuery
 8b61100 2026-10-12 Integration bookkeeping: #54
-3e0bbfc 2026-10-12 Merge PR #52: [FORGE-03] FL-0088 citizen card and conversation UI
-a65d99b 2026-10-12 Merge PR #54: [FORGE-01] Citizen height: entities stand on the terrain and the bridge decks
-a44d21a 2026-10-12 FL-0093 evidence: user builds B2 and B3
-af63d73 2026-10-12 Integration bookkeeping: #44; B3 delivered note
-e798f9b 2026-10-12 Citizen height: records stand on the terrain and the bridge decks
-6b851ea 2026-10-12 CONTRACTS G13.4: history/memory t is server time (GetServerTimeNow scale)
 ```
 
 <!-- forge:auto:end -->
