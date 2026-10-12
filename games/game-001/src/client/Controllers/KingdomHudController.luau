@@ -190,6 +190,11 @@ function KingdomHudController:start()
 	self:_follow("Treasury.Changed", "Treasury.Get", function(totals, deltas)
 		store:applyTreasury(totals, deltas)
 	end)
+	-- My kingdom's population (G13.2, approved by FORGE-00; FORGE-01 declares it): the job panel
+	-- and the army panel read it from the store.
+	self:_follow("Kingdom.Population", "Kingdom.GetPopulation", function(payload)
+		store:applyPopulation(payload)
+	end)
 	self:_follow("Build.Buildings", nil, function(list)
 		store:applyBuildings(list, false)
 	end)
