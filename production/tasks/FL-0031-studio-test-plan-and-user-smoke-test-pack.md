@@ -29,3 +29,4 @@ Dry-run the steps against the built place file structure
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: D-030: the S1 boot check can run on the current main build now (empty world plus debug panel), which confirms require-by-string in live Studio.
