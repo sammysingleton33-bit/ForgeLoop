@@ -114,6 +114,7 @@ M = [
  ("FL-0091", C2+"CitizenBubbleController.luau", '	self:_undraw(entityId)\n	self._models[entityId] = nil', '	self._models[entityId] = nil', "CitizenBubbles", "released rigs lose their bubble", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'if bubble ~= nil and not (bubble.kind == "reaction" and self:_barksOff()) then', 'if bubble ~= nil then', "CitizenBubbles", "citizenBarks off hides reactions", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'gui.Active = false', 'gui.Active = true', "CitizenBubbles", "draws a thought over the citizen", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'if okTag and tagged then', 'if okTag then', "InputMode", "a tap on bare ground (an untagged part) fires none", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'if minutes < Def.MATCH30_MINUTES.min or minutes > Def.MATCH30_MINUTES.max then', 'if false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'out[phase] = durations[phase] -- nil unless', 'out[phase] = nil -- nil unless', "PacingService", "match30 is the", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),

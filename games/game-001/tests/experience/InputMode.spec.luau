@@ -185,6 +185,18 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		expect(log).toEqual({ "slot:crimson_s3", "none:" })
 	end)
 
+	it("a tap on bare ground (an untagged part) fires none, so FORGE-03's panels close", function()
+		local log = seen()
+		input:select("building", 4)
+		local ground = env.newInstance("Part")
+		ground.Name = "Grass"
+		ground.Parent = world
+		hit = ground
+		tap(300, 200)
+		expect(log).toEqual({ "building:4", "none:" })
+		expect(input.selection.kind).toBe("none")
+	end)
+
 	it("a drag (pan) or a long press is not a tap; GUI-handled input never selects", function()
 		local log = seen()
 		picks[100] = 7
