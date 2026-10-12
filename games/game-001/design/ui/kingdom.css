@@ -50,3 +50,13 @@
 .ben .bl { flex: 0 0 52px; font-weight: 800; color: var(--color-textSecondary); }
 .ben.next { background: color-mix(in srgb, var(--color-vert) 18%, transparent); outline: 1px solid color-mix(in srgb, var(--color-vert) 45%, transparent); }
 .ben.next .bl { color: #A9E57C; }
+
+/* FL-0065 job panel (Kingdom panel "Jobs" tab) */
+.jsum { display: flex; align-items: center; gap: 6px; font: 600 12px var(--font-body); color: var(--color-textSecondary); padding: 2px 4px 6px; }
+.jsum b { color: var(--color-parchment100); }
+.jrow { gap: 10px; }
+.jrow.muted { background: var(--color-ink800); }
+.jctl { display: flex; align-items: center; gap: 6px; }
+.jctl .iconbtn.off { opacity: 0.35; }
+.jn { min-width: 34px; text-align: center; font: 800 20px var(--font-body); color: var(--color-parchment100); }
+.jn.solo { margin-right: 52px; }
