@@ -17,7 +17,8 @@
 		{ breakpoint, scale, width, height (logical), margin, touch,
 		  hud = { x, y, crest, compact, pills = { x, y }, members = { x, y }?,
 		          reputation = { x, y, width, height, columns, item = { width, height }, gap = { x, y }, pad },
-		          bottom },                                bottom of the whole top-left stack
+		          bottom,                                  bottom of the whole top-left stack
+		          objectives = { x, y, width, maxHeight } },   objective tracker under the stack (FL-0060)
 		  rail = { right, button, gap },                   right-edge menu buttons (vertical centre)
 		  drawer = { x, y, width, height, single },        menu drawer (left of the rail)
 		  toast = { width },                               notification stack width
@@ -25,8 +26,9 @@
 		  queue = { bottom } }                             construction chips (bottom centre)
 	Layout.freeArea(metrics, drawerOpen) -> { x, width }   the part of the screen not covered by the
 		rail or an open drawer: toasts, chips and the placement bar centre in it
-	Layout.toastTop(metrics, drawerOpen) -> number         phone + open drawer: below the pills
-		and the reputation strip
+	Layout.toastTop(metrics, drawerOpen, stackBottom?) -> number   phone + open drawer: below the
+		pills and the reputation strip, or below `stackBottom` (the objective tracker's bottom edge
+		while it shows: hud:setStackBottom)
 
 	Reputation strip (FL-0089, UI/ReputationStrip; prototype games/game-001/design/ui/reputation.js):
 		phone           one row of six (icon + number + bar) under the crest, clear of its Crown
@@ -34,6 +36,13 @@
 		tablet/desktop  three columns by two rows (icon + name + number + bar) under the rulers
 	It is part of the top-left stack, so `hud.bottom` (and with it the tablet/desktop drawer top and
 	the phone toast top) sits below it.
+
+	Objective tracker (FL-0060, UI/ObjectiveTracker; prototype games/game-001/design/ui/army.js):
+		under the top-left stack, at most 224 px wide on phones and 272 px on tablet/desktop, and 12 px
+		clear of the drawer (tablets: 261 px). It is NOT part of `hud.bottom`, so drawers keep their
+		size; its height follows the capture state, so the phone toast top follows it through
+		`toastTop(m, drawerOpen, stackBottom)`.
+		`maxHeight` keeps it clear of the construction chips at the bottom.
 ]]
 
 export type Strip = {
@@ -63,6 +72,7 @@ export type Metrics = {
 		members: { x: number, y: number }?,
 		reputation: Strip,
 		bottom: number,
+		objectives: { x: number, y: number, width: number, maxHeight: number },
 	},
 	rail: { right: number, button: number, gap: number },
 	drawer: { x: number, y: number, width: number, height: number, single: boolean },
@@ -83,6 +93,10 @@ Layout.MEMBERS_HEIGHT = 22
 -- Reputation strip (FL-0089): six items; phones one row, tablet/desktop three columns.
 Layout.REPUTATION_ITEMS = 6
 Layout.REPUTATION_ITEM_HEIGHT = 22
+-- Objective tracker (FL-0060): width per breakpoint; it keeps clear of the bottom chips (36 px + gap).
+Layout.OBJECTIVES_WIDTH_PHONE = 224
+Layout.OBJECTIVES_WIDTH = 272
+Layout.CHIPS_CLEARANCE = 44
 
 local function clamp(v: number, lo: number, hi: number): number
 	return math.min(hi, math.max(lo, v))
@@ -161,6 +175,17 @@ function Layout.compute(width: number, height: number): Metrics
 		drawer =
 			{ x = W - drawerRight - w, y = top, width = w, height = math.min(maxH, H - top - margin), single = false }
 	end
+	-- The tracker keeps 12 px clear of the drawer (tablet: the drawer starts at x = 289).
+	local objectivesY = bottom + (if phone then 8 else 10)
+	local objectives = {
+		x = x,
+		y = objectivesY,
+		width = math.max(
+			160,
+			math.min(if phone then Layout.OBJECTIVES_WIDTH_PHONE else Layout.OBJECTIVES_WIDTH, drawer.x - x - 12)
+		),
+		maxHeight = math.max(44, H - objectivesY - margin - Layout.CHIPS_CLEARANCE),
+	}
 	return {
 		breakpoint = bp,
 		scale = scale,
@@ -177,6 +202,7 @@ function Layout.compute(width: number, height: number): Metrics
 			members = members,
 			reputation = reputation,
 			bottom = bottom,
+			objectives = objectives,
 		},
 		rail = { right = margin, button = railButton, gap = 10 },
 		drawer = drawer,
@@ -193,9 +219,9 @@ function Layout.freeArea(m: Metrics, drawerOpen: boolean): { x: number, width: n
 	return { x = 0, width = m.width - m.rail.right - m.rail.button }
 end
 
-function Layout.toastTop(m: Metrics, drawerOpen: boolean): number
+function Layout.toastTop(m: Metrics, drawerOpen: boolean, stackBottom: number?): number
 	if drawerOpen and m.breakpoint == "phone" then
-		return m.hud.bottom + 8
+		return math.max(m.hud.bottom, stackBottom or 0) + 8
 	end
 	return m.hud.y
 end

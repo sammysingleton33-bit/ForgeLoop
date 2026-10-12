@@ -71,3 +71,11 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   rebuild when it changes; balances, CTA state and progress are patched. Check it with instance
   identity in specs (`expect(find(...)).toBe(before)`) and pixel-compare the committed renders.
   `observed-once` (2026-10-12).
+- **A rebuild that starts with `destroy()` must set the render key after building.** The objective
+  tracker did `self._key = key; self:_build()` and `_build` began with `self:destroy()`, which cleared
+  the key: every push rebuilt the tracker, invisible in renders and caught only by the M1
+  instance-identity spec (`expect(find(...)).toBe(before)`). Set the key last, and keep an identity
+  spec per keyed view. `observed-once` (FL-0060, 2026-10-12).
+- **StyLua 2.6 can need a second pass.** A long typed parameter list was reformatted again by the
+  next `stylua` run, so `stylua --check` failed right after `stylua`. Run it twice (or run `--check`)
+  before committing. `observed-once` (FL-0060).

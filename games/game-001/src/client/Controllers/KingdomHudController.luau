@@ -28,6 +28,10 @@
 		hud.menuChanged: Signal<(menu?)>    "build" | "kingdom" | nil
 		hud:setMenu(id?)                    opens a menu (closes the other); the same id again closes it
 		hud:setPlacing(on)                  hides the construction chips while the placement bar shows
+		hud:addRailItem({ id, icon, label, target?, order? })   a rail button for another controller's
+		                                    menu (ArmyPanelController: "army"); it calls hud:setMenu(id)
+		hud:setStackBottom(y?)              the bottom of a widget hung under the top-left stack (the
+		                                    objective tracker): phone toasts with an open drawer start below it
 		hud:notify({ title, body?, kind? })
 		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
@@ -80,6 +84,8 @@ function Def.new(env: any, registry: any)
 			confirm = nil :: any,
 		},
 		_viewport = nil :: Vector2?,
+		_railItems = {} :: { any },
+		_stackBottom = nil :: number?,
 		_mounted = false,
 		_running = false,
 		_mine = nil :: string?,
@@ -153,6 +159,9 @@ function KingdomHudController:mount(parent: Instance)
 		Parent = g.hud,
 	})
 	self.view = KingdomHud.new(self.roots.hud, g.topbar, self._motion)
+	for _, item in self._railItems do
+		self.view:addMenu(item)
+	end
 	self.panel = KingdomPanel.new(self.roots.menus)
 	self.toasts = ToastStack.new(self.roots.notices, self._motion)
 	for _, key in { "hud", "topbar", "menus", "modals", "notices" } do
@@ -373,6 +382,44 @@ function KingdomHudController:setMenu(id: string?)
 	end
 	self.menuChanged:fire(id)
 	self:render()
+end
+
+function KingdomHudController:addRailItem(item: {
+	id: string,
+	icon: string,
+	label: string,
+	target: string?,
+	order: number?,
+})
+	table.insert(self._railItems, item)
+	if self.view then
+		self.view:addMenu(item)
+		self:render()
+	end
+end
+
+-- Only the toasts move (no full render): the tracker calls this from its own render.
+function KingdomHudController:setStackBottom(y: number?)
+	if y == self._stackBottom then
+		return
+	end
+	self._stackBottom = y
+	if self._mounted then
+		self:_placeToasts(self:metrics())
+	end
+end
+
+function KingdomHudController:_placeToasts(m: any)
+	local drawerOpen = self.state.menu ~= nil
+	local free = Layout.freeArea(m, drawerOpen)
+	local right = if drawerOpen and m.breakpoint == "phone"
+		then free.width - 10
+		else m.width - m.rail.right - m.rail.button - 12
+	self.toasts:place(
+		UDim2.fromOffset(right, Layout.toastTop(m, drawerOpen, self._stackBottom)),
+		Vector2.new(1, 0),
+		m.toast.width
+	)
 end
 
 function KingdomHudController:setPlacing(on: boolean)
@@ -620,12 +667,7 @@ function KingdomHudController:render()
 		self._modalFor = s.confirm
 	end
 
-	local drawerOpen = s.menu ~= nil
-	local free = Layout.freeArea(m, drawerOpen)
-	local right = if drawerOpen and m.breakpoint == "phone"
-		then free.width - 10
-		else m.width - m.rail.right - m.rail.button - 12
-	self.toasts:place(UDim2.fromOffset(right, Layout.toastTop(m, drawerOpen)), Vector2.new(1, 0), m.toast.width)
+	self:_placeToasts(m)
 	self.rendered:fire(m)
 end
 
