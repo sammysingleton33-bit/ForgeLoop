@@ -77,7 +77,7 @@ return {
 		Rock = Color3.fromRGB(128, 124, 118),
 		Slate = Color3.fromRGB(110, 108, 104),
 		Cobblestone = Color3.fromRGB(150, 144, 132),
-		Water = Color3.fromRGB(52, 128, 170),
+		-- no Water entry: water colour is Terrain.WaterColor (below), not a material colour
 	},
 
 	water = {
