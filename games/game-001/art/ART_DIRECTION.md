@@ -27,7 +27,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 | Grass / leafy / ground / sand (terrain) | `world/Lighting.luau` `terrainColors` | terrain |
 
 - The kingdom colours above are FORGE-02's recommendation; FORGE-01's `Kingdoms.luau` is the source.
-- Rules shared with the Blender bible (§3 there): walls are never painted in the kingdom colour; straw, hay and wheat stay desaturated tan; kingdom green stays clearly bluer than grass and leaves.
+- Rules shared with the Blender bible (§3 there): walls are never painted in the kingdom colour; straw, hay and wheat stay desaturated tan; kingdom green stays clearly bluer than grass and leaves. Emerald banners and flags use a lighter, high-saturation tint of the kingdom colour with an ivory border, because from the aerial camera the emerald plot sits on green terrain.
 - Kit derives every shade from the colour it is given and marks those parts with `KitTint`, so `Kit.setKingdomColor` recolours in place.
 - Every Kit colour lives in `Kit/Parts.luau` `C`, with the same values as `blender/lib/palette.py`.
 

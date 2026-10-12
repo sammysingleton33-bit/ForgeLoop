@@ -57,6 +57,9 @@ Rules (tuned after the first reviews, 2026-10-12):
   gold-kingdom shutters are dark goldenrod.
 - The green kingdom is a **jewel emerald** (hue ~160°, `green_roof*`, `green_cloth*`), clearly bluer than foliage and
   grass (hue 95–115°), so green roofs never melt into trees.
+  On green terrain from the aerial camera, emerald identity rests on silhouette (timber hoardings) and cloth:
+  emerald banners and flags use the bright `green_cloth_light` field with an ivory border and oak leaf, never the
+  dark roof green (FORGE-00 calibration, 2026-10-12; check the emerald plot in the Studio aerial view).
 - One emblem per kingdom everywhere (banners, shields, flags): crimson **crown**, azure **star**, emerald **oak leaf**,
   gold **sun**. (The flame is retired.)
 - Every building sits on a stone plinth or kit plinth; no flat dirt decals under buildings.
