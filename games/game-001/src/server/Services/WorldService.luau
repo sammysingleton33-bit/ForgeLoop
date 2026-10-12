@@ -10,7 +10,8 @@
 	     piece, at most VOXELS_PER_FRAME voxels per frame;
 	  3. places resource nodes (Kit.prop by asset id, tagged ResourceNode + NodeId), build zones
 	     (invisible parts tagged BuildZone + ZoneId, Kingdom), the objective zone (ObjectiveZone +
-	     ObjectiveId, Radius) and plot markers (KingdomPlot + Kingdom);
+	     ObjectiveId, Radius), plot markers (KingdomPlot + Kingdom) and build slot markers
+	     (Kit.slotMarker; its Root part is tagged BuildSlot + SlotId, Size, Kingdom; G13.5);
 	  4. places props and forests from WorldPlan.props (deterministic), PROPS_PER_FRAME per frame;
 	  5. fires `ready` and logs the build time in ms.
 	It never calls Kit.build: BuildingService and ObjectiveService build buildings (G6, G10).
@@ -77,6 +78,15 @@ function WorldService:destroy()
 end
 
 -- ---------------------------------------------------------------- helpers
+
+-- Slot marker pennants until FORGE-01's kingdom colours reach the world (pennants carry KitTint, so
+-- Kit.setKingdomColor recolours them); art-direction recommendation, games/game-001/art/ART_DIRECTION.md.
+local KINGDOM_COLORS = {
+	crimson = Color3.fromRGB(196, 40, 28),
+	azure = Color3.fromRGB(13, 105, 172),
+	emerald = Color3.fromRGB(40, 127, 71),
+	gold = Color3.fromRGB(245, 205, 48),
+}
 
 local function setProps(instance: any, props: { [string]: any })
 	for k, v in props do
@@ -169,6 +179,7 @@ function WorldService:_build()
 	self._root = root
 	local nodesFolder = self:_folder("ResourceNodes", root)
 	local zonesFolder = self:_folder("Zones", root)
+	local slotsFolder = self:_folder("BuildSlots", root)
 	local propsFolder = self:_folder("Props", root)
 
 	-- terrain, chunked by voxel budget
@@ -228,6 +239,20 @@ function WorldService:_build()
 				part:SetAttribute("Kingdom", kingdom)
 				part.Parent = zonesFolder
 				CollectionService:AddTag(part, "BuildZone")
+			end
+			for _, slot in plot.buildSlots or {} do
+				local size = layout.slotSizes[slot.size]
+				local model = Kit.slotMarker(size, KINGDOM_COLORS[kingdom] or Kit.NEUTRAL_COLOR)
+				model.Name = slot.id
+				local y = WorldPlan.groundHeight(layout, slot.center.X, slot.center.Z)
+				placeModel(model, CFrame.new(slot.center.X, y, slot.center.Z) * CFrame.Angles(0, slot.rot, 0))
+				local slotRoot = model.PrimaryPart
+				slotRoot:SetAttribute("SlotId", slot.id)
+				slotRoot:SetAttribute("Size", slot.size)
+				slotRoot:SetAttribute("Kingdom", kingdom)
+				model.Parent = slotsFolder
+				CollectionService:AddTag(slotRoot, "BuildSlot")
+				count(model)
 			end
 		end
 	end
