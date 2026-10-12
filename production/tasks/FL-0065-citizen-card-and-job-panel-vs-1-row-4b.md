@@ -3,7 +3,7 @@ id: FL-0065
 title: Citizen card and job panel (VS-1 row 4b)
 track: build
 owner: forge-03
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,10 @@ updated: 2026-10-12
 depends_on: [FL-0050, FL-0059]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
-evidence: []
+evidence:
+  - bash roblox/scripts/check.sh OVERALL PASS (Lune 486, game-001 532)
+  - JobPanel.spec (8, end to end over RemoteService and PopulationDoubles) + Population.spec (2); 9 mutations each fail a spec
+  - prototype kingdom-jobs-phone (844x390) and kingdom-jobs-full-desktop (1920x1080); Luau kingdom-jobs phone/tablet, kingdom-jobs-full phone/desktop, looked at
 ---
 
 # Citizen card and job panel (VS-1 row 4b)
@@ -34,3 +37,5 @@ Prototype screenshots at 844x390 and 1920x1080 reviewed. Lune specs for card for
 ## Log
 - 2026-10-12 forge-00: created for VS-1 row 4b (D-028) (READY).
 - 2026-10-12 forge-00: D-030: extended by FL-0088 (citizen card v2 with traits, loyalty, relationships and the conversation panel).
+- 2026-10-12 forge-03: READY → BUILDING. FORGE-03: job panel as the Kingdom panel's Jobs tab (G13.2 population + G8 SetJobQuota); the citizen card part is FL-0088 (#52)
+- 2026-10-12 forge-03: BUILDING → REVIEW. PR stacked on #52: Jobs tab (population + SetJobQuota), population plumbing shared with FL-0060; card is FL-0088; U15 Studio steps

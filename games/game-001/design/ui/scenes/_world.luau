@@ -12,7 +12,13 @@ local KingdomWorld = require("../../../tests/economy/doubles/KingdomWorld")
 
 return function(ctx, opts, act)
 	Create.useTestConnector()
-	local world = KingdomWorld.new({ clientDefinitions = { KingdomHudDef, BuildMenuDef }, treasury = opts.treasury })
+	local world = KingdomWorld.new({
+		clientDefinitions = { KingdomHudDef, BuildMenuDef },
+		treasury = opts.treasury,
+		remotes = opts.remotes, -- extra doubles for a scene (e.g. PopulationDoubles)
+		services = opts.services,
+		latency = opts.latency,
+	})
 	local hud = world.client:get("KingdomHudController")
 	local build = world.client:get("BuildMenuController")
 	hud:setViewport(ctx.core.width, ctx.core.height)

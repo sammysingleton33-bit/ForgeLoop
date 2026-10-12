@@ -3,7 +3,7 @@
 	Sim/Footprint — placement shapes on the XZ plane and the overlap tests Simulation:canPlace uses
 	(CONTRACTS G6, G13.5; FORGE-05 finding M2). Pure maths: no requires, no Roblox APIs.
 
-	A building places as an oriented rectangle: its Kit footprint at its largest level (Catalog `size`,
+	A building places as an oriented rectangle: its Kit footprint at its largest level (Catalog `placeSize`,
 	so an upgrade never grows into a neighbour), centred on the building and turned by its yaw
 	(CFrame.Angles(0, yaw, 0): local X = width = size.X, local Z = depth = size.Y). A type without a Kit
 	footprint places as its `footprint` circle. Resource nodes are circles.

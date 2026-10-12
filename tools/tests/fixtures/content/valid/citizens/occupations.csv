@@ -1,0 +1,5 @@
+occupation_id,name_text,job_id,key_role,needs,trait_affinity,notes
+farmer,Farmer,farmer,provisioner,food;rest;tools,kind:1.5;timid:1.2,
+woodcutter,Woodcutter,woodcutter,,tools;food,brave:1.5,
+smith,Blacksmith,miner,blacksmith,tools;pay,greedy:1.2,key role; nearest job is miner
+soldier,Soldier,soldier,captain,pay;safety;food,brave:2;timid:0.3,
