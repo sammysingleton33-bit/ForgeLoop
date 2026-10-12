@@ -102,12 +102,24 @@ local function scaledRoot(gui: Instance): (Frame, UIScale)
 	return root, scale
 end
 
-function UIController:_findPlayerGui(): Instance?
-	local player = self._env.Players.LocalPlayer
-	if player == nil then
-		return nil
+-- Calls `fn(playerGui)` now when the PlayerGui exists, else from a spawned thread once it appears
+-- (start() must not yield, interfaces §3). Gives up after 10 s with a warning.
+function UIController:_withPlayerGui(fn: (Instance) -> ())
+	local env = self._env
+	local player = env.Players.LocalPlayer
+	local found = if player then player:FindFirstChildOfClass("PlayerGui") else nil
+	if found then
+		fn(found)
+		return
 	end
-	return player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui", 10)
+	env.spawn(function()
+		local waited = if player then player:WaitForChild("PlayerGui", 10) else nil
+		if waited then
+			fn(waited)
+		else
+			env.log("warn", "UIController: no PlayerGui; the kingdom UI is not mounted", {})
+		end
+	end)
 end
 
 function UIController:mount(parent: Instance)
@@ -150,11 +162,13 @@ function UIController:start()
 	self._kingdom = self._registry:find("KingdomController")
 	self._notifications = self._registry:find("NotificationController")
 	self._rc = env.sharedModules("RemoteClient").Core
-	local parent = self:_findPlayerGui()
-	if parent == nil then
-		env.log("warn", "UIController: no PlayerGui; the kingdom UI is not mounted", {})
-		return
-	end
+	self:_withPlayerGui(function(parent)
+		self:_begin(parent)
+	end)
+end
+
+function UIController:_begin(parent: Instance)
+	local env = self._env
 	self:mount(parent)
 	if self._kingdom then
 		self.state.kingdom = self._kingdom.state

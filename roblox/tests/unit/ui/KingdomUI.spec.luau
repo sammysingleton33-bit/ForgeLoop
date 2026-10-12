@@ -77,6 +77,18 @@ describe("AI Kingdoms UI end to end (desktop)", function()
 		expect(ui.guis.hud.Enabled).toBe(true)
 	end)
 
+	it("does not yield in start(): mounts once the PlayerGui appears", function()
+		local late = KingdomWorld.new({ clientDefinitions = { UIControllerDef }, userId = 3, noPlayerGui = true })
+		local lateUi = late.client:get("UIController")
+		expect(lateUi.guis.hud).toBeNil()
+		local playerGui = late.env.newInstance("PlayerGui")
+		playerGui.Parent = late.player
+		late:advance(0.2)
+		expect(lateUi.guis.hud).toBeTruthy()
+		expect(lateUi.guis.hud.Parent).toBe(playerGui)
+		late:destroy()
+	end)
+
 	it("stays hidden for a player without a kingdom", function()
 		local other = KingdomWorld.new({ clientDefinitions = { UIControllerDef }, userId = 2 })
 		local otherUi = other.client:get("UIController")

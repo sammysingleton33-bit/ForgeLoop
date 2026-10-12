@@ -10,7 +10,7 @@
 		world:advance(20)                                -- virtual seconds (constructions, production)
 
 	Options: seed, userId, playerName, kingdom (createKingdom opts: name, tincture, start, citizens,
-	tiles, rank, kingdoms), clientDefinitions (extra client controllers, e.g. UIController),
+	tiles, rank, kingdoms), noPlayerGui (do not create the player's PlayerGui), clientDefinitions (extra client controllers, e.g. UIController),
 	sharedModules (extra env.sharedModules entries, merged), services (MockEnv service overrides).
 	Fields: env, player, server (registry), client (registry), kingdomId, kingdom (KingdomService
 	double), treasury (EconomyTreasuryService), controller (KingdomController double), remotes
@@ -45,8 +45,10 @@ function KingdomWorld.new(opts: { [string]: any }?)
 	local rc = RemoteDoubles.client(env)
 	shared.RemoteClient = { Core = rc }
 	local player = env.Players.LocalPlayer
-	local playerGui = env.newInstance("PlayerGui") -- the engine creates it; the mock player has none
-	playerGui.Parent = player
+	if not o.noPlayerGui then
+		local playerGui = env.newInstance("PlayerGui") -- the engine creates it; the mock player has none
+		playerGui.Parent = player
+	end
 	local server =
 		Loader.load(env, { RemoteDoubles.serviceDefinition(), TreasuryDef, KingdomDoubles.serviceDefinition() })
 	local kingdom = server:get("KingdomService")
