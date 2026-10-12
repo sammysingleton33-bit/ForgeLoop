@@ -9,6 +9,7 @@ local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
+local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
@@ -341,6 +342,26 @@ describe("EntityService replication (G4)", function()
 		expect(stats.entities >= 300).toBe(true)
 		expect(type(stats.encodeMsP99)).toBe("number")
 		expect(type(stats.simMsP99)).toBe("number")
+	end)
+
+	it("the sim.spawn debug command spawns test citizens for the presser's kingdom", function()
+		local env, entities = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local before = #entities:_sim().citizenOrder
+		local ok, message = DebugCommands.run(p1, "sim.spawn", 50)
+		expect(ok).toBe(true)
+		expect(message).toContain("50")
+		expect(#entities:_sim().citizenOrder).toBe(before + 50)
+		expect((DebugCommands.run(p1, "sim.spawn", 301))).toBe(false) -- validated, fail closed
+		env.mock:advance(1)
+		local spawns = 0
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" then
+				spawns += 1
+			end
+		end
+		expect(spawns).toBe(before + 50)
 	end)
 
 	it("sends reset before the new world's spawns when a match starts over", function()

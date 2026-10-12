@@ -24,11 +24,14 @@
 	Extra
 		EntityService:replicate()                    -- one snapshot tick (the loop calls it; specs too)
 		EntityService:stats() -> { entities, bytesPerSecond, encodeMsP99, simMsP99, snapshotsSent }
+	Studio debug (FL-0068): command sim.spawn(count) spawns test citizens around the presser's keep.
 	Performance (G7/FL-0049): every 30 s logs "Kingdom perf" with entities, bytes/s per player,
 	sim ms p99 per host tick and encode ms p99 per snapshot tick.
 ]]
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
+local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
@@ -38,6 +41,44 @@ local EntityService = {}
 EntityService.__index = EntityService
 
 local Def = { name = "EntityService", dependencies = { "MatchService", "RemoteService" } }
+
+-- The running service, for the Studio debug commands (registered once per process, like MatchService).
+local active: any = nil
+
+local function registerDebugCommands()
+	for _, command in DebugCommands.list() do
+		if command.name == "sim.spawn" then
+			return
+		end
+	end
+	DebugCommands.register({
+		name = "sim.spawn",
+		label = "Spawn test citizens around me (FL-0049 perf run)",
+		args = { Validate.integer(1, 300) },
+		run = function(player: any, count: number): string?
+			if active == nil then
+				return "no entity service is running"
+			end
+			local kingdom = active._match.host.match:kingdomOf(player.UserId)
+			if kingdom == nil then
+				return "you are not in a kingdom"
+			end
+			local k = active:_sim().kingdoms[kingdom]
+			local jobs = { "farmer", "woodcutter", "miner", "builder", "hauler" }
+			for i = 1, count do
+				local angle = i * 2.4
+				local radius = 12 + (i % 10) * 3
+				active:spawn(
+					"citizen",
+					kingdom,
+					jobs[i % #jobs + 1],
+					Vector3.new(k.x + math.cos(angle) * radius, 0, k.z + math.sin(angle) * radius)
+				)
+			end
+			return `spawned {count} citizens for {kingdom}`
+		end,
+	})
+end
 
 Def.SNAPSHOT_HZ = 10
 Def.REFRESH_EVERY = 10 -- snapshot ticks between round-robin refreshes of a still entity (~1 s)
@@ -137,6 +178,8 @@ function EntityService:start()
 			self._pending = { { type = "reset" } }
 		end
 	end)
+	active = self
+	registerDebugCommands()
 	self._running = true
 	self._env.spawn(function()
 		while self._running do
@@ -335,6 +378,9 @@ function EntityService:despawn(id: number, reason: string)
 end
 
 function EntityService:destroy()
+	if active == self then
+		active = nil
+	end
 	self._running = false
 	self.spawned:disconnectAll()
 	self.despawned:disconnectAll()
