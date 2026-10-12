@@ -7,7 +7,8 @@
 	Kit models (Sim/WorldView). This service is the server API and the Build.* remotes.
 	API (G6)
 		BuildingService:canPlace(kingdom, type, cframe): (boolean, reason?)   -- type, keep level, limit,
-		                                           bounds, territory, overlap (Kit.footprint), cost
+		                                           bounds, territory, overlap (the Kit.footprint rectangle
+		                                           of the largest level, turned by the cframe), cost
 		BuildingService:place(player, type, cframe): (buildingId?, reason?)   -- charges through the
 		                                           treasury (Costs.luau via TreasuryService); sets placedBy
 		BuildingService:upgrade(player, buildingId): (boolean, reason?)
@@ -90,7 +91,7 @@ function BuildingService:canPlace(kingdomId: string?, kind: string, cframe: CFra
 		return false, "match_not_active"
 	end
 	local p = cframe.Position
-	return sim:canPlace(k, kind, p.X, p.Z) -- the same rules Place enforces, cost included
+	return sim:canPlace(k, kind, p.X, p.Z, yawOf(cframe)) -- the rules Place enforces, facing and cost included
 end
 
 function BuildingService:place(player: any, kind: string, cframe: CFrame): (number?, string?)
