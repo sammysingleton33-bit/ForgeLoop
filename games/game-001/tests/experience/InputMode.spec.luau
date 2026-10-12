@@ -216,6 +216,31 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		expect(log).toEqual({ "citizen:9", "none:", "citizen:9" })
 	end)
 
+	it("selecting a citizen reports CitizenInspected to the onboarding (FL-0092)", function()
+		local reports = {}
+		local reg = D.boot(MockEnv.new({ seed = 62, isServer = false, localPlayer = { userId = 6102 } }), {
+			input = { userInput = D.userInput() },
+			camera = false,
+			extra = {
+				{
+					name = "OnboardingController",
+					new = function()
+						return {
+							report = function(_, action)
+								table.insert(reports, action)
+								return true
+							end,
+						}
+					end,
+				},
+			},
+		})
+		local controller = reg:get("InputModeController")
+		controller:select("building", 1)
+		controller:select("citizen", 5)
+		expect(reports).toEqual({ "CitizenInspected" })
+	end)
+
 	it("select() is the programmatic path and refuses unknown kinds", function()
 		local log = seen()
 		expect(input:select("building", 3)).toBe(true)

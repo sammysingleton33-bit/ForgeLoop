@@ -95,6 +95,7 @@ M = [
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'out[phase] = durations[phase] -- nil unless', 'out[phase] = nil -- nil unless', "PacingService", "match30 is the", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", G+"config/Onboarding.luau", 'trigger = { client = "CitizenInspected" }', 'trigger = { client = "CitizenAnswered" }', "Onboarding", "a client action completes only the current step", "game"),
+ ("FL-0092", C2+"InputModeController.luau", 'if kind == "citizen" then\n		local onboarding', 'if false then\n		local onboarding', "InputMode", "reports CitizenInspected", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
