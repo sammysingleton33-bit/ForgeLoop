@@ -165,7 +165,11 @@ function CurrencyPill:pulse(delta: number)
 	self._stroke.Color = if negative then Theme.color("gules") else Theme.color("vert")
 	self._stroke.Transparency = 0
 	if self._motion then
-		self._motion:to(label, { Position = UDim2.new(1, -6, 1, 10), TextTransparency = 1 }, CurrencyPill.PULSE_SEC)
+		-- Fade only when tweens run: without them (reduced motion, no TweenService) the end state
+		-- would apply at once and the player would never see the change.
+		if self._motion.enabled then
+			self._motion:to(label, { Position = UDim2.new(1, -6, 1, 10), TextTransparency = 1 }, CurrencyPill.PULSE_SEC)
+		end
 		self._motion:after(CurrencyPill.PULSE_SEC, function()
 			label:Destroy()
 			self:update({})
