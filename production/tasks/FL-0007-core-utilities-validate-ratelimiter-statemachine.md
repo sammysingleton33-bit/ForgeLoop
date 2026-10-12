@@ -3,14 +3,16 @@ id: FL-0007
 title: "Core utilities: Validate, RateLimiter, StateMachine, Trove, RemoteClient"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0003]
 estimate_h: 4
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS at merge with main 3a7b983: Lune 261 passed/0 failed, Selene 0, StyLua 79 files, Rojo build, place check"
+  - 82 new specs in roblox/tests/unit/core; each module proven red by a mutation (see PR)
 ---
 
 # Core utilities: Validate, RateLimiter, StateMachine, Trove, RemoteClient
@@ -34,3 +36,5 @@ Lune specs in roblox/tests/unit/core/ incl. NaN/inf/oversized payloads, clock-dr
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-01: READY → BUILDING. started: Core utilities for the AI Kingdoms remotes
+- 2026-10-12 forge-01: BUILDING → REVIEW. PR from forge/01-gameplay-fl0007: Validate, RateLimiter, StateMachine, Trove, RemoteClient with failure-path specs

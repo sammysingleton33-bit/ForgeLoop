@@ -4,7 +4,7 @@ title: AnalyticsService adapter, event taxonomy and funnels
 track: build
 owner: forge-04
 status: READY
-priority: P0
+priority: P1
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -31,3 +31,4 @@ Lune specs with MockAnalyticsService (event shapes, limits, failure isolation)
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P1. Analytics adapter needed for FL-0063.
