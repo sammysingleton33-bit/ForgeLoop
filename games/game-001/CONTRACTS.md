@@ -305,7 +305,7 @@ Kit.build(type: BuildingType, level: number, stage: number | "complete", kingdom
 	-- PrimaryPart; attachments Door, WorkSpot1..n, DropOff (storehouse), Rally (barracks)
 Kit.footprint(type: BuildingType, level: number): Vector2           -- the one source for canPlace and the build ghost
 Kit.character(kind: EntityKind, job: JobId, kingdomColor: Color3): Model
-	-- ≤ 8 parts (anchored root, torso, head, 2 arms, 2 legs, tool); Motor6Ds named after the moving part;
+	-- ≤ 9 parts (anchored root, torso, head, 2 arms, 2 legs, tool, + Hair welded to Head, no motor; D-032); Motor6Ds named after the moving part;
 	-- CanCollide, CanTouch and CanQuery false; pooled client rig template
 Kit.regalia(kingdomColor: Color3): { Accessory }                     -- ruler crown + cape (R15 and R6 attachments)
 Kit.prop(assetId: string): Model                                     -- imported mesh from Forge.Assets if present, else a part-built stand-in
@@ -445,6 +445,14 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
   - `repeatMultiplier`
   - `REACH`
 - **Context.** FORGE-01 builds the context table from the vocabulary in `content/SPEC.md`, e.g. `ctx["kingdom.fed_ratio"]`. A variable the server cannot yet provide stays nil, and a clause on a nil variable is false.
+- **Runtime semantics** live in `content/SPEC.md` §6–§8 (lands with FL-0083, PR #53). The server follows them:
+  - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
+  - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
+  - Co-rulers:
+    - a conversation uses the acting ruler's reputation;
+    - thought selection uses the highest reputation among the co-rulers, and `decision.<id>` is true if any co-ruler chose it;
+    - farm history is kept per ruler for reputation, and per kingdom for loyalty and conditions.
+  - Action rows map their audience to loyalty reach as SPEC §6.9 says. Civilians and soldiers are split by job.
 
 ### G13.2 Population (FORGE-01; looks FORGE-02) — VS-1
 ```lua
@@ -456,8 +464,9 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 	family: { string }, friends: { string }, rivals: { string }, hasRequest: boolean, look: CitizenLook }
 ```
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
+- **Chemistry and memories.** Chemistry is rolled once per citizen and may drift at most ±5 from its rolled value (`ContentQuery.driftChemistry`). Memories set by content are **pinned**: the G5 cap of 8 never evicts them.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
-- **Looks.** The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
+- **Looks.** Hair is the 9th rig part, welded to the Head (D-032). The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
 - **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
 
 ### G13.3 Conversations (FORGE-01 server; FORGE-03 panel; FORGE-04 bubbles) — VS-1
@@ -470,18 +479,26 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
   - `thought` `{ entityId, scenarioId, text, icon: "request" | "concern" | "idea" }`
   - `reaction` `{ entityId, text, tone: "happy" | "angry" | "sad" | "neutral" }`
   - `strike` `{ occupation, on: boolean }`
+  - `cue` `{ entityId?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
+- Options from `Kingdom.Converse` may also carry `cost: ResourceBag?` and `risks: { { text: string, chance: number } }?`, both from `ContentQuery.choicePreview`. Every risk is shown before the player chooses (model decision 7).
 - At most `Society.openRequests` (PROVISIONAL 3) thought bubbles are open per kingdom at a time. The list is refreshed every 20 s.
 
 ### G13.4 Reputation and kingdom conditions (FORGE-01; screen FORGE-03) — VS-1
 ```lua
 ReputationService:get(userId: number): { values: { [Category]: number }, history: { { t: number, category: Category, delta: number, text: string, source: string } } }
-ReputationService:apply(userId: number, source: string, delta: { [Category]: number }, text: string)   -- anti-farming per content farm_key; clamps 0..100
+ReputationService:apply(userId: number, source: string, delta: { [Category]: number }, text: string)   -- delta is already decayed by ContentQuery.fireDecision; clamps 0..100
 ```
 - `Kingdom` (G2) gains `happiness`, `stability` and `morale` (0–100). They are kingdom conditions and are kept separate from reputation.
+- **Time units.** Every history and memory time `t` is **server time**, on the same scale as G3 `endsAt` (`workspace:GetServerTimeNow()`). The server converts the sim's injected clock to that scale. Clients show `GetServerTimeNow() - t` as "x min ago". Match-relative times appear only where a field says so explicitly.
 - Remotes:
   - `Kingdom.Reputation`: serverEvent to the ruler.
   - `Kingdom.GetReputation`: function returning `{ values, history (latest 30), kingdom: { happiness, stability, morale } }`.
 - Consequence thresholds, rates and windows live in config `Society.luau` (FORGE-01), never in code.
+- **Reputation action events.** `content/reputation/actions.csv` fires on these events, all produced by FORGE-01 and appended to the GameEvents bus as D-024 did:
+  - VS-1: `FoodShortage`, `RulerVisited`, `ObjectiveLost`, `PhaseEndedWellFed`.
+  - VS-2: `RaidDefended`, `RaidAbandoned`, `EnemyAttacked`, `EnemyFarmsBurned`, `TruceBroken`, `DeserterExecuted`, `DeserterForgiven`.
+  - Suggested payloads are in SPEC §8.
+  - Fear relaxes over time at a rate in `Society.luau`, so fear is not one-way.
 
 ### G13.5 Construction on plots (FORGE-01 logic; FORGE-02 Layout and Kit; FORGE-03 menus) — VS-1
 - **Build slots (G10.1, additive).** `Layout.plots[k].buildSlots = { { id: string, center: Vector3, size: "S" | "M" | "L", rot: number } }`, at least 8 per kingdom. WorldService tags each slot's ground marker `BuildSlot` with attribute `SlotId`.
@@ -500,7 +517,9 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Fit rule (FORGE-05 finding M2).** A structure fits a slot when `Kit.footprint(type, Costs.maxLevel(type))` fits inside `Layout.slotSizes[slot.size]` on both axes (slot-local X = width, Y = depth).
   - The rule is implemented once, as the pure `src/shared/Build/Fit.luau` (FORGE-01: `Fit.fits(type, size): boolean`, `Fit.typesFor(size): { BuildingType }`).
   - The server (`Build.PlaceSlot`) and the plot picker both call it. Nobody re-implements it.
-  - FORGE-02 keeps footprints and `slotSizes` consistent with the intended classes: S = house (and watchtower when it fits), M = barracks, storehouse and the VS-2 service buildings, L = farm, lumber camp, quarry and mine.
+  - The rule is **purely physical**: any structure whose footprint fits may use the slot. With today's footprints, S fits house, lumber camp, quarry, storehouse and watchtower; M also fits barracks; L also fits farm. That is accepted for VS-1.
+  - The class list in `Layout.luau` comments is placement guidance, not a rule. Placing resource buildings near their nodes is a gameplay choice for the player.
+  - Until `Fit.luau` lands, FORGE-03 may keep an interim client copy (`UI/SlotFit`) with the same rule. It switches to `Fit.typesFor` when `Fit.luau` lands, and FORGE-05 checks on review that the two agree.
 
 ### G13.6 Throne, camera and selection — VS-1
 - **Throne (FORGE-02).** `Kit.build("keep", level, "complete", color)` contains a `Seat` named `Throne` on a raised dais, visible from the aerial camera.
@@ -524,7 +543,13 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `population.reseed <seed>`
 
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: G13.5 clarifications: one source per number (`Costs` = cost/time/levels, `Buildings` = stats only) and one shared `Build/Fit` rule. G4.1 camera modes renamed: `overview` is the aerial management default and `follow` is walk mode. In explore mode a tap selects. The `Kingdom.Population` remote is added. G13 living kingdom (D-030) is additive. VS-1 rows are effective now: content modules and ContentQuery; generated population with `CitizenView` and `look`; `Kingdom.Converse` and `Kingdom.Choose`; the thought, reaction and strike events; ReputationService and kingdom conditions; build slots and `Build.PlaceSlot`; throne seat, aerial camera and the selection signal; debug presets. New BuildingTypes take effect from VS-2.
+- v0.4-g4 (2026-10-12) FORGE-00: G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
+  - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
+  - G13.2 chemistry drift ±5 and pinned memories;
+  - G13.3 `cue` event and option cost/risks;
+  - G13.4 reputation action events and fear relaxation.
+
+  G13.5 clarifications: one source per number (`Costs` = cost/time/levels, `Buildings` = stats only) and one shared `Build/Fit` rule. G4.1 camera modes renamed: `overview` is the aerial management default and `follow` is walk mode. In explore mode a tap selects. The `Kingdom.Population` remote is added. G13 living kingdom (D-030) is additive. VS-1 rows are effective now: content modules and ContentQuery; generated population with `CitizenView` and `look`; `Kingdom.Converse` and `Kingdom.Choose`; the thought, reaction and strike events; ReputationService and kingdom conditions; build slots and `Build.PlaceSlot`; throne seat, aerial camera and the selection signal; debug presets. New BuildingTypes take effect from VS-2.
 - v0.4-g3 (2026-10-12) FORGE-00: G12 Crown Arena and support added as a **draft for VS-2** (D-029). Nothing in G1–G11 changes for VS-1. G3's PROVISIONAL victory default is superseded at VS-2 by the Crown Arena (G12, BRIEF §18).
 - v0.4-g2 (2026-10-12) FORGE-00: FORGE-01 clarifications added to G3, G5 and G7 (countdown, job semantics, no VS-1 treasury cap, PROVISIONAL victory/diplomacy defaults); game remote areas `Treasury` and `Feedback`.
 - v0.4-g2 (2026-10-12) FORGE-00, review fixes (D-024 to D-028):

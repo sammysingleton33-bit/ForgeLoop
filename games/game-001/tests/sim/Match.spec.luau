@@ -581,6 +581,11 @@ describe("Kingdom/Match: VS-1 slice mode (PROVISIONAL, CONTRACTS G3)", function(
 		expect(tower.radius).toBe(world.radius)
 		expect(tower.regionId).toBe(world.regionId)
 	end)
+
+	it("stands entities on the world surface (Layout.groundY); the square layout stays flat", function()
+		expect(newSlice().sim.groundY).toBe(Layout.groundY)
+		expect(newMatch({ spacing = 200 }).sim.groundY).toBeNil()
+	end)
 end)
 
 describe("Kingdom/Match: a whole AI match", function()

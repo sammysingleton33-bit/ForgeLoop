@@ -114,7 +114,7 @@ describe("Kingdom/Military: recruiting", function()
 	it("counts units already queued against the population cap (population_cap)", function()
 		local sim, k1 = world({ citizens = { farmer = 6 } })
 		stockUp(sim, k1, { food = 280, wood = 300 })
-		addBuilding(sim, k1, "barracks", 0, -40, 1)
+		addBuilding(sim, k1, "barracks", 0, -40, 2) -- recruit cap 10: only the population limits here
 		expect(k1.popCap).toBe(12)
 		expect((recruit(RULER, sim, "soldier", 4))).toBe(true) -- 6 citizens + 4 queued
 		local stock = sim.treasury:get(k1.id)
@@ -126,6 +126,40 @@ describe("Kingdom/Military: recruiting", function()
 		expect(#k1.unitIds).toBe(6)
 		expect(sim:population(k1)).toBe(12)
 		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
+	end)
+
+	it("caps soldiers (living + training) at the standing barracks' recruitCap sum (recruit_cap, G13.5)", function()
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 400, wood = 200 })
+		addBuilding(sim, k1, "barracks", 0, -40, 1) -- recruitCap 5
+		expect(Military.recruitCap(sim, k1)).toBe(5)
+		assert(recruit(RULER, sim, "soldier", 3))
+		local stock = sim.treasury:get(k1.id)
+		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("recruit_cap") -- would be 6
+		expect(sim.treasury:get(k1.id)).toEqual(stock)
+		assert(recruit(RULER, sim, "soldier", 2)) -- exactly 5
+		sim:advance(5 * 8)
+		expect(#k1.unitIds).toBe(5)
+		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("recruit_cap") -- trained ones still count
+		local second = addBuilding(sim, k1, "barracks", 40, -40, 2) -- + recruitCap 10
+		expect(Military.recruitCap(sim, k1)).toBe(15)
+		assert(recruit(RULER, sim, "soldier", 1))
+		second.destroyed = true
+		expect(Military.recruitCap(sim, k1)).toBe(5)
+	end)
+
+	it("a barracks' trainSpeed shortens training (level 3: x1.25)", function()
+		local sim, k1 = world()
+		stockUp(sim, k1, { wood = 100 })
+		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 3)
+		expect(sim.catalog.buildings.barracks.levels[3].trainSpeed).toBe(1.25)
+		assert(recruit(RULER, sim, "soldier", 1))
+		F.events(sim)
+		sim:advance(6.375) -- 8 s / 1.25 = 6.4 s
+		expect(#F.events(sim, "UnitRecruited")).toBe(0)
+		sim:advance(0.125)
+		expect(#F.events(sim, "UnitRecruited")).toBe(1)
+		expect(#barracks.queue).toBe(0)
 	end)
 
 	it("births leave the beds of recruits still in training free, so population never exceeds popCap", function()

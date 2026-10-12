@@ -39,6 +39,7 @@ function Def.new(env: any, registry: any)
 		hud = registry:get("KingdomHudController"),
 		state = { slotId = nil :: string?, selected = nil :: string?, phoneView = "list", pending = false },
 		_connections = {},
+		_inFlight = {}, -- slotId -> true while its Build.PlaceSlot has no reply (FORGE-05 L2)
 	}, PlotPickerController)
 end
 
@@ -80,9 +81,14 @@ function PlotPickerController:start()
 	-- Push first, then the full list (as KingdomHudController does for every area).
 	env.spawn(function()
 		local ok, err = pcall(function()
-			hud.remotes:on("Build.Slots", function(list)
+			local connection = hud.remotes:on("Build.Slots", function(list)
 				hud.store:applySlots(list)
 			end)
+			table.insert(self._connections, {
+				disconnect = function()
+					connection:Disconnect()
+				end,
+			})
 		end)
 		if not ok then
 			env.log("warn", "PlotPickerController: cannot listen to Build.Slots", { error = tostring(err) })
@@ -136,7 +142,8 @@ function PlotPickerController:open(slotId: any)
 	s.slotId = slot.id
 	s.selected = nil
 	s.phoneView = "list"
-	s.pending = false
+	-- Reopening a plot whose order is still on its way keeps the CTA busy: no second PlaceSlot.
+	s.pending = self._inFlight[slot.id] == true
 	if self.hud.state.menu == PlotPickerController.MENU then
 		self.hud:render()
 	else
@@ -167,15 +174,22 @@ function PlotPickerController:place(detail: any)
 	if s.pending or detail == nil or detail.cta.state ~= "ready" or s.slotId == nil then
 		return
 	end
+	if self._inFlight[s.slotId] then
+		return
+	end
 	local hud = self.hud
 	local slotId = s.slotId
+	self._inFlight[slotId] = true
 	s.pending = true
 	hud:render()
 	self._env.spawn(function()
 		local called, buildingId, reason = pcall(function()
 			return hud.remotes:invoke("Build.PlaceSlot", slotId, detail.type)
 		end)
-		s.pending = false
+		self._inFlight[slotId] = nil
+		if s.slotId == slotId then
+			s.pending = false
+		end
 		if called and type(buildingId) == "number" then
 			hud:notify({ kind = "success", title = `{detail.name} ordered`, body = "Builders are on their way" })
 			if s.slotId == slotId then
@@ -185,7 +199,7 @@ function PlotPickerController:place(detail: any)
 			hud:notify({
 				kind = "error",
 				title = "Couldn't build here",
-				body = Text.reason(if called then reason else nil),
+				body = Text.reason(if called then reason else nil, "slot"),
 			})
 		end
 		hud:render()

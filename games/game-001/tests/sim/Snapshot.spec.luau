@@ -74,9 +74,10 @@ describe("Kingdom/Snapshot", function()
 			return nil
 		end
 		expect(progress()).toBe(0)
-		sim:addWork(house, 7.5)
+		local work = sim:workFor("house", 1)
+		sim:addWork(house, work / 2)
 		expect(progress()).toBe(0.5)
-		sim:addWork(house, 7.5)
+		sim:addWork(house, work / 2)
 		local p, level = progress()
 		expect(p).toBe(0)
 		expect(level).toBe(1)

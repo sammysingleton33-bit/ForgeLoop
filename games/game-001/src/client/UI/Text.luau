@@ -3,7 +3,8 @@
 	UI/Text — every player-facing sentence the kingdom screens show for a server reply or a cost
 	check, in one place so the wording stays consistent and testable.
 
-		Text.reason(reason?) -> string         reason string from Build.CanPlace / Place / Upgrade
+		Text.reason(reason?, context?) -> string   reason string from Build.CanPlace / Place / Upgrade;
+		                                       context "slot" for Build.PlaceSlot (a plot's words)
 		Text.missing(cost, have) -> string?    "Need 20 Wood and 10 Stone"; nil when covered (fits a button)
 		Text.phase(phase?) -> string           MatchPhase as shown in the top bar
 		Text.list(words) -> string             "a, b and c"
@@ -33,13 +34,30 @@ local REASONS: { [string]: string } = {
 	busy = "Finish building it first",
 	unknown_type = "That building can't be built",
 	rate = "Slow down a moment, then try again",
+	-- Kingdom.SetJobQuota and other sim commands (FORGE-01 Sim/Commands error codes)
+	unknown_job = "That job can't be changed",
+	match_not_active = "The match isn't running",
+	not_ruler = "Only rulers can do that",
+	kingdom_eliminated = "Your kingdom has fallen",
 }
 
-function Text.reason(reason: any): string
+-- Build.PlaceSlot names the same codes after the plot (plots-ui handoff: `territory` not your plot,
+-- `overlap` already built on, `zone` does not fit).
+local SLOT_REASONS: { [string]: string } = {
+	territory = "This plot isn't yours",
+	overlap = "This plot is already built on",
+	zone = "That doesn't fit this plot",
+}
+
+function Text.reason(reason: any, context: string?): string
 	if reason == nil then
 		return "Couldn't reach the server. Try again."
 	end
-	return REASONS[tostring(reason)] or "That didn't work. Try again."
+	local key = tostring(reason)
+	if context == "slot" and SLOT_REASONS[key] then
+		return SLOT_REASONS[key]
+	end
+	return REASONS[key] or "That didn't work. Try again."
 end
 
 function Text.list(words: { string }): string

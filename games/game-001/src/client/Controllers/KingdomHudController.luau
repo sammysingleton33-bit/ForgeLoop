@@ -32,12 +32,15 @@
 		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
+		hud:changeJob(jobId, delta)         Kingdom panel "Jobs" (FL-0065): asks Kingdom.SetJobQuota for
+		                                    the job's count + delta; one request per job at a time
 		hud:setViewport(width, height)      the CoreUISafeInsets area size (headless; live measures it)
 		hud:render()   hud.state   hud.view (UI/KingdomHud)   hud.panel (UI/KingdomPanel)   hud.guis
 ]]
 
 local BuildModel = require("../UI/BuildModel")
 local Buildings = require("../UI/Buildings")
+local JobModel = require("../UI/JobModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local HudModel = require("../UI/HudModel")
@@ -76,7 +79,13 @@ function Def.new(env: any, registry: any)
 		state = {
 			menu = nil :: string?,
 			placing = false,
-			panel = { tab = "overview", upgradeId = nil, pending = nil, done = nil },
+			panel = {
+				tab = "overview",
+				upgradeId = nil,
+				pending = nil,
+				done = nil,
+				jobs = { pending = {}, requested = {} }, -- FL-0065: in flight / asked (JobModel state)
+			},
 			confirm = nil :: any,
 		},
 		_viewport = nil :: Vector2?,
@@ -123,7 +132,9 @@ function KingdomHudController:_withPlayerGui(fn: (Instance) -> ())
 	end
 	env.spawn(function()
 		local waited = if player then player:WaitForChild("PlayerGui", 10) else nil
-		if waited then
+		if self._destroyed then
+			return -- destroyed while waiting (FORGE-05 L6): mount nothing
+		elseif waited then
 			fn(waited)
 		else
 			env.log("warn", "KingdomHudController: no PlayerGui; the kingdom HUD is not mounted", {})
@@ -173,6 +184,7 @@ function KingdomHudController:start()
 	self._notifications = registry:find("NotificationController")
 	self._onboarding = registry:find("OnboardingController")
 	self.remotes = RemoteClient.new(env)
+	self._remoteConnections = {}
 	self._storeConnection = self.store.changed:connect(function(what, deltas)
 		self:_onStore(what, deltas)
 	end)
@@ -186,6 +198,11 @@ function KingdomHudController:start()
 	end)
 	self:_follow("Treasury.Changed", "Treasury.Get", function(totals, deltas)
 		store:applyTreasury(totals, deltas)
+	end)
+	-- My kingdom's population (G13.2, approved by FORGE-00; FORGE-01 declares it): the job panel
+	-- and the army panel read it from the store.
+	self:_follow("Kingdom.Population", "Kingdom.GetPopulation", function(payload)
+		store:applyPopulation(payload)
 	end)
 	self:_follow("Build.Buildings", nil, function(list)
 		store:applyBuildings(list, false)
@@ -216,7 +233,12 @@ function KingdomHudController:_follow(push: string, get: string?, handler: (...a
 	local env = self._env
 	env.spawn(function()
 		local ok, err = pcall(function()
-			self.remotes:on(push, handler)
+			local connection = self.remotes:on(push, handler)
+			if self._destroyed then
+				connection:Disconnect()
+			else
+				table.insert(self._remoteConnections, connection)
+			end
 		end)
 		if not ok then
 			env.log("warn", "KingdomHudController: cannot listen to " .. push, { error = tostring(err) })
@@ -246,9 +268,17 @@ end
 
 function KingdomHudController:destroy()
 	self._running = false
+	self._destroyed = true
 	if self._storeConnection then
 		self._storeConnection:disconnect()
 	end
+	-- Pushes stop here: the store no longer follows the server (FORGE-05 L5).
+	for _, connection in self._remoteConnections or {} do
+		pcall(function()
+			connection:Disconnect()
+		end)
+	end
+	self._remoteConnections = {}
 	for _, gui in self.guis do
 		gui:Destroy()
 	end
@@ -433,6 +463,47 @@ function KingdomHudController:requestUpgrade(detail: any, confirmed: boolean?)
 	end)
 end
 
+-- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
+-- the request sets the job's quota to that count + delta and the server fills it from the free
+-- (hauler) pool. Nothing changes here until its push arrives.
+function KingdomHudController:changeJob(jobId: string, delta: number)
+	local jobs = self.state.panel.jobs
+	local population = self.store:population()
+	if population == nil or not JobModel.isJob(jobId) or jobs.pending[jobId] ~= nil then
+		return
+	end
+	local current = population.byJob[jobId] or 0
+	local free = population.byJob.hauler or 0
+	local target = current + (if delta > 0 then 1 else -1)
+	if target < 0 or target > JobModel.MAX_QUOTA or (delta > 0 and free <= 0) then
+		return
+	end
+	local env = self._env
+	jobs.pending[jobId] = target
+	jobs.requested[jobId] = nil
+	self:render()
+	env.spawn(function()
+		local called, ok, reason = pcall(function()
+			return self.remotes:invoke("Kingdom.SetJobQuota", jobId, target)
+		end)
+		jobs.pending[jobId] = nil
+		if called and ok == true then
+			jobs.requested[jobId] = { target = target, at = env.clock() }
+			-- the "Moving…" note clears itself once its time is up, even without another push
+			self._motion:after(JobModel.REQUEST_HINT_SEC, function()
+				self:render()
+			end)
+		else
+			self:notify({
+				kind = "error",
+				title = "Couldn't change jobs",
+				body = Text.reason(if called then reason else nil),
+			})
+		end
+		self:render()
+	end)
+end
+
 function KingdomHudController:confirm()
 	local pending = self.state.confirm
 	self.state.confirm = nil
@@ -497,6 +568,7 @@ function KingdomHudController:_panelModel(): any
 		standings = HudModel.standings(store),
 		buildings = rows,
 		upgrade = upgrade,
+		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs, self._env.clock()) else nil,
 	}
 end
 
@@ -557,16 +629,23 @@ function KingdomHudController:render()
 			onClose = function()
 				self:setMenu(nil)
 			end,
+			onJob = function(jobId, delta)
+				self:changeJob(jobId, delta)
+			end,
 		})
 	else
 		self.panel:destroy()
 	end
 
-	if self._modal then
+	-- The confirm dialog belongs to one request: pushes while it is open leave it alone
+	-- (FORGE-05 M1). It shows the costs as they were when the player asked; the server checks
+	-- the treasury again on Build.Upgrade.
+	if self._modal and self._modalFor ~= s.confirm then
 		self._modal:destroy()
 		self._modal = nil
+		self._modalFor = nil
 	end
-	if s.confirm then
+	if s.confirm and self._modal == nil then
 		local d = s.confirm
 		local rows = {}
 		for _, c in d.costs do
@@ -592,6 +671,7 @@ function KingdomHudController:render()
 			end,
 		})
 		self._modal.instance.Parent = self.roots.modals
+		self._modalFor = s.confirm
 	end
 
 	local drawerOpen = s.menu ~= nil

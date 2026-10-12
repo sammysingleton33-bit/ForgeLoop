@@ -223,6 +223,81 @@
 			</g>
 			<circle cx="24" cy="24" r="11" fill="#F6D16A" ${s()}/>
 			<circle cx="24" cy="24" r="6.5" fill="#FBE6A2"/>`,
+		// FL-0088 citizen card and conversation (appended).
+		talk: `
+			<path d="M9 7 H39 Q44 7 44 12 V29 Q44 34 39 34 H23 L12.5 42.5 L14.5 34 H9 Q4 34 4 29 V12 Q4 7 9 7 Z" fill="#F7EFDC" ${s()}/>
+			<circle cx="15" cy="20.5" r="2.8" fill="#8F6A26"/><circle cx="24" cy="20.5" r="2.8" fill="#8F6A26"/><circle cx="33" cy="20.5" r="2.8" fill="#8F6A26"/>`,
+		heart: `
+			<path d="M24 42.5 C10.5 33 4 25.5 4 16.8 C4 10.6 8.7 6 14.4 6 C18.5 6 21.9 8.4 24 12 C26.1 8.4 29.5 6 33.6 6 C39.3 6 44 10.6 44 16.8 C44 25.5 37.5 33 24 42.5 Z" fill="#D9573F" ${s()}/>
+			<path d="M11.5 15 C12.2 12.3 14.2 10.8 16.8 10.7" fill="none" stroke="#F4A08E" stroke-width="2.6" stroke-linecap="round"/>`,
+		mood: `
+			<circle cx="24" cy="24" r="19" fill="#F2C447" ${s()}/>
+			<circle cx="17.5" cy="19.5" r="2.6" fill="${O}"/><circle cx="30.5" cy="19.5" r="2.6" fill="${O}"/>
+			<path d="M15 28 Q24 37 33 28" fill="none" stroke="${O}" stroke-width="2.8" stroke-linecap="round"/>
+			<path d="M11 15 Q13 10.5 17.5 9" fill="none" stroke="#FBE6A2" stroke-width="2.4" stroke-linecap="round"/>`,
+		scroll: `
+			<rect x="11" y="9" width="26" height="30" fill="#EADCBA" ${s()}/>
+			<rect x="7" y="5" width="34" height="7.5" rx="3.75" fill="#D6C295" ${s()}/>
+			<rect x="7" y="35.5" width="34" height="7.5" rx="3.75" fill="#D6C295" ${s()}/>
+			<path d="M16 18.5 H32 M16 24 H32 M16 29.5 H27" stroke="#8F6A26" stroke-width="2.2" stroke-linecap="round"/>`,
+		laurel: `
+			<path d="M23 43 C12 41 6 31 8.5 15 M25 43 C36 41 42 31 39.5 15" fill="none" stroke="${O}" stroke-width="4.4" stroke-linecap="round"/>
+			<path d="M23 43 C12 41 6 31 8.5 15 M25 43 C36 41 42 31 39.5 15" fill="none" stroke="#7E9A3A" stroke-width="2" stroke-linecap="round"/>
+			<g fill="#9CC95A" ${s('stroke-width="1.8"')}>
+				<ellipse cx="13" cy="15" rx="3" ry="5.5" transform="rotate(35 13 15)"/><ellipse cx="13.5" cy="23.5" rx="3" ry="5.5" transform="rotate(55 13.5 23.5)"/>
+				<ellipse cx="16.5" cy="31.5" rx="3" ry="5.5" transform="rotate(70 16.5 31.5)"/><ellipse cx="6" cy="22" rx="2.6" ry="5" transform="rotate(-15 6 22)"/>
+				<ellipse cx="35" cy="15" rx="3" ry="5.5" transform="rotate(-35 35 15)"/><ellipse cx="34.5" cy="23.5" rx="3" ry="5.5" transform="rotate(-55 34.5 23.5)"/>
+				<ellipse cx="31.5" cy="31.5" rx="3" ry="5.5" transform="rotate(-70 31.5 31.5)"/><ellipse cx="42" cy="22" rx="2.6" ry="5" transform="rotate(15 42 22)"/>
+			</g>
+			<path d="M24 41 L21 46 M24 41 L27 46" stroke="#D9573F" stroke-width="2.4" stroke-linecap="round"/>`,
+		// FL-0089 reputation categories (living-kingdom §3) and kingdom conditions.
+		rep_compassion: `
+			<path d="M24 42 C14 34.5 5 27 5 17.5 C5 11 10 6.5 15.5 6.5 C19.5 6.5 22.5 9 24 12 C25.5 9 28.5 6.5 32.5 6.5 C38 6.5 43 11 43 17.5 C43 27 34 34.5 24 42 Z" fill="#E0607A" ${s()}/>
+			<path d="M12 15 C12.5 12 14.5 10.5 17 10.5" fill="none" stroke="#F7B7C4" stroke-width="3" stroke-linecap="round"/>`,
+		rep_honor: `
+			<path d="M24 6 V40" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M24 6 V40" stroke="#D6A84A" stroke-width="2.4" stroke-linecap="round"/>
+			<path d="M8 13 H40" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M8 13 H40" stroke="#EAC46C" stroke-width="2.4" stroke-linecap="round"/>
+			<path d="M10 14 L4.5 27 M10 14 L15.5 27 M38 14 L32.5 27 M38 14 L43.5 27" stroke="#8F6A26" stroke-width="1.6"/>
+			<path d="M3 27 H17 C17 31.5 13.8 34 10 34 C6.2 34 3 31.5 3 27 Z" fill="#9FC0E6" ${s()}/>
+			<path d="M31 27 H45 C45 31.5 41.8 34 38 34 C34.2 34 31 31.5 31 27 Z" fill="#9FC0E6" ${s()}/>
+			<rect x="15" y="39" width="18" height="5" rx="2" fill="#8A5A32" ${s()}/>
+			<circle cx="24" cy="6.5" r="3" fill="#EAC46C" ${s('stroke-width="1.6"')}/>`,
+		rep_competence: `
+			<path d="M21 4 H27 L28 9.5 L32.5 11.3 L37.2 8.1 L41.4 12.3 L38.2 17 L40 21.5 L45.5 22.5 V28.5 L40 29.5 L38.2 34 L41.4 38.7 L37.2 42.9 L32.5 39.7 L28 41.5 L27 47 H21 L20 41.5 L15.5 39.7 L10.8 42.9 L6.6 38.7 L9.8 34 L8 29.5 L2.5 28.5 V22.5 L8 21.5 L9.8 17 L6.6 12.3 L10.8 8.1 L15.5 11.3 L20 9.5 Z" transform="translate(0 -1.5) scale(1 0.97)" fill="#A9B7C8" ${s()}/>
+			<circle cx="24" cy="24" r="8.5" fill="#5E6B7C" ${s()}/>
+			<circle cx="24" cy="24" r="4" fill="#DCE4EE"/>`,
+		rep_courage: `
+			<path d="M24 6 C31 9 38 9.5 41 9.5 C41 27 35 37 24 44 C13 37 7 27 7 9.5 C10 9.5 17 9 24 6 Z" fill="#B8402E" ${s()}/>
+			<path d="M24 10 C29.5 12.5 35 13 37.5 13 C37 25.5 32 33.5 24 39.5 Z" fill="#8F3B2C"/>
+			<g transform="rotate(-38 24 25)">
+			<path d="M20.5 7 L24 2 L27.5 7 V30 H20.5 Z" fill="#E6ECF3" ${s()}/>
+			<path d="M24 6 V28" stroke="#A9B7C8" stroke-width="1.8"/>
+			<rect x="13" y="29.5" width="22" height="6" rx="2.5" fill="#F2C447" ${s()}/>
+			<rect x="21" y="35.5" width="6" height="7.5" fill="#7E5230" ${s()}/>
+			<circle cx="24" cy="44.5" r="3" fill="#F2C447" ${s('stroke-width="1.6"')}/></g>`,
+		rep_authority: `
+			<path d="M24 18 V43" stroke="${O}" stroke-width="8.5" stroke-linecap="round"/><path d="M24 18 V43" stroke="#D6A84A" stroke-width="4.4" stroke-linecap="round"/>
+			<rect x="16.5" y="26" width="15" height="5" rx="2" fill="#EAC46C" ${s()}/>
+			<path d="M10 7 L16 14 L24 3 L32 14 L38 7 L36 21 H12 Z" fill="#F2C447" ${s()}/>
+			<circle cx="24" cy="14.5" r="3.2" fill="#9A62C9" ${s('stroke-width="1.6"')}/>
+			<circle cx="24" cy="43.5" r="3.4" fill="#9A62C9" ${s('stroke-width="1.8"')}/>`,
+		rep_fear: `
+			<path d="M24 4 C13 4 7 11.5 7 20.5 C7 26.5 10 30.5 14 32.5 V39 C14 41.5 16 43 18 43 H30 C32 43 34 41.5 34 39 V32.5 C38 30.5 41 26.5 41 20.5 C41 11.5 35 4 24 4 Z" fill="#E6E0D0" ${s()}/>
+			<path d="M13 22 C13 18.5 16 17 18.5 17 C21 17 22 19 22 21.5 C22 24.5 19.5 26 17 26 C14.5 26 13 24.5 13 22 Z M35 22 C35 18.5 32 17 29.5 17 C27 17 26 19 26 21.5 C26 24.5 28.5 26 31 26 C33.5 26 35 24.5 35 22 Z" fill="#2A2116"/>
+			<path d="M24 27.5 L21.5 32.5 H26.5 Z" fill="#2A2116"/>
+			<path d="M19.5 37 V43 M24 37 V43 M28.5 37 V43" stroke="#8F866E" stroke-width="1.6"/>`,
+		happiness: `
+			<circle cx="24" cy="24" r="19" fill="#F2C447" ${s()}/>
+			<circle cx="17" cy="20" r="2.8" fill="#2A2116"/><circle cx="31" cy="20" r="2.8" fill="#2A2116"/>
+			<path d="M14.5 27.5 C17 33.5 31 33.5 33.5 27.5" fill="none" stroke="#2A2116" stroke-width="3" stroke-linecap="round"/>
+			<circle cx="12.5" cy="27" r="2.6" fill="#E0607A" opacity="0.6"/><circle cx="35.5" cy="27" r="2.6" fill="#E0607A" opacity="0.6"/>`,
+		stability: `
+			<rect x="7" y="5" width="34" height="6" rx="1.5" fill="#E6DCC4" ${s()}/>
+			<rect x="10" y="11" width="28" height="4" fill="#CFC3A6" ${s()}/>
+			<rect x="14" y="15" width="20" height="23" fill="#E6DCC4" ${s()}/>
+			<path d="M19 17 V36 M24 17 V36 M29 17 V36" stroke="#B3A68A" stroke-width="1.8"/>
+			<rect x="10" y="38" width="28" height="4" fill="#CFC3A6" ${s()}/>
+			<rect x="6" y="42" width="36" height="4" rx="1.5" fill="#BDB295" ${s()}/>`,
 	};
 
 	function svg(name, size) {

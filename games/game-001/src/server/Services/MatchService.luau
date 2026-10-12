@@ -26,6 +26,7 @@
 	exactly once by the host's event fan-out (see Game/Kingdom/MatchHost).
 ]]
 
+local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -100,11 +101,14 @@ function MatchService:start()
 	self.host = MatchHost.new(self._env, self._remotes, {
 		tickSeconds = MatchConfig.tickSeconds,
 		worldViewEntities = false, -- clients render citizens and soldiers (EntityController, D-023/D-026)
+		worldViewBuildings = "kit", -- FORGE-02's Kit models for every building (G6/G10)
+		worldViewGround = false, -- WorldService (FORGE-02) owns the terrain and the river; no slab over them
 		match = {
 			mode = self.mode,
 			phaseDurations = durations,
 			minPlayers = MatchConfig.minPlayers,
 			treasury = treasury,
+			costs = Costs, -- FORGE-03's Costs.luau (G6/G7)
 		},
 	})
 	self.host.events:connect(function(name: string)

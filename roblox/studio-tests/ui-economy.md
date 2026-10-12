@@ -16,8 +16,9 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
    `BuildMenuController`, with no red errors from either.
-2. Without P2 you see, after about 10 s, warnings like `KingdomHudController: cannot listen to
-   Kingdom.State`, and **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
+2. Without P2, wait about 25 s: warnings like `KingdomHudController: cannot listen to
+   Kingdom.State` arrive in two waves (around 15 s and 20 s, one per area each time), and there is
+   **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
 
 ## U2 — kingdom, rulers, resources (P2)
 1. Play. Top-left: a crest in your kingdom's colour, its name (e.g. Emberhold) and
@@ -85,8 +86,48 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 3. Tap another kingdom's building: a read-only card "Frostmere · Level 2 — Not your building".
 4. Tap empty ground: the drawer closes.
 
+## U12 — reputation (P2 + FORGE-01 `Kingdom.Reputation`/`GetReputation`, FL-0089)
+1. Play as a ruler. Under the rulers row (tablet/desktop) or under the crest (phone) a strip shows six
+   values, each with an icon, a **number** and a bar (Compassion, Honor, Competence, Courage,
+   Authority, Fear). Without FORGE-01's reputation remotes the strip stays hidden and Output shows a
+   warning: expected.
+2. Open the Build drawer on a tablet or desktop: it starts below the strip and covers none of it.
+3. Tap the strip: the Reputation screen opens. Tap a value: its number, Low/Medium/High word and recent
+   changes (the About text appears only once FORGE-00's content library is in). On a phone: the grid,
+   then the detail with "‹ Reputation" back.
+4. Take a decision that changes reputation (a citizen conversation, FL-0088): the bar moves and a
+   "+N"/"−N" chip floats on that value; History shows the line on top, "just now".
+5. Kingdom tab: Happiness, Stability, Morale, each with a bar, a number and a word.
+6. While the screen is open, let production tick: the screen does not flicker or lose its scroll.
+
+## U13 — citizen card and a conversation (P2 + FORGE-01 `Sim.Inspect`, `Kingdom.Converse/Choose`, FORGE-04 selection, FL-0088)
+1. Tap one of your citizens: the drawer (phone: the right-hand panel) shows the name, occupation,
+   Loyalty / Mood / Obedience each with a bar **and a number**, what they are doing now, traits,
+   family and friends. A citizen with something to say has a "!" on the portrait and a gold **Talk**.
+2. Tap **Talk**: the question and 2–4 answers appear (phone 844 × 390: all four visible without
+   scrolling; a very long question shows a "scroll for all" cue). Every word comes from the server:
+   nothing in English is built into the client.
+3. Tap an answer: all answers grey out at once; then the reaction and the "What changed" chips
+   (resources, loyalty, reputation). The pills and the reputation strip move to match. **Done** closes.
+4. Tap the same answer twice quickly, or tap during a resource tick: only one answer is sent, and the
+   panel does not flicker or lose the tap.
+5. Tap empty ground or enter build mode while the card or conversation is open: it closes.
+
+## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
+1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free
+   citizens row, Farmers, Woodcutters, Miners, Builders, each with a **number** and − / + (44 px on a
+   phone), and Soldiers (read-only). Without FORGE-01's population remotes the tab shows
+   "Counting your citizens…" and the buttons stay off: expected until FORGE-01 ships them.
+2. Tap **+** on Woodcutters: the row says "Asking… 2 → 3" and its buttons wait; within about a second
+   the count is 3 and Free citizens is one lower. In the world, a hauler walks off to cut wood.
+3. Tap **−** on Farmers: Farmers goes down by one and Free citizens up by one.
+4. Move citizens until Free citizens is 0: every + is greyed out and the row says
+   "None free: lower a job first".
+5. Leave the panel open while resources tick or someone builds: the rows don't flicker and a tap
+   always lands.
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 
 ## Report
-Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6, any Output errors.
+Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.

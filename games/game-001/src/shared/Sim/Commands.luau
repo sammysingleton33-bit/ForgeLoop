@@ -18,7 +18,7 @@
 		Commands.namesFor(sim): { string }                 -- built-ins + installed, sorted
 
 	Commands (args)                         result on success
-		PlaceBuilding(kind, x, z)            { buildingId }
+		PlaceBuilding(kind, x, z, yaw?)      { buildingId }        -- yaw: facing in radians (default: towards the keep)
 		UpgradeBuilding(buildingId)          { buildingId, level }
 		CancelConstruction(buildingId)       { buildingId }
 		SetJobQuota(job, count)              { job, count }           -- 0..200; hauler is the pool (no quota)
@@ -84,11 +84,11 @@ function Commands.namesFor(sim: any): { string }
 	return out
 end
 
-register("PlaceBuilding", function(sim, kingdom, by, kind, x, z)
-	if not isId(kind) or not finite(x) or not finite(z) then
+register("PlaceBuilding", function(sim, kingdom, by, kind, x, z, yaw)
+	if not isId(kind) or not finite(x) or not finite(z) or (yaw ~= nil and not finite(yaw)) then
 		return false, "invalid_args"
 	end
-	local building, err = sim:placeBuilding(kingdom, kind, x, z, by)
+	local building, err = sim:placeBuilding(kingdom, kind, x, z, by, yaw)
 	if building == nil then
 		return false, err
 	end
