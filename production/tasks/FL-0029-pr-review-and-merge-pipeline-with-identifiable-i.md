@@ -3,7 +3,7 @@ id: FL-0029
 title: PR review and merge pipeline with identifiable integration builds
 track: qa
 owner: forge-05
-status: READY
+status: BUILDING
 priority: P0
 game: factory
 created: 2026-10-12
@@ -30,3 +30,4 @@ First worker PR merged with evidence; artifact downloaded and BuildInfo checked
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-05: READY → BUILDING. First integration done (PR #1). Building PR template, ownership gate (G8), integration log, merge checklist, branch-protection handoff.

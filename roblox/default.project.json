@@ -1,0 +1,33 @@
+{
+	"name": "ForgeLoopSandbox",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Forge": {
+				"$path": "src/shared",
+				"Config": {
+					"$path": "../games/sandbox/config"
+				},
+				"Assets": {
+					"$path": "assets"
+				}
+			}
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"Forge": {
+				"$path": "src/server"
+			}
+		},
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts",
+				"Forge": {
+					"$path": "src/client"
+				}
+			}
+		}
+	}
+}

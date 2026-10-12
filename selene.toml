@@ -1,0 +1,5 @@
+# Selene 0.31.0 (rokit.toml). Run from the repository root: selene roblox/src roblox/tests roblox/scripts games
+# std "roblox" is read from the committed roblox.yml next to this file (pinned: no network, same result in CI).
+# How it was generated and how to refresh it: roblox/README.md, section "Linting".
+std = "roblox"
+roblox-std-source = "pinned"
