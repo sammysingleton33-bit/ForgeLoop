@@ -1,0 +1,21 @@
+# Line endings: LF in the repository and in every working tree, on every OS. Git for Windows
+# defaults to core.autocrlf=true, which would check out CRLF: bash then fails on the .sh scripts
+# ("set: pipefail: invalid option name") and `stylua --check` (line_endings = "Unix") flags every
+# Luau file. Existing Windows clones made before this file: `git rm --cached -r . && git reset --hard`
+# (or clone again).
+* text=auto eol=lf
+
+# Binary assets: never normalise or diff as text.
+*.rbxl binary
+*.rbxm binary
+*.blend binary
+*.fbx binary
+*.glb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ogg binary
+*.mp3 binary
+*.wav binary
+*.zip binary
