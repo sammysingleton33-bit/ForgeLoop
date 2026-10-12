@@ -25,3 +25,34 @@ palette / detail density / cohesion / triangle cost.
 - Scores (author): 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3 (06 sits at 4,992/5,000, so it has no headroom).
 - Remaining weaknesses: plain chimneys; side walls have little detail; the yellow kingdom roof reads orange next to the thatch.
 - Next: fresh-context reviewer (D-019) and user calibration.
+
+## Round 5 — fresh-context reviewer (D-019), on v3
+- Reviewer saw only `previews/house_cottage.jpg` and the 03/06 hero renders. Scores 3 / 3 / 4 / 3 / 3 / 3 / 4 / 3. Verdict **NEEDS-WORK**.
+- Findings:
+  - every line was ruler-straight (not storybook);
+  - three thatch roofs looked identical at distance, and the thatch read thin;
+  - 03 and 06 shared one plan;
+  - the wing roof buried an upper window;
+  - the chimneys were tiny stubs;
+  - triangles weren't spent where they show.
+
+## Round 6 — v4 (author response to the reviewer)
+- Kit changes (shared by every timber building):
+  - tile roofs are lofted slabs with a ridge/eave sag;
+  - timbers wander ±0.09 (hand-cut);
+  - chimneys are tapered, with a mid band, a flared two-step cap, clay pots and a lean;
+  - thatch is thicker (2× eave thickness) with more bulge, a zig-zag "pinned" ridge band, and 2 layers on small roofs.
+- Cottage: six distinct archetypes:
+  1. porch cottage;
+  2. stone-ground two-storey with woodshed;
+  3. round stair-tower house with an exterior chimney breast;
+  4. catslide cottage with a rear outshut and dormer;
+  5. front-wing thatched house;
+  6. steep two-storey with dormer and exterior chimney.
+- The upper storey leans ~1°. Wing-side upper windows moved clear of the wing roof. Straw tone varies (thatch/hay).
+- Result: all 6 PASS, 3,892–4,994 tris; min silhouette diff 0.184 (v3: 0.167; v2: 0.134).
+- Author scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3.
+- Remaining:
+  - 05 has only ~6 tris of headroom (4,994/5,000);
+  - the green-kingdom turret cone can still read as a small tree from far away;
+  - side walls are plain on single-storey variants.

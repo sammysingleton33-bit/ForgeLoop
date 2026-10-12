@@ -53,7 +53,7 @@ def oriented_box(p0, p1, width, depth, color, normal=Vector((0, -1, 0)), bev=0.0
 # ------------------------------------------------------------------ walls
 
 def wall_face_frame(length, height, axis, offset, color="timber", posts=3, braces=True, rng=None, skip=(),
-                    rail=None):
+                    rail=None, crooked=0.09):
     """Timber framing on one wall face (sole plate, top plate, posts, optional mid rail and
     diagonal braces). axis 'x': wall runs along X at y=offset (normal sign(offset) on Y);
     axis 'y': wall runs along Y at x=offset. `skip`: post indices left out (door bays)."""
@@ -63,7 +63,10 @@ def wall_face_frame(length, height, axis, offset, color="timber", posts=3, brace
     t = TIMBER
     d = TIMBER_OUT * 2
 
-    def P(u, z):
+    def P(u, z, wob=True):
+        if rng and crooked and wob:  # hand-cut timber: endpoints wander a little (storybook, not ruler-straight)
+            u += rng.uniform(-crooked, crooked)
+            z += rng.uniform(-crooked, crooked) * 0.6
         return Vector((u, offset, z)) if axis == "x" else Vector((offset, u, z))
 
     half = length / 2
@@ -185,14 +188,43 @@ def _slab(ridge, a, side, s0, s1, y0, y1, t, extra=0.0, color="thatch", lift=0.0
     return recalc_normals(Piece(pts, f, color))
 
 
+def _slab_lofted(ridge, a, side, s0, s1, y0, y1, t, extra=0.0, color="tile", lift=0.0, stations=5, sag=0.0):
+    """Like _slab but with intermediate stations along the ridge so the slab can sag in the middle."""
+    ca, sa = math.cos(a), math.sin(a)
+    d = Vector((side * ca, 0, -sa))
+    n = Vector((side * sa, 0, ca))
+    if extra:
+        rot = Matrix.Rotation(-side * extra, 3, "Y")
+        d2, n2 = rot @ d, rot @ n
+    else:
+        d2, n2 = d, n
+    top = Vector(ridge) + d * s0 + n * lift
+    rings = []
+    for i in range(stations):
+        f = i / (stations - 1)
+        yy = y0 + (y1 - y0) * f
+        dz = -sag * math.sin(math.pi * f)
+        ring = []
+        for s, nn in ((0, 0), (s1 - s0, 0), (s1 - s0, t), (0, t)):
+            p = top + d2 * s + n2 * nn
+            ring.append((p.x, yy, p.z + dz))
+        rings.append(ring)
+    return loft_rings(rings, color)
+
+
 def gable_roof(span, length, pitch_deg=45.0, overhang=1.2, gable_overhang=1.0, thickness=0.8,
-               color="thatch", rows=5, ridge_color=None, style="tile", rng=None, trim="timber"):
+               color="thatch", rows=5, ridge_color=None, style="tile", rng=None, trim="timber", sag=None,
+               extend=None, pins=True):
     """Roof over walls of width `span` (X) and length `length` (Y), eaves at z=0, ridge along Y.
 
     style 'tile': stepped shingle rows + ridge cap + barge boards.
     style 'thatch': three thick rounded layers, wavy eaves and a rolled ridge.
+    sag: storybook dip in the middle of the ridge/eaves (default 0.02 x length, max 0.5).
+    extend: (side, extra) lengthens the lowest tile row on one side (catslide roofs).
     Returns (pieces, ridge_height)."""
     a = math.radians(pitch_deg)
+    if sag is None:
+        sag = min(0.5, 0.02 * length)
     half = span / 2
     rise = half * math.tan(a)
     ridge = Vector((0, 0, rise))
@@ -200,22 +232,28 @@ def gable_roof(span, length, pitch_deg=45.0, overhang=1.2, gable_overhang=1.0, t
     y0, y1 = -length / 2 - gable_overhang, length / 2 + gable_overhang
     out = []
     if style == "thatch":
-        out += thatch_roof(span, length, pitch_deg, overhang, gable_overhang, thickness * 1.6, color,
-                           ridge_color or "thatch_dark", rng)
+        out += thatch_roof(span, length, pitch_deg, overhang, gable_overhang, thickness * 2.0, color,
+                           ridge_color or "thatch_dark", rng, pins=pins)
     else:
         n = max(1, rows)
         seg = L / n
+        st = max(3, min(6, int((y1 - y0) // 5) + 2))
         for side in (-1, 1):
             for k in range(n):
                 s0 = -0.3 + k * seg
                 s1 = (k + 1) * seg + (0.3 if k < n - 1 else 0.0)
-                sl = _slab(ridge, a, side, s0, s1, y0, y1, thickness, extra=math.radians(4.0) if n > 1 else 0.0,
-                           color=color, lift=0.02 * k)
+                if extend and side == extend[0] and k == n - 1:
+                    s1 += extend[1]
+                sl = _slab_lofted(ridge, a, side, s0, s1, y0, y1, thickness,
+                                  extra=math.radians(4.0) if n > 1 else 0.0, color=color, lift=0.02 * k,
+                                  stations=st, sag=sag)
                 sl.grad = ("range", 0.3 + 0.25 * (n - 1 - k) / max(1, n - 1), 0.9)
-                out.append(bevel(sl, 0.1))
-        cap = bbox(thickness * 1.6, (y1 - y0) + 0.4, thickness * 1.6, ridge_color or color, 0.15, base=False)
-        cap.rotate(math.radians(45), "Y")
-        cap.move(0, 0, rise + thickness * 0.45)
+                out.append(sl)
+        c = thickness * 0.8
+        diamond = [(0.0, -c * 0.2), (c * 1.1, c * 0.75), (0.0, c * 1.7), (-c * 1.1, c * 0.75)]
+        ys = [y0 - 0.2 + (y1 - y0 + 0.4) * i / (st - 1) for i in range(st)]
+        cap = loft_rings([[(x, yy, rise + z - sag * math.sin(math.pi * i / (st - 1))) for x, z in diamond]
+                          for i, yy in enumerate(ys)], ridge_color or color)
         out.append(cap)
         if trim:
             ez = -overhang * math.tan(a)
@@ -227,7 +265,7 @@ def gable_roof(span, length, pitch_deg=45.0, overhang=1.2, gable_overhang=1.0, t
 
 
 def thatch_roof(span, length, pitch_deg=50.0, overhang=1.4, gable_overhang=1.1, t=1.3, color="thatch",
-                ridge_color="thatch_dark", rng=None, steps=3):
+                ridge_color="thatch_dark", rng=None, steps=3, pins=True):
     """Puffy layered thatch: one lofted profile with stepped bulges, rounded eave lips,
     a rolled ridge, a slight sag along the ridge and wavy eaves. Rests on walls of width
     `span`; eaves at z=0. Smooth-shaded (soft straw look)."""
@@ -242,7 +280,9 @@ def thatch_roof(span, length, pitch_deg=50.0, overhang=1.4, gable_overhang=1.1, 
         # point at slope distance u from the ridge (underside line), pushed `off` along the normal
         return (side * (u * ca + off * sa), rise - u * sa + off * ca)
 
-    b = t * 0.32  # bulge of each layer's lower edge
+    if span < 12:
+        steps = min(steps, 2)  # small roofs (wings, porches): fewer layers, same look
+    b = t * 0.42  # bulge of each layer's lower edge
     outer = []  # right side, ridge -> eave
     for k in range(steps):
         u0, u1 = L * k / steps, L * (k + 1) / steps
@@ -292,6 +332,30 @@ def thatch_roof(span, length, pitch_deg=50.0, overhang=1.4, gable_overhang=1.1, 
     roll.bend(lambda v: (v.x, v.y, v.z - 0.22 * math.sin(math.pi * (v.y - y0) / (y1 - y0))))
     roll.move(0, 0, rise + t * 1.0)
     out.append(roll.paint(smooth=True, grad=("range", 0.3, 0.85)))
+    if not pins:
+        return out
+    # pinned ridge: a zig-zag band of darker straw lying over the ridge on both slopes
+    n_teeth = max(4, int((y1 - y0 - 1.6) // 1.8))
+    band_h, tooth, bt = t * 0.9, t * 0.75, 0.22
+    for side in (-1, 1):
+        poly = [(y0 + 0.6, 0.0), (y1 - 0.6, 0.0)]
+        span_y = (y1 - 0.6) - (y0 + 0.6)
+        for i in range(2 * n_teeth, -1, -1):
+            yy = y0 + 0.6 + span_y * i / (2 * n_teeth)
+            poly.append((yy, band_h + (tooth if i % 2 else 0.0)))
+        verts, faces = [], []
+        m = len(poly)
+        for off in (0.0, bt):
+            for yy, s in poly:
+                p = Vector((side * (s * ca + (t * 1.08 + off) * sa), yy, rise - s * sa + (t * 1.08 + off) * ca))
+                p.z += -0.22 * math.sin(math.pi * (yy - y0) / (y1 - y0))
+                verts.append(p)
+        faces.append(tuple(range(m)))
+        faces.append(tuple(range(2 * m - 1, m - 1, -1)))
+        for i in range(m):
+            j = (i + 1) % m
+            faces.append((i, m + i, m + j, j))
+        out.append(recalc_normals(Piece(verts, faces, ridge_color)).paint(grad=("range", 0.35, 0.75)))
     return out
 
 
@@ -342,10 +406,23 @@ def crenellations(length, thickness, height=3.0, merlon=2.6, gap=1.8, color="sto
     return out
 
 
-def chimney(height, w=2.2, color="stone", cap="stone_dark"):
-    out = [bbox(w, w, height, color, 0.15).paint(grad=("range", 0.25, 0.8))]
-    out.append(bbox(w + 0.6, w + 0.6, 0.45, cap, 0.1).move(0, 0, height))
-    out.append(box(w * 0.55, w * 0.55, 0.3, "black").move(0, 0, height + 0.3))
+def chimney(height, w=2.2, color="stone", cap="stone_dark", lean=0.0, pots=1, band=True):
+    """Tapered stone stack with a mid band, a flared two-step cap and clay pots. `lean` (radians)
+    tilts the whole stack about its base (storybook)."""
+    from .geo import frustum_box
+
+    out = [bevel(frustum_box(w, w, w * 0.9, w * 0.9, height, color), 0.12).paint(grad=("range", 0.25, 0.85))]
+    if band and height > 6:
+        out.append(bbox(w * 0.98, w * 0.98, 0.4, cap, 0.08).move(0, 0, height * 0.62))
+    out.append(bbox(w * 0.9 + 0.5, w * 0.9 + 0.5, 0.4, cap, 0.1).move(0, 0, height))
+    out.append(bbox(w * 0.9 + 0.9, w * 0.9 + 0.9, 0.35, cap, 0.1).move(0, 0, height + 0.4))
+    for i in range(max(1, pots)):
+        ox = 0.0 if pots == 1 else (i - (pots - 1) / 2) * w * 0.45
+        out.append(lathe([(0.42, 0.0), (0.36, 0.7), (0.42, 1.0), (0.0, 1.0)], 6, "clay").move(ox, 0, height + 0.75))
+        out.append(box(0.36, 0.36, 0.08, "black").move(ox, 0, height + 1.72))
+    if lean:
+        for p in out:
+            p.rotate(lean, "X")
     return out
 
 

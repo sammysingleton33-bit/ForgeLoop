@@ -1,6 +1,8 @@
 """Village cottage: stone plinth, plaster + timber frame (or kingdom-stone ground floor),
 optional jettied upper storey, layered thatch or kingdom-tile roof, chimney, shutters in
-the kingdom colour, optional lean-to woodshed, door props.
+the kingdom colour, and one archetype feature per variant so plans differ:
+porch, woodshed, round stair tower, catslide outshut + dormers, front-gabled wing,
+exterior chimney breast.
 
 Front (door) faces Blender -Y (Roblox -Z, the Model's front). Door is walkable (4.4 x 7.6).
 """
@@ -8,11 +10,11 @@ Front (door) faces Blender -Y (Roblox -Z, the Model's front). Door is walkable (
 import math
 
 from lib import kit
-from lib.geo import Vector, box, cylinder, lathe
+from lib.geo import Vector, bevel, box, cylinder, frustum_box, lathe
 from lib.palette import kingdom_color
 
 NAME = "house_cottage"
-VERSION = 3
+VERSION = 4
 CATEGORY = "house"
 BUDGET = "building_small"
 COLLISION = {"fidelity": "PreciseConvexDecomposition"}
@@ -20,23 +22,27 @@ CHECKS = {"min_pieces": 60, "min_windows": 3, "min_roof": 2}
 DEFAULT_VARIANTS = 6
 
 KINGDOM_CYCLE = ("red", "blue", "green", "yellow")
+# one archetype per slot: (storeys, roof, ground, features)
+ARCHETYPES = (
+    (1, "thatch", "plaster", ("porch",)),
+    (2, "tile", "stone", ("lean_to",)),
+    (2, "thatch", "stone", ("tower", "ext_chimney")),
+    (1, "tile", "plaster", ("dormers", "catslide")),
+    (2, "thatch", "plaster", ("wing",)),
+    (2, "tile", "plaster", ("dormers", "ext_chimney", "steep")),
+)
+FEATURES = ("porch", "lean_to", "tower", "ext_chimney", "dormers", "catslide", "wing", "steep")
 
 
 def variants(n, seed):
     out = []
     for i in range(n):
-        out.append({
-            "kingdom": KINGDOM_CYCLE[i % 4],
-            "storeys": 1 if i % 3 == 0 else 2,
-            "roof": "thatch" if i % 2 == 0 else "tile",
-            "ground": "stone" if i % 4 in (1, 2) else "plaster",
-            "lean_to": i % 3 == 1 or i == 4,
-            "chimney": "left" if i % 2 else "right",
-            "wing": i % 6 in (2, 5),  # L-plan: front-gabled wing
-            "dormers": i % 6 in (3, 5),  # attic dormers on tile roofs
-            "porch": i % 6 == 0,  # gabled porch over the door
-            "seed": seed * 1000 + i,
-        })
+        storeys, roof, ground, feats = ARCHETYPES[i % len(ARCHETYPES)]
+        p = {"kingdom": KINGDOM_CYCLE[i % 4], "storeys": storeys, "roof": roof, "ground": ground,
+             "chimney": "left" if i % 2 else "right", "seed": seed * 1000 + i}
+        for f in FEATURES:
+            p[f] = f in feats
+        out.append(p)
     return out
 
 
@@ -53,8 +59,10 @@ def build(b, p):
     plaster = rng.choice(("plaster", "plaster", "plaster_white"))
     shutter = kingdom_color(k, "shutter")
     windows = 0
+    style = p["roof"]
+    thatch_tone = rng.choice(("thatch", "thatch", "hay"))
 
-    # --- plinth: stone blocks around a solid core
+    # --- plinth
     e = 0.35
     pts = [(-W / 2 - e, -D / 2 - e, 0), (W / 2 + e, -D / 2 - e, 0), (W / 2 + e, D / 2 + e, 0),
            (-W / 2 - e, D / 2 + e, 0), (-W / 2 - e, -D / 2 - e, 0)]
@@ -65,17 +73,19 @@ def build(b, p):
     # --- ground floor
     z0 = plinth_h
     dx = rng.choice((-1, 1)) * rng.uniform(W * 0.08, W * 0.2)
+    ws = -1 if dx > 0 else 1  # side away from the door
     if p["ground"] == "stone":
         b.add(kit.bbox(W, D, h1, kingdom_color(k, "stone"), 0.2).move(0, 0, z0).paint(grad=("range", 0.2, 0.8)))
         for sx in (-1, 1):
             for sy in (-1, 1):
+                if p["tower"] and sx == ws and sy < 0:
+                    continue  # the stair tower covers this corner
                 for j in range(int(h1 // 1.9)):
                     big = j % 2 == 0
                     q = box(1.9 if big else 1.2, 1.2 if big else 1.9, 1.7, kingdom_color(k, "stone_light"))
                     q.move(sx * (W / 2 - (0.75 if big else 0.4)) + sx * 0.18,
                            sy * (D / 2 - (0.4 if big else 0.75)) + sy * 0.18, z0 + 0.12 + j * 1.9)
                     b.add(q)
-        # string course under the eaves
         b.add(kit.bbox(W + 0.5, D + 0.5, 0.5, kingdom_color(k, "stone_dark"), 0.12).move(0, 0, z0 + h1 - 0.5))
     else:
         b.add(kit.bbox(W, D, h1, plaster, 0.2).move(0, 0, z0).paint(grad=("range", 0.35, 0.85)))
@@ -92,91 +102,114 @@ def build(b, p):
     b.add([pc.move(dx, -D / 2, z0) for pc in kit.door(kit.DOOR_W, kit.DOOR_H, "wood_dark", surround)])
     b.socket("door", dx, -D / 2 - 2.0, 0)
 
-    # ground floor windows: front (or on the wing's gable), one side, back
-    ws = -1 if dx > 0 else 1  # the side away from the door
-    wx = dx + ws * W * 0.33
-    wy = -D / 2
-    if p.get("wing"):
+    # --- ground floor windows: front (or on the wing gable), one side, back
+    wx, wy = dx + ws * W * 0.33, -D / 2
+    if p["wing"]:
         Ww, Dw = rng.uniform(9.0, 10.5), rng.uniform(7.0, 8.5)
         xw = ws * (W / 2 - Ww / 2)
-        windows += _wing(b, p, k, xw, -D / 2, Ww, Dw, z0, h1, plinth_h, plaster, shutter)
+        windows += _wing(b, p, k, xw, -D / 2, Ww, Dw, z0, h1, plinth_h, plaster, shutter, thatch_tone, ws)
         wx, wy = xw, -D / 2 - Dw
-    b.add([pc.move(wx, wy, z0 + kit.SILL_Z) for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", shutter)])
+    if not p["tower"] or abs(wx - ws * (W / 2 - 0.6)) > 4.5:
+        b.add([pc.move(wx, wy, z0 + kit.SILL_Z) for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", shutter)])
+    else:
+        wx = dx + ws * W * 0.2
+        b.add([pc.move(wx, wy, z0 + kit.SILL_Z) for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", shutter)])
     windows += 1
-    side = rng.choice((-1, 1))
+    side = -ws if p["ext_chimney"] else rng.choice((-1, 1))
     for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", shutter):
         b.add(pc.rotate(side * math.pi / 2, "Z").move(side * W / 2, rng.uniform(-1.5, 1.5), z0 + kit.SILL_Z))
     windows += 1
-    for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", None):
-        b.add(pc.rotate(math.pi, "Z").move(rng.uniform(-W / 4, W / 4), D / 2, z0 + kit.SILL_Z))
-    windows += 1
+    if not p["catslide"]:
+        for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", None):
+            b.add(pc.rotate(math.pi, "Z").move(rng.uniform(-W / 4, W / 4), D / 2, z0 + kit.SILL_Z))
+        windows += 1
 
     # flower box under the front window
     b.add(kit.bbox(4.2, 1.0, 0.9, "wood", 0.1).move(wx, wy - 1.0, z0 + kit.SILL_Z - 1.35))
     b.add(kit.bbox(3.9, 0.8, 0.5, "leaf_mid", 0.15).move(wx, wy - 1.0, z0 + kit.SILL_Z - 0.5))
-    for j in range(6):
+    nfl = 4 if p["wing"] else 6
+    for j in range(nfl):
         fl = lathe([(0.0, 0.0), (0.42, 0.2), (0.4, 0.55), (0.0, 0.75)], 4,
                    rng.choice(("flower_red", "flower_yellow", "flower_white", "flower_purple", "flower_red")))
-        b.add(fl.move(wx - 1.6 + j * 0.64, wy - 1.0 + rng.uniform(-0.2, 0.2), z0 + kit.SILL_Z - 0.35))
-    if p.get("porch"):
-        _porch(b, dx, -D / 2, z0, "wood")
+        b.add(fl.move(wx - 1.6 + j * 3.2 / (nfl - 1), wy - 1.0 + rng.uniform(-0.2, 0.2), z0 + kit.SILL_Z - 0.35))
+    if p["porch"]:
+        _porch(b, dx, -D / 2, "wood")
 
+    # --- upper storey (jettied, with a slight storybook lean)
     top = z0 + h1
     Wr, Dr = W, D
+    lean_dx = 0.0
     if two:
-        b.add(kit.bbox(W + 2 * jetty + 0.4, D + 2 * jetty + 0.4, 0.7, "timber", 0.1).move(0, 0, top))
-        for i in range(7):  # joist ends under the jetty
+        lean = rng.uniform(0.008, 0.016) * rng.choice((-1, 1))
+        upper = [kit.bbox(W + 2 * jetty + 0.4, D + 2 * jetty + 0.4, 0.7, "timber", 0.1).move(0, 0, top)]
+        for i in range(7):
             u = -W / 2 + 0.6 + (W - 1.2) * i / 6
             b.add(box(0.6, jetty + 0.4, 0.6, "timber").move(u, -D / 2 - jetty / 2, top - 0.55))
-        top += 0.7
+        t2 = top + 0.7
         Wr, Dr = W + 2 * jetty, D + 2 * jetty
-        b.add(kit.bbox(Wr, Dr, h2, plaster, 0.18).move(0, 0, top).paint(grad=("range", 0.4, 0.85)))
+        upper.append(kit.bbox(Wr, Dr, h2, plaster, 0.18).move(0, 0, t2).paint(grad=("range", 0.4, 0.85)))
         for off in (-Dr / 2, Dr / 2):
-            fr = kit.wall_face_frame(Wr, h2, "x", off, "timber", posts=5, braces=True, rng=rng)
-            b.add([f.move(0, 0, top) for f in fr])
+            upper += [f.move(0, 0, t2) for f in kit.wall_face_frame(Wr, h2, "x", off, "timber", posts=5,
+                                                                    braces=True, rng=rng)]
         for off in (-Wr / 2, Wr / 2):
-            fr = kit.wall_face_frame(Dr, h2, "y", off, "timber", posts=3, braces=False, rng=rng)
-            b.add([f.move(0, 0, top) for f in fr])
+            upper += [f.move(0, 0, t2) for f in kit.wall_face_frame(Dr, h2, "y", off, "timber", posts=3,
+                                                                    braces=False, rng=rng)]
         xs = [-Wr / 4.0, Wr / 4.0]
-        if p.get("wing"):
-            xs = [-ws * Wr / 4.0, ws * (Wr / 2 - 2.4)]
+        if p["wing"]:  # keep both upper windows clear of the wing roof
+            xs = [-ws * (Wr / 2 - 2.8), -ws * 2.6]
         for ux in xs:
-            b.add([pc.move(ux, -Dr / 2, top + 2.6) for pc in kit.window(kit.WIN_W, kit.WIN_H * 0.9, "timber", shutter)])
+            upper += [pc.move(ux, -Dr / 2, t2 + 2.6) for pc in kit.window(kit.WIN_W, kit.WIN_H * 0.9, "timber", shutter)]
             windows += 1
-        top += h2
+        for pc in upper:  # lean the whole upper storey a touch sideways
+            pc.bend(lambda v, z=top, ln=lean: (v.x + (v.z - z) * ln, v.y, v.z))
+            b.add(pc)
+        top = t2 + h2
+        lean_dx = h2 * lean
 
     # --- roof (ridge along X so the long side faces the street)
-    style = p["roof"]
-    pitch = rng.uniform(47, 54) if style == "thatch" else rng.uniform(40, 47)
-    color = "thatch" if style == "thatch" else kingdom_color(k, "roof")
+    if style == "thatch":
+        pitch = rng.uniform(52, 56) if p["steep"] else rng.uniform(47, 54)
+    else:
+        pitch = rng.uniform(49, 53) if p["steep"] else rng.uniform(40, 46)
+    color = thatch_tone if style == "thatch" else kingdom_color(k, "roof")
     ridge_col = "thatch_dark" if style == "thatch" else kingdom_color(k, "roof_dark")
+    extend = (1, 4.0 / math.cos(math.radians(pitch))) if p["catslide"] else None
     roof, rise = kit.gable_roof(Dr, Wr, pitch, overhang=1.5, gable_overhang=1.1, thickness=0.75, color=color,
-                                rows=4 if (p.get("wing") and p.get("dormers")) else 5, ridge_color=ridge_col,
-                                style=style, rng=rng)
+                                rows=4 if p["dormers"] and two else 5, ridge_color=ridge_col, style=style, rng=rng,
+                                extend=extend)
     for pc in roof:
-        b.add(pc.rotate(math.pi / 2, "Z").move(0, 0, top), tag="roof")
+        b.add(pc.rotate(math.pi / 2, "Z").move(lean_dx, 0, top), tag="roof")
     for sx in (-1, 1):
         g = kit.gable_end(Dr, rise, 0.8, plaster)
-        b.add(g.rotate(math.pi / 2, "Z").move(sx * (Wr / 2 - 0.4), 0, top).paint(grad=("range", 0.5, 0.85)))
+        b.add(g.rotate(math.pi / 2, "Z").move(sx * (Wr / 2 - 0.4) + lean_dx, 0, top).paint(grad=("range", 0.5, 0.85)))
         n = Vector((sx, 0, 0))
-        xg = sx * (Wr / 2 + 0.1)
+        xg = sx * (Wr / 2 + 0.1) + lean_dx
         b.add(kit.oriented_box((xg, -Dr / 2 + 0.5, top + 0.35), (xg, Dr / 2 - 0.5, top + 0.35), kit.TIMBER, 0.4,
                                "timber", n))
         b.add(kit.oriented_box((xg, 0, top + 0.6), (xg, 0, top + rise - 0.8), kit.TIMBER, 0.4, "timber", n))
         for s in (-1, 1):
             b.add(kit.oriented_box((xg, s * Dr * 0.36, top + 0.6), (xg, s * 0.4, top + rise * 0.62), kit.TIMBER * 0.8,
                                    0.4, "timber", n))
+    if p["catslide"]:
+        _outshut(b, W, D, z0, pitch, top)
+    if p["dormers"] and style == "tile":
+        for xd in ((-ws * Wr / 5,) if p["ext_chimney"] or not two else (-Wr / 4, Wr / 4)):
+            windows += _dormer(b, xd + lean_dx, Dr, top, pitch, plaster, color, ridge_col, shutter)
 
-    if p.get("dormers") and style == "tile":
-        for xd in ((-Wr / 4, Wr / 4) if Wr > 19 and not p.get("wing") else (-ws * Wr / 5,)):
-            if p.get("wing") and abs(xd - ws * Wr / 4) < 3:
-                continue
-            windows += _dormer(b, xd, Dr, top, pitch, plaster, color, ridge_col, shutter)
+    # --- chimney: through the roof, or an exterior stone breast on a gable end
+    ch_lean = rng.uniform(0.02, 0.045) * rng.choice((-1, 1))
+    if p["ext_chimney"]:
+        sx = -ws if p["tower"] else ws
+        _ext_chimney(b, sx * (W / 2 + 1.5), rng.uniform(-1.5, 1.5), top + rise + 3.5, ch_lean)
+    else:
+        cx = (-1 if p["chimney"] == "left" else 1) * (Wr / 2 - 2.2)
+        ch_h = top + rise + 4.2 - z0
+        b.add([pc.move(cx + lean_dx, Dr * 0.2, z0) for pc in kit.chimney(ch_h, 2.4, "stone", "stone_dark",
+                                                                         lean=ch_lean, pots=rng.choice((1, 2)))])
 
-    # --- chimney on one gable, rising through the roof
-    cx = (-1 if p["chimney"] == "left" else 1) * (Wr / 2 - 2.0)
-    ch_h = top + rise + 2.8 - z0
-    b.add([pc.move(cx, Dr * 0.2, z0) for pc in kit.chimney(ch_h, 2.4, "stone", "stone_dark")])
+    # --- stair tower on the front corner away from the door
+    if p["tower"]:
+        windows += _stair_tower(b, k, ws * (W / 2 - 0.6), -D / 2 + 0.6, top + 2.5)
 
     # --- lean-to woodshed with a mono-pitch roof and a log pile
     if p["lean_to"]:
@@ -192,14 +225,10 @@ def build(b, p):
         logs = 0
         for row in range(3):
             for j in range(4 - row):
-                lg = cylinder(0.6, 0.6, ld * 0.8, 7, "bark")
-                lg.rotate(math.pi / 2, "X").move(lx - sx * 0.2 - 1.8 + j * 1.22 + row * 0.6, ld * 0.4,
-                                                 0.6 + 0.6 + row * 1.04)
-                b.add(lg)
-                lg2 = cylinder(0.45, 0.45, 0.1, 7, "wood_pale")  # cut faces
-                lg2.rotate(math.pi / 2, "X").move(lx - sx * 0.2 - 1.8 + j * 1.22 + row * 0.6, -ld * 0.4 + 0.02,
-                                                  0.6 + 0.6 + row * 1.04)
-                b.add(lg2)
+                xx = lx - sx * 0.2 - 1.8 + j * 1.22 + row * 0.6
+                zz = 0.6 + 0.6 + row * 1.04
+                b.add(cylinder(0.6, 0.6, ld * 0.8, 7, "bark").rotate(math.pi / 2, "X").move(xx, ld * 0.4, zz))
+                b.add(cylinder(0.45, 0.45, 0.1, 7, "wood_pale").rotate(math.pi / 2, "X").move(xx, -ld * 0.4 + 0.02, zz))
                 logs += 1
         b.stats["logs"] = logs
 
@@ -207,9 +236,9 @@ def build(b, p):
     bx = dx + (3.2 if dx <= 0 else -3.2)
     barrel = lathe([(0.0, 0.0), (1.0, 0.0), (1.18, 1.0), (1.18, 1.5), (1.0, 2.5), (0.0, 2.5)], 8, "wood")
     b.add(barrel.move(bx, -D / 2 - 2.0, 0))
-    for zz in (0.5, 1.85):
+    for zz in (() if p["wing"] else (0.5, 1.85)):
         b.add(cylinder(1.17, 1.17, 0.18, 8, "iron_dark").move(bx, -D / 2 - 2.0, zz))
-    if not p.get("wing"):  # winged houses already carry enough detail for the budget
+    if not (p["wing"] or p["tower"]):
         b.add(kit.bbox(2.0, 2.0, 2.0, "wood_light", 0.12).rotate(0.3, "Z").move(bx + (2.4 if bx > dx else -2.4),
                                                                               -D / 2 - 2.4, 0))
 
@@ -218,37 +247,30 @@ def build(b, p):
     b.stats["roof"] = b.count_tag("roof")
 
 
-def _wing(b, p, k, xw, yfront, Ww, Dw, z0, h1, plinth_h, plaster, shutter):
+def _wing(b, p, k, xw, yfront, Ww, Dw, z0, h1, plinth_h, plaster, shutter, thatch_tone, ws):
     """Front-gabled wing (L-plan) projecting Dw from the main front wall at x=xw. Returns windows added."""
     rng = b.rng
     yc = yfront - Dw / 2
     e = 0.35
     b.add(kit.bbox(Ww + 2 * e, Dw + e, plinth_h, "stone", 0.15).move(xw, yc - e / 2, 0).paint(grad=("range", 0.2, 0.7)))
-    if p["ground"] == "stone":
-        b.add(kit.bbox(Ww, Dw + 0.4, h1, kingdom_color(k, "stone"), 0.2).move(xw, yc + 0.2, z0)
-              .paint(grad=("range", 0.2, 0.8)))
-        b.add(kit.bbox(Ww + 0.5, Dw + 0.5, 0.5, kingdom_color(k, "stone_dark"), 0.12).move(xw, yc, z0 + h1 - 0.5))
-    else:
-        b.add(kit.bbox(Ww, Dw + 0.4, h1, plaster, 0.2).move(xw, yc + 0.2, z0).paint(grad=("range", 0.35, 0.85)))
-        fr = kit.wall_face_frame(Ww, h1, "x", yfront - Dw, "timber", posts=3, braces=True, rng=rng, skip=(1,))
-        b.add([f.move(xw, 0, z0) for f in fr])
-        for sx in (-1, 1):
-            fr = kit.wall_face_frame(Dw, h1, "y", xw + sx * Ww / 2, "timber", posts=2, braces=True, rng=rng)
-            b.add([f.move(0, yc, z0) for f in fr])
-    pitch = rng.uniform(44, 50)
+    b.add(kit.bbox(Ww, Dw + 0.4, h1, plaster, 0.2).move(xw, yc + 0.2, z0).paint(grad=("range", 0.35, 0.85)))
+    fr = kit.wall_face_frame(Ww, h1, "x", yfront - Dw, "timber", posts=3, braces=True, rng=rng, skip=(1,))
+    b.add([f.move(xw, 0, z0) for f in fr])
+    for sx in (-1, 1):
+        fr = kit.wall_face_frame(Dw, h1, "y", xw + sx * Ww / 2, "timber", posts=2, braces=True, rng=rng)
+        b.add([f.move(0, yc, z0) for f in fr])
+    pitch = rng.uniform(46, 52)
     style = p["roof"]
-    color = "thatch" if style == "thatch" else kingdom_color(k, "roof")
+    color = thatch_tone if style == "thatch" else kingdom_color(k, "roof")
     ridge = "thatch_dark" if style == "thatch" else kingdom_color(k, "roof_dark")
-    roof, rise = kit.gable_roof(Ww, Dw + 1.2, pitch, overhang=1.2, gable_overhang=0.9, thickness=0.65, color=color,
-                                rows=3, ridge_color=ridge, style=style, rng=rng)
+    roof, rise = kit.gable_roof(Ww, Dw + 1.2, pitch, overhang=1.2, gable_overhang=0.9, thickness=0.6, color=color,
+                                rows=3, ridge_color=ridge, style=style, rng=rng, pins=False)
     for pc in roof:
         b.add(pc.move(xw, yc + 0.6, z0 + h1), tag="roof")
-    g = kit.gable_end(Ww, rise, 0.8, plaster)
-    b.add(g.move(xw, yfront - Dw + 0.4, z0 + h1).paint(grad=("range", 0.5, 0.85)))
-    n = Vector((0, -1, 0))
+    b.add(kit.gable_end(Ww, rise, 0.8, plaster).move(xw, yfront - Dw + 0.4, z0 + h1).paint(grad=("range", 0.5, 0.85)))
     yg = yfront - Dw - 0.1
     b.add(kit.oriented_box((xw - Ww / 2 + 0.4, yg, z0 + h1 + 0.35), (xw + Ww / 2 - 0.4, yg, z0 + h1 + 0.35),
-                           kit.TIMBER, 0.4, "timber", n))
+                           kit.TIMBER, 0.4, "timber", Vector((0, -1, 0))))
     for pc in kit.window(1.6, 2.0, "timber", None, mullion=False):
         b.add(pc.move(xw, yg + 0.1, z0 + h1 + 0.9))
     return 1
@@ -262,7 +284,7 @@ def _dormer(b, xd, Dr, top, pitch, plaster, roof_color, ridge_color, shutter):
     zb = top + (Dr / 2 - abs(yd)) * t - 0.6
     b.add(kit.bbox(wd, dd, hd, plaster, 0.12).move(xd, yd + dd / 2, zb).paint(grad=("range", 0.45, 0.85)))
     roof, rise = kit.gable_roof(wd, dd, 48, overhang=0.6, gable_overhang=0.5, thickness=0.5, color=roof_color,
-                                rows=2, ridge_color=ridge_color, style="tile", trim="timber")
+                                rows=2, ridge_color=ridge_color, style="tile", trim="timber", sag=0.0)
     for pc in roof:
         b.add(pc.move(xd, yd + dd / 2, zb + hd), tag="roof")
     b.add(kit.gable_end(wd, rise, 0.5, plaster).move(xd, yd + 0.25, zb + hd))
@@ -271,7 +293,7 @@ def _dormer(b, xd, Dr, top, pitch, plaster, roof_color, ridge_color, shutter):
     return 1
 
 
-def _porch(b, dx, yfront, z0, color):
+def _porch(b, dx, yfront, color):
     """Small gabled porch over the door on two posts."""
     pw, pd, ph = 7.0, 4.2, 8.6
     for sx in (-1, 1):
@@ -280,6 +302,49 @@ def _porch(b, dx, yfront, z0, color):
                                (dx + sx * (pw / 2 - 1.8), yfront - pd + 0.5, ph - 0.1), 0.4, 0.4, "timber"))
     b.add(box(pw, 0.6, 0.6, "timber").move(dx, yfront - pd + 0.5, ph - 0.3))
     roof, rise = kit.gable_roof(pw - 0.6, pd + 0.4, 42, overhang=0.7, gable_overhang=0.4, thickness=0.45,
-                                color=color, rows=3, ridge_color="wood_dark", style="tile", trim="timber")
+                                color=color, rows=3, ridge_color="wood_dark", style="tile", trim="timber", sag=0.1)
     for pc in roof:
         b.add(pc.move(dx, yfront - pd / 2 + 0.2, ph + 0.2), tag="roof")
+
+
+def _outshut(b, W, D, z0, pitch, top):
+    """Rear outshut under a catslide roof: a low plaster-and-timber room along the back wall."""
+    depth = 4.6
+    yb = D / 2 + depth / 2 - 0.2
+    hh = max(5.5, (top - z0) - (depth + 1.5) * math.tan(math.radians(pitch)) - 0.4)
+    b.add(kit.bbox(W - 0.6, depth + 0.4, 1.4, "stone", 0.12).move(0, yb, 0))
+    b.add(kit.bbox(W - 0.6, depth, hh, "plaster", 0.15).move(0, yb, z0).paint(grad=("range", 0.35, 0.8)))
+    fr = kit.wall_face_frame(W - 0.6, hh, "x", D / 2 + depth - 0.2, "timber", posts=4, braces=False, rng=b.rng)
+    b.add([f.move(0, 0, z0) for f in fr])
+    for pc in kit.window(2.2, 2.4, "timber", None):
+        b.add(pc.rotate(math.pi, "Z").move(W * 0.2, D / 2 + depth - 0.2, z0 + 2.4))
+
+
+def _ext_chimney(b, x, y, top_z, lean):
+    """Exterior chimney breast against a gable end: wide stepped base, tall leaning stack."""
+    sx = 1 if x > 0 else -1
+    base_w, base_d, base_h = 5.0, 3.0, 11.0
+    b.add(kit.bbox(base_d, base_w, base_h, "stone", 0.2).move(x, y, 0).paint(grad=("range", 0.2, 0.75)))
+    b.add(kit.bbox(base_d + 0.5, base_w + 0.5, 0.6, "stone_dark", 0.12).move(x, y, base_h))
+    b.add(bevel(frustum_box(base_d - 0.2, base_w - 0.2, 2.8, 3.2, 2.6, "stone"), 0.12).move(x - sx * 0.1, y, base_h + 0.6))
+    stack_h = top_z - (base_h + 3.2)
+    for pc in kit.chimney(stack_h, 3.0, "stone", "stone_dark", lean=lean * 0.6, pots=2):
+        b.add(pc.move(x - sx * 0.1, y, base_h + 3.2))
+
+
+def _stair_tower(b, k, x, y, height):
+    """Round stair turret on a front corner with a conical kingdom roof. Returns windows added."""
+    r = 3.0
+    b.add(cylinder(r + 0.5, r + 0.3, 1.6, 8, "stone").move(x, y, 0))
+    b.add(cylinder(r, r * 0.94, height, 8, "plaster").move(x, y, 1.4).paint(grad=("range", 0.35, 0.85)))
+    b.add(cylinder(r + 0.25, r + 0.25, 0.6, 8, "timber").move(x, y, height * 0.55))
+    b.add(cylinder(r + 0.35, r + 0.35, 0.6, 8, "timber").move(x, y, height + 0.9))
+    for pc in kit.cone_roof(r * 1.05, 6.2, seg=8, color=kingdom_color(k, "roof"), overhang=1.3, rows=1,
+                            finial=kingdom_color(k, "trim")):
+        b.add(pc.move(x, y, height + 1.4), tag="roof")
+    n = 0
+    for z, a in ((height * 0.32, -0.5), (height * 0.72, 0.5)):
+        for pc in kit.window(1.2, 2.0, "timber", None, mullion=False):
+            b.add(pc.move(0, -r + 0.05, 0).rotate(a, "Z").move(x, y, z))
+        n += 1
+    return n
