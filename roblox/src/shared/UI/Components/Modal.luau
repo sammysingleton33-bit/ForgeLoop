@@ -13,7 +13,8 @@
 		onConfirm: () -> ()           onCancel: (() -> ())?   (also called by tapping the scrim)
 	Modal.new(props) -> handle { instance: Frame (full-screen: scrim + panel), answered: boolean?, destroy() }
 	Confirm, Cancel and the scrim answer once; later taps are ignored.
-	Put it in a DeviceSafeInsets ScreenGui in the modals DisplayOrder band (40-59).
+	Put it in a ScreenInsets.None ScreenGui in the modals DisplayOrder band (40-59): the scrim then
+	covers the whole screen, notch strips included, and the centred panel stays clear of them.
 ]]
 
 local Button = require("./Button")
