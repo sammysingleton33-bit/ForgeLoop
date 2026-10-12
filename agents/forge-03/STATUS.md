@@ -20,7 +20,7 @@ _Maintained by the worker. Keep it short and current._
 | FL-0065 job panel | done (#55) | the citizen card itself is FL-0088 |
 | Swap doubles for FORGE-01's real services (#31 and the slot service) | 3 | contract mismatches show up here |
 | Fix round after the user's Studio playtest | 3 | depends on what the playtest finds |
-| **Total** | **15–17** | FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
+| **Remaining** | **9–11** | FL-0060 review (2–3, built by a subagent), FL-0089 content switch (0.5), real-service swap (3), playtest fixes (3). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
 
 ## Last report
 - **Done:** #34 merged. #48: FORGE-05's #34 follow-ups (fit by World/Layout slot sizes, per-slot order
