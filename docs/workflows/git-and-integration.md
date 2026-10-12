@@ -1,6 +1,6 @@
 # Git, worker branches, worktrees and integration
 
-Repository: `github.com/sammysingleton33-bit/forgeloop` (private).
+Repository: `github.com/sammysingleton33-bit/ForgeLoop` (private).
 
 ## Branches
 | Branch | Purpose | Who writes |
@@ -17,7 +17,7 @@ Repository: `github.com/sammysingleton33-bit/forgeloop` (private).
 Worker branches are long-lived: one per worker, reused across sessions. Each worker submits work by PR from its branch into `main`.
 
 ## Starting a worker session
-Cloud session (Claude app → Code → new session on `sammysingleton33-bit/forgeloop`): every session has its own container, so the working copy is already isolated. Check out your worker branch:
+Cloud session (Claude app → Code → new session on `sammysingleton33-bit/ForgeLoop`): every session has its own container, so the working copy is already isolated. Check out your worker branch:
 ```bash
 B=forge/01-gameplay                       # your worker branch (see table)
 git fetch origin "$B" main
@@ -29,7 +29,7 @@ The user's startup prompt explicitly authorises pushing to your worker branch. I
 
 Local session (Claude Code CLI/desktop on the user's PC): one worktree per worker, so sessions never share a working directory:
 ```bash
-git clone https://github.com/sammysingleton33-bit/forgeloop.git forgeloop && cd forgeloop
+git clone https://github.com/sammysingleton33-bit/ForgeLoop.git forgeloop && cd forgeloop
 git worktree add --track -b forge/01-gameplay ../forgeloop-wt/forge-01 origin/forge/01-gameplay
 cd ../forgeloop-wt/forge-01 && git merge --no-edit origin/main
 ```

@@ -4,7 +4,7 @@ Targets, not promises. Quality and functional completeness gate every milestone.
 
 ## Phase 0 — Factory bootstrap (now)
 - ✅ Contract, team, ownership, task tooling (FL-0001); toolchain verified (FL-0002)
-- ✅ Dedicated private repo `sammysingleton33-bit/forgeloop` with full history (FL-0038)
+- ✅ Dedicated private repo `sammysingleton33-bit/ForgeLoop` with full history (FL-0038)
 - ◐ Shared skeleton green (FL-0003) → merged to `main`, worker branches created
 - ◐ Platform/provider research (FL-0004), market research + Game #1 shortlist (FL-0005)
 - ◐ Worker prompts (FL-0006); workers launched; Codex launched (FL-0037)

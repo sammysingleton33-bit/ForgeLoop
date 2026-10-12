@@ -3,7 +3,7 @@
 Codex is the intelligence and strategy department. Claude workers do the heavy building; Codex spends its limited capacity on reviews, research and specs that change what gets built.
 
 ## Where
-Codex connected to GitHub (Codex in ChatGPT, or the Codex CLI in a local clone). Repository: `sammysingleton33-bit/forgeloop`, starting branch `main`. Codex reads `AGENTS.md` automatically. Setup details and Plus-plan limits: `docs/research/ai-providers.md`.
+Codex connected to GitHub (Codex in ChatGPT, or the Codex CLI in a local clone). Repository: `sammysingleton33-bit/ForgeLoop`, starting branch `main`. Codex reads `AGENTS.md` automatically. Setup details and Plus-plan limits: `docs/research/ai-providers.md`.
 
 ## Paste this as the first Codex task
 ```

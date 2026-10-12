@@ -11,7 +11,7 @@ updated: 2026-10-12
 depends_on: []
 estimate_h: 0.25
 evidence:
-  - 2026-10-12 user created private repo sammysingleton33-bit/forgeloop; history migrated via git subtree split (3 commits preserved)
+  - 2026-10-12 user created private repo sammysingleton33-bit/ForgeLoop; history migrated via git subtree split (3 commits preserved)
 ---
 
 # Decide the repository home for FORGELOOP

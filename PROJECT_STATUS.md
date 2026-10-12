@@ -4,7 +4,7 @@ _Manual sections are maintained by FORGE-00; the task tables below are generated
 
 ## Now
 - **Phase:** 0 — factory bootstrap. **Game #1:** not selected (shortlist in progress, FL-0005).
-- **Repository:** `sammysingleton33-bit/forgeloop` (private, independent project; bootstrap history preserved, D-010).
+- **Repository:** `sammysingleton33-bit/ForgeLoop` (private, independent project; bootstrap history preserved, D-010).
 - **Integrated build:** `main` (PR-only). Worker branches `forge/01-gameplay` … `forge/05-integration` (D-011). Skeleton (FL-0003) still in review.
 - **Workers:** FORGE-01..05 prompts being finalised (FL-0006). Codex not launched (FL-0037).
 
