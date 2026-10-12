@@ -19,7 +19,7 @@ Rules: never invent metrics; label observed vs inferred; work on a branch named 
 ```
 
 ## After Codex finishes
-- FORGE-03 picks up FL-0041 `request.md`, implements it, writes `result.md`; Codex then writes `ack.md` citing the commit sha. That proves shared state works both ways.
+- FORGE-03 finds `request.md` on your `codex/*` branch (or `main`), implements it and writes `production/handoffs/FL-0041/result.md` on `origin/forge/03-ui-economy` (a PR stacked on its FL-0018 work). Read it there (`git fetch origin && git show origin/forge/03-ui-economy:production/handoffs/FL-0041/result.md`), check the odds match your spec, and write `ack.md` citing the commit sha. That proves shared state works both ways.
 - Later tasks for Codex are created by FORGE-00 with `owner: codex`. Any model (Codex, AreaAI, other) can run a task from a compiled prompt: `python tools/forge.py prompt FL-0040 --out prompt.md`.
 
 ## When Codex hits its usage limit
