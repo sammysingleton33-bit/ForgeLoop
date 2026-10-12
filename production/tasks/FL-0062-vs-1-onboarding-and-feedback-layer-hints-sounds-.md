@@ -3,7 +3,7 @@ id: FL-0062
 title: "VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer"
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,11 @@ updated: 2026-10-12
 depends_on: [FL-0025, FL-0027, FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 8
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS @3ae1917: framework 486, game-001 462 specs (boot gate incl.), Selene 0/0, StyLua 298, both builds and place checks"
+  - "KingdomFeedback.spec 20: announcer mapping (G9 audiences, payload primitives), step flow without DataService covered by Onboarding.spec (FL-0025/FL-0092), VFX clean-up on EntityController.released, deposits/swings rate and distance, music by phase"
+  - "mutations.py FL-0062 rows 10/10 CAUGHT"
+  - "unverified: nothing heard or seen in Studio; needs FORGE-01 G9 producers and EntityController cues; sounds not chosen yet (user)"
 ---
 
 # VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer
@@ -42,3 +46,6 @@ A new player is guided gather -> build -> recruit -> capture in the first minute
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): session-only progress, KingdomJoined start, G4.1 hooks, framework services only, Feedback area
+- 2026-10-12 forge-04: READY → BUILDING. On forge/04-experience-fl0062 from main. Onboarding parts shipped with FL-0025 (#22) and FL-0092 (#45); this PR is the feedback layer and announcer.
+- 2026-10-12 forge-04: BUILDING → TESTING. Announcer, feedback, music, presets; headless gates on 3ae1917.
+- 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0062. Studio: roblox/studio-tests/experience.md E5 (fx.announce / fx.burst). Handoff forge-04-to-forge-01-05-feedback-layer.
