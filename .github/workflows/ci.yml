@@ -63,7 +63,17 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: python tools/check_ownership.py --base "$BASE_SHA" --head HEAD --explain
+        # The checkout is GitHub's test merge commit (refs/pull/N/merge); its first parent is the
+        # base branch as of this run. pull_request.base.sha can be older: when main moved by a
+        # D-014 direct push and the PR branch then merged main, main's own commits were charged to
+        # the PR (false FAIL on PR #12). Fall back to base.sha only if HEAD is not a merge commit.
+        run: |
+          if git rev-parse --verify --quiet 'HEAD^2' >/dev/null; then
+            base="$(git rev-parse 'HEAD^1')"
+          else
+            base="$BASE_SHA"
+          fi
+          python tools/check_ownership.py --base "$base" --head HEAD --explain
 
   roblox:
     name: roblox (Lune, Selene, StyLua, Rojo, place check)
