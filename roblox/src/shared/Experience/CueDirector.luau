@@ -1,46 +1,52 @@
 --!strict
 --[[
 	Experience/CueDirector — resolves a gameplay signal into feedback actions for the local player,
-	using the matrix in Experience/Cues. Pure apart from the injected clock and settings.
+	from a game's cue matrix. Generic: the game supplies the matrix, how to classify a signal (whose
+	it is, who won, ...) and how to resolve "@placeholder" ids. game-001: games/game-001/src/shared/
+	Feedback/Cues.luau, played by its FeedbackController (FL-0062).
 
 		local director = CueDirector.new({
-			now = env.clock,                         -- seconds
-			kingdomId = function() return "k1" end,  -- the local player's kingdom (nil before founding)
-			setting = function(key) return value end -- SettingsController:get
+			cues = { [signalName] = { Variant } },
+			classify = function(signalName, info) -> { [tag]: any },   -- e.g. { relation = "mine", outcome = "won" }
+			ids = { [placeholder] = function(info) -> id? },          -- "@resource" -> ids.resource(info)
+			now = env.clock,
+			setting = function(key) return SettingsController:get(key) end,
 		})
-		director:handle(eventName, info) -> { Action }
+		director:handle(signalName, info) -> { Action }
 
-	Actions, in play order:
-		{ kind = "sound", id, position? }
-		{ kind = "vfx", id, position?, tint? }
-		{ kind = "float", text, position? }
-		{ kind = "react", reaction, position?, kingdomId }
-		{ kind = "notify", notification = { title, body?, kind, durationSec?, key?, count } }
-		{ kind = "music", input = "combat" | "calm" }
-		{ kind = "celebrate", celebration, payload }
+	Variant: the first whose `when` entries all equal the classify tags is used (no `when` = always).
+		sound, vfx: id or "@placeholder"     float: "+{amount} {resource}" (template from info)
+		react: reaction id (the game decides who reacts)   notify: { kind, title, body?, important? }
+		music: input string for the game's MusicController   celebrate: kind for NotificationController
+		coalesce: { key = "{resource}", windowSec } — repeats inside the window keep vfx and float but drop
+		the sound and the reaction, and their notification carries the same `key` with a growing
+		`count`, so NotificationController updates one toast ("Farm complete x3").
+	Actions, in play order: sound, vfx, float, react, notify, music, celebrate.
+		{ kind = "sound", id, position? }   { kind = "vfx", id, position?, tint? }   { kind = "float", text, position? }
+		{ kind = "react", reaction, position? }   { kind = "notify", notification = { title, body?, kind, key?, count } }
+		{ kind = "music", input }   { kind = "celebrate", celebration, payload }
+	Settings: notifications = "important" keeps only important toasts; citizenBarks = false drops reactions.
 
-	Coalescing (variant.coalesce): the first signal of a window plays everything; repeats inside the
-	window keep vfx and float (each at its own position) but drop the sound and the reaction, and
-	their notification carries the same `key` with a growing `count`, so NotificationController
-	updates one toast ("Farm complete x3") instead of stacking three.
-	Settings: notifications = "important" keeps only important toasts; citizenBarks = false drops
-	reactions. Reduced motion is applied by VFXController (per preset).
-
-		CueDirector.validate(cues, { sounds = registry, vfx = VfxPresets, reactions = CitizenReactions.REACTIONS })
-			-> { string }  -- unknown ids, bad relations/kinds, and sound-only variants (accessibility rule)
-		CueDirector.format(template, info) -> string     -- "{field}" from primitive info values, max 60 chars
+		CueDirector.validate(cues, { sounds = registry, vfx = VfxPresets-like, reactions = table?, expand = fn? })
+			-> { string }   -- unknown ids, bad notify kinds, and sound-only variants (accessibility rule:
+			                -- creator-docs production/publishing/accessibility.md, players with sound off
+			                -- "will be confused by in-game events that are **only** conveyed with sound")
+		CueDirector.format(template, info) -> string   -- "{field}" from primitive info values, max 60 chars
 ]]
-
-local Cues = require("./Cues")
 
 local CueDirector = {}
 CueDirector.__index = CueDirector
 
-local RELATIONS = { mine = true, against = true, others = true }
 local NOTIFY_KINDS = { info = true, reward = true, warning = true, achievement = true }
 local MAX_TEXT = 60
 
-export type Options = { now: () -> number, kingdomId: () -> string?, setting: ((key: string) -> any)? }
+export type Options = {
+	cues: { [string]: { any } },
+	classify: ((signalName: string, info: { [string]: any }) -> { [string]: any })?,
+	ids: { [string]: (info: { [string]: any }) -> string? }?,
+	now: () -> number,
+	setting: ((key: string) -> any)?,
+}
 
 function CueDirector.format(template: string, info: { [string]: any }): string
 	local text = string.gsub(template, "{(%w+)}", function(field: string): string
@@ -59,55 +65,9 @@ function CueDirector.format(template: string, info: { [string]: any }): string
 	return text
 end
 
-local function bandOf(morale: number): number
-	if morale < Cues.MORALE_BANDS.low then
-		return 1
-	elseif morale > Cues.MORALE_BANDS.high then
-		return 3
-	end
-	return 2
-end
-
-local function relationOf(info: { [string]: any }, mine: string?): string
-	if mine ~= nil then
-		if info.kingdomId == mine then
-			return "mine"
-		elseif info.defenderKingdomId == mine or info.fromKingdomId == mine then
-			return "against"
-		end
-	end
-	return "others"
-end
-
-local function outcomeOf(eventName: string, info: { [string]: any }, relation: string, mine: string?): string?
-	if eventName == "BattleEnded" and info.winnerKingdomId ~= nil then
-		return if info.winnerKingdomId == mine then "won" else "lost"
-	elseif eventName == "SiegeEnded" and info.outcome ~= nil then
-		local breached = info.outcome == "Breached"
-		if relation == "mine" then
-			return if breached then "won" else "lost"
-		end
-		return if breached then "lost" else "won"
-	end
-	return nil
-end
-
-local function moraleBand(info: { [string]: any }): string?
-	if type(info.morale) ~= "number" or type(info.previous) ~= "number" then
-		return nil
-	end
-	local before, after = bandOf(info.previous), bandOf(info.morale)
-	if after == 3 and before < 3 then
-		return "joyful"
-	elseif after == 1 and before > 1 then
-		return "unhappy"
-	elseif before == 1 and after > 1 then
-		return "recovered"
-	end
-	return nil
-end
-
 function CueDirector.new(options: Options)
+	assert(type(options) == "table" and type(options.cues) == "table", "CueDirector.new: options.cues required")
+	assert(type(options.now) == "function", "CueDirector.new: options.now required")
 	return setmetatable({ _options = options, _windows = {} }, CueDirector)
 end
 
@@ -116,41 +76,37 @@ function CueDirector:_setting(key: string): any
 	return if getter then getter(key) else nil
 end
 
-function CueDirector:_variant(eventName: string, info: { [string]: any }): (any, string)
-	local variants = Cues.CUES[eventName]
-	local mine = self._options.kingdomId()
-	local relation = relationOf(info, mine)
-	if variants == nil then
-		return nil, relation
-	end
-	local outcome = outcomeOf(eventName, info, relation, mine)
-	local band = if eventName == "MoraleChanged" then moraleBand(info) else nil
-	local eventKind = if eventName == "KingdomEventStarted"
-		then (if Cues.GOOD_EVENTS[info.eventId] then "good" else "bad")
-		else nil
-	for _, variant in variants do
-		if
-			variant.relation == relation
-			and (variant.outcome == nil or variant.outcome == outcome)
-			and (variant.band == nil or variant.band == band)
-			and (variant.eventKind == nil or variant.eventKind == eventKind)
-		then
-			return variant, relation
+local function matches(variant: any, tags: { [string]: any }): boolean
+	for key, expected in variant.when or {} do
+		if tags[key] ~= expected then
+			return false
 		end
 	end
-	return nil, relation
+	return true
 end
 
-local function resolveId(value: string?, table_: { [string]: string }, info: { [string]: any }): string?
-	if value == "@resource" then
-		return table_[info.resource]
+function CueDirector:_resolveId(value: string?, info: { [string]: any }): string?
+	if type(value) ~= "string" or string.sub(value, 1, 1) ~= "@" then
+		return value
 	end
-	return value
+	local resolver = self._options.ids and self._options.ids[string.sub(value, 2)]
+	return if resolver then resolver(info) else nil
 end
 
-function CueDirector:handle(eventName: string, info: { [string]: any }?): { any }
+function CueDirector:handle(signalName: string, info: { [string]: any }?): { any }
 	local data = info or {}
-	local variant, relation = self:_variant(eventName, data)
+	local variants = self._options.cues[signalName]
+	if variants == nil then
+		return {}
+	end
+	local tags = if self._options.classify then self._options.classify(signalName, data) else {}
+	local variant = nil
+	for _, candidate in variants do
+		if matches(candidate, tags) then
+			variant = candidate
+			break
+		end
+	end
 	if variant == nil then
 		return {}
 	end
@@ -159,7 +115,7 @@ function CueDirector:handle(eventName: string, info: { [string]: any }?): { any 
 	local repeatCount = 1
 	local coalesceKey: string? = nil
 	if variant.coalesce then
-		coalesceKey = `{eventName}:{CueDirector.format(variant.coalesce.key, data)}`
+		coalesceKey = `{signalName}:{CueDirector.format(variant.coalesce.key, data)}`
 		local window = self._windows[coalesceKey]
 		if window and now < window.untilAt then
 			window.count += 1
@@ -171,23 +127,19 @@ function CueDirector:handle(eventName: string, info: { [string]: any }?): { any 
 	end
 	local first = repeatCount == 1
 	local actions = {}
-	local sound = resolveId(variant.sound, Cues.RESOURCE_SOUND, data)
+	local sound = self:_resolveId(variant.sound, data)
 	if sound and first then
 		table.insert(actions, { kind = "sound", id = sound, position = position })
 	end
-	local vfx = resolveId(variant.vfx, Cues.RESOURCE_VFX, data)
+	local vfx = self:_resolveId(variant.vfx, data)
 	if vfx then
-		table.insert(actions, { kind = "vfx", id = vfx, position = position, tint = data.kingdomColor })
+		table.insert(actions, { kind = "vfx", id = vfx, position = position, tint = data.tint })
 	end
 	if variant.float then
 		table.insert(actions, { kind = "float", text = CueDirector.format(variant.float, data), position = position })
 	end
-	if variant.react and first and relation ~= "others" and self:_setting("citizenBarks") ~= false then
-		-- "mine" and "against" are both about the local kingdom: its own citizens react
-		table.insert(
-			actions,
-			{ kind = "react", reaction = variant.react, position = position, kingdomId = self._options.kingdomId() }
-		)
+	if variant.react and first and self:_setting("citizenBarks") ~= false then
+		table.insert(actions, { kind = "react", reaction = variant.react, position = position })
 	end
 	local notify = variant.notify
 	if notify and (notify.important or self:_setting("notifications") ~= "important") then
@@ -218,32 +170,33 @@ function CueDirector.validate(cues: { [string]: any }, refs: { [string]: any }):
 		table.insert(names, name)
 	end
 	table.sort(names)
-	local function soundExists(id: string): boolean
-		return refs.sounds:get(id) ~= nil
-	end
-	local function vfxExists(id: string): boolean
-		return refs.vfx.get(id) ~= nil
+	local function idsOf(value: any): { string }
+		if type(value) ~= "string" then
+			return {}
+		end
+		if string.sub(value, 1, 1) == "@" then
+			return if refs.expand then refs.expand(string.sub(value, 2)) or {} else {}
+		end
+		return { value }
 	end
 	for _, name in names do
 		for i, variant in cues[name] do
 			local where = `{name}[{i}]`
-			if not RELATIONS[variant.relation] then
-				table.insert(problems, `{where}: relation must be mine | against | others`)
+			if variant.when ~= nil and type(variant.when) ~= "table" then
+				table.insert(problems, `{where}: when must be a table of tags`)
 			end
-			local sounds = if variant.sound == "@resource" then Cues.RESOURCE_SOUND else { variant.sound }
-			for _, id in sounds do
-				if not soundExists(id) then
+			for _, id in idsOf(variant.sound) do
+				if refs.sounds:get(id) == nil then
 					table.insert(problems, `{where}: unknown sound '{id}'`)
 				end
 			end
-			local vfxIds = if variant.vfx == "@resource" then Cues.RESOURCE_VFX else { variant.vfx }
-			for _, id in vfxIds do
-				if not vfxExists(id) then
+			for _, id in idsOf(variant.vfx) do
+				if refs.vfx.get(id) == nil then
 					table.insert(problems, `{where}: unknown vfx preset '{id}'`)
 				end
 			end
-			if variant.react and refs.reactions[variant.react] == nil then
-				table.insert(problems, `{where}: unknown citizen reaction '{variant.react}'`)
+			if variant.react and refs.reactions and refs.reactions[variant.react] == nil then
+				table.insert(problems, `{where}: unknown reaction '{variant.react}'`)
 			end
 			if variant.notify then
 				if not NOTIFY_KINDS[variant.notify.kind] then
@@ -253,8 +206,8 @@ function CueDirector.validate(cues: { [string]: any }, refs: { [string]: any }):
 					table.insert(problems, `{where}: notify.title required`)
 				end
 			end
-			if variant.music and variant.music ~= "combat" and variant.music ~= "calm" then
-				table.insert(problems, `{where}: music must be combat | calm`)
+			if variant.music ~= nil and type(variant.music) ~= "string" then
+				table.insert(problems, `{where}: music must be an input name`)
 			end
 			if variant.sound and not (variant.vfx or variant.notify or variant.float or variant.react) then
 				table.insert(problems, `{where}: sound-only cue; add a visual (accessibility rule)`)

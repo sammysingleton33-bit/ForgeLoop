@@ -27,8 +27,9 @@
 	the smoke/fire textures are the legacy Smoke/Fire ones. All three are built-in client content and
 	still need the Studio visual check (G5/G6). FORGE-02 may replace them with authored flipbooks.
 
-	The kingdom presets (construction, harvest, siege, ...) are AI Kingdoms content kept here until a
-	per-game VFX config file is assigned (handoff to FORGE-00).
+	Games add their own presets at runtime: VfxPresets.register(list) (or VFXController:register),
+	validated against the same budgets; ids are namespaced ("kingdom.harvest.wood"). game-001's
+	presets live in games/game-001/src/shared/Feedback/Presets.luau (FL-0062).
 ]]
 
 local VfxPresets = {}
@@ -50,15 +51,7 @@ VfxPresets.TEXTURES = table.freeze({
 
 local T = VfxPresets.TEXTURES
 local rgb = Color3.fromRGB
-local GOLD, WHITE, DUST, WOOD, STONE, WHEAT, EMBER, SMOKE =
-	rgb(255, 207, 92),
-	rgb(255, 255, 255),
-	rgb(176, 148, 112),
-	rgb(150, 105, 60),
-	rgb(150, 150, 150),
-	rgb(232, 200, 90),
-	rgb(255, 140, 40),
-	rgb(90, 85, 80)
+local GOLD, WHITE, EMBER = rgb(255, 207, 92), rgb(255, 255, 255), rgb(255, 140, 40)
 local DOWN = Vector3.new(0, -18, 0)
 local UP = Vector3.new(0, 3, 0)
 
@@ -148,396 +141,6 @@ local PRESETS: { any } = {
 				spread = 180,
 				lightEmission = 0.5,
 			},
-		},
-	},
-	-- AI Kingdoms presets
-	{
-		id = "kingdom.construction.place",
-		category = "construction",
-		priority = 2,
-		reducedMotion = "reduce",
-		emitters = {
-			burst({
-				texture = T.smoke,
-				colors = { DUST },
-				burst = 12,
-				lifetime = { 0.6, 1 },
-				speed = { 3, 6 },
-				size = { 1.2, 2.4 },
-				spread = 70,
-				drag = 4,
-			}),
-		},
-	},
-	{
-		id = "kingdom.construction.progress",
-		category = "construction",
-		priority = 1,
-		reducedMotion = "reduce",
-		emitters = {
-			{
-				texture = T.smoke,
-				colors = { DUST },
-				rate = 4,
-				lifetime = { 1, 1.5 },
-				speed = { 1, 2 },
-				size = { 0.8, 1.6 },
-				transparency = { 0.4, 1 },
-				spread = 40,
-				lightEmission = 0,
-			},
-		},
-	},
-	{
-		id = "kingdom.construction.complete",
-		category = "construction",
-		priority = 3,
-		reducedMotion = "reduce",
-		tint = true,
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { GOLD, WHITE },
-				burst = 30,
-				lifetime = { 0.8, 1.4 },
-				speed = { 5, 10 },
-				lightEmission = 0.7,
-				acceleration = UP,
-			}),
-			burst({
-				texture = T.smoke,
-				colors = { DUST },
-				burst = 14,
-				lifetime = { 0.8, 1.2 },
-				speed = { 4, 7 },
-				size = { 1.5, 3 },
-				spread = 90,
-				drag = 4,
-			}),
-		},
-	},
-	{
-		id = "kingdom.harvest.food",
-		category = "harvest",
-		priority = 1,
-		reducedMotion = "keep",
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { WHEAT },
-				burst = 10,
-				lifetime = { 0.6, 1 },
-				speed = { 2, 4 },
-				size = { 0.35, 0 },
-				spread = 40,
-				acceleration = UP,
-			}),
-		},
-	},
-	{
-		id = "kingdom.harvest.wood",
-		category = "harvest",
-		priority = 1,
-		reducedMotion = "keep",
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { WOOD },
-				burst = 8,
-				lifetime = { 0.4, 0.7 },
-				speed = { 4, 7 },
-				size = { 0.3, 0.1 },
-				acceleration = DOWN,
-			}),
-		},
-	},
-	{
-		id = "kingdom.harvest.stone",
-		category = "harvest",
-		priority = 1,
-		reducedMotion = "keep",
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { STONE },
-				burst = 8,
-				lifetime = { 0.4, 0.7 },
-				speed = { 4, 7 },
-				size = { 0.3, 0.1 },
-				acceleration = DOWN,
-			}),
-		},
-	},
-	{
-		id = "kingdom.harvest.gold",
-		category = "harvest",
-		priority = 2,
-		reducedMotion = "keep",
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { GOLD, WHITE },
-				burst = 12,
-				lifetime = { 0.5, 0.9 },
-				speed = { 2, 5 },
-				size = { 0.3, 0 },
-				lightEmission = 0.8,
-				acceleration = UP,
-			}),
-		},
-	},
-	{
-		id = "kingdom.upgrade",
-		category = "levelUp",
-		priority = 3,
-		reducedMotion = "reduce",
-		durationSec = 1.5,
-		tint = true,
-		shake = { magnitude = 0.25, duration = 0.35 },
-		emitters = {
-			{
-				texture = T.sparkle,
-				colors = { GOLD, WHITE },
-				rate = 60,
-				lifetime = { 1.2, 1.6 },
-				speed = { 8, 14 },
-				size = { 0.8, 0 },
-				transparency = { 0, 1 },
-				spread = 15,
-				lightEmission = 0.9,
-				acceleration = UP,
-			},
-			burst({
-				texture = T.sparkle,
-				colors = { GOLD },
-				burst = 40,
-				lifetime = { 0.8, 1.4 },
-				speed = { 10, 16 },
-				lightEmission = 0.8,
-			}),
-		},
-	},
-	{
-		id = "kingdom.army.recruit",
-		category = "army",
-		priority = 2,
-		reducedMotion = "reduce",
-		emitters = {
-			burst({
-				texture = T.smoke,
-				colors = { DUST },
-				burst = 16,
-				lifetime = { 0.6, 1 },
-				speed = { 5, 8 },
-				size = { 1, 2 },
-				spread = 90,
-				drag = 5,
-			}),
-		},
-	},
-	{
-		id = "kingdom.combat.clash",
-		category = "hit",
-		priority = 2,
-		reducedMotion = "reduce",
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { WHITE, EMBER },
-				burst = 10,
-				lifetime = { 0.15, 0.3 },
-				speed = { 12, 20 },
-				size = { 0.3, 0 },
-				lightEmission = 1,
-				drag = 6,
-			}),
-		},
-	},
-	{
-		id = "kingdom.siege.impact",
-		category = "siege",
-		priority = 3,
-		reducedMotion = "reduce",
-		shake = { magnitude = 0.4, duration = 0.3 },
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { STONE },
-				burst = 18,
-				lifetime = { 0.6, 1.1 },
-				speed = { 10, 18 },
-				size = { 0.5, 0.3 },
-				acceleration = Vector3.new(0, -40, 0),
-			}),
-			burst({
-				texture = T.smoke,
-				colors = { DUST, SMOKE },
-				burst = 20,
-				lifetime = { 1, 1.8 },
-				speed = { 4, 8 },
-				size = { 2, 4 },
-				spread = 120,
-				drag = 3,
-			}),
-		},
-	},
-	{
-		id = "kingdom.siege.burning",
-		category = "siege",
-		priority = 2,
-		reducedMotion = "keep",
-		emitters = {
-			{
-				texture = T.fire,
-				colors = { EMBER, rgb(255, 210, 120) },
-				rate = 20,
-				lifetime = { 0.6, 1 },
-				speed = { 2, 4 },
-				size = { 1.5, 0.5 },
-				transparency = { 0.2, 1 },
-				spread = 20,
-				lightEmission = 1,
-				acceleration = UP,
-			},
-			{
-				texture = T.smoke,
-				colors = { SMOKE },
-				rate = 8,
-				lifetime = { 2.5, 3.5 },
-				speed = { 2, 3 },
-				size = { 2, 5 },
-				transparency = { 0.4, 1 },
-				spread = 15,
-				lightEmission = 0,
-				acceleration = UP,
-			},
-		},
-	},
-	{
-		id = "kingdom.territory.claim",
-		category = "territory",
-		priority = 2,
-		reducedMotion = "reduce",
-		tint = true,
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { GOLD, WHITE },
-				burst = 30,
-				lifetime = { 1, 1.6 },
-				speed = { 3, 6 },
-				size = { 0.6, 0 },
-				lightEmission = 0.6,
-				acceleration = UP,
-			}),
-		},
-	},
-	{
-		id = "kingdom.morale.up",
-		category = "morale",
-		priority = 1,
-		reducedMotion = "keep",
-		emitters = {
-			burst({
-				texture = T.sparkle,
-				colors = { rgb(255, 230, 150) },
-				burst = 12,
-				lifetime = { 1, 1.6 },
-				speed = { 1, 3 },
-				size = { 0.4, 0 },
-				spread = 60,
-				lightEmission = 0.5,
-				acceleration = UP,
-			}),
-		},
-	},
-	{
-		id = "kingdom.morale.down",
-		category = "morale",
-		priority = 1,
-		reducedMotion = "keep",
-		emitters = {
-			burst({
-				texture = T.smoke,
-				colors = { rgb(120, 125, 140) },
-				burst = 10,
-				lifetime = { 1, 1.6 },
-				speed = { 0.5, 1.5 },
-				size = { 1, 2 },
-				transparency = { 0.5, 1 },
-				spread = 60,
-			}),
-		},
-	},
-	{
-		id = "kingdom.festival",
-		category = "event",
-		priority = 2,
-		reducedMotion = "reduce",
-		durationSec = 6,
-		emitters = {
-			{
-				texture = T.sparkle,
-				colors = { rgb(255, 90, 90), rgb(90, 160, 255) },
-				rate = 30,
-				lifetime = { 2, 3 },
-				speed = { 6, 10 },
-				size = { 0.4, 0.3 },
-				transparency = { 0, 1 },
-				spread = 50,
-				lightEmission = 0.3,
-				acceleration = Vector3.new(0, -6, 0),
-			},
-		},
-	},
-	{
-		id = "kingdom.chimney",
-		category = "ambience",
-		priority = 1,
-		reducedMotion = "keep",
-		emitters = {
-			{
-				texture = T.smoke,
-				colors = { rgb(200, 200, 200) },
-				rate = 2,
-				lifetime = { 3, 4 },
-				speed = { 1, 2 },
-				size = { 0.8, 2.5 },
-				transparency = { 0.5, 1 },
-				spread = 10,
-				lightEmission = 0,
-				acceleration = UP,
-			},
-		},
-	},
-	{
-		id = "kingdom.victory",
-		category = "celebration",
-		priority = 3,
-		reducedMotion = "reduce",
-		durationSec = 4,
-		tint = true,
-		emitters = {
-			{
-				texture = T.sparkle,
-				colors = { GOLD, WHITE },
-				rate = 40,
-				lifetime = { 1.5, 2 },
-				speed = { 14, 22 },
-				size = { 0.7, 0 },
-				transparency = { 0, 1 },
-				spread = 35,
-				lightEmission = 1,
-				acceleration = Vector3.new(0, -8, 0),
-			},
-			burst({
-				texture = T.sparkle,
-				colors = { GOLD },
-				burst = 80,
-				lifetime = { 1, 1.8 },
-				speed = { 10, 18 },
-				lightEmission = 0.8,
-			}),
 		},
 	},
 }
@@ -633,11 +236,29 @@ for _, preset in PRESETS do
 	byId[preset.id] = preset
 end
 
-VfxPresets.ALL = PRESETS
+VfxPresets.ALL = PRESETS -- factory presets (every game)
 VfxPresets.byId = byId
 
 function VfxPresets.get(id: string): any
 	return byId[id]
+end
+
+-- Adds game presets. Returns the problems; presets are added only when the whole list is valid
+-- and no id is already registered (a game cannot replace a factory preset by accident).
+function VfxPresets.register(presets: { any }): { string }
+	local problems = VfxPresets.validate(presets)
+	for _, preset in presets do
+		if type(preset) == "table" and type(preset.id) == "string" and byId[preset.id] ~= nil then
+			table.insert(problems, `preset {preset.id}: already registered`)
+		end
+	end
+	if #problems > 0 then
+		return problems
+	end
+	for _, preset in presets do
+		byId[preset.id] = preset
+	end
+	return problems
 end
 
 return VfxPresets

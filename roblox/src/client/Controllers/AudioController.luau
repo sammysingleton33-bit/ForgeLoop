@@ -8,7 +8,8 @@
 		AudioController:setAmbience({ id })  -- looping beds, at most BUDGET.ambience at once
 		AudioController.stats = { played, skipped = { [reason]: number } }
 	Skip reasons: unknown (id not in the registry), needed (no asset yet), cooldown, instances
-	(maxInstances of that id playing), budget (all voices busy with equal or higher priority).
+	(maxInstances of that id playing), budget (all voices busy with equal or higher priority),
+	unavailable (no SoundService to play in, e.g. a headless boot).
 
 	Budget (FL-0024, roblox/studio-tests/experience.md): at most BUDGET.voices = 8 concurrent
 	SFX/UI/voice/ambience sounds plus 1 music track. When full, the new sound steals the oldest
@@ -41,8 +42,14 @@ export type Voice = { id: string, entry: any, sound: any, startedAt: number, pri
 -- ------------------------------------------------------------------ live backend (Roblox Sound objects)
 
 function Def.liveBackend(env: any)
-	local backend = { groups = {} }
+	local backend = { groups = {}, volumes = {} }
 	local holder: any = nil
+
+	-- SoundService is an Instance in Roblox; anything else (an unmocked service in a headless boot)
+	-- means there is nowhere to play, and the controller skips sounds instead of erroring.
+	function backend.available(): boolean
+		return typeof(env.SoundService) == "Instance"
+	end
 
 	local function group(category: string): any
 		local existing = backend.groups[category]
@@ -51,6 +58,7 @@ function Def.liveBackend(env: any)
 		end
 		local soundGroup = env.newInstance("SoundGroup")
 		soundGroup.Name = `ForgeAudio_{category}`
+		soundGroup.Volume = backend.volumes[category] or 1
 		soundGroup.Parent = env.SoundService
 		backend.groups[category] = soundGroup
 		return soundGroup
@@ -118,7 +126,11 @@ function Def.liveBackend(env: any)
 	end
 
 	function backend.setGroupVolume(category: string, volume: number)
-		group(category).Volume = volume
+		backend.volumes[category] = volume -- applied when the group is created on the first sound
+		local existing = backend.groups[category]
+		if existing then
+			existing.Volume = volume
+		end
 	end
 
 	return backend
@@ -214,6 +226,9 @@ function AudioController:_victim(priority: number): number?
 end
 
 function AudioController:_start(entry: any, volume: number, position: any): any
+	if self._backend.available and not self._backend.available() then
+		return nil
+	end
 	local variance = entry.pitchVariance or 0
 	local pitch = if variance > 0 then 1 + self._rng:NextNumber(-variance, variance) else 1
 	local sound = self._backend.create(entry, volume, pitch, position)
@@ -254,6 +269,9 @@ function AudioController:play(soundId: string, opts: { volume: number?, position
 	end
 	local volume = entry.volume * math.clamp(if opts and opts.volume then opts.volume else 1, 0, 1)
 	local sound = self:_start(entry, volume, if opts then opts.position else nil)
+	if sound == nil then
+		return self:_skip("unavailable")
+	end
 	local voice: Voice =
 		{ id = soundId, entry = entry, sound = sound, startedAt = now, priority = priority, category = entry.category }
 	table.insert(self._voices, voice)
@@ -326,6 +344,10 @@ function AudioController:setMusic(state: string?)
 		return
 	end
 	local sound = self:_start(entry, 0, nil)
+	if sound == nil then
+		self:_skip("unavailable")
+		return
+	end
 	self._music = {
 		id = entry.id,
 		entry = entry,

@@ -1,21 +1,32 @@
 --!strict
 --[[
-	SettingsService (FORGE-04) — the only registrant of the `experience` profile namespace
-	(interfaces §5, §8) and the player settings API.
+	SettingsService (FORGE-04) — the only owner of the `experience` profile namespace (interfaces §5,
+	§8) and the player settings API.
 
-		SettingsService:get(player, key) -> value            -- §8; the default when the profile is not loaded
+		SettingsService:get(player, key) -> value            -- §8; the default when nothing is stored
 		SettingsService:getAll(player) -> { [key]: value }   -- a copy
 		SettingsService:set(player, key, value) -> boolean    -- validated (Experience/Schema.checkSetting)
 		SettingsService:read(player, section) -> table?       -- a deep copy of experience[section]
 		SettingsService:update(player, section, fn) -> boolean
 			-- Onboarding/Quest/DailyReward services change ONLY their own section through this:
-			-- fn(sectionTable) runs on a copy; DataService commits it only if fn returns without error.
+			-- fn(sectionTable) runs on a copy and is committed only if it returns without error.
+		SettingsService:isPersistent() -> boolean           -- true when DataService is loaded
 		SettingsService.changed: Signal (player, key, value)
 
+	Storage (D-027: VS-1 runs without persistence)
+	- DataService present (registry:find in start()): the namespace is registered there and every
+	  read/write goes through DataService:get/update (step-wise migrations, no partial writes).
+	- DataService absent: a session store keeps one `experience` table per player in memory, created
+	  at the first access and dropped when the player leaves. Same API, same validation, same copy
+	  semantics, so callers never branch on it.
+	Registration happens in start() (D-027 requires the optional lookup there; interfaces §5 asks for
+	new()). When FL-0008 lands, FORGE-01 and FORGE-04 agree whether DataService accepts it in start()
+	or SettingsService declares the dependency again (handoff 2026-10-12-forge-04-to-forge-01-*).
+
 	Remotes (Experience/Remotes.luau, via RemoteService when loaded): Experience.SetSetting (client ->
-	server) and Experience.Settings (snapshot to the client on profile load and after each change).
-	Analytics: SettingChanged (key, value) at most once per key per player every ANALYTICS_GAP seconds,
-	so slider drags do not spend the analytics budget.
+	server) and Experience.Settings (a snapshot to the client when the player joins or the profile
+	loads, and after each change). Analytics: SettingChanged (key, value) at most once per key per
+	player every ANALYTICS_GAP seconds, so slider drags do not spend the analytics budget.
 ]]
 
 local Schema = require("@game/ReplicatedStorage/Forge/Experience/Schema")
@@ -24,7 +35,7 @@ local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local SettingsService = {}
 SettingsService.__index = SettingsService
 
-local Def = { name = "SettingsService", dependencies = { "DataService" } }
+local Def = { name = "SettingsService", dependencies = {} }
 
 local ANALYTICS_GAP = 10
 
@@ -44,12 +55,11 @@ local function isPlayer(value: any): boolean
 end
 
 function Def.new(env: any, registry: any)
-	local data = registry:get("DataService")
-	data:registerNamespace(Schema.NAMESPACE, Schema.spec())
 	return setmetatable({
 		_env = env,
 		_registry = registry,
-		_data = data,
+		_data = nil,
+		_session = {},
 		_connections = {},
 		_lastAnalytics = {},
 		changed = Signal.new(),
@@ -57,20 +67,50 @@ function Def.new(env: any, registry: any)
 end
 
 function SettingsService:start()
+	local env = self._env
 	self._remotes = self._registry:find("RemoteService")
 	self._analytics = self._registry:find("AnalyticsService")
+	local data = self._registry:find("DataService")
+	if data then
+		local ok, err = pcall(data.registerNamespace, data, Schema.NAMESPACE, Schema.spec())
+		if ok then
+			self._data = data
+		else
+			env.log("error", "SettingsService: DataService refused the experience namespace; session store", {
+				error = tostring(err),
+			})
+		end
+	else
+		env.log("info", "SettingsService: no DataService; settings and progress last for the session (D-027)", {})
+	end
 	if self._remotes then
 		self._remotes:handle("Experience.SetSetting", function(player, key, value)
 			self:set(player, key, value)
 		end)
 	else
-		self._env.log("warn", "SettingsService: RemoteService not loaded; settings remotes inactive", {})
+		env.log("warn", "SettingsService: RemoteService not loaded; settings remotes inactive", {})
 	end
-	if self._data.loaded then
+	if self._data and self._data.loaded then
 		table.insert(
 			self._connections,
 			self._data.loaded:connect(function(player)
 				self:_push(player)
+			end)
+		)
+	elseif env.Players and env.Players.PlayerAdded then
+		table.insert(
+			self._connections,
+			env.Players.PlayerAdded:Connect(function(player)
+				self:_push(player)
+			end)
+		)
+	end
+	if env.Players and env.Players.PlayerRemoving then
+		table.insert(
+			self._connections,
+			env.Players.PlayerRemoving:Connect(function(player)
+				self._session[player] = nil
+				self._lastAnalytics[player] = nil
 			end)
 		)
 	end
@@ -78,19 +118,54 @@ end
 
 function SettingsService:destroy()
 	for _, connection in self._connections do
-		connection:disconnect()
+		if connection.Disconnect then
+			connection:Disconnect()
+		else
+			connection:disconnect()
+		end
 	end
 	table.clear(self._connections)
 	self.changed:disconnectAll()
 end
 
--- The live namespace table, repaired with defaults; nil when not loaded.
+function SettingsService:isPersistent(): boolean
+	return self._data ~= nil
+end
+
+-- The live namespace table (repaired with defaults); nil when DataService has not loaded it.
 function SettingsService:_profile(player: any): any
-	local data = self._data:get(player, Schema.NAMESPACE)
-	if type(data) ~= "table" then
-		return nil
+	if self._data then
+		local data = self._data:get(player, Schema.NAMESPACE)
+		return if type(data) == "table" then data else nil
 	end
-	return data
+	local profile = self._session[player]
+	if profile == nil and player.Parent ~= nil then
+		profile = Schema.defaults()
+		self._session[player] = profile
+	end
+	return profile
+end
+
+-- Runs fn on a normalized copy and commits it only when fn returns (no partial writes).
+function SettingsService:_write(player: any, fn: (any) -> ()): boolean
+	if self._data then
+		return self._data:update(player, Schema.NAMESPACE, function(data)
+			Schema.normalize(data)
+			fn(data)
+		end)
+	end
+	local profile = self:_profile(player)
+	if profile == nil then
+		return false
+	end
+	local copy = deepCopy(profile)
+	Schema.normalize(copy)
+	local ok = pcall(fn, copy)
+	if not ok then
+		return false
+	end
+	self._session[player] = copy
+	return true
 end
 
 function SettingsService:_push(player: any)
@@ -126,11 +201,13 @@ function SettingsService:set(player: any, key: string, value: any): boolean
 	if not ok then
 		return false
 	end
+	if self:_profile(player) == nil then
+		return false
+	end
 	if self:get(player, key) == checked then
 		return true
 	end
-	local committed = self._data:update(player, Schema.NAMESPACE, function(data)
-		Schema.normalize(data)
+	local committed = self:_write(player, function(data)
 		data.settings[key] = checked
 	end)
 	if not committed then
@@ -147,12 +224,13 @@ function SettingsService:_report(player: any, key: string, value: any)
 		return
 	end
 	local now = self._env.clock()
-	local id = `{player.UserId}:{key}`
-	local last = self._lastAnalytics[id]
+	local perPlayer = self._lastAnalytics[player] or {}
+	self._lastAnalytics[player] = perPlayer
+	local last = perPlayer[key]
 	if last and now - last < ANALYTICS_GAP then
 		return
 	end
-	self._lastAnalytics[id] = now
+	perPlayer[key] = now
 	self._analytics:event(player, "SettingChanged", { key = key, value = value })
 end
 
@@ -173,8 +251,7 @@ function SettingsService:update(player: any, section: string, fn: (any) -> ()): 
 	if section == "settings" or not table.find(Schema.SECTIONS, section) or not isPlayer(player) then
 		return false
 	end
-	return self._data:update(player, Schema.NAMESPACE, function(data)
-		Schema.normalize(data)
+	return self:_write(player, function(data)
 		fn(data[section])
 	end)
 end

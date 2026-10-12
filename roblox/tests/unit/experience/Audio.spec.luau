@@ -9,8 +9,7 @@ local Sounds = require("@game/ReplicatedStorage/Forge/Experience/Sounds")
 local MusicDirector = require("@game/ReplicatedStorage/Forge/Experience/MusicDirector")
 local SettingsDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/SettingsController")
 local AudioDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/AudioController")
-local KingdomSounds = require("../../../../games/game-001/config/Sounds")
-local SandboxSounds = require("../../../../games/sandbox/config/Sounds")
+local SandboxSounds = require("@game/ReplicatedStorage/Forge/Config/Sounds")
 
 EngineStubs.install()
 
@@ -45,17 +44,9 @@ local function hasProblem(problems, substring)
 end
 
 describe("Experience/SoundRegistry", function()
-	it("accepts the factory list and both game lists", function()
+	it("accepts the factory list and the sandbox list (game lists: games/<game>/tests)", function()
 		expect(SoundRegistry.validate(Sounds.FACTORY)).toEqual({})
-		expect(SoundRegistry.validate(KingdomSounds)).toEqual({})
 		expect(SoundRegistry.validate(SandboxSounds)).toEqual({})
-	end)
-
-	it("every music state has a registered track (AI Kingdoms)", function()
-		local registry = SoundRegistry.build(Sounds.FACTORY, KingdomSounds)
-		for _, id in MusicDirector.STATE_SOUNDS do
-			expect(registry:get(id)).never.toBeNil()
-		end
 	end)
 
 	it("rejects entries without licence, source, category or a valid volume", function()
@@ -243,6 +234,13 @@ describe("AudioController", function()
 		expect(audio:musicState()).toBe("battle")
 	end)
 
+	it("skips sounds cleanly when there is no SoundService to play in (headless boot)", function()
+		env.SoundService = {} -- MockEnv's unmocked guard is a table, not an Instance
+		expect(audio:play("t.click")).toBeNil()
+		audio:setMusic("calm")
+		expect(audio.stats.skipped.unavailable).toBe(2)
+	end)
+
 	it("setMusic(nil) fades to silence; a state without an asset is counted, not thrown", function()
 		audio:setMusic("calm")
 		env.wait(2)
@@ -270,6 +268,6 @@ describe("AudioController", function()
 		expect(group.Volume).toBeNear(0.8)
 		settings:set("masterVolume", 0.5)
 		expect(group.Volume).toBeNear(0.4)
-		expect(audio._backend.groups.music.Volume).toBeNear(0.3)
+		expect(audio._backend.volumes.music).toBeNear(0.3) -- applied when the music group is created
 	end)
 end)
