@@ -69,8 +69,17 @@ describe("Experience/Onboarding config rules", function()
 
 	it("rejects rewards on client-triggered steps (untrusted input)", function()
 		expect(problemsOf(function(c)
-			c.flows[1].steps[2].reward = { currency = "Crowns", amount = 5 }
+			c.flows[1].steps[2].reward = { currency = "Coins", amount = 5 }
 		end)).toContain("rewards only on bus-triggered (server-verified) steps")
+	end)
+
+	it("rejects idle hints that are not phase -> 1-140 characters", function()
+		expect(problemsOf(function(c)
+			c.idleHints = { Expansion = string.rep("x", 141) }
+		end)).toContain("idleHints[Expansion]: text must be 1-140 characters")
+		expect(problemsOf(function(c)
+			c.idleHints = "Build more"
+		end)).toContain("idleHints must be a table of phase -> text")
 	end)
 
 	it("rejects an unknown start event", function()
@@ -132,7 +141,7 @@ describe("Experience/Onboarding step graph", function()
 	it("a later bus step done early completes as soon as it becomes current", function()
 		local state = fresh()
 		Onboarding.handle(FLOW, state, { client = "RulerMoved" }, 1)
-		Onboarding.handle(FLOW, state, { client = "ReachedCastle" }, 2)
+		Onboarding.handle(FLOW, state, { client = "ReachedTarget" }, 2)
 		Onboarding.handle(FLOW, state, { client = "ResourceInspected" }, 3)
 		local early, changed = Onboarding.handle(
 			FLOW,
@@ -268,7 +277,7 @@ describe("OnboardingService", function()
 
 	local function walkToFarm()
 		act("RulerMoved")
-		act("ReachedCastle")
+		act("ReachedTarget")
 		act("ResourceInspected")
 		bus.CitizenTaskChanged:fire(player, { matchId = "m1", kingdomId = "k1", citizenId = "c1", task = "Farmer" })
 		bus.ConstructionStarted:fire(
@@ -296,7 +305,7 @@ describe("OnboardingService", function()
 		local last = state[#state].args[1]
 		expect(last.stepId).toBe("MoveRuler")
 		expect(last.clientAction).toBe("RulerMoved")
-		expect(last.hint.title).toBe("Walk to your castle")
+		expect(last.hint.title).toBe("Walk to the landmark")
 	end)
 
 	it("a full first session logs every funnel step in order, the completion event and the rewards", function()
@@ -309,7 +318,7 @@ describe("OnboardingService", function()
 			player,
 			{ matchId = "m1", kingdomId = "k1", resource = "Food", amount = 3, total = 3 }
 		)
-		bus.BuildingUpgraded:fire(player, { matchId = "m1", kingdomId = "k1", buildingType = "TownHall", level = 2 })
+		bus.BuildingUpgraded:fire(player, { matchId = "m1", kingdomId = "k1", buildingType = "Hall", level = 2 })
 		act("GoalAcknowledged")
 		expect(onboardingSteps(env)).toEqual({
 			"Arrive",
@@ -357,7 +366,7 @@ describe("OnboardingService", function()
 		end
 		expect(skipped[2]).toBe(2)
 		expect(skipped[3]).toEqual({ CustomField01 = "MoveRuler", CustomField02 = "first_session" })
-		act("ReachedCastle")
+		act("ReachedTarget")
 		bus.CitizenTaskChanged:fire(player, { matchId = "m1", kingdomId = "k1", citizenId = "c1", task = "Farmer" })
 		expect(onboardingSteps(env)).toEqual({ "Arrive", "MoveRuler" })
 		expect(next(economy.grants)).toBeNil()
@@ -408,7 +417,7 @@ describe("OnboardingService", function()
 		local pushes = remotes:sentTo("Experience.OnboardingState", player)
 		expect(pushes[#pushes].args[1].escalated).toBe(true)
 		act("RulerMoved")
-		act("ReachedCastle")
+		act("ReachedTarget")
 		env.mock:advance(21)
 		expect(service:state(player).stepId).toBe("AssignCitizen")
 	end)
@@ -445,7 +454,7 @@ describe("OnboardingService", function()
 		bus.PlayerReady:fire(p)
 		local s = registry3:get("OnboardingService")
 		s:action(p, "first_session", "RulerMoved")
-		s:action(p, "first_session", "ReachedCastle")
+		s:action(p, "first_session", "ReachedTarget")
 		s:action(p, "first_session", "ResourceInspected")
 		bus.CitizenTaskChanged:fire(p, { matchId = "m", kingdomId = "k", citizenId = "c", task = "Farmer" })
 		bus.ConstructionStarted:fire(p, { matchId = "m", kingdomId = "k", buildingType = "Farm" })

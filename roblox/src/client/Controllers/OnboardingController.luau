@@ -21,11 +21,15 @@
 	- escalated (the player is stuck): the card border and arrow turn gold
 	Detectors (client actions the server whitelists in config.clientActions):
 		RulerMoved / CharacterMoved   the character moved MOVE_STUDS from where the step began
-		ReachedCastle                 within REACH_STUDS of an instance tagged "OnboardingCastle"
-	Idle hints: after the tutorial, VFXController.idleNudge (dead air in a match) shows a phase hint
-	for IDLE_HINT_SEC when the showHints setting is on.
+		ReachedTarget                 within REACH_STUDS of the step's world target (the nearest
+		                              instance tagged hint.target.tag)
+	Idle hints: showIdleHint(phase) shows the game's config.idleHints[phase] (games/<game>/config/
+	Onboarding.luau) for IDLE_HINT_SEC, only after the tutorial and only with the showHints setting
+	on. The game decides when a player is idle (game-001: FL-0062, PACING.md dead air); the framework
+	holds no hint text.
 ]]
 
+local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
 local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
@@ -38,13 +42,6 @@ Def.MOVE_STUDS = 8
 Def.REACH_STUDS = 15
 Def.POLL_SEC = 0.25
 Def.IDLE_HINT_SEC = 6
-Def.IDLE_HINTS = table.freeze({
-	Opening = "Build another farm: more food means more citizens.",
-	Development = "Upgrade your Town Hall to unlock new buildings.",
-	Competition = "Rivals are near. Train soldiers at the Barracks.",
-	Conflict = "Defend your walls, or strike a rival's town.",
-	Resolution = "Hold your lands to win the crown.",
-})
 
 local MOVE_ACTIONS = { RulerMoved = true, CharacterMoved = true }
 local GOLD = Color3.fromRGB(255, 207, 92)
@@ -58,6 +55,7 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_registry = registry,
 		_settings = registry:get("SettingsController"),
 		_playerGui = opts.playerGui,
+		_idleHints = opts.idleHints or OnboardingConfig.idleHints or {},
 		_links = {},
 		_connections = {},
 		_view = nil :: any,
@@ -79,15 +77,6 @@ function OnboardingController:start()
 			self:apply(state)
 		end)
 	)
-	local vfx = self._registry:find("VFXController")
-	if vfx and vfx.idleNudge then
-		table.insert(
-			self._connections,
-			vfx.idleNudge:connect(function(phase)
-				self:showIdleHint(phase)
-			end)
-		)
-	end
 end
 
 function OnboardingController:destroy()
@@ -153,9 +142,11 @@ function OnboardingController:_startDetector()
 	local token = self._detectorToken
 	local state = self.state
 	local action = if state and not state.done then state.clientAction else nil
-	if action == nil or (not MOVE_ACTIONS[action] and action ~= "ReachedCastle") then
+	if action == nil or (not MOVE_ACTIONS[action] and action ~= "ReachedTarget") then
 		return
 	end
+	local target = state.hint and state.hint.target
+	local tag = if target and target.kind == "world" then target.tag else nil
 	local env = self._env
 	env.spawn(function()
 		local origin = nil
@@ -169,13 +160,12 @@ function OnboardingController:_startDetector()
 						self:report(action)
 						return
 					end
-				else
-					for _, castle in env.CollectionService:GetTagged("OnboardingCastle") do
-						local target = if castle:IsA("Model") then castle.PrimaryPart else castle
-						if target and (target.Position - position).Magnitude <= Def.REACH_STUDS then
-							self:report(action)
-							return
-						end
+				elseif tag ~= nil then
+					local nearest = self:_nearest(tag)
+					local part = if nearest and nearest:IsA("Model") then nearest.PrimaryPart else nearest
+					if part and (part.Position - position).Magnitude <= Def.REACH_STUDS then
+						self:report(action)
+						return
 					end
 				end
 			end
@@ -367,7 +357,7 @@ function OnboardingController:_render()
 end
 
 function OnboardingController:showIdleHint(phase: string): boolean
-	local text = Def.IDLE_HINTS[phase]
+	local text = self._idleHints[phase]
 	if text == nil or self._settings:get("showHints") == false then
 		return false
 	end

@@ -10,6 +10,7 @@ local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/Analyt
 local Onboarding = require("@game/ReplicatedStorage/Forge/Experience/Onboarding")
 local ExperienceRemotes = require("@game/ReplicatedStorage/Forge/Experience/Remotes")
 local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
+local PacingDef = require("@game/ServerScriptService/Game/Services/PacingService")
 local AnalyticsDef = require("@game/ServerScriptService/Forge/Services/AnalyticsService")
 local SettingsDef = require("@game/ServerScriptService/Forge/Services/SettingsService")
 local OnboardingDef = require("@game/ServerScriptService/Forge/Services/OnboardingService")
@@ -49,6 +50,16 @@ describe("game-001 VS-1 onboarding config", function()
 		end
 		expect(firstInteraction).toBeLessThanOrEqual(30)
 		expect(elapsed).toBeLessThanOrEqual(450) -- PACING.md firstCaptureSec target
+	end)
+
+	it("keys its idle hints by contract MatchPhase (G2) and never names a Town Hall or currency", function()
+		local hints = OnboardingConfig.idleHints
+		assert(hints, "game-001 has idle hints")
+		for phase, text in hints do
+			expect(table.find(PacingDef.PHASES, phase) ~= nil and phase ~= "Lobby" and phase ~= "Results").toBe(true)
+			expect(string.find(text, "Town Hall", 1, true)).toBeNil()
+			expect(string.find(text, "Crowns", 1, true)).toBeNil()
+		end
 	end)
 
 	it("guides gather -> build -> recruit -> capture (BRIEF §4)", function()

@@ -6,6 +6,9 @@ local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local SettingsDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/SettingsController")
 local OnboardingDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/OnboardingController")
 
+-- Hint text is game data (config.idleHints); the framework holds none.
+local IDLE_HINTS = { Expansion = "Try a building you have not built yet.", Conflict = "Rivals are near." }
+
 describe("OnboardingController (client)", function()
 	local env, controller, gui, remotes, notifications, settings
 
@@ -36,7 +39,7 @@ describe("OnboardingController (client)", function()
 			step = 2,
 			stepId = "MoveRuler",
 			clientAction = "RulerMoved",
-			hint = { title = "Walk to your castle", body = "Move with WASD.", target = nil },
+			hint = { title = "Walk to the landmark", body = "Move with WASD.", target = nil },
 			escalated = false,
 			done = false,
 			skipped = false,
@@ -67,7 +70,7 @@ describe("OnboardingController (client)", function()
 				name = "OnboardingController",
 				dependencies = { "SettingsController" },
 				new = function(e, r)
-					return OnboardingDef.create(e, r, { playerGui = gui })
+					return OnboardingDef.create(e, r, { playerGui = gui, idleHints = IDLE_HINTS })
 				end,
 			},
 			{
@@ -89,7 +92,7 @@ describe("OnboardingController (client)", function()
 		expect(screen).never.toBeNil()
 		expect(screen.DisplayOrder).toBe(60)
 		local card = screen:FindFirstChild("Card")
-		expect(card:FindFirstChild("Title").Text).toBe("Walk to your castle")
+		expect(card:FindFirstChild("Title").Text).toBe("Walk to the landmark")
 		expect(card:FindFirstChild("Counter").Text).toBe("2/9")
 		local skip = card:FindFirstChild("Skip")
 		expect(skip.Size.Y.Offset).toBeGreaterThanOrEqual(44)
@@ -124,8 +127,8 @@ describe("OnboardingController (client)", function()
 	it("marks world targets with a highlight and an arrow, UI targets with a stroke; gold when stuck", function()
 		local castle = env.newInstance("Part")
 		castle.Parent = env.Workspace
-		env.CollectionService:AddTag(castle, "OnboardingCastle")
-		controller:apply(state({ hint = { title = "Go", target = { kind = "world", tag = "OnboardingCastle" } } }))
+		env.CollectionService:AddTag(castle, "Landmark")
+		controller:apply(state({ hint = { title = "Go", target = { kind = "world", tag = "Landmark" } } }))
 		expect(castle:FindFirstChild("ForgeOnboardingHighlight")).never.toBeNil()
 		expect(castle:FindFirstChild("ForgeOnboardingArrow")).never.toBeNil()
 		local button = env.newInstance("TextButton")
@@ -168,7 +171,7 @@ describe("OnboardingController (client)", function()
 		expect(sent[1].args[2]).toBe("RulerMoved")
 	end)
 
-	it("reports ReachedCastle near the tagged castle", function()
+	it("reports ReachedTarget near the step's tagged world target", function()
 		local character = env.newInstance("Model")
 		local root = env.newInstance("Part")
 		root.Position = Vector3.new(0, 0, 0)
@@ -178,13 +181,18 @@ describe("OnboardingController (client)", function()
 		local castle = env.newInstance("Part")
 		castle.Position = Vector3.new(40, 0, 0)
 		castle.Parent = env.Workspace
-		env.CollectionService:AddTag(castle, "OnboardingCastle")
-		controller:apply(state({ step = 3, stepId = "FindKingdom", clientAction = "ReachedCastle" }))
+		env.CollectionService:AddTag(castle, "Landmark")
+		controller:apply(state({
+			step = 3,
+			stepId = "FindKingdom",
+			clientAction = "ReachedTarget",
+			hint = { title = "Go", target = { kind = "world", tag = "Landmark" } },
+		}))
 		env.mock:advance(1)
 		expect(#env.mock.remotes:sent(remotes.action, "toServer")).toBe(0)
 		root.Position = Vector3.new(30, 0, 0)
 		env.mock:advance(0.5)
-		expect(env.mock.remotes:sent(remotes.action, "toServer")[1].args[2]).toBe("ReachedCastle")
+		expect(env.mock.remotes:sent(remotes.action, "toServer")[1].args[2]).toBe("ReachedTarget")
 	end)
 
 	it("UI code reports actions through report(); nothing is sent once the tutorial is done", function()
@@ -196,11 +204,12 @@ describe("OnboardingController (client)", function()
 
 	it("shows idle hints only after the tutorial and only with showHints on", function()
 		controller:apply(state())
-		expect(controller:showIdleHint("Development")).toBe(false)
+		expect(controller:showIdleHint("Expansion")).toBe(false)
 		controller:apply(state({ done = true, hint = nil }))
-		expect(controller:showIdleHint("Development")).toBe(true)
-		expect(notifications.shown[1].title).toBe("Upgrade your Town Hall to unlock new buildings.")
+		expect(controller:showIdleHint("Founding")).toBe(false) -- no text for that phase
+		expect(controller:showIdleHint("Expansion")).toBe(true)
+		expect(notifications.shown[1].title).toBe(IDLE_HINTS.Expansion)
 		settings:set("showHints", false)
-		expect(controller:showIdleHint("Competition")).toBe(false)
+		expect(controller:showIdleHint("Conflict")).toBe(false)
 	end)
 end)
