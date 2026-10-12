@@ -1,0 +1,557 @@
+{
+	"children": [
+		{
+			"attributes": {
+				"KingdomId": "Neutral",
+				"NodeId": "Neutral-Gold-SE",
+				"Resource": "Gold"
+			},
+			"className": "Part",
+			"name": "GoldMine_SE",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.7071, 0, 0.7071],
+							[0, 1, 0],
+							[-0.7071, 0, 0.7071]
+						],
+						"position": [120.2082, 0.1, 120.2082]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Slate",
+				"Size": [24, 0.2, 24],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.5736, 0, 0.8192],
+							[0, 1, 0],
+							[-0.8192, 0, 0.5736]
+						],
+						"position": [123.0366, 5, 123.0366]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [16, 10, 12],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.1736, 0, 0.9848],
+							[0, 1, 0],
+							[-0.9848, 0, 0.1736]
+						],
+						"position": [114.5513, 3.5, 123.0366]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [9, 7, 8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.2588, 0, 0.9659],
+							[0, 1, 0],
+							[-0.9659, 0, 0.2588]
+						],
+						"position": [121.2688, 7, 117.0262]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.2588, 0, 0.9659],
+							[0, 1, 0],
+							[-0.9659, 0, 0.2588]
+						],
+						"position": [114.9049, 4.5, 117.7333]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.2588, 0, 0.9659],
+							[0, 1, 0],
+							[-0.9659, 0, 0.2588]
+						],
+						"position": [124.4508, 4, 115.9655]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "Neutral",
+				"NodeId": "Neutral-Gold-NE",
+				"Resource": "Gold"
+			},
+			"className": "Part",
+			"name": "GoldMine_NE",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.7071, 0, 0.7071],
+							[0, 1, 0],
+							[-0.7071, 0, -0.7071]
+						],
+						"position": [120.2082, 0.1, -120.2082]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Slate",
+				"Size": [24, 0.2, 24],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.8192, 0, 0.5736],
+							[0, 1, 0],
+							[-0.5736, 0, -0.8192]
+						],
+						"position": [123.0366, 5, -123.0366]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [16, 10, 12],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.9848, 0, 0.1736],
+							[0, 1, 0],
+							[-0.1736, 0, -0.9848]
+						],
+						"position": [123.0366, 3.5, -114.5513]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [9, 7, 8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.9659, 0, 0.2588],
+							[0, 1, 0],
+							[-0.2588, 0, -0.9659]
+						],
+						"position": [117.0262, 7, -121.2688]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.9659, 0, 0.2588],
+							[0, 1, 0],
+							[-0.2588, 0, -0.9659]
+						],
+						"position": [117.7333, 4.5, -114.9049]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.9659, 0, 0.2588],
+							[0, 1, 0],
+							[-0.2588, 0, -0.9659]
+						],
+						"position": [115.9655, 4, -124.4508]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "Neutral",
+				"NodeId": "Neutral-Gold-NW",
+				"Resource": "Gold"
+			},
+			"className": "Part",
+			"name": "GoldMine_NW",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.7071, 0, -0.7071],
+							[0, 1, 0],
+							[0.7071, 0, -0.7071]
+						],
+						"position": [-120.2082, 0.1, -120.2082]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Slate",
+				"Size": [24, 0.2, 24],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.5736, 0, -0.8192],
+							[0, 1, 0],
+							[0.8192, 0, -0.5736]
+						],
+						"position": [-123.0366, 5, -123.0366]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [16, 10, 12],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.1736, 0, -0.9848],
+							[0, 1, 0],
+							[0.9848, 0, -0.1736]
+						],
+						"position": [-114.5513, 3.5, -123.0366]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [9, 7, 8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.2588, 0, -0.9659],
+							[0, 1, 0],
+							[0.9659, 0, -0.2588]
+						],
+						"position": [-121.2688, 7, -117.0262]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.2588, 0, -0.9659],
+							[0, 1, 0],
+							[0.9659, 0, -0.2588]
+						],
+						"position": [-114.9049, 4.5, -117.7333]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-0.2588, 0, -0.9659],
+							[0, 1, 0],
+							[0.9659, 0, -0.2588]
+						],
+						"position": [-124.4508, 4, -115.9655]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "Neutral",
+				"NodeId": "Neutral-Gold-SW",
+				"Resource": "Gold"
+			},
+			"className": "Part",
+			"name": "GoldMine_SW",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.7071, 0, -0.7071],
+							[0, 1, 0],
+							[0.7071, 0, 0.7071]
+						],
+						"position": [-120.2082, 0.1, 120.2082]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Slate",
+				"Size": [24, 0.2, 24],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.8192, 0, -0.5736],
+							[0, 1, 0],
+							[0.5736, 0, 0.8192]
+						],
+						"position": [-123.0366, 5, 123.0366]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [16, 10, 12],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "MineRock",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.9848, 0, -0.1736],
+							[0, 1, 0],
+							[0.1736, 0, 0.9848]
+						],
+						"position": [-123.0366, 3.5, 114.5513]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [9, 7, 8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.9659, 0, -0.2588],
+							[0, 1, 0],
+							[0.2588, 0, 0.9659]
+						],
+						"position": [-117.0262, 7, 121.2688]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.9659, 0, -0.2588],
+							[0, 1, 0],
+							[0.2588, 0, 0.9659]
+						],
+						"position": [-117.7333, 4.5, 114.9049]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "GoldVein",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.9659, 0, -0.2588],
+							[0, 1, 0],
+							[0.2588, 0, 0.9659]
+						],
+						"position": [-115.9655, 4, 124.4508]
+					}
+				},
+				"Color": [1, 0.78, 0.2],
+				"Material": "Foil",
+				"Size": [3, 2, 3],
+				"TopSurface": "Smooth"
+			}
+		}
+	],
+	"className": "Folder"
+}

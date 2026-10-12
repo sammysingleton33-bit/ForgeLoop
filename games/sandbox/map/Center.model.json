@@ -1,0 +1,367 @@
+{
+	"children": [
+		{
+			"className": "Part",
+			"name": "Plaza",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [0, 0.2, 0]
+					}
+				},
+				"Color": [0.6, 0.57, 0.5],
+				"Material": "Cobblestone",
+				"Size": [64, 0.4, 64],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "SpawnLocation",
+			"name": "LobbySpawn",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [0, 0.9, 0]
+					}
+				},
+				"Color": [0.55, 0.55, 0.53],
+				"Duration": 0,
+				"Material": "Slate",
+				"Neutral": true,
+				"Size": [12, 1, 12],
+				"Tags": ["ForgeLobbySpawn"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Well",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [18, 1.9, 18]
+					}
+				},
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "Cobblestone",
+				"Shape": "Cylinder",
+				"Size": [3, 10, 10],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "WellWater",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [18, 3.3, 18]
+					}
+				},
+				"Color": [0.25, 0.45, 0.7],
+				"Material": "Glass",
+				"Shape": "Cylinder",
+				"Size": [0.2, 8, 8],
+				"TopSurface": "Smooth",
+				"Transparency": 0.3
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Road_South",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [0, 0.1, 78.5]
+					}
+				},
+				"Color": [0.6, 0.57, 0.5],
+				"Material": "Cobblestone",
+				"Size": [12, 0.2, 93],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Pole_South",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [9, 8, 34]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [16, 0.8, 0.8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Flag_South",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [9, 13.5, 37.4]
+					}
+				},
+				"Color": [0.77, 0.16, 0.16],
+				"Material": "Fabric",
+				"Size": [0.3, 4, 6],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Road_East",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 0, 1],
+							[0, 1, 0],
+							[-1, 0, 0]
+						],
+						"position": [78.5, 0.1, 0]
+					}
+				},
+				"Color": [0.6, 0.57, 0.5],
+				"Material": "Cobblestone",
+				"Size": [12, 0.2, 93],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Pole_East",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 0, 1],
+							[1, 0, 0],
+							[0, 1, 0]
+						],
+						"position": [34, 8, -9]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [16, 0.8, 0.8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Flag_East",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 0, 1],
+							[0, 1, 0],
+							[-1, 0, 0]
+						],
+						"position": [37.4, 13.5, -9]
+					}
+				},
+				"Color": [0.16, 0.36, 0.78],
+				"Material": "Fabric",
+				"Size": [0.3, 4, 6],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Road_North",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [0, 0.1, -78.5]
+					}
+				},
+				"Color": [0.6, 0.57, 0.5],
+				"Material": "Cobblestone",
+				"Size": [12, 0.2, 93],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Pole_North",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 1, 0],
+							[1, 0, 0],
+							[0, 0, -1]
+						],
+						"position": [-9, 8, -34]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [16, 0.8, 0.8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Flag_North",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [-9, 13.5, -37.4]
+					}
+				},
+				"Color": [0.18, 0.58, 0.26],
+				"Material": "Fabric",
+				"Size": [0.3, 4, 6],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Road_West",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 0, -1],
+							[0, 1, 0],
+							[1, 0, 0]
+						],
+						"position": [-78.5, 0.1, 0]
+					}
+				},
+				"Color": [0.6, 0.57, 0.5],
+				"Material": "Cobblestone",
+				"Size": [12, 0.2, 93],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Pole_West",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 0, -1],
+							[1, 0, 0],
+							[0, -1, 0]
+						],
+						"position": [-34, 8, 9]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [16, 0.8, 0.8],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Flag_West",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, 0, -1],
+							[0, 1, 0],
+							[1, 0, 0]
+						],
+						"position": [-37.4, 13.5, 9]
+					}
+				},
+				"Color": [0.86, 0.68, 0.14],
+				"Material": "Fabric",
+				"Size": [0.3, 4, 6],
+				"TopSurface": "Smooth"
+			}
+		}
+	],
+	"className": "Folder"
+}

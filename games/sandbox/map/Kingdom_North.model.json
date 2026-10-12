@@ -1,0 +1,1786 @@
+{
+	"attributes": {
+		"KingdomId": "North"
+	},
+	"children": [
+		{
+			"className": "Part",
+			"name": "Territory",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [0, 0.2, -210]
+					}
+				},
+				"Color": [0.38, 0.55, 0.27],
+				"Material": "Grass",
+				"Size": [170, 0.4, 170],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North"
+			},
+			"className": "Part",
+			"name": "Keep",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [0, 8.4, -260]
+					}
+				},
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "Cobblestone",
+				"Size": [36, 16, 28],
+				"Tags": ["ForgeKeep"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North"
+			},
+			"className": "Part",
+			"name": "RulerDais",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [0, 0.9, -236]
+					}
+				},
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "Cobblestone",
+				"Size": [12, 1, 12],
+				"Tags": ["ForgeRulerSpawn", "ForgeSpawn"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North"
+			},
+			"className": "Part",
+			"name": "Stockpile",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [26, 0.9, -220]
+					}
+				},
+				"Color": [0.62, 0.47, 0.3],
+				"Material": "WoodPlanks",
+				"Size": [12, 1, 12],
+				"Tags": ["ForgeStockpile"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North"
+			},
+			"className": "Part",
+			"name": "VillagerSpawn",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [46, 0.9, -232]
+					}
+				},
+				"CanCollide": false,
+				"CanQuery": false,
+				"CanTouch": false,
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [6, 1, 6],
+				"Tags": ["ForgeVillagerSpawn"],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North",
+				"NodeId": "North-Wood-1",
+				"Resource": "Wood"
+			},
+			"className": "Part",
+			"name": "Forest",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [-55, 0.5, -260]
+					}
+				},
+				"Color": [0.27, 0.42, 0.2],
+				"Material": "LeafyGrass",
+				"Size": [30, 0.2, 30],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North",
+				"NodeId": "North-Stone-1",
+				"Resource": "Stone"
+			},
+			"className": "Part",
+			"name": "Quarry",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [-60, 0.5, -216]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Slate",
+				"Size": [26, 0.2, 26],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North",
+				"NodeId": "North-Food-1",
+				"Resource": "Food"
+			},
+			"className": "Part",
+			"name": "Farm",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [45, 0.5, -158]
+					}
+				},
+				"Color": [0.42, 0.3, 0.2],
+				"Material": "Ground",
+				"Size": [32, 0.2, 24],
+				"Tags": ["ForgeResourceNode"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North",
+				"PlotId": "North-Plot-1"
+			},
+			"className": "Part",
+			"name": "BuildPlot",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [-28, 0.55, -188]
+					}
+				},
+				"Color": [0.82, 0.74, 0.55],
+				"Material": "Sand",
+				"Size": [16, 0.3, 16],
+				"Tags": ["ForgeBuildPlot"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North",
+				"PlotId": "North-Plot-2"
+			},
+			"className": "Part",
+			"name": "BuildPlot",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [-28, 0.55, -158]
+					}
+				},
+				"Color": [0.82, 0.74, 0.55],
+				"Material": "Sand",
+				"Size": [16, 0.3, 16],
+				"Tags": ["ForgeBuildPlot"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North",
+				"PlotId": "North-Plot-3"
+			},
+			"className": "Part",
+			"name": "BuildPlot",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [26, 0.55, -190]
+					}
+				},
+				"Color": [0.82, 0.74, 0.55],
+				"Material": "Sand",
+				"Size": [16, 0.3, 16],
+				"Tags": ["ForgeBuildPlot"],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"attributes": {
+				"KingdomId": "North"
+			},
+			"className": "Part",
+			"name": "RallyPoint",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[-1, 0, 0],
+							[0, 1, 0],
+							[0, 0, -1]
+						],
+						"position": [0, 0.9, -142]
+					}
+				},
+				"CanCollide": false,
+				"CanQuery": false,
+				"CanTouch": false,
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [10, 1, 10],
+				"Tags": ["ForgeRallyPoint"],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		},
+		{
+			"children": [
+				{
+					"className": "Part",
+					"name": "WallBack",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [0, 6.4, -295]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [172, 12, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "WallLeft",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [85, 6.4, -210]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [2, 12, 170],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "WallRight",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-85, 6.4, -210]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [2, 12, 170],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "WallFrontLeft",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [48.5, 6.4, -125]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [73, 12, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "WallFrontRight",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-48.5, 6.4, -125]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [73, 12, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "GateTower",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [15.5, 10.4, -125]
+							}
+						},
+						"Color": [0.55, 0.55, 0.53],
+						"Material": "Cobblestone",
+						"Size": [7, 20, 7],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "GateBanner",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [15.5, 14.4, -121.2]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Fabric",
+						"Size": [5, 7, 0.4],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "GateTower",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-15.5, 10.4, -125]
+							}
+						},
+						"Color": [0.55, 0.55, 0.53],
+						"Material": "Cobblestone",
+						"Size": [7, 20, 7],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "GateBanner",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-15.5, 14.4, -121.2]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Fabric",
+						"Size": [5, 7, 0.4],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepHall",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [0, 22.4, -260]
+							}
+						},
+						"Color": [0.55, 0.55, 0.53],
+						"Material": "Cobblestone",
+						"Size": [22, 12, 18],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepRoof",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [0, 29.15, -260]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Slate",
+						"Size": [24, 1.5, 20],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTower",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [18, 14.4, -246]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Cobblestone",
+						"Size": [8, 28, 8],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTowerCap",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [18, 29.15, -246]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Slate",
+						"Size": [9.5, 1.5, 9.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTower",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-18, 14.4, -246]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Cobblestone",
+						"Size": [8, 28, 8],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTowerCap",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-18, 29.15, -246]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Slate",
+						"Size": [9.5, 1.5, 9.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTower",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [18, 14.4, -274]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Cobblestone",
+						"Size": [8, 28, 8],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTowerCap",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [18, 29.15, -274]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Slate",
+						"Size": [9.5, 1.5, 9.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTower",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-18, 14.4, -274]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Cobblestone",
+						"Size": [8, 28, 8],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepTowerCap",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-18, 29.15, -274]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Slate",
+						"Size": [9.5, 1.5, 9.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "KeepBanner",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [0, 9.4, -245.6]
+							}
+						},
+						"Color": [0.18, 0.58, 0.26],
+						"Material": "Fabric",
+						"Size": [8, 10, 0.4],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "Road",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [0, 0.5, -177.5]
+							}
+						},
+						"Color": [0.6, 0.57, 0.5],
+						"Material": "Cobblestone",
+						"Size": [12, 0.2, 105],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "Crate",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [29, 2.9, -217]
+							}
+						},
+						"Color": [0.62, 0.47, 0.3],
+						"Material": "WoodPlanks",
+						"Size": [3, 3, 3],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "Crate",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [23, 2.9, -223]
+							}
+						},
+						"Color": [0.62, 0.47, 0.3],
+						"Material": "WoodPlanks",
+						"Size": [3, 3, 3],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House1",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 3.9, -208]
+							}
+						},
+						"Color": [0.62, 0.47, 0.3],
+						"Material": "WoodPlanks",
+						"Size": [10, 7, 9],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House1Roof",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 8, -208]
+							}
+						},
+						"Color": [0.48, 0.2, 0.15],
+						"Material": "Slate",
+						"Size": [11.5, 1.2, 10.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House1Ridge",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 9.2, -208]
+							}
+						},
+						"Color": [0.48, 0.2, 0.15],
+						"Material": "Slate",
+						"Size": [7, 1.2, 6],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House2",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 3.9, -232]
+							}
+						},
+						"Color": [0.62, 0.47, 0.3],
+						"Material": "WoodPlanks",
+						"Size": [10, 7, 9],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House2Roof",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 8, -232]
+							}
+						},
+						"Color": [0.48, 0.2, 0.15],
+						"Material": "Slate",
+						"Size": [11.5, 1.2, 10.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House2Ridge",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 9.2, -232]
+							}
+						},
+						"Color": [0.48, 0.2, 0.15],
+						"Material": "Slate",
+						"Size": [7, 1.2, 6],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House3",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 3.9, -256]
+							}
+						},
+						"Color": [0.62, 0.47, 0.3],
+						"Material": "WoodPlanks",
+						"Size": [10, 7, 9],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House3Roof",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 8, -256]
+							}
+						},
+						"Color": [0.48, 0.2, 0.15],
+						"Material": "Slate",
+						"Size": [11.5, 1.2, 10.5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "House3Ridge",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [64, 9.2, -256]
+							}
+						},
+						"Color": [0.48, 0.2, 0.15],
+						"Material": "Slate",
+						"Size": [7, 1.2, 6],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeTrunk",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[0, 1, 0],
+									[1, 0, 0],
+									[0, 0, -1]
+								],
+								"position": [-46, 5.3, -251]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Shape": "Cylinder",
+						"Size": [10, 2.2, 2.2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeCrown",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-46, 13.3, -251]
+							}
+						},
+						"Color": [0.24, 0.47, 0.2],
+						"Material": "LeafyGrass",
+						"Shape": "Ball",
+						"Size": [9, 9, 9],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeTrunk",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[0, 1, 0],
+									[1, 0, 0],
+									[0, 0, -1]
+								],
+								"position": [-56, 4.55, -249]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Shape": "Cylinder",
+						"Size": [8.5, 1.87, 1.87],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeCrown",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-56, 11.395, -249]
+							}
+						},
+						"Color": [0.24, 0.47, 0.2],
+						"Material": "LeafyGrass",
+						"Shape": "Ball",
+						"Size": [7.65, 7.65, 7.65],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeTrunk",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[0, 1, 0],
+									[1, 0, 0],
+									[0, 0, -1]
+								],
+								"position": [-65, 5.8, -254]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Shape": "Cylinder",
+						"Size": [11, 2.42, 2.42],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeCrown",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-65, 14.57, -254]
+							}
+						},
+						"Color": [0.24, 0.47, 0.2],
+						"Material": "LeafyGrass",
+						"Shape": "Ball",
+						"Size": [9.9, 9.9, 9.9],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeTrunk",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[0, 1, 0],
+									[1, 0, 0],
+									[0, 0, -1]
+								],
+								"position": [-45, 4.8, -264]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Shape": "Cylinder",
+						"Size": [9, 1.98, 1.98],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeCrown",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-45, 12.03, -264]
+							}
+						},
+						"Color": [0.24, 0.47, 0.2],
+						"Material": "LeafyGrass",
+						"Shape": "Ball",
+						"Size": [8.1, 8.1, 8.1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeTrunk",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[0, 1, 0],
+									[1, 0, 0],
+									[0, 0, -1]
+								],
+								"position": [-58, 6.05, -265]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Shape": "Cylinder",
+						"Size": [11.5, 2.53, 2.53],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeCrown",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-58, 15.205, -265]
+							}
+						},
+						"Color": [0.24, 0.47, 0.2],
+						"Material": "LeafyGrass",
+						"Shape": "Ball",
+						"Size": [10.35, 10.35, 10.35],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeTrunk",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[0, 1, 0],
+									[1, 0, 0],
+									[0, 0, -1]
+								],
+								"position": [-65, 5.05, -270]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Shape": "Cylinder",
+						"Size": [9.5, 2.09, 2.09],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "TreeCrown",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-65, 12.665, -270]
+							}
+						},
+						"Color": [0.24, 0.47, 0.2],
+						"Material": "LeafyGrass",
+						"Shape": "Ball",
+						"Size": [8.55, 8.55, 8.55],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "QuarryRock",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-0.9659, 0, -0.2588],
+									[0, 1, 0],
+									[0.2588, 0, -0.9659]
+								],
+								"position": [-55, 3.4, -212]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Rock",
+						"Size": [8, 6, 7],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "QuarryRock",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-0.766, 0, -0.6428],
+									[0, 1, 0],
+									[0.6428, 0, -0.766]
+								],
+								"position": [-65, 4.4, -218]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Rock",
+						"Size": [9, 8, 8],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "QuarryRock",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-0.342, 0, -0.9397],
+									[0, 1, 0],
+									[0.9397, 0, -0.342]
+								],
+								"position": [-58, 2.4, -223]
+							}
+						},
+						"Color": [0.4, 0.4, 0.4],
+						"Material": "Rock",
+						"Size": [6, 4, 5],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "QuarryRock",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-0.9063, 0, -0.4226],
+									[0, 1, 0],
+									[0.4226, 0, -0.9063]
+								],
+								"position": [-66, 1.9, -207]
+							}
+						},
+						"Color": [0.55, 0.55, 0.53],
+						"Material": "Rock",
+						"Size": [5, 3, 4],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "CropRow",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [45, 1.2, -150]
+							}
+						},
+						"Color": [0.72, 0.68, 0.3],
+						"Material": "LeafyGrass",
+						"Size": [29, 1.2, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "CropRow",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [45, 1.2, -154]
+							}
+						},
+						"Color": [0.72, 0.68, 0.3],
+						"Material": "LeafyGrass",
+						"Size": [29, 1.2, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "CropRow",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [45, 1.2, -158]
+							}
+						},
+						"Color": [0.72, 0.68, 0.3],
+						"Material": "LeafyGrass",
+						"Size": [29, 1.2, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "CropRow",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [45, 1.2, -162]
+							}
+						},
+						"Color": [0.72, 0.68, 0.3],
+						"Material": "LeafyGrass",
+						"Size": [29, 1.2, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "CropRow",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [45, 1.2, -166]
+							}
+						},
+						"Color": [0.72, 0.68, 0.3],
+						"Material": "LeafyGrass",
+						"Size": [29, 1.2, 2],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-20.5, 1.9, -180.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-35.5, 1.9, -180.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-20.5, 1.9, -195.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-35.5, 1.9, -195.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-20.5, 1.9, -150.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-35.5, 1.9, -150.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-20.5, 1.9, -165.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [-35.5, 1.9, -165.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [33.5, 1.9, -182.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [18.5, 1.9, -182.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [33.5, 1.9, -197.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				},
+				{
+					"className": "Part",
+					"name": "PlotPost",
+					"properties": {
+						"Anchored": true,
+						"BottomSurface": "Smooth",
+						"CFrame": {
+							"CFrame": {
+								"orientation": [
+									[-1, 0, 0],
+									[0, 1, 0],
+									[0, 0, -1]
+								],
+								"position": [18.5, 1.9, -197.5]
+							}
+						},
+						"Color": [0.45, 0.31, 0.18],
+						"Material": "Wood",
+						"Size": [1, 3, 1],
+						"TopSurface": "Smooth"
+					}
+				}
+			],
+			"className": "Folder",
+			"name": "Decor"
+		}
+	],
+	"className": "Model",
+	"properties": {
+		"Tags": ["ForgeKingdom"]
+	}
+}

@@ -2,7 +2,8 @@
 # FORGELOOP Roblox gates (G1 static + G2 unit). Works from any directory.
 #   bash roblox/scripts/check.sh                   # all gates
 #   bash roblox/scripts/check.sh --require-stamp   # also require a BuildInfo stamp (CI on main)
-# Steps: toolchain versions · Lune tests · Selene (0 errors) · StyLua --check · Rojo build · place check.
+# Steps: toolchain versions · Lune tests · Selene (0 errors) · StyLua --check · map gen --check ·
+# Rojo build · place check.
 # Prints a PASS/FAIL table and exits non-zero if any step fails. Nothing is skipped silently:
 # a missing tool is a FAIL, and a step that records no result (e.g. aborted by a shell error) fails
 # the run. Portable to bash 3.2 (macOS /bin/bash): no mapfile, no empty-array expansions.
@@ -24,7 +25,7 @@ PLACE="roblox/build/sandbox.rbxl"
 LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
-EXPECTED_STEPS=6 # toolchain, lune tests, selene, stylua, rojo build, place check
+EXPECTED_STEPS=7 # toolchain, lune tests, selene, stylua, map gen, rojo build, place check
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 
 NAMES=()
@@ -130,6 +131,17 @@ if command -v stylua >/dev/null 2>&1; then
 	fi
 else
 	record "stylua" "FAIL" "stylua not found"
+fi
+
+# ---------------------------------------------------------------- map generator freshness
+# games/sandbox/map/*.model.json are generated (FL-0044); a hand edit or a stale file fails here.
+if command -v lune >/dev/null 2>&1; then
+	run_step "map gen" "$LOG_DIR/mapgen.log" with_timeout lune run roblox/scripts/gen_sandbox_map.luau --check
+	code=$?
+	summary="$(grep -E '^map gen:' "$LOG_DIR/mapgen.log" | tail -1 | sed -E 's/^map gen: ((PASS|FAIL) — )?//')"
+	if [[ $code == 0 ]]; then record "map gen" "PASS" "$summary"; else record "map gen" "FAIL" "${summary:-exit $code}"; fi
+else
+	record "map gen" "FAIL" "lune not found"
 fi
 
 # ---------------------------------------------------------------- Rojo build

@@ -1,0 +1,129 @@
+{
+	"children": [
+		{
+			"className": "Part",
+			"name": "Bounds",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [0, 118, 0]
+					}
+				},
+				"CanCollide": false,
+				"CanQuery": false,
+				"CanTouch": false,
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [720, 240, 720],
+				"Tags": ["ForgePlayArea"],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		},
+		{
+			"className": "Part",
+			"name": "EdgeWall",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [362, 118, 0]
+					}
+				},
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [4, 240, 720],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		},
+		{
+			"className": "Part",
+			"name": "EdgeWall",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-362, 118, 0]
+					}
+				},
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [4, 240, 720],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		},
+		{
+			"className": "Part",
+			"name": "EdgeWall",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [0, 118, 362]
+					}
+				},
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [720, 240, 4],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		},
+		{
+			"className": "Part",
+			"name": "EdgeWall",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [0, 118, -362]
+					}
+				},
+				"CastShadow": false,
+				"Color": [0.55, 0.55, 0.53],
+				"Material": "SmoothPlastic",
+				"Size": [720, 240, 4],
+				"TopSurface": "Smooth",
+				"Transparency": 1
+			}
+		}
+	],
+	"className": "Folder"
+}

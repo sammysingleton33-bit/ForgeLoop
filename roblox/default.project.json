@@ -14,6 +14,35 @@
 				}
 			}
 		},
+		"Workspace": {
+			"$className": "Workspace",
+			"$ignoreUnknownInstances": true,
+			"ForgeMap": {
+				"$path": "../games/sandbox/map"
+			}
+		},
+		"Lighting": {
+			"$className": "Lighting",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"ClockTime": 14.5,
+				"Brightness": 2.5,
+				"GlobalShadows": true,
+				"EnvironmentDiffuseScale": 1,
+				"EnvironmentSpecularScale": 1
+			},
+			"Atmosphere": {
+				"$className": "Atmosphere",
+				"$properties": {
+					"Density": 0.28,
+					"Offset": 0.1,
+					"Haze": 1.2,
+					"Glare": 0.2,
+					"Color": [0.78, 0.78, 0.78],
+					"Decay": [0.42, 0.47, 0.55]
+				}
+			}
+		},
 		"ServerScriptService": {
 			"$className": "ServerScriptService",
 			"Forge": {

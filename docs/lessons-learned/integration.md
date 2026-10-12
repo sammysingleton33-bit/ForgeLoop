@@ -60,6 +60,18 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   return 403 and GitHub release downloads are blocked; release asset names can still be checked in
   each tag's release workflow via `raw.githubusercontent.com`, and tags via `git ls-remote`. ·
   `.github/workflows/ci.yml` asset notes · `observed-once`
+- 2026-10-12 · Rojo 7.7.1 accepts a `"Position"` property in a `.model.json` and builds without a
+  warning, but the part lands at the origin (`CFrame` stays identity). Write
+  `"CFrame": {"CFrame": {"position": [...], "orientation": [[row1], [row2], [row3]]}}` (orientation
+  is row-major: a part rotated +90° about Y has RightVector (0, 0, −1)). Tags (`"Tags": [...]`) and
+  `"attributes"` round-trip into the place. · `rojo build` + `@lune/roblox` read-back of a scratch
+  project; map gate negative test M1 (place check FAIL "at 0, 0, 0") · `observed-once`
+- 2026-10-12 · GitHub release downloads (`github.com/<repo>/releases/download/...`) worked from a
+  cloud session through the agent proxy (`roblox/scripts/ci_install_tools.sh` fetched all four pinned
+  tools in seconds), contradicting an earlier session where they were blocked; Actions artifact
+  downloads (redirect to `*.blob.core.windows.net`) were still refused. Try the release binaries
+  before compiling with cargo; read artifact contents from the CI log instead. · FORGE-05 session
+  2026-10-12 · `observed-once`
 
 ## Mock change log (FL-0028)
 - 2026-10-12 FL-0003 (FORGE-00 skeleton): first versions of MockEnv, MockDataStoreService,

@@ -1,0 +1,1653 @@
+{
+	"children": [
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-53.4735, 4.5814, -19.8104]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [9.7628, 2.1478, 2.1478],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-53.4735, 12.3988, -19.8104]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.7866, 8.7866, 8.7866],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-292.9872, 4.5829, 175.139]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [9.7658, 2.1485, 2.1485],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-292.9872, 12.4026, 175.139]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.7893, 8.7893, 8.7893],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [230.4516, 5.2587, 126.8606]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.1173, 2.4458, 2.4458],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [230.4516, 14.119, 126.8606]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.0056, 10.0056, 10.0056],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [111.487, 4.9326, 309.6218]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.4653, 2.3024, 2.3024],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [111.487, 13.2909, 309.6218]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.4187, 9.4187, 9.4187],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-308.4545, 5.6291, 190.8217]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.8582, 2.6088, 2.6088],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-308.4545, 15.0599, 190.8217]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.6724, 10.6724, 10.6724],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [203.8664, 5.4802, -123.3057]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.5604, 2.5433, 2.5433],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [203.8664, 14.6816, -123.3057]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.4043, 10.4043, 10.4043],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-124.7924, 5.4874, -335.0501]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.5748, 2.5465, 2.5465],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-124.7924, 14.7, -335.0501]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.4173, 10.4173, 10.4173],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [280.288, 6.1298, 259.8251]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.8596, 2.8291, 2.8291],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [280.288, 16.3317, 259.8251]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [11.5737, 11.5737, 11.5737],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-108.2828, 5.3605, 282.3434]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.321, 2.4906, 2.4906],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-108.2828, 14.3776, 282.3434]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.1889, 10.1889, 10.1889],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-293.5323, 5.2021, -217.7541]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.0041, 2.4209, 2.4209],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-293.5323, 13.9752, -217.7541]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.9037, 9.9037, 9.9037],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [221.8343, 4.329, 323.2662]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [9.2579, 2.0367, 2.0367],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [221.8343, 11.7576, 323.2662]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.3321, 8.3321, 8.3321],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-176.4801, 5.9063, 168.39]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.4126, 2.7308, 2.7308],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-176.4801, 15.764, 168.39]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [11.1713, 11.1713, 11.1713],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-317.0556, 4.3145, -269.2188]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [9.2289, 2.0304, 2.0304],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-317.0556, 11.7207, -269.2188]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.306, 8.306, 8.306],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [21.2422, 5.7078, 104.5045]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.0156, 2.6434, 2.6434],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [21.2422, 15.2598, 104.5045]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.814, 10.814, 10.814],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [211.0713, 4.7824, -97.2818]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.1647, 2.2362, 2.2362],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [211.0713, 12.9092, -97.2818]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.1482, 9.1482, 9.1482],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [227.0087, 6.1266, 258.3932]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.8532, 2.8277, 2.8277],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [227.0087, 16.3235, 258.3932]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [11.5679, 11.5679, 11.5679],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [326.7111, 5.9339, -208.7406]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.4678, 2.7429, 2.7429],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [326.7111, 15.8341, -208.7406]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [11.221, 11.221, 11.221],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-66.6132, 5.2943, 33.3388]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.1886, 2.4615, 2.4615],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-66.6132, 14.2096, 33.3388]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.0698, 10.0698, 10.0698],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [283.764, 6.0218, 293.7728]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.6437, 2.7816, 2.7816],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [283.764, 16.0575, 293.7728]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [11.3793, 11.3793, 11.3793],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [296.7166, 5.6216, -154.2551]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.8433, 2.6055, 2.6055],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [296.7166, 15.0409, -154.2551]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.6589, 10.6589, 10.6589],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [272.246, 4.5013, 144.5611]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [9.6027, 2.1126, 2.1126],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [272.246, 12.1954, 144.5611]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.6424, 8.6424, 8.6424],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [190.262, 5.1342, -180.8528]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.8684, 2.3911, 2.3911],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [190.262, 13.8029, -180.8528]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.7816, 9.7816, 9.7816],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [127.3579, 4.7482, 335.0969]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.0965, 2.2212, 2.2212],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [127.3579, 12.8225, 335.0969]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.0868, 9.0868, 9.0868],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [298.036, 5.8682, 173.3568]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [12.3365, 2.714, 2.714],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [298.036, 15.6673, 173.3568]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [11.1028, 11.1028, 11.1028],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-119.2412, 4.157, -213.4944]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [8.914, 1.9611, 1.9611],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-119.2412, 11.3208, -213.4944]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.0226, 8.0226, 8.0226],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [281.8425, 4.6285, -303.0162]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [9.857, 2.1685, 2.1685],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [281.8425, 12.5184, -303.0162]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [8.8713, 8.8713, 8.8713],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-228.0593, 3.954, 149.495]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [8.508, 1.8718, 1.8718],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-228.0593, 10.8051, 149.495]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [7.6572, 7.6572, 7.6572],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [-106.1838, 5.0582, 83.6036]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.7164, 2.3576, 2.3576],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [-106.1838, 13.6099, 83.6036]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.6448, 9.6448, 9.6448],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [166.2325, 5.0927, -189.5042]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.7855, 2.3728, 2.3728],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [166.2325, 13.6976, -189.5042]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.7069, 9.7069, 9.7069],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [283.7498, 5.4141, 326.4497]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.4283, 2.5142, 2.5142],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [283.7498, 14.5139, 326.4497]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.2854, 10.2854, 10.2854],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [329.5767, 5.6001, -121.3062]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [11.8001, 2.596, 2.596],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [329.5767, 14.9862, -121.3062]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [10.6201, 10.6201, 10.6201],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeTrunk",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0, -1, 0],
+							[1, 0, 0],
+							[0, 0, 1]
+						],
+						"position": [283.5853, 5.0459, 305.1478]
+					}
+				},
+				"Color": [0.45, 0.31, 0.18],
+				"Material": "Wood",
+				"Shape": "Cylinder",
+				"Size": [10.6917, 2.3522, 2.3522],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "TreeCrown",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[1, 0, 0],
+							[0, 1, 0],
+							[0, 0, 1]
+						],
+						"position": [283.5853, 13.5785, 305.1478]
+					}
+				},
+				"Color": [0.24, 0.47, 0.2],
+				"Material": "LeafyGrass",
+				"Shape": "Ball",
+				"Size": [9.6226, 9.6226, 9.6226],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.3611, 0, 0.9325],
+							[0, 1, 0],
+							[-0.9325, 0, 0.3611]
+						],
+						"position": [-253.5041, 1.2983, 224.6561]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [5.1932, 3.4621, 4.3277],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.3826, 0, 0.9239],
+							[0, 1, 0],
+							[-0.9239, 0, 0.3826]
+						],
+						"position": [-324.2624, 1.8531, 330.4201]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [7.4123, 4.9415, 6.1769],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.814, 0, 0.5809],
+							[0, 1, 0],
+							[-0.5809, 0, 0.814]
+						],
+						"position": [211.5186, 1.347, -104.7283]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [5.388, 3.592, 4.49],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.0872, 0, 0.9962],
+							[0, 1, 0],
+							[-0.9962, 0, 0.0872]
+						],
+						"position": [301.4595, 1.9281, -170.5103]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [7.7124, 5.1416, 6.427],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.9902, 0, 0.14],
+							[0, 1, 0],
+							[-0.14, 0, 0.9902]
+						],
+						"position": [-269.7848, 1.7292, -143.4868]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [6.9167, 4.6112, 5.764],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.9215, 0, 0.3885],
+							[0, 1, 0],
+							[-0.3885, 0, 0.9215]
+						],
+						"position": [280.0531, 1.9372, -278.8136]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [7.7489, 5.1659, 6.4574],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.5392, 0, 0.8422],
+							[0, 1, 0],
+							[-0.8422, 0, 0.5392]
+						],
+						"position": [226.1192, 1.5307, -199.0968]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [6.1229, 4.082, 5.1025],
+				"TopSurface": "Smooth"
+			}
+		},
+		{
+			"className": "Part",
+			"name": "Boulder",
+			"properties": {
+				"Anchored": true,
+				"BottomSurface": "Smooth",
+				"CFrame": {
+					"CFrame": {
+						"orientation": [
+							[0.8742, 0, 0.4855],
+							[0, 1, 0],
+							[-0.4855, 0, 0.8742]
+						],
+						"position": [-196.2943, 1.7811, -124.4532]
+					}
+				},
+				"Color": [0.4, 0.4, 0.4],
+				"Material": "Rock",
+				"Size": [7.1246, 4.7497, 5.9372],
+				"TopSurface": "Smooth"
+			}
+		}
+	],
+	"className": "Folder"
+}
