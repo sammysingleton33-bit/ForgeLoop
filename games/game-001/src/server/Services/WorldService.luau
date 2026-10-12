@@ -23,7 +23,11 @@
 		WorldService:getRoot(): Folder?     -- Workspace.World once built
 		WorldService.stats: { ms, terrainOps, props, parts }
 	Test hooks: set `service.terrain` (Kit/Terrain recorder), `service.layout`, `service.dressed`,
-	`service.voxelsPerFrame` or `service.propsPerFrame` before start().
+	`service.voxelsPerFrame` or `service.partsPerFrame` before start().
+	Robustness: start() is idempotent; the build runs under pcall, so `ready` always fires (an error is
+	logged at error level and kept in stats.error); destroy() stops the build at the next frame and removes
+	Workspace.World. Invisible zone parts are not queryable; decoration never fires Touched and only collides
+	near the ground.
 ]]
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
@@ -38,7 +42,9 @@ WorldService.__index = WorldService
 
 WorldService.DRESSED = { crimson = true } -- VS-1: one kingdom fully dressed, the others blocked out
 WorldService.VOXELS_PER_FRAME = 64 * 64 * 64
-WorldService.PROPS_PER_FRAME = 40
+WorldService.PARTS_PER_FRAME = 400 -- parts created per frame before yielding (nodes, markers, props)
+-- decoration parts higher than this above their model's pivot do not collide (canopies, banners, roofs)
+WorldService.COLLIDE_HEIGHT = 7
 
 local Def = { name = "WorldService", dependencies = {} }
 
@@ -54,7 +60,10 @@ function Def.new(env, _registry)
 		stats = { ms = 0, terrainOps = 0, props = 0, parts = 0 },
 		dressed = table.clone(WorldService.DRESSED),
 		voxelsPerFrame = WorldService.VOXELS_PER_FRAME,
-		propsPerFrame = WorldService.PROPS_PER_FRAME,
+		partsPerFrame = WorldService.PARTS_PER_FRAME,
+		_started = false,
+		_destroyed = false,
+		_frameParts = 0,
 	}, WorldService)
 	return self
 end
@@ -68,13 +77,48 @@ function WorldService:getRoot(): any
 end
 
 function WorldService:start()
+	if self._started then
+		return -- a second start() must not build a second world
+	end
+	self._started = true
 	self._env.spawn(function()
-		self:_build()
+		local ok, err = pcall(self._build, self)
+		if self._destroyed then
+			return
+		end
+		if not ok then
+			-- never leave waiters (KingdomService) hanging: report loudly, then fire ready with what exists
+			self.stats.error = tostring(err)
+			self._env.log("error", "WorldService build failed", { error = self.stats.error })
+		end
+		self._ready = true
+		self.ready:fire()
 	end)
 end
 
 function WorldService:destroy()
+	self._destroyed = true -- the build thread stops at its next frame boundary
 	self.ready:disconnectAll()
+	if self._root then
+		self._root:Destroy()
+		self._root = nil
+	end
+end
+
+-- Yield one frame (and stop if destroyed) once `n` more parts would exceed the per-frame budget.
+function WorldService:_budget(n: number)
+	self._frameParts += n
+	if self._frameParts >= self.partsPerFrame then
+		self._frameParts = 0
+		self:_wait()
+	end
+end
+
+function WorldService:_wait()
+	self._env.wait(0)
+	if self._destroyed then
+		error("WorldService destroyed during build", 0)
+	end
 end
 
 -- ---------------------------------------------------------------- helpers
@@ -111,6 +155,26 @@ local function placeModel(model: any, cf: CFrame)
 end
 WorldService._placeModel = placeModel
 
+-- Decoration physics: nothing needs Touched, and only parts near the ground block movement (trunks, rocks,
+-- walls); canopies, banners and roofs above COLLIDE_HEIGHT let units and the camera through.
+local function decorate(model: any, base: number, solid: boolean?)
+	local n = 0
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanTouch = false
+			if d == model.PrimaryPart and d.Transparency >= 1 then
+				d.CanQuery = false -- the invisible footprint plate must not catch raycasts
+			end
+			if not solid and d.CFrame.Position.Y - d.Size.Y / 2 > base + WorldService.COLLIDE_HEIGHT then
+				d.CanCollide = false
+			end
+			n += 1
+		end
+	end
+	return n
+end
+WorldService._decorate = decorate
+
 function WorldService:_folder(name: string, parent: any): any
 	local f = self._env.newInstance("Folder")
 	f.Name = name
@@ -124,7 +188,7 @@ function WorldService:_zonePart(name: string, cf: CFrame, size: Vector3, shape: 
 	p.Anchored = true
 	p.CanCollide = false
 	p.CanTouch = false
-	p.CanQuery = true
+	p.CanQuery = false -- invisible markers must not catch placement or selection raycasts (G13.6)
 	p.Transparency = 1
 	p.CastShadow = false
 	if shape then
@@ -186,23 +250,27 @@ function WorldService:_build()
 	local ops = WorldPlan.terrainOps(layout)
 	local budget = 0
 	for _, op in ops do
-		self.terrain.fill(op)
-		budget += WorldPlan.voxels(op)
-		if budget >= self.voxelsPerFrame then
+		local v = WorldPlan.voxels(op)
+		if budget > 0 and budget + v > self.voxelsPerFrame then
 			budget = 0
-			env.wait(0)
+			self:_wait()
 		end
+		self.terrain.fill(op)
+		budget += v
 	end
 	self.stats.terrainOps = #ops
-	env.wait(0)
+	self:_wait()
 
 	local parts = 0
 	local function count(model: any)
+		local n = 0
 		for _, d in model:GetDescendants() do
 			if d:IsA("BasePart") then
-				parts += 1
+				n += 1
 			end
 		end
+		parts += n
+		self:_budget(n)
 	end
 
 	-- resource nodes (tagged; the sim reads Layout, tags are for visuals and client hints)
@@ -214,11 +282,12 @@ function WorldService:_build()
 		placeModel(model, CFrame.new(p.X, y, p.Z) * (node.cframe - node.cframe.Position))
 		model:SetAttribute("NodeId", node.id)
 		model:SetAttribute("Resource", node.resource)
+		decorate(model, y)
 		model.Parent = nodesFolder
 		CollectionService:AddTag(model, "ResourceNode")
 		count(model)
 	end
-	env.wait(0)
+	self:_wait()
 
 	-- build zones and kingdom plots
 	for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
@@ -271,24 +340,21 @@ function WorldService:_build()
 		zone.Parent = zonesFolder
 		CollectionService:AddTag(zone, "ObjectiveZone")
 	end
-	env.wait(0)
+	self:_wait()
 
-	-- props and forests, deterministic, a few per frame
+	-- props and forests, deterministic, at most partsPerFrame parts per frame
 	local placements = WorldPlan.props(layout, self.dressed)
-	for i, placement in placements do
+	for _, placement in placements do
 		local model = Kit.prop(placement.assetId)
 		placeModel(model, placement.cframe)
 		model:SetAttribute("Feature", placement.feature)
+		decorate(model, placement.cframe.Position.Y, placement.feature == "bridge") -- bridges stay solid
 		model.Parent = propsFolder
 		count(model)
-		if i % self.propsPerFrame == 0 then
-			env.wait(0)
-		end
 	end
 	self.stats.props = #placements
 	self.stats.parts = parts
 
-	self._ready = true
 	self.stats.ms = math.floor((env.clock() - t0) * 1000 + 0.5)
 	env.log("info", "WorldService ready", {
 		ms = self.stats.ms,
@@ -296,7 +362,7 @@ function WorldService:_build()
 		props = self.stats.props,
 		parts = parts,
 	})
-	self.ready:fire()
+	-- start() marks the service ready and fires `ready` once this returns (or fails)
 end
 
 return Def
