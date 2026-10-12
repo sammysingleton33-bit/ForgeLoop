@@ -106,6 +106,16 @@ describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 		bubbles:release(5)
 		expect(bubbles:get(5)).toBeNil()
 	end)
+
+	it("a NaN entity id is ignored, never a table key", function()
+		local nan = 0 / 0
+		expect(bubbles:thought(nan, { text = "t" })).toBeNil()
+		expect(bubbles:reaction(nan, { text = "r", tone = "happy" })).toBeNil()
+		bubbles:strike(nan, true)
+		bubbles:release(nan)
+		expect(bubbles:get(nan)).toBeNil()
+		expect(bubbles.stats.ignored).toBe(3)
+	end)
 end)
 
 describe("config Vfx.luau cues (FL-0091)", function()
@@ -150,15 +160,19 @@ describe("config Vfx.luau cues (FL-0091)", function()
 end)
 
 describe("CitizenBubbleController (FL-0091)", function()
-	local env, entities, played, effects, poses, settingsValues
+	local env, entities, played, effects, poses, settingsValues, world
 
-	local function citizen(id, x)
+	-- A rendered rig. `hidden` = unparented, as EntityController's LOD leaves a far rig.
+	local function citizen(id, x, hidden)
 		local model = roblox.Instance.new("Model")
 		model.Name = `Citizen{id}`
 		local root = roblox.Instance.new("Part")
 		root.CFrame = CFrame.new(x, 2, 0)
 		root.Parent = model
 		model.PrimaryPart = root
+		if not hidden then
+			model.Parent = world
+		end
 		entities.rendered:fire(id, model)
 		return model
 	end
@@ -169,6 +183,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 
 	beforeEach(function()
 		env = MockEnv.new({ seed = 91, isServer = false, localPlayer = { userId = 9101 } })
+		world = roblox.Instance.new("Folder")
 		entities = {
 			rendered = Signal.new(),
 			released = Signal.new(),
@@ -274,7 +289,52 @@ describe("CitizenBubbleController (FL-0091)", function()
 		end
 		expect(drawn).toBe(Vfx.bubbles.maxOnScreen)
 		expect(bubbleOf(far)).toBeNil()
-		expect(bubbleOf(models[1]).MaxDistance).toBe(Vfx.bubbles.maxDistance)
+		expect(bubbleOf(models[1]).MaxDistance).toBe(0) -- no engine limit: the zoomed-out overview keeps them
+	end)
+
+	it("LOD-hidden (unparented) rigs never take a bubble slot (R42-6)", function()
+		for id = 1, Vfx.bubbles.maxOnScreen do
+			local hiddenRig = citizen(id, 1, true)
+			entities.event:fire(id, "thought", { text = `hidden{id}` }, hiddenRig)
+		end
+		local visible = citizen(50, 100)
+		entities.event:fire(50, "thought", { text = "I am here" }, visible)
+		assert(bubbleOf(visible), "the visible citizen gets a bubble")
+		expect(bubbleOf(visible):FindFirstChild("Text", true).Text).toBe("I am here")
+	end)
+
+	it(
+		"a job change swaps the rig: the thought stays, a strike placard drops; a despawn clears both (R42-3)",
+		function()
+			local miner = citizen(3, 20)
+			entities.event:fire(3, "thought", { text = "More lamps, please." }, miner)
+			local striker = citizen(4, 25)
+			entities.event:fire(4, "strike", { occupation = "miner", on = true }, striker)
+			-- EntityController's job swap: released, then rendered at once
+			entities.released:fire(3, miner)
+			local farmer = citizen(3, 20)
+			entities.released:fire(4, striker)
+			local newStriker = citizen(4, 25)
+			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
+			assert(bubbleOf(farmer), "the thought follows the citizen to its new rig")
+			expect(bubbleOf(farmer):FindFirstChild("Text", true).Text).toBe("More lamps, please.")
+			expect(bubbleOf(newStriker)).toBeNil() -- a new occupation: off strike
+			-- a despawn: released and not rendered again
+			entities.released:fire(3, farmer)
+			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
+			local reused = citizen(3, 20) -- the id comes back for another citizen
+			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
+			expect(bubbleOf(reused)).toBeNil()
+		end
+	)
+
+	it("a NaN entity id from the event signal is ignored", function()
+		entities.rendered:fire(0 / 0, roblox.Instance.new("Model"))
+		entities.released:fire(0 / 0, nil)
+		entities.event:fire(0 / 0, "thought", { text = "t" }, nil)
+		entities.event:fire(0 / 0, "cue", { cue = "bow" }, nil)
+		expect(poses).toEqual({})
+		expect(env.mock.threadErrors).toEqual({})
 	end)
 
 	it("strike placards stay while on; citizenBarks off hides reactions but not thoughts or placards", function()
@@ -321,6 +381,48 @@ describe("CitizenBubbleController (FL-0091)", function()
 		end
 		expect(warnings).toBe(1)
 	end)
+
+	it(
+		"measures distance from the camera focus, so a zoomed-out overview shows the citizens under it (R42-1)",
+		function()
+			local focusEnv = MockEnv.new({ seed = 93, isServer = false, localPlayer = { userId = 9103 } })
+			local signals = { rendered = Signal.new(), released = Signal.new(), event = Signal.new() }
+			Loader.load(focusEnv, {
+				{
+					name = "EntityController",
+					new = function()
+						return signals
+					end,
+				},
+				{
+					name = "RulerCameraController",
+					new = function()
+						return {
+							getFocus = function()
+								return Vector3.new(500, 0, 0) -- the overview's focus; the camera is up to 220 studs away
+							end,
+						}
+					end,
+				},
+				BubbleDef,
+			})
+			local function rig(id, x)
+				local model = roblox.Instance.new("Model")
+				local root = roblox.Instance.new("Part")
+				root.CFrame = CFrame.new(x, 2, 0)
+				root.Parent = model
+				model.PrimaryPart = root
+				model.Parent = world
+				signals.rendered:fire(id, model)
+				signals.event:fire(id, "thought", { text = `t{id}` }, model)
+				return model
+			end
+			local underView = rig(1, 520)
+			local nearOrigin = rig(2, 0)
+			assert(bubbleOf(underView), "the citizen at the focus has a bubble")
+			expect(bubbleOf(nearOrigin)).toBeNil() -- 500 studs from the focus
+		end
+	)
 
 	it("ignores FL-0062's work cues and runs without EntityController (headless boot)", function()
 		local farmer = citizen(1, 20)

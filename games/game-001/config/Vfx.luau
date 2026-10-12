@@ -16,7 +16,7 @@
 return table.freeze({
 	bubbles = table.freeze({
 		maxOnScreen = 8, -- citizen bubbles drawn at once (nearest first, reactions before thoughts)
-		maxDistance = 160, -- studs from the camera; matches the entity LOD distance
+		maxDistance = 160, -- studs from the camera focus (the overview's centre); about the entity LOD distance
 		thoughtSec = 45, -- a request stays this long unless answered (requests refresh every 20 s, G13.3)
 		reactionSec = 4,
 		maxChars = 80,

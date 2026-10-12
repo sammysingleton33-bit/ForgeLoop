@@ -105,6 +105,14 @@ M = [
  ("FL-0091", C2+"CitizenBubbleController.luau", 'self:_pose(entityId, if fallback then Bubbles.POSE[fallback :: string] else nil)', 'self:_pose(entityId, nil)', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'elseif current and current.kind == "reaction" then current.tone', 'elseif false then nil', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'payload.cue or payload.cueId', 'payload.cue', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'if camera ~= nil and camera.getFocus ~= nil then', 'if false then', "CitizenBubbles", "measures distance from the camera focus", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'gui.MaxDistance = 0', 'gui.MaxDistance = 160', "CitizenBubbles", "draws at most maxOnScreen bubbles", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'if self.bubbles:get(id) ~= nil and model.Parent ~= nil then', 'if self.bubbles:get(id) ~= nil then', "CitizenBubbles", "LOD-hidden (unparented) rigs never take a bubble slot", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '				self._leaving[id] = nil -- a rig swap: the citizen stays\n', '', "CitizenBubbles", "a job change swaps the rig", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '	self.bubbles:strike(entityId, false) -- a new job is a new occupation, so off strike\n', '', "CitizenBubbles", "a job change swaps the rig", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '		self.bubbles:release(id) -- released and not rendered again: the citizen is gone\n', '', "CitizenBubbles", "a job change swaps the rig", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'return type(value) == "number" and value == value', 'return type(value) == "number"', "CitizenBubbles", "a NaN entity id from the event signal is ignored", "game"),
+ ("FL-0091", F+"Bubbles.luau", 'return type(value) == "number" and value == value', 'return type(value) == "number"', "CitizenBubbles", "a NaN entity id is ignored", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
