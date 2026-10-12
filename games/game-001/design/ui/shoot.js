@@ -5,7 +5,7 @@ const fs = require("fs");
 const { chromium } = require("playwright");
 
 const SIZES = { phone: [844, 390], tablet: [1024, 768], desktop: [1920, 1080] };
-const SCENES = ["hud", "build", "build-detail", "build-short", "placing", "placing-bad", "placed", "kingdom", "kingdom-buildings", "upgrade"];
+const SCENES = ["hud", "build", "build-detail", "build-short", "placing", "placing-bad", "placed", "kingdom", "kingdom-buildings", "upgrade", "plot-pick", "plot-pick-list", "plot-pick-large", "building-upgrade", "building-max", "building-foreign"];
 const filter = process.argv[2];
 const out = path.join(__dirname, "screenshots", "prototype");
 fs.mkdirSync(out, { recursive: true });

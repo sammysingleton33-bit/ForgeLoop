@@ -72,6 +72,27 @@ describe("game-001 config Costs (G6/G7 contract stub)", function()
 		expect(Costs.unit("dragon")).toBeNil()
 	end)
 
+	it("uses whole numbers for every amount the treasury charges (spendUpTo takes integers)", function()
+		local function whole(n)
+			return type(n) == "number" and n % 1 == 0 and n >= 0
+		end
+		expect(whole(Costs.upkeep.citizenFood)).toBe(true)
+		expect(whole(Costs.unit("soldier").upkeepFood)).toBe(true)
+		for _, amount in Costs.unit("soldier").cost do
+			expect(whole(amount)).toBe(true)
+		end
+		for _, levels in Costs.catalogue().buildings do
+			for _, entry in levels do
+				for _, amount in entry.cost do
+					expect(whole(amount)).toBe(true)
+				end
+			end
+		end
+		for _, amount in Costs.starting do
+			expect(whole(amount)).toBe(true)
+		end
+	end)
+
 	it("prices the soldier with training time and food upkeep", function()
 		local soldier = Costs.unit("soldier")
 		expect((isResourceBag(soldier.cost, false))).toBe(true)

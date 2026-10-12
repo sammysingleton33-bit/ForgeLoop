@@ -25,6 +25,8 @@ Design: `BRIEF.md`. Contracts: `CONTRACTS.md` (FORGE-00). Who owns which folder:
 | `Workspace.ModelStreamingBehavior` | `Improved` | Models stream as units. |
 | `Workspace.StreamOutBehavior` | `Opportunistic` | Far content can be removed from clients. |
 | `Workspace.StreamingIntegrityMode` | `PauseOutsideLoadedArea` | A player outside loaded content is paused, not dropped into the void. |
+| `Lighting.Technology` | `Future` | Not settable from scripts, so it lives in the project (FORGE-02 request, FL-0055). WorldService applies every other lighting value from `world/Lighting.luau`. |
+| `StarterPlayer.EnableMouseLockOption` | `false` | No shift lock: Left Shift is the sprint key, and shift lock would fight the ruler's smooth turning (FORGE-04 request, FL-0053). |
 
 The place check verifies every `$properties` value of the project in the built place; a value Rojo
 drops or mis-converts fails `check.sh`.

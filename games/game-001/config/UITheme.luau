@@ -125,5 +125,14 @@ return table.freeze({
 		mood = { image = "", glyph = "🙂" },
 		scroll = { image = "", glyph = "📜" },
 		laurel = { image = "", glyph = "🏅" },
+		-- FL-0089: reputation categories (living-kingdom §3) and kingdom conditions
+		rep_compassion = { image = "", glyph = "❤" },
+		rep_honor = { image = "", glyph = "⚖" },
+		rep_competence = { image = "", glyph = "⚙" },
+		rep_courage = { image = "", glyph = "🦁" },
+		rep_authority = { image = "", glyph = "⚜" },
+		rep_fear = { image = "", glyph = "💀" },
+		happiness = { image = "", glyph = "😊" },
+		stability = { image = "", glyph = "🏛" },
 	},
 })
