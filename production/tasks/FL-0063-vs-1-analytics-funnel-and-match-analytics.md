@@ -20,7 +20,8 @@ evidence: []
 We can see where new players drop off in VS-1 and how matches end.
 
 ## Requirements
-- Funnel: spawn -> first gather -> first build placed -> first building complete -> first recruit -> first capture; match length and outcome events
+- Funnel: spawn (= KingdomJoined) → first gather → first build placed (credits `Building.placedBy`) → first building complete → first recruit → first capture. Building completions and captures credit every current member of the kingdom (G9).
+- Match length and outcome events.
 
 ## Validation
 Specs with MockAnalyticsService; events.md updated
@@ -30,3 +31,4 @@ Specs with MockAnalyticsService; events.md updated
 
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
+- 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): funnel attribution rules (G9)

@@ -28,16 +28,18 @@ Rules
 - UI components (FORGE-03) are consumed by FORGE-04 through the documented component API in `docs/architecture/interfaces.md`.
 - FORGE-02 hands assets over through `blender/manifest.json`; gameplay code refers to assets only by asset id.
 
-## game-001 — AI Kingdoms (D-020, D-022)
-Game code lives in `games/game-001/` (layout in `games/game-001/CONTRACTS.md` G1). The framework rows above still apply to `roblox/`. Most specific rule wins.
+## game-001 — AI Kingdoms (D-020, D-022, D-026, D-028)
+Game code lives in `games/game-001/` (layout in `games/game-001/CONTRACTS.md` G1). The framework rows above still apply to `roblox/`. Most specific rule wins. This section is the single source for game-001 ownership (the brief points here).
 
 | Owner | game-001 paths |
 |---|---|
-| FORGE-01 | `games/game-001/src/shared/Sim/`, `src/shared/Kingdom/`, `src/server/Services/{Match,Kingdom,Citizen,Entity,Building,Construction,Territory,Military,Objective,Diplomacy,Governor,Interaction}*`, `src/client/Controllers/{Ruler,Camera,Entity,Command,Selection,Interaction}*`, config `{Match,Kingdoms,Citizens,Jobs,Buildings,Military,Objectives,Governor}.luau`, `games/game-001/tests/sim/` |
-| FORGE-02 | `games/game-001/world/`, `games/game-001/art/`, `src/shared/Kit/`, `src/server/Services/{World,KitBuilder}*`, `games/game-001/tests/world/` (plus `blender/**`) |
-| FORGE-03 | `src/shared/Economy/`, `src/server/Services/{Treasury,Production,Trade,Progression,Shop}*`, `src/client/UI/`, config `{Resources,Costs,Recipes,Progression,Products,Shop,UITheme}.luau`, `games/game-001/tests/economy/`, `games/game-001/design/ui/`, `games/game-001/design/economy.md` |
-| FORGE-04 | `src/shared/Experience/`, `src/server/Services/{Pacing,Announcer,Onboarding,MatchAnalytics}*`, `src/client/Controllers/{Audio,Music,VFX,Feedback,Onboarding,Notification,Announcer}*`, config `{Pacing,Onboarding,Sounds,Analytics}.luau`, `games/game-001/tests/experience/`, `games/game-001/design/pacing/` |
-| FORGE-05 | `games/game-001/default.project.json`, `games/game-001/README.md`, `games/game-001/STUDIO_PLAYTEST.md`, `games/game-001/tests/integration/`, game wiring in Loader/harness/place check/CI |
+| FORGE-01 | `src/shared/{Sim,Kingdom,Build,Army,Match}/`, `src/server/Services/{Match,Kingdom,Citizen,Entity,Building,Construction,Territory,Military,Objective,Interaction,Diplomacy,Governor}*`, `src/client/Controllers/{Entity,Interaction,Command,Selection}*` (Command/Selection are VS-2), config `{Match,Kingdoms,Citizens,Jobs,Buildings,Military,Objectives,Governor}.luau`, `games/game-001/tests/sim/` |
+| FORGE-02 | `games/game-001/world/` (incl. `Layout.luau`, `Lighting.luau`), `games/game-001/art/`, `src/shared/Kit/`, `src/server/Services/World*`, `games/game-001/tests/world/` (plus `blender/**`) |
+| FORGE-03 | `src/shared/Treasury/`, `src/server/Services/{Treasury,Production,Trade,Progression}*`, `src/client/UI/`, `src/client/Controllers/{KingdomHud,BuildMenu,CitizenCard,ArmyPanel,ObjectivePanel,SliceSummary}*`, config `{Resources,Costs,Recipes,Progression,Products,Shop,UITheme}.luau`, `games/game-001/tests/economy/`, `games/game-001/design/ui/`, `games/game-001/design/economy.md` |
+| FORGE-04 | `src/shared/Feedback/`, `src/server/Services/{Pacing,Announcer,MatchAnalytics}*`, `src/client/Controllers/{Ruler,InputMode,Music,Feedback,Announcer}*` (`Ruler*` covers `RulerController` and `RulerCameraController`), config `{Pacing,Onboarding,Sounds,Analytics}.luau`, `games/game-001/tests/experience/`, `games/game-001/design/pacing/` |
+| FORGE-05 | `games/game-001/default.project.json`, `games/game-001/config/Game.luau`, `games/game-001/README.md`, `games/game-001/STUDIO_PLAYTEST.md`, `games/game-001/tests/integration/`, game wiring in Loader/harness/place check/CI |
 | FORGE-00 | `games/game-001/BRIEF.md`, `games/game-001/CONTRACTS.md` |
 
-(`src/` above means `games/game-001/src/`; config means `games/game-001/config/`.) Remote areas: `Kingdom`, `Sim`, `Build`, `Army` → FORGE-01; `Economy` → FORGE-03; `Match` → FORGE-01; `Experience` → FORGE-04.
+(`src/` above means `games/game-001/src/`; config means `games/game-001/config/`.)
+- Remote areas: `Kingdom`, `Sim`, `Build`, `Army`, `Match` → FORGE-01; `Treasury` → FORGE-03; `Feedback` → FORGE-04.
+- Names are unique across the framework and game trees (services, controllers, remote areas; D-026). VS-1 uses the framework `OnboardingService`, `ShopService`, `AudioController`, `VFXController` and `NotificationController`; the game tree must not add services or controllers with those names.
