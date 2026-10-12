@@ -10,16 +10,17 @@
 
 		Workspace.ForgeKingdoms
 			Ground                      flat ground sized to the map bounds (createGround = true)
-			Nodes/<nodeId>              attributes: EntityId, Kind, Resource, Amount
-			<kingdomId>/Buildings/<id>  attributes: EntityId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
-			<kingdomId>/Citizens/<id>   attributes: EntityId, KingdomId, Occupation, Activity, CitizenName
-			<kingdomId>/Units/<id>      attributes: EntityId, KingdomId, Kind, Hp, MaxHp
+			Nodes/node:<nodeId>                  attributes: EntityId, Kind, Resource, Amount
+			<kingdomId>/Buildings/building:<id>  attributes: EntityId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
+			<kingdomId>/Citizens/entity:<id>     attributes: EntityId, KingdomId, Job, Activity, CitizenName
+			<kingdomId>/Units/entity:<id>        attributes: EntityId, KingdomId, Kind, Hp, MaxHp
+	(D-023 moves entity rendering to clients via Sim.Snapshot; these server parts are the interim view.)
 
 	API
 		WorldView.new(env, options?): WorldView
 			options: { groundY = 0, parent = env.Workspace, createGround = true }
 		view:sync(sim)                 -- create, update and remove parts to match the simulation
-		view:find(entityId): Instance?
+		view:find(kind, id): Instance?    -- kind "node" | "building" | "entity"
 		view:count(): number           -- live entity parts (specs)
 		view:destroy()
 	Positions: simulation X/Z map to world X/Z; Y is groundY plus half the part height.
@@ -29,26 +30,27 @@ local WorldView = {}
 WorldView.__index = WorldView
 
 local BUILDING_STYLE: { [string]: { height: number, color: { number }?, material: string } } = {
-	Keep = { height = 22, material = "Slate" },
-	House = { height = 9, color = { 140, 98, 57 }, material = "WoodPlanks" },
-	Farm = { height = 1, color = { 160, 170, 70 }, material = "Grass" },
-	Storehouse = { height = 11, color = { 120, 85, 50 }, material = "WoodPlanks" },
-	Barracks = { height = 12, material = "Brick" },
-	Tower = { height = 24, material = "Cobblestone" },
-	Wall = { height = 10, color = { 130, 130, 125 }, material = "Cobblestone" },
+	keep = { height = 22, material = "Slate" },
+	house = { height = 9, color = { 140, 98, 57 }, material = "WoodPlanks" },
+	farm = { height = 1, color = { 160, 170, 70 }, material = "Grass" },
+	storehouse = { height = 11, color = { 120, 85, 50 }, material = "WoodPlanks" },
+	barracks = { height = 12, material = "Brick" },
+	lumbercamp = { height = 7, color = { 120, 85, 50 }, material = "WoodPlanks" },
+	quarry = { height = 5, color = { 150, 150, 150 }, material = "Slate" },
+	watchtower = { height = 24, material = "Cobblestone" },
+	wall = { height = 10, color = { 130, 130, 125 }, material = "Cobblestone" },
 }
 local NODE_STYLE: { [string]: { size: { number }, color: { number }, material: string } } = {
-	Tree = { size = { 4, 14, 4 }, color = { 50, 110, 45 }, material = "Grass" },
-	Rock = { size = { 8, 6, 8 }, color = { 120, 120, 125 }, material = "Slate" },
-	GoldVein = { size = { 7, 5, 7 }, color = { 230, 190, 60 }, material = "Foil" },
+	tree = { size = { 4, 14, 4 }, color = { 50, 110, 45 }, material = "Grass" },
+	rock = { size = { 8, 6, 8 }, color = { 120, 120, 125 }, material = "Slate" },
+	goldvein = { size = { 7, 5, 7 }, color = { 230, 190, 60 }, material = "Foil" },
 }
-local OCCUPATION_COLOR: { [string]: { number } } = {
-	Farmer = { 200, 180, 90 },
-	Woodcutter = { 110, 75, 40 },
-	Quarrier = { 150, 150, 150 },
-	Miner = { 90, 90, 110 },
-	Builder = { 230, 140, 40 },
-	Laborer = { 200, 200, 200 },
+local JOB_COLOR: { [string]: { number } } = {
+	farmer = { 200, 180, 90 },
+	woodcutter = { 110, 75, 40 },
+	miner = { 120, 120, 135 },
+	builder = { 230, 140, 40 },
+	hauler = { 200, 200, 200 },
 }
 
 local function rgb(c: { number }): Color3
@@ -99,16 +101,18 @@ function WorldView:_kingdom(kingdom: any): { [string]: any }
 	return folders
 end
 
-function WorldView:_part(id: string, parent: any, size: Vector3, color: Color3, material: string): any
-	local part = self._parts[id]
+-- Parts are keyed "node:<id>", "building:<id>" and "entity:<id>": buildings and entities have
+-- separate numeric id spaces (CONTRACTS G2), so a bare id would collide.
+function WorldView:_part(key: string, id: any, parent: any, size: Vector3, color: Color3, material: string): any
+	local part = self._parts[key]
 	if part == nil then
 		part = self._env.newInstance("Part")
-		part.Name = id
+		part.Name = key
 		part.Anchored = true
 		part.CanCollide = false
 		part:SetAttribute("EntityId", id)
 		part.Parent = parent
-		self._parts[id] = part
+		self._parts[key] = part
 	end
 	if part.Size ~= size then
 		part.Size = size
@@ -156,13 +160,20 @@ function WorldView:sync(sim: any)
 		local size = style.size
 		local depleted = node.amount <= 0
 		local h = if depleted then 1.5 else size[2]
-		local part = self:_part(nid, self._nodes, Vector3.new(size[1], h, size[3]), rgb(style.color), style.material)
+		local part = self:_part(
+			"node:" .. nid,
+			nid,
+			self._nodes,
+			Vector3.new(size[1], h, size[3]),
+			rgb(style.color),
+			style.material
+		)
 		part.Transparency = if depleted then 0.6 else 0
 		part:SetAttribute("Kind", node.kind)
 		part:SetAttribute("Resource", node.resource)
 		part:SetAttribute("Amount", node.amount)
 		self:_place(part, node.x, node.z, h)
-		live[nid] = true
+		live["node:" .. nid] = true
 	end
 
 	for _, kid in sim.kingdomOrder do
@@ -176,12 +187,18 @@ function WorldView:sync(sim: any)
 			local fullHeight = style.height * (1 + 0.25 * math.max(0, b.level - 1))
 			local progress = 1
 			if b.level == 0 and b.pendingLevel ~= nil then
-				local stats = sim.catalog.buildings[b.kind].levels[b.pendingLevel]
-				progress = math.clamp(b.progress / stats.work, 0.05, 1)
+				progress = math.clamp(b.progress / sim:workFor(b.kind, b.pendingLevel), 0.05, 1)
 			end
 			local height = math.max(1, fullHeight * progress)
 			local color = if style.color then rgb(style.color) else kingdomColor
-			local part = self:_part(bid, folders.Buildings, Vector3.new(width, height, width), color, style.material)
+			local part = self:_part(
+				"building:" .. bid,
+				bid,
+				folders.Buildings,
+				Vector3.new(width, height, width),
+				color,
+				style.material
+			)
 			part.Transparency = if b.level == 0 then 0.55 else 0
 			part:SetAttribute("KingdomId", kid)
 			part:SetAttribute("Kind", b.kind)
@@ -191,33 +208,34 @@ function WorldView:sync(sim: any)
 			part:SetAttribute("Hp", b.hp)
 			part:SetAttribute("MaxHp", b.maxHp)
 			self:_place(part, b.x, b.z, height)
-			live[bid] = true
+			live["building:" .. bid] = true
 		end
 		for _, cid in kingdom.citizenIds do
 			local c = sim.citizens[cid]
 			local part = self:_part(
+				"entity:" .. cid,
 				cid,
 				folders.Citizens,
 				Vector3.new(1.6, 4.5, 1.6),
-				rgb(OCCUPATION_COLOR[c.occupation] or { 200, 200, 200 }),
+				rgb(JOB_COLOR[c.job] or { 200, 200, 200 }),
 				"SmoothPlastic"
 			)
 			part:SetAttribute("KingdomId", kid)
-			part:SetAttribute("Occupation", c.occupation)
+			part:SetAttribute("Job", c.job)
 			part:SetAttribute("Activity", c.activity)
 			part:SetAttribute("CitizenName", c.name)
 			self:_place(part, c.x, c.z, 4.5)
-			live[cid] = true
+			live["entity:" .. cid] = true
 		end
 		for _, uid in kingdom.unitIds do
 			local u = sim.units[uid]
-			local part = self:_part(uid, folders.Units, Vector3.new(2, 5, 2), kingdomColor, "Metal")
+			local part = self:_part("entity:" .. uid, uid, folders.Units, Vector3.new(2, 5, 2), kingdomColor, "Metal")
 			part:SetAttribute("KingdomId", kid)
 			part:SetAttribute("Kind", u.kind)
 			part:SetAttribute("Hp", u.hp)
 			part:SetAttribute("MaxHp", u.maxHp)
 			self:_place(part, u.x, u.z, 5)
-			live[uid] = true
+			live["entity:" .. uid] = true
 		end
 	end
 
@@ -229,8 +247,8 @@ function WorldView:sync(sim: any)
 	end
 end
 
-function WorldView:find(entityId: string): any?
-	return self._parts[entityId]
+function WorldView:find(kind: "node" | "building" | "entity", id: any): any?
+	return self._parts[kind .. ":" .. tostring(id)]
 end
 
 function WorldView:count(): number

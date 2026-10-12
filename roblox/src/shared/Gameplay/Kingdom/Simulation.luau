@@ -7,13 +7,17 @@
 	same commands = same world, so bugs reproduce and balance can be simulated headlessly.
 
 	Construction
-		Simulation.new({ catalog: Catalog?, random: RandomLike, bounds: Bounds? }): Simulation
+		Simulation.new({ catalog: Catalog?, random: RandomLike, bounds: Bounds?, treasury: Treasury?, costs: Costs? })
 			random    an object with :NextNumber() and :NextInteger(a, b) (env.random(seed) / Random.new)
 			bounds    { minX, maxX, minZ, maxZ } in studs; placement outside is rejected (default ±1024)
+			treasury  CONTRACTS G7 TreasuryService (get/canAfford/spend/deposit, txIds); default TreasuryDouble
+			costs     CONTRACTS G6 Costs (building(type, level) -> { cost, buildSeconds }, unit(type));
+			          default Catalog.costs(catalog), the double of FORGE-03's Costs.luau
 
 	World setup
-		sim:addKingdom({ id, name, color: {number}, x, z }): Kingdom   -- keep + start citizens + stock
-		sim:addNode(kind, x, z): Node                                 -- Tree / Rock / GoldVein
+		sim:addKingdom({ id, name, color: {number}, x, z }): Kingdom   -- keep + start buildings + citizens;
+		                                                                  seeds the treasury when it is the double
+		sim:addNode(kind, x, z, id?): Node                             -- tree / rock / goldvein / berries
 	Time
 		sim:advance(seconds)        -- runs whole fixed ticks (catalog.tuning.tickSeconds); remainder carried
 		sim:step()                  -- exactly one tick
@@ -22,6 +26,13 @@
 	Rulers (shared ownership: every ruler of a kingdom has the same command rights)
 		sim:addRuler(kingdomId, userId): (boolean, string?)   sim:removeRuler(userId)
 		sim:kingdomOfUser(userId): Kingdom?
+		sim:setRulerPosition(userId, x?, z?)   -- the host mirrors characters (objectives count rulers)
+	Treasury, Crown Points, territory
+		sim:balance(kingdomId, resource), sim:canAfford(kingdomId, cost), sim:spend(kingdomId, cost, txId, sink),
+		sim:deposit(kingdomId, resource, amount, txId, source)          -- thin G7 wrappers
+		sim:addCrownPoints(kingdomId, amount, reason)                   -- emits CrownPoints
+		sim:claimRegion(kingdomId, regionId, x, z, radius, reason), sim:releaseRegion(regionId)
+		sim:territoryOwner(x, z): KingdomId?   -- keep circles first, then claimed regions
 	Construction (called by Commands after validation; also usable by AI rulers)
 		sim:canPlace(kingdom, kind, x, z): (boolean, string?)
 		sim:placeBuilding(kingdom, kind, x, z, byUserId?): (Building?, string?)
@@ -34,28 +45,31 @@
 		sim:population(kingdom), sim:atWar(kingdomIdA, kingdomIdB)
 	Events
 		sim:drainEvents(): { Event }   -- everything since the last drain, in order; Event = { name, ... }
-		  ResourceDelivered  { kingdomId, resource, amount, wasted, citizenId }
+		  ResourceGathered   { kingdomId, resource, amount, source = "citizen" | "ruler", citizenId?, userId? }
 		  BuildingPlaced     { kingdomId, buildingId, kind, x, z, by }
 		  UpgradeStarted     { kingdomId, buildingId, kind, level, by }
 		  BuildingCompleted  { kingdomId, buildingId, kind, level }
 		  ConstructionCancelled { kingdomId, buildingId, kind, refund, by }
-		  CitizenBorn        { kingdomId, citizenId, occupation }
+		  CitizenBorn        { kingdomId, citizenId, job }
 		  CitizenDied        { kingdomId, citizenId, cause }
-		  CitizenReassigned  { kingdomId, citizenId, from, to }
+		  CitizenReassigned  { kingdomId, citizenId, from, to }      CrownPoints { kingdomId, amount, total, reason }
+		  RegionClaimed { kingdomId, regionId, reason }              RegionReleased { kingdomId, regionId }
 		  NodeDepleted       { nodeId, resource }          NodeRegrown { nodeId, resource }
 		  AlarmChanged       { kingdomId, on, by }
 		  DayStarted         { day }        NightFell { day }
 		  RulerJoined        { kingdomId, userId }   RulerLeft { kingdomId, userId }
 		  (Military/Diplomacy add their own; see those modules.)
 
-	Invariants (covered by specs): stock never negative and never above capacity; a claim slot is
-	never over-subscribed; ids are never reused; iteration order is creation order (deterministic).
+	Ids: citizens and soldiers share one numeric EntityId space; buildings have their own numeric ids;
+	resource nodes keep string ids (they come from map tags). Ids are never reused within a match.
+	Invariants (covered by specs): the treasury ledger audits exactly and never goes negative; a claim
+	slot is never over-subscribed; iteration order is creation order (deterministic).
 ]]
 
 local Catalog = require("./Catalog")
 local CitizenActions = require("./CitizenActions")
 local CitizenBrain = require("./CitizenBrain")
-local Stockpile = require("./Stockpile")
+local TreasuryDouble = require("./TreasuryDouble")
 
 type Catalog = Catalog.Catalog
 
@@ -111,20 +125,27 @@ function Simulation.new(options: { [string]: any })
 	local self = setmetatable({}, Simulation)
 	self.catalog = catalog
 	self.rng = options.random
+	self.treasury = options.treasury or TreasuryDouble.new()
+	self.costs = options.costs or Catalog.costs(catalog)
+	self.rulerPositions = {} :: { [number]: { x: number, z: number } }
+	self.regions = {} :: { [string]: any }
+	self.regionOrder = {} :: { string }
+	self._nextEntity = 0
+	self._nextBuilding = 0
 	self.bounds = options.bounds or { minX = -1024, maxX = 1024, minZ = -1024, maxZ = 1024 }
 	self.time = 0
 	self.tick = 0
 	self.active = true
 	self.kingdoms = {} :: { [string]: any }
 	self.kingdomOrder = {} :: { string }
-	self.buildings = {} :: { [string]: any }
-	self.buildingOrder = {} :: { string }
-	self.citizens = {} :: { [string]: any }
-	self.citizenOrder = {} :: { string }
+	self.buildings = {} :: { [number]: any }
+	self.buildingOrder = {} :: { number }
+	self.citizens = {} :: { [number]: any }
+	self.citizenOrder = {} :: { number }
 	self.nodes = {} :: { [string]: any }
 	self.nodeOrder = {} :: { string }
-	self.units = {} :: { [string]: any }
-	self.unitOrder = {} :: { string }
+	self.units = {} :: { [number]: any }
+	self.unitOrder = {} :: { number }
 	self.rulerOf = {} :: { [number]: string }
 	self.relations = {} :: { [string]: string }
 	self._ids = {} :: { [string]: number }
@@ -141,6 +162,12 @@ function Simulation:_newId(prefix: string): string
 	local n = (self._ids[prefix] or 0) + 1
 	self._ids[prefix] = n
 	return prefix .. tostring(n)
+end
+
+-- EntityId (G2/G4): citizens and soldiers share one numeric space, never reused.
+function Simulation:newEntityId(): number
+	self._nextEntity += 1
+	return self._nextEntity
 end
 
 function Simulation:emit(name: string, payload: { [string]: any }?)
@@ -185,7 +212,6 @@ end
 function Simulation:addKingdom(def: { [string]: any })
 	assert(type(def.id) == "string" and self.kingdoms[def.id] == nil, "addKingdom: unique string id required")
 	local tuning = self.catalog.tuning
-	local keepStats = self.catalog.buildings.Keep.levels[1]
 	local kingdom = {
 		id = def.id,
 		index = #self.kingdomOrder + 1,
@@ -193,12 +219,12 @@ function Simulation:addKingdom(def: { [string]: any })
 		color = def.color or { 200, 200, 200 },
 		x = def.x,
 		z = def.z,
-		keepId = "",
+		keepId = 0,
 		rulers = {} :: { number },
-		stock = Stockpile.new(self.catalog.resources, tuning.startResources, keepStats.storage or 0),
-		buildingIds = {} :: { string },
-		citizenIds = {} :: { string },
-		unitIds = {} :: { string },
+		crownPoints = 0,
+		buildingIds = {} :: { number },
+		citizenIds = {} :: { number },
+		unitIds = {} :: { number },
 		quotas = table.clone(tuning.startCitizens),
 		priorities = { food = 1, wood = 1, stone = 1, gold = 1 },
 		alarm = false,
@@ -223,13 +249,16 @@ function Simulation:addKingdom(def: { [string]: any })
 	}
 	self.kingdoms[kingdom.id] = kingdom
 	table.insert(self.kingdomOrder, kingdom.id)
+	if self.treasury.seed then
+		self.treasury:seed(kingdom.id, tuning.startResources) -- the double only; FORGE-03 seeds the real one
+	end
 	for _, other in self.kingdomOrder do
 		if other ~= kingdom.id then
 			self.relations[self:relationKey(other, kingdom.id)] = "Peace"
 		end
 	end
 
-	local keep = self:_createBuilding(kingdom, "Keep", def.x, def.z)
+	local keep = self:_createBuilding(kingdom, "keep", def.x, def.z)
 	self:_completeInstantly(keep)
 	kingdom.keepId = keep.id
 	-- starting buildings (a farm), placed relative to the direction toward the map centre
@@ -246,14 +275,14 @@ function Simulation:addKingdom(def: { [string]: any })
 	end
 	self:_recompute(kingdom)
 
-	-- start citizens in a ring around the keep, in occupation order (deterministic)
-	local ring = self.catalog.buildings.Keep.footprint + 4
+	-- start citizens in a ring around the keep, in job order (deterministic)
+	local ring = self.catalog.buildings.keep.footprint + 4
 	local total = 0
-	for _, occ in self.catalog.occupationOrder do
+	for _, occ in self.catalog.jobOrder do
 		total += tuning.startCitizens[occ] or 0
 	end
 	local i = 0
-	for _, occ in self.catalog.occupationOrder do
+	for _, occ in self.catalog.jobOrder do
 		for _ = 1, tuning.startCitizens[occ] or 0 do
 			local angle = (i / math.max(1, total)) * math.pi * 2
 			self:_spawnCitizen(kingdom, occ, def.x + math.cos(angle) * ring, def.z + math.sin(angle) * ring)
@@ -264,11 +293,13 @@ function Simulation:addKingdom(def: { [string]: any })
 	return kingdom
 end
 
-function Simulation:addNode(kind: string, x: number, z: number)
+function Simulation:addNode(kind: string, x: number, z: number, id: string?)
 	local def = self.catalog.nodes[kind]
 	assert(def ~= nil, `addNode: unknown node kind '{kind}'`)
+	local nodeId = id or self:_newId("n")
+	assert(self.nodes[nodeId] == nil, `addNode: duplicate node id '{nodeId}'`)
 	local node = {
-		id = self:_newId("n"),
+		id = nodeId,
 		kind = kind,
 		resource = def.resource,
 		x = x,
@@ -291,8 +322,9 @@ end
 
 function Simulation:_createBuilding(kingdom: any, kind: string, x: number, z: number)
 	local def = self.catalog.buildings[kind]
+	self._nextBuilding += 1
 	local building = {
-		id = self:_newId("b"),
+		id = self._nextBuilding,
 		kind = kind,
 		kingdomId = kingdom.id,
 		x = x,
@@ -325,19 +357,20 @@ function Simulation:_completeInstantly(b: any)
 	b.hp = stats.hp
 end
 
-function Simulation:_spawnCitizen(kingdom: any, occupation: string, x: number, z: number)
-	local id = self:_newId("c")
-	local n = self._ids.c
+function Simulation:_spawnCitizen(kingdom: any, job: string, x: number, z: number)
+	local id = self:newEntityId()
 	local citizen = {
 		id = id,
+		kind = "citizen",
 		kingdomId = kingdom.id,
-		name = NAMES[((n - 1) % #NAMES) + 1],
-		occupation = occupation,
+		name = NAMES[((id - 1) % #NAMES) + 1],
+		job = job,
+		tripSeq = 0,
 		x = x,
 		z = z,
-		home = nil :: string?,
+		home = nil :: number?,
 		activity = "Idle",
-		target = nil :: string?,
+		target = nil :: any,
 		phase = "Go",
 		reason = "spawned",
 		carrying = nil :: { resource: string, amount: number }?,
@@ -347,7 +380,7 @@ function Simulation:_spawnCitizen(kingdom: any, occupation: string, x: number, z
 		hunger = 0,
 		thinkAt = self.time + self.rng:NextNumber() * self.catalog.tuning.thinkInterval,
 		memory = {} :: { any },
-		claim = nil :: { kind: string, id: string }?,
+		claim = nil :: { kind: string, id: any }?,
 		done = true,
 		alive = true,
 		hp = Simulation.CITIZEN_HP,
@@ -384,6 +417,7 @@ function Simulation:removeRuler(userId: number): boolean
 		table.remove(kingdom.rulers, index)
 	end
 	self.rulerOf[userId] = nil
+	self.rulerPositions[userId] = nil
 	self:emit("RulerLeft", { kingdomId = kingdomId, userId = userId })
 	return true
 end
@@ -395,7 +429,7 @@ end
 
 -- ---------------------------------------------------------------- derived kingdom stats
 function Simulation:_recompute(kingdom: any)
-	local popCap, storage, territory = 0, 0, 0
+	local popCap, territory = 0, 0
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
 		if b.destroyed or b.level < 1 then
@@ -403,15 +437,11 @@ function Simulation:_recompute(kingdom: any)
 		end
 		local stats = self.catalog.buildings[b.kind].levels[b.level]
 		popCap += stats.popCap or 0
-		if self.catalog.buildings[b.kind].dropoff then
-			storage += stats.storage or 0
-		end
-		if b.kind == "Keep" then
+		if b.kind == "keep" then
 			territory = stats.territory or 0
 		end
 	end
 	kingdom.popCap = popCap
-	kingdom.stock:setCapacity(storage)
 	if territory ~= kingdom.territory then
 		kingdom.territory = territory
 		self:_refreshNearNodes(kingdom)
@@ -440,7 +470,7 @@ function Simulation:_assignHomes(kingdom: any)
 			continue
 		end
 		local cap = self.catalog.buildings[b.kind].levels[b.level].popCap or 0
-		if b.kind == "Keep" then
+		if b.kind == "keep" then
 			keepBeds = cap
 		elseif cap > 0 then
 			table.insert(beds, { id = bid, free = cap })
@@ -466,6 +496,28 @@ end
 
 function Simulation:population(kingdom: any): number
 	return #kingdom.citizenIds + #kingdom.unitIds
+end
+
+-- Units paid for and still training in this kingdom's barracks (they will need a bed too).
+function Simulation:queuedUnits(kingdom: any): number
+	local n = 0
+	for _, bid in kingdom.buildingIds do
+		local b = self.buildings[bid]
+		if b.queue then
+			n += #b.queue
+		end
+	end
+	return n
+end
+
+-- CitizenService:getPopulation (G5): { total, byJob, cap }; soldiers count as job "soldier".
+function Simulation:getPopulation(kingdom: any): { total: number, byJob: { [string]: number }, cap: number }
+	local byJob: { [string]: number } = { soldier = #kingdom.unitIds }
+	for _, cid in kingdom.citizenIds do
+		local job = self.citizens[cid].job
+		byJob[job] = (byJob[job] or 0) + 1
+	end
+	return { total = self:population(kingdom), byJob = byJob, cap = kingdom.popCap }
 end
 
 function Simulation:citizensOf(kingdom: any): { any }
@@ -496,7 +548,7 @@ function Simulation:hasOpenSite(kingdom: any): boolean
 end
 
 function Simulation:_siteBuilders(building: any): number
-	return if building.kind == "Keep" then Simulation.SITE_BUILDERS + 2 else Simulation.SITE_BUILDERS
+	return if building.kind == "keep" then Simulation.SITE_BUILDERS + 2 else Simulation.SITE_BUILDERS
 end
 
 function Simulation:needTarget(kingdom: any, resource: string): number
@@ -506,7 +558,7 @@ function Simulation:needTarget(kingdom: any, resource: string): number
 		local perDay = #kingdom.citizenIds * self.catalog.tuning.mealFood * self.catalog.tuning.hungerPerDay
 		base = math.max(base, perDay * 2)
 	end
-	return math.min(base, kingdom.stock:capacity())
+	return base
 end
 
 function Simulation:threatNear(kingdom: any, x: number, z: number, radius: number): boolean
@@ -525,7 +577,7 @@ function Simulation:_freeSlot(target: any, kind: string, citizen: any): boolean
 	if kind == "node" then
 		return target.claims < target.slots
 	elseif kind == "farm" then
-		local stats = self.catalog.buildings.Farm.levels[target.level]
+		local stats = self.catalog.buildings.farm.levels[target.level]
 		return stats ~= nil and #target.workers < (stats.workers or 0)
 	else
 		return #target.builders < self:_siteBuilders(target)
@@ -547,7 +599,7 @@ function Simulation:findWorkTarget(kingdom: any, kind: string, citizen: any): (a
 	elseif kind == "farm" then
 		for _, bid in kingdom.buildingIds do
 			local b = self.buildings[bid]
-			if b.kind == "Farm" and b.level >= 1 and not b.destroyed and self:_freeSlot(b, "farm", citizen) then
+			if b.kind == "farm" and b.level >= 1 and not b.destroyed and self:_freeSlot(b, "farm", citizen) then
 				local d = dist(citizen.x, citizen.z, b.x, b.z)
 				if d < bestDistance then
 					best, bestDistance = b, d
@@ -568,11 +620,15 @@ function Simulation:findWorkTarget(kingdom: any, kind: string, citizen: any): (a
 	return best, bestDistance
 end
 
-function Simulation:nearestDropoff(kingdom: any, x: number, z: number): any?
+-- Nearest complete drop-off of the kingdom; with `resource`, only drop-offs that accept it
+-- (lumber camps take wood, quarries stone and gold; the keep and storehouses take everything).
+function Simulation:nearestDropoff(kingdom: any, x: number, z: number, resource: string?): any?
 	local best, bestDistance = nil, math.huge
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
-		if not b.destroyed and b.level >= 1 and self.catalog.buildings[b.kind].dropoff then
+		local def = self.catalog.buildings[b.kind]
+		local accepts = resource == nil or def.accepts == nil or table.find(def.accepts, resource) ~= nil
+		if not b.destroyed and b.level >= 1 and def.dropoff and accepts then
 			local d = dist(x, z, b.x, b.z)
 			if d < bestDistance then
 				best, bestDistance = b, d
@@ -683,6 +739,104 @@ function Simulation:killCitizen(citizen: any, cause: string)
 	self:_assignHomes(kingdom)
 end
 
+-- ---------------------------------------------------------------- treasury (G7), crown points, territory
+function Simulation:balance(kingdomId: string, resource: string): number
+	return self.treasury:get(kingdomId)[resource] or 0
+end
+
+function Simulation:canAfford(kingdomId: string, cost: { [string]: number }): boolean
+	return self.treasury:canAfford(kingdomId, cost)
+end
+
+function Simulation:spend(kingdomId: string, cost: { [string]: number }, txId: string, sink: string): boolean
+	return self.treasury:spend(kingdomId, cost, txId, sink)
+end
+
+function Simulation:deposit(kingdomId: string, resource: string, amount: number, txId: string, source: string): boolean
+	if amount <= 0 then
+		return true
+	end
+	return self.treasury:deposit(kingdomId, resource, amount, txId, source)
+end
+
+function Simulation:workFor(kind: string, level: number): number
+	local price = self.costs.building(kind, level)
+	return if price then price.buildSeconds else self.catalog.buildings[kind].levels[level].work
+end
+
+function Simulation:addCrownPoints(kingdomId: string, amount: number, reason: string)
+	local kingdom = self.kingdoms[kingdomId]
+	if kingdom == nil or amount == 0 then
+		return
+	end
+	kingdom.crownPoints += amount
+	self:emit("CrownPoints", { kingdomId = kingdomId, amount = amount, total = kingdom.crownPoints, reason = reason })
+end
+
+function Simulation:claimRegion(
+	kingdomId: string,
+	regionId: string,
+	x: number,
+	z: number,
+	radius: number,
+	reason: string
+)
+	if self.regions[regionId] == nil then
+		table.insert(self.regionOrder, regionId)
+	end
+	self.regions[regionId] = { kingdomId = kingdomId, x = x, z = z, radius = radius, reason = reason }
+	self:emit("RegionClaimed", { kingdomId = kingdomId, regionId = regionId, reason = reason })
+end
+
+function Simulation:releaseRegion(regionId: string)
+	local region = self.regions[regionId]
+	if region == nil then
+		return
+	end
+	self.regions[regionId] = nil
+	table.remove(self.regionOrder, table.find(self.regionOrder, regionId) :: number)
+	self:emit("RegionReleased", { kingdomId = region.kingdomId, regionId = regionId })
+end
+
+-- A footprint circle at (x, z) lies inside the kingdom's land: its keep circle or a claimed region.
+function Simulation:insideTerritory(kingdom: any, x: number, z: number, footprint: number): boolean
+	if kingdom.alive and dist(x, z, kingdom.x, kingdom.z) + footprint <= kingdom.territory then
+		return true
+	end
+	for _, regionId in self.regionOrder do
+		local region = self.regions[regionId]
+		if region.kingdomId == kingdom.id and dist(x, z, region.x, region.z) + footprint <= region.radius then
+			return true
+		end
+	end
+	return false
+end
+
+-- TerritoryService:owner (G6): keep circles first (in kingdom order), then claimed regions.
+function Simulation:territoryOwner(x: number, z: number): string?
+	for _, kid in self.kingdomOrder do
+		local k = self.kingdoms[kid]
+		if k.alive and dist(x, z, k.x, k.z) <= k.territory then
+			return kid
+		end
+	end
+	for _, regionId in self.regionOrder do
+		local region = self.regions[regionId]
+		if self.kingdoms[region.kingdomId].alive and dist(x, z, region.x, region.z) <= region.radius then
+			return region.kingdomId
+		end
+	end
+	return nil
+end
+
+function Simulation:setRulerPosition(userId: number, x: number?, z: number?)
+	if x == nil or z == nil then
+		self.rulerPositions[userId] = nil
+	else
+		self.rulerPositions[userId] = { x = x, z = z }
+	end
+end
+
 -- ---------------------------------------------------------------- construction
 function Simulation:countOf(kingdom: any, kind: string): number
 	local n = 0
@@ -724,7 +878,7 @@ function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number): 
 	if z - def.footprint < bounds.minZ or z + def.footprint > bounds.maxZ then
 		return false, "out_of_bounds"
 	end
-	if dist(x, z, kingdom.x, kingdom.z) + def.footprint > kingdom.territory then
+	if not self:insideTerritory(kingdom, x, z, def.footprint) then
 		return false, "out_of_territory"
 	end
 	local gap = self.catalog.tuning.placementGap
@@ -742,7 +896,11 @@ function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number): 
 			return false, "blocked"
 		end
 	end
-	if not kingdom.stock:canAfford(def.levels[1].cost) then
+	local price = self.costs.building(kind, 1)
+	if price == nil then
+		return false, "unknown_building"
+	end
+	if not self:canAfford(kingdom.id, price.cost) then
 		return false, "cannot_afford"
 	end
 	return true, nil
@@ -753,9 +911,13 @@ function Simulation:placeBuilding(kingdom: any, kind: string, x: number, z: numb
 	if not ok then
 		return nil, err
 	end
-	local cost = self.catalog.buildings[kind].levels[1].cost
-	assert(kingdom.stock:spend(cost, "construction"), "canPlace said affordable") -- cannot fail after canPlace
+	local cost = (self.costs.building(kind, 1) :: any).cost
+	local nextId = self._nextBuilding + 1
+	if not self:spend(kingdom.id, cost, `build:{nextId}:1`, `building:{kind}`) then
+		return nil, "cannot_afford" -- e.g. another server-side spend raced us
+	end
 	local building = self:_createBuilding(kingdom, kind, x, z)
+	assert(building.id == nextId, "building id changed between spend and create")
 	building.pendingCost = table.clone(cost)
 	self:emit(
 		"BuildingPlaced",
@@ -785,17 +947,18 @@ function Simulation:startUpgrade(kingdom: any, buildingId: string, by: number?):
 	end
 	local def = self.catalog.buildings[b.kind]
 	local nextStats = def.levels[b.level + 1]
-	if nextStats == nil then
+	local price = self.costs.building(b.kind, b.level + 1)
+	if nextStats == nil or price == nil then
 		return false, "max_level"
 	end
-	if b.kind ~= "Keep" and def.requiresKeepLevel and self:keepLevel(kingdom) < def.requiresKeepLevel then
+	if b.kind ~= "keep" and def.requiresKeepLevel and self:keepLevel(kingdom) < def.requiresKeepLevel then
 		return false, "requires_keep_level"
 	end
-	if not kingdom.stock:spend(nextStats.cost, "upgrade") then
+	if not self:spend(kingdom.id, price.cost, `build:{b.id}:{b.level + 1}`, `building:{b.kind}`) then
 		return false, "cannot_afford"
 	end
 	b.pendingLevel = b.level + 1
-	b.pendingCost = table.clone(nextStats.cost)
+	b.pendingCost = table.clone(price.cost)
 	b.progress = 0
 	self:emit(
 		"UpgradeStarted",
@@ -824,7 +987,14 @@ function Simulation:cancelConstruction(kingdom: any, buildingId: string, by: num
 	if b.pendingLevel == nil then
 		return false, "nothing_to_cancel"
 	end
-	local refund = kingdom.stock:refund(b.pendingCost or {}, self.catalog.tuning.cancelRefund, "refund")
+	local refund = {}
+	for _, res in self.catalog.resources do
+		local amount = math.floor(((b.pendingCost or {})[res] or 0) * self.catalog.tuning.cancelRefund)
+		if amount > 0 then
+			self:deposit(kingdom.id, res, amount, `refund:{b.id}:{b.pendingLevel}:{res}`, "refund")
+			refund[res] = amount
+		end
+	end
 	self:_releaseAll(b.builders)
 	if b.level == 0 then
 		self:_removeBuilding(b)
@@ -864,12 +1034,13 @@ function Simulation:addWork(b: any, amount: number): boolean
 		return true
 	end
 	local stats = self.catalog.buildings[b.kind].levels[b.pendingLevel]
+	local work = self:workFor(b.kind, b.pendingLevel :: number)
 	b.progress += amount
 	if b.level == 0 then
 		-- a new site's hit points grow with its progress
-		b.hp = math.max(b.hp, math.floor(stats.hp * math.clamp(0.1 + 0.9 * b.progress / stats.work, 0, 1)))
+		b.hp = math.max(b.hp, math.floor(stats.hp * math.clamp(0.1 + 0.9 * b.progress / work, 0, 1)))
 	end
-	if b.progress < stats.work then
+	if b.progress < work then
 		return false
 	end
 	local kingdom = self.kingdoms[b.kingdomId]
@@ -885,6 +1056,7 @@ function Simulation:addWork(b: any, amount: number): boolean
 	self:_recompute(kingdom)
 	self:_assignHomes(kingdom)
 	self:emit("BuildingCompleted", { kingdomId = kingdom.id, buildingId = b.id, kind = b.kind, level = b.level })
+	self:addCrownPoints(kingdom.id, self.catalog.crown.buildingLevel * b.level, `building:{b.kind}`)
 	return true
 end
 
@@ -893,20 +1065,20 @@ function Simulation:_rebalanceQuotas(kingdom: any)
 	local catalog = self.catalog
 	local counts: { [string]: number } = {}
 	for _, cid in kingdom.citizenIds do
-		local occ = self.citizens[cid].occupation
+		local occ = self.citizens[cid].job
 		counts[occ] = (counts[occ] or 0) + 1
 	end
 	local function reassign(c: any, to: string)
-		local from = c.occupation
+		local from = c.job
 		counts[from] -= 1
 		counts[to] = (counts[to] or 0) + 1
-		c.occupation = to
+		c.job = to
 		c.done = c.carrying == nil -- rethink now unless mid-delivery
 		self:emit("CitizenReassigned", { kingdomId = kingdom.id, citizenId = c.id, from = from, to = to })
 	end
-	-- over quota -> Laborer (newest first, preferring citizens not carrying anything)
-	for _, occ in catalog.occupationOrder do
-		if occ == "Laborer" then
+	-- over quota -> hauler pool (newest first, preferring citizens not carrying anything)
+	for _, occ in catalog.jobOrder do
+		if occ == "hauler" then
 			continue
 		end
 		local quota = kingdom.quotas[occ] or 0
@@ -916,15 +1088,15 @@ function Simulation:_rebalanceQuotas(kingdom: any)
 					break
 				end
 				local c = self.citizens[kingdom.citizenIds[i]]
-				if c.occupation == occ and (pass == 2 or c.carrying == nil) then
-					reassign(c, "Laborer")
+				if c.job == occ and (pass == 2 or c.carrying == nil) then
+					reassign(c, "hauler")
 				end
 			end
 		end
 	end
-	-- under quota <- Laborer (oldest first)
-	for _, occ in catalog.occupationOrder do
-		if occ == "Laborer" then
+	-- under quota <- hauler pool (oldest first)
+	for _, occ in catalog.jobOrder do
+		if occ == "hauler" then
 			continue
 		end
 		local quota = kingdom.quotas[occ] or 0
@@ -933,7 +1105,7 @@ function Simulation:_rebalanceQuotas(kingdom: any)
 				break
 			end
 			local c = self.citizens[cid]
-			if c.occupation == "Laborer" then
+			if c.job == "hauler" then
 				reassign(c, occ)
 			end
 		end
@@ -943,15 +1115,15 @@ end
 function Simulation:_neededOccupation(kingdom: any): string
 	local counts: { [string]: number } = {}
 	for _, cid in kingdom.citizenIds do
-		local occ = self.citizens[cid].occupation
+		local occ = self.citizens[cid].job
 		counts[occ] = (counts[occ] or 0) + 1
 	end
-	for _, occ in self.catalog.occupationOrder do
-		if occ ~= "Laborer" and (counts[occ] or 0) < (kingdom.quotas[occ] or 0) then
+	for _, occ in self.catalog.jobOrder do
+		if occ ~= "hauler" and (counts[occ] or 0) < (kingdom.quotas[occ] or 0) then
 			return occ
 		end
 	end
-	return "Laborer"
+	return "hauler"
 end
 
 function Simulation:_stepPopulation(kingdom: any)
@@ -960,15 +1132,25 @@ function Simulation:_stepPopulation(kingdom: any)
 	end
 	kingdom.nextBirthAt = self.time + self.catalog.tuning.birthInterval
 	local tuning = self.catalog.tuning
-	if self:population(kingdom) >= kingdom.popCap then
+	-- recruits still training already hold a bed (found by the spec batch: births overfilled the cap)
+	if self:population(kingdom) + self:queuedUnits(kingdom) >= kingdom.popCap then
 		return
 	end
 	-- keep a day of meals in reserve before growing
 	local reserve = #kingdom.citizenIds * tuning.mealFood
-	if kingdom.stock:get("food") < tuning.birthFood + reserve then
+	if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
 		return
 	end
-	kingdom.stock:spend({ food = tuning.birthFood }, "birth")
+	if
+		not self:spend(
+			kingdom.id,
+			{ food = tuning.birthFood },
+			`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
+			"population"
+		)
+	then
+		return
+	end
 	local keep = self.buildings[kingdom.keepId]
 	local angle = self.rng:NextNumber() * math.pi * 2
 	local ring = keep.footprint + 3
@@ -976,7 +1158,7 @@ function Simulation:_stepPopulation(kingdom: any)
 	local c = self:_spawnCitizen(kingdom, occ, keep.x + math.cos(angle) * ring, keep.z + math.sin(angle) * ring)
 	kingdom.stats.born += 1
 	self:_assignHomes(kingdom)
-	self:emit("CitizenBorn", { kingdomId = kingdom.id, citizenId = c.id, occupation = occ })
+	self:emit("CitizenBorn", { kingdomId = kingdom.id, citizenId = c.id, job = occ })
 end
 
 function Simulation:_regrowNodes()

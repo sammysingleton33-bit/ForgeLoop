@@ -4,13 +4,87 @@
 		local F = require("./KingdomFixtures")
 		local sim, k = F.kingdom({ seed = 1, nodes = true, tuning = { birthInterval = 9999 } })
 		F.events(sim, "BuildingCompleted")     -- drains and filters events
-		F.assertInvariants(sim)                -- ledger audit, capacity, claim bookkeeping, ids
+		F.assertInvariants(sim)                -- ledger audit, claim bookkeeping, ids
+		F.stock(sim, k)                        -- old Stockpile-style view over the G7 treasury (specs only)
 ]]
 
 local Catalog = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Catalog")
 local Simulation = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Simulation")
 
 local F = {}
+
+local giveSeq = 0
+
+-- Maps a treasury ledger entry to the reason names the specs use.
+local function reasonOf(entry: any): string
+	local tag = entry.sink or entry.source or "other"
+	if entry.kind == "deposit" then
+		if string.sub(tag, 1, 8) == "citizen:" or tag == "ruler" then
+			return "gathered"
+		end
+		return tag -- refund, loot, test
+	end
+	if string.sub(tag, 1, 9) == "building:" then
+		local level = tonumber(string.match(entry.txId, ":(%d+)$"))
+		return if level and level > 1 then "upgrade" else "construction"
+	elseif string.sub(tag, 1, 5) == "unit:" then
+		return "recruit"
+	elseif tag == "upkeep" then
+		return "meal"
+	elseif tag == "population" then
+		return "birth"
+	elseif tag == "plunder" then
+		return "plundered"
+	end
+	return tag
+end
+
+-- A Stockpile-shaped view of one kingdom's treasury for specs (add/take/get/snapshot/flows/audit).
+function F.stock(sim: any, k: any)
+	local view = {}
+	function view:get(res: string): number
+		return sim:balance(k.id, res)
+	end
+	function view:snapshot()
+		return sim.treasury:get(k.id)
+	end
+	function view:add(res: string, amount: number): number
+		giveSeq += 1
+		sim.treasury:deposit(k.id, res, amount, `test:give:{giveSeq}`, "test")
+		return amount
+	end
+	function view:take(res: string, amount: number): number
+		local taken = math.min(amount, sim:balance(k.id, res))
+		if taken > 0 then
+			giveSeq += 1
+			sim.treasury:spend(k.id, { [res] = taken }, `test:take:{giveSeq}`, "test")
+		end
+		return taken
+	end
+	function view:spend(cost: { [string]: number }): boolean
+		giveSeq += 1
+		return sim.treasury:spend(k.id, cost, `test:spend:{giveSeq}`, "test")
+	end
+	function view:canAfford(cost: { [string]: number }): boolean
+		return sim.treasury:canAfford(k.id, cost)
+	end
+	function view:audit()
+		return sim.treasury:audit(k.id)
+	end
+	function view:flows()
+		local out = { income = {}, expense = {} }
+		for _, entry in sim.treasury:ledger(k.id) do
+			local book = if entry.kind == "deposit" then out.income else out.expense
+			local reason = reasonOf(entry)
+			book[reason] = book[reason] or {}
+			for res, amount in entry.bag do
+				book[reason][res] = (book[reason][res] or 0) + amount
+			end
+		end
+		return out
+	end
+	return view
+end
 
 function F.catalog(tuning: { [string]: any }?)
 	local catalog = Catalog.default()
@@ -24,15 +98,15 @@ end
 function F.kingdom(options: { [string]: any }?)
 	local opts = options or {}
 	local sim = Simulation.new({ random = Random.new(opts.seed or 1), catalog = F.catalog(opts.tuning) })
-	local k = sim:addKingdom({ id = "k1", name = "Test", x = 0, z = 0 })
+	local k = sim:addKingdom({ id = "crimson", name = "Test", x = 0, z = 0 })
 	if opts.nodes ~= false then
 		for i = 1, 8 do
 			local a = i * math.pi / 4
-			sim:addNode("Tree", math.cos(a) * 60, math.sin(a) * 60)
+			sim:addNode("tree", math.cos(a) * 60, math.sin(a) * 60)
 		end
 		for i = 1, 3 do
 			local a = 0.3 + i * 2.1
-			sim:addNode("Rock", math.cos(a) * 75, math.sin(a) * 75)
+			sim:addNode("rock", math.cos(a) * 75, math.sin(a) * 75)
 		end
 	end
 	return sim, k
@@ -58,10 +132,10 @@ function F.count(list: { any }, predicate: (any) -> boolean): number
 	return n
 end
 
-function F.occupations(sim: any, k: any): { [string]: number }
+function F.jobs(sim: any, k: any): { [string]: number }
 	local counts = {}
 	for _, c in sim:citizensOf(k) do
-		counts[c.occupation] = (counts[c.occupation] or 0) + 1
+		counts[c.job] = (counts[c.job] or 0) + 1
 	end
 	return counts
 end
@@ -70,10 +144,10 @@ end
 function F.assertInvariants(sim: any)
 	for _, kid in sim.kingdomOrder do
 		local k = sim.kingdoms[kid]
-		local ok, why = k.stock:audit()
+		local ok, why = sim.treasury:audit(k.id)
 		assert(ok, `{kid} ledger: {why}`)
 		for _, res in sim.catalog.resources do
-			assert(k.stock:get(res) >= 0, `{kid} {res} negative`)
+			assert(sim:balance(k.id, res) >= 0, `{kid} {res} negative`)
 		end
 	end
 	local nodeClaims = {}

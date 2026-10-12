@@ -29,11 +29,11 @@ describe("Kingdom/Catalog", function()
 
 	it("default() returns an independent deep copy", function()
 		local a = Catalog.default()
-		a.buildings.House.levels[1].cost.wood = 1
-		a.tuning.startCitizens.Farmer = 99
+		a.buildings.house.levels[1].cost.wood = 1
+		a.tuning.startCitizens.farmer = 99
 		local b = Catalog.default()
-		expect(b.buildings.House.levels[1].cost.wood).toBe(40)
-		expect(b.tuning.startCitizens.Farmer).toBe(3)
+		expect(b.buildings.house.levels[1].cost.wood).toBe(40)
+		expect(b.tuning.startCitizens.farmer).toBe(3)
 	end)
 
 	it("starts every kingdom with about ten citizens", function()
@@ -52,7 +52,7 @@ describe("Kingdom/Catalog", function()
 
 	it("reports unknown resources and non-integer costs", function()
 		local errors = errorsOf(function(c)
-			c.buildings.House.levels[1].cost = { mana = 5, wood = 2.5 }
+			c.buildings.house.levels[1].cost = { mana = 5, wood = 2.5 }
 		end)
 		expect(anyContains(errors, "unknown resource 'mana'")).toBe(true)
 		expect(anyContains(errors, "cost of wood must be a non-negative integer")).toBe(true)
@@ -60,12 +60,12 @@ describe("Kingdom/Catalog", function()
 
 	it("requires a Keep with territory and a Laborer fallback", function()
 		local errors = errorsOf(function(c)
-			c.buildings.Keep.levels[1].territory = 0
-			c.occupations.Laborer = nil
-			table.remove(c.occupationOrder, table.find(c.occupationOrder, "Laborer"))
+			c.buildings.keep.levels[1].territory = 0
+			c.occupations.hauler = nil
+			table.remove(c.jobOrder, table.find(c.jobOrder, "hauler"))
 		end)
 		expect(anyContains(errors, "Keep: level 1 needs a positive territory")).toBe(true)
-		expect(anyContains(errors, "Laborer")).toBe(true)
+		expect(anyContains(errors, "hauler")).toBe(true)
 	end)
 
 	it("keeps the order lists and maps in sync", function()
@@ -79,15 +79,15 @@ describe("Kingdom/Catalog", function()
 
 	it("rejects farms without workers, units with zero stats and bad tuning", function()
 		local errors = errorsOf(function(c)
-			c.buildings.Farm.levels[2].workers = 0
-			c.units.Archer.range = 0
+			c.buildings.farm.levels[2].workers = 0
+			c.units.archer.range = 0
 			c.tuning.nightStart = 1.5
 			c.tuning.dayLength = -1
 			c.tuning.startCitizens.Wizard = 2
-			c.buildings.Barracks.levels[1].trains = { "Dragon" }
+			c.buildings.barracks.levels[1].trains = { "Dragon" }
 		end)
 		expect(anyContains(errors, "farms need workers and yield")).toBe(true)
-		expect(anyContains(errors, "units.Archer: range must be positive")).toBe(true)
+		expect(anyContains(errors, "units.archer: range must be positive")).toBe(true)
 		expect(anyContains(errors, "nightStart")).toBe(true)
 		expect(anyContains(errors, "tuning.dayLength must be positive")).toBe(true)
 		expect(anyContains(errors, "unknown occupation 'Wizard'")).toBe(true)
@@ -96,8 +96,8 @@ describe("Kingdom/Catalog", function()
 
 	it("rejects placeable buildings that need no work and unplaceable start buildings", function()
 		local errors = errorsOf(function(c)
-			c.buildings.House.levels[1].work = 0
-			c.tuning.startBuildings = { { kind = "Keep", angle = 0, distance = 10 } }
+			c.buildings.house.levels[1].work = 0
+			c.tuning.startBuildings = { { kind = "keep", angle = 0, distance = 10 } }
 		end)
 		expect(anyContains(errors, "placeable buildings need work > 0")).toBe(true)
 		expect(anyContains(errors, "unknown or unplaceable building 'Keep'")).toBe(true)
@@ -105,8 +105,8 @@ describe("Kingdom/Catalog", function()
 
 	it("levelOf and isResource answer lookups", function()
 		local c = Catalog.default()
-		expect(Catalog.levelOf(c, "House", 2).popCap).toBe(7)
-		expect(Catalog.levelOf(c, "House", 9)).toBeNil()
+		expect(Catalog.levelOf(c, "house", 2).popCap).toBe(7)
+		expect(Catalog.levelOf(c, "house", 9)).toBeNil()
 		expect(Catalog.levelOf(c, "Nope", 1)).toBeNil()
 		expect(Catalog.isResource("gold")).toBe(true)
 		expect(Catalog.isResource("mana")).toBe(false)

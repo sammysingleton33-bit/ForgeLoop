@@ -1,8 +1,11 @@
 --!strict
 --[[
 	Gameplay/Kingdom/Catalog — the data that defines AI Kingdoms: resources, buildings and their
-	levels, citizen occupations, military units and simulation tuning. Pure data + validation; no
-	Roblox APIs, so the simulation runs identically in Lune specs and on the server.
+	levels, citizen jobs, military units, resource nodes, Crown Point rules and simulation tuning.
+	Pure data + validation; no Roblox APIs, so the simulation runs identically in Lune specs and on
+	the server. Ids follow CONTRACTS G2 (building types and job ids are lowercase contract ids).
+	Costs and build times here are the local double of FORGE-03's Costs.luau (G6): the simulation
+	reads them only through its `costs` provider, so Costs.luau replaces them without code changes.
 
 	API
 		Catalog.default(): Catalog              -- a fresh deep copy of the built-in catalog
@@ -10,6 +13,8 @@
 		Catalog.RESOURCES: { string }           -- "food", "wood", "stone", "gold" (stable order)
 		Catalog.levelOf(catalog, kind, level): BuildingLevel?
 		Catalog.isResource(name): boolean
+		Catalog.costs(catalog): Costs        -- G6-shaped provider: building(type, level) -> { cost, buildSeconds },
+		                                       unit(type) -> { cost, trainSeconds } (the FORGE-03 double)
 
 	Conventions
 		- All amounts are integers (resources never become fractional, so balances stay exact).
@@ -31,28 +36,28 @@ export type BuildingLevel = {
 	hp: number,
 	popCap: number?, -- population this building houses
 	storage: number?, -- storage capacity per resource this building provides
-	territory: number?, -- territory radius (Keep only)
-	workers: number?, -- worker slots (Farm)
-	yield: number?, -- food per harvest (Farm)
-	attack: AttackStats?, -- defensive fire (Tower, Keep)
-	trains: { string }?, -- unit ids this level can train (Barracks)
+	territory: number?, -- territory radius (keep only)
+	workers: number?, -- worker slots (farm)
+	yield: number?, -- food per harvest (farm)
+	attack: AttackStats?, -- defensive fire (watchtower, keep)
+	trains: { string }?, -- unit ids this level can train (barracks)
 }
 
 export type BuildingDef = {
 	id: string,
 	name: string,
 	footprint: number, -- radius in studs used for placement overlap checks
-	placeable: boolean, -- false for the Keep (granted at kingdom creation)
+	placeable: boolean, -- false for the keep (granted at kingdom creation)
 	dropoff: boolean, -- citizens deliver resources here
+	accepts: { string }?, -- drop-off for these resources only (nil = all)
 	maxCount: number?, -- per kingdom
 	requiresKeepLevel: number?,
 	levels: { BuildingLevel },
 }
 
-export type OccupationDef = {
+export type JobDef = {
 	id: string,
-	name: string,
-	resource: string?, -- what this occupation produces (nil for builders/laborers)
+	resources: { string }, -- what this job produces (empty for builders/haulers)
 	affinity: { [string]: number }, -- activity kind -> skill multiplier for utility scoring
 }
 
@@ -103,7 +108,8 @@ export type Tuning = {
 	placementGap: number,
 	cancelRefund: number, -- fraction of a site's cost refunded on cancel
 	startResources: Cost,
-	startCitizens: { [string]: number }, -- occupation -> count
+	startCitizens: { [string]: number }, -- job -> count
+	mealsChargeTreasury: boolean,
 	startBuildings: { { kind: string, angle: number, distance: number } }, -- complete at match start
 	needTargets: Cost, -- stock level each resource is "comfortable" at (before population scaling)
 }
@@ -112,17 +118,28 @@ export type Catalog = {
 	resources: { string },
 	buildings: { [string]: BuildingDef },
 	buildingOrder: { string },
-	occupations: { [string]: OccupationDef },
-	occupationOrder: { string },
+	jobs: { [string]: JobDef },
+	jobOrder: { string },
 	units: { [string]: UnitDef },
 	unitOrder: { string },
 	nodes: { [string]: NodeDef },
+	crown: { buildingLevel: number, conquest: number, unitKill: number },
 	tuning: Tuning,
 }
 
+export type Costs = {
+	building: (kind: string, level: number) -> { cost: Cost, buildSeconds: number }?,
+	unit: (kind: string) -> { cost: Cost, trainSeconds: number }?,
+}
+
+local Types = require("./Types")
+
+local JOB_IDS = Types.JOB_IDS
+local BUILDING_TYPES = Types.BUILDING_TYPES
+
 local Catalog = {}
 
-Catalog.RESOURCES = table.freeze({ "food", "wood", "stone", "gold" })
+Catalog.RESOURCES = Types.RESOURCE_IDS
 
 local function deepCopy(value: any): any
 	if type(value) ~= "table" then
@@ -137,10 +154,10 @@ end
 
 local DEFAULT: Catalog = {
 	resources = { "food", "wood", "stone", "gold" },
-	buildingOrder = { "Keep", "House", "Farm", "Storehouse", "Barracks", "Tower", "Wall" },
+	buildingOrder = { "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks", "watchtower", "wall" },
 	buildings = {
-		Keep = {
-			id = "Keep",
+		keep = {
+			id = "keep",
 			name = "Keep",
 			footprint = 14,
 			placeable = false,
@@ -151,8 +168,7 @@ local DEFAULT: Catalog = {
 					cost = {},
 					work = 0,
 					hp = 6000,
-					popCap = 10,
-					storage = 400,
+					popCap = 12,
 					territory = 130,
 					attack = { damage = 10, range = 40, cooldown = 1.5 },
 				},
@@ -160,8 +176,7 @@ local DEFAULT: Catalog = {
 					cost = { wood = 150, stone = 150 },
 					work = 60,
 					hp = 9000,
-					popCap = 14,
-					storage = 800,
+					popCap = 16,
 					territory = 170,
 					attack = { damage = 14, range = 45, cooldown = 1.5 },
 				},
@@ -169,15 +184,14 @@ local DEFAULT: Catalog = {
 					cost = { wood = 300, stone = 300, gold = 100 },
 					work = 120,
 					hp = 12000,
-					popCap = 18,
-					storage = 1500,
+					popCap = 20,
 					territory = 210,
 					attack = { damage = 18, range = 50, cooldown = 1.5 },
 				},
 			},
 		},
-		House = {
-			id = "House",
+		house = {
+			id = "house",
 			name = "House",
 			footprint = 6,
 			placeable = true,
@@ -188,8 +202,8 @@ local DEFAULT: Catalog = {
 				{ cost = { wood = 60, stone = 60 }, work = 25, hp = 600, popCap = 10 },
 			},
 		},
-		Farm = {
-			id = "Farm",
+		farm = {
+			id = "farm",
 			name = "Farm",
 			footprint = 10,
 			placeable = true,
@@ -200,36 +214,58 @@ local DEFAULT: Catalog = {
 				{ cost = { wood = 80, stone = 60 }, work = 30, hp = 450, workers = 5, yield = 7 },
 			},
 		},
-		Storehouse = {
-			id = "Storehouse",
+		storehouse = {
+			id = "storehouse",
 			name = "Storehouse",
 			footprint = 7,
 			placeable = true,
 			dropoff = true,
 			levels = {
-				{ cost = { wood = 60 }, work = 20, hp = 500, storage = 300 },
-				{ cost = { wood = 60, stone = 60 }, work = 30, hp = 800, storage = 600 },
+				{ cost = { wood = 60 }, work = 20, hp = 500 },
+				{ cost = { wood = 60, stone = 60 }, work = 30, hp = 800 },
 			},
 		},
-		Barracks = {
-			id = "Barracks",
+		lumbercamp = {
+			id = "lumbercamp",
+			name = "Lumber Camp",
+			footprint = 6,
+			placeable = true,
+			dropoff = true,
+			accepts = { "wood" },
+			levels = {
+				{ cost = { wood = 40 }, work = 15, hp = 350 },
+			},
+		},
+		quarry = {
+			id = "quarry",
+			name = "Quarry",
+			footprint = 6,
+			placeable = true,
+			dropoff = true,
+			accepts = { "stone", "gold" },
+			levels = {
+				{ cost = { wood = 50 }, work = 15, hp = 350 },
+			},
+		},
+		barracks = {
+			id = "barracks",
 			name = "Barracks",
 			footprint = 10,
 			placeable = true,
 			dropoff = false,
 			maxCount = 2,
 			levels = {
-				{ cost = { wood = 120, stone = 60 }, work = 40, hp = 1200, trains = { "Militia", "Archer" } },
+				{ cost = { wood = 120, stone = 60 }, work = 40, hp = 1200, trains = { "soldier", "archer" } },
 				{
 					cost = { wood = 100, stone = 120, gold = 40 },
 					work = 50,
 					hp = 1800,
-					trains = { "Militia", "Archer", "Knight", "Ram" },
+					trains = { "soldier", "archer", "knight", "ram" },
 				},
 			},
 		},
-		Tower = {
-			id = "Tower",
+		watchtower = {
+			id = "watchtower",
 			name = "Watchtower",
 			footprint = 5,
 			placeable = true,
@@ -250,8 +286,8 @@ local DEFAULT: Catalog = {
 				},
 			},
 		},
-		Wall = {
-			id = "Wall",
+		wall = {
+			id = "wall",
 			name = "Wall",
 			footprint = 4,
 			placeable = true,
@@ -262,33 +298,23 @@ local DEFAULT: Catalog = {
 			},
 		},
 	},
-	occupationOrder = { "Farmer", "Woodcutter", "Quarrier", "Miner", "Builder", "Laborer" },
-	occupations = {
-		Farmer = { id = "Farmer", name = "Farmer", resource = "food", affinity = { farm = 1, build = 0.3 } },
-		Woodcutter = {
-			id = "Woodcutter",
-			name = "Woodcutter",
-			resource = "wood",
-			affinity = { wood = 1, build = 0.3 },
-		},
-		Quarrier = { id = "Quarrier", name = "Quarrier", resource = "stone", affinity = { stone = 1, build = 0.3 } },
-		Miner = { id = "Miner", name = "Miner", resource = "gold", affinity = { gold = 1, build = 0.3 } },
-		Builder = {
-			id = "Builder",
-			name = "Builder",
-			affinity = { build = 1, wood = 0.35, stone = 0.35, farm = 0.25 },
-		},
-		Laborer = {
-			id = "Laborer",
-			name = "Laborer",
+	jobOrder = { "farmer", "woodcutter", "miner", "builder", "hauler" },
+	jobs = {
+		farmer = { id = "farmer", resources = { "food" }, affinity = { farm = 1, build = 0.3 } },
+		woodcutter = { id = "woodcutter", resources = { "wood" }, affinity = { wood = 1, build = 0.3 } },
+		miner = { id = "miner", resources = { "stone", "gold" }, affinity = { stone = 1, gold = 1, build = 0.3 } },
+		builder = { id = "builder", resources = {}, affinity = { build = 1, wood = 0.35, stone = 0.35, farm = 0.25 } },
+		hauler = {
+			id = "hauler",
+			resources = {},
 			affinity = { build = 0.6, wood = 0.6, stone = 0.6, farm = 0.6, gold = 0.4 },
 		},
 	},
-	unitOrder = { "Militia", "Archer", "Knight", "Ram" },
+	unitOrder = { "soldier", "archer", "knight", "ram" },
 	units = {
-		Militia = {
-			id = "Militia",
-			name = "Militia",
+		soldier = {
+			id = "soldier",
+			name = "Soldier",
 			cost = { food = 30, wood = 10 },
 			trainTime = 8,
 			hp = 80,
@@ -300,8 +326,8 @@ local DEFAULT: Catalog = {
 			attacksUnits = true,
 			requiresBarracksLevel = 1,
 		},
-		Archer = {
-			id = "Archer",
+		archer = {
+			id = "archer",
 			name = "Archer",
 			cost = { food = 30, wood = 30 },
 			trainTime = 10,
@@ -314,8 +340,8 @@ local DEFAULT: Catalog = {
 			attacksUnits = true,
 			requiresBarracksLevel = 1,
 		},
-		Knight = {
-			id = "Knight",
+		knight = {
+			id = "knight",
 			name = "Knight",
 			cost = { food = 50, gold = 40 },
 			trainTime = 14,
@@ -328,8 +354,8 @@ local DEFAULT: Catalog = {
 			attacksUnits = true,
 			requiresBarracksLevel = 2,
 		},
-		Ram = {
-			id = "Ram",
+		ram = {
+			id = "ram",
 			name = "Battering Ram",
 			cost = { wood = 120, stone = 20 },
 			trainTime = 20,
@@ -344,42 +370,65 @@ local DEFAULT: Catalog = {
 		},
 	},
 	nodes = {
-		Tree = { id = "Tree", resource = "wood", amount = 80, footprint = 3, slots = 2, regrow = 240 },
-		Rock = { id = "Rock", resource = "stone", amount = 200, footprint = 4, slots = 3 },
-		GoldVein = { id = "GoldVein", resource = "gold", amount = 300, footprint = 4, slots = 3 },
+		tree = { id = "tree", resource = "wood", amount = 80, footprint = 3, slots = 2, regrow = 240 },
+		rock = { id = "rock", resource = "stone", amount = 200, footprint = 4, slots = 3 },
+		goldvein = { id = "goldvein", resource = "gold", amount = 300, footprint = 4, slots = 3 },
+		berries = { id = "berries", resource = "food", amount = 60, footprint = 3, slots = 2, regrow = 180 },
 	},
+	crown = { buildingLevel = 5, conquest = 300, unitKill = 2 },
 	tuning = {
 		tickSeconds = 0.25,
 		dayLength = 120,
 		nightStart = 0.75,
 		citizenSpeed = 12,
 		carry = 10,
-		gatherRate = { wood = 0.8, stone = 0.5, gold = 0.35 },
+		gatherRate = { wood = 0.8, stone = 0.5, gold = 0.35, food = 0.8 },
 		harvestTime = 6,
 		buildRate = 1,
 		thinkInterval = 2,
 		hungerPerDay = 1,
 		eatThreshold = 0.6,
 		mealFood = 2,
+		mealsChargeTreasury = true, -- double of FORGE-03 upkeep (G7); false once ProductionService charges upkeep
 		starveDeathHunger = 3,
 		birthInterval = 30,
 		birthFood = 25,
-		memorySize = 4,
+		memorySize = 8,
 		memorySeconds = 45,
 		fleeRadius = 40,
 		arriveRadius = 1.5,
 		placementGap = 2,
 		cancelRefund = 0.5,
 		startResources = { food = 120, wood = 100, stone = 50, gold = 0 },
-		startCitizens = { Farmer = 3, Woodcutter = 3, Quarrier = 2, Builder = 2 },
+		startCitizens = { farmer = 3, woodcutter = 3, miner = 2, builder = 2, hauler = 2 },
 		-- angle is relative to the direction from the keep toward the map centre (radians)
-		startBuildings = { { kind = "Farm", angle = 0.6, distance = 34 } },
+		startBuildings = { { kind = "farm", angle = 0.6, distance = 34 } },
 		needTargets = { food = 150, wood = 200, stone = 150, gold = 80 },
 	},
 }
 
 function Catalog.default(): Catalog
 	return deepCopy(DEFAULT)
+end
+
+function Catalog.costs(catalog: Catalog): Costs
+	return {
+		building = function(kind: string, level: number)
+			local def = catalog.buildings[kind]
+			local stats = def and def.levels[level]
+			if stats == nil then
+				return nil
+			end
+			return { cost = table.clone(stats.cost), buildSeconds = stats.work }
+		end,
+		unit = function(kind: string)
+			local def = catalog.units[kind]
+			if def == nil then
+				return nil
+			end
+			return { cost = table.clone(def.cost), trainSeconds = def.trainTime }
+		end,
+	}
 end
 
 function Catalog.isResource(name: any): boolean
@@ -422,7 +471,7 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		return false, { "catalog must be a table" }
 	end
 	for _, field in
-		{ "buildings", "buildingOrder", "occupations", "occupationOrder", "units", "unitOrder", "nodes", "tuning" }
+		{ "buildings", "buildingOrder", "jobs", "jobOrder", "units", "unitOrder", "nodes", "crown", "tuning" }
 	do
 		if type(catalog[field]) ~= "table" then
 			table.insert(errors, `missing table '{field}'`)
@@ -450,13 +499,13 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		end
 	end
 	checkOrder("buildingOrder", "buildings")
-	checkOrder("occupationOrder", "occupations")
+	checkOrder("jobOrder", "jobs")
 	checkOrder("unitOrder", "units")
 
-	if catalog.buildings.Keep == nil then
-		table.insert(errors, "buildings: a Keep is required")
-	elseif catalog.buildings.Keep.levels[1] == nil or not isPositive(catalog.buildings.Keep.levels[1].territory) then
-		table.insert(errors, "buildings.Keep: level 1 needs a positive territory")
+	if catalog.buildings.keep == nil then
+		table.insert(errors, "buildings: a keep is required")
+	elseif catalog.buildings.keep.levels[1] == nil or not isPositive(catalog.buildings.keep.levels[1].territory) then
+		table.insert(errors, "buildings.keep: level 1 needs a positive territory")
 	end
 
 	for id, def in catalog.buildings do
@@ -490,7 +539,12 @@ function Catalog.validate(catalog: any): (boolean, { string })
 				end
 			end
 		end
-		if id == "Farm" then
+		for _, res in def.accepts or {} do
+			if not Catalog.isResource(res) then
+				table.insert(errors, `{where}: accepts unknown resource '{tostring(res)}'`)
+			end
+		end
+		if id == "farm" then
 			for level, stats in def.levels do
 				if not isPositive(stats.workers) or not isPositive(stats.yield) then
 					table.insert(errors, `{where}.levels[{level}]: farms need workers and yield`)
@@ -499,16 +553,31 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		end
 	end
 
-	for id, occ in catalog.occupations do
-		if occ.id ~= id then
-			table.insert(errors, `occupations.{tostring(id)}: id field must equal its key`)
+	for id, job in catalog.jobs do
+		if job.id ~= id then
+			table.insert(errors, `jobs.{tostring(id)}: id field must equal its key`)
 		end
-		if occ.resource ~= nil and not Catalog.isResource(occ.resource) then
-			table.insert(errors, `occupations.{tostring(id)}: unknown resource '{tostring(occ.resource)}'`)
+		if table.find(JOB_IDS, id) == nil or id == "idle" or id == "soldier" then
+			table.insert(errors, `jobs.{tostring(id)}: not a citizen job of CONTRACTS G2`)
+		end
+		for _, res in job.resources or {} do
+			if not Catalog.isResource(res) then
+				table.insert(errors, `jobs.{tostring(id)}: unknown resource '{tostring(res)}'`)
+			end
 		end
 	end
-	if catalog.occupations.Laborer == nil then
-		table.insert(errors, "occupations: a Laborer (fallback occupation) is required")
+	if catalog.jobs.hauler == nil then
+		table.insert(errors, "jobs: a hauler (the generalist pool) is required")
+	end
+	for id in catalog.buildings do
+		if table.find(BUILDING_TYPES, id) == nil then
+			table.insert(errors, `buildings.{tostring(id)}: not a building type of CONTRACTS G2`)
+		end
+	end
+	for _, field in { "buildingLevel", "conquest", "unitKill" } do
+		if not isNonNegInt(catalog.crown[field]) then
+			table.insert(errors, `crown.{field} must be a non-negative integer`)
+		end
 	end
 
 	for id, unit in catalog.units do
@@ -579,8 +648,8 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		end
 	end
 	for occ, count in t.startCitizens or {} do
-		if catalog.occupations[occ] == nil then
-			table.insert(errors, `tuning.startCitizens: unknown occupation '{tostring(occ)}'`)
+		if catalog.jobs[occ] == nil then
+			table.insert(errors, `tuning.startCitizens: unknown job '{tostring(occ)}'`)
 		elseif not isNonNegInt(count) then
 			table.insert(errors, `tuning.startCitizens.{occ}: count must be a non-negative integer`)
 		end

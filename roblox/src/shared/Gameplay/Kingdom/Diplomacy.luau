@@ -120,7 +120,7 @@ function Diplomacy.install(sim: any, options: { [string]: number }?)
 				if u.order.kind == "Attack" and (u.order.kingdomId == kingdom.id or u.order.kingdomId == from.id) then
 					u.order = { kind = "Defend" }
 				end
-				u.targetId = nil
+				u.target = nil
 			end
 		end
 		s:emit("PeaceMade", { kingdomId = kingdom.id, targetId = from.id, by = by })

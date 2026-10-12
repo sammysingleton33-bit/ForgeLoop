@@ -26,7 +26,8 @@
 		- Keeps and Towers shoot the nearest enemy unit in range (catalog `attack`).
 		- Citizens sheltering in their keep (Flee or Sleep, resting) cannot be attacked.
 		- A destroyed Keep eliminates its kingdom: its citizens, units and buildings are removed, the
-		  conqueror loots half of its stockpile (capped by storage) and gains a conquest.
+		  conqueror loots half of its treasury and gains a conquest (Crown Points: Catalog.crown.conquest).
+		- Each enemy unit killed is worth Catalog.crown.unitKill Crown Points.
 	Threats: before citizens think, each kingdom's `threats` lists enemy units inside its territory
 	(+30 studs); CitizenBrain uses it to flee and remember danger.
 
@@ -69,7 +70,8 @@ function Military.spawnUnit(sim: any, kingdom: any, kind: string, x: number, z: 
 	local def = sim.catalog.units[kind]
 	assert(def ~= nil, `spawnUnit: unknown unit '{kind}'`)
 	local unit = {
-		id = sim:_newId("u"),
+		id = sim:newEntityId(),
+		entityKind = "soldier",
 		kind = kind,
 		kingdomId = kingdom.id,
 		x = x,
@@ -78,7 +80,7 @@ function Military.spawnUnit(sim: any, kingdom: any, kind: string, x: number, z: 
 		maxHp = def.hp,
 		cooldown = 0,
 		order = { kind = "Defend" } :: { [string]: any },
-		targetId = nil :: string?,
+		target = nil :: { kind: string, id: number }?,
 		alive = true,
 	}
 	sim.units[unit.id] = unit
@@ -91,7 +93,7 @@ local function queuedCount(sim: any, kingdom: any): number
 	local n = 0
 	for _, bid in kingdom.buildingIds do
 		local b = sim.buildings[bid]
-		if b.kind == "Barracks" then
+		if b.kind == "barracks" then
 			n += #b.queue
 		end
 	end
@@ -109,7 +111,7 @@ local function recruit(sim: any, kingdom: any, by: number?, kind: any, count: an
 	local best = nil
 	for _, bid in kingdom.buildingIds do
 		local b = sim.buildings[bid]
-		if b.kind == "Barracks" and not b.destroyed and b.level >= def.requiresBarracksLevel then
+		if b.kind == "barracks" and not b.destroyed and b.level >= def.requiresBarracksLevel then
 			if best == nil or #b.queue < #best.queue then
 				best = b
 			end
@@ -125,7 +127,8 @@ local function recruit(sim: any, kingdom: any, by: number?, kind: any, count: an
 	for res, amount in def.cost do
 		total[res] = amount * count
 	end
-	if not kingdom.stock:spend(total, "recruit") then
+	sim.recruitSeq = (sim.recruitSeq or 0) + 1
+	if not sim:spend(kingdom.id, total, `recruit:{best.id}:{sim.recruitSeq}`, `unit:{kind}`) then
 		return false, "cannot_afford"
 	end
 	for _ = 1, count do
@@ -161,7 +164,7 @@ local function armyOrder(sim: any, kingdom: any, by: number?, order: any, a: any
 	for _, uid in kingdom.unitIds do
 		local u = sim.units[uid]
 		u.order = table.clone(newOrder)
-		u.targetId = nil
+		u.target = nil
 	end
 	sim:emit("ArmyOrdered", { kingdomId = kingdom.id, order = order, by = by })
 	return true, nil, { order = order }
@@ -186,6 +189,7 @@ local function killUnit(sim: any, u: any, byKingdomId: string?)
 	owner.stats.unitsLost += 1
 	if byKingdomId and sim.kingdoms[byKingdomId] then
 		sim.kingdoms[byKingdomId].stats.unitsKilled += 1
+		sim:addCrownPoints(byKingdomId, sim.catalog.crown.unitKill, "kill")
 	end
 	sim:emit("UnitKilled", { kingdomId = owner.id, unitId = u.id, unit = u.kind, byKingdomId = byKingdomId })
 end
@@ -200,12 +204,20 @@ local function eliminate(sim: any, kingdom: any, byKingdomId: string?)
 	local conqueror = byKingdomId and sim.kingdoms[byKingdomId]
 	if conqueror then
 		conqueror.stats.conquered += 1
+		sim:addCrownPoints(conqueror.id, sim.catalog.crown.conquest, `conquest:{kingdom.id}`)
 		for _, res in sim.catalog.resources do
-			loot[res] = conqueror.stock:add(res, math.floor(kingdom.stock:get(res) / 2), "loot")
+			local amount = math.floor(sim:balance(kingdom.id, res) / 2)
+			if amount > 0 then
+				sim:deposit(conqueror.id, res, amount, `loot:{kingdom.id}:{res}`, "loot")
+				loot[res] = amount
+			end
 		end
 	end
 	for _, res in sim.catalog.resources do
-		kingdom.stock:take(res, kingdom.stock:get(res), "plundered")
+		local left = sim:balance(kingdom.id, res)
+		if left > 0 then
+			sim:spend(kingdom.id, { [res] = left }, `plunder:{kingdom.id}:{res}`, "plunder")
+		end
 	end
 	-- remove everything the kingdom had, without per-entity events (one KingdomEliminated instead)
 	for _, cid in table.clone(kingdom.citizenIds) do
@@ -252,7 +264,7 @@ local function destroyBuilding(sim: any, b: any, byKingdomId: string?)
 		return
 	end
 	local kingdom = sim.kingdoms[b.kingdomId]
-	if b.kind == "Keep" then
+	if b.kind == "keep" then
 		eliminate(sim, kingdom, byKingdomId)
 		return
 	end
@@ -272,17 +284,17 @@ local function sheltered(sim: any, c: any): boolean
 	return c.target == kingdom.keepId or c.target == nil
 end
 
-local function resolveTarget(sim: any, id: string?): (any?, string?)
-	if id == nil then
+-- Targets are { kind, id }: units and citizens share the EntityId space, buildings have their own.
+local function resolveTarget(sim: any, target: { kind: string, id: number }?): (any?, string?)
+	if target == nil then
 		return nil, nil
 	end
-	local prefix = string.sub(id, 1, 1)
-	if prefix == "u" then
-		return sim.units[id], "unit"
-	elseif prefix == "c" then
-		return sim.citizens[id], "citizen"
-	elseif prefix == "b" then
-		local b = sim.buildings[id]
+	if target.kind == "unit" then
+		return sim.units[target.id], "unit"
+	elseif target.kind == "citizen" then
+		return sim.citizens[target.id], "citizen"
+	elseif target.kind == "building" then
+		local b = sim.buildings[target.id]
 		return if b and not b.destroyed then b else nil, "building"
 	end
 	return nil, nil
@@ -295,7 +307,7 @@ end
 local function acquire(sim: any, u: any, def: any): (any?, string?)
 	local aggro = def.range + Military.AGGRO_EXTRA
 	-- sticky: keep the current target while it is valid and still within reach
-	local current, currentKind = resolveTarget(sim, u.targetId)
+	local current, currentKind = resolveTarget(sim, u.target)
 	if current and sim:atWar(u.kingdomId, current.kingdomId) then
 		local reach = aggro * STICKY_FACTOR + targetRadius(current, currentKind)
 		local valid = currentKind ~= "citizen" or not sheltered(sim, current)
@@ -303,7 +315,7 @@ local function acquire(sim: any, u: any, def: any): (any?, string?)
 			return current, currentKind
 		end
 	end
-	u.targetId = nil
+	u.target = nil
 	local best, bestKind, bestDistance = nil, nil, math.huge
 	for _, kid in sim.kingdomOrder do
 		local enemy = sim.kingdoms[kid]
@@ -351,7 +363,7 @@ local function acquire(sim: any, u: any, def: any): (any?, string?)
 		end
 	end
 	if best then
-		u.targetId = best.id
+		u.target = { kind = bestKind :: string, id = best.id }
 	end
 	return best, bestKind
 end
@@ -417,7 +429,7 @@ local function orderDestination(sim: any, u: any): (number?, number?, number)
 		u.order = { kind = "Defend" }
 	end
 	-- Defend: a loose ring around the keep, slot from the unit's id (stable when others die)
-	local index = tonumber(string.sub(u.id, 2)) or 0
+	local index = u.id
 	local angle = index * 2.399963 -- golden angle spreads units evenly
 	local radius = 20 + (index % 3) * 4
 	return kingdom.x + math.cos(angle) * radius, kingdom.z + math.sin(angle) * radius, 1
@@ -446,7 +458,7 @@ local function stepUnits(sim: any, dt: number)
 				-- citizen) stay out of reach forever
 				local blocker = moveUnit(sim, u, def, target.x, target.z, def.range + targetRadius(target, kind), dt)
 				if blocker then
-					u.targetId = blocker.id
+					u.target = { kind = "building", id = blocker.id }
 				else
 					gap = dist(u.x, u.z, target.x, target.z) - targetRadius(target, kind)
 				end
@@ -457,14 +469,14 @@ local function stepUnits(sim: any, dt: number)
 					u.cooldown = def.cooldown
 				end
 			elseif u.order.kind == "Hold" then
-				u.targetId = nil -- holding units do not chase; look for something in range next tick
+				u.target = nil -- holding units do not chase; look for something in range next tick
 			end
 		else
 			local x, z, stopAt = orderDestination(sim, u)
 			if x and z then
 				local blocker = moveUnit(sim, u, def, x, z, stopAt, dt)
 				if blocker then
-					u.targetId = blocker.id
+					u.target = { kind = "building", id = blocker.id }
 				end
 			end
 		end

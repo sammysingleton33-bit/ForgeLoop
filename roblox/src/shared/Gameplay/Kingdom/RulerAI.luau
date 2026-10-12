@@ -11,7 +11,7 @@
 		defence   ring the alarm while enemies are inside the territory and no army defends it
 		housing   build a House when population is within 1 of the cap
 		food      build Farms to keep about one farm per 5 citizens; farmer quota follows farm slots
-		storage   build a Storehouse when any resource is above 85% of capacity
+		logistics build a Lumber Camp by the forest and a Quarry by the rocks (shorter carry trips)
 		growth    upgrade the Keep from day 3; upgrade Houses when wood and stone are plentiful
 		military  build a Barracks from day 4, keep an army of about a quarter of the population,
 		          Watchtowers after Keep level 2
@@ -26,7 +26,8 @@
 	API
 		RulerAI.install(sim, options?)  -- options: { interval = 6, assistHumans = false }
 		RulerAI.think(sim, kingdom): string?    -- one decision now; returns the command issued (specs)
-		RulerAI.findSpot(sim, kingdom, kind): (number?, number?)  -- a valid placement, or nil
+		RulerAI.findSpot(sim, kingdom, kind, near?): (number?, number?)  -- a valid placement, or nil;
+		                                         near = { x, z } searches outward from that point instead of the keep
 ]]
 
 local Commands = require("./Commands")
@@ -59,7 +60,7 @@ local function queuedUnits(sim: any, kingdom: any): number
 	local n = 0
 	for _, bid in kingdom.buildingIds do
 		local b = sim.buildings[bid]
-		if b.kind == "Barracks" then
+		if b.kind == "barracks" then
 			n += #b.queue
 		end
 	end
@@ -76,19 +77,25 @@ local function hasSite(sim: any, kingdom: any, kind: string?): boolean
 	return false
 end
 
-function RulerAI.findSpot(sim: any, kingdom: any, kind: string): (number?, number?)
+function RulerAI.findSpot(sim: any, kingdom: any, kind: string, near: { x: number, z: number }?): (number?, number?)
 	local def = sim.catalog.buildings[kind]
 	local keep = sim.buildings[kingdom.keepId]
 	if def == nil or keep == nil then
 		return nil, nil
 	end
 	local offset = sim.rng:NextNumber() * math.pi * 2
+	local cx, cz = kingdom.x, kingdom.z
 	local radius = keep.footprint + def.footprint + 6
-	while radius + def.footprint <= kingdom.territory do
+	if near then
+		cx, cz = near.x, near.z
+		radius = def.footprint + 6
+	end
+	-- search rings outward until they leave the territory entirely
+	while radius <= kingdom.territory * 2 do
 		local steps = math.max(8, math.floor(radius / 6))
 		for i = 0, steps - 1 do
 			local angle = offset + i / steps * math.pi * 2
-			local x, z = kingdom.x + math.cos(angle) * radius, kingdom.z + math.sin(angle) * radius
+			local x, z = cx + math.cos(angle) * radius, cz + math.sin(angle) * radius
 			if sim:canPlace(kingdom, kind, x, z) then
 				return x, z
 			end
@@ -98,12 +105,12 @@ function RulerAI.findSpot(sim: any, kingdom: any, kind: string): (number?, numbe
 	return nil, nil
 end
 
-local function place(sim: any, kingdom: any, kind: string): string?
-	local def = sim.catalog.buildings[kind]
-	if not kingdom.stock:canAfford(def.levels[1].cost) then
+local function place(sim: any, kingdom: any, kind: string, near: { x: number, z: number }?): string?
+	local price = sim.costs.building(kind, 1)
+	if price == nil or not sim:canAfford(kingdom.id, price.cost) then
 		return nil
 	end
-	local x, z = RulerAI.findSpot(sim, kingdom, kind)
+	local x, z = RulerAI.findSpot(sim, kingdom, kind, near)
 	if x == nil then
 		return nil
 	end
@@ -115,8 +122,8 @@ local function tryUpgrade(sim: any, kingdom: any, kind: string, maxLevel: number
 	for _, bid in kingdom.buildingIds do
 		local b = sim.buildings[bid]
 		if b.kind == kind and b.level >= 1 and b.level < maxLevel and b.pendingLevel == nil then
-			local nextStats = sim.catalog.buildings[kind].levels[b.level + 1]
-			if nextStats and kingdom.stock:canAfford(nextStats.cost) then
+			local price = sim.costs.building(kind, b.level + 1)
+			if price and sim:canAfford(kingdom.id, price.cost) then
 				local ok = Commands.executeFor(sim, kingdom, nil, "UpgradeBuilding", bid)
 				return if ok then "UpgradeBuilding:" .. kind else nil
 			end
@@ -138,6 +145,22 @@ end
 -- Neighbours are the kingdoms next to this one around the map (k1-k2-k3-k4-k1), so an AI never
 -- marches across the centre while a neighbour stands. Kingdoms already fighting two wars are
 -- left alone (no dog-piling a single kingdom, human or AI).
+-- The kingdom's nearest node of a resource (by distance from the keep), as a placement anchor.
+local function nearestNode(sim: any, kingdom: any, resource: string): { x: number, z: number }?
+	local best, bestDistance = nil, math.huge
+	for _, nid in kingdom.nearNodes do
+		local node = sim.nodes[nid]
+		if node.resource == resource then
+			local dx, dz = node.x - kingdom.x, node.z - kingdom.z
+			local d = dx * dx + dz * dz
+			if d < bestDistance then
+				best, bestDistance = node, d
+			end
+		end
+	end
+	return if best then { x = best.x, z = best.z } else nil
+end
+
 local function weakestEnemy(sim: any, kingdom: any): any?
 	local n = #sim.kingdomOrder
 	local neighbours = {}
@@ -188,8 +211,6 @@ function RulerAI.think(sim: any, kingdom: any): string?
 	local ai = sim.rulerAI
 	local aggression = aggressionOf(sim, ai, kingdom)
 	local day = sim:day()
-	local stock = kingdom.stock
-	local capacity = stock:capacity()
 	local pop = sim:population(kingdom)
 	local army = #kingdom.unitIds
 
@@ -241,16 +262,16 @@ function RulerAI.think(sim: any, kingdom: any): string?
 	end
 
 	-- housing
-	if pop >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "House") then
-		local issued = place(sim, kingdom, "House")
+	if pop >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "house") then
+		local issued = place(sim, kingdom, "house")
 		if issued then
 			return issued
 		end
 	end
 	-- food
-	local farms = count(sim, kingdom, "Farm", true)
-	if farms < math.ceil(#kingdom.citizenIds / 5) and not hasSite(sim, kingdom, "Farm") then
-		local issued = place(sim, kingdom, "Farm")
+	local farms = count(sim, kingdom, "farm", true)
+	if farms < math.ceil(#kingdom.citizenIds / 5) and not hasSite(sim, kingdom, "farm") then
+		local issued = place(sim, kingdom, "farm")
 		if issued then
 			return issued
 		end
@@ -258,37 +279,37 @@ function RulerAI.think(sim: any, kingdom: any): string?
 	local slots = 0
 	for _, bid in kingdom.buildingIds do
 		local b = sim.buildings[bid]
-		if b.kind == "Farm" and b.level >= 1 then
-			slots += sim.catalog.buildings.Farm.levels[b.level].workers or 0
+		if b.kind == "farm" and b.level >= 1 then
+			slots += sim.catalog.buildings.farm.levels[b.level].workers or 0
 		end
 	end
-	if slots > 0 and kingdom.quotas.Farmer ~= slots then
-		Commands.executeFor(sim, kingdom, nil, "SetJobQuota", "Farmer", slots)
-		return "SetJobQuota:Farmer"
+	if slots > 0 and kingdom.quotas.farmer ~= slots then
+		Commands.executeFor(sim, kingdom, nil, "SetJobQuota", "farmer", slots)
+		return "SetJobQuota:farmer"
 	end
-	-- storage
-	for _, res in sim.catalog.resources do
-		if stock:get(res) >= capacity * 0.85 and count(sim, kingdom, "Storehouse", true) < 3 then
-			if not hasSite(sim, kingdom, "Storehouse") then
-				local issued = place(sim, kingdom, "Storehouse")
+	-- logistics: drop-offs next to the forest and the rocks shorten every carry trip
+	if day >= 2 and not hasSite(sim, kingdom) then
+		for _, entry in { { kind = "lumbercamp", resource = "wood" }, { kind = "quarry", resource = "stone" } } do
+			if count(sim, kingdom, entry.kind, true) == 0 then
+				local spot = nearestNode(sim, kingdom, entry.resource)
+				local issued = spot and place(sim, kingdom, entry.kind, spot)
 				if issued then
 					return issued
 				end
 			end
-			break
 		end
 	end
 	-- growth
 	if day >= 3 and not hasSite(sim, kingdom) then
-		local issued = tryUpgrade(sim, kingdom, "Keep", 3)
+		local issued = tryUpgrade(sim, kingdom, "keep", 3)
 		if issued then
 			return issued
 		end
 	end
 	-- military
 	if day >= 4 then
-		if count(sim, kingdom, "Barracks", true) == 0 then
-			local issued = place(sim, kingdom, "Barracks")
+		if count(sim, kingdom, "barracks", true) == 0 then
+			local issued = place(sim, kingdom, "barracks")
 			if issued then
 				return issued
 			end
@@ -297,30 +318,30 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			-- count, and count toward the army) and its full price
 			local training = queuedUnits(sim, kingdom)
 			local target = math.max(2, math.floor(pop * (0.15 + 0.2 * aggression)))
-			local kind = if army % 2 == 0 then "Militia" else "Archer"
+			local kind = if army % 2 == 0 then "soldier" else "archer"
 			local cost = {}
 			for res, amount in sim.catalog.units[kind].cost do
 				cost[res] = amount * 2
 			end
 			if
-				count(sim, kingdom, "Barracks", false) > 0
+				count(sim, kingdom, "barracks", false) > 0
 				and army + training < target
 				and pop + training + 2 <= kingdom.popCap
-				and stock:canAfford(cost)
+				and sim:canAfford(kingdom.id, cost)
 				and Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2)
 			then
 				return "Recruit:" .. kind
 			end
 		end
-		if sim:keepLevel(kingdom) >= 2 and count(sim, kingdom, "Tower", true) < 2 then
-			local issued = place(sim, kingdom, "Tower")
+		if sim:keepLevel(kingdom) >= 2 and count(sim, kingdom, "watchtower", true) < 2 then
+			local issued = place(sim, kingdom, "watchtower")
 			if issued then
 				return issued
 			end
 		end
 	end
-	if stock:get("wood") > 150 and stock:get("stone") > 120 then
-		local issued = tryUpgrade(sim, kingdom, "House", 3)
+	if sim:balance(kingdom.id, "wood") > 150 and sim:balance(kingdom.id, "stone") > 120 then
+		local issued = tryUpgrade(sim, kingdom, "house", 3)
 		if issued then
 			return issued
 		end

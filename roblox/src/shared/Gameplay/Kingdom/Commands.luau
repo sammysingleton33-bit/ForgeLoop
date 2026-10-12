@@ -21,7 +21,7 @@
 		PlaceBuilding(kind, x, z)            { buildingId }
 		UpgradeBuilding(buildingId)          { buildingId, level }
 		CancelConstruction(buildingId)       { buildingId }
-		SetJobQuota(occupation, count)       { occupation, count }    -- 0..200; Laborer has no quota
+		SetJobQuota(job, count)              { job, count }           -- 0..200; hauler is the pool (no quota)
 		SetPriority(resource, weight)        { resource, weight }     -- integer 0..3
 		SetAlarm(on)                         { on }                   -- citizens shelter in the keep
 		(+ Recruit, ArmyOrder from Military; DeclareWar, ProposePeace, AcceptPeace from Diplomacy)
@@ -29,7 +29,8 @@
 	Error codes: match_not_active, not_ruler, kingdom_eliminated, unknown_command, invalid_args,
 	unknown_building, not_placeable, requires_keep_level, limit_reached, out_of_bounds,
 	out_of_territory, blocked, cannot_afford, not_found, not_owner, busy, max_level,
-	nothing_to_cancel, unknown_occupation, unknown_resource (+ those of registered commands).
+	nothing_to_cancel, unknown_job, unknown_resource (+ those of registered commands).
+	Building ids are positive integers (CONTRACTS G2); building kinds and jobs are contract ids.
 ]]
 
 local Catalog = require("./Catalog")
@@ -46,6 +47,10 @@ local names: { string } = {}
 
 local function finite(v: any): boolean
 	return type(v) == "number" and v == v and math.abs(v) < MAX_COORD
+end
+
+local function isBuildingId(v: any): boolean
+	return type(v) == "number" and v == v and v >= 1 and v <= 1e9 and math.floor(v) == v
 end
 
 local function isId(v: any): boolean
@@ -91,7 +96,7 @@ register("PlaceBuilding", function(sim, kingdom, by, kind, x, z)
 end)
 
 register("UpgradeBuilding", function(sim, kingdom, by, buildingId)
-	if not isId(buildingId) then
+	if not isBuildingId(buildingId) then
 		return false, "invalid_args"
 	end
 	local ok, err = sim:startUpgrade(kingdom, buildingId, by)
@@ -102,7 +107,7 @@ register("UpgradeBuilding", function(sim, kingdom, by, buildingId)
 end)
 
 register("CancelConstruction", function(sim, kingdom, by, buildingId)
-	if not isId(buildingId) then
+	if not isBuildingId(buildingId) then
 		return false, "invalid_args"
 	end
 	local ok, err = sim:cancelConstruction(kingdom, buildingId, by)
@@ -112,15 +117,15 @@ register("CancelConstruction", function(sim, kingdom, by, buildingId)
 	return true, nil, { buildingId = buildingId }
 end)
 
-register("SetJobQuota", function(sim, kingdom, _by, occupation, count)
-	if not isId(occupation) or not isInt(count, 0, 200) then
+register("SetJobQuota", function(sim, kingdom, _by, job, count)
+	if not isId(job) or not isInt(count, 0, 200) then
 		return false, "invalid_args"
 	end
-	if sim.catalog.occupations[occupation] == nil or occupation == "Laborer" then
-		return false, "unknown_occupation"
+	if sim.catalog.jobs[job] == nil or job == "hauler" then
+		return false, "unknown_job"
 	end
-	kingdom.quotas[occupation] = count
-	return true, nil, { occupation = occupation, count = count }
+	kingdom.quotas[job] = count
+	return true, nil, { job = job, count = count }
 end)
 
 register("SetPriority", function(_sim, kingdom, _by, resource, weight)

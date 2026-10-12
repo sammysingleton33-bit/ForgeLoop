@@ -3,6 +3,9 @@
 	Gameplay/Remotes — every client <-> server remote of the Gameplay area (interfaces §6), aggregated
 	by RemoteService into ReplicatedStorage.ForgeRemotes.Gameplay.<Action>.
 
+	Interim names: with FL-0046 these move to the CONTRACTS G1 areas (Build.Place/Upgrade, Army.*,
+	Kingdom.Gather, Match.*, Sim.*) in games/game-001/src/shared/<Area>/Remotes.luau.
+
 	Client -> server (all `function`: they return (ok: boolean, errorCode: string?, result: table?)).
 	Arguments are validated by RemoteService before the handler runs; the server re-checks meaning
 	(ownership, territory, cost) in Gameplay/Kingdom/Commands. Error codes are listed in Commands,
@@ -17,7 +20,8 @@
 		Gameplay.ArmyOrder(order, x?, z?)             "Defend" | "Hold" | "Move" (Move needs x, z)
 		Gameplay.ArmyAttack(kingdomId)                march on a kingdom you are at war with
 		Gameplay.Diplomacy(action, kingdomId)         "DeclareWar" | "ProposePeace" | "AcceptPeace"
-		Gameplay.ChooseKingdom(kingdomId)             switch kingdom; only before the match is Active
+		Gameplay.ChooseKingdom(kingdomId)             switch kingdom; only in the Lobby
+		Gameplay.Gather(nodeId)                       ruler harvests a node (server checks range + cooldown)
 		Gameplay.GetKingdomState()                    -> { round, kingdomId?, kingdom?, overview } (joiners)
 		Gameplay.GetRoundState()                      -> { state, roundId, endsAtServerTime?, aliveCount } (§4)
 	Server -> client
@@ -25,7 +29,9 @@
 		Gameplay.KingdomOverview(overview)            to everyone, every 2 seconds
 		Gameplay.KingdomEvent(event)                  notable simulation events ({ name, ... } payloads,
 		                                              see Kingdom/Simulation, Military, Diplomacy headers)
-		Gameplay.RoundState(state, roundId, endsAtServerTime?, aliveCount)   §4 (aliveCount = kingdoms standing)
+		Gameplay.MatchPhase(phase, endsAtServerTime?)  CONTRACTS G2 MatchPhase; Lobby carries the countdown deadline
+		Gameplay.RoundState(state, roundId, endsAtServerTime?, aliveCount)   §4 (aliveCount = kingdoms standing;
+		                                              Founding..Endgame map to "Active", a running countdown to "Countdown")
 		Gameplay.Eliminated({ userId, cause, byUserId?, aliveCount })        §4 (rulers of a fallen kingdom)
 		Gameplay.RoundResult(result)                  §4 RoundResult, mode "kingdoms"
 ]]
@@ -46,6 +52,7 @@ local function keysOf(order: { string }, exclude: string?): { string }
 end
 
 local ID = Validate.string(1, 16)
+local BUILDING_ID = Validate.integer(1, 1000000)
 local COORD = Validate.number(-4096, 4096)
 local COMMAND_RATE = { burst = 6, perSecond = 2 }
 local SLOW_RATE = { burst = 3, perSecond = 0.5 }
@@ -54,15 +61,15 @@ return {
 	{
 		name = "Gameplay.PlaceBuilding",
 		kind = "function",
-		args = { Validate.enum(keysOf(catalog.buildingOrder, "Keep")), COORD, COORD },
+		args = { Validate.enum(keysOf(catalog.buildingOrder, "keep")), COORD, COORD },
 		rate = COMMAND_RATE,
 	},
-	{ name = "Gameplay.UpgradeBuilding", kind = "function", args = { ID }, rate = COMMAND_RATE },
-	{ name = "Gameplay.CancelConstruction", kind = "function", args = { ID }, rate = COMMAND_RATE },
+	{ name = "Gameplay.UpgradeBuilding", kind = "function", args = { BUILDING_ID }, rate = COMMAND_RATE },
+	{ name = "Gameplay.CancelConstruction", kind = "function", args = { BUILDING_ID }, rate = COMMAND_RATE },
 	{
 		name = "Gameplay.SetJobQuota",
 		kind = "function",
-		args = { Validate.enum(keysOf(catalog.occupationOrder, "Laborer")), Validate.integer(0, 200) },
+		args = { Validate.enum(keysOf(catalog.jobOrder, "hauler")), Validate.integer(0, 200) },
 		rate = { burst = 10, perSecond = 4 },
 	},
 	{
@@ -92,11 +99,18 @@ return {
 		rate = SLOW_RATE,
 	},
 	{ name = "Gameplay.ChooseKingdom", kind = "function", args = { ID }, rate = SLOW_RATE },
+	{
+		name = "Gameplay.Gather",
+		kind = "function",
+		args = { Validate.string(1, 32) },
+		rate = { burst = 4, perSecond = 2 },
+	},
 	{ name = "Gameplay.GetKingdomState", kind = "function", rate = { burst = 3, perSecond = 1 } },
 	{ name = "Gameplay.GetRoundState", kind = "function", rate = { burst = 3, perSecond = 1 } },
 	{ name = "Gameplay.KingdomSnapshot", kind = "serverEvent" },
 	{ name = "Gameplay.KingdomOverview", kind = "serverEvent" },
 	{ name = "Gameplay.KingdomEvent", kind = "serverEvent" },
+	{ name = "Gameplay.MatchPhase", kind = "serverEvent" },
 	{ name = "Gameplay.RoundState", kind = "serverEvent" },
 	{ name = "Gameplay.Eliminated", kind = "serverEvent" },
 	{ name = "Gameplay.RoundResult", kind = "serverEvent" },

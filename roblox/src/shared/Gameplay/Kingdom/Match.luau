@@ -1,72 +1,81 @@
 --!strict
 --[[
-	Gameplay/Kingdom/Match — one AI Kingdoms match: four kingdoms, player assignment, phases,
-	victory and results. Owns a Simulation (with Military, Diplomacy and RulerAI installed).
+	Gameplay/Kingdom/Match — one AI Kingdoms match: four kingdoms, player assignment, the CONTRACTS G2
+	phases, victory and results. Owns a Simulation with Military, Diplomacy, Objectives and the AI
+	governor (RulerAI) installed. (Moves to games/game-001/src/shared/Kingdom/ with FL-0046.)
 
-	Phases use the shared round state names (Contracts/Types RoundState) so round HUDs work as is:
-		Lobby --(enough players)--> Countdown --(countdownSec)--> Active --(victory)--> Results
-		Countdown --(players drop below minPlayers)--> Lobby
-		Results --(resultsSec)--> Lobby with a fresh world (current players re-assigned)
-	The simulation only advances while Active. Match state is per server and in memory only; it is
-	never written to player data (permanent progression is separate, through DataService).
-
-	Players
-		- Up to maxRulersPerKingdom (4) rulers per kingdom; all rulers share command rights.
-		- join(userId, preferred?) honours a preferred kingdom when it is alive and not full, otherwise
-		  picks the alive kingdom with the fewest rulers (ties: lowest index). A player who left and
-		  rejoins the same match gets their old kingdom back when possible.
-		- Joining never touches other kingdom state: it only adds the ruler (specs prove it).
-		- Kingdoms without rulers are run by RulerAI (aiRulers = true).
+	Phases (MatchPhase, G2)
+		Lobby      waiting for players; once minPlayers are in, a countdown of countdownSec runs
+		           (cancelled when players drop below minPlayers). The world is frozen.
+		Founding → Expansion → Conflict → Endgame   the simulation runs; each phase lasts its duration
+		           from options.phaseDurations (FORGE-04's Pacing.phaseDurations(); default 8/12/15/10 min).
+		           War declarations open with Conflict (Diplomacy grace = Founding + Expansion).
+		Results    resultsSec, then a fresh world and Lobby again with the connected players re-seated.
 	Victory
-		- Conquest: one kingdom left standing wins at once.
-		- Time: at durationSec the highest score wins; equal top scores share the win.
-		Ranking: alive kingdoms by score (equal scores share a placement), then eliminated kingdoms,
-		those eliminated later ranking higher.
+		- Conquest: the last kingdom standing wins at once (any active phase).
+		- Time: when Endgame ends, the most Crown Points wins; equal top scores share the win.
+		Ranking: standing kingdoms by Crown Points (equal points share a placement), then fallen
+		kingdoms, those that fell later ranking higher.
+	Players
+		- Up to maxRulersPerKingdom (4) rulers per kingdom, equal command rights (shared ownership).
+		- join(userId, preferred?) honours a preferred kingdom when it stands and has room, then the
+		  player's previous kingdom in this match, then the standing kingdom with the fewest rulers
+		  (ties: kingdom order). Joining only adds a ruler; no other kingdom state changes.
+		- joinParty({ userIds }, preferred?) seats a party together when one kingdom has room for all.
+		- Kingdoms without rulers are run by the AI governor (RulerAI) when aiRulers is true.
+	State is per server and in memory; permanent progression goes through DataService only.
 
 	API
 		Match.new(options): Match
-			options: { random (required), now: () -> number (unix seconds, for RoundResult),
-			  roundIdPrefix = "km", kingdoms = 4, spacing = 260, durationSec = 2400, countdownSec = 10,
-			  resultsSec = 20, minPlayers = 1, maxRulersPerKingdom = 4, aiRulers = true,
-			  graceSeconds = 300, catalog? }
-		match.state, match.sim, match.roundId
-		match:join(userId, preferredKingdomId?): (boolean, string)   -- (true, kingdomId) | (false, error)
+			options: { random (required), now: () -> number (unix seconds), roundIdPrefix = "km",
+			  kingdoms = 4, spacing = 260, phaseDurations = { Founding, Expansion, Conflict, Endgame },
+			  countdownSec = 10, resultsSec = 20, minPlayers = 1, maxRulersPerKingdom = 4,
+			  aiRulers = true, objectives = Layout.OBJECTIVES, catalog?, treasury?, costs? }
+		match.state (MatchPhase), match.sim, match.roundId
+		match:join(userId, preferred?): (boolean, string)       -- (true, kingdomId) | (false, error)
+		match:joinParty(userIds, preferred?): (boolean, { [number]: string } | string)
 		match:leave(userId)
-		match:choose(userId, kingdomId): (boolean, string)   -- switch kingdom before Active; errors:
-		                                   too_late, not_in_match, unknown_kingdom, kingdom_full
+		match:choose(userId, kingdomId): (boolean, string)      -- only in Lobby
 		match:kingdomOf(userId): string?
-		match:update(dt)                 -- drive from the server's fixed tick
-		match:remaining(): number?       -- seconds left in the current timed phase
-		match:result(): RoundResult?     -- after Results; Contracts/Types RoundResult (mode "kingdoms")
-		match:summary(): MatchSummary?   -- { reason, winnerKingdomIds, ranking = { { kingdomId, name, score, alive, placement } } }
-		match:drainEvents(): { Event }   -- simulation events + MatchStateChanged { state, previous }
-		                                   + MatchEnded { roundId, reason, winnerKingdomIds }
-		match:command(userId, name, ...) -- Commands.execute on this match's simulation
-	Errors from join: "match_full" (every alive kingdom has maxRulers), "already_joined".
+		match:update(dt)
+		match:remaining(): number?    -- seconds left in the countdown / current phase / results
+		match:command(userId, name, ...)                         -- Commands.execute on this simulation
+		match:result(): RoundResult?  -- framework Contracts/Types RoundResult, mode "kingdoms"
+		match:summary(): { winner: KingdomId?, standings: { { kingdom, crownPoints } }, durationSec,
+		                   reason, winnerKingdomIds, ranking }   -- G9 MatchEnded payload (+ reason/ranking)
+		match:drainEvents(): { Event }  -- simulation events + MatchPhaseChanged { phase, previous, roundId }
+		                                   + CountdownChanged { running, seconds } + MatchEnded (summary fields)
+	Errors from join: match_full, already_joined. From choose: too_late, not_in_match, unknown_kingdom,
+	kingdom_full. From joinParty: party_too_large, match_full.
 ]]
 
 local Commands = require("./Commands")
 local Diplomacy = require("./Diplomacy")
 local Layout = require("./Layout")
 local Military = require("./Military")
+local Objectives = require("./Objectives")
 local RulerAI = require("./RulerAI")
 local Simulation = require("./Simulation")
-local Snapshot = require("./Snapshot")
 
 local Match = {}
 Match.__index = Match
 
 Match.MODE = "kingdoms"
+Match.ACTIVE_PHASES = table.freeze({ "Founding", "Expansion", "Conflict", "Endgame" })
+Match.DEFAULT_DURATIONS = table.freeze({ Founding = 480, Expansion = 720, Conflict = 900, Endgame = 600 })
 
-local TRANSITIONS: { [string]: { [string]: boolean } } = {
-	Lobby = { Countdown = true },
-	Countdown = { Active = true, Lobby = true },
-	Active = { Results = true },
-	Results = { Lobby = true },
-}
+local function isActive(phase: string): boolean
+	return table.find(Match.ACTIVE_PHASES, phase) ~= nil
+end
 
 function Match.new(options: { [string]: any })
 	assert(options.random ~= nil, "Match.new: random is required")
+	local durations = table.clone(Match.DEFAULT_DURATIONS)
+	for phase, seconds in options.phaseDurations or {} do
+		assert(durations[phase] ~= nil, `Match.new: unknown phase '{tostring(phase)}' in phaseDurations`)
+		assert(type(seconds) == "number" and seconds > 0, `Match.new: {phase} duration must be > 0`)
+		durations[phase] = seconds
+	end
 	local self = setmetatable({}, Match)
 	self.options = {
 		random = options.random,
@@ -76,21 +85,30 @@ function Match.new(options: { [string]: any })
 		roundIdPrefix = options.roundIdPrefix or "km",
 		kingdoms = options.kingdoms or 4,
 		spacing = options.spacing or 260,
-		durationSec = options.durationSec or 2400,
+		durations = durations,
 		countdownSec = options.countdownSec or 10,
 		resultsSec = options.resultsSec or 20,
 		minPlayers = options.minPlayers or 1,
 		maxRulersPerKingdom = options.maxRulersPerKingdom or 4,
 		aiRulers = if options.aiRulers == nil then true else options.aiRulers,
-		graceSeconds = options.graceSeconds or 300,
+		objectives = options.objectives or Layout.OBJECTIVES,
 		catalog = options.catalog,
+		treasury = options.treasury,
+		costs = options.costs,
 	}
+	-- phase boundaries in simulation seconds
+	local t = 0
+	self.phaseEnds = {} :: { [string]: number }
+	for _, phase in Match.ACTIVE_PHASES do
+		t += durations[phase]
+		self.phaseEnds[phase] = t
+	end
 	self.state = "Lobby"
-	self.players = {} :: { number } -- connected userIds in join order
-	self.lastKingdom = {} :: { [number]: string }
+	self.players = {} :: { number }
 	self._matchCount = 0
 	self._events = {} :: { any }
 	self._phaseTime = 0
+	self._countdown = nil :: number?
 	self:_newWorld()
 	return self
 end
@@ -102,74 +120,81 @@ function Match:_newWorld()
 		catalog = self.options.catalog,
 		random = self.options.random,
 		bounds = Layout.boundsFor(self.options.spacing),
+		treasury = self.options.treasury,
+		costs = self.options.costs,
 	})
 	Layout.generate(sim, { kingdoms = self.options.kingdoms, spacing = self.options.spacing })
 	Military.install(sim)
-	Diplomacy.install(sim, { graceSeconds = self.options.graceSeconds })
+	Diplomacy.install(sim, { graceSeconds = self.phaseEnds.Expansion })
+	local objectives = {}
+	for _, o in self.options.objectives do
+		table.insert(objectives, table.clone(o))
+	end
+	Objectives.install(sim, objectives)
 	if self.options.aiRulers then
 		RulerAI.install(sim)
 	end
 	sim.active = false
 	self.sim = sim
 	self.participants = {} :: { [number]: { kingdomId: string, joinedAt: number, leftAt: number? } }
+	self.lastKingdom = {} :: { [number]: string }
 	self.startedAt = nil :: number?
 	self.endedAt = nil :: number?
 	self._result = nil :: any
 	self._summary = nil :: any
-	self.lastKingdom = {}
 end
 
 function Match:_setState(nextState: string)
-	assert(TRANSITIONS[self.state][nextState], `Match: illegal transition {self.state} -> {nextState}`)
 	local previous = self.state
 	self.state = nextState
 	self._phaseTime = 0
 	table.insert(
 		self._events,
-		{ name = "MatchStateChanged", state = nextState, previous = previous, roundId = self.roundId }
+		{ name = "MatchPhaseChanged", phase = nextState, previous = previous, roundId = self.roundId }
 	)
+end
+
+function Match:_setCountdown(seconds: number?)
+	if (seconds == nil) == (self._countdown == nil) then
+		self._countdown = seconds
+		return
+	end
+	self._countdown = seconds
+	table.insert(self._events, { name = "CountdownChanged", running = seconds ~= nil, seconds = seconds })
 end
 
 function Match:kingdomOf(userId: number): string?
 	return self.sim.rulerOf[userId]
 end
 
-function Match:_pickKingdom(userId: number, preferred: string?): string?
-	local sim = self.sim
-	local max = self.options.maxRulersPerKingdom
-	local function open(id: string?): boolean
-		local k = id and sim.kingdoms[id]
-		return k ~= nil and k.alive and #k.rulers < max
+function Match:_room(kingdomId: string?): number
+	local k = kingdomId and self.sim.kingdoms[kingdomId]
+	if k == nil or not k.alive then
+		return 0
 	end
-	if open(preferred) then
+	return self.options.maxRulersPerKingdom - #k.rulers
+end
+
+function Match:_pickKingdom(userId: number?, preferred: string?, seats: number): string?
+	if self:_room(preferred) >= seats then
 		return preferred
 	end
-	local previous = self.lastKingdom[userId]
-	if open(previous) then
+	local previous = if userId then self.lastKingdom[userId] else nil
+	if self:_room(previous) >= seats then
 		return previous
 	end
 	local best, bestCount = nil, math.huge
-	for _, kid in sim.kingdomOrder do
-		local k = sim.kingdoms[kid]
-		if k.alive and #k.rulers < max and #k.rulers < bestCount then
+	for _, kid in self.sim.kingdomOrder do
+		local k = self.sim.kingdoms[kid]
+		if self:_room(kid) >= seats and #k.rulers < bestCount then
 			best, bestCount = kid, #k.rulers
 		end
 	end
 	return best
 end
 
-function Match:join(userId: number, preferred: string?): (boolean, string)
-	if self.sim.rulerOf[userId] ~= nil then
-		return false, "already_joined"
-	end
-	local kingdomId = self:_pickKingdom(userId, preferred)
-	if kingdomId == nil then
-		return false, "match_full"
-	end
-	local ok, err = self.sim:addRuler(kingdomId, userId)
-	if not ok then
-		return false, err or "join_failed"
-	end
+function Match:_seat(userId: number, kingdomId: string)
+	assert(self.sim:addRuler(kingdomId, userId))
 	if not table.find(self.players, userId) then
 		table.insert(self.players, userId)
 	end
@@ -180,7 +205,48 @@ function Match:join(userId: number, preferred: string?): (boolean, string)
 	else
 		entry.leftAt = nil
 	end
+end
+
+function Match:join(userId: number, preferred: string?): (boolean, string)
+	if self.sim.rulerOf[userId] ~= nil then
+		return false, "already_joined"
+	end
+	local kingdomId = self:_pickKingdom(userId, preferred, 1)
+	if kingdomId == nil then
+		return false, "match_full"
+	end
+	self:_seat(userId, kingdomId)
 	return true, kingdomId
+end
+
+-- Seats a party in one kingdom when any kingdom has room for all of them; otherwise seats each
+-- member individually (still balanced). Members already seated keep their kingdom.
+function Match:joinParty(userIds: { number }, preferred: string?): (boolean, any)
+	if #userIds > self.options.maxRulersPerKingdom then
+		return false, "party_too_large"
+	end
+	local newcomers = {}
+	for _, userId in userIds do
+		if self.sim.rulerOf[userId] == nil then
+			table.insert(newcomers, userId)
+		end
+	end
+	local seated = {}
+	local together = self:_pickKingdom(nil, preferred, #newcomers)
+	for _, userId in newcomers do
+		local ok, kingdomId
+		if together then
+			self:_seat(userId, together)
+			ok, kingdomId = true, together
+		else
+			ok, kingdomId = self:join(userId, preferred)
+		end
+		if not ok then
+			return false, kingdomId
+		end
+		seated[userId] = kingdomId
+	end
+	return true, seated
 end
 
 function Match:leave(userId: number)
@@ -193,14 +259,14 @@ function Match:leave(userId: number)
 	if entry then
 		entry.leftAt = self.sim.time
 	end
-	if self.state == "Countdown" and #self.players < self.options.minPlayers then
-		self:_setState("Lobby")
+	if self.state == "Lobby" and self._countdown ~= nil and #self.players < self.options.minPlayers then
+		self:_setCountdown(nil)
 	end
 end
 
--- Moves a ruler to another kingdom; only before the match is Active (no defecting mid-war).
+-- Moves a ruler to another kingdom; only in the Lobby (no defecting mid-match).
 function Match:choose(userId: number, kingdomId: string): (boolean, string)
-	if self.state ~= "Lobby" and self.state ~= "Countdown" then
+	if self.state ~= "Lobby" then
 		return false, "too_late"
 	end
 	local current = self.sim.rulerOf[userId]
@@ -229,10 +295,10 @@ function Match:command(userId: number, name: any, ...: any): (boolean, string?, 
 end
 
 function Match:remaining(): number?
-	if self.state == "Countdown" then
-		return math.max(0, self.options.countdownSec - self._phaseTime)
-	elseif self.state == "Active" then
-		return math.max(0, self.options.durationSec - self.sim.time)
+	if self.state == "Lobby" then
+		return self._countdown
+	elseif isActive(self.state) then
+		return math.max(0, self.phaseEnds[self.state] - self.sim.time)
 	elseif self.state == "Results" then
 		return math.max(0, self.options.resultsSec - self._phaseTime)
 	end
@@ -247,7 +313,7 @@ function Match:ranking(): { any }
 		table.insert(rows, {
 			kingdomId = kid,
 			name = k.name,
-			score = Snapshot.score(sim, k),
+			crownPoints = k.crownPoints,
 			alive = k.alive,
 			eliminatedAt = k.eliminatedAt or math.huge,
 			index = k.index,
@@ -258,8 +324,8 @@ function Match:ranking(): { any }
 			return a.alive
 		end
 		if a.alive then
-			if a.score ~= b.score then
-				return a.score > b.score
+			if a.crownPoints ~= b.crownPoints then
+				return a.crownPoints > b.crownPoints
 			end
 		elseif a.eliminatedAt ~= b.eliminatedAt then
 			return a.eliminatedAt > b.eliminatedAt
@@ -270,13 +336,16 @@ function Match:ranking(): { any }
 	for i, row in rows do
 		local placement = i
 		local prev = out[i - 1]
-		if prev and row.alive and prev.alive and prev.score == row.score then
+		if prev and row.alive and prev.alive and prev.crownPoints == row.crownPoints then
 			placement = prev.placement
 		end
-		table.insert(
-			out,
-			{ kingdomId = row.kingdomId, name = row.name, score = row.score, alive = row.alive, placement = placement }
-		)
+		table.insert(out, {
+			kingdomId = row.kingdomId,
+			name = row.name,
+			crownPoints = row.crownPoints,
+			alive = row.alive,
+			placement = placement,
+		})
 	end
 	return out
 end
@@ -288,8 +357,10 @@ function Match:_finish(reason: string)
 	local ranking = self:ranking()
 	local placementOf = {}
 	local winners: { string } = {}
+	local standings = {}
 	for _, row in ranking do
 		placementOf[row.kingdomId] = row.placement
+		table.insert(standings, { kingdom = row.kingdomId, crownPoints = row.crownPoints })
 		if row.placement == 1 and row.alive then
 			table.insert(winners, row.kingdomId)
 		end
@@ -315,7 +386,14 @@ function Match:_finish(reason: string)
 			table.insert(winnerUsers, userId)
 		end
 	end
-	self._summary = { reason = reason, winnerKingdomIds = winners, ranking = ranking }
+	self._summary = {
+		winner = if #winners == 1 then winners[1] else nil,
+		standings = standings,
+		durationSec = math.floor(sim.time),
+		reason = reason,
+		winnerKingdomIds = winners,
+		ranking = ranking,
+	}
 	self._result = {
 		roundId = self.roundId,
 		mode = Match.MODE,
@@ -325,10 +403,10 @@ function Match:_finish(reason: string)
 		winners = winnerUsers,
 	}
 	self:_setState("Results")
-	table.insert(
-		self._events,
-		{ name = "MatchEnded", roundId = self.roundId, reason = reason, winnerKingdomIds = winners }
-	)
+	local ended = table.clone(self._summary)
+	ended.name = "MatchEnded"
+	ended.roundId = self.roundId
+	table.insert(self._events, ended)
 end
 
 function Match:_checkVictory()
@@ -341,8 +419,16 @@ function Match:_checkVictory()
 	end
 	if alive <= 1 and #sim.kingdomOrder > 1 then
 		self:_finish("conquest")
-	elseif sim.time >= self.options.durationSec then
-		self:_finish("time")
+		return
+	end
+	while isActive(self.state) and sim.time >= self.phaseEnds[self.state] - 1e-9 do
+		local index = table.find(Match.ACTIVE_PHASES, self.state) :: number
+		local nextPhase = Match.ACTIVE_PHASES[index + 1]
+		if nextPhase then
+			self:_setState(nextPhase)
+		else
+			self:_finish("time")
+		end
 	end
 end
 
@@ -350,24 +436,27 @@ function Match:update(dt: number)
 	assert(type(dt) == "number" and dt >= 0 and dt < math.huge, "Match:update: dt must be >= 0")
 	self._phaseTime += dt
 	if self.state == "Lobby" then
-		if #self.players >= self.options.minPlayers then
-			self:_setState("Countdown")
-		end
-	elseif self.state == "Countdown" then
 		if #self.players < self.options.minPlayers then
-			self:_setState("Lobby")
-		elseif self._phaseTime >= self.options.countdownSec then
-			self.startedAt = self.options.now()
-			self.sim.active = true
-			self:_setState("Active")
+			self:_setCountdown(nil)
+		elseif self._countdown == nil then
+			self:_setCountdown(self.options.countdownSec)
+		else
+			local left = (self._countdown :: number) - dt
+			if left <= 1e-9 then
+				self._countdown = nil
+				self.startedAt = self.options.now()
+				self.sim.active = true
+				self:_setState("Founding")
+			else
+				self._countdown = left
+			end
 		end
-	elseif self.state == "Active" then
+	elseif isActive(self.state) then
 		self.sim:advance(dt)
 		self:_checkVictory()
 	elseif self.state == "Results" then
 		if self._phaseTime >= self.options.resultsSec then
 			local players = table.clone(self.players)
-			-- events of the finished world are dropped with it; the new world starts clean
 			self:_newWorld()
 			self.players = {}
 			self:_setState("Lobby")

@@ -6,7 +6,8 @@
 		Gather  Go (to node) -> Work (fill carry at the node's rate) -> Return (to nearest drop-off) -> done
 		Farm    Go (to farm) -> Work (harvest every harvestTime: +yield food) -> Return -> done
 		Build   Go (to site) -> Work (add work; the site completes when work reaches the level's cost) -> done
-		Eat     Go (to keep) -> eat mealFood from the stockpile (partial meal if short) -> done
+		Eat     Go (to keep) -> eat a meal; with tuning.mealsChargeTreasury the meal is paid from the
+		        treasury (double of FORGE-03 upkeep, G7), otherwise eating only needs food in stock -> done
 		Sleep   Go (home or keep) -> Rest until morning -> done
 		Flee    Go (keep) -> Rest while the alarm rings or a threat is near -> done
 		Idle    wander a short hop near the keep, pause, done
@@ -53,8 +54,8 @@ function CitizenActions.moveTo(sim: any, c: any, x: number, z: number, radius: n
 end
 
 function CitizenActions.skill(sim: any, c: any, kind: string): number
-	local occupation = sim.catalog.occupations[c.occupation]
-	local base = occupation.affinity[kind] or 0.25
+	local job = sim.catalog.jobs[c.job]
+	local base = job.affinity[kind] or 0.25
 	local multiplier = math.max(0.25, base)
 	if c.hunger >= 1 then
 		multiplier *= 0.5 -- starving citizens work at half speed
@@ -66,23 +67,21 @@ local function finish(c: any)
 	c.done = true
 end
 
--- Puts the citizen's cargo into the kingdom stockpile (capped by storage; the excess is wasted and
--- remembered so the brain stops gathering that resource for a while).
+-- Deposits the citizen's cargo into the kingdom treasury: TreasuryService:deposit with txId
+-- "dep:<entityId>:<tripSeq>" (CONTRACTS G5), so a replayed trip can never count twice.
 local function deposit(sim: any, c: any)
 	local kingdom = sim.kingdoms[c.kingdomId]
 	local cargo = c.carrying
 	c.carrying = nil
 	if cargo and cargo.amount > 0 then
-		local stored = kingdom.stock:add(cargo.resource, cargo.amount, "gathered")
-		kingdom.stats.gathered[cargo.resource] += stored
-		if stored < cargo.amount then
-			sim:remember(c, { kind = "storage_full", ref = cargo.resource })
-		end
-		sim:emit("ResourceDelivered", {
+		c.tripSeq += 1
+		sim:deposit(kingdom.id, cargo.resource, cargo.amount, `dep:{c.id}:{c.tripSeq}`, `citizen:{c.job}`)
+		kingdom.stats.gathered[cargo.resource] += cargo.amount
+		sim:emit("ResourceGathered", {
 			kingdomId = kingdom.id,
 			resource = cargo.resource,
-			amount = stored,
-			wasted = cargo.amount - stored,
+			amount = cargo.amount,
+			source = "citizen",
 			citizenId = c.id,
 		})
 	end
@@ -90,7 +89,7 @@ end
 
 local function returnCargo(sim: any, c: any, dt: number)
 	local kingdom = sim.kingdoms[c.kingdomId]
-	local dropoff = sim:nearestDropoff(kingdom, c.x, c.z)
+	local dropoff = sim:nearestDropoff(kingdom, c.x, c.z, c.carrying and c.carrying.resource)
 	if dropoff == nil then
 		-- nowhere to deliver (keep destroyed): drop the load
 		c.carrying = nil
@@ -170,7 +169,7 @@ local function farm(sim: any, c: any, dt: number)
 		return
 	end
 	local tuning = sim.catalog.tuning
-	local stats = sim.catalog.buildings.Farm.levels[b.level]
+	local stats = sim.catalog.buildings.farm.levels[b.level]
 	local yield = stats.yield or 0
 	c.workTimer += dt * CitizenActions.skill(sim, c, "farm")
 	if c.workTimer >= tuning.harvestTime then
@@ -212,8 +211,19 @@ local function eat(sim: any, c: any, dt: number)
 	if not CitizenActions.moveTo(sim, c, place.x, place.z, place.footprint + 1, dt) then
 		return
 	end
-	local meal = sim.catalog.tuning.mealFood
-	local eaten = kingdom.stock:take("food", meal, "meal")
+	local tuning = sim.catalog.tuning
+	local meal = tuning.mealFood
+	local eaten = 0
+	if tuning.mealsChargeTreasury then
+		-- the double of FORGE-03's upkeep: paid from the treasury, partial meal when short
+		c.meals = (c.meals or 0) + 1
+		local available = math.min(meal, sim:balance(kingdom.id, "food"))
+		if available > 0 and sim:spend(kingdom.id, { food = available }, `meal:{c.id}:{c.meals}`, "upkeep") then
+			eaten = available
+		end
+	elseif sim:balance(kingdom.id, "food") > 0 then
+		eaten = meal
+	end
 	if eaten < meal then
 		sim:remember(c, { kind = "no_food" })
 	end

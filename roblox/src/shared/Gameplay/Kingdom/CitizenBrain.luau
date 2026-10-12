@@ -5,8 +5,8 @@
 	A citizen does not run an expensive planner: every few seconds (or when something interrupts it)
 	the brain scores a handful of candidate activities and picks the best. Scores combine:
 		- emergencies (flee from threats or the ruler's alarm bell, sleep at night, eat when hungry);
-		- skill: the citizen's occupation affinity for the activity (Farmer: farm 1.0, build 0.3 ...);
-		- kingdom need: how far the stock of that resource is below its target, scaled by the rulers'
+		- skill: the citizen's job affinity for the activity (farmer: farm 1.0, build 0.3 ...);
+		- kingdom need: how far the treasury balance of that resource is below its target, scaled by the rulers'
 		  priority weight (0 = never, 1 = normal, 3 = urgent); open construction sites are explicit
 		  ruler orders and score high;
 		- distance to the best target (nearer is better);
@@ -77,11 +77,7 @@ function CitizenBrain.need(world: any, kingdom: any, kind: string): number
 	if weight <= 0 then
 		return 0
 	end
-	local stock = kingdom.stock:get(resource)
-	local capacity = kingdom.stock:capacity()
-	if stock >= capacity then
-		return 0
-	end
+	local stock = world:balance(kingdom.id, resource)
 	local target = world:needTarget(kingdom, resource)
 	local deficit = math.clamp(1 - stock / math.max(1, target), 0, 1)
 	return weight * (0.25 + 0.75 * deficit)
@@ -100,14 +96,14 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 	if world:isNight() then
 		return { activity = "Sleep", target = citizen.home or kingdom.keepId, score = 5, reason = "night" }
 	end
-	if citizen.hunger >= tuning.eatThreshold and kingdom.stock:get("food") > 0 then
+	if citizen.hunger >= tuning.eatThreshold and world:balance(kingdom.id, "food") > 0 then
 		return { activity = "Eat", target = kingdom.keepId, score = 1 + citizen.hunger, reason = "hungry" }
 	end
 
-	local occupation = world.catalog.occupations[citizen.occupation]
+	local job = world.catalog.jobs[citizen.job]
 	local best: Decision = { activity = "Idle", target = nil, score = IDLE_SCORE, reason = "nothing to do" }
 	for _, kind in CitizenBrain.WORK_KINDS do
-		local affinity = occupation.affinity[kind] or 0
+		local affinity = job.affinity[kind] or 0
 		if affinity <= 0 then
 			continue
 		end
@@ -134,7 +130,11 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 			best = { activity = activity, target = target.id, score = score, reason = kind }
 		end
 	end
-	if best.activity == "Idle" and kingdom.stock:get("food") > 0 and citizen.hunger >= tuning.eatThreshold * 0.5 then
+	if
+		best.activity == "Idle"
+		and world:balance(kingdom.id, "food") > 0
+		and citizen.hunger >= tuning.eatThreshold * 0.5
+	then
 		return { activity = "Eat", target = kingdom.keepId, score = IDLE_SCORE, reason = "idle snack" }
 	end
 	return best

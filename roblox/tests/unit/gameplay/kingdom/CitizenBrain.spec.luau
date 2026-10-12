@@ -9,14 +9,14 @@ local CitizenBrain = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Cit
 local function setup(citizens: { [string]: number }?)
 	local sim, k = F.kingdom({
 		nodes = false,
-		tuning = { startCitizens = citizens or { Woodcutter = 1, Builder = 1 }, birthInterval = 1e6 },
+		tuning = { startCitizens = citizens or { woodcutter = 1, builder = 1 }, birthInterval = 1e6 },
 	})
 	return sim, k
 end
 
 local function citizen(sim, k, occupation: string)
 	for _, c in sim:citizensOf(k) do
-		if c.occupation == occupation then
+		if c.job == occupation then
 			return c
 		end
 	end
@@ -42,8 +42,8 @@ end
 describe("Kingdom/CitizenBrain: emergencies", function()
 	it("flees to the keep when the alarm rings, ahead of danger, night and hunger", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
 		k.alarm = true
 		k.threats = { { id = "u1", x = c.x + 5, z = c.z } }
 		c.hunger = 2
@@ -57,8 +57,8 @@ describe("Kingdom/CitizenBrain: emergencies", function()
 
 	it("flees from a threat inside fleeRadius, ahead of night and hunger, but ignores one outside it", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
 		local radius = sim.catalog.tuning.fleeRadius
 		k.threats = { { id = "u1", x = c.x, z = c.z + radius } } -- exactly on the edge counts
 		c.hunger = 2
@@ -76,8 +76,8 @@ describe("Kingdom/CitizenBrain: emergencies", function()
 
 	it("sleeps at night: at home when it has one, otherwise in the keep, even when hungry", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
 		sim.time = sim.catalog.tuning.dayLength * sim.catalog.tuning.nightStart - 0.25
 		expect(CitizenBrain.decide(sim, c).activity).toBe("Gather") -- still evening
 
@@ -94,8 +94,8 @@ describe("Kingdom/CitizenBrain: emergencies", function()
 
 	it("eats at eatThreshold when there is food, and works instead when the stockpile is empty", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
 		local threshold = sim.catalog.tuning.eatThreshold
 
 		c.hunger = threshold - 0.01
@@ -108,7 +108,7 @@ describe("Kingdom/CitizenBrain: emergencies", function()
 		expect(d.reason).toBe("hungry")
 		expect(d.score).toBeNear(1 + threshold)
 
-		k.stock:take("food", k.stock:get("food"))
+		F.stock(sim, k):take("food", sim:balance(k.id, "food"))
 		c.hunger = 2
 		d = CitizenBrain.decide(sim, c)
 		expect(d.activity).toBe("Gather")
@@ -119,9 +119,9 @@ end)
 describe("Kingdom/CitizenBrain: choosing work", function()
 	it("a Woodcutter gathers at the nearest tree with a free slot", function()
 		local sim, k = setup()
-		local far = sim:addNode("Tree", -90, 0)
-		local near = sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
+		local far = sim:addNode("tree", -90, 0)
+		local near = sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
 		local d = CitizenBrain.decide(sim, c)
 		expect(d.activity).toBe("Gather")
 		expect(d.target).toBe(near.id)
@@ -136,11 +136,11 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 
 	it("a Builder builds at an open site, and does other work when there is none", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Builder")
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "builder")
 		local before = CitizenBrain.decide(sim, c)
 		expect(before.activity).never.toBe("Build")
-		local site = assert(sim:placeBuilding(k, "House", 0, -40))
+		local site = assert(sim:placeBuilding(k, "house", 0, -40))
 		local d = CitizenBrain.decide(sim, c)
 		expect(d.activity).toBe("Build")
 		expect(d.target).toBe(site.id)
@@ -153,11 +153,11 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 	end)
 
 	it("a Farmer farms at a farm with a free worker slot, and not at a full one", function()
-		local sim, k = setup({ Farmer = 1 })
+		local sim, k = setup({ farmer = 1 })
 		local farm = sim:buildingsOf(k)[2]
-		local c = citizen(sim, k, "Farmer")
+		local c = citizen(sim, k, "farmer")
 		local d = CitizenBrain.decide(sim, c)
-		expect(d.activity).toBe("Farm")
+		expect(d.activity).toBe("farm")
 		expect(d.target).toBe(farm.id)
 		for i = 1, 3 do
 			table.insert(farm.workers, "c9" .. i)
@@ -167,8 +167,8 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 
 	it("priority 0 makes need() 0 and takes that work off the table", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
 		expect(CitizenBrain.decide(sim, c).activity).toBe("Gather")
 		k.priorities.wood = 0
 		expect(CitizenBrain.need(sim, k, "wood")).toBe(0)
@@ -179,10 +179,10 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 
 	it("a full store makes need() 0, so nobody gathers what cannot be stored", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		local c = citizen(sim, k, "Woodcutter")
-		k.stock:add("wood", k.stock:capacity())
-		expect(k.stock:get("wood")).toBe(k.stock:capacity())
+		sim:addNode("tree", 60, 0)
+		local c = citizen(sim, k, "woodcutter")
+		F.stock(sim, k):add("wood", F.stock(sim, k):capacity())
+		expect(sim:balance(k.id, "wood")).toBe(F.stock(sim, k):capacity())
 		expect(CitizenBrain.need(sim, k, "wood")).toBe(0)
 		expect(CitizenBrain.decide(sim, c).activity).toBe("Idle")
 	end)
@@ -200,31 +200,31 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 		expect(need("wood")).toBeNear(1.25)
 		k.priorities.wood = 1
 		-- at or above the target (but below capacity) the base need remains
-		k.stock:add("wood", 150)
+		F.stock(sim, k):add("wood", 150)
 		expect(need("wood")).toBeNear(0.25)
 		-- empty: full deficit
-		k.stock:take("wood", k.stock:get("wood"))
+		F.stock(sim, k):take("wood", sim:balance(k.id, "wood"))
 		expect(need("wood")).toBeNear(1)
 		-- gold: 0 of 80
 		expect(need("gold")).toBeNear(1)
 		-- "farm" is food: 120 of max(150, 2 citizens x 2 meals x 2 days) -> deficit 0.2
 		expect(need("farm")).toBeNear(0.4)
 		-- the target never exceeds storage: capacity 150 makes stone's target 150 (50 stored)
-		k.stock:setCapacity(150)
+		F.stock(sim, k):setCapacity(150)
 		expect(need("stone")).toBeNear(0.25 + 0.75 * (1 - 50 / 150))
 		-- build is 1 with an open site, 0 without
 		expect(need("build")).toBe(0)
-		k.stock:setCapacity(400)
-		k.stock:add("wood", 40)
-		assert(sim:placeBuilding(k, "House", 0, -40))
+		F.stock(sim, k):setCapacity(400)
+		F.stock(sim, k):add("wood", 40)
+		assert(sim:placeBuilding(k, "house", 0, -40))
 		expect(need("build")).toBe(1)
 	end)
 
 	it("a recently remembered threat near the best target lowers its score, so the citizen picks other work", function()
 		local sim, k = setup()
-		local tree = sim:addNode("Tree", 60, 0)
-		local site = assert(sim:placeBuilding(k, "House", -40, 0))
-		local c = citizen(sim, k, "Woodcutter")
+		local tree = sim:addNode("tree", 60, 0)
+		local site = assert(sim:placeBuilding(k, "house", -40, 0))
+		local c = citizen(sim, k, "woodcutter")
 		expect(CitizenBrain.decide(sim, c).target).toBe(tree.id)
 		-- a threat remembered far from the tree changes nothing
 		sim:remember(c, { kind = "threat", ref = "u1", x = 0, z = 120 })
@@ -241,9 +241,9 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 
 	it("remembering that storage was full damps gathering that resource", function()
 		local sim, k = setup()
-		local tree = sim:addNode("Tree", 60, 0)
-		local site = assert(sim:placeBuilding(k, "House", -40, 0))
-		local c = citizen(sim, k, "Woodcutter")
+		local tree = sim:addNode("tree", 60, 0)
+		local site = assert(sim:placeBuilding(k, "house", -40, 0))
+		local c = citizen(sim, k, "woodcutter")
 		expect(CitizenBrain.decide(sim, c).target).toBe(tree.id)
 		sim:remember(c, { kind = "storage_full", ref = "stone" }) -- another resource: no effect
 		expect(CitizenBrain.decide(sim, c).target).toBe(tree.id)
@@ -253,10 +253,10 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 
 	it("the commitment bonus keeps the current target when scores are close, but not against a clear winner", function()
 		local sim, k = setup()
-		local tree = sim:addNode("Tree", 60, 0)
-		local site = assert(sim:placeBuilding(k, "House", -60, 0))
-		k.stock:add("wood", 200 - k.stock:get("wood")) -- at the target: wood need is the 0.25 base
-		local c = citizen(sim, k, "Woodcutter")
+		local tree = sim:addNode("tree", 60, 0)
+		local site = assert(sim:placeBuilding(k, "house", -60, 0))
+		F.stock(sim, k):add("wood", 200 - sim:balance(k.id, "wood")) -- at the target: wood need is the 0.25 base
+		local c = citizen(sim, k, "woodcutter")
 		c.x, c.z = 0, 0 -- equally far from the tree and the site
 		-- wood 1 x 0.25 x f(60) = 0.18 against build 0.3 x 1 x f(60) = 0.21: build wins when uncommitted
 		expect(CitizenBrain.decide(sim, c).target).toBe(site.id)
@@ -268,7 +268,7 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 		expect(CitizenBrain.decide(sim, c).target).toBe(site.id)
 
 		-- a Builder (build affinity 1) is not held at a tree by the bonus
-		local builder = citizen(sim, k, "Builder")
+		local builder = citizen(sim, k, "builder")
 		builder.x, builder.z = 0, 0
 		builder.target = tree.id
 		expect(CitizenBrain.decide(sim, builder).target).toBe(site.id)
@@ -276,21 +276,21 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 
 	it("idles when there is nothing to do, snacking first when a little hungry and food is left", function()
 		local sim, k = setup()
-		local c = citizen(sim, k, "Woodcutter") -- no trees, no sites
+		local c = citizen(sim, k, "woodcutter") -- no trees, no sites
 		local d = CitizenBrain.decide(sim, c)
 		expect(d).toEqual({ activity = "Idle", target = nil, score = 0.05, reason = "nothing to do" })
 		c.hunger = sim.catalog.tuning.eatThreshold * 0.5
 		d = CitizenBrain.decide(sim, c)
 		expect(d.activity).toBe("Eat")
 		expect(d.reason).toBe("idle snack")
-		k.stock:take("food", k.stock:get("food"))
+		F.stock(sim, k):take("food", sim:balance(k.id, "food"))
 		expect(CitizenBrain.decide(sim, c).activity).toBe("Idle")
 	end)
 
 	it("decide() never mutates the world", function()
 		local sim, k = setup()
-		sim:addNode("Tree", 60, 0)
-		assert(sim:placeBuilding(k, "House", -40, 0))
+		sim:addNode("tree", 60, 0)
+		assert(sim:placeBuilding(k, "house", -40, 0))
 		local cases = {
 			function() end,
 			function(_c)
@@ -312,11 +312,11 @@ describe("Kingdom/CitizenBrain: choosing work", function()
 		for _, prepare in cases do
 			for _, c in sim:citizensOf(k) do
 				prepare(c)
-				local before = { citizen = deepCopy(c), stock = k.stock:snapshot(), nodes = deepCopy(sim.nodes) }
+				local before = { citizen = deepCopy(c), stock = sim.treasury:get(k.id), nodes = deepCopy(sim.nodes) }
 				local buildings = deepCopy(sim.buildings)
 				CitizenBrain.decide(sim, c)
 				expect(deepCopy(c)).toEqual(before.citizen)
-				expect(k.stock:snapshot()).toEqual(before.stock)
+				expect(sim.treasury:get(k.id)).toEqual(before.stock)
 				expect(deepCopy(sim.nodes)).toEqual(before.nodes)
 				expect(deepCopy(sim.buildings)).toEqual(buildings)
 			end

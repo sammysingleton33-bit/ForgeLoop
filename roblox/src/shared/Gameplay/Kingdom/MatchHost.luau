@@ -9,7 +9,8 @@
 	API
 		MatchHost.new(env, remoteService, options?): MatchHost       -- builds; never yields
 			options: { seed?, tickSeconds = 0.25, snapshotEvery = 0.5, overviewEvery = 2,
-			           match = { ...Match options }, worldView = true, groundY = 0 }
+			           match = { ...Match options }, worldView = true, groundY = 0,
+			           positionOf = (player) -> (x, z)? }   -- default: the character's HumanoidRootPart
 		host:start()        -- connects Players, handles current players, spawns the tick loop
 		host:step(dt)       -- one host tick (the loop calls it; specs may call it directly)
 		host:destroy()      -- stops the loop, disconnects, removes teams, spawns and world parts
@@ -27,8 +28,12 @@
 		KingdomEvent     -> notable events: kingdom-scoped ones to that kingdom's rulers; wars, peace,
 		                    eliminations and day/night to everyone (ResourceDelivered is not sent:
 		                    snapshots carry balances)
-		RoundState / RoundResult / Eliminated (interfaces §4) and GameEvents.RoundStateChanged,
-		RoundEnded (exactly once per match), PlayerEliminated (each ruler of a conquered kingdom).
+		MatchPhase       -> everyone on every phase change and countdown start/stop (G2 MatchPhase)
+		RoundState / RoundResult / Eliminated (interfaces §4) and GameEvents.RoundStateChanged (only when
+		the mapped round state changes: Lobby / Countdown / Active / Results), RoundEnded (exactly once per
+		match), PlayerEliminated (each ruler of a conquered kingdom).
+	Ruler positions: every tick the host mirrors each ruler's character position into the simulation
+	(capture zones count rulers) and uses the same server-side position to range-check Gather.
 	Teams: one Team per kingdom (Layout teamColor) with a SpawnLocation beside its keep, so a ruler's
 	character spawns at home. Players who cannot join (all kingdoms full) stay neutral spectators.
 ]]
@@ -37,6 +42,7 @@ local GameEvents = require("../../Contracts/GameEvents")
 local Signal = require("../../Core/Signal")
 local Layout = require("./Layout")
 local Match = require("./Match")
+local RulerGather = require("./RulerGather")
 local Snapshot = require("./Snapshot")
 local WorldView = require("./WorldView")
 
@@ -69,12 +75,15 @@ local KINGDOM_EVENTS = {
 	ArmyOrdered = true,
 	RulerJoined = true,
 	RulerLeft = true,
+	CrownPoints = true,
+	RegionClaimed = true,
 }
 local GLOBAL_EVENTS = {
 	WarDeclared = true,
 	PeaceProposed = true,
 	PeaceMade = true,
 	KingdomEliminated = true,
+	ObjectiveCaptured = true,
 	DayStarted = true,
 	NightFell = true,
 	MatchEnded = true,
@@ -96,6 +105,8 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 	self._connections = {} :: { any }
 	self._running = false
 	self._dirty = {} :: { [string]: boolean }
+	self._roundState = nil :: string?
+	self._positionOf = opts.positionOf or MatchHost.characterPosition
 	self.events = Signal.new()
 
 	local matchOptions = table.clone(opts.match or {})
@@ -123,6 +134,20 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 		self:_assignTeam(player)
 		self._dirty[result] = true
 		return true, nil, { kingdomId = result }
+	end)
+	remotes:handle("Gameplay.Gather", function(player: any, nodeId: string)
+		if self.match:kingdomOf(player.UserId) == nil then
+			return false, "not_in_match"
+		end
+		local x, z = self._positionOf(player)
+		if x == nil or z == nil then
+			return false, "no_character"
+		end
+		local ok, err, result = RulerGather.gather(self.match.sim, player.UserId, nodeId, x :: number, z :: number)
+		if ok then
+			self._dirty[self.match:kingdomOf(player.UserId) :: string] = true
+		end
+		return ok, err, result
 	end)
 	remotes:handle("Gameplay.GetKingdomState", function(player: any)
 		local kingdomId = self.match:kingdomOf(player.UserId)
@@ -265,7 +290,8 @@ end
 function MatchHost:roundSnapshot()
 	local remaining = self.match:remaining()
 	return {
-		state = self.match.state,
+		state = self:roundState(),
+		phase = self.match.state,
 		roundId = self.match.roundId,
 		endsAtServerTime = if remaining then self._env.serverTimeNow() + remaining else nil,
 		aliveCount = self:_aliveCount(),
@@ -275,6 +301,44 @@ end
 function MatchHost:_roundArgs(): ...any
 	local snap = self:roundSnapshot()
 	return snap.state, snap.roundId, snap.endsAtServerTime, snap.aliveCount
+end
+
+-- Maps the game phase to the framework round state (interfaces §4) for round HUDs and GameEvents.
+function MatchHost:roundState(): string
+	local phase = self.match.state
+	if phase == "Lobby" then
+		return if self.match:remaining() ~= nil then "Countdown" else "Lobby"
+	elseif phase == "Results" then
+		return "Results"
+	end
+	return "Active"
+end
+
+-- Default ruler position: the character's HumanoidRootPart, read on the server (never from a client).
+function MatchHost.characterPosition(player: any): (number?, number?)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if root == nil then
+		return nil, nil
+	end
+	local p = root.Position
+	return p.X, p.Z
+end
+
+function MatchHost:_phaseChanged()
+	local remaining = self.match:remaining()
+	local endsAt = if remaining then self._env.serverTimeNow() + remaining else nil
+	self._remotes:fireAll("Gameplay.MatchPhase", self.match.state, endsAt)
+	local roundState = self:roundState()
+	local snap = self:roundSnapshot()
+	self._remotes:fireAll("Gameplay.RoundState", snap.state, snap.roundId, snap.endsAtServerTime, snap.aliveCount)
+	if roundState ~= self._roundState then
+		self._roundState = roundState
+		GameEvents.RoundStateChanged:fire(roundState, {
+			roundId = self.match.roundId,
+			endsAt = if remaining then self._env.now() + math.ceil(remaining) else nil,
+		})
+	end
 end
 
 -- ---------------------------------------------------------------- event fan-out
@@ -309,14 +373,12 @@ end
 function MatchHost:_handleEvent(event: any)
 	self.events:fire(event.name, event)
 	local name = event.name
-	if name == "MatchStateChanged" then
-		local snap = self:roundSnapshot()
-		self._remotes:fireAll("Gameplay.RoundState", snap.state, snap.roundId, snap.endsAtServerTime, snap.aliveCount)
-		local remaining = self.match:remaining()
-		GameEvents.RoundStateChanged:fire(event.state, {
-			roundId = event.roundId,
-			endsAt = if remaining then self._env.now() + math.ceil(remaining) else nil,
-		})
+	if name == "CountdownChanged" then
+		self:_phaseChanged()
+		return
+	end
+	if name == "MatchPhaseChanged" then
+		self:_phaseChanged()
 		if event.previous == "Results" then
 			-- a fresh world was created for the next match: rebuild the view and re-team everyone
 			self:_destroyWorld()
@@ -334,6 +396,13 @@ function MatchHost:_handleEvent(event: any)
 	end
 	if name == "KingdomEliminated" then
 		self:_announceElimination(event)
+	end
+	if name == "ResourceGathered" and event.source == "ruler" and event.userId then
+		local player = self._env.Players:GetPlayerByUserId(event.userId)
+		if player then
+			self._remotes:fire("Gameplay.KingdomEvent", player, self:_publicEvent(event))
+		end
+		return
 	end
 	if GLOBAL_EVENTS[name] then
 		self._remotes:fireAll("Gameplay.KingdomEvent", self:_publicEvent(event))
@@ -390,7 +459,20 @@ function MatchHost:_sendSnapshots(all: boolean)
 	self._dirty = {}
 end
 
+function MatchHost:_mirrorRulers()
+	local sim = self.match.sim
+	for userId in sim.rulerOf do
+		local player = self._env.Players:GetPlayerByUserId(userId)
+		local x, z = nil, nil
+		if player then
+			x, z = self._positionOf(player)
+		end
+		sim:setRulerPosition(userId, x, z)
+	end
+end
+
 function MatchHost:step(dt: number)
+	self:_mirrorRulers()
 	self.match:update(dt)
 	for _, event in self.match:drainEvents() do
 		self:_handleEvent(event)

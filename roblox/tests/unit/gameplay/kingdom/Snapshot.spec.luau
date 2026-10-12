@@ -34,13 +34,13 @@ describe("Kingdom/Snapshot", function()
 	it("describes a kingdom with remote-safe values only", function()
 		local sim, k = F.kingdom()
 		Military.install(sim)
-		assert(sim:placeBuilding(k, "House", 0, -35))
+		assert(sim:placeBuilding(k, "house", 0, -35))
 		sim:advance(45)
-		local snap = Snapshot.kingdom(sim, "k1", 7)
+		local snap = Snapshot.kingdom(sim, "crimson", 7)
 		assertRemoteSafe(snap, "snapshot")
 		expect(snap.seq).toBe(7)
-		expect(snap.kingdom.id).toBe("k1")
-		expect(snap.kingdom.resources).toEqual(k.stock:snapshot())
+		expect(snap.kingdom.id).toBe("crimson")
+		expect(snap.kingdom.resources).toEqual(sim.treasury:get(k.id))
 		expect(#snap.citizens).toBe(#k.citizenIds)
 		expect(#snap.buildings).toBe(3)
 		expect(snap.day).toBe(1)
@@ -48,25 +48,25 @@ describe("Kingdom/Snapshot", function()
 
 	it("never aliases live simulation tables", function()
 		local sim, k = F.kingdom()
-		sim:addRuler("k1", 5)
-		local snap = Snapshot.kingdom(sim, "k1", 1)
+		sim:addRuler("crimson", 5)
+		local snap = Snapshot.kingdom(sim, "crimson", 1)
 		snap.kingdom.rulers[1] = 999
-		snap.kingdom.quotas.Farmer = 0
+		snap.kingdom.quotas.farmer = 0
 		snap.kingdom.priorities.wood = 0
 		snap.kingdom.resources.food = 0
 		snap.kingdom.color[1] = 0
 		expect(k.rulers).toEqual({ 5 })
-		expect(k.quotas.Farmer).toBe(3)
+		expect(k.quotas.farmer).toBe(3)
 		expect(k.priorities.wood).toBe(1)
-		expect(k.stock:get("food")).toBe(120)
+		expect(sim:balance(k.id, "food")).toBe(120)
 		expect(k.color[1]).never.toBe(0)
 	end)
 
 	it("reports construction progress from 0 to 1", function()
 		local sim, k = F.kingdom()
-		local house = sim:placeBuilding(k, "House", 0, -35)
+		local house = sim:placeBuilding(k, "house", 0, -35)
 		local function progress()
-			for _, b in Snapshot.kingdom(sim, "k1", 1).buildings do
+			for _, b in Snapshot.kingdom(sim, "crimson", 1).buildings do
 				if b.id == house.id then
 					return b.progress, b.level
 				end
@@ -99,7 +99,7 @@ describe("Kingdom/Snapshot", function()
 
 	it("summarises every kingdom in the overview", function()
 		local sim = F.kingdom()
-		sim:addKingdom({ id = "k2", name = "Other", x = 400, z = 0 })
+		sim:addKingdom({ id = "azure", name = "Other", x = 400, z = 0 })
 		local overview = Snapshot.overview(sim, 3)
 		assertRemoteSafe(overview, "overview")
 		expect(overview.seq).toBe(3)

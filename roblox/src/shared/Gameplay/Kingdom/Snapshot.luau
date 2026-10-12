@@ -13,17 +13,19 @@
 
 	KingdomSnapshot = {
 		seq, time, day, dayFraction, night,
-		kingdom = { id, name, color, rulers, resources, capacity, population, popCap, territory,
-		            quotas, priorities, alarm, alive, score, x, z, keepId },
+		kingdom = { id, name, color, rulers, isAI, resources, population, popCap, territory,
+		            quotas, priorities, alarm, alive, crownPoints, x, z, keepId },
 		buildings = { { id, kind, x, z, level, pendingLevel?, progress (0..1), hp, maxHp, workers, builders } },
-		citizens = { { id, name, occupation, activity, x, z, carrying?, carryAmount?, hunger } },
+		citizens = { { id, name, job, activity, x, z, carrying?, carryAmount?, hunger } },
 		units = { { id, kind, x, z, hp, maxHp, order } },
 		relations = { [otherKingdomId] = "Peace" | "War" },
+		objectives = { { id, x, z, radius, owner?, progress = { [kingdomId] = 0..1 }, contested } },
 	}
-	Overview = { seq, time, kingdoms = { { id, name, color, x, z, alive, population, score, rulerCount, territory } } }
+	Overview = { seq, time, kingdoms = { { id, name, color, x, z, alive, population, crownPoints, rulerCount,
+	           territory } }, objectives }
 
-	Score (documented for players and Match): population x 10 + completed building levels x 20 +
-	kingdoms conquered x 300 + enemy units killed x 5 + floor(total resources gathered / 25).
+	Score = the kingdom's Crown Points (KingdomService:addCrownPoints, G3): completed building levels,
+	captured and held objectives, conquests and enemy units killed (Catalog.crown).
 ]]
 
 local Snapshot = {}
@@ -32,23 +34,24 @@ local function round1(v: number): number
 	return math.floor(v * 10 + 0.5) / 10
 end
 
-function Snapshot.score(sim: any, kingdom: any): number
-	local levels = 0
-	for _, bid in kingdom.buildingIds do
-		local b = sim.buildings[bid]
-		if not b.destroyed then
-			levels += b.level
-		end
+function Snapshot.score(_sim: any, kingdom: any): number
+	return kingdom.crownPoints
+end
+
+local function objectives(sim: any): { any }
+	local out = {}
+	for _, o in (sim.objectives and sim.objectives.list) or {} do
+		table.insert(out, {
+			id = o.id,
+			x = round1(o.x),
+			z = round1(o.z),
+			radius = o.radius,
+			owner = o.owner,
+			progress = table.clone(o.progress),
+			contested = o.contested,
+		})
 	end
-	local gathered = 0
-	for _, amount in kingdom.stats.gathered do
-		gathered += amount
-	end
-	return sim:population(kingdom) * 10
-		+ levels * 20
-		+ kingdom.stats.conquered * 300
-		+ kingdom.stats.unitsKilled * 5
-		+ math.floor(gathered / 25)
+	return out
 end
 
 function Snapshot.kingdom(sim: any, kingdomId: string, seq: number): { [string]: any }?
@@ -61,8 +64,8 @@ function Snapshot.kingdom(sim: any, kingdomId: string, seq: number): { [string]:
 		local b = sim.buildings[bid]
 		local progress = 0
 		if b.pendingLevel ~= nil then
-			local stats = sim.catalog.buildings[b.kind].levels[b.pendingLevel]
-			progress = if stats.work > 0 then math.clamp(b.progress / stats.work, 0, 1) else 1
+			local work = sim:workFor(b.kind, b.pendingLevel)
+			progress = if work > 0 then math.clamp(b.progress / work, 0, 1) else 1
 		end
 		table.insert(buildings, {
 			id = b.id,
@@ -84,7 +87,7 @@ function Snapshot.kingdom(sim: any, kingdomId: string, seq: number): { [string]:
 		table.insert(citizens, {
 			id = c.id,
 			name = c.name,
-			occupation = c.occupation,
+			job = c.job,
 			activity = c.activity,
 			x = round1(c.x),
 			z = round1(c.z),
@@ -123,8 +126,8 @@ function Snapshot.kingdom(sim: any, kingdomId: string, seq: number): { [string]:
 			name = k.name,
 			color = table.clone(k.color),
 			rulers = table.clone(k.rulers),
-			resources = k.stock:snapshot(),
-			capacity = k.stock:capacity(),
+			isAI = #k.rulers == 0,
+			resources = sim.treasury:get(k.id),
 			population = sim:population(k),
 			popCap = k.popCap,
 			territory = k.territory,
@@ -132,7 +135,7 @@ function Snapshot.kingdom(sim: any, kingdomId: string, seq: number): { [string]:
 			priorities = table.clone(k.priorities),
 			alarm = k.alarm,
 			alive = k.alive,
-			score = Snapshot.score(sim, k),
+			crownPoints = k.crownPoints,
 			x = k.x,
 			z = k.z,
 			keepId = k.keepId,
@@ -141,6 +144,7 @@ function Snapshot.kingdom(sim: any, kingdomId: string, seq: number): { [string]:
 		citizens = citizens,
 		units = units,
 		relations = relations,
+		objectives = objectives(sim),
 	}
 end
 
@@ -156,12 +160,12 @@ function Snapshot.overview(sim: any, seq: number): { [string]: any }
 			z = k.z,
 			alive = k.alive,
 			population = sim:population(k),
-			score = Snapshot.score(sim, k),
+			crownPoints = k.crownPoints,
 			rulerCount = #k.rulers,
 			territory = k.territory,
 		})
 	end
-	return { seq = seq, time = round1(sim.time), kingdoms = kingdoms }
+	return { seq = seq, time = round1(sim.time), kingdoms = kingdoms, objectives = objectives(sim) }
 end
 
 return Snapshot
