@@ -9,7 +9,7 @@ game: game-001
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: []
-context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
+context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 3
 evidence: []
 ---

@@ -154,6 +154,12 @@ describe("TreasuryService (G7)", function()
 			function()
 				return treasury:spend("azure", { mana = 1 }, "h", "x")
 			end,
+			function()
+				return treasury:deposit("azure", "food", 5, string.rep("k", 101), "x") -- ids are 1-100 bytes
+			end,
+			function()
+				return treasury:spend("azure", { food = 1 }, string.rep("k", 101), "x")
+			end,
 		}
 		for i, case in cases do
 			local ok = case()
@@ -163,8 +169,38 @@ describe("TreasuryService (G7)", function()
 		end
 		expect(treasury:spendUpTo("azure", "food", -3, "i", "upkeep")).toBe(0)
 		expect(treasury:spendUpTo("azure", "iron", 3, "j", "upkeep")).toBe(0)
+		expect(treasury:spendUpTo("azure", "food", 3, string.rep("k", 101), "upkeep")).toBe(0)
 		expect(treasury:get("azure")).toEqual(bag())
 		expect(events).toHaveLength(0)
+	end)
+
+	it("review R2-R4, R6: proxies, method-scoped ids, spendUpTo memory per kingdom, match-long replay", function()
+		-- R2: an empty-looking proxy is not an empty cost
+		local proxy = setmetatable({}, {
+			__index = function()
+				return 5
+			end,
+		})
+		expect(treasury:spend("azure", proxy, "p:1", "x")).toBe(false)
+		-- R3: a deposit id does not make a spend with the same id a "replay"
+		expect(treasury:deposit("azure", "food", 5, "t:1", "x")).toBe(true)
+		expect(treasury:spend("azure", { wood = 9999 }, "t:1", "x")).toBe(false)
+		-- R4: the same spendUpTo id on another kingdom or resource is a different transaction
+		expect(treasury:spendUpTo("azure", "food", 10, "up:1", "upkeep")).toBe(10)
+		expect(treasury:spendUpTo("crimson", "food", 10, "up:1", "upkeep")).toBe(10)
+		expect(treasury:spendUpTo("crimson", "wood", 10, "up:1", "upkeep")).toBe(10)
+		expect(treasury:get("crimson").food).toBe(START.food - 10)
+		expect(treasury:get("crimson").wood).toBe(START.wood - 10)
+		expect(treasury:spendUpTo("crimson", "food", 10, "up:1", "upkeep")).toBe(10) -- a true replay
+		expect(treasury:get("crimson").food).toBe(START.food - 10)
+		-- R6: a deposit replayed after 3,000 newer ones (a long match) still does nothing
+		expect(treasury:deposit("gold", "food", 1, "dep:first", "citizen:farmer")).toBe(true)
+		for i = 1, 3000 do
+			treasury:deposit("gold", "food", 1, `dep:{i}`, "citizen:farmer")
+		end
+		local before = treasury:get("gold").food
+		expect(treasury:deposit("gold", "food", 1, "dep:first", "citizen:farmer")).toBe(true)
+		expect(treasury:get("gold").food).toBe(before)
 	end)
 
 	it("keeps kingdoms separate", function()
@@ -279,6 +315,34 @@ describe("ProductionService upkeep (G7)", function()
 		expect(citizens.fed.azure).toBe(1)
 		expect(citizens.fed.crimson).toBe(1) -- nobody to feed
 		expect(treasury:get("crimson").food).toBe(START.food)
+	end)
+
+	it("review P4: one kingdom's population error is logged and never stops upkeep", function()
+		citizens.getPopulation = function(_, kingdom)
+			if kingdom == "crimson" then
+				error("CitizenService exploded")
+			end
+			return populations[kingdom]
+		end
+		GameEvents.MatchPhaseChanged:fire("Founding")
+		local upkeep = production:upkeepFor(populations.azure)
+		env.mock:advance(Costs.upkeep.intervalSeconds * 5 + 1)
+		expect(treasury:get("azure").food).toBe(START.food - 5 * upkeep)
+		expect(env.mock:hasLog("error", "upkeep failed")).toBe(true)
+		expect(#env.mock.threadErrors).toBe(0)
+	end)
+
+	it("review R5 + timing: whole-number upkeep, first charge one interval after Founding", function()
+		for total = 0, 40 do
+			local u = production:upkeepFor({ total = total, byJob = { soldier = total // 3 } })
+			expect(u % 1).toBe(0)
+		end
+		env.mock:advance(Costs.upkeep.intervalSeconds * 0.6)
+		GameEvents.MatchPhaseChanged:fire("Founding")
+		env.mock:advance(Costs.upkeep.intervalSeconds * 0.6)
+		expect(treasury:get("azure").food).toBe(START.food) -- the old loop's wake-up charges nothing
+		env.mock:advance(Costs.upkeep.intervalSeconds * 0.4 + 0.1)
+		expect(treasury:get("azure").food).toBe(START.food - production:upkeepFor(populations.azure))
 	end)
 
 	it("feeds partially when food runs short and reports the ratio", function()
