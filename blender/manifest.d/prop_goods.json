@@ -30,21 +30,21 @@
       "preview": "previews/prop_goods.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "notes": "All six read as distinct clusters at 40 studs, the compositions vary well and all are within the 1800-tri budget. Weak spots: green (sacks_01) and gold (produce_01) have one variant each, with small, muted accents (a teal sack and a mustard cloth), and the storehouse_01 canopy makes blue the dominant surface.",
         "review_file": "reviews/prop_goods.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 3,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7001,
       "sockets": {
@@ -92,21 +92,21 @@
       "preview": "previews/prop_goods.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "notes": "All six read as distinct clusters at 40 studs, the compositions vary well and all are within the 1800-tri budget. Weak spots: green (sacks_01) and gold (produce_01) have one variant each, with small, muted accents (a teal sack and a mustard cloth), and the storehouse_01 canopy makes blue the dominant surface.",
         "review_file": "reviews/prop_goods.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 3,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7000,
       "sockets": {
@@ -154,21 +154,21 @@
       "preview": "previews/prop_goods.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "notes": "All six read as distinct clusters at 40 studs, the compositions vary well and all are within the 1800-tri budget. Weak spots: green (sacks_01) and gold (produce_01) have one variant each, with small, muted accents (a teal sack and a mustard cloth), and the storehouse_01 canopy makes blue the dominant surface.",
         "review_file": "reviews/prop_goods.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 3,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7004,
       "sockets": {
@@ -216,21 +216,21 @@
       "preview": "previews/prop_goods.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Clusters read well at 40 studs, but kingdom accents are broken: sacks_01 (green) has no green at all, merchant_01 (red) shows red and blue cloth rolls equally, and produce_01 gold cloth is mustard/hay. storehouse_01 reuses the barrels_01 blue-lid barrel and crate stack, so blue variants look like remixes.",
+        "notes": "All six read as distinct clusters at 40 studs, the compositions vary well and all are within the 1800-tri budget. Weak spots: green (sacks_01) and gold (produce_01) have one variant each, with small, muted accents (a teal sack and a mustard cloth), and the storehouse_01 canopy makes blue the dominant surface.",
         "review_file": "reviews/prop_goods.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 3,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
@@ -278,9 +278,21 @@
       "preview": "previews/prop_goods.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All six read as distinct clusters at 40 studs, the compositions vary well and all are within the 1800-tri budget. Weak spots: green (sacks_01) and gold (produce_01) have one variant each, with small, muted accents (a teal sack and a mustard cloth), and the storehouse_01 canopy makes blue the dominant surface.",
         "review_file": "reviews/prop_goods.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7002,
       "sockets": {
@@ -328,9 +340,21 @@
       "preview": "previews/prop_goods.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All six read as distinct clusters at 40 studs, the compositions vary well and all are within the 1800-tri budget. Weak spots: green (sacks_01) and gold (produce_01) have one variant each, with small, muted accents (a teal sack and a mustard cloth), and the storehouse_01 canopy makes blue the dominant surface.",
         "review_file": "reviews/prop_goods.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7005,
       "sockets": {

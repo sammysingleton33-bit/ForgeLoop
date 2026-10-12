@@ -32,21 +32,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "red_01 carries a flame emblem instead of the crown, so at 43 studs it reads as a fifth faction; yellow_01/02 set the sun on a heavy off-palette purple disc and trim that turns it into a medallion/rosette and the gold reads butter-yellow. Silhouettes and tri counts (560-788) are good.",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7002,
       "sockets": {
@@ -101,21 +101,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "red_01 carries a flame emblem instead of the crown, so at 43 studs it reads as a fifth faction; yellow_01/02 set the sun on a heavy off-palette purple disc and trim that turns it into a medallion/rosette and the gold reads butter-yellow. Silhouettes and tri counts (560-788) are good.",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
@@ -170,21 +170,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "red_01 carries a flame emblem instead of the crown, so at 43 studs it reads as a fifth faction; yellow_01/02 set the sun on a heavy off-palette purple disc and trim that turns it into a medallion/rosette and the gold reads butter-yellow. Silhouettes and tri counts (560-788) are good.",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7004,
       "sockets": {
@@ -239,21 +239,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "red_01 carries a flame emblem instead of the crown, so at 43 studs it reads as a fifth faction; yellow_01/02 set the sun on a heavy off-palette purple disc and trim that turns it into a medallion/rosette and the gold reads butter-yellow. Silhouettes and tri counts (560-788) are good.",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7005,
       "sockets": {
@@ -308,9 +308,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7000,
       "sockets": {
@@ -365,21 +377,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "red_01 carries a flame emblem instead of the crown, so at 43 studs it reads as a fifth faction; yellow_01/02 set the sun on a heavy off-palette purple disc and trim that turns it into a medallion/rosette and the gold reads butter-yellow. Silhouettes and tri counts (560-788) are good.",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 1,
+        "round": 2,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7001,
       "sockets": {
@@ -434,9 +446,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7006,
       "sockets": {
@@ -491,9 +515,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7007,
       "sockets": {
