@@ -149,7 +149,7 @@ describe("Core/StateMachine", function()
 		})
 		expect(function()
 			machine:transition("B")
-		end).toThrow("re-entrant transition to 'C'")
+		end).toThrow("re-entrant or concurrent transition to 'C'")
 		expect(machine:state()).toBe("B") -- onEnter failed after the switch; not queued to C
 		expect(machine:transition("C")).toBe(true) -- unlocked again
 	end)
@@ -172,7 +172,7 @@ describe("Core/StateMachine", function()
 		})
 		expect(function()
 			machine:transition("B")
-		end).toThrow("re-entrant transition")
+		end).toThrow("re-entrant or concurrent transition")
 		expect(machine:state()).toBe("A")
 	end)
 

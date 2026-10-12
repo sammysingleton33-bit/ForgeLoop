@@ -26,6 +26,10 @@
 	     requires (require(instance), aliasing `require`) only inside Contracts/.
 	  5. BuildInfo: if roblox/src/shared/BuildInfo.json exists, ReplicatedStorage.Forge.BuildInfo must
 	     be a ModuleScript carrying the same sha (with --require-stamp the stamp is mandatory).
+	  7. Project properties: every "$properties" value in the project (e.g. game-001's Players
+	     CharacterAutoLoads, Workspace streaming, D-025/D-026) is present with that value in the place,
+	     so a property Rojo drops or mis-converts fails here. Booleans, numbers, strings and enum names
+	     are compared; any other value type is reported as unverifiable (extend this check).
 	  6. Area names: no area folder in ReplicatedStorage.Game has a Remotes module when the same-named
 	     area in ReplicatedStorage.Forge has one (env.sharedModules would collide at run time).
 	Exit code 1 on any problem.
@@ -265,6 +269,51 @@ do
 	end
 end
 
+-- ------------------------------------------------------------------ 7. project properties
+local propertiesChecked = 0
+for _, node in project.nodes do
+	if node.properties == nil then
+		continue
+	end
+	local where = dotted(node.dm)
+	local instance, err = lookup(node.dm)
+	if not instance then
+		problem(`properties: {err}`)
+		continue
+	end
+	local names = {}
+	for name in node.properties do
+		table.insert(names, name)
+	end
+	table.sort(names)
+	for _, name in names do
+		local expected = node.properties[name]
+		local ok, actual = pcall(function()
+			return instance[name]
+		end)
+		if not ok then
+			problem(`properties: {where}.{name} cannot be read from the place ({actual})`)
+			continue
+		end
+		local kind = type(expected)
+		local same
+		if typeof(actual) == "EnumItem" and kind == "string" then
+			same = actual.Name == expected
+		elseif kind == "boolean" or kind == "string" then
+			same = actual == expected
+		elseif kind == "number" then
+			same = type(actual) == "number" and math.abs(actual - expected) <= 1e-6 * math.max(1, math.abs(expected))
+		else
+			problem(`properties: {where}.{name} has a {kind} value the place check cannot verify yet (extend check 7)`)
+			continue
+		end
+		propertiesChecked += 1
+		if not same then
+			problem(`properties: {where}.{name} is {tostring(actual)} in the place, project says {tostring(expected)}`)
+		end
+	end
+end
+
 -- ------------------------------------------------------------------ 5. BuildInfo
 local stampFile = ROOT .. "/roblox/src/shared/BuildInfo.json"
 local buildInfo = lookup({ "ReplicatedStorage", "Forge", "BuildInfo" })
@@ -297,5 +346,6 @@ if #problems > 0 then
 end
 print(
 	`place check: PASS — {relativePlace} ({project.name}): {#EXPECTED} expected instances, {scripts} scripts, `
-		.. `{requiresChecked} string requires resolved, {dynamicRequires} dynamic (Contracts only), BuildInfo {stampNote}`
+		.. `{requiresChecked} string requires resolved, {dynamicRequires} dynamic (Contracts only), `
+		.. `{propertiesChecked} project properties, BuildInfo {stampNote}`
 )

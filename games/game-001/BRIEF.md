@@ -3,12 +3,12 @@
 _Status: **selected by the user on 2026-10-12** (D-020). Author: FORGE-00. Contracts: `games/game-001/CONTRACTS.md`. Unresolved design and monetization questions stay with the user (§16)._
 
 ## 1. Pitch and target player
-Four medieval kingdoms compete in one 30–45 minute match. Each kingdom has up to four human rulers (solo, duo, trio or squad) who walk their land in third person. They direct a living population of AI citizens who farm, gather, build, trade and fight. Grow, fortify, raid and besiege. Victory rules are the user's decision (§16.4). Target (proposal, pending §16.7): mid-core Roblox players aged 13+, on PC and mobile, in 30–45 minute sessions with friends.
+Four medieval kingdoms compete in one 30–45 minute match. Each kingdom has up to four human rulers (solo, duo, trio or squad) who walk their land in third person. They direct a living population of AI citizens who farm, gather, build, trade and fight. Grow, fortify, raid and besiege. The match ends in the **Crown Arena**: the leading rulers duel in front of their own citizens, whose support reflects how each ruler led (§18). The remaining victory rules are the user's decision (§16.4, §16.9). Target (proposal, pending §16.7): mid-core Roblox players aged 13+, on PC and mobile, in 30–45 minute sessions with friends.
 
 ## 2. Core loop
 - **30 s:** walk to a job, gather or place something, and see citizens react.
 - **5 min:** grow the economy (food, wood, stone, gold) → build or upgrade → unlock units and territory.
-- **Match (30–45 min):** Founding → Expansion → Conflict → Siege / Endgame → Victory screen.
+- **Match (30–45 min):** Founding → Expansion → Conflict → Endgame (sieges) → Crown Arena → Results with a leadership recap.
 - **Week:** account progression, cosmetics, kingdom banners, ranked or seasonal play. Scope for this is the user's decision (§16).
 
 ## 3. Match structure (target; numbers tuned in config)
@@ -16,8 +16,9 @@ Four medieval kingdoms compete in one 30–45 minute match. Each kingdom has up 
 |---|---|---|
 | Founding | 0–8 min | Claim the keep, assign first citizens, first farms and lumber, first houses |
 | Expansion | 8–20 min | Grow population, take neutral outposts and resource nodes, upgrade the keep, raise walls |
-| Conflict | 20–35 min | Armies, raids on rival farms and stores, alliances form and break |
-| Endgame | 35–45 min | Siege of rival keeps. Victory per §16.4 (default proposal: last keep standing, or most Crown Points at the timer) |
+| Conflict | 20–32 min | Armies, raids on rival farms and stores, alliances form and break |
+| Endgame | 32–38 min | Siege of rival keeps. Crown Points decide who reaches the arena (§18) |
+| Crown Arena | 38–44 min | Final duel in front of each kingdom's citizens; support earned during the match gives moderate buffs and clutch moments (§18). Results and leadership recap to 45 min |
 
 Empty kingdom slots are run by AI governors. Their behaviour level, from passive to competitive, is a user decision (§16.3).
 
@@ -51,7 +52,7 @@ The interim slice rules (start on first join, untimed Founding, the first captur
 | 7 | Produce | Production chain v1 (e.g. wheat → bread or ore → weapons) |
 | 8 | Lose and keep playing | Elimination → spectate or assist (§16.4) |
 | 9 | Share a kingdom safely | Co-ruler spending permissions; "join this kingdom" banner for friends outside a party; solo/duo/trio/squad queueing design |
-| 10 | Win | Victory screen under the user's victory rules (§16.4) |
+| 10 | Win in the Crown Arena | Qualification, champion vote, loadout and trigger pick, crowd support, final duel, crowning and leadership recap (§18, `design/crown-arena.md`). The fairness harness passes the outcome caps; the user accepts the feel in a two-client Studio run (§16.4, §16.9) |
 | 11 | Run at scale | Interest-managed snapshots; day/night clock; custom animations (FL-0066); 300 entities measured on a published private test place with ≥ 8 real clients (user approval) |
 
 **VS-3:** alliances and betrayal (§16.2), trade, diplomacy, replayability (layout seeds and variants, governor personalities), persistent progression (§16.5), polish, mobile performance pass, release checklist.
@@ -81,7 +82,8 @@ The interim slice rules (start on first join, untimed Founding, the first captur
 Colourful, readable, stylised medieval: warm sunlit valleys, saturated kingdom colours (four distinct banners: crimson, azure, emerald, gold), chunky readable silhouettes, timber-and-plaster houses, stone keeps with banners, golden wheat fields, deep green forests, blue river.
 - Readable at RTS-ish camera distances and on phones.
 - No grey placeholder look in anything shown to players.
-- Art direction sheet: `games/game-001/art/ART_DIRECTION.md` (FORGE-02).
+- Art direction sheet: `blender/ART_DIRECTION.md` (FORGE-02), with budgets in `blender/budgets.json` and the asset list in `blender/manifest.json`.
+- Kingdom display names (working names, PROVISIONAL until the user's branding decision §16.6): Emberhold (crimson, flame and crown), Frostmere (azure, star), Thornwood (emerald, oak leaf), Sunspire (gold, sun disc). Contract ids stay `crimson`, `azure`, `emerald`, `gold` (G2).
 - Lighting preset (Lighting, Atmosphere, Sky, ColorCorrection, Bloom, terrain material colours): `games/game-001/world/Lighting.luau` (FORGE-02). VS-1 uses a fixed time of day.
 
 ## 7. Economy (starting point; FORGE-03 owns numbers, FORGE-04 pacing)
@@ -148,11 +150,12 @@ Estimated hours to VS-1 per worker:
 1. Monetization model (passes, products, cosmetics, any paid random items) and pricing.
 2. PvP intensity between human kingdoms (full raids/sieges vs. PvE-first), and whether betrayal mechanics ship.
 3. AI governor difficulty for empty kingdoms, whether a match can start with fewer than 4 human teams, and the mid-match join policy.
-4. Victory rules: last keep standing vs. Crown Points at the timer (or both), and what eliminated players do.
+4. Victory rules. **Decided (user, 2026-10-12, D-029):** the match ends in the Crown Arena (§18). Still open: what eliminated players do, and the arena points in §16.9.
 5. Cross-match persistence scope (account levels, unlocks, cosmetics only, or memory of rival players?).
 6. Final title and branding.
 7. Target audience and maturity rating: 13+ mid-core vs. all-ages Mild (they pull in different directions; market research rec. 4).
 8. Whether to spike Roblox `TextGenerator` (an LLM NPC API, initially 100 requests/min) for citizen petitions voiced from their memory, in VS-2/3. It is not in VS-1.
+9. Crown Arena open points (`design/crown-arena.md` §11; defaults are PROVISIONAL and config-driven): (a) format — top-2 kingdoms in one final duel, or a bracket; (b) champion choice in multi-ruler kingdoms; (c) whether the duel decides the match winner or grants Crown Points; (d) support strength — the outcome caps, and whether weak support may ever debuff.
 
 ## 17. Risks
 | Risk | Mitigation |
@@ -162,3 +165,14 @@ Estimated hours to VS-1 per worker:
 | Scope (it is an RTS + city builder + social game) | VS-1 first; every addition must fit the 30–45 min match |
 | Studio-only verification | Short, frequent user playtests with scripted checklists and Studio-only debug presets (FL-0047) |
 | Critical path on one worker (FORGE-01) | Contract stubs at hour 0, client controllers moved out (D-028), honest §15 |
+| Crown Arena support decides duels (unfair) or feels irrelevant | Contract caps (CONTRACTS G12.3), headless fairness harness with outcome bounds in CI, user feel test in Studio |
+| Crown Arena scope pulls FORGE-01 off VS-1 | Arena work starts after FORGE-01's VS-1 rows; other workers prep in slack (§18) |
+
+## 18. Crown Arena — final phase and citizen support (D-029; VS-2)
+Full design: `games/game-001/design/crown-arena.md`. Contract: CONTRACTS G12 (draft until VS-2 starts).
+- At the end of Endgame the leading rulers enter the **Crown Arena** in their chosen armour and weapons. Behind each ruler sits their own kingdom's stand, filled by the citizens who are actually alive.
+- **Support** is a deterministic score built over the whole match: public reputation, happiness, stability, army morale, citizen loyalty, conduct (key decisions, protecting vs exploiting citizens) and personal valour. It sets a tier from Adoring to Hostile that drives crowd behaviour and a small passive blessing.
+- **Key citizens** (blacksmith, healer, captain, provisioner, elder, merchant) appear with their buildings. When their loyalty is ≥ 80 they pledge a one-time duel trigger, e.g. a blacksmith at 98 loyalty reinforces the ruler's armour for +10 % damage reduction for 6 s. All of it is earned through play; nothing is random and nothing is purchasable.
+- **Fairness:** passive ≤ +5 % per stat, ≤ 3 triggers, ≤ +15 % on any stat at any moment, no support effect touches the opponent. Measured outcome bounds: equal skill, Adoring vs Hostile wins 55–65 %; one skill tier beats maximal support ≥ 60 %.
+- **Presentation:** chants, boos, perk moments at the rail, an intro versus card with the reasons for support, and endings that pay off the player's leadership.
+- **Order:** VS-1 first. Prep in slack time, then FORGE-01 builds the core after its VS-1 rows (tasks FL-0069 to FL-0077).
