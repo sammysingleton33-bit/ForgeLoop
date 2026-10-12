@@ -138,6 +138,7 @@ local JobsConfig = require("@game/ReplicatedStorage/Forge/Config/Jobs")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local MilitaryConfig = require("@game/ReplicatedStorage/Forge/Config/Military")
+local Kit = require("../Kit/Kit")
 local Types = require("../Kingdom/Types")
 
 local JOB_IDS = Types.JOB_IDS
@@ -186,8 +187,21 @@ local function assemble(): Catalog
 	}
 end
 
+-- G6: Kit.footprint is the one source for placement. The simulation places circles, so each building's
+-- footprint radius is half the longer side of its level-1 Kit footprint (config `footprint` is the
+-- fallback for a type the Kit does not know).
+function Catalog.kitFootprints(catalog: Catalog): Catalog
+	for kind, def in catalog.buildings do
+		local ok, size = pcall(Kit.footprint, kind, 1)
+		if ok and typeof(size) == "Vector2" then
+			def.footprint = math.max(size.X, size.Y) / 2
+		end
+	end
+	return catalog
+end
+
 function Catalog.default(): Catalog
-	return deepCopy(assemble())
+	return Catalog.kitFootprints(deepCopy(assemble()))
 end
 
 function Catalog.costs(catalog: Catalog): Costs

@@ -3,7 +3,8 @@
 	Kingdom/Layout — where the simulation's kingdoms, nodes and objectives sit.
 
 	By default the four kingdoms sit on FORGE-02's world Layout (CONTRACTS G10.1, world/Layout.luau):
-	each keep at `plots[k].anchors.keep`, the neutral objectives at `objectives[i]` (gameplay numbers from
+	each keep at `plots[k].anchors.keep` and the starting buildings (config Kingdoms.startAnchors:
+	storehouse, farm, lumbercamp, quarry) at their anchors, facing as the anchors do; the neutral objectives at `objectives[i]` (gameplay numbers from
 	config Objectives), and the contested centre nodes from the world's `heart_*` resource nodes. Each
 	kingdom still gets a generated forest, quarry and gold vein around its keep until FL-0050/FL-0051
 	move the economy onto `Layout.resourceNodes` and the starting buildings onto the plot anchors.
@@ -57,6 +58,12 @@ local function objectives(): { any }
 end
 Layout.OBJECTIVES = objectives()
 
+-- The yaw (CFrame.Angles(0, yaw, 0)) of a CFrame's facing: its LookVector projected on XZ.
+function Layout.yawOf(cf: CFrame): number
+	local look = cf.LookVector
+	return math.atan2(-look.X, -look.Z)
+end
+
 function Layout.boundsFor(spacing: number)
 	local half = spacing + 240
 	return { minX = -half, maxX = half, minZ = -half, maxZ = half }
@@ -81,12 +88,19 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 	local kingdoms = {}
 	for i = 1, count do
 		local identity = Layout.KINGDOMS[i]
-		local kx, kz
+		local kx, kz, keepYaw, startAt
 		if spacing then
 			kx, kz = CORNERS[i][1] * spacing, CORNERS[i][2] * spacing
 		else
-			local keep = WorldLayout.plots[identity.id].anchors.keep.Position
-			kx, kz = keep.X, keep.Z
+			local anchors = WorldLayout.plots[identity.id].anchors
+			kx, kz, keepYaw = anchors.keep.Position.X, anchors.keep.Position.Z, Layout.yawOf(anchors.keep)
+			startAt = {}
+			for _, kind in KingdomsConfig.startAnchors do
+				local cf = anchors[kind]
+				if cf then
+					table.insert(startAt, { kind = kind, x = cf.Position.X, z = cf.Position.Z, yaw = Layout.yawOf(cf) })
+				end
+			end
 		end
 		table.insert(
 			kingdoms,
@@ -96,6 +110,8 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 				color = identity.color,
 				x = kx,
 				z = kz,
+				yaw = keepYaw,
+				startAt = startAt,
 				populate = opts.populate,
 			})
 		)
