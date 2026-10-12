@@ -82,7 +82,8 @@ The interim slice rules (start on first join, untimed Founding, the first captur
 Colourful, readable, stylised medieval: warm sunlit valleys, saturated kingdom colours (four distinct banners: crimson, azure, emerald, gold), chunky readable silhouettes, timber-and-plaster houses, stone keeps with banners, golden wheat fields, deep green forests, blue river.
 - Readable at RTS-ish camera distances and on phones.
 - No grey placeholder look in anything shown to players.
-- Art direction sheet: `games/game-001/art/ART_DIRECTION.md` (FORGE-02).
+- Art direction sheet: `blender/ART_DIRECTION.md` (FORGE-02), with budgets in `blender/budgets.json` and the asset list in `blender/manifest.json`.
+- Kingdom display names (working names, PROVISIONAL until the user's branding decision §16.6): Emberhold (crimson, flame and crown), Frostmere (azure, star), Thornwood (emerald, oak leaf), Sunspire (gold, sun disc). Contract ids stay `crimson`, `azure`, `emerald`, `gold` (G2).
 - Lighting preset (Lighting, Atmosphere, Sky, ColorCorrection, Bloom, terrain material colours): `games/game-001/world/Lighting.luau` (FORGE-02). VS-1 uses a fixed time of day.
 
 ## 7. Economy (starting point; FORGE-03 owns numbers, FORGE-04 pacing)

@@ -223,6 +223,7 @@
     "games/game-001/src/client/Controllers/Crowd*": "forge-04",
     "games/game-001/src/client/Controllers/Chant*": "forge-04",
     "games/game-001/config/Crowd.luau": "forge-04",
+    "games/game-001/config/Vfx.luau": "forge-04",
     "games/game-001/default.project.json": "forge-05",
     "games/game-001/config/Game.luau": "forge-05",
     "games/game-001/README.md": "forge-05",

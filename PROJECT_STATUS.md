@@ -164,14 +164,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+5d89a06 2026-10-12 Integration bookkeeping: PR #11 FL-0067 merged (979f1ba)
+7ff75ca 2026-10-12 Regenerate dashboard after PR #11
 35f975c 2026-10-12 Merge remote-tracking branch 'origin/main'
 979f1ba 2026-10-12 Merge PR #11: [FORGE-05] FL-0067 game-001 wiring follow-ups (streaming, CharacterAutoLoads, world mount, buffer-faithful mocks)
 fef7b5d 2026-10-12 Merge origin/main (PRs #8-#10) into Crown Arena work; ownership.json union
 3c3ef8e 2026-10-12 Integration bookkeeping: PR #9 (245b6c1), PR #10 (74f779f)
 4ae7bc6 2026-10-12 Crown Arena final phase (D-029): design, BRIEF §18, CONTRACTS G12 draft, ownership, tasks FL-0069..FL-0077
 e8062c2 2026-10-12 [FORGE-05] FL-0067 game-001 wiring follow-ups: streaming + CharacterAutoLoads, world mount, buffer-faithful remote mocks
-467fa54 2026-10-12 Merge remote-tracking branch 'origin/main' into forge/05-integration-fl0067
-90493ce 2026-10-12 WIP FL-0067: streaming/character project properties, world mount, buffer-faithful Wire/MockRemotes, place-check properties
 ```
 
 <!-- forge:auto:end -->
