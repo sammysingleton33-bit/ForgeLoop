@@ -44,9 +44,21 @@
       "preview": "previews/tree_birch.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
         "review_file": "reviews/tree_birch.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7017,
       "sockets": {
@@ -113,9 +125,21 @@
       "preview": "previews/tree_birch.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
         "review_file": "reviews/tree_birch.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7076,
       "sockets": {
@@ -182,9 +206,21 @@
       "preview": "previews/tree_birch.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
         "review_file": "reviews/tree_birch.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7135,
       "sockets": {
@@ -251,9 +287,21 @@
       "preview": "previews/tree_birch.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
         "review_file": "reviews/tree_birch.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7194,
       "sockets": {
@@ -320,9 +368,21 @@
       "preview": "previews/tree_birch.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
         "review_file": "reviews/tree_birch.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7253,
       "sockets": {
@@ -389,9 +449,21 @@
       "preview": "previews/tree_birch.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
         "review_file": "reviews/tree_birch.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7312,
       "sockets": {

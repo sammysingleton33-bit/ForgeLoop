@@ -105,3 +105,11 @@ Rather than a fourth round of the same approach, the change of strategy is:
    (`LINEUP_ROWS = 2`) so the reviewer can judge at 60.
 
 The in-game farm uses the Kit's part-built field (FL-0054), so VS-1 is not blocked. The Blender field is an FL-0057 import.
+
+## Parked: tree_birch (NEEDS-WORK after 3 fresh-review rounds, 2026-10-12)
+Round 1 failed on variation; rounds 2–3 failed on silhouette (3/5) for the same cause: crowns built as stacked,
+equal-size blobs with no branch arms. Bark read, the autumn ramp, variation and triangle cost now pass.
+Strategy change (one attempt, then report): build the birch crown with tree_oak's proven crown builder (the oak
+passed first time) using a tapering teardrop envelope with drooping tips. Clumps hang on short visible branch arms.
+Use one continuous trunk taper (06's seam), add a small dark root flare on every variant, use bold flush bark marks,
+and drop the hairline twigs. Not on the VS-1 path: forests use oak and pine, and the Kit has its own birch stand-in.
