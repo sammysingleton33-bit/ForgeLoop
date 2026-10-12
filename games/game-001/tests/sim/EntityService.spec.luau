@@ -391,5 +391,11 @@ describe("EntityService replication (G4)", function()
 			expect(events[i].type).never.toBe("despawn") -- the reset already cleared the old world
 		end
 		expect(respawned > 0).toBe(true)
+		-- seq keeps counting across matches, so clients drop late packets of the old world
+		local snapshots = sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		for i = 2, #snapshots do
+			local a, b = snapshots[i - 1].decoded, snapshots[i].decoded
+			expect(a.seq == b.seq or SnapshotCodec.newer(b.seq, a.seq)).toBe(true)
+		end
 	end)
 end)

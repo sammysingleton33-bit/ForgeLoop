@@ -4,7 +4,8 @@
 	RemoteService creates them as ReplicatedStorage.ForgeRemotes.Sim.<Action>.
 
 	Server -> client
-		Sim.Snapshot(buffer)    UnreliableRemoteEvent; one SnapshotCodec v2 buffer per event (≤ 900 B),
+		Sim.Snapshot(buffer)    UnreliableRemoteEvent; one SnapshotCodec v2 buffer per event (≤ 900 B);
+		                        seq keeps increasing across matches (a reset never restarts it),
 		                        ~10 per second; moving entities every snapshot, idle and working ones
 		                        round-robin about once per second. VS-1: every client gets every entity.
 		Sim.Events(buffer)      reliable; one EventCodec buffer per tick when anything happened: spawn,

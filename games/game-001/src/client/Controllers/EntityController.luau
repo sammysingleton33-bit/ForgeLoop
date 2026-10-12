@@ -29,7 +29,9 @@
 		- Unknown ids are ignored (a snapshot can arrive before its spawn).
 		- Despawned ids are remembered, so neither a late snapshot nor a stale full record brings one
 		  back. Only a spawn record clears an id.
-		- A reset record releases every rig and forgets the despawned ids, the seq and the server clock
+		- A reset record releases every rig and forgets the despawned ids and the server clock. The seq is
+		  kept: EntityService's seq keeps increasing across matches, so a late snapshot of the old match
+		  is still dropped
 		  (a new match restarts serverTime).
 		Events: spawn, despawn, job (swaps the rig: released, then rendered), cue (fires `event`; die
 		blends into the dead pose and releases the rig after DEATH_DELAY), full (spawn + state), reset.
@@ -388,8 +390,7 @@ function EntityController:_reset()
 	end
 	table.clear(self._entities)
 	table.clear(self._despawned)
-	self._newestSeq = nil
-	self._clock:reset()
+	self._clock:reset() -- serverTime restarts with the new match; seq does not (see the header)
 end
 
 function EntityController:_remove(entity: Entity)

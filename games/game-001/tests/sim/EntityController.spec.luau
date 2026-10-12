@@ -456,7 +456,7 @@ describe("EntityController: rigs, cues and reset", function()
 		expect(#h.rendered).toBe(1)
 	end)
 
-	it("a reset releases everything and forgets the despawned ids, the seq and the clock", function()
+	it("a reset releases everything and forgets the despawned ids and the clock, not the seq", function()
 		local h = start(setup({ full(1, 0, 0), full(2, 5, 0), full(3, 10, 0) }))
 		frame(h, 0)
 		events(h, { { type = "despawn", id = 2 } })
@@ -473,11 +473,12 @@ describe("EntityController: rigs, cues and reset", function()
 		for id = 1, 3 do
 			expect(h.controller:getModel(id)).toBeNil()
 		end
-		-- the new match reuses ids and restarts seq
+		-- the new match reuses ids; the server's seq keeps counting, so a late old-match packet is dropped
 		events(h, { full(2, 1, 1) })
 		h.env.mock:advance(0.1)
-		snapshot(h, { record(2, 4, 4) }, 1)
-		expect(h.controller.stats.stale).toBe(0)
+		snapshot(h, { record(2, 50, 50) }, 499) -- delayed from the old match
+		expect(h.controller.stats.stale).toBe(1)
+		snapshot(h, { record(2, 4, 4) }, 501)
 		frame(h, 1)
 		expect((pivotOf(h.controller:getModel(2)) - Vector3.new(4, 0, 4)).Magnitude).toBeLessThan(1e-3)
 		expect(h.controller:getModel(1)).toBeNil()
