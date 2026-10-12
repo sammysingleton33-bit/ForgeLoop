@@ -1,7 +1,7 @@
 local T = require("../../harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
-local UI = "@game/StarterPlayer/StarterPlayerScripts/Forge/UI/"
+local UI = "@game/ReplicatedStorage/Forge/UI/"
 local Create = require(UI .. "Create")
 local Button = require(UI .. "Components/Button")
 local CurrencyPill = require(UI .. "Components/CurrencyPill")
@@ -13,6 +13,8 @@ local Panel = require(UI .. "Components/Panel")
 local ProgressBar = require(UI .. "Components/ProgressBar")
 local Tabs = require(UI .. "Components/Tabs")
 local Toast = require(UI .. "Components/Toast")
+local MockEnv = require("../../mocks/MockEnv")
+local Motion = require(UI .. "Motion")
 
 local function find(root, name)
 	for _, d in root:GetDescendants() do
@@ -116,6 +118,13 @@ describe("UI kit components", function()
 		expect(find(pill.instance, "Amount").Text).toBe("—")
 		pill:pulse(-50)
 		expect(find(pill.instance, "Delta").Text).toBe("−50")
+		-- Reduced motion / no TweenService: the delta stays readable, then goes after PULSE_SEC.
+		local env = MockEnv.new({})
+		local still = CurrencyPill.new({ currency = "wood", amount = 50 }, Motion.new(env, { reduced = true }))
+		still:pulse(-50)
+		expect(find(still.instance, "Delta").TextTransparency).toBe(0)
+		env.mock:advance(CurrencyPill.PULSE_SEC + 0.1)
+		expect(find(still.instance, "Delta")).toBeNil()
 	end)
 
 	it("ProgressBar clamps progress and shows a label", function()
@@ -150,6 +159,12 @@ describe("UI kit components", function()
 	it("Panel, Modal, Toast, Grid and ItemCard build", function()
 		local panel = Panel.new({ title = "Construction", size = UDim2.fromOffset(600, 400) })
 		expect(panel.instance:FindFirstChild("Ornament")).toBeTruthy()
+		-- The header slot fills the width the title leaves (a close button reaches the right edge).
+		local slot = panel.instance:FindFirstChild("Slot", true)
+		expect(slot:FindFirstChildOfClass("UIFlexItem").FlexMode).toBe(Enum.UIFlexMode.Fill)
+		expect(slot.Size).toBe(UDim2.fromScale(0, 1))
+		local untitled = Panel.new({ header = Instance.new("Frame"), size = UDim2.fromOffset(600, 400) })
+		expect(untitled.instance:FindFirstChild("Slot", true).Size).toBe(UDim2.fromScale(1, 1))
 		local confirmed, cancelled = 0, 0
 		local modal = Modal.new({
 			title = "Upgrade Town Hall?",

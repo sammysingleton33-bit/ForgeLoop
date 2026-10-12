@@ -1,7 +1,7 @@
 local T = require("../../harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
-local UI = "@game/StarterPlayer/StarterPlayerScripts/Forge/UI/"
+local UI = "@game/ReplicatedStorage/Forge/UI/"
 local Format = require(UI .. "Format")
 local Motion = require(UI .. "Motion")
 local Theme = require(UI .. "Theme")

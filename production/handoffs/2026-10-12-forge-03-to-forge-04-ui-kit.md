@@ -3,9 +3,10 @@
 ## What I'm giving you
 The UI kit is in the FL-0020 PR (`forge/03-ui-economy-fl0020`), including the **Toast** and **Panel**
 your NotificationController (FL-0027) builds on. Everything is under
-`roblox/src/client/UI/` (require from game or framework client code with
-`@game/StarterPlayer/StarterPlayerScripts/Forge/UI/...` inside the Forge client tree, or relative
-paths from within it).
+`roblox/src/shared/UI/` → `ReplicatedStorage.Forge.UI` (moved from `client/UI` on 2026-10-12: the
+D-017/D-022 require policy forbids `@game/StarterPlayer/...`, so game-001 client code could not reach
+a kit under StarterPlayerScripts). Require it from any client code (framework or game) with
+`@game/ReplicatedStorage/Forge/UI/...`; relative paths only from inside `roblox/src/shared`.
 
 ## Answers to `2026-10-12-forge-04-to-forge-03-components-shopviewed-celebrate.md`
 1. **Components and props:** all there. Added for you: Toast kind `achievement` (purpure accent,
@@ -26,12 +27,12 @@ paths from within it).
 
 ## API you need
 ```lua
-local Toast = require(".../UI/Components/Toast")
+local Toast = require("@game/ReplicatedStorage/Forge/UI/Components/Toast")
 local t = Toast.new({ kind = "info" | "success" | "warning" | "error" | "reward", title = "…", body = "…"?, icon = "name"?, width = 300?, layoutOrder = n? })
 t.instance.Parent = yourStack  -- a Frame; AutomaticSize Y; accent colour per kind (Toast.ACCENT)
 t:destroy()
 
-local Panel = require(".../UI/Components/Panel")
+local Panel = require("@game/ReplicatedStorage/Forge/UI/Components/Panel")
 local p = Panel.new({ title = "Settings"?, size = UDim2, position = UDim2?, anchor = Vector2?, ornament = true?, padding = 12?, header = Instance?, zIndex = n? })
 p.instance.Parent = gui          -- framed surface: ink gradient, gold trim, inner rule, shadow
 child.Parent = p.content         -- put your content here

@@ -1,11 +1,11 @@
 --[[
 	Kit scene: every FL-0020 component in its states, built by the real Luau modules
-	(roblox/src/client/UI). Render with the game-001 theme:
+	(roblox/src/shared/UI). Render with the game-001 theme:
 		PROJECT=games/game-001/default.project.json bash design/ui/render/shoot-luau.sh kit
 	The sheet is laid out for a wide screen; use a tall custom size, e.g. DEVICES=1280x1400.
 ]]
 
-local UI = "@game/StarterPlayer/StarterPlayerScripts/Forge/UI/"
+local UI = "@game/ReplicatedStorage/Forge/UI/"
 local Create = require(UI .. "Create")
 local Button = require(UI .. "Components/Button")
 local CurrencyPill = require(UI .. "Components/CurrencyPill")

@@ -1,66 +1,75 @@
 # Studio tests — UI & Economy (FORGE-03, gate G6)
 
-> **Not runnable yet (2026-10-12).** The pre-contract framework kingdom UI these steps describe was
-> removed. The kingdom HUD and build menu are being rebuilt in `games/game-001` against CONTRACTS G8
-> (FL-0059); this file is rewritten with that PR. Do not run U1–U8 below until then.
-
-Run by the user in Roblox Studio on the integrated build (`main`), setup as in
-`roblox/STUDIO_TEST_PLAN.md`. Quote the BuildInfo sha in every report. Headless checks
-(`check.sh`, the Lune specs and the snapshot screenshots in `design/ui/screenshots/`) are **not**
-Studio evidence; these steps are.
+Run by the user in Roblox Studio on the integrated game-001 build (`main`; open the place built
+from `games/game-001/default.project.json`). Quote the BuildInfo sha in every report. Headless
+checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/screenshots/`) are
+**not** Studio evidence; these steps are.
 
 ## Prerequisites (check first — skip the tests whose prerequisite is missing)
 | # | Prerequisite | Needed for |
 |---|---|---|
-| P1 | Skeleton (FL-0003) and FORGE-03's AI Kingdoms PRs merged into `main` | all |
-| P2 | FORGE-01's RemoteService, Core/RemoteClient and KingdomService/KingdomController merged (API: `production/handoffs/2026-10-12-forge-03-to-forge-01-kingdom-api.md`) | U2–U7 |
-| P3 | Icons uploaded and their ids in `games/sandbox/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U8 only; otherwise glyph fallbacks show |
-| P4 | Products/passes published (FL-0019; needs your approval) | purchase tests, later |
+| P1 | FORGE-03 PRs FL-0058 (Treasury), FL-0020 (UI kit) and FL-0059 (HUD, build menu) merged | all |
+| P2 | FORGE-01's `Kingdom`, `Match` and `Build` remotes and services merged (CONTRACTS G8) | U2–U9 |
+| P3 | FORGE-04's InputModeController merged (G4.1) | U5 build-mode camera/taps only |
+| P4 | Icons uploaded and their ids in `games/game-001/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U9 only; otherwise emoji fallbacks show |
 
-## U1 — the place boots with the UI controller (P1)
-1. Play (F5). In Output find `ForgeLoop client controllers started ... order=... UIController`.
-2. Without P2 you should also see `UIController: no KingdomController yet` and **no** kingdom HUD on
-   screen (it stays hidden until you own a kingdom). Pass = no red errors from `UIController`.
+## U1 — the place boots with the kingdom UI (P1)
+1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
+   `BuildMenuController`, with no red errors from either.
+2. Without P2 you see, after about 10 s, warnings like `KingdomHudController: cannot listen to
+   Kingdom.State`, and **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
 
-## U2 — resources and kingdom information (P2)
-1. Play. Top-left: crest, kingdom name + "Town Hall Lv 1 · N tiles", pills for Food, Wood, Stone,
-   Gold (amount / cap, +rate/min) and Citizens (total / housed, idle).
-2. The values match the server (Output or the developer console `Economy.Treasury` payloads).
+## U2 — kingdom, rulers, resources (P2)
+1. Play. Top-left: a crest in your kingdom's colour, its name (e.g. Emberhold) and
+   "Keep Lv 1 · 1 region · 0 Crown Points"; four pills Food / Wood / Stone / Gold with the starting
+   stock; under them your name with "you" (and co-rulers with Test → Clients and Servers, 2 players).
+2. Top bar: the phase ("FOUNDING") and the match time.
+3. Tap the Food pill: a card explains Food. Gather a tree: the Wood pill rises with a green "+N".
 
-## U3 — build a building end to end (P2)
-1. Click **Build** (right edge). The Construction drawer opens on Economy.
-2. Click **Quarry**. The detail shows its cost per resource with what you have (✓ or "have N"),
-   build time, workers and +stone/min.
-3. Click **Build Quarry**. Expected within a second: the button turns green "Construction started",
-   "Paid 20 Food · 50 Wood" with a progress bar, red "−50"/"−20" float under the Wood/Food pills,
-   a toast "Quarry construction started", a Quarry chip at the bottom with a countdown.
-4. After the build time the chip disappears and the Kingdom → Buildings tab shows Quarry Lv 1.
-5. Spend down Wood and select Farm: the button reads "Need N more Wood" and does nothing when clicked.
+## U3 — build menu and costs (P2)
+1. Click **Build** (right edge). The drawer opens on Economy with each building's cost.
+2. Click **Farm**: the detail shows "Economy · 34 × 28 studs", the build time and Wood 50 against
+   what you have (✓). The button reads **Place Farm**.
+3. Military → **Barracks** while short: the button is greyed and reads "Need … Wood and … Stone".
 
-## U4 — phone layout (P2)
-1. **Test → Device emulator** (toolbar) → choose an iPhone in **landscape** (e.g. iPhone 14, 844×390).
-2. Expected: compact pills to the right of the crest, a population chip under the crest, rail
-   buttons without labels, the timer inside the Roblox top bar. Open **Build**: one pane (list);
-   tapping a row shows its detail with "‹ Economy"; the Build button stays visible at the bottom.
-3. Nothing sits under the notch or the Roblox top-bar buttons. Every button is easy to tap.
-4. Screenshot the HUD, the list and the detail (attach to the report).
+## U4 — place a building, desktop (P2)
+1. **Place Farm**. The drawer closes; a translucent footprint follows the mouse with an arrow on
+   its front; a bar at the bottom shows Farm, its cost, "✓ Good spot", Rotate / Cancel / Place and
+   the hint "R rotates · Click places · Q cancels".
+2. Move outside your land: the footprint turns red and the bar says why ("Outside your territory").
+   Clicking does nothing.
+3. Press **R**: the footprint turns 90°. Back on your land, click: within a second the footprint
+   disappears, a toast says "Farm placed — Builders are on their way", a red "−50" floats under
+   Wood, and a "Farm · waiting" chip appears at the bottom; it fills as builders work.
+4. Place again and press **Q**: build mode ends, nothing is spent.
 
-## U5 — tablet and desktop layout (P2)
-1. Device emulator: an iPad in landscape (1024×768), then turn the emulator off at 1920×1080.
-2. Expected: the drawer shows list and detail side by side; desktop is scaled up (≈1.2×) and stays
-   inside the right half of the screen. Screenshot both.
+## U5 — place a building, phone (P2; P3 for camera/taps)
+1. **Test → Device emulator** → an iPhone in **landscape** (e.g. iPhone 14, 844 × 390).
+2. Expected HUD: crest with Crown Points on it, compact pills to its right, rail buttons without
+   labels, phase and time inside the Roblox top bar; nothing under the notch.
+3. Build → tap **Farm** (one pane; "‹ Economy" goes back) → **Place Farm**. Tap the ground: the
+   footprint moves there. Tap **Place** to build; the ⟳ button rotates; ✕ cancels. A tap on the
+   ground never builds by itself.
+4. Screenshot the HUD, the build detail and the placement bar.
 
-## U6 — kingdom panel, workers, upgrade confirmation (P2)
-1. Click **Kingdom** → Overview: citizens bar (working / building / idle) and production per resource.
-2. Buildings tab → use **+ / −** on a Farm: the worker count changes and Food/min follows.
-3. With enough resources, **Upgrade** the Town Hall: a confirmation appears (large spend); confirm →
-   toast "Town Hall upgrade started".
+## U6 — tablet and desktop layout (P2)
+1. Device emulator: an iPad in landscape (1024 × 768), then off at 1920 × 1080.
+2. Expected: drawer with list and detail side by side to the right; desktop scaled up (~1.2×).
+   Screenshot both with the Build drawer open.
 
-## U7 — match timer (P2 + FORGE-01 round remotes)
-1. Start a round. The timer appears in the Roblox top bar, counting down "until the match ends".
+## U7 — Kingdom panel and keep upgrade (P2)
+1. Click **Kingdom** → Overview: rulers (you marked) and the standings of the four kingdoms by
+   Crown Points (yours highlighted, AI kingdoms marked "AI").
+2. Buildings tab → **Upgrade** on the Keep → "Upgrade to Lv 2" with its costs. With exactly enough
+   resources a confirmation appears first. Confirm → toast "Keep upgrade started", the stock drops,
+   a "Keep Lv 2" chip appears; when built, the plate reads "Keep Lv 2".
 
-## U8 — icons (P3)
-1. Pills, rail buttons and building tiles show the uploaded icons (no emoji fallbacks).
+## U8 — two rulers (P2)
+1. Test → Clients and Servers with 2 players in one party (Party Simulator). Both see the same
+   kingdom, both names under the pills; a Farm placed by one lowers the Wood pill of both.
+
+## U9 — icons (P4)
+1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 
 ## Report
-Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U4/U5, and any Output errors.
+Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6, any Output errors.
