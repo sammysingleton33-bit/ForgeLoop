@@ -491,6 +491,13 @@ function UIController:render()
 		self._roots[key].Size = UDim2.fromScale(1 / m.scale, 1 / m.scale)
 	end
 	local s = self.state
+	-- Hidden until the player rules a kingdom (lobby, other games in the integration place).
+	local active = s.kingdom ~= nil or s.treasury ~= nil
+	self.guis.hud.Enabled = active
+	self.guis.menus.Enabled = active
+	if not active and s.menu ~= nil then
+		s.menu = nil
+	end
 	local now = self._env.serverTimeNow()
 	local overview = if s.kingdom
 		then KingdomPanelModel.overview(s.kingdom, s.treasury, self.catalog, self.currencies)
