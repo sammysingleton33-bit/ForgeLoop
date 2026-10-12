@@ -20,8 +20,9 @@
     "Per-area game config files match games/*/config/<Name>.luau in every game folder. Everything else in games/sandbox/ is forge-05. Other games/game-00N/ paths stay with forge-00 (it creates them) until the game brief reassigns sub-folders: add rows then.",
     "Unlisted paths belong to forge-00, e.g. README.md, AGENTS.md, CLAUDE.md, docs/architecture/interfaces.md, docs/standards/, tools/forge.py, tools/tests/test_forge.py, tools/setup/, production/handoffs/TEMPLATE.md, agents/*/STATUS.md. New handoffs and each agent's own STATUS.md are opened up by the exceptions below.",
     "Shared contracts (roblox/src/shared/Contracts/ -> forge-05 as custodian, docs/architecture/interfaces.md -> forge-00) are flagged when another worker edits them; AGENTS.md requires FORGE-05 review and FORGE-00 approval for those PRs, recorded on the PR.",
-    "game-001 rows come from the 'game-001 \u2014 AI Kingdoms' section of team.md (D-020, D-022): 'src/' = games/game-001/src/, 'config' = games/game-001/config/. Two FORGE-05 rows (now also in team.md): games/game-001/config/Game.luau (game id + display name, read by Studio smoke test S1, like games/sandbox/config/Game.luau) and games/game-001/**/.gitkeep (empty-folder placeholders the Rojo project needs before workers add code; any more specific row still wins).",
+    "game-001 rows come from the 'game-001 — AI Kingdoms' section of team.md (D-020, D-022): 'src/' = games/game-001/src/, 'config' = games/game-001/config/. Two FORGE-05 rows (now also in team.md): games/game-001/config/Game.luau (game id + display name, read by Studio smoke test S1, like games/sandbox/config/Game.luau) and games/game-001/**/.gitkeep (empty-folder placeholders the Rojo project needs before workers add code; any more specific row still wins).",
     "Name prefixes compete by literal prefix: games/game-001/src/server/Services/MatchAnalytics* (forge-04) beats Match* (forge-01) for MatchAnalyticsService.luau.",
+    "games/game-001/world/.gitkeep (exact file, forge-05): the empty-folder placeholder that lets the game project mount world/ -> ReplicatedStorage.Game.World before FORGE-02's first world file (Rojo fails on a missing $path; FL-0067). Everything else in world/ is forge-02's.",
     "Crown Arena rows (D-029, VS-2) added by FORGE-00 on 2026-10-12 from team.md: Arena shared folder, Leadership/Support/Arena/Duel services, Duel/ArenaState controllers and Support/Arena/Duel config -> forge-01; SupportMeter/PerkPicker/Loadout/ArenaIntro/ArenaHud/LeadershipRecap/Petition controllers -> forge-03; Crowd/Chant controllers and Crowd config -> forge-04; tests/fairness -> forge-05; design/crown-arena.md -> forge-00."
   ],
   "rules": {
@@ -231,7 +232,8 @@
     "games/game-001/CONTRACTS.md": "forge-00",
     "games/game-001/design/crown-arena.md": "forge-00",
     "games/game-001/**/.gitkeep": "forge-05",
-    "games/game-001/tests/fairness/**": "forge-05"
+    "games/game-001/tests/fairness/**": "forge-05",
+    "games/game-001/world/.gitkeep": "forge-05"
   },
   "exceptions": [
     {
