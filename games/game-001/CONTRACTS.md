@@ -305,7 +305,7 @@ Kit.build(type: BuildingType, level: number, stage: number | "complete", kingdom
 	-- PrimaryPart; attachments Door, WorkSpot1..n, DropOff (storehouse), Rally (barracks)
 Kit.footprint(type: BuildingType, level: number): Vector2           -- the one source for canPlace and the build ghost
 Kit.character(kind: EntityKind, job: JobId, kingdomColor: Color3): Model
-	-- ≤ 8 parts (anchored root, torso, head, 2 arms, 2 legs, tool); Motor6Ds named after the moving part;
+	-- ≤ 9 parts (anchored root, torso, head, 2 arms, 2 legs, tool, + Hair welded to Head, no motor; D-032); Motor6Ds named after the moving part;
 	-- CanCollide, CanTouch and CanQuery false; pooled client rig template
 Kit.regalia(kingdomColor: Color3): { Accessory }                     -- ruler crown + cape (R15 and R6 attachments)
 Kit.prop(assetId: string): Model                                     -- imported mesh from Forge.Assets if present, else a part-built stand-in
@@ -466,7 +466,7 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
 - **Chemistry and memories.** Chemistry is rolled once per citizen and may drift at most ±5 from its rolled value (`ContentQuery.driftChemistry`). Memories set by content are **pinned**: the G5 cap of 8 never evicts them.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
-- **Looks.** The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
+- **Looks.** Hair is the 9th rig part, welded to the Head (D-032). The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
 - **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
 
 ### G13.3 Conversations (FORGE-01 server; FORGE-03 panel; FORGE-04 bubbles) — VS-1
@@ -542,7 +542,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `population.reseed <seed>`
 
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: content review follow-ups:
+- v0.4-g4 (2026-10-12) FORGE-00: G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
   - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
   - G13.2 chemistry drift ±5 and pinned memories;
   - G13.3 `cue` event and option cost/risks;
