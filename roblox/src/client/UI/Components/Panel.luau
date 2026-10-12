@@ -9,12 +9,17 @@
 		ornament: boolean?      gold rule with a diamond under the title (default true with a title)
 		padding: number?        inner padding (default 12)
 		header: Instance?       extra header content placed right of the title (tabs, close button)
+		onClose: (() -> ())?    adds a close control at the top right (an X, or `closeText`)
+		closeText: string?      e.g. "Skip": a small secondary button instead of the X
+		compact: boolean?       phones: 8 px padding and a smaller title
 		zIndex: number?
 	Panel.new(props) -> handle { instance: Frame, content: Frame (put children here),
 		headerSlot: Frame, update(partial), destroy() }
 ]]
 
+local Button = require("./Button")
 local Create = require("../Create")
+local IconButton = require("./IconButton")
 local Style = require("../Style")
 local Theme = require("../Theme")
 
@@ -25,9 +30,9 @@ local RADIUS = 12
 
 function Panel.new(props: { [string]: any })
 	local self = setmetatable({}, Panel)
-	local pad = props.padding or 12
+	local pad = props.padding or (if props.compact then 8 else 12)
 	local hasTitle = props.title ~= nil
-	local headerHeight = if hasTitle or props.header then 38 else 0
+	local headerHeight = if hasTitle or props.header or props.onClose then 38 else 0
 	local ornament = hasTitle and props.ornament ~= false
 	local top = headerHeight + (if ornament then 14 else if headerHeight > 0 then 8 else 0)
 
@@ -51,7 +56,7 @@ function Panel.new(props: { [string]: any })
 				text = props.title,
 				role = "display",
 				weight = Enum.FontWeight.Bold,
-				size = 26,
+				size = if props.compact then 21 else 26,
 				color = Theme.color("gold300"),
 				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 1 },
 			})
@@ -131,6 +136,26 @@ function Panel.new(props: { [string]: any })
 		Ornament = ornamentFrame,
 		Content = self.content,
 	})
+	if props.onClose then
+		local close
+		if props.closeText then
+			close = Button.new({
+				text = props.closeText,
+				variant = "secondary",
+				size = "small",
+				width = math.max(64, 12 + 8 * #props.closeText),
+				onActivated = props.onClose,
+			})
+		else
+			close = IconButton.new({ icon = "close", variant = "plain", size = 36, onActivated = props.onClose })
+		end
+		close.instance.Name = "Close"
+		close.instance.AnchorPoint = Vector2.new(1, 0)
+		close.instance.Position = UDim2.new(1, -pad, 0, pad - 1)
+		close.instance.ZIndex = 3
+		close.instance.Parent = self.instance
+		self.close = close
+	end
 	return self
 end
 

@@ -56,22 +56,36 @@ function CurrencyPill.new(props: { [string]: any }, motion: any?)
 		AutomaticSize = Enum.AutomaticSize.X,
 		Size = UDim2.fromScale(0, 1),
 		LayoutOrder = 2,
-	}, { Style.list("y", 1, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center), self._amount, self._rate })
+	}, {
+		List = Style.list("y", 1, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
+		Amount = self._amount,
+		Rate = self._rate,
+	})
+	-- The row holds the laid-out content; the pill itself has no list layout, so the floating
+	-- delta (pulse) can sit outside the row instead of becoming a list item.
+	self._row = Create("Frame", {
+		Name = "Row",
+		BackgroundTransparency = 1,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromScale(0, 1),
+	}, {
+		Padding = Style.padding(0, 10, 0, 2),
+		List = Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
+		Stack = self._stack,
+	})
 	self.instance = Create("Frame", {
 		Name = "Pill_" .. tostring(props.currency),
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		AutomaticSize = Enum.AutomaticSize.X,
 	}, {
-		Style.corner(999),
-		self._stroke,
-		Create("UIGradient", {
+		Corner = Style.corner(999),
+		Stroke = self._stroke,
+		Gradient = Create("UIGradient", {
 			Rotation = 90,
 			Color = ColorSequence.new(Theme.color("ink700"), Theme.color("ink950")),
 			Transparency = NumberSequence.new(0.08, 0.1),
 		}),
-		Style.padding(0, 10, 0, 2),
-		Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
-		self._stack,
+		Row = self._row,
 	})
 	self:update(props)
 	return self
@@ -85,7 +99,7 @@ function CurrencyPill:update(partial: { [string]: any })
 	local compact = p.compact == true
 	self.instance.Size = UDim2.fromOffset(0, if compact then 30 else 34)
 	self.instance.LayoutOrder = p.layoutOrder or 0
-	local medallion = self.instance:FindFirstChild("Medallion")
+	local medallion = self._row:FindFirstChild("Medallion")
 	if medallion == nil or medallion:GetAttribute("compact") ~= compact then
 		if medallion then
 			medallion:Destroy()
@@ -93,7 +107,7 @@ function CurrencyPill:update(partial: { [string]: any })
 		medallion = Icon.medallion(p.currency, if compact then 24 else 28, Theme.resource(p.currency))
 		medallion:SetAttribute("compact", compact)
 		medallion.LayoutOrder = 1
-		medallion.Parent = self.instance
+		medallion.Parent = self._row
 	end
 	local text
 	if p.error then

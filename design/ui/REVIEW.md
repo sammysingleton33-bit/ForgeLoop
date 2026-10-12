@@ -55,6 +55,14 @@ Tokens: `design/ui/tokens.json` → `prototype/tokens.css` (generated) and
 - The prototype's stylised kingdom backdrop is a stand-in for the game camera view.
 - Luau snapshot screenshots of the real Luau UI: see the next section.
 
-## Luau UI snapshots
-Pending: rendered from the actual Luau instance trees (`design/ui/render/`), listed here once
-generated and reviewed.
+## Luau UI snapshots (the real kit, not the prototype)
+`design/ui/render/` runs the actual Luau modules under Lune and draws the instance tree they build
+with a Roblox-layout emulation (approximation; deviations listed in `design/ui/render/README.md`).
+- `screenshots/luau/kit-1280x1400.png` — every component and state from `roblox/src/client/UI`,
+  game-001 theme (`PROJECT=games/game-001/default.project.json DEVICES=1280x1400 bash
+  design/ui/render/shoot-luau.sh kit`). Matches the prototype sheet (`kit-*.png`): colours, fonts,
+  trims, badges, rarity frames, toasts, panel ornament, modal.
+- `screenshots/luau/selftest-{phone,tablet,desktop}.png` — the renderer's own self-test.
+- **Found by this render and fixed:** the spend delta of a CurrencyPill was laid out inside the pill
+  by its UIListLayout instead of floating under it (the pill now keeps its content in a `Row`).
+- Glyph fallbacks (emoji) show where uploaded icons will go.

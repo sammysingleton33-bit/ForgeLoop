@@ -13,8 +13,11 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   `Heavy` (900). `observed-once`.
 - **Clearing a container also destroys its UIScale.** Give screens their own child container and
   keep modifiers (UIScale) on the root. `observed-once`.
-- **UIListLayout positions every GuiObject child**, so decorations (tab underline, row accent) must
-  live outside the laid-out row. `standard` (Roblox semantics).
+- **UIListLayout positions every GuiObject child**, so decorations (tab underline, floating
+  deltas, badges) must live outside the laid-out row: keep a `Row` child for the layout. Hit three
+  times (tab underline, pill delta caught only by the Luau snapshot render). `repeated`.
+- **Render the real Luau tree, not only the prototype.** `design/ui/render/` found a layout bug the
+  HTML prototype could not (the prototype positions by hand). `observed-once`.
 - **Pipelines hide failures.** `cmd | tail -3 && git commit` commits even when `cmd` failed. Use
   `set -o pipefail` (or no pipe) before chaining a commit/push to a check. Cost: one pushed commit
   with a failing spec (`e9e7766`, fixed in `83761e7`). `observed-once`.
