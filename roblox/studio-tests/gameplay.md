@@ -8,6 +8,18 @@ Output for any step that fails.
 (game tree wiring, FORGE-05) and the FORGE-01 kingdom PRs (FL-0048 → FL-0052). Until both land there
 is nothing to run. Never mark a step as passed without a user run.
 
+Which steps are runnable after which PR:
+
+| Steps | Needs |
+|---|---|
+| K1–K4, K7 (join, phases, citizens, gathering, rejoin) | FL-0046 + FL-0048 (`Kingdom.*` remotes) |
+| K5 (build, upgrade) | FL-0051 (`Build.Place`, `Build.Upgrade`) |
+| K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`) |
+| Performance capture | FL-0049 (`KingdomHost: sim` log line, entity replication) |
+
+Remote names below are the CONTRACTS G1/G8 names (`<Area>.<Action>`, under
+`ReplicatedStorage.ForgeRemotes.<Area>`). Kingdom functions return `(ok, errorCode?, result?)`.
+
 ## Setup
 1. Open the game-001 build: `rojo serve games/game-001/default.project.json`, or the CI `.rbxl` once FL-0046 lands.
 2. Open the Output window.
@@ -20,15 +32,17 @@ is nothing to run. Never mark a step as passed without a user run.
 
 **Expected:** two different kingdoms (balanced assignment). No errors in Output.
 
-**Shared-kingdom variant:** the second player calls `Gameplay.ChooseKingdom` with the first player's
-kingdom while in the Lobby. Both are then on one team and both see the same treasury.
+**Shared-kingdom variant:** while in the Lobby, the second player calls `Kingdom.Choose` with the first
+player's kingdom id (`crimson`, `azure`, `emerald` or `gold`). Both are then on one team and both see the
+same treasury. After the countdown the same call returns `too_late`.
 
 ## K2 — Match phases (VS-1 / G3)
 1. Play Solo and watch Output.
 2. Wait for the countdown (10 s), then Founding.
 
 **Expected:**
-- `Gameplay.MatchPhase` fires `Founding` with a deadline about 8 minutes ahead.
+- `Kingdom.Phase` fires `Lobby` with the countdown deadline, then `Founding` with a deadline about 8
+  minutes ahead.
 - The citizens start moving only after the countdown ends.
 
 ## K3 — Citizens at work and the stockpile rising (VS-1 row 4)
@@ -38,11 +52,11 @@ kingdom while in the Lobby. Both are then on one team and both see the same trea
 **Expected:**
 - At least 12 citizens with visible jobs: farmer, woodcutter, miner, builder, hauler.
 - They walk to farms, trees and rocks, work, then carry goods back to the keep or a storehouse.
-- `Gameplay.KingdomSnapshot` totals rise. Food rises from the farm, wood from trees and stone from rocks.
+- `Kingdom.Snapshot` totals rise. Food rises from the farm, wood from trees and stone from rocks.
 - At night (after 90 s of each 120 s day) the citizens go home to sleep. In the morning they go back to work.
 
 ## K4 — Ruler gathering (VS-1 row 5)
-1. Walk to a tree and trigger `Gameplay.Gather(nodeId)`. For now, call it from the client command bar with the node's `EntityId` attribute.
+1. Walk to a tree and trigger `Kingdom.Gather(nodeId)`. For now, call it from the client command bar with the node's `EntityId` attribute.
 2. Repeat it faster than once per 0.8 s.
 3. Repeat it from 30 studs away.
 
@@ -52,9 +66,9 @@ kingdom while in the Lobby. Both are then on one team and both see the same trea
 - From 30 studs away the call returns `too_far`.
 
 ## K5 — Build and upgrade (VS-1 row 6)
-1. Place a House inside your territory with `Gameplay.PlaceBuilding("house", x, z)`. The build menu (FORGE-03) replaces this call later.
+1. Place a House inside your territory with `Build.Place("house", cframe)`. The build menu (FORGE-03) replaces this call later.
 2. Watch the site.
-3. Upgrade the keep once wood and stone allow it (`Gameplay.UpgradeBuilding(keepId)`).
+3. Upgrade the keep once wood and stone allow it (`Build.Upgrade(keepId)`).
 
 **Expected:**
 - The treasury drops by exactly 40 wood.
@@ -66,8 +80,9 @@ kingdom while in the Lobby. Both are then on one team and both see the same trea
 
 ## K6 — Recruit and capture (VS-1 row 7)
 1. Build a Barracks.
-2. Recruit 3 soldiers (`Gameplay.Recruit("soldier", 3)`).
-3. Move them onto the neutral watchtower near the map centre with `Gameplay.ArmyOrder("Move", x, z)`.
+2. Recruit 3 soldiers (`Army.Recruit("soldier", 3)`).
+3. Move them onto the neutral watchtower near the map centre with `Army.Command` (a Move order; the
+   argument shape is fixed by FL-0052).
 
 **Expected:**
 - The treasury is charged 90 food and 30 wood.
@@ -81,11 +96,12 @@ kingdom while in the Lobby. Both are then on one team and both see the same trea
 
 **Expected:**
 - Both buildings exist and the treasury drops by the sum of both costs.
-- The rejoining player is back in the same kingdom and sees the current state at once (`Gameplay.GetKingdomState`).
+- The rejoining player is back in the same kingdom and sees the current state at once (`Kingdom.GetState`).
 
 ## Performance capture (FL-0049, gate G7)
 With 4 kingdoms × 12 citizens running for 5 minutes, record:
-- server sim time per tick (Output line `KingdomHost: sim`, logged every 30 s);
+- server sim time per tick (Output line `KingdomHost: sim`, logged every 30 s once FL-0049 lands;
+  until then the value exists only as `MatchHost:simMsPerTick()`);
 - Network → Data sent per client (KB/s).
 
 The targets are ≤ 4 ms per frame and ≤ 50 KB/s per player.

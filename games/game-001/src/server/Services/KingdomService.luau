@@ -12,9 +12,13 @@
 		KingdomService:addCrownPoints(id, amount, reason)
 		KingdomService.membershipChanged: Signal<(Player, KingdomId?)>
 	Players join automatically on PlayerAdded (MatchHost); assign/assignParty are for lobby UIs and
-	party systems. Every kingdom maps to a Team (chat, leaderboard, spawn). Empty kingdoms have
-	isAI = true and are run by the AI governor (VS-2 tuning; config Governor).
-	Fires GameEvents.KingdomJoined(player, kingdomId) once per join (G9).
+	party systems (in the Lobby, assignParty also regroups members who were already seated). Every
+	kingdom maps to a Team (chat, leaderboard, spawn). Empty kingdoms have isAI = true and are run by
+	the AI governor (VS-2 tuning; config Governor).
+	membershipChanged fires once per net change, after the simulation tick that made it (<= tickSeconds):
+	(player, kingdomId) on a join or a Lobby switch, (player, nil) on leaving, even when the Player has
+	already left the server. GameEvents.KingdomJoined(player, kingdomId) fires with every non-nil change
+	(G9), so once per join, per switch and per match a player is seated in.
 ]]
 
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
@@ -30,25 +34,40 @@ function Def.new(env: any, registry: any)
 	self._env = env
 	self._match = registry:get("MatchService")
 	self.membershipChanged = Signal.new()
+	-- userId -> Player seen in a kingdom (ruler events are handled a tick later, when a leaving
+	-- Player is no longer in Players) and userId -> "<roundId>/<kingdomId>" last reported
+	self._players = {} :: { [number]: any }
+	self._reported = {} :: { [number]: string }
 	return self
 end
 
 function KingdomService:start()
 	self._match.host.events:connect(function(name: string, event: any)
-		if name ~= "RulerJoined" and name ~= "RulerLeft" then
-			return
-		end
-		local player = self._env.Players:GetPlayerByUserId(event.userId)
-		if player == nil then
-			return
-		end
-		if name == "RulerJoined" then
-			self.membershipChanged:fire(player, event.kingdomId)
-			GameEvents.KingdomJoined:fire(player, event.kingdomId)
-		else
-			self.membershipChanged:fire(player, self:getKingdomOf(player))
+		if name == "RulerJoined" or name == "RulerLeft" then
+			self:_report(event.userId)
 		end
 	end)
+end
+
+-- Reports the ruler's current membership if it differs from the last one reported. Several ruler
+-- events of one tick (join then switch, leave then rejoin) collapse into one net change.
+function KingdomService:_report(userId: number)
+	local player = self._env.Players:GetPlayerByUserId(userId) or self._players[userId]
+	if player == nil then
+		return
+	end
+	local match = self._match.host.match
+	local kingdomId = match:kingdomOf(userId)
+	local key = if kingdomId then `{match.roundId}/{kingdomId}` else nil
+	if self._reported[userId] == key then
+		return
+	end
+	self._reported[userId] = key
+	self._players[userId] = if kingdomId then player else nil
+	self.membershipChanged:fire(player, kingdomId)
+	if kingdomId then
+		GameEvents.KingdomJoined:fire(player, kingdomId)
+	end
 end
 
 function KingdomService:_sim(): any
@@ -96,7 +115,7 @@ function KingdomService:assignParty(players: { any }, preferred: string?): { [an
 	for _, player in players do
 		table.insert(userIds, player.UserId)
 	end
-	local ok, seated = self._match.host.match:joinParty(userIds, preferred)
+	local ok = self._match.host.match:joinParty(userIds, preferred)
 	if not ok then
 		return nil
 	end

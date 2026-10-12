@@ -50,7 +50,7 @@ function MatchService:start()
 			treasury = treasury,
 		},
 	})
-	self.host.events:connect(function(name: string, event: any)
+	self.host.events:connect(function(name: string)
 		if name == "MatchPhaseChanged" or name == "CountdownChanged" then
 			self.phaseChanged:fire(self:getPhase(), { endsAt = self:getEndsAt() })
 		end
