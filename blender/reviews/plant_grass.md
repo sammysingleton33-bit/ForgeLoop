@@ -30,3 +30,13 @@ Change: grass tufts use the 10-tri blade (one bend: ring at 58 % height + tip) i
 Tufts 506-674 -> 326-530 tris (-21 % on the seed-head tuft with its stalks, -33 to -36 % on the rest).
 Seen (`previews/plant_grass.jpg`): fan shape, colour ramp and silhouettes are effectively unchanged at hero and
 gameplay distance. Scores unchanged.
+
+## Round 5: revert to v1 (FORGE-02 lead)
+The v2 10-tri blade (round 4) cost the round-1 PASS: fresh review round 2 = NEEDS-WORK (silhouette 3).
+`generators/plant_grass.py` restored byte-identical from a024e40 (VERSION 1; the shared blade helper's default
+3-ring path is the v1 geometry); all 6 geometry hashes equal the PASS hashes pinned in f76edef
+`reviews/plant_grass.json`, which is restored.
+Polish backlog (fresh review round 2, not acted on):
+- tufts 01-04 share one needle-blade spiky fan outline (04 = same tuft in tan); blades splay near-horizontal on 02/03.
+- base of 06 (reeds) reads as a solid faceted tube.
+- thin spiky blades clash with the chunky rounded kit language: try fewer, broader, rounder-tipped blades.

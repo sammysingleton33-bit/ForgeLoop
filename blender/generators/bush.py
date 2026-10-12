@@ -12,7 +12,7 @@ from lib.geo import TAU, Vector, icosphere, lathe, look_rot
 from generators import _vegetation_common as vc
 
 NAME = "bush"
-VERSION = 2
+VERSION = 1
 CATEGORY = "bush"
 BUDGET = "bush"
 COLLISION = {"fidelity": "Box"}
@@ -122,12 +122,12 @@ def _hedge(b, rng, s, sch):
     sec = []
     cr = min(D, Hh) * 0.32
     for cy, cz, a0 in ((D / 2 - cr, Hh - cr, 0.0), (-D / 2 + cr, Hh - cr, 90.0)):
-        for k in range(3):  # 3 points per rounded corner (was 4): same read, fewer hidden faces
-            a = math.radians(a0 + 90.0 * k / 2)
+        for k in range(4):
+            a = math.radians(a0 + 90.0 * k / 3)
             sec.append((cy + math.cos(a) * cr, cz + math.sin(a) * cr))
     sec += [(-D / 2 - 0.05, Hh * 0.3), (-D / 2 + 0.25, 0.0), (D / 2 - 0.25, 0.0), (D / 2 + 0.05, Hh * 0.3)]
     seed = rng.uniform(0, 100)
-    xs = [-L / 2 + L * i / 11 for i in range(12)]
+    xs = [-L / 2 + L * i / 15 for i in range(16)]
     rings = []
     for xi, x in enumerate(xs):
         end = 1.0 - (0.12 if xi in (0, len(xs) - 1) else 0.0)
@@ -150,14 +150,14 @@ def _hedge(b, rng, s, sch):
         cols.append(sch[2] if nz > 0.5 else sch[0] if zc < Hh * 0.2 else sch[1])
     body.face_colors = cols
     pcs = [body]
-    for i in range(5):
-        x = -L / 2 + 2.0 + (L - 4.0) * i / 4 + rng.uniform(-0.5, 0.5)
+    for i in range(6):
+        x = -L / 2 + 1.9 + (L - 3.8) * i / 5 + rng.uniform(-0.5, 0.5)
         r = rng.uniform(1.3, 1.6) * (Hh / 3.6) ** 0.5
         lump = vc.puff(rng, r, sch, hglob=0.6, subdiv=2, squash=0.6, bottom=0.6, lump=0.2)
         pcs.append(lump.move(x, rng.uniform(-0.4, 0.4), Hh - r * 0.36))
-        if i not in (1, 3):
+        if i % 2:
             continue
-        side = -1 if i == 1 else 1
+        side = -1 if i % 4 else 1
         sl = vc.puff(rng, r * 0.8, sch, hglob=0.35, subdiv=2, squash=0.9, bottom=0.8, lump=0.14)
         pcs.append(sl.scale(1.0, 0.6, 1.0).move(x + 0.8, side * D * 0.44, Hh * rng.uniform(0.35, 0.55)))
     return pcs

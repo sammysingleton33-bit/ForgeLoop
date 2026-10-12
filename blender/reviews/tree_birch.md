@@ -48,3 +48,23 @@ Seen (quick sheet + gameplay strip): six different structures; tris now 2218 / 2
 04 hero (35 deg azimuth) it sits partly behind the leader crown.
 Remaining weaknesses: crowns are still built from many similar small puffs; twin (02) and clump (03) remain the
 most conventional of the six.
+
+## Round 5 (fix round after fresh review round 2: NEEDS-WORK, silhouette 3) — v3
+Reviewer findings: canopies were dozens of same-sized flat pads (stacks of plates, busy outline, no primary
+masses); birch_04 showed a bare broken spike above its lower foliage; birch_05's low clump sat on a thin stick;
+trunks lacked the oak's root flare; 02/03 spent 3.5-3.7k tris on overlapping pads.
+Changes (VERSION 3):
+- Crown = 3-5 large primary masses per tree (smooth 180-tri geodesic, rounder/taller than the oak's: rz x1.18) with
+  2-3 satellite clumps each, placed close to the stem (offset x0.72) and spaced so neighbouring masses overlap
+  into one crown; dark twigs shortened so they stay under the rim.
+- birch_04: stem now snaps at 15.5 studs and the stub is capped inside a foliage mass (no bare spike); the side
+  leader (r 0.7) carries the upper, asymmetric crown.
+- birch_05: side branch shorter (4.6 studs) and chunkier (0.8 x stem radius -> 0.36 tip); its mass sits close
+  to the trunk.
+- All: root flare 0.55, three small dark roots, consistent dark foot band (1.3-1.7 studs, ragged edge).
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4
+Seen (quick sheet + 04 hero + gameplay strip): chunky merged crowns with sunlit tops, gaps only between masses;
+leaning / twin / 3-stem / side-leader / low-arm / gold V-fork all read at 57 studs. Tris 1666-3016 (was
+2218-3744); min silhouette diff 0.416.
+Remaining weaknesses: 04 and 05 still stack their masses vertically with a visible neck of wood between them;
+satellites on top read as small bumps rather than distinct clumps.
