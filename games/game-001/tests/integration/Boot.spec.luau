@@ -108,18 +108,36 @@ describe("game-001 project wiring (FL-0046)", function()
 	end)
 end)
 
+-- Error-level logs during the run. A service that catches an error and only logs it would otherwise
+-- pass the boot gate (FORGE-01's MatchHost did, FL-0048 review); a boot is clean only without them.
+local function errorLogs(env): { string }
+	local out = {}
+	for _, entry in env.mock.logs do
+		if entry.level == "error" then
+			local fields = {}
+			for key, value in entry.fields or {} do
+				table.insert(fields, `{key}={tostring(value)}`)
+			end
+			table.sort(fields)
+			table.insert(out, `{entry.message} {table.concat(fields, " ")}`)
+		end
+	end
+	return out
+end
+
 describe("game-001 headless boot (FL-0046)", function()
-	it("the server boots every service from both trees and runs 10 virtual seconds without errors", function()
+	it("the server boots every service from both trees and runs 75 virtual seconds without errors", function()
 		local definitions = definitionsIn(SERVER_TREES)
 		local env = MockEnv.new({ seed = 1, sharedModules = { Remotes = remotesByArea() } })
 		local registry = Loader.load(env, definitions)
 		expect(#registry.order).toBe(#definitions)
-		env.mock:advance(10)
+		env.mock:advance(75) -- past the 60 s upkeep tick and the 10 s remote-wait timeouts
 		expect(env.mock.threadErrors).toEqual({})
+		expect(errorLogs(env)).toEqual({})
 		registry:destroy()
 	end)
 
-	it("a client boots every controller from both trees and runs 10 virtual seconds without errors", function()
+	it("a client boots every controller from both trees and runs 75 virtual seconds without errors", function()
 		local definitions = definitionsIn(CLIENT_TREES)
 		local env = MockEnv.new({
 			seed = 1,
@@ -129,8 +147,9 @@ describe("game-001 headless boot (FL-0046)", function()
 		})
 		local registry = Loader.load(env, definitions)
 		expect(#registry.order).toBe(#definitions)
-		env.mock:advance(10)
+		env.mock:advance(75) -- past the 60 s upkeep tick and the 10 s remote-wait timeouts
 		expect(env.mock.threadErrors).toEqual({})
+		expect(errorLogs(env)).toEqual({})
 		registry:destroy()
 	end)
 end)

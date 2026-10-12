@@ -47,7 +47,7 @@ local function partsOf(model: Instance)
 			table.insert(out, {
 				name = d.Name,
 				class = d.ClassName,
-				shape = if d.ClassName == "Part" then (d :: Part).Shape.Name else d.ClassName,
+				shape = if d:IsA("Part") then (d :: Part).Shape.Name else d.ClassName,
 				size = { r3(d.Size.X), r3(d.Size.Y), r3(d.Size.Z) },
 				cframe = cf12(d.CFrame),
 				color = { r3(d.Color.R), r3(d.Color.G), r3(d.Color.B) },
@@ -73,7 +73,10 @@ local function surfaceMaterial(x: number, z: number, h: number): string
 		end
 	end
 	for _, field in f.fields do
-		if math.abs(x - field.center.X) < field.size.X / 2 and math.abs(z - field.center.Y) < field.size.Y / 2 then
+		local yaw = field.yaw or 0
+		local dx, dz = x - field.center.X, z - field.center.Y
+		local lx, lz = dx * math.cos(yaw) - dz * math.sin(yaw), dx * math.sin(yaw) + dz * math.cos(yaw)
+		if math.abs(lx) < field.size.X / 2 and math.abs(lz) < field.size.Y / 2 then
 			return "Mud"
 		end
 	end
@@ -128,6 +131,26 @@ local function dump()
 				placements,
 				{ assetId = id, cframe = cf12(Layout.plots[kingdom].anchors[bt]), feature = "building" }
 			)
+		end
+	end
+	-- build slot markers (WorldService, G13.5) and, on crimson, a few slots built up to preview a grown town
+	local SAMPLE = { [1] = { "house", 1 }, [2] = { "house", 2 }, [3] = { "house", 1 }, [5] = { "barracks", 2 } }
+	for kingdom, color in KINGDOM_COLORS do
+		for i, slot in Layout.plots[kingdom].buildSlots do
+			local size = Layout.slotSizes[slot.size]
+			local id = `slot_{slot.size}_{kingdom}`
+			if not assets[id] then
+				assets[id] = partsOf(Kit.slotMarker(size, color))
+			end
+			local y = WorldPlan.groundHeight(Layout, slot.center.X, slot.center.Z)
+			local cf = CFrame.new(slot.center.X, y, slot.center.Z) * CFrame.Angles(0, slot.rot, 0)
+			table.insert(placements, { assetId = id, cframe = cf12(cf), feature = "slot" })
+			local sample = SAMPLE[i]
+			if kingdom == "crimson" and sample then
+				local bid = `{sample[1]}{sample[2]}_{kingdom}_{i}`
+				assets[bid] = partsOf(Kit.build(sample[1], sample[2], "complete", color, i))
+				table.insert(placements, { assetId = bid, cframe = cf12(cf), feature = "slot_building" })
+			end
 		end
 	end
 	assets.watchtower_neutral = partsOf(Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR))

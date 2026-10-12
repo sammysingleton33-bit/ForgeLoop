@@ -172,6 +172,7 @@ def test_rules_cover_every_game001_path_in_team_md(rules):
         ("games/game-001/src/server/Services/.gitkeep", "forge-05"),
         ("games/game-001/src/shared/Sim/.gitkeep", "forge-01"),
         ("games/game-001/world/.gitkeep", "forge-05"),
+        ("games/game-001/src/server/Services/DebugPresetService.luau", "forge-05"),
         ("games/game-001/world/Layout.luau", "forge-02"),
         ("games/game-001/config/Game.luau", "forge-05"),
         ("games/game-001/src/server/Services/UnlistedService.luau", "forge-00"),

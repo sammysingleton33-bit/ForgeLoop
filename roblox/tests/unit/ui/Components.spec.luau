@@ -35,6 +35,29 @@ describe("UI kit components", function()
 		Create.setConnector(previous)
 	end)
 
+	it("the test connector keeps handlers when Lua drops the instance and the GC runs", function()
+		-- Lune hands out a new userdata for an instance once the old one is collected, so a
+		-- weak-keyed handler table loses the button after a GC: Create.fire found 0 handlers in a
+		-- third of full game-001 runs (KingdomUI.spec "tapping a resource").
+		local parent = Instance.new("Frame")
+		local fired = 0
+		Create("TextButton", {
+			Name = "Hit",
+			Parent = parent,
+			[Create.Event.Activated] = function()
+				fired += 1
+			end,
+		})
+		for _ = 1, 30 do
+			local junk = {}
+			for i = 1, 200000 do
+				junk[i] = { i }
+			end
+		end
+		expect(Create.fire(parent:FindFirstChild("Hit"), "Activated")).toBe(1)
+		expect(fired).toBe(1)
+	end)
+
 	it("Create sets props, keyed children, refs and events; Parent last", function()
 		local ref
 		local fired = 0

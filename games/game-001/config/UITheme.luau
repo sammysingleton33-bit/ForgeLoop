@@ -111,5 +111,13 @@ return table.freeze({
 		banner = { image = "", glyph = "🚩" },
 		crest = { image = "", glyph = "🛡" },
 		chest = { image = "", glyph = "🧰" },
+		keep = { image = "", glyph = "♜" },
+		wall = { image = "", glyph = "🧱" },
+		gate = { image = "", glyph = "🚪" },
+		rotate = { image = "", glyph = "⟳" },
+		emblem_flame = { image = "", glyph = "🔥" },
+		emblem_star = { image = "", glyph = "★" },
+		emblem_oak = { image = "", glyph = "🌳" },
+		emblem_sun = { image = "", glyph = "☀" },
 	},
 })

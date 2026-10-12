@@ -24,7 +24,7 @@
 	Create.setConnector(fn?) -> previous   tests: route connections through a fake (the Lune
 		harness has no instance events); fn(instance, eventName, handler) -> { Disconnect: () -> () }
 	Create.fire(instance, eventName, ...)   tests: call handlers registered through the default
-		test connector installed by Create.useTestConnector()
+		test connector installed by Create.useTestConnector() (each call starts with no handlers)
 	Create.clear(instance)                  destroys every child
 ]]
 
@@ -61,10 +61,14 @@ function Create.setConnector(fn: ((any, string, (...any) -> ()) -> Connection)?)
 	return previous
 end
 
--- Test connector: handlers live in a weak table keyed by instance; Create.fire calls them.
-local handlers: { [any]: { [string]: { (...any) -> () } } } = setmetatable({}, { __mode = "k" }) :: any
+-- Test connector: handlers live in a table keyed by instance; Create.fire calls them. The keys are
+-- strong on purpose: Lune hands out a new userdata for an instance once nothing in Lua holds the
+-- old one, so weak keys lost handlers whenever the GC ran. Each useTestConnector() starts a new
+-- table, so a test run keeps one test's instances at a time.
+local handlers: { [any]: { [string]: { (...any) -> () } } } = {}
 
 function Create.useTestConnector()
+	handlers = {}
 	return Create.setConnector(function(instance: any, eventName: string, fn: (...any) -> ()): Connection
 		local byEvent = handlers[instance]
 		if byEvent == nil then
