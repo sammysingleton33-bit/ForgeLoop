@@ -61,12 +61,17 @@ function Panel.new(props: { [string]: any })
 				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 1 },
 			})
 		end
+		-- With a title, the slot takes whatever width the title leaves (UIFlexItem Fill), so header
+		-- content anchored to the right (a close button) sits at the panel's right edge.
 		local slotHolder = Create("Frame", {
 			Name = "Slot",
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, if hasTitle then -170 else 0, 1, 0),
+			Size = UDim2.fromScale(if hasTitle then 0 else 1, 1),
 			LayoutOrder = 2,
-		}, { self.headerSlot })
+		}, {
+			HeaderSlot = self.headerSlot,
+			Flex = if hasTitle then Create("UIFlexItem", { FlexMode = Enum.UIFlexMode.Fill }) else nil,
+		})
 		children.Slot = slotHolder
 		header = Create("Frame", {
 			Name = "Header",
