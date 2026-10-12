@@ -21,6 +21,8 @@
 		    4. otherwise "none" (tapping empty ground clears the selection)
 		  and fires selected(kind, id).
 		- Entering build mode clears the selection (selected("none", "")): panels close while placing.
+		- Selecting a citizen reports the client action "CitizenInspected" to OnboardingController
+		  (when present), the onboarding v2 step "inspect a citizen" (FL-0092).
 		- Input that a GUI already handled (gameProcessedEvent) never selects.
 
 	Arbitration (specs: games/game-001/tests/experience/InputMode.spec.luau)
@@ -168,6 +170,12 @@ function Controller:select(kind: any, id: any): boolean
 	local value = if id == nil then "" else id
 	self.selection = { kind = kind, id = value }
 	self.selected:fire(kind, value)
+	if kind == "citizen" then
+		local onboarding = self._registry:find("OnboardingController")
+		if onboarding ~= nil and onboarding.report ~= nil then
+			pcall(onboarding.report, onboarding, "CitizenInspected")
+		end
+	end
 	return true
 end
 
