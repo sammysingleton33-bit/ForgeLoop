@@ -13,6 +13,7 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
+local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
@@ -25,6 +26,10 @@ local Types = require("@game/ReplicatedStorage/Game/Kingdom/Types")
 local RemoteServiceDef = require("@game/ServerScriptService/Forge/Services/RemoteService")
 local MatchServiceDef = require("@game/ServerScriptService/Game/Services/MatchService")
 local KingdomServiceDef = require("@game/ServerScriptService/Game/Services/KingdomService")
+local PacingServiceDef = require("@game/ServerScriptService/Game/Services/PacingService")
+local ProductionServiceDef = require("@game/ServerScriptService/Game/Services/ProductionService")
+local TreasuryServiceDef = require("@game/ServerScriptService/Game/Services/TreasuryService")
+local TreasuryRemotes = require("@game/ReplicatedStorage/Game/Treasury/Remotes")
 
 local TICK = MatchConfig.tickSeconds
 local MATCH_DURATIONS = MatchConfig.durations.match
@@ -53,16 +58,22 @@ end
 
 local useAdapter
 
--- options: { mode?, pacing?, world?, parties? } (pacing/world: service doubles; parties: userId -> PartyId).
+-- options: { mode?, pacing?, world?, parties?, others? } (pacing/world: service doubles; parties:
+-- userId -> PartyId; others = true also boots FORGE-03's Treasury/Production and FORGE-04's Pacing).
 -- Returns env, MatchService, KingdomService and the spawn adapter's log.
 local function boot(options: any?)
 	local opts = options or {}
 	MatchConfig.mode = opts.mode or savedMode
 	local env = MockEnv.new({
 		seed = 5,
-		sharedModules = { Remotes = { Kingdom = KingdomRemotes, Match = MatchRemotes } },
+		sharedModules = { Remotes = { Kingdom = KingdomRemotes, Match = MatchRemotes, Treasury = TreasuryRemotes } },
 	})
 	local definitions = { RemoteServiceDef, MatchServiceDef, KingdomServiceDef }
+	if opts.others then
+		table.insert(definitions, TreasuryServiceDef)
+		table.insert(definitions, ProductionServiceDef)
+		table.insert(definitions, PacingServiceDef)
+	end
 	if opts.pacing then
 		table.insert(definitions, double("PacingService", opts.pacing))
 	end
@@ -148,7 +159,8 @@ end
 
 local function remote(env, name)
 	local area, action = string.match(name, "^(%w+)%.(%w+)$")
-	return env.ReplicatedStorage.ForgeRemotes[area][action]
+	-- FindFirstChild: "Changed" would index the Instance event, not the remote
+	return env.ReplicatedStorage.ForgeRemotes:FindFirstChild(area):FindFirstChild(action)
 end
 
 -- args of every firing of a server event that reached `player` (FireClient to them, or FireAllClients)
@@ -657,6 +669,66 @@ describe("KingdomService membership signal and G9 KingdomJoined", function()
 		expect(changes).toEqual({ { 1, "crimson" } })
 		expect(joined).toEqual({ { 1, "crimson" } })
 		expect(count(log.loads, 1)).toBe(2) -- respawned at the fresh world's keep
+	end)
+end)
+
+describe("With the other workers' services (G7, G11)", function()
+	it("runs on the real TreasuryService and PacingService: deposits land, members get Treasury.Changed", function()
+		local env, match, kingdoms = boot({ others = true })
+		expect(match.durationsSource).toBe("pacing")
+		local treasury = match.host.match.sim.treasury
+		expect(treasury.seed).toBeNil() -- FORGE-03's service, not the local double
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(TICK)
+		expect(match:getPhase()).toBe("Founding")
+		local start = treasury:get("crimson")
+		env.mock:advance(90)
+		local now = treasury:get("crimson")
+		expect(now.wood).toBeGreaterThan(start.wood)
+		expect(now.stone).toBeGreaterThan(start.stone)
+		expect(treasury:get("azure")).toEqual(start) -- no ruler, no citizens: untouched
+		local changed = received(env, "Treasury.Changed", p1)
+		expect(#changed).toBeGreaterThan(0)
+		expect(changed[#changed][1]).toEqual(now) -- the member sees the current totals
+		expect(kingdoms:getKingdomOf(p1)).toBe("crimson")
+	end)
+end)
+
+describe("Studio debug commands (FL-0068)", function()
+	it("registers match.phase, kingdom.respawn and preset vs1.row3 once, acting on the running services", function()
+		boot() -- an earlier server in this process
+		local env, match, _, log = boot()
+		local names = {}
+		for _, command in DebugCommands.list() do
+			names[command.name] = (names[command.name] or 0) + 1
+		end
+		expect(names["match.phase"]).toBe(1)
+		expect(names["kingdom.respawn"]).toBe(1)
+		local presets = {}
+		for _, preset in DebugCommands.presets() do
+			presets[preset.name] = true
+		end
+		expect(presets["vs1.row3"]).toBe(true)
+
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		expect(count(log.loads, 1)).toBe(1)
+		local ok, message = DebugCommands.run(p1, "match.phase", "Conflict")
+		expect(ok).toBe(true)
+		expect(message).toContain("Conflict")
+		expect(match:getPhase()).toBe("Conflict")
+		expect((DebugCommands.run(p1, "match.phase", "Results"))).toBe(false) -- not an active phase
+		expect((DebugCommands.run(p1, "match.phase", "Lobby"))).toBe(false)
+		expect(DebugCommands.runPreset(p1, "vs1.row3")).toBe(true)
+		env.mock:advance(1)
+		expect(count(log.loads, 1)).toBe(2) -- respawned by the preset
+		for userId = 2, 16 do
+			env.mock.players:add({ userId = userId })
+		end
+		local spectator = env.mock.players:add({ userId = 100 })
+		env.mock:advance(1)
+		local _, why = DebugCommands.run(spectator, "kingdom.respawn")
+		expect(why).toContain("not in a kingdom")
 	end)
 end)
 

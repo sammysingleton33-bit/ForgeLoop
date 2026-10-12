@@ -21,12 +21,15 @@
 		  (same numbers as config Pacing) and a warning.
 		- TreasuryService (G7, FORGE-03): the simulation charges and deposits through it; until then the
 		  local TreasuryDouble.
+	Studio debug (FL-0068): command match.phase (Founding/Expansion/Conflict/Endgame).
 	Events: GameEvents.MatchPhaseChanged / KingdomEliminated / MatchEnded and the other G9 events are fired
 	exactly once by the host's event fan-out (see Game/Kingdom/MatchHost).
 ]]
 
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
+local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
 local MatchHost = require("@game/ReplicatedStorage/Game/Kingdom/MatchHost")
 
@@ -34,6 +37,30 @@ local MatchService = {}
 MatchService.__index = MatchService
 
 local Def = { name = "MatchService", dependencies = { "RemoteService" } }
+
+-- The running service, for the Studio debug commands (registered once per process: Lune specs boot
+-- many servers in one process, a real server boots one).
+local active: any = nil
+
+local function registerDebugCommands()
+	for _, command in DebugCommands.list() do
+		if command.name == "match.phase" then
+			return
+		end
+	end
+	DebugCommands.register({
+		name = "match.phase",
+		label = "Set the match phase (Founding, Expansion, Conflict or Endgame)",
+		args = { Validate.enum({ "Founding", "Expansion", "Conflict", "Endgame" }) },
+		run = function(_player: any, phase: string): string?
+			if active == nil or active.host == nil then
+				return "no match is running"
+			end
+			local ok, err = active.host.match:debugSetPhase(phase)
+			return if ok then `phase is now {phase}` else `not changed: {err}`
+		end,
+	})
+end
 
 function Def.new(env: any, registry: any)
 	local self = setmetatable({}, MatchService)
@@ -85,6 +112,8 @@ function MatchService:start()
 		end
 	end)
 	self.host:start()
+	active = self
+	registerDebugCommands()
 end
 
 function MatchService:getPhase(): string
@@ -100,6 +129,9 @@ function MatchService:getEndsAt(): number?
 end
 
 function MatchService:destroy()
+	if active == self then
+		active = nil
+	end
 	if self.host then
 		self.host:destroy()
 	end

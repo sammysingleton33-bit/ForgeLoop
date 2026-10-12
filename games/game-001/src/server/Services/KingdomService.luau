@@ -26,8 +26,10 @@
 	already left the server. GameEvents.KingdomJoined(player, kingdomId) fires with every non-nil change
 	(G9), so once per join, per switch and per match a player is seated in.
 	Dependencies: MatchService. Optional (registry:find in start): WorldService (G10, FORGE-02).
+	Studio debug (FL-0068): command kingdom.respawn; preset vs1.row3 (match.phase Founding + respawn).
 ]]
 
+local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
@@ -37,6 +39,36 @@ local KingdomService = {}
 KingdomService.__index = KingdomService
 
 local Def = { name = "KingdomService", dependencies = { "MatchService" } }
+
+-- The running service, for the Studio debug commands (registered once per process, like MatchService).
+local active: any = nil
+
+local function registerDebugCommands()
+	for _, command in DebugCommands.list() do
+		if command.name == "kingdom.respawn" then
+			return
+		end
+	end
+	DebugCommands.register({
+		name = "kingdom.respawn",
+		label = "Respawn me at my kingdom's plot with regalia",
+		run = function(player: any): string?
+			if active == nil then
+				return "no kingdom service is running"
+			end
+			if active:getKingdomOf(player) == nil then
+				return "you are not in a kingdom"
+			end
+			active:_spawn(player)
+			return "respawning"
+		end,
+	})
+	DebugCommands.registerPreset({
+		name = "vs1.row3",
+		label = "Row 3: match running, respawn at the keep",
+		steps = { { "match.phase", "Founding" }, { "kingdom.respawn" } },
+	})
+end
 
 export type Adapter = {
 	partyOf: (player: any) -> string?, -- Player.PartyId, nil when not in a party
@@ -118,6 +150,8 @@ function KingdomService:start()
 			end
 		end)
 	)
+	active = self
+	registerDebugCommands()
 	local world = self._registry:find("WorldService")
 	if world == nil or world:isReady() then
 		self._worldReady = true
@@ -272,6 +306,9 @@ function KingdomService:addCrownPoints(id: string, amount: number, reason: strin
 end
 
 function KingdomService:destroy()
+	if active == self then
+		active = nil
+	end
 	for _, connection in self._connections do
 		connection:disconnect()
 	end

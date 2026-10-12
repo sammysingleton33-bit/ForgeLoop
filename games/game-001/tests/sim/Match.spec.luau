@@ -94,6 +94,30 @@ describe("Kingdom/Match: phases", function()
 		end).toThrow("must be > 0")
 	end)
 
+	it("debugSetPhase jumps to an active phase now and re-times the rest (Studio match.phase)", function()
+		local match = newMatch({ phaseDurations = durations(10) })
+		match:join(1)
+		match:update(0.25)
+		expect(match.state).toBe("Lobby")
+		expect(match:debugSetPhase("Conflict")).toBe(true)
+		expect(match.state).toBe("Conflict")
+		expect(match.sim.active).toBe(true)
+		expect(match:remaining()).toBeNear(10, 1e-6)
+		local phases = {}
+		for _, e in match:drainEvents() do
+			if e.name == "MatchPhaseChanged" then
+				table.insert(phases, e.phase)
+			end
+		end
+		expect(phases).toEqual({ "Founding", "Conflict" })
+		run(match, 10)
+		expect(match.state).toBe("Endgame")
+		expect({ match:debugSetPhase("Results") }).toEqual({ false, "not an active phase" })
+		run(match, 10)
+		expect(match.state).toBe("Results")
+		expect({ match:debugSetPhase("Founding") }).toEqual({ false, "the match is over" })
+	end)
+
 	it("uses the config defaults per mode without PacingService: match 20 s Lobby + 45 min + 30 s Results", function()
 		local plain = { random = Random.new(1) }
 		local full = Match.new({ random = Random.new(1), mode = "match" })

@@ -56,7 +56,8 @@ end
 
 local function remote(env, name)
 	local area, action = string.match(name, "^(%w+)%.(%w+)$")
-	return env.ReplicatedStorage.ForgeRemotes[area][action]
+	-- FindFirstChild: "Changed" would index the Instance event, not the remote
+	return env.ReplicatedStorage.ForgeRemotes:FindFirstChild(area):FindFirstChild(action)
 end
 
 local function invoke(env, player, name, ...)

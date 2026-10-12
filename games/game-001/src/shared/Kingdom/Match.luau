@@ -53,6 +53,7 @@
 		match:kingdomOf(userId): string?
 		match:update(dt)
 		match:remaining(): number?    -- seconds left in the countdown / current phase / results; nil = untimed
+		match:debugSetPhase(phase): (boolean, string?)          -- Studio debug panel only (match.phase)
 		match:command(userId, name, ...)                         -- Commands.execute on this simulation
 		match:result(): RoundResult?  -- framework Contracts/Types RoundResult, mode "kingdoms"
 		match:summary(): { winner: KingdomId?, standings: { { kingdom, crownPoints } }, durationSec,
@@ -597,6 +598,35 @@ function Match:update(dt: number)
 			end
 		end
 	end
+end
+
+-- Studio debug (FL-0068 command match.phase): jump to an active phase now. The phases after it keep
+-- their lengths from this moment; the simulation itself is not fast-forwarded.
+function Match:debugSetPhase(phase: string): (boolean, string?)
+	if not isActive(phase) then
+		return false, "not an active phase"
+	end
+	if self.state == "Results" then
+		return false, "the match is over"
+	end
+	if self.state == "Lobby" then
+		self._countdown = nil
+		self:_start()
+	end
+	if self.state ~= phase then
+		local index = table.find(Match.ACTIVE_PHASES, phase) :: number
+		local t = self.sim.time
+		for i, name in Match.ACTIVE_PHASES do
+			if i < index then
+				self.phaseEnds[name] = self.sim.time
+			else
+				t += self.durations[name]
+				self.phaseEnds[name] = t
+			end
+		end
+		self:_setState(phase)
+	end
+	return true, nil
 end
 
 function Match:_start()
