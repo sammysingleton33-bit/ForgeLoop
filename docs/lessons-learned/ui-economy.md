@@ -27,3 +27,18 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **The default Roblox top bar can hold your timer:** `ScreenInsets.TopbarSafeInsets` gives the
   free part of the top bar (creator-docs ScreenInsets.yaml), which saves a row on phones in
   landscape. Studio confirmation pending (U7). `observed-once` (docs only).
+- **Game code cannot reach `StarterPlayerScripts`.** The D-017/D-022 require policy lets game code
+  use `@game/` only for `ReplicatedStorage/Forge/...` and `ReplicatedStorage/Game/...`; a UI kit in
+  the framework client tree is unusable from `games/<game>/src/client`. Shared client libraries go in
+  `roblox/src/shared` (→ `ReplicatedStorage.Forge`). Caught by `check_place` before any game code
+  used the old path. `observed-once` (2026-10-12).
+- **"Apply the end state at once" breaks exit animations.** Motion's no-tween fallback (reduced
+  motion, no TweenService) applies a tween's target immediately; for a fade-out that means the
+  element is invisible from the first frame (the spend float). Tween exits only when
+  `motion.enabled`, and remove the element on a timer either way. `observed-once`.
+- **A git worktree has no `node_modules`.** Renders in a fresh worktree silently fell back to system
+  fonts. Link `design/ui/node_modules` from the main checkout (git-excluded) before shooting, and
+  watch for the renderer's "no @fontsource fonts" line. `observed-once`.
+- **Mutate against the strongest double you have.** A late-join refetch survived its mutation
+  because the real TreasuryService also pushes on join; the spec now models a missed push.
+  `observed-once`.
