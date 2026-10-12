@@ -13,8 +13,9 @@ estimate_h: 6
 evidence:
   - "check.sh OVERALL PASS @4054eab: framework 471 Lune specs, game-001 86 specs (boot gate + VS-1 flow), Selene 0/0, StyLua 167 files, both Rojo builds and place checks"
   - mutations.py FL-0025 rows 11/11 CAUGHT; whole file 39/39 at 4054eab
-  - funnel step per completed step and no step after skip: games/game-001/tests/experience/Onboarding.spec.luau (8) and roblox/tests/unit/experience/Onboarding.spec.luau
+  - "funnel step per completed step and no step after skip: games/game-001/tests/experience/Onboarding.spec.luau (8) and roblox/tests/unit/experience/Onboarding.spec.luau"
   - "unverified: Studio walkthrough E6 not run; needs FORGE-01 KingdomJoined/G9 producers, WorldService tags and FORGE-03 HUD targets on the build"
+  - "check.sh OVERALL PASS @7ee0f3c: framework 472, game-001 87 specs; mutations FL-0025 14/14 CAUGHT"
 ---
 
 # Onboarding and tutorial framework
@@ -42,3 +43,4 @@ Lune specs for step progression, skip, persistence, triggers; fresh-player Studi
 - 2026-10-12 forge-04: REVIEW → BUILDING. back to BUILDING after merging main: D-027 (session-only progress), first step on KingdomJoined, G9 triggers via a subject-resolver hook. PRs not opened yet.
 - 2026-10-12 forge-04: BUILDING → TESTING. Reconciled: startOn KingdomJoined, G9 triggers via Subjects + game-001 Signals, session-only progress (D-027); headless gates on 4054eab.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0025, stacked on FL-0024. Studio walkthrough: roblox/studio-tests/experience.md E6.
+- 2026-10-12 forge-04: REVIEW → REVIEW. Follow-up in PR #22: idle hints from config (framework holds no game text, D-026), generic ReachedTarget detector, neutral fixtures.
