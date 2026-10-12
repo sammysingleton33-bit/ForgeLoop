@@ -358,7 +358,7 @@ describe("Kingdom/CitizenBrain: decisions carried out (CitizenActions)", functio
 			local food = sim:balance(k.id, "food")
 			local ateAt = nil
 			for _ = 1, 80 do
-				sim:step()
+				sim:advance(0.25) -- one former 4 Hz tick
 				if c.hunger < 0.5 then
 					ateAt = { x = c.x, z = c.z }
 					break

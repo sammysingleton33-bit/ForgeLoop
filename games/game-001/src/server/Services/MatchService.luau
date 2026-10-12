@@ -99,6 +99,7 @@ function MatchService:start()
 	self.durationsSource = if durations then "pacing" else "defaults"
 	self.host = MatchHost.new(self._env, self._remotes, {
 		tickSeconds = MatchConfig.tickSeconds,
+		worldViewEntities = false, -- clients render citizens and soldiers (EntityController, D-023/D-026)
 		match = {
 			mode = self.mode,
 			phaseDurations = durations,

@@ -71,6 +71,7 @@ local Commands = require("../Sim/Commands")
 local Diplomacy = require("../Sim/Diplomacy")
 local Layout = require("./Layout")
 local Military = require("../Sim/Military")
+local Nav = require("../Sim/Nav")
 local Objectives = require("../Sim/Objectives")
 local RulerAI = require("../Sim/RulerAI")
 local Simulation = require("../Sim/Simulation")
@@ -183,6 +184,9 @@ function Match:_newWorld()
 		spacing = self.options.spacing,
 		populate = not self.options.populateOnJoin,
 	})
+	if self.options.spacing == nil then
+		sim.nav = Nav.new(Layout.WORLD.nav) -- roads and bridges of the world Layout (G10.1)
+	end
 	Military.install(sim)
 	if self.options.pvp then
 		Diplomacy.install(sim, {

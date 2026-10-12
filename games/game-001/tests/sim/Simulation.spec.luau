@@ -470,6 +470,46 @@ describe("Kingdom/Simulation: daily life", function()
 	end)
 end)
 
+describe("Kingdom/Simulation: fixed tick and staggered decisions (G4)", function()
+	it("moves entities every tick and spreads routine re-planning across ticks", function()
+		local sim, k = F.kingdom({
+			seed = 4,
+			tuning = { startCitizens = { farmer = 12, woodcutter = 12, miner = 12, hauler = 12 } },
+		})
+		expect(sim.catalog.tuning.tickSeconds <= 1 / 15).toBe(true) -- ≈20 Hz movement (16 Hz: exact in binary)
+		expect(#k.citizenIds).toBe(48)
+		sim:advance(5) -- past the opening, when everyone picks a first job at once
+		local thinkAt = {}
+		for _, id in k.citizenIds do
+			thinkAt[id] = sim.citizens[id].thinkAt
+		end
+		local perTick, total, ticks = {}, 0, 0
+		local interval = sim.catalog.tuning.thinkInterval
+		local seconds = interval * 5
+		for _ = 1, seconds / sim.catalog.tuning.tickSeconds do
+			sim:step()
+			ticks += 1
+			local n = 0
+			for _, id in k.citizenIds do
+				local c = sim.citizens[id]
+				if c and c.thinkAt ~= thinkAt[id] then
+					thinkAt[id] = c.thinkAt
+					n += 1
+				end
+			end
+			table.insert(perTick, n)
+			total += n
+		end
+		table.sort(perTick)
+		local busiest = perTick[#perTick]
+		-- 48 citizens re-plan about every `interval` s (later while carrying): ~1-2 per tick, never a crowd
+		local budget = math.max(2, math.ceil(48 * sim.catalog.tuning.tickSeconds / interval * 2))
+		expect(total >= 48 * 2).toBe(true)
+		expect(busiest <= budget).toBe(true)
+		expect(ticks).toBe(seconds * 16)
+	end)
+end)
+
 describe("Kingdom/Simulation: determinism", function()
 	it("same seed and same commands give the same world", function()
 		local function run()
@@ -490,7 +530,8 @@ describe("Kingdom/Simulation: determinism", function()
 		end
 		b:advance(100)
 		expect(Snapshot.kingdom(a, "crimson", 1)).toEqual(Snapshot.kingdom(b, "crimson", 1))
-		expect(a.tick).toBe(400)
+		expect(a.tick).toBe(100 / a.catalog.tuning.tickSeconds) -- whole ticks, no float drift
+		expect(b.tick).toBe(a.tick)
 	end)
 
 	it("does nothing while inactive and rejects bad durations", function()

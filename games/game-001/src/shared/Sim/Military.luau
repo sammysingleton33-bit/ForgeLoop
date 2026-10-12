@@ -42,6 +42,7 @@
 ]]
 
 local Commands = require("./Commands")
+local Nav = require("./Nav")
 
 local Military = {}
 
@@ -377,9 +378,17 @@ local function moveUnit(sim: any, u: any, def: any, x: number, z: number, stopAt
 	if d <= stopAt then
 		return nil
 	end
-	local stepLen = math.min(def.speed * dt, d - stopAt)
-	local nx = u.x + (x - u.x) / d * stepLen
-	local nz = u.z + (z - u.z) / d * stepLen
+	local wx, wz = Nav.waypoint(sim, u, x, z) -- long marches follow roads and bridges (Sim/Nav)
+	local nx, nz
+	if wx ~= x or wz ~= z then
+		local dw = dist(u.x, u.z, wx, wz)
+		local f = if dw > 0 then math.min(1, def.speed * dt / dw) else 0
+		nx, nz = u.x + (wx - u.x) * f, u.z + (wz - u.z) * f
+	else
+		local stepLen = math.min(def.speed * dt, d - stopAt)
+		nx = u.x + (x - u.x) / d * stepLen
+		nz = u.z + (z - u.z) / d * stepLen
+	end
 	for _, kid in sim.kingdomOrder do
 		local enemy = sim.kingdoms[kid]
 		if enemy.alive and sim:atWar(u.kingdomId, kid) then
@@ -594,6 +603,7 @@ end
 
 -- exposed for specs and the match host
 Military.destroyBuilding = destroyBuilding
+Military.killUnit = killUnit
 Military.eliminate = eliminate
 
 return Military
