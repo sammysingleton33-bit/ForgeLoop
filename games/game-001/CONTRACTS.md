@@ -491,6 +491,16 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   - `Build.Place` stays as it is.
 - **BuildingType (G2, additive, used from VS-2):** `"mine" | "blacksmith" | "market" | "infirmary" | "granary" | "shrine"`. The Kit returns a labelled part-built stand-in until FORGE-02 models each type.
 - **Levels and times.** `Costs.building(type, level).buildSeconds` drives build and upgrade time, scaled by the builders on site. Barracks proposal: 8 / 18 / 35 / 60 s (FORGE-03, PROVISIONAL). `Kit.build(type, level, …)` must differ visibly per level (FORGE-02).
+- **One source per number (FORGE-05 finding L4, 2026-10-12).**
+  - `Costs.luau` (FORGE-03) is canonical for **cost, buildSeconds and the number of levels** (`Costs.maxLevel(type)`).
+  - `Buildings.luau` (FORGE-01) holds only **gameplay stats** per type and level, for exactly levels `1..Costs.maxLevel(type)`: housing/popCap, storage, production rate, recruit cap and `requires` (e.g. keep level).
+  - `Buildings.luau` never repeats a cost or a time, and the server sim reads costs and times from `Costs`.
+  - UI reads costs from `Costs` and stats from `Buildings`.
+  - FORGE-05 adds an integration spec: every (type, level) in one file exists in the other, and no field appears in both.
+- **Fit rule (FORGE-05 finding M2).** A structure fits a slot when `Kit.footprint(type, Costs.maxLevel(type))` fits inside `Layout.slotSizes[slot.size]` on both axes (slot-local X = width, Y = depth).
+  - The rule is implemented once, as the pure `src/shared/Build/Fit.luau` (FORGE-01: `Fit.fits(type, size): boolean`, `Fit.typesFor(size): { BuildingType }`).
+  - The server (`Build.PlaceSlot`) and the plot picker both call it. Nobody re-implements it.
+  - FORGE-02 keeps footprints and `slotSizes` consistent with the intended classes: S = house (and watchtower when it fits), M = barracks, storehouse and the VS-2 service buildings, L = farm, lumber camp, quarry and mine.
 
 ### G13.6 Throne, camera and selection — VS-1
 - **Throne (FORGE-02).** `Kit.build("keep", level, "complete", color)` contains a `Seat` named `Throne` on a raised dais, visible from the aerial camera.
@@ -514,7 +524,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `population.reseed <seed>`
 
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: G4.1 camera modes renamed: `overview` is the aerial management default and `follow` is walk mode. In explore mode a tap selects. The `Kingdom.Population` remote is added. G13 living kingdom (D-030) is additive. VS-1 rows are effective now: content modules and ContentQuery; generated population with `CitizenView` and `look`; `Kingdom.Converse` and `Kingdom.Choose`; the thought, reaction and strike events; ReputationService and kingdom conditions; build slots and `Build.PlaceSlot`; throne seat, aerial camera and the selection signal; debug presets. New BuildingTypes take effect from VS-2.
+- v0.4-g4 (2026-10-12) FORGE-00: G13.5 clarifications: one source per number (`Costs` = cost/time/levels, `Buildings` = stats only) and one shared `Build/Fit` rule. G4.1 camera modes renamed: `overview` is the aerial management default and `follow` is walk mode. In explore mode a tap selects. The `Kingdom.Population` remote is added. G13 living kingdom (D-030) is additive. VS-1 rows are effective now: content modules and ContentQuery; generated population with `CitizenView` and `look`; `Kingdom.Converse` and `Kingdom.Choose`; the thought, reaction and strike events; ReputationService and kingdom conditions; build slots and `Build.PlaceSlot`; throne seat, aerial camera and the selection signal; debug presets. New BuildingTypes take effect from VS-2.
 - v0.4-g3 (2026-10-12) FORGE-00: G12 Crown Arena and support added as a **draft for VS-2** (D-029). Nothing in G1–G11 changes for VS-1. G3's PROVISIONAL victory default is superseded at VS-2 by the Crown Arena (G12, BRIEF §18).
 - v0.4-g2 (2026-10-12) FORGE-00: FORGE-01 clarifications added to G3, G5 and G7 (countdown, job semantics, no VS-1 treasury cap, PROVISIONAL victory/diplomacy defaults); game remote areas `Treasury` and `Feedback`.
 - v0.4-g2 (2026-10-12) FORGE-00, review fixes (D-024 to D-028):
