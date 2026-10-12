@@ -37,3 +37,4 @@ Lune specs: score from synthetic sample histories (last-minute deed cannot jump 
 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (SPECIFIED).
+- 2026-10-12 forge-00: D-030: at VS-2, re-base support on spectators' loyalty and obedience (living-kingdom §6), so fear-led rulers have a dutiful crowd; the G12.3 caps are unchanged.
