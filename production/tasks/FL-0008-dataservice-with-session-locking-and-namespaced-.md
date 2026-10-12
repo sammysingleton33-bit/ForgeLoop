@@ -4,7 +4,7 @@ title: DataService with session locking and namespaced profiles + PlayerService
 track: build
 owner: forge-01
 status: READY
-priority: P0
+priority: P1
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -33,3 +33,4 @@ Lune specs with MockDataStoreService: two servers contending for one key, stale-
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P1. Persistence is not needed for VS-1; needed for VS-3 progression.

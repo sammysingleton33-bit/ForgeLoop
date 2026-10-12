@@ -4,7 +4,7 @@ title: "Economy server services: EconomyService, InventoryService, RewardService
 track: build
 owner: forge-03
 status: READY
-priority: P0
+priority: P2
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -33,3 +33,4 @@ Lune specs with DataService test double / real module: idempotent replay fires n
 
 ## Log
 - 2026-10-12 forge-00: created from the second prompt review (READY).
+- 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.

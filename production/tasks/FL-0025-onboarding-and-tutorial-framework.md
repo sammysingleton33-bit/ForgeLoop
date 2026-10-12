@@ -30,3 +30,4 @@ Lune specs for step progression, skip, persistence, triggers; fresh-player Studi
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P0. Onboarding framework feeds VS-1 onboarding (FL-0062).
