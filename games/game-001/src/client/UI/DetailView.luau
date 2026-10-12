@@ -108,7 +108,7 @@ function DetailView.new(props: { [string]: any })
 		ScrollBarImageColor3 = Theme.color("gold600"),
 	}, { List = Style.list("y", 8, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
 
-	if not compact then
+	if not compact and d.description then
 		Style.text({
 			text = d.description,
 			weight = Enum.FontWeight.Medium,
@@ -146,6 +146,65 @@ function DetailView.new(props: { [string]: any })
 	}, { List = Style.list("y", 3, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
 	for i, c in d.costs do
 		costRow(c, i).Parent = costs
+	end
+
+	-- What this level gives / what the next one adds (FL-0087). After the costs, so phones see
+	-- the price first.
+	local benefits = d.benefits or {}
+	if compact then
+		-- Phones: what the next level adds is the line that decides an upgrade; keep it above the fold.
+		local nextOnly = {}
+		for _, b in benefits do
+			if b.next then
+				table.insert(nextOnly, b)
+			end
+		end
+		if #nextOnly > 0 then
+			benefits = nextOnly
+		end
+	end
+	if #benefits > 0 then
+		local list = Create("Frame", {
+			Name = "Benefits",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			LayoutOrder = nextOrder(),
+			Parent = body,
+		}, { List = Style.list("y", 3, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
+		for i, b in benefits do
+			Create("Frame", {
+				Name = "Benefit_" .. i,
+				BackgroundColor3 = if b.next then Theme.color("vert") else Theme.color("scrim"),
+				BackgroundTransparency = if b.next then 0.82 else 0.55,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = i,
+				Parent = list,
+			}, {
+				Corner = Style.corner(6),
+				Stroke = if b.next then Style.stroke(Theme.color("vert"), 1, 0.55) else nil,
+				Padding = Style.padding(5, 8, 5, 8),
+				Label = Style.text({
+					text = b.label,
+					weight = Enum.FontWeight.ExtraBold,
+					size = 12,
+					color = if b.next then GOOD else Theme.color("textSecondary"),
+					extra = { Size = UDim2.fromOffset(52, 16) },
+				}),
+				Text = Style.text({
+					text = b.text,
+					weight = Enum.FontWeight.SemiBold,
+					size = 12,
+					wrap = true,
+					extra = {
+						Position = UDim2.fromOffset(60, 0),
+						Size = UDim2.new(1, -60, 0, 16),
+						AutomaticSize = Enum.AutomaticSize.Y,
+					},
+				}),
+			})
+		end
 	end
 
 	local tileSize = if compact then 40 else 56
