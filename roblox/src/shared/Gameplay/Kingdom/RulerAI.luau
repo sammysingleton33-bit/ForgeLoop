@@ -19,6 +19,9 @@
 		          attacks once its army is large enough; it proposes peace when its army is gone and
 		          accepts peace when it is behind on score
 	Aggression is seeded per kingdom (0.3..1.0) so AI kingdoms differ but stay deterministic.
+	The AI only issues commands the simulation will accept (checked by specs): it recruits with a
+	finished barracks, room for the batch and its full price; accepts only unexpired proposals; and
+	declares no war in the grace period or on a kingdom it is in a peace cooldown with.
 
 	API
 		RulerAI.install(sim, options?)  -- options: { interval = 6, assistHumans = false }
@@ -37,6 +40,27 @@ local function count(sim: any, kingdom: any, kind: string, includeSites: boolean
 		local b = sim.buildings[bid]
 		if b.kind == kind and (includeSites or b.level >= 1) then
 			n += 1
+		end
+	end
+	return n
+end
+
+-- Seeds a kingdom's aggression and think schedule the first time it is needed (the system's first
+-- tick, or a direct think() before that).
+local function aggressionOf(sim: any, state: any, kingdom: any): number
+	if state.aggression[kingdom.id] == nil then
+		state.aggression[kingdom.id] = 0.3 + 0.7 * sim.rng:NextNumber()
+		state.nextThink[kingdom.id] = kingdom.index * state.interval / math.max(1, #sim.kingdomOrder)
+	end
+	return state.aggression[kingdom.id]
+end
+
+local function queuedUnits(sim: any, kingdom: any): number
+	local n = 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "Barracks" then
+			n += #b.queue
 		end
 	end
 	return n
@@ -132,9 +156,12 @@ local function weakestEnemy(sim: any, kingdom: any): any?
 			end
 		end
 	end
+	local diplomacy = sim.diplomacy
 	local best, bestScore = nil, math.huge
 	for _, other in neighbours do
-		if warsOf(sim, other) < 2 then
+		local madePeace = diplomacy.peaceAt[sim:relationKey(kingdom.id, other.id)]
+		local cooling = madePeace ~= nil and sim.time - madePeace < diplomacy.peaceCooldown
+		if warsOf(sim, other) < 2 and not cooling then
 			local score = Snapshot.score(sim, other)
 			if score < bestScore then
 				best, bestScore = other, score
@@ -159,7 +186,7 @@ function RulerAI.think(sim: any, kingdom: any): string?
 		return nil
 	end
 	local ai = sim.rulerAI
-	local aggression = ai.aggression[kingdom.id]
+	local aggression = aggressionOf(sim, ai, kingdom)
 	local day = sim:day()
 	local stock = kingdom.stock
 	local capacity = stock:capacity()
@@ -178,7 +205,8 @@ function RulerAI.think(sim: any, kingdom: any): string?
 	if sim.diplomacy then
 		for _, enemy in enemies do
 			local proposedAt = sim.diplomacy.proposals[enemy.id .. ">" .. kingdom.id]
-			if proposedAt and Snapshot.score(sim, kingdom) < Snapshot.score(sim, enemy) then
+			local open = proposedAt ~= nil and sim.time - proposedAt <= sim.diplomacy.proposalSeconds
+			if open and Snapshot.score(sim, kingdom) < Snapshot.score(sim, enemy) then
 				if Commands.executeFor(sim, kingdom, nil, "AcceptPeace", enemy.id) then
 					return "AcceptPeace"
 				end
@@ -195,7 +223,7 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			end
 		end
 		local warDay = 9 - math.floor(aggression * 4) -- day 5 (aggressive) .. day 8 (cautious)
-		if #enemies == 0 and day >= warDay and army >= 6 then
+		if #enemies == 0 and day >= warDay and army >= 6 and sim.time >= sim.diplomacy.graceSeconds then
 			local target = weakestEnemy(sim, kingdom)
 			if target and Commands.executeFor(sim, kingdom, nil, "DeclareWar", target.id) then
 				return "DeclareWar"
@@ -264,9 +292,23 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			if issued then
 				return issued
 			end
-		elseif army < math.max(2, math.floor(pop * (0.15 + 0.2 * aggression))) then
+		else
+			-- only what Recruit accepts: a finished barracks, room for the batch (queued units
+			-- count, and count toward the army) and its full price
+			local training = queuedUnits(sim, kingdom)
+			local target = math.max(2, math.floor(pop * (0.15 + 0.2 * aggression)))
 			local kind = if army % 2 == 0 then "Militia" else "Archer"
-			if Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2) then
+			local cost = {}
+			for res, amount in sim.catalog.units[kind].cost do
+				cost[res] = amount * 2
+			end
+			if
+				count(sim, kingdom, "Barracks", false) > 0
+				and army + training < target
+				and pop + training + 2 <= kingdom.popCap
+				and stock:canAfford(cost)
+				and Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2)
+			then
 				return "Recruit:" .. kind
 			end
 		end
@@ -299,12 +341,9 @@ function RulerAI.install(sim: any, options: { [string]: any }?)
 	sim.rulerAI = state
 	sim:addSystem({
 		afterCitizens = function(s: any, _dt: number)
-			for i, kid in s.kingdomOrder do
+			for _, kid in s.kingdomOrder do
 				local kingdom = s.kingdoms[kid]
-				if state.aggression[kid] == nil then
-					state.aggression[kid] = 0.3 + 0.7 * s.rng:NextNumber()
-					state.nextThink[kid] = i * state.interval / math.max(1, #s.kingdomOrder)
-				end
+				aggressionOf(s, state, kingdom)
 				if
 					kingdom.alive
 					and (#kingdom.rulers == 0 or state.assistHumans)
