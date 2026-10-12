@@ -36,7 +36,9 @@
 		  guard (if any) passes. It never errors for unknown states. Guards should be pure: can()
 		  calls them too.
 		- Re-entrancy: calling transition() from inside a guard, onExit or onEnter raises an error
-		  ("re-entrant transition"). It is not queued. Defer it (task.defer / env.spawn after a
+		  ("re-entrant or concurrent transition"). It is not queued. Guards and hooks must not
+		  yield: a transition started by another thread while a hook is suspended is refused the same
+		  way. Defer it (task.defer / env.spawn after a
 		  wait) or call it from a `changed` handler: `changed` fires after the transition finished,
 		  so handlers may transition; handlers after that one still receive the (new, old) pair of
 		  their own event while state() has already moved on.
@@ -178,7 +180,7 @@ function StateMachine.transition(self: any, to: string, ...: any): boolean
 	local from: string = self._state
 	if self._busy then
 		error(
-			`StateMachine: re-entrant transition to '{tostring(to)}' requested from inside a guard or hook of `
+			`StateMachine: re-entrant or concurrent transition to '{tostring(to)}' requested while a guard or hook of `
 				.. `{self._busy}; transitions are not queued — defer it or transition from a changed handler`,
 			2
 		)

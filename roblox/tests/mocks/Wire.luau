@@ -8,14 +8,22 @@
 
 	Remote rules imitate content/en-us/scripting/events/remote.md#argument-limitations
 	(non-string keys of dictionaries become strings, functions arrive as nil, tables are copies,
-	metatables are dropped, Instances keep their identity).
+	metatables are dropped, Instances keep their identity). Buffers are copied too: the receiver gets
+	its own bytes, so a sender writing to its buffer after firing changes nothing on the other side.
+
+	Payload size (UnreliableRemoteEvent.yaml: "Events with payloads larger than 1000 bytes are
+	dropped"): estimateBytes counts a buffer as exactly buffer.len bytes and everything else by its
+	JSON length. Roblox compresses some types (buffers among them) before measuring, so the engine
+	may accept a payload this estimate rejects — never the other way round; keep real payloads under
+	the documented limit with a margin (D-025: <= 900 B per snapshot).
 
 	API
 		Wire.checkStorable(value) -> (ok: boolean, err: string?)
 		Wire.encodeForDataStore(value) -> json (errors with "10x: ..." when not storable)
 		Wire.decodeFromDataStore(json) -> value (a fresh copy)
 		Wire.copyForRemote(value) -> value
-		Wire.estimateBytes(values: { any }) -> number   -- rough payload size (JSON length)
+		Wire.estimateBytes(values: { any }) -> number   -- payload size of arguments 1..(values.n or #values):
+		                                                   buffer.len per buffer + JSON length of the rest
 ]]
 
 local serde = require("@lune/serde")
@@ -102,6 +110,10 @@ local function copyRemote(value: any, seen: { [any]: any }): any
 	local kind = typeof(value)
 	if kind == "function" or kind == "thread" then
 		return nil
+	elseif kind == "buffer" then
+		local copy = buffer.create(buffer.len(value))
+		buffer.copy(copy, 0, value)
+		return copy
 	elseif kind ~= "table" then
 		return value -- primitives, Instances, datatypes and EnumItems keep identity/value
 	end
@@ -122,11 +134,42 @@ function Wire.copyForRemote(value: any): any
 	return copyRemote(value, {})
 end
 
+-- Replaces every buffer (also nested in tables) by "" and adds its length to bytes.total.
+local function stripBuffers(value: any, bytes: { total: number }, seen: { [any]: any }): any
+	local kind = typeof(value)
+	if kind == "buffer" then
+		bytes.total += buffer.len(value)
+		return ""
+	elseif kind ~= "table" then
+		return value
+	end
+	if seen[value] then
+		return seen[value]
+	end
+	local out = {}
+	seen[value] = out
+	for k, v in value do
+		out[k] = stripBuffers(v, bytes, seen)
+	end
+	return out
+end
+
 function Wire.estimateBytes(values: { any }): number
+	-- positional arguments 1..n only (a table.pack result also has the field n), nils count 0
 	local total = 0
-	for _, value in values do
-		local ok, json = pcall(serde.encode, "json", { v = Wire.copyForRemote(value) })
-		total += if ok then #json - 6 else #tostring(value)
+	local count = if type(values.n) == "number" then values.n else #values
+	for i = 1, count do
+		local value = values[i]
+		if value == nil then
+			continue
+		elseif typeof(value) == "buffer" then
+			total += buffer.len(value)
+			continue
+		end
+		local bytes = { total = 0 }
+		local stripped = stripBuffers(Wire.copyForRemote(value), bytes, {})
+		local ok, json = pcall(serde.encode, "json", { v = stripped })
+		total += bytes.total + (if ok then #json - 6 else #tostring(value))
 	end
 	return total
 end

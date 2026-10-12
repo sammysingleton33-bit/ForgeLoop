@@ -101,8 +101,10 @@ function RateLimiter.allow(self: any, key: any, cost: number?): boolean
 	if now > b.at then
 		b.at = now
 	end
-	if b.tokens >= amount then
-		b.tokens -= amount
+	-- a hair of tolerance: refill arithmetic in floating point must not deny a call that arrives
+	-- exactly on schedule (burst 1 at 5/s, calls 0.2 s apart)
+	if b.tokens >= amount - 1e-9 then
+		b.tokens = math.max(0, b.tokens - amount)
 		return true
 	end
 	return false
