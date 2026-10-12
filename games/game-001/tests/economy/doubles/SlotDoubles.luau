@@ -1,0 +1,133 @@
+--[[
+	SlotDoubles — FORGE-01's plot construction (CONTRACTS G13.5) as a test double for FL-0087:
+	remote declarations for `Build.Slots`, `Build.GetSlots` and `Build.PlaceSlot`, and a server
+	double that answers them on top of KingdomWorld's BuildingService double and the real
+	TreasuryService.
+
+		local world = KingdomWorld.new({
+			remotes = SlotDoubles.REMOTES,
+			services = { SlotDoubles.service },
+			clientDefinitions = { ... },
+		})
+		world.server:get("SlotService"):occupy("m1", buildingId)
+
+	Plots of crimson (the local player's kingdom): m1 M, s1 S, l1 L, m2 M (built on: a house).
+	The double's own fit rule (largest side of the biggest footprint: S <= 18, M <= 26, L larger),
+	so a client that offers a misfit gets "zone" back. Costs from config Costs; refusals use the
+	reason vocabulary of production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md.
+]]
+
+local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
+local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
+
+local SlotDoubles = {}
+
+local TYPES =
+	{ "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks", "watchtower", "wall", "gate" }
+
+SlotDoubles.REMOTES = {
+	Build = {
+		{ name = "Build.Slots", kind = "serverEvent" },
+		{ name = "Build.GetSlots", kind = "function", args = {}, rate = { burst = 5, perSecond = 2 } },
+		{
+			name = "Build.PlaceSlot",
+			kind = "function",
+			args = { V.string(1, 32), V.enum(TYPES) },
+			rate = { burst = 3, perSecond = 1 },
+		},
+	},
+}
+
+-- Size class per type, as the double's server sees it.
+SlotDoubles.SIZE = {
+	watchtower = "S",
+	house = "M",
+	storehouse = "M",
+	lumbercamp = "M",
+	quarry = "M",
+	farm = "L",
+	barracks = "L",
+}
+local RANK = { S = 1, M = 2, L = 3 }
+
+function SlotDoubles.service(world)
+	return {
+		name = "SlotService",
+		dependencies = { "RemoteService", "TreasuryService", "KingdomService", "BuildingService" },
+		new = function(_, registry)
+			local remotes = registry:get("RemoteService")
+			local treasury = registry:get("TreasuryService")
+			local kingdoms = registry:get("KingdomService")
+			local build = registry:get("BuildingService")
+			local svc = {
+				slots = {
+					m1 = { id = "m1", kingdom = "crimson", size = "M", center = Vector3.new(60, 0, 60) },
+					s1 = { id = "s1", kingdom = "crimson", size = "S", center = Vector3.new(-60, 0, 60) },
+					l1 = { id = "l1", kingdom = "crimson", size = "L", center = Vector3.new(60, 0, -60) },
+					m2 = { id = "m2", kingdom = "crimson", size = "M", center = Vector3.new(-100, 0, 100) },
+				},
+			}
+			function svc:list(kingdom)
+				local out = {}
+				for _, slot in self.slots do
+					if slot.kingdom == kingdom then
+						table.insert(out, { id = slot.id, size = slot.size, occupiedBy = slot.occupiedBy })
+					end
+				end
+				return out
+			end
+			function svc:publish(kingdom)
+				for _, player in world.env.Players:GetPlayers() do
+					if kingdoms:getKingdomOf(player) == kingdom then
+						remotes:fire("Build.Slots", player, self:list(kingdom))
+					end
+				end
+			end
+			function svc:occupy(slotId, buildingId)
+				local slot = self.slots[slotId]
+				slot.occupiedBy = buildingId
+				self:publish(slot.kingdom)
+			end
+			function svc:start()
+				-- m2 holds a house already.
+				local house = build:add("crimson", "house", 1, "complete", self.slots.m2.center)
+				self.slots.m2.occupiedBy = house
+				remotes:handle("Build.GetSlots", function(player)
+					local kingdom = kingdoms:getKingdomOf(player)
+					return if kingdom then self:list(kingdom) else {}
+				end)
+				remotes:handle("Build.PlaceSlot", function(player, slotId, buildingType)
+					table.insert(world.calls, { name = "PlaceSlot", args = { slotId, buildingType } })
+					if world.latency > 0 then
+						world.env.wait(world.latency) -- the round trip (KingdomWorld option `latency`)
+					end
+					local kingdom = kingdoms:getKingdomOf(player)
+					local slot = self.slots[slotId]
+					if kingdom == nil then
+						return nil, "no_kingdom"
+					elseif slot == nil or slot.kingdom ~= kingdom then
+						return nil, "territory"
+					elseif slot.occupiedBy then
+						return nil, "overlap"
+					end
+					local size = SlotDoubles.SIZE[buildingType]
+					if size == nil or RANK[size] > RANK[slot.size] then
+						return nil, "zone"
+					end
+					local entry = Costs.building(buildingType, 1)
+					if not treasury:spend(kingdom, entry.cost, `slot:{slotId}:{buildingType}`, "construction") then
+						return nil, "cost"
+					end
+					local id = build:add(kingdom, buildingType, 1, "planned", slot.center)
+					build.buildings[id].placedBy = player.UserId
+					build:push(id)
+					self:occupy(slotId, id)
+					return id
+				end)
+			end
+			return svc
+		end,
+	}
+end
+
+return SlotDoubles
