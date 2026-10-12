@@ -15,6 +15,8 @@
 	Kingdom.SetJobQuota(job, count) -> (boolean, errorCode?): jobs are config Jobs.jobOrder without the
 	hauler pool. The double's rule (a stand-in, not the game's): the quota moves haulers into the job,
 	or back into the pool, at once; it never takes more haulers than there are.
+	Spec knobs on the service: `refuse = "<code>"` answers (false, code); `immediate = false` records
+	the quota but moves nobody until `svc:rebalance(kingdom)` (the real sim fills quotas each second).
 ]]
 
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -45,7 +47,7 @@ function PopulationDoubles.service(world)
 		new = function(_, registry)
 			local remotes = registry:get("RemoteService")
 			local kingdoms = registry:get("KingdomService")
-			local svc = { byKingdom = {} }
+			local svc = { byKingdom = {}, immediate = true, refuse = nil, quotas = {} }
 			function svc:_of(kingdom)
 				local p = self.byKingdom[kingdom]
 				if p == nil then
@@ -73,6 +75,17 @@ function PopulationDoubles.service(world)
 				self:_of(kingdom).byJob[job] = count
 				self:publish(kingdom)
 			end
+			-- Moves haulers into (or back out of) each job until its quota is met or the pool is empty.
+			function svc:rebalance(kingdom)
+				local byJob = self:_of(kingdom).byJob
+				for job, quota in self.quotas[kingdom] or {} do
+					local current = byJob[job] or 0
+					local moved = math.clamp(quota - current, -current, byJob.hauler or 0)
+					byJob[job] = current + moved
+					byJob.hauler = (byJob.hauler or 0) - moved
+				end
+				self:publish(kingdom)
+			end
 			function svc:start()
 				remotes:handle("Kingdom.GetPopulation", function(player)
 					local kingdom = kingdoms:getKingdomOf(player)
@@ -86,13 +99,14 @@ function PopulationDoubles.service(world)
 					local kingdom = kingdoms:getKingdomOf(player)
 					if kingdom == nil then
 						return false, "no_kingdom"
+					elseif self.refuse then
+						return false, self.refuse
 					end
-					local byJob = self:_of(kingdom).byJob
-					local current = byJob[job] or 0
-					local moved = math.clamp(count - current, -current, byJob.hauler or 0)
-					byJob[job] = current + moved
-					byJob.hauler = (byJob.hauler or 0) - moved
-					self:publish(kingdom)
+					self.quotas[kingdom] = self.quotas[kingdom] or {}
+					self.quotas[kingdom][job] = count
+					if self.immediate then
+						self:rebalance(kingdom)
+					end
 					return true
 				end)
 			end
