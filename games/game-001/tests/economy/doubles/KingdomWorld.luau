@@ -10,7 +10,9 @@
 		world.build:progress(id, 0.5)        -- server side: construction progress, pushed to clients
 		world:advance(1)                     -- virtual seconds
 
-	Options: latency (seconds Build.CanPlace takes to answer; default 0), userId, playerName, kingdom (default "crimson"; false = no kingdom yet), noPlayerGui,
+	Options: remotes ({ [Area] = { declaration } }: appended to that area, for a spec's own doubles),
+	services ({ (world) -> Def }: extra server doubles, loaded after the ones here),
+	latency (seconds Build.CanPlace takes to answer; default 0), userId, playerName, kingdom (default "crimson"; false = no kingdom yet), noPlayerGui,
 	clientDefinitions, treasury (a starting ResourceBag that replaces Costs.starting for the
 	player's kingdom), match = { phase, endsAt?, startedAt? }.
 	Fields: env, player, server (registry), client (registry), kingdoms (KingdomService double),
@@ -325,6 +327,14 @@ function KingdomWorld.new(opts: { [string]: any }?)
 	local o = opts or {}
 	local shared = { Remotes = table.clone(KingdomWorld.REMOTES) }
 	shared.Remotes.Treasury = TreasuryRemotes
+	-- Extra declarations from a spec's own doubles: appended to an existing area, or a new area.
+	for area, decls in o.remotes or {} do
+		local list = if shared.Remotes[area] then table.clone(shared.Remotes[area]) else {}
+		for _, decl in decls do
+			table.insert(list, decl)
+		end
+		shared.Remotes[area] = list
+	end
 	local env = MockEnv.new({
 		seed = 1,
 		localPlayer = { userId = o.userId or 1, name = o.playerName or "Sam" },
@@ -339,13 +349,17 @@ function KingdomWorld.new(opts: { [string]: any }?)
 	end
 	local co = env.mock.players:add({ userId = 2, name = "Mira" })
 	self.coRuler = co
-	self.server = Loader.load(env, {
+	local serverDefs = {
 		RemoteServiceDef,
 		TreasuryDef,
 		kingdomServiceDef(self),
 		matchServiceDef(self, o.match),
 		buildingServiceDef(self),
-	})
+	}
+	for _, makeDef in o.services or {} do
+		table.insert(serverDefs, makeDef(self)) -- (world) -> a service Def, e.g. a FORGE-01 double
+	end
+	self.server = Loader.load(env, serverDefs)
 	self.remotes = self.server:get("RemoteService")
 	self.treasury = self.server:get("TreasuryService")
 	self.kingdoms = self.server:get("KingdomService")
