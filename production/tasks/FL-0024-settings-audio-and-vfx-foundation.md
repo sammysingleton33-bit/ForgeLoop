@@ -3,14 +3,18 @@ id: FL-0024
 title: Settings, audio and VFX foundation
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P1
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0008]
 estimate_h: 6
-evidence: []
+evidence:
+  - check.sh OVERALL PASS @eeb239a (325 specs)
+  - Settings 17, Audio 15, Vfx 12, Feedback 27 specs; mutations.py FL-0024 rows 14/14 CAUGHT
+  - budgets documented in roblox/studio-tests/experience.md E3/E4
+  - "unverified: no sound assets chosen; nothing heard/seen in Studio (G5/G6)"
 ---
 
 # Settings, audio and VFX foundation
@@ -30,3 +34,6 @@ Lune specs for settings persistence/migration and registry validation; Studio li
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-04: READY → BUILDING. Started 2026-10-12 on forge/04-experience (status recorded late: work began before this transition was logged).
+- 2026-10-12 forge-04: BUILDING → TESTING. Implementation committed; headless gates running (check.sh, mutation check).
+- 2026-10-12 forge-04: TESTING → REVIEW. Settings (experience namespace, only registrant), sound registry + AudioController (8 voices + music), VFX presets + VFXController within mobile budgets, kingdom feedback matrix (Cues/CueDirector), MusicDirector, Pacing, CitizenReactions. Boot needs FL-0008 DataService. Draft PR stacked on FL-0023.
