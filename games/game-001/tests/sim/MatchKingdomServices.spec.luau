@@ -376,6 +376,17 @@ describe("KingdomService (G3)", function()
 		expect(ids).toEqual(expected)
 	end)
 
+	it("lays no ground of its own: WorldService owns the terrain and the river (F1)", function()
+		local env = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local root = env.Workspace:FindFirstChild("ForgeKingdoms")
+		expect(root).never.toBeNil() -- the interim world view still runs (buildings, nodes)
+		for _, part in env.Workspace:GetDescendants() do
+			expect(part.Name).never.toBe("Ground")
+		end
+	end)
+
 	it("seats 1..16 arriving players in balanced kingdoms, sets Player.Team, and spectates the 17th", function()
 		local env, _, kingdoms = boot()
 		for userId = 1, 16 do
