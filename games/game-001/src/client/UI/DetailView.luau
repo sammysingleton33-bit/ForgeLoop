@@ -8,6 +8,11 @@
 	DetailView.new({ detail = BuildModel Detail, compact = boolean, back = string?,
 	                 onCta = (detail) -> (), onBack = () -> () }) -> handle
 	handle.instance: Frame (fills its parent)   handle.cta: Button handle   handle:destroy()
+	handle:update(detail, { onCta?, onBack? })   patches what a push changes — what you have of each
+		cost, the CTA's state and text — on the same instances (FORGE-05 M1: a rebuild under the
+		player's finger lost the tap). Use it when DetailView.key(...) is unchanged.
+	DetailView.key(detail, compact, back?) -> string   the layout: everything but `have`/`short`
+		and the CTA. A different key needs a new DetailView.
 	The CTA face carries the attribute `cta` (its state) for specs and Studio inspection.
 ]]
 
@@ -15,6 +20,7 @@ local Button = require("@game/ReplicatedStorage/Forge/UI/Components/Button")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
+local Signature = require("./Signature")
 local Style = require("@game/ReplicatedStorage/Forge/UI/Style")
 local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
 
@@ -49,13 +55,55 @@ local function stat(icon: string, text: string, order: number): Frame
 	})
 end
 
+-- What a push changes on a cost row: the balance and whether it is short.
+local function paintCost(row: any, c: any)
+	row.BackgroundColor3 = if c.short then Theme.color("gules") else Theme.color("scrim")
+	row.BackgroundTransparency = if c.short then 0.84 else 0.55
+	local have = row:FindFirstChild("Have")
+	if have then
+		have.Text = if c.short then `have {Format.amount(c.have)}` else `✓ {Format.amount(c.have)}`
+		have.TextColor3 = if c.short then SHORT else GOOD
+	end
+end
+
+local function ctaProps(cta: any): { [string]: any }
+	return {
+		text = cta.text,
+		icon = cta.icon or false,
+		variant = if cta.state == "done" then "success" else "primary",
+		state = if cta.state == "disabled" then "disabled" elseif cta.state == "loading" then "loading" else "default",
+	}
+end
+
+function DetailView.key(d: any, compact: boolean, back: string?): string
+	local costs = {}
+	for i, c in d.costs do
+		costs[i] = { currency = c.currency, name = c.name, amount = c.amount }
+	end
+	return Signature.of({
+		type = d.type,
+		name = d.name,
+		icon = d.icon,
+		category = d.category,
+		description = d.description,
+		meta = d.meta,
+		action = d.action,
+		buildingId = d.buildingId,
+		slotId = d.slotId,
+		level = d.level,
+		buildSeconds = d.buildSeconds,
+		benefits = d.benefits,
+		costs = costs,
+		compact = compact,
+		back = back,
+	})
+end
+
 local function costRow(c: any, order: number): Frame
 	local icon = Icon.new(c.currency, 18)
 	icon.LayoutOrder = 1
-	return Create("Frame", {
+	local row = Create("Frame", {
 		Name = "Cost_" .. c.currency,
-		BackgroundColor3 = if c.short then Theme.color("gules") else Theme.color("scrim"),
-		BackgroundTransparency = if c.short then 0.84 else 0.55,
 		Size = UDim2.new(1, 0, 0, 24),
 		LayoutOrder = order,
 	}, {
@@ -77,20 +125,27 @@ local function costRow(c: any, order: number): Frame
 			extra = { Size = UDim2.new(0, 44, 1, 0), LayoutOrder = 3 },
 		}),
 		Have = Style.text({
-			text = if c.short then `have {Format.amount(c.have)}` else `✓ {Format.amount(c.have)}`,
+			text = "",
 			weight = Enum.FontWeight.Bold,
 			size = 12,
 			xAlign = "Right",
-			color = if c.short then SHORT else GOOD,
 			extra = { Size = UDim2.new(0, 66, 1, 0), LayoutOrder = 4 },
 		}),
 	})
+	paintCost(row, c)
+	return row
 end
 
 function DetailView.new(props: { [string]: any })
-	local self = setmetatable({}, DetailView)
 	local d = props.detail
 	local compact = props.compact == true
+	local self = setmetatable({
+		key = DetailView.key(d, compact, props.back),
+		costs = {},
+		_detail = d,
+		_onCta = props.onCta,
+		_onBack = props.onBack,
+	}, DetailView)
 	local order = 0
 	local function nextOrder(): number
 		order += 1
@@ -108,7 +163,7 @@ function DetailView.new(props: { [string]: any })
 		ScrollBarImageColor3 = Theme.color("gold600"),
 	}, { List = Style.list("y", 8, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
 
-	if not compact then
+	if not compact and d.description then
 		Style.text({
 			text = d.description,
 			weight = Enum.FontWeight.Medium,
@@ -145,7 +200,68 @@ function DetailView.new(props: { [string]: any })
 		Parent = body,
 	}, { List = Style.list("y", 3, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
 	for i, c in d.costs do
-		costRow(c, i).Parent = costs
+		local row = costRow(c, i)
+		row.Parent = costs
+		self.costs[c.currency] = row
+	end
+
+	-- What this level gives / what the next one adds (FL-0087). After the costs, so phones see
+	-- the price first.
+	local benefits = d.benefits or {}
+	if compact then
+		-- Phones: what the next level adds is the line that decides an upgrade; keep it above the fold.
+		local nextOnly = {}
+		for _, b in benefits do
+			if b.next then
+				table.insert(nextOnly, b)
+			end
+		end
+		if #nextOnly > 0 then
+			benefits = nextOnly
+		end
+	end
+	if #benefits > 0 then
+		local list = Create("Frame", {
+			Name = "Benefits",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			LayoutOrder = nextOrder(),
+			Parent = body,
+		}, { List = Style.list("y", 3, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top) })
+		for i, b in benefits do
+			Create("Frame", {
+				Name = "Benefit_" .. i,
+				BackgroundColor3 = if b.next then Theme.color("vert") else Theme.color("scrim"),
+				BackgroundTransparency = if b.next then 0.82 else 0.55,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = i,
+				Parent = list,
+			}, {
+				Corner = Style.corner(6),
+				Stroke = if b.next then Style.stroke(Theme.color("vert"), 1, 0.55) else nil,
+				Padding = Style.padding(5, 8, 5, 8),
+				Label = Style.text({
+					text = b.label,
+					weight = Enum.FontWeight.ExtraBold,
+					size = 12,
+					color = if b.next then GOOD else Theme.color("textSecondary"),
+					extra = { Size = UDim2.fromOffset(52, 16) },
+				}),
+				Text = Style.text({
+					text = b.text,
+					weight = Enum.FontWeight.SemiBold,
+					size = 12,
+					wrap = true,
+					extra = {
+						Position = UDim2.fromOffset(60, 0),
+						Size = UDim2.new(1, -60, 0, 16),
+						AutomaticSize = Enum.AutomaticSize.Y,
+					},
+				}),
+			})
+		end
 	end
 
 	local tileSize = if compact then 40 else 56
@@ -179,22 +295,20 @@ function DetailView.new(props: { [string]: any })
 		}),
 	})
 
-	local cta = d.cta
-	self.cta = Button.new({
-		text = cta.text,
-		icon = cta.icon,
-		variant = if cta.state == "done" then "success" else "primary",
-		state = if cta.state == "disabled" then "disabled" elseif cta.state == "loading" then "loading" else "default",
-		onActivated = function()
-			if cta.state == "ready" and props.onCta then
-				props.onCta(d)
-			end
-		end,
-	})
+	-- The CTA acts on the newest detail: update() may have patched it since it was built.
+	local ctaSpec = ctaProps(d.cta)
+	ctaSpec.onActivated = function()
+		local current = self._detail
+		if current.cta.state == "ready" and self._onCta then
+			self._onCta(current)
+		end
+	end
+	self.cta = Button.new(ctaSpec)
+	self._ctaKey = Signature.of(d.cta)
 	self.cta.instance.AnchorPoint = Vector2.new(0, 1)
 	self.cta.instance.Position = UDim2.fromScale(0, 1)
 	self.cta.instance.Name = "Cta"
-	self.cta.face:SetAttribute("cta", cta.state)
+	self.cta.face:SetAttribute("cta", d.cta.state)
 
 	local backHeight = if props.back then 24 else 0
 	local children: { [any]: any } = {
@@ -224,8 +338,8 @@ function DetailView.new(props: { [string]: any })
 			TextSize = 12,
 			TextColor3 = Theme.color("gold400"),
 			[Create.Event.Activated] = function()
-				if props.onBack then
-					props.onBack()
+				if self._onBack then
+					self._onBack()
 				end
 			end,
 		})
@@ -236,6 +350,26 @@ function DetailView.new(props: { [string]: any })
 		Size = UDim2.fromScale(1, 1),
 	}, children)
 	return self
+end
+
+function DetailView:update(d: any, handlers: { onCta: ((any) -> ())?, onBack: (() -> ())? }?)
+	self._detail = d
+	if handlers then
+		self._onCta = handlers.onCta
+		self._onBack = handlers.onBack
+	end
+	for _, c in d.costs do
+		local row = self.costs[c.currency]
+		if row then
+			paintCost(row, c)
+		end
+	end
+	local ctaKey = Signature.of(d.cta)
+	if ctaKey ~= self._ctaKey then
+		self._ctaKey = ctaKey
+		self.cta:update(ctaProps(d.cta))
+		self.cta.face:SetAttribute("cta", d.cta.state)
+	end
 end
 
 function DetailView:destroy()

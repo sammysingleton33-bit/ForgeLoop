@@ -32,7 +32,7 @@ return {
 		match = { Lobby = 20, Founding = 480, Expansion = 720, Conflict = 900, Endgame = 600, Results = 30 },
 	},
 	minPlayers = 1,
-	tickSeconds = 0.25,
+	tickSeconds = 1 / 16, -- 16 Hz movement (CONTRACTS G4 ≈20 Hz); exact in binary, so timers never drift
 	victory = { conquest = true, crownPointsAtEnd = true }, -- PROVISIONAL (BRIEF §16.4)
 	pvp = { enabled = false, peaceCooldown = 120, proposalSeconds = 60 }, -- PROVISIONAL (BRIEF §16.2)
 	crown = { buildingLevel = 5, conquest = 300, unitKill = 2 },

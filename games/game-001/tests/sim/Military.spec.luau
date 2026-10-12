@@ -382,7 +382,7 @@ describe("Kingdom/Military: combat", function()
 		local near = unit(sim, k2, "soldier", 30, 0)
 		local farther = unit(sim, k2, "soldier", 0, 38)
 		local outside = unit(sim, k2, "soldier", -41, 0) -- keep range is 40
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(near.hp).toBe(70) -- keep damage 10
 		expect(farther.hp).toBe(80)
 		sim:advance(1.25)
@@ -393,7 +393,7 @@ describe("Kingdom/Military: combat", function()
 
 		local tower = addBuilding(sim, k1, "watchtower", 80, 80, 1)
 		local target = unit(sim, k2, "soldier", 80, 120) -- 40 from the tower, 144 from the keep
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(target.hp).toBe(68) -- tower damage 12
 		-- a tower still under construction does not shoot
 		local site = sim:_createBuilding(k1, "watchtower", -80, -80)
@@ -409,7 +409,7 @@ describe("Kingdom/Military: combat", function()
 		war(sim)
 		local wall = addBuilding(sim, k1, "wall", 100, 0, 1)
 		local ram = unit(sim, k2, "ram", 110, 0)
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(ram.target).toEqual({ kind = "building", id = wall.id })
 		expect(wall.hp).toBe(900 - 60 * 4)
 		local soldier = unit(sim, k2, "soldier", 108, 3) -- 4.5 from the wall's edge: in range
@@ -447,7 +447,7 @@ describe("Kingdom/Military: combat", function()
 		local raider = unit(sim, k2, "soldier", 140, 0, { kind = "Move", x = 100, z = 0 })
 		local blockedAt = nil
 		for _ = 1, 20 do
-			sim:step()
+			sim:advance(0.25) -- one former 4 Hz tick
 			if
 				raider.target ~= nil
 				and raider.target.kind == "building"
@@ -490,7 +490,7 @@ describe("Kingdom/Military: combat", function()
 			local raider = unit(sim, k2, "soldier", 0, 102, { kind = "Move", x = 0, z = 102 })
 			local died = {}
 			for _ = 1, 40 do
-				sim:step()
+				sim:advance(0.25) -- one former 4 Hz tick
 				for _, e in F.events(sim, "CitizenDied") do
 					table.insert(died, e)
 				end
@@ -514,10 +514,10 @@ describe("Kingdom/Military: combat", function()
 		local farmers = sim:citizensOf(k1)
 		local intruder = unit(sim, k2, "soldier", 55, 19)
 		local distant = unit(sim, k2, "soldier", 170, 0) -- beyond 130 + 30
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(k1.threats).toEqual({}) -- at peace nobody is a threat
 		war(sim)
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(#k1.threats).toBe(1)
 		expect(k1.threats[1].id).toBe(intruder.id)
 		expect(k2.threats).toEqual({}) -- k1 has no units
@@ -538,7 +538,7 @@ describe("Kingdom/Military: combat", function()
 		end)).toBeGreaterThan(0)
 		-- once the intruder is gone the list clears on the next tick
 		Diplomacy.setRelation(sim, "crimson", "azure", "Peace")
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(k1.threats).toEqual({})
 		expect(distant.alive).toBe(true)
 	end)
@@ -556,7 +556,7 @@ describe("Kingdom/Military: conquest", function()
 		local k2Citizens = table.clone(k2.citizenIds)
 		local k2Buildings = table.clone(k2.buildingIds)
 		F.events(sim)
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 
 		local events = sim:drainEvents()
 		local eliminated = nil
@@ -572,7 +572,7 @@ describe("Kingdom/Military: conquest", function()
 		expect(eliminated.loot).toEqual({ food = 60, wood = 50, stone = 25 }) -- half of 120/100/50/0
 		expect(k2.alive).toBe(false)
 		expect(k2.eliminatedBy).toBe("crimson")
-		expect(k2.eliminatedAt).toBe(sim.time)
+		expect(k2.eliminatedAt > sim.time - 0.25 and k2.eliminatedAt <= sim.time).toBe(true) -- within the last step
 		expect(k1.stats.conquered).toBe(1)
 		expect(k1.crownPoints).toBe(sim.catalog.crown.conquest)
 		expect(sim.treasury:get(k1.id)).toEqual({ food = 180, wood = 150, stone = 75, gold = 0 })

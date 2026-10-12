@@ -62,3 +62,27 @@ Prototype ↔ Luau differences that remain (on purpose):
 | Every refusal explained | CTA text for shortfalls; server reasons as sentences (`UI/Text`); unknown reasons get a generic line |
 | Visual confirmation of a spend | pill float (−50), pill border tint, toast, construction chip with progress |
 | Colour is never the only signal | ghost verdict also in words on the bar; costs say "have N" |
+
+## 4. FL-0087 — plot picker and upgrade panel (D-030, CONTRACTS G13.5/G13.6)
+Prototype scenes (same `kingdom.html`): `plot-pick`, `plot-pick-list`, `plot-pick-large`,
+`building-upgrade`, `building-max`, `building-foreign`; committed: `screenshots/prototype/plot-pick-*`
+and `building-upgrade-*` (6). Luau scenes `scenes/{plot-pick,plot-pick-list,building-upgrade,building-foreign}.luau`
+on the spec world with `tests/economy/doubles/SlotDoubles.luau`; committed:
+`screenshots/luau/plot-pick-{phone,tablet,desktop}`, `plot-pick-list-phone`,
+`building-upgrade-{phone,tablet,desktop}`, `building-foreign-desktop` (8). The build, build-short,
+upgrade and confirm renders were re-shot because the detail pane now shows what a building gives.
+
+What the prototype settled:
+- The plot picker **is** the build drawer (same rows, costs and detail), with one tab naming the plot
+  size and a CTA "Build <name> here"; only structures that fit the plot are listed (`UI/SlotFit`).
+- The upgrade panel is the same detail pane: the next level's cost and time, plus two lines —
+  **Now** (what the building gives) and **Lv N** (what the next level adds, green).
+- A tapped building of another kingdom opens a read-only card.
+
+Changed after looking:
+- At the highest level the prototype still showed "0:00 with builders" → no build time without a
+  next level (Luau hides it).
+- Phone upgrade panel (Luau render): the "Lv 2" line sat below the fold under the costs → phones show
+  only the next-level line; costs stay first so the price is always visible.
+- The read-only card read "Recruits and trains soldiers for **your** kingdom" about Frostmere's
+  barracks → no catalogue description on foreign buildings.

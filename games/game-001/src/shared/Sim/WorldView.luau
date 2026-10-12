@@ -18,7 +18,8 @@
 
 	API
 		WorldView.new(env, options?): WorldView
-			options: { groundY = 0, parent = env.Workspace, createGround = true }
+			options: { groundY = 0, parent = env.Workspace, createGround = true, entities = true }
+			entities = false: no citizen/soldier parts (clients render them with EntityController, D-023)
 		view:sync(sim)                 -- create, update and remove parts to match the simulation
 		view:find(kind, id): Instance?    -- kind "node" | "building" | "entity"
 		view:count(): number           -- live entity parts (specs)
@@ -63,6 +64,7 @@ function WorldView.new(env: any, options: { [string]: any }?)
 	self._env = env
 	self._groundY = opts.groundY or 0
 	self._createGround = if opts.createGround == nil then true else opts.createGround
+	self._entities = if opts.entities == nil then true else opts.entities
 	self._parts = {} :: { [string]: any }
 	local root = env.newInstance("Folder")
 	root.Name = "ForgeKingdoms"
@@ -210,7 +212,7 @@ function WorldView:sync(sim: any)
 			self:_place(part, b.x, b.z, height)
 			live["building:" .. bid] = true
 		end
-		for _, cid in kingdom.citizenIds do
+		for _, cid in if self._entities then kingdom.citizenIds else {} do
 			local c = sim.citizens[cid]
 			local part = self:_part(
 				"entity:" .. cid,
@@ -227,7 +229,7 @@ function WorldView:sync(sim: any)
 			self:_place(part, c.x, c.z, 4.5)
 			live["entity:" .. cid] = true
 		end
-		for _, uid in kingdom.unitIds do
+		for _, uid in if self._entities then kingdom.unitIds else {} do
 			local u = sim.units[uid]
 			local part = self:_part("entity:" .. uid, uid, folders.Units, Vector3.new(2, 5, 2), kingdomColor, "Metal")
 			part:SetAttribute("KingdomId", kid)

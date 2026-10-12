@@ -176,20 +176,20 @@ describe("Kingdom/RulerAI: decisions", function()
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
 		local raider = Military.spawnUnit(sim, k2, "soldier", 100, 0)
 		raider.order = { kind = "Hold" }
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		F.events(sim)
 		expect(RulerAI.think(sim, k1)).toBe("SetAlarm")
 		expect(k1.alarm).toBe(true)
 		expect(F.events(sim, "AlarmChanged")[1].on).toBe(true)
 		Diplomacy.setRelation(sim, "crimson", "azure", "Peace")
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(RulerAI.think(sim, k1)).toBe("SetAlarm")
 		expect(k1.alarm).toBe(false)
 		-- with two soldiers at home it leaves the citizens at work
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
 		Military.spawnUnit(sim, k1, "soldier", 0, 30)
 		Military.spawnUnit(sim, k1, "soldier", 0, -30)
-		sim:step()
+		sim:advance(0.25) -- one former 4 Hz tick
 		expect(#k1.threats).toBe(1)
 		expect(RulerAI.think(sim, k1)).never.toBe("SetAlarm")
 		expect(k1.alarm).toBe(false)
