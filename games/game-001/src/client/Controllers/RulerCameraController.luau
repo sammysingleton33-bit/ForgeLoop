@@ -1,40 +1,43 @@
 --!strict
 --[[
-	RulerCameraController (game-001, FORGE-04, FL-0053; CONTRACTS G4.1): the ruler's camera.
+	RulerCameraController (game-001, FORGE-04, FL-0053 + FL-0090; CONTRACTS G4.1, G13.6): the ruler's camera.
 
 		local camera = registry:find("RulerCameraController")
-		camera:setMode("overview")          -- "follow" | "overview"; returns false for anything else
+		camera:setMode("follow")            -- "overview" (default) | "follow"; false for anything else
 		camera.mode, camera.changed:connect(function(mode, previous) ... end)
-		camera:zoomBy(steps)                -- overview height; positive = further out
+		camera:panBy(Vector2) / camera:rotateBy(degrees) / camera:zoomBy(steps)   -- overview rig
+		camera:focusOn(position)            -- e.g. a panel's "go to" button; clamped to the map
+		camera:getFocus() -> Vector3?
 		camera:shake(magnitude, duration)   -- VFXController.shakeRequested is wired to this
 
-	Modes
-		follow    Roblox's default third-person camera (CameraType Custom), tuned for overseeing the
-		          kingdom: zoom between follow.minZoom and follow.maxZoom studs (min ≥ 8, so never first
-		          person, which smooth turning would break), a shoulder offset (Humanoid.CameraOffset)
-		          and the field of view.
-		overview  A Scriptable camera high above the ruler, looking down at overview.pitchDeg. It keeps
-		          the yaw the player had and follows the ruler with frame-rate-independent smoothing.
-		          The mouse wheel, a pinch, or zoomBy() change the height within its range. Entering it
-		          blends from the current view over transitionSec.
-	Switching
-		- V on a keyboard, Y on a gamepad, or the on-screen "View" button on touch toggles the mode.
-		- overviewInBuild: entering build mode (InputModeController) switches to overview, and
-		  leaving it restores the previous mode, unless the player picked a mode themselves while
-		  building.
-	Shake
-		- magnitude 0..1 (clamped) maps to at most shake.maxDegrees of rotation; duration is capped
-		  at shake.maxDuration; it eases out to zero, and at most shake.maxActive shakes add up.
-		- It is ignored when SettingsController says cameraShake is off or reduced motion is on (the
-		  platform's Reduce Motion included). VFXController already checks this; direct callers get
-		  the same rule here.
-	The camera runs at RenderPriority.Camera + 1 (after Roblox's camera), so shake also works in
-	follow mode. Engine access is guarded: without a camera or the input services (headless boot
-	gate) it boots and does nothing.
+	overview (default, D-030): the aerial management view. The ruler sits on the throne (FORGE-01
+	seats them) while the player looks after the kingdom from above.
+		- Pan: WASD / arrow keys, left-mouse drag, one-finger drag, or the left stick. Speed scales
+		  with the zoom, so the screen moves at the same rate whether close or far.
+		- Zoom: mouse wheel, pinch, or zoomBy(); overview.minZoom..maxZoom studs (≈ 40–220, G13.6)
+		  from the focus. The pitch follows the zoom: flatter close up, steeper far out.
+		- Rotate: Q / E, right-mouse drag, a two-finger twist, or the right stick. Q / E are not bound
+		  in build mode, because FORGE-03's placement rotates with Q / R.
+		- Bounded to the map: the focus stays inside the Layout regions' box (G10.1) plus a margin.
+		- Streaming: when the focus moves far, the camera asks the server to stream around it
+		  (Player:RequestStreamAroundAsync, throttled; Player.ReplicationFocus is server-only).
+		- The character's movement and jump keys are sunk (ContextActionService, High priority) and
+		  the touch thumbstick is hidden (GuiService.TouchControlsEnabled), so the ruler stays seated.
+	follow (walk mode, kept from FL-0053): Roblox's third-person camera with zoom follow.minZoom..
+	maxZoom (never first person), a shoulder offset and the field of view. Entering it makes the
+	ruler stand up (RulerController:standUp) and shows the touch controls again.
+	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode always uses the
+	overview, and leaving it restores the previous mode unless the player chose one meanwhile.
+	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
+	maxActive at once, never with cameraShake off or reduced motion on (SettingsController).
 
-	Pure helpers (specs): Def.overviewCFrame, Def.smooth, Def.ease, Def.clamp, Def.shakeAmplitude
+	The camera runs at RenderPriority.Camera + 1. Engine access is guarded: without a camera, input
+	services or Layout it boots and does nothing (the headless boot gate).
+	Pure helpers (specs): Def.aerialCFrame, Def.pitchFor, Def.clampFocus, Def.boundsFromLayout,
+	Def.worldPerPixel, Def.panVector, Def.smooth, Def.ease, Def.clamp, Def.shakeAmplitude
 ]]
 
+local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
 local Def = {
@@ -42,9 +45,26 @@ local Def = {
 	dependencies = { "RulerController", "InputModeController" },
 }
 
-Def.MODES = table.freeze({ "follow", "overview" })
+Def.MODES = table.freeze({ "overview", "follow" })
+Def.DEFAULT_MODE = "overview"
 Def.ACTION = "ForgeRulerView"
+Def.PAN_ACTION = "ForgeOverviewPan"
+Def.ROTATE_ACTION = "ForgeOverviewRotate"
+Def.SEAT_ACTION = "ForgeOverviewSeat"
 Def.RENDER_NAME = "ForgeRulerCamera"
+Def.PAN_KEYS = table.freeze({
+	[Enum.KeyCode.W] = Vector2.new(0, 1),
+	[Enum.KeyCode.Up] = Vector2.new(0, 1),
+	[Enum.KeyCode.S] = Vector2.new(0, -1),
+	[Enum.KeyCode.Down] = Vector2.new(0, -1),
+	[Enum.KeyCode.A] = Vector2.new(-1, 0),
+	[Enum.KeyCode.Left] = Vector2.new(-1, 0),
+	[Enum.KeyCode.D] = Vector2.new(1, 0),
+	[Enum.KeyCode.Right] = Vector2.new(1, 0),
+})
+Def.ROTATE_KEYS = table.freeze({ [Enum.KeyCode.Q] = -1, [Enum.KeyCode.E] = 1 })
+Def.FALLBACK_BOUNDS = table.freeze({ min = Vector2.new(-1024, -1024), max = Vector2.new(1024, 1024) })
+
 Def.DEFAULTS = table.freeze({
 	fieldOfView = 70,
 	follow = table.freeze({
@@ -53,12 +73,21 @@ Def.DEFAULTS = table.freeze({
 		shoulder = Vector3.new(1.25, 0.75, 0),
 	}),
 	overview = table.freeze({
-		minHeight = 45,
-		maxHeight = 140,
-		startHeight = 80,
-		zoomStep = 10, -- studs of height per wheel notch / zoomBy(1)
-		pitchDeg = 55, -- degrees below the horizon
-		smoothing = 6, -- 1/s: the focus closes about 95 % of the gap in 0.5 s
+		minZoom = 40,
+		maxZoom = 220,
+		startZoom = 120,
+		minPitchDeg = 38, -- at minZoom
+		maxPitchDeg = 65, -- at maxZoom
+		zoomStep = 14, -- studs per wheel notch / zoomBy(1)
+		panSpeed = 0.9, -- keys and stick: zoom distances per second
+		rotateSpeed = 90, -- Q / E and the stick: degrees per second
+		dragRotate = 0.3, -- right-drag: degrees per pixel
+		smoothing = 12, -- 1/s: how fast the shown view follows the target view
+		boundsMargin = 40,
+		stickDeadzone = 0.2,
+		streamMoveStuds = 128,
+		streamEverySec = 1,
+		streamTimeoutSec = 2,
 	}),
 	transitionSec = 0.6,
 	overviewInBuild = true,
@@ -72,13 +101,18 @@ Def.DEFAULTS = table.freeze({
 local Controller = {}
 Controller.__index = Controller
 
+-- ------------------------------------------------------------------ pure helpers
+
 function Def.clamp(value: number, low: number, high: number): number
 	return math.max(low, math.min(high, value))
 end
 
 -- Exponential smoothing that gives the same result for one step of dt as for two steps of dt/2.
-function Def.smooth(current: Vector3, target: Vector3, rate: number, dt: number): Vector3
+function Def.smooth(current: any, target: any, rate: number, dt: number): any
 	local alpha = 1 - math.exp(-rate * dt)
+	if type(current) == "number" then
+		return current + (target - current) * alpha
+	end
 	return current:Lerp(target, alpha)
 end
 
@@ -88,14 +122,69 @@ function Def.ease(t: number): number
 	return x * x * (3 - 2 * x)
 end
 
--- Camera above `focus`: `height` studs up, looking down at `pitchDeg`, facing along `yaw`
--- (radians around +Y; yaw 0 looks toward -Z, like the default camera).
-function Def.overviewCFrame(focus: Vector3, yaw: number, height: number, pitchDeg: number): CFrame
-	local pitch = math.rad(Def.clamp(pitchDeg, 10, 89))
-	local back = height / math.tan(pitch)
+-- Pitch (degrees below the horizon) for a zoom distance: flatter close up, steeper far out.
+function Def.pitchFor(zoom: number, overview: any): number
+	local span = overview.maxZoom - overview.minZoom
+	local t = if span > 0 then Def.clamp((zoom - overview.minZoom) / span, 0, 1) else 0
+	return overview.minPitchDeg + (overview.maxPitchDeg - overview.minPitchDeg) * t
+end
+
+-- Camera `zoom` studs from `focus`, facing along `yaw` (radians around +Y; yaw 0 looks toward -Z,
+-- like the default camera), at the pitch for that zoom.
+function Def.aerialCFrame(focus: Vector3, yaw: number, zoom: number, overview: any): CFrame
+	local pitch = math.rad(Def.pitchFor(zoom, overview))
 	local forward = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw))
-	local position = focus + Vector3.new(0, height, 0) - forward * back
+	local position = focus - forward * (zoom * math.cos(pitch)) + Vector3.new(0, zoom * math.sin(pitch), 0)
 	return CFrame.lookAt(position, focus)
+end
+
+-- The map box from Layout (G10.1): every region polygon point and every plot spawn.
+function Def.boundsFromLayout(layout: any): { min: Vector2, max: Vector2 }?
+	if type(layout) ~= "table" then
+		return nil
+	end
+	local minX, minZ, maxX, maxZ = math.huge, math.huge, -math.huge, -math.huge
+	local function add(x: number, z: number)
+		minX, minZ = math.min(minX, x), math.min(minZ, z)
+		maxX, maxZ = math.max(maxX, x), math.max(maxZ, z)
+	end
+	for _, region in (if type(layout.regions) == "table" then layout.regions else {}) do
+		for _, point in (if type(region) == "table" and type(region.polygon) == "table" then region.polygon else {}) do
+			if typeof(point) == "Vector2" then
+				add(point.X, point.Y)
+			end
+		end
+	end
+	for _, plot in (if type(layout.plots) == "table" then layout.plots else {}) do
+		if type(plot) == "table" and typeof(plot.spawn) == "CFrame" then
+			add(plot.spawn.Position.X, plot.spawn.Position.Z)
+		end
+	end
+	if minX > maxX then
+		return nil
+	end
+	return { min = Vector2.new(minX, minZ), max = Vector2.new(maxX, maxZ) }
+end
+
+-- Keeps the focus inside the bounds (plus the margin); the height is kept.
+function Def.clampFocus(focus: Vector3, bounds: { min: Vector2, max: Vector2 }, margin: number): Vector3
+	return Vector3.new(
+		Def.clamp(focus.X, bounds.min.X - margin, bounds.max.X + margin),
+		focus.Y,
+		Def.clamp(focus.Z, bounds.min.Y - margin, bounds.max.Y + margin)
+	)
+end
+
+-- Studs of ground per screen pixel at a zoom distance (vertical field of view in degrees).
+function Def.worldPerPixel(zoom: number, fieldOfView: number, viewportHeight: number): number
+	return 2 * zoom * math.tan(math.rad(fieldOfView) / 2) / math.max(viewportHeight, 1)
+end
+
+-- World XZ movement for a screen-space direction (x = right, y = forward) at `yaw`.
+function Def.panVector(direction: Vector2, yaw: number): Vector3
+	local forward = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw))
+	local right = Vector3.new(math.cos(yaw), 0, -math.sin(yaw))
+	return right * direction.X + forward * direction.Y
 end
 
 -- Eased-out amplitude (degrees) of one shake `age` seconds in.
@@ -113,6 +202,11 @@ local function yawOf(look: Vector3): number
 		return 0
 	end
 	return math.atan2(-flat.X, -flat.Z)
+end
+
+-- Shortest signed difference between two angles (radians).
+local function angleDelta(from: number, to: number): number
+	return (to - from + math.pi) % (2 * math.pi) - math.pi
 end
 
 local function connect(target: any, eventName: string, handler: (...any) -> ()): any
@@ -151,7 +245,9 @@ local function guarded(env: any, field: string, override: any, member: string): 
 	return if ok then service else nil
 end
 
--- opts (specs): { config, camera, player, actions, userInput, runService }
+-- ------------------------------------------------------------------ lifecycle
+
+-- opts (specs): { config, camera, player, actions, userInput, guiService, runService, layout, viewportHeight }
 function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 	local options = opts or {}
 	local config = options.config or Def.DEFAULTS
@@ -163,15 +259,23 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_connections = {},
 		_shakes = {},
 		_refused = {},
-		_height = config.overview.startHeight,
-		_yaw = 0,
-		_focus = nil,
+		_held = {},
+		_rotateHeld = {},
+		_stick = Vector2.zero,
+		_stickTurn = 0,
+		_drag = nil,
+		_panLast = nil,
+		_pinch = 1,
+		_twist = 0,
+		_target = { focus = nil, yaw = 0, zoom = config.overview.startZoom },
+		_shown = nil,
 		_blendFrom = nil,
 		_blendT = 1,
 		_autoFrom = nil,
 		_rendering = false,
-		_pinch = 1,
-		mode = "follow",
+		_streamedAt = nil,
+		_streamedFocus = nil,
+		mode = Def.DEFAULT_MODE,
 		changed = Signal.new(),
 	}, Controller)
 end
@@ -195,6 +299,11 @@ function Controller:start()
 		return opts.player or env.Players.LocalPlayer
 	end)
 	self._player = if okPlayer then foundPlayer else nil
+	local layout = if opts.layout ~= nil then opts.layout else Layout
+	self._bounds = Def.boundsFromLayout(layout) or Def.FALLBACK_BOUNDS
+	self._actions = guarded(env, "ContextActionService", opts.actions, "BindAction")
+	self._userInput = guarded(env, "UserInputService", opts.userInput, "InputChanged")
+	self._guiService = guarded(env, "GuiService", opts.guiService, "TouchControlsEnabled")
 
 	if self._ruler ~= nil then
 		track(
@@ -203,9 +312,6 @@ function Controller:start()
 				self:_onCharacter(character)
 			end)
 		)
-		if self._ruler:getCharacter() ~= nil then
-			self:_onCharacter(self._ruler:getCharacter())
-		end
 	end
 	if self._input ~= nil then
 		track(
@@ -223,17 +329,23 @@ function Controller:start()
 			end)
 		)
 	end
-	self:_bindInput()
+	self:_bindView()
+	self:_bindPointer()
 	self:_bindRender()
-	local camera = self._camera
-	if camera == nil then
+	if self._camera == nil then
 		env.log("info", "RulerCameraController: no camera; camera modes are skipped")
 	else
 		pcall(function()
-			camera.FieldOfView = self._config.fieldOfView
+			self._camera.FieldOfView = self._config.fieldOfView
 		end)
 	end
-	self:_applyFollow()
+	if self._actions == nil or self._userInput == nil then
+		env.log("info", "RulerCameraController: input services unavailable; camera keys and gestures are skipped")
+	end
+	if self._ruler ~= nil and self._ruler:getCharacter() ~= nil then
+		self:_onCharacter(self._ruler:getCharacter())
+	end
+	self:_apply()
 end
 
 function Controller:destroy()
@@ -243,10 +355,13 @@ function Controller:destroy()
 	table.clear(self._connections)
 	local actions = self._actions
 	if actions ~= nil then
-		pcall(function()
-			actions:UnbindAction(Def.ACTION)
-		end)
+		for _, name in { Def.ACTION, Def.PAN_ACTION, Def.ROTATE_ACTION, Def.SEAT_ACTION } do
+			pcall(function()
+				actions:UnbindAction(name)
+			end)
+		end
 	end
+	self:_setTouchControls(true)
 	if self._rendering then
 		pcall(function()
 			(self._opts.runService or self._env.RunService):UnbindFromRenderStep(Def.RENDER_NAME)
@@ -256,6 +371,8 @@ function Controller:destroy()
 	self.changed:disconnectAll()
 end
 
+-- ------------------------------------------------------------------ public API
+
 function Controller:setMode(mode: any): boolean
 	if self._input ~= nil and self._input.mode == "build" then
 		self._autoFrom = nil -- the player chose a view while building: keep it after build mode
@@ -264,12 +381,33 @@ function Controller:setMode(mode: any): boolean
 end
 
 function Controller:toggle(): boolean
-	return self:setMode(if self.mode == "follow" then "overview" else "follow")
+	return self:setMode(if self.mode == "overview" then "follow" else "overview")
+end
+
+function Controller:getFocus(): Vector3?
+	return self._target.focus
+end
+
+function Controller:focusOn(position: Vector3)
+	self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
+end
+
+-- Moves the overview focus by a screen-space amount in studs (x = right, y = forward).
+function Controller:panBy(studs: Vector2)
+	local focus = self._target.focus
+	if focus == nil then
+		return
+	end
+	self:focusOn(focus + Def.panVector(studs, self._target.yaw))
+end
+
+function Controller:rotateBy(degrees: number)
+	self._target.yaw += math.rad(degrees)
 end
 
 function Controller:zoomBy(steps: number)
 	local overview = self._config.overview
-	self._height = Def.clamp(self._height + steps * overview.zoomStep, overview.minHeight, overview.maxHeight)
+	self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)
 end
 
 function Controller:shake(magnitude: any, duration: any): boolean
@@ -295,6 +433,90 @@ function Controller:shake(magnitude: any, duration: any): boolean
 	return true
 end
 
+-- One frame. Live: bound with BindToRenderStep after Roblox's camera; specs call it directly.
+function Controller:update(dt: number)
+	local camera = self._camera
+	if camera == nil then
+		return
+	end
+	if self.mode == "overview" then
+		self:_stepOverview(dt, camera)
+	end
+	if #self._shakes > 0 then
+		local pitch, yaw = self:_shakeDegrees(dt)
+		camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(pitch), math.rad(yaw), 0)
+	end
+end
+
+-- ------------------------------------------------------------------ overview
+
+function Controller:_stepOverview(dt: number, camera: any)
+	local overview = self._config.overview
+	local target = self._target
+	if target.focus == nil then
+		return
+	end
+	-- keys and stick: a screen direction, scaled with the zoom
+	local direction = Vector2.zero
+	for _, vector in self._held do
+		direction += vector
+	end
+	direction += self._stick
+	if direction.Magnitude > 0 then
+		direction = if direction.Magnitude > 1 then direction.Unit else direction
+		self:panBy(direction * (overview.panSpeed * target.zoom * dt))
+	end
+	local turn = self._stickTurn
+	for _, sign in self._rotateHeld do
+		turn += sign
+	end
+	if turn ~= 0 then
+		self:rotateBy(Def.clamp(turn, -1, 1) * overview.rotateSpeed * dt)
+	end
+
+	local shown = self._shown
+	if shown == nil then
+		shown = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
+		self._shown = shown
+	else
+		shown.focus = Def.smooth(shown.focus, target.focus, overview.smoothing, dt)
+		shown.yaw += angleDelta(shown.yaw, target.yaw) * (1 - math.exp(-overview.smoothing * dt))
+		shown.zoom = Def.smooth(shown.zoom, target.zoom, overview.smoothing, dt)
+	end
+	local goal = Def.aerialCFrame(shown.focus, shown.yaw, shown.zoom, overview)
+	if self._blendFrom ~= nil then
+		self._blendT = math.min(1, self._blendT + dt / self._config.transitionSec)
+		camera.CFrame = self._blendFrom:Lerp(goal, Def.ease(self._blendT))
+		if self._blendT >= 1 then
+			self._blendFrom = nil
+		end
+	else
+		camera.CFrame = goal
+	end
+	self:_streamAround(target.focus)
+end
+
+function Controller:_streamAround(focus: Vector3)
+	local overview = self._config.overview
+	local player = self._player
+	if player == nil then
+		return
+	end
+	local now = self._env.clock()
+	if self._streamedFocus ~= nil then
+		local far = (focus - self._streamedFocus).Magnitude >= overview.streamMoveStuds
+		if not far or now - (self._streamedAt :: number) < overview.streamEverySec then
+			return
+		end
+	end
+	self._streamedFocus, self._streamedAt = focus, now
+	self._env.spawn(function()
+		pcall(function()
+			player:RequestStreamAroundAsync(focus, overview.streamTimeoutSec)
+		end)
+	end)
+end
+
 -- Total shake rotation (degrees) right now; advances the shakes by dt.
 function Controller:_shakeDegrees(dt: number): (number, number)
 	local pitch, yaw = 0, 0
@@ -313,38 +535,7 @@ function Controller:_shakeDegrees(dt: number): (number, number)
 	return pitch, yaw
 end
 
--- One frame. Live: bound with BindToRenderStep after Roblox's camera; specs call it directly.
-function Controller:update(dt: number)
-	local camera = self._camera
-	if camera == nil then
-		return
-	end
-	if self.mode == "overview" then
-		local root = self._ruler and self._ruler:getRoot()
-		if root ~= nil then
-			local target = root.CFrame.Position
-			self._focus = if self._focus
-				then Def.smooth(self._focus, target, self._config.overview.smoothing, dt)
-				else target
-		end
-		if self._focus ~= nil then
-			local goal = Def.overviewCFrame(self._focus, self._yaw, self._height, self._config.overview.pitchDeg)
-			if self._blendFrom ~= nil then
-				self._blendT = math.min(1, self._blendT + dt / self._config.transitionSec)
-				camera.CFrame = self._blendFrom:Lerp(goal, Def.ease(self._blendT))
-				if self._blendT >= 1 then
-					self._blendFrom = nil
-				end
-			else
-				camera.CFrame = goal
-			end
-		end
-	end
-	if #self._shakes > 0 then
-		local pitch, yaw = self:_shakeDegrees(dt)
-		camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(pitch), math.rad(yaw), 0)
-	end
-end
+-- ------------------------------------------------------------------ modes
 
 function Controller:_setMode(mode: any): boolean
 	if not table.find(Def.MODES, mode) then
@@ -366,23 +557,30 @@ function Controller:_setMode(mode: any): boolean
 end
 
 function Controller:_apply()
+	local overview = self.mode == "overview"
+	self:_bindOverviewKeys(overview)
+	self:_setTouchControls(not overview)
 	local camera = self._camera
-	if camera == nil then
-		return
-	end
-	pcall(function()
-		camera.FieldOfView = self._config.fieldOfView
-	end)
-	if self.mode == "overview" then
-		self._yaw = yawOf(camera.CFrame.LookVector)
+	if overview then
 		local root = self._ruler and self._ruler:getRoot()
-		self._focus = if root then root.CFrame.Position else self._focus
-		self._blendFrom = camera.CFrame
-		self._blendT = 0
-		camera.CameraType = Enum.CameraType.Scriptable
+		if self._target.focus == nil and root ~= nil then
+			self:focusOn(root.CFrame.Position)
+		end
+		if camera ~= nil then
+			self._target.yaw = yawOf(camera.CFrame.LookVector)
+			self._shown = nil
+			self._blendFrom = camera.CFrame
+			self._blendT = 0
+			camera.CameraType = Enum.CameraType.Scriptable
+		end
 	else
 		self._blendFrom = nil
-		camera.CameraType = Enum.CameraType.Custom
+		if self._ruler ~= nil and self._ruler.standUp then
+			self._ruler:standUp()
+		end
+		if camera ~= nil then
+			camera.CameraType = Enum.CameraType.Custom
+		end
 		self:_applyFollow()
 	end
 end
@@ -415,13 +613,18 @@ function Controller:_onCharacter(character: any)
 		return
 	end
 	local root = self._ruler and self._ruler:getRoot()
-	if root ~= nil then
-		self._focus = root.CFrame.Position -- snap: a respawn is not a camera move
+	if root ~= nil and self._target.focus == nil then
+		self:focusOn(root.CFrame.Position) -- the throne: the first view is the player's own keep
 	end
 	self:_applyFollow()
 end
 
 function Controller:_onInputMode(mode: string, previous: string)
+	if mode ~= "build" then
+		self:_bindRotateKeys(self.mode == "overview")
+	else
+		self:_bindRotateKeys(false) -- Q / R belong to FORGE-03's placement in build mode
+	end
 	if not self._config.overviewInBuild then
 		return
 	end
@@ -437,45 +640,230 @@ function Controller:_onInputMode(mode: string, previous: string)
 	end
 end
 
-function Controller:_bindInput()
-	local env, opts = self._env, self._opts
-	local actions = guarded(env, "ContextActionService", opts.actions, "BindAction")
-	if actions ~= nil then
-		self._actions = actions
+function Controller:_setTouchControls(enabled: boolean)
+	local gui = self._guiService
+	if gui ~= nil then
 		pcall(function()
-			actions:BindAction(Def.ACTION, function(_, state)
-				if state == Enum.UserInputState.Begin then
-					self:toggle()
-					return Enum.ContextActionResult.Sink
-				end
-				return Enum.ContextActionResult.Pass
-			end, true, Enum.KeyCode.V, Enum.KeyCode.ButtonY)
-			actions:SetTitle(Def.ACTION, "View")
+			gui.TouchControlsEnabled = enabled
 		end)
 	end
-	local userInput = guarded(env, "UserInputService", opts.userInput, "InputChanged")
-	if userInput ~= nil then
-		track(
-			self._connections,
-			connect(userInput, "InputChanged", function(input, processed)
-				if
-					not processed
-					and self.mode == "overview"
-					and input.UserInputType == Enum.UserInputType.MouseWheel
-				then
+end
+
+-- ------------------------------------------------------------------ input bindings
+
+function Controller:_bindView()
+	local actions = self._actions
+	if actions == nil then
+		return
+	end
+	pcall(function()
+		actions:BindAction(Def.ACTION, function(_, state)
+			if state == Enum.UserInputState.Begin then
+				self:toggle()
+				return Enum.ContextActionResult.Sink
+			end
+			return Enum.ContextActionResult.Pass
+		end, true, Enum.KeyCode.V, Enum.KeyCode.ButtonY)
+		actions:SetTitle(Def.ACTION, "View")
+	end)
+end
+
+function Controller:_bindOverviewKeys(on: boolean)
+	local actions = self._actions
+	if actions == nil then
+		return
+	end
+	if not on then
+		table.clear(self._held)
+		pcall(function()
+			actions:UnbindAction(Def.PAN_ACTION)
+			actions:UnbindAction(Def.SEAT_ACTION)
+		end)
+		self:_bindRotateKeys(false)
+		return
+	end
+	local high = Enum.ContextActionPriority.High.Value
+	pcall(function()
+		local keys = {}
+		for key in Def.PAN_KEYS do
+			table.insert(keys, key)
+		end
+		actions:BindActionAtPriority(Def.PAN_ACTION, function(_, state, input)
+			local key = input and input.KeyCode
+			local vector = key and Def.PAN_KEYS[key]
+			if vector == nil then
+				return Enum.ContextActionResult.Pass
+			end
+			if state == Enum.UserInputState.Begin then
+				self._held[key] = vector
+			else
+				self._held[key] = nil
+			end
+			return Enum.ContextActionResult.Sink -- the seated ruler never walks off
+		end, false, high, table.unpack(keys))
+		-- jump would unseat the ruler from the throne: sink it while in the overview
+		actions:BindActionAtPriority(Def.SEAT_ACTION, function()
+			return Enum.ContextActionResult.Sink
+		end, false, high, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+	end)
+	self:_bindRotateKeys(self._input == nil or self._input.mode ~= "build")
+end
+
+function Controller:_bindRotateKeys(on: boolean)
+	local actions = self._actions
+	if actions == nil then
+		return
+	end
+	if not on then
+		table.clear(self._rotateHeld)
+		pcall(function()
+			actions:UnbindAction(Def.ROTATE_ACTION)
+		end)
+		return
+	end
+	pcall(function()
+		actions:BindActionAtPriority(Def.ROTATE_ACTION, function(_, state, input)
+			local key = input and input.KeyCode
+			local sign = key and Def.ROTATE_KEYS[key]
+			if sign == nil then
+				return Enum.ContextActionResult.Pass
+			end
+			self._rotateHeld[key] = if state == Enum.UserInputState.Begin then sign else nil
+			return Enum.ContextActionResult.Sink
+		end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Q, Enum.KeyCode.E)
+	end)
+end
+
+function Controller:_viewportHeight(): number
+	if self._opts.viewportHeight then
+		return self._opts.viewportHeight
+	end
+	local ok, height = pcall(function()
+		return self._camera.ViewportSize.Y
+	end)
+	return if ok and type(height) == "number" and height > 0 then height else 720
+end
+
+function Controller:_tapPixels(): number
+	return if self._input and self._input.tapPixels then self._input.tapPixels else 8
+end
+
+-- A screen-space drag of `pixels` (x right, y down) moves the ground with the pointer.
+function Controller:dragBy(pixels: Vector2)
+	local studsPerPixel = Def.worldPerPixel(self._target.zoom, self._config.fieldOfView, self:_viewportHeight())
+	self:panBy(Vector2.new(-pixels.X, pixels.Y) * studsPerPixel)
+end
+
+function Controller:_bindPointer()
+	local userInput = self._userInput
+	if userInput == nil then
+		return
+	end
+	local overview = self._config.overview
+	track(
+		self._connections,
+		connect(userInput, "InputBegan", function(input, processed)
+			if processed or self.mode ~= "overview" then
+				return
+			end
+			local kind = input.UserInputType
+			if kind == Enum.UserInputType.MouseButton1 or kind == Enum.UserInputType.MouseButton2 then
+				self._drag = { button = kind, start = input.Position, last = input.Position, active = false }
+			end
+		end)
+	)
+	track(
+		self._connections,
+		connect(userInput, "InputEnded", function(input)
+			if self._drag and input.UserInputType == self._drag.button then
+				self._drag = nil
+			end
+			if input.KeyCode == Enum.KeyCode.Thumbstick1 then
+				self._stick = Vector2.zero
+			elseif input.KeyCode == Enum.KeyCode.Thumbstick2 then
+				self._stickTurn = 0
+			end
+		end)
+	)
+	track(
+		self._connections,
+		connect(userInput, "InputChanged", function(input, processed)
+			local kind = input.UserInputType
+			if kind == Enum.UserInputType.MouseWheel then
+				if not processed and self.mode == "overview" then
 					self:zoomBy(-input.Position.Z)
 				end
-			end)
-		)
-		track(
-			self._connections,
-			connect(userInput, "TouchPinch", function(_, scale, _, state, processed)
-				self:_pinchTo(scale, state, processed)
-			end)
-		)
+			elseif kind == Enum.UserInputType.MouseMovement then
+				self:_mouseMoved(input.Position)
+			elseif input.KeyCode == Enum.KeyCode.Thumbstick1 then
+				local stick = Vector2.new(input.Position.X, input.Position.Y)
+				self._stick = if stick.Magnitude >= overview.stickDeadzone and self.mode == "overview"
+					then stick
+					else Vector2.zero
+			elseif input.KeyCode == Enum.KeyCode.Thumbstick2 then
+				local x = input.Position.X
+				self._stickTurn = if math.abs(x) >= overview.stickDeadzone and self.mode == "overview" then x else 0
+			end
+		end)
+	)
+	track(
+		self._connections,
+		connect(userInput, "TouchPan", function(touches, translation, _, state, processed)
+			self:_touchPan(touches, translation, state, processed)
+		end)
+	)
+	track(
+		self._connections,
+		connect(userInput, "TouchPinch", function(_, scale, _, state, processed)
+			self:_pinchTo(scale, state, processed)
+		end)
+	)
+	track(
+		self._connections,
+		connect(userInput, "TouchRotate", function(_, rotation, _, state, processed)
+			self:_twistTo(rotation, state, processed)
+		end)
+	)
+end
+
+function Controller:_mouseMoved(position: Vector3)
+	local drag = self._drag
+	if drag == nil or self.mode ~= "overview" then
+		return
 	end
-	if actions == nil or userInput == nil then
-		env.log("info", "RulerCameraController: input services unavailable; view keys and overview zoom are skipped")
+	local delta = Vector2.new(position.X - drag.last.X, position.Y - drag.last.Y)
+	drag.last = position
+	if not drag.active then
+		local moved = Vector2.new(position.X - drag.start.X, position.Y - drag.start.Y)
+		if moved.Magnitude < self:_tapPixels() then
+			return -- still a tap (InputModeController selects on release)
+		end
+		drag.active = true
+		delta = moved
+	end
+	if drag.button == Enum.UserInputType.MouseButton1 then
+		self:dragBy(delta)
+	else
+		self:rotateBy(delta.X * self._config.overview.dragRotate)
+	end
+end
+
+-- One finger drags the ground; two-finger gestures are pinch and twist.
+function Controller:_touchPan(touches: any, translation: Vector2, state: any, processed: boolean?)
+	if state == Enum.UserInputState.Begin or self._panLast == nil then
+		self._panLast = translation
+	end
+	if processed or self.mode ~= "overview" or type(touches) ~= "table" or #touches ~= 1 then
+		self._panLast = translation
+		return
+	end
+	local delta = translation - self._panLast
+	self._panLast = translation
+	if translation.Magnitude >= self:_tapPixels() then
+		self:dragBy(delta)
+	end
+	if state == Enum.UserInputState.End then
+		self._panLast = nil
 	end
 end
 
@@ -491,6 +879,19 @@ function Controller:_pinchTo(scale: number, state: any, processed: boolean?)
 	local ratio = scale / self._pinch
 	self._pinch = scale
 	self:zoomBy((1 - ratio) * 5)
+end
+
+-- TouchRotate reports the degrees turned since the gesture began.
+function Controller:_twistTo(rotation: number, state: any, processed: boolean?)
+	if state == Enum.UserInputState.Begin then
+		self._twist = 0
+	end
+	if processed or self.mode ~= "overview" or state ~= Enum.UserInputState.Change then
+		return
+	end
+	local delta = rotation - self._twist
+	self._twist = rotation
+	self:rotateBy(-delta)
 end
 
 function Controller:_bindRender()

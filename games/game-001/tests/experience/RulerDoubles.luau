@@ -5,7 +5,7 @@
 		local D = require("./RulerDoubles")
 		local actions = D.actions()              -- ContextActionService-like
 		actions:press("ForgeRulerSprint", Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
-		local userInput = D.userInput()          -- InputChanged / TouchPinch
+		local userInput = D.userInput()          -- InputBegan/Ended/Changed, TouchPan/Pinch/Rotate
 		local player = D.player()                -- CharacterAdded / CharacterRemoving + camera zoom fields
 		local character = D.character(Vector3.new(0, 3, 0))   -- Model + Humanoid + HumanoidRootPart
 		local boot = D.boot(env, { ruler = opts, camera = opts, input = opts, extra = { defs } })
@@ -52,10 +52,11 @@ function D.actions()
 end
 
 function D.userInput()
-	return {
-		InputChanged = MockSignal.new({ name = "UserInputService.InputChanged" }),
-		TouchPinch = MockSignal.new({ name = "UserInputService.TouchPinch" }),
-	}
+	local events = {}
+	for _, name in { "InputBegan", "InputEnded", "InputChanged", "TouchPan", "TouchPinch", "TouchRotate" } do
+		events[name] = MockSignal.new({ name = `UserInputService.{name}` })
+	end
+	return events
 end
 
 function D.player()
