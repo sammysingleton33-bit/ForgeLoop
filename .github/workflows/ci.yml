@@ -1,5 +1,9 @@
 # FORGELOOP CI (owner: FORGE-05). Runs on PRs and on pushes to main.
 #   tools  — forge tooling tests + task validation; every PR event and every push to main (D-014)
+#   ownership (G8) — PRs only: every changed file belongs to the PR's owner (title prefix [FORGE-0N] /
+#            [CODEX], else branch forge/0N-...) or is allowed by an exception in
+#            production/quality-gates/ownership.json (tools/check_ownership.py). Pushes to main are
+#            merges and D-014 bookkeeping, so they are not checked. A title change needs a new push.
 #   roblox — pinned release binaries (no compiling, D-015) + roblox/scripts/check.sh. Skipped for
 #            draft PRs (D-016: drafts are never merged; marking a PR ready for review runs it) and,
 #            via its first step, when nothing Roblox-related changed (e.g. D-014/D-018 bookkeeping
@@ -39,6 +43,26 @@ jobs:
         run: python -m pytest -q tools/tests
       - name: Validate tasks
         run: python tools/forge.py validate
+
+  ownership:
+    name: ownership (G8)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # merge base of the PR base and the merge commit
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Changed files belong to the PR's owner
+        env:
+          # Passed through env, never interpolated into the script: titles are untrusted text.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python tools/check_ownership.py --base "$BASE_SHA" --head HEAD --explain
 
   roblox:
     name: roblox (Lune, Selene, StyLua, Rojo, place check)
