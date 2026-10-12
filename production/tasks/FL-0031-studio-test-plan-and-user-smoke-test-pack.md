@@ -16,10 +16,10 @@ evidence: []
 # Studio test plan and user smoke-test pack
 
 ## Outcome
-The user can verify the integrated build in Studio in minutes: Rojo plugin connect, S1 require-by-string, S2 BuildInfo, S3 services start, then per-feature tests appended by workers.
+The user can verify the integrated build in Studio in minutes: Rojo plugin connect, S1 require-by-string, S2 BuildInfo, S3 services start, then links to each worker's roblox/studio-tests/<area>.md.
 
 ## Requirements
-- Exact steps, expected results, where to report (production/handoffs/)
+- Exact steps and expected results; the user pastes results (Output log + BuildInfo sha) into the FORGE-05 chat and FORGE-05 records them in production/quality-gates/studio-runs.md
 
 ## Validation
 Dry-run the steps against the built place file structure

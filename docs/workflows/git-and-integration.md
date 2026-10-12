@@ -5,18 +5,22 @@ Repository: `github.com/sammysingleton33-bit/ForgeLoop` (private).
 ## Branches
 | Branch | Purpose | Who writes |
 |---|---|---|
-| `main` | **The integrated build.** Only validated work arrives here, through PRs. Studio testing always uses `main`. | FORGE-05 merges PRs. FORGE-00 may push coordination-only files (dashboard, tasks, decisions, prompts). Nobody else pushes to `main`. |
+| `main` | **The integrated build.** Code, assets and config arrive only through validated PRs. Studio testing always uses `main`. | FORGE-05 merges PRs. Coordination-only files may be pushed directly by FORGE-00 and, for merge bookkeeping, FORGE-05 (D-014). |
 | `forge/01-gameplay` | FORGE-01 workspace | FORGE-01 only |
 | `forge/02-blender` | FORGE-02 workspace | FORGE-02 only |
 | `forge/03-ui-economy` | FORGE-03 workspace | FORGE-03 only |
 | `forge/04-experience` | FORGE-04 workspace | FORGE-04 only |
 | `forge/05-integration` | FORGE-05 workspace (harness, CI, sandbox, test plan) | FORGE-05 only |
+| `forge/0N-<area>-fl00xx` | One PR branch per task, cut from the worker branch (D-013) | that worker only |
+| `forge/00-skeleton`, `forge/00-coordination` | FORGE-00 bootstrap and coordination PRs | FORGE-00 |
 | `codex/<task-id>-<slug>` | Codex work | Codex |
 | `release/game-00N-vX` tags | Published versions (user-approved) | FORGE-05 after approval |
 
 Worker branches are long-lived: one per worker, reused across sessions. Each worker submits work by PR from its branch into `main`.
 
 ## Starting a worker session
+Run the setup block **once per new session**. If `git status` already shows you on your worker branch with local commits (e.g. after a context reset), skip it and only run `git fetch origin main && git merge --no-edit origin/main`. Locally, if your worktree already exists, `cd` into it instead of adding it again.
+
 Cloud session (Claude app → Code → new session on `sammysingleton33-bit/ForgeLoop`): every session has its own container, so the working copy is already isolated. Check out your worker branch:
 ```bash
 B=forge/01-gameplay                       # your worker branch (see table)
@@ -48,15 +52,17 @@ Windows: install [Rokit](https://github.com/rojo-rbx/rokit), then `rokit install
 - Small PRs (one task, ideally < ~600 changed lines of code). Asset/generator PRs can be larger but stay in one area.
 
 ## Pull requests (worker → main)
-- From your worker branch into `main`. Title: `[FORGE-0N] FL-0000 <summary>`.
-- Body: tasks, what changed, **evidence** (exact commands and results), what is unverified, Studio steps needed, contract changes (none / additive / breaking).
+- One task per PR (D-013). When a task's checks pass: `git push origin HEAD:refs/heads/forge/0N-<area>-fl00xx`, open the PR from that branch into `main`, keep working on your worker branch. If an earlier PR of yours is still open, the new one is stacked on it: write "stacked on #N" in the body.
+- Until FL-0003 (skeleton) is merged into `main`, open PRs only as drafts (D-016).
+- Title: `[FORGE-0N] FL-0000 <summary>`.
+- Body per `.github/pull_request_template.md` (until it exists: tasks, what changed, **evidence** (exact commands and results), what is unverified, Studio steps needed, contract changes (none / additive / breaking)).
 - Only paths you own (`docs/workflows/team.md`). CI (`.github/workflows/ci.yml`) must be green.
 - Task files: set `REVIEW` with evidence in the same PR. Don't regenerate `PROJECT_STATUS.md` (FORGE-00 does that after merges; it would conflict between workers).
 
 ## Merge procedure (FORGE-05)
 1. CI green on the PR head; merge `origin/main` into a local check-out of the PR branch, then `bash roblox/scripts/check.sh` green on that merge result.
 2. Ownership respected; contract changes reviewed (breaking → FORGE-00 approval recorded in `DECISIONS.md`).
-3. Merge with a merge commit (keeps the worker's evidence commit shas reachable from `main`).
+3. Merge with a merge commit (keeps the worker's evidence commit shas reachable from `main`). Stacked PRs in order. GitHub won't let one account approve or request changes on its own PRs, so blocking feedback is a COMMENT review starting with `BLOCKING:`.
 4. Move the PR's tasks to `ACCEPTED` (or leave `REVIEW` if only the Studio gate G6 is pending) and append a line to `production/quality-gates/integration-log.md` (main sha, PRs, checks).
 5. Tell workers whose code depends on it (handoff file or PR comment).
 

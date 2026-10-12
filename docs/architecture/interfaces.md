@@ -2,7 +2,7 @@
 
 These contracts let five workers build at the same time. Code against them; use mocks for parts not built yet. Additive changes are fine in your own area; breaking changes need a PR reviewed by FORGE-05 and approved by FORGE-00, with the version bumped below.
 
-Contract version: **0.1** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
+Contract version: **0.2** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
 
 ## 1. Code layout and requires
 - Rojo project `roblox/default.project.json` maps:
@@ -13,6 +13,7 @@ Contract version: **0.1** · custodian FORGE-05 · Luau files in `roblox/src/sha
 - Requires use **require-by-string with relative paths** (`require("../Core/Signal")`), at the top of the module only (not inside functions). No aliases. This runs identically in Lune tests and in Roblox ([announcement](https://devforum.roblox.com/t/introducing-require-by-string/3405078)). Studio confirmation is smoke test S1 in `roblox/STUDIO_TEST_PLAN.md`.
 - One module per file, `PascalCase.luau`. Shared logic is `--!strict`. Entry scripts: `*.server.luau`, `*.client.luau`.
 - No `init.luau` modules with children that require each other (Rojo/Luau semantics differ historically). Prefer flat folders.
+- **Cross-tree requires** (server or client code → `shared/`, anything → `Config`) cannot use plain relative paths, because the folders sit under different services in the DataModel. The skeleton (FL-0003) defines and tests the one allowed form (expected: Roblox's built-in `@game` alias, e.g. `require("@game/ReplicatedStorage/Forge/Core/Signal")`, mapped for Lune by the harness) and documents it in `roblox/README.md`. Until it is on `main`, keep code that needs cross-tree requires on your branch.
 
 ## 2. Environment injection (`Contracts/Env.luau`)
 Every service/controller receives an `Env` instead of calling `game:GetService` directly, so Lune tests pass mocks.
@@ -29,9 +30,14 @@ export type Env = {
 	spawn: (fn: (...any) -> (), ...any) -> (),
 	random: (seed: number?) -> any, -- Random.new
 	log: (level: "info" | "warn" | "error", message: string, fields: { [string]: any }?) -> (),
+	-- v0.2 additions (FORGE-05 implements in Env.live and MockEnv)
+	bindToClose: (fn: () -> ()) -> (),        -- game:BindToClose
+	serverTimeNow: () -> number,              -- workspace:GetServerTimeNow(); use for client-facing deadlines
+	newInstance: (className: string) -> any,  -- Instance.new (mocked in tests)
+	sharedModules: (fileName: string) -> { [string]: any }, -- required ReplicatedStorage.Forge.<Area>.<fileName> modules keyed by Area
 }
 ```
-`Env.live()` builds the real one inside Roblox; `roblox/tests/mocks/` builds fakes.
+`Env.live()` builds the real one inside Roblox; `roblox/tests/mocks/` builds fakes. `jobId` is never empty: in Studio (`game.JobId == ""`) `Env.live()` substitutes a GUID per session.
 
 ## 3. Service / controller lifecycle (`Contracts/Loader.luau`)
 ```lua
@@ -68,7 +74,7 @@ export type RoundResult = {
 }
 export type RewardResult = { tableId: string, rarity: string, itemId: string, qty: number, pityTriggered: boolean }
 ```
-Add events by appending to the table (additive). Payloads are server-only; clients learn via remotes.
+Round states are exactly `"Lobby" | "Intermission" | "Countdown" | "Active" | "Results"` (exported type `RoundState`). Add events by appending to the table (additive). Payloads are server-only; clients learn via remotes: FORGE-01 declares `Gameplay.RoundState` (state, roundId, endsAtServerTime), `Gameplay.Eliminated` and `Gameplay.RoundResult` serverEvents; client deadlines use `serverTimeNow`.
 
 ## 5. Player data (`DataService`, FORGE-01)
 DataStore `ForgeProfiles_v1`, key `u_<UserId>`. Session-locked. Data is split into namespaces so each worker evolves its own schema:
@@ -89,6 +95,9 @@ DataService.loaded: Signal<(Player)>
 DataService.releasing: Signal<(Player)>                    -- last chance to write before the final save
 ```
 Registration happens in `new` of the owning service; DataService loads profiles after all services are constructed.
+- Migrations are step-wise: `migrate(data, k)` is called for k = stored … version−1 and returns data at version k+1. A stored version above the registered one → no downgrade: kick with a friendly message and never write. Namespaces/fields this server doesn't know are preserved on save.
+- Every save verifies the session lock still belongs to this server (`jobId`); otherwise it writes nothing, marks the profile lost and kicks. The stale-lock steal timeout is at least 3× the autosave interval.
+- Strings written to data must be valid UTF-8 (DataStores reject invalid UTF-8).
 
 ## 6. Remotes (`RemoteService`, FORGE-01)
 Each area declares its remotes in `shared/<Area>/Remotes.luau`; RemoteService aggregates them and creates instances under `ReplicatedStorage.ForgeRemotes`.
@@ -100,10 +109,10 @@ return {
 	{ name = "Experience.Sfx", kind = "unreliableServerEvent" },
 }
 ```
-Kinds: `event` (client→server), `function` (client→server, returns), `serverEvent` (server→client), `unreliableServerEvent`. Names are `<Area>.<Action>`; areas: `Gameplay`, `Economy`, `UI`, `Experience`, `Debug`.
+Kinds: `event` (client→server), `function` (client→server, returns), `serverEvent` (server→client), `unreliableServerEvent`. Names are `<Area>.<Action>`; areas: `Gameplay` (FORGE-01), `Economy` and `UI` (FORGE-03), `Experience` (FORGE-04), `Debug` (FORGE-05). RemoteService discovers declarations with `env.sharedModules("Remotes")`. Instances: `ReplicatedStorage.ForgeRemotes.<Area>.<Action>` (RemoteEvent / RemoteFunction / UnreliableRemoteEvent). Client→server remotes without `rate` get burst 10 / 5 per second; calls with extra arguments are dropped.
 - Server: `RemoteService:handle(name, fn(player, ...))`, `:fire(name, player, ...)`, `:fireAll(name, ...)`. Arguments are validated against `args` and rate-limited per player before `fn` runs; invalid calls are dropped and counted.
 - Client (`shared/Core/RemoteClient.luau`): `RemoteClient.invoke(name, ...)`, `.send(name, ...)`, `.on(name, fn)`.
-- Validators (`shared/Core/Validate.luau`): `string(min,max)`, `integer(min,max)`, `number(min,max)` (finite only), `boolean()`, `enum({...})`, `optional(v)`, `array(v, maxLen)`, `vector3(maxMagnitude)`, `instanceOf(className)`. Each is `(value) -> (boolean, string?)`.
+- Validators (`shared/Core/Validate.luau`): `string(min,max)`, `integer(min,max)`, `number(min,max)` (finite only), `boolean()`, `enum({...})`, `optional(v)`, `array(v, maxLen)`, `vector3(maxMagnitude)`, `instanceOf(className)`. Each is `(value) -> (boolean, string?)`. `string` measures bytes (`#s`) and rejects invalid UTF-8; `array` rejects tables whose keys are not exactly 1..n.
 
 ## 7. Economy (FORGE-03)
 ```lua
@@ -148,3 +157,4 @@ EconomyService calls `registry:find("AnalyticsService")` in `start()` and report
 
 ## Changelog
 - 0.1 (2026-10-12) FORGE-00: first version.
+- 0.2 (2026-10-12) FORGE-00, additive (prompt review): cross-tree require rule; Env `bindToClose`, `serverTimeNow`, `newInstance`, `sharedModules`, non-empty `jobId`; round state strings + client remotes; step-wise migrations, lock check on every save, UTF-8; remote discovery/instance layout/default rate; Validate byte/UTF-8/array rules.

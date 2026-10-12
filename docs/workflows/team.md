@@ -3,21 +3,23 @@
 | ID | Role | Owns (writes) | Main consumers of its output |
 |---|---|---|---|
 | FORGE-00 | Director | `PROJECT_STATUS.md`, `ROADMAP.md`, `DECISIONS.md`, `production/tasks/` (creates/assigns), `agents/*/MISSION.md`, `agents/*/PROMPT.md`, `intelligence/` (until Codex is live), `docs/workflows/`, `docs/research/` | everyone |
-| FORGE-01 | Gameplay | `roblox/src/shared/Core/`, `roblox/src/shared/Gameplay/`, `roblox/src/server/Services/{Data,Player,Remote,Round,Spawn,Combat,Hazard}*`, `roblox/src/client/Controllers/{Input,Camera,Movement,Combat,Spectate}*`, `roblox/tests/unit/core/`, `roblox/tests/unit/gameplay/`, `roblox/studio-tests/gameplay.md`, `docs/lessons-learned/gameplay.md` | 03, 04, 05 |
+| FORGE-01 | Gameplay | `roblox/src/shared/Core/`, `roblox/src/shared/Gameplay/`, `roblox/src/server/Services/{Data,Player,Remote,Round,Spawn,Combat,Hazard}*`, `roblox/src/client/Controllers/{Input,Camera,Movement,Combat,Spectate,Round}*` (client state only; screens are FORGE-03), `roblox/tests/unit/core/`, `roblox/tests/unit/gameplay/`, `roblox/studio-tests/gameplay.md`, `docs/lessons-learned/gameplay.md` | 03, 04, 05 |
 | FORGE-02 | Blender | `blender/**`, `roblox/studio-tests/assets.md`, `docs/lessons-learned/blender.md` | 01 (placement), 05 (import), 04 (VFX props) |
-| FORGE-03 | UI & Economy | `roblox/src/shared/Economy/`, `roblox/src/server/Services/{Economy,Purchase,Shop,Reward,Inventory}*`, `roblox/src/client/UI/`, `roblox/src/client/Controllers/UIController*`, `roblox/tests/unit/economy/`, `roblox/tests/unit/ui/`, `roblox/studio-tests/ui-economy.md`, `design/ui/`, `docs/lessons-learned/ui-economy.md` | 04 (components), 05 |
+| FORGE-03 | UI & Economy | `roblox/src/shared/Economy/`, `roblox/src/server/Services/{Economy,Purchase,Shop,Reward,Inventory}*`, `roblox/src/shared/UI/`, `roblox/src/client/UI/`, `roblox/src/client/Controllers/UIController*`, `roblox/tests/unit/economy/`, `roblox/tests/unit/ui/`, `roblox/studio-tests/ui-economy.md`, `design/ui/`, `docs/lessons-learned/ui-economy.md` | 04 (components), 05 |
 | FORGE-04 | Experience | `roblox/src/shared/Experience/`, `roblox/src/server/Services/{Analytics,Onboarding,Quest,DailyReward,Settings}*`, `roblox/src/client/Controllers/{Audio,VFX,Onboarding,Settings,Notification}*`, `roblox/tests/unit/experience/`, `roblox/studio-tests/experience.md`, `analytics/`, `docs/lessons-learned/experience.md` | 03, 05 |
-| FORGE-05 | Integration & QA | `roblox/default.project.json`, `roblox/src/server/Main.server.luau`, `roblox/src/client/Main.client.luau`, `roblox/src/shared/Contracts/` (custodian), `roblox/tests/harness/`, `roblox/tests/mocks/`, `roblox/scripts/`, `rokit.toml`, `selene.toml`, `stylua.toml`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, `tools/check_ownership.py` (+ its tests), `games/sandbox/`, `production/quality-gates/` (incl. `integration-log.md`), `production/release-checklists/`, `roblox/STUDIO_TEST_PLAN.md`, `docs/lessons-learned/integration.md` | everyone |
+| FORGE-05 | Integration & QA | `roblox/default.project.json`, `roblox/src/server/Main.server.luau`, `roblox/src/client/Main.client.luau`, `roblox/src/shared/Contracts/` (custodian), `roblox/tests/harness/`, `roblox/tests/mocks/`, `roblox/scripts/`, `rokit.toml`, `selene.toml`, `stylua.toml`, `.github/workflows/ci.yml`, `.github/pull_request_template.md`, `tools/check_ownership.py` (+ its tests), `roblox/src/shared/Debug/`, `roblox/assets/`, `games/sandbox/` (except per-area config files, see Rules), `production/quality-gates/` (incl. `integration-log.md`), `production/release-checklists/`, `roblox/STUDIO_TEST_PLAN.md`, `docs/lessons-learned/integration.md` | everyone |
 | Codex | Intelligence | `intelligence/` (takes over from FORGE-00 once launched), `prompts/`, reviews | FORGE-00 |
+| Everyone | Shared | new files in `production/handoffs/` (never edit another agent's handoff); own `agents/<id>/STATUS.md`; status/evidence/Log of tasks they own | — |
 | User | Executive | approvals, Studio sessions on Windows, accounts/keys | — |
 
 Rules
-- One owner per path. A path not listed belongs to FORGE-00 until assigned.
+- One owner per path; the most specific rule wins. A path not listed belongs to FORGE-00 until assigned.
+- Task files: FORGE-00 creates tasks (others request them by handoff); the task owner updates status/evidence/Log; FORGE-05 may update status/evidence/Log of any task when recording a merge or acceptance.
 - `games/game-00N/` is created by FORGE-00 when a game is approved; its sub-folders are then assigned per the game brief.
 - Each worker keeps `agents/<id>/STATUS.md` current: branch, open PR, current task, blockers, last verified check.
 - Game config files are owned per area in every `games/<game>/config/` folder: `Rounds`, `Spawns`, `Hazards`, `Combat` → FORGE-01; `Items`, `Currencies`, `RewardTables`, `Products`, `Shop`, `UITheme` → FORGE-03; `Onboarding`, `Quests`, `DailyRewards`, `Sounds`, `Analytics` → FORGE-04; everything else in `games/sandbox/` (map, `Game.luau`, README) → FORGE-05. For `game-00N` the game brief may reassign.
 - Studio test steps: each worker writes its own `roblox/studio-tests/<area>.md`; FORGE-05's `roblox/STUDIO_TEST_PLAN.md` links them and runs the smoke tests.
-- Cross-area requests: `production/handoffs/YYYY-MM-DD-<from>-to-<to>-<topic>.md`, plus a task for the receiver.
+- Cross-area requests: `production/handoffs/YYYY-MM-DD-<from>-to-<to>-<topic>.md`; FORGE-00 turns it into a task for the receiver if it is more than a small fix.
 
 ## Why the split works in parallel
 - Profile data is namespaced (`core`, `economy`, `experience`, `game`) so no two workers edit one schema.

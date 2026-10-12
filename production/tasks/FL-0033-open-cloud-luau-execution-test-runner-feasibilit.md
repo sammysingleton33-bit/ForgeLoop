@@ -25,7 +25,7 @@ Decide whether CI can run tests inside the real Roblox engine via Open Cloud, an
 Prototype run log
 
 ## Completion criteria
-- [ ] Recommendation recorded in DECISIONS.md
+- [ ] Recommendation in production/quality-gates/open-cloud-runner.md, handed to FORGE-00 for a DECISIONS entry
 
 ## Log
 - 2026-10-12 forge-00: created (SPECIFIED).

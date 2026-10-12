@@ -25,7 +25,7 @@ Player data never lost or duplicated: session-locked profiles, per-owner namespa
 - Releasing signal before final save
 
 ## Validation
-Lune specs with MockDataStoreService: two servers contending for one key, stale-lock steal, transient failures, migration per namespace, saveNow failure path, BindToClose; Studio test steps appended to STUDIO_TEST_PLAN.md
+Lune specs with MockDataStoreService: two servers contending for one key, stale-lock steal, transient failures, migration per namespace, saveNow failure path, BindToClose; Studio test steps in roblox/studio-tests/gameplay.md
 
 ## Completion criteria
 - [ ] Specs cover success and failure paths

@@ -19,7 +19,7 @@ evidence: []
 Exports are reproducible on GitHub Actions (pip bpy) and downloadable as an artifact, so nothing large is committed.
 
 ## Requirements
-- Coordinate the workflow file change with FORGE-05 (owner of forgeloop.yml)
+- Coordinate the workflow file change with FORGE-05 (owner of .github/workflows/ci.yml)
 
 ## Validation
 CI run produces the artifact

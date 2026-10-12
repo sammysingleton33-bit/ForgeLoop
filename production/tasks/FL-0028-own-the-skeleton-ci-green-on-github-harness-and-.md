@@ -16,7 +16,7 @@ evidence: []
 # Own the skeleton: CI green on GitHub, harness and mocks upkeep
 
 ## Outcome
-FORGE-05 takes custody of the skeleton (FL-0003), gets the forgeloop CI workflow green on GitHub, and serves workers harness/mock requests.
+FORGE-05 takes custody of the skeleton (FL-0003), gets .github/workflows/ci.yml green on GitHub, and serves workers harness/mock requests.
 
 ## Requirements
 - Fix anything CI reveals that local runs did not

@@ -8,7 +8,7 @@ priority: P1
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
-depends_on: [FL-0007, FL-0008]
+depends_on: [FL-0007, FL-0008, FL-0044]
 estimate_h: 6
 evidence: []
 ---
@@ -24,7 +24,7 @@ A genre-agnostic round loop (Lobby, Intermission, Countdown, Active, Results) wi
 - Mode config (teams/free-for-all, min players, durations) from games/<game>/config
 
 ## Validation
-Lune specs for every transition and edge case; Studio test with 2-3 local clients in STUDIO_TEST_PLAN.md
+Lune specs for every transition and edge case; Studio test with 2-3 local clients in roblox/studio-tests/gameplay.md
 
 ## Completion criteria
 - [ ] RoundEnded payload matches interfaces.md section 4
