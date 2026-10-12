@@ -7,7 +7,8 @@
 	API
 		MatchHost.new(env, remoteService, options?): MatchHost       -- builds; never yields
 			options: { seed?, tickSeconds = 0.25, stateEvery = 0.5, match = { ...Match options },
-			           worldView = true, worldViewEntities = true, worldViewBuildings = "parts", groundY = 0,
+			           worldView = true, worldViewEntities = true, worldViewBuildings = "parts",
+			           worldViewGround = true, groundY = 0,
 			           positionOf = (player) -> (x, z)? }   -- default: the character's HumanoidRootPart
 		host:start()        -- connects Players, seats current players, spawns the tick loop
 		host:step(dt)       -- one host tick (the loop calls it; specs may call it directly)
@@ -76,6 +77,7 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 	self._worldViewEnabled = if opts.worldView == nil then true else opts.worldView
 	self._worldViewEntities = if opts.worldViewEntities == nil then true else opts.worldViewEntities
 	self._worldViewBuildings = opts.worldViewBuildings or "parts"
+	self._worldViewGround = if opts.worldViewGround == nil then true else opts.worldViewGround
 	self._groundY = opts.groundY or 0
 	self._stateClock = 0
 	self._lastStateSignature = ""
@@ -129,6 +131,7 @@ function MatchHost:_buildWorld()
 			groundY = self._groundY,
 			entities = self._worldViewEntities,
 			buildings = self._worldViewBuildings,
+			createGround = self._worldViewGround,
 		})
 		self._view:sync(sim)
 	end

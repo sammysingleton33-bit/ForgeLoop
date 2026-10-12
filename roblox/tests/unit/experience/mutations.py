@@ -9,7 +9,7 @@ Prints one line per row: CAUGHT / NOT CAUGHT / MUTATION NOT APPLIED. Needs lune 
 import subprocess, sys, re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[4]  # repository root
 S = "roblox/src/server/Services/"; C = "roblox/src/client/Controllers/"; X = "roblox/src/shared/Experience/"
-G = "games/game-001/"
+G = "games/game-001/"; C2 = G + "src/client/Controllers/"
 RUN = {
     "fw": ["lune", "run", "roblox/tests/harness/run.luau"],
     "game": ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-001/default.project.json", "--specs", "games/game-001/tests"],
@@ -58,6 +58,39 @@ M = [
  ("FL-0061", G+"src/server/Services/PacingService.luau", '		config = Def.DEFAULTS\n', '', "PacingService", "an invalid config never breaks the match", "game"),
  ("FL-0061", G+"src/server/Services/PacingService.luau", 'if durations == nil or not table.find(Def.MODES, mode) then', 'if false then', "PacingService", "rejects an unknown mode", "game"),
  ("FL-0024", G+"config/Sounds.luau", 'id = "music.tension"', 'id = "music.tense"', "Sounds", "registers a track for every music state", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if self._firing then', 'if false then', "InputMode", "applies a set() made inside a changed handler", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'return self.mode == mode and self._env.clock() - self._changedAt >= self._config.settleSec', 'return self.mode == mode', "InputMode", "accepts() gives a tap", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'self:_bindLeave(nextMode == "build")', 'self:_bindLeave(true)', "InputMode", "binds X / gamepad B only while in build mode", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if not table.find(Def.MODES, mode) then', 'if mode == nil then', "InputMode", "refuses unknown modes", "game"),
+ ("FL-0053", C2+"RulerController.luau", 'return { held = state.held, toggled = toggled }, moving and (state.held or toggled)', 'return { held = state.held, toggled = toggled }, state.held or toggled', "Ruler", "standing still never sprints", "game"),
+ ("FL-0053", C2+"RulerController.luau", 'local toggled = state.toggled and moving', 'local toggled = state.toggled', "Ruler", "the toggle ends when the ruler stops", "game"),
+ ("FL-0053", C2+"RulerController.luau", 'return math.min(current + step, target)', 'return current + step', "Ruler", "never overshoots", "game"),
+ ("FL-0053", C2+"RulerController.luau", 'humanoid.AutoRotate = false', 'humanoid.AutoRotate = true', "Ruler", "smooth turning: AutoRotate off", "game"),
+ ("FL-0053", C2+"RulerController.luau", '	if self._input ~= nil then\n		self._input:set("explore")\n	end\n	if character == nil then', '	if character == nil then', "Ruler", "respawn, removal and death return input to explore", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'elseif previous == "build" and self._autoFrom ~= nil then', 'elseif false then', "RulerCamera", "build mode uses the overview", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'self._autoFrom = nil -- the player chose', '-- removed', "RulerCamera", "build mode uses the overview", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'if reduced or settings:get("cameraShake") == false then', 'if false then', "RulerCamera", "never shakes when camera shake is off", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'local alpha = 1 - math.exp(-rate * dt)', 'local alpha = math.min(1, rate * dt)', "RulerCamera", "frame-rate independent", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'camera.CFrame = self._blendFrom:Lerp(goal, Def.ease(self._blendT))', 'camera.CFrame = goal', "RulerCamera", "returning to the overview blends", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)', 'self._target.zoom = self._target.zoom + steps * overview.zoomStep', "RulerCamera", "zoom stays within", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'local ratio = scale / self._pinch', 'local ratio = scale', "RulerCamera", "zoom stays within", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'while #self._shakes > limits.maxActive do', 'while false do', "RulerCamera", "caps the duration and the number of shakes", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'return Def.clamp(magnitude, 0, 1) * maxDegrees * left * left', 'return magnitude * maxDegrees * left * left', "RulerCamera", "shakeAmplitude() eases out and clamps", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)', 'self._target.focus = position', "RulerCamera", "the focus never leaves the map bounds", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'if moved.Magnitude < self:_tapPixels() then', 'if false then', "RulerCamera", "left-drag pans the ground", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'type(touches) ~= "table" or #touches ~= 1 then', 'type(touches) ~= "table" or #touches < 1 then', "RulerCamera", "two-finger moves never pan", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'self:_bindRotateKeys(false) -- Q / R belong', 'self:_bindRotateKeys(true) -- Q / R belong', "RulerCamera", "Q / E rotate in the overview", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'if not far or now - (self._streamedAt :: number) < overview.streamEverySec then', 'if not far then', "RulerCamera", "stream around the focus", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'self:_setTouchControls(not overview)', 'self:_setTouchControls(true)', "RulerCamera", "starts in the overview over the throne", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", '			self._ruler:standUp()', '			local _ = self._ruler', "RulerCamera", "follow (walk mode) stands the ruler up", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'self:panBy(direction * (overview.panSpeed * target.zoom * dt))', 'self:panBy(direction * (overview.panSpeed * dt))', "RulerCamera", "WASD pans relative to the view", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'local ok, entityId = pcall(entities.pick, entities, screenPos)', 'local ok, entityId = false, nil', "InputMode", "a tap on a citizen selects it", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'return (upAt - downAt).Magnitude < config.tapPixels and heldSec <= config.tapSec', 'return true', "InputMode", "a drag (pan) or a long press is not a tap", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'if nextMode == "build" and self.selection.kind ~= "none" then', 'if false then', "InputMode", "build mode clears the selection", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'for _ = 1, 8 do', 'for _ = 1, 20 do', "InputMode", "resolveHit() stops after 8 levels", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'if okId and buildingId ~= nil then', 'if false then', "InputMode", "selects the building through", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),
+ ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

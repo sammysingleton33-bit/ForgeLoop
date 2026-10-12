@@ -3,7 +3,7 @@ id: FL-0090
 title: Aerial management camera (overview, default), selection signal, walk mode kept (G13.6)
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,11 @@ updated: 2026-10-12
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 6
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS @9e4fb27: framework 485, game-001 155 specs (boot gate incl.), Selene 0/0, StyLua 210, both builds and place checks"
+  - "specs: RulerCamera 21 (aerial rig math, Layout bounds, WASD/drag/touch pan, zoom 40-220, Q/E outside build mode, streaming throttle, walk mode), InputMode 13 (selection: citizen via pick, BuildingId, BuildSlot, none, tap vs drag, build clears), Ruler 12 (standUp)"
+  - "mutation check: FL-0090 rows 15/15 CAUGHT"
+  - "unverified: aerial feel on PC and phone emulator, throne visibility, streaming while panning far (Studio, user G6)"
 ---
 
 # Aerial management camera (default), selection signal, walk mode kept (G13.6)
@@ -40,3 +44,6 @@ Specs for the camera math (bounds, zoom clamp) and selection resolution. Studio:
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-12 forge-04: READY → BUILDING. On forge/04-experience-fl0053 (PR #29): extends FL-0053, nothing discarded (D-030).
+- 2026-10-12 forge-04: BUILDING → TESTING. Aerial overview default, selection, walk mode; headless gates on 9e4fb27.
+- 2026-10-12 forge-04: TESTING → REVIEW. In PR #29 with FL-0053. Keys/gestures and Studio checklist in the PR; handoff forge-04-to-forge-01-03-05-ruler-camera-input.
