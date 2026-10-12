@@ -1,0 +1,5 @@
+action_id,event,condition,direct,farm_key,repeat_decay,repeat_window_s,rep_compassion,rep_honor,rep_competence,rep_courage,rep_authority,rep_fear,audience,audience_condition,audience_loyalty,morale,happiness,stability,notice_text,notes
+fund_barracks,BuildingCompleted:barracks,kingdom.soldiers >= 3,"-gold, +military readiness",barracks_built,0.5,900,0,0,+1,+1,0,0,soldiers,,+3,+2,0,0,The soldiers appreciate the new barracks.,
+fund_barracks,BuildingCompleted:barracks,kingdom.fed_ratio < 0.6,,,,,-1,0,0,0,0,0,civilians,citizen.hunger >= 0.5,-2,0,-1,0,Hungry citizens resent the barracks while they starve.,indirect effect
+build_houses,BuildingCompleted:house,kingdom.housing_ratio > 0.9,+housing capacity,houses_built,0.6,600,+1,0,+1,0,0,0,kingdom,,+1,0,+1,0,New homes for a crowded kingdom.,
+raid_defended,RaidDefended,,raid repelled,raid_defended,0.8,300,0,0,+1,+2,+1,0,kingdom,,+2,+3,+1,+1,You stood at the wall when the raiders came.,

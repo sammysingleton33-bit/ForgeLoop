@@ -186,6 +186,7 @@ function Match:_newWorld()
 	})
 	if self.options.spacing == nil then
 		sim.nav = Nav.new(Layout.WORLD.nav) -- roads and bridges of the world Layout (G10.1)
+		sim.groundY = Layout.groundY -- entities stand on the terrain and the bridge decks (G4 y = feet)
 	end
 	Military.install(sim)
 	if self.options.pvp then

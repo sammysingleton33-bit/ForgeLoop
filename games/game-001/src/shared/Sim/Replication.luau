@@ -14,7 +14,9 @@
 		Replication.entityState(sim, id): EntityState?   -- G4 EntityState (a copy)
 		Replication.actionOf(sim, entity): string  -- idle | walk | work | carry | fight | flee | dead
 		Replication.MOVING: { [action]: true }     -- actions whose records go out every snapshot
-	Records: { id, x, y, z, yaw, action, carrying? } with y = groundY (the feet; rigs stand on it).
+	Records: { id, x, y, z, yaw, action, carrying? } with y = the feet (rigs stand on it): sim.groundY(x, z)
+	when the simulation has a surface (world plots: Kingdom/Layout.groundY), else the groundY argument (0).
+	The surface is sampled again only when the entity moves.
 	Actions
 		citizen  Go phase: walk (carry when loaded) · Work: work · Return: carry · Flee: flee ·
 		         Rest / Sleep / Idle pause: idle
@@ -90,7 +92,7 @@ function Replication.entityState(sim: any, id: number): any?
 		kingdom = e.kingdomId,
 		job = jobOf(e),
 		name = e.name or `Soldier {id}`,
-		position = Vector3.new(e.x, 0, e.z),
+		position = Vector3.new(e.x, if sim.groundY then sim.groundY(e.x, e.z) else 0, e.z),
 		yaw = e.yaw or 0,
 		action = Replication.actionOf(sim, e),
 		carrying = carrying(e),
@@ -101,11 +103,12 @@ function Replication.entityState(sim: any, id: number): any?
 end
 
 function Replication.new()
-	return setmetatable({ _last = {} :: { [number]: { x: number, z: number, yaw: number } } }, Replication)
+	return setmetatable({ _last = {} :: { [number]: { x: number, z: number, y: number, yaw: number } } }, Replication)
 end
 
 function Replication:frame(sim: any, groundY: number?): { records: { any }, identity: { [number]: any } }
-	local y = groundY or 0
+	local flat = groundY or 0
+	local surface: ((number, number) -> number)? = sim.groundY
 	local records = {}
 	local identity = {}
 	local function add(e: any, kind: string)
@@ -119,7 +122,11 @@ function Replication:frame(sim: any, groundY: number?): { records: { any }, iden
 				moved = true
 			end
 		end
-		self._last[e.id] = { x = e.x, z = e.z, yaw = yaw }
+		local y = flat
+		if surface then
+			y = if last and not moved then last.y else surface(e.x, e.z)
+		end
+		self._last[e.id] = { x = e.x, z = e.z, y = y, yaw = yaw }
 		e.yaw = yaw
 		e.moving = moved
 		identity[e.id] = { kind = kind, job = jobOf(e), kingdom = e.kingdomId }

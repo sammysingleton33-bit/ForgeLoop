@@ -3,7 +3,7 @@ id: FL-0088
 title: Conversation panel and citizen card v2 (G13.2, G13.3)
 track: build
 owner: forge-03
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,10 @@ updated: 2026-10-12
 depends_on: [FL-0079]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 6
-evidence: []
+evidence:
+  - bash roblox/scripts/check.sh OVERALL PASS (see PR)
+  - CitizenUI.spec (22, end to end over RemoteService and CitizenDoubles) + CitizenModel.spec (16); 8 mutations + 2 M1 render-key mutations each fail a spec
+  - games/game-001/design/ui/screenshots/luau citizen-* (11) and prototype citizen-* (4), reviewed; phone conversation at 844x390 shows 4 answers
 ---
 
 # Conversation panel and citizen card v2 (G13.2, G13.3)
@@ -36,3 +39,5 @@ UI specs for 2, 3 and 4 options, long text and the effect chips. Prototype scree
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-12 forge-03: READY → BUILDING. FORGE-03 (subagent): citizen card v2 (CitizenView) and conversation panel on G13.2/G13.3 with CitizenDoubles
+- 2026-10-12 forge-03: BUILDING → REVIEW. PR stacked on #44: card + conversation, all text from the server; renders keyed (M1); U13 Studio steps
