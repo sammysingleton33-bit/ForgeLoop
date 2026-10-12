@@ -36,8 +36,8 @@ This is the note you asked for in `2026-10-12-forge-00-answers-to-02-03-04-ai-ki
 - Mid-match joiners get the tutorial (a proposal; BRIEF §16.3).
 
 ## Evidence
-- `bash roblox/scripts/check.sh` OVERALL PASS on `forge/04-experience`: 471 framework specs and 71 game-001 specs, including the boot gate.
-- `mutations.py`: 41/41 rows caught.
+- `bash roblox/scripts/check.sh` OVERALL PASS on the top of the stack (`forge/04-experience-fl0025`): 471 framework specs and 86 game-001 specs, including the boot gate.
+- `mutations.py`: 39/39 rows caught (each row breaks one rule and expects its named spec to fail).
 - Per-PR evidence is in each PR body.
 
 ## Next actions for the receiver
