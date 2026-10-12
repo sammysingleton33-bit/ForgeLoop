@@ -12,10 +12,22 @@ Design: `BRIEF.md`. Contracts: `CONTRACTS.md` (FORGE-00). Who owns which folder:
 | `src/client/Controllers/` | `StarterPlayerScripts.Game.Controllers` | game controllers; booted with the framework's |
 | `config/` | `ReplicatedStorage.Forge.Config` | game config (`Game.luau` = id `game-001`) |
 | `tests/<area>/` | not in the place | Lune specs, run over this project |
-| `world/` | **not mapped yet** | Rojo fails on a missing `$path`; FORGE-05 adds `world/` → `ReplicatedStorage.Game.World` in the PR that lands the first file there (FORGE-02 handoff) |
+| `world/` | `ReplicatedStorage.Game.World` | FORGE-02's layout data (`Layout.luau`, CONTRACTS G10.1). A separate mount: require it as `@game/ReplicatedStorage/Game/World/Layout` from every tree, `src/shared` included (a relative path would cross mounts). `world/.gitkeep` keeps the folder for Rojo until real files exist. |
 | `../../roblox/src/*`, `../../roblox/assets` | `ReplicatedStorage.Forge`, `ServerScriptService.Forge`, `StarterPlayerScripts.Forge`, `Forge.Assets` | the framework, unchanged |
 
-`Workspace` is not mapped, so `rojo serve` never deletes what Studio or WorldService puts there.
+`Workspace` has no `$path`, so `rojo serve` never deletes what Studio or WorldService puts there.
+
+## Engine settings in the project (D-025, D-026; checked by the place check)
+| Setting | Value | What it means for your code |
+|---|---|---|
+| `Players.CharacterAutoLoads` | `false` | No character exists until the game spawns one (`player:LoadCharacter()` at the kingdom's keep, FORGE-01). Do not wait for `player.Character` before the player has joined a kingdom. |
+| `Workspace.StreamingEnabled` | `true` | Clients only have the parts near them. Client code finds world parts with `WaitForChild`/tags and handles them streaming out; never assume a far part exists on a client. |
+| `Workspace.ModelStreamingBehavior` | `Improved` | Models stream as units. |
+| `Workspace.StreamOutBehavior` | `Opportunistic` | Far content can be removed from clients. |
+| `Workspace.StreamingIntegrityMode` | `PauseOutsideLoadedArea` | A player outside loaded content is paused, not dropped into the void. |
+
+The place check verifies every `$properties` value of the project in the built place; a value Rojo
+drops or mis-converts fails `check.sh`.
 
 ## Build, serve, test
 ```bash
@@ -84,3 +96,11 @@ framework areas.
 
 If your service needs something `MockEnv` does not provide, write a handoff to FORGE-05; do not
 work around the gate.
+
+## Network mocks for entity replication (FL-0067)
+`env.mock.remotes` behaves like Roblox for `UnreliableRemoteEvent` payloads:
+- a buffer counts exactly `buffer.len` bytes; payloads over **1000 bytes are dropped** (logged with
+  `dropped = true`); the engine may compress buffers, so stay well under (D-025: ≤ 900 B);
+- buffers are **copied** on send: writing to your buffer after `FireClient` changes nothing on the client;
+- `network:holdUnreliable(remote)` then `network:releaseUnreliable(remote, "reverse" | { 3, 1, 2 } | "fifo")`
+  delays and reorders deliveries (both directions); `network:dropNext(remote, n)` loses packets.
