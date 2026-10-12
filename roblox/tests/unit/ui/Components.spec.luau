@@ -150,6 +150,12 @@ describe("UI kit components", function()
 	it("Panel, Modal, Toast, Grid and ItemCard build", function()
 		local panel = Panel.new({ title = "Construction", size = UDim2.fromOffset(600, 400) })
 		expect(panel.instance:FindFirstChild("Ornament")).toBeTruthy()
+		-- The header slot fills the width the title leaves (a close button reaches the right edge).
+		local slot = panel.instance:FindFirstChild("Slot", true)
+		expect(slot:FindFirstChildOfClass("UIFlexItem").FlexMode).toBe(Enum.UIFlexMode.Fill)
+		expect(slot.Size).toBe(UDim2.fromScale(0, 1))
+		local untitled = Panel.new({ header = Instance.new("Frame"), size = UDim2.fromOffset(600, 400) })
+		expect(untitled.instance:FindFirstChild("Slot", true).Size).toBe(UDim2.fromScale(1, 1))
 		local confirmed, cancelled = 0, 0
 		local modal = Modal.new({
 			title = "Upgrade Town Hall?",
