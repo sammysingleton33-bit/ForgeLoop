@@ -203,7 +203,8 @@ end
 
 local function eat(sim: any, c: any, dt: number)
 	local kingdom = sim.kingdoms[c.kingdomId]
-	local place = sim:nearestDropoff(kingdom, c.x, c.z)
+	-- meals are taken where food is kept (keep, storehouse), not at a lumber camp or quarry
+	local place = sim:nearestDropoff(kingdom, c.x, c.z, "food")
 	if place == nil then
 		finish(c)
 		return

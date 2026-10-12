@@ -6,7 +6,7 @@ local Commands = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Command
 local Diplomacy = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Diplomacy")
 local Military = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Military")
 
-local A, B, RIVAL, THIRD = 101, 102, 201, 301 -- A and B rule k1; RIVAL rules k2; THIRD rules k3
+local A, B, RIVAL, THIRD = 101, 102, 201, 301 -- A and B rule crimson; RIVAL rules azure; THIRD rules emerald
 
 -- Three kingdoms 300 studs apart, no citizens (fast), Military installed for armies.
 -- options: Diplomacy.install options (default: 10 s grace so most tests can start a war quickly).
@@ -22,7 +22,7 @@ local function setup(options: { [string]: number }?)
 	assert(sim:addRuler("emerald", THIRD))
 	sim:advance(sim.diplomacy.graceSeconds)
 	F.events(sim)
-	return sim, k1, k2, k3
+	return sim, crimson, azure, emerald
 end
 
 local function command(sim, userId: number, name: string, ...: any)
@@ -56,7 +56,7 @@ describe("Kingdom/Diplomacy: war", function()
 		expect(sim:atWar("crimson", "azure")).toBe(false)
 		sim:advance(0.25)
 		expect((command(sim, A, "DeclareWar", "azure"))).toBe(true)
-		expect(k1.alive).toBe(true)
+		expect(crimson.alive).toBe(true)
 	end)
 
 	it("DeclareWar takes effect at once, both ways, and is announced with who declared it", function()
@@ -87,7 +87,7 @@ describe("Kingdom/Diplomacy: war", function()
 
 	it("unknown_kingdom for itself, a missing or an eliminated kingdom; invalid_args for non-string ids", function()
 		local sim, _, _, emerald = setup()
-		Military.eliminate(sim, k3, nil)
+		Military.eliminate(sim, emerald, nil)
 		F.events(sim)
 		for _, name in { "DeclareWar", "ProposePeace", "AcceptPeace" } do
 			expect(errorOf(sim, A, name, "crimson")).toBe("unknown_kingdom")
@@ -122,21 +122,21 @@ describe("Kingdom/Diplomacy: peace", function()
 	end)
 
 	it("AcceptPeace within proposalSeconds makes peace and armies attacking each other stand down", function()
-		local sim, k1, k2, emerald = setup()
+		local sim, crimson, azure, emerald = setup()
 		assert(command(sim, A, "DeclareWar", "azure"))
 		assert(command(sim, A, "DeclareWar", "emerald"))
-		local onK2 = Military.spawnUnit(sim, k1, "soldier", 50, 0)
+		local onK2 = Military.spawnUnit(sim, crimson, "soldier", 50, 0)
 		onK2.order = { kind = "Attack", kingdomId = "azure" }
-		onK2.targetId = "b9"
-		local onK3 = Military.spawnUnit(sim, k1, "soldier", 0, 50)
+		local onK3 = Military.spawnUnit(sim, crimson, "soldier", 0, 50)
 		onK3.order = { kind = "Attack", kingdomId = "emerald" }
-		local theirs = Military.spawnUnit(sim, k2, "soldier", 250, 0)
+		local theirs = Military.spawnUnit(sim, azure, "soldier", 250, 0)
 		theirs.order = { kind = "Attack", kingdomId = "crimson" }
-		local bystander = Military.spawnUnit(sim, k3, "soldier", 0, 250)
+		local bystander = Military.spawnUnit(sim, emerald, "soldier", 0, 250)
 		bystander.order = { kind = "Attack", kingdomId = "crimson" }
 		assert(command(sim, RIVAL, "ProposePeace", "crimson"))
 		sim:advance(1)
 		expect(onK2.alive and theirs.alive).toBe(true)
+		onK2.target = { kind = "building", id = azure.keepId } -- mid-march on the enemy keep
 		F.events(sim)
 
 		local ok, err, result = command(sim, B, "AcceptPeace", "azure")
@@ -146,7 +146,7 @@ describe("Kingdom/Diplomacy: peace", function()
 		expect(sim:atWar("crimson", "azure")).toBe(false)
 		expect(sim:atWar("crimson", "emerald")).toBe(true) -- other wars go on
 		expect(onK2.order).toEqual({ kind = "Defend" })
-		expect(onK2.targetId).toBeNil()
+		expect(onK2.target).toBeNil()
 		expect(theirs.order).toEqual({ kind = "Defend" })
 		expect(onK3.order).toEqual({ kind = "Attack", kingdomId = "emerald" })
 		expect(bystander.order).toEqual({ kind = "Attack", kingdomId = "crimson" })
@@ -157,7 +157,7 @@ describe("Kingdom/Diplomacy: peace", function()
 		expect(made[1].by).toBe(B)
 		-- the proposal is used up
 		expect(errorOf(sim, A, "AcceptPeace", "azure")).toBe("no_proposal")
-		expect(k1.alive and k2.alive and k3.alive).toBe(true)
+		expect(crimson.alive and azure.alive and emerald.alive).toBe(true)
 	end)
 
 	it("a proposal can still be accepted exactly proposalSeconds after it was made", function()
@@ -190,7 +190,7 @@ describe("Kingdom/Diplomacy: peace", function()
 		assert(command(sim, RIVAL, "ProposePeace", "crimson"))
 		F.events(sim)
 		expect(errorOf(sim, RIVAL, "AcceptPeace", "crimson")).toBe("no_proposal") -- its own proposal
-		expect(errorOf(sim, A, "AcceptPeace", "emerald")).toBe("no_proposal") -- k3 proposed nothing
+		expect(errorOf(sim, A, "AcceptPeace", "emerald")).toBe("no_proposal") -- emerald proposed nothing
 		expect(errorOf(sim, THIRD, "AcceptPeace", "azure")).toBe("no_proposal") -- not at war, no proposal
 		expect(sim:atWar("crimson", "azure")).toBe(true)
 		expect((command(sim, A, "AcceptPeace", "azure"))).toBe(true)
@@ -250,7 +250,7 @@ describe("Kingdom/Diplomacy: setup helpers", function()
 	it("an eliminated kingdom's wars end", function()
 		local sim, _, azure = setup()
 		assert(command(sim, A, "DeclareWar", "azure"))
-		Military.eliminate(sim, k2, "crimson")
+		Military.eliminate(sim, azure, "crimson")
 		expect(Diplomacy.relation(sim, "crimson", "azure")).toBe("Peace")
 		expect(errorOf(sim, A, "DeclareWar", "azure")).toBe("unknown_kingdom")
 	end)
