@@ -39,3 +39,4 @@ Lune specs: act recording and sampling with a fake clock; loyalty rises and fall
 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (SPECIFIED).
+- 2026-10-12 forge-00: D-030: key citizens are drawn from the generated population (FL-0078); petitions become conversation scenarios in the content library (FL-0079, FL-0083).
