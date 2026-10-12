@@ -1,70 +1,59 @@
-# Handoff: forge-04 → forge-03 · UI components, ShopViewed, celebrate, HUD hooks, txType · FL-0023..0027 · 2026-10-12
+# Handoff: forge-04 → forge-03 · UI components, HUD onboarding targets, celebrate, settings panel · FL-0024/0025/0027/0062 · 2026-10-12
+
+_Revised 2026-10-12 for CONTRACTS v0.4-g2/g3 and FORGE-00's answers (`2026-10-12-forge-00-answers-to-02-03-04-ai-kingdoms.md`). VS-1 has no tutorial currency rewards, so the "Crowns" grants are withdrawn. FORGE-00 rejected the name "Crowns" (it would clash with Crown Points and the Crown Arena). `ShopViewed` and the economy txType mapping are post-VS-1 and kept only in `analytics/schemas/events.md` §6._
 
 ## What I need / what I'm giving you
-These are FORGE-04's day-one needs from your UI kit and economy services. In return you get:
-- the analytics `txType` mapping for EconomyService;
-- the `celebrate` API contract;
-- the onboarding hooks your HUD can call.
-Game #1 is AI Kingdoms (user directive, 2026-10-12).
+These are FORGE-04's VS-1 needs from your HUD (D-028: FORGE-03 owns the game HUD controllers). In return you get:
+- the onboarding hooks your HUD can use;
+- the `celebrate` and `show` contract of NotificationController (FL-0027);
+- the settings keys for a settings panel.
 
-## 1. Components I will consume (interfaces §9)
-My controllers draw minimal Instance-based views today and switch to your components once they merge, changing only each controller's `_render`/`_build`.
+## 1. HUD targets for the VS-1 tutorial (`games/game-001/config/Onboarding.luau`)
+| Step | Target | What I do |
+|---|---|---|
+| PlaceBuilding | `OnboardingTarget = "HUD.BuildButton"` on the Build button | outline it while the step is active (gold when the hint escalates) |
+| Recruit | `OnboardingTarget = "HUD.Recruit"` on the Recruit button in your army panel | same |
+| Gather, BuildingComplete, Capture | world tags (G10: `ResourceNode`, `BuildZone`, `ObjectiveZone`) | arrow and highlight on the nearest instance; nothing from you |
+
+- Set the attribute on the GuiObject itself. My controller finds it by the attribute in `PlayerGui`, so the name and the hierarchy are yours.
+- Optional: call `OnboardingController:report("GoalAcknowledged")` if you build a "next goal" card. Get the controller with `registry:find("OnboardingController")`. That is the only client action in the VS-1 config. Steps that grant anything are server-verified only.
+- The onboarding card uses the DisplayOrder band 60–69 and never blocks input. Please keep the HUD below 60.
+
+## 2. NotificationController (FL-0027, next in my queue)
+- All transient toasts go through `NotificationController:show({ title, body?, kind, key?, durationSec? })`. `kind` is `info`, `reward`, `warning` or `achievement`. Repeats with the same `key` coalesce into "×N". Please don't create toasts directly.
+- `celebrate(kind, payload)` is for big moments. The VS-1 kinds are `kingdomFounded`, `keepUpgraded`, `firstCapture` and `onboardingComplete`; FL-0062 raises them from G9 events. Call `celebrate("sliceSummary", {...})` yourself only if your slice summary wants the shared fanfare. Otherwise I stay out of your summary.
+- Band: DisplayOrder 70–79, at most 3 toasts visible, in the top right.
+
+## 3. Components I will consume once your kit has them
+My views are minimal Instance-based UI today. When your components merge, only each controller's `_build`/`_render` changes.
 
 | Component | Used by | Props I need |
 |---|---|---|
-| Panel | onboarding card, daily-reward claim panel, quest list, settings | title, body slot, close/skip action, compact size for phones |
-| Button / IconButton | Skip, Claim, settings toggles | label, icon, `onActivated`, disabled state, ≥ 44 px touch target |
-| Toast | NotificationController (FL-0027) | title, body, kind (`info` / `reward` / `warning` / `achievement`), count badge ("×3"), icon |
-| ProgressBar | quests, streak track, onboarding progress | value 0..1, label, colour from Theme |
-| Modal | settings screen | — |
-| Theme tokens | everything | the onboarding (60–69) and notifications (70–79) DisplayOrder bands; kind colours; reward tier colours (common…legendary) |
+| Panel | onboarding card, settings | title, body slot, close/skip action, compact size for phones |
+| Button | Skip, settings toggles | label, `onActivated`, disabled state, ≥ 44 px touch target |
+| Toast | NotificationController | title, body, kind, count badge ("×3"), icon |
+| Theme tokens | everything | the DisplayOrder bands above; kind colours |
 
-## 2. `ShopViewed` (interfaces §4)
-Fire `GameEvents.ShopViewed(player, shopId, itemId?)` **once per shop open** (and once per item detail view, with `itemId`). My adapter starts a new funnel session (GUID) on every `ShopViewed` and continues it with `PurchaseCompleted` within 900 s. A purchase without an open session is never counted as a conversion. Spec: `AnalyticsService.spec.luau` "gives each shop open its own session id".
-
-## 3. `NotificationController:celebrate(kind, payload)` (interfaces §8; built in FL-0027)
-- Call it at the **end** of your reward reveal: `celebrate("reward", { rarity, itemId, qty })`.
-- I never react to `RewardRolled` on my own, so there is no double celebration.
-- Other kinds I raise myself: `kingdomTier`, `onboardingComplete`, `achievement`, `dailyStreak`, `victory`.
-- All transient toasts go through `NotificationController:show({ title, body?, kind, durationSec? })`. Please don't create toasts directly.
-
-## 4. HUD hooks for onboarding (AI Kingdoms)
-- Set the attribute `OnboardingTarget = "HUD.Resources"` on the resource bar and `OnboardingTarget = "HUD.BuildButton"` on the Build button, and `"HUD.Shop"` on the sandbox shop button. My controller outlines that GuiObject while its step is active.
-- Call `OnboardingController:report("ResourceInspected")` when the player taps a resource counter. Call `report("GoalAcknowledged")` when they dismiss the "next goal" card, if you build it as a component (otherwise my card auto-advances).
-- Get the controller from your client registry: `registry:find("OnboardingController")`.
-
-## 5. Economy (FL-0045)
-- **Currency for tutorial rewards:** `Crowns` (assumed name, please confirm or rename). Onboarding grants 25 at the first harvest and 50 at completion via `EconomyService:grant(player, "Crowns", amount, "onboarding:<flow>:<step>:<userId>", "Onboarding")`. It must be idempotent per txId (§7).
-- **Analytics:** EconomyService is the only caller of `AnalyticsService:economy` (§7/§8). The `txType` mapping is in `analytics/schemas/events.md` §6:
-  - `IAP` (Robux to currency, source);
-  - `Shop` (buy = sink, sell = source);
-  - `Gameplay` (match/quest/achievement rewards = source; gameplay spend = sink);
-  - `TimedReward` (daily, source);
-  - `Onboarding` (tutorial, source);
-  - `ContextualPurchase` (speed-ups and revives, sink).
-  Budget: ≤ 5 currencies (creator-docs AS "Limited to 5 unique currency types"), ≤ 20 transaction types, ≤ 100 SKUs. In-match resources (Food, Wood, Stone, Gold) are **not** economy events.
-- `CurrencyChanged` drives my FirstReward funnel (step 2, delta > 0). Fire it exactly once per successful grant (§4 rule).
-
-## 6. Settings screen
-Settings keys and validation: `roblox/src/shared/Experience/Schema.luau` (`SETTINGS`):
-- volumes: master, music, sfx, ambience, ui;
-- `reducedMotion`, `cameraShake`, `showHints`, `citizenBarks`;
-- `notifications`: all | important.
-The panel reads `SettingsController:get(key)` and calls `SettingsController:set(key, value)` **on release** (not on every slider tick).
+## 4. Settings panel (if you build one; Studio step E2)
+- Keys and validation live in `roblox/src/shared/Experience/Schema.luau` (`SETTINGS`):
+  - volumes: master, music, sfx, ambience, ui;
+  - `reducedMotion`, `cameraShake`, `showHints`, `citizenBarks`;
+  - `notifications`: all | important.
+- The panel reads `SettingsController:get(key)` and calls `SettingsController:set(key, value)` **on release**, not on every slider tick.
+- VS-1 keeps settings for the session only (D-027).
 
 ## Evidence
-- `bash roblox/scripts/check.sh` PASS (325 specs); my views are Lune-tested for structure only (DisplayOrder 60, Skip ≥ 44 px). Layout on phones is **unverified** (Studio step E6 in `roblox/studio-tests/experience.md`).
+- `bash roblox/scripts/check.sh` PASS on `forge/04-experience`. My views are Lune-tested for structure only: DisplayOrder 60, a Skip button ≥ 44 px, and the nearest world target.
+- **Unverified:** layout on phones (Studio step E6 in `roblox/studio-tests/experience.md`).
 
 ## Interfaces touched
-None of yours. My additive remotes: `Experience/Remotes.luau`.
+None of yours. My additive remotes are in `roblox/src/shared/Experience/Remotes.luau`.
 
 ## Next actions for the receiver
-1. Confirm the props above, or point me at your component docs when FL-0020 lands.
-2. Fire `ShopViewed` per open; call `celebrate` at the end of reveals.
-3. Add the `OnboardingTarget` attributes and the two `report` calls.
-4. Confirm the soft-currency name.
+1. Add the two `OnboardingTarget` attributes (`HUD.BuildButton`, `HUD.Recruit`).
+2. Point me at your component docs when they land, or confirm the props above.
 
 ## Files to read
-- `analytics/schemas/events.md` §6 — txType mapping
-- `roblox/src/client/Controllers/OnboardingController.luau` — `report()` and target rules
-- `roblox/src/shared/Experience/Schema.luau` — settings keys
+- `games/game-001/config/Onboarding.luau`: the VS-1 steps and targets.
+- `roblox/src/client/Controllers/OnboardingController.luau`: `report()` and the target rules.
+- `roblox/src/shared/Experience/Schema.luau`: the settings keys.
