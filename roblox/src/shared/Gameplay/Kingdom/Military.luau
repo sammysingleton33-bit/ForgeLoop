@@ -17,6 +17,9 @@
 		- Only kingdoms at war fight (Simulation:atWar). Units pick the nearest enemy within aggro
 		  range (weapon range + 30): units first, then citizens outside shelter, then buildings.
 		  Siege units (attacksUnits = false) only target buildings. Targets are sticky while in reach.
+		- A unit out of weapon range closes in and strikes in the same tick once in range, so a target
+		  that keeps moving away (a fleeing citizen) can still be caught. Hold units never move: they
+		  only strike what is already within weapon range.
 		- Damage to buildings is multiplied by the unit's `siege` value (Ram x4).
 		- Soft blocking: a unit whose next step would enter an enemy building's footprint attacks that
 		  building instead (walls hold armies until broken). Full navigation comes with pathfinding.
@@ -45,6 +48,8 @@ Military.AGGRO_EXTRA = 30
 Military.UNIT_RADIUS = 1.5
 local STICKY_FACTOR = 1.5
 local DEFEND_RADIUS = 25
+-- moveUnit stops exactly at weapon range; floating-point error can leave that a hair outside it
+local REACH_EPSILON = 1e-6
 local ORDERS = { Defend = true, Hold = true, Move = true, Attack = true }
 
 local function dist(ax: number, az: number, bx: number, bz: number): number
@@ -435,16 +440,24 @@ local function stepUnits(sim: any, dt: number)
 		end
 		if target and kind and engage then
 			local gap = dist(u.x, u.z, target.x, target.z) - targetRadius(target, kind)
-			if gap <= def.range then
+			if gap > def.range + REACH_EPSILON and u.order.kind ~= "Hold" then
+				-- close in, then strike in the same tick if that brought the target into range: checking
+				-- range only before moving lets any target that steps away each tick (a fleeing
+				-- citizen) stay out of reach forever
+				local blocker = moveUnit(sim, u, def, target.x, target.z, def.range + targetRadius(target, kind), dt)
+				if blocker then
+					u.targetId = blocker.id
+				else
+					gap = dist(u.x, u.z, target.x, target.z) - targetRadius(target, kind)
+				end
+			end
+			if gap <= def.range + REACH_EPSILON then
 				if u.cooldown <= 0 then
 					hit(sim, u, def, target, kind)
 					u.cooldown = def.cooldown
 				end
-			else
-				local blocker = moveUnit(sim, u, def, target.x, target.z, def.range + targetRadius(target, kind), dt)
-				if blocker then
-					u.targetId = blocker.id
-				end
+			elseif u.order.kind == "Hold" then
+				u.targetId = nil -- holding units do not chase; look for something in range next tick
 			end
 		else
 			local x, z, stopAt = orderDestination(sim, u)
