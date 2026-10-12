@@ -281,6 +281,11 @@ describe("Experience/Pacing", function()
 		expect(pacing:phase()).toBe("Resolution")
 	end)
 
+	it("any signal after a fallback minute also advances the phase (observe uses the clock too)", function()
+		local pacing = Pacing.new(0, { kingdomId = "k1" })
+		expect(pacing:observe("ResourceProduced", { kingdomId = "k1", resource = "Food" }, 7 * 60)).toBe("Development")
+	end)
+
 	it("flags dead air once per idle spell, with a longer threshold later in the match", function()
 		local pacing = Pacing.new(0, { kingdomId = "k1" })
 		expect(pacing:nudgeDue(24)).toBe(false)
