@@ -33,6 +33,7 @@ local CitizenCard = require("../UI/CitizenCard")
 local CitizenModel = require("../UI/CitizenModel")
 local CitizenText = require("../UI/CitizenText")
 local HudModel = require("../UI/HudModel")
+local Signature = require("../UI/Signature")
 
 local CitizenCardController = {}
 CitizenCardController.__index = CitizenCardController
@@ -237,12 +238,31 @@ function CitizenCardController:render(metrics: any)
 	self.card = self.card or CitizenCard.new(hud.roots.menus)
 	if not self:isOpen() then
 		self.card:destroy()
+		self._renderKey = nil
 		return
 	end
 	local entityId = self.entityId
+	local color = self:_kingdomColor()
+	local talk = { visible = self._talk ~= nil, state = self.talkState }
+	-- The HUD re-renders on every treasury or construction push: rebuild the card only when what
+	-- it shows changed, so the Talk button under the player's finger survives (FORGE-05 M1).
+	local key = Signature.of({
+		entityId = entityId,
+		model = self.model,
+		color = color,
+		talk = talk,
+		breakpoint = metrics.breakpoint,
+		drawer = metrics.drawer,
+		width = metrics.width,
+		height = metrics.height,
+	})
+	if key == self._renderKey and self.card.panel ~= nil then
+		return
+	end
+	self._renderKey = key
 	self.card:render(self.model, metrics, {
-		color = self:_kingdomColor(),
-		talk = { visible = self._talk ~= nil, state = self.talkState },
+		color = color,
+		talk = talk,
 		onTalk = function()
 			local talk = self._talk
 			if talk and entityId and self.talkState ~= "loading" then

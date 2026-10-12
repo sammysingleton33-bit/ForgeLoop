@@ -18,52 +18,18 @@ local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
 local SCENARIOS = CitizenDoubles.SCENARIOS
 
--- Taps. Create.useTestConnector keeps handlers in a weak-keyed table; under Lune a garbage collection
--- can drop an instance's userdata wrapper between render and tap, and the handlers with it (a rare
--- "expected 0 to be greater than 0"; reported to the kit owner). This spec's connector keys handlers
--- strongly, which keeps the wrappers alive, so taps are deterministic here.
-local strong = {}
-
+-- Taps fire the handlers registered through the kit's test connector (strong keys since #25, so a
+-- garbage collection between render and tap no longer drops them).
 local function useStrongConnector()
-	strong = {}
-	return Create.setConnector(function(instance, eventName, fn)
-		local byEvent = strong[instance]
-		if byEvent == nil then
-			byEvent = {}
-			strong[instance] = byEvent
-		end
-		local list = byEvent[eventName]
-		if list == nil then
-			list = {}
-			byEvent[eventName] = list
-		end
-		table.insert(list, fn)
-		return {
-			Disconnect = function()
-				local index = table.find(list, fn)
-				if index then
-					table.remove(list, index)
-				end
-			end,
-		}
-	end)
+	return Create.useTestConnector()
 end
 
 local function fire(instance, eventName, ...)
-	local byEvent = strong[instance]
-	local list = byEvent and byEvent[eventName]
-	if list == nil then
-		return 0
-	end
-	for _, fn in table.clone(list) do
-		fn(...)
-	end
-	return #list
+	return Create.fire(instance, eventName, ...)
 end
 
 local function restoreConnector(previous)
 	Create.setConnector(previous)
-	strong = {}
 end
 
 -- An RBXScriptSignal look-alike (:Connect / :Disconnect only), for FORGE-04 controllers that expose one.
@@ -412,7 +378,7 @@ describe("Conversation panel (G13.3)", function()
 		local m = world.hud:metrics()
 		local panel = talkTo(world, 43)
 		expect(panel.Position.X.Offset).toBe(m.margin)
-		expect(panel.Position.Y.Offset).toBeGreaterThan(m.hud.bottom)
+		expect(panel.Position.Y.Offset).toBeGreaterThan(m.hud.pills.y + 34) -- below the pills
 		expect(panel.Position.Y.Offset + panel.Size.Y.Offset).toBeLessThanOrEqual(m.height - m.margin)
 		expect(panel.Size.X.Offset).toBeGreaterThan(m.drawer.width) -- wider than the phone drawer
 		local rows = findAll(panel, "^Row_")
@@ -547,5 +513,42 @@ describe("Conversation panel (G13.3)", function()
 		world.hud:setMenu("build")
 		expect(world.conversation.state).toBeNil()
 		expect(convoPanel(world)).toBeNil()
+	end)
+end)
+
+describe("Citizen card and conversation survive pushes (FORGE-05 M1)", function()
+	local previous
+	beforeEach(function()
+		previous = useStrongConnector()
+	end)
+	afterEach(function()
+		restoreConnector(previous)
+	end)
+
+	it("treasury and other kingdoms' pushes keep the Talk button and the answers in place", function()
+		local world = newWorld()
+		local function pushes(tag)
+			world.treasury:deposit("crimson", "food", 5, "m1:" .. tag, "test")
+			local id = world.build:add("azure", "house", 1, "planned", Vector3.new(900, 0, 900))
+			world.build:push(id)
+			world:advance(0.2)
+		end
+		pickSelection(world, "citizen", 41)
+		local card = cardPanel(world)
+		local talk = find(card, "Talk")
+		pushes("card")
+		expect(cardPanel(world)).toBe(card)
+		expect(find(card, "Talk")).toBe(talk)
+		tap(talk)
+		world:advance(0.1 + world.citizens.latency)
+		local panel = convoPanel(world)
+		local first = options(panel)[1]
+		pushes("conversation")
+		expect(convoPanel(world)).toBe(panel)
+		expect(options(panel)[1]).toBe(first)
+		tap(first)
+		world:advance(0.1 + world.citizens.latency)
+		expect(#world.citizens:callsNamed("Choose")).toBe(1)
+		world:destroy()
 	end)
 end)

@@ -7,7 +7,7 @@ assumption the client makes, the refusal codes it turns into sentences, and five
 open (items 6-10) — please confirm or correct them before FL-0079 integrates. FORGE-04: section at the end.
 
 ## Done (with commits)
-- Branch `forge/03-ui-economy-fl0088` (stacked on PR #25, FL-0059; no PR opened yet):
+- Branch `forge/03-ui-economy-fl0088` (stacked on PR #44, FL-0089, which contains #41):
   `games/game-001/src/client/Controllers/{CitizenCardController,ConversationController}.luau`,
   `games/game-001/src/client/UI/{CitizenModel,CitizenText,CitizenCard,ConversationPanel}.luau`,
   specs `games/game-001/tests/economy/{CitizenUI,CitizenModel}.spec.luau`.
@@ -69,19 +69,23 @@ None. G8/G13 consumed as written; items 6-10 are questions, not changes.
 10. **Rate of `Sim.Inspect` while the card is open** (every 4 s per open card): acceptable for VS-1?
     If you prefer a push (e.g. a `citizen` event in `Sim.Events`), only EntityController may decode it
     (G4) — then I would need a signal from EntityController instead.
+11. **Optional `category` on reputation effects** (additive): `{ kind = "reputation", text,
+    category = "compassion" }` would let the chip use the same icon as the reputation strip (FL-0089)
+    instead of a generic laurel. Without it the chip stays as it is.
 
 ## For FORGE-04 (InputModeController, bubbles)
 - I listen to `InputModeController.selected:(kind, id)` (framework Signal `:connect` or
   RBXScriptSignal `:Connect`, both work). kind `"citizen"` opens the card; any other kind closes the
-  card and the conversation. **Please do not fire a selection for taps that land on GUI**
-  (`gameProcessedEvent`): a tap on Talk or an answer that also fires `"none"` would close the panel.
+  card and the conversation. A tap on Talk or an answer must not also fire `"none"` (it would close
+  the panel): your InputModeController already ignores GUI-handled input (`gameProcessedEvent`,
+  lines 24 and 243–261 on main), so nothing to do unless that changes.
 - The card's "!" on the avatar mirrors your thought-bubble cue; same amber, if you can.
 
 ## Next actions for the receiver
-1. FORGE-01: confirm items 1-5 or send the differences; answer 6-10 (a line each is enough).
+1. FORGE-01: confirm items 1-5 or send the differences; answer 6-11 (a line each is enough).
 2. FORGE-01: when FL-0079 lands, run `games/game-001/tests/economy/CitizenUI.spec.luau` against your
    declarations (swap `CitizenDoubles.REMOTES` for your `Remotes.luau` lists) to catch a mismatch.
-3. FORGE-04: confirm the GUI-tap rule above.
+3. FORGE-04: nothing required (the GUI-tap rule is already in InputModeController); keep it.
 
 ## Files to read
 - `games/game-001/tests/economy/doubles/CitizenDoubles.luau` — the shapes and rules I assumed.

@@ -31,6 +31,7 @@ local CitizenModel = require("../UI/CitizenModel")
 local CitizenText = require("../UI/CitizenText")
 local ConversationPanel = require("../UI/ConversationPanel")
 local HudModel = require("../UI/HudModel")
+local Signature = require("../UI/Signature")
 
 local ConversationController = {}
 ConversationController.__index = ConversationController
@@ -246,11 +247,27 @@ function ConversationController:render(metrics: any)
 	self.panel = self.panel or ConversationPanel.new(hud.roots.menus)
 	if hud.state.menu ~= ConversationController.MENU or self.state == nil then
 		self.panel:destroy()
+		self._renderKey = nil
 		return
 	end
 	local kingdom = hud.store:mine()
+	local color = if kingdom then HudModel.color(kingdom) else nil
+	-- Rebuild only when the conversation or the screen changed: a treasury push mid-question must
+	-- not swap the answer buttons under the player's finger (FORGE-05 M1).
+	local key = Signature.of({
+		state = self.state,
+		color = color,
+		breakpoint = metrics.breakpoint,
+		drawer = metrics.drawer,
+		width = metrics.width,
+		height = metrics.height,
+	})
+	if key == self._renderKey and self.panel.panel ~= nil then
+		return
+	end
+	self._renderKey = key
 	self.panel:render(self.state, metrics, {
-		color = if kingdom then HudModel.color(kingdom) else nil,
+		color = color,
 		onPick = function(responseId)
 			self:choose(responseId)
 		end,

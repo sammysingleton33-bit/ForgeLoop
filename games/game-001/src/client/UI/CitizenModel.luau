@@ -33,6 +33,7 @@
 ]]
 
 local CitizenText = require("./CitizenText")
+local Layout = require("./Layout")
 
 local CitizenModel = {}
 
@@ -344,8 +345,10 @@ function CitizenModel.conversationRect(m: any): { x: number, y: number, width: n
 	if m.breakpoint ~= "phone" then
 		return { x = d.x, y = d.y, width = d.width, height = d.height }
 	end
-	-- Below the pills and the CurrencyPill spend float (16 px under the pill).
-	local y = m.hud.bottom + 16
+	-- Below the pills and the CurrencyPill spend float (16 px under the pill). Not below
+	-- `hud.bottom`: on phones that includes the reputation strip (FL-0089), and a conversation is
+	-- worth covering it — the sheet needs the height for four answers at 844 × 390.
+	local y = m.hud.pills.y + Layout.PILL_HEIGHT + 16
 	return { x = m.margin, y = y, width = d.x + d.width - m.margin, height = m.height - y - m.margin }
 end
 

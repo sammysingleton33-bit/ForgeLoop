@@ -247,7 +247,8 @@ describe("CitizenModel geometry", function()
 		local phone = Layout.compute(750, 311)
 		local r = CitizenModel.conversationRect(phone)
 		expect(r.x).toBe(phone.margin)
-		expect(r.y).toBe(phone.hud.bottom + 16)
+		-- under the pills and their spend float; it may cover the reputation strip (FL-0089) while open
+		expect(r.y).toBe(phone.hud.pills.y + 34 + 16)
 		expect(r.x + r.width).toBe(phone.drawer.x + phone.drawer.width) -- left of the rail
 		expect(r.y + r.height).toBe(phone.height - phone.margin)
 	end)
