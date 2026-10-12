@@ -66,11 +66,7 @@ function Bundle.validate(b: any, opts: { allowZero: boolean?, allowEmpty: boolea
 end
 
 function Bundle.copy(b: Bundle): Bundle
-	local out = {}
-	for k, v in b do
-		out[k] = v
-	end
-	return out
+	return table.clone(b)
 end
 
 function Bundle.isEmpty(b: Bundle): boolean
