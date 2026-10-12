@@ -1,0 +1,140 @@
+# FORGELOOP CI (owner: FORGE-05). Runs on PRs and on pushes to main.
+#   tools  — forge tooling tests + task validation; every PR event and every push to main (D-014)
+#   ownership (G8) — PRs only: every changed file belongs to the PR's owner (title prefix [FORGE-0N] /
+#            [CODEX], else branch forge/0N-...) or is allowed by an exception in
+#            production/quality-gates/ownership.json (tools/check_ownership.py). Pushes to main are
+#            merges and D-014 bookkeeping, so they are not checked. A title change needs a new push.
+#   roblox — pinned release binaries (no compiling, D-015) + roblox/scripts/check.sh. Skipped for
+#            draft PRs (D-016: drafts are never merged; marking a PR ready for review runs it) and,
+#            via its first step, when nothing Roblox-related changed (e.g. D-014/D-018 bookkeeping
+#            pushes to main), so metered minutes (D-015) go to code. On pushes to main that run it,
+#            the places are stamped (BuildInfo) and uploaded as artifacts forgeloop-main-<short sha>
+#            (framework sandbox, forgeloop-main-<short sha>.rbxl) and forgeloop-game001-<short sha>
+#            (AI Kingdoms, forgeloop-game001-<short sha>.rbxl — the place for Studio playtests).
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# PRs: a new push cancels the PR's older run. Pushes to main: one group per commit, so no merge's
+# run (and its artifact) is ever cancelled or dropped from the queue.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  tools:
+    name: tools (pytest + forge validate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Tool tests
+        run: python -m pytest -q tools/tests
+      - name: Validate tasks
+        run: python tools/forge.py validate
+
+  ownership:
+    name: ownership (G8)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # merge base of the PR base and the merge commit
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Changed files belong to the PR's owner
+        env:
+          # Passed through env, never interpolated into the script: titles are untrusted text.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python tools/check_ownership.py --base "$BASE_SHA" --head HEAD --explain
+
+  roblox:
+    name: roblox (Lune, Selene, StyLua, Rojo, place check)
+    if: github.event_name == 'push' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # the change filter below diffs against the PR base / the previous main commit
+      - name: Roblox-related changes?
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # Paths whose change can affect the Roblox gates. No usable base (new branch, failed diff)
+          # runs the gates: when in doubt, check.
+          pattern='^(roblox/|games/|rokit\.toml$|selene\.toml$|stylua\.toml$|roblox\.yml$|\.gitattributes$|\.github/)'
+          range="$BASE...$HEAD"
+          if [ "$EVENT" = "push" ]; then range="$BASE..$HEAD"; fi
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+            || ! files="$(git diff --name-only "$range")"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "change filter: no usable base; running the gates"
+          elif printf '%s\n' "$files" | grep -E "$pattern" >/dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "change filter: Roblox-related files changed; running the gates"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "change filter: no Roblox-related file changed; gates SKIPPED. Changed files:"
+            printf '  %s\n' "$files"
+          fi
+      - name: Install pinned tools (rokit.toml versions, release binaries)
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          bash roblox/scripts/ci_install_tools.sh "$RUNNER_TEMP/forge-bin"
+          echo "$RUNNER_TEMP/forge-bin" >> "$GITHUB_PATH"
+      - name: Stamp build (push to main)
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: bash roblox/scripts/stamp_build.sh
+      - name: Roblox gates
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            bash roblox/scripts/check.sh --require-stamp
+          else
+            bash roblox/scripts/check.sh
+          fi
+      - name: Name the place after the commit (push to main)
+        id: place
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          short="${GITHUB_SHA::7}"
+          cp roblox/build/sandbox.rbxl "roblox/build/forgeloop-main-$short.rbxl"
+          cp roblox/build/game-001.rbxl "roblox/build/forgeloop-game001-$short.rbxl"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+      - name: Upload integrated place
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v6
+        with:
+          name: forgeloop-main-${{ steps.place.outputs.short }}
+          path: roblox/build/forgeloop-main-${{ steps.place.outputs.short }}.rbxl
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload game-001 place (AI Kingdoms)
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v6
+        with:
+          name: forgeloop-game001-${{ steps.place.outputs.short }}
+          path: roblox/build/forgeloop-game001-${{ steps.place.outputs.short }}.rbxl
+          if-no-files-found: error
+          retention-days: 30

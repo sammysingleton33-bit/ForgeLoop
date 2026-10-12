@@ -1,0 +1,226 @@
+# roblox/ — FORGELOOP Luau framework
+
+Shared Roblox code for every FORGELOOP game, built with Rojo and tested headlessly with Lune.
+Contracts: `docs/architecture/interfaces.md` (v0.3). Ownership: `docs/workflows/team.md`.
+
+```bash
+bash roblox/scripts/check.sh                        # every Roblox gate; run from any directory
+lune run roblox/tests/harness/run.luau [filter]     # only the Lune specs (filter = path substring)
+bash roblox/scripts/stamp_build.sh                  # write BuildInfo.json (sha/branch/time) before a build
+rojo build roblox/default.project.json -o roblox/build/sandbox.rbxl
+rojo serve roblox/default.project.json              # live sync into Studio (Rojo plugin)
+```
+Tools are pinned in `rokit.toml` (Rojo 7.7.1, Selene 0.31.0, StyLua 2.6.0, Lune 0.11.0; D-005).
+Windows/macOS: `rokit install`. Linux cloud sessions: `bash tools/setup/cloud-setup.sh`.
+
+## Layout
+
+| Source | In the place | Owner |
+|---|---|---|
+| `roblox/src/shared/` | `ReplicatedStorage.Forge` | per area (`Core/` FORGE-01, `Economy/` FORGE-03, ...) |
+| `roblox/src/shared/Contracts/` | `ReplicatedStorage.Forge.Contracts` (Env, Loader, GameEvents, Types, BuildStamp) | FORGE-05 custodian |
+| `roblox/src/server/` | `ServerScriptService.Forge` (`Main` Script + `Services/`) | Main: FORGE-05; services per area |
+| `roblox/src/client/` | `StarterPlayer.StarterPlayerScripts.Forge` (`Main` LocalScript + `Controllers/`) | Main: FORGE-05; controllers per area |
+| `games/sandbox/config/` | `ReplicatedStorage.Forge.Config` | per file (team.md Rules) |
+| `roblox/assets/` | `ReplicatedStorage.Forge.Assets` (`<asset_id>.rbxm` → child named by id) | FORGE-05 |
+| `games/sandbox/map/` | `Workspace` — not mapped yet: FORGE-05 adds the mapping with FL-0044 (interfaces §1) | FORGE-05 |
+| `roblox/src/shared/BuildInfo.json` | `ReplicatedStorage.Forge.BuildInfo` (gitignored, from `stamp_build.sh`) | generated |
+| `roblox/tests/harness/`, `roblox/tests/mocks/`, `roblox/tests/unit/contracts/`, `roblox/tests/fixtures/` | not in the place (Lune only) | FORGE-05 |
+| `roblox/tests/unit/<area>/` (`core/` FORGE-01, ...) | not in the place | per area |
+| `games/game-001/` (AI Kingdoms) | its own project `games/game-001/default.project.json`: this framework **plus** `ReplicatedStorage.Game`, `ServerScriptService.Game`, `StarterPlayerScripts.Game`, its `config/` as `Forge.Config` | `games/game-001/README.md` (D-022) |
+
+Rojo ignores `README.md` and `.gitkeep`, so empty `Services/` and `Controllers/` folders exist in the
+build and the loader boots with no services.
+
+## Requires: the one rule (D-004 as amended by D-017)
+
+1. **Inside one source tree, use relative paths**: `require("./Sibling")`, `require("../Core/Signal")`.
+   `./` starts at `script.Parent`, `../` at `script.Parent.Parent` — the same as the folders on disk.
+2. **To reach another tree, use `@game/` with the full DataModel path**, only then, and only into
+   `ReplicatedStorage/Forge/...` (shared code, Config, Assets) or, in game projects,
+   `ReplicatedStorage/Game/...` (game shared code, D-022). **Framework code (`roblox/src`) never
+   requires game code**; game code may require the framework:
+   - server or client code → shared: `require("@game/ReplicatedStorage/Forge/Core/Signal")`
+   - anything → game config: `require("@game/ReplicatedStorage/Forge/Config/Game")`
+   Never `@game/ServerScriptService/...`, `@game/ServerStorage/...` or `@game/StarterPlayer/...`:
+   server content does not replicate to clients, and the running client tree is the copy in
+   `PlayerScripts`, so such a require fails or loads a second copy. (Specs under `roblox/tests/` may
+   require any module by `@game/...`, e.g. a server service under test.)
+   The trees are the Rojo `$path` mounts above: shared, server, client, config, assets (and the
+   Game trees in a game project).
+3. Nothing else: no `@self`, no custom aliases, no `script.Parent.X` instance paths for modules, and
+   requires sit at the top level of the module — not inside a function or block (a require that
+   StyLua wraps onto a continuation line is fine). Only `Contracts/` may `require(instance)` or
+   pass `require` around (Loader discovery, `env.sharedModules`, BuildInfo).
+
+**Why `@game` (evidence).** Roblox documents it: `content/en-us/reference/engine/globals/LuaGlobals.yaml`
+in [Roblox/creator-docs](https://github.com/Roblox/creator-docs) states "Paths with the `@game/` prefix
+begin resolution at `game`" (present since docs commit `d6b68cfd`, 2026-01-13; still there at
+`af5f853c`, 2026-10-10, with the example `require("@game/ReplicatedStorage/Shared/MyModule")`).
+A DevForum feature request from January 2026 (thread 4224639) describes `@game` as recently live
+(seen through web search only; the DevForum is not reachable from the cloud sandbox). Live Studio
+confirmation is smoke test **S1** in `roblox/STUDIO_TEST_PLAN.md` — until the user has run it, treat
+`@game` as documented but not yet observed by us.
+
+**How it runs identically in Lune and in the place.**
+- Lune specs load modules through `roblox/tests/harness/ModuleLoader.luau`, which reads
+  `roblox/default.project.json` and resolves every require in DataModel space, exactly like Roblox
+  (`@game/...` → mount → file; `./`, `../` from the script's DataModel path). It rejects what Roblox
+  rejects: requiring a Script, a missing child, a folder, a cyclic require, a module that does not
+  return exactly one value, and (policy) `@self`/other aliases or `@lune` inside game code.
+- **Module identity:** every module is cached by its one source file, so `@game/.../Core/Signal`
+  and `../Core/Signal` return the same table — as in Roblox, where both name one ModuleScript.
+  (Mapping `@game` to a mirrored directory with a `.luaurc` alias in plain Lune loads a *second*
+  copy; see `docs/lessons-learned/integration.md`.) Proven by
+  `roblox/tests/unit/contracts/ModuleIdentity.spec.luau` (real project + a fixture with shared,
+  server and config trees, plus every rejected form).
+- `roblox/scripts/check_place.luau` opens the built `sandbox.rbxl` and resolves every require in
+  every script against the real instance tree with the same rules (shared code:
+  `roblox/tests/harness/RequirePath.luau`), and enforces rules 1–3 (relative paths may not cross a
+  mount; `@game` may not stay inside one and may only reach `ReplicatedStorage/Forge`; top level
+  only, judged by block depth from a tokenizer, so comments and strings never count; dynamic
+  requires only in Contracts). The module loader applies the same policy to game code, so a
+  forbidden require also fails the Lune specs.
+
+Each spec file gets a fresh module registry (no state leaks between spec files); inside one spec file
+a module is loaded once.
+
+## Add a service (server) or controller (client)
+
+Create `roblox/src/server/Services/<Name>.luau` (or `roblox/src/client/Controllers/<Name>.luau`);
+game services go in `games/game-001/src/server/Services/` (`games/game-001/README.md`). `Main`
+boots both trees as one dependency graph (`Loader.boot(env, { forgeServices, gameServices })`; a
+name defined in both trees is an error). Never edit `Main` or another worker's file.
+```lua
+--!strict
+local RoundService = {}
+RoundService.__index = RoundService
+
+local Def = { name = "RoundService", dependencies = { "PlayerService", "DataService" } }
+
+function Def.new(env, registry) -- build only: no yielding, no registry:find here
+	return setmetatable({ _env = env, _registry = registry, _data = registry:get("DataService") }, RoundService)
+end
+
+function RoundService:start() -- optional; may spawn threads with self._env.spawn, should not yield
+	self._analytics = self._registry:find("AnalyticsService") -- optional dependency: may be nil
+end
+
+return Def
+```
+Loader rules (`Contracts/Loader.luau`, §3): the module name must equal `name`; dependencies are
+constructed first (ties by name); missing dependencies and cycles fail the boot with the exact
+names (`dependency cycle: A -> B -> A`); `registry:get` of an undeclared service inside `new()` and
+`registry:find` inside `new()` are errors. `Main` logs the order (`services started ... order=A > B`).
+Use the injected `env` for every service and clock (§2) — never `game:GetService`, `task.wait`,
+`os.time` or `Random.new` directly in services.
+
+## Add a remotes declaration
+
+Each area declares its remotes in `roblox/src/shared/<Area>/Remotes.luau` (interfaces §6) and owns
+that file. FORGE-01's RemoteService finds all of them with `env.sharedModules("Remotes")` — keyed by
+area folder name — and creates `ReplicatedStorage.ForgeRemotes.<Area>.<Action>` via `env.newInstance`.
+In specs, pass the declarations directly:
+`MockEnv.new({ sharedModules = { Remotes = { Economy = require("@game/ReplicatedStorage/Forge/Economy/Remotes") } } })`.
+
+## Add a test
+
+Specs are `roblox/tests/unit/<area>/<Name>.spec.luau` (any depth); the runner finds them all.
+Game specs live in `games/game-001/tests/<area>/` and run over the game project
+(`lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests`;
+`check.sh` runs both).
+```lua
+local T = require("../../harness/Test")
+local describe, it, expect, beforeEach = T.describe, T.it, T.expect, T.beforeEach
+local MockEnv = require("../../mocks/MockEnv")
+local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+
+describe("Thing", function()
+	local env
+	beforeEach(function()
+		env = MockEnv.new({ seed = 1 })
+	end)
+	it("does X", function()
+		expect(1 + 1).toBe(2)
+	end)
+end)
+```
+Matchers: `toBe`, `toEqual` (deep), `toBeNear`, `toThrow(substring?)`, `toBeNil`, `toBeTruthy`,
+`toBeFalsy`, `toContain`, `toHaveLength`, `toBeGreaterThan(OrEqual)`, `toBeLessThan(OrEqual)`,
+`toBeA`, each with `.never`. Hooks: `beforeEach`, `afterEach`. There is no skip: a spec file that
+fails to load, defines no tests, leaves a test suspended for 5 s, or lets a spawned thread error
+(task.spawn/defer/delay, `env.spawn`, a Signal handler — also after the thread waited and was
+resumed) fails the run; the error is charged to the test that spawned the thread. Specs are
+`*.spec.luau` (or `*.spec.lua`); a file named like a spec that the runner would not collect
+(`FooSpec.luau`, `Foo.test.luau`) fails the run.
+
+**Globals under the harness** (`roblox/tests/harness/Globals.luau`): `task` (Lune's, real time —
+services use `env.wait`/`env.spawn` instead), `Enum`, `Instance`, a deterministic `Random`
+(MockRandom, one per spec file), the @lune/roblox datatypes (`Vector3`, `CFrame`, `Color3`, `UDim2`,
+`BrickColor`, `NumberSequence`, ... — full list in Globals.luau), and stand-ins for `TweenInfo`,
+`RaycastParams`, `OverlapParams` and `DateTime` (UTC only; `DateTime.now()` errors — use
+`env.now()`). Other Roblox globals are nil; `game`, `workspace`, `script` and `plugin` raise a clear
+error — use `env`.
+
+**Virtual time** (`MockEnv`): `env.wait(s)` behaves like `task.wait` (at least one frame, 1/60 s).
+In any scheduled thread — `env.spawn`, Signal/GameEvents handlers, the coroutine `Loader` runs
+`new()` in — it suspends until the spec calls `env.mock:advance(seconds)`; in the spec's own thread
+it advances time at once. So a waiting handler does not delay `fire()`, a `new()` that waits (or
+calls a DataStore, Policy or game-pass API, which always yield) fails with "new() yielded", and a
+per-frame loop (`while true do ... env.wait() end`) runs 60 times per virtual second.
+
+**Mocks** (`roblox/tests/mocks/`, each file cites the Roblox doc it imitates):
+`MockEnv` (every Env field; virtual time above; seeded `random`; captured `logs`; `bindToClose` +
+`runBindToClose`; `newInstance`; `sharedModules` from a table; `service(name)`), `MockDataStoreService`
+(Get/Set/Update/Increment/RemoveAsync, UpdateAsync nil = cancel, `failNext`, `afterCommit`, budgets that
+refill per virtual minute (60 + 40 × players) + `GetRequestBudgetForRequestType`, 4 MB / key / UTF-8
+errors, latency, `interleaveNextUpdate`; share one between two MockEnvs for two servers), `MockPlayers`
+(real Player instances, PlayerAdded/Removing, `Kick` recorded, leave during load), `MockMarketplaceService`
+(ProcessReceipt decisions, redelivery, auto-acknowledge hazard, game passes), `MockPolicyService`,
+`MockAnalyticsService` (record/throw/noop), `MockRemotes` (RemoteEvent/RemoteFunction/
+UnreliableRemoteEvent, server and client ends; unreliable payloads > 1000 bytes dropped with buffers
+counted by `buffer.len`, buffers copied on send, `holdUnreliable`/`releaseUnreliable` to delay and
+reorder, `dropNext`), `MockCollectionService`, `MockInstanceEvents`,
+`MockSignal`, `MockRandom`.
+
+**Instances** in a MockEnv (`env.ReplicatedStorage`, `env.Workspace`, ..., `env.newInstance`) are real
+Lune instances: properties, `FindFirstChild`, `GetChildren`, `GetDescendants`, `IsA`, `Clone`,
+`Destroy`, attributes and tags work. Added by the mocks: `WaitForChild(name, timeout?)` on the
+virtual clock, and `ChildAdded`/`ChildRemoved` (fire at the next scheduler step, like Deferred
+signal behaviour). **Not provided** (clear error on use): `Changed`, `GetPropertyChangedSignal`,
+`GetAttributeChangedSignal`, `Destroying`, `AncestryChanged`, `DescendantAdded`,
+`DescendantRemoving`, `AttributeChanged`; TweenService, SoundService, UserInputService,
+ContextActionService, GuiService and MemoryStoreService are unmocked placeholders (pass your own
+with `MockEnv.new({ services = { ... } })`). Missing something? Handoff to FORGE-05.
+
+## Build identity
+
+`bash roblox/scripts/stamp_build.sh` writes `roblox/src/shared/BuildInfo.json`
+(`sha`, `branch`, `builtAt`, `dirty`; gitignored). Rojo turns it into
+`ReplicatedStorage.Forge.BuildInfo`; both `Main` scripts log it (`sha=unstamped` if absent).
+CI stamps every push to `main` that changes Roblox files and uploads two places: artifact
+`forgeloop-main-<short sha>` (framework sandbox, `forgeloop-main-<short sha>.rbxl`) and
+`forgeloop-game001-<short sha>` (AI Kingdoms, `forgeloop-game001-<short sha>.rbxl`). Both `Main`
+scripts also log `game=<Config.Game.id>` (`sandbox` or `game-001`).
+
+## Linting and formatting
+
+- **Selene** uses `std = "roblox"` from the committed `roblox.yml` at the repository root
+  (`selene.toml`: `roblox-std-source = "pinned"`), so CI and every session lint against the same API
+  without network access. It was generated on 2026-10-12 from the Roblox-Client-Tracker API dump with
+  selene 0.31.0's own generator code; `selene generate-roblox-std` could not download it here because
+  selene's HTTP client ships its own CA roots and does not trust the sandbox proxy (setting
+  `SSL_CERT_FILE` does not help). Refresh on a machine with direct internet:
+  `rm roblox.yml && selene generate-roblox-std` (then re-add the header comment).
+- **StyLua** (`stylua.toml`: Luau, tabs, 120 columns). StyLua needs its `luau` cargo feature: a plain
+  `cargo install stylua` cannot parse Luau and, given directories, silently skips `.luau` files.
+  Release binaries and `tools/setup/cloud-setup.sh` include it; `check.sh` passes an explicit file
+  list so a wrong build fails instead of passing. Fix formatting with `stylua roblox games`.
+
+## Headless vs Studio
+
+`check.sh` proves: specs pass against mocks, Selene/StyLua are clean, Rojo builds, and the built
+place has the expected tree and resolvable requires. It does **not** prove engine behaviour —
+replication, physics, real DataStores/purchases, UI layout, and that Studio accepts `@game` requires.
+Those are gate G6: steps in `roblox/STUDIO_TEST_PLAN.md`, run by the user, results recorded with
+the BuildInfo sha. Never report a Studio result you have not been given.
