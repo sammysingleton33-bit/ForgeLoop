@@ -3,7 +3,7 @@ id: FL-0091
 title: Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3)
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,11 @@ updated: 2026-10-12
 depends_on: [FL-0079]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 5
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS @5741a20: framework 485, game-001 123 specs, Selene 0/0, StyLua 207, both builds and place checks"
+  - "CitizenBubbles.spec 14: pool (one per citizen, release for pooled rigs, BillboardGui reuse) and distance culling (maxDistance, maxOnScreen, priority), text from the event only, glyphs/words not colour, citizenBarks, cue map validity, headless boot"
+  - "mutations.py FL-0091 rows 9/9 CAUGHT"
+  - "unverified: needs FORGE-01 EntityController thought/reaction/strike events (FL-0079) and Studio video (E8); poses wait for EntityController:playPose (proposed)"
 ---
 
 # Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3)
@@ -35,3 +39,6 @@ Specs for the pool and the distance culling. Studio video of a request bubble, a
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-12 forge-04: READY → BUILDING. On forge/04-experience-fl0091 from main; FL-0079 (FORGE-01) not landed: built on the G4.1/G13.3 shapes with doubles.
+- 2026-10-12 forge-04: BUILDING → TESTING. Bubbles model, controller, Vfx config, specs; headless gates on 5741a20.
+- 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0091. Studio: roblox/studio-tests/experience.md E8 (needs FL-0079 + EntityController events). Handoff forge-04-to-forge-01-00-bubbles-events.
