@@ -143,15 +143,12 @@ local function warsOf(sim: any, kingdom: any): number
 	return n
 end
 
--- Neighbours are the kingdoms next to this one around the map (k1-k2-k3-k4-k1), so an AI never
--- marches across the centre while a neighbour stands. Kingdoms already fighting two wars are
--- left alone (no dog-piling a single kingdom, human or AI).
 -- The kingdom's nearest node of a resource (by distance from the keep), as a placement anchor.
 local function nearestNode(sim: any, kingdom: any, resource: string): { x: number, z: number }?
 	local best, bestDistance = nil, math.huge
 	for _, nid in kingdom.nearNodes do
 		local node = sim.nodes[nid]
-		if node.resource == resource then
+		if node.resource == resource and node.amount > 0 then
 			local dx, dz = node.x - kingdom.x, node.z - kingdom.z
 			local d = dx * dx + dz * dz
 			if d < bestDistance then
@@ -162,6 +159,9 @@ local function nearestNode(sim: any, kingdom: any, resource: string): { x: numbe
 	return if best then { x = best.x, z = best.z } else nil
 end
 
+-- Neighbours are the kingdoms next to this one around the map (adjacent in kingdom order, which
+-- runs clockwise), so an AI never marches across the centre while a neighbour stands. Kingdoms
+-- already fighting two wars are left alone (no dog-piling a single kingdom, human or AI).
 local function weakestEnemy(sim: any, kingdom: any): any?
 	local n = #sim.kingdomOrder
 	local neighbours = {}
@@ -275,9 +275,15 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			end
 		end
 		if best then
-			local unit = sim.units[kingdom.unitIds[1]]
-			local order = unit.order
-			local already = order.kind == "Move" and order.x == best.x and order.z == best.z
+			-- re-issue only when some soldier (e.g. a fresh recruit) is not marching there yet
+			local already = true
+			for _, uid in kingdom.unitIds do
+				local order = sim.units[uid].order
+				if not (order.kind == "Move" and order.x == best.x and order.z == best.z) then
+					already = false
+					break
+				end
+			end
 			if not already and Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Move", best.x, best.z) then
 				return "ArmyOrder:Objective"
 			end

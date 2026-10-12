@@ -10,7 +10,7 @@
 		  priority weight (0 = never, 1 = normal, 3 = urgent); open construction sites are explicit
 		  ruler orders and score high;
 		- distance to the best target (nearer is better);
-		- compact memory: a recent threat near a target or a recent "storage full" lowers the score;
+		- compact memory: a recent threat near a target lowers its score;
 		- commitment: the current activity gets a small bonus so citizens do not flip-flop.
 
 	API
@@ -42,16 +42,6 @@ local function resourceOfKind(kind: string): string
 		return "food"
 	end
 	return kind
-end
-
-local function recentMemory(world: any, citizen: any, kind: string, ref: string?): boolean
-	local horizon = world.time - world.catalog.tuning.memorySeconds
-	for _, entry in citizen.memory do
-		if entry.kind == kind and entry.t >= horizon and (ref == nil or entry.ref == ref) then
-			return true
-		end
-	end
-	return false
 end
 
 local function nearRememberedThreat(world: any, citizen: any, x: number, z: number): boolean
@@ -110,9 +100,6 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 		local need = CitizenBrain.need(world, kingdom, kind)
 		if need <= 0 then
 			continue
-		end
-		if kind ~= "build" and recentMemory(world, citizen, "storage_full", resourceOfKind(kind)) then
-			need *= 0.3
 		end
 		local target, distance = world:findWorkTarget(kingdom, kind, citizen)
 		if target == nil then
