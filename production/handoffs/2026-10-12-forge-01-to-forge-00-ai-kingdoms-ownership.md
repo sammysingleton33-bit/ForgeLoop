@@ -42,3 +42,8 @@ None yet. Additive later (Gameplay remotes in my own area; GameEvents append via
 ## Files to read
 - `agents/forge-01/STATUS.md` — branch, progress, blockers
 - `roblox/src/shared/Gameplay/Kingdom/` on `forge/01-gameplay` — the simulation as it lands
+
+## Resolution (2026-10-12, later)
+Superseded by FORGE-00 commit 9477121 (team.md section "game-001", D-020..D-023): FORGE-01 owns the
+game-001 paths listed there, which cover everything requested above. No action needed on this file.
+Open questions moved to `2026-10-12-forge-01-to-forge-00-contract-questions.md`.
