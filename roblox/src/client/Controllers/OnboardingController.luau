@@ -9,6 +9,7 @@
 		OnboardingController:skip()                      -- the always-visible Skip button calls this
 		OnboardingController.state                       -- last snapshot from Experience.OnboardingState
 		OnboardingController.changed: Signal (state)
+	When a snapshot turns done (not skipped), NotificationController:celebrate("onboardingComplete").
 
 	View (thin, built with Instances until FORGE-03's Panel/Button land; then only _render changes):
 	- one small card at the top centre (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9):
@@ -101,9 +102,17 @@ function OnboardingController:apply(state: any)
 	if type(state) ~= "table" then
 		return
 	end
+	local wasActive = self.state ~= nil and not self.state.done
 	self.state = state
 	self:_render()
 	self:_startDetector()
+	if wasActive and state.done and not state.skipped then
+		-- the tutorial's last step just completed (not skipped): the celebration moment (FL-0027)
+		local notifications = self._registry:find("NotificationController")
+		if notifications and notifications.celebrate then
+			notifications:celebrate("onboardingComplete", { flowId = state.flowId })
+		end
+	end
 	self.changed:fire(state)
 end
 

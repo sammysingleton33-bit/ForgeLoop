@@ -58,6 +58,19 @@ M = [
  ("FL-0061", G+"src/server/Services/PacingService.luau", '		config = Def.DEFAULTS\n', '', "PacingService", "an invalid config never breaks the match", "game"),
  ("FL-0061", G+"src/server/Services/PacingService.luau", 'if durations == nil or not table.find(Def.MODES, mode) then', 'if false then', "PacingService", "rejects an unknown mode", "game"),
  ("FL-0024", G+"config/Sounds.luau", 'id = "music.tension"', 'id = "music.tense"', "Sounds", "registers a track for every music state", "game"),
+ ("FL-0027", X+"NotificationQueue.luau", 'if #self._visible < config.maxVisible then', 'if true then', "Notification", "shows at most 3", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", 'if shown.priority < item.priority and', 'if shown.priority <= item.priority and', "Notification", "shows at most 3", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", 'item.expiresAt = math.min(refreshed, (item.shownAt :: number) + config.maxRefreshSec)', 'item.expiresAt = refreshed', "Notification", "not past maxRefreshSec", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", 'if self.filter == "important" and not important then', 'if false then', "Notification", "the 'important' filter keeps only", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", 'if #pending >= self._config.maxPending then', 'if false then', "Notification", "keeps at most maxPending waiting", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", 'if item.priority > waiting.priority then', 'if false then', "Notification", "keeps at most maxPending waiting", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'if how == "shown" or how == "replaced" then', 'if how ~= "filtered" and how ~= "invalid" then', "Notification", "with a ×N badge", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'if last ~= nil and now - last < (spec.cooldownSec or 1) then', 'if false then', "Notification", "coalesces the same celebration", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'return if missing then nil else id', 'return id', "Notification", "never asks for the sound id", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'self:_announce(item, spec.silent == true)', 'self:_announce(item, false)', "Notification", "celebration toasts are important", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'if spec.sound ~= nil and not hasVisual then', 'if false then', "Notification", "games register celebrations", "fw"),
+ ("FL-0027", C+"NotificationController.luau", '				self.queue:setFilter(value)', '				local _ = value', "Notification", "applies the notifications setting live", "fw"),
+ ("FL-0027", C+"OnboardingController.luau", 'if wasActive and state.done and not state.skipped then', 'if state.done then', "OnboardingController", "celebrates when the last step completes", "fw"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
