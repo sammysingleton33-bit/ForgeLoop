@@ -6,7 +6,7 @@ NotificationController through `registry:find`, so each works without the others
 exactly how, so your controllers and my UI agree.
 
 ## Done (with commits)
-- Branch `forge/03-ui-economy-fl0059` (PR: FL-0059). Specs double your three controllers
+- Branch `forge/03-ui-economy-fl0059b` (PR #25). Specs double your three controllers
   (`games/game-001/tests/economy/KingdomUI.spec.luau`, top of the file).
 - **The UI kit moved** to `roblox/src/shared/UI/` → require it with
   `@game/ReplicatedStorage/Forge/UI/...` (the require policy forbids `@game/StarterPlayer/...`).

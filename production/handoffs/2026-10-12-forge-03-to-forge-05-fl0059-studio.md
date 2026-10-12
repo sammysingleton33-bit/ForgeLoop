@@ -7,7 +7,7 @@ Studio steps for the kingdom HUD and build menu (phone emulator and desktop) are
 remotes are merged; until then only U1 applies.
 
 ## Done (with commits)
-- Branch `forge/03-ui-economy-fl0059` (PR: FL-0059, stacked on #12 and #13).
+- Branch `forge/03-ui-economy-fl0059b` (PR #25, stacked on #24).
 
 ## Evidence
 - `bash roblox/scripts/check.sh` OVERALL PASS on the branch (see the PR for numbers).
