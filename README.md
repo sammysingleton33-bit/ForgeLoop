@@ -25,4 +25,4 @@ python tools/forge.py check                       # run every gate this machine 
 bash roblox/scripts/check.sh                      # Roblox gates
 ```
 
-Integrated build: branch `forge/integration` (see `docs/workflows/git-and-integration.md`).
+Integrated build: `main` (validated PRs only). Each worker has its own branch `forge/0N-<area>` and submits PRs — see `docs/workflows/git-and-integration.md`.

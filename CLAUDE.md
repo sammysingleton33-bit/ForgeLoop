@@ -1,8 +1,10 @@
 # CLAUDE.md — FORGELOOP-01
 
-Read `AGENTS.md` (this folder) first. Inside `forgeloop/`, it replaces the DLS rules at the repository root.
+@AGENTS.md
 
-- Identify yourself as your FORGE id (set `FORGE_AGENT=forge-0N` for `tools/forge.py`). Your role file: `agents/<id>/MISSION.md`.
+The shared rules above are imported from `AGENTS.md` (Claude Code reads CLAUDE.md, not AGENTS.md, so this import keeps one source of truth for Claude and Codex).
+
+- Identify yourself as your FORGE id (set `FORGE_AGENT=forge-0N` for `tools/forge.py`). Your role file: `agents/<id>/MISSION.md`. Your branch: `forge/0N-<area>` — never commit to `main`.
 - Short, action-focused reports: Done / Verified (commands + results) / Unverified / Blocked / Next.
 - Build thoroughly and iterate (build → test → inspect → criticise → improve), but no open-ended loops: after two failed attempts at the same problem, change approach or report the blocker.
 - Use subagents for independent work inside your own area. Never edit paths owned by another worker.

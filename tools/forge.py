@@ -26,7 +26,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent  # forgeloop/
+ROOT = Path(__file__).resolve().parent.parent  # repository root
 TASK_DIR = ROOT / "production" / "tasks"
 STATUS_FILE = ROOT / "PROJECT_STATUS.md"
 AUTO_START = "<!-- forge:auto:start -->"
@@ -452,7 +452,7 @@ def render_dashboard(tasks: list[Task], include_git: bool = True) -> str:
         out += ["_No accepted task has an actual time recorded yet._", ""]
     if include_git:
         log = _git("log", "-8", "--format=%h %ad %s", "--date=short", "--", ".")
-        out += ["### Recent commits touching forgeloop/", ""]
+        out += ["### Recent commits", ""]
         out += ["```", log.strip() or "(git log unavailable)", "```", ""]
     out.append(AUTO_END)
     return "\n".join(out)
@@ -502,7 +502,7 @@ def compile_prompt(task: Task, tasks: list[Task]) -> str:
         "## Your role",
         mission.read_text(encoding="utf-8").strip() if mission.exists() else f"Owner: {owner}.",
         "",
-        "## Shared rules (from forgeloop/AGENTS.md)",
+        "## Shared rules (from AGENTS.md)",
         (ROOT / "AGENTS.md").read_text(encoding="utf-8").strip() if (ROOT / "AGENTS.md").exists() else "(AGENTS.md missing)",
         "",
         "## The task",
@@ -530,9 +530,9 @@ def compile_prompt(task: Task, tasks: list[Task]) -> str:
     parts += [
         "",
         "## When you finish",
-        "1. Update the task file status with `python forgeloop/tools/forge.py set-status` (or edit the frontmatter by hand and append a Log line).",
-        "2. Write a handoff using the template below to `forgeloop/production/handoffs/`.",
-        "3. Commit on your own branch and open a PR into `forge/integration` (see docs/workflows/git-and-integration.md). Never claim checks you did not run.",
+        "1. Update the task file status with `python tools/forge.py set-status` (or edit the frontmatter by hand and append a Log line).",
+        "2. Write a handoff using the template below to `production/handoffs/`.",
+        "3. Commit on your own branch (worker branch `forge/0N-<area>` or `codex/<task-id>-<slug>`) and open a PR into `main` (see docs/workflows/git-and-integration.md). Never claim checks you did not run.",
     ]
     if handoff.exists():
         parts += ["", "```", handoff.read_text(encoding="utf-8").strip(), "```"]

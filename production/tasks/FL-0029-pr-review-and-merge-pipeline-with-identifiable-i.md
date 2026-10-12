@@ -16,7 +16,7 @@ evidence: []
 # PR review and merge pipeline with identifiable integration builds
 
 ## Outcome
-Worker PRs are reviewed, validated on the merge result and squash-merged into forge/integration; every integration commit yields a stamped .rbxl artifact.
+Worker PRs are reviewed, validated on the merge result and squash-merged into main; every integration commit yields a stamped .rbxl artifact.
 
 ## Requirements
 - Follow docs/workflows/git-and-integration.md

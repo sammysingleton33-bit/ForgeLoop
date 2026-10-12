@@ -1,4 +1,4 @@
-"""Tests for tools/forge.py. Run: python -m pytest -q forgeloop/tools/tests"""
+"""Tests for tools/forge.py. Run: python -m pytest -q tools/tests"""
 import importlib.util
 import sys
 from pathlib import Path

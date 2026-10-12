@@ -23,7 +23,7 @@ FORGE-05 takes custody of the skeleton (FL-0003), gets the forgeloop CI workflow
 - Mocks stay faithful to Roblox semantics (cite docs)
 
 ## Validation
-CI run link on forge/integration; check.sh green locally
+CI run link on main; check.sh green locally
 
 ## Completion criteria
 - [ ] CI green

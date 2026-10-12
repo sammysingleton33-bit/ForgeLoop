@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # FORGELOOP-01 cloud/Linux toolchain setup. Idempotent: skips tools already at the pinned version.
-#   bash forgeloop/tools/setup/cloud-setup.sh            # Roblox CLI tools + pytest
-#   bash forgeloop/tools/setup/cloud-setup.sh --blender  # also headless Blender (bpy wheel) + Mesa for Eevee
+#   bash tools/setup/cloud-setup.sh            # Roblox CLI tools + pytest
+#   bash tools/setup/cloud-setup.sh --blender  # also headless Blender (bpy wheel) + Mesa for Eevee
 # Background use (keeps working while it compiles, ~10 min first time):
-#   nohup bash forgeloop/tools/setup/cloud-setup.sh > /tmp/forge-setup.log 2>&1 &
+#   nohup bash tools/setup/cloud-setup.sh > /tmp/forge-setup.log 2>&1 &
 #   ...later: tail -3 /tmp/forge-setup.log   (ends with "FORGE SETUP DONE" or "FORGE SETUP FAILED")
-# Versions must match forgeloop/rokit.toml and DECISIONS.md D-005.
+# Versions must match rokit.toml and DECISIONS.md D-005.
 set -uo pipefail
 export PATH="$HOME/.cargo/bin:$PATH"
 want_blender=0

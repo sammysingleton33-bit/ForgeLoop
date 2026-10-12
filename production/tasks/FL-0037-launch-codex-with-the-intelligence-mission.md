@@ -22,7 +22,7 @@ Codex is connected to the repo and working its first tasks.
 - Follow agents/codex/LAUNCH.md
 
 ## Validation
-Codex opens its first PR into forge/integration
+Codex opens its first PR into main
 
 ## Completion criteria
 - [ ] FL-0041 round-trip test passes

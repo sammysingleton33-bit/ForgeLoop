@@ -4,7 +4,8 @@ _Manual sections are maintained by FORGE-00; the task tables below are generated
 
 ## Now
 - **Phase:** 0 — factory bootstrap. **Game #1:** not selected (shortlist in progress, FL-0005).
-- **Integrated build:** `forge/integration` — not created yet (waits for the green skeleton, FL-0003).
+- **Repository:** `sammysingleton33-bit/forgeloop` (private; history migrated from DLS, D-010).
+- **Integrated build:** `main` (PR-only). Worker branches `forge/01-gameplay` … `forge/05-integration` (D-011). Skeleton (FL-0003) still in review.
 - **Workers:** FORGE-01..05 prompts being finalised (FL-0006). Codex not launched (FL-0037).
 
 ## Verified so far (evidence)
@@ -24,7 +25,7 @@ _Manual sections are maintained by FORGE-00; the task tables below are generated
 
 ## Decisions needed from the user
 1. Game #1 selection — after the shortlist lands (FL-0035).
-2. Repository home: keep `DLS/forgeloop` or a dedicated repo (FL-0038) — no rush.
+2. Protect `main` with a GitHub branch rule (require PRs) — recommended; the cloud git proxy does not stop sessions pushing to any branch (research draft, being fact-checked).
 
 <!-- forge:auto:start -->
 

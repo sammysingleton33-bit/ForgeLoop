@@ -4,7 +4,7 @@ This folder is a Roblox game factory. The repository is the only shared memory: 
 
 ## Start of every session
 1. Read `PROJECT_STATUS.md`, `DECISIONS.md`, your role file `agents/<your-id>/MISSION.md`, and `docs/workflows/team.md` (who owns what).
-2. Sync with the integration branch: `git fetch origin forge/integration` and make sure your branch contains it (see `docs/workflows/git-and-integration.md`).
+2. Work on your own worker branch (`forge/0N-<area>`), never on `main`. Sync it: `git fetch origin main && git merge --no-edit origin/main` (see `docs/workflows/git-and-integration.md`).
 3. Pick work from `production/tasks/` assigned to you (`python tools/forge.py list --owner <your-id>`). Move it to `BUILDING` with a note before you start.
 
 ## While working
@@ -24,7 +24,7 @@ This folder is a Roblox game factory. The repository is the only shared memory: 
 1. Run `bash roblox/scripts/check.sh` (Roblox code) and/or `bash blender/scripts/check.sh` (assets) and `python tools/forge.py validate`.
 2. Update your task(s) with `python tools/forge.py set-status <ID> <STATUS> --note "..." --evidence "..."` (set `FORGE_AGENT=<your-id>`).
 3. Write a handoff (`production/handoffs/TEMPLATE.md`) when another worker must act on your output.
-4. Commit, push your branch, and open/update a PR into `forge/integration`. Update `agents/<your-id>/STATUS.md` (branch, PR, current task, blockers).
+4. Commit, push your worker branch, and open/update a PR into `main`. Update `agents/<your-id>/STATUS.md` (branch, PR, current task, blockers).
 5. Add a lesson to `docs/lessons-learned/<area>.md` only if verified and reusable; tag it `observed-once`, `repeated` or `standard`.
 
 ## Commands
@@ -32,6 +32,8 @@ This folder is a Roblox game factory. The repository is the only shared memory: 
 - Roblox: `bash roblox/scripts/check.sh` (Lune tests + Selene + StyLua + Rojo build + place-structure check)
 - Blender: `bash blender/scripts/check.sh` (once FORGE-02 lands it)
 - Tool tests: `python -m pytest -q tools/tests`
+
+Never run `tools/forge.py dashboard` on a worker branch (FORGE-00 regenerates `PROJECT_STATUS.md` after merges; worker copies would conflict).
 
 ## Approval gates (ask the user; never assume)
 Choosing a game, major creative or monetization changes, spending money, publishing anything publicly, changing Roblox/GitHub permissions, deleting or rewriting history on shared branches.
