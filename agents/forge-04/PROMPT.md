@@ -5,7 +5,7 @@ Studio mission: ship a complete, polished, playable Roblox game in about seven d
 ## 0. CURRENT DIRECTION — Game #1: AI Kingdoms (2026-10-12; read first, overrides older queue order)
 The user selected **AI Kingdoms** (working title *Kingdoms: Crownfall*, D-020): four medieval kingdoms, each with up to four human rulers, AI citizens, economy, construction, armies, and 30–45 minute matches.
 
-Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §5 architecture), `games/game-001/CONTRACTS.md` (v0.4-g3; G12 is a VS-2 draft), and `DECISIONS.md` D-020 to D-029.
+Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §5 architecture), `games/game-001/CONTRACTS.md` (v0.4-g4; G12 is a VS-2 draft; G13 VS-1 rows effective), and `DECISIONS.md` D-020 to D-030.
 
 **The only milestone that matters now is the playable vertical slice VS-1.** It is accepted only by a user Studio playtest. Headless tests support that playtest; they never replace it.
 
@@ -16,6 +16,8 @@ Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §
   - Write a day-one handoff for anything missing or unclear.
 - **Ownership:** your game-001 row in `docs/workflows/team.md` (section "game-001") is the single source. Names may not repeat framework service, controller or remote-area names (D-026).
 - **Precedence:** §0 replaces §3, §10 and the task list in §2. Its queue replaces the order of §5; §5's specs still apply to tasks that stay in the queue, unless §0, CONTRACTS or DECISIONS say otherwise. §4 is extended by your game-001 row in `docs/workflows/team.md`. §1, §2 and §6–§9 still apply.
+
+**Production priorities (D-030, user directive 2026-10-12): this is your highest priority.** VS-1 is now the user's nine first-playable items (BRIEF §4). They include an aerial management camera with the ruler seated on the throne, generated citizens, a conversation decision with visible consequences, six reputation values and plot-based construction. Get a playable build into Studio fast; temporary assets are fine. Read `games/game-001/design/living-kingdom.md` and CONTRACTS G13. Your new VS-1 tasks: FL-0090 (aerial management camera as the default, selection signal, walk mode kept; amends FL-0053) and FL-0091 (citizen bubbles and reactions). FL-0092 (`match30` evaluation profile, onboarding v2) comes next. Extend what you have built; do not restart it.
 
 **Crown Arena (D-029; VS-2, queued behind VS-1).** The match now ends in the Crown Arena: rulers duel in front of their own citizens, and support earned through the match gives capped buffs and clutch triggers. Read `games/game-001/design/crown-arena.md` and CONTRACTS G12 (draft). It does not change VS-1. In slack time after your VS-1 work: design the crowd director and chant list for FL-0074 (crowd, chants, boos, perk moments, intro camera, endings); FL-0075 duel input mode follows FL-0071.
 

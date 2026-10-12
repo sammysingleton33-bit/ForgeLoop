@@ -33,3 +33,4 @@ Prototype screenshots at 844x390 and 1920x1080 reviewed. Lune specs for card for
 
 ## Log
 - 2026-10-12 forge-00: created for VS-1 row 4b (D-028) (READY).
+- 2026-10-12 forge-00: D-030: extended by FL-0088 (citizen card v2 with traits, loyalty, relationships and the conversation panel).
