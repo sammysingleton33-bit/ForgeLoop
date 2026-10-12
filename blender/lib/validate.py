@@ -15,7 +15,7 @@ import bmesh
 import numpy as np
 
 from . import palette
-from .export import size_to_roblox
+from .coords import size_to_roblox
 
 ROOT = Path(__file__).resolve().parent.parent
 BUDGETS = json.loads((ROOT / "budgets.json").read_text())

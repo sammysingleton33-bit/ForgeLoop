@@ -8,6 +8,8 @@ Options:
   --no-render | --quick                   skip previews | low-res fast previews
   --no-export                             skip FBX files (validation still runs)
   --merge-only                            just merge manifest.d/ into manifest.json
+  --verify                                rebuild every committed fragment (no render/export/manifest
+                                          writes) and fail if any geometry hash or tri count differs
   --list                                  list generators
 Exit code 1 if any asset fails validation or the variation check.
 """
@@ -40,11 +42,13 @@ def parse_args(argv):
     g.add_argument("--all", action="store_true")
     g.add_argument("--merge-only", action="store_true")
     g.add_argument("--list", action="store_true")
+    g.add_argument("--verify", action="store_true")
     ap.add_argument("--variants", type=int)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--no-render", action="store_true")
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--no-export", action="store_true")
+    ap.add_argument("--no-manifest", action="store_true", help="do not write manifest.d / manifest.json")
     ap.add_argument("--samples", type=int)
     ap.add_argument("--out", default=str(HERE / "exports"))
     ap.add_argument("--renders", default=str(HERE / "renders"))
@@ -70,7 +74,7 @@ def asset_id_for(gen, i, params):
     return f"{gen.NAME}_{i + 1:02d}"
 
 
-def build_generator(name, args):
+def build_generator(name, args, expect=None):
     import bpy  # noqa: F401  (import here so --list / tests work without bpy)
 
     from lib import asset, contact, export, manifest, rig, validate
@@ -143,8 +147,19 @@ def build_generator(name, args):
               flush=True)
 
     variation = validate.variation_report(masks)
-    manifest.write_fragment(gen.NAME, entries, variation)
-    manifest.merge()
+    if expect is not None:  # --verify: compare with the committed fragment, write nothing
+        ok = all(r["pass"] for r in reports.values()) and variation["pass"]
+        got = {e["id"]: (e["geometry_hash"], e["triangles"]["lod0"]) for e in entries}
+        want = {e["id"]: (e["geometry_hash"], e["triangles"]["lod0"]) for e in expect["assets"]}
+        for aid in sorted(set(got) | set(want)):
+            if got.get(aid) != want.get(aid):
+                ok = False
+                print(f"[{name}] VERIFY MISMATCH {aid}: committed {want.get(aid)} rebuilt {got.get(aid)}", flush=True)
+        print(f"[{name}] verify {'PASS' if ok else 'FAIL'} ({len(got)} assets)", flush=True)
+        return ok
+    if not args.no_manifest:
+        manifest.write_fragment(gen.NAME, entries, variation, {"seed": args.seed, "variants": n})
+        manifest.merge()
     print(f"[{name}] variation: min silhouette diff {variation['min_pair_diff']} "
           f"(closest {variation['closest_pair']}) {'PASS' if variation['pass'] else 'FAIL'}", flush=True)
 
@@ -170,7 +185,8 @@ def render_previews(gen, objs, entries, rdir, sc, hero_px, samples, quick):
             o.hide_render = o is not ob
         mn, mx = rig.world_bounds([ob])
         h = mx.z - mn.z
-        px = rig.add_character_proxy(sc, mx.x + 1.5 + max(0.0, 0.04 * h), mn.y - 1.0, 0, 0.4)
+        # proxy to the right and slightly behind the asset's centre line so it never hides small assets
+        px = rig.add_character_proxy(sc, mx.x + 2.2 + max(0.0, 0.04 * h), mn.y + (mx.y - mn.y) * 0.65 + 0.8, 0, 0.4)
         hero = getattr(gen, "HERO_VIEW", {"azimuth": 35, "elevation": 20})
         rig.frame(sc, cam, [ob, px], hero["azimuth"], hero["elevation"])
         sc.render.resolution_x = sc.render.resolution_y = hero_px
@@ -221,6 +237,21 @@ def main(argv):
     if args.list:
         print("\n".join(list_generators()))
         return 0
+    if args.verify:
+        from lib import manifest
+
+        args.no_render = args.no_export = args.no_manifest = True
+        ok = True
+        for frag in manifest.fragments():
+            bp = frag.get("build") or {}
+            if frag["generator"] not in list_generators() or "variants" not in bp:
+                print(f"[{frag['generator']}] verify FAIL: generator missing or fragment has no build params")
+                ok = False
+                continue
+            args.seed, args.variants = bp["seed"], bp["variants"]
+            ok = build_generator(frag["generator"], args, expect=frag) and ok
+        print("VERIFY", "PASS" if ok else "FAIL")
+        return 0 if ok else 1
     if args.merge_only:
         from lib import manifest
 

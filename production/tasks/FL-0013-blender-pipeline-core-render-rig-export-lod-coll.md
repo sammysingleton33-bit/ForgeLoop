@@ -3,7 +3,7 @@ id: FL-0013
 title: "Blender pipeline core: render rig, export, LOD, collision, validation, manifest"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: factory
 created: 2026-10-12
@@ -40,3 +40,4 @@ check.sh rebuilds a small set and validates; render images opened and reviewed
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-02: READY → BUILDING. Pipeline core built on forge/02-blender (palette, geo, kit, rig, export, validate, manifest, check.sh, tests). Game #1 pivot to AI Kingdoms (user directive 2026-10-12): first medieval kit in production.

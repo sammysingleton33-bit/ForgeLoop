@@ -54,9 +54,9 @@ def review_for(generator, asset_id, geometry_hash):
     return out
 
 
-def write_fragment(generator, entries, variation):
+def write_fragment(generator, entries, variation, build=None):
     FRAG_DIR.mkdir(parents=True, exist_ok=True)
-    frag = {"generator": generator, "variation": variation,
+    frag = {"generator": generator, "variation": variation, "build": build or {},
             "assets": sorted(entries, key=lambda e: e["id"])}
     path = FRAG_DIR / f"{generator}.json"
     _atomic_write(path, _dump(frag))
@@ -93,6 +93,10 @@ def merge():
         raise ValueError("manifest schema errors:\n  " + "\n  ".join(errs[:30]))
     _atomic_write(MANIFEST, _dump(data))
     return data
+
+
+def fragments():
+    return [json.loads(p.read_text()) for p in sorted(FRAG_DIR.glob("*.json"))]
 
 
 def check(manifest_path=MANIFEST):

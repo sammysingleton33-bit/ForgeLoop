@@ -11,6 +11,8 @@ from pathlib import Path
 
 import bpy
 
+from .coords import blender_to_roblox, size_to_roblox  # noqa: F401  (re-exported for callers)
+
 
 def _select_only(objs):
     for o in bpy.context.scene.objects:
@@ -55,18 +57,3 @@ def export_gltf(obj, path):
                               export_yup=True, export_apply=True)
     return path
 
-
-def blender_to_roblox(v):
-    """Blender (x, y, z), Z-up -> file/Roblox (X, Y, Z), Y-up, for axis_forward='Z', axis_up='Y'.
-
-    bpy_extras.io_utils.axis_conversion(to_forward='Z', to_up='Y') is
-    [[-1,0,0],[0,0,1],[0,1,0]] (checked 2026-10-12, bpy 5.2.2), i.e. (x, y, z) -> (-x, z, y).
-    Our generators put the asset's front on Blender -Y, which becomes Roblox -Z: the
-    Model's LookVector side. In-Studio confirmation: roblox/studio-tests/assets.md (A3)."""
-    x, y, z = v
-    return (-x, z, y)
-
-
-def size_to_roblox(size):
-    sx, sy, sz = size
-    return (abs(sx), abs(sz), abs(sy))

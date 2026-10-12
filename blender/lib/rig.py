@@ -70,7 +70,7 @@ def setup_world(sc, sky_top=(0.30, 0.55, 0.92), sky_horizon=(0.80, 0.88, 0.96), 
     ramp = nt.nodes.new("ShaderNodeValToRGB")
     ramp.color_ramp.elements[0].position = 0.0
     ramp.color_ramp.elements[0].color = (*sky_horizon, 1)
-    ramp.color_ramp.elements[1].position = 0.45
+    ramp.color_ramp.elements[1].position = 0.28
     ramp.color_ramp.elements[1].color = (*sky_top, 1)
     nt.links.new(tc.outputs["Generated"], sep.inputs[0])
     nt.links.new(sep.outputs["Z"], ramp.inputs["Fac"])
