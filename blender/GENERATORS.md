@@ -113,3 +113,9 @@ Strategy change (one attempt, then report): build the birch crown with tree_oak'
 passed first time) using a tapering teardrop envelope with drooping tips. Clumps hang on short visible branch arms.
 Use one continuous trunk taper (06's seam), add a small dark root flare on every variant, use bold flush bark marks,
 and drop the hairline twigs. Not on the VS-1 path: forests use oak and pine, and the Kit has its own birch stand-in.
+
+## Parked: rock_cliff (NEEDS-WORK after 2 fresh-review rounds on silhouette, 2026-10-12)
+Both rounds read the cliffs as built walls or a layer cake (stacked horizontal slabs, block grids). The world does
+not need cliff meshes for VS-1/VS-2: WorldPlan already builds hills with terrain Rock/Slate crowns and scatters
+boulder clusters at their feet. Strategy change, if cliffs are needed later: build them as clusters of the passed
+rock_boulder masses (scaled, overlapped and tilted), with turf from the boulder moss helper, rather than as layered slabs.
