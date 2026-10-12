@@ -7,7 +7,7 @@ Contract, team, task tooling, toolchain, dedicated repo, research and shortlist,
 
 ## Phase 1 — Game #1: AI Kingdoms (D-020)
 - **VS-1 first playable** (target ≈24 h of productive work): enter the world, third-person ruler, belong to a kingdom, ≥12 AI citizens working, gather, build/upgrade, recruit + capture the Watchtower, guided first two minutes (`games/game-001/BRIEF.md` §4).
-- **VS-2:** four dressed kingdoms, AI governors, raids, walls/gates, a simple siege, match timer with phases, victory screen.
+- **VS-2:** four dressed kingdoms, AI governors, raids, walls/gates, a simple siege, match timer with phases, and the **Crown Arena** final duel with citizen support (D-029, `games/game-001/design/crown-arena.md`), then the victory screen and leadership recap.
 - **VS-3:** alliances/betrayal, trade, persistent progression, polish, mobile performance pass, release checklist → user approval → publish.
 
 ## Phase 2 — Live improvement and Game #2

@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g2, 2026-10-12)
+# game-001 contracts: AI Kingdoms (v0.4-g3, 2026-10-12; G12 is a VS-2 draft)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -90,7 +90,7 @@ KingdomService.membershipChanged: Signal<(player, KingdomId?)>
 
 - **Clarifications (FORGE-01 questions, 2026-10-12):**
   - The pre-match countdown runs in `Lobby`, which carries `endsAt` while it runs. `Founding` starts the simulation.
-  - **Victory is PROVISIONAL and the user's decision (BRIEF §16.4).** Default in config `Match.luau`: last keep standing ends the match early; otherwise most Crown Points at the end of Endgame wins; ties share the win. It must be config-driven and never described as decided.
+  - **Victory is PROVISIONAL and the user's decision (BRIEF §16.4).** Default in config `Match.luau`: last keep standing ends the match early; otherwise most Crown Points at the end of Endgame wins; ties share the win. It must be config-driven and never described as decided. **From VS-2 (D-029):** the match ends in the Crown Arena (G12); Crown Points decide who qualifies, and last keep standing becomes a coronation.
   - **Diplomacy/PvP is PROVISIONAL and the user's decision (BRIEF §16.2).** Default: war from Conflict onward; peace by mutual consent; no betrayal mechanics. It is behind a config flag and not needed for VS-1.
 
 ## G4. Entities and replication (FORGE-01; D-023 as amended by D-025, D-026)
@@ -343,7 +343,94 @@ Kit.setKingdomColor(model: Model, color: Color3)                     -- recolour
   - audio: `AudioController` with `Sounds.luau`.
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
 
+## G12. Crown Arena and support (DRAFT for VS-2; D-029; design: `design/crown-arena.md`)
+**Do not implement in VS-1.** Shapes are stable enough for stubs, prototypes and the fairness harness. FORGE-00 freezes G12 as v0.5 when VS-2 starts; changes before then are announced in a handoff.
+
+### G12.1 Types (`src/shared/Arena/Types.luau`, FORGE-01)
+```lua
+export type SupportTier = "adoring" | "loyal" | "divided" | "restless" | "hostile"
+export type SupportComponent = "reputation" | "happiness" | "stability" | "morale" | "loyalty" | "conduct" | "valour"
+export type KeyRole = "blacksmith" | "healer" | "captain" | "provisioner" | "elder" | "merchant"
+export type TriggerId = "reforge" | "fieldRemedy" | "calledWarning" | "heartyRations" | "rallyingHymn" | "fineWares" | "crowdRally"
+export type LeadershipMoment = { t: number, kingdom: KingdomId, userId: number?, act: string, component: SupportComponent,
+	delta: number, text: string }                                         -- text is pre-authored, never user input
+export type TriggerOffer = { trigger: TriggerId, citizenId: EntityId?, citizenName: string?, role: KeyRole?,
+	loyalty: number?, power: "pledged" | "empowered", condition: string, effect: string }   -- crowdRally has no citizen
+export type SupportView = { kingdom: KingdomId, userId: number, score: number, tier: SupportTier, trend: number,
+	breakdown: { [SupportComponent]: number }, moments: { LeadershipMoment }, offers: { TriggerOffer }, slots: number }
+export type Weapon = "swordShield" | "greatsword" | "spear" | "mace"
+export type Armour = "light" | "medium" | "heavy"
+export type Duellist = { userId: number, kingdom: KingdomId, isAI: boolean, tier: SupportTier, score: number,
+	weapon: Weapon?, armour: Armour?, triggers: { TriggerId }, reasons: { string } }   -- reasons: top 3 moment texts
+export type ArenaStage = "qualify" | "vote" | "loadout" | "intro" | "duel" | "crowning" | "done"
+export type ArenaState = { stage: ArenaStage, endsAt: number?, a: Duellist?, b: Duellist?, coronation: KingdomId?, winner: number? }
+export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "dodge"
+```
+- `MatchPhase` gains `"Arena"` between `Endgame` and `Results` at VS-2 (additive; `PacingService:phaseDurations` gains `Arena`).
+- `CitizenService:inspect` gains `loyalty: number`, `role: KeyRole?` and `petition: { id: string, text: string, need: ResourceBag?, expiresAt: number }?` (additive).
+
+### G12.2 Server APIs (FORGE-01)
+```lua
+-- pure, deterministic, no Roblox APIs, injected clock/RNG where needed; FORGE-05's harness requires them directly
+SupportModel.score(samples: { SupportSample }, ruler: RulerRecord, config): (number, SupportTier, { [SupportComponent]: number })
+SupportModel.offers(keyCitizens: { KeyCitizenRecord }, tier: SupportTier, config): ({ TriggerOffer }, slots: number)
+DuelModel.new(config, a: DuellistSetup, b: DuellistSetup, seed: number): DuelState
+DuelModel.step(state: DuelState, inputs: { a: DuelInput?, b: DuelInput? }, dt: number): { DuelEvent }
+	-- DuelInput = { action: DuelAction?, inRange: boolean, facing: boolean }; DuelService derives inRange/facing from real positions
+Caps.check(modifiers: { Modifier }): (boolean, string?)              -- src/shared/Arena/Caps.luau; G12.3 numbers
+-- services
+LeadershipService:record(kingdom: KingdomId, userId: number?, act: string, magnitude: number?)  -- act ids from config Support.luau
+LeadershipService:getMoments(kingdom: KingdomId, userId: number?, limit: number): { LeadershipMoment }
+SupportService:getView(kingdom: KingdomId, userId: number): SupportView
+ArenaService:getState(): ArenaState
+ArenaService.stageChanged: Signal<(ArenaState)>
+DuelService.events: Signal<(duelId: string, DuelEvent)>
+```
+- Producers of acts (BuildingService, ProductionService, MilitaryService, CitizenService, Interaction) call `LeadershipService:record` through `registry:find` and never compute support themselves.
+- Support is computed only by SupportModel. Every modifier DuelService applies passes `Caps.check` first; a refusal is logged and the modifier dropped.
+- Trigger conditions are evaluated by DuelService from DuelModel events (HP thresholds, stamina out, heavy wind-up, hype full). No random roll exists in the support chain.
+
+### G12.3 Fairness caps (contract; change only with a DECISIONS entry)
+| Cap | Value |
+|---|---|
+| Passive blessing per stat / combined | ≤ +5 % / ≤ +8 % |
+| Support triggers per duel (perks + Crowd Rally) | ≤ 3, each once |
+| Trigger duration / magnitude | ≤ 8 s / ≤ +10 % (damage reduction, damage, stamina regeneration) |
+| Total support bonus on one stat at any moment | ≤ +15 % |
+| Support healing per duel | ≤ 10 % of max HP (single trigger ≤ 8 %) |
+| Quiet start | no trigger in the first 10 s |
+| Same-stat active triggers | do not stack; the stronger applies |
+| Effects on the opponent | none (no stun, root, disarm, damage or reveal) |
+| Weak support | never below baseline stats |
+| Outcome bounds (fairness harness, PROVISIONAL, BRIEF §16.9d) | equal skill Adoring vs Hostile wins 55–65 %; one skill tier better with Hostile beats Adoring ≥ 60 %; no setup > 70 % vs equal-skill baseline |
+
+### G12.4 Client remotes (area `Arena` → FORGE-01; additions to `Kingdom` and `Sim`)
+| Remote | Kind | Args → result, or payload |
+|---|---|---|
+| `Arena.State` / `Arena.GetState` | serverEvent / function | `ArenaState` (public to every player) |
+| `Arena.Vote` | function | `(candidateUserId: integer)` → `boolean`; co-rulers of a qualified kingdom, `vote` stage only |
+| `Arena.Choose` | function | `(weapon: enum Weapon, armour: enum Armour, triggers: array(enum TriggerId, 3))` → `(ok, reason?)`; champion only, `loadout` stage, triggers ⊆ own offers and ≤ slots |
+| `Arena.Action` | event | `(action: enum DuelAction)`; champion only, `duel` stage; burst 8, 12/s |
+| `Arena.Events` | serverEvent | batched `{ { t: number, kind: string, side: "a" \| "b", data: { [string]: any }? } }` (hit, parry, stagger, staminaOut, heavyWindup, triggerFired, hype, ended) |
+| `Kingdom.Support` / `Kingdom.GetSupport` | serverEvent to the ruler / function | the caller's `SupportView` (in-match meter, perk previews) |
+| `Kingdom.FulfilPetition` | function | `(petitionId: string(1,32))` → `(ok, reason?)`; spends the petition's `need` through TreasuryService |
+
+### G12.5 Events (appended to the GameEvents bus by FORGE-05 when VS-2 starts, as D-024)
+| Event | Producer | Payload |
+|---|---|---|
+| `LeadershipAct` | FORGE-01 | (KingdomId, userId?, act, component, delta) |
+| `KeyCitizenChanged` | FORGE-01 | (KingdomId, KeyRole, entityId?, loyalty) |
+| `ArenaStarted` | FORGE-01 | (ArenaState) |
+| `SupportTriggered` | FORGE-01 | (duelId, userId, TriggerId, citizenId?) |
+| `DuelEnded` | FORGE-01 | (duelId, winnerUserId, loserUserId, { durationSec, triggersFired, hpLeft }) |
+
+### G12.6 Client and asset hooks
+- FORGE-01 `src/client/Controllers/DuelController.luau`: `act(action: DuelAction)`, `getState(): ArenaState`, `events: Signal<(ArenaEvent)>`. It is the only sender of `Arena.Action`. FORGE-04's InputMode binds keys, touch and gamepad to `act`; FORGE-03's arena HUD and FORGE-04's crowd director read `events`.
+- FORGE-02 Kit additions: `Kit.arena(): Model` (two stands with `StandA`/`StandB` seat attachments, royal boxes, gate, duel ring), `Kit.crowdFigure(kingdomColor, role: KeyRole?): Model` (≤ 4 parts, client-only), `Kit.armour(armour: Armour, kingdomColor): { Accessory }`, `Kit.weapon(weapon: Weapon): Tool`. Layout gains `arena = { cframe: CFrame, duelRadius: number, spawnA: CFrame, spawnB: CFrame }` at the neutral map centre, visible during the whole match.
+- Crowd figures and reactions are client-only (FORGE-04). The server sends no per-figure data; the crowd is derived from `ArenaState`, `Arena.Events` and kingdom population.
+
 ## Changelog
+- v0.4-g3 (2026-10-12) FORGE-00: G12 Crown Arena and support added as a **draft for VS-2** (D-029). Nothing in G1–G11 changes for VS-1. G3's PROVISIONAL victory default is superseded at VS-2 by the Crown Arena (G12, BRIEF §18).
 - v0.4-g2 (2026-10-12) FORGE-00: FORGE-01 clarifications added to G3, G5 and G7 (countdown, job semantics, no VS-1 treasury cap, PROVISIONAL victory/diplomacy defaults); game remote areas `Treasury` and `Feedback`.
 - v0.4-g2 (2026-10-12) FORGE-00, review fixes (D-024 to D-028):
   - Breaking changes:

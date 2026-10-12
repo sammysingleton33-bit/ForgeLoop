@@ -4,7 +4,8 @@
 	Waits for the initial replication (require-by-string does not wait for instances), builds the
 	live Env, logs the build stamp and the game id, then loads every controller definition in
 	StarterPlayerScripts.Forge.Controllers and, in game projects (D-022), StarterPlayerScripts.Game.Controllers
-	— one dependency graph across both trees (Contracts/Loader, interfaces §3).
+	— one dependency graph across both trees (Contracts/Loader, interfaces §3). In Studio only, it
+	then opens the debug panel (Debug/DebugPanel, FL-0068; F8).
 	Add a controller by adding a module to a Controllers folder — never edit this file for it.
 ]]
 
@@ -13,6 +14,7 @@ if not game:IsLoaded() then
 end
 
 local BuildStamp = require("@game/ReplicatedStorage/Forge/Contracts/BuildStamp")
+local DebugPanel = require("@game/ReplicatedStorage/Forge/Debug/DebugPanel")
 local Env = require("@game/ReplicatedStorage/Forge/Contracts/Env")
 local GameConfig = require("@game/ReplicatedStorage/Forge/Config/Game")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
@@ -40,3 +42,4 @@ env.log("info", "ForgeLoop client controllers started", {
 	order = if #registry.order > 0 then table.concat(registry.order, " > ") else "(none)",
 	trees = table.concat(trees, ","),
 })
+DebugPanel.start(env)
