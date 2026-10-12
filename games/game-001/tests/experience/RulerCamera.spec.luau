@@ -1,0 +1,407 @@
+local T = require("../../../../roblox/tests/harness/Test")
+local describe, it, expect, beforeEach = T.describe, T.it, T.expect, T.beforeEach
+
+local roblox = require("@lune/roblox")
+local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
+local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local D = require("./RulerDoubles")
+local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
+
+local C = CameraDef.DEFAULTS
+local O = C.overview
+local DT = 1 / 60
+
+local function near(a: Vector3, b: Vector3, eps: number?): boolean
+	return (a - b).Magnitude <= (eps or 1e-3)
+end
+
+describe("RulerCameraController pure rules (FL-0053, FL-0090)", function()
+	it("aerialCFrame() sits zoom studs from the focus, looking at it, at the zoom's pitch", function()
+		local focus = Vector3.new(100, 0, -40)
+		for _, zoom in { O.minZoom, O.startZoom, O.maxZoom } do
+			local cf = CameraDef.aerialCFrame(focus, 0, zoom, O)
+			expect(math.abs((cf.Position - focus).Magnitude - zoom) < 1e-3).toBe(true)
+			expect(near(cf.LookVector, (focus - cf.Position).Unit)).toBe(true)
+			local pitch = math.deg(math.asin(-cf.LookVector.Y))
+			expect(math.abs(pitch - CameraDef.pitchFor(zoom, O)) < 1e-3).toBe(true)
+		end
+		expect(CameraDef.pitchFor(O.minZoom, O)).toBe(O.minPitchDeg) -- flatter close up
+		expect(CameraDef.pitchFor(O.maxZoom, O)).toBe(O.maxPitchDeg) -- steeper far out
+		expect(CameraDef.aerialCFrame(focus, 0, 100, O).LookVector.Z < 0).toBe(true) -- yaw 0 looks toward -Z
+		expect(CameraDef.aerialCFrame(focus, math.pi / 2, 100, O).LookVector.X < -0.3).toBe(true)
+	end)
+
+	it("boundsFromLayout() boxes every region polygon and plot spawn of the real Layout", function()
+		local bounds = CameraDef.boundsFromLayout(Layout)
+		assert(bounds, "the Layout has regions")
+		for _, region in Layout.regions do
+			for _, point in region.polygon do
+				expect(point.X >= bounds.min.X and point.X <= bounds.max.X).toBe(true)
+				expect(point.Y >= bounds.min.Y and point.Y <= bounds.max.Y).toBe(true)
+			end
+		end
+		for _, plot in Layout.plots do
+			local p = plot.spawn.Position
+			expect(p.X >= bounds.min.X and p.X <= bounds.max.X and p.Z >= bounds.min.Y and p.Z <= bounds.max.Y).toBe(
+				true
+			)
+		end
+		expect(CameraDef.boundsFromLayout({})).toBeNil()
+		expect(CameraDef.boundsFromLayout(nil)).toBeNil()
+	end)
+
+	it("clampFocus() keeps the focus within bounds + margin and keeps its height", function()
+		local bounds = { min = Vector2.new(-100, -50), max = Vector2.new(100, 50) }
+		expect(CameraDef.clampFocus(Vector3.new(500, 7, -500), bounds, 10)).toBe(Vector3.new(110, 7, -60))
+		expect(CameraDef.clampFocus(Vector3.new(1, 2, 3), bounds, 10)).toBe(Vector3.new(1, 2, 3))
+	end)
+
+	it("panVector() maps screen right/forward onto the ground at any yaw; worldPerPixel scales with zoom", function()
+		expect(near(CameraDef.panVector(Vector2.new(0, 1), 0), Vector3.new(0, 0, -1))).toBe(true)
+		expect(near(CameraDef.panVector(Vector2.new(1, 0), 0), Vector3.new(1, 0, 0))).toBe(true)
+		local look = CameraDef.aerialCFrame(Vector3.zero, math.pi / 2, 100, O).LookVector
+		expect(near(CameraDef.panVector(Vector2.new(0, 1), math.pi / 2), Vector3.new(look.X, 0, look.Z).Unit)).toBe(
+			true
+		)
+		local close = CameraDef.worldPerPixel(40, 70, 720)
+		local far = CameraDef.worldPerPixel(200, 70, 720)
+		expect(math.abs(far / close - 5) < 1e-6).toBe(true)
+	end)
+
+	it("smooth() is frame-rate independent; shakeAmplitude() eases out and clamps", function()
+		local target = Vector3.new(10, 0, 0)
+		local once = CameraDef.smooth(Vector3.zero, target, 6, 0.1)
+		local twice = CameraDef.smooth(CameraDef.smooth(Vector3.zero, target, 6, 0.05), target, 6, 0.05)
+		expect(near(once, twice, 1e-6)).toBe(true)
+		local n1 = CameraDef.smooth(0, 10, 6, 0.1)
+		local n2 = CameraDef.smooth(CameraDef.smooth(0, 10, 6, 0.05), 10, 6, 0.05)
+		expect(math.abs(n1 - n2) < 1e-9).toBe(true)
+		expect(CameraDef.shakeAmplitude(0.5, 0.4, 0, 2)).toBe(1)
+		expect(CameraDef.shakeAmplitude(0.5, 0.4, 0.2, 2)).toBe(0.25)
+		expect(CameraDef.shakeAmplitude(0.5, 0.4, 0.4, 2)).toBe(0)
+		expect(CameraDef.shakeAmplitude(5, 1, 0, 2)).toBe(2)
+	end)
+end)
+
+describe("RulerCameraController overview, walk mode, build mode and shake (FL-0053, FL-0090)", function()
+	local env, actions, userInput, player, camera, gui, registry, controller, input, humanoid, vfx
+	local THRONE = Vector3.new(120, 3, -40)
+
+	local function boot(extra, config, layout)
+		registry = D.boot(env, {
+			input = { actions = actions },
+			ruler = { actions = actions, player = player },
+			camera = {
+				actions = actions,
+				userInput = userInput,
+				guiService = gui,
+				camera = camera,
+				player = player,
+				config = config,
+				layout = layout,
+				viewportHeight = 720,
+			},
+			extra = extra,
+		})
+		controller = registry:get("RulerCameraController")
+		input = registry:get("InputModeController")
+	end
+
+	local function frames(n)
+		for _ = 1, n do
+			controller:update(DT)
+		end
+	end
+
+	local function settle()
+		frames(math.ceil(C.transitionSec / DT) + 240)
+	end
+
+	local function key(name, code, state)
+		return actions:press(name, state or Enum.UserInputState.Begin, { KeyCode = code })
+	end
+
+	local function mouse(event, kind, x, y)
+		userInput[event]:Fire({ UserInputType = kind, Position = Vector3.new(x, y, 0) }, false)
+	end
+
+	beforeEach(function()
+		env = MockEnv.new({ seed = 58, isServer = false, localPlayer = { userId = 5801 } })
+		actions = D.actions()
+		userInput = D.userInput()
+		player = D.player()
+		gui = { TouchControlsEnabled = true }
+		camera = roblox.Instance.new("Camera")
+		camera.CFrame = CFrame.lookAt(Vector3.new(0, 12, 20), Vector3.new(0, 3, 0))
+		local character, h = D.character(THRONE)
+		humanoid = h
+		player.Character = character
+		vfx = {
+			name = "VFXController",
+			dependencies = {},
+			new = function()
+				return { shakeRequested = Signal.new() }
+			end,
+		}
+	end)
+
+	it("starts in the overview over the throne; move and jump keys are sunk and the thumbstick hidden", function()
+		boot()
+		expect(controller.mode).toBe("overview")
+		expect(camera.CameraType).toBe(Enum.CameraType.Scriptable)
+		expect(controller:getFocus()).toBe(THRONE)
+		expect(gui.TouchControlsEnabled).toBe(false)
+		local pan = actions.bound[CameraDef.PAN_ACTION]
+		local seat = actions.bound[CameraDef.SEAT_ACTION]
+		assert(pan and seat, "pan and seat actions bound")
+		expect(pan.priority).toBe(Enum.ContextActionPriority.High.Value)
+		expect(#pan.keys).toBe(8)
+		expect(seat.keys).toEqual({ Enum.KeyCode.Space, Enum.KeyCode.ButtonA })
+		expect(key(CameraDef.PAN_ACTION, Enum.KeyCode.W)).toBe(Enum.ContextActionResult.Sink)
+		key(CameraDef.PAN_ACTION, Enum.KeyCode.W, Enum.UserInputState.End)
+		expect(key(CameraDef.SEAT_ACTION, Enum.KeyCode.Space)).toBe(Enum.ContextActionResult.Sink)
+		settle()
+		local goal = CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, O.startZoom, O)
+		expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+	end)
+
+	it("WASD pans relative to the view at a speed that scales with the zoom", function()
+		boot()
+		settle()
+		local start = controller:getFocus() :: Vector3
+		key(CameraDef.PAN_ACTION, Enum.KeyCode.D)
+		frames(60) -- one second
+		key(CameraDef.PAN_ACTION, Enum.KeyCode.D, Enum.UserInputState.End)
+		local moved = (controller:getFocus() :: Vector3) - start
+		local right = CameraDef.panVector(Vector2.new(1, 0), controller._target.yaw)
+		expect(math.abs(moved.Magnitude - O.panSpeed * O.startZoom) < 1).toBe(true)
+		expect(near(moved.Unit, right, 1e-3)).toBe(true)
+		local still = controller:getFocus()
+		frames(30)
+		expect(controller:getFocus()).toBe(still) -- released: no drift
+	end)
+
+	it("the focus never leaves the map bounds + margin", function()
+		local layout = { regions = { home = { polygon = { Vector2.new(0, 0), Vector2.new(200, 100) } } } }
+		boot(nil, nil, layout)
+		controller:focusOn(Vector3.new(0, 0, 0))
+		expect(controller:getFocus()).toBe(Vector3.new(0, 0, 0))
+		controller:focusOn(Vector3.new(9999, 0, -9999))
+		expect(controller:getFocus()).toBe(Vector3.new(200 + O.boundsMargin, 0, -O.boundsMargin))
+		for _ = 1, 50 do
+			controller:panBy(Vector2.new(0, 500))
+		end
+		local focus = controller:getFocus() :: Vector3
+		expect(focus.X >= -O.boundsMargin and focus.X <= 200 + O.boundsMargin).toBe(true)
+		expect(focus.Z >= -O.boundsMargin and focus.Z <= 100 + O.boundsMargin).toBe(true)
+	end)
+
+	it("zoom stays within 40-220 studs (wheel, pinch, zoomBy)", function()
+		boot()
+		controller:zoomBy(-100)
+		expect(controller._target.zoom).toBe(O.minZoom)
+		userInput.InputChanged:Fire(
+			{ UserInputType = Enum.UserInputType.MouseWheel, Position = Vector3.new(0, 0, -1) },
+			false
+		)
+		expect(controller._target.zoom).toBe(O.minZoom + O.zoomStep)
+		local function pinch(scale, state)
+			userInput.TouchPinch:Fire({}, scale, 0, state, false)
+		end
+		pinch(1, Enum.UserInputState.Begin)
+		pinch(0.5, Enum.UserInputState.Change) -- pinch in: further out, by the change since the last event
+		pinch(0.25, Enum.UserInputState.Change)
+		expect(controller._target.zoom).toBe(O.minZoom + O.zoomStep + 2 * 2.5 * O.zoomStep)
+		controller:zoomBy(100)
+		expect(controller._target.zoom).toBe(O.maxZoom)
+	end)
+
+	it("left-drag pans the ground with the pointer only after tapPixels; right-drag rotates", function()
+		boot()
+		local start = controller:getFocus() :: Vector3
+		mouse("InputBegan", Enum.UserInputType.MouseButton1, 400, 300)
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 405, 300)
+		expect(controller:getFocus()).toBe(start) -- 5 px: still a tap
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 500, 300)
+		local studs = 100 * CameraDef.worldPerPixel(O.startZoom, C.fieldOfView, 720)
+		local moved = (controller:getFocus() :: Vector3) - start
+		expect(math.abs(moved.Magnitude - studs) < 1e-3).toBe(true)
+		-- the ground follows the pointer: dragging right moves the view left
+		expect(near(moved.Unit, -CameraDef.panVector(Vector2.new(1, 0), controller._target.yaw), 1e-3)).toBe(true)
+		mouse("InputEnded", Enum.UserInputType.MouseButton1, 500, 300)
+		local yaw = controller._target.yaw
+		mouse("InputBegan", Enum.UserInputType.MouseButton2, 400, 300)
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 500, 300)
+		expect(math.abs(math.deg(controller._target.yaw - yaw) - 100 * O.dragRotate) < 1e-6).toBe(true)
+	end)
+
+	it("one-finger drag pans, a two-finger twist rotates; two-finger moves never pan", function()
+		boot()
+		local start = controller:getFocus() :: Vector3
+		local one, two = { Vector2.new(1, 1) }, { Vector2.new(1, 1), Vector2.new(9, 9) }
+		userInput.TouchPan:Fire(one, Vector2.zero, Vector2.zero, Enum.UserInputState.Begin, false)
+		userInput.TouchPan:Fire(one, Vector2.new(0, 50), Vector2.zero, Enum.UserInputState.Change, false)
+		local panned = controller:getFocus() :: Vector3
+		expect((panned - start).Magnitude > 1).toBe(true)
+		userInput.TouchPan:Fire(two, Vector2.new(0, 120), Vector2.zero, Enum.UserInputState.Change, false)
+		expect(controller:getFocus()).toBe(panned)
+		local yaw = controller._target.yaw
+		userInput.TouchRotate:Fire(two, 0, 0, Enum.UserInputState.Begin, false)
+		userInput.TouchRotate:Fire(two, 30, 0, Enum.UserInputState.Change, false)
+		userInput.TouchRotate:Fire(two, 45, 0, Enum.UserInputState.Change, false)
+		expect(math.abs(math.deg(controller._target.yaw - yaw) + 45) < 1e-6).toBe(true)
+	end)
+
+	it("Q / E rotate in the overview, but are left to FORGE-03's placement in build mode", function()
+		boot()
+		assert(actions.bound[CameraDef.ROTATE_ACTION], "rotate bound in explore")
+		key(CameraDef.ROTATE_ACTION, Enum.KeyCode.E)
+		local yaw = controller._target.yaw
+		frames(60)
+		expect(math.abs(math.deg(controller._target.yaw - yaw) - O.rotateSpeed) < 1e-3).toBe(true)
+		key(CameraDef.ROTATE_ACTION, Enum.KeyCode.E, Enum.UserInputState.End)
+		input:set("build")
+		expect(actions.bound[CameraDef.ROTATE_ACTION]).toBeNil()
+		input:set("explore")
+		expect(actions.bound[CameraDef.ROTATE_ACTION] ~= nil).toBe(true)
+	end)
+
+	it("asks the server to stream around the focus, throttled by distance and time", function()
+		local requests = {}
+		function player.RequestStreamAroundAsync(_, position)
+			table.insert(requests, position)
+		end
+		boot()
+		frames(1)
+		expect(#requests).toBe(1)
+		controller:panBy(Vector2.new(O.streamMoveStuds / 2, 0))
+		frames(90)
+		expect(#requests).toBe(1) -- not far enough
+		controller:panBy(Vector2.new(O.streamMoveStuds, 0))
+		frames(1)
+		expect(#requests).toBe(1) -- far enough, but too soon (the virtual clock has not moved)
+		env.mock:advance(O.streamEverySec)
+		frames(1)
+		expect(#requests).toBe(2)
+	end)
+
+	it("follow (walk mode) stands the ruler up, shows the thumbstick and tunes Roblox's camera", function()
+		boot()
+		local stood = 0
+		local ruler = registry:get("RulerController")
+		local original = ruler.standUp
+		ruler.standUp = function(self)
+			stood += 1
+			return original(self)
+		end
+		expect(controller:setMode("follow")).toBe(true)
+		expect(stood).toBe(1)
+		expect(camera.CameraType).toBe(Enum.CameraType.Custom)
+		expect(camera.CameraSubject).toBe(humanoid)
+		expect(gui.TouchControlsEnabled).toBe(true)
+		expect(actions.bound[CameraDef.PAN_ACTION]).toBeNil()
+		expect(actions.bound[CameraDef.SEAT_ACTION]).toBeNil()
+		expect(player.CameraMinZoomDistance).toBe(C.follow.minZoom)
+		expect(player.CameraMaxZoomDistance).toBe(C.follow.maxZoom)
+		expect(C.follow.minZoom >= 8).toBe(true) -- never first person (smooth turning needs it)
+		expect(humanoid.CameraOffset).toBe(C.follow.shoulder)
+		expect(controller:setMode("cinematic")).toBe(false)
+		expect(env.mock:hasLog("warn", "unknown camera mode 'cinematic'")).toBe(true)
+	end)
+
+	it("returning to the overview blends from the walk view over transitionSec (no snap)", function()
+		boot()
+		controller:setMode("follow")
+		local walkView = CFrame.lookAt(THRONE + Vector3.new(0, 8, 20), THRONE)
+		camera.CFrame = walkView
+		controller:setMode("overview")
+		frames(1)
+		expect(near(camera.CFrame.Position, walkView.Position, 5)).toBe(true) -- the first frame stays close
+		frames(math.ceil(C.transitionSec / DT) + 240)
+		local goal =
+			CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, controller._target.zoom, O)
+		expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+	end)
+
+	it("V / gamepad Y / the touch View button toggles overview and walk mode", function()
+		boot()
+		local bound = actions.bound[CameraDef.ACTION]
+		assert(bound, "view action bound")
+		expect(bound.keys).toEqual({ Enum.KeyCode.V, Enum.KeyCode.ButtonY })
+		expect(bound.touch).toBe(true)
+		expect(actions.titles[CameraDef.ACTION]).toBe("View")
+		actions:press(CameraDef.ACTION, Enum.UserInputState.Begin)
+		expect(controller.mode).toBe("follow")
+		actions:press(CameraDef.ACTION, Enum.UserInputState.End)
+		expect(controller.mode).toBe("follow")
+		actions:press(CameraDef.ACTION, Enum.UserInputState.Begin)
+		expect(controller.mode).toBe("overview")
+	end)
+
+	it("build mode uses the overview and restores walk mode afterwards, unless the player chose a view", function()
+		boot()
+		controller:setMode("follow")
+		input:set("build")
+		expect(controller.mode).toBe("overview")
+		input:set("explore")
+		expect(controller.mode).toBe("follow")
+		input:set("build")
+		controller:setMode("follow")
+		controller:setMode("overview")
+		input:set("explore")
+		expect(controller.mode).toBe("overview")
+	end)
+
+	it("VFXController shake requests rotate the camera and fade out after their duration", function()
+		boot({ vfx })
+		controller:setMode("follow") -- Roblox's camera owns the CFrame; shake is added on top
+		local shakes = registry:get("VFXController").shakeRequested
+		local still = camera.CFrame
+		shakes:fire(0.4, 0.3)
+		controller:update(0.05)
+		expect(near(camera.CFrame.LookVector, still.LookVector, 1e-6)).toBe(false)
+		local angle = math.deg(math.acos(math.clamp(camera.CFrame.LookVector:Dot(still.LookVector), -1, 1)))
+		expect(angle <= 2 * C.shake.maxDegrees * 0.4 + 1e-3).toBe(true)
+		camera.CFrame = still
+		controller:update(0.3)
+		camera.CFrame = still
+		controller:update(DT)
+		expect(near(camera.CFrame.LookVector, still.LookVector, 1e-9)).toBe(true)
+	end)
+
+	it("never shakes when camera shake is off or reduced motion is on (incl. the platform setting)", function()
+		for _, values in { { cameraShake = false }, { reducedMotion = true }, { platformReduced = true } } do
+			env = MockEnv.new({ seed = 59, isServer = false, localPlayer = { userId = 5802 } })
+			boot({ vfx, D.settings(values) })
+			controller:setMode("follow")
+			local still = camera.CFrame
+			expect(controller:shake(1, 1)).toBe(false)
+			registry:get("VFXController").shakeRequested:fire(1, 1)
+			controller:update(0.05)
+			expect(near(camera.CFrame.LookVector, still.LookVector, 1e-9)).toBe(true)
+		end
+	end)
+
+	it("caps the duration and the number of shakes that add up", function()
+		boot()
+		for _ = 1, 10 do
+			controller:shake(1, 30)
+		end
+		expect(#controller._shakes).toBe(C.shake.maxActive)
+		expect(controller._shakes[1].duration).toBe(C.shake.maxDuration)
+		expect(controller:shake(0, 1)).toBe(false)
+		expect(controller:shake("big", 1)).toBe(false)
+	end)
+
+	it("boots with no camera, input services or character (headless) and does nothing", function()
+		local bare = MockEnv.new({ seed = 60, isServer = false, localPlayer = { userId = 5803 } })
+		local reg = D.boot(bare, {})
+		local cam = reg:get("RulerCameraController")
+		expect(cam.mode).toBe("overview")
+		expect(cam:setMode("follow")).toBe(true)
+		cam:update(DT)
+		expect(bare.mock:hasLog("info", "RulerCameraController: input services unavailable")).toBe(true)
+		expect(bare.mock.threadErrors).toEqual({})
+	end)
+end)
