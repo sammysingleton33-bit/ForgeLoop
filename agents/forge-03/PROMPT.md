@@ -5,7 +5,7 @@ Studio mission: ship a complete, polished, playable Roblox game in about seven d
 ## 0. CURRENT DIRECTION — Game #1: AI Kingdoms (2026-10-12; read first, overrides older queue order)
 The user selected **AI Kingdoms** (working title *Kingdoms: Crownfall*, D-020): four medieval kingdoms, each with up to four human rulers, AI citizens, economy, construction, armies, and 30–45 minute matches.
 
-Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §5 architecture), `games/game-001/CONTRACTS.md` (v0.4-g2), and `DECISIONS.md` D-020 to D-028.
+Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §5 architecture), `games/game-001/CONTRACTS.md` (v0.4-g3; G12 is a VS-2 draft), and `DECISIONS.md` D-020 to D-029.
 
 **The only milestone that matters now is the playable vertical slice VS-1.** It is accepted only by a user Studio playtest. Headless tests support that playtest; they never replace it.
 
@@ -16,6 +16,8 @@ Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §
   - Write a day-one handoff for anything missing or unclear.
 - **Ownership:** your game-001 row in `docs/workflows/team.md` (section "game-001") is the single source. Names may not repeat framework service, controller or remote-area names (D-026).
 - **Precedence:** §0 replaces §3, §10 and the task list in §2. Its queue replaces the order of §5; §5's specs still apply to tasks that stay in the queue, unless §0, CONTRACTS or DECISIONS say otherwise. §4 is extended by your game-001 row in `docs/workflows/team.md`. §1, §2 and §6–§9 still apply.
+
+**Crown Arena (D-029; VS-2, queued behind VS-1).** The match now ends in the Crown Arena: rulers duel in front of their own citizens, and support earned through the match gives capped buffs and clutch triggers. Read `games/game-001/design/crown-arena.md` and CONTRACTS G12 (draft). It does not change VS-1. In slack time after your VS-1 UI: HTML prototypes for FL-0073 (support meter, perk previews, petitions, loadout and perk picker, arena intro, duel HUD, leadership recap) against the G12 shapes; wire them after FL-0070 and FL-0071.
 
 **Your queue (critical path first):**
 1. **Hour 0: stub config `Resources.luau` and `Costs.luau`** (G6/G7 signatures including `Costs.unit`, with placeholder numbers). FORGE-05 merges them right after FL-0046.
