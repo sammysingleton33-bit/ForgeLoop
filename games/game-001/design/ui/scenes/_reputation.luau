@@ -5,10 +5,10 @@
 	FORGE-01 ReputationService double (tests/economy/doubles/ReputationDoubles), sized to the
 	device's CoreUISafeInsets area. Same starting state as the FL-0059 scenes (_world.luau).
 
-		return scene(ctx, { profile = "balanced" | "fear" | "empty", content = true? }, function(world, hud, rep, build) ... end)
+		return scene(ctx, { profile = "balanced" | "fear" | "empty", content = false? }, function(world, hud, rep, build) ... end)
 
-	`content = true` injects the SAMPLE category texts (a stand-in for Content/Reputation, FL-0083);
-	the screenshots then show "SAMPLE:" in front of every such text.
+	Category prose comes from FORGE-00's content library (Content/Reputation, FL-0083) by default;
+	`content = false` shows the fallback with no provider (no prose).
 ]]
 local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/BuildMenuController")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -74,8 +74,8 @@ return function(ctx, opts, act)
 	local houseId = world.build:add("crimson", "house", 1, "constructing", Vector3.new(-60, 0, 60))
 	world.build:progress(houseId, 0.45)
 	world:advance(0.1)
-	if opts.content then
-		rep:setCategoryText(Rep.provider)
+	if opts.content == false then
+		rep:setCategoryText(nil)
 	end
 	if act then
 		act(world, hud, rep, build, world.server:get("ReputationService"))

@@ -217,7 +217,7 @@ function BuildMenu:_frame(view: any, metrics: any, ui: { [string]: any })
 end
 
 function BuildMenu:_list(view: any, phone: boolean)
-	local key = listKey(view.rows, phone)
+	local key = listKey(view.rows, phone) .. (view.empty or "")
 	if self.list == nil or key ~= self._listKey then
 		if self.list then
 			self._scroll[self._category] = self.list.CanvasPosition
@@ -250,6 +250,18 @@ function BuildMenu:_list(view: any, phone: boolean)
 			button.LayoutOrder = i
 			button.Parent = list
 			self.rows[r.id] = button
+		end
+		if #view.rows == 0 and view.empty then
+			-- e.g. the server's `fits` for this plot is empty: say so instead of an empty drawer
+			Style.text({
+				text = view.empty,
+				weight = Enum.FontWeight.SemiBold,
+				size = 12,
+				color = Theme.color("textSecondary"),
+				wrap = true,
+				extra = { Name = "Empty", Size = UDim2.new(1, -8, 0, 36) },
+			}).Parent =
+				list
 		end
 		list.Parent = self.panel.content
 		-- Back from a phone detail, or the same tab rebuilt: where the player left the list.

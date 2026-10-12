@@ -77,6 +77,12 @@ local function rowsKey(rows: { any }, phone: boolean): string
 	return Signature.of({ tab = "buildings", rows = out, phone = phone })
 end
 
+-- A finished building's state in words (the server's codes are never shown raw).
+local STATES = { complete = "Complete", damaged = "Damaged", repairing = "Repairing" }
+local function stateText(state: string): string
+	return STATES[state] or (string.upper(string.sub(state, 1, 1)) .. string.sub(state, 2))
+end
+
 local function progressText(r: any): string
 	return if r.state == "planned" then "waiting" else `{math.floor(r.progress * 100)}%`
 end
@@ -319,7 +325,7 @@ function KingdomPanel:_buildings(content: Instance, model: any, phone: boolean):
 			})
 		else
 			sub = Style.text({
-				text = if r.state == "complete" then "Complete" else r.state,
+				text = stateText(r.state),
 				weight = Enum.FontWeight.SemiBold,
 				size = 11,
 				color = Theme.color("textSecondary"),
@@ -561,6 +567,13 @@ function KingdomPanel:_paintRows(rows: { any })
 			local value = row and row:FindFirstChild("Value", true)
 			if value then
 				value.Text = progressText(r)
+			end
+		elseif row and not building(r) then
+			-- complete ↔ damaged keeps the row's layout: patch the words (FORGE-05, #41 review)
+			local mid = row:FindFirstChild("Mid")
+			local label = mid and mid:FindFirstChild("Sub")
+			if label and label:IsA("TextLabel") then
+				label.Text = stateText(r.state)
 			end
 		end
 	end
