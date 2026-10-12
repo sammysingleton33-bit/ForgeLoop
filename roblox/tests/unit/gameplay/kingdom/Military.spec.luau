@@ -8,16 +8,22 @@ local Military = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Militar
 
 local RULER, RIVAL = 101, 201
 
--- k1 at the origin and k2 300 studs east, at Peace, Military installed, births off.
+-- k1 (id "crimson") at the origin and k2 ("azure") 300 studs east, at Peace, Military installed.
 -- options.citizens: start citizens per kingdom (default none, so units fight undisturbed).
+-- options.birthInterval: births are off unless given. Keep level 1 houses 12 (popCap 12).
 -- Territory 130 + 30: k1's threat zone reaches x = 160, k2's starts at x = 140.
+-- Ids are numbers (CONTRACTS G2): units share EntityIds with citizens; targets are { kind, id }.
 local function world(options: { [string]: any }?)
 	local opts = options or {}
-	local sim, crimson = F.kingdom({
+	local sim, k1 = F.kingdom({
 		nodes = false,
-		tuning = { startCitizens = opts.citizens or {}, birthInterval = 1e6, hungerPerDay = 0.001 },
+		tuning = {
+			startCitizens = opts.citizens or {},
+			birthInterval = opts.birthInterval or 1e6,
+			hungerPerDay = 0.001,
+		},
 	})
-	local azure = sim:addKingdom({ id = "azure", name = "Rival", x = 300, z = 0 })
+	local k2 = sim:addKingdom({ id = "azure", name = "Rival", x = 300, z = 0 })
 	Military.install(sim)
 	assert(sim:addRuler("crimson", RULER))
 	assert(sim:addRuler("azure", RIVAL))
@@ -51,7 +57,7 @@ local function recruit(userId: number, sim, kind: any, count: any)
 	return Commands.execute(sim, userId, "Recruit", kind, count)
 end
 
-local function stockUp(k, amounts: { [string]: number })
+local function stockUp(sim, k, amounts: { [string]: number })
 	for res, amount in amounts do
 		F.stock(sim, k):add(res, amount)
 	end
@@ -59,13 +65,13 @@ end
 
 describe("Kingdom/Military: recruiting", function()
 	it("needs a finished barracks (no_barracks for none or a construction site), costing nothing", function()
-		local sim, crimson = world()
+		local sim, k1 = world()
 		local stock = sim.treasury:get(k1.id)
 		local ok, err = recruit(RULER, sim, "soldier", 1)
 		expect(ok).toBe(false)
 		expect(err).toBe("no_barracks")
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
-		stockUp(k1, { wood = 200, stone = 100 })
+		stockUp(sim, k1, { wood = 200, stone = 100 })
 		assert(sim:placeBuilding(k1, "barracks", 0, -40))
 		stock = sim.treasury:get(k1.id)
 		F.events(sim)
@@ -75,8 +81,8 @@ describe("Kingdom/Military: recruiting", function()
 	end)
 
 	it("Knight and Ram need a level-2 barracks", function()
-		local sim, crimson = world()
-		stockUp(k1, { food = 280, wood = 300, stone = 300, gold = 300 })
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 280, wood = 300, stone = 300, gold = 300 })
 		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
 		local stock = sim.treasury:get(k1.id)
 		expect(select(2, recruit(RULER, sim, "knight", 1))).toBe("no_barracks")
@@ -92,7 +98,7 @@ describe("Kingdom/Military: recruiting", function()
 	end)
 
 	it("rejects bad arguments (invalid_args) and unknown units (unknown_unit)", function()
-		local sim, crimson = world()
+		local sim, k1 = world()
 		addBuilding(sim, k1, "barracks", 0, -40, 1)
 		for _, count in { 0, 11, 1.5, -1, 0 / 0, math.huge, "1", nil } do
 			expect(select(2, recruit(RULER, sim, "soldier", count))).toBe("invalid_args")
@@ -100,47 +106,74 @@ describe("Kingdom/Military: recruiting", function()
 		for _, kind in { nil, 5, {} } do
 			expect(select(2, recruit(RULER, sim, kind, 1))).toBe("invalid_args")
 		end
-		expect(select(2, recruit(RULER, sim, "Dragon", 1))).toBe("unknown_unit")
-		expect(select(2, recruit(RULER, sim, "militia", 1))).toBe("unknown_unit")
+		expect(select(2, recruit(RULER, sim, "dragon", 1))).toBe("unknown_unit")
+		expect(select(2, recruit(RULER, sim, "Soldier", 1))).toBe("unknown_unit")
 		expect(F.events(sim)).toEqual({})
 	end)
 
 	it("counts units already queued against the population cap (population_cap)", function()
-		local sim, crimson = world({ citizens = { farmer = 4 } })
-		stockUp(k1, { food = 280, wood = 300 })
+		local sim, k1 = world({ citizens = { farmer = 6 } })
+		stockUp(sim, k1, { food = 280, wood = 300 })
 		addBuilding(sim, k1, "barracks", 0, -40, 1)
-		expect(k1.popCap).toBe(10)
-		expect((recruit(RULER, sim, "soldier", 4))).toBe(true) -- 4 citizens + 4 queued
+		expect(k1.popCap).toBe(12)
+		expect((recruit(RULER, sim, "soldier", 4))).toBe(true) -- 6 citizens + 4 queued
 		local stock = sim.treasury:get(k1.id)
-		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("population_cap") -- would be 11
+		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("population_cap") -- would be 13
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
-		expect((recruit(RULER, sim, "soldier", 2))).toBe(true) -- exactly 10
+		expect((recruit(RULER, sim, "soldier", 2))).toBe(true) -- exactly 12
 		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
-		sim:advance(6 * 8) -- everything trained: 4 citizens + 6 units
+		sim:advance(6 * 8) -- everything trained: 6 citizens + 6 units
 		expect(#k1.unitIds).toBe(6)
-		expect(sim:population(k1)).toBe(10)
+		expect(sim:population(k1)).toBe(12)
 		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
-		-- KNOWN BUG (Simulation.luau, not editable here): births ignore units still in a barracks
-		-- queue, so a birth during training can push population above popCap. See the report; this
-		-- spec turns births off so it only covers Recruit's own check.
+	end)
+
+	it("births leave the beds of recruits still in training free, so population never exceeds popCap", function()
+		-- 8 citizens of 12; births every 5 s with plenty of food
+		local function run(recruits: number)
+			local sim, k1 = world({ citizens = { farmer = 8 }, birthInterval = 5 })
+			stockUp(sim, k1, { food = 880, wood = 300 })
+			addBuilding(sim, k1, "barracks", 0, -40, 1)
+			assert(recruit(RULER, sim, "soldier", recruits))
+			local peak = 0
+			for _ = 1, 40 do
+				sim:advance(1)
+				peak = math.max(peak, sim:population(k1) + sim:queuedUnits(k1))
+				expect(sim:population(k1)).toBeLessThanOrEqual(k1.popCap)
+			end
+			local born = F.count(F.events(sim, "CitizenBorn"), function(e)
+				return e.kingdomId == "crimson" -- azure (no recruits) grows to its own cap meanwhile
+			end)
+			return born, peak, k1
+		end
+		local born, peak, k1 = run(4) -- 8 + 4 queued fill all 12 beds
+		expect(born).toBe(0)
+		expect(peak).toBe(12)
+		expect(#k1.unitIds).toBe(4)
+		born, peak, k1 = run(2) -- two beds left: two births, no more
+		expect(born).toBe(2)
+		expect(peak).toBe(12)
+		expect(#k1.citizenIds).toBe(10)
+		expect(#k1.unitIds).toBe(2)
 	end)
 
 	it("cannot_afford leaves stock, queue and events untouched", function()
-		local sim, crimson = world()
+		local sim, k1 = world()
 		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
-		local stock = sim.treasury:get(k1.id) -- food 120: four militia cost 120, five cost 150
+		local stock = sim.treasury:get(k1.id) -- food 120: four soldiers cost 120, five cost 150
 		expect(select(2, recruit(RULER, sim, "soldier", 5))).toBe("cannot_afford")
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
 		expect(#barracks.queue).toBe(0)
 		expect(F.events(sim)).toEqual({})
 		expect(F.stock(sim, k1):flows().expense.recruit).toBeNil()
+		expect(#sim.treasury:ledger(k1.id)).toBe(0) -- nothing booked at all
 		expect((recruit(RULER, sim, "soldier", 4))).toBe(true)
 		expect(sim:balance(k1.id, "food")).toBe(0)
 	end)
 
 	it("spends cost x count at once, booked as 'recruit', and announces the queue", function()
-		local sim, crimson = world()
-		stockUp(k1, { wood = 100 })
+		local sim, k1 = world()
+		stockUp(sim, k1, { wood = 100 })
 		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
 		local ok, err, result = recruit(RULER, sim, "archer", 3)
 		expect(err).toBeNil()
@@ -148,6 +181,8 @@ describe("Kingdom/Military: recruiting", function()
 		expect(result).toEqual({ barracksId = barracks.id, count = 3 })
 		expect(sim.treasury:get(k1.id)).toEqual({ food = 30, wood = 110, stone = 50, gold = 0 })
 		expect(F.stock(sim, k1):flows().expense.recruit).toEqual({ food = 90, wood = 90 })
+		local ledger = sim.treasury:ledger(k1.id)
+		expect(ledger[#ledger].sink).toBe("unit:archer") -- G7 spend with the unit as sink
 		local queued = F.events(sim, "RecruitQueued")
 		expect(#queued).toBe(1)
 		expect(queued[1].kingdomId).toBe("crimson")
@@ -160,8 +195,8 @@ describe("Kingdom/Military: recruiting", function()
 	end)
 
 	it("queues on the barracks with the shortest queue", function()
-		local sim, crimson = world()
-		stockUp(k1, { food = 280, wood = 300 })
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 280, wood = 300 })
 		local first = addBuilding(sim, k1, "barracks", 0, -40, 1)
 		local second = addBuilding(sim, k1, "barracks", 0, 40, 1)
 		local _, _, a = recruit(RULER, sim, "soldier", 2)
@@ -173,8 +208,8 @@ describe("Kingdom/Military: recruiting", function()
 	end)
 
 	it("trains one unit per trainTime, in queue order, then emits UnitRecruited", function()
-		local sim, crimson = world()
-		stockUp(k1, { wood = 100 })
+		local sim, k1 = world()
+		stockUp(sim, k1, { wood = 100 })
 		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
 		assert(recruit(RULER, sim, "soldier", 1))
 		assert(recruit(RULER, sim, "archer", 1))
@@ -182,7 +217,7 @@ describe("Kingdom/Military: recruiting", function()
 		sim:advance(7.75)
 		expect(#k1.unitIds).toBe(0)
 		expect(#F.events(sim, "UnitRecruited")).toBe(0)
-		sim:advance(0.25) -- Militia trainTime 8
+		sim:advance(0.25) -- soldier trainTime 8
 		local recruited = F.events(sim, "UnitRecruited")
 		expect(#recruited).toBe(1)
 		expect(recruited[1].kingdomId).toBe("crimson")
@@ -194,7 +229,7 @@ describe("Kingdom/Military: recruiting", function()
 		expect(#barracks.queue).toBe(1)
 		sim:advance(9.75)
 		expect(#F.events(sim, "UnitRecruited")).toBe(0)
-		sim:advance(0.25) -- Archer trainTime 10, after the militia
+		sim:advance(0.25) -- archer trainTime 10, after the soldier
 		recruited = F.events(sim, "UnitRecruited")
 		expect(#recruited).toBe(1)
 		expect(recruited[1].unit).toBe("archer")
@@ -207,7 +242,7 @@ end)
 
 describe("Kingdom/Military: army orders", function()
 	it("validates the order and its arguments without changing any unit", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		local u = unit(sim, k1, "soldier", 10, 30, { kind = "Defend" })
 		local nan, inf = 0 / 0, math.huge
 		local cases = {
@@ -240,7 +275,7 @@ describe("Kingdom/Military: army orders", function()
 	end)
 
 	it("gives every unit the order, records who gave it, and units march to a Move point", function()
-		local sim, crimson = world()
+		local sim, k1 = world()
 		local a = unit(sim, k1, "soldier", 10, 30, { kind = "Defend" })
 		local b = unit(sim, k1, "archer", -10, 30, { kind = "Defend" })
 		local ok, err, result = Commands.execute(sim, RULER, "ArmyOrder", "Move", 60, -60)
@@ -263,7 +298,7 @@ end)
 
 describe("Kingdom/Military: combat", function()
 	it("units do not fight at Peace, and keeps do not shoot", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		local a = unit(sim, k1, "soldier", 150, 0)
 		local b = unit(sim, k2, "soldier", 153, 0)
 		local intruder = unit(sim, k2, "soldier", 30, 0) -- inside k1's keep range
@@ -277,7 +312,7 @@ describe("Kingdom/Military: combat", function()
 	end)
 
 	it("at War, units kill enemy units and both sides count it", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		war(sim)
 		local mine =
 			{ unit(sim, k1, "soldier", 150, 2), unit(sim, k1, "soldier", 150, -2), unit(sim, k1, "soldier", 151, 0) }
@@ -299,13 +334,18 @@ describe("Kingdom/Military: combat", function()
 		})
 		expect(k1.stats.unitsKilled).toBe(1)
 		expect(k2.stats.unitsLost).toBe(1)
+		-- each kill is worth Crown Points to the killer
+		local crown = sim.catalog.crown.unitKill
+		expect(crown).toBeGreaterThan(0)
+		expect(k1.crownPoints).toBe(crown)
+		expect(k2.crownPoints).toBe(0)
 		for _, u in mine do
 			expect(u.alive).toBe(true)
 		end
 	end)
 
 	it("Hold units stay where they stand and only fight what is in weapon range", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		war(sim)
 		local holder = unit(sim, k1, "soldier", 150, 0)
 		local bait = unit(sim, k2, "ram", 170, 0) -- inside aggro (35) but outside weapon range (5)
@@ -322,7 +362,7 @@ describe("Kingdom/Military: combat", function()
 	it("a unit closing in from any direction reaches striking range (no floating-point stall)", function()
 		local stalled = {}
 		for i = 0, 35 do
-			local sim, k1, azure = world()
+			local sim, k1, k2 = world()
 			war(sim)
 			local wall = addBuilding(sim, k1, "wall", 100, 0, 1)
 			local a = i * math.pi / 18
@@ -337,7 +377,7 @@ describe("Kingdom/Military: combat", function()
 	end)
 
 	it("keeps and towers shoot the nearest enemy unit in range, on their cooldown", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		war(sim)
 		local near = unit(sim, k2, "soldier", 30, 0)
 		local farther = unit(sim, k2, "soldier", 0, 38)
@@ -365,16 +405,16 @@ describe("Kingdom/Military: combat", function()
 	end)
 
 	it("a Ram deals damage x4 (siege) to buildings, destroys them, and never attacks units", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		war(sim)
 		local wall = addBuilding(sim, k1, "wall", 100, 0, 1)
 		local ram = unit(sim, k2, "ram", 110, 0)
 		sim:step()
-		expect(ram.targetId).toBe(wall.id)
+		expect(ram.target).toEqual({ kind = "building", id = wall.id })
 		expect(wall.hp).toBe(900 - 60 * 4)
-		local militia = unit(sim, k2, "soldier", 108, 3) -- 4.5 from the wall's edge: in range
-		sim:advance(3) -- ram strikes again at 3.25 (cooldown 3); militia at 0.5, 1.5, 2.5
-		expect(wall.hp).toBe(900 - 240 * 2 - 8 * 3) -- Militia siege 1: plain damage
+		local soldier = unit(sim, k2, "soldier", 108, 3) -- 4.5 from the wall's edge: in range
+		sim:advance(3) -- ram strikes again at 3.25 (cooldown 3); soldier at 0.5, 1.5, 2.5
+		expect(wall.hp).toBe(900 - 240 * 2 - 8 * 3) -- soldier siege 1: plain damage
 		sim:advance(5.75)
 		expect(sim.buildings[wall.id]).toBe(wall) -- 900 - 3 x 240 - 8 x 8 = 116 left
 		sim:advance(0.25) -- the ram's fourth blow at 9.25
@@ -387,7 +427,7 @@ describe("Kingdom/Military: combat", function()
 		expect(destroyed[1].kind).toBe("wall")
 		expect(destroyed[1].byKingdomId).toBe("azure")
 		expect(k1.alive).toBe(true)
-		expect(militia.alive).toBe(true)
+		expect(soldier.alive).toBe(true)
 
 		-- far from any building, a ram next to an enemy soldier never strikes it
 		local defender = unit(sim, k1, "soldier", 150, -150)
@@ -399,16 +439,21 @@ describe("Kingdom/Military: combat", function()
 	end)
 
 	it("soft blocking: a unit chasing a target behind an enemy wall stops at the wall and breaks it first", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		war(sim)
 		local wall = addBuilding(sim, k1, "wall", 125, 0, 1)
-		wall.hp = 24 -- three militia hits
+		wall.hp = 24 -- three soldier hits
 		local bait = unit(sim, k1, "ram", 110, 0) -- behind the wall; rams do not fight back
 		local raider = unit(sim, k2, "soldier", 140, 0, { kind = "Move", x = 100, z = 0 })
 		local blockedAt = nil
 		for _ = 1, 20 do
 			sim:step()
-			if raider.targetId == wall.id and blockedAt == nil then
+			if
+				raider.target ~= nil
+				and raider.target.kind == "building"
+				and raider.target.id == wall.id
+				and blockedAt == nil
+			then
 				blockedAt = raider.x
 			end
 			if sim.buildings[wall.id] then
@@ -433,7 +478,7 @@ describe("Kingdom/Military: combat", function()
 	it(
 		"a raider catches citizens fleeing in the open (cause raid) but cannot touch those sheltering in the keep",
 		function()
-			local sim, k1, azure = world({ citizens = { farmer = 2 } })
+			local sim, k1, k2 = world({ citizens = { farmer = 2 } })
 			war(sim)
 			local keep = sim.buildings[k1.keepId]
 			local sheltered, outside = sim:citizensOf(k1)[1], sim:citizensOf(k1)[2]
@@ -464,7 +509,7 @@ describe("Kingdom/Military: combat", function()
 	)
 
 	it("lists enemy units inside territory (+30) as threats; citizens near one flee and remember it", function()
-		local sim, k1, azure = world({ citizens = { farmer = 3 } })
+		local sim, k1, k2 = world({ citizens = { farmer = 3 } })
 		sim:advance(10) -- farmers walk to the farm at about (28, 19)
 		local farmers = sim:citizensOf(k1)
 		local intruder = unit(sim, k2, "soldier", 55, 19)
@@ -501,9 +546,8 @@ end)
 
 describe("Kingdom/Military: conquest", function()
 	it("destroying a Keep eliminates the kingdom, removes everything it had and pays the conqueror", function()
-		local sim, k1, azure = world({ citizens = { farmer = 2 } })
+		local sim, k1, k2 = world({ citizens = { farmer = 2 } })
 		war(sim)
-		stockUp(k1, { wood = 290 }) -- 390 of 400: wood loot is capped at 10
 		local house = addBuilding(sim, k2, "house", 300, 40, 1)
 		local guard = unit(sim, k2, "soldier", 420, 100)
 		local ram = unit(sim, k1, "ram", 300 - 14 - 5, 0)
@@ -525,13 +569,15 @@ describe("Kingdom/Military: conquest", function()
 		expect(eliminated).toBeTruthy()
 		expect(eliminated.kingdomId).toBe("azure")
 		expect(eliminated.byKingdomId).toBe("crimson")
-		expect(eliminated.loot).toEqual({ food = 60, wood = 10, stone = 25, gold = 0 })
+		expect(eliminated.loot).toEqual({ food = 60, wood = 50, stone = 25 }) -- half of 120/100/50/0
 		expect(k2.alive).toBe(false)
 		expect(k2.eliminatedBy).toBe("crimson")
 		expect(k2.eliminatedAt).toBe(sim.time)
 		expect(k1.stats.conquered).toBe(1)
-		expect(sim:balance(k1.id, "wood")).toBe(400)
-		expect(sim:balance(k1.id, "food")).toBe(180)
+		expect(k1.crownPoints).toBe(sim.catalog.crown.conquest)
+		expect(sim.treasury:get(k1.id)).toEqual({ food = 180, wood = 150, stone = 75, gold = 0 })
+		expect(F.stock(sim, k1):flows().income.loot).toEqual({ food = 60, wood = 50, stone = 25 })
+		expect(F.stock(sim, k2):flows().expense.plundered).toEqual({ food = 120, wood = 100, stone = 50 })
 		expect(sim.treasury:get(k2.id)).toEqual({ food = 0, wood = 0, stone = 0, gold = 0 })
 		expect(k2.citizenIds).toEqual({})
 		expect(k2.unitIds).toEqual({})
@@ -559,7 +605,7 @@ describe("Kingdom/Military: conquest", function()
 	end)
 
 	it("losing any other building does not eliminate; elimination without a conqueror pays nobody", function()
-		local sim, k1, azure = world()
+		local sim, k1, k2 = world()
 		local farm = sim:buildingsOf(k2)[2]
 		Military.destroyBuilding(sim, farm, "crimson")
 		expect(k2.alive).toBe(true)
@@ -572,7 +618,9 @@ describe("Kingdom/Military: conquest", function()
 		expect(eliminated[1].loot).toEqual({})
 		expect(eliminated[1].byKingdomId).toBeNil()
 		expect(k1.stats.conquered).toBe(0)
+		expect(k1.crownPoints).toBe(0)
 		expect(sim:balance(k1.id, "food")).toBe(120)
+		expect(sim.treasury:get(k2.id)).toEqual({ food = 0, wood = 0, stone = 0, gold = 0 })
 		F.assertInvariants(sim)
 	end)
 

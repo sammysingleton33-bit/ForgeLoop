@@ -6,6 +6,7 @@ local Commands = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Command
 local Diplomacy = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Diplomacy")
 local Layout = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Layout")
 local Military = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Military")
+local Objectives = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Objectives")
 local RulerAI = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/RulerAI")
 local Simulation = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Simulation")
 local Snapshot = require("@game/ReplicatedStorage/Forge/Gameplay/Kingdom/Snapshot")
@@ -50,24 +51,26 @@ local function callsNamed(calls: { any }, name: string): { any }
 	return out
 end
 
--- k1 at the origin (with trees and rocks) and k2 300 studs east; births off; AI installed but idle.
+-- k1 ("crimson") at the origin with trees and rocks, k2 ("azure") 300 studs east; births off; AI
+-- installed but idle. Each kingdom starts with 12 citizens in a keep housing 12. Scores are Crown Points.
 local function pair(aiOptions: { [string]: any }?)
-	local sim, crimson = F.kingdom({ tuning = { birthInterval = 1e6 } })
-	local azure = sim:addKingdom({ id = "azure", name = "Rival", x = 300, z = 0 })
+	local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6 } })
+	local k2 = sim:addKingdom({ id = "azure", name = "Rival", x = 300, z = 0 })
 	Military.install(sim)
 	RulerAI.install(sim, aiOptions or { interval = NEVER })
 	return sim, k1, k2
 end
 
--- The four Layout kingdoms (k1..k4 clockwise, so k1's neighbours are k2 and k4), no grace period,
--- AI idle so the test drives think() itself; k1 is aggressive (war from day 5) with an army of 6.
+-- The four Layout kingdoms crimson, azure, emerald, gold (k1..k4, clockwise: crimson's neighbours are
+-- azure and gold, emerald is across the map), no grace period, AI idle so the test drives think()
+-- itself; crimson is aggressive (war from day 5) with an army of 6. No objectives installed.
 local function ring()
 	local sim = Simulation.new({ random = Random.new(3), bounds = Layout.boundsFor(260) })
 	Layout.generate(sim)
 	Military.install(sim)
 	Diplomacy.install(sim, { graceSeconds = 0 })
 	RulerAI.install(sim, { interval = NEVER })
-	local crimson = sim.kingdoms.crimson
+	local k1 = sim.kingdoms.crimson
 	sim.rulerAI.aggression.crimson = 1
 	for i = 1, 6 do
 		Military.spawnUnit(sim, k1, "soldier", k1.x + i, k1.z)
@@ -88,7 +91,7 @@ end
 
 describe("Kingdom/RulerAI: who it rules", function()
 	it("rules only kingdoms without human rulers, and takes over again when the last one leaves", function()
-		local sim, crimson = pair({}) -- default interval: thinks every 6 s
+		local sim, k1 = pair({}) -- default interval: thinks every 6 s
 		assert(sim:addRuler("crimson", 101))
 		local calls = recordCommands(function()
 			sim:advance(30)
@@ -98,7 +101,7 @@ describe("Kingdom/RulerAI: who it rules", function()
 			expect(c.kingdomId).toBe("azure")
 			expect(c.by).toBeNil()
 		end
-		expect(sim.rulerAI.lastAction.k1).toBeNil()
+		expect(sim.rulerAI.lastAction.crimson).toBeNil()
 		expect(sim:countOf(k1, "house")).toBe(0)
 
 		sim:removeRuler(101)
@@ -123,18 +126,18 @@ describe("Kingdom/RulerAI: who it rules", function()
 	end)
 
 	it("can think before the simulation's first tick (diplomacy installed)", function()
-		local sim, crimson = F.kingdom({ tuning = { birthInterval = 1e6 } })
+		local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6 } })
 		Diplomacy.install(sim)
 		RulerAI.install(sim)
 		local ok, result = pcall(RulerAI.think, sim, k1)
 		expect(ok).toBe(true)
-		expect(result).toBe("PlaceBuilding:House")
-		expect(sim.rulerAI.aggression.k1).toBeGreaterThanOrEqual(0.3)
-		expect(sim.rulerAI.aggression.k1).toBeLessThanOrEqual(1)
+		expect(result).toBe("PlaceBuilding:house")
+		expect(sim.rulerAI.aggression.crimson).toBeGreaterThanOrEqual(0.3)
+		expect(sim.rulerAI.aggression.crimson).toBeLessThanOrEqual(1)
 	end)
 
 	it("never thinks for an eliminated kingdom; installs once", function()
-		local sim, crimson = pair()
+		local sim, k1 = pair()
 		Military.eliminate(sim, k1, nil)
 		expect(RulerAI.think(sim, k1)).toBeNil()
 		expect(function()
@@ -145,23 +148,22 @@ end)
 
 describe("Kingdom/RulerAI: decisions", function()
 	it("builds a House when population reaches the cap, and only one at a time", function()
-		local sim, crimson = pair()
+		local sim, k1 = pair()
 		expect(sim:population(k1)).toBe(k1.popCap)
 		F.events(sim)
-		expect(RulerAI.think(sim, k1)).toBe("PlaceBuilding:House")
+		expect(RulerAI.think(sim, k1)).toBe("PlaceBuilding:house")
 		local placed = F.events(sim, "BuildingPlaced")
 		expect(#placed).toBe(1)
 		expect(placed[1].kind).toBe("house")
 		expect(placed[1].kingdomId).toBe("crimson")
 		expect(placed[1].by).toBeNil()
 		expect(sim:balance(k1.id, "wood")).toBe(60)
-		expect(RulerAI.think(sim, k1)).never.toBe("PlaceBuilding:House") -- the site is not finished
+		expect(RulerAI.think(sim, k1)).never.toBe("PlaceBuilding:house") -- the site is not finished
 		expect(sim:countOf(k1, "house")).toBe(1)
 	end)
 
 	it("does not build a House while there is room for two more people", function()
-		local sim, crimson =
-			F.kingdom({ tuning = { birthInterval = 1e6, startCitizens = { farmer = 3, builder = 2 } } })
+		local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6, startCitizens = { farmer = 3, builder = 2 } } })
 		RulerAI.install(sim, { interval = NEVER })
 		for _ = 1, 5 do
 			RulerAI.think(sim, k1)
@@ -170,7 +172,7 @@ describe("Kingdom/RulerAI: decisions", function()
 	end)
 
 	it("rings the alarm while enemies are inside and nobody defends, and stops it when they are gone", function()
-		local sim, k1, azure = pair()
+		local sim, k1, k2 = pair()
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
 		local raider = Military.spawnUnit(sim, k2, "soldier", 100, 0)
 		raider.order = { kind = "Hold" }
@@ -194,9 +196,9 @@ describe("Kingdom/RulerAI: decisions", function()
 	end)
 
 	it("recruits only what Recruit accepts: a finished barracks, room for the batch, the full price", function()
-		local sim, crimson = pair()
+		local sim, k1 = pair()
 		sim.time = 3 * sim.catalog.tuning.dayLength -- day 4: military
-		sim.rulerAI.aggression.crimson = 1 -- army target: floor(35% of 10 people) = 3
+		sim.rulerAI.aggression.crimson = 1 -- army target: floor(35% of 12 people) = 4
 		F.stock(sim, k1):add("wood", 300)
 		F.stock(sim, k1):add("stone", 300)
 		F.stock(sim, k1):add("food", 200)
@@ -217,9 +219,9 @@ describe("Kingdom/RulerAI: decisions", function()
 		expect(recruits()).toBe(0) -- no room for a batch of two
 		sim:_completeInstantly(house)
 		sim:_recompute(k1)
-		expect(k1.popCap).toBe(14)
+		expect(k1.popCap).toBe(16)
 		expect(recruits()).toBe(1)
-		expect(recruits()).toBe(1) -- 2 queued < 3, and 10 + 2 + 2 fits in 14
+		expect(recruits()).toBe(1) -- 2 queued < 4, and 12 + 2 + 2 fits in 16
 		expect(#barracks.queue).toBe(4)
 		expect(recruits()).toBe(0) -- queued soldiers count toward the army target (and the cap)
 		table.clear(barracks.queue)
@@ -231,19 +233,19 @@ describe("Kingdom/RulerAI: decisions", function()
 	end)
 
 	it("accepts peace when behind on score, but never an expired proposal", function()
-		local sim, k1, azure = pair()
+		local sim, k1, k2 = pair()
 		Diplomacy.install(sim, { graceSeconds = 0 })
 		assert(sim:addRuler("azure", 201))
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
 		Military.spawnUnit(sim, k1, "soldier", 0, 30) -- an army, so k1 does not propose itself
 		assert(Commands.execute(sim, 201, "ProposePeace", "crimson"))
-		k1.stats.conquered = 0
+		sim:addCrownPoints("crimson", 10, "test")
 		expect(Snapshot.score(sim, k1)).toBeGreaterThan(Snapshot.score(sim, k2))
 		expect(RulerAI.think(sim, k1)).never.toBe("AcceptPeace") -- ahead: keeps fighting
 		expect(sim:atWar("crimson", "azure")).toBe(true)
 
 		sim:advance(sim.diplomacy.proposalSeconds + 1)
-		k2.stats.conquered = 5 -- now k1 is behind, but the proposal has expired
+		sim:addCrownPoints("azure", 500, "test") -- now k1 is behind, but the proposal has expired
 		local calls = recordCommands(function()
 			RulerAI.think(sim, k1)
 		end)
@@ -276,18 +278,93 @@ describe("Kingdom/RulerAI: decisions", function()
 	end)
 end)
 
+describe("Kingdom/RulerAI: logistics and objectives", function()
+	local function nearestDistance(sim, x: number, z: number, resource: string): number
+		local best = math.huge
+		for _, nid in sim.nodeOrder do
+			local node = sim.nodes[nid]
+			if node.resource == resource then
+				best = math.min(best, math.sqrt((node.x - x) ^ 2 + (node.z - z) ^ 2))
+			end
+		end
+		return best
+	end
+
+	it("from day 2 builds a lumber camp by the forest, then a quarry by the rocks, one of each", function()
+		local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6, startCitizens = { farmer = 3, woodcutter = 2 } } })
+		RulerAI.install(sim, { interval = NEVER })
+		F.stock(sim, k1):add("wood", 200)
+		expect(RulerAI.think(sim, k1)).toBeNil() -- day 1: nothing to do yet
+		sim.time = sim.catalog.tuning.dayLength -- day 2
+		F.events(sim)
+		expect(RulerAI.think(sim, k1)).toBe("PlaceBuilding:lumbercamp")
+		local camp = sim.buildings[F.events(sim, "BuildingPlaced")[1].buildingId]
+		local keep = sim.buildings[k1.keepId]
+		local toKeep = math.sqrt((camp.x - keep.x) ^ 2 + (camp.z - keep.z) ^ 2)
+		expect(nearestDistance(sim, camp.x, camp.z, "wood")).toBeLessThan(toKeep / 2)
+		expect(RulerAI.think(sim, k1)).never.toBe("PlaceBuilding:quarry") -- one site at a time
+		sim:_completeInstantly(camp)
+		expect(RulerAI.think(sim, k1)).toBe("PlaceBuilding:quarry")
+		local quarry = sim.buildings[F.events(sim, "BuildingPlaced")[1].buildingId]
+		expect(quarry.kind).toBe("quarry")
+		local quarryToKeep = math.sqrt((quarry.x - keep.x) ^ 2 + (quarry.z - keep.z) ^ 2)
+		expect(nearestDistance(sim, quarry.x, quarry.z, "stone")).toBeLessThan(quarryToKeep / 2)
+		sim:_completeInstantly(quarry)
+		for _ = 1, 3 do
+			RulerAI.think(sim, k1)
+		end
+		expect(sim:countOf(k1, "lumbercamp")).toBe(1)
+		expect(sim:countOf(k1, "quarry")).toBe(1)
+	end)
+
+	it("marches a standing army of 3+ at peace on the nearest capture point it does not own, once", function()
+		local sim, k1 = pair()
+		Objectives.install(sim, { { id = "near", x = 0, z = 100 }, { id = "far", x = 0, z = -200 } })
+		local soldiers = {}
+		for i = 1, 2 do
+			table.insert(soldiers, Military.spawnUnit(sim, k1, "soldier", i * 3, 20))
+		end
+		local function orders(): { any }
+			local calls = recordCommands(function()
+				RulerAI.think(sim, k1)
+			end)
+			expect(rejected(calls)).toEqual({})
+			return callsNamed(calls, "ArmyOrder")
+		end
+		expect(orders()).toEqual({}) -- two soldiers are not an army yet
+		table.insert(soldiers, Military.spawnUnit(sim, k1, "soldier", 9, 20))
+		F.events(sim)
+		expect(RulerAI.think(sim, k1)).toBe("ArmyOrder:Objective")
+		for _, u in soldiers do
+			expect(u.order).toEqual({ kind = "Move", x = 0, z = 100 })
+		end
+		expect(F.events(sim, "ArmyOrdered")[1].by).toBeNil()
+		expect(orders()).toEqual({}) -- already on the way: not issued again
+		-- once it owns the near point it moves on to the next one
+		sim.objectives.list[1].owner = "crimson"
+		expect(#orders()).toBe(1)
+		expect(soldiers[1].order).toEqual({ kind = "Move", x = 0, z = -200 })
+		-- at war the army is not sent off to capture points
+		sim.objectives.list[1].owner = nil
+		Diplomacy.setRelation(sim, "crimson", "azure", "War")
+		expect(orders()).toEqual({})
+		expect(soldiers[1].order).toEqual({ kind = "Move", x = 0, z = -200 })
+	end)
+end)
+
 describe("Kingdom/RulerAI: war", function()
 	it("declares war only on a neighbour (index +-1 around the ring) while one lives", function()
-		local sim, crimson = ring()
-		local k2, k3, gold = sim.kingdoms.azure, sim.kingdoms.emerald, sim.kingdoms.gold
-		k2.stats.conquered, k4.stats.conquered = 1, 1 -- k3, across the map, is by far the weakest
+		local sim, k1 = ring()
+		local k2, k3, k4 = sim.kingdoms.azure, sim.kingdoms.emerald, sim.kingdoms.gold
+		sim:addCrownPoints("azure", 300, "test")
+		sim:addCrownPoints("gold", 300, "test") -- emerald, across the map, is by far the weakest
 		expect(Snapshot.score(sim, k3)).toBeLessThan(Snapshot.score(sim, k2))
 		F.events(sim)
 		expect(RulerAI.think(sim, k1)).toBe("DeclareWar")
 		local declared = F.events(sim, "WarDeclared")
 		expect(#declared).toBe(1)
 		expect(declared[1].kingdomId).toBe("crimson")
-		expect(declared[1].targetId).toBe("azure") -- tied with k4; the first in order wins
+		expect(declared[1].targetId).toBe("azure") -- tied with gold; the first in order wins
 		expect(declared[1].by).toBeNil()
 
 		-- with both neighbours fallen, anyone left is fair game
@@ -299,10 +376,10 @@ describe("Kingdom/RulerAI: war", function()
 	end)
 
 	it("leaves a kingdom that already fights two wars alone", function()
-		local sim, crimson = ring()
+		local sim, k1 = ring()
 		Diplomacy.setRelation(sim, "azure", "emerald", "War")
 		Diplomacy.setRelation(sim, "azure", "gold", "War")
-		sim.kingdoms.gold.stats.conquered = 1 -- k2 would be the weaker neighbour
+		sim:addCrownPoints("gold", 300, "test") -- azure would be the weaker neighbour
 		expect(RulerAI.think(sim, k1)).toBe("DeclareWar")
 		expect(wars(sim, "crimson")).toEqual({ "gold" })
 	end)
@@ -310,7 +387,7 @@ describe("Kingdom/RulerAI: war", function()
 	it(
 		"does not declare war before its war day, without an army, in the grace period or in a peace cooldown",
 		function()
-			local sim, crimson = ring()
+			local sim, k1 = ring()
 			local day = sim.catalog.tuning.dayLength
 			local function attempts()
 				local calls = recordCommands(function()
@@ -329,9 +406,9 @@ describe("Kingdom/RulerAI: war", function()
 			sim.diplomacy.graceSeconds = 10 * day -- a long grace period (Match option)
 			expect(attempts()).toBe(0)
 			sim.diplomacy.graceSeconds = 0
-			-- peace was just made with k2: the AI turns to its other neighbour instead of being refused
+			-- peace was just made with azure: the AI turns to its other neighbour instead of being refused
 			sim.diplomacy.peaceAt[sim:relationKey("crimson", "azure")] = sim.time - 1
-			sim.kingdoms.gold.stats.conquered = 1 -- k2 would be the weaker neighbour
+			sim:addCrownPoints("gold", 300, "test") -- azure would be the weaker neighbour
 			expect(attempts()).toBe(1)
 			expect(wars(sim, "crimson")).toEqual({ "gold" })
 		end
@@ -340,9 +417,8 @@ end)
 
 describe("Kingdom/RulerAI: findSpot", function()
 	it("returns only placeable spots inside the territory, then nil once the territory is full", function()
-		local sim, crimson = F.kingdom({ tuning = { birthInterval = 1e6 } })
+		local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6 } })
 		RulerAI.install(sim, { interval = NEVER })
-		F.stock(sim, k1):setCapacity(100000)
 		F.stock(sim, k1):add("wood", 50000)
 		local placed = 0
 		local exhausted = false
@@ -364,9 +440,9 @@ describe("Kingdom/RulerAI: findSpot", function()
 	end)
 
 	it("returns nil for an unknown kind, an unaffordable building or a kingdom without a keep", function()
-		local sim, crimson = F.kingdom({ tuning = { birthInterval = 1e6 } })
+		local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6 } })
 		RulerAI.install(sim, { interval = NEVER })
-		expect(RulerAI.findSpot(sim, k1, "Castle")).toBeNil()
+		expect(RulerAI.findSpot(sim, k1, "castle")).toBeNil()
 		expect(RulerAI.findSpot(sim, k1, "barracks")).toBeNil() -- wood 100 < 120
 		expect(RulerAI.findSpot(sim, k1, "house")).never.toBeNil()
 		Military.eliminate(sim, k1, nil)
@@ -394,8 +470,13 @@ local function aiWorld()
 	Layout.generate(sim)
 	Military.install(sim)
 	Diplomacy.install(sim)
+	local objectives = {}
+	for _, o in Layout.OBJECTIVES do
+		table.insert(objectives, table.clone(o))
+	end
+	Objectives.install(sim, objectives) -- as Match does
 	RulerAI.install(sim)
-	local run = { sim = sim, invariantErrors = {}, unconfirmed = {}, thinks = 0, results = 0 }
+	local run = { sim = sim, invariantErrors = {}, unconfirmed = {}, thinks = 0, results = 0, byName = {} }
 	local start = {}
 	for _, kid in sim.kingdomOrder do
 		local k = sim.kingdoms[kid]
@@ -414,6 +495,7 @@ local function aiWorld()
 		if result then
 			run.results += 1
 			local name, detail = string.match(result, "^([^:]+):?(.*)$")
+			run.byName[result] = (run.byName[result] or 0) + 1
 			local last = calls[#calls]
 			local confirmed = #calls > callsBefore and last.name == name and last.ok and last.kingdomId == kingdom.id
 			if confirmed and EVENT_OF[name] then
@@ -464,7 +546,7 @@ describe("Kingdom/RulerAI: an AI-only match world over ten minutes", function()
 			expect(k.alive).toBe(true)
 			expect(#k.citizenIds).toBeGreaterThan(run.start[kid].citizens)
 			expect(#k.buildingIds).toBeGreaterThan(run.start[kid].buildings + 4)
-			expect(k.popCap).toBeGreaterThan(10)
+			expect(k.popCap).toBeGreaterThan(12)
 		end
 	end)
 
