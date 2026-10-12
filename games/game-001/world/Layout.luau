@@ -27,6 +27,45 @@ local function v(x: number, z: number): Vector3
 	return Vector3.new(x, 0, z)
 end
 
+-- ---------------------------------------------------------------- river and bridges (shared by nav + features)
+local RIVER = {
+	Vector2.new(-60, -660),
+	Vector2.new(-80, -420),
+	Vector2.new(-118, -210),
+	Vector2.new(-100, -40),
+	Vector2.new(-70, 90),
+	Vector2.new(-108, 230),
+	Vector2.new(-60, 420),
+	Vector2.new(-30, 680),
+}
+local BRIDGE_HALF = 30 -- Kit bridge_stone stand-in: ramps reach the ground 30 studs from the centre
+local BRIDGE_DECK_Y = 3.8 -- deck top of the bridge stand-in (units walk over it)
+
+-- Bridge across the river at latitude z: centre on the river line, axis perpendicular to the flow.
+local function bridgeAt(z: number)
+	for i = 1, #RIVER - 1 do
+		local a, b = RIVER[i], RIVER[i + 1]
+		if z >= a.Y and z <= b.Y then
+			local t = (z - a.Y) / (b.Y - a.Y)
+			local centre = a:Lerp(b, t)
+			local flow = (b - a).Unit
+			local across = Vector2.new(flow.Y, -flow.X) -- perpendicular, pointing roughly +X (east)
+			if across.X < 0 then
+				across = -across
+			end
+			return {
+				at = centre,
+				yaw = math.deg(math.atan2(across.X, across.Y)),
+				west = centre - across * BRIDGE_HALF,
+				east = centre + across * BRIDGE_HALF,
+			}
+		end
+	end
+	error(`Layout: no river segment at z = {z}`)
+end
+local BRIDGE_N = bridgeAt(-150)
+local BRIDGE_S = bridgeAt(170)
+
 -- ---------------------------------------------------------------- nav graph
 -- Nodes are added in order; edges reference node indices. Roads follow the same polylines.
 local nodes: { Vector3 } = {}
@@ -170,17 +209,25 @@ for _, k in KINGDOMS do
 end
 
 -- ---------------------------------------------------------------- valley roads, bridges, heartland
-local hub = node(CENTRE.X - 20, CENTRE.Z) -- crossroads below the watchtower hill
+local hub = node(CENTRE.X - 20, CENTRE.Z) -- crossroads in front of the watchtower
 local tower = node(CENTRE.X + 10, CENTRE.Z - 6)
 link(hub, tower)
-local bridgeN = node(-100, -150) -- bridge on the north-west road
-local bridgeS = node(-92, 170) -- bridge on the south-west road
+local function bridgeNodes(b): { number }
+	local w = node(b.west.X, b.west.Y)
+	local deck = node(b.at.X, b.at.Y)
+	nodes[deck] = Vector3.new(b.at.X, BRIDGE_DECK_Y, b.at.Y) -- on the deck, above the river
+	local e = node(b.east.X, b.east.Y)
+	b.navNodes = { w, deck, e }
+	return { w, deck, e }
+end
+local bridgeN = bridgeNodes(BRIDGE_N)
+local bridgeS = bridgeNodes(BRIDGE_S)
 local westN = node(-190, -230)
 local westS = node(-190, 245)
 local eastN = node(230, -220)
 local eastS = node(240, 230)
-chain({ plotNav.crimson.gate, westN, bridgeN, hub })
-chain({ plotNav.emerald.gate, westS, bridgeS, hub })
+chain({ plotNav.crimson.gate, westN, bridgeN[1], bridgeN[2], bridgeN[3], hub })
+chain({ plotNav.emerald.gate, westS, bridgeS[1], bridgeS[2], bridgeS[3], hub })
 chain({ plotNav.azure.gate, eastN, hub })
 chain({ plotNav.gold.gate, eastS, hub })
 -- heartland stone + gold nodes near the tower (contested)
@@ -237,49 +284,115 @@ local features = {
 	river = {
 		width = 34,
 		depth = 9,
-		points = {
-			Vector2.new(-60, -660),
-			Vector2.new(-80, -420),
-			Vector2.new(-118, -210),
-			Vector2.new(-100, -40),
-			Vector2.new(-70, 90),
-			Vector2.new(-108, 230),
-			Vector2.new(-60, 420),
-			Vector2.new(-30, 680),
+		points = RIVER,
+		bridges = {
+			{ at = BRIDGE_N.at, yaw = BRIDGE_N.yaw, navNodes = BRIDGE_N.navNodes, deckY = BRIDGE_DECK_Y },
+			{ at = BRIDGE_S.at, yaw = BRIDGE_S.yaw, navNodes = BRIDGE_S.navNodes, deckY = BRIDGE_DECK_Y },
 		},
-		bridges = { { at = Vector2.new(-100, -150), yaw = 75 }, { at = Vector2.new(-92, 170), yaw = 100 } },
 	},
 	roads = {
 		{
 			width = 12,
-			points = { Vector2.new(-330, -390), Vector2.new(-190, -230), Vector2.new(-100, -150), Vector2.new(20, 0) },
+			points = {
+				Vector2.new(-330, -390),
+				Vector2.new(-290, -300),
+				Vector2.new(-230, -262),
+				Vector2.new(-190, -230),
+				Vector2.new(-160, -170),
+				BRIDGE_N.west,
+				BRIDGE_N.east,
+				Vector2.new(-40, -90),
+				Vector2.new(20, 0),
+			},
 		},
 		{
 			width = 12,
-			points = { Vector2.new(-330, 410), Vector2.new(-190, 245), Vector2.new(-92, 170), Vector2.new(20, 0) },
+			points = {
+				Vector2.new(-330, 410),
+				Vector2.new(-280, 320),
+				Vector2.new(-232, 278),
+				Vector2.new(-190, 245),
+				Vector2.new(-150, 190),
+				BRIDGE_S.west,
+				BRIDGE_S.east,
+				Vector2.new(-20, 90),
+				Vector2.new(20, 0),
+			},
 		},
-		{ width = 12, points = { Vector2.new(380, -390), Vector2.new(230, -220), Vector2.new(20, 0) } },
-		{ width = 12, points = { Vector2.new(380, 410), Vector2.new(240, 230), Vector2.new(20, 0) } },
+		{
+			width = 12,
+			points = {
+				Vector2.new(380, -390),
+				Vector2.new(330, -300),
+				Vector2.new(270, -250),
+				Vector2.new(230, -220),
+				Vector2.new(170, -150),
+				Vector2.new(90, -90),
+				Vector2.new(20, 0),
+			},
+		},
+		{
+			width = 12,
+			points = {
+				Vector2.new(380, 410),
+				Vector2.new(330, 320),
+				Vector2.new(280, 262),
+				Vector2.new(240, 230),
+				Vector2.new(180, 160),
+				Vector2.new(100, 90),
+				Vector2.new(20, 0),
+			},
+		},
 	},
-	hills = {
-		{ center = Vector2.new(50, -6), radius = 70, height = 14 }, -- watchtower hill
-		{ center = Vector2.new(560, 0), radius = 200, height = 60 }, -- eastern ridge (valley wall)
-		{ center = Vector2.new(-560, 0), radius = 200, height = 55 }, -- western ridge
-		{ center = Vector2.new(0, -620), radius = 220, height = 70 }, -- northern mountains
-		{ center = Vector2.new(0, 640), radius = 220, height = 65 }, -- southern hills
-	},
+	hills = (function()
+		local h = {
+			{ center = Vector2.new(-200, -20), radius = 60, height = 12 },
+			{ center = Vector2.new(240, -40), radius = 70, height = 16 },
+			{ center = Vector2.new(170, 420), radius = 60, height = 12 },
+			{ center = Vector2.new(-160, -440), radius = 55, height = 10 },
+		}
+		-- mountain ring framing the valley (also hides the world edge)
+		local ring = {}
+		for x = -600, 640, 150 do
+			table.insert(ring, { Vector2.new(x, -720), 1 })
+			table.insert(ring, { Vector2.new(x + 40, 760), 1 })
+		end
+		for z = -560, 640, 150 do
+			table.insert(ring, { Vector2.new(-740, z), 1 })
+			table.insert(ring, { Vector2.new(780, z + 40), 1 })
+		end
+		for i, r in ring do
+			local wobble = ((i * 37) % 11) / 10
+			table.insert(h, { center = r[1], radius = 100 + wobble * 10, height = 70 + wobble * 38 })
+		end
+		return h
+	end)(),
 	forests = {
-		{ center = Vector2.new(-460, -180), radius = 90, count = 26, species = { "tree_pine", "tree_oak" } },
-		{ center = Vector2.new(-250, 40), radius = 80, count = 22, species = { "tree_oak", "tree_birch" } },
-		{ center = Vector2.new(250, 60), radius = 90, count = 24, species = { "tree_oak", "tree_birch" } },
-		{ center = Vector2.new(520, -200), radius = 90, count = 24, species = { "tree_pine", "tree_oak" } },
-		{ center = Vector2.new(-430, 520), radius = 100, count = 22, species = { "tree_pine" } },
-		{ center = Vector2.new(470, 540), radius = 100, count = 22, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-480, -170), radius = 110, count = 46, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-250, 40), radius = 90, count = 36, species = { "tree_oak", "tree_birch" } },
+		{ center = Vector2.new(250, 60), radius = 100, count = 40, species = { "tree_oak", "tree_birch" } },
+		{ center = Vector2.new(540, -180), radius = 110, count = 46, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-460, 520), radius = 110, count = 40, species = { "tree_pine" } },
+		{ center = Vector2.new(500, 540), radius = 110, count = 40, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-60, -420), radius = 90, count = 32, species = { "tree_oak", "tree_pine" } },
+		{ center = Vector2.new(60, 430), radius = 90, count = 32, species = { "tree_oak", "tree_birch" } },
+		{ center = Vector2.new(-460, -480), radius = 80, count = 26, species = { "tree_pine" } },
+		{ center = Vector2.new(560, -500), radius = 80, count = 26, species = { "tree_pine", "tree_birch" } },
 	},
-	fields = {
-		{ center = Vector2.new(-170, -330), size = Vector2.new(40, 30), crop = "wheat" },
-		{ center = Vector2.new(250, 380), size = Vector2.new(40, 30), crop = "wheat" },
-	},
+	fields = (function()
+		-- farmland patchwork beside every plot (alternating crops, gaps for hedgerows)
+		local out = {}
+		for _, c in { Vector2.new(-200, -380), Vector2.new(240, -380), Vector2.new(-200, 400), Vector2.new(240, 400) } do
+			for i = 0, 3 do
+				local off = Vector2.new((i % 2) * 46 - 23, math.floor(i / 2) * 36 - 18)
+				table.insert(
+					out,
+					{ center = c + off, size = Vector2.new(40, 30), crop = if i % 2 == 0 then "wheat" else "cabbage" }
+				)
+			end
+		end
+		return out
+	end)(),
 }
 
 return {

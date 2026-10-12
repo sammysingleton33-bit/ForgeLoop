@@ -10,14 +10,15 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 |---|---|---|
 | P1 | FORGE-03 PRs FL-0058 (Treasury), FL-0020 (UI kit) and FL-0059 (HUD, build menu) merged | all |
 | P2 | FORGE-01's `Kingdom`, `Match` and `Build` remotes and services merged (CONTRACTS G8) | U2–U9 |
-| P3 | FORGE-04's InputModeController merged (G4.1) | U5 build-mode camera/taps only |
+| P3 | FORGE-04's InputModeController merged (G4.1; G13.6 `selected` for U10–U11) | U5 build-mode camera/taps, U10–U11 |
 | P4 | Icons uploaded and their ids in `games/game-001/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U9 only; otherwise emoji fallbacks show |
 
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
    `BuildMenuController`, with no red errors from either.
-2. Without P2 you see, after about 10 s, warnings like `KingdomHudController: cannot listen to
-   Kingdom.State`, and **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
+2. Without P2, wait about 25 s: warnings like `KingdomHudController: cannot listen to
+   Kingdom.State` arrive in two waves (around 15 s and 20 s, one per area each time), and there is
+   **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
 
 ## U2 — kingdom, rulers, resources (P2)
 1. Play. Top-left: a crest in your kingdom's colour, its name (e.g. Emberhold) and
@@ -67,6 +68,23 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 ## U8 — two rulers (P2)
 1. Test → Clients and Servers with 2 players in one party (Party Simulator). Both see the same
    kingdom, both names under the pills; a Farm placed by one lowers the Wood pill of both.
+
+## U10 — build on a plot (P2 + FORGE-01 plots and FORGE-04 selection, FL-0087)
+1. In the aerial view tap a free **plot**. The drawer opens titled "Build here" with one tab naming
+   its size (e.g. "Medium plot") and only the structures that fit it, each with its cost.
+2. Pick one: cost against your stock, "0:25 with builders", and a "Gives" line. Tap **Build … here**:
+   a toast "… ordered — Builders are on their way", the drawer closes, the spend floats under the
+   pills and a construction chip appears. The plot now shows the building rising.
+3. Tap a plot you cannot afford anything for: greyed buttons say what is missing ("Need 20 Wood …").
+
+## U11 — upgrade a building (P2 + FORGE-04 selection, FL-0087)
+1. Tap your Barracks: the drawer shows "Barracks · Lv 1", the level-2 cost, "0:18 with builders",
+   **Now:** Recruit up to 5 soldiers and **Lv 2:** Recruit up to 10 (green). On a phone only the Lv 2
+   line shows, under the costs.
+2. Tap **Upgrade to Lv 2** (a confirmation appears if it costs half or more of a resource): toast
+   "Barracks upgrade started"; the chip reads "Barracks Lv 2".
+3. Tap another kingdom's building: a read-only card "Frostmere · Level 2 — Not your building".
+4. Tap empty ground: the drawer closes.
 
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).

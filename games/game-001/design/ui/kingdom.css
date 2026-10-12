@@ -40,3 +40,13 @@
 .mrow .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 800 11px var(--font-body); color: var(--color-ink950); background: var(--k); }
 .mrow .role { margin-left: auto; color: var(--color-textSecondary); font-weight: 600; }
 .stand .rg { display: inline-flex; align-items: center; gap: 2px; color: var(--color-textSecondary); width: 34px; }
+/* FL-0087: plot markers in the aerial view, benefits in the detail pane */
+.plot { position: absolute; transform: translate(-50%, -50%) skewX(-14deg); border: 2.5px dashed rgba(247, 239, 220, 0.85); border-radius: 6px; background: rgba(11, 15, 24, 0.18); display: grid; place-items: center; }
+.plot span { transform: skewX(14deg); font: 800 13px var(--font-body); color: var(--color-parchment100); text-shadow: 0 1px 2px #000; }
+.plot.sel { border: 3px solid var(--color-gold400); background: rgba(234, 196, 108, 0.28); box-shadow: 0 0 0 3px rgba(234, 196, 108, 0.35); }
+.plot.used { border-style: solid; border-color: rgba(247, 239, 220, 0.35); background: rgba(217, 201, 163, 0.5); }
+.benefits { display: flex; flex-direction: column; gap: 4px; }
+.ben { display: flex; gap: 8px; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: 6px; background: color-mix(in srgb, var(--color-scrim) 55%, transparent); font: 600 12px var(--font-body); color: var(--color-textPrimary); }
+.ben .bl { flex: 0 0 52px; font-weight: 800; color: var(--color-textSecondary); }
+.ben.next { background: color-mix(in srgb, var(--color-vert) 18%, transparent); outline: 1px solid color-mix(in srgb, var(--color-vert) 45%, transparent); }
+.ben.next .bl { color: #A9E57C; }

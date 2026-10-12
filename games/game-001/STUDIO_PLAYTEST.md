@@ -41,7 +41,8 @@ panel only exists in Studio; live servers create no debug remotes. Pressing a bu
 3. Copy those three lines into the report.
 
 4. With the game stopped: Explorer → **Workspace** → Properties → **StreamingEnabled** is ticked, and
-   **Players** → **CharacterAutoLoads** is unticked (D-025, D-026).
+   **Players** → **CharacterAutoLoads** is unticked (D-025, D-026), and **Lighting** → **Technology** is
+   **Future**.
 5. Until FL-0048 spawns rulers, **no character appears** when you press Play (the camera is free).
    That is correct: characters only load when the game puts you in a kingdom.
 

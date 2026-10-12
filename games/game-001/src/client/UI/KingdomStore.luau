@@ -11,6 +11,7 @@
 		store:applyTreasury(totals, deltas?)      Treasury.Changed / Treasury.Get (my kingdom's bag)
 		store:applyBuildings(list, full)          Build.GetBuildings (full = true) / Build.Buildings (changes)
 		store:applyCosts(catalogue)               Treasury.GetCosts (config Costs is the fallback)
+		store:applySlots(list)                    Build.Slots / Build.GetSlots: my kingdom's plots (G13.5)
 	Reading:
 		store:mine() -> Kingdom?                  store:kingdoms() -> { Kingdom } (server order)
 		store:myBuildings() -> { Building }       mine, by id, destroyed ones dropped
@@ -18,8 +19,10 @@
 		store:balances() -> ResourceBag           ({} until the treasury arrives)
 		store:hasTreasury() -> boolean
 		store:buildingCost(type, level) -> { cost, buildSeconds }?
+		store:slot(id) -> { id, size, occupiedBy?, fits? }?   store:slots() -> { slot } (by id)
+		store:building(id) -> Building?           any kingdom's building (foreign ones too)
 		store.match = { phase, endsAt?, startedAt? }?
-		store.changed: Signal<(what: "kingdoms" | "match" | "treasury" | "buildings" | "costs", ...)>
+		store.changed: Signal<(what: "kingdoms" | "match" | "treasury" | "buildings" | "costs" | "slots", ...)>
 			"treasury" also passes the deltas, so the HUD can float them under the pills.
 	Payloads are checked loosely (wrong types are ignored with no error): a bad push must never
 	break the HUD.
@@ -39,6 +42,7 @@ function KingdomStore.new()
 		_treasury = nil :: { [string]: number }?,
 		_buildings = {} :: { [number]: any },
 		_costs = nil :: any,
+		_slots = {} :: { [string]: any },
 		match = nil :: any,
 		changed = Signal.new(),
 	}, KingdomStore)
@@ -118,6 +122,43 @@ function KingdomStore:applyCosts(catalogue: any)
 	end
 	self._costs = catalogue
 	self.changed:fire("costs")
+end
+
+function KingdomStore:applySlots(list: any)
+	if type(list) ~= "table" then
+		return
+	end
+	local slots = {}
+	for _, slot in list do
+		if
+			type(slot) == "table"
+			and type(slot.id) == "string"
+			and (slot.size == "S" or slot.size == "M" or slot.size == "L")
+		then
+			slots[slot.id] = slot
+		end
+	end
+	self._slots = slots
+	self.changed:fire("slots")
+end
+
+function KingdomStore:slot(id: any): any
+	return if type(id) == "string" then self._slots[id] else nil
+end
+
+function KingdomStore:slots(): { any }
+	local out = {}
+	for _, slot in self._slots do
+		table.insert(out, slot)
+	end
+	table.sort(out, function(a, b)
+		return a.id < b.id
+	end)
+	return out
+end
+
+function KingdomStore:building(id: any): any
+	return if type(id) == "number" then self._buildings[id] else nil
 end
 
 function KingdomStore:mine(): any
