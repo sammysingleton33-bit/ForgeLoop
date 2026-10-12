@@ -17,3 +17,5 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
 - A branch that contains the same commit twice (once through main, once through the stale stacked base) can
   show "dirty" on GitHub even when local `git merge` is clean. Merging current main into the head and pushing
   clears it.
+- 2026-10-12 · Commit an asset the moment a fresh review passes it, before asking for any optional improvement. bush, plant_grass and resource_ore all passed round 1 and then failed after "nice to have" changes. Only bush and grass could be restored, because only their passing code was in git. · reviews/bush.json, resource_ore.json history · `observed-once`
+- 2026-10-12 · Cap the review loop at 3 rounds per generator. After that, park it with a written change of strategy instead of iterating. Repeated rounds of the same approach (stacked-blob birch crowns, layered cliff slabs, masonry quarry joints) failed for the same reason each time. · GENERATORS.md "Parked" sections · `observed-once`

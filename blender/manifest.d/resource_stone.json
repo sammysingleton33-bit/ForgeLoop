@@ -34,9 +34,21 @@
       "preview": "previews/resource_stone.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Rule fails: on 01/03/06 vertical joints line up across the tier and wedge-slot lines and read as + crosses at the gameplay camera, and the bottom tiers of 03 (barge/skip) and 06 (prow-like left end) taper inward to the ground like boat hulls. Props give strong silhouettes and the quarry reads instantly vs ore/wood even in greyscale, but 05 reads like a sofa, the uniform brick grid reads as built wall rather than faceted rock, and cut blocks are near-white like the character proxy.",
         "review_file": "reviews/resource_stone.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7500,
       "sockets": {
@@ -93,9 +105,21 @@
       "preview": "previews/resource_stone.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Rule fails: on 01/03/06 vertical joints line up across the tier and wedge-slot lines and read as + crosses at the gameplay camera, and the bottom tiers of 03 (barge/skip) and 06 (prow-like left end) taper inward to the ground like boat hulls. Props give strong silhouettes and the quarry reads instantly vs ore/wood even in greyscale, but 05 reads like a sofa, the uniform brick grid reads as built wall rather than faceted rock, and cut blocks are near-white like the character proxy.",
         "review_file": "reviews/resource_stone.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7501,
       "sockets": {
@@ -152,9 +176,21 @@
       "preview": "previews/resource_stone.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Rule fails: on 01/03/06 vertical joints line up across the tier and wedge-slot lines and read as + crosses at the gameplay camera, and the bottom tiers of 03 (barge/skip) and 06 (prow-like left end) taper inward to the ground like boat hulls. Props give strong silhouettes and the quarry reads instantly vs ore/wood even in greyscale, but 05 reads like a sofa, the uniform brick grid reads as built wall rather than faceted rock, and cut blocks are near-white like the character proxy.",
         "review_file": "reviews/resource_stone.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7502,
       "sockets": {
@@ -211,9 +247,21 @@
       "preview": "previews/resource_stone.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Rule fails: on 01/03/06 vertical joints line up across the tier and wedge-slot lines and read as + crosses at the gameplay camera, and the bottom tiers of 03 (barge/skip) and 06 (prow-like left end) taper inward to the ground like boat hulls. Props give strong silhouettes and the quarry reads instantly vs ore/wood even in greyscale, but 05 reads like a sofa, the uniform brick grid reads as built wall rather than faceted rock, and cut blocks are near-white like the character proxy.",
         "review_file": "reviews/resource_stone.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7503,
       "sockets": {
@@ -270,9 +318,21 @@
       "preview": "previews/resource_stone.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Rule fails: on 01/03/06 vertical joints line up across the tier and wedge-slot lines and read as + crosses at the gameplay camera, and the bottom tiers of 03 (barge/skip) and 06 (prow-like left end) taper inward to the ground like boat hulls. Props give strong silhouettes and the quarry reads instantly vs ore/wood even in greyscale, but 05 reads like a sofa, the uniform brick grid reads as built wall rather than faceted rock, and cut blocks are near-white like the character proxy.",
         "review_file": "reviews/resource_stone.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7504,
       "sockets": {
@@ -329,9 +389,21 @@
       "preview": "previews/resource_stone.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Rule fails: on 01/03/06 vertical joints line up across the tier and wedge-slot lines and read as + crosses at the gameplay camera, and the bottom tiers of 03 (barge/skip) and 06 (prow-like left end) taper inward to the ground like boat hulls. Props give strong silhouettes and the quarry reads instantly vs ore/wood even in greyscale, but 05 reads like a sofa, the uniform brick grid reads as built wall rather than faceted rock, and cut blocks are near-white like the character proxy.",
         "review_file": "reviews/resource_stone.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7505,
       "sockets": {

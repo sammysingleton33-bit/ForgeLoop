@@ -119,3 +119,17 @@ Both rounds read the cliffs as built walls or a layer cake (stacked horizontal s
 not need cliff meshes for VS-1/VS-2: WorldPlan already builds hills with terrain Rock/Slate crowns and scatters
 boulder clusters at their feet. Strategy change, if cliffs are needed later: build them as clusters of the passed
 rock_boulder masses (scaled, overlapped and tilted), with turf from the boulder moss helper, rather than as layered slabs.
+
+## Parked: resource_stone and resource_ore (NEEDS-WORK after 3 fresh-review rounds, 2026-10-12)
+In-game resource nodes use the Kit's part-built stand-ins (`Kit/Props.luau`), so VS-1 is not blocked.
+- **resource_stone.** Round 1 failed on variation, rounds 2–3 on "+"-reading joints and hull-like bases. The props
+  (windlass, crane, treadwheel, sled) pass, and the quarry reads distinct from ore and wood in every colour mode.
+  Strategy change: build the rock from the passed rock_boulder builder (uncut faceted rock), carve one worked face,
+  and put the joints only on that face, staggered across tiers and checked from the low gameplay camera. Use a
+  warm mid-grey, never near-white.
+- **resource_ore.** v1 passed round 1 on colour alone. The accessibility rework (rounds 2–3) made it worse: iron
+  reads as meat or candy, the gold nuggets sit on the surface, and every variant shares one layout. v1 cannot be
+  restored because it was never committed. Lesson: commit a passing version before asking for an optional
+  improvement. Strategy change: generalise the crystal approach, which reads in colour, greyscale and CVD, to
+  every ore. Iron becomes dull steel-grey angular crystals in rust-stained rock; gold becomes bright faceted nuggets
+  embedded in a split seam. Use the passed boulder builder for the rock, and give each variant its own layout.

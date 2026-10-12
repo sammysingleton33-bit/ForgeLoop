@@ -32,9 +32,21 @@
       "preview": "previews/resource_ore.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
         "review_file": "reviews/resource_ore.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7700,
       "sockets": {
@@ -89,9 +101,21 @@
       "preview": "previews/resource_ore.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
         "review_file": "reviews/resource_ore.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7701,
       "sockets": {
@@ -146,9 +170,21 @@
       "preview": "previews/resource_ore.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
         "review_file": "reviews/resource_ore.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7702,
       "sockets": {
@@ -203,9 +239,21 @@
       "preview": "previews/resource_ore.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
         "review_file": "reviews/resource_ore.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7703,
       "sockets": {
@@ -260,19 +308,19 @@
       "preview": "previews/resource_ore.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "The orange veins on ore_01/02 are flat painted bands with almost no luminance contrast against the slate (they vanish in greyscale) and turn khaki under protan/deutan, close to the gold nuggets on 03/04, which are small specks at 52 studs. Only the crystals (05/06) change the silhouette, so the metal-ore nodes read as plain boulders.",
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
         "review_file": "reviews/resource_ore.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
           "cohesion": 4,
           "detail_density": 3,
-          "palette": 4,
-          "proportions": 4,
+          "palette": 3,
+          "proportions": 3,
           "readability": 3,
           "silhouette": 3,
           "triangle_cost": 4,
-          "variation": 4
+          "variation": 3
         },
         "verdict": "NEEDS-WORK"
       },
@@ -329,19 +377,19 @@
       "preview": "previews/resource_ore.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "The orange veins on ore_01/02 are flat painted bands with almost no luminance contrast against the slate (they vanish in greyscale) and turn khaki under protan/deutan, close to the gold nuggets on 03/04, which are small specks at 52 studs. Only the crystals (05/06) change the silhouette, so the metal-ore nodes read as plain boulders.",
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
         "review_file": "reviews/resource_ore.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
           "cohesion": 4,
           "detail_density": 3,
-          "palette": 4,
-          "proportions": 4,
+          "palette": 3,
+          "proportions": 3,
           "readability": 3,
           "silhouette": 3,
           "triangle_cost": 4,
-          "variation": 4
+          "variation": 3
         },
         "verdict": "NEEDS-WORK"
       },
