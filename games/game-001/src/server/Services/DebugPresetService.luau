@@ -12,7 +12,8 @@
 
 		rep.set <category> <n>                   ReputationService:get / :apply (G13.4); sets the
 		                                         presser's <category> to n (0-100)
-		citizen.request <entityId> <scenarioId>  ConversationService:debugRequest (hook, FORGE-01)
+		citizen.request <entityId> <scenarioId>  ConversationService:debugRequest (hook, FORGE-01);
+		                                         entityId 0 / scenarioId "any" = the hook picks
 		kingdom.setFed <ratio>                   CitizenService:setFedRatio(kingdom, ratio) (G5); lasts
 		                                         until ProductionService's next upkeep tick
 		strike.start <occupation>                ConsequenceService:debugStrike(kingdom, occupation, true) (hook)
@@ -22,7 +23,9 @@
 	`(self, kingdom: KingdomId, ...) -> (ok: boolean, message: string?)`. The service named first is
 	tried first; CitizenService is the fallback home for each hook.
 
-	Presets (STUDIO_PLAYTEST rows 8 and 9; no arguments, so the panel can run them):
+	Presets (STUDIO_PLAYTEST rows 4, 5, 8 and 9; the panel can only run commands without arguments,
+	so every user step uses a preset):
+		vs1.reseed    population from seed 1234     vs1.request  any citizen raises any eligible request
 		vs1.repLow    compassion 10, fear 80        vs1.repHigh  compassion 90, honor 90
 		vs1.hungry    kingdom fed ratio 0.3         vs1.strike   farmers strike
 ]]
@@ -128,7 +131,7 @@ function DebugPresetService:start()
 	register(self, {
 		name = "citizen.request",
 		label = "Make a citizen of your kingdom raise a request (entityId, scenarioId)",
-		args = { Validate.integer(1, 65535), Validate.string(1, 48) },
+		args = { Validate.integer(0, 65535), Validate.string(1, 48) },
 		run = function(player: any, entityId: number, scenarioId: string)
 			return self:_hook("request", self:_kingdomOf(player), entityId, scenarioId)
 		end,
@@ -164,6 +167,16 @@ function DebugPresetService:start()
 		end,
 	})
 
+	registerPreset({
+		name = "vs1.reseed",
+		label = "Row 4: regenerate your citizens from seed 1234",
+		steps = { { "population.reseed", 1234 } },
+	})
+	registerPreset({
+		name = "vs1.request",
+		label = "Row 9: a citizen raises a request now",
+		steps = { { "citizen.request", 0, "any" } },
+	})
 	registerPreset({
 		name = "vs1.repLow",
 		label = "Row 8: low compassion, high fear",

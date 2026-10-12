@@ -83,7 +83,7 @@ describe("DebugPresetService (CONTRACTS G13.7)", function()
 		DebugCommands.reset()
 	end)
 
-	it("registers the five G13.7 commands and the four row presets once", function()
+	it("registers the five G13.7 commands and the six row presets once", function()
 		boot()
 		boot() -- a second boot in the same process must not error or duplicate
 		local names = {}
@@ -95,7 +95,7 @@ describe("DebugPresetService (CONTRACTS G13.7)", function()
 		for _, preset in DebugCommands.presets() do
 			table.insert(presets, preset.name)
 		end
-		expect(presets).toEqual({ "vs1.hungry", "vs1.repHigh", "vs1.repLow", "vs1.strike" })
+		expect(presets).toEqual({ "vs1.hungry", "vs1.repHigh", "vs1.repLow", "vs1.request", "vs1.reseed", "vs1.strike" })
 	end)
 
 	it("runs every command against the contract APIs when the services exist", function()
@@ -128,6 +128,11 @@ describe("DebugPresetService (CONTRACTS G13.7)", function()
 		expect((DebugCommands.runPreset(PLAYER, "vs1.hungry"))).toBe(true)
 		expect((DebugCommands.runPreset(PLAYER, "vs1.strike"))).toBe(true)
 		expect((DebugCommands.runPreset(PLAYER, "vs1.repHigh"))).toBe(true)
+		expect({ DebugCommands.runPreset(PLAYER, "vs1.request") }).toEqual({
+			true,
+			"vs1.request: citizen 0 asks 'any'",
+		})
+		expect((DebugCommands.runPreset(PLAYER, "vs1.reseed"))).toBe(true)
 	end)
 
 	it("fails closed on bad arguments (negative test per command)", function()
@@ -137,7 +142,7 @@ describe("DebugPresetService (CONTRACTS G13.7)", function()
 			{ "rep.set", "kindness", 50 }, -- unknown category
 			{ "rep.set", "fear", 101 }, -- out of range
 			{ "rep.set", "fear", 0.5 }, -- not an integer
-			{ "citizen.request", 0, "x" }, -- entity id below 1
+			{ "citizen.request", -1, "x" }, -- negative entity id
 			{ "citizen.request", 12, "" }, -- empty scenario id
 			{ "citizen.request", 12, string.rep("s", 49) }, -- scenario id too long
 			{ "kingdom.setFed", 1.5 },

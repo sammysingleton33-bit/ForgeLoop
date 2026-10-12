@@ -87,6 +87,12 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   merge commit (`HEAD^1`) instead. · PR #12 run 38303576284 (`base 7ff75ca`, FAIL 6 of 17); local
   reproduction with the merge onto `0267e23`: `--base 7ff75ca` FAIL 6 of 17, `--base HEAD^1` PASS 10;
   a deliberate PROJECT_STATUS.md edit still fails with `HEAD^1` · `observed-once`
+- 2026-10-12 · In a clone whose fetch refspec maps only `main`, `git fetch origin <branch>` updates
+  `FETCH_HEAD` but not `refs/remotes/origin/<branch>`. Pushes then look unpushed (a stop hook counted
+  42 "unpushed" commits that were on the remote), and a filtered `git push -q … | grep` can hide the
+  real result. Verify pushes with `git ls-remote origin refs/heads/<branch>`, and fetch branches with an
+  explicit refspec `+refs/heads/<b>:refs/remotes/origin/<b>`. · FORGE-05 session, `forge/05-integration`
+  (ls-remote 5348570 = local) · `observed-once`
 
 ## Mock change log (FL-0028)
 - 2026-10-12 FL-0003 (FORGE-00 skeleton): first versions of MockEnv, MockDataStoreService,
