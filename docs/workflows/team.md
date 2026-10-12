@@ -15,6 +15,7 @@ Rules
 - One owner per path. A path not listed belongs to FORGE-00 until assigned.
 - `games/game-00N/` is created by FORGE-00 when a game is approved; its sub-folders are then assigned per the game brief.
 - Each worker keeps `agents/<id>/STATUS.md` current: branch, open PR, current task, blockers, last verified check.
+- Game config files are owned per area in every `games/<game>/config/` folder: `Rounds`, `Spawns`, `Hazards`, `Combat` → FORGE-01; `Items`, `Currencies`, `RewardTables`, `Products`, `Shop`, `UITheme` → FORGE-03; `Onboarding`, `Quests`, `DailyRewards`, `Sounds`, `Analytics` → FORGE-04; everything else in `games/sandbox/` (map, `Game.luau`, README) → FORGE-05. For `game-00N` the game brief may reassign.
 - Studio test steps: each worker writes its own `roblox/studio-tests/<area>.md`; FORGE-05's `roblox/STUDIO_TEST_PLAN.md` links them and runs the smoke tests.
 - Cross-area requests: `production/handoffs/YYYY-MM-DD-<from>-to-<to>-<topic>.md`, plus a task for the receiver.
 

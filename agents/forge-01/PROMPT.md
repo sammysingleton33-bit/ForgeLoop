@@ -25,7 +25,7 @@ If pushing `forge/01-gameplay` is refused, use the branch your session assigns a
 - `Core/Signal.luau` comes with the skeleton; you own `Core/` from then on.
 
 ## 4. What you own (edit nothing else)
-`roblox/src/shared/Core/`, `roblox/src/shared/Gameplay/` (incl. `Gameplay/Remotes.luau`), server services `roblox/src/server/Services/{Data,Player,Remote,Round,Spawn,Combat,Hazard}*`, client controllers `roblox/src/client/Controllers/{Input,Camera,Movement,Combat,Spectate}*`, `roblox/tests/unit/core/`, `roblox/tests/unit/gameplay/`, `roblox/studio-tests/gameplay.md`, `docs/lessons-learned/gameplay.md`, your task files, `agents/forge-01/STATUS.md`. Harness or mock changes → request from FORGE-05 (`production/handoffs/…-forge-01-to-forge-05-…md`); contract changes → FORGE-00.
+`roblox/src/shared/Core/`, `roblox/src/shared/Gameplay/` (incl. `Gameplay/Remotes.luau`), server services `roblox/src/server/Services/{Data,Player,Remote,Round,Spawn,Combat,Hazard}*`, client controllers `roblox/src/client/Controllers/{Input,Camera,Movement,Combat,Spectate}*`, `roblox/tests/unit/core/`, `roblox/tests/unit/gameplay/`, `roblox/studio-tests/gameplay.md`, `docs/lessons-learned/gameplay.md`, the gameplay config files `games/*/config/{Rounds,Spawns,Hazards,Combat}.luau`, your task files, `agents/forge-01/STATUS.md`. Harness or mock changes → request from FORGE-05 (`production/handoffs/…-forge-01-to-forge-05-…md`); contract changes → FORGE-00.
 
 ## 5. Work queue, in order (one PR per item; open each PR as soon as its specs pass)
 **PR 1 — FL-0007 Core utilities (target: first)**
