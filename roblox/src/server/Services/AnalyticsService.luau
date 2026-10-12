@@ -25,9 +25,11 @@
 	- Economy events: only EconomyService calls economy() (§7); nothing here derives them from
 	  CurrencyChanged.
 
-	Bus wiring (start): config.track rules are applied to GameEvents (+ KingdomSignals once declared);
-	PlayerReady/PlayerRemoving drive SessionStart/SessionEnd and the Return funnel (config.session).
-	DataService (optional, registry:find) supplies core.createdAt for days since first join.
+	Bus wiring (start): config.track rules are applied to GameEvents. Who an event is about comes
+	from Experience/Subjects: framework events have defaults, and a game passes resolvers for its own
+	events in config.subjects (e.g. game-001's G9 attribution rules). PlayerReady/PlayerRemoving drive
+	SessionStart/SessionEnd and the Return funnel (config.session). DataService (optional,
+	registry:find) supplies core.createdAt for days since first join.
 ]]
 
 local AnalyticsConfig = require("@game/ReplicatedStorage/Forge/Config/Analytics")
@@ -35,6 +37,7 @@ local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/Analyt
 local AnalyticsSchema = require("@game/ReplicatedStorage/Forge/Experience/AnalyticsSchema")
 local Bus = require("@game/ReplicatedStorage/Forge/Experience/Bus")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
+local Subjects = require("@game/ReplicatedStorage/Forge/Experience/Subjects")
 
 local AnalyticsService = {}
 AnalyticsService.__index = AnalyticsService
@@ -103,7 +106,11 @@ function Def.create(env: any, registry: any, options: Options?)
 	for key, value in (if type(config) == "table" and type(config.limits) == "table" then config.limits else {}) do
 		self._limits[key] = value
 	end
-	local problems = AnalyticsSchema.validate(config, AnalyticsRouter.knownEvents(bus))
+	local known = AnalyticsRouter.knownEvents(bus)
+	local problems = AnalyticsSchema.validate(config, known)
+	for _, problem in Subjects.validate(if type(config) == "table" then config.subjects else nil, known) do
+		table.insert(problems, problem)
+	end
 	if #problems > 0 then
 		self._enabled = false
 		env.log("error", "analytics config invalid; analytics disabled", { problems = table.concat(problems, "; ") })
@@ -520,6 +527,7 @@ function AnalyticsService:_lookup()
 		all = function(): { any }
 			return if players then players:GetPlayers() else {}
 		end,
+		registry = self._registry,
 	}
 end
 
@@ -568,7 +576,15 @@ function AnalyticsService:_onBus(eventName: string, args: { any })
 	if rules == nil then
 		return
 	end
-	for _, subject in AnalyticsRouter.normalize(eventName, args, self:_lookup()) do
+	local subjects, err = Subjects.resolve(eventName, args, self:_lookup(), self._config.subjects)
+	if err then
+		self:_warnThrottled(
+			`resolver:{eventName}`,
+			`analytics: subjects resolver for {eventName} failed`,
+			{ error = err }
+		)
+	end
+	for _, subject in subjects do
 		self:_state(subject.player).lastActivity = eventName
 		for _, rule in rules do
 			if AnalyticsRouter.matches(rule, subject.info) then

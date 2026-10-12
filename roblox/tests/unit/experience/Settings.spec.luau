@@ -140,8 +140,9 @@ describe("SettingsService", function()
 		player = env.mock.players:add({ userId = 501 })
 	end)
 
-	it("is the only registrant of the experience namespace (registered in new)", function()
+	it("registers the experience namespace with DataService when it is loaded", function()
 		expect(data:registeredNamespaces()).toEqual({ "experience" })
+		expect(settings:isPersistent()).toBe(true)
 		expect(function()
 			data:registerNamespace("experience", Schema.spec())
 		end).toThrow("registered twice")
@@ -241,5 +242,62 @@ describe("SettingsService", function()
 		local env2 = MockEnv.new()
 		boot(env2, FakeDataService.new(), nil, nil)
 		expect(env2.mock:hasLog("warn", "RemoteService not loaded")).toBe(true)
+	end)
+end)
+
+describe("SettingsService without DataService (D-027: session-only)", function()
+	local env, remotes, registry, settings, player
+
+	beforeEach(function()
+		env = MockEnv.new({ seed = 12 })
+		remotes = FakeRemoteService.new({ declarations = ExperienceRemotes })
+		registry = Loader.load(env, {
+			{
+				name = "RemoteService",
+				new = function()
+					return remotes
+				end,
+			},
+			SettingsDef,
+		})
+		settings = registry:get("SettingsService")
+		player = env.mock.players:add({ userId = 551 })
+	end)
+
+	it("boots without DataService and says so", function()
+		expect(settings:isPersistent()).toBe(false)
+		expect(env.mock:hasLog("info", "no DataService")).toBe(true)
+	end)
+
+	it("pushes the default snapshot when the player joins", function()
+		local sent = remotes:sentTo("Experience.Settings", player)
+		expect(#sent).toBe(1)
+		expect(sent[1].args[1].musicVolume).toBe(0.6)
+	end)
+
+	it("keeps settings and section progress for the session", function()
+		expect(settings:set(player, "musicVolume", 0.3)).toBe(true)
+		expect(settings:get(player, "musicVolume")).toBe(0.3)
+		expect(settings:update(player, "onboarding", function(section)
+			section.flows.first = { version = 1, completed = 3, skipped = false }
+		end)).toBe(true)
+		expect(settings:read(player, "onboarding").flows.first.completed).toBe(3)
+	end)
+
+	it("has the same no-partial-write and validation rules as the persistent store", function()
+		expect(settings:set(player, "musicVolume", "loud")).toBe(false)
+		expect(settings:update(player, "daily", function(section)
+			section.streak = 9
+			error("boom")
+		end)).toBe(false)
+		expect(settings:read(player, "daily").streak).toBe(0)
+		expect(settings:update(player, "settings", function() end)).toBe(false)
+	end)
+
+	it("forgets the session when the player leaves", function()
+		settings:set(player, "sfxVolume", 0.1)
+		env.mock.players:remove(player)
+		expect(settings:get(player, "sfxVolume")).toBe(0.8) -- a departed player gets defaults, nothing new is stored
+		expect(settings:set(player, "sfxVolume", 0.2)).toBe(false)
 	end)
 end)

@@ -4,13 +4,94 @@ local describe, it, expect, beforeEach = T.describe, T.it, T.expect, T.beforeEac
 local MockEnv = require("../../mocks/MockEnv")
 local EngineStubs = require("./doubles/EngineStubs")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
-local SoundRegistry = require("@game/ReplicatedStorage/Forge/Experience/SoundRegistry")
 local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
 local SettingsDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/SettingsController")
-local AudioDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/AudioController")
 local VFXDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/VFXController")
 
 EngineStubs.install()
+
+-- Game-style presets, registered once for this spec file (VfxPresets.register is how games add theirs).
+local rgb = Color3.fromRGB
+local function spec(fields)
+	local base = {
+		texture = VfxPresets.TEXTURES.sparkle,
+		colors = { rgb(255, 255, 255) },
+		lifetime = { 0.5, 1 },
+		speed = { 1, 2 },
+		size = { 1, 0 },
+		transparency = { 0, 1 },
+		spread = 30,
+		lightEmission = 0,
+	}
+	for k, v in fields do
+		base[k] = v
+	end
+	return base
+end
+local TEST_PRESETS = {
+	{
+		id = "test.burning",
+		category = "siege",
+		priority = 2,
+		reducedMotion = "keep",
+		emitters = {
+			spec({ rate = 20, lifetime = { 0.6, 1 } }),
+			spec({ rate = 8, lifetime = { 2.5, 3.5 } }),
+		},
+	},
+	{
+		id = "test.chimney",
+		category = "ambience",
+		priority = 1,
+		reducedMotion = "keep",
+		emitters = {
+			spec({ rate = 2, lifetime = { 3, 4 } }),
+		},
+	},
+	{
+		id = "test.festival",
+		category = "event",
+		priority = 2,
+		reducedMotion = "reduce",
+		durationSec = 6,
+		emitters = {
+			spec({ rate = 30, lifetime = { 2, 3 } }),
+		},
+	},
+	{
+		id = "test.victory",
+		category = "celebration",
+		priority = 3,
+		reducedMotion = "reduce",
+		durationSec = 4,
+		emitters = {
+			spec({ rate = 40, lifetime = { 1.5, 2 } }),
+			spec({ burst = 80, lifetime = { 1, 1.8 } }),
+		},
+	},
+	{
+		id = "test.impact",
+		category = "siege",
+		priority = 3,
+		reducedMotion = "reduce",
+		shake = { magnitude = 0.4, duration = 0.3 },
+		emitters = {
+			spec({ burst = 18 }),
+			spec({ burst = 20 }),
+		},
+	},
+	{
+		id = "test.claim",
+		category = "territory",
+		priority = 2,
+		reducedMotion = "reduce",
+		tint = true,
+		emitters = {
+			spec({ burst = 30 }),
+		},
+	},
+}
+assert(#VfxPresets.register(TEST_PRESETS) == 0, "test presets must be valid")
 
 local function hasProblem(problems, substring)
 	for _, p in problems do
@@ -43,6 +124,29 @@ local function emitter(fields)
 end
 
 describe("Experience/VfxPresets budgets", function()
+	it("register() rejects invalid lists and duplicate ids, adding nothing", function()
+		local problems = VfxPresets.register({
+			{
+				id = "test.ok",
+				category = "x",
+				priority = 1,
+				reducedMotion = "keep",
+				emitters = { spec({ burst = 5 }) },
+			},
+			{
+				id = "test.bad",
+				category = "x",
+				priority = 1,
+				reducedMotion = "keep",
+				emitters = { spec({ burst = 999 }) },
+			},
+		})
+		expect(table.concat(problems, "\n")).toContain("(test.bad): ~999 live particles")
+		expect(VfxPresets.get("test.ok")).toBeNil()
+		local dup = VfxPresets.register({ TEST_PRESETS[1] })
+		expect(dup[1]).toContain("test.burning: already registered")
+	end)
+
 	it("every shipped preset is valid and inside the mobile budget", function()
 		expect(VfxPresets.validate(VfxPresets.ALL)).toEqual({})
 		for _, preset in VfxPresets.ALL do
@@ -91,30 +195,7 @@ describe("VFXController", function()
 			services = { GuiService = platformReduce },
 		})
 		env.SoundService = env.mock.dataModel:GetService("SoundService")
-		registry = Loader.load(env, {
-			SettingsDef,
-			{
-				name = "AudioController",
-				dependencies = { "SettingsController" },
-				new = function(e, r)
-					return AudioDef.create(e, r, { registry = SoundRegistry.build({}) })
-				end,
-			},
-			{
-				name = "VFXController",
-				dependencies = { "SettingsController", "AudioController" },
-				new = function(e, r)
-					return VFXDef.create(e, r, {
-						kingdomId = function()
-							return "k1"
-						end,
-						focus = function()
-							return Vector3.zero
-						end,
-					})
-				end,
-			},
-		})
+		registry = Loader.load(env, { SettingsDef, VFXDef })
 		vfx = registry:get("VFXController")
 		settings = registry:get("SettingsController")
 	end)
@@ -145,14 +226,14 @@ describe("VFXController", function()
 
 	it("tints presets that allow it with the kingdom colour", function()
 		local red = Color3.fromRGB(200, 30, 30)
-		local effect = vfx:play("kingdom.territory.claim", { position = Vector3.zero, tint = red })
+		local effect = vfx:play("test.claim", { position = Vector3.zero, tint = red })
 		expect(effect.parts[2][1].Color).toBe(ColorSequence.new(red, red))
 		local plain = vfx:play("hit.generic", { position = Vector3.zero, tint = red })
 		expect(plain.parts[2][1].Color).never.toBe(ColorSequence.new(red, red))
 	end)
 
 	it("runs continuous presets for durationSec, then stops emitting and cleans up", function()
-		local effect = vfx:play("kingdom.festival", { position = Vector3.zero })
+		local effect = vfx:play("test.festival", { position = Vector3.zero })
 		local e = effect.parts[2][1]
 		expect(e.Enabled).toBe(true)
 		expect(e.Rate).toBe(30)
@@ -168,10 +249,10 @@ describe("VFXController", function()
 		vfx.shakeRequested:connect(function()
 			shakes += 1
 		end)
-		vfx:play("kingdom.siege.impact", { position = Vector3.zero })
+		vfx:play("test.impact", { position = Vector3.zero })
 		expect(shakes).toBe(1)
 		platformReduce.ReducedMotionEnabled = true -- the platform's Reduce Motion counts too
-		local effect = vfx:play("kingdom.siege.impact", { position = Vector3.zero })
+		local effect = vfx:play("test.impact", { position = Vector3.zero })
 		expect(shakes).toBe(1)
 		expect(EngineStubs.emitted(effect.parts[2][1])).toEqual({ 9 })
 		expect(effect.live).toBe(19)
@@ -183,21 +264,21 @@ describe("VFXController", function()
 			shakes += 1
 		end)
 		settings:set("cameraShake", false)
-		vfx:play("kingdom.upgrade", { position = Vector3.zero })
+		vfx:play("test.impact", { position = Vector3.zero })
 		expect(shakes).toBe(0)
 	end)
 
 	it("keeps live particles on screen within budget, evicting lower-priority continuous effects first", function()
 		local burning = {}
 		for i = 1, 12 do -- each burning preset: 20 x 1 s fire + 8 x 3.5 s smoke = 48; 12 x 48 = 576
-			burning[i] = vfx:play("kingdom.siege.burning", { position = Vector3.new(i, 0, 0) })
+			burning[i] = vfx:play("test.burning", { position = Vector3.new(i, 0, 0) })
 			expect(burning[i]).never.toBeNil()
 		end
 		expect(vfx:liveParticles()).toBe(576)
-		local festival = vfx:play("kingdom.festival", { position = Vector3.zero }) -- priority 2, ~90
+		local festival = vfx:play("test.festival", { position = Vector3.zero }) -- priority 2, ~90
 		expect(festival).toBeNil() -- does not fit and cannot evict equal priority
 		expect(vfx.stats.skipped.budget).toBe(1)
-		local victory = vfx:play("kingdom.victory", { position = Vector3.zero }) -- priority 3, 160
+		local victory = vfx:play("test.victory", { position = Vector3.zero }) -- priority 3, 160
 		expect(victory).never.toBeNil()
 		expect(vfx:liveParticles()).toBeLessThanOrEqual(VfxPresets.BUDGET.particlesOnScreen)
 		expect(burning[1].parts[2][1].Enabled).toBe(false)
@@ -215,31 +296,14 @@ describe("VFXController", function()
 		expect(vfx:float("", Vector3.zero)).toBeNil()
 	end)
 
-	it("citizens of the kingdom near the event react with a speech bubble and an emote", function()
-		local function citizen(id, kingdom, x)
-			local part = env.newInstance("Part")
-			part.Position = Vector3.new(x, 0, 0)
-			part:SetAttribute("CitizenId", id)
-			part:SetAttribute("KingdomId", kingdom)
-			part.Parent = env.Workspace
-			env.CollectionService:AddTag(part, "Citizen")
-			return part
-		end
-		local near = citizen("c1", "k1", 5)
-		citizen("c2", "k1", 500)
-		local rival = citizen("c3", "k2", 3)
-		local barks = vfx:react("acknowledge", Vector3.zero, "k1")
-		expect(#barks).toBe(1)
-		expect(barks[1].citizenId).toBe("c1")
-		local bubble = near:FindFirstChild("ForgeBark")
-		expect(bubble).never.toBeNil()
-		expect(near:GetAttribute("ForgeEmote")).toBe("nod")
-		expect(rival:FindFirstChild("ForgeBark")).toBeNil()
-		env.mock:advance(2)
-		expect(near:FindFirstChild("ForgeBark")).toBeNil()
-		expect(near:GetAttribute("ForgeEmote")).toBeNil()
-		settings:set("citizenBarks", false)
-		env.mock:advance(10)
-		expect(#vfx:react("acknowledge", Vector3.zero, "k1")).toBe(0)
+	it("shows a speech bubble over a part, then removes it", function()
+		local part = env.newInstance("Part")
+		part.Parent = env.Workspace
+		local bubble = vfx:bubble(part, "Aye!", 2)
+		expect(bubble.Parent).toBe(part)
+		expect(bubble:FindFirstChildOfClass("TextLabel").Text).toBe("Aye!")
+		env.mock:advance(2.1)
+		expect(part:FindFirstChild("ForgeBubble")).toBeNil()
+		expect(vfx:bubble(nil, "x", 1)).toBeNil()
 	end)
 end)

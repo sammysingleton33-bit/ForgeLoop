@@ -5,7 +5,8 @@ local AnalyticsSchema = require("@game/ReplicatedStorage/Forge/Experience/Analyt
 local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/AnalyticsRouter")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local SandboxAnalytics = require("@game/ReplicatedStorage/Forge/Config/Analytics")
-local KingdomsAnalytics = require("../../../../games/game-001/config/Analytics")
+local Subjects = require("@game/ReplicatedStorage/Forge/Experience/Subjects")
+local TestAnalytics = require("./doubles/TestAnalytics")
 
 local KNOWN = AnalyticsRouter.knownEvents(GameEvents)
 
@@ -19,7 +20,7 @@ local function valid()
 		},
 		track = {
 			{ on = "ShopViewed", funnel = "Shop", step = 1, session = "start" },
-			{ on = "BuildingCompleted", event = "Thing", fields = { "count", "kind" } },
+			{ on = "BuildingCompleted", event = "Thing", fields = { "count", "kind" } }, -- a game event (D-024)
 		},
 		session = { returnFunnel = "Return" },
 	}
@@ -35,13 +36,13 @@ local function hasProblem(problems, substring)
 end
 
 describe("Experience/AnalyticsSchema", function()
-	it("accepts both shipped configs (sandbox and AI Kingdoms)", function()
+	it("accepts the sandbox config and the spec config (game configs: games/<game>/tests)", function()
 		expect(AnalyticsSchema.validate(SandboxAnalytics, KNOWN)).toEqual({})
-		expect(AnalyticsSchema.validate(KingdomsAnalytics, KNOWN)).toEqual({})
+		expect(AnalyticsSchema.validate(TestAnalytics.build(), KNOWN)).toEqual({})
 	end)
 
-	it("keeps AI Kingdoms inside the documented caps and the house budget", function()
-		local budget = AnalyticsSchema.budget(KingdomsAnalytics)
+	it("keeps a full-size config inside the documented caps and the house budget", function()
+		local budget = AnalyticsSchema.budget(TestAnalytics.build())
 		expect(budget.events).toBeLessThanOrEqual(AnalyticsSchema.HOUSE.customEventNames)
 		expect(budget.events).toBeLessThanOrEqual(AnalyticsSchema.CAPS.customEventNames)
 		expect(budget.funnels).toBeLessThanOrEqual(AnalyticsSchema.HOUSE.funnels)
@@ -107,7 +108,7 @@ describe("Experience/AnalyticsSchema", function()
 	it("checks track rules: event names, steps, sessions and fields", function()
 		local config = valid()
 		config.track = {
-			{ on = "BuildingCompletd", event = "Thing" },
+			{ on = "BuildingCompletd", event = "Thing" }, -- typo
 			{ on = "ShopViewed", funnel = "Shop", step = 3, session = "start" },
 			{ on = "ShopViewed", funnel = "Shop", step = 1 },
 			{ on = "PlayerReady", funnel = "Return", step = 1, session = "start" },
@@ -136,8 +137,8 @@ describe("Experience/AnalyticsSchema", function()
 	end)
 end)
 
-describe("Experience/AnalyticsRouter", function()
-	local function lookupWith(players)
+describe("Experience/Subjects and AnalyticsRouter", function()
+	local function ctxWith(players)
 		return {
 			byUserId = function(id)
 				return players[id]
@@ -152,65 +153,79 @@ describe("Experience/AnalyticsRouter", function()
 		}
 	end
 
-	it("knows GameEvents plus the proposed kingdom signals", function()
+	it("knows every declared GameEvents event, including game events (D-024)", function()
 		expect(KNOWN).toContain("ShopViewed")
-		expect(KNOWN).toContain("BuildingCompleted")
+		expect(KNOWN).toContain("KingdomJoined")
+		expect(KNOWN).never.toContain("ResourceProduced")
 	end)
 
-	it("keeps only primitive info (no positions or objects)", function()
+	it("default resolvers keep only primitive info", function()
 		local player = Instance.new("Player")
-		local subjects = AnalyticsRouter.normalize(
-			"BuildingCompleted",
-			table.pack(player, {
-				matchId = "m",
-				kingdomId = "k",
-				buildingType = "Farm",
-				level = 2,
-				position = Vector3.new(1, 2, 3),
-				extra = { a = 1 },
-			}),
-			lookupWith({})
+		local subjects = Subjects.resolve(
+			"RewardRolled",
+			table.pack(player, "chest", { rarity = "Rare", itemId = "hat", qty = 1, pityTriggered = false, extra = {} }),
+			ctxWith({})
 		)
-		expect(#subjects).toBe(1)
 		expect(subjects[1].info).toEqual({
-			matchId = "m",
-			kingdomId = "k",
-			buildingType = "Farm",
-			level = 2,
-			role = "actor",
+			tableId = "chest",
+			rarity = "Rare",
+			itemId = "hat",
+			qty = 1,
+			pityTriggered = false,
 		})
 	end)
 
-	it("ignores AI kingdoms (no player) and players that left", function()
-		expect(#AnalyticsRouter.normalize("BuildingCompleted", table.pack(nil, { kingdomId = "ai" }), lookupWith({}))).toBe(
-			0
-		)
-		local subjects = AnalyticsRouter.normalize(
-			"SiegeEnded",
-			table.pack(nil, { kingdomId = "ai", defenderKingdomId = "k2", defenderUserId = 55, outcome = "Repelled" }),
-			lookupWith({})
-		)
-		expect(#subjects).toBe(0)
+	it("a game resolver wins over the default and its info is filtered too", function()
+		local player = Instance.new("Player")
+		local subjects = Subjects.resolve("ShopViewed", table.pack(player, "main"), ctxWith({}), {
+			ShopViewed = function(args)
+				return { { player = args[1], info = { shopId = "custom", where = Vector3.zero } } }
+			end,
+		})
+		expect(subjects[1].info).toEqual({ shopId = "custom" })
 	end)
 
-	it("tells siege defenders they won when the siege was repelled", function()
-		local defender = Instance.new("Player")
-		local subjects = AnalyticsRouter.normalize(
-			"SiegeEnded",
-			table.pack(nil, { kingdomId = "ai", defenderKingdomId = "k2", defenderUserId = 55, outcome = "Repelled" }),
-			lookupWith({ [55] = defender })
+	it("drops subjects that are not Players and returns resolver errors", function()
+		local subjects, err = Subjects.resolve("ShopViewed", table.pack(nil), ctxWith({}), {
+			ShopViewed = function()
+				error("boom")
+			end,
+		})
+		expect(#subjects).toBe(0)
+		expect(err).toContain("boom")
+		expect(#Subjects.resolve("ShopViewed", table.pack({ UserId = 1 }, "main"), ctxWith({}))).toBe(0)
+		expect(#Subjects.resolve("NotAnEvent", { n = 0 }, ctxWith({}))).toBe(0)
+	end)
+
+	it("validates game resolvers against declared events", function()
+		local problems = Subjects.validate({ ResourceProduced = function() end, ShopViewed = 5 }, KNOWN)
+		expect(table.concat(problems, "\n")).toContain("subjects.ResourceProduced: not a declared GameEvents event")
+		expect(table.concat(problems, "\n")).toContain("subjects.ShopViewed: must be a function")
+	end)
+
+	it("RoundStateChanged reaches every player; RoundEnded only participants still here", function()
+		local a, b = Instance.new("Player"), Instance.new("Player")
+		local players = { [1] = a, [2] = b }
+		expect(#Subjects.resolve("RoundStateChanged", table.pack("Active", { roundId = "r" }), ctxWith(players))).toBe(
+			2
 		)
-		expect(#subjects).toBe(1)
-		expect(subjects[1].info.role).toBe("defender")
-		expect(subjects[1].info.won).toBe(true)
+		local ended = Subjects.resolve(
+			"RoundEnded",
+			table.pack({
+				roundId = "r",
+				participants = { { userId = 1, placement = 1 }, { userId = 9, placement = 2 } },
+				winners = { 1 },
+			}),
+			ctxWith(players)
+		)
+		expect(#ended).toBe(1)
+		expect(ended[1].info.won).toBe(true)
 	end)
 
 	it("marks CurrencyChanged gains", function()
 		local player = Instance.new("Player")
-		local gain =
-			AnalyticsRouter.normalize("CurrencyChanged", table.pack(player, "Crowns", 10, 5, "match"), lookupWith({}))
-		local spend =
-			AnalyticsRouter.normalize("CurrencyChanged", table.pack(player, "Crowns", 5, -5, "shop"), lookupWith({}))
+		local gain = Subjects.resolve("CurrencyChanged", table.pack(player, "Crowns", 10, 5, "match"), ctxWith({}))
+		local spend = Subjects.resolve("CurrencyChanged", table.pack(player, "Crowns", 5, -5, "shop"), ctxWith({}))
 		expect(gain[1].info.gained).toBe(true)
 		expect(spend[1].info.gained).toBe(false)
 	end)

@@ -9,7 +9,7 @@
 	No asset ids are filled in yet: choosing Creator Store sounds or uploading originals needs the
 	user's Roblox account (handoff production/handoffs/2026-10-12-forge-04-to-user-sounds.md).
 	Until then AudioController skips "needed" sounds and counts them, so the game runs silently
-	instead of failing, and every cue also has a visual (Experience/Cues.luau rule).
+	instead of failing, and every cue also has a visual (CueDirector.validate rejects sound-only cues).
 
 		local Sounds = require("@game/ReplicatedStorage/Forge/Experience/Sounds")
 		Sounds.registry:get("ui.click")         Sounds.FACTORY    Sounds.LICENCE
@@ -204,7 +204,7 @@ local FACTORY = {
 		status = "needed",
 		source = STORE .. "'soft success chime'",
 		licence = LICENCE.creatorStore,
-		description = "Tutorial step done: warm, quiet two-note chime (heard up to 9 times in 5 minutes).",
+		description = "Tutorial step done: warm, quiet two-note chime (heard once per tutorial step, several times in the first minutes).",
 		maxInstances = 1,
 		cooldown = 0.3,
 	},

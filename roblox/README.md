@@ -27,6 +27,7 @@ Windows/macOS: `rokit install`. Linux cloud sessions: `bash tools/setup/cloud-se
 | `roblox/src/shared/BuildInfo.json` | `ReplicatedStorage.Forge.BuildInfo` (gitignored, from `stamp_build.sh`) | generated |
 | `roblox/tests/harness/`, `roblox/tests/mocks/`, `roblox/tests/unit/contracts/`, `roblox/tests/fixtures/` | not in the place (Lune only) | FORGE-05 |
 | `roblox/tests/unit/<area>/` (`core/` FORGE-01, ...) | not in the place | per area |
+| `games/game-001/` (AI Kingdoms) | its own project `games/game-001/default.project.json`: this framework **plus** `ReplicatedStorage.Game`, `ServerScriptService.Game`, `StarterPlayerScripts.Game`, its `config/` as `Forge.Config` | `games/game-001/README.md` (D-022) |
 
 Rojo ignores `README.md` and `.gitkeep`, so empty `Services/` and `Controllers/` folders exist in the
 build and the loader boots with no services.
@@ -36,14 +37,17 @@ build and the loader boots with no services.
 1. **Inside one source tree, use relative paths**: `require("./Sibling")`, `require("../Core/Signal")`.
    `./` starts at `script.Parent`, `../` at `script.Parent.Parent` — the same as the folders on disk.
 2. **To reach another tree, use `@game/` with the full DataModel path**, only then, and only into
-   `ReplicatedStorage/Forge/...` (shared code, Config, Assets):
+   `ReplicatedStorage/Forge/...` (shared code, Config, Assets) or, in game projects,
+   `ReplicatedStorage/Game/...` (game shared code, D-022). **Framework code (`roblox/src`) never
+   requires game code**; game code may require the framework:
    - server or client code → shared: `require("@game/ReplicatedStorage/Forge/Core/Signal")`
    - anything → game config: `require("@game/ReplicatedStorage/Forge/Config/Game")`
    Never `@game/ServerScriptService/...`, `@game/ServerStorage/...` or `@game/StarterPlayer/...`:
    server content does not replicate to clients, and the running client tree is the copy in
    `PlayerScripts`, so such a require fails or loads a second copy. (Specs under `roblox/tests/` may
    require any module by `@game/...`, e.g. a server service under test.)
-   The trees are the Rojo `$path` mounts above: shared, server, client, config, assets.
+   The trees are the Rojo `$path` mounts above: shared, server, client, config, assets (and the
+   Game trees in a game project).
 3. Nothing else: no `@self`, no custom aliases, no `script.Parent.X` instance paths for modules, and
    requires sit at the top level of the module — not inside a function or block (a require that
    StyLua wraps onto a continuation line is fine). Only `Contracts/` may `require(instance)` or
@@ -83,8 +87,10 @@ a module is loaded once.
 
 ## Add a service (server) or controller (client)
 
-Create `roblox/src/server/Services/<Name>.luau` (or `roblox/src/client/Controllers/<Name>.luau`).
-Never edit `Main` or another worker's file; the loader discovers it.
+Create `roblox/src/server/Services/<Name>.luau` (or `roblox/src/client/Controllers/<Name>.luau`);
+game services go in `games/game-001/src/server/Services/` (`games/game-001/README.md`). `Main`
+boots both trees as one dependency graph (`Loader.boot(env, { forgeServices, gameServices })`; a
+name defined in both trees is an error). Never edit `Main` or another worker's file.
 ```lua
 --!strict
 local RoundService = {}
@@ -120,6 +126,9 @@ In specs, pass the declarations directly:
 ## Add a test
 
 Specs are `roblox/tests/unit/<area>/<Name>.spec.luau` (any depth); the runner finds them all.
+Game specs live in `games/game-001/tests/<area>/` and run over the game project
+(`lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests`;
+`check.sh` runs both).
 ```lua
 local T = require("../../harness/Test")
 local describe, it, expect, beforeEach = T.describe, T.it, T.expect, T.beforeEach
@@ -169,7 +178,9 @@ errors, latency, `interleaveNextUpdate`; share one between two MockEnvs for two 
 (real Player instances, PlayerAdded/Removing, `Kick` recorded, leave during load), `MockMarketplaceService`
 (ProcessReceipt decisions, redelivery, auto-acknowledge hazard, game passes), `MockPolicyService`,
 `MockAnalyticsService` (record/throw/noop), `MockRemotes` (RemoteEvent/RemoteFunction/
-UnreliableRemoteEvent, server and client ends), `MockCollectionService`, `MockInstanceEvents`,
+UnreliableRemoteEvent, server and client ends; unreliable payloads > 1000 bytes dropped with buffers
+counted by `buffer.len`, buffers copied on send, `holdUnreliable`/`releaseUnreliable` to delay and
+reorder, `dropNext`), `MockCollectionService`, `MockInstanceEvents`,
 `MockSignal`, `MockRandom`.
 
 **Instances** in a MockEnv (`env.ReplicatedStorage`, `env.Workspace`, ..., `env.newInstance`) are real
@@ -187,8 +198,10 @@ with `MockEnv.new({ services = { ... } })`). Missing something? Handoff to FORGE
 `bash roblox/scripts/stamp_build.sh` writes `roblox/src/shared/BuildInfo.json`
 (`sha`, `branch`, `builtAt`, `dirty`; gitignored). Rojo turns it into
 `ReplicatedStorage.Forge.BuildInfo`; both `Main` scripts log it (`sha=unstamped` if absent).
-CI stamps every push to `main` that changes Roblox files and uploads the place as artifact
-`forgeloop-main-<short sha>`, containing `forgeloop-main-<short sha>.rbxl`.
+CI stamps every push to `main` that changes Roblox files and uploads two places: artifact
+`forgeloop-main-<short sha>` (framework sandbox, `forgeloop-main-<short sha>.rbxl`) and
+`forgeloop-game001-<short sha>` (AI Kingdoms, `forgeloop-game001-<short sha>.rbxl`). Both `Main`
+scripts also log `game=<Config.Game.id>` (`sandbox` or `game-001`).
 
 ## Linting and formatting
 

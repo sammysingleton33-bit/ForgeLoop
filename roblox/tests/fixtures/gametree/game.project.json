@@ -1,0 +1,36 @@
+{
+	"name": "GameTreeFixture",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Forge": {
+				"$path": "forge/shared",
+				"Config": {
+					"$path": "config"
+				}
+			},
+			"Game": {
+				"$path": "game/shared"
+			}
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"Forge": {
+				"$path": "forge/server"
+			},
+			"Game": {
+				"$path": "game/server"
+			}
+		},
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts",
+				"Game": {
+					"$path": "game/client"
+				}
+			}
+		}
+	}
+}

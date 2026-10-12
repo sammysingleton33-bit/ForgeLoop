@@ -19,6 +19,18 @@
 	| RewardRolled       | FORGE-03 RewardService         | (player, tableId: string, result: RewardResult) |
 	| OnboardingStep     | FORGE-04 OnboardingService     | (player, flow: string, step: number, stepName: string) |
 	| ShopViewed         | FORGE-03 ShopService           | (player, shopId: string, itemId: string?) — one per shop open |
+	game-001 AI Kingdoms (games/game-001/CONTRACTS.md G9, D-022; producers FORGE-01). Payloads use the
+	game's types (G2: KingdomId, MatchPhase, Building, ResourceId) from game code; the framework does
+	not require game code, so they are typed loosely here:
+	| KingdomJoined      | KingdomService                 | (player, kingdomId: string) |
+	| MatchPhaseChanged  | MatchService                   | (phase: string) |
+	| BuildingPlaced     | BuildingService                | (building: table, player?) — also BuildingCompleted, |
+	|   BuildingUpgraded, BuildingDestroyed                 | same payload |
+	| ResourceGathered   | Citizen/InteractionService     | (player?, kingdomId: string, resourceId: string, amount: number, source: "ruler" | "citizen") |
+	| UnitsRecruited     | MilitaryService                | (player, kingdomId: string, count: number) |
+	| ObjectiveCaptured  | ObjectiveService               | (objectiveId: string, kingdomId: string) |
+	| KingdomEliminated  | MatchService                   | (kingdomId: string, by: string?) |
+	| MatchEnded         | MatchService                   | ({ winner: string?, standings: { { kingdom: string, crownPoints: number } }, durationSec: number }) |
 	Payload types (interfaces §4) are exported here too: GameEvents.RoundState, GameEvents.RoundResult,
 	GameEvents.RewardResult (defined once in Contracts/Types, re-exported).
 
@@ -54,6 +66,18 @@ export type GameEvents = {
 	RewardRolled: SignalT,
 	OnboardingStep: SignalT,
 	ShopViewed: SignalT,
+	-- game-001 (CONTRACTS G9)
+	KingdomJoined: SignalT,
+	MatchPhaseChanged: SignalT,
+	BuildingPlaced: SignalT,
+	BuildingCompleted: SignalT,
+	BuildingUpgraded: SignalT,
+	BuildingDestroyed: SignalT,
+	ResourceGathered: SignalT,
+	UnitsRecruited: SignalT,
+	ObjectiveCaptured: SignalT,
+	KingdomEliminated: SignalT,
+	MatchEnded: SignalT,
 	EVENT_NAMES: { string },
 	disconnectAll: () -> (),
 }
@@ -69,6 +93,18 @@ local EVENT_NAMES = table.freeze({
 	"RewardRolled",
 	"OnboardingStep",
 	"ShopViewed",
+	-- game-001 (CONTRACTS G9)
+	"KingdomJoined",
+	"MatchPhaseChanged",
+	"BuildingPlaced",
+	"BuildingCompleted",
+	"BuildingUpgraded",
+	"BuildingDestroyed",
+	"ResourceGathered",
+	"UnitsRecruited",
+	"ObjectiveCaptured",
+	"KingdomEliminated",
+	"MatchEnded",
 })
 
 local events: { [string]: any } = {}

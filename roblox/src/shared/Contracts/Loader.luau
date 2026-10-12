@@ -17,7 +17,11 @@
 			missing dependency, or the exact cycle ("A -> B -> A").
 		Loader.load(env, definitions) -> Registry
 			sort, then new() for every definition in order, then start() in the same order.
-		Loader.boot(env, folder?, requireModule?) -> Registry   -- discover + load; nil folder = no services
+		Loader.discoverAll(folders, requireModule?) -> { Definition }
+			discover() over several folders (framework Forge tree + game Game tree, D-022); a name
+			defined in two folders is an error naming both folders.
+		Loader.boot(env, folders?, requireModule?) -> Registry  -- discover + load. `folders` is one
+			Folder, a list of Folders, or nil (no services).
 
 	Registry
 		registry:get(name)  -> instance; errors if `name` is not loaded. During new(), only declared
@@ -302,9 +306,29 @@ function Loader.load(env: any, definitions: { Definition }): Registry
 	return (registry :: any) :: Registry
 end
 
-function Loader.boot(env: any, folder: any?, requireModule: ((any) -> any)?): Registry
-	local definitions = if folder then Loader.discover(folder, requireModule) else {}
-	return Loader.load(env, definitions)
+function Loader.discoverAll(folders: { any }, requireModule: ((any) -> any)?): { Definition }
+	local definitions: { Definition } = {}
+	local definedIn: { [string]: string } = {}
+	for _, folder in folders do
+		local where = folder:GetFullName()
+		for _, definition in Loader.discover(folder, requireModule) do
+			local previous = definedIn[definition.name]
+			if previous then
+				error(
+					`Loader: '{definition.name}' is defined in both {previous} and {where}; names must be unique across trees`,
+					0
+				)
+			end
+			definedIn[definition.name] = where
+			table.insert(definitions, definition)
+		end
+	end
+	return definitions
+end
+
+function Loader.boot(env: any, folders: any?, requireModule: ((any) -> any)?): Registry
+	local list: { any } = if folders == nil then {} elseif type(folders) == "table" then folders else { folders }
+	return Loader.load(env, Loader.discoverAll(list, requireModule))
 end
 
 return Loader
