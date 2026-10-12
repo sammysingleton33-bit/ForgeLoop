@@ -80,9 +80,14 @@ function PlotPickerController:start()
 	-- Push first, then the full list (as KingdomHudController does for every area).
 	env.spawn(function()
 		local ok, err = pcall(function()
-			hud.remotes:on("Build.Slots", function(list)
+			local connection = hud.remotes:on("Build.Slots", function(list)
 				hud.store:applySlots(list)
 			end)
+			table.insert(self._connections, {
+				disconnect = function()
+					connection:Disconnect()
+				end,
+			})
 		end)
 		if not ok then
 			env.log("warn", "PlotPickerController: cannot listen to Build.Slots", { error = tostring(err) })

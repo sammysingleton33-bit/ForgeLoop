@@ -9,24 +9,45 @@
 	panel:render(detail: BuildModel Detail, metrics, ui: { onUpgrade(detail), onClose() })
 	panel:destroy()
 	The panel is named "UpgradePanel"; its CTA face carries the attribute `cta`.
+	A render that shows the same building at the same level patches the costs and the CTA in place
+	(DetailView:update, FORGE-05 M1), so a push never swaps the button under the player's finger.
 ]]
 
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local DetailView = require("./DetailView")
 local IconButton = require("@game/ReplicatedStorage/Forge/UI/Components/IconButton")
 local Panel = require("@game/ReplicatedStorage/Forge/UI/Components/Panel")
+local Signature = require("./Signature")
 local Tabs = require("@game/ReplicatedStorage/Forge/UI/Components/Tabs")
 
 local UpgradePanel = {}
 UpgradePanel.__index = UpgradePanel
 
 function UpgradePanel.new(parent: Instance)
-	return setmetatable({ _parent = parent, panel = nil, detail = nil }, UpgradePanel)
+	return setmetatable({ _parent = parent, panel = nil, detail = nil, _ui = {} }, UpgradePanel)
 end
 
 function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
-	self:destroy()
+	self._ui = ui
 	local phone = metrics.breakpoint == "phone"
+	local handlers = {
+		onCta = function(d)
+			if self._ui.onUpgrade then
+				self._ui.onUpgrade(d)
+			end
+		end,
+	}
+	local key = Signature.of({
+		breakpoint = metrics.breakpoint,
+		drawer = metrics.drawer,
+		detail = DetailView.key(detail, phone, nil),
+	})
+	if self.panel and key == self._key then
+		self.detail:update(detail, handlers)
+		return
+	end
+	self:destroy()
+	self._key = key
 	local d = metrics.drawer
 	local header = Create("Frame", {
 		Name = "HeaderRow",
@@ -40,7 +61,16 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		compact = false,
 	}).instance.Parent =
 		header
-	local close = IconButton.new({ icon = "close", variant = "plain", size = 36, onActivated = ui.onClose })
+	local close = IconButton.new({
+		icon = "close",
+		variant = "plain",
+		size = 36,
+		onActivated = function()
+			if self._ui.onClose then
+				self._ui.onClose()
+			end
+		end,
+	})
 	close.instance.AnchorPoint = Vector2.new(1, 0.5)
 	close.instance.Position = UDim2.fromScale(1, 0.5)
 	close.instance.Name = "Close"
@@ -53,7 +83,7 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		padding = if phone then 10 else 12,
 	})
 	self.panel.instance.Name = "UpgradePanel"
-	self.detail = DetailView.new({ detail = detail, compact = phone, onCta = ui.onUpgrade })
+	self.detail = DetailView.new({ detail = detail, compact = phone, onCta = handlers.onCta })
 	self.detail.instance.Parent = self.panel.content
 	self.panel.instance.Parent = self._parent
 end
@@ -64,6 +94,7 @@ function UpgradePanel:destroy()
 		self.panel = nil
 	end
 	self.detail = nil
+	self._key = nil
 end
 
 return UpgradePanel
