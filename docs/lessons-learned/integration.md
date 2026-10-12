@@ -80,6 +80,13 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   session found them blocked; Actions artifact downloads (`*.blob.core.windows.net`) were refused.
   Try release binaries before compiling with cargo; read artifact facts from the CI log. · FORGE-05
   session · `observed-once`
+- 2026-10-12 · In `pull_request` runs, `github.event.pull_request.base.sha` can be older than the
+  base branch: after a D-014 direct push to `main`, a PR branch that merged `main` was diffed against
+  the old base, so `main`'s own commits (PROJECT_STATUS.md, team.md, integration-log…) were charged to
+  the PR and the ownership gate failed falsely. Diff against the first parent of the checked-out test
+  merge commit (`HEAD^1`) instead. · PR #12 run 38303576284 (`base 7ff75ca`, FAIL 6 of 17); local
+  reproduction with the merge onto `0267e23`: `--base 7ff75ca` FAIL 6 of 17, `--base HEAD^1` PASS 10;
+  a deliberate PROJECT_STATUS.md edit still fails with `HEAD^1` · `observed-once`
 
 ## Mock change log (FL-0028)
 - 2026-10-12 FL-0003 (FORGE-00 skeleton): first versions of MockEnv, MockDataStoreService,
@@ -100,3 +107,10 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   - Harness: per-spec-file `Random` loaded through the module loader; `TweenInfo`, `RaycastParams`,
     `OverlapParams`, `DateTime` (UTC) stand-ins; spawned-thread errors charged to the spawning test
     (also late ones); `*.spec.lua` collected and misnamed specs fail the run.
+- 2026-10-12 FL-0067 (FORGE-05): `Wire.copyForRemote` copies buffers (sender writes after firing no
+  longer reach the receiver); `Wire.estimateBytes` counts buffers as `buffer.len` (they were measured
+  as their `tostring`, ~20 bytes, so oversized snapshots were never dropped) and only arguments
+  1..n (it also counted the `n` field of `table.pack`, adding a byte, and gave negative sizes for nil
+  arguments); `MockRemotes` gains `holdUnreliable`/`releaseUnreliable` for delay and reordering.
+  Source: creator-docs `UnreliableRemoteEvent.yaml` ("payloads larger than 1000 bytes are dropped";
+  buffers may be compressed). Specs: 4 new in `MockRemotes.spec.luau`, each proven able to fail.

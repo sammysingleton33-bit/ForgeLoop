@@ -14,7 +14,10 @@
 				}
 			},
 			"Game": {
-				"$path": "src/shared"
+				"$path": "src/shared",
+				"World": {
+					"$path": "world"
+				}
 			}
 		},
 		"ServerScriptService": {
@@ -36,6 +39,23 @@
 				"Game": {
 					"$path": "src/client"
 				}
+			}
+		},
+		"Players": {
+			"$className": "Players",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"CharacterAutoLoads": false
+			}
+		},
+		"Workspace": {
+			"$className": "Workspace",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"StreamingEnabled": true,
+				"ModelStreamingBehavior": "Improved",
+				"StreamOutBehavior": "Opportunistic",
+				"StreamingIntegrityMode": "PauseOutsideLoadedArea"
 			}
 		}
 	}
