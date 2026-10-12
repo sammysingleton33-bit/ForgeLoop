@@ -42,6 +42,12 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **Mutate against the strongest double you have.** A late-join refetch survived its mutation
   because the real TreasuryService also pushes on join; the spec now models a missed push.
   `observed-once`.
+- **Size fixed-width labels from the renderer's metrics, not from the prototype.** The HTML
+  prototype lays names out with flex, so nothing truncates there; the Luau labels have fixed widths
+  and the snapshot render showed "Compassi…" / "Compete…" (FL-0089). A canvas `measureText` in the
+  prototype page said "Competence" is 58 px at Montserrat SemiBold 11; a DOM span in the
+  renderer's `out/*.html` page measured 73 px. Measure there, then leave ~10 % slack for Studio.
+  `observed-once`.
 - **Never key a weak table by an Instance in Lune.** Lune hands out a new userdata for an instance
   once nothing in Lua holds the old one, so a `__mode = "k"` table keyed by instances loses entries
   whenever the GC runs. The kit's test connector did, and a tap spec failed in about a third of full
