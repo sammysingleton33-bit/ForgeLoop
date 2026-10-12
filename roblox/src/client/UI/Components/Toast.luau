@@ -5,9 +5,10 @@
 	back to UI/ToastStack otherwise.
 
 	Props
-		kind: "info" | "success" | "warning" | "error" | "reward"   accent colour (default "info")
+		kind: "info" | "success" | "warning" | "error" | "reward" | "achievement"   accent (default "info")
 		title: string              body: string?
 		icon: string?              default per kind (info, check, warning, cross, chest)
+		count: number?             repeat badge ("×3") for stacked identical toasts (shown when > 1)
 		width: number?             px (default 300)
 		layoutOrder: number?
 	Toast.new(props) -> handle { instance: Frame, destroy() }
@@ -78,6 +79,22 @@ function Toast.new(props: { [string]: any })
 			AutomaticSize = Enum.AutomaticSize.Y,
 		}, textChildren),
 	})
+	if props.count and props.count > 1 then
+		Create("TextLabel", {
+			Name = "Count",
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Size = UDim2.fromOffset(0, 20),
+			AutomaticSize = Enum.AutomaticSize.X,
+			BackgroundColor3 = accent,
+			Text = `×{props.count}`,
+			TextSize = 11,
+			FontFace = Theme.font("body", Enum.FontWeight.ExtraBold),
+			TextColor3 = Theme.color("inkText"),
+			ZIndex = 3,
+			Parent = self.instance,
+		}, { Corner = Style.corner(999), Padding = Style.padding(0, 6) })
+	end
 	self.instance:SetAttribute("kind", kind)
 	return self
 end

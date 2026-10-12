@@ -169,6 +169,26 @@ describe("UI kit components", function()
 		expect(cancelled).toBe(1)
 		local toast = Toast.new({ kind = "error", title = "Couldn't start construction", body = "Need 20 more Wood" })
 		expect(toast.instance:GetAttribute("kind")).toBe("error")
+		local stacked = Toast.new({ kind = "achievement", title = "First building", count = 3 })
+		expect(stacked.instance.Count.Text).toBe("×3")
+		expect(Toast.new({ title = "once", count = 1 }).instance:FindFirstChild("Count")).toBeNil()
+		local closed = 0
+		local skip = Panel.new({
+			title = "Welcome",
+			compact = true,
+			onClose = function()
+				closed += 1
+			end,
+			closeText = "Skip",
+		})
+		Create.fire(skip.close.face, "Activated")
+		local x = Panel.new({
+			onClose = function()
+				closed += 1
+			end,
+		})
+		Create.fire(x.close.instance, "Activated")
+		expect(closed).toBe(2)
 		local grid = Grid.new({ empty = "No banners yet" })
 		expect(grid.instance.Empty.Visible).toBe(true)
 		grid:add(ItemCard.new({ name = "Oak Banner", icon = "banner", rarity = "Common", owned = true }).instance)

@@ -7,6 +7,23 @@ your NotificationController (FL-0027) builds on. Everything is under
 `@game/StarterPlayer/StarterPlayerScripts/Forge/UI/...` inside the Forge client tree, or relative
 paths from within it).
 
+## Answers to `2026-10-12-forge-04-to-forge-03-components-shopviewed-celebrate.md`
+1. **Components and props:** all there. Added for you: Toast kind `achievement` (purpure accent,
+   crown icon) and `count` (a "×3" badge when > 1); Panel `onClose` (X button, or a small secondary
+   button with `closeText = "Skip"`) and `compact` (phones). Button/IconButton are ≥ 44 px
+   (IconButton plain variant is 36 px: use it for desktop-only controls). ProgressBar takes
+   `progress`, `label`, `color`. DisplayOrder bands stay as interfaces §9 (onboarding 60–69,
+   notifications 70–79); kind colours in `Toast.ACCENT`; rarity colours `Theme.rarity(name)`.
+2. **ShopViewed / celebrate:** agreed as you describe; they arrive with the shop and reward reveal
+   (FL-0021/FL-0045, P2 after VS-1).
+3. **HUD hooks:** the AI Kingdoms HUD (FL-0059) sets `OnboardingTarget = "HUD.Resources"` on the
+   resource bar and `"HUD.BuildButton"` on the Build button, and calls
+   `registry:find("OnboardingController"):report("ResourceInspected")` when a resource pill is
+   tapped. No sandbox shop button in VS-1.
+4. **Soft currency:** none in VS-1. FORGE-00 ruled that out (no currency rewards in VS-1; and not
+   the name "Crowns", which clashes with Crown Points and the Crown Arena). EconomyService
+   (FL-0045) is P2; the txType mapping is noted for it.
+
 ## API you need
 ```lua
 local Toast = require(".../UI/Components/Toast")
