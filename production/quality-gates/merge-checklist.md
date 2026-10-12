@@ -9,6 +9,12 @@ shared, so APPROVE / REQUEST_CHANGES are not available). Procedure: `docs/workfl
 - [ ] Diff against `main` contains no skeleton files from another branch (D-016) and nothing outside the author's paths.
 - [ ] Stacked PRs: the PR it is stacked on is merged first.
 
+- [ ] **The PR's base branch is `main`** (`pull_request_read get` → `base.ref`). A PR stacked on another
+      PR keeps that PR's branch as its base after the lower one merges, and merging it then lands it
+      on the stale branch, not on `main` (PR #37, 2026-10-12: merged into `forge/02-blender-fl0055-world`;
+      re-targeted as #38). If the base is not `main`, open a PR from the same head into `main` or ask
+      the author to change the base.
+
 ## 2. CI green on the PR head
 - [ ] `roblox`, `tools` and `ownership` jobs green on the **current head sha** (GitHub MCP: `pull_request_read get_check_runs`; read the job log, not only the conclusion — a skipped Roblox job must say why).
 
@@ -33,6 +39,7 @@ python tools/check_ownership.py --base origin/main --title "<PR title>" --branch
 
 ## 5. Merge
 - [ ] Merge commit (never squash/rebase; keeps the worker's evidence shas reachable), with `expectedHeadSha` = the sha checked above.
+- [ ] After the merge, `git ls-remote origin refs/heads/main` shows the new merge commit (the merge API also reports success for a merge into another base).
 
 ## 6. Bookkeeping (direct push to `main`, D-014)
 - [ ] Tasks → ACCEPTED, or REVIEW when only G6 (Studio) is pending; evidence = merge sha + check summary + CI link.
