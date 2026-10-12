@@ -173,6 +173,18 @@ describe("RulerController with a character (FL-0053)", function()
 		expect(seen).toEqual({ "Ruler", "none", "Ruler" })
 	end)
 
+	it("standUp() leaves the throne by jumping, and only when seated", function()
+		local character, humanoid = D.character()
+		player.CharacterAdded:Fire(character)
+		humanoid.Jump = false
+		humanoid.Sit = false
+		expect(ruler:standUp()).toBe(false)
+		expect(humanoid.Jump).toBe(false)
+		humanoid.Sit = true
+		expect(ruler:standUp()).toBe(true)
+		expect(humanoid.Jump).toBe(true)
+	end)
+
 	it("picks up a character that already exists at start", function()
 		local lateEnv = MockEnv.new({ seed = 57, isServer = false, localPlayer = { userId = 5503 } })
 		local latePlayer = D.player()

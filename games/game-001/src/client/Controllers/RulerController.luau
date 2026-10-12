@@ -21,6 +21,7 @@
 	API
 		RulerController.characterChanged: Signal (character?)
 		RulerController:getCharacter() / :getRoot() / :getHumanoid()
+		RulerController:standUp() -> boolean           -- leave the throne for walk mode (camera calls it)
 		RulerController:setSprint(held: boolean)        -- what the bound keys call (specs too)
 		RulerController:toggleSprint()
 		RulerController:update(dt)                       -- one frame; Heartbeat calls it live
@@ -193,6 +194,27 @@ end
 
 function Controller:getHumanoid(): any
 	return self._humanoid
+end
+
+-- Leaves the throne (or any seat): walk mode (G13.6: "walk mode unseats"). True if it stood up.
+function Controller:standUp(): boolean
+	local humanoid = self._humanoid
+	if humanoid == nil then
+		return false
+	end
+	local okSit, sitting = pcall(function()
+		return humanoid.Sit == true
+	end)
+	local okSeat, seatPart = pcall(function()
+		return humanoid.SeatPart
+	end)
+	if (okSit and sitting) or (okSeat and seatPart ~= nil) then
+		pcall(function()
+			humanoid.Jump = true
+		end)
+		return true
+	end
+	return false
 end
 
 function Controller:setSprint(held: boolean)
