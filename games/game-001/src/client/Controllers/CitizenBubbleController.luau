@@ -10,7 +10,7 @@
 		.event(entityId, "strike",   { occupation, on }, model)           -> "On strike" placard while on
 		.event(entityId, <cue>, payload, model) for a G13.3 `cue` in Vfx.cues (celebrate, grumble, salute,
 		    bow, cower, strike_placard, work_fast, rest, hammer)          -> pose + sound + effect
-		.event(entityId, "cue", { cue, tone? }, model)                    -> the same; an unknown cue falls
+		.event(entityId, "cue", { cue | cueId, tone? }, model)            -> the same; an unknown cue falls
 		    back to the reaction tone (payload.tone, else the citizen's current reaction) for its pose
 		.rendered(entityId, model) / .released(entityId, model)           -> attach / clear (pooled rigs)
 	Rules live in Feedback/Bubbles (one bubble per citizen, text from the event only, lifetimes, the
@@ -166,7 +166,7 @@ function Controller:onEvent(entityId: any, cue: string, payload: any, model: any
 	elseif cue == "strike" then
 		self.bubbles:strike(entityId, payload.on == true)
 	elseif cue == "cue" then
-		self:_playCue(entityId, payload.cue, payload.tone)
+		self:_playCue(entityId, payload.cue or payload.cueId, payload.tone) -- content/SPEC.md says cueId
 		return
 	elseif self._config.cues and self._config.cues[cue] then
 		self:_playCue(entityId, cue, nil)

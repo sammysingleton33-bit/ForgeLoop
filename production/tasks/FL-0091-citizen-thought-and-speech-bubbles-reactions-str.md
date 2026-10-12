@@ -13,9 +13,9 @@ context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, 
 estimate_h: 5
 evidence:
   - "check.sh OVERALL PASS @5741a20: framework 485, game-001 123 specs, Selene 0/0, StyLua 207, both builds and place checks"
-  - "CitizenBubbles.spec 15: pool (one per citizen, release for pooled rigs, BillboardGui reuse) and distance culling (maxDistance, maxOnScreen, priority), text from the event only, glyphs/words not colour, citizenBarks, cue map pinned to the G13.3 cue vocabulary (direct and \"cue\" form, unknown-cue tone fallback), headless boot"
-  - "mutations.py FL-0091 rows 13/13 CAUGHT"
-  - "check.sh OVERALL PASS on main d559c9e + G13.3 cue alignment: framework 486, game-001 569 specs (49 files), Selene 0/0, StyLua 341, both builds and place checks"
+  - "CitizenBubbles.spec 16: pool (one per citizen, release for pooled rigs, BillboardGui reuse) and distance culling (maxDistance, maxOnScreen, priority), text from the event only, glyphs/words not colour, citizenBarks, cue map pinned to the G13.3 cue vocabulary and covering every Content/Consequences cue_id (direct and \"cue\" form, unknown-cue tone fallback), headless boot"
+  - "mutations.py FL-0091 rows 14/14 CAUGHT"
+  - "check.sh OVERALL PASS on main 4d880a4 + G13.3 cue alignment: framework 486, game-001 698 specs (54 files), Selene 0/0, StyLua 371, both builds and place checks"
   - "unverified: needs FORGE-01 EntityController thought/reaction/strike events (FL-0079) and Studio video (E8); poses wait for EntityController:playPose (proposed)"
 ---
 
@@ -44,3 +44,4 @@ Specs for the pool and the distance culling. Studio video of a request bubble, a
 - 2026-10-12 forge-04: BUILDING → TESTING. Bubbles model, controller, Vfx config, specs; headless gates on 5741a20.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0091. Studio: roblox/studio-tests/experience.md E8 (needs FL-0079 + EntityController events). Handoff forge-04-to-forge-01-00-bubbles-events.
 - 2026-10-12 forge-04: REVIEW (unchanged). Main d559c9e merged; cues follow CONTRACTS G13.3 `cue` (v0.4-g4): Vfx.cues keyed by its vocabulary, unknown cues fall back to the reaction tone; handoff and E8 updated.
+- 2026-10-12 forge-04: REVIEW (unchanged). Main 4d880a4 (FL-0083 content library) merged: every content cue_id is mapped (spec); `cueId` read as well as `cue`.
