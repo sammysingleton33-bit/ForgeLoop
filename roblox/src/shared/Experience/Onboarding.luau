@@ -9,6 +9,7 @@
 			flows = { Flow },
 			clientActions = { string },       -- every client action a step may wait for (whitelist)
 			limits = { firstInteractionSec: number, firstRewardSec: number },
+			idleHints = { [phase]: string }?,  -- after the tutorial: OnboardingController:showIdleHint(phase)
 		}
 		Flow = { id: string, version: number, funnel: boolean?, startOn: string? (bus event that starts the
 		         flow for its subject players; default "PlayerReady"; game-001 uses "KingdomJoined"),
@@ -193,6 +194,17 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 	end
 	if funnels > 1 then
 		table.insert(problems, "flows: only one flow may log the onboarding funnel (funnel = true)")
+	end
+	if config.idleHints ~= nil then
+		if type(config.idleHints) ~= "table" then
+			table.insert(problems, "idleHints must be a table of phase -> text")
+		else
+			for phase, text in config.idleHints do
+				if type(phase) ~= "string" or type(text) ~= "string" or #text == 0 or #text > 140 then
+					table.insert(problems, `idleHints[{tostring(phase)}]: text must be 1-140 characters`)
+				end
+			end
+		end
 	end
 	return problems
 end

@@ -20,7 +20,7 @@ local config = {
 		ResourceProduced = actorOf,
 		BuildingUpgraded = actorOf,
 	},
-	clientActions = { "RulerMoved", "ReachedCastle", "ResourceInspected", "GoalAcknowledged" },
+	clientActions = { "RulerMoved", "ReachedTarget", "ResourceInspected", "GoalAcknowledged" },
 	limits = { firstInteractionSec = 30, firstRewardSec = 180 },
 	flows = {
 		{
@@ -28,7 +28,7 @@ local config = {
 			version = 1,
 			funnel = true,
 			startOn = "PlayerReady",
-			completeReward = { currency = "Crowns", amount = 50 },
+			completeReward = { currency = "Coins", amount = 50 },
 			steps = {
 				{
 					id = "Arrive",
@@ -40,9 +40,9 @@ local config = {
 					id = "MoveRuler",
 					trigger = { client = "RulerMoved" },
 					hint = {
-						title = "Walk to your castle",
+						title = "Walk to the landmark",
 						body = "Move with WASD or the thumbstick.",
-						target = { kind = "world", tag = "OnboardingCastle" },
+						target = { kind = "world", tag = "Landmark" },
 					},
 					expectSec = 8,
 					interactive = true,
@@ -50,11 +50,11 @@ local config = {
 				},
 				{
 					id = "FindKingdom",
-					trigger = { client = "ReachedCastle" },
+					trigger = { client = "ReachedTarget" },
 					hint = {
 						title = "Your banner marks your kingdom",
 						body = "Everything inside your coloured border is yours to build on.",
-						target = { kind = "world", tag = "OnboardingCastle" },
+						target = { kind = "world", tag = "Landmark" },
 					},
 					expectSec = 10,
 					interactive = true,
@@ -105,15 +105,15 @@ local config = {
 						body = "Watch the farm: your first harvest is coming.",
 					},
 					expectSec = 30,
-					reward = { currency = "Crowns", amount = 25 },
+					reward = { currency = "Coins", amount = 25 },
 				},
 				{
 					id = "UpgradeHall",
-					trigger = { bus = "BuildingUpgraded", match = { role = "actor", buildingType = "TownHall" } },
+					trigger = { bus = "BuildingUpgraded", match = { role = "actor", buildingType = "Hall" } },
 					hint = {
-						title = "Upgrade your Town Hall",
+						title = "Upgrade your hall",
 						body = "A bigger hall unlocks new buildings and more citizens.",
-						target = { kind = "world", tag = "OnboardingTownHall" },
+						target = { kind = "world", tag = "HallZone" },
 					},
 					expectSec = 90,
 					interactive = true,

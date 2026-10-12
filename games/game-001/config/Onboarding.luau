@@ -24,6 +24,14 @@ return table.freeze({
 	subjects = Signals.subjects,
 	clientActions = { "GoalAcknowledged" },
 	limits = { firstInteractionSec = 30 },
+	-- After the tutorial: shown by OnboardingController:showIdleHint(phase) when FL-0062 detects dead
+	-- air (PACING.md §6). Keyed by MatchPhase (CONTRACTS G2); text only names VS-1 actions.
+	idleHints = {
+		Founding = "Gather from a tree or rock, or place a House or Farm.",
+		Expansion = "Upgrade your keep from the kingdom panel.",
+		Conflict = "Recruit soldiers at the Barracks and send them to a tower.",
+		Endgame = "Hold your towers: every capture counts.",
+	},
 	flows = {
 		{
 			id = "vs1",
