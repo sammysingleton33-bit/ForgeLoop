@@ -145,6 +145,19 @@ tracker on the phone, the summary on the phone and on desktop.
 8. Report: whether the soldier count, the bars and the summary always matched what happened in the
    world (the client shows only what the server sends).
 
+## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
+1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free
+   citizens row, Farmers, Woodcutters, Miners, Builders, each with a **number** and − / + (44 px on a
+   phone), and Soldiers (read-only). Without FORGE-01's population remotes the tab shows
+   "Counting your citizens…" and the buttons stay off: expected until FORGE-01 ships them.
+2. Tap **+** on Woodcutters: the row says "Asking… 2 → 3" and its buttons wait; within about a second
+   the count is 3 and Free citizens is one lower. In the world, a hauler walks off to cut wood.
+3. Tap **−** on Farmers: Farmers goes down by one and Free citizens up by one.
+4. Move citizens until Free citizens is 0: every + is greyed out and the row says
+   "None free: lower a job first".
+5. Leave the panel open while resources tick or someone builds: the rows don't flicker and a tap
+   always lands.
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 

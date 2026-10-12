@@ -33,6 +33,11 @@ local REASONS: { [string]: string } = {
 	busy = "Finish building it first",
 	unknown_type = "That building can't be built",
 	rate = "Slow down a moment, then try again",
+	-- Kingdom.SetJobQuota and other sim commands (FORGE-01 Sim/Commands error codes)
+	unknown_job = "That job can't be changed",
+	match_not_active = "The match isn't running",
+	not_ruler = "Only rulers can do that",
+	kingdom_eliminated = "Your kingdom has fallen",
 }
 
 function Text.reason(reason: any): string
