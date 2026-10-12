@@ -231,7 +231,7 @@ function WorldPlan.terrainOps(layout: any): { Op }
 		local fy = WorldPlan.groundHeight(layout, field.center.X, field.center.Y)
 		block(
 			"Mud",
-			CFrame.new(field.center.X, fy - 0.8, field.center.Y),
+			CFrame.new(field.center.X, fy - 0.8, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0),
 			Vector3.new(field.size.X, 2, field.size.Y),
 			"field"
 		)
@@ -263,8 +263,8 @@ function WorldPlan.terrainOps(layout: any): { Op }
 	cylinder("Cobblestone", hubX, WorldPlan.groundHeight(layout, hubX, hubZ) - 0.9, hubZ, 14, 2, "plaza")
 	for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
 		local plot = layout.plots[kingdom]
-		local yard = plot.buildZones[1].center
-		cylinder("Cobblestone", yard.X, gy - 0.9, yard.Z, 20, 2, "plaza")
+		local yard = (plot.anchors.keep * CFrame.new(0, 0, -62)).Position -- the yard crossroads (Layout nav)
+		cylinder("Cobblestone", yard.X, gy - 0.9, yard.Z, 11, 2, "plaza")
 	end
 
 	-- 7. river: sandy banks, carve, then water (surface 1.4 below ground)
@@ -316,7 +316,7 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placem
 	local occupied: { { x: number, z: number, r: number } } = {}
 	local rng = prng(4242)
 
-	-- keep-out discs: plot cores (buildings), build zones, objective, resource nodes, bridges
+	-- keep-out discs: plot cores (buildings), build zones, build slots, objective, resource nodes, bridges
 	local keepOut: { { x: number, z: number, r: number } } = {}
 	for _, plot in layout.plots do
 		for _, anchor in plot.anchors do
@@ -327,6 +327,10 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placem
 				keepOut,
 				{ x = zone.center.X, z = zone.center.Z, r = math.max(zone.size.X, zone.size.Y) * 0.6 }
 			)
+		end
+		for _, slot in plot.buildSlots or {} do
+			local size = (layout.slotSizes or {})[slot.size] or Vector2.new(46, 40)
+			table.insert(keepOut, { x = slot.center.X, z = slot.center.Z, r = size.Magnitude / 2 + 1 })
 		end
 	end
 	for _, o in layout.objectives do
@@ -407,7 +411,7 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placem
 		local y = WorldPlan.groundHeight(layout, field.center.X, field.center.Y)
 		table.insert(out, {
 			assetId = string.format("farm_field_%s_%02d", field.crop or "wheat", 1 + (i % 3)),
-			cframe = CFrame.new(field.center.X, y, field.center.Y),
+			cframe = CFrame.new(field.center.X, y, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0),
 			feature = "crops",
 		})
 		table.insert(
@@ -462,25 +466,17 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placem
 				local p = (keep * CFrame.new(off)).Position
 				place(string.format("prop_banner_%s_%02d", banner, 1 + (i % 2)), p.X, p.Z, 1.5, "dressing", yaw)
 			end
-			local yard = (keep * CFrame.new(28, 0, -54)).Position
+			local yard = (keep * CFrame.new(14, 0, -46)).Position
 			place("prop_well_01", yard.X, yard.Z, 4, "dressing")
 			for i, off in
-				{ Vector3.new(-30, 0, -10), Vector3.new(-52, 0, -36), Vector3.new(66, 0, -40), Vector3.new(-80, 0, 20) }
+				{ Vector3.new(-30, 0, -10), Vector3.new(-30, 0, 6), Vector3.new(30, 0, -14), Vector3.new(-76, 0, 2) }
 			do
 				local p = (keep * CFrame.new(off)).Position
 				local id = if i == 3
 					then "farm_haystack_01"
 					elseif i == 4 then "prop_cart_02"
 					else assetId("prop_goods", i)
-				if clear(p.X, p.Z, 3) then
-					place(id, p.X, p.Z, 3, "dressing")
-				end
-			end
-			for i = 0, 5 do
-				local p = (keep * CFrame.new(40 + i * 16, 0, -84)).Position
-				if clear(p.X, p.Z, 1) then
-					place(assetId("farm_fence", 1 + (i % 3)), p.X, p.Z, 1, "dressing", yaw)
-				end
+				place(id, p.X, p.Z, 3, "dressing") -- hand-placed clear of slots, nav and roads (spec)
 			end
 		end
 	end
