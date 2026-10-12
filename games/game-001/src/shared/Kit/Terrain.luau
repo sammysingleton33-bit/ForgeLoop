@@ -2,7 +2,7 @@
 --[[
 	Kit/Terrain — the thin terrain adapter WorldService talks to (CONTRACTS G10, FL-0055).
 
-		Terrain.live(terrain: Terrain) -> Adapter       -- real Workspace.Terrain (Roblox only)
+		Terrain.live(terrain: Terrain, log?) -> Adapter -- real Workspace.Terrain (Roblox only)
 		Terrain.recorder() -> Adapter                   -- records calls; Lune specs read adapter.calls
 		Terrain.forWorkspace(workspace, log?) -> Adapter -- live when Terrain supports Fill*, else recorder
 	Adapter:
@@ -56,7 +56,7 @@ function Terrain.recorder()
 	return adapter
 end
 
-function Terrain.live(terrain: any)
+function Terrain.live(terrain: any, log: ((string, string, any?) -> ())?)
 	local adapter = { live = true }
 	function adapter.fill(op)
 		check(op)
@@ -72,7 +72,13 @@ function Terrain.live(terrain: any)
 		end
 	end
 	function adapter.setMaterialColor(name: string, color: Color3)
-		terrain:SetMaterialColor((Enum.Material :: any)[name], color)
+		-- a material Roblox refuses (e.g. Water) must not abort the world build: warn and continue
+		local ok, err = pcall(function()
+			terrain:SetMaterialColor((Enum.Material :: any)[name], color)
+		end)
+		if not ok and log then
+			log("warn", "Terrain:SetMaterialColor failed", { material = name, error = tostring(err) })
+		end
 	end
 	function adapter.setWater(props: { [string]: any })
 		for k, v in props do
@@ -89,7 +95,7 @@ function Terrain.forWorkspace(workspace: any, log: ((string, string, any?) -> ()
 		return (terrain :: any).FillBlock
 	end)
 	if ok then
-		return Terrain.live(terrain)
+		return Terrain.live(terrain, log)
 	end
 	if log then
 		log("info", "Terrain adapter: no live Terrain (headless); recording terrain calls", nil)

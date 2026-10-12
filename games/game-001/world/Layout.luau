@@ -438,17 +438,17 @@ local features = {
 		end
 		return h
 	end)(),
-	forests = {
-		{ center = Vector2.new(-480, -170), radius = 110, count = 46, species = { "tree_pine", "tree_oak" } },
-		{ center = Vector2.new(-250, 40), radius = 90, count = 36, species = { "tree_oak", "tree_birch" } },
-		{ center = Vector2.new(250, 60), radius = 100, count = 40, species = { "tree_oak", "tree_birch" } },
-		{ center = Vector2.new(540, -180), radius = 110, count = 46, species = { "tree_pine", "tree_oak" } },
-		{ center = Vector2.new(-460, 520), radius = 110, count = 40, species = { "tree_pine" } },
-		{ center = Vector2.new(500, 540), radius = 110, count = 40, species = { "tree_pine", "tree_oak" } },
-		{ center = Vector2.new(-60, -420), radius = 90, count = 32, species = { "tree_oak", "tree_pine" } },
-		{ center = Vector2.new(60, 430), radius = 90, count = 32, species = { "tree_oak", "tree_birch" } },
-		{ center = Vector2.new(-460, -480), radius = 80, count = 26, species = { "tree_pine" } },
-		{ center = Vector2.new(560, -500), radius = 80, count = 26, species = { "tree_pine", "tree_birch" } },
+	forests = { -- ~220 trees: forest stand-ins were 6.4k of 11.5k world parts (FORGE-05 review of #28)
+		{ center = Vector2.new(-480, -170), radius = 110, count = 28, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-250, 40), radius = 90, count = 22, species = { "tree_oak", "tree_birch" } },
+		{ center = Vector2.new(250, 60), radius = 100, count = 24, species = { "tree_oak", "tree_birch" } },
+		{ center = Vector2.new(540, -180), radius = 110, count = 28, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-460, 520), radius = 110, count = 24, species = { "tree_pine" } },
+		{ center = Vector2.new(500, 540), radius = 110, count = 24, species = { "tree_pine", "tree_oak" } },
+		{ center = Vector2.new(-60, -420), radius = 90, count = 20, species = { "tree_oak", "tree_pine" } },
+		{ center = Vector2.new(60, 430), radius = 90, count = 20, species = { "tree_oak", "tree_birch" } },
+		{ center = Vector2.new(-460, -480), radius = 80, count = 16, species = { "tree_pine" } },
+		{ center = Vector2.new(560, -500), radius = 80, count = 16, species = { "tree_pine", "tree_birch" } },
 	},
 	fields = plotFields, -- { center: Vector2, size: Vector2, yaw: number, crop: string }
 }
