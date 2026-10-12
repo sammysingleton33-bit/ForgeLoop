@@ -9,6 +9,7 @@ local Sounds = require("@game/ReplicatedStorage/Forge/Experience/Sounds")
 local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
 local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local Bubbles = require("@game/ReplicatedStorage/Game/Feedback/Bubbles")
+local Consequences = require("@game/ReplicatedStorage/Game/Content/Consequences")
 local BubbleDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenBubbleController")
 
 describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
@@ -134,6 +135,17 @@ describe("config Vfx.luau cues (FL-0091)", function()
 			"strike_placard",
 			"work_fast",
 		})
+	end)
+
+	it("maps every cue_id the content library uses (Content/Consequences, FL-0083)", function()
+		local used = 0
+		for id, row in Consequences do
+			if row.cue_id ~= nil then
+				used += 1
+				assert(Vfx.cues[row.cue_id] ~= nil, `consequence {id}: cue '{row.cue_id}' has no entry in Vfx.cues`)
+			end
+		end
+		assert(used > 0, "the content library uses cues")
 	end)
 end)
 
@@ -288,6 +300,8 @@ describe("CitizenBubbleController (FL-0091)", function()
 		entities.event:fire(1, "cue", { cue = "bow" }, smith)
 		expect(poses).toEqual({ "1:hammer", "1:bow" })
 		expect(played).toEqual({ Vfx.cues.hammer.sound }) -- bow is pose-only
+		entities.event:fire(1, "cue", { cueId = "rest" }, smith) -- content/SPEC.md's field name
+		expect(poses).toEqual({ "1:hammer", "1:bow", "1:rest" })
 	end)
 
 	it("an unknown cue falls back to the reaction tone for its pose and warns once", function()

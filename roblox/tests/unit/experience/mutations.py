@@ -104,6 +104,7 @@ M = [
  ("FL-0091", C2+"CitizenBubbleController.luau", '	self:_pose(entityId, spec.pose)\n', '', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'self:_pose(entityId, if fallback then Bubbles.POSE[fallback :: string] else nil)', 'self:_pose(entityId, nil)', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'elseif current and current.kind == "reaction" then current.tone', 'elseif false then nil', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'payload.cue or payload.cueId', 'payload.cue', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
