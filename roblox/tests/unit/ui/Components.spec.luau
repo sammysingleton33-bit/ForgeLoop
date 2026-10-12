@@ -46,7 +46,7 @@ describe("UI kit components", function()
 			[Create.Event.Activated] = function()
 				fired += 1
 			end,
-		}, { Label = Create("TextLabel", {}), false })
+		}, { Label = Create("TextLabel", {}), Skipped = false })
 		expect(ref).toBe(button)
 		expect(button.Parent).toBe(parent)
 		expect(button:FindFirstChild("Label")).toBeTruthy()

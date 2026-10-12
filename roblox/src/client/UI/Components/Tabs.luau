@@ -25,7 +25,7 @@ function Tabs.new(props: { [string]: any })
 		Name = "Tabs",
 		BackgroundTransparency = 1,
 		AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.new(0, 0, 0, 34),
+		Size = UDim2.fromOffset(0, 34),
 	}, { Style.list("x", 4, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center) })
 	self:update(props)
 	return self
@@ -52,7 +52,7 @@ function Tabs:update(partial: { [string]: any })
 			Text = "",
 			AutoButtonColor = false,
 			AutomaticSize = Enum.AutomaticSize.X,
-			Size = UDim2.new(0, 0, 0, 34),
+			Size = UDim2.fromOffset(0, 34),
 			BackgroundColor3 = if selected then Theme.color("ink600") else Theme.color("ink950"),
 			BackgroundTransparency = if selected then 0 else 0.45,
 			LayoutOrder = index,
@@ -73,7 +73,7 @@ function Tabs:update(partial: { [string]: any })
 			Name = "Row",
 			BackgroundTransparency = 1,
 			AutomaticSize = Enum.AutomaticSize.X,
-			Size = UDim2.new(0, 0, 1, 0),
+			Size = UDim2.fromScale(0, 1),
 			Parent = button,
 		}, {
 			Style.padding(0, 12, 0, 10),
@@ -88,7 +88,7 @@ function Tabs:update(partial: { [string]: any })
 				weight = Enum.FontWeight.Bold,
 				size = 13,
 				color = color,
-				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2 },
+				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 2 },
 			}).Parent =
 				row
 		end

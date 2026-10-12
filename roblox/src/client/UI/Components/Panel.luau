@@ -34,7 +34,7 @@ function Panel.new(props: { [string]: any })
 	self.headerSlot = Create("Frame", {
 		Name = "HeaderSlot",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.fromScale(1, 1),
 	}, { Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center) })
 	self.content = Create("Frame", {
 		Name = "Content",
@@ -53,7 +53,7 @@ function Panel.new(props: { [string]: any })
 				weight = Enum.FontWeight.Bold,
 				size = 26,
 				color = Theme.color("gold300"),
-				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 1 },
+				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 1 },
 			})
 		end
 		local slotHolder = Create("Frame", {
@@ -87,7 +87,7 @@ function Panel.new(props: { [string]: any })
 			Line = Create("Frame", {
 				BackgroundColor3 = Theme.color("gold600"),
 				BorderSizePixel = 0,
-				Position = UDim2.new(0, 0, 0.5, 0),
+				Position = UDim2.fromScale(0, 0.5),
 				Size = UDim2.new(1, 0, 0, 1),
 			}, {
 				Create("UIGradient", {
@@ -116,9 +116,9 @@ function Panel.new(props: { [string]: any })
 		AnchorPoint = props.anchor or Vector2.zero,
 		ZIndex = props.zIndex or 1,
 	}, {
-		Style.corner(RADIUS),
-		Style.stroke(Theme.color("gold700"), 1.5),
-		Create("UIGradient", {
+		Corner = Style.corner(RADIUS),
+		Stroke = Style.stroke(Theme.color("gold700"), 1.5),
+		Gradient = Create("UIGradient", {
 			Rotation = 90,
 			Color = ColorSequence.new({
 				ColorSequenceKeypoint.new(0, Theme.color("ink700")),
@@ -126,7 +126,7 @@ function Panel.new(props: { [string]: any })
 				ColorSequenceKeypoint.new(1, Theme.color("ink900")),
 			}),
 		}),
-		Style.inset(RADIUS),
+		Inset = Style.inset(RADIUS),
 		Header = header,
 		Ornament = ornamentFrame,
 		Content = self.content,

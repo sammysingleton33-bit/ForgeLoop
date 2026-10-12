@@ -67,7 +67,7 @@ function Modal.new(props: { [string]: any })
 				text = row.label,
 				size = 12,
 				color = Theme.color("textSecondary"),
-				extra = { Size = UDim2.new(0.5, 0, 1, 0), LayoutOrder = 2 },
+				extra = { Size = UDim2.fromScale(0.5, 1), LayoutOrder = 2 },
 			}),
 			Style.text({
 				text = row.value .. (if row.note then "  " .. row.note else ""),

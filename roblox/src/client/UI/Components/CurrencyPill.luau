@@ -36,7 +36,7 @@ function CurrencyPill.new(props: { [string]: any }, motion: any?)
 		extra = {
 			Name = "Amount",
 			AutomaticSize = Enum.AutomaticSize.X,
-			Size = UDim2.new(0, 0, 0, 16),
+			Size = UDim2.fromOffset(0, 16),
 			LayoutOrder = 1,
 			RichText = true,
 		},
@@ -46,13 +46,13 @@ function CurrencyPill.new(props: { [string]: any }, motion: any?)
 		weight = Enum.FontWeight.Bold,
 		size = 10,
 		color = Theme.color("vert"),
-		extra = { Name = "Rate", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 0, 11), LayoutOrder = 2 },
+		extra = { Name = "Rate", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 11), LayoutOrder = 2 },
 	})
 	self._stack = Create("Frame", {
 		Name = "Stack",
 		BackgroundTransparency = 1,
 		AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.new(0, 0, 1, 0),
+		Size = UDim2.fromScale(0, 1),
 		LayoutOrder = 2,
 	}, { Style.list("y", 1, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center), self._amount, self._rate })
 	self.instance = Create("Frame", {
@@ -122,29 +122,25 @@ function CurrencyPill:pulse(delta: number)
 		return
 	end
 	local negative = delta < 0
-	local label = Create(
-		"TextLabel",
-		{
-			Name = "Delta",
-			BackgroundTransparency = 1,
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -6, 1, 1),
-			Size = UDim2.fromOffset(40, 16),
-			Text = Format.signed(delta),
-			TextXAlignment = Enum.TextXAlignment.Right,
-			TextSize = 13,
-			FontFace = Theme.font("body", Enum.FontWeight.ExtraBold),
-			TextColor3 = if negative then Theme.hex("#FF8A73") else Theme.hex("#A9E57C"),
-			ZIndex = 5,
-			Parent = self.instance,
-		},
-		{
-			Create(
-				"UIStroke",
-				{ Color = Theme.color("ink950"), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }
-			),
-		}
-	)
+	local label = Create("TextLabel", {
+		Name = "Delta",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -6, 1, 1),
+		Size = UDim2.fromOffset(40, 16),
+		Text = Format.signed(delta),
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextSize = 13,
+		FontFace = Theme.font("body", Enum.FontWeight.ExtraBold),
+		TextColor3 = if negative then Theme.hex("#FF8A73") else Theme.hex("#A9E57C"),
+		ZIndex = 5,
+		Parent = self.instance,
+	}, {
+		Create(
+			"UIStroke",
+			{ Color = Theme.color("ink950"), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }
+		),
+	})
 	self._stroke.Color = if negative then Theme.color("gules") else Theme.color("vert")
 	self._stroke.Transparency = 0
 	if self._motion then

@@ -140,7 +140,7 @@ function Button:update(partial: { [string]: any })
 		size = if small then 12 else 15,
 		color = textColor,
 		xAlign = "Center",
-		extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.new(0, 0, 1, 0), LayoutOrder = 2, Name = "Label" },
+		extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 2, Name = "Label" },
 	})
 	label.Parent = self._content
 	self._content.Parent = self.face

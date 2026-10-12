@@ -31,14 +31,14 @@ function Toast.new(props: { [string]: any })
 	local kind = props.kind or "info"
 	local accent = Theme.color(Toast.ACCENT[kind] or "azure")
 	local textChildren: { [any]: any } = {
-		Style.padding(8, 0, 8, 0),
-		Style.list("y", 2, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
+		Padding = Style.padding(8, 0, 8, 0),
+		List = Style.list("y", 2, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
 		Title = Style.text({
 			text = props.title,
 			weight = Enum.FontWeight.ExtraBold,
 			size = 13,
 			wrap = true,
-			extra = { AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 0), LayoutOrder = 1 },
+			extra = { AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 1 },
 		}),
 	}
 	if props.body then
@@ -48,7 +48,7 @@ function Toast.new(props: { [string]: any })
 			size = 11,
 			color = Theme.color("textSecondary"),
 			wrap = true,
-			extra = { AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, 0, 0, 0), LayoutOrder = 2 },
+			extra = { AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 2 },
 		})
 	end
 	local icon = Icon.new(props.icon or ICON[kind] or "info", 28)
@@ -62,9 +62,9 @@ function Toast.new(props: { [string]: any })
 		LayoutOrder = props.layoutOrder or 0,
 		ClipsDescendants = true,
 	}, {
-		Style.corner(10),
-		Style.stroke(Theme.color("gold700"), 1.5),
-		Style.gradient(Theme.color("ink700"), Theme.color("ink900")),
+		Corner = Style.corner(10),
+		Stroke = Style.stroke(Theme.color("gold700"), 1.5),
+		Gradient = Style.gradient(Theme.color("ink700"), Theme.color("ink900")),
 		Accent = Create("Frame", {
 			BackgroundColor3 = accent,
 			BorderSizePixel = 0,
