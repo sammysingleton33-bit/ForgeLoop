@@ -3,7 +3,7 @@
 _Status: **selected by the user on 2026-10-12** (D-020). Author: FORGE-00. Contracts: `games/game-001/CONTRACTS.md`. Unresolved design and monetization questions stay with the user (§16)._
 
 ## 1. Pitch and target player
-Four medieval kingdoms compete in one 30–45 minute match. Each kingdom has up to four human rulers (solo, duo, trio or squad) who walk their land in third person. They direct a living population of AI citizens who farm, gather, build, trade and fight. Grow, fortify, raid and besiege. The match ends in the **Crown Arena**: the leading rulers duel in front of their own citizens, whose support reflects how each ruler led (§18). The remaining victory rules are the user's decision (§16.4, §16.9). Target (proposal, pending §16.7): mid-core Roblox players aged 13+, on PC and mobile, in 30–45 minute sessions with friends.
+Four medieval kingdoms compete in one 30–45 minute match. Each kingdom has up to four human rulers (solo, duo, trio or squad). They rule from the throne through an aerial management view, and they direct a living population of AI citizens who are generated anew each match. Citizens farm, gather, build, trade and fight, have personalities and relationships, and react to the ruler's decisions through structured conversations and six reputation values (`design/living-kingdom.md`). Grow, fortify, raid and besiege. The match ends in the **Crown Arena**: the leading rulers duel in front of their own citizens, whose support reflects how each ruler led (§18). The remaining victory rules are the user's decision (§16.4, §16.9). Target (proposal, pending §16.7): mid-core Roblox players aged 13+, on PC and mobile, in 30–45 minute sessions with friends.
 
 ## 2. Core loop
 - **30 s:** walk to a job, gather or place something, and see citizens react.
@@ -22,22 +22,27 @@ Four medieval kingdoms compete in one 30–45 minute match. Each kingdom has up 
 
 Empty kingdom slots are run by AI governors. Their behaviour level, from passive to competitive, is a user decision (§16.3).
 
-## 4. Vertical slice VS-1 (first playable; ≈48 h wall-clock, see §15)
-The **only** milestone that matters now. It is accepted only after a **Studio playtest by the user** (G6), with screenshots and the BuildInfo sha. Headless tests never count as acceptance. Playtest A (rows 1–4b) runs as soon as they are integrated; the full VS-1 playtest is FL-0064.
+## 4. Vertical slice VS-1 (first playable; user directive 2026-10-12, D-030)
+The **only** milestone that matters now.
+- It is accepted only after a **Studio playtest by the user**, with screenshots and the BuildInfo sha. Headless tests never count as acceptance.
+- Temporary assets and simplified mechanics are fine where needed. They are improved after the loop works.
+- FORGE-05 hands the user a fresh `.rbxl` after every merge that changes what can be seen or played. Each build comes with a truthful "works / doesn't yet" list.
 
 | # | Player can… | Acceptance in Studio | Owners |
 |---|---|---|---|
-| 1 | Enter a medieval world | Spawns at their own kingdom's keep (never falls or respawns elsewhere) in a colourful valley with a river, forest, quarry, farm fields and roads. At least one kingdom plot is fully dressed; the other three are blocked out | FORGE-02 (world, architecture, foliage, lighting), FORGE-01 (spawn), FORGE-05 (integration) |
-| 2 | Control a ruler in third person | Smooth movement and camera on PC and phone emulator; ruler visibly distinguished (crown/cape in kingdom colours) | FORGE-04 (controller, camera, input modes), FORGE-02 (regalia), FORGE-01 (attaches it at spawn) |
-| 3 | Belong to a kingdom | Auto-assigned to one of 4 kingdoms with banner colour and name; HUD shows kingdom and members; two players in one simulated party share a kingdom (Party Simulator) | FORGE-01 (KingdomService), FORGE-03 (HUD) |
-| 4 | See AI citizens working | At least 12 citizens in the player's kingdom with visible jobs (farmer, woodcutter, miner, builder, hauler). They walk to work, work (procedural animation), carry goods to the storehouse, and the stockpile rises | FORGE-01 (sim + replication), FORGE-02 (citizen look, props), FORGE-04 (work sounds/VFX) |
-| 4b | See that citizens think | Tap a citizen: a card shows name, job, mood, current intent (e.g. "Carrying wood to storehouse") and last memory. A job panel (+/− per job) reassigns workers. Citizens near the keep cheer when it reaches level 2; a ruler visit adds a "ruler visited" memory and raises mood, shown on the card | FORGE-01 (inspect, job quotas, reactions), FORGE-03 (card + panel, FL-0065) |
-| 5 | Gather resources | The ruler can harvest a tree or rock with feedback; the kingdom treasury updates on the HUD | FORGE-01 (interaction), FORGE-03 (treasury + HUD), FORGE-04 (feedback) |
-| 6 | Construct or upgrade | The build menu places a House, Farm, Barracks or Watchtower on valid ground with costs shown. Builders walk there and raise it through visible stages; the keep upgrades to level 2 | FORGE-01 (construction sim), FORGE-03 (build menu + costs), FORGE-02 (staged models) |
-| 7 | Military / kingdom objective | Recruit 3 soldiers at the Barracks (paid from the treasury) and press Send-to-capture. They walk to the neutral Watchtower and a capture bar fills. The tower takes the kingdom colour, border flags mark the region, and Crown Points rise. The objective panel tracks progress, and the slice summary appears | FORGE-01 (military + objective), FORGE-03 (army/objective UI, summary), FORGE-04 (announcer, celebration), FORGE-02 (tower, flags) |
-| — | First two minutes guided | The onboarding hints walk a new player through gather → build → recruit → capture | FORGE-04 |
+| 1 | See a colourful medieval kingdom | A colourful valley with a river, forest, quarry, farm fields and roads. The player's own kingdom plot is fully dressed; the other three are blocked out | FORGE-02 (WorldService, Kit, lighting), FORGE-05 |
+| 2 | Rule from the throne with an aerial camera | The ruler (crown and cape in kingdom colours) sits on the throne in the keep. The default camera is an aerial management view over the kingdom: pan, zoom and rotate on PC and on the phone emulator. Tapping selects a citizen, a building or a plot. Walk mode is optional in VS-1 | FORGE-04 (camera, selection), FORGE-01 (spawn and seat), FORGE-02 (throne) |
+| 3 | Belong to a kingdom | Auto-assigned to one of 4 kingdoms with banner colour and name. The HUD shows the kingdom and its members. Two players in one simulated party share a kingdom (Party Simulator) | FORGE-01, FORGE-03 |
+| 4 | Watch AI citizens live and work | At least 12 citizens in the player's kingdom, **generated for this match**: names, 2–3 traits, varied looks. They walk to work, gather or farm, carry goods to the storehouse, and the stockpile rises | FORGE-01 (population, sim, replication), FORGE-02 (looks), FORGE-04 (work feedback) |
+| 4b | See that citizens think | Selecting a citizen opens a card with name, occupation, traits, mood, loyalty, current intent, family, friends and recent memories. A job panel reassigns workers | FORGE-01, FORGE-03 |
+| 5 | Run the kingdom economy | The treasury (food, wood, stone, gold) rises from citizen work, falls with costs and upkeep, and is always visible on the HUD | FORGE-01, FORGE-03 |
+| 6 | Construct and upgrade | Select a free plot, choose a structure (House, Farm, Barracks and more) with its cost, then confirm. Builders walk over and raise it through visible stages. The Keep and Barracks upgrade (Barracks levels 1–2 at about 8 s and 18 s, PROVISIONAL) and look different at each level | FORGE-01, FORGE-03 (plot picker, build menu, upgrade panel), FORGE-02 (stages, levels) |
+| 7 | Recruit and capture | Recruit 3 soldiers at the Barracks, paid from the treasury, then press Send-to-capture. They walk to the neutral Watchtower, a capture bar fills and the tower takes the kingdom colour. Crown Points rise and the slice summary appears | FORGE-01, FORGE-03, FORGE-04, FORGE-02 |
+| 8 | Use an interactive kingdom HUD | Resources, population, kingdom and Crown Points are on the HUD, with build, army and objective panels and the six reputation values. A reputation screen shows the history of changes and what each value means | FORGE-03 |
+| 9 | Decide in a conversation and see the result | At least one citizen shows a thought bubble with a real request. Selecting them opens a conversation with 2–4 choices. The chosen answer plays the reaction and changes the world visibly: resources, that citizen's loyalty and mood on the card, a reputation value with a history line, and a visible work boost, strike or follow-up | FORGE-01 (ConversationService, reputation, effects), FORGE-03 (conversation panel, reputation screen), FORGE-04 (bubbles, reactions), FORGE-00 (content library) |
+| — | First minutes guided | Onboarding walks a new player through: inspect a citizen → build on a plot → answer a citizen → recruit → capture | FORGE-04 |
 
-The interim slice rules (start on first join, untimed Founding, the first capture ends the slice) are in CONTRACTS G3. They are not the game's victory rules.
+The interim slice rules are unchanged (CONTRACTS G3): start on first join, untimed Founding, and the first capture ends the slice. They are not the game's victory rules. The full living-kingdom requirements are in `design/living-kingdom.md`. VS-1 carries the smallest working version of each.
 
 **VS-2 — a complete four-kingdom match (draft; ask the user before VS-2 starts about every item tagged §16.x):**
 
@@ -130,6 +135,8 @@ Chopping, mining, building hammer, coin and resource pickups, construction compl
 | Players | 16 per server (4×4) | as above |
 
 ## 15. Plan to first playable (parallel; honest hours from task estimates)
+_Update 2026-10-12 (D-030): VS-1 v2 adds the aerial camera with the throne, a generated population, conversations, reputation and plot construction. The hour table below is from before that change. Workers report updated estimates in their STATUS.md, and the dashboard tracks real progress._
+
 FORGE-01 holds the critical path at about 47 h of serial work. VS-1 is therefore about 48 h of wall-clock time, not 24. Playtest A (rows 1–4b) comes at about h32. The other workers have slack, and fill it with VS-1 polish and the non-gating tasks.
 
 | Hours | FORGE-01 | FORGE-02 | FORGE-03 | FORGE-04 | FORGE-05 |
@@ -156,6 +163,10 @@ Estimated hours to VS-1 per worker:
 7. Target audience and maturity rating: 13+ mid-core vs. all-ages Mild (they pull in different directions; market research rec. 4).
 8. Whether to spike Roblox `TextGenerator` (an LLM NPC API, initially 100 requests/min) for citizen petitions voiced from their memory, in VS-2/3. It is not in VS-1.
 9. Crown Arena open points (`design/crown-arena.md` §11; defaults are PROVISIONAL and config-driven): (a) format — top-2 kingdoms in one final duel, or a bracket; (b) champion choice in multi-ruler kingdoms; (c) whether the duel decides the match winner or grants Crown Points; (d) support strength — the outcome caps, and whether weak support may ever debuff.
+10. **Match length (conflict recorded, unresolved; D-030).** The user's preference is about 25 minutes of kingdom play plus a 5-minute final phase, ending around minute 30. The current §3 and crown-arena §2 timing puts the arena at 38–44 minutes. Nothing changes until the user decides. FORGE-04 adds a non-default `match30` pacing profile for evaluation.
+11. Approval of the dialogue library. The starter set is a DRAFT. The earlier 16-archetype / 48-response proposal will be imported once its files are supplied.
+12. Balancing acceptance bounds for leadership strategies (`design/living-kingdom.md` §7).
+13. Whether walk mode (third person) is offered outside the Crown Arena.
 
 ## 17. Risks
 | Risk | Mitigation |

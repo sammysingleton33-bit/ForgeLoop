@@ -3,14 +3,17 @@ id: FL-0020
 title: "UI foundation: builder, theme tokens, component library, responsive rules"
 track: build
 owner: forge-03
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0003]
 estimate_h: 8
-evidence: []
+evidence:
+  - check.sh OVERALL PASS on forge/03-ui-economy-fl0020 (Lune 306/0, game-001 specs 8/0, both builds + place checks)
+  - "Specs: Components 7, Kit 3, UIThemeParity 3; mutations fail Kit (Format sign) and Parity (gold500 drift)"
+  - "Screens reviewed: design/ui/REVIEW.md; prototype/kit-{phone,tablet,desktop}.png; luau/kit-1280x1400.png (real Luau render found and fixed the pill delta layout bug)"
 ---
 
 # UI foundation: builder, theme tokens, component library, responsive rules
@@ -32,3 +35,5 @@ Prototype screenshots inspected; Lune specs for pure layout/format helpers; Stud
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-03: READY → BUILDING. Design and Luau kit built on forge/03-ui-economy.
+- 2026-10-12 forge-03: BUILDING → REVIEW. UI foundation: Create builder, Theme (+ per-game UITheme: game-001 medieval, sandbox neutral), Style, Icon (glyph fallback until icons are uploaded), Format, Motion, ToastStack; 10 components (Button, IconButton, Panel, Modal, Tabs, Grid, ItemCard, CurrencyPill, ProgressBar, Toast) with props in headers; design tokens, 34-icon set, HTML prototypes + component sheet at 3 sizes, Luau snapshot renderer (design/ui/render). No external framework.
