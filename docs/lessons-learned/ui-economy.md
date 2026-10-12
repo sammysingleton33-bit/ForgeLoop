@@ -42,3 +42,14 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **Mutate against the strongest double you have.** A late-join refetch survived its mutation
   because the real TreasuryService also pushes on join; the spec now models a missed push.
   `observed-once`.
+- **Never key a weak table by an Instance in Lune.** Lune hands out a new userdata for an instance
+  once nothing in Lua holds the old one, so a `__mode = "k"` table keyed by instances loses entries
+  whenever the GC runs. The kit's test connector did, and a tap spec failed in about a third of full
+  game-001 runs while passing alone. Hold instances strongly and reset per test. Repro: a spec that
+  drops the reference and forces GC with allocations (`collectgarbage("collect")` is not allowed).
+  `observed-once` (2026-10-12).
+- **Re-render by key, patch values in place.** A full rebuild per push swapped the button under the
+  player's finger and reset scroll (FORGE-05 M1). Views keep a layout key (`UI/Signature`) and only
+  rebuild when it changes; balances, CTA state and progress are patched. Check it with instance
+  identity in specs (`expect(find(...)).toBe(before)`) and pixel-compare the committed renders.
+  `observed-once` (2026-10-12).

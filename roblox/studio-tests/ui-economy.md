@@ -16,8 +16,9 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
    `BuildMenuController`, with no red errors from either.
-2. Without P2 you see, after about 10 s, warnings like `KingdomHudController: cannot listen to
-   Kingdom.State`, and **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
+2. Without P2, wait about 25 s: warnings like `KingdomHudController: cannot listen to
+   Kingdom.State` arrive in two waves (around 15 s and 20 s, one per area each time), and there is
+   **no** kingdom HUD (it stays hidden until you rule a kingdom). That is expected.
 
 ## U2 — kingdom, rulers, resources (P2)
 1. Play. Top-left: a crest in your kingdom's colour, its name (e.g. Emberhold) and
