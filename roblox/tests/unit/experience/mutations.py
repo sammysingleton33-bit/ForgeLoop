@@ -118,6 +118,16 @@ M = [
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'out[phase] = durations[phase] -- nil unless', 'out[phase] = nil -- nil unless', "PacingService", "match30 is the", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", G+"config/Onboarding.luau", 'trigger = { client = "CitizenInspected" }', 'trigger = { client = "CitizenAnswered" }', "Onboarding", "a client action completes only the current step", "game"),
+ ("FL-0062", F+"Moments.luau", 'rival.position = nil', 'local _ = rival', "KingdomFeedback", "without its location", "game"),
+ ("FL-0062", F+"Moments.luau", 'if member ~= player then', 'if true then', "KingdomFeedback", "the other members learn who joined", "game"),
+ ("FL-0062", F+"Moments.luau", 'won = mine ~= nil and mine == winner,', 'won = true,', "KingdomFeedback", "whether their kingdom won", "game"),
+ ("FL-0062", F+"Moments.luau", 'if not isMember(members, player) then', 'if true then', "KingdomFeedback", "members celebrate, everyone else is warned", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", 'silent = presentation.sound ~= nil,', 'silent = false,', "KingdomFeedback", "silently when they have a sound", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", 'celebrated = notifications:celebrate(presentation.celebrate, moment) == true', 'celebrated = false', "KingdomFeedback", "celebrations celebrate", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if now - self._lastDeposit < Def.DEPOSIT_GAP_SEC or not self:_near(position) then', 'if not self:_near(position) then', "KingdomFeedback", "deposits coalesce", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'pcall(self._vfx.stop, self._vfx, effect)', 'local _ = effect', "KingdomFeedback", "a released rig loses every effect", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if sound == nil or type(id) ~= "number" or not self:_near(position) then', 'if sound == nil or type(id) ~= "number" then', "KingdomFeedback", "culled by distance", "game"),
+ ("FL-0062", C2+"MusicController.luau", 'if type(phase) ~= "string" or Def.PHASE_STATES[phase] == nil then', 'if type(phase) ~= "string" then', "KingdomFeedback", "the match result wins at once", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
