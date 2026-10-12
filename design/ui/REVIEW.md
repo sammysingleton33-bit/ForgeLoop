@@ -58,7 +58,7 @@ Tokens: `design/ui/tokens.json` → `prototype/tokens.css` (generated) and
 ## Luau UI snapshots (the real kit, not the prototype)
 `design/ui/render/` runs the actual Luau modules under Lune and draws the instance tree they build
 with a Roblox-layout emulation (approximation; deviations listed in `design/ui/render/README.md`).
-- `screenshots/luau/kit-1280x1400.png` — every component and state from `roblox/src/client/UI`,
+- `screenshots/luau/kit-1280x1400.png` — every component and state from `roblox/src/shared/UI`,
   game-001 theme (`PROJECT=games/game-001/default.project.json DEVICES=1280x1400 bash
   design/ui/render/shoot-luau.sh kit`). Matches the prototype sheet (`kit-*.png`): colours, fonts,
   trims, badges, rarity frames, toasts, panel ornament, modal.

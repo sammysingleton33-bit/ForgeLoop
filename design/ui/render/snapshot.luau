@@ -11,7 +11,7 @@
 	ModuleLoader.new over the Rojo project (same root, preloaded Test/LuneInstances, Lune's require
 	for "@lune/..."), MockRandom loaded first and installed as the global Random, Core/Signal's
 	error reporter routed to the harness. So a scene can require("@game/ReplicatedStorage/Forge/..."),
-	require("@game/StarterPlayer/StarterPlayerScripts/Forge/UI/..."), relative helpers and
+	require("@game/ReplicatedStorage/Forge/UI/..."), relative helpers and
 	MockEnv (roblox/tests/mocks/MockEnv). The harness files are imported, never modified.
 
 	Scene contract (design/ui/render/scenes/<name>.luau):

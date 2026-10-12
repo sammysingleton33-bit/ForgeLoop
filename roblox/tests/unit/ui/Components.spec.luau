@@ -1,7 +1,7 @@
 local T = require("../../harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
-local UI = "@game/StarterPlayer/StarterPlayerScripts/Forge/UI/"
+local UI = "@game/ReplicatedStorage/Forge/UI/"
 local Create = require(UI .. "Create")
 local Button = require(UI .. "Components/Button")
 local CurrencyPill = require(UI .. "Components/CurrencyPill")

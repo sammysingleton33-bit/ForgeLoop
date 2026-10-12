@@ -7,7 +7,7 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
 local UITheme = require("@game/ReplicatedStorage/Forge/Config/UITheme")
-local Theme = require("@game/StarterPlayer/StarterPlayerScripts/Forge/UI/Theme")
+local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
 
 local tokens = serde.decode("json", fs.readFile(T.root .. "/design/ui/tokens.json"))
 
@@ -34,7 +34,7 @@ describe("game-001 UITheme parity with design/ui/tokens.json", function()
 		expect(UITheme.touchTarget).toBe(tokens.touchTarget)
 	end)
 
-	it("resolves through client/UI/Theme for the four G2 kingdoms", function()
+	it("resolves through shared/UI/Theme for the four G2 kingdoms", function()
 		for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
 			expect(Theme.tincture(kingdom)).toEqual(Theme.hex(UITheme.tinctures[kingdom]))
 		end

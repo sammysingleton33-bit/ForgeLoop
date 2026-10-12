@@ -1,6 +1,6 @@
 // AI Kingdoms HUD + construction + kingdom panel prototype (FORGE-03).
 // URL: kingdom.html?size=phone|tablet|desktop&scene=<name>&guides=1
-// The layout maths here is the spec for roblox/src/client/UI/Layout.luau (same breakpoints, scale and zones).
+// The layout maths here is the spec for roblox/src/shared/UI/Layout.luau (same breakpoints, scale and zones).
 (function () {
 	const T = window.TOKENS;
 	const I = (name, size) => window.Icons.svg(name, size);

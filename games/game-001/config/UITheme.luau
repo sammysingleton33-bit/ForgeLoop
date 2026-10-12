@@ -5,7 +5,7 @@
 	The AI Kingdoms look: a heraldic palette (Or, Azure, Gules, Vert, Purpure, Sable/ink,
 	Argent/parchment) on dark ink panels with gold trim. Source of truth for the colours is
 	design/ui/tokens.json (the HTML prototypes); games/game-001/tests/economy/UIThemeParity.spec.luau
-	fails if the two drift. client/UI/Theme.luau merges this over its neutral defaults, so another game
+	fails if the two drift. shared/UI/Theme.luau (ReplicatedStorage.Forge.UI.Theme) merges this over its neutral defaults, so another game
 	only overrides what it needs.
 
 	Icons: `image` is an uploaded asset id ("" until the user uploads design/ui/icons/png — handoff

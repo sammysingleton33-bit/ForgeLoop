@@ -81,7 +81,7 @@ The scene is loaded like one spec file of `roblox/tests/harness/run.luau`: `Glob
 `Random`, Core/Signal's error reporter routed to the run. So inside a scene:
 
 - `require("@game/ReplicatedStorage/Forge/...")` (shared code, `Config/UITheme`) and
-  `require("@game/StarterPlayer/StarterPlayerScripts/Forge/UI/...")` (client UI) work;
+  `require("@game/ReplicatedStorage/Forge/UI/...")` (the UI kit, `roblox/src/shared/UI`) work;
 - relative requires resolve on disk from the scene file, e.g. MockEnv from `scenes/`:
   `require("../../../../roblox/tests/mocks/MockEnv")`; absolute paths are rejected (harness rule);
 - globals are the harness ones (`Instance`, `Enum`, `UDim2`, `Color3`, `Font`, `ColorSequence`,
@@ -92,9 +92,9 @@ Example with the real FORGE-03 modules (checked during development against the U
 2026-10-12; adapt to their current API):
 
 ```lua
-local Create = require("@game/StarterPlayer/StarterPlayerScripts/Forge/UI/Create")
-local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Forge/UI/Layout")
-local Style = require("@game/StarterPlayer/StarterPlayerScripts/Forge/UI/Style")
+local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local Layout = require("@game/ReplicatedStorage/Forge/UI/Layout")
+local Style = require("@game/ReplicatedStorage/Forge/UI/Style")
 
 return function(ctx)
 	Create.useTestConnector() -- event props ([Create.Event.Activated]) need it: Lune instances have no events
