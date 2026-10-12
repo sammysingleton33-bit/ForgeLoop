@@ -42,6 +42,18 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **Mutate against the strongest double you have.** A late-join refetch survived its mutation
   because the real TreasuryService also pushes on join; the spec now models a missed push.
   `observed-once`.
+- **Weak-keyed tables lose Lune instances.** Lune hands out a userdata wrapper per instance and may
+  collect it while the instance lives on; a weak-keyed table keyed by that wrapper then loses its
+  entry and the next access gets a new wrapper. `Create.useTestConnector` keys handlers that way, so
+  after a GC `Create.fire` finds no handler ("expected 0 to be greater than 0"; KingdomUI ≈ 2 in 60
+  full runs, 0 in 40 alone). Reproduced with a 10-line script (FL-0088). Specs that tap should use a
+  strong-keyed connector until the kit's is fixed. `observed-once`.
+- **Wrapped Merriweather needs `LineHeight` ≥ 1.2** in the headless renderer: at 1.0 its ascenders
+  overlap the line above (question text, FL-0088). Roblox's own spacing is unverified; 1.15-1.25 is
+  safe either way. `observed-once`.
+- **The session scratchpad is shared by parallel agents.** A generic `scratchpad/mutate.py` was
+  overwritten by another worker's script, and running it mutated (and restored) their worktree. Keep
+  scratch files in a task-named subdirectory with task-named files. `observed-once`.
 - **Size fixed-width labels from the renderer's metrics, not from the prototype.** The HTML
   prototype lays names out with flex, so nothing truncates there; the Luau labels have fixed widths
   and the snapshot render showed "Compassi…" / "Compete…" (FL-0089). A canvas `measureText` in the
