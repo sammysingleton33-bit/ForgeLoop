@@ -45,7 +45,7 @@ Identity comes from **four levers**, used on castles/military always and on vill
 |---|---|---|---|---|
 | Roof colour (`<k>_roof*`) | brick red | slate blue | jewel emerald | rich gold |
 | Stone (`<k>_stone*`) | warm grey | cool blue-grey | mossy grey-green | sandstone |
-| Trim metal (`<k>_trim*`) | gold | silver | bronze | royal purple + ivory |
+| Trim metal (`<k>_trim*`) | gold | silver | bronze | deep bronze + ivory |
 | Tower roof shape | tall **conical spires** with finials | **square pyramid** roofs, crisp | **timber hoardings** (wooden fighting galleries) + low cones | **domes / onion domes** with gold finials |
 | Emblem (banners, shields) | crown | star | oak leaf | sun disc |
 
@@ -53,8 +53,7 @@ Rules (tuned after the first reviews, 2026-10-12):
 - Straw thatch is deliberately **muted** (`thatch*`) so it never reads as the gold kingdom; every thatch
   building carries its kingdom on a large element that reads at 80 studs (ridge pennant, gable banner, door banner).
 - The gold kingdom is **gold, not orange** (`yellow_roof*`, `yellow_cloth*`, saturation ≥ 0.85); straw, hay, wheat and
-  thatch stay desaturated tan (saturation ≤ 0.55), so gold never reads as hay. Purple is only a small trim accent;
-  gold-kingdom shutters are dark goldenrod.
+  thatch stay desaturated tan (saturation ≤ 0.55), so gold never reads as hay. gold-kingdom shutters are dark goldenrod. **No purple anywhere on the gold kingdom** (three fresh reviews read it as a fifth faction or a crescent); its trim is deep bronze `yellow_trim` + ivory `yellow_accent`.
 - The green kingdom is a **jewel emerald** (hue ~160°, `green_roof*`, `green_cloth*`), clearly bluer than foliage and
   grass (hue 95–115°), so green roofs never melt into trees.
   On green terrain from the aerial camera, emerald identity rests on silhouette (timber hoardings) and cloth:

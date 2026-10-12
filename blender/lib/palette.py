@@ -14,7 +14,7 @@ UVs change. Bump PALETTE_VERSION when appending.
 No bpy import here, so tests and tools can use it with plain Python.
 """
 
-PALETTE_VERSION = 1  # values tuned 2026-10-12 (muted thatch and straw, saturated kingdom gold, jewel-green kingdom apart from foliage); indices unchanged
+PALETTE_VERSION = 1  # values tuned 2026-10-12 (muted thatch and straw, saturated kingdom gold, jewel-green kingdom apart from foliage, gold-kingdom trim bronze not purple); indices unchanged
 SIZE = 512
 SWATCH = 32
 GRID = SIZE // SWATCH  # 16 x 16 swatches
@@ -64,7 +64,7 @@ _ENTRIES = [
     ("green_accent", "E9DFAF"), ("green_wood", "6A4A2A"), ("green_emblem", "F0E2B0"), ("green_glow", "B8E06A"),
 
     ("yellow_roof_dark", "B08408"), ("yellow_roof", "EBB910"), ("yellow_roof_light", "F7D447"), ("yellow_cloth_dark", "A87A06"),
-    ("yellow_cloth", "F0BE14"), ("yellow_cloth_light", "FADA5A"), ("yellow_trim", "6E3F92"), ("yellow_trim_dark", "4A2868"),
+    ("yellow_cloth", "F0BE14"), ("yellow_cloth_light", "FADA5A"), ("yellow_trim", "8A5A1C"), ("yellow_trim_dark", "5C3A10"),
     ("yellow_shutter", "B8860B"), ("yellow_stone", "C4A47A"), ("yellow_stone_dark", "9A7D58"), ("yellow_stone_light", "DEC79F"),
     ("yellow_accent", "FFF2CF"), ("yellow_wood", "8A5A30"), ("yellow_emblem", "FFF6DD"), ("yellow_glow", "FFD86B"),
     # row 9: crops, flowers, canvas, fire

@@ -76,6 +76,11 @@ Apply after the current worker rounds finish, because `lib/` changes rebuild eve
    - a smooth geodesic option for `geo.icosphere` (now in `_vegetation_common.py`).
    - `emblem()` (crown, star, oak leaf, sun) from `_kingdom_props_common.py` into `lib/kit.py`. farm_* already
      import it across generator families; every kingdom banner and shield should share one emblem source.
+   - `wheel()`, `sheet()` (solid cloth, `normal="auto"`) and `sweep_loop()` from `_kingdom_props_common.py`.
+4b. **`kit.oriented_box` gets an explicit `up` parameter.** When the normal is parallel to the beam axis, the
+   cross-section is arbitrary today (worked around with `obox` in `siege_ballista.py`).
+4c. **Docs/rig.** `geo.icosphere(subdiv=1)` is a 20-face icosahedron (document it). The hero proxy is cut off at
+   the right edge of small-prop heroes (`prop_goods`); place it relative to the asset width.
 4. **Kit options:**
    - `gable_roof(..., flush_ridge=True)`, a ridge cap without the 0.2 overshoot;
    - a cheap voussoir mode for `kit.door` (about 12 tris per stone, not ~540 per door).
@@ -85,3 +90,18 @@ Apply after the current worker rounds finish, because `lib/` changes rebuild eve
    - a cool `snow` swatch (append-only), where tree_pine uses `foam` today.
 7. **Variation check.** Modular pieces that share end posts (fences, walls) score as near-identical side
    silhouettes. Compare front and top silhouettes only for classes tagged `modular`.
+
+## Parked: farm_field (NEEDS-WORK after 3 fresh-review rounds, 2026-10-12)
+Rounds 1–3 failed on silhouette (3/5) for the same cause each time: a 32×24 plot of wheat inside the
+3,000-tri crop budget reads as a flat bed with thin spikes. Readability, palette and triangle cost passed in round 3.
+Rather than a fourth round of the same approach, the change of strategy is:
+1. **Split crops from plots.** The plot asset is the bed, border and props. Crops become separate small
+   instanced assets (`crop_wheat_clump`, `crop_maize`, …, about 150–300 tris each) that WorldPlan/Kit scatter densely,
+   so wheat can be a chunky waist-high mass without blowing one mesh's budget. This needs a FORGE-01/FORGE-05
+   check on the instance counts.
+2. Or a `crop_large` budget class (4,500), as the farm worker requested, if instancing is rejected.
+3. Vary the borders (only 03 is stone) and give 04/06 a vertical accent (trellis, post with basket).
+4. Gameplay strip: 6 × 32-stud plots only fit at 88 studs. Allow a two-row lineup for wide sets
+   (`LINEUP_ROWS = 2`) so the reviewer can judge at 60.
+
+The in-game farm uses the Kit's part-built field (FL-0054), so VS-1 is not blocked. The Blender field is an FL-0057 import.
