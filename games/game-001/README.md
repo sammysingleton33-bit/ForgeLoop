@@ -7,7 +7,7 @@ Design: `BRIEF.md`. Contracts: `CONTRACTS.md` (FORGE-00). Who owns which folder:
 
 | Source | In the place | Notes |
 |---|---|---|
-| `src/shared/` | `ReplicatedStorage.Game` | game shared code, one folder per area (`Sim/`, `Kingdom/`, `Kit/`, `Economy/`, `Experience/`) |
+| `src/shared/` | `ReplicatedStorage.Game` | game shared code, one folder per area (`Sim/`, `Kingdom/`, `Kit/`, `Treasury/`, `Feedback/`, …; area names per CONTRACTS v0.4-g2) |
 | `src/server/Services/` | `ServerScriptService.Game.Services` | game services; booted with the framework's |
 | `src/client/Controllers/` | `StarterPlayerScripts.Game.Controllers` | game controllers; booted with the framework's |
 | `config/` | `ReplicatedStorage.Forge.Config` | game config (`Game.luau` = id `game-001`) |
