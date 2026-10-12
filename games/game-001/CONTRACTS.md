@@ -500,7 +500,9 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Fit rule (FORGE-05 finding M2).** A structure fits a slot when `Kit.footprint(type, Costs.maxLevel(type))` fits inside `Layout.slotSizes[slot.size]` on both axes (slot-local X = width, Y = depth).
   - The rule is implemented once, as the pure `src/shared/Build/Fit.luau` (FORGE-01: `Fit.fits(type, size): boolean`, `Fit.typesFor(size): { BuildingType }`).
   - The server (`Build.PlaceSlot`) and the plot picker both call it. Nobody re-implements it.
-  - FORGE-02 keeps footprints and `slotSizes` consistent with the intended classes: S = house (and watchtower when it fits), M = barracks, storehouse and the VS-2 service buildings, L = farm, lumber camp, quarry and mine.
+  - The rule is **purely physical**: any structure whose footprint fits may use the slot. With today's footprints, S fits house, lumber camp, quarry, storehouse and watchtower; M also fits barracks; L also fits farm. That is accepted for VS-1.
+  - The class list in `Layout.luau` comments is placement guidance, not a rule. Placing resource buildings near their nodes is a gameplay choice for the player.
+  - Until `Fit.luau` lands, FORGE-03 may keep an interim client copy (`UI/SlotFit`) with the same rule. It switches to `Fit.typesFor` when `Fit.luau` lands, and FORGE-05 checks on review that the two agree.
 
 ### G13.6 Throne, camera and selection — VS-1
 - **Throne (FORGE-02).** `Kit.build("keep", level, "complete", color)` contains a `Seat` named `Throne` on a raised dais, visible from the aerial camera.
