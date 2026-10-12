@@ -442,6 +442,96 @@ function Props.prop(assetId: string): Model
 	return standIn(assetId)
 end
 
+-- ------------------------------------------------------------------ build slot markers (G13.5)
+
+-- Ground marker for a free build slot: a cleared-earth pad inside a low timber sill, survey stakes with
+-- kingdom pennants on the corners and a signpost at the front (-Z). `size` is slot-local (X width, Y depth).
+-- Only Root (0.12 thick, under a building's 0.2 Root) is queryable, so a selection raycast hits the slot
+-- Root unless a building stands on it. Nothing collides; units walk across.
+function Props.slotMarker(size: Vector2, kingdomColor: Color3): Model
+	local ctx = newModel("BuildSlot", size)
+	local root = ctx.root
+	root.Size = Vector3.new(size.X, 0.12, size.Y)
+	root.CFrame = CFrame.new(0, 0.06, 0)
+	root.PivotOffset = CFrame.new(0, -0.06, 0)
+	local w, d = size.X, size.Y
+	local pad = block(
+		ctx,
+		"Pad",
+		Vector3.new(w - 1.4, 0.16, d - 1.4),
+		CFrame.new(0, 0.08, 0),
+		Color3.fromRGB(176, 144, 102),
+		Enum.Material.Ground
+	)
+	pad.CastShadow = false
+	for _, sx in { -1, 1 } do
+		block(
+			ctx,
+			"Sill",
+			Vector3.new(0.7, 0.45, d),
+			CFrame.new(sx * (w / 2 - 0.35), 0.22, 0),
+			C.wood,
+			Enum.Material.Wood
+		)
+		block(
+			ctx,
+			"Sill",
+			Vector3.new(w - 1.4, 0.45, 0.7),
+			CFrame.new(0, 0.22, sx * (d / 2 - 0.35)),
+			C.wood,
+			Enum.Material.Wood
+		)
+	end
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			local x, z = sx * (w / 2 - 0.35), sz * (d / 2 - 0.35)
+			block(ctx, "Stake", Vector3.new(0.45, 3.2, 0.45), CFrame.new(x, 1.6, z), C.woodLight, Enum.Material.Wood)
+			block(
+				ctx,
+				"Pennant",
+				Vector3.new(0.12, 0.9, 1.3),
+				CFrame.new(x, 2.7, z - sz * 0.75),
+				kingdomColor,
+				Enum.Material.Fabric,
+				1
+			)
+		end
+	end
+	block(
+		ctx,
+		"SignPost",
+		Vector3.new(0.5, 4.2, 0.5),
+		CFrame.new(w / 2 - 3.5, 2.1, -d / 2 - 0.2),
+		C.woodDark,
+		Enum.Material.Wood
+	)
+	block(
+		ctx,
+		"SignBoard",
+		Vector3.new(3.2, 1.8, 0.25),
+		CFrame.new(w / 2 - 3.5, 3.4, -d / 2 - 0.5),
+		C.woodLight,
+		Enum.Material.WoodPlanks
+	)
+	block(
+		ctx,
+		"SignMark",
+		Vector3.new(1.1, 1.1, 0.12),
+		CFrame.new(w / 2 - 3.5, 3.4, -d / 2 - 0.66) * CFrame.Angles(0, 0, math.rad(45)),
+		kingdomColor,
+		Enum.Material.SmoothPlastic,
+		1
+	)
+	for _, part in ctx.model:GetChildren() do
+		if part:IsA("BasePart") then
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CanQuery = part == root
+		end
+	end
+	return ctx.model
+end
+
 -- ------------------------------------------------------------------ territory markers
 
 function Props.regionMarkers(polygon: { Vector2 }, kingdomColor: Color3): Model
