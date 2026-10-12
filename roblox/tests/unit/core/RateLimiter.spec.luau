@@ -14,6 +14,20 @@ describe("Core/RateLimiter", function()
 		now = 100
 	end)
 
+	it("never denies a call that arrives exactly on schedule (float drift, review follow-up on #4)", function()
+		local limiter = RateLimiter.new({ burst = 1, perSecond = 5, clock = clock })
+		local denied = 0
+		for i = 1, 100000 do
+			now = 100 + i * 0.2
+			if not limiter:allow("k") then
+				denied += 1
+			end
+		end
+		expect(denied).toBe(0)
+		now += 0.1
+		expect(limiter:allow("k")).toBe(false) -- early calls are still refused
+	end)
+
 	it("allows a full burst at once, then rejects", function()
 		local limiter = RateLimiter.new({ burst = 3, perSecond = 1, clock = clock })
 		expect(limiter:allow("a")).toBe(true)
