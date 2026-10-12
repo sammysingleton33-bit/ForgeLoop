@@ -2,7 +2,7 @@
 
 These contracts let five workers build at the same time. Code against them; use mocks for parts not built yet. Additive changes are fine in your own area; breaking changes need a PR reviewed by FORGE-05 and approved by FORGE-00, with the version bumped below.
 
-Contract version: **0.2** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
+Contract version: **0.3** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
 
 ## 1. Code layout and requires
 - Rojo project `roblox/default.project.json` maps:
@@ -10,6 +10,8 @@ Contract version: **0.2** · custodian FORGE-05 · Luau files in `roblox/src/sha
   - `roblox/src/server` → `ServerScriptService.Forge`
   - `roblox/src/client` → `StarterPlayer.StarterPlayerScripts.Forge`
   - `games/<game>/config` → `ReplicatedStorage.Forge.Config` (the sandbox until Game #1 is approved)
+  - `roblox/assets` → `ReplicatedStorage.Forge.Assets` (each `<asset_id>.rbxm` becomes a child named by asset id)
+  - `games/<game>/map` → `Workspace` (FORGE-05 adds this mapping once the skeleton is merged)
 - Requires use **require-by-string with relative paths** (`require("../Core/Signal")`), at the top of the module only (not inside functions). No aliases. This runs identically in Lune tests and in Roblox ([announcement](https://devforum.roblox.com/t/introducing-require-by-string/3405078)). Studio confirmation is smoke test S1 in `roblox/STUDIO_TEST_PLAN.md`.
 - One module per file, `PascalCase.luau`. Shared logic is `--!strict`. Entry scripts: `*.server.luau`, `*.client.luau`.
 - No `init.luau` modules with children that require each other (Rojo/Luau semantics differ historically). Prefer flat folders.
@@ -35,6 +37,10 @@ export type Env = {
 	serverTimeNow: () -> number,              -- workspace:GetServerTimeNow(); use for client-facing deadlines
 	newInstance: (className: string) -> any,  -- Instance.new (mocked in tests)
 	sharedModules: (fileName: string) -> { [string]: any }, -- required ReplicatedStorage.Forge.<Area>.<fileName> modules keyed by Area
+	-- v0.3 additions: more services, plus a generic accessor backed by mocks in tests
+	CollectionService: any, Teams: any, ServerStorage: any, Lighting: any,
+	UserInputService: any, ContextActionService: any, GuiService: any,
+	service: (name: string) -> any,          -- any other Roblox service by name (mockable)
 }
 ```
 `Env.live()` builds the real one inside Roblox; `roblox/tests/mocks/` builds fakes. `jobId` is never empty: in Studio (`game.JobId == ""`) `Env.live()` substitutes a GUID per session.
@@ -66,6 +72,7 @@ Server-side signals that decouple producers from consumers (quests, analytics, o
 | `PurchaseCompleted` | FORGE-03 PurchaseService | `(player, kind: "product" \| "pass", id: number, robux: number?)` |
 | `RewardRolled` | FORGE-03 RewardService | `(player, tableId: string, result: RewardResult)` |
 | `OnboardingStep` | FORGE-04 OnboardingService | `(player, flow: string, step: number, stepName: string)` |
+| `ShopViewed` | FORGE-03 ShopService | `(player, shopId: string, itemId: string?)` — one per shop open, for funnels |
 ```lua
 export type RoundResult = {
 	roundId: string, mode: string, startedAt: number, endedAt: number,
@@ -74,7 +81,14 @@ export type RoundResult = {
 }
 export type RewardResult = { tableId: string, rarity: string, itemId: string, qty: number, pityTriggered: boolean }
 ```
-Round states are exactly `"Lobby" | "Intermission" | "Countdown" | "Active" | "Results"` (exported type `RoundState`). Add events by appending to the table (additive). Payloads are server-only; clients learn via remotes: FORGE-01 declares `Gameplay.RoundState` (state, roundId, endsAtServerTime), `Gameplay.Eliminated` and `Gameplay.RoundResult` serverEvents; client deadlines use `serverTimeNow`.
+**Exactly-once rule:** producers fire an event once per successful action — never on an idempotent replay (same txId/PurchaseId), a failed grant or a partial grant.
+
+Round states are exactly `"Lobby" | "Intermission" | "Countdown" | "Active" | "Results"` (exported type `RoundState`). Add events by appending to the table (additive). Payloads are server-only; clients learn via remotes, all broadcast to every player and declared by FORGE-01:
+- `Gameplay.RoundState` serverEvent: `(state, roundId, endsAtServerTime: number?, aliveCount: number)`; deadlines use `serverTimeNow`.
+- `Gameplay.Eliminated` serverEvent: `({ userId: number, cause: string, byUserId: number?, aliveCount: number })`.
+- `Gameplay.RoundResult` serverEvent: `(result: RoundResult)`.
+- `Gameplay.GetRoundState` function: returns the current `{ state, roundId, endsAtServerTime, aliveCount }` snapshot (mid-round joiners).
+- Client API (FORGE-01 controllers, consumed by FORGE-03 screens): `RoundController.state`, `.aliveCount`, `.changed: Signal`; `SpectateController:next()`, `:previous()`, `:stop()` (returns to the lobby camera), `.targetChanged: Signal<Player?>`.
 
 ## 5. Player data (`DataService`, FORGE-01)
 DataStore `ForgeProfiles_v1`, key `u_<UserId>`. Session-locked. Data is split into namespaces so each worker evolves its own schema:
@@ -122,21 +136,30 @@ EconomyService:spend(player, currency, amount: number, txId: string, sink: strin
 InventoryService:grant(player, itemId: string, qty: number, txId: string, source: string): boolean
 InventoryService:count(player, itemId): number
 RewardService:roll(player, tableId: string, txId: string): RewardResult?  -- server only
-RewardTables.odds(tableId): { { rarity: string, itemId: string, probability: number } } -- shared; UI shows these exactly
+RewardTables.odds(tableId, pityState: any?): { { rarity: string, itemId: string, probability: number } } -- shared; the server samples from exactly this distribution
+RewardTables.pityRule(tableId): string?           -- human-readable rule shown next to the odds ("Epic or better guaranteed within 10 opens")
+RewardTables.displayPercents(odds): { string }    -- largest-remainder rounding; always sums to exactly 100.00%
 PurchaseService:registerProduct(productId: number, handler: (player, receipt) -> boolean)
 PurchaseService:ownsPass(player, passId: number): boolean
-PurchaseService:canBuyPaidRandom(player): boolean -- PolicyService gate; false when unknown
+PurchaseService:canBuyPaidRandom(player): boolean -- PolicyInfo.ArePaidRandomItemsRestricted, cached at join with pcall; false when unknown
 ```
+A reward is **paid random** when its cost is Robux or a currency marked `robuxPurchasable` in `Currencies.luau`; Shop and RewardService check `canBuyPaidRandom` before every paid-random roll and show numerical odds behind a worded "Odds" control. Earned random rewards (gameplay) need no gate but still show possible outcomes.
+EconomyService is the **only** caller of `AnalyticsService:economy` (in `start()` via `registry:find`); nobody derives economy analytics from `CurrencyChanged`.
+
 Definitions (items, currencies, reward tables, products) are data in `games/<game>/config/` (`Items.luau`, `Currencies.luau`, `RewardTables.luau`, `Products.luau`), validated at startup.
 
 ## 8. Experience (FORGE-04)
+Exactly one service (SettingsService) registers the `experience` namespace with a composite schema from `shared/Experience/Schema.luau`; Onboarding/Quest/DailyReward services depend on it and update only their own sub-tables. Skipping onboarding logs an `OnboardingSkipped` custom event and no further funnel steps.
 ```lua
 AnalyticsService:event(player, name: string, fields: {[string]: any}?)
-AnalyticsService:funnel(player, funnel: string, step: number, stepName: string)
+AnalyticsService:funnel(player, funnel: string, step: number, stepName: string, opts: { sessionId: string?, fields: { [string]: string }? }?)
+-- onboarding funnel → LogOnboardingFunnelStepEvent; recurring funnels (e.g. shop) pass a sessionId per attempt
+-- custom events: each event declares in games/<game>/config/Analytics.luau which field is the numeric value and which ≤3 fields map to CustomField01-03
 AnalyticsService:economy(player, flow: "source" | "sink", currency: string, amount: number, balance: number, txType: string, item: string?)
 SettingsService:get(player, key: string): any
 -- client
-NotificationController:show({ title: string, body: string?, kind: "info" | "reward" | "warning" | "achievement", durationSec: number? })
+NotificationController:show({ title: string, body: string?, kind: "info" | "reward" | "warning" | "achievement", durationSec: number? }) -- all transient toasts go through this (built on FORGE-03's Toast)
+NotificationController:celebrate(kind: string, payload: any)  -- FORGE-03's reward reveal calls this at the end; FORGE-04 never reacts to RewardRolled on its own
 AudioController:play(soundId: string, opts: { volume: number?, position: Vector3? }?)  -- ids from shared/Experience/Sounds.luau
 ```
 EconomyService calls `registry:find("AnalyticsService")` in `start()` and reports sources/sinks when present.
@@ -149,6 +172,8 @@ EconomyService calls `registry:find("AnalyticsService")` in `start()` and report
 
 ## 10. Assets (FORGE-02 → everyone)
 - `blender/manifest.json` is the hand-over: one entry per asset id `<category>_<name>_<NN>` with dimensions (studs), triangle counts per LOD, files, preview, review status.
+- One export file per asset containing only the visual mesh, pivot at base centre, dimensions reported as Roblox X/Y/Z (Y up). Roblox generates render LODs itself (`RenderFidelity`), so LOD1 is a Blender-side budget/preview artefact only. Collision: a `CollisionFidelity` per asset, or a child `<asset_id>_col` (Transparency 1, CanCollide true) with the visual part CanCollide false. In Roblox each asset is a Model with a PrimaryPart.
+- Asset ids match `^[a-z]+(_[a-z0-9]+)+_\d{2}$`, category first.
 - In Roblox, imported models live in `ReplicatedStorage.Forge.Assets` (or `ServerStorage` for server-only) named by asset id. Code refers to assets only by id.
 - Until an Open Cloud key exists, import is manual (3D Importer in Studio → save `.rbxm` to `roblox/assets/`), done by FORGE-05 with the user.
 
@@ -157,4 +182,5 @@ EconomyService calls `registry:find("AnalyticsService")` in `start()` and report
 
 ## Changelog
 - 0.1 (2026-10-12) FORGE-00: first version.
+- 0.3 (2026-10-12) FORGE-00, additive (second prompt review): Assets/map mappings; Env services + `service()`; `ShopViewed`; exactly-once rule; round remote payloads, `GetRoundState`, client Round/Spectate API; pity-aware odds + display rounding; paid-random definition incl. Robux-purchasable currency; single economy-analytics path; funnel sessionId/custom-field mapping; one `experience` registrant; toast/celebration boundary; asset structure + id regex.
 - 0.2 (2026-10-12) FORGE-00, additive (prompt review): cross-tree require rule; Env `bindToClose`, `serverTimeNow`, `newInstance`, `sharedModules`, non-empty `jobId`; round state strings + client remotes; step-wise migrations, lock check on every save, UTF-8; remote discovery/instance layout/default rate; Validate byte/UTF-8/array rules.

@@ -51,6 +51,28 @@ Windows: install [Rokit](https://github.com/rojo-rbx/rokit), then `rokit install
 - `git fetch origin main && git merge --no-edit origin/main` at the start of every session, before opening/updating a PR, and right after your PR is merged. Merge, don't rebase, pushed branches.
 - Small PRs (one task, ideally < ~600 changed lines of code). Asset/generator PRs can be larger but stay in one area.
 
+## Every work block: handoffs addressed to you
+Handoffs live on the sender's branch until merged, so scan all branches:
+```bash
+git fetch origin
+ME=forge-01   # your id
+for r in origin/main $(git branch -r --list 'origin/forge/*' 'origin/codex/*'); do
+  git ls-tree -r --name-only "$r" -- production/handoffs | grep -- "-to-$ME-" | sed "s|^|$r: |"
+done | sort -u
+```
+Read new ones with `git show <ref>:<path>` and answer (handoff reply or PR comment) within the same work block.
+
+## Updating an open PR branch (e.g. after the skeleton merges)
+```bash
+git checkout forge/01-gameplay-fl0007
+git merge --no-edit origin/main && bash roblox/scripts/check.sh && git push origin HEAD
+git checkout forge/01-gameplay && git merge --no-edit forge/01-gameplay-fl0007
+```
+Update stacked PRs bottom-up. Never push unrelated in-progress work into an earlier task's PR branch.
+
+## If pushes to your branches are refused (D-018)
+Push to the branch your session assigns, then create each per-task PR branch at that sha with the GitHub MCP `create_branch` tool; FORGE-05 bookkeeping uses `create_or_update_file` on `main`.
+
 ## Pull requests (worker → main)
 - One task per PR (D-013). When a task's checks pass: `git push origin HEAD:refs/heads/forge/0N-<area>-fl00xx`, open the PR from that branch into `main`, keep working on your worker branch. If an earlier PR of yours is still open, the new one is stacked on it: write "stacked on #N" in the body.
 - Until FL-0003 (skeleton) is merged into `main`, open PRs only as drafts (D-016).

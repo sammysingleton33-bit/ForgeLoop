@@ -19,7 +19,8 @@ evidence: []
 Boulders/cliff chunks and modular ruin pieces (blocks, broken walls, arches, overgrowth) that read as one set with the foliage.
 
 ## Requirements
-- Faceted, beveled, noise-displaced rocks in sizes S/M/L with optional moss
+- Faceted, beveled, noise-displaced rocks in sizes S/M/L (>= 3 variants each) with optional moss
+- >= 8 modular ruin pieces on a stated stud grid
 - Modular ruin pieces on a stud grid for building layouts
 
 ## Validation

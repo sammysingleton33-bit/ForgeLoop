@@ -5,3 +5,7 @@ blender/exports/
 **/__pycache__/
 .pytest_cache/
 *.blend1
+node_modules/
+blender/**/*.blend
+!blender/source-assets/**/*.blend
+blender/renders/

@@ -24,6 +24,11 @@ A reusable bpy pipeline that turns a generator into reviewed, validated, Roblox-
 - Export (FBX or glTF; research) with correct axes/scale and base-centre origin; LOD0/LOD1; collision proxies
 - Validation report: tris vs budget and import limit, bounds in studs, degenerate geometry, UVs, materials
 - build.py CLI (--generator, --variants, --seed, --all) runnable via bpy wheel and desktop Blender
+- Budgets (fail check.sh on breach; and on any mesh > 20,000 tris, the Roblox import limit): tree LOD0 <= 4,000 tris, palm <= 3,000, fern/bush <= 1,500, rock <= 1,000, ruin piece <= 1,500; 1 material; palette texture <= 512 px. LOD1 is a Blender-side preview/budget artefact (Roblox auto-LODs via RenderFidelity)
+- One export file per asset with only the visual mesh; collision via CollisionFidelity or child `<asset_id>_col`; Model with PrimaryPart; dims as Roblox X/Y/Z (Y up); id regex ^[a-z]+(_[a-z0-9]+)+_\d{2}$ (interfaces section 10)
+- Preview rig imitates Roblox (backface culling on); decide with sources between solid leaf geometry and alpha leaf cards (double-sided cost, SurfaceAppearance AlphaMode); validation flags open/zero-thickness geometry where the choice requires it
+- manifest.schema.json + per-generator fragments (blender/manifest.d/<generator>.json) merged deterministically; check.sh validates the schema and fails on committed images > 250 KB
+- blender/README.md: budgets, Blender-unit to stud scale, axes, export settings; desktop path `blender -b -P blender/build.py -- args` covered by an argv/sys.path unit test (marked unverified until the user runs it)
 - blender/scripts/check.sh
 
 ## Validation

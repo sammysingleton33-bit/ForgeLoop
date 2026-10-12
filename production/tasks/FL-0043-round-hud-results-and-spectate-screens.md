@@ -8,7 +8,7 @@ priority: P1
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
-depends_on: [FL-0020]
+depends_on: [FL-0020, FL-0009, FL-0010]
 estimate_h: 6
 evidence: []
 ---

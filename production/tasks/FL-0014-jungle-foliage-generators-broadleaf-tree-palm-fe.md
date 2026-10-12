@@ -22,7 +22,8 @@ Parametric generators producing varied, cohesive, non-primitive jungle foliage i
 - tree_broadleaf: recursive tapered branching, buttress roots, layered leaf clumps (never one sphere)
 - palm: curved segmented trunk with rings, layered drooping fronds with leaflets
 - fern_bush: layered understory fronds
-- At least two critique-refine rounds each; reviews/<generator>.md records each round
+- At least two critique-refine rounds each (no exceptions); reviews/<generator>.md records each round with the D-019 rubric scores; final scoring by a fresh-context reviewer subagent; >= 6 variants per generator
+- Calibration: FORGE-00 or the user judges the first tree_broadleaf contact sheet before palm/fern scale up
 
 ## Validation
 Contact sheets + gameplay-distance renders inspected; validation reports within budget

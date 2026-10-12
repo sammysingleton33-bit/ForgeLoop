@@ -19,7 +19,7 @@ evidence: []
 FORGE-01 has a real place to run rounds and measure the flood: a small lobby, spawn platforms, and a play area with a marked low region and a documented base water level.
 
 ## Requirements
-- games/sandbox/map/ mapped by Rojo into Workspace
+- Map model files + README first (before the skeleton merges); the Rojo mapping into Workspace and the place-check assertions right after the skeleton merges
 - Spawn parts tagged ForgeSpawn, lobby spawn tagged ForgeLobbySpawn, play-area bounds part tagged ForgePlayArea, low-region marker parts tagged ForgeFloodProbe (5 points) with their base water Y documented
 - Terrain or parts kept small and readable; handoff to FORGE-01 announcing the tags
 

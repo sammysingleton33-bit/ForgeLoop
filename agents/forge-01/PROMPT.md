@@ -12,13 +12,13 @@ git merge --no-edit origin/main
 git push -u origin "$B"
 nohup bash tools/setup/cloud-setup.sh > /tmp/forge-setup.log 2>&1 &   # pinned Rojo/Selene/StyLua/Lune; ~6–7 min first time
 ```
-If `git status` already shows you on `forge/01-gameplay` with local commits (e.g. after a context reset), skip this block and only run `git fetch origin main && git merge --no-edit origin/main`. If pushing your branch is refused, use the branch your session assigns and record it in `agents/forge-01/STATUS.md`. Local (non-cloud) sessions use a worktree: `git worktree add --track -b forge/01-gameplay ../forgeloop-wt/forge-01 origin/forge/01-gameplay` (if it already exists, `cd` into it). Shell variables don't persist between tool calls, so prefix every task command: `FORGE_AGENT=forge-01 python tools/forge.py …`.
+If `git status` already shows you on `forge/01-gameplay` with local commits (e.g. after a context reset), skip this block and only run `git fetch origin main && git merge --no-edit origin/main`. If pushing your branch is refused, follow D-018 (assigned branch + GitHub MCP `create_branch` for PR branches) and record it in `agents/forge-01/STATUS.md`. Local (non-cloud) sessions use a worktree: `git worktree add --track -b forge/01-gameplay ../forgeloop-wt/forge-01 origin/forge/01-gameplay` (if it already exists, `cd` into it). Shell variables don't persist between tool calls, so prefix every task command: `FORGE_AGENT=forge-01 python tools/forge.py …`.
 
 ## 2. Read before working
-`CLAUDE.md` (imports `AGENTS.md`), `agents/forge-01/MISSION.md`, `docs/architecture/interfaces.md` (**contracts v0.2; §1–§6 are yours to implement or honour**), `docs/workflows/team.md`, `docs/workflows/git-and-integration.md`, `DECISIONS.md` (D-011, D-013–D-016), `production/quality-gates/README.md`, `docs/lessons-learned/README.md` (previous survival-arena failures), your tasks: `python tools/forge.py list --owner forge-01` (FL-0007 … FL-0012).
+`CLAUDE.md` (imports `AGENTS.md`), `agents/forge-01/MISSION.md`, `docs/architecture/interfaces.md` (**contracts v0.3; §1–§6 are yours to implement or honour, plus the round remotes and client API in §4**), `docs/workflows/team.md`, `docs/workflows/git-and-integration.md`, `DECISIONS.md` (D-011, D-013–D-018), `production/quality-gates/README.md`, `docs/lessons-learned/README.md` (previous survival-arena failures), your tasks: `python tools/forge.py list --owner forge-01` (FL-0007 … FL-0012).
 
 ## 3. Current state and dependencies (2026-10-12)
-- On `main`: contracts v0.2, ownership, task queue, `tools/forge.py`, setup script (fresh install verified).
+- On `main`: contracts v0.3, ownership, task queue, `tools/forge.py`, setup script (fresh install verified).
 - Coming soon: the shared skeleton (FL-0003), as a PR from **`forge/00-skeleton`** that FORGE-05 verifies and merges. It contains:
   - the Rojo project;
   - `Contracts/Env` (dependency injection), `Contracts/Loader` (service lifecycle `Def.new(env, registry)` → `start()`), `Contracts/GameEvents` (server event bus) and `Contracts/Types`;
@@ -82,7 +82,7 @@ Harness, mock and Env changes go through FORGE-05; contract changes go through F
 **PR 3 — FL-0009 RemoteService.**
 - Discovers every area's declarations with `env.sharedModules("Remotes")` (§6).
 - Creates `ReplicatedStorage.ForgeRemotes.<Area>.<Action>` instances via `env.newInstance`.
-- Validates every argument and rate-limits per player before the handler runs. Undeclared remotes default to burst 10 / 5 per second. Calls with extra arguments are dropped.
+- Validates every argument and rate-limits per player before the handler runs. Declared client→server remotes without `rate` default to burst 10 / 5 per second. Undeclared names and calls with extra arguments are dropped and counted.
 - Drops and counts invalid calls. Never errors the server, never trusts the client, never uses `InvokeClient`.
 - API: `handle`, `fire`, `fireAll`.
 - Specs: wrong types, NaN/inf, oversized payloads, extra arguments, a burst over the limit, unknown names, handler errors isolated.
@@ -92,7 +92,8 @@ Harness, mock and Env changes go through FORGE-05; contract changes go through F
 - Config in `games/sandbox/config/Rounds.luau` and `Spawns.luau`; spawns and bounds from the FL-0044 tags.
 - Elimination → spectate. Win by last-standing or by timer. Handle joins and leaves mid-round, too few players, and ties.
 - Server events: `RoundStateChanged`, `PlayerEliminated`, `RoundEnded` with the exact `RoundResult` type (§4).
-- Client contract, in `Gameplay/Remotes.luau`: serverEvents `Gameplay.RoundState` (state, roundId, endsAtServerTime from `serverTimeNow`), `Gameplay.Eliminated` and `Gameplay.RoundResult`. FORGE-03 builds the screens (FL-0043).
+- Client contract (§4 v0.3), in `Gameplay/Remotes.luau`, all broadcast: `Gameplay.RoundState` (state, roundId, endsAtServerTime from `serverTimeNow`, aliveCount), `Gameplay.Eliminated` ({userId, cause, byUserId?, aliveCount}), `Gameplay.RoundResult` (RoundResult), and the `Gameplay.GetRoundState` function for mid-round joiners. Client API: `RoundController.state/.aliveCount/.changed`, `SpectateController:next()/:previous()/:stop()/.targetChanged`. FORGE-03 builds the screens (FL-0043) on exactly this API.
+- Tags and teams come through `env.CollectionService` / `env.Teams` (v0.3), never `game:GetService`.
 
 **PR 5 — FL-0011 HazardService + a real flood.**
 - Data-driven hazards (warn → active → cleanup), server-authoritative, scheduled from `Hazards.luau`.
@@ -121,6 +122,7 @@ Everything is server-authoritative: no client input decides outcomes, rewards or
   2. Open the PR into `main`, titled `[FORGE-01] FL-00xx <summary>`, with the body following `.github/pull_request_template.md`. Until that template exists, use these sections: tasks, what changed, evidence (exact commands + counts), unverified, Studio steps, contract changes (none/additive/breaking).
   3. If an earlier PR of yours is still open, write "stacked on #N".
   4. The PR stays a draft until FL-0003 is merged.
+- Every work block: run the handoff scan in `docs/workflows/git-and-integration.md` and answer handoffs to you. To update an open PR branch (e.g. after the skeleton merges) follow "Updating an open PR branch" there; never push unrelated work into an earlier task's PR branch.
 - Before each PR: `git fetch origin main && git merge --no-edit origin/main`, then re-run the checks.
 - Task status: `FORGE_AGENT=forge-01 python tools/forge.py set-status FL-00xx <STATUS> --note "…" --evidence "…"`. Set BUILDING when you start a task and REVIEW in its PR. Never run `forge.py dashboard`.
 - Keep `agents/forge-01/STATUS.md` current. After each work block, reply in this chat with **Done / Verified (commands + results) / Unverified / Blocked / Next**. FORGE-00 may send coordination messages here; treat them as Director instructions within your scope.

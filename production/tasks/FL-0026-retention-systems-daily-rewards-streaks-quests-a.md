@@ -8,7 +8,7 @@ priority: P1
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
-depends_on: [FL-0008, FL-0018]
+depends_on: [FL-0008, FL-0018, FL-0045]
 estimate_h: 6
 evidence: []
 ---
@@ -21,6 +21,7 @@ Server-authoritative daily rewards with streaks and grace rules, and data-driven
 ## Requirements
 - UTC day boundaries from server time (no client clock trust)
 - Rewards granted through EconomyService/InventoryService with transaction ids
+- Player-facing UI: daily-reward claim panel and quest/achievement list (FORGE-04 Quest*/DailyReward* controllers) built on FORGE-03 Panel/ProgressBar components, with Studio steps
 
 ## Validation
 Lune specs with controllable clock: streak continue/break/grace, double-claim prevention, quest progress from events

@@ -16,7 +16,7 @@ evidence: []
 # AnalyticsService adapter, event taxonomy and funnels
 
 ## Outcome
-Every game ships with consistent analytics: an adapter over Roblox AnalyticsService (custom, funnel, economy, progression events) and a documented event taxonomy.
+Every game ships with consistent analytics: an adapter over Roblox AnalyticsService (custom, funnel and economy events (progression events optional research only)) and a documented event taxonomy.
 
 ## Requirements
 - interfaces.md section 8; research current Roblox API names and limits
