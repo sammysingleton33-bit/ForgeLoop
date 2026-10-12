@@ -186,6 +186,7 @@
 			<div class="dscroll">
 			${phone ? "" : `<div class="ddesc">${o.desc || e.desc}</div>`}
 			<div class="stats"><span class="stat">${I("timer", 16)}${mmss(e.sec)} with builders</span>${o.stats || ""}</div>
+			${o.benefits ? `<div class="benefits">${o.benefits.map((b) => `<div class="ben ${b.next ? "next" : ""}"><span class="bl">${b.label}</span><span class="bt">${b.text}</span></div>`).join("")}</div>` : ""}
 			<div class="costs">${Object.entries(e.cost)
 				.map(([r, v]) => {
 					const s = state.treasury[r] < v;
@@ -291,6 +292,72 @@
 		return drawer(M, "Kingdom", tabs, detail(e, M, { verb: "Upgrade to Lv 2", meta: "Keep · Level 1 → 2", back: "Buildings", done: done ? "Upgrade started" : null }));
 	}
 
+	// ------------------------------------------------------------------ FL-0087: plots, plot picker, building upgrade panel
+	// Plot sizes (proposal, games/game-001/src/client/UI/SlotFit.luau): the largest footprint over a type's
+	// levels decides: <= 18 studs S, <= 26 M, else L; a slot takes its size and every smaller one.
+	const SLOT_FIT = { watchtower: "S", house: "M", storehouse: "M", lumbercamp: "M", quarry: "M", farm: "L", barracks: "L" };
+	const SIZE_NAME = { S: "Small", M: "Medium", L: "Large" };
+	const BENEFITS = {
+		lumbercamp: ["Woodcutters fell trees nearby", "More wood", "Even more wood"],
+		house: ["Homes 4 citizens", "Homes 8 citizens"],
+		storehouse: ["Drop-off point for haulers"],
+		quarry: ["Miners cut stone", "More stone", "Even more stone"],
+		watchtower: ["Vision over your land", "Archers"],
+		farm: ["Grows food", "Food +50 %", "Food +100 %"],
+		barracks: ["Recruit up to 5 soldiers", "Recruit up to 10 · faster training", "Recruit up to 15 · faster training", "Recruit up to 20 · veterans (+ morale)"],
+	};
+	const fits = (slot, type) => "SML".indexOf(SLOT_FIT[type]) <= "SML".indexOf(slot);
+	function plotsOverlay(d, sel) {
+		const plots = [
+			{ id: "p1", size: "M", x: 0.18, y: 0.66 },
+			{ id: "p2", size: "S", x: 0.29, y: 0.8 },
+			{ id: "p3", size: "L", x: 0.42, y: 0.74 },
+			{ id: "p4", size: "M", x: 0.12, y: 0.86, used: "house" },
+			{ id: "p5", size: "M", x: 0.36, y: 0.58 },
+		];
+		const px = { S: 46, M: 64, L: 90 };
+		return plots
+			.map((p) => {
+				const w = px[p.size] * (d.w / 1920 + 0.45);
+				return `<div class="plot ${p.id === sel ? "sel" : ""} ${p.used ? "used" : ""}" style="left:${p.x * d.w}px;top:${p.y * d.h}px;width:${w}px;height:${w * 0.62}px">${p.used ? "" : `<span>${p.size}</span>`}</div>`;
+			})
+			.join("");
+	}
+	function plotPicker(M, slot, selId, view) {
+		const phone = M.bp === "phone";
+		const listW = M.bp === "tablet" ? 230 : 250;
+		const rows = CATALOG.filter((e) => SLOT_FIT[e.id] && fits(slot, e.id));
+		const sel = rows.find((e) => e.id === selId) || rows[0];
+		const tabs = [{ label: `${SIZE_NAME[slot]} plot`, icon: "build", sel: true }];
+		const opts = { verb: `Build ${sel.name} here`, meta: `${sel.cat[0].toUpperCase() + sel.cat.slice(1)} · fits ${SIZE_NAME[slot].toLowerCase()} plots`, benefits: [{ label: "Gives", text: BENEFITS[sel.id][0] }] };
+		if (phone) {
+			const body = view === "list" ? `<div class="list fade" style="flex:1;width:auto">${rows.map((e) => buildRow(e, false, true)).join("")}</div>` : detail(sel, M, Object.assign({ back: "Plot" }, opts));
+			return drawer(M, "Build here", tabs, body);
+		}
+		const list = `<div class="list" style="width:${listW}px">${rows.map((e) => buildRow(e, e.id === sel.id, false)).join("")}</div>`;
+		return drawer(M, "Build here", tabs, list + detail(sel, M, opts));
+	}
+	function buildingPanel(M, b, o = {}) {
+		const levels = { barracks: [{ wood: 120, stone: 60 }, { wood: 100, stone: 80 }, { wood: 150, stone: 120, gold: 20 }, { wood: 200, stone: 180, gold: 50 }], watchtower: [{ wood: 60, stone: 80 }, { wood: 60, stone: 100 }] };
+		const secs = { barracks: [8, 18, 35, 60], watchtower: [40, 40] };
+		const max = levels[b.type].length;
+		const info = CATALOG.find((e) => e.id === b.type);
+		const tabs = [{ label: `${info.name} · Lv ${b.level}`, icon: info.id, sel: true }];
+		const top = b.level >= max;
+		const e = Object.assign({}, info, { cost: top ? {} : levels[b.type][b.level], sec: top ? 0 : secs[b.type][b.level] });
+		const benefits = [{ label: "Now", text: BENEFITS[b.type][b.level - 1] }];
+		if (!top) benefits.push({ label: `Lv ${b.level + 1}`, text: BENEFITS[b.type][b.level], next: true });
+		if (o.foreign) {
+			return drawer(M, "Building", [{ label: `${info.name} · Lv ${b.level}`, icon: info.id, sel: true }], `<div class="detail"><div class="dh"><div class="tile ${info.cat}" style="width:56px;height:56px">${I(info.id, 48)}</div><div><div class="dname">${info.name}</div><div class="dmeta">Frostmere · Level ${b.level}</div></div></div><div class="dscroll"><div class="ddesc">${info.desc}</div></div><div class="cta"><div class="btn disabled">Not your building</div></div></div>`);
+		}
+		return drawer(M, "Upgrade", tabs, detail(e, M, {
+			verb: `Upgrade to Lv ${b.level + 1}`,
+			meta: top ? `${info.name} · Level ${b.level} (highest)` : `${info.name} · Level ${b.level} → ${b.level + 1}`,
+			benefits,
+			done: top ? null : o.done,
+		}).replace(top ? /<div class="btn [^"]*">[^]*?<\/div><\/div>$/ : /$^/, top ? `<div class="btn disabled">Highest level reached</div></div>` : ""));
+	}
+
 	// ------------------------------------------------------------------ backdrop: a stylised kingdom view
 	function world(w, h) {
 		const houses = [];
@@ -351,6 +418,16 @@
 			state.treasury = { food: 132, wood: 180, stone: 160, gold: 0 };
 			return { core: hud(M) + rail(M, "kingdom") + upgradePanel(M) };
 		},
+		// FL-0087 (tap a plot / a building in the aerial view)
+		"plot-pick": (M, d) => ({ world: plotsOverlay(d, "p1"), core: hud(M) + rail(M) + plotPicker(M, "M", "lumbercamp", "detail") }),
+		"plot-pick-list": (M, d) => ({ world: plotsOverlay(d, "p1"), core: hud(M) + rail(M) + plotPicker(M, "M", "lumbercamp", "list") }),
+		"plot-pick-large": (M, d) => ({ world: plotsOverlay(d, "p3"), core: hud(M) + rail(M) + plotPicker(M, "L", "barracks", "detail") }),
+		"building-upgrade": (M, d) => {
+			state.treasury = { food: 132, wood: 180, stone: 160, gold: 0 };
+			return { world: plotsOverlay(d, ""), core: hud(M) + rail(M) + buildingPanel(M, { type: "barracks", level: 1 }) };
+		},
+		"building-max": (M, d) => ({ world: plotsOverlay(d, ""), core: hud(M) + rail(M) + buildingPanel(M, { type: "watchtower", level: 2 }) }),
+		"building-foreign": (M, d) => ({ world: plotsOverlay(d, ""), core: hud(M) + rail(M) + buildingPanel(M, { type: "barracks", level: 2 }, { foreign: true }) }),
 	};
 	function toast(M, kind, icon, title, body) {
 		const k = { success: "var(--color-vert)", error: "var(--color-gules)", info: "var(--color-azure)" }[kind];

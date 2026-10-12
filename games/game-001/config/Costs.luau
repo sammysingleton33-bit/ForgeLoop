@@ -26,8 +26,11 @@ export type ResourceBag = { [string]: number }
 export type BuildingCost = { cost: ResourceBag, buildSeconds: number }
 export type UnitCost = { cost: ResourceBag, trainSeconds: number, upkeepFood: number }
 
--- Placeholders (FORGE-01 double, 2026-10-12 handoff): House 40 wood · Farm 50 wood · Storehouse 60
--- wood · Barracks 120 wood + 60 stone · Watchtower 60 wood + 80 stone · Keep L2 150 wood + 150 stone (60 s).
+-- PROVISIONAL (D-030 catalogue, design/living-kingdom.md §4; balance sheet design/economy.md):
+-- level 1 is the VS-1 path (house 40 wood, farm 50 wood, barracks 120 wood + 60 stone, keep L2
+-- 150 wood + 150 stone); higher levels follow the D-030 level ranges. Barracks build/upgrade times
+-- are the user's proposal 8 / 18 / 35 / 60 s. Times are builder-seconds: BuildingService scales them
+-- by the builders on site.
 local BUILDINGS: { [string]: { BuildingCost } } = {
 	keep = {
 		{ cost = {}, buildSeconds = 0 }, -- starting building
@@ -41,27 +44,40 @@ local BUILDINGS: { [string]: { BuildingCost } } = {
 	farm = {
 		{ cost = { wood = 50 }, buildSeconds = 25 },
 		{ cost = { wood = 60, stone = 20 }, buildSeconds = 35 },
+		{ cost = { wood = 80, stone = 40 }, buildSeconds = 45 },
 	},
 	storehouse = {
 		{ cost = { wood = 60 }, buildSeconds = 30 },
 	},
 	lumbercamp = {
 		{ cost = { wood = 40 }, buildSeconds = 25 },
+		{ cost = { wood = 50, stone = 20 }, buildSeconds = 30 },
+		{ cost = { wood = 70, stone = 40 }, buildSeconds = 40 },
 	},
 	quarry = {
 		{ cost = { wood = 60 }, buildSeconds = 30 },
+		{ cost = { wood = 70, stone = 10 }, buildSeconds = 35 },
+		{ cost = { wood = 90, stone = 30 }, buildSeconds = 45 },
 	},
 	barracks = {
-		{ cost = { wood = 120, stone = 60 }, buildSeconds = 45 },
+		{ cost = { wood = 120, stone = 60 }, buildSeconds = 8 },
+		{ cost = { wood = 100, stone = 80 }, buildSeconds = 18 },
+		{ cost = { wood = 150, stone = 120, gold = 20 }, buildSeconds = 35 },
+		{ cost = { wood = 200, stone = 180, gold = 50 }, buildSeconds = 60 },
 	},
 	watchtower = {
 		{ cost = { wood = 60, stone = 80 }, buildSeconds = 40 },
+		{ cost = { wood = 60, stone = 100 }, buildSeconds = 40 },
 	},
 	wall = {
 		{ cost = { stone = 20 }, buildSeconds = 15 },
+		{ cost = { stone = 40 }, buildSeconds = 20 },
+		{ cost = { stone = 60, gold = 10 }, buildSeconds = 25 },
 	},
 	gate = {
 		{ cost = { wood = 40, stone = 30 }, buildSeconds = 25 },
+		{ cost = { wood = 40, stone = 60 }, buildSeconds = 30 },
+		{ cost = { wood = 60, stone = 90, gold = 10 }, buildSeconds = 35 },
 	},
 }
 
