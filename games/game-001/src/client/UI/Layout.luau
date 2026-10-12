@@ -15,7 +15,9 @@
 
 	Layout.compute(width, height) -> Metrics
 		{ breakpoint, scale, width, height (logical), margin, touch,
-		  hud = { x, y, crest, compact, pills = { x, y }, members = { x, y }?, bottom },
+		  hud = { x, y, crest, compact, pills = { x, y }, members = { x, y }?,
+		          reputation = { x, y, width, height, columns, item = { width, height }, gap = { x, y }, pad },
+		          bottom },                                bottom of the whole top-left stack
 		  rail = { right, button, gap },                   right-edge menu buttons (vertical centre)
 		  drawer = { x, y, width, height, single },        menu drawer (left of the rail)
 		  toast = { width },                               notification stack width
@@ -24,7 +26,26 @@
 	Layout.freeArea(metrics, drawerOpen) -> { x, width }   the part of the screen not covered by the
 		rail or an open drawer: toasts, chips and the placement bar centre in it
 	Layout.toastTop(metrics, drawerOpen) -> number         phone + open drawer: below the pills
+		and the reputation strip
+
+	Reputation strip (FL-0089, UI/ReputationStrip; prototype games/game-001/design/ui/reputation.js):
+		phone           one row of six (icon + number + bar) under the crest, clear of its Crown
+		                Points badge (y + crest + 8) and left of the phone drawer
+		tablet/desktop  three columns by two rows (icon + name + number + bar) under the rulers
+	It is part of the top-left stack, so `hud.bottom` (and with it the tablet/desktop drawer top and
+	the phone toast top) sits below it.
 ]]
+
+export type Strip = {
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+	columns: number,
+	item: { width: number, height: number },
+	gap: { x: number, y: number },
+	pad: number,
+}
 
 export type Metrics = {
 	breakpoint: "phone" | "tablet" | "desktop",
@@ -40,6 +61,7 @@ export type Metrics = {
 		compact: boolean,
 		pills: { x: number, y: number },
 		members: { x: number, y: number }?,
+		reputation: Strip,
 		bottom: number,
 	},
 	rail: { right: number, button: number, gap: number },
@@ -58,6 +80,9 @@ Layout.PHONE_PILL_GAP = 6
 Layout.PHONE_PILLS = 4
 Layout.PILL_HEIGHT = 34
 Layout.MEMBERS_HEIGHT = 22
+-- Reputation strip (FL-0089): six items; phones one row, tablet/desktop three columns.
+Layout.REPUTATION_ITEMS = 6
+Layout.REPUTATION_ITEM_HEIGHT = 22
 
 local function clamp(v: number, lo: number, hi: number): number
 	return math.min(hi, math.max(lo, v))
@@ -70,6 +95,31 @@ function Layout.breakpoint(width: number, height: number): "phone" | "tablet" | 
 		return "desktop"
 	end
 	return "tablet"
+end
+
+-- The strip's box at (x, top): phones one row of 6 items (50 px, narrower — down to 44 — when
+-- `maxWidth` is less, so it stays left of the phone drawer), tablet/desktop 3 × 2 items of 118 px.
+function Layout.reputationStrip(phone: boolean, x: number, top: number, maxWidth: number?): Strip
+	local columns = if phone then Layout.REPUTATION_ITEMS else 3
+	local rows = math.ceil(Layout.REPUTATION_ITEMS / columns)
+	local gap = if phone then { x = 3, y = 0 } else { x = 8, y = 6 }
+	local pad = if phone then 4 else 6
+	local itemWidth = 118
+	if phone then
+		local fit = math.floor(((maxWidth or math.huge) - 2 * pad - (columns - 1) * gap.x) / columns)
+		itemWidth = math.clamp(fit, 44, 50)
+	end
+	local item = { width = itemWidth, height = Layout.REPUTATION_ITEM_HEIGHT }
+	return {
+		x = x,
+		y = top,
+		width = columns * item.width + (columns - 1) * gap.x + 2 * pad,
+		height = rows * item.height + (rows - 1) * gap.y + 2 * pad,
+		columns = columns,
+		item = item,
+		gap = gap,
+		pad = pad,
+	}
 end
 
 function Layout.compute(width: number, height: number): Metrics
@@ -88,9 +138,8 @@ function Layout.compute(width: number, height: number): Metrics
 	local crest = if phone then Layout.PHONE_CREST else 52
 	local pills = if phone then { x = x + crest + 8, y = y + 2 } else { x = x, y = y + crest + 8 }
 	local members = if phone then nil else { x = x, y = pills.y + Layout.PILL_HEIGHT + 6 }
-	local bottom = if members then members.y + Layout.MEMBERS_HEIGHT else y + 36
 	local drawerRight = margin + railButton + 12
-	local drawer
+	local drawer, reputation
 	if phone then
 		local left = x
 			+ Layout.PHONE_CREST
@@ -100,7 +149,12 @@ function Layout.compute(width: number, height: number): Metrics
 			+ 12
 		local w = math.max(260, W - drawerRight - left)
 		drawer = { x = W - drawerRight - w, y = y, width = w, height = H - y - margin, single = true }
+		reputation = Layout.reputationStrip(true, x, y + crest + 12, drawer.x - x - margin)
 	else
+		reputation = Layout.reputationStrip(false, x, (members :: any).y + Layout.MEMBERS_HEIGHT + 6)
+	end
+	local bottom = reputation.y + reputation.height
+	if not phone then
 		local w = if bp == "tablet" then 560 else 620
 		local maxH = if bp == "tablet" then 470 else 480
 		local top = bottom + 10
@@ -114,7 +168,16 @@ function Layout.compute(width: number, height: number): Metrics
 		height = H,
 		margin = margin,
 		touch = 44,
-		hud = { x = x, y = y, crest = crest, compact = phone, pills = pills, members = members, bottom = bottom },
+		hud = {
+			x = x,
+			y = y,
+			crest = crest,
+			compact = phone,
+			pills = pills,
+			members = members,
+			reputation = reputation,
+			bottom = bottom,
+		},
 		rail = { right = margin, button = railButton, gap = 10 },
 		drawer = drawer,
 		toast = { width = if phone then 250 else 300 },

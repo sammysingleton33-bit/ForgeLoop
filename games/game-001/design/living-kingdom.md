@@ -13,7 +13,7 @@ _Status: **official requirements, user directive of 2026-10-12** (D-030). Author
   - occupation and routine (work, carry, eat; rest at VS-2 with day/night);
   - needs (hunger in VS-1; rest and safety in VS-2);
   - relationships: family (household), 1–3 friends, 0–1 rival;
-  - chemistry with the ruler (−20..+20, fixed for the match);
+  - chemistry with the ruler (−20..+20, rolled once; may drift at most ±5 during the match);
   - loyalty (0–100, individual);
   - memories (≤ 8, existing G5 rule) with tags usable by conversations;
   - mood (0–100).
