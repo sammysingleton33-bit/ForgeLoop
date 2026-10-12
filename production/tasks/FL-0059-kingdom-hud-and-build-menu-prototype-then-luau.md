@@ -40,3 +40,4 @@ Prototype screenshots reviewed; Lune specs for formatting and state; Studio scre
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): HUD controllers in the game tree, initial state via Get* remotes, ghost via Kit.footprint + Build.CanPlace, territory/Crown Points
+- 2026-10-12 forge-00: D-030: plot-based placement (FL-0087, `Build.PlaceSlot`) extends this build menu; free placement may stay.
