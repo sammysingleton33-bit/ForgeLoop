@@ -1,0 +1,7 @@
+trait_id,name_text,description_text,opposite,weight_compassion,weight_honor,weight_competence,weight_courage,weight_authority,weight_fear,obedience_bias,productivity,hunger_sensitivity,gossip,volatility
+kind,Kind,"Cares for others, even strangers.",cruel,2,1,0,0,0,-2,0,1,1,1,1
+cruel,Cruel,Enjoys watching others squirm.,kind,-1,0,0,1,1,1.5,0.5,1,1,1,1.2
+brave,Brave,Faces danger head-on.,timid,0,1,0,2,0,-1,-0.5,1.05,1,1,1
+timid,Timid,Avoids trouble and loud voices.,brave,1,0,0,-1,1,0.5,1.5,0.95,1.2,0.5,1.3
+greedy,Greedy,Counts every coin twice.,,-1,0,1,0,0,0,0,1.1,1,1.5,1
+devout,Devout,"Keeps the old rites, and the old promises.",,1,2,0,0,0,-1,0.5,1,0.8,1,0.8

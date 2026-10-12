@@ -223,6 +223,33 @@
 			</g>
 			<circle cx="24" cy="24" r="11" fill="#F6D16A" ${s()}/>
 			<circle cx="24" cy="24" r="6.5" fill="#FBE6A2"/>`,
+		// FL-0088 citizen card and conversation (appended).
+		talk: `
+			<path d="M9 7 H39 Q44 7 44 12 V29 Q44 34 39 34 H23 L12.5 42.5 L14.5 34 H9 Q4 34 4 29 V12 Q4 7 9 7 Z" fill="#F7EFDC" ${s()}/>
+			<circle cx="15" cy="20.5" r="2.8" fill="#8F6A26"/><circle cx="24" cy="20.5" r="2.8" fill="#8F6A26"/><circle cx="33" cy="20.5" r="2.8" fill="#8F6A26"/>`,
+		heart: `
+			<path d="M24 42.5 C10.5 33 4 25.5 4 16.8 C4 10.6 8.7 6 14.4 6 C18.5 6 21.9 8.4 24 12 C26.1 8.4 29.5 6 33.6 6 C39.3 6 44 10.6 44 16.8 C44 25.5 37.5 33 24 42.5 Z" fill="#D9573F" ${s()}/>
+			<path d="M11.5 15 C12.2 12.3 14.2 10.8 16.8 10.7" fill="none" stroke="#F4A08E" stroke-width="2.6" stroke-linecap="round"/>`,
+		mood: `
+			<circle cx="24" cy="24" r="19" fill="#F2C447" ${s()}/>
+			<circle cx="17.5" cy="19.5" r="2.6" fill="${O}"/><circle cx="30.5" cy="19.5" r="2.6" fill="${O}"/>
+			<path d="M15 28 Q24 37 33 28" fill="none" stroke="${O}" stroke-width="2.8" stroke-linecap="round"/>
+			<path d="M11 15 Q13 10.5 17.5 9" fill="none" stroke="#FBE6A2" stroke-width="2.4" stroke-linecap="round"/>`,
+		scroll: `
+			<rect x="11" y="9" width="26" height="30" fill="#EADCBA" ${s()}/>
+			<rect x="7" y="5" width="34" height="7.5" rx="3.75" fill="#D6C295" ${s()}/>
+			<rect x="7" y="35.5" width="34" height="7.5" rx="3.75" fill="#D6C295" ${s()}/>
+			<path d="M16 18.5 H32 M16 24 H32 M16 29.5 H27" stroke="#8F6A26" stroke-width="2.2" stroke-linecap="round"/>`,
+		laurel: `
+			<path d="M23 43 C12 41 6 31 8.5 15 M25 43 C36 41 42 31 39.5 15" fill="none" stroke="${O}" stroke-width="4.4" stroke-linecap="round"/>
+			<path d="M23 43 C12 41 6 31 8.5 15 M25 43 C36 41 42 31 39.5 15" fill="none" stroke="#7E9A3A" stroke-width="2" stroke-linecap="round"/>
+			<g fill="#9CC95A" ${s('stroke-width="1.8"')}>
+				<ellipse cx="13" cy="15" rx="3" ry="5.5" transform="rotate(35 13 15)"/><ellipse cx="13.5" cy="23.5" rx="3" ry="5.5" transform="rotate(55 13.5 23.5)"/>
+				<ellipse cx="16.5" cy="31.5" rx="3" ry="5.5" transform="rotate(70 16.5 31.5)"/><ellipse cx="6" cy="22" rx="2.6" ry="5" transform="rotate(-15 6 22)"/>
+				<ellipse cx="35" cy="15" rx="3" ry="5.5" transform="rotate(-35 35 15)"/><ellipse cx="34.5" cy="23.5" rx="3" ry="5.5" transform="rotate(-55 34.5 23.5)"/>
+				<ellipse cx="31.5" cy="31.5" rx="3" ry="5.5" transform="rotate(-70 31.5 31.5)"/><ellipse cx="42" cy="22" rx="2.6" ry="5" transform="rotate(15 42 22)"/>
+			</g>
+			<path d="M24 41 L21 46 M24 41 L27 46" stroke="#D9573F" stroke-width="2.4" stroke-linecap="round"/>`,
 		// FL-0089 reputation categories (living-kingdom §3) and kingdom conditions.
 		rep_compassion: `
 			<path d="M24 42 C14 34.5 5 27 5 17.5 C5 11 10 6.5 15.5 6.5 C19.5 6.5 22.5 9 24 12 C25.5 9 28.5 6.5 32.5 6.5 C38 6.5 43 11 43 17.5 C43 27 34 34.5 24 42 Z" fill="#E0607A" ${s()}/>
