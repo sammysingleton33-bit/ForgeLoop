@@ -10,7 +10,10 @@
 	face -Z (Kit), so each anchor CFrame turns that front towards the valley centre.
 
 	Ids: plots by KingdomId (crimson, azure, emerald, gold); regions "<kingdom>_home", "heartland";
-	nodes "<kingdom>_<resource><n>" and "heart_<resource><n>"; objective "watchtower".
+	nodes "<kingdom>_<resource><n>" and "heart_<resource><n>"; objective "watchtower";
+	build slots "<kingdom>_slot<n>" (G13.5: 10 per kingdom, 4 S + 4 M + 2 L, sizes in `slotSizes`).
+	Each plot is a small town: the keep at the back, an avenue from the keep door through the yard to the
+	gate, a cross street through the yard with the slots on it, the starting buildings on the flanks.
 	Visual features (`features`) are FORGE-02's own shape, read only by WorldService.
 ]]
 
@@ -100,7 +103,32 @@ local ANCHOR_OFFSETS = {
 	quarry = Vector3.new(52, 0, 50),
 }
 
+-- Build slots (CONTRACTS G13.5): predefined plots for Build.PlaceSlot. Sizes in studs, slot-local
+-- (X = width across the slot's front, Y = depth); a building placed on a slot uses
+-- CFrame.new(center) * CFrame.Angles(0, rot, 0), so its -Z front faces the street.
+local SLOT_SIZES = {
+	S = Vector2.new(24, 20), -- house (all levels)
+	M = Vector2.new(36, 30), -- barracks, storehouse, market, granary, infirmary, blacksmith, shrine
+	L = Vector2.new(46, 40), -- farm, lumber camp, quarry, mine
+}
+-- Plot-local slot plan in the keep frame: { x, z, size, yaw }. Yaw pi faces the cross street (+Z, towards
+-- the keep); +-pi/2 faces the avenue or the lumber camp and quarry lanes; 0 faces the valley.
+local SLOT_PLAN = {
+	{ -20, -82, "S", math.pi },
+	{ 20, -82, "S", math.pi },
+	{ -24, -107, "S", -math.pi / 2 },
+	{ 24, -107, "S", math.pi / 2 },
+	{ -58, -85, "M", math.pi },
+	{ 58, -85, "M", math.pi },
+	{ -100, -40, "M", 0 },
+	{ 100, -40, "M", 0 },
+	{ -106, 12, "L", -math.pi / 2 },
+	{ 106, 10, "L", math.pi / 2 },
+}
+
 local plots = {}
+local plotRoads: { [string]: { Vector2 } } = {}
+local plotFields = {}
 local resourceNodes = {}
 local regions: { [string]: { kingdom: string?, polygon: { Vector2 } } } = {}
 local plotNav: { [string]: { [string]: number } } = {}
@@ -126,7 +154,25 @@ for _, k in KINGDOMS do
 		{ id = `{k.id}_east`, center = toWorld(keepCF, Vector3.new(80, 0, -40)), size = Vector2.new(50, 60) },
 	}
 
-	-- plot nav: keep door, yard, storehouse, farm, lumber camp, quarry, gate (towards the valley)
+	-- build slots along the cross street, the avenue and the flanks (G13.5)
+	local buildSlots = {}
+	for i, s in SLOT_PLAN do
+		local cf = keepCF * CFrame.new(s[1], 0, s[2]) * CFrame.Angles(0, s[4], 0)
+		local look = cf.LookVector
+		table.insert(buildSlots, {
+			id = `{k.id}_slot{i}`,
+			center = cf.Position,
+			size = s[3],
+			rot = math.atan2(-look.X, -look.Z),
+		})
+	end
+
+	-- plot nav: keep door, yard, storehouse, farm, lumber camp, quarry, gate (towards the valley),
+	-- and the cross street in front of the slots (west1/west2, east1/east2)
+	local function at(x: number, z: number): number
+		local p = toWorld(keepCF, Vector3.new(x, 0, z))
+		return node(p.X, p.Z)
+	end
 	local n = {
 		keep = node(toWorld(keepCF, Vector3.new(0, 0, -30)).X, toWorld(keepCF, Vector3.new(0, 0, -30)).Z),
 		yard = node(toWorld(keepCF, Vector3.new(0, 0, -62)).X, toWorld(keepCF, Vector3.new(0, 0, -62)).Z),
@@ -142,13 +188,39 @@ for _, k in KINGDOMS do
 	link(n.storehouse, n.lumbercamp)
 	link(n.farm, n.quarry)
 	link(n.yard, n.gate)
+	n.west1, n.west2, n.east1, n.east2 = at(-58, -62), at(-100, -62), at(58, -62), at(100, -62)
+	chain({ n.west2, n.west1, n.yard, n.east1, n.east2 })
 	plotNav[k.id] = n
+
+	-- plot roads: the avenue (keep door -> yard -> gate), continued into the valley below, and the cross street
+	local function flat(x: number, z: number): Vector2
+		local p = toWorld(keepCF, Vector3.new(x, 0, z))
+		return Vector2.new(p.X, p.Z)
+	end
+	plotRoads[k.id] = { flat(0, -36), flat(0, -62), flat(0, -110) }
+	plotRoads[`{k.id}_street`] = { flat(-110, -62), flat(0, -62), flat(110, -62) }
+	-- farmland behind the keep, turned with the plot (clear of slots, wood nodes and the quarry)
+	local look = keepCF.LookVector
+	local keepYaw = math.atan2(-look.X, -look.Z)
+	for i, off in { Vector2.new(0, 50), Vector2.new(0, 86), Vector2.new(44, 86) } do
+		table.insert(plotFields, {
+			center = flat(off.X, off.Y),
+			size = Vector2.new(40, 30),
+			yaw = keepYaw,
+			crop = if i == 2 then "cabbage" else "wheat",
+		})
+	end
+	-- lanes to the flank slots: west3 by the lumber camp, east3 between the farm and the quarry
+	n.west3, n.east3 = at(-82, 14), at(82, 22)
+	link(n.west3, n.lumbercamp)
+	link(n.east3, n.quarry)
 
 	plots[k.id] = {
 		spawn = spawn,
 		regionId = `{k.id}_home`,
 		anchors = anchors,
 		buildZones = buildZones,
+		buildSlots = buildSlots,
 	}
 
 	-- home region: a square around the plot, clipped short of the river/centre
@@ -204,11 +276,18 @@ for _, k in KINGDOMS do
 	addNode("stone", "resource_stone_01", Vector3.new(70, 0, 66), 200, 0, n.quarry)
 	addNode("stone", "resource_stone_02", Vector3.new(40, 0, 72), 200, 0, n.quarry)
 	addNode("gold", "resource_ore_03", Vector3.new(90, 0, 40), 80, 0, n.quarry)
-	addNode("food", "bush_03", Vector3.new(80, 0, -40), 60, 45, n.farm)
-	addNode("food", "bush_03", Vector3.new(92, 0, -28), 60, 45, n.farm)
+	addNode("food", "bush_03", Vector3.new(74, 0, -44), 60, 45, n.farm)
+	addNode("food", "bush_03", Vector3.new(70, 0, -32), 60, 45, n.farm)
 end
 
 -- ---------------------------------------------------------------- valley roads, bridges, heartland
+local function join(a: { Vector2 }, b: { Vector2 }): { Vector2 }
+	local out = table.clone(a)
+	for _, p in b do
+		table.insert(out, p)
+	end
+	return out
+end
 local hub = node(CENTRE.X - 20, CENTRE.Z) -- crossroads in front of the watchtower
 local tower = node(CENTRE.X + 10, CENTRE.Z - 6)
 link(hub, tower)
@@ -293,56 +372,48 @@ local features = {
 	roads = {
 		{
 			width = 12,
-			points = {
-				Vector2.new(-330, -390),
-				Vector2.new(-290, -300),
-				Vector2.new(-230, -262),
+			points = join(plotRoads.crimson, {
 				Vector2.new(-190, -230),
 				Vector2.new(-160, -170),
 				BRIDGE_N.west,
 				BRIDGE_N.east,
 				Vector2.new(-40, -90),
 				Vector2.new(20, 0),
-			},
+			}),
 		},
 		{
 			width = 12,
-			points = {
-				Vector2.new(-330, 410),
-				Vector2.new(-280, 320),
-				Vector2.new(-232, 278),
+			points = join(plotRoads.emerald, {
 				Vector2.new(-190, 245),
 				Vector2.new(-150, 190),
 				BRIDGE_S.west,
 				BRIDGE_S.east,
 				Vector2.new(-20, 90),
 				Vector2.new(20, 0),
-			},
+			}),
 		},
 		{
 			width = 12,
-			points = {
-				Vector2.new(380, -390),
-				Vector2.new(330, -300),
-				Vector2.new(270, -250),
+			points = join(plotRoads.azure, {
 				Vector2.new(230, -220),
 				Vector2.new(170, -150),
 				Vector2.new(90, -90),
 				Vector2.new(20, 0),
-			},
+			}),
 		},
 		{
 			width = 12,
-			points = {
-				Vector2.new(380, 410),
-				Vector2.new(330, 320),
-				Vector2.new(280, 262),
+			points = join(plotRoads.gold, {
 				Vector2.new(240, 230),
 				Vector2.new(180, 160),
 				Vector2.new(100, 90),
 				Vector2.new(20, 0),
-			},
+			}),
 		},
+		{ width = 10, points = plotRoads.crimson_street },
+		{ width = 10, points = plotRoads.azure_street },
+		{ width = 10, points = plotRoads.emerald_street },
+		{ width = 10, points = plotRoads.gold_street },
 	},
 	hills = (function()
 		local h = {
@@ -379,25 +450,13 @@ local features = {
 		{ center = Vector2.new(-460, -480), radius = 80, count = 26, species = { "tree_pine" } },
 		{ center = Vector2.new(560, -500), radius = 80, count = 26, species = { "tree_pine", "tree_birch" } },
 	},
-	fields = (function()
-		-- farmland patchwork beside every plot (alternating crops, gaps for hedgerows)
-		local out = {}
-		for _, c in { Vector2.new(-200, -380), Vector2.new(240, -380), Vector2.new(-200, 400), Vector2.new(240, 400) } do
-			for i = 0, 3 do
-				local off = Vector2.new((i % 2) * 46 - 23, math.floor(i / 2) * 36 - 18)
-				table.insert(
-					out,
-					{ center = c + off, size = Vector2.new(40, 30), crop = if i % 2 == 0 then "wheat" else "cabbage" }
-				)
-			end
-		end
-		return out
-	end)(),
+	fields = plotFields, -- { center: Vector2, size: Vector2, yaw: number, crop: string }
 }
 
 return {
 	version = 1,
 	plots = plots,
+	slotSizes = SLOT_SIZES, -- G13.5 slot dimensions by size class (FORGE-02 shape)
 	nav = { nodes = nodes, edges = edges },
 	resourceNodes = resourceNodes,
 	objectives = objectives,
