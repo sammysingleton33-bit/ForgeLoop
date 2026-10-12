@@ -3,14 +3,16 @@ id: FL-0020
 title: "UI foundation: builder, theme tokens, component library, responsive rules"
 track: build
 owner: forge-03
-status: READY
+status: BUILDING
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0003]
 estimate_h: 8
-evidence: []
+evidence:
+  - "HTML prototypes + component sheet at 844x390/1024x768/1920x1080: design/ui/screenshots/prototype/ (reviewed)"
+  - Components.spec 7 + Models.spec 18 + KingdomUI.spec 11 pass in check.sh at f8d621b
 ---
 
 # UI foundation: builder, theme tokens, component library, responsive rules
@@ -32,3 +34,4 @@ Prototype screenshots inspected; Lune specs for pure layout/format helpers; Stud
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-03: READY → BUILDING. Design + Luau kit done (design/ui/REVIEW.md, client/UI/*); Luau snapshot screenshots of the real kit in progress.
