@@ -1,54 +1,145 @@
 --!strict
 --[[
-	KingdomService — kingdom membership, Crown Points and kingdom views (CONTRACTS G3, FL-0048).
-	Owner: FORGE-01.
+	KingdomService — kingdom membership, Teams, spawning, Crown Points and kingdom views (CONTRACTS G3,
+	FL-0048). Owner: FORGE-01.
 
 	API (G3)
 		KingdomService:getKingdom(id): Kingdom        -- G2 Kingdom view (a copy): id, name, color (Color3),
-		                                                rulers, isAI, keepBuildingId, crownPoints, alive
+		                                                rulers, isAI, keepBuildingId, crownPoints, regions, alive
 		KingdomService:getKingdomOf(player): KingdomId?
-		KingdomService:assign(player, preferred?): KingdomId?  -- balanced; switching is Lobby-only
+		KingdomService:assign(player, preferred?): KingdomId?  -- switching is Lobby-only; nil = spectator
 		KingdomService:assignParty(players, preferred?): { [Player]: KingdomId }?  -- parties stay together
 		KingdomService:addCrownPoints(id, amount, reason)
 		KingdomService.membershipChanged: Signal<(Player, KingdomId?)>
-	Players join automatically on PlayerAdded (MatchHost); assign/assignParty are for lobby UIs and
-	party systems (in the Lobby, assignParty also regroups members who were already seated). Every
-	kingdom maps to a Team (chat, leaderboard, spawn). Empty kingdoms have isAI = true and are run by
-	the AI governor (VS-2 tuning; config Governor).
+	Assignment: players are seated on arrival (MatchHost). A player whose Player.PartyId matches a seated
+	player's goes to that kingdom when it has room; everyone else is balanced. In the Lobby, assignParty
+	also regroups members who were already seated. Every kingdom maps to a Team (MatchHost; config
+	Kingdoms teamColor, AutoAssignable false); assign sets Player.Team.
+	Spawn (D-026; CharacterAutoLoads is false): once WorldService.ready has fired (or at once when there
+	is no WorldService) and the player is seated, the service loads the character, pivots it to
+	world Layout plots[k].spawn and attaches Kit.regalia(kingdom color). It does the same after every
+	death (after Players.RespawnTime) and whenever the player's kingdom changes (Lobby switch, new match).
+	Spectators get no character. Engine calls go through `adapter` (KingdomService.robloxAdapter); specs
+	replace it because Lune has no characters.
 	membershipChanged fires once per net change, after the simulation tick that made it (<= tickSeconds):
 	(player, kingdomId) on a join or a Lobby switch, (player, nil) on leaving, even when the Player has
 	already left the server. GameEvents.KingdomJoined(player, kingdomId) fires with every non-nil change
 	(G9), so once per join, per switch and per match a player is seated in.
+	Dependencies: MatchService. Optional (registry:find in start): WorldService (G10, FORGE-02).
 ]]
 
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
 
 local KingdomService = {}
 KingdomService.__index = KingdomService
 
 local Def = { name = "KingdomService", dependencies = { "MatchService" } }
 
+export type Adapter = {
+	partyOf: (player: any) -> string?, -- Player.PartyId, nil when not in a party
+	load: (player: any) -> any?, -- spawns a fresh character (yields); returns it
+	pivot: (character: any, cframe: CFrame) -> (),
+	attach: (character: any, accessory: any) -> (),
+	onDied: (character: any, callback: () -> ()) -> any?, -- connection with :Disconnect()
+	respawnDelay: () -> number,
+}
+
+-- The engine calls behind spawning. LoadCharacterAsync is the contract call (G3); LoadCharacter is the
+-- fallback for engines without it. Unverified in Studio until the FL-0048 playtest.
+function KingdomService.robloxAdapter(env: any): Adapter
+	return {
+		partyOf = function(player: any): string?
+			local ok, id = pcall(function()
+				return player.PartyId
+			end)
+			return if ok and type(id) == "string" and id ~= "" then id else nil
+		end,
+		load = function(player: any): any?
+			local ok = pcall(function()
+				player:LoadCharacterAsync()
+			end)
+			if not ok then
+				player:LoadCharacter()
+			end
+			return player.Character
+		end,
+		pivot = function(character: any, cframe: CFrame)
+			character:PivotTo(cframe)
+		end,
+		attach = function(character: any, accessory: any)
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid:AddAccessory(accessory)
+			else
+				accessory.Parent = character
+			end
+		end,
+		onDied = function(character: any, callback: () -> ()): any?
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			return if humanoid then humanoid.Died:Connect(callback) else nil
+		end,
+		respawnDelay = function(): number
+			return env.Players.RespawnTime
+		end,
+	}
+end
+
 function Def.new(env: any, registry: any)
 	local self = setmetatable({}, KingdomService)
 	self._env = env
+	self._registry = registry
 	self._match = registry:get("MatchService")
 	self.membershipChanged = Signal.new()
+	self.adapter = KingdomService.robloxAdapter(env)
+	self._worldReady = false
+	self._connections = {} :: { any }
 	-- userId -> Player seen in a kingdom (ruler events are handled a tick later, when a leaving
 	-- Player is no longer in Players) and userId -> "<roundId>/<kingdomId>" last reported
 	self._players = {} :: { [number]: any }
 	self._reported = {} :: { [number]: string }
+	self._spawnGen = {} :: { [number]: number } -- bumped per spawn; a stale spawn stops after it yields
+	self._died = {} :: { [number]: any }
 	return self
 end
 
 function KingdomService:start()
-	self._match.host.events:connect(function(name: string, event: any)
-		if name == "RulerJoined" or name == "RulerLeft" then
-			self:_report(event.userId)
-		end
-	end)
+	local host = self._match.host
+	host.preferredKingdom = function(player: any): string?
+		return self:_partyKingdom(player)
+	end
+	table.insert(
+		self._connections,
+		host.events:connect(function(name: string, event: any)
+			if name == "RulerJoined" or name == "RulerLeft" then
+				self:_report(event.userId)
+			end
+		end)
+	)
+	local world = self._registry:find("WorldService")
+	if world == nil or world:isReady() then
+		self._worldReady = true
+	else
+		table.insert(
+			self._connections,
+			world.ready:connect(function()
+				if self._worldReady then
+					return
+				end
+				self._worldReady = true
+				for _, player in self._env.Players:GetPlayers() do
+					if self:getKingdomOf(player) then
+						self:_spawn(player)
+					end
+				end
+			end)
+		)
+	end
 end
 
+-- ---------------------------------------------------------------- membership
 -- Reports the ruler's current membership if it differs from the last one reported. Several ruler
 -- events of one tick (join then switch, leave then rejoin) collapse into one net change.
 function KingdomService:_report(userId: number)
@@ -67,28 +158,79 @@ function KingdomService:_report(userId: number)
 	self.membershipChanged:fire(player, kingdomId)
 	if kingdomId then
 		GameEvents.KingdomJoined:fire(player, kingdomId)
+		self:_spawn(player)
+	else
+		self:_forgetCharacter(userId)
 	end
 end
 
+-- The kingdom of a seated player in the same party (Player.PartyId), if any.
+function KingdomService:_partyKingdom(player: any): string?
+	local party = self.adapter.partyOf(player)
+	if party == nil then
+		return nil
+	end
+	for _, other in self._env.Players:GetPlayers() do
+		if other ~= player and self.adapter.partyOf(other) == party then
+			local kingdomId = self:getKingdomOf(other)
+			if kingdomId then
+				return kingdomId
+			end
+		end
+	end
+	return nil
+end
+
+-- ---------------------------------------------------------------- spawning
+function KingdomService:_forgetCharacter(userId: number)
+	self._spawnGen[userId] = (self._spawnGen[userId] or 0) + 1
+	local died = self._died[userId]
+	if died then
+		died:Disconnect()
+		self._died[userId] = nil
+	end
+end
+
+-- Loads the character at the kingdom's plot spawn wearing regalia (G3). Runs in its own thread, because
+-- loading a character yields; a newer spawn or a departure makes an older one stop.
+function KingdomService:_spawn(player: any)
+	if not self._worldReady then
+		return -- spawned when WorldService.ready fires
+	end
+	local userId = player.UserId
+	self:_forgetCharacter(userId)
+	local generation = self._spawnGen[userId]
+	self._env.spawn(function()
+		local kingdomId = self:getKingdomOf(player)
+		if kingdomId == nil then
+			return
+		end
+		local character = self.adapter.load(player)
+		if character == nil or self._spawnGen[userId] ~= generation or self:getKingdomOf(player) ~= kingdomId then
+			return
+		end
+		local plot = Layout.WORLD.plots[kingdomId]
+		self.adapter.pivot(character, plot.spawn)
+		local view = self:getKingdom(kingdomId)
+		for _, accessory in Kit.regalia(view.color) do
+			self.adapter.attach(character, accessory)
+		end
+		self._died[userId] = self.adapter.onDied(character, function()
+			self._env.wait(self.adapter.respawnDelay())
+			if self._spawnGen[userId] == generation and player.Parent ~= nil and self:getKingdomOf(player) then
+				self:_spawn(player)
+			end
+		end)
+	end)
+end
+
+-- ---------------------------------------------------------------- API (G3)
 function KingdomService:_sim(): any
 	return self._match.host.match.sim
 end
 
 function KingdomService:getKingdom(id: string): any?
-	local k = self:_sim().kingdoms[id]
-	if k == nil then
-		return nil
-	end
-	return {
-		id = k.id,
-		name = k.name,
-		color = Color3.fromRGB(k.color[1], k.color[2], k.color[3]),
-		rulers = table.clone(k.rulers),
-		isAI = #k.rulers == 0,
-		keepBuildingId = if k.alive then k.keepId else nil,
-		crownPoints = k.crownPoints,
-		alive = k.alive,
-	}
+	return self._match.host:kingdomView(id)
 end
 
 function KingdomService:getKingdomOf(player: any): string?
@@ -98,16 +240,13 @@ end
 function KingdomService:assign(player: any, preferred: string?): string?
 	local match = self._match.host.match
 	local current = match:kingdomOf(player.UserId)
-	local ok, result
 	if current == nil then
-		ok, result = match:join(player.UserId, preferred)
+		match:join(player.UserId, preferred or self:_partyKingdom(player))
 	elseif preferred and preferred ~= current then
-		ok, result = match:choose(player.UserId, preferred)
-	else
-		return current
+		match:choose(player.UserId, preferred)
 	end
-	self._match.host:_assignTeam(player)
-	return if ok then result else match:kingdomOf(player.UserId)
+	self._match.host:assignTeam(player)
+	return match:kingdomOf(player.UserId)
 end
 
 function KingdomService:assignParty(players: { any }, preferred: string?): { [any]: string }?
@@ -121,7 +260,7 @@ function KingdomService:assignParty(players: { any }, preferred: string?): { [an
 	end
 	local out = {}
 	for _, player in players do
-		self._match.host:_assignTeam(player)
+		self._match.host:assignTeam(player)
 		out[player] = self:getKingdomOf(player)
 	end
 	return out
@@ -133,6 +272,13 @@ function KingdomService:addCrownPoints(id: string, amount: number, reason: strin
 end
 
 function KingdomService:destroy()
+	for _, connection in self._connections do
+		connection:disconnect()
+	end
+	self._connections = {}
+	for userId in self._died do
+		self:_forgetCharacter(userId)
+	end
 	self.membershipChanged:disconnectAll()
 end
 

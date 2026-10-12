@@ -15,8 +15,10 @@
 			          default Catalog.costs(catalog), the double of FORGE-03's Costs.luau
 
 	World setup
-		sim:addKingdom({ id, name, color: {number}, x, z }): Kingdom   -- keep + start buildings + citizens;
-		                                                                  seeds the treasury when it is the double
+		sim:addKingdom({ id, name, color: {number}, x, z, populate? }): Kingdom   -- keep + start buildings +
+		                                       citizens (populate = false: none until sim:populate(id));
+		                                       seeds the treasury when it is the double
+		sim:populate(kingdomId): boolean       -- spawns the starting citizens once (slice mode: on first ruler)
 		sim:addNode(kind, x, z, id?): Node                             -- tree / rock / goldvein / berries
 	Time
 		sim:advance(seconds)        -- runs whole fixed ticks (catalog.tuning.tickSeconds); remainder carried
@@ -276,8 +278,23 @@ function Simulation:addKingdom(def: { [string]: any })
 		self:_completeInstantly(b)
 	end
 	self:_recompute(kingdom)
+	kingdom.populated = false
+	if def.populate ~= false then
+		self:populate(kingdom.id)
+	end
+	return kingdom
+end
 
-	-- start citizens in a ring around the keep, in job order (deterministic)
+-- Spawns the kingdom's starting citizens in a ring around the keep, in job order (deterministic).
+-- Once per kingdom: later calls do nothing. Returns whether citizens were spawned.
+function Simulation:populate(kingdomId: string): boolean
+	local kingdom = self.kingdoms[kingdomId]
+	if kingdom == nil or kingdom.populated or not kingdom.alive then
+		return false
+	end
+	kingdom.populated = true
+	local tuning = self.catalog.tuning
+	kingdom.nextBirthAt = self.time + tuning.birthInterval
 	local ring = self.catalog.buildings.keep.footprint + 4
 	local total = 0
 	for _, occ in self.catalog.jobOrder do
@@ -287,12 +304,12 @@ function Simulation:addKingdom(def: { [string]: any })
 	for _, occ in self.catalog.jobOrder do
 		for _ = 1, tuning.startCitizens[occ] or 0 do
 			local angle = (i / math.max(1, total)) * math.pi * 2
-			self:_spawnCitizen(kingdom, occ, def.x + math.cos(angle) * ring, def.z + math.sin(angle) * ring)
+			self:_spawnCitizen(kingdom, occ, kingdom.x + math.cos(angle) * ring, kingdom.z + math.sin(angle) * ring)
 			i += 1
 		end
 	end
 	self:_assignHomes(kingdom)
-	return kingdom
+	return true
 end
 
 function Simulation:addNode(kind: string, x: number, z: number, id: string?)
@@ -772,6 +789,7 @@ function Simulation:viewOf(b: any): { [string]: any }
 		progress = progress,
 		hp = b.hp,
 		maxHp = b.maxHp,
+		placedBy = b.placedBy,
 	}
 end
 
@@ -960,6 +978,7 @@ function Simulation:placeBuilding(kingdom: any, kind: string, x: number, z: numb
 	local building = self:_createBuilding(kingdom, kind, x, z)
 	assert(building.id == nextId, "building id changed between spend and create")
 	building.pendingCost = table.clone(cost)
+	building.placedBy = by
 	self:emit(
 		"BuildingPlaced",
 		{ kingdomId = kingdom.id, buildingId = building.id, kind = kind, x = x, z = z, by = by }
@@ -1168,8 +1187,8 @@ function Simulation:_neededOccupation(kingdom: any): string
 end
 
 function Simulation:_stepPopulation(kingdom: any)
-	if self.time < kingdom.nextBirthAt then
-		return
+	if not kingdom.populated or self.time < kingdom.nextBirthAt then
+		return -- an unpopulated kingdom (slice mode, no ruler yet) stays empty
 	end
 	kingdom.nextBirthAt = self.time + self.catalog.tuning.birthInterval
 	local tuning = self.catalog.tuning

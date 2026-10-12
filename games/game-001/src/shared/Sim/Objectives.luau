@@ -17,7 +17,7 @@
 	API
 		Objectives.install(sim, definitions)
 			definitions: { { id, x, z, radius = 18, captureSeconds = 20, crownPoints = 100,
-			                 territoryRadius = 60, holdPointsPerMinute = 6 } }
+			                 territoryRadius = 60, holdPointsPerMinute = 6, regionId = "objective:<id>" } }
 		Objectives.list(sim): { { id, kind = "capture", x, z, radius, owner: KingdomId?,
 		                          progress: { [KingdomId]: number }, contested: boolean } }   -- copies (G8 list)
 		Objectives.presence(sim, objective): { KingdomId }   -- sorted, for specs and the HUD
@@ -90,12 +90,12 @@ local function step(sim: any, dt: number)
 				if after >= 1 then
 					local previous = o.owner
 					if previous then
-						sim:releaseRegion("objective:" .. o.id)
+						sim:releaseRegion(o.regionId)
 					end
 					o.owner = kid
 					o.progress = { [kid] = 1 }
 					o.heldSeconds = 0
-					sim:claimRegion(kid, "objective:" .. o.id, o.x, o.z, o.territoryRadius, "objective")
+					sim:claimRegion(kid, o.regionId, o.x, o.z, o.territoryRadius, "objective")
 					sim:addCrownPoints(kid, o.crownPoints, "objective:" .. o.id)
 					sim:emit("ObjectiveCaptured", { objectiveId = o.id, kingdomId = kid, previousOwner = previous })
 				end
@@ -137,6 +137,7 @@ function Objectives.install(sim: any, definitions: { { [string]: any } })
 			crownPoints = def.crownPoints or DEFAULTS.crownPoints,
 			territoryRadius = def.territoryRadius or DEFAULTS.territoryRadius,
 			holdPointsPerMinute = def.holdPointsPerMinute or DEFAULTS.holdPointsPerMinute,
+			regionId = def.regionId or ("objective:" .. def.id), -- world Layout region (G10.1) when given
 			owner = nil :: string?,
 			progress = {} :: { [string]: number },
 			contested = false,

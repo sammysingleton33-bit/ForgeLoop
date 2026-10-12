@@ -8,19 +8,26 @@
 
 	API (G3)
 		MatchService:getPhase(): MatchPhase
-		MatchService:getEndsAt(): number?           -- serverTimeNow deadline of the countdown / phase / results
-		MatchService.phaseChanged: Signal<(MatchPhase, { endsAt: number? })>
+		MatchService:getEndsAt(): number?           -- serverTimeNow deadline of the countdown / phase / results;
+		                                              nil = untimed (or no countdown running)
+		MatchService.phaseChanged: Signal<(MatchPhase, { endsAt: number? })>   -- phase or countdown changes
 	Extra
 		MatchService.host                           -- the MatchHost (after start); simulation at host.match.sim
-	Dependencies: RemoteService. Optional (registry:find in start): TreasuryService (G7, FORGE-03) —
-	when present the simulation charges and deposits through it; until then the local TreasuryDouble.
-	Phase lengths: config Match.phaseDurations until FORGE-04's Pacing.phaseDurations() exists (G11).
+		MatchService.mode                           -- "slice" | "match" (config Match.mode, PROVISIONAL)
+		MatchService.durationsSource                -- "pacing" | "defaults"
+	Dependencies: RemoteService. Optional (registry:find in start):
+		- PacingService (G11, FORGE-04): phase lengths from phaseDurations(mode); without it, or when it
+		  fails or returns lengths Match.checkDurations rejects, the built-in config Match.durations[mode]
+		  (same numbers as config Pacing) and a warning.
+		- TreasuryService (G7, FORGE-03): the simulation charges and deposits through it; until then the
+		  local TreasuryDouble.
 	Events: GameEvents.MatchPhaseChanged / KingdomEliminated / MatchEnded and the other G9 events are fired
 	exactly once by the host's event fan-out (see Game/Kingdom/MatchHost).
 ]]
 
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
 local MatchHost = require("@game/ReplicatedStorage/Game/Kingdom/MatchHost")
 
 local MatchService = {}
@@ -35,18 +42,40 @@ function Def.new(env: any, registry: any)
 	self._remotes = registry:get("RemoteService")
 	self.phaseChanged = Signal.new()
 	self.host = nil :: any
+	self.mode = MatchConfig.mode
+	self.durationsSource = "defaults"
 	return self
+end
+
+-- PacingService:phaseDurations(mode) when present and well-formed, else nil (the config defaults apply).
+function MatchService:_pacedDurations(): { [string]: number }?
+	local pacing = self._registry:find("PacingService")
+	if pacing == nil then
+		return nil
+	end
+	local ok, durations = pcall(pacing.phaseDurations, pacing, self.mode)
+	local problem = if ok then Match.checkDurations(durations) else tostring(durations)
+	if problem then
+		self._env.log(
+			"warn",
+			"MatchService: PacingService durations unusable; using built-in durations",
+			{ mode = self.mode, problem = problem }
+		)
+		return nil
+	end
+	return durations
 end
 
 function MatchService:start()
 	local treasury = self._registry:find("TreasuryService")
+	local durations = self:_pacedDurations()
+	self.durationsSource = if durations then "pacing" else "defaults"
 	self.host = MatchHost.new(self._env, self._remotes, {
 		tickSeconds = MatchConfig.tickSeconds,
 		match = {
-			countdownSec = MatchConfig.countdownSec,
-			resultsSec = MatchConfig.resultsSec,
+			mode = self.mode,
+			phaseDurations = durations,
 			minPlayers = MatchConfig.minPlayers,
-			phaseDurations = MatchConfig.phaseDurations,
 			treasury = treasury,
 		},
 	})

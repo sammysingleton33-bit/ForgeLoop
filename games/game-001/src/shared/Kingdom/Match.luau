@@ -1,16 +1,22 @@
 --!strict
 --[[
 	Kingdom/Match — one AI Kingdoms match: four kingdoms, player assignment, the CONTRACTS G2
-	phases, victory and results. Owns a Simulation with Military, Diplomacy, Objectives and the AI
-	governor (RulerAI) installed. (Moves to games/game-001/src/shared/Kingdom/ with FL-0046.)
+	phases, victory and results. Owns a Simulation with Military, Objectives, optionally Diplomacy
+	(PvP flag) and the AI governor (RulerAI) installed.
 
-	Phases (MatchPhase, G2)
-		Lobby      waiting for players; once minPlayers are in, a countdown of countdownSec runs
-		           (cancelled when players drop below minPlayers). The world is frozen.
-		Founding → Expansion → Conflict → Endgame   the simulation runs; each phase lasts its duration
-		           from options.phaseDurations (FORGE-04's Pacing.phaseDurations(); default 8/12/15/10 min).
-		           War declarations open with Conflict (Diplomacy grace = Founding + Expansion).
-		Results    resultsSec, then a fresh world and Lobby again with the connected players re-seated.
+	Modes (CONTRACTS G3/G11; options.mode, default config Match.mode)
+		"match"  the full match. Lobby: once minPlayers are in, a countdown of durations.Lobby runs
+		         (cancelled when players drop below minPlayers); the world is frozen. Founding →
+		         Expansion → Conflict → Endgame run the simulation for their durations, then Results
+		         for durations.Results, then a fresh world and Lobby again with the players re-seated.
+		         Kingdoms without rulers are run by the AI governor (RulerAI) when aiRulers is true.
+		"slice"  PROVISIONAL VS-1 rules (pending BRIEF §16.3/§16.4): Lobby 0 s (Founding starts on the
+		         first join), untimed phases, the first ObjectiveCaptured ends the slice with that
+		         kingdom as winner (reason "objective"); starting citizens appear when a kingdom's
+		         first ruler joins; no AI governors.
+		Durations come from options.phaseDurations (PacingService:phaseDurations(mode), G11), merged over
+		config Match.durations[mode]; math.huge = untimed (remaining() is nil). countdownSec/resultsSec
+		override Lobby/Results (spec convenience).
 	Victory — PROVISIONAL, user decision pending (BRIEF §16.4); config Match.victory:
 		- conquest: the last kingdom standing wins at once (any active phase).
 		- crownPointsAtEnd: when Endgame ends, the most Crown Points wins; equal points share the win.
@@ -23,26 +29,30 @@
 		- Up to maxRulersPerKingdom (4) rulers per kingdom, equal command rights (shared ownership).
 		- join(userId, preferred?) honours a preferred kingdom when it stands and has room, then the
 		  player's previous kingdom in this match, then the standing kingdom with the fewest rulers
-		  (ties: kingdom order). Joining only adds a ruler; no other kingdom state changes.
+		  (ties: kingdom order). Joining only adds a ruler (and, in slice mode, the first ruler's
+		  starting citizens); no other kingdom state changes. Late joiners are seated in any phase.
 		- joinParty({ userIds }, preferred?) seats a party together when one kingdom has room for all.
-		- Kingdoms without rulers are run by the AI governor (RulerAI) when aiRulers is true.
 	State is per server and in memory; permanent progression goes through DataService only.
 
 	API
 		Match.new(options): Match
 			options: { random (required), now: () -> number (unix seconds), roundIdPrefix = "km",
-			  kingdoms = 4, spacing = 260, phaseDurations = { Founding, Expansion, Conflict, Endgame },
-			  countdownSec = 10, resultsSec = 20, minPlayers = 1, maxRulersPerKingdom = 4,
-			  aiRulers = Governor.enabled, pvp = Match.pvp.enabled, victory = Match.victory,
-			  objectives = Layout.OBJECTIVES, catalog?, treasury?, costs? }   -- defaults from config
-		match.state (MatchPhase), match.sim, match.roundId
+			  mode = Match.mode, phaseDurations = { Lobby?, Founding?, ..., Results? }, countdownSec?,
+			  resultsSec?, kingdoms = 4, spacing? (square layout; default world plots), minPlayers = 1,
+			  maxRulersPerKingdom = 4, aiRulers = Governor.enabled and mode == "match",
+			  populateOnJoin = mode == "slice", endOnFirstCapture = mode == "slice",
+			  pvp = Match.pvp.enabled, victory = Match.victory, objectives = Layout.OBJECTIVES,
+			  catalog?, treasury?, costs? }   -- defaults from config
+		Match.durationsFor(mode): { [MatchPhase]: number }      -- config defaults (fresh table)
+		Match.checkDurations(durations): string?                -- why a full six-phase table is unusable
+		match.state (MatchPhase), match.mode, match.sim, match.roundId, match.durations
 		match:join(userId, preferred?): (boolean, string)       -- (true, kingdomId) | (false, error)
 		match:joinParty(userIds, preferred?): (boolean, { [number]: string } | string)
 		match:leave(userId)
 		match:choose(userId, kingdomId): (boolean, string)      -- only in Lobby
 		match:kingdomOf(userId): string?
 		match:update(dt)
-		match:remaining(): number?    -- seconds left in the countdown / current phase / results
+		match:remaining(): number?    -- seconds left in the countdown / current phase / results; nil = untimed
 		match:command(userId, name, ...)                         -- Commands.execute on this simulation
 		match:result(): RoundResult?  -- framework Contracts/Types RoundResult, mode "kingdoms"
 		match:summary(): { winner: KingdomId?, standings: { { kingdom, crownPoints } }, durationSec,
@@ -69,21 +79,54 @@ Match.__index = Match
 
 Match.MODE = "kingdoms"
 Match.ACTIVE_PHASES = table.freeze({ "Founding", "Expansion", "Conflict", "Endgame" })
-Match.DEFAULT_DURATIONS = table.freeze(table.clone(MatchConfig.phaseDurations))
+Match.PHASES = table.freeze({ "Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Results" })
+Match.MODES = table.freeze({ "slice", "match" })
 
 local function isActive(phase: string): boolean
 	return table.find(Match.ACTIVE_PHASES, phase) ~= nil
 end
 
+-- nil when every phase has a usable length: active phases > 0, Lobby and Results >= 0, math.huge = untimed.
+function Match.checkDurations(durations: any): string?
+	if type(durations) ~= "table" then
+		return "durations must be a table"
+	end
+	for _, phase in Match.PHASES do
+		local seconds = durations[phase]
+		local ok = type(seconds) == "number" and seconds == seconds
+		if ok and isActive(phase) then
+			ok = seconds > 0
+		elseif ok then
+			ok = seconds >= 0
+		end
+		if not ok then
+			return `{phase} duration must be {if isActive(phase) then "> 0" else ">= 0"} (math.huge = untimed)`
+		end
+	end
+	return nil
+end
+
+function Match.durationsFor(mode: string): { [string]: number }
+	local durations = MatchConfig.durations[mode]
+	assert(durations ~= nil, `Match: mode must be "slice" or "match", got {tostring(mode)}`)
+	return table.clone(durations)
+end
+
 function Match.new(options: { [string]: any })
 	assert(options.random ~= nil, "Match.new: random is required")
-	local durations = table.clone(Match.DEFAULT_DURATIONS)
+	local mode = options.mode or MatchConfig.mode
+	local durations = Match.durationsFor(mode)
 	for phase, seconds in options.phaseDurations or {} do
 		assert(durations[phase] ~= nil, `Match.new: unknown phase '{tostring(phase)}' in phaseDurations`)
-		assert(type(seconds) == "number" and seconds > 0, `Match.new: {phase} duration must be > 0`)
 		durations[phase] = seconds
 	end
+	durations.Lobby = options.countdownSec or durations.Lobby
+	durations.Results = options.resultsSec or durations.Results
+	local problem = Match.checkDurations(durations)
+	assert(problem == nil, `Match.new: {problem}`)
 	local self = setmetatable({}, Match)
+	self.mode = mode
+	self.durations = durations
 	self.options = {
 		random = options.random,
 		now = options.now or function()
@@ -91,13 +134,15 @@ function Match.new(options: { [string]: any })
 		end,
 		roundIdPrefix = options.roundIdPrefix or "km",
 		kingdoms = options.kingdoms or #KingdomsConfig.identities,
-		spacing = options.spacing or KingdomsConfig.spacing,
+		spacing = options.spacing,
 		durations = durations,
-		countdownSec = options.countdownSec or MatchConfig.countdownSec,
-		resultsSec = options.resultsSec or MatchConfig.resultsSec,
+		countdownSec = durations.Lobby,
+		resultsSec = durations.Results,
 		minPlayers = options.minPlayers or MatchConfig.minPlayers,
 		maxRulersPerKingdom = options.maxRulersPerKingdom or KingdomsConfig.maxRulersPerKingdom,
-		aiRulers = if options.aiRulers == nil then GovernorConfig.enabled else options.aiRulers,
+		aiRulers = if options.aiRulers == nil then GovernorConfig.enabled and mode == "match" else options.aiRulers,
+		populateOnJoin = if options.populateOnJoin == nil then mode == "slice" else options.populateOnJoin,
+		endOnFirstCapture = if options.endOnFirstCapture == nil then mode == "slice" else options.endOnFirstCapture,
 		pvp = if options.pvp == nil then MatchConfig.pvp.enabled else options.pvp,
 		victory = options.victory or MatchConfig.victory,
 		objectives = options.objectives or Layout.OBJECTIVES,
@@ -128,11 +173,15 @@ function Match:_newWorld()
 	local sim = Simulation.new({
 		catalog = self.options.catalog,
 		random = self.options.random,
-		bounds = Layout.boundsFor(self.options.spacing),
+		bounds = Layout.bounds(self.options.spacing),
 		treasury = self.options.treasury,
 		costs = self.options.costs,
 	})
-	Layout.generate(sim, { kingdoms = self.options.kingdoms, spacing = self.options.spacing })
+	Layout.generate(sim, {
+		kingdoms = self.options.kingdoms,
+		spacing = self.options.spacing,
+		populate = not self.options.populateOnJoin,
+	})
 	Military.install(sim)
 	if self.options.pvp then
 		Diplomacy.install(sim, {
@@ -213,8 +262,16 @@ function Match:_pickKingdom(userId: number?, preferred: string?, seats: number):
 	return best
 end
 
+-- Slice mode: a kingdom's starting citizens appear with its first ruler (CONTRACTS G3).
+function Match:_populate(kingdomId: string)
+	if self.options.populateOnJoin then
+		self.sim:populate(kingdomId)
+	end
+end
+
 function Match:_seat(userId: number, kingdomId: string)
 	assert(self.sim:addRuler(kingdomId, userId))
+	self:_populate(kingdomId)
 	if not table.find(self.players, userId) then
 		table.insert(self.players, userId)
 	end
@@ -341,6 +398,7 @@ function Match:choose(userId: number, kingdomId: string): (boolean, string)
 	end
 	self.sim:removeRuler(userId)
 	assert(self.sim:addRuler(kingdomId, userId))
+	self:_populate(kingdomId)
 	self.lastKingdom[userId] = kingdomId
 	self.participants[userId] = { kingdomId = kingdomId, joinedAt = self.sim.time, leftAt = nil }
 	return true, kingdomId
@@ -354,9 +412,11 @@ function Match:remaining(): number?
 	if self.state == "Lobby" then
 		return self._countdown
 	elseif isActive(self.state) then
-		return math.max(0, self.phaseEnds[self.state] - self.sim.time)
+		local ends = self.phaseEnds[self.state]
+		return if ends == math.huge then nil else math.max(0, ends - self.sim.time)
 	elseif self.state == "Results" then
-		return math.max(0, self.options.resultsSec - self._phaseTime)
+		local seconds = self.options.resultsSec
+		return if seconds == math.huge then nil else math.max(0, seconds - self._phaseTime)
 	end
 	return nil
 end
@@ -410,7 +470,7 @@ function Match:ranking(): { any }
 	return out
 end
 
-function Match:_finish(reason: string)
+function Match:_finish(reason: string, winner: string?)
 	local sim = self.sim
 	sim.active = false
 	self.endedAt = self.options.now()
@@ -421,9 +481,12 @@ function Match:_finish(reason: string)
 	for _, row in ranking do
 		placementOf[row.kingdomId] = row.placement
 		table.insert(standings, { kingdom = row.kingdomId, crownPoints = row.crownPoints })
-		if row.placement == 1 and row.alive then
+		if winner == nil and row.placement == 1 and row.alive then
 			table.insert(winners, row.kingdomId)
 		end
+	end
+	if winner then
+		winners = { winner }
 	end
 	local participants = {}
 	local winnerUsers = {}
@@ -481,6 +544,15 @@ function Match:_checkVictory()
 		self:_finish("conquest")
 		return
 	end
+	if self.options.endOnFirstCapture and sim.objectives then
+		-- slice mode: the first capture ends the slice (an interim rule for Studio tests, not victory)
+		for _, o in sim.objectives.list do
+			if o.owner ~= nil then
+				self:_finish("objective", o.owner)
+				return
+			end
+		end
+	end
 	while isActive(self.state) and sim.time >= self.phaseEnds[self.state] - 1e-9 do
 		local index = table.find(Match.ACTIVE_PHASES, self.state) :: number
 		local nextPhase = Match.ACTIVE_PHASES[index + 1]
@@ -498,15 +570,15 @@ function Match:update(dt: number)
 	if self.state == "Lobby" then
 		if #self.players < self.options.minPlayers then
 			self:_setCountdown(nil)
+		elseif self.options.countdownSec <= 0 then
+			self:_start() -- slice mode: no countdown, Founding starts with the first join
 		elseif self._countdown == nil then
 			self:_setCountdown(self.options.countdownSec)
 		else
 			local left = (self._countdown :: number) - dt
 			if left <= 1e-9 then
 				self._countdown = nil
-				self.startedAt = self.options.now()
-				self.sim.active = true
-				self:_setState("Founding")
+				self:_start()
 			else
 				self._countdown = left
 			end
@@ -525,6 +597,12 @@ function Match:update(dt: number)
 			end
 		end
 	end
+end
+
+function Match:_start()
+	self.startedAt = self.options.now()
+	self.sim.active = true
+	self:_setState("Founding")
 end
 
 function Match:result(): any

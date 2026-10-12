@@ -5,6 +5,7 @@ local F = require("./KingdomFixtures")
 local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Snapshot = require("@game/ReplicatedStorage/Game/Sim/Snapshot")
+local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
 local Types = require("@game/ReplicatedStorage/Game/Kingdom/Types")
 
 -- every active phase lasts `each` seconds unless overridden
@@ -15,6 +16,7 @@ end
 local function newMatch(options)
 	local opts = {
 		random = Random.new(9),
+		mode = "match", -- the full match; slice-mode specs pass mode = "slice"
 		countdownSec = 2,
 		now = function()
 			return 1700000000
@@ -90,6 +92,47 @@ describe("Kingdom/Match: phases", function()
 		expect(function()
 			newMatch({ phaseDurations = { Founding = 0 } })
 		end).toThrow("must be > 0")
+	end)
+
+	it("uses the config defaults per mode without PacingService: match 20 s Lobby + 45 min + 30 s Results", function()
+		local plain = { random = Random.new(1) }
+		local full = Match.new({ random = Random.new(1), mode = "match" })
+		expect(full.durations).toEqual({
+			Lobby = 20,
+			Founding = 480,
+			Expansion = 720,
+			Conflict = 900,
+			Endgame = 600,
+			Results = 30,
+		})
+		local slice = Match.new({ random = Random.new(1), mode = "slice" })
+		expect(slice.durations.Lobby).toBe(0)
+		for _, phase in { "Founding", "Expansion", "Conflict", "Endgame", "Results" } do
+			expect(slice.durations[phase]).toBe(math.huge)
+		end
+		expect(Match.new(plain).mode).toBe("slice") -- config Match.mode (PROVISIONAL VS-1 default)
+		expect(function()
+			Match.new({ random = Random.new(1), mode = "siege" })
+		end).toThrow("mode must be")
+	end)
+
+	it("accepts a six-phase table from PacingService and rejects unusable lengths", function()
+		local paced = { Lobby = 4, Founding = 6, Expansion = 6, Conflict = 6, Endgame = 6, Results = 2 }
+		local match = Match.new({ random = Random.new(1), mode = "match", phaseDurations = paced })
+		expect(match.durations).toEqual(paced)
+		expect(Match.checkDurations(paced)).toBeNil()
+		local untimed = table.clone(paced)
+		untimed.Founding = math.huge
+		expect(Match.checkDurations(untimed)).toBeNil()
+		for phase, bad in { Founding = 0, Conflict = -1, Lobby = -1, Results = 0 / 0 } do
+			local broken = table.clone(paced)
+			broken[phase] = bad
+			expect(Match.checkDurations(broken)).toContain(phase)
+		end
+		local missing = table.clone(paced)
+		missing.Endgame = nil
+		expect(Match.checkDurations(missing)).toContain("Endgame")
+		expect(Match.checkDurations("x")).toContain("table")
 	end)
 
 	it("cancels the countdown when players drop below the minimum", function()
@@ -382,6 +425,118 @@ describe("Kingdom/Match: victory and results", function()
 		expect(match.sim.time).toBe(0)
 		expect(match:result()).toBeNil()
 		F.assertInvariants(match.sim)
+	end)
+end)
+
+describe("Kingdom/Match: VS-1 slice mode (PROVISIONAL, CONTRACTS G3)", function()
+	local function newSlice(options)
+		local opts = { random = Random.new(9), mode = "slice" }
+		for k, v in options or {} do
+			opts[k] = v
+		end
+		return Match.new(opts)
+	end
+
+	local function citizensOf(match, kingdomId)
+		return #match.sim.kingdoms[kingdomId].citizenIds
+	end
+
+	it("starts Founding on the first join, without a countdown, and never times a phase", function()
+		local match = newSlice()
+		run(match, 5)
+		expect(match.state).toBe("Lobby") -- nobody here yet
+		match:join(1)
+		match:update(0.25)
+		expect(match.state).toBe("Founding")
+		expect(match.sim.active).toBe(true)
+		expect(match:remaining()).toBeNil()
+		expect(phaseEvents(match)).toEqual({ "Founding" }) -- no CountdownChanged
+		run(match, 3600)
+		expect(match.state).toBe("Founding")
+		expect(match:remaining()).toBeNil()
+	end)
+
+	it("spawns a kingdom's starting citizens with its first ruler; empty kingdoms stay empty and idle", function()
+		local match = newSlice()
+		for _, kid in match.sim.kingdomOrder do
+			expect(citizensOf(match, kid)).toBe(0)
+			expect(#match.sim.kingdoms[kid].buildingIds).toBeGreaterThan(0) -- starting buildings for all four
+		end
+		match:join(1) -- crimson
+		expect(citizensOf(match, "crimson")).toBe(12)
+		run(match, 30)
+		match:join(2) -- late joiner, azure
+		expect(match:kingdomOf(2)).toBe("azure")
+		expect(citizensOf(match, "azure")).toBe(12)
+		match:join(3, "crimson") -- a second ruler brings nobody
+		expect(citizensOf(match, "crimson")).toBeGreaterThanOrEqual(12)
+		local goldBuildings = #match.sim.kingdoms.gold.buildingIds
+		run(match, 240)
+		expect(citizensOf(match, "emerald")).toBe(0) -- no births without citizens
+		expect(citizensOf(match, "gold")).toBe(0)
+		expect(#match.sim.kingdoms.gold.buildingIds).toBe(goldBuildings) -- no AI governor builds
+		expect(match.sim.kingdoms.gold.stats.gathered.food).toBe(0)
+		F.assertInvariants(match.sim)
+	end)
+
+	it("ends the slice on the first capture: MatchEnded { winner = capturer } once, then Results stays", function()
+		local match = newSlice()
+		match:join(1)
+		match:update(0.25)
+		match:drainEvents()
+		local tower = match.sim.objectives.list[1]
+		match.sim:setRulerPosition(1, tower.x, tower.z)
+		local ended = {}
+		for _ = 1, (tower.captureSeconds + 2) * 4 do
+			match:update(0.25)
+			match.sim:setRulerPosition(1, tower.x, tower.z)
+			for _, e in match:drainEvents() do
+				if e.name == "MatchEnded" then
+					table.insert(ended, e)
+				end
+			end
+		end
+		expect(match.state).toBe("Results")
+		expect(#ended).toBe(1)
+		expect(ended[1].winner).toBe("crimson")
+		expect(ended[1].reason).toBe("objective")
+		expect(ended[1].winnerKingdomIds).toEqual({ "crimson" })
+		expect(match:summary().winner).toBe("crimson")
+		expect(match:remaining()).toBeNil()
+		run(match, 600)
+		expect(match.state).toBe("Results") -- untimed: the slice is over
+		for _, e in match:drainEvents() do
+			expect(e.name).never.toBe("MatchEnded")
+		end
+	end)
+
+	it("in match mode a capture does not end the match", function()
+		local match = newMatch({ phaseDurations = durations(600), aiRulers = false })
+		match:join(1)
+		run(match, 3)
+		local tower = match.sim.objectives.list[1]
+		for _ = 1, (tower.captureSeconds + 2) * 4 do
+			match.sim:setRulerPosition(1, tower.x, tower.z)
+			match:update(0.25)
+		end
+		expect(tower.owner).toBe("crimson")
+		expect(match.state).toBe("Founding")
+	end)
+
+	it("puts the kingdoms and the watchtower where the world Layout puts them (G10.1)", function()
+		local match = newSlice()
+		for _, kid in match.sim.kingdomOrder do
+			local k = match.sim.kingdoms[kid]
+			local keep = Layout.WORLD.plots[kid].anchors.keep.Position
+			expect(k.x).toBeNear(keep.X, 1e-6)
+			expect(k.z).toBeNear(keep.Z, 1e-6)
+		end
+		local tower = match.sim.objectives.list[1]
+		local world = Layout.WORLD.objectives[1]
+		expect(tower.id).toBe(world.id)
+		expect(tower.x).toBeNear(world.cframe.Position.X, 1e-6)
+		expect(tower.radius).toBe(world.radius)
+		expect(tower.regionId).toBe(world.regionId)
 	end)
 end)
 

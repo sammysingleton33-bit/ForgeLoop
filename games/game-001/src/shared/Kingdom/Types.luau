@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Kingdom/Types — core ids and types of game-001, exactly as CONTRACTS G2 (v0.4-g1).
+	Kingdom/Types — core ids and types of game-001, exactly as CONTRACTS G2 (v0.4-g3).
 
 	Values (stable order, used for encoding and validation)
 		Types.KINGDOM_IDS   { "crimson", "azure", "emerald", "gold" }
@@ -39,6 +39,7 @@ export type Kingdom = {
 	isAI: boolean,
 	keepBuildingId: number?,
 	crownPoints: number,
+	regions: { string }, -- claimed Layout region ids
 	alive: boolean,
 }
 export type Building = {
@@ -52,6 +53,7 @@ export type Building = {
 	progress: number,
 	hp: number,
 	maxHp: number,
+	placedBy: number?, -- userId; nil for starting buildings
 }
 export type ResourceBag = { [ResourceId]: number }
 

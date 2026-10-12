@@ -2,101 +2,100 @@
 
 Steps for engine behaviour that headless Lune specs cannot prove (gate G6). Run them on the integrated
 build only, and quote the `ReplicatedStorage.Forge.BuildInfo` sha in every report. Paste the server
-Output for any step that fails.
-
-**Status:** these steps need the AI Kingdoms services on `main`. That requires two things: FL-0046
-(game tree wiring, FORGE-05) and the FORGE-01 kingdom PRs (FL-0048 → FL-0052). Until both land there
-is nothing to run. Never mark a step as passed without a user run.
+Output for any step that fails. Never mark a step as passed without a user run.
 
 Which steps are runnable after which PR:
 
 | Steps | Needs |
 |---|---|
-| K1–K4, K7 (join, phases, citizens, gathering, rejoin) | FL-0046 + FL-0048 (`Kingdom.*` remotes) |
+| K1, K2, K7 (party, spawn, regalia, phases, rejoin) | FL-0048 merged on `main` |
+| K3, K4 (citizens at work, ruler gathering) | FL-0048; citizens render once FL-0049 lands (placeholder parts until then) |
 | K5 (build, upgrade) | FL-0051 (`Build.Place`, `Build.Upgrade`) |
-| K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`) |
+| K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | Performance capture | FL-0049 (`KingdomHost: sim` log line, entity replication) |
 
-Remote names below are the CONTRACTS G1/G8 names (`<Area>.<Action>`, under
-`ReplicatedStorage.ForgeRemotes.<Area>`). Kingdom functions return `(ok, errorCode?, result?)`.
+Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
+The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
+starts on the first join and is untimed; the first watchtower capture ends the slice.
 
 ## Setup
-1. Open the game-001 build: `rojo serve games/game-001/default.project.json`, or the CI `.rbxl` once FL-0046 lands.
+1. Open the game-001 build: `rojo serve games/game-001/default.project.json`, or the CI `.rbxl`.
 2. Open the Output window.
-3. Use **Test → Start** with 2 players (local server) unless a step says Play Solo.
+3. Use **Test → Start** with 2 players (local server) unless a step says Play Solo. For K1's party variant,
+   use the Party Simulator (FL-0068 preset) so both players share a `Player.PartyId`.
 
-## K1 — Join a kingdom and spawn at home (VS-1 row 3)
-1. Start a local server with 2 players.
-2. Check the player list: each player is on a kingdom team (Crimson, Azure, Emerald or Gold).
-3. Check where each character spawns: next to its own keep, on the side facing the map centre.
-
-**Expected:** two different kingdoms (balanced assignment). No errors in Output.
-
-**Shared-kingdom variant:** while in the Lobby, the second player calls `Kingdom.Choose` with the first
-player's kingdom id (`crimson`, `azure`, `emerald` or `gold`). Both are then on one team and both see the
-same treasury. After the countdown the same call returns `too_late`.
-
-## K2 — Match phases (VS-1 / G3)
-1. Play Solo and watch Output.
-2. Wait for the countdown (10 s), then Founding.
+## K1 — Join, spawn at the keep, regalia (VS-1 row 3; FL-0048)
+1. Start a local server with 2 players **not** in a party.
+2. Check the player list and each character.
+3. Repeat with 2 players in one simulated party.
 
 **Expected:**
-- `Kingdom.Phase` fires `Lobby` with the countdown deadline, then `Founding` with a deadline about 8
-  minutes ahead.
-- The citizens start moving only after the countdown ends.
+- Without a party: two different kingdoms (balanced). With a party: both on the same kingdom team.
+- Teams are Crimson, Azure, Emerald, Gold with distinct colours; no player is auto-assigned by the engine.
+- Each character appears in front of its own keep door (world Layout `plots[k].spawn`), facing the valley,
+  wearing a crown and a cape in the kingdom colour.
+- Reset a character (Esc → Reset): it respawns after `Players.RespawnTime` at the same plot, again with
+  regalia.
+- No errors in Output; no `KingdomHost: tick failed` lines. If a line says
+  `LoadCharacterAsync` is missing, note it: the service falls back to `LoadCharacter` (unverified engine API).
+
+## K2 — Match phases in the slice (G3, G8)
+1. Play Solo and watch Output.
+2. From the client command bar, call `ReplicatedStorage.ForgeRemotes.Match.GetState:InvokeServer()`.
+
+**Expected:**
+- `Match.State` fires `Founding` within a quarter second of joining, with no deadline (`endsAtServerTime`
+  nil) and a `startedAtServerTime` number.
+- `Match.GetState` returns `"Founding", nil, <number>`.
+- Only your kingdom has citizens; the other three keeps stand idle (no AI governors in the slice).
 
 ## K3 — Citizens at work and the stockpile rising (VS-1 row 4)
 1. In Play Solo, stand at your keep for 60 s.
-2. Watch the citizens.
+2. Watch the citizens (placeholder parts until FL-0049).
 
 **Expected:**
-- At least 12 citizens with visible jobs: farmer, woodcutter, miner, builder, hauler.
+- 12 citizens with jobs: farmer, woodcutter, miner, builder, hauler.
 - They walk to farms, trees and rocks, work, then carry goods back to the keep or a storehouse.
-- `Kingdom.Snapshot` totals rise. Food rises from the farm, wood from trees and stone from rocks.
-- At night (after 90 s of each 120 s day) the citizens go home to sleep. In the morning they go back to work.
+- The treasury rises (FORGE-03's `Treasury.Changed` once FL-0058 lands; until then the server-side
+  double, visible through the debug panel of FL-0068).
 
 ## K4 — Ruler gathering (VS-1 row 5)
-1. Walk to a tree and trigger `Kingdom.Gather(nodeId)`. For now, call it from the client command bar with the node's `EntityId` attribute.
+1. Walk to a tree and call `Kingdom.Gather(nodeId)` from the client command bar with the node's
+   `EntityId` attribute (the interaction prompt of FL-0051 replaces this).
 2. Repeat it faster than once per 0.8 s.
 3. Repeat it from 30 studs away.
 
 **Expected:**
-- Each accepted gather adds 2 wood to the treasury.
-- Calls faster than the cooldown return `cooldown`.
-- From 30 studs away the call returns `too_far`.
+- An accepted gather returns `true, "wood", 2`.
+- Calls faster than the cooldown return `false, "cooldown"`; from 30 studs away `false, "too_far"`.
 
-## K5 — Build and upgrade (VS-1 row 6)
-1. Place a House inside your territory with `Build.Place("house", cframe)`. The build menu (FORGE-03) replaces this call later.
-2. Watch the site.
-3. Upgrade the keep once wood and stone allow it (`Build.Upgrade(keepId)`).
+## K5 — Build and upgrade (VS-1 row 6; needs FL-0051)
+1. Place a House inside your territory with `Build.Place("house", position, 0)`.
+2. Upgrade the keep once wood and stone allow it (`Build.Upgrade(keepId)`).
 
 **Expected:**
-- The treasury drops by exactly 40 wood.
-- A translucent site appears and grows.
-- Builders walk there and hammer, and the house completes in about 15 builder-seconds.
-- Population capacity rises by 4.
-- Invalid spots return a reason and cost nothing: on the keep → `blocked`; outside your land → `out_of_territory`.
+- The treasury drops by exactly 40 wood; a site appears and builders finish it.
+- Invalid spots return a reason and cost nothing.
 - The keep upgrade shows a level-2 keep and a larger territory.
 
-## K6 — Recruit and capture (VS-1 row 7)
-1. Build a Barracks.
-2. Recruit 3 soldiers (`Army.Recruit("soldier", 3)`).
-3. Move them onto the neutral watchtower near the map centre with `Army.Command` (a Move order; the
-   argument shape is fixed by FL-0052).
+## K6 — Capture the watchtower (VS-1 row 7)
+1. Walk your ruler onto the neutral watchtower near the valley centre and stay inside its ring.
+2. With FL-0052: recruit soldiers (`Army.Recruit`) and press Send-to-capture (`Army.Command` with no ids).
 
 **Expected:**
-- The treasury is charged 90 food and 30 wood.
-- The soldiers appear next to the Barracks after 8 s each.
-- On the watchtower the capture progress rises to 1 in 20 s when uncontested. Then the kingdom owns it, gains +100 Crown Points, and the territory around it lets you build there.
-- A second kingdom's units in the zone freeze the progress (contested).
+- Capture progress rises to 1 in 20 s while uncontested; a second kingdom in the zone freezes it.
+- On capture: the kingdom owns the tower, gains +100 Crown Points and the `heartland` region
+  (`Kingdom.State` shows it in `regions`).
+- Slice mode: `Match.Ended` fires once with your kingdom as `winner`; the phase becomes `Results` and stays.
 
 ## K7 — Multiplayer integrity
-1. With 2 players in the same kingdom, both place a building within one second.
+1. With 2 players in the same kingdom (party), both act within one second (gather, set a job quota).
 2. Leave with one player and rejoin.
 
 **Expected:**
-- Both buildings exist and the treasury drops by the sum of both costs.
-- The rejoining player is back in the same kingdom and sees the current state at once (`Kingdom.GetState`).
+- Both actions apply; the treasury matches the sum.
+- The rejoining player is back in the same kingdom, respawns at its keep with regalia, and
+  `Kingdom.GetState` shows them in `rulers` with `mine` set.
 
 ## Performance capture (FL-0049, gate G7)
 With 4 kingdoms × 12 citizens running for 5 minutes, record:
