@@ -59,7 +59,26 @@ local function simpleTable(id: string): { [string]: any }
 	}
 end
 
-local fixture = RewardTables.new({ mixedTable(), simpleTable("simple") }, registry, { "crowns" })
+-- Odds that need rounding: six outcomes of 1/6 each; the guaranteed open (Rare or better) has three
+-- of 1/3 each. Without largest remainder these would display 99.96% and 99.99%.
+local function thirdsTable(): { [string]: any }
+	return {
+		id = "thirds",
+		name = "Thirds",
+		pity = { afterOpens = 2, minRarity = "Rare" },
+		tiers = {
+			{
+				rarity = "Common",
+				weight = 3,
+				items = { { itemId = "c1", weight = 1 }, { itemId = "c2", weight = 1 }, { itemId = "s1", weight = 1 } },
+			},
+			{ rarity = "Rare", weight = 1, items = { { itemId = "r1", weight = 1 } } },
+			{ rarity = "Epic", weight = 2, items = { { itemId = "e1", weight = 1 }, { itemId = "e2", weight = 1 } } },
+		},
+	}
+end
+
+local fixture = RewardTables.new({ mixedTable(), simpleTable("simple"), thirdsTable() }, registry, { "crowns" })
 local default = RewardTables.default()
 
 local CURRENCY_IDS = {}
@@ -73,6 +92,7 @@ local CASES = {
 	{ set = default, tableId = "match_reward" },
 	{ set = fixture, tableId = "mixed" },
 	{ set = fixture, tableId = "simple" },
+	{ set = fixture, tableId = "thirds" },
 }
 
 -- An rng whose NextNumber always returns the given value(s) in turn (the last one repeats).
@@ -298,6 +318,22 @@ describe("Economy/RewardTables", function()
 				expect(odds[i].probability).toBeNear(p, 1e-15)
 			end
 			expect(fixture:displayPercents(odds)).toEqual({ "12.50%", "12.50%", "25.00%", "30.00%", "5.00%", "15.00%" })
+		end)
+
+		it("rounds odds that are not whole hundredths so the shown percents still total 100.00%", function()
+			expect(fixture:displayPercents(fixture:odds("thirds"))).toEqual({
+				"16.67%",
+				"16.67%",
+				"16.67%",
+				"16.67%",
+				"16.66%",
+				"16.66%",
+			})
+			expect(fixture:displayPercents(fixture:odds("thirds", { opensSinceHit = 1 }))).toEqual({
+				"33.34%",
+				"33.33%",
+				"33.33%",
+			})
 		end)
 
 		it("conditions the guaranteed open on rarity >= minRarity and renormalises", function()
@@ -633,7 +669,7 @@ describe("Economy/RewardTables", function()
 
 	describe("validation", function()
 		it("accepts the fixtures", function()
-			expect(problemsOf({ mixedTable(), simpleTable("simple") })).toEqual({})
+			expect(problemsOf({ mixedTable(), simpleTable("simple"), thirdsTable() })).toEqual({})
 		end)
 
 		it("rejects a duplicate table id", function()
