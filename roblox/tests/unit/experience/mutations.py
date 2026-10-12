@@ -9,7 +9,7 @@ Prints one line per row: CAUGHT / NOT CAUGHT / MUTATION NOT APPLIED. Needs lune 
 import subprocess, sys, re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[4]  # repository root
 S = "roblox/src/server/Services/"; C = "roblox/src/client/Controllers/"; X = "roblox/src/shared/Experience/"
-G = "games/game-001/"; C2 = G + "src/client/Controllers/"
+G = "games/game-001/"; C2 = G + "src/client/Controllers/"; F = G + "src/shared/Feedback/"
 RUN = {
     "fw": ["lune", "run", "roblox/tests/harness/run.luau"],
     "game": ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-001/default.project.json", "--specs", "games/game-001/tests"],
@@ -105,6 +105,15 @@ M = [
  ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),
  ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
  ("FL-0092", C2+"InputModeController.luau", 'if kind == "citizen" then\n		local onboarding', 'if false then\n		local onboarding', "InputMode", "reports CitizenInspected", "game"),
+ ("FL-0091", F+"Bubbles.luau", 'if current ~= nil and current.kind == "reaction" then', 'if false then', "CitizenBubbles", "a reaction replaces the thought", "game"),
+ ("FL-0091", F+"Bubbles.luau", 'local text = cut(data.text, self._config.maxChars)\n	if text == nil then\n		self.stats.ignored += 1\n		return nil\n	end\n	local current', 'local text = cut(data.text, self._config.maxChars) or "…"\n	local current', "CitizenBubbles", "uses only the event's text", "game"),
+ ("FL-0091", F+"Bubbles.luau", 'if distance <= config.maxDistance then', 'if true then', "CitizenBubbles", "beyond maxDistance is never picked", "game"),
+ ("FL-0091", F+"Bubbles.luau", 'for index = 1, math.min(#candidates, config.maxOnScreen) do', 'for index = 1, #candidates do', "CitizenBubbles", "pick(): within maxDistance", "game"),
+ ("FL-0091", F+"Bubbles.luau", 'return a.priority > b.priority', 'return a.priority < b.priority', "CitizenBubbles", "reactions first, then nearest", "game"),
+ ("FL-0091", F+"Bubbles.luau", '	self._bubbles[entityId] = nil\n	self._striking[entityId] = nil\nend', '	self._bubbles[entityId] = nil\nend', "CitizenBubbles", "release() clears the bubble and the placard", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '	self:_undraw(entityId)\n	self._models[entityId] = nil', '	self._models[entityId] = nil', "CitizenBubbles", "released rigs lose their bubble", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'if bubble ~= nil and not (bubble.kind == "reaction" and self:_barksOff()) then', 'if bubble ~= nil then', "CitizenBubbles", "citizenBarks off hides reactions", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'gui.Active = false', 'gui.Active = true', "CitizenBubbles", "draws a thought over the citizen", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
