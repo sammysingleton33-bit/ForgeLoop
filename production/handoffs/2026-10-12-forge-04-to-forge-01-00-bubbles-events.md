@@ -15,27 +15,32 @@
    - `event(entityId, "thought", { scenarioId, text, icon }, model)`
    - `event(entityId, "reaction", { text, tone }, model)`
    - `event(entityId, "strike", { occupation, on }, model)`: **please send one event per striking citizen** (with its entityId), so the placard can sit over each striker. G13.3's `strike { occupation, on }` has no entity; an occupation-only event is ignored for now.
-2. **Consequence cues:** `event(entityId, "consequence", { cue = "<cue id>" }, model)` when a decision's consequence has a visible cue.
-   - The cue ids I map today, as proposals: `work_boost`, `strike`, `strike_end`, `loyalty_up`, `loyalty_down`, `hunger`.
-   - Unknown ids warn once and play nothing.
-3. **Pose hook (optional, additive):** `EntityController:playPose(entityId, pose: "cheer" | "grumble" | "slump" | "salute")`, a short procedural pose on the pooled rig. I call it for each reaction (tone → pose: happy → cheer, angry → grumble, sad → slump, neutral → salute). Without it, the bubble alone shows.
+2. **Consequence cues (G13.3 `cue`, now in CONTRACTS):** forward each one per citizen as `event(entityId, "<cue>", payload, model)`, the way `EntityController._cue` already forwards codec cues. `event(entityId, "cue", { cue, tone? }, model)` also works.
+   - `Vfx.luau` maps the full vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer.
+   - An unknown cue falls back to the reaction tone for its pose (G13.3): `payload.tone`, else the citizen's current reaction. It warns once. That fallback needs the `"cue"` form, because a bare unknown name cannot be told apart from FL-0062's work cues.
+   - An occupation-only `cue` needs fanning out to that occupation's citizens, as for `strike` above.
+3. **Pose hook (optional, additive):** `EntityController:playPose(entityId, pose)`, a short procedural pose on the pooled rig.
+   - Reactions use tone → pose: happy → cheer, angry → grumble, sad → slump, neutral → salute.
+   - Cues use the `pose` in `Vfx.cues`: cheer, grumble, salute, bow, cower, work_fast, rest, hammer.
+   - Without it, the bubble and the cue's effect still show. Every cue with a sound also has an effect.
+   - The 9th `Hair` part (D-032) needs no pose work from me.
 
 ### FORGE-00 (contract custodian)
 1. **A G9 event for onboarding v2 (FL-0092):** `CitizenAnswered(player, entityId, scenarioId, responseId)`, fired by ConversationService when `Kingdom.Choose` succeeds.
    - This is additive to the GameEvents bus.
    - With it, the "answer a citizen" tutorial step is server-verified.
    - Until then that step waits for a client action (`CitizenAnswered`) from FORGE-03's conversation panel. That is acceptable, because VS-1 has no tutorial rewards.
-2. **The content library's cue column:** please confirm or rename my cue ids above when `content/SPEC.md` lands. I'll mirror them in `Vfx.luau`; a spec checks that every cue has a registered sound and effect.
+2. **The content library's cue column** (PR #53): it should use exactly the G13.3 vocabulary. A spec pins `Vfx.cues` to that list, so a new cue fails the build until it is mapped.
 
 ## Evidence
-- `games/game-001/tests/experience/CitizenBubbles.spec.luau`: 14 specs.
+- `games/game-001/tests/experience/CitizenBubbles.spec.luau`: 15 specs.
   - Model rules: one bubble per citizen; text from the event only; glyphs; placards; distance; cap; release.
-  - The cue map: every cue is valid and never sound-only.
-  - The controller: drawing, pooling on `released`, the cap and distance, placards, `citizenBarks`, cues, the headless boot.
-- `mutations.py FL-0091`: 9/9 caught.
+  - The cue map: exactly the G13.3 vocabulary, registered sounds and effects, never sound-only.
+  - The controller: drawing, pooling on `released`, the cap and distance, placards, `citizenBarks`, cues (direct and `"cue"`), the unknown-cue tone fallback, the headless boot.
+- `mutations.py FL-0091`: 13/13 caught.
 
 ## Interfaces touched
-None yet. The `consequence` cue, `playPose` and `CitizenAnswered` are proposals in this file.
+None. The cue routing follows CONTRACTS G13.3 `cue` (v0.4-g4). `playPose`, the per-citizen strike and cue fan-out, and `CitizenAnswered` are proposals in this file.
 
 ## Files to read
 - `games/game-001/src/shared/Feedback/Bubbles.luau`

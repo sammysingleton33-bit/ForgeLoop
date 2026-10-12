@@ -128,6 +128,10 @@ M = [
  ("FL-0062", C2+"FeedbackController.luau", 'pcall(self._vfx.stop, self._vfx, effect)', 'local _ = effect', "KingdomFeedback", "a released rig loses every effect", "game"),
  ("FL-0062", C2+"FeedbackController.luau", 'if sound == nil or type(id) ~= "number" or not self:_near(position) then', 'if sound == nil or type(id) ~= "number" then', "KingdomFeedback", "culled by distance", "game"),
  ("FL-0062", C2+"MusicController.luau", 'if type(phase) ~= "string" or Def.PHASE_STATES[phase] == nil then', 'if type(phase) ~= "string" then', "KingdomFeedback", "the match result wins at once", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'elseif self._config.cues and self._config.cues[cue] then', 'elseif false then', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '	self:_pose(entityId, spec.pose)\n', '', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'self:_pose(entityId, if fallback then Bubbles.POSE[fallback :: string] else nil)', 'self:_pose(entityId, nil)', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'elseif current and current.kind == "reaction" then current.tone', 'elseif false then nil', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
