@@ -68,7 +68,12 @@ local function cut(text: any, limit: number): string?
 	if type(text) ~= "string" or text == "" then
 		return nil
 	end
-	if utf8.len(text) and (utf8.len(text) :: number) > limit then
+	local length = utf8.len(text)
+	if length == nil then
+		-- invalid UTF-8: cut by bytes, so a malformed string is never kept whole
+		return if #text > limit then string.sub(text, 1, limit) .. "…" else text
+	end
+	if length > limit then
 		local stop = utf8.offset(text, limit) or (limit + 1)
 		return string.sub(text, 1, stop - 1) .. "…"
 	end
@@ -183,7 +188,9 @@ function NotificationQueue:push(spec: { [string]: any }): (Item?, string)
 	end
 
 	self._nextId += 1
-	local duration = if type(spec.durationSec) == "number" then spec.durationSec else NotificationQueue.DURATION[kind]
+	local duration = if type(spec.durationSec) == "number" and spec.durationSec == spec.durationSec -- not NaN
+		then spec.durationSec
+		else NotificationQueue.DURATION[kind]
 	local item: Item = {
 		id = self._nextId,
 		title = title,

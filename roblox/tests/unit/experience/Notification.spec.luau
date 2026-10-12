@@ -117,6 +117,14 @@ describe("Experience/NotificationQueue (FL-0027)", function()
 		expect(select(2, queue:push({ title = "" }))).toBe("invalid")
 		expect(select(2, queue:push({}))).toBe("invalid")
 	end)
+
+	it("a NaN duration gets the kind's default; invalid UTF-8 is cut by bytes", function()
+		local nan = queue:push({ title = "nan", durationSec = 0 / 0 })
+		expect(nan.durationSec).toBe(NotificationQueue.DURATION.info)
+		local broken = queue:push({ title = string.rep("\255", 5000), body = string.rep("\254", 5000) })
+		expect(#broken.title).toBe(60 + #"…")
+		expect(#broken.body).toBe(140 + #"…")
+	end)
 end)
 
 describe("NotificationController (FL-0027, interfaces §8)", function()
@@ -248,6 +256,41 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 		env.mock:advance(1.1)
 		expect(controller:celebrate("achievement", { title = "Keep level 2" })).toBe(true)
 		expect(#effects).toBe(2)
+	end)
+
+	it("a different moment of the same kind within the cooldown gets its toast, without a second fanfare", function()
+		expect(controller:celebrate("achievement", { title = "Watchtower captured" })).toBe(true)
+		expect(controller:celebrate("achievement", { title = "Bridge captured" })).toBe(true)
+		expect(controller:celebrate("achievement", { title = "Bridge captured" })).toBe(false) -- reported twice
+		expect(#effects).toBe(1)
+		local shownTitles = {}
+		for _, toast in toasts() do
+			table.insert(shownTitles, toast:FindFirstChild("Title", true).Text)
+		end
+		table.sort(shownTitles)
+		expect(shownTitles).toEqual({ "Bridge captured", "Watchtower captured" })
+	end)
+
+	it("a payload that is not a table counts as none and never throws", function()
+		expect(controller:celebrate("achievement", 42)).toBe(true)
+		expect(controller:celebrate("levelUp", "five")).toBe(true)
+		expect(env.mock.threadErrors).toEqual({})
+	end)
+
+	it("place() follows the game's layout; reserveTop() keeps the stack below a card until freed", function()
+		controller:show({ title = "House complete" })
+		local frame = stack()
+		expect(frame.Position).toEqual(UDim2.new(1, -12, 0, 12))
+		controller:place(UDim2.new(1, -60, 0, 96), Vector2.new(1, 0), 250)
+		expect(frame.Position).toEqual(UDim2.new(1, -60, 0, 96))
+		expect(frame:FindFirstChildOfClass("UISizeConstraint").MaxSize.X).toBe(250)
+		controller:reserveTop("onboarding", 168)
+		expect(frame.Position.Y.Offset).toBe(168)
+		controller:reserveTop("onboarding", 40) -- below the placement: the placement wins
+		expect(frame.Position.Y.Offset).toBe(96)
+		controller:reserveTop("onboarding", nil)
+		expect(frame.Position.Y.Offset).toBe(96)
+		expect(#toasts()).toBe(1) -- the card was rebuilt at the new width, not lost
 	end)
 
 	it("celebration toasts are important (pass the filter) and silent (the moment has its own sound)", function()
