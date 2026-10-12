@@ -108,14 +108,32 @@ describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 end)
 
 describe("config Vfx.luau cues (FL-0091)", function()
-	it("every cue names a registered sound and VFX preset and is never sound-only", function()
+	it("maps exactly the G13.3 cue vocabulary; sounds and effects are registered; no cue is sound-only", function()
+		local keys = {}
 		for id, cue in Vfx.cues do
-			assert(cue.vfx ~= nil, `cue {id}: needs a visual`)
-			assert(VfxPresets.byId[cue.vfx] ~= nil, `cue {id}: unknown VFX preset {cue.vfx}`)
+			table.insert(keys, id)
+			assert(cue.pose ~= nil or cue.vfx ~= nil, `cue {id}: needs a pose or an effect`)
+			if cue.vfx then
+				assert(VfxPresets.byId[cue.vfx] ~= nil, `cue {id}: unknown VFX preset {cue.vfx}`)
+			end
 			if cue.sound then
+				assert(cue.vfx ~= nil, `cue {id}: a sound needs an effect (poses wait for FORGE-01)`)
 				assert(Sounds.registry:get(cue.sound) ~= nil, `cue {id}: unknown sound {cue.sound}`)
 			end
 		end
+		table.sort(keys)
+		-- CONTRACTS G13.3 `cue` vocabulary
+		expect(keys).toEqual({
+			"bow",
+			"celebrate",
+			"cower",
+			"grumble",
+			"hammer",
+			"rest",
+			"salute",
+			"strike_placard",
+			"work_fast",
+		})
 	end)
 end)
 
@@ -261,16 +279,29 @@ describe("CitizenBubbleController (FL-0091)", function()
 		expect(bubbleOf(smith)).toBeNil()
 	end)
 
-	it("plays a consequence cue's sound and effect at the citizen; unknown cues warn once", function()
+	it("plays a G13.3 cue's pose, sound and effect at the citizen, sent directly or as `cue`", function()
+		local smith = citizen(1, 20)
+		entities.event:fire(1, "hammer", {}, smith)
+		expect(poses).toEqual({ "1:hammer" })
+		expect(played).toEqual({ Vfx.cues.hammer.sound })
+		expect(effects).toEqual({ Vfx.cues.hammer.vfx })
+		entities.event:fire(1, "cue", { cue = "bow" }, smith)
+		expect(poses).toEqual({ "1:hammer", "1:bow" })
+		expect(played).toEqual({ Vfx.cues.hammer.sound }) -- bow is pose-only
+	end)
+
+	it("an unknown cue falls back to the reaction tone for its pose and warns once", function()
 		local farmer = citizen(1, 20)
-		entities.event:fire(1, "consequence", { cue = "work_boost" }, farmer)
-		expect(played).toEqual({ Vfx.cues.work_boost.sound })
-		expect(effects).toEqual({ Vfx.cues.work_boost.vfx })
-		entities.event:fire(1, "consequence", { cue = "dragons" }, farmer)
-		entities.event:fire(1, "consequence", { cue = "dragons" }, farmer)
+		entities.event:fire(1, "cue", { cue = "dragons", tone = "sad" }, farmer)
+		expect(poses).toEqual({ "1:slump" })
+		entities.event:fire(1, "reaction", { text = "Hooray!", tone = "happy" }, farmer)
+		entities.event:fire(1, "cue", { cue = "dragons" }, farmer)
+		expect(poses).toEqual({ "1:slump", "1:cheer", "1:cheer" }) -- the reaction's tone
+		expect(played).toEqual({})
+		expect(effects).toEqual({})
 		local warnings = 0
 		for _, entry in env.mock.logs do
-			if entry.level == "warn" and string.find(entry.message, "unknown consequence cue 'dragons'", 1, true) then
+			if entry.level == "warn" and string.find(entry.message, "unknown cue 'dragons'", 1, true) then
 				warnings += 1
 			end
 		end

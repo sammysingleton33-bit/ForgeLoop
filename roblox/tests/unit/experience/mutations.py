@@ -100,6 +100,10 @@ M = [
  ("FL-0091", C2+"CitizenBubbleController.luau", '	self:_undraw(entityId)\n	self._models[entityId] = nil', '	self._models[entityId] = nil', "CitizenBubbles", "released rigs lose their bubble", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'if bubble ~= nil and not (bubble.kind == "reaction" and self:_barksOff()) then', 'if bubble ~= nil then', "CitizenBubbles", "citizenBarks off hides reactions", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'gui.Active = false', 'gui.Active = true', "CitizenBubbles", "draws a thought over the citizen", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'elseif self._config.cues and self._config.cues[cue] then', 'elseif false then', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '	self:_pose(entityId, spec.pose)\n', '', "CitizenBubbles", "plays a G13.3 cue's pose", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'self:_pose(entityId, if fallback then Bubbles.POSE[fallback :: string] else nil)', 'self:_pose(entityId, nil)', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", 'elseif current and current.kind == "reaction" then current.tone', 'elseif false then nil', "CitizenBubbles", "an unknown cue falls back to the reaction tone", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

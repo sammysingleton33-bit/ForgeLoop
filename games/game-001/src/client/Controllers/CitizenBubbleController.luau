@@ -8,7 +8,10 @@
 		.event(entityId, "thought",  { scenarioId, text, icon }, model)   -> thought bubble ("!", "?", "…")
 		.event(entityId, "reaction", { text, tone }, model)               -> reaction bubble + a pose
 		.event(entityId, "strike",   { occupation, on }, model)           -> "On strike" placard while on
-		.event(entityId, "consequence", { cue = id }, model)              -> config Vfx.cues[id]: sound + effect
+		.event(entityId, <cue>, payload, model) for a G13.3 `cue` in Vfx.cues (celebrate, grumble, salute,
+		    bow, cower, strike_placard, work_fast, rest, hammer)          -> pose + sound + effect
+		.event(entityId, "cue", { cue, tone? }, model)                    -> the same; an unknown cue falls
+		    back to the reaction tone (payload.tone, else the citizen's current reaction) for its pose
 		.rendered(entityId, model) / .released(entityId, model)           -> attach / clear (pooled rigs)
 	Rules live in Feedback/Bubbles (one bubble per citizen, text from the event only, lifetimes, the
 	on-screen cap and distance). The `citizenBarks` setting off hides reaction bubbles (the pose,
@@ -162,11 +165,14 @@ function Controller:onEvent(entityId: any, cue: string, payload: any, model: any
 		end
 	elseif cue == "strike" then
 		self.bubbles:strike(entityId, payload.on == true)
-	elseif cue == "consequence" then
-		self:_playCue(payload.cue, entityId)
+	elseif cue == "cue" then
+		self:_playCue(entityId, payload.cue, payload.tone)
+		return
+	elseif self._config.cues and self._config.cues[cue] then
+		self:_playCue(entityId, cue, nil)
 		return
 	else
-		return -- other cues (deposit, hit, celebrate) are FL-0062's feedback layer
+		return -- other cues (deposit, hit, die) are FL-0062's feedback layer
 	end
 	self:refresh()
 end
@@ -242,15 +248,23 @@ function Controller:_pose(entityId: number, pose: string?)
 	pcall(entities.playPose, entities, entityId, pose)
 end
 
-function Controller:_playCue(cueId: any, entityId: any)
+function Controller:_playCue(entityId: any, cueId: any, tone: any)
 	local spec = type(cueId) == "string" and self._config.cues and self._config.cues[cueId]
 	if not spec then
+		-- G13.3: an unknown cue falls back to the reaction tone
+		local current = self.bubbles:get(entityId)
+		local fallback = if type(tone) == "string"
+			then tone
+			elseif current and current.kind == "reaction" then current.tone
+			else nil
+		self:_pose(entityId, if fallback then Bubbles.POSE[fallback :: string] else nil)
 		if not self._warned[tostring(cueId)] then
 			self._warned[tostring(cueId)] = true
-			self._env.log("warn", `CitizenBubbleController: unknown consequence cue '{tostring(cueId)}'`)
+			self._env.log("warn", `CitizenBubbleController: unknown cue '{tostring(cueId)}'`)
 		end
 		return
 	end
+	self:_pose(entityId, spec.pose)
 	local model = if type(entityId) == "number" then self._models[entityId] else nil
 	local position = if model then pivotOf(model) else nil
 	if spec.sound and self._audio then

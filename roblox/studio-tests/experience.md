@@ -108,7 +108,7 @@ Pass: all timings recorded and within target; the log order matches; skip and co
 
 ## E8 — Citizen bubbles, reactions and strike placards (FL-0091, game-001)
 Needs:
-- FORGE-01's EntityController (G4.1) re-emitting the G13.3 `Sim.Events` kinds as `EntityController.event(entityId, "thought" | "reaction" | "strike", payload, model)`;
+- FORGE-01's EntityController (G4.1) re-emitting the G13.3 `Sim.Events` kinds as `EntityController.event(entityId, "thought" | "reaction" | "strike" | <cue>, payload, model)`;
 - ConversationService (FL-0079) and FORGE-03's conversation panel;
 - the debug presets `citizen.request` and `strike.start` (G13.7, FORGE-05).
 
@@ -124,6 +124,7 @@ Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec
 | Lifetimes | thought 45 s or until answered; reaction 4 s; placard until the strike ends |
 | On screen | at most 8, within 160 studs of the camera; reactions first, then the nearest |
 | `citizenBarks` off | hides reaction bubbles only; thoughts and placards stay (they are gameplay) |
+| Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose |
 
 Steps
 1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
@@ -132,8 +133,9 @@ Steps
 4. Zoom out past about 160 studs: the bubbles disappear. Zoom back in: they return. With more than 8 requests open, at most 8 bubbles show, the nearest first.
 5. Settings → Citizen barks off: reaction bubbles no longer show; request bubbles and placards still do.
 6. Device emulator, a small phone: bubble text is readable at the default zoom, and bubbles don't cover the HUD.
+7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists.
 
-Pass: steps 1–6 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
+Pass: steps 1–7 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
 
 ## Changelog
 - 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
