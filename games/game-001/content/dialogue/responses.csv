@@ -1,39 +1,51 @@
-scenario_id,response_id,order,response_text,reaction_text,decision_id
-farmer_hungry_grain,farmer_hungry_grain_open_store,1,Open the store. No farmer starves on my land.,Bless you! We'll work those fields till they shine.,grain_open_store
-farmer_hungry_grain,farmer_hungry_grain_promise_harvest,2,Plant the east field first. Its first sacks are yours.,"A promise, then. I'll hold you to it, ruler.",grain_promise_harvest
-farmer_hungry_grain,farmer_hungry_grain_equal_rations,3,Everyone gets the same ration. No exceptions.,"Fair, I suppose... but fair doesn't fill a bowl.",grain_equal_rations
-farmer_hungry_grain,farmer_hungry_grain_threaten,4,Complain again and you'll dig ditches instead.,"...Yes, ruler. As you say, ruler.",grain_threaten
-builder_overworked,builder_overworked_rest,1,Down tools until the noon bell. Rest well.,You're a good sort! We'll be back twice as sharp.,builder_rest
-builder_overworked,builder_overworked_stew,2,"Hot stew for every builder tonight, on the crown.",Stew! Now that's worth swinging a hammer for.,builder_stew
-builder_overworked,builder_overworked_push_on,3,"The kingdom needs walls, not naps. Back to work.",Back to work... right. Hope the walls love you back.,builder_push_on
-soldier_recruit_pay,soldier_recruit_pay_double_rations,1,Double rations tonight. An army marches on its belly.,Ha! Now that's a ruler worth marching for!,soldier_double_rations
-soldier_recruit_pay,soldier_recruit_pay_promise_pay,2,Take the watchtower and you'll each be paid in gold.,"Gold when the tower falls. We'll remember that, ruler.",soldier_promise_pay
-soldier_recruit_pay,soldier_recruit_pay_discipline,3,Your pay is serving the crown. Dismissed.,Serving the crown. Right. Tastes a lot like porridge.,soldier_discipline
-soldier_recruit_pay,soldier_recruit_pay_threaten,4,Grumble again and you'll guard the pig pens.,"N-no grumbling, ruler. Not a word.",soldier_threaten
-woodcutter_hearth_logs,woodcutter_hearth_logs_give,1,"Take what your families need. Warm homes, strong arms.",Thank you! The little ones will sleep warm tonight.,logs_give
-woodcutter_hearth_logs,woodcutter_hearth_logs_earn,2,"Haul one extra load each, and those logs are yours.","A fair trade. Axes up, friends, we've logs to earn!",logs_earn
-woodcutter_hearth_logs,woodcutter_hearth_logs_refuse,3,Every log belongs to the kingdom. Taking one is theft.,Theft. Of logs we cut ourselves. Well.,logs_refuse
-miner_rockfall,miner_rockfall_shore_up,1,Shore it up with timber before anyone digs.,"Oh, thank you! I'll sleep tonight, truly.",miner_shore_up
-miner_rockfall,miner_rockfall_dig_on,2,Rocks always groan. Keep digging.,"If you say so, ruler... I'll keep one eye on the ceiling.",miner_dig_on
-miner_rockfall,miner_rockfall_inspect,3,Show me. I'll walk the rock face with you myself.,You'd come down here? With us? Then it can't be so bad.,miner_inspect
-hauler_rival_cart,hauler_rival_cart_side_with_me,1,The cart is yours. {rival} can carry sacks on foot.,Ha! Justice at last. That'll wipe the smirk off.,hauler_side_with_speaker
-hauler_rival_cart,hauler_rival_cart_two_carts,2,I'll have a second cart made. No more quarrels.,"Two carts? Well... that does solve it, I suppose.",hauler_two_carts
-hauler_rival_cart,hauler_rival_cart_settle_it,3,"Sort it out yourselves, or you both haul at night.",Night hauling? Fine. We'll sort it. Somehow.,hauler_settle_yourselves
-blacksmith_forge_stone,blacksmith_forge_stone_full,1,"Take forty stone. A sound forge, a sound kingdom.",Now we're talking! Your soldiers will feel the difference.,smith_forge_full
-blacksmith_forge_stone,blacksmith_forge_stone_half,2,Twenty now. The rest when the walls are done.,Half a forge it is. I'll hold you to the other half.,smith_forge_half
-blacksmith_forge_stone,blacksmith_forge_stone_clay,3,Patch it with clay. Stone goes to the walls first.,"Clay. On a forge. I'll do what I can, but don't expect miracles.",smith_forge_clay
-captain_drill,captain_drill_drill_myself,1,I'll drill them myself at dawn.,"At dawn, then! They'll stand taller with you beside them.",captain_drill_personally
-captain_drill,captain_drill_feed_them,2,Feed them well first. Strength before drills.,"Full bellies, steady arms. Good thinking, ruler.",captain_extra_rations
-captain_drill,captain_drill_punish,3,Punish the slowest in front of the others.,As you command. They'll fear the yard... and you.,captain_punish_slowest
-provisioner_feast,provisioner_feast_feast_all,1,Light every oven. A feast for the whole kingdom!,A feast! I'll have the bread rising within the hour!,feast_for_all
-provisioner_feast,provisioner_feast_modest,2,"A modest supper, and keep the stores full.","Modest it is. Warm and filling, nothing wasted.",feast_modest
-provisioner_feast,provisioner_feast_after_victory,3,Feasts are for victories. We celebrate when we win.,As you wish. I'll save the honey cakes for that day.,feast_after_victory
-elder_fear_whispers,elder_fear_whispers_open_court,1,Open court at the keep. Anyone may speak freely.,Wisely chosen. Words spoken aloud do less harm than whispers.,elder_open_court
-elder_fear_whispers,elder_fear_whispers_keep_methods,2,Fear keeps them working. My methods stay.,"Then let us hope the beams hold, ruler.",elder_keep_methods
-elder_fear_whispers,elder_fear_whispers_name_them,3,"Give me the names of the whisperers, elder.","...I am old, ruler, and my memory fails me. Forgive me.",elder_name_whisperers
-farmer_promise_due,farmer_promise_due_keep,1,A promise is a promise. Take your sacks.,You kept your word! I'll tell the whole valley.,promise_sacks_keep
-farmer_promise_due,farmer_promise_due_delay,2,"Not yet. Next harvest, on my word.","Next harvest... your word is wearing thin, ruler.",promise_sacks_delay
-farmer_promise_due,farmer_promise_due_break,3,The kingdom needs that grain more than you do.,So that's what a ruler's word is worth. Noted.,promise_sacks_break
-soldier_pay_due,soldier_pay_due_pay_full,1,Pay them in full. They earned every coin.,Gold! Three cheers for the crown!,pay_due_full
-soldier_pay_due,soldier_pay_due_pay_half,2,Half now. The treasury is thin.,Half's better than nothing... just about.,pay_due_half
-soldier_pay_due,soldier_pay_due_refuse,3,"Victory is its own reward, soldier.","Victory doesn't buy boots, ruler. The squad won't forget this.",pay_due_refuse
+scenario_id,response_id,order,response_text,reaction_text,reaction_tone,decision_id,notes
+farmer_hungry_grain,farmer_hungry_grain_open_store,1,Open the store. No farmer starves on my land.,Bless you! We'll work those fields till they shine.,happy,grain_open_store,
+farmer_hungry_grain,farmer_hungry_grain_promise_harvest,2,Plant the east field first. Its first sacks are yours.,"A promise, then. My family won't forget it.",neutral,grain_promise_harvest,
+farmer_hungry_grain,farmer_hungry_grain_equal_rations,3,Everyone gets the same ration. No exceptions.,"Fair, I suppose. But fair doesn't fill a bowl.",sad,grain_equal_rations,
+farmer_hungry_grain,farmer_hungry_grain_threaten,4,Complain again and you'll dig ditches instead.,"...Yes, {ruler}. As you say.",sad,grain_threaten,
+builder_overworked,builder_overworked_rest,1,Down tools until the noon bell. Rest well.,You're a good sort! We'll be back twice as sharp.,happy,builder_rest,
+builder_overworked,builder_overworked_stew,2,"Hot stew for every builder tonight, on the crown.",Stew! Now that's worth swinging a hammer for.,happy,builder_stew,
+builder_overworked,builder_overworked_push_on,3,"The kingdom needs walls, not naps. Back to work.",Back to work. Right. Hope the walls love you back.,angry,builder_push_on,
+soldier_recruit_pay,soldier_recruit_pay_double_rations,1,Double rations tonight. An army marches on its belly.,Ha! Now that's a ruler worth marching for!,happy,soldier_double_rations,
+soldier_recruit_pay,soldier_recruit_pay_promise_pay,2,Take the watchtower and you'll each be paid in gold.,Gold when the tower falls. The squad will remember that.,neutral,soldier_promise_pay,
+soldier_recruit_pay,soldier_recruit_pay_discipline,3,Your pay is serving the crown. Dismissed.,Serving the crown. Right. Tastes a lot like porridge.,angry,soldier_discipline,
+soldier_recruit_pay,soldier_recruit_pay_threaten,4,One more grumble and you'll muck out the pig pens.,"N-not a word. Not one, I swear it.",sad,soldier_threaten,
+woodcutter_hearth_logs,woodcutter_hearth_logs_give,1,"Take what your families need. Warm homes, strong arms.",Thank you! The little ones will sleep warm tonight.,happy,logs_give,
+woodcutter_hearth_logs,woodcutter_hearth_logs_earn,2,"Haul one extra load each, and those logs are yours.","A fair trade. Axes up, friends, we've logs to earn!",happy,logs_earn,
+woodcutter_hearth_logs,woodcutter_hearth_logs_refuse,3,Every log belongs to the kingdom. Taking one is theft.,Theft. Of logs we cut ourselves. Well.,angry,logs_refuse,
+miner_rockfall,miner_rockfall_shore_up,1,Shore it up with timber before anyone digs.,"Oh, thank you! I'll sleep tonight, truly.",happy,miner_shore_up,
+miner_rockfall,miner_rockfall_dig_on,2,Rocks always groan. Keep digging.,If you say so. I'll keep one eye on the ceiling.,sad,miner_dig_on,
+miner_rockfall,miner_rockfall_inspect,3,Show me. I'll walk the rock face with you myself.,You'd come down here? With us? Then it can't be so bad.,happy,miner_inspect,
+miner_rockfall_worse,miner_rockfall_worse_shore_up,1,"Timber, now. Nobody digs until it's shored.",Thank the stars. We'll have it braced by nightfall.,happy,miner_shore_up,
+miner_rockfall_worse,miner_rockfall_worse_dig_on,2,We dig. The kingdom needs that stone.,"Then I'll dig near the door, and pray you're right.",sad,miner_dig_on_cracked,
+miner_rockfall_worse,miner_rockfall_worse_close_face,3,Close the east face. Dig the west side instead.,"Slower going, but nobody under that crack. Thank you.",neutral,miner_close_face,
+hauler_rival_cart,hauler_rival_cart_side_with_me,1,The cart is yours. {rival} can carry sacks on foot.,Ha! Justice at last. That'll wipe the smirk off.,happy,hauler_side_with_speaker,
+hauler_rival_cart,hauler_rival_cart_two_carts,2,I'll have a second cart made. No more quarrels.,"Two carts? Well, that does solve it, I suppose.",neutral,hauler_two_carts,
+hauler_rival_cart,hauler_rival_cart_settle_it,3,"Sort it out yourselves, or you both haul at night.",Night hauling? Fine. We'll sort it. Somehow.,angry,hauler_settle_yourselves,
+blacksmith_forge_stone,blacksmith_forge_stone_full,1,"Take the stone you need. A sound forge, a sound kingdom.",Now we're talking! Your soldiers will feel the difference.,happy,smith_forge_full,
+blacksmith_forge_stone,blacksmith_forge_stone_half,2,Half now. The rest when the walls are done.,Half a forge it is. I'll be back for the other half.,neutral,smith_forge_half,
+blacksmith_forge_stone,blacksmith_forge_stone_clay,3,Patch it with clay. Stone goes to the walls first.,"Clay. On a forge. I'll do what I can, but don't expect miracles.",angry,smith_forge_clay,
+blacksmith_half_due,blacksmith_half_due_keep,1,"You have my word, and now the stone. Finish it.",Now that's a forge! Your soldiers will feel the difference.,happy,smith_half_keep,
+blacksmith_half_due,blacksmith_half_due_delay,2,Not yet. The walls still come first.,"Again. A cracked forge makes cracked blades, you know.",angry,smith_half_delay,
+blacksmith_half_due,blacksmith_half_due_break,3,There is no more stone for the forge. Make do.,Make do. With half a wall and half a promise.,angry,smith_half_break,
+captain_drill,captain_drill_drill_myself,1,I'll drill them myself at dawn.,"At dawn, then! They'll stand taller with you beside them.",happy,captain_drill_personally,
+captain_drill,captain_drill_feed_them,2,Feed them well first. Strength before drills.,"Full bellies, steady arms. Good thinking.",happy,captain_extra_rations,
+captain_drill,captain_drill_punish,3,Punish the slowest in front of the others.,"As you command. They'll fear the yard, and you.",neutral,captain_punish_slowest,
+provisioner_feast,provisioner_feast_feast_all,1,Light every oven. A feast for the whole kingdom!,A feast! I'll have the bread rising within the hour!,happy,feast_for_all,
+provisioner_feast,provisioner_feast_modest,2,"A modest supper, and keep the stores full.","Modest it is. Warm and filling, nothing wasted.",neutral,feast_modest,
+provisioner_feast,provisioner_feast_after_victory,3,Feasts are for victories. We celebrate when we win.,As you wish. I'll save the honey cakes for that day.,neutral,feast_after_victory,
+provisioner_victory_feast,provisioner_victory_feast_hold,1,You heard me. Light every oven: a victory feast!,A victory feast! The whole kingdom will sing tonight!,happy,victory_feast_hold,
+provisioner_victory_feast,provisioner_victory_feast_small,2,A small supper for the victors. The stores stay full.,"Smaller than promised, but a feast. Of sorts.",neutral,victory_feast_small,
+provisioner_victory_feast,provisioner_victory_feast_cancel,3,The war isn't over. There will be no feast.,"No feast. You promised. The cakes will go stale, and so will we.",angry,victory_feast_cancel,
+elder_fear_whispers,elder_fear_whispers_open_court,1,Open court at the keep. Anyone may speak freely.,Wisely chosen. Words spoken aloud do less harm than whispers.,happy,elder_open_court,
+elder_fear_whispers,elder_fear_whispers_keep_methods,2,Fear keeps them working. My methods stay.,Then let us hope the beams hold.,sad,elder_keep_methods,
+elder_fear_whispers,elder_fear_whispers_name_them,3,"Give me the names of the whisperers, elder.","I am old, and my memory fails me. Forgive me.",sad,elder_name_whisperers,
+farmer_promise_due,farmer_promise_due_keep,1,A promise is a promise. Take your sacks.,You kept your word! I'll tell the whole valley.,happy,promise_sacks_keep,
+farmer_promise_due,farmer_promise_due_delay,2,"Not yet. Next harvest, on my word.",Next harvest. Your word is wearing thin.,angry,promise_sacks_delay,
+farmer_promise_due,farmer_promise_due_break,3,The kingdom needs that grain more than you do.,So that's what a crown's word is worth. Noted.,angry,promise_sacks_break,
+soldier_pay_due,soldier_pay_due_pay_full,1,Pay them in full. They earned every coin.,Gold! Three cheers for the crown!,happy,pay_due_full,
+soldier_pay_due,soldier_pay_due_pay_half,2,Half now. The treasury is thin.,Half's better than nothing. Just about.,neutral,pay_due_half,
+soldier_pay_due,soldier_pay_due_refuse,3,"Victory is its own reward, soldier.",Victory doesn't buy boots. The squad won't forget this.,angry,pay_due_refuse,
+family_bread_theft,family_bread_theft_pardon,1,"Hunger is no crime. Take the bread home, unpunished.",Mercy! Bless you. We will never forget it.,happy,theft_pardon,
+family_bread_theft,family_bread_theft_work_off,2,The bread is forgiven once it's worked off: one extra shift.,"Hard, but fair. We'll work it off.",neutral,theft_work_off,
+family_bread_theft,family_bread_theft_example,3,Theft is theft. Make an example of them at the gate.,"No! Please. We'll starve quietly, I swear it.",sad,theft_make_example,

@@ -10,8 +10,12 @@ Commands (all take --content DIR; build/check also take --out DIR)
   lint                     design warnings (never fails)
   build                    validate, then write the generated Luau (deterministic)
   check                    exit 1 if validation fails or the generated Luau is missing or stale (CI)
-  export-xlsx [PATH]       write the editing workbook (default content/AI_Kingdoms_Content.xlsx)
-  import-xlsx PATH [--build]  read the workbook back into the CSVs (validates first; unchanged rows keep their bytes)
+  export-xlsx [PATH]       write the editing workbook (default content/AI_Kingdoms_Content.xlsx), stamped with
+                           the CSV versions it was made from
+  import-xlsx PATH [--build] [--text-only]
+                           read the workbook back into the CSVs: validates first, lists every change (TEXT /
+                           MECHANICS / NOTES), refuses mechanics from a workbook older than the CSVs, restores
+                           the original row order; --text-only takes only the text. Unchanged rows keep their bytes
   fmt                      rewrite every CSV in canonical form
 
 Standard library + openpyxl (only for the two workbook commands).
@@ -56,19 +60,30 @@ CONSEQUENCE_KINDS = (
     "unlock_scenario", "memory", "desertion_risk", "unrest_pressure", "cue",
 )
 SIMPLE_TARGETS = ("speaker", "family", "friends", "soldiers", "civilians", "kingdom")
+LOCAL_TARGETS = ("speaker", "family", "friends")  # a handful of named citizens; everything else is a group
+BROAD_TARGETS = ("kingdom", "civilians", "soldiers")  # kingdom-wide groups (model decision 6 caps)
 DECISION_AUDIENCES = ("none", "occupation", "kingdom")
 ACTION_AUDIENCES = ("soldiers", "civilians", "kingdom", "speaker")  # plus occupation:<id>
 NAME_KINDS = ("given_f", "given_m", "given_n", "family")
-PLACEHOLDERS = ("name", "ruler", "kingdom", "occupation", "family", "friend", "rival")
+THOUGHT_ICONS = ("request", "concern", "idea")  # CONTRACTS G13.3 thought.icon
+REACTION_TONES = ("happy", "angry", "sad", "neutral")  # CONTRACTS G13.3 reaction.tone
+# Feedback cue ids for consequences.cue_id (FORGE-04 vocabulary, SPEC §5.4). 'celebrate' is the G4 cue.
+CUE_IDS = ("celebrate", "grumble", "salute", "bow", "cower", "strike_placard", "work_fast", "rest", "hammer")
+# TEXT placeholders (SPEC §3). Which ones a column may use depends on whether it has a speaking citizen.
+CITIZEN_PLACEHOLDERS = ("name", "ruler", "kingdom", "occupation", "family", "friend", "rival")
+MECHANICS_PLACEHOLDERS = ("chance", "magnitude", "magnitude_pct", "duration")  # consequences.notice_text only
+PLACEHOLDERS = CITIZEN_PLACEHOLDERS + MECHANICS_PLACEHOLDERS
+RELATION_FLAGS = {"family": "citizen.has_family", "friend": "citizen.has_friend", "rival": "citizen.has_rival"}
 SYSTEM_MEMORIES = ("rulerVisited", "raided")
 SUGGESTED_NEEDS = ("food", "shelter", "rest", "safety", "tools", "health", "pay", "faith", "company", "respect")
-KNOWN_EVENTS = (
-    "BuildingPlaced", "BuildingCompleted", "BuildingUpgraded", "BuildingDestroyed", "KeepUpgraded",
-    "UnitsRecruited", "ObjectiveCaptured", "ObjectiveLost", "RaidDefended", "RaidSuffered", "FoodShortage",
-    "FoodRestored", "RulerVisited", "ResourceGathered", "MatchPhaseChanged", "KingdomEliminated", "CitizenDied",
-    "SoldierDied", "FeastHeld", "WarDeclared", "PeaceMade", "ArenaWon", "ArenaLost",
+# CONTRACTS G9: the game events on the framework bus (Contracts/GameEvents). Any other event name in
+# actions.csv is a proposed reputation trigger: it needs a contract (FORGE-00) and FORGE-01 must fire it.
+BUS_EVENTS = (
+    "KingdomJoined", "MatchPhaseChanged", "BuildingPlaced", "BuildingCompleted", "BuildingUpgraded",
+    "BuildingDestroyed", "ResourceGathered", "UnitsRecruited", "ObjectiveCaptured", "KingdomEliminated",
+    "MatchEnded",
 )
-CONSTRUCTION_EVENTS = ("BuildingPlaced", "BuildingCompleted", "BuildingUpgraded", "KeepUpgraded")
+CONSTRUCTION_EVENTS = ("BuildingPlaced", "BuildingCompleted", "BuildingUpgraded")
 MIN_GIVEN_NAMES = 60
 MIN_FAMILY_NAMES = 40
 
@@ -79,6 +94,18 @@ CONSEQUENCE_MAGNITUDE = {  # kind -> (lo, hi) or None (ignored)
     "stability": (-20, 20), "loyalty": (-20, 20), "resource_over_time": (-500, 500), "unlock_scenario": None,
     "memory": None, "desertion_risk": (0, 1), "unrest_pressure": (-20, 20), "cue": None,
 }
+# Model decision 6 guards: one decision may never stop or turn a whole kingdom (SPEC §5.4, §6.6).
+MAX_DURATION_S = 600  # any consequence
+STRIKE_MAX_SHARE = 0.5  # a strike stops at most half of one occupation ...
+STRIKE_MAX_DURATION_S = 120  # ... for at most two minutes
+GROUP_PRODUCTIVITY_FLOOR = -0.5  # productivity on any group target (not speaker/family/friends)
+KINGDOM_LOYALTY_FLOOR = -5  # per decision: kingdom audience_loyalty + loyalty consequences on broad targets
+KINGDOM_STABILITY_FLOOR = -5  # per decision: stability column + stability consequences
+# Characters that are invisible or break a workbook (openpyxl refuses C0 controls).
+_INVISIBLE_NAMES = {0x2028: "line separator", 0x2029: "paragraph separator", 0x200B: "zero-width space",
+                    0x200C: "zero-width non-joiner", 0x200D: "zero-width joiner", 0x2060: "word joiner",
+                    0xFEFF: "zero-width no-break space", 0x7F: "delete", 0x09: "tab", 0x0A: "line break",
+                    0x0D: "carriage return", 0x0B: "vertical tab (Shift+Enter in Word)"}
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 TAG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -92,7 +119,7 @@ LUAU_KEYWORDS = frozenset(
 @dataclass(frozen=True)
 class Column:
     name: str
-    kind: str  # "key" | "mech" | "text" | "notes"
+    kind: str  # "key" | "mech" | "text" | "style" (presentation choice, edited with the text) | "notes"
     help: str
     limit: int | None = None
     required: bool = True  # must exist in the header
@@ -125,6 +152,8 @@ SPECS: tuple[TableSpec, ...] = (
         Column("priority", "mech", "1-100; higher is offered first"),
         Column("cooldown_s", "mech", "seconds before the same citizen raises it again"),
         Column("once_per_citizen", "mech", "true/false", choices="bools"),
+        Column("thought_icon", "style", "bubble icon: request | concern | idea (default request)", required=False,
+               choices="thought_icons"),
         Column("thought_text", "text", "thought bubble above the citizen", 48),
         Column("question_text", "text", "what the citizen says when selected", 160),
         Column("notes", "notes", "designer notes (not in game)"),
@@ -135,7 +164,10 @@ SPECS: tuple[TableSpec, ...] = (
         Column("order", "mech", "1-4 position in the menu"),
         Column("response_text", "text", "the ruler's answer", 70),
         Column("reaction_text", "text", "the citizen's reaction", 140),
+        Column("reaction_tone", "style", "how the reaction is shown: happy | angry | sad | neutral (default neutral)",
+               required=False, choices="reaction_tones"),
         Column("decision_id", "mech", "the mechanics this answer applies (decisions sheet)", choices="decision_ids"),
+        Column("notes", "notes", "designer notes (not in game)", required=False),
     ), "responses"),
     TableSpec("decisions", "dialogue/decisions.csv", (
         Column("decision_id", "key", "unique id of the decision"),
@@ -184,10 +216,12 @@ SPECS: tuple[TableSpec, ...] = (
         Column("hunger_sensitivity", "mech", "0.5-1.5"),
         Column("gossip", "mech", "0-2 how far news spreads from them"),
         Column("volatility", "mech", "0.5-1.5 how fast their mood swings"),
+        Column("notes", "notes", "designer notes (not in game)", required=False),
     ), "traits"),
     TableSpec("names", "citizens/names.csv", (
         Column("kind", "mech", "given_f | given_m | given_n | family", choices="name_kinds"),
         Column("name", "text", "a name", 16),
+        Column("notes", "notes", "designer notes (not in game)", required=False),
     ), "names"),
     TableSpec("occupations", "citizens/occupations.csv", (
         Column("occupation_id", "key", "unique id"),
@@ -204,6 +238,7 @@ SPECS: tuple[TableSpec, ...] = (
         Column("description_text", "text", "what it means", 160),
         Column("affects_text", "text", "what raises or lowers it, in plain words", 300),
         Column("start", "mech", "0-100 starting value"),
+        Column("notes", "notes", "designer notes (not in game)", required=False),
     ), "categories"),
     TableSpec("actions", "reputation/actions.csv", (
         Column("action_id", "key", "ruler action id (rows may repeat it, one per audience)"),
@@ -489,8 +524,12 @@ def load_tables(content_dir: Path, report: Report, overrides: dict[str, Table] |
 
 
 def _suggest(name: str, candidates) -> str:
-    match = difflib.get_close_matches(name, list(candidates), n=1, cutoff=0.7)
-    return f" (did you mean '{match[0]}'?)" if match else ""
+    """' (did you mean 'x'?)' for the closest candidate; compares case-insensitively, answers in its spelling."""
+    by_lower: dict[str, str] = {}
+    for c in candidates:
+        by_lower.setdefault(str(c).lower(), str(c))
+    match = difflib.get_close_matches(name.lower(), list(by_lower), n=1, cutoff=0.7)
+    return f" (did you mean '{by_lower[match[0]]}'?)" if match else ""
 
 
 # ----------------------------------------------------------------------------- condition language
@@ -523,6 +562,7 @@ STATIC_VARS: dict[str, VarSpec] = {
     "citizen.hunger": VarSpec("number", "citizen", 0, 1),
     "citizen.obedience": VarSpec("number", "citizen", 0, 100),
     "citizen.has_family": VarSpec("bool", "citizen"),
+    "citizen.has_friend": VarSpec("bool", "citizen"),
     "citizen.has_rival": VarSpec("bool", "citizen"),
     **{f"event.{e}": VarSpec("bool", "kingdom") for e in EVENT_TAGS},
 }
@@ -588,8 +628,10 @@ def parse_condition(text: str, vocab: Vocab, scope: str) -> tuple[list[dict], li
     text = text.strip()
     if text == "":
         return [], []
-    if re.search(r"\|\||\||\s(or|OR)\s", text):
+    if re.search(r"\|\||\||\s(or|OR|Or)\s", text):
         raise CondError("only AND is supported (join clauses with ' & '); for OR, write two rows")
+    if re.search(r"\s(and|AND|And)\s", text):
+        raise CondError("join clauses with ' & ' (not 'and'), e.g. 'kingdom.food < 50 & citizen.hunger > 0.5'")
     if "&&" in text:
         raise CondError("use a single '&' between clauses")
     clauses: list[dict] = []
@@ -601,6 +643,12 @@ def parse_condition(text: str, vocab: Vocab, scope: str) -> tuple[list[dict], li
             raise CondError(f"clause {k} is empty (a doubled or trailing '&')")
         if "==" in s:
             raise CondError(f"{where}: use '=' instead of '=='")
+        for wrong, right in (("=<", "<="), ("=>", ">="), ("≤", "<="), ("≥", ">="), ("≠", "!="), ("<>", "!=")):
+            if wrong in s:
+                raise CondError(f"{where}: write '{right}' instead of '{wrong}'")
+        m_not = re.fullmatch(rf"(?:not|NOT|Not)\s+({VAR_TOKEN})", s)
+        if m_not:
+            raise CondError(f"{where}: write '!{m_not.group(1)}' instead of 'not {m_not.group(1)}'")
         m_in = RE_IN.fullmatch(s)
         m_cmp = None if m_in else RE_CMP.fullmatch(s)
         m_bare = None if (m_in or m_cmp) else RE_BARE.fullmatch(s)
@@ -777,7 +825,9 @@ class Validator:
             return None
         return v
 
-    def p_text(self, table: Table, row: Row, col: str, required: bool = True) -> str | None:
+    def p_text(self, table: Table, row: Row, col: str, required: bool = True,
+               placeholders: tuple[str, ...] = ()) -> str | None:
+        """Player-facing text. `placeholders` lists the ones this column may use (SPEC §3); () = none."""
         spec = table.spec.col(col)
         v = row.get(col)
         if v.strip() == "":
@@ -794,10 +844,25 @@ class Validator:
         if spec is not None and spec.limit is not None and len(v) > spec.limit:
             self.err(table, row, col, f"text is {len(v)} characters; the limit is {spec.limit}")
             ok = False
-        for problem in _placeholder_problems(v):
+        for problem in _placeholder_problems(v, placeholders):
             self.err(table, row, col, problem)
             ok = False
+        if _invisible_problem(v, "text"):
+            ok = False  # reported once by v_cells
         return v if ok else None
+
+    def relation_guard(self, table: Table, row: Row, cols: tuple[str, ...], trigger: list[dict] | None,
+                       sid: str) -> None:
+        """{family} / {friend} / {rival} only when the scenario's trigger guarantees that relation (SPEC §3)."""
+        if trigger is None:
+            return
+        have = {c["var"] for c in trigger if c["op"] == "=" and c["value"] is True}
+        for col in cols:
+            for m in _PLACEHOLDER.finditer(row.get(col)):
+                flag = RELATION_FLAGS.get(m.group(1))
+                if flag and flag not in have:
+                    self.err(table, row, col, f"'{{{m.group(1)}}}' needs a {m.group(1)}: add '{flag}' to the "
+                                              f"trigger of scenario '{sid}', or the name could be missing in game")
 
     def p_list(self, table: Table, row: Row, col: str) -> list[str]:
         v = self.raw(row, col)
@@ -840,7 +905,21 @@ class Validator:
         return clauses
 
     # --- passes -------------------------------------------------------------
+    def v_cells(self) -> None:
+        """Invisible and control characters, in every cell of every table (they break the workbook)."""
+        for t in self.t.values():
+            if not t.usable:
+                continue
+            for row in t.rows:
+                for col in t.header:
+                    c = t.spec.col(col)
+                    problem = _invisible_problem(row.values.get(col, ""), c.kind if c else "mech")
+                    if problem:
+                        self.err(t, row, col, problem)
+
     def run(self) -> Model:
+        self.unlock_targets: set[str] = set()
+        self.v_cells()
         for key, col in KEY_COLUMN.items():
             self.collect_ids(key, col)
         self.vocab = Vocab(
@@ -1062,10 +1141,16 @@ class Validator:
             rng = CONSEQUENCE_MAGNITUDE.get(kind or "", None)
             magnitude = self.p_num(tt, row, "magnitude", rng[0] if rng else None, rng[1] if rng else None, 0)
             duration = self.p_int(tt, row, "duration_s", 0, None, 0)
+            if duration is not None and duration > MAX_DURATION_S:
+                self.err(tt, row, "duration_s", f"{duration} s is longer than the {MAX_DURATION_S} s limit (lasting "
+                                                "kingdom trouble comes from the sustained unrest rules, model "
+                                                "decision 6, never from one decision)")
+                duration = None
             delay = self.p_int(tt, row, "delay_s", 0, None, 0)
             chance = self.p_num(tt, row, "chance", 0, 1, 1, lo_open=True)
             cue = self.p_id(tt, row, "cue_id", required=False)
-            notice = self.p_text(tt, row, "notice_text", required=False)
+            notice = self.p_text(tt, row, "notice_text", required=False,
+                                 placeholders=("name", "ruler", "kingdom", "occupation") + MECHANICS_PLACEHOLDERS)
             param_raw = self.raw(row, "param")
             param: str | None = param_raw or None
             if kind == "resource_over_time":
@@ -1074,8 +1159,8 @@ class Validator:
             elif kind == "unlock_scenario":
                 if param_raw == "":
                     self.err(tt, row, "param", "unlock_scenario needs param = the scenario id to unlock")
-                else:
-                    self.ref(tt, row, "param", "scenarios", param_raw)
+                elif self.ref(tt, row, "param", "scenarios", param_raw):
+                    self.unlock_targets.add(param_raw)
             elif kind == "memory":
                 param = param_raw or cid
                 if not TAG_RE.match(param):
@@ -1087,15 +1172,49 @@ class Validator:
                 self.err(tt, row, "param", f"kind '{kind}' takes no param (leave it empty)")
             if kind in ("productivity", "strike", "resource_over_time") and duration == 0:
                 self.err(tt, row, "duration_s", f"kind '{kind}' needs duration_s > 0")
-            if kind == "strike" and target in ("kingdom", "civilians", "soldiers"):
-                self.err(tt, row, "target", "a single decision may not stop a whole kingdom, all civilians or all "
-                                            "soldiers (model decision 6); use unrest_pressure, or target speaker/"
-                                            "family/friends/occupation:<id>")
+            if kind == "strike" and target is not None:
+                self.strike_rules(tt, row, target, magnitude, duration)
+            if (kind == "productivity" and target is not None and target not in LOCAL_TARGETS
+                    and magnitude is not None and magnitude < GROUP_PRODUCTIVITY_FLOOR):
+                self.err(tt, row, "magnitude", f"{_fmt(magnitude)} would stop a whole group: productivity on "
+                                               f"'{target}' may fall at most to {_fmt(GROUP_PRODUCTIVITY_FLOOR)} "
+                                               "(model decision 6; a full walk-out is only for speaker/family/friends)")
+            if chance is not None and chance < 1:
+                if self.raw(row, "notice_text") == "":
+                    self.err(tt, row, "notice_text", f"chance {_fmt(chance)} is below 1, so the player must see the "
+                                                     "risk before choosing (model decision 7): write a notice_text "
+                                                     "with {chance}")
+                elif "{chance}" not in row.get("notice_text"):
+                    self.err(tt, row, "notice_text", "a risk must show its real odds: write {chance} in the text "
+                                                     "(the game fills in e.g. 50%) instead of a typed number")
             rec = {
                 "id": cid, "kind": kind, "target": target, "magnitude": magnitude, "duration_s": duration,
                 "delay_s": delay, "chance": chance, "param": param, "cue_id": cue, "notice": notice,
             }
             self.m.consequences[cid] = rec
+
+    def strike_rules(self, tt: Table, row: Row, target: str, magnitude, duration) -> None:
+        """Model decision 6 + CONTRACTS G13.3 (`strike { occupation, on }`): a decision may only start a short,
+        partial walk-out of one civilian occupation."""
+        if not target.startswith("occupation:"):
+            if target in BROAD_TARGETS:
+                msg = ("a single decision may not stop a whole kingdom, all civilians or all soldiers (model decision "
+                       "6); a strike targets one occupation:<id>, or use unrest_pressure")
+            else:
+                msg = ("a strike stops part of one occupation (CONTRACTS G13.3 sends strike { occupation }); for one "
+                       "citizen's walk-out use kind productivity with magnitude -1")
+            self.err(tt, row, "target", msg)
+            return
+        occ = target.split(":", 1)[1]
+        if (self.m.occupations.get(occ) or {}).get("job") == "soldier":
+            self.err(tt, row, "target", f"'{occ}' are soldiers: one decision may not make the army stop (model "
+                                        "decision 6); use morale or desertion_risk")
+        if magnitude is not None and magnitude > STRIKE_MAX_SHARE:
+            self.err(tt, row, "magnitude", f"a strike from one decision stops at most {_fmt(STRIKE_MAX_SHARE)} of the "
+                                           f"occupation (got {_fmt(magnitude)}; model decision 6)")
+        if duration is not None and duration > STRIKE_MAX_DURATION_S:
+            self.err(tt, row, "duration_s", f"a strike from one decision lasts at most {STRIKE_MAX_DURATION_S} s "
+                                            f"(got {duration}; model decision 6)")
 
     def anti_farm(self, table: Table, row: Row) -> tuple[str | None, Any, Any]:
         farm = self.p_id(table, row, "farm_key", required=False)
@@ -1178,7 +1297,34 @@ class Validator:
                 "memory_tag": memory,
                 "_farm_missing": farm is None,
             }
+            self.kingdom_caps(tt, row, rec)
             self.m.decisions[did] = rec
+
+    def kingdom_caps(self, tt: Table, row: Row, d: dict) -> None:
+        """Model decision 6: one answer may not push the whole kingdom towards rebellion (SPEC §6.6)."""
+        loyalty = (d["audience_loyalty"] or 0) if d["audience"] == "kingdom" else 0
+        stability = d["kingdom"]["stability"] or 0
+        from_consequences = {"loyalty": False, "stability": False}
+        for cid in d["consequences"]:
+            c = self.m.consequences.get(cid)
+            if c is None or c["magnitude"] is None:
+                continue
+            if c["kind"] == "loyalty" and c["target"] in BROAD_TARGETS:
+                loyalty += c["magnitude"]
+                from_consequences["loyalty"] = True
+            elif c["kind"] == "stability":
+                stability += c["magnitude"]
+                from_consequences["stability"] = True
+        if loyalty < KINGDOM_LOYALTY_FLOOR:
+            col = "consequences" if from_consequences["loyalty"] else "audience_loyalty"
+            self.err(tt, row, col, f"kingdom-wide loyalty {_fmt(loyalty)} is below {KINGDOM_LOYALTY_FLOOR} "
+                                   "(audience_loyalty with audience kingdom, plus loyalty consequences on kingdom, "
+                                   "civilians or soldiers): one decision may not turn the kingdom (model decision 6)")
+        if stability < KINGDOM_STABILITY_FLOOR:
+            col = "consequences" if from_consequences["stability"] else "stability"
+            self.err(tt, row, col, f"stability {_fmt(stability)} is below {KINGDOM_STABILITY_FLOOR} (the stability "
+                                   "column plus stability consequences): one decision may not push the kingdom "
+                                   "towards rebellion (model decision 6)")
 
     def v_scenarios(self) -> None:
         for tt, row, sid in self.keyed_rows("scenarios"):
@@ -1190,16 +1336,20 @@ class Validator:
                 occ_v = occ
             else:
                 occ_v = None
+            trigger = self.cond(tt, row, "trigger", "citizen")
             rec = {
                 "id": sid,
                 "occupation": occ_v,
-                "trigger": self.cond(tt, row, "trigger", "citizen"),
+                "trigger": trigger,
                 "priority": self.p_int(tt, row, "priority", 1, 100, None),
                 "cooldown_s": self.p_int(tt, row, "cooldown_s", 0, None, 0),
                 "once_per_citizen": self.p_bool(tt, row, "once_per_citizen", False),
-                "thought": self.p_text(tt, row, "thought_text"),
-                "question": self.p_text(tt, row, "question_text"),
+                "locked": sid in self.unlock_targets,  # offered only after an unlock_scenario consequence
+                "icon": self.p_enum(tt, row, "thought_icon", THOUGHT_ICONS, default="request"),
+                "thought": self.p_text(tt, row, "thought_text", placeholders=CITIZEN_PLACEHOLDERS),
+                "question": self.p_text(tt, row, "question_text", placeholders=CITIZEN_PLACEHOLDERS),
             }
+            self.relation_guard(tt, row, ("thought_text", "question_text"), trigger, sid)
             self.m.scenarios[sid] = rec
             self.m.scenario_order.append(sid)
 
@@ -1221,10 +1371,14 @@ class Validator:
             rec = {
                 "id": rid,
                 "order": self.p_int(tt, row, "order", 1, 4, None),
-                "text": self.p_text(tt, row, "response_text"),
-                "reaction": self.p_text(tt, row, "reaction_text"),
+                "text": self.p_text(tt, row, "response_text", placeholders=CITIZEN_PLACEHOLDERS),
+                "reaction": self.p_text(tt, row, "reaction_text", placeholders=CITIZEN_PLACEHOLDERS),
+                "tone": self.p_enum(tt, row, "reaction_tone", REACTION_TONES, default="neutral"),
                 "decision": did or None,
             }
+            scenario = self.m.scenarios.get(sid)
+            if scenario is not None:
+                self.relation_guard(tt, row, ("response_text", "reaction_text"), scenario["trigger"], sid)
             by_scenario.setdefault(sid, []).append((row, rec))
         for sid, items in by_scenario.items():
             seen: dict[int, int] = {}
@@ -1272,7 +1426,9 @@ class Validator:
                     "stability": self.p_int(t, row, "stability", *DELTA_RANGE),
                     "morale": self.p_int(t, row, "morale", *DELTA_RANGE),
                 },
-                "notice": self.p_text(t, row, "notice_text", required=False),
+                # history-log line: {ruler}/{kingdom} always; a citizen's name only when one citizen is the audience
+                "notice": self.p_text(t, row, "notice_text", required=False, placeholders=(
+                    ("ruler", "kingdom") + (("name", "occupation") if audience == "speaker" else ()))),
             }
             if audience is None and rec["audience_loyalty"] and self.raw(row, "audience") == "":
                 self.err(t, row, "audience_loyalty", "audience_loyalty needs an audience")
@@ -1331,16 +1487,42 @@ def _num_or_raise(v: str) -> float:
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 
 
-def _placeholder_problems(text: str) -> list[str]:
+def _placeholder_list(allowed: tuple[str, ...]) -> str:
+    if not allowed:
+        return "none: this text is not about one citizen"
+    return ", ".join("{" + p + "}" for p in allowed)
+
+
+def _placeholder_problems(text: str, allowed: tuple[str, ...] = ()) -> list[str]:
     problems = []
     for m in _PLACEHOLDER.finditer(text):
-        if m.group(1) not in PLACEHOLDERS:
-            problems.append(f"unknown placeholder '{{{m.group(1)}}}'{_suggest(m.group(1), PLACEHOLDERS)} "
-                            f"(allowed: {', '.join('{' + p + '}' for p in PLACEHOLDERS)})")
+        name = m.group(1)
+        if name not in PLACEHOLDERS:
+            problems.append(f"unknown placeholder '{{{name}}}'{_suggest(name, allowed or PLACEHOLDERS)} "
+                            f"(allowed here: {_placeholder_list(allowed)})")
+        elif name not in allowed:
+            problems.append(f"placeholder '{{{name}}}' cannot be used in this column "
+                            f"(allowed here: {_placeholder_list(allowed)})")
     stripped = _PLACEHOLDER.sub("", text)
     if "{" in stripped or "}" in stripped:
         problems.append("unbalanced '{' or '}' (placeholders look like {name})")
     return problems
+
+
+def _invisible_problem(value: str, kind: str) -> str | None:
+    """First invisible/control character in a cell, or None. Notes may hold tabs and line breaks; text reports
+    line breaks itself (p_text)."""
+    for i, ch in enumerate(value):
+        o = ord(ch)
+        if ch in "\n\r" and kind in ("notes", "text"):
+            continue
+        if ch == "\t" and kind == "notes":
+            continue
+        if o < 0x20 or o == 0x7F or 0x80 <= o <= 0x9F or o in _INVISIBLE_NAMES:
+            name = _INVISIBLE_NAMES.get(o, "control character")
+            return (f"invisible character U+{o:04X} ({name}) at position {i + 1}; delete it (it usually comes "
+                    "from copy-paste)")
+    return None
 
 
 def validate_tables(tables: dict[str, Table], report: Report) -> Model:
@@ -1354,25 +1536,104 @@ def summary_line(model: Model, errors: int) -> str:
 
 
 # ----------------------------------------------------------------------------- lint
+def _clause_ok(clause: dict, actual) -> bool:
+    op, value = clause["op"], clause["value"]
+    if isinstance(value, bool):
+        return bool(actual) == value if op == "=" else bool(actual) != value
+    if op == "in":
+        return actual in value
+    if op == "=":
+        return actual == value
+    if op == "!=":
+        return actual != value
+    if not isinstance(actual, (int, float)) or isinstance(actual, bool):
+        return False
+    return {"<": actual < value, "<=": actual <= value, ">": actual > value, ">=": actual >= value}.get(op, False)
+
+
+def sample_population(model: Model, occupation: str, n: int, rng) -> list[tuple[list[str], int]]:
+    """A stand-in for FORGE-01's generator (CONTRACTS G13.2): 2-3 traits weighted by the occupation's
+    trait_affinity (unlisted = 1, 0 = never), never an opposite pair, chemistry -20..+20. Used by lint only."""
+    traits = sorted(model.traits)
+    affinity = (model.occupations.get(occupation) or {}).get("trait_affinity", {})
+    out = []
+    for _ in range(n):
+        want = rng.choice((2, 3))
+        chosen: list[str] = []
+        while len(chosen) < want:
+            pool = [t for t in traits if t not in chosen and model.traits[t]["opposite"] not in chosen
+                    and affinity.get(t, 1) > 0]
+            if not pool:
+                break
+            chosen.append(rng.choices(pool, [affinity.get(t, 1) for t in pool])[0])
+        out.append((chosen, rng.randint(-20, 20)))
+    return out
+
+
+def speaker_loyalty(model: Model, d: dict, traits: list[str], chemistry: float) -> float:
+    """ContentQuery.decisionLoyalty(d, traits, "speaker", chemistry) at multiplier 1 (model decisions 3-4)."""
+    total = sum((model.traits[t]["weights"][c] or 0) * (d["rep"][c] or 0) for t in traits for c in CATEGORIES)
+    total += (d["speaker"]["loyalty"] or 0) + sum(d["trait_overrides"].get(t, 0) for t in traits)
+    return total * (1 + chemistry / 40) if total > 0 else total * (1 - chemistry / 40)
+
+
+def _scenario_sample(model: Model, sid: str, n: int = 400) -> list[tuple[list[str], int]]:
+    """Seeded sample of the citizens who can raise scenario `sid` (trait, occupation and chemistry clauses)."""
+    import random
+
+    s = model.scenarios[sid]
+    rng = random.Random(f"lint:{sid}")
+    occupations = sorted(model.occupations) if s["occupation"] == "any" else [s["occupation"]]
+    trigger = s["trigger"] or []
+    occ_clauses = [c for c in trigger if c["var"] == "occupation"]
+    occupations = [o for o in occupations if all(_clause_ok(c, o) for c in occ_clauses)]
+    out: list[tuple[list[str], int]] = []
+    for attempt in range(20):
+        for occ in occupations:
+            for traits, chem in sample_population(model, occ, max(1, n // max(1, len(occupations))), rng):
+                ok = True
+                for c in trigger:
+                    if c["var"].startswith("citizen.trait."):
+                        ok = ok and _clause_ok(c, c["var"][len("citizen.trait."):] in traits)
+                    elif c["var"] == "citizen.chemistry":
+                        ok = ok and _clause_ok(c, chem)
+                if ok:
+                    out.append((traits, chem))
+        if len(out) >= n // 2:
+            break
+    return out
+
+
+def _is_free(d: dict) -> bool:
+    return not d["cost"] and not any(v < 0 for v in d["resources"].values())
+
+
+def _rep_without_fear(d: dict) -> int:
+    return sum(d["rep"][c] or 0 for c in CATEGORIES if c != "fear")
+
+
 def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
     rows = model.rows
 
     def vector(d: dict) -> list[float]:
+        # Fear is neither good nor bad for the ruler (model rules), so it is left out of "better".
         net = [d["resources"].get(r, 0) - d["cost"].get(r, 0) for r in RESOURCES]
-        loyal = [d["speaker"]["loyalty"], d["family_loyalty"], d["friends_loyalty"], d["rivals_loyalty"],
-                 d["audience_loyalty"]]
-        return [d["rep"][c] for c in CATEGORIES] + loyal + net
+        loyal = [d["speaker"]["loyalty"], d["speaker"]["chemistry"], d["family_loyalty"], d["friends_loyalty"],
+                 d["rivals_loyalty"], d["audience_loyalty"] if d["audience"] != "none" else 0]
+        kingdom = [d["kingdom"][k] for k in ("happiness", "stability", "morale")]
+        return [d["rep"][c] for c in CATEGORIES if c != "fear"] + loyal + kingdom + net
 
     st = tables.get("scenarios")
     for sid, responses in model.responses.items():
         srow = rows.get(("scenarios", sid))
+        srownum = srow[1].num if srow else None
         decided = [(r, model.decisions.get(r["decision"] or "")) for r in responses]
         if any(d is None for _, d in decided) or len(decided) < 2:
             continue
         seen_dec: dict[str, str] = {}
         for r, _ in decided:
             if r["decision"] in seen_dec:
-                report.warn(st, srow[1].num if srow else None, "scenario_id",
+                report.warn(st, srownum, "scenario_id",
                             f"responses '{seen_dec[r['decision']]}' and '{r['id']}' of '{sid}' share decision "
                             f"'{r['decision']}' (the choice has no mechanical difference)")
             seen_dec[r["decision"]] = r["id"]
@@ -1380,47 +1641,102 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
         for r, v in vecs:
             others = [w for o, w in vecs if o is not r]
             if all(all(a >= b for a, b in zip(v, w)) for w in others) and any(v != w for w in others):
-                report.warn(st, srow[1].num if srow else None, "scenario_id",
+                report.warn(st, srownum, "scenario_id",
                             f"response '{r['id']}' ({r['decision']}) is at least as good as every other answer of "
-                            f"'{sid}' on all reputation, loyalty and resource columns (no real trade-off)")
+                            f"'{sid}' on every reputation (fear aside), loyalty, chemistry, kingdom and resource "
+                            "column (no real trade-off)")
+        # The personality reaction is most of a speaker's loyalty change: score each answer over a seeded sample
+        # of the citizens who can raise this scenario, with ContentQuery's formula.
+        sample = _scenario_sample(model, sid) if model.scenarios.get(sid) else []
+        if sample:
+            best = [0] * len(decided)
+            for traits, chem in sample:
+                scores = [speaker_loyalty(model, d, traits, chem) for _, d in decided]
+                best[scores.index(max(scores))] += 1
+            top_rep = max(_rep_without_fear(d) for _, d in decided)
+            for k, (r, d) in enumerate(decided):
+                share = best[k] / len(sample)
+                if _is_free(d) and share > 0.8 and _rep_without_fear(d) >= top_rep:
+                    report.warn(st, srownum, "scenario_id",
+                                f"free answer '{r['id']}' ({r['decision']}) is the best speaker-loyalty choice for "
+                                f"{share:.0%} of sampled citizens of '{sid}' and also has the highest reputation sum "
+                                "(fear aside): the paid answers are rarely worth it")
     for did, d in model.decisions.items():
         t, row = rows[("decisions", did)]
-        rep_sum = sum(d["rep"][c] or 0 for c in CATEGORIES)
+        rep_sum = _rep_without_fear(d)
         if not d["cost"] and rep_sum > 6:
-            report.warn(t, row.num, "cost", f"free decision '{did}' gives +{rep_sum} reputation in total (> 6); "
-                                            "add a cost or a downside")
+            report.warn(t, row.num, "cost", f"free decision '{did}' gives +{rep_sum} reputation in total, fear "
+                                            "aside (> 6); add a cost or a downside")
         if d.get("_farm_missing"):
             report.warn(t, row.num, "farm_key", f"no farm_key: repeats of '{did}' only decay as their own group")
         if did not in model.referenced_decisions:
             report.warn(t, row.num, "decision_id", f"decision '{did}' is not used by any response")
+    used_unlocks: set[str] = set()
+    for d in model.decisions.values():
+        for cid in d["consequences"]:
+            c = model.consequences.get(cid)
+            if c and c["kind"] == "unlock_scenario" and c["param"]:
+                used_unlocks.add(c["param"])
     for cid, c in model.consequences.items():
         t, row = rows[("consequences", cid)]
-        if c["chance"] is not None and c["chance"] < 1 and not c["notice"]:
-            report.warn(t, row.num, "notice_text", f"chance {c['chance']} < 1 without notice_text: the risk must be "
-                                                   "shown to the player")
         if cid not in model.referenced_consequences:
             report.warn(t, row.num, "consequence_id", f"consequence '{cid}' is not used by any decision")
+        if c["cue_id"] and c["cue_id"] not in CUE_IDS:
+            report.warn(t, row.num, "cue_id", f"cue '{c['cue_id']}' is not in the cue vocabulary "
+                                              f"({', '.join(CUE_IDS)}; SPEC §5.4): FORGE-04 must add it")
+        if c["notice"] and re.search(r"\d", c["notice"]):
+            report.warn(t, row.num, "notice_text", "the notice types a number: write {chance}, {magnitude}, "
+                                                   "{magnitude_pct} or {duration} so it stays right when the "
+                                                   "mechanics change")
     for sid, s in model.scenarios.items():
         t, row = rows[("scenarios", sid)]
         if s["once_per_citizen"] is False and s["cooldown_s"] == 0:
             report.warn(t, row.num, "cooldown_s", f"scenario '{sid}' repeats with no cooldown (dialogue farming)")
+        if s["locked"] and sid not in used_unlocks:
+            report.warn(t, row.num, "scenario_id", f"scenario '{sid}' is locked, but no decision uses a consequence "
+                                                   "that unlocks it: it can never be offered")
     farm_warned: set[str] = set()
+    events: dict[str, list[int]] = {}
+    event_rows: dict[str, tuple[Table, Row]] = {}
     for (t, row), a in zip(model.action_rows, model.actions):
         name = (a["event"] or "").split(":")[0]
-        if a["event"] and name not in KNOWN_EVENTS:
-            report.warn(t, row.num, "event", f"event '{name}' is not a known game event (SPEC §8); FORGE-01 must fire it")
+        if a["event"] and name not in BUS_EVENTS:
+            events.setdefault(name, []).append(row.num)
+            event_rows.setdefault(name, (t, row))
         if name in CONSTRUCTION_EVENTS and not a["condition"] and any((a["rep"][c] or 0) > 0 for c in CATEGORIES):
             report.warn(t, row.num, "condition", "construction gives reputation without a measured need "
                                                  "(model decision 5: set a condition such as kingdom.housing_ratio > 0.9)")
         if a.get("_farm_missing") and a["id"] not in farm_warned:
             farm_warned.add(a["id"])
             report.warn(t, row.num, "farm_key", f"no farm_key on action '{a['id']}'")
+        if a["notice"] and re.search(r"\d", a["notice"]):
+            report.warn(t, row.num, "notice_text", "the notice types a number; numbers belong in the mechanics "
+                                                   "columns, so the text cannot go stale")
+    for name, nums in events.items():
+        t, row = event_rows[name]
+        report.warn(t, row.num, "event", f"event '{name}' (rows {', '.join(map(str, nums))}) is not a CONTRACTS G9 bus "
+                                         "event: it is a proposed reputation trigger (SPEC §8) that needs a contract "
+                                         "(FORGE-00) and FORGE-01 must fire it")
     known_memories = set(SYSTEM_MEMORIES)
-    known_memories |= {d["memory_tag"] for d in model.decisions.values() if d["memory_tag"]}
-    known_memories |= {c["param"] for c in model.consequences.values() if c["kind"] == "memory" and c["param"]}
+    setters: dict[str, tuple[Table, int, str]] = {}
+    for did, d in model.decisions.items():
+        if d["memory_tag"]:
+            known_memories.add(d["memory_tag"])
+            t, row = rows[("decisions", did)]
+            setters.setdefault(d["memory_tag"], (t, row.num, "memory_tag"))
+    for cid, c in model.consequences.items():
+        if c["kind"] == "memory" and c["param"]:
+            known_memories.add(c["param"])
+            t, row = rows[("consequences", cid)]
+            setters.setdefault(c["param"], (t, row.num, "param"))
+    read = {tag for _, _, _, tag in model.memory_uses}
     for t, rownum, col, tag in model.memory_uses:
         if tag not in known_memories:
             report.warn(t, rownum, col, f"memory '{tag}' is never set by a decision memory_tag or a memory consequence")
+    for tag, (t, rownum, col) in setters.items():
+        if tag not in read:
+            report.warn(t, rownum, col, f"memory '{tag}' is set but no trigger reads it (fine as flavour for the "
+                                        "citizen card; a promise needs a follow-up scenario that reads it)")
     for role, items in model.key_role_rows.items():
         if len(items) > 1:
             for t, row in items[1:]:
@@ -1695,12 +2011,20 @@ def cmd_fmt(args) -> int:
 
 
 # ----------------------------------------------------------------------------- workbook
-FILL = {"text_head": "FFE699", "text": "FFF2CC", "mech_head": "BFBFBF", "mech": "EDEDED", "key_head": "A6A6A6",
-        "key": "E0E0E0", "notes_head": "FFFFFF"}
+FILL = {"text_head": "FFE699", "text": "FFF2CC", "style_head": "FFE699", "style": "FFF2CC", "mech_head": "BFBFBF",
+        "mech": "EDEDED", "key_head": "A6A6A6", "key": "E0E0E0", "notes_head": "FFFFFF", "info_head": "BDD7EE",
+        "info": "DDEBF7"}
 CONDITION_COLUMNS = ("trigger", "condition", "audience_condition")
 LIST_SHEET = "lists"
 README_SHEET = "README"
 MAX_ROWS = 2000  # validations cover this many rows so new rows get dropdowns too
+STAMP_HEADERS = ("stamp_file", "stamp_sha256")  # export stamp in the hidden lists sheet (stale-workbook check)
+# Read-only helper columns: export-xlsx fills them in, import-xlsx ignores them.
+INFO_COLUMNS = {"responses": ("info: question", "info: effects")}
+EDITABLE_KINDS = ("text", "style", "notes")  # what import-xlsx --text-only takes from the workbook
+# Tables without a unique key are matched by position; these columns must agree for --text-only.
+POSITION_IDENTITY = {"names": ("kind",), "actions": ("action_id", "event", "audience")}
+CHANGE_LINES = 200  # import-xlsx prints at most this many change lines
 
 
 def _require_openpyxl():
@@ -1717,14 +2041,70 @@ def _raw_tables(content_dir: Path) -> tuple[dict[str, Table], Report]:
     return tables, report
 
 
+def _sha256(path: Path) -> str | None:
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+
 def _column_comment(spec: TableSpec, col: Column) -> str:
     if col.kind == "text":
         limit = f" Max {col.limit} characters." if col.limit else ""
-        return f"EDIT — player-facing text: {col.help}.{limit} Placeholders: " + " ".join(
-            "{" + p + "}" for p in PLACEHOLDERS) + "."
+        allowed = _column_placeholders(spec.key, col.name)
+        ph = f" Placeholders: {_placeholder_list(allowed)}." if allowed else " No placeholders here."
+        return (f"EDIT — player-facing text: {col.help}.{limit}{ph} Do not type numbers that the mechanics decide.")
+    if col.kind == "style":
+        return f"EDIT — presentation, pick from the dropdown: {col.help}."
     if col.kind == "notes":
         return f"NOTES — {col.help}. Free text, never shown in game."
     return f"MECHANICS — {col.help}. Changes gameplay; see content/SPEC.md before editing."
+
+
+def _column_placeholders(table: str, col: str) -> tuple[str, ...]:
+    """The placeholders a TEXT column accepts (SPEC §3); mirrors the Validator."""
+    if table in ("scenarios", "responses"):
+        return CITIZEN_PLACEHOLDERS
+    if table == "consequences" and col == "notice_text":
+        return ("name", "ruler", "kingdom", "occupation") + MECHANICS_PLACEHOLDERS
+    if table == "actions" and col == "notice_text":
+        return ("ruler", "kingdom", "name", "occupation")  # name/occupation only when the audience is speaker
+    return ()
+
+
+def _signed(v: str) -> str:
+    v = v.strip()
+    return v if v[:1] in "+-" else f"+{v}"
+
+
+def _decision_summary(r: Row) -> str:
+    """One line for the read-only 'info: effects' column (raw cells, so it works on an invalid library too)."""
+    parts = [f"cost {r.get('cost').strip()}" if r.get("cost").strip() else "free"]
+    if r.get("resource_effects").strip():
+        parts.append(f"resources {r.get('resource_effects').strip()}")
+    rep = [f"{c} {_signed(r.get(f'rep_{c}'))}" for c in CATEGORIES
+           if r.get(f"rep_{c}").strip() not in ("", "0", "+0", "-0")]
+    if rep:
+        parts.append("rep " + ", ".join(rep))
+    for col, label in (("speaker_loyalty", "speaker"), ("family_loyalty", "family"), ("audience_loyalty", "audience")):
+        if r.get(col).strip() not in ("", "0", "+0", "-0"):
+            parts.append(f"{label} {_signed(r.get(col))}")
+    if r.get("consequences").strip():
+        parts.append("then " + ", ".join(x.strip() for x in r.get("consequences").split(";") if x.strip()))
+    return " | ".join(parts)
+
+
+def _info_columns(tables: dict[str, Table]) -> dict[str, Callable[[Row], list[str]]]:
+    questions = {r.get("scenario_id").strip(): r.get("question_text") for r in
+                 (tables["scenarios"].rows if tables.get("scenarios") else [])}
+    effects = {r.get("decision_id").strip(): _decision_summary(r) for r in
+               (tables["decisions"].rows if tables.get("decisions") else [])}
+
+    def responses(row: Row) -> list[str]:
+        did = row.get("decision_id").strip()
+        return [questions.get(row.get("scenario_id").strip(), ""),
+                effects.get(did, f"(unknown decision '{did}')" if did else "")]
+
+    return {"responses": responses}
 
 
 def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
@@ -1732,6 +2112,7 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
     from openpyxl import Workbook
     from openpyxl.comments import Comment
     from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils.exceptions import IllegalCharacterError
     from openpyxl.worksheet.datavalidation import DataValidation
 
     tables, report = _raw_tables(content_dir)
@@ -1751,6 +2132,8 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
         "key_roles": list(KEY_ROLES),
         "name_kinds": list(NAME_KINDS),
         "bools": ["true", "false"],
+        "thought_icons": list(THOUGHT_ICONS),
+        "reaction_tones": list(REACTION_TONES),
     }
     live = {"decision_ids": ("decisions", "decision_id"), "scenario_ids": ("scenarios", "scenario_id"),
             "trait_ids": ("traits", "trait_id")}
@@ -1766,6 +2149,13 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
         for j, v in enumerate(values, 2):
             list_ws.cell(row=j, column=i, value=v).number_format = "@"
         list_ref[name] = f"{LIST_SHEET}!${letter}$2:${letter}${max(2, len(values) + 1)}"
+    # export stamp: which CSV bytes this workbook was made from (import-xlsx refuses stale mechanics)
+    stamp_col = len(lists) + 1
+    list_ws.cell(row=1, column=stamp_col, value=STAMP_HEADERS[0])
+    list_ws.cell(row=1, column=stamp_col + 1, value=STAMP_HEADERS[1])
+    for j, spec in enumerate(SPECS, 2):
+        list_ws.cell(row=j, column=stamp_col, value=spec.path)
+        list_ws.cell(row=j, column=stamp_col + 1, value=_sha256(content_dir / spec.path) or "")
     for name, (sheet, col) in live.items():
         if col in headers[sheet]:
             letter = _col_letter(headers[sheet].index(col) + 1)
@@ -1774,11 +2164,14 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
 
     bold = Font(bold=True)
     top_wrap = Alignment(wrap_text=True, vertical="top")
+    info_of = _info_columns(tables)
+    illegal = 0
     for spec in SPECS:
         ws = wb.create_sheet(spec.key)
         t = tables.get(spec.key)
         header = headers[spec.key]
         rows = t.rows if t is not None else []
+        info = INFO_COLUMNS.get(spec.key, ()) if t is not None else ()
         for ci, name in enumerate(header, 1):
             col = spec.col(name)
             kind = col.kind if col else "mech"
@@ -1788,20 +2181,44 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
             cell.number_format = "@"
             if col is not None:
                 comment = Comment(_column_comment(spec, col), "content.py")
-                comment.width, comment.height = 320, 110
+                comment.width, comment.height = 320, 120
                 cell.comment = comment
+        for k, name in enumerate(info, len(header) + 1):
+            cell = ws.cell(row=1, column=k, value=name)
+            cell.font = bold
+            cell.fill = PatternFill("solid", fgColor=FILL["info_head"])
+            comment = Comment("READ ONLY — filled in by export-xlsx to help you edit; import-xlsx ignores this "
+                              "column.", "content.py")
+            comment.width, comment.height = 320, 60
+            cell.comment = comment
         for ri, row in enumerate(rows, 2):
             for ci, name in enumerate(header, 1):
                 value = row.values.get(name, "")
                 col = spec.col(name)
                 kind = col.kind if col else "mech"
-                cell = ws.cell(row=ri, column=ci, value=value if value != "" else None)
+                try:
+                    cell = ws.cell(row=ri, column=ci, value=value if value != "" else None)
+                except IllegalCharacterError:
+                    problem = _invisible_problem(value, "mech") or "a character a workbook cannot hold"
+                    report.error(t, row.num, name, f"cannot export: {problem}")
+                    illegal += 1
+                    continue
                 if value.startswith("="):
                     cell.data_type = "s"  # never a formula
                 cell.number_format = "@"
                 if kind in FILL:
                     cell.fill = PatternFill("solid", fgColor=FILL[kind])
                 cell.alignment = top_wrap
+            if info:
+                for k, value in enumerate(info_of[spec.key](row), len(header) + 1):
+                    try:
+                        cell = ws.cell(row=ri, column=k, value=value or None)
+                    except IllegalCharacterError:
+                        continue  # the source cell is reported above
+                    cell.data_type = "s"
+                    cell.number_format = "@"
+                    cell.fill = PatternFill("solid", fgColor=FILL["info"])
+                    cell.alignment = top_wrap
         # widths
         for ci, name in enumerate(header, 1):
             col = spec.col(name)
@@ -1811,9 +2228,11 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
             else:
                 width = min(max(longest + 2, 8), 40)
             ws.column_dimensions[_col_letter(ci)].width = round(width, 1)
+        for k in range(len(header) + 1, len(header) + len(info) + 1):
+            ws.column_dimensions[_col_letter(k)].width = 50
         ws.freeze_panes = "B2"
         if rows:
-            ws.auto_filter.ref = f"A1:{_col_letter(len(header))}{len(rows) + 1}"
+            ws.auto_filter.ref = f"A1:{_col_letter(len(header) + len(info))}{len(rows) + 1}"
         # validations
         for ci, name in enumerate(header, 1):
             col = spec.col(name)
@@ -1822,7 +2241,7 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
             rng = f"{_col_letter(ci)}2:{_col_letter(ci)}{MAX_ROWS}"
             if col.choices and col.choices in list_ref:
                 strict = col.choices in ("consequence_kinds", "jobs", "key_roles", "name_kinds", "bools",
-                                         "decision_audiences")
+                                         "decision_audiences", "thought_icons", "reaction_tones")
                 dv = DataValidation(type="list", formula1=list_ref[col.choices], allow_blank=True,
                                     errorStyle="stop" if strict else "warning",
                                     error=f"Pick a value from the list ({name}).", errorTitle=name,
@@ -1836,6 +2255,8 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
                                     promptTitle="EDIT", prompt=f"Max {col.limit} characters", showInputMessage=True)
                 dv.add(rng)
                 ws.add_data_validation(dv)
+    if illegal:
+        return 1, report
     _write_readme(readme, headers)
     wb.active = 0
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1864,16 +2285,23 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         ("HOW TO EDIT", "head"),
         ("1. Change text only in YELLOW columns (marked EDIT in the header comment). Stay within the character limit.", ""),
         ("2. GREY columns are mechanics (ids, numbers, conditions). Changing them changes gameplay — see SPEC.md first.", ""),
-        ("3. WHITE columns are notes for designers; they never reach the game.", ""),
-        ("4. Never rename sheets or header cells, and never add new sheets. Add rows at the bottom of a sheet.", ""),
-        ("5. Ids link sheets together: responses.decision_id must exist in decisions, and so on. Use the dropdowns.", ""),
-        ("6. Placeholders the game fills in: {name} {ruler} {kingdom} {occupation} {family} {friend} {rival}.", ""),
-        ("7. Keep cells as Text. Write true/false in lower case and lists like food:-20;gold:5.", ""),
+        ("3. WHITE columns are notes for designers; they never reach the game. BLUE columns are read-only help.", ""),
+        ("4. Never rename sheets or header cells, never add or remove columns or sheets. Add rows at the bottom.", ""),
+        ("5. Sorting and filtering are fine: the import puts rows back in their original order.", ""),
+        ("6. Ids link sheets together: responses.decision_id must exist in decisions, and so on. Use the dropdowns.", ""),
+        ("7. Placeholders the game fills in: {name} {ruler} {kingdom} {occupation}; {family} {friend} {rival} only "
+         "when the scenario's trigger requires that relation. Hover a header to see which ones a column accepts.", ""),
+        ("8. Never type numbers the mechanics decide (odds, durations, amounts). In consequence notices write "
+         "{chance}, {magnitude}, {magnitude_pct} or {duration}.", ""),
+        ("9. Keep cells as Text. Write true/false in lower case and lists like food:-20;gold:5.", ""),
         ("", ""),
         ("HAND IT BACK", "head"),
         ("Save as .xlsx (same name is fine) and give the file back, or run:", ""),
-        ("    python3 tools/content/content.py import-xlsx <file.xlsx> --build", "code"),
+        ("    python3 tools/content/content.py import-xlsx <file.xlsx> --text-only --build", "code"),
+        ("--text-only takes only the yellow and white columns, so mechanics can never change by accident (safest).", ""),
+        ("Without it, grey columns are imported too, but only if nobody changed the CSV files since this export.", ""),
         ("The import checks everything first and changes nothing if it finds an error; errors name the sheet and cell.", ""),
+        ("It always lists every change it made, split into TEXT, MECHANICS and NOTES.", ""),
         ("", ""),
         ("COLUMNS", "head"),
     ]
@@ -1894,7 +2322,8 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         c.font = Font(bold=True)
         c.fill = head_fill
     r += 1
-    kind_label = {"text": "EDIT (text)", "mech": "mechanics", "key": "id (mechanics)", "notes": "notes"}
+    kind_label = {"text": "EDIT (text)", "style": "EDIT (choice)", "mech": "mechanics", "key": "id (mechanics)",
+                  "notes": "notes"}
     for spec in SPECS:
         for name in headers[spec.key]:
             col = spec.col(name)
@@ -1903,7 +2332,7 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
             values = (spec.key, col.name, kind_label[col.kind], col.limit, col.help)
             for ci, v in enumerate(values, 1):
                 cell = ws.cell(row=r, column=ci, value=v)
-                if col.kind == "text":
+                if col.kind in ("text", "style"):
                     cell.fill = PatternFill("solid", fgColor=FILL["text"])
             r += 1
     for letter, width in zip("ABCDE", (16, 20, 16, 7, 90)):
@@ -1928,7 +2357,20 @@ def _cell_text(value: Any) -> str:
     return str(value)
 
 
-def read_workbook(path: Path, report: Report) -> dict[str, Table]:
+def _read_stamps(ws) -> dict[str, str] | None:
+    header = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
+    if STAMP_HEADERS[0] not in header or STAMP_HEADERS[1] not in header:
+        return None
+    fi, si = header.index(STAMP_HEADERS[0]), header.index(STAMP_HEADERS[1])
+    stamps: dict[str, str] = {}
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if fi < len(row) and row[fi]:
+            stamps[str(row[fi]).strip()] = str(row[si]).strip() if si < len(row) and row[si] else ""
+    return stamps
+
+
+def read_workbook(path: Path, report: Report) -> tuple[dict[str, Table], dict[str, str] | None]:
+    """The table sheets (info columns dropped) and the export stamp ({csv path: sha256}, None when absent)."""
     _require_openpyxl()
     from openpyxl import load_workbook
 
@@ -1937,10 +2379,14 @@ def read_workbook(path: Path, report: Report) -> dict[str, Table]:
         wb = load_workbook(path, data_only=True)
     except Exception as e:  # noqa: BLE001 - any unreadable file
         report.add("error", None, None, None, f"cannot open workbook: {e}", source=source)
-        return {}
+        return {}, None
     tables: dict[str, Table] = {}
+    stamps: dict[str, str] | None = None
     for ws in wb.worksheets:
-        if ws.title in (README_SHEET, LIST_SHEET):
+        if ws.title == LIST_SHEET:
+            stamps = _read_stamps(ws)
+            continue
+        if ws.title == README_SHEET:
             continue
         spec = SPEC_BY_KEY.get(ws.title)
         if spec is None:
@@ -1963,22 +2409,213 @@ def read_workbook(path: Path, report: Report) -> dict[str, Table]:
         if not records:
             report.add("error", None, None, None, f"sheet '{ws.title}' is empty (it needs its header row)", source=source)
             continue
+        info = INFO_COLUMNS.get(ws.title, ())
+        drop = {i for i, h in enumerate(records[0][1]) if h.strip() in info}
+        if drop:
+            records = [(n, [v for i, v in enumerate(cells) if i not in drop]) for n, cells in records]
         table = table_from_records(spec, source, records, report, sheet=ws.title)
         tables[spec.key] = table
-    return tables
+    return tables, stamps
 
 
-def import_xlsx(path: Path, content_dir: Path) -> tuple[int, Report, list[str], Model | None]:
+# --- import: order, diff, merge
+@dataclass
+class Change:
+    kind: str  # "TEXT" | "MECHANICS" | "NOTES"
+    sheet: str
+    label: str  # row key, or "row N" for tables without a key
+    column: str | None
+    old: str | None  # None: the row is new
+    new: str | None  # None: the row was removed
+    row: int | None = None  # workbook row, for error locations
+    applied: bool = True
+
+    def describe(self) -> str:
+        where = f"{self.sheet} › {self.label}" + (f" [{self.column}]" if self.column else "")
+        if self.old is None:
+            return f"{where}: new row"
+        if self.new is None:
+            return f"{where}: row removed"
+        return f"{where}: {_short(self.old)} → {_short(self.new)}"
+
+
+def _short(s: str, limit: int = 70) -> str:
+    s = s if len(s) <= limit else s[: limit - 1] + "…"
+    return '""' if s == "" else repr(s)
+
+
+def _change_kind(spec: TableSpec, col: str) -> str:
+    c = spec.col(col)
+    if c is not None and c.kind in ("text", "style"):
+        return "TEXT"
+    if c is not None and c.kind == "notes":
+        return "NOTES"
+    return "MECHANICS"
+
+
+def _row_key(spec: TableSpec, row: Row) -> str | None:
+    key = KEY_COLUMN.get(spec.key)
+    return row.get(key).strip() or None if key else None
+
+
+def _restore_order(spec: TableSpec, cur: Table, rows: list[Row]) -> list[Row]:
+    """Undo a sort in the workbook: keyed rows go back to their CSV order (new ids at the end, in workbook order).
+    A table without a key is restored only when its rows are a pure permutation of the CSV rows."""
+    key = KEY_COLUMN.get(spec.key)
+    if key:
+        position = {}
+        for i, r in enumerate(cur.rows):
+            position.setdefault(r.get(key).strip(), i)
+        placed: dict[str, Row] = {}
+        rest: list[Row] = []
+        for r in rows:
+            k = r.get(key).strip()
+            if k in position and k not in placed:
+                placed[k] = r
+            else:
+                rest.append(r)
+        return sorted(placed.values(), key=lambda r: position[r.get(key).strip()]) + rest
+    cols = cur.header
+
+    def sig(r: Row) -> tuple[str, ...]:
+        return tuple(r.values.get(c, "") for c in cols)
+
+    from collections import Counter
+
+    if Counter(sig(r) for r in rows) != Counter(sig(r) for r in cur.rows):
+        return rows
+    pool: dict[tuple[str, ...], deque[Row]] = {}
+    for r in rows:
+        pool.setdefault(sig(r), deque()).append(r)
+    return [pool[sig(r)].popleft() for r in cur.rows]
+
+
+def _match_rows(spec: TableSpec, cur_rows: list[Row], wb_rows: list[Row]):
+    """(pairs [(cur, wb, label)], added [(wb, label)], removed [(cur, label)]): by key, else by position."""
+    pairs, added, removed = [], [], []
+    if KEY_COLUMN.get(spec.key):
+        by_key: dict[str, Row] = {}
+        for r in cur_rows:
+            k = _row_key(spec, r)
+            if k is not None:
+                by_key.setdefault(k, r)
+        matched: set[str] = set()
+        for w in wb_rows:
+            k = _row_key(spec, w)
+            if k is not None and k in by_key and k not in matched:
+                matched.add(k)
+                pairs.append((by_key[k], w, k))
+            else:
+                added.append((w, k or f"row {w.num}"))
+        removed = [(r, k) for k, r in by_key.items() if k not in matched]
+        return pairs, added, removed
+    for i in range(max(len(cur_rows), len(wb_rows))):
+        if i < len(cur_rows) and i < len(wb_rows):
+            pairs.append((cur_rows[i], wb_rows[i], f"row {i + 2}"))
+        elif i < len(wb_rows):
+            added.append((wb_rows[i], f"row {i + 2}"))
+        else:
+            removed.append((cur_rows[i], f"row {i + 2}"))
+    return pairs, added, removed
+
+
+def _diff_table(spec: TableSpec, cur: Table, wb: Table) -> list[Change]:
+    changes: list[Change] = []
+    if set(cur.header) != set(wb.header):
+        changes.append(Change("MECHANICS", spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header)))
+    cols = list(dict.fromkeys([*cur.header, *wb.header]))
+    pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
+    for c_row, w_row, label in pairs:
+        for col in cols:
+            a, b = c_row.values.get(col, ""), w_row.values.get(col, "")
+            if a != b:
+                changes.append(Change(_change_kind(spec, col), spec.key, label, col, a, b, w_row.num))
+    changes += [Change("MECHANICS", spec.key, label, None, None, "", w.num) for w, label in added]
+    changes += [Change("MECHANICS", spec.key, label, None, "", None) for _, label in removed]
+    return changes
+
+
+def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[Row] | None, str | None]:
+    """The current CSV rows with only the TEXT, choice and notes cells taken from the workbook."""
+    pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
+    if not KEY_COLUMN.get(spec.key):
+        ident = POSITION_IDENTITY.get(spec.key, ())
+        moved = any(c.values.get(k, "").strip() != w.values.get(k, "").strip() for c, w, _ in pairs for k in ident)
+        if added or removed or moved:
+            return None, (f"rows were added, removed or moved in sheet '{spec.key}', so --text-only cannot match "
+                          "them to the CSV: undo that, or import without --text-only")
+    take = {c.name for c in spec.columns if c.kind in EDITABLE_KINDS} & set(wb.header)
+    by_cur = {id(c): w for c, w, _ in pairs}
+    out = []
+    for c in cur.rows:
+        w = by_cur.get(id(c))
+        if w is None:
+            out.append(c)
+            continue
+        values = {col: (w.values.get(col, "") if col in take else c.values.get(col, "")) for col in cur.header}
+        out.append(Row(w.num, values))
+    return out, None
+
+
+@dataclass
+class ImportResult:
+    code: int
+    report: Report
+    written: list[str]
+    model: Model | None
+    changes: list[Change]
+
+
+def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> ImportResult:
     report = Report()
-    sheets = read_workbook(path, report)
+    sheets, stamps = read_workbook(path, report)
     if report.errors:
-        return 1, report, [], None
-    tables = load_tables(content_dir, report, overrides=sheets)
+        return ImportResult(1, report, [], None, [])
+    changes: list[Change] = []
+    merged: dict[str, Table] = {}
+    for key, wbt in sheets.items():
+        spec = SPEC_BY_KEY[key]
+        cur = load_csv_table(spec, content_dir, Report())
+        if cur is None or not cur.usable or not wbt.usable:
+            if text_only:
+                report.add("error", wbt, None, None, f"--text-only needs a readable {spec.path} to merge into")
+                continue
+            merged[key] = wbt  # nothing to compare with: validation below has the last word
+            continue
+        wbt.rows = _restore_order(spec, cur, wbt.rows)
+        diff = _diff_table(spec, cur, wbt)
+        changes += diff
+        if text_only:
+            rows, problem = _text_only_rows(spec, cur, wbt)
+            if rows is None:
+                report.add("error", wbt, None, None, problem or "cannot merge")
+                continue
+            for c in diff:
+                c.applied = c.kind != "MECHANICS"
+            merged[key] = Table(spec, wbt.source, list(cur.header), rows, sheet=wbt.sheet)
+            continue
+        stale = None
+        if stamps is None:
+            stale = "this workbook has no export stamp (made by an older tool or by hand)"
+        elif stamps.get(spec.path) != _sha256(content_dir / spec.path):
+            stale = f"{spec.path} changed after this workbook was exported"
+        mechanics = [c for c in diff if c.kind == "MECHANICS"]
+        if stale and mechanics:
+            for c in mechanics:
+                c.applied = False
+                report.add("error", wbt, c.row, c.column,
+                           f"{c.describe()} — refused: {stale}, so this would overwrite newer mechanics. Export a "
+                           "fresh workbook and redo the change, or import with --text-only to take only the text")
+            continue
+        merged[key] = wbt
+    if report.errors:
+        return ImportResult(1, report, [], None, changes)
+    tables = load_tables(content_dir, report, overrides=merged)
     model = validate_tables(tables, report)
     if report.errors:
-        return 1, report, [], model
+        return ImportResult(1, report, [], model, changes)
     written = []
-    for key, table in sheets.items():
+    for key, table in merged.items():
         spec = SPEC_BY_KEY[key]
         csv_path = content_dir / spec.path
         old = None
@@ -1997,7 +2634,24 @@ def import_xlsx(path: Path, content_dir: Path) -> tuple[int, Report, list[str], 
             csv_path.parent.mkdir(parents=True, exist_ok=True)
             csv_path.write_text(text, encoding="utf-8", newline="")
             written.append(spec.path)
-    return 0, report, written, model
+    return ImportResult(0, report, written, model, changes)
+
+
+def print_changes(changes: list[Change], out=None) -> None:
+    out = out or sys.stdout
+    applied = [c for c in changes if c.applied]
+    ignored = [c for c in changes if not c.applied]
+    counts = {k: sum(1 for c in applied if c.kind == k) for k in ("TEXT", "MECHANICS", "NOTES")}
+    print(f"import-xlsx: {len(applied)} change(s) from the workbook: TEXT {counts['TEXT']}, "
+          f"MECHANICS {counts['MECHANICS']}, NOTES {counts['NOTES']}", file=out)
+    for c in applied[:CHANGE_LINES]:
+        print(f"  {c.kind:<9} {c.describe()}", file=out)
+    if len(applied) > CHANGE_LINES:
+        print(f"  … and {len(applied) - CHANGE_LINES} more", file=out)
+    if ignored:
+        print(f"import-xlsx: {len(ignored)} mechanics change(s) in the workbook were NOT imported:", file=out)
+        for c in ignored[:CHANGE_LINES]:
+            print(f"  ignored   {c.describe()}", file=out)
 
 
 def cmd_export(args) -> int:
@@ -2014,13 +2668,14 @@ def cmd_export(args) -> int:
 
 
 def cmd_import(args) -> int:
-    code, report, written, model = import_xlsx(Path(args.path), args.content)
-    if code:
-        print_diags(report.errors)
-        print(f"import-xlsx: {len(report.errors)} error(s); no CSV was changed")
+    res = import_xlsx(Path(args.path), args.content, text_only=args.text_only)
+    if res.code:
+        print_diags(res.report.errors)
+        print(f"import-xlsx: {len(res.report.errors)} error(s); no CSV was changed")
         return 1
-    print(f"import-xlsx: {len(written)} CSV file(s) updated{': ' + ', '.join(written) if written else ''}")
-    print(summary_line(model, 0))
+    print_changes(res.changes)
+    print(f"import-xlsx: {len(res.written)} CSV file(s) updated{': ' + ', '.join(res.written) if res.written else ''}")
+    print(summary_line(res.model, 0))
     if args.build:
         return cmd_build(args)
     return 0
@@ -2045,6 +2700,8 @@ def build_parser() -> argparse.ArgumentParser:
     im = sub.add_parser("import-xlsx", parents=[common, with_out], help="read the workbook back into the CSVs")
     im.add_argument("path", help="workbook path")
     im.add_argument("--build", action="store_true", help="also regenerate the Luau modules")
+    im.add_argument("--text-only", action="store_true",
+                    help="take only TEXT, choice and notes columns from the workbook (mechanics stay as in the CSV)")
     im.set_defaults(func=cmd_import)
     return p
 

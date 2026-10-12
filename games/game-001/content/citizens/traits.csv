@@ -12,7 +12,7 @@ skeptical,Skeptical,"Believes what works. Judges a ruler by results, not titles.
 cheerful,Cheerful,Sunny and chatty. Spreads good news fast and forgives quickly.,grumpy,1,0,0,1,0,-1,0,1.05,0.9,1.5,0.8
 grumpy,Grumpy,Never satisfied. Grudgingly respects a ruler with a firm hand.,cheerful,-1,0,1,0,1,1,0,0.95,1.2,1.3,1.3
 ambitious,Ambitious,"Wants to rise. Follows a capable, commanding ruler.",content,-1,0,2,1,1,0,0,1.1,1,1.1,1.2
-content,Content,"Happy with a quiet life. Wants peace, bread and kindness.",ambitious,1,1,0,0,0,-1,1,1,0.8,0.8,0.7
+content,Content,"Happy with a quiet life. Wants peace, bread and kindness.",ambitious,1,1,0,-1,0,-1,1,1,0.8,0.8,0.7
 loyal,Loyal,Stands by the crown. Values order and those who serve it.,fickle,0,1,0,0,2,0,2,1.05,1,0.8,0.6
 fickle,Fickle,Changes sides with the wind. Swayed by boldness and fear alike.,loyal,0,-1,1,1,0,1,-1,0.95,1.1,1.4,1.5
 proud,Proud,"Will not be bullied. Resents fear, respects skill and courage.",humble,0,1,1,1,0,-2,-2,1.05,1.1,1.2,1.3
