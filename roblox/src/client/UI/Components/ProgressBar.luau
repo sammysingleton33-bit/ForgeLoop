@@ -42,21 +42,17 @@ function ProgressBar.new(props: { [string]: any })
 		Thickness = 1,
 		Parent = self._label,
 	})
-	self.instance = Create(
-		"Frame",
-		{
-			Name = "ProgressBar",
-			BackgroundColor3 = Theme.color("scrim"),
-			BackgroundTransparency = 0.25,
-			ClipsDescendants = true,
-		},
-		{
-			Corner = Style.corner(999),
-			Stroke = Style.stroke(Theme.color("ink500"), 1),
-			Fill = self._fill,
-			Label = self._label,
-		}
-	)
+	self.instance = Create("Frame", {
+		Name = "ProgressBar",
+		BackgroundColor3 = Theme.color("scrim"),
+		BackgroundTransparency = 0.25,
+		ClipsDescendants = true,
+	}, {
+		Corner = Style.corner(999),
+		Stroke = Style.stroke(Theme.color("ink500"), 1),
+		Fill = self._fill,
+		Label = self._label,
+	})
 	self:update(props)
 	return self
 end
