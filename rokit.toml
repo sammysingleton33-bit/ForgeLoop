@@ -1,0 +1,8 @@
+# Pinned toolchain (DECISIONS.md D-005). Install on Windows/macOS/Linux with Rokit: `rokit install`.
+# CI downloads the same versions from GitHub releases (.github/workflows/ci.yml); cloud sessions
+# build them with cargo (tools/setup/cloud-setup.sh). Keep all three in sync.
+[tools]
+rojo = "rojo-rbx/rojo@7.7.1"
+selene = "Kampfkarren/selene@0.31.0"
+stylua = "JohnnyMorganz/StyLua@2.6.0"
+lune = "lune-org/lune@0.11.0"
