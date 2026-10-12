@@ -1,0 +1,427 @@
+{
+  "assets": [
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 14.36,
+        "y": 6.43,
+        "z": 13.027
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_wood_01.fbx",
+        "validation": "exports/resource_wood_01.validation.json"
+      },
+      "generator": "resource_wood",
+      "generator_version": 2,
+      "geometry_hash": "ba5b34cf4987e5bc",
+      "id": "resource_wood_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "extra": "stump",
+        "pile": "round",
+        "scale": 1.0
+      },
+      "preview": "previews/resource_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Reads instantly as wood at 56 studs (brown logs, tan end grain) and stays distinct from stone and ore in value and shape for colour-blind players, with good variety inside the budget. Polish only: the three upright stubs on wood_03 read like an upturned bench, wood_04 is very flat (3 studs), and the tiny chips and black slits on the top logs are noise.",
+        "review_file": "reviews/resource_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7900,
+      "sockets": {
+        "harvest": [
+          -3.921,
+          0.0,
+          -8.518
+        ],
+        "hit": [
+          -3.921,
+          0.742,
+          -6.118
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1120,
+        "lod1": 392
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.531,
+        "y": 5.869,
+        "z": 9.271
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_wood_02.fbx",
+        "validation": "exports/resource_wood_02.validation.json"
+      },
+      "generator": "resource_wood",
+      "generator_version": 2,
+      "geometry_hash": "8ab128554a334022",
+      "id": "resource_wood_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "extra": "bucksaw",
+        "pile": "crib",
+        "scale": 1.0
+      },
+      "preview": "previews/resource_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Reads instantly as wood at 56 studs (brown logs, tan end grain) and stays distinct from stone and ore in value and shape for colour-blind players, with good variety inside the budget. Polish only: the three upright stubs on wood_03 read like an upturned bench, wood_04 is very flat (3 studs), and the tiny chips and black slits on the top logs are noise.",
+        "review_file": "reviews/resource_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7901,
+      "sockets": {
+        "harvest": [
+          3.351,
+          0.0,
+          -4.866
+        ],
+        "hit": [
+          3.351,
+          1.837,
+          -2.466
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 996,
+        "lod1": 348
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 19.178,
+        "y": 4.6,
+        "z": 12.828
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_wood_03.fbx",
+        "validation": "exports/resource_wood_03.validation.json"
+      },
+      "generator": "resource_wood",
+      "generator_version": 2,
+      "geometry_hash": "2fe7b5a07b88bb40",
+      "id": "resource_wood_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "extra": "rounds",
+        "pile": "felled",
+        "scale": 1.0
+      },
+      "preview": "previews/resource_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Reads instantly as wood at 56 studs (brown logs, tan end grain) and stays distinct from stone and ore in value and shape for colour-blind players, with good variety inside the budget. Polish only: the three upright stubs on wood_03 read like an upturned bench, wood_04 is very flat (3 studs), and the tiny chips and black slits on the top logs are noise.",
+        "review_file": "reviews/resource_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7902,
+      "sockets": {
+        "harvest": [
+          -4.025,
+          0.0,
+          -3.551
+        ],
+        "hit": [
+          -4.025,
+          2.14,
+          -1.151
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 700,
+        "lod1": 244
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 18.144,
+        "y": 3.388,
+        "z": 12.217
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_wood_04.fbx",
+        "validation": "exports/resource_wood_04.validation.json"
+      },
+      "generator": "resource_wood",
+      "generator_version": 2,
+      "geometry_hash": "da06e8c07f3ec7aa",
+      "id": "resource_wood_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "extra": "block",
+        "pile": "row",
+        "scale": 1.0
+      },
+      "preview": "previews/resource_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Reads instantly as wood at 56 studs (brown logs, tan end grain) and stays distinct from stone and ore in value and shape for colour-blind players, with good variety inside the budget. Polish only: the three upright stubs on wood_03 read like an upturned bench, wood_04 is very flat (3 studs), and the tiny chips and black slits on the top logs are noise.",
+        "review_file": "reviews/resource_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7903,
+      "sockets": {
+        "harvest": [
+          4.061,
+          0.0,
+          -8.434
+        ],
+        "hit": [
+          4.061,
+          0.767,
+          -6.034
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 776,
+        "lod1": 270
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 17.638,
+        "y": 5.546,
+        "z": 11.724
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_wood_05.fbx",
+        "validation": "exports/resource_wood_05.validation.json"
+      },
+      "generator": "resource_wood",
+      "generator_version": 2,
+      "geometry_hash": "623f62e42835d22d",
+      "id": "resource_wood_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "extra": "barrow",
+        "pile": "shored",
+        "scale": 1.0
+      },
+      "preview": "previews/resource_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Reads instantly as wood at 56 studs (brown logs, tan end grain) and stays distinct from stone and ore in value and shape for colour-blind players, with good variety inside the budget. Polish only: the three upright stubs on wood_03 read like an upturned bench, wood_04 is very flat (3 studs), and the tiny chips and black slits on the top logs are noise.",
+        "review_file": "reviews/resource_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7904,
+      "sockets": {
+        "harvest": [
+          3.786,
+          0.0,
+          -7.379
+        ],
+        "hit": [
+          3.786,
+          0.733,
+          -4.979
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1080,
+        "lod1": 378
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.532,
+        "y": 5.03,
+        "z": 10.865
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_wood_06.fbx",
+        "validation": "exports/resource_wood_06.validation.json"
+      },
+      "generator": "resource_wood",
+      "generator_version": 2,
+      "geometry_hash": "ccd96da95d913369",
+      "id": "resource_wood_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "extra": "stump",
+        "pile": "bundle",
+        "scale": 1.05
+      },
+      "preview": "previews/resource_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Reads instantly as wood at 56 studs (brown logs, tan end grain) and stays distinct from stone and ore in value and shape for colour-blind players, with good variety inside the budget. Polish only: the three upright stubs on wood_03 read like an upturned bench, wood_04 is very flat (3 studs), and the tiny chips and black slits on the top logs are noise.",
+        "review_file": "reviews/resource_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7905,
+      "sockets": {
+        "harvest": [
+          -3.488,
+          0.0,
+          -7.223
+        ],
+        "hit": [
+          -3.488,
+          2.243,
+          -4.823
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 916,
+        "lod1": 320
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "resource_wood",
+  "variation": {
+    "closest_pair": [
+      "resource_wood_01",
+      "resource_wood_06"
+    ],
+    "mean_pair_diff": 0.5485,
+    "min_pair_diff": 0.4001,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "assets": {
+    "rock_cliff_01": {
+      "geometry_hash": "407bfcec4384b755",
+      "verdict": "NEEDS-WORK"
+    },
+    "rock_cliff_02": {
+      "geometry_hash": "c99b509c075395b2",
+      "verdict": "NEEDS-WORK"
+    },
+    "rock_cliff_03": {
+      "geometry_hash": "2cb093b6313e0259",
+      "verdict": "NEEDS-WORK"
+    },
+    "rock_cliff_04": {
+      "geometry_hash": "626295dd98f90d16",
+      "verdict": "NEEDS-WORK"
+    },
+    "rock_cliff_05": {
+      "geometry_hash": "ccc859f9cf058127",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "rock_cliff",
+  "generator_version": 2,
+  "notes": "All five read as built masonry or layer cake, not fractured rock: cliff_04 and the right tower of cliff_02 are stacks of equal-height horizontal slabs, cliff_05 is a grid of rectangular blocks and cliff_03 reads as a ruined wall with a doorway gap. Moss on cliff_01/03/05 is thick flat pads (lids) in a cooler, more saturated green (hue ~95) than the boulder moss (~80), so the set does not match the boulder kit.",
+  "reviewer": "fresh-context subagent",
+  "round": 2,
+  "scores": {
+    "cohesion": 2,
+    "detail_density": 3,
+    "palette": 3,
+    "proportions": 2,
+    "readability": 3,
+    "silhouette": 2,
+    "triangle_cost": 3,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

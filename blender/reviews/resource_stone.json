@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "resource_stone_01": {
+      "geometry_hash": "b3bba915fa79cd20",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_stone_02": {
+      "geometry_hash": "d009d2ca20b3e798",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_stone_03": {
+      "geometry_hash": "30e1bb637de9c10c",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_stone_04": {
+      "geometry_hash": "8ecb8aa438f4e751",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_stone_05": {
+      "geometry_hash": "0bea0f87eb41916e",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_stone_06": {
+      "geometry_hash": "505f6260a7940d8c",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "resource_stone",
+  "generator_version": 2,
+  "notes": "Cut-line rods on stone_01, _03 and _06 cross the vertical ticks into + shapes, overshoot the rock silhouette and poke below the base like stakes, and the tally marks are illegible noise. Undercut keel bases make 01/03/06 read as boat hulls and stone_05 as a sofa, and the blue-grey of 02/05 drifts toward the ore slate.",
+  "reviewer": "fresh-context subagent",
+  "round": 2,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 2,
+    "palette": 3,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 3,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

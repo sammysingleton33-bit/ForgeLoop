@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "resource_ore_01": {
+      "geometry_hash": "b46844f95c8a1105",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_02": {
+      "geometry_hash": "39a3838db25e60db",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_03": {
+      "geometry_hash": "a6b0cda15daa4a2f",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_04": {
+      "geometry_hash": "dd5b7403691c67ed",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_05": {
+      "geometry_hash": "abf52327d5603ec5",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_06": {
+      "geometry_hash": "88d430dd351708f5",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "resource_ore",
+  "generator_version": 2,
+  "notes": "The orange veins on ore_01/02 are flat painted bands with almost no luminance contrast against the slate (they vanish in greyscale) and turn khaki under protan/deutan, close to the gold nuggets on 03/04, which are small specks at 52 studs. Only the crystals (05/06) change the silhouette, so the metal-ore nodes read as plain boulders.",
+  "reviewer": "fresh-context subagent",
+  "round": 2,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 3,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}
