@@ -235,8 +235,12 @@ describe("Reputation strip (desktop)", function()
 		expect(texts(panel(world))).toContain("separate from your reputation")
 	end)
 
-	it("invents no category prose without the content library", function()
+	it("shows the content library's prose by default, and invents none without a provider", function()
+		local Content = require("@game/ReplicatedStorage/Game/Content/Reputation")
 		world.rep:open()
+		local withContent = find(panel(world), "CategoryDetail")
+		expect(texts(find(withContent, "About"))).toContain(Content.categories.compassion.description)
+		world.rep:setCategoryText(nil) -- re-renders the open screen
 		local detail = find(panel(world), "CategoryDetail")
 		expect(find(detail, "About")).toBeNil()
 		expect(find(detail, "Affects")).toBeNil()

@@ -294,6 +294,9 @@ function KingdomHudController:_onStore(what: string, deltas: any)
 end
 
 function KingdomHudController:notify(spec: { title: string, body: string?, kind: string? })
+	if self._destroyed then
+		return -- a reply that arrives after destroy has no screen to speak on (FORGE-05, #48 review)
+	end
 	if self._notifications and self._notifications.show then
 		local ok = pcall(function()
 			self._notifications:show({

@@ -139,6 +139,32 @@ describe("UI kit components", function()
 		expect(ib.instance.Size.X.Offset).toBeGreaterThanOrEqual(44)
 	end)
 
+	it("CurrencyPill's spend badge fades with its outline", function()
+		-- A recording Motion: headless has no TweenService, so check what would be tweened.
+		local tweens = {}
+		local motion = {
+			enabled = true,
+			to = function(_, instance, props)
+				table.insert(tweens, { instance = instance, props = props })
+			end,
+			after = function() end,
+		}
+		local pill = CurrencyPill.new({ currency = "wood", amount = 100 }, motion)
+		pill:pulse(-50)
+		local badge = pill.instance:FindFirstChild("Delta")
+		expect(badge).toBeTruthy()
+		local faded = { badge = false, outline = false }
+		for _, t in tweens do
+			if t.instance == badge and t.props.TextTransparency == 1 then
+				faded.badge = true
+			elseif t.instance == badge:FindFirstChild("Stroke") and t.props.Transparency == 1 then
+				faded.outline = true
+			end
+		end
+		expect(faded.badge).toBe(true)
+		expect(faded.outline).toBe(true)
+	end)
+
 	it("CurrencyPill formats amounts, caps, loading and error", function()
 		local pill = CurrencyPill.new({ currency = "food", amount = 1234, cap = 5000, rate = 18 })
 		expect(find(pill.instance, "Amount").Text).toContain("1.2k")

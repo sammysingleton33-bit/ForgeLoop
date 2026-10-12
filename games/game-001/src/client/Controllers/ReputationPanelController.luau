@@ -16,7 +16,7 @@
 		GetReputation is asked again when my kingdom changes (late join). History `t` is read as
 		serverTimeNow seconds; "… ago" labels in the open screen refresh every REFRESH_SEC.
 	Category prose ("About", "What affects it") comes from a provider: ReputationText.provider (the
-	content library, nil until FL-0083 lands) or setCategoryText(fn). Without one, no prose is shown.
+	content library, FL-0083) or setCategoryText(fn). Without one, no prose is shown.
 
 	Depends on KingdomHudController (store, remotes, menus, layout). The strip is drawn into
 	hud.roots.hud at Layout `metrics.hud.reputation`; the screen into hud.roots.menus at
