@@ -348,7 +348,8 @@ local function pyramidRoof(
 			ctx,
 			"RoofCorner",
 			Vector3.new(half, h, half),
-			off * CFrame.Angles(0, math.rad(180), 0),
+			-- CornerWedge apex is at local (+X, +Y, -Z); a 90° turn puts it over the pyramid centre
+			off * CFrame.Angles(0, math.rad(90), 0),
 			color,
 			Enum.Material.SmoothPlastic,
 			tint
