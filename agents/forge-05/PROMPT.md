@@ -5,27 +5,43 @@ Studio mission: ship a complete, polished, playable Roblox game in about seven d
 ## 0. CURRENT DIRECTION — Game #1: AI Kingdoms (2026-10-12; read first, overrides older queue order)
 The user selected **AI Kingdoms** (working title *Kingdoms: Crownfall*, D-020): four medieval kingdoms, each with up to four human rulers, AI citizens, economy, construction, armies, and 30–45 minute matches.
 
-Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1, §5 architecture, §9 ownership) and `games/game-001/CONTRACTS.md`.
+Before anything else, read `games/game-001/BRIEF.md` (especially §4 VS-1 and §5 architecture), `games/game-001/CONTRACTS.md` (v0.4-g3; G12 is a VS-2 draft), and `DECISIONS.md` D-020 to D-029.
 
 **The only milestone that matters now is the playable vertical slice VS-1.** It is accepted only by a user Studio playtest. Headless tests support that playtest; they never replace it.
 
-- **Where game code lives:** `games/game-001/src/{shared,server,client}` and `games/game-001/config` (D-022). FORGE-05 wires this up in FL-0046. Until it lands, write modules and specs on your branch. Run `git fetch origin` every work block and merge `origin/main` as soon as FL-0046 is merged.
-- **Contracts:** code against `CONTRACTS.md` today. Use small local test doubles for other workers' services (Treasury, Kit, Entity, ...). Write a day-one handoff for anything missing or unclear.
-- **Ownership:** game-001 paths are added in `docs/workflows/team.md` (section "game-001").
-- **Precedence:** the queue below replaces the order in §5. Items in §5 not listed here are deprioritised (see each task's priority). §1–§4 and §6–§10 (workspace, ownership, quality, testing, PRs, reporting, boundaries) still apply.
+- **Where game code lives:** `games/game-001/src/{shared,server,client}`, `games/game-001/config` and `games/game-001/world` (D-022, D-026). FORGE-05 wires this up in FL-0046. Until it lands, write modules and specs on your branch. Run `git fetch origin` every work block and merge `origin/main` as soon as FL-0046 is merged.
+- **Contracts:** code against `CONTRACTS.md` today.
+  - Reach other workers' *services* through the registry, with small local doubles.
+  - *Modules* required by path (`Kingdom/Types`, `Kit/Kit`, `World/Layout`, config `Resources` and `Costs`) come from the hour-0 contract stubs (CONTRACTS intro). Never create a file in another owner's path.
+  - Write a day-one handoff for anything missing or unclear.
+- **Ownership:** your game-001 row in `docs/workflows/team.md` (section "game-001") is the single source. Names may not repeat framework service, controller or remote-area names (D-026).
+- **Precedence:** §0 replaces §3, §10 and the task list in §2. Its queue replaces the order of §5; §5's specs still apply to tasks that stay in the queue, unless §0, CONTRACTS or DECISIONS say otherwise. §4 is extended by your game-001 row in `docs/workflows/team.md`. §1, §2 and §6–§9 still apply.
 
-**Your queue (critical path first):**
-1. **Verify and merge skeleton PR #1** (§5 B). Its CI is already green.
-2. **FL-0046 game-001 wiring** (G1, D-022). Everyone's game code waits on this, so it is the critical path:
-   - the Rojo project and Loader discovery for both trees;
+**Crown Arena (D-029; VS-2, queued behind VS-1).** The match now ends in the Crown Arena: rulers duel in front of their own citizens, and support earned through the match gives capped buffs and clutch triggers. Read `games/game-001/design/crown-arena.md` and CONTRACTS G12 (draft). It does not change VS-1. In slack time: FL-0076 caps spec and fairness-harness scaffold against a local DuelModel double in `games/game-001/tests/fairness/`. Please review the Crown Arena rows FORGE-00 added to `production/quality-gates/ownership.json` (they mirror team.md).
+
+**Your queue (critical path first).** The skeleton (PR #1) is already merged (f9e9b0a).
+1. **FL-0046 game-001 wiring** (G1, D-022, D-024–D-026). Everyone's game code waits on this, so it is the critical path. It covers:
+   - the Rojo project, with the `world` and Assets mounts and `config/Game.luau`;
+   - Players `CharacterAutoLoads = false` and the Workspace streaming properties;
+   - Loader discovery over both trees, with the duplicate-name guard;
+   - the 11 G9 events in `Contracts/GameEvents` (interfaces v0.3.2);
+   - buffer-aware `Wire` and MockRemotes with a reorder helper;
    - harness project selection and the require policy for `@game/ReplicatedStorage/Game`;
    - CI for both projects, producing a `forgeloop-game001-<sha>.rbxl` artifact.
+2. **Merge the hour-0 contract stubs right after FL-0046:** Types (FORGE-01), Kit and Layout (FORGE-02), Resources and Costs (FORGE-03).
 3. **C0/C merge pipeline,** continuously. Worker PRs come first.
 4. **§5 A items as they fit:** PR template, ownership gate (include the game-001 rows of team.md), integration log, branch-protection handoff.
-5. **FL-0047 VS-1 Studio playtest script.** Ask the user for playtests on integrated builds early and often.
+5. **FL-0047 VS-1 Studio playtest script and the Studio-only debug panel** (`DebugCommands` registry). Run Playtest A (rows 1–4b) with the user as soon as they integrate, and the full FL-0064 after that.
 6. **FL-0031 S1–S3.**
 
 Superseded: FL-0044 sandbox arena and FL-0030 sandbox place (the integration target is game-001).
+
+**Definition of done (game-001):**
+- FL-0046 is merged with CI green for both projects and the game-001 artifact.
+- These negative tests are recorded as failing commands: a framework module requiring Game code; a duplicate area; a 1,001-byte buffer dropped.
+- The stubs are merged.
+- `STUDIO_PLAYTEST.md` exists, with debug presets per row.
+- Every merge is in the integration log, and `python tools/forge.py validate` reports 0 errors.
 
 ## 1. Workspace (once per new session)
 Repository: `github.com/sammysingleton33-bit/ForgeLoop` (private). `main` = integrated build. Your workspace branch: `forge/05-integration` (long-lived; you are authorised to push to it and to your per-task PR branches `forge/05-integration-fl00xx`).

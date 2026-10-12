@@ -8,7 +8,7 @@ priority: P0
 game: game-001
 created: 2026-10-12
 updated: 2026-10-12
-depends_on: [FL-0047, FL-0048, FL-0049, FL-0050, FL-0051, FL-0052, FL-0053, FL-0054, FL-0055, FL-0058, FL-0059, FL-0062]
+depends_on: [FL-0047, FL-0048, FL-0049, FL-0050, FL-0051, FL-0052, FL-0053, FL-0054, FL-0055, FL-0056, FL-0058, FL-0059, FL-0060, FL-0061, FL-0062, FL-0065]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 1
 evidence: []
@@ -20,7 +20,8 @@ evidence: []
 You play the first slice in Studio and tell us what works and what does not.
 
 ## Requirements
-- Follow games/game-001/STUDIO_PLAYTEST.md; paste results into the FORGE-05 chat
+- First, Playtest A (rows 1–4b) on an earlier integrated build, when FORGE-05 asks.
+- Then follow `games/game-001/STUDIO_PLAYTEST.md` for every row, and paste the results into the FORGE-05 chat.
 
 ## Validation
 Checklist results with BuildInfo sha and screenshots
@@ -30,3 +31,4 @@ Checklist results with BuildInfo sha and screenshots
 
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (SPECIFIED).
+- 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): depends on FL-0056/0060/0061/0065; Playtest A first

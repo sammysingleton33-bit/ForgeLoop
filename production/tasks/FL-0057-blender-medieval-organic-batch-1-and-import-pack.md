@@ -21,7 +21,7 @@ Forests, rocks, crops and props look hand-crafted and cohesive (replaces jungle-
 
 ## Requirements
 - Generators: oak, pine, birch, bushes, rocks S/M/L, wheat crop stages, log and stone piles, crates, barrels, banners (4 colours)
-- D-019 rubric with a fresh-context reviewer; budgets per FL-0013
+- D-019 rubric with a fresh-context reviewer; budgets per FL-0013; the D-019 calibration for this batch is the first oak contact sheet (D-026)
 - Import pack + guide; asset ids match Kit.prop stand-ins so imported meshes swap in automatically
 
 ## Validation
@@ -32,3 +32,4 @@ blender/scripts/check.sh; contact sheets reviewed; user import in Studio
 
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
+- 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): calibration on the first oak sheet (D-026)

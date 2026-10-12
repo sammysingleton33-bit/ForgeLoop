@@ -13,10 +13,14 @@
 	                                                       InvokeClient -> OnClientInvoke(...); errors
 	                                                       in the callback propagate to the invoker
 	  reference/engine/classes/UnreliableRemoteEvent.yaml  same API; payloads over 1000 bytes are
-	                                                       dropped; may be dropped (dropNext)
+	                                                       dropped (buffers count buffer.len, see Wire);
+	                                                       "unordered and unreliable": may be dropped
+	                                                       (dropNext), delayed and reordered
+	                                                       (holdUnreliable / releaseUnreliable)
 	  scripting/events/remote.md#argument-limitations      arguments are copied (functions -> nil,
 	                                                       non-string dictionary keys -> strings,
-	                                                       metatables dropped, Instances by reference)
+	                                                       metatables dropped, buffers copied,
+	                                                       Instances by reference)
 	Queueing: a RemoteEvent fired before anyone listens is delivered when the first handler connects
 	(Roblox queues these); an UnreliableRemoteEvent without a listener is discarded.
 	Not modelled: the ~500 requests/s client rate limit, latency, replication of the instance tree.
@@ -31,6 +35,12 @@
 		     direction: "toServer" | "toClient" | "toAllClients" | "invokeServer" | "invokeClient"
 		network:sent(remoteOrName, direction?) -> log entries
 		network:dropNext(unreliableRemote, count?)
+		network:holdUnreliable(unreliableRemote)    -- queue its deliveries (both directions) instead of delivering
+		network:heldCount(unreliableRemote) -> number
+		network:releaseUnreliable(unreliableRemote, order?) -> number
+		     deliver the held payloads now (a delay) and stop holding. order: "fifo" (default),
+		     "reverse", or a permutation of 1..heldCount (e.g. { 2, 3, 1 }) to test out-of-order arrival.
+		     A payload whose receiver no longer listens is discarded, as for any unreliable event.
 ]]
 
 local roblox = require("@lune/roblox")
@@ -136,6 +146,7 @@ function MockRemotes.newNetwork(options: { players: any?, spawn: ((...any) -> ()
 		_clientStack = {},
 		_localPlayer = nil,
 		_drops = {},
+		_held = {},
 	}, Network)
 end
 
@@ -189,6 +200,59 @@ end
 function Network:dropNext(remote: any, count: number?)
 	assert(remote.ClassName == "UnreliableRemoteEvent", "dropNext only applies to UnreliableRemoteEvent")
 	self._drops[remote] = (self._drops[remote] or 0) + (count or 1)
+end
+
+function Network:holdUnreliable(remote: any)
+	assert(remote.ClassName == "UnreliableRemoteEvent", "holdUnreliable only applies to UnreliableRemoteEvent")
+	stateOf(remote) -- must be attached
+	self._held[remote] = self._held[remote] or {}
+end
+
+function Network:heldCount(remote: any): number
+	local held = self._held[remote]
+	return if held then #held else 0
+end
+
+function Network:releaseUnreliable(remote: any, order: any?): number
+	local held = self._held[remote]
+	assert(held, "releaseUnreliable: call holdUnreliable(remote) first")
+	self._held[remote] = nil
+	local n = #held
+	local indices = {}
+	if order == nil or order == "fifo" then
+		for i = 1, n do
+			indices[i] = i
+		end
+	elseif order == "reverse" then
+		for i = 1, n do
+			indices[i] = n + 1 - i
+		end
+	elseif type(order) == "table" then
+		local used = {}
+		assert(#order == n, `releaseUnreliable: order has {#order} entries, {n} payloads are held`)
+		for _, index in order do
+			assert(
+				type(index) == "number" and held[index] and not used[index],
+				"releaseUnreliable: order must be a permutation of 1..n"
+			)
+			used[index] = true
+		end
+		indices = order
+	else
+		error(`releaseUnreliable: unknown order {tostring(order)} ("fifo", "reverse" or a permutation)`, 2)
+	end
+	local state = stateOf(remote)
+	for _, index in indices do
+		local item = held[index]
+		if item.toServer then
+			if state.serverSignal:connectionCount() > 0 then
+				state.serverSignal:Fire(item.player, table.unpack(item.args, 1, item.args.n))
+			end
+		else
+			self:_deliver(state, item.player, item.args)
+		end
+	end
+	return n
 end
 
 function Network:sent(remoteOrName: any, direction: string?)
@@ -264,6 +328,11 @@ function Network:_toServer(state, player, ...)
 	if dropped then
 		return
 	end
+	local held = self._held[state.remote]
+	if held then
+		table.insert(held, { toServer = true, player = player, args = args })
+		return
+	end
 	if state.serverSignal:connectionCount() == 0 then
 		if state.kind == "RemoteEvent" then
 			table.insert(state.serverQueue, { player = player, args = args })
@@ -289,9 +358,15 @@ function Network:_toClient(state, player, direction: string, ...)
 	local args = copyArgs(...)
 	local dropped = self:_shouldDrop(state, args)
 	self:_record(state, direction, player, args, dropped)
-	if not dropped then
-		self:_deliver(state, player, args)
+	if dropped then
+		return
 	end
+	local held = self._held[state.remote]
+	if held then
+		table.insert(held, { player = player, args = args })
+		return
+	end
+	self:_deliver(state, player, args)
 end
 
 function Network:_toAll(state, ...)
@@ -301,8 +376,13 @@ function Network:_toAll(state, ...)
 	if dropped or self._players == nil then
 		return
 	end
+	local held = self._held[state.remote]
 	for _, player in self._players._service:GetPlayers() do
-		self:_deliver(state, player, args)
+		if held then
+			table.insert(held, { player = player, args = args })
+		else
+			self:_deliver(state, player, args)
+		end
 	end
 end
 
