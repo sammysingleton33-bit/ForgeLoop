@@ -79,7 +79,7 @@ return {
 		volume = 0.45,
 		loop = true,
 		source = STORE .. "'medieval village ambience' (birds, distant chatter, livestock)",
-		description = "Own kingdom by day; fades with citizen count (empty town = quieter bed).",
+		description = "Own kingdom by day: birds, distant chatter, livestock; calm and unobtrusive.",
 	}),
 	sound({
 		id = "ambience.wind",
