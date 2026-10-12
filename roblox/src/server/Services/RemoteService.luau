@@ -23,7 +23,7 @@
 	Boot (new, never yields): every declaration is checked and a bad one fails the boot with the
 	area, index and problem: name must be "<Area>.<Action>" with <Area> equal to the folder it was
 	declared in, kind one of the four above, names unique, `args` (a list of validator functions)
-	and `rate` (finite burst > 0, perSecond >= 0) only on client -> server kinds (event, function),
+	and `rate` (finite burst >= 1, perSecond >= 0) only on client -> server kinds (event, function),
 	no other fields. Instances: ReplicatedStorage.ForgeRemotes.<Area>.<Action> (RemoteEvent for
 	event/serverEvent, RemoteFunction for function, UnreliableRemoteEvent for unreliableServerEvent),
 	built through env.newInstance and parented to ReplicatedStorage last (one complete tree).
@@ -35,9 +35,11 @@
 		rateLimited      token bucket per player per remote: the declared rate, else burst 10 /
 		                 5 per second (RateLimiter on env.clock)
 		extraArgs        more arguments than #args (a declaration without args takes none)
-		invalidArgs      a validator rejected argument i; missing arguments are validated as nil, so
-		                 Validate.optional works
-		handlerError     the handler errored (xpcall): logged with env.log("error", ...) every time
+		invalidArgs      a validator rejected argument i (fail closed: only a result of exactly `true`
+		                 passes, so a validator passed without `()` rejects everything); missing
+		                 arguments are validated as nil, so Validate.optional works
+		handlerError     the handler errored (xpcall): the first error per remote is logged with
+		                 env.log("error", ...) and its traceback; later ones are only counted
 	Only the first drop of each (remote, reason) pair is logged (warn); later ones are only counted,
 	so a flood cannot flood the logs. Nothing a client sends can error the server. `function`
 	remotes return the handler's results, or nil when the call was dropped or the handler errored.
@@ -162,8 +164,8 @@ local function parseDeclaration(area: string, index: number, decl: any): Remote
 				bootError(where, `rate has unknown field '{tostring(key)}'`)
 			end
 		end
-		if not isFinite(rate.burst) or rate.burst <= 0 then
-			bootError(where, "rate.burst must be a finite number > 0")
+		if not isFinite(rate.burst) or rate.burst < 1 then
+			bootError(where, "rate.burst must be a finite number >= 1 (below 1 no call could ever pass)")
 		end
 		if not isFinite(rate.perSecond) or rate.perSecond < 0 then
 			bootError(where, "rate.perSecond must be a finite number >= 0")
@@ -331,7 +333,7 @@ function RemoteService._dispatch(self: any, remote: Remote, player: any, ...: an
 		local ran, good, why = pcall(remote.args[i], (select(i, ...)))
 		if not ran then
 			return self:_drop(remote, "invalidArgs", player, `argument {i}: validator error`)
-		elseif not good then
+		elseif good ~= true then
 			return self:_drop(remote, "invalidArgs", player, `argument {i}: {why or "invalid"}`)
 		end
 	end
@@ -339,11 +341,20 @@ function RemoteService._dispatch(self: any, remote: Remote, player: any, ...: an
 	if not results[1] then
 		self._dropped.handlerError = (self._dropped.handlerError or 0) + 1
 		self._droppedByName[remote.name] = (self._droppedByName[remote.name] or 0) + 1
-		self._env.log("error", `RemoteService: handler for '{remote.name}' failed`, {
-			remote = remote.name,
-			userId = player.UserId,
-			error = tostring(results[2]),
-		})
+		-- one full traceback per remote; repeats are only counted (a client cannot flood the log)
+		local key = `{remote.name}|handlerError`
+		if not self._loggedDrops[key] then
+			self._loggedDrops[key] = true
+			self._env.log(
+				"error",
+				`RemoteService: handler for '{remote.name}' failed (later failures are only counted)`,
+				{
+					remote = remote.name,
+					userId = player.UserId,
+					error = tostring(results[2]),
+				}
+			)
+		end
 		return nil
 	end
 	return results
