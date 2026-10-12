@@ -3,11 +3,13 @@
 
 	Builds the live Env, logs the build stamp and the game id, then loads every service definition
 	in ServerScriptService.Forge.Services and, in game projects (D-022), ServerScriptService.Game.Services
-	— one dependency graph across both trees (Contracts/Loader, interfaces §3).
+	— one dependency graph across both trees (Contracts/Loader, interfaces §3). In Studio only, it
+	then serves the debug panel (Debug/DebugServer, FL-0068); live servers create no debug remotes.
 	Add a service by adding a module to a Services folder — never edit this file for it.
 ]]
 
 local BuildStamp = require("@game/ReplicatedStorage/Forge/Contracts/BuildStamp")
+local DebugServer = require("@game/ReplicatedStorage/Forge/Debug/DebugServer")
 local Env = require("@game/ReplicatedStorage/Forge/Contracts/Env")
 local GameConfig = require("@game/ReplicatedStorage/Forge/Config/Game")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
@@ -35,3 +37,6 @@ env.log("info", "ForgeLoop server services started", {
 	sha = startFields.sha,
 	trees = table.concat(trees, ","),
 })
+if DebugServer.start(env, registry) then
+	env.log("info", "ForgeLoop debug panel served (Studio only)", { sha = startFields.sha })
+end
