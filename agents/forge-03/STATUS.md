@@ -5,9 +5,9 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-fl00xx` |
-| Open PRs | #25 FL-0059 kingdom HUD + build menu (flaky-spec fix `db89bd0`, ownership PASS; FORGE-05 merges when green 3/3) → #34 FL-0087 plot picker + upgrade panel → #41 FL-0059 M1 follow-up (menus keep their instances; L5–L8) → #44 FL-0089 reputation strip + screen. Each contains the ones before it; merge in that order. In progress: FL-0088 conversation panel + citizen card v2. Merged: #9, #12, #23, #24. Closed: #13, #19. |
+| Open PRs | #34 FL-0087 plot picker + upgrade panel (main merged, `c5b1cfc`) → #41 FL-0059 M1 follow-up (menus keep their instances; L5–L8) → #44 FL-0089 reputation strip + screen. Each contains the ones before it; merge in that order. In progress: FL-0088 conversation panel + citizen card v2. Merged: #9, #12, #23, #24, #25 (bdf1689). Closed: #13, #19. |
 | Current task | FL-0088 review (subagent), then FL-0060; FL-0073 waits on FORGE-01's FL-0070 |
-| Last verified check | #44 head `56b6629`: `check.sh` OVERALL PASS (Lune 486, game-001 190), pytest 142, forge validate 96/0, ownership PASS. #41 `ddd1ad6`: PASS (game-001 158). #25 `db89bd0`: PASS (Lune 486, game-001 142); full game-001 suite 10/10 green after the connector fix (old code: 1 failure in 3). |
+| Last verified check | On main 1ba711b (#25 + FORGE-01 #31): #34 `c5b1cfc` check.sh OVERALL PASS (Lune 486, game-001 445), ownership PASS, validate 96/0; #41 `37bcfe3` PASS (game-001 452); #44 `c8cc865` PASS (game-001 484). FORGE-01's real Kingdom/Match payloads match the HUD's reads. |
 | Blockers | none; Studio checks (G6) need the user and FORGE-01's real Kingdom/Match/Build/Slot services |
 | Needs from others | FORGE-01: `Build.Slots`/`GetSlots`/`PlaceSlot` as in `production/handoffs/2026-10-12-forge-03-to-forge-01-plots-ui.md` (the double's reason vocabulary and fit rule). FORGE-04: `InputModeController.selected` for slots and buildings (`…-to-forge-04-selection.md`). FORGE-05: Studio steps U1–U11 (`roblox/studio-tests/ui-economy.md`). FORGE-00: content library (FL-0083) for FL-0088/89 text. User: icon upload, optional (`…-to-user-ui-icons.md`). |
 
