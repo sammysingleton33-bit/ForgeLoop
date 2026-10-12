@@ -1,0 +1,31 @@
+{
+  "_comment": "LOD0 triangle budgets per budget class (check.sh fails on any breach). LOD1 is a Blender-side preview/budget artefact; Roblox builds its own render LODs (RenderFidelity). Jungle classes (tree, palm, bush, rock, ruin) come from FORGE-02 PROMPT section 5; medieval classes added 2026-10-12 by FORGE-02 for Game #1 (AI Kingdoms).",
+  "roblox_max_tris": 20000,
+  "roblox_max_size_studs": 2048,
+  "max_texture_px": 512,
+  "max_materials": 1,
+  "lod1_ratio": 0.35,
+  "min_silhouette_diff": 0.08,
+  "classes": {
+    "tree": 4000,
+    "palm": 3000,
+    "bush": 1500,
+    "rock": 1000,
+    "ruin": 1500,
+    "resource": 1500,
+    "crop": 3000,
+    "prop_small": 800,
+    "prop": 1800,
+    "banner": 800,
+    "character": 2500,
+    "siege": 4000,
+    "building_small": 5000,
+    "building_medium": 8000,
+    "building_large": 12000,
+    "castle_wall": 3000,
+    "castle_tower": 6000,
+    "castle_gate": 9000,
+    "castle_keep": 16000,
+    "bridge": 4000
+  }
+}

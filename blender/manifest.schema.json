@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "forgeloop/blender/manifest.schema.json",
+  "title": "FORGE-02 asset manifest (hand-over contract, interfaces.md section 10)",
+  "type": "object",
+  "required": ["schema_version", "palette", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "minimum": 1},
+    "palette": {
+      "type": "object",
+      "required": ["file", "px", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "file": {"type": "string"},
+        "px": {"type": "integer", "minimum": 1, "maximum": 512},
+        "version": {"type": "integer", "minimum": 1}
+      }
+    },
+    "assets": {"type": "array", "items": {"$ref": "#/$defs/asset"}}
+  },
+  "$defs": {
+    "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "asset": {
+      "type": "object",
+      "required": ["id", "generator", "generator_version", "category", "kingdom", "params", "seed", "budget_class",
+                   "dimensions_studs", "triangles", "material", "texture", "collision", "double_sided",
+                   "render_fidelity", "files", "preview", "sockets", "validation_pass", "geometry_hash", "review"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z]+(_[a-z0-9]+)+_\\d{2}$"},
+        "generator": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "generator_version": {"type": "integer", "minimum": 1},
+        "category": {"type": "string", "pattern": "^[a-z]+$"},
+        "kingdom": {"type": ["string", "null"], "enum": ["red", "blue", "green", "yellow", null]},
+        "params": {"type": "object"},
+        "seed": {"type": "integer"},
+        "budget_class": {"type": "string"},
+        "dimensions_studs": {
+          "type": "object", "required": ["x", "y", "z"], "additionalProperties": false,
+          "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0},
+                         "z": {"type": "number", "minimum": 0}}
+        },
+        "triangles": {
+          "type": "object", "required": ["lod0", "lod1", "budget_lod0"], "additionalProperties": false,
+          "properties": {"lod0": {"type": "integer", "minimum": 1, "maximum": 20000},
+                         "lod1": {"type": "integer", "minimum": 1}, "budget_lod0": {"type": "integer", "minimum": 1}}
+        },
+        "material": {"type": "string"},
+        "texture": {"type": "string"},
+        "collision": {
+          "type": "object", "required": ["fidelity", "boxes"], "additionalProperties": false,
+          "properties": {
+            "fidelity": {"type": "string", "enum": ["Default", "Hull", "Box", "PreciseConvexDecomposition", "None"]},
+            "boxes": {"type": "array", "items": {
+              "type": "object", "required": ["name", "center", "size"], "additionalProperties": false,
+              "properties": {"name": {"type": "string"}, "center": {"$ref": "#/$defs/vec3"}, "size": {"$ref": "#/$defs/vec3"}}
+            }}
+          }
+        },
+        "double_sided": {"type": "boolean"},
+        "render_fidelity": {"type": "string", "enum": ["Automatic", "Precise", "Performance"]},
+        "files": {
+          "type": "object", "required": ["mesh", "validation"], "additionalProperties": false,
+          "properties": {"mesh": {"type": "string"}, "validation": {"type": "string"}}
+        },
+        "preview": {"type": "string"},
+        "sockets": {"type": "object", "additionalProperties": {"$ref": "#/$defs/vec3"}},
+        "validation_pass": {"type": "boolean"},
+        "geometry_hash": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+        "review": {
+          "type": "object", "required": ["verdict"], "additionalProperties": false,
+          "properties": {
+            "verdict": {"type": "string", "enum": ["PASS", "NEEDS-WORK", "UNREVIEWED"]},
+            "scores": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 5}},
+            "notes": {"type": "string"},
+            "reviewer": {"type": "string"},
+            "round": {"type": "integer", "minimum": 0},
+            "review_file": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}
