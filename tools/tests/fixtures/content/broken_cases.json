@@ -225,5 +225,341 @@
    "dialogue/scenarios.csv:1:9:",
    "unknown column 'note'"
   ]
+ },
+ {
+  "name": "risk odds typed as a number",
+  "file": "dialogue/consequences.csv",
+  "row": 6,
+  "column": "notice_text",
+  "value": "Some soldiers may desert (50% chance).",
+  "expect": [
+   "dialogue/consequences.csv:6:10:",
+   "write {chance}"
+  ]
+ },
+ {
+  "name": "risk without a notice",
+  "file": "dialogue/consequences.csv",
+  "row": 6,
+  "column": "notice_text",
+  "value": "",
+  "expect": [
+   "dialogue/consequences.csv:6:10:",
+   "must see the risk"
+  ]
+ },
+ {
+  "name": "strike on a soldier occupation",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "target",
+  "value": "occupation:soldier",
+  "expect": [
+   "dialogue/consequences.csv:2:3:",
+   "are soldiers"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "kind",
+    "value": "strike"
+   },
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "magnitude",
+    "value": "0.3"
+   }
+  ]
+ },
+ {
+  "name": "strike on one citizen",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "target",
+  "value": "speaker",
+  "expect": [
+   "dialogue/consequences.csv:2:3:",
+   "for one citizen's walk-out use kind productivity"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "kind",
+    "value": "strike"
+   },
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "magnitude",
+    "value": "0.3"
+   }
+  ]
+ },
+ {
+  "name": "strike stops more than half an occupation",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "magnitude",
+  "value": "0.8",
+  "expect": [
+   "dialogue/consequences.csv:2:4:",
+   "at most 0.5 of the occupation"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "kind",
+    "value": "strike"
+   }
+  ]
+ },
+ {
+  "name": "strike lasts too long",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "duration_s",
+  "value": "180",
+  "expect": [
+   "dialogue/consequences.csv:2:6:",
+   "lasts at most 120 s"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "kind",
+    "value": "strike"
+   },
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "magnitude",
+    "value": "0.3"
+   }
+  ]
+ },
+ {
+  "name": "work stoppage of a whole group via productivity",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "magnitude",
+  "value": "-1",
+  "expect": [
+   "dialogue/consequences.csv:2:4:",
+   "would stop a whole group"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "target",
+    "value": "kingdom"
+   }
+  ]
+ },
+ {
+  "name": "consequence lasts too long",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "duration_s",
+  "value": "99999",
+  "expect": [
+   "dialogue/consequences.csv:2:6:",
+   "longer than the 600 s limit"
+  ]
+ },
+ {
+  "name": "kingdom-wide loyalty from the audience column",
+  "file": "dialogue/decisions.csv",
+  "row": 8,
+  "column": "audience_loyalty",
+  "value": "-6",
+  "expect": [
+   "dialogue/decisions.csv:8:19:",
+   "kingdom-wide loyalty -6 is below -5"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/decisions.csv",
+    "row": 8,
+    "column": "audience",
+    "value": "kingdom"
+   }
+  ]
+ },
+ {
+  "name": "kingdom-wide loyalty from a consequence",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "kind",
+  "value": "loyalty",
+  "expect": [
+   "dialogue/decisions.csv:3:24:",
+   "kingdom-wide loyalty -6 is below -5"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "target",
+    "value": "kingdom"
+   },
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "magnitude",
+    "value": "-6"
+   }
+  ]
+ },
+ {
+  "name": "stability from one decision",
+  "file": "dialogue/decisions.csv",
+  "row": 3,
+  "column": "stability",
+  "value": "-6",
+  "expect": [
+   "dialogue/decisions.csv:3:21:",
+   "stability -6 is below -5"
+  ]
+ },
+ {
+  "name": "stability from a decision plus a consequence",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "kind",
+  "value": "stability",
+  "expect": [
+   "dialogue/decisions.csv:3:24:",
+   "stability -6 is below -5"
+  ],
+  "patch": [
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "target",
+    "value": "kingdom"
+   },
+   {
+    "file": "dialogue/consequences.csv",
+    "row": 2,
+    "column": "magnitude",
+    "value": "-7"
+   }
+  ]
+ },
+ {
+  "name": "family placeholder without the relation",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "thought_text",
+  "value": "{family} is hungry too...",
+  "expect": [
+   "dialogue/scenarios.csv:2:7:",
+   "add 'citizen.has_family' to the trigger"
+  ]
+ },
+ {
+  "name": "rival placeholder in a reaction without has_rival",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "{rival} will hear of this!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "citizen.has_rival"
+  ]
+ },
+ {
+  "name": "placeholder in a trait description",
+  "file": "citizens/traits.csv",
+  "row": 2,
+  "column": "description_text",
+  "value": "{name} loves {ruler}.",
+  "expect": [
+   "citizens/traits.csv:2:3:",
+   "'{name}' cannot be used in this column"
+  ]
+ },
+ {
+  "name": "citizen placeholder in a kingdom-wide action notice",
+  "file": "reputation/actions.csv",
+  "row": 4,
+  "column": "notice_text",
+  "value": "{rival} welcomes the new house in {kingdom}.",
+  "expect": [
+   "reputation/actions.csv:4:20:",
+   "'{rival}' cannot be used in this column"
+  ]
+ },
+ {
+  "name": "mechanics placeholder outside a consequence",
+  "file": "dialogue/scenarios.csv",
+  "row": 3,
+  "column": "question_text",
+  "value": "The smith says {chance}.",
+  "expect": [
+   "dialogue/scenarios.csv:3:8:",
+   "'{chance}' cannot be used in this column"
+  ]
+ },
+ {
+  "name": "invisible vertical tab (Shift+Enter in Word)",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless you!\u000bWe will work.",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "invisible character U+000B"
+  ]
+ },
+ {
+  "name": "zero-width space in text",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "question_text",
+  "value": "Ruler\u200bword, we are hungry.",
+  "expect": [
+   "dialogue/scenarios.csv:2:8:",
+   "invisible character U+200B"
+  ]
+ },
+ {
+  "name": "control character in notes",
+  "file": "dialogue/decisions.csv",
+  "row": 2,
+  "column": "notes",
+  "value": "bell\u0007",
+  "expect": [
+   "dialogue/decisions.csv:2:26:",
+   "invisible character U+0007"
+  ]
+ },
+ {
+  "name": "tab in a mechanics cell",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fed_ratio < 0.6\t& citizen.hunger >= 0.5",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "invisible character U+0009"
+  ]
+ },
+ {
+  "name": "'and' instead of '&'",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fed_ratio < 0.6 and citizen.hunger > 0.5",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "join clauses with ' & ' (not 'and')"
+  ]
  }
 ]

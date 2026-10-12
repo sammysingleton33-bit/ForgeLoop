@@ -45,7 +45,7 @@ return {
 		name = "Content",
 		description = "Happy with a quiet life. Wants peace, bread and kindness.",
 		opposite = "ambitious",
-		weights = { compassion = 1, honor = 1, competence = 0, courage = 0, authority = 0, fear = -1 },
+		weights = { compassion = 1, honor = 1, competence = 0, courage = -1, authority = 0, fear = -1 },
 		obedience_bias = 1,
 		productivity = 1,
 		hunger_sensitivity = 0.8,

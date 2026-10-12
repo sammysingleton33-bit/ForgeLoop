@@ -18,6 +18,10 @@ local function repVector(partial: { [string]: number }): { [string]: number }
 	return out
 end
 
+local function clause(var: string, op: string, value: any)
+	return { var = var, op = op, value = value }
+end
+
 local function trait(id: string, weights: { [string]: number }, opposite: string?)
 	return {
 		id = id,
@@ -115,6 +119,10 @@ local CONSEQUENCES = {
 		duration_s = 30,
 		notice = "Risk: {name} may walk out.",
 	}),
+	calm = consequence("calm", "unrest_pressure", "kingdom", 1, { magnitude = -4, duration_s = 60 }),
+	unrest = consequence("unrest", "unrest_pressure", "kingdom", 1, { magnitude = 5, duration_s = 60 }),
+	loyal_friends = consequence("loyal_friends", "loyalty", "friends", 1, { magnitude = 2 }),
+	sad = consequence("sad", "happiness", "kingdom", 1, { magnitude = -3, duration_s = 60 }),
 }
 
 local DECISIONS = {
@@ -149,10 +157,24 @@ local DECISIONS = {
 		audience_loyalty = 0,
 	}),
 	broken_ref = decision("broken_ref", { consequences = { "cheer", "missing_one" } }),
+	gain_act = decision("gain_act", {
+		rep = repVector({ compassion = 2, fear = -1 }),
+		speaker = { loyalty = 2, chemistry = 2 },
+		kingdom = { happiness = 3, stability = -2, morale = 4 },
+		consequences = { "calm", "unrest", "loyal_friends", "sad" },
+	}),
 }
 
 -- File order deliberately differs from alphabetical order and from priority order.
-local ORDER = { "z_farmer_low", "m_any_high", "a_farmer_high", "b_builder", "d_farmer_cd", "c_farmer_once" }
+local ORDER = {
+	"z_farmer_low",
+	"m_any_high",
+	"a_farmer_high",
+	"b_builder",
+	"d_farmer_cd",
+	"c_farmer_once",
+	"e_farmer_locked",
+}
 local SCENARIOS = {
 	z_farmer_low = scenario("z_farmer_low", "farmer", 10),
 	a_farmer_high = scenario("a_farmer_high", "farmer", 80, {
@@ -172,6 +194,80 @@ local SCENARIOS = {
 		trigger = { { var = "citizen.memory.promised", op = "=", value = false } },
 		cooldown_s = 120,
 	}),
+	e_farmer_locked = scenario("e_farmer_locked", "farmer", 70, { locked = true, cooldown_s = 300 }),
+}
+
+local OCCUPATIONS = {
+	farmer = { id = "farmer", name = "Farmer", job = "farmer", needs = {}, trait_affinity = {} },
+	soldier = { id = "soldier", name = "Soldier", job = "soldier", needs = {}, trait_affinity = {} },
+	captain = {
+		id = "captain",
+		name = "Captain",
+		job = "soldier",
+		key_role = "captain",
+		needs = {},
+		trait_affinity = {},
+	},
+}
+
+local function actionRow(id: string, event: string, fields: { [string]: any }?)
+	local a: { [string]: any } = {
+		id = id,
+		event = event,
+		condition = {},
+		farm_key = id,
+		repeat_decay = 1,
+		repeat_window_s = 0,
+		rep = repVector({}),
+		audience_condition = {},
+		audience_loyalty = 0,
+		kingdom = { happiness = 0, stability = 0, morale = 0 },
+	}
+	for k, v in fields or {} do
+		a[k] = v
+	end
+	return a
+end
+
+-- Rows 1-2 are one action with two audiences (soldiers appreciate it; hungry civilians resent it).
+local ACTIONS = {
+	actionRow("fund_barracks", "BuildingCompleted:barracks", {
+		farm_key = "barracks",
+		repeat_decay = 0.5,
+		repeat_window_s = 900,
+		audience = "soldiers",
+		audience_loyalty = 3,
+		kingdom = { happiness = 0, stability = 0, morale = 3 },
+	}),
+	actionRow("fund_barracks", "BuildingCompleted:barracks", {
+		farm_key = "barracks",
+		repeat_decay = 0.5,
+		repeat_window_s = 900,
+		condition = { clause("kingdom.fed_ratio", "<", 0.6) },
+		rep = repVector({ compassion = -1 }),
+		audience = "civilians",
+		audience_condition = { clause("citizen.hunger", ">=", 0.4) },
+		audience_loyalty = -3,
+		kingdom = { happiness = -2, stability = 0, morale = 0 },
+	}),
+	actionRow("any_building", "BuildingCompleted", { rep = repVector({ competence = 1 }), audience = "kingdom" }),
+	actionRow(
+		"visit",
+		"RulerVisited",
+		{ rep = repVector({ compassion = 1 }), audience = "speaker", audience_loyalty = 3 }
+	),
+	actionRow("farmers_cheer", "BuildingCompleted:farm", { audience = "occupation:farmer", audience_loyalty = 1 }),
+}
+local REPUTATION = {
+	categories = {},
+	order = CATEGORIES,
+	actions = ACTIONS,
+	byEvent = {
+		["BuildingCompleted:barracks"] = { 1, 2 },
+		BuildingCompleted = { 3 },
+		RulerVisited = { 4 },
+		["BuildingCompleted:farm"] = { 5 },
+	},
 }
 
 local FIXTURE = {
@@ -179,6 +275,8 @@ local FIXTURE = {
 	decisions = DECISIONS,
 	consequences = CONSEQUENCES,
 	traits = TRAITS,
+	occupations = OCCUPATIONS,
+	reputation = REPUTATION,
 }
 
 local function newQuery()
@@ -191,10 +289,6 @@ local function ids(list: { any }): { string }
 		table.insert(out, s.id)
 	end
 	return out
-end
-
-local function clause(var: string, op: string, value: any)
-	return { var = var, op = op, value = value }
 end
 
 local REACH_EXPECTED = { speaker = 1, family = 0.6, friends = 0.4, rivals = -0.3, kingdom = 0.2 }
@@ -306,6 +400,17 @@ describe("ContentQuery.evaluate (condition language, SPEC §4)", function()
 		expect(ContentQuery.evaluate({ clause("citizen.mood", ">=", 60) }, ctx)).toBe(false)
 		expect(ContentQuery.evaluate({ clause("citizen.mood", "=", 0 / 0) }, ctx)).toBe(false)
 		expect(ContentQuery.evaluate({ clause("citizen.trait.kind", "<", true) }, ctx)).toBe(false)
+	end)
+
+	it("counts an absent kingdom.count.<type> as 0, and only that family of variables", function()
+		expect(ContentQuery.evaluate({ clause("kingdom.count.blacksmith", "<", 1) }, {})).toBe(true)
+		expect(ContentQuery.evaluate({ clause("kingdom.count.blacksmith", "=", 0) }, {})).toBe(true)
+		expect(ContentQuery.evaluate({ clause("kingdom.count.blacksmith", ">=", 1) }, {})).toBe(false)
+		expect(
+			ContentQuery.evaluate({ clause("kingdom.count.blacksmith", ">=", 1) }, { ["kingdom.count.blacksmith"] = 2 })
+		).toBe(true)
+		expect(ContentQuery.evaluate({ clause("kingdom.food", "<", 1) }, {})).toBe(false)
+		expect(ContentQuery.evaluate({ clause("kingdom.level.keep", "=", 0) }, {})).toBe(false)
 	end)
 
 	it("ANDs chained clauses: every clause must hold", function()
@@ -441,10 +546,34 @@ describe("ContentQuery.eligibleScenarios", function()
 		expect(ids(a)).toEqual(ids(b))
 	end)
 
+	it("offers a locked scenario only to a citizen it was unlocked for (unlock_scenario)", function()
+		local q = newQuery()
+		local function offered(citizen: any, now: number, history: any): { string }
+			return ids(q.eligibleScenarios(farmerCtx, citizen, now, history))
+		end
+		expect(table.find(offered({ id = 7, occupation = "farmer" }, 0, {}), "e_farmer_locked")).toBeNil()
+		local other = { id = 7, occupation = "farmer", unlocked = { a_farmer_high = true } }
+		expect(table.find(offered(other, 0, {}), "e_farmer_locked")).toBeNil()
+		local unlocked = { id = 7, occupation = "farmer", unlocked = { e_farmer_locked = true } }
+		expect(offered(unlocked, 0, {})).toEqual({
+			"m_any_high",
+			"a_farmer_high",
+			"e_farmer_locked",
+			"d_farmer_cd",
+			"c_farmer_once",
+			"z_farmer_low",
+		})
+		-- once unlocked it still keeps its cooldown
+		expect(table.find(offered(unlocked, 100, { [7] = { e_farmer_locked = 0 } }), "e_farmer_locked")).toBeNil()
+		expect(table.find(offered(unlocked, 300, { [7] = { e_farmer_locked = 0 } }), "e_farmer_locked")).toBeTruthy()
+	end)
+
 	it("works with empty data", function()
 		local q = ContentQuery.new({})
 		expect(q.eligibleScenarios(farmerCtx, { id = 1, occupation = "farmer" }, 0, {})).toEqual({})
 		expect(q.decisionEffects("kind_act")).toBeNil()
+		expect(q.actionFirings("BuildingCompleted", {})).toEqual({})
+		expect(q.choicePreview("a", "b")).toBeNil()
 	end)
 end)
 
@@ -528,6 +657,185 @@ describe("ContentQuery.decisionEffects", function()
 		expect(p.memory_tag).toBeNil()
 		expect(p.consequences).toEqual({})
 		expect(p.risks).toEqual({})
+	end)
+end)
+
+describe("ContentQuery anti-farming of kingdom gains (SPEC §6.5)", function()
+	it("scales kingdom, chemistry and consequence gains by the kingdom multiplier, never losses", function()
+		local q = newQuery()
+		local e = q.decisionEffects("gain_act", 1, 0.5)
+		assert(e, "gain_act exists")
+		expect(e.multiplier).toBe(1)
+		expect(e.kingdom_multiplier).toBe(0.5)
+		expect(e.rep).toEqual(repVector({ compassion = 2, fear = -1 })) -- the ruler's own multiplier is 1
+		expect(e.kingdom).toEqual({ happiness = 1.5, stability = -2, morale = 2 })
+		expect(e.speaker).toEqual({ loyalty = 2, chemistry = 1 })
+		local magnitude = {}
+		for _, c in e.consequences do
+			magnitude[c.id] = c.magnitude
+		end
+		expect(magnitude).toEqual({ calm = -2, unrest = 5, loyal_friends = 1, sad = -3 }) -- relief is a gain
+		expect(CONSEQUENCES.calm.magnitude).toBe(-4) -- the content itself is untouched
+		expect(DECISIONS.gain_act.kingdom.happiness).toBe(3)
+	end)
+
+	it("defaults the kingdom multiplier to the ruler multiplier", function()
+		local e = newQuery().decisionEffects("gain_act", 0.25)
+		assert(e, "gain_act exists")
+		expect(e.kingdom_multiplier).toBe(0.25)
+		expect(e.kingdom.happiness).toBe(0.75)
+		expect(e.kingdom.stability).toBe(-2)
+		expect(e.rep.compassion).toBe(0.5)
+	end)
+end)
+
+describe("ContentQuery.fireDecision (one call per choice, SPEC §6.5 and §6.8)", function()
+	it("decays the ruler's reputation and the kingdom's gains separately and records both firings", function()
+		local q = newQuery()
+		local rulerA, rulerB, kingdom = {}, {}, {}
+		local first = q.fireDecision("kind_act", rulerA, kingdom, 0)
+		assert(first, "kind_act exists")
+		expect(first.multiplier).toBe(1)
+		expect(first.kingdom_multiplier).toBe(1)
+		expect(rulerA).toEqual({ handout = { 0 } })
+		expect(kingdom).toEqual({ handout = { 0 } })
+		-- a co-ruler's first time: full reputation for them, but the kingdom already heard it once
+		local second = q.fireDecision("kind_act", rulerB, kingdom, 10)
+		assert(second, "kind_act exists")
+		expect(second.multiplier).toBe(1)
+		expect(second.kingdom_multiplier).toBe(0.5)
+		expect(second.rep.compassion).toBe(3)
+		expect(second.kingdom.happiness).toBe(1)
+		expect(q.decisionLoyalty("kind_act", { "kind" }, "speaker", 0, second.kingdom_multiplier)).toBe(6)
+		local third = q.fireDecision("kind_act", rulerA, kingdom, 20)
+		assert(third, "kind_act exists")
+		expect(third.multiplier).toBe(0.5)
+		expect(third.kingdom_multiplier).toBe(0.25)
+		expect(kingdom).toEqual({ handout = { 0, 10, 20 } })
+		expect(q.fireDecision("nope", rulerA, kingdom, 30)).toBeNil()
+		expect(rulerA.nope).toBeNil()
+	end)
+
+	it("records one firing when the same history is passed for ruler and kingdom", function()
+		local q = newQuery()
+		local h = {}
+		q.fireDecision("kind_act", h, h, 0)
+		expect(h).toEqual({ handout = { 0 } })
+	end)
+end)
+
+describe("ContentQuery.choicePreview (model decision 7)", function()
+	it("returns the cost and the visible risks of one answer", function()
+		local q = newQuery()
+		local p = q.choicePreview("a_farmer_high", "a_farmer_high_yes")
+		assert(p, "the answer exists")
+		expect(p.decision).toBe("kind_act")
+		expect(p.cost).toEqual({ food = 25 })
+		expect(ids(p.risks)).toEqual({ "walkout_risk" })
+		local harsh = q.choicePreview("a_farmer_high", "a_farmer_high_no")
+		assert(harsh, "the answer exists")
+		expect(harsh.cost).toEqual({})
+		expect(harsh.risks).toEqual({})
+		expect(q.choicePreview("a_farmer_high", "nope")).toBeNil()
+		expect(q.choicePreview("nope", "a_farmer_high_yes")).toBeNil()
+	end)
+end)
+
+describe("ContentQuery actions (SPEC §6.9)", function()
+	it("returns the rows of an event and of its bare name, filtered by condition, grouped per action", function()
+		local q = newQuery()
+		local fed = q.actionFirings("BuildingCompleted:barracks", { ["kingdom.fed_ratio"] = 0.9 })
+		expect(#fed).toBe(2)
+		expect(fed[1].id).toBe("fund_barracks")
+		expect(fed[1].farm_key).toBe("barracks")
+		expect(fed[1].repeat_decay).toBe(0.5)
+		expect(#fed[1].rows).toBe(1)
+		expect(fed[1].kingdom).toEqual({ happiness = 0, stability = 0, morale = 3 })
+		expect(fed[2].id).toBe("any_building")
+		expect(fed[2].rep).toEqual(repVector({ competence = 1 }))
+		local starving = q.actionFirings("BuildingCompleted:barracks", { ["kingdom.fed_ratio"] = 0.5 })
+		expect(#starving[1].rows).toBe(2)
+		expect(starving[1].rows[2]).toBe(ACTIONS[2]) -- the shared content row
+		expect(starving[1].rep).toEqual(repVector({ compassion = -1 }))
+		expect(starving[1].kingdom).toEqual({ happiness = -2, stability = 0, morale = 3 })
+		expect(#q.actionFirings("BuildingCompleted", {})).toBe(1)
+		expect(q.actionFirings("Nothing", {})).toEqual({})
+		expect(q.scaleGains(starving[1].kingdom :: any, 0.5)).toEqual({ happiness = -2, stability = 0, morale = 1.5 })
+	end)
+
+	it(
+		"finds each row's audience: soldiers by job, civilians, occupation, speaker, kingdom, then the listener condition",
+		function()
+			local q = newQuery()
+			local soldiers, civilians = ACTIONS[1] :: any, ACTIONS[2] :: any
+			expect(q.inActionAudience(soldiers, { occupation = "soldier" }, {})).toBe(true)
+			expect(q.inActionAudience(soldiers, { occupation = "captain" }, {})).toBe(true) -- job soldier
+			expect(q.inActionAudience(soldiers, { occupation = "farmer" }, {})).toBe(false)
+			local hungry = { ["citizen.hunger"] = 0.5 }
+			expect(q.inActionAudience(civilians, { occupation = "farmer" }, hungry)).toBe(true)
+			expect(q.inActionAudience(civilians, { occupation = "farmer" }, { ["citizen.hunger"] = 0.1 })).toBe(false)
+			expect(q.inActionAudience(civilians, { occupation = "captain" }, hungry)).toBe(false)
+			expect(q.inActionAudience(ACTIONS[3] :: any, { occupation = "captain" }, {})).toBe(true)
+			expect(q.inActionAudience(ACTIONS[4] :: any, { occupation = "farmer", speaker = true }, {})).toBe(true)
+			expect(q.inActionAudience(ACTIONS[4] :: any, { occupation = "farmer" }, {})).toBe(false)
+			expect(q.inActionAudience(ACTIONS[5] :: any, { occupation = "farmer" }, {})).toBe(true)
+			expect(q.inActionAudience(ACTIONS[5] :: any, { occupation = "soldier" }, {})).toBe(false)
+			expect(q.inActionAudience(actionRow("nobody", "X") :: any, { occupation = "farmer" }, {})).toBe(false)
+		end
+	)
+
+	it("computes a listener's loyalty with speaker or group reach, the explicit column and the multiplier", function()
+		local q = newQuery()
+		-- civilians row: compassion -1; a kind listener at group reach: 2 * -1 * 0.2 - 3 = -3.4
+		expect(q.actionLoyalty(ACTIONS[2] :: any, { "kind" }, 0)).toBeNear(-3.4)
+		expect(q.actionLoyalty(ACTIONS[2] :: any, { "kind" }, 0, 0)).toBeNear(-3.4) -- losses never decay
+		-- visit row at speaker reach: 2 * 1 + 3 = 5, halved by the repeat multiplier
+		expect(q.actionLoyalty(ACTIONS[4] :: any, { "kind" }, 0)).toBe(5)
+		expect(q.actionLoyalty(ACTIONS[4] :: any, { "kind" }, 0, 0.5)).toBe(2.5)
+		expect(q.actionLoyalty(ACTIONS[4] :: any, { "kind" }, 20)).toBeNear(7.5)
+		expect(q.actionLoyalty(actionRow("nobody", "X") :: any, { "kind" }, 0)).toBe(0)
+	end)
+end)
+
+describe("ContentQuery notice text (SPEC §3)", function()
+	it("fills the mechanics placeholders from the consequence's own numbers", function()
+		local risk = consequence("risk", "productivity", "speaker", 0.5, {
+			magnitude = -0.15,
+			duration_s = 45,
+			notice = "Risk ({chance}): {name} is {magnitude_pct} slower for {duration}.",
+		}) :: any
+		expect(ContentQuery.noticeValues(risk)).toEqual({
+			chance = "50%",
+			magnitude = "-0.15",
+			magnitude_pct = "15%",
+			duration = "45 s",
+		})
+		expect(ContentQuery.consequenceNotice(risk, { name = "Agnes" })).toBe(
+			"Risk (50%): Agnes is 15% slower for 45 s."
+		)
+		expect(ContentQuery.consequenceNotice(risk)).toBe("Risk (50%): {name} is 15% slower for 45 s.")
+		local unrest = consequence("u", "unrest_pressure", "kingdom", 1, {
+			magnitude = 5,
+			duration_s = 240,
+			notice = "Unrest {magnitude} for {duration}.",
+		}) :: any
+		expect(ContentQuery.consequenceNotice(unrest)).toBe("Unrest +5 for 4 minutes.")
+		unrest.magnitude = -5
+		expect(ContentQuery.consequenceNotice(unrest)).toBe("Unrest -5 for 4 minutes.")
+		expect(ContentQuery.consequenceNotice(consequence("x", "cue", "speaker", 1) :: any)).toBeNil()
+	end)
+
+	it("writes durations in seconds or whole minutes", function()
+		expect(ContentQuery.durationText(45)).toBe("45 s")
+		expect(ContentQuery.durationText(60)).toBe("1 minute")
+		expect(ContentQuery.durationText(120)).toBe("2 minutes")
+		expect(ContentQuery.durationText(90)).toBe("90 s")
+		expect(ContentQuery.durationText(0)).toBe("0 s")
+	end)
+
+	it("fill replaces only the keys it is given, literally", function()
+		expect(ContentQuery.fill("{a} and {b}", { a = "x" })).toBe("x and {b}")
+		expect(ContentQuery.fill("{a} {a}", { a = "50%" })).toBe("50% 50%")
 	end)
 end)
 
@@ -738,6 +1046,22 @@ describe("ContentQuery chemistry helpers (model decisions 2 and 4)", function()
 		expect(ContentQuery.applyChemistry(-4, -20)).toBe(-6)
 		expect(ContentQuery.applyChemistry(0, 20)).toBe(0)
 		expect(ContentQuery.applyChemistry(4, nil)).toBe(4)
+	end)
+
+	it("driftChemistry keeps decision changes within 5 of the rolled value and within -20..20", function()
+		expect(ContentQuery.CHEMISTRY_DRIFT_MAX).toBe(5)
+		expect(ContentQuery.driftChemistry(0, 0, 3)).toBe(3)
+		expect(ContentQuery.driftChemistry(0, 4, 3)).toBe(5)
+		expect(ContentQuery.driftChemistry(0, -4, -3)).toBe(-5)
+		expect(ContentQuery.driftChemistry(18, 18, 5)).toBe(20)
+		expect(ContentQuery.driftChemistry(-18, -20, -1)).toBe(-20)
+		expect(ContentQuery.driftChemistry(3, 3, 0 / 0)).toBe(3)
+	end)
+
+	it("scaleGains scales the positive entries of a copy", function()
+		local v = { a = 4, b = -4, c = 0 }
+		expect(ContentQuery.scaleGains(v, 0.5)).toEqual({ a = 2, b = -4, c = 0 })
+		expect(v.a).toBe(4)
 	end)
 
 	it("startLoyalty is 50 + chemistry/4 with chemistry clamped", function()

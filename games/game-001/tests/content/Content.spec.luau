@@ -75,6 +75,18 @@ local CONSEQUENCE_KINDS = {
 	cue = true,
 }
 local TEXT_LIMITS = { thought = 48, question = 160, response = 70, reaction = 140, notice = 100 }
+local THOUGHT_ICONS = { request = true, concern = true, idea = true } -- CONTRACTS G13.3
+local REACTION_TONES = { happy = true, angry = true, sad = true, neutral = true } -- CONTRACTS G13.3
+local RELATION_FLAGS = { family = "citizen.has_family", friend = "citizen.has_friend", rival = "citizen.has_rival" }
+-- model decision 6 guards (content/SPEC.md §5.4 and §6.6)
+local MAX_DURATION_S = 600
+local STRIKE_MAX_SHARE = 0.5
+local STRIKE_MAX_DURATION_S = 120
+local GROUP_PRODUCTIVITY_FLOOR = -0.5
+local KINGDOM_LOYALTY_FLOOR = -5
+local KINGDOM_STABILITY_FLOOR = -5
+local LOCAL_TARGETS = { speaker = true, family = true, friends = true }
+local BROAD_TARGETS = { kingdom = true, civilians = true, soldiers = true }
 
 -- ---------------------------------------------------------------- helpers
 
@@ -147,7 +159,7 @@ local function varSpec(var: string): (string?, { string }?, boolean?)
 		return "enum", sortedKeys(Occupations), true
 	elseif var == "phase" then
 		return "enum", PHASES, false
-	elseif var == "citizen.has_family" or var == "citizen.has_rival" then
+	elseif var == "citizen.has_family" or var == "citizen.has_friend" or var == "citizen.has_rival" then
 		return "flag", nil, true
 	end
 	local building = string.match(var, "^kingdom%.count%.(.+)$")
@@ -199,6 +211,7 @@ local function fullSampleCtx(): { [string]: any }
 		["citizen.hunger"] = 0.4,
 		["citizen.obedience"] = 50,
 		["citizen.has_family"] = true,
+		["citizen.has_friend"] = true,
 		["citizen.has_rival"] = false,
 	}
 	for i, b in BUILDING_TYPES do
@@ -335,6 +348,63 @@ describe("Dialogue", function()
 		end
 	end)
 
+	it("gives every scenario and response a contracted icon and tone (CONTRACTS G13.3)", function()
+		for _, id in Dialogue.order do
+			local s = Dialogue.scenarios[id]
+			if not THOUGHT_ICONS[s.icon] then
+				error(`scenario {id}: icon {tostring(s.icon)} is not request, concern or idea`)
+			end
+			expect(s.locked).toBeA("boolean")
+			for _, r in s.responses do
+				if not REACTION_TONES[r.tone] then
+					error(`response {r.id}: tone {tostring(r.tone)} is not happy, angry, sad or neutral`)
+				end
+			end
+		end
+	end)
+
+	it("uses {family}, {friend} and {rival} only where the trigger guarantees that relation", function()
+		for _, id in Dialogue.order do
+			local s = Dialogue.scenarios[id]
+			local have = {}
+			for _, clause in s.trigger do
+				if clause.op == "=" and clause.value == true then
+					have[clause.var] = true
+				end
+			end
+			local texts = { s.thought, s.question }
+			for _, r in s.responses do
+				table.insert(texts, r.text)
+				table.insert(texts, r.reaction)
+			end
+			for _, text in texts do
+				for name in string.gmatch(text, "{(%w+)}") do
+					local flag = RELATION_FLAGS[name]
+					if flag and not have[flag] then
+						error(`scenario {id}: '\{{name}\}' without {flag} in the trigger`)
+					end
+				end
+			end
+		end
+	end)
+
+	it("locks exactly the scenarios that an unlock_scenario consequence opens", function()
+		local unlockable = {}
+		for _, c in Consequences do
+			if c.kind == "unlock_scenario" then
+				unlockable[c.param] = true
+			end
+		end
+		for _, id in Dialogue.order do
+			local s = Dialogue.scenarios[id]
+			if (s.locked == true) ~= (unlockable[id] == true) then
+				error(
+					`scenario {id}: locked = {tostring(s.locked)}, but unlockable = {tostring(unlockable[id] == true)}`
+				)
+			end
+		end
+	end)
+
 	it("gives every scenario 2-4 responses, sorted by order, that reference existing decisions", function()
 		local responseIds = {}
 		for _, id in Dialogue.order do
@@ -440,13 +510,19 @@ describe("conditions (SPEC §4)", function()
 			if ctx == nil then
 				error(`scenario {id}: no value of {tostring(badVar)} satisfies its trigger`)
 			end
-			local offered = ContentQuery.eligibleScenarios(ctx, { id = 1 }, 0, {})
-			local found = false
-			for _, o in offered do
-				found = found or o.id == id
+			local function offered(citizen: any): boolean
+				for _, o in ContentQuery.eligibleScenarios(ctx, citizen, 0, {}) do
+					if o.id == id then
+						return true
+					end
+				end
+				return false
 			end
-			if not found then
+			if not offered({ id = 1, unlocked = { [id] = true } }) then
 				error(`scenario {id}: not offered even when its trigger holds`)
+			end
+			if s.locked and offered({ id = 1 }) then
+				error(`scenario {id}: locked, but offered to a citizen it was never unlocked for`)
 			end
 		end
 	end)
@@ -528,8 +604,32 @@ describe("Decisions and Consequences", function()
 			if not (simple[c.target] or (occupation and Occupations[occupation])) then
 				error(`consequence {id}: unknown target {c.target}`)
 			end
-			if c.kind == "strike" and (c.target == "kingdom" or c.target == "civilians" or c.target == "soldiers") then
-				error(`consequence {id}: a strike may not target {c.target}`)
+			if c.duration_s > MAX_DURATION_S then
+				error(`consequence {id}: duration_s {c.duration_s} > {MAX_DURATION_S}`)
+			end
+			if c.kind == "strike" then
+				local target = Occupations[occupation or ""]
+				if target == nil or target.job == "soldier" then
+					error(`consequence {id}: a strike targets one civilian occupation:<id>, not {c.target}`)
+				end
+				if c.magnitude > STRIKE_MAX_SHARE or c.duration_s > STRIKE_MAX_DURATION_S then
+					error(`consequence {id}: a strike from one decision is at most half an occupation for 120 s`)
+				end
+			end
+			if c.kind == "productivity" and not LOCAL_TARGETS[c.target] and c.magnitude < GROUP_PRODUCTIVITY_FLOOR then
+				error(`consequence {id}: productivity {c.magnitude} on {c.target} would stop a whole group`)
+			end
+			if c.chance < 1 and (c.notice == nil or string.find(c.notice, "{chance}", 1, true) == nil) then
+				error(`consequence {id}: a risk (chance {c.chance}) must show its odds with \{chance\}`)
+			end
+			if c.notice then
+				local filled = ContentQuery.consequenceNotice(
+					c,
+					{ name = "Agnes", ruler = "Ruler", kingdom = "Kingdom", occupation = "Farmer" }
+				)
+				if filled == nil or string.find(filled, "{", 1, true) then
+					error(`consequence {id}: notice keeps an unfilled placeholder: {tostring(filled)}`)
+				end
 			end
 			if c.kind == "unlock_scenario" and Dialogue.scenarios[c.param] == nil then
 				error(`consequence {id}: unlocks unknown scenario {tostring(c.param)}`)
@@ -539,6 +639,27 @@ describe("Decisions and Consequences", function()
 			end
 			if c.notice and textLength(c.notice) > TEXT_LIMITS.notice then
 				error(`consequence {id}: notice over its length limit`)
+			end
+		end
+	end)
+end)
+
+describe("model decision 6: no single decision turns the kingdom", function()
+	it("caps every decision's kingdom-wide loyalty and stability change", function()
+		for _, id in sortedKeys(Decisions) do
+			local d = Decisions[id]
+			local loyalty = if d.audience == "kingdom" then d.audience_loyalty else 0
+			local stability = d.kingdom.stability
+			for _, cid in d.consequences do
+				local c = Consequences[cid]
+				if c.kind == "loyalty" and BROAD_TARGETS[c.target] then
+					loyalty += c.magnitude
+				elseif c.kind == "stability" then
+					stability += c.magnitude
+				end
+			end
+			if loyalty < KINGDOM_LOYALTY_FLOOR or stability < KINGDOM_STABILITY_FLOOR then
+				error(`decision {id}: kingdom-wide loyalty {loyalty} / stability {stability} below the floor`)
 			end
 		end
 	end)
@@ -633,6 +754,50 @@ describe("Reputation", function()
 			if not (a.repeat_decay > 0 and a.repeat_decay <= 1) then
 				error(`action #{i} ({a.id}): repeat_decay outside (0, 1]`)
 			end
+		end
+	end)
+
+	it("lets ContentQuery fire every event and reach a listener for every row (SPEC §6.9)", function()
+		local ctx = fullSampleCtx()
+		for _, event in sortedKeys(Reputation.byEvent) do
+			local listed = {}
+			for _, i in Reputation.byEvent[event] do
+				listed[Reputation.actions[i]] = true
+			end
+			local base = string.match(event, "^([^:]+):")
+			for _, i in (if base then Reputation.byEvent[base] else nil) or {} do
+				listed[Reputation.actions[i]] = true
+			end
+			for _, f in ContentQuery.actionFirings(event, ctx) do
+				expect(#f.rows).toBeGreaterThan(0)
+				for _, row in f.rows do
+					if not listed[row] or row.id ~= f.id or not ContentQuery.evaluate(row.condition, ctx) then
+						error(`event {event}: firing {f.id} holds a row that should not fire`)
+					end
+				end
+			end
+		end
+		for i, a in Reputation.actions do
+			local audience = a.audience
+			if audience == nil then
+				continue
+			end
+			local occupation = string.match(audience, "^occupation:(.+)$")
+			local listener = {
+				occupation = occupation or (if audience == "soldiers" then "soldier" else "farmer"),
+				speaker = true,
+			}
+			if occupation and Occupations[occupation] == nil then
+				error(`action #{i} ({a.id}): unknown audience occupation {occupation}`)
+			end
+			local listenerCtx, badVar = satisfyingCtx(a.audience_condition, ctx)
+			if listenerCtx == nil then
+				error(`action #{i} ({a.id}): no listener can satisfy {tostring(badVar)}`)
+			end
+			if not ContentQuery.inActionAudience(a :: any, listener, listenerCtx) then
+				error(`action #{i} ({a.id}): no listener of audience {audience} hears it`)
+			end
+			expect(ContentQuery.actionLoyalty(a :: any, { "kind" }, 0)).toBeA("number")
 		end
 	end)
 end)

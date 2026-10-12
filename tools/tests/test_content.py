@@ -156,6 +156,7 @@ def vocab():
     ("citizen.memory.rulerVisited & citizen.chemistry > -5", [
         {"var": "citizen.memory.rulerVisited", "op": "=", "value": True},
         {"var": "citizen.chemistry", "op": ">", "value": -5}]),
+    ("citizen.has_friend", [{"var": "citizen.has_friend", "op": "=", "value": True}]),
 ])
 def test_condition_parses_into_typed_clauses(text, expected):
     clauses, _ = content.parse_condition(text, vocab(), "citizen")
@@ -179,6 +180,13 @@ def test_condition_parses_into_typed_clauses(text, expected):
     ("rep.fear > 5 && rep.honor < 5", "single '&'"),
     ("rep.fear > 5 & ", "clause 2 is empty"),
     ("occupation in farmer,farmer", "appears twice"),
+    # hints for the mistakes non-programmers make
+    ("kingdom.food < 50 and citizen.hunger > 0.5", "join clauses with ' & ' (not 'and')"),
+    ("Kingdom.Food < 50", "unknown variable 'Kingdom.Food' (did you mean 'kingdom.food'?)"),
+    ("kingdom.food =< 50", "write '<=' instead of '=<'"),
+    ("kingdom.food => 50", "write '>=' instead of '=>'"),
+    ("kingdom.food ≤ 50", "write '<=' instead of '≤'"),
+    ("not event.raid", "write '!event.raid' instead of 'not event.raid'"),
 ])
 def test_condition_rejects_with_precise_message(text, message):
     with pytest.raises(content.CondError) as err:
@@ -251,6 +259,9 @@ def test_generated_shapes(lib):
     assert 'audience_condition = { { var = "citizen.hunger", op = ">=", value = 0.5 } },' in reputation
     names = files["Names.luau"]
     assert '"D\'Arcy-Mae",' in names
+    # presentation (CONTRACTS G13.3) and unlock gating (SPEC §5.4)
+    assert dialogue.count("locked = true,") == 1  # s_smith_tools, opened by c_unlock_followup
+    assert 'icon = "request",' in dialogue and 'tone = "neutral",' in dialogue
 
 
 def test_generated_luau_passes_stylua_and_selene(lib, tmp_path, capsys):
@@ -281,7 +292,7 @@ def test_lint_reports_design_warnings(lib, capsys):
     code, out = run(capsys, "lint", "--content", lib)
     assert code == 0
     assert "[farm_key] no farm_key: repeats of 'd_grain_gift'" in out
-    # free decision with a reputation sum above 6
+    # free decision with a reputation sum above 6 (fear does not count as a gain)
     set_cell(lib, "dialogue/decisions.csv", 5, "cost", "")
     set_cell(lib, "dialogue/decisions.csv", 5, "rep_competence", "7")
     # a response that dominates: d_threaten becomes d_pay_bonus without the cost
@@ -290,14 +301,75 @@ def test_lint_reports_design_warnings(lib, capsys):
     idx = next(i for i, r in enumerate(rows) if r[0] == "d_threaten")
     rows[idx] = ["d_threaten", "threats", *pay[2:4], "", *pay[5:23], "", "", ""]
     write_rows(lib / "dialogue" / "decisions.csv", rows)
-    # a risky consequence without a notice
-    set_cell(lib, "dialogue/consequences.csv", 6, "notice_text", "")
     code, out = run(capsys, "lint", "--content", lib)
     assert code == 0, out
-    assert "free decision 'd_buy_tools' gives +7 reputation in total (> 6)" in out
+    assert "free decision 'd_buy_tools' gives +7 reputation in total, fear aside (> 6)" in out
     assert "response 'r_sp_threat' (d_threaten) is at least as good as every other answer of 's_soldier_pay'" in out
-    assert "chance 0.5 < 1 without notice_text" in out
     assert "consequence 'c_desert_risk' is not used by any decision" in out
+    set_cell(lib, "dialogue/decisions.csv", 8, "rep_fear", "9")  # a big fear gain is not "better"
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "response 'r_sp_threat' (d_threaten) is at least as good" in out
+
+
+def test_lint_scores_answers_with_the_personality_reaction(lib, capsys):
+    """The explicit columns alone hide a free answer that most citizens prefer (review finding: drill/inspect)."""
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "free answer" not in out
+    set_cell(lib, "dialogue/decisions.csv", 6, "rep_honor", "0")  # d_promise_later: free, ...
+    set_cell(lib, "dialogue/decisions.csv", 6, "rep_competence", "3")  # ... as much reputation as buying tools
+    set_cell(lib, "dialogue/decisions.csv", 6, "speaker_loyalty", "8")
+    code, out = run(capsys, "lint", "--content", lib)
+    assert ("free answer 'r_st_later' (d_promise_later) is the best speaker-loyalty choice for 100% of sampled "
+            "citizens of 's_smith_tools'") in out
+    # deterministic: the sample is seeded by the scenario id
+    assert run(capsys, "lint", "--content", lib)[1] == out
+
+
+def test_lint_contract_memory_cue_and_number_warnings(lib, capsys):
+    set_cell(lib, "dialogue/consequences.csv", 2, "notice_text", "Farmers work 20% slower for 2 minutes.")
+    code, out = run(capsys, "lint", "--content", lib)
+    assert code == 0
+    # one warning per event name that is not on the CONTRACTS G9 bus
+    assert "event 'RaidDefended' (rows 5) is not a CONTRACTS G9 bus event" in out
+    assert out.count("is not a CONTRACTS G9 bus event") == 1
+    assert "memory 'fed_by_ruler' is set but no trigger reads it" in out
+    assert "memory 'promised_tools' is set but" not in out  # s_smith_tools reads it
+    assert "cue 'cue_grumble' is not in the cue vocabulary" in out
+    assert "consequences.csv:2:10: [notice_text] the notice types a number" in out
+
+
+def test_lint_flags_a_locked_scenario_that_nothing_unlocks(lib, capsys):
+    set_cell(lib, "dialogue/decisions.csv", 5, "consequences", "")  # d_buy_tools no longer unlocks s_smith_tools
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "scenario 's_smith_tools' is locked, but no decision uses a consequence that unlocks it" in out
+
+
+def test_notes_may_hold_tabs_and_line_breaks(lib, capsys):
+    set_cell(lib, "dialogue/decisions.csv", 2, "notes", "line one\nline\ttwo")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+
+
+def test_thought_icon_and_reaction_tone_columns(lib, tmp_path, capsys):
+    rows = read_rows(lib / "dialogue" / "scenarios.csv")
+    rows[0].insert(6, "thought_icon")
+    for r, icon in zip(rows[1:], ("concern", "", "idea")):
+        r.insert(6, icon)
+    write_rows(lib / "dialogue" / "scenarios.csv", rows)
+    rows = read_rows(lib / "dialogue" / "responses.csv")
+    rows[0].insert(5, "reaction_tone")
+    for r in rows[1:]:
+        r.insert(5, "happy" if r[1] == "r_hf_share" else "")
+    write_rows(lib / "dialogue" / "responses.csv", rows)
+    out = tmp_path / "out"
+    code, text = run(capsys, "build", "--content", lib, "--out", out)
+    assert code == 0, text
+    dialogue = (out / "Dialogue.luau").read_text(encoding="utf-8")
+    assert 'icon = "concern",' in dialogue and 'icon = "idea",' in dialogue and 'icon = "request",' in dialogue
+    assert 'tone = "happy",' in dialogue and 'tone = "neutral",' in dialogue
+    set_cell(lib, "dialogue/scenarios.csv", 2, "thought_icon", "shout")
+    code, text = run(capsys, "validate", "--content", lib)
+    assert code == 1 and "dialogue/scenarios.csv:2:7: [thought_icon] 'shout' is not allowed" in text
 
 
 # ----------------------------------------------------------------------------- CSV round trip helpers
@@ -471,6 +543,246 @@ def test_import_converts_typed_cells_back_to_text(lib, tmp_path, capsys):
     assert code == 0, out
     row = read_rows(lib / "dialogue" / "scenarios.csv")[1]
     assert row[3] == "81" and row[5] == "true"
+
+
+def _sheet_cell(wb, sheet: str, row: int, column: str):
+    ws = wb[sheet]
+    header = [c.value for c in ws[1]]
+    return ws.cell(row, header.index(column) + 1)
+
+
+@needs_openpyxl
+def test_import_refuses_mechanics_from_a_stale_workbook(lib, tmp_path, capsys):
+    """Review finding: an old workbook silently reverted a cost changed in the CSV after the export."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    set_cell(lib, "dialogue/decisions.csv", 2, "cost", "food:30")  # a developer edit after the export
+    after_dev = csv_bytes(lib)
+    wb = load_workbook(book)  # the editor only rewrote two lines of text
+    _sheet_cell(wb, "responses", 2, "reaction_text").value = "Bless you, truly!"
+    _sheet_cell(wb, "scenarios", 3, "thought_text").value = "My hammer is cracked."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1, out
+    assert "decisions!E2 [cost]: decisions › d_share_grain [cost]: 'food:30' → 'food:20'" in out
+    assert "dialogue/decisions.csv changed after this workbook was exported" in out
+    assert "--text-only" in out and "no CSV was changed" in out
+    assert csv_bytes(lib) == after_dev
+    # --text-only takes the two texts and keeps the developer's cost
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 0, out
+    assert "2 change(s) from the workbook: TEXT 2, MECHANICS 0, NOTES 0" in out
+    assert "1 mechanics change(s) in the workbook were NOT imported" in out
+    assert "ignored   decisions › d_share_grain [cost]: 'food:30' → 'food:20'" in out
+    assert read_rows(lib / "dialogue" / "decisions.csv")[1][4] == "food:30"
+    assert read_rows(lib / "dialogue" / "responses.csv")[1][4] == "Bless you, truly!"
+    now = csv_bytes(lib)
+    assert [rel for rel in CSV_PATHS if now[rel] != after_dev[rel]] == ["dialogue/scenarios.csv",
+                                                                         "dialogue/responses.csv"]
+
+
+@needs_openpyxl
+def test_import_lists_every_change_and_takes_mechanics_from_a_fresh_workbook(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "scenarios", 2, "priority").value = "81"
+    _sheet_cell(wb, "scenarios", 2, "notes").value = "my note"
+    _sheet_cell(wb, "responses", 3, "response_text").value = "Rations for all. Me too."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0, out
+    assert "3 change(s) from the workbook: TEXT 1, MECHANICS 1, NOTES 1" in out
+    assert "MECHANICS scenarios › s_hungry_farmer [priority]: '80' → '81'" in out
+    assert "NOTES     scenarios › s_hungry_farmer [notes]: \"\" → 'my note'" in out
+    assert "TEXT      responses › r_hf_ration [response_text]:" in out
+    assert read_rows(lib / "dialogue" / "scenarios.csv")[1][3] == "81"
+
+
+@needs_openpyxl
+def test_reimporting_one_workbook_after_more_text_edits(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 2, "reaction_text").value = "First pass."
+    wb.save(book)
+    assert run(capsys, "import-xlsx", "--content", lib, book)[0] == 0
+    wb = load_workbook(book)  # the same, now older, workbook: more text only
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "Second pass."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0, out
+    assert "TEXT 1, MECHANICS 0" in out
+    rows = read_rows(lib / "dialogue" / "responses.csv")
+    assert rows[1][4] == "First pass." and rows[2][4] == "Second pass."
+
+
+@needs_openpyxl
+def test_import_without_an_export_stamp_takes_text_but_not_mechanics(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    lists = wb["lists"]
+    header = [c.value for c in lists[1]]
+    lists.delete_cols(header.index("stamp_file") + 1, 2)
+    _sheet_cell(wb, "scenarios", 2, "priority").value = "81"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1 and "this workbook has no export stamp" in out
+    wb = load_workbook(book)
+    _sheet_cell(wb, "scenarios", 2, "priority").value = "80"
+    _sheet_cell(wb, "scenarios", 2, "thought_text").value = "Still hungry."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0, out
+    assert read_rows(lib / "dialogue" / "scenarios.csv")[1][6] == "Still hungry."
+
+
+@needs_openpyxl
+def test_sorting_the_workbook_never_reorders_the_csv(lib, tmp_path, capsys):
+    """Review finding: sorting the scenarios sheet changed Dialogue.order, the priority tie-break."""
+    from openpyxl import load_workbook
+
+    out1, out2 = tmp_path / "out1", tmp_path / "out2"
+    assert run(capsys, "build", "--content", lib, "--out", out1)[0] == 0
+    before = csv_bytes(lib)
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    for sheet in ("scenarios", "responses", "names", "actions"):  # keyed and keyless tables
+        ws = wb[sheet]
+        values = [[c.value for c in row] for row in ws.iter_rows(min_row=2)]
+        for r, row in enumerate(reversed(values), 2):
+            for c, v in enumerate(row, 1):
+                ws.cell(r, c).value = v
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, "--out", out2, book, "--build")
+    assert code == 0, out
+    assert "0 CSV file(s) updated" in out
+    assert csv_bytes(lib) == before
+    assert snapshot(out1) == snapshot(out2)
+    # sorted and edited: only the edited text changes
+    wb = load_workbook(book)
+    ws = wb["scenarios"]
+    header = [c.value for c in ws[1]]
+    row = next(r for r in range(2, ws.max_row + 1) if ws.cell(r, 1).value == "s_smith_tools")
+    ws.cell(row, header.index("thought_text") + 1).value = "My tools are worn to nothing."
+    wb.save(book)
+    assert run(capsys, "import-xlsx", "--content", lib, book)[0] == 0
+    old, new = before["dialogue/scenarios.csv"].decode().splitlines(), csv_bytes(lib)["dialogue/scenarios.csv"].decode()
+    assert [i for i, (a, b) in enumerate(zip(old, new.splitlines())) if a != b] == [2]
+
+
+@needs_openpyxl
+def test_text_only_refuses_rows_moved_in_a_table_without_a_key(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    wb["names"].delete_rows(2)
+    wb.save(book)
+    before = csv_bytes(lib)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 1
+    assert "rows were added, removed or moved in sheet 'names'" in out
+    assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+def test_responses_sheet_has_read_only_help_columns(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    ws = wb["responses"]
+    header = [c.value for c in ws[1]]
+    assert header[-2:] == ["info: question", "info: effects"]
+    assert ws.cell(1, len(header)).comment.text.startswith("READ ONLY")
+    assert ws.cell(2, len(header) - 1).value.startswith("{ruler}, the granary is low")
+    effects = ws.cell(2, len(header)).value
+    assert effects.startswith("cost food:20 | rep compassion +3, honor +1 | speaker +4")
+    assert "then c_remember_kindness, c_cheer" in effects
+    ws.cell(2, len(header)).value = "edited help text"  # ignored on import
+    wb.save(book)
+    before = csv_bytes(lib)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0 and "0 CSV file(s) updated" in out, out
+    assert csv_bytes(lib) == before
+
+
+def test_export_names_the_cell_with_an_invisible_character(lib, tmp_path, capsys):
+    pytest.importorskip("openpyxl")
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Bless you!\x0bWe'll work those fields.")
+    book = tmp_path / "x.xlsx"
+    code, out = run(capsys, "export-xlsx", "--content", lib, book)
+    assert code == 1
+    assert "dialogue/responses.csv:2:5: [reaction_text] cannot export: invisible character U+000B" in out
+    assert not book.exists()
+
+
+@needs_openpyxl
+def test_import_rejects_invisible_characters(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "scenarios", 2, "question_text").value = "Ruler\u200bword, we starve."
+    _sheet_cell(wb, "responses", 2, "reaction_text").value = "line\u2028sep"
+    wb.save(book)
+    before = csv_bytes(lib)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1
+    assert "scenarios!H2 [question_text]: invisible character U+200B (zero-width space) at position 6" in out
+    assert "responses!E2 [reaction_text]: invisible character U+2028 (line separator)" in out
+    assert csv_bytes(lib) == before
+
+
+# ----------------------------------------------------------------------------- real content regressions
+@real_only
+def test_real_content_keeps_the_balance_review_fixes(capsys):
+    code, out = run(capsys, "lint")
+    assert code == 0
+    for rid in ("captain_drill_drill_myself", "miner_rockfall_inspect"):
+        assert f"free answer '{rid}'" not in out  # finding: free 'ruler present' answers dominated
+    for tag in ("feast_promised", "forge_half_promise", "promised_harvest", "promised_pay", "inspected_face"):
+        assert f"memory '{tag}' is set but no trigger reads it" not in out  # every promise comes due
+    _, model, report = content.load_and_validate(REAL)
+    assert not report.errors
+    assert any(t["weights"]["courage"] < 0 for t in model.traits.values())  # someone dislikes courage
+    assert any((a["rep"]["fear"] or 0) < 0 for a in model.actions)  # setbacks lower fear
+    mercy = [d for d in model.decisions.values() if (d["rep"]["fear"] or 0) < 0 and d["farm_key"] == "mercy"]
+    assert mercy  # a repeatable fear-lowering answer
+    assert "KeepUpgraded" not in {(a["event"] or "").split(":")[0] for a in model.actions}
+    for a in model.actions:  # construction reputation only through a measured need
+        if (a["event"] or "").startswith(content.CONSTRUCTION_EVENTS) and any(v > 0 for v in a["rep"].values()):
+            assert a["condition"], a
+
+
+@real_only
+def test_real_content_rejects_a_strike_by_the_captains(tmp_path, capsys):
+    lib = tmp_path / "content"
+    for spec in content.SPECS:
+        (lib / spec.path).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REAL / spec.path, lib / spec.path)
+    rows = read_rows(lib / "dialogue" / "consequences.csv")
+    row = next(i for i, r in enumerate(rows, 1) if r[0] == "speaker_refuses_work")
+    set_cell(lib, "dialogue/consequences.csv", row, "kind", "strike")
+    set_cell(lib, "dialogue/consequences.csv", row, "magnitude", "0.3")
+    set_cell(lib, "dialogue/consequences.csv", row, "target", "occupation:captain")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1
+    assert f"dialogue/consequences.csv:{row}:3: [target] 'captain' are soldiers" in out
 
 
 def test_cli_entry_point_runs():
