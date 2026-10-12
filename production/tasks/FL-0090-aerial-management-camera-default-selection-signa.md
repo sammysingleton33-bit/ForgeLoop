@@ -1,6 +1,6 @@
 ---
 id: FL-0090
-title: Aerial management camera (default), selection signal, walk mode kept (G13.6)
+title: Aerial management camera (overview, default), selection signal, walk mode kept (G13.6)
 track: build
 owner: forge-04
 status: READY
@@ -20,11 +20,11 @@ evidence: []
 The game opens in an aerial management view over the player's kingdom, with the ruler visible on the throne. The player pans, zooms, rotates and selects citizens, buildings and plots with a tap or click. Walk mode stays available for later and for the Crown Arena (VS-1 row 2).
 
 ## Requirements
-- `RulerCameraController` gets a `management` mode as the default:
+- `RulerCameraController` gets the `overview` mode (the aerial management view, G4.1 name) as the default:
   - zoom ≈ 40–220 studs, bounded to the map;
   - PC: WASD, drag, wheel, Q/E;
   - touch: drag, pinch, two-finger rotate.
-- Keep the third-person work as `walk` mode. Do not discard it.
+- Keep the third-person work as `follow` (walk) mode. Do not discard it.
 - `InputModeController.selected` signal (G13.6). Raycast resolution:
   - citizen: `EntityController:pick`;
   - building: `BuildingId` attribute;

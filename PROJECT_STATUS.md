@@ -133,7 +133,7 @@ _None._
 | [FL-0053](production/tasks/FL-0053-ruler-third-person-controller-and-camera.md) | Ruler third-person controller, camera and input modes | READY | P0 | build |
 | [FL-0061](production/tasks/FL-0061-match-pacing-design-and-pacingservice.md) | Match pacing design and PacingService | REVIEW | P0 | design |
 | [FL-0062](production/tasks/FL-0062-vs-1-onboarding-and-feedback-layer-hints-sounds-.md) | VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer | READY | P0 | build |
-| [FL-0090](production/tasks/FL-0090-aerial-management-camera-default-selection-signa.md) | Aerial management camera (default), selection signal, walk mode kept (G13.6) | READY | P0 | build |
+| [FL-0090](production/tasks/FL-0090-aerial-management-camera-default-selection-signa.md) | Aerial management camera (overview, default), selection signal, walk mode kept (G13.6) | READY | P0 | build |
 | [FL-0091](production/tasks/FL-0091-citizen-thought-and-speech-bubbles-reactions-str.md) | Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3) | READY | P0 | build |
 | [FL-0023](production/tasks/FL-0023-analyticsservice-adapter-event-taxonomy-and-funn.md) | AnalyticsService adapter, event taxonomy and funnels | READY | P1 | build |
 | [FL-0063](production/tasks/FL-0063-vs-1-analytics-funnel-and-match-analytics.md) | VS-1 analytics funnel and match analytics | READY | P1 | build |
@@ -183,6 +183,7 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+005873b 2026-10-12 D-030 production priorities: VS-1 v2 (nine first-playable items), living-kingdom requirements, CONTRACTS G13, tasks FL-0078..FL-0096
 c390de2 2026-10-12 [FORGE-01] FL-0048 hour-0 stub: Kingdom/Types (G2)
 5348570 2026-10-12 Integration bookkeeping: PR #18 (6f3ce4b) FL-0076 scaffold merged
 aeb1c84 2026-10-12 [FORGE-05] FL-0076 Crown Arena fairness harness scaffold: caps spec, DuelModel double, Monte Carlo with Wilson CIs
@@ -190,7 +191,6 @@ aeb1c84 2026-10-12 [FORGE-05] FL-0076 Crown Arena fairness harness scaffold: cap
 5eb33ae 2026-10-12 Merge PR #14: [FORGE-05] FL-0068 Studio debug panel (DebugCommands, Studio-only DebugServer, DebugPanel F8)
 9559534 2026-10-12 Merge branch 'main' into forge/03-ui-economy-fl0058
 2afc519 2026-10-12 [FORGE-05] FL-0029 G8: diff PRs against the test merge commit's first parent, not a stale base.sha
-7a6d24c 2026-10-12 Integration bookkeeping: PR #16 (55846d2), PR #15 (d3a0561)
 ```
 
 <!-- forge:auto:end -->

@@ -159,13 +159,16 @@ EntityController.event: Signal<(EntityId, cue: string, payload: any, Model?)>
 EntityController:pick(screenPos: Vector2): EntityId?
 EntityController:getModel(id: EntityId): Model?
 InteractionController.gathered: Signal<(nodeId: string, ResourceId, amount: number)>   -- FORGE-01
-InputModeController:set(mode: "explore" | "build"); .mode; .changed: Signal  -- FORGE-04 (FL-0053); "command" is VS-2
-RulerCameraController:setMode(mode: "follow" | "overview")                    -- FORGE-04 (FL-0053)
+InputModeController:set(mode: "explore" | "build"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090); "command" is VS-2
+InputModeController.selected: Signal<(kind: "citizen" | "building" | "slot" | "none", id: number | string)>   -- G13.6
+RulerCameraController:setMode(mode: "overview" | "follow")                    -- FORGE-04; "overview" = aerial management view (VS-1 default, D-030), "follow" = walk mode
 ```
 - FORGE-04 hooks feedback only on these signals and on G9 events. Only EntityController decodes `Sim.*`.
-- Mobile input:
-  - The ruler moves only with the default thumbstick.
-  - In explore mode a tap gathers or inspects a citizen. In build mode a tap places.
+- Mobile input (amended by D-030):
+  - In the default overview mode the ruler sits on the throne, and the camera pans, pinches and rotates.
+  - In explore mode a tap **selects** (G13.6): citizen, building or plot. Ruler gathering is optional in VS-1.
+  - In build mode a tap places.
+  - In follow (walk) mode the ruler moves with the default thumbstick.
 
 ## G5. Citizens and jobs (FORGE-01)
 - Each citizen runs a utility AI. It scores needs (hunger, rest), the assigned job, and threats (raid nearby → flee to keep), then executes the job's state machine.
@@ -455,6 +458,7 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
 - **Looks.** The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
+- **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
 
 ### G13.3 Conversations (FORGE-01 server; FORGE-03 panel; FORGE-04 bubbles) — VS-1
 | Remote | Kind | Args → result, or payload |
@@ -491,9 +495,9 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 ### G13.6 Throne, camera and selection — VS-1
 - **Throne (FORGE-02).** `Kit.build("keep", level, "complete", color)` contains a `Seat` named `Throne` on a raised dais, visible from the aerial camera.
 - **Ruler seating (FORGE-01).** After spawn (G3), KingdomService seats the ruler on the throne. In management mode the ruler stays seated. Walk mode (optional in VS-1) unseats.
-- **Camera (FORGE-04).** `RulerCameraController` has two modes:
-  - `management` (default): aerial camera with pan, zoom (≈ 40–220 studs) and rotate. PC uses WASD, drag, wheel and Q/E; touch uses drag, pinch and two-finger rotate. The camera is bounded to the map, and the camera's focus point is what loads under streaming.
-  - `walk`: third person.
+- **Camera (FORGE-04).** `RulerCameraController` has two modes. They keep the G4.1 names:
+  - `overview` (the management view, default): aerial camera with pan, zoom (≈ 40–220 studs) and rotate. PC uses WASD, drag, wheel and Q/E; touch uses drag, pinch and two-finger rotate. The camera is bounded to the map, and the camera's focus point is what loads under streaming.
+  - `follow`: walk mode, third person.
 - **Selection (FORGE-04).** `InputModeController.selected: Signal<(kind: "citizen" | "building" | "slot" | "none", id: number | string)>`. A tap or click raycasts and resolves the selection:
   - citizen: through `EntityController:pick`;
   - building: through the `BuildingId` attribute;
@@ -510,7 +514,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `population.reseed <seed>`
 
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: G13 living kingdom (D-030) is additive. VS-1 rows are effective now: content modules and ContentQuery; generated population with `CitizenView` and `look`; `Kingdom.Converse` and `Kingdom.Choose`; the thought, reaction and strike events; ReputationService and kingdom conditions; build slots and `Build.PlaceSlot`; throne seat, aerial camera and the selection signal; debug presets. New BuildingTypes take effect from VS-2.
+- v0.4-g4 (2026-10-12) FORGE-00: G4.1 camera modes renamed: `overview` is the aerial management default and `follow` is walk mode. In explore mode a tap selects. The `Kingdom.Population` remote is added. G13 living kingdom (D-030) is additive. VS-1 rows are effective now: content modules and ContentQuery; generated population with `CitizenView` and `look`; `Kingdom.Converse` and `Kingdom.Choose`; the thought, reaction and strike events; ReputationService and kingdom conditions; build slots and `Build.PlaceSlot`; throne seat, aerial camera and the selection signal; debug presets. New BuildingTypes take effect from VS-2.
 - v0.4-g3 (2026-10-12) FORGE-00: G12 Crown Arena and support added as a **draft for VS-2** (D-029). Nothing in G1–G11 changes for VS-1. G3's PROVISIONAL victory default is superseded at VS-2 by the Crown Arena (G12, BRIEF §18).
 - v0.4-g2 (2026-10-12) FORGE-00: FORGE-01 clarifications added to G3, G5 and G7 (countdown, job semantics, no VS-1 treasury cap, PROVISIONAL victory/diplomacy defaults); game remote areas `Treasury` and `Feedback`.
 - v0.4-g2 (2026-10-12) FORGE-00, review fixes (D-024 to D-028):
