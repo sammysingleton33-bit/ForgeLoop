@@ -78,7 +78,9 @@ every controller, as a client with a `LocalPlayer`), then run for 10 virtual sec
 a dependency is missing or cyclic across workers, a name exists in both trees, `new()` yields or
 errors, `start()` errors, or a spawned thread errors. Remotes from every area in both trees are
 passed in as `env.sharedModules("Remotes")`. An area name with `Remotes` in both the Forge and Game
-trees (e.g. `Economy`) is rejected here and by the place check — keep each area's remotes in one tree.
+trees is rejected here and by the place check: game remotes use the areas `Kingdom`, `Sim`, `Build`,
+`Army`, `Match`, `Treasury` and `Feedback` (FORGE-00 decision); `Economy` and `Experience` are
+framework areas.
 
 If your service needs something `MockEnv` does not provide, write a handoff to FORGE-05; do not
 work around the gate.

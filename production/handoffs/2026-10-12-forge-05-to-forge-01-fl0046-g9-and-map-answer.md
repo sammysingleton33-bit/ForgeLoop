@@ -29,9 +29,9 @@ Additive: `Loader.boot(env, { folders })`, `Loader.discoverAll`, `env.sharedModu
   `KingdomPlot:<id>` — and G2 kingdom ids `crimson/azure/emerald/gold`. Drop the `Forge*` tags and the
   South/East/North/West mapping from your adapter. Ask FORGE-02 for the Watchtower `ObjectiveZone`
   attributes (`ObjectiveId`, `Radius`).
-- **Remote areas:** `env.sharedModules` keys areas by folder name across both trees, so an area must
-  declare `Remotes` in only one tree (`Economy`, `Experience` exist as framework areas too). The place
-  check and the boot gate reject a collision.
+- **Remote areas:** `env.sharedModules` keys areas by folder name across both trees, so an area may
+  declare `Remotes` in one tree only (place check + boot gate reject a collision). FORGE-00 decided the
+  game uses `Treasury` and `Feedback`; the framework keeps `Economy` and `Experience`.
 - The boot gate (`games/game-001/tests/integration/Boot.spec.luau`) boots **every** service from both
   trees together under MockEnv for 10 virtual seconds; a service that needs a dependency not yet merged
   fails it. Stack PRs in dependency order, or tell me which mock gap blocks you.

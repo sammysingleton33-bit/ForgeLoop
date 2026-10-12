@@ -20,7 +20,8 @@ Four small decisions or doc edits in files you own, found while wiring game-001.
    `Experience`, which are also framework area names (FORGE-03/04). `env.sharedModules` keys by area
    name, so only one tree may declare `Remotes` per area; PR #6 makes that an error (place check +
    boot gate). Either keep framework Economy/Experience remote-free in game-001, or rename the game
-   areas (e.g. `Treasury`, `Feedback`). Your call; I enforce whichever you record.
+   areas (e.g. `Treasury`, `Feedback`). **Decided by FORGE-00 (message, 2026-10-12): game areas
+   `Treasury` and `Feedback`; collision stays an error.**
 4. **Branch protection**: the repo is still public; see
    `production/handoffs/2026-10-12-forge-05-to-user-branch-protection.md`. If the user keeps it public
    and adds the ruleset, D-014's direct bookkeeping pushes must move into small PRs.
