@@ -187,6 +187,42 @@
 			<rect x="6" y="21" width="36" height="20" rx="2" fill="#B07A45" ${s()}/>
 			<path d="M13 9.5 V41 M35 9.5 V41" stroke="#D6A84A" stroke-width="3.2"/>
 			<rect x="20" y="17" width="8" height="10" rx="1.5" fill="#EAC46C" ${s('stroke-width="1.6"')}/>`,
+		keep: `
+			<path d="M10 44 V18 H14 V14 H18 V18 H22 V14 H26 V18 H30 V14 H34 V18 H38 V44 Z" fill="#BDB295" ${s()}/>
+			<path d="M10 26 H38 M10 34 H38 M18 18 V26 M30 18 V26 M14 26 V34 M24 26 V34 M34 26 V34" stroke="#8F866E" stroke-width="1.4"/>
+			<path d="M19 44 V36 C19 32.5 29 32.5 29 36 V44 Z" fill="#5A3B24" ${s('stroke-width="1.8"')}/>
+			<path d="M24 14 V3" stroke="${O}" stroke-width="2"/>
+			<path d="M24 3.5 L34 6.5 L24 9.5 Z" fill="#B8402E" ${s('stroke-width="1.6"')}/>`,
+		wall: `
+			<path d="M4 40 V20 H9 V15 H15 V20 H21 V15 H27 V20 H33 V15 H39 V20 H44 V40 Z" fill="#B3AA92" ${s()}/>
+			<path d="M4 27 H44 M4 34 H44 M12 20 V27 M24 20 V27 M36 20 V27 M8 27 V34 M18 27 V34 M30 27 V34 M40 27 V34 M14 34 V40 M26 34 V40 M36 34 V40" stroke="#857D68" stroke-width="1.4"/>`,
+		gate: `
+			<path d="M4 44 V12 H8 V9 H12 V12 H16 V44 Z M32 44 V12 H36 V9 H40 V12 H44 V44 Z" fill="#BDB295" ${s()}/>
+			<path d="M16 44 V24 C16 14 32 14 32 24 V44 Z" fill="#A69C82" ${s()}/>
+			<path d="M19 44 V25 C19 18.5 29 18.5 29 25 V44 Z" fill="#3B2A1C" ${s('stroke-width="1.6"')}/>
+			<path d="M21.5 21 V44 M24 19.5 V44 M26.5 21 V44 M19 28 H29 M19 34 H29 M19 40 H29" stroke="#8F8A80" stroke-width="1.5"/>`,
+		rotate: `
+			<path d="M36 17 A14 14 0 1 0 38 28" fill="none" stroke="${O}" stroke-width="8" stroke-linecap="round"/>
+			<path d="M36 17 A14 14 0 1 0 38 28" fill="none" stroke="#EAC46C" stroke-width="4" stroke-linecap="round"/>
+			<path d="M28.5 15.5 L39.5 9 L40 21.5 Z" fill="#EAC46C" ${s()}/>`,
+		emblem_flame: `
+			<path d="M24 44 C13 44 8 36 10 27 C11.5 21 16 18 16 11 C21 14 23 18 22.5 23 C25 20 26.5 14 26 6 C33 11 40 19 38.5 30 C37.5 38 32 44 24 44 Z" fill="#E0642F" ${s()}/>
+			<path d="M24 41 C19 41 16.5 37.5 17.5 33 C18.5 29.5 21.5 28 22 24.5 C25 26.5 26 29 25.5 31.5 C27.5 30.5 28.5 28.5 28.5 26 C31.5 29 32.5 33 31.5 36 C30.5 39.5 27.5 41 24 41 Z" fill="#F6C24A"/>`,
+		emblem_star: `
+			<path d="M24 4 L29.2 17.6 L43.6 18.2 L32.4 27.4 L36.2 41.4 L24 33.4 L11.8 41.4 L15.6 27.4 L4.4 18.2 L18.8 17.6 Z" fill="#DCE8F5" ${s()}/>
+			<path d="M24 11 L27.2 19.8 L24 30 L20.8 19.8 Z" fill="#9FC0E6"/>`,
+		emblem_oak: `
+			<path d="M24 45 V31" stroke="${O}" stroke-width="4.4" stroke-linecap="round"/>
+			<path d="M24 45 V31" stroke="#7E5230" stroke-width="2" stroke-linecap="round"/>
+			<path d="M24 4 C28 6 27 10 30 11 C34 11 35 14 33 17 C37 18 38 22 35 24 C38 27 36 31 32 30 C30 33 26 33 24 31 C22 33 18 33 16 30 C12 31 10 27 13 24 C10 22 11 18 15 17 C13 14 14 11 18 11 C21 10 20 6 24 4 Z" fill="#5DAE4F" ${s()}/>
+			<path d="M24 9 V31 M24 15 L29 13 M24 15 L19 13 M24 21 L31 19 M24 21 L17 19 M24 26 L29 25 M24 26 L19 25" stroke="#2F6B30" stroke-width="1.5" stroke-linecap="round"/>`,
+		emblem_sun: `
+			<g fill="#F2C447" ${s('stroke-width="1.8"')}>
+				<path d="M24 2 L27 10 H21 Z"/><path d="M24 46 L21 38 H27 Z"/><path d="M2 24 L10 21 V27 Z"/><path d="M46 24 L38 27 V21 Z"/>
+				<path d="M8.4 8.4 L16 12.2 L12.2 16 Z"/><path d="M39.6 39.6 L32 35.8 L35.8 32 Z"/><path d="M39.6 8.4 L35.8 16 L32 12.2 Z"/><path d="M8.4 39.6 L12.2 32 L16 35.8 Z"/>
+			</g>
+			<circle cx="24" cy="24" r="11" fill="#F6D16A" ${s()}/>
+			<circle cx="24" cy="24" r="6.5" fill="#FBE6A2"/>`,
 	};
 
 	function svg(name, size) {
