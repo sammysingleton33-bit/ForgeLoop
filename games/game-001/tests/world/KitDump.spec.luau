@@ -41,7 +41,7 @@ local function serialise(model: Instance)
 			table.insert(parts, {
 				name = d.Name,
 				class = d.ClassName,
-				shape = if d.ClassName == "Part" then (d :: Part).Shape.Name else d.ClassName,
+				shape = if d:IsA("Part") then (d :: Part).Shape.Name else d.ClassName,
 				size = { round(d.Size.X), round(d.Size.Y), round(d.Size.Z) },
 				cframe = cf,
 				color = { round(d.Color.R), round(d.Color.G), round(d.Color.B) },
