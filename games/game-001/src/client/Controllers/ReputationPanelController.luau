@@ -38,6 +38,7 @@ local ReputationModel = require("../UI/ReputationModel")
 local ReputationPanel = require("../UI/ReputationPanel")
 local ReputationStrip = require("../UI/ReputationStrip")
 local ReputationText = require("../UI/ReputationText")
+local Signature = require("../UI/Signature")
 
 local ReputationPanelController = {}
 ReputationPanelController.__index = ReputationPanelController
@@ -88,9 +89,14 @@ function ReputationPanelController:start()
 	-- Push first, then the full state (G4 rule, as KingdomHudController does for every area).
 	env.spawn(function()
 		local ok, err = pcall(function()
-			hud.remotes:on(ReputationPanelController.PUSH, function(payload)
+			local push = hud.remotes:on(ReputationPanelController.PUSH, function(payload)
 				self:apply(payload, true)
 			end)
+			if self._destroyed then
+				push:Disconnect()
+			else
+				self._push = push
+			end
 		end)
 		if not ok then
 			env.log("warn", "ReputationPanelController: cannot listen to " .. ReputationPanelController.PUSH, {
@@ -111,8 +117,16 @@ end
 
 function ReputationPanelController:destroy()
 	self._running = false
+	self._destroyed = true
 	for _, connection in self._connections or {} do
 		connection:disconnect()
+	end
+	-- The push stops here too: after destroy no push may build a strip again (R44-5).
+	if self._push then
+		pcall(function()
+			self._push:Disconnect()
+		end)
+		self._push = nil
 	end
 	if self.panel then
 		self.panel:destroy()
@@ -143,11 +157,28 @@ function ReputationPanelController:apply(payload: any, pushed: boolean?)
 	if pushed and type(payload) ~= "table" then
 		return -- a malformed push never wipes what the server told us before
 	end
+	if self._destroyed then
+		return
+	end
 	local before = self.data
 	self.data = ReputationModel.normalize(payload)
-	self._version += 1
-	self.state.fresh = pushed == true and #self.data.history > 0
-	self:render()
+	-- The open screen rebuilds only when what it shows changed: an identical push leaves it, and
+	-- its scroll, alone (FORGE-05 R44-1).
+	local signature = Signature.of(self.data)
+	if signature ~= self._dataSignature then
+		self._dataSignature = signature
+		self._version += 1
+		self.state.fresh = pushed == true and #self.data.history > 0
+	end
+	-- Layout reserves the strip's room only while it shows (no empty gap before FL-0080 lands).
+	local hud = self.hud
+	local visible = self.data.known == true
+	if hud.state.reputation ~= visible then
+		hud.state.reputation = visible
+		hud:render() -- new metrics for every view; this controller renders through hud.rendered
+	else
+		self:render()
+	end
 	if pushed and self.strip then
 		self.strip:pulse(ReputationModel.deltas(before, self.data))
 	end
@@ -211,7 +242,7 @@ function ReputationPanelController:_model(): { [string]: any }
 		fresh = self.state.fresh,
 		known = self.data.known,
 		categories = ReputationModel.categories(self.data, now, self._provider),
-		history = ReputationModel.history(self.data, now),
+		history = ReputationModel.history(self.data, now, ReputationModel.HISTORY_LIMIT),
 		conditions = ReputationModel.conditions(self.data),
 	}
 end

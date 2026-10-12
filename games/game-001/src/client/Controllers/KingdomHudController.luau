@@ -352,7 +352,8 @@ end
 
 function KingdomHudController:metrics(): any
 	local size = self:_safeArea()
-	return Layout.compute(size.X, size.Y)
+	-- The reputation strip's room only while it shows (ReputationPanelController sets the flag).
+	return Layout.compute(size.X, size.Y, { reputation = self.state.reputation == true })
 end
 
 -- ------------------------------------------------------------------ menus and actions
@@ -581,7 +582,16 @@ function KingdomHudController:render()
 	-- The confirm dialog belongs to one request: pushes while it is open leave it alone
 	-- (FORGE-05 M1). It shows the costs as they were when the player asked; the server checks
 	-- the treasury again on Build.Upgrade.
-	if self._modal and self._modalFor ~= s.confirm then
+	-- The building changed under the dialog (a co-ruler upgraded it, or it is no longer complete):
+	-- the question no longer holds, so close it; the panel shows the new level and price.
+	if s.confirm then
+		local target = self:_building(s.confirm.buildingId)
+		if target == nil or target.level + 1 ~= s.confirm.level or target.state ~= "complete" then
+			s.confirm = nil
+		end
+	end
+	-- Rebuilt for a new breakpoint too: its width follows the screen (400 px does not fit a phone).
+	if self._modal and (self._modalFor ~= s.confirm or self._modalBreakpoint ~= m.breakpoint) then
 		self._modal:destroy()
 		self._modal = nil
 		self._modalFor = nil
@@ -613,6 +623,7 @@ function KingdomHudController:render()
 		})
 		self._modal.instance.Parent = self.roots.modals
 		self._modalFor = s.confirm
+		self._modalBreakpoint = m.breakpoint
 	end
 
 	local drawerOpen = s.menu ~= nil

@@ -83,6 +83,10 @@ function PlotPickerController:start()
 			local connection = hud.remotes:on("Build.Slots", function(list)
 				hud.store:applySlots(list)
 			end)
+			if self._destroyed then
+				connection:Disconnect() -- the remote replicated after destroy (FORGE-05, #41 review)
+				return
+			end
 			table.insert(self._connections, {
 				disconnect = function()
 					connection:Disconnect()
@@ -91,6 +95,9 @@ function PlotPickerController:start()
 		end)
 		if not ok then
 			env.log("warn", "PlotPickerController: cannot listen to Build.Slots", { error = tostring(err) })
+		end
+		if self._destroyed then
+			return
 		end
 		local fetched, list = pcall(function()
 			return hud.remotes:invoke("Build.GetSlots")
@@ -104,6 +111,7 @@ function PlotPickerController:start()
 end
 
 function PlotPickerController:destroy()
+	self._destroyed = true
 	for _, connection in self._connections do
 		if connection then
 			pcall(function()
