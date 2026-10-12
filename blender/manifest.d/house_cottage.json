@@ -9,7 +9,7 @@
       },
       "dimensions_studs": {
         "x": 20.429,
-        "y": 25.977,
+        "y": 26.981,
         "z": 21.027
       },
       "double_sided": false,
@@ -18,8 +18,8 @@
         "validation": "exports/house_cottage_01.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 4,
-      "geometry_hash": "cce2c7acb12ef594",
+      "generator_version": 5,
+      "geometry_hash": "a611061eacc322ce",
       "id": "house_cottage_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -54,8 +54,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 3892,
-        "lod1": 1362
+        "lod0": 3870,
+        "lod1": 1354
       },
       "validation_pass": true
     },
@@ -68,8 +68,8 @@
       },
       "dimensions_studs": {
         "x": 26.068,
-        "y": 34.279,
-        "z": 19.769
+        "y": 34.38,
+        "z": 19.776
       },
       "double_sided": false,
       "files": {
@@ -77,8 +77,8 @@
         "validation": "exports/house_cottage_02.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 4,
-      "geometry_hash": "c1569aa5d8304239",
+      "generator_version": 5,
+      "geometry_hash": "2baa54904209bbaa",
       "id": "house_cottage_02",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -107,14 +107,14 @@
         "door": [
           4.898,
           0.0,
-          -8.269
+          -8.273
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4836,
-        "lod1": 1692
+        "lod0": 4812,
+        "lod1": 1684
       },
       "validation_pass": true
     },
@@ -127,8 +127,8 @@
       },
       "dimensions_studs": {
         "x": 25.588,
-        "y": 38.058,
-        "z": 21.552
+        "y": 38.394,
+        "z": 21.352
       },
       "double_sided": false,
       "files": {
@@ -136,8 +136,8 @@
         "validation": "exports/house_cottage_03.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 4,
-      "geometry_hash": "4606f2422c3eecbf",
+      "generator_version": 5,
+      "geometry_hash": "c95378e9f05c6282",
       "id": "house_cottage_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -195,7 +195,7 @@
         "validation": "exports/house_cottage_04.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 4,
+      "generator_version": 5,
       "geometry_hash": "a081fb07515f84e0",
       "id": "house_cottage_04",
       "kingdom": "yellow",
@@ -244,9 +244,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 21.865,
-        "y": 35.943,
-        "z": 26.559
+        "x": 21.626,
+        "y": 37.395,
+        "z": 26.601
       },
       "double_sided": false,
       "files": {
@@ -254,8 +254,8 @@
         "validation": "exports/house_cottage_05.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 4,
-      "geometry_hash": "2a15ce8ed1853664",
+      "generator_version": 5,
+      "geometry_hash": "53d0e2eb05c8ea59",
       "id": "house_cottage_05",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -282,16 +282,16 @@
       "seed": 7004,
       "sockets": {
         "door": [
-          -1.472,
+          -1.603,
           0.0,
-          -5.305
+          -5.326
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4994,
-        "lod1": 1746
+        "lod0": 4942,
+        "lod1": 1728
       },
       "validation_pass": true
     },
@@ -304,8 +304,8 @@
       },
       "dimensions_studs": {
         "x": 23.227,
-        "y": 36.697,
-        "z": 19.889
+        "y": 36.523,
+        "z": 19.881
       },
       "double_sided": false,
       "files": {
@@ -313,8 +313,8 @@
         "validation": "exports/house_cottage_06.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 4,
-      "geometry_hash": "ba85bd13cd6d03e6",
+      "generator_version": 5,
+      "geometry_hash": "61020ae20bf28e72",
       "id": "house_cottage_06",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -343,14 +343,14 @@
         "door": [
           2.311,
           0.0,
-          -8.329
+          -8.325
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4760,
-        "lod1": 1666
+        "lod0": 4736,
+        "lod1": 1656
       },
       "validation_pass": true
     }
@@ -365,8 +365,8 @@
       "house_cottage_03",
       "house_cottage_06"
     ],
-    "mean_pair_diff": 0.3633,
-    "min_pair_diff": 0.1839,
+    "mean_pair_diff": 0.3603,
+    "min_pair_diff": 0.1798,
     "pass": true,
     "threshold": 0.08
   }

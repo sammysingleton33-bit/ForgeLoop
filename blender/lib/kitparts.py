@@ -53,8 +53,13 @@ def _mesh_from(name, verts, faces, smooth=False):
     return me
 
 
+# Part subclasses that render as a plain block (dumps from older specs send the class name, not the shape)
+BLOCK_CLASSES = {"Seat": "Block", "VehicleSeat": "Block", "SpawnLocation": "Block", "Part": "Block"}
+
+
 def unit_mesh(kind):
     """Shared unit meshes; objects scale them by the part size."""
+    kind = BLOCK_CLASSES.get(kind, kind)
     if kind in _mesh_cache:
         return _mesh_cache[kind]
     if kind == "Block":

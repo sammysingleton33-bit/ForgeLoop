@@ -1,0 +1,301 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 5.549,
+        "y": 2.944,
+        "z": 4.505
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_flowers_01.fbx",
+        "validation": "exports/plant_flowers_01.validation.json"
+      },
+      "generator": "plant_flowers",
+      "generator_version": 1,
+      "geometry_hash": "46744b18a65536df",
+      "id": "plant_flowers_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "wildflowers"
+      },
+      "preview": "previews/plant_flowers.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7007,
+      "sockets": {
+        "pick": [
+          0.479,
+          0.011,
+          -2.893
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 788,
+        "lod1": 274
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 3.673,
+        "y": 3.652,
+        "z": 3.455
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_flowers_02.fbx",
+        "validation": "exports/plant_flowers_02.validation.json"
+      },
+      "generator": "plant_flowers",
+      "generator_version": 1,
+      "geometry_hash": "98f88f3e75ae4720",
+      "id": "plant_flowers_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "tulips"
+      },
+      "preview": "previews/plant_flowers.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7030,
+      "sockets": {
+        "pick": [
+          0.116,
+          0.01,
+          -2.42
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 722,
+        "lod1": 252
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 3.92,
+        "y": 2.287,
+        "z": 4.522
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_flowers_03.fbx",
+        "validation": "exports/plant_flowers_03.validation.json"
+      },
+      "generator": "plant_flowers",
+      "generator_version": 1,
+      "geometry_hash": "69692887bcb7b241",
+      "id": "plant_flowers_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "daisies"
+      },
+      "preview": "previews/plant_flowers.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7053,
+      "sockets": {
+        "pick": [
+          0.029,
+          0.017,
+          -3.112
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 784,
+        "lod1": 274
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 4.429,
+        "y": 7.503,
+        "z": 3.595
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_flowers_04.fbx",
+        "validation": "exports/plant_flowers_04.validation.json"
+      },
+      "generator": "plant_flowers",
+      "generator_version": 1,
+      "geometry_hash": "8ffc9ce3ac8af636",
+      "id": "plant_flowers_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "sunflowers"
+      },
+      "preview": "previews/plant_flowers.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7076,
+      "sockets": {
+        "pick": [
+          -0.021,
+          0.006,
+          -1.932
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 628,
+        "lod1": 218
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 3.511,
+        "y": 3.046,
+        "z": 3.615
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_flowers_05.fbx",
+        "validation": "exports/plant_flowers_05.validation.json"
+      },
+      "generator": "plant_flowers",
+      "generator_version": 1,
+      "geometry_hash": "30843e52dcfafe20",
+      "id": "plant_flowers_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "lavender"
+      },
+      "preview": "previews/plant_flowers.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7099,
+      "sockets": {
+        "pick": [
+          -0.067,
+          0.008,
+          -2.243
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 672,
+        "lod1": 234
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 4.827,
+        "y": 3.022,
+        "z": 4.059
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_flowers_06.fbx",
+        "validation": "exports/plant_flowers_06.validation.json"
+      },
+      "generator": "plant_flowers",
+      "generator_version": 1,
+      "geometry_hash": "41b4907fcdf89878",
+      "id": "plant_flowers_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "poppies"
+      },
+      "preview": "previews/plant_flowers.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7122,
+      "sockets": {
+        "pick": [
+          -0.631,
+          0.013,
+          -2.616
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 652,
+        "lod1": 228
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "plant_flowers",
+  "variation": {
+    "closest_pair": [
+      "plant_flowers_05",
+      "plant_flowers_06"
+    ],
+    "mean_pair_diff": 0.4598,
+    "min_pair_diff": 0.2461,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

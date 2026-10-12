@@ -1,0 +1,247 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 29.078,
+        "y": 38.332,
+        "z": 21.843
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_01.fbx",
+        "validation": "exports/farm_windmill_01.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 1,
+      "geometry_hash": "1369b113684c5497",
+      "id": "farm_windmill_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 12,
+        "cap": "cone",
+        "gallery": false,
+        "kingdom": "red",
+        "sails": "canvas",
+        "tower": "stone"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7600,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.058,
+          -10.613
+        ],
+        "door": [
+          -0.0,
+          0.058,
+          -9.613
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 4842,
+        "lod1": 1694
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 24.013,
+        "y": 36.767,
+        "z": 21.759
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_02.fbx",
+        "validation": "exports/farm_windmill_02.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 1,
+      "geometry_hash": "75ac299eb2f0b2e2",
+      "id": "farm_windmill_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 40,
+        "cap": "thatch",
+        "gallery": false,
+        "kingdom": null,
+        "sails": "slats",
+        "tower": "smock"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7601,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.049,
+          -10.756
+        ],
+        "door": [
+          -0.0,
+          0.049,
+          -9.756
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 4720,
+        "lod1": 1652
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 29.6,
+        "y": 39.916,
+        "z": 22.625
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_03.fbx",
+        "validation": "exports/farm_windmill_03.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 1,
+      "geometry_hash": "9b721bd27232cfdc",
+      "id": "farm_windmill_03",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 0,
+        "cap": "boat",
+        "gallery": true,
+        "kingdom": "blue",
+        "sails": "mixed",
+        "tower": "white"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7602,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.054,
+          -10.643
+        ],
+        "door": [
+          -0.0,
+          0.054,
+          -9.643
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5422,
+        "lod1": 1896
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 26.528,
+        "y": 36.557,
+        "z": 21.892
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_04.fbx",
+        "validation": "exports/farm_windmill_04.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 1,
+      "geometry_hash": "62c5c98c7e85eb8a",
+      "id": "farm_windmill_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 28,
+        "cap": "dome",
+        "gallery": true,
+        "kingdom": "yellow",
+        "sails": "canvas",
+        "tower": "sand"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7603,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.06,
+          -10.742
+        ],
+        "door": [
+          -0.0,
+          0.06,
+          -9.742
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5430,
+        "lod1": 1900
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "farm_windmill",
+  "variation": {
+    "closest_pair": [
+      "farm_windmill_01",
+      "farm_windmill_04"
+    ],
+    "mean_pair_diff": 0.297,
+    "min_pair_diff": 0.2433,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

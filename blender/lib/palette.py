@@ -14,7 +14,7 @@ UVs change. Bump PALETTE_VERSION when appending.
 No bpy import here, so tests and tools can use it with plain Python.
 """
 
-PALETTE_VERSION = 1
+PALETTE_VERSION = 1  # values tuned 2026-10-12 (muted thatch, true-gold kingdom); indices unchanged
 SIZE = 512
 SWATCH = 32
 GRID = SIZE // SWATCH  # 16 x 16 swatches
@@ -30,8 +30,8 @@ _ENTRIES = [
     # row 1: bark, wood, thatch
     ("bark_dark", "4A3222"), ("bark", "6B4A30"), ("bark_light", "8A6442"), ("birch_white", "E8E2D2"),
     ("birch_mark", "3B3530"), ("wood_dark", "5C3B22"), ("wood", "8B5A33"), ("wood_light", "B07B4A"),
-    ("wood_pale", "CFA171"), ("timber", "4B3020"), ("thatch_dark", "A9813A"), ("thatch", "CFA651"),
-    ("thatch_light", "E3C677"), ("straw", "EDD58A"), ("hay", "D8B85A"), ("rope", "B89A6A"),
+    ("wood_pale", "CFA171"), ("timber", "4B3020"), ("thatch_dark", "9C8556"), ("thatch", "BFA36C"),
+    ("thatch_light", "D6C08E"), ("straw", "EDD58A"), ("hay", "D8B85A"), ("rope", "B89A6A"),
     # row 2: stone, plaster, slate
     ("stone_dark", "6F6A63"), ("stone", "8F8A82"), ("stone_light", "B3ADA3"), ("stone_pale", "CFC9BE"),
     ("sandstone_dark", "8A7558"), ("sandstone", "B39A74"), ("sandstone_light", "D6BE95"), ("stone_cool_dark", "5E6772"),
@@ -63,8 +63,8 @@ _ENTRIES = [
     ("green_shutter", "4A6E35"), ("green_stone", "8C8E7C"), ("green_stone_dark", "66695A"), ("green_stone_light", "B2B39E"),
     ("green_accent", "E9DFAF"), ("green_wood", "6A4A2A"), ("green_emblem", "F0E2B0"), ("green_glow", "B8E06A"),
 
-    ("yellow_roof_dark", "B06A12"), ("yellow_roof", "E8961C"), ("yellow_roof_light", "F5BE45"), ("yellow_cloth_dark", "8F5E0E"),
-    ("yellow_cloth", "E0A41E"), ("yellow_cloth_light", "F4CC52"), ("yellow_trim", "6E3F92"), ("yellow_trim_dark", "4A2868"),
+    ("yellow_roof_dark", "A87F14"), ("yellow_roof", "E0B12E"), ("yellow_roof_light", "F2CF5C"), ("yellow_cloth_dark", "9A7012"),
+    ("yellow_cloth", "E6B52A"), ("yellow_cloth_light", "F6D768"), ("yellow_trim", "6E3F92"), ("yellow_trim_dark", "4A2868"),
     ("yellow_shutter", "5E4598"), ("yellow_stone", "C4A47A"), ("yellow_stone_dark", "9A7D58"), ("yellow_stone_light", "DEC79F"),
     ("yellow_accent", "FFF2CF"), ("yellow_wood", "8A5A30"), ("yellow_emblem", "FFF6DD"), ("yellow_glow", "FFD86B"),
     # row 9: crops, flowers, canvas, fire

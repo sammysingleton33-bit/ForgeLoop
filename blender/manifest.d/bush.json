@@ -1,0 +1,444 @@
+{
+  "assets": [
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 6.657,
+        "y": 5.563,
+        "z": 6.726
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_berry_05.fbx",
+        "validation": "exports/bush_berry_05.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "e4a220a578f2b1f1",
+      "id": "bush_berry_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [
+          "apple_red"
+        ],
+        "kind": "berry",
+        "leaves": "hedge",
+        "size": 1.1
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7063,
+      "sockets": {
+        "harvest": [
+          -1.724,
+          1.138,
+          -3.562
+        ],
+        "top": [
+          -0.131,
+          5.443,
+          0.214
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1380,
+        "lod1": 482
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 5.956,
+        "y": 4.491,
+        "z": 5.287
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_berry_06.fbx",
+        "validation": "exports/bush_berry_06.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "08d2f1f807398759",
+      "id": "bush_berry_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [
+          "flower_blue",
+          "flower_purple"
+        ],
+        "kind": "berry",
+        "leaves": "bush",
+        "size": 0.9
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7076,
+      "sockets": {
+        "harvest": [
+          2.031,
+          1.339,
+          -2.809
+        ],
+        "top": [
+          0.037,
+          4.415,
+          -0.252
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1380,
+        "lod1": 482
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 7.351,
+        "y": 5.607,
+        "z": 6.947
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_flowering_03.fbx",
+        "validation": "exports/bush_flowering_03.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "94a71383841358e3",
+      "id": "bush_flowering_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [
+          "blossom_pink",
+          "flower_white"
+        ],
+        "kind": "flowering",
+        "leaves": "bush",
+        "size": 1.15
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7037,
+      "sockets": {
+        "top": [
+          -0.127,
+          5.596,
+          0.137
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1488,
+        "lod1": 520
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 6.189,
+        "y": 4.981,
+        "z": 6.025
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_flowering_04.fbx",
+        "validation": "exports/bush_flowering_04.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "97407c842d2ec9fc",
+      "id": "bush_flowering_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [
+          "flower_yellow",
+          "flower_white",
+          "flower_purple"
+        ],
+        "kind": "flowering",
+        "leaves": "hedge",
+        "size": 1.0
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7050,
+      "sockets": {
+        "top": [
+          0.052,
+          4.862,
+          -0.191
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1408,
+        "lod1": 492
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 15.76,
+        "y": 4.039,
+        "z": 4.145
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_hedge_07.fbx",
+        "validation": "exports/bush_hedge_07.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "5ac350564d24d6d9",
+      "id": "bush_hedge_07",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [],
+        "kind": "hedge",
+        "leaves": "hedge",
+        "size": 1.0
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7089,
+      "sockets": {
+        "top": [
+          -0.0,
+          4.039,
+          -0.057
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1100,
+        "lod1": 384
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 16.201,
+        "y": 5.091,
+        "z": 5.272
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_hedge_08.fbx",
+        "validation": "exports/bush_hedge_08.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "3e7fab13e6e4a060",
+      "id": "bush_hedge_08",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [
+          "flower_red",
+          "flower_white"
+        ],
+        "kind": "hedge",
+        "leaves": "bush",
+        "size": 1.25
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7102,
+      "sockets": {
+        "top": [
+          0.221,
+          4.943,
+          -0.005
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1388,
+        "lod1": 484
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 6.264,
+        "y": 4.918,
+        "z": 6.087
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_round_01.fbx",
+        "validation": "exports/bush_round_01.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "ad1d2cb921f48aaf",
+      "id": "bush_round_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [],
+        "kind": "round",
+        "leaves": "bush",
+        "size": 1.0
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7011,
+      "sockets": {
+        "top": [
+          -0.151,
+          4.918,
+          0.304
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1180,
+        "lod1": 412
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bush",
+      "category": "bush",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 8.492,
+        "y": 6.489,
+        "z": 7.575
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bush_round_02.fbx",
+        "validation": "exports/bush_round_02.validation.json"
+      },
+      "generator": "bush",
+      "generator_version": 1,
+      "geometry_hash": "7142bffb8e511d09",
+      "id": "bush_round_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "accents": [],
+        "kind": "round",
+        "leaves": "hedge",
+        "size": 1.35
+      },
+      "preview": "previews/bush.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7024,
+      "sockets": {
+        "top": [
+          -0.057,
+          6.489,
+          -0.027
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1180,
+        "lod1": 412
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 8
+  },
+  "generator": "bush",
+  "variation": {
+    "closest_pair": [
+      "bush_berry_05",
+      "bush_flowering_03"
+    ],
+    "mean_pair_diff": 0.3817,
+    "min_pair_diff": 0.1668,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

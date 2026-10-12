@@ -1,0 +1,265 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 3.436,
+        "y": 1.933,
+        "z": 3.195
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_grass_01.fbx",
+        "validation": "exports/plant_grass_01.validation.json"
+      },
+      "generator": "plant_grass",
+      "generator_version": 1,
+      "geometry_hash": "84011b0eff4a9cbe",
+      "id": "plant_grass_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "short"
+      },
+      "preview": "previews/plant_grass.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7019,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 546,
+        "lod1": 190
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 7.365,
+        "y": 3.731,
+        "z": 7.32
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_grass_02.fbx",
+        "validation": "exports/plant_grass_02.validation.json"
+      },
+      "generator": "plant_grass",
+      "generator_version": 1,
+      "geometry_hash": "bbb959bae7702b99",
+      "id": "plant_grass_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "tall"
+      },
+      "preview": "previews/plant_grass.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7056,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 506,
+        "lod1": 176
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 5.982,
+        "y": 2.555,
+        "z": 5.956
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_grass_03.fbx",
+        "validation": "exports/plant_grass_03.validation.json"
+      },
+      "generator": "plant_grass",
+      "generator_version": 1,
+      "geometry_hash": "491cf455b4c14264",
+      "id": "plant_grass_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "meadow"
+      },
+      "preview": "previews/plant_grass.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7093,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 666,
+        "lod1": 232
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 5.429,
+        "y": 2.675,
+        "z": 5.524
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_grass_04.fbx",
+        "validation": "exports/plant_grass_04.validation.json"
+      },
+      "generator": "plant_grass",
+      "generator_version": 1,
+      "geometry_hash": "fe28753ccc8c86f6",
+      "id": "plant_grass_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "dry"
+      },
+      "preview": "previews/plant_grass.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7130,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 538,
+        "lod1": 188
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 4.474,
+        "y": 5.072,
+        "z": 4.262
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_grass_05.fbx",
+        "validation": "exports/plant_grass_05.validation.json"
+      },
+      "generator": "plant_grass",
+      "generator_version": 1,
+      "geometry_hash": "7adc8a9685a261d8",
+      "id": "plant_grass_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "seed"
+      },
+      "preview": "previews/plant_grass.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7167,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 674,
+        "lod1": 234
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "plant",
+      "collision": {
+        "boxes": [],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 2.643,
+        "y": 8.305,
+        "z": 2.387
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/plant_grass_06.fbx",
+        "validation": "exports/plant_grass_06.validation.json"
+      },
+      "generator": "plant_grass",
+      "generator_version": 1,
+      "geometry_hash": "20de8af1933503d5",
+      "id": "plant_grass_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "reeds"
+      },
+      "preview": "previews/plant_grass.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7204,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 532,
+        "lod1": 186
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "plant_grass",
+  "variation": {
+    "closest_pair": [
+      "plant_grass_03",
+      "plant_grass_04"
+    ],
+    "mean_pair_diff": 0.591,
+    "min_pair_diff": 0.3801,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

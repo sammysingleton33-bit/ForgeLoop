@@ -56,3 +56,13 @@ palette / detail density / cohesion / triangle cost.
   - 05 has only ~6 tris of headroom (4,994/5,000);
   - the green-kingdom turret cone can still read as a small tree from far away;
   - side walls are plain on single-storey variants.
+
+## Round 7 — v5 (cross-set rules from the fresh review and FORGE-00 calibration)
+- Palette: thatch muted (`thatch` BFA36C) so straw never reads as the gold kingdom; gold kingdom made true gold
+  (`yellow_roof` E0B12E, `yellow_cloth` E6B52A) instead of orange. Rules recorded in ART_DIRECTION §3.
+- Thatch houses carry a kingdom ridge pennant (pole + flag at the ridge end away from the chimney); winged houses
+  hang a kingdom banner on the wing in place of the flower box.
+- Budget: the pennant pushed 03/05 over 5,000; trimmed the pennant tail, jetty joists 7 → 5 and the wing side-wall
+  braces. Result: all 6 PASS, 3,870–4,976 tris; min silhouette diff 0.180.
+- Looked at `previews/house_cottage.jpg`: thatch reads as pale straw next to the gold tile roof of 04; pennants are
+  visible on 01/03/05 in the 80-stud strip. Remaining: the wing banner on 05 is small from the hero angle.

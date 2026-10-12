@@ -14,7 +14,7 @@ from lib.geo import Vector, bevel, box, cylinder, frustum_box, lathe
 from lib.palette import kingdom_color
 
 NAME = "house_cottage"
-VERSION = 4
+VERSION = 5
 CATEGORY = "house"
 BUDGET = "building_small"
 COLLISION = {"fidelity": "PreciseConvexDecomposition"}
@@ -124,14 +124,16 @@ def build(b, p):
             b.add(pc.rotate(math.pi, "Z").move(rng.uniform(-W / 4, W / 4), D / 2, z0 + kit.SILL_Z))
         windows += 1
 
-    # flower box under the front window
+    # flower box under the front window (winged houses carry a kingdom banner instead)
+    if p["wing"]:
+        _kingdom_banner(b, k, wx + 2.2, wy, z0 + kit.SILL_Z + 4.2)
     b.add(kit.bbox(4.2, 1.0, 0.9, "wood", 0.1).move(wx, wy - 1.0, z0 + kit.SILL_Z - 1.35))
     b.add(kit.bbox(3.9, 0.8, 0.5, "leaf_mid", 0.15).move(wx, wy - 1.0, z0 + kit.SILL_Z - 0.5))
-    nfl = 4 if p["wing"] else 6
+    nfl = 0 if p["wing"] else 6
     for j in range(nfl):
         fl = lathe([(0.0, 0.0), (0.42, 0.2), (0.4, 0.55), (0.0, 0.75)], 4,
                    rng.choice(("flower_red", "flower_yellow", "flower_white", "flower_purple", "flower_red")))
-        b.add(fl.move(wx - 1.6 + j * 3.2 / (nfl - 1), wy - 1.0 + rng.uniform(-0.2, 0.2), z0 + kit.SILL_Z - 0.35))
+        b.add(fl.move(wx - 1.6 + j * 3.2 / max(1, nfl - 1), wy - 1.0 + rng.uniform(-0.2, 0.2), z0 + kit.SILL_Z - 0.35))
     if p["porch"]:
         _porch(b, dx, -D / 2, "wood")
 
@@ -142,8 +144,8 @@ def build(b, p):
     if two:
         lean = rng.uniform(0.008, 0.016) * rng.choice((-1, 1))
         upper = [kit.bbox(W + 2 * jetty + 0.4, D + 2 * jetty + 0.4, 0.7, "timber", 0.1).move(0, 0, top)]
-        for i in range(7):
-            u = -W / 2 + 0.6 + (W - 1.2) * i / 6
+        for i in range(5):
+            u = -W / 2 + 0.6 + (W - 1.2) * i / 4
             b.add(box(0.6, jetty + 0.4, 0.6, "timber").move(u, -D / 2 - jetty / 2, top - 0.55))
         t2 = top + 0.7
         Wr, Dr = W + 2 * jetty, D + 2 * jetty
@@ -190,6 +192,9 @@ def build(b, p):
         for s in (-1, 1):
             b.add(kit.oriented_box((xg, s * Dr * 0.36, top + 0.6), (xg, s * 0.4, top + rise * 0.62), kit.TIMBER * 0.8,
                                    0.4, "timber", n))
+    if style == "thatch":
+        px = (1 if p["chimney"] == "left" else -1) * (Wr / 2 - 0.4) + lean_dx
+        _ridge_pennant(b, k, px, top + rise + 1.4)
     if p["catslide"]:
         _outshut(b, W, D, z0, pitch, top)
     if p["dormers"] and style == "tile":
@@ -257,7 +262,7 @@ def _wing(b, p, k, xw, yfront, Ww, Dw, z0, h1, plinth_h, plaster, shutter, thatc
     fr = kit.wall_face_frame(Ww, h1, "x", yfront - Dw, "timber", posts=3, braces=True, rng=rng, skip=(1,))
     b.add([f.move(xw, 0, z0) for f in fr])
     for sx in (-1, 1):
-        fr = kit.wall_face_frame(Dw, h1, "y", xw + sx * Ww / 2, "timber", posts=2, braces=True, rng=rng)
+        fr = kit.wall_face_frame(Dw, h1, "y", xw + sx * Ww / 2, "timber", posts=2, braces=False, rng=rng)
         b.add([f.move(0, yc, z0) for f in fr])
     pitch = rng.uniform(46, 52)
     style = p["roof"]
@@ -348,3 +353,16 @@ def _stair_tower(b, k, x, y, height):
             b.add(pc.move(0, -r + 0.05, 0).rotate(a, "Z").move(x, y, z))
         n += 1
     return n
+
+
+def _ridge_pennant(b, k, x, z):
+    """Kingdom pennant on a pole at the ridge end: makes thatch houses read by kingdom at 80 studs."""
+    b.add(box(0.3, 0.3, 6.2, "timber").move(x, 0, z - 0.6))
+    b.add(box(0.14, 4.2, 1.9, kingdom_color(k, "cloth")).move(x, -2.15, z + 3.7), tint=0.5)
+
+
+def _kingdom_banner(b, k, x, y, z):
+    """Hanging kingdom banner on the front wall (top at z)."""
+    b.add(box(3.0, 0.3, 0.3, "timber").move(x, y - 0.35, z))
+    b.add(box(2.4, 0.18, 4.2, kingdom_color(k, "cloth")).move(x, y - 0.45, z - 4.2), tint=0.5)
+    b.add(box(1.0, 0.2, 1.0, kingdom_color(k, "emblem")).rotate(math.radians(45), "Y").move(x, y - 0.55, z - 2.0))

@@ -1,0 +1,697 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              9.525,
+              6.169,
+              1.723
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              12.264,
+              26.625
+            ]
+          },
+          {
+            "center": [
+              -9.525,
+              6.169,
+              1.723
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              12.264,
+              26.625
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              6.169,
+              14.735
+            ],
+            "name": "wall_back",
+            "size": [
+              19.65,
+              12.264,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              6.912,
+              6.169,
+              -11.29
+            ],
+            "name": "front_l",
+            "size": [
+              4.625,
+              12.264,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -6.912,
+              6.169,
+              -11.29
+            ],
+            "name": "front_r",
+            "size": [
+              4.625,
+              12.264,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              11.469,
+              -11.29
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.664,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              0.237,
+              1.723
+            ],
+            "name": "floor",
+            "size": [
+              19.65,
+              0.4,
+              26.625
+            ]
+          },
+          {
+            "center": [
+              -7.8,
+              1.387,
+              -14.69
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 24.127,
+        "y": 33.821,
+        "z": 33.071
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_01.fbx",
+        "validation": "exports/farm_barn_01.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 1,
+      "geometry_hash": "d7a15532d5c5354c",
+      "id": "farm_barn_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": true,
+        "doors": "open",
+        "kingdom": "red",
+        "lean_to": false,
+        "loft": "closed",
+        "paint": true,
+        "roof": "tile"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7700,
+      "sockets": {
+        "deposit": [
+          -6.4,
+          0.037,
+          -14.59
+        ],
+        "door": [
+          -0.0,
+          0.037,
+          -14.59
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5412,
+        "lod1": 1894
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              7.739,
+              6.206,
+              1.672
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              12.336,
+              26.193
+            ]
+          },
+          {
+            "center": [
+              -11.415,
+              6.206,
+              1.672
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              12.336,
+              26.193
+            ]
+          },
+          {
+            "center": [
+              -1.838,
+              6.206,
+              14.468
+            ],
+            "name": "wall_back",
+            "size": [
+              19.754,
+              12.336,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              5.1,
+              6.206,
+              -11.125
+            ],
+            "name": "front_l",
+            "size": [
+              4.677,
+              12.336,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -8.777,
+              6.206,
+              -11.125
+            ],
+            "name": "front_r",
+            "size": [
+              4.677,
+              12.336,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -1.838,
+              11.506,
+              -11.125
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.736,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -1.838,
+              0.237,
+              1.672
+            ],
+            "name": "floor",
+            "size": [
+              19.754,
+              0.4,
+              26.193
+            ]
+          },
+          {
+            "center": [
+              -9.638,
+              1.387,
+              -14.525
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          },
+          {
+            "center": [
+              3.062,
+              3.037,
+              4.291
+            ],
+            "name": "lean_to",
+            "size": [
+              6.0,
+              6.0,
+              14.406
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 29.493,
+        "y": 28.607,
+        "z": 32.736
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_02.fbx",
+        "validation": "exports/farm_barn_02.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 1,
+      "geometry_hash": "11d8ca3b75c56f36",
+      "id": "farm_barn_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": false,
+        "doors": "closed",
+        "kingdom": null,
+        "lean_to": true,
+        "loft": "open",
+        "paint": false,
+        "roof": "thatch"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7701,
+      "sockets": {
+        "deposit": [
+          -8.238,
+          0.037,
+          -14.425
+        ],
+        "door": [
+          -1.838,
+          0.037,
+          -14.425
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5104,
+        "lod1": 1786
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              7.181,
+              5.976,
+              1.697
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              11.877,
+              26.357
+            ]
+          },
+          {
+            "center": [
+              -11.646,
+              5.976,
+              1.697
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              11.877,
+              26.357
+            ]
+          },
+          {
+            "center": [
+              -2.232,
+              5.976,
+              14.576
+            ],
+            "name": "wall_back",
+            "size": [
+              19.427,
+              11.877,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              4.624,
+              5.976,
+              -11.181
+            ],
+            "name": "front_l",
+            "size": [
+              4.513,
+              11.877,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -9.089,
+              5.976,
+              -11.181
+            ],
+            "name": "front_r",
+            "size": [
+              4.513,
+              11.877,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -2.232,
+              11.276,
+              -11.181
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.277,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -2.232,
+              0.237,
+              1.697
+            ],
+            "name": "floor",
+            "size": [
+              19.427,
+              0.4,
+              26.357
+            ]
+          },
+          {
+            "center": [
+              -10.032,
+              1.387,
+              -14.581
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          },
+          {
+            "center": [
+              2.668,
+              3.037,
+              4.333
+            ],
+            "name": "lean_to",
+            "size": [
+              6.0,
+              6.0,
+              14.497
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 28.377,
+        "y": 26.231,
+        "z": 32.752
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_03.fbx",
+        "validation": "exports/farm_barn_03.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 1,
+      "geometry_hash": "368608eefc54c254",
+      "id": "farm_barn_03",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": false,
+        "doors": "half",
+        "kingdom": "blue",
+        "lean_to": true,
+        "loft": "open",
+        "paint": true,
+        "roof": "tile"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7702,
+      "sockets": {
+        "deposit": [
+          -8.632,
+          0.037,
+          -14.481
+        ],
+        "door": [
+          -2.232,
+          0.037,
+          -14.481
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5916,
+        "lod1": 2070
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              9.926,
+              6.174,
+              1.696
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              12.274,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              -9.926,
+              6.174,
+              1.696
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              12.274,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              6.174,
+              15.238
+            ],
+            "name": "wall_back",
+            "size": [
+              20.452,
+              12.274,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              7.113,
+              6.174,
+              -11.846
+            ],
+            "name": "front_l",
+            "size": [
+              5.026,
+              12.274,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -7.113,
+              6.174,
+              -11.846
+            ],
+            "name": "front_r",
+            "size": [
+              5.026,
+              12.274,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              11.474,
+              -11.846
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.674,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              0.237,
+              1.696
+            ],
+            "name": "floor",
+            "size": [
+              20.452,
+              0.4,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              -7.8,
+              1.387,
+              -15.246
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 25.015,
+        "y": 35.559,
+        "z": 34.076
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_04.fbx",
+        "validation": "exports/farm_barn_04.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 1,
+      "geometry_hash": "f203fa3675a5696e",
+      "id": "farm_barn_04",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": true,
+        "doors": "open",
+        "kingdom": "green",
+        "lean_to": false,
+        "loft": "open",
+        "paint": false,
+        "roof": "tile"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7703,
+      "sockets": {
+        "deposit": [
+          -6.4,
+          0.037,
+          -15.146
+        ],
+        "door": [
+          -0.0,
+          0.037,
+          -15.146
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5572,
+        "lod1": 1950
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "farm_barn",
+  "variation": {
+    "closest_pair": [
+      "farm_barn_01",
+      "farm_barn_04"
+    ],
+    "mean_pair_diff": 0.1582,
+    "min_pair_diff": 0.1011,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

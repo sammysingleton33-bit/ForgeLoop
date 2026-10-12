@@ -49,7 +49,14 @@ Identity comes from **four levers**, used on castles/military always and on vill
 | Tower roof shape | tall **conical spires** with finials | **square pyramid** roofs, crisp | **timber hoardings** (wooden fighting galleries) + low cones | **domes / onion domes** with gold finials |
 | Emblem (banners, shields) | flame / crown | star | oak leaf | sun disc |
 
-Rules: kingdom colour covers at most ~35 % of a building's visible surface besides the roof. Village
+Rules (tuned after the first reviews, 2026-10-12):
+- Straw thatch is deliberately **muted** (`thatch*`) so it never reads as the gold kingdom; every thatch
+  building carries its kingdom on a large element that reads at 80 studs (ridge pennant, gable banner, door banner).
+- The gold kingdom is **gold, not orange** (`yellow_roof*`, `yellow_cloth*`); purple is only a small trim accent.
+- One emblem per kingdom everywhere (banners, shields, flags): crimson **crown**, azure **star**, emerald **oak leaf**,
+  gold **sun**. (The flame is retired.)
+- Every building sits on a stone plinth or kit plinth; no flat dirt decals under buildings.
+- Kingdom colour covers at most ~35 % of a building's visible surface besides the roof. Village
 buildings: roofs ~50/50 thatch vs kingdom tiles, shutters and doors always in the kingdom colour, plus banners.
 Castles and military buildings: always kingdom roofs, stone and banners.
 

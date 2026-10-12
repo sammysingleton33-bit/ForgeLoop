@@ -1,0 +1,433 @@
+{
+  "assets": [
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -1.059,
+              4.0,
+              -0.164
+            ],
+            "name": "trunk",
+            "size": [
+              1.87,
+              8.0,
+              1.87
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 13.009,
+        "y": 32.253,
+        "z": 14.227
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_01.fbx",
+        "validation": "exports/tree_birch_01.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 1,
+      "geometry_hash": "52deab89ef32ea2b",
+      "id": "tree_birch_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "height": 30.0,
+        "leaves": "birch",
+        "style": "single",
+        "trunks": 1
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7017,
+      "sockets": {
+        "canopy_top": [
+          -0.991,
+          29.6,
+          0.002
+        ],
+        "harvest": [
+          -1.059,
+          0.0,
+          -1.269
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2352,
+        "lod1": 822
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              1.258,
+              4.0,
+              0.272
+            ],
+            "name": "trunk",
+            "size": [
+              3.239,
+              8.0,
+              2.484
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 20.95,
+        "y": 34.09,
+        "z": 17.341
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_02.fbx",
+        "validation": "exports/tree_birch_02.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 1,
+      "geometry_hash": "625256bd5f5fa7c8",
+      "id": "tree_birch_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "height": 32.0,
+        "leaves": "birch",
+        "style": "twin",
+        "trunks": 2
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7076,
+      "sockets": {
+        "canopy_top": [
+          -2.892,
+          31.6,
+          -1.833
+        ],
+        "harvest": [
+          1.258,
+          0.0,
+          -1.14
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3648,
+        "lod1": 1276
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.263,
+              4.0,
+              0.795
+            ],
+            "name": "trunk",
+            "size": [
+              3.166,
+              8.0,
+              3.037
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 17.617,
+        "y": 29.32,
+        "z": 18.447
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_03.fbx",
+        "validation": "exports/tree_birch_03.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 1,
+      "geometry_hash": "497a1a7e197b695f",
+      "id": "tree_birch_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "height": 28.0,
+        "leaves": "birch",
+        "style": "clump",
+        "trunks": 3
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7135,
+      "sockets": {
+        "canopy_top": [
+          0.59,
+          27.6,
+          -2.359
+        ],
+        "harvest": [
+          0.263,
+          0.0,
+          -1.059
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3726,
+        "lod1": 1304
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.615,
+              4.0,
+              0.437
+            ],
+            "name": "trunk",
+            "size": [
+              1.87,
+              8.0,
+              1.87
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 14.465,
+        "y": 36.886,
+        "z": 11.621
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_04.fbx",
+        "validation": "exports/tree_birch_04.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 1,
+      "geometry_hash": "8ac9a2479a26a5e1",
+      "id": "tree_birch_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "height": 34.5,
+        "leaves": "birch",
+        "style": "tall",
+        "trunks": 1
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7194,
+      "sockets": {
+        "canopy_top": [
+          -0.1,
+          34.1,
+          0.538
+        ],
+        "harvest": [
+          -0.615,
+          0.0,
+          -0.668
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2352,
+        "lod1": 822
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -1.563,
+              4.0,
+              -0.42
+            ],
+            "name": "trunk",
+            "size": [
+              1.364,
+              8.0,
+              1.364
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 9.81,
+        "y": 25.604,
+        "z": 11.187
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_05.fbx",
+        "validation": "exports/tree_birch_05.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 1,
+      "geometry_hash": "26d87e11463466a3",
+      "id": "tree_birch_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "height": 24.5,
+        "leaves": "birch",
+        "style": "young",
+        "trunks": 1
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7253,
+      "sockets": {
+        "canopy_top": [
+          -0.635,
+          24.1,
+          -0.109
+        ],
+        "harvest": [
+          -1.563,
+          0.0,
+          -1.226
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2352,
+        "lod1": 822
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.838,
+              4.0,
+              0.789
+            ],
+            "name": "trunk",
+            "size": [
+              3.33,
+              8.0,
+              2.212
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 19.912,
+        "y": 31.959,
+        "z": 16.647
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_06.fbx",
+        "validation": "exports/tree_birch_06.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 1,
+      "geometry_hash": "aa42d1830d5753d5",
+      "id": "tree_birch_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "height": 30.0,
+        "leaves": "birch_gold",
+        "style": "twin_gold",
+        "trunks": 2
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7312,
+      "sockets": {
+        "canopy_top": [
+          -3.236,
+          29.6,
+          1.179
+        ],
+        "harvest": [
+          0.838,
+          0.0,
+          -0.487
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3648,
+        "lod1": 1276
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "tree_birch",
+  "variation": {
+    "closest_pair": [
+      "tree_birch_02",
+      "tree_birch_06"
+    ],
+    "mean_pair_diff": 0.5392,
+    "min_pair_diff": 0.3349,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
