@@ -31,11 +31,18 @@ Explorer → ReplicatedStorage → Forge → **BuildInfo** (double-click) → `s
    - `ForgeLoop client controllers started count=<n> order=... trees=Forge,Game`
 3. Copy those three lines into the report.
 
-**Pass:** all three lines, `game=game-001`, `trees=Forge,Game`, no red text.
+4. With the game stopped: Explorer → **Workspace** → Properties → **StreamingEnabled** is ticked, and
+   **Players** → **CharacterAutoLoads** is unticked (D-025, D-026).
+5. Until FL-0048 spawns rulers, **no character appears** when you press Play (the camera is free).
+   That is correct: characters only load when the game puts you in a kingdom.
+
+**Pass:** all three lines, `game=game-001`, `trees=Forge,Game`, no red text, both properties as above.
 
 ## 2. Enter a medieval world — VS-1 row 1 (waiting: FL-0054 Kit, FL-0055 World)
 1. Play. You spawn at **your kingdom's keep** in a sunny valley: river, forest, quarry, farm fields,
    roads. One kingdom plot is fully dressed; the other three are blocked out.
+   Your ruler must appear **only** at your own keep: never at the map centre, never falling, never
+   respawning somewhere else (CharacterAutoLoads is off; the game spawns you).
 2. Screenshot **W1**: your character in front of the keep (third-person view).
 3. Screenshot **W2**: zoomed out / from high up so the river and at least two kingdom plots are visible.
 
@@ -97,7 +104,9 @@ the right moment and can be skipped.
 
 ## M1 / M2 — two players (Test → Clients and Servers → Local Server, 2 players → Start)
 (Later multiplayer checks M3–M8: `production/quality-gates/multiplayer-test-plan.md`.)
-- **M1 (always runnable):** both client windows log the same sha; both rulers spawn and see each other move.
+- **M1 (always runnable):** both client windows log the same sha and `trees=Forge,Game`. Once FL-0048
+  spawns rulers: both rulers appear at their keeps and each sees the other move (with streaming on,
+  a far ruler may not be visible until you walk closer).
 - **M2 shared kingdom (waiting: FL-0048):** both players can be in **one** kingdom (party) — the HUD
   member list shows both; resources one player gathers appear in the other's HUD; both see the same
   citizens in the same places. Then **Cleanup**.
