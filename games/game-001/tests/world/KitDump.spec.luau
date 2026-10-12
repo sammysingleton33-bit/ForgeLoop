@@ -75,8 +75,18 @@ local function catalogue()
 		for _, k in KINGDOMS do
 			add(`building_{bt}`, `{bt} L1 {k.id}`, Kit.build(bt, 1, "complete", k.color), { kingdom = k.id })
 		end
-		add(`building_{bt}`, `{bt} L1 neutral`, Kit.build(bt, 1, "complete", Kit.NEUTRAL_COLOR), { kingdom = "neutral" })
-		add(`building_{bt}`, `{bt} L2 crimson`, Kit.build(bt, 2, "complete", KINGDOMS[1].color), { kingdom = "crimson" })
+		add(
+			`building_{bt}`,
+			`{bt} L1 neutral`,
+			Kit.build(bt, 1, "complete", Kit.NEUTRAL_COLOR),
+			{ kingdom = "neutral" }
+		)
+		add(
+			`building_{bt}`,
+			`{bt} L2 crimson`,
+			Kit.build(bt, 2, "complete", KINGDOMS[1].color),
+			{ kingdom = "crimson" }
+		)
 	end
 	for _, bt in { "house", "keep", "barracks", "farm" } do
 		for _, stage in { 1, 2, 3, "complete" } do
@@ -89,7 +99,18 @@ local function catalogue()
 		end
 		add("characters", `soldier {k.id}`, Kit.character("soldier", "soldier", k.color))
 	end
-	for _, id in { "tree_oak_01", "tree_pine_02", "tree_birch_01", "bush_03", "resource_stone_01", "resource_ore_03", "resource_wood_01", "prop_goods_01" } do
+	for _, id in
+		{
+			"tree_oak_01",
+			"tree_pine_02",
+			"tree_birch_01",
+			"bush_03",
+			"resource_stone_01",
+			"resource_ore_03",
+			"resource_wood_01",
+			"prop_goods_01",
+		}
+	do
 		add("props", id, Kit.prop(id))
 	end
 	local regalia = Instance.new("Model")

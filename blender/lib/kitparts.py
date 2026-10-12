@@ -129,10 +129,13 @@ def cframe_matrix(c):
     return Matrix(((r00, r01, r02, x), (r10, r11, r12, y), (r20, r21, r22, z), (0, 0, 0, 1)))
 
 
-def build_model(entry, collection, offset=(0.0, 0.0, 0.0)):
-    """Create Blender objects for one dumped model. Returns the list of objects."""
+def build_model(entry, collection, offset=(0.0, 0.0, 0.0), transform=None):
+    """Create Blender objects for one dumped model. `transform` is an optional Roblox-space 4x4
+    (e.g. a placement CFrame) applied before the axis conversion. Returns the list of objects."""
     objs = []
-    for p in entry["parts"]:
+    parts = entry["parts"] if isinstance(entry, dict) else entry
+    pre = transform if transform is not None else Matrix.Identity(4)
+    for p in parts:
         if p.get("transparency", 0) >= 0.99:
             continue
         kind = p["shape"] if p["class"] == "Part" else p["class"]
@@ -151,7 +154,8 @@ def build_model(entry, collection, offset=(0.0, 0.0, 0.0)):
             ob.data.materials.append(None)
         ob.material_slots[0].link = "OBJECT"
         ob.material_slots[0].material = mat
-        ob.matrix_world = Matrix.Translation(offset) @ P @ cframe_matrix(p["cframe"]) @ Matrix.Diagonal((sx, sy, sz, 1))
+        ob.matrix_world = (Matrix.Translation(offset) @ P @ pre @ cframe_matrix(p["cframe"])
+                           @ Matrix.Diagonal((sx, sy, sz, 1)))
         collection.objects.link(ob)
         objs.append(ob)
     return objs
