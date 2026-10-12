@@ -13,8 +13,11 @@
 			viewer    { x: number, z: number }? -- nil (no character yet): everything counts as far
 			options   { nearRadius = 200, farEvery = 5, always = { [id] = true }? }
 		Interest.bytesPerSecond(nearCount, farCount, ticksPerSecond, options?): number
-			-- the snapshot budget estimate logged by the host (22 bytes/entity + 15/chunk header)
+			-- snapshot bandwidth estimate (SnapshotCodec v2: 10 B per record, 8 B per buffer of ≤ 80)
+	VS-1 broadcasts every entity (G4); interest tiers (near ≤ 150 studs at full rate, far at 2 Hz) are VS-2.
 ]]
+
+local SnapshotCodec = require("./SnapshotCodec")
 
 local Interest = {}
 
@@ -60,8 +63,8 @@ function Interest.bytesPerSecond(
 	local opts = options or {}
 	local farEvery = math.max(1, opts.farEvery or Interest.DEFAULT_FAR_EVERY)
 	local perTick = nearCount + farCount / farEvery
-	local chunks = math.max(1, math.ceil(perTick / 40))
-	return (perTick * 22 + chunks * 15) * ticksPerSecond
+	local chunks = math.max(1, math.ceil(perTick / SnapshotCodec.MAX_RECORDS))
+	return (perTick * SnapshotCodec.RECORD_BYTES + chunks * SnapshotCodec.HEADER_BYTES) * ticksPerSecond
 end
 
 return Interest

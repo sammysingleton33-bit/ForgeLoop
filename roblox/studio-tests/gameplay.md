@@ -12,7 +12,7 @@ Which steps are runnable after which PR:
 | K3, K4 (citizens at work, ruler gathering) | FL-0048; citizens render once FL-0049 lands (placeholder parts until then) |
 | K5 (build, upgrade) | FL-0051 (`Build.Place`, `Build.Upgrade`) |
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
-| Performance capture | FL-0049 (`KingdomHost: sim` log line, entity replication) |
+| K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
 The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
@@ -97,10 +97,26 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - The rejoining player is back in the same kingdom, respawns at its keep with regalia, and
   `Kingdom.GetState` shows them in `rulers` with `mine` set.
 
-## Performance capture (FL-0049, gate G7)
-With 4 kingdoms × 12 citizens running for 5 minutes, record:
-- server sim time per tick (Output line `KingdomHost: sim`, logged every 30 s once FL-0049 lands;
-  until then the value exists only as `MatchHost:simMsPerTick()`);
-- Network → Data sent per client (KB/s).
+## K8 — Citizens rendered on clients (FL-0049, G4)
+1. Start a local server with 2 players. Join, so your kingdom's 12 citizens appear.
+2. Watch the citizens from both clients for 60 s.
+3. Open the debug panel (F8) and run `sim.spawn 50` once.
+4. Repeat with Studio's Network Simulator at 200 ms latency and 5 % packet loss.
 
-The targets are ≤ 4 ms per frame and ≤ 50 KB/s per player.
+**Expected:**
+- Citizens are part-built rigs (`Workspace.KingdomEntities`, no Humanoids) in kingdom colours. They walk,
+  work, carry and idle with procedural animation, and they look the same on both clients.
+- Movement is smooth, about 0.2 s behind the server, with no teleporting. Under loss, a citizen may
+  hesitate briefly but never jumps back.
+- Rigs further than 150 studs from your character disappear and come back when you approach.
+- Long trips (soldiers sent to the watchtower) follow the road and cross the river at the bridge.
+- No `EntityService` errors in Output.
+
+## Performance capture (FL-0049, gate G7)
+With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:
+- the server Output line `Kingdom perf`, logged every 30 s: entities, bytesPerSecond (per player),
+  simMsP99 (per 1/16 s host tick) and encodeMsP99 (per snapshot tick);
+- Network → Data sent per client (KB/s), from the Studio stats panel.
+
+The targets are ≤ 4 ms per frame and ≤ 20 KB/s per player (G4, VS-2 target; VS-1 sends everything).
+Write the numbers into `games/game-001/tests/sim/PERF.md`, labelled "Studio, indicative".

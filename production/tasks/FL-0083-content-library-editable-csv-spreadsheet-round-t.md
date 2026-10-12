@@ -3,7 +3,7 @@ id: FL-0083
 title: "Content library: editable CSV, spreadsheet round-trip, generated Content modules, ContentQuery, DRAFT starter content"
 track: design
 owner: forge-00
-status: BUILDING
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,7 @@ updated: 2026-10-12
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 6
-evidence: []
+evidence: ["PR #53 head 721d488: check.sh OVERALL PASS (Lune 486/0, game-001 596/0), pytest 251, content validate 0 errors, xlsx round-trip byte-identical, ownership PASS"]
 ---
 
 # "Content library: editable CSV, spreadsheet round-trip, generated Content modules, ContentQuery, DRAFT starter content"
@@ -40,3 +40,4 @@ The user controls the dialogue and the citizen and reputation data in a spreadsh
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (BUILDING).
+- 2026-10-12 forge-00: PR #53 (REVIEW). A 3-lens adversarial review raised 31 findings, all reproduced: 29 fixed in full, 2 partly (sheet protection and two event rows skipped). Workbook DRAFT v1 sent to the user (FL-0095).
