@@ -13,8 +13,12 @@
 		                    when everything overflowed, so a replay can never add it later.
 		A txId already applied returns ok = true, reason = "replay" and changes nothing: callers
 		fire their events only when reason ~= "replay" (interfaces §4 exactly-once rule).
-		Processed txIds are remembered in data.txOrder (oldest evicted first, `txLimit`, default
-		1000) so a saved wallet keeps its idempotency across sessions.
+		Spends and grants keep separate txId sets ("spend:<txId>", "grant:<txId>"), so a spend can
+		never pass as the replay of a grant with the same id, or the other way round.
+		Processed txIds are remembered in data.txOrder from index data.txHead + 1 (the newest
+		`txLimit`, default 1000; older ones are forgotten in amortised O(1)) so a saved wallet keeps
+		its idempotency across sessions. The memory is a window, not "forever": size txLimit for the
+		number of transactions a wallet sees in its lifetime (a match, a session).
 
 	API
 		Wallet.new({ currencies: { string }, caps: Bundle?, start: Bundle?, data: table?, txLimit: number? })
@@ -26,7 +30,7 @@
 		wallet:grant(bundle, txId) -> (ok, reason?, result)
 			result = { applied: Bundle (signed change), overflow: Bundle, missing: Bundle, balances: Bundle }
 			reasons: nil (applied) | "replay" | "insufficient" | "invalid_tx" | "invalid_amount"
-		wallet:seen(txId) -> boolean
+		wallet:seen(txId, kind?) -> boolean   kind "spend" | "grant"; nil = either
 ]]
 
 local Bundle = require("./Bundle")
@@ -39,7 +43,7 @@ local Wallet = {}
 Wallet.__index = Wallet
 
 Wallet.DEFAULT_TX_LIMIT = 1000
-Wallet.MAX_TX_ID = 100
+Wallet.MAX_TX_ID = 128 -- room for a caller prefix on a 100-byte public id (TreasuryService)
 
 function Wallet.new(opts: { currencies: { string }, caps: Bundle?, start: Bundle?, data: any?, txLimit: number? })
 	assert(type(opts) == "table" and type(opts.currencies) == "table", "Wallet.new({ currencies = { ... } })")
@@ -54,14 +58,15 @@ function Wallet.new(opts: { currencies: { string }, caps: Bundle?, start: Bundle
 	local data = opts.data or {}
 	data.balances = data.balances or {}
 	data.txOrder = data.txOrder or {}
+	data.txHead = data.txHead or 0
 	for _, id in opts.currencies do
 		if data.balances[id] == nil then
 			data.balances[id] = if opts.start and opts.start[id] then opts.start[id] else 0
 		end
 	end
 	local seen: { [string]: boolean } = {}
-	for _, txId in data.txOrder do
-		seen[txId] = true
+	for i = data.txHead + 1, #data.txOrder do
+		seen[data.txOrder[i]] = true
 	end
 	return setmetatable({
 		_order = table.clone(opts.currencies),
@@ -97,8 +102,11 @@ function Wallet:setCaps(caps: Bundle)
 	end
 end
 
-function Wallet:seen(txId: string): boolean
-	return self._seen[txId] == true
+function Wallet:seen(txId: string, kind: string?): boolean
+	if kind then
+		return self._seen[kind .. ":" .. txId] == true
+	end
+	return self._seen["spend:" .. txId] == true or self._seen["grant:" .. txId] == true
 end
 
 function Wallet:canAfford(cost: Bundle): (boolean, Bundle)
@@ -110,13 +118,25 @@ local function validTxId(txId: any): boolean
 	return type(txId) == "string" and #txId > 0 and #txId <= Wallet.MAX_TX_ID
 end
 
-function Wallet:_remember(txId: string)
-	self._seen[txId] = true
-	local order = self._data.txOrder
-	table.insert(order, txId)
-	while #order > self._txLimit do
-		local oldest = table.remove(order, 1)
-		self._seen[oldest] = nil
+-- Live keys are order[head + 1 .. #order] (each at most once: a key is added only while unseen).
+-- Forgetting moves `head`; the dead prefix is dropped once it is as long as the live part, so
+-- each remembered key costs amortised O(1) (table.remove(order, 1) would be O(n) per key).
+function Wallet:_remember(key: string)
+	self._seen[key] = true
+	local data = self._data
+	local order = data.txOrder
+	table.insert(order, key)
+	while #order - data.txHead > self._txLimit do
+		data.txHead += 1
+		self._seen[order[data.txHead]] = nil
+	end
+	local live = #order - data.txHead
+	if data.txHead > 0 and data.txHead >= live then
+		table.move(order, data.txHead + 1, #order, 1)
+		for i = #order, live + 1, -1 do
+			order[i] = nil
+		end
+		data.txHead = 0
 	end
 end
 
@@ -128,7 +148,8 @@ function Wallet:spend(cost: Bundle, txId: string): (boolean, string?, Result)
 	if not validTxId(txId) then
 		return false, "invalid_tx", self:_result()
 	end
-	if self._seen[txId] then
+	local key = "spend:" .. txId
+	if self._seen[key] then
 		return true, "replay", self:_result()
 	end
 	if not Bundle.validate(cost, { currencies = self._allowed }) then
@@ -142,7 +163,7 @@ function Wallet:spend(cost: Bundle, txId: string): (boolean, string?, Result)
 	for id, amount in cost do
 		balances[id] -= amount
 	end
-	self:_remember(txId)
+	self:_remember(key)
 	return true, nil, self:_result(Bundle.negate(cost))
 end
 
@@ -150,7 +171,8 @@ function Wallet:grant(bundle: Bundle, txId: string): (boolean, string?, Result)
 	if not validTxId(txId) then
 		return false, "invalid_tx", self:_result()
 	end
-	if self._seen[txId] then
+	local key = "grant:" .. txId
+	if self._seen[key] then
 		return true, "replay", self:_result()
 	end
 	if not Bundle.validate(bundle, { currencies = self._allowed }) then
@@ -170,7 +192,7 @@ function Wallet:grant(bundle: Bundle, txId: string): (boolean, string?, Result)
 			overflow[id] = amount - added
 		end
 	end
-	self:_remember(txId)
+	self:_remember(key)
 	return true, nil, self:_result(applied, overflow)
 end
 
