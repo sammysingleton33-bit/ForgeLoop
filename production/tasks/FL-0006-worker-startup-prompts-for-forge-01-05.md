@@ -1,0 +1,31 @@
+---
+id: FL-0006
+title: Worker startup prompts for FORGE-01..05
+track: coordination
+owner: forge-00
+status: BUILDING
+priority: P0
+game: factory
+created: 2026-10-12
+updated: 2026-10-12
+depends_on: []
+estimate_h: 2
+evidence: []
+---
+
+# Worker startup prompts for FORGE-01..05
+
+## Outcome
+Each worker has a tailored, copy-paste startup prompt in agents/<id>/PROMPT.md reflecting the actual repo state.
+
+## Requirements
+- Identity, responsibilities, repo + branch/worktree steps, files, requirements, deliverables, quality bar, dependencies, tests, commit/report procedure, definition of done
+
+## Validation
+Cross-worker consistency review (ownership overlaps, dependency gaps, stale paths)
+
+## Completion criteria
+- [ ] Five prompts saved and displayed to the user
+
+## Log
+- 2026-10-12 forge-00: created (BUILDING).
