@@ -48,6 +48,13 @@
 				"CharacterAutoLoads": false
 			}
 		},
+		"Lighting": {
+			"$className": "Lighting",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"Technology": "Future"
+			}
+		},
 		"Workspace": {
 			"$className": "Workspace",
 			"$ignoreUnknownInstances": true,
