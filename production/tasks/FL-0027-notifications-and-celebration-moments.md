@@ -3,14 +3,19 @@ id: FL-0027
 title: Notifications and celebration moments
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0020]
 estimate_h: 4
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS @1846163: framework 489 Lune specs, game-001 87, Selene 0/0, StyLua 170 files, both Rojo builds and place checks"
+  - "Notification.spec 16 (queue: stack of 3, priority replace, waiting cap, coalescing + refresh cap, important filter, clamps; controller: view band 70, expiry on the virtual clock, live setting, celebrations, cooldown, registration, dismiss) + OnboardingController completion celebration"
+  - mutations.py FL-0027 rows 13/13 CAUGHT
+  - "Studio checklist written: roblox/studio-tests/experience.md E7"
+  - "unverified: look and feel in Studio, phone layout, FORGE-03 Toast component not yet adopted (FL-0020 not on main)"
 ---
 
 # Notifications and celebration moments
@@ -32,3 +37,6 @@ Prototype/screenshot review; Lune specs for queue logic
 ## Log
 - 2026-10-12 forge-00: created (READY).
 - 2026-10-12 forge-00: priority -> P0. Notifications feed the VS-1 announcer (FL-0062).
+- 2026-10-12 forge-04: READY → BUILDING. Started on forge/04-experience-fl0027, stacked on FL-0025 (#22). FORGE-03's Toast (FL-0020, PR #13) is not on main yet: minimal view until then.
+- 2026-10-12 forge-04: BUILDING → TESTING. Queue, controller, specs committed; headless gates on 1846163.
+- 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0027 stacked on #22. Studio checklist: roblox/studio-tests/experience.md E7.

@@ -64,6 +64,11 @@ describe("OnboardingController (client)", function()
 		function notifications.show(_, n)
 			table.insert(notifications.shown, n)
 		end
+		notifications.celebrated = {}
+		function notifications.celebrate(_, kind, payload)
+			table.insert(notifications.celebrated, { kind = kind, payload = payload })
+			return true
+		end
 		local registry = Loader.load(env, {
 			SettingsDef,
 			{
@@ -141,6 +146,18 @@ describe("OnboardingController (client)", function()
 		local stroke = button:FindFirstChild("ForgeOnboardingStroke")
 		expect(stroke).never.toBeNil()
 		expect(stroke.Thickness).toBe(4)
+	end)
+
+	it("celebrates when the last step completes, never on skip or on a late snapshot that is already done", function()
+		controller:apply(state({ done = true, hint = nil })) -- joined with the tutorial already finished
+		expect(#notifications.celebrated).toBe(0)
+		controller:apply(state())
+		controller:apply(state({ done = true, hint = nil }))
+		expect(#notifications.celebrated).toBe(1)
+		expect(notifications.celebrated[1].kind).toBe("onboardingComplete")
+		controller:apply(state())
+		controller:skip()
+		expect(#notifications.celebrated).toBe(1)
 	end)
 
 	it("Skip tells the server and hides the card at once", function()
