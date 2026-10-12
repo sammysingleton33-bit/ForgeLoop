@@ -3,7 +3,7 @@ id: FL-0014
 title: "Jungle foliage generators: broadleaf tree, palm, fern/bush"
 track: asset
 owner: forge-02
-status: READY
+status: REJECTED
 priority: P0
 game: factory
 created: 2026-10-12
@@ -33,3 +33,4 @@ Contact sheets + gameplay-distance renders inspected; validation reports within 
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: READY -> REJECTED. Superseded by AI Kingdoms (D-020); kept for history. Medieval organic assets: FL-0057.

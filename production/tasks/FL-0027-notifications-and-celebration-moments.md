@@ -4,7 +4,7 @@ title: Notifications and celebration moments
 track: build
 owner: forge-04
 status: READY
-priority: P1
+priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -31,3 +31,4 @@ Prototype/screenshot review; Lune specs for queue logic
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P0. Notifications feed the VS-1 announcer (FL-0062).

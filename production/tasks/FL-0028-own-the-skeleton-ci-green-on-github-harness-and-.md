@@ -3,7 +3,7 @@ id: FL-0028
 title: "Own the skeleton: CI green on GitHub, harness and mocks upkeep"
 track: qa
 owner: forge-05
-status: READY
+status: BUILDING
 priority: P0
 game: factory
 created: 2026-10-12
@@ -31,3 +31,4 @@ CI run link on main; check.sh green locally
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-05: READY → BUILDING. Skeleton merged (PR #1, f9e9b0a); FORGE-05 takes custody. CI green on main (run 38295342210). Next: Workspace map mapping + place-check tag assertions, ownership job.
