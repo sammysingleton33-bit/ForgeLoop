@@ -3,8 +3,8 @@ id: FL-0011
 title: HazardService framework with a real flood hazard
 track: build
 owner: forge-01
-status: READY
-priority: P1
+status: SPECIFIED
+priority: P3
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -31,3 +31,5 @@ Lune specs for scheduling/state; Studio test measuring water height before/after
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: READY -> SPECIFIED. Deprioritised: no flood in AI Kingdoms VS-1; keep for a later disaster/weather feature.
+- 2026-10-12 forge-00: priority -> P3. Not needed for game-001 VS-1.

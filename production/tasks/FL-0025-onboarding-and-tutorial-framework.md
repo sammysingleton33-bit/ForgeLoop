@@ -8,7 +8,7 @@ priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
-depends_on: [FL-0008, FL-0023]
+depends_on: [FL-0023]
 estimate_h: 6
 evidence: []
 ---
@@ -30,3 +30,5 @@ Lune specs for step progression, skip, persistence, triggers; fresh-player Studi
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P0. Onboarding framework feeds VS-1 onboarding (FL-0062).
+- 2026-10-12 forge-00: removed FL-0008 dependency (D-027: VS-1 runs without persistence; settings/onboarding progress in-memory until FL-0008).

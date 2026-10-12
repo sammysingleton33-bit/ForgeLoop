@@ -20,8 +20,10 @@
 		log(level, message, fields?)  "[Forge] <level> <message> k=v ..." via print (info) or warn (warn, error)
 		bindToClose(fn) game:BindToClose(fn); errors on the client (server-only API)
 		newInstance     Instance.new
-		sharedModules(fileName)  { [Area] = require(ReplicatedStorage.Forge.<Area>.<fileName>) } for every
-		                area folder that has a ModuleScript of that name (e.g. "Remotes", interfaces §6)
+		sharedModules(fileName)  { [Area] = require(ReplicatedStorage.<Root>.<Area>.<fileName>) } for every
+		                area folder that has a ModuleScript of that name (e.g. "Remotes", interfaces §6),
+		                across the roots in Env.SHARED_ROOTS: Forge (framework) and Game (game-001 shared
+		                code, D-022). An area with that module in both roots is an error (names collide).
 		service(name)   game:GetService(name)
 	Service fields that cannot be obtained on this side (pcall around GetService) are nil.
 ]]
@@ -102,6 +104,9 @@ Env.FUNCTION_FIELDS = table.freeze({
 	"sharedModules",
 	"service",
 })
+
+-- ReplicatedStorage children whose area folders env.sharedModules searches, in order (D-022).
+Env.SHARED_ROOTS = table.freeze({ "Forge", "Game" })
 
 local allFields = { "isServer", "jobId" }
 for _, name in Env.SERVICE_FIELDS do
@@ -207,15 +212,27 @@ function Env.live(): Env
 		end,
 		sharedModules = function(fileName: string): { [string]: any }
 			local result = {}
-			local forge = ReplicatedStorage:FindFirstChild("Forge")
-			if forge == nil then
-				return result
-			end
-			for _, area in forge:GetChildren() do
-				if area:IsA("Folder") then
-					local module = area:FindFirstChild(fileName)
-					if module and module:IsA("ModuleScript") then
-						result[area.Name] = require(module) :: any
+			local foundIn: { [string]: string } = {}
+			for _, rootName in Env.SHARED_ROOTS do
+				local root = ReplicatedStorage:FindFirstChild(rootName)
+				if root == nil then
+					continue
+				end
+				for _, area in root:GetChildren() do
+					if area:IsA("Folder") then
+						local module = area:FindFirstChild(fileName)
+						if module and module:IsA("ModuleScript") then
+							if foundIn[area.Name] then
+								error(
+									`env.sharedModules("{fileName}"): area '{area.Name}' has a {fileName} module in both `
+										.. `ReplicatedStorage.{foundIn[area.Name]} and ReplicatedStorage.{rootName}; area names `
+										.. "must be unique across the Forge and Game trees",
+									2
+								)
+							end
+							foundIn[area.Name] = rootName
+							result[area.Name] = require(module) :: any
+						end
 					end
 				end
 			end

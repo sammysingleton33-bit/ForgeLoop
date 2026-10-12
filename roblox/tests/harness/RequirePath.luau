@@ -29,12 +29,19 @@
 			reference). depth = number of enclosing blocks (function, if, do, while, for, repeat);
 			0 means top level of the module. Luau if-expressions do not count as blocks.
 		RequirePath.checkPolicy(parsed, fromMount, toMount, target) -> string?
-			the D-017 rule for code inside the project trees (nil = allowed); mounts are the Rojo
-			"$path" nodes (Project.mountForFile / mountForDataModel), compared by identity:
+			the D-017 rule (extended by D-022) for code inside the project trees (nil = allowed);
+			mounts are the Rojo "$path" nodes (Project.mountForFile / mountForDataModel), compared
+			by identity:
 			  - relative paths stay inside the requiring file's own mount;
 			  - "@game/..." only crosses into another mount, and only to ReplicatedStorage/Forge/...
-			    (shared code, Config, Assets): server and client trees cannot see each other, and
-			    ServerScriptService never replicates to clients (interfaces §1).
+			    (framework shared code, Config, Assets) or ReplicatedStorage/Game/... (game shared
+			    code, D-022): server and client trees cannot see each other, and ServerScriptService
+			    never replicates to clients (interfaces §1);
+			  - framework code never requires game code (D-022): a file in a framework mount (a
+			    Forge tree other than Config) may not reach ReplicatedStorage/Game/....
+		RequirePath.isFrameworkMount(mount) -> boolean
+			true for the framework's Forge trees (shared, server, client, Assets); false for Config
+			(per-game configuration) and for every game tree.
 ]]
 
 local RequirePath = {}
@@ -427,6 +434,13 @@ function RequirePath.scan(source: string): { { path: string?, line: number, dept
 end
 
 -- ------------------------------------------------------------------ policy (D-017, interfaces §1)
+function RequirePath.isFrameworkMount(mount: any): boolean
+	if mount == nil then
+		return false
+	end
+	return table.find(mount.dm, "Forge") ~= nil and table.find(mount.dm, "Config") == nil
+end
+
 function RequirePath.checkPolicy(parsed: any, fromMount: any, toMount: any, target: { string }): string?
 	local sameTree = fromMount ~= nil and fromMount == toMount
 	if parsed.kind == "relative" then
@@ -437,10 +451,16 @@ function RequirePath.checkPolicy(parsed: any, fromMount: any, toMount: any, targ
 		if sameTree then
 			return "stays inside its own source tree; use a relative path (D-017)"
 		end
-		if target[1] ~= "ReplicatedStorage" or target[2] ~= "Forge" then
+		local root = if target[1] == "ReplicatedStorage" then target[2] else nil
+		if root ~= "Forge" and root ~= "Game" then
 			return `reaches {table.concat(target, ".")}; "@game/" may only reach ReplicatedStorage/Forge/... `
-				.. "(shared code, Config, Assets): server and client trees cannot see each other and "
-				.. "ServerScriptService never replicates to clients (interfaces §1)"
+				.. "(shared code, Config, Assets) or ReplicatedStorage/Game/... (game shared code, D-022): server "
+				.. "and client trees cannot see each other and ServerScriptService never replicates to clients "
+				.. "(interfaces §1)"
+		end
+		if root == "Game" and RequirePath.isFrameworkMount(fromMount) then
+			return `reaches {table.concat(target, ".")}; framework code never requires game code (D-022) — `
+				.. "pass game behaviour in through config, a registered service or a callback instead"
 		end
 	end
 	return nil

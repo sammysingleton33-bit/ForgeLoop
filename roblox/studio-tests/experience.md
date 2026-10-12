@@ -5,24 +5,24 @@ _Gate G6. Run by the user in Roblox Studio on the integrated build (`main`, or a
 Headless evidence already in place (not a substitute for these steps): Lune specs under `roblox/tests/unit/experience/` run the real Sound/ParticleEmitter instance-building code on Lune instances with engine methods (`Play`, `Emit`) stubbed. They cannot hear audio, see particles, or prove layout on a phone.
 
 **Before you start:** some systems need other workers' code. Each section says what it needs; if that is not on the build yet, write "blocked: needs X" instead of a result.
-- Settings, onboarding persistence: FORGE-01 DataService (FL-0008) and RemoteService (FL-0009).
-- Kingdom feedback: FORGE-01 kingdom signals + `Gameplay.KingdomEvent` remote and the `Citizen` tag (handoff `2026-10-12-forge-04-to-forge-01-kingdom-signals.md`).
-- Sounds: asset ids chosen/uploaded (handoff `2026-10-12-forge-04-to-user-sounds.md`). Until then every sound is skipped on purpose.
+- Remotes: RemoteService (FL-0009, on `main`). Persistence: DataService (FL-0008) is **not** needed for VS-1. Settings and onboarding progress last for the session (D-027).
+- AI Kingdoms feedback (sounds/VFX on citizens' work, announcer, music): FL-0062, with steps in `games/game-001/STUDIO_PLAYTEST.md` via FORGE-05. It needs FORGE-01's G9 events and G4.1 client signals.
+- Sounds: asset ids chosen or uploaded (handoff `2026-10-12-forge-04-to-user-sounds.md`). Until then every sound is skipped on purpose.
 
 ## E1 — Analytics trail (FL-0023)
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. Expect `analytics: waiting for bus events not declared yet events=...` listing the kingdom signals until FORGE-01 declares them.
-4. When FORGE-01's PlayerReady exists: `analytics event SessionStart ... sent=true`.
-5. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
+3. When FORGE-01's PlayerReady exists: `analytics event SessionStart ... sent=true`.
+4. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 ## E2 — Settings (FL-0024)
-Needs: DataService, RemoteService, and a settings panel (FORGE-03 components; until it exists write "blocked: no settings UI").
-1. Play Solo in a place with Studio access to API services enabled (DataStores).
-2. In the settings panel set Music to 20% and Reduced Motion on. Leave, then Play Solo again.
-Pass: values persist across sessions; Output shows no `SettingsService` warning other than "RemoteService not loaded" when RemoteService is absent.
+Needs: RemoteService and a settings panel (FORGE-03 components; until it exists write "blocked: no settings UI"). Persistence across sessions also needs DataService (FL-0008, after VS-1).
+1. Play Solo. Output shows `SettingsService: no DataService; settings and progress last for the session (D-027)` while FL-0008 is absent.
+2. In the settings panel set Music to 20% and Reduced Motion on: music drops at once; effects lose their camera shake.
+3. With DataService on the build only: leave, then Play Solo again; the values are still there.
+Pass: step 2 holds; step 3 holds when DataService exists. No `SettingsService` error in Output.
 
 ## E3 — Audio budget and levels (FL-0024)
 Needs: sound assets (at least the P0 list in the user handoff).
@@ -54,27 +54,58 @@ Budgets (initial, FL-0032 refines):
 | Particle lifetime | ≤ 5 s (house) | `VfxPresets.validate` |
 | Live particles on screen, all presets | ≤ 600; ≤ 16 active effects | VFXController (spec "keeps live particles on screen within budget") |
 
-Steps (until a debug panel exists, FORGE-05's sandbox tools or a temporary LocalScript can call `VFXController:play(id, { position = ... })` for each id in `roblox/src/shared/Experience/VfxPresets.luau`):
+Steps (until a debug panel exists, FORGE-05's tools or a temporary LocalScript can call `VFXController:play(id, { position = ... })` for each factory id in `roblox/src/shared/Experience/VfxPresets.luau` and each game id registered by FL-0062):
 1. Play every preset once at a visible spot; screenshot each. Judge: readable at gameplay distance, matches its name, no square/blocky texture artefacts (built-in textures unverified).
 2. Graphics quality 1 and 10 (Studio: File → Studio Settings → Rendering → Editor Quality Level, both lowest and highest, as effects/particle-emitters.md advises). Effects still read at quality 1.
-3. Device emulator: a low-end phone profile. Play `kingdom.siege.burning` on 12 buildings plus `kingdom.victory`. Note FPS in the MicroProfiler (Ctrl+F6) or the Developer Console.
-4. Turn the in-game Reduced Motion setting on (or the Roblox menu's Reduce Motion): `kingdom.siege.impact` shows fewer particles and **no** camera shake request.
+3. Device emulator: a low-end phone profile. Play the heaviest looping preset on 12 spots plus the heaviest burst (the spec's stress case: about 576 + 160 estimated particles, so the on-screen cap evicts the lowest priority). Note FPS in the MicroProfiler (Ctrl+F6) or the Developer Console.
+4. Turn the in-game Reduced Motion setting on (or the Roblox menu's Reduce Motion): a preset with shake (`levelup.column` has none; use a game preset with `shake`) shows fewer particles and **no** camera shake request.
 Pass: screenshots reviewed (G5 note committed by FORGE-04 after the user shares them), FPS on the low-end profile ≥ 30 with the stress case, reduced motion behaves as above.
 
-## E5 — Kingdom feedback (FL-0024)
-Needs: FORGE-01 kingdom signals, `Gameplay.KingdomEvent`, `Citizen` tags, `KingdomId` player attribute; NotificationController (FL-0027) for toasts.
-1. Start a match. Expect: founding horn + toast "Your kingdom is founded", calm music.
-2. Assign a citizen: an "Aye!"-style bubble over that citizen, acknowledgement sound.
-3. Place a farm: dust puff + thunk; nearby citizens say "To work!". When it completes: sparkle + flourish + toast "Farm complete"; two farms completing within 2 s show one toast that counts "×2".
-4. Harvest: "+N Food" floats over the farm; one harvest sound per 1.5 s even with many farms.
-5. Upgrade the kingdom: fanfare, golden column, achievement toast.
-6. Have a rival attack you: alarm bell + warning toast + citizens "Raiders!", music switches to battle within 1 s and returns to the match music about 8 s after the fight ends.
-7. Win the match: victory fanfare/music and the victory effect.
-8. Mute the game: every event above still shows a visual (accessibility rule, spec "with a visual for every sound").
-Pass: every step observed; note anything that felt late (> 0.2 s), noisy or repetitive.
+## E5 — AI Kingdoms feedback (moved)
+The kingdom-specific feedback moved to the game tree with CONTRACTS v0.4-g2 (D-026): sounds and VFX on citizens' work, the announcer, the music by match phase, and citizen reactions. That is FL-0062 (`games/game-001/src/{shared/Feedback,client/Controllers/{Feedback,Music,Announcer}*}`). Its Studio steps go into `games/game-001/STUDIO_PLAYTEST.md` through FORGE-05. The framework parts it uses are checked by E3 and E4.
 
-## E6 — Fresh-player onboarding walkthrough (FL-0025)
-Steps and the expected `env.log` funnel order are added with FL-0025.
+## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 VS-1 flow)
+Needs:
+- RemoteService (on `main`).
+- FORGE-01: KingdomService (`KingdomJoined`, `getKingdom().rulers`), the G9 producers (`ResourceGathered`, `BuildingPlaced`, `BuildingCompleted`, `UnitsRecruited`, `ObjectiveCaptured`), and WorldService's tags (`ResourceNode`, `BuildZone`, `ObjectiveZone`).
+- FORGE-03: the HUD targets `HUD.BuildButton` and `HUD.Recruit`.
+- DataService is not needed (session-only progress, D-027).
+
+Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions).
+1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
+2. At spawn: the card "Welcome, ruler. Your citizens are already at work.", then "Gather from a tree or rock", with an arrow and highlight on the **nearest** resource node.
+3. Gather once. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The card moves to "Build a House or a Farm" and the Build button is outlined.
+4. Place a House or Farm. The card says "Your builders are on their way" until it completes.
+5. Build a Barracks, recruit 3 soldiers, press Send to capture. The card points at the objective until the capture.
+6. On any step with a target, wait 30–60 s without acting: the card border and arrow turn gold (escalation).
+
+Expected `env.log` order (the adapter writes every call; `sent=true` means it was handed to Roblox, which records nothing from Studio):
+```
+info onboarding step ... flow=vs1 step=1 stepId=Spawn via=auto
+info analytics funnel Onboarding ... step=1 stepName=Spawn sent=true
+info onboarding step ... step=2 stepId=Gather via=bus
+info analytics funnel Onboarding ... step=2 stepName=Gather sent=true
+... step=3 PlaceBuilding (via=bus), 4 BuildingComplete (via=bus or via=satisfied when a co-ruler built first),
+    5 Recruit (via=bus), 6 Capture (via=bus)
+info analytics event OnboardingCompleted ... CustomField01=vs1 sent=true
+```
+The same order is asserted headlessly by `games/game-001/tests/experience/Onboarding.spec.luau` ("runs the whole slice for co-rulers with the G9 attribution rules").
+
+**Skip path** (new session): at step 2 press **Skip tutorial**. Expect:
+- `onboarding skipped ... lastStep=1`;
+- `analytics event OnboardingSkipped value=1 CustomField01=Spawn`;
+- the card disappears;
+- **no further** `analytics funnel Onboarding` line for the rest of the session.
+
+**Co-rulers** (Studio Party Simulator, 2 players in one party): both see their own card. When one ruler's building completes, the other's "BuildingComplete" step completes as soon as they reach it.
+
+**Phone check** (Studio device emulator, a small phone):
+- the card fits the width with margins and does not cover the thumbstick or jump button;
+- Skip is tappable (≥ 44 px);
+- the text is readable.
+
+Pass: all timings recorded and within target; the log order matches; skip and co-ruler behaviour as above.
 
 ## Changelog
-- 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024).
+- 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
+- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2 and D-027. Session-only settings and progress; E5 moved to FL-0062 (game tree); E6 rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture).

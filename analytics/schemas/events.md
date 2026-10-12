@@ -38,70 +38,62 @@ Consequences for this design:
 - Field values are low-cardinality categories: types, outcomes, phases, roles, small numbers (placement 1–8, streak days). **Never** user ids, names, free text, timestamps or GUIDs (Roblox groups combinations past 8,000 as "Other").
 - Every call is written to `env.log`; nothing in a field may be personal data.
 
-## 3. Budget (AI Kingdoms)
+## 3. Budget (AI Kingdoms, `games/game-001/config/Analytics.luau`)
 
 | Limit | Roblox cap (quote, source) | House budget | AI Kingdoms uses |
 |---|---|---|---|
-| Custom event names | 100 — "eventNames \| 100" (ET); "up to 100 custom events" (CE) | 60 | **21** |
-| Funnels | 10 — "Number of funnels \| 10" (ET); "Limited to 10 unique funnels per experience." (AS) | 8 | **6** |
-| Steps per funnel | 100 — "Limited to steps 1-100." (AS) | 30 | **≤ 9** (Onboarding 9, FirstMatch 7) |
+| Custom event names | 100 — "eventNames \| 100" (ET); "up to 100 custom events" (CE) | 60 | **10** |
+| Funnels | 10 — "Number of funnels \| 10" (ET); "Limited to 10 unique funnels per experience." (AS) | 8 | **3** (Onboarding, VS1, Return) |
+| Steps per funnel | 100 — "Limited to steps 1-100." (AS) | 30 | **≤ 6** |
 | Custom fields per event | 3 — "Number of custom fields \| 3" (ET) | 3 | **≤ 3** |
-| Custom field value combinations | 8,000 — "Limited to 8,000 unique combinations of values across the three custom fields per experience." (AS); ET says values past 8,000 are grouped as "Other" | well under 8,000 | largest: `MatchEnded` won(2) × placement(≤8) × mode(≤3) = 48; `QuestCompleted` questId ≤ 100 |
-| Currency types (economy) | **5** — "Limited to 5 unique currency types per experience." (AS, EE "up to five"); ET says 10. We keep 5. | 3 | owned by FORGE-03 (`Currencies.luau`); in-match resources are **not** economy events |
+| Custom field value combinations | 8,000 — "Limited to 8,000 unique combinations of values across the three custom fields per experience." (AS); ET says values past 8,000 are grouped as "Other" | well under 8,000 | largest: `MatchEnded` won(2) × phase(6) × mode(2) = 24 |
+| Currency types (economy) | **5** — "Limited to 5 unique currency types per experience." (AS, EE "up to five"); ET says 10. We keep 5. | 3 | none in VS-1 (no meta currency); kingdom resources are **not** economy events |
 | Transaction types | 20 — "Limited to 20 unique types per experience." (AS) | 12 | the 6 enum names below + ≤ 6 custom |
 | Item SKUs | 100 — "Limited to 100 unique SKUs per experience." (AS) | 80 | FORGE-03 |
 | Requests per minute (all AnalyticsService calls) | "120 + (20 * CCU)" (ET) | 80% of that | adapter enforces it (below) |
 
 Rate cap as built (`AnalyticsService:_admit`):
-- One server bucket of `floor(0.8 × (120 + 20 × players))` requests per minute, refilled continuously; the allowance grows at once when players join.
+- One server bucket of `floor(0.8 × (120 + 20 × players))` requests per minute, refilled continuously. The allowance grows at once when players join.
 - Custom events may only use the bucket down to **25%**, so funnels and economy events keep that reserve.
 - Each player has a **30 per minute** bucket, so one player (or a client spamming a remote that leads to analytics) cannot drain the server's budget.
 - Dropped calls are counted in `stats.dropped.rate` / `.playerRate`, logged, and warned at most once per minute.
 
-Expected load (estimate, **unverified** until a playtest): a 40-minute AI Kingdoms match with ~60 tracked actions per player ≈ 1.5 requests per player-minute (repeats of once-funnel steps are not re-sent), against an allowance of 0.8 × 20 = 16 per player-minute.
+Expected load (estimate, **unverified** until a playtest): a VS-1 slice logs about 15 requests per player in 8 minutes, against an allowance of 0.8 × 20 = 16 per player-minute.
 
-## 4. Custom events — AI Kingdoms (`LogCustomEvent(player, name, value, customFields)`)
+## 4. Who an event is about (`Experience/Subjects`)
+Track rules and onboarding triggers act on **subjects** (`{ player, info }`). Framework events have default resolvers (PlayerReady, Round*, CurrencyChanged, ItemGranted, PurchaseCompleted, RewardRolled, ShopViewed, OnboardingStep). A game passes resolvers for its own events in config (`subjects = { [event] = fn }`). game-001 uses `games/game-001/src/shared/Feedback/Signals.luau`, which implements the CONTRACTS G9 attribution rules:
+- "spawn" = `KingdomJoined`;
+- "first build placed" credits `Building.placedBy`;
+- building completions and captures credit every current member of the kingdom (`KingdomService:getKingdom(id).rulers`).
 
+Resolver errors are caught and warned once per minute; analytics never breaks gameplay.
+
+## 5. Custom events and funnels — AI Kingdoms
+
+### Custom events (`LogCustomEvent(player, name, value, customFields)`)
 | Event | Value | CustomField01 | CustomField02 | CustomField03 | Emitted by | Status |
 |---|---|---|---|---|---|---|
-| SessionStart | daysSinceFirstJoin | visit (`firstDay` \| `return` \| `unknown`) | | | AnalyticsService on `PlayerReady` (core.createdAt from DataService) | built |
-| SessionEnd | sessionSec | lastActivity (last tracked bus/custom event name = drop-off point) | | | AnalyticsService on `Players.PlayerRemoving` | built |
-| OnboardingCompleted | durationSec | flow | | | OnboardingService (FL-0025) | built in FL-0025 |
-| OnboardingSkipped | lastStep | lastStepName | flow | | OnboardingService on skip; **no funnel step is logged after it** | built in FL-0025 |
-| OnboardingHintEscalated | step | stepName | | | OnboardingService when a step passes its nudge time (stuck points) | built in FL-0025 |
-| MatchEnded | durationSec | won (`true`/`false`) | placement | mode | track rule on `RoundEnded`, per participant still in the server | built |
-| PhaseReached | minute | phase (`Opening` … `Resolution`) | | | Experience/Pacing (FL-0024) | planned |
-| IdleNudge | idleSec | phase | | | Experience/Pacing dead-air nudge (FL-0024) | planned |
-| BuildingCompleted | level | buildingType | | | track rule on `BuildingCompleted` (actor) | built, needs FORGE-01 signal |
-| KingdomUpgraded | tier | | | | track rule on `KingdomUpgraded` (actor) | built, needs FORGE-01 signal |
-| UnitsRecruited | count | unitType | | | track rule on `UnitsRecruited` (actor) | built, needs FORGE-01 signal |
-| BattleEnded | 1 | role (`actor` \| `defender`) | won | | track rule on `BattleEnded` (both sides) | built, needs FORGE-01 signal |
-| SiegeEnded | 1 | role | outcome (`Breached` \| `Repelled` \| `Abandoned`) | | track rule on `SiegeEnded` (both sides) | built, needs FORGE-01 signal |
-| TerritoryChanged | 1 | role (`actor` gained \| `loser` lost) | | | track rule on `TerritoryChanged` | built, needs FORGE-01 signal |
-| KingdomEventStarted | severity (1–3) | eventId | | | track rule on `KingdomEventStarted` (actor) | built, needs FORGE-01 signal |
-| RewardClaimed | amount | source (`daily` \| `quest` \| `match` \| `onboarding` \| `achievement`) | rewardKind (`currency` \| `item`) | | Quest/DailyReward/Onboarding services (FL-0026) | planned |
-| DailyRewardClaimed | streakDay | graceUsed | | | DailyRewardService (FL-0026) | planned |
-| QuestCompleted | tier | questId | | | QuestService (FL-0026) | planned |
-| AchievementUnlocked | 1 | achievementId | | | QuestService (FL-0026) | planned |
-| CelebrationShown | 1 | kind | | | NotificationController → server report (FL-0027) | planned |
-| SettingChanged | 1 | key | value | | SettingsService (FL-0024) | planned |
+| SessionStart | daysSinceFirstJoin | visit (`firstDay` \| `return` \| `unknown`) | | | AnalyticsService on `PlayerReady` (core.createdAt from DataService when present) | built |
+| SessionEnd | sessionSec | lastActivity (last tracked bus/custom event = drop-off point) | | | AnalyticsService on `Players.PlayerRemoving` | built |
+| OnboardingCompleted | durationSec | flow | | | OnboardingService | built |
+| OnboardingSkipped | lastStep | lastStepName | flow | | OnboardingService on skip; **no funnel step is logged after it** | built |
+| OnboardingHintEscalated | step | stepName | | | OnboardingService when a step passes its nudge time (stuck points) | built |
+| MatchEnded | durationSec | won (`true`/`false`) | phase | mode (`slice` \| `match`) | G9 `MatchEnded`, per player still here | planned FL-0063 |
+| PhaseLeft | minute | phase | | | player left during a match (disconnect point) | planned FL-0063 |
+| IdleHintShown | idleSec | phase | | | dead-air hint shown (PACING.md §6) | planned FL-0062 |
+| CelebrationShown | 1 | kind | | | NotificationController:celebrate (reported by the server) | planned FL-0027 |
+| SettingChanged | 1 | key | value | | SettingsService (once per key per 10 s) | built |
 
-"needs FORGE-01 signal": the rule is live in config but the bus event is a **proposal** (`roblox/src/shared/Experience/KingdomSignals.luau`, handoff to FORGE-01). Until `Contracts/GameEvents` declares it, the adapter logs `analytics: waiting for bus events not declared yet events=...` once at start and the rule is inert.
-
-## 5. Funnels — AI Kingdoms
-
+### Funnels
 | Funnel | Roblox method | Kind / session id | Steps | Logged by |
 |---|---|---|---|---|
-| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time (Roblox's own onboarding funnel) | the 9 steps of `games/game-001/config/Onboarding.luau` (FL-0025): `Arrive`, `MoveRuler`, `FindKingdom`, `CheckResources`, `AssignCitizen`, `PlaceFarm`, `FirstHarvest`, `UpgradeHall`, `NextGoal` | OnboardingService only; after a skip nothing more is logged |
-| FirstMatch | `LogFunnelStepEvent(player, "FirstMatch", nil, step, name, fields)` | once | 1 MatchJoined (`RoundStateChanged` Active) · 2 FirstConstruction · 3 FirstBuilding · 4 FirstUpgrade · 5 FirstArmy · 6 FirstCombat (battle or siege, either side) · 7 MatchFinished (`RoundEnded`) | track rules |
-| MatchProgress | `LogFunnelStepEvent(player, "MatchProgress", matchId, step, name, fields)` | recurring, **session = matchId** | 1 Joined · 2 FirstBuilding · 3 FirstUpgrade · 4 FirstArmy · 5 FirstCombat · 6 Finished | track rules — shows where players drop out of every match, not only the first |
-| FirstReward | `LogFunnelStepEvent(player, "FirstReward", nil, ...)` | once | 1 FirstHarvest (`ResourceProduced` actor) · 2 FirstCurrency (`CurrencyChanged` delta > 0) · 3 FirstItem (`ItemGranted`) | track rules |
-| Shop | `LogFunnelStepEvent(player, "Shop", <GUID per open>, ...)` | recurring, **new GUID on every `ShopViewed`**, continued by `PurchaseCompleted` within 900 s | 1 Opened · 2 Purchased | track rules; a purchase with no open shop session is dropped (`noSession`), never counted as a conversion |
-| Return | `LogFunnelStepEvent(player, "Return", nil, ...)` | once | 1 FirstSession (first join today, UTC) · 2 ReturnNextDay (joined on the next UTC day) | AnalyticsService on `PlayerReady` (needs DataService `core.createdAt`) |
+| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau`: `Spawn` (KingdomJoined), `Gather` (ruler's ResourceGathered), `PlaceBuilding` (BuildingPlaced, placedBy), `BuildingComplete`, `Recruit` (UnitsRecruited), `Capture` (ObjectiveCaptured) | OnboardingService only; nothing after a skip |
+| VS1 | `LogFunnelStepEvent(player, "VS1", nil, step, name, fields)` | once | BRIEF §13: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture (G9 attribution, §4) | declared now; track rules land in FL-0063 |
+| Return | `LogFunnelStepEvent(player, "Return", nil, ...)` | once | 1 FirstSession (first join today, UTC) · 2 ReturnNextDay | AnalyticsService on `PlayerReady` (needs DataService `core.createdAt`; inactive in VS-1, D-027) |
 
-Why `Return` stops at step 2: if we logged a day-7 step, a player who skipped day 1 would be counted as a day-1 returner (skipped steps count as completed). D7/D30 come from the Creator Dashboard retention charts, and `SessionStart.value` (days since first join) gives the raw distribution.
+Why both Onboarding and VS1: Onboarding counts tutorial completion, and stops at a skip. VS1 counts real progress for everybody, including players who skipped the tutorial or played it on another server. Their difference shows whether the tutorial helps.
 
-Why both `FirstMatch` and `MatchProgress`: Roblox filters and breakdowns apply to step 1 and funnels show cohorts (FE), so the once funnel measures new-player conversion while the recurring one measures every match, including returning players.
+Why `Return` stops at step 2: if we logged a day-7 step, a player who skipped day 1 would be counted as a day-1 returner (skipped steps count as completed). D7/D30 come from the Creator Dashboard retention charts.
 
 ## 6. Economy (`LogEconomyEvent`) — owned by FORGE-03's EconomyService
 
@@ -132,27 +124,25 @@ So session duration is covered twice (dashboard + `SessionEnd.value`); our own e
 
 | Question (FORGE-04 mission) | Answered by |
 |---|---|
-| Tutorial completion | Onboarding funnel (last step `NextGoal`), `OnboardingCompleted.value` (seconds) |
+| Tutorial completion | Onboarding funnel (last step `Capture`), `OnboardingCompleted.value` |
 | Tutorial skip and where | `OnboardingSkipped` value/field = last completed step |
 | Stuck points in the tutorial | `OnboardingHintEscalated` by step |
-| Early player actions | FirstMatch funnel steps 1–5, FirstReward funnel |
-| Resource and construction milestones | FirstReward step 1, FirstMatch steps 2–4, `BuildingCompleted`, `KingdomUpgraded` |
-| Match participation / completion | MatchProgress step 1 vs step 6; `MatchEnded` (won, placement, duration) |
-| Drop-off points | `SessionEnd.lastActivity`; MatchProgress step-to-step conversion; `PhaseReached` |
+| Early player actions, resource and construction milestones | VS1 funnel steps 2–4 (FL-0063) |
+| Match participation / completion, pacing | VS1 step 6; `MatchEnded` (won, phase, duration); `PhaseLeft` |
+| Drop-off points | `SessionEnd.lastActivity`; VS1 step-to-step conversion; `PhaseLeft` |
 | Session duration | Dashboard; `SessionEnd.value` |
-| Progression | `KingdomUpgraded`, `QuestCompleted`, `AchievementUnlocked` (FL-0026) |
-| Reward interactions | `RewardClaimed`, `DailyRewardClaimed`, `CelebrationShown`; FirstReward funnel |
-| Pacing (30–45 min target, no dead air) | `MatchEnded.value` distribution; `PhaseReached` minute per phase; `IdleNudge` count |
-| Day-2 return | Return funnel; dashboard D1 |
-| Shop conversion | Shop funnel (session per open) |
+| Dead air | `IdleHintShown` per match (PACING.md §6) |
+| Reward interactions | `CelebrationShown` (FL-0027); quests and daily rewards are FL-0026 (after VS-1) |
+| Day-2 return | Return funnel (once persistence exists); dashboard D1 |
 
 ## 9. Sandbox (`games/sandbox/config/Analytics.luau`)
 Same session events and onboarding events as above, plus `RoundFinished` (value survivedSec; won, placement) and `SettingChanged`, `CelebrationShown`. Funnels: Onboarding, FirstRound (Ready → RoundStarted → RoundFinished), FirstReward (FirstCurrency → FirstItem), Shop, Return. 8 events, 5 funnels.
 
 ## 10. How to verify (Studio, gate G6 — run by the user)
 1. Play Solo on the integrated build; open the Output window and filter for `analytics`.
-2. Expect, in order: `analytics event SessionStart ... sent=true`, then one `analytics funnel Onboarding step=1 stepName=Arrive` per tutorial step as you complete it (full order in `roblox/studio-tests/experience.md`).
+2. Expect, in order: `analytics event SessionStart ... sent=true`, then `analytics funnel Onboarding step=1 stepName=Spawn` when the kingdom is joined, then one line per tutorial step as you complete it (full order in `roblox/studio-tests/experience.md` E6).
 3. Roblox records nothing from Studio; to check real delivery, publish to a private test place and use the View Events tool (near real time) — needs the user's account.
 
 ## Changelog
 - 2026-10-12 FORGE-04: first version (FL-0023).
+- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; game-001 VS-1 onboarding steps and the declared VS1 funnel (FL-0063); budget recomputed.

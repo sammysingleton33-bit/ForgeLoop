@@ -2,10 +2,10 @@
 --[[
 	Experience/Bus — safe subscriptions to the server event bus (Contracts/GameEvents, interfaces §4).
 
-	GameEvents errors when an undeclared event is read (typo guard). Experience systems also listen
-	to events that are proposed but not declared yet (Experience/KingdomSignals), so they subscribe
-	through this module: undeclared names are skipped and reported instead of crashing the service.
-	Any table with EVENT_NAMES and one Signal per name works as a bus (specs pass a fake bus).
+	GameEvents errors when an undeclared event is read (typo guard). Config validation already
+	rejects unknown event names; this module is the second line: an undeclared name is skipped and
+	reported instead of crashing the service. Any table with EVENT_NAMES and one Signal per name
+	works as a bus (specs pass a fake bus).
 
 	API
 		Bus.declared(bus, name) -> boolean

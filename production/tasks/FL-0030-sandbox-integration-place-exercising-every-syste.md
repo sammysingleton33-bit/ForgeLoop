@@ -3,7 +3,7 @@ id: FL-0030
 title: Sandbox integration place exercising every system
 track: qa
 owner: forge-05
-status: READY
+status: REJECTED
 priority: P1
 game: factory
 created: 2026-10-12
@@ -29,3 +29,4 @@ check.sh green; Studio walkthrough script with expected results
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: READY -> REJECTED. Superseded by AI Kingdoms (D-020); kept for history. Integration target is game-001: FL-0046/FL-0047.

@@ -3,7 +3,7 @@ id: FL-0044
 title: "Sandbox arena v0: lobby, tagged spawns, play area with a low region"
 track: qa
 owner: forge-05
-status: READY
+status: REJECTED
 priority: P0
 game: factory
 created: 2026-10-12
@@ -32,3 +32,4 @@ Rojo build contains the tagged instances (place check); Studio screenshot by the
 
 ## Log
 - 2026-10-12 forge-00: created from the prompt review (READY).
+- 2026-10-12 forge-00: READY -> REJECTED. Superseded by AI Kingdoms (D-020); kept for history. World and objectives: FL-0055.

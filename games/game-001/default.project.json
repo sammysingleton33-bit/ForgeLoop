@@ -1,0 +1,62 @@
+{
+	"name": "ForgeLoopGame001",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Forge": {
+				"$path": "../../roblox/src/shared",
+				"Config": {
+					"$path": "config"
+				},
+				"Assets": {
+					"$path": "../../roblox/assets"
+				}
+			},
+			"Game": {
+				"$path": "src/shared",
+				"World": {
+					"$path": "world"
+				}
+			}
+		},
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"Forge": {
+				"$path": "../../roblox/src/server"
+			},
+			"Game": {
+				"$path": "src/server"
+			}
+		},
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts",
+				"Forge": {
+					"$path": "../../roblox/src/client"
+				},
+				"Game": {
+					"$path": "src/client"
+				}
+			}
+		},
+		"Players": {
+			"$className": "Players",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"CharacterAutoLoads": false
+			}
+		},
+		"Workspace": {
+			"$className": "Workspace",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"StreamingEnabled": true,
+				"ModelStreamingBehavior": "Improved",
+				"StreamOutBehavior": "Opportunistic",
+				"StreamingIntegrityMode": "PauseOutsideLoadedArea"
+			}
+		}
+	}
+}

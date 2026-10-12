@@ -17,6 +17,7 @@
 			                             fields: { string }?, sessionTtlSec: number? } },
 			track = { Rule },   -- bus event -> funnel step or custom event (AnalyticsRouter)
 			session = { startEvent: string?, endEvent: string?, returnFunnel: string? }?,
+			subjects = { [eventName]: resolver }?,  -- game resolvers for its own events (Experience/Subjects)
 			limits = { perPlayerPerMinute: number?, safety: number?, customReserve: number? }?,
 		}
 		Rule = { on: string, funnel: string?, step: number?, event: string?, session: ("start" | "continue" | "match")?,
@@ -217,7 +218,7 @@ local function checkRules(config: any, knownEvents: { string }, problems: { stri
 		end
 		where = `track[{i}] ({tostring(rule.on)})`
 		if type(rule.on) ~= "string" or not table.find(knownEvents, rule.on) then
-			table.insert(problems, `{where}: 'on' must name a GameEvents or KingdomSignals event`)
+			table.insert(problems, `{where}: 'on' must name a declared GameEvents event`)
 		end
 		if (rule.funnel == nil) == (rule.event == nil) then
 			table.insert(problems, `{where}: set exactly one of funnel or event`)

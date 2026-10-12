@@ -14,6 +14,7 @@
 	API
 		Project.load(projectFile) -> Project
 		project.mounts: { { dm: { string }, fs: string } }   -- every "$path" node
+		project.nodes: { { dm, className?, properties? } }   -- every node ("$properties" as written)
 		project:mountForFile(file) -> mount?                 -- deepest mount whose directory holds `file`
 		project:mountForDataModel(dm) -> mount?               -- deepest mount whose DataModel path prefixes `dm`
 		project:fileToDataModel(file) -> ({ string }?, kind?) -- kind: "module" | "script" | "localscript"
@@ -66,7 +67,7 @@ function Project.load(projectFile: string)
 	local projectDir = Path.dirname(projectFile)
 	local self = setmetatable({ file = projectFile, name = decoded.name, mounts = {}, nodes = {} }, Project)
 	local function walk(node, dm: { string })
-		table.insert(self.nodes, { dm = dm, className = node["$className"] })
+		table.insert(self.nodes, { dm = dm, className = node["$className"], properties = node["$properties"] })
 		if node["$path"] then
 			table.insert(self.mounts, { dm = dm, fs = Path.join(projectDir, node["$path"]) })
 		end
