@@ -21,6 +21,8 @@
 		CitizenActions.skill(sim, citizen, kind): number                -- work-rate multiplier
 ]]
 
+local Nav = require("./Nav")
+
 local CitizenActions = {}
 
 local function dist(ax: number, az: number, bx: number, bz: number): number
@@ -40,6 +42,17 @@ function CitizenActions.moveTo(sim: any, c: any, x: number, z: number, radius: n
 		speed *= 0.5
 	end
 	local stepLen = speed * dt
+	local wx, wz = Nav.waypoint(sim, c, x, z)
+	if wx ~= x or wz ~= z then
+		-- on a leg of a long route (roads and bridges, Sim/Nav): walk to the waypoint
+		local dw = dist(c.x, c.z, wx, wz)
+		if dw > 0 then
+			local f = math.min(1, stepLen / dw)
+			c.x += (wx - c.x) * f
+			c.z += (wz - c.z) * f
+		end
+		return false
+	end
 	local travel = d - reach
 	if stepLen >= travel then
 		-- stop at the edge of the target radius, not inside the target

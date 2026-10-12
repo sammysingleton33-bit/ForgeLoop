@@ -547,6 +547,25 @@ describe("Kingdom/Match: VS-1 slice mode (PROVISIONAL, CONTRACTS G3)", function(
 		expect(match.state).toBe("Founding")
 	end)
 
+	it("a long march follows the world roads over the bridge (Sim/Nav)", function()
+		local match = newSlice()
+		match:join(1)
+		match:update(0.25)
+		local sim = match.sim
+		local k = sim.kingdoms.crimson
+		local unit = Military.spawnUnit(sim, k, "soldier", k.x, k.z)
+		local tower = sim.objectives.list[1]
+		assert(match:command(1, "ArmyOrder", "Move", tower.x, tower.z))
+		local bridge = Layout.WORLD.features.river.bridges[1].at
+		local nearest = math.huge
+		for _ = 1, 120 * 4 do
+			match:update(0.25)
+			nearest = math.min(nearest, math.sqrt((unit.x - bridge.X) ^ 2 + (unit.z - bridge.Y) ^ 2))
+		end
+		expect(nearest < 15).toBe(true) -- crossed the river at the bridge
+		expect(math.sqrt((unit.x - tower.x) ^ 2 + (unit.z - tower.z) ^ 2) < 20).toBe(true) -- and arrived
+	end)
+
 	it("puts the kingdoms and the watchtower where the world Layout puts them (G10.1)", function()
 		local match = newSlice()
 		for _, kid in match.sim.kingdomOrder do
