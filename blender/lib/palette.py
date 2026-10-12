@@ -58,8 +58,8 @@ _ENTRIES = [
     ("blue_shutter", "3A5F8F"), ("blue_stone", "8A929C"), ("blue_stone_dark", "636B75"), ("blue_stone_light", "B0B7BF"),
     ("blue_accent", "E3ECF5"), ("blue_wood", "5E4A3A"), ("blue_emblem", "F2F5FA"), ("blue_glow", "8FD3F2"),
 
-    ("green_roof_dark", "175443"), ("green_roof", "23805F"), ("green_roof_light", "45A383"), ("green_cloth_dark", "16503F"),
-    ("green_cloth", "1E7A58"), ("green_cloth_light", "48A684"), ("green_trim", "C9873A"), ("green_trim_dark", "8F5A24"),
+    ("green_roof_dark", "175443"), ("green_roof", "23805F"), ("green_roof_light", "45A383"), ("green_cloth_dark", "0E5E40"),
+    ("green_cloth", "128A5E"), ("green_cloth_light", "2FBF83"), ("green_trim", "C9873A"), ("green_trim_dark", "8F5A24"),
     ("green_shutter", "2C6A52"), ("green_stone", "8C8E7C"), ("green_stone_dark", "66695A"), ("green_stone_light", "B2B39E"),
     ("green_accent", "E9DFAF"), ("green_wood", "6A4A2A"), ("green_emblem", "F0E2B0"), ("green_glow", "B8E06A"),
 
