@@ -1,7 +1,7 @@
 --!strict
 --[[
 	UI/ToastStack — stand-in for FORGE-04's NotificationController until it merges (interfaces §8:
-	all transient toasts go through NotificationController:show). UIController uses the real
+	all transient toasts go through NotificationController:show). Game UI controllers use the real
 	controller when registry:find("NotificationController") returns one, and this otherwise.
 
 	ToastStack.new(parent: GuiObject, motion) -> stack
