@@ -28,6 +28,9 @@ REAL = ROOT / "games" / "game-001" / "content"
 REAL_OUT = ROOT / "games" / "game-001" / "src" / "shared" / "Content"
 HAS_REAL = all((REAL / s.path).is_file() for s in content.SPECS)
 real_only = pytest.mark.skipif(not HAS_REAL, reason="starter content not present yet")
+# Workbook tests need openpyxl. CI must install it (pip install pytest openpyxl) or these are skipped.
+needs_openpyxl = pytest.mark.skipif(importlib.util.find_spec("openpyxl") is None,
+                                    reason="openpyxl not installed (python3 -m pip install openpyxl)")
 CSV_PATHS = [s.path for s in content.SPECS]
 
 
@@ -321,10 +324,12 @@ def _xlsx_roundtrip(lib: Path, tmp_path: Path, capsys) -> None:
     assert csv_bytes(lib) == before
 
 
+@needs_openpyxl
 def test_xlsx_roundtrip_is_byte_identical(lib, tmp_path, capsys):
     _xlsx_roundtrip(lib, tmp_path, capsys)
 
 
+@needs_openpyxl
 def test_xlsx_roundtrip_keeps_crlf_and_extra_quoting(lib, tmp_path, capsys):
     path = lib / "dialogue" / "scenarios.csv"
     buf = io.StringIO()
@@ -334,6 +339,7 @@ def test_xlsx_roundtrip_keeps_crlf_and_extra_quoting(lib, tmp_path, capsys):
 
 
 @real_only
+@needs_openpyxl
 def test_xlsx_roundtrip_real_content(tmp_path, capsys):
     lib = tmp_path / "content"
     for spec in content.SPECS:
@@ -342,6 +348,7 @@ def test_xlsx_roundtrip_real_content(tmp_path, capsys):
     _xlsx_roundtrip(lib, tmp_path, capsys)
 
 
+@needs_openpyxl
 def test_workbook_layout(lib, tmp_path, capsys):
     from openpyxl import load_workbook
 
@@ -370,6 +377,7 @@ def test_workbook_layout(lib, tmp_path, capsys):
     assert len(cv) == 2  # kind and target
 
 
+@needs_openpyxl
 def test_editing_text_in_the_workbook_changes_only_that_text(lib, tmp_path, capsys):
     from openpyxl import load_workbook
 
@@ -409,6 +417,7 @@ def test_editing_text_in_the_workbook_changes_only_that_text(lib, tmp_path, caps
     assert changed_lines[0][1].strip() == "question = 'Pay us, {ruler}, or the \"men\" will walk.',"
 
 
+@needs_openpyxl
 def test_import_refuses_unknown_sheets_and_columns(lib, tmp_path, capsys):
     from openpyxl import load_workbook
 
@@ -427,6 +436,7 @@ def test_import_refuses_unknown_sheets_and_columns(lib, tmp_path, capsys):
     assert csv_bytes(lib) == before
 
 
+@needs_openpyxl
 def test_import_validates_before_writing_and_names_the_cell(lib, tmp_path, capsys):
     from openpyxl import load_workbook
 
@@ -445,6 +455,7 @@ def test_import_validates_before_writing_and_names_the_cell(lib, tmp_path, capsy
     assert csv_bytes(lib) == before
 
 
+@needs_openpyxl
 def test_import_converts_typed_cells_back_to_text(lib, tmp_path, capsys):
     from openpyxl import load_workbook
 

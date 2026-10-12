@@ -73,7 +73,7 @@ TEXT cells may use these placeholders, which the game fills in at runtime: `{nam
 | `kingdom.housing_ratio` | number | 0–10 (population / capacity) | kingdom |
 | `kingdom.happiness` `kingdom.stability` `kingdom.morale` | number | 0–100 | kingdom |
 | `kingdom.population` `kingdom.soldiers` | number | ≥ 0 | kingdom |
-| `kingdom.count.<BuildingType>` | number | ≥ 0; BuildingType from CONTRACTS G2 | kingdom |
+| `kingdom.count.<BuildingType>` | number | ≥ 0; BuildingType from CONTRACTS G2 (`keep house farm storehouse lumbercamp quarry barracks watchtower wall gate`, plus the VS-2 additions of G13.5: `mine blacksmith market infirmary granary shrine`) | kingdom |
 | `kingdom.level.keep` | number | 0–10 | kingdom |
 | `rep.<category>` | number | 0–100; six categories | kingdom |
 | `citizen.loyalty` `citizen.mood` `citizen.obedience` | number | 0–100 | citizen |
@@ -95,6 +95,7 @@ TEXT cells may use these placeholders, which the game fills in at runtime: `{nam
 - Booleans are normalised to `op = "="` with `value = true/false`, so `!x` becomes `{ var = "x", op = "=", value = false }`.
 - `in` keeps `op = "in"` with a `{ string }` value.
 - The runtime ctx is a flat table keyed by variable name, e.g. `ctx["kingdom.fed_ratio"]`. The game never parses strings at runtime.
+- **Missing variables at runtime** (`ContentQuery.evaluate`). A boolean clause treats an absent (nil) variable as `false`, so the runtime only sets the flags that are true (`citizen.memory.*`, `decision.*`, `event.*`, `citizen.trait.*`, `has_*`) and `!citizen.memory.x` holds for a citizen without that memory. Every other clause on an absent variable is false (including `!=` and `in`). Numbers never coerce from strings.
 
 ## 5. Tables
 

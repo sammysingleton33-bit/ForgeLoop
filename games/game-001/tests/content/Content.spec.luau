@@ -31,8 +31,24 @@ local MODULES = {
 local CATEGORIES = { "compassion", "honor", "competence", "courage", "authority", "fear" }
 local RESOURCES = { food = true, wood = true, stone = true, gold = true } -- CONTRACTS G2
 local JOBS = { farmer = true, woodcutter = true, miner = true, builder = true, hauler = true, soldier = true }
-local BUILDING_TYPES = -- CONTRACTS G2
-	{ "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks", "watchtower", "wall", "gate" }
+local BUILDING_TYPES = { -- CONTRACTS G2, plus the additive VS-2 types of G13.5
+	"keep",
+	"house",
+	"farm",
+	"storehouse",
+	"lumbercamp",
+	"quarry",
+	"barracks",
+	"watchtower",
+	"wall",
+	"gate",
+	"mine",
+	"blacksmith",
+	"market",
+	"infirmary",
+	"granary",
+	"shrine",
+}
 local PHASES = { "Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Arena", "Results" }
 local EVENT_TAGS = {
 	"raid",

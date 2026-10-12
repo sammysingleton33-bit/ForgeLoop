@@ -43,6 +43,8 @@ JOBS = ("farmer", "woodcutter", "miner", "builder", "hauler", "soldier")
 KEY_ROLES = ("blacksmith", "healer", "captain", "provisioner", "elder", "merchant")
 BUILDING_TYPES = (
     "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks", "watchtower", "wall", "gate",
+    # CONTRACTS G13.5: additive G2 BuildingTypes, built from VS-2 (key citizens appear with them)
+    "mine", "blacksmith", "market", "infirmary", "granary", "shrine",
 )
 PHASES = ("Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Arena", "Results")
 EVENT_TAGS = (
