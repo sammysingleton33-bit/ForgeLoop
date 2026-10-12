@@ -16,7 +16,8 @@
 	  - "@lune/x"          Lune's own libraries; only for files outside the project trees
 	  - anything else      error (see RequirePath.parse)
 	For files inside the project trees the D-017 policy applies as in the place check
-	(RequirePath.checkPolicy: relative stays in its tree, "@game" only into ReplicatedStorage/Forge);
+	(RequirePath.checkPolicy: relative stays in its tree, "@game" only into ReplicatedStorage/Forge or
+	ReplicatedStorage/Game, and framework trees never reach Game code — D-022);
 	specs, mocks and tooling outside the trees may require any module by "@game/...".
 	Roblox rules enforced: the target must be a ModuleScript (requiring a Script errors), a module
 	must return exactly one non-nil value, and a cyclic require errors.
