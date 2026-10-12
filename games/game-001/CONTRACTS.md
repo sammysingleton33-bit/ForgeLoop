@@ -87,6 +87,12 @@ KingdomService.membershipChanged: Signal<(player, KingdomId?)>
   - Starting buildings exist for all four kingdoms. Starting citizens are spawned for a kingdom when its first ruler joins. AI kingdoms stay idle until VS-2 governors.
 - Empty kingdoms are flagged `isAI = true` and run by GovernorService (VS-2).
 
+
+- **Clarifications (FORGE-01 questions, 2026-10-12):**
+  - The pre-match countdown runs in `Lobby`, which carries `endsAt` while it runs. `Founding` starts the simulation.
+  - **Victory is PROVISIONAL and the user's decision (BRIEF §16.4).** Default in config `Match.luau`: last keep standing ends the match early; otherwise most Crown Points at the end of Endgame wins; ties share the win. It must be config-driven and never described as decided.
+  - **Diplomacy/PvP is PROVISIONAL and the user's decision (BRIEF §16.2).** Default: war from Conflict onward; peace by mutual consent; no betrayal mechanics. It is behind a config flag and not needed for VS-1.
+
 ## G4. Entities and replication (FORGE-01; D-023 as amended by D-025, D-026)
 - The server owns all entity state and simulates it at fixed ticks: decisions ≈10 Hz, movement ≈20 Hz. Decisions are staggered round-robin across frames, never all on one frame.
 - `EntityService` API:
@@ -183,6 +189,11 @@ CitizenService:inspect(entityId): { name: string, job: JobId, mood: number, inte
   - a ruler visit adds a `rulerVisited` memory and raises mood, at most once per citizen per few minutes.
 - The day/night routine is VS-2. VS-1 runs at a fixed time of day.
 
+
+- **Job semantics (FORGE-01 question, 2026-10-12):**
+  - `miner` works stone and gold, choosing by kingdom need.
+  - `hauler` is the generalist: it carries goods to the storehouse, builds when idle, and is the pool `requestWorkers` draws from.
+
 ## G6. Buildings, construction and territory (FORGE-01; FORGE-02 provides visuals)
 - `BuildingService`, `ConstructionService` and `TerritoryService` API:
 ```lua
@@ -220,6 +231,9 @@ TreasuryService.changed: Signal<(KingdomId, ResourceBag, { [ResourceId]: number 
   2. calls `CitizenService:setFedRatio(kingdom, taken / upkeep)`.
 - In VS-1, any kingdom member may spend. Co-ruler spending permissions are VS-2.
 - Client remotes: `Treasury.Changed`, `Treasury.Get` and `Treasury.GetCosts` (G8 table).
+
+
+- **Treasury capacity (FORGE-01 question, 2026-10-12):** VS-1 has no storage cap. Storehouses are drop-off points only. A cap would be a later pacing/economy decision by FORGE-03 with FORGE-04.
 
 ## G8. Military, objectives and client remotes (FORGE-01 unless noted)
 ```lua
@@ -330,6 +344,7 @@ Kit.setKingdomColor(model: Model, color: Color3)                     -- recolour
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
 
 ## Changelog
+- v0.4-g2 (2026-10-12) FORGE-00: FORGE-01 clarifications added to G3, G5 and G7 (countdown, job semantics, no VS-1 treasury cap, PROVISIONAL victory/diplomacy defaults); game remote areas `Treasury` and `Feedback`.
 - v0.4-g2 (2026-10-12) FORGE-00, review fixes (D-024 to D-028):
   - Breaking changes:
     - snapshot wire format v2 (header, chunks ≤ 900 B, 10 B records);
