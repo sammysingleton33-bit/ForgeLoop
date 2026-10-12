@@ -3,10 +3,10 @@
 _Manual sections are maintained by FORGE-00; the task tables below are generated._
 
 ## Now
-- **Phase:** 0 — factory bootstrap. **Game #1:** not selected (shortlist in progress, FL-0005).
+- **Phase:** 0 → 1. Skeleton PR open ([#1](https://github.com/sammysingleton33-bit/ForgeLoop/pull/1), FL-0003 REVIEW, CI running). Workers can launch now (prompts in `agents/forge-0N/PROMPT.md`). **Game #1:** shortlist ready for your decision (FL-0035): recommended C2 Flood Island 73.2 (not approved).
 - **Repository:** `sammysingleton33-bit/ForgeLoop` (private, independent project; bootstrap history preserved, D-010).
-- **Integrated build:** `main` (PR-only). Worker branches `forge/01-gameplay` … `forge/05-integration` (D-011). Skeleton (FL-0003) still in review.
-- **Workers:** FORGE-01..05 prompts being finalised (FL-0006). Codex not launched (FL-0037).
+- **Integrated build:** `main` (PR-only). Worker branches `forge/01-gameplay` … `forge/05-integration` (D-011, D-013). First integration: skeleton PR #1 → FORGE-05 merges after green CI.
+- **Workers:** prompts final and reviewed twice (FL-0006 REVIEW); not launched yet. Codex not launched (FL-0037).
 
 ## Verified so far (evidence)
 | What | Evidence |
@@ -14,6 +14,8 @@ _Manual sections are maintained by FORGE-00; the task tables below are generated
 | Task tool (`tools/forge.py`) | 32 pytest tests pass (2026-10-12, cloud session) |
 | Roblox CLI toolchain on Linux | Rojo 7.7.1, Selene 0.31.0, StyLua 2.6.0, Lune 0.11.0 installed and run |
 | Headless Blender | bpy 5.2.2 rendered Cycles CPU and Eevee (Mesa) test images |
+| Shared skeleton (branch `forge/00-skeleton`) | check.sh PASS: 179 Lune specs, Selene 0, StyLua 69 files, Rojo build, place check; negative tests fail the gate (FORGE-00 independent run) |
+| Worktrees + task coordination | two parallel worktrees, same-branch double checkout refused, both PR merges clean, task validation passes |
 
 ## Not verified / blockers
 | Item | Why | Owner |
@@ -135,6 +137,7 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+79ece0d 2026-10-12 Research merged; FL-0004/0005 to REVIEW, FL-0035 ready for the user's decision
 c6ac0dd 2026-10-12 Merge branch 'forge/00-research'
 76e619b 2026-10-12 Research: platform constraints, AI providers, market landscape, Game #1 shortlist (fact-checked)
 ba14a09 2026-10-12 FL-0006 to REVIEW; dashboard refresh
@@ -142,7 +145,6 @@ fd0e556 2026-10-12 Rewrite FORGE-03/04 prompts after review; Codex round-trip lo
 2cd819b 2026-10-12 Second prompt review: contracts v0.3, FL-0045 economy services, D-017..D-019, asset rubric and budgets
 22e0d36 2026-10-12 Apply prompt review: contracts v0.2, per-task PR branches, ownership exceptions, arena and round-screen tasks
 3acf16a 2026-10-12 Draft prompts for FORGE-02/03/04; per-area ownership of game config files
-5d28d46 2026-10-12 FORGE-05 and FORGE-01 startup prompts (draft, under review); per-area Studio test files; FORGE-05 owns PR template and ownership checker
 ```
 
 <!-- forge:auto:end -->
