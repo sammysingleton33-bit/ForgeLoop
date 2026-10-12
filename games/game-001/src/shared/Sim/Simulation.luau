@@ -20,6 +20,9 @@
 		                                       citizens (populate = false: none until sim:populate(id));
 		                                       seeds the treasury when it is the double
 		sim:populate(kingdomId): boolean       -- spawns the starting citizens once (slice mode: on first ruler)
+		sim.profiler: { start: (sim, kingdom, citizens), birth: (sim, kingdom, citizen) }?
+		                                       -- optional; gives citizens names, traits and families
+		                                          (Sim/People, G13.2) right after they spawn
 		sim:addNode(kind, x, z, id?): Node                             -- tree / rock / goldvein / berries
 	Time
 		sim:advance(seconds)        -- runs whole fixed ticks (catalog.tuning.tickSeconds); remainder carried
@@ -312,12 +315,18 @@ function Simulation:populate(kingdomId: string): boolean
 		total += tuning.startCitizens[occ] or 0
 	end
 	local i = 0
+	local spawned = {}
 	for _, occ in self.catalog.jobOrder do
 		for _ = 1, tuning.startCitizens[occ] or 0 do
 			local angle = (i / math.max(1, total)) * math.pi * 2
-			self:_spawnCitizen(kingdom, occ, kingdom.x + math.cos(angle) * ring, kingdom.z + math.sin(angle) * ring)
+			local c =
+				self:_spawnCitizen(kingdom, occ, kingdom.x + math.cos(angle) * ring, kingdom.z + math.sin(angle) * ring)
+			table.insert(spawned, c)
 			i += 1
 		end
+	end
+	if self.profiler then
+		self.profiler.start(self, kingdom, spawned) -- names, traits, families (Sim/People, G13.2)
 	end
 	self:_assignHomes(kingdom)
 	return true
@@ -1239,6 +1248,9 @@ function Simulation:_stepPopulation(kingdom: any)
 	local occ = self:_neededOccupation(kingdom)
 	local c = self:_spawnCitizen(kingdom, occ, keep.x + math.cos(angle) * ring, keep.z + math.sin(angle) * ring)
 	kingdom.stats.born += 1
+	if self.profiler then
+		self.profiler.birth(self, kingdom, c)
+	end
 	self:_assignHomes(kingdom)
 	self:emit("CitizenBorn", { kingdomId = kingdom.id, citizenId = c.id, job = occ })
 end

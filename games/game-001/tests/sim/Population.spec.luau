@@ -9,6 +9,7 @@ local fs = require("@lune/fs")
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
+local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
 local Types = require("@game/ReplicatedStorage/Game/Kingdom/Types")
 local Kingdoms = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
@@ -439,10 +440,11 @@ describe("Population ranges", function()
 		expect(math.abs(sum / n)).toBeLessThan(2)
 	end)
 
-	it("starts loyalty at 50 + chemistry/4, rounded half up", function()
-		local cases = { [-20] = 45, [-3] = 49, [-2] = 50, [-1] = 50, [0] = 50, [1] = 50, [2] = 51, [3] = 51, [20] = 55 }
+	it("starts loyalty at 50 + chemistry/4, exactly ContentQuery.startLoyalty", function()
+		local cases = { [-20] = 45, [-3] = 49.25, [-2] = 49.5, [0] = 50, [1] = 50.25, [3] = 50.75, [20] = 55 }
 		for chemistry, loyalty in cases do
 			expect(Population.loyaltyFor(chemistry)).toBe(loyalty)
+			expect(Population.loyaltyFor(chemistry)).toBe(ContentQuery.startLoyalty(chemistry))
 		end
 		for _, population in SWEEP do
 			for _, citizen in population do

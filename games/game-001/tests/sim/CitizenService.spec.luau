@@ -11,6 +11,8 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
+local People = require("@game/ReplicatedStorage/Game/Sim/People")
+local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
 local SimRemotes = require("@game/ReplicatedStorage/Game/Sim/Remotes")
@@ -22,7 +24,7 @@ end
 
 local booted = {}
 
-local function boot()
+local function boot(withEntities: boolean?)
 	local env = MockEnv.new({
 		seed = 6,
 		sharedModules = {
@@ -34,6 +36,9 @@ local function boot()
 		{ "RemoteService", "MatchService", "KingdomService", "CitizenService", "TreasuryService", "ProductionService" }
 	do
 		table.insert(definitions, service(name))
+	end
+	if withEntities then
+		table.insert(definitions, service("EntityService"))
 	end
 	local registry = Loader.load(env, definitions)
 	table.insert(booted, { registry = registry, env = env })
@@ -162,5 +167,152 @@ describe("CitizenService (G5)", function()
 		expect(invoke(env, p1, "Sim.Inspect", theirs)).toBeNil() -- not my kingdom
 		expect(invoke(env, p2, "Sim.Inspect", theirs).name).toBe(sim.citizens[theirs].name)
 		expect(invoke(env, p1, "Sim.Inspect", "x")).toBeNil() -- rejected by validation
+	end)
+end)
+
+describe("CitizenService: generated population (G13.2, FL-0078)", function()
+	local VIEW_KEYS = {
+		"entityId",
+		"family",
+		"friends",
+		"hasRequest",
+		"intent",
+		"job",
+		"lastMemory",
+		"look",
+		"loyalty",
+		"memories",
+		"mood",
+		"name",
+		"obedience",
+		"occupation",
+		"rivals",
+		"traits",
+	}
+
+	it("generates the people when a kingdom is populated, and inspect returns the CitizenView", function()
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 }) -- crimson
+		env.mock:advance(5)
+		local sim = match.host.match.sim
+		expect(sim.profiler).never.toBeNil()
+		local ids = sim.kingdoms.crimson.citizenIds
+		expect(#ids).toBe(12)
+		for _, id in ids do
+			local c = sim.citizens[id]
+			local view = assert(citizens:inspect(id))
+			local keys = {}
+			for key in view do
+				table.insert(keys, key)
+			end
+			table.sort(keys)
+			local expected = table.clone(VIEW_KEYS)
+			if view.lastMemory == nil then
+				table.remove(expected, table.find(expected, "lastMemory"))
+			end
+			expect(keys).toEqual(expected)
+			expect(view.entityId).toBe(id)
+			expect(view.name).toBe(c.name)
+			expect(view.occupation).toBe(c.profile.occupation)
+			expect(view.traits).toEqual(c.profile.traits)
+			expect(view.loyalty).toBe(c.loyalty)
+			expect(view.obedience).toBe(
+				Population.obedience(c.profile.traits, People.startReputation(), People.CONTENT)
+			)
+			expect(view.look).toEqual(c.profile.look)
+			expect(view.hasRequest).toBe(false)
+			for _, relation in { "family", "friends", "rivals" } do
+				expect(#view[relation]).toBe(#c.profile[relation])
+				for i, otherId in c.profile[relation] do
+					expect(view[relation][i]).toBe(sim.citizens[otherId].name)
+				end
+			end
+			view.traits[1] = "changed" -- a copy
+			view.look.skin = 99
+			expect(c.profile.traits[1]).never.toBe("changed")
+			expect(c.profile.look.skin).never.toBe(99)
+		end
+	end)
+
+	it("uses ReputationService's values for obedience when it runs", function()
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(5)
+		local id = match.host.match.sim.kingdoms.crimson.citizenIds[1]
+		local c = match.host.match.sim.citizens[id]
+		local rep = { compassion = 50, honor = 50, competence = 50, courage = 50, authority = 90, fear = 70 }
+		citizens._registry = {
+			find = function(_, name)
+				if name == "ReputationService" then
+					return {
+						getKingdomReputation = function(_, kingdomId)
+							return if kingdomId == "crimson" then rep else nil
+						end,
+					}
+				end
+				return nil
+			end,
+		}
+		expect(citizens:inspect(id).obedience).toBe(Population.obedience(c.profile.traits, rep, People.CONTENT))
+	end)
+
+	it("Kingdom.GetPopulation answers members only; Kingdom.Population follows changes per kingdom", function()
+		local env, citizens, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 }) -- crimson
+		local p2 = env.mock.players:add({ userId = 2 }) -- azure
+		env.mock:advance(3)
+		expect(invoke(env, p1, "Kingdom.GetPopulation")).toEqual(citizens:getPopulation("crimson"))
+		local remote = env.ReplicatedStorage.ForgeRemotes.Kingdom:FindFirstChild("Population")
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote) do
+				if entry.player == player then
+					table.insert(out, entry.args[1])
+				end
+			end
+			return out
+		end
+		expect(#sentTo(p1)).toBe(1)
+		expect(sentTo(p1)[1]).toEqual(citizens:getPopulation("crimson"))
+		expect(sentTo(p2)[1]).toEqual(citizens:getPopulation("azure"))
+		env.mock:advance(3) -- nothing changed: nothing sent
+		expect(#sentTo(p1)).toBe(1)
+		local sim = match.host.match.sim
+		local c = sim.citizens[sim.kingdoms.crimson.citizenIds[1]]
+		Military.spawnUnit(sim, sim.kingdoms.crimson, "soldier", c.x, c.z) -- crimson grows by a soldier
+		env.mock:advance(1.5)
+		expect(#sentTo(p1)).toBe(2)
+		expect(sentTo(p1)[2].byJob.soldier).toBe(1)
+		expect(#sentTo(p2)).toBe(1) -- azure did not change
+		local spectatorEnv = env
+		local p17 = nil
+		for i = 3, 17 do
+			p17 = spectatorEnv.mock.players:add({ userId = i })
+		end
+		env.mock:advance(2)
+		expect(match.host.match:kingdomOf(17)).toBeNil()
+		expect(invoke(env, p17, "Kingdom.GetPopulation")).toBeNil()
+		expect(#sentTo(p17)).toBe(0)
+	end)
+
+	it("sends each citizen's look once, in its reliable spawn event (G4, G13.2)", function()
+		local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
+		local env, _, match = boot(true)
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(3)
+		local sim = match.host.match.sim
+		local remote = env.ReplicatedStorage.ForgeRemotes.Sim:FindFirstChild("Events")
+		local looks = {}
+		for _, entry in env.mock.remotes:sent(remote) do
+			local batch = assert(EventCodec.decode(entry.args[1]))
+			for _, e in batch.events do
+				if e.type == "spawn" and e.kind == "citizen" then
+					looks[e.id] = e.look
+				end
+			end
+		end
+		for _, id in sim.kingdoms.crimson.citizenIds do
+			expect(looks[id]).toEqual(sim.citizens[id].profile.look)
+		end
 	end)
 end)

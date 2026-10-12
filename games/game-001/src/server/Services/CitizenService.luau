@@ -8,15 +8,28 @@
 		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap }?
 			-- citizens and soldiers (soldiers count in byJob.soldier and in total); nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
-		CitizenService:inspect(entityId): { name, job, mood, intent, lastMemory? }?   -- citizens only
+		CitizenService:inspect(entityId): CitizenView?   -- G13.2 (a superset of G5's name, job, mood,
+		                                                  intent, lastMemory?); citizens only
 	G7: ProductionService is the only food consumer. Once this service runs, citizens never buy meals:
 	their hunger follows the kingdom's fed ratio (fully fed: hunger falls; half fed: holds; unfed: rises;
 	Sim/Simulation fedByUpkeep). Without this service the simulation keeps its own meal double.
-	Remote (G8): Sim.Inspect(entityId) -> inspect(entityId) for a citizen of the asker's own kingdom, else nil.
-	mood is 0..100 (well fed and rested = high); intent is the current activity and why, e.g.
-	"Gather wood (best job)". The generated population (names, traits, loyalty, family) arrives with
-	FL-0078 once the content library is merged; inspect then returns the G13.2 CitizenView superset.
+	Remotes (G8, G13.2): Sim.Inspect(entityId) -> inspect(entityId) for a citizen of the asker's own
+	kingdom, else nil. Kingdom.GetPopulation() -> getPopulation(my kingdom) (nil for a spectator);
+	Kingdom.Population(population) to a kingdom's members when it changes (checked every second) and
+	to each player whose kingdom changes.
+	Population (G13.2, FL-0078): on start the match generates people (Sim/People) from a seed per
+	world and the content library (Names, Traits, Occupations), so every citizen has a name, an
+	occupation, 2-3 traits, a household, friends and rivals, chemistry, loyalty and a look.
+	CitizenView = { entityId, name, occupation, job, traits, mood, loyalty, obedience, intent,
+	lastMemory?, memories, family, friends, rivals (names), hasRequest, look }. mood is 0..100 (well
+	fed and rested = high); intent is the current activity and why, e.g. "Gathering (best job)";
+	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
+	(ReputationService when present, else the Content start values) and the citizen's traits;
+	hasRequest is false until conversations (FL-0079).
 ]]
+
+local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
+local People = require("@game/ReplicatedStorage/Game/Sim/People")
 
 local CitizenService = {}
 CitizenService.__index = CitizenService
@@ -33,12 +46,29 @@ local ACTIVITY_TEXT = {
 	Idle = "Idle",
 }
 
+local POPULATION_EVERY = 1 -- seconds between Kingdom.Population checks
+
 function Def.new(env: any, registry: any)
 	local self = setmetatable({}, CitizenService)
 	self._env = env
+	self._registry = registry
 	self._match = registry:get("MatchService")
 	self._remotes = registry:get("RemoteService")
+	self._sentPopulation = {} :: { [any]: string } -- player -> last Kingdom.Population signature sent
+	self._running = false
 	return self
+end
+
+-- The ruler reputation obedience reads (G13.2): ReputationService's when it runs, else the starts.
+function CitizenService:reputationOf(kingdomId: string): { [string]: number }
+	local reputation = self._registry:find("ReputationService")
+	if reputation and reputation.getKingdomReputation then
+		local values = reputation:getKingdomReputation(kingdomId)
+		if values then
+			return values
+		end
+	end
+	return People.startReputation()
 end
 
 function CitizenService:_sim(): any
@@ -50,6 +80,7 @@ function CitizenService:start()
 	-- from now on (and in every new world) the upkeep feeds the citizens (G7)
 	match.options.fedByUpkeep = true
 	match.sim.fedByUpkeep = true
+	match:setPeople(People.CONTENT) -- generated citizens in this world and every next one (G13.2)
 	self._remotes:handle("Sim.Inspect", function(player: any, entityId: number)
 		local mine = match:kingdomOf(player.UserId)
 		local c = self:_sim().citizens[entityId]
@@ -58,6 +89,53 @@ function CitizenService:start()
 		end
 		return self:inspect(entityId)
 	end)
+	self._remotes:handle("Kingdom.GetPopulation", function(player: any)
+		local mine = match:kingdomOf(player.UserId)
+		return if mine then self:getPopulation(mine) else nil
+	end)
+	self._running = true
+	self._env.spawn(function()
+		while self._running do
+			self:_pushPopulation()
+			self._env.wait(POPULATION_EVERY)
+		end
+	end)
+end
+
+local function populationSignature(kingdomId: string, population: { [string]: any }): string
+	local jobs = {}
+	for job, n in population.byJob do
+		table.insert(jobs, `{job}={n}`)
+	end
+	table.sort(jobs)
+	return `{kingdomId}|{population.total}|{population.cap}|{table.concat(jobs, ",")}`
+end
+
+-- Kingdom.Population to every player whose kingdom's population (or whose kingdom) changed.
+function CitizenService:_pushPopulation()
+	local match = self._match.host.match
+	local seen = {}
+	for _, player in self._env.Players:GetPlayers() do
+		seen[player] = true
+		local mine = match:kingdomOf(player.UserId)
+		local population = if mine then self:getPopulation(mine) else nil
+		local signature = if population and mine then populationSignature(mine, population) else ""
+		if signature ~= (self._sentPopulation[player] or "") then
+			self._sentPopulation[player] = signature
+			if population then
+				self._remotes:fire("Kingdom.Population", player, population)
+			end
+		end
+	end
+	for player in self._sentPopulation do
+		if not seen[player] then
+			self._sentPopulation[player] = nil
+		end
+	end
+end
+
+function CitizenService:destroy()
+	self._running = false
 end
 
 function CitizenService:getPopulation(kingdomId: string): { total: number, byJob: { [string]: number }, cap: number }?
@@ -85,6 +163,17 @@ function CitizenService:setFedRatio(kingdomId: string, ratio: number)
 	end
 end
 
+local function namesOf(sim: any, ids: { number }?): { string }
+	local out = {}
+	for _, id in ids or {} do
+		local other = sim.citizens[id]
+		if other then
+			table.insert(out, other.name)
+		end
+	end
+	return out
+end
+
 function CitizenService:inspect(entityId: number): { [string]: any }?
 	local sim = self:_sim()
 	local c = sim.citizens[entityId]
@@ -94,12 +183,29 @@ function CitizenService:inspect(entityId: number): { [string]: any }?
 	local last = c.memory and c.memory[#c.memory]
 	local doing = ACTIVITY_TEXT[c.activity] or tostring(c.activity or "Idle")
 	local why = c.reason or c.activityReason
+	local profile = c.profile
+	local traits = if profile then table.clone(profile.traits) else {}
+	local memories = {}
+	for _, entry in c.memory or {} do
+		table.insert(memories, entry.kind)
+	end
 	return {
+		entityId = c.id,
 		name = c.name,
+		occupation = if profile then profile.occupation else c.job,
 		job = c.job,
+		traits = traits,
 		mood = math.clamp(math.floor((1 - math.min(1, c.hunger)) * 100 + 0.5), 0, 100),
+		loyalty = c.loyalty or 50,
+		obedience = Population.obedience(traits, self:reputationOf(c.kingdomId), People.CONTENT),
 		intent = if why then `{doing} ({why})` else doing,
 		lastMemory = if last then last.kind else nil,
+		memories = memories,
+		family = namesOf(sim, profile and profile.family),
+		friends = namesOf(sim, profile and profile.friends),
+		rivals = namesOf(sim, profile and profile.rivals),
+		hasRequest = false,
+		look = table.clone(if profile then profile.look else People.DEFAULT_LOOK),
 	}
 end
 

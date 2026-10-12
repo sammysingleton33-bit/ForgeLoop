@@ -2,17 +2,18 @@
 --[[
 	Sim/EventCodec — the reliable entity traffic of CONTRACTS G4: `Sim.Events` (one buffer per tick,
 	batched) and `Sim.GetEntities` (one buffer with every live entity). Fields that rarely change
-	(kind, job, kingdom) travel here, never in the per-tick snapshot (Sim/SnapshotCodec).
+	(kind, job, kingdom, a citizen's look) travel here, never in the per-tick snapshot (Sim/SnapshotCodec).
 
 	Wire layout (little-endian `buffer`):
 		header (6 B)   serverTime f32 (seconds since match start) · n u16 (records)
 		records, each starting with a tag u8:
-			1 spawn    id u16 · kind u8 · job u8 · kingdom u8                                (6 B)
+			1 spawn    id u16 · kind u8 · job u8 · kingdom u8 · look: skin u8 · hair u8 ·
+			           hairColor u8 · outfit u8 (all 0 = no look, the Kit default)        (10 B)
 			2 despawn  id u16                                                               (3 B)
 			3 job      id u16 · job u8                                                      (4 B)
 			4 cue      id u16 · cue u8 · arg u8   (deposit: arg = resource code, else 0)     (5 B)
 			5 full     spawn fields + SnapshotCodec record fields (x/y/z i16 at 1/8 stud,
-			           yaw u8, state u8)                                                   (14 B)
+			           yaw u8, state u8)                                                   (18 B)
 			6 reset    (no fields: a new match world; drop every entity, ids start over)      (1 B)
 	Codes (index in the list, from 1): KINDS = G2 EntityKind, JOBS = G2 JobId, KINGDOMS = G2 KingdomId,
 	CUES = { deposit, hit, die, celebrate } (G4: looping work animations derive from action + job,
@@ -23,11 +24,13 @@
 		EventCodec.decode(buf): (Batch?, string?)    -- nil + reason for a malformed buffer; never errors
 		EventCodec.CUES, KINDS, JOBS, KINGDOMS
 	Event (input and decoded output), by type:
-		{ type = "spawn", id, kind, job, kingdom }       { type = "despawn", id }
+		{ type = "spawn", id, kind, job, kingdom, look? }   { type = "despawn", id }
 		{ type = "job", id, job }                        { type = "cue", id, cue, resource? }
-		{ type = "full", id, kind, job, kingdom, x, y, z, yaw, action, carrying? }
+		{ type = "full", id, kind, job, kingdom, look?, x, y, z, yaw, action, carrying? }
+	look = CitizenLook { skin, hair, hairColor, outfit } (G13.2): palette indices 1..255.
 		{ type = "reset" }
-	encode errors on unknown codes, ids outside 1..65535 and coordinates SnapshotCodec rejects.
+	encode errors on unknown codes, ids outside 1..65535, look fields outside 1..255 and coordinates
+	SnapshotCodec rejects.
 ]]
 
 local SnapshotCodec = require("./SnapshotCodec")
@@ -45,7 +48,9 @@ EventCodec.KINGDOMS = Types.KINGDOM_IDS
 EventCodec.CUES = table.freeze({ "deposit", "hit", "die", "celebrate" })
 
 local TAGS = { spawn = 1, despawn = 2, job = 3, cue = 4, full = 5, reset = 6 }
-local SIZES = { [1] = 6, [2] = 3, [3] = 4, [4] = 5, [5] = 14, [6] = 1 }
+local SIZES = { [1] = 10, [2] = 3, [3] = 4, [4] = 5, [5] = 18, [6] = 1 }
+local LOOK_FIELDS = { "skin", "hair", "hairColor", "outfit" }
+local SPAWN_BYTES = 10 -- where a full record's state part starts
 local TYPE_OF = { "spawn", "despawn", "job", "cue", "full", "reset" }
 
 local function codeOf(list: { string }, value: any, what: string): number
@@ -88,6 +93,17 @@ function EventCodec.encode(serverTime: number, events: { Event }): buffer
 			buffer.writeu8(buf, o + 3, codeOf(EventCodec.KINDS, e.kind, "kind"))
 			buffer.writeu8(buf, o + 4, codeOf(EventCodec.JOBS, e.job, "job"))
 			buffer.writeu8(buf, o + 5, codeOf(EventCodec.KINGDOMS, e.kingdom, "kingdom"))
+			local look = e.look
+			for i, field in LOOK_FIELDS do
+				local v = if look then look[field] else 0
+				if look then
+					assert(
+						type(v) == "number" and v >= 1 and v <= 255 and v % 1 == 0,
+						`EventCodec: look.{field} {tostring(v)} outside 1..255`
+					)
+				end
+				buffer.writeu8(buf, o + 5 + i, v)
+			end
 		elseif tag == 3 then
 			buffer.writeu8(buf, o + 3, codeOf(EventCodec.JOBS, e.job, "job"))
 		elseif tag == 4 then
@@ -101,7 +117,7 @@ function EventCodec.encode(serverTime: number, events: { Event }): buffer
 		if tag == 5 then
 			-- reuse the snapshot record layout for the state part (id already written)
 			local record = SnapshotCodec.encode({ e :: any }, 0, 0)
-			buffer.copy(buf, o + 6, record, SnapshotCodec.HEADER_BYTES + 2, SnapshotCodec.RECORD_BYTES - 2)
+			buffer.copy(buf, o + SPAWN_BYTES, record, SnapshotCodec.HEADER_BYTES + 2, SnapshotCodec.RECORD_BYTES - 2)
 		end
 		o += SIZES[tag]
 	end
@@ -145,6 +161,19 @@ function EventCodec.decode(buf: any): (Batch?, string?)
 			if e.kind == nil or e.job == nil or e.kingdom == nil then
 				return nil, `record {i}: bad code`
 			end
+			local look = {}
+			local set = 0
+			for f, field in LOOK_FIELDS do
+				look[field] = buffer.readu8(buf, o + 5 + f)
+				if look[field] > 0 then
+					set += 1
+				end
+			end
+			if set == #LOOK_FIELDS then
+				e.look = look
+			elseif set > 0 then
+				return nil, `record {i}: partial look`
+			end
 		elseif tag == 3 then
 			e.job = EventCodec.JOBS[buffer.readu8(buf, o + 3)]
 			if e.job == nil then
@@ -164,7 +193,7 @@ function EventCodec.decode(buf: any): (Batch?, string?)
 			buffer.writeu8(record, 6, 1) -- chunk 0 of 1
 			buffer.writeu8(record, 7, 1)
 			buffer.writeu16(record, SnapshotCodec.HEADER_BYTES, e.id)
-			buffer.copy(record, SnapshotCodec.HEADER_BYTES + 2, buf, o + 6, SnapshotCodec.RECORD_BYTES - 2)
+			buffer.copy(record, SnapshotCodec.HEADER_BYTES + 2, buf, o + SPAWN_BYTES, SnapshotCodec.RECORD_BYTES - 2)
 			local frame, reason = SnapshotCodec.decode(record)
 			if frame == nil then
 				return nil, `record {i}: {reason}`

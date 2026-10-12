@@ -40,7 +40,8 @@
 		  behind the server time estimated from arrivals (Sim/Interpolation).
 		- Position is the rig pivot (base centre). Yaw turns about +Y, CFrame.Angles(0, yaw, 0); the
 		  rig faces -Z at yaw 0.
-		- Rigs come from Kit.character(kind, job, colour of the kingdom in config Kingdoms). They are
+		- Rigs come from Kit.character(kind, job, colour of the kingdom in config Kingdoms, look?) with
+		  the citizen's look from its spawn record (G13.2; Kit falls back to its default look). They are
 		  pooled per (kind, job, kingdom) and parented to one client-created Workspace folder.
 		- Each frame, one BulkMoveTo moves every visible root, and each motor gets its Sim/Pose
 		  Transform.
@@ -91,6 +92,7 @@ type Entity = {
 	kind: string,
 	job: string,
 	kingdom: string,
+	look: any?, -- G13.2 CitizenLook from the spawn record (citizens)
 	track: Interpolation.Track,
 	state: Interpolation.State,
 	pose: Pose.Joints,
@@ -325,6 +327,7 @@ function EntityController:_spawn(e: any, serverTime: number?)
 			kind = e.kind,
 			job = e.job,
 			kingdom = e.kingdom,
+			look = e.look,
 			track = Interpolation.newTrack(),
 			state = {} :: any,
 			pose = {},
@@ -402,12 +405,16 @@ end
 
 -- ---------------------------------------------------------------- rigs and pool
 
-local function poolKey(kind: string, job: string, kingdom: string): string
+local function poolKey(kind: string, job: string, kingdom: string, look: any?): string
+	if look then
+		return `{kind}|{job}|{kingdom}|{look.skin}.{look.hair}.{look.hairColor}.{look.outfit}`
+	end
 	return `{kind}|{job}|{kingdom}`
 end
 
-local function buildRig(kind: string, job: string, kingdom: string, key: string): Rig
-	local model = Kit.character(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR)
+-- look (G13.2 CitizenLook, from the spawn record) is Kit.character's optional 4th argument
+local function buildRig(kind: string, job: string, kingdom: string, look: any?, key: string): Rig
+	local model = (Kit.character :: any)(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR, look)
 	local root = model.PrimaryPart
 	local motors = {}
 	for _, d in model:GetDescendants() do
@@ -419,10 +426,10 @@ local function buildRig(kind: string, job: string, kingdom: string, key: string)
 end
 
 function EntityController:_acquire(entity: Entity): Rig
-	local key = poolKey(entity.kind, entity.job, entity.kingdom)
+	local key = poolKey(entity.kind, entity.job, entity.kingdom, entity.look)
 	local spare = self._pool[key]
 	local rig = if spare then table.remove(spare) else nil
-	return rig or buildRig(entity.kind, entity.job, entity.kingdom, key)
+	return rig or buildRig(entity.kind, entity.job, entity.kingdom, entity.look, key)
 end
 
 -- Attaches a rig. Inside a frame (`inFrame`) the frame's BulkMoveTo places it and `rendered` fires

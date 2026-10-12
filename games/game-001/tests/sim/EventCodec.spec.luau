@@ -9,7 +9,14 @@ local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local SnapshotCodec = require("@game/ReplicatedStorage/Game/Sim/SnapshotCodec")
 
 local SAMPLE = {
-	{ type = "spawn", id = 1, kind = "citizen", job = "farmer", kingdom = "crimson" },
+	{
+		type = "spawn",
+		id = 1,
+		kind = "citizen",
+		job = "farmer",
+		kingdom = "crimson",
+		look = { skin = 3, hair = 6, hairColor = 8, outfit = 1 },
+	},
 	{ type = "spawn", id = 65535, kind = "soldier", job = "soldier", kingdom = "gold" },
 	{ type = "job", id = 1, job = "hauler" },
 	{ type = "cue", id = 1, cue = "deposit", resource = "wood" },
@@ -21,6 +28,7 @@ local SAMPLE = {
 		kind = "citizen",
 		job = "miner",
 		kingdom = "azure",
+		look = { skin = 1, hair = 2, hairColor = 255, outfit = 4 },
 		x = -330.3,
 		y = 3,
 		z = 412.06,
@@ -34,7 +42,7 @@ local SAMPLE = {
 describe("Sim/EventCodec", function()
 	it("round-trips every record type at its documented size", function()
 		local buf = EventCodec.encode(12.5, SAMPLE)
-		expect(buffer.len(buf)).toBe(6 + 6 + 6 + 4 + 5 + 5 + 3 + 14 + 1)
+		expect(buffer.len(buf)).toBe(6 + 10 + 10 + 4 + 5 + 5 + 3 + 18 + 1)
 		local batch = assert(EventCodec.decode(buf))
 		expect(batch.serverTime).toBeNear(12.5, 1e-6)
 		expect(#batch.events).toBe(#SAMPLE)
@@ -44,6 +52,8 @@ describe("Sim/EventCodec", function()
 		local full = batch.events[7]
 		expect(full.type).toBe("full")
 		expect({ full.id, full.kind, full.job, full.kingdom }).toEqual({ 7, "citizen", "miner", "azure" })
+		expect(full.look).toEqual(SAMPLE[7].look)
+		expect(batch.events[2].look).toBeNil() -- no look (a soldier): Kit's default
 		expect(full.x).toBe(SnapshotCodec.quantize(-330.3))
 		expect(full.z).toBe(SnapshotCodec.quantize(412.06))
 		expect(full.y).toBe(3)
@@ -89,7 +99,7 @@ describe("Sim/EventCodec", function()
 			})
 		end
 		local buf = EventCodec.encode(0, events)
-		expect(buffer.len(buf)).toBe(6 + 300 * 14)
+		expect(buffer.len(buf)).toBe(6 + 300 * 18)
 		expect(#assert(EventCodec.decode(buf)).events).toBe(300)
 	end)
 
@@ -113,6 +123,13 @@ describe("Sim/EventCodec", function()
 		expect(bad({ type = "despawn", id = 0 })).toThrow("outside 1..65535")
 		expect(bad({ type = "despawn", id = 70000 })).toThrow("outside 1..65535")
 		expect(bad({ type = "teleport", id = 1 })).toThrow("unknown event type")
+		local function withLook(look)
+			return bad({ type = "spawn", id = 1, kind = "citizen", job = "farmer", kingdom = "gold", look = look })
+		end
+		expect(withLook({ skin = 0, hair = 1, hairColor = 1, outfit = 1 })).toThrow("look.skin")
+		expect(withLook({ skin = 1, hair = 256, hairColor = 1, outfit = 1 })).toThrow("look.hair")
+		expect(withLook({ skin = 1, hair = 1, hairColor = 1.5, outfit = 1 })).toThrow("look.hairColor")
+		expect(withLook({ skin = 1, hair = 1, hairColor = 1 })).toThrow("look.outfit")
 		expect(function()
 			EventCodec.encode(0 / 0, {})
 		end).toThrow("serverTime")
@@ -146,6 +163,9 @@ describe("Sim/EventCodec", function()
 			end),
 			mutated(function(b)
 				buffer.writeu16(b, 4, 200) -- more records than bytes
+			end),
+			mutated(function(b)
+				buffer.writeu8(b, 6 + 7, 0) -- a look with one field missing
 			end),
 		}
 		for _, case in cases do

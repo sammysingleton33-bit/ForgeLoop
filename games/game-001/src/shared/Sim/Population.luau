@@ -37,7 +37,7 @@
 		  occupation's trait_affinity (missing = 1; 0 = never, unless the citizen would otherwise end
 		  up with fewer than 2).
 		- Chemistry: integer −20..+20, the sum of two uniform rolls −10..+10 (most citizens near 0).
-		- Loyalty (start): floor(50 + chemistry/4 + 0.5), clamped 0..100, so 45..55.
+		- Loyalty (start): 50 + chemistry/4 (ContentQuery.startLoyalty), clamped 0..100, so 45..55.
 		- Households: 1–4 members (odds 1:3:3:2 for sizes 1..4) over a seeded shuffle; members share
 		  familyName; family = the keys of the other members.
 		- Friends: 1–3, mutual, never self, never the rival; outside the household when possible.
@@ -547,8 +547,9 @@ local function assignLooks(rng: Rng, citizens: { Citizen })
 end
 
 -- ---------------------------------------------------------------- API
+-- = ContentQuery.startLoyalty (one formula, FORGE-00/FORGE-05 #46 review (d)): 50 + chemistry/4
 function Population.loyaltyFor(chemistry: number): number
-	return math.clamp(math.floor(RULES.loyaltyBase + chemistry / 4 + 0.5), 0, 100)
+	return math.clamp(RULES.loyaltyBase + chemistry / 4, 0, 100)
 end
 
 function Population.obedience(traits: { string }, rep: { [string]: number }, content: Content): number
