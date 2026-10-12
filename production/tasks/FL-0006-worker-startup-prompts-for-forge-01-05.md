@@ -3,14 +3,15 @@ id: FL-0006
 title: Worker startup prompts for FORGE-01..05
 track: coordination
 owner: forge-00
-status: BUILDING
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: []
 estimate_h: 2
-evidence: []
+evidence:
+  - 2026-10-12 agents/forge-0{1..5}/PROMPT.md on main fd0e556; review workflows wf_d4b44a35 (FORGE-05/01) and wf_1e194bee (FORGE-02/03/04)
 ---
 
 # Worker startup prompts for FORGE-01..05
@@ -29,3 +30,4 @@ Cross-worker consistency review (ownership overlaps, dependency gaps, stale path
 
 ## Log
 - 2026-10-12 forge-00: created (BUILDING).
+- 2026-10-12 forge-00: BUILDING → REVIEW. All five prompts written, independently reviewed twice (fresh-session simulation + cross-worker coordination); ~70 findings applied
