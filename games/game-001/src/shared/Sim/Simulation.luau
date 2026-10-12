@@ -12,7 +12,7 @@
 			bounds    { minX, maxX, minZ, maxZ } in studs; placement outside is rejected (default ±1024)
 			treasury  CONTRACTS G7 TreasuryService (get/canAfford/spend/deposit, txIds); default TreasuryDouble
 			costs     CONTRACTS G6 Costs (building(type, level) -> { cost, buildSeconds }, unit(type));
-			          default Catalog.costs(catalog), the double of FORGE-03's Costs.luau
+			          default Catalog.costs(catalog), on FORGE-03's Costs.luau
 
 	World setup
 		sim:addKingdom({ id, name, color: {number}, x, z, yaw?, startAt?, populate? }): Kingdom   -- keep + start
@@ -852,9 +852,11 @@ function Simulation:deposit(kingdomId: string, resource: string, amount: number,
 	return self.treasury:deposit(kingdomId, resource, amount, txId, source)
 end
 
+-- builder-seconds of work for a level (Costs.building(kind, level).buildSeconds, CONTRACTS G13.5)
 function Simulation:workFor(kind: string, level: number): number
 	local price = self.costs.building(kind, level)
-	return if price then price.buildSeconds else self.catalog.buildings[kind].levels[level].work
+	assert(price, `no Costs.building({kind}, {level})`)
+	return price.buildSeconds
 end
 
 function Simulation:addCrownPoints(kingdomId: string, amount: number, reason: string)
