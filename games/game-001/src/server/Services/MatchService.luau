@@ -100,6 +100,8 @@ function MatchService:start()
 	self.host = MatchHost.new(self._env, self._remotes, {
 		tickSeconds = MatchConfig.tickSeconds,
 		worldViewEntities = false, -- clients render citizens and soldiers (EntityController, D-023/D-026)
+		worldViewBuildings = "kit", -- FORGE-02's Kit models for every building (G6/G10)
+		worldViewGround = false, -- WorldService (FORGE-02) owns the terrain and the river; no slab over them
 		match = {
 			mode = self.mode,
 			phaseDurations = durations,

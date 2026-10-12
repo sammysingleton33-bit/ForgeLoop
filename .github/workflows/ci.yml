@@ -38,8 +38,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Install pytest
-        run: python -m pip install --disable-pip-version-check pytest
+      - name: Install pytest and openpyxl
+        # openpyxl: the content library's workbook round-trip tests (tools/tests/test_content.py) skip without it
+        run: python -m pip install --disable-pip-version-check pytest "openpyxl==3.1.5"
       - name: Tool tests
         run: python -m pytest -q tools/tests
       - name: Validate tasks

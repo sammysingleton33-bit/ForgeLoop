@@ -1,0 +1,4 @@
+scenario_id,occupation,trigger,priority,cooldown_s,once_per_citizen,thought_text,question_text,notes
+s_hungry_farmer,farmer,kingdom.fed_ratio < 0.6 & citizen.hunger >= 0.5 & !event.raid,80,300,false,My children are hungry...,"{ruler}, the granary is low and my family is hungry. Will you share the stores, or must we tighten our belts?",
+s_smith_tools,smith,"kingdom.count.storehouse >= 1 & phase in Founding,Expansion & citizen.memory.promised_tools",60,600,true,My tools are worn thin.,"My hammer is cracked, {ruler}. Good iron costs gold, but bad tools cost more.",
+s_soldier_pay,soldier,rep.authority >= 30 & kingdom.gold > 20 & citizen.trait.greedy = true & occupation = soldier & decision.d_buy_tools = false,50,240,false,Where is our pay?,"We bled at the wall, {ruler}. The men say ""a crown that cannot pay cannot rule.""",quote test

@@ -1,0 +1,8 @@
+scenario_id,response_id,order,response_text,reaction_text,decision_id
+s_hungry_farmer,r_hf_share,1,Open the granary. No child starves here.,"Bless you, {ruler}! We will not forget this.",d_share_grain
+s_hungry_farmer,r_hf_ration,2,"Rations, for everyone. Even me.",She nods slowly. Her eyes say otherwise.,d_ration_strict
+s_hungry_farmer,r_hf_gift,3,Take this sack of seed grain. Plant it well.,"""Seed grain? Then we eat next season,"" she laughs.",d_grain_gift
+s_smith_tools,r_st_buy,1,Here is gold. Buy the best iron you can find.,He grins and tests the coin with his teeth.,d_buy_tools
+s_smith_tools,r_st_later,2,After the harvest. I promise.,"""Promises don't shoe horses,"" he mutters.",d_promise_later
+s_soldier_pay,r_sp_pay,1,Here is your bonus. You earned it.,The yard erupts in cheers.,d_pay_bonus
+s_soldier_pay,r_sp_threat,2,Desert and hang. Back to your post.,He salutes. Nobody meets your eyes.,d_threaten
