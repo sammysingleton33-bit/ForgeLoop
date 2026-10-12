@@ -74,7 +74,35 @@ Needs: FORGE-01 kingdom signals, `Gameplay.KingdomEvent`, `Citizen` tags, `Kingd
 Pass: every step observed; note anything that felt late (> 0.2 s), noisy or repetitive.
 
 ## E6 — Fresh-player onboarding walkthrough (FL-0025)
-Steps and the expected `env.log` funnel order are added with FL-0025.
+Needs: DataService + RemoteService (FORGE-01); for the AI Kingdoms flow also the kingdom signals, the `OnboardingCastle`, `OnboardingTownHall` and `Citizen` tags, the HUD targets `HUD.Resources` / `HUD.BuildButton` with `ResourceInspected` / `GoalAcknowledged` reports (FORGE-03), and the `Crowns` currency. The sandbox flow (`games/sandbox/config/Onboarding.luau`) needs only DataService, RemoteService, ShopViewed and the round events.
+
+Fresh player: in Studio use a test place with an empty DataStore (or delete key `u_<UserId>` of `ForgeProfiles_v1` first).
+1. Play Solo; filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch at spawn.
+2. Within 3 s: the card "Welcome, ruler. This land is yours." then "Walk to your castle" with an arrow over the castle. Record the time.
+3. Walk 8+ studs: card advances to "Your banner marks your kingdom". Record the time (target: first meaningful interaction ≤ 30 s from spawn).
+4. Walk to the castle; tap the Food counter; assign a citizen; place a farm; wait for the first harvest; record the time of "+25 Crowns" (target ≤ 3 min).
+5. Upgrade the Town Hall; acknowledge the goal card (or wait 10 s).
+6. Do nothing for 15 s on any step with an arrow: the card border and arrow turn gold (escalation).
+
+Expected `env.log` order (the adapter writes every call; `sent=true` means it was handed to Roblox, which records nothing from Studio):
+```
+info onboarding step ... step=1 stepId=Arrive via=auto
+info analytics funnel Onboarding ... step=1 stepName=Arrive sent=true
+info onboarding step ... step=2 stepId=MoveRuler via=client
+info analytics funnel Onboarding ... step=2 stepName=MoveRuler sent=true
+... step=3 FindKingdom, 4 CheckResources (via=client or via=timeout), 5 AssignCitizen (via=bus),
+    6 PlaceFarm (via=bus or via=satisfied), 7 FirstHarvest (via=bus), 8 UpgradeHall (via=bus), 9 NextGoal
+info analytics event OnboardingCompleted ... CustomField01=first_session sent=true
+```
+The same order is asserted headlessly by `Onboarding.spec.luau` ("a full first session logs every funnel step in order").
+
+Skip path (new fresh player): at step 2 press **Skip tutorial**. Expect `onboarding skipped ... lastStep=2`, `analytics event OnboardingSkipped value=2 CustomField01=MoveRuler`, the card disappears, and **no further** `analytics funnel Onboarding` line for the rest of the session or after rejoining.
+
+Resume path: complete up to "Build a farm", leave, rejoin. Expect the card to resume at "Build a farm" (or the next step if the farm was placed) and no repeated `analytics funnel Onboarding step=1` line.
+
+Phone check (Studio device emulator, a small phone): the card fits the width with 16 px margins, does not cover the thumbstick or jump button, Skip is tappable (≥ 44 px), text is readable.
+
+Pass: all timings recorded and within target, the log order matches, skip and resume behave as above.
 
 ## Changelog
-- 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024).
+- 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
