@@ -213,18 +213,15 @@ describe("KingdomPanelModel", function()
 
 	it("orders the construction queue by time left", function()
 		local k = kingdom()
-		table.insert(
-			k.buildings,
-			{
-				uid = "u9",
-				buildingId = "farm",
-				level = 1,
-				state = "upgrading",
-				workers = 0,
-				startedAt = 100,
-				completesAt = 104,
-			}
-		)
+		table.insert(k.buildings, {
+			uid = "u9",
+			buildingId = "farm",
+			level = 1,
+			state = "upgrading",
+			workers = 0,
+			startedAt = 100,
+			completesAt = 104,
+		})
 		local q = KingdomPanelModel.queue(k, catalog, 102)
 		expect(#q).toBe(2)
 		expect(q[1].uid).toBe("u9")

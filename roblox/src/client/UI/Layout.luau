@@ -67,7 +67,8 @@ function Layout.compute(width: number, height: number): Metrics
 		then clamp(height / 850, 1, 1.5)
 		elseif bp == "tablet" then clamp(height / 630, 1, 1.25)
 		else 1
-	local W, H = width / scale, height / scale
+	-- Whole logical pixels: UDim2 offsets are integers in the engine (and strict in Lune).
+	local W, H = math.floor(width / scale), math.floor(height / scale)
 	local phone = bp == "phone"
 	local margin = if phone then 8 else 16
 	local railButton = if phone then 48 else 58
@@ -114,7 +115,7 @@ end
 
 function Layout.freeArea(m: Metrics, drawerOpen: boolean): { x: number, width: number }
 	if drawerOpen then
-		return { x = 0, width = m.drawer.x }
+		return { x = 0, width = math.floor(m.drawer.x) }
 	end
 	return { x = 0, width = m.width - m.rail.right - m.rail.button }
 end

@@ -15,7 +15,7 @@
 			done: string?,                 building id that was just started (success flash)
 		}
 		View = {
-			loading: boolean,
+			loading: boolean, category: string, selected: string?,
 			tabs: { { id, label, icon } },
 			rows: { Row },  detail: Detail?
 		}
@@ -223,6 +223,7 @@ function BuildMenuModel.build(input: { [string]: any }): any
 	end
 	return {
 		loading = not input.kingdom or not input.treasury,
+		category = input.category,
 		tabs = BuildMenuModel.CATEGORIES,
 		rows = rows,
 		selected = selected,

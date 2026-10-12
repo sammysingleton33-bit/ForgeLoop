@@ -45,6 +45,8 @@ function KingdomWorld.new(opts: { [string]: any }?)
 	local rc = RemoteDoubles.client(env)
 	shared.RemoteClient = { Core = rc }
 	local player = env.Players.LocalPlayer
+	local playerGui = env.newInstance("PlayerGui") -- the engine creates it; the mock player has none
+	playerGui.Parent = player
 	local server =
 		Loader.load(env, { RemoteDoubles.serviceDefinition(), TreasuryDef, KingdomDoubles.serviceDefinition() })
 	local kingdom = server:get("KingdomService")

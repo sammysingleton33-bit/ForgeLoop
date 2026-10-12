@@ -7,6 +7,8 @@
 		amount: number?            loading: boolean?   no value yet ("…"; also when amount is nil)
 		cap: number?               shown as " / cap" (full pills only); at cap → amber border
 		rate: number?              per minute, shown under the amount (full pills only)
+		sub: string?               other text under the amount instead of a rate ("2 idle")
+		subColor: Color3?          colour for `sub`
 		compact: boolean?          phones: icon + amount only
 		error: boolean?            unknown value ("—")
 		layoutOrder: number?
@@ -107,9 +109,14 @@ function CurrencyPill:update(partial: { [string]: any })
 	end
 	self._amount.Text = text
 	self._amount.TextSize = if compact then 13 else 15
-	self._rate.Visible = not compact and p.rate ~= nil
-	self._rate.Text = if p.rate then Format.rate(p.rate) else ""
-	self._rate.TextColor3 = if p.rate and p.rate > 0 then Theme.color("vert") else Theme.color("textMuted")
+	self._rate.Visible = not compact and (p.rate ~= nil or p.sub ~= nil)
+	if p.sub then
+		self._rate.Text = p.sub
+		self._rate.TextColor3 = p.subColor or Theme.color("textSecondary")
+	else
+		self._rate.Text = if p.rate then Format.rate(p.rate) else ""
+		self._rate.TextColor3 = if p.rate and p.rate > 0 then Theme.color("vert") else Theme.color("textMuted")
+	end
 	local full = p.cap ~= nil and p.amount ~= nil and not p.loading and p.amount >= p.cap
 	self._stroke.Color = if full then Theme.color("amber") else Theme.color("gold600")
 	self._stroke.Transparency = if full then 0 else 0.35
