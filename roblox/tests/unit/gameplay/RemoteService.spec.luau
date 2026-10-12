@@ -95,6 +95,7 @@ describe("RemoteService", function()
 				{ { name = "Economy.X", kind = "serverEvent", rate = { burst = 1, perSecond = 1 } }, "rate is only" },
 				{ { name = "Economy.X", kind = "event", args = { "string" } }, "args[1] must be a validator" },
 				{ { name = "Economy.X", kind = "event", rate = { burst = 0, perSecond = 1 } }, "rate.burst" },
+				{ { name = "Economy.X", kind = "event", rate = { burst = 0.5, perSecond = 1 } }, "rate.burst" },
 				{ { name = "Economy.X", kind = "event", rate = { burst = 1, perSecond = NAN } }, "rate.perSecond" },
 				{ { name = "Economy.X", kind = "event", arg = { V.boolean() } }, "unknown field 'arg'" },
 				{ "Economy.X", "expected a table" },
@@ -344,6 +345,46 @@ describe("RemoteService", function()
 			expect(entry.fields.error).toContain("inventory exploded")
 			expect(entry.fields.userId).toBe(1)
 			expect(service:stats().dropped).toEqual({ handlerError = 2 })
+		end)
+
+		it("logs a failing handler's traceback once per remote and only counts repeats", function()
+			local env, service, client, as = boot()
+			local alice = env.mock.players:add({ userId = 1 })
+			service:handle("Gameplay.Ping", function()
+				error("ping broke")
+			end)
+			as(alice, function()
+				for _ = 1, 5 do
+					client:send("Gameplay.Ping")
+				end
+			end)
+			local errors = 0
+			for _, log in env.mock.logs do
+				if log.level == "error" and log.fields.remote == "Gameplay.Ping" then
+					errors += 1
+				end
+			end
+			expect(errors).toBe(1)
+			expect(service:stats().dropped.handlerError).toBe(5)
+		end)
+
+		it("fails closed: a validator declared without () rejects every call (review follow-up on #5)", function()
+			local env, service, client, as = boot({
+				Gameplay = { { name = "Gameplay.SetFlag", kind = "event", args = { V.boolean :: any } } },
+			})
+			local alice = env.mock.players:add({ userId = 1 })
+			local received = 0
+			service:handle("Gameplay.SetFlag", function()
+				received += 1
+			end)
+			as(alice, function()
+				client:send("Gameplay.SetFlag", {})
+				client:send("Gameplay.SetFlag", "x")
+				client:send("Gameplay.SetFlag", 1e308)
+				client:send("Gameplay.SetFlag", true)
+			end)
+			expect(received).toBe(0)
+			expect(service:stats().dropped.invalidArgs).toBe(4)
 		end)
 
 		it("returns a function handler's results to the client; nil when the call is dropped", function()
