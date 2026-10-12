@@ -48,12 +48,13 @@
 		hud.reputation = rep;
 		hud.bottom = rep.y + rep.height;
 		// FL-0060: the objective tracker hangs under the top-left stack (not part of hud.bottom: drawers keep their size).
-		hud.objectives = phone ? { x: hud.x, y: hud.bottom + 8, width: 224 } : { x: hud.x, y: hud.bottom + 10, width: 272 };
 		if (!phone) {
 			const width = bp === "tablet" ? 560 : 620;
 			const y = hud.bottom + 10;
 			drawer = { x: W - drawerRight - width, y, width, height: Math.min(bp === "tablet" ? 470 : 480, H - y - margin), single: false };
 		}
+		// at most 224 / 272 px and 12 px clear of the drawer (tablet: 261 px; the Luau render found the 1 px gap)
+		hud.objectives = { x: hud.x, y: hud.bottom + (phone ? 8 : 10), width: Math.max(160, Math.min(phone ? 224 : 272, drawer.x - hud.x - 12)) };
 		return { bp, scale, W, H, margin, hud, rail: { right: margin, button: railButton, gap: 10 }, drawer, toast: { width: phone ? 250 : 300 } };
 	}
 
@@ -240,7 +241,7 @@
 		const status = o.sent
 			? `<div class="astatus ok">${I("check", 14)}Sent to the nearest tower</div>`
 			: soldiers === 0
-				? `<div class="astatus">Recruit soldiers to capture towers</div>`
+				? `<div class="astatus">Recruit soldiers first</div>`
 				: `<div class="astatus">Idle soldiers march to the nearest tower</div>`;
 		const costRows = Object.entries(cost)
 			.map(([r, v]) => {
@@ -284,7 +285,7 @@
 			<div class="adiv"></div>
 			<div class="sh">${I("banner", 16)}Send to capture</div>
 			<div class="pt">Idle soldiers march to the nearest tower you don't hold and take it.</div>
-			<div class="target">${I("watchtower", 18)}${nameOf(obj.id)}<span class="tm">Neutral · you ${Math.round(obj.progress.crimson * 100)}%</span></div>
+			<div class="target">${I("watchtower", 20)}<div><div>${nameOf(obj.id)}</div><div class="tm">Neutral · you ${Math.round(obj.progress.crimson * 100)}%</div></div></div>
 			<div class="spacer"></div>${o.sent || soldiers === 0 ? status : ""}${sendCta}</div>`;
 		return drawer(M, "Army", tabs, `<div class="acols">${recruit}${own}</div>`);
 	}
@@ -314,7 +315,7 @@
 		const kick = mineWins ? `<div class="skick win">${I("crown", 14)}Victory</div>` : `<div class="skick">${I("standings", 14)}Match over</div>`;
 		const head = winner
 			? `<div class="swin">${crest(winner, phone ? 48 : 60)}<div><div class="sname" style="font-size:${phone ? 30 : 36}px">${KINGDOMS[winner].name}</div><div class="ssub ${mineWins ? "mine" : ""}">${mineWins ? "Your kingdom wins" : "wins the match"}</div></div></div>`
-			: `<div class="swin"><div class="crest" style="width:${phone ? 48 : 60}px;height:${phone ? 48 : 60}px;background:linear-gradient(180deg,var(--color-ink600),var(--color-ink900))">${I("standings", phone ? 30 : 38)}</div><div><div class="sname" style="font-size:${phone ? 30 : 36}px">No winner</div><div class="ssub">The match ended without a winner</div></div></div>`;
+			: `<div class="swin"><div class="crest" style="width:${phone ? 48 : 60}px;height:${phone ? 48 : 60}px;background:linear-gradient(180deg,var(--color-ink600),var(--color-ink900))">${I("standings", phone ? 30 : 38)}</div><div><div class="sname" style="font-size:${phone ? 30 : 36}px">No winner</div><div class="ssub">Nobody won the match</div></div></div>`;
 		const rows = standings
 			.map((s, i) => {
 				const k = KINGDOMS[s.kingdom];

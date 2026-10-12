@@ -45,9 +45,9 @@
 .asub { font: 600 11px var(--font-body); color: var(--color-textSecondary); }
 .adiv { height: 1px; background: color-mix(in srgb, var(--color-gold600) 45%, transparent); }
 .pt { font: 500 12px var(--font-body); color: var(--color-textSecondary); line-height: 1.35; }
-.target { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px 0 4px; border-radius: 8px; background: rgba(11, 15, 24, 0.55); border: 1px solid var(--color-ink500);
+.target { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 4px; border-radius: 8px; background: rgba(11, 15, 24, 0.55); border: 1px solid var(--color-ink500);
 	font: 700 12px var(--font-body); color: var(--color-textPrimary); white-space: nowrap; }
-.target .tm { margin-left: auto; color: var(--color-textSecondary); font-weight: 600; }
+.target .tm { color: var(--color-textSecondary); font: 600 11px var(--font-body); }
 .astatus { display: flex; align-items: center; gap: 5px; height: 16px; font: 700 12px var(--font-body); color: var(--color-textSecondary); white-space: nowrap; }
 .astatus.ok { color: #A9E57C; }
 .astatus.bad { color: #FF8A73; }

@@ -12,7 +12,7 @@ steps are U14 in `roblox/studio-tests/ui-economy.md`.
 ## 1. HTML prototype (first)
 `army.html?size=…&scene=…` (`node shoot-army.js`) → `screenshots/prototype/army-<scene>-<size>.png`.
 Scenes: `hud` (+guides), `hud-open`, `army` (+guides), `army-short`, `army-none`, `army-sent`,
-`army-nobarracks`, `upgrade-tab`, `summary` (+guides), `summary-win`, `summary-none` (36 shots).
+`army-nobarracks`, `upgrade-tab`, `summary` (+guides), `summary-win`, `summary-none` (42 shots).
 
 What the prototype settled:
 - **One army drawer, two ways in.** A third rail button **Army** opens it for my barracks (the one
@@ -82,6 +82,9 @@ renders of FL-0059 / FL-0087 / FL-0088 / FL-0089 (`hud`, `building-upgrade`, `bu
 `placed`) re-shot, palette-compressed the same way and compared: all 27 pixel-identical. The rail gets
 its third button only where ArmyPanelController runs, and the upgrade panel's Army tab only for my
 barracks with ArmyPanelController running.
+
+The prototype was then synced with these fixes (tracker clamp in its `layout`, the two-line target
+chip, the shorter sentences) and re-shot; all 42 prototype shots looked at again in contact sheets.
 
 Prototype ↔ Luau differences that remain (on purpose): emoji fallbacks until the icons are uploaded
 (the army/watchtower/banner/militia/standings icons exist in `design/ui/icons.js` already); the Luau
