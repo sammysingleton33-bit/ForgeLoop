@@ -123,7 +123,9 @@ function KingdomHudController:_withPlayerGui(fn: (Instance) -> ())
 	end
 	env.spawn(function()
 		local waited = if player then player:WaitForChild("PlayerGui", 10) else nil
-		if waited then
+		if self._destroyed then
+			return -- destroyed while waiting (FORGE-05 L6): mount nothing
+		elseif waited then
 			fn(waited)
 		else
 			env.log("warn", "KingdomHudController: no PlayerGui; the kingdom HUD is not mounted", {})
@@ -173,6 +175,7 @@ function KingdomHudController:start()
 	self._notifications = registry:find("NotificationController")
 	self._onboarding = registry:find("OnboardingController")
 	self.remotes = RemoteClient.new(env)
+	self._remoteConnections = {}
 	self._storeConnection = self.store.changed:connect(function(what, deltas)
 		self:_onStore(what, deltas)
 	end)
@@ -216,7 +219,12 @@ function KingdomHudController:_follow(push: string, get: string?, handler: (...a
 	local env = self._env
 	env.spawn(function()
 		local ok, err = pcall(function()
-			self.remotes:on(push, handler)
+			local connection = self.remotes:on(push, handler)
+			if self._destroyed then
+				connection:Disconnect()
+			else
+				table.insert(self._remoteConnections, connection)
+			end
 		end)
 		if not ok then
 			env.log("warn", "KingdomHudController: cannot listen to " .. push, { error = tostring(err) })
@@ -246,9 +254,17 @@ end
 
 function KingdomHudController:destroy()
 	self._running = false
+	self._destroyed = true
 	if self._storeConnection then
 		self._storeConnection:disconnect()
 	end
+	-- Pushes stop here: the store no longer follows the server (FORGE-05 L5).
+	for _, connection in self._remoteConnections or {} do
+		pcall(function()
+			connection:Disconnect()
+		end)
+	end
+	self._remoteConnections = {}
 	for _, gui in self.guis do
 		gui:Destroy()
 	end
@@ -562,11 +578,15 @@ function KingdomHudController:render()
 		self.panel:destroy()
 	end
 
-	if self._modal then
+	-- The confirm dialog belongs to one request: pushes while it is open leave it alone
+	-- (FORGE-05 M1). It shows the costs as they were when the player asked; the server checks
+	-- the treasury again on Build.Upgrade.
+	if self._modal and self._modalFor ~= s.confirm then
 		self._modal:destroy()
 		self._modal = nil
+		self._modalFor = nil
 	end
-	if s.confirm then
+	if s.confirm and self._modal == nil then
 		local d = s.confirm
 		local rows = {}
 		for _, c in d.costs do
@@ -592,6 +612,7 @@ function KingdomHudController:render()
 			end,
 		})
 		self._modal.instance.Parent = self.roots.modals
+		self._modalFor = s.confirm
 	end
 
 	local drawerOpen = s.menu ~= nil

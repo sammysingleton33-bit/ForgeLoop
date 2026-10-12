@@ -42,8 +42,20 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **Mutate against the strongest double you have.** A late-join refetch survived its mutation
   because the real TreasuryService also pushes on join; the spec now models a missed push.
   `observed-once`.
-- **Framework modules must not require game config.** Static `require(Config.Items)` in shared
-  economy modules passed every sandbox gate and broke the game-001 build the moment a second project
-  existed (its config folder has no Items). Pattern: `X.setDefault(<the game's config>)` /
-  `X.default()` that errors until set; only files every project provides (UITheme) may be required.
+- **Size fixed-width labels from the renderer's metrics, not from the prototype.** The HTML
+  prototype lays names out with flex, so nothing truncates there; the Luau labels have fixed widths
+  and the snapshot render showed "Compassi…" / "Compete…" (FL-0089). A canvas `measureText` in the
+  prototype page said "Competence" is 58 px at Montserrat SemiBold 11; a DOM span in the
+  renderer's `out/*.html` page measured 73 px. Measure there, then leave ~10 % slack for Studio.
+  `observed-once`.
+- **Never key a weak table by an Instance in Lune.** Lune hands out a new userdata for an instance
+  once nothing in Lua holds the old one, so a `__mode = "k"` table keyed by instances loses entries
+  whenever the GC runs. The kit's test connector did, and a tap spec failed in about a third of full
+  game-001 runs while passing alone. Hold instances strongly and reset per test. Repro: a spec that
+  drops the reference and forces GC with allocations (`collectgarbage("collect")` is not allowed).
+  `observed-once` (2026-10-12).
+- **Re-render by key, patch values in place.** A full rebuild per push swapped the button under the
+  player's finger and reset scroll (FORGE-05 M1). Views keep a layout key (`UI/Signature`) and only
+  rebuild when it changes; balances, CTA state and progress are patched. Check it with instance
+  identity in specs (`expect(find(...)).toBe(before)`) and pixel-compare the committed renders.
   `observed-once` (2026-10-12).

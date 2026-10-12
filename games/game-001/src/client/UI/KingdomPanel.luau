@@ -16,6 +16,10 @@
 		ui = { onTab(id), onUpgradeOpen(buildingId), onUpgrade(detail), onBack(), onClose() }
 	panel:destroy()
 	Building rows are named "Building_<id>"; their Upgrade button "Upgrade".
+	Renders keep their instances (FORGE-05 M1): the frame is rebuilt for another breakpoint or tab,
+	a tab's content only when its layout changes (a building added, a level gained, the overview's
+	text); construction progress and the upgrade CTA are patched in place, and a rebuilt list keeps
+	its scroll.
 ]]
 
 local Button = require("@game/ReplicatedStorage/Forge/UI/Components/Button")
@@ -27,6 +31,7 @@ local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
 local IconButton = require("@game/ReplicatedStorage/Forge/UI/Components/IconButton")
 local Panel = require("@game/ReplicatedStorage/Forge/UI/Components/Panel")
 local ProgressBar = require("@game/ReplicatedStorage/Forge/UI/Components/ProgressBar")
+local Signature = require("./Signature")
 local Style = require("@game/ReplicatedStorage/Forge/UI/Style")
 local Tabs = require("@game/ReplicatedStorage/Forge/UI/Components/Tabs")
 local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
@@ -40,7 +45,35 @@ KingdomPanel.TABS = table.freeze({
 })
 
 function KingdomPanel.new(parent: Instance)
-	return setmetatable({ _parent = parent, panel = nil, detail = nil, rows = {} }, KingdomPanel)
+	return setmetatable(
+		{ _parent = parent, panel = nil, detail = nil, rows = {}, bars = {}, _ui = {}, _scroll = {} },
+		KingdomPanel
+	)
+end
+
+local function building(r: any): boolean
+	return r.state == "constructing" or r.state == "planned"
+end
+
+-- A building row's layout; progress and the state's wording are patched (paintRow).
+local function rowsKey(rows: { any }, phone: boolean): string
+	local out = {}
+	for i, r in rows do
+		out[i] = {
+			id = r.id,
+			name = r.name,
+			icon = r.icon,
+			category = r.category,
+			level = r.level,
+			building = building(r),
+			canUpgrade = r.canUpgrade,
+		}
+	end
+	return Signature.of({ tab = "buildings", rows = out, phone = phone })
+end
+
+local function progressText(r: any): string
+	return if r.state == "planned" then "waiting" else `{math.floor(r.progress * 100)}%`
 end
 
 local function section(title: string, icon: string, right: string?, order: number): Frame
@@ -109,7 +142,7 @@ local function scroller(name: string, parent: Instance): ScrollingFrame
 	})
 end
 
-function KingdomPanel:_overview(content: Instance, model: any, phone: boolean)
+function KingdomPanel:_overview(content: Instance, model: any, phone: boolean): Instance
 	local scroll = scroller("Overview", content)
 	local b = model.banner
 	if b and not phone then
@@ -242,6 +275,7 @@ function KingdomPanel:_overview(content: Instance, model: any, phone: boolean)
 		crest.Parent = row
 	end
 	standings.Parent = scroll
+	return scroll
 end
 
 local function centredTile(icon: string, size: number, category: string): Frame
@@ -251,16 +285,17 @@ local function centredTile(icon: string, size: number, category: string): Frame
 	return t
 end
 
-function KingdomPanel:_buildings(content: Instance, model: any, phone: boolean, ui: any)
+function KingdomPanel:_buildings(content: Instance, model: any, phone: boolean): Instance
 	local scroll = scroller("Buildings", content)
 	local tile = 40
 	-- Phones get the full 44 px Upgrade button, so their rows are taller.
 	local rowHeight = if phone then 56 else 52
 	for i, r in model.buildings do
 		local sub
-		if r.state == "constructing" or r.state == "planned" then
+		if building(r) then
 			local bar = ProgressBar.new({ progress = r.progress, width = UDim.new(1, -48) })
 			bar.instance.LayoutOrder = 1
+			self.bars[r.id] = bar
 			sub = Create("Frame", {
 				Name = "Progress",
 				BackgroundTransparency = 1,
@@ -270,7 +305,7 @@ function KingdomPanel:_buildings(content: Instance, model: any, phone: boolean, 
 				List = Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
 				Bar = bar.instance,
 				Value = Style.text({
-					text = if r.state == "planned" then "waiting" else `{math.floor(r.progress * 100)}%`,
+					text = progressText(r),
 					weight = Enum.FontWeight.ExtraBold,
 					size = 11,
 					color = Theme.color("gold300"),
@@ -322,7 +357,9 @@ function KingdomPanel:_buildings(content: Instance, model: any, phone: boolean, 
 				size = if phone then "regular" else "small",
 				width = 104,
 				onActivated = function()
-					ui.onUpgradeOpen(r.id)
+					if self._ui.onUpgradeOpen then
+						self._ui.onUpgradeOpen(r.id)
+					end
 				end,
 			})
 			up.instance.Name = "Upgrade"
@@ -342,10 +379,26 @@ function KingdomPanel:_buildings(content: Instance, model: any, phone: boolean, 
 		}).Parent =
 			scroll
 	end
+	return scroll
 end
 
-function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
-	self:destroy()
+-- Construction progress on rows built for the same layout.
+function KingdomPanel:_paintRows(rows: { any })
+	for _, r in rows do
+		local bar = self.bars[r.id]
+		local row = self.rows[r.id]
+		if bar and building(r) then
+			bar:update({ progress = r.progress })
+			local value = row and row:FindFirstChild("Value", true)
+			if value then
+				value.Text = progressText(r)
+			end
+		end
+	end
+end
+
+function KingdomPanel:_frame(model: any, metrics: any)
+	self:_teardown()
 	local phone = metrics.breakpoint == "phone"
 	local d = metrics.drawer
 	local header = Create("Frame", {
@@ -354,9 +407,27 @@ function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
 		Size = UDim2.fromScale(1, 1),
 	})
 	local selected = if model.tab == "upgrade" then "buildings" else model.tab
-	self.tabs = Tabs.new({ tabs = KingdomPanel.TABS, selected = selected, compact = phone, onSelect = ui.onTab })
+	self.tabs = Tabs.new({
+		tabs = KingdomPanel.TABS,
+		selected = selected,
+		compact = phone,
+		onSelect = function(id)
+			if self._ui.onTab then
+				self._ui.onTab(id)
+			end
+		end,
+	})
 	self.tabs.instance.Parent = header
-	local close = IconButton.new({ icon = "close", variant = "plain", size = 36, onActivated = ui.onClose })
+	local close = IconButton.new({
+		icon = "close",
+		variant = "plain",
+		size = 36,
+		onActivated = function()
+			if self._ui.onClose then
+				self._ui.onClose()
+			end
+		end,
+	})
 	close.instance.AnchorPoint = Vector2.new(1, 0.5)
 	close.instance.Position = UDim2.fromScale(1, 0.5)
 	close.instance.Name = "Close"
@@ -369,33 +440,108 @@ function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
 		padding = if phone then 10 else 12,
 	})
 	self.panel.instance.Name = "KingdomPanel"
-	local content = self.panel.content
-	self.rows = {}
-	self.detail = nil
-	if model.tab == "overview" then
-		self:_overview(content, model, phone)
-	elseif model.tab == "upgrade" and model.upgrade then
-		self.detail = DetailView.new({
-			detail = model.upgrade,
-			compact = phone,
-			back = "Buildings",
-			onCta = ui.onUpgrade,
-			onBack = ui.onBack,
-		})
-		self.detail.instance.Parent = content
-	else
-		self:_buildings(content, model, phone, ui)
-	end
 	self.panel.instance.Parent = self._parent
 end
 
-function KingdomPanel:destroy()
+function KingdomPanel:_clearBody()
+	if self._body then
+		if self._body:IsA("ScrollingFrame") then
+			self._scroll[self._body.Name] = self._body.CanvasPosition
+		end
+		self._body:Destroy()
+	end
+	self._body, self._bodyKey, self.detail = nil, nil, nil
+	self.rows, self.bars = {}, {}
+end
+
+function KingdomPanel:_setBody(body: Instance, key: string)
+	if body:IsA("ScrollingFrame") then
+		local scroll = self._scroll[body.Name]
+		if scroll then
+			body.CanvasPosition = scroll
+		end
+	end
+	self._body, self._bodyKey = body, key
+end
+
+function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
+	self._ui = ui
+	local phone = metrics.breakpoint == "phone"
+	local frameKey = Signature.of({
+		breakpoint = metrics.breakpoint,
+		drawer = metrics.drawer,
+		tab = if model.tab == "upgrade" then "buildings" else model.tab,
+	})
+	if self.panel == nil or frameKey ~= self._frameKey then
+		self:_frame(model, metrics)
+		self._frameKey = frameKey
+	end
+	local content = self.panel.content
+	if model.tab == "overview" then
+		local key = Signature.of({
+			tab = "overview",
+			banner = model.banner,
+			members = model.members,
+			standings = model.standings,
+			phone = phone,
+		})
+		if key ~= self._bodyKey then
+			self:_clearBody()
+			self:_setBody(self:_overview(content, model, phone), key)
+		end
+	elseif model.tab == "upgrade" and model.upgrade then
+		local handlers = {
+			onCta = function(detail)
+				if self._ui.onUpgrade then
+					self._ui.onUpgrade(detail)
+				end
+			end,
+			onBack = function()
+				if self._ui.onBack then
+					self._ui.onBack()
+				end
+			end,
+		}
+		local key = "upgrade:" .. DetailView.key(model.upgrade, phone, "Buildings")
+		if key == self._bodyKey and self.detail then
+			self.detail:update(model.upgrade, handlers)
+		else
+			self:_clearBody()
+			self.detail = DetailView.new({
+				detail = model.upgrade,
+				compact = phone,
+				back = "Buildings",
+				onCta = handlers.onCta,
+				onBack = handlers.onBack,
+			})
+			self.detail.instance.Parent = content
+			self:_setBody(self.detail.instance, key)
+		end
+	else
+		local key = rowsKey(model.buildings, phone)
+		if key ~= self._bodyKey then
+			self:_clearBody()
+			self:_setBody(self:_buildings(content, model, phone), key)
+		end
+		self:_paintRows(model.buildings)
+	end
+end
+
+function KingdomPanel:_teardown()
+	self:_clearBody()
 	if self.panel then
 		self.panel:destroy()
 		self.panel = nil
 	end
-	self.detail = nil
-	self.rows = {}
+	self._frameKey = nil
+end
+
+function KingdomPanel:destroy()
+	if self.panel == nil then
+		return
+	end
+	self:_teardown()
+	self._scroll = {}
 end
 
 return KingdomPanel
