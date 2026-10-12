@@ -26,6 +26,7 @@
 	exactly once by the host's event fan-out (see Game/Kingdom/MatchHost).
 ]]
 
+local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -106,6 +107,7 @@ function MatchService:start()
 			phaseDurations = durations,
 			minPlayers = MatchConfig.minPlayers,
 			treasury = treasury,
+			costs = Costs, -- FORGE-03's Costs.luau (G6/G7)
 		},
 	})
 	self.host.events:connect(function(name: string)
