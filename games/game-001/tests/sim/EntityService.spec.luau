@@ -299,15 +299,15 @@ describe("EntityService replication (G4)", function()
 		env.mock:advance(0.2)
 		entities:_sim().citizens[citizen].job = "farmer"
 		env.mock:advance(0.5)
-		expect(changed).toEqual({ { citizen, "farmer" } })
-		local jobs = 0
+		-- the first change goes out once; the quota rebalancer may move the citizen on again later
+		expect(changed[1]).toEqual({ citizen, "farmer" })
+		local jobs = {}
 		for _, e in eventsOf(env) do
 			if e.type == "job" and e.id == citizen then
-				jobs += 1
-				expect(e.job).toBe("farmer")
+				table.insert(jobs, { citizen, e.job })
 			end
 		end
-		expect(jobs).toBe(1)
+		expect(jobs).toEqual(changed) -- one job record per jobChanged, in order
 		entities:despawn(soldier, "test")
 		env.mock:advance(0.2)
 		expect(entities:get(soldier)).toBeNil()

@@ -156,6 +156,7 @@ function Simulation.new(options: { [string]: any })
 	self._events = {} :: { Event }
 	self._accum = 0
 	self._quotaAccum = 0
+	self._decisionBudget = 2 -- per tick; set by step() (staggered decisions)
 	self._systems = {} :: { any } -- extra per-tick systems: { beforeCitizens?(sim, dt), afterCitizens?(sim, dt) }
 	self.extraCommands = {} :: { [string]: any } -- installed by Military/Diplomacy (Commands.install)
 	return self
@@ -1244,6 +1245,7 @@ function Simulation:_stepCitizen(c: any, dt: number)
 
 	-- interrupts: emergencies preempt anything; night preempts work once cargo is delivered
 	local emergency = kingdom.alarm or self:threatNear(kingdom, c.x, c.z, tuning.fleeRadius)
+	local urgent = emergency and c.activity ~= "Flee"
 	if emergency and c.activity ~= "Flee" then
 		if not kingdom.alarm then
 			for _, threat in kingdom.threats do
@@ -1258,7 +1260,12 @@ function Simulation:_stepCitizen(c: any, dt: number)
 		c.done = true
 	end
 
-	if c.done or (self.time >= c.thinkAt and c.carrying == nil) then
+	-- decisions are staggered (CONTRACTS G4): at most the tick's budget re-plan, threats excepted;
+	-- the rest keep their flag and decide on one of the next ticks
+	if (c.done or (self.time >= c.thinkAt and c.carrying == nil)) and (urgent or self._decisionBudget > 0) then
+		if not urgent then
+			self._decisionBudget -= 1
+		end
 		local decision = CitizenBrain.decide(self, c)
 		self:setActivity(c, decision.activity, decision.target, decision.reason)
 		c.thinkAt = self.time + tuning.thinkInterval
@@ -1302,6 +1309,9 @@ function Simulation:step()
 		end
 	end
 
+	-- about twice the average re-planning rate per tick (everyone every thinkInterval), at least 2
+	local tuning = self.catalog.tuning
+	self._decisionBudget = math.max(2, math.ceil(#self.citizenOrder * dt / tuning.thinkInterval * 2))
 	-- iterate a copy: citizens may die during the step
 	for _, cid in table.clone(self.citizenOrder) do
 		local c = self.citizens[cid]
