@@ -1,10 +1,16 @@
 --[[
 	FORGELOOP Lune test runner.
 
-		lune run roblox/tests/harness/run.luau            -- every spec
+		lune run roblox/tests/harness/run.luau            -- every framework spec
 		lune run roblox/tests/harness/run.luau Signal     -- only spec files whose path contains "Signal"
+		lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json \
+			--specs games/game-001/tests                  -- game-001 specs over the game project (D-022)
 
-	Discovers every *.spec.luau and *.spec.lua under roblox/tests/unit (recursively, sorted), loads
+	Options (paths relative to the repository root):
+		--project <file>   Rojo project the module loader resolves requires over
+		                   (default roblox/default.project.json, the framework sandbox)
+		--specs <dir>      directory searched for specs (default roblox/tests/unit)
+	Discovers every *.spec.luau and *.spec.lua under the spec directory (recursively, sorted), loads
 	each with a fresh ModuleLoader (Roblox require semantics; one module identity per file per spec
 	file; the global Random is that loader's MockRandom), runs it and prints failures with
 	locations. Exit code 1 if anything failed, if a spec file failed to load or defined no tests,
@@ -33,7 +39,38 @@ end
 
 local HARNESS_DIR = scriptDir()
 local ROOT = Path.normalize(HARNESS_DIR .. "/../../..")
-local UNIT_DIR = ROOT .. "/roblox/tests/unit"
+local specDirArg, projectArg, filter = nil, nil, nil
+do
+	local i = 1
+	while i <= #process.args do
+		local arg = process.args[i]
+		if arg == "--specs" or arg == "--project" then
+			local value = process.args[i + 1]
+			if value == nil or string.sub(value, 1, 2) == "--" then
+				print(`run.luau: {arg} needs a path`)
+				process.exit(2)
+			end
+			if arg == "--specs" then
+				specDirArg = value
+			else
+				projectArg = value
+			end
+			i += 2
+		elseif string.sub(arg, 1, 2) == "--" then
+			print(`run.luau: unknown option {arg} (--project <file>, --specs <dir>, [filter])`)
+			process.exit(2)
+		else
+			filter = arg
+			i += 1
+		end
+	end
+end
+local UNIT_DIR = Path.normalize(ROOT .. "/" .. (specDirArg or "roblox/tests/unit"))
+local PROJECT_FILE = Path.normalize(ROOT .. "/" .. (projectArg or "roblox/default.project.json"))
+if not fs.isFile(PROJECT_FILE) then
+	print(`run.luau: project file {Path.relative(ROOT, PROJECT_FILE)} not found`)
+	process.exit(2)
+end
 local TEST_MODULE = HARNESS_DIR .. "/Test.luau"
 local LUNE_INSTANCES_MODULE = HARNESS_DIR .. "/LuneInstances.luau"
 local MOCK_RANDOM_MODULE = ROOT .. "/roblox/tests/mocks/MockRandom.luau"
@@ -74,7 +111,6 @@ end
 
 Test.root = ROOT -- absolute repository root, for specs that read files
 
-local filter = process.args[1]
 local misnamed = {}
 local allSpecs = findSpecs(UNIT_DIR, {}, misnamed)
 local specs = {}
@@ -84,7 +120,10 @@ for _, file in allSpecs do
 	end
 end
 
-print(`FORGELOOP Lune tests — {#specs} spec file(s) under {Path.relative(ROOT, UNIT_DIR)}`)
+print(
+	`FORGELOOP Lune tests — {#specs} spec file(s) under {Path.relative(ROOT, UNIT_DIR)} `
+		.. `(project {Path.relative(ROOT, PROJECT_FILE)})`
+)
 if filter then
 	print(`  filter "{filter}": {#specs} of {#allSpecs} spec files selected`)
 end
@@ -117,6 +156,7 @@ for _, file in specs do
 	table.insert(pendingCounters, globalsControl.pendingCount)
 	local loader = ModuleLoader.new({
 		root = ROOT,
+		projectFile = PROJECT_FILE,
 		globals = globals,
 		preloaded = { [TEST_MODULE] = Test, [LUNE_INSTANCES_MODULE] = LuneInstances },
 		nativeRequire = require,

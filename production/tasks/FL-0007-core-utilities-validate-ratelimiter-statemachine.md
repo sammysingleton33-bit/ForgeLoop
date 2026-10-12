@@ -3,14 +3,18 @@ id: FL-0007
 title: "Core utilities: Validate, RateLimiter, StateMachine, Trove, RemoteClient"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: [FL-0003]
 estimate_h: 4
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS at merge with main 3a7b983: Lune 261 passed/0 failed, Selene 0, StyLua 79 files, Rojo build, place check"
+  - 82 new specs in roblox/tests/unit/core; each module proven red by a mutation (see PR)
+  - "FORGE-05 integration 2026-10-12: merged PR #4 (merge commit 1e27297). PR CI run 38298796034 green on 73da45a; merge result = head: check.sh OVERALL PASS (Lune 261/0, 21 files; Selene 0; StyLua 79; Rojo; place check); pytest 139; forge validate 0 errors; ownership PASS. CI on main run 38300347646 green, artifact forgeloop-main-1e27297. Independent security review: no crash in 517 hostile Validate calls; follow-ups on the PR."
+  - "review follow-ups merged in PR #8 (a0cf019): fail-closed validators (== true), burst >= 1, log-once handler errors, RateLimiter epsilon, StateMachine/RemoteClient docs, Validate.cframe/record/oneOf; FORGE-05 probe confirmed fail-closed behaviour"
 ---
 
 # Core utilities: Validate, RateLimiter, StateMachine, Trove, RemoteClient
@@ -34,3 +38,7 @@ Lune specs in roblox/tests/unit/core/ incl. NaN/inf/oversized payloads, clock-dr
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-01: READY → BUILDING. started: Core utilities for the AI Kingdoms remotes
+- 2026-10-12 forge-01: BUILDING → REVIEW. PR from forge/01-gameplay-fl0007: Validate, RateLimiter, StateMachine, Trove, RemoteClient with failure-path specs
+- 2026-10-12 forge-05: merged PR #4 as 1e27297 (FORGE-05). Stays REVIEW: G6 (RemoteClient replication in Studio, with FL-0047) and review follow-ups on PR #4 (validator result == true before the first Remotes declaration; RateLimiter epsilon; StateMachine/RemoteClient docs; CFrame + record validators for G8).
+- 2026-10-12 forge-05: review follow-ups merged (PR #8, a0cf019). Remaining gate: G6 in Studio.

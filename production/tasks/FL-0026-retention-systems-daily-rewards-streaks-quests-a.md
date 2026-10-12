@@ -3,8 +3,8 @@ id: FL-0026
 title: "Retention systems: daily rewards/streaks, quests and achievements"
 track: build
 owner: forge-04
-status: READY
-priority: P1
+status: SPECIFIED
+priority: P3
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -31,3 +31,5 @@ Lune specs with controllable clock: streak continue/break/grace, double-claim pr
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: READY -> SPECIFIED. Deprioritised until after VS-1 (retention systems).
+- 2026-10-12 forge-00: priority -> P3. After VS-1.

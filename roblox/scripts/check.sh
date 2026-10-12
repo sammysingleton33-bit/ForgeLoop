@@ -2,7 +2,9 @@
 # FORGELOOP Roblox gates (G1 static + G2 unit). Works from any directory.
 #   bash roblox/scripts/check.sh                   # all gates
 #   bash roblox/scripts/check.sh --require-stamp   # also require a BuildInfo stamp (CI on main)
-# Steps: toolchain versions · Lune tests · Selene (0 errors) · StyLua --check · Rojo build · place check.
+# Steps: toolchain versions · Lune tests · Selene (0 errors) · StyLua --check · Rojo build · place check,
+# then the same for every game project in GAME_PROJECTS (D-022): game specs over the game project,
+# Rojo build of the game place, place check of it.
 # Prints a PASS/FAIL table and exits non-zero if any step fails. Nothing is skipped silently:
 # a missing tool is a FAIL, and a step that records no result (e.g. aborted by a shell error) fails
 # the run. Portable to bash 3.2 (macOS /bin/bash): no mapfile, no empty-array expansions.
@@ -21,10 +23,12 @@ for arg in "$@"; do
 done
 
 PLACE="roblox/build/sandbox.rbxl"
+# game projects: "<id>:<project file>:<spec dir>"; each builds roblox/build/<id>.rbxl
+GAME_PROJECTS=("game-001:games/game-001/default.project.json:games/game-001/tests")
 LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
-EXPECTED_STEPS=6 # toolchain, lune tests, selene, stylua, rojo build, place check
+EXPECTED_STEPS=$((6 + 3 * ${#GAME_PROJECTS[@]})) # 6 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 
 NAMES=()
@@ -157,21 +161,61 @@ else
 	record "place check" "FAIL" "lune not found"
 fi
 
+# ---------------------------------------------------------------- game projects (D-022)
+for entry in "${GAME_PROJECTS[@]}"; do
+	IFS=: read -r game_id game_project game_specs <<<"$entry"
+	game_place="roblox/build/$game_id.rbxl"
+	if command -v lune >/dev/null 2>&1; then
+		run_step "$game_id specs" "$LOG_DIR/$game_id-lune.log" with_timeout lune run roblox/tests/harness/run.luau \
+			--project "$game_project" --specs "$game_specs"
+		code=$?
+		summary="$(grep -E '^Lune tests:' "$LOG_DIR/$game_id-lune.log" | tail -1 | sed 's/^Lune tests: //')"
+		if [[ $code == 0 ]] && grep -q '^RESULT: PASS' "$LOG_DIR/$game_id-lune.log"; then
+			record "$game_id specs" "PASS" "$summary"
+		else
+			record "$game_id specs" "FAIL" "${summary:-runner exited $code}"
+		fi
+	else
+		record "$game_id specs" "FAIL" "lune not found"
+	fi
+	rm -f "$game_place"
+	if command -v rojo >/dev/null 2>&1; then
+		run_step "$game_id build" "$LOG_DIR/$game_id-rojo.log" rojo build "$game_project" -o "$game_place"
+		code=$?
+		if [[ $code == 0 && -f "$game_place" ]]; then
+			record "$game_id build" "PASS" "$game_place ($(wc -c < "$game_place" | tr -d ' ') bytes)"
+		else
+			record "$game_id build" "FAIL" "exit $code"
+		fi
+	else
+		record "$game_id build" "FAIL" "rojo not found"
+	fi
+	if command -v lune >/dev/null 2>&1; then
+		run_step "$game_id place" "$LOG_DIR/$game_id-place.log" with_timeout lune run roblox/scripts/check_place.luau \
+			"$game_place" --project "$game_project" $REQUIRE_STAMP
+		code=$?
+		summary="$(grep -E '^place check:' "$LOG_DIR/$game_id-place.log" | tail -1 | sed -E 's/^place check: ((PASS|FAIL) — )?//')"
+		if [[ $code == 0 ]]; then record "$game_id place" "PASS" "$summary"; else record "$game_id place" "FAIL" "$summary"; fi
+	else
+		record "$game_id place" "FAIL" "lune not found"
+	fi
+done
+
 # ---------------------------------------------------------------- summary
 overall="PASS"
 echo
 echo "FORGELOOP Roblox gates — $(git rev-parse --short HEAD 2>/dev/null || echo 'no git')$( [[ -n "$(git status --porcelain 2>/dev/null)" ]] && echo ' (uncommitted changes)')"
-printf '%-12s %-6s %s\n' "STEP" "RESULT" "DETAIL"
+printf '%-16s %-6s %s\n' "STEP" "RESULT" "DETAIL"
 recorded=${#NAMES[@]}
 i=0
 while [[ $i -lt $recorded ]]; do
-	printf '%-12s %-6s %s\n' "${NAMES[$i]}" "${RESULTS[$i]}" "${DETAILS[$i]}"
+	printf '%-16s %-6s %s\n' "${NAMES[$i]}" "${RESULTS[$i]}" "${DETAILS[$i]}"
 	[[ "${RESULTS[$i]}" == "PASS" ]] || overall="FAIL"
 	i=$((i + 1))
 done
 if [[ $recorded -ne $EXPECTED_STEPS ]]; then
-	printf '%-12s %-6s %s\n' "steps" "FAIL" "$recorded of $EXPECTED_STEPS steps recorded a result (a step aborted; see the log above)"
+	printf '%-16s %-6s %s\n' "steps" "FAIL" "$recorded of $EXPECTED_STEPS steps recorded a result (a step aborted; see the log above)"
 	overall="FAIL"
 fi
-printf '%-12s %-6s\n' "OVERALL" "$overall"
+printf '%-16s %-6s\n' "OVERALL" "$overall"
 [[ "$overall" == "PASS" ]]
