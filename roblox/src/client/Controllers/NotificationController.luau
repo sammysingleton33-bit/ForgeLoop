@@ -26,15 +26,17 @@
 	one moment never give a double fanfare. Every celebration has a visual: a spec with a sound and
 	neither a toast nor a vfx is rejected (accessibility rule, as in CueDirector).
 
-	View (thin, built with Instances until FORGE-03's UI/Components/Toast lands in main; then only
-	_buildToast changes): ScreenGui "ForgeNotifications", DisplayOrder 70 (the notifications band,
-	interfaces §9), ScreenInsets CoreUISafeInsets, a stack in the top right at most 300 px or 46 % of
-	the screen wide, newest on top. Each toast shows title, body and the ×N badge, with the accent of
-	its kind. Tapping a toast dismisses it. A toast never blocks input elsewhere.
+	View: FORGE-03's UI kit (`UI/Components/Toast`, FL-0020). ScreenGui "ForgeNotifications",
+	DisplayOrder 70 (the notifications band, interfaces §9), ScreenInsets CoreUISafeInsets, a stack in
+	the top right at most 300 px or 46 % of the screen wide, newest on top. Each card is a Toast (kind
+	accent and icon, title, body, the ×N badge); a change of title, body or count rebuilds the card,
+	since Toast has no update API. A transparent "Dismiss" button over the card makes a tap dismiss
+	it. A toast never blocks input elsewhere.
 ]]
 
 local NotificationQueue = require("@game/ReplicatedStorage/Forge/Experience/NotificationQueue")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Toast = require("@game/ReplicatedStorage/Forge/UI/Components/Toast")
 
 local NotificationController = {}
 NotificationController.__index = NotificationController
@@ -52,18 +54,6 @@ Def.KIND_SOUND = table.freeze({
 	reward = "notify.reward",
 	achievement = "notify.achievement",
 })
-
-local rgb = Color3.fromRGB
-Def.ACCENT = table.freeze({
-	info = rgb(120, 170, 230),
-	success = rgb(120, 200, 120),
-	warning = rgb(240, 170, 60),
-	error = rgb(225, 85, 70),
-	reward = rgb(255, 207, 92),
-	achievement = rgb(255, 207, 92),
-})
-local INK = rgb(245, 240, 228)
-local PANEL = rgb(38, 30, 22)
 
 -- Factory celebrations (every game). Game moments are added with registerCelebration.
 Def.CELEBRATIONS = table.freeze({
@@ -389,66 +379,42 @@ function NotificationController:_rootView(): any
 	return self._root
 end
 
-local function text(env: any, name: string, size: number, bold: boolean): any
-	local label = env.newInstance("TextLabel")
-	label.Name = name
-	label.BackgroundTransparency = 1
-	label.TextColor3 = INK
-	label.TextSize = size
-	label.TextWrapped = true
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Font = if bold then Enum.Font.GothamBold else Enum.Font.Gotham
-	return label
+local function signature(item: any): string
+	return `{item.title}\0{item.body or ""}\0{item.count}`
 end
 
-function NotificationController:_buildToast(item: any, parent: any): any
-	local env = self._env
-	local frame = env.newInstance("TextButton") -- a button so a tap dismisses it
+function NotificationController:_buildToast(item: any, parent: any, layoutOrder: number): any
+	local toast = Toast.new({
+		kind = item.kind,
+		title = item.title,
+		body = item.body,
+		icon = item.icon,
+		count = item.count,
+		width = Def.WIDTH,
+		layoutOrder = layoutOrder,
+	})
+	local frame = toast.instance
 	frame.Name = `Toast_{item.id}`
-	frame.Text = ""
-	frame.AutoButtonColor = false
-	frame.BackgroundColor3 = PANEL
-	frame.BackgroundTransparency = 0.08
-	frame.Size = UDim2.new(1, 0, 0, if item.body then 58 else 38)
-	frame.Parent = parent
-	local stroke = env.newInstance("UIStroke")
-	stroke.Name = "Accent"
-	stroke.Thickness = 2
-	stroke.Color = Def.ACCENT[item.kind] or Def.ACCENT.info
-	stroke.Parent = frame
-	local title = text(env, "Title", 15, true)
-	title.Position = UDim2.fromOffset(12, 6)
-	title.Size = UDim2.new(1, -64, 0, 20)
-	title.Parent = frame
-	local body = text(env, "Body", 13, false)
-	body.Position = UDim2.fromOffset(12, 28)
-	body.Size = UDim2.new(1, -24, 0, 24)
-	body.Parent = frame
-	local count = text(env, "Count", 14, true)
-	count.TextXAlignment = Enum.TextXAlignment.Right
-	count.Position = UDim2.new(1, -52, 0, 6)
-	count.Size = UDim2.fromOffset(44, 20)
-	count.TextColor3 = Def.ACCENT[item.kind] or INK
-	count.Parent = frame
+	local dismiss = self._env.newInstance("TextButton") -- a tap dismisses the card
+	dismiss.Name = "Dismiss"
+	dismiss.Text = ""
+	dismiss.BackgroundTransparency = 1
+	dismiss.AutoButtonColor = false
+	dismiss.Size = UDim2.fromScale(1, 1)
+	dismiss.ZIndex = 5
+	dismiss.Parent = frame
 	pcall(function() -- GuiButton.Activated: real in Roblox; Lune instances have no events
-		frame.Activated:Connect(function()
+		dismiss.Activated:Connect(function()
 			self:dismiss(item.id)
 		end)
 	end)
-	return { frame = frame, title = title, body = body, count = count }
-end
-
-function NotificationController:_fillToast(view: any, item: any)
-	view.title.Text = item.title
-	view.body.Text = item.body or ""
-	view.body.Visible = item.body ~= nil
-	view.count.Text = if item.count > 1 then `×{item.count}` else ""
+	frame.Parent = parent
+	return { toast = toast, frame = frame, signature = signature(item) }
 end
 
 function NotificationController:_refresh(item: any)
-	local view = self._views[item.id]
-	if view then
-		self:_fillToast(view, item)
+	if self._views[item.id] then
+		self:_sync()
 	end
 end
 
@@ -462,17 +428,21 @@ function NotificationController:_sync()
 	local keep = {}
 	for order, item in visible do
 		keep[item.id] = true
+		local layoutOrder = #visible - order -- the newest (last) gets the lowest order: on top
 		local view = self._views[item.id]
+		if view ~= nil and view.signature ~= signature(item) then
+			view.toast:destroy() -- Toast has no update API: rebuild with the new text or count
+			view = nil
+		end
 		if view == nil then
-			view = self:_buildToast(item, root.stack)
+			view = self:_buildToast(item, root.stack, layoutOrder)
 			self._views[item.id] = view
 		end
-		view.frame.LayoutOrder = #visible - order -- the newest (last) gets the lowest order: on top
-		self:_fillToast(view, item)
+		view.frame.LayoutOrder = layoutOrder
 	end
 	for id, view in self._views do
 		if not keep[id] then
-			view.frame:Destroy()
+			view.toast:destroy()
 			self._views[id] = nil
 		end
 	end
