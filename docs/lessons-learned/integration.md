@@ -100,3 +100,10 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   - Harness: per-spec-file `Random` loaded through the module loader; `TweenInfo`, `RaycastParams`,
     `OverlapParams`, `DateTime` (UTC) stand-ins; spawned-thread errors charged to the spawning test
     (also late ones); `*.spec.lua` collected and misnamed specs fail the run.
+- 2026-10-12 FL-0067 (FORGE-05): `Wire.copyForRemote` copies buffers (sender writes after firing no
+  longer reach the receiver); `Wire.estimateBytes` counts buffers as `buffer.len` (they were measured
+  as their `tostring`, ~20 bytes, so oversized snapshots were never dropped) and only arguments
+  1..n (it also counted the `n` field of `table.pack`, adding a byte, and gave negative sizes for nil
+  arguments); `MockRemotes` gains `holdUnreliable`/`releaseUnreliable` for delay and reordering.
+  Source: creator-docs `UnreliableRemoteEvent.yaml` ("payloads larger than 1000 bytes are dropped";
+  buffers may be compressed). Specs: 4 new in `MockRemotes.spec.luau`, each proven able to fail.

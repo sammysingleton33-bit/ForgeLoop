@@ -15,6 +15,11 @@
 		                                n <= maxLen, every element accepted by `validator`
 		Validate.vector3(maxMagnitude)  Vector3 with finite components and Magnitude <= maxMagnitude
 		Validate.instanceOf(className)  Instance for which :IsA(className) is true
+		Validate.cframe(maxPosition)    CFrame with 12 finite components, |Position| <= maxPosition and an
+		                                orthonormal rotation (each axis length 1 ± 1e-3, axes orthogonal)
+		Validate.record(shape)          plain table (no metatable) with only the string keys named in `shape`
+		                                ({ [key] = Validator }); every field is validated, missing ones as nil
+		Validate.oneOf({ validators })  accepted when at least one validator accepts (a union, e.g. Vector3 | id)
 		Validate.check(validators, ...) -> (ok, reason?)
 		                                validates positional arguments: at most #validators of them,
 		                                argument i checked by validators[i] (missing ones are nil, so
@@ -22,6 +27,9 @@
 		Validate.MAX_DEPTH = 8          deepest array nesting accepted
 
 	Semantics
+		- Fail closed: a value passes only when its validator returns exactly `true`. Anything else (a
+		  forgotten `()` that hands back the constructor's validator function, nil, a string) rejects —
+		  in array, record, oneOf, optional, check and RemoteService alike.
 		- Validators never throw on any input: wrong types, NaN, ±inf, huge or cyclic tables all
 		  return false with a short reason ("expected string, got number", "[3] too long", ...).
 		- Constructors check their own arguments and error at once on programmer mistakes
@@ -171,7 +179,11 @@ function Validate.optional(validator: Validator): Validator
 		if value == nil then
 			return true, nil
 		end
-		return validator(value)
+		local ok, why = validator(value)
+		if ok ~= true then
+			return false, why or "invalid"
+		end
+		return true, nil
 	end
 end
 
@@ -219,7 +231,7 @@ function Validate.array(validator: Validator, maxLen: number): Validator
 			if not ran then
 				ok, reason = false, `[{i}] validator error`
 				break
-			elseif not good then
+			elseif good ~= true then
 				ok, reason = false, `[{i}] {why or "invalid"}`
 				break
 			end
@@ -264,6 +276,95 @@ function Validate.instanceOf(className: string): Validator
 	end
 end
 
+function Validate.cframe(maxPosition: number): Validator
+	if type(maxPosition) ~= "number" or not isFinite(maxPosition) or maxPosition < 0 then
+		error("Validate.cframe(maxPosition): maxPosition must be a finite number >= 0", 2)
+	end
+	return function(value: any): (boolean, string?)
+		if typeof(value) ~= "CFrame" then
+			return wrongType("CFrame", value)
+		end
+		local components = { value:GetComponents() }
+		for i = 1, 12 do
+			if not isFinite(components[i]) then
+				return false, "CFrame has a non-finite component"
+			end
+		end
+		local position = value.Position
+		if not (position.Magnitude <= maxPosition) then
+			return false, `CFrame position too far ({describeNumber(position.Magnitude)} > {maxPosition})`
+		end
+		local right, up, back = value.RightVector, value.UpVector, -value.LookVector
+		for _, axis in { right, up, back } do
+			if math.abs(axis.Magnitude - 1) > 1e-3 then
+				return false, "CFrame rotation is not orthonormal (scaled axis)"
+			end
+		end
+		if math.abs(right:Dot(up)) > 1e-3 or math.abs(right:Dot(back)) > 1e-3 or math.abs(up:Dot(back)) > 1e-3 then
+			return false, "CFrame rotation is not orthonormal (skewed axes)"
+		end
+		return true, nil
+	end
+end
+
+function Validate.record(shape: { [string]: Validator }): Validator
+	if type(shape) ~= "table" or getmetatable(shape :: any) ~= nil then
+		error("Validate.record(shape): shape must be a plain table of validators", 2)
+	end
+	local keys = {}
+	for key, validator in shape do
+		if type(key) ~= "string" then
+			error("Validate.record(shape): keys must be strings", 2)
+		end
+		assertValidator("record", validator)
+		table.insert(keys, key)
+	end
+	table.sort(keys)
+	return function(value: any): (boolean, string?)
+		if type(value) ~= "table" then
+			return wrongType("table", value)
+		end
+		if getmetatable(value) ~= nil then
+			return false, "table has a metatable"
+		end
+		for key in value do
+			if type(key) ~= "string" or shape[key] == nil then
+				return false, `unexpected field {if type(key) == "string" then key else typeof(key)}`
+			end
+		end
+		for _, key in keys do
+			local ran, good, why = pcall(shape[key], rawget(value, key))
+			if not ran then
+				return false, `.{key}: validator error`
+			elseif good ~= true then
+				return false, `.{key}: {why or "invalid"}`
+			end
+		end
+		return true, nil
+	end
+end
+
+function Validate.oneOf(validators: { Validator }): Validator
+	if type(validators) ~= "table" or #validators == 0 then
+		error("Validate.oneOf(validators): needs a non-empty list of validators", 2)
+	end
+	for _, validator in validators do
+		assertValidator("oneOf", validator)
+	end
+	local list = table.clone(validators)
+	return function(value: any): (boolean, string?)
+		local reasons = {}
+		for _, validator in list do
+			local ran, good, why = pcall(validator, value)
+			if ran and good == true then
+				return true, nil
+			end
+			table.insert(reasons, if ran then why or "invalid" else "validator error")
+		end
+		return false, `none matched ({table.concat(reasons, "; ")})`
+	end
+end
+
 function Validate.check(validators: { Validator }, ...: any): (boolean, string?)
 	local count = select("#", ...)
 	local expected = #validators
@@ -274,7 +375,7 @@ function Validate.check(validators: { Validator }, ...: any): (boolean, string?)
 		local ran, good, why = pcall(validators[i], (select(i, ...)))
 		if not ran then
 			return false, `argument {i}: validator error`
-		elseif not good then
+		elseif good ~= true then
 			return false, `argument {i}: {why or "invalid"}`
 		end
 	end

@@ -3,7 +3,7 @@ id: FL-0067
 title: "game-001 wiring follow-ups from the plan review: streaming, character spawn, world mount, buffer-faithful mocks"
 track: infra
 owner: forge-05
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,11 @@ updated: 2026-10-12
 depends_on: [FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 3
-evidence: []
+evidence:
+  - "game-001 project: Players.CharacterAutoLoads=false; Workspace StreamingEnabled=true, ModelStreamingBehavior=Improved, StreamOutBehavior=Opportunistic, StreamingIntegrityMode=PauseOutsideLoadedArea; world -> ReplicatedStorage.Game.World (placeholder world/.gitkeep, ownership rule PR #10). Place check now asserts every project $properties value (5 checked) and the World mount (23 expected instances)."
+  - "mocks: Wire copies buffers and counts buffer.len; estimateBytes counts args 1..n only (fixed n-field bug); MockRemotes holdUnreliable/releaseUnreliable. 4 new MockRemotes specs."
+  - "negative tests (each fails, restored green): buffer passed by reference -> 'server write after FireClient' spec FAIL; JSON-measured buffers -> '1000 delivered, 1001 dropped' spec FAIL; project expects CharacterAutoLoads=true vs place false -> place check FAIL 'properties: Players.CharacterAutoLoads is false in the place, project says true'; world mount without the folder -> rojo build exit 1"
+  - merged PR #11 as 979f1ba; CI on main run 38302385630 green; artifact forgeloop-game001-979f1ba (id 11771141654)
 ---
 
 # game-001 wiring follow-ups from the plan review: streaming, character spawn, world mount, buffer-faithful mocks
@@ -45,3 +49,6 @@ The game-001 place behaves like production Roblox for the things VS-1 depends on
 
 ## Log
 - 2026-10-12 forge-00: created from the plan review; these requirements arrived after FL-0046 had merged (READY).
+- 2026-10-12 forge-05: READY → BUILDING. Project engine settings, world mount, buffer-faithful mocks.
+- 2026-10-12 forge-05: BUILDING → REVIEW. All headless items done and gated; G6 pending: the user confirms in Studio that streaming is on and no character auto-loads (playtest check 1).
+- 2026-10-12 forge-05: merged PR #11 (979f1ba). Stays REVIEW until the user's Studio check (playtest check 1, steps 4-5).

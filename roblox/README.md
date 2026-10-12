@@ -178,7 +178,9 @@ errors, latency, `interleaveNextUpdate`; share one between two MockEnvs for two 
 (real Player instances, PlayerAdded/Removing, `Kick` recorded, leave during load), `MockMarketplaceService`
 (ProcessReceipt decisions, redelivery, auto-acknowledge hazard, game passes), `MockPolicyService`,
 `MockAnalyticsService` (record/throw/noop), `MockRemotes` (RemoteEvent/RemoteFunction/
-UnreliableRemoteEvent, server and client ends), `MockCollectionService`, `MockInstanceEvents`,
+UnreliableRemoteEvent, server and client ends; unreliable payloads > 1000 bytes dropped with buffers
+counted by `buffer.len`, buffers copied on send, `holdUnreliable`/`releaseUnreliable` to delay and
+reorder, `dropNext`), `MockCollectionService`, `MockInstanceEvents`,
 `MockSignal`, `MockRandom`.
 
 **Instances** in a MockEnv (`env.ReplicatedStorage`, `env.Workspace`, ..., `env.newInstance`) are real

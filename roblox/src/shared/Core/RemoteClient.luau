@@ -28,6 +28,9 @@
 		  spawned thread, never from a controller's new().
 		- Kind checks: invoke needs a RemoteFunction; send and on need a RemoteEvent or
 		  UnreliableRemoteEvent (error otherwise, naming the remote and its class).
+		- invoke has no response timeout: RemoteService always answers (nil for a dropped or failed
+		  call), so it returns once the round trip completes. Callers that must not wait (UI) should
+		  invoke from a spawned thread.
 		- The server validates and rate-limits every call (RemoteService); invoke returns nil when
 		  the server dropped the call. Nothing here trusts or retries.
 ]]
