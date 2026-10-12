@@ -3,7 +3,7 @@ id: FL-0056
 title: "Characters: citizens by job, soldier, ruler crown and cape"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -38,3 +38,4 @@ Entities and rulers read clearly at gameplay distance in kingdom colours (VS-1 r
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): P0; ≤8-part Motor6D rigs instead of R15, regalia accessories, ahead of FL-0055
+- 2026-10-12 forge-02: READY → BUILDING. In progress on forge/02-blender (stubs PR #16 open). See agents/forge-02/STATUS.md.

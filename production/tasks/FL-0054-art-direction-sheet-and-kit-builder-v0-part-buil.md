@@ -3,7 +3,7 @@ id: FL-0054
 title: Art direction sheet and Kit builder v0 (part-built medieval architecture with construction stages)
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -46,3 +46,4 @@ Colourful, detailed medieval buildings exist in-engine without any upload step (
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Kit stub first, primitive Parts only/no yields, footprint/Rally/neutral colour/region markers, preview path required, calibration pair
+- 2026-10-12 forge-02: READY → BUILDING. In progress on forge/02-blender (stubs PR #16 open). See agents/forge-02/STATUS.md.

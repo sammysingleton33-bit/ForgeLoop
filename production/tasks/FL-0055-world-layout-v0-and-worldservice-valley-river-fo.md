@@ -3,7 +3,7 @@ id: FL-0055
 title: "World layout v0 and WorldService: valley, river, forests, quarries, roads, 4 kingdom plots, nodes, objective"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -50,3 +50,4 @@ A colourful medieval valley exists at server start with tagged resource nodes, b
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Layout stub + G10.1 schema, Fill* terrain via adapter, ready signal, Lighting.luau, world preview renders
+- 2026-10-12 forge-02: READY → BUILDING. In progress on forge/02-blender (stubs PR #16 open). See agents/forge-02/STATUS.md.
