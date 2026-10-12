@@ -9,7 +9,7 @@ game: game-001
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: []
-context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
+context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 6
 evidence: ["PR #53 head 721d488: check.sh OVERALL PASS (Lune 486/0, game-001 596/0), pytest 251, content validate 0 errors, xlsx round-trip byte-identical, ownership PASS"]
 ---
