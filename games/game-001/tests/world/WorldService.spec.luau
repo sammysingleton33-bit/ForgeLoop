@@ -203,3 +203,134 @@ describe("WorldPlan (FL-0055)", function()
 		expect(one).toBeGreaterThan(6)
 	end)
 end)
+
+describe("WorldService robustness (FORGE-05 review of #28)", function()
+	it("builds one world when start() is called twice", function()
+		local env, svc = boot()
+		local fired = 0
+		svc.ready:connect(function()
+			fired += 1
+		end)
+		svc:start()
+		svc:start()
+		env.mock:advance(30)
+		local worlds = 0
+		for _, c in env.Workspace:GetChildren() do
+			if c.Name == "World" then
+				worlds += 1
+			end
+		end
+		expect(worlds).toBe(1)
+		expect(fired).toBe(1)
+		svc:destroy()
+	end)
+
+	it("still fires ready, once, and logs an error when the build fails", function()
+		local env, svc = boot()
+		local original = Kit.prop
+		Kit.prop = function()
+			error("boom")
+		end
+		local fired = 0
+		svc.ready:connect(function()
+			fired += 1
+		end)
+		svc:start()
+		env.mock:advance(30)
+		Kit.prop = original
+		expect(fired).toBe(1)
+		expect(svc:isReady()).toBe(true)
+		expect(type(svc.stats.error)).toBe("string")
+		expect(env.mock:hasLog("error", "WorldService build failed")).toBe(true)
+		svc:destroy()
+	end)
+
+	it("stops building and removes the world when destroyed mid-build", function()
+		local env, svc = boot()
+		local fired = 0
+		svc.ready:connect(function()
+			fired += 1
+		end)
+		svc:start()
+		env.mock:advance(0.05) -- a few frames in: terrain done, models in progress
+		svc:destroy()
+		env.mock:advance(30)
+		expect(fired).toBe(0)
+		expect(env.Workspace:FindFirstChild("World")).toBeNil()
+		expect(#env.mock.threadErrors).toBe(0)
+	end)
+
+	it("makes invisible zone parts non-queryable (placement and selection raycasts pass through)", function()
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		for _, tag in { "BuildZone", "ObjectiveZone", "KingdomPlot" } do
+			local parts = tagged(env, tag)
+			expect(#parts).toBeGreaterThan(0)
+			for _, p in parts do
+				expect(p.CanQuery).toBe(false)
+			end
+		end
+		svc:destroy()
+	end)
+
+	it("never lets decoration fire Touched or catch raycasts with its plate, and lets units under canopies", function()
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		local root = svc:getRoot()
+		local high, highCollide = 0, 0
+		for _, folder in { "Props", "ResourceNodes" } do
+			for _, d in root:FindFirstChild(folder):GetDescendants() do
+				if d:IsA("BasePart") then
+					expect(d.CanTouch).toBe(false)
+					local model = d:FindFirstAncestorOfClass("Model")
+					if d == model.PrimaryPart then
+						expect(d.CanQuery).toBe(false) -- invisible footprint plate
+					end
+					local base = model.PrimaryPart.CFrame.Position.Y - model.PrimaryPart.Size.Y / 2
+					if
+						model:GetAttribute("Feature") ~= "bridge"
+						and d.CFrame.Position.Y - d.Size.Y / 2 > base + svc.COLLIDE_HEIGHT + 0.01
+					then
+						high += 1
+						if d.CanCollide then
+							highCollide += 1
+						end
+					end
+				end
+			end
+		end
+		expect(high).toBeGreaterThan(100) -- canopies exist
+		expect(highCollide).toBe(0)
+		svc:destroy()
+	end)
+
+	it("creates at most partsPerFrame parts (plus one model) per frame and keeps the world under budget", function()
+		local env, svc = boot()
+		local largest = 0
+		local originalProp = Kit.prop
+		Kit.prop = function(id)
+			local m = originalProp(id)
+			largest = math.max(largest, Kit.partCount(m))
+			return m
+		end
+		local worst, last = 0, 0
+		local originalWait = svc._wait
+		svc._wait = function(self)
+			local root = self:getRoot()
+			local n = root and #root:GetDescendants() or 0
+			worst = math.max(worst, n - last)
+			last = n
+			originalWait(self)
+		end
+		svc:start()
+		env.mock:advance(30)
+		Kit.prop = originalProp
+		expect(svc:isReady()).toBe(true)
+		-- descendants include attachments and folders, so allow a little slack over the part budget
+		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
+		expect(svc.stats.parts).toBeLessThan(9000)
+		svc:destroy()
+	end)
+end)
