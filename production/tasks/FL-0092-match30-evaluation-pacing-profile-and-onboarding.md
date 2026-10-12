@@ -17,6 +17,7 @@ evidence:
   - mutations.py FL-0092 rows 4/4 CAUGHT
   - "unverified: AnswerCitizen needs FORGE-03 conversation panel report or a G9 CitizenAnswered event; Studio E6 not run"
   - "check.sh OVERALL PASS @3cd506c: framework 486, game-001 518 specs; FL-0092 mutations 5/5 CAUGHT incl. the CitizenInspected hook"
+  - "check.sh OVERALL PASS on main d559c9e merged: framework 486, game-001 559 specs (48 files), Selene 0/0, StyLua 337, both builds and place checks; InputMode bare-ground spec + FL-0090 mutations 16/16 CAUGHT"
 ---
 
 # match30 evaluation pacing profile and onboarding v2
@@ -40,3 +41,4 @@ Pacing spec covers the `match30` totals. Onboarding specs cover the step trigger
 - 2026-10-12 forge-04: BUILDING → TESTING. match30 + onboarding v2 committed; headless gates on bdf9736.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0092. AnswerCitizen waits for FORGE-03's CitizenAnswered report (or the proposed G9 event).
 - 2026-10-12 forge-04: REVIEW → REVIEW. #29 merged before its last commit: the CitizenInspected selection hook is ported into this PR (cherry-picked onto main).
+- 2026-10-12 forge-04: REVIEW (unchanged). Main d559c9e merged. Answered FORGE-03's selection handoff (new handoff forge-04-to-forge-03-selection-rules): both rules already hold; added the bare-ground tap spec and its mutation row.

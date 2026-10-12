@@ -91,6 +91,7 @@ M = [
  ("FL-0090", C2+"InputModeController.luau", 'if okId and buildingId ~= nil then', 'if false then', "InputMode", "selects the building through", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),
  ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'if okTag and tagged then', 'if okTag then', "InputMode", "a tap on bare ground (an untagged part) fires none", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'if minutes < Def.MATCH30_MINUTES.min or minutes > Def.MATCH30_MINUTES.max then', 'if false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'out[phase] = durations[phase] -- nil unless', 'out[phase] = nil -- nil unless', "PacingService", "match30 is the", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
