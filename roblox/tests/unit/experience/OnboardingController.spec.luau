@@ -96,6 +96,31 @@ describe("OnboardingController (client)", function()
 		expect(card.Size.Y.Offset).toBeLessThanOrEqual(88)
 	end)
 
+	it("marks the nearest tagged world object to the character", function()
+		local character = env.newInstance("Model")
+		local root = env.newInstance("Part")
+		root.Position = Vector3.new(0, 0, 0)
+		root.Parent = character
+		character.PrimaryPart = root
+		env.mock.localPlayer.Character = character
+		local far = env.newInstance("Part")
+		far.Position = Vector3.new(300, 0, 0)
+		far.Parent = env.Workspace
+		env.CollectionService:AddTag(far, "ResourceNode")
+		local near = env.newInstance("Part")
+		near.Position = Vector3.new(20, 0, 0)
+		near.Parent = env.Workspace
+		env.CollectionService:AddTag(near, "ResourceNode")
+		local gather = state({ hint = { title = "Gather", target = { kind = "world", tag = "ResourceNode" } } })
+		controller:apply(gather)
+		expect(near:FindFirstChild("ForgeOnboardingHighlight")).never.toBeNil()
+		expect(far:FindFirstChild("ForgeOnboardingHighlight")).toBeNil()
+		root.Position = Vector3.new(290, 0, 0) -- walk over to the other node: the mark follows
+		controller:apply(gather)
+		expect(far:FindFirstChild("ForgeOnboardingHighlight")).never.toBeNil()
+		expect(near:FindFirstChild("ForgeOnboardingHighlight")).toBeNil()
+	end)
+
 	it("marks world targets with a highlight and an arrow, UI targets with a stroke; gold when stuck", function()
 		local castle = env.newInstance("Part")
 		castle.Parent = env.Workspace

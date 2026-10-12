@@ -3,10 +3,14 @@
 	OnboardingService (FORGE-04) — runs the tutorial flows of games/<game>/config/Onboarding.luau
 	for every player, server-authoritatively (engine: Experience/Onboarding).
 
-	Lifecycle per player
-		PlayerReady            restore progress from experience.onboarding (SettingsService), begin the
-		                       flow (auto steps), push Experience.OnboardingState to the client
-		bus events             (GameEvents + kingdom signals once declared) complete or pre-satisfy steps
+	Lifecycle per player and flow
+		flow.startOn (default PlayerReady; game-001: KingdomJoined)
+		                       restore progress from experience.onboarding (SettingsService: persistent
+		                       with DataService, session-only without it, D-027), begin the flow (auto
+		                       steps), push Experience.OnboardingState to the client
+		bus events             complete or pre-satisfy steps; who an event is about comes from
+		                       Experience/Subjects (framework defaults + the config's `subjects`
+		                       resolvers for game events, e.g. game-001's G9 attribution rules)
 		Experience.OnboardingAction(flowId, action)   client-observed actions; only the current step
 		Experience.OnboardingSkip(flowId)             skip: OnboardingSkipped, then no funnel step ever again
 		every second           nudge escalation (OnboardingHintEscalated) and auto-advance of info steps
@@ -24,6 +28,7 @@
 
 local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/AnalyticsRouter")
 local Bus = require("@game/ReplicatedStorage/Forge/Experience/Bus")
+local Subjects = require("@game/ReplicatedStorage/Forge/Experience/Subjects")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Onboarding = require("@game/ReplicatedStorage/Forge/Experience/Onboarding")
 local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
@@ -57,7 +62,11 @@ function Def.create(env: any, registry: any, options: { config: any?, bus: any? 
 		_running = false,
 		_enabled = true,
 	}, OnboardingService)
-	local problems = Onboarding.validate(config, AnalyticsRouter.knownEvents(bus))
+	local known = AnalyticsRouter.knownEvents(bus)
+	local problems = Onboarding.validate(config, known)
+	for _, problem in Subjects.validate(if type(config) == "table" then config.subjects else nil, known) do
+		table.insert(problems, problem)
+	end
 	if #problems > 0 then
 		self._enabled = false
 		env.log("error", "onboarding config invalid; onboarding disabled", { problems = table.concat(problems, "; ") })
@@ -94,6 +103,7 @@ function OnboardingService:start()
 	end
 	local busEvents = {}
 	for _, flow in self._config.flows do
+		busEvents[flow.startOn or "PlayerReady"] = true
 		for _, step in flow.steps do
 			if step.trigger.bus then
 				busEvents[step.trigger.bus] = true
@@ -104,13 +114,6 @@ function OnboardingService:start()
 	for eventName in busEvents do
 		handlers[eventName] = function(...)
 			self:_onBus(eventName, table.pack(...))
-		end
-	end
-	local readyHandler = handlers.PlayerReady
-	handlers.PlayerReady = function(player, ...)
-		self:_onReady(player)
-		if readyHandler then
-			readyHandler(player, ...)
 		end
 	end
 	local connections, missing = Bus.connectAll(self._bus, handlers)
@@ -155,24 +158,29 @@ end
 
 -- ------------------------------------------------------------------ per-player state
 
-function OnboardingService:_onReady(player: any)
-	if not isPlayer(player) or self._players[player.UserId] then
+-- Starts (or resumes) one flow for a player: restore stored progress, run auto steps, tell the client.
+function OnboardingService:_begin(player: any, flow: any)
+	if not isPlayer(player) then
+		return
+	end
+	local states = self._players[player.UserId]
+	if states == nil then
+		states = {}
+		self._players[player.UserId] = states
+	end
+	if states[flow.id] then
 		return
 	end
 	local section = self._settings:read(player, "onboarding")
 	local stored = if section and type(section.flows) == "table" then section.flows else {}
 	local now = self._env.now()
-	local states = {}
-	self._players[player.UserId] = states
-	for _, flow in self._config.flows do
-		local state = Onboarding.restore(flow, stored[flow.id], now)
-		states[flow.id] = state
-		local transitions = Onboarding.begin(flow, state, now)
-		if #transitions > 0 then
-			self:_apply(player, flow, state, transitions) -- persists and pushes
-		else
-			self:_push(player, flow, state)
-		end
+	local state = Onboarding.restore(flow, stored[flow.id], now)
+	states[flow.id] = state
+	local transitions = Onboarding.begin(flow, state, now)
+	if #transitions > 0 then
+		self:_apply(player, flow, state, transitions) -- persists and pushes
+	else
+		self:_push(player, flow, state)
 	end
 end
 
@@ -259,15 +267,26 @@ end
 -- ------------------------------------------------------------------ inputs
 
 function OnboardingService:_onBus(eventName: string, args: { any })
-	local lookup = {
+	local players = self._env.Players
+	local ctx = {
 		byUserId = function(userId: number): any
-			return self._env.Players:GetPlayerByUserId(userId)
+			return players:GetPlayerByUserId(userId)
 		end,
 		all = function(): { any }
-			return self._env.Players:GetPlayers()
+			return players:GetPlayers()
 		end,
+		registry = self._registry,
 	}
-	for _, subject in AnalyticsRouter.normalize(eventName, args, lookup) do
+	local subjects, err = Subjects.resolve(eventName, args, ctx, self._config.subjects)
+	if err then
+		self._env.log("warn", `onboarding: subjects resolver for {eventName} failed`, { error = err })
+	end
+	for _, subject in subjects do
+		for _, flow in self._config.flows do
+			if (flow.startOn or "PlayerReady") == eventName then
+				self:_begin(subject.player, flow)
+			end
+		end
 		local states = self._players[subject.player.UserId]
 		if states then
 			for flowId, state in states do
