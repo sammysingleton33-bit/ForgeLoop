@@ -9,8 +9,8 @@
       },
       "dimensions_studs": {
         "x": 20.429,
-        "y": 22.66,
-        "z": 19.364
+        "y": 22.255,
+        "z": 20.516
       },
       "double_sided": false,
       "files": {
@@ -18,18 +18,21 @@
         "validation": "exports/house_cottage_01.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 2,
-      "geometry_hash": "abab8f496403daa1",
+      "generator_version": 3,
+      "geometry_hash": "5a1b60717cfb4dd6",
       "id": "house_cottage_01",
       "kingdom": "red",
       "material": "M_forge_palette",
       "params": {
         "chimney": "right",
+        "dormers": false,
         "ground": "plaster",
         "kingdom": "red",
         "lean_to": false,
+        "porch": true,
         "roof": "thatch",
-        "storeys": 1
+        "storeys": 1,
+        "wing": false
       },
       "preview": "previews/house_cottage.jpg",
       "render_fidelity": "Automatic",
@@ -39,16 +42,16 @@
       "seed": 7000,
       "sockets": {
         "door": [
-          3.454,
+          -1.954,
           0.0,
-          -8.067
+          -7.458
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 3348,
-        "lod1": 1170
+        "lod0": 3628,
+        "lod1": 1268
       },
       "validation_pass": true
     },
@@ -61,8 +64,8 @@
       },
       "dimensions_studs": {
         "x": 25.966,
-        "y": 32.435,
-        "z": 19.755
+        "y": 32.525,
+        "z": 19.76
       },
       "double_sided": false,
       "files": {
@@ -70,18 +73,21 @@
         "validation": "exports/house_cottage_02.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 2,
-      "geometry_hash": "1dc3709e1ff74ee3",
+      "generator_version": 3,
+      "geometry_hash": "0cdebe2a40f42d6c",
       "id": "house_cottage_02",
       "kingdom": "blue",
       "material": "M_forge_palette",
       "params": {
         "chimney": "left",
+        "dormers": false,
         "ground": "stone",
         "kingdom": "blue",
         "lean_to": true,
+        "porch": false,
         "roof": "tile",
-        "storeys": 2
+        "storeys": 2,
+        "wing": false
       },
       "preview": "previews/house_cottage.jpg",
       "render_fidelity": "Automatic",
@@ -91,16 +97,16 @@
       "seed": 7001,
       "sockets": {
         "door": [
-          4.245,
+          4.949,
           0.0,
-          -8.262
+          -8.265
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4836,
-        "lod1": 1692
+        "lod0": 4668,
+        "lod1": 1632
       },
       "validation_pass": true
     },
@@ -113,8 +119,8 @@
       },
       "dimensions_studs": {
         "x": 23.057,
-        "y": 35.601,
-        "z": 20.692
+        "y": 36.237,
+        "z": 26.389
       },
       "double_sided": false,
       "files": {
@@ -122,18 +128,21 @@
         "validation": "exports/house_cottage_03.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 2,
-      "geometry_hash": "57a3036787f113b9",
+      "generator_version": 3,
+      "geometry_hash": "ef05969f4ee2652e",
       "id": "house_cottage_03",
       "kingdom": "green",
       "material": "M_forge_palette",
       "params": {
         "chimney": "right",
+        "dormers": false,
         "ground": "stone",
         "kingdom": "green",
         "lean_to": false,
+        "porch": false,
         "roof": "thatch",
-        "storeys": 2
+        "storeys": 2,
+        "wing": true
       },
       "preview": "previews/house_cottage.jpg",
       "render_fidelity": "Automatic",
@@ -143,16 +152,16 @@
       "seed": 7002,
       "sockets": {
         "door": [
-          1.814,
+          -1.8,
           0.0,
-          -8.731
+          -5.915
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4248,
-        "lod1": 1486
+        "lod0": 4776,
+        "lod1": 1670
       },
       "validation_pass": true
     },
@@ -165,8 +174,8 @@
       },
       "dimensions_studs": {
         "x": 21.407,
-        "y": 21.361,
-        "z": 18.418
+        "y": 21.992,
+        "z": 18.459
       },
       "double_sided": false,
       "files": {
@@ -174,18 +183,21 @@
         "validation": "exports/house_cottage_04.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 2,
-      "geometry_hash": "f7b96f7436130a06",
+      "generator_version": 3,
+      "geometry_hash": "fe13b11da96b68c3",
       "id": "house_cottage_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
       "params": {
         "chimney": "left",
+        "dormers": true,
         "ground": "plaster",
         "kingdom": "yellow",
         "lean_to": false,
+        "porch": false,
         "roof": "tile",
-        "storeys": 1
+        "storeys": 1,
+        "wing": false
       },
       "preview": "previews/house_cottage.jpg",
       "render_fidelity": "Automatic",
@@ -195,16 +207,16 @@
       "seed": 7003,
       "sockets": {
         "door": [
-          -3.557,
+          1.93,
           0.0,
-          -7.593
+          -7.614
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 3428,
-        "lod1": 1198
+        "lod0": 3780,
+        "lod1": 1322
       },
       "validation_pass": true
     },
@@ -217,8 +229,8 @@
       },
       "dimensions_studs": {
         "x": 26.181,
-        "y": 35.21,
-        "z": 19.912
+        "y": 34.489,
+        "z": 19.871
       },
       "double_sided": false,
       "files": {
@@ -226,18 +238,21 @@
         "validation": "exports/house_cottage_05.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 2,
-      "geometry_hash": "ee3e41acc554ef99",
+      "generator_version": 3,
+      "geometry_hash": "14453b3bd46765bb",
       "id": "house_cottage_05",
       "kingdom": "red",
       "material": "M_forge_palette",
       "params": {
         "chimney": "right",
+        "dormers": false,
         "ground": "plaster",
         "kingdom": "red",
         "lean_to": true,
+        "porch": false,
         "roof": "thatch",
-        "storeys": 2
+        "storeys": 2,
+        "wing": false
       },
       "preview": "previews/house_cottage.jpg",
       "render_fidelity": "Automatic",
@@ -247,16 +262,16 @@
       "seed": 7004,
       "sockets": {
         "door": [
-          0.861,
+          -3.761,
           0.0,
-          -8.34
+          -8.32
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4912,
-        "lod1": 1718
+        "lod0": 4700,
+        "lod1": 1644
       },
       "validation_pass": true
     },
@@ -269,8 +284,8 @@
       },
       "dimensions_studs": {
         "x": 22.325,
-        "y": 32.669,
-        "z": 19.69
+        "y": 31.581,
+        "z": 25.951
       },
       "double_sided": false,
       "files": {
@@ -278,18 +293,21 @@
         "validation": "exports/house_cottage_06.validation.json"
       },
       "generator": "house_cottage",
-      "generator_version": 2,
-      "geometry_hash": "fe04810bfe9d50f9",
+      "generator_version": 3,
+      "geometry_hash": "882beaaa1cdbfb72",
       "id": "house_cottage_06",
       "kingdom": "blue",
       "material": "M_forge_palette",
       "params": {
         "chimney": "left",
+        "dormers": true,
         "ground": "stone",
         "kingdom": "blue",
         "lean_to": false,
+        "porch": false,
         "roof": "tile",
-        "storeys": 2
+        "storeys": 2,
+        "wing": true
       },
       "preview": "previews/house_cottage.jpg",
       "render_fidelity": "Automatic",
@@ -299,28 +317,32 @@
       "seed": 7005,
       "sockets": {
         "door": [
-          -2.936,
+          -1.792,
           0.0,
-          -8.23
+          -5.049
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4228,
-        "lod1": 1478
+        "lod0": 4992,
+        "lod1": 1746
       },
       "validation_pass": true
     }
   ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
   "generator": "house_cottage",
   "variation": {
     "closest_pair": [
-      "house_cottage_02",
-      "house_cottage_06"
+      "house_cottage_01",
+      "house_cottage_04"
     ],
-    "mean_pair_diff": 0.3293,
-    "min_pair_diff": 0.1343,
+    "mean_pair_diff": 0.3713,
+    "min_pair_diff": 0.1666,
     "pass": true,
     "threshold": 0.08
   }
