@@ -18,7 +18,9 @@ return {
 	},
 	maxRulersPerKingdom = 4,
 	startCitizens = { farmer = 3, woodcutter = 3, miner = 2, builder = 2, hauler = 2 },
-	startBuildings = { { kind = "farm", angle = 0.6, distance = 34 } },
+	startBuildings = { { kind = "farm", angle = 0.6, distance = 34 } }, -- generated (square) layout only
+	-- world Layout (G6): starting buildings at plots[k].anchors, complete when the match starts
+	startAnchors = { "storehouse", "farm", "lumbercamp", "quarry" },
 	startResources = { food = 120, wood = 100, stone = 50, gold = 0 },
 	spacing = 260, -- generated layout: keeps on the corners of a square this far from the centre
 	trees = 24, -- generated layout: trees per forest
