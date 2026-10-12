@@ -1,0 +1,13 @@
+occupation_id,name_text,job_id,key_role,needs,trait_affinity,notes
+farmer,Farmer,farmer,,food;shelter;rest;company,hardworking:3;content:3;devout:2;humble:2;grumpy:1;timid:1,DRAFT: base job.
+woodcutter,Woodcutter,woodcutter,,food;shelter;tools;rest,hardworking:3;brave:2;cheerful:2;skeptical:1;proud:1,DRAFT: base job.
+miner,Miner,miner,,food;safety;tools;rest,hardworking:2;timid:2;grumpy:2;skeptical:2;proud:1,DRAFT: base job; works stone and gold (CONTRACTS G5).
+builder,Builder,builder,,food;rest;tools;respect,hardworking:3;ambitious:2;proud:2;cheerful:1;lazy:1,DRAFT: base job.
+hauler,Hauler,hauler,,food;rest;company;pay,cheerful:2;fickle:2;cunning:2;lazy:2;humble:1,DRAFT: base job; the generalist pool (CONTRACTS G5).
+soldier,Soldier,soldier,,food;pay;rest;respect,brave:3;loyal:2;proud:2;ambitious:2;cruel:1;fickle:1,DRAFT: recruited unit.
+blacksmith,Blacksmith,builder,blacksmith,food;tools;respect;rest,proud:3;hardworking:3;grumpy:2;honest:1,"DRAFT: key citizen template (Crown Arena, appears with the Smithy). Hammers like a builder."
+healer,Healer,hauler,healer,food;health;safety;faith,kind:3;devout:2;humble:2;honest:1;timid:1,"DRAFT: key citizen template (Crown Arena, appears with the Infirmary). Walks the kingdom like a hauler."
+captain,Captain,soldier,captain,food;pay;respect;safety,brave:3;loyal:3;proud:2;ambitious:2;cruel:1,"DRAFT: key citizen template (Crown Arena, first veteran soldier at the Barracks)."
+provisioner,Provisioner,farmer,provisioner,food;company;shelter;rest,cheerful:3;kind:2;content:2;cunning:1,"DRAFT: key citizen template (Crown Arena cook or provisioner, appears with the Granary or Kitchen)."
+elder,Elder,farmer,elder,food;respect;faith;company,devout:2;honest:2;content:2;humble:2;skeptical:1,"DRAFT: key citizen template (Crown Arena elder, appears with the Chapel or Shrine). Tends a garden plot."
+merchant,Merchant,hauler,merchant,food;safety;pay;company,cunning:3;ambitious:3;cheerful:1;fickle:1,"DRAFT: key citizen template (Crown Arena, needs the Market and trade, VS-3)."
