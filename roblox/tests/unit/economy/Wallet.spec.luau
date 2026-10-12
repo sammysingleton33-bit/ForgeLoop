@@ -86,10 +86,13 @@ describe("Economy/Wallet", function()
 		expect(reason).toBe("replay")
 		expect(result.applied).toEqual({})
 		expect(wallet:balance("wood")).toBe(100)
+		-- a grant with the same id is a different transaction (spends and grants keep separate ids)
 		local gOk, gReason = wallet:grant({ food = 10 }, "build:1")
 		expect(gOk).toBe(true)
-		expect(gReason).toBe("replay")
-		expect(wallet:balance("food")).toBe(100)
+		expect(gReason).toBeNil()
+		expect(wallet:balance("food")).toBe(110)
+		local _, again = wallet:grant({ food = 10 }, "build:1")
+		expect(again).toBe("replay")
 	end)
 
 	it("clamps grants at the cap, reports overflow and still consumes the txId", function()
@@ -120,7 +123,7 @@ describe("Economy/Wallet", function()
 			{ { mana = 5 }, "t3", "invalid_amount" },
 			{ {}, "t4", "invalid_amount" },
 			{ { wood = 5 }, "", "invalid_tx" },
-			{ { wood = 5 }, string.rep("x", 101), "invalid_tx" },
+			{ { wood = 5 }, string.rep("x", Wallet.MAX_TX_ID + 1), "invalid_tx" },
 		}
 		for _, case in cases do
 			local ok, reason = wallet:spend(case[1], case[2])
@@ -138,7 +141,7 @@ describe("Economy/Wallet", function()
 		local first = Wallet.new({ currencies = IDS, data = data, start = { wood = 10 } })
 		first:grant({ wood = 5 }, "quest:1")
 		expect(data.balances.wood).toBe(15)
-		expect(data.txOrder).toEqual({ "quest:1" })
+		expect(data.txOrder).toEqual({ "grant:quest:1" })
 		local reloaded = Wallet.new({ currencies = IDS, data = data, start = { wood = 999 } })
 		expect(reloaded:balance("wood")).toBe(15)
 		local _, reason = reloaded:grant({ wood = 5 }, "quest:1")
@@ -154,6 +157,42 @@ describe("Economy/Wallet", function()
 		expect(small:seen("a")).toBe(false)
 		expect(small:seen("b")).toBe(true)
 		expect(small:seen("c")).toBe(true)
+	end)
+
+	it("keeps spends and grants apart: one id cannot pass as the other's replay", function()
+		local w = Wallet.new({ currencies = IDS, start = { wood = 10 } })
+		expect((w:grant({ wood = 5 }, "t:1"))).toBe(true)
+		local ok, reason = w:spend({ wood = 9999 }, "t:1")
+		expect(ok).toBe(false)
+		expect(reason).toBe("insufficient")
+		expect(w:balance("wood")).toBe(15)
+		expect(w:seen("t:1")).toBe(true)
+		expect(w:seen("t:1", "spend")).toBe(false)
+		expect(w:seen("t:1", "grant")).toBe(true)
+	end)
+
+	it("forgets in O(1) per id and keeps exactly the newest txLimit ids, also after a reload", function()
+		local data = {}
+		local w = Wallet.new({ currencies = IDS, txLimit = 3, data = data })
+		for i = 1, 20 do
+			w:grant({ wood = 1 }, `g:{i}`)
+		end
+		for i = 1, 17 do
+			expect(w:seen(`g:{i}`)).toBe(false)
+		end
+		for i = 18, 20 do
+			expect(w:seen(`g:{i}`)).toBe(true)
+		end
+		expect(#data.txOrder - data.txHead).toBe(3)
+		expect(#data.txOrder).toBeLessThan(7) -- the dead prefix is dropped as it grows
+		local reloaded = Wallet.new({ currencies = IDS, txLimit = 3, data = data })
+		expect(reloaded:seen("g:17")).toBe(false)
+		expect(reloaded:seen("g:20")).toBe(true)
+		local _, reason = reloaded:grant({ wood = 1 }, "g:19")
+		expect(reason).toBe("replay")
+		-- an id forgotten long ago is a new transaction again
+		local _, again = reloaded:grant({ wood = 1 }, "g:1")
+		expect(again).toBeNil()
 	end)
 
 	it("raises caps without touching balances", function()

@@ -31,6 +31,9 @@
 		},
 		"StarterPlayer": {
 			"$className": "StarterPlayer",
+			"$properties": {
+				"EnableMouseLockOption": false
+			},
 			"StarterPlayerScripts": {
 				"$className": "StarterPlayerScripts",
 				"Forge": {
@@ -46,6 +49,13 @@
 			"$ignoreUnknownInstances": true,
 			"$properties": {
 				"CharacterAutoLoads": false
+			}
+		},
+		"Lighting": {
+			"$className": "Lighting",
+			"$ignoreUnknownInstances": true,
+			"$properties": {
+				"Technology": "Future"
 			}
 		},
 		"Workspace": {
