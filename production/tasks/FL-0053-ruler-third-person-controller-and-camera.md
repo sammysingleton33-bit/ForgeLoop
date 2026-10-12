@@ -35,3 +35,4 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): moved from forge-01 to forge-04 (D-028); input modes added; ruler look moved to FL-0048/FL-0056
+- 2026-10-12 forge-00: D-030: the default camera becomes the aerial management view with the ruler seated on the throne (FL-0090). Keep the third-person work as walk mode; nothing is discarded.

@@ -23,7 +23,12 @@
 
 	Kingdoms: the four G2 ids. Every kingdom starts from config Costs.starting and is reset when
 	the match enters Founding (GameEvents.MatchPhaseChanged), so a new match never inherits a
-	stockpile.
+	stockpile. A service that writes to the treasury from its own Founding handler must list
+	"TreasuryService" in its `dependencies`, so it starts after this service and its write lands
+	after the reset (handlers run in start order).
+	Idempotency lasts the whole match: each match gets fresh wallets that remember TX_MEMORY ids
+	per kingdom (a 45-minute match makes about 2,800), and spendUpTo remembers its answers per
+	(kingdom, resource, txId).
 	Members: KingdomService:getKingdomOf(player) (FORGE-01, found in start()). Treasury.Changed
 	goes to members only; a player who joins a kingdom (KingdomService.membershipChanged) gets the
 	current totals at once. Without KingdomService nobody is a member: the service still works for
@@ -48,6 +53,8 @@ TreasuryService.KINGDOMS = table.freeze({ "crimson", "azure", "emerald", "gold" 
 TreasuryService.MAX_TAG = 64
 -- spendUpTo results remembered for replays (oldest dropped first).
 TreasuryService.SPEND_UP_TO_MEMORY = 512
+TreasuryService.TX_MEMORY = 20000
+TreasuryService.MAX_TX_ID = 100
 
 local Def = { name = "TreasuryService", dependencies = { "RemoteService" } }
 
@@ -117,7 +124,8 @@ function TreasuryService:reset()
 	local isReset = next(self._wallets) ~= nil
 	for _, kingdom in TreasuryService.KINGDOMS do
 		local before = if self._wallets[kingdom] then self._wallets[kingdom]:balances() else {}
-		self._wallets[kingdom] = Wallet.new({ currencies = Resources.ids, start = Costs.starting })
+		self._wallets[kingdom] =
+			Wallet.new({ currencies = Resources.ids, start = Costs.starting, txLimit = TreasuryService.TX_MEMORY })
 		if isReset then
 			local totals = self:get(kingdom)
 			self:_publish(kingdom, totals, Bundle.sub(totals, before))
@@ -145,6 +153,10 @@ function TreasuryService:canAfford(kingdom: string, cost: Bag): boolean
 		return false
 	end
 	return (wallet:canAfford(cost))
+end
+
+local function validTxId(txId: any): boolean
+	return type(txId) == "string" and #txId > 0 and #txId <= TreasuryService.MAX_TX_ID
 end
 
 local function validTag(tag: any): boolean
@@ -177,8 +189,11 @@ function TreasuryService:_apply(kingdom: string, method: string, bag: Bag, txId:
 end
 
 function TreasuryService:spend(kingdom: string, cost: Bag, txId: string, sink: string): boolean
-	if type(cost) == "table" and next(cost) == nil then
+	if type(cost) == "table" and getmetatable(cost) == nil and next(cost) == nil then
 		return self._wallets[kingdom] ~= nil and validTag(sink) -- nothing to pay (e.g. starting buildings)
+	end
+	if not validTxId(txId) then
+		return false
 	end
 	local ok = self:_apply(kingdom, "spend", cost, txId, sink)
 	return ok == true
@@ -191,7 +206,7 @@ function TreasuryService:deposit(
 	txId: string,
 	source: string
 ): boolean
-	if Resources.defs[resource] == nil then
+	if Resources.defs[resource] == nil or not validTxId(txId) then
 		return false
 	end
 	local ok = self:_apply(kingdom, "grant", { [resource] = amount }, txId, source)
@@ -205,7 +220,8 @@ function TreasuryService:spendUpTo(
 	txId: string,
 	sink: string
 ): number
-	local remembered = self._upTo[txId]
+	local memoryKey = `{tostring(kingdom)}|{tostring(resource)}|{tostring(txId)}`
+	local remembered = self._upTo[memoryKey]
 	if remembered ~= nil then
 		return remembered
 	end
@@ -213,18 +229,19 @@ function TreasuryService:spendUpTo(
 	if wallet == nil or Resources.defs[resource] == nil or not validTag(sink) then
 		return 0
 	end
-	if not Bundle.isAmount(amount) or type(txId) ~= "string" or #txId == 0 or #txId > Wallet.MAX_TX_ID then
+	if not Bundle.isAmount(amount) or not validTxId(txId) then
 		return 0
 	end
 	local take = math.min(wallet:balance(resource), amount)
 	if take > 0 then
-		local ok, reason = self:_apply(kingdom, "spend", { [resource] = take }, txId, sink)
+		-- The wallet id names the resource too: the same txId on food and on wood are two spends.
+		local ok, reason = self:_apply(kingdom, "spend", { [resource] = take }, `upTo:{resource}:{txId}`, sink)
 		if not ok or reason ~= nil then
 			return 0
 		end
 	end
-	self._upTo[txId] = take
-	table.insert(self._upToOrder, txId)
+	self._upTo[memoryKey] = take
+	table.insert(self._upToOrder, memoryKey)
 	if #self._upToOrder > TreasuryService.SPEND_UP_TO_MEMORY then
 		self._upTo[table.remove(self._upToOrder, 1) :: string] = nil
 	end
