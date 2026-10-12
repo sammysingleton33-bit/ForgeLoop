@@ -6,7 +6,9 @@
 
 	BuildMenu.new(parent: GuiObject) -> menu
 	menu:render(view: BuildModel View, metrics: Layout Metrics, ui: {
-		phoneView: "list" | "detail", onCategory(id), onSelect(type), onBack(), onPlace(detail), onClose() })
+		phoneView: "list" | "detail", title: string? (default "Build"), name: string? (panel Name, default
+		"BuildMenu"), onCategory(id), onSelect(type), onBack(),
+		onPlace(detail), onClose() })
 	menu:destroy()
 	Rows are named "Row_<type>" and carry the attribute `buildingType`; the CTA face carries `cta`.
 ]]
@@ -145,13 +147,13 @@ function BuildMenu:render(view: any, metrics: any, ui: { [string]: any })
 	close.instance.Parent = header
 	self.close = close
 	self.panel = Panel.new({
-		title = if phone then nil else "Build",
+		title = if phone then nil else ui.title or "Build",
 		header = header,
 		size = UDim2.fromOffset(d.width, d.height),
 		position = UDim2.fromOffset(d.x, d.y),
 		padding = if phone then 10 else 12,
 	})
-	self.panel.instance.Name = "BuildMenu"
+	self.panel.instance.Name = ui.name or "BuildMenu"
 	local content = self.panel.content
 	local listWidth = if phone then 0 elseif metrics.breakpoint == "tablet" then 230 else 250
 	local showList = not phone or ui.phoneView ~= "detail"

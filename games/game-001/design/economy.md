@@ -25,13 +25,18 @@ decision yet; the final balance needs the user's playtest (FL-0064).
 | Keep | 2 | 150 wood, 150 stone | 60 |
 | Keep | 3 | 250 wood, 300 stone, 60 gold | 120 |
 | House | 1 / 2 | 40 wood / 40 wood + 30 stone | 20 / 30 |
-| Farm | 1 / 2 | 50 wood / 60 wood + 20 stone | 25 / 35 |
+| Farm | 1 / 2 / 3 | 50 wood / 60 wood + 20 stone / 80 wood + 40 stone | 25 / 35 / 45 |
 | Storehouse | 1 | 60 wood | 30 |
-| Lumber camp | 1 | 40 wood | 25 |
-| Quarry | 1 | 60 wood | 30 |
-| Barracks | 1 | 120 wood, 60 stone | 45 |
-| Watchtower | 1 | 60 wood, 80 stone | 40 |
-| Wall / Gate | 1 | 20 stone / 40 wood + 30 stone | 15 / 25 |
+| Lumber camp | 1 / 2 / 3 | 40 wood / 50 wood + 20 stone / 70 wood + 40 stone | 25 / 30 / 40 |
+| Quarry | 1 / 2 / 3 | 60 wood / 70 wood + 10 stone / 90 wood + 30 stone | 30 / 35 / 45 |
+| Barracks | 1 / 2 / 3 / 4 | 120 wood + 60 stone / 100 wood + 80 stone / 150 wood + 120 stone + 20 gold / 200 wood + 180 stone + 50 gold | **8 / 18 / 35 / 60** (user proposal, D-030) |
+| Watchtower | 1 / 2 | 60 wood + 80 stone / 60 wood + 100 stone | 40 / 40 |
+| Wall | 1 / 2 / 3 | 20 stone / 40 stone / 60 stone + 10 gold | 15 / 20 / 25 |
+| Gate | 1 / 2 / 3 | 40 wood + 30 stone / 40 wood + 60 stone / 60 wood + 90 stone + 10 gold | 25 / 30 / 35 |
+
+Levels follow the D-030 catalogue (`design/living-kingdom.md` §4); everything above level 1 is
+PROVISIONAL until the user plays it. The VS-1 path (level 1 and keep level 2) is unchanged except
+the barracks time (45 → 8 builder-seconds).
 
 | Unit | Cost | Train | Upkeep |
 |---|---|---:|---:|
