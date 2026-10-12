@@ -66,9 +66,12 @@ Regression check of FL-0059 (Layout changed): all 27 FL-0059 renders re-shot and
 tolerance against the committed ones. Phones and every scene without a drawer (`hud`, `placing*`,
 `placed`): identical. Drawer scenes on tablet/desktop moved down by the strip's height; looked at
 `build` (tablet, desktop) and `build-short`, `upgrade`, `kingdom`, `confirm` (tablet): CTAs fully
-visible, nothing cut; the Kingdom overview now scrolls to reach its 4th standing on tablet. Re-committed: `build-{tablet,desktop}`,
-`kingdom-tablet`, `upgrade-tablet`. Still the pre-FL-0089 drawer position (regenerate with the
-FL-0059 command in `REVIEW.md`): `build-short-*`, `confirm-*`, `kingdom-desktop`, `upgrade-desktop`.
+visible, nothing cut; the Kingdom overview now scrolls to reach its 4th standing on tablet.
+After stacking on #25/#34/#41 (FORGE-03 review): every Luau scene re-shot and pixel-compared with the
+committed renders; the 15 that changed (all tablet/desktop drawer scenes of FL-0059 and FL-0087, plus
+`rep-build-tablet`) are re-committed. `building-upgrade-tablet` and `plot-pick-tablet` looked at: the
+Lv 2 line, the "Gives" line and the CTA still fit the 398 px tablet drawer. No render shows the old
+drawer position any more.
 The FL-0059 scenes do not load the reputation controller, so they show the gap without the strip;
 `rep-build-*` shows the two together.
 
