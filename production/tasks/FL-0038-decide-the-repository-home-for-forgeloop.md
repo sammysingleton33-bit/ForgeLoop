@@ -17,7 +17,7 @@ evidence:
 # Decide the repository home for FORGELOOP
 
 ## Outcome
-Keep FORGELOOP in DLS/forgeloop or move it to a dedicated repository.
+Give FORGELOOP its own dedicated repository.
 
 ## Requirements
 - If moving: create the empty repo, install the Claude GitHub app on it; FORGE-00 performs git subtree split
