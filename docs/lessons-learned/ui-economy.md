@@ -59,3 +59,8 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   rebuild when it changes; balances, CTA state and progress are patched. Check it with instance
   identity in specs (`expect(find(...)).toBe(before)`) and pixel-compare the committed renders.
   `observed-once` (2026-10-12).
+- **Framework modules must not require game config.** Static `require(Config.Items)` in shared
+  economy modules passed every sandbox gate and broke the game-001 build the moment a second project
+  existed (its config folder has no Items). Pattern: `X.setDefault(<the game's config>)` /
+  `X.default()` that errors until set; only files every project provides (UITheme) may be required.
+  `observed-once` (2026-10-12).
