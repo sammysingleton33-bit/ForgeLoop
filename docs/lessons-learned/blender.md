@@ -7,3 +7,13 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
 - 2026-10-12 · Design buildings at human scale from the start: a 5.5-stud Roblox character needs ~7.5-stud doors and ~11-stud storeys. The first cottage pass at "realistic-looking" sizes had doors shorter than the character and had to be rebuilt 1.5× larger. · `previews/house_cottage.jpg` v1 vs v2 · `observed-once`
 - 2026-10-12 · Bevelling every small box blows triangle budgets (a bevelled box is ~44 tris vs 12). Bevel only parts large enough to catch light (walls, roofs, big stones); keep timbers, frames and battens plain. · cottage 7.1k → 4.8k tris with no visible loss · `observed-once`
 - 2026-10-12 · `bpy_extras.io_utils.axis_conversion(to_forward='Z', to_up='Y')` maps Blender (x, y, z) to (−x, z, y), so a −Y-facing Blender front becomes Roblox −Z (LookVector). Pinned by `tests/test_pipeline.py`; Studio confirmation pending (A3). · `observed-once`
+
+## Process: stacked PRs (2026-10-12)
+- A PR stacked on another PR's branch merges **into that branch**, not into main, even after the lower PR has
+  merged. #37 (build slots) landed on `forge/02-blender-fl0055-world` and never reached main until FORGE-05
+  re-targeted it (#38). Rule: as soon as the lower PR merges, retarget the stacked PR's base to `main`
+  (`update_pull_request base=main`) and merge main into its head. Then confirm with `git show origin/main:<file>`
+  after the merge.
+- A branch that contains the same commit twice (once through main, once through the stale stacked base) can
+  show "dirty" on GitHub even when local `git merge` is clean. Merging current main into the head and pushing
+  clears it.

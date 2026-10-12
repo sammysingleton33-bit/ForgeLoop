@@ -11,7 +11,7 @@ updated: 2026-10-12
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 6
-evidence: ["PR #37 (build slots): check.sh OVERALL PASS, game-001 91 specs, BuildSlots.spec 8 specs"]
+evidence: ["PR #38 (build slots, merged dc0b09f): check.sh OVERALL PASS, BuildSlots.spec 8 specs", "PR #43 (hardening, merged 986c773): check.sh OVERALL PASS, game-001 442 specs"]
 ---
 
 # Throne seat, build slots, citizen look variation, visible building levels (G13)
@@ -44,3 +44,4 @@ A preview sheet per level is reviewed under D-019.
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
 - 2026-10-12 forge-02: BUILDING. Part 1 (build slots: Layout.buildSlots, slotSizes, BuildSlot markers, plot towns) in PR #37, check.sh OVERALL PASS. Part 2 (throne seat, citizen looks, visible levels, thatch pennants) in progress in the Kit.
+- 2026-10-12 forge-02: part 1 on main via #38 (re-target of #37, dc0b09f); world hardening from the #28 review merged in #43 (986c773: 8,310 world parts, 0 collide+touch parts, pcall build). Part 2 (throne, looks, levels) in the Kit next.
