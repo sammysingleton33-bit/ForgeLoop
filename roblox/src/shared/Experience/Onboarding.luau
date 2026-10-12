@@ -10,8 +10,10 @@
 			clientActions = { string },       -- every client action a step may wait for (whitelist)
 			limits = { firstInteractionSec: number, firstRewardSec: number },
 		}
-		Flow = { id: string, version: number, funnel: boolean?, startOn: "PlayerReady",
+		Flow = { id: string, version: number, funnel: boolean?, startOn: string? (bus event that starts the
+		         flow for its subject players; default "PlayerReady"; game-001 uses "KingdomJoined"),
 		         steps: { Step }, completeReward: Reward? }
+		subjects = { [eventName]: resolver }?   -- who a game event is about (Experience/Subjects)
 		Step = {
 			id: string (PascalCase; the funnel step name),
 			trigger: { auto: true } | { bus: string, match: { [string]: any }? } | { client: string },
@@ -118,6 +120,9 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 		end
 		if flow.funnel then
 			funnels += 1
+		end
+		if flow.startOn ~= nil and (type(flow.startOn) ~= "string" or not table.find(knownBusEvents, flow.startOn)) then
+			table.insert(problems, `{where}: startOn '{tostring(flow.startOn)}' is not a declared bus event`)
 		end
 		if type(flow.steps) ~= "table" or #flow.steps == 0 then
 			table.insert(problems, `{where}: steps required`)

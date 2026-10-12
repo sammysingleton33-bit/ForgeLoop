@@ -14,11 +14,12 @@ local AnalyticsDef = require("@game/ServerScriptService/Forge/Services/Analytics
 local SettingsDef = require("@game/ServerScriptService/Forge/Services/SettingsService")
 local OnboardingDef = require("@game/ServerScriptService/Forge/Services/OnboardingService")
 local SandboxOnboarding = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
-local KingdomsOnboarding = require("../../../../games/game-001/config/Onboarding")
-local KingdomsAnalytics = require("../../../../games/game-001/config/Analytics")
+local TestOnboarding = require("./doubles/TestOnboarding")
+local TestAnalytics = require("./doubles/TestAnalytics")
 
-local KNOWN = AnalyticsRouter.knownEvents(GameEvents)
-local FLOW = KingdomsOnboarding.flows[1]
+local CONFIG = TestOnboarding.config
+local KNOWN = AnalyticsRouter.knownEvents(FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS }))
+local FLOW = CONFIG.flows[1]
 
 local function deepCopy(value)
 	if type(value) ~= "table" then
@@ -32,18 +33,18 @@ local function deepCopy(value)
 end
 
 local function problemsOf(mutate)
-	local config = deepCopy(KingdomsOnboarding)
+	local config = deepCopy(CONFIG)
 	mutate(config)
 	return table.concat(Onboarding.validate(config, KNOWN), "\n")
 end
 
 describe("Experience/Onboarding config rules", function()
-	it("accepts the AI Kingdoms and sandbox flows", function()
-		expect(Onboarding.validate(KingdomsOnboarding, KNOWN)).toEqual({})
-		expect(Onboarding.validate(SandboxOnboarding, KNOWN)).toEqual({})
+	it("accepts the spec flow and the sandbox flow (game flows: games/<game>/tests)", function()
+		expect(Onboarding.validate(CONFIG, KNOWN)).toEqual({})
+		expect(Onboarding.validate(SandboxOnboarding, AnalyticsRouter.knownEvents(GameEvents))).toEqual({})
 	end)
 
-	it("AI Kingdoms: first meaningful interaction within 30 s, first reward within 3 minutes", function()
+	it("the spec flow: first meaningful interaction within 30 s, first reward within 3 minutes", function()
 		local elapsed, firstInteraction, firstReward = 0, nil, nil
 		for _, step in FLOW.steps do
 			elapsed += step.expectSec
@@ -57,7 +58,7 @@ describe("Experience/Onboarding config rules", function()
 
 	it("the onboarding steps fit the analytics funnel budget", function()
 		expect(#FLOW.steps).toBeLessThanOrEqual(30)
-		expect(KingdomsAnalytics.funnels.Onboarding.kind).toBe("onboarding")
+		expect(TestAnalytics.build().funnels.Onboarding.kind).toBe("onboarding")
 	end)
 
 	it("rejects a flow whose first interaction comes too late", function()
@@ -70,6 +71,12 @@ describe("Experience/Onboarding config rules", function()
 		expect(problemsOf(function(c)
 			c.flows[1].steps[2].reward = { currency = "Crowns", amount = 5 }
 		end)).toContain("rewards only on bus-triggered (server-verified) steps")
+	end)
+
+	it("rejects an unknown start event", function()
+		expect(problemsOf(function(c)
+			c.flows[1].startOn = "KingdomJoind"
+		end)).toContain("startOn 'KingdomJoind' is not a declared bus event")
 	end)
 
 	it("rejects unknown bus events, unlisted client actions and auto-advancing bus steps", function()
@@ -233,7 +240,7 @@ describe("OnboardingService", function()
 			{
 				name = "AnalyticsService",
 				new = function(e, r)
-					return AnalyticsDef.create(e, r, { config = KingdomsAnalytics, bus = bus })
+					return AnalyticsDef.create(e, r, { config = TestAnalytics.build(), bus = bus })
 				end,
 			},
 			SettingsDef,
@@ -241,7 +248,7 @@ describe("OnboardingService", function()
 				name = "OnboardingService",
 				dependencies = { "SettingsService", "AnalyticsService" },
 				new = function(e, r)
-					return OnboardingDef.create(e, r, { config = KingdomsOnboarding, bus = bus })
+					return OnboardingDef.create(e, r, { config = CONFIG, bus = bus })
 				end,
 			},
 		})
@@ -273,7 +280,7 @@ describe("OnboardingService", function()
 	beforeEach(function()
 		GameEvents.disconnectAll()
 		env = MockEnv.new({ seed = 21 })
-		bus = FakeBus.new()
+		bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
 		data = FakeDataService.new()
 		remotes = FakeRemoteService.new({ declarations = ExperienceRemotes })
 		registry = boot(env, data, remotes)
@@ -364,7 +371,7 @@ describe("OnboardingService", function()
 		expect(stored.experience.data.onboarding.flows.first_session.completed).toBe(6)
 		GameEvents.disconnectAll()
 		local env2 = MockEnv.new({ seed = 22 })
-		bus = FakeBus.new()
+		bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
 		local data2 = FakeDataService.new()
 		local remotes2 = FakeRemoteService.new({ declarations = ExperienceRemotes })
 		local registry2 = boot(env2, data2, remotes2)
@@ -409,7 +416,7 @@ describe("OnboardingService", function()
 	it("logs a warning, not an error, when EconomyService is missing for a reward", function()
 		GameEvents.disconnectAll()
 		local env3 = MockEnv.new({ seed = 23 })
-		bus = FakeBus.new()
+		bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
 		local data3 = FakeDataService.new()
 		local registry3 = Loader.load(env3, {
 			{
@@ -421,7 +428,7 @@ describe("OnboardingService", function()
 			{
 				name = "AnalyticsService",
 				new = function(e, r)
-					return AnalyticsDef.create(e, r, { config = KingdomsAnalytics, bus = bus })
+					return AnalyticsDef.create(e, r, { config = TestAnalytics.build(), bus = bus })
 				end,
 			},
 			SettingsDef,
@@ -429,7 +436,7 @@ describe("OnboardingService", function()
 				name = "OnboardingService",
 				dependencies = { "SettingsService", "AnalyticsService" },
 				new = function(e, r)
-					return OnboardingDef.create(e, r, { config = KingdomsOnboarding, bus = bus })
+					return OnboardingDef.create(e, r, { config = CONFIG, bus = bus })
 				end,
 			},
 		})

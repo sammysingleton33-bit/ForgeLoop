@@ -14,9 +14,10 @@
 	- one small card at the top centre (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9):
 	  title, one line of body, "n/total", and a Skip button with a 44 px touch target; never modal,
 	  never captures input
-	- world targets (hint.target.kind = "world"): a Highlight plus a bobbing arrow over the first
-	  instance tagged hint.target.tag; UI targets: a UIStroke on the GuiObject whose OnboardingTarget
-	  attribute equals hint.target.name
+	- world targets (hint.target.kind = "world"): a Highlight plus an arrow over the instance tagged
+	  hint.target.tag that is nearest to the character (game-001: WorldService's ResourceNode,
+	  BuildZone, ObjectiveZone tags, CONTRACTS G10); UI targets: a UIStroke on the GuiObject whose
+	  OnboardingTarget attribute equals hint.target.name
 	- escalated (the player is stuck): the card border and arrow turn gold
 	Detectors (client actions the server whitelists in config.clientActions):
 		RulerMoved / CharacterMoved   the character moved MOVE_STUDS from where the step began
@@ -264,6 +265,23 @@ function OnboardingController:_build(): any
 	return { gui = gui, card = card, stroke = stroke, title = title, body = body, counter = counter, skip = skip }
 end
 
+-- The tagged instance nearest to the local character (the first one when there is no character yet).
+function OnboardingController:_nearest(tag: string): any
+	local root = rootOf(self._env.Players.LocalPlayer)
+	local origin = if root then root.Position else nil
+	local best, bestDistance = nil, math.huge
+	for _, instance in self._env.CollectionService:GetTagged(tag) do
+		local part = if instance:IsA("Model") then instance.PrimaryPart else instance
+		if part and part:IsA("BasePart") then
+			local distance = if origin then (part.Position - origin).Magnitude else 0
+			if distance < bestDistance then
+				best, bestDistance = instance, distance
+			end
+		end
+	end
+	return best
+end
+
 function OnboardingController:_clearMarks()
 	for _, mark in self._marks do
 		mark:Destroy()
@@ -277,8 +295,7 @@ function OnboardingController:_mark(target: any, escalated: boolean)
 		return
 	end
 	if target.kind == "world" then
-		local tagged = env.CollectionService:GetTagged(target.tag)
-		local instance = tagged[1]
+		local instance = self:_nearest(target.tag)
 		if instance == nil then
 			return
 		end

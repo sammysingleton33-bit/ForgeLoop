@@ -7,7 +7,7 @@ local FakeDataService = require("./doubles/FakeDataService")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local AnalyticsDef = require("@game/ServerScriptService/Forge/Services/AnalyticsService")
-local KingdomsAnalytics = require("../../../../games/game-001/config/Analytics")
+local TestAnalytics = require("./doubles/TestAnalytics")
 
 local function boot(env, options)
 	local defs = {
@@ -48,7 +48,7 @@ describe("AnalyticsService adapter (§8)", function()
 		env = MockEnv.new({ seed = 3 })
 		roblox = env.AnalyticsService
 		player = env.mock.players:add({ userId = 101 })
-		service = boot(env, { config = KingdomsAnalytics, bus = FakeBus.new() })
+		service = boot(env, { config = TestAnalytics.build(), bus = FakeBus.new() })
 	end)
 
 	describe("event()", function()
@@ -196,13 +196,13 @@ describe("AnalyticsService adapter (§8)", function()
 			local bare = MockEnv.new()
 			bare.AnalyticsService = nil
 			local p = bare.mock.players:add({ userId = 7 })
-			local s = boot(bare, { config = KingdomsAnalytics, bus = FakeBus.new() })
+			local s = boot(bare, { config = TestAnalytics.build(), bus = FakeBus.new() })
 			expect(s:event(p, "SessionStart", {})).toBe(false)
 			expect(s.stats.dropped.unavailable).toBe(1)
 		end)
 
 		it("disables itself (no throw) when the config is invalid", function()
-			local broken = table.clone(KingdomsAnalytics)
+			local broken = TestAnalytics.build()
 			broken.funnels = { Bad = { kind = "nope", description = "x" } }
 			local s = boot(env, { config = broken, bus = FakeBus.new() })
 			expect(env.mock:hasLog("error", "analytics config invalid")).toBe(true)
@@ -264,16 +264,28 @@ describe("AnalyticsService adapter (§8)", function()
 end)
 
 describe("AnalyticsService bus wiring", function()
-	local env, bus, player, roblox, service
+	local env, bus, player, roblox, service, members
 
 	beforeEach(function()
 		GameEvents.disconnectAll()
 		env = MockEnv.new({ seed = 4 })
 		roblox = env.AnalyticsService
-		bus = FakeBus.new()
+		bus = FakeBus.new({ extra = { "TestDuel" } })
 		player = env.mock.players:add({ userId = 201 })
-		env.mock.players:add({ userId = 202 }) -- second ruler (defender in battle specs)
-		service = boot(env, { config = KingdomsAnalytics, bus = bus })
+		local second = env.mock.players:add({ userId = 202 }) -- second ruler (defender in duel specs)
+		members = { crimson = { player, second }, azure = {} }
+		service = boot(env, {
+			config = TestAnalytics.build({
+				membersOf = function(kingdom)
+					return members[kingdom] or {}
+				end,
+				matchId = function()
+					return "m7"
+				end,
+				duel = true,
+			}),
+			bus = bus,
+		})
 	end)
 
 	local function funnelSteps(name)
@@ -342,10 +354,10 @@ describe("AnalyticsService bus wiring", function()
 		expect(finished[1].session).toBe("m1")
 	end)
 
-	it("runs the match funnel per matchId from kingdom signals (actor only)", function()
+	it("runs the match funnel per match from game events through config resolvers", function()
 		bus.RoundStateChanged:fire("Active", { roundId = "m7", endsAt = nil })
-		bus.BuildingCompleted:fire(player, { matchId = "m7", kingdomId = "k1", buildingType = "Farm", level = 1 })
-		bus.UnitsRecruited:fire(player, { matchId = "m7", kingdomId = "k1", unitType = "Spearman", count = 5 })
+		bus.BuildingCompleted:fire({ id = 1, kingdom = "crimson", type = "farm", level = 1 }, player)
+		bus.UnitsRecruited:fire(player, "crimson", 3)
 		local steps = {}
 		for _, s in funnelSteps("MatchProgress") do
 			if s.userId == 201 then
@@ -362,17 +374,29 @@ describe("AnalyticsService bus wiring", function()
 		expect(first).toEqual({ "MatchJoined", "FirstBuilding", "FirstArmy" })
 	end)
 
-	it("logs battles for attacker and defender with who won", function()
-		bus.BattleEnded:fire(player, {
-			matchId = "m1",
-			kingdomId = "k1",
-			battleId = "b1",
-			defenderKingdomId = "k2",
-			defenderUserId = 202,
-			winnerKingdomId = "k2",
-			attackerLosses = 10,
-			defenderLosses = 4,
-		})
+	it("credits every current member of the kingdom, and nobody else, for a completion", function()
+		local outsider = env.mock.players:add({ userId = 203 })
+		bus.BuildingCompleted:fire({ id = 2, kingdom = "crimson", type = "house", level = 1 }, nil)
+		local credited = {}
+		for _, s in funnelSteps("FirstMatch") do
+			credited[s.userId] = s.name
+		end
+		expect(credited[201]).toBe("FirstBuilding")
+		expect(credited[202]).toBe("FirstBuilding")
+		expect(credited[outsider.UserId]).toBeNil()
+	end)
+
+	it("isolates a resolver that errors (no calls, no crash)", function()
+		members = nil -- membersOf now indexes nil and errors inside the resolver
+		bus.BuildingCompleted:fire({ id = 3, kingdom = "crimson", type = "farm", level = 1 }, player)
+		expect(#funnelSteps("FirstMatch")).toBe(0)
+		expect(service.stats.failed).toBe(0)
+		expect(env.mock:hasLog("warn", "subjects resolver for BuildingCompleted failed")).toBe(true)
+	end)
+
+	it("logs both sides of a two-party event with who won", function()
+		local defender = env.mock.players:get(202)
+		bus.TestDuel:fire(player, defender, defender)
 		local byUser = {}
 		for _, call in roblox:callsTo("LogCustomEvent") do
 			if call.args[1] == "BattleEnded" then
@@ -383,25 +407,20 @@ describe("AnalyticsService bus wiring", function()
 		expect(byUser[202]).toEqual({ CustomField01 = "defender", CustomField02 = "true" })
 	end)
 
-	it("on the real GameEvents bus, kingdom rules wait without errors", function()
+	it("works on the real GameEvents bus (game events are declared there, D-024)", function()
 		local real = MockEnv.new({ seed = 5 })
 		local p = real.mock.players:add({ userId = 301 })
-		local s = boot(real, { config = KingdomsAnalytics })
-		expect(real.mock:hasLog("info", "waiting for bus events not declared yet")).toBe(true)
+		local s = boot(real, { config = TestAnalytics.build() })
 		GameEvents.ShopViewed:fire(p, "main", nil)
 		expect(#real.AnalyticsService:callsTo("LogFunnelStepEvent")).toBe(1)
 		expect(s.stats.failed).toBe(0)
+		expect(real.mock:hasLog("error", "analytics")).toBe(false)
 	end)
 
 	it("does not double-count once-funnel steps within a session", function()
-		bus.ResourceProduced:fire(
-			player,
-			{ matchId = "m1", kingdomId = "k1", resource = "Food", amount = 3, total = 3 }
-		)
-		bus.ResourceProduced:fire(
-			player,
-			{ matchId = "m1", kingdomId = "k1", resource = "Food", amount = 3, total = 6 }
-		)
+		bus.ResourceGathered:fire(player, "crimson", "food", 3, "ruler")
+		bus.ResourceGathered:fire(player, "crimson", "food", 3, "ruler")
+		bus.ResourceGathered:fire(nil, "crimson", "wood", 5, "citizen") -- citizens: no player credit
 		expect(#funnelSteps("FirstReward")).toBe(1)
 	end)
 end)
@@ -430,7 +449,15 @@ describe("AnalyticsService sessions", function()
 	it("logs SessionStart (days since first join), the Return funnel, and SessionEnd with the last activity", function()
 		local player = env.mock.players:add({ userId = 401 })
 		loadCore(player, 1700000000 - 86400)
-		boot(env, { config = KingdomsAnalytics, bus = bus, data = data })
+		boot(env, {
+			config = TestAnalytics.build({
+				membersOf = function()
+					return { env.mock.players:get(401) }
+				end,
+			}),
+			bus = bus,
+			data = data,
+		})
 		bus.PlayerReady:fire(player)
 		local start = roblox:callsTo("LogCustomEvent")[1]
 		expect(start.args[1]).toBe("SessionStart")
@@ -440,7 +467,7 @@ describe("AnalyticsService sessions", function()
 		expect(ret.args[1]).toBe("Return")
 		expect(ret.args[3]).toBe(2)
 		expect(ret.args[4]).toBe("ReturnNextDay")
-		bus.BuildingCompleted:fire(player, { matchId = "m1", kingdomId = "k1", buildingType = "Farm", level = 1 })
+		bus.BuildingCompleted:fire({ id = 9, kingdom = "crimson", type = "farm", level = 1 }, player)
 		env.wait(125)
 		env.mock.players:remove(player)
 		local last = roblox.calls[#roblox.calls]
@@ -452,7 +479,15 @@ describe("AnalyticsService sessions", function()
 	it("first-day players log Return step 1 (FirstSession)", function()
 		local player = env.mock.players:add({ userId = 403 })
 		loadCore(player, 1700000000 - 60)
-		boot(env, { config = KingdomsAnalytics, bus = bus, data = data })
+		boot(env, {
+			config = TestAnalytics.build({
+				membersOf = function()
+					return { env.mock.players:get(401) }
+				end,
+			}),
+			bus = bus,
+			data = data,
+		})
 		bus.PlayerReady:fire(player)
 		expect(roblox:callsTo("LogCustomEvent")[1].args[3]).toEqual({ CustomField01 = "firstDay" })
 		local steps = roblox:callsTo("LogFunnelStepEvent")
@@ -463,14 +498,22 @@ describe("AnalyticsService sessions", function()
 	it("logs no Return step for later days, and visit 'unknown' without DataService", function()
 		local late = env.mock.players:add({ userId = 404 })
 		loadCore(late, 1700000000 - 3 * 86400)
-		boot(env, { config = KingdomsAnalytics, bus = bus, data = data })
+		boot(env, {
+			config = TestAnalytics.build({
+				membersOf = function()
+					return { env.mock.players:get(401) }
+				end,
+			}),
+			bus = bus,
+			data = data,
+		})
 		bus.PlayerReady:fire(late)
 		expect(#roblox:callsTo("LogFunnelStepEvent")).toBe(0)
 		GameEvents.disconnectAll()
 		local env2 = MockEnv.new({ seed = 7 })
 		local bus2 = FakeBus.new()
 		local anon = env2.mock.players:add({ userId = 405 })
-		boot(env2, { config = KingdomsAnalytics, bus = bus2 })
+		boot(env2, { config = TestAnalytics.build(), bus = bus2 })
 		bus2.PlayerReady:fire(anon)
 		expect(env2.AnalyticsService:callsTo("LogCustomEvent")[1].args[3]).toEqual({ CustomField01 = "unknown" })
 		expect(#env2.AnalyticsService:callsTo("LogFunnelStepEvent")).toBe(0)

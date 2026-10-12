@@ -1,129 +1,99 @@
 --!strict
 --[[
-	AI Kingdoms (game-001) first-session onboarding — owner FORGE-04. Engine: Experience/Onboarding.
-	Design notes: production/handoffs/2026-10-12-forge-04-to-forge-00-ai-kingdoms-experience.md §4.
+	AI Kingdoms (game-001) VS-1 onboarding — owner FORGE-04. Engine: the framework OnboardingService
+	(roblox/src/server/Services/OnboardingService.luau, FL-0025); this file is FL-0062's step list.
+	BRIEF §4 "First two minutes guided": gather -> build -> recruit -> capture.
 
-	Teach by doing: every step is something the player does (move, look, tap, order, build) or sees
-	happen because of what they did; hints are one line. The tutorial never blocks play: hints are a
-	small card plus an arrow, Skip is always visible, and steps the player already did complete at
-	once. Expected time (expectSec): first interaction at ~3 s, first reward (the first harvest,
-	+25 Crowns) at ~100 s, whole flow ~3.5 min.
-
-	Needs from others: bus events CitizenTaskChanged / ConstructionStarted / ResourceProduced /
-	BuildingUpgraded (FORGE-01, proposed), the "OnboardingCastle" and "Citizen" tags (FORGE-01 / map),
-	UI targets "HUD.Resources", "HUD.BuildButton" and the "ResourceInspected" / "GoalAcknowledged"
-	reports from FORGE-03's HUD, and the "Crowns" currency (FORGE-03).
+	- Starts on G9 `KingdomJoined` (D-027), not PlayerReady.
+	- Every step after the first waits for a G9 event, attributed by Feedback/Signals (CONTRACTS G9):
+	  the ruler's own gather, the build the player placed (placedBy), any completion and the capture
+	  for every member of the kingdom. A step done early (a co-ruler finished the building first)
+	  completes the moment it comes up.
+	- Hints are one line and point at world objects by WorldService's tags (G10: ResourceNode,
+	  BuildZone, ObjectiveZone; the nearest one is marked) or at HUD controls by their OnboardingTarget
+	  attribute (FORGE-03's BuildMenu and ArmyPanel; handoff).
+	- Session-only progress when DataService is absent (D-027). No rewards: VS-1 has no meta currency;
+	  the first reward is the first gather itself (+N on the treasury).
+	Timing (expectSec, typical new player) against PACING.md targets: first gather ~25 s (target <= 45),
+	build placed ~70 s (<= 90), complete ~130 s (<= 150), recruit ~300 s (<= 330), capture ~420 s (<= 450).
 ]]
 
+local Signals = require("@game/ReplicatedStorage/Game/Feedback/Signals")
+
 return table.freeze({
-	clientActions = { "RulerMoved", "ReachedCastle", "ResourceInspected", "GoalAcknowledged" },
-	limits = { firstInteractionSec = 30, firstRewardSec = 180 },
+	subjects = Signals.subjects,
+	clientActions = { "GoalAcknowledged" },
+	limits = { firstInteractionSec = 30 },
 	flows = {
 		{
-			id = "first_session",
+			id = "vs1",
 			version = 1,
 			funnel = true,
-			startOn = "PlayerReady",
-			completeReward = { currency = "Crowns", amount = 50 },
+			startOn = "KingdomJoined",
 			steps = {
 				{
-					id = "Arrive",
+					id = "Spawn",
 					trigger = { auto = true },
-					hint = { title = "Welcome, ruler. This land is yours." },
-					expectSec = 3,
+					hint = { title = "Welcome, ruler. Your citizens are already at work." },
+					expectSec = 2,
 				},
 				{
-					id = "MoveRuler",
-					trigger = { client = "RulerMoved" },
+					id = "Gather",
+					trigger = { bus = "ResourceGathered", match = { source = "ruler" } },
 					hint = {
-						title = "Walk to your castle",
-						body = "Move with WASD or the thumbstick.",
-						target = { kind = "world", tag = "OnboardingCastle" },
+						title = "Gather from a tree or rock",
+						body = "Walk up and tap or click it. Every bit fills the treasury.",
+						target = { kind = "world", tag = "ResourceNode" },
 					},
-					expectSec = 8,
-					interactive = true,
-					nudgeAfterSec = 12,
-				},
-				{
-					id = "FindKingdom",
-					trigger = { client = "ReachedCastle" },
-					hint = {
-						title = "Your banner marks your kingdom",
-						body = "Everything inside your coloured border is yours to build on.",
-						target = { kind = "world", tag = "OnboardingCastle" },
-					},
-					expectSec = 10,
+					expectSec = 23,
 					interactive = true,
 					nudgeAfterSec = 20,
 				},
 				{
-					id = "CheckResources",
-					trigger = { client = "ResourceInspected" },
+					id = "PlaceBuilding",
+					trigger = { bus = "BuildingPlaced", match = { placedBy = true } },
 					hint = {
-						title = "Tap your Food",
-						body = "Food feeds citizens. Wood and Stone build. Gold pays soldiers.",
-						target = { kind = "ui", name = "HUD.Resources" },
-					},
-					expectSec = 8,
-					interactive = true,
-					nudgeAfterSec = 10,
-					autoAdvanceSec = 20,
-				},
-				{
-					id = "AssignCitizen",
-					trigger = { bus = "CitizenTaskChanged", match = { role = "actor" } },
-					hint = {
-						title = "Put a citizen to work",
-						body = "Tap an idle citizen, then tap the fields.",
-						target = { kind = "world", tag = "Citizen" },
-					},
-					expectSec = 15,
-					interactive = true,
-					nudgeAfterSec = 20,
-				},
-				{
-					id = "PlaceFarm",
-					trigger = { bus = "ConstructionStarted", match = { role = "actor", buildingType = "Farm" } },
-					hint = {
-						title = "Build a farm",
-						body = "Open Build, choose Farm, place it on green land.",
+						title = "Build a House or a Farm",
+						body = "Open Build, choose one, place it on open ground.",
 						target = { kind = "ui", name = "HUD.BuildButton" },
 					},
-					expectSec = 25,
+					expectSec = 45,
 					interactive = true,
-					nudgeAfterSec = 25,
+					nudgeAfterSec = 30,
 				},
 				{
-					id = "FirstHarvest",
-					trigger = { bus = "ResourceProduced", match = { role = "actor", resource = "Food" } },
+					id = "BuildingComplete",
+					trigger = { bus = "BuildingCompleted" },
 					hint = {
-						title = "Your citizens are working",
-						body = "Watch the farm: your first harvest is coming.",
+						title = "Your builders are on their way",
+						body = "Watch it rise. Gather more wood while you wait.",
+						target = { kind = "world", tag = "BuildZone" },
 					},
-					expectSec = 30,
-					reward = { currency = "Crowns", amount = 25 },
+					expectSec = 60,
 				},
 				{
-					id = "UpgradeHall",
-					trigger = { bus = "BuildingUpgraded", match = { role = "actor", buildingType = "TownHall" } },
+					id = "Recruit",
+					trigger = { bus = "UnitsRecruited" },
 					hint = {
-						title = "Upgrade your Town Hall",
-						body = "A bigger hall unlocks new buildings and more citizens.",
-						target = { kind = "world", tag = "OnboardingTownHall" },
+						title = "Build a Barracks, then recruit 3 soldiers",
+						body = "Soldiers cost food and wood from the treasury.",
+						target = { kind = "ui", name = "HUD.Recruit" },
 					},
-					expectSec = 90,
+					expectSec = 170,
+					interactive = true,
+					nudgeAfterSec = 60,
+				},
+				{
+					id = "Capture",
+					trigger = { bus = "ObjectiveCaptured" },
+					hint = {
+						title = "Send your soldiers to the watchtower",
+						body = "Press Send to capture and hold the ring until the bar fills.",
+						target = { kind = "world", tag = "ObjectiveZone" },
+					},
+					expectSec = 120,
 					interactive = true,
 					nudgeAfterSec = 45,
-				},
-				{
-					id = "NextGoal",
-					trigger = { client = "GoalAcknowledged" },
-					hint = {
-						title = "Your kingdom grows",
-						body = "Next: train soldiers before your rivals come.",
-					},
-					expectSec = 6,
-					autoAdvanceSec = 10,
 				},
 			},
 		},

@@ -13,27 +13,30 @@
 ]]
 
 local Schema = require("./Schema")
-local Validators = require("./Validators")
+local V = require("../Core/Validate")
+
+-- A setting value: a boolean, a volume 0..1, or a short enum string (Schema.checkSetting re-checks per key).
+local settingValue = V.oneOf({ V.boolean(), V.number(0, 1), V.string(1, 16) })
 
 return {
 	{ name = "Experience.Settings", kind = "serverEvent" },
 	{
 		name = "Experience.SetSetting",
 		kind = "event",
-		args = { Validators.enum(Schema.SETTING_KEYS), Validators.settingValue() },
+		args = { V.enum(Schema.SETTING_KEYS), settingValue },
 		rate = { burst = 10, perSecond = 2 },
 	},
 	{ name = "Experience.OnboardingState", kind = "serverEvent" },
 	{
 		name = "Experience.OnboardingAction",
 		kind = "event",
-		args = { Validators.string(1, 32), Validators.string(1, 48) },
+		args = { V.string(1, 32), V.string(1, 48) },
 		rate = { burst = 6, perSecond = 2 },
 	},
 	{
 		name = "Experience.OnboardingSkip",
 		kind = "event",
-		args = { Validators.string(1, 32) },
+		args = { V.string(1, 32) },
 		rate = { burst = 2, perSecond = 0.2 },
 	},
 }

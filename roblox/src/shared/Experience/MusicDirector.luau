@@ -1,20 +1,21 @@
 --!strict
 --[[
-	Experience/MusicDirector — picks the music state from match pacing, combat and the result, with
-	hysteresis so the music never flip-flops. Pure; AudioController plays the chosen track.
+	Experience/MusicDirector — picks the music state from the match phase, combat and the result,
+	with hysteresis so the music never flip-flops. Pure; AudioController:setMusic plays the state.
+	Generic: the game maps its phases to states (game-001: MatchPhase -> state in its MusicController).
 
-		local music = MusicDirector.new({ minDwellSec = 20, combatHoldSec = 25 })
-		music:combat(now)                  -- a combat cue happened (CueDirector action music = "combat")
-		music:calm(now)                    -- combat ended for us (music = "calm"): battle rings out for calmTailSec
+		local music = MusicDirector.new({ phaseStates = { Founding = "calm", Expansion = "build", ... },
+		                                  minDwellSec = 20, combatHoldSec = 25, calmTailSec = 8 })
+		music:combat(now)                  -- a combat cue happened
+		music:calm(now)                    -- combat ended for us: battle rings out for calmTailSec
 		music:update(now, { phase: string?, inMatch: boolean, result: ("won" | "lost")? }) -> string?
 			returns the new state when it changes, else nil
 
-	States -> sound ids (STATE_SOUNDS): calm, build, tension, battle, victory, defeat.
-	Rules
+	States -> sound ids: STATE_SOUNDS (music.calm ... music.defeat); a game registers those ids in its
+	Sounds.luau. Rules
 		result won/lost              -> victory/defeat at once (overrides everything)
 		combat within combatHoldSec  -> battle at once; leaves battle only when the hold has passed
-		otherwise by phase           -> Opening calm, Development build, Competition/Conflict/Resolution tension;
-		                                not in a match -> calm
+		otherwise                    -> phaseStates[phase] (default "calm"); not in a match -> calm
 		phase changes wait until the current state has played minDwellSec (urgent states do not wait)
 ]]
 
@@ -30,17 +31,17 @@ MusicDirector.STATE_SOUNDS = table.freeze({
 	defeat = "music.defeat",
 })
 
-local PHASE_STATE = table.freeze({
-	Opening = "calm",
-	Development = "build",
-	Competition = "tension",
-	Conflict = "tension",
-	Resolution = "tension",
-})
+export type Options = {
+	phaseStates: { [string]: string }?,
+	minDwellSec: number?,
+	combatHoldSec: number?,
+	calmTailSec: number?,
+}
 
-function MusicDirector.new(options: { minDwellSec: number?, combatHoldSec: number?, calmTailSec: number? }?)
+function MusicDirector.new(options: Options?)
 	local opts = options or {}
 	return setmetatable({
+		_phaseStates = opts.phaseStates or {},
 		state = nil :: string?,
 		_since = -math.huge,
 		_lastCombat = -math.huge,
@@ -77,7 +78,7 @@ function MusicDirector:update(now: number, inputs: { phase: string?, inMatch: bo
 	if inputs.inMatch and now - self._lastCombat < self._hold then
 		return self:_set("battle", now)
 	end
-	local desired = if inputs.inMatch then (PHASE_STATE[inputs.phase or "Opening"] or "calm") else "calm"
+	local desired = if inputs.inMatch then (self._phaseStates[inputs.phase or ""] or "calm") else "calm"
 	if self.state == nil then
 		return self:_set(desired, now)
 	end

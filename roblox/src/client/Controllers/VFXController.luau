@@ -1,47 +1,34 @@
 --!strict
 --[[
-	VFXController (FORGE-04, client) — particle presets, floating numbers, citizen reactions, and the
-	kingdom feedback pipeline that turns gameplay signals into sound + visuals + toasts + music.
+	VFXController (FORGE-04, client) — particle presets, floating text and speech bubbles within the
+	mobile budget. Generic: games add their own presets and decide when to play them (game-001: the
+	FeedbackController in games/game-001/src/client/Controllers, FL-0062).
 
-	Effects
 		VFXController:play(presetId, opts?: { position: Vector3?, parent: Instance?, tint: Color3? }) -> Effect?
 		VFXController:stop(effect)                         -- continuous presets; bursts clean up themselves
-		VFXController:float(text, position?) -> Instance?  -- rising text ("+3 Food"), FLOAT_SEC, max FLOATS
-		VFXController:react(reaction, position?, kingdomId) -> { Bark }   -- citizen speech bubbles
-		VFXController.shakeRequested: Signal (magnitude, duration) -- FORGE-01's CameraController applies it
-		VFXController.idleNudge: Signal (phase, idleSec)            -- OnboardingController shows a hint
+		VFXController:register(presets) -> { string }      -- add game presets (validated; problems returned)
+		VFXController:float(text, position?) -> Instance?  -- rising text ("+3 Wood"), FLOAT_SEC, max FLOATS
+		VFXController:bubble(adornee, text, seconds) -> Instance?  -- a speech bubble over a part or model
+		VFXController.shakeRequested: Signal (magnitude, duration) -- the game's camera controller applies it
 		VFXController.stats = { played, skipped = { [reason]: number } }
 	Budget (Experience/VfxPresets.BUDGET): live particles on screen <= particlesOnScreen and at most
 	activePresets effects; a new effect that does not fit evicts strictly lower-priority continuous
 	effects, otherwise it is skipped. Reduced motion (SettingsController:reducedMotion) applies each
-	preset's rule: "skip", "reduce" (half the particles, no shake) or "keep".
-
-	Feedback pipeline (start): signals arrive on the proposed FORGE-01 remotes Gameplay.KingdomEvent
-	(eventName, info) and Gameplay.SiegeImpact (info), plus the contract's Gameplay.RoundState and
-	Gameplay.RoundResult. Each signal goes through Experience/CueDirector; actions are dispatched to
-	AudioController (sound), this controller (vfx, float, react), NotificationController (notify,
-	celebrate; optional until FL-0027) and Experience/MusicDirector (music). The local kingdom is
-	Players.LocalPlayer:GetAttribute("KingdomId") (proposed to FORGE-01). Call handleSignal(eventName,
-	info) directly to drive it (specs, sandbox tools).
+	preset's rule: "skip", "reduce" (half the particles, no shake) or "keep". Floats do not rise with
+	reduced motion; they only fade.
 ]]
 
-local CitizenReactions = require("@game/ReplicatedStorage/Forge/Experience/CitizenReactions")
-local CueDirector = require("@game/ReplicatedStorage/Forge/Experience/CueDirector")
-local MusicDirector = require("@game/ReplicatedStorage/Forge/Experience/MusicDirector")
-local Pacing = require("@game/ReplicatedStorage/Forge/Experience/Pacing")
-local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
 
 local VFXController = {}
 VFXController.__index = VFXController
 
-local Def = { name = "VFXController", dependencies = { "SettingsController", "AudioController" } }
+local Def = { name = "VFXController", dependencies = { "SettingsController" } }
 
 Def.FLOAT_SEC = 1.2
 Def.FLOATS = 12
-Def.OTHER_RANGE = 250 -- studs: rivals' cosmetic effects farther than this from the camera are not drawn
-Def.CITIZEN_TAG = "Citizen"
+Def.BUBBLES = 8
 
 export type Effect = { id: string, preset: any, live: number, priority: number, continuous: boolean, parts: { any } }
 
@@ -136,21 +123,11 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_env = env,
 		_registry = registry,
 		_settings = registry:get("SettingsController"),
-		_audio = registry:get("AudioController"),
 		_backend = opts.backend or Def.liveBackend(env),
-		_rng = opts.rng or env.random(),
-		_focus = opts.focus,
-		_kingdomId = opts.kingdomId,
 		_effects = {} :: { Effect },
 		_floats = {},
-		_memory = CitizenReactions.newMemory(),
-		_links = {},
-		_running = false,
-		_match = { inMatch = false, roundId = nil, result = nil },
-		music = MusicDirector.new(),
-		pacing = nil :: any,
+		_bubbles = {},
 		shakeRequested = Signal.new(),
-		idleNudge = Signal.new(),
 		stats = { played = 0, skipped = {} },
 	}, VFXController)
 end
@@ -162,23 +139,6 @@ end
 function VFXController:_skip(reason: string): nil
 	self.stats.skipped[reason] = (self.stats.skipped[reason] or 0) + 1
 	return nil
-end
-
-function VFXController:_localKingdom(): string?
-	if self._kingdomId then
-		return self._kingdomId()
-	end
-	local player = self._env.Players and self._env.Players.LocalPlayer
-	local id = if player then player:GetAttribute("KingdomId") else nil
-	return if type(id) == "string" then id else nil
-end
-
-function VFXController:_focusPosition(): any
-	if self._focus then
-		return self._focus()
-	end
-	local camera = self._env.Workspace.CurrentCamera
-	return if camera then camera.CFrame.Position else nil
 end
 
 -- ------------------------------------------------------------------ effects
@@ -370,245 +330,41 @@ function VFXController:float(text: string, position: any?): any
 	return attachment
 end
 
-local function positionOf(instance: any): any
-	if instance:IsA("BasePart") then
-		return instance.Position
-	elseif instance:IsA("Model") and instance.PrimaryPart then
-		return instance.PrimaryPart.Position
+function VFXController:bubble(adornee: any, text: string, seconds: number): any
+	if adornee == nil or text == "" then
+		return self:_skip("bubble")
 	end
-	return nil
-end
-
-function VFXController:_citizens(): ({ any }, { [string]: any })
-	local list, byId = {}, {}
-	local ok, tagged = pcall(function()
-		return self._env.CollectionService:GetTagged(Def.CITIZEN_TAG)
+	if #self._bubbles >= Def.BUBBLES then
+		local oldest = table.remove(self._bubbles, 1)
+		self._backend.destroy(oldest)
+	end
+	local gui = billboard(self._env, text, Color3.fromRGB(255, 255, 255), UDim2.fromOffset(180, 40))
+	gui.Name = "ForgeBubble"
+	gui.StudsOffset = Vector3.new(0, 3, 0)
+	gui.Adornee = adornee
+	gui.Parent = adornee
+	table.insert(self._bubbles, gui)
+	self._env.spawn(function()
+		self._env.wait(seconds)
+		local index = table.find(self._bubbles, gui)
+		if index then
+			table.remove(self._bubbles, index)
+		end
+		self._backend.destroy(gui)
 	end)
-	if not ok then
-		return list, byId
-	end
-	for _, instance in tagged do
-		local id, kingdom = instance:GetAttribute("CitizenId"), instance:GetAttribute("KingdomId")
-		local position = positionOf(instance)
-		if type(id) == "string" and type(kingdom) == "string" and position then
-			table.insert(list, { id = id, kingdomId = kingdom, position = position })
-			byId[id] = instance
-		end
-	end
-	return list, byId
+	return gui
 end
 
-function VFXController:react(reaction: string, position: any?, kingdomId: string?): { any }
-	if self._settings:get("citizenBarks") == false then
-		return {}
-	end
-	local citizens, byId = self:_citizens()
-	local barks =
-		CitizenReactions.pick(reaction, citizens, position, kingdomId, self._rng, self._env.clock(), self._memory)
-	for _, bark in barks do
-		local instance = byId[bark.citizenId]
-		local adornee = if instance:IsA("Model") then instance.PrimaryPart else instance
-		local gui = billboard(self._env, bark.line, Color3.fromRGB(255, 255, 255), UDim2.fromOffset(180, 40))
-		gui.Name = "ForgeBark"
-		gui.StudsOffset = Vector3.new(0, 3, 0)
-		gui.Adornee = adornee
-		gui.Parent = adornee
-		instance:SetAttribute("ForgeEmote", bark.emote) -- FORGE-01's citizen animator may play it
-		self._env.spawn(function()
-			self._env.wait(bark.durationSec)
-			self._backend.destroy(gui)
-			if instance:GetAttribute("ForgeEmote") == bark.emote then
-				instance:SetAttribute("ForgeEmote", nil)
-			end
-		end)
-	end
-	return barks
-end
-
--- ------------------------------------------------------------------ feedback pipeline
-
-function VFXController:_director(): any
-	if self._cues == nil then
-		self._cues = CueDirector.new({
-			now = self._env.clock,
-			kingdomId = function()
-				return self:_localKingdom()
-			end,
-			setting = function(key)
-				return self._settings:get(key)
-			end,
-		})
-	end
-	return self._cues
-end
-
-function VFXController:_notify(method: string, ...)
-	local notifications = self._registry:find("NotificationController")
-	if notifications == nil then
-		self._env.log("info", `feedback: {method} skipped (NotificationController not loaded)`, {})
-		return
-	end
-	notifications[method](notifications, ...)
-end
-
-function VFXController:_inRange(position: any, mine: boolean): boolean
-	if mine or position == nil then
-		return true
-	end
-	local focus = self:_focusPosition()
-	return focus == nil or (position - focus).Magnitude <= Def.OTHER_RANGE
-end
-
-function VFXController:dispatch(actions: { any }, mine: boolean)
-	local now = self._env.clock()
-	for _, action in actions do
-		if action.kind == "sound" then
-			self._audio:play(action.id, { position = action.position })
-		elseif action.kind == "vfx" then
-			if self:_inRange(action.position, mine) then
-				self:play(action.id, { position = action.position, tint = action.tint })
-			end
-		elseif action.kind == "float" then
-			self:float(action.text, action.position)
-		elseif action.kind == "react" then
-			self:react(action.reaction, action.position, action.kingdomId)
-		elseif action.kind == "notify" then
-			self:_notify("show", action.notification)
-		elseif action.kind == "celebrate" then
-			self:_notify("celebrate", action.celebration, action.payload)
-		elseif action.kind == "music" then
-			if action.input == "combat" then
-				self.music:combat(now)
-			else
-				self.music:calm(now)
-			end
-			self:_updateMusic()
-		end
-	end
-end
-
-function VFXController:handleSignal(eventName: string, info: { [string]: any }?): { any }
-	local data = info or {}
-	if self.pacing then
-		self.pacing:setKingdom(self:_localKingdom())
-		self.pacing:observe(eventName, data, self._env.clock())
-	end
-	local actions = self:_director():handle(eventName, data)
-	local mine = self:_localKingdom() ~= nil and data.kingdomId == self:_localKingdom()
-	self:dispatch(actions, mine)
-	return actions
-end
-
-function VFXController:_updateMusic()
-	local phase = if self.pacing then self.pacing:phase() else nil
-	local state = self.music:update(
-		self._env.clock(),
-		{ phase = phase, inMatch = self._match.inMatch, result = self._match.result }
-	)
-	if state then
-		self._audio:setMusic(state)
-	end
-end
-
-function VFXController:onRoundState(state: string, roundId: string?)
-	local now = self._env.clock()
-	if state == "Active" then
-		if roundId ~= self._match.roundId or not self._match.inMatch then
-			self._match = { inMatch = true, roundId = roundId, result = nil }
-			self.pacing = Pacing.new(now, { kingdomId = self:_localKingdom() })
-		end
-	elseif state == "Results" then
-		if self.pacing then
-			self.pacing:observe("RoundStateChanged", { state = "Results" }, now)
-		end
-	else
-		self._match = { inMatch = false, roundId = nil, result = nil }
-		self.pacing = nil
-	end
-	self:_updateMusic()
-end
-
-function VFXController:onRoundResult(result: any)
-	local player = self._env.Players and self._env.Players.LocalPlayer
-	if type(result) ~= "table" or player == nil then
-		return
-	end
-	local participant = false
-	for _, entry in result.participants or {} do
-		if entry.userId == player.UserId then
-			participant = true
-		end
-	end
-	if not participant then
-		return
-	end
-	local won = table.find(result.winners or {}, player.UserId) ~= nil
-	self._match.result = if won then "won" else "lost"
-	if won then
-		self:play("kingdom.victory", { position = self:_focusPosition() })
-	end
-	self:_updateMusic()
-end
-
-function VFXController:start()
-	local env = self._env
-	self._running = true
-	table.insert(
-		self._links,
-		RemoteLink.on(env, "Gameplay.KingdomEvent", function(eventName, info)
-			if type(eventName) == "string" then
-				self:handleSignal(eventName, if type(info) == "table" then info else {})
-			end
-		end)
-	)
-	table.insert(
-		self._links,
-		RemoteLink.on(env, "Gameplay.SiegeImpact", function(info)
-			self:handleSignal("SiegeImpact", if type(info) == "table" then info else {})
-		end)
-	)
-	table.insert(
-		self._links,
-		RemoteLink.on(env, "Gameplay.RoundState", function(state, roundId)
-			self:onRoundState(state, roundId)
-		end)
-	)
-	table.insert(
-		self._links,
-		RemoteLink.on(env, "Gameplay.RoundResult", function(result)
-			self:onRoundResult(result)
-		end)
-	)
-	self:_updateMusic()
-	env.spawn(function()
-		while self._running do
-			env.wait(1)
-			if not self._running then
-				break
-			end
-			local now = env.clock()
-			if self.pacing then
-				self.pacing:tick(now)
-				if self.pacing:nudgeDue(now) then
-					self.idleNudge:fire(self.pacing:phase(), self.pacing:idleFor(now))
-				end
-			end
-			self:_updateMusic()
-		end
-	end)
+function VFXController:register(presets: { any }): { string }
+	return VfxPresets.register(presets)
 end
 
 function VFXController:destroy()
-	self._running = false
-	for _, link in self._links do
-		link:disconnect()
-	end
 	for _, effect in table.clone(self._effects) do
 		self:_remove(effect)
 		self:_destroyParts(effect)
 	end
 	self.shakeRequested:disconnectAll()
-	self.idleNudge:disconnectAll()
 end
 
 return Def
