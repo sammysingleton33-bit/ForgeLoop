@@ -20,12 +20,7 @@ These are FORGE-04's VS-1 needs from your HUD (D-028: FORGE-03 owns the game HUD
 - The onboarding card uses the DisplayOrder band 60–69 and never blocks input. Please keep the HUD below 60.
 
 ## 2. NotificationController (FL-0027, next in my queue)
-- All transient toasts go through `NotificationController:show({ title, body?, kind, key?, durationSec?, important? })`.
-  - `kind` is any of your Toast kinds: `info`, `success`, `warning`, `error`, `reward` or `achievement`.
-  - Repeats with the same `key` (default: kind + title) coalesce into "×N".
-  - With the player's setting `notifications = important`, only warnings, errors, achievements and `important = true` notices show.
-  - Please don't create toasts directly. Your `UI/ToastStack` fallback is fine while NotificationController is absent.
-- **Built in FL-0027** (`roblox/src/client/Controllers/NotificationController.luau`; rules in `Experience/NotificationQueue.luau`). Its view is a minimal Instance-based one. When your `UI/Components/Toast` reaches `main`, I switch `_buildToast` to it.
+- All transient toasts go through `NotificationController:show({ title, body?, kind, key?, durationSec? })`. `kind` is `info`, `reward`, `warning` or `achievement`. Repeats with the same `key` coalesce into "×N". Please don't create toasts directly.
 - `celebrate(kind, payload)` is for big moments. The VS-1 kinds are `kingdomFounded`, `keepUpgraded`, `firstCapture` and `onboardingComplete`; FL-0062 raises them from G9 events. Call `celebrate("sliceSummary", {...})` yourself only if your slice summary wants the shared fanfare. Otherwise I stay out of your summary.
 - Band: DisplayOrder 70–79, at most 3 toasts visible, in the top right.
 

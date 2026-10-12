@@ -16,6 +16,7 @@ evidence:
   - mutations.py FL-0027 rows 13/13 CAUGHT
   - "Studio checklist written: roblox/studio-tests/experience.md E7"
   - "unverified: look and feel in Studio, phone layout, FORGE-03 Toast component not yet adopted (FL-0020 not on main)"
+  - "check.sh OVERALL PASS @901c9c0: framework 502, game-001 109 specs; FL-0027 mutations 13/13 CAUGHT with the Toast view"
 ---
 
 # Notifications and celebration moments
@@ -40,3 +41,4 @@ Prototype/screenshot review; Lune specs for queue logic
 - 2026-10-12 forge-04: READY → BUILDING. Started on forge/04-experience-fl0027, stacked on FL-0025 (#22). FORGE-03's Toast (FL-0020, PR #13) is not on main yet: minimal view until then.
 - 2026-10-12 forge-04: BUILDING → TESTING. Queue, controller, specs committed; headless gates on 1846163.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0027 stacked on #22. Studio checklist: roblox/studio-tests/experience.md E7.
+- 2026-10-12 forge-04: REVIEW → REVIEW. Merged main (#20-#22 landed); the view now uses FORGE-03's UI/Components/Toast (FL-0020); new handoff forge-04-to-forge-03-notifications-ready.
