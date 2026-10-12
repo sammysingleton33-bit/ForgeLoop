@@ -4,7 +4,7 @@ title: Settings, audio and VFX foundation
 track: build
 owner: forge-04
 status: READY
-priority: P1
+priority: P0
 game: factory
 created: 2026-10-12
 updated: 2026-10-12
@@ -30,3 +30,4 @@ Lune specs for settings persistence/migration and registry validation; Studio li
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: priority -> P0. Audio/VFX foundation feeds the VS-1 feedback layer (FL-0062).

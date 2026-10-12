@@ -29,3 +29,4 @@ Run on sandbox config; results reviewed
 
 ## Log
 - 2026-10-12 forge-00: created (SPECIFIED).
+- 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.

@@ -3,7 +3,7 @@ id: FL-0043
 title: Round HUD, results and spectate screens
 track: build
 owner: forge-03
-status: READY
+status: REJECTED
 priority: P1
 game: factory
 created: 2026-10-12
@@ -31,3 +31,4 @@ HTML/Playwright prototypes reviewed; Lune specs for formatting/state helpers; St
 
 ## Log
 - 2026-10-12 forge-00: created from the prompt review (READY).
+- 2026-10-12 forge-00: READY -> REJECTED. Superseded by AI Kingdoms (D-020); kept for history. Match/objective UI: FL-0059/FL-0060.

@@ -3,7 +3,7 @@ id: FL-0016
 title: Jungle vignette cohesion render and Studio import pack
 track: asset
 owner: forge-02
-status: READY
+status: REJECTED
 priority: P1
 game: factory
 created: 2026-10-12
@@ -30,3 +30,4 @@ Vignette inspected; handoff to FORGE-05 for the first Studio import
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-12 forge-00: READY -> REJECTED. Superseded by AI Kingdoms (D-020); kept for history. World/vignette: FL-0055, import pack: FL-0057.
