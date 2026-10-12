@@ -14,6 +14,7 @@ estimate_h: 12
 evidence:
   - "Scaffold in games/game-001/tests/fairness/ (CapsContract, CapsCheck, DesignSupport, DuelDouble, Duellist, Harness, run.luau): Caps.spec 5 + Fairness.spec 10 pass; mutations caught: cap raised in CapsContract, quiet start removed, stacking triggers, Fine Wares without a slot, heal above max HP"
   - "Mirror match (hostile vs hostile, equal skill, 2000 duels): novice 51.2 % [49.0, 53.4], average 51.2 % [49.0, 53.4], expert 50.4 % [48.2, 52.6]; ~1,200 duels/s (quick run 28 cells x 100 duels in 2.4 s)"
+  - "Merged PR #18 as 6f3ce4b; CI on main run 38306276658 gates PASS"
 ---
 
 # Crown Arena fairness harness, caps spec and arena integration
