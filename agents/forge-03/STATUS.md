@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-fl00xx` |
-| Open PRs | #71 job ack beats stale payload quota (unblocks FORGE-01's #61) · #74 HUD places NotificationController (#33 M1) · #76 ghost shows upgrade room + gap (#62 M-2) · #79 D-033 canonical kingdom colours · #66 FL-0088 gate + CitizenAnswered (#45), stacked on #74 · #63 FL-0060 (main merged at `4d1881a`). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #65. Closed: #13, #19. |
-| Current task | FORGE-05 review rounds on #71/#74/#76/#79/#66/#63; merge main into what is left after each merge. Then SlotFit → Fit.typesFor and the doubles → FORGE-01's real services as they land; FL-0073 when FL-0070 lands |
-| Last verified check | #71 `83bf46a` check.sh PASS (868/0), 6 mutations killed · #74 PASS (866/0), 3 killed · #76 PASS (865/0), 6 killed · #79 PASS (891/0), parity mutation · #66 `dc9ed86` PASS (913/0) · #63 `4d1881a` PASS (917/0) |
+| Open PRs | #66 FL-0088 gate + B1 confirm step + #66 lows (`256ad31`, main merged) · #63 FL-0060 review fixes (`43a2bdc`), held for FORGE-01's #70 (FORGE-00/05) · #76 ghost room outline · #79 D-033 colours (approved by FORGE-00). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #65, #71, #74. Closed: #13, #19. |
+| Current task | Review rounds on #66 (Converse gate), #76, #79; #63 after #70. Next: FL-0099 cinematic conversation UI (D-036, G13.8) once FL-0088 merges and FL-0097/FL-0098 exist (reuse ConversationController); SlotFit → Fit.typesFor; doubles → FORGE-01's real services as they land |
+| Last verified check | #66 `256ad31` check.sh PASS (game-001 967/0), 13 mutations killed · #63 `43a2bdc` PASS (922/0), 13 killed · #76 PASS (865/0) · #79 PASS (891/0) |
 | Blockers | none; Studio checks (G6) need the user and FORGE-01's real Kingdom/Match/Build/Slot services |
-| Needs from others | FORGE-01: Build.Slots/PlaceSlot with the fit rule or `fits` (`…-to-forge-01-slot-fit.md`), Kingdom.Reputation payload (`…-reputation-ui.md`), Sim.Inspect/Converse/Choose answers 6–11 (`…-conversation-ui.md`), ground height (`…-ground-height.md`). FORGE-02: lumber camp/quarry on L plots only? FORGE-00: Content/Reputation (FL-0083), L4 cost catalogue alignment. FORGE-05: Studio steps U1–U13. User: icon upload, optional. |
+| Needs from others | FORGE-01: Converse/Choose server (risk `text` = filled sentence, Choose re-checks cost), #70 (army), Fit.typesFor (#56). FORGE-04: `limit` on NotificationController:place() (asked). FORGE-00: choiceRisks content PR. FORGE-05: Studio steps U4.5, U5.5, U13, U15. |
 
 ## Estimate to VS-1 (FORGE-03 rows, unverified, hours of FORGE-03 work)
 | Item | Hours | Notes |
@@ -23,14 +23,13 @@ _Maintained by the worker. Keep it short and current._
 | **Remaining** | **6–7** | review rounds on #63/#65/#66 (0.5–1), real-service swap as FORGE-01 lands Converse/Army/Slots/Population (3), playtest fixes (3). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
 
 ## Last report
-- **Done:** #65 merged. FORGE-05's #61 measurement → #71 (ack before the payload's quota; forget it
-  when a later push shows it or after 3 s). #33 M1 → #74 (NotificationController placed, × scale,
-  only on change). #62 M-2 → #76 (ghost room outline, "Leave room for upgrades"). #45 →
-  CitizenAnswered in #66. D-033 → #79 (tinctures = Kingdoms.luau, enforced; spec world sends them).
-- **Verified:** check.sh PASS on every branch; each fix has a spec that fails without it; renders
-  looked at (notify-drawer with FORGE-04's real controller, placing-room, standings/HUD colours).
-- **Unverified:** Studio; FORGE-01's real Population (#61) and Converse; the ghost outline's look.
-- **Next:** review rounds; merges of main into what is left.
+- **Done:** #71 and #74 merged. #66: main merged, then FORGE-05's B1 (confirm step for answers with a
+  cost or a risk, fits the 750 × 311 safe area), M1, L1-L5 and CitizenAnswered (#45). #63: FORGE-05's
+  M1/M2 destroy paths, lows 4-7, destroy specs; held for #70. D-033 (#79) approved by FORGE-00.
+- **Verified:** check.sh PASS on each branch; 13 + 13 mutations killed; renders looked at (builder
+  bug and confirm fix on phone, army-sent toast).
+- **Unverified:** Studio; FORGE-01's real Converse/Choose and army services.
+- **Next:** FL-0099 after FL-0088 merges and FL-0097/FL-0098 exist.
 
 ## Doubles in use
 - game-001 specs use local doubles for FORGE-01 services (`KingdomWorld`, `SlotDoubles`) and FORGE-04
