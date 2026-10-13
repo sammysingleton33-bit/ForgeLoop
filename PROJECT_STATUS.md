@@ -4,24 +4,24 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B8**, main `751138b` (CI artifact 11801272018), delivered 2026-10-13 09:35 UTC. Not yet run in Studio.
-  - **New:**
-    - Citizens talk to you (row 9): "!" requests, 2–4 choices with cost and risk, and visible results (resources, loyalty, reputation with history, boosts, strikes, walk-out placards).
-    - The tutorial's "answer a citizen" step is live.
-    - Citizens stay visible at full zoom-out.
-    - Plot refusals are in words, and walls and gates stay off plots.
-    - Camp levels speed up gathering (PROVISIONAL).
-    - The Crown Points badge is a gold gem.
+- **Latest build: B9**, main `f562a31` (CI artifact 11807315580), delivered 2026-10-13 11:00 UTC. Not yet run in Studio.
+  - **New since B8:**
+    - Kingdom emblems are in the world (crown, star, oak leaf and sun on keep roofs, banners, flags and plot signs), and a captured tower takes the capturer's emblem (#105).
+    - Talk, close, then Talk again shows the same question (#107).
+    - A walk-out stops a carrier at once.
+    - The tutorial hints point at a plot marker and at the Army button (#99).
+    - A keep upgrade credits only the ruler who started it (#104).
   - **Not yet:**
-    - Talk, then close, loses the request (#77 N3).
-    - Hints target the wrong controls (#99).
-    - A keep upgrade credits every co-ruler (#104).
-    - No emblems on world banners (#105).
+    - #107 M1–M3: co-rulers on a conversation left open, requests outliving their need, a rare lost load.
+    - Anyone can sit on a throne.
+    - A captured building keeps its roof shape.
+    - The oak leaf is hard to read at full zoom.
     - No sound (#49).
     - Dialogue is DRAFT.
     - The other kingdoms are empty by design (D-043).
-  - The notes and Studio asks are in `production/quality-gates/studio-runs.md` (B8 row).
-- **Next build: B9.** It comes with FORGE-01's N3 fix, #104, #105 and #99, as they land.
+    - FPS is unknown.
+  - The notes and Studio asks are in `production/quality-gates/studio-runs.md` (B9 row). B8 was delivered at 09:35.
+- **Next build: B10.** It comes with the #107 fix-forward (M1–M3) and the throne fix.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -275,14 +275,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+0403d32b 2026-10-13 B9 (f562a31): emblems in the world, conversation re-ask, tutorial hints, upgrade credit; build notes and Studio asks; main CI green for #107, #105
+e48c728c 2026-10-13 Integration bookkeeping: #107 and #105 merged (B9 set, D-040 star); FL-0079 REVIEW with M1-M3 tracked; colour-vision finding 3 resolved on render; STUDIO_PLAYTEST rows 9 and colour vision
+f562a310 2026-10-13 Merge PR #105: [FORGE-02] Kingdom emblems from the overview camera (colour-vision finding 3): D-039 emblems on banners, flags, pennants, crests, slot signs; keep roof and back plaques
+276d933f 2026-10-13 Merge PR #107: [FORGE-01] FL-0079 #77 follow-ups: an unanswered request stays open (N3), a walk-out stops carriers (N2), K10 steps (N4), hasRequest reads the current round (N5)
+5f337db3 2026-10-13 [FORGE-00] check-in 10:40: review queue (B9 set: #107, #105, throne fix), blockers, dashboard
 7228b2e6 2026-10-13 integration-log: main CI green for #99, #104, #109
+f44cfc3e 2026-10-13 KitEmblems.spec: broad-phase cull in the visibility probe (conservative bounding-sphere test per view)
 5309b48e 2026-10-13 Merge remote-tracking branch 'origin/main'
-367cddd1 2026-10-13 [FORGE-00] CONTRACTS G9: CitizenAnswered is declared (#109)
-39439e4a 2026-10-13 integration-log: #109 merged (G9 CitizenAnswered, FORGE-00 approved)
-b8daeb64 2026-10-13 Merge remote-tracking branch 'origin/main'
-0fec9329 2026-10-13 [FORGE-00] D-045: births follow upkeep health, not a food payment; CONTRACTS v0.4-g9d (G7)
-b0509b02 2026-10-13 Merge PR #109: [FORGE-05] G9: declare CitizenAnswered in Contracts/GameEvents (D-044 (3)), additive
-09767749 2026-10-13 Integration bookkeeping: #104 merged (D-040 star); FL-0080 REVIEW only G6
 ```
 
 <!-- forge:auto:end -->

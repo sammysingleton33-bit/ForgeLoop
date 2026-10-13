@@ -132,6 +132,13 @@ local function gather(sim: any, c: any, dt: number)
 		end
 		return
 	end
+	if c.carrying and c.carrying.amount > 0 and c.carrying.resource ~= node.resource then
+		-- a load from before (a walk-out stopped the delivery): delivered first, never swapped (#107 M3)
+		c.phase = "Return"
+		sim:releaseClaim(c)
+		returnCargo(sim, c, dt)
+		return
+	end
 	if c.phase == "Go" then
 		if CitizenActions.moveTo(sim, c, node.x, node.z, node.footprint + 1, dt) then
 			c.phase = "Work"
@@ -169,6 +176,12 @@ local function farm(sim: any, c: any, dt: number)
 		returnCargo(sim, c, dt)
 		return
 	end
+	if c.carrying and c.carrying.amount > 0 and c.carrying.resource ~= "food" then
+		-- a load from before (a walk-out stopped the delivery): delivered first, never counted as food (#107 M3)
+		c.phase = "Return"
+		returnCargo(sim, c, dt)
+		return
+	end
 	local b = c.target and sim.buildings[c.target]
 	if b == nil or b.destroyed or b.level < 1 then
 		if c.carrying then
@@ -190,7 +203,9 @@ local function farm(sim: any, c: any, dt: number)
 	c.workTimer += dt * CitizenActions.skill(sim, c, "farm")
 	if c.workTimer >= tuning.harvestTime then
 		c.workTimer -= tuning.harvestTime
-		local cargo = c.carrying or { resource = "food", amount = 0 }
+		local cargo = if c.carrying and c.carrying.resource == "food"
+			then c.carrying
+			else { resource = "food", amount = 0 }
 		cargo.amount = math.min(tuning.carry, cargo.amount + yield)
 		c.carrying = cargo
 		if cargo.amount + yield > tuning.carry then
