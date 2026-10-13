@@ -100,6 +100,21 @@ describe("CitizenService (G5)", function()
 		pop = assert(citizens:getPopulation("crimson"))
 		expect(pop.total).toBe(13)
 		expect(pop.byJob.soldier).toBe(1)
+		-- cap = beds + barracks bunks (D-041): it counts the same people as total
+		local k = sim.kingdoms.crimson
+		expect(pop.cap).toBe(k.popCap)
+		local barracks = sim:_createBuilding(k, "barracks", k.x + 40, k.z + 40)
+		sim:_completeInstantly(barracks)
+		sim:_recompute(k)
+		expect(assert(citizens:getPopulation("crimson")).cap).toBe(k.popCap + 4)
+		barracks.level = 2
+		expect(assert(citizens:getPopulation("crimson")).cap).toBe(k.popCap + 8)
+		local levels = sim.catalog.buildings.barracks.levels
+		local bunks = levels[2].bunks
+		levels[2].bunks = nil -- a level without a bunk count sleeps any number: shown as exactly full
+		local unlimited = assert(citizens:getPopulation("crimson")).cap
+		levels[2].bunks = bunks
+		expect(unlimited).toBe(k.popCap + 1)
 		expect(assert(citizens:getPopulation("azure")).total).toBe(0) -- slice: no ruler, no citizens
 		expect(citizens:getPopulation("violet")).toBeNil()
 	end)
