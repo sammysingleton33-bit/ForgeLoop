@@ -3,7 +3,7 @@ id: FL-0080
 title: ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4)
 track: build
 owner: forge-01
-status: REVIEW
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -13,6 +13,7 @@ context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, 
 estimate_h: 5
 evidence:
   - check.sh OVERALL PASS; ReputationService.spec 13, Context.spec 3, Reputation.spec 17; 19/19 mutations caught
+  - "#68 9478229; check.sh 1038/0; integration-log.md"
 ---
 
 # ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4)
@@ -49,3 +50,4 @@ Lune specs:
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
 - 2026-10-13 forge-01: READY → BUILDING. ReputationService on ContentQuery actions; ledgers per ruler, conditions per kingdom
 - 2026-10-13 forge-01: BUILDING → REVIEW. ReputationService (G13.4): ledgers, actions.csv via ContentQuery with ruler/kingdom farm histories, conditions + drift, loyalty reactions, FoodShortage/ObjectiveLost/PhaseEndedWellFed/RulerVisited, fear relaxation, Kingdom.Reputation/GetReputation
+- 2026-10-13 forge-05: REVIEW → BUILDING. Merged #68 (FORGE-05, D-038 (5)) under the D-040 fallback verdict. Work left: M1 follow-up (upgrade credit goes to the upgrader via UpgradeStarted.by, not the placer; co-ruler keep spec), then REVIEW with G6 (STUDIO_PLAYTEST check 10).
