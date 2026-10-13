@@ -230,9 +230,11 @@ function Crest.oakLeaf(size: number): Frame
 			Rotation = Crest.LEAF_TILT,
 		}, l[6]))
 	end
+	-- a short midrib from the stem up the lower leaf: full length it read as a slash at 40-58 px
+	-- (FORGE-05 L7 on #86)
 	part(leaf, "Midrib", {
-		Position = tilted(0.5, 0.46),
-		Size = UDim2.fromScale(0.03, 0.54),
+		Position = tilted(0.5, 0.56),
+		Size = UDim2.fromScale(0.03, 0.34),
 		Rotation = Crest.LEAF_TILT,
 		BackgroundColor3 = Theme.color("ink900"),
 		BackgroundTransparency = 0.45,

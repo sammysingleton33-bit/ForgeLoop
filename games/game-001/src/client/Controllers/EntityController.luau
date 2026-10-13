@@ -7,9 +7,22 @@
 		EntityController.rendered: Signal<(EntityId, Model)>      -- a rig now shows this entity
 		EntityController.released: Signal<(EntityId, Model)>      -- fired before the rig returns to the pool;
 		                                                             getModel(id) still returns it meanwhile
-		EntityController.event: Signal<(EntityId, cue, payload, Model?)>
+		EntityController.event: Signal<(EntityId?, cue, payload, Model?)>
 			cues from Sim.Events for known entities: deposit (payload { resource = ResourceId }), hit, die,
-			celebrate (payload {}); Model is nil while the entity has no rig yet
+			celebrate (payload {}); Model is nil while the entity has no rig yet.
+			G13.3 conversation events (FL-0079; only this kingdom's members receive them), for FORGE-04
+			bubbles and FORGE-03 panels:
+			  thought   (id, "thought", { scenarioId, text, icon = "request" | "concern" | "idea" }, Model?)
+			  reaction  (id, "reaction", { text, tone = "happy" | "angry" | "sad" | "neutral" }, Model?)
+			  kcue      on citizens: (id, <cue>, { occupation? }, Model?) once per id (its entityId and its
+			            entityIds, each once); with neither: (nil, <cue>, { occupation? }, nil), for the
+			            HUD or the keep only. <cue> is one of EventCodec.KINGDOM_CUES (celebrate, grumble,
+			            salute, bow, cower, strike_placard, work_fast, rest, hammer); "celebrate" also
+			            arrives as a G4 cue
+			  strike    (id, "strike", { occupation, on: boolean }, Model?) once per id in its entityIds:
+			            exactly the citizens whose strike changed; never fanned out by occupation (v0.4-g6)
+			As for cues, an event with an entity id fires only while that entity is known and not
+			despawned (otherwise it is dropped); text may be empty.
 		EntityController:pick(screenPos: Vector2): EntityId?      -- nearest visible rig within PICK_RADIUS px
 			of screenPos, in Camera:WorldToScreenPoint space (InputObject.Position); nil when none
 		EntityController:getModel(id): Model?                     -- the entity's rig (also while LOD-hidden)
@@ -18,7 +31,7 @@
 		controller.adapter           engine calls (Adapter); specs replace it with a recording double
 		controller.folder            Workspace.KingdomEntities, created in start() (D-025)
 		controller.stats             { snapshots, stale, unknown, despawned, malformed } counters
-		Def.INTERP_DELAY, LOD_HIDE, LOD_SHOW, DEATH_DELAY, DEATH_BLEND, PICK_RADIUS, PICK_HEIGHT,
+		Def.INTERP_DELAY, LOD_HIDE, LOD_SHOW, LOD_ZOOM, DEATH_DELAY, DEATH_BLEND, PICK_RADIUS, PICK_HEIGHT,
 		POOL_MAX, FOLDER_NAME, Def.robloxAdapter(env)
 
 	Replication (G4 client rules)
@@ -34,7 +47,8 @@
 		  is still dropped
 		  (a new match restarts serverTime).
 		Events: spawn, despawn, job (swaps the rig: released, then rendered), cue (fires `event`; die
-		blends into the dead pose and releases the rig after DEATH_DELAY), full (spawn + state), reset.
+		blends into the dead pose and releases the rig after DEATH_DELAY), full (spawn + state), reset,
+		and the G13.3 thought, reaction, strike and kcue (fire `event`, see above).
 	Rendering (D-026, D-025)
 		- Samples are buffered per entity by snapshot serverTime. They render INTERP_DELAY (0.2 s)
 		  behind the server time estimated from arrivals (Sim/Interpolation).
@@ -48,7 +62,9 @@
 		  Transform.
 		- LOD: beyond LOD_HIDE studs from the LOD centre, a rig is unparented and skips pose work. It
 		  comes back within LOD_SHOW studs. The centre is RulerCameraController:getFocus() while its mode
-		  is "overview" (G13.6; registry:find), else the local character, else the camera focus.
+		  is "overview" (G13.6; registry:find), else the local character, else the camera focus. In the
+		  overview the hide distance is the larger of LOD_HIDE and LOD_ZOOM x the camera's distance from
+		  the focus (the zoom), with the same hysteresis.
 		- Soldiers get their kingdom as Kit.character's `kingdom` argument (the helmet crest, G13.2).
 	Engine calls (BulkMoveTo, Motor6D.Transform, camera and character reads) go through `adapter`
 	(Lune has no BulkMoveTo). Unverified in Studio until the FL-0049 playtest.
@@ -72,6 +88,9 @@ local Def = { name = "EntityController", dependencies = {} }
 Def.INTERP_DELAY = 0.2 -- seconds behind the estimated server time (G4)
 Def.LOD_HIDE = 150 -- studs (G4 streaming, D-025)
 Def.LOD_SHOW = 140 -- hysteresis: a hidden rig returns inside this distance
+-- overview: the hide distance grows with the camera's distance from its focus (the zoom), so citizens
+-- on screen at a far zoom keep their rigs (#91 L1: at zoom 220 the view is ~273 studs across)
+Def.LOD_ZOOM = 1.25
 Def.DEATH_DELAY = 2 -- seconds the dead pose stays before the rig is released
 Def.DEATH_BLEND = 0.4 -- seconds to fall into the dead pose
 Def.PICK_RADIUS = 60 -- pixels
@@ -85,6 +104,7 @@ export type Adapter = {
 	bulkMove: (parts: { any }, cframes: { CFrame }) -> (), -- workspace:BulkMoveTo(..., FireCFrameChanged)
 	setTransform: (motor: any, cframe: CFrame) -> (), -- Motor6D.Transform
 	focus: () -> Vector3?, -- LOD centre outside the overview: the local character, else the camera focus
+	eye: (() -> Vector3?)?, -- the camera's position (the overview's zoom is its distance from the focus)
 	project: (point: Vector3) -> (Vector2?, number?), -- screen point and depth; nil when off screen
 }
 
@@ -136,6 +156,10 @@ function Def.robloxAdapter(env: any): Adapter
 			end
 			local camera = env.Workspace.CurrentCamera
 			return if camera then camera.Focus.Position else nil
+		end,
+		eye = function(): Vector3?
+			local camera = env.Workspace.CurrentCamera
+			return if camera then camera.CFrame.Position else nil
 		end,
 		project = function(point: Vector3): (Vector2?, number?)
 			local camera = env.Workspace.CurrentCamera
@@ -302,6 +326,25 @@ function EntityController:_applyBatch(buf: any, initial: boolean)
 			self:_setJob(e.id, e.job)
 		elseif kind == "cue" then
 			self:_cue(e.id, e.cue, e.resource)
+		elseif kind == "thought" then
+			self:_fireFor(e.id, "thought", { scenarioId = e.scenarioId, text = e.text, icon = e.icon })
+		elseif kind == "reaction" then
+			self:_fireFor(e.id, "reaction", { text = e.text, tone = e.tone })
+		elseif kind == "kcue" then
+			local ids = e.entityIds or {}
+			if e.id ~= nil and not table.find(ids, e.id) then
+				table.insert(ids, 1, e.id)
+			end
+			for _, id in ids do
+				self:_fireFor(id, e.cue, { occupation = e.occupation })
+			end
+			if #ids == 0 then
+				self.event:fire(nil, e.cue, { occupation = e.occupation }, nil) -- HUD or keep only
+			end
+		elseif kind == "strike" then
+			for _, id in e.entityIds do -- exactly the citizens whose strike changed (G13.3 v0.4-g6)
+				self:_fireFor(id, "strike", { occupation = e.occupation, on = e.on })
+			end
 		elseif kind == "reset" then
 			self:_reset()
 		end
@@ -347,8 +390,15 @@ function EntityController:_spawn(e: any, serverTime: number?)
 		}
 		self._entities[id] = created
 		entity = created
-	elseif entity.kind ~= e.kind or entity.job ~= e.job or entity.kingdom ~= e.kingdom then
+	elseif
+		entity.kind ~= e.kind
+		or entity.job ~= e.job
+		or entity.kingdom ~= e.kingdom
+		or (e.look ~= nil and Kit.lookKey(e.look) ~= Kit.lookKey(entity.look))
+	then
+		-- a new look (the Studio reseed sends the spawn again, #91 M1) swaps the rig like a new job
 		entity.kind, entity.job, entity.kingdom = e.kind, e.job, e.kingdom
+		entity.look = e.look or entity.look
 		self:_swap(entity)
 	end
 	if serverTime ~= nil then
@@ -381,15 +431,20 @@ end
 
 function EntityController:_cue(id: number, cue: string, resource: string?)
 	local entity = self._entities[id]
+	if entity ~= nil and not self._despawned[id] and cue == "die" and entity.diedAt == nil then
+		entity.diedAt = self._env.clock()
+	end
+	self:_fireFor(id, cue, if cue == "deposit" then { resource = resource } else {})
+end
+
+-- Fires `event` for a known entity that is not despawned, with its model (nil while it has no rig).
+function EntityController:_fireFor(id: number, name: string, payload: { [string]: any })
+	local entity = self._entities[id]
 	if entity == nil or self._despawned[id] then
 		return
 	end
-	if cue == "die" and entity.diedAt == nil then
-		entity.diedAt = self._env.clock()
-	end
-	local payload = if cue == "deposit" then { resource = resource } else {}
 	local rig = entity.rig
-	self.event:fire(id, cue, payload, if rig then rig.model else nil)
+	self.event:fire(id, name, payload, if rig then rig.model else nil)
 end
 
 function EntityController:_reset()
@@ -494,7 +549,9 @@ end
 -- The LOD centre: the overview camera's focus while RulerCameraController is in "overview" (the ruler
 -- sits on the throne and the player looks after the whole plot, #39 M1), else adapter.focus() (the
 -- local character, else the camera focus).
-function EntityController:_lodCentre(): Vector3?
+-- Second result: the hide distance, LOD_HIDE, or in the overview LOD_ZOOM x the camera's distance from
+-- the focus when that is larger (#91 L1).
+function EntityController:_lodCentre(): (Vector3?, number)
 	local camera = self._camera
 	if camera == nil and self._registry and self._registry.find then
 		camera = self._registry:find("RulerCameraController")
@@ -503,10 +560,12 @@ function EntityController:_lodCentre(): Vector3?
 	if camera and camera.mode == "overview" then
 		local focus = camera:getFocus()
 		if focus then
-			return focus
+			local eye = self.adapter.eye and self.adapter.eye()
+			local zoom = if eye then (eye - focus).Magnitude else 0
+			return focus, math.max(Def.LOD_HIDE, Def.LOD_ZOOM * zoom)
 		end
 	end
-	return self.adapter.focus()
+	return self.adapter.focus(), Def.LOD_HIDE
 end
 
 function EntityController:step(dt: number)
@@ -515,12 +574,12 @@ function EntityController:step(dt: number)
 	end
 	local now = self._env.clock()
 	local renderTime = self._clock:renderTime(now, Def.INTERP_DELAY)
-	local focus = self:_lodCentre()
+	local focus, hide = self:_lodCentre()
 	local parts, cframes = self._parts, self._cframes
 	table.clear(parts)
 	table.clear(cframes)
 	for _, entity in self._entities do
-		self:_stepEntity(entity, dt, now, renderTime, focus)
+		self:_stepEntity(entity, dt, now, renderTime, focus, hide)
 	end
 	if #parts > 0 then
 		self.adapter.bulkMove(parts, cframes)
@@ -537,7 +596,14 @@ function EntityController:step(dt: number)
 	end
 end
 
-function EntityController:_stepEntity(entity: Entity, dt: number, now: number, renderTime: number?, focus: Vector3?)
+function EntityController:_stepEntity(
+	entity: Entity,
+	dt: number,
+	now: number,
+	renderTime: number?,
+	focus: Vector3?,
+	hide: number?
+)
 	if entity.done then
 		return
 	end
@@ -559,7 +625,8 @@ function EntityController:_stepEntity(entity: Entity, dt: number, now: number, r
 	entity.position = position
 	local far = false
 	if focus ~= nil then
-		far = (position - focus).Magnitude > (if entity.hidden then Def.LOD_SHOW else Def.LOD_HIDE)
+		local hideAt = hide or Def.LOD_HIDE
+		far = (position - focus).Magnitude > (if entity.hidden then hideAt - (Def.LOD_HIDE - Def.LOD_SHOW) else hideAt)
 	end
 	local rig = entity.rig
 	if rig == nil then

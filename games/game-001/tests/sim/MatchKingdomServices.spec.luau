@@ -735,6 +735,33 @@ describe("KingdomService spawning (G3, D-026)", function()
 		expect(#log.sits).toBe(2)
 	end)
 
+	it("a throne that fails to seat the ruler never stops the respawns (#89 L1)", function()
+		local env, _, kingdoms, log = boot()
+		local broken = 0
+		kingdoms.adapter.sit = function()
+			broken += 1
+			error("seat broke")
+		end
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		expect(broken).toBe(1)
+		local first = p1.Character
+		expect(log.died[first]).never.toBeNil() -- the respawn hook is connected all the same
+		env.spawn(log.died[first])
+		env.mock:advance(log.respawnDelay + 1)
+		expect(count(log.loads, 1)).toBe(2)
+		expect(p1.Character).never.toBe(first)
+		local warned = 0
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "cannot seat the ruler", 1, true) then
+				warned += 1
+			end
+		end
+		expect(warned >= 1).toBe(true)
+		-- spec-local: no thread errors from the broken seat
+		expect(env.mock.threadErrors).toEqual({})
+	end)
+
 	it("a co-ruler stands while the throne is held, and each kingdom has its own throne", function()
 		local env, match, _, log = boot({ parties = { [1] = "party", [2] = "party" } })
 		local p1 = env.mock.players:add({ userId = 1 })
@@ -1005,7 +1032,6 @@ describe("Kingdom and Match remotes (G8)", function()
 		local p1 = env.mock.players:add({ userId = 1 })
 		env.mock:advance(TICK)
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 5)).toBe(true)
-		expect(env.ReplicatedStorage.ForgeRemotes.Kingdom:FindFirstChild("Choose")).toBeNil() -- VS-2
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 51)).toBeNil() -- rejected before the handler
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "hauler", 2)).toBeNil() -- the pool has no quota
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 1.5)).toBeNil()

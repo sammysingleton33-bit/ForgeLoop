@@ -59,7 +59,7 @@ kingdom income, and a 2:30-4:00 wait for the Barracks (line 61; measured about 4
   `:26-29`); or a keep-level gate on the Barracks like the watchtower's `requiresKeepLevel`.
 - First capture: training time × batch and the one-at-a-time queue, soldier speed, tower position,
   capture time; onboarding Capture 120 s.
-- AI in the slice: `Kingdom/Match.luau:148-149` defaults (FORGE-00 / FORGE-01 decision).
+- AI in the slice: decided by FORGE-00, D-043: the VS-1 slice stays AI-free (BRIEF §4 row 1, G3); AI governors come in VS-2. `Kingdom/Match.luau:148-149` defaults unchanged.
 
 Sent to FORGE-00, FORGE-03 (economy) and FORGE-04 (Pacing.luau, PACING.md) on 2026-10-13. Tuning waits
 for the user's play (FORGE-00).
