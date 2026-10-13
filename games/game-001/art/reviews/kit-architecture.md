@@ -347,3 +347,50 @@ The coplanar probe, the budgets, the footprint containment and `KitEmblems.spec`
 - Studio look: Grass material on the wheat, Slate walls, the gate leaves, and depth precision of the tilted bunches.
 - Phone screens.
 - The real azimuth of the aerial camera relative to each farm. From straight in front, the cottage covers about half the barn.
+
+## Fresh-context D-019 scoring — FL-0085 record (2026-10-13)
+
+**Reviewer:** a fresh-context subagent that did not build the kit. It read no author logs or Kit source before scoring.
+**Inputs:** `img/kit_levels_keep.jpg`, `img/kit_levels_barracks.jpg`, `img/kit_levels_house_farm.jpg`, `img/kit_throne.jpg`. These are Blender approximations of the Lune Kit dump with no material textures.
+**Method:** opened each sheet, then cropped and zoomed the gameplay strips and throne tiles with PIL and made grayscale versions to test colour-free readability.
+**Evidence:** render review only. It is not a Studio play test.
+
+**Part-cost scale:** the worst level's share of its budget. 5 = 75 % or less, 4 = 90 % or less, 3 = 100 % or less, 2 = over budget.
+
+| type | sil | var | read | prop | pal | detail | coh | cost | verdict | notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| keep L1–3 | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 3 | PASS | Real growth: 57 → 67 → 77 studs tall and 31 → 39 → 45 footprint. L3 adds a second ring of caps. Star banners read in grayscale at 79 studs. Weak points: fat front towers squeeze the door bay, the tower drums are plain, and L2 is at 244/260 parts. |
+| barracks L1–4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 3 | PASS | Four distinct silhouettes at 73 studs: cottage, then two storeys, then a spire, then a crenellated gatehouse. Crowns read in grayscale. L2 → L3 is the weakest step: the body is identical, and in the iso view the spire seems to grow out of the roof ridge. In the iso view the L4 flag merges with the red left spire. L4 is at 237/260 parts. |
+| house L1–2 | 4 | 3 | 4 | 4 | 4 | 4 | 4 | 4 | NEEDS-WORK | v2 emerald L1 → L2 gains a clear second storey (+7 studs). v1 gold L1 → L2 adds only a dormer, +3 width and +2 height, and the two levels look the same at 90 studs and in grayscale. The gold v1 house carries no sun emblem anywhere, so gold is told by colour alone. The emerald leaf pennant is only a few pixels at 90 studs. |
+| farm L1–2 | 3 | 4 | 3 | 3 | 3 | 3 | 4 | 3 | NEEDS-WORK | The azure-roof barn makes L2 read as bigger. The wheat reads as stacked planks or hay bales in a pen, which could be mistaken for a lumber yard. In grayscale, field, thatch, fence and haystack are one tan value. L1's silhouette is the house v2 cottage plus a low pen, and its haystack is hidden behind the cottage from the front. L2 is at 186/190 parts. |
+| throne (keep L1, 4 kingdoms) | 3 | 4 | 3 | 2 | 3 | 4 | 4 | 3 | NEEDS-WORK | Close up, it reads as a high-backed throne on a dais, and the crown/star/leaf/sun set separates the kingdoms in grayscale. The canopy sits at 30.4 studs, about 24 studs (4.4 proxy heights) above the 6.2-stud seat, on hair-thin poles, so it reads as an entrance awning, not a baldachin. The throne back fills the dark door opening and vanishes in grayscale for crimson and emerald. In the off-axis gameplay views (keep strip L1 and L3), a pole cuts through the throne. No clipping is visible, but the back finials touch the arch voussoirs. The keep with throne is 218–236 parts, against a budget of 260. |
+
+**Fixes for the NEEDS-WORK rows:**
+- **Throne:**
+  - Lower the baldachin to about 12–14 studs and deepen it so it visibly roofs the seat.
+  - Hang a kingdom-colour back cloth with a valance behind the throne, so the throne stands against a light backdrop instead of the dark door. Move the shield above the canopy or onto that cloth.
+  - Pull the throne 1–2 studs forward, clear of the arch.
+  - Put the kingdom emblem on the throne back, and add a light trim edge so the throne reads in grayscale.
+  - Thicken the poles, or move them to the dais corners at the new height, so they no longer cross the throne in three-quarter views.
+  - All of this should fit within the 24 parts of headroom on the emerald keep L1 (236/260).
+- **House:**
+  - Give v1 L2 a front-visible change: a jettied third storey, a side wing or lean-to, or about +4–6 studs of height. It has 29 parts of headroom (161/190).
+  - Add a sun pennant or plaque to gold v1.
+  - Enlarge the ridge pennants so the emblem reads at 90 studs.
+- **Farm:**
+  - Rebuild the wheat as upright, thinner stalk clusters with dark soil furrows between the rows. This must stay part-neutral on L2 (186/190).
+  - Separate the values: darker soil, more saturated gold wheat, and muted thatch.
+  - Bring the L1 haystack, or a taller vertical prop, to the side or front of the cottage.
+  - Offset the L2 barn so the cottage doesn't hide its lower half from the front.
+
+**Cross-kit notes:**
+- **Leaf emblem:** crown, star and sun survive grayscale. The leaf is the weakest emblem: at standard size it reads as a white cloud or blossom. Give it a lobed oak outline and a stem.
+- **Thatch:** the thick slab with a log ridge reads as a cushion or loaf, and it causes the tan-on-tan problem on the house v2 and the farm.
+- **Gameplay strips:** the models are packed too tightly. The keeps overlap and the two gold houses touch. Space them at least 8 studs apart so each level's silhouette can be judged on its own.
+- **Kingdom coverage:** the level sheets show one kingdom per type. Combinations such as gold barracks L4 or emerald farm L2 are not reviewed.
+- **Part headroom:** keep L2 has 16 parts left and farm L2 has 4.
+
+**Unverified:**
+- Studio materials and lighting.
+- Phone-size screens.
+- Whether the throne finials and the arch voussoirs actually intersect in 3D. The renders only show that they touch.
