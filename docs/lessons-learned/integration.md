@@ -130,3 +130,10 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   arguments); `MockRemotes` gains `holdUnreliable`/`releaseUnreliable` for delay and reordering.
   Source: creator-docs `UnreliableRemoteEvent.yaml` ("payloads larger than 1000 bytes are dropped";
   buffers may be compressed). Specs: 4 new in `MockRemotes.spec.luau`, each proven able to fail.
+- 2026-10-13 FL-0046 (#120, FORGE-05): `MockEnv.new` installs FORGE-04's `EngineStubs`
+  (`ParticleEmitter:Emit`/`:Clear`, `Sound:Play`/`:Stop`) once per Lune process: since #49 a client spec
+  that fires a celebration crashed in VFXController ("Emit is not a valid member"; Lune has no Emit).
+  Lune allows one `implementMethod` per member per process (a second throws "already registered
+  method"), so EngineStubs stays the only registrar and MockEnv calls its idempotent `install`. Source:
+  creator-docs `ParticleEmitter.yaml` (Emit(count)). Proof: Boot.spec "a booted client presents a
+  celebration and a kingdom effect" fails without the install.
