@@ -121,9 +121,13 @@ describe("Job model (FL-0065)", function()
 		-- the count arrived: no note
 		local arrived = { total = 10, cap = 12, byJob = { farmer = 4, hauler = 1 } }
 		expect(JobModel.view(arrived, { pending = {}, quota = { farmer = 4 } }).rows[1].note).toBeNil()
-		-- the server's quotas, when the payload carries them, win over this client's memory
-		local server = { total = 10, cap = 12, byJob = { farmer = 3, hauler = 2 }, quotas = { farmer = 6 } }
-		expect(JobModel.target(server, { pending = {}, quota = { farmer = 4 } }, "farmer")).toBe(6)
+		-- an acknowledged quota beats the payload's, which can be from before the request (#61 pushes
+		-- at most once a second); without an ack the server's quota beats the count
+		local server = { total = 10, cap = 12, byJob = { farmer = 3, hauler = 2 }, quotas = { farmer = 3 } }
+		expect(JobModel.target(server, { pending = {}, quota = { farmer = 4 } }, "farmer")).toBe(4)
+		expect(JobModel.freeLeft(server, { pending = {}, quota = { farmer = 4 } })).toBe(1)
+		local moved = { total = 10, cap = 12, byJob = { farmer = 3, hauler = 2 }, quotas = { farmer = 6 } }
+		expect(JobModel.target(moved, { pending = {}, quota = {} }, "farmer")).toBe(6)
 		-- a quota the pool cannot fill says so
 		local dry = { total = 10, cap = 12, byJob = { farmer = 3, hauler = 0 } }
 		expect(JobModel.view(dry, { pending = {}, quota = { farmer = 4 } }).rows[1].note).toBe(
@@ -269,6 +273,81 @@ describe("Job panel end to end (FL-0065)", function()
 		tap(button(world, "woodcutter", "Minus"))
 		world:advance(0.1)
 		expect(world:callsNamed("SetJobQuota")[4].args[2]).toBe(START.woodcutter + 2)
+		world:destroy()
+	end)
+
+	it("#61: an ack beats the payload's older quota, and + stops once the free citizens are promised", function()
+		local world = newWorld()
+		world.pop.immediate = false -- no push until the spec publishes: the payload keeps the old quotas
+		local pop = world.hud.store:population()
+		expect(pop.quotas.farmer).toBe(START.farmer) -- the server's payload carries quotas (#61)
+		-- 3 free citizens: + on three jobs, each after its reply, with no push in between
+		for _, job in { "farmer", "miner", "builder" } do
+			tap(button(world, job, "Plus"))
+			world:advance(0.1)
+		end
+		expect(#world:callsNamed("SetJobQuota")).toBe(3)
+		-- every free citizen is promised: a fourth + anywhere sends nothing, and the pool says why
+		tap(button(world, "woodcutter", "Plus"))
+		world.hud:changeJob("woodcutter", 1)
+		tap(button(world, "farmer", "Plus"))
+		world:advance(0.1)
+		expect(#world:callsNamed("SetJobQuota")).toBe(3)
+		expect(texts(row(world, "free"))).toContain("None free")
+		-- + then − on a job whose payload quota is still the old one: − steps from the ack
+		tap(button(world, "miner", "Minus"))
+		world:advance(0.1)
+		local calls = world:callsNamed("SetJobQuota")
+		expect(calls[4].args[1]).toBe("miner")
+		expect(calls[4].args[2]).toBe(START.miner) -- ack START+1 → START, not the old quota − 1
+		world:destroy()
+	end)
+
+	it("#61: the ack is forgotten once a push shows it; a co-ruler's later quota wins after the hold", function()
+		local world = newWorld()
+		world.pop.immediate = false
+		tap(button(world, "farmer", "Plus"))
+		world:advance(0.1)
+		local jobs = world.hud.state.panel.jobs
+		expect(jobs.quota.farmer).toBe(START.farmer + 1)
+		-- a push that still shows the old quota (sent before the request was handled) keeps the ack
+		world.pop.quotas.crimson.farmer = START.farmer -- a push computed before the request was handled
+		world.pop:publish("crimson")
+		world:advance(0.1)
+		expect(jobs.quota.farmer).toBe(START.farmer + 1)
+		-- the push that shows it: the ack is forgotten, the server's quota is the target
+		world.pop.quotas.crimson.farmer = START.farmer + 1
+		world.pop:publish("crimson")
+		world:advance(0.1)
+		expect(jobs.quota.farmer).toBeNil()
+		expect(texts(row(world, "farmer"))).toContain(`Moving… {START.farmer} → {START.farmer + 1}`)
+		-- a co-ruler sets farmers to 6 and my next ack is never shown by a push: after the hold the
+		-- server's 6 wins over my 5
+		tap(button(world, "farmer", "Plus"))
+		world:advance(0.1)
+		expect(jobs.quota.farmer).toBe(START.farmer + 2)
+		world.pop.quotas.crimson.farmer = 6
+		world.pop:publish("crimson")
+		world:advance(0.1)
+		expect(texts(row(world, "farmer"))).toContain(`→ {START.farmer + 2}`)
+		world:advance(JobModel.ACK_HOLD_SEC)
+		expect(jobs.quota.farmer).toBeNil()
+		expect(texts(row(world, "farmer"))).toContain(`Moving… {START.farmer} → 6`)
+		world:destroy()
+	end)
+
+	it("#61: without quotas in the payload (an older server) the ack stays the target", function()
+		local world = newWorld()
+		world.pop.sendQuotas = false
+		world.pop:publish("crimson")
+		world.pop.immediate = false
+		world:advance(0.1)
+		tap(button(world, "miner", "Plus"))
+		world:advance(JobModel.ACK_HOLD_SEC + 0.5)
+		expect(world.hud.state.panel.jobs.quota.miner).toBe(START.miner + 1)
+		tap(button(world, "miner", "Plus"))
+		world:advance(0.1)
+		expect(world:callsNamed("SetJobQuota")[2].args[2]).toBe(START.miner + 2)
 		world:destroy()
 	end)
 

@@ -22,14 +22,14 @@
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
-		keep        300   195–289  (L1–L2 ≤ 260: Kit.spec hard cap; L3 is the only model above it)
-		house       170   99–163   (8 variants, L1–L2)
-		farm        190   153–185
+		keep        300   198–292  (L1 198–218, L2 230–258, L3 261–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
+		house       170   99–161   (8 variants, L1–L2)
+		farm        190   151–183
 		storehouse  150   89–94
 		lumbercamp  130   48–52
 		quarry      130   53–57
 		barracks    260   119–252  (L1–L4)
-		watchtower  130   102–122
+		watchtower  130   100–122
 		wall         60   37–40    (per 32-stud segment)
 		gate        150   97–106
 		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (38–108, G13.5 stand-ins)
@@ -408,7 +408,15 @@ local function buildHouse(ctx: Ctx, level: number, color: Color3, _style: string
 			table.insert(ops.back, { u = 0, hw = 1.9 })
 		end
 		if fl.kind == "stone" then
-			block(ctx, "Walls", Vector3.new(w, h, fd), CFrame.new(0, y + h / 2, 0), C.stone, M.Cobblestone)
+			-- 0.03 above the floor: the door leaf and jambs stand on the floor without a shared bottom face
+			block(
+				ctx,
+				"Walls",
+				Vector3.new(w, h - 0.03, fd),
+				CFrame.new(0, y + h / 2 + 0.015, 0),
+				C.stone,
+				M.Cobblestone
+			)
 			quoins(ctx, w, fd, y, h, C.stoneLight, 3)
 		else
 			timberBox(ctx, w, fd, y, h, s.plaster)
@@ -477,7 +485,7 @@ local function buildHouse(ctx: Ctx, level: number, color: Color3, _style: string
 		block(
 			ctx,
 			"PorchBeam",
-			Vector3.new(6.6, 0.5, 0.55),
+			Vector3.new(6.6, 0.5, 0.5),
 			CFrame.new(doorX, s.plinth + 7.6, fz - 2.7),
 			C.timber,
 			M.Wood
@@ -557,8 +565,8 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 	)
 	block(ctx, "Corbel", Vector3.new(2 * hw + 1.6, 1.3, 2 * hd + 1.6), CFrame.new(0, topY - 0.15, zc), S.light, M.Slate)
 	local span = hw - tr - 0.9
-	for i = -2, 2 do
-		bracket(ctx, CFrame.new(i * span / 2, topY - 0.8, fz), 0.8, 1.4, S.light, M.Slate)
+	for i = -1, 1 do
+		bracket(ctx, CFrame.new(i * span * 0.75, topY - 0.8, fz), 0.8, 1.4, S.light, M.Slate)
 	end
 	crenellate(
 		ctx,
@@ -656,13 +664,20 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 	local tw = bw + 7
 	local td = 5
 	local tz1 = tz0 - td
-	block(ctx, "Terrace", Vector3.new(tw, pl, td + 0.4), CFrame.new(0, pl / 2, tz0 - td / 2 + 0.2), S.light, M.Slate)
+	block(
+		ctx,
+		"Terrace",
+		Vector3.new(tw, pl + 0.03, td + 0.4),
+		CFrame.new(0, (pl + 0.03) / 2, tz0 - td / 2 + 0.2),
+		S.light,
+		M.Slate
+	)
 	for _, sx in { -1, 1 } do
 		block(
 			ctx,
 			"TerraceWall",
 			Vector3.new(0.9, 1.2, td),
-			CFrame.new(sx * (tw / 2 - 0.45), pl + 0.6, tz0 - td / 2),
+			CFrame.new(sx * (tw / 2 - 0.47), pl + 0.6, tz0 - td / 2),
 			S.base,
 			M.Slate
 		)
@@ -684,7 +699,8 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 		)
 		z0 -= st[3]
 	end
-	throne(ctx, CFrame.new(0, pl, tz0 - 0.1), color, style, S)
+	-- 0.4 in front of the bay face: the dais and the throne back stay clear of the door, straps and voussoirs
+	throne(ctx, CFrame.new(0, pl, tz0 - 0.4), color, style, S, math.max(bayTop + 3.2, topY + 3.4) - pl)
 	-- banners on the hall face between the bay and the turrets, arched windows above them
 	for _, sx in { -1, 1 } do
 		local bx = sx * (bw / 2 + (hw - tr - bw / 2) / 2)
@@ -738,14 +754,14 @@ BUILDERS.storehouse = function(ctx, level, color, style, fp)
 	end
 	block(ctx, "Floor", Vector3.new(w + 0.8, 0.7, d + 0.8), CFrame.new(cx, lift + 0.35, 0), C.timber, M.WoodPlanks)
 	local h = if big then 9.6 else 8.6
-	block(ctx, "Walls", Vector3.new(w, h, d), CFrame.new(cx, ys + h / 2, 0), C.woodLight, M.WoodPlanks)
+	block(ctx, "Walls", Vector3.new(w, h - 0.06, d), CFrame.new(cx, ys + h / 2, 0), C.woodLight, M.WoodPlanks)
 	block(ctx, "TopPlate", Vector3.new(w + 0.5, 0.6, d + 0.5), CFrame.new(cx, ys + h - 0.3, 0), C.timber, M.Wood)
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
 			block(
 				ctx,
 				"CornerPost",
-				Vector3.new(0.75, h, 0.75),
+				Vector3.new(0.75, h - 0.04, 0.75),
 				CFrame.new(cx + sx * w / 2, ys + h / 2, sz * d / 2),
 				C.timber,
 				M.Wood
@@ -897,8 +913,8 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 	local z0, z1 = -d / 2 + 0.3, d / 2 - 0.3
 	fence(ctx, Vector3.new(x0, 0, z0), Vector3.new(fx + 1.5, 0, z0))
 	fence(ctx, Vector3.new(fx + 5.5, 0, z0), Vector3.new(x1, 0, z0))
-	fence(ctx, Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1))
-	fence(ctx, Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1))
+	fence(ctx, Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1), nil, true) -- corner posts are shared
+	fence(ctx, Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1), nil, true)
 	-- farmhouse: small thatched cottage on the right (door on the Door attachment)
 	local hw, hd = w / 2 - 2.15 - (x1 + 1.3), 9
 	local hx = w / 2 - 2.15 - hw / 2
@@ -955,13 +971,13 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 		local bx, bz = hx + 0.6, d / 2 - bd / 2 - 1.2
 		block(ctx, "BarnBase", Vector3.new(bw + 0.8, 0.8, bd + 0.8), CFrame.new(bx, 0.4, bz), C.stone, M.Cobblestone)
 		local bh = 7.2
-		block(ctx, "BarnWalls", Vector3.new(bw, bh, bd), CFrame.new(bx, 0.8 + bh / 2, bz), C.wood, M.WoodPlanks)
+		block(ctx, "BarnWalls", Vector3.new(bw, bh - 0.06, bd), CFrame.new(bx, 0.8 + bh / 2, bz), C.wood, M.WoodPlanks)
 		for _, sx in { -1, 1 } do
 			for _, sz in { -1, 1 } do
 				block(
 					ctx,
 					"BarnPost",
-					Vector3.new(0.7, bh, 0.7),
+					Vector3.new(0.7, bh - 0.02, 0.7),
 					CFrame.new(bx + sx * bw / 2, 0.8 + bh / 2, bz + sz * bd / 2),
 					C.timber,
 					M.Wood
@@ -1181,18 +1197,18 @@ BUILDERS.quarry = function(ctx, _level, color, style, fp)
 	for ti, t in tiers do
 		local hh, depth, zc = t[1], t[2], t[3]
 		local n = 3
-		local x = -w / 2 + 0.4
+		local x = -w / 2 + 0.4 + ti * 0.04 -- each tier inset a little: no shared end faces
 		for i = 1, n do
 			local bw = (w - 0.8) / n + jit(ti * 7 + i, 1.2)
 			if i == n then
-				bw = w / 2 - 0.4 - x
+				bw = w / 2 - 0.4 - ti * 0.04 - x
 			end
 			local th = hh + jit(ti * 3 + i, 0.6)
 			block(
 				ctx,
 				"RockFace",
 				Vector3.new(bw - 0.15, th, depth + jit(ti + i * 5, 0.5)),
-				CFrame.new(x + bw / 2, th / 2, zc + jit(i * 11 + ti, 0.3)),
+				CFrame.new(x + bw / 2 + ti * 0.013, th / 2, zc + jit(i * 11 + ti, 0.3)),
 				shade(QUARRY_STONE[ti], 1 + jit(ti * 5 + i * 3, 0.07)),
 				M.Rock
 			)
@@ -1290,7 +1306,7 @@ BUILDERS.quarry = function(ctx, _level, color, style, fp)
 			C.wood,
 			M.Wood
 		)
-		block(ctx, "PickHead", Vector3.new(0.25, 0.25, 1.3), CFrame.new(tx + 0.75, 0.8, tz + i * 1.1), C.iron, M.Metal)
+		block(ctx, "PickHead", Vector3.new(0.25, 0.25, 1.0), CFrame.new(tx + 0.75, 0.8, tz + i * 1.1), C.iron, M.Metal)
 	end
 	flagpole(ctx, -w / 2 + 1, 0, -d / 2 + 1, 8, color)
 	banner(ctx, cx, 9.4, cz - 0.05, 0, color, 3.4, style, 1.8)
@@ -1337,7 +1353,7 @@ BUILDERS.barracks = function(ctx, level, color, style, fp)
 		topY, topD = pl + h, d
 	else
 		local h1, h2 = 8, 6.8
-		block(ctx, "Walls", Vector3.new(w, h1, d), CFrame.new(0, pl + h1 / 2, oz), S.base, M.Cobblestone)
+		block(ctx, "Walls", Vector3.new(w, h1 - 0.03, d), CFrame.new(0, pl + h1 / 2 + 0.015, oz), S.base, M.Cobblestone)
 		quoins(ctx, w, d, pl, h1, S.light, 2, 0, oz)
 		local y2 = pl + h1
 		local d2 = d + 1.2
@@ -1453,7 +1469,7 @@ BUILDERS.barracks = function(ctx, level, color, style, fp)
 		for _, px in { -1.7, 1.7 } do
 			block(ctx, "RackPost", Vector3.new(0.4, 3.6, 0.4), CFrame.new(rx + px, 1.8, rz), C.timber, M.Wood)
 		end
-		block(ctx, "Rack", Vector3.new(4, 0.35, 0.4), CFrame.new(rx, 3.1, rz), C.wood, M.Wood)
+		block(ctx, "Rack", Vector3.new(4, 0.35, 0.36), CFrame.new(rx, 3.1, rz), C.wood, M.Wood)
 		for i = 0, 2 do
 			block(
 				ctx,
@@ -1509,7 +1525,7 @@ BUILDERS.watchtower = function(ctx, level, color, style, fp)
 	local h = if big then 30 else 24
 	local pl = 1.8
 	stonePlinth(ctx, w + 1.6, w + 1.6, pl, 0, 0, S, 3, 4)
-	block(ctx, "Shaft", Vector3.new(w, h, w), CFrame.new(0, pl + h / 2, 0), S.base, M.Cobblestone)
+	block(ctx, "Shaft", Vector3.new(w, h - 0.03, w), CFrame.new(0, pl + h / 2 + 0.015, 0), S.base, M.Cobblestone)
 	quoins(ctx, w, w, pl, h - 1, S.light, if big then 6 else 5)
 	block(ctx, "StringCourse", Vector3.new(w + 0.6, 0.6, w + 0.6), CFrame.new(0, pl + h * 0.48, 0), S.light, M.Slate)
 	local gy = pl + h
@@ -1643,7 +1659,7 @@ BUILDERS.gate = function(ctx, _level, color, style, fp)
 		)
 	end
 	block(ctx, "Portcullis", Vector3.new(12, 0.45, 0.45), CFrame.new(0, 11.2, -d / 2 + 1.6), C.iron, M.Metal)
-	crenellate(ctx, pass + 0.2, d, h, S.light, 0, 0, { m = 2.2, h = 2.4, t = 1, gap = 1.6, xOnly = true })
+	crenellate(ctx, pass - 0.2, d, h, S.light, 0, 0, { m = 2.2, h = 2.4, t = 1, gap = 1.6, xOnly = true })
 	crest(ctx, CFrame.new(0, 17.4, -d / 2 + 0.3), 3, color, style)
 	block(ctx, "GateRoad", Vector3.new(pass, 0.2, fp.Y), CFrame.new(0, 0.1, 0), C.stoneDark, M.Cobblestone)
 	attach(ctx, "Door", Vector3.new(0, 0, -fp.Y / 2 - 2))
@@ -1752,7 +1768,7 @@ BUILDERS.blacksmith = function(ctx, _level, color, style, fp)
 	local pl = 1
 	stonePlinth(ctx, w + 0.8, d + 0.8, pl, bx, bz, S, 71)
 	local h = 8
-	block(ctx, "Walls", Vector3.new(w, h, d), CFrame.new(bx, pl + h / 2, bz), C.stone, M.Cobblestone)
+	block(ctx, "Walls", Vector3.new(w, h - 0.03, d), CFrame.new(bx, pl + h / 2 + 0.015, bz), C.stone, M.Cobblestone)
 	quoins(ctx, w, d, pl, h, C.stoneLight, 2, bx, bz)
 	local info = tileRoof(ctx, {
 		w = w,
@@ -1815,7 +1831,7 @@ local function stall(ctx: Ctx, cf: CFrame, color: Color3, goods: Color3)
 			block(ctx, "StallPost", Vector3.new(0.35, 5.6, 0.35), cf * CFrame.new(sx, 2.8, sz), C.wood, M.Wood)
 		end
 	end
-	block(ctx, "Counter", Vector3.new(4.2, 1.6, 1.2), cf * CFrame.new(0, 0.8, -0.9), C.woodLight, M.WoodPlanks)
+	block(ctx, "Counter", Vector3.new(4.2, 1.6, 1.2), cf * CFrame.new(0, 0.83, -0.9), C.woodLight, M.WoodPlanks)
 	for i = -1, 1 do
 		ball(ctx, "Goods", 0.9, (cf * CFrame.new(i * 1.1, 1.95, -0.9)).Position, goods, M.SmoothPlastic)
 	end
@@ -1854,7 +1870,7 @@ BUILDERS.market = function(ctx, _level, color, style, fp)
 	for _, sx in { -1.7, 1.7 } do
 		block(ctx, "WellPost", Vector3.new(0.35, 4.6, 0.35), CFrame.new(sx, 2.3, -1), C.wood, M.Wood)
 	end
-	block(ctx, "WellBeam", Vector3.new(3.8, 0.35, 0.35), CFrame.new(0, 4.4, -1), C.wood, M.Wood)
+	block(ctx, "WellBeam", Vector3.new(3.8, 0.35, 0.3), CFrame.new(0, 4.4, -1), C.wood, M.Wood)
 	crate(ctx, CFrame.new(-4.5, 0.2, -6) * CFrame.Angles(0, rad(12), 0), 1.8)
 	barrel(ctx, Vector3.new(4.6, 0.2, -6.4), 2)
 	sack(ctx, Vector3.new(-3.2, 0.2, -6.8))

@@ -15,8 +15,8 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 ## 2. Palette
 | Role | Colour (RGB) | Where |
 |---|---|---|
-| Crimson kingdom | 196, 40, 28 | roofs, banners, shutters, tabards |
-| Azure kingdom | 13, 105, 172 | 〃 |
+| Crimson kingdom | 190, 40, 50 | roofs, banners, shutters, tabards |
+| Azure kingdom | 40, 110, 210 | 〃 |
 | Emerald kingdom | 35, 128, 95 (jewel emerald, bluer than foliage) | 〃 |
 | Gold kingdom | 235, 185, 16 (saturated gold, never hay-tan or orange) | 〃 |
 | Neutral (`Kit.NEUTRAL_COLOR`) | 208, 200, 184 | uncaptured watchtower, neutral banners |
@@ -26,7 +26,8 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 | Thatch | 191, 163, 108 (muted, so it never reads as the gold kingdom) | peasant roofs |
 | Grass / leafy / ground / sand (terrain) | `world/Lighting.luau` `terrainColors` | terrain |
 
-- The kingdom colours above are FORGE-02's recommendation; FORGE-01's `Kingdoms.luau` is the source.
+- The kingdom colours above are canonical in `config/Kingdoms.luau` (D-033); Kit stand-ins and WorldService read them from there, never hard-coded.
+- **Never colour alone (D-033).** Each kingdom is told apart by tower silhouette (crimson spires, azure pyramids, emerald hoardings, gold domes), its emblem (crown, star, oak leaf, sun) and its name. Crimson and emerald get close under protanopia, so banners, flags and shields always carry the emblem.
 - Rules shared with the Blender bible (§3 there): walls are never painted in the kingdom colour; straw, hay and wheat stay desaturated tan; kingdom green stays clearly bluer than grass and leaves. Emerald banners and flags use a lighter, high-saturation tint of the kingdom colour with an ivory border, because from the aerial camera the emerald plot sits on green terrain.
 - Kit derives every shade from the colour it is given and marks those parts with `KitTint`, so `Kit.setKingdomColor` recolours in place.
 - Every Kit colour lives in `Kit/Parts.luau` `C`, with the same values as `blender/lib/palette.py`.

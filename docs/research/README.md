@@ -1,4 +1,5 @@
 # Research index (2026-10-12): 12 decision-relevant facts
+> **Historical (2026-10-13).** Items 1–3 are superseded. The user chose **AI Kingdoms** as Game #1 (D-020, FL-0035), and the game is in VS-1 production (`PROJECT_STATUS.md`). The platform and provider facts (4 onward) are still current reference.
 Short codes: SL = [Game #1 shortlist](../../intelligence/game-opportunities/game-001-shortlist.md), MR = [market landscape](../../intelligence/market-research/2026-10-roblox-landscape.md), PC = [platform constraints](roblox-platform-constraints.md), AI = [AI providers](ai-providers.md). Confidence is in each row.
 1. Recommended Game #1 (not approved): C2 Flood Island 73.2. Next: C6 68.8, C4 68.4 (fragile order); the prior concept C1 scores 57.6, 7th of 8 (SL summary, §3).
 2. Nothing is built: 0 Luau files on any branch, the skeleton FL-0003 is BUILDING, and the framework tasks are READY (not started). Every 7-day estimate starts after Phase 1 (SL §1, E25).

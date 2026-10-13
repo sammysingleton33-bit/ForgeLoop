@@ -12,6 +12,7 @@
 	prop_goods_NN, farm_haystack_NN, farm_fence_NN, bridge_stone_NN; anything else is a crate.
 ]]
 
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local WorldPlan = require("./WorldPlan")
@@ -52,12 +53,20 @@ local EXTRA = {
 	water = Color3.fromRGB(46, 120, 168),
 }
 
-local BANNER_COLORS = {
-	red = Color3.fromRGB(196, 40, 28),
-	blue = Color3.fromRGB(13, 105, 172),
-	green = Color3.fromRGB(40, 127, 71),
-	yellow = Color3.fromRGB(245, 205, 48),
-}
+-- Banner stand-ins in the canonical kingdom colours (config Kingdoms, D-033). Asset ids use the Blender
+-- names (prop_banner_<red|blue|green|yellow>_NN), mapped here to the kingdom ids.
+local BANNER_KINGDOM = { red = "crimson", blue = "azure", green = "emerald", yellow = "gold" }
+local BANNER_COLORS: { [string]: Color3 } = {}
+do
+	local byId = {}
+	for _, identity in KingdomsConfig.identities do
+		byId[identity.id] = identity.color
+	end
+	for name, id in BANNER_KINGDOM do
+		local c = byId[id] or { 208, 200, 184 }
+		BANNER_COLORS[name] = Color3.fromRGB(c[1], c[2], c[3])
+	end
+end
 
 local assetSource: Instance? = nil
 

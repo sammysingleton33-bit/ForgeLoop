@@ -16,8 +16,11 @@
 	hauler pool. The double's rule (a stand-in, not the game's): the quota moves haulers into the job,
 	or back into the pool, at once; it never takes more haulers than there are.
 	Spec knobs on the service: `refuse = "<code>"` answers (false, code); `immediate = false` records
-	the quota but moves nobody until `svc:rebalance(kingdom)` (the real sim fills quotas each second);
-	`getLatency = <seconds>` delays Kingdom.GetPopulation's answer.
+	the quota but moves nobody until `svc:rebalance(kingdom)` (the real sim fills quotas each second)
+	and pushes nothing either, so the client keeps the payload from before the request (#61 pushes at
+	most once a second); `svc:publish(kingdom)` pushes now. `getLatency = <seconds>` delays
+	Kingdom.GetPopulation's answer. The payload carries `quotas` as #61's does; `sendQuotas = false`
+	leaves them out (an older server).
 ]]
 
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -25,6 +28,8 @@ local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
 local PopulationDoubles = {}
 
 PopulationDoubles.JOBS = { "farmer", "woodcutter", "miner", "builder" }
+local QUOTA_JOBS = { "farmer", "woodcutter", "miner", "builder" } -- config Jobs.jobOrder without hauler
+
 PopulationDoubles.START = { farmer = 3, woodcutter = 2, miner = 1, builder = 1, hauler = 3, soldier = 0 }
 PopulationDoubles.CAP = 12
 
@@ -48,7 +53,14 @@ function PopulationDoubles.service(world)
 		new = function(_, registry)
 			local remotes = registry:get("RemoteService")
 			local kingdoms = registry:get("KingdomService")
-			local svc = { byKingdom = {}, immediate = true, refuse = nil, quotas = {}, getLatency = nil }
+			local svc = {
+				byKingdom = {},
+				immediate = true,
+				refuse = nil,
+				quotas = {},
+				getLatency = nil,
+				sendQuotas = true,
+			}
 			function svc:_of(kingdom)
 				local p = self.byKingdom[kingdom]
 				if p == nil then
@@ -63,7 +75,15 @@ function PopulationDoubles.service(world)
 				for _, n in p.byJob do
 					total += n
 				end
-				return { total = total, cap = p.cap, byJob = table.clone(p.byJob) }
+				local payload = { total = total, cap = p.cap, byJob = table.clone(p.byJob) }
+				if self.sendQuotas then
+					-- as #61's CitizenService: every quota job; one never set is met by its count
+					payload.quotas = {}
+					for _, job in QUOTA_JOBS do
+						payload.quotas[job] = (self.quotas[kingdom] or {})[job] or p.byJob[job] or 0
+					end
+				end
+				return payload
 			end
 			function svc:publish(kingdom)
 				for _, player in world.env.Players:GetPlayers() do
