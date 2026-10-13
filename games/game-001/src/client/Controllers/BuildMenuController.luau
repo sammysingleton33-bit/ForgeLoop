@@ -23,7 +23,7 @@
 		build:startPlacement(type)  build:aimAt(position: Vector3)  build:rotate()
 		build:confirm()  build:cancel()
 		build.state = { category, selected, phoneView }   build.placing = { type, rot, position?,
-		    status ("pending" | "ok" | "bad"), reason?, busy, footprint }?
+		    status ("pending" | "ok" | "bad"), reason?, busy, footprint, room? }?
 		build.menu (UI/BuildMenu)  build.bar (UI/PlacementBar)  build.ghost (UI/Ghost)?
 ]]
 
@@ -196,6 +196,7 @@ function BuildMenuController:startPlacement(buildingType: string)
 		reason = nil :: string?,
 		busy = false,
 		footprint = detail.footprint or BuildMenuController.FALLBACK_FOOTPRINT,
+		room = detail.room, -- largest level + gap: what the server keeps free (#62)
 	}
 	self.ghost = Ghost.new(self._env)
 	if self.hud.state.menu == "build" then
@@ -215,7 +216,7 @@ function BuildMenuController:_refreshGhost()
 	if p == nil or p.position == nil or self.ghost == nil then
 		return
 	end
-	self.ghost:show(p.footprint, Placement.cframe(p.position, p.rot))
+	self.ghost:show(p.footprint, Placement.cframe(p.position, p.rot), p.room)
 	self.ghost:tint(p.status)
 end
 

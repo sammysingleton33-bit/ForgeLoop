@@ -11,6 +11,8 @@ Repository: `github.com/sammysingleton33-bit/ForgeLoop` (private).
 | `forge/03-ui-economy` | FORGE-03 workspace | FORGE-03 only |
 | `forge/04-experience` | FORGE-04 workspace | FORGE-04 only |
 | `forge/05-integration` | FORGE-05 workspace (harness, CI, sandbox, test plan) | FORGE-05 only |
+| `forge/06-dialogue-*` | FORGE-06 content PR branches (D-035) | FORGE-06 only |
+| (none) | FORGE-07 reviews on GitHub; its `production/reviews/` and STATUS go straight to `main` (D-037) | FORGE-07 |
 | `forge/0N-<area>-fl00xx` | One PR branch per task, cut from the worker branch (D-013) | that worker only |
 | `forge/00-skeleton`, `forge/00-coordination` | FORGE-00 bootstrap and coordination PRs | FORGE-00 |
 | `codex/<task-id>-<slug>` | Codex work | Codex |
@@ -81,11 +83,24 @@ Push to the branch your session assigns, then create each per-task PR branch at 
 - Only paths you own (`docs/workflows/team.md`). CI (`.github/workflows/ci.yml`) must be green.
 - Task files: set `REVIEW` with evidence in the same PR. Don't regenerate `PROJECT_STATUS.md` (FORGE-00 does that after merges; it would conflict between workers).
 
+## Review lane (FORGE-07, D-037)
+Reviews run in parallel with development and integration:
+
+| Who | Does |
+|---|---|
+| Author (FORGE-01…06) | Opens the PR with its evidence and sets its task to REVIEW in the same PR. Answers every B and M finding with a fix or a reason, then pushes. |
+| **FORGE-07** | Primary reviewer. Works in the order of the review queue in `PROJECT_STATUS.md` (VS-1 dependency order). Test-merges the PR with `main` and its dependencies, runs the gates and reads the diff for contracts, server authority, security, performance, integration and spec quality. Reproduces defects. Posts one COMMENT review that opens with `FORGE-07 verdict: READY TO MERGE / CHANGES REQUESTED / BLOCKED ON #N / NEEDS DECISION`. Re-reviews fixes within one work block. Never merges. |
+| FORGE-05 | Integration: merge order, conflicts, holds, the test merge on the final base, the merge itself, task status at merge, user builds (D-034). It may add an integration review, but no longer has to review every PR line by line. |
+| FORGE-00 | Orders the review queue each cycle. Reviews only design decisions, contract changes, content approval routing and significant risk. Reconciles task statuses. |
+
+Severity: B (blocking) must be fixed before merge. M (medium) is fixed before merge unless FORGE-05 accepts it as a tracked follow-up. L (low) never blocks.
+
 ## Merge procedure (FORGE-05)
 1. CI green on the PR head; merge `origin/main` into a local check-out of the PR branch, then `bash roblox/scripts/check.sh` green on that merge result.
 2. Ownership respected; contract changes reviewed (breaking → FORGE-00 approval recorded in `DECISIONS.md`).
+   Review: FORGE-07's latest verdict on the current content is `READY TO MERGE`. FORGE-05's own review is enough for bookkeeping, or for a change of 50 lines or fewer that touches no remote, contract, economy or gameplay rule.
 3. Merge with a merge commit (keeps the worker's evidence commit shas reachable from `main`). Stacked PRs in order. GitHub won't let one account approve or request changes on its own PRs, so blocking feedback is a COMMENT review starting with `BLOCKING:`.
-4. Move the PR's tasks to `ACCEPTED` (or leave `REVIEW` if only the Studio gate G6 is pending) and append a line to `production/quality-gates/integration-log.md` (main sha, PRs, checks).
+4. Move the PR's tasks to `ACCEPTED` only when every gate is met, or leave `REVIEW` if only the Studio gate G6 is pending. A merge alone never accepts a task. A task with more PRs still to come stays `BUILDING` and append a line to `production/quality-gates/integration-log.md` (main sha, PRs, checks).
 5. Tell workers whose code depends on it (handoff file or PR comment).
 
 ## Conflicts

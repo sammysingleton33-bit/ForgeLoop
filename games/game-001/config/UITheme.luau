@@ -10,7 +10,12 @@
 
 	Icons: `image` is an uploaded asset id ("" until the user uploads design/ui/icons/png — handoff
 	production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md); `glyph` is the text fallback.
-	Kingdom colours follow CONTRACTS G2 ids (crimson, azure, emerald, gold).
+	Kingdom colours follow CONTRACTS G2 ids (crimson, azure, emerald, gold). D-033: the four kingdom
+	tinctures ARE the canonical colours of config/Kingdoms.luau (FORGE-01; crimson 190,40,50, azure
+	40,110,210, emerald 35,128,95, gold 235,185,16), not variants: UIThemeParity.spec fails if they
+	drift. The HUD shows the colour the server sends in Kingdom.State (the same values) and falls back
+	to these. A kingdom is never shown by colour alone: crest emblem + name (HUD, standings, match
+	summary), swatch + name (objective tracker, owner pills).
 ]]
 
 return table.freeze({
@@ -56,10 +61,10 @@ return table.freeze({
 		Legendary = "#F0B33C",
 	},
 	tinctures = {
-		crimson = "#B8402E",
-		azure = "#3F72B5",
-		emerald = "#3E8A4B",
-		gold = "#C99A36",
+		crimson = "#BE2832",
+		azure = "#286ED2",
+		emerald = "#23805F",
+		gold = "#EBB910",
 		purpure = "#7B4AA8",
 		sable = "#2B2B33",
 	},

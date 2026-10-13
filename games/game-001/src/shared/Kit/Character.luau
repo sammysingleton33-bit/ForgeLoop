@@ -203,16 +203,17 @@ local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel sq
 -- kit-characters.md): the spire is tallest and pointed, the square low and wider than the helm, the plume a
 -- narrow tail swept back past the helm, the dome a round knob wider than its seat.
 local HELM_TOP = GREAT_HELM.size.Y / 2
-local SPIRE = Vector3.new(0.95, 2.1, 0.95)
-local PLUME_LEN, PLUME_D, PLUME_TILT = 2.5, 0.7, math.rad(55)
+local SPIRE = Vector3.new(1.3, 2.1, 1.3) -- base 1.84 across the diagonal: a broad roof, not a stick
+local PLUME_LEN, PLUME_D, PLUME_TILT = 2.5, 0.7, math.rad(70) -- a near-horizontal tail
 local CRESTS: { [string]: PartSpec } = {
-	crimson = { -- tall spire (2.05 above the helm): a CornerWedge turned 45°, its point over the front corner
+	crimson = { -- tall spire (2.05 above the helm): a CornerWedge turned 45°, its point over the front corner;
+		-- the base overhangs the helm a little at the corners, like the crimson towers' spires
 		name = "crest_spire",
 		class = "CornerWedgePart",
 		size = SPIRE,
 		color = 1,
 		material = Enum.Material.Metal,
-		offset = CFrame.new(0, HELM_TOP + SPIRE.Y / 2 - 0.05, 0.05) * CFrame.Angles(0, math.rad(45), 0),
+		offset = CFrame.new(0, HELM_TOP + SPIRE.Y / 2 - 0.05, 0) * CFrame.Angles(0, math.rad(45), 0),
 	},
 	azure = { -- square: a flat plate overhanging the helm by 0.25 on every side (the azure tower's square eave)
 		name = "crest_square",
@@ -223,7 +224,7 @@ local CRESTS: { [string]: PartSpec } = {
 		material = Enum.Material.Metal,
 		offset = CFrame.new(0, HELM_TOP + 0.24 - 0.02, 0),
 	},
-	emerald = { -- plume: a horsehair tail rising from the front of the helm top, swept back 55° past its back
+	emerald = { -- plume: a horsehair tail from the front of the helm top, swept back 70° and 1.4 past its back
 		name = "crest_plume",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,

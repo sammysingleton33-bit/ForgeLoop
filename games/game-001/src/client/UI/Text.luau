@@ -23,7 +23,9 @@ local REASONS: { [string]: string } = {
 	territory = "Outside your territory",
 	zone = "Not on open building ground",
 	overlap = "Too close to another building",
-	blocked = "Something is in the way",
+	-- the server keeps a building's largest-level footprint plus Buildings.placementGap free
+	-- (Sim/Footprint, #62): the ghost's outer outline shows that room (FORGE-05 M-2 on #62)
+	blocked = "Leave room for upgrades",
 	cost = "Not enough resources",
 	insufficient = "Not enough resources",
 	phase = "You can't build right now",

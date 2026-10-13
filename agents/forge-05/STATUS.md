@@ -6,11 +6,11 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | none of mine (#47, #57, #69 merged) |
-| Current task | D-030 / FL-0093: merge in dependency order. B5 (`71a0257`) delivered; B6 after #61 (citizens look different, Jobs tab works end to end). Waiting on the user's first Studio report |
-| Last verified check | main `0a7c9f1` CI green [run 38342038293](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38342038293); `bf84416` CI running |
-| Blockers | none |
-| In review / queued | #61 (needs FORGE-01's `ContentQuery.startLoyalty` fix after #67; then merge, then retarget #68) · #66 (gate passed 916/0; GitHub false conflict from a criss-cross base, FORGE-03 to merge main) · #63 (changes requested: 2 destroy-path Mediums; timing vs #70 is FORGE-00's call) · #70, #42/#49, #64 (review agents running) · #45 (held per FORGE-00 until Converse + CitizenAnswered work end to end) |
-| Merge gates I hold | FORGE-01 `Kingdom.Converse` server only after #66 is on main and FORGE-03 fixes #66 B1 (phone: risky answer tappable while its risk is below the fold); #61 only once main + #61 passes (Population.spec:447 after #67) |
+| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. **B6** (`c28576a`) prepared: individual citizens, Jobs tab end to end, D-033 colours. Next build after #66/#77 (conversations) or #70+#63 (army). D-037: non-trivial merges now need FORGE-07's READY TO MERGE |
+| Last verified check | main `c28576a` CI green [run 38343924442](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38343924442); B6 artifact id 11787952681 |
+| Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (reported to FORGE-00/07; post-merge verdicts requested) |
+| In review / queued | #66 (gate passed; FORGE-03 to merge main; FORGE-07 verdict) · #70 (changes requested: B1 capture without targetId) · #63 (changes requested; held until #70) · #64 (changes requested: M1 log flood) · #49 (FORGE-04 to merge main after #42) · #68, #77 (FORGE-07 reviewing) · #45 (held per FORGE-00) |
+| Merge gates I hold | FORGE-01 `Kingdom.Converse` server (#77) only after #66 is on main and #66 B1 (phone: risk below the fold) is fixed; risks as `{text, chance}` via `choiceRisks` |
 | Needs from others | User: run a user build and send Output/FPS/screenshots (via FORGE-00). FORGE-00: #63 timing, risk-prefix ruling (#67 M2), `fireAction` co-ruler rule (M3), CONTRACTS/handoff (M4). FORGE-01: #61 `startLoyalty`, risks as `{text, chance}`. FORGE-03: #66 main merge, #66 B1, #63 M1/M2. FORGE-02: soldier helmet crest (D-033 VS-1 row) |
 
 ## Merged so far (integration log: `production/quality-gates/integration-log.md`)
@@ -74,6 +74,13 @@ _Maintained by the worker. Keep it short and current._
 | #71 | FORGE-03 Jobs ack beats older payload (unblocks #61) | `0c272f6` |
 | #74 | FORGE-03 HUD places NotificationController (#33 M1) | `0a7c9f1` |
 | #73 | FORGE-02 kingdom colours from `config/Kingdoms.luau` (D-033) | `bf84416` |
+| #61 | FORGE-01 generated population, CitizenView | `ad71b3e` |
+| #78 | FORGE-06 ownership rows (cross-owner, accepted) | `1a6bebc` |
+| #79 | FORGE-03 UI tinctures = canonical colours | `84e143a` |
+| #76 | FORGE-03 ghost "Room" outline | `36d5ca9` |
+| #75 | FORGE-02 throne clearance, coplanar faces | `7b6cd51` |
+| #42 | FORGE-04 citizen bubbles and placards | `c28576a` (user build B6) |
+| #80 | FORGE-07 ownership row (cross-owner, accepted) | `54f7390` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
