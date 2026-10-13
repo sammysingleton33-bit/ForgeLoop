@@ -173,7 +173,7 @@ describe("RulerController with a character (FL-0053)", function()
 		expect(seen).toEqual({ "Ruler", "none", "Ruler" })
 	end)
 
-	it("standUp() leaves the throne by jumping, and only when seated", function()
+	it("standUp() leaves the throne (Sit = false, then a jump), and only when seated (FL-0081)", function()
 		local character, humanoid = D.character()
 		player.CharacterAdded:Fire(character)
 		humanoid.Jump = false
@@ -182,6 +182,7 @@ describe("RulerController with a character (FL-0053)", function()
 		expect(humanoid.Jump).toBe(false)
 		humanoid.Sit = true
 		expect(ruler:standUp()).toBe(true)
+		expect(humanoid.Sit).toBe(false)
 		expect(humanoid.Jump).toBe(true)
 	end)
 

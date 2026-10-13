@@ -20,8 +20,9 @@
 	remotes (RemoteService), calls (BuildingService call log: { { name, args } }).
 
 	Double rules (stand-ins for FORGE-01, not the game's rules): your territory is the square
-	|x| <= 200, |z| <= 200 (reason "territory"); a new building needs 24 studs from any other
-	("overlap"); costs come from config Costs and are spent with TreasuryService:spend ("cost").
+	|x| <= 200, |z| <= 200 (reason "out_of_territory"); a new building needs 24 studs from any other
+	("blocked"); costs come from config Costs and are spent with TreasuryService:spend
+	("cannot_afford"). Refusal codes are the server's (FORGE-01 refusal-codes handoff).
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
@@ -239,19 +240,19 @@ local function buildingServiceDef(world)
 			end
 			function svc:canPlace(kingdom, buildingType, position)
 				if math.abs(position.X) > 200 or math.abs(position.Z) > 200 then
-					return false, "territory"
+					return false, "out_of_territory"
 				end
 				for _, other in self.positions do
 					if (Vector3.new(other.X, 0, other.Z) - Vector3.new(position.X, 0, position.Z)).Magnitude < 24 then
-						return false, "overlap"
+						return false, "blocked"
 					end
 				end
 				local entry = Costs.building(buildingType, 1)
 				if entry == nil then
-					return false, "unknown_type"
+					return false, "unknown_building"
 				end
 				if not treasury:canAfford(kingdom, entry.cost) then
-					return false, "cost"
+					return false, "cannot_afford"
 				end
 				return true
 			end
@@ -280,7 +281,7 @@ local function buildingServiceDef(world)
 					end
 					local kingdom = kingdoms:getKingdomOf(player)
 					if kingdom == nil then
-						return false, "no_kingdom"
+						return false, "not_in_match"
 					end
 					return self:canPlace(kingdom, buildingType, position)
 				end)
@@ -288,7 +289,7 @@ local function buildingServiceDef(world)
 					table.insert(world.calls, { name = "Place", args = { buildingType, position, rot } })
 					local kingdom = kingdoms:getKingdomOf(player)
 					if kingdom == nil then
-						return nil, "no_kingdom"
+						return nil, "not_in_match"
 					end
 					local ok, reason = self:canPlace(kingdom, buildingType, position)
 					if not ok then
@@ -296,7 +297,7 @@ local function buildingServiceDef(world)
 					end
 					local entry = Costs.building(buildingType, 1)
 					if not treasury:spend(kingdom, entry.cost, `place:{self.nextId}`, "construction") then
-						return nil, "cost"
+						return nil, "cannot_afford"
 					end
 					local id = self:add(kingdom, buildingType, 1, "planned", position)
 					self.buildings[id].placedBy = player.UserId
@@ -321,7 +322,7 @@ local function buildingServiceDef(world)
 					if
 						not treasury:spend(kingdom, entry.cost, `upgrade:{buildingId}:{b.level + 1}`, "construction")
 					then
-						return false, "cost"
+						return false, "cannot_afford"
 					end
 					b.level += 1
 					b.state = "constructing"

@@ -73,13 +73,10 @@ return table.freeze({
 				{
 					id = "BuildOnPlot",
 					trigger = { bus = "BuildingPlaced", match = { placedBy = true } },
-					-- Until FL-0081 declares Build.PlaceSlot, the plot picker's "Build here" fails, so the hint
-					-- points at the Build button (Build.Place). Back to { kind = "world", tag = "BuildSlot" }
-					-- once FL-0081 lands (FORGE-05's #45 M1).
 					hint = {
-						title = "Build a House or a Farm",
-						body = "Open Build and place a House or a Farm.",
-						target = { kind = "ui", name = "HUD.BuildButton" },
+						title = "Build on a free plot",
+						body = "Tap a plot marker, choose a House or a Farm, then confirm.",
+						target = { kind = "world", tag = "BuildSlot" }, -- Build.PlaceSlot is served (FL-0081)
 					},
 					expectSec = 50,
 					interactive = true,
@@ -106,7 +103,7 @@ return table.freeze({
 					hint = {
 						title = "Build a Barracks, then recruit 3 soldiers",
 						body = "Soldiers cost food and wood from the treasury.",
-						target = { kind = "ui", name = "HUD.Recruit" },
+						target = { kind = "ui", name = "HUD.ArmyButton" }, -- the Army rail button (FL-0060)
 					},
 					requires = "MilitaryService",
 					expectSec = 150,

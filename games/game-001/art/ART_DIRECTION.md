@@ -28,6 +28,11 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 
 - The kingdom colours above are canonical in `config/Kingdoms.luau` (D-033); Kit stand-ins and WorldService read them from there, never hard-coded.
 - **Never colour alone (D-033).** Each kingdom is told apart by tower silhouette (crimson spires, azure pyramids, emerald hoardings, gold domes), its emblem (crown, star, oak leaf, sun) and its name. Crimson and emerald get close under protanopia, so banners, flags and shields always carry the emblem.
+- **Emblems (D-039; colour-vision finding 3).** One builder, `Pieces.emblem`, puts the emblem on every banner, flag, pennant, shield, prop banner and slot sign; the kind follows the colour with the same hue map as the tower caps (`Kit.emblemKind`), so emblem and silhouette always agree, and a neutral colour carries none.
+  - Shapes, a few primitive parts each: **crown** (3: two tall wedges and a diamond, three points), **star** (5 wedges, the exact five-pointed star), **oak leaf** (5: three round lobes, a diamond base, a darker midrib and stem; the leaf lies in bend, tilted 35°, because upright and foreshortened it read as a lollipop tree), **sun** (4: a disc, a ring and two squares for 8 pointed rays; 9 with separate wedge rays on the aerial plaques).
+  - Colour: ivory (240, 232, 212) on the kingdom field, except the sun, which is deep gold (`shade(colour, 0.42)`) because ivory on the light gold field has no contrast — the same choice as the Blender bible's deep-gold sun. Every emblem differs from its field by ΔL* ≥ 25 (`KitEmblems.spec`).
+  - As large as the field allows: 80 % of a banner's width, 64 % of a shield.
+  - **Aerial plaques on the keep.** The overview camera (40–220 studs, 38–65° down) sees roofs and caps, not hanging banners, so the keep carries two large plaques (kingdom field, ivory border, emblem): one on the hall roof in front of the donjon, facing up and raised 2.4 so the merlons never hide it, and one on the donjon's windowless back face for views from behind.
 - Rules shared with the Blender bible (§3 there): walls are never painted in the kingdom colour; straw, hay and wheat stay desaturated tan; kingdom green stays clearly bluer than grass and leaves. Emerald banners and flags use a lighter, high-saturation tint of the kingdom colour with an ivory border, because from the aerial camera the emerald plot sits on green terrain.
 - Kit derives every shade from the colour it is given and marks those parts with `KitTint`, so `Kit.setKingdomColor` recolours in place.
 - Every Kit colour lives in `Kit/Parts.luau` `C`, with the same values as `blender/lib/palette.py`.
@@ -66,6 +71,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
   | gold | domes with gold finials |
 
   The same caps appear on keep turrets, barracks turrets, the gatehouse, soldiers' helmets in the Blender set, and the watchtower once it is captured.
+  Part-built Kit soldiers given their kingdom (CONTRACTS G13.2, D-033(3)) wear a one-part helmet crest in the same style, so they read apart without colour: crimson a tall spire, azure a flat square plate overhanging the helm, emerald a plume swept back, gold a dome knob.
 - **Chunky and slightly exaggerated:** thick roofs with 1.2-stud overhangs, oversized doors (4.4 × 7.6, walkable), chamfered or stepped edges, banners hanging below the eaves.
 - **Human scale:** 5.5-stud characters, storeys of about 10–11 studs, sills 3.4 above the floor, fences and parapets 3–3.4 high.
 - **Front faces −Z** (the Model's LookVector). The pivot is at the base centre (PrimaryPart `Root` plus `PivotOffset`).

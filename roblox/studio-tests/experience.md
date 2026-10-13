@@ -71,9 +71,9 @@ Needs:
 - FORGE-04: InputModeController's selection (FL-0090, PR #29). It reports `CitizenInspected`.
 - FORGE-03:
   - the citizen card;
-  - the Build menu (`HUD.BuildButton`; the plot menu takes over once FL-0081 declares `Build.PlaceSlot`);
+  - the plot menu (`Build.PlaceSlot`, FL-0081, on `main`);
   - the conversation panel, which reports `CitizenAnswered` after a successful `Kingdom.Choose`;
-  - the HUD target `HUD.Recruit`.
+  - the Army rail button (`HUD.ArmyButton`, FL-0060).
 - DataService is not needed (session-only progress, D-027).
 
 No step waits for a system the build doesn't have:
@@ -86,9 +86,9 @@ Each passed or timed-out step is still logged as its funnel step (Roblox counts 
 Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions).
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
 2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
-3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build a House or a Farm", with the Build button highlighted.
-4. Open Build and place a House or Farm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
-5. Build a Barracks, recruit 3 soldiers, press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
+3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
+4. Tap a plot marker, choose a House or Farm and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
+5. Build a Barracks, then recruit 3 soldiers from the Army rail button (highlighted by the Recruit card), and press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
 6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
 
 Expected `env.log` order (the adapter writes every call; `sent=true` means it was handed to Roblox, which records nothing from Studio):
@@ -163,21 +163,24 @@ Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec
 | Text | only from the event, at most 80 characters (an ellipsis beyond) |
 | Meaning | "!" request, "?" concern, "…" idea; placards say "On strike"; never colour alone |
 | Lifetimes | thought 45 s or until answered; reaction 4 s; placard until the strike ends |
-| On screen | at most 8, within 160 studs of the camera focus (not the camera, so zoom never hides them); reactions first, then the nearest; never on LOD-hidden rigs |
+| On screen | at most 8, within 160 studs of the camera focus in the overview (not the camera, so zoom never hides them) and of the camera in walk mode; reactions first, then the nearest; never on LOD-hidden rigs |
 | `citizenBarks` off | hides reaction bubbles only; thoughts and placards stay (they are gameplay) |
-| Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose |
+| Targets (v0.4-g6) | a strike or cue marks exactly the citizens the server names (`entityIds`), never every citizen of the occupation; a cue with no ids shows on no citizen |
+| Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose; a continuous effect (`rest`) stops after its `seconds` (6), at the citizen's next cue, or when the rig is released |
+| Conversation | the citizen's own bubble hides while their conversation panel is open |
 
 Steps
 1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
 2. Tap the citizen: the selection still works through the bubble (FORGE-03's card opens). Answer in the conversation panel: the bubble changes to the reaction line for about 4 s. The citizen poses (cheer, grumble, slump or salute) if FORGE-01's `playPose` exists; otherwise only the bubble shows.
-3. `strike.start miner`: each striking miner shows "On strike" until the strike ends.
+3. `strike.start miner` (or the `vs1.strike` preset): every miner shows "On strike" until the strike ends, and citizens of other jobs show none. Reassign a striking miner to another job: the placard stays on the new rig, because the strike belongs to the citizen. (A consequence that strikes only the least loyal share of an occupation marks exactly those citizens; that case is covered headless in `CitizenBubbles.spec`, since no debug preset produces it before FL-0082.)
 4. Zoom all the way out (about 220 studs): the bubbles under the view stay. Pan until a citizen is more than about 160 studs from the centre of the view: its bubble disappears. Pan back: it returns. With more than 8 requests open, at most 8 bubbles show, the nearest to the centre first.
-   - A citizen with a request who changes job keeps the bubble on the new rig.
+   - A citizen with a request who changes job keeps the bubble on the new rig (and a striking citizen keeps the placard).
 5. Settings → Citizen barks off: reaction bubbles no longer show; request bubbles and placards still do.
 6. Device emulator, a small phone: bubble text is readable at the default zoom, and bubbles don't cover the HUD.
-7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists.
+7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists. A `rest` cue shows motes on that citizen for about 6 s, then they stop.
+8. Open a conversation with a citizen who has a request: their bubble hides while the panel is open and comes back when it closes. Switch to walk mode: bubbles on citizens next to the ruler show, wherever the overview was last centred.
 
-Pass: steps 1–7 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
+Pass: steps 1–8 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
 
 ## Changelog
 - 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).

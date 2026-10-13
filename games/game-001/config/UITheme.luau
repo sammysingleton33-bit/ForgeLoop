@@ -88,6 +88,7 @@ return table.freeze({
 		gold = { image = "", glyph = "🪙" },
 		citizens = { image = "", glyph = "👥" },
 		crown = { image = "", glyph = "👑" },
+		gem = { image = "", glyph = "💎" }, -- Crown Points: never a crown, which is Emberhold's emblem (D-039)
 		build = { image = "", glyph = "🔨" },
 		kingdom = { image = "", glyph = "🏰" },
 		army = { image = "", glyph = "⚔" },
@@ -120,7 +121,7 @@ return table.freeze({
 		wall = { image = "", glyph = "🧱" },
 		gate = { image = "", glyph = "🚪" },
 		rotate = { image = "", glyph = "⟳" },
-		emblem_flame = { image = "", glyph = "🔥" },
+		emblem_crown = { image = "", glyph = "♛" }, -- Emberhold (drawn by UI/Crest unless an image is uploaded)
 		emblem_star = { image = "", glyph = "★" },
 		emblem_oak = { image = "", glyph = "🌳" },
 		emblem_sun = { image = "", glyph = "☀" },

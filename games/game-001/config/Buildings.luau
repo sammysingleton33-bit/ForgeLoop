@@ -5,8 +5,8 @@
 	One entry per CONTRACTS G2 BuildingType: footprint (radius, studs; Kit.footprint replaces it in the
 	simulation, G6), whether rulers may place it, drop-off role (`accepts` limits it to some resources),
 	limits, keep-level requirements and the gameplay stats of every level: hp, popCap (housing),
-	territory, farm workers/yield, defensive attack, trainable units, recruitCap and trainSpeed
-	(barracks).
+	territory, farm workers/yield, defensive attack, trainable units, bunks and trainSpeed
+	(barracks), gatherBonus (lumber camp, quarry).
 
 	One source per number (CONTRACTS G13.5): FORGE-03's Costs.luau owns every cost, build time and the
 	number of levels (Costs.maxLevel). This file has stats for exactly levels 1..Costs.maxLevel(type)
@@ -96,10 +96,12 @@ return {
 			placeable = true,
 			dropoff = true,
 			accepts = { "wood" },
-			levels = { -- PROVISIONAL: higher levels are sturdier; their wood-rate bonus lands with FL-0081
-				{ hp = 350 },
-				{ hp = 500 },
-				{ hp = 650 },
+			-- gatherBonus: the kingdom's citizens gather what the camp accepts this much faster (the best
+			-- standing camp counts; FL-0081 "each level unlocks something"). PROVISIONAL 0 / +20% / +40%.
+			levels = {
+				{ hp = 350, gatherBonus = 0 },
+				{ hp = 500, gatherBonus = 0.2 },
+				{ hp = 650, gatherBonus = 0.4 },
 			},
 		},
 		quarry = {
@@ -109,10 +111,11 @@ return {
 			placeable = true,
 			dropoff = true,
 			accepts = { "stone", "gold" },
-			levels = { -- PROVISIONAL: higher levels are sturdier; their stone-rate bonus lands with FL-0081
-				{ hp = 350 },
-				{ hp = 500 },
-				{ hp = 650 },
+			-- gatherBonus as the lumber camp's, for stone and gold. PROVISIONAL 0 / +20% / +40%.
+			levels = {
+				{ hp = 350, gatherBonus = 0 },
+				{ hp = 500, gatherBonus = 0.2 },
+				{ hp = 650, gatherBonus = 0.4 },
 			},
 		},
 		barracks = {
@@ -122,14 +125,14 @@ return {
 			placeable = true,
 			dropoff = false,
 			maxCount = 2,
-			-- recruitCap: living soldiers plus those in training that this barracks supports (the kingdom's
-			-- cap is the sum over its standing barracks); trainSpeed divides the unit's trainSeconds.
-			-- Design §4: recruit cap 5 / 10 / 15 / 20; level 4 veterans come with morale (FL-0082).
+			-- bunks: soldiers sleep in the barracks, never in house or keep beds (D-041); the kingdom's
+			-- soldiers (living + training) fit in the bunks of its standing barracks. PROVISIONAL 4/8/12/16.
+			-- trainSpeed divides the unit's trainSeconds. Level 4 veterans come with morale (FL-0082).
 			levels = {
-				{ hp = 1200, trains = { "soldier", "archer" }, recruitCap = 5, trainSpeed = 1 },
-				{ hp = 1800, trains = { "soldier", "archer", "knight", "ram" }, recruitCap = 10, trainSpeed = 1 },
-				{ hp = 2400, trains = { "soldier", "archer", "knight", "ram" }, recruitCap = 15, trainSpeed = 1.25 },
-				{ hp = 3000, trains = { "soldier", "archer", "knight", "ram" }, recruitCap = 20, trainSpeed = 1.5 },
+				{ hp = 1200, trains = { "soldier", "archer" }, bunks = 4, trainSpeed = 1 },
+				{ hp = 1800, trains = { "soldier", "archer", "knight", "ram" }, bunks = 8, trainSpeed = 1 },
+				{ hp = 2400, trains = { "soldier", "archer", "knight", "ram" }, bunks = 12, trainSpeed = 1.25 },
+				{ hp = 3000, trains = { "soldier", "archer", "knight", "ram" }, bunks = 16, trainSpeed = 1.5 },
 			},
 		},
 		watchtower = {
