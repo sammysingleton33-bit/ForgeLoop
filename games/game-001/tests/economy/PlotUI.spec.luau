@@ -284,6 +284,33 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world:destroy()
 	end)
 
+	it("keeps the upgrade panel's scroll when the reputation strip appears and moves it (#58 f4)", function()
+		local world = newWorld({ width = 1024, height = 690 })
+		local hud = world.hud
+		local barracks = world.build:add("crimson", "barracks", 1, "complete", Vector3.new(150, 0, 150))
+		world.build:push(barracks)
+		world:advance(0.1)
+		pick(world, "building", barracks)
+		local panel = find(hud.guis.menus, "UpgradePanel")
+		local body = find(panel, "Body")
+		expect(body:IsA("ScrollingFrame")).toBe(true)
+		body.CanvasPosition = Vector2.new(0, 40)
+		-- the strip shows for the first time (ReputationPanelController sets the flag): the drawer
+		-- moves down, so the panel is rebuilt once
+		hud.state.reputation = true
+		hud:render()
+		local moved = find(hud.guis.menus, "UpgradePanel")
+		expect(moved == panel).toBe(false) -- rebuilt (the old one is destroyed)
+		expect(find(moved, "Body").CanvasPosition).toBe(Vector2.new(0, 40))
+		-- another building's panel starts at the top
+		local house = world.build:add("crimson", "house", 1, "complete", Vector3.new(170, 0, 150))
+		world.build:push(house)
+		world:advance(0.1)
+		pick(world, "building", house)
+		expect(find(find(hud.guis.menus, "UpgradePanel"), "Body").CanvasPosition).toBe(Vector2.new(0, 0))
+		world:destroy()
+	end)
+
 	it("shows another kingdom's building read-only and closes on other selections", function()
 		local world = newWorld()
 		local hud = world.hud

@@ -1,0 +1,133 @@
+# Kit architecture review log (FL-0054 v0 + G13 / FL-0085) — FORGE-02
+
+D-019 preview loop for `src/shared/Kit/{Buildings,Pieces}.luau`. Renders: `blender/scripts/render_kit.py`
+over the Lune dumps (`KitDump.spec` → `building_*`, `stages`; `KitBuildingsDump.spec` → `house_variants`,
+`stages_more`, `levels_*`, `standins`). The preview has no Roblox material textures (Studio decides the final
+look, D-026). Scores 1–5: silhouette / variation / readability at gameplay distance / proportions / palette /
+detail density / cohesion / part cost.
+
+Starting point (before round 1): `kit_building_house.jpg`, `kit_building_keep.jpg`, `kit_building_watchtower.jpg`
+at commit c772f96 — flat single-colour wedge roofs, one identical house, thin turrets, plain walls, door arch
+rendering black. Scores ≈ 2 / 1 / 3 / 3 / 3 / 1 / 3 / 5.
+
+## Round 1 — new piece language (quick renders, 21:09–21:22)
+Images: `blender/previews/kit_building_{house,keep,watchtower,storehouse,barracks,farm,lumbercamp,quarry,wall,gate}.jpg`,
+`kit_stages.jpg`, `kit_house_variants.jpg`, `kit_stages_more.jpg`; tiles in `blender/renders/kit/`.
+
+Built: tile roofs from lapped courses (alternating shade, ridge cap, barge boards), thatch (thick slabs,
+lighter upper layer, rolled eaves/ridge/verges), irregular stone plinths, timber framing with braces/posts/rails
+placed around openings, windows (frame, glass, cross mullion, sill/flower box, kingdom shutters), arched doors
+with stone voussoirs and keystone, gable and ridge chimneys, quoins, kingdom tower caps (stepped spire, slate
+pyramid, timber hoarding, dome), banners with per-kingdom emblems, crests, scaffolding, material piles; four
+house archetypes + mirrors; per-kingdom castle stone (warm grey / blue-grey / mossy / sandstone).
+
+| model | sil | var | read | prop | pal | detail | coh | cost | notes |
+|---|---|---|---|---|---|---|---|---|---|
+| house | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | storybook townhouse reads; gable chimney hidden on the far side in the hero view |
+| keep | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 3 | kingdom caps distinct; facade cramped between fat turrets; walls plain in preview |
+| watchtower | 3 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | caps too small and sunk behind merlons; emerald hoarding hidden |
+| storehouse | 3 | 3 | 4 | 3 | 4 | 3 | 4 | 5 | staddles barely visible; plain sides |
+| barracks | 4 | 3 | 4 | 4 | 4 | 4 | 4 | 3 | gatehouse + turret read "military"; turret at the back hardly seen |
+| farm | 3 | 3 | 3 | 4 | 2 | 3 | 4 | 4 | wheat rows read as planks; whole farm beige/yellow, no contrast |
+| lumbercamp / quarry | 3 | 3 | 3 | 3 | 3 | 2 | 3 | 5 | low detail, pale uniform quarry stone |
+| wall / gate | 4 | 3 | 4 | 4 | 4 | 3 | 4 | 5 | pointed gate arch reads; black seam on wall ends |
+| stages | 4 | 3 | 4 | 4 | 3 | 3 | 4 | 5 | read as building sites; stage 1 sparse |
+
+Problems found and fixed for round 2:
+- Black bands on every arched door/window: coplanar disc + leaf faces (Cycles artifact, and a z-fight in Studio).
+  Discs now sit 0.05 behind the leaf/frame plane; banner/crest tips, emblem layers, frame members and the wall's
+  string course/batter ends were de-coplanarised the same way.
+- Keep: broad facade (hall 25 × 20 instead of 24 × 24), projecting entrance bay, bay merlons, crest; spires get 8
+  tiers on big caps; turret flare reduced to stay in the footprint.
+- Watchtower: cap raised to the merlon tops and widened to w+0.4 (eave over the parapet); emerald hoarding replaces
+  the parapet.
+- Storehouse: granary lifted to 3 studs on staddles, cleated ramp, side lean-to store with goods.
+- Farm: wheat = darker stalk rows + lighter, wider ears; darker soil; green vegetable patch; kingdom flag; kingdom
+  coat on the scarecrow.
+- House v1 chimney moved to the visible side; v4 lean-to moved to the visible side.
+- Part trims: crown emblem 4 → 2 parts, bare arched castle windows, front-only jetty brackets.
+
+## Round 2 — G13 scope (FL-0085): throne, visible levels, VS-2 stand-ins (quick renders, 21:34–21:37)
+Images: `blender/previews/kit_levels_keep.jpg`, `kit_levels_barracks.jpg`, `kit_levels_house_farm.jpg`,
+`kit_standins.jpg` (dump `KitBuildingsDump.spec`; the Seat is previewed as a block because render_kit only knows
+primitive classes).
+
+Built: keep redesign — broad hall pushed back, entrance bay, and an open front terrace with a three-step dais and
+the `Throne` Seat (kingdom-colour back, gold arms/trim/finials, emblem, carpet) facing −Z, framed by two kingdom
+standards; nothing roofs over it (spec-checked). Keep L1 5 caps → L2 + bartizans on the bay + turret banners (7
+caps) → L3 + side towers (9 caps), height 57 → 67 → 77. Barracks L1 timber hall → L2 stone + jettied timber,
+banners, two racks → L3 + corner tower + sand yard, dummies, target → L4 + crenellated gatehouse, crest, big flag,
+second tower. House L2: v1 dormer + woodshed + taller storeys, v2/v3/v4 a second storey. Farm L2: barn with a
+kingdom-tile roof. Thatch muted to 191,163,108 and every thatch house flies a ridge pennant. Six labelled stand-ins.
+
+| sheet | sil | var | read | prop | pal | detail | coh | cost | notes |
+|---|---|---|---|---|---|---|---|---|---|
+| keep L1–3 | 4 | 4 | 4 | 4 | 4 | 3 | 4 | 3 | throne + standards read in front of the door; each level adds caps/height |
+| barracks L1–4 | 4 | 4 | 5 | 4 | 4 | 4 | 4 | 3 | four clearly different silhouettes at 73 studs |
+| house / farm L1–2 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | v1 L1→L2 only a dormer (too subtle); wheat still a flat tan slab |
+| stand-ins | 3 | 4 | 4 | 3 | 4 | 3 | 4 | 5 | blacksmith/market/shrine good; mine hill = two grey boxes; granary thatch reads as a cake |
+
+Changes for round 3: v1 L2 gets a side woodshed (roof count 1 → 3); wheat stalks olive, ears brighter; mine rocks
+tilted, varied, moss cap; quarry face darker and varied (Rock material), rubble and a ladder; lumber camp firewood
+stack and a log cart; wall string course/batter ends de-coplanarised.
+
+## Round 3 — refinements + final renders (non-quick, 420 px / 28 samples, 22:00 →)
+Images (final): `blender/previews/kit_building_{house,keep,watchtower,storehouse,barracks,farm,lumbercamp,quarry,wall,gate}.jpg`,
+`kit_levels_{keep,barracks,house_farm}.jpg`, `kit_house_variants.jpg`, `kit_standins.jpg`, `kit_stages.jpg`,
+`kit_stages_more.jpg`; tiles in `blender/renders/kit/`.
+
+Changes: wheat ears are now a gabled golden ridge on an olive stalk row (light/shade per row — reads as a crop
+field, no longer as planks); house v1 L2 woodshed; barracks L1–L2 get a tall kingdom standard (moved to the +X
+corner after the first final render showed its flag flying into the roof); mine rocks tilted/varied with a moss
+cap; quarry face in three darker stone tones (Rock) with rubble and a ladder; lumber camp firewood stack + log cart.
+
+| sheet | sil | var | read | prop | pal | detail | coh | cost |
+|---|---|---|---|---|---|---|---|---|
+| house (calibration) | 4 | 4 | 5 | 4 | 4 | 4 | 5 | 4 |
+| keep (calibration) | 5 | 5 | 4 | 4 | 4 | 4 | 4 | 3 |
+| watchtower (neutral + kingdoms) | 4 | 4 | 5 | 4 | 4 | 4 | 4 | 4 |
+| storehouse | 4 | 3 | 4 | 4 | 4 | 4 | 4 | 5 |
+| barracks L1–4 | 4 | 4 | 5 | 4 | 4 | 4 | 4 | 3 |
+| farm L1–2 | 3 | 3 | 4 | 4 | 4 | 3 | 4 | 4 |
+| house variants | 4 | 5 | 4 | 4 | 4 | 4 | 4 | 4 |
+| lumber camp / quarry / mine | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 5 |
+| wall / gate | 4 | 3 | 4 | 4 | 4 | 3 | 4 | 5 |
+| stages | 4 | 3 | 4 | 4 | 3 | 3 | 4 | 5 |
+| stand-ins (G13.5) | 3 | 4 | 4 | 3 | 4 | 3 | 4 | 5 |
+
+Remaining weaknesses (next pass): castle/hall walls are plain in the preview (Studio's Cobblestone texture carries
+them — confirm in the calibration screenshot); crimson stepped spires read as stacked discs at close range;
+ClayRoofTiles texture orientation on rotated courses is unverified (Studio check); lumber camp, quarry and mine are
+the weakest silhouettes; stage 1 is sparse; the throne is small at 220 studs (the standards and carpet carry it).
+
+## Round 4 — G13 contract rules: pinned footprints, strict containment, emerald calibration (22:30 →)
+Images: `kit_levels_keep.jpg`, `kit_levels_barracks.jpg`, `kit_levels_house_farm.jpg` (non-quick, FORGE-01 G13
+colours emerald 35,128,95 and gold 235,185,16 in `KitBuildingsDump`), then the `building_*` sheets.
+
+Rule (FORGE-00/FORGE-02 lead): footprints never change and never grow per level; the slot picker, the server and
+`Build/Fit.luau` read `Kit.footprint(type, maxLevel)`. Measured before the fix, parts poked out of the footprint by
+up to 2.3 studs (keep turret flares and caps, barracks L3/L4 back towers, v1/v4 woodsheds, thatch eaves, farmhouse
+verges, gate/wall plinths and buttresses, mine rocks, building-site piles). Fixes: keep hall sized from the
+footprint (turret + widest cap reach = r + 1.3; back edge to last stair = fp + 1, the Door attachment 0.5 in
+front of the stairs), terrace 5 deep, dais 4.4/3.6/3.0; barracks towers clamped 4.25 inside the corner; thatch
+houses 0.6 shallower with 1.3 overhang, tile overhang 1.2, woodsheds 1.8 (v1 L2) / 2.7 (v4); farmhouse sized so
+the thatch verge stays in; gate towers 0.6 narrower and 2.4 shallower; wall 2.8 thinner with 1.35-deep buttresses;
+mine rocks pulled in; site ground, stakes, crane and material piles inside. The spec now pins every FOOTPRINTS
+entry (all 16 types, levels 0–5 clamped) and fails if any part leaves the footprint (sides/back strictly; front ≤ 2
+studs for entrance steps).
+
+Emerald calibration (FORGE-00: emerald plots sit on green terrain): emerald banners, building flags and ridge
+pennants use a lighter, high-saturation tint (KitTint 1.35, still recoloured by setKingdomColor) with an ivory
+border and ivory trim band. Region-marker flags (Props → Pieces.flagpole without a style) keep the exact kingdom
+colour that Kit.spec pins.
+
+Critique of the level sheets: keep L1→L3 still reads as one family growing (5 → 7 → 9 caps, 57 → 67 → 77 studs),
+the throne + standards stay legible in front of the door; the halls are narrower than round 3 (footprint-bound)
+but the facade still holds bay, banners and windows. Barracks L1 now carries a tall standard (visible), L3/L4
+towers sit on the hall's back corners. House/farm unchanged in read; the gold roof at 235,185,16 is a saffron
+mustard and no longer competes with the muted thatch; the emerald pennant reads mint with a cream edge.
+
+Final sheets after round 4 (non-quick): `kit_building_{house,keep,watchtower,barracks,farm,storehouse}.jpg`,
+`kit_levels_{keep,barracks,house_farm}.jpg`, `kit_standins.jpg`. Not re-rendered after round 4 (stopped at the
+coordinator's wrap-up; geometry changed only to stay inside the footprint): `kit_house_variants.jpg`,
+`kit_stages*.jpg`, `kit_building_{lumbercamp,quarry,wall,gate}.jpg`.
