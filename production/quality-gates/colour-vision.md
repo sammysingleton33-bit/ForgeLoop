@@ -37,5 +37,11 @@ CIEDE2000 between kingdom colours (< 10 hard to tell apart at a glance; < 5 near
    aerial zoom, so add a non-colour cue there too (banner emblem visible from the overview camera).
 4. Tritanopia: azure vs emerald 10.8 — same remedy as 2–3.
 
+Routing (FORGE-00, CONTRACTS G13.2 at `2221c1e`):
+- Finding 2 → soldier helmet crest per kingdom in its tower style (spire / square / plume / dome) as the 9th rig part;
+  FORGE-02 builds it in the Kit, FORGE-01 passes the kingdom id when rendering soldiers. **VS-1 acceptance row.**
+- Finding 3 → banner emblems readable from the overview camera (FORGE-02, VS-1 polish, after FL-0085).
+- Finding 4 → covered by tower silhouettes and emblems; re-check in the Studio four-kingdom screenshot step.
+
 Status: **not yet acceptable for VS-1** (finding 2). Re-run after the soldier marker lands and once with a Studio
 screenshot of a four-kingdom view.
