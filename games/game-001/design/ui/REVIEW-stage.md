@@ -15,9 +15,10 @@ itself. Everything here is headless; Studio is U16 in `roblox/studio-tests/ui-ec
 - The renderer now draws ViewportFrames (`design/ui/render/README.md`, deviations 23–24): flat
   shading (the head looks faceted; Roblox shades it smoothly), and a stand-in face instead of the
   face texture. The framing and proportions are the real ones; the surface look is not.
-- Committed (uncompressed, 0.87 MB in all; palette compression banded the portrait's gradient):
+- Committed (uncompressed, about 1 MB in all; palette compression banded the portrait's gradient):
   `screenshots/luau/stage-asking-desktop.png`, `stage-asking-tablet.png`, `stage-answered-desktop.png`,
-  `stage-four-phone.png`, `stage-confirm-phone.png`, `stage-long-phone.png`, `stage-refused-phone.png`.
+  `stage-asking-phone.png`, `stage-four-phone.png`, `stage-confirm-phone.png`, `stage-long-phone.png`,
+  `stage-refused-phone.png` (phones re-shot after the bubble moved above).
 
 ## What I looked at, and what changed after looking
 - **Layout.** Portrait bottom left, bubble and answers to its right, the whole stage centred left
@@ -36,8 +37,12 @@ itself. Everything here is headless; Studio is U16 in `roblox/studio-tests/ui-ec
   "Edda Thornbury" fits.
 - **A thin scroll bar on the tablet's four answers.** The height estimate was exact; the body's
   1 px padding tipped it over. 4 px of slack added; no body overflows in any scene now.
-- Long question on a phone: the stage grows up to the HUD stack, the kicker says "YOUR ANSWER ·
-  SCROLL FOR ALL 3" and the body scrolls (as the panel does).
+- **FORGE-06's longest lines scrolled on a phone** (via FORGE-00: question ≤ 160, four answers
+  ≤ 70 must fit 844 × 390): beside the portrait the bubble wrapped such a question to three lines,
+  228 of 215 px. Phones now put the bubble across the stage **above** the portrait and the answers
+  (tail down at the portrait, the close button beside it): 210 of 215 px, and the question stays in
+  view while the answers scroll. A bubble too tall to leave the portrait its room (far over budget,
+  e.g. `stage-long`) goes back beside it and the column scrolls with "SCROLL FOR ALL N".
 
 ## Unverified
 - Studio: the rise, the camera framing next to the stage, the portrait against the world rig, the

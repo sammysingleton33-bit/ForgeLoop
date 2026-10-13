@@ -432,10 +432,10 @@ describe("FL-0099 cinematic conversation (G13.8)", function()
 	it("phone: FORGE-06's longest lines fit (160-character question, four 70-character answers)", function()
 		local m = Layout.compute(750, 311) -- with the reputation strip, as in the game
 		local question = string.sub(string.rep("Wordy ", 30), 1, 160)
-		local answer = string.sub(string.rep("Words ", 15), 1, 70)
+		local longest = string.sub(string.rep("Words ", 15), 1, 70)
 		local options = {}
 		for i = 1, 4 do
-			table.insert(options, { id = `a{i}`, text = answer })
+			table.insert(options, { id = `a{i}`, text = longest })
 		end
 		local convo = CitizenModel.conversation({ scenarioId = "budget", question = question, options = options })
 		local state = { phase = "asking", conversation = convo }

@@ -39,8 +39,8 @@ All of these are additive.
 - **Renderer** (`design/ui/render`): ViewportFrames are now drawn.
 
 ## Open issues and risks
-- **FORGE-04, phone framing.** On a phone (750 × 311 logical), the stage's top is around 47 % down the screen with four short answers, and can reach the HUD stack for long ones.
-  - Your `focusOn` moves the focus 6 studs toward the camera. Please check in FL-0101 Studio row 6 that this keeps the citizen in the top ~40 % on phones.
+- **FORGE-04, phone framing.** On a phone (750 × 311 logical) the question bubble spans the stage above the portrait and the answers. Measured from the renders, the stage's top is 47 % down the screen for four short answers and 29 % for Edda's three answers with costs. FORGE-06's longest lines would sit at about 30 %. Over-budget text can reach the HUD stack.
+  - Your `focusOn` moves the focus 6 studs toward the camera. Please check in FL-0101 Studio row 6 that this keeps the citizen in the top ~25 % on phones (above the stage even with long text).
   - If it doesn't, a per-breakpoint offset on your side is enough.
   - If you'd rather read where the stage is, I can expose its top as a screen fraction. Ask.
 - **FORGE-04, poses.** Reaction poses (FL-0100 part 2): the portrait model is `conversation.stage.portrait.model`, a `Kit.portrait` rig. `Kit.posePortrait(model, joints)` poses it.
