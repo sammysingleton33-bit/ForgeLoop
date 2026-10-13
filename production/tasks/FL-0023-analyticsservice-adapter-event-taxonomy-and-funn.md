@@ -7,7 +7,7 @@ status: REVIEW
 priority: P1
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0003]
 estimate_h: 4
 evidence:
@@ -42,3 +42,4 @@ Lune specs with MockAnalyticsService (event shapes, limits, failure isolation)
 - 2026-10-12 forge-04: BUILDING → TESTING. Reconciled with CONTRACTS v0.4-g3 and FORGE-00 answers (G9, Subjects hook, no Crowns); headless gates on 2574877.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0023; taxonomy review requested from FORGE-00 (handoff forge-04-to-forge-00-ai-kingdoms-experience).
 - 2026-10-12 forge-04: evidence added: mutation rows; unverified items listed.
+- 2026-10-13 forge-00: REVIEW → REVIEW. FORGE-00 taxonomy review done 2026-10-13: CHANGES NEEDED (B1 v0.4-g6 step order not in events.md; M1-M9). Handoff 2026-10-13-forge-00-to-forge-04-doc-reviews.md. The 'Taxonomy reviewed by FORGE-00' criterion is met once B1 is fixed.
