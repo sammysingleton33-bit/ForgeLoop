@@ -4,27 +4,27 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B10**, main `1c48149`, delivered 2026-10-13 11:45 UTC. **This is the build to test.** Not yet run in Studio.
-  - **New since B9:**
+- **Latest build: B11**, main `38526a4`, delivered 2026-10-13 13:30 UTC. **This is the build to test.** Not yet run in Studio.
+  - **New since B10:** a captured tower is rebuilt in the capturer's look (cap, roof and emblem), not just recoloured (#115).
+  - **Since B9 (B10):**
     - A co-ruler can answer a conversation another ruler left open.
-    - Stale requests clear when their matter passes or their ruler leaves.
+    - Stale requests clear.
     - Struck carriers deliver their load (#114).
     - Only a kingdom's own rulers can sit on its throne (#112).
   - **Since B8 (B9):**
     - Kingdom emblems in the world (#105).
     - Talk, close, Talk shows the same question (#107).
-    - The tutorial hints point at the right controls (#99).
+    - The tutorial hints are on target (#99).
     - Keep-upgrade credit goes to the ruler who started it (#104).
   - **Not yet:**
-    - A captured building keeps its roof shape (#115 in review).
     - The oak leaf is hard to read at full zoom.
+    - The throne is hard to see from behind.
     - No sound (#49).
     - Dialogue is DRAFT.
     - The other kingdoms are empty by design (D-043).
-    - The throne is hard to see from behind.
     - FPS is unknown.
-  - The Studio asks are in `production/quality-gates/studio-runs.md` (B9 row; the B8 asks still stand).
-- **Next build: B11.** It brings #115 (a captured building takes the new owner's look), plus whatever the first Studio feedback or FORGE-07 merges add.
+  - The Studio asks are in `production/quality-gates/studio-runs.md` (B8 and B9 rows) and STUDIO_PLAYTEST §9 step 2 (the captured tower look).
+- **Next build: B12.** It follows the first Studio feedback or FORGE-07 merges.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -45,13 +45,12 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 ## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
 Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs per folder for CI headroom).
 
-**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114 and #112. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
+**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114, #112 and #115. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
 
-**One ★ row is open:** #115 plus the tower rebuild (B11). Every other known VS-1 defect from B8 and B9 is merged.
+**No ★ rows are open.** #115 (with the tower rebuild) merged for B11. Every other known VS-1 defect from B8 and B9 is merged.
 
 | # | PR | Owner | Lane | State | Next |
 |---|---|---|---|---|---|
-| ★ | #115 WorldView rebuild on kingdom change, plus (being added) the ObjectiveService tower rebuild that fixes the captured tower's roof shape | FORGE-01 | World (B9/B10 defect) | Held for the ObjectiveService commit. #115 alone changes nothing visible today | FORGE-01 commit, verdict, then B11 |
 | 1 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable. It unblocks FORGE-06's starter pack | FORGE-07 |
 | 2 | #111 FL-0107 G9 `CitizenAnswered` fired | FORGE-01 | Conversation | Unreviewed | FORGE-07 |
 | 3 | #113 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget | FORGE-01 | Living kingdom | Unreviewed | FORGE-07 |
@@ -91,12 +90,12 @@ Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs 
 ## Top integration blockers (VS-1)
 1. **No Studio evidence on any build (B1–B8).** Every merged task waits on G6, and frame rate (G7) is unknown. B8 is the first build with all nine VS-1 rows present in some form.
 2. **FORGE-07 is paused.** Every open PR now waits on it (rows 1–12, some rows group several PRs). They include #96, which unblocks FORGE-06, #49, which brings sound, and the cinematic lane (#108, #84, #85). Post-merge verdicts are also owed on 19 D-040 merges.
-3. **No known open VS-1 defects** after B10 (#114, #112). What remains is Studio-only: feel, FPS and readability.
+3. **No known open VS-1 defects** after B11 (#114, #112, #115). What remains is Studio-only: feel, FPS and readability.
 4. **No sound.** #49 waits on FORGE-07, and the P0 sound picks wait on the user.
 5. **Dialogue is DRAFT.** FORGE-06's starter pack waits on #96 and on the user's approval for temporary testing (FL-0095).
 
 ## Decisions needed from the user
-1. **Run B10 in Studio on your Mac.** It supersedes B6–B9. The asks are in the B8 and B9 rows of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
+1. **Run B11 in Studio on your Mac.** It supersedes B6–B10. The asks are in the B8 and B9 rows of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
 2. **Give FORGE-07 its OK.** Type it in the Forge07 session: "FORGE-07 may post COMMENT reviews and push agents/forge-07/STATUS.md and production/reviews/ to main." A relayed OK is not accepted.
 3. **Pick the P0 sounds** (handoff `2026-10-12-forge-04-to-user-sounds.md`) and **upload the icons** `gem.png` and `emblem_crown.png`. Drawn fallbacks are in the game until then.
 4. **Approve FORGE-06's starter pack for temporary testing:** 10 conversations, every row DRAFT (D-035 (2)).
@@ -278,14 +277,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-2b7a89f8 2026-10-13 integration-log: #116 merged (check.sh per-folder game spec steps)
-50ba0b7c 2026-10-13 check.sh: run game specs one top-level folder at a time, each under STEP_TIMEOUT; sum into one row with the slowest folders
-4522a40b 2026-10-13 [FORGE-00] B10 delivered (1c48149): Now, review queue (no star rows open), blockers, dashboard
-f3de21a5 2026-10-13 Integration bookkeeping: #114 and #112 merged (D-040 star); FL-0079 and FL-0081 REVIEW only G6; STUDIO_PLAYTEST co-ruler conversation and throne
-1c481491 2026-10-13 Merge PR #112: [FORGE-01] FL-0081 #89 L2: a throne is for its kingdom's rulers only (server-side unseat)
-61d51c36 2026-10-13 [FORGE-01] FL-0079 log: correct the fix-forward's spec counts
-5f53d83e 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-fl0079c
-2189329c 2026-10-13 [FORGE-01] #107 fix-forward: co-ruler showing (M1), requests no longer pinned (M2), struck carriers keep their load (M3), L1 specs, K10 co-ruler steps (L2)
+d2049072 2026-10-13 Integration bookkeeping: #115 merged (D-040 star for B11); STUDIO_PLAYTEST capture step checks the rebuilt tower look
+38526a46 2026-10-13 Merge PR #115: [FORGE-01] a building or objective tower that changes owner is rebuilt in the new owner's Kit look (VS-1 row 7)
+8b844e4f 2026-10-13 [FORGE-01] ObjectiveService: a captured watchtower is rebuilt in its owner's Kit look (VS-1 row 7)
+2207afa5 2026-10-13 integration-log: main CI green for #83, #66, #63, #45, #68, #95, #81 (last pending cells)
+61657db8 2026-10-13 integration-log: main CI green for #114, #112 and #116
+eab0135f 2026-10-13 [FORGE-00] queue: #115 held for the ObjectiveService tower rebuild (FORGE-05 finding)
+acd65ee5 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-worldview-kingdom
+877e9f13 2026-10-13 [FORGE-00] check-in 13:05: #115 is star (B11 candidate); queue and dashboard
 ```
 
 <!-- forge:auto:end -->
