@@ -63,7 +63,7 @@ local function record(id: number, x: number, z: number, extra: { [string]: any }
 end
 
 local function recorder()
-	local rec = { moves = {}, transforms = {}, writes = 0, focus = nil :: Vector3? }
+	local rec = { moves = {}, transforms = {}, writes = 0, focus = nil :: Vector3?, eye = nil :: Vector3? }
 	rec.adapter = {
 		bulkMove = function(parts, cframes)
 			table.insert(rec.moves, #parts)
@@ -78,6 +78,9 @@ local function recorder()
 		focus = function()
 			return rec.focus
 		end,
+		eye = function()
+			return rec.eye
+		end,
 		-- top-down camera: screen = (500 + 2x, 500 + 2z), depth = 200 - y
 		project = function(p: Vector3)
 			return Vector2.new(500 + p.X * 2, 500 + p.Z * 2), 200 - p.Y
@@ -87,7 +90,8 @@ local function recorder()
 end
 
 -- Builds the client env, the server stand-in and the controller (not started).
-local function setup(world: { any }?)
+-- registry: what Def.new gets (specs pass a find() double for RulerCameraController)
+local function setup(world: { any }?, registry: any?)
 	local env = MockEnv.new({
 		seed = 4,
 		isServer = false,
@@ -114,7 +118,7 @@ local function setup(world: { any }?)
 		return EventCodec.encode(serverTime(env), h.world)
 	end)
 	h.rec = recorder()
-	h.controller = Def.new(env, {})
+	h.controller = Def.new(env, registry or {})
 	h.controller.adapter = h.rec.adapter
 	h.controller.rendered:connect(function(id, model)
 		table.insert(h.rendered, { id = id, model = model })
@@ -495,6 +499,27 @@ describe("EntityController: rigs, cues and reset", function()
 		expect(#h.order).toBe(2)
 	end)
 
+	it("swaps the rig when a spawn record brings a new look (the Studio reseed, #91 M1)", function()
+		local function look(skin: number)
+			return { skin = skin, hair = 1, hairColor = 1, outfit = 1 }
+		end
+		local h = start(setup({ full(1, 4, 0, { look = look(2) }) }))
+		frame(h, 0)
+		local old = h.controller:getModel(1)
+		expect(old:GetAttribute("KitLook")).toBe(Kit.lookKey(look(2)))
+		table.clear(h.order)
+		events(h, { spawnRecord(1, { look = look(2) }) }) -- the same look again: nothing to do
+		expect(h.order).toEqual({})
+		events(h, { spawnRecord(1) }) -- a spawn without a look keeps the rig (not Kit's default look)
+		expect(h.order).toEqual({})
+		events(h, { spawnRecord(1, { look = look(3) }) })
+		expect(h.order).toEqual({ "released:1", "rendered:1" })
+		local new = h.controller:getModel(1)
+		expect(new).never.toBe(old)
+		expect(new:GetAttribute("KitLook")).toBe(Kit.lookKey(look(3)))
+		expect((pivotOf(new) - Vector3.new(4, 0, 0)).Magnitude).toBeLessThan(1e-3) -- where the citizen was
+	end)
+
 	it("fires event for cues with their payload and the model", function()
 		local h = start(setup({ full(1, 0, 0) }))
 		frame(h, 0)
@@ -509,6 +534,53 @@ describe("EntityController: rigs, cues and reset", function()
 			{ id = 1, cue = "deposit", payload = { resource = "wood" }, model = model },
 			{ id = 1, cue = "hit", payload = {}, model = model },
 			{ id = 1, cue = "celebrate", payload = {}, model = model },
+		})
+	end)
+
+	it("fires event for the G13.3 thought, reaction, kcue and strike events, per listed citizen (v0.4-g6)", function()
+		local h = start(setup({ full(1, 0, 0), full(2, 5, 0) }))
+		frame(h, 0)
+		local model = h.controller:getModel(1)
+		-- 3: known, no rig yet; 2: despawned while its dead pose still plays (the corpse is kept)
+		events(h, { spawnRecord(3), { type = "cue", id = 2, cue = "die" }, { type = "despawn", id = 2 } })
+		expect(h.controller:getModel(2)).never.toBeNil()
+		table.clear(h.events)
+		events(h, {
+			{ type = "thought", id = 1, scenarioId = "farmer_drought", text = "Le blé ! 🌾", icon = "request" },
+			{ type = "reaction", id = 1, text = "", tone = "angry" },
+			{ type = "reaction", id = 3, text = "Hm.", tone = "neutral" },
+			{ type = "kcue", id = 1, cue = "bow" },
+			{ type = "kcue", id = 3, occupation = "farmer", cue = "salute" },
+			{ type = "kcue", occupation = "farmer", cue = "strike_placard", entityIds = { 1, 3, 99 } }, -- 99 unknown
+			{ type = "kcue", id = 1, cue = "grumble", entityIds = { 1, 3 } }, -- 1 listed twice: once
+			{ type = "kcue", occupation = "farmer", cue = "rest" }, -- no ids: never fanned out by occupation
+			{ type = "kcue", cue = "celebrate" },
+			{ type = "strike", occupation = "farmer", on = true, entityIds = { 1, 99, 2 } }, -- only the known
+			{ type = "strike", occupation = "miner", on = false, entityIds = { 3 } },
+			{ type = "strike", occupation = "farmer", on = false, entityIds = {} }, -- nobody: nothing
+			{ type = "thought", id = 99, scenarioId = "s", text = "?", icon = "idea" }, -- unknown: dropped
+			{ type = "reaction", id = 2, text = "…", tone = "sad" }, -- despawned: dropped
+			{ type = "kcue", id = 99, cue = "cower" }, -- unknown: dropped
+		})
+		expect(h.events).toEqual({
+			{
+				id = 1,
+				cue = "thought",
+				payload = { scenarioId = "farmer_drought", text = "Le blé ! 🌾", icon = "request" },
+				model = model,
+			},
+			{ id = 1, cue = "reaction", payload = { text = "", tone = "angry" }, model = model },
+			{ id = 3, cue = "reaction", payload = { text = "Hm.", tone = "neutral" } }, -- no rig: model nil
+			{ id = 1, cue = "bow", payload = {}, model = model },
+			{ id = 3, cue = "salute", payload = { occupation = "farmer" } },
+			{ id = 1, cue = "strike_placard", payload = { occupation = "farmer" }, model = model },
+			{ id = 3, cue = "strike_placard", payload = { occupation = "farmer" } },
+			{ id = 1, cue = "grumble", payload = {}, model = model },
+			{ id = 3, cue = "grumble", payload = {} },
+			{ cue = "rest", payload = { occupation = "farmer" } }, -- HUD or keep only: id and model nil
+			{ cue = "celebrate", payload = {} },
+			{ id = 1, cue = "strike", payload = { occupation = "farmer", on = true }, model = model },
+			{ id = 3, cue = "strike", payload = { occupation = "miner", on = false } },
 		})
 	end)
 
@@ -594,6 +666,95 @@ describe("EntityController: frames, LOD and pick", function()
 		frame(h, 1 / 60)
 		expect(near.Parent).toBeNil()
 		expect(far.Parent).toBe(h.controller.folder)
+	end)
+
+	it("takes the overview camera's focus as the LOD centre; the character in walk mode (#39 M1)", function()
+		local camera = { mode = "overview", focus = Vector3.new(200, 0, 0) :: Vector3? }
+		function camera.getFocus(_self)
+			return camera.focus
+		end
+		local registry = {
+			find = function(_self, name)
+				return if name == "RulerCameraController" then camera else nil
+			end,
+		}
+		local h = setup({ full(1, 10, 0), full(2, 200, 0) }, registry)
+		h.rec.focus = Vector3.zero -- the ruler sits on the throne by the keep
+		start(h)
+		frame(h, 0)
+		local near, far = h.controller:getModel(1), h.controller:getModel(2)
+		expect(far.Parent).toBe(h.controller.folder) -- the camera looks at 200: citizens there show
+		expect(near.Parent).toBeNil()
+		camera.mode = "follow" -- walk mode: around the character again
+		frame(h, 1 / 60)
+		expect(near.Parent).toBe(h.controller.folder)
+		expect(far.Parent).toBeNil()
+		camera.mode, camera.focus = "overview", nil -- no focus yet: the character stands in
+		frame(h, 1 / 60)
+		expect(near.Parent).toBe(h.controller.folder)
+		expect(far.Parent).toBeNil()
+	end)
+
+	it("in the overview the hide distance grows with the zoom: LOD_ZOOM x camera distance (#91 L1)", function()
+		local camera = { mode = "overview", focus = Vector3.zero :: Vector3? }
+		function camera.getFocus(_self)
+			return camera.focus
+		end
+		local registry = {
+			find = function(_self, name)
+				return if name == "RulerCameraController" then camera else nil
+			end,
+		}
+		local h = setup({ full(1, 10, 0), full(2, 200, 0) }, registry)
+		h.rec.eye = Vector3.new(0, 60, 60) -- zoom ~85: LOD_HIDE (150) still applies
+		start(h)
+		frame(h, 0)
+		local near, far = h.controller:getModel(1), h.controller:getModel(2)
+		expect(near.Parent).toBe(h.controller.folder)
+		expect(far.Parent).toBeNil()
+		h.rec.eye = Vector3.new(0, 155, 155) -- zoom ~219: hide at ~274 studs
+		frame(h, 1 / 60)
+		expect(far.Parent).toBe(h.controller.folder) -- on screen at a far zoom, so it keeps its rig
+		h.rec.eye = Vector3.new(0, 115, 115) -- zoom ~163: hide at ~203, show again inside ~193
+		frame(h, 1 / 60)
+		expect(far.Parent).toBe(h.controller.folder) -- 200 < 203: still shown
+		h.rec.eye = Vector3.new(0, 110, 110) -- zoom ~156: hide at ~194
+		frame(h, 1 / 60)
+		expect(far.Parent).toBeNil()
+		h.rec.eye = Vector3.new(0, 115, 115) -- back to ~203: inside hide, outside the ~193 show line
+		frame(h, 1 / 60)
+		expect(far.Parent).toBeNil() -- hysteresis, as at LOD_HIDE / LOD_SHOW
+		camera.mode = "follow" -- walk mode: the fixed LOD_HIDE around the character, whatever the camera
+		h.rec.focus = Vector3.zero
+		h.rec.eye = Vector3.new(0, 300, 300)
+		frame(h, 1 / 60)
+		expect(far.Parent).toBeNil()
+		expect(near.Parent).toBe(h.controller.folder)
+	end)
+
+	it("passes the kingdom to Kit.character for soldiers only (the helmet crest, G13.2)", function()
+		local calls = {}
+		local original = Kit.character
+		Kit.character = function(...)
+			table.insert(calls, table.pack(...))
+			return original(...)
+		end
+		local ok, err = pcall(function()
+			local h = start(setup({
+				full(1, 0, 0, { kind = "soldier", job = "soldier", kingdom = "azure" }),
+				full(2, 5, 0),
+			}))
+			frame(h, 0)
+		end)
+		Kit.character = original
+		assert(ok, err)
+		local byKind = {}
+		for _, args in calls do
+			byKind[args[1]] = args
+		end
+		expect(byKind.soldier[5]).toBe("azure")
+		expect(byKind.citizen[5]).toBeNil()
+		expect(byKind.citizen.n <= 5).toBe(true)
 	end)
 
 	it("animates 50 entities through every action without errors, one BulkMoveTo per frame", function()

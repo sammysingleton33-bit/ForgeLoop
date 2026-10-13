@@ -54,7 +54,7 @@
 	// ------------------------------------------------------------------ sample state (G8 shapes; matches the Lune doubles)
 	const RES = ["food", "wood", "stone", "gold"];
 	const NAMES = { food: "Food", wood: "Wood", stone: "Stone", gold: "Gold" };
-	const EMBLEM = { crimson: "emblem_flame", azure: "emblem_star", emerald: "emblem_oak", gold: "emblem_sun" };
+	const EMBLEM = { crimson: "emblem_crown", azure: "emblem_star", emerald: "emblem_oak", gold: "emblem_sun" };
 	const state = {
 		mine: "crimson",
 		kingdoms: [
@@ -113,7 +113,7 @@
 		const keep = state.buildings.find((b) => b.type === "keep");
 		const deltas = o.deltas || {};
 		let html = `<div class="badge" style="left:${h.x}px;top:${h.y}px">
-			${crest(k, h.crest, phone ? `<div class="pop cp">${I("crown", 11)}${k.crownPoints}</div>` : "")}
+			${crest(k, h.crest, phone ? `<div class="pop cp">${I("gem", 11)}${k.crownPoints}</div>` : "")}
 			${phone ? "" : `<div class="plate"><div class="kname" style="font-size:26px">${k.name}</div>
 				<div class="ksub">Keep <b>Lv ${keep.level}</b> · ${k.regions.length} region${k.regions.length === 1 ? "" : "s"} · <b>${k.crownPoints}</b> Crown Points</div></div>`}</div>`;
 		html += `<div class="pills" style="left:${h.pills.x}px;top:${h.pills.y}px" title="OnboardingTarget = HUD.Resources">${RES.map((r) => pill(r, { compact: phone, delta: deltas[r] })).join("")}</div>`;
@@ -233,7 +233,7 @@
 		const free = M.W - M.rail.right - M.rail.button;
 		const st = {
 			ok: `<div class="pstatus ok">${I("check", 14)}Good spot</div>`,
-			bad: `<div class="pstatus bad">${I("cross", 14)}${o_reason || "Outside your territory"}</div>`,
+			bad: `<div class="pstatus bad">${I("cross", 14)}${o_reason || "Build inside your kingdom"}</div>`,
 			wait: `<div class="pstatus wait">Checking…</div>`,
 		}[status];
 		return `<div class="placebar" style="left:${(free - w) / 2}px;bottom:${M.place.bottom}px;width:${w}px;height:${M.place.height}px">
@@ -256,7 +256,7 @@
 		const k = me();
 		const phone = M.bp === "phone";
 		const tabs = [
-			{ label: "Overview", icon: "crown", sel: tab === "overview" },
+			{ label: "Overview", icon: "banner", sel: tab === "overview" },
 			{ label: "Buildings", icon: "keep", sel: tab === "buildings" },
 			{ label: "Jobs", icon: "citizens", sel: tab === "jobs" },
 		];
@@ -324,15 +324,16 @@
 	function upgradePanel(M, done) {
 		const e = { id: "keep", name: "Keep", cat: "civic", cost: { wood: 150, stone: 150 }, sec: 60, desc: "A stronger keep. Your citizens nearby cheer when it is done." };
 		const tabs = [
-			{ label: "Overview", icon: "crown" },
+			{ label: "Overview", icon: "banner" },
 			{ label: "Buildings", icon: "keep", sel: true },
 		];
 		return drawer(M, "Kingdom", tabs, detail(e, M, { verb: "Upgrade to Lv 2", meta: "Keep · Level 1 → 2", back: "Buildings", done: done ? "Upgrade started" : null }));
 	}
 
 	// ------------------------------------------------------------------ FL-0087: plots, plot picker, building upgrade panel
-	// Plot sizes (proposal, games/game-001/src/client/UI/SlotFit.luau): the largest footprint over a type's
-	// levels decides: <= 18 studs S, <= 26 M, else L; a slot takes its size and every smaller one.
+	// Plot sizes: this prototype keeps its first proposal (the largest footprint over a type's levels
+	// decides: <= 18 studs S, <= 26 M, else L; a slot takes its size and every smaller one). The game
+	// uses FORGE-01's Build/Fit (CONTRACTS G13.5) through BuildModel.plotTypes, so its lists differ.
 	const SLOT_FIT = { watchtower: "S", house: "M", storehouse: "M", lumbercamp: "M", quarry: "M", farm: "L", barracks: "L" };
 	const SIZE_NAME = { S: "Small", M: "Medium", L: "Large" };
 	const BENEFITS = {
@@ -436,7 +437,7 @@
 		"build-short": (M) => ({ core: hud(M) + rail(M, "build") + buildMenu(M, "military", "barracks", "detail") }),
 		placing: (M, d) => ({ world: ghost(d, farm, "ok", 0), core: hud(M) + rail(M) + placebar(M, farm, "ok") }),
 		"placing-bad": (M, d) => {
-			o_reason = "Outside your territory";
+			o_reason = "Build inside your kingdom";
 			return { world: ghost(d, farm, "bad", 1), core: hud(M) + rail(M) + placebar(M, farm, "bad") };
 		},
 		placed: (M) => {

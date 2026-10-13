@@ -3,15 +3,19 @@ id: FL-0080
 title: ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4)
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0083]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 5
-evidence: []
+evidence:
+  - check.sh OVERALL PASS; ReputationService.spec 13, Context.spec 3, Reputation.spec 17; 19/19 mutations caught
+  - "#68 9478229; check.sh 1038/0; integration-log.md"
+  - ReputationService.spec 21, Reputation.spec 17, Context.spec 3, MatchKingdomServices 41; follow-up mutations 10/10 caught; Studio unverified
+  - "main 3f3ac6d: check.sh PASS on 4bb6622+#104 (game-001 1152/0); ownership PASS 6 files; CI 3/3 on bdd0c5e; 3/3 mutations"
 ---
 
 # ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4)
@@ -46,3 +50,8 @@ Lune specs:
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-13 forge-01: READY → BUILDING. ReputationService on ContentQuery actions; ledgers per ruler, conditions per kingdom
+- 2026-10-13 forge-01: BUILDING → REVIEW. ReputationService (G13.4): ledgers, actions.csv via ContentQuery with ruler/kingdom farm histories, conditions + drift, loyalty reactions, FoodShortage/ObjectiveLost/PhaseEndedWellFed/RulerVisited, fear relaxation, Kingdom.Reputation/GetReputation
+- 2026-10-13 forge-05: REVIEW → BUILDING. Merged #68 (FORGE-05, D-038 (5)) under the D-040 fallback verdict. Work left: M1 follow-up (upgrade credit goes to the upgrader via UpgradeStarted.by, not the placer; co-ruler keep spec), then REVIEW with G6 (STUDIO_PLAYTEST check 10).
+- 2026-10-13 forge-01: BUILDING → REVIEW. #68 follow-ups: M1 upgrade credited to UpgradeStarted.by (keep upgrade no longer credits every co-ruler); L1 an actor who left earns nothing and nobody is credited instead; L2 PhaseEndedWellFed guard specced; L3 loyalty 0..100 specced; L4 Kingdom.State signature counts whole-point condition changes; L6 dead scaleGain/multiplier/raw removed; L7 evidence refreshed
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #104 (3f3ac6d, FORGE-05 D-040 fallback verdict on bdd0c5e; star as #68 fix-forward): #68 M1 (upgrade credited to UpgradeStarted.by), L1 (departed actor credits nobody), L2/L3 specs, L4 (Kingdom.State follows whole-point conditions), L6, L7. REVIEW, only G6 pending (STUDIO_PLAYTEST row 8 reputation screen). FORGE-07 post-merge review owed.

@@ -20,6 +20,8 @@
 		                                       citizens (populate = false: none until sim:populate(id));
 		                                       seeds the treasury when it is the double
 		sim:populate(kingdomId): boolean       -- spawns the starting citizens once (slice mode: on first ruler)
+		sim:addProductivity(citizen, amount, seconds), sim:productivityOf(citizen): number,
+		sim:strike(citizen, seconds), sim:isStriking(citizen)   -- decision consequences (G13.3)
 		sim.profiler: { start: (sim, kingdom, citizens), birth: (sim, kingdom, citizen) }?
 		                                       -- optional; gives citizens names, traits and families
 		                                          (Sim/People, G13.2) right after they spawn
@@ -51,10 +53,13 @@
 		sim:cancelConstruction(kingdom, buildingId, byUserId?): (boolean, string?)
 		Overlap (Sim/Footprint): placement shapes keep tuning.placementGap from each other and from
 		resource node circles; bounds and territory still test the footprint circle.
+	Citizens (G5)
+		sim:rulerVisit(citizen, userId?): boolean   -- rulerVisited memory + mood lift, once per visitCooldown
+		sim:setJob(citizen, job)               -- one citizen to `job`, quotas kept in step (no rebalance back)
 	Views
 		sim:buildingView(id) / sim:viewOf(record): CONTRACTS G2 Building (cframe, footprint, state, ...)
 	Queries (used by CitizenBrain / CitizenActions / Snapshot)
-		sim:hasOpenSite(kingdom), sim:needTarget(kingdom, resource), sim:threatNear(kingdom, x, z, r)
+		sim:hasOpenSite(kingdom, citizen?), sim:needTarget(kingdom, resource), sim:threatNear(kingdom, x, z, r)
 		sim:findWorkTarget(kingdom, kind, citizen): (target?, distance), sim:nearestDropoff(kingdom, x, z)
 		sim:citizensOf(kingdom) / sim:buildingsOf(kingdom): arrays in creation order
 		sim:population(kingdom), sim:atWar(kingdomIdA, kingdomIdB)
@@ -86,6 +91,7 @@ local CitizenActions = require("./CitizenActions")
 local CitizenBrain = require("./CitizenBrain")
 local Footprint = require("./Footprint")
 local TreasuryDouble = require("./TreasuryDouble")
+local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 
 type Catalog = Catalog.Catalog
 
@@ -519,18 +525,25 @@ end
 -- ---------------------------------------------------------------- derived kingdom stats
 function Simulation:_recompute(kingdom: any)
 	local popCap, territory = 0, 0
+	local bonus: { [string]: number } = {}
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
 		if b.destroyed or b.level < 1 then
 			continue
 		end
-		local stats = self.catalog.buildings[b.kind].levels[b.level]
+		local def = self.catalog.buildings[b.kind]
+		local stats = def.levels[b.level]
 		popCap += stats.popCap or 0
 		if b.kind == "keep" then
 			territory = stats.territory or 0
 		end
+		-- the best standing camp's level speeds up gathering what it accepts (FL-0081)
+		for _, resource in if stats.gatherBonus then def.accepts or {} else {} do
+			bonus[resource] = math.max(bonus[resource] or 0, stats.gatherBonus)
+		end
 	end
 	kingdom.popCap = popCap
+	kingdom.gatherBonus = bonus
 	if territory ~= kingdom.territory then
 		kingdom.territory = territory
 		self:_refreshNearNodes(kingdom)
@@ -587,7 +600,30 @@ function Simulation:population(kingdom: any): number
 	return #kingdom.citizenIds + #kingdom.unitIds
 end
 
--- Units paid for and still training in this kingdom's barracks (they will need a bed too).
+-- Bunks (D-041): soldiers (living + training) sleep in the kingdom's standing barracks, never in house or
+-- keep beds: the sum of their levels' `bunks` (Buildings.luau); a level without one sleeps any number.
+function Simulation:bunks(kingdom: any): number
+	local n = 0
+	for _, bid in kingdom.buildingIds do
+		local b = self.buildings[bid]
+		if b.kind == "barracks" and not b.destroyed and b.level >= 1 then
+			n += self.catalog.buildings.barracks.levels[b.level].bunks or math.huge
+		end
+	end
+	return n
+end
+
+-- Sleeping places for the whole population (beds + bunks, D-041): the G5 getPopulation cap. A barracks
+-- level without a bunk count (unlimited) shows as exactly full.
+function Simulation:sleepCap(kingdom: any): number
+	local bunks = self:bunks(kingdom)
+	if bunks == math.huge then
+		bunks = #kingdom.unitIds + self:queuedUnits(kingdom)
+	end
+	return kingdom.popCap + bunks
+end
+
+-- Units paid for and still training in this kingdom's barracks (they will need a bunk too).
 function Simulation:queuedUnits(kingdom: any): number
 	local n = 0
 	for _, bid in kingdom.buildingIds do
@@ -599,14 +635,15 @@ function Simulation:queuedUnits(kingdom: any): number
 	return n
 end
 
--- CitizenService:getPopulation (G5): { total, byJob, cap }; soldiers count as job "soldier".
+-- CitizenService:getPopulation (G5): { total, byJob, cap }; soldiers count as job "soldier" and the cap is
+-- beds plus bunks (D-041).
 function Simulation:getPopulation(kingdom: any): { total: number, byJob: { [string]: number }, cap: number }
 	local byJob: { [string]: number } = { soldier = #kingdom.unitIds }
 	for _, cid in kingdom.citizenIds do
 		local job = self.citizens[cid].job
 		byJob[job] = (byJob[job] or 0) + 1
 	end
-	return { total = self:population(kingdom), byJob = byJob, cap = kingdom.popCap }
+	return { total = self:population(kingdom), byJob = byJob, cap = self:sleepCap(kingdom) }
 end
 
 function Simulation:citizensOf(kingdom: any): { any }
@@ -626,7 +663,15 @@ function Simulation:buildingsOf(kingdom: any): { any }
 end
 
 -- ---------------------------------------------------------------- queries for the brain
-function Simulation:hasOpenSite(kingdom: any): boolean
+-- A site with a free builder slot; for `citizen`, also the site it already builds on (full or not).
+function Simulation:hasOpenSite(kingdom: any, citizen: any?): boolean
+	local claim = if citizen then citizen.claim else nil
+	if claim and claim.kind == "site" then
+		local site = self.buildings[claim.id]
+		if site and site.pendingLevel ~= nil and not site.destroyed then
+			return true
+		end
+	end
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
 		if b.pendingLevel ~= nil and not b.destroyed and #b.builders < self:_siteBuilders(b) then
@@ -752,7 +797,8 @@ function Simulation:releaseClaim(citizen: any)
 end
 
 function Simulation:_claim(citizen: any, kind: string, id: string)
-	if citizen.claim and citizen.claim.id == id then
+	-- the same building can be a farm to work and a site to build (an upgrade): the kind matters
+	if citizen.claim and citizen.claim.id == id and citizen.claim.kind == kind then
 		return
 	end
 	self:releaseClaim(citizen)
@@ -790,6 +836,38 @@ function Simulation:setActivity(citizen: any, activity: string, target: string?,
 	end
 	citizen.reason = reason or citizen.reason
 	citizen.done = false
+end
+
+-- A ruler's visit (CONTRACTS G5): a rulerVisited memory and a mood lift of tuning.visitMood for
+-- visitMoodSeconds, at most once per citizen per visitCooldown. True when it counted.
+function Simulation:rulerVisit(citizen: any, userId: number?): boolean
+	local tuning = self.catalog.tuning
+	if citizen.visitedAt and self.time - citizen.visitedAt < tuning.visitCooldown then
+		return false
+	end
+	citizen.visitedAt = self.time
+	self:remember(citizen, { kind = "rulerVisited", ref = userId })
+	citizen.moodLift = { amount = tuning.visitMood, untilTime = self.time + tuning.visitMoodSeconds }
+	return true
+end
+
+-- Moves one citizen to `job` and keeps the kingdom's quotas in step, so the rebalancer leaves it there
+-- (CitizenService:setJob, G5). The hauler pool has no quota.
+function Simulation:setJob(citizen: any, job: string)
+	local kingdom = self.kingdoms[citizen.kingdomId]
+	local from = citizen.job
+	if from == job then
+		return
+	end
+	if from ~= "hauler" then
+		kingdom.quotas[from] = math.max(0, (kingdom.quotas[from] or 0) - 1)
+	end
+	if job ~= "hauler" then
+		kingdom.quotas[job] = (kingdom.quotas[job] or 0) + 1
+	end
+	citizen.job = job
+	citizen.done = citizen.carrying == nil -- rethink now unless mid-delivery
+	self:emit("CitizenReassigned", { kingdomId = kingdom.id, citizenId = citizen.id, from = from, to = job })
 end
 
 function Simulation:remember(citizen: any, entry: { [string]: any })
@@ -898,6 +976,45 @@ function Simulation:deposit(kingdomId: string, resource: string, amount: number,
 		return true
 	end
 	return self.treasury:deposit(kingdomId, resource, amount, txId, source)
+end
+
+-- ---------------------------------------------------------------- work modifiers (G13.3 consequences)
+-- A productivity change of `amount` (−1..+1: −0.2 = 20 % slower) for `seconds`; changes add up.
+function Simulation:addProductivity(citizen: any, amount: number, seconds: number)
+	citizen.boosts = citizen.boosts or {}
+	table.insert(citizen.boosts, { amount = amount, untilTime = self.time + seconds })
+end
+
+-- The citizen's work-rate factor: 1 + the active productivity changes, never below 0.
+function Simulation:productivityOf(citizen: any): number
+	local boosts = citizen.boosts
+	if boosts == nil then
+		return 1
+	end
+	local total = 1
+	for i = #boosts, 1, -1 do
+		local boost = boosts[i]
+		if self.time >= boost.untilTime then
+			table.remove(boosts, i)
+		else
+			total += boost.amount
+		end
+	end
+	if #boosts == 0 then
+		citizen.boosts = nil
+	end
+	return math.max(0, total)
+end
+
+-- Stops the citizen working for `seconds` (a strike); they idle instead.
+function Simulation:strike(citizen: any, seconds: number)
+	citizen.strikeUntil = math.max(citizen.strikeUntil or 0, self.time + seconds)
+	citizen.done = true -- downs tools at once, even with a load in hand (#77 N2): it re-plans next tick
+end
+
+-- On strike, or walked out (productivity down to 0: SPEC §5.4 "−1 = one citizen's walk-out").
+function Simulation:isStriking(citizen: any): boolean
+	return (citizen.strikeUntil ~= nil and self.time < citizen.strikeUntil) or self:productivityOf(citizen) <= 0
 end
 
 -- builder-seconds of work for a level (Costs.building(kind, level).buildSeconds, CONTRACTS G13.5)
@@ -1164,6 +1281,17 @@ end
 
 function Simulation:_removeBuilding(b: any)
 	local kingdom = self.kingdoms[b.kingdomId]
+	-- a barracks lost with recruits queued or in training refunds each one in full (D-041); the txIds
+	-- differ from cancelConstruction's refund:<id>:<level>:<resource>
+	for i, entry in b.queue or {} do
+		local price = self.costs.unit(entry.unit)
+		for resource, amount in if price then price.cost else {} do
+			self:deposit(kingdom.id, resource, amount, `recruit_refund:{b.id}:{i}:{resource}`, "refund")
+		end
+	end
+	if b.queue then
+		table.clear(b.queue)
+	end
 	self:_releaseAll(b.builders)
 	self:_releaseAll(b.workers)
 	b.destroyed = true
@@ -1284,24 +1412,31 @@ function Simulation:_stepPopulation(kingdom: any)
 	end
 	kingdom.nextBirthAt = self.time + self.catalog.tuning.birthInterval
 	local tuning = self.catalog.tuning
-	-- recruits still training already hold a bed (found by the spec batch: births overfilled the cap)
-	if self:population(kingdom) + self:queuedUnits(kingdom) >= kingdom.popCap then
+	-- beds are for citizens only: soldiers sleep in the barracks (D-041)
+	if #kingdom.citizenIds >= kingdom.popCap then
 		return
 	end
-	-- keep a day of meals in reserve before growing
-	local reserve = #kingdom.citizenIds * tuning.mealFood
-	if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
-		return
-	end
-	if
-		not self:spend(
-			kingdom.id,
-			{ food = tuning.birthFood },
-			`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
-			"population"
-		)
-	then
-		return
+	if self.fedByUpkeep then
+		-- D-045: the upkeep is the only food consumer (G7); a well-fed kingdom grows, it pays no food for it
+		if (kingdom.fedRatio or 1) < SocietyConfig.food.wellFedAtLeast then
+			return
+		end
+	else
+		-- the meal double (no upkeep): keep a day of meals in reserve, then pay for the birth
+		local reserve = #kingdom.citizenIds * tuning.mealFood
+		if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
+			return
+		end
+		if
+			not self:spend(
+				kingdom.id,
+				{ food = tuning.birthFood },
+				`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
+				"population"
+			)
+		then
+			return
+		end
 	end
 	local keep = self.buildings[kingdom.keepId]
 	local angle = self.rng:NextNumber() * math.pi * 2
@@ -1369,6 +1504,15 @@ function Simulation:_stepCitizen(c: any, dt: number)
 		end
 		local decision = CitizenBrain.decide(self, c)
 		self:setActivity(c, decision.activity, decision.target, decision.reason)
+		c.thinkAt = self.time + tuning.thinkInterval
+	elseif self.time >= c.thinkAt and c.activity == "Gather" and c.phase == "Work" and self._decisionBudget > 0 then
+		-- a gatherer mid-load still looks up: a site to build sends it home with what it carries (a slow
+		-- gatherer, e.g. a builder chopping wood, would otherwise keep a site waiting for a full load);
+		-- it decides again once the load is delivered
+		self._decisionBudget -= 1
+		if CitizenBrain.decide(self, c).activity == "Build" then
+			c.phase = "Return"
+		end
 		c.thinkAt = self.time + tuning.thinkInterval
 	end
 	CitizenActions.step(self, c, dt)

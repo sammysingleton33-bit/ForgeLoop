@@ -5,6 +5,9 @@ local F = require("./KingdomFixtures")
 local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
 local Diplomacy = require("@game/ReplicatedStorage/Game/Sim/Diplomacy")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
+local Objectives = require("@game/ReplicatedStorage/Game/Sim/Objectives")
+local WorldView = require("@game/ReplicatedStorage/Game/Sim/WorldView")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 
 local RULER, RIVAL = 101, 201
 
@@ -111,41 +114,77 @@ describe("Kingdom/Military: recruiting", function()
 		expect(F.events(sim)).toEqual({})
 	end)
 
-	it("counts units already queued against the population cap (population_cap)", function()
-		local sim, k1 = world({ citizens = { farmer = 6 } })
+	it("soldiers sleep in barracks bunks, not beds: a kingdom with every bed taken still recruits (D-041)", function()
+		local sim, k1 = world({ citizens = { farmer = 12 } })
 		stockUp(sim, k1, { food = 280, wood = 300 })
-		addBuilding(sim, k1, "barracks", 0, -40, 2) -- recruit cap 10: only the population limits here
+		addBuilding(sim, k1, "barracks", 0, -40, 1) -- 4 bunks
 		expect(k1.popCap).toBe(12)
-		expect((recruit(RULER, sim, "soldier", 4))).toBe(true) -- 6 citizens + 4 queued
-		local stock = sim.treasury:get(k1.id)
-		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("population_cap") -- would be 13
-		expect(sim.treasury:get(k1.id)).toEqual(stock)
-		expect((recruit(RULER, sim, "soldier", 2))).toBe(true) -- exactly 12
-		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
-		sim:advance(6 * 8) -- everything trained: 6 citizens + 6 units
-		expect(#k1.unitIds).toBe(6)
-		expect(sim:population(k1)).toBe(12)
-		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
+		expect(#k1.citizenIds).toBe(12) -- every bed in the keep is taken, and no house stands
+		expect((recruit(RULER, sim, "soldier", 4))).toBe(true)
+		expect(sim:getPopulation(k1).cap).toBe(16) -- 12 beds + 4 bunks
+		sim:advance(4 * 8)
+		expect(#k1.unitIds).toBe(4)
+		expect(#k1.citizenIds).toBe(12)
+		expect(sim:population(k1)).toBe(16)
+		local population = sim:getPopulation(k1)
+		expect(population.total).toBe(16)
+		expect(population.cap).toBe(16)
+		expect(population.byJob.soldier).toBe(4)
+		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("recruit_cap") -- every bunk is taken
 	end)
 
-	it("caps soldiers (living + training) at the standing barracks' recruitCap sum (recruit_cap, G13.5)", function()
+	it("caps soldiers (living + training) at the standing barracks' bunks (recruit_cap, D-041)", function()
 		local sim, k1 = world()
 		stockUp(sim, k1, { food = 400, wood = 200 })
-		addBuilding(sim, k1, "barracks", 0, -40, 1) -- recruitCap 5
-		expect(Military.recruitCap(sim, k1)).toBe(5)
+		addBuilding(sim, k1, "barracks", 0, -40, 1) -- 4 bunks
+		expect(Military.recruitCap(sim, k1)).toBe(4)
+		expect(sim:bunks(k1)).toBe(4)
 		assert(recruit(RULER, sim, "soldier", 3))
 		local stock = sim.treasury:get(k1.id)
-		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("recruit_cap") -- would be 6
+		expect(select(2, recruit(RULER, sim, "soldier", 2))).toBe("recruit_cap") -- would be 5
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
-		assert(recruit(RULER, sim, "soldier", 2)) -- exactly 5
-		sim:advance(5 * 8)
-		expect(#k1.unitIds).toBe(5)
+		assert(recruit(RULER, sim, "soldier", 1)) -- exactly 4
+		sim:advance(4 * 8)
+		expect(#k1.unitIds).toBe(4)
 		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("recruit_cap") -- trained ones still count
-		local second = addBuilding(sim, k1, "barracks", 40, -40, 2) -- + recruitCap 10
-		expect(Military.recruitCap(sim, k1)).toBe(15)
+		local second = addBuilding(sim, k1, "barracks", 40, -40, 2) -- + 8 bunks
+		expect(Military.recruitCap(sim, k1)).toBe(12)
 		assert(recruit(RULER, sim, "soldier", 1))
 		second.destroyed = true
-		expect(Military.recruitCap(sim, k1)).toBe(5)
+		expect(Military.recruitCap(sim, k1)).toBe(4)
+	end)
+
+	it("bunks follow the barracks level: 4 / 8 / 12 / 16 (Buildings.luau, PROVISIONAL)", function()
+		local sim, k1 = world()
+		local b = addBuilding(sim, k1, "barracks", 0, -40, 1)
+		for level, bunks in { 4, 8, 12, 16 } do
+			b.level = level
+			expect(sim:bunks(k1)).toBe(bunks)
+			expect(sim:getPopulation(k1).cap).toBe(k1.popCap + bunks)
+		end
+		b.level = 0 -- a construction site sleeps nobody
+		expect(sim:bunks(k1)).toBe(0)
+		expect(sim:getPopulation(k1).cap).toBe(k1.popCap)
+	end)
+
+	it("births fill the beds with citizens only: soldiers in training or trained never take one (D-041)", function()
+		-- 8 citizens of 12 beds; births every 5 s with plenty of food; 4 recruits in a level 1 barracks
+		local sim, k1 = world({ citizens = { farmer = 8 }, birthInterval = 5 })
+		stockUp(sim, k1, { food = 880, wood = 300 })
+		addBuilding(sim, k1, "barracks", 0, -40, 1)
+		assert(recruit(RULER, sim, "soldier", 4))
+		for _ = 1, 40 do
+			sim:advance(1)
+			expect(#k1.citizenIds).toBeLessThanOrEqual(k1.popCap)
+			expect(#k1.unitIds + sim:queuedUnits(k1)).toBeLessThanOrEqual(sim:bunks(k1))
+		end
+		local born = F.count(F.events(sim, "CitizenBorn"), function(e)
+			return e.kingdomId == "crimson" -- azure grows to its own cap meanwhile
+		end)
+		expect(born).toBe(4) -- the four free beds, whatever the barracks holds
+		expect(#k1.citizenIds).toBe(12)
+		expect(#k1.unitIds).toBe(4)
+		expect(sim:population(k1)).toBe(16)
 	end)
 
 	it("a barracks' trainSpeed shortens training (level 3: x1.25)", function()
@@ -162,38 +201,34 @@ describe("Kingdom/Military: recruiting", function()
 		expect(#barracks.queue).toBe(0)
 	end)
 
-	it("births leave the beds of recruits still in training free, so population never exceeds popCap", function()
-		-- 8 citizens of 12; births every 5 s with plenty of food
-		local function run(recruits: number)
-			local sim, k1 = world({ citizens = { farmer = 8 }, birthInterval = 5 })
-			stockUp(sim, k1, { food = 880, wood = 300 })
-			addBuilding(sim, k1, "barracks", 0, -40, 1)
-			assert(recruit(RULER, sim, "soldier", recruits))
-			local peak = 0
-			for _ = 1, 40 do
-				sim:advance(1)
-				peak = math.max(peak, sim:population(k1) + sim:queuedUnits(k1))
-				expect(sim:population(k1)).toBeLessThanOrEqual(k1.popCap)
-			end
-			local born = F.count(F.events(sim, "CitizenBorn"), function(e)
-				return e.kingdomId == "crimson" -- azure (no recruits) grows to its own cap meanwhile
-			end)
-			return born, peak, k1
-		end
-		local born, peak, k1 = run(4) -- 8 + 4 queued fill all 12 beds
-		expect(born).toBe(0)
-		expect(peak).toBe(12)
-		expect(#k1.unitIds).toBe(4)
-		born, peak, k1 = run(2) -- two beds left: two births, no more
-		expect(born).toBe(2)
-		expect(peak).toBe(12)
-		expect(#k1.citizenIds).toBe(10)
-		expect(#k1.unitIds).toBe(2)
+	it("a barracks lost with recruits queued or in training refunds each of them in full (D-041)", function()
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 280, wood = 300 })
+		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 2)
+		assert(recruit(RULER, sim, "soldier", 1))
+		sim:advance(8.25) -- trained: a living soldier is never refunded
+		expect(#k1.unitIds).toBe(1)
+		assert(recruit(RULER, sim, "soldier", 3)) -- 90 food, 30 wood
+		sim:advance(3)
+		expect(#barracks.queue).toBe(3)
+		expect(barracks.queue[1].remaining < 8).toBe(true) -- the first is in training
+		local food, wood = sim:balance(k1.id, "food"), sim:balance(k1.id, "wood")
+		F.events(sim)
+		Military.destroyBuilding(sim, barracks, "azure")
+		expect(sim:balance(k1.id, "food")).toBe(food + 90)
+		expect(sim:balance(k1.id, "wood")).toBe(wood + 30)
+		expect(F.stock(sim, k1):flows().income.refund).toEqual({ food = 90, wood = 30 })
+		expect(#barracks.queue).toBe(0)
+		sim:advance(30)
+		expect(#F.events(sim, "UnitRecruited")).toBe(0) -- nothing trains in a ruin
+		expect(#k1.unitIds).toBe(1)
+		expect(Military.recruitCap(sim, k1)).toBe(0)
+		F.assertInvariants(sim)
 	end)
 
 	it("cannot_afford leaves stock, queue and events untouched", function()
 		local sim, k1 = world()
-		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
+		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 2) -- 8 bunks: only the price limits here
 		local stock = sim.treasury:get(k1.id) -- food 120: four soldiers cost 120, five cost 150
 		expect(select(2, recruit(RULER, sim, "soldier", 5))).toBe("cannot_afford")
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
@@ -663,5 +698,490 @@ describe("Kingdom/Military: conquest", function()
 		expect(function()
 			Military.install(sim)
 		end).toThrow("already installed")
+	end)
+end)
+
+-- (x, z) of every unit Military.spawnUnit creates while `fn` runs (training spawns through it).
+local function spawnedDuring(fn: () -> ()): { { x: number, z: number, id: number } }
+	local spawned = {}
+	local original = Military.spawnUnit
+	Military.spawnUnit = function(sim, kingdom, kind, x, z)
+		local u = original(sim, kingdom, kind, x, z)
+		table.insert(spawned, { x = x, z = z, id = u.id })
+		return u
+	end
+	local ok, err = pcall(fn)
+	Military.spawnUnit = original
+	assert(ok, err)
+	return spawned
+end
+
+-- The world position of the Kit barracks' Rally attachment for a simulated barracks.
+local function kitRally(b): Vector3
+	local model = Kit.build("barracks", math.max(1, b.level), "complete", Kit.NEUTRAL_COLOR)
+	WorldView.placeModel(model, CFrame.new(b.x, 0, b.z) * CFrame.Angles(0, b.yaw, 0))
+	local root = model.PrimaryPart :: BasePart
+	local rally = root:FindFirstChild("Rally") :: Attachment
+	return (root.CFrame * rally.CFrame).Position
+end
+
+local function order(userId: number, sim, ...)
+	return Commands.execute(sim, userId, "UnitOrder", ...)
+end
+
+local function near(u, x: number, z: number): number
+	return math.sqrt((u.x - x) ^ 2 + (u.z - z) ^ 2)
+end
+
+describe("Kingdom/Military: recruiting at a chosen barracks, Rally (FL-0052)", function()
+	it("trains at the barracks asked for, even when another one has a shorter queue", function()
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 280, wood = 300 })
+		local first = addBuilding(sim, k1, "barracks", 0, -40, 1)
+		local second = addBuilding(sim, k1, "barracks", 0, 40, 1)
+		local _, err, a = Commands.execute(sim, RULER, "Recruit", "soldier", 2, second.id)
+		expect(err).toBeNil()
+		expect(a).toEqual({ barracksId = second.id, count = 2 })
+		local _, _, b = Commands.execute(sim, RULER, "Recruit", "soldier", 1, second.id)
+		expect(b.barracksId).toBe(second.id) -- first has the shorter queue; the id wins
+		expect(#first.queue).toBe(0)
+		expect(#second.queue).toBe(3)
+		local _, _, c = recruit(RULER, sim, "soldier", 1) -- without an id: the shortest queue, as before
+		expect(c.barracksId).toBe(first.id)
+	end)
+
+	it("refuses an unknown, foreign, non-barracks, unfinished or too-low barracks and charges nothing", function()
+		local sim, k1, k2 = world()
+		stockUp(sim, k1, { food = 280, wood = 300, stone = 300, gold = 300 })
+		local mine = addBuilding(sim, k1, "barracks", 0, -40, 1)
+		local theirs = addBuilding(sim, k2, "barracks", 300, -40, 1)
+		local site = assert(sim:placeBuilding(k1, "barracks", 40, 40))
+		F.events(sim)
+		local stock = sim.treasury:get(k1.id)
+		local cases = {
+			{ "invalid_args", "soldier", 0 },
+			{ "invalid_args", "soldier", 1.5 },
+			{ "invalid_args", "soldier", "1" },
+			{ "invalid_args", "soldier", 0 / 0 },
+			{ "not_found", "soldier", 999 },
+			{ "not_owner", "soldier", theirs.id },
+			{ "not_barracks", "soldier", k1.keepId },
+			{ "barracks_not_ready", "soldier", site.id },
+			{ "requires_barracks_level", "knight", mine.id },
+		}
+		for _, case in cases do
+			local ok, err = Commands.execute(sim, RULER, "Recruit", case[2], 1, case[3])
+			expect(ok).toBe(false)
+			expect(err).toBe(case[1])
+		end
+		mine.destroyed = true
+		expect(select(2, Commands.execute(sim, RULER, "Recruit", "soldier", 1, mine.id))).toBe("not_found")
+		expect(sim.treasury:get(k1.id)).toEqual(stock)
+		expect(#theirs.queue).toBe(0)
+		expect(F.events(sim)).toEqual({})
+	end)
+
+	it("a trained unit appears at the barracks' Kit Rally, turned with the building; the next beside it", function()
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 280, wood = 300 })
+		local b = sim:_createBuilding(k1, "barracks", 60, -60, 0.7)
+		sim:_completeInstantly(b)
+		b.level = 2 -- 8 bunks for the five recruits
+		sim:_recompute(k1)
+		assert(Commands.execute(sim, RULER, "Recruit", "soldier", 3, b.id))
+		local spawned = spawnedDuring(function()
+			sim:advance(3 * 8 + 0.25)
+		end)
+		expect(#spawned).toBe(3)
+		local rally = kitRally(b)
+		expect(spawned[1].x).toBeNear(rally.X, 1e-3)
+		expect(spawned[1].z).toBeNear(rally.Z, 1e-3)
+		local front = Vector3.new(-math.sin(b.yaw), 0, -math.cos(b.yaw)) -- Kit models face -Z
+		local toRally = Vector3.new(rally.X - b.x, 0, rally.Z - b.z)
+		expect(toRally.Unit:Dot(front)).toBeNear(1, 1e-3) -- in front of the building
+		-- the first one walks off to defend before the next is trained: the Rally is free again
+		expect(spawned[2].x).toBeNear(rally.X, 1e-3)
+		expect(spawned[2].z).toBeNear(rally.Z, 1e-3)
+		-- recruits still standing on the Rally push the next ones sideways, perpendicular to the front
+		for _, entry in spawned do
+			local u = sim.units[entry.id]
+			u.order = { kind = "Hold" }
+			u.x, u.z = rally.X, rally.Z
+		end
+		assert(Commands.execute(sim, RULER, "Recruit", "soldier", 2, b.id))
+		local fourth = spawnedDuring(function()
+			sim:advance(8.25)
+		end)
+		expect(#fourth).toBe(1)
+		local stays = sim.units[fourth[1].id]
+		stays.order = { kind = "Hold" }
+		stays.x, stays.z = fourth[1].x, fourth[1].z
+		local fifth = spawnedDuring(function()
+			sim:advance(8)
+		end)
+		expect(#fifth).toBe(1)
+		local right = Vector3.new(fourth[1].x - rally.X, 0, fourth[1].z - rally.Z)
+		local left = Vector3.new(fifth[1].x - rally.X, 0, fifth[1].z - rally.Z)
+		-- (Vector3 is single precision: compare to 1e-3)
+		expect(right.Magnitude).toBeNear(3, 1e-3)
+		expect(left.Magnitude).toBeNear(3, 1e-3)
+		expect(math.abs(right.Unit:Dot(front)) < 1e-3).toBe(true)
+		expect(right.Unit:Dot(left.Unit)).toBeNear(-1, 1e-3) -- one on each side
+	end)
+end)
+
+describe("Kingdom/Military: unit orders (UnitOrder, G8 Army.Command)", function()
+	it("validates ids, kind and arguments without changing any unit", function()
+		local sim, k1 = world()
+		local u = unit(sim, k1, "soldier", 10, 30, { kind = "Defend" })
+		local many = {}
+		for i = 1, 51 do
+			many[i] = i
+		end
+		local nan = 0 / 0
+		local cases = {
+			{ "invalid_args", "x", "move", 0, 0 },
+			{ "invalid_args", nil, "move", 0, 0 },
+			{ "too_many_units", many, "move", 0, 0 },
+			{ "invalid_args", { 1.5 }, "move", 0, 0 },
+			{ "invalid_args", { 0 }, "move", 0, 0 },
+			{ "invalid_args", { 70000 }, "move", 0, 0 },
+			{ "invalid_args", { [1] = u.id, [3] = u.id }, "move", 0, 0 },
+			{ "invalid_args", { a = u.id }, "move", 0, 0 },
+			{ "invalid_args", { u.id }, 5, 0, 0 },
+			{ "unknown_order", { u.id }, "charge", 0, 0 },
+			{ "unknown_order", { u.id }, "Move", 0, 0 },
+			{ "invalid_args", { u.id }, "move" },
+			{ "invalid_args", { u.id }, "move", nan, 0 },
+			{ "invalid_args", { u.id }, "move", 0, math.huge },
+			{ "invalid_args", { u.id }, "guard", 0 },
+			{ "out_of_bounds", { u.id }, "move", 3900, 900 }, -- the map is ±1024 here
+			{ "out_of_bounds", { u.id }, "move", 0, -1025 },
+			{ "out_of_bounds", { u.id }, "guard", 1024.5, 0 },
+			{ "out_of_bounds", { u.id }, "capture", -2000, 0, "tower" },
+			{ "no_objective", { u.id }, "capture" }, -- no target and no objective it does not own
+			{ "unknown_objective", { u.id }, "capture", nil, nil, "tower" },
+			{ "invalid_args", { u.id }, "attack" },
+			{ "unknown_target", { u.id }, "attack", nil, nil, "k9" },
+			{ "unknown_target", { u.id }, "attack", nil, nil, "building:999" },
+			{ "unknown_target", { u.id }, "attack", nil, nil, "entity:999" },
+			{ "unknown_kingdom", { u.id }, "attack", nil, nil, "crimson" },
+			{ "not_at_war", { u.id }, "attack", nil, nil, "azure" },
+			{ "not_at_war", { u.id }, "attack", nil, nil, `building:{k1.keepId}` },
+		}
+		for _, case in cases do
+			local ok, err = order(RULER, sim, case[2], case[3], case[4], case[5], case[6])
+			expect(ok).toBe(false)
+			expect(err).toBe(case[1])
+		end
+		expect(u.order).toEqual({ kind = "Defend" })
+		expect(F.events(sim)).toEqual({})
+	end)
+
+	it("commands only the kingdom's own living units; foreign, unknown and dead ids are ignored and counted", function()
+		local sim, k1, k2 = world()
+		local a = unit(sim, k1, "soldier", 10, 30)
+		local b = unit(sim, k1, "soldier", -10, 30)
+		local foreign = unit(sim, k2, "soldier", 300, 30, { kind = "Defend" })
+		local dead = unit(sim, k1, "soldier", 0, 30)
+		Military.killUnit(sim, dead, nil)
+		F.events(sim)
+		local ok, err, result = order(RULER, sim, { a.id, foreign.id, 999, dead.id, a.id }, "move", 60, -60)
+		expect(err).toBeNil()
+		expect(ok).toBe(true)
+		expect(result).toEqual({ kind = "move", count = 1, ignored = 3 })
+		expect(a.order).toEqual({ kind = "Move", x = 60, z = -60 })
+		expect(b.order).toEqual({ kind = "Hold" })
+		expect(foreign.order).toEqual({ kind = "Defend" })
+		local ordered = F.events(sim, "UnitsOrdered")
+		expect(#ordered).toBe(1)
+		expect(ordered[1].count).toBe(1)
+		expect(ordered[1].by).toBe(RULER)
+		expect(select(2, order(RULER, sim, { foreign.id }, "move", 0, 0))).toBe("no_units")
+		expect(select(2, order(RIVAL, sim, { a.id, b.id }, "move", 0, 0))).toBe("no_units")
+		expect(a.order).toEqual({ kind = "Move", x = 60, z = -60 })
+	end)
+
+	it("an empty list commands every idle unit: at home, holding, guarding or done moving, not busy ones", function()
+		local sim, k1, k2 = world()
+		local home = unit(sim, k1, "soldier", 10, 30, { kind = "Defend" })
+		local holding = unit(sim, k1, "soldier", 12, 30, { kind = "Hold" })
+		local guarding = unit(sim, k1, "soldier", 14, 30, { kind = "Guard", x = 14, z = 30 })
+		local arrived = unit(sim, k1, "soldier", 16, 30, { kind = "Move", x = 17, z = 30 })
+		local marching = unit(sim, k1, "soldier", 18, 30, { kind = "Move", x = 200, z = 30 })
+		local capturing = unit(sim, k1, "soldier", 20, 30, { kind = "Capture", objectiveId = "tower", x = 0, z = 0 })
+		local fighting = unit(sim, k1, "soldier", 22, 30, { kind = "Defend" })
+		local enemy = unit(sim, k2, "soldier", 300, 0)
+		fighting.target = { kind = "unit", id = enemy.id }
+		local rival = unit(sim, k2, "soldier", 300, 10, { kind = "Defend" })
+		local ok, _, result = order(RULER, sim, {}, "guard", 40, 40)
+		expect(ok).toBe(true)
+		expect(result).toEqual({ kind = "guard", count = 4, ignored = 0 })
+		for _, u in { home, holding, guarding, arrived } do
+			expect(u.order.kind).toBe("Guard")
+		end
+		expect(marching.order.kind).toBe("Move")
+		expect(capturing.order.kind).toBe("Capture")
+		expect(fighting.order.kind).toBe("Defend")
+		expect(rival.order.kind).toBe("Defend") -- never another kingdom's
+		expect(Military.isIdle(marching)).toBe(false)
+		for _, u in { home, holding, guarding, arrived, marching, capturing, fighting } do
+			u.order = { kind = "Move", x = u.x, z = u.z + 100 }
+			u.target = nil
+		end
+		expect(select(2, order(RULER, sim, {}, "move", 0, 0))).toBe("no_units") -- nobody idle
+	end)
+
+	it("move: the units march to the point and stand spread around it", function()
+		local sim, k1 = world()
+		local units = {}
+		for i = 1, 5 do
+			table.insert(units, unit(sim, k1, "soldier", -10 + i * 4, 30, { kind = "Defend" }))
+		end
+		local ids = {}
+		for _, u in units do
+			table.insert(ids, u.id)
+		end
+		assert(order(RULER, sim, ids, "move", 60, -60))
+		sim:advance(20)
+		expect(near(units[1], 60, -60)).toBeLessThanOrEqual(2 + 1e-6) -- the first stands on the point
+		for i, u in units do
+			expect(near(u, 60, -60)).toBeLessThanOrEqual(3 * math.sqrt(i - 1) + 2 + 1e-6)
+			expect(Military.isIdle(u)).toBe(true) -- arrived: idle again
+		end
+		for i = 2, #units do
+			for j = 1, i - 1 do
+				expect(near(units[i], units[j].x, units[j].z) > 1).toBe(true) -- not stacked
+			end
+		end
+	end)
+
+	it("guard: units hold the point, fight only within GUARD_RADIUS of it and return to it", function()
+		local sim, k1, k2 = world()
+		war(sim)
+		local g = unit(sim, k1, "soldier", 150, -150, { kind = "Defend" })
+		assert(order(RULER, sim, { g.id }, "guard"))
+		expect(g.order).toEqual({ kind = "Guard", x = 150, z = -150 }) -- no point: where it stands
+		local far = unit(sim, k2, "ram", 150 + 30, -150) -- in aggro (35) but 30 from the point (> 25)
+		sim:advance(5)
+		expect(near(g, 150, -150)).toBeLessThanOrEqual(1e-6)
+		expect(far.hp).toBe(far.maxHp)
+		local bait = unit(sim, k2, "ram", 150 + 12, -150) -- inside the guarded ground
+		sim:advance(3)
+		expect(near(g, bait.x, bait.z)).toBeLessThanOrEqual(5 + 1e-6)
+		expect(bait.hp < bait.maxHp).toBe(true)
+		bait.x = 150 + 200 -- leaves
+		far.x = 150 + 200
+		sim:advance(4)
+		expect(near(g, 150, -150)).toBeLessThanOrEqual(1 + 1e-6)
+		expect(g.order.kind).toBe("Guard")
+	end)
+
+	it("capture: units march into the objective's zone and hold it through the capture", function()
+		local sim, k1 = world()
+		Objectives.install(sim, { { id = "tower", x = 0, z = -200, captureSeconds = 10, crownPoints = 100 } })
+		local tower = sim.objectives.list[1]
+		local units = {}
+		for i = 1, 3 do
+			table.insert(units, unit(sim, k1, "soldier", i * 3, -40, { kind = "Defend" }))
+		end
+		local ok, err, result = order(RULER, sim, {}, "capture", nil, nil, "tower")
+		expect(err).toBeNil()
+		expect(ok).toBe(true)
+		expect(result.count).toBe(3)
+		for _, u in units do
+			expect(u.order.kind).toBe("Capture")
+			expect(u.order.objectiveId).toBe("tower")
+			expect(near(u, u.order.x, u.order.z) > 100).toBe(true) -- destination: inside the zone
+			local fromCentre = math.sqrt(u.order.x ^ 2 + (u.order.z + 200) ^ 2)
+			expect(fromCentre).toBeLessThanOrEqual(tower.radius * 0.8 + 1e-6) -- well inside the zone
+			expect(fromCentre).toBeGreaterThanOrEqual(9 - 1e-6) -- clear of the 14 x 14 watchtower
+		end
+		F.events(sim)
+		sim:advance(30)
+		expect(tower.owner).toBe("crimson")
+		local captured = F.events(sim, "ObjectiveCaptured")
+		expect(#captured).toBe(1)
+		expect(captured[1].kingdomId).toBe("crimson")
+		expect(sim.regions[tower.regionId].kingdomId).toBe("crimson")
+		sim:advance(10)
+		for _, u in units do
+			expect(near(u, tower.x, tower.z)).toBeLessThanOrEqual(tower.radius) -- still holding it
+		end
+	end)
+
+	it("capture: once the kingdom owns the objective the order ends, each unit guards its spot (idle)", function()
+		local sim, k1 = world()
+		Objectives.install(sim, {
+			{ id = "tower", x = 0, z = -200, captureSeconds = 10 },
+			{ id = "mill", x = 200, z = -200, captureSeconds = 10 },
+		})
+		local tower = sim.objectives.list[1]
+		local units = {}
+		for i = 1, 3 do
+			table.insert(units, unit(sim, k1, "soldier", i * 3, -40, { kind = "Defend" }))
+		end
+		assert(order(RULER, sim, {}, "capture", nil, nil, "tower"))
+		local spots = {}
+		for _, u in units do
+			table.insert(spots, { x = u.order.x, z = u.order.z })
+		end
+		sim:advance(8) -- marching
+		for _, u in units do
+			expect(Military.isIdle(u)).toBe(false)
+		end
+		while tower.owner == nil and sim.time < 60 do
+			sim:advance(0.25)
+		end
+		expect(tower.owner).toBe("crimson")
+		sim:advance(0.25)
+		for i, u in units do
+			expect(u.order).toEqual({ kind = "Guard", x = spots[i].x, z = spots[i].z })
+			expect(Military.isIdle(u)).toBe(true)
+			expect(near(u, tower.x, tower.z)).toBeLessThanOrEqual(tower.radius) -- still standing on it
+		end
+		-- so Send-to-capture takes them on to the next objective
+		local ok, err, result = order(RULER, sim, {}, "capture")
+		expect(err).toBeNil()
+		expect(ok).toBe(true)
+		expect(result.count).toBe(3)
+		for _, u in units do
+			expect(u.order.kind).toBe("Capture")
+			expect(u.order.objectiveId).toBe("mill")
+		end
+	end)
+
+	it(
+		"capture without a target (Send-to-capture): the nearest objective it does not own, from the units' centroid",
+		function()
+			local sim, k1, k2 = world()
+			Objectives.install(sim, {
+				{ id = "west", x = -220, z = 0 }, -- 20 from the western unit, 120 from the centroid
+				{ id = "south", x = -100, z = 60 }, -- 60 from the centroid
+				{ id = "held", x = -100, z = 10 }, -- nearest of all, but already the kingdom's
+				{ id = "far", x = -100, z = -200 },
+			})
+			sim.objectives.list[3].owner = "crimson"
+			local west = unit(sim, k1, "soldier", -200, 0, { kind = "Defend" })
+			local east = unit(sim, k1, "soldier", 0, 0, { kind = "Defend" })
+			local busy = unit(sim, k1, "soldier", -100, 0, { kind = "Move", x = -100, z = 300 }) -- not idle
+			local rival = unit(sim, k2, "soldier", 300, 10, { kind = "Defend" })
+			F.events(sim)
+			local ok, err, result = order(RULER, sim, {}, "capture")
+			expect(err).toBeNil()
+			expect(ok).toBe(true)
+			expect(result).toEqual({ kind = "capture", count = 2, ignored = 0 })
+			for _, u in { west, east } do
+				expect(u.order.kind).toBe("Capture")
+				expect(u.order.objectiveId).toBe("south")
+				expect(math.sqrt((u.order.x + 100) ^ 2 + (u.order.z - 60) ^ 2)).toBeLessThanOrEqual(18 * 0.8 + 1e-6)
+			end
+			expect(busy.order.kind).toBe("Move")
+			expect(rival.order.kind).toBe("Defend")
+			expect(#F.events(sim, "UnitsOrdered")).toBe(1)
+			-- listed units work the same way; an objective another kingdom owns counts as not ours
+			sim.objectives.list[2].owner = "azure"
+			assert(order(RULER, sim, { busy.id }, "capture")) -- centroid (-100, 0): south is 60 away
+			expect(busy.order.objectiveId).toBe("south")
+			sim.objectives.list[2].owner = "crimson"
+			assert(order(RULER, sim, { busy.id }, "capture"))
+			expect(busy.order.objectiveId).toBe("west") -- 120 away; far is 200
+		end
+	)
+
+	it("capture without a target when the kingdom owns every objective changes nothing (no_objective)", function()
+		local sim, k1 = world()
+		Objectives.install(sim, { { id = "tower", x = 0, z = -200 }, { id = "mill", x = 200, z = -200 } })
+		for _, o in sim.objectives.list do
+			o.owner = "crimson"
+		end
+		local a = unit(sim, k1, "soldier", 10, 30, { kind = "Defend" })
+		local b = unit(sim, k1, "soldier", 12, 30, { kind = "Guard", x = 12, z = 30 })
+		F.events(sim)
+		expect({ order(RULER, sim, {}, "capture") }).toEqual({ false, "no_objective" })
+		expect({ order(RULER, sim, { a.id }, "capture") }).toEqual({ false, "no_objective" })
+		expect(a.order).toEqual({ kind = "Defend" })
+		expect(b.order).toEqual({ kind = "Guard", x = 12, z = 30 })
+		expect(F.events(sim)).toEqual({})
+		-- an explicit target the kingdom owns is still allowed (reinforcing it): they guard there
+		assert(order(RULER, sim, { a.id }, "capture", nil, nil, "mill"))
+		expect(a.order.objectiveId).toBe("mill")
+		sim:advance(0.25)
+		expect(a.order.kind).toBe("Guard")
+	end)
+
+	it("a point off the map is refused (out_of_bounds) and nobody moves; units sent to the edge stay on it", function()
+		local sim, k1 = world()
+		local units, ids = {}, {}
+		for i = 1, 6 do
+			local u = unit(sim, k1, "soldier", 1000, 1000 - i * 4, { kind = "Hold" })
+			table.insert(units, u)
+			table.insert(ids, u.id)
+		end
+		F.events(sim)
+		expect({ order(RULER, sim, ids, "move", 3900, 900) }).toEqual({ false, "out_of_bounds" })
+		expect({ order(RULER, sim, {}, "guard", 0, 3900) }).toEqual({ false, "out_of_bounds" })
+		expect(F.events(sim)).toEqual({})
+		sim:advance(5)
+		for i, u in units do
+			expect(u.order).toEqual({ kind = "Hold" })
+			expect(u.x).toBe(1000) -- nobody marched towards (3900, 900)
+			expect(u.z).toBe(1000 - i * 4)
+		end
+		-- the corner itself is on the map; the spread around it is kept on it too
+		assert(order(RULER, sim, ids, "move", sim.bounds.maxX, sim.bounds.maxZ))
+		for _, u in units do
+			expect(u.order.x <= sim.bounds.maxX and u.order.z <= sim.bounds.maxZ).toBe(true)
+		end
+		sim:advance(10)
+		for _, u in units do
+			expect(u.x <= sim.bounds.maxX + 1e-6 and u.z <= sim.bounds.maxZ + 1e-6).toBe(true)
+		end
+	end)
+
+	it("capture: a march through enemy land breaks a wall in the way instead of standing at it", function()
+		local sim, k1, k2 = world()
+		war(sim)
+		Objectives.install(sim, { { id = "post", x = 60, z = 0, radius = 10 } })
+		local wall = addBuilding(sim, k1, "wall", 125, 0, 1) -- 65 from the post: outside the held ground
+		wall.hp = 24 -- three soldier hits
+		local raider = unit(sim, k2, "soldier", 140, 0, { kind = "Defend" })
+		assert(order(RIVAL, sim, { raider.id }, "capture", nil, nil, "post"))
+		sim:advance(15)
+		expect(sim.buildings[wall.id]).toBeNil()
+		expect(near(raider, 60, 0)).toBeLessThanOrEqual(10)
+	end)
+
+	it("attack: a target id is chased beyond aggro range; afterwards the units guard where they stand", function()
+		local sim, k1, k2 = world()
+		local u = unit(sim, k1, "soldier", 150, -150, { kind = "Defend" })
+		local ram = unit(sim, k2, "ram", 150, -250) -- 100 away: far beyond aggro (35)
+		ram.hp = 16 -- two hits
+		expect(select(2, order(RULER, sim, { u.id }, "attack", nil, nil, `entity:{ram.id}`))).toBe("not_at_war")
+		war(sim)
+		assert(order(RULER, sim, { u.id }, "attack", nil, nil, `entity:{ram.id}`))
+		expect(u.order).toEqual({ kind = "Attack", focus = { kind = "unit", id = ram.id } })
+		sim:advance(4)
+		expect(near(u, 150, -150) > 40).toBe(true) -- chasing
+		sim:advance(6)
+		expect(ram.alive).toBe(false)
+		sim:advance(0.25)
+		expect(u.order.kind).toBe("Guard")
+		expect(u.order.x).toBeNear(u.x, 1e-6)
+		-- a kingdom id: march on its keep (ArmyOrder Attack); a building id: that building
+		local other = unit(sim, k1, "soldier", 140, -150, { kind = "Defend" })
+		assert(order(RULER, sim, { other.id }, "attack", nil, nil, "azure"))
+		expect(other.order).toEqual({ kind = "Attack", kingdomId = "azure" })
+		assert(order(RULER, sim, { other.id }, "attack", nil, nil, `building:{k2.keepId}`))
+		expect(other.order.focus).toEqual({ kind = "building", id = k2.keepId })
+	end)
+
+	it("ArmyOrder still orders every unit of the kingdom", function()
+		local sim, k1 = world()
+		local a = unit(sim, k1, "soldier", 10, 30, { kind = "Capture", objectiveId = "x", x = 0, z = 0 })
+		local b = unit(sim, k1, "soldier", 12, 30, { kind = "Guard", x = 12, z = 30 })
+		assert(Commands.execute(sim, RULER, "ArmyOrder", "Defend"))
+		expect(a.order).toEqual({ kind = "Defend" })
+		expect(b.order).toEqual({ kind = "Defend" })
 	end)
 end)

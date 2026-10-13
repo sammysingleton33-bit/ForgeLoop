@@ -96,3 +96,37 @@ Status: the soldier marker is acceptable for VS-1 on the render evidence, pendin
 - FORGE-01 has to pass `kingdom` in `EntityController.buildRig`.
 - The Studio four-kingdom screenshot (STUDIO_PLAYTEST colour-vision steps 1–6) has not been taken. It would also confirm the aerial camera's real distance, which may be more than 50 studs.
 - Findings 3 and 4 are unchanged.
+
+## Run 4: 2026-10-13, finding 3 (kingdoms from the overview camera), PR #105 head `c483f29` (not yet merged)
+**What changed.** FORGE-02 put the D-039 emblem on every banner, flag, pennant, crest, `prop_banner` and
+slot sign (ivory crown, star, oak leaf; deep-gold sun on gold), added an up-facing roof plaque and a
+donjon-back plaque to each keep, and made `Kit.setKingdomColor` swap the emblem.
+
+**Input.** PR #105's committed Blender (`bpy`) renders of the Lune Kit dump, 1:1 crops of 1920×1080 at the
+Roblox 70° FOV, 50° down: `kit_emblems_aerial_170.jpg` (four keeps L1) and `kit_emblems_aerial_distances.jpg`
+(120 / 170 / 220 studs). I also looked at FORGE-02's `kit_emblems_aerial_170_cvd.jpg` (their run of this
+tool, plus grayscale).
+
+**Command.** `python3 -I production/quality-gates/cvd/cvd.py OUT kit_emblems_aerial_170.jpg kit_emblems_aerial_distances.jpg`;
+I looked at all four simulations for both images. Closest kingdom pairs (ΔE): protanopia crimson/emerald
+14.7, deuteranopia crimson/emerald 15.1, tritanopia azure/emerald 10.8.
+
+**What tells the kingdoms apart without colour, from the overview camera:**
+- **Roof silhouette** (the strongest cue at every distance): crimson's stacked cones, azure's tall
+  pyramids, emerald's hipped roofs with a dark eave band, gold's onion domes.
+- **Roof plaque emblem**: at 120 and 170 studs the star and the sun read clearly, the crown reads as a
+  crown, and the oak leaf reads as a leaf; at 220 studs (about 10 px) the star and the sun still read,
+  the crown is a light blob and the oak leaf is the weakest.
+- Protanopia and deuteranopia: crimson and emerald go olive and grey; cones vs hipped roofs and crown vs
+  leaf separate them. Tritanopia: azure and emerald are both teal; pyramids vs hipped roofs and star vs
+  leaf separate them. Grayscale (FORGE-02's strip): all four separate by silhouette and emblem.
+
+**Verdict: finding 3 passes on render evidence** at 120-220 studs, with the roof silhouette as the main
+cue and the emblem as the second. The oak leaf is the weakest emblem (also #86 L7 in the UI).
+
+**Still open:** the Studio four-kingdom screenshot (STUDIO_PLAYTEST colour-vision steps 1-7, the B7/B8
+asks) would confirm the real camera distance and finding 4 (tritanopia in Studio).
+
+**Update 2026-10-13:** #105 merged on main as `f562a31` (FORGE-05 D-040 verdict on `f44cfc3`, after
+CHANGES REQUESTED for the slot-marker and stage budget gates). Finding 3 is resolved on render evidence;
+findings 1, 2 and 3 now wait only for the Studio screenshot.

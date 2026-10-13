@@ -101,39 +101,17 @@ Resolver errors are caught and warned once per minute; analytics never breaks ga
 
 ## 5. Custom events and funnels — AI Kingdoms
 
-### Custom events (`LogCustomEvent(player, name, value, customFields)`)
-| Event | Value | CustomField01 | CustomField02 | CustomField03 | Emitted by | Status |
-|---|---|---|---|---|---|---|
-| SessionStart | daysSinceFirstJoin | visit (`firstDay` \| `return` \| `unknown`) | | | AnalyticsService on `config.session.startOn`: game-001 uses `KingdomJoined`, because VS-1 has no profiles and so no `PlayerReady` (D-027). Once per server visit. `core.createdAt` comes from DataService when present | built (FL-0063) |
-| SessionEnd | sessionSec | lastActivity (the last bus event that was actually logged for the player = drop-off point; kingdom-wide repeats such as citizens gathering don't move it) | | | AnalyticsService on `Players.PlayerRemoving` | built |
-| OnboardingCompleted | durationSec | flow | | | OnboardingService | built |
-| OnboardingSkipped | lastStep | lastStepName | flow | | OnboardingService on skip; **no funnel step is logged after it** | built |
-| OnboardingHintEscalated | step | stepName | | | OnboardingService when a step passes its nudge time (stuck points) | built |
-| OnboardingStepPassed | step | stepName | via (`unavailable` \| `timeout`) | | OnboardingService when a step is passed over or an interactive step times out (also logged as its funnel step) | built (FL-0092) |
-| MatchEnded | durationSec | won (`true`/`false`/`draw` when there is no single winner: a draw or a shared win is never logged as a loss) | phase (the last playing phase before Results = where it was decided: Founding..Endgame, Arena from VS-2) | mode (`MatchService.mode`: `slice` \| `match` \| `match30` \| `unknown`; comparison labels, not a match-length decision, BRIEF §16.10) | MatchAnalyticsService on G9 `MatchEnded`, per ruler still here (spectators not counted). KingdomEliminated is not logged in VS-1 (the slice has no elimination); VS-2 adds it as a custom event | built (FL-0063) |
-| PhaseLeft | minute | phase | | | AnalyticsService at session end through `config.session.leftInfo` → MatchAnalyticsService, for a ruler leaving in Founding..Arena. Logged before SessionEnd, so the order never depends on PlayerRemoving handler order | built (FL-0063) |
-| ConversationAnswered | secondsOpen (how long the request waited) | occupation | decision (the content `farm_key`, e.g. `handout_food`, `firm_ruling`, `threat`) | | FORGE-01's ConversationService when `Kingdom.Choose` succeeds, via `AnalyticsService:event` (interfaces §8). No ids or free text | declared (FL-0063); producer pending FORGE-01 |
-| ReputationShifted | delta (rounded; negative = down) | category (the six of G13.4) | source (`conversation` \| `action`) | phase | FORGE-01's ReputationService, once per category that changed per decision or action. Fear relaxing over time is **not** logged (it would be a stream) | declared (FL-0063); producer pending FORGE-01 |
-| IdleHintShown | idleSec | phase | | | dead-air hint shown (PACING.md §6) | planned FL-0062 |
-| CelebrationShown | 1 | kind | | | NotificationController:celebrate (reported by the server) | planned FL-0027 |
-| SettingChanged | 1 | key | value | | SettingsService (once per key per 10 s) | built |
+One file per feature (D-038 (7)), so PRs for different features never edit the same lines. Every event and funnel in `games/game-001/config/Analytics.luau` is in exactly one of them:
 
-### Funnels
-| Funnel | Roblox method | Kind / session id | Steps | Logged by |
-|---|---|---|---|---|
-| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau` (v2, D-030): `Spawn` (KingdomJoined), `InspectCitizen` (client action `CitizenInspected`), `BuildOnPlot` (BuildingPlaced, placedBy), `AnswerCitizen` (client action `CitizenAnswered`; G9 `CitizenAnswered` proposed; `requires = ConversationService`, so the step is passed over while that service is missing, and `autoAdvanceSec = 120`), `Recruit` (UnitsRecruited; `requires = MilitaryService`), `Capture` (ObjectiveCaptured; `requires = ObjectiveService`). InspectCitizen and AnswerCitizen are **client-reported** steps that grant nothing (G11 wording pending FORGE-00). Every step is logged when it completes or is passed: Roblox counts a skipped step as completed anyway, so a step passed over (`unavailable`) or a timed-out interactive step is logged too and **also** as `OnboardingStepPassed`; step n of this funnel therefore means "reached past step n", and real answers = AnswerCitizen − OnboardingStepPassed(stepName AnswerCitizen) | OnboardingService only; nothing after a skip |
-| VS1 | `LogFunnelStepEvent(player, "VS1", nil, step, name, fields)` | once | BRIEF §13: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture (G9 attribution, §4) | AnalyticsService track rules on `KingdomJoined`, `ResourceGathered`, `BuildingPlaced` (placedBy), `BuildingCompleted`, `UnitsRecruited`, `ObjectiveCaptured` (built, FL-0063). `inOrder`: a step is credited only to a player who already has the previous step (FORGE-00's #64 ruling). Roblox counts skipped steps as completed, so a co-ruler credited for the kingdom's completion or capture would otherwise inflate FirstBuildPlaced and FirstRecruit. Repeats are counted (`stats.dropped.duplicate`), never logged |
-| Return | `LogFunnelStepEvent(player, "Return", nil, ...)` | once | 1 FirstSession (first join today, UTC) · 2 ReturnNextDay | AnalyticsService at session start (`config.session.startOn`; game-001: `KingdomJoined`, D-027). Needs DataService `core.createdAt`, so it is inactive in VS-1 (D-027) |
+| File | Feature | Custom events | Funnels |
+|---|---|---|---|
+| `analytics/schemas/game-001/sessions.md` | Sessions and return (FL-0023) | SessionStart, SessionEnd | Return |
+| `analytics/schemas/game-001/onboarding.md` | Onboarding (FL-0025, FL-0092) | OnboardingCompleted, OnboardingSkipped, OnboardingHintEscalated, OnboardingStepPassed | Onboarding |
+| `analytics/schemas/game-001/match.md` | VS-1 progress and matches (FL-0063) | MatchEnded, PhaseLeft | VS1 |
+| `analytics/schemas/game-001/conversation.md` | Conversations and reputation (FL-0063) | ConversationAnswered, ReputationShifted |  |
+| `analytics/schemas/game-001/feedback.md` | Feedback, celebrations and settings (FL-0024, FL-0027, FL-0062) | IdleHintShown, CelebrationShown, SettingChanged |  |
 
-Why both Onboarding and VS1: Onboarding counts tutorial completion, and stops at a skip. VS1 counts real progress for everybody, including players who skipped the tutorial or played it on another server. Their difference shows whether the tutorial helps.
-
-**Who has no session.** Sessions start on `KingdomJoined`, so a spectator (all kingdoms full) never gets SessionStart, SessionEnd or PhaseLeft. MatchEnded counts rulers only.
-
-**VS1 step meanings.** FirstGather: the first ResourceGathered credited to the player by Feedback/Signals (their own gather, or any citizen deposit into their kingdom, credited to every member). FirstRecruit: the player named in UnitsRecruited. The others follow G9 (§4).
-
-**FirstGather under D-030.** Ruler gathering is optional and citizens gather for the kingdom. By G9, citizens' gathering credits every member, so this step completes within seconds of the first citizen deposit: it measures "the economy started", not a ruler's action. With the order rule, a ruler who places a building before their first deposit credit loses that FirstBuildPlaced (it is dropped, not deferred) and is credited at their next placement. The funnel follows BRIEF §13 as written. For FORGE-00's review: a v2 funnel could replace FirstGather with FirstCitizenInspected or FirstConversation once a server-side conversation event exists.
-
-Why `Return` stops at step 2: if we logged a day-7 step, a player who skipped day 1 would be counted as a day-1 returner (skipped steps count as completed). D7/D30 come from the Creator Dashboard retention charts.
+A new feature adds its own file and one row here.
 
 ## 6. Economy (`LogEconomyEvent`) — owned by FORGE-03's EconomyService
 
@@ -185,8 +163,10 @@ Same session events and onboarding events as above, plus `RoundFinished` (value 
 3. When the match ends: `analytics event MatchEnded value=<seconds>` with won, the decided phase and the mode. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `SessionEnd`.
 4. Roblox records nothing from Studio; to check real delivery, publish to a private test place and use the View Events tool (near real time) — needs the user's account.
 
-## Changelog
+## History
+Each feature file keeps its own history. Changes to the shared sections above (rules, budget, measurement plan, verification):
 - 2026-10-12 FORGE-04: first version (FL-0023).
 - 2026-10-13 FORGE-04 (FL-0063, FORGE-00 doc review): aligned with CONTRACTS v0.4-g8 (G9 order rule v0.4-g6, §4); step meanings for FirstGather and FirstRecruit; Return starts at session start; KingdomEliminated noted; per-event combination budget with a house total under 2,000 (ConversationAnswered drops `phase`; SettingChanged values in tenths); server-only rule (§2); daily limit reset (§1).
 - 2026-10-12 FORGE-04 (FL-0063): VS1 track rules built; sessions start on `KingdomJoined` in game-001 (`session.startOn`); `MatchEnded` and `PhaseLeft` built (MatchAnalyticsService, `session.leftInfo`); SessionEnd's drop-off is the last *logged* bus event; `ConversationAnswered` and `ReputationShifted` declared for FORGE-01 (D-030); budget recomputed.
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; game-001 VS-1 onboarding steps and the declared VS1 funnel (FL-0063); budget recomputed.
+- 2026-10-13 FORGE-04: §5 split into one file per feature under `analytics/schemas/game-001/` (D-038 (7)).

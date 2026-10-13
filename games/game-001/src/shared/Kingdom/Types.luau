@@ -41,6 +41,9 @@ export type Kingdom = {
 	crownPoints: number,
 	regions: { string }, -- claimed Layout region ids
 	alive: boolean,
+	happiness: number, -- kingdom conditions 0..100 (G13.4), separate from reputation
+	stability: number,
+	morale: number,
 }
 export type Building = {
 	id: number,

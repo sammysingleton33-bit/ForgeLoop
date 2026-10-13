@@ -22,7 +22,8 @@
 			           buildings = "parts" }
 			buildings = "kit": each building is FORGE-02's Kit.build(type, level, stage, colour) model (G6/G10):
 			  stage 1..3 by progress while first being built, then "complete"; a model is replaced whole
-			  when its (type, level, stage) changes, placed at the building's position and yaw, and carries
+			  when its (type, level, stage, kingdom) changes (a building that changes kingdom is rebuilt in
+			  the new kingdom's colour, emblems and folder: FORGE-02's Kit emblem handoff), placed at the building's position and yaw, and carries
 			  the attributes BuildingId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
 			  (G13.6 selection reads BuildingId)
 			entities = false: no citizen/soldier parts (clients render them with EntityController, D-023)
@@ -30,6 +31,7 @@
 		view:find(kind, id): Instance?    -- kind "node" | "building" | "entity"
 		view:count(): number           -- live entity parts (specs)
 		view:destroy()
+		WorldView.placeModel(model, cframe)   -- moves a Kit model's pivot onto cframe without PivotTo (Lune too)
 	Positions: simulation X/Z map to world X/Z; Y is groundY plus half the part height.
 ]]
 
@@ -74,7 +76,7 @@ function WorldView.new(env: any, options: { [string]: any }?)
 	self._createGround = if opts.createGround == nil then true else opts.createGround
 	self._entities = if opts.entities == nil then true else opts.entities
 	self._kitBuildings = opts.buildings == "kit"
-	self._kitKey = {} :: { [string]: string } -- building key -> "<type>|<level>|<stage>" of its model
+	self._kitKey = {} :: { [string]: string } -- building key -> "<type>|<level>|<stage>|<kingdom>" of its model
 	self._parts = {} :: { [string]: any }
 	local root = env.newInstance("Folder")
 	root.Name = "ForgeKingdoms"
@@ -127,6 +129,7 @@ local function placeModel(model: any, cf: CFrame)
 		end
 	end
 end
+WorldView.placeModel = placeModel
 
 -- The Kit stage for a building: 1..3 while it is first being built, else "complete".
 function WorldView.stageOf(sim: any, b: any): number | string
@@ -141,7 +144,7 @@ function WorldView:_kitBuilding(sim: any, b: any, parent: any, kingdomColor: Col
 	local key = "building:" .. b.id
 	local level = math.max(1, b.level)
 	local stage = WorldView.stageOf(sim, b)
-	local signature = `{b.kind}|{level}|{stage}`
+	local signature = `{b.kind}|{level}|{stage}|{b.kingdomId}`
 	local model = self._parts[key]
 	if model == nil or self._kitKey[key] ~= signature then
 		if model then
