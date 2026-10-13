@@ -379,8 +379,8 @@ describe("client feedback controllers (FL-0062)", function()
 						stop = function(_, effect)
 							table.insert(stopped, effect)
 						end,
-						float = function(_, text, position)
-							table.insert(floats, { text = text, position = position })
+						float = function(_, text, position, floatOpts)
+							table.insert(floats, { text = text, position = position, opts = floatOpts })
 						end,
 						register = function(_, list)
 							for _, preset in list do
@@ -504,8 +504,40 @@ describe("client feedback controllers (FL-0062)", function()
 		expect(effects[1].id).toBe("kingdom.harvest.wood")
 		expect(effects[1].position).toBe(Vector3.new(40, 0, 0))
 		expect(floats[1].text).toBe("+3 Wood")
+		expect(floats[1].opts).toEqual({ maxDistance = 0 }) -- culled here from the focus, not by the engine
 		feedback:gathered("oak_1", "silk", 3)
 		expect(#played).toBe(1)
+	end)
+
+	it("FeedbackController: floats only within MAX_STUDS of the view; walk mode measures from the camera", function()
+		local defs = doubles({ notifications = false })
+		local camera = { mode = "follow" }
+		function camera.getFocus()
+			return Vector3.new(500, 0, 0) -- left over from the overview
+		end
+		table.insert(defs, {
+			name = "RulerCameraController",
+			new = function()
+				return camera
+			end,
+		})
+		local nodes = { { id = "oak_1", cframe = CFrame.new(10, 0, 0) } }
+		table.insert(defs, {
+			name = "FeedbackController",
+			new = function(e, r)
+				return FeedbackDef.create(e, r, { layout = { resourceNodes = nodes } })
+			end,
+		})
+		local feedback = Loader.load(env, defs):get("FeedbackController")
+		local view = roblox.Instance.new("Camera")
+		view.CFrame = CFrame.new(0, 12, 18)
+		view.Parent = env.Workspace
+		env.Workspace.CurrentCamera = view
+		feedback:gathered("oak_1", "wood", 2) -- next to the walking ruler
+		expect(#floats).toBe(1)
+		camera.mode = "overview"
+		feedback:gathered("oak_1", "wood", 2) -- 490 studs from the overview's focus
+		expect(#floats).toBe(1)
 	end)
 
 	it("FeedbackController: deposits coalesce, swings are rate-limited and culled by distance", function()
@@ -551,6 +583,7 @@ describe("client feedback controllers (FL-0062)", function()
 				name = "RulerCameraController",
 				new = function()
 					return {
+						mode = "overview",
 						getFocus = function()
 							return Vector3.new(500, 0, 0)
 						end,

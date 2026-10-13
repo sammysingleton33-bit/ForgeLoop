@@ -14,8 +14,11 @@
 		EntityController.released(id, model) -> stops every effect attached to that rig (pooled rigs
 		    must not carry effects to their next citizen); finished effects leave that list after
 		    ATTACH_KEEP_SEC, so it never grows with the match
-	Distances are measured from the camera focus (RulerCameraController:getFocus(), else the camera),
-	so a zoomed-out overview (up to 220 studs) still hears and sees the citizens under the view.
+	Distances are measured from the overview's focus (RulerCameraController:getFocus() while mode is
+	"overview"), else from the camera (walk mode, whose focus would be the stale overview one), so a
+	zoomed-out overview (up to 220 studs) still hears and sees the citizens under the view. Floats
+	("+3 Wood") follow the same rule and carry no engine MaxDistance (VFXController opts.maxDistance 0),
+	which would measure from the camera, 220 studs up.
 	Registers the kingdom presets (Feedback/Presets) with VFXController at start; presets already
 	registered are skipped, so a second boot never fails.
 	Every sound here has a visual counterpart (the effect or the float), the accessibility rule.
@@ -166,7 +169,7 @@ function FeedbackController:_near(position: Vector3?): boolean
 	local camera = self._camera
 	if self._origin then
 		origin = self._origin()
-	elseif camera ~= nil and camera.getFocus ~= nil then
+	elseif camera ~= nil and camera.mode == "overview" and camera.getFocus ~= nil then
 		local okFocus, focus = pcall(camera.getFocus, camera)
 		origin = if okFocus and typeof(focus) == "Vector3" then focus else nil
 	end
@@ -192,8 +195,8 @@ function FeedbackController:gathered(nodeId: any, resource: any, amount: any)
 		if position then
 			self._vfx:play(spec.vfx, { position = position })
 		end
-		if type(amount) == "number" and amount > 0 then
-			self._vfx:float(`+{amount} {spec.label}`, position)
+		if type(amount) == "number" and amount > 0 and self:_near(position) then
+			self._vfx:float(`+{amount} {spec.label}`, position, { maxDistance = 0 })
 		end
 	end
 end
