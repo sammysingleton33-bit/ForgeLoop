@@ -3,7 +3,17 @@
 -- Source: dialogue/consequences.csv. Edit the CSV files (or the workbook, see content/README.md),
 -- then run: python3 tools/content/content.py build
 
-return {
+-- Deeply frozen: the content is shared by every consumer, so nobody may change it.
+local function deepFreeze<T>(value: T): T
+	for _, child in value :: any do
+		if type(child) == "table" and not table.isfrozen(child) then
+			deepFreeze(child)
+		end
+	end
+	return table.freeze(value :: any) :: any
+end
+
+return deepFreeze({
 	bow_speaker = {
 		id = "bow_speaker",
 		kind = "cue",
@@ -560,4 +570,4 @@ return {
 		cue_id = "work_fast",
 		notice = "Warm and grateful, woodcutters work {magnitude_pct} faster for {duration}.",
 	},
-}
+})
