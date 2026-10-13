@@ -65,6 +65,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
   | gold | domes with gold finials |
 
   The same caps appear on keep turrets, barracks turrets, the gatehouse, soldiers' helmets in the Blender set, and the watchtower once it is captured.
+  Part-built Kit soldiers given their kingdom (CONTRACTS G13.2, D-033(3)) wear a one-part helmet crest in the same style, so they read apart without colour: crimson a tall spire, azure a flat square plate overhanging the helm, emerald a plume swept back, gold a dome knob.
 - **Chunky and slightly exaggerated:** thick roofs with 1.2-stud overhangs, oversized doors (4.4 × 7.6, walkable), chamfered or stepped edges, banners hanging below the eaves.
 - **Human scale:** 5.5-stud characters, storeys of about 10–11 studs, sills 3.4 above the floor, fences and parapets 3–3.4 high.
 - **Front faces −Z** (the Model's LookVector). The pivot is at the base centre (PrimaryPart `Root` plus `PivotOffset`).
