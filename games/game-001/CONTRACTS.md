@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g8, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g9c, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -66,6 +66,7 @@ export type ResourceBag = { [ResourceId]: number }
 MatchService:getPhase(): MatchPhase
 MatchService:getEndsAt(): number?                  -- serverTimeNow deadline of the current phase; nil = untimed
 MatchService.phaseChanged: Signal<(MatchPhase, { endsAt: number? })>
+MatchService.mode: "slice" | "match"           -- read-only; config Match.mode, PROVISIONAL (v0.4-g9c, D-044 (5)); "match30" only if FL-0096 picks it
 KingdomService:getKingdom(id: KingdomId): Kingdom
 KingdomService:getKingdomOf(player): KingdomId?
 KingdomService:assign(player, preferred: KingdomId?): KingdomId?   -- nil when no kingdom can take the player (v0.4-g8)
@@ -285,6 +286,7 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `UnitsRecruited` | FORGE-01 | (player, KingdomId, count) |
 | `ObjectiveCaptured` | FORGE-01 | (objectiveId, KingdomId) |
 | `KingdomEliminated` | FORGE-01 | (KingdomId, by: KingdomId?) |
+| `CitizenAnswered` (planned, after #77; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose` |
 | `MatchEnded` | FORGE-01 | ({ winner: KingdomId?, standings: { { kingdom: KingdomId, crownPoints: number } }, durationSec: number }) |
 
 - Producers fire each event exactly once, per framework rules.
@@ -294,6 +296,9 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
   - "spawn" = `KingdomJoined`;
   - "first build placed" credits `Building.placedBy`;
   - building completions and captures credit every current member of the kingdom.
+  - `ResourceGathered`: a ruler gather (`source = "ruler"`) credits that player; a citizen deposit credits every current member. So "first gather" means the kingdom's economy started (D-044 (2)).
+  - "first recruit" credits the player named in `UnitsRecruited`.
+  - Attribution is implemented once, in `Feedback/Signals.luau` (`Signals.subjects`), and onboarding and analytics both use it. Nobody re-implements it.
   - **Funnel order (v0.4-g6).** The analytics funnel credits a step to a player only if that player already holds the previous step.
     - Example: a co-ruler who never placed a building is not credited "first building complete" or "first capture".
     - Reason: Roblox counts skipped funnel steps as completed, so kingdom-wide credit would inflate the steps before it.
@@ -346,6 +351,7 @@ Kit.setKingdomColor(model: Model, color: Color3)                     -- recolour
 - `PacingService:phaseDurations(mode: "slice" | "match"): { Lobby: number, Founding: number, Expansion: number, Conflict: number, Endgame: number, Results: number }` returns seconds from config `Pacing.luau`; `math.huge` means untimed. MatchService pulls it (G3).
 - **No game-tree duplicates of framework services.** VS-1 uses the framework services and controllers, fed by game config:
   - onboarding: OnboardingService (FL-0025) with `Onboarding.luau`. Steps are triggered by G9 events; the first step is on `KingdomJoined`.
+    - **Client-reported steps (`clientActions`, D-044 (4)).** These are allowed only for UI moments that have no server event (`CitizenInspected`, `GoalAcknowledged`). They complete only the reporting player's current step and grant nothing. They may feed that player's onboarding funnel step, but no other analytics event. `CitizenAnswered` moves to the G9 event once it exists.
   - announcements: `AnnouncerService` turns G9 events into kingdom-scoped messages shown through `NotificationController`.
   - audio: `AudioController` with `Sounds.luau`.
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
@@ -527,13 +533,14 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Build slots (G10.1, additive).** `Layout.plots[k].buildSlots = { { id: string, center: Vector3, size: "S" | "M" | "L", rot: number } }`, at least 8 per kingdom. WorldService tags each slot's ground marker `BuildSlot` with attribute `SlotId`.
 - **Remotes.**
   - `Build.PlaceSlot`: `(slotId: string(1,32), type: enum BuildingType)` → `(buildingId?, reason?)`.
+    - Plots take only the building types that sit on a plot. `wall` and `gate` are line structures (VS-2, placed on territory lines). The server refuses them on a plot with reason `not_on_plot`, even though they fit physically. Fit stays purely physical; this is placement policy, and the server enforces it, not only the picker (v0.4-g9a, #89 L3).
   - `Build.Slots` / `Build.GetSlots`: own kingdom's slots `{ id, size, occupiedBy: number? }`.
   - `Build.Place` stays as it is.
 - **BuildingType (G2, additive, used from VS-2):** `"mine" | "blacksmith" | "market" | "infirmary" | "granary" | "shrine"`. The Kit returns a labelled part-built stand-in until FORGE-02 models each type.
 - **Levels and times.** `Costs.building(type, level).buildSeconds` drives build and upgrade time, scaled by the builders on site. Barracks proposal: 8 / 18 / 35 / 60 s (FORGE-03, PROVISIONAL). `Kit.build(type, level, …)` must differ visibly per level (FORGE-02).
 - **One source per number (FORGE-05 finding L4, 2026-10-12).**
   - `Costs.luau` (FORGE-03) is canonical for **cost, buildSeconds and the number of levels** (`Costs.maxLevel(type)`).
-  - `Buildings.luau` (FORGE-01) holds only **gameplay stats** per type and level, for exactly levels `1..Costs.maxLevel(type)`: housing/popCap, storage, production rate, recruit cap and `requires` (e.g. keep level).
+  - `Buildings.luau` (FORGE-01) holds only **gameplay stats** per type and level, for exactly levels `1..Costs.maxLevel(type)`: housing/popCap, storage, production rate, barracks `bunks` (D-041; soldiers sleep in bunks, never in beds) and `requires` (e.g. keep level).
   - `Buildings.luau` never repeats a cost or a time, and the server sim reads costs and times from `Costs`.
   - UI reads costs from `Costs` and stats from `Buildings`.
   - FORGE-05 adds an integration spec: every (type, level) in one file exists in the other, and no field appears in both.
@@ -542,7 +549,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   - The server (`Build.PlaceSlot`) and the plot picker both call it. Nobody re-implements it.
   - The rule is **purely physical**: any structure whose footprint fits may use the slot. With today's footprints, S fits house, lumber camp, quarry, storehouse and watchtower; M also fits barracks; L also fits farm. That is accepted for VS-1.
   - The class list in `Layout.luau` comments is placement guidance, not a rule. Placing resource buildings near their nodes is a gameplay choice for the player.
-  - Until `Fit.luau` lands, FORGE-03 may keep an interim client copy (`UI/SlotFit`) with the same rule. It switches to `Fit.typesFor` when `Fit.luau` lands, and FORGE-05 checks on review that the two agree.
+  - The interim client copy (`UI/SlotFit`) is gone: since #88 the plot picker calls `Fit.typesFor` (D-038).
 
 ### G13.6 Throne, camera and selection — VS-1
 - **Throne (FORGE-02).** `Kit.build("keep", level, "complete", color)` contains a `Seat` named `Throne` on a raised dais, visible from the aerial camera.
@@ -585,6 +592,13 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
+- v0.4-g9c (2026-10-13) FORGE-00, rulings on FORGE-04's #98 questions (D-044). These are additive:
+  - G3 lists `MatchService.mode`.
+  - G9 adds the planned `CitizenAnswered` event and the attribution of `ResourceGathered` and `UnitsRecruited`, and says attribution lives in `Feedback/Signals`.
+  - G11 sets the rule for client-reported onboarding steps.
+- v0.4-g9b (2026-10-13) FORGE-00: G13.5 drops the interim `UI/SlotFit` allowance; #88 deleted it and the picker calls `Fit.typesFor`. Wording only. The header now names the latest version.
+- v0.4-g9a (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` refuses `wall`/`gate` on plots (`not_on_plot`), enforced on the server (#89 L3).
+- v0.4-g8a (2026-10-13) FORGE-00: G13.5 Buildings stats name barracks `bunks` instead of a recruit cap (D-041). Wording only.
 - v0.4-g8 (2026-10-13) FORGE-00, ruling on the three #31 contract nits (backlog audit): the contract follows the shipped code. `assign` returns `KingdomId?`; `Kingdom.Gather` returns `(true, ResourceId, amount)` or `(false, errorCode)`; `Kingdom.SetJobQuota` covers farmer/woodcutter/miner/builder and returns `(ok, errorCode?)`. The v0.4-g7 G13.1 signatures arrive with PR #83.
 - v0.4-g7 (2026-10-13) FORGE-00, content follow-ups round 2 (FORGE-05 #67 review). G13.1 now gives exact signatures: `fireAction` takes one call per event with `rulerHistories` and `creditedRulers`; `choicePreview` requires `fillNames`; `choiceRisks(decisionId, fillNames)`; cost is paid from `decisionEffects`; the farm cap gives multiplier 0. Breaking for open PRs #68 and #77; a migration note is in their handoff.
 - v0.4-g6 (2026-10-13) FORGE-00, rulings on FORGE-05's #42 and #64 reviews: G13.3 `strike` carries `entityIds` and `cue` may carry `entityIds` (additive; no client fan-out by occupation); G9 funnel credits a step only after the player's previous step.

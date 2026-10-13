@@ -23,6 +23,12 @@
 local CitizenText = {}
 
 local REASONS: { [string]: string } = {
+	-- FORGE-01's Kingdom.Choose codes (handoff 2026-10-13-forge-01-to-forge-03-refusal-codes.md;
+	-- FORGE-05 L4 on #77): not_offered = no open conversation for this ruler (never opened, already
+	-- answered, or another ruler's)
+	not_offered = "That conversation is over. Talk to them again.",
+	unknown_citizen = "They're no longer here.",
+	not_in_match = "The match isn't running.",
 	not_eligible = "They've moved on from that. Ask again later.",
 	stale = "They've moved on from that. Ask again later.",
 	expired = "That moment has passed.",

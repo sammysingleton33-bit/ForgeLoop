@@ -95,12 +95,7 @@ end
 
 -- The server declares its remotes at start (RemoteService); they replicate under ForgeRemotes.
 function ArmyPanelController:_served(): boolean
-	local ok, found = pcall(function()
-		local root = self._env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
-		local area = if root then root:FindFirstChild("Army") else nil
-		return area ~= nil and area:FindFirstChild("Recruit") ~= nil
-	end)
-	return ok and found == true
+	return self.hud:hasRemote(ArmyPanelController.RECRUIT)
 end
 
 -- The rail button and the barracks tab, once (D-038 (2)).

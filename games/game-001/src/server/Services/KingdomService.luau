@@ -21,6 +21,11 @@
 	death (after Players.RespawnTime) and whenever the player's kingdom changes (Lobby switch, new match).
 	Spectators get no character. Engine calls go through `adapter` (KingdomService.robloxAdapter); specs
 	replace it because Lune has no characters.
+	Throne (G13.6): after every spawn the ruler sits on the keep's Kit Seat "Throne" (host:buildingModel of
+	the kingdom's keep), unless another character already holds it (co-rulers stand at the plot spawn).
+	Every THRONE_CHECK seconds a ruler still sitting there is seated again when the keep model was rebuilt
+	(an upgrade replaces it); a ruler who got up (walk mode) or died is no longer followed. Adapters
+	without `sit` (specs' spawn doubles) skip seating.
 	Failures: a load that errors or returns no character is retried with backoff (1, 2, 4, ... 30 s) while
 	the player is still seated, with a warning per attempt. If WorldService exists but has not fired
 	ready after WORLD_READY_TIMEOUT seconds, the service warns and spawns anyway.
@@ -46,6 +51,7 @@ local Def = { name = "KingdomService", dependencies = { "MatchService" } }
 local WORLD_READY_TIMEOUT = 30 -- seconds to wait for WorldService.ready before spawning anyway
 local LOAD_RETRY_MAX = 30 -- longest wait between character load attempts (seconds)
 Def.WORLD_READY_TIMEOUT = WORLD_READY_TIMEOUT
+Def.THRONE_CHECK = 0.5 -- seconds between checks for a rebuilt keep under a seated ruler
 
 -- The running service, for the Studio debug commands (registered once per process, like MatchService).
 local active: any = nil
@@ -84,6 +90,9 @@ export type Adapter = {
 	attach: (character: any, accessory: any) -> (),
 	onDied: (character: any, callback: () -> ()) -> any?, -- connection with :Disconnect()
 	respawnDelay: () -> number,
+	sit: ((character: any, seat: any) -> ())?, -- Seat:Sit(humanoid)
+	seatOf: ((character: any) -> any?)?, -- Humanoid.SeatPart
+	occupant: ((seat: any) -> any?)?, -- the character in Seat.Occupant, nil when free
 }
 
 -- The engine calls behind spawning. LoadCharacterAsync is the contract call (G3); LoadCharacter is the
@@ -123,6 +132,20 @@ function KingdomService.robloxAdapter(env: any): Adapter
 		respawnDelay = function(): number
 			return env.Players.RespawnTime
 		end,
+		sit = function(character: any, seat: any)
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				seat:Sit(humanoid)
+			end
+		end,
+		seatOf = function(character: any): any?
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			return if humanoid then humanoid.SeatPart else nil
+		end,
+		occupant = function(seat: any): any?
+			local humanoid = seat.Occupant
+			return if humanoid then humanoid.Parent else nil
+		end,
 	}
 end
 
@@ -141,6 +164,8 @@ function Def.new(env: any, registry: any)
 	self._reported = {} :: { [number]: string }
 	self._spawnGen = {} :: { [number]: number } -- bumped per spawn; a stale spawn stops after it yields
 	self._died = {} :: { [number]: any }
+	-- userId -> the throne a ruler sat down on: { character, kingdomId, model (the keep), seat? }
+	self._seated = {} :: { [number]: { character: any, kingdomId: string, model: any, seat: any? } }
 	return self
 end
 
@@ -159,6 +184,18 @@ function KingdomService:start()
 	)
 	active = self
 	registerDebugCommands()
+	self._env.spawn(function()
+		while not self._destroyed do
+			self._env.wait(Def.THRONE_CHECK)
+			if self._destroyed then
+				break
+			end
+			local ok, err = pcall(self._checkThrones, self)
+			if not ok then
+				self._env.log("error", "KingdomService: throne check failed", { error = tostring(err) })
+			end
+		end
+	end)
 	local world = self._registry:find("WorldService")
 	if world == nil or world:isReady() then
 		self._worldReady = true
@@ -238,6 +275,7 @@ end
 -- ---------------------------------------------------------------- spawning
 function KingdomService:_forgetCharacter(userId: number)
 	self._spawnGen[userId] = (self._spawnGen[userId] or 0) + 1
+	self._seated[userId] = nil
 	local died = self._died[userId]
 	if died then
 		died:Disconnect()
@@ -305,13 +343,57 @@ function KingdomService:_spawn(player: any)
 		for _, accessory in Kit.regalia(view.color) do
 			self.adapter.attach(character, accessory)
 		end
+		-- the respawn hook first: a throne that fails to seat the ruler must never stop the respawns (#89 L1)
 		self._died[userId] = self.adapter.onDied(character, function()
 			self._env.wait(self.adapter.respawnDelay())
 			if self._spawnGen[userId] == generation and player.Parent ~= nil and self:getKingdomOf(player) then
 				self:_spawn(player)
 			end
 		end)
+		local seated, err = pcall(self._seat, self, userId, character, kingdomId)
+		if not seated then
+			self._env.log("warn", "KingdomService: cannot seat the ruler; they stand", { error = tostring(err) })
+		end
 	end)
+end
+
+-- ---------------------------------------------------------------- throne (G13.6)
+-- The kingdom's keep model and its Seat "Throne" (nil when the keep is not drawn or has none).
+function KingdomService:_throne(kingdomId: string): (any?, any?)
+	local k = self:_sim().kingdoms[kingdomId]
+	local model = if k and k.keepId then self._match.host:buildingModel(k.keepId) else nil
+	local seat = if model then model:FindFirstChild("Throne", true) else nil
+	return model, if seat and seat:IsA("Seat") then seat else nil
+end
+
+-- Sits the character on its keep's throne when that is free or already its own; else it stands.
+function KingdomService:_seat(userId: number, character: any, kingdomId: string)
+	local adapter = self.adapter
+	if adapter.sit == nil then
+		return
+	end
+	local model, seat = self:_throne(kingdomId)
+	local holder = if seat then (adapter.occupant :: any)(seat) else nil
+	if holder ~= nil and holder ~= character then
+		self._seated[userId] = nil -- a co-ruler holds the throne
+		return
+	end
+	if seat then
+		(adapter.sit :: any)(character, seat)
+	end
+	-- without a throne yet (the keep not drawn), the next check seats the ruler once it appears
+	self._seated[userId] = { character = character, kingdomId = kingdomId, model = model, seat = seat }
+end
+
+function KingdomService:_checkThrones()
+	for userId, entry in self._seated do
+		local model = self:_throne(entry.kingdomId)
+		if model ~= entry.model then
+			self:_seat(userId, entry.character, entry.kingdomId) -- the keep was rebuilt under the ruler
+		elseif entry.seat and (self.adapter.seatOf :: any)(entry.character) ~= entry.seat then
+			self._seated[userId] = nil -- got up (walk mode) or died: no longer followed
+		end
+	end
 end
 
 -- ---------------------------------------------------------------- API (G3)

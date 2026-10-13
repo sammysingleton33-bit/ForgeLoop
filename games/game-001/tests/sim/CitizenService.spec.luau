@@ -100,6 +100,21 @@ describe("CitizenService (G5)", function()
 		pop = assert(citizens:getPopulation("crimson"))
 		expect(pop.total).toBe(13)
 		expect(pop.byJob.soldier).toBe(1)
+		-- cap = beds + barracks bunks (D-041): it counts the same people as total
+		local k = sim.kingdoms.crimson
+		expect(pop.cap).toBe(k.popCap)
+		local barracks = sim:_createBuilding(k, "barracks", k.x + 40, k.z + 40)
+		sim:_completeInstantly(barracks)
+		sim:_recompute(k)
+		expect(assert(citizens:getPopulation("crimson")).cap).toBe(k.popCap + 4)
+		barracks.level = 2
+		expect(assert(citizens:getPopulation("crimson")).cap).toBe(k.popCap + 8)
+		local levels = sim.catalog.buildings.barracks.levels
+		local bunks = levels[2].bunks
+		levels[2].bunks = nil -- a level without a bunk count sleeps any number: shown as exactly full
+		local unlimited = assert(citizens:getPopulation("crimson")).cap
+		levels[2].bunks = bunks
+		expect(unlimited).toBe(k.popCap + 1)
 		expect(assert(citizens:getPopulation("azure")).total).toBe(0) -- slice: no ruler, no citizens
 		expect(citizens:getPopulation("violet")).toBeNil()
 	end)
@@ -312,6 +327,36 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 		expect(match.host.match:kingdomOf(17)).toBeNil()
 		expect(invoke(env, p17, "Kingdom.GetPopulation")).toBeNil()
 		expect(#sentTo(p17)).toBe(0)
+	end)
+
+	it("G13.7 hook debugReseed: the kingdom's citizens get the seed's people; the preset service finds it", function()
+		local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(3)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local function names()
+			local out = {}
+			for _, id in k.citizenIds do
+				table.insert(out, sim.citizens[id].name)
+			end
+			return out
+		end
+		local before = names()
+		local presets = service("DebugPresetService").new(env, citizens._registry)
+		expect(presets:_hook("reseed", "crimson", 1234)).toContain("reseeded from 1234")
+		local first = names()
+		expect(first).never.toEqual(before)
+		expect(citizens:debugReseed("crimson", 99)).toBe(true)
+		expect(names()).never.toEqual(first) -- another seed, other people
+		expect(citizens:debugReseed("crimson", 1234)).toBe(true)
+		expect(names()).toEqual(first) -- the same seed gives the same people
+		for _, id in k.citizenIds do
+			local c = sim.citizens[id]
+			expect(c.loyalty).toBe(ContentQuery.startLoyalty(c.chemistry))
+		end
+		expect({ citizens:debugReseed("violet", 1) }).toEqual({ false, "unknown kingdom violet" })
 	end)
 
 	it("sends each citizen's look once, in its reliable spawn event (G4, G13.2)", function()

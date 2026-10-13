@@ -17,6 +17,8 @@ evidence:
   - "mutation check: 18/18 FL-0053 rows CAUGHT (rows listed in the PR; folded into mutations.py after #20-#22 merge)"
   - "unverified: feel on PC and phone emulator, AlignOrientation turning, CAS touch button layout (Studio, user G6)"
   - check.sh OVERALL PASS @9e4fb27 (with FL-0090); FL-0053 mutation rows 18/18 CAUGHT after the rework
+  - Ruler.spec standUp case; mutations.py FL-0053 19/19
+  - "main d887beb: Ruler.spec asserts Sit == false after standUp; check.sh PASS"
 ---
 
 # Ruler third-person controller, camera and input modes
@@ -45,4 +47,6 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-12 forge-04: BUILDING → TESTING. Controllers and specs committed; headless gates on 5f58718.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0053 (independent of #20-#22). Keys and Studio checklist in the PR; handoff forge-04-to-forge-01-03-05-ruler-camera-input.
 - 2026-10-12 forge-04: REVIEW → REVIEW. D-030: amended by FL-0090 in the same PR (#29); walk mode = follow.
+- 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FL-0081 seats the ruler on the throne: RulerController:standUp now sets Humanoid.Sit = false (FORGE-01's #89 handoff), then jumps, so walk mode unseats and the server stops re-seating. Studio unverified (Seat engine behaviour).
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #99 (d887beb): standUp sets Humanoid.Sit = false then jumps, so the server stops re-seating the ruler (FL-0081). REVIEW, only G6 pending (walk mode from the throne, K11).
 - 2026-10-13 forge-04: REVIEW → REVIEW. Status unchanged (--force). #29 shake Medium (FORGE-00 audit, D-038 follow-ups): each frame's shake is undone before Roblox's camera runs (undoShake at RenderPriority.Camera - 1), so walk mode never drifts; NaN and infinite shakes are refused. Specs + 3 mutation rows; in PR #84 (FL-0100) because both edit RulerCameraController.

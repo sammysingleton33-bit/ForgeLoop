@@ -9,14 +9,24 @@
 		└ Torso      Motor6D "Torso" at the hips (2.2): walk bob, work lean, the death fall
 		  ├ Head     Motor6D at the neck
 		  │ └ Hair   welded headwear: a Weld from the Head, never a Motor6D, no pose work. Citizens: hair, beard,
-		  │          hood or hat (bald citizens have none); governors: the gold crown. Attribute KitHeadwear.
+		  │          hood or hat (bald citizens have none); governors: the gold crown; soldiers given a kingdom:
+		  │          the kingdom helmet crest (below). Attribute KitHeadwear.
 		  ├ LeftArm / RightArm   Motor6Ds at the shoulders (arms hang splayed 7°)
 		  │            RightArm └ Tool   Motor6D inside the right fist (hoe, axe, pick, hammer, spear, staff)
 		  ├ LeftLeg / RightLeg   Motor6Ds at the hips
 		  └ Tool     the hauler's sack only: Motor6D "Tool" from the Torso at the right shoulder blade
 	Every joint frame is axis-aligned with the model (+X right, +Y up, -Z front), as Pose expects: Transform rotates
-	about it. Part counts: 7 (bald idle citizen) to 9 (headwear + tool); soldiers always 8 (the helm is their
-	Head); governors 9; Motor6Ds = parts − 1 − welded headwear.
+	about it. Part counts: 7 (bald idle citizen) to 9 (headwear + tool); soldiers 8 (the helm is their Head),
+	9 with a kingdom crest; governors 9; Motor6Ds = parts − 1 − welded headwear.
+
+	Soldier kingdom crest (CONTRACTS G13.2, D-033(3)): Kit.character(kind, job, kingdomColor, look?, kingdom?)
+	takes an optional KingdomId. A soldier given one wears a crest on the helm in the kingdom's tower style, so
+	friend and foe read apart without colour: crimson a tall pointed spire (CornerWedgePart turned 45°, point at
+	the front), azure a wide flat square plate overhanging the helm (Block), emerald a plume swept up and back
+	(Cylinder), gold a round dome knob (Ball). One primitive each, welded to the Head as `Hair` (D-032, so still
+	≤ 9 parts) with KitHeadwear "crest_spire" | "crest_square" | "crest_plume" | "crest_dome" and the kingdom
+	colour (KitTint 1). Without a kingdom, or with an unknown one, soldiers keep the plain helm (8 parts);
+	citizens and governors ignore it. Character.CRESTS maps KingdomId → crest name.
 
 	Looks (G13.2): CitizenLook = { skin, hair, hairColor, outfit }, 1-based indices into LOOK_RANGES. Any value
 	is accepted: non-numbers, NaN and ±inf fall back to the default index; other numbers are floored and
@@ -26,7 +36,9 @@
 	the torso, the sleeves, or the hood.
 	Kingdom-coloured parts are exactly shade(kingdomColor, KitTint), so Kit.setKingdomColor recolours a
 	pooled rig to the same look as a fresh build. Rigs with different looks differ in part shapes, so pool
-	them by Character.lookKey(look) as well (also stored as the model attribute KitLook).
+	them by Character.lookKey(look) as well (also stored as the model attribute KitLook). A soldier's crest
+	shape follows its kingdom, which recolouring cannot change: pool soldiers by kingdom too. Their KitLook is
+	Character.lookKey(look, kingdom), which ends in ".<kingdom>" when a crest was built.
 ]]
 
 local Parts = require("./Parts")
@@ -186,6 +198,61 @@ local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel sq
 	offset = CFrame.new(0, 0.8, 0), -- from the neck
 }
 
+-- Soldier kingdom crests (G13.2, D-033(3)): one primitive welded on top of the helm, offsets from the helm
+-- centre (its top is at +0.8). They differ in outline, not only colour (Blender grayscale review, art/reviews/
+-- kit-characters.md): the spire is tallest and pointed, the square low and wider than the helm, the plume a
+-- narrow tail swept back past the helm, the dome a round knob wider than its seat.
+local HELM_TOP = GREAT_HELM.size.Y / 2
+local SPIRE = Vector3.new(1.3, 2.1, 1.3) -- base 1.84 across the diagonal: a broad roof, not a stick
+local PLUME_LEN, PLUME_D, PLUME_TILT = 2.5, 0.7, math.rad(70) -- a near-horizontal tail
+local CRESTS: { [string]: PartSpec } = {
+	crimson = { -- tall spire (2.05 above the helm): a CornerWedge turned 45°, its point over the front corner;
+		-- the base overhangs the helm a little at the corners, like the crimson towers' spires
+		name = "crest_spire",
+		class = "CornerWedgePart",
+		size = SPIRE,
+		color = 1,
+		material = Enum.Material.Metal,
+		offset = CFrame.new(0, HELM_TOP + SPIRE.Y / 2 - 0.05, 0) * CFrame.Angles(0, math.rad(45), 0),
+	},
+	azure = { -- square: a flat plate overhanging the helm by 0.25 on every side (the azure tower's square eave)
+		name = "crest_square",
+		class = "Part",
+		shape = Enum.PartType.Block,
+		size = Vector3.new(1.95, 0.48, 1.95),
+		color = 1,
+		material = Enum.Material.Metal,
+		offset = CFrame.new(0, HELM_TOP + 0.24 - 0.02, 0),
+	},
+	emerald = { -- plume: a horsehair tail from the front of the helm top, swept back 70° and 1.4 past its back
+		name = "crest_plume",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(PLUME_LEN, PLUME_D, PLUME_D),
+		color = 1,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, HELM_TOP - 0.1, -0.3)
+			* CFrame.Angles(PLUME_TILT, 0, 0)
+			* CFrame.new(0, PLUME_LEN / 2, 0)
+			* UPRIGHT,
+	},
+	gold = { -- dome: a 1.3 ball set 0.4 above the helm top, so it bulges over a narrower seat (an onion dome)
+		name = "crest_dome",
+		class = "Part",
+		shape = Enum.PartType.Ball,
+		size = Vector3.new(1.3, 1.3, 1.3),
+		color = 1,
+		material = Enum.Material.Metal,
+		offset = CFrame.new(0, HELM_TOP + 0.4, 0),
+	},
+}
+Character.CRESTS = table.freeze({
+	crimson = CRESTS.crimson.name,
+	azure = CRESTS.azure.name,
+	emerald = CRESTS.emerald.name,
+	gold = CRESTS.gold.name,
+})
+
 type Outfit = { name: string, torso: Paint, sleeves: Paint, legs: Paint, legMaterial: Enum.Material? }
 
 -- The kingdom colour (a number = KitTint) is on the torso, the sleeves or both, so it reads from above.
@@ -333,10 +400,17 @@ function Character.normalizeLook(look: any): CitizenLook
 	}
 end
 
--- Pool key: equal keys build identical rigs (for a given kind, job and kingdom colour).
-function Character.lookKey(look: any): string
+local function crestOf(kingdom: any): PartSpec?
+	return if type(kingdom) == "string" then CRESTS[kingdom] else nil
+end
+
+-- Pool key: equal keys build identical rigs (for a given kind, job and kingdom colour). A soldier's crest
+-- follows its kingdom (G13.2), so pass the kingdom for soldiers: a known KingdomId appends ".<kingdom>"
+-- ("1.1.1.1.crimson"). Without one (or an unknown one) the key is the plain look key.
+function Character.lookKey(look: any, kingdom: string?): string
 	local l = Character.normalizeLook(look)
-	return `{l.skin}.{l.hair}.{l.hairColor}.{l.outfit}`
+	local key = `{l.skin}.{l.hair}.{l.hairColor}.{l.outfit}`
+	return if crestOf(kingdom) then `{key}.{kingdom}` else key
 end
 
 -- ------------------------------------------------------------------ builders
@@ -417,9 +491,16 @@ local function specPart(
 	return rigPart(model, name, spec.class, spec.shape, spec.size, cf, color, spec.material, tint)
 end
 
--- ------------------------------------------------------------------ characters (≤ 8 parts)
+-- ------------------------------------------------------------------ characters (≤ 9 parts)
 
-function Character.character(kind: string, job: string, kingdomColor: Color3, look: CitizenLook?): Model
+-- kingdom (G13.2): a KingdomId; only soldiers use it (their helmet crest). nil/unknown = the plain helm.
+function Character.character(
+	kind: string,
+	job: string,
+	kingdomColor: Color3,
+	look: CitizenLook?,
+	kingdom: string?
+): Model
 	local l = Character.normalizeLook(look)
 	local style = if kind == "governor"
 		then "governor"
@@ -427,9 +508,10 @@ function Character.character(kind: string, job: string, kingdomColor: Color3, lo
 		else "citizen"
 	local skin, hairColor = SKIN[l.skin], HAIR_COLORS[l.hairColor]
 	local jobSpec = JOBS[job] or JOBS.idle
+	local crest = if style == "soldier" then crestOf(kingdom) else nil
 	local outfit: Outfit, headwear: PartSpec?, width: number, tool: string?
 	if style == "soldier" then
-		outfit, headwear, width, tool = SOLDIER_OUTFIT, nil, 2.15, "spear"
+		outfit, headwear, width, tool = SOLDIER_OUTFIT, crest, 2.15, "spear"
 	elseif style == "governor" then
 		outfit, headwear, width, tool = GOVERNOR_OUTFIT, GOVERNOR_CROWN, 2.2, "staff"
 	else
@@ -440,7 +522,7 @@ function Character.character(kind: string, job: string, kingdomColor: Color3, lo
 	model.Name = `{kind}_{job}`
 	model:SetAttribute("KitKind", kind)
 	model:SetAttribute("KitJob", job)
-	model:SetAttribute("KitLook", Character.lookKey(l))
+	model:SetAttribute("KitLook", Character.lookKey(l, if crest then kingdom else nil))
 	model:SetAttribute("KitRootHeight", Character.ROOT_HEIGHT)
 
 	-- Root: anchored, invisible; BulkMoveTo moves it, everything else hangs off the Torso motor
@@ -499,13 +581,15 @@ function Character.character(kind: string, job: string, kingdomColor: Color3, lo
 	motor(torso, head, neck)
 
 	if headwear then
-		local hair = specPart(model, "Hair", headwear, headCF * headwear.offset, kingdomColor, skin, hairColor)
+		-- offsets are from the head centre (citizens, governors) or the helm centre (soldiers' crests)
+		local headFrame = head.CFrame
+		local hair = specPart(model, "Hair", headwear, headFrame * headwear.offset, kingdomColor, skin, hairColor)
 		hair:SetAttribute("KitHeadwear", headwear.name)
 		local weld = Instance.new("Weld")
 		weld.Name = "HairWeld"
 		weld.Part0 = head
 		weld.Part1 = hair
-		weld.C0 = headCF:Inverse() * hair.CFrame
+		weld.C0 = headFrame:Inverse() * hair.CFrame
 		weld.C1 = CFrame.new()
 		weld.Parent = hair
 	end

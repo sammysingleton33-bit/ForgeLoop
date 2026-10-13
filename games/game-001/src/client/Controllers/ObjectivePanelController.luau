@@ -8,8 +8,10 @@
 		          matters most (one I am capturing, else one I don't hold) with two bars at most and
 		          "+N more"; a tap expands the whole list (and closes it again).
 	Data (the client decides nothing; the bars move only when the server says so):
-		on start, in a spawned thread: listen to `Army.Objectives` (serverEvent to every player) first,
-		then ask `Army.GetObjectives`. A push replaces the list; a malformed push (not a table) is
+		on start, in a spawned thread: wait until the server declares `Army.Objectives` and
+		`Army.GetObjectives` (hud:hasRemote, polled every SERVED_POLL_SEC, never yielding on a missing
+		remote: a build without FORGE-01's army server stays quiet, FORGE-05 L1 on #63), then listen to
+		`Army.Objectives` (serverEvent to every player) first, then ask `Army.GetObjectives`. A push replaces the list; a malformed push (not a table) is
 		ignored, and bad entries are dropped (UI/ObjectiveModel.normalize), never an error.
 		Pushes patch the tracker in place: the HUD does not re-render for them (they can be frequent).
 	It reports its bottom edge to the HUD (hud:setStackBottom) so phone toasts with an open drawer
@@ -23,7 +25,8 @@
 		objectives:refresh()                     asks Army.GetObjectives now (yields; use env.spawn)
 		objectives:toggle()                      what a tap on the tracker does
 		objectives.state = { expanded }          objectives.tracker (UI/ObjectiveTracker)
-		ObjectivePanelController.PUSH / GET
+		objectives.serving: boolean              true once the server's remotes were found and used
+		ObjectivePanelController.PUSH / GET / SERVED_POLL_SEC
 ]]
 
 local HudModel = require("../UI/HudModel")
@@ -38,6 +41,7 @@ local Def = { name = "ObjectivePanelController", dependencies = { "KingdomHudCon
 
 ObjectivePanelController.PUSH = "Army.Objectives"
 ObjectivePanelController.GET = "Army.GetObjectives"
+ObjectivePanelController.SERVED_POLL_SEC = 2
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -48,6 +52,7 @@ function Def.new(env: any, registry: any)
 		tracker = nil :: any,
 		_objectives = {} :: { any },
 		_connections = {} :: { any },
+		serving = false,
 	}, ObjectivePanelController)
 end
 
@@ -62,6 +67,13 @@ function ObjectivePanelController:start()
 	)
 	-- Push first, then the full list (G4 rule, as KingdomHudController does for every area).
 	env.spawn(function()
+		while not self._destroyed and not self:_served() do
+			env.wait(ObjectivePanelController.SERVED_POLL_SEC)
+		end
+		if self._destroyed then
+			return
+		end
+		self.serving = true
 		local ok, err = pcall(function()
 			local connection = hud.remotes:on(ObjectivePanelController.PUSH, function(payload)
 				self:apply(payload, true)
@@ -79,6 +91,11 @@ function ObjectivePanelController:start()
 		end
 		self:refresh() -- returns at once after destroy (FORGE-05 M2 on #63)
 	end)
+end
+
+-- The server declares its remotes at start (RemoteService); they replicate under ForgeRemotes.
+function ObjectivePanelController:_served(): boolean
+	return self.hud:hasRemote(ObjectivePanelController.PUSH) and self.hud:hasRemote(ObjectivePanelController.GET)
 end
 
 function ObjectivePanelController:destroy()

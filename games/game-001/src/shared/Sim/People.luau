@@ -8,6 +8,8 @@
 
 	API
 		People.install(sim, seed, content)    -- sets sim.profiler and profiles kingdoms already populated
+		People.reseed(sim, kingdomId, seed, content): number   -- Studio debug: new identities for the
+		                                       kingdom's living citizens from `seed`; returns how many
 			content  { names = Content.Names, traits = Content.Traits, occupations = Content.Occupations }
 		People.CONTENT                         -- that table for the real content library
 		People.startReputation(): { [Category]: number }   -- Content.Reputation category starts
@@ -138,6 +140,18 @@ local function profileArrival(sim: any, seed: number, content: any, kingdom: any
 	local person = unique or nameOnly or last
 	person.key = `{kingdom.id}:b{n}`
 	apply(citizen, person, {})
+end
+
+-- Studio debug (G13.7 population.reseed): the kingdom's living citizens get new identities from `seed`,
+-- exactly as a world with that seed would profile them (later arrivals keep the world's own stream).
+function People.reseed(sim: any, kingdomId: string, seed: number, content: any): number
+	local kingdom = sim.kingdoms[kingdomId]
+	local citizens = {}
+	for _, id in kingdom.citizenIds do
+		table.insert(citizens, sim.citizens[id])
+	end
+	profileStart(sim, seed, content, kingdom, citizens)
+	return #citizens
 end
 
 function People.install(sim: any, seed: number, content: any)

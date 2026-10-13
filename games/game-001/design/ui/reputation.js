@@ -135,7 +135,7 @@
 	const bandColor = (v) => (v < 34 ? "#FF8A73" : v < 67 ? "var(--color-amber)" : "#A9E57C");
 
 	// ------------------------------------------------------------------ HUD (from kingdom.js)
-	const crest = (px, extra = "") => `<div class="crest tinted k-crimson" style="width:${px}px;height:${px}px">${I("emblem_flame", Math.round(px * 0.66))}${extra}</div>`;
+	const crest = (px, extra = "") => `<div class="crest tinted k-crimson" style="width:${px}px;height:${px}px">${I("emblem_crown", Math.round(px * 0.66))}${extra}</div>`;
 	const medallion = (res, px) => {
 		const c = T.resource[res];
 		return `<div class="medallion" style="width:${px}px;height:${px}px;background:linear-gradient(180deg, ${c} 0%, color-mix(in srgb, ${c} 55%, #0B0F18) 100%)">${I(res, Math.round(px * 0.78))}</div>`;
@@ -147,7 +147,7 @@
 		const h = M.hud;
 		const phone = M.bp === "phone";
 		let html = `<div class="badge" style="left:${h.x}px;top:${h.y}px">
-			${crest(h.crest, phone ? `<div class="pop cp">${I("crown", 11)}${k.crownPoints}</div>` : "")}
+			${crest(h.crest, phone ? `<div class="pop cp">${I("gem", 11)}${k.crownPoints}</div>` : "")}
 			${phone ? "" : `<div class="plate"><div class="kname" style="font-size:26px">${k.name}</div>
 				<div class="ksub">Keep <b>Lv 1</b> · 1 region · <b>${k.crownPoints}</b> Crown Points</div></div>`}</div>`;
 		html += `<div class="pills" style="left:${h.pills.x}px;top:${h.pills.y}px">${RES.map((r) => pill(r, phone)).join("")}</div>`;
