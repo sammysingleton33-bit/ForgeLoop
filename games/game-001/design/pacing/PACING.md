@@ -29,6 +29,23 @@ Everything marked *target* is a tuning goal for playtests, not a measured result
 - Match mode runs 45 minutes from Founding to the end of Endgame. An early victory in Endgame (the default proposal is last keep standing) can shorten a match toward 35 minutes.
 - `PacingService` rejects configs outside 30–45 minutes.
 
+### `match30`: evaluation profile, not the default (D-030 (6), FL-0092)
+The user prefers about 25 minutes of kingdom play, then a 5-minute final phase, ending around minute 30. The current timing puts the arena at 38–44 minutes. The conflict is recorded and not resolved (`design/living-kingdom.md` §6). `match30` lets the team play the short version without changing the default.
+
+| Phase | match30 (s) | Minutes |
+|---|---|---|
+| Lobby | 20 | countdown |
+| Founding | 300 | 0–5 |
+| Expansion | 420 | 5–12 |
+| Conflict | 480 | 12–20 |
+| Endgame | 300 | 20–25 |
+| Arena | 270 | 25–29.5 (VS-2 phase, CONTRACTS G12) |
+| Results | 30 | |
+
+- Total: 1,820 s (30 min 20 s). `PacingService` checks that Founding..Arena lasts 25–35 minutes.
+- `phaseDurations("match30")` also returns `Arena`; `match` and `slice` have none until VS-2.
+- The default stays `slice` in VS-1 and `match` for the full match; `match30` runs only when deliberately selected. Selecting it needs a FORGE-01 change to `Match.durationsFor` and MatchService, plus an optional FORGE-05 debug preset; both are pending. Until MatchPhase gains Arena (G12.1), a `match30` run ends after Endgame (25 min) without the final phase.
+
 ## 3. VS-1 slice, minute by minute (*targets*, from spawn)
 Assumptions:
 - FORGE-03 placeholder costs: starting treasury food 120 / wood 100 / stone 50; house 40 wood (20 builder-s); farm 50 wood (25 s); barracks 120 wood + 60 stone (45 s); soldier 30 food + 10 wood (8 s); upkeep 1 food per citizen per minute.

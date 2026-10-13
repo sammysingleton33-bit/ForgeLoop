@@ -707,6 +707,9 @@ describe("FL-0060 destroy paths and match end (FORGE-05 review of #63)", functio
 		local hudDouble = {
 			rendered = Signal.new(),
 			roots = {},
+			hasRemote = function()
+				return true -- the army remotes are served; Army.Objectives replicates late
+			end,
 			setStackBottom = function()
 				placed += 1
 			end,
@@ -795,6 +798,38 @@ describe("FL-0060 destroy paths and match end (FORGE-05 review of #63)", functio
 			expect(find(world.hud.guis.hud, "Menu_army")).toBeTruthy()
 		end
 	)
+
+	it("FORGE-05 L1 on #63: without the Army remotes the tracker neither listens nor asks, and logs nothing", function()
+		-- today's main without FORGE-01's #70: no Army area under ForgeRemotes
+		world = KingdomWorld.new({
+			remotes = { Kingdom = PopulationDoubles.REMOTES.Kingdom },
+			services = { PopulationDoubles.service },
+			clientDefinitions = { KingdomHudDef, UpgradePanelDef, ObjectiveDef, inputModeDef() },
+		})
+		world.hud = world.client:get("KingdomHudController")
+		world.objectives = world.client:get("ObjectivePanelController")
+		world.hud:setViewport(1920, 1022)
+		world:advance(25) -- past the remote client's 10 s wait and a GetObjectives timeout
+		expect(world.objectives.serving).toBe(false)
+		expect(world.env.mock:hasLog("warn", "ObjectivePanelController")).toBe(false)
+		local shown = tracker(world)
+		expect(shown == nil or shown.Visible == false).toBe(true) -- nothing to show
+		-- the server's army remotes replicate later: the tracker starts listening and asking
+		local root = world.env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
+		local area = world.env.newInstance("Folder")
+		area.Name = "Army"
+		area.Parent = root
+		local push = world.env.newInstance("RemoteEvent")
+		push.Name = "Objectives"
+		push.Parent = area
+		world:advance(world.objectives.SERVED_POLL_SEC + 0.1)
+		expect(world.objectives.serving).toBe(false) -- both, or it would wait on the fetch
+		local get = world.env.newInstance("RemoteFunction")
+		get.Name = "GetObjectives"
+		get.Parent = area
+		world:advance(world.objectives.SERVED_POLL_SEC + 0.1)
+		expect(world.objectives.serving).toBe(true)
+	end)
 
 	it("low 4: FORGE-01's recruit refusals read as sentences", function()
 		for _, code in { "recruit_cap", "match_not_active", "not_in_match", "not_ruler", "kingdom_eliminated" } do
