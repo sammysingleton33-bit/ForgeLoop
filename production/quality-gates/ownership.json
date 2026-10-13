@@ -12,6 +12,7 @@
     "forge-04",
     "forge-05",
     "forge-06",
+    "forge-07",
     "codex"
   ],
   "notes": [
@@ -27,7 +28,8 @@
     "games/game-001/src/server/Services/DebugPreset* (forge-05): the Studio-only VS-1 debug presets of CONTRACTS G13.7 (rep.set, citizen.request, kingdom.setFed, strike.start, population.reseed; FL-0093, D-030). They reach other workers' services only through the registry.",
     "Crown Arena rows (D-029, VS-2) added by FORGE-00 on 2026-10-12 from team.md: Arena shared folder, Leadership/Support/Arena/Duel services, Duel/ArenaState controllers and Support/Arena/Duel config -> forge-01; SupportMeter/PerkPicker/Loadout/ArenaIntro/ArenaHud/LeadershipRecap/Petition controllers -> forge-03; Crowd/Chant controllers and Crowd config -> forge-04; tests/fairness -> forge-05; design/crown-arena.md -> forge-00.",
     "Living-kingdom rows (D-030) added by FORGE-00 on 2026-10-12 from team.md: Population/Conversation/Reputation/Consequence services and Society config -> forge-01; Conversation/ReputationPanel/PlotPicker/UpgradePanel controllers -> forge-03; CitizenBubble controllers -> forge-04; tests/balance -> forge-05; content library, generated src/shared/Content, tests/content, tools/content and design/living-kingdom.md -> forge-00.",
-    "FORGE-06 (dialogue and content, D-035) added by FORGE-00 on 2026-10-13: content/dialogue/** and content/citizens/** plus the six generated data modules derived from them -> forge-06; content/reputation/**, SPEC.md, README.md, ContentQuery.luau, Reputation.luau, tests/content and tools/content stay forge-00."
+    "FORGE-06 (dialogue and content, D-035) added by FORGE-00 on 2026-10-13: content/dialogue/** and content/citizens/** plus the six generated data modules derived from them -> forge-06; content/reputation/**, SPEC.md, README.md, ContentQuery.luau, Reputation.luau, tests/content and tools/content stay forge-00.",
+    "FORGE-07 (review and QA, D-037) added by FORGE-00 on 2026-10-13: production/reviews/** -> forge-07. FORGE-07 owns no game code."
   ],
   "rules": {
     "PROJECT_STATUS.md": "forge-00",
@@ -129,6 +131,7 @@
     "tools/check_ownership.py": "forge-05",
     "tools/tests/test_check_ownership.py": "forge-05",
     "games/sandbox/**": "forge-05",
+    "production/reviews/**": "forge-07",
     "production/quality-gates/**": "forge-05",
     "production/release-checklists/**": "forge-05",
     "docs/lessons-learned/integration.md": "forge-05",
