@@ -7,7 +7,7 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 - **Latest user build: B6**, main `c28576a` (CI artifact 11787952681), delivered 2026-10-13. Not yet run in Studio.
   - **New:** generated citizens with varied looks, a working Jobs tab, the D-033 colours, throne clearance, and phone toast placement.
   - **Not yet:** conversations, the Army drawer, real reputation, sound, a seated ruler, and plot orders. Also, citizens more than 150 studs from the ruler are hidden in the aerial view (#39 M1, FL-0104).
-- **Next build, B7:** the conversation decision (#83 → #66 → #68 → #77) and/or recruit and capture (#70 → #63), whichever lane clears first.
+- **Next build, B7:** being prepared from main 297eac5. It adds the capture lane (#70 + #63, D-041 bunks), plot orders and the seated ruler (#89), soldier crests (#81), aerial-view LOD (#91), reputation (#68), the conversation-panel gate (#66) and onboarding v2 (#45). Conversations themselves wait for #77.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -26,28 +26,26 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
   - The flow is in `docs/workflows/git-and-integration.md` → Review lane.
 
 ## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
-Updated 2026-10-13 06:20 UTC. Already merged under D-040: #83, #66, #63 (the Army tab stays hidden until the Army server exists). "Re-review" means a review exists, but not of the current code.
+Updated 2026-10-13 07:35 UTC.
+
+**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70 (D-041 bunks), #91, #89. The capture lane is complete, and **B7 is being prepared from main 297eac5**.
 
 | # | PR | Owner | Lane | State | Next |
 |---|---|---|---|---|---|
-| 1 ★ | #68 ReputationService | FORGE-01 | Conversation | Migrated to v0.4-g7 (0ea874e) | Verdict on the current head |
-| 2 ★ | #77 ConversationService (stacked on #68) | FORGE-01 | Conversation | entityIds (246ce58), v0.4-g7 migration and every-scenario Converse spec (4131c1f), debug hooks | Verdict; retarget after #68 |
-| 3 ★ | #87 strike/cue `entityIds` client, rest effect stops | FORGE-04 | Conversation | Unreviewed | Verdict |
-| 4 ★ | #70 Military | FORGE-01 | Capture | B1, M1, M3 fixed (fa063b1). D-041 bunks to add. M2 is a follow-up. | FORGE-01 adds D-041 (1); then verdict |
-| 5 ★ | #89 FL-0081 build slots, ruler seated on the throne, builders stay on site | FORGE-01 | Build / throne | Unreviewed | Verdict |
-| 6 ★ | #91 FL-0104 aerial LOD centre, crest argument, `debugReseed` | FORGE-01 | Polish (VS-1 visible) | Unreviewed | Verdict |
-| 7 ★ | #81 soldier helmet crest (VS-1 acceptance item) | FORGE-02 | Identity | Unreviewed | Verdict |
-| 8 ★ | #45 onboarding v2 + match30 | FORGE-04 | Conversation | Unreviewed; D-038 (1) early-merge condition | FORGE-04 merges main; verdict |
-| 9 | #86 refusal codes, D-039 emblems, gem badge | FORGE-03 | Polish | Unreviewed | FORGE-07 |
-| 10 | #88 plot picker on `Fit.typesFor` | FORGE-03 | Build | Unreviewed | FORGE-07; then FORGE-00 drops the G13.5 SlotFit line |
-| 11 | #92 D-038 (7) per-feature files | FORGE-04 | Process | Unreviewed; it unblocks FORGE-04's merges | FORGE-07 |
-| 12 | #49 feedback layer and music | FORGE-04 | Feel | M1 fixed; needs a re-review | FORGE-07 |
-| 13 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed | FORGE-04, then FORGE-07 |
-| 14 | #82 notification follow-ups | FORGE-04 | Feel | Unreviewed | FORGE-07 |
-| 15 | #93 replication hardening; #94 fair resource nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
-| 16 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
-| 17 | #84 conversation camera; #85 Kit.portrait | FORGE-04, FORGE-02 | Cinematic | Unreviewed; after the VS-1 lanes (D-036) | FORGE-07 |
-| — | Post-merge verdicts: #42, #75, #76, #79, and the D-040 merges #83, #66, #63 | FORGE-07 | — | Owed | B/M findings become fix-forward PRs |
+| 1 ★ | #77 ConversationService | FORGE-01 | Conversation | Changes requested: B1 thoughts are re-sent on the 20 s refresh; M1 walk-out = state (D-042); M2 `hasRequest` | FORGE-01 fixes; verdict |
+| 2 ★ | #87 strike/cue `entityIds` client, rest effect stops | FORGE-04 | Conversation | Unreviewed | Verdict |
+| 3 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable; unblocks FORGE-06's starter pack | FORGE-07 |
+| 4 | #86 refusal codes, D-039 emblems, gem badge | FORGE-03 | Polish | Unreviewed | FORGE-07 |
+| 5 | #88 plot picker on `Fit.typesFor` | FORGE-03 | Build | Unreviewed | FORGE-07; then FORGE-00 drops the G13.5 SlotFit line |
+| 6 | #92 D-038 (7) per-feature files | FORGE-04 | Process | Unreviewed | FORGE-07 |
+| 7 | #49 feedback layer and music | FORGE-04 | Feel | M1 fixed; needs re-review | FORGE-07 |
+| 8 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed | FORGE-04, then FORGE-07 |
+| 9 | #82 notification follow-ups | FORGE-04 | Feel | Unreviewed | FORGE-07 |
+| 10 | #97 FL-0106 late-joiner `Match.Ended` | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
+| 11 | #93 replication hardening; #94 fair resource nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
+| 12 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
+| 13 | #84 conversation camera; #85 Kit.portrait | FORGE-04, FORGE-02 | Cinematic | After the VS-1 lanes (D-036) | FORGE-07 |
+| — | Post-merge verdicts: #42, #75, #76, #79 and every D-040 merge | FORGE-07 | — | Owed | B/M findings become fix-forward PRs |
 
 ## Audit 2026-10-13 (54 tasks, 12 open PRs; each classification adversarially re-checked)
 - **Open PRs:**
@@ -91,7 +89,7 @@ Updated 2026-10-13 06:20 UTC. Already merged under D-040: #83, #66, #63 (the Arm
 
 _Generated by `python tools/forge.py dashboard` from `production/tasks/`. Do not edit by hand._
 
-**Tasks:** 105 — SPECIFIED 25 · READY 31 · BUILDING 7 · REVIEW 28 · ACCEPTED 7 · REJECTED 7
+**Tasks:** 106 — SPECIFIED 25 · READY 26 · BUILDING 9 · REVIEW 32 · ACCEPTED 7 · REJECTED 7
 
 ### Needs the user (decisions, approvals, local-machine steps)
 
@@ -127,12 +125,12 @@ _None._
 | [FL-0049](production/tasks/FL-0049-entity-simulation-core-snapshot-codec-replicatio.md) | Entity simulation core, snapshot codec, replication and client rendering | REVIEW | P0 | build |
 | [FL-0050](production/tasks/FL-0050-citizen-ai-and-jobs-farmer-woodcutter-miner-haul.md) | Citizen AI and jobs: farmer, woodcutter, miner, hauler with treasury deposits | BUILDING | P0 | build |
 | [FL-0051](production/tasks/FL-0051-buildings-construction-territory-and-ruler-gathe.md) | Buildings, construction, territory and ruler gathering | BUILDING | P0 | build |
-| [FL-0052](production/tasks/FL-0052-military-recruit-command-and-capture-objective.md) | Military: recruit, command and capture objective | READY | P0 | build |
+| [FL-0052](production/tasks/FL-0052-military-recruit-command-and-capture-objective.md) | Military: recruit, command and capture objective | REVIEW | P0 | build |
 | [FL-0078](production/tasks/FL-0078-generated-population-names-traits-looks-relation.md) | Generated population: names, traits, looks, relationships, chemistry, loyalty (G13.2) | REVIEW | P0 | build |
 | [FL-0079](production/tasks/FL-0079-conversationservice-thought-bubbles-converse-cho.md) | ConversationService: thought bubbles, Converse/Choose, decision effects and memories (G13.3) | READY | P0 | build |
-| [FL-0080](production/tasks/FL-0080-reputationservice-six-categories-history-anti-fa.md) | ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4) | READY | P0 | build |
-| [FL-0081](production/tasks/FL-0081-plot-construction-upgrade-times-and-ruler-seated.md) | Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6) | READY | P0 | build |
-| [FL-0104](production/tasks/FL-0104-vs-1-polish-forge-01-aerial-view-lod-focus-39-m1.md) | VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing | READY | P0 | build |
+| [FL-0080](production/tasks/FL-0080-reputationservice-six-categories-history-anti-fa.md) | ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4) | BUILDING | P0 | build |
+| [FL-0081](production/tasks/FL-0081-plot-construction-upgrade-times-and-ruler-seated.md) | Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6) | REVIEW | P0 | build |
+| [FL-0104](production/tasks/FL-0104-vs-1-polish-forge-01-aerial-view-lod-focus-39-m1.md) | VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing | BUILDING | P0 | build |
 | [FL-0008](production/tasks/FL-0008-dataservice-with-session-locking-and-namespaced-.md) | DataService with session locking and namespaced profiles + PlayerService | READY | P1 | build |
 | [FL-0012](production/tasks/FL-0012-server-authoritative-combat-and-damage-framework.md) | Server-authoritative combat and damage framework | SPECIFIED | P1 | build |
 | [FL-0069](production/tasks/FL-0069-leadership-ledger-citizen-loyalty-and-key-citize.md) | Leadership ledger, citizen loyalty and key citizens (Crown Arena support inputs) | SPECIFIED | P1 | build |
@@ -140,6 +138,7 @@ _None._
 | [FL-0071](production/tasks/FL-0071-crown-arena-phase-and-duel-core-arenaservice-due.md) | Crown Arena phase and duel core (ArenaService, DuelModel, DuelService, AI champion) | SPECIFIED | P1 | build |
 | [FL-0082](production/tasks/FL-0082-consequence-rules-strikes-shortages-riots-rebell.md) | Consequence rules: strikes, shortages, riots, rebellion gating, army morale effects | SPECIFIED | P1 | build |
 | [FL-0097](production/tasks/FL-0097-cinematic-conversation-server-converse-look-posi.md) | Cinematic conversation server: Converse look/position, conversation hold, EndConversation (G13.8) | SPECIFIED | P1 | build |
+| [FL-0106](production/tasks/FL-0106-match-ended-for-players-who-arrive-during-result.md) | Match.Ended for players who arrive during Results (#70 M2) | REVIEW | P1 | build |
 | [FL-0084](production/tasks/FL-0084-ruler-policy-hook-for-headless-leadership-strate.md) | Ruler policy hook for headless leadership-strategy simulation | SPECIFIED | P2 | build |
 | [FL-0010](production/tasks/FL-0010-roundservice-with-spawn-spectate-and-results.md) | RoundService with spawn, spectate and results | SPECIFIED | P3 | build |
 | [FL-0011](production/tasks/FL-0011-hazardservice-framework-with-a-real-flood-hazard.md) | HazardService framework with a real flood hazard | SPECIFIED | P3 | build |
@@ -195,7 +194,7 @@ _None._
 | [FL-0091](production/tasks/FL-0091-citizen-thought-and-speech-bubbles-reactions-str.md) | Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3) | REVIEW | P0 | build |
 | [FL-0023](production/tasks/FL-0023-analyticsservice-adapter-event-taxonomy-and-funn.md) | AnalyticsService adapter, event taxonomy and funnels | REVIEW | P1 | build |
 | [FL-0063](production/tasks/FL-0063-vs-1-analytics-funnel-and-match-analytics.md) | VS-1 analytics funnel and match analytics | READY | P1 | build |
-| [FL-0092](production/tasks/FL-0092-match30-evaluation-pacing-profile-and-onboarding.md) | match30 evaluation pacing profile and onboarding v2 | READY | P1 | design |
+| [FL-0092](production/tasks/FL-0092-match30-evaluation-pacing-profile-and-onboarding.md) | match30 evaluation pacing profile and onboarding v2 | REVIEW | P1 | design |
 | [FL-0100](production/tasks/FL-0100-conversation-camera-focuson-restore-and-reaction.md) | Conversation camera focusOn/restore and reaction poses (G13.8) | SPECIFIED | P1 | build |
 | [FL-0074](production/tasks/FL-0074-crowd-director-chants-and-boos-perk-moments-aren.md) | Crowd director, chants and boos, perk moments, arena camera and music, emotional payoff | READY | P2 | build |
 | [FL-0075](production/tasks/FL-0075-duel-input-mode-pc-touch-gamepad-bound-to-duelco.md) | Duel input mode (PC, touch, gamepad) bound to DuelController | READY | P2 | build |
@@ -256,14 +255,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-fccd146 2026-10-13 Integration bookkeeping: #63 merged (D-040 fallback verdict); FL-0060 record
-bdab09b 2026-10-13 [FORGE-03] #63: ArmyPanelController header names the "Orders sent" toast (FORGE-05 L5 wording)
-3cf17d2 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/03-ui-economy-fl0060
-57039b8 2026-10-13 Integration bookkeeping: #66 merged (D-040 fallback verdict); FL-0088 record
-9710822 2026-10-13 Merge PR #66: [FORGE-03] FL-0088 gate: answer costs and every risk before choosing (G13.3), confirm step, late-reply + in-flight guards
-5c397a0 2026-10-13 [FORGE-03] #66 B1: CitizenDoubles on ContentQuery v0.4-g7 (choicePreview fillNames)
-d716e51 2026-10-13 Integration bookkeeping: #83 merged (D-040 fallback verdict, cross-owner FORGE-06 files); FL-0083 record
-d8180bd 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/03-ui-economy-fl0088-gate
+297eac5e 2026-10-13 Merge PR #89: [FORGE-01] FL-0081 build slots (Build.PlaceSlot/GetSlots/Slots), ruler seated on the throne, builders stay on site
+ab70493a 2026-10-13 Merge PR #91: [FORGE-01] FL-0104 aerial LOD centre = camera focus (#39 M1), soldier crest per kingdom, debugReseed (Studio-only)
+d3525dbc 2026-10-13 Merge PR #70: [FORGE-01] FL-0052 Military: recruit at a barracks (bunks, D-041), command units, capture the watchtower (Army remotes)
+182250da 2026-10-13 Integration bookkeeping: #95 and #81 merged (D-040 fallback verdicts); #85 retargeted to main
+ec5218a7 2026-10-13 Merge PR #81: [FORGE-02] G13.2 soldier helmet crest per kingdom (D-033 (3), VS-1 acceptance): spire / square / plume / dome
+9c310bd3 2026-10-13 [FORGE-00] FL-0106 (#70 M2 late-joiner Match.Ended, PR #97, REVIEW); CONTRACTS G13.5 names barracks bunks (D-041)
+a0820017 2026-10-13 [FORGE-01] FL-0052 #70 D-041 slice spec: recruit 3 pays once, Match.Ended fires once
+fd1369ff 2026-10-13 Merge PR #95: [FORGE-03] #63 L1 objective tracker waits for the Army remotes; #77 L4 conversation refusal sentences
 ```
 
 <!-- forge:auto:end -->

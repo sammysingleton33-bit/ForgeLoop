@@ -8,13 +8,20 @@
 		Build.Place(type, position, rot) -> (buildingId?, reason?)    charges through the treasury; placedBy
 		Build.Upgrade(buildingId) -> (boolean, reason?)
 		Build.GetBuildings() -> { Building }                           every standing building (G2 views)
+		Build.PlaceSlot(slotId: string(1,32), type) -> (buildingId?, reason?)   G13.5: builds on one of the
+		                                 player's kingdom's build slots, facing its street (the slot's rot);
+		                                 the type must fit the slot (Build/Fit); then the Build.Place rules
+		Build.GetSlots() -> { { id, size, occupiedBy: number? } }      the asker's kingdom's slots (G13.5)
 	Server -> client
 		Build.Buildings({ Building })    the buildings that changed (placed, progress, level, damage,
 		                                 destroyed = state "destroyed"), to every player, at most 2 per second
+		Build.Slots({ { id, size, occupiedBy: number? } })   a kingdom's slots, to its members when one is
+		                                 taken or freed (and when a member arrives)
 	rot turns the building in 90° steps: yaw = rot × 90° in the CFrame.Angles(0, yaw, 0) convention (Kit
 	models face -Z), rebuilt on the server from the integer. Implemented by BuildingService.
 	Reasons: blocked, out_of_territory, out_of_bounds, cannot_afford, not_placeable, requires_keep_level,
-	limit_reached, unknown_building, not_owner, busy, max_level, match_not_active, not_in_match.
+	limit_reached, unknown_building, not_owner, busy, max_level, match_not_active, not_in_match;
+	PlaceSlot also unknown_slot (not one of the player's kingdom's slots), slot_occupied, does_not_fit.
 ]]
 
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -33,4 +40,12 @@ return {
 	},
 	{ name = "Build.GetBuildings", kind = "function", rate = { burst = 3, perSecond = 1 } },
 	{ name = "Build.Buildings", kind = "serverEvent" },
+	{
+		name = "Build.PlaceSlot",
+		kind = "function",
+		args = { Validate.string(1, 32), Validate.enum(Types.BUILDING_TYPES) },
+		rate = { burst = 4, perSecond = 2 },
+	},
+	{ name = "Build.GetSlots", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } },
+	{ name = "Build.Slots", kind = "serverEvent" },
 }

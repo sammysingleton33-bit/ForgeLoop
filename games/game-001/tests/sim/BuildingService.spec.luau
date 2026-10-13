@@ -2,7 +2,7 @@
 	BuildingService (CONTRACTS G6, G8 Build area; FL-0051) booted with the match services and FORGE-03's
 	real TreasuryService and Costs: CanPlace and Place agree (facing included: the placement rectangle
 	turns with rot), Place charges exactly once and sets placedBy, the facing comes from rot, Upgrade,
-	and Build.Buildings / Build.GetBuildings.
+	Build.Buildings / Build.GetBuildings, and the G13.5 build slots (Build.PlaceSlot, GetSlots, Slots).
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -12,6 +12,8 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
+local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
 local BuildRemotes = require("@game/ReplicatedStorage/Game/Build/Remotes")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
@@ -293,6 +295,129 @@ describe("BuildingService (G6, G8)", function()
 		expect(#gone).toBe(old)
 		for _, view in gone do
 			expect(view.state).toBe("destroyed")
+		end
+	end)
+end)
+
+describe("BuildingService build slots (G13.5, FL-0081)", function()
+	local function slotsSent(env, player)
+		local out = {}
+		for _, entry in env.mock.remotes:sent(remote(env, "Build.Slots")) do
+			if entry.player == player then
+				table.insert(out, entry.args[1])
+			end
+		end
+		return out
+	end
+
+	local function firstSlot(kingdomId, size)
+		for _, slot in Layout.WORLD.plots[kingdomId].buildSlots do
+			if slot.size == size then
+				return slot
+			end
+		end
+		error(`no {size} slot`)
+	end
+
+	it("PlaceSlot builds on a free slot of the player's kingdom, facing its street, at the Place price", function()
+		local env, _, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local defs = Layout.WORLD.plots.crimson.buildSlots
+		expect(#defs >= 8).toBe(true)
+		local listed = invoke(env, p1, "Build.GetSlots")
+		expect(#listed).toBe(#defs)
+		for i, slot in listed do
+			expect(slot).toEqual({ id = defs[i].id, size = defs[i].size }) -- all free
+		end
+		local slot = firstSlot("crimson", "S")
+		local before = treasury:get("crimson")
+		local id, reason = invoke(env, p1, "Build.PlaceSlot", slot.id, "house")
+		expect(reason).toBeNil()
+		local b = sim.buildings[id]
+		expect({ b.kind, b.slotId, b.placedBy }).toEqual({ "house", slot.id, 1 })
+		expect(b.x).toBeNear(slot.center.X, 1e-6)
+		expect(b.z).toBeNear(slot.center.Z, 1e-6)
+		expect(b.yaw).toBeNear(slot.rot, 1e-6)
+		local after = treasury:get("crimson")
+		for res, amount in assert(Costs.building("house", 1)).cost do
+			expect(after[res]).toBe(before[res] - amount)
+		end
+		for _, entry in invoke(env, p1, "Build.GetSlots") do
+			expect(entry.occupiedBy).toBe(if entry.id == slot.id then id else nil)
+		end
+		-- every S slot fits a house; an L slot (farm) takes what fits it
+		local large = firstSlot("crimson", "L")
+		expect(Fit.fits("farm", "L")).toBe(true)
+		local farm = invoke(env, p1, "Build.PlaceSlot", large.id, "farm")
+		expect(sim.buildings[farm].slotId).toBe(large.id)
+	end)
+
+	it("refuses another kingdom's or an unknown slot, a taken slot, a type that does not fit, and the poor", function()
+		local env, buildings, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 }) -- crimson
+		local p2 = env.mock.players:add({ userId = 2 }) -- another kingdom
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local theirs = match.host:kingdomOf(p2)
+		expect(theirs).never.toBe("crimson")
+		local slot = firstSlot("crimson", "S")
+		local before = treasury:get("crimson")
+		expect({ invoke(env, p1, "Build.PlaceSlot", firstSlot(theirs, "S").id, "house") }).toEqual({
+			nil,
+			"unknown_slot",
+		})
+		expect({ invoke(env, p1, "Build.PlaceSlot", "crimson_slot999", "house") }).toEqual({ nil, "unknown_slot" })
+		expect(Fit.fits("barracks", "S")).toBe(false)
+		expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks") }).toEqual({ nil, "does_not_fit" })
+		env.mock:advance(3) -- refill PlaceSlot's burst
+		expect(treasury:get("crimson")).toEqual(before) -- refusals cost nothing
+		local id = invoke(env, p1, "Build.PlaceSlot", slot.id, "house")
+		expect(type(id)).toBe("number")
+		expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "house") }).toEqual({ nil, "slot_occupied" })
+		expect({ invoke(env, p2, "Build.PlaceSlot", slot.id, "house") }).toEqual({ nil, "unknown_slot" })
+		-- a building on the slot that is gone frees it
+		assert(sim:cancelConstruction(sim.kingdoms.crimson, id, 1))
+		env.mock:advance(3)
+		local poor = treasury:get("crimson")
+		sim:spend("crimson", { wood = poor.wood }, "spec:drain", "spec")
+		expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "house") }).toEqual({ nil, "cannot_afford" })
+		expect(buildings:slots("crimson")[1].occupiedBy).toBeNil()
+		-- malformed calls never reach the kingdom; a spectator is not in the match
+		expect(invoke(env, p1, "Build.PlaceSlot", string.rep("x", 33), "house")).toBeNil()
+		expect(invoke(env, p1, "Build.PlaceSlot", slot.id, "castle")).toBeNil()
+		expect(invoke(env, p1, "Build.PlaceSlot", 7, "house")).toBeNil()
+		expect({ buildings:placeSlot({ UserId = 999 }, slot.id, "house") }).toEqual({ nil, "not_in_match" })
+		expect(buildings:slots("violet")).toEqual({})
+	end)
+
+	it("Build.Slots goes to the kingdom's members on arrival and when a slot is taken or freed", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		local p2 = env.mock.players:add({ userId = 2 })
+		env.mock:advance(1)
+		local sim = match.host.match.sim
+		expect(#slotsSent(env, p1)).toBe(1) -- on arrival
+		expect(#slotsSent(env, p2)).toBe(1)
+		expect(slotsSent(env, p2)[1][1].id).toBe(Layout.WORLD.plots[match.host:kingdomOf(p2)].buildSlots[1].id)
+		env.mock:advance(2)
+		expect(#slotsSent(env, p1)).toBe(1) -- nothing changed: nothing sent
+		local slot = firstSlot("crimson", "S")
+		local id = invoke(env, p1, "Build.PlaceSlot", slot.id, "house")
+		env.mock:advance(1)
+		local mine = slotsSent(env, p1)
+		expect(#mine).toBe(2)
+		for _, entry in mine[2] do
+			expect(entry.occupiedBy).toBe(if entry.id == slot.id then id else nil)
+		end
+		expect(#slotsSent(env, p2)).toBe(1) -- another kingdom's slot: not theirs to hear
+		assert(sim:cancelConstruction(sim.kingdoms.crimson, id, 1))
+		env.mock:advance(1)
+		mine = slotsSent(env, p1)
+		expect(#mine).toBe(3)
+		for _, entry in mine[3] do
+			expect(entry.occupiedBy).toBeNil()
 		end
 	end)
 end)
