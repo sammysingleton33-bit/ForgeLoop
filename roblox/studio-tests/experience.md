@@ -77,7 +77,7 @@ Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spe
 
 | Rule | Value |
 |---|---|
-| Audience (G9 attribution) | buildings, recruits, captures: the kingdom's members; a keep upgrade and a capture are also reported to rivals (a rival keep without its location); phases and the match end: everyone |
+| Audience (G9 attribution) | placements and recruits: the co-rulers (the player who acted already has FORGE-03's toast); completions, upgrades and captures: the kingdom's members; a keep upgrade and a capture are also reported to rivals (a rival keep without its location); phases and the match end: everyone |
 | Celebrations | kingdom founded, keep upgraded, watchtower captured, victory, defeat |
 | Toasts | one line each; repeats coalesce ("House placed ×3"); silent when the moment has its own sound |
 | Deposits | at most one clink per 1.5 s |
@@ -91,7 +91,7 @@ Steps
 1. Play Solo. In F8, run `fx.announce kingdomFounded`: a gold burst over the ruler and "Emberhold is yours" with the founding horn (when chosen).
 2. Run `fx.burst`: at most 3 toasts, "House placed ×2", the newest on top, the warning ("Frostmere took a watchtower") above info.
 3. Run `fx.announce keepUpgraded`, then `objectiveCaptured`, then `victory`: each is a celebration (sound, effect, toast). The music changes to victory.
-4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. **One** toast for your own placement (FORGE-03's). A co-ruler sees "House placed" with your name. The completion effect and the capture effect take your kingdom's colour.
+4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. **One** toast for your own placement and **one** for your own recruit (FORGE-03's "House placed" and "3 soldiers recruited"). A co-ruler sees "House placed" and "+3 soldiers" with your name. The completion effect and the capture effect take your kingdom's colour.
    - Zoom the aerial view all the way out: work sounds and glints at the citizens under the view still play.
    - Join a match already in Conflict (a second client): the tension music plays at once, not only at the next phase.
 5. Watch citizens work from close up (40 studs) and far away (more than 150 studs): close up you hear the chops and hammering, with chips; far away, silence. Deposits at the storehouse clink at most about once a second and a half.

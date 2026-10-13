@@ -18,6 +18,8 @@ local AnnouncerDef = require("@game/ServerScriptService/Game/Services/AnnouncerS
 local AnnouncerControllerDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/AnnouncerController")
 local FeedbackDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackController")
 local MusicDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/MusicController")
+local AudioDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/AudioController")
+local SettingsDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/SettingsController")
 
 local function presetIds(): { [string]: boolean }
 	local ids = {}
@@ -107,6 +109,18 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 		expect(out[1].moment.actor).toBe("Ann")
 		expect(out[1].moment.position).toBe(Vector3.new(10, 0, 5))
 		expect(#Moments.fromEvent("BuildingCompleted", { building() }, ctx)).toBe(2)
+	end)
+
+	it("recruits: the co-rulers hear it; the recruiter already has FORGE-03's own toast", function()
+		local out = Moments.fromEvent("UnitsRecruited", { a1, "crimson", 3 }, ctx)
+		expect(#out).toBe(1)
+		expect(only(out, a1)).toEqual({})
+		expect(only(out, b1)).toEqual({})
+		expect(only(out, a2)).toEqual({ "unitsRecruited" })
+		expect(out[1].moment.actor).toBe("Ann")
+		expect(out[1].moment.count).toBe(3)
+		-- a recruiter who already left (no Player): every member hears it
+		expect(#Moments.fromEvent("UnitsRecruited", { nil, "crimson", 3 }, ctx)).toBe(2)
 	end)
 
 	it("a keep upgrade is celebrated at home and reported to rivals without its location", function()
@@ -752,6 +766,34 @@ describe("client feedback controllers (FL-0062)", function()
 		end
 		expect(first <= #Presets).toBe(true)
 	end)
+
+	it(
+		"MusicController with the real AudioController and game-001's placeholder Sounds: silent, no errors or warnings",
+		function()
+			-- every config/Sounds.luau entry is still "needed" (no asset chosen; user handoff), so nothing may
+			-- play, and nothing may error or warn while the match runs through its phases (FORGE-00's #49 check)
+			local client = MockEnv.new({ seed = 4962, isServer = false, localPlayer = { userId = 4962 } })
+			local registry = Loader.load(client, { SettingsDef, AudioDef, MusicDef })
+			local controller = registry:get("MusicController")
+			for _, phase in { "Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Results" } do
+				controller:setPhase(phase)
+				client.mock:advance(25)
+			end
+			controller:setResult("won")
+			client.mock:advance(5)
+			local audio = registry:get("AudioController")
+			expect(audio.stats.played).toBe(0)
+			expect((audio.stats.skipped.needed or 0) > 0).toBe(true) -- skipped as "needed", counted, not logged
+			local loud = {}
+			for _, entry in client.mock.logs do
+				if entry.level == "warn" or entry.level == "error" then
+					table.insert(loud, entry.message)
+				end
+			end
+			expect(loud).toEqual({})
+			expect(client.mock.threadErrors).toEqual({})
+		end
+	)
 
 	it("MusicController: the phase picks the music, the match result wins at once, ambience starts once", function()
 		local defs = doubles({ notifications = false })

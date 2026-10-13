@@ -16,15 +16,17 @@
 		Audience rules (CONTRACTS G9 attribution, kingdom-scoped announcer of G11):
 		| G9 event          | the kingdom's members                      | everyone else                  |
 		| KingdomJoined     | the joiner: kingdomFounded; others: memberJoined |                          |
-		| BuildingPlaced    | buildingPlaced (with the placer's name)    | —                              |
+		| BuildingPlaced    | buildingPlaced to the co-rulers, with the placer's name | —                 |
 		| BuildingCompleted | buildingCompleted                          | —                              |
 		| BuildingUpgraded  | keepUpgraded (keep) / buildingUpgraded     | rivalKeepUpgraded (keep only)  |
 		| BuildingDestroyed | buildingDestroyed                          | —                              |
-		| UnitsRecruited    | unitsRecruited                             | —                              |
+		| UnitsRecruited    | unitsRecruited to the co-rulers            | —                              |
 		| ObjectiveCaptured | objectiveCaptured                          | rivalCaptured                  |
 		| MatchPhaseChanged | phase, to every player                                                      |
 		| MatchEnded        | matchEnded to every player: outcome won / lost / draw (no winner) / watched  |
 		|                   | (a spectator), won = outcome == "won"                                      |
+		The player who placed or recruited is left out: FORGE-03's own toast already answered them
+		("House placed", "3 soldiers recruited"), so the announcer never says it twice.
 		ResourceGathered is not announced: the client's own gather feedback (FeedbackController) is
 		immediate, and citizens' gathering would flood the stack.
 	Moment (sent as Feedback.Moment): { kind, kingdom?, kingdomName?, actor?, buildingType?, level?,
@@ -73,6 +75,17 @@ local function to(out: { Delivery }, players: { any }, moment: { [string]: any }
 	for _, player in players do
 		table.insert(out, { player = player, moment = table.clone(moment) })
 	end
+end
+
+-- the members without the player who acted (nil: an unknown or departed actor, so all of them)
+local function except(members: { any }, actor: any): { any }
+	local out = {}
+	for _, member in members do
+		if member ~= actor then
+			table.insert(out, member)
+		end
+	end
+	return out
 end
 
 local function others(ctx: any, members: { any }): { any }
@@ -128,13 +141,7 @@ function Moments.fromEvent(eventName: string, args: { any }, ctx: any): { Delive
 			local placer = if type(building.placedBy) == "number" then ctx.byUserId(building.placedBy) else args[2]
 			moment.actor = if placer then ctx.displayName(placer) else nil
 			-- the placer already has FORGE-03's own notice ("House placed"): the co-rulers get this one
-			local coRulers = {}
-			for _, member in members do
-				if member ~= placer then
-					table.insert(coRulers, member)
-				end
-			end
-			to(out, coRulers, moment)
+			to(out, except(members, placer), moment)
 		elseif eventName == "BuildingCompleted" then
 			to(out, members, buildingMoment("buildingCompleted", building, ctx))
 		elseif eventName == "BuildingDestroyed" then
@@ -152,7 +159,8 @@ function Moments.fromEvent(eventName: string, args: { any }, ctx: any): { Delive
 		if type(kingdom) ~= "string" then
 			return out
 		end
-		to(out, ctx.members(kingdom), {
+		-- the recruiter already has FORGE-03's own notice ("3 soldiers recruited"): the co-rulers get this one
+		to(out, except(ctx.members(kingdom), player), {
 			kind = "unitsRecruited",
 			kingdom = kingdom,
 			actor = if player then ctx.displayName(player) else nil,

@@ -17,6 +17,7 @@ evidence:
   - "mutations.py FL-0062 rows 21/21 CAUGHT (incl. FORGE-05 #49 review: M1, L1-L4, L6, L8)"
   - "KingdomFeedback.spec 26 after the #49 review: one toast per placement, won/lost/draw/watched, no fallback toast for a declined celebration, kingdom tint, distance from the camera focus, bounded attached-effects list, Match.GetState for late joiners"
   - "unverified: nothing heard or seen in Studio; needs FORGE-01 G9 producers and EntityController cues; sounds not chosen yet (user)"
+  - check.sh OVERALL PASS (game-001 1212/0); KingdomFeedback.spec 31/31; mutations FL-0062 30/30
 ---
 
 # VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer
@@ -54,3 +55,4 @@ A new player is guided gather -> build -> recruit -> capture in the first minute
 - 2026-10-13 forge-04: REVIEW (unchanged). Main 2a84ca0+ merged (#33 landed). L8 completed: NotificationController's celebrate() passes payload.tint to the effect (ported here from the merged #33's branch), so captures take the kingdom colour.
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-05 re-review lows: a late Match.GetState reply after destroy plays nothing; celebrate culled by distance with one cheer sound per 0.5 s; NaN ids ignored. KingdomFeedback.spec 28; FL-0062 mutations 25/25. Main a75de0f merged (with #42).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force because the status stays REVIEW). FORGE-05 #42 L3 applies here too: walk mode measures from the camera (getFocus only while mode is overview); '+N' floats culled from the view and passed opts.maxDistance 0 (FORGE-05 #42 L7, framework option in the FL-0091 follow-up PR). Main 3bbf2a0 merged.
+- 2026-10-13 forge-04: REVIEW → REVIEW. Main 3d3cb82 merged. FORGE-00's two checks for the star review: (1) music with game-001's placeholder Sounds is silent and logs nothing (new spec with the real AudioController); (2) announcer lines vs FORGE-03's toasts: the recruiter no longer gets '+3 soldiers' on top of FORGE-03's '3 soldiers recruited' (co-rulers only, like placement); no announcer line repeats a refusal (#86) or an achievement toast (the announcer's celebrations are the only achievement toasts).
