@@ -981,7 +981,16 @@ describe("FORGE-05 review of #66: risks never below the fold (B1), L1-L5", funct
 		local card = find(confirming, "Option_" .. PUSH_ON)
 		local risk = find(card, "Risk_1")
 		expect(find(risk, "Chance").Text).toBe("50 %")
-		expect(find(risk, "RiskText").Text).toBe("Bran may lay down tools for 45 s.")
+		-- the server's filled sentence, shown as sent (content wording from ContentQuery, #83)
+		local sent
+		for _, r in CitizenDoubles.SCENARIOS.builder.responses do
+			if r.id == PUSH_ON then
+				sent = r.risks[1].text
+			end
+		end
+		expect(find(risk, "RiskText").Text).toBe(sent)
+		expect(string.find(sent, "^Bran may ")).toBeTruthy() -- the citizen's name filled, no template left
+		expect(string.find(sent, "[{}]")).toBeNil()
 		expect(find(confirming, "Back")).toBeTruthy()
 		expect(find(confirming, "Confirm")).toBeTruthy()
 		-- the step fits the sheet without scrolling: nothing of the answer is below the fold

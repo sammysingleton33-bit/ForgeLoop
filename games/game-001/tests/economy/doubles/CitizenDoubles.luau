@@ -385,26 +385,20 @@ CitizenDoubles.SCENARIOS = {
 }
 
 -- FORGE-05's B1 case on #66: the content library's real "builder_overworked" (Dialogue +
--- ContentQuery.choicePreview), three answers, one with a cost and one with a 50 % risk. The risk
--- sentence is the content notice filled as FORGE-01's server will send it (FORGE-00: choiceRisks,
--- no "Risk ({chance}):" prefix): {name} the speaker, {duration} the consequence's duration.
+-- ContentQuery.choicePreview), three answers, one with a cost and one with a 50 % risk. The
+-- preview is exactly what FORGE-01's server sends in Kingdom.Converse (ContentQuery v0.4-g7, #83):
+-- { cost?, risks? }, risks already filled sentences { text, chance } for this conversation's names.
 local function fromContent(scenarioId: string, speaker: string): any
 	local scenario = Dialogue.scenarios[scenarioId]
+	local names = { name = speaker, ruler = "Sam", kingdom = "Emberhold", occupation = "builder" }
 	local responses = {}
 	for _, r in scenario.responses do
-		local preview = ContentQuery.choicePreview(scenarioId, r.id)
-		local risks = {}
-		for _, risk in preview.risks do
-			local sentence = string.gsub(risk.notice, "^Risk %b(): ", "")
-			sentence = string.gsub(sentence, "{name}", speaker)
-			sentence = string.gsub(sentence, "{duration}", `{risk.duration_s} s`)
-			table.insert(risks, { text = sentence, chance = risk.chance })
-		end
+		local preview = ContentQuery.choicePreview(scenarioId, r.id, names) or {}
 		table.insert(responses, {
 			id = r.id,
 			text = r.text,
-			cost = if next(preview.cost) then preview.cost else nil,
-			risks = if #risks > 0 then risks else nil,
+			cost = preview.cost,
+			risks = preview.risks,
 			loyalty = 0,
 			reaction = r.reaction,
 			effects = {},
