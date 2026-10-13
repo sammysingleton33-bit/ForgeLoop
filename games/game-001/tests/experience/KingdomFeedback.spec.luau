@@ -503,6 +503,55 @@ describe("client feedback controllers (FL-0062)", function()
 		expect(notices[1].title).toBe("Emberhold is yours")
 	end)
 
+	it(
+		"AnnouncerController with the slice summary: no result toast, celebrations and music stay (FORGE-00 ruling)",
+		function()
+			local summary = {
+				name = "SliceSummaryController",
+				new = function()
+					return {}
+				end,
+			}
+			local defs = doubles()
+			table.insert(defs, summary)
+			table.insert(defs, AnnouncerControllerDef)
+			local announcer = Loader.load(env, defs):get("AnnouncerController")
+			local heard = {}
+			announcer.moment:connect(function(moment)
+				table.insert(heard, moment.outcome)
+			end)
+			announcer:onMoment({ kind = "matchEnded", outcome = "draw" })
+			announcer:onMoment({ kind = "matchEnded", outcome = "watched", winner = "azure", kingdomName = "Frostmere" })
+			expect(#notices).toBe(0) -- the summary shows the result line
+			expect(heard).toEqual({ "draw", "watched" }) -- MusicController still hears both
+			announcer:onMoment({ kind = "matchEnded", outcome = "won", won = true, kingdomName = "Emberhold" })
+			expect(celebrations[1].kind).toBe("victory")
+			announcer:onMoment({ kind = "buildingCompleted", buildingType = "farm", position = Vector3.zero })
+			expect(notices[1].title).toBe("Farm complete") -- other moments still toast
+
+			-- a celebration that falls back to its toast is still the celebration: it stays
+			notices, celebrations = {}, {}
+			local fallback = doubles({ noCelebrations = true })
+			table.insert(fallback, summary)
+			table.insert(fallback, AnnouncerControllerDef)
+			local plain =
+				Loader.load(MockEnv.new({ seed = 64, isServer = false, localPlayer = { userId = 3202 } }), fallback)
+					:get("AnnouncerController")
+			plain:onMoment({ kind = "matchEnded", outcome = "lost", kingdomName = "Frostmere" })
+			expect(notices[1].title).toBe("Defeat")
+		end
+	)
+
+	it("AnnouncerController without the slice summary keeps the result toast", function()
+		local defs = doubles()
+		table.insert(defs, AnnouncerControllerDef)
+		local announcer = Loader.load(env, defs):get("AnnouncerController")
+		announcer:onMoment({ kind = "matchEnded", outcome = "draw" })
+		announcer:onMoment({ kind = "matchEnded", outcome = "watched", winner = "azure", kingdomName = "Frostmere" })
+		expect(notices[1].title).toBe("A draw")
+		expect(notices[2].title).toBe("Frostmere wins the match")
+	end)
+
 	it("FeedbackController: a gather sounds, bursts chips at the node and floats +N", function()
 		local defs = doubles({ notifications = false })
 		local node = { id = "oak_1", cframe = CFrame.new(40, 0, 0) }

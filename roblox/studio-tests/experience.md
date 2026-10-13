@@ -97,7 +97,7 @@ Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spe
 | Deposits | at most one clink per 1.5 s |
 | Citizens' work sounds | at most one per citizen per 1.5 s, only within 150 studs of the camera focus (the centre of the aerial view, not the camera) |
 | Placements | the placer sees FORGE-03's own notice only; co-rulers get "<building> placed" with the placer's name |
-| Match end | Victory or Defeat only for a ruler who won or lost; a draw shows "A draw", a spectator "<kingdom> wins the match", both without the defeat music |
+| Match end | Victory or Defeat only for a ruler who won or lost. A draw and a spectator get no toast: the slice summary shows the result line (FORGE-00 ruling). Only a client without the summary shows "A draw" / "<kingdom> wins the match". Neither plays the defeat music |
 | Pooled rigs | a released rig keeps no effect |
 | Music | Founding calm, Expansion build, Conflict/Endgame tension, Results calm; victory/defeat at once |
 
@@ -118,6 +118,7 @@ History:
 - 2026-10-12 FORGE-04: moved to FL-0062 in the game tree (CONTRACTS v0.4-g2, D-026).
 - 2026-10-12 FORGE-04: back in this file for FL-0062 (game-001 feedback, announcer, music) with the fx.announce and fx.burst debug commands.
 - 2026-10-13 FORGE-04: FL-0062 merged (#49): one toast for your own placement and recruit (co-rulers get the announcer's); the end-of-slice stack check (FORGE-05, #49 low).
+- 2026-10-13 FORGE-04: match end: no draw or spectator toast while the slice summary shows the result (FORGE-00 ruling on #49; #119).
 
 ## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 onboarding v2, FL-0092)
 Needs:
