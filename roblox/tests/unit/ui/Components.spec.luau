@@ -139,6 +139,42 @@ describe("UI kit components", function()
 		expect(ib.instance.Size.X.Offset).toBeGreaterThanOrEqual(44)
 	end)
 
+	it("a disabled IconButton reads as disabled: dim outline, icon and label, and no taps (FORGE-05 L5)", function()
+		local taps = 0
+		local ib = IconButton.new({
+			icon = "build",
+			label = "Ranks",
+			onActivated = function()
+				taps += 1
+			end,
+		})
+		local enabled = {
+			stroke = ib.instance:FindFirstChildWhichIsA("UIStroke").Color,
+			label = find(ib.instance, "Label").TextColor3,
+		}
+		ib:update({ disabled = true })
+		Create.fire(ib.instance, "Activated")
+		expect(taps).toBe(0)
+		expect(ib.instance:GetAttribute("disabled")).toBe(true)
+		expect(ib.instance:FindFirstChildWhichIsA("UIStroke").Color == enabled.stroke).toBe(false)
+		expect(find(ib.instance, "Label").TextColor3 == enabled.label).toBe(false)
+		local dimmed = 0
+		for _, d in find(ib.instance, "Body"):GetDescendants() do
+			if
+				(d:IsA("ImageLabel") and d.ImageTransparency >= 0.5)
+				or (d:IsA("TextLabel") and d.Name ~= "Label" and d.TextTransparency >= 0.5)
+			then
+				dimmed += 1
+			end
+		end
+		expect(dimmed).toBeGreaterThan(0)
+		-- enabled again: the label is back to its colour and taps work
+		ib:update({ disabled = false })
+		expect(find(ib.instance, "Label").TextColor3 == enabled.label).toBe(true)
+		Create.fire(ib.instance, "Activated")
+		expect(taps).toBe(1)
+	end)
+
 	it("CurrencyPill's spend badge fades with its outline", function()
 		-- A recording Motion: headless has no TweenService, so check what would be tweened.
 		local tweens = {}

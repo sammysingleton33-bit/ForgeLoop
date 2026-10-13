@@ -104,7 +104,10 @@ function IconButton:update(partial: { [string]: any })
 			text = p.label,
 			weight = Enum.FontWeight.Bold,
 			size = 10,
-			color = if p.selected then Theme.color("inkText") else Theme.color("parchment200"),
+			color = if p.selected
+				then Theme.color("inkText")
+				elseif p.disabled then Theme.color("textMuted") -- dimmed with the icon (FORGE-05 L5 on #55)
+				else Theme.color("parchment200"),
 			xAlign = "Center",
 			extra = { Size = UDim2.new(1, 0, 0, 12), LayoutOrder = 2, Name = "Label" },
 		}).Parent =
