@@ -15,6 +15,7 @@ evidence:
   - "Specs: Components 7, Kit 3, UIThemeParity 3; mutations fail Kit (Format sign) and Parity (gold500 drift)"
   - "Screens reviewed: design/ui/REVIEW.md; prototype/kit-{phone,tablet,desktop}.png; luau/kit-1280x1400.png (real Luau render found and fixed the pill delta layout bug)"
   - "#24 e3a5e74; integration-log.md"
+  - "integration-log #103 row: check.sh PASS on the merge result, main CI green"
 ---
 
 # UI foundation: builder, theme tokens, component library, responsive rules
@@ -39,3 +40,4 @@ Prototype screenshots inspected; Lune specs for pure layout/format helpers; Stud
 - 2026-10-12 forge-03: READY → BUILDING. Design and Luau kit built on forge/03-ui-economy.
 - 2026-10-12 forge-03: BUILDING → REVIEW. UI foundation: Create builder, Theme (+ per-game UITheme: game-001 medieval, sandbox neutral), Style, Icon (glyph fallback until icons are uploaded), Format, Motion, ToastStack; 10 components (Button, IconButton, Panel, Modal, Tabs, Grid, ItemCard, CurrencyPill, ProgressBar, Toast) with props in headers; design tokens, 34-icon set, HTML prototypes + component sheet at 3 sizes, Luau snapshot renderer (design/ui/render). No external framework.
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0105 (Toast achievement accent; dark emblem on light tinctures).
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 log: the #86 review follow-ups are closed by #103 (f2d430a): M1 Studio text and L2-L9 (specs, no crown tab, drawn gem, midrib, rail 'blocked'). REVIEW, only G6 pending (FORGE-05 acceptance record, D-038 (5)).
