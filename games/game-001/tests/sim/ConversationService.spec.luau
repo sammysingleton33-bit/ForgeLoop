@@ -1253,6 +1253,39 @@ describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function(
 		assert(choose(conversations, p2, farmer, first.scenarioId, "farmer_hungry_grain_open_store"))
 	end)
 
+	it("leaving and rejoining farms nothing: same scenario, the stamp never earlier, one more visit at most", function()
+		local env, conversations, match, registry = boot()
+		local rulers = crimsonRulers(env, match, 5)
+		assert(#rulers >= 2, "two crimson rulers")
+		local p1 = rulers[1]
+		local farmer = hungryFarmer(match, registry)
+		local reputation = registry:get("ReputationService")
+		local visits = 0
+		local real = reputation.rulerVisited
+		reputation.rulerVisited = function(self, ...)
+			visits += 1
+			return real(self, ...)
+		end
+		conversations:refresh()
+		local before = (conversations._shown.crimson or {})[farmer.id]
+		local stampBefore = before and before.farmer_hungry_grain
+		local first = assert(conversations:converse(p1, farmer.id))
+		local asked = conversations._shown.crimson[farmer.id][first.scenarioId]
+		env.mock.players:remove(p1) -- leaves with the question open
+		env.mock:advance(1)
+		conversations:refresh()
+		local whileAway = conversations._shown.crimson[farmer.id][first.scenarioId]
+		expect(whileAway).toBe(stampBefore) -- back to its value before the ask, never earlier
+		local back = env.mock.players:add({ userId = p1.UserId, displayName = "Ruler1" }) -- rejoins
+		env.mock:advance(1)
+		expect(match.host.match:kingdomOf(back.UserId)).toBe("crimson")
+		local again = assert(conversations:converse(back, farmer.id))
+		reputation.rulerVisited = real
+		expect(again.scenarioId).toBe(first.scenarioId) -- no re-roll
+		expect(conversations._shown.crimson[farmer.id][first.scenarioId] >= asked).toBe(true)
+		expect(visits <= 2).toBe(true) -- the first ask, and at most one more
+	end)
+
 	it("M2: requests a departed ruler asked about stop holding the kingdom's slots", function()
 		local env, conversations, match, registry = boot()
 		local rulers = crimsonRulers(env, match, 5)
