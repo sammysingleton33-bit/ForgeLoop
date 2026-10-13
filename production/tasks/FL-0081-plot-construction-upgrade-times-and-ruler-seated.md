@@ -17,6 +17,7 @@ evidence:
   - BuildingService 11, MatchKingdomServices 41, Simulation 37, Catalog 15 specs; mutations 9/9 caught (1 equivalent removed); Studio unverified
   - "main aecd245: check.sh PASS on 2570c47+#106 (game-001 1107/0); combined 1111/0; CI 3/3 on f975532; whole plot fills 10/10; rail-on-slot -> slot_occupied; 3/3 mutations"
   - check.sh OVERALL PASS (game-001 1155/0); MatchKingdomServices 45/0 (3 new L2 specs); throne mutations 6/6 caught
+  - "main 1c48149: check.sh PASS on 8357596+#112 (game-001 1171/0); ownership PASS 4 files; CI 3/3 on 5633e4d; 2/2 mutations"
 ---
 
 # Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6)
@@ -52,3 +53,4 @@ Studio: tap a plot, build a house, upgrade the barracks to level 2.
 - 2026-10-13 forge-01: BUILDING → REVIEW. #89 follow-ups: M1 a slot is occupied by any standing building of the kingdom over it (rail placements too); G13.5 v0.4-g9a PlaceSlot refuses wall/gate with not_on_plot; M3 lumber camp and quarry levels give gatherBonus 0/+20%/+40% (PROVISIONAL, best camp counts); L1 onDied connected before the throne seat, which is pcalled; L2 (Kit Seat not Disabled) deferred, L3 ruled by FORGE-00 (done here). Waits G6: K11, STUDIO_PLAYTEST rows 2 and 6
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #106 (aecd245, FORGE-05 D-040 fallback verdict on f975532; star by FORGE-00): #89 M1 slot reservation, M3 camp gatherBonus 0/0.2/0.4 (PROVISIONAL), L1 respawn never blocked by the seat, v0.4-g9a not_on_plot on the server. REVIEW, only G6 pending (K11, STUDIO_PLAYTEST rows 2 and 6). L2 (anyone can sit) deferred past VS-1.
 - 2026-10-13 forge-01: REVIEW → REVIEW. #89 L2 fix-forward (star, FORGE-00): a keep's throne is its kingdom's rulers' only. KingdomService unseats anyone else (another kingdom's ruler, a spectator, any humanoid) within THRONE_CHECK and a respawning ruler takes a throne an outsider holds at once; co-rulers share it. Same status: adds the L2 fix on forge/01-gameplay-throne.
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #112 (1c48149, FORGE-05 D-040 fallback verdict on 5633e4d; star by FORGE-00): #89 L2, a throne is for its kingdom's rulers only (server-side unseat, co-rulers share). REVIEW, only G6 pending (K11 incl. step 9, STUDIO_PLAYTEST rows 2 and 6).
