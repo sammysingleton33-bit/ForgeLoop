@@ -808,8 +808,8 @@ describe("FL-0060 destroy paths and match end (FORGE-05 review of #63)", functio
 		world:advance(25) -- past the remote client's 10 s wait and a GetObjectives timeout
 		expect(world.objectives.serving).toBe(false)
 		expect(world.env.mock:hasLog("warn", "ObjectivePanelController")).toBe(false)
-		local tracker = find(world.hud.guis.hud, "ObjectiveTracker")
-		expect(tracker == nil or tracker.Visible == false).toBe(true) -- nothing to show
+		local shown = tracker(world)
+		expect(shown == nil or shown.Visible == false).toBe(true) -- nothing to show
 		-- the server's army remotes replicate later: the tracker starts listening and asking
 		local root = world.env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
 		local area = world.env.newInstance("Folder")
