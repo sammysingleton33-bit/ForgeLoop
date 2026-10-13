@@ -13,6 +13,14 @@
 		.event(entityId, "cue", { cue | cueId, tone? }, model)            -> the same; an unknown cue falls
 		    back to the reaction tone (payload.tone, else the citizen's current reaction) for its pose
 		.rendered(entityId, model) / .released(entityId, model)           -> attach / clear (pooled rigs)
+	Targets (CONTRACTS G13.3 v0.4-g6): a strike or cue marks exactly the citizens the server named, never
+	every citizen of an occupation. EntityController (FL-0079) fires one event per id. A payload that
+	still carries `entityIds` (the raw Sim.Events shape) marks its entityId and each of its entityIds
+	once. An event with neither (an occupation- or kingdom-wide cue) is the HUD's or the keep's, never
+	shown on citizens here (stats.untargeted).
+	A cue's effect is kept per citizen: a continuous one (`rest`'s motes) stops after the cue's `seconds`
+	(Vfx.cues; else CUE_EFFECT_SEC), when the citizen's next cue plays an effect, or when its rig is
+	released, so a pooled rig never keeps an emitter and the VFX budget is not held by idle citizens.
 	Rules live in Feedback/Bubbles (one bubble per citizen, text from the event only, lifetimes, the
 	on-screen cap and distance). The `citizenBarks` setting off hides reaction bubbles (the pose,
 	sound and effect still play); thoughts and placards always show, because they are gameplay.
@@ -20,16 +28,20 @@
 	EntityController:playPose(entityId, pose) when it has one (proposed to FORGE-01).
 
 	View: a pool of BillboardGuis (at most bubbles.maxOnScreen), reparented to the citizen's model.
-	Distance is measured from the camera focus (RulerCameraController:getFocus(), else the camera),
-	so zooming the overview out (40-220 studs) never hides the citizens under the view; the GUIs
+	Distance is measured from the overview's focus (RulerCameraController:getFocus() while mode is
+	"overview"), else from the camera (walk mode, whose focus would be the stale overview one), so
+	zooming the overview out (40-220 studs) never hides the citizens under the view; the GUIs
 	carry no MaxDistance of their own (0 = no limit) for the same reason. Rigs that EntityController's
 	LOD hides (unparented) never take a slot. A job change swaps the rig (released, then rendered at
 	once): the citizen keeps its thought, and drops a strike placard, because it left the striking
 	occupation. Bubbles never take input (Active = false, no buttons), so a tap on a citizen still
-	reaches InputModeController's selection (G13.6).
+	reaches InputModeController's selection (G13.6). While the ruler talks to a citizen
+	(ConversationController.opened .. closed, G13.8; else its state.entityId), that citizen's bubble is
+	hidden: the conversation panel shows the same words.
 
 		CitizenBubbleController:refresh()   -- re-pick and redraw (Heartbeat calls it every POLL_SEC)
 		CitizenBubbleController.bubbles     -- the Feedback/Bubbles model (specs)
+		CitizenBubbleController.stats       -- { untargeted } events with no citizen to mark (specs)
 ]]
 
 local Bubbles = require("@game/ReplicatedStorage/Game/Feedback/Bubbles")
@@ -41,6 +53,8 @@ local Def = {
 }
 
 Def.POLL_SEC = 0.25
+Def.CUE_EFFECT_SEC = 6 -- a continuous cue effect with no `seconds` of its own stops after this
+Def.UNKNOWN_CUE_LOG = 8 -- distinct unknown cue names warned about; later ones share one last warning
 Def.HEIGHT = 3.2 -- studs above the model's pivot
 local rgb = Color3.fromRGB
 Def.STYLE = table.freeze({
@@ -94,8 +108,12 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_connections = {},
 		_running = false,
 		_warned = {},
+		_unknownCues = 0,
 		_leaving = {} :: { [number]: boolean },
+		_cueEffects = {} :: { [number]: any },
+		_talking = nil :: number?,
 		bubbles = Bubbles.new({ now = env.clock, config = config.bubbles }),
+		stats = { untargeted = 0 },
 	}, Controller)
 end
 
@@ -110,6 +128,7 @@ function Controller:start()
 	self._audio = registry:find("AudioController")
 	self._vfx = registry:find("VFXController")
 	self._camera = registry:find("RulerCameraController")
+	self._conversation = registry:find("ConversationController")
 	local entities = self._entities
 	if entities == nil then
 		self._env.log(
@@ -137,6 +156,22 @@ function Controller:start()
 	do
 		table.insert(self._connections, item)
 	end
+	local conversation = self._conversation
+	local opened = connect(conversation, "opened", function(id)
+		self._talking = if isId(id) then id else nil
+		self:refresh()
+	end)
+	if opened ~= nil then
+		self._talkSignals = true
+		table.insert(self._connections, opened)
+		table.insert(
+			self._connections,
+			connect(conversation, "closed", function()
+				self._talking = nil
+				self:refresh()
+			end)
+		)
+	end
 	self._running = true
 	local env = self._env
 	env.spawn(function()
@@ -155,6 +190,9 @@ function Controller:destroy()
 		end)
 	end
 	table.clear(self._connections)
+	for id in self._cueEffects do
+		self:_stopCueEffect(id)
+	end
 	for _, gui in self._drawn do
 		gui:Destroy()
 	end
@@ -166,14 +204,40 @@ function Controller:destroy()
 end
 
 function Controller:onEvent(entityId: any, cue: string, payload: any, model: any)
-	if not isId(entityId) then
-		return -- no citizen (or NaN): nothing to draw on
-	end
-	if model ~= nil then
-		self._models[entityId] = model
-	end
 	if type(payload) ~= "table" then
 		payload = {}
+	end
+	local listed = payload.entityIds
+	if type(listed) ~= "table" then
+		if isId(entityId) then
+			self:_onCitizen(entityId, cue, payload, model)
+		elseif entityId == nil then
+			self.stats.untargeted += 1 -- occupation- or kingdom-wide: the HUD's or the keep's (G13.3)
+		end
+		return -- a NaN id: nothing to draw on
+	end
+	-- the raw G13.3 shape: exactly the citizens the server named, each once (v0.4-g6)
+	local own = table.clone(payload)
+	own.entityIds = nil
+	local seen = {}
+	if isId(entityId) then
+		seen[entityId] = true
+		self:_onCitizen(entityId, cue, own, model)
+	end
+	for _, id in listed do
+		if isId(id) and not seen[id] then
+			seen[id] = true
+			self:_onCitizen(id, cue, own, nil)
+		end
+	end
+	if next(seen) == nil then
+		self.stats.untargeted += 1
+	end
+end
+
+function Controller:_onCitizen(entityId: number, cue: string, payload: { [string]: any }, model: any)
+	if model ~= nil then
+		self._models[entityId] = model
 	end
 	if cue == "thought" then
 		self.bubbles:thought(entityId, payload)
@@ -215,18 +279,22 @@ function Controller:refresh()
 			positions[id] = pivotOf(model)
 		end
 	end
+	local talking = self:_talkingTo()
 	local keep = {}
 	for _, id in self.bubbles:pick(positions, origin) do
 		local bubble = self.bubbles:get(id)
-		if bubble ~= nil and not (bubble.kind == "reaction" and self:_barksOff()) then
-			keep[id] = true
-			self:_draw(id, bubble)
+		if bubble ~= nil and id ~= talking and not (bubble.kind == "reaction" and self:_barksOff()) then
+			keep[id] = bubble
 		end
 	end
+	-- dropped bubbles go back to the pool first, so the new ones reuse them (never above maxOnScreen)
 	for id in self._drawn do
 		if not keep[id] then
 			self:_undraw(id)
 		end
+	end
+	for id, bubble in keep do
+		self:_draw(id, bubble)
 	end
 end
 
@@ -237,12 +305,23 @@ function Controller:_barksOff(): boolean
 	return settings ~= nil and settings:get("citizenBarks") == false
 end
 
+-- The citizen in the open conversation (G13.8 signals; else ConversationController.state on main).
+function Controller:_talkingTo(): number?
+	if self._talkSignals then
+		return self._talking
+	end
+	local conversation = self._conversation
+	local state = conversation and conversation.state
+	local id = type(state) == "table" and state.entityId or nil
+	return if isId(id) then id else nil
+end
+
 function Controller:_originPosition(): Vector3?
 	if self._origin then
 		return self._origin()
 	end
 	local camera = self._camera
-	if camera ~= nil and camera.getFocus ~= nil then
+	if camera ~= nil and camera.mode == "overview" and camera.getFocus ~= nil then
 		local okFocus, focus = pcall(camera.getFocus, camera)
 		if okFocus and typeof(focus) == "Vector3" then
 			return focus
@@ -261,6 +340,7 @@ function Controller:_release(entityId: number)
 		return
 	end
 	self.bubbles:strike(entityId, false) -- a new job is a new occupation, so off strike
+	self:_stopCueEffect(entityId) -- its emitter sits on the rig going back to the pool
 	self._leaving[entityId] = true
 	self:_undraw(entityId)
 	self._models[entityId] = nil
@@ -294,10 +374,7 @@ function Controller:_playCue(entityId: any, cueId: any, tone: any)
 			elseif current and current.kind == "reaction" then current.tone
 			else nil
 		self:_pose(entityId, if fallback then Bubbles.POSE[fallback :: string] else nil)
-		if not self._warned[tostring(cueId)] then
-			self._warned[tostring(cueId)] = true
-			self._env.log("warn", `CitizenBubbleController: unknown cue '{tostring(cueId)}'`)
-		end
+		self:_warnUnknownCue(tostring(cueId))
 		return
 	end
 	self:_pose(entityId, spec.pose)
@@ -310,8 +387,42 @@ function Controller:_playCue(entityId: any, cueId: any, tone: any)
 		self._audio:play(spec.sound, { position = position })
 	end
 	if spec.vfx and self._vfx then
-		self._vfx:play(spec.vfx, { position = position, parent = model })
+		self:_stopCueEffect(entityId)
+		local effect = self._vfx:play(spec.vfx, { position = position, parent = model })
+		if type(effect) == "table" and effect.continuous then
+			self._cueEffects[entityId] = effect
+			local seconds = if type(spec.seconds) == "number" then spec.seconds else Def.CUE_EFFECT_SEC
+			self._env.spawn(function()
+				self._env.wait(seconds)
+				if self._cueEffects[entityId] == effect then
+					self:_stopCueEffect(entityId)
+				end
+			end)
+		end
 	end
+end
+
+function Controller:_stopCueEffect(entityId: number)
+	local effect = self._cueEffects[entityId]
+	if effect ~= nil then
+		self._cueEffects[entityId] = nil
+		pcall(self._vfx.stop, self._vfx, effect)
+	end
+end
+
+-- Cue names come from the server: one warning per name, and only for the first few names.
+function Controller:_warnUnknownCue(name: string)
+	local key = "cue:" .. name
+	if self._warned[key] or self._unknownCues > Def.UNKNOWN_CUE_LOG then
+		return
+	end
+	self._unknownCues += 1
+	if self._unknownCues > Def.UNKNOWN_CUE_LOG then
+		self._env.log("warn", "CitizenBubbleController: more unknown cues; no longer logged")
+		return
+	end
+	self._warned[key] = true
+	self._env.log("warn", `CitizenBubbleController: unknown cue '{name}'`)
 end
 
 local function build(env: any): any
