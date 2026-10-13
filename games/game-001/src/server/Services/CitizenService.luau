@@ -6,7 +6,8 @@
 	Citizens live in the kingdom simulation (MatchService's host); this service is their API.
 	API (G5)
 		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap, quotas }?
-			-- citizens and soldiers (soldiers count in byJob.soldier and in total); quotas = the
+			-- citizens and soldiers (soldiers count in byJob.soldier and in total); cap = beds + barracks
+			   bunks (soldiers sleep in the barracks, D-041), so it counts the same people as total; quotas = the
 			   Kingdom.SetJobQuota targets per job, hauler excepted (additive to G5, for the job panel);
 			   whole numbers >= 0; nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
@@ -175,7 +176,9 @@ function CitizenService:getPopulation(kingdomId: string): {
 			quotas[job] = count(n)
 		end
 	end
-	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = count(k.popCap), quotas = quotas }
+	-- citizens sleep in beds, soldiers in barracks bunks (D-041): cap counts both, like total
+	local cap = count(sim:sleepCap(k))
+	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = cap, quotas = quotas }
 end
 
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)

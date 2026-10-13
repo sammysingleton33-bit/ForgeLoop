@@ -13,6 +13,7 @@ context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 6
 evidence:
   - check.sh OVERALL PASS (game-001 864/0); Military.spec +10, MilitaryService.spec 8; 14/14 mutations caught
+  - check.sh OVERALL PASS (game-001 1068/0, 76 files); Military 43 + MilitaryService 11 pass; mutations 13/13 caught; Studio unverified
 ---
 
 # Military: recruit, command and capture objective
@@ -45,3 +46,4 @@ Players recruit soldiers and send them to capture the neutral Watchtower for ter
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Send-to-capture (selection to VS-2), objective built from Layout with neutral Kit colour, Rally, Costs.unit
 - 2026-10-13 forge-01: READY → BUILDING. Army remotes, MilitaryService, ObjectiveService
 - 2026-10-13 forge-01: BUILDING → REVIEW. Recruit at a barracks (Rally spawn), UnitOrder move/attack/capture/guard (empty = idle, max 50, own units), ObjectiveService (Kit watchtower, recolour, broadcast), Army.* remotes
+- 2026-10-13 forge-01: REVIEW → REVIEW. Still REVIEW; adds D-041 to #70 (FORGE-00 asked): barracks bunks 4/8/12/16 replace recruitCap; Recruit limited by bunks only (no population_cap); births use beds for citizens only; destroyed barracks refunds queued + training recruits in full; getPopulation cap = beds + bunks; AI recruits by bunks, houses for citizens; slice e2e without a house recruits 3 and captures

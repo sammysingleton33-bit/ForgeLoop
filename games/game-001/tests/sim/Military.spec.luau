@@ -114,41 +114,77 @@ describe("Kingdom/Military: recruiting", function()
 		expect(F.events(sim)).toEqual({})
 	end)
 
-	it("counts units already queued against the population cap (population_cap)", function()
-		local sim, k1 = world({ citizens = { farmer = 6 } })
+	it("soldiers sleep in barracks bunks, not beds: a kingdom with every bed taken still recruits (D-041)", function()
+		local sim, k1 = world({ citizens = { farmer = 12 } })
 		stockUp(sim, k1, { food = 280, wood = 300 })
-		addBuilding(sim, k1, "barracks", 0, -40, 2) -- recruit cap 10: only the population limits here
+		addBuilding(sim, k1, "barracks", 0, -40, 1) -- 4 bunks
 		expect(k1.popCap).toBe(12)
-		expect((recruit(RULER, sim, "soldier", 4))).toBe(true) -- 6 citizens + 4 queued
-		local stock = sim.treasury:get(k1.id)
-		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("population_cap") -- would be 13
-		expect(sim.treasury:get(k1.id)).toEqual(stock)
-		expect((recruit(RULER, sim, "soldier", 2))).toBe(true) -- exactly 12
-		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
-		sim:advance(6 * 8) -- everything trained: 6 citizens + 6 units
-		expect(#k1.unitIds).toBe(6)
-		expect(sim:population(k1)).toBe(12)
-		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("population_cap")
+		expect(#k1.citizenIds).toBe(12) -- every bed in the keep is taken, and no house stands
+		expect((recruit(RULER, sim, "soldier", 4))).toBe(true)
+		expect(sim:getPopulation(k1).cap).toBe(16) -- 12 beds + 4 bunks
+		sim:advance(4 * 8)
+		expect(#k1.unitIds).toBe(4)
+		expect(#k1.citizenIds).toBe(12)
+		expect(sim:population(k1)).toBe(16)
+		local population = sim:getPopulation(k1)
+		expect(population.total).toBe(16)
+		expect(population.cap).toBe(16)
+		expect(population.byJob.soldier).toBe(4)
+		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("recruit_cap") -- every bunk is taken
 	end)
 
-	it("caps soldiers (living + training) at the standing barracks' recruitCap sum (recruit_cap, G13.5)", function()
+	it("caps soldiers (living + training) at the standing barracks' bunks (recruit_cap, D-041)", function()
 		local sim, k1 = world()
 		stockUp(sim, k1, { food = 400, wood = 200 })
-		addBuilding(sim, k1, "barracks", 0, -40, 1) -- recruitCap 5
-		expect(Military.recruitCap(sim, k1)).toBe(5)
+		addBuilding(sim, k1, "barracks", 0, -40, 1) -- 4 bunks
+		expect(Military.recruitCap(sim, k1)).toBe(4)
+		expect(sim:bunks(k1)).toBe(4)
 		assert(recruit(RULER, sim, "soldier", 3))
 		local stock = sim.treasury:get(k1.id)
-		expect(select(2, recruit(RULER, sim, "soldier", 3))).toBe("recruit_cap") -- would be 6
+		expect(select(2, recruit(RULER, sim, "soldier", 2))).toBe("recruit_cap") -- would be 5
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
-		assert(recruit(RULER, sim, "soldier", 2)) -- exactly 5
-		sim:advance(5 * 8)
-		expect(#k1.unitIds).toBe(5)
+		assert(recruit(RULER, sim, "soldier", 1)) -- exactly 4
+		sim:advance(4 * 8)
+		expect(#k1.unitIds).toBe(4)
 		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("recruit_cap") -- trained ones still count
-		local second = addBuilding(sim, k1, "barracks", 40, -40, 2) -- + recruitCap 10
-		expect(Military.recruitCap(sim, k1)).toBe(15)
+		local second = addBuilding(sim, k1, "barracks", 40, -40, 2) -- + 8 bunks
+		expect(Military.recruitCap(sim, k1)).toBe(12)
 		assert(recruit(RULER, sim, "soldier", 1))
 		second.destroyed = true
-		expect(Military.recruitCap(sim, k1)).toBe(5)
+		expect(Military.recruitCap(sim, k1)).toBe(4)
+	end)
+
+	it("bunks follow the barracks level: 4 / 8 / 12 / 16 (Buildings.luau, PROVISIONAL)", function()
+		local sim, k1 = world()
+		local b = addBuilding(sim, k1, "barracks", 0, -40, 1)
+		for level, bunks in { 4, 8, 12, 16 } do
+			b.level = level
+			expect(sim:bunks(k1)).toBe(bunks)
+			expect(sim:getPopulation(k1).cap).toBe(k1.popCap + bunks)
+		end
+		b.level = 0 -- a construction site sleeps nobody
+		expect(sim:bunks(k1)).toBe(0)
+		expect(sim:getPopulation(k1).cap).toBe(k1.popCap)
+	end)
+
+	it("births fill the beds with citizens only: soldiers in training or trained never take one (D-041)", function()
+		-- 8 citizens of 12 beds; births every 5 s with plenty of food; 4 recruits in a level 1 barracks
+		local sim, k1 = world({ citizens = { farmer = 8 }, birthInterval = 5 })
+		stockUp(sim, k1, { food = 880, wood = 300 })
+		addBuilding(sim, k1, "barracks", 0, -40, 1)
+		assert(recruit(RULER, sim, "soldier", 4))
+		for _ = 1, 40 do
+			sim:advance(1)
+			expect(#k1.citizenIds).toBeLessThanOrEqual(k1.popCap)
+			expect(#k1.unitIds + sim:queuedUnits(k1)).toBeLessThanOrEqual(sim:bunks(k1))
+		end
+		local born = F.count(F.events(sim, "CitizenBorn"), function(e)
+			return e.kingdomId == "crimson" -- azure grows to its own cap meanwhile
+		end)
+		expect(born).toBe(4) -- the four free beds, whatever the barracks holds
+		expect(#k1.citizenIds).toBe(12)
+		expect(#k1.unitIds).toBe(4)
+		expect(sim:population(k1)).toBe(16)
 	end)
 
 	it("a barracks' trainSpeed shortens training (level 3: x1.25)", function()
@@ -165,38 +201,34 @@ describe("Kingdom/Military: recruiting", function()
 		expect(#barracks.queue).toBe(0)
 	end)
 
-	it("births leave the beds of recruits still in training free, so population never exceeds popCap", function()
-		-- 8 citizens of 12; births every 5 s with plenty of food
-		local function run(recruits: number)
-			local sim, k1 = world({ citizens = { farmer = 8 }, birthInterval = 5 })
-			stockUp(sim, k1, { food = 880, wood = 300 })
-			addBuilding(sim, k1, "barracks", 0, -40, 1)
-			assert(recruit(RULER, sim, "soldier", recruits))
-			local peak = 0
-			for _ = 1, 40 do
-				sim:advance(1)
-				peak = math.max(peak, sim:population(k1) + sim:queuedUnits(k1))
-				expect(sim:population(k1)).toBeLessThanOrEqual(k1.popCap)
-			end
-			local born = F.count(F.events(sim, "CitizenBorn"), function(e)
-				return e.kingdomId == "crimson" -- azure (no recruits) grows to its own cap meanwhile
-			end)
-			return born, peak, k1
-		end
-		local born, peak, k1 = run(4) -- 8 + 4 queued fill all 12 beds
-		expect(born).toBe(0)
-		expect(peak).toBe(12)
-		expect(#k1.unitIds).toBe(4)
-		born, peak, k1 = run(2) -- two beds left: two births, no more
-		expect(born).toBe(2)
-		expect(peak).toBe(12)
-		expect(#k1.citizenIds).toBe(10)
-		expect(#k1.unitIds).toBe(2)
+	it("a barracks lost with recruits queued or in training refunds each of them in full (D-041)", function()
+		local sim, k1 = world()
+		stockUp(sim, k1, { food = 280, wood = 300 })
+		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 2)
+		assert(recruit(RULER, sim, "soldier", 1))
+		sim:advance(8.25) -- trained: a living soldier is never refunded
+		expect(#k1.unitIds).toBe(1)
+		assert(recruit(RULER, sim, "soldier", 3)) -- 90 food, 30 wood
+		sim:advance(3)
+		expect(#barracks.queue).toBe(3)
+		expect(barracks.queue[1].remaining < 8).toBe(true) -- the first is in training
+		local food, wood = sim:balance(k1.id, "food"), sim:balance(k1.id, "wood")
+		F.events(sim)
+		Military.destroyBuilding(sim, barracks, "azure")
+		expect(sim:balance(k1.id, "food")).toBe(food + 90)
+		expect(sim:balance(k1.id, "wood")).toBe(wood + 30)
+		expect(F.stock(sim, k1):flows().income.refund).toEqual({ food = 90, wood = 30 })
+		expect(#barracks.queue).toBe(0)
+		sim:advance(30)
+		expect(#F.events(sim, "UnitRecruited")).toBe(0) -- nothing trains in a ruin
+		expect(#k1.unitIds).toBe(1)
+		expect(Military.recruitCap(sim, k1)).toBe(0)
+		F.assertInvariants(sim)
 	end)
 
 	it("cannot_afford leaves stock, queue and events untouched", function()
 		local sim, k1 = world()
-		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
+		local barracks = addBuilding(sim, k1, "barracks", 0, -40, 2) -- 8 bunks: only the price limits here
 		local stock = sim.treasury:get(k1.id) -- food 120: four soldiers cost 120, five cost 150
 		expect(select(2, recruit(RULER, sim, "soldier", 5))).toBe("cannot_afford")
 		expect(sim.treasury:get(k1.id)).toEqual(stock)
@@ -754,6 +786,7 @@ describe("Kingdom/Military: recruiting at a chosen barracks, Rally (FL-0052)", f
 		stockUp(sim, k1, { food = 280, wood = 300 })
 		local b = sim:_createBuilding(k1, "barracks", 60, -60, 0.7)
 		sim:_completeInstantly(b)
+		b.level = 2 -- 8 bunks for the five recruits
 		sim:_recompute(k1)
 		assert(Commands.execute(sim, RULER, "Recruit", "soldier", 3, b.id))
 		local spawned = spawnedDuring(function()

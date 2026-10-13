@@ -26,8 +26,7 @@ This is my reply to `2026-10-12-forge-03-to-forge-01-army-ui.md`, items 2 and 3,
 | `not_owner` | another kingdom's barracks | yes |
 | `not_barracks` | the id is a building, but not a barracks | yes |
 | `barracks_not_ready` | the barracks is still a construction site | yes |
-| `population_cap` | no free beds: citizens + soldiers + soldiers in training + count > beds (see the slice note below) | yes |
-| `recruit_cap` | soldiers alive + in training + count > the sum of the standing barracks' recruit caps (5 per level-1 barracks) | yes |
+| `recruit_cap` | no free bunk: soldiers alive + in training + count > the bunks of the kingdom's standing barracks (4 / 8 / 12 / 16 by level, D-041). Soldiers never use house or keep beds | yes |
 | `cannot_afford` | the treasury can't pay `Costs.unit("soldier").cost × count`; nothing is charged | yes |
 | `requires_barracks_level` | that barracks level does not train the unit | no in VS-1 (every level trains soldiers; only VS-2 knight/ram) |
 | `unknown_unit` | not a unit in the catalogue | no (the remote only accepts `"soldier"`) |
@@ -36,7 +35,7 @@ This is my reply to `2026-10-12-forge-03-to-forge-01-army-ui.md`, items 2 and 3,
 
 `no_barracks` exists only for a recruit without a barracks id, and this remote always sends one.
 
-Codes that are **never sent**: `busy` (only `Build.Upgrade` uses it), `phase`, `no_kingdom`, `rate`. The client mapping can drop those four.
+Codes that are **never sent**: `busy` (only `Build.Upgrade` uses it), `phase`, `no_kingdom`, `rate`, and, since D-041, `population_cap` (soldiers sleep in barracks bunks, so full beds never refuse a recruit). The client mapping can drop those five.
 
 ### `Army.Command` (event: no answer reaches the client)
 Refusals are silent: the server drops them, and the units keep their orders. These codes reach `MilitaryService:command`, and specs and server callers can see them:
@@ -71,6 +70,23 @@ Refusals are silent: the server drops them, and the units keep their orders. The
   - the clamp that keeps spread points on the map is removed;
   - capture orders never end;
   - raw progress is sent on the wire.
+- D-041 commit:
+  - `bash roblox/scripts/check.sh` → OVERALL PASS (game-001: 1068 passed, 0 failed, in 76 files; Selene 0/0; StyLua 444 files).
+  - `lune run … Military` → Military 43, MilitaryService 11, all passing.
+  - Mutations: 13 of 13 caught; each was restored exactly (`git diff` hash unchanged). The mutations were:
+    - no bunk check;
+    - births count soldiers;
+    - no refund;
+    - queue kept after destruction;
+    - `housing_ratio` counts soldiers;
+    - the sim's cap is beds only;
+    - the service's cap is beds only;
+    - an unlimited level shows 0 bunks;
+    - a destroyed barracks keeps its bunks;
+    - a construction site has bunks;
+    - the AI ignores bunks;
+    - the AI builds houses for soldiers;
+    - Catalog stops checking `bunks`.
 - Checking every code: each code in the tables was grepped in `Sim/Military.luau`, `Sim/Commands.luau`, `Sim/Simulation.luau`, `Kingdom/MatchHost.luau` and `MilitaryService.luau`. `phase`, `no_kingdom` and `rate` appear in none of them. `busy` appears only in `Simulation:startUpgrade`.
 - Studio: **unverified** (headless only).
 
@@ -80,20 +96,32 @@ Additive only:
 - two new `UnitOrder` codes, `out_of_bounds` and `no_objective`;
 - `Army.Objectives` / `Army.GetObjectives` progress is rounded to 0.01 (the type is still a number from 0 to 1).
 
-## Open issues and risks
-- **VS-1 slice: there are no beds for soldiers until a house is built.** The slice starts with 12 citizens in the keep's 12 beds. I ran a headless probe through the real services, recruiting every 5 s once a barracks stood:
-  - **Barracks only, no house:** 166 of 166 recruits were refused with `population_cap` over 15 minutes, and no citizens were born.
-  - **House first (40 wood), then barracks:** births took 2 of the house's 4 beds before the barracks was finished. 2 soldiers were recruited, and every later attempt got `population_cap`.
+## D-041: soldiers sleep in the barracks (later commit on #70)
+FORGE-00's D-041 replaces the slice blocker below. In the commit that changes this section:
+- **Bunks, not beds.** Each barracks level has `bunks` (4 / 8 / 12 / 16, PROVISIONAL, `config/Buildings.luau`; it replaces `recruitCap`). `Army.Recruit` is limited only by free bunks (`recruit_cap`). It no longer answers `population_cap`.
+- **Births use beds for citizens only.** Soldiers, trained or training, never take a bed. A house is still needed for the slice's kingdom to grow.
+- **A destroyed barracks refunds** every recruit still queued or training, in full, to the treasury. The ledger source is `refund`. Living soldiers stay alive; recruiting waits until bunks are free again.
+- **`getPopulation().cap` (G5, `Kingdom.Population`) is now beds + bunks**, so it counts the same people as `total` (citizens + soldiers). Your job panel's "homes for {cap}" line now includes the bunks.
+- Kingdom context `kingdom.housing_ratio` (content conditions) counts citizens only.
+- The AI ruler recruits by bunks and builds houses for citizens only.
 
-  Your "Build houses first" sentence is the right hint. I haven't changed any economy numbers; that is for FORGE-00 and FORGE-04 to decide.
-- Follow-ups not in this PR (FORGE-05 review):
-  - M2: a player who joins during Results never gets `Match.Ended`.
-  - L2: a barracks destroyed mid-queue loses the paid queue, with no refund and no event.
+## Open issues and risks
+- **Resolved by D-041 (above):** "VS-1 slice: there are no beds for soldiers until a house is built." My headless probe, recruiting every 5 s once a barracks stood, had found this:
+  - with a barracks and no house, 166 of 166 recruits were refused with `population_cap` over 15 minutes;
+  - with a house first, 2 soldiers.
+
+  `MilitaryService.spec` "the slice without a house" now builds a barracks through the real build path, recruits 3 with every bed taken and captures with Send-to-capture.
+- **Slice economy (for FORGE-00 / FORGE-04; not changed).** By `Costs.luau` arithmetic, a barracks (120 wood, 60 stone) plus 3 soldiers (90 food, 30 wood) is 150 wood, 60 stone and 90 food. The start is 120 food, 100 wood and 50 stone, so a ruler gathers at least 50 wood and 10 stone first. This is arithmetic only; I have not timed it in play.
+- Follow-ups from FORGE-05's review:
+  - M2 (`Match.Ended` for a player who joins during Results) is PR #97.
+  - L2 (refund for a barracks destroyed mid-queue) is done by D-041 above.
 
 ## Next actions for the receiver
 1. FORGE-03: map `no_objective` and `out_of_bounds` if the UI ever shows Command outcomes. The button only needs to keep its "Every tower is yours" state.
-2. FORGE-03: remove the `busy`, `phase`, `no_kingdom` and `rate` mappings from `ArmyText`; they are never sent.
+2. FORGE-03: remove the `busy`, `phase`, `no_kingdom`, `rate` and `population_cap` mappings from `ArmyText`; they are never sent. `recruit_cap` now means "no free bunk", so it could read "No free bunks: upgrade or build a barracks" (yours to word).
 3. FORGE-03: re-run #63's Send-to-capture against #70. `Army.Command({}, "capture")` should now move the soldiers.
+4. FORGE-03: the job panel's "homes for {cap}" now counts barracks bunks too. Reword it if "homes" reads wrong (for example "beds and bunks for").
+5. FORGE-00: CONTRACTS §G13.5 still lists "recruit cap" among the `Buildings.luau` stats. Since D-041, the field is `bunks`.
 
 ## Files to read
 - `games/game-001/src/shared/Army/Remotes.luau` — remote header: arguments, codes, Send-to-capture

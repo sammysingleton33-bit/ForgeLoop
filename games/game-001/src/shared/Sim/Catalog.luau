@@ -42,7 +42,7 @@ export type BuildingLevel = {
 	yield: number?, -- food per harvest (farm)
 	attack: AttackStats?, -- defensive fire (watchtower, keep)
 	trains: { string }?, -- unit ids this level can train (barracks)
-	recruitCap: number?, -- soldiers (living + training) this barracks supports
+	bunks: number?, -- soldiers (living + training) this barracks sleeps (D-041; barracks)
 	trainSpeed: number?, -- divides a unit's trainSeconds (barracks; default 1)
 }
 
@@ -336,8 +336,8 @@ function Catalog.validate(catalog: any): (boolean, { string })
 			if not isNonNegInt(stats.hp) or stats.hp == 0 then
 				table.insert(errors, `{lw}: hp must be a positive integer`)
 			end
-			if stats.recruitCap ~= nil and not isNonNegInt(stats.recruitCap) then
-				table.insert(errors, `{lw}: recruitCap must be a non-negative integer`)
+			if stats.bunks ~= nil and not isNonNegInt(stats.bunks) then
+				table.insert(errors, `{lw}: bunks must be a non-negative integer`)
 			end
 			if stats.trainSpeed ~= nil and not isPositive(stats.trainSpeed) then
 				table.insert(errors, `{lw}: trainSpeed must be positive`)

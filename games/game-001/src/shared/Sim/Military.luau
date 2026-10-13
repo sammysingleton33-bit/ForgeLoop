@@ -5,7 +5,8 @@
 	Installed into a Simulation as a system plus three commands:
 		Military.install(sim)
 		Recruit(unitKind, count, barracksId?) -> { barracksId, count }   errors: unknown_unit, invalid_args,
-		                                      no_barracks, population_cap, recruit_cap, cannot_afford; with a
+		                                      no_barracks, recruit_cap (no free bunks: soldiers sleep in the
+		                                      barracks, D-041), cannot_afford; with a
 		                                      barracksId also not_found, not_owner, not_barracks,
 		                                      barracks_not_ready (still being built), requires_barracks_level
 		                                      (that level does not train the unit). Without one: the standing
@@ -145,18 +146,11 @@ local function queuedCount(sim: any, kingdom: any): number
 	return n
 end
 
--- soldiers (living + training) the kingdom's standing barracks support: the sum of their recruitCap
--- (Buildings.luau, G13.5); a barracks level without one supports any number
+-- Bunks (D-041): soldiers (living + training) fit in the kingdom's standing barracks (Simulation:bunks)
 local function recruitCap(sim: any, kingdom: any): number
-	local cap = 0
-	for _, bid in kingdom.buildingIds do
-		local b = sim.buildings[bid]
-		if b.kind == "barracks" and not b.destroyed and b.level >= 1 then
-			cap += sim.catalog.buildings.barracks.levels[b.level].recruitCap or math.huge
-		end
-	end
-	return cap
+	return sim:bunks(kingdom)
 end
+
 Military.recruitCap = recruitCap
 
 -- A standing barracks whose level trains `kind`: at least the unit's requiresBarracksLevel and, when the
@@ -222,9 +216,6 @@ local function recruit(
 	local best, refused = pickBarracks(sim, kingdom, kind, def, barracksId)
 	if best == nil then
 		return false, refused
-	end
-	if sim:population(kingdom) + queuedCount(sim, kingdom) + count > kingdom.popCap then
-		return false, "population_cap"
 	end
 	if #kingdom.unitIds + queuedCount(sim, kingdom) + count > recruitCap(sim, kingdom) then
 		return false, "recruit_cap"

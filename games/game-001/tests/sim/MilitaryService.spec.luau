@@ -239,9 +239,10 @@ describe("MilitaryService: Army.Recruit (G8)", function()
 		expect(#fired).toBe(1) -- once per recruit, not per soldier
 	end)
 
-	it("refuses full beds, short funds, the recruit cap and bad barracks, charging nothing", function()
+	it("refuses short funds, full bunks and bad barracks, charging nothing; full beds never refuse (D-041)", function()
 		local env, s, p1, sim, k = setup()
-		local barracks = addBuilding(sim, k, "barracks") -- level 1: recruit cap 5
+		local barracks = addBuilding(sim, k, "barracks") -- level 1: 4 bunks
+		expect(#k.citizenIds).toBe(k.popCap) -- twelve citizens in the keep's twelve beds, no house
 		local fired = 0
 		GameEvents.UnitsRecruited:connect(function()
 			fired += 1
@@ -252,22 +253,20 @@ describe("MilitaryService: Army.Recruit (G8)", function()
 			expect(s.treasury:get(k.id)).toEqual(before)
 			env.mock:advance(0.6) -- keep within Army.Recruit's rate (burst 4, 2 per second)
 		end
-		refused("population_cap", barracks.id, 1) -- twelve citizens in the keep's twelve beds
-		addBeds(sim, k)
 		local food = s.treasury:get(k.id).food
-		local short = math.floor(food / 30) + 1 -- one more soldier than the food pays for
-		expect(short <= 5).toBe(true)
-		refused("cannot_afford", barracks.id, short)
+		assert(s.treasury:spend(k.id, { food = food - 60 }, "spec:spend", "spec")) -- 60 food: two soldiers
+		refused("cannot_afford", barracks.id, 3)
 		local azure = addBuilding(sim, sim.kingdoms.azure, "barracks")
 		refused("not_owner", azure.id, 1)
 		refused("not_found", 99999, 1)
 		refused("not_barracks", k.keepId, 1)
 		s.treasury:deposit(k.id, "food", 500, "spec:food", "spec")
 		s.treasury:deposit(k.id, "wood", 500, "spec:wood", "spec")
-		expect({ invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 5) }).toEqual({ true })
+		refused("recruit_cap", barracks.id, 5) -- more than the 4 bunks at once
+		expect({ invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 4) }).toEqual({ true })
 		env.mock:advance(0.6)
-		refused("recruit_cap", barracks.id, 1) -- five living or training is the cap
-		expect(#barracks.queue).toBe(5)
+		refused("recruit_cap", barracks.id, 1) -- four living or training fill the bunks
+		expect(#barracks.queue).toBe(4)
 		expect(#azure.queue).toBe(0)
 		expect(fired).toBe(1)
 	end)
@@ -360,7 +359,7 @@ describe("MilitaryService: remotes (G8)", function()
 		local barracks = addBuilding(sim, k, "barracks")
 		local calls = countCommands(s.match.host)
 		for _ = 1, 6 do
-			invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 1) -- population_cap, but counted
+			invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 1) -- the first four fill the 4 bunks
 		end
 		expect(calls.n).toBe(4)
 		for _ = 1, 10 do
@@ -369,7 +368,8 @@ describe("MilitaryService: remotes (G8)", function()
 		expect(calls.n).toBe(4 + 6)
 		expect(s.remotes:stats().dropped.rateLimited).toBe(2 + 4)
 		env.mock:advance(3) -- the buckets refill
-		expect({ invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 1) }).toEqual({ false, "population_cap" })
+		expect(#barracks.queue).toBe(4)
+		expect({ invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 1) }).toEqual({ false, "recruit_cap" })
 	end)
 
 	it("answers not_in_match to spectators and leaves other kingdoms' soldiers alone", function()
@@ -454,6 +454,79 @@ describe("MilitaryService + ObjectiveService: Send-to-capture (VS-1 row 7)", fun
 		end
 		local model = assert(s.objectives:getModel(tower.id))
 		expect(model:GetAttribute("Owner")).toBe(k.id)
+		expect(s.match:getPhase()).toBe("Results") -- slice mode: the first capture ends the slice
+	end)
+end)
+
+describe("MilitaryService: the slice without a house (D-041, VS-1 B7)", function()
+	it("builds a barracks, recruits 3 with every bed taken and captures with Send-to-capture", function()
+		local env, s, p1, sim, k = setup()
+		expect(s.match:getPhase()).toBe("Founding")
+		expect(#k.citizenIds).toBe(k.popCap) -- the keep's twelve beds are full from the start
+		-- the spec adds only what the treasury lacks for a price: what a ruler gathers first
+		local function topUp(price: { [string]: number }, times: number)
+			local stock = s.treasury:get(k.id)
+			for res, amount in price do
+				local short = amount * times - (stock[res] or 0)
+				if short > 0 then
+					s.treasury:deposit(k.id, res, short, `spec:{res}:{times}`, "spec")
+				end
+			end
+		end
+		-- the barracks goes up through the real build path: cost, construction site, builders
+		topUp(assert(Costs.building("barracks", 1)).cost, 1)
+		local keep = sim.buildings[k.keepId]
+		local barracks
+		for radius = 40, 160, 10 do
+			for step = 0, 23 do
+				local a = step / 24 * 2 * math.pi
+				barracks =
+					sim:placeBuilding(k, "barracks", keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius)
+				if barracks then
+					break
+				end
+			end
+			if barracks then
+				break
+			end
+		end
+		assert(barracks, "no spot for the barracks")
+		local waited = 0
+		while barracks.level < 1 and waited < 120 do
+			env.mock:advance(1)
+			waited += 1
+		end
+		expect(barracks.level).toBe(1)
+		for _, bid in k.buildingIds do
+			expect(sim.buildings[bid].kind).never.toBe("house")
+		end
+		expect(#k.citizenIds).toBe(k.popCap)
+		-- recruit 3: soldiers sleep in the barracks' bunks, so the full beds do not matter
+		topUp(assert(Costs.unit("soldier")).cost, 3)
+		expect({ invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 3) }).toEqual({ true })
+		env.mock:advance(3 * assert(Costs.unit("soldier")).trainSeconds + 0.5)
+		expect(#k.unitIds).toBe(3)
+		expect(s.match:getPhase()).toBe("Founding")
+		-- Send-to-capture (no target): the nearest tower the kingdom does not hold
+		fire(env, p1, "Army.Command", {}, "capture")
+		for _, uid in k.unitIds do
+			expect(sim.units[uid].order.kind).toBe("Capture")
+		end
+		local towerId = sim.units[k.unitIds[1]].order.objectiveId
+		local tower
+		for _, o in sim.objectives.list do
+			if o.id == towerId then
+				tower = o
+			end
+		end
+		assert(tower, "the soldiers march on no tower")
+		waited = 0
+		while tower.owner == nil and waited < 300 do
+			env.mock:advance(1)
+			waited += 1
+		end
+		expect(tower.owner).toBe(k.id)
+		env.mock:advance(0.5)
 		expect(s.match:getPhase()).toBe("Results") -- slice mode: the first capture ends the slice
 	end)
 end)
