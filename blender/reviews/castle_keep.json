@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "castle_keep_blue_01": {
+      "geometry_hash": "7b9e852a34f07cd1",
+      "verdict": "PASS"
+    },
+    "castle_keep_green_01": {
+      "geometry_hash": "4f3e8ff8caf2b26c",
+      "verdict": "PASS"
+    },
+    "castle_keep_red_01": {
+      "geometry_hash": "c1827b6fbb1e859b",
+      "verdict": "PASS"
+    },
+    "castle_keep_yellow_01": {
+      "geometry_hash": "ee8c39495af85ec4",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_keep",
+  "generator_version": 1,
+  "notes": "Strong kingdom reads (red cone cluster, blue pyramids, emerald timber hall, gold onions) with accents correctly kept to roofs, shutters and banners. Nits: yellow_01 front-corner onion overlaps the central dome into one gold lump at eye level and its rib lines read as cracks; red/blue/gold share the same 4+1 tower layout.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

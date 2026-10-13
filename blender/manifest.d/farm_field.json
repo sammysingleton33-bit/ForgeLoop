@@ -9,7 +9,7 @@
             "center": [
               -0.004,
               1.213,
-              11.692
+              11.717
             ],
             "name": "border_back",
             "size": [
@@ -22,7 +22,7 @@
             "center": [
               15.446,
               1.213,
-              0.242
+              0.267
             ],
             "name": "border_left",
             "size": [
@@ -35,7 +35,7 @@
             "center": [
               -15.454,
               1.213,
-              0.242
+              0.267
             ],
             "name": "border_right",
             "size": [
@@ -46,26 +46,26 @@
           },
           {
             "center": [
-              7.696,
+              9.096,
               1.213,
-              -11.208
+              -11.183
             ],
             "name": "border_front_l",
             "size": [
-              16.6,
+              13.8,
               2.4,
               1.0
             ]
           },
           {
             "center": [
-              -10.504,
+              -9.104,
               1.213,
-              -11.208
+              -11.183
             ],
             "name": "border_front_r",
             "size": [
-              11.0,
+              13.8,
               2.4,
               1.0
             ]
@@ -75,8 +75,8 @@
       },
       "dimensions_studs": {
         "x": 31.585,
-        "y": 4.078,
-        "z": 24.075
+        "y": 5.033,
+        "z": 24.138
       },
       "double_sided": false,
       "files": {
@@ -84,8 +84,8 @@
         "validation": "exports/farm_field_01.validation.json"
       },
       "generator": "farm_field",
-      "generator_version": 1,
-      "geometry_hash": "d4b8478347b7c26c",
+      "generator_version": 3,
+      "geometry_hash": "30e81a98b6aea8b7",
       "id": "farm_field_01",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -93,31 +93,46 @@
         "border": "wattle",
         "crop": "wheat",
         "gap": "centre",
-        "rows": 5
+        "rows": 4,
+        "w": 32.0
       },
       "preview": "previews/farm_field.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+        "review_file": "reviews/farm_field.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7300,
       "sockets": {
         "entry": [
-          -2.804,
+          -0.004,
           0.013,
-          -12.758
+          -12.733
         ],
         "harvest": [
           -0.004,
           0.913,
-          0.242
+          0.267
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2958,
-        "lod1": 1034
+        "lod0": 2844,
+        "lod1": 994
       },
       "validation_pass": true
     },
@@ -128,66 +143,66 @@
         "boxes": [
           {
             "center": [
-              0.016,
-              0.717,
-              11.533
+              0.005,
+              1.213,
+              11.571
             ],
             "name": "border_back",
             "size": [
               32.0,
-              1.2,
+              2.4,
               1.0
             ]
           },
           {
             "center": [
-              15.466,
-              0.717,
-              0.083
+              15.455,
+              1.213,
+              0.121
             ],
             "name": "border_left",
             "size": [
               1.0,
-              1.2,
+              2.4,
               24.0
             ]
           },
           {
             "center": [
-              -15.434,
-              0.717,
-              0.083
+              -15.445,
+              1.213,
+              0.121
             ],
             "name": "border_right",
             "size": [
               1.0,
-              1.2,
+              2.4,
               24.0
             ]
           },
           {
             "center": [
-              10.516,
-              0.717,
-              -11.367
+              12.605,
+              1.213,
+              -11.329
             ],
             "name": "border_front_l",
             "size": [
-              11.0,
-              1.2,
+              6.8,
+              2.4,
               1.0
             ]
           },
           {
             "center": [
-              -7.684,
-              0.717,
-              -11.367
+              -5.595,
+              1.213,
+              -11.329
             ],
             "name": "border_front_r",
             "size": [
-              16.6,
-              1.2,
+              20.8,
+              2.4,
               1.0
             ]
           }
@@ -195,9 +210,9 @@
         "fidelity": "None"
       },
       "dimensions_studs": {
-        "x": 32.265,
-        "y": 5.829,
-        "z": 24.437
+        "x": 31.599,
+        "y": 5.725,
+        "z": 23.851
       },
       "double_sided": false,
       "files": {
@@ -205,40 +220,55 @@
         "validation": "exports/farm_field_02.validation.json"
       },
       "generator": "farm_field",
-      "generator_version": 1,
-      "geometry_hash": "603525c2d87415b1",
+      "generator_version": 3,
+      "geometry_hash": "06c9b9f0128d5183",
       "id": "farm_field_02",
       "kingdom": null,
       "material": "M_forge_palette",
       "params": {
-        "border": "stones",
+        "border": "wattle",
         "crop": "wheat_harvest",
         "gap": "left",
-        "rows": 5
+        "rows": 4,
+        "w": 32.0
       },
       "preview": "previews/farm_field.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+        "review_file": "reviews/farm_field.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7301,
       "sockets": {
         "entry": [
-          2.816,
-          0.117,
-          -12.917
+          7.005,
+          0.013,
+          -12.879
         ],
         "harvest": [
-          0.016,
-          1.017,
-          0.083
+          0.005,
+          0.913,
+          0.121
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2762,
-        "lod1": 966
+        "lod0": 2830,
+        "lod1": 990
       },
       "validation_pass": true
     },
@@ -326,8 +356,8 @@
         "validation": "exports/farm_field_03.validation.json"
       },
       "generator": "farm_field",
-      "generator_version": 1,
-      "geometry_hash": "1069a44c4bafaab8",
+      "generator_version": 3,
+      "geometry_hash": "197a143684dfe7f7",
       "id": "farm_field_03",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -336,12 +366,27 @@
         "crop": "cabbage",
         "gap": "centre",
         "rows": 6,
-        "scarecrow": true
+        "scarecrow": true,
+        "w": 32.0
       },
       "preview": "previews/farm_field.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+        "review_file": "reviews/farm_field.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7302,
       "sockets": {
@@ -372,21 +417,21 @@
           {
             "center": [
               0.012,
-              1.216,
-              11.654
+              1.213,
+              11.716
             ],
             "name": "border_back",
             "size": [
-              32.0,
+              24.0,
               2.4,
               1.0
             ]
           },
           {
             "center": [
-              15.462,
-              1.216,
-              0.204
+              11.462,
+              1.213,
+              0.266
             ],
             "name": "border_left",
             "size": [
@@ -397,9 +442,9 @@
           },
           {
             "center": [
-              -15.438,
-              1.216,
-              0.204
+              -11.438,
+              1.213,
+              0.266
             ],
             "name": "border_right",
             "size": [
@@ -410,26 +455,26 @@
           },
           {
             "center": [
-              4.912,
-              1.216,
-              -11.246
+              4.612,
+              1.213,
+              -11.184
             ],
             "name": "border_front_l",
             "size": [
-              22.2,
+              14.8,
               2.4,
               1.0
             ]
           },
           {
             "center": [
-              -13.288,
-              1.216,
-              -11.246
+              -9.588,
+              1.213,
+              -11.184
             ],
             "name": "border_front_r",
             "size": [
-              5.4,
+              4.8,
               2.4,
               1.0
             ]
@@ -438,9 +483,9 @@
         "fidelity": "None"
       },
       "dimensions_studs": {
-        "x": 31.591,
-        "y": 2.946,
-        "z": 24.026
+        "x": 23.591,
+        "y": 3.916,
+        "z": 24.15
       },
       "double_sided": false,
       "files": {
@@ -448,8 +493,8 @@
         "validation": "exports/farm_field_04.validation.json"
       },
       "generator": "farm_field",
-      "generator_version": 1,
-      "geometry_hash": "51686e3324cac635",
+      "generator_version": 3,
+      "geometry_hash": "d34bac4e98c22afb",
       "id": "farm_field_04",
       "kingdom": null,
       "material": "M_forge_palette",
@@ -457,31 +502,47 @@
         "border": "wattle",
         "crop": "pumpkin",
         "gap": "right",
-        "rows": 5
+        "rows": 4,
+        "tool_rack": true,
+        "w": 24.0
       },
       "preview": "previews/farm_field.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+        "review_file": "reviews/farm_field.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7303,
       "sockets": {
         "entry": [
-          -8.388,
-          0.016,
-          -12.796
+          -4.988,
+          0.013,
+          -12.734
         ],
         "harvest": [
           0.012,
-          0.916,
-          0.204
+          0.913,
+          0.266
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2968,
-        "lod1": 1038
+        "lod0": 2396,
+        "lod1": 838
       },
       "validation_pass": true
     },
@@ -494,20 +555,20 @@
             "center": [
               -0.008,
               1.212,
-              11.641
+              11.625
             ],
             "name": "border_back",
             "size": [
-              32.0,
+              16.0,
               2.4,
               1.0
             ]
           },
           {
             "center": [
-              15.442,
+              7.442,
               1.212,
-              0.191
+              0.175
             ],
             "name": "border_left",
             "size": [
@@ -518,9 +579,9 @@
           },
           {
             "center": [
-              -15.458,
+              -7.458,
               1.212,
-              0.191
+              0.175
             ],
             "name": "border_right",
             "size": [
@@ -531,26 +592,26 @@
           },
           {
             "center": [
-              11.425,
+              4.092,
               1.212,
-              -11.259
+              -11.275
             ],
             "name": "border_front_l",
             "size": [
-              9.133,
+              7.8,
               2.4,
               1.0
             ]
           },
           {
             "center": [
-              -6.775,
+              -6.108,
               1.212,
-              -11.259
+              -11.275
             ],
             "name": "border_front_r",
             "size": [
-              18.467,
+              3.8,
               2.4,
               1.0
             ]
@@ -559,9 +620,9 @@
         "fidelity": "None"
       },
       "dimensions_studs": {
-        "x": 31.597,
-        "y": 2.957,
-        "z": 23.993
+        "x": 15.597,
+        "y": 8.637,
+        "z": 23.96
       },
       "double_sided": false,
       "files": {
@@ -569,40 +630,55 @@
         "validation": "exports/farm_field_05.validation.json"
       },
       "generator": "farm_field",
-      "generator_version": 1,
-      "geometry_hash": "0e7f5a95535a5e2d",
+      "generator_version": 3,
+      "geometry_hash": "a8d28b1db18cf13e",
       "id": "farm_field_05",
       "kingdom": null,
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
-        "crop": "carrot",
-        "gap": "left",
-        "rows": 6
+        "crop": "corn_beans",
+        "gap": "centre",
+        "rows": 3,
+        "w": 16.0
       },
       "preview": "previews/farm_field.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+        "review_file": "reviews/farm_field.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7304,
       "sockets": {
         "entry": [
-          4.658,
+          -2.008,
           0.012,
-          -12.809
+          -12.825
         ],
         "harvest": [
           -0.008,
           0.912,
-          0.191
+          0.175
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2878,
-        "lod1": 1006
+        "lod0": 2408,
+        "lod1": 842
       },
       "validation_pass": true
     },
@@ -613,66 +689,66 @@
         "boxes": [
           {
             "center": [
-              0.009,
-              0.717,
-              11.455
+              0.002,
+              1.212,
+              11.597
             ],
             "name": "border_back",
             "size": [
               32.0,
-              1.2,
+              2.4,
               1.0
             ]
           },
           {
             "center": [
-              15.459,
-              0.717,
-              0.005
+              15.452,
+              1.212,
+              0.147
             ],
             "name": "border_left",
             "size": [
               1.0,
-              1.2,
+              2.4,
               24.0
             ]
           },
           {
             "center": [
-              -15.441,
-              0.717,
-              0.005
+              -15.448,
+              1.212,
+              0.147
             ],
             "name": "border_right",
             "size": [
               1.0,
-              1.2,
+              2.4,
               24.0
             ]
           },
           {
             "center": [
-              9.109,
-              0.717,
-              -11.445
+              4.902,
+              1.212,
+              -11.303
             ],
             "name": "border_front_l",
             "size": [
-              13.8,
-              1.2,
+              22.2,
+              2.4,
               1.0
             ]
           },
           {
             "center": [
-              -9.091,
-              0.717,
-              -11.445
+              -13.298,
+              1.212,
+              -11.303
             ],
             "name": "border_front_r",
             "size": [
-              13.8,
-              1.2,
+              5.4,
+              2.4,
               1.0
             ]
           }
@@ -680,9 +756,9 @@
         "fidelity": "None"
       },
       "dimensions_studs": {
-        "x": 32.293,
-        "y": 7.282,
-        "z": 24.344
+        "x": 31.613,
+        "y": 2.925,
+        "z": 23.87
       },
       "double_sided": false,
       "files": {
@@ -690,41 +766,56 @@
         "validation": "exports/farm_field_06.validation.json"
       },
       "generator": "farm_field",
-      "generator_version": 1,
-      "geometry_hash": "00a5bd0d67104047",
+      "generator_version": 3,
+      "geometry_hash": "9869fcb412ea7fba",
       "id": "farm_field_06",
       "kingdom": null,
       "material": "M_forge_palette",
       "params": {
-        "border": "stones",
-        "crop": "sprouts",
-        "gap": "centre",
-        "rows": 6,
-        "scarecrow": true
+        "border": "wattle",
+        "crop": "turnips",
+        "gap": "right",
+        "rows": 5,
+        "trough": true,
+        "w": 32.0
       },
       "preview": "previews/farm_field.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+        "review_file": "reviews/farm_field.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7305,
       "sockets": {
         "entry": [
-          0.009,
-          0.117,
-          -12.995
+          -8.398,
+          0.012,
+          -12.853
         ],
         "harvest": [
-          0.009,
-          1.017,
-          0.005
+          0.002,
+          0.912,
+          0.147
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2690,
-        "lod1": 940
+        "lod0": 2640,
+        "lod1": 924
       },
       "validation_pass": true
     }
@@ -736,11 +827,11 @@
   "generator": "farm_field",
   "variation": {
     "closest_pair": [
-      "farm_field_04",
-      "farm_field_05"
+      "farm_field_01",
+      "farm_field_02"
     ],
-    "mean_pair_diff": 0.3712,
-    "min_pair_diff": 0.1188,
+    "mean_pair_diff": 0.4652,
+    "min_pair_diff": 0.1049,
     "pass": true,
     "threshold": 0.08
   }

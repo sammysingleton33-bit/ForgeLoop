@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "castle_wall_blue_01": {
+      "geometry_hash": "78b516b559424960",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_blue_02": {
+      "geometry_hash": "ad55446273b0c6f7",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_green_01": {
+      "geometry_hash": "08539b88ed3b3ad3",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_green_02": {
+      "geometry_hash": "64d091ceb6588d54",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_red_01": {
+      "geometry_hash": "167081d6f35eac94",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_red_02": {
+      "geometry_hash": "65acf4cee4f4d582",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_yellow_01": {
+      "geometry_hash": "1c88ad07a41c5458",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_wall_yellow_02": {
+      "geometry_hash": "bc9bf36a433cf531",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "castle_wall",
+  "generator_version": 1,
+  "notes": "red_01 and yellow_01 carry no kingdom roof form (no red spire / gold onion), so kingdom ID rests on one small banner; blue_01 and green_01 read as flat boxes with a lid-like shed/gable roof at 80 studs. Banners collide with arrow slits on red_01/green_01/blue_02, and the oak-leaf and sun emblems both read as white blobs at distance.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 3,
+    "triangle_cost": 4,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

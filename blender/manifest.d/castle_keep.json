@@ -1,0 +1,255 @@
+{
+  "assets": [
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 47.974,
+        "y": 72.8,
+        "z": 41.087
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_blue_01.fbx",
+        "validation": "exports/castle_keep_blue_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "1bb89639ac0e0af2",
+      "id": "castle_keep_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_keep.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7701,
+      "sockets": {
+        "balcony": [
+          -0.0,
+          17.8,
+          -13.043
+        ],
+        "door": [
+          -0.0,
+          0.0,
+          -22.143
+        ],
+        "flag": [
+          -0.0,
+          72.8,
+          3.057
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 13070,
+        "lod1": 4574
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 54.6,
+        "y": 64.515,
+        "z": 44.4
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_green_01.fbx",
+        "validation": "exports/castle_keep_green_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "11b00511bf67dbbf",
+      "id": "castle_keep_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_keep.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7702,
+      "sockets": {
+        "balcony": [
+          -0.0,
+          17.8,
+          -14.7
+        ],
+        "door": [
+          -0.0,
+          0.0,
+          -23.8
+        ],
+        "flag": [
+          -0.0,
+          64.515,
+          0.4
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 13644,
+        "lod1": 4774
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 44.765,
+        "y": 84.3,
+        "z": 40.436
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_red_01.fbx",
+        "validation": "exports/castle_keep_red_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "ac178010a3a71af5",
+      "id": "castle_keep_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_keep.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7700,
+      "sockets": {
+        "balcony": [
+          0.041,
+          17.8,
+          -12.718
+        ],
+        "door": [
+          0.041,
+          0.0,
+          -21.818
+        ],
+        "flag": [
+          0.041,
+          84.3,
+          3.882
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 13414,
+        "lod1": 4694
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 47.02,
+        "y": 68.8,
+        "z": 42.298
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_yellow_01.fbx",
+        "validation": "exports/castle_keep_yellow_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "9dc5fec1a79bca29",
+      "id": "castle_keep_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_keep.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7703,
+      "sockets": {
+        "balcony": [
+          0.241,
+          17.8,
+          -13.649
+        ],
+        "door": [
+          0.241,
+          0.0,
+          -22.749
+        ],
+        "flag": [
+          0.241,
+          68.8,
+          2.951
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 12564,
+        "lod1": 4396
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "castle_keep",
+  "variation": {
+    "closest_pair": [
+      "castle_keep_blue_01",
+      "castle_keep_yellow_01"
+    ],
+    "mean_pair_diff": 0.1821,
+    "min_pair_diff": 0.1077,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

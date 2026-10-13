@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "castle_tower_blue_01": {
+      "geometry_hash": "7ed5afe2b6cc8ac3",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_blue_02": {
+      "geometry_hash": "02a9f680520070b5",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_green_01": {
+      "geometry_hash": "c7dc981efca18d21",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_green_02": {
+      "geometry_hash": "f502241b106c9386",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_red_01": {
+      "geometry_hash": "66d775a441a9f740",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_red_02": {
+      "geometry_hash": "92b377792c54523c",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_yellow_01": {
+      "geometry_hash": "62a0c7535c662ae0",
+      "verdict": "NEEDS-WORK"
+    },
+    "castle_tower_yellow_02": {
+      "geometry_hash": "f5d0061dd1e1c036",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "castle_tower",
+  "generator_version": 1,
+  "notes": "green_01/green_02 roofs are grass/foliage green (approx #457c40, hue ~117) instead of the emerald (hue ~155) used on wall/gatehouse/keep, breaking the foliage rule and kit cohesion. yellow_02 central dome is a hemisphere, not an onion, and merges with the front corner dome at gameplay distance; red_02/blue_02/yellow_02 sit at 98-99% of the 6000-tri budget.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 2,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

@@ -56,6 +56,9 @@ def asset_id(i, p):
 
 # ------------------------------------------------------------------ cloth
 
+FROZEN = {"oak": "oak_tilted"}  # banner geometry is reviewed + committed: keep its original leaf
+
+
 def emblem_cols(k, emb):
     """(main, accent) colours of an emblem on kingdom cloth."""
     if emb == "flame":
@@ -112,7 +115,7 @@ def hanging_cloth(b, k, W, L, top, bottom, emb, rng, x0=0.0, y0=0.0, amp=0.3, fr
     b.add(sheet(us, vs, pos, THICK, cloth, cols), grad=("range", 0.3, 0.9), tag="cloth")
     es = emb_size or W * 0.74
     ez = top - L * emb_z
-    parts = emblem(emb, es, *emblem_cols(k, emb), mid=emb_mid)
+    parts = emblem(FROZEN.get(emb, emb), es, *emblem_cols(k, emb), mid=emb_mid)
     for p in parts:
         p.move(x0, y0 - THICK / 2 - 0.08, ez)
     bend_onto(parts, wave)
@@ -169,7 +172,7 @@ def flying_flag(b, k, L, H, top, emb, rng, x0=0.0, notch=2.0, amp=0.45):
     es = H * 0.56
     ex = x0 + 0.25 + L * 0.36
     ez = top - H * 0.5 - droop(0.36)
-    parts = emblem(emb, es, *emblem_cols(k, emb))
+    parts = emblem(FROZEN.get(emb, emb), es, *emblem_cols(k, emb))
     for p in parts:
         p.move(ex, -THICK / 2 - 0.08, ez)
     bend_onto(parts, wave)
@@ -307,7 +310,7 @@ def build_standard(b, p, rng):
                   us=(0.0, 0.07, 0.35, 0.68, 0.87, 1.0))
     # 3D emblem topper in trim metal on a socket
     es = 2.8 if big else 3.2
-    parts = emblem(p["emblem"], es, trim, kcol(k, "emblem"), depth=0.4, mid=None)
+    parts = emblem(FROZEN.get(p["emblem"], p["emblem"]), es, trim, kcol(k, "emblem"), depth=0.4, mid=None)
     for pc in parts:
         pc.move(0, 0, H + 0.5 + es / 2)
     b.add(parts, grad=("range", 0.4, 1.0), tag="emblem")

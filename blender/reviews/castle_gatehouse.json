@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "castle_gatehouse_blue_01": {
+      "geometry_hash": "df153c3e56803bae",
+      "verdict": "PASS"
+    },
+    "castle_gatehouse_green_01": {
+      "geometry_hash": "140e565be5af47b2",
+      "verdict": "PASS"
+    },
+    "castle_gatehouse_red_01": {
+      "geometry_hash": "6ede89735c286466",
+      "verdict": "PASS"
+    },
+    "castle_gatehouse_yellow_01": {
+      "geometry_hash": "93790508cf70ad68",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_gatehouse",
+  "generator_version": 1,
+  "notes": "All four read instantly at 78 studs via cones/pyramids/hoarding/onions, crest and banners; correct emerald and gold. Nits: red/green/gold share identical drum-tower massing, the gold sun reads as a white star at distance, and all variants sit at 96-99% of the 9000-tri budget.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 5,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

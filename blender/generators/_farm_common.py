@@ -12,7 +12,7 @@ from lib.geo import Piece, Vector, box, cylinder, frustum_box, icosphere, lathe,
 from lib.geo import recalc_normals, tube  # noqa: F401  (re-exported)
 
 HAY = ("hay", "straw", "thatch_light", "hay")
-WHEAT = ("wheat", "wheat", "hay", "straw", "thatch_light")
+WHEAT = ("wheat", "straw", "thatch_light", "straw", "wheat")
 
 
 # ------------------------------------------------------------------ tiny organic bits
@@ -289,6 +289,29 @@ def square_bale(rng, L=3.0, w=1.6, h=1.4, color="hay", twine="hay_dark"):
     return out
 
 
+EMBLEMS = {"red": "crown", "blue": "star", "green": "oak", "yellow": "sun"}
+
+
+def kingdom_banner(k, h=5.6, w=2.6, depth=0.14):
+    """Hanging kingdom banner in the XZ plane facing -Y, top bar at z=h, swallowtail bottom at z=0:
+    cloth in the kingdom colour, dark hem at the top, trim edges and the kingdom emblem
+    (crown / star / oak leaf / sun, from the shared kingdom-props helper)."""
+    from lib.palette import kingdom_color
+    from generators._kingdom_props_common import emblem
+
+    cloth = kingdom_color(k, "cloth")
+    out = [prism([(-w / 2, 0.0), (0.0, 0.9), (w / 2, 0.0), (w / 2, h), (-w / 2, h)], depth, cloth, axis="Y")
+           .paint(grad=("range", 0.35, 0.95))]
+    out.append(box(w + 0.1, depth + 0.06, 0.5, kingdom_color(k, "cloth_dark")).move(0, 0, h - 0.5))
+    for sx in (-1, 1):
+        out.append(box(0.16, depth + 0.04, h - 1.0, kingdom_color(k, "trim")).move(sx * (w / 2 - 0.08), 0, 0.5))
+    out.append(cylinder(0.11, 0.11, w + 0.9, 5, "wood_dark").move(0, 0, -(w + 0.9) / 2).rotate(math.pi / 2, "Y")
+               .move(0, 0, h + 0.12))
+    for q in emblem(EMBLEMS[k], w * 0.62, kingdom_color(k, "emblem"), kingdom_color(k, "trim"), depth=0.12, mid=None):
+        out.append(q.move(0, -depth / 2 - 0.02, h * 0.58))
+    return out
+
+
 __all__ = ["HAY", "WHEAT", "spindle", "blade", "leaf", "wattle_band", "stake", "fieldstone", "stone_row", "sack",
            "basket", "pitchfork", "rake", "wheel", "scarecrow", "round_bale", "twine_ring", "hay_mound",
-           "layered_profile", "straw_tufts", "square_bale", "tube"]
+           "layered_profile", "straw_tufts", "square_bale", "tube", "EMBLEMS", "kingdom_banner"]

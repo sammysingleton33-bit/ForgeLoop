@@ -1,0 +1,595 @@
+{
+  "assets": [
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.579,
+        "y": 64.9,
+        "z": 18.579
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_blue_01.fbx",
+        "validation": "exports/castle_tower_blue_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "64d2595bd8ee5741",
+      "id": "castle_tower_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "pyramid_big",
+        "form": "square",
+        "kingdom": "blue",
+        "walk": 33.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7302,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          64.9,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          33.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4104,
+        "lod1": 1436
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 19.048,
+        "y": 62.95,
+        "z": 19.048
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_blue_02.fbx",
+        "validation": "exports/castle_tower_blue_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "304b919289e3a9c2",
+      "id": "castle_tower_blue_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "bartizans",
+        "form": "square",
+        "kingdom": "blue",
+        "walk": 34.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7303,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          62.95,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          34.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 5400,
+        "lod1": 1890
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 20.7,
+        "y": 50.856,
+        "z": 20.7
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_green_01.fbx",
+        "validation": "exports/castle_tower_green_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "2e68ceb8b781c9a7",
+      "id": "castle_tower_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "hoarding",
+        "form": "round",
+        "kingdom": "green",
+        "walk": 32.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7304,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          50.856,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          32.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4260,
+        "lod1": 1490
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 20.7,
+        "y": 59.073,
+        "z": 20.7
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_green_02.fbx",
+        "validation": "exports/castle_tower_green_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "8881daa372d3788c",
+      "id": "castle_tower_green_02",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "hoarding_lookout",
+        "form": "octagon",
+        "kingdom": "green",
+        "walk": 35.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7305,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          59.073,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          35.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4784,
+        "lod1": 1674
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.635,
+        "y": 70.5,
+        "z": 18.635
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_red_01.fbx",
+        "validation": "exports/castle_tower_red_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "7141a6556477871f",
+      "id": "castle_tower_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "spire_big",
+        "form": "round",
+        "kingdom": "red",
+        "walk": 33.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7300,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          70.5,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          33.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4164,
+        "lod1": 1456
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.635,
+        "y": 72.8,
+        "z": 18.635
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_red_02.fbx",
+        "validation": "exports/castle_tower_red_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "37c886205f24bfda",
+      "id": "castle_tower_red_02",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "spire_turret",
+        "form": "round",
+        "kingdom": "red",
+        "walk": 35.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7301,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          72.8,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          35.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 5708,
+        "lod1": 1996
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.635,
+        "y": 61.3,
+        "z": 18.635
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_yellow_01.fbx",
+        "validation": "exports/castle_tower_yellow_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "e3946d341b3ddd2d",
+      "id": "castle_tower_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "onion",
+        "form": "round",
+        "kingdom": "yellow",
+        "walk": 33.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7306,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          61.3,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          33.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4770,
+        "lod1": 1668
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.0,
+        "y": 60.4,
+        "z": 18.0
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_yellow_02.fbx",
+        "validation": "exports/castle_tower_yellow_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "39f9b0c65d0423a4",
+      "id": "castle_tower_yellow_02",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "kiosks",
+        "form": "square",
+        "kingdom": "yellow",
+        "walk": 29.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_tower.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7307,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          60.4,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          29.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 5442,
+        "lod1": 1904
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 8
+  },
+  "generator": "castle_tower",
+  "variation": {
+    "closest_pair": [
+      "castle_tower_blue_01",
+      "castle_tower_blue_02"
+    ],
+    "mean_pair_diff": 0.1649,
+    "min_pair_diff": 0.0914,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
