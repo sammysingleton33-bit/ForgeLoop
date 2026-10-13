@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
-| Open PR | none of mine (#47, #57, #69 merged) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. **B9** (`f562a31`: #99, #104, #107, #105) prepared and sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused; next ★: FORGE-01's #107 fix-forward (M1-M3) and the throne restriction (#89 L2) |
-| Last verified check | main `f562a31` (#105): check.sh 9/9 on the combined #107 + #105 gate (game-001 1168/0); main CI [run 38385776409](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38385776409) green; B9 artifact id 11807315580. CI Roblox gates step 307 s (STEP_TIMEOUT 600 s per step): tracking |
+| Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
+| Current task | D-046: **B13 = `d65fb2e`** sent to FORGE-00 (artifact 11840974191; studio-runs row and asks b234533). #93 rides B14 (M1 fix pending from FORGE-01). Next: FL-0101 cinematic conversations (#108 → #84 → #85 → #126) |
+| Last verified check | main `d65fb2e` (#119): check.sh PASS on the merge result (framework 517/0, game-001 1225/0), FL-0062 mutations 35/35, main CI run 38453828362 green, B13 artifact 11840974191; FL-0089 end-to-end 5/5 after #122 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
-| In review / queued | #77 re-review running on c5ad31d (B1/M1/M2 fixes pushed) → B8. Not ★ (wait for FORGE-07 unless promoted): #100 (gather, on #94), #101 (#91 follow-ups), #102 (my pacing probe spec). Waiting for FORGE-07 (not on the D-040 list): #86, #88, #85, #93, #94, #90, #96, #97, #49, #64, #82, #84, #92 |
+| In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -104,7 +104,18 @@ _Maintained by the worker. Keep it short and current._
 | #107 | FORGE-01 #77 follow-ups N2-N5 (M1-M3 tracked), D-040 ★ | `276d933` |
 | #105 | FORGE-02 kingdom emblems from the overview camera, D-040 ★ | `f562a31` (user build B9) |
 | #114 | FORGE-01 #107 follow-ups M1-M3, D-040 ★ | `74db60c` |
-| #112 | FORGE-01 throne for its kingdom's rulers only (#89 L2), D-040 ★ | `1c48149` |
+| #112 | FORGE-01 throne for its kingdom's rulers only (#89 L2), D-040 ★ | `1c48149` (user build B10, FORGE-00) |
+| #116 | FORGE-05 check.sh: game specs per top-level folder, each under STEP_TIMEOUT | `56b4d7c` |
+| #115 | FORGE-01 owner change rebuilds the building or captured watchtower in the owner's Kit look (VS-1 row 7; ★ for B11) | `38526a4` |
+| #117 | FORGE-01 #115 L1 spec: rebuilt tower keeps its pivot, a second capture, no leak (★, spec-only) | `1d4c076` |
+| #49 | FORGE-04 FL-0062 VS-1 feedback layer: announcer, kingdom effects, work feedback, phase music (★) | `21904e4` |
+| #120 | FORGE-05 MockEnv installs EngineStubs once per process (Lune has no ParticleEmitter:Emit); Boot spec celebration case | `0d71eff` |
+| #92 | FORGE-04 D-038 (7) per-feature mutation rows, Studio-test history, analytics taxonomy (★, D-046) | `13acf26` |
+| #113 | FORGE-01 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget (★, D-046) | `cac9522` |
+| #97 | FORGE-01 FL-0106 Match.Ended for late joiners during Results (★, D-046) | `681f38c` |
+| #111 | FORGE-01 FL-0107 G9 CitizenAnswered (★, D-046) | `003e180` |
+| #122 | FORGE-00 reputation notices for soldiers_recruited / wall_built (★, B13) | `196b1df` |
+| #119 | FORGE-04 FL-0062 follow-up: the summary owns the result line (★, D-046) | `d65fb2e` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

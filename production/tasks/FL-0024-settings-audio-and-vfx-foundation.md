@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 estimate_h: 6
 evidence:
@@ -15,6 +15,7 @@ evidence:
   - mutations.py FL-0024 rows 16/16 CAUGHT (session store, voice budget, SoundService guard, VFX budgets, sound-only cue, music dwell, game music tracks)
   - budgets documented in roblox/studio-tests/experience.md E3 (audio) and E4 (VFX)
   - "unverified: no sound asset chosen or heard; no effect seen in Studio (G5/G6, steps E2-E4)"
+  - integration-log #22 row; PR CI run 38309978083
 ---
 
 # Settings, audio and VFX foundation
@@ -42,3 +43,4 @@ Lune specs for settings persistence/migration and registry validation; Studio li
 - 2026-10-12 forge-04: REVIEW → BUILDING. back to BUILDING after merging main: D-027 (DataService optional, session-only settings), Core/Validate + RemoteClient now on main, kingdom-specific cues/presets move to the game tree (FL-0062, D-026). PRs not opened yet.
 - 2026-10-12 forge-04: BUILDING → TESTING. Reconciled: D-027 session store, SoundService guard, generic directors (kingdom cues to FL-0062); headless gates on 537c50b.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0024, stacked on FL-0023. Budgets in roblox/studio-tests/experience.md E3/E4.
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 at-merge record: merged in #22 (fc0ef69, 2026-10-12, with stacked #20 FL-0023 and #21 FL-0025). PR CI run 38309978083 green on a902d8c; merge result check.sh 9/9 PASS (485/0; game-001 97/0), pytest 141, validate 96/0, ownership PASS. Later fixes: #42/#49 (VFX parent attachment, budgets). REVIEW, only G6 pending (experience.md E3/E4 budgets in Studio).

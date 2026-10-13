@@ -108,6 +108,10 @@ export type Tuning = {
 	birthFood: number,
 	memorySize: number,
 	memorySeconds: number,
+	visitMood: number, -- mood points a ruler's visit adds (G5)
+	visitMoodSeconds: number, -- how long that lift lasts
+	visitCooldown: number, -- seconds before the same citizen's next visit counts again
+	celebrateRadius: number, -- studs around the keep within which citizens celebrate its level 2
 	fleeRadius: number,
 	arriveRadius: number,
 	placementGap: number,
@@ -440,6 +444,10 @@ function Catalog.validate(catalog: any): (boolean, { string })
 			"memorySize",
 			"memorySeconds",
 			"arriveRadius",
+			"visitMood",
+			"visitMoodSeconds",
+			"visitCooldown",
+			"celebrateRadius",
 		}
 	do
 		if not isPositive(t[field]) then

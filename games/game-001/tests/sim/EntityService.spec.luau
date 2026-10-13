@@ -774,3 +774,57 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 		expect(sawReset).toBe(true)
 	end)
 end)
+
+describe("EntityService VS-1 reactions (CONTRACTS G5, FL-0050)", function()
+	it("a keep reaching level 2 makes its citizens near it celebrate, once; far or foreign ones don't", function()
+		local env, entities, match = boot()
+		local byKingdom = seat(env, match, 5) -- rulers in several kingdoms, so several are populated
+		local sim = entities:_sim()
+		local k = sim.kingdoms.crimson
+		local keep = sim.buildings[k.keepId]
+		local radius = sim.catalog.tuning.celebrateRadius
+		local near = sim.citizens[k.citizenIds[1]]
+		local far = sim.citizens[k.citizenIds[2]]
+		near.x, near.z = keep.x + radius * 0.5, keep.z
+		far.x, far.z = keep.x + radius + 30, keep.z
+		local foreignKingdom
+		for kingdomId in byKingdom do
+			if kingdomId ~= "crimson" and #sim.kingdoms[kingdomId].citizenIds > 0 then
+				foreignKingdom = sim.kingdoms[kingdomId]
+				break
+			end
+		end
+		local foreign = sim.citizens[assert(foreignKingdom).citizenIds[1]]
+		foreign.x, foreign.z = keep.x + 1, keep.z + 1 -- a stranger at the gate
+		local before = #eventsOf(env)
+		keep.pendingLevel = 2
+		keep.progress = 0
+		expect(sim:addWork(keep, 1e9)).toBe(true) -- the upgrade completes inside the simulation
+		env.mock:advance(0.2)
+		local celebrated = {}
+		local all = eventsOf(env)
+		for i = before + 1, #all do
+			local e = all[i]
+			if e.type == "cue" and e.cue == "celebrate" then
+				celebrated[e.id] = (celebrated[e.id] or 0) + 1
+			end
+		end
+		expect(celebrated[near.id]).toBe(1)
+		expect(celebrated[far.id]).toBeNil()
+		expect(celebrated[foreign.id]).toBeNil()
+		for id in celebrated do
+			local c = sim.citizens[id]
+			expect(c.kingdomId).toBe("crimson")
+		end
+		-- level 3 is not the level-2 celebration
+		before = #eventsOf(env)
+		keep.pendingLevel = 3
+		keep.progress = 0
+		sim:addWork(keep, 1e9)
+		env.mock:advance(0.2)
+		all = eventsOf(env)
+		for i = before + 1, #all do
+			expect(all[i].type == "cue" and all[i].cue == "celebrate").toBe(false)
+		end
+	end)
+end)

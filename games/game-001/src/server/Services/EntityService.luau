@@ -228,6 +228,8 @@ function EntityService:start()
 				self._pending,
 				{ type = "cue", id = event.citizenId, cue = "deposit", resource = event.resource }
 			)
+		elseif name == "BuildingCompleted" and event.kind == "keep" and event.level == 2 then
+			self:_celebrate(event.kingdomId, event.buildingId)
 		elseif name == "CitizenDied" then
 			self:_queueDeath(event.citizenId, event.cause)
 		elseif name == "UnitKilled" then
@@ -251,6 +253,25 @@ function EntityService:start()
 			end
 		end
 	end)
+end
+
+-- The keep reached level 2 (CONTRACTS G5 VS-1 reaction): every citizen of the kingdom within
+-- tuning.celebrateRadius of it plays the celebrate cue, once.
+function EntityService:_celebrate(kingdomId: string, keepId: number)
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdomId]
+	local keep = sim.buildings[keepId]
+	if k == nil or keep == nil then
+		return
+	end
+	local radius = sim.catalog.tuning.celebrateRadius
+	for _, cid in k.citizenIds do
+		local c = sim.citizens[cid]
+		local dx, dz = c.x - keep.x, c.z - keep.z
+		if dx * dx + dz * dz <= radius * radius then
+			table.insert(self._pending, { type = "cue", id = cid, cue = "celebrate" })
+		end
+	end
 end
 
 -- A fresh world: ids start over, so clients drop everything before the new spawns, and events
