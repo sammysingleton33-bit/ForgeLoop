@@ -4,27 +4,25 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B11**, main `38526a4`, delivered 2026-10-13 13:30 UTC. **This is the build to test.** Not yet run in Studio.
-  - **New since B10:** a captured tower is rebuilt in the capturer's look (cap, roof and emblem), not just recoloured (#115).
-  - **Since B9 (B10):**
-    - A co-ruler can answer a conversation another ruler left open.
-    - Stale requests clear.
-    - Struck carriers deliver their load (#114).
-    - Only a kingdom's own rulers can sit on its throne (#112).
-  - **Since B8 (B9):**
-    - Kingdom emblems in the world (#105).
-    - Talk, close, Talk shows the same question (#107).
-    - The tutorial hints are on target (#99).
-    - Keep-upgrade credit goes to the ruler who started it (#104).
+- **Latest build: B12**, main `21904e4`, delivered 2026-10-13 14:35 UTC. **This is the build to test.** Not yet run in Studio.
+  - **New since B11 (#49, FL-0062):**
+    - A kingdom announcer: toasts and celebrations for builds, recruits, captures, keep upgrades, phases and the match end, each to the right audience.
+    - Construction, recruit and territory effects.
+    - Work feedback.
+    - Phase music. It stays silent until the P0 sounds are picked.
+    - Tests added: #117.
+  - **Since B10 (B11):** a captured tower is rebuilt in the capturer's look (#115).
+  - **Since B9 (B10):** co-rulers share conversations, stale requests clear, struck carriers deliver (#114), and thrones are for their own rulers (#112).
+  - **Since B8 (B9):** kingdom emblems (#105), Talk-close-Talk (#107), the tutorial hints (#99), and keep-upgrade credit (#104).
   - **Not yet:**
+    - Nothing is audible until the P0 sounds are picked.
     - The oak leaf is hard to read at full zoom.
     - The throne is hard to see from behind.
-    - No sound (#49).
     - Dialogue is DRAFT.
     - The other kingdoms are empty by design (D-043).
     - FPS is unknown.
-  - The Studio asks are in `production/quality-gates/studio-runs.md` (B8 and B9 rows) and STUDIO_PLAYTEST §9 step 2 (the captured tower look).
-- **Next build: B12.** It follows the first Studio feedback or FORGE-07 merges.
+  - The Studio asks are in `production/quality-gates/studio-runs.md` and STUDIO_PLAYTEST §9 (the captured tower look; the end-of-slice celebration with Victory and the summary, O3).
+- **Next build: B13.** It follows the first Studio feedback or FORGE-07 merges.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -45,7 +43,7 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 ## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
 Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs per folder for CI headroom).
 
-**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114, #112 and #115. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
+**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114, #112, #115, #117 and #49. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
 
 **No ★ rows are open.** #115 (with the tower rebuild) merged for B11. Every other known VS-1 defect from B8 and B9 is merged.
 
@@ -56,7 +54,6 @@ Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs 
 | 3 | #113 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget | FORGE-01 | Living kingdom | Unreviewed | FORGE-07 |
 | 4 | #98 PACING and EXPERIENCE fixes, `idleSec`, `Subjects.missing` | FORGE-04 | Design and docs | FORGE-00 design verdict: APPROVED WITH CHANGES (N1–N3) | FORGE-04 doc edits, then FORGE-07 |
 | 5 | #110 economy.md: D-045 births, the 6–8 min slice | FORGE-03 | Design | FORGE-00 design verdict: APPROVED | FORGE-07 |
-| 6 | #49 feedback layer and music | FORGE-04 | Feel (sound) | M1 fixed; needs re-review | FORGE-07 |
 | 7 | #92 D-038 (7) per-feature files; #82 notification follow-ups | FORGE-04 | Process, feel | Unreviewed | FORGE-07 |
 | 8 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed; D-044 rulings apply | FORGE-04, then FORGE-07 |
 | 9 | #97 late-joiner `Match.Ended`; #93 replication hardening; #94 fair nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
@@ -90,12 +87,12 @@ Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs 
 ## Top integration blockers (VS-1)
 1. **No Studio evidence on any build (B1–B8).** Every merged task waits on G6, and frame rate (G7) is unknown. B8 is the first build with all nine VS-1 rows present in some form.
 2. **FORGE-07 is paused.** Every open PR now waits on it (rows 1–12, some rows group several PRs). They include #96, which unblocks FORGE-06, #49, which brings sound, and the cinematic lane (#108, #84, #85). Post-merge verdicts are also owed on 19 D-040 merges.
-3. **No known open VS-1 defects** after B11 (#114, #112, #115). What remains is Studio-only: feel, FPS and readability.
-4. **No sound.** #49 waits on FORGE-07, and the P0 sound picks wait on the user.
+3. **No known open VS-1 defects** after B12 (#114, #112, #115, #49). What remains is Studio-only: feel, FPS and readability.
+4. **No sound is audible.** #49 is merged (B12), but the P0 sound picks wait on the user.
 5. **Dialogue is DRAFT.** FORGE-06's starter pack waits on #96 and on the user's approval for temporary testing (FL-0095).
 
 ## Decisions needed from the user
-1. **Run B11 in Studio on your Mac.** It supersedes B6–B10. The asks are in the B8 and B9 rows of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
+1. **Run B12 in Studio on your Mac.** It supersedes B6–B11. The asks are in the B8 and B9 rows of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
 2. **Give FORGE-07 its OK.** Type it in the Forge07 session: "FORGE-07 may post COMMENT reviews and push agents/forge-07/STATUS.md and production/reviews/ to main." A relayed OK is not accepted.
 3. **Pick the P0 sounds** (handoff `2026-10-12-forge-04-to-user-sounds.md`) and **upload the icons** `gem.png` and `emblem_crown.png`. Drawn fallbacks are in the game until then.
 4. **Approve FORGE-06's starter pack for temporary testing:** 10 conversations, every row DRAFT (D-035 (2)).
@@ -109,7 +106,7 @@ Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs 
 
 _Generated by `python tools/forge.py dashboard` from `production/tasks/`. Do not edit by hand._
 
-**Tasks:** 108 — SPECIFIED 27 · READY 24 · BUILDING 6 · REVIEW 37 · ACCEPTED 7 · REJECTED 7
+**Tasks:** 108 — SPECIFIED 27 · READY 23 · BUILDING 6 · REVIEW 38 · ACCEPTED 7 · REJECTED 7
 
 ### Needs the user (decisions, approvals, local-machine steps)
 
@@ -210,7 +207,7 @@ _None._
 | [FL-0027](production/tasks/FL-0027-notifications-and-celebration-moments.md) | Notifications and celebration moments | REVIEW | P0 | build |
 | [FL-0053](production/tasks/FL-0053-ruler-third-person-controller-and-camera.md) | Ruler third-person controller, camera and input modes | REVIEW | P0 | build |
 | [FL-0061](production/tasks/FL-0061-match-pacing-design-and-pacingservice.md) | Match pacing design and PacingService | REVIEW | P0 | design |
-| [FL-0062](production/tasks/FL-0062-vs-1-onboarding-and-feedback-layer-hints-sounds-.md) | VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer | READY | P0 | build |
+| [FL-0062](production/tasks/FL-0062-vs-1-onboarding-and-feedback-layer-hints-sounds-.md) | VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer | REVIEW | P0 | build |
 | [FL-0090](production/tasks/FL-0090-aerial-management-camera-default-selection-signa.md) | Aerial management camera (overview, default), selection signal, walk mode kept (G13.6) | REVIEW | P0 | build |
 | [FL-0091](production/tasks/FL-0091-citizen-thought-and-speech-bubbles-reactions-str.md) | Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3) | REVIEW | P0 | build |
 | [FL-0023](production/tasks/FL-0023-analyticsservice-adapter-event-taxonomy-and-funn.md) | AnalyticsService adapter, event taxonomy and funnels | REVIEW | P1 | build |
@@ -277,14 +274,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-d2049072 2026-10-13 Integration bookkeeping: #115 merged (D-040 star for B11); STUDIO_PLAYTEST capture step checks the rebuilt tower look
-38526a46 2026-10-13 Merge PR #115: [FORGE-01] a building or objective tower that changes owner is rebuilt in the new owner's Kit look (VS-1 row 7)
-8b844e4f 2026-10-13 [FORGE-01] ObjectiveService: a captured watchtower is rebuilt in its owner's Kit look (VS-1 row 7)
-2207afa5 2026-10-13 integration-log: main CI green for #83, #66, #63, #45, #68, #95, #81 (last pending cells)
-61657db8 2026-10-13 integration-log: main CI green for #114, #112 and #116
-eab0135f 2026-10-13 [FORGE-00] queue: #115 held for the ObjectiveService tower rebuild (FORGE-05 finding)
-acd65ee5 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-worldview-kingdom
-877e9f13 2026-10-13 [FORGE-00] check-in 13:05: #115 is star (B11 candidate); queue and dashboard
+1e84914c 2026-10-13 Integration bookkeeping: #49 merged (D-040 star, FL-0062 feedback layer); FL-0062 REVIEW only G6; STUDIO_PLAYTEST end-of-slice stack check
+04a78cdd 2026-10-13 FL-0062: announcer recruit line to co-rulers only; silent-music spec
+e524249c 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/04-experience-fl0062
+3d3cb82e 2026-10-13 Integration bookkeeping: #117 merged (D-040 star, spec-only #115 L1); main CI green for #115
+52c5f4c7 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-tower-spec
+f4a7c708 2026-10-13 [FORGE-01] Tower spec: the neutral step really runs (FORGE-05 on #117)
+58a7d7f6 2026-10-13 [FORGE-00] B11 delivered (38526a4): Now, queue, dashboard
+8d2a7ac1 2026-10-13 [FORGE-01] ObjectiveService spec: rebuilt in place, a second kingdom still captures, no leak (FORGE-05 checks on #115)
 ```
 
 <!-- forge:auto:end -->
