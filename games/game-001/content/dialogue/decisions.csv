@@ -36,7 +36,7 @@ feast_after_victory,firm_ruling,0.6,600,,,0,0,1,0,0,0,-2,0,0,0,0,none,0,-1,0,0,a
 victory_feast_hold,feast,0.4,900,food:60,,1,2,0,0,0,0,5,1,0,1,0,kingdom,2,4,0,2,,kingdom_festive;cheer_speaker,feast_kept,DRAFT: keeps the promise in full; big food cost.
 victory_feast_small,feast,0.4,900,food:25,,0,1,0,0,0,0,1,0,0,0,0,kingdom,1,2,0,0,,kingdom_small_cheer,feast_kept,"DRAFT: keeps the letter of the promise, cheaply."
 victory_feast_cancel,broken_promise,1,900,,,0,-3,1,0,0,0,-5,-1,0,0,0,kingdom,-1,-2,0,0,,grumble_speaker,feast_broken,"DRAFT: keeps the food, breaks your word."
-elder_open_court,open_court,0.3,1800,,,2,1,0,0,-1,-2,5,1,0,1,0,kingdom,1,0,2,0,,kingdom_calm;bow_speaker,,DRAFT: compassionate and honest; lowers fear and authority.
+elder_open_court,open_court,0.3,1800,gold:10,,2,1,0,0,-1,-2,5,1,0,1,0,kingdom,1,0,2,0,,kingdom_calm;bow_speaker,,"DRAFT: compassionate and honest; lowers fear and authority. Costs a little gold (scribes and the hall for a day), so the merciful answer is not also the free one (lint, review finding L11). Still once per match: the trigger reads !decision.elder_open_court."
 elder_keep_methods,firm_ruling,0.6,600,,,0,0,0,0,2,1,-4,0,0,-1,0,none,0,0,0,0,timid:+1;cruel:+2;kind:-2;proud:-2,kingdom_unrest_small;grumble_speaker,,DRAFT: authoritative; unrest keeps building.
 elder_name_whisperers,threat,0.5,600,,,-2,-2,0,0,1,4,-7,-3,-2,-2,0,kingdom,-1,-2,-1,0,cruel:+3;timid:+1;kind:-3;honest:-2,kingdom_unrest_medium;kingdom_cower,,"DRAFT: fearful; obedience up, affection and stability down."
 promise_sacks_keep,promise_kept,0.8,900,food:15,,0,3,0,0,0,0,6,1,3,1,0,occupation,1,0,0,0,,farmers_work_up;friends_hear_kept_word;cheer_speaker,harvest_promise_kept,DRAFT: honorable; costs food.

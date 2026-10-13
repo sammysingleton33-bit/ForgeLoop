@@ -3,7 +3,17 @@
 -- Source: citizens/occupations.csv. Edit the CSV files (or the workbook, see content/README.md),
 -- then run: python3 tools/content/content.py build
 
-return {
+-- Deeply frozen: the content is shared by every consumer, so nobody may change it.
+local function deepFreeze<T>(value: T): T
+	for _, child in value :: any do
+		if type(child) == "table" and not table.isfrozen(child) then
+			deepFreeze(child)
+		end
+	end
+	return table.freeze(value :: any) :: any
+end
+
+return deepFreeze({
 	blacksmith = {
 		id = "blacksmith",
 		name = "Blacksmith",
@@ -94,4 +104,4 @@ return {
 		needs = { "food", "shelter", "tools", "rest" },
 		trait_affinity = { brave = 2, cheerful = 2, hardworking = 3, proud = 1, skeptical = 1 },
 	},
-}
+})
