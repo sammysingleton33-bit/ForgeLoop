@@ -17,6 +17,15 @@
 		citizens.inspectDelay[41] = 0.3                      -- seconds Sim.Inspect takes for one citizen
 		citizens.drop = true                                 -- the next Choose returns nil (a dropped call)
 
+	Cinematic conversations (FORGE-01 #108, CONTRACTS G13.8), opt-in so the panel specs keep today's
+	payload: remotes = CitizenDoubles.CINEMATIC_REMOTES (adds Kingdom.EndConversation) and
+	services = { CitizenDoubles.cinematic }. Converse then adds `look`, `job`, `position`
+	(CitizenDoubles.POSITIONS) and `kingdom`, and holds the citizen (citizens.held[entityId] = true);
+	Kingdom.EndConversation(entityId) releases the hold and answers true for your own citizen, false
+	otherwise (calls are recorded as "End"). citizens.noPosition = true leaves `position` out.
+	CitizenDoubles.cinematicNoEnd: the same Converse fields without Kingdom.EndConversation (with
+	CitizenDoubles.REMOTES).
+
 	Today's main (FORGE-01 CitizenService has Sim.Inspect, no conversations yet):
 		KingdomWorld.new({ remotes = CitizenDoubles.INSPECT_ONLY, services = { CitizenDoubles.inspectOnly } })
 
@@ -70,6 +79,30 @@ CitizenDoubles.REMOTES = {
 }
 
 local LOOK = { skin = 2, hair = 1, hairColor = 3, outfit = 1 }
+
+CitizenDoubles.END = {
+	name = "Kingdom.EndConversation",
+	kind = "function",
+	args = { V.integer(1, 65535) },
+	rate = { burst = 4, perSecond = 2 },
+}
+
+CitizenDoubles.CINEMATIC_REMOTES = {
+	Sim = CitizenDoubles.REMOTES.Sim,
+	Kingdom = { CitizenDoubles.REMOTES.Kingdom[1], CitizenDoubles.REMOTES.Kingdom[2], CitizenDoubles.END },
+}
+
+-- Where each sample citizen stands (G13.8 `position`, studs; y at the feet).
+CitizenDoubles.POSITIONS = {
+	[41] = Vector3.new(12, 0, -30),
+	[42] = Vector3.new(18, 0, -26),
+	[43] = Vector3.new(-6, 0, -34),
+	[44] = Vector3.new(30, 0, -12),
+	[45] = Vector3.new(8, 0, -40),
+	[46] = Vector3.new(-14, 0, -20),
+	[47] = Vector3.new(4, 0, -16),
+	[51] = Vector3.new(220, 0, 40),
+}
 
 -- CitizenView (G13.2) samples. 41-45 belong to crimson (the spec player's kingdom), 51 to azure.
 CitizenDoubles.CITIZENS = {
@@ -418,8 +451,10 @@ end
 
 -- The server double: register with KingdomWorld `services = { CitizenDoubles.service }`.
 -- opts.conversations = false: Sim.Inspect only (CitizenDoubles.inspectOnly, with INSPECT_ONLY).
-function CitizenDoubles.service(world, opts: { conversations: boolean? }?)
+function CitizenDoubles.service(world, opts: { conversations: boolean?, cinematic: boolean?, noEnd: boolean? }?)
 	local conversations = not (opts and opts.conversations == false)
+	local cinematic = opts ~= nil and opts.cinematic == true
+	local endRemote = cinematic and not (opts ~= nil and opts.noEnd == true)
 	return {
 		name = "CitizenService",
 		dependencies = { "RemoteService", "TreasuryService", "KingdomService" },
@@ -437,6 +472,8 @@ function CitizenDoubles.service(world, opts: { conversations: boolean? }?)
 				inspectDelay = {} :: { [number]: number },
 				refuse = nil :: string?,
 				drop = false,
+				held = {} :: { [number]: boolean },
+				noPosition = false,
 			}
 			for _, c in CitizenDoubles.CITIZENS do
 				svc.citizens[c.entityId] = clone(c)
@@ -501,14 +538,33 @@ function CitizenDoubles.service(world, opts: { conversations: boolean? }?)
 							risks = if r.risks then clone(r.risks) else nil,
 						})
 					end
-					return {
+					local payload = {
 						entityId = entityId,
 						scenarioId = scenario.scenarioId,
 						speaker = { name = c.name, occupation = c.occupation },
 						question = scenario.question,
 						options = options,
 					}
+					if cinematic then
+						payload.look = clone(c.look)
+						payload.job = c.job
+						payload.kingdom = c.kingdom
+						payload.position = if self.noPosition then nil else CitizenDoubles.POSITIONS[entityId]
+						self.held[entityId] = true
+					end
+					return payload
 				end)
+				if endRemote then
+					remotes:handle("Kingdom.EndConversation", function(player, entityId)
+						table.insert(self.calls, { name = "End", args = { entityId } })
+						local mine = own(player, entityId)
+						if not mine then
+							return false
+						end
+						self.held[entityId] = nil
+						return true
+					end)
+				end
 				remotes:handle("Kingdom.Choose", function(player, entityId, scenarioId, responseId)
 					table.insert(self.calls, { name = "Choose", args = { entityId, scenarioId, responseId } })
 					local latency = self.chooseLatency or self.latency
@@ -570,6 +626,15 @@ end
 
 function CitizenDoubles.inspectOnly(world)
 	return CitizenDoubles.service(world, { conversations = false })
+end
+
+function CitizenDoubles.cinematic(world)
+	return CitizenDoubles.service(world, { cinematic = true })
+end
+
+-- #108's Converse fields on a server without Kingdom.EndConversation (use CitizenDoubles.REMOTES).
+function CitizenDoubles.cinematicNoEnd(world)
+	return CitizenDoubles.service(world, { cinematic = true, noEnd = true })
 end
 
 return CitizenDoubles

@@ -32,26 +32,54 @@
 		   notice. Never once the choice is sent or answered (FORGE-05 L1 on #66).
 	The client decides nothing: no question, answer, reaction or effect text lives in this code.
 
+	Cinematic conversations (CONTRACTS G13.8, D-036; FL-0099):
+		- A Converse result with the citizen's `look` (FORGE-01 #108) shows the cinematic stage
+		  (UI/ConversationStage): their portrait (FORGE-02's Kit.portrait, #85) rises from the bottom,
+		  the question in a speech bubble, the answers beside it. Without a look, or without a
+		  portrait (no Kit.portrait, or building it fails), the drawer panel above is the fallback.
+		  Same phases and rules in both. The answered stage closes by itself after
+		  StageModel.readSeconds (Done closes it sooner); the panel waits for Done.
+		- `opened(entityId, position)` fires when a conversation appears and the result has a
+		  `position` (Vector3); `closed(entityId)` fires once for each `opened`, when that
+		  conversation leaves the screen for any reason (Done, Close, a selection, another menu,
+		  the citizen gone, another citizen's conversation replacing it, destroy). FORGE-04's
+		  RulerCameraController (#84) focuses the camera on `opened` and restores it on `closed`.
+		- `Kingdom.EndConversation(entityId)` (FORGE-01 #108) is called whenever a conversation the
+		  server opened leaves the screen, answered or not, and when a Converse reply arrives for a
+		  conversation that is no longer wanted (the player moved on while it loaded): the server
+		  holds the citizen while a conversation is open. Idempotent on the server; skipped while
+		  the server has no such remote.
+		- Reduced motion (SettingsController:reducedMotion) places the portrait at once.
+
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional (registry:find in
 	start): CitizenCardController (the Talk button and its busy state), InputModeController (.selected),
-	OnboardingController (`report("CitizenAnswered")` after an accepted Kingdom.Choose, FORGE-04 #45).
+	OnboardingController (`report("CitizenAnswered")` after an accepted Kingdom.Choose, FORGE-04 #45),
+	SettingsController (reduced motion).
 
 	API (specs and scenes)
 		conversation:open(entityId)    ask Kingdom.Converse and show the panel
 		conversation:choose(responseId)  conversation:confirm()  conversation:back()
 		conversation:done()  conversation:close()
 		conversation.state = { entityId, phase ("asking" | "confirming" | "choosing" | "answered" | "refused"),
-			conversation (UI/CitizenModel Conversation), picked?, outcome?, error? }?
+			conversation (UI/CitizenModel Conversation), picked?, outcome?, error?, showing (a number per
+			showing), figure? ({ look, job, kingdom }: the stage; nil: the panel) }?
 		conversation.inflight = { [CitizenModel.key(entityId, scenarioId)]: responseId }
-		conversation.panel (UI/ConversationPanel)    ConversationController.MENU = "conversation"
-		ConversationController.CHECK_SEC
+		conversation.panel (UI/ConversationPanel)    conversation.stage (UI/ConversationStage)
+		conversation.opened: Signal<(entityId, position: Vector3)>   conversation.closed: Signal<(entityId)>
+		ConversationController.MENU = "conversation"    ConversationController.CHECK_SEC
+		ConversationController.END = "Kingdom.EndConversation"
 ]]
 
 local CitizenModel = require("../UI/CitizenModel")
 local CitizenText = require("../UI/CitizenText")
 local ConversationPanel = require("../UI/ConversationPanel")
+local ConversationStage = require("../UI/ConversationStage")
 local HudModel = require("../UI/HudModel")
+local Motion = require("@game/ReplicatedStorage/Forge/UI/Motion")
+local PortraitView = require("../UI/PortraitView")
+local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Signature = require("../UI/Signature")
+local StageModel = require("../UI/StageModel")
 
 local ConversationController = {}
 ConversationController.__index = ConversationController
@@ -63,6 +91,7 @@ ConversationController.CHECK_SEC = 4 -- the citizen card's refresh period (Citiz
 ConversationController.CONFIRM_DELAY = 0.35 -- seconds Choose ignores taps after the confirm step opens
 ConversationController.CONVERSE = "Kingdom.Converse"
 ConversationController.CHOOSE = "Kingdom.Choose"
+ConversationController.END = "Kingdom.EndConversation"
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -71,7 +100,12 @@ function Def.new(env: any, registry: any)
 		hud = registry:get("KingdomHudController"),
 		state = nil :: any,
 		panel = nil :: any,
+		stage = nil :: any,
+		opened = Signal.new(),
+		closed = Signal.new(),
 		inflight = {} :: { [string]: string },
+		_shown = nil :: any, -- { entityId, signalled }: the conversation on screen (G13.8 hold)
+		_showings = 0,
 		_loading = nil :: number?,
 		_token = 0,
 		_connections = {},
@@ -132,9 +166,11 @@ function ConversationController:start()
 					self:_setLoading(nil)
 				end
 				self.state = nil
+				self:_leave()
 			end
 		end)
 	)
+	self._settings = self._registry:find("SettingsController")
 	local inputMode = self._registry:find("InputModeController")
 	local connection = connect(if inputMode then inputMode.selected else nil, function()
 		self:_onSelected()
@@ -173,6 +209,9 @@ function ConversationController:destroy()
 	if self.panel then
 		self.panel:destroy()
 	end
+	if self.stage then
+		self.stage:destroy()
+	end
 	-- Leave no menu pointing at a panel that no longer exists (FORGE-05 L6).
 	self.state = nil
 	local hud = self.hud
@@ -181,6 +220,59 @@ function ConversationController:destroy()
 			hud:setMenu(nil)
 		end)
 	end
+	self:_leave() -- the camera returns and the server lets the citizen go
+end
+
+-- Kingdom.EndConversation (G13.8): the server stops holding the citizen. Fire and forget.
+function ConversationController:_end(entityId: number)
+	if not self:_hasRemote(ConversationController.END) then
+		return
+	end
+	local hud = self.hud
+	self._env.spawn(function()
+		pcall(function()
+			hud.remotes:invoke(ConversationController.END, entityId)
+		end)
+	end)
+end
+
+-- The conversation on screen is gone (any reason): `closed` for its `opened`, and the hold ends.
+function ConversationController:_leave()
+	local shown = self._shown
+	if shown == nil then
+		return
+	end
+	self._shown = nil
+	if shown.signalled then
+		self.closed:fire(shown.entityId)
+	end
+	self:_end(shown.entityId)
+end
+
+-- A conversation appeared: `opened` when the server said where the citizen stands. The same
+-- citizen again (a reopen while it shows) keeps its `opened` and its hold.
+function ConversationController:_appear(entityId: number, position: any)
+	local shown = self._shown
+	if shown ~= nil and shown.entityId == entityId then
+		return
+	end
+	self:_leave() -- another citizen's conversation it replaces
+	local signalled = typeof(position) == "Vector3"
+	self._shown = { entityId = entityId, signalled = signalled }
+	if signalled then
+		self.opened:fire(entityId, position)
+	end
+end
+
+function ConversationController:_reducedMotion(): boolean
+	local settings = self._settings
+	if settings == nil then
+		return false
+	end
+	local ok, reduced = pcall(function()
+		return if settings.reducedMotion then settings:reducedMotion() else settings:get("reducedMotion")
+	end)
+	return ok and reduced == true
 end
 
 -- The server has the remote (non-yielding). An older HUD without hasRemote: assume it does.
@@ -254,7 +346,11 @@ function ConversationController:open(entityId: number)
 		local called, payload = pcall(function()
 			return hud.remotes:invoke(ConversationController.CONVERSE, entityId)
 		end)
+		local opened = called and type(payload) == "table" -- the server holds the citizen now (G13.8)
 		if token ~= self._token then
+			if opened then
+				self:_end(entityId) -- the player moved on while it loaded: let the citizen go
+			end
 			return
 		end
 		self:_setLoading(nil)
@@ -266,8 +362,21 @@ function ConversationController:open(entityId: number)
 				title = if called then CitizenText.NOTHING else CitizenText.unreachable(),
 				body = if called and fallback then fallback.name else nil,
 			})
+			if opened then
+				self:_end(entityId)
+			end
 			return
 		end
+		-- G13.8: the stage needs the citizen's look (and a portrait: without one it falls back).
+		local figure = nil
+		if payload.look ~= nil then
+			figure = {
+				look = payload.look,
+				job = if type(payload.job) == "string" then payload.job else nil,
+				kingdom = if type(payload.kingdom) == "string" then payload.kingdom else nil,
+			}
+		end
+		self._showings += 1
 		-- The same showing reopened while its Choose is still in flight: show the pick as waiting.
 		local pending = self.inflight[CitizenModel.key(entityId, conversation.scenarioId)]
 		self.state = {
@@ -277,7 +386,10 @@ function ConversationController:open(entityId: number)
 			picked = pending :: string?,
 			outcome = nil :: any,
 			error = nil :: string?,
+			showing = self._showings,
+			figure = figure,
 		}
+		self:_appear(entityId, payload.position)
 		if hud.state.menu ~= ConversationController.MENU then
 			hud:setMenu(ConversationController.MENU)
 		else
@@ -401,6 +513,15 @@ function ConversationController:choose(responseId: string, confirmed: boolean?)
 			current.outcome = outcome
 		end
 		hud:render()
+		if current.phase == "answered" and current.figure ~= nil then
+			-- The stage reads like a scene: it closes by itself once the reaction has been read.
+			self._env.spawn(function()
+				self._env.wait(StageModel.readSeconds(outcome))
+				if self.state == current and current.phase == "answered" then
+					self:close()
+				end
+			end)
+		end
 	end)
 end
 
@@ -444,8 +565,10 @@ function ConversationController:render(metrics: any)
 		return
 	end
 	self.panel = self.panel or ConversationPanel.new(hud.roots.menus)
+	self.stage = self.stage or ConversationStage.new(hud.roots.menus, hud.roots.backdrop)
 	if hud.state.menu ~= ConversationController.MENU or self.state == nil then
 		self.panel:destroy()
+		self.stage:destroy()
 		self._renderKey = nil
 		return
 	end
@@ -462,11 +585,50 @@ function ConversationController:render(metrics: any)
 		height = metrics.height,
 	})
 	local balances = self:_balances()
-	if key == self._renderKey and self.panel.panel ~= nil then
-		self.panel:patch(balances) -- what each answer costs against the new treasury, in place
+	if key == self._renderKey and (self.panel.panel ~= nil or self.stage.root ~= nil) then
+		-- what each answer costs against the new treasury, in place
+		if self.stage.root ~= nil then
+			self.stage:patch(balances)
+		else
+			self.panel:patch(balances)
+		end
 		return
 	end
 	self._renderKey = key
+	local s = self.state
+	if s.figure ~= nil then
+		local shown = self.stage:render(s, metrics, {
+			key = `{s.entityId}:{s.showing}`,
+			figure = s.figure,
+			color = PortraitView.colorOf(s.figure.kingdom),
+			banner = HudModel.banner(hud.store),
+			balances = balances,
+			motion = Motion.new(self._env, { reduced = self:_reducedMotion() }),
+			readSeconds = if s.phase == "answered" and s.outcome then StageModel.readSeconds(s.outcome) else nil,
+			onPick = function(responseId)
+				self:choose(responseId)
+			end,
+			onDone = function()
+				self:done()
+			end,
+			onClose = function()
+				self:close()
+			end,
+			onConfirm = function()
+				self:confirm()
+			end,
+			onBack = function()
+				self:back()
+			end,
+		})
+		if shown then
+			self.panel:destroy()
+			return
+		end
+		s.figure = nil -- no portrait for this showing: the panel from now on
+		self._renderKey = nil
+	end
+	self.stage:destroy()
 	self.panel:render(self.state, metrics, {
 		color = color,
 		balances = balances,

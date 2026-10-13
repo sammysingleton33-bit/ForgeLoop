@@ -107,3 +107,13 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
 - **`check.sh | grep … && git push` pushes a failing build.** The pipeline's status is grep's, not
   check.sh's: a Selene warning failed OVERALL and the push went out anyway (#95). Capture the exit
   code (`bash roblox/scripts/check.sh > log; rc=$?`) and push only on 0. `observed-once` (2026-10-13).
+- **Lune cannot read `ViewportFrame.CurrentCamera` back.** Setting it works, reading it errors with
+  "CurrentCamera is not a valid member of Workspace" (Lune looks the name up on Workspace). Keep the
+  Camera you set on your own view object for specs, parent it under the ViewportFrame so tools can
+  find it, and don't read the property in shared code that runs under Lune (FL-0099).
+  `observed-once` (2026-10-13).
+- **Palette compression bands gradients and shifts small colour areas.** `compress-shots.py` (256
+  colours, no dither) turned the portrait's backdrop gradient into stripes and greyed a citizen's
+  hair. Flat HUD screens survive it; for shots with gradients or 3D, check the PNG sizes first and
+  keep the originals when they are within D-031 (300 KB each, 2 MB per PR). `observed-once`
+  (2026-10-13).

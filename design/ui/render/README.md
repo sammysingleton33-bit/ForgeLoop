@@ -206,9 +206,13 @@ and draws text.
   TextStrokeTransparency/Color3; emoji and symbols through Noto Color Emoji; TextBox shows
   PlaceholderText when empty.
 - **Folder**: its GuiObjects are drawn as children of the Folder's parent, outside any layout.
-- **Unknown classes** (ViewportFrame, VideoFrame, ...): a plain box with their background, a
-  dashed outline and the class name. Unknown modifiers (UIPageLayout, UITableLayout, ...) are
-  ignored with a note.
+- **ViewportFrame** (FL-0099 portraits): snapshot.luau records the camera (CFrame, FieldOfView)
+  and every BasePart under the frame (shape, size, CFrame, colour, transparency, decals);
+  engine.js rasterises them with a z-buffer at 3× and scales down: Block, Wedge, CornerWedge,
+  Ball (the smallest dimension) and Cylinder (axis = local X), lit as a ViewportFrame lights them
+  (Ambient + LightColor × max(0, n · −LightDirection)). See deviations 23-24.
+- **Unknown classes** (VideoFrame, ...): a plain box with their background, a dashed outline and
+  the class name. Unknown modifiers (UIPageLayout, UITableLayout, ...) are ignored with a note.
 
 ## Known deviations from Roblox
 
@@ -281,6 +285,13 @@ Studio check.
     ImageColor3. CanvasGroup `GroupColor3` tint is ignored.
 22. No interaction states: hover/press colours (AutoButtonColor), Selected, TextBox cursor, tweens
     in flight. Only the property values present after `settle()` are drawn.
+23. ViewportFrame contents are flat-shaded per triangle (Roblox shades smoothly: balls and
+    cylinders look faceted here); no materials, specular light, shadows, textures, MeshParts or
+    SpecialMeshes; a Decal named "Face" on a Ball is a stand-in face (two eyes and a smile), not
+    its texture. Framing and proportions follow the real camera and parts; the surface look does
+    not. CornerWedge's peak is assumed at (+X, +Y, −Z) (unverified).
+24. Lune cannot read `ViewportFrame.CurrentCamera` back (it looks the name up on Workspace): the
+    frame's first Camera child stands in, with a note.
 
 ## Files
 
