@@ -226,7 +226,10 @@ describe("OnboardingController (client)", function()
 
 	it("UI code reports actions through report(); nothing is sent once the tutorial is done", function()
 		controller:apply(state({ clientAction = "ResourceInspected" }))
+		expect(controller:report("RulerMoved")).toBe(false) -- not the current step's action: not sent
 		expect(controller:report("ResourceInspected")).toBe(true)
+		local sent = env.mock.remotes:sent(remotes.action, "toServer")
+		expect(#sent).toBe(1)
 		controller:apply(state({ done = true, hint = nil }))
 		expect(controller:report("ResourceInspected")).toBe(false)
 	end)
