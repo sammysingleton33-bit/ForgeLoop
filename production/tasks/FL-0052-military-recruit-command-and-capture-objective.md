@@ -3,15 +3,18 @@ id: FL-0052
 title: "Military: recruit, command and capture objective"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0049, FL-0051, FL-0055]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 6
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 864/0); Military.spec +10, MilitaryService.spec 8; 14/14 mutations caught
+  - check.sh OVERALL PASS (game-001 1068/0, 76 files); Military 43 + MilitaryService 11 pass; mutations 13/13 caught; Studio unverified
+  - "main d3525db: check.sh PASS (game-001 1074/0 on 182250d+#70); ownership PASS 22 files; main CI run 38361561318 green; fresh slice: recruit 3 at 75 s charged once, capture t=156 s, Match.Ended once, 0 errors"
 ---
 
 # Military: recruit, command and capture objective
@@ -42,3 +45,7 @@ Players recruit soldiers and send them to capture the neutral Watchtower for ter
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Send-to-capture (selection to VS-2), objective built from Layout with neutral Kit colour, Rally, Costs.unit
+- 2026-10-13 forge-01: READY → BUILDING. Army remotes, MilitaryService, ObjectiveService
+- 2026-10-13 forge-01: BUILDING → REVIEW. Recruit at a barracks (Rally spawn), UnitOrder move/attack/capture/guard (empty = idle, max 50, own units), ObjectiveService (Kit watchtower, recolour, broadcast), Army.* remotes
+- 2026-10-13 forge-01: REVIEW → REVIEW. Still REVIEW; adds D-041 to #70 (FORGE-00 asked): barracks bunks 4/8/12/16 replace recruitCap; Recruit limited by bunks only (no population_cap); births use beds for citizens only; destroyed barracks refunds queued + training recruits in full; getPopulation cap = beds + bunks; AI recruits by bunks, houses for citizens; slice e2e without a house recruits 3 and captures
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #70 (d3525db, FORGE-05 D-040 fallback verdict on a082001). Only G6 pending: STUDIO_PLAYTEST check 9 (row 7) from B7. #70 M2 late-joiner Match.Ended is FL-0106 (#97). FORGE-07 post-merge review owed.

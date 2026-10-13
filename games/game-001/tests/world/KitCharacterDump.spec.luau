@@ -1,12 +1,13 @@
 --[[
 	Kit character preview dump (FL-0056, D-019 review). KitDump.spec covers citizens per job and soldiers in
 	the four kingdom colours; this one adds what that sheet leaves out: one row of every look (idle,
-	governor), the one-part far LOD, and the regalia fitted on stand-in R15 and R6 avatars.
+	governor), the soldier kingdom crests (G13.2, D-033(3)) from the front and the side, the one-part far
+	LOD, and the regalia fitted on stand-in R15 and R6 avatars.
 
 	Always: asserts the dump serialises to finite numbers.
 	With FORGE_KIT_CHAR_DUMP=<path.json>: also writes the JSON for blender/scripts/render_kit.py
-	(groups characters_lineup, characters_looks, characters_aerial, characters_turn, characters_lod,
-	regalia_fit). Run:
+	(groups characters_lineup, characters_looks, characters_aerial, characters_turn, characters_crests,
+	characters_crests_side, characters_lod, regalia_fit). Run:
 	  FORGE_KIT_CHAR_DUMP=/tmp/kit_chars_ext.json lune run roblox/tests/harness/run.luau \
 	    --project games/game-001/default.project.json --specs games/game-001/tests/world KitCharacterDump
 ]]
@@ -162,8 +163,11 @@ local function catalogue()
 				model = m,
 			})
 		end
-		for _, k in { KINGDOMS[1], KINGDOMS[2], KINGDOMS[3] } do
-			table.insert(out, { label = `soldier {k.id}`, model = Kit.character("soldier", "soldier", k.color) })
+		for _, k in KINGDOMS do
+			table.insert(
+				out,
+				{ label = `soldier {k.id}`, model = Kit.character("soldier", "soldier", k.color, nil, k.id) }
+			)
 		end
 		local gov =
 			Kit.character("governor", "idle", KINGDOMS[4].color, { skin = 5, hair = 1, hairColor = 1, outfit = 1 })
@@ -189,7 +193,7 @@ local function catalogue()
 		{ { "soldier", "soldier" }, { "citizen", "hauler" }, { "citizen", "woodcutter" }, { "citizen", "miner" } }
 	do
 		for _, yaw in { 90, 180 } do
-			local m = Kit.character(spec[1], spec[2], KINGDOMS[3].color)
+			local m = Kit.character(spec[1], spec[2], KINGDOMS[3].color, nil, KINGDOMS[3].id)
 			local turn = CFrame.Angles(0, math.rad(yaw), 0)
 			for _, d in m:GetDescendants() do
 				if d:IsA("BasePart") then
@@ -198,6 +202,24 @@ local function catalogue()
 			end
 			add("characters_turn", `{spec[2]} yaw {yaw}`, m)
 		end
+	end
+	-- soldier kingdom crests side by side (spire, square, plume, dome): front, then side (yaw 90)
+	for _, k in KINGDOMS do
+		add(
+			"characters_crests",
+			`soldier {k.id} {Kit.SOLDIER_CRESTS[k.id]}`,
+			Kit.character("soldier", "soldier", k.color, nil, k.id)
+		)
+	end
+	for _, k in KINGDOMS do
+		local m = Kit.character("soldier", "soldier", k.color, nil, k.id)
+		local turn = CFrame.Angles(0, math.rad(90), 0)
+		for _, d in m:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CFrame = turn * d.CFrame
+			end
+		end
+		add("characters_crests_side", `soldier {k.id} side`, m)
 	end
 	for _, k in KINGDOMS do
 		add("characters_lod", `citizen lod {k.id}`, Character.lod("citizen", k.color))
@@ -236,7 +258,7 @@ describe("Kit character preview dump", function()
 				end
 			end
 		end
-		expect(nModels).toBe(61)
+		expect(nModels).toBe(71)
 		local out = process.env.FORGE_KIT_CHAR_DUMP
 		if out and out ~= "" then
 			fs.writeFile(out, serde.encode("json", { version = Kit.VERSION, groups = groups }, false))

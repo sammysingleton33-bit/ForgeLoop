@@ -6,12 +6,12 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | none of mine (#47, #57, #69 merged) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. **B6** (`c28576a`) prepared: individual citizens, Jobs tab end to end, D-033 colours. Next build after #66/#77 (conversations) or #70+#63 (army). D-037: non-trivial merges now need FORGE-07's READY TO MERGE |
-| Last verified check | main `c28576a` CI green [run 38343924442](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38343924442); B6 artifact id 11787952681 |
-| Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (reported to FORGE-00/07; post-merge verdicts requested) |
-| In review / queued | #66 (gate passed; FORGE-03 to merge main; FORGE-07 verdict) · #70 (changes requested: B1 capture without targetId) · #63 (changes requested; held until #70) · #64 (changes requested: M1 log flood) · #49 (FORGE-04 to merge main after #42) · #68, #77 (FORGE-07 reviewing) · #45 (held per FORGE-00) |
-| Merge gates I hold | FORGE-01 `Kingdom.Converse` server (#77) only after #66 is on main and #66 B1 (phone: risk below the fold) is fixed; risks as `{text, chance}` via `choiceRisks` |
-| Needs from others | User: run a user build and send Output/FPS/screenshots (via FORGE-00). FORGE-00: #63 timing, risk-prefix ruling (#67 M2), `fireAction` co-ruler rule (M3), CONTRACTS/handoff (M4). FORGE-01: #61 `startLoyalty`, risks as `{text, chance}`. FORGE-03: #66 main merge, #66 B1, #63 M1/M2. FORGE-02: soldier helmet crest (D-033 VS-1 row) |
+| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. Capture lane landed (#70 + #63, D-041 bunks) with #91 (aerial LOD, crests) and #89 (plots, throne): **B7** (`297eac5`) prepared and sent to FORGE-00. Next: pacing probe (FORGE-00 request), then #77/#87 re-verify. D-040 fallback verdicts while FORGE-07 is paused; FORGE-07 post-merge review owed on every D-040 merge |
+| Last verified check | main `297eac5` (#89): check.sh 9/9 PASS on the merge result (game-001 1087/0); main CI [run 38362808466](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38362808466) green; B7 artifact id 11796015838; slice e2e on `297eac5`: capture at t = 131 s, 0 errors |
+| Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
+| In review / queued | #77 re-review running on c5ad31d (B1/M1/M2 fixes pushed); #88 next (★, after it takes main with #86). Waiting for FORGE-07 (not on the D-040 list): #86, #88, #85, #93, #94, #90, #96, #97, #49, #64, #82, #84, #92 |
+| Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
+| Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
 ## Merged so far (integration log: `production/quality-gates/integration-log.md`)
 | PR | What | main sha |
@@ -81,6 +81,18 @@ _Maintained by the worker. Keep it short and current._
 | #75 | FORGE-02 throne clearance, coplanar faces | `7b6cd51` |
 | #42 | FORGE-04 citizen bubbles and placards | `c28576a` (user build B6) |
 | #80 | FORGE-07 ownership row (cross-owner, accepted) | `54f7390` |
+| #83 | FORGE-00 content v0.4-g7 (`choicePreview` fillNames), D-040 | `f3d84b5` |
+| #66 | FORGE-03 conversation cost/risk panel, D-040 | `9710822` |
+| #63 | FORGE-03 Army drawer, objective tracker, slice summary, D-040 | `5764630` |
+| #45 | FORGE-04 match30 profile, onboarding v2, D-040 | `ac97689` |
+| #68 | FORGE-01 ReputationService (M1 tracked), D-040 | `9478229` |
+| #95 | FORGE-03 #63 L1, #77 L4, D-040 | `fd1369f` |
+| #81 | FORGE-02 soldier helmet crest per kingdom, D-040 | `ec5218a` |
+| #70 | FORGE-01 Army server: recruit (bunks, D-041), command, capture, D-040 | `d3525db` |
+| #91 | FORGE-01 aerial LOD centre, crest plumbing, debugReseed (M1 tracked), D-040 | `ab70493` |
+| #89 | FORGE-01 build slots, throne seat (M1/M3 tracked), D-040 | `297eac5` (user build B7) |
+| #87 | FORGE-04 bubble targets v0.4-g6, rest effect stops, D-040 | `42b6709` |
+| #86 | FORGE-03 FL-0105 refusal words, D-039 emblems + gem badge (M1 tracked), D-040 ★ | `2a6a247` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

@@ -7,6 +7,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local F = require("./KingdomFixtures")
 local Context = require("@game/ReplicatedStorage/Game/Sim/Context")
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
 local Types = require("@game/ReplicatedStorage/Game/Kingdom/Types")
 
@@ -29,6 +30,10 @@ describe("Sim/Context", function()
 		expect(ctx["kingdom.food"]).toBe(sim:balance("crimson", "food"))
 		expect(ctx["kingdom.population"]).toBe(#k.citizenIds)
 		expect(ctx["kingdom.housing_ratio"]).toBe(#k.citizenIds / k.popCap)
+		Military.spawnUnit(sim, k, "soldier", k.x, k.z)
+		local armed = Context.kingdom(sim, "crimson")
+		expect(armed["kingdom.soldiers"]).toBe(1)
+		expect(armed["kingdom.housing_ratio"]).toBe(#k.citizenIds / k.popCap) -- soldiers sleep in bunks (D-041)
 		expect(ctx["kingdom.happiness"]).toBe(61)
 		expect(ctx["event.shortage"]).toBe(true)
 		expect(ctx["rep.fear"]).toBe(33)

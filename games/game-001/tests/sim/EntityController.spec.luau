@@ -87,7 +87,8 @@ local function recorder()
 end
 
 -- Builds the client env, the server stand-in and the controller (not started).
-local function setup(world: { any }?)
+-- registry: what Def.new gets (specs pass a find() double for RulerCameraController)
+local function setup(world: { any }?, registry: any?)
 	local env = MockEnv.new({
 		seed = 4,
 		isServer = false,
@@ -114,7 +115,7 @@ local function setup(world: { any }?)
 		return EventCodec.encode(serverTime(env), h.world)
 	end)
 	h.rec = recorder()
-	h.controller = Def.new(env, {})
+	h.controller = Def.new(env, registry or {})
 	h.controller.adapter = h.rec.adapter
 	h.controller.rendered:connect(function(id, model)
 		table.insert(h.rendered, { id = id, model = model })
@@ -594,6 +595,58 @@ describe("EntityController: frames, LOD and pick", function()
 		frame(h, 1 / 60)
 		expect(near.Parent).toBeNil()
 		expect(far.Parent).toBe(h.controller.folder)
+	end)
+
+	it("takes the overview camera's focus as the LOD centre; the character in walk mode (#39 M1)", function()
+		local camera = { mode = "overview", focus = Vector3.new(200, 0, 0) :: Vector3? }
+		function camera.getFocus(_self)
+			return camera.focus
+		end
+		local registry = {
+			find = function(_self, name)
+				return if name == "RulerCameraController" then camera else nil
+			end,
+		}
+		local h = setup({ full(1, 10, 0), full(2, 200, 0) }, registry)
+		h.rec.focus = Vector3.zero -- the ruler sits on the throne by the keep
+		start(h)
+		frame(h, 0)
+		local near, far = h.controller:getModel(1), h.controller:getModel(2)
+		expect(far.Parent).toBe(h.controller.folder) -- the camera looks at 200: citizens there show
+		expect(near.Parent).toBeNil()
+		camera.mode = "follow" -- walk mode: around the character again
+		frame(h, 1 / 60)
+		expect(near.Parent).toBe(h.controller.folder)
+		expect(far.Parent).toBeNil()
+		camera.mode, camera.focus = "overview", nil -- no focus yet: the character stands in
+		frame(h, 1 / 60)
+		expect(near.Parent).toBe(h.controller.folder)
+		expect(far.Parent).toBeNil()
+	end)
+
+	it("passes the kingdom to Kit.character for soldiers only (the helmet crest, G13.2)", function()
+		local calls = {}
+		local original = Kit.character
+		Kit.character = function(...)
+			table.insert(calls, table.pack(...))
+			return original(...)
+		end
+		local ok, err = pcall(function()
+			local h = start(setup({
+				full(1, 0, 0, { kind = "soldier", job = "soldier", kingdom = "azure" }),
+				full(2, 5, 0),
+			}))
+			frame(h, 0)
+		end)
+		Kit.character = original
+		assert(ok, err)
+		local byKind = {}
+		for _, args in calls do
+			byKind[args[1]] = args
+		end
+		expect(byKind.soldier[5]).toBe("azure")
+		expect(byKind.citizen[5]).toBeNil()
+		expect(byKind.citizen.n <= 5).toBe(true)
 	end)
 
 	it("animates 50 entities through every action without errors, one BulkMoveTo per frame", function()
