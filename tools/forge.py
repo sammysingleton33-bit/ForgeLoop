@@ -43,6 +43,8 @@ OWNER_LABELS = {
     "forge-03": "FORGE-03 UI & Economy",
     "forge-04": "FORGE-04 Experience",
     "forge-05": "FORGE-05 Integration & QA",
+    "forge-06": "FORGE-06 Dialogue & Content",
+    "forge-07": "FORGE-07 Review & QA",
     "codex": "Codex (intelligence)",
     "any": "Unassigned",
 }
