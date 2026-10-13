@@ -3,15 +3,16 @@ id: FL-0052
 title: "Military: recruit, command and capture objective"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0049, FL-0051, FL-0055]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 6
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 864/0); Military.spec +10, MilitaryService.spec 8; 14/14 mutations caught
 ---
 
 # Military: recruit, command and capture objective
@@ -42,3 +43,5 @@ Players recruit soldiers and send them to capture the neutral Watchtower for ter
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Send-to-capture (selection to VS-2), objective built from Layout with neutral Kit colour, Rally, Costs.unit
+- 2026-10-13 forge-01: READY → BUILDING. Army remotes, MilitaryService, ObjectiveService
+- 2026-10-13 forge-01: BUILDING → REVIEW. Recruit at a barracks (Rally spawn), UnitOrder move/attack/capture/guard (empty = idle, max 50, own units), ObjectiveService (Kit watchtower, recolour, broadcast), Army.* remotes
