@@ -29,6 +29,9 @@
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
 	hasRequest is false until conversations (FL-0079).
+	Studio debug hooks (G13.7, called by FORGE-05's DebugPresetService; each `(kingdom, ...) -> (ok, message)`):
+		debugReseed(kingdom, seed)              new identities for the kingdom's living citizens (People.reseed)
+		(debugStrike and debugRequest come with the conversations, FL-0079)
 ]]
 
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
@@ -179,6 +182,19 @@ function CitizenService:getPopulation(kingdomId: string): {
 	-- citizens sleep in beds, soldiers in barracks bunks (D-041): cap counts both, like total
 	local cap = count(sim:sleepCap(k))
 	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = cap, quotas = quotas }
+end
+
+-- ---------------------------------------------------------------- Studio debug hooks (G13.7)
+function CitizenService:debugReseed(kingdomId: string, seed: number): (boolean, string?)
+	local sim = self:_sim()
+	if sim.kingdoms[kingdomId] == nil then
+		return false, `unknown kingdom {kingdomId}`
+	end
+	if sim.profiler == nil then
+		return false, "this world has no generated population"
+	end
+	local reseeded = People.reseed(sim, kingdomId, seed, People.CONTENT)
+	return true, `{reseeded} citizens of {kingdomId} reseeded from {seed}`
 end
 
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)
