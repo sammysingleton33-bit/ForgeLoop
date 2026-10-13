@@ -303,6 +303,9 @@ function Controller:_playCue(entityId: any, cueId: any, tone: any)
 	self:_pose(entityId, spec.pose)
 	local model = if type(entityId) == "number" then self._models[entityId] else nil
 	local position = if model then pivotOf(model) else nil
+	if position == nil then
+		return -- no rendered rig: nothing to show it on (never at the world origin)
+	end
 	if spec.sound and self._audio then
 		self._audio:play(spec.sound, { position = position })
 	end

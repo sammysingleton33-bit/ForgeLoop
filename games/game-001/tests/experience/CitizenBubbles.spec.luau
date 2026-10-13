@@ -364,6 +364,13 @@ describe("CitizenBubbleController (FL-0091)", function()
 		expect(poses).toEqual({ "1:hammer", "1:bow", "1:rest" })
 	end)
 
+	it("a cue for a citizen with no rendered rig plays no sound or effect (never at the origin)", function()
+		entities.event:fire(77, "hammer", {}, nil)
+		expect(poses).toEqual({ "77:hammer" }) -- EntityController ignores poses for unrendered entities
+		expect(played).toEqual({})
+		expect(effects).toEqual({})
+	end)
+
 	it("an unknown cue falls back to the reaction tone for its pose and warns once", function()
 		local farmer = citizen(1, 20)
 		entities.event:fire(1, "cue", { cue = "dragons", tone = "sad" }, farmer)

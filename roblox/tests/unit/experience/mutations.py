@@ -113,6 +113,9 @@ M = [
  ("FL-0091", C2+"CitizenBubbleController.luau", '		self.bubbles:release(id) -- released and not rendered again: the citizen is gone\n', '', "CitizenBubbles", "a job change swaps the rig", "game"),
  ("FL-0091", C2+"CitizenBubbleController.luau", 'return type(value) == "number" and value == value', 'return type(value) == "number"', "CitizenBubbles", "a NaN entity id from the event signal is ignored", "game"),
  ("FL-0091", F+"Bubbles.luau", 'return type(value) == "number" and value == value', 'return type(value) == "number"', "CitizenBubbles", "a NaN entity id is ignored", "game"),
+ ("FL-0091", C+"VFXController.luau", '			elseif host ~= nil then', '			elseif false then', "Vfx", "puts an effect on a Model into an owned Attachment", "fw"),
+ ("FL-0091", C+"VFXController.luau", '		if ok and direct then\n			return parent, true', '		if false then\n			return parent, true', "Vfx", "uses a BasePart or Attachment parent as is", "fw"),
+ ("FL-0091", C2+"CitizenBubbleController.luau", '	if position == nil then\n		return -- no rendered rig', '	if false then\n		return -- no rendered rig', "CitizenBubbles", "a cue for a citizen with no rendered rig", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

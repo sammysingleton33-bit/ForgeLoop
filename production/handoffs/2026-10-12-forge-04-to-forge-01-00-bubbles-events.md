@@ -42,11 +42,11 @@
    - §5.4 also still says no cue event is contracted, and that cues show only through the reaction tone. G13.3 now contracts it.
 
 ## Evidence
-- `games/game-001/tests/experience/CitizenBubbles.spec.luau`: 21 specs.
+- `games/game-001/tests/experience/CitizenBubbles.spec.luau`: 22 specs.
   - Model rules: one bubble per citizen; text from the event only; glyphs; placards; distance; cap; release.
   - The cue map: exactly the G13.3 vocabulary, every content `cue_id` mapped, registered sounds and effects, never sound-only.
   - The controller: drawing, pooling on `released`, the cap and distance from the camera focus, LOD-hidden rigs, a job-change rig swap, NaN ids, placards, `citizenBarks`, cues (direct and `"cue"`), the unknown-cue tone fallback, the headless boot.
-- `mutations.py FL-0091`: 22/22 caught.
+- `mutations.py FL-0091`: 25/25 caught. That includes the VFXController rows: an effect on a citizen's Model goes into an owned Attachment under its PrimaryPart, because ParticleEmitters emit only from a BasePart or Attachment.
 
 ## Interfaces touched
 None. The cue routing follows CONTRACTS G13.3 `cue` (v0.4-g4). `playPose`, the per-citizen strike and cue fan-out, and `CitizenAnswered` are proposals in this file.
