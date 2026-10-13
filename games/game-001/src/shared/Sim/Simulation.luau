@@ -26,6 +26,8 @@
 		                                       -- optional; gives citizens names, traits and families
 		                                          (Sim/People, G13.2) right after they spawn
 		sim:addNode(kind, x, z, id?): Node                             -- tree / rock / goldvein / berries
+		sim:nodeClear(kind, x, z): boolean     -- a `kind` node there keeps placementGap to every standing
+		                                       building's placement shape and footprint circle (Layout)
 	Time
 		sim:advance(seconds)        -- runs whole fixed ticks (catalog.tuning.tickSeconds); remainder carried
 		sim:step()                  -- exactly one tick
@@ -42,10 +44,15 @@
 		sim:claimRegion(kingdomId, regionId, x, z, radius, reason), sim:releaseRegion(regionId)
 		sim:territoryOwner(x, z): KingdomId?   -- keep circles first, then claimed regions
 	Construction (called by Commands after validation; also usable by AI rulers)
-		sim:canPlace(kingdom, kind, x, z): (boolean, string?)
-		sim:placeBuilding(kingdom, kind, x, z, byUserId?): (Building?, string?)
+		sim:canPlace(kingdom, kind, x, z, yaw?): (boolean, string?)   -- yaw nil: the facing placeBuilding
+		                                       would give (towards the keep)
+		sim:placeBuilding(kingdom, kind, x, z, byUserId?, yaw?): (Building?, string?)
+		sim:shapeOf(kind, x, z, yaw): Footprint.Shape   -- placement shape: catalog placeSize rectangle
+		                                       (largest Kit level, turned by yaw), else the footprint circle
 		sim:startUpgrade(kingdom, buildingId, byUserId?): (boolean, string?)
 		sim:cancelConstruction(kingdom, buildingId, byUserId?): (boolean, string?)
+		Overlap (Sim/Footprint): placement shapes keep tuning.placementGap from each other and from
+		resource node circles; bounds and territory still test the footprint circle.
 	Views
 		sim:buildingView(id) / sim:viewOf(record): CONTRACTS G2 Building (cframe, footprint, state, ...)
 	Queries (used by CitizenBrain / CitizenActions / Snapshot)
@@ -79,6 +86,7 @@
 local Catalog = require("./Catalog")
 local CitizenActions = require("./CitizenActions")
 local CitizenBrain = require("./CitizenBrain")
+local Footprint = require("./Footprint")
 local TreasuryDouble = require("./TreasuryDouble")
 
 type Catalog = Catalog.Catalog
@@ -361,19 +369,49 @@ function Simulation:addNode(kind: string, x: number, z: number, id: string?)
 	return node
 end
 
+-- Node generation (Kingdom/Layout): a `kind` node at (x, z) clears every standing building by
+-- placementGap: its placement shape (the canPlace rule, seen from the node) and its footprint circle
+-- (where citizens, units and combat reach it).
+function Simulation:nodeClear(kind: string, x: number, z: number): boolean
+	local radius = self.catalog.nodes[kind].footprint
+	local gap = self.catalog.tuning.placementGap
+	for _, bid in self.buildingOrder do
+		local b = self.buildings[bid]
+		if
+			not b.destroyed
+			and (
+				Footprint.overlapsCircle(b.shape, x, z, radius, gap)
+				or dist(x, z, b.x, b.z) < b.footprint + radius + gap
+			)
+		then
+			return false
+		end
+	end
+	return true
+end
+
 -- yaw: facing in radians (CFrame.Angles(0, yaw, 0); Kit models face -Z). Default: the front towards
 -- the kingdom's keep, or for the keep itself towards the map centre.
+function Simulation:_facing(kingdom: any, kind: string, x: number, z: number, yaw: number?): number
+	if yaw ~= nil then
+		return yaw
+	end
+	local tx, tz = kingdom.x, kingdom.z
+	if kind == "keep" or (math.abs(tx - x) < 1e-6 and math.abs(tz - z) < 1e-6) then
+		tx, tz = 0, 0
+	end
+	return if math.abs(tx - x) + math.abs(tz - z) < 1e-6 then 0 else math.atan2(-(tx - x), -(tz - z))
+end
+
+function Simulation:shapeOf(kind: string, x: number, z: number, yaw: number): Footprint.Shape
+	local def = self.catalog.buildings[kind]
+	return if def.placeSize then Footprint.rect(def.placeSize, x, z, yaw) else Footprint.circle(x, z, def.footprint)
+end
+
 function Simulation:_createBuilding(kingdom: any, kind: string, x: number, z: number, yaw: number?)
 	local def = self.catalog.buildings[kind]
 	self._nextBuilding += 1
-	local facing = yaw
-	if facing == nil then
-		local tx, tz = kingdom.x, kingdom.z
-		if kind == "keep" or (math.abs(tx - x) < 1e-6 and math.abs(tz - z) < 1e-6) then
-			tx, tz = 0, 0
-		end
-		facing = if math.abs(tx - x) + math.abs(tz - z) < 1e-6 then 0 else math.atan2(-(tx - x), -(tz - z))
-	end
+	local facing = self:_facing(kingdom, kind, x, z, yaw)
 	local building = {
 		id = self._nextBuilding,
 		kind = kind,
@@ -382,6 +420,7 @@ function Simulation:_createBuilding(kingdom: any, kind: string, x: number, z: nu
 		z = z,
 		yaw = facing,
 		footprint = def.footprint,
+		shape = self:shapeOf(kind, x, z, facing), -- placement overlap (never moves or grows)
 		level = 0,
 		pendingLevel = 1 :: number?,
 		pendingCost = nil :: { [string]: number }?,
@@ -998,7 +1037,7 @@ function Simulation:keepLevel(kingdom: any): number
 	return if keep and not keep.destroyed then keep.level else 0
 end
 
-function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number): (boolean, string?)
+function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number, yaw: number?): (boolean, string?)
 	local def = self.catalog.buildings[kind]
 	if def == nil then
 		return false, "unknown_building"
@@ -1026,9 +1065,10 @@ function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number): 
 		return false, "out_of_territory"
 	end
 	local gap = self.catalog.tuning.placementGap
+	local shape = self:shapeOf(kind, x, z, self:_facing(kingdom, kind, x, z, yaw))
 	for _, bid in self.buildingOrder do
 		local b = self.buildings[bid]
-		if not b.destroyed and dist(x, z, b.x, b.z) < def.footprint + b.footprint + gap then
+		if not b.destroyed and Footprint.overlaps(shape, b.shape, gap) then
 			return false, "blocked"
 		end
 	end
@@ -1036,7 +1076,7 @@ function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number): 
 		local node = self.nodes[nid]
 		-- depleted trees still block: they grow back
 		local present = node.amount > 0 or node.regrow ~= nil
-		if present and dist(x, z, node.x, node.z) < def.footprint + node.footprint + gap then
+		if present and Footprint.overlapsCircle(shape, node.x, node.z, node.footprint, gap) then
 			return false, "blocked"
 		end
 	end
@@ -1058,7 +1098,7 @@ function Simulation:placeBuilding(
 	by: number?,
 	yaw: number?
 ): (any?, string?)
-	local ok, err = self:canPlace(kingdom, kind, x, z)
+	local ok, err = self:canPlace(kingdom, kind, x, z, yaw)
 	if not ok then
 		return nil, err
 	end

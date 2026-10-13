@@ -440,8 +440,8 @@ describe("Population ranges", function()
 		expect(math.abs(sum / n)).toBeLessThan(2)
 	end)
 
-	it("starts loyalty at 50 + chemistry/4, exactly ContentQuery.startLoyalty", function()
-		local cases = { [-20] = 45, [-3] = 49.25, [-2] = 49.5, [0] = 50, [1] = 50.25, [3] = 50.75, [20] = 55 }
+	it("starts loyalty at round(50 + chemistry/4), exactly ContentQuery.startLoyalty", function()
+		local cases = { [-20] = 45, [-3] = 49, [-2] = 50, [0] = 50, [1] = 50, [2] = 51, [3] = 51, [20] = 55, [30] = 55 }
 		for chemistry, loyalty in cases do
 			expect(Population.loyaltyFor(chemistry)).toBe(loyalty)
 			expect(Population.loyaltyFor(chemistry)).toBe(ContentQuery.startLoyalty(chemistry))
@@ -654,7 +654,7 @@ describe("Population.validate", function()
 			broken(function(p)
 				p[1].loyalty += 1
 			end),
-			"is not 50 + chemistry/4"
+			"is not round(50 + chemistry/4)"
 		)
 		expectReported(
 			broken(function(p)

@@ -9,6 +9,7 @@
 		OnboardingController:skip()                      -- the always-visible Skip button calls this
 		OnboardingController.state                       -- last snapshot from Experience.OnboardingState
 		OnboardingController.changed: Signal (state)
+	When a snapshot turns done (not skipped), NotificationController:celebrate("onboardingComplete").
 
 	View (thin, built with Instances until FORGE-03's Panel/Button land; then only _render changes):
 	- one small card at the top centre (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9):
@@ -42,6 +43,11 @@ Def.MOVE_STUDS = 8
 Def.REACH_STUDS = 15
 Def.POLL_SEC = 0.25
 Def.IDLE_HINT_SEC = 6
+Def.CARD_TOP = 72 -- px below the top inset (the card is centred, up to 420 px wide)
+Def.CARD_HEIGHT = 88
+-- While the card shows, NotificationController keeps its stack below it (on phones the card spans
+-- the width, and the stack would cover Skip).
+Def.CARD_RESERVE = Def.CARD_TOP + Def.CARD_HEIGHT + 8
 
 local MOVE_ACTIONS = { RulerMoved = true, CharacterMoved = true }
 local GOLD = Color3.fromRGB(255, 207, 92)
@@ -88,6 +94,7 @@ function OnboardingController:destroy()
 		connection:disconnect()
 	end
 	self:_clearMarks()
+	self:_reserve(nil)
 	if self._view then
 		self._view.gui:Destroy()
 		self._view = nil
@@ -101,9 +108,17 @@ function OnboardingController:apply(state: any)
 	if type(state) ~= "table" then
 		return
 	end
+	local wasActive = self.state ~= nil and not self.state.done
 	self.state = state
 	self:_render()
 	self:_startDetector()
+	if wasActive and state.done and not state.skipped then
+		-- the tutorial's last step just completed (not skipped): the celebration moment (FL-0027)
+		local notifications = self._registry:find("NotificationController")
+		if notifications and notifications.celebrate then
+			notifications:celebrate("onboardingComplete", { flowId = state.flowId })
+		end
+	end
 	self.changed:fire(state)
 end
 
@@ -211,13 +226,13 @@ function OnboardingController:_build(): any
 	local card = env.newInstance("Frame")
 	card.Name = "Card"
 	card.AnchorPoint = Vector2.new(0.5, 0)
-	card.Position = UDim2.new(0.5, 0, 0, 72)
-	card.Size = UDim2.new(0.92, 0, 0, 88)
+	card.Position = UDim2.new(0.5, 0, 0, Def.CARD_TOP)
+	card.Size = UDim2.new(0.92, 0, 0, Def.CARD_HEIGHT)
 	card.BackgroundColor3 = PANEL
 	card.BackgroundTransparency = 0.1
 	card.Parent = gui
 	local limit = env.newInstance("UISizeConstraint")
-	limit.MaxSize = Vector2.new(420, 88)
+	limit.MaxSize = Vector2.new(420, Def.CARD_HEIGHT)
 	limit.Parent = card
 	local stroke = env.newInstance("UIStroke")
 	stroke.Thickness = 2
@@ -340,6 +355,7 @@ function OnboardingController:_render()
 		if self._view then
 			self._view.gui.Enabled = false
 		end
+		self:_reserve(nil)
 		return
 	end
 	self._view = self._view or self:_build()
@@ -348,12 +364,21 @@ function OnboardingController:_render()
 		return
 	end
 	view.gui.Enabled = true
+	self:_reserve(Def.CARD_RESERVE)
 	view.title.Text = state.hint.title or ""
 	view.body.Text = state.hint.body or ""
 	view.counter.Text = `{state.step}/{state.total}`
 	view.stroke.Color = if state.escalated then GOLD else INK
 	view.stroke.Transparency = if state.escalated then 0 else 0.6
 	self:_mark(state.hint.target, state.escalated)
+end
+
+-- Keeps NotificationController's toast stack below the card while it shows (nil frees the space).
+function OnboardingController:_reserve(px: number?)
+	local notifications = self._registry:find("NotificationController")
+	if notifications and notifications.reserveTop then
+		pcall(notifications.reserveTop, notifications, "onboarding", px)
+	end
 end
 
 function OnboardingController:showIdleHint(phase: string): boolean

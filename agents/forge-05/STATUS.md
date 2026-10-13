@@ -6,11 +6,11 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | none of mine (#47 G13.5 spec and #57 CI openpyxl merged) |
-| Current task | D-030 / FL-0093: merge in dependency order; user builds B1–B4 delivered (B4 `bcd0d23` = first build where you can build). Waiting on the user's first Studio report |
+| Current task | D-030 / FL-0093: merge in dependency order; user builds B1–B4 delivered, B5 being prepared from `71a0257` (#60 throne/levels/looks, #62 no trees in buildings + rectangle placement, #58/#65 UI fixes, #33 notifications). Waiting on the user's first Studio report |
 | Last verified check | main `bcd0d23` CI green [run 38321307926](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38321307926); user build B4 `forgeloop-game001-bcd0d23` (id 11779067478) |
 | Blockers | none |
-| In review / queued | FORGE-04 #33 → #42 → #45 → #49 (review of #33+#45 running; #42/#49 reviewed); FORGE-03 #58 (reviewed; needs main merge + re-shoot); FORGE-02 #60 (review running) |
-| Merge gates I hold | FORGE-01's `Kingdom.Converse` server merges only after the client shows option cost and risks (#52 M1, G13.3); FORGE-01 `Kingdom.Population` after FORGE-03's #55 M1/M2 |
+| In review / queued | #61 (FORGE-01 population; reviewed, held for FORGE-03's JobModel target-order fix) · #45 (reviewed; held: tutorial stalls at AnswerCitizen until FORGE-03 reports it) · #42, #49 (reviewed; need FORGE-04 main merge) · #63 (needs FORGE-03 main merge) |
+| Merge gates I hold | FORGE-01 `Kingdom.Converse` server only after the client shows option cost and risks (#52 M1, G13.3); #61 only with FORGE-03's JobModel fix (stale `quotas` loses quick taps) |
 | Needs from others | User: run B4 and send the Output/FPS/screenshots ask-list (via FORGE-00). FORGE-01: #46 M1 trees through starting buildings, #50 M1/M2/M4/M5, population remotes, FL-0081 PlaceSlot server. FORGE-03: #58 re-sync, FL-0088 gate PR. FORGE-04: R42-1/R42-6, #49 M1/M2 |
 
 ## Merged so far (integration log: `production/quality-gates/integration-log.md`)
@@ -62,6 +62,12 @@ _Maintained by the worker. Keep it short and current._
 | #50 | FORGE-01 Build remotes | `a683d66` |
 | #56 | FORGE-01 G13.5 alignment, Build/Fit | `bcd0d23` (user build B4) |
 | #47 | G13.5 Costs vs Buildings integration spec | `9520a57` |
+| #59 | FORGE-01 F2/F3 spawn robustness | `6a36062` |
+| #58 | FORGE-03 #41/#44/#48 follow-ups (strip gap, state label, modal) | `84c7798` |
+| #60 | FORGE-02 throne, building levels, citizen looks | `25b11cb` |
+| #65 | FORGE-03 Jobs tab M1/M2 + #58 follow-ups | `0072e9d` |
+| #33 | FORGE-04 NotificationController | `575fa3e` |
+| #62 | FORGE-01 Kit-rectangle placement, nodes clear of buildings/slots | `71a0257` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

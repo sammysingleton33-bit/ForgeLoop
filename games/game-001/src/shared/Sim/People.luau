@@ -17,10 +17,11 @@
 		citizen.profile = { key, given, familyName, gender, occupation, keyRole?, traits, household,
 		                    chemistryBase, look, family, friends, rivals }   -- relations as entity ids
 		citizen.chemistry, citizen.loyalty    current values (start: rolled chemistry and
-		                                      ContentQuery.startLoyalty(chemistry) = 50 + chemistry/4)
+		                                      ContentQuery.startLoyalty(chemistry) = round(50 + chemistry/4))
 	Starting citizens are matched to the generated people in job order, which both sides use
 	(Population.generate with the catalog's jobOrder). An arrival (birth) is one more generated person
-	of its job, from its own stream ("<kingdomId>#<n>"), with no family, friends or rivals yet.
+	of its job, from its own stream ("<kingdomId>#<n>"), with no family, friends or rivals yet; it is
+	re-rolled until its name (and, within People.ARRIVAL_TRIES, its look) is unique in the kingdom.
 ]]
 
 local ContentQuery = require("../Content/ContentQuery")
@@ -108,9 +109,33 @@ local function profileStart(sim: any, seed: number, content: any, kingdom: any, 
 	end
 end
 
-local function profileArrival(seed: number, content: any, kingdom: any, citizen: any)
+-- An arrival re-rolls (stream "<kingdomId>#<n>", then "<kingdomId>#<n>/<try>") until its full name is
+-- unique among the kingdom's living citizens, and its look too when ARRIVAL_TRIES allow (FORGE-05 #61 M).
+People.ARRIVAL_TRIES = 24
+
+local function profileArrival(sim: any, seed: number, content: any, kingdom: any, citizen: any)
+	local names, looks = {}, {}
+	for _, id in kingdom.citizenIds do
+		local other = sim.citizens[id]
+		if other and other.profile then -- the arrival itself has no profile yet
+			names[other.name] = true
+			looks[Population.lookKey(other.profile.look)] = true
+		end
+	end
 	local n = kingdom.stats.born
-	local person = Population.generate(seed, `{kingdom.id}#{n}`, { [citizen.job] = 1 }, content)[1]
+	local unique, nameOnly, last
+	for try = 1, People.ARRIVAL_TRIES do
+		local stream = if try == 1 then `{kingdom.id}#{n}` else `{kingdom.id}#{n}/{try}`
+		last = Population.generate(seed, stream, { [citizen.job] = 1 }, content)[1]
+		if not names[last.name] then
+			if not looks[Population.lookKey(last.look)] then
+				unique = last
+				break
+			end
+			nameOnly = nameOnly or last
+		end
+	end
+	local person = unique or nameOnly or last
 	person.key = `{kingdom.id}:b{n}`
 	apply(citizen, person, {})
 end
@@ -120,8 +145,8 @@ function People.install(sim: any, seed: number, content: any)
 		start = function(s: any, kingdom: any, citizens: { any })
 			profileStart(s, seed, content, kingdom, citizens)
 		end,
-		birth = function(_s: any, kingdom: any, citizen: any)
-			profileArrival(seed, content, kingdom, citizen)
+		birth = function(s: any, kingdom: any, citizen: any)
+			profileArrival(s, seed, content, kingdom, citizen)
 		end,
 	}
 	sim.peopleSeed = seed

@@ -35,13 +35,16 @@
 		                                 a shortage that phase), then PhaseEndedWellFed:<ended phase> when its
 		                                 lowest fed ratio stayed >= Society.food.wellFedAtLeast
 		fed ratio below Society.food.shortageBelow (once per dip) → FoodShortage
-	For each firing (ContentQuery.actionFirings: its rows whose kingdom condition holds, one per action):
-		- each credited ruler: reputation = guardRules(scaleGains(rep, the ruler's repeat multiplier));
-		- the kingdom: conditions += scaleGains(kingdom deltas, the kingdom's repeat multiplier), capped per
-		  application (Kingdom/Reputation.applyConditions);
-		- each citizen hearing a row (inActionAudience): loyalty += Σ actionLoyalty(row, traits, chemistry,
-		  the kingdom multiplier), clamped 0..100.
+	Every firing comes from ContentQuery.fireAction (the single anti-farming point, #67) and is applied as
+	given: its rows whose kingdom condition holds, decayed per row by the farm histories, then
+		- each credited ruler: reputation += guardRules(rep), rep decayed by that ruler's own history;
+		- the kingdom, once: conditions += kingdom (decayed by the kingdom history), capped per application
+		  (Kingdom/Reputation.applyConditions);
+		- each citizen who hears a row: loyalty += its listener loyalty (the rows it hears summed, clamped
+		  once to LOYALTY_CLAMP of its relation), then kept within 0..100.
 		Farm histories: one per ruler (reputation), one per kingdom (conditions, loyalty) (SPEC §6.5, §6.8).
+		The kingdom history records each firing once, however many rulers are credited.
+	Additive: service.content = the ContentQuery query it reads (specs may pass ContentQuery.new(...)).
 	Every second while the match runs: conditions drift toward their food/housing targets; a ruler's fear
 	above its start fades by Society.fear.relaxPerMinute (one history entry a minute). A new world (round)
 	starts fresh ledgers, histories and conditions.
@@ -68,6 +71,7 @@ function Def.new(env: any, registry: any)
 	self._remotes = registry:get("RemoteService")
 	self._connections = {} :: { any }
 	self._running = false
+	self.content = ContentQuery -- the content query (specs may pass ContentQuery.new(...))
 	self:_reset(nil)
 	return self
 end
@@ -164,6 +168,20 @@ local function noticeOf(firing: any): string
 	return firing.id
 end
 
+function ReputationService:_rulerHistory(userId: number): any
+	local farm = self._rulerFarm[userId] or {}
+	self._rulerFarm[userId] = farm
+	return farm
+end
+
+local function copyHistory(history: any): any
+	local out = {}
+	for key, times in history do
+		out[key] = table.clone(times)
+	end
+	return out
+end
+
 function ReputationService:fireAction(event: string, kingdomId: string, opts: { [string]: any }?)
 	local options = opts or {}
 	local sim = self:_sim()
@@ -174,44 +192,47 @@ function ReputationService:fireAction(event: string, kingdomId: string, opts: { 
 	local match = self._match.host.match
 	local ctx =
 		Context.kingdom(sim, kingdomId, { phase = match.state, events = options.events, before = options.before })
-	local firings = ContentQuery.actionFirings(event, ctx)
-	if #firings == 0 then
-		return
+	if #self.content.actionFirings(event, ctx) == 0 then
+		return -- nothing applies: no listeners to build, no firing recorded
 	end
 	local now = self:_now()
 	local rulers = options.rulers or k.rulers
 	local kingdomFarm = self._kingdomFarm[kingdomId] or {}
 	self._kingdomFarm[kingdomId] = kingdomFarm
-	for _, firing in firings do
-		local key, decay, window = firing.farm_key, firing.repeat_decay, firing.repeat_window_s
-		local kingdomMultiplier = ContentQuery.repeatMultiplier(kingdomFarm, key, now, decay, window)
-		ContentQuery.recordFire(kingdomFarm, key, now)
-		for _, userId in rulers do
-			local farm = self._rulerFarm[userId] or {}
-			self._rulerFarm[userId] = farm
-			local multiplier = ContentQuery.repeatMultiplier(farm, key, now, decay, window)
-			ContentQuery.recordFire(farm, key, now)
-			local rep = Reputation.guardRules(event, ContentQuery.scaleGains(firing.rep, multiplier))
-			self:apply(userId, firing.id, rep, noticeOf(firing))
+	local listeners = {}
+	for _, cid in k.citizenIds do
+		local c = sim.citizens[cid]
+		table.insert(listeners, {
+			citizen = c,
+			occupation = if c.profile then c.profile.occupation else c.job,
+			speaker = options.speaker == cid,
+			traits = if c.profile then c.profile.traits else {},
+			chemistry = c.chemistry,
+			ctx = Context.citizen(sim, c, ctx),
+		})
+	end
+	-- The kingdom's effects once, through the first credited ruler's history (a scratch one with no
+	-- ruler); each further ruler takes only its reputation, against the kingdom history as it was before.
+	local first = rulers[1]
+	local kingdomBefore = if #rulers > 1 then copyHistory(kingdomFarm) else nil
+	local rulerFarm = if first then self:_rulerHistory(first) else {}
+	for _, firing in self.content.fireAction(event, ctx, rulerFarm, kingdomFarm, now, listeners) do
+		if first then
+			self:apply(first, firing.id, Reputation.guardRules(event, firing.rep), noticeOf(firing))
 		end
-		Reputation.applyConditions(k.conditions, ContentQuery.scaleGains(firing.kingdom, kingdomMultiplier))
-		for _, cid in k.citizenIds do
-			local c = sim.citizens[cid]
-			local listener = {
-				occupation = if c.profile then c.profile.occupation else c.job,
-				speaker = options.speaker == cid,
-			}
-			local listenerCtx = Context.citizen(sim, c, ctx)
-			local traits = if c.profile then c.profile.traits else {}
-			local delta = 0
-			for _, row in firing.rows do
-				if ContentQuery.inActionAudience(row, listener, listenerCtx) then
-					delta += ContentQuery.actionLoyalty(row, traits, c.chemistry, kingdomMultiplier)
-				end
+		Reputation.applyConditions(k.conditions, firing.kingdom)
+		for _, heard in firing.listeners do -- decayed and clamped once per listener: applied as given
+			local c = heard.citizen
+			if heard.loyalty ~= 0 then
+				c.loyalty = math.clamp((c.loyalty or 50) + heard.loyalty, 0, 100)
 			end
-			if delta ~= 0 then
-				c.loyalty = math.clamp((c.loyalty or 50) + delta, 0, 100)
-			end
+		end
+	end
+	for i = 2, #rulers do
+		local userId = rulers[i]
+		local history = copyHistory(kingdomBefore)
+		for _, firing in self.content.fireAction(event, ctx, self:_rulerHistory(userId), history, now, nil) do
+			self:apply(userId, firing.id, Reputation.guardRules(event, firing.rep), noticeOf(firing))
 		end
 	end
 end

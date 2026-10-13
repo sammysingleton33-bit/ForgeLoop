@@ -3,7 +3,17 @@
 -- Source: dialogue/scenarios.csv, dialogue/responses.csv. Edit the CSV files (or the workbook, see content/README.md),
 -- then run: python3 tools/content/content.py build
 
-return {
+-- Deeply frozen: the content is shared by every consumer, so nobody may change it.
+local function deepFreeze<T>(value: T): T
+	for _, child in value :: any do
+		if type(child) == "table" and not table.isfrozen(child) then
+			deepFreeze(child)
+		end
+	end
+	return table.freeze(value :: any) :: any
+end
+
+return deepFreeze({
 	scenarios = {
 		blacksmith_forge_stone = {
 			id = "blacksmith_forge_stone",
@@ -721,4 +731,4 @@ return {
 		"soldier_pay_due",
 		"family_bread_theft",
 	},
-}
+})
