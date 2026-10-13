@@ -88,7 +88,7 @@ Colourful, readable, stylised medieval: warm sunlit valleys, saturated kingdom c
 - Readable at RTS-ish camera distances and on phones.
 - No grey placeholder look in anything shown to players.
 - Art direction sheet: `blender/ART_DIRECTION.md` (FORGE-02), with budgets in `blender/budgets.json` and the asset list in `blender/manifest.json`.
-- Kingdom display names (working names, PROVISIONAL until the user's branding decision §16.6): Emberhold (crimson, flame and crown), Frostmere (azure, star), Thornwood (emerald, oak leaf), Sunspire (gold, sun disc). Contract ids stay `crimson`, `azure`, `emerald`, `gold` (G2).
+- Kingdom display names (working names, PROVISIONAL until the user's branding decision §16.6): Emberhold (crimson, crown; D-039), Frostmere (azure, star), Thornwood (emerald, oak leaf), Sunspire (gold, sun disc). Contract ids stay `crimson`, `azure`, `emerald`, `gold` (G2).
 - Lighting preset (Lighting, Atmosphere, Sky, ColorCorrection, Bloom, terrain material colours): `games/game-001/world/Lighting.luau` (FORGE-02). VS-1 uses a fixed time of day.
 
 ## 7. Economy (starting point; FORGE-03 owns numbers, FORGE-04 pacing)

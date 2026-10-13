@@ -25,24 +25,29 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
   - The Studio gate G6 is the user's.
   - The flow is in `docs/workflows/git-and-integration.md` → Review lane.
 
-## Review queue (FORGE-07 works top-down; FORGE-00 updates it each cycle)
-Order follows the VS-1 dependency chain. "Re-review" means a review exists, but not on the current content.
+## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
+Updated 2026-10-13 06:20 UTC. Already merged under D-040: #83, #66, #63 (the Army tab stays hidden until the Army server exists). "Re-review" means a review exists, but not of the current code.
 
-| # | PR | Owner | Lane | State on 2026-10-13 04:25 UTC | Next |
+| # | PR | Owner | Lane | State | Next |
 |---|---|---|---|---|---|
-| 1 | #83 ContentQuery v0.4-g7 (choiceRisks, multi-ruler fireAction) | FORGE-00 | Conversation | Unreviewed. The G8 cross-owner flag (2 FORGE-06 files) is expected. | FORGE-07 verdict; FORGE-05 merges with a cross-owner note |
-| 2 | #66 conversation panel gate (costs and risks before choosing) | FORGE-03 | Conversation | B1 fixed at 256ad31 (FORGE-05 confirmed renders). No FORGE-07 verdict yet. | FORGE-07 verdict on 256ad31 |
-| 3 | #68 ReputationService | FORGE-01 | Conversation | FORGE-07 READY on the stale head 1878986. It must migrate to v0.4-g7 after #83 (9 specs fail on #83 until it does). | FORGE-01 migrates; FORGE-07 re-reviews |
-| 4 | #77 ConversationService (stacked on #68) | FORGE-01 | Conversation | Unreviewed. Missing v0.4-g6 `entityIds` on strike and cue events, plus the v0.4-g7 migration. | FORGE-01 fixes; FORGE-07 reviews |
-| 5 | #45 onboarding v2 + match30 | FORGE-04 | Conversation | Unreviewed. Conflicts with main. D-038 (1) allows an early merge if it auto-advances past AnswerCitizen. | FORGE-04 merges main; FORGE-07 reviews |
-| 6 | #70 Military (recruit, command, capture) | FORGE-01 | Capture | Changes requested. B1 `Army.Command({}, "capture")` is silently refused. Also M1 (bounds), M3 (refusal codes), M2 (follow-up allowed). | FORGE-01 fixes; FORGE-07 reviews |
-| 7 | #63 Army drawer and objective tracker | FORGE-03 | Capture | Fixes pushed, not re-reviewed. Conflicts with main. Decoupled from #70 by D-038 (2): hide the rail until Army remotes exist. | FORGE-03 merges main and hides the rail; FORGE-07 re-reviews |
-| 8 | #81 soldier helmet crest (VS-1 acceptance item) | FORGE-02 | Identity | Unreviewed, CI green, clean | FORGE-07 verdict |
-| 9 | #49 feedback layer, announcer, music | FORGE-04 | Feel | M1 fixed, not re-reviewed. Conflicts with main. | FORGE-04 merges main; FORGE-07 re-reviews |
-| 10 | #82 notification follow-ups | FORGE-04 | Feel | Unreviewed, clean | FORGE-07 verdict |
-| 11 | #64 analytics funnel and sessions | FORGE-04 | Data | Changes requested: M1 log flood; M2 v0.4-g6 step order. Conflicts with main. | FORGE-04 fixes; FORGE-07 re-reviews |
-| 12 | #84 FL-0100 conversation camera (cinematic) | FORGE-04 | Cinematic | Unreviewed. Comes after the VS-1 lanes (D-036). | FORGE-07 later |
-| — | Post-merge verdicts on #42, #75, #76, #79 (merged just before D-037) | FORGE-07 | — | Owed | B or M findings become fix-forward PRs |
+| 1 ★ | #68 ReputationService | FORGE-01 | Conversation | Migrated to v0.4-g7 (0ea874e) | Verdict on the current head |
+| 2 ★ | #77 ConversationService (stacked on #68) | FORGE-01 | Conversation | entityIds (246ce58), v0.4-g7 migration and every-scenario Converse spec (4131c1f), debug hooks | Verdict; retarget after #68 |
+| 3 ★ | #87 strike/cue `entityIds` client, rest effect stops | FORGE-04 | Conversation | Unreviewed | Verdict |
+| 4 ★ | #70 Military | FORGE-01 | Capture | B1, M1, M3 fixed (fa063b1). D-041 bunks to add. M2 is a follow-up. | FORGE-01 adds D-041 (1); then verdict |
+| 5 ★ | #89 FL-0081 build slots, ruler seated on the throne, builders stay on site | FORGE-01 | Build / throne | Unreviewed | Verdict |
+| 6 ★ | #91 FL-0104 aerial LOD centre, crest argument, `debugReseed` | FORGE-01 | Polish (VS-1 visible) | Unreviewed | Verdict |
+| 7 ★ | #81 soldier helmet crest (VS-1 acceptance item) | FORGE-02 | Identity | Unreviewed | Verdict |
+| 8 ★ | #45 onboarding v2 + match30 | FORGE-04 | Conversation | Unreviewed; D-038 (1) early-merge condition | FORGE-04 merges main; verdict |
+| 9 | #86 refusal codes, D-039 emblems, gem badge | FORGE-03 | Polish | Unreviewed | FORGE-07 |
+| 10 | #88 plot picker on `Fit.typesFor` | FORGE-03 | Build | Unreviewed | FORGE-07; then FORGE-00 drops the G13.5 SlotFit line |
+| 11 | #92 D-038 (7) per-feature files | FORGE-04 | Process | Unreviewed; it unblocks FORGE-04's merges | FORGE-07 |
+| 12 | #49 feedback layer and music | FORGE-04 | Feel | M1 fixed; needs a re-review | FORGE-07 |
+| 13 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed | FORGE-04, then FORGE-07 |
+| 14 | #82 notification follow-ups | FORGE-04 | Feel | Unreviewed | FORGE-07 |
+| 15 | #93 replication hardening; #94 fair resource nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
+| 16 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
+| 17 | #84 conversation camera; #85 Kit.portrait | FORGE-04, FORGE-02 | Cinematic | Unreviewed; after the VS-1 lanes (D-036) | FORGE-07 |
+| — | Post-merge verdicts: #42, #75, #76, #79, and the D-040 merges #83, #66, #63 | FORGE-07 | — | Owed | B/M findings become fix-forward PRs |
 
 ## Audit 2026-10-13 (54 tasks, 12 open PRs; each classification adversarially re-checked)
 - **Open PRs:**
@@ -75,7 +80,8 @@ Order follows the VS-1 dependency chain. "Re-review" means a review exists, but 
 ## Decisions needed from the user
 1. **Studio run of B6 on your Mac:** Output lines, FPS, screenshots (see the B6 notes). This is the only route to acceptance.
 2. **Pick the P0 sounds** (handoff `2026-10-12-forge-04-to-user-sounds.md`). Even after #49 the game is silent without them.
-3. **Still open:**
+3. **Approve FORGE-06's starter pack for temporary testing.** It holds 10 conversations, every row marked DRAFT. D-035 (2) needs your approval before it is merged.
+4. **Still open:**
    - match length, 25 + 5 or the current schedule (FL-0096);
    - Crown Arena format, victory rules and support strength (FL-0077);
    - approval of the DRAFT dialogue (FL-0095);
@@ -85,7 +91,7 @@ Order follows the VS-1 dependency chain. "Re-review" means a review exists, but 
 
 _Generated by `python tools/forge.py dashboard` from `production/tasks/`. Do not edit by hand._
 
-**Tasks:** 105 — SPECIFIED 25 · READY 33 · BUILDING 6 · REVIEW 30 · ACCEPTED 4 · REJECTED 7
+**Tasks:** 105 — SPECIFIED 25 · READY 31 · BUILDING 7 · REVIEW 28 · ACCEPTED 7 · REJECTED 7
 
 ### Needs the user (decisions, approvals, local-machine steps)
 
@@ -109,10 +115,7 @@ _None._
 | id | title | status | priority | track |
 |---|---|---|---|---|
 | [FL-0003](production/tasks/FL-0003-shared-roblox-skeleton-contracts-loader-harness-.md) | Shared Roblox skeleton: contracts, loader, harness, mocks, checks, CI | REVIEW | P0 | infra |
-| [FL-0005](production/tasks/FL-0005-roblox-market-research-and-game-1-shortlist.md) | Roblox market research and Game #1 shortlist | REVIEW | P0 | research |
-| [FL-0006](production/tasks/FL-0006-worker-startup-prompts-for-forge-01-05.md) | Worker startup prompts for FORGE-01..05 | REVIEW | P0 | coordination |
 | [FL-0083](production/tasks/FL-0083-content-library-editable-csv-spreadsheet-round-t.md) | Content library: editable CSV, spreadsheet round-trip, generated Content modules, ContentQuery, DRAFT starter content | REVIEW | P0 | design |
-| [FL-0004](production/tasks/FL-0004-platform-constraints-and-ai-provider-research.md) | Platform constraints and AI provider research | REVIEW | P1 | research |
 
 ### FORGE-01 Gameplay — open
 
@@ -164,7 +167,7 @@ _None._
 | [FL-0020](production/tasks/FL-0020-ui-foundation-builder-theme-tokens-component-lib.md) | UI foundation: builder, theme tokens, component library, responsive rules | REVIEW | P0 | build |
 | [FL-0058](production/tasks/FL-0058-kingdom-treasury-costs-catalogue-and-upkeep-trea.md) | Kingdom treasury, costs catalogue and upkeep (Treasury, Costs, Production) | REVIEW | P0 | build |
 | [FL-0059](production/tasks/FL-0059-kingdom-hud-and-build-menu-prototype-then-luau.md) | Kingdom HUD and build menu (prototype then Luau) | REVIEW | P0 | build |
-| [FL-0060](production/tasks/FL-0060-army-and-objective-panels-end-of-slice-summary.md) | Army and objective panels, end-of-slice summary | READY | P0 | build |
+| [FL-0060](production/tasks/FL-0060-army-and-objective-panels-end-of-slice-summary.md) | Army and objective panels, end-of-slice summary | BUILDING | P0 | build |
 | [FL-0065](production/tasks/FL-0065-citizen-card-and-job-panel-vs-1-row-4b.md) | Citizen card and job panel (VS-1 row 4b) | REVIEW | P0 | build |
 | [FL-0087](production/tasks/FL-0087-plot-picker-slot-build-menu-and-upgrade-panel-g1.md) | Plot picker, slot build menu and upgrade panel (G13.5) | REVIEW | P0 | build |
 | [FL-0088](production/tasks/FL-0088-conversation-panel-and-citizen-card-v2-g13-2-g13.md) | Conversation panel and citizen card v2 (G13.2, G13.3) | REVIEW | P0 | build |
@@ -205,7 +208,7 @@ _None._
 |---|---|---|---|---|
 | [FL-0028](production/tasks/FL-0028-own-the-skeleton-ci-green-on-github-harness-and-.md) | Own the skeleton: CI green on GitHub, harness and mocks upkeep | BUILDING | P0 | qa |
 | [FL-0029](production/tasks/FL-0029-pr-review-and-merge-pipeline-with-identifiable-i.md) | PR review and merge pipeline with identifiable integration builds | REVIEW | P0 | qa |
-| [FL-0031](production/tasks/FL-0031-studio-test-plan-and-user-smoke-test-pack.md) | Studio test plan and user smoke-test pack | READY | P0 | qa |
+| [FL-0031](production/tasks/FL-0031-studio-test-plan-and-user-smoke-test-pack.md) | Studio test plan and user smoke-test pack | REVIEW | P0 | qa |
 | [FL-0046](production/tasks/FL-0046-game-001-project-wiring-rojo-project-game-tree-d.md) | game-001 project wiring: Rojo project, Game-tree discovery, harness, require policy, CI | REVIEW | P0 | infra |
 | [FL-0047](production/tasks/FL-0047-vs-1-studio-playtest-script-and-integration-buil.md) | VS-1 Studio playtest script and integration builds | REVIEW | P0 | qa |
 | [FL-0067](production/tasks/FL-0067-game-001-wiring-follow-ups-from-the-plan-review-.md) | game-001 wiring follow-ups from the plan review: streaming, character spawn, world mount, buffer-faithful mocks | REVIEW | P0 | infra |
@@ -240,6 +243,9 @@ _None._
 |---|---|---|---|
 | [FL-0001](production/tasks/FL-0001-shared-operating-contract-and-task-tooling.md) | Shared operating contract and task tooling | ACCEPTED | 2026-10-12 |
 | [FL-0002](production/tasks/FL-0002-cloud-environment-audit-and-toolchain.md) | Cloud environment audit and toolchain | ACCEPTED | 2026-10-12 |
+| [FL-0004](production/tasks/FL-0004-platform-constraints-and-ai-provider-research.md) | Platform constraints and AI provider research | ACCEPTED | 2026-10-13 |
+| [FL-0005](production/tasks/FL-0005-roblox-market-research-and-game-1-shortlist.md) | Roblox market research and Game #1 shortlist | ACCEPTED | 2026-10-13 |
+| [FL-0006](production/tasks/FL-0006-worker-startup-prompts-for-forge-01-05.md) | Worker startup prompts for FORGE-01..05 | ACCEPTED | 2026-10-13 |
 | [FL-0035](production/tasks/FL-0035-select-game-1-from-the-shortlist.md) | Select Game #1 from the shortlist | ACCEPTED | 2026-10-12 |
 | [FL-0038](production/tasks/FL-0038-decide-the-repository-home-for-forgeloop.md) | Decide the repository home for FORGELOOP | ACCEPTED | 2026-10-12 |
 
@@ -250,14 +256,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-ec421c3 2026-10-13 [FORGE-00] D-038 backlog-audit rulings; FL-0103..FL-0105 follow-ups; FL-0065 scope
-a75de0f 2026-10-13 [FORGE-00] backlog audit batch 1: CONTRACTS v0.4-g8 (#31 nits follow the code); FL-0040 REJECTED; FL-0050/0051 BUILDING; research index marked historical
-f7cb412 2026-10-13 colour-vision run 2: correct the render size (1280×720; panels are downscaled to 960×540)
-cedc4e8 2026-10-13 D-033 (4) colour-vision run 2: soldier helmet crests (#81 renders) read apart under protan/deutan/tritan; Studio aerial check still owed
-f9bca3d 2026-10-13 User build B6 (c28576a): individual citizens, Jobs tab, D-033 colours; integration log #61 #78 #79 #76 #75 #42 #80; FORGE-05 STATUS
-54f7390 2026-10-12 Merge PR #80: [FORGE-00] D-037 FORGE-07 ownership row (production/reviews/**)
-40824ee 2026-10-13 [FORGE-00] CONTRACTS v0.4-g6: strike/cue entityIds (G13.3), funnel credits a step only after the previous one (G9)
-c28576a 2026-10-12 Merge PR #42: [FORGE-04] FL-0091 citizen thought/reaction bubbles, strike placards, consequence cues (G13.3)
+fccd146 2026-10-13 Integration bookkeeping: #63 merged (D-040 fallback verdict); FL-0060 record
+bdab09b 2026-10-13 [FORGE-03] #63: ArmyPanelController header names the "Orders sent" toast (FORGE-05 L5 wording)
+3cf17d2 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/03-ui-economy-fl0060
+57039b8 2026-10-13 Integration bookkeeping: #66 merged (D-040 fallback verdict); FL-0088 record
+9710822 2026-10-13 Merge PR #66: [FORGE-03] FL-0088 gate: answer costs and every risk before choosing (G13.3), confirm step, late-reply + in-flight guards
+5c397a0 2026-10-13 [FORGE-03] #66 B1: CitizenDoubles on ContentQuery v0.4-g7 (choicePreview fillNames)
+d716e51 2026-10-13 Integration bookkeeping: #83 merged (D-040 fallback verdict, cross-owner FORGE-06 files); FL-0083 record
+d8180bd 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/03-ui-economy-fl0088-gate
 ```
 
 <!-- forge:auto:end -->

@@ -44,11 +44,11 @@ Consequences for this design:
 
 | Limit | Roblox cap (quote, source) | House budget | AI Kingdoms uses |
 |---|---|---|---|
-| Custom event names | 100 — "eventNames \| 100" (ET); "up to 100 custom events" (CE) | 60 | **12** |
+| Custom event names | 100 — "eventNames \| 100" (ET); "up to 100 custom events" (CE) | 60 | **13** |
 | Funnels | 10 — "Number of funnels \| 10" (ET); "Limited to 10 unique funnels per experience." (AS) | 8 | **3** (Onboarding, VS1, Return) |
 | Steps per funnel | 100 — "Limited to steps 1-100." (AS) | 30 | **≤ 6** |
 | Custom fields per event | 3 — "Number of custom fields \| 3" (ET) | 3 | **≤ 3** |
-| Custom field value combinations | 8,000 — "Limited to 8,000 unique combinations of values across the three custom fields per experience." (AS); ET says values past 8,000 are grouped as "Other". The cap is per experience, across **all** events | **total < 2,000** (house rule) | about 420 in all (below) |
+| Custom field value combinations | 8,000 — "Limited to 8,000 unique combinations of values across the three custom fields per experience." (AS); ET says values past 8,000 are grouped as "Other". The cap is per experience, across **all** events | **total < 2,000** (house rule) | about 440 in all (below) |
 | Currency types (economy) | **5** — "Limited to 5 unique currency types per experience." (AS, EE "up to five"); ET says 10. We keep 5. | 3 | none in VS-1 (no meta currency); kingdom resources are **not** economy events |
 | Transaction types | 20 — "Limited to 20 unique types per experience." (AS) | 12 | the 6 enum names below + ≤ 6 custom |
 | Item SKUs | 100 — "Limited to 100 unique SKUs per experience." (AS) | 80 | FORGE-03 |
@@ -74,6 +74,7 @@ Custom field value combinations per event (the house rule counts their sum; phas
 | OnboardingCompleted | flow (1) | 1 |
 | OnboardingSkipped | lastStepName (6) × flow (1) | 6 |
 | OnboardingHintEscalated | stepName (6) | 6 |
+| OnboardingStepPassed | stepName (6) × via (2) | 12 |
 | MatchEnded | won (3) × phase (5 playing + unknown) × mode (4) | 72 |
 | PhaseLeft | phase (5) | 5 |
 | IdleHintShown | phase (4) | 4 |
@@ -81,7 +82,7 @@ Custom field value combinations per event (the house rule counts their sum; phas
 | SettingChanged | key × value: 5 volumes × 11 (tenths) + 4 booleans × 2 + 1 enum × 2 | 65 |
 | ConversationAnswered | occupation (12) × decision (15 content `farm_key`s today) | 180 (grows with the content: 1,200 at 100 `farm_key`s) |
 | ReputationShifted | category (6) × source (2) × phase (6) | 72 |
-| **Total** | | **about 430** |
+| **Total** | | **about 440** |
 
 A new event, field or content value that would push the total past 2,000 needs a bucket (as SettingChanged's tenths) or FORGE-00's approval.
 
@@ -108,6 +109,7 @@ Resolver errors are caught and warned once per minute; analytics never breaks ga
 | OnboardingCompleted | durationSec | flow | | | OnboardingService | built |
 | OnboardingSkipped | lastStep | lastStepName | flow | | OnboardingService on skip; **no funnel step is logged after it** | built |
 | OnboardingHintEscalated | step | stepName | | | OnboardingService when a step passes its nudge time (stuck points) | built |
+| OnboardingStepPassed | step | stepName | via (`unavailable` \| `timeout`) | | OnboardingService when a step is passed over or an interactive step times out (also logged as its funnel step) | built (FL-0092) |
 | MatchEnded | durationSec | won (`true`/`false`/`draw` when there is no single winner: a draw or a shared win is never logged as a loss) | phase (the last playing phase before Results = where it was decided: Founding..Endgame, Arena from VS-2) | mode (`MatchService.mode`: `slice` \| `match` \| `match30` \| `unknown`; comparison labels, not a match-length decision, BRIEF §16.10) | MatchAnalyticsService on G9 `MatchEnded`, per ruler still here (spectators not counted). KingdomEliminated is not logged in VS-1 (the slice has no elimination); VS-2 adds it as a custom event | built (FL-0063) |
 | PhaseLeft | minute | phase | | | AnalyticsService at session end through `config.session.leftInfo` → MatchAnalyticsService, for a ruler leaving in Founding..Arena. Logged before SessionEnd, so the order never depends on PlayerRemoving handler order | built (FL-0063) |
 | ConversationAnswered | secondsOpen (how long the request waited) | occupation | decision (the content `farm_key`, e.g. `handout_food`, `firm_ruling`, `threat`) | | FORGE-01's ConversationService when `Kingdom.Choose` succeeds, via `AnalyticsService:event` (interfaces §8). No ids or free text | declared (FL-0063); producer pending FORGE-01 |
@@ -119,7 +121,7 @@ Resolver errors are caught and warned once per minute; analytics never breaks ga
 ### Funnels
 | Funnel | Roblox method | Kind / session id | Steps | Logged by |
 |---|---|---|---|---|
-| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau`: `Spawn` (KingdomJoined), `Gather` (ruler's ResourceGathered), `PlaceBuilding` (BuildingPlaced, placedBy), `BuildingComplete`, `Recruit` (UnitsRecruited), `Capture` (ObjectiveCaptured) | OnboardingService only; nothing after a skip |
+| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau` (v2, D-030): `Spawn` (KingdomJoined), `InspectCitizen` (client action `CitizenInspected`), `BuildOnPlot` (BuildingPlaced, placedBy), `AnswerCitizen` (client action `CitizenAnswered`; G9 `CitizenAnswered` proposed; `requires = ConversationService`, so the step is passed over while that service is missing, and `autoAdvanceSec = 120`), `Recruit` (UnitsRecruited; `requires = MilitaryService`), `Capture` (ObjectiveCaptured; `requires = ObjectiveService`). InspectCitizen and AnswerCitizen are **client-reported** steps that grant nothing (G11 wording pending FORGE-00). Every step is logged when it completes or is passed: Roblox counts a skipped step as completed anyway, so a step passed over (`unavailable`) or a timed-out interactive step is logged too and **also** as `OnboardingStepPassed`; step n of this funnel therefore means "reached past step n", and real answers = AnswerCitizen − OnboardingStepPassed(stepName AnswerCitizen) | OnboardingService only; nothing after a skip |
 | VS1 | `LogFunnelStepEvent(player, "VS1", nil, step, name, fields)` | once | BRIEF §13: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture (G9 attribution, §4) | AnalyticsService track rules on `KingdomJoined`, `ResourceGathered`, `BuildingPlaced` (placedBy), `BuildingCompleted`, `UnitsRecruited`, `ObjectiveCaptured` (built, FL-0063). `inOrder`: a step is credited only to a player who already has the previous step (FORGE-00's #64 ruling). Roblox counts skipped steps as completed, so a co-ruler credited for the kingdom's completion or capture would otherwise inflate FirstBuildPlaced and FirstRecruit. Repeats are counted (`stats.dropped.duplicate`), never logged |
 | Return | `LogFunnelStepEvent(player, "Return", nil, ...)` | once | 1 FirstSession (first join today, UTC) · 2 ReturnNextDay | AnalyticsService at session start (`config.session.startOn`; game-001: `KingdomJoined`, D-027). Needs DataService `core.createdAt`, so it is inactive in VS-1 (D-027) |
 
