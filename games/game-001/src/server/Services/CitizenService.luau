@@ -5,11 +5,13 @@
 
 	Citizens live in the kingdom simulation (MatchService's host); this service is their API.
 	API (G5)
-		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap, quotas }?
+		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap, quotas, quotaRev }?
 			-- citizens and soldiers (soldiers count in byJob.soldier and in total); cap = beds + barracks
 			   bunks (soldiers sleep in the barracks, D-041), so it counts the same people as total; quotas = the
 			   Kingdom.SetJobQuota targets per job, hauler excepted (additive to G5, for the job panel);
-			   whole numbers >= 0; nil for an unknown kingdom
+			   whole numbers >= 0; quotaRev rises with every accepted quota change, even to the same number,
+			   so each one is pushed and a co-ruler's job panel sees its request answered (FL-0109, #71 low);
+			   nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
 		CitizenService:setJob(entityId, job): boolean   -- one citizen to `job` (a G2 JobId, not soldier); the
 		                                                   kingdom's quotas follow, so it stays there
@@ -30,7 +32,8 @@
 	world and the content library (Names, Traits, Occupations), so every citizen has a name, an
 	occupation, 2-3 traits, a household, friends and rivals, chemistry, loyalty and a look.
 	CitizenView = { entityId, name, occupation, job, traits, mood, loyalty, obedience, intent,
-	lastMemory?, memories, family, friends, rivals (names), hasRequest, look }. mood is 0..100 (well
+	lastMemory?, memories, family, friends, rivals (names), familyIds, friendIds, rivalIds (their entity ids,
+	index for index: FL-0109, match people by id), hasRequest, look (validated, Kit.normalizeLook) }. mood is 0..100 (well
 	fed = high, plus tuning.visitMood for visitMoodSeconds after a ruler's visit, Sim/Context mood); intent is the current activity and why, e.g. "Gathering (best job)";
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
@@ -47,6 +50,7 @@ local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
 local Context = require("@game/ReplicatedStorage/Game/Sim/Context")
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 
 local CitizenService = {}
 CitizenService.__index = CitizenService
@@ -132,7 +136,7 @@ local function populationSignature(kingdomId: string, population: { [string]: an
 		table.insert(quotas, `{job}={n}`)
 	end
 	table.sort(quotas)
-	return `{kingdomId}|{population.total}|{population.cap}|{table.concat(jobs, ",")}|{table.concat(quotas, ",")}`
+	return `{kingdomId}|{population.total}|{population.cap}|{table.concat(jobs, ",")}|{table.concat(quotas, ",")}|{population.quotaRev}`
 end
 
 -- Kingdom.Population to every player whose kingdom's population (or whose kingdom) changed.
@@ -172,6 +176,7 @@ function CitizenService:getPopulation(kingdomId: string): {
 	byJob: { [string]: number },
 	cap: number,
 	quotas: { [string]: number },
+	quotaRev: number,
 }?
 	local sim = self:_sim()
 	local k = sim.kingdoms[kingdomId]
@@ -194,7 +199,13 @@ function CitizenService:getPopulation(kingdomId: string): {
 	end
 	-- citizens sleep in beds, soldiers in barracks bunks (D-041): cap counts both, like total
 	local cap = count(sim:sleepCap(k))
-	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = cap, quotas = quotas }
+	return {
+		total = count(#k.citizenIds + #k.unitIds),
+		byJob = byJob,
+		cap = cap,
+		quotas = quotas,
+		quotaRev = count(k.quotaRev or 0), -- FL-0109 (#71 low): rises with every accepted quota change
+	}
 end
 
 -- ---------------------------------------------------------------- Studio debug hooks (G13.7)
@@ -272,15 +283,18 @@ function CitizenService:setFedRatio(kingdomId: string, ratio: number)
 	end
 end
 
-local function namesOf(sim: any, ids: { number }?): { string }
-	local out = {}
+-- A relation list as display names and, index for index, entity ids (FL-0109: the UI matches people by
+-- id, never by name). Relations who are gone are left out of both.
+local function relationsOf(sim: any, ids: { number }?): ({ string }, { number })
+	local names, out = {}, {}
 	for _, id in ids or {} do
 		local other = sim.citizens[id]
 		if other then
-			table.insert(out, other.name)
+			table.insert(names, other.name)
+			table.insert(out, id)
 		end
 	end
-	return out
+	return names, out
 end
 
 function CitizenService:_hasRequest(c: any): boolean
@@ -303,6 +317,9 @@ function CitizenService:inspect(entityId: number): { [string]: any }?
 	for _, entry in c.memory or {} do
 		table.insert(memories, entry.kind)
 	end
+	local family, familyIds = relationsOf(sim, profile and profile.family)
+	local friends, friendIds = relationsOf(sim, profile and profile.friends)
+	local rivals, rivalIds = relationsOf(sim, profile and profile.rivals)
 	return {
 		entityId = c.id,
 		name = c.name,
@@ -315,11 +332,15 @@ function CitizenService:inspect(entityId: number): { [string]: any }?
 		intent = if why then `{doing} ({why})` else doing,
 		lastMemory = if last then last.kind else nil,
 		memories = memories,
-		family = namesOf(sim, profile and profile.family),
-		friends = namesOf(sim, profile and profile.friends),
-		rivals = namesOf(sim, profile and profile.rivals),
+		family = family,
+		friends = friends,
+		rivals = rivals,
+		familyIds = familyIds,
+		friendIds = friendIds,
+		rivalIds = rivalIds,
 		hasRequest = self:_hasRequest(c),
-		look = table.clone(if profile then profile.look else People.DEFAULT_LOOK),
+		-- only the validated CitizenLook (FL-0109): the four G13.2 fields as palette indices
+		look = if profile then Kit.normalizeLook(profile.look) else table.clone(People.DEFAULT_LOOK),
 	}
 end
 

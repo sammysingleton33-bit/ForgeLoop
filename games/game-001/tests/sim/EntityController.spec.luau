@@ -239,6 +239,65 @@ describe("EntityController: initial state", function()
 		controller:destroy()
 	end)
 
+	it("reads Sim.GetEntities page by page until the server gives no next cursor (FL-0109)", function()
+		local env = MockEnv.new({
+			isServer = false,
+			localPlayer = { userId = 1001 },
+			sharedModules = { Remotes = { Sim = SimRemotes } },
+		})
+		local remotes = RemoteServiceDef.new(env, {})
+		local world = { full(1, 1, 1), full(2, 2, 2), full(4, 4, 4), full(7, 7, 7), full(9, 9, 9) }
+		local asked, failOnce = {}, true
+		remotes:handle("Sim.GetEntities", function(_player, after)
+			table.insert(asked, after or 0)
+			if after == 7 and failOnce then
+				failOnce = false
+				return nil -- one page gets no answer: it is asked for again
+			end
+			local page = {}
+			for _, e in world do
+				if e.id > (after or 0) and #page < 2 then
+					table.insert(page, e)
+				end
+			end
+			local last = page[#page]
+			local more = last ~= nil and last.id < world[#world].id
+			return EventCodec.encode(1, page), if more then last.id else nil
+		end)
+		local controller = Def.new(env, {})
+		controller.adapter = recorder().adapter
+		controller:start()
+		env.mock:advance(Def.RETRY_SECONDS * 2)
+		controller:step(0)
+		for _, e in world do
+			expect(controller:getModel(e.id)).never.toBeNil()
+		end
+		expect(asked).toEqual({ 0, 2, 7, 7 }) -- pages of two: after 0, 2, then 7 (asked twice: no answer once)
+		controller:destroy()
+	end)
+
+	it("stops paging when the server's cursor does not move on", function()
+		local env = MockEnv.new({
+			isServer = false,
+			localPlayer = { userId = 1001 },
+			sharedModules = { Remotes = { Sim = SimRemotes } },
+		})
+		local remotes = RemoteServiceDef.new(env, {})
+		local calls = 0
+		remotes:handle("Sim.GetEntities", function()
+			calls += 1
+			return EventCodec.encode(1, { full(3, 3, 3) }), 3 -- always "more after 3"
+		end)
+		local controller = Def.new(env, {})
+		controller.adapter = recorder().adapter
+		controller:start()
+		env.mock:advance(5)
+		controller:step(0)
+		expect(calls).toBe(2) -- the first page, then the same cursor again ends it
+		expect(controller:getModel(3)).never.toBeNil()
+		controller:destroy()
+	end)
+
 	it("keeps retrying without errors when the Sim remotes never appear", function()
 		local env = MockEnv.new({ isServer = false, localPlayer = { userId = 1001 } })
 		local controller = Def.new(env, {})

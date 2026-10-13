@@ -12,6 +12,7 @@ local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
@@ -189,6 +190,8 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 	local VIEW_KEYS = {
 		"entityId",
 		"family",
+		"familyIds",
+		"friendIds",
 		"friends",
 		"hasRequest",
 		"intent",
@@ -201,6 +204,7 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 		"name",
 		"obedience",
 		"occupation",
+		"rivalIds",
 		"rivals",
 		"traits",
 	}
@@ -236,8 +240,10 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 			)
 			expect(view.look).toEqual(c.profile.look)
 			expect(view.hasRequest).toBe(false)
+			local idsOf = { family = "familyIds", friends = "friendIds", rivals = "rivalIds" }
 			for _, relation in { "family", "friends", "rivals" } do
 				expect(#view[relation]).toBe(#c.profile[relation])
+				expect(view[idsOf[relation]]).toEqual(c.profile[relation]) -- ids beside the names (FL-0109)
 				for i, otherId in c.profile[relation] do
 					expect(view[relation][i]).toBe(sim.citizens[otherId].name)
 				end
@@ -246,6 +252,42 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 			view.look.skin = 99
 			expect(c.profile.traits[1]).never.toBe("changed")
 			expect(c.profile.look.skin).never.toBe(99)
+		end
+	end)
+
+	it("relation ids stay aligned with names when a relation is gone; the look is only ever valid (FL-0109)", function()
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(5)
+		local sim = match.host.match.sim
+		local c
+		for _, id in sim.kingdoms.crimson.citizenIds do
+			local candidate = sim.citizens[id]
+			if #candidate.profile.friends >= 2 then
+				c = candidate
+				break
+			end
+		end
+		assert(c, "a citizen with two friends")
+		local gone, stays = c.profile.friends[1], c.profile.friends[2]
+		sim:killCitizen(sim.citizens[gone], "test")
+		local view = assert(citizens:inspect(c.id))
+		expect(table.find(view.friendIds, gone)).toBeNil()
+		local at = assert(table.find(view.friendIds, stays))
+		expect(view.friends[at]).toBe(sim.citizens[stays].name)
+		expect(#view.friends).toBe(#view.friendIds)
+		-- a look the profile should never hold: out of range, fractional, an extra key
+		c.profile.look = { skin = 300, hair = 0, hairColor = 2.5, outfit = 4, key = "raw" }
+		local look = assert(citizens:inspect(c.id)).look
+		expect(look).toEqual(Kit.normalizeLook(c.profile.look))
+		local keys = {}
+		for key in look do
+			table.insert(keys, key)
+		end
+		table.sort(keys)
+		expect(keys).toEqual({ "hair", "hairColor", "outfit", "skin" })
+		for field, range in Kit.LOOK_RANGES do
+			expect(look[field] >= 1 and look[field] <= range).toBe(true)
 		end
 	end)
 
@@ -269,6 +311,50 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 			end,
 		}
 		expect(citizens:inspect(id).obedience).toBe(Population.obedience(c.profile.traits, rep, People.CONTENT))
+	end)
+
+	it("quotaRev: every accepted quota change is pushed, even one to the same number (FL-0109, #71 low)", function()
+		local env, citizens, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 }) -- crimson
+		env.mock:advance(3)
+		local remote = env.ReplicatedStorage.ForgeRemotes.Kingdom:FindFirstChild("Population")
+		local function sent()
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote) do
+				if entry.player == p1 then
+					table.insert(out, entry.args[1])
+				end
+			end
+			return out
+		end
+		local sim = match.host.match.sim
+		sim.step = function() end -- frozen world, match still active: only the quotas can change the payload
+		env.mock:advance(1.5)
+		local start = citizens:getPopulation("crimson").quotaRev
+		expect(start).toBe(0)
+		local pushed = #sent()
+		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 5)).toBe(true)
+		env.mock:advance(1.5)
+		expect(#sent()).toBe(pushed + 1)
+		expect(sent()[#sent()].quotaRev).toBe(1)
+		-- a co-ruler asking for the same number again: the quotas look the same, the revision does not
+		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 5)).toBe(true)
+		env.mock:advance(1.5)
+		expect(#sent()).toBe(pushed + 2)
+		expect(sent()[#sent()].quotas.farmer).toBe(5)
+		expect(sent()[#sent()].quotaRev).toBe(2)
+		-- refused requests change nothing
+		invoke(env, p1, "Kingdom.SetJobQuota", "hauler", 3)
+		invoke(env, p1, "Kingdom.SetJobQuota", "farmer", -1)
+		env.mock:advance(1.5)
+		expect(#sent()).toBe(pushed + 2)
+		expect(citizens:getPopulation("crimson").quotaRev).toBe(2)
+		-- moving one citizen (setJob) moves the quotas with it: that counts too
+		local c = sim.citizens[sim.kingdoms.crimson.citizenIds[1]]
+		local to = if c.job == "miner" then "woodcutter" else "miner"
+		expect(citizens:setJob(c.id, to)).toBe(true)
+		env.mock:advance(1.5)
+		expect(sent()[#sent()].quotaRev).toBe(3)
 	end)
 
 	it("Kingdom.GetPopulation answers members only; Kingdom.Population follows changes per kingdom", function()

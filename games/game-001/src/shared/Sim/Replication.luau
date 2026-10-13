@@ -9,7 +9,7 @@
 
 	API
 		Replication.new(): Tracker                 -- remembers last positions for facing and movement
-		tracker:frame(sim, groundY?): { records: { Record }, identity: { [id]: { kind, job, kingdom, look? } } }
+		tracker:frame(sim, groundY?): { records: { Record } (ascending id), identity: { [id]: { kind, job, kingdom, look? } } }
 		                                           -- every live entity in id order; updates facing
 		Replication.entityState(sim, id): EntityState?   -- G4 EntityState (a copy)
 		Replication.actionOf(sim, entity): string  -- idle | walk | work | carry | fight | flee | dead
