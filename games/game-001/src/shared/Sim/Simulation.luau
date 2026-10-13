@@ -519,18 +519,25 @@ end
 -- ---------------------------------------------------------------- derived kingdom stats
 function Simulation:_recompute(kingdom: any)
 	local popCap, territory = 0, 0
+	local bonus: { [string]: number } = {}
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
 		if b.destroyed or b.level < 1 then
 			continue
 		end
-		local stats = self.catalog.buildings[b.kind].levels[b.level]
+		local def = self.catalog.buildings[b.kind]
+		local stats = def.levels[b.level]
 		popCap += stats.popCap or 0
 		if b.kind == "keep" then
 			territory = stats.territory or 0
 		end
+		-- the best standing camp's level speeds up gathering what it accepts (FL-0081)
+		for _, resource in if stats.gatherBonus then def.accepts or {} else {} do
+			bonus[resource] = math.max(bonus[resource] or 0, stats.gatherBonus)
+		end
 	end
 	kingdom.popCap = popCap
+	kingdom.gatherBonus = bonus
 	if territory ~= kingdom.territory then
 		kingdom.territory = territory
 		self:_refreshNearNodes(kingdom)

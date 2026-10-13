@@ -16,7 +16,9 @@
 		BuildingService:slots(kingdomId): { { id, size, occupiedBy: number? } }   -- G13.5 build slots
 		BuildingService:placeSlot(player, slotId, type): (buildingId?, reason?)   -- on the player's kingdom's
 		                                           slot, facing its street (the slot's rot), when the type fits
-		                                           (Build/Fit); then exactly the Build.Place rules and price
+		                                           (Build/Fit); then exactly the Build.Place rules and price.
+		                                           Reasons: not_in_match, unknown_slot, not_on_plot (wall, gate:
+		                                           v0.4-g9a), slot_occupied, does_not_fit, then Build.Place's
 	Remotes (Build/Remotes.luau): Build.CanPlace / Build.Place (type, position, rot), Build.Upgrade,
 	Build.GetBuildings, and Build.Buildings: the G2 views of buildings that changed (placed, progress,
 	level, hp, destroyed), to every player, at most BROADCAST_HZ times per second. A building removed from
@@ -24,7 +26,8 @@
 	(its own batch, first: the new world's ids start over).
 	The facing comes from rot only; the client never sends a rotation (no CFrame on the wire).
 	Build slots (G13.5): world Layout.plots[k].buildSlots; a slot is occupied while a standing building
-	placed on it (building.slotId) exists. Build.GetSlots answers the asker's kingdom; Build.Slots goes to a
+	placed on it (building.slotId) exists, or any standing building of the kingdom overlaps its rectangle
+	(Layout.slotSizes, turned by the slot's rot), such as one placed there with Build.Place. Build.GetSlots answers the asker's kingdom; Build.Slots goes to a
 	kingdom's members when a slot is taken or freed, and to a member when they arrive.
 	Not yet: build zones (G10.1 buildZones; the VS-1 path is the build slots) and linking a building's
 	Door to the nav graph.
@@ -32,6 +35,8 @@
 
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
+local Footprint = require("@game/ReplicatedStorage/Game/Sim/Footprint")
+local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local BuildingService = {}
 BuildingService.__index = BuildingService
@@ -39,6 +44,8 @@ BuildingService.__index = BuildingService
 local Def = { name = "BuildingService", dependencies = { "MatchService", "RemoteService" } }
 
 Def.BROADCAST_HZ = 2
+-- building types that never stand on a plot: walls and gates go on territory lines (VS-2, G13.5 v0.4-g9a)
+Def.NOT_ON_PLOT = table.freeze({ wall = true, gate = true })
 
 function BuildingService.toCFrame(position: Vector3, rot: number): CFrame
 	return CFrame.new(position.X, 0, position.Z) * CFrame.Angles(0, (rot % 4) * math.pi / 2, 0)
@@ -72,12 +79,27 @@ function BuildingService:_slotDefs(kingdomId: string): { any }
 	return plot.buildSlots or {}
 end
 
+-- The building occupying a slot: the one placed on it (building.slotId), else any standing building of
+-- the kingdom whose shape overlaps the slot rectangle, e.g. one placed there with Build.Place (#89 M1).
 function BuildingService:_occupant(kingdomId: string, slotId: string): number?
 	local sim = self:_sim()
 	local k = sim.kingdoms[kingdomId]
-	for _, bid in if k then k.buildingIds else {} do
+	local ids = if k then k.buildingIds else {} -- a destroyed or cancelled building leaves buildingIds
+	for _, bid in ids do
 		local b = sim.buildings[bid]
-		if b and b.slotId == slotId then -- a destroyed or cancelled building leaves buildingIds
+		if b and b.slotId == slotId then
+			return b.id
+		end
+	end
+	local rect
+	for _, slot in self:_slotDefs(kingdomId) do
+		if slot.id == slotId then
+			rect = Footprint.rect(WorldLayout.slotSizes[slot.size], slot.center.X, slot.center.Z, slot.rot)
+		end
+	end
+	for _, bid in if rect then ids else {} do
+		local b = sim.buildings[bid]
+		if b and b.shape and Footprint.overlaps(rect, b.shape, 0) then
 			return b.id
 		end
 	end
@@ -106,6 +128,9 @@ function BuildingService:placeSlot(player: any, slotId: string, kind: string): (
 	end
 	if slot == nil then
 		return nil, "unknown_slot"
+	end
+	if Def.NOT_ON_PLOT[kind] then
+		return nil, "not_on_plot" -- line structures (VS-2), whatever fits physically (G13.5 v0.4-g9a)
 	end
 	if self:_occupant(kingdomId, slotId) then
 		return nil, "slot_occupied"
