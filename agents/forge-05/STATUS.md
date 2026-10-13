@@ -98,6 +98,7 @@ _Maintained by the worker. Keep it short and current._
 | #103 | FORGE-03 #86 follow-ups (Studio text, gem, banner tab), D-040 ★ | `f2d430a` |
 | #106 | FORGE-01 #89 follow-ups (slot reservation, not_on_plot, camp levels), D-040 ★ | `aecd245` |
 | #77 | FORGE-01 FL-0079 ConversationService (conversation lane), D-040 | `751138b` (user build B8) |
+| #99 | FORGE-04 onboarding hints on BuildSlot / Army button, walk-mode unseat, D-040 ★ | `d887beb` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

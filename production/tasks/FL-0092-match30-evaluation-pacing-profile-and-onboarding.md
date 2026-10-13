@@ -24,6 +24,7 @@ evidence:
   - check.sh OVERALL PASS on main d716e51 + #45 (framework 515/0, game-001 962/0); mutations.py FL-0092 21/21
   - "#45 ac97689; check.sh 1029/0; integration-log.md"
   - check.sh OVERALL PASS on main 6c567e5 + FL-0081 follow-ups (game-001 1087/0); mutations.py FL-0092 22/22
+  - "main d887beb: check.sh PASS on d6e727f+#99 (game-001 1146/0); CI 3/3 on e240077; onboarding e2e InspectCitizen -> BuildOnPlot -> AnswerCitizen -> Recruit; target mutation caught"
 ---
 
 # match30 evaluation pacing profile and onboarding v2
@@ -55,3 +56,4 @@ Pacing spec covers the `match30` totals. Onboarding specs cover the step trigger
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-05 #45 M1 (D-040 fallback review): the BuildOnPlot hint points at HUD.BuildButton ('Open Build and place a House or a Farm') until FL-0081 declares Build.PlaceSlot, then back to the BuildSlot tag; E6 and EXPERIENCE §2 follow; E6 'not logged' wording corrected to OnboardingStepPassed. Main d716e51 merged.
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW at merge of #45 (FORGE-05, D-038 (5); --force because the status stays REVIEW): merged under the D-040 fallback verdict. Remaining: AnswerCitizen/Recruit/Capture steps go live with #77/#70; match30 not played (FORGE-01 chooses the mode); then G6 (experience.md E6).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FL-0081 on main (FORGE-05 B7 follow-ups): BuildOnPlot hint back to the BuildSlot plot markers (Build.PlaceSlot served); Recruit hint targets HUD.ArmyButton (nothing set HUD.Recruit); E6 steps follow. PR from forge/04-experience-fl0081.
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #99 (d887beb, FORGE-05 D-040 fallback verdict on e240077; star by FORGE-00 for B9): #45 M1 closed: BuildOnPlot hint on the BuildSlot markers, Recruit hint on HUD.ArmyButton. REVIEW, only G6 pending (STUDIO_PLAYTEST row 12).

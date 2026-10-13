@@ -227,9 +227,10 @@ after B7; B7 says "…Upgrade it").
 Start a fresh Play and follow the hints: inspect a citizen → build (House or Farm) → answer a citizen →
 recruit → capture. In B7 the "answer a citizen" hint is passed over (no conversation server); from the
 build after B7 it waits for your answer (it moves on by itself after 2 minutes).
-**Pass:** each hint appears at the right moment and can be skipped. Known, not a fail: the build hint
-highlights the **Build** button rather than a plot marker, and the recruit hint highlights nothing
-(FORGE-04 follow-ups: retarget to `BuildSlot` now that FL-0081 is on main, and to `HUD.ArmyButton`).
+**Pass:** each hint appears at the right moment and can be skipped. From main `d887beb` (#99) the build
+hint points at the nearest free plot marker and the recruit hint at the **Army** rail button. In B7 and
+B8 the build hint highlights the **Build** button and the recruit hint highlights nothing (known, not a
+fail). In walk mode, standing up from the throne keeps the ruler standing (#99).
 
 ## M1 / M2 — two players (Test → Clients and Servers → Local Server, 2 players → Start)
 (Later multiplayer checks M3–M8: `production/quality-gates/multiplayer-test-plan.md`.)
