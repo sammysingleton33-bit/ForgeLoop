@@ -28,6 +28,12 @@ _Status: **official requirements, user directive of 2026-10-12** (D-030). Author
 1. A citizen with something to say shows a **thought bubble**: a short line plus a "!" or "?" icon. The bubble comes from the scenario's `thought_text`.
 2. Selecting the citizen opens a **conversation**: the question and 2–4 choices.
 3. Choosing one plays the **reaction** line, applies the decision's effects and records a memory. The visible consequence follows at once: a resource change, a work boost or a strike, morale, or a follow-up later.
+- **Cinematic presentation (D-036).**
+  - Selecting the citizen eases the camera toward their real position, with the kingdom still visible.
+  - Their generated portrait rises from the bottom of the screen with the speech bubble and the choices.
+  - The reaction plays on the portrait and on the citizen in the world.
+  - The camera then returns to where it was.
+  - A simple version comes first, after the ConversationService; the presentation is refined after that (CONTRACTS G13.8).
 - **Scenario selection** is deterministic. FORGE-01 builds a context from the real state (occupation, resources, fed ratio, traits, memories, recent events, previous decisions; vocabulary in `content/SPEC.md`). `ContentQuery.eligibleScenarios` picks the highest-priority eligible scenario. Cooldowns and once-per-citizen rules stop repetition.
 - **Editorial control.** Every question, answer and reaction is text in `content/dialogue/*.csv`, also exported as one spreadsheet. The user rewrites text without touching mechanics: text columns are separate from effect columns and keyed by ids. The importer validates and regenerates the game data (`tools/content/content.py`).
 - **The 16-archetype / 48-response proposal** from an earlier conversation was not supplied. The starter set in the repo is a DRAFT. Send the files and they are imported as a proposal.

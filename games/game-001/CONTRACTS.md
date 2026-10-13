@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g4, 2026-10-12; G12 is a VS-2 draft; G13 VS-1 rows are effective)
+# game-001 contracts: AI Kingdoms (v0.4-g5, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -446,6 +446,14 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
   - `REACH`
 - **Context.** FORGE-01 builds the context table from the vocabulary in `content/SPEC.md`, e.g. `ctx["kingdom.fed_ratio"]`. A variable the server cannot yet provide stays nil, and a clause on a nil variable is false.
 - **Runtime semantics** live in `content/SPEC.md` §6–§8 (lands with FL-0083, PR #53). The server follows them:
+- **ContentQuery API added by FL-0083 follow-ups (PR #67, #-next).** All of these are pure:
+  - `fireDecision(..., listeners?)` returns decayed, clamped, apply-as-given values. Each listener gets its final loyalty.
+  - `fireAction(...)` is the single anti-farming point for `actions.csv`. Reputation goes to the credited rulers: the attributed actor, or every co-ruler for kingdom-wide events. Kingdom conditions and listener loyalty are applied once per firing.
+  - `citizenKey(citizen)` resolves `id`, then `entityId`, then `key`.
+  - `LOYALTY_CLAMP` = speaker 25, family/friends/rivals 10, kingdom 5.
+  - `startLoyalty(chemistry)` = `floor(50 + chemistry/4 + 0.5)`.
+  - `choicePreview(decisionId)` returns `{ cost?, risks? }` exactly as the G13.3 option extras. `choiceRisks` returns filled `{ text, chance }`. The panel shows the chance; content text never repeats it.
+  - Servers use these and do not re-implement decay, clamps or start loyalty.
   - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
   - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
   - Co-rulers:
@@ -543,7 +551,27 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `strike.start <occupation>`
 - `population.reseed <seed>`
 
+### G13.8 Cinematic conversations (D-036; first version after FL-0079 and FL-0088 land)
+- **Server (FORGE-01).**
+  - The `Kingdom.Converse` result gains `look: CitizenLook`, `job`, `position: Vector3` (the citizen's current position) and `kingdom`.
+  - While a conversation is open, the citizen is **held**: `intent = "talking"`, it stops moving and turns to face the ruler's camera direction. The hold lasts at most `Society.conversationHoldSec` (PROVISIONAL 30 s) or ends at `Kingdom.EndConversation(entityId: integer) -> boolean`, a new function remote (own kingdom, rate-limited).
+  - After `Kingdom.Choose`, the hold ends when the reaction finishes, after at most 4 s.
+- **Portrait (FORGE-02).** `Kit.portrait(kind, job, kingdomColor, look, kingdom?) -> Model` returns the same ≤ 9-part rig as `Kit.character`, with the same look. It also carries a `PortraitFocus` attachment (head and shoulders) for a ViewportFrame camera. The portrait and the world rig must look identical.
+- **UI (FORGE-03).** `ConversationController`:
+  - The portrait ViewportFrame rises from the bottom (about 0.35 s).
+  - It shows a speech bubble with the question, then 2–4 choices with cost and risk chips.
+  - It then shows the reaction text and the consequence chips, and closes.
+  - The world stays visible: no full-screen cover, dim at most 20 %.
+  - It fires `ConversationController.opened(entityId, position)` and `.closed(entityId)`.
+- **Camera and presentation (FORGE-04).**
+  - On `opened`, `RulerCameraController:focusOn(position, { duration = 0.6 })` eases to about 25–35 studs from the citizen, framing them off-centre so the portrait does not cover them. On `closed`, `RulerCameraController:restore()` returns to the saved overview.
+  - A reduced-motion setting cuts instantly instead.
+  - Reaction poses and emotes play on the portrait and the world rig, keyed by the reaction tone or emotion.
+- **Content (FORGE-06).** Lines are written for this presentation: short questions and reactions, with optional emotion and gesture metadata (SPEC columns added by FORGE-00).
+- **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
+
 ## Changelog
+- v0.4-g5 (2026-10-13) FORGE-00: G13.1 ContentQuery API list (fireAction, citizenKey, LOYALTY_CLAMP, startLoyalty, choicePreview/choiceRisks); G13.8 cinematic conversations (D-036).
 - v0.4-g4 (2026-10-13) FORGE-00: G13.2 soldier kingdom crest (D-033). G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
   - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
   - G13.2 chemistry drift ±5 and pinned memories;
