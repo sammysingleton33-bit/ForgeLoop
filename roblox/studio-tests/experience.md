@@ -172,9 +172,9 @@ Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec
 Steps
 1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
 2. Tap the citizen: the selection still works through the bubble (FORGE-03's card opens). Answer in the conversation panel: the bubble changes to the reaction line for about 4 s. The citizen poses (cheer, grumble, slump or salute) if FORGE-01's `playPose` exists; otherwise only the bubble shows.
-3. `strike.start miner`: only the miners the server struck (the least loyal share) show "On strike", until the strike ends. The other miners show no placard.
+3. `strike.start miner` (or the `vs1.strike` preset): every miner shows "On strike" until the strike ends, and citizens of other jobs show none. Reassign a striking miner to another job: the placard stays on the new rig, because the strike belongs to the citizen. (A consequence that strikes only the least loyal share of an occupation marks exactly those citizens; that case is covered headless in `CitizenBubbles.spec`, since no debug preset produces it before FL-0082.)
 4. Zoom all the way out (about 220 studs): the bubbles under the view stay. Pan until a citizen is more than about 160 studs from the centre of the view: its bubble disappears. Pan back: it returns. With more than 8 requests open, at most 8 bubbles show, the nearest to the centre first.
-   - A citizen with a request who changes job keeps the bubble on the new rig.
+   - A citizen with a request who changes job keeps the bubble on the new rig (and a striking citizen keeps the placard).
 5. Settings → Citizen barks off: reaction bubbles no longer show; request bubbles and placards still do.
 6. Device emulator, a small phone: bubble text is readable at the default zoom, and bubbles don't cover the HUD.
 7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists. A `rest` cue shows motes on that citizen for about 6 s, then they stop.

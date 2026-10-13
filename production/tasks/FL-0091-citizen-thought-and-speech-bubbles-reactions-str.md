@@ -20,6 +20,7 @@ evidence:
   - "unverified: needs FORGE-01 EntityController thought/reaction/strike events (FL-0079) and Studio video (E8); poses wait for EntityController:playPose (proposed)"
   - "#42 c28576a; integration-log.md"
   - check.sh OVERALL PASS on the follow-up branch (game-001 943/0); CitizenBubbles 29/0; mutations.py FL-0091 40/40. Studio E8 steps 3/7/8 unverified (needs #77).
+  - check.sh OVERALL PASS after FORGE-05's #87 fixes; CitizenBubbles 31/0; mutations.py FL-0091 43/43
 ---
 
 # Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3)
@@ -52,3 +53,4 @@ Specs for the pool and the distance culling. Studio video of a request bubble, a
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-05 re-review: N1 effects on a Model now get an owned Attachment under its PrimaryPart (fixed once in VFXController, also #49 M2); N2 cues for unrendered citizens play nothing. Main 5db78fd merged.
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-ups from FORGE-05's #42 review: M1 'rest' cue effect never stops on pooled rigs; strike/cue entityIds (CONTRACTS v0.4-g6) handled in FORGE-04's small follow-up PR; walk-mode focus (Low). Bubbles stay empty until FL-0079 (#77).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force because the status stays REVIEW). Follow-up PR from forge/04-experience-fl0091b: CONTRACTS v0.4-g6 targets (only the citizens named; raw entityIds marked once each; no ids = not on citizens); FORGE-05 #42 M1 rest effect kept per citizen and stopped after Vfx.cues.rest.seconds, at the next cue or on release; lows: walk-mode origin from the camera, pool reuse before draw, unknown-cue warning cap, bubble hidden during the citizen's conversation (G13.8 opened/closed, else state.entityId), VFXController float/bubble opts.maxDistance. Handoff forge-04-to-forge-03-01-bubble-targets.
+- 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-05 #87 review (D-040 fallback): M1 a striking citizen keeps its placard through a job change (strike belongs to the citizen, v0.4-g6; R42-3 spec now expects the placard on the new rig; despawn still clears it); M2 E8.3 expects every miner on strike with strike.start/vs1.strike, partial strikes covered headless; L1 timer identity spec; L2 one refresh per event; L3 ids are whole numbers >= 1 from the list part. Main fd1369f+ merged.

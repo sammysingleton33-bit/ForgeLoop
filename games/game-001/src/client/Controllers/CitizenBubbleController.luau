@@ -33,8 +33,9 @@
 	zooming the overview out (40-220 studs) never hides the citizens under the view; the GUIs
 	carry no MaxDistance of their own (0 = no limit) for the same reason. Rigs that EntityController's
 	LOD hides (unparented) never take a slot. A job change swaps the rig (released, then rendered at
-	once): the citizen keeps its thought, and drops a strike placard, because it left the striking
-	occupation. Bubbles never take input (Active = false, no buttons), so a tap on a citizen still
+	once): the citizen keeps its thought and its strike placard, because a strike belongs to the
+	citizen (v0.4-g6) and the server sends "off" only when it ends (FORGE-05 #87 M1). A despawn
+	(released and not rendered again) clears both. Bubbles never take input (Active = false, no buttons), so a tap on a citizen still
 	reaches InputModeController's selection (G13.6). While the ruler talks to a citizen
 	(ConversationController.opened .. closed, G13.8; else its state.entityId), that citizen's bubble is
 	hidden: the conversation panel shows the same words.
@@ -77,9 +78,9 @@ local function connect(target: any, signalName: string, handler: (...any) -> ())
 	return if ok then connection else nil
 end
 
--- An entity id: a number, never NaN (NaN cannot be a table key).
+-- An entity id: a whole number >= 1 (the sim counts from 1); never NaN, infinite or fractional.
 local function isId(value: any): boolean
-	return type(value) == "number" and value == value
+	return type(value) == "number" and value >= 1 and value < math.huge and value % 1 == 0
 end
 
 local function pivotOf(model: any): Vector3?
@@ -210,7 +211,9 @@ function Controller:onEvent(entityId: any, cue: string, payload: any, model: any
 	local listed = payload.entityIds
 	if type(listed) ~= "table" then
 		if isId(entityId) then
-			self:_onCitizen(entityId, cue, payload, model)
+			if self:_onCitizen(entityId, cue, payload, model) then
+				self:refresh()
+			end
 		elseif entityId == nil then
 			self.stats.untargeted += 1 -- occupation- or kingdom-wide: the HUD's or the keep's (G13.3)
 		end
@@ -220,22 +223,28 @@ function Controller:onEvent(entityId: any, cue: string, payload: any, model: any
 	local own = table.clone(payload)
 	own.entityIds = nil
 	local seen = {}
+	local changed = false
 	if isId(entityId) then
 		seen[entityId] = true
-		self:_onCitizen(entityId, cue, own, model)
+		changed = self:_onCitizen(entityId, cue, own, model)
 	end
-	for _, id in listed do
+	for index = 1, #listed do -- the list part only
+		local id = listed[index]
 		if isId(id) and not seen[id] then
 			seen[id] = true
-			self:_onCitizen(id, cue, own, nil)
+			changed = self:_onCitizen(id, cue, own, nil) or changed
 		end
 	end
 	if next(seen) == nil then
 		self.stats.untargeted += 1
 	end
+	if changed then
+		self:refresh() -- once per event, however many citizens it named (FORGE-05 #87 L2)
+	end
 end
 
-function Controller:_onCitizen(entityId: number, cue: string, payload: { [string]: any }, model: any)
+-- Applies one event to one citizen; true when a bubble may have changed (the caller refreshes once).
+function Controller:_onCitizen(entityId: number, cue: string, payload: { [string]: any }, model: any): boolean
 	if model ~= nil then
 		self._models[entityId] = model
 	end
@@ -250,14 +259,14 @@ function Controller:_onCitizen(entityId: number, cue: string, payload: { [string
 		self.bubbles:strike(entityId, payload.on == true)
 	elseif cue == "cue" then
 		self:_playCue(entityId, payload.cue or payload.cueId, payload.tone) -- content/SPEC.md says cueId
-		return
+		return false
 	elseif self._config.cues and self._config.cues[cue] then
 		self:_playCue(entityId, cue, nil)
-		return
+		return false
 	else
-		return -- other cues (deposit, hit, die) are FL-0062's feedback layer
+		return false -- other cues (deposit, hit, die) are FL-0062's feedback layer
 	end
-	self:refresh()
+	return true
 end
 
 function Controller:refresh()
@@ -339,7 +348,6 @@ function Controller:_release(entityId: number)
 	if not isId(entityId) then
 		return
 	end
-	self.bubbles:strike(entityId, false) -- a new job is a new occupation, so off strike
 	self:_stopCueEffect(entityId) -- its emitter sits on the rig going back to the pool
 	self._leaving[entityId] = true
 	self:_undraw(entityId)

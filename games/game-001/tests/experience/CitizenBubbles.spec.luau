@@ -367,7 +367,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 	end)
 
 	it(
-		"a job change swaps the rig: the thought stays, a strike placard drops; a despawn clears both (R42-3)",
+		"a job change swaps the rig: the thought and the strike placard stay; a despawn clears both (FORGE-05 #87 M1)",
 		function()
 			local miner = citizen(3, 20)
 			entities.event:fire(3, "thought", { text = "More lamps, please." }, miner)
@@ -381,13 +381,18 @@ describe("CitizenBubbleController (FL-0091)", function()
 			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
 			assert(bubbleOf(farmer), "the thought follows the citizen to its new rig")
 			expect(bubbleOf(farmer):FindFirstChild("Text", true).Text).toBe("More lamps, please.")
-			expect(bubbleOf(newStriker)).toBeNil() -- a new occupation: off strike
+			-- a strike belongs to the citizen (v0.4-g6): the server sends "off" only when it ends
+			assert(bubbleOf(newStriker), "the placard follows the striker to its new job")
+			expect(bubbleOf(newStriker):FindFirstChild("Text", true).Text).toBe(Bubbles.STRIKE_TEXT)
 			-- a despawn: released and not rendered again
 			entities.released:fire(3, farmer)
+			entities.released:fire(4, newStriker)
 			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
 			local reused = citizen(3, 20) -- the id comes back for another citizen
+			local reusedStriker = citizen(4, 25)
 			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
 			expect(bubbleOf(reused)).toBeNil()
+			expect(bubbleOf(reusedStriker)).toBeNil() -- the departed striker's placard is gone
 		end
 	)
 
@@ -490,6 +495,31 @@ describe("CitizenBubbleController (FL-0091)", function()
 			expect(#stopped).toBe(3) -- stopped once, never twice; bursts (hammer) clean up themselves
 		end
 	)
+
+	it("an older cue timer never stops a newer effect on the same citizen (FORGE-05 #87 L1)", function()
+		local farmer = citizen(1, 20)
+		entities.event:fire(1, "rest", {}, farmer)
+		env.mock:advance(1)
+		entities.event:fire(1, "rest", {}, farmer) -- replaces the first; its timer is still pending
+		expect(#stopped).toBe(1)
+		env.mock:advance(Vfx.cues.rest.seconds - 0.5) -- the first timer fires here
+		expect(#stopped).toBe(1) -- the second rest is still live
+		env.mock:advance(1)
+		expect(#stopped).toBe(2) -- and ends after its own seconds
+	end)
+
+	it("takes only whole entity ids >= 1 from the list part of entityIds (FORGE-05 #87 L3)", function()
+		for id = 1, 3 do
+			citizen(id, id * 10)
+		end
+		local listed = { 1, -1, 1.5, math.huge, 0, 3 }
+		listed.extra = 2 -- a hash-part value is not part of the list
+		entities.event:fire(nil, "cue", { cue = "bow", entityIds = listed }, nil)
+		expect(poses).toEqual({ "1:bow", "3:bow" })
+		entities.event:fire(0, "cue", { cue = "bow" }, nil)
+		entities.event:fire(2.5, "cue", { cue = "bow" }, nil)
+		expect(poses).toEqual({ "1:bow", "3:bow" })
+	end)
 
 	it("never holds more bubble GUIs than maxOnScreen while bubbles swap (FORGE-05 #42 L4)", function()
 		for id = 1, Vfx.bubbles.maxOnScreen do

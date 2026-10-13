@@ -8,6 +8,8 @@ CitizenBubbleController now follows CONTRACTS G13.3 v0.4-g6: it marks only the c
   - **Targets.** `EntityController.event(id, "strike" | <cue>, …)` marks `id` only. That is #77's shape: one event per id from `entityIds`.
     - A payload that still carries `entityIds` (the raw Sim.Events shape) marks its `entityId` and each listed id, once each.
     - An event with neither an id nor `entityIds` (for example `(nil, "hammer", { occupation })`) shows on no citizen. It is counted in `stats.untargeted`.
+    - A strike belongs to the citizen. A job change (a rig swap) keeps the placard, and only the server's "off" or a despawn clears it (FORGE-05 #87 M1).
+    - Ids are whole numbers ≥ 1, taken from the list part of `entityIds`. The bubbles refresh once per event.
   - **Cue effects.** A continuous cue effect (`rest` → `ambience.motes`) is kept per citizen. It stops in three cases:
     - after the cue's `seconds` (config `Vfx.cues.rest.seconds = 6`);
     - when that citizen's next cue plays an effect;
