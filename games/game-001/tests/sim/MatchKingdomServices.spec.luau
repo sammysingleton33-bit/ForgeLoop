@@ -930,5 +930,56 @@ describe("Kingdom and Match remotes (G8)", function()
 		env.mock:advance(120)
 		expect(match:getPhase()).toBe("Results")
 		expect(#ended).toBe(1)
+		-- a player who arrives during Results gets the summary too (#70 M2); the first one not again
+		local late = env.mock.players:add({ userId = 2 })
+		env.mock:advance(TICK)
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote(env, "Match.Ended")) do
+				if entry.player == player then
+					table.insert(out, entry.args)
+				end
+			end
+			return out
+		end
+		local lateEnded = sentTo(late) -- (the broadcast went out before this player existed)
+		expect(#lateEnded).toBe(1)
+		expect(lateEnded[1][1]).toEqual(ended[1])
+		expect(#sentTo(p1)).toBe(0) -- the first player had the broadcast only
+		expect(#received(env, "Match.Ended", p1)).toBe(1)
+	end)
+
+	it("match mode: the summary goes to arrivals during Results only, never after (#70 M2)", function()
+		local env, match = boot({ mode = "match", pacing = fastPacing() })
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote(env, "Match.Ended")) do
+				if entry.player == player then
+					table.insert(out, entry.args)
+				end
+			end
+			return out
+		end
+		local early = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		expect(#sentTo(early)).toBe(0) -- nothing to summarise yet
+		local guard = 0
+		while match:getPhase() ~= "Results" and guard < 400 do
+			env.mock:advance(TICK)
+			guard += 1
+		end
+		expect(match:getPhase()).toBe("Results")
+		local during = env.mock.players:add({ userId = 2 })
+		env.mock:advance(TICK)
+		expect(#sentTo(during)).toBe(1)
+		guard = 0
+		while match:getPhase() == "Results" and guard < 400 do
+			env.mock:advance(TICK)
+			guard += 1
+		end
+		expect(match:getPhase()).toBe("Lobby")
+		local after = env.mock.players:add({ userId = 3 })
+		env.mock:advance(TICK)
+		expect(#sentTo(after)).toBe(0) -- a new match: the old summary is gone
 	end)
 end)
