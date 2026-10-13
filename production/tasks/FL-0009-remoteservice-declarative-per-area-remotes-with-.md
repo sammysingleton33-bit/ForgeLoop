@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0007]
 estimate_h: 5
 evidence:
@@ -15,6 +15,7 @@ evidence:
   - each guard proven red by a mutation (see PR)
   - "FORGE-05 integration 2026-10-12: merged PR #5 (merge commit fb5c086). PR CI run 38298853791 green on e364a0b; merge result = head: check.sh OVERALL PASS (Lune 284/0, 22 files); pytest 139; forge validate 0 errors; ownership PASS. With FL-0046 on top: 9/9 steps, game-001 boot gate boots RemoteService headlessly. CI on main run 38300365977 green, artifact forgeloop-main-fb5c086."
   - "review follow-ups merged in PR #8 (a0cf019): fail-closed validators (== true), burst >= 1, log-once handler errors, RateLimiter epsilon, StateMachine/RemoteClient docs, Validate.cframe/record/oneOf; FORGE-05 probe confirmed fail-closed behaviour"
+  - "#5 fb5c086, #8 a0cf019; integration-log.md"
 ---
 
 # RemoteService: declarative per-area remotes with validation and rate limits
@@ -40,3 +41,4 @@ Lune specs: wrong types, NaN/inf, oversized tables, burst over limit, unknown re
 - 2026-10-12 forge-01: BUILDING → REVIEW. PR from forge/01-gameplay-fl0009 (stacked on FL-0007)
 - 2026-10-12 forge-05: merged PR #5 as fb5c086 (FORGE-05). Stays REVIEW: G6 (Play Solo: ForgeRemotes exists, no RemoteService errors) and review follow-ups on PR #5 (validator result == true and burst >= 1 before the first Remotes declaration; error-log dedupe; G8 area folders Army/Build/Kingdom).
 - 2026-10-12 forge-05: review follow-ups merged (PR #8, a0cf019). Remaining gate: G6 in Studio.
+- 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main; the user's Studio run (G6) is the only gate left.

@@ -71,3 +71,28 @@ Command: `python3 -I production/quality-gates/cvd/cvd.py OUT <both jpgs>`. I enl
   - the four-kingdom Studio screenshot (STUDIO_PLAYTEST colour-vision steps 1–6) is still owed.
 
 Status: the soldier marker is acceptable for VS-1 on the render evidence, pending #81 merging, FORGE-01's `kingdom` plumbing and the Studio screenshot. Findings 3 (banner emblems from the overview) and 4 (tritanopia in Studio) are unchanged.
+
+## Run 3: 2026-10-13, crest follow-up, PR #81 head `f4cfb86` (not yet merged)
+**What changed.** FORGE-02 widened the spire base from 0.95 to 1.3 and tilted the plume from 55° to 70°. They report the front-view outline gap between spire and plume grew from 0.64 to 1.14 studs.
+
+**Input.** Re-rendered `kit_characters_crests_gameplay.jpg` and `_side_gameplay.jpg`, plus a new `kit_characters_crests_aerial.jpg`: 50° elevation, about 50 studs, 1280×720, Blender (`bpy`).
+
+**Command.** `python3 -I production/quality-gates/cvd/cvd.py OUT <3 jpgs>`. I looked at all four simulations with the soldier strips enlarged 3–4×.
+
+**Front view.** Under protanopia and deuteranopia the crimson and emerald soldiers are still the same olive. The broad-based spire and the plume bent back now differ clearly in outline.
+
+**Aerial view, 50°.** All four kingdoms are told apart without colour in every simulation:
+- the spire reads as a broad peaked lump;
+- the plume as a thin upright stick;
+- the azure plate, seen from above, as a large flat square;
+- the gold dome as a round knob.
+
+**Tritanopia.** Azure and emerald soldiers are both teal, but the plate and the plume still separate them.
+
+**Verdict: finding 2 (soldiers) passes on render evidence at both gameplay distance and 50° aerial.**
+
+**Still open:**
+- #81 has to merge after FORGE-07's verdict.
+- FORGE-01 has to pass `kingdom` in `EntityController.buildRig`.
+- The Studio four-kingdom screenshot (STUDIO_PLAYTEST colour-vision steps 1–6) has not been taken. It would also confirm the aerial camera's real distance, which may be more than 50 studs.
+- Findings 3 and 4 are unchanged.
