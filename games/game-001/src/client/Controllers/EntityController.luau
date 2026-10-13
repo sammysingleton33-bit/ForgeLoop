@@ -40,8 +40,10 @@
 		  behind the server time estimated from arrivals (Sim/Interpolation).
 		- Position is the rig pivot (base centre). Yaw turns about +Y, CFrame.Angles(0, yaw, 0); the
 		  rig faces -Z at yaw 0.
-		- Rigs come from Kit.character(kind, job, colour of the kingdom in config Kingdoms). They are
-		  pooled per (kind, job, kingdom) and parented to one client-created Workspace folder.
+		- Rigs come from Kit.character(kind, job, colour of the kingdom in config Kingdoms, look?) with
+		  the citizen's look from its spawn record (G13.2; Kit falls back to its default look). They are
+		  pooled per (kind, job, kingdom, Kit.lookKey(look)), POOL_MAX spares in all (the oldest is
+		  destroyed first), and parented to one client-created Workspace folder.
 		- Each frame, one BulkMoveTo moves every visible root, and each motor gets its Sim/Pose
 		  Transform.
 		- LOD: beyond LOD_HIDE studs from the local character (else the camera focus), a rig is
@@ -72,7 +74,7 @@ Def.DEATH_DELAY = 2 -- seconds the dead pose stays before the rig is released
 Def.DEATH_BLEND = 0.4 -- seconds to fall into the dead pose
 Def.PICK_RADIUS = 60 -- pixels
 Def.PICK_HEIGHT = 2.75 -- studs above the pivot: the body centre the pick aims at
-Def.POOL_MAX = 64 -- spare rigs kept per (kind, job, kingdom)
+Def.POOL_MAX = 64 -- spare rigs kept in all; past it the oldest spare is destroyed
 Def.FOLDER_NAME = "KingdomEntities"
 Def.GET_ENTITIES_TRIES = 10
 Def.RETRY_SECONDS = 1.5
@@ -91,6 +93,7 @@ type Entity = {
 	kind: string,
 	job: string,
 	kingdom: string,
+	look: any?, -- G13.2 CitizenLook from the spawn record (citizens)
 	track: Interpolation.Track,
 	state: Interpolation.State,
 	pose: Pose.Joints,
@@ -159,7 +162,7 @@ function Def.new(env: any, _registry: any)
 	self._despawned = {} :: { [number]: boolean }
 	self._newestSeq = nil :: number?
 	self._clock = Interpolation.newClock()
-	self._pool = {} :: { [string]: { Rig } }
+	self._spares = {} :: { Rig } -- released rigs, oldest first, at most POOL_MAX
 	self._connections = {} :: { any }
 	self._snapshotConnection = nil :: any
 	self._eventsConnection = nil :: any
@@ -325,6 +328,7 @@ function EntityController:_spawn(e: any, serverTime: number?)
 			kind = e.kind,
 			job = e.job,
 			kingdom = e.kingdom,
+			look = e.look,
 			track = Interpolation.newTrack(),
 			state = {} :: any,
 			pose = {},
@@ -402,12 +406,14 @@ end
 
 -- ---------------------------------------------------------------- rigs and pool
 
-local function poolKey(kind: string, job: string, kingdom: string): string
-	return `{kind}|{job}|{kingdom}`
+-- Kit.lookKey: equal keys build identical rigs (no look = Kit's default look)
+local function poolKey(kind: string, job: string, kingdom: string, look: any?): string
+	return `{kind}|{job}|{kingdom}|{Kit.lookKey(look)}`
 end
 
-local function buildRig(kind: string, job: string, kingdom: string, key: string): Rig
-	local model = Kit.character(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR)
+-- look (G13.2 CitizenLook, from the spawn record) is Kit.character's optional 4th argument
+local function buildRig(kind: string, job: string, kingdom: string, look: any?, key: string): Rig
+	local model = (Kit.character :: any)(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR, look)
 	local root = model.PrimaryPart
 	local motors = {}
 	for _, d in model:GetDescendants() do
@@ -419,10 +425,14 @@ local function buildRig(kind: string, job: string, kingdom: string, key: string)
 end
 
 function EntityController:_acquire(entity: Entity): Rig
-	local key = poolKey(entity.kind, entity.job, entity.kingdom)
-	local spare = self._pool[key]
-	local rig = if spare then table.remove(spare) else nil
-	return rig or buildRig(entity.kind, entity.job, entity.kingdom, key)
+	local key = poolKey(entity.kind, entity.job, entity.kingdom, entity.look)
+	local spares = self._spares
+	for i = #spares, 1, -1 do -- the newest matching spare
+		if spares[i].key == key then
+			return table.remove(spares, i)
+		end
+	end
+	return buildRig(entity.kind, entity.job, entity.kingdom, entity.look, key)
 end
 
 -- Attaches a rig. Inside a frame (`inFrame`) the frame's BulkMoveTo places it and `rendered` fires
@@ -453,15 +463,13 @@ function EntityController:_release(entity: Entity)
 	entity.rig = nil
 	rig.model.Parent = nil
 	rig.model:SetAttribute("EntityId", nil)
-	local spare = self._pool[rig.key]
-	if spare == nil then
-		spare = {}
-		self._pool[rig.key] = spare
-	end
-	if #spare < Def.POOL_MAX and not self._destroyed then
-		table.insert(spare, rig)
-	else
+	if self._destroyed then
 		rig.model:Destroy()
+		return
+	end
+	table.insert(self._spares, rig)
+	if #self._spares > Def.POOL_MAX then
+		table.remove(self._spares, 1).model:Destroy() -- one bound for every key (looks make many keys)
 	end
 end
 
@@ -595,12 +603,10 @@ function EntityController:destroy()
 	if self._eventsConnection then
 		self._eventsConnection:Disconnect()
 	end
-	for _, spare in self._pool do
-		for _, rig in spare do
-			rig.model:Destroy()
-		end
+	for _, rig in self._spares do
+		rig.model:Destroy()
 	end
-	table.clear(self._pool)
+	table.clear(self._spares)
 	if self.folder then
 		self.folder:Destroy()
 	end

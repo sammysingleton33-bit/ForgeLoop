@@ -20,7 +20,7 @@ sys.modules["check_ownership"] = co
 SPEC.loader.exec_module(co)
 forge = co.forge
 
-OWNERS = ["forge-00", "forge-01", "forge-02", "forge-03", "forge-04", "forge-05", "codex"]
+OWNERS = ["forge-00", "forge-01", "forge-02", "forge-03", "forge-04", "forge-05", "forge-06", "forge-07", "codex"]
 PR_ENV = ("PR_TITLE", "PR_BRANCH", "GITHUB_HEAD_REF")
 GIT_ID = ["-c", "user.name=Forge Test", "-c", "user.email=forge-test@example.invalid", "-c", "commit.gpgsign=false"]
 
@@ -60,6 +60,16 @@ def test_rules_file_loads_and_every_pattern_is_reachable(rules):
         ("tools/forge.py", "forge-00"),
         ("games/game-001/README.md", "forge-05"),
         ("games/game-002/README.md", "forge-00"),
+        # FORGE-06 dialogue content (D-035); schema, tooling and ContentQuery stay FORGE-00
+        ("games/game-001/content/dialogue/scenarios.csv", "forge-06"),
+        ("games/game-001/content/citizens/traits.csv", "forge-06"),
+        ("games/game-001/src/shared/Content/Dialogue.luau", "forge-06"),
+        ("games/game-001/content/SPEC.md", "forge-00"),
+        ("games/game-001/content/reputation/actions.csv", "forge-00"),
+        ("games/game-001/src/shared/Content/ContentQuery.luau", "forge-00"),
+        # FORGE-07 review reports (D-037)
+        ("production/reviews/2026-10-13-queue.md", "forge-07"),
+        ("production/quality-gates/integration-log.md", "forge-05"),
         # FORGE-01
         ("roblox/src/shared/Core/Signal.luau", "forge-01"),
         ("roblox/src/server/Services/DataService.luau", "forge-01"),

@@ -19,6 +19,9 @@
 		           cta: { state ("ready" | "disabled" | "loading" | "done"), text, icon? },
 		           needsConfirm: boolean, slotId? }
 	BuildModel.footprint(type, level) -> Vector2?     Kit.footprint (G10), nil for unknown types
+	BuildModel.room(type) -> Vector2?                 the ground the server keeps free for it: its
+	                                                  largest-level footprint (Build/Fit) grown by
+	                                                  Buildings.placementGap on every side (#62)
 	BuildModel.isLargeSpend(cost, balances) -> boolean
 		true when the total cost is at least LARGE_SPEND_MIN_TOTAL and takes at least
 		LARGE_SPEND_SHARE of some balance: the UI then asks for confirmation first.
@@ -29,6 +32,8 @@ local BuildingLevels = require("./BuildingLevels")
 local Buildings = require("./Buildings")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Resources = require("@game/ReplicatedStorage/Forge/Config/Resources")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local SlotFit = require("./SlotFit")
 local Text = require("./Text")
 
@@ -57,6 +62,18 @@ end
 function BuildModel.footprint(buildingType: string, level: number): Vector2?
 	local ok, size = pcall(Kit.footprint, buildingType, level)
 	return if ok and typeof(size) == "Vector2" then size else nil
+end
+
+-- What Simulation:canPlace checks (FORGE-01 #62): this building's largest-level rectangle must stay
+-- `placementGap` studs clear of other buildings' and of trees and rocks. The ghost draws it as an
+-- outer outline so a red verdict near a neighbour is visible (FORGE-05 M-2 on #62).
+function BuildModel.room(buildingType: string): Vector2?
+	local largest = Fit.largestFootprint(buildingType)
+	if largest == nil then
+		return nil
+	end
+	local gap = BuildingsConfig.placementGap or 0
+	return largest + Vector2.new(2 * gap, 2 * gap)
 end
 
 local function costRows(cost: { [string]: number }, have: { [string]: number }): { any }
@@ -127,6 +144,7 @@ function BuildModel.placeDetail(store: any, buildingType: string, opts: { slot: 
 		level = 1,
 		buildSeconds = if entry then entry.buildSeconds else nil,
 		footprint = footprint,
+		room = BuildModel.room(buildingType),
 		costs = if entry then costRows(entry.cost, have) else {},
 		benefits = if gives then { { label = "Gives", text = gives } } else {},
 		cta = cta,
