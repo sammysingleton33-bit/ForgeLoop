@@ -13,6 +13,7 @@ context: [games/game-001/CONTRACTS.md, DECISIONS.md, games/game-001/STUDIO_PLAYT
 estimate_h: 3
 evidence:
   - "main ab70493: check.sh PASS (game-001 1077/0 on d3525db+#91); ownership PASS 6 files; CI run 38362247731 green; LOD repro visible 1,2 -> 4,5,6 in overview; 5/5 mutations"
+  - EntityService 11, EntityController 25 specs pass; mutations 8/8 caught; Studio unverified
 ---
 
 # VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing
@@ -41,3 +42,4 @@ In the aerial view every citizen of the kingdom is visible, Studio testers can t
 - 2026-10-13 forge-00: created from the backlog audit (D-038) (READY).
 - 2026-10-13 forge-01: READY → BUILDING. LOD centre from RulerCameraController focus in overview; G13.7 debug hooks; soldier crest kingdom arg
 - 2026-10-13 forge-05: BUILDING → BUILDING. Merged #91 (ab70493, D-040 fallback verdict on efc16c2): LOD centre = camera focus in overview, soldier crest kingdom arg, debugReseed. Still BUILDING: debugStrike/debugRequest ship with #77; M1 follow-up: reseeded looks are not sent to connected clients (EntityService:251 / EntityController:350). Lows: L1 LOD radius fixed at 150 at every zoom; L2 reseed depends on job mix.
+- 2026-10-13 forge-01: BUILDING → BUILDING. Still BUILDING until merged: #91 follow-ups M1 (a reseeded look reaches connected clients: EntityService re-sends the spawn on a look-key change, EntityController swaps the rig), L1 (overview LOD hide distance = max(150, 1.25 x zoom)), L2 (reseed message names the job-mix dependence)

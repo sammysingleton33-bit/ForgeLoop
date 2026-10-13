@@ -194,7 +194,8 @@ function CitizenService:debugReseed(kingdomId: string, seed: number): (boolean, 
 		return false, "this world has no generated population"
 	end
 	local reseeded = People.reseed(sim, kingdomId, seed, People.CONTENT)
-	return true, `{reseeded} citizens of {kingdomId} reseeded from {seed}`
+	-- People draws from the seed in job order, so a job change between two presses changes some people
+	return true, `{reseeded} citizens of {kingdomId} reseeded from {seed} (same seed and same jobs: same people)`
 end
 
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)
