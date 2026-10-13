@@ -343,13 +343,17 @@ function KingdomService:_spawn(player: any)
 		for _, accessory in Kit.regalia(view.color) do
 			self.adapter.attach(character, accessory)
 		end
-		self:_seat(userId, character, kingdomId)
+		-- the respawn hook first: a throne that fails to seat the ruler must never stop the respawns (#89 L1)
 		self._died[userId] = self.adapter.onDied(character, function()
 			self._env.wait(self.adapter.respawnDelay())
 			if self._spawnGen[userId] == generation and player.Parent ~= nil and self:getKingdomOf(player) then
 				self:_spawn(player)
 			end
 		end)
+		local seated, err = pcall(self._seat, self, userId, character, kingdomId)
+		if not seated then
+			self._env.log("warn", "KingdomService: cannot seat the ruler; they stand", { error = tostring(err) })
+		end
 	end)
 end
 
