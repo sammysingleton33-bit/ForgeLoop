@@ -6,6 +6,8 @@ return function(ctx)
 		world:advance(0.1)
 		citizens.latency = 30
 		conversation:choose("help")
+		world:advance(0.4) -- the confirm step (a cost or a risk) and its short guard
+		conversation:confirm()
 		world:advance(0.1)
 	end)
 end
