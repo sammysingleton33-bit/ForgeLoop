@@ -29,6 +29,9 @@
 		rail or an open drawer: toasts, chips and the placement bar centre in it
 	Layout.toastTop(metrics, drawerOpen) -> number         phone + open drawer: below the pills
 		and the reputation strip
+	Layout.sheetToast(metrics) -> { right, y, width }      phone + a wide sheet open (the
+		conversation, which starts just below the pills): toasts go in the band right of the pills,
+		above the sheet, right-aligned with the sheet's right edge (the drawer's)
 
 	Reputation strip (FL-0089, UI/ReputationStrip; prototype games/game-001/design/ui/reputation.js):
 		phone           one row of six (icon + number + bar) under the crest, clear of its Crown
@@ -85,6 +88,8 @@ Layout.MEMBERS_HEIGHT = 22
 -- Reputation strip (FL-0089): six items; phones one row, tablet/desktop three columns.
 Layout.REPUTATION_ITEMS = 6
 Layout.REPUTATION_ITEM_HEIGHT = 22
+-- Phone toasts above a wide sheet: wider than the usual 250 px so titles wrap less (one fits).
+Layout.SHEET_TOAST_WIDTH = 330
 
 local function clamp(v: number, lo: number, hi: number): number
 	return math.min(hi, math.max(lo, v))
@@ -199,6 +204,16 @@ function Layout.freeArea(m: Metrics, drawerOpen: boolean): { x: number, width: n
 		return { x = 0, width = math.floor(m.drawer.x) }
 	end
 	return { x = 0, width = m.width - m.rail.right - m.rail.button }
+end
+
+function Layout.sheetToast(m: Metrics): { right: number, y: number, width: number }
+	local pillsRight = m.hud.pills.x
+		+ Layout.PHONE_PILLS * Layout.PHONE_PILL
+		+ (Layout.PHONE_PILLS - 1) * Layout.PHONE_PILL_GAP
+	local right = m.drawer.x + m.drawer.width
+	-- At the top of the safe area: a toast with a title and one line of body (48 px) ends 2 px above
+	-- the sheet.
+	return { right = right, y = 0, width = math.min(Layout.SHEET_TOAST_WIDTH, right - pillsRight - 8) }
 end
 
 function Layout.toastTop(m: Metrics, drawerOpen: boolean): number

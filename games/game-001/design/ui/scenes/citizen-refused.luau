@@ -6,6 +6,8 @@ return function(ctx)
 		conversation:open(41)
 		world:advance(0.1)
 		conversation:choose("bread")
+		world:advance(0.4) -- the confirm step (a cost or a risk) and its short guard
+		conversation:confirm()
 		world:advance(0.1)
 	end)
 end

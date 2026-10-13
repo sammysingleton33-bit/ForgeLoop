@@ -317,7 +317,7 @@ return deepFreeze({
 		delay_s = 60,
 		chance = 0.2,
 		cue_id = "cower",
-		notice = "Risk ({chance}): a rockfall may hurt a miner. Happiness {magnitude} for {duration}.",
+		notice = "A rockfall may hurt a miner. Happiness {magnitude} for {duration}.",
 	},
 	quarry_rockfall_risk_high = {
 		id = "quarry_rockfall_risk_high",
@@ -328,7 +328,7 @@ return deepFreeze({
 		delay_s = 60,
 		chance = 0.4,
 		cue_id = "cower",
-		notice = "Risk ({chance}): the cracked face may fall on the miners. Happiness {magnitude} for {duration}.",
+		notice = "The cracked face may fall on the miners. Happiness {magnitude} for {duration}.",
 	},
 	salute_speaker = {
 		id = "salute_speaker",
@@ -447,7 +447,7 @@ return deepFreeze({
 		delay_s = 10,
 		chance = 0.5,
 		cue_id = "strike_placard",
-		notice = "Risk ({chance}): {name} may lay down tools for {duration}.",
+		notice = "{name} may walk off the job for {duration}.",
 	},
 	speaker_work_down = {
 		id = "speaker_work_down",
