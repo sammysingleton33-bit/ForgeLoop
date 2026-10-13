@@ -46,8 +46,10 @@
 		  destroyed first), and parented to one client-created Workspace folder.
 		- Each frame, one BulkMoveTo moves every visible root, and each motor gets its Sim/Pose
 		  Transform.
-		- LOD: beyond LOD_HIDE studs from the local character (else the camera focus), a rig is
-		  unparented and skips pose work. It comes back within LOD_SHOW studs.
+		- LOD: beyond LOD_HIDE studs from the LOD centre, a rig is unparented and skips pose work. It
+		  comes back within LOD_SHOW studs. The centre is RulerCameraController:getFocus() while its mode
+		  is "overview" (G13.6; registry:find), else the local character, else the camera focus.
+		- Soldiers get their kingdom as Kit.character's `kingdom` argument (the helmet crest, G13.2).
 	Engine calls (BulkMoveTo, Motor6D.Transform, camera and character reads) go through `adapter`
 	(Lune has no BulkMoveTo). Unverified in Studio until the FL-0049 playtest.
 ]]
@@ -82,7 +84,7 @@ Def.RETRY_SECONDS = 1.5
 export type Adapter = {
 	bulkMove: (parts: { any }, cframes: { CFrame }) -> (), -- workspace:BulkMoveTo(..., FireCFrameChanged)
 	setTransform: (motor: any, cframe: CFrame) -> (), -- Motor6D.Transform
-	focus: () -> Vector3?, -- LOD centre: the local character, else the camera focus
+	focus: () -> Vector3?, -- LOD centre outside the overview: the local character, else the camera focus
 	project: (point: Vector3) -> (Vector2?, number?), -- screen point and depth; nil when off screen
 }
 
@@ -149,9 +151,11 @@ function Def.robloxAdapter(env: any): Adapter
 	}
 end
 
-function Def.new(env: any, _registry: any)
+function Def.new(env: any, registry: any)
 	local self = setmetatable({}, EntityController)
 	self._env = env
+	self._registry = registry
+	self._camera = nil :: any -- RulerCameraController, found on the first frame that has one
 	self.rendered = Signal.new()
 	self.released = Signal.new()
 	self.event = Signal.new()
@@ -411,9 +415,11 @@ local function poolKey(kind: string, job: string, kingdom: string, look: any?): 
 	return `{kind}|{job}|{kingdom}|{Kit.lookKey(look)}`
 end
 
--- look (G13.2 CitizenLook, from the spawn record) is Kit.character's optional 4th argument
+-- look (G13.2 CitizenLook, from the spawn record) and, for soldiers, the kingdom (their helmet
+-- crest, D-033) are Kit.character's optional 4th and 5th arguments
 local function buildRig(kind: string, job: string, kingdom: string, look: any?, key: string): Rig
-	local model = (Kit.character :: any)(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR, look)
+	local crest = if kind == "soldier" then kingdom else nil
+	local model = (Kit.character :: any)(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR, look, crest)
 	local root = model.PrimaryPart
 	local motors = {}
 	for _, d in model:GetDescendants() do
@@ -485,13 +491,31 @@ end
 
 -- ---------------------------------------------------------------- frame
 
+-- The LOD centre: the overview camera's focus while RulerCameraController is in "overview" (the ruler
+-- sits on the throne and the player looks after the whole plot, #39 M1), else adapter.focus() (the
+-- local character, else the camera focus).
+function EntityController:_lodCentre(): Vector3?
+	local camera = self._camera
+	if camera == nil and self._registry and self._registry.find then
+		camera = self._registry:find("RulerCameraController")
+		self._camera = camera
+	end
+	if camera and camera.mode == "overview" then
+		local focus = camera:getFocus()
+		if focus then
+			return focus
+		end
+	end
+	return self.adapter.focus()
+end
+
 function EntityController:step(dt: number)
 	if self._destroyed then
 		return
 	end
 	local now = self._env.clock()
 	local renderTime = self._clock:renderTime(now, Def.INTERP_DELAY)
-	local focus = self.adapter.focus()
+	local focus = self:_lodCentre()
 	local parts, cframes = self._parts, self._cframes
 	table.clear(parts)
 	table.clear(cframes)

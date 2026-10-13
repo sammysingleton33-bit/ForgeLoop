@@ -352,6 +352,7 @@ describe("Kingdom/Commands: install and namesFor", function()
 			"SetAlarm",
 			"SetJobQuota",
 			"SetPriority",
+			"UnitOrder",
 			"UpgradeBuilding",
 			"Wave",
 		})
