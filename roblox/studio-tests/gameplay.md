@@ -173,6 +173,9 @@ starts on the first join and is untimed; the first watchtower capture ends the s
    that slot.
 8. Upgrade the lumber camp to level 2 (`Build.Upgrade(lumbercampId)`) and note the wood on the HUD for a
    minute before and after.
+9. (#89 L2) **Test → Clients and Servers → Local Server, 2 players** in different kingdoms. Player 1 stands
+   up (Space). Player 2 walks (V) to player 1's keep and sits on the empty throne. Then player 2 sits on
+   their own throne. Then player 1 resets while player 2 sits on player 1's throne again.
 
 **Expected:**
 - After spawning (and after every respawn) the ruler sits on the keep's throne, wearing crown and cape.
@@ -189,6 +192,10 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   `Costs` build time divided by the builders on site.
 - When the keep upgrade completes, the seated ruler sits on the new keep's throne within half a second.
   A ruler who stood up stays standing after the next upgrade.
+- Step 9: player 2 is put down in front of player 1's dais within half a second (Output:
+  `KingdomService: unseated a non-ruler from a throne`) and stays on their own throne. When player 1
+  respawns, they sit on their throne at once, and player 2 ends up in front of the dais. A co-ruler of
+  player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
 
 ## Performance capture (FL-0049, gate G7)
