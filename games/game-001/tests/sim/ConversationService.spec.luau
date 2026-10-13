@@ -11,6 +11,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
+local ConversationDef = require("@game/ServerScriptService/Game/Services/ConversationService")
 local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
@@ -1124,16 +1125,56 @@ describe("ConversationService: cinematic conversations (G13.8, FL-0097)", functi
 		expect(remoteCall(env, p1, "Kingdom.EndConversation", 1.5)).toBeNil()
 	end)
 
-	it("after Choose the citizen is released once the reaction has played (at most 4 s)", function()
+	it("after Choose the citizen stays held while the reaction is read, until EndConversation (g9f)", function()
 		local env, conversations, match, registry = boot()
 		local p1 = seat(env, 1)[1]
 		local farmer, sim = hungryFarmer(match, registry)
 		assert(conversations:converse(p1, farmer.id))
 		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
-		expect(sim:isHeld(farmer)).toBe(true) -- the reaction plays first
-		env.mock:advance(3.5)
+		local x, z = farmer.x, farmer.z
+		env.mock:advance(8) -- longer than the old 4 s: still framed, still facing the ruler
+		expect(sim:isHeld(farmer)).toBe(true)
+		expect({ farmer.x, farmer.z }).toEqual({ x, z })
+		expect(conversations:endConversation(p1, farmer.id)).toBe(true) -- the client closed the stage
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("after Choose the hold ends by itself at most REACTION_HOLD_MAX (12 s) later (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(p1, farmer.id))
+		-- answered late in the hold: the cap counts from the answer, so the reaction can still be read
+		env.mock:advance(Society.conversationHoldSec - 2)
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(ConversationDef.REACTION_HOLD_MAX).toBe(12)
+		env.mock:advance(ConversationDef.REACTION_HOLD_MAX - 0.5)
 		expect(sim:isHeld(farmer)).toBe(true)
 		env.mock:advance(1)
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("after Choose an emergency still releases the citizen at once (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 2) -- 1 and 2 rule crimson together
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		assert(choose(conversations, players[1], farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		sim.kingdoms.crimson.alarm = true
+		env.mock:advance(0.5)
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("after Choose the ruler leaving releases the citizen at the next refresh, not after 12 s (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 2) -- 1 and 2 rule crimson together
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		assert(choose(conversations, players[1], farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(sim:isHeld(farmer)).toBe(true)
+		env.mock.players:remove(players[1]) -- leaves while the reaction is still up
+		env.mock:advance(1)
+		conversations:refresh()
 		expect(sim:isHeld(farmer)).toBe(false)
 	end)
 

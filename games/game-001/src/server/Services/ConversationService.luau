@@ -22,7 +22,9 @@
 			stays open); own kingdom only, idempotent; false for a co-ruler's conversation
 		Kingdom.Choose(entityId, scenarioId, responseId) -> (ok, { reaction, effects: { { kind, text } } }?,
 		                                                     reason?)
-			An answered conversation releases the citizen after Def.REACTION_HOLD_SEC (4 s, G13.8).
+			After an answer the citizen stays held, facing the ruler, until Kingdom.EndConversation or at most
+			Def.REACTION_HOLD_MAX (12 s, the UI's longest reading time) after Choose; an emergency or the ruler
+			leaving still ends it at once (G13.8 v0.4-g9f).
 			Answers the showing that Converse opened for this ruler, once (idempotent per showing). Refusal
 			reasons (stable): not_in_match, unknown_citizen, phase (the match is not in an active phase: Lobby
 			or Results; Converse returns nil then too), not_offered (no open showing for this ruler and
@@ -99,7 +101,7 @@ local Def = {
 }
 
 local STEP = 1 -- seconds between consequence steps
-Def.REACTION_HOLD_SEC = 4 -- G13.8: after Choose the citizen is released once the reaction has played
+Def.REACTION_HOLD_MAX = 12 -- G13.8 v0.4-g9f: after Choose, held until EndConversation, at most this long
 function Def.new(env: any, registry: any)
 	local self = setmetatable({}, ConversationService)
 	self._env = env
@@ -771,8 +773,8 @@ function ConversationService:choose(
 	end
 	local reaction = ContentQuery.fill(response.reaction, names)
 	self:_send(kingdomId, { type = "reaction", id = entityId, text = reaction, tone = response.tone or "neutral" })
-	if c.hold and c.hold.by == userId then -- released once the reaction has played (G13.8: at most 4 s)
-		c.hold.untilTime = math.min(c.hold.untilTime, sim.time + Def.REACTION_HOLD_SEC)
+	if c.hold and c.hold.by == userId then -- framed while the reaction is read: EndConversation, at most 12 s
+		c.hold.untilTime = sim.time + Def.REACTION_HOLD_MAX
 	end
 	-- G9 (D-044 (3)): once per accepted answer, after its effects; the bus is server-only
 	local secondsOpen = if showing.requestedAt then math.max(0, self:_now() - showing.requestedAt) else nil

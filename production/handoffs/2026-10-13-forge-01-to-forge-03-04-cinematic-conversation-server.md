@@ -20,7 +20,10 @@ PR for FL-0097, branch `forge/01-gameplay-fl0097`:
   - it releases the hold, is idempotent, and works only for your own kingdom;
   - it returns `false` for another kingdom's citizen, for a spectator, and for a citizen a co-ruler is talking to;
   - the question stays open, so opening the panel again shows the same question.
-- **After `Kingdom.Choose`**, the citizen is released 4 s later, once the reaction has played. You don't need to call `EndConversation` after an answer, but calling it is harmless.
+- **After `Kingdom.Choose`** (CONTRACTS v0.4-g9f): the citizen stays held, facing the ruler, until the client
+  closes the stage with `Kingdom.EndConversation`, and at most 12 s (`REACTION_HOLD_MAX`, the UI's longest
+  reading time). **Call `EndConversation` when the answered stage closes**; an emergency or the ruler
+  leaving still releases the citizen at once.
 - **A co-ruler gets `nil` from `Kingdom.Converse`** while another ruler holds that citizen.
 
 ## Evidence
@@ -30,7 +33,7 @@ PR for FL-0097, branch `forge/01-gameplay-fl0097`:
   - facing the ruler, checked through `Replication`'s yaw;
   - the timeout;
   - `EndConversation`: it releases, it is idempotent, the question stays, and malformed calls are dropped;
-  - release 4 s after Choose;
+  - after Choose: held until `EndConversation`, at most 12 s; an emergency or the ruler leaving releases it at once;
   - refusals for a co-ruler, another kingdom and a spectator;
   - release on an emergency.
 - Mutations: 12 of 12 caught.
