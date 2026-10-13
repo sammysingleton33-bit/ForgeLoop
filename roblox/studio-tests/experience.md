@@ -22,15 +22,20 @@ Pass: no analytics line at `error` level; no script error mentioning AnalyticsSe
 History:
 - 2026-10-12 FORGE-04: written (FL-0023); aligned with CONTRACTS v0.4-g2 and D-027.
 
-## E2 — Settings (FL-0024)
-Needs: RemoteService and a settings panel (FORGE-03 components; until it exists write "blocked: no settings UI"). Persistence across sessions also needs DataService (FL-0008, after VS-1).
+## E2 — Settings (FL-0024, panel FL-0103)
+Needs: RemoteService. The panel is FORGE-04's SettingsPanelController (FL-0103): in game-001 it opens from the HUD rail button "Settings" into the menu drawer. Persistence across sessions also needs DataService (FL-0008, after VS-1).
 1. Play Solo. Output shows `SettingsService: no DataService; settings and progress last for the session (D-027)` while FL-0008 is absent.
-2. In the settings panel set Music to 20% and Reduced Motion on: music drops at once; effects lose their camera shake.
-3. With DataService on the build only: leave, then Play Solo again; the values are still there.
-Pass: step 2 holds; step 3 holds when DataService exists. No `SettingsService` error in Output.
+2. Tap the rail button "Settings": the panel opens in the drawer with three sections (Sound, Motion and effects, Gameplay). Tap it again, or open Build or Kingdom: it closes.
+3. Set Music to 20% with the − button (four taps from 60%): music drops at each tap. The bar and the percentage follow; at 0% the − button greys out.
+4. Turn Reduced motion on: effects lose their camera shake, and a conversation's camera cuts instead of gliding (FL-0100). With the device's Reduce Motion on and the toggle off, the row says "On in your device settings".
+5. Effects quality → Reduced: build a House and watch the completion sparkle; it has visibly fewer particles than at Full, with the same motion.
+6. Device emulator, a phone (844×390): every row reads on one line and every button can be tapped; scroll to reach Gameplay.
+7. With DataService on the build only: leave, then Play Solo again; the values are still there.
+Pass: steps 2–6 hold; step 7 holds when DataService exists. No `SettingsService` or `SettingsPanelController` error in Output. Screenshot the panel on PC and on the phone emulator (FL-0103's visual evidence; the headless render is `roblox/tests/unit/experience/scenes/settings.luau`).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0024); session-only settings (D-027).
+- 2026-10-13 FORGE-04: the panel exists (FL-0103): rail button, sections, effects quality, phone layout.
 
 ## E3 — Audio budget and levels (FL-0024)
 Needs: sound assets (at least the P0 list in the user handoff).
