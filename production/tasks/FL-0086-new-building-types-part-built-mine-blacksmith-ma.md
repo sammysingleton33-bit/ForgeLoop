@@ -3,7 +3,7 @@ id: FL-0086
 title: "New building types part-built: mine, blacksmith, market, infirmary, granary, shrine"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-12
@@ -32,3 +32,4 @@ Kit specs cover parts, attachments and footprints. Previews are reviewed under D
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (SPECIFIED).
 - 2026-10-13 forge-00: SPECIFIED → READY. FORGE-00 reconciliation 2026-10-13 (stale-status sweep): dependencies are met (FL-0079/FL-0080/FL-0085 merged, only G6 left), so the task is READY.
+- 2026-10-13 forge-02: READY → BUILDING. Started: six VS-2 types (mine, blacksmith, market, infirmary, granary, shrine) as full part-built models replacing the G13.5 stand-ins; branch forge/02-blender-fl0086-buildings.
