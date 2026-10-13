@@ -3,7 +3,17 @@
 -- Source: reputation/categories.csv, reputation/actions.csv. Edit the CSV files (or the workbook, see content/README.md),
 -- then run: python3 tools/content/content.py build
 
-return {
+-- Deeply frozen: the content is shared by every consumer, so nobody may change it.
+local function deepFreeze<T>(value: T): T
+	for _, child in value :: any do
+		if type(child) == "table" and not table.isfrozen(child) then
+			deepFreeze(child)
+		end
+	end
+	return table.freeze(value :: any) :: any
+end
+
+return deepFreeze({
 	categories = {
 		compassion = {
 			id = "compassion",
@@ -497,7 +507,7 @@ return {
 			audience_condition = {},
 			audience_loyalty = 0,
 			kingdom = { happiness = -2, stability = 1, morale = 0 },
-			notice = "The deserter was executed at dawn. The kingdom falls quiet.",
+			notice = "The deserter faced the ruler's justice at dawn. The kingdom falls quiet.",
 		},
 		{
 			id = "deserter_executed",
@@ -578,4 +588,4 @@ return {
 		TruceBroken = { 30 },
 		UnitsRecruited = { 10, 11 },
 	},
-}
+})

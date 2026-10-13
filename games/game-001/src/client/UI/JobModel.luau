@@ -8,27 +8,35 @@
 
 	Every request steps from the job's newest target, not from the count (FORGE-05 M1 on #55): three
 	quick + send 4, 5, 6, not 4 three times. The target is, newest first: the request on its way, the
-	server's `quotas[job]` when the payload carries it, the quota this client last had acknowledged,
-	the count. Adds still to be filled are reserved against the free pool, so + stops when the pool is
-	spoken for.
+	quota this client last had acknowledged, the server's `quotas[job]` when the payload carries it,
+	the count. An acknowledged quota beats the payload's: the server pushes population about once a
+	second, so the payload can still carry the quota from before the ack (FORGE-05, measured on #61).
+	KingdomHudController forgets the ack once the server's quota equals it (or after ACK_HOLD_SEC, so
+	a co-ruler's later change wins). Adds still to be filled are reserved against the free pool, so +
+	stops when the pool is spoken for.
 
 	JobModel.JOBS                           quota jobs in panel order (FORGE-01 config Jobs.jobOrder
 	                                        without the hauler pool): { id, name, sub, icon }
 	JobModel.target(population, state, job) -> number     the job's newest target
 	JobModel.freeLeft(population, state) -> number        free citizens not yet promised to a job
 	JobModel.view(population?, state?) -> View
-		state = { pending = { [job]: target }, quota = { [job]: target } }
+		state = { pending = { [job]: target }, quota = { [job]: target }, at? = { [job]: clock } }
+		                                        (quota = acknowledged; `at` is when, for ACK_HOLD_SEC)
 		View = { known: boolean,
 		         summary = { total, cap?, free },
 		         rows = { { id, name, sub, icon, count, target, note?, busy, canAdd, canRemove } },
 		         pool = { count, text },            the hauler pool, shown as "Free citizens"
 		         soldiers = { count } }
 	JobModel.MAX_QUOTA                       50 (G8: SetJobQuota count is integer(0, 50))
+	JobModel.ACK_HOLD_SEC                    how long an ack beats a payload quota that differs from it
 ]]
 
 local JobModel = {}
 
 JobModel.MAX_QUOTA = 50
+-- The server pushes population at most once a second (CitizenService POPULATION_EVERY = 1) and a
+-- reply takes a round trip: 3 s leaves room for both, then the server's newer quota wins.
+JobModel.ACK_HOLD_SEC = 3
 
 JobModel.JOBS = table.freeze({
 	table.freeze({ id = "farmer", name = "Farmers", sub = "Grow food", icon = "food" }),
@@ -52,13 +60,13 @@ function JobModel.target(population: any, state: any, job: string): number
 	if pending ~= nil then
 		return pending
 	end
-	local server = population and population.quotas and population.quotas[job]
-	if type(server) == "number" then
-		return server
-	end
 	local acknowledged = state and state.quota and state.quota[job]
 	if acknowledged ~= nil then
 		return acknowledged
+	end
+	local server = population and population.quotas and population.quotas[job]
+	if type(server) == "number" then
+		return server
 	end
 	return if population then population.byJob[job] or 0 else 0
 end

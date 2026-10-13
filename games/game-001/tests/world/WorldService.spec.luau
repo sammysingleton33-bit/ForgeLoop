@@ -334,3 +334,32 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		svc:destroy()
 	end)
 end)
+
+describe("Kingdom colours come from config Kingdoms (D-033)", function()
+	it("colours every slot marker pennant with its kingdom's canonical colour", function()
+		local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+		local expected = {}
+		for _, identity in KingdomsConfig.identities do
+			local c = identity.color
+			expected[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+		end
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		local checked = 0
+		for _, root in env.CollectionService:GetTagged("BuildSlot") do
+			local want = expected[root:GetAttribute("Kingdom")]
+			expect(want).never.toBeNil()
+			for _, d in root.Parent:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "Pennant" then
+					expect(
+						(Vector3.new(d.Color.R, d.Color.G, d.Color.B) - Vector3.new(want.R, want.G, want.B)).Magnitude
+					).toBeLessThan(1e-3)
+					checked += 1
+				end
+			end
+		end
+		expect(checked).toBeGreaterThan(100)
+		svc:destroy()
+	end)
+end)
