@@ -45,3 +45,54 @@ Routing (FORGE-00, CONTRACTS G13.2 at `2221c1e`):
 
 Status: **not yet acceptable for VS-1** (finding 2). Re-run after the soldier marker lands and once with a Studio
 screenshot of a four-kingdom view.
+
+## Run 2: 2026-10-13, soldier helmet crests, PR #81 head `2ef6606` (not yet merged)
+**Input.** FORGE-02's Blender (`bpy`) renders from #81, `games/game-001/art/reviews/img/`:
+- `kit_characters_crests_gameplay.jpg`: front view at about 40 studs, 1280×720;
+- `kit_characters_crests_side_gameplay.jpg`: the same, from the side;
+- one soldier per kingdom, plus a dummy with no kingdom.
+
+Command: `python3 -I production/quality-gates/cvd/cvd.py OUT <both jpgs>`. I enlarged the soldier strip 3× to look at it.
+
+**Palette.** The CIEDE2000 values are unchanged from run 1: crimson/emerald 14.7 protan and 15.1 deutan; azure/emerald 10.8 tritan. The colours alone still don't separate crimson and emerald soldiers.
+
+**Crests (looked at in all four simulations, front and side).**
+- Crimson has a pointed cone (spire). Emerald has a tall upright cylinder (plume), which leans back in the side view.
+- Under protanopia and deuteranopia these two soldiers are the same olive, but cone and cylinder still read apart.
+- Azure's flat square plate and gold's round dome are distinct in every simulation.
+- Under tritanopia, azure and emerald are both teal, but the plate and the plume tell them apart.
+- The dummy keeps the plain helm.
+- At 40 studs a crest is about 12–15 px tall in the 960×540 simulation panel (about 16–20 px in the 1280×720 render). The spire and the plume are the two shapes closest to each other at that size. They differ in outline (triangle vs. bar) rather than in height.
+
+**Verdict.**
+- **Finding 2 is resolved in the renders**: friend and foe can be told apart without colour at gameplay distance in the Blender renders.
+- **Unverified in Studio**, at the 50° aerial overview distance, and in the live game:
+  - FORGE-01 must pass `kingdom` in `EntityController.buildRig` (a #81 dependency) before soldiers get crests in play;
+  - the four-kingdom Studio screenshot (STUDIO_PLAYTEST colour-vision steps 1–6) is still owed.
+
+Status: the soldier marker is acceptable for VS-1 on the render evidence, pending #81 merging, FORGE-01's `kingdom` plumbing and the Studio screenshot. Findings 3 (banner emblems from the overview) and 4 (tritanopia in Studio) are unchanged.
+
+## Run 3: 2026-10-13, crest follow-up, PR #81 head `f4cfb86` (not yet merged)
+**What changed.** FORGE-02 widened the spire base from 0.95 to 1.3 and tilted the plume from 55° to 70°. They report the front-view outline gap between spire and plume grew from 0.64 to 1.14 studs.
+
+**Input.** Re-rendered `kit_characters_crests_gameplay.jpg` and `_side_gameplay.jpg`, plus a new `kit_characters_crests_aerial.jpg`: 50° elevation, about 50 studs, 1280×720, Blender (`bpy`).
+
+**Command.** `python3 -I production/quality-gates/cvd/cvd.py OUT <3 jpgs>`. I looked at all four simulations with the soldier strips enlarged 3–4×.
+
+**Front view.** Under protanopia and deuteranopia the crimson and emerald soldiers are still the same olive. The broad-based spire and the plume bent back now differ clearly in outline.
+
+**Aerial view, 50°.** All four kingdoms are told apart without colour in every simulation:
+- the spire reads as a broad peaked lump;
+- the plume as a thin upright stick;
+- the azure plate, seen from above, as a large flat square;
+- the gold dome as a round knob.
+
+**Tritanopia.** Azure and emerald soldiers are both teal, but the plate and the plume still separate them.
+
+**Verdict: finding 2 (soldiers) passes on render evidence at both gameplay distance and 50° aerial.**
+
+**Still open:**
+- #81 has to merge after FORGE-07's verdict.
+- FORGE-01 has to pass `kingdom` in `EntityController.buildRig`.
+- The Studio four-kingdom screenshot (STUDIO_PLAYTEST colour-vision steps 1–6) has not been taken. It would also confirm the aerial camera's real distance, which may be more than 50 studs.
+- Findings 3 and 4 are unchanged.

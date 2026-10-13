@@ -38,6 +38,8 @@ Press **Play**, then **F8** (or the **Debug (F8)** button, top left) to open the
 
   Row owners add their own presets (e.g. treasury, construction). A preset that fails says why. For
   example, `KingdomService is not running yet` means that part of the game is still **waiting**.
+  **As of B6:** `vs1.reseed`, `vs1.request` and `vs1.strike` answer **FAIL** on purpose: they fail closed
+  until FORGE-01 adds their server hooks (FL-0104). Write `SKIPPED (waiting FL-0104)` for the steps that use them.
 - **Commands** such as `forge.buildInfo` (shows the sha; use it for the report) and `forge.services`.
   Commands with arguments are listed as text only. Use the presets.
 
@@ -55,12 +57,13 @@ The panel only exists in Studio; live servers create no debug remotes. Every but
 4. With the game stopped: Explorer → **Workspace** → Properties → **StreamingEnabled** is ticked, and
    **Players** → **CharacterAutoLoads** is unticked (D-025, D-026), and **Lighting** → **Technology** is
    **Future**.
-5. Until FL-0048 spawns rulers, **no character appears** when you press Play (the camera is free).
-   That is correct: characters only load when the game puts you in a kingdom.
+5. Press **Play**: your ruler (crown and cape) appears at **your own kingdom's keep**. Characters only load
+   once the game puts you in a kingdom (FL-0048), so a second or two with no character is normal.
 
-**Pass:** all three lines, `game=game-001`, `trees=Forge,Game`, no red text, both properties as above.
+**Pass:** all three lines, `game=game-001`, `trees=Forge,Game`, no red text, both properties as above, and the
+ruler appears at your keep.
 
-## Keys (as of FL-0053; the aerial view becomes the default with FL-0090)
+## Keys (as of FL-0053; the aerial view is the default since FL-0090)
 | Action | PC | Gamepad | Touch |
 |---|---|---|---|
 | Move | WASD / arrow keys | left stick | thumbstick |
@@ -90,8 +93,10 @@ WASD, mouse wheel to zoom.
 **Pass:** the valley as described, readable lighting, `WorldService ready` logged. **Fail:** holes, floating
 or sunk props, unreadable lighting. Describe what you see next to the screenshot.
 
-## 3. Rule from the throne with an aerial camera (row 2; waiting: FL-0048 spawn #31, FL-0085 throne, FL-0090 camera)
-1. Press **Play**. Your ruler (crown and cape in your kingdom's colour) sits on the **throne** in your keep.
+## 3. Rule from the throne with an aerial camera (row 2; runnable from B6 except the seat: waiting FL-0081)
+1. Press **Play**. Your ruler (crown and cape in your kingdom's colour) appears at your keep. The **throne**
+   stands on a dais in the keep's entrance arch. *Sitting on it waits on FL-0081*: until then write
+   `SKIPPED (waiting FL-0081)` for the seat and check only that the throne is there and clear of the door.
 2. The camera is an aerial view over your kingdom: pan (WASD or drag), zoom (wheel, about 40–220 studs),
    rotate (Q/E).
 3. **Test → Device** → pick a phone. Drag pans, pinch zooms, two fingers rotate.
@@ -99,9 +104,11 @@ or sunk props, unreadable lighting. Describe what you see next to the screenshot
 5. Optional: V switches to walking behind the ruler, and back.
 6. Screenshots **R1** (ruler on the throne) and **R2** (the aerial view in the phone emulator).
 
-**Pass:** seated ruler with crown and cape; smooth pan, zoom and rotate on PC and phone; tap selects.
+**Pass:** ruler with crown and cape at the keep, throne visible (seated once FL-0081 lands); smooth pan, zoom
+and rotate on PC and phone; tap selects. Known: citizens more than 150 studs from your ruler are hidden in
+the aerial view (#39 M1, fix FL-0104); note it, it is not a fail.
 
-## 4. Belong to a kingdom (row 3; waiting: FL-0048 #31, HUD #25)
+## 4. Belong to a kingdom (row 3; runnable from B6)
 1. Play. The HUD shows your kingdom's name, banner colour and member list.
 2. **Test → Clients and Servers → Local Server, 2 players → Start**, twice:
    - with both clients in **one party** (Studio party simulation; FORGE-01 writes the exact steps here
@@ -114,26 +121,28 @@ or sunk props, unreadable lighting. Describe what you see next to the screenshot
 **Pass:** auto-assigned to crimson, azure, emerald or gold; HUD name, colour and members correct; the
 party stays together.
 
-## 5. Watch AI citizens live and work (row 4; waiting: FL-0078 population, FL-0049/FL-0050 sim)
-Preset: `vs1.reseed`.
+## 5. Watch AI citizens live and work (row 4; runnable from B6; `vs1.reseed` waits on FL-0104)
+Preset: `vs1.reseed` (fails closed until FL-0104; skip step 3 until then).
 1. At least **12** citizens of your kingdom. Each has a name, 2–3 traits and its own look.
 2. Watch 60 s: they walk to work, gather or farm, carry goods to the storehouse; the HUD stockpile rises.
    Note the stockpile at the start and after 60 s.
 3. Press `vs1.reseed` again: the **same** names and looks appear (same seed, same population).
+   As of B6: `SKIPPED (waiting FL-0104)`.
 4. Screenshot **C1**: citizens at work with the stockpile visible.
 
 **Pass:** ≥ 12 distinct citizens, every job visible, the stockpile rose, no citizen stuck, same seed →
 same people.
 
-## 6. See that citizens think (row 4b; waiting: FL-0078, FL-0088 citizen card)
+## 6. See that citizens think (row 4b; runnable from B6; conversation answers wait on FL-0079/FL-0088 #66)
 1. Select a citizen. The card shows name, occupation, traits, mood, loyalty, current intent, family,
    friends and recent memories.
-2. In the job panel, move one citizen to another job. They walk to the new work.
+2. Kingdom panel → **Jobs**: press **+** on another job. A free citizen takes it and walks to the new work;
+   press **−** and they go back. Three quick taps add three (B6).
 3. Screenshot **C2**: the citizen card.
 
 **Pass:** every field filled with real values; the job change happens in the world.
 
-## 7. Run the kingdom economy (row 5; waiting: FL-0048 #31 + FORGE-01 sim; TreasuryService is on main)
+## 7. Run the kingdom economy (row 5; runnable from B6)
 1. The HUD always shows food, wood, stone and gold. It rises with citizen work and falls with costs.
 2. Upkeep: about one minute after the match starts, food falls once per minute.
 3. Preset `vs1.hungry`: the kingdom is short of food until the next upkeep tick. Citizens' mood falls
@@ -141,8 +150,10 @@ same people.
 
 **Pass:** numbers move only when something in the world explains it; no negative values.
 
-## 8. Construct and upgrade (row 6; waiting: FL-0081 plots, FL-0087 plot picker, FL-0085 levels, build menu #25)
-1. Select a free plot. Choose a structure (House, Farm, Barracks and more) with its cost, then confirm.
+## 8. Construct and upgrade (row 6; runnable from B4 through the Build rail; ordering on a plot waits on FL-0081)
+1. Open **Build** on the rail, choose a structure (House, Farm, Barracks and more) with its cost, place the
+   ghost (R rotates; the fainter "Room" outline is the space kept for upgrades), then confirm. Ordering by
+   selecting a free plot marker waits on FL-0081: write `SKIPPED (waiting FL-0081)` for that part.
    A spend of half or more of any resource asks you to confirm once more.
 2. Builders walk over and raise it through visible stages. The cost leaves the treasury **once**.
 3. Try a plot that is taken, or a structure you cannot afford: it is refused with a reason.
@@ -152,7 +163,7 @@ same people.
 
 **Pass:** costs shown and charged once, refusals explained, stages and levels visible.
 
-## 9. Recruit and capture (row 7; waiting: FL-0052, FL-0060 panels)
+## 9. Recruit and capture (row 7; waiting: FL-0052 Army server #70, FL-0060 Army drawer #63)
 1. At the Barracks, recruit **3 soldiers** (paid once from the treasury).
 2. Press **Send to capture**. They walk to the neutral Watchtower, a capture bar fills, and the tower
    takes your colour. Crown Points rise, and the slice summary appears (the first capture ends the
@@ -161,7 +172,7 @@ same people.
 
 **Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear.
 
-## 10. Use the kingdom HUD and reputation screen (row 8; waiting: HUD #25, FL-0089 screen, FL-0080 reputation)
+## 10. Use the kingdom HUD and reputation screen (row 8; HUD and screen runnable from B6; history waits on FL-0080 #68)
 1. The HUD shows resources, population, kingdom, Crown Points, the build/army/objective panels and the
    **six reputation values** (compassion, honor, competence, courage, authority, fear).
 2. Press `vs1.repLow`, then `vs1.repHigh`. The values change. The reputation screen lists each change in
@@ -170,7 +181,7 @@ same people.
 
 **Pass:** all HUD parts present and current; the history matches what you did.
 
-## 11. Decide in a conversation and see the result (row 9; waiting: FL-0079, FL-0088 panel, FL-0091 bubbles, FL-0083 content)
+## 11. Decide in a conversation and see the result (row 9; waiting: FL-0079 server #77, FL-0088 panel #66; bubbles FL-0091 and content FL-0083 are on main; `vs1.request` / `vs1.strike` wait on FL-0104)
 1. Within a minute at least one citizen shows a **thought bubble** with a real request. If none does,
    press `vs1.request`.
 2. Select that citizen. A conversation opens with 2–4 choices. Pick one.
@@ -185,17 +196,17 @@ same people.
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
 
-## 12. First minutes guided (onboarding; waiting: FL-0092 onboarding v2)
+## 12. First minutes guided (onboarding; waiting: FL-0092 onboarding v2 #45)
 Start a fresh Play and follow the hints: inspect a citizen → build on a plot → answer a citizen →
 recruit → capture. **Pass:** each hint appears at the right moment and can be skipped. (On main today the
 onboarding still waits for the ruler to gather; that is FL-0092's to change.)
 
 ## M1 / M2 — two players (Test → Clients and Servers → Local Server, 2 players → Start)
 (Later multiplayer checks M3–M8: `production/quality-gates/multiplayer-test-plan.md`.)
-- **M1 (always runnable):** both client windows log the same sha and `trees=Forge,Game`. Once FL-0048
-  spawns rulers: both rulers appear at their keeps and each sees the other move (with streaming on,
-  a far ruler may not be visible until you walk closer).
-- **M2 shared kingdom (waiting: FL-0048):** both players can be in **one** kingdom (party) — the HUD
+- **M1 (always runnable):** both client windows log the same sha and `trees=Forge,Game`; both rulers
+  appear at their keeps and each sees the other move (with streaming on, a far ruler may not be visible
+  until you walk closer).
+- **M2 shared kingdom (runnable from B6):** both players can be in **one** kingdom (party) — the HUD
   member list shows both; resources one player gathers appear in the other's HUD; both see the same
   citizens in the same places. Then **Cleanup**.
 
