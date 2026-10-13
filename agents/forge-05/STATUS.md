@@ -6,7 +6,7 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. B11 (`38526a4`) delivered by FORGE-00. Since then: #117 (`1d4c076`, spec only) and **#49 (`21904e4`, FL-0062 feedback layer, ★)**, the B12 candidate, sha sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused |
+| Current task | D-046 (integration first): B13 ★ chain #92 ✔ (`13acf26`) → #119 (waits for FORGE-04's main merge) → #113 ✔ (`cac9522`) → #97 → #111 → #93; B13 after #113 + #97. Then D-046 acceptance bookkeeping and FL-0101 |
 | Last verified check | #120 on main `53186d8`: check.sh OVERALL PASS (framework 517/0, game-001 1213/0), PR CI run 38418573537 3/3. Post-merge self-check of 19 D-040 review sets on main 962984f: no regressions. Main CI green for #117 and #49 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
 | In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
@@ -110,6 +110,8 @@ _Maintained by the worker. Keep it short and current._
 | #117 | FORGE-01 #115 L1 spec: rebuilt tower keeps its pivot, a second capture, no leak (★, spec-only) | `1d4c076` |
 | #49 | FORGE-04 FL-0062 VS-1 feedback layer: announcer, kingdom effects, work feedback, phase music (★) | `21904e4` |
 | #120 | FORGE-05 MockEnv installs EngineStubs once per process (Lune has no ParticleEmitter:Emit); Boot spec celebration case | `0d71eff` |
+| #92 | FORGE-04 D-038 (7) per-feature mutation rows, Studio-test history, analytics taxonomy (★, D-046) | `13acf26` |
+| #113 | FORGE-01 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget (★, D-046) | `cac9522` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
