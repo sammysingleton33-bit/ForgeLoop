@@ -3,11 +3,11 @@ id: FL-0051
 title: Buildings, construction, territory and ruler gathering
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0049, FL-0054, FL-0058, FL-0055]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 9
@@ -43,3 +43,4 @@ Players place buildings that builders raise through visible stages; rulers can h
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): starting buildings, door links, footprint, region markers, InteractionController, position+rot placement remotes
+- 2026-10-13 forge-00: READY → BUILDING. Status reconciled by the FORGE-00 backlog audit 2026-10-13: partly built in merged PRs #46, #50, #56, #62, #72. Remaining (audit): ruler gather client (InteractionController; onboarding needs it), Door->nav, claim markers, Construction/Territory service facades (G5), #62 M-1. Slot reservation is FL-0081.

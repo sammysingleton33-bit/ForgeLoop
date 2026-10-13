@@ -396,6 +396,88 @@ describe("EntityController: rigs, cues and reset", function()
 		expect(h.controller:getModel(11)).never.toBe(first)
 	end)
 
+	it("pools rigs per Kit.lookKey and keeps at most POOL_MAX spares in all, the oldest destroyed first", function()
+		local function look(skin: number)
+			return { skin = skin, hair = 2, hairColor = 1, outfit = 1 }
+		end
+		local h = start(setup({ full(1, 0, 0, { look = look(1) }), full(2, 5, 0, { look = look(2) }), full(3, 9, 0) }))
+		frame(h, 0)
+		local a, b, plain = h.controller:getModel(1), h.controller:getModel(2), h.controller:getModel(3)
+		expect(a:GetAttribute("KitLook")).toBe(Kit.lookKey(look(1)))
+		expect(b:GetAttribute("KitLook")).toBe(Kit.lookKey(look(2)))
+		events(h, { { type = "despawn", id = 1 }, { type = "despawn", id = 2 }, { type = "despawn", id = 3 } })
+		-- a spawn takes the spare built for its own look, never another look's rig
+		events(h, {
+			spawnRecord(10, { look = look(2) }),
+			spawnRecord(11, { look = table.clone(Kit.DEFAULT_LOOK) }), -- = no look, Kit's default
+			spawnRecord(12, { look = look(3) }),
+		})
+		h.env.mock:advance(0.1)
+		snapshot(h, { record(10, 1, 1), record(11, 2, 2), record(12, 3, 3) })
+		frame(h, 0)
+		expect(h.controller:getModel(10)).toBe(b)
+		expect(h.controller:getModel(11)).toBe(plain)
+		local fresh = h.controller:getModel(12)
+		expect(fresh).never.toBe(a)
+		expect(fresh:GetAttribute("KitLook")).toBe(Kit.lookKey(look(3)))
+		-- one bound over every key: with POOL_MAX 3, six released looks leave the three newest
+		local max = Def.POOL_MAX
+		Def.POOL_MAX = 3
+		local list, models = {}, {}
+		for i = 1, 6 do
+			table.insert(list, spawnRecord(20 + i, { look = look(i), kingdom = "azure" }))
+		end
+		events(h, list)
+		h.env.mock:advance(0.1)
+		local records = {}
+		for i = 1, 6 do
+			table.insert(records, record(20 + i, i, 0))
+		end
+		snapshot(h, records)
+		frame(h, 0)
+		for i = 1, 6 do
+			models[i] = h.controller:getModel(20 + i)
+			events(h, { { type = "despawn", id = 20 + i } })
+		end
+		expect(#h.controller._spares).toBe(3) -- the older spare (a) went first, then looks 1..3
+		Def.POOL_MAX = max
+		local function destroyed(model): boolean
+			return not pcall(function()
+				return model.Name
+			end)
+		end
+		expect({ destroyed(a), destroyed(models[1]), destroyed(models[3]), destroyed(models[4]) }).toEqual({
+			true,
+			true,
+			true,
+			false,
+		})
+		local again = {}
+		for _, i in { 1, 6 } do
+			table.insert(again, spawnRecord(40 + i, { look = look(i), kingdom = "azure" }))
+		end
+		events(h, again)
+		h.env.mock:advance(0.1)
+		snapshot(h, { record(41, 1, 1), record(46, 6, 6) })
+		frame(h, 0)
+		expect(destroyed(h.controller:getModel(41))).toBe(false) -- look 1 was evicted: built anew
+		expect(h.controller:getModel(41):GetAttribute("KitLook")).toBe(Kit.lookKey(look(1)))
+		expect(h.controller:getModel(46) == models[6]).toBe(true)
+		-- two spares of one key: the newest comes back first (older ones age out of the pool)
+		events(h, { spawnRecord(51, { look = look(5) }), spawnRecord(52, { look = look(5) }) })
+		h.env.mock:advance(0.1)
+		snapshot(h, { record(51, 5, 5), record(52, 6, 6) })
+		frame(h, 0)
+		local older, newer = h.controller:getModel(51), h.controller:getModel(52)
+		events(h, { { type = "despawn", id = 51 }, { type = "despawn", id = 52 } })
+		events(h, { spawnRecord(53, { look = look(5) }) })
+		h.env.mock:advance(0.1)
+		snapshot(h, { record(53, 7, 7) })
+		frame(h, 0)
+		expect(h.controller:getModel(53) == newer).toBe(true)
+		expect(h.controller:getModel(53) == older).toBe(false)
+	end)
+
 	it("swaps the rig on a job change: released, then rendered with the new job", function()
 		local h = start(setup({ full(1, 4, 0) }))
 		frame(h, 0)

@@ -42,7 +42,8 @@
 			  maxRulersPerKingdom = 4, aiRulers = Governor.enabled and mode == "match",
 			  populateOnJoin = mode == "slice", endOnFirstCapture = mode == "slice",
 			  pvp = Match.pvp.enabled, victory = Match.victory, objectives = Layout.OBJECTIVES,
-			  catalog?, treasury?, costs? }   -- defaults from config
+			  catalog?, treasury?, costs?, people? }   -- defaults from config; people = Sim/People content
+			  (generated citizens, G13.2; a seed per world from `random`)
 		Match.durationsFor(mode): { [MatchPhase]: number }      -- config defaults (fresh table)
 		Match.checkDurations(durations): string?                -- why a full six-phase table is unusable
 		match.state (MatchPhase), match.mode, match.sim, match.roundId, match.durations
@@ -54,6 +55,7 @@
 		match:update(dt)
 		match:remaining(): number?    -- seconds left in the countdown / current phase / results; nil = untimed
 		match:debugSetPhase(phase): (boolean, string?)          -- Studio debug panel only (match.phase)
+		match:setPeople(content)                                 -- options.people, now and for later worlds
 		match:command(userId, name, ...)                         -- Commands.execute on this simulation
 		match:result(): RoundResult?  -- framework Contracts/Types RoundResult, mode "kingdoms"
 		match:summary(): { winner: KingdomId?, standings: { { kingdom, crownPoints } }, durationSec,
@@ -73,6 +75,7 @@ local Layout = require("./Layout")
 local Military = require("../Sim/Military")
 local Nav = require("../Sim/Nav")
 local Objectives = require("../Sim/Objectives")
+local People = require("../Sim/People")
 local RulerAI = require("../Sim/RulerAI")
 local Simulation = require("../Sim/Simulation")
 
@@ -212,12 +215,28 @@ function Match:_newWorld()
 	sim.active = false
 	sim.fedByUpkeep = self.options.fedByUpkeep == true
 	self.sim = sim
+	self:_installPeople()
 	self.participants = {} :: { [number]: { kingdomId: string, joinedAt: number, leftAt: number? } }
 	self.lastKingdom = {} :: { [number]: string }
 	self.startedAt = nil :: number?
 	self.endedAt = nil :: number?
 	self._result = nil :: any
 	self._summary = nil :: any
+end
+
+-- Generated people (G13.2) for this world's citizens, from a seed drawn per world, once
+-- options.people (the content tables of Sim/People) is set.
+function Match:_installPeople()
+	local content = self.options.people
+	if content then
+		People.install(self.sim, self.options.random:NextInteger(1, 2147483646), content)
+	end
+end
+
+-- Turns generated people on (CitizenService, FL-0078) for the current world and every next one.
+function Match:setPeople(content: any)
+	self.options.people = content
+	self:_installPeople()
 end
 
 function Match:_setState(nextState: string)

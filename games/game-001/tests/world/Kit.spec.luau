@@ -6,15 +6,21 @@ local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 -- CONTRACTS G2 BuildingType, in contract order.
 local BUILDING_TYPES =
 	{ "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks", "watchtower", "wall", "gate" }
-local KINGDOM_COLORS = {
-	Color3.fromRGB(196, 40, 28), -- crimson
-	Color3.fromRGB(13, 105, 172), -- azure
-	Color3.fromRGB(40, 127, 71), -- emerald
-	Color3.fromRGB(245, 205, 48), -- gold
-}
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+
+-- canonical kingdom colours (config Kingdoms, D-033), keyed by KingdomId
+local CANON: { [string]: Color3 } = {}
+for _, identity in KingdomsConfig.identities do
+	local c = identity.color
+	CANON[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+end
+local KINGDOM_COLORS = { CANON.crimson, CANON.azure, CANON.emerald, CANON.gold }
 local STAGES = { 1, 2, 3, "complete" }
 local PRIMITIVE_CLASSES = { Part = true, WedgePart = true, CornerWedgePart = true, Seat = true } -- Seat: keep Throne (G13.6)
-local MAX_BUILDING_PARTS = 260 -- per model; world budget ≤ 25k parts (BRIEF §14)
+local MAX_BUILDING_PARTS = 260 -- per model at levels 1–2; world budget ≤ 25k parts (BRIEF §14)
+-- Documented exception: the keep's level 3 (the kingdom centrepiece, one per kingdom) may use up to
+-- Buildings.PART_BUDGET.keep = 300 parts; asserted below. Every other model and level stays ≤ 260.
+local KEEP_L3_MAX_PARTS = 300
 
 local function parts(model: Instance): { BasePart }
 	local out = {}
@@ -57,6 +63,18 @@ describe("Kit.build (G10)", function()
 						expect(#parts(model)).toBeLessThanOrEqual(MAX_BUILDING_PARTS)
 					end
 				end
+			end
+		end
+	end)
+
+	it("keeps the keep's level 3 within its documented exception (≤ 300 parts) and its stages ≤ 260", function()
+		local Buildings = require("@game/ReplicatedStorage/Game/Kit/Buildings")
+		expect(Buildings.PART_BUDGET.keep).toBe(KEEP_L3_MAX_PARTS)
+		for _, color in KINGDOM_COLORS do
+			for _, stage in STAGES do
+				local model = Kit.build("keep", 3, stage, color)
+				local limit = if stage == "complete" then KEEP_L3_MAX_PARTS else MAX_BUILDING_PARTS
+				expect(#parts(model)).toBeLessThanOrEqual(limit)
 			end
 		end
 	end)
@@ -249,4 +267,30 @@ describe("Kit.prop and Kit.regionMarkers", function()
 		end
 		expect(flags).toBe(8)
 	end)
+end)
+
+describe("Banner props carry the canonical kingdom colours (D-033)", function()
+	-- Blender asset names (prop_banner_<red|blue|green|yellow>_NN) map to KingdomIds; a missing key would
+	-- silently fall back to another kingdom's colour
+	local BANNER_KINGDOM = { red = "crimson", blue = "azure", green = "emerald", yellow = "gold" }
+
+	local function bannerColor(name: string): Color3?
+		local model = Kit.prop(`prop_banner_{name}_01`)
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") and d.Name == "Banner" then
+				return d.Color
+			end
+		end
+		return nil
+	end
+
+	for name, id in BANNER_KINGDOM do
+		it(`colours prop_banner_{name} with the {id} kingdom colour`, function()
+			local got, want = bannerColor(name), CANON[id]
+			expect(want).never.toBeNil()
+			expect(got).never.toBeNil()
+			local gotV = Vector3.new((got :: Color3).R, (got :: Color3).G, (got :: Color3).B)
+			expect((gotV - Vector3.new(want.R, want.G, want.B)).Magnitude).toBeLessThan(1e-3)
+		end)
+	end
 end)

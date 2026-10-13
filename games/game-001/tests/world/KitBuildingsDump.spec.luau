@@ -18,12 +18,15 @@ local serde = require("@lune/serde")
 
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 
-local COLORS = {
-	crimson = Color3.fromRGB(196, 40, 28),
-	azure = Color3.fromRGB(13, 105, 172),
-	emerald = Color3.fromRGB(35, 128, 95), -- FORGE-01 G13 kingdom colours
-	gold = Color3.fromRGB(235, 185, 16),
-}
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+
+-- canonical kingdom colours (config Kingdoms, D-033), keyed by KingdomId
+local CANON: { [string]: Color3 } = {}
+for _, identity in KingdomsConfig.identities do
+	local c = identity.color
+	CANON[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+end
+local COLORS = CANON
 
 local function round(n: number): number
 	return math.floor(n * 1000 + 0.5) / 1000
