@@ -16,6 +16,7 @@ evidence:
   - games/game-001/design/ui/REVIEW.md; screenshots/prototype (15 of 33 committed) and screenshots/luau (27)
   - 8 mutations of placement/upgrade/visibility rules each fail a spec
   - "#25 bdf1689, #41 94db2a2, #58 84c7798; integration-log.md"
+  - "integration-log #103 row: check.sh PASS on the merge result, main CI green"
 ---
 
 # Kingdom HUD and build menu (prototype then Luau)
@@ -49,3 +50,4 @@ Prototype screenshots reviewed; Lune specs for formatting and state; Studio scre
 - 2026-10-12 forge-03: BUILDING → TESTING. FORGE-03: 33 specs (17 end to end), 8 mutations killed, Luau renders at 3 sizes
 - 2026-10-12 forge-03: TESTING → REVIEW. PR from forge/03-ui-economy-fl0059 (stacked on #12, #13): KingdomHudController + BuildMenuController on G8 remotes; Studio steps U1-U9 for the user
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0105 (refusal codes from Build/Army shown as reasons, not 'That didn't work').
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 log: the #86 review follow-ups are closed by #103 (f2d430a): M1 Studio text and L2-L9 (refusal sentences, rail 'blocked', specs). REVIEW, only G6 pending (STUDIO_PLAYTEST rows 3, 6).

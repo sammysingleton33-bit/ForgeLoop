@@ -7,6 +7,10 @@
 		- every other moment as a toast through NotificationController:show (silent when the moment
 		  has its own sound, so nothing plays twice), coalesced by the line's key ("×N");
 		- the moment's own sound and effect at its position (AudioController, VFXController).
+	The end-of-match summary owns the result line (FORGE-00 ruling on #49): when FORGE-03's
+	SliceSummaryController is on this client, a matchEnded moment shows no plain toast ("A draw",
+	"<kingdom> wins the match"). Celebrations (Victory!, Defeat) and the music stay; a client without
+	the summary keeps the toast (Def.SUMMARY_OWNS).
 	A celebration that NotificationController declines (the same moment twice inside its cooldown)
 	is simply done: the plain-toast fallback is only for a NotificationController without the
 	celebration API or a kind it rejected. Effects get the moment's kingdom colour (`tint`, config
@@ -27,6 +31,9 @@ local AnnouncerController = {}
 AnnouncerController.__index = AnnouncerController
 
 local Def = { name = "AnnouncerController", dependencies = {} }
+
+-- moment kinds whose plain toast the end-of-match summary already says (SliceSummaryController)
+Def.SUMMARY_OWNS = table.freeze({ matchEnded = true })
 
 -- kingdom id -> banner colour, for presets with tint = true
 Def.COLORS = (function()
@@ -59,6 +66,7 @@ function AnnouncerController:start()
 	self._notifications = registry:find("NotificationController")
 	self._audio = registry:find("AudioController")
 	self._vfx = registry:find("VFXController")
+	self._summary = registry:find("SliceSummaryController")
 	self:_registerCelebrations()
 	table.insert(
 		self._links,
@@ -137,6 +145,9 @@ function AnnouncerController:onMoment(moment: any)
 					end)),
 				}
 			end
+		end
+		if toast and presentation.celebrate == nil and self._summary ~= nil and Def.SUMMARY_OWNS[moment.kind] then
+			toast = nil -- the summary on screen shows the same result line
 		end
 		if toast and notifications and notifications.show then
 			notifications:show({

@@ -6,8 +6,8 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | D-046 (integration first): B13 ★ chain #92 ✔ (`13acf26`) → #119 (waits for FORGE-04's main merge) → #113 ✔ (`cac9522`) → #97 → #111 → #93; B13 after #113 + #97. Then D-046 acceptance bookkeeping and FL-0101 |
-| Last verified check | #120 on main `53186d8`: check.sh OVERALL PASS (framework 517/0, game-001 1213/0), PR CI run 38418573537 3/3. Post-merge self-check of 19 D-040 review sets on main 962984f: no regressions. Main CI green for #117 and #49 |
+| Current task | D-046: **B13 = `d65fb2e`** sent to FORGE-00 (artifact 11840974191; studio-runs row and asks b234533). #93 rides B14 (M1 fix pending from FORGE-01). Next: FL-0101 cinematic conversations (#108 → #84 → #85 → #126) |
+| Last verified check | main `d65fb2e` (#119): check.sh PASS on the merge result (framework 517/0, game-001 1225/0), FL-0062 mutations 35/35, main CI run 38453828362 green, B13 artifact 11840974191; FL-0089 end-to-end 5/5 after #122 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
 | In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
@@ -112,6 +112,10 @@ _Maintained by the worker. Keep it short and current._
 | #120 | FORGE-05 MockEnv installs EngineStubs once per process (Lune has no ParticleEmitter:Emit); Boot spec celebration case | `0d71eff` |
 | #92 | FORGE-04 D-038 (7) per-feature mutation rows, Studio-test history, analytics taxonomy (★, D-046) | `13acf26` |
 | #113 | FORGE-01 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget (★, D-046) | `cac9522` |
+| #97 | FORGE-01 FL-0106 Match.Ended for late joiners during Results (★, D-046) | `681f38c` |
+| #111 | FORGE-01 FL-0107 G9 CitizenAnswered (★, D-046) | `003e180` |
+| #122 | FORGE-00 reputation notices for soldiers_recruited / wall_built (★, B13) | `196b1df` |
+| #119 | FORGE-04 FL-0062 follow-up: the summary owns the result line (★, D-046) | `d65fb2e` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

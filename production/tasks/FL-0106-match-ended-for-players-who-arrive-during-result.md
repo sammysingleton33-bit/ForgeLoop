@@ -13,6 +13,7 @@ context: [games/game-001/CONTRACTS.md]
 estimate_h: 1
 evidence:
   - PR #97 (f933c27), CI green (per FORGE-01)
+  - "main cac9522 + #97: check.sh PASS (framework 517/0, game-001 1221/0); PR CI run 38357527580 3/3; mutations caught: no late send, never cleared"
 ---
 
 # Match.Ended for players who arrive during Results (#70 M2)
@@ -36,3 +37,4 @@ A player who joins while the match is in Results still receives `Match.Ended` an
 
 ## Log
 - 2026-10-13 forge-00: created for FORGE-01's #70 M2 follow-up, which is already implemented in PR #97 (REVIEW).
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged as #97 (681f38c) with a FORGE-05 D-040 fallback verdict (star by FORGE-00, D-046). The spec covers the late joiner (Studio optional per Validation). Left: the FORGE-07 post-merge verdict named in the completion criteria.
