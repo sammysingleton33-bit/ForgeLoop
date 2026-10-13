@@ -979,6 +979,27 @@ describe("Kingdom and Match remotes (G8)", function()
 		expect(#received(env, "Kingdom.State", p1)).toBe(before + 2) -- nothing changed, nothing sent
 	end)
 
+	it("Kingdom.State goes out again when a kingdom condition moves by a whole point (#68 L4)", function()
+		local env, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(TICK)
+		local k = match.host.match.sim.kingdoms.crimson
+		k.conditions = { happiness = 50, stability = 50, morale = 50 }
+		env.mock:advance(1)
+		local before = #received(env, "Kingdom.State", p1)
+		k.conditions.happiness = 50.3 -- a drift step: not worth a push
+		env.mock:advance(1)
+		expect(#received(env, "Kingdom.State", p1)).toBe(before)
+		k.conditions.happiness = 51.2
+		env.mock:advance(1)
+		local pushed = received(env, "Kingdom.State", p1)
+		expect(#pushed).toBe(before + 1)
+		expect(pushed[#pushed][1].kingdoms[1].happiness).toBe(51.2)
+		k.conditions.morale = 45
+		env.mock:advance(1)
+		expect(#received(env, "Kingdom.State", p1)).toBe(before + 2)
+	end)
+
 	it("Kingdom.SetJobQuota returns a boolean and validates its arguments", function()
 		local env = boot()
 		local p1 = env.mock.players:add({ userId = 1 })
