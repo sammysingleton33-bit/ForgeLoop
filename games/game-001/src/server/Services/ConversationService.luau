@@ -44,7 +44,9 @@
 		  was applied comes off again;
 		- `strike` on/off events (G13.3 v0.4-g6) listing exactly the citizens whose strike or walk-out
 		  started, and later ended, one event per occupation;
-		- a `reaction` event to the kingdom's members.
+		- a `reaction` event to the kingdom's members;
+		- G9 CitizenAnswered(player, kingdomId, citizenId, decisionId, secondsOpen?) once, last (D-044 (3)):
+		  secondsOpen is the server time since the request's bubble appeared, nil when there was none.
 	Thought bubbles: every Society.requestRefreshSeconds, each ruled kingdom keeps up to Society.openRequests
 	open requests: the highest-priority eligible scenario of citizens without one (thought ctx: the best
 	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request that stops holding closes;
@@ -71,6 +73,7 @@
 ]]
 
 local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
+local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local Occupations = require("@game/ReplicatedStorage/Game/Content/Occupations")
 local Reputation = require("@game/ReplicatedStorage/Game/Kingdom/Reputation")
@@ -341,8 +344,13 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	end
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
 	self:_closeRequest(kingdomId, entityId)
-	self._showing[entityId] =
-		{ scenarioId = scenario.id, userId = userId, kingdomId = kingdomId, forced = forced or nil }
+	self._showing[entityId] = {
+		scenarioId = scenario.id,
+		userId = userId,
+		kingdomId = kingdomId,
+		forced = forced or nil,
+		requestedAt = open and open.openedAt, -- nil when the citizen had no request bubble
+	}
 	self._reputation:rulerVisited(userId, entityId)
 	return payload
 end
@@ -705,6 +713,9 @@ function ConversationService:choose(
 	end
 	local reaction = ContentQuery.fill(response.reaction, names)
 	self:_send(kingdomId, { type = "reaction", id = entityId, text = reaction, tone = response.tone or "neutral" })
+	-- G9 (D-044 (3)): once per accepted answer, after its effects; the bus is server-only
+	local secondsOpen = if showing.requestedAt then math.max(0, self:_now() - showing.requestedAt) else nil
+	GameEvents.CitizenAnswered:fire(player, kingdomId, entityId, response.decision, secondsOpen)
 	return true, { reaction = reaction, effects = applied }, nil
 end
 
@@ -774,7 +785,13 @@ function ConversationService:_openRequest(kingdomId: string, open: { any }, c: a
 		text = ContentQuery.fill(scenario.thought, self:_names(c, nil)),
 		icon = scenario.icon or "request",
 	}
-	table.insert(open, { entityId = c.id, scenarioId = scenario.id, forced = forced, thought = thought })
+	table.insert(open, {
+		entityId = c.id,
+		scenarioId = scenario.id,
+		forced = forced,
+		thought = thought,
+		openedAt = self:_now(), -- when the bubble appeared (CitizenAnswered secondsOpen, D-044 (3))
+	})
 	self:_send(kingdomId, thought)
 end
 

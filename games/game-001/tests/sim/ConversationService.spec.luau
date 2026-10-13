@@ -983,3 +983,83 @@ describe("ConversationService: events on the wire (EntityService, G13.3)", funct
 		expect(queued[3].cue).toBe("salute")
 	end)
 end)
+
+describe("ConversationService: G9 CitizenAnswered (FL-0107, D-044 (3))", function()
+	local function listen()
+		local fired = {}
+		GameEvents.CitizenAnswered:connect(function(player, kingdomId, citizenId, decisionId, secondsOpen)
+			table.insert(fired, {
+				player = player,
+				kingdomId = kingdomId,
+				citizenId = citizenId,
+				decisionId = decisionId,
+				secondsOpen = secondsOpen,
+			})
+		end)
+		return fired
+	end
+
+	it("fires once per accepted answer, after its effects, with how long the request was open", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local fired = listen()
+		conversations:refresh() -- the farmer's request bubble appears now
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		env.mock:advance(5)
+		local food = sim:balance("crimson", "food")
+		local effectsApplied = false
+		GameEvents.CitizenAnswered:connect(function()
+			effectsApplied = sim:balance("crimson", "food") == food - 25 -- the cost is already paid
+		end)
+		assert(conversations:converse(p1, farmer.id))
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(#fired).toBe(1)
+		local e = fired[1]
+		expect(e.player).toBe(p1)
+		expect(e.kingdomId).toBe("crimson")
+		expect(e.citizenId).toBe(farmer.id)
+		expect(e.decisionId).toBe("grain_open_store")
+		expect(e.secondsOpen).toBeNear(5, 0.6)
+		expect(effectsApplied).toBe(true)
+		-- a repeat of the same showing is refused and fires nothing
+		expect((choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(false)
+		expect(#fired).toBe(1)
+	end)
+
+	it("never fires for a refused, unaffordable or expired choice; secondsOpen is nil without a bubble", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local fired = listen()
+		-- no refresh: the conversation opens without a request bubble
+		assert(conversations:converse(p1, farmer.id))
+		expect(select(3, choose(conversations, p1, farmer, "farmer_hungry_grain", "nope"))).toBe("unknown_response")
+		local food = sim:balance("crimson", "food")
+		sim:spend("crimson", { food = food }, "spec:drain", "spec")
+		expect(select(3, choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(
+			"cost"
+		)
+		expect(#fired).toBe(0)
+		sim:deposit("crimson", "food", food, "spec:refill", "spec")
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(#fired).toBe(1)
+		expect(fired[1].secondsOpen).toBeNil()
+		-- expired: the situation changed before the answer (not_eligible)
+		local other = sim.citizens[sim.kingdoms.crimson.citizenIds[1]]
+		if other.id == farmer.id then
+			other = sim.citizens[sim.kingdoms.crimson.citizenIds[2]]
+		end
+		assert(conversations:debugRequest("crimson", other.id, "farmer_hungry_grain"))
+		local view = assert(conversations:converse(p1, other.id))
+		conversations._showing[other.id].forced = nil -- as if it had been offered normally
+		registry:get("CitizenService"):setFedRatio("crimson", 1)
+		other.hunger = 0
+		expect(select(3, choose(conversations, p1, other, view.scenarioId, "farmer_hungry_grain_open_store"))).toBe(
+			"not_eligible"
+		)
+		expect(#fired).toBe(1)
+		expect(select(3, conversations:choose({ UserId = 999 }, farmer.id, "x", "y"))).toBe("not_in_match")
+		expect(#fired).toBe(1)
+	end)
+end)
