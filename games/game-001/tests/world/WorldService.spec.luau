@@ -363,3 +363,69 @@ describe("Kingdom colours come from config Kingdoms (D-033)", function()
 		svc:destroy()
 	end)
 end)
+
+-- D-047 (BRIEF §14): ≤ 25k parts in a typical VS-2 match, hard ceiling 27k for the all-built worst case. The
+-- worst case is the world WorldService builds plus every kingdom fully built at its top levels (the VS-2
+-- kingdom in the Buildings.luau budget note) plus the neutral towers. Fails above 27k; prints the breakdown.
+describe("World part ceiling (D-047)", function()
+	it("keeps WorldService plus four fully built kingdoms at max levels within 27k parts", function()
+		local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+		local MAX = { keep = 3, barracks = 4, mine = 3, blacksmith = 3 } -- others 2; Kit.build clamps
+		local function top(bt: string): number
+			return MAX[bt] or 2
+		end
+		-- { type, count, stage? } per kingdom (Buildings.luau budget note, FL-0086 types at their top level)
+		local KINGDOM = {
+			{ "keep", 1 },
+			{ "house", 10 },
+			{ "farm", 3 },
+			{ "storehouse", 1 },
+			{ "lumbercamp", 2 },
+			{ "quarry", 2 },
+			{ "barracks", 2 },
+			{ "watchtower", 2 },
+			{ "wall", 12 },
+			{ "gate", 1 },
+			{ "mine", 1 },
+			{ "blacksmith", 1 },
+			{ "market", 1 },
+			{ "infirmary", 1 },
+			{ "granary", 1 },
+			{ "shrine", 1 },
+			{ "barracks", 1, 2 }, -- two sites in progress
+			{ "house", 1, 2 },
+		}
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		expect(svc:isReady()).toBe(true)
+		local world = svc.stats.parts
+		svc:destroy()
+
+		local perKingdom = {}
+		local buildings = 0
+		for _, identity in KingdomsConfig.identities do
+			local c = identity.color
+			local color = Color3.fromRGB(c[1], c[2], c[3])
+			local n = 0
+			for _, row in KINGDOM do
+				local bt, count, stage = row[1], row[2], row[3] or "complete"
+				for i = 1, count do
+					local variant = if bt == "house" then ((i - 1) % 8) + 1 else nil
+					n += Kit.partCount(Kit.build(bt, top(bt), stage, color, variant))
+				end
+			end
+			table.insert(perKingdom, `{identity.id} {n}`)
+			buildings += n
+		end
+		local neutral = 3 * Kit.partCount(Kit.build("watchtower", top("watchtower"), "complete", Kit.NEUTRAL_COLOR))
+		local total = world + buildings + neutral
+		print(
+			`world part ceiling (D-047): WorldService {world} + kingdoms {buildings} ({table.concat(perKingdom, ", ")})`
+				.. ` + neutral towers {neutral} = {total} / 27000`
+		)
+		if total > 27000 then
+			error(`all-built worst case {total} parts > 27000 (D-047)`)
+		end
+	end)
+end)
