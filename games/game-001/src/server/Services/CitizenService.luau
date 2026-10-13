@@ -5,8 +5,10 @@
 
 	Citizens live in the kingdom simulation (MatchService's host); this service is their API.
 	API (G5)
-		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap }?
-			-- citizens and soldiers (soldiers count in byJob.soldier and in total); nil for an unknown kingdom
+		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap, quotas }?
+			-- citizens and soldiers (soldiers count in byJob.soldier and in total); quotas = the
+			   Kingdom.SetJobQuota targets per job (additive to G5, for the job panel); whole numbers >= 0;
+			   nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
 		CitizenService:inspect(entityId): CitizenView?   -- G13.2 (a superset of G5's name, job, mood,
 		                                                  intent, lastMemory?); citizens only
@@ -108,7 +110,12 @@ local function populationSignature(kingdomId: string, population: { [string]: an
 		table.insert(jobs, `{job}={n}`)
 	end
 	table.sort(jobs)
-	return `{kingdomId}|{population.total}|{population.cap}|{table.concat(jobs, ",")}`
+	local quotas = {}
+	for job, n in population.quotas do
+		table.insert(quotas, `{job}={n}`)
+	end
+	table.sort(quotas)
+	return `{kingdomId}|{population.total}|{population.cap}|{table.concat(jobs, ",")}|{table.concat(quotas, ",")}`
 end
 
 -- Kingdom.Population to every player whose kingdom's population (or whose kingdom) changed.
@@ -138,7 +145,17 @@ function CitizenService:destroy()
 	self._running = false
 end
 
-function CitizenService:getPopulation(kingdomId: string): { total: number, byJob: { [string]: number }, cap: number }?
+-- whole numbers >= 0 on the wire (never -0 or a fraction)
+local function count(n: number): number
+	return math.max(0, math.floor(n)) + 0
+end
+
+function CitizenService:getPopulation(kingdomId: string): {
+	total: number,
+	byJob: { [string]: number },
+	cap: number,
+	quotas: { [string]: number },
+}?
 	local sim = self:_sim()
 	local k = sim.kingdoms[kingdomId]
 	if k == nil then
@@ -152,7 +169,11 @@ function CitizenService:getPopulation(kingdomId: string): { total: number, byJob
 	if #k.unitIds > 0 then
 		byJob.soldier = (byJob.soldier or 0) + #k.unitIds
 	end
-	return { total = #k.citizenIds + #k.unitIds, byJob = byJob, cap = k.popCap }
+	local quotas = {}
+	for job, n in k.quotas or {} do
+		quotas[job] = count(n)
+	end
+	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = count(k.popCap), quotas = quotas }
 end
 
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)

@@ -284,6 +284,22 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 		expect(#sentTo(p1)).toBe(2)
 		expect(sentTo(p1)[2].byJob.soldier).toBe(1)
 		expect(#sentTo(p2)).toBe(1) -- azure did not change
+		-- quotas travel too (the job panel steps from them), as whole numbers
+		expect(sentTo(p1)[2].quotas).toEqual(sim.kingdoms.crimson.quotas)
+		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 5)).toBe(true)
+		env.mock:advance(1.5) -- the quota change (and citizens moving to meet it) is pushed
+		local latest = sentTo(p1)[#sentTo(p1)]
+		expect(#sentTo(p1) >= 3).toBe(true)
+		expect(latest.quotas.farmer).toBe(5)
+		for _, n in latest.byJob do
+			expect(n >= 0 and n % 1 == 0).toBe(true)
+		end
+		sim.active = false -- frozen: nobody moves, so only the quota differs
+		local pushed = #sentTo(p1)
+		sim.kingdoms.crimson.quotas.miner = 7
+		env.mock:advance(1.5)
+		expect(#sentTo(p1)).toBe(pushed + 1)
+		expect(sentTo(p1)[pushed + 1].quotas.miner).toBe(7)
 		local spectatorEnv = env
 		local p17 = nil
 		for i = 3, 17 do
