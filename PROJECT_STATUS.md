@@ -4,25 +4,29 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B12**, main `21904e4`, delivered 2026-10-13 14:35 UTC. **This is the build to test.** Not yet run in Studio.
-  - **New since B11 (#49, FL-0062):**
-    - A kingdom announcer: toasts and celebrations for builds, recruits, captures, keep upgrades, phases and the match end, each to the right audience.
-    - Construction, recruit and territory effects.
-    - Work feedback.
-    - Phase music. It stays silent until the P0 sounds are picked.
-    - Tests added: #117.
-  - **Since B10 (B11):** a captured tower is rebuilt in the capturer's look (#115).
-  - **Since B9 (B10):** co-rulers share conversations, stale requests clear, struck carriers deliver (#114), and thrones are for their own rulers (#112).
-  - **Since B8 (B9):** kingdom emblems (#105), Talk-close-Talk (#107), the tutorial hints (#99), and keep-upgrade credit (#104).
+- **Latest build: B13**, main `d65fb2e`, delivered 2026-10-13 19:35 UTC. **This is the build to test.** Not yet run in Studio.
+  - **New since B12:**
+    - Living citizens (#113): a well-fed kingdom with a free bed grows on its own, and a birth costs no food (D-045). Citizens cheer the keep at level 2. Talking to a citizen is remembered and lifts their mood. Up to 100 citizens stay responsive.
+    - One recruit toast, and readable reputation history (#122).
+    - Late joiners still get the end summary (#97).
+    - No duplicate match-end toast (#119).
+    - The server fires G9 `CitizenAnswered` (#111).
+  - **Since B8–B12:**
+    - Conversations with consequences.
+    - Kingdom emblems and captured-tower looks.
+    - Thrones only for their own rulers.
+    - The announcer, effects and music (silent until sounds are picked).
+    - Tutorial hints on target.
   - **Not yet:**
+    - The cinematic conversation (B14 set: #85, #108, #84, #121, #126).
     - Nothing is audible until the P0 sounds are picked.
     - The oak leaf is hard to read at full zoom.
-    - The throne is hard to see from behind.
+    - The throne is hard to see from behind (FORGE-02 fix in progress).
     - Dialogue is DRAFT.
     - The other kingdoms are empty by design (D-043).
     - FPS is unknown.
-  - The Studio asks are in `production/quality-gates/studio-runs.md` and STUDIO_PLAYTEST §9 (the captured tower look; the end-of-slice celebration with Victory and the summary, O3).
-- **Next build: B13.** It brings the D-046 ★ set: #92, #119, #113 (living citizens: ruler visits, births, keep-L2 celebration), #97, #111 and #93. FORGE-05 builds it when #113 lands.
+  - The Studio asks are in `production/quality-gates/studio-runs.md` (B13 row).
+- **Next build: B14.** The cinematic conversations (FL-0101 set), plus #93 and FORGE-02's B12 visual fixes.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -101,7 +105,7 @@ One combined gate for all five. If any PR fails review, the whole set waits.
 5. **No audible sound** until the user picks the P0 sounds. Dialogue is DRAFT until FL-0095.
 
 ## Decisions needed from the user
-1. **Run B12, or B13 when it lands, in Studio on your Mac.** The asks are in `production/quality-gates/studio-runs.md`. A Mac section is coming in STUDIO_PLAYTEST.
+1. **Run B13 in Studio** (Windows: F5 Play; the Mac keys are in STUDIO_PLAYTEST §0). The asks are in `production/quality-gates/studio-runs.md`. A Mac section is coming in STUDIO_PLAYTEST.
 2. **Give FORGE-07 its OK** in the Forge07 session: "FORGE-07 may post COMMENT reviews and push agents/forge-07/STATUS.md and production/reviews/ to main."
 3. **VS-2 start:** may FORGE-01 begin the combat framework (FL-0012, §16.2) in parallel, before VS-1 is accepted? (D-046 (4))
 4. **Pick the P0 sounds** and upload `gem.png` and `emblem_crown.png`. Approve FORGE-06's DRAFT starter pack for temporary testing.
@@ -280,6 +284,7 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+7cbda612 2026-10-13 [FORGE-00] queue: B14 cinematic set is star (FL-0099 #126 up), #122 in B13; dashboard
 66b1412f 2026-10-13 Integration bookkeeping: #122 and #119 merged; B13 = d65fb2e; main CI green for #97 and #111
 b2345337 2026-10-13 studio-runs: B13 (d65fb2e) works / doesn't-yet and Studio asks (D-046)
 d65fb2e1 2026-10-13 Merge PR #119: [FORGE-04] FL-0062 follow-up: the slice summary owns the match result line (FORGE-00 ruling on #49)
@@ -287,7 +292,6 @@ d65fb2e1 2026-10-13 Merge PR #119: [FORGE-04] FL-0062 follow-up: the slice summa
 55ba7074 2026-10-13 Integration bookkeeping: #97 and #111 merged (D-046 B13 chain); FL-0107 ACCEPTED, FL-0106 REVIEW (FORGE-07 verdict left); main CI green for #113
 7cf8a84c 2026-10-13 [FORGE-00] Reputation history text for recruits and post-raid walls (FL-0089 end-to-end defect)
 003e180b 2026-10-13 Merge PR #111: [FORGE-01] FL-0107 G9 CitizenAnswered fired by ConversationService (D-044 (3))
-b976fe1d 2026-10-13 FL-0089: end-to-end check against the real ReputationService (D-046); soldiers_recruited history-text defect tracked
 ```
 
 <!-- forge:auto:end -->
