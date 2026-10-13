@@ -15,7 +15,9 @@
 		BuildingService.toCFrame(position: Vector3, rot: number): CFrame    -- rot 0..3 = 90° steps
 	Remotes (Build/Remotes.luau): Build.CanPlace / Build.Place (type, position, rot), Build.Upgrade,
 	Build.GetBuildings, and Build.Buildings: the G2 views of buildings that changed (placed, progress,
-	level, hp, destroyed), to every player, at most BROADCAST_HZ times per second.
+	level, hp, destroyed), to every player, at most BROADCAST_HZ times per second. A building removed from
+	the world goes out once more with state "destroyed"; when a new world starts, every old building does
+	(its own batch, first: the new world's ids start over).
 	The facing comes from rot only; the client never sends a rotation (no CFrame on the wire).
 	Not yet: build zones (G10.1 buildZones; the VS-1 path is G13.5 build slots, FL-0081) and linking
 	a building's Door to the nav graph.
@@ -43,6 +45,7 @@ function Def.new(env: any, registry: any)
 	self._match = registry:get("MatchService")
 	self._remotes = registry:get("RemoteService")
 	self._sent = {} :: { [number]: string } -- building id -> signature last broadcast
+	self._views = {} :: { [number]: any } -- building id -> view last broadcast (for its "destroyed" view)
 	self._round = nil :: string?
 	self._running = false
 	return self
@@ -109,22 +112,54 @@ function BuildingService:upgrade(player: any, buildingId: number): (boolean, str
 end
 
 -- One broadcast of the buildings that changed since the last one. Specs may call it directly.
+-- A removed building's last view, marked destroyed (Build.Buildings promises one, Remotes.luau).
+local function destroyedView(view: { [string]: any }): { [string]: any }
+	local out = table.clone(view)
+	out.state = "destroyed"
+	out.hp = 0
+	return out
+end
+
 function BuildingService:broadcast()
 	local sim = self:_sim()
 	local round = self._match.host.match.roundId
 	if round ~= self._round then
+		-- a new world: every building of the old one is gone (sent first, as its own batch, because
+		-- the new world's ids start over)
+		local gone = {}
+		for _, view in self._views or {} do
+			table.insert(gone, destroyedView(view))
+		end
+		table.sort(gone, function(a, b)
+			return a.id < b.id
+		end)
+		if #gone > 0 then
+			self._remotes:fireAll("Build.Buildings", gone)
+		end
 		self._round = round
-		self._sent = {} -- a new world: everything is new
+		self._sent = {}
+		self._views = {}
 	end
 	local changed = {}
+	local present = {}
 	for _, id in sim.buildingOrder do
 		local b = sim.buildings[id]
 		local view = sim:viewOf(b)
+		present[id] = true
 		local signature =
 			`{view.type}|{view.level}|{view.state}|{math.floor(view.progress * 100)}|{math.floor(view.hp)}|{view.maxHp}`
 		if self._sent[id] ~= signature then
 			self._sent[id] = signature
+			self._views[id] = view
 			table.insert(changed, view)
+		end
+	end
+	-- removed from the world (cancelled sites, eliminated kingdoms): send "destroyed" once
+	for id, view in self._views do
+		if not present[id] then
+			table.insert(changed, destroyedView(view))
+			self._views[id] = nil
+			self._sent[id] = nil
 		end
 	end
 	if #changed > 0 then
