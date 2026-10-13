@@ -3,7 +3,7 @@ id: FL-0078
 title: "Generated population: names, traits, looks, relationships, chemistry, loyalty (G13.2)"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
@@ -11,7 +11,8 @@ updated: 2026-10-12
 depends_on: [FL-0083]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 5
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 764/0); People.spec 7, CitizenService +4, EventCodec look cases; 16/16 mutations caught
 ---
 
 # "Generated population: names, traits, looks, relationships, chemistry, loyalty (G13.2)"
@@ -45,3 +46,5 @@ Lune specs:
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-12 forge-01: READY → BUILDING. CitizenService generates the population (Sim/People on Sim/Population + Content)
+- 2026-10-12 forge-01: BUILDING → REVIEW. Generated population per world seed; inspect returns CitizenView; look in the spawn event; Kingdom.Population/GetPopulation

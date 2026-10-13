@@ -10,9 +10,11 @@
 		                                     position it sees and enforces range and cooldown
 		Kingdom.SetJobQuota(job: JobId, count: integer(0,50)) -> (boolean, errorCode?)   G5 requestWorkers;
 		                                     hauler is the pool, so it is not a quota job
+		Kingdom.GetPopulation() -> { total, byJob, cap, quotas }?   getPopulation of the asker's kingdom (G13.2)
 	Server -> client
 		Kingdom.State({ kingdoms, mine })    on change (to every player) and to each arriving player
-	Implemented by Kingdom/MatchHost. Match phases are the "Match" area (Match/Remotes.luau).
+		Kingdom.Population({ total, byJob, cap, quotas })   to a kingdom's members on change (G13.2)
+	Implemented by Kingdom/MatchHost; GetPopulation/Population by CitizenService. Match phases are the "Match" area (Match/Remotes.luau).
 ]]
 
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -45,4 +47,6 @@ return {
 		rate = { burst = 10, perSecond = 4 },
 	},
 	{ name = "Kingdom.State", kind = "serverEvent" },
+	{ name = "Kingdom.GetPopulation", kind = "function", args = {}, rate = { burst = 5, perSecond = 2 } },
+	{ name = "Kingdom.Population", kind = "serverEvent" },
 }

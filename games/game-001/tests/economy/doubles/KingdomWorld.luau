@@ -25,6 +25,7 @@
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local MockEnv = require("../../../../../roblox/tests/mocks/MockEnv")
 local RemoteServiceDef = require("@game/ServerScriptService/Forge/Services/RemoteService")
@@ -73,11 +74,22 @@ KingdomWorld.REMOTES = {
 	},
 }
 
+-- Colours from FORGE-01's config/Kingdoms.luau, as the real Kingdom.State sends them (D-033), so the
+-- specs and the committed renders show the colours players see.
+local function canonical(id: string): Color3
+	for _, k in KingdomsConfig.identities do
+		if k.id == id then
+			return Color3.fromRGB(k.color[1], k.color[2], k.color[3])
+		end
+	end
+	error(`KingdomWorld: no {id} in config/Kingdoms`)
+end
+
 KingdomWorld.KINGDOMS = {
-	{ id = "crimson", name = "Emberhold", color = Color3.fromRGB(184, 64, 46) },
-	{ id = "azure", name = "Frostmere", color = Color3.fromRGB(63, 114, 181) },
-	{ id = "emerald", name = "Thornwood", color = Color3.fromRGB(62, 138, 75) },
-	{ id = "gold", name = "Sunspire", color = Color3.fromRGB(201, 154, 54) },
+	{ id = "crimson", name = "Emberhold", color = canonical("crimson") },
+	{ id = "azure", name = "Frostmere", color = canonical("azure") },
+	{ id = "emerald", name = "Thornwood", color = canonical("emerald") },
+	{ id = "gold", name = "Sunspire", color = canonical("gold") },
 }
 
 -- ------------------------------------------------------------------ KingdomService double (G3)
