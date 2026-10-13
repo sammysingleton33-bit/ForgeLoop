@@ -529,6 +529,78 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(env.mock:hasLog("info", "conversation focus waits")).toBe(false)
 	end)
 
+	it(
+		"conversationYaw() looks at the citizen's face; no usable facing keeps the current yaw (G13.8 v0.4-g9e)",
+		function()
+			for _, facing in { Vector3.new(0, 0, -1), Vector3.new(1, 0, 0), Vector3.new(-0.6, 0.3, 0.8) } do
+				local yaw = CameraDef.conversationYaw(facing, 0)
+				local forward = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw)) -- what aerialCFrame looks along
+				local flat = Vector3.new(facing.X, 0, facing.Z).Unit
+				expect(near(forward, -flat, 1e-6)).toBe(true) -- the camera faces the citizen's front
+			end
+			expect(CameraDef.conversationYaw(nil, 1.25)).toBe(1.25)
+			expect(CameraDef.conversationYaw(Vector3.new(0, 1, 0), 1.25)).toBe(1.25) -- straight up: no facing
+			expect(CameraDef.conversationYaw(Vector3.new(0 / 0, 0, 1), 1.25)).toBe(1.25)
+		end
+	)
+
+	it(
+		"frames the citizen's face from the rig's facing and follows the turn to the ruler; a turn by the player stops it",
+		function()
+			local opened, closed = Signal.new(), Signal.new()
+			local facing = Vector3.new(1, 0, 0) -- before the server's hold turns them
+			local rig = {
+				GetPivot = function()
+					return CFrame.lookAt(Vector3.zero, facing)
+				end,
+			}
+			boot({
+				{
+					name = "ConversationController",
+					dependencies = {},
+					new = function()
+						return { opened = opened, closed = closed }
+					end,
+				},
+				{
+					name = "EntityController",
+					dependencies = {},
+					new = function()
+						return {
+							getModel = function(_, id)
+								return if id == 7 then rig else nil
+							end,
+						}
+					end,
+				},
+			})
+			settle()
+			local citizen = THRONE + Vector3.new(-25, 0, 15)
+			opened:fire(7, citizen)
+			expect(controller._target.yaw).toBe(CameraDef.conversationYaw(Vector3.new(1, 0, 0), 0))
+			facing = Vector3.new(0, 0, 1) -- the server turned the citizen toward the ruler
+			frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+			expect(controller._target.yaw).toBe(CameraDef.conversationYaw(Vector3.new(0, 0, 1), 0))
+			local view = CameraDef.conversationView(
+				citizen,
+				controller._target.yaw,
+				C.conversation,
+				controller._bounds,
+				O.boundsMargin
+			)
+			expect(controller:getFocus()).toBe(view.focus) -- re-framed for the new side
+			controller:rotateBy(30) -- the player turns the view: no more following
+			local turned = controller._target.yaw
+			facing = Vector3.new(-1, 0, 0)
+			frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+			expect(controller._target.yaw).toBe(turned)
+			closed:fire(7)
+			expect(controller._talking).toBeNil()
+			opened:fire(8, citizen) -- no rig for this one: the current yaw stays
+			expect(controller._target.yaw).toBe(controller._saved.yaw)
+		end
+	)
+
 	it("boots with no camera, input services or character (headless) and does nothing", function()
 		local bare = MockEnv.new({ seed = 60, isServer = false, localPlayer = { userId = 5803 } })
 		local reg = D.boot(bare, {})

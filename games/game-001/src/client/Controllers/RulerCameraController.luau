@@ -39,8 +39,12 @@
 	Conversations (D-036, G13.8): ConversationController.opened(entityId, position) glides the
 	overview toward the citizen (eased over `duration`, the citizen framed above the centre so the
 	portrait rising from the bottom never covers them, clamped to the map); .closed glides back to
-	the saved focus, rotation and zoom. Reduced motion cuts instead of gliding. A pan or "go to"
-	during a glide ends it. Walk mode ignores conversations.
+	the saved focus, rotation and zoom. The camera stands in front of the citizen's face: its yaw
+	comes from the rig's facing (EntityController:getModel, Def.conversationYaw; v0.4-g9e: the held
+	citizen turns to face the ruler's character), and it follows that turn when it arrives after the
+	panel opened (checked every FOLLOW_SEC, re-aimed past FOLLOW_DEGREES). Reduced motion cuts
+	instead of gliding. A pan, a "go to" or a turn by the player ends the glide and the following.
+	Walk mode ignores conversations.
 
 	The camera runs at RenderPriority.Camera + 1. Engine access is guarded: without a camera, input
 	services or Layout it boots and does nothing (the headless boot gate).
@@ -63,6 +67,8 @@ Def.PAN_ACTION = "ForgeOverviewPan"
 Def.ROTATE_ACTION = "ForgeOverviewRotate"
 Def.SEAT_ACTION = "ForgeOverviewSeat"
 Def.RENDER_NAME = "ForgeRulerCamera"
+Def.FOLLOW_SEC = 0.2 -- how often an open conversation re-reads the citizen's facing
+Def.FOLLOW_DEGREES = 10 -- a smaller turn keeps the current view
 Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.PAN_KEYS = table.freeze({
 	[Enum.KeyCode.W] = Vector2.new(0, 1),
@@ -227,6 +233,19 @@ local function yawOf(look: Vector3): number
 		return 0
 	end
 	return math.atan2(-flat.X, -flat.Z)
+end
+
+-- The yaw that looks at a citizen's face, so the camera stands in front of them (G13.8 v0.4-g9e).
+-- No usable facing (nil, flat or NaN): `fallback`, the current yaw.
+function Def.conversationYaw(facing: any, fallback: number): number
+	if typeof(facing) ~= "Vector3" then
+		return fallback
+	end
+	local flat = Vector3.new(facing.X, 0, facing.Z)
+	if flat.Magnitude ~= flat.Magnitude or flat.Magnitude < 0.1 then
+		return fallback
+	end
+	return yawOf(-flat)
 end
 
 -- Shortest signed difference between two angles (radians).
@@ -418,9 +437,10 @@ function Controller:getFocus(): Vector3?
 	return self._target.focus
 end
 
-function Controller:focusOn(position: Vector3, opts: { duration: number? }?): boolean
+function Controller:focusOn(position: Vector3, opts: { duration: number?, facing: Vector3? }?): boolean
 	if opts == nil then
 		self._glide = nil -- a pan or a "go to" ends a conversation glide
+		self._talking = nil -- and stops following the citizen's turn
 		self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
 		return true
 	end
@@ -432,16 +452,53 @@ function Controller:focusOn(position: Vector3, opts: { duration: number? }?): bo
 	if self._saved == nil then
 		self._saved = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
 	end
-	local view =
-		Def.conversationView(position, target.yaw, conversation, self._bounds, self._config.overview.boundsMargin)
+	local yaw = Def.conversationYaw(opts.facing, target.yaw)
+	local view = Def.conversationView(position, yaw, conversation, self._bounds, self._config.overview.boundsMargin)
 	self:_glideTo(view, if type(opts.duration) == "number" then opts.duration else conversation.durationSec)
 	return true
+end
+
+-- The citizen's facing from its rig (EntityController:getModel); nil when there is no rig.
+function Controller:_facingOf(entityId: any): Vector3?
+	local entities = self._registry:find("EntityController")
+	if entities == nil or entities.getModel == nil then
+		return nil
+	end
+	local ok, facing = pcall(function()
+		local model = entities:getModel(entityId)
+		return if model then model:GetPivot().LookVector else nil
+	end)
+	return if ok and typeof(facing) == "Vector3" then facing else nil
+end
+
+-- The server turns a held citizen to face the ruler a moment after the panel opens (G13.8): the
+-- camera follows that turn so it stays in front of their face.
+function Controller:_followTalker(dt: number)
+	local talking = self._talking
+	if talking == nil then
+		return
+	end
+	talking.wait -= dt
+	if talking.wait > 0 then
+		return
+	end
+	talking.wait = Def.FOLLOW_SEC
+	local yaw = Def.conversationYaw(self:_facingOf(talking.entityId), talking.yaw)
+	if math.abs(angleDelta(talking.yaw, yaw)) < math.rad(Def.FOLLOW_DEGREES) then
+		return
+	end
+	talking.yaw = yaw
+	local conversation = self._config.conversation or Def.DEFAULTS.conversation
+	local view =
+		Def.conversationView(talking.position, yaw, conversation, self._bounds, self._config.overview.boundsMargin)
+	self:_glideTo(view, conversation.durationSec)
 end
 
 -- Back to the view saved by the first focusOn(position, opts). False when there is nothing to restore.
 function Controller:restore(opts: { duration: number? }?): boolean
 	local saved = self._saved
 	self._saved = nil
+	self._talking = nil
 	if saved == nil or saved.focus == nil then
 		return false
 	end
@@ -468,8 +525,11 @@ function Controller:_listenConversations()
 		return ok
 	end
 	local opened = conversations
-		and listen(conversations.opened, function(_entityId, position)
-			self:focusOn(position, {})
+		and listen(conversations.opened, function(entityId, position)
+			if self:focusOn(position, { facing = self:_facingOf(entityId) }) then
+				self._talking =
+					{ entityId = entityId, position = position, yaw = self._target.yaw, wait = Def.FOLLOW_SEC }
+			end
 		end)
 	local closed = conversations and listen(conversations.closed, function()
 		self:restore()
@@ -521,6 +581,7 @@ function Controller:panBy(studs: Vector2)
 end
 
 function Controller:rotateBy(degrees: number)
+	self._talking = nil -- the player turns the view: stop following the citizen
 	self._target.yaw += math.rad(degrees)
 end
 
@@ -602,6 +663,7 @@ function Controller:_stepOverview(dt: number, camera: any)
 	if target.focus == nil then
 		return
 	end
+	self:_followTalker(dt)
 	-- keys and stick: a screen direction, scaled with the zoom
 	local direction = Vector2.zero
 	for _, vector in self._held do
