@@ -18,6 +18,7 @@
 		host.preferredKingdom: ((player) -> KingdomId?)?   -- consulted when a player arrives (KingdomService:
 		                                                     party grouping); nil = balanced
 		host:kingdomOf(player): KingdomId?
+		host:buildingModel(buildingId): Model?              -- the Kit model drawing it (worldView), else nil
 		host:kingdomView(kingdomId): Kingdom?               -- CONTRACTS G2 Kingdom (a fresh copy)
 		host:kingdomsState(player?): { kingdoms: { Kingdom }, mine: KingdomId? }   -- Kingdom.State payload
 		host:assignTeam(player)                             -- Player.Team = the player's kingdom team (or none)
@@ -175,6 +176,11 @@ function MatchHost:kingdomOf(player: any): string?
 	return self.match:kingdomOf(player.UserId)
 end
 
+-- The model drawing a building (WorldView; rebuilt when its level or stage changes), else nil.
+function MatchHost:buildingModel(buildingId: number): any?
+	return if self._view then self._view:find("building", buildingId) else nil
+end
+
 function MatchHost:_onPlayerAdded(player: any)
 	local preferred = nil
 	if self.preferredKingdom then
@@ -238,6 +244,12 @@ end
 
 -- What clients can see of the views; Crown Points count in whole points so hold income does not
 -- resend the state every tick.
+local function whole(x: number?): number
+	return math.floor((x or 0) + 0.5)
+end
+
+-- What makes Kingdom.State worth sending again. The conditions drift every second, so they count when a
+-- whole point changes (#68 L4), not on every fraction.
 function MatchHost:_stateSignature(): string
 	local parts = {}
 	for _, view in self:kingdomsState().kingdoms do
@@ -246,7 +258,7 @@ function MatchHost:_stateSignature(): string
 			`{view.id}:{table.concat(view.rulers, ",")}:{math.floor(view.crownPoints)}:{view.alive}:{view.keepBuildingId}:{table.concat(
 				view.regions,
 				","
-			)}`
+			)}:{whole(view.happiness)}:{whole(view.stability)}:{whole(view.morale)}`
 		)
 	end
 	return table.concat(parts, "|")

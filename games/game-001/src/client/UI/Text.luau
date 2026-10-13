@@ -19,24 +19,36 @@ local Resources = require("@game/ReplicatedStorage/Forge/Config/Resources")
 
 local Text = {}
 
+-- Every refusal code FORGE-01's server returns (FL-0105; handoff
+-- 2026-10-13-forge-01-to-forge-03-refusal-codes.md and the Reasons line of Build/Remotes.luau), and
+-- nothing else: a code the server never sends is not vocabulary. Army.Recruit's are UI/ArmyText's,
+-- Kingdom.Choose's UI/CitizenText's.
 local REASONS: { [string]: string } = {
-	territory = "Outside your territory",
-	zone = "Not on open building ground",
-	overlap = "Too close to another building",
+	-- Build.CanPlace / Build.Place
 	-- the server keeps a building's largest-level footprint plus Buildings.placementGap free
 	-- (Sim/Footprint, #62): the ghost's outer outline shows that room (FORGE-05 M-2 on #62)
-	blocked = "Leave room for upgrades",
-	cost = "Not enough resources",
-	insufficient = "Not enough resources",
-	phase = "You can't build right now",
-	no_kingdom = "You don't rule a kingdom yet",
-	not_owner = "That building isn't yours",
+	-- one code for both the slab on something and the upgrade room touching it (FORGE-05 L8 on #86)
+	blocked = "Not enough room here",
+	out_of_territory = "Build inside your kingdom",
+	out_of_bounds = "That's off the edge of the map",
+	cannot_afford = "Not enough resources",
+	not_placeable = "That building can't be placed by hand",
+	requires_keep_level = "Upgrade your keep first",
+	limit_reached = "You have the most of these already",
+	unknown_building = "That building can't be built",
+	-- Build.Upgrade
 	not_found = "That building no longer exists",
-	max_level = "Already at the highest level",
+	not_owner = "That building isn't yours",
 	busy = "Finish building it first",
-	unknown_type = "That building can't be built",
-	rate = "Slow down a moment, then try again",
-	-- Kingdom.SetJobQuota and other sim commands (FORGE-01 Sim/Commands error codes)
+	max_level = "Already at the highest level",
+	-- Kingdom.Gather
+	no_character = "Your ruler isn't in the world yet",
+	too_far = "Walk closer first",
+	cooldown = "Not yet. Try again in a moment",
+	depleted = "Nothing left to gather there",
+	unknown_node = "There's nothing to gather there",
+	-- Kingdom.SetJobQuota and every sim command
+	invalid_args = "That request wasn't valid",
 	unknown_job = "That job can't be changed",
 	match_not_active = "The match isn't running",
 	not_in_match = "The match isn't running",
@@ -44,12 +56,16 @@ local REASONS: { [string]: string } = {
 	kingdom_eliminated = "Your kingdom has fallen",
 }
 
--- Build.PlaceSlot names the same codes after the plot (plots-ui handoff: `territory` not your plot,
--- `overlap` already built on, `zone` does not fit).
+-- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of
+-- Build/Remotes.luau) in the plot's words. Its other refusals come from the simulation's placement and
+-- read as in REASONS, except `blocked`: on a plot that means something stands in the footprint.
 local SLOT_REASONS: { [string]: string } = {
-	territory = "This plot isn't yours",
-	overlap = "This plot is already built on",
-	zone = "That doesn't fit this plot",
+	unknown_slot = "This plot isn't yours",
+	slot_occupied = "This plot is already built on",
+	does_not_fit = "That doesn't fit this plot",
+	-- walls and gates are line structures (CONTRACTS G13.5 v0.4-g9a; FORGE-01 adds it to the server)
+	not_on_plot = "Walls and gates go on your borders, not on a plot",
+	blocked = "Something is in the way on this plot",
 }
 
 function Text.reason(reason: any, context: string?): string

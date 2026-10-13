@@ -23,6 +23,8 @@
 		{ sound: string?, vfx: string?, toast: { kind, title, body? }?, cooldownSec: number? }
 	where title and body may contain {field} placeholders filled from the payload's string and number
 	fields (any other value leaves the placeholder empty; a payload that is not a table counts as none).
+	payload.position (Vector3) places the effect (else over the ruler), and payload.tint (Color3) colours
+	presets that allow it (VfxPresets tint = true), e.g. a kingdom's banner colour.
 	Sounds play through AudioController and effects through VFXController (both found with
 	registry:find, so either may be absent). Within cooldownSec (default 1 s) of a kind's fanfare:
 	the same moment again (same toast text) is dropped, so two systems reporting one moment never give
@@ -326,7 +328,8 @@ function NotificationController:_fanfare(spec: any, data: any)
 	end
 	local vfx = self._registry:find("VFXController")
 	if vfx and spec.vfx then
-		vfx:play(spec.vfx, { position = position or self:_rulerPosition() })
+		local tint = if data and typeof(data.tint) == "Color3" then data.tint else nil
+		vfx:play(spec.vfx, { position = position or self:_rulerPosition(), tint = tint })
 	end
 end
 

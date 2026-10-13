@@ -30,6 +30,7 @@ local CONTRACT_EVENTS = {
 	"ObjectiveCaptured",
 	"KingdomEliminated",
 	"MatchEnded",
+	"CitizenAnswered",
 }
 
 describe("Contracts/GameEvents", function()

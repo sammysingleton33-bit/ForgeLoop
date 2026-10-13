@@ -78,13 +78,6 @@ local function clamp100(x: number): number
 	return math.clamp(x, Reputation.MIN, Reputation.MAX)
 end
 
-local function scaleGain(delta: number, multiplier: number): number
-	if delta > 0 then
-		return delta * multiplier
-	end
-	return delta
-end
-
 local function setOf(list: { string }?): { [string]: boolean }
 	local set = {}
 	for _, item in list or {} do
@@ -177,12 +170,12 @@ local function eventNameOf(event: string): string
 	return (string.match(event, "^([^:]+)") or event) :: string
 end
 
-local function guardedRep(action: Action, multiplier: number, rules: any): (RepVector, RepVector, { string })
+local function guardedRep(action: Action, rules: any): (RepVector, { string })
 	local name = eventNameOf(action.event)
 	local isFight = table.find(rules.fightEvents or {}, name) ~= nil
 	local isPeace = table.find(rules.peaceEvents or {}, name) ~= nil
 	local noLoss = setOf(rules.fightNoLoss)
-	local rep: RepVector, raw: RepVector, blocked: { string } = {}, {}, {}
+	local rep: RepVector, blocked: { string } = {}, {}
 	local keys: { string } = {}
 	for category in action.rep do
 		table.insert(keys, category)
@@ -196,23 +189,21 @@ local function guardedRep(action: Action, multiplier: number, rules: any): (RepV
 	end)
 	for _, category in keys do
 		local d = action.rep[category]
-		raw[category] = d
 		if (isFight and noLoss[category] and d < 0) or (isPeace and d > 0) then
 			rep[category] = 0
 			table.insert(blocked, category)
 		else
-			rep[category] = scaleGain(d, multiplier)
+			rep[category] = d -- already decayed by ContentQuery (one anti-farming point, #67)
 		end
 	end
-	return rep, raw, blocked
+	return rep, blocked
 end
 
 -- The user rules (see Rules) on one event's reputation vector, already decayed. Returns the guarded
 -- vector and the categories a rule zeroed.
 function Reputation.guardRules(event: string, rep: RepVector, config: any?): (RepVector, { string })
 	local rules = (config or SocietyConfig).rules
-	local guarded, _, blocked = guardedRep({ event = event, rep = rep } :: any, 1, rules)
-	return guarded, blocked
+	return guardedRep({ event = event, rep = rep } :: any, rules)
 end
 
 function Reputation.newConditions(config: any?): Conditions

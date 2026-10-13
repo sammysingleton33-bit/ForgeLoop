@@ -10,6 +10,9 @@
 		RemoteLink.on(env, "Area.Action", fn) -> Link   -- connects in its own thread; a missing remote
 		                                                 -- logs one info line and stays inert
 		RemoteLink.send(env, "Area.Action", ...) -> boolean  -- fires in its own thread; true = queued
+		RemoteLink.request(env, "Area.Action", onResult, ...) -- invokes a function in its own thread and
+		                                                 -- calls onResult(...results) on success; a missing
+		                                                 -- remote or a server error logs one info line
 		link:disconnect()
 	One RemoteClient per env (RemoteClient.new(env)), shared by every Experience controller.
 ]]
@@ -68,6 +71,22 @@ function RemoteLink.send(env: any, name: string, ...): boolean
 		end
 	end)
 	return true
+end
+
+function RemoteLink.request(env: any, name: string, onResult: (...any) -> (), ...)
+	local args = table.pack(...)
+	env.spawn(function()
+		local results = table.pack(pcall(function()
+			return clientFor(env):invoke(name, table.unpack(args, 1, args.n))
+		end))
+		if not results[1] then
+			env.log("info", `RemoteLink: {name} not answered; feature waits for its events`, {
+				error = tostring(results[2]),
+			})
+			return
+		end
+		onResult(table.unpack(results, 2, results.n))
+	end)
 end
 
 return table.freeze(RemoteLink)

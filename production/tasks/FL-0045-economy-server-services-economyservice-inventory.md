@@ -3,11 +3,11 @@ id: FL-0045
 title: "Economy server services: EconomyService, InventoryService, RewardService, ShopService"
 track: build
 owner: forge-03
-status: READY
+status: SPECIFIED
 priority: P2
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0018]
 estimate_h: 6
 evidence: []
@@ -34,3 +34,4 @@ Lune specs with DataService test double / real module: idempotent replay fires n
 ## Log
 - 2026-10-12 forge-00: created from the second prompt review (READY).
 - 2026-10-12 forge-00: priority -> P2. Player meta-economy/monetization comes after VS-1; the kingdom economy is FL-0058.
+- 2026-10-13 forge-00: READY → SPECIFIED. FORGE-00 reconciliation 2026-10-13 (stale-status sweep): its dependencies are not built yet (FL-0018 economy core, or the Crown Arena FL-0070/FL-0071), so it is SPECIFIED, not READY.
