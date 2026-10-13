@@ -1,9 +1,14 @@
 --[[
-	Kingdom/Layout generated resource nodes on the world layout (FORGE-05 finding M1): for seeds 1..20 no
-	node stands within a starting building's clearance (its placement rectangle or its footprint circle
-	plus placementGap and the node's radius), none reaches into a build slot (so every type that fits a
-	slot can still be built on it), every kingdom keeps its wood, stone and gold, and the same seed gives
-	the same nodes. The square layout (`spacing`) is unchanged.
+	Kingdom/Layout resource nodes on the world layout.
+	World nodes (FL-0051 ruler gathering): every world Layout resource node (the models WorldService tags
+	`ResourceNode`) is a simulation node at its world id, kind and position, marked fromWorld, and the
+	generated nodes keep clear of them.
+	Generated nodes (FORGE-05 finding M1): for seeds 1..20 no node stands within a starting building's
+	clearance (its placement rectangle or its footprint circle plus placementGap and the node's radius),
+	no generated node reaches into a build slot's margin and no node at all blocks a type that fits a slot
+	(so every such type can still be built on it), every kingdom keeps its wood, stone and gold, the plots
+	get the same resources at the same distances (#62 M-1), and the same seed gives the same nodes. The
+	square layout (`spacing`) is unchanged and has no world nodes.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -43,6 +48,92 @@ local function slotsOf(plot)
 	end
 	return out
 end
+
+-- world Layout resource nodes by id
+local function worldNodes(): { [string]: any }
+	local out = {}
+	for _, node in Layout.WORLD.resourceNodes do
+		out[node.id] = node
+	end
+	return out
+end
+
+describe("Kingdom/Layout: the world's resource nodes are simulation nodes (FL-0051 ruler gathering)", function()
+	it("adds every world resource node at its world id, kind and position, marked fromWorld", function()
+		local sim = generate(1)
+		local world = worldNodes()
+		local perPlot = {}
+		for id, w in world do
+			local n = sim.nodes[id]
+			if n == nil then
+				error(`world node {id} is not a simulation node`)
+			end
+			expect(n.kind).toBe(Layout.NODE_KIND[w.resource])
+			expect(n.resource).toBe(w.resource)
+			expect(n.x).toBeNear(w.cframe.Position.X, 1e-9)
+			expect(n.z).toBeNear(w.cframe.Position.Z, 1e-9)
+			expect(n.fromWorld).toBe(true)
+			expect(n.amount > 0).toBe(true)
+			local plot = string.match(id, "^(%a+)_")
+			perPlot[plot] = (perPlot[plot] or 0) + 1
+		end
+		-- every plot's 4 wood, 2 stone, 1 gold and 2 food, plus the heart's
+		for _, identity in Layout.KINGDOMS do
+			expect(perPlot[identity.id]).toBe(9)
+		end
+		expect(perPlot.heart).toBe(2)
+		-- and nothing else is marked fromWorld
+		for _, nid in sim.nodeOrder do
+			if sim.nodes[nid].fromWorld then
+				expect(world[nid]).toBeTruthy()
+			end
+		end
+	end)
+
+	it("adds them for every plot even with fewer kingdoms, and each kingdom's citizens see its own", function()
+		local sim = Simulation.new({ random = Random.new(2), bounds = Layout.bounds() })
+		Layout.generate(sim, { kingdoms = 2 })
+		for id in worldNodes() do
+			expect(sim.nodes[id]).toBeTruthy()
+		end
+		for _, kid in sim.kingdomOrder do
+			local near = {}
+			for _, nid in sim.kingdoms[kid].nearNodes do
+				near[nid] = true
+			end
+			for _, node in Layout.WORLD.resourceNodes do
+				if string.sub(node.id, 1, #kid + 1) == kid .. "_" then
+					expect(near[node.id]).toBe(true)
+				end
+			end
+		end
+	end)
+
+	it("keeps every generated node off the world nodes, seeds 1..20", function()
+		for seed = 1, SEEDS do
+			local sim = generate(seed)
+			local worldIds = {}
+			for _, nid in sim.nodeOrder do
+				if sim.nodes[nid].fromWorld then
+					table.insert(worldIds, nid)
+				end
+			end
+			expect(#worldIds).toBe(#Layout.WORLD.resourceNodes)
+			for _, nid in sim.nodeOrder do
+				local n = sim.nodes[nid]
+				if not n.fromWorld then
+					for _, wid in worldIds do
+						local w = sim.nodes[wid]
+						local d = math.sqrt((n.x - w.x) ^ 2 + (n.z - w.z) ^ 2)
+						if d < n.footprint + w.footprint then
+							error(`seed {seed}: {n.kind} {n.id} overlaps {w.id} ({string.format("%.1f", d)} studs)`)
+						end
+					end
+				end
+			end
+		end
+	end)
+end)
 
 describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 	it("keeps every node clear of the keeps and starting buildings, seeds 1..20", function()
@@ -84,9 +175,10 @@ describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 						if math.abs(l.X) < size.X / 2 + margin and math.abs(l.Z) < size.Y / 2 + margin then
 							error(`seed {seed}: {n.kind} {n.id} inside {slot.id}`)
 						end
-						-- the node's circle stays placementGap + SLOT_MARGIN from the slot's edge
+						-- a generated node's circle stays placementGap + SLOT_MARGIN from the slot's edge (the
+						-- generator's rule; world nodes stand where FORGE-02 put them and only must not block)
 						local ox, oz = math.max(math.abs(l.X) - size.X / 2, 0), math.max(math.abs(l.Z) - size.Y / 2, 0)
-						if math.sqrt(ox * ox + oz * oz) < n.footprint + gap + margin then
+						if not n.fromWorld and math.sqrt(ox * ox + oz * oz) < n.footprint + gap + margin then
 							error(`seed {seed}: {n.kind} {n.id} reaches into {slot.id}`)
 						end
 						for _, kind in Fit.typesFor(slot.size) do
@@ -105,10 +197,11 @@ describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 	it("leaves every kingdom its wood, stone and gold", function()
 		for seed = 1, SEEDS do
 			local sim = generate(seed)
+			-- generated nodes only: the generator leaves none out next to the world nodes
 			local count = {}
 			for _, nid in sim.nodeOrder do
 				local n = sim.nodes[nid]
-				if string.sub(n.id, 1, 6) ~= "heart_" then
+				if not n.fromWorld then
 					local owner = ownerOf(sim, n)
 					count[owner] = count[owner] or { tree = 0, rock = 0, goldvein = 0 }
 					count[owner][n.kind] += 1
@@ -131,10 +224,11 @@ describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 	end)
 
 	it("is fair: every kingdom gets the same resources at the same distances in its own plot (#62 M-1)", function()
-		local DROP = { tree = "wood", rock = "stone", goldvein = "gold" }
+		local DROP = { tree = "wood", rock = "stone", goldvein = "gold", berries = "food" }
 		for seed = 1, SEEDS do
 			local sim = generate(seed)
 			-- per kingdom and kind: node counts, and the sorted distances from each node to the nearest drop-off
+			-- (generated and world plot nodes; the contested heart_* nodes belong to nobody)
 			local profile = {}
 			for _, nid in sim.nodeOrder do
 				local n = sim.nodes[nid]
@@ -142,7 +236,7 @@ describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 					local owner = ownerOf(sim, n)
 					local k = sim.kingdoms[owner]
 					local drop = assert(sim:nearestDropoff(k, n.x, n.z, DROP[n.kind]))
-					profile[owner] = profile[owner] or { tree = {}, rock = {}, goldvein = {} }
+					profile[owner] = profile[owner] or { tree = {}, rock = {}, goldvein = {}, berries = {} }
 					table.insert(profile[owner][n.kind], math.sqrt((n.x - drop.x) ^ 2 + (n.z - drop.z) ^ 2))
 				end
 			end
@@ -183,10 +277,14 @@ describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 		end
 	end)
 
-	it("leaves the square layout as it was: no node moved or left out", function()
+	it("leaves the square layout as it was: no node moved or left out, no world nodes", function()
 		local sim = generate(3, 260)
 		local perKingdom = KingdomsConfig.trees + 3 + 1
 		expect(#sim.nodeOrder).toBe(4 * perKingdom + 5)
+		for _, nid in sim.nodeOrder do
+			expect(sim.nodes[nid].fromWorld).toBe(false)
+			expect(string.match(nid, "^n%d+$")).toBeTruthy()
+		end
 		for index, kid in sim.kingdomOrder do
 			local k = sim.kingdoms[kid]
 			local away = math.atan2(k.z, k.x)

@@ -24,6 +24,8 @@
 		                                       -- optional; gives citizens names, traits and families
 		                                          (Sim/People, G13.2) right after they spawn
 		sim:addNode(kind, x, z, id?): Node                             -- tree / rock / goldvein / berries
+		                                       Node.fromWorld: false here; Kingdom/Layout sets it on the
+		                                       world Layout's nodes (WorldService draws those, WorldView not)
 		sim:nodeClear(kind, x, z): boolean     -- a `kind` node there keeps placementGap to every standing
 		                                       building's placement shape and footprint circle (Layout)
 	Time
@@ -358,6 +360,7 @@ function Simulation:addNode(kind: string, x: number, z: number, id: string?)
 		capacity = def.amount,
 		regrow = def.regrow,
 		depletedAt = nil :: number?,
+		fromWorld = false, -- Kingdom/Layout: a world Layout resource node (WorldService draws it)
 	}
 	self.nodes[node.id] = node
 	table.insert(self.nodeOrder, node.id)

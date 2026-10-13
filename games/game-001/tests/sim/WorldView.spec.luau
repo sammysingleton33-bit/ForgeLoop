@@ -2,6 +2,8 @@
 	Sim/WorldView in the game's Kit mode (G6/G10, FL-0051 visuals): every building is FORGE-02's
 	Kit.build model at the building's position and facing, replaced whole as its stage advances; the
 	starting buildings stand at the world Layout's plot anchors; footprints come from Kit.footprint.
+	Resource nodes: only generated nodes get a part; the world Layout's nodes (fromWorld) are drawn by
+	WorldService, so WorldView never draws them a second time.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -118,5 +120,37 @@ describe("Sim/WorldView Kit buildings", function()
 			expect(models[i - 1].Parent).toBeNil()
 		end
 		expect(view:find("building", house.id):GetAttribute("Level")).toBe(1)
+	end)
+
+	it("draws no part for the world's resource nodes (WorldService does), one for each generated node", function()
+		local env, match, view = world()
+		local sim = match.sim
+		local drawn, skipped = 0, 0
+		for _, nid in sim.nodeOrder do
+			local node = sim.nodes[nid]
+			local part = view:find("node", nid)
+			if node.fromWorld then
+				expect(part).toBeNil()
+				skipped += 1
+			else
+				expect(part).toBeTruthy()
+				expect(part:GetAttribute("Kind")).toBe(node.kind)
+				expect(part:GetAttribute("Resource")).toBe(node.resource)
+				drawn += 1
+			end
+		end
+		expect(skipped).toBe(#Layout.WORLD.resourceNodes)
+		expect(drawn > 0).toBe(true)
+		local nodes = env.Workspace.ForgeKingdoms.Nodes
+		expect(#nodes:GetChildren()).toBe(drawn)
+		expect(nodes:FindFirstChild("node:crimson_wood1")).toBeNil()
+		expect(nodes:FindFirstChild("node:heart_gold1")).toBeNil()
+		-- a depleted world node still gets none; a depleted generated node is a stump
+		sim.nodes.crimson_wood1.amount = 0
+		sim.nodes.n1.amount = 0
+		view:sync(sim)
+		expect(view:find("node", "crimson_wood1")).toBeNil()
+		expect(view:find("node", "n1").Size.Y).toBe(1.5)
+		expect(#nodes:GetChildren()).toBe(drawn)
 	end)
 end)
