@@ -18,8 +18,8 @@
         "validation": "exports/farm_windmill_01.validation.json"
       },
       "generator": "farm_windmill",
-      "generator_version": 1,
-      "geometry_hash": "1369b113684c5497",
+      "generator_version": 2,
+      "geometry_hash": "6ecea280c4d5bc20",
       "id": "farm_windmill_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -34,7 +34,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Passes: four distinct mill types (tower, smock, gallery tower, post mill), and the kingdom-coloured sails read clearly at 67 studs on neutral walls, within 3.9k-5.6k tris. Minor: the windmill_02 oak leaf is an indistinct cream blob, the windmill_04 sun has a purple disc that reads as an eye, the windmill_03 blue leans cobalt rather than slate, and 01-03 repeat the same door/millstone/sack layout.",
+        "review_file": "reviews/farm_windmill.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7600,
       "sockets": {
@@ -52,8 +66,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 4842,
-        "lod1": 1694
+        "lod0": 5006,
+        "lod1": 1752
       },
       "validation_pass": true
     },
@@ -67,7 +81,7 @@
       "dimensions_studs": {
         "x": 24.013,
         "y": 36.767,
-        "z": 21.759
+        "z": 21.796
       },
       "double_sided": false,
       "files": {
@@ -75,22 +89,24 @@
         "validation": "exports/farm_windmill_02.validation.json"
       },
       "generator": "farm_windmill",
-      "generator_version": 1,
-      "geometry_hash": "75ac299eb2f0b2e2",
+      "generator_version": 2,
+      "geometry_hash": "75c939539865d331",
       "id": "farm_windmill_02",
-      "kingdom": null,
+      "kingdom": "green",
       "material": "M_forge_palette",
       "params": {
         "angle": 40,
         "cap": "thatch",
         "gallery": false,
-        "kingdom": null,
-        "sails": "slats",
+        "kingdom": "green",
+        "sails": "mixed",
         "tower": "smock"
       },
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/farm_windmill.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7601,
@@ -98,19 +114,19 @@
         "deposit": [
           -5.0,
           0.049,
-          -10.756
+          -10.738
         ],
         "door": [
           -0.0,
           0.049,
-          -9.756
+          -9.738
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 4720,
-        "lod1": 1652
+        "lod0": 4828,
+        "lod1": 1688
       },
       "validation_pass": true
     },
@@ -132,8 +148,8 @@
         "validation": "exports/farm_windmill_03.validation.json"
       },
       "generator": "farm_windmill",
-      "generator_version": 1,
-      "geometry_hash": "9b721bd27232cfdc",
+      "generator_version": 2,
+      "geometry_hash": "9f68cd1650c248c9",
       "id": "farm_windmill_03",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -148,7 +164,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "verdict": "UNREVIEWED"
+        "notes": "Passes: four distinct mill types (tower, smock, gallery tower, post mill), and the kingdom-coloured sails read clearly at 67 studs on neutral walls, within 3.9k-5.6k tris. Minor: the windmill_02 oak leaf is an indistinct cream blob, the windmill_04 sun has a purple disc that reads as an eye, the windmill_03 blue leans cobalt rather than slate, and 01-03 repeat the same door/millstone/sack layout.",
+        "review_file": "reviews/farm_windmill.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7602,
       "sockets": {
@@ -166,8 +196,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 5422,
-        "lod1": 1896
+        "lod0": 5594,
+        "lod1": 1956
       },
       "validation_pass": true
     },
@@ -179,9 +209,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 26.528,
-        "y": 36.557,
-        "z": 21.892
+        "x": 24.055,
+        "y": 30.208,
+        "z": 23.349
       },
       "double_sided": false,
       "files": {
@@ -189,42 +219,44 @@
         "validation": "exports/farm_windmill_04.validation.json"
       },
       "generator": "farm_windmill",
-      "generator_version": 1,
-      "geometry_hash": "62c5c98c7e85eb8a",
+      "generator_version": 2,
+      "geometry_hash": "12d3f94486bdc783",
       "id": "farm_windmill_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
       "params": {
         "angle": 28,
-        "cap": "dome",
-        "gallery": true,
+        "cap": "post",
+        "gallery": false,
         "kingdom": "yellow",
         "sails": "canvas",
-        "tower": "sand"
+        "tower": "post"
       },
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/farm_windmill.md",
         "verdict": "UNREVIEWED"
       },
       "seed": 7603,
       "sockets": {
         "deposit": [
-          -5.0,
-          0.06,
-          -10.742
+          -3.4,
+          0.079,
+          10.025
         ],
         "door": [
-          -0.0,
-          0.06,
-          -9.742
+          0.8,
+          0.079,
+          10.025
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 5430,
-        "lod1": 1900
+        "lod0": 3956,
+        "lod1": 1384
       },
       "validation_pass": true
     }
@@ -237,10 +269,10 @@
   "variation": {
     "closest_pair": [
       "farm_windmill_01",
-      "farm_windmill_04"
+      "farm_windmill_03"
     ],
-    "mean_pair_diff": 0.297,
-    "min_pair_diff": 0.2433,
+    "mean_pair_diff": 0.4367,
+    "min_pair_diff": 0.275,
     "pass": true,
     "threshold": 0.08
   }
