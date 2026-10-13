@@ -11,14 +11,24 @@ local describe, it, expect = T.describe, T.it, T.expect
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Buildings = require("@game/ReplicatedStorage/Game/Kit/Buildings")
 
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+
+-- canonical kingdom colours (config Kingdoms, D-033), keyed by KingdomId
+local CANON: { [string]: Color3 } = {}
+for _, identity in KingdomsConfig.identities do
+	local c = identity.color
+	CANON[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+end
 local COLORS = {
-	Color3.fromRGB(196, 40, 28), -- crimson
-	Color3.fromRGB(13, 105, 172), -- azure
-	Color3.fromRGB(40, 127, 71), -- emerald
-	Color3.fromRGB(245, 205, 48), -- gold
+	CANON.crimson,
+	CANON.azure,
+	CANON.emerald,
+	CANON.gold,
 	Kit.NEUTRAL_COLOR,
-	Color3.fromRGB(35, 128, 95), -- FORGE-01 emerald (G13)
-	Color3.fromRGB(235, 185, 16), -- FORGE-01 gold (G13)
+	-- off-palette tints of the emerald and gold hue styles (the pre-D-033 values): any kingdom colour,
+	-- not only the canonical four, must map to a tower style and stay inside the budgets
+	Color3.fromRGB(40, 127, 71),
+	Color3.fromRGB(245, 205, 48),
 }
 -- a second colour of the same hue style as each COLORS entry (same silhouette, different tint)
 local SAME_STYLE = {
