@@ -8,6 +8,8 @@
 	MOMENT[kind] = { kind (toast kind), title, body?, key? (coalescing), sound?, vfx?, celebrate? }
 	   A moment with its own sound gets a silent toast (AnnouncerController), so nothing plays twice.
 	   `celebrate` names a NotificationController celebration registered from CELEBRATIONS.
+	   draw / watched (matchEnded without a win or a loss) toast only on a client without the slice
+	   summary, which shows the result line itself (AnnouncerController.SUMMARY_OWNS).
 	PHASE[phase] = { kind, title, body?, sound? }   -- MatchPhaseChanged announcements
 	CELEBRATIONS[kind] = NotificationController:registerCelebration spec (FL-0027)
 	BUILDING[type] = display name (CONTRACTS G2 BuildingType)
