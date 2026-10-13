@@ -22,9 +22,10 @@
 
 	Send to capture: `Army.Command({}, "capture")` — no unit ids = all my idle soldiers, no target = the
 	server's choice (CONTRACTS "VS-1 command"; target picking is VS-2). Army.Command is an event (no
-	reply): local feedback only — a toast "Soldiers sent", the button reads "Sent" and ignores taps
-	for COOLDOWN_SEC. Disabled with a reason when the server says there are no soldiers, or when every
-	objective is already mine (ObjectivePanelController's list, optional).
+	reply): local feedback only — a toast "Orders sent" (ArmyText.SENT_TOAST: nothing claims an outcome
+	before the server acts), the button reads "Sent" and ignores taps for COOLDOWN_SEC. Disabled with
+	a reason when the server says there are no soldiers, or when every objective is already mine
+	(ObjectivePanelController's list, optional).
 
 	Offered only once the server serves the army (D-038 (2)): the rail button and the barracks tab
 	appear when `ReplicatedStorage.ForgeRemotes.Army.Recruit` exists (checked at start, then every
