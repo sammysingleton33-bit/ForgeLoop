@@ -351,6 +351,49 @@ describe("Kingdom emblems on every banner, flag, pennant and shield", function()
 		end
 		expect(fullSuns).toBe(2)
 	end)
+
+	it("draws the compact sun's 8 points: two equal squares at 45°, tips beyond the ring, disc inside it", function()
+		local m = Kit.prop(`prop_banner_{BANNER_ASSET.gold}_01`)
+		local checked = 0
+		for _, slot in slotsOf(m) do
+			local anchor = anchorOf(slot.field :: BasePart)
+			local rays, ring, disc = {}, nil, nil
+			for _, p in slot.marks do
+				if p.Name == "EmblemRay" then
+					table.insert(rays, p)
+				elseif p.Name == "EmblemRing" then
+					ring = p
+				elseif p.Name == "Emblem" then
+					disc = p
+				end
+			end
+			expect(#rays).toBe(2)
+			expect(ring).never.toBeNil()
+			expect(disc).never.toBeNil()
+			local r1, r2 = rays[1], rays[2]
+			for _, r in rays do
+				expect(r.ClassName).toBe("Part")
+				expect(math.abs(r.Size.X - r.Size.Y)).toBeLessThan(1e-3) -- square
+				-- lies flat on the field: its face normal is the anchor's normal
+				local n = anchor:VectorToObjectSpace(r.CFrame.LookVector)
+				expect(math.abs(math.abs(n.Z) - 1)).toBeLessThan(1e-3)
+			end
+			expect(math.abs(r1.Size.X - r2.Size.X)).toBeLessThan(1e-3)
+			-- 45° apart about the normal, so the 8 corners are evenly spaced
+			local u1 = anchor:VectorToObjectSpace(r1.CFrame.RightVector)
+			local u2 = anchor:VectorToObjectSpace(r2.CFrame.RightVector)
+			local ang = math.deg(math.acos(math.clamp(math.abs(u1.X * u2.X + u1.Y * u2.Y), 0, 1)))
+			expect(math.abs(ang - 45)).toBeLessThan(0.5)
+			-- the points (half-diagonals) stick out past the field-coloured ring, the disc sits inside it
+			local tip = r1.Size.X * math.sqrt(2) / 2
+			local ringR = math.max(ring.Size.Y, ring.Size.Z) / 2
+			local discR = math.max((disc :: BasePart).Size.Y, (disc :: BasePart).Size.Z) / 2
+			expect(tip > ringR * 1.1).toBe(true)
+			expect(discR < ringR).toBe(true)
+			checked += 1
+		end
+		expect(checked >= 1).toBe(true)
+	end)
 end)
 
 -- Overview camera (FORGE-04 RulerCameraController): pitch 50° at 120 studs, 57.5° at 170, 65° at 220.
@@ -474,7 +517,13 @@ describe("Keep aerial heraldry (overview camera, G13.6)", function()
 	-- turrets hide about a third of the roof plaque at 50° (≥ 84 % from 57.5°).
 	it("keeps each plaque's emblem in view of the overview camera at 120–220 studs (50–65° down)", function()
 		local report = {}
-		for _, run in { { 1, "emerald" }, { 2, "emerald" }, { 3, "emerald" }, { 1, "crimson" }, { 2, "crimson" } } do
+		local runs = {}
+		for _, id in { "crimson", "azure", "emerald", "gold" } do
+			for level = 1, 3 do
+				table.insert(runs, { level, id })
+			end
+		end
+		for _, run in runs do
 			local level = run[1]
 			local m = Buildings.build("keep", level, "complete", CANON[run[2]])
 			local plaques = {}
@@ -618,5 +667,20 @@ describe("Kit.setKingdomColor re-forms emblems", function()
 				expect((anchor:PointToObjectSpace(p.CFrame.Position)).Magnitude).toBeLessThan(5)
 			end
 		end
+	end)
+
+	it("re-forms every model's emblems when the recoloured container holds several Kit models", function()
+		-- slots are numbered per model, so two towers both have slot 1: pair by (model, slot)
+		local container = Instance.new("Model")
+		local a = Buildings.build("watchtower", 1, "complete", CANON.crimson)
+		local b = Buildings.build("watchtower", 1, "complete", CANON.crimson)
+		for _, p in parts(b) do
+			p.CFrame = CFrame.new(40, 0, 0) * p.CFrame
+		end
+		a.Parent = container
+		b.Parent = container
+		Kit.setKingdomColor(container, CANON.azure)
+		compare("container tower A", a, Buildings.build("watchtower", 1, "complete", CANON.azure), "star")
+		compare("container tower B", b, Buildings.build("watchtower", 1, "complete", CANON.azure), "star")
 	end)
 end)

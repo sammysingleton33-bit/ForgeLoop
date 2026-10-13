@@ -39,6 +39,10 @@
 		colour's kind (a neutral colour removes them; a kingdom colour adds them on a neutral model). It
 		never touches other part identities. Shape cues picked at build time — tower caps, stone and trim
 		metal — stay as built: to give a building another kingdom's silhouette, rebuild it with Kit.build.
+		Rebuild keeps (and any building) on a kingdom change rather than recolouring: emblems cost a different
+		number of parts per kingdom, so a recoloured model can exceed its part budget (an emerald keep L2
+		recoloured to gold has 262 parts against 260); Kit.build always fits.
+		setKingdomColor also works on a container holding several Kit models (slots pair per model).
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
 		Kit.BUILDING_TYPES, Kit.partCount(model).
 	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.LOOK_RANGES,
@@ -110,44 +114,51 @@ local shade = Parts.shade
 
 -- Re-forms every emblem slot whose kind differs from the new colour's: the old parts go, the new kind is
 -- built on the same anchor (the field part's KitEmblemCF, so it follows wherever the model was moved).
+-- Slots are numbered per Kit model, so fields and marks are paired by (owning Kit model, slot): a container
+-- holding several Kit models re-forms each one's emblems.
 local function reformEmblems(model: Model, color: Color3)
 	local kind = Parts.emblemKind(color)
-	local fields: { [number]: BasePart } = {}
-	local marks: { [number]: { BasePart } } = {}
+	local fields: { [Instance]: { [number]: BasePart } } = {}
+	local marks: { [Instance]: { [number]: { BasePart } } } = {}
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			local slot = d:GetAttribute("KitEmblemSlot")
 			if type(slot) == "number" then
+				local owner: Instance = d:FindFirstAncestorOfClass("Model") or model
 				if d:GetAttribute("KitEmblem") ~= nil then
-					marks[slot] = marks[slot] or {}
-					table.insert(marks[slot], d)
+					marks[owner] = marks[owner] or {}
+					marks[owner][slot] = marks[owner][slot] or {}
+					table.insert(marks[owner][slot], d)
 				elseif d:GetAttribute("KitEmblemCF") ~= nil then
-					fields[slot] = d
+					fields[owner] = fields[owner] or {}
+					fields[owner][slot] = d
 				end
 			end
 		end
 	end
-	for slot, field in fields do
-		local old = marks[slot]
-		if (if old then old[1]:GetAttribute("KitEmblem") else nil) ~= kind then
-			for _, p in old or {} do
-				p:Destroy()
-			end
-			local rel, size = field:GetAttribute("KitEmblemCF"), field:GetAttribute("KitEmblemSize")
-			if kind and typeof(rel) == "CFrame" and type(size) == "number" then
-				local tint = field:GetAttribute("KitTint")
-				local detail = field:GetAttribute("KitEmblemDetail")
-				local ctx = { model = field.Parent :: any, root = field, count = 0 }
-				Pieces.buildEmblem(
-					ctx,
-					field.CFrame * rel,
-					size,
-					kind,
-					color,
-					if type(tint) == "number" then tint else 1,
-					if type(detail) == "string" then detail else "compact",
-					slot
-				)
+	for owner, slots in fields do
+		for slot, field in slots do
+			local old = marks[owner] and marks[owner][slot]
+			if (if old then old[1]:GetAttribute("KitEmblem") else nil) ~= kind then
+				for _, p in old or {} do
+					p:Destroy()
+				end
+				local rel, size = field:GetAttribute("KitEmblemCF"), field:GetAttribute("KitEmblemSize")
+				if kind and typeof(rel) == "CFrame" and type(size) == "number" then
+					local tint = field:GetAttribute("KitTint")
+					local detail = field:GetAttribute("KitEmblemDetail")
+					local ctx = { model = field.Parent :: any, root = field, count = 0 }
+					Pieces.buildEmblem(
+						ctx,
+						field.CFrame * rel,
+						size,
+						kind,
+						color,
+						if type(tint) == "number" then tint else 1,
+						if type(detail) == "string" then detail else "compact",
+						slot
+					)
+				end
 			end
 		end
 	end

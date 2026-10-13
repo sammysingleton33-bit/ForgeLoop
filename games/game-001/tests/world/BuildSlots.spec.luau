@@ -294,8 +294,24 @@ describe("WorldService build slot markers (G13.5)", function()
 		svc:destroy()
 	end)
 
-	it("keeps a slot marker small (part budget)", function()
-		local model = Kit.slotMarker(Layout.slotSizes.L, Kit.NEUTRAL_COLOR)
-		expect(Kit.partCount(model) <= 20).toBe(true)
+	it("keeps every slot marker small (part budget ≤ 20), in every kingdom colour and size", function()
+		-- emblems make kingdom markers dearer than neutral ones (azure and emerald sit at 20): gate them all
+		local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+		local colors = { neutral = Kit.NEUTRAL_COLOR }
+		for _, identity in KingdomsConfig.identities do
+			local c = identity.color
+			colors[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+		end
+		local checked = 0
+		for name, color in colors do
+			for sizeName, size in Layout.slotSizes do
+				local n = Kit.partCount(Kit.slotMarker(size, color))
+				if n > 20 then
+					error(`slot marker {sizeName} {name}: {n} parts > 20`)
+				end
+				checked += 1
+			end
+		end
+		expect(checked).toBe(5 * 3)
 	end)
 end)
