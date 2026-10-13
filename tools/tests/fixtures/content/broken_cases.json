@@ -227,14 +227,14 @@
   ]
  },
  {
-  "name": "risk odds typed as a number",
+  "name": "risk notice repeats the chance",
   "file": "dialogue/consequences.csv",
   "row": 6,
   "column": "notice_text",
-  "value": "Some soldiers may desert (50% chance).",
+  "value": "Some soldiers may desert ({chance} chance).",
   "expect": [
    "dialogue/consequences.csv:6:10:",
-   "write {chance}"
+   "do not write {chance}: the conversation panel already shows a risk's chance next to its text"
   ]
  },
  {
@@ -245,7 +245,8 @@
   "value": "",
   "expect": [
    "dialogue/consequences.csv:6:10:",
-   "must see the risk"
+   "the player must see the risk before choosing",
+   "describes the outcome"
   ]
  },
  {
@@ -793,6 +794,144 @@
   "expect": [
    "dialogue/responses.csv:2:5:",
    "with the longest names filled in ({ruler} 20, {name} 16, {occupation} 24, {kingdom} 20 characters) this text can reach 126 characters, but the bubble shows 80 and cuts the rest: shorten it"
+  ]
+ },
+ {
+  "name": "chance placeholder in a certain consequence's notice",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "notice_text",
+  "value": "Farmers work slower ({chance}).",
+  "expect": [
+   "dialogue/consequences.csv:2:10:",
+   "do not write {chance}"
+  ]
+ },
+ {
+  "name": "braille blank inside a reaction",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless you\u2800, {ruler}!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "invisible character U+2800 (braille pattern blank) at position 10"
+  ]
+ },
+ {
+  "name": "combining grapheme joiner in a question",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "question_text",
+  "value": "Ruler\u034f, we starve.",
+  "expect": [
+   "dialogue/scenarios.csv:2:8:",
+   "invisible character U+034F (combining grapheme joiner) at position 6"
+  ]
+ },
+ {
+  "name": "musical null notehead in a name",
+  "file": "citizens/names.csv",
+  "row": 2,
+  "column": "name",
+  "value": "Ada\ud834\udd59",
+  "expect": [
+   "citizens/names.csv:2:2:",
+   "invisible character U+1D159 (musical symbol null notehead) at position 4"
+  ]
+ },
+ {
+  "name": "halfwidth hangul filler as a whole reaction",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "reaction_text",
+  "value": "\uffa0",
+  "expect": [
+   "dialogue/responses.csv:3:5:",
+   "invisible character U+FFA0 (halfwidth hangul filler) at position 1",
+   "text is blank"
+  ]
+ },
+ {
+  "name": "em space as a whole thought",
+  "file": "dialogue/scenarios.csv",
+  "row": 3,
+  "column": "thought_text",
+  "value": "\u2003",
+  "expect": [
+   "dialogue/scenarios.csv:3:7:",
+   "text is blank: it holds only spaces or invisible characters (U+2003 em space)"
+  ]
+ },
+ {
+  "name": "en quad to hair space as a whole optional notice",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "notice_text",
+  "value": "\u2000\u2001\u2002\u2004\u2005\u2006\u2007\u2008\u2009\u200a",
+  "expect": [
+   "dialogue/consequences.csv:2:10:",
+   "text is blank",
+   "(U+2000 en quad)",
+   "or leave the cell empty"
+  ]
+ },
+ {
+  "name": "ascii spaces as a whole required text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "response_text",
+  "value": "   ",
+  "expect": [
+   "dialogue/responses.csv:2:4:",
+   "text is blank: it holds only spaces or invisible characters (U+0020 space)"
+  ]
+ },
+ {
+  "name": "ideographic and no-break spaces as a whole occupation name",
+  "file": "citizens/occupations.csv",
+  "row": 2,
+  "column": "name_text",
+  "value": "\u3000\u00a0",
+  "expect": [
+   "citizens/occupations.csv:2:2:",
+   "text is blank",
+   "(U+3000 ideographic space)"
+  ]
+ },
+ {
+  "name": "braille blank as a whole action notice",
+  "file": "reputation/actions.csv",
+  "row": 2,
+  "column": "notice_text",
+  "value": "\u2800",
+  "expect": [
+   "reputation/actions.csv:2:20:",
+   "invisible character U+2800 (braille pattern blank) at position 1",
+   "text is blank"
+  ]
+ },
+ {
+  "name": "lone variation selector-16 as a whole reaction",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "\ufe0f",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "text is blank: it holds only spaces or invisible characters (U+FE0F variation selector-16)"
+  ]
+ },
+ {
+  "name": "variation selector-17 and khmer inherent vowel as a whole thought",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "thought_text",
+  "value": "\udb40\udd00\u17b4",
+  "expect": [
+   "dialogue/scenarios.csv:2:7:",
+   "text is blank",
+   "(U+E0100 variation selector-17)"
   ]
  }
 ]

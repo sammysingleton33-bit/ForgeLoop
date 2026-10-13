@@ -74,10 +74,10 @@ One file per feature (D-038 (7)), so PRs for different features never edit the s
 
 | File | Feature | Custom events | Funnels |
 |---|---|---|---|
-| `analytics/schemas/game-001/sessions.md` | sessions and return (FL-0023) | SessionStart, SessionEnd | Return |
-| `analytics/schemas/game-001/onboarding.md` | the tutorial (FL-0025, FL-0092) | OnboardingCompleted, OnboardingSkipped, OnboardingHintEscalated | Onboarding |
+| `analytics/schemas/game-001/sessions.md` | Sessions and return (FL-0023) | SessionStart, SessionEnd | Return |
+| `analytics/schemas/game-001/onboarding.md` | Onboarding (FL-0025, FL-0092) | OnboardingCompleted, OnboardingSkipped, OnboardingHintEscalated, OnboardingStepPassed | Onboarding |
 | `analytics/schemas/game-001/match.md` | VS-1 progress and matches (FL-0063) | MatchEnded, PhaseLeft | VS1 |
-| `analytics/schemas/game-001/feedback.md` | feedback, celebrations, settings (FL-0024, FL-0027, FL-0062) | IdleHintShown, CelebrationShown, SettingChanged | |
+| `analytics/schemas/game-001/feedback.md` | Feedback, celebrations and settings (FL-0024, FL-0027, FL-0062) | IdleHintShown, CelebrationShown, SettingChanged |  |
 
 A new feature adds its own file and one row here.
 
@@ -132,5 +132,5 @@ Same session events and onboarding events as above, plus `RoundFinished` (value 
 ## History
 Each feature file keeps its own history. Changes to the shared sections above (rules, budget, measurement plan, verification):
 - 2026-10-12 FORGE-04: first version (FL-0023).
-- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; budget recomputed.
+- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; game-001 VS-1 onboarding steps and the declared VS1 funnel (FL-0063); budget recomputed.
 - 2026-10-13 FORGE-04: §5 split into one file per feature under `analytics/schemas/game-001/` (D-038 (7)).
