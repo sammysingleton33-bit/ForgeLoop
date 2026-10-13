@@ -167,7 +167,6 @@ function ReputationPanelController:apply(payload: any, pushed: boolean?)
 	local signature = Signature.of(self.data)
 	if signature ~= self._dataSignature then
 		self._dataSignature = signature
-		self._version += 1
 		self.state.fresh = pushed == true and #self.data.history > 0
 	end
 	-- Layout reserves the strip's room only while it shows (no empty gap before FL-0080 lands).
@@ -274,7 +273,25 @@ function ReputationPanelController:render(metrics: any?)
 	local s = self.state
 	-- Rebuild only when something it shows changed: the HUD re-renders on every treasury or
 	-- construction push, and a rebuild would reset the player's scroll position.
-	local key = `{self._version}|{s.tab}|{s.selected}|{s.phoneView}|{m.breakpoint}|{m.width}x{m.height}`
+	-- Each tab keys on what it shows (FORGE-05, #58 review): a kingdom-condition push leaves the
+	-- History tab alone, a new history line leaves the Kingdom tab alone. `_version` moves with the
+	-- category text (setCategoryText).
+	local d = self.data
+	local shown = if s.tab == "history"
+		then d.history
+		elseif s.tab == "kingdom" then d.kingdom
+		else { values = d.values, history = d.history }
+	local key = Signature.of({
+		shown = shown,
+		known = d.known,
+		text = self._version,
+		tab = s.tab,
+		selected = s.selected,
+		pane = s.phoneView,
+		breakpoint = m.breakpoint,
+		width = m.width,
+		height = m.height,
+	})
 	if key == self._panelKey and self.panel and self.panel.panel then
 		return
 	end

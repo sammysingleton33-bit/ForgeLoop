@@ -285,7 +285,10 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 		expect(sentTo(p1)[2].byJob.soldier).toBe(1)
 		expect(#sentTo(p2)).toBe(1) -- azure did not change
 		-- quotas travel too (the job panel steps from them), as whole numbers
-		expect(sentTo(p1)[2].quotas).toEqual(sim.kingdoms.crimson.quotas)
+		local expected = table.clone(sim.kingdoms.crimson.quotas)
+		expect(expected.hauler).never.toBeNil() -- the sim keeps a start count for the pool ...
+		expected.hauler = nil -- ... but haulers have no quota to step
+		expect(sentTo(p1)[2].quotas).toEqual(expected)
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 5)).toBe(true)
 		env.mock:advance(1.5) -- the quota change (and citizens moving to meet it) is pushed
 		local latest = sentTo(p1)[#sentTo(p1)]

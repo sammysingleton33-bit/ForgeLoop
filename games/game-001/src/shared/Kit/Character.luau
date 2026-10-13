@@ -1,7 +1,32 @@
 --!strict
 --[[
-	Kit/Character — ≤ 8-part entity rigs (Motor6Ds named after the moving part, no Humanoid) and ruler
-	regalia (crown + cape accessories). CONTRACTS G4 rendering, D-026.
+	Kit/Character — Kit.character rigs with per-citizen looks (CONTRACTS G4 rendering, G10, G13.2; D-026, D-032),
+	the one-part far LOD stand-in, and ruler regalia (crown + cape accessories).
+
+	Rig: at most 9 BaseParts, no Humanoid/Animator, every part CanCollide/CanTouch/CanQuery false and Massless.
+	Motor6Ds are named after the moving part and match Sim/Pose.JOINTS:
+		Root   anchored, invisible, centre ROOT_HEIGHT (3.2) above the feet; PivotOffset puts the pivot at the feet
+		└ Torso      Motor6D "Torso" at the hips (2.2): walk bob, work lean, the death fall
+		  ├ Head     Motor6D at the neck
+		  │ └ Hair   welded headwear: a Weld from the Head, never a Motor6D, no pose work. Citizens: hair, beard,
+		  │          hood or hat (bald citizens have none); governors: the gold crown. Attribute KitHeadwear.
+		  ├ LeftArm / RightArm   Motor6Ds at the shoulders (arms hang splayed 7°)
+		  │            RightArm └ Tool   Motor6D inside the right fist (hoe, axe, pick, hammer, spear, staff)
+		  ├ LeftLeg / RightLeg   Motor6Ds at the hips
+		  └ Tool     the hauler's sack only: Motor6D "Tool" from the Torso at the right shoulder blade
+	Every joint frame is axis-aligned with the model (+X right, +Y up, -Z front), as Pose expects: Transform rotates
+	about it. Part counts: 7 (bald idle citizen) to 9 (headwear + tool); soldiers always 8 (the helm is their
+	Head); governors 9; Motor6Ds = parts − 1 − welded headwear.
+
+	Looks (G13.2): CitizenLook = { skin, hair, hairColor, outfit }, 1-based indices into LOOK_RANGES. Any value
+	is accepted: non-numbers, NaN and ±inf fall back to the default index; other numbers are floored and
+	wrapped into range, so the same look always builds the same model. The default look (nil) has short brown
+	hair. Soldiers wear a steel great helm as their Head and ignore the look; governors take only the skin tone
+	(crown, ermine and kingdom robe are fixed). The kingdom colour stays visible from above in every outfit: on
+	the torso, the sleeves, or the hood.
+	Kingdom-coloured parts are exactly shade(kingdomColor, KitTint), so Kit.setKingdomColor recolours a
+	pooled rig to the same look as a fresh build. Rigs with different looks differ in part shapes, so pool
+	them by Character.lookKey(look) as well (also stored as the model attribute KitLook).
 ]]
 
 local Parts = require("./Parts")
@@ -10,45 +35,354 @@ local shade = Parts.shade
 
 local Character = {}
 
--- ------------------------------------------------------------------ characters (≤ 8 parts)
+export type CitizenLook = { skin: number, hair: number, hairColor: number, outfit: number }
+type Paint = Color3 | number | string -- fixed colour | kingdom shade factor (KitTint) | "skin" | "hair"
 
-local JOB_LOOK: { [string]: { legs: Color3, tool: string } } = {
-	idle = { legs = Color3.fromRGB(110, 86, 60), tool = "none" },
-	farmer = { legs = Color3.fromRGB(94, 127, 58), tool = "hoe" },
-	woodcutter = { legs = Color3.fromRGB(122, 74, 42), tool = "axe" },
-	miner = { legs = Color3.fromRGB(95, 102, 111), tool = "pick" },
-	builder = { legs = Color3.fromRGB(139, 94, 60), tool = "hammer" },
-	hauler = { legs = Color3.fromRGB(150, 130, 100), tool = "sack" },
-	soldier = { legs = Color3.fromRGB(93, 102, 112), tool = "spear" },
+-- ------------------------------------------------------------------ proportions (feet at y = 0)
+
+local LEG = Vector3.new(0.95, 2.2, 1.0)
+local HIP_Y = LEG.Y -- 2.2: Pose's death fall drops the hips by 1.7 to lay the body on its back
+local TORSO_H, TORSO_D = 1.7, 1.15
+local NECK_Y = HIP_Y + TORSO_H -- 3.9
+local ARM = Vector3.new(0.78, 1.7, 0.82)
+local SHOULDER_Y = NECK_Y - 0.4
+local ARM_SPLAY = math.rad(7)
+local HAND_UP = 0.2 -- the hand joint sits inside the fist, this far above the arm's end
+local HEAD_D = 1.6
+local HEAD_Y = NECK_Y + HEAD_D / 2 - 0.06 -- head centre (4.64)
+
+Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
+Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT
+Character.HEIGHT = 5.5
+
+-- ------------------------------------------------------------------ colours
+
+local STEEL = Color3.fromRGB(176, 182, 192)
+local STEEL_DARK = Color3.fromRGB(84, 90, 100)
+local BLADE = Color3.fromRGB(138, 146, 158)
+local BURLAP = Color3.fromRGB(176, 138, 88)
+local LINEN = Color3.fromRGB(226, 214, 186)
+local LEATHER = Color3.fromRGB(120, 78, 46)
+local STRAW = Color3.fromRGB(222, 186, 98)
+local ERMINE = Color3.fromRGB(242, 238, 228)
+local FACE_TEXTURE = "rbxasset://textures/face.png" -- Roblox's built-in classic face (engine content, no upload)
+
+local SKIN: { Color3 } = { -- light to dark; 1 is the Kit default (the lightest but one)
+	C.skin, -- 1 (242, 201, 160)
+	Color3.fromRGB(255, 222, 196),
+	Color3.fromRGB(210, 156, 112),
+	Color3.fromRGB(162, 108, 70),
+	Color3.fromRGB(110, 70, 44),
+	Color3.fromRGB(78, 50, 34),
 }
+
+local HAIR_COLORS: { Color3 } = {
+	Color3.fromRGB(92, 58, 32), -- 1 brown (default)
+	Color3.fromRGB(36, 28, 24), -- black
+	Color3.fromRGB(150, 94, 48), -- chestnut
+	Color3.fromRGB(222, 178, 92), -- blond
+	Color3.fromRGB(178, 74, 34), -- ginger
+	Color3.fromRGB(206, 204, 198), -- grey
+	Color3.fromRGB(62, 42, 30), -- dark brown
+	Color3.fromRGB(242, 224, 166), -- flaxen
+}
+
+type PartSpec = {
+	name: string,
+	class: string, -- "Part" | "WedgePart" | "CornerWedgePart"
+	shape: Enum.PartType?,
+	size: Vector3,
+	color: Paint,
+	material: Enum.Material,
+	offset: CFrame, -- relative to the joint frame (head centre for headwear, hand for tools)
+	onBack: boolean?, -- tool jointed to the Root (sack) instead of the right hand
+}
+
+local UPRIGHT = CFrame.Angles(0, 0, math.rad(90)) -- cylinder axis (X) → +Y
+
+-- Headwear slot (welded to the Head). Sizes keep the face (front of the head below y ≈ +0.33) clear and the
+-- top ≤ 5.65 studs. Bald has no part.
+type HairStyle = { name: string, spec: PartSpec? }
+local HAIR_STYLES: { HairStyle } = {
+	{ -- 1 short bowl cut (default)
+		name = "short",
+		spec = {
+			name = "short",
+			class = "Part",
+			shape = Enum.PartType.Ball,
+			size = Vector3.new(1.66, 1.66, 1.66),
+			color = "hair",
+			material = Enum.Material.SmoothPlastic,
+			offset = CFrame.new(0, 0.13, 0.13),
+		},
+	},
+	{ name = "bald" }, -- 2 the classic bare head; the skin tone shows from above
+	{ -- 3 long hair: a bigger mass set low and back, over the ears and down to the shoulders
+		name = "long",
+		spec = {
+			name = "long",
+			class = "Part",
+			shape = Enum.PartType.Ball,
+			size = Vector3.new(1.87, 1.87, 1.87),
+			color = "hair",
+			material = Enum.Material.SmoothPlastic,
+			offset = CFrame.new(0, -0.05, 0.29),
+		},
+	},
+	{ -- 4 bald with a full beard
+		name = "beard",
+		spec = {
+			name = "beard",
+			class = "WedgePart",
+			size = Vector3.new(1.14, 0.76, 0.52),
+			color = "hair",
+			material = Enum.Material.SmoothPlastic,
+			offset = CFrame.new(0, -0.48, -0.5) * CFrame.Angles(0, math.pi, 0),
+		},
+	},
+	{ -- 5 hood in the kingdom colour
+		name = "hood",
+		spec = {
+			name = "hood",
+			class = "Part",
+			shape = Enum.PartType.Ball,
+			size = Vector3.new(1.83, 1.83, 1.83),
+			color = 0.72,
+			material = Enum.Material.Fabric,
+			offset = CFrame.new(0, 0.08, 0.3),
+		},
+	},
+	{ -- 6 wide straw hat
+		name = "strawhat",
+		spec = {
+			name = "strawhat",
+			class = "Part",
+			shape = Enum.PartType.Cylinder,
+			size = Vector3.new(0.4, 2.3, 2.3),
+			color = STRAW,
+			material = Enum.Material.Fabric,
+			offset = CFrame.new(0, 0.63, 0) * UPRIGHT,
+		},
+	},
+}
+
+local GOVERNOR_CROWN: PartSpec = { -- gold circlet low on the head: a gold ring from above
+	name = "crown",
+	class = "Part",
+	shape = Enum.PartType.Cylinder,
+	size = Vector3.new(0.38, 1.52, 1.52),
+	color = C.gold,
+	material = Enum.Material.Metal,
+	offset = CFrame.new(0, 0.57, 0) * UPRIGHT,
+}
+
+local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel square from above)
+	name = "greathelm",
+	class = "Part",
+	shape = Enum.PartType.Block,
+	size = Vector3.new(1.45, 1.6, 1.45),
+	color = STEEL,
+	material = Enum.Material.Metal,
+	offset = CFrame.new(0, 0.8, 0), -- from the neck
+}
+
+type Outfit = { name: string, torso: Paint, sleeves: Paint, legs: Paint, legMaterial: Enum.Material? }
+
+-- The kingdom colour (a number = KitTint) is on the torso, the sleeves or both, so it reads from above.
+local OUTFITS: { Outfit } = {
+	{ name = "tunic", torso = 0.8, sleeves = LINEN, legs = Color3.fromRGB(110, 86, 60) }, -- 1 default
+	{ name = "sleeveless", torso = 0.85, sleeves = "skin", legs = Color3.fromRGB(78, 58, 40) },
+	{ name = "vest", torso = LEATHER, sleeves = 0.8, legs = Color3.fromRGB(88, 90, 98) },
+	{ name = "apron", torso = C.canvas, sleeves = 0.72, legs = Color3.fromRGB(104, 70, 44) },
+	{ name = "robe", torso = 0.66, sleeves = 0.66, legs = 0.5 },
+	{ name = "jerkin", torso = 1, sleeves = Color3.fromRGB(72, 62, 54), legs = Color3.fromRGB(150, 128, 96) },
+}
+
+local SOLDIER_OUTFIT: Outfit =
+	{ name = "tabard", torso = 1, sleeves = 0.85, legs = STEEL_DARK, legMaterial = Enum.Material.Metal }
+local GOVERNOR_OUTFIT: Outfit = { name = "regal", torso = 1, sleeves = ERMINE, legs = 0.55 }
+
+Character.LOOK_RANGES = table.freeze({
+	skin = #SKIN,
+	hair = #HAIR_STYLES,
+	hairColor = #HAIR_COLORS,
+	outfit = #OUTFITS,
+})
+Character.LOOK_PALETTES = table.freeze({
+	skin = table.freeze(table.clone(SKIN)),
+	hairColor = table.freeze(table.clone(HAIR_COLORS)),
+	hair = table.freeze((function()
+		local names = {}
+		for i, h in HAIR_STYLES do
+			names[i] = h.name
+		end
+		return names
+	end)()),
+	outfit = table.freeze((function()
+		local names = {}
+		for i, o in OUTFITS do
+			names[i] = o.name
+		end
+		return names
+	end)()),
+})
+Character.DEFAULT_LOOK = table.freeze({ skin = 1, hair = 1, hairColor = 1, outfit = 1 })
+
+-- ------------------------------------------------------------------ jobs and tools
+
+local JOBS: { [string]: { tool: string?, width: number } } = {
+	idle = { width = 2.0 },
+	farmer = { tool = "hoe", width = 2.0 },
+	woodcutter = { tool = "axe", width = 2.2 }, -- stocky jobs read heavier in a crowd
+	miner = { tool = "pick", width = 2.1 },
+	builder = { tool = "hammer", width = 2.2 },
+	hauler = { tool = "sack", width = 2.15 },
+}
+
+local GRIP = CFrame.new(0, 0, -0.55) -- in front of the fist, so a held shaft clears the arm
+-- Swing tools (axe, pick, hammer) are oversized heads gripped at the fist: in a swing the arm reads as the
+-- handle. They are turned 40° outwards so the head shows from the front as well as from the side.
+local OUT = CFrame.Angles(0, math.rad(-40), 0)
+
+local TOOLS: { [string]: PartSpec } = {
+	hoe = {
+		name = "hoe",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(5.0, 0.34, 0.34),
+		color = C.woodLight,
+		material = Enum.Material.Wood,
+		offset = GRIP * CFrame.Angles(0, 0, math.rad(-10)) * CFrame.new(0, 0.55, 0) * UPRIGHT,
+	},
+	axe = { -- bearded axe blade: top edge level with the fist, cutting edge forward
+		name = "axe",
+		class = "WedgePart",
+		size = Vector3.new(0.42, 1.7, 1.7),
+		color = BLADE,
+		material = Enum.Material.Metal,
+		offset = OUT * CFrame.new(0, -0.7, -0.6) * CFrame.Angles(math.pi, 0, 0),
+	},
+	pick = { -- a tapering iron spike
+		name = "pick",
+		class = "WedgePart",
+		size = Vector3.new(0.48, 0.65, 3.0),
+		color = STEEL_DARK,
+		material = Enum.Material.Metal,
+		offset = OUT * CFrame.Angles(math.rad(-20), 0, 0) * CFrame.new(0, -0.3, -1.1),
+	},
+	hammer = { -- big wooden mallet head
+		name = "hammer",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(1.8, 1.15, 1.15),
+		color = C.wood,
+		material = Enum.Material.Wood,
+		offset = OUT * CFrame.new(0, -0.45, -0.3) * CFrame.Angles(0, math.rad(90), 0),
+	},
+	sack = { -- burlap sack slung on the back, over the right shoulder
+		name = "sack",
+		class = "Part",
+		shape = Enum.PartType.Ball,
+		size = Vector3.new(2.1, 2.1, 2.1),
+		color = BURLAP,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0.3, -0.15, 0.6),
+		onBack = true,
+	},
+	spear = {
+		name = "spear",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(8.0, 0.34, 0.34),
+		color = C.woodDark,
+		material = Enum.Material.Wood,
+		offset = GRIP * CFrame.new(0, 1.9, 0) * UPRIGHT,
+	},
+	staff = {
+		name = "staff",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(5.6, 0.34, 0.34),
+		color = C.gold,
+		material = Enum.Material.Metal,
+		offset = GRIP * CFrame.new(0, 0.7, 0) * UPRIGHT,
+	},
+}
+
+-- ------------------------------------------------------------------ looks
+
+local function index(v: any, n: number, default: number): number
+	if type(v) ~= "number" or v ~= v or v == math.huge or v == -math.huge then
+		return default
+	end
+	return (math.floor(v) - 1) % n + 1
+end
+
+-- Any input → a valid CitizenLook (never errors; deterministic).
+function Character.normalizeLook(look: any): CitizenLook
+	local d = Character.DEFAULT_LOOK
+	if type(look) ~= "table" then
+		return { skin = d.skin, hair = d.hair, hairColor = d.hairColor, outfit = d.outfit }
+	end
+	local r = Character.LOOK_RANGES
+	return {
+		skin = index(look.skin, r.skin, d.skin),
+		hair = index(look.hair, r.hair, d.hair),
+		hairColor = index(look.hairColor, r.hairColor, d.hairColor),
+		outfit = index(look.outfit, r.outfit, d.outfit),
+	}
+end
+
+-- Pool key: equal keys build identical rigs (for a given kind, job and kingdom colour).
+function Character.lookKey(look: any): string
+	local l = Character.normalizeLook(look)
+	return `{l.skin}.{l.hair}.{l.hairColor}.{l.outfit}`
+end
+
+-- ------------------------------------------------------------------ builders
 
 local function rigPart(
 	model: Model,
 	name: string,
+	class: string,
+	shape: Enum.PartType?,
 	size: Vector3,
 	cf: CFrame,
 	color: Color3,
-	material: Enum.Material?,
-	shape: Enum.PartType?
-)
-	local p = Instance.new("Part")
+	material: Enum.Material,
+	tint: number?
+): BasePart
+	local p: BasePart
+	if class == "Part" then
+		local part = Instance.new("Part")
+		part.Shape = shape or Enum.PartType.Block
+		p = part
+	elseif class == "WedgePart" then
+		p = Instance.new("WedgePart")
+	else
+		p = Instance.new("CornerWedgePart")
+	end
 	p.Name = name
-	p.Shape = shape or Enum.PartType.Block
 	p.Size = size
 	p.CFrame = cf
 	p.Color = color
-	p.Material = material or Enum.Material.SmoothPlastic
+	p.Material = material
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
 	p.Anchored = false
 	p.CanCollide = false
 	p.CanTouch = false
 	p.CanQuery = false
 	p.Massless = true
 	p.CastShadow = true
+	if tint then
+		p:SetAttribute("KitTint", tint)
+	end
 	p.Parent = model
 	return p
 end
 
-local function motor(part0: BasePart, part1: BasePart, jointWorld: CFrame)
+local function motor(part0: BasePart, part1: BasePart, jointWorld: CFrame): Motor6D
 	local m = Instance.new("Motor6D")
 	m.Name = part1.Name
 	m.Part0 = part0
@@ -59,166 +393,348 @@ local function motor(part0: BasePart, part1: BasePart, jointWorld: CFrame)
 	return m
 end
 
-local TOOL_SHAPES: { [string]: { size: Vector3, color: Color3, material: Enum.Material, offset: CFrame } } = {
-	hoe = {
-		size = Vector3.new(0.25, 4.2, 0.25),
-		color = C.wood,
-		material = Enum.Material.Wood,
-		offset = CFrame.new(0, -0.6, -0.4),
-	},
-	axe = {
-		size = Vector3.new(0.35, 2.6, 0.9),
-		color = C.iron,
-		material = Enum.Material.Metal,
-		offset = CFrame.new(0, -1.2, -0.5),
-	},
-	pick = {
-		size = Vector3.new(0.3, 2.4, 1.6),
-		color = C.iron,
-		material = Enum.Material.Metal,
-		offset = CFrame.new(0, -1.2, -0.5),
-	},
-	hammer = {
-		size = Vector3.new(0.6, 1.8, 0.6),
-		color = C.iron,
-		material = Enum.Material.Metal,
-		offset = CFrame.new(0, -1.1, -0.4),
-	},
-	sack = {
-		size = Vector3.new(1.6, 1.6, 1.6),
-		color = C.canvas,
-		material = Enum.Material.Fabric,
-		offset = CFrame.new(0, 1.2, 0.9),
-	},
-	spear = {
-		size = Vector3.new(0.22, 7.0, 0.22),
-		color = C.woodDark,
-		material = Enum.Material.Wood,
-		offset = CFrame.new(0, 0.6, -0.4),
-	},
-}
+local function paint(p: Paint, kingdomColor: Color3, skin: Color3, hair: Color3): (Color3, number?)
+	if type(p) == "number" then
+		return shade(kingdomColor, p), p
+	elseif p == "skin" then
+		return skin, nil
+	elseif p == "hair" then
+		return hair, nil
+	end
+	return p :: Color3, nil
+end
 
-function Character.character(kind: string, job: string, kingdomColor: Color3): Model
-	local look = JOB_LOOK[job] or JOB_LOOK.idle
+local function specPart(
+	model: Model,
+	name: string,
+	spec: PartSpec,
+	cf: CFrame,
+	kingdomColor: Color3,
+	skin: Color3,
+	hair: Color3
+): BasePart
+	local color, tint = paint(spec.color, kingdomColor, skin, hair)
+	return rigPart(model, name, spec.class, spec.shape, spec.size, cf, color, spec.material, tint)
+end
+
+-- ------------------------------------------------------------------ characters (≤ 8 parts)
+
+function Character.character(kind: string, job: string, kingdomColor: Color3, look: CitizenLook?): Model
+	local l = Character.normalizeLook(look)
+	local style = if kind == "governor"
+		then "governor"
+		elseif kind == "soldier" or job == "soldier" then "soldier"
+		else "citizen"
+	local skin, hairColor = SKIN[l.skin], HAIR_COLORS[l.hairColor]
+	local jobSpec = JOBS[job] or JOBS.idle
+	local outfit: Outfit, headwear: PartSpec?, width: number, tool: string?
+	if style == "soldier" then
+		outfit, headwear, width, tool = SOLDIER_OUTFIT, nil, 2.15, "spear"
+	elseif style == "governor" then
+		outfit, headwear, width, tool = GOVERNOR_OUTFIT, GOVERNOR_CROWN, 2.2, "staff"
+	else
+		outfit, headwear, width, tool = OUTFITS[l.outfit], HAIR_STYLES[l.hair].spec, jobSpec.width, jobSpec.tool
+	end
+
 	local model = Instance.new("Model")
 	model.Name = `{kind}_{job}`
 	model:SetAttribute("KitKind", kind)
 	model:SetAttribute("KitJob", job)
-	-- proportions: legs 2.2, torso 2.0, head 1.3 => 5.5 studs
-	local root = rigPart(model, "Root", Vector3.new(2, 2, 1), CFrame.new(0, 3.2, 0), C.cloth)
+	model:SetAttribute("KitLook", Character.lookKey(l))
+	model:SetAttribute("KitRootHeight", Character.ROOT_HEIGHT)
+
+	-- Root: anchored, invisible; BulkMoveTo moves it, everything else hangs off the Torso motor
+	local root = rigPart(
+		model,
+		"Root",
+		"Part",
+		Enum.PartType.Block,
+		Vector3.new(2, 2, 1),
+		CFrame.new(0, Character.ROOT_HEIGHT, 0),
+		C.cloth,
+		Enum.Material.SmoothPlastic
+	)
 	root.Anchored = true
 	root.Transparency = 1
-	root.PivotOffset = CFrame.new(0, -3.2, 0)
+	root.CastShadow = false
+	root.PivotOffset = CFrame.new(0, -Character.ROOT_HEIGHT, 0)
 	model.PrimaryPart = root
-	local tunic = if kind == "citizen" then shade(kingdomColor, 0.85):Lerp(C.cloth, 0.45) else kingdomColor
-	local torso = rigPart(model, "Torso", Vector3.new(2, 2, 1), CFrame.new(0, 3.2, 0), tunic, Enum.Material.Fabric)
-	torso:SetAttribute("KitTint", if kind == "citizen" then 0.85 else 1)
-	local head = rigPart(
+
+	local torsoColor, torsoTint = paint(outfit.torso, kingdomColor, skin, hairColor)
+	local torso = rigPart(
 		model,
-		"Head",
-		Vector3.new(1.3, 1.3, 1.3),
-		CFrame.new(0, 4.85, 0),
-		if kind == "soldier" then C.iron else C.skin,
-		if kind == "soldier" then Enum.Material.Metal else Enum.Material.SmoothPlastic
+		"Torso",
+		"Part",
+		Enum.PartType.Block,
+		Vector3.new(width, TORSO_H, if style == "citizen" then TORSO_D else TORSO_D + 0.05),
+		CFrame.new(0, HIP_Y + TORSO_H / 2, 0),
+		torsoColor,
+		Enum.Material.Fabric,
+		torsoTint
 	)
-	local larm =
-		rigPart(model, "LeftArm", Vector3.new(0.9, 2, 0.9), CFrame.new(-1.45, 3.2, 0), tunic, Enum.Material.Fabric)
-	local rarm =
-		rigPart(model, "RightArm", Vector3.new(0.9, 2, 0.9), CFrame.new(1.45, 3.2, 0), tunic, Enum.Material.Fabric)
-	larm:SetAttribute("KitTint", 0.85)
-	rarm:SetAttribute("KitTint", 0.85)
-	local lleg = rigPart(
-		model,
-		"LeftLeg",
-		Vector3.new(0.95, 2.2, 0.95),
-		CFrame.new(-0.5, 1.1, 0),
-		look.legs,
-		Enum.Material.Fabric
-	)
-	local rleg = rigPart(
-		model,
-		"RightLeg",
-		Vector3.new(0.95, 2.2, 0.95),
-		CFrame.new(0.5, 1.1, 0),
-		look.legs,
-		Enum.Material.Fabric
-	)
-	motor(root, torso, CFrame.new(0, 2.2, 0))
-	motor(torso, head, CFrame.new(0, 4.2, 0))
-	motor(torso, larm, CFrame.new(-1.0, 4.0, 0))
-	motor(torso, rarm, CFrame.new(1.0, 4.0, 0))
-	motor(torso, lleg, CFrame.new(-0.5, 2.2, 0))
-	motor(torso, rleg, CFrame.new(0.5, 2.2, 0))
-	local toolName = if kind == "soldier" then "spear" else look.tool
-	local spec = TOOL_SHAPES[toolName]
-	if spec then
-		local hand = CFrame.new(1.45, 2.3, 0)
-		local tool = rigPart(model, "Tool", spec.size, hand * spec.offset, spec.color, spec.material)
-		motor(rarm, tool, hand)
+	motor(root, torso, CFrame.new(0, HIP_Y, 0))
+
+	local headCF = CFrame.new(0, HEAD_Y, 0)
+	local neck = CFrame.new(0, NECK_Y, 0)
+	local head
+	if style == "soldier" then
+		head = specPart(model, "Head", GREAT_HELM, neck * GREAT_HELM.offset, kingdomColor, skin, hairColor)
+	else
+		head = rigPart(
+			model,
+			"Head",
+			"Part",
+			Enum.PartType.Ball,
+			Vector3.new(HEAD_D, HEAD_D, HEAD_D),
+			headCF,
+			skin,
+			Enum.Material.SmoothPlastic
+		)
+		local face = Instance.new("Decal")
+		face.Name = "Face"
+		face.Face = Enum.NormalId.Front
+		face.Texture = FACE_TEXTURE
+		face.Parent = head
 	end
+	motor(torso, head, neck)
+
+	if headwear then
+		local hair = specPart(model, "Hair", headwear, headCF * headwear.offset, kingdomColor, skin, hairColor)
+		hair:SetAttribute("KitHeadwear", headwear.name)
+		local weld = Instance.new("Weld")
+		weld.Name = "HairWeld"
+		weld.Part0 = head
+		weld.Part1 = hair
+		weld.C0 = headCF:Inverse() * hair.CFrame
+		weld.C1 = CFrame.new()
+		weld.Parent = hair
+	end
+
+	-- arms hang splayed a few degrees (friendlier silhouette, tools clear the legs)
+	local armColor, armTint = paint(outfit.sleeves, kingdomColor, skin, hairColor)
+	local armMaterial = if outfit.sleeves == "skin" then Enum.Material.SmoothPlastic else Enum.Material.Fabric
+	local armX = width / 2 + ARM.X / 2 + 0.02
+	local dropX, dropY = armX - width / 2, -(ARM.Y / 2 - (NECK_Y - SHOULDER_Y)) -- shoulder → arm centre
+	local lShoulder = CFrame.new(-width / 2, SHOULDER_Y, 0)
+	local rShoulder = CFrame.new(width / 2, SHOULDER_Y, 0)
+	local larm = rigPart(
+		model,
+		"LeftArm",
+		"Part",
+		Enum.PartType.Block,
+		ARM,
+		lShoulder * CFrame.Angles(0, 0, -ARM_SPLAY) * CFrame.new(-dropX, dropY, 0),
+		armColor,
+		armMaterial,
+		armTint
+	)
+	local rarm = rigPart(
+		model,
+		"RightArm",
+		"Part",
+		Enum.PartType.Block,
+		ARM,
+		rShoulder * CFrame.Angles(0, 0, ARM_SPLAY) * CFrame.new(dropX, dropY, 0),
+		armColor,
+		armMaterial,
+		armTint
+	)
+	motor(torso, larm, lShoulder)
+	motor(torso, rarm, rShoulder)
+
+	local legColor, legTint = paint(outfit.legs, kingdomColor, skin, hairColor)
+	local legMaterial = outfit.legMaterial or Enum.Material.Fabric
+	for _, side in { -1, 1 } do
+		local leg = rigPart(
+			model,
+			if side < 0 then "LeftLeg" else "RightLeg",
+			"Part",
+			Enum.PartType.Block,
+			LEG,
+			CFrame.new(side * 0.5, LEG.Y / 2, 0),
+			legColor,
+			legMaterial,
+			legTint
+		)
+		motor(torso, leg, CFrame.new(side * 0.5, HIP_Y, 0))
+	end
+
+	local spec = if tool then TOOLS[tool] else nil
+	if spec then
+		local hand = rarm.CFrame * CFrame.new(0, -ARM.Y / 2 + HAND_UP, 0)
+		local joint = if spec.onBack
+			then CFrame.new(armX - 0.6, NECK_Y - 0.1, TORSO_D / 2)
+			else CFrame.new(hand.Position)
+		local part = specPart(model, "Tool", spec, joint * spec.offset, kingdomColor, skin, hairColor)
+		part:SetAttribute("KitTool", spec.name)
+		motor(if spec.onBack then torso else rarm, part, joint)
+	end
+	return model
+end
+
+-- ------------------------------------------------------------------ far LOD (one part, CONTRACTS G4)
+
+function Character.lod(kind: string, kingdomColor: Color3): Model
+	local tint = if kind == "citizen" then 0.8 else 1
+	local model = Instance.new("Model")
+	model.Name = `{kind}_lod`
+	model:SetAttribute("KitKind", kind)
+	model:SetAttribute("KitRootHeight", Character.LOD_ROOT_HEIGHT)
+	-- one Block, centred at the rig's Root height with its feet on the ground (so 6.4 tall), identity rotation
+	local root = rigPart(
+		model,
+		"Root",
+		"Part",
+		Enum.PartType.Block,
+		Vector3.new(1.5, 2 * Character.LOD_ROOT_HEIGHT, 1.0),
+		CFrame.new(0, Character.LOD_ROOT_HEIGHT, 0),
+		shade(kingdomColor, tint),
+		Enum.Material.SmoothPlastic,
+		tint
+	)
+	root.Anchored = true
+	root.CastShadow = false
+	root.PivotOffset = CFrame.new(0, -Character.LOD_ROOT_HEIGHT, 0)
+	model.PrimaryPart = root
 	return model
 end
 
 -- ------------------------------------------------------------------ regalia (ruler crown + cape)
 
+local function accessoryPart(
+	parent: Instance,
+	name: string,
+	shape: Enum.PartType,
+	size: Vector3,
+	cf: CFrame,
+	color: Color3,
+	material: Enum.Material,
+	tint: number?
+): Part
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Shape = shape
+	p.Size = size
+	p.CFrame = cf
+	p.Color = color
+	p.Material = material
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Anchored = false
+	p.CanCollide = false
+	p.CanTouch = false
+	p.CanQuery = false
+	p.Massless = true
+	if tint then
+		p:SetAttribute("KitTint", tint)
+	end
+	p.Parent = parent
+	return p
+end
+
+local function weldTo(handle: BasePart, part: BasePart)
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = handle
+	w.Part1 = part
+	w.Parent = part
+end
+
+-- Regalia are modelled in attachment space: the origin is the avatar's HatAttachment (top of the head)
+-- or BodyBackAttachment (centre of the back), which R6 and R15 both carry with identity orientation.
 function Character.regalia(kingdomColor: Color3): { Accessory }
 	local crown = Instance.new("Accessory")
 	crown.Name = "KitCrown"
-	local band = Instance.new("Part")
-	band.Name = "Handle"
-	band.Shape = Enum.PartType.Cylinder
-	band.Size = Vector3.new(0.5, 1.5, 1.5)
-	band.CFrame = CFrame.Angles(0, 0, math.rad(90))
-	band.Color = C.gold
-	band.Material = Enum.Material.Metal
-	band.CanCollide = false
-	band.CanTouch = false
-	band.CanQuery = false
-	band.Massless = true
-	band.Parent = crown
+	local band = accessoryPart(
+		crown,
+		"Handle",
+		Enum.PartType.Cylinder,
+		Vector3.new(0.5, 1.5, 1.5),
+		CFrame.new(0, 0.15, 0) * UPRIGHT,
+		C.gold,
+		Enum.Material.Metal
+	)
 	local hat = Instance.new("Attachment")
 	hat.Name = "HatAttachment"
-	hat.CFrame = CFrame.Angles(0, 0, math.rad(-90)) * CFrame.new(0, -0.35, 0)
+	hat.CFrame = band.CFrame:Inverse()
 	hat.Parent = band
-	for i = 0, 3 do
-		local a = math.rad(i * 90 + 45)
-		local pt = Instance.new("Part")
-		pt.Name = "CrownPoint"
-		pt.Size = Vector3.new(0.3, 0.45, 0.3)
-		pt.CFrame = band.CFrame
-			* CFrame.Angles(0, 0, math.rad(-90))
-			* CFrame.new(math.cos(a) * 0.65, 0.4, math.sin(a) * 0.65)
-		pt.Color = if i % 2 == 0 then C.gold else kingdomColor
-		pt:SetAttribute("KitTint", if i % 2 == 0 then nil else 1)
-		pt.Material = Enum.Material.Metal
-		pt.CanCollide = false
-		pt.CanTouch = false
-		pt.CanQuery = false
-		pt.Massless = true
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = band
-		weld.Part1 = pt
-		weld.Parent = pt
-		pt.Parent = crown
+	for i = 0, 4 do
+		local a = math.rad(i * 72)
+		local pt = accessoryPart(
+			crown,
+			"CrownPoint",
+			Enum.PartType.Block,
+			Vector3.new(0.32, 0.5, 0.32),
+			CFrame.new(math.sin(a) * 0.6, 0.58, -math.cos(a) * 0.6) * CFrame.Angles(0, -a + math.rad(45), 0),
+			C.gold,
+			Enum.Material.Metal
+		)
+		weldTo(band, pt)
 	end
+	local jewel = accessoryPart(
+		crown,
+		"Jewel",
+		Enum.PartType.Ball,
+		Vector3.new(0.34, 0.34, 0.34),
+		CFrame.new(0, 0.18, -0.74),
+		kingdomColor,
+		Enum.Material.SmoothPlastic,
+		1
+	)
+	weldTo(band, jewel)
+	local cap = accessoryPart( -- velvet cap in the kingdom colour: the crown reads from above too
+		crown,
+		"Cap",
+		Enum.PartType.Ball,
+		Vector3.new(1.3, 1.3, 1.3),
+		CFrame.new(0, 0.3, 0),
+		kingdomColor,
+		Enum.Material.Fabric,
+		1
+	)
+	weldTo(band, cap)
 
 	local cape = Instance.new("Accessory")
 	cape.Name = "KitCape"
-	local cloth = Instance.new("Part")
-	cloth.Name = "Handle"
-	cloth.Size = Vector3.new(2.2, 3.2, 0.2)
-	cloth.Color = kingdomColor
-	cloth:SetAttribute("KitTint", 1)
-	cloth.Material = Enum.Material.Fabric
-	cloth.CanCollide = false
-	cloth.CanTouch = false
-	cloth.CanQuery = false
-	cloth.Massless = true
-	cloth.Parent = cape
+	-- hangs from just below the shoulder line (R6 shoulders ≈ +1.0, R15 ≈ +0.6 above BodyBackAttachment) and
+	-- flares 9° backwards so walking legs clip it less
+	local drape = CFrame.new(0, 0.85, 0.14) * CFrame.Angles(math.rad(-9), 0, 0) * CFrame.new(0, -1.65, 0)
+	local cloth = accessoryPart(
+		cape,
+		"Handle",
+		Enum.PartType.Block,
+		Vector3.new(2.5, 3.3, 0.18),
+		drape,
+		kingdomColor,
+		Enum.Material.Fabric,
+		1
+	)
 	local back = Instance.new("Attachment")
 	back.Name = "BodyBackAttachment"
-	back.CFrame = CFrame.new(0, 1.0, -0.15)
+	back.CFrame = cloth.CFrame:Inverse()
 	back.Parent = cloth
+	local trims: { { name: string, shape: Enum.PartType, size: Vector3, at: CFrame } } = {
+		{
+			name = "Hem",
+			shape = Enum.PartType.Block,
+			size = Vector3.new(2.54, 0.24, 0.24),
+			at = CFrame.new(0, -1.55, 0),
+		},
+		{
+			name = "Yoke",
+			shape = Enum.PartType.Block,
+			size = Vector3.new(2.54, 0.16, 0.22),
+			at = CFrame.new(0, 1.57, 0),
+		},
+		{ -- gold disc on the back, between the shoulder blades
+			name = "Emblem",
+			shape = Enum.PartType.Cylinder,
+			size = Vector3.new(0.1, 0.95, 0.95),
+			at = CFrame.new(0, 0.7, 0.12) * CFrame.Angles(0, math.rad(90), 0),
+		},
+	}
+	for _, t in trims do
+		weldTo(cloth, accessoryPart(cape, t.name, t.shape, t.size, drape * t.at, C.gold, Enum.Material.Metal))
+	end
 	return { crown, cape }
 end
 

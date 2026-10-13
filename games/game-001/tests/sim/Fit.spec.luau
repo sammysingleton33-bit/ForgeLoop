@@ -13,6 +13,7 @@ describe("Build/Fit (CONTRACTS G13.5)", function()
 			local slot = WorldLayout.slotSizes[size]
 			for _, kind in Types.BUILDING_TYPES do
 				local fp = Kit.footprint(kind, Costs.maxLevel(kind))
+				expect(Fit.largestFootprint(kind)).toEqual(fp)
 				expect(Fit.fits(kind, size)).toBe(fp.X <= slot.X and fp.Y <= slot.Y)
 			end
 		end
@@ -53,6 +54,7 @@ describe("Build/Fit (CONTRACTS G13.5)", function()
 
 	it("fits nothing for unknown types or sizes, and lists in Types.BUILDING_TYPES order", function()
 		expect(Fit.fits("castle", "L")).toBe(false)
+		expect(Fit.largestFootprint("castle")).toBeNil()
 		expect(Fit.fits("house", "XL")).toBe(false)
 		expect(Fit.fits("__index", "S")).toBe(false)
 		expect(Fit.typesFor("XL")).toEqual({})

@@ -46,7 +46,17 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		self.detail:update(detail, handlers)
 		return
 	end
+	-- Rebuilt for the same building (new screen size, the strip shown): keep where the player had
+	-- scrolled (FORGE-05, #58 review).
+	local scroll = nil
+	if self.panel and self._buildingId == detail.buildingId then
+		local body = self.panel.instance:FindFirstChild("Body", true)
+		if body and body:IsA("ScrollingFrame") then
+			scroll = body.CanvasPosition
+		end
+	end
 	self:destroy()
+	self._buildingId = detail.buildingId
 	self._key = key
 	local d = metrics.drawer
 	local header = Create("Frame", {
@@ -86,6 +96,10 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 	self.detail = DetailView.new({ detail = detail, compact = phone, onCta = handlers.onCta })
 	self.detail.instance.Parent = self.panel.content
 	self.panel.instance.Parent = self._parent
+	local body = self.detail.instance:FindFirstChild("Body")
+	if scroll and body and body:IsA("ScrollingFrame") then
+		body.CanvasPosition = scroll -- after parenting, so the canvas has its size
+	end
 end
 
 function UpgradePanel:destroy()
