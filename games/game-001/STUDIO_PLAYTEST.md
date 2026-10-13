@@ -110,8 +110,8 @@ or sunk props, unreadable lighting. Describe what you see next to the screenshot
 rotate on PC and phone; tap selects. In the aerial view, citizens near the **centre of the screen** show
 wherever you pan (#39 M1 fixed in B7, #91), and from the build after B7 they also stay when you zoom all the
 way out (#101; in B7, citizens more than 150 studs from the screen centre are hidden when zoomed out, known,
-not a fail). Known, not a fail: any character that touches
-the throne can sit on it, so in M1/M2 another player can take your seat (#89 L2).
+not a fail). From main `1c48149` (#112) only your kingdom's rulers can sit on your throne: anyone else is
+put down in front of the dais within half a second (in B7-B9 anyone could sit there: known, not a fail).
 
 ## 4. Belong to a kingdom (row 3; runnable from B6)
 1. Play. The HUD shows your kingdom's name, banner colour and member list.
@@ -218,9 +218,10 @@ after B7; B7 says "…Upgrade it").
    `vs1.hungry` makes food-related requests more likely.
    From main `276d933` (#107): press Talk and close without answering, then tap Talk again: the **same**
    question comes back and the bubble stays up (in B8 the request was gone for the match); a citizen who
-   walks out stops at once, even while carrying a load. Known, not a fail (FORGE-01 next): with two
-   rulers, if one leaves a conversation open, the other's Talk on that citizen may answer "Nothing on
-   their mind right now" or show a different question.
+   walks out stops at once, even while carrying a load. From main `74db60c` (#114), with two rulers: if
+   one leaves a conversation open, the other's Talk shows the same question and the one who asked last
+   answers it. (In B9 the other ruler may get "Nothing on their mind right now" or a different question:
+   known, not a fail there.)
 5. Screenshots **D1** (bubble), **D2** (conversation), **D3** (the visible result).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
