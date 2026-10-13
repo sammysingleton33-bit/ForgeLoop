@@ -380,3 +380,106 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 		end
 	end)
 end)
+
+describe("CitizenService: job orders and a ruler's visit (CONTRACTS G5, FL-0050)", function()
+	local function jobsOf(sim, k)
+		local out = {}
+		for _, id in k.citizenIds do
+			local job = sim.citizens[id].job
+			out[job] = (out[job] or 0) + 1
+		end
+		return out
+	end
+
+	it("setJob moves one citizen and its quota follows, so the rebalancer leaves it there", function()
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local farmer
+		for _, id in k.citizenIds do
+			if sim.citizens[id].job == "farmer" then
+				farmer = sim.citizens[id]
+				break
+			end
+		end
+		assert(farmer, "a crimson farmer")
+		local quotas = table.clone(k.quotas)
+		expect(citizens:setJob(farmer.id, "miner")).toBe(true)
+		expect(farmer.job).toBe("miner")
+		expect(k.quotas.farmer).toBe(quotas.farmer - 1)
+		expect(k.quotas.miner).toBe(quotas.miner + 1)
+		local jobs = jobsOf(sim, k)
+		env.mock:advance(60) -- a minute of rebalancing: nobody is moved back to the farms
+		expect(farmer.job).toBe("miner")
+		expect(jobsOf(sim, k)).toEqual(jobs)
+		-- the hauler pool has no quota: a hauler order only lowers the old job's quota
+		expect(citizens:setJob(farmer.id, "hauler")).toBe(true)
+		expect(k.quotas.miner).toBe(quotas.miner)
+		expect(k.quotas.hauler).toBe(quotas.hauler)
+		-- the same job again changes nothing
+		local same = table.clone(k.quotas)
+		expect(citizens:setJob(farmer.id, "hauler")).toBe(true)
+		expect(k.quotas).toEqual(same)
+		-- refused: soldiers (Military's), unknown jobs, a unit, nobody, malformed
+		expect(citizens:setJob(farmer.id, "soldier")).toBe(false)
+		expect(citizens:setJob(farmer.id, "wizard")).toBe(false)
+		expect(citizens:setJob(farmer.id, 5 :: any)).toBe(false)
+		local unit = Military.spawnUnit(sim, k, "soldier", k.x, k.z)
+		expect(citizens:setJob(unit.id, "farmer")).toBe(false)
+		expect(citizens:setJob(999999, "farmer")).toBe(false)
+		expect(farmer.job).toBe("hauler")
+		expect(k.quotas).toEqual(same)
+	end)
+
+	it("requestWorkers sets the job's quota and haulers fill it; bad orders change nothing", function()
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local miners = jobsOf(sim, k).miner or 0
+		expect(citizens:requestWorkers("crimson", "miner", miners + 1)).toBe(true)
+		expect(k.quotas.miner).toBe(miners + 1)
+		env.mock:advance(60)
+		expect(jobsOf(sim, k).miner).toBe(miners + 1)
+		local quotas = table.clone(k.quotas)
+		expect({ citizens:requestWorkers("crimson", "hauler", 3) }).toEqual({ false, "unknown_job" })
+		expect({ citizens:requestWorkers("crimson", "wizard", 3) }).toEqual({ false, "unknown_job" })
+		expect({ citizens:requestWorkers("crimson", "miner", -1) }).toEqual({ false, "invalid_args" })
+		expect({ citizens:requestWorkers("crimson", "miner", 1.5) }).toEqual({ false, "invalid_args" })
+		expect({ citizens:requestWorkers("violet", "miner", 1) }).toEqual({ false, "unknown_kingdom" })
+		expect(k.quotas).toEqual(quotas)
+	end)
+
+	it("a ruler's visit is remembered and lifts the citizen's mood for a while, once per cooldown", function()
+		local env, citizens, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local tuning = sim.catalog.tuning
+		local c = sim.citizens[sim.kingdoms.crimson.citizenIds[1]]
+		c.hunger = 0.5
+		expect(assert(citizens:inspect(c.id)).mood).toBe(50)
+		expect(sim:rulerVisit(c, 1)).toBe(true)
+		local remembered
+		for _, entry in c.memory do
+			if entry.kind == "rulerVisited" then
+				remembered = entry
+			end
+		end
+		expect(remembered and remembered.ref).toBe(1)
+		expect(assert(citizens:inspect(c.id)).mood).toBe(50 + tuning.visitMood)
+		expect(sim:rulerVisit(c, 1)).toBe(false) -- again at once: no second lift
+		env.mock:advance(tuning.visitMoodSeconds + 1)
+		c.hunger = 0.5
+		expect(assert(citizens:inspect(c.id)).mood).toBe(50) -- the lift has worn off
+		c.hunger = 0
+		expect(assert(citizens:inspect(c.id)).mood).toBe(100)
+		env.mock:advance(math.max(0, tuning.visitCooldown - tuning.visitMoodSeconds))
+		c.hunger = 0
+		expect(sim:rulerVisit(c, 2)).toBe(true) -- after the cooldown a visit counts again
+		expect(assert(citizens:inspect(c.id)).mood).toBe(100) -- clamped
+	end)
+end)
