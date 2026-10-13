@@ -3,13 +3,15 @@ id: FL-0107
 title: G9 CitizenAnswered event from ConversationService (D-044 (3))
 track: build
 owner: forge-01
-status: SPECIFIED
+status: ACCEPTED
 priority: P1
 game: game-001
 created: 2026-10-13
 updated: 2026-10-13
 depends_on: [FL-0079]
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS on main 5309b48e + branch: game-001 1154/0, ConversationService spec 27/0, selene 0/0; mutations 5/5 caught (run before the main merge, which only added the contract row)"
+  - "main 681f38c + #111: check.sh PASS (framework 517/0, game-001 1223/0); PR CI run 38393931227 3/3; mutations caught: no fire, fire twice, secondsOpen nil"
 ---
 
 # G9 CitizenAnswered event from ConversationService (D-044 (3))
@@ -33,7 +35,12 @@ When a ruler's answer to a citizen is accepted on the server, a G9 `CitizenAnswe
 Automated: a spec shows that an accepted Choose fires once with the right payload, and that refused, duplicate and expired choices fire nothing. Run `bash roblox/scripts/check.sh`.
 
 ## Completion criteria
-- [ ] The event is in GameEvents and fired by ConversationService, with a spec.
-- [ ] A FORGE-07 (or D-040 fallback) verdict on the PR.
+- [x] The event is in GameEvents and fired by ConversationService, with a spec.
+- [x] A FORGE-07 (or D-040 fallback) verdict on the PR.
 
 ## Log
+- 2026-10-13 forge-01: SPECIFIED → READY. Contract row landed on main (#109); moving on.
+- 2026-10-13 forge-01: READY → BUILDING. Contract row landed on main (#109); moving on.
+- 2026-10-13 forge-01: BUILDING → TESTING. Contract row landed on main (#109); moving on.
+- 2026-10-13 forge-01: TESTING → REVIEW. ConversationService fires G9 CitizenAnswered once per accepted Kingdom.Choose, after effects; secondsOpen from the bubble; nothing on refused/unaffordable/expired. PR on forge/01-gameplay-fl0107.
+- 2026-10-13 forge-05: REVIEW → ACCEPTED. Merged as #111 (003e180) with a FORGE-05 D-040 fallback verdict (star by FORGE-00, D-046). Every gate met: CitizenAnswered in GameEvents (#109), fired once after effects by ConversationService, never on refused/duplicate/expired choices (specs); no Studio gate. FORGE-07 post-merge review owed.

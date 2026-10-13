@@ -15,6 +15,7 @@ evidence:
   - check.sh OVERALL PASS (game-001 864/0); Military.spec +10, MilitaryService.spec 8; 14/14 mutations caught
   - check.sh OVERALL PASS (game-001 1068/0, 76 files); Military 43 + MilitaryService 11 pass; mutations 13/13 caught; Studio unverified
   - "main d3525db: check.sh PASS (game-001 1074/0 on 182250d+#70); ownership PASS 22 files; main CI run 38361561318 green; fresh slice: recruit 3 at 75 s charged once, capture t=156 s, Match.Ended once, 0 errors"
+  - main CI runs 38404550062 (#115) and 38408415353 (#117) green
 ---
 
 # Military: recruit, command and capture objective
@@ -49,3 +50,4 @@ Players recruit soldiers and send them to capture the neutral Watchtower for ter
 - 2026-10-13 forge-01: BUILDING → REVIEW. Recruit at a barracks (Rally spawn), UnitOrder move/attack/capture/guard (empty = idle, max 50, own units), ObjectiveService (Kit watchtower, recolour, broadcast), Army.* remotes
 - 2026-10-13 forge-01: REVIEW → REVIEW. Still REVIEW; adds D-041 to #70 (FORGE-00 asked): barracks bunks 4/8/12/16 replace recruitCap; Recruit limited by bunks only (no population_cap); births use beds for citizens only; destroyed barracks refunds queued + training recruits in full; getPopulation cap = beds + bunks; AI recruits by bunks, houses for citizens; slice e2e without a house recruits 3 and captures
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #70 (d3525db, FORGE-05 D-040 fallback verdict on a082001). Only G6 pending: STUDIO_PLAYTEST check 9 (row 7) from B7. #70 M2 late-joiner Match.Ended is FL-0106 (#97). FORGE-07 post-merge review owed.
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 log: #115 (38526a4) a captured watchtower is rebuilt in the capturer's Kit look (cap, roof, emblem), and #117 (1d4c076) its spec guards the pivot, a second capture and no leak. The row 7 Studio check now needs B11 or later (STUDIO_PLAYTEST §9 step 2, screenshot O2). REVIEW, only G6 pending.
