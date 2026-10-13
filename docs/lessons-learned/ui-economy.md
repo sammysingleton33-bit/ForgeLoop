@@ -99,3 +99,11 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   the confirm step the full answer list's height survived until the spec used 750 × 311. Size phone
   specs to the safe area, and assert the failing case too (the list overflows) so the check can
   fail. `observed-once` (2026-10-13).
+- **A fresh git worktree renders with fallback fonts, silently enough to commit.** `design/ui/
+  node_modules` (the @fontsource fonts) is untracked, so a new worktree has none; the renderer prints
+  "no @fontsource fonts found … text uses fallbacks" once and draws digits and words spread apart
+  (#86 follow-ups). Check for that line before trusting a render; link or install the fonts in the
+  new worktree first. `observed-once` (2026-10-13).
+- **`check.sh | grep … && git push` pushes a failing build.** The pipeline's status is grep's, not
+  check.sh's: a Selene warning failed OVERALL and the push went out anyway (#95). Capture the exit
+  code (`bash roblox/scripts/check.sh > log; rc=$?`) and push only on 0. `observed-once` (2026-10-13).

@@ -21,7 +21,9 @@
 	models face -Z), rebuilt on the server from the integer. Implemented by BuildingService.
 	Reasons: blocked, out_of_territory, out_of_bounds, cannot_afford, not_placeable, requires_keep_level,
 	limit_reached, unknown_building, not_owner, busy, max_level, match_not_active, not_in_match;
-	PlaceSlot also unknown_slot (not one of the player's kingdom's slots), slot_occupied, does_not_fit.
+	PlaceSlot also unknown_slot (not one of the player's kingdom's slots), not_on_plot (wall and gate never
+	stand on a plot, G13.5 v0.4-g9a), slot_occupied (a building placed on the slot, or any of the kingdom's
+	standing buildings over it), does_not_fit.
 ]]
 
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")

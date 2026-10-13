@@ -18,6 +18,9 @@
 			events?: { tag } (event.<tag> flags), before?: { buildingId, level } (Sim/Context) }
 		ReputationService:rulerVisited(userId, entityId)        -- RulerVisited (audience speaker), for
 		                                                           conversations (FL-0079)
+		ReputationService:farmHistories(userId, kingdomId): (rulerHistory, kingdomHistory)
+			-- the anti-farming histories (SPEC §6.8) ConversationService hands ContentQuery.fireDecision
+		ReputationService:values(userId): { [Category]: number }   -- a copy of the ruler's current values
 	Remotes (G13.4): Kingdom.GetReputation() -> { values, history (latest Society.historySent), kingdom }
 	for the asker (nil for a spectator); Kingdom.Reputation(the same) to a ruler when it changes.
 
@@ -218,6 +221,17 @@ function ReputationService:fireAction(event: string, kingdomId: string, opts: { 
 			end
 		end
 	end
+end
+
+function ReputationService:farmHistories(userId: number, kingdomId: string): (any, any)
+	self:_sim()
+	local kingdom = self._kingdomFarm[kingdomId] or {}
+	self._kingdomFarm[kingdomId] = kingdom
+	return self:_rulerHistory(userId), kingdom
+end
+
+function ReputationService:values(userId: number): { [string]: number }
+	return table.clone(self:_ledger(userId).values)
 end
 
 function ReputationService:rulerVisited(userId: number, entityId: number)

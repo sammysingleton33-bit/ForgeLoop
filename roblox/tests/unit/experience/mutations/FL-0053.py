@@ -22,4 +22,5 @@ M = [
  ("FL-0053", C2+"RulerCameraController.luau", 'local ratio = scale / self._pinch', 'local ratio = scale', "RulerCamera", "zoom stays within", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'while #self._shakes > limits.maxActive do', 'while false do', "RulerCamera", "caps the duration and the number of shakes", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'return Def.clamp(magnitude, 0, 1) * maxDegrees * left * left', 'return magnitude * maxDegrees * left * left', "RulerCamera", "shakeAmplitude() eases out and clamps", "game"),
+ ("FL-0053", C2+"RulerController.luau", '			humanoid.Sit = false -- FORGE-01', '			local _ = false -- FORGE-01', "Ruler", "standUp() leaves the throne", "game"),
 ]

@@ -7,12 +7,12 @@
 	Props
 		kind: "info" | "success" | "warning" | "error" | "reward" | "achievement"   accent (default "info")
 		title: string              body: string?
-		icon: string?              default per kind (info, check, warning, cross, chest)
+		icon: string?              default per kind (info, check, warning, cross, chest, laurel)
 		count: number?             repeat badge ("×3") for stacked identical toasts (shown when > 1)
 		width: number?             px (default 300)
 		layoutOrder: number?
 	Toast.new(props) -> handle { instance: Frame, destroy() }
-	Toast.ACCENT[kind] -> colour name
+	Toast.ACCENT[kind] -> colour name       Toast.ICON[kind] -> default icon name
 ]]
 
 local Create = require("../Create")
@@ -23,9 +23,23 @@ local Theme = require("../Theme")
 local Toast = {}
 Toast.__index = Toast
 
-Toast.ACCENT =
-	table.freeze({ info = "azure", success = "vert", warning = "amber", error = "gules", reward = "gold400" })
-local ICON = { info = "info", success = "check", warning = "warning", error = "cross", reward = "chest" }
+-- achievement is purpure, not a second gold, so it never reads as a reward (FL-0105; #33 L2)
+Toast.ACCENT = table.freeze({
+	info = "azure",
+	success = "vert",
+	warning = "amber",
+	error = "gules",
+	reward = "gold400",
+	achievement = "purpure",
+})
+Toast.ICON = table.freeze({
+	info = "info",
+	success = "check",
+	warning = "warning",
+	error = "cross",
+	reward = "chest",
+	achievement = "laurel",
+})
 
 function Toast.new(props: { [string]: any })
 	local self = setmetatable({}, Toast)
@@ -52,7 +66,7 @@ function Toast.new(props: { [string]: any })
 			extra = { AutomaticSize = Enum.AutomaticSize.Y, Size = UDim2.fromScale(1, 0), LayoutOrder = 2 },
 		})
 	end
-	local icon = Icon.new(props.icon or ICON[kind] or "info", 28)
+	local icon = Icon.new(props.icon or Toast.ICON[kind] or "info", 28)
 	icon.Position = UDim2.new(0, 14, 0.5, 0)
 	icon.AnchorPoint = Vector2.new(0, 0.5)
 	self.instance = Create("Frame", {

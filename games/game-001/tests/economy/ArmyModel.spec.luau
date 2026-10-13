@@ -1,6 +1,7 @@
 -- FL-0060: the pure parts of the army drawer, the objective tracker and the slice summary —
 -- sentences (UI/ArmyText), the drawer model (UI/ArmyModel), the tracker model (UI/ObjectiveModel),
 -- the summary model (UI/SummaryModel), the store's unit costs and the tracker's Layout zone.
+local fs = require("@lune/fs")
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
@@ -44,34 +45,30 @@ local BARRACKS = { id = 5, kingdom = "crimson", type = "barracks", level = 1, st
 
 describe("ArmyText (FL-0060)", function()
 	it("turns reason codes into sentences and never shows an unknown code", function()
-		expect(ArmyText.reason("population_cap")).toBe("No room for more people. Build houses first")
+		expect(ArmyText.reason("recruit_cap")).toBe("No free bunks. Upgrade the barracks or build another") -- D-041
 		expect(ArmyText.reason("cannot_afford")).toBe("Not enough resources")
 		expect(ArmyText.reason("barracks_not_ready")).toBe("Finish building the barracks first")
 		expect(ArmyText.reason("requires_barracks_level")).toBe("Upgrade the barracks first")
-		-- every code #70's Army.Recruit can send has its own sentence (FORGE-05 on #63)
-		for _, code in
-			{
-				"not_in_match",
-				"match_not_active",
-				"kingdom_eliminated",
-				"not_found",
-				"not_owner",
-				"not_barracks",
-				"barracks_not_ready",
-				"population_cap",
-				"recruit_cap",
-				"cannot_afford",
-				"requires_barracks_level",
-				"unknown_unit",
-				"invalid_args",
-				"not_ruler",
-				"unknown_command",
-			}
-		do
+		-- every code FORGE-01's Army.Recruit sends has its own sentence: read from the reasons line of
+		-- Army/Remotes.luau, so a code added there fails here until it is worded (parentheses explain)
+		local source = fs.readFile(T.root .. "/games/game-001/src/shared/Army/Remotes.luau")
+		local line = string.match(source, "Army%.Recruit reasons:(.-)Army%.Command")
+		assert(line, "Army/Remotes.luau has no 'Army.Recruit reasons:' line")
+		local count = 0
+		for code in string.gmatch((string.gsub(line, "%b()", "")), "[%l_]+") do
+			count += 1
+			local sentence = ArmyText.reason(code)
+			if sentence == ArmyText.GENERIC or string.find(sentence, code, 1, true) then
+				error(`Army.Recruit: "{code}" reads "{sentence}"`)
+			end
+		end
+		expect(count >= 9).toBe(true)
+		-- unreachable through Recruit's validation, but worded anyway, and the rest of the panel's codes
+		for _, code in { "requires_barracks_level", "unknown_unit", "invalid_args", "not_ruler", "unknown_command" } do
 			expect(ArmyText.reason(code)).never.toBe(ArmyText.GENERIC)
 		end
 		-- codes the server never sends are not vocabulary
-		for _, code in { "busy", "phase", "no_kingdom", "rate", "no_barracks" } do
+		for _, code in { "busy", "phase", "no_kingdom", "rate", "no_barracks", "population_cap" } do
 			expect(ArmyText.reason(code)).toBe(ArmyText.GENERIC)
 		end
 		expect(ArmyText.reason(nil)).toBe(ArmyText.UNREACHABLE)
