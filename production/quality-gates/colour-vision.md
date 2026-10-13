@@ -45,3 +45,29 @@ Routing (FORGE-00, CONTRACTS G13.2 at `2221c1e`):
 
 Status: **not yet acceptable for VS-1** (finding 2). Re-run after the soldier marker lands and once with a Studio
 screenshot of a four-kingdom view.
+
+## Run 2: 2026-10-13, soldier helmet crests, PR #81 head `2ef6606` (not yet merged)
+**Input.** FORGE-02's Blender (`bpy`) renders from #81, `games/game-001/art/reviews/img/`:
+- `kit_characters_crests_gameplay.jpg`: front view at about 40 studs, 960×540;
+- `kit_characters_crests_side_gameplay.jpg`: the same, from the side;
+- one soldier per kingdom, plus a dummy with no kingdom.
+
+Command: `python3 -I production/quality-gates/cvd/cvd.py OUT <both jpgs>`. I enlarged the soldier strip 3× to look at it.
+
+**Palette.** The CIEDE2000 values are unchanged from run 1: crimson/emerald 14.7 protan and 15.1 deutan; azure/emerald 10.8 tritan. The colours alone still don't separate crimson and emerald soldiers.
+
+**Crests (looked at in all four simulations, front and side).**
+- Crimson has a pointed cone (spire). Emerald has a tall upright cylinder (plume), which leans back in the side view.
+- Under protanopia and deuteranopia these two soldiers are the same olive, but cone and cylinder still read apart.
+- Azure's flat square plate and gold's round dome are distinct in every simulation.
+- Under tritanopia, azure and emerald are both teal, but the plate and the plume tell them apart.
+- The dummy keeps the plain helm.
+- At 40 studs a crest is about 12–15 px tall in the 960×540 frame. The spire and the plume are the two shapes closest to each other at that size. They differ in outline (triangle vs. bar) rather than in height.
+
+**Verdict.**
+- **Finding 2 is resolved in the renders**: friend and foe can be told apart without colour at gameplay distance in the Blender renders.
+- **Unverified in Studio**, at the 50° aerial overview distance, and in the live game:
+  - FORGE-01 must pass `kingdom` in `EntityController.buildRig` (a #81 dependency) before soldiers get crests in play;
+  - the four-kingdom Studio screenshot (STUDIO_PLAYTEST colour-vision steps 1–6) is still owed.
+
+Status: the soldier marker is acceptable for VS-1 on the render evidence, pending #81 merging, FORGE-01's `kingdom` plumbing and the Studio screenshot. Findings 3 (banner emblems from the overview) and 4 (tritanopia in Studio) are unchanged.
