@@ -836,8 +836,67 @@ describe("ConversationService: FORGE-05 verdict on #77 (M1, M2, L1, L2, L3, L5)"
 			end
 			expect(assert(citizens:inspect(id)).hasRequest).toBe(listed)
 		end
-		assert(conversations:converse(p1, farmer.id)) -- talking to them takes the request
-		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(false)
+		assert(conversations:converse(p1, farmer.id)) -- talking keeps the request until it is answered (N3)
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(true)
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(false) -- answered: settled
+	end)
+
+	it("N3: Talk, then close without answering: the request and its thought stay; asking again shows it", function()
+		local env, conversations, match, registry, sent = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer = hungryFarmer(match, registry)
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local view = assert(conversations:converse(p1, farmer.id)) -- the panel opens, then closes unanswered
+		table.clear(sent)
+		for _ = 1, 3 do -- three refreshes (the scenario is on its shown cooldown now)
+			conversations:refresh()
+		end
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local thoughts = 0
+		for _, entry in sent do
+			if entry.event.type == "thought" and entry.event.id == farmer.id then
+				thoughts += 1
+			end
+		end
+		expect(thoughts).toBe(3) -- the bubble is still re-sent every refresh
+		local again = assert(conversations:converse(p1, farmer.id))
+		expect(again.scenarioId).toBe(view.scenarioId)
+		-- answered: the request closes and the next refresh does not bring it back
+		assert(choose(conversations, p1, farmer, view.scenarioId, "farmer_hungry_grain_open_store"))
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+	end)
+
+	it("N2: a walk-out downs tools at once, even with a load in hand", function()
+		local env, conversations, match, registry = boot()
+		seat(env, 1)
+		local _, sim = hungryFarmer(match, registry)
+		local k = sim.kingdoms.crimson
+		-- a citizen in the middle of gathering, carrying part of a load
+		local worker
+		for _ = 1, 600 do
+			env.mock:advance(0.25)
+			for _, id in k.citizenIds do
+				local c = sim.citizens[id]
+				if c.activity == "Gather" and c.phase == "Work" and c.carrying and c.carrying.amount > 0 then
+					worker = c
+					break
+				end
+			end
+			if worker then
+				break
+			end
+		end
+		assert(worker, "no citizen was gathering")
+		local carried = worker.carrying.amount
+		conversations:_applyConsequence("crimson", worker, ContentQuery.data.consequences.speaker_refuses_work)
+		env.mock:advance(1)
+		expect(sim:isStriking(worker)).toBe(true)
+		expect(worker.activity).toBe("Idle") -- re-planned at once: on strike
+		expect(worker.carrying == nil or worker.carrying.amount <= carried).toBe(true) -- gathered nothing more
 	end)
 
 	it("L1: a timed condition, unrest or desertion consequence comes off again after its duration", function()
@@ -981,5 +1040,120 @@ describe("ConversationService: events on the wire (EntityService, G13.3)", funct
 		expect(queued[1].icon).toBe("request")
 		expect(queued[2].tone).toBe("neutral")
 		expect(queued[3].cue).toBe("salute")
+	end)
+end)
+
+describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function()
+	-- crimson's rulers among `n` seated players (no parties: the balancer spreads them)
+	local function crimsonRulers(env, match, n)
+		local out = {}
+		for _, player in seat(env, n) do
+			if match.host.match:kingdomOf(player.UserId) == "crimson" then
+				table.insert(out, player)
+			end
+		end
+		return out
+	end
+
+	it("M1: a co-ruler who taps a bubble another ruler left open gets the same question and answers it", function()
+		local env, conversations, match, registry = boot()
+		local rulers = crimsonRulers(env, match, 5)
+		assert(#rulers >= 2, "two crimson rulers")
+		local p1, p2 = rulers[1], rulers[2]
+		local farmer = hungryFarmer(match, registry)
+		conversations:refresh()
+		local first = assert(conversations:converse(p1, farmer.id)) -- ruler 1 opens it, then walks away
+		local again = assert(conversations:converse(p2, farmer.id))
+		expect(again.scenarioId).toBe(first.scenarioId)
+		expect(again.question).toBe(first.question)
+		-- the ruler who asked last answers it; the other's Choose is refused, and charges nothing
+		local food = match.host.match.sim:balance("crimson", "food")
+		expect(select(3, choose(conversations, p1, farmer, first.scenarioId, "farmer_hungry_grain_open_store"))).toBe(
+			"not_offered"
+		)
+		expect(match.host.match.sim:balance("crimson", "food")).toBe(food)
+		assert(choose(conversations, p2, farmer, first.scenarioId, "farmer_hungry_grain_open_store"))
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+		-- another kingdom's ruler never reaches crimson's showing
+		local outsider
+		for _, player in env.Players:GetPlayers() do
+			local kingdomId = match.host.match:kingdomOf(player.UserId)
+			if kingdomId and kingdomId ~= "crimson" then
+				outsider = player
+			end
+		end
+		expect(conversations:converse(assert(outsider, "a ruler of another kingdom"), farmer.id)).toBeNil()
+	end)
+
+	it("M2: a request someone asked about closes, with its showing, once its matter has passed", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer = hungryFarmer(match, registry)
+		conversations:refresh()
+		assert(conversations:converse(p1, farmer.id)) -- asked, never answered
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true) -- still hungry: it stays (N3)
+		registry:get("CitizenService"):setFedRatio("crimson", 1) -- fed again: the matter has passed
+		farmer.hunger = 0
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+		expect(conversations._showing[farmer.id]).toBeNil()
+		expect(select(3, choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(
+			"not_offered"
+		)
+	end)
+
+	it("M2: requests a departed ruler asked about stop holding the kingdom's slots", function()
+		local env, conversations, match, registry = boot()
+		local rulers = crimsonRulers(env, match, 5)
+		assert(#rulers >= 2, "two crimson rulers")
+		local p1 = rulers[1]
+		hungryFarmer(match, registry)
+		conversations:refresh()
+		local open = conversations:openRequests("crimson")
+		expect(#open >= 1).toBe(true)
+		for _, r in open do
+			conversations:converse(p1, r.entityId)
+		end
+		env.mock.players:remove(p1) -- ruler 1 leaves with every bubble asked about
+		env.mock:advance(1)
+		conversations:refresh()
+		for _, r in open do
+			local showing = conversations._showing[r.entityId]
+			expect(showing == nil or showing.userId ~= p1.UserId).toBe(true)
+		end
+	end)
+
+	it("L1: a re-ask keeps the shown stamp and fires no second RulerVisited", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer = hungryFarmer(match, registry)
+		local reputation = registry:get("ReputationService")
+		local visits = 0
+		local real = reputation.rulerVisited
+		reputation.rulerVisited = function(self, ...)
+			visits += 1
+			return real(self, ...)
+		end
+		local view = assert(conversations:converse(p1, farmer.id))
+		local stamp = table.clone(conversations._shown.crimson[farmer.id])
+		env.mock:advance(30)
+		local again = assert(conversations:converse(p1, farmer.id))
+		reputation.rulerVisited = real
+		expect(again.scenarioId).toBe(view.scenarioId)
+		expect(conversations._shown.crimson[farmer.id]).toEqual(stamp)
+		expect(visits).toBe(1)
+	end)
+
+	it("L1 (N5): right after a new round starts, hasRequest is false for last round's requests", function()
+		local env, conversations, match, registry = boot()
+		seat(env, 1)
+		local farmer = hungryFarmer(match, registry)
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local m = match.host.match
+		m.roundId = if type(m.roundId) == "number" then m.roundId + 1 else `{m.roundId}+1` -- as a new round would
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+		expect(#conversations:openRequests("crimson")).toBe(0)
 	end)
 end)

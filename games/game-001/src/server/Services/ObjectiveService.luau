@@ -19,8 +19,9 @@
 	World: Workspace.KingdomObjectives.<objectiveId> = Kit.build("watchtower", 1, "complete",
 	Kit.NEUTRAL_COLOR), its pivot on the ground (Kit/WorldPlan heights) at the objective, facing as the
 	Layout objective does, placed without PivotTo (WorldView.placeModel); attributes ObjectiveId and
-	Owner. On capture it is recoloured in place with Kit.setKingdomColor (the owner's colour); a new
-	match turns it neutral again.
+	Owner. Whenever the owner changes (a capture, or a new match turning it neutral) the model is destroyed
+	and built again with Kit.build in the new owner's colour, so caps, roof and emblems match the owner;
+	the same owner keeps the same model.
 	Remotes (Army/Remotes.luau): Army.GetObjectives -> list(); Army.Objectives(list) to every player when
 	an owner or a progress (in whole percent) changes, at most BROADCAST_HZ times per second. list()
 	rounds every progress to 0.01 (whole percent), so a payload changes exactly when its signature does.
@@ -115,23 +116,24 @@ function ObjectiveService:_syncModels()
 	for _, o in (sim.objectives and sim.objectives.list) or {} do
 		live[o.id] = true
 		local model = self._models[o.id]
-		if model == nil then
-			model = Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR)
-			model.Name = o.id
-			WorldView.placeModel(model, self:_frame(o))
-			model:SetAttribute("ObjectiveId", o.id)
-			model.Parent = self._folder
-			self._models[o.id] = model
-			self._shown[o.id] = ""
-		end
 		local owner = o.owner or ""
-		if self._shown[o.id] ~= owner then
+		if model == nil or self._shown[o.id] ~= owner then
+			-- a new owner gets a tower built in its own Kit look (caps, roof, emblems); a recolour in place
+			-- would keep the old owner's silhouette (FORGE-02 Kit emblem handoff)
+			if model then
+				model:Destroy()
+			end
 			local kingdom = o.owner and sim.kingdoms[o.owner]
 			local color = if kingdom
 				then Color3.fromRGB(kingdom.color[1], kingdom.color[2], kingdom.color[3])
 				else Kit.NEUTRAL_COLOR
-			Kit.setKingdomColor(model, color)
+			model = Kit.build("watchtower", 1, "complete", color)
+			model.Name = o.id
+			WorldView.placeModel(model, self:_frame(o))
+			model:SetAttribute("ObjectiveId", o.id)
 			model:SetAttribute("Owner", o.owner)
+			model.Parent = self._folder
+			self._models[o.id] = model
 			self._shown[o.id] = owner
 		end
 	end

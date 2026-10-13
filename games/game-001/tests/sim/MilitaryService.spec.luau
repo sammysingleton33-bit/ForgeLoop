@@ -20,6 +20,7 @@ local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
 local TreasuryRemotes = require("@game/ReplicatedStorage/Game/Treasury/Remotes")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local MatchHost = require("@game/ReplicatedStorage/Game/Kingdom/MatchHost")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local WorldView = require("@game/ReplicatedStorage/Game/Sim/WorldView")
@@ -645,7 +646,91 @@ describe("ObjectiveService (G8)", function()
 		expect(#sent(env, "Army.Objectives")).toBe(1)
 	end)
 
-	it("broadcasts progress at most twice a second, builds the tower neutral and recolours it on capture", function()
+	it("a tower rebuilt on capture keeps its pivot, a second kingdom still captures it, and nothing leaks", function()
+		-- the full match: in the slice the first capture ends the match, so nobody could capture it again
+		local savedMode = MatchConfig.mode
+		MatchConfig.mode = "match"
+		local ok, env, s, _, sim, k = pcall(setup)
+		MatchConfig.mode = savedMode
+		assert(ok, env)
+		local waitedActive = 0
+		while not sim.active and waitedActive < 60 do -- past the Lobby countdown
+			env.mock:advance(1)
+			waitedActive += 1
+		end
+		assert(sim.active, "the match is running")
+		local o = sim.objectives.list[1]
+		local first = assert(s.objectives:getModel(o.id))
+		local folder = first.Parent
+		local function pivotOf(m)
+			local root = m.PrimaryPart :: BasePart
+			return root.CFrame * root.PivotOffset
+		end
+		local pivot = pivotOf(first)
+		local function towers()
+			local n = 0
+			for _, child in folder:GetChildren() do
+				if child.Name == o.id then
+					n += 1
+				end
+			end
+			return n
+		end
+		local function waitOwner(owner, seconds)
+			local waited = 0
+			while o.owner ~= owner and waited < seconds do
+				env.mock:advance(0.25)
+				waited += 0.25
+			end
+			return o.owner == owner
+		end
+		local other
+		for id, kingdom in sim.kingdoms do
+			if id ~= k.id and kingdom.alive then
+				other = kingdom
+				break
+			end
+		end
+		assert(other, "a second kingdom")
+		local a = Military.spawnUnit(sim, k, "soldier", o.x, o.z)
+		a.order = { kind = "Hold" }
+		expect(waitOwner(k.id, 60)).toBe(true)
+		local byA = assert(s.objectives:getModel(o.id))
+		expect(rawequal(byA, first)).toBe(false)
+		expect(towers()).toBe(1)
+		expect((pivotOf(byA).Position - pivot.Position).Magnitude < 1e-4).toBe(true) -- rebuilt in place
+		expect((pivotOf(byA).LookVector - pivot.LookVector).Magnitude < 1e-4).toBe(true) -- facing kept
+		-- kingdom A walks away; kingdom B's soldier takes the zone: the capture still progresses and completes
+		a.x, a.z = o.x + 400, o.z + 400
+		local b = Military.spawnUnit(sim, other, "soldier", o.x, o.z)
+		b.order = { kind = "Hold" }
+		expect(waitOwner(other.id, 180)).toBe(true)
+		local byB = assert(s.objectives:getModel(o.id))
+		expect(rawequal(byB, byA)).toBe(false)
+		expect(byA.Parent).toBeNil()
+		expect(byB:GetAttribute("Owner")).toBe(other.id)
+		expect((pivotOf(byB).Position - pivot.Position).Magnitude < 1e-4).toBe(true)
+		expect((pivotOf(byB).LookVector - pivot.LookVector).Magnitude < 1e-4).toBe(true)
+		expect(tintColors(byB)).toEqual(tintColors(Kit.build("watchtower", 1, "complete", kingdomColor(other))))
+		expect(towers()).toBe(1)
+		-- A again, then neutral: one tower at every step, each old one destroyed
+		local previous = byB
+		local steps = 0
+		for _, owner in { k.id, false } do -- false stands for neutral: a nil entry would end the list
+			steps += 1
+			o.owner = if owner == false then nil else owner
+			s.objectives:broadcast()
+			local now = assert(s.objectives:getModel(o.id))
+			expect(rawequal(now, previous)).toBe(false)
+			expect(previous.Parent).toBeNil()
+			expect(towers()).toBe(1)
+			expect(now:GetAttribute("Owner")).toBe(o.owner)
+			previous = now
+		end
+		expect(steps).toBe(2)
+	end)
+
+	it("broadcasts progress at most twice a second, builds the tower neutral and rebuilds it on capture", function()
 		local env, s, _, sim, k = setup()
 		local o = sim.objectives.list[1]
 		local model = assert(s.objectives:getModel(o.id))
@@ -685,12 +770,52 @@ describe("ObjectiveService (G8)", function()
 			waited += 0.25
 		end
 		expect(o.owner).toBe(k.id)
-		expect(model:GetAttribute("Owner")).toBe(k.id) -- recoloured in the capture tick
-		expect(model:GetAttribute("KitColor")).toEqual(kingdomColor(k))
-		Kit.setKingdomColor(neutral, kingdomColor(k))
-		expect(tintColors(model)).toEqual(tintColors(neutral))
+		-- rebuilt in the capture tick: a fresh Kit tower in the owner's colour, never a recolour in place
+		local captured = assert(s.objectives:getModel(o.id))
+		expect(rawequal(captured, model)).toBe(false)
+		expect(model.Parent).toBeNil() -- the old model is destroyed
+		expect(captured:GetAttribute("Owner")).toBe(k.id)
+		expect(captured:GetAttribute("ObjectiveId")).toBe(o.id)
+		expect(captured.Name).toBe(o.id)
+		local fresh = Kit.build("watchtower", 1, "complete", kingdomColor(k))
+		expect(captured:GetAttribute("KitColor")).toEqual(fresh:GetAttribute("KitColor")) -- as built, not recoloured
+		expect(#captured:GetDescendants()).toBe(#fresh:GetDescendants()) -- caps and emblems of the owner
+		local function shape(m)
+			local out = {}
+			for _, d in m:GetDescendants() do
+				if d:IsA("BasePart") then
+					local size = d.Size
+					table.insert(out, string.format("%s %.2f %.2f %.2f", d.Name, size.X, size.Y, size.Z))
+				end
+			end
+			table.sort(out)
+			return out
+		end
+		expect(shape(captured)).toEqual(shape(fresh))
+		local recoloured = Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR)
+		Kit.setKingdomColor(recoloured, kingdomColor(k))
+		-- the defect this guards against: a recoloured neutral tower keeps the neutral silhouette
+		expect(shape(recoloured)).never.toEqual(shape(fresh))
+		expect(tintColors(captured)).toEqual(tintColors(fresh))
+		local towers = 0
+		for _, child in captured.Parent:GetChildren() do
+			if child.Name == o.id then
+				towers += 1
+			end
+		end
+		expect(towers).toBe(1) -- one model per objective
 		env.mock:advance(1)
 		local final = sent(env, "Army.Objectives")
 		expect(final[#final][1].owner).toBe(k.id)
+		expect(rawequal(s.objectives:getModel(o.id), captured)).toBe(true) -- same owner: kept, not rebuilt
+		-- back to neutral (as a new match would): rebuilt neutral
+		o.owner = nil
+		s.objectives:broadcast()
+		local back = assert(s.objectives:getModel(o.id))
+		expect(rawequal(back, captured)).toBe(false)
+		expect(captured.Parent).toBeNil()
+		expect(back:GetAttribute("Owner")).toBeNil()
+		expect(tintColors(back)).toEqual(tintColors(neutral))
+		expect(#back:GetDescendants()).toBe(#neutral:GetDescendants())
 	end)
 end)
