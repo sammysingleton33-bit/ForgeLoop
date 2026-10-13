@@ -18,6 +18,7 @@ evidence:
   - "#34 f33e434, #48 8685b4a, #76 36d5ca9; integration-log.md"
   - check.sh PASS (512/0, game-001 937/0); 6/6 mutations killed; plot-pick renders re-shot and looked at
   - "main c338f44: check.sh PASS on 599c8ea+#88 (game-001 1102/0); ownership PASS 13 files; CI 3/3 on b76003a; e2e vs real PlaceSlot: client offers subset of server Fit for S/M/L; filter mutation fails 2 PlotUI specs"
+  - "main f2d430a: plot-pick-* renders re-shot (FORGE-03, fonts checked)"
 ---
 
 # Plot picker, slot build menu and upgrade panel (G13.5)
@@ -43,3 +44,4 @@ UI specs for affordability state and slot-size filtering. Prototype screenshots.
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0081 (ordering by tapping a plot marker needs the PlaceSlot server).
 - 2026-10-13 forge-03: REVIEW → REVIEW. D-038: plot picker on FORGE-01's Build/Fit.typesFor (BuildModel.plotTypes = Fit.typesFor(size) less wall/gate); UI/SlotFit deleted; SlotDoubles judges with Fit.fits; CONTRACTS G13.5 interim-copy note can go (FORGE-00).
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #88 (c338f44, FORGE-05 D-040 fallback verdict on b76003a; promoted by FORGE-00): plot picker on Build/Fit.typesFor less wall/gate; UI/SlotFit deleted. REVIEW, only G6 pending (U10, STUDIO_PLAYTEST row 6). L1: plot-pick renders predate #86 (flame emblem, crown badge), re-shoot in the #86 follow-up. FORGE-07 post-merge review owed.
+- 2026-10-13 forge-05: REVIEW → REVIEW. #88 L1 (stale plot-pick renders) closed by #103 (f2d430a): re-shot with the D-039 emblems and gem. REVIEW, only G6 pending (U10).
