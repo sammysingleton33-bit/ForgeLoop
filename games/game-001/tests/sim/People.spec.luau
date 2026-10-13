@@ -177,6 +177,64 @@ describe("Sim/People (G13.2)", function()
 		})
 	end)
 
+	it("re-rolls an arrival until its name and look are unique among the kingdom's living citizens", function()
+		local sim, crimson = world(31)
+		local function arrive(n, job)
+			local c = sim:_spawnCitizen(crimson, job, 0, 0)
+			crimson.stats.born = n
+			sim.profiler.birth(sim, crimson, c)
+			return c
+		end
+		local function roll(n, try)
+			local stream = if try == 1 then `crimson#{n}` else `crimson#{n}/{try}`
+			return Population.generate(31, stream, { farmer = 1 }, People.CONTENT)[1]
+		end
+		local function plant(i, name, look)
+			local holder = sim.citizens[crimson.citizenIds[i]]
+			holder.name = name or holder.name
+			holder.profile.look = if look then table.clone(look) else holder.profile.look
+		end
+		-- planted clashes: a living citizen already carries the first roll's name, or its look, or both
+		local first = roll(100, 1)
+		plant(1, first.name, nil)
+		local born = arrive(100, "farmer")
+		expect(born.name).never.toBe(first.name)
+		expect(born.profile.key).toBe("crimson:b100") -- the key stays per arrival, whatever the roll
+		first = roll(101, 1)
+		plant(2, nil, first.look)
+		born = arrive(101, "farmer")
+		expect(Population.lookKey(born.profile.look)).never.toBe(Population.lookKey(first.look))
+		-- out of tries: a unique name beats a unique look (here try 1 clashes on look, try 2 on name)
+		local tries = People.ARRIVAL_TRIES
+		People.ARRIVAL_TRIES = 2
+		local one, two = roll(102, 1), roll(102, 2)
+		plant(3, nil, one.look)
+		plant(4, two.name, two.look)
+		born = arrive(102, "farmer")
+		People.ARRIVAL_TRIES = tries
+		expect(born.name).toBe(one.name)
+		-- many arrivals in a fresh kingdom: every living citizen keeps a distinct name and look
+		sim, crimson = world(32)
+		local jobs = { "farmer", "woodcutter", "miner", "builder" }
+		for n = 1, 60 do
+			arrive(n, jobs[n % #jobs + 1])
+		end
+		local names, looks = {}, {}
+		for _, c in people(sim, crimson) do
+			expect(names[c.name]).toBeNil()
+			expect(looks[Population.lookKey(c.profile.look)]).toBeNil()
+			names[c.name] = true
+			looks[Population.lookKey(c.profile.look)] = true
+		end
+		expect(#crimson.citizenIds).toBe(12 + 60)
+		-- without a clash the first roll stands: re-rolls never change an arrival that was already unique
+		local again = world(31)
+		local c = again:_spawnCitizen(again.kingdoms.crimson, "farmer", 0, 0)
+		again.kingdoms.crimson.stats.born = 100
+		again.profiler.birth(again, again.kingdoms.crimson, c)
+		expect(c.name).toBe(roll(100, 1).name)
+	end)
+
 	it("Match: people per world from a seed drawn per world once options.people is set", function()
 		local match = Match.new({
 			random = Random.new(4),

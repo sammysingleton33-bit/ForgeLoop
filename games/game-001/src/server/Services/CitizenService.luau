@@ -7,8 +7,8 @@
 	API (G5)
 		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap, quotas }?
 			-- citizens and soldiers (soldiers count in byJob.soldier and in total); quotas = the
-			   Kingdom.SetJobQuota targets per job (additive to G5, for the job panel); whole numbers >= 0;
-			   nil for an unknown kingdom
+			   Kingdom.SetJobQuota targets per job, hauler excepted (additive to G5, for the job panel);
+			   whole numbers >= 0; nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
 		CitizenService:inspect(entityId): CitizenView?   -- G13.2 (a superset of G5's name, job, mood,
 		                                                  intent, lastMemory?); citizens only
@@ -171,7 +171,9 @@ function CitizenService:getPopulation(kingdomId: string): {
 	end
 	local quotas = {}
 	for job, n in k.quotas or {} do
-		quotas[job] = count(n)
+		if job ~= "hauler" then -- haulers are the pool the others draw from: no quota (Sim/Commands)
+			quotas[job] = count(n)
+		end
 	end
 	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = count(k.popCap), quotas = quotas }
 end
