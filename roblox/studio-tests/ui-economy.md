@@ -12,6 +12,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 | P2 | FORGE-01's `Kingdom`, `Match` and `Build` remotes and services merged (CONTRACTS G8) | U2–U9 |
 | P3 | FORGE-04's InputModeController merged (G4.1; G13.6 `selected` for U10–U11) | U5 build-mode camera/taps, U10–U11 |
 | P4 | Icons uploaded and their ids in `games/game-001/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U9 only; otherwise emoji fallbacks show |
+| P5 | FORGE-01's army and objectives (FL-0052: `Army.Recruit`, `Army.Command`, `Army.Objectives` / `Army.GetObjectives`), `Match.Ended` and `Kingdom.Population` merged (CONTRACTS G8, G13.2) | U14 |
 
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
@@ -112,14 +113,60 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 1. Tap one of your citizens: the drawer (phone: the right-hand panel) shows the name, occupation,
    Loyalty / Mood / Obedience each with a bar **and a number**, what they are doing now, traits,
    family and friends. A citizen with something to say has a "!" on the portrait and a gold **Talk**.
-2. Tap **Talk**: the question and 2–4 answers appear (phone 844 × 390: all four visible without
-   scrolling; a very long question shows a "scroll for all" cue). Every word comes from the server:
-   nothing in English is built into the client.
-3. Tap an answer: all answers grey out at once; then the reaction and the "What changed" chips
+2. Tap **Talk**: the question and 2–4 answers appear (phone 844 × 390: a 2-answer question is fully
+   visible, costs and risks included; more answers may scroll, and then the kicker says "scroll for
+   all N"). Every word comes from the server: nothing in English is built into the client.
+3. **Before answering, check costs and every risk** (FORGE-05 M1; needs FORGE-01's options with
+   `cost` / `risks`): an answer that costs something shows resource chips with the amounts; one the
+   treasury can't pay has its short amount in red **and** "Need … <Resource>" in words and can't be
+   tapped. Every risk of every answer is listed with its whole-percent chance ("40 %" + the server's
+   sentence), none cut off or hidden. Compare with the scenario's preview on the server
+   (`ContentQuery.choicePreview`): same cost, same number of risks, same chances.
+4. Tap an answer with a cost or a risk (phone: the builder's "The kingdom needs walls…"): a confirm
+   step shows that answer alone, whole, with its cost and every risk, and **Back** / **Choose**
+   under it; nothing is spent yet. Back shows the answers again. A quick double tap on the answer
+   only opens the step; it never chooses. An answer with neither is sent at once.
+   Then Choose (or an answer with neither): all answers grey out at once; then the reaction and the "What changed" chips
    (resources, loyalty, reputation). The pills and the reputation strip move to match. **Done** closes.
-4. Tap the same answer twice quickly, or tap during a resource tick: only one answer is sent, and the
-   panel does not flicker or lose the tap.
-5. Tap empty ground or enter build mode while the card or conversation is open: it closes.
+5. Tap the same answer twice quickly, or tap during a resource tick: only one answer is sent, and the
+   panel does not flicker or lose the tap. Gain the missing resource while the question is open: the
+   disabled answer becomes tappable without the panel jumping.
+6. Tap empty ground or enter build mode while the card or conversation is open: it closes. Tap Talk
+   and open Build before the question arrives: Build stays open (no conversation pops up later).
+7. Phone: the conversation sheet covers the reputation strip completely (no sliver above it); a
+   notice during the conversation appears above the sheet, right of the pills, not over the answers.
+
+## U14 — army, objectives and the slice summary (P2 + P5; FORGE-04 selection for step 6; FL-0060)
+Phone first (844 × 390 landscape), then tablet and desktop. Screenshots: the army drawer and the
+tracker on the phone, the summary on the phone and on desktop.
+1. HUD: under the reputation strip, the objective tracker reads "Watchtower" with a "Neutral" chip and
+   "Send soldiers to capture it". It covers neither the pills, the strip nor the rail, which now has a
+   third button, **Army** (crossed swords). Without FORGE-01's army server (before #70) there is
+   no Army button and no Army tab on the barracks: expected (D-038 (2)).
+2. Tap **Army**: the drawer shows your soldier count (the same number as the Kingdom/jobs panel),
+   tabs "Barracks · Lv N" and "Army" once you have a barracks, the recruit block and **Send to
+   capture**. Without a barracks: "Build a Barracks to recruit soldiers"; Send still works.
+3. Recruit: − / + change the count from 1 to 10; Food and Wood are the cost × count against what you
+   have. Short → the button reads "Need N Food" and does nothing. Tap **Recruit 3 soldiers**: the button
+   shows "Recruiting…", then a toast "3 soldiers recruited", the Food and Wood pills drop, and the count
+   rises when the server says so (soldiers appear at the barracks). Tap it twice quickly: one recruit.
+4. Tap **Send to capture**: a toast "Soldiers sent", the button reads "Sent" for about 3 s (taps are
+   ignored), and the idle soldiers march to the nearest tower you don't hold. With 0 soldiers the button
+   reads "No soldiers yet".
+5. While they capture: the tracker shows a bar "You" with a rising percentage (gold text); another
+   kingdom contesting gets its own bar with its name and percentage. The bars move without the HUD
+   flickering, and an open army drawer keeps the button under your finger. Tap the tracker: it expands
+   (all objectives and bars) and collapses again.
+6. Tap your barracks in the world: its upgrade panel has an **Army** tab → the army drawer for that
+   barracks; its "Barracks" tab goes back. Another kingdom's barracks and your keep have no Army tab.
+   Tapping empty ground closes the army drawer.
+7. The first capture ends the slice: the screen dims (notch strips too) and a centred summary shows
+   "Victory" + your kingdom (or "Match over" + the winner, or "No winner"), "Lasted m:ss" and the
+   standings with Crown Points: you highlighted with a "you" tag, AI kingdoms tagged "AI", the winner
+   with a crown. Tapping the dimmed area does nothing; **Continue** closes it. Phone: the panel sits
+   clear of the notch, the Roblox top bar and the home bar.
+8. Report: whether the soldier count, the bars and the summary always matched what happened in the
+   world (the client shows only what the server sends).
 
 ## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
 1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free

@@ -127,6 +127,9 @@ function OnboardingController:report(action: string): boolean
 	if state == nil or state.done or type(action) ~= "string" then
 		return false
 	end
+	if state.clientAction ~= action then
+		return false -- the server would ignore it: only the current step's action is sent
+	end
 	return RemoteLink.send(self._env, "Experience.OnboardingAction", state.flowId, action)
 end
 
