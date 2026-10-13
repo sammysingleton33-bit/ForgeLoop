@@ -6,7 +6,7 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | D-046: **B13 = `d65fb2e`** sent to FORGE-00 (artifact 11840974191; studio-runs row and asks b234533). #93 rides B14 (M1 fix pending from FORGE-01). Next: FL-0101 cinematic conversations (#108 → #84 → #85 → #126) |
+| Current task | **User priorities for the next playable Studio build (2026-10-13, after the first live Studio feedback):** (1) kingdom cleanup fixes, (2) building rotation support, (3) chat bubble readability, (4) initial visual art upgrades where ready. Gate and merge as each lands; ship as soon as 1–3 are in (4 where ready), no waiting on all polish. Owners asked for PRs and ETAs (FORGE-01 rotation server side and cleanup, FORGE-02 cleanup and art, FORGE-03 bubbles and rotation UI). The B14 cinematic set (#108 → #84 → #121 → #85 → #126) rides along if #108's g9f change lands; #93 merged (`7694638`) |
 | Last verified check | main `d65fb2e` (#119): check.sh PASS on the merge result (framework 517/0, game-001 1225/0), FL-0062 mutations 35/35, main CI run 38453828362 green, B13 artifact 11840974191; FL-0089 end-to-end 5/5 after #122 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
 | In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
