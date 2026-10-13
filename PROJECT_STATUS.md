@@ -188,14 +188,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+7e5026f 2026-10-13 Merge remote-tracking branch 'origin/main'
+23ad34c 2026-10-13 [FORGE-00] D-034 build/review cycle, D-035 FORGE-06, D-036 cinematic conversations (G13.8); FL-0097..FL-0102
+0c272f6 2026-10-12 Merge PR #71: [FORGE-03] FL-0065: an acknowledged job quota beats the payload's older one
 27c8cbe 2026-10-12 Merge PR #67: [FORGE-00] FL-0083 follow-ups: #53 review M1–M4, L1–L12, ContentQuery.fireAction, loyalty clamp
 c5208ac 2026-10-12 Merge PR #72: [FORGE-01] Build.Buildings sends removed buildings as destroyed (#50 M1); refusal codes (M2)
 5f2ccfb 2026-10-13 Build.Buildings sends removed buildings as destroyed (#50 M1); refusal codes for FORGE-03; STATUS
 124af89 2026-10-12 Merge PR #69: [FORGE-05] FL-0093 D-033 (4) colour-vision check: CVD simulation, run 1 report, Studio step
-80debb8 2026-10-13 D-033: soldier helmet crest and tritanopia rows in the colour-vision Studio step; FORGE-00 routing recorded
-cc15541 2026-10-13 User build B5 (71a0257): throne, building levels, no trees in buildings
-2221c1e 2026-10-13 CONTRACTS G13.2: soldier helmet crest per kingdom (non-colour friend/foe marker, D-033 colour-vision finding)
-4baf669 2026-10-13 [FORGE-05] FL-0093 D-033 (4) colour-vision check: CVD simulation script, run 1 report, Studio step
+83bf46a 2026-10-13 [FORGE-03] FL-0065: an acknowledged job quota beats the payload's older one (#61 measured)
 ```
 
 <!-- forge:auto:end -->
