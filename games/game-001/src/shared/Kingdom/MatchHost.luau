@@ -53,6 +53,7 @@
 	(FL-0049) take over.
 ]]
 
+local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local RulerGather = require("../Sim/RulerGather")
@@ -201,6 +202,7 @@ function MatchHost:kingdomView(kingdomId: string): { [string]: any }?
 		return nil
 	end
 	local regions = {}
+	local conditions = k.conditions or SocietyConfig.conditionStart -- ReputationService keeps k.conditions (G13.4)
 	local plot = Layout.WORLD.plots[kingdomId]
 	if plot and k.alive then
 		table.insert(regions, plot.regionId) -- the home region (world Layout) is the kingdom's from the start
@@ -220,6 +222,9 @@ function MatchHost:kingdomView(kingdomId: string): { [string]: any }?
 		crownPoints = k.crownPoints,
 		regions = regions,
 		alive = k.alive,
+		happiness = conditions.happiness,
+		stability = conditions.stability,
+		morale = conditions.morale,
 	}
 end
 
