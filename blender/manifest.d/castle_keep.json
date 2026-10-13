@@ -221,8 +221,8 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 46.763,
-        "y": 68.8,
+        "x": 46.838,
+        "y": 67.4,
         "z": 42.316
       },
       "double_sided": false,
@@ -232,7 +232,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "b2bd5cb7335899bd",
+      "geometry_hash": "f677fb8beed92233",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -242,45 +242,33 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_keep.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7703,
       "sockets": {
         "balcony": [
-          -0.058,
+          0.114,
           17.8,
           -13.658
         ],
         "door": [
-          -0.058,
+          0.114,
           0.0,
           -22.758
         ],
         "flag": [
-          -0.058,
-          68.8,
+          0.114,
+          67.4,
           2.942
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 14120,
-        "lod1": 4942
+        "lod0": 14088,
+        "lod1": 4930
       },
       "validation_pass": true
     }
@@ -295,8 +283,8 @@
       "castle_keep_blue_01",
       "castle_keep_yellow_01"
     ],
-    "mean_pair_diff": 0.1821,
-    "min_pair_diff": 0.1082,
+    "mean_pair_diff": 0.1818,
+    "min_pair_diff": 0.1105,
     "pass": true,
     "threshold": 0.08
   }

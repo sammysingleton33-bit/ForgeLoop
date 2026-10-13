@@ -785,7 +785,7 @@
       },
       "dimensions_studs": {
         "x": 32.244,
-        "y": 47.929,
+        "y": 47.365,
         "z": 27.2
       },
       "double_sided": false,
@@ -795,7 +795,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "92f0d279f09f317e",
+      "geometry_hash": "f97e731382456187",
       "id": "castle_gatehouse_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -806,21 +806,9 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_gatehouse.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7903,
       "sockets": {
@@ -868,8 +856,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 8530,
-        "lod1": 2984
+        "lod0": 8470,
+        "lod1": 2964
       },
       "validation_pass": true
     }
@@ -884,7 +872,7 @@
       "castle_gatehouse_green_01",
       "castle_gatehouse_yellow_01"
     ],
-    "mean_pair_diff": 0.1624,
+    "mean_pair_diff": 0.1622,
     "min_pair_diff": 0.0991,
     "pass": true,
     "threshold": 0.08

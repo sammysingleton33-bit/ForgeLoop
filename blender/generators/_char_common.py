@@ -16,6 +16,8 @@ from lib import kit
 from lib.geo import Matrix, Vector, box, cylinder, lathe, look_rot, loft_rings, prism, tube, uvsphere
 from lib.palette import kingdom_color
 
+from generators import _kingdom_props_common as kp
+
 KINGDOMS = ("red", "blue", "green", "yellow")
 
 # Joint table for a 5.5-stud character (x for the LEFT side; the right side mirrors to -x).
@@ -83,7 +85,8 @@ def interp(profile, z):
 
 
 def emblem_poly(k):
-    """Kingdom emblem outline in a unit box (x -0.5..0.5, z 0..1), CCW."""
+    """Kingdom emblem outline in a unit box (x -0.5..0.5, z 0..1), CCW. (No yellow: the kit-wide sun
+    is layered, see `emblem`.)"""
     if k == "red":  # flame
         return [(0.0, 0.0), (0.26, 0.03), (0.42, 0.18), (0.46, 0.4), (0.38, 0.58), (0.42, 0.8), (0.24, 0.64),
                 (0.18, 0.84), (0.02, 1.0), (-0.06, 0.78), (-0.2, 0.9), (-0.26, 0.66), (-0.42, 0.5),
@@ -104,31 +107,44 @@ def emblem_poly(k):
             right.append((max(0.05, env * lob), 0.16 + 0.84 * t))
         right[-1] = (0.03, 1.0)
         return [(-0.05, 0.0), (0.05, 0.0)] + right + [(-x, z) for x, z in reversed(right)]
-    # yellow: sun disc with twelve rays
-    pts = []
-    for i in range(16):
-        a = math.pi / 2 + i * math.pi / 8
-        r = 0.52 if i % 2 == 0 else 0.33
-        pts.append((math.cos(a) * r, 0.5 + math.sin(a) * r))
-    return pts
+    raise ValueError("emblem_poly('yellow'): the kit-wide sun is layered, draw it with emblem('yellow', ...)")
 
 
 EMBLEM_STYLE = {  # fill, outline (None = no outline) when drawn on kingdom cloth
     "red": ("red_trim", "red_cloth_dark"),
     "blue": ("blue_emblem", "blue_cloth_dark"),
     "green": ("green_emblem", "green_cloth_dark"),
-    "yellow": ("yellow_emblem", "yellow_trim"),
-}
+}  # yellow: see `sun`
+
+
+def sun(size, depth=0.08, roundel=True):
+    """The kit-wide Sunspire sun (_kingdom_props_common.sun_outlines: 8 long deep-gold rays + a raised
+    16-sided disc) as two cheap prisms, centred on the origin, facing -Y. roundel=True (on gold cloth,
+    D-033): it sits on the shared ivory roundel with a bronze rim, 0.6 x size in radius (the old
+    outlined sun's footprint); roundel=False (on an ivory field): the bare sun, 0.56 x size in radius."""
+    out = []
+    if roundel:
+        r = 0.6 * size
+        out.append(kp.roundel(r, depth * 0.75).move(0, depth * 0.375, 0).paint(tint=0.5))  # back at +0.75 depth
+        s = r / kp.SUN_ROUNDEL
+    else:
+        s = 0.56 * size
+    rays, disc = kp.sun_outlines(s)
+    y = depth * 0.3 - depth / 2  # rays' back sunk 0.3 x depth into the roundel (or field) face at y = 0
+    out.append(slab(rays, depth, kp.SUN_RAYS).move(0, y, 0))
+    out.append(slab(disc, depth, kp.SUN_DISC).move(0, y - depth * 0.3, 0))
+    return [p.paint(grad=("range", 0.55, 0.95)) for p in out]
 
 
 def emblem(k, size, depth=0.08, outline=True):
-    """Emblem slab centred on the origin, facing -Y. outline=None: only where the fill needs it."""
+    """Emblem slab centred on the origin, facing -Y. outline=None: only where the fill needs it.
+    Yellow is the kit-wide sun (`sun`); its "outline" is the ivory roundel it needs on gold cloth."""
+    if k == "yellow":
+        return sun(size, depth, roundel=outline is not False)
     poly = [(x * size, (z - 0.5) * size) for x, z in emblem_poly(k)]
     fill, line = EMBLEM_STYLE[k]
     out = [slab(poly, depth, fill)]
-    if outline is None:
-        outline = k == "yellow"
-    if outline and line:
+    if outline and line:  # (None: no outline; only the yellow sun needed one, now its roundel)
         o = slab(shrink(poly, 1.16, 0.0, 0.0), depth * 0.6, line)
         out.append(o.move(0, depth * 0.45, 0))
     return [p.paint(grad=("range", 0.55, 0.95)) for p in out]
@@ -182,15 +198,16 @@ def round_poly(R, n=12):
 def shield(k, poly, emblem_size, rim=None, field=None, boss=False, depth=0.2):
     """Shield standing on its lowest point at the origin, face towards -Y.
     Returns (pieces, centre_z)."""
+    sun_on_ivory = k == "yellow" and field is None  # D-033: the gold sun gets an ivory field, not gold
     rim = rim or kingdom_color(k, "trim")
-    field = field or kingdom_color(k, "cloth")
+    field = field or kingdom_color(k, "accent" if sun_on_ivory else "cloth")
     zs = [z for _, z in poly]
     cz = (min(zs) + max(zs)) / 2
     out = [slab(poly, depth, rim).paint(grad=("range", 0.3, 0.9))]
     out.append(slab(shrink(poly, 0.86, 0.0, cz), depth * 0.6, field).move(0, -depth * 0.4, 0)
                .paint(grad=("range", 0.35, 0.9)))
     ez = cz + (max(zs) - cz) * 0.12
-    for e in emblem(k, emblem_size, 0.08, outline=True):
+    for e in emblem(k, emblem_size, 0.08, outline=not sun_on_ivory):
         out.append(e.move(0, -depth * 0.75, ez))
     if boss:
         out.append(lathe([(0.0, 0.0), (0.3, 0.0), (0.26, 0.12), (0.0, 0.2)], 8, rim).rotate(math.pi / 2, "X")
@@ -802,6 +819,6 @@ def mace(hand, direction, length=1.9):
 
 
 __all__ = ["KINGDOMS", "BASE", "HEAD_R", "ARM_POSES", "Body", "ellipsoid", "along", "elathe", "slab", "shrink",
-           "interp", "emblem_poly", "emblem", "kite_poly", "heater_poly", "almond_poly", "round_poly", "shield", "hair_cap",
+           "interp", "emblem_poly", "sun", "emblem", "kite_poly", "heater_poly", "almond_poly", "round_poly", "shield", "hair_cap",
            "hair_long", "beard", "hood", "brimmed_hat", "scarf_head", "helmet", "spear", "pennant_flag", "bow",
            "quiver", "sword", "hammer", "great_helm", "axe", "mace", "pitchfork", "basket", "pouch", "stick"]

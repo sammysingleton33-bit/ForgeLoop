@@ -7,7 +7,8 @@
 
 Cloth is solid (0.3 thick) and waves gently (grid lofted through stations); the kingdom
 emblem (red crown, blue star, green oak leaf, yellow sun) is raised geometry that is
-bent onto the same wave. Trim bands and tassels use the kingdom trim metal colour.
+bent onto the same wave (the gold sun on the shared ivory roundel with a bronze rim, D-033).
+Trim bands and tassels use the kingdom trim metal colour.
 
 Sockets: `base` = foot of the pole/mast on the ground (wall banner: bottom centre on the
 wall plane); `top` = finial tip / mounting point (wall banner: rod centre on the wall).
@@ -18,7 +19,8 @@ import math
 from lib import kit
 from lib.geo import Vector, box, cone, cylinder, lathe
 
-from generators._kingdom_props_common import (KINGDOMS, bend_onto, border, emblem, field, kcol, lashing, rope, sheet)
+from generators._kingdom_props_common import (KINGDOMS, bend_onto, border, emblem, field, kcol, lashing, rope, sheet,
+                                              sun_badge)
 
 NAME = "prop_banner"
 VERSION = 1
@@ -115,10 +117,22 @@ def hanging_cloth(b, k, W, L, top, bottom, emb, rng, x0=0.0, y0=0.0, amp=0.3, fr
     b.add(sheet(us, vs, pos, THICK, cloth, cols), grad=("range", 0.3, 0.9), tag="cloth")
     es = emb_size or W * 0.74
     ez = top - L * emb_z
-    parts = emblem(FROZEN.get(emb, emb), es, *emblem_cols(k, emb), mid=emb_mid)
+    if emb == "sun":
+        # D-033: never an emblem on its own colour. The gold sun sits on the shared ivory roundel with a
+        # bronze rim (es = roundel diameter), sunk 0.06 into the cloth so the wave never opens a gap;
+        # the roundel gets a half-radius ring wherever the sun itself is bent through a mid ring.
+        parts = sun_badge(es / 2, 0.16, mid=emb_mid, roundel_mid=emb_mid is not None, sun_depth=0.22)
+        parts[0].paint(tint=0.5, grad=("range", 0.55, 0.95))  # fixed tint: no extra rng draw
+        dy = -0.02
+    else:
+        parts = emblem(FROZEN.get(emb, emb), es, *emblem_cols(k, emb), mid=emb_mid)
+        dy = -0.08
     for p in parts:
-        p.move(x0, y0 - THICK / 2 - 0.08, ez)
+        p.move(x0, y0 - THICK / 2 + dy, ez)
     bend_onto(parts, wave)
+    if emb == "sun":
+        b.add(parts[0], tag="emblem")
+        parts = parts[1:]
     b.add(parts, grad=("range", 0.45, 0.95), tag="emblem")
     b.stats["emblem"] = 1
     low = top
@@ -221,7 +235,7 @@ def build_pole(b, p, rng):
             pc.move(0, 0, H)
             pc.tag = ""
     hanging_cloth(b, k, W, L, cz + 0.05, "point" if k in ("red", "yellow") else "swallow",
-                  p["emblem"], rng, y0=yb, lean=0.45, emb_z=0.4)
+                  p["emblem"], rng, y0=yb, lean=0.45, emb_z=0.4, emb_size=W * 0.76 if sun else None)
     b.socket("base", 0, 0, 0)
     b.socket("top", 0, 0, H + 2.0)
 
@@ -305,8 +319,11 @@ def build_standard(b, p, rng):
     b.add(bar)
     for sx in (-1, 1):
         b.add(cone(0.32, 0.75, 6, trim).rotate(sx * math.pi / 2, "Y").move(sx * (W + 1.0) / 2, yb, cz))
+    es, ez = W * 0.62, 0.36
+    if p["emblem"] == "sun":  # ivory roundel (D-033) 0.62 W across, just under the top hem, clear of the tail notches
+        es, ez = W * 0.62, (0.07 * L + 0.06 + W * 0.31) / L
     hanging_cloth(b, k, W, L, cz + 0.02, "tails", p["emblem"], rng, y0=yb, amp=0.2, side_trim=False,
-                  emb_size=W * 0.62, emb_z=0.36, fringe=False, lean=0.35, emb_mid=None,
+                  emb_size=es, emb_z=ez, fringe=False, lean=0.35, emb_mid=None,
                   us=(0.0, 0.07, 0.35, 0.68, 0.87, 1.0))
     # 3D emblem topper in trim metal on a socket
     es = 2.8 if big else 3.2

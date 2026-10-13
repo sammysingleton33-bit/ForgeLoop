@@ -3,7 +3,7 @@ curtain wall, crowned in its kingdom's roof language (ART_DIRECTION section 3):
   red    round towers, tall conical spires with gold finials (big roofed spire / drum + stair turret)
   blue   square towers, crisp pyramid slate roofs with silver finials (big pyramid / corner bartizans)
   green  timber hoardings (wooden fighting galleries) under low green cones
-  yellow sandstone, stepped Moorish merlons, onion dome / domed corner kiosks, gold sun finials
+  yellow sandstone, stepped Moorish merlons, onion dome / domed corner kiosks, gold orb finials
 
 Front (field side) faces -Y like castle_wall. Ground door faces +Y (courtyard); arched wall-walk
 doors at x = +-R, z = 24 open onto castle_wall walks; the top walk is at `walk` (31-35; roofed
@@ -464,7 +464,7 @@ def build(b, p):
                 else:  # onion
                     z = drum(b, k, rng, 5.0, walk, 5.4, windows=2)
                     b.add(cc.annulus(4.2, 5.6, z, z + 0.9, 12, kc(k, "accent")))
-                    pcs, apex = cc.dome(k, 5.7, 12.0, onion=True, seg=12)  # broad bulb
+                    pcs, apex = cc.dome(k, 5.7, 12.0, onion=True, seg=12, fin="orb_pole")  # broad bulb
                     b.add(cc.place(pcs, 0, 0, 0, z + 0.9), tag="roof")
                     flag_at = (0, 0, z + 0.9 + apex)
     else:  # square
@@ -496,7 +496,7 @@ def build(b, p):
                     kiosk(b, k, sx * (hp - 1.75), sy * (hp - 1.75), walk + 0.05)
             z = drum(b, k, rng, 4.9, walk, 8.4, windows=2, seg=12, shutters=False)  # chunky raised drum
             b.add(cc.annulus(4.1, 5.5, z, z + 0.8, 12, kc(k, "accent")))
-            pcs, apex = cc.dome(k, 5.1, 10.5, onion=True, seg=12)  # true onion: bulb, pinched neck, tip
+            pcs, apex = cc.dome(k, 5.1, 10.5, onion=True, seg=12, fin="orb_pole")  # true onion: bulb, neck, orb + flag
             b.add(cc.place(pcs, 0, 0, 0, z + 0.8), tag="roof")
             flag_at = (0, 0, z + 0.8 + apex)
 

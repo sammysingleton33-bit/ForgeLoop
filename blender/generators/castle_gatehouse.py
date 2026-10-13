@@ -150,7 +150,7 @@ def tower_crowns(b, k, rng, form, y, z, front=True):
         else:
             b.add(cylinder(TR - 0.3, TR - 0.3, 2.4, 10, kc(k, "stone")).move(x, y, z).paint(grad=("range", 0.5, 0.95)))
             b.add(cc.annulus(TR - 0.8, TR + 0.2, z + 2.4, z + 3.0, 10, kc(k, "accent")).move(x, y, 0))
-            pcs, apex = cc.dome(k, TR - 0.35, (TR - 0.35) * 2.1, onion=True, seg=10, fin="sun", ribs=False,
+            pcs, apex = cc.dome(k, TR - 0.35, (TR - 0.35) * 2.1, onion=True, seg=10, fin="orb", ribs=False,
                                 collar=False)
             b.add(cc.place(pcs, 0, x, y, z + 3.0), tag="roof")
 

@@ -508,7 +508,7 @@ def keep_yellow(b, k, rng):
             b.add(cc.annulus(r - 0.4, r + 0.5, zt + 4.2, zt + 4.9, 12, kc(k, "stone_light")).move(x, y, 0))
             pcs, apex = cc.dome(k, r * 0.92, r * 2.0, onion=True, seg=10, fin="simple", ribs=False, collar=False)
             b.add(cc.place(pcs, 0, x, y, zt + 4.9), tag="roof")
-    # great drum with arched windows and a gallery, onion dome with a sun finial
+    # great drum with arched windows and a gallery, onion dome with a gold orb under the flag
     Rd = 8.4
     cy = 1.0
     zd0, zd1 = zm - 0.3, zm + 13.0
@@ -525,7 +525,7 @@ def keep_yellow(b, k, rng):
         b.stats["windows"] += 1
     b.add(cc.annulus(Rd - 0.3, Rd + 0.5, zd1 - 0.1, zd1 + 0.5, 16, kc(k, "accent")).move(0, cy, 0))
     b.add(cc.annulus(Rd - 0.6, Rd + 0.15, zd1 + 0.5, zd1 + 1.4, 16, "gold_dark").move(0, cy, 0))
-    pcs, apex = cc.dome(k, Rd, 18.0, onion=True, seg=16)
+    pcs, apex = cc.dome(k, Rd, 18.0, onion=True, seg=16, fin="orb_pole")
     b.add(cc.place(pcs, 0, 0, cy, zd1 + 1.4), tag="roof")
     # two chunky crenellated back towers (square, squat, gold half-dome caps): the gold kingdom's
     # identity is big domes on chunky drums, never slim ringed shafts

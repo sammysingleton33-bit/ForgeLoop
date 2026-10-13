@@ -433,7 +433,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "09d98959f4b4e40f",
+      "geometry_hash": "3e63b8f23a9f323e",
       "id": "prop_banner_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -466,8 +466,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 708,
-        "lod1": 246
+        "lod0": 780,
+        "lod1": 272
       },
       "validation_pass": true
     },
@@ -490,7 +490,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "e7c36ba0207b1938",
+      "geometry_hash": "caca0f2ab7df7a00",
       "id": "prop_banner_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -523,8 +523,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 706,
-        "lod1": 246
+        "lod0": 790,
+        "lod1": 276
       },
       "validation_pass": true
     }
@@ -539,8 +539,8 @@
       "prop_banner_red_01",
       "prop_banner_yellow_02"
     ],
-    "mean_pair_diff": 0.5721,
-    "min_pair_diff": 0.186,
+    "mean_pair_diff": 0.5704,
+    "min_pair_diff": 0.1817,
     "pass": true,
     "threshold": 0.08
   }

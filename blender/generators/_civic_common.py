@@ -8,7 +8,9 @@ scale like lib/kit.py, so the props match the cottage's barrels and crates exact
 import math
 
 from lib import kit
-from lib.geo import Matrix, Vector, box, cylinder, icosphere, lathe, loft_rings, prism, tube
+from lib.geo import Matrix, Vector, box, cylinder, icosphere, lathe, loft_rings, merge, prism, tube
+
+from generators._kingdom_props_common import sun_badge
 
 KINGDOM_CYCLE = ("red", "blue", "green", "yellow")
 
@@ -115,7 +117,8 @@ def pennant(length=2.2, h=1.1, color="red_cloth", pole=3.0):
 # ------------------------------------------------------------------ emblems / signs
 
 def emblem_poly(kind, s=1.0):
-    """2D outline (x, z) centred on 0, roughly 1.4 x 1.4 at s=1."""
+    """2D outline (x, z) centred on 0, roughly 1.4 x 1.4 at s=1. (No "sun": the kit-wide sun is
+    layered, see `emblem`.)"""
     if kind == "star":
         pts = []
         for i in range(10):
@@ -123,11 +126,7 @@ def emblem_poly(kind, s=1.0):
             r = 0.72 if i % 2 == 0 else 0.3
             pts.append((math.cos(a) * r, math.sin(a) * r))
     elif kind == "sun":
-        pts = []
-        for i in range(16):
-            a = math.pi * 2 * i / 16
-            r = 0.72 if i % 2 == 0 else 0.5
-            pts.append((math.cos(a) * r, math.sin(a) * r))
+        raise ValueError("emblem_poly('sun'): the kit-wide sun is layered, draw it with emblem('sun', ...)")
     elif kind == "crown":
         pts = [(-0.6, -0.45), (0.6, -0.45), (0.65, 0.45), (0.32, 0.08), (0.0, 0.55), (-0.32, 0.08), (-0.65, 0.45)]
     elif kind == "leaf":
@@ -160,6 +159,15 @@ KINGDOM_EMBLEM = {"red": "crown", "blue": "star", "green": "leaf", "yellow": "su
 
 
 def emblem(kind, s, depth, color):
+    """Raised emblem / sign icon centred on the origin (`depth` thick around y = 0), about 1.4 s across.
+    "sun" is the kit-wide Sunspire sun (_kingdom_props_common.sun_badge, `color` ignored): deep-gold
+    rays + disc on an ivory roundel with a bronze rim, because the civic banners and shields put it on
+    gold cloth (D-033: never an emblem on its own colour). The roundel fills the old `depth` envelope,
+    the sun stands proud of it; merged into ONE piece so callers can `.move()` it like any icon."""
+    if kind == "sun":
+        parts = sun_badge(0.72 * s, depth, sun_depth=depth * 0.6)
+        parts[0].paint(grad=("range", 0.55, 0.95))  # merge() keeps the first piece's gradient
+        return merge(parts)
     return prism(emblem_poly(kind, s), depth, color)
 
 

@@ -537,7 +537,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "e93f93cbddcbf0d2",
+      "geometry_hash": "63fc7f669f80b14b",
       "id": "char_soldier_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -550,21 +550,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7003,
       "sockets": {
@@ -667,8 +655,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2418,
-        "lod1": 846
+        "lod0": 2490,
+        "lod1": 870
       },
       "validation_pass": true
     },
@@ -1209,7 +1197,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "6f51e3db76665a3f",
+      "geometry_hash": "5679c6d33da29e91",
       "id": "char_soldier_08",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -1222,21 +1210,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7007,
       "sockets": {
@@ -1339,8 +1315,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2320,
-        "lod1": 812
+        "lod0": 2392,
+        "lod1": 836
       },
       "validation_pass": true
     },
@@ -1881,7 +1857,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "717413c4e728b7af",
+      "geometry_hash": "3fc27e7f2470c29a",
       "id": "char_soldier_12",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -1894,21 +1870,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7011,
       "sockets": {
@@ -2011,8 +1975,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2346,
-        "lod1": 820
+        "lod0": 2418,
+        "lod1": 846
       },
       "validation_pass": true
     }
@@ -2027,7 +1991,7 @@
       "char_soldier_05",
       "char_soldier_07"
     ],
-    "mean_pair_diff": 0.3289,
+    "mean_pair_diff": 0.3283,
     "min_pair_diff": 0.1207,
     "pass": true,
     "threshold": 0.08

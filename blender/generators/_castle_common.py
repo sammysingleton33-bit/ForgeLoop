@@ -501,14 +501,32 @@ def finial(color, h=3.0, ball=0.55, collar=0.45, seg=6):
                    (ball, h * 0.58), (0.12, h * 0.7), (0.0, h)], seg, color)]
 
 
-def sun_finial(color, h=3.4):
-    """Gold spike with a sun disc (Sunspire)."""
-    out = finial(color, h * 0.7, 0.45)
-    disc = lathe([(0.0, -0.12), (0.9, -0.12), (0.9, 0.12), (0.0, 0.12)], 10, color)
-    disc.rotate(math.pi / 2, "X").move(0, 0, h * 0.82)
-    out.append(disc)
-    out.append(lathe([(0.12, 0.0), (0.12, h * 0.3), (0.0, h * 0.42)], 5, color).move(0, 0, h * 0.82))
-    return out
+ORB_C = 1.5  # height of the orb centre above the base of orb_finial
+ORB_POLE_NECK = 1.2  # extra stem under the orb when a flagpole stands on it
+
+
+def orb_finial(h=3.9, ball=0.82, spike=True, seg=8, color="gold", orb="gold_dark", neck=0.0):
+    """Gold-kingdom dome finial: collar, neck, a solid orb and a spike (spike=False: the orb ends in a
+    short socket for a flagpole, which then plays the spike). The orb is a darker gold than the collar and
+    spike so it reads as a solid ball against the sky in grayscale too. Never put a flat disc or a ring on
+    a gold dome: a gold disc there was iso-luminant with the sky, only its dark rim showed, and it read as
+    a crescent on an onion dome (fresh review round 4). `neck` lifts the orb (and spike) on a longer stem.
+    Base z=0; the orb centre is at ORB_C + neck. Returns (piece, top_z)."""
+    c = ORB_C + neck
+    h += neck
+    prof = [(0.5, 0.0), (0.5, 0.3), (0.17, c - 0.95 * ball),  # collar + neck
+            (ball * 0.82, c - 0.58 * ball), (ball, c), (ball * 0.82, c + 0.58 * ball),  # orb
+            (0.24 if spike else 0.3, c + 0.95 * ball)]
+    if spike:
+        prof.append((0.0, h))
+    p = lathe(prof, seg, color)
+    bands = len(prof) - 1
+    cols = [orb if 2 <= fi // seg <= 5 else color for fi in range(bands * seg)]
+    cols += [color] * (len(p.faces) - len(cols))  # caps: bottom (collar), top socket
+    if not spike:
+        cols[-1] = orb
+    p.face_colors = cols
+    return p, (h if spike else c + 0.95 * ball)
 
 
 # ------------------------------------------------------------------ kingdom roofs
@@ -584,9 +602,13 @@ def low_cone(k, r, h, seg=10, overhang=1.1, rows=2):
     return out, h + 1.9
 
 
-def dome(k, r, h=None, onion=True, seg=12, rng=None, fin="sun", ribs=False, collar=True):
-    """Yellow: onion dome (or half dome) with a ring collar, ribs and a gold sun finial.
+def dome(k, r, h=None, onion=True, seg=12, rng=None, fin="orb", ribs=False, collar=True):
+    """Yellow: onion dome (or half dome) with a ring collar, ribs and a gold finial:
+    fin="orb" ball + spike (crowning dome), "orb_pole" ball with a flagpole socket (the returned apex
+    minus 0.6-0.8 puts the pole foot inside the orb), "simple" small knob + spike (turrets).
     Returns (pieces, apex_z)."""
+    if fin not in ("orb", "orb_pole", "simple"):
+        raise ValueError(f"dome finial {fin!r}: use 'orb', 'orb_pole' or 'simple' (no discs on gold domes)")
     col = kc(k, "roof")
     if onion and r < 2.5:
         h = h or r * 2.0
@@ -615,11 +637,16 @@ def dome(k, r, h=None, onion=True, seg=12, rng=None, fin="sun", ribs=False, coll
             p0 = Vector((math.cos(a) * ra, math.sin(a) * ra, za))
             p1 = Vector((math.cos(a) * rb, math.sin(a) * rb, zb))
             out.append(kit.oriented_box(p0, p1, 0.22, 0.2, "gold_dark", Vector((math.cos(a), math.sin(a), 0))))
-    f = sun_finial("gold", 3.6) if fin == "sun" else finial("gold", 1.8, 0.3, 0.25)
-    for p in f:
-        p.move(0, 0, h - 0.2)
-    out += f
-    return out, h + (3.3 if fin == "sun" else 1.6)
+    if fin == "simple":
+        f = finial("gold", 1.8, 0.3, 0.25)
+        for p in f:
+            p.move(0, 0, h - 0.2)
+        out += f
+        return out, h + 1.6
+    neck = 0.0 if fin == "orb" else ORB_POLE_NECK  # the flag keeps its old height above the dome
+    f, top = orb_finial(spike=fin == "orb", neck=neck)
+    out.append(f.move(0, 0, h - 0.2))
+    return out, h - 0.2 + (top if fin == "orb" else ORB_C + neck + 0.6)
 
 
 def merlon(style, k, w=MERLON_W, h=MERLON_H, t=1.3, color=None, cap=True):

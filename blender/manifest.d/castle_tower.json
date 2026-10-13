@@ -513,7 +513,7 @@
       },
       "dimensions_studs": {
         "x": 18.635,
-        "y": 61.3,
+        "y": 61.1,
         "z": 18.635
       },
       "double_sided": false,
@@ -523,7 +523,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "5f7db019848c2844",
+      "geometry_hash": "e04ab1ffee8fb06d",
       "id": "castle_tower_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -536,21 +536,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 5,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7306,
       "sockets": {
@@ -561,7 +549,7 @@
         ],
         "flag": [
           -0.0,
-          61.3,
+          61.1,
           0.0
         ],
         "top": [
@@ -583,8 +571,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4950,
-        "lod1": 1732
+        "lod0": 4918,
+        "lod1": 1720
       },
       "validation_pass": true
     },
@@ -597,7 +585,7 @@
       },
       "dimensions_studs": {
         "x": 18.0,
-        "y": 58.7,
+        "y": 58.5,
         "z": 18.0
       },
       "double_sided": false,
@@ -607,7 +595,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "0dc9bd2071f3395a",
+      "geometry_hash": "cf239f5efc12ef10",
       "id": "castle_tower_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -620,21 +608,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 5,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7307,
       "sockets": {
@@ -645,7 +621,7 @@
         ],
         "flag": [
           -0.0,
-          58.7,
+          58.5,
           0.0
         ],
         "top": [
@@ -667,8 +643,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 5598,
-        "lod1": 1958
+        "lod0": 5566,
+        "lod1": 1948
       },
       "validation_pass": true
     }
@@ -683,7 +659,7 @@
       "castle_tower_blue_01",
       "castle_tower_blue_02"
     ],
-    "mean_pair_diff": 0.164,
+    "mean_pair_diff": 0.1638,
     "min_pair_diff": 0.09,
     "pass": true,
     "threshold": 0.08

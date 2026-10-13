@@ -4406,7 +4406,7 @@
       },
       "dimensions_studs": {
         "x": 32.244,
-        "y": 47.929,
+        "y": 47.365,
         "z": 27.2
       },
       "double_sided": false,
@@ -4416,7 +4416,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "92f0d279f09f317e",
+      "geometry_hash": "f97e731382456187",
       "id": "castle_gatehouse_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -4427,21 +4427,9 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_gatehouse.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7903,
       "sockets": {
@@ -4489,8 +4477,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 8530,
-        "lod1": 2984
+        "lod0": 8470,
+        "lod1": 2964
       },
       "validation_pass": true
     },
@@ -4715,8 +4703,8 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 46.763,
-        "y": 68.8,
+        "x": 46.838,
+        "y": 67.4,
         "z": 42.316
       },
       "double_sided": false,
@@ -4726,7 +4714,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "b2bd5cb7335899bd",
+      "geometry_hash": "f677fb8beed92233",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -4736,45 +4724,33 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_keep.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7703,
       "sockets": {
         "balcony": [
-          -0.058,
+          0.114,
           17.8,
           -13.658
         ],
         "door": [
-          -0.058,
+          0.114,
           0.0,
           -22.758
         ],
         "flag": [
-          -0.058,
-          68.8,
+          0.114,
+          67.4,
           2.942
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 14120,
-        "lod1": 4942
+        "lod0": 14088,
+        "lod1": 4930
       },
       "validation_pass": true
     },
@@ -5291,7 +5267,7 @@
       },
       "dimensions_studs": {
         "x": 18.635,
-        "y": 61.3,
+        "y": 61.1,
         "z": 18.635
       },
       "double_sided": false,
@@ -5301,7 +5277,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "5f7db019848c2844",
+      "geometry_hash": "e04ab1ffee8fb06d",
       "id": "castle_tower_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -5314,21 +5290,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 5,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7306,
       "sockets": {
@@ -5339,7 +5303,7 @@
         ],
         "flag": [
           -0.0,
-          61.3,
+          61.1,
           0.0
         ],
         "top": [
@@ -5361,8 +5325,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4950,
-        "lod1": 1732
+        "lod0": 4918,
+        "lod1": 1720
       },
       "validation_pass": true
     },
@@ -5375,7 +5339,7 @@
       },
       "dimensions_studs": {
         "x": 18.0,
-        "y": 58.7,
+        "y": 58.5,
         "z": 18.0
       },
       "double_sided": false,
@@ -5385,7 +5349,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "0dc9bd2071f3395a",
+      "geometry_hash": "cf239f5efc12ef10",
       "id": "castle_tower_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -5398,21 +5362,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 5,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7307,
       "sockets": {
@@ -5423,7 +5375,7 @@
         ],
         "flag": [
           -0.0,
-          58.7,
+          58.5,
           0.0
         ],
         "top": [
@@ -5445,8 +5397,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 5598,
-        "lod1": 1958
+        "lod0": 5566,
+        "lod1": 1948
       },
       "validation_pass": true
     },
@@ -7739,7 +7691,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "e93f93cbddcbf0d2",
+      "geometry_hash": "63fc7f669f80b14b",
       "id": "char_soldier_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -7752,21 +7704,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7003,
       "sockets": {
@@ -7869,8 +7809,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2418,
-        "lod1": 846
+        "lod0": 2490,
+        "lod1": 870
       },
       "validation_pass": true
     },
@@ -8411,7 +8351,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "6f51e3db76665a3f",
+      "geometry_hash": "5679c6d33da29e91",
       "id": "char_soldier_08",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -8424,21 +8364,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7007,
       "sockets": {
@@ -8541,8 +8469,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2320,
-        "lod1": 812
+        "lod0": 2392,
+        "lod1": 836
       },
       "validation_pass": true
     },
@@ -9083,7 +9011,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "717413c4e728b7af",
+      "geometry_hash": "3fc27e7f2470c29a",
       "id": "char_soldier_12",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -9096,21 +9024,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7011,
       "sockets": {
@@ -9213,8 +9129,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2346,
-        "lod1": 820
+        "lod0": 2418,
+        "lod1": 846
       },
       "validation_pass": true
     },
@@ -13420,7 +13336,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "09d98959f4b4e40f",
+      "geometry_hash": "3e63b8f23a9f323e",
       "id": "prop_banner_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -13453,8 +13369,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 708,
-        "lod1": 246
+        "lod0": 780,
+        "lod1": 272
       },
       "validation_pass": true
     },
@@ -13477,7 +13393,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "e7c36ba0207b1938",
+      "geometry_hash": "caca0f2ab7df7a00",
       "id": "prop_banner_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -13510,8 +13426,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 706,
-        "lod1": 246
+        "lod0": 790,
+        "lod1": 276
       },
       "validation_pass": true
     },

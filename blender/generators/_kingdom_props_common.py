@@ -180,6 +180,83 @@ CROWN = [(-0.95, -0.62), (0.95, -0.62), (0.92, -0.18), (1.04, 0.6), (0.46, 0.02)
          (-1.04, 0.6), (-0.92, -0.18)]
 
 
+# The ONE Sunspire sun of the kit (banners, shields, signs, tabards): every generator draws it from
+# `sun_outlines` (via `emblem("sun")`, `sun_badge`, or its own prisms of the same outlines).
+SUN_RAYS, SUN_DISC = "gold_dark", "yellow_shutter"  # deep gold: darker than ivory, gold cloth and sky
+SUN_FIELD, SUN_RIM = "yellow_accent", "yellow_trim"  # its backing on gold: ivory roundel, deep-bronze rim
+SUN_ROUNDEL = 1.28  # roundel outer radius / sun ray radius (as on the castle crests)
+
+
+def sun_outlines(s):
+    """(rays, disc): CCW (x, z) outlines of the kit-wide sun with ray radius `s`, centred on the
+    origin: 8 long pointed rays (valleys at 0.4 s) and a 16-sided disc (0.56 s) that covers the
+    valleys, so sun + rays read as one round deep-gold shape, never a cog, flower or star."""
+    rays = [(x * s, z * s) for x, z in _star(8, 1.0, 0.4, rot=math.pi / 2)]
+    angles = [math.pi / 2 + math.tau * i / 16 for i in range(16)]
+    disc = [(math.cos(a) * 0.56 * s, math.sin(a) * 0.56 * s) for a in angles]
+    return rays, disc
+
+
+def roundel(r, depth, seg=12, rim=0.12, field=SUN_FIELD, rim_color=SUN_RIM, mid=False):
+    """Round plaque in the XZ plane, centred on the origin, front at y = -depth/2: a `field` face
+    inside a `rim_color` band rim * r wide (sides and back in the rim colour too), ONE closed piece.
+    It is the backing that keeps the gold sun off gold cloth (D-033: never an emblem on its own
+    colour). Front and back are fans around centre vertices, so `bend_onto` can lay it on a gently
+    waving cloth (6 * seg tris); mid=True adds a half-radius ring of seg / 2 points for strongly
+    waving cloth (7 * seg tris, seg even)."""
+    d = depth / 2
+
+    def circle(rr, n, y):
+        return [(math.cos(math.pi / 2 + math.tau * i / n) * rr, y, math.sin(math.pi / 2 + math.tau * i / n) * rr)
+                for i in range(n)]
+
+    m = seg // 2 if mid else 0
+    verts = [(0.0, -d, 0.0)] + circle(r * 0.5, m, -d)  # 0 = front centre, 1..m = half ring
+    ia = 1 + m  # inner (field edge) ring, then outer ring front / back, then back centre
+    verts += circle(r * (1 - rim), seg, -d)
+    verts += circle(r, seg, -d)
+    verts += circle(r, seg, d)
+    verts.append((0.0, d, 0.0))
+    of, ob, bc = ia + seg, ia + 2 * seg, ia + 3 * seg
+    faces, cols = [], []
+
+    def add(f, c):
+        faces.append(f)
+        cols.append(c)
+
+    if mid:
+        for j in range(m):
+            j2 = (j + 1) % m
+            a, a2 = 1 + j, 1 + j2
+            b0, b1, b2 = ia + 2 * j, ia + 2 * j + 1, ia + (2 * j + 2) % seg
+            add((0, a, a2), field)
+            add((a, b0, b1), field)
+            add((a, b1, a2), field)
+            add((a2, b1, b2), field)
+    for k in range(seg):
+        k2 = (k + 1) % seg
+        if not mid:
+            add((0, ia + k, ia + k2), field)
+        add((ia + k, of + k, of + k2, ia + k2), rim_color)  # rim band
+        add((of + k, ob + k, ob + k2, of + k2), rim_color)  # side
+        add((bc, ob + k2, ob + k), rim_color)  # back
+    p = recalc_normals(Piece(verts, faces, rim_color))  # (keeps the face order, drops face colours)
+    p.face_colors = cols
+    return p
+
+
+def sun_badge(r, depth, seg=12, mid=None, roundel_mid=False, sun_depth=None):
+    """The kit-wide sun on its ivory roundel with a bronze rim (outer radius r), for gold fields:
+    [roundel, rays, disc] centred on the origin, the roundel `depth` thick around y = 0, the sun
+    (`sun_depth` thick, default 1.4 x depth) standing proud of the roundel front with 30 % of its
+    depth sunk into it. mid / roundel_mid: see `emblem` / `roundel` (bending onto cloth)."""
+    out = [roundel(r, depth, seg, mid=roundel_mid)]
+    sd = sun_depth or depth * 1.4
+    for q in emblem("sun", 2 * r / SUN_ROUNDEL, None, None, depth=sd, mid=mid):
+        out.append(q.move(0, -depth / 2 - sd * 0.2, 0))
+    return out
+
+
 def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
     """Kingdom emblem as raised geometry in the XZ plane, centred on the origin, front at
     -Y, about `size` studs across. kind: crown | star | oak | sun (flame: retired, kept for
@@ -212,11 +289,9 @@ def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
         # under the disc and the disc is only 0.3 x depth proud of the rays. (The earlier pale disc,
         # raised 0.85 x depth over a dark bronze ring, nearly matched the ivory roundel: the dark ring
         # was the figure, and parallax / the key light's shadow thinned one side into a "C" crescent.)
-        rays = [(x * s, z * s) for x, z in _star(8, 1.0, 0.4, rot=math.pi / 2)]
-        out.append(fan_solid(rays, depth, "gold_dark", mid=mid))
-        angles = [math.pi / 2 + math.tau * i / 16 for i in range(16)]
-        disc = [(math.cos(a) * 0.56 * s, math.sin(a) * 0.56 * s) for a in angles]
-        out.append(fan_solid(disc, depth, "yellow_shutter", mid=None).move(0, -depth * 0.3, 0))
+        rays, disc = sun_outlines(s)
+        out.append(fan_solid(rays, depth, SUN_RAYS, mid=mid))
+        out.append(fan_solid(disc, depth, SUN_DISC, mid=None).move(0, -depth * 0.3, 0))
     elif kind == "oak":
         # full oak leaf (reads at 80 studs, never a feather): wide and mirror-symmetric, 4 rounded
         # lobes per side with deep sinuses, a rounded tip lobe, midrib and a visible stem.
@@ -395,4 +470,5 @@ def border(k):
 
 
 __all__ = ["KINGDOMS", "sweep_loop", "ring_solid", "sheet", "fan_solid", "strip_solid", "emblem", "bend_onto",
+           "SUN_RAYS", "SUN_DISC", "SUN_FIELD", "SUN_RIM", "SUN_ROUNDEL", "sun_outlines", "roundel", "sun_badge",
            "wheel", "rope", "lashing", "barrel", "crate", "sack", "stone_ball", "kcol", "field", "border", "emblem_colors"]

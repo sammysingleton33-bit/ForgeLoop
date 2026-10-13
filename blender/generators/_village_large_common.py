@@ -14,6 +14,8 @@ from lib import kit
 from lib.geo import Vector, box, cylinder, lathe, merge, prism
 from lib.palette import kingdom_color
 
+from generators._kingdom_props_common import sun_badge
+
 KINGDOM_CYCLE = ("red", "blue", "green", "yellow")
 # finial / small metal accent per kingdom (ART_DIRECTION section 3)
 FINIAL = {"red": "gold", "blue": "steel", "green": "bronze", "yellow": "gold"}
@@ -29,7 +31,7 @@ def grounded(piece):
 
 def emblem_poly(k, s=1.0):
     """Kingdom emblem outline (x, z), about s studs tall, centred on the origin.
-    red crown, blue star, green oak leaf, yellow sun disc."""
+    red crown, blue star, green oak leaf. (No yellow: the kit-wide sun is layered, see `emblem`.)"""
     pts = []
     if k == "blue":
         for i in range(10):
@@ -37,10 +39,7 @@ def emblem_poly(k, s=1.0):
             r = 0.52 if i % 2 == 0 else 0.22
             pts.append((math.cos(a) * r, math.sin(a) * r))
     elif k == "yellow":
-        for i in range(24):
-            a = math.pi / 2 + math.pi * i / 12
-            r = 0.52 if i % 2 == 0 else 0.36
-            pts.append((math.cos(a) * r, math.sin(a) * r))
+        raise ValueError("emblem_poly('yellow'): the kit-wide sun is layered, draw it with emblem('yellow', ...)")
     elif k == "green":
         n = 26
         for i in range(n):
@@ -54,7 +53,15 @@ def emblem_poly(k, s=1.0):
 
 
 def emblem(k, s=1.0, depth=0.14, color=None):
-    """Solid emblem facing -Y (plane XZ), centred on the origin."""
+    """Solid emblem facing -Y (plane XZ), centred on the origin (`depth` thick around y = 0).
+    Yellow is the kit-wide Sunspire sun (_kingdom_props_common.sun_badge, `color` ignored): deep-gold
+    rays + disc on an ivory roundel with a bronze rim, s studs across, because the banners, flags and
+    shields put it on gold cloth (D-033: never an emblem on its own colour). The roundel fills the
+    old `depth` envelope, the sun stands proud of it; merged into ONE piece like the other emblems."""
+    if k == "yellow":
+        parts = sun_badge(0.52 * s, depth, sun_depth=depth * 0.9)
+        parts[0].paint(grad=("range", 0.55, 0.95))  # merge() keeps the first piece's gradient
+        return merge(parts)
     return prism(emblem_poly(k, s), depth, color or kingdom_color(k, "emblem"))
 
 
