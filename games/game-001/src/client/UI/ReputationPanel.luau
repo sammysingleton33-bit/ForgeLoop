@@ -654,12 +654,14 @@ function ReputationPanel:render(model: { [string]: any }, metrics: any, ui: { [s
 	else
 		self:_values(content, model, phone, ui, metrics)
 	end
+	self.panel.instance.Parent = self._parent
+	-- after parenting (FORGE-05, #58 review): an unparented AutomaticCanvasSize list has no canvas
+	-- yet, and Roblox may clamp the position to it (unverified headless)
 	for _, scroll in self.panel.instance:GetDescendants() do
 		if scroll:IsA("ScrollingFrame") and scrolls[scroll.Name] then
 			scroll.CanvasPosition = scrolls[scroll.Name]
 		end
 	end
-	self.panel.instance.Parent = self._parent
 end
 
 function ReputationPanel:refreshTimes(now: number)

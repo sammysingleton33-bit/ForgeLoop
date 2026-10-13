@@ -1,7 +1,8 @@
 --[[
 	BuildingService (CONTRACTS G6, G8 Build area; FL-0051) booted with the match services and FORGE-03's
-	real TreasuryService and Costs: CanPlace and Place agree, Place charges exactly once and sets
-	placedBy, the facing comes from rot, Upgrade, and Build.Buildings / Build.GetBuildings.
+	real TreasuryService and Costs: CanPlace and Place agree (facing included: the placement rectangle
+	turns with rot), Place charges exactly once and sets placedBy, the facing comes from rot, Upgrade,
+	and Build.Buildings / Build.GetBuildings.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -81,14 +82,19 @@ local function broadcasts(env)
 	return out
 end
 
--- the first spot around the keep where `kind` may stand
-local function freeSpot(sim, k, kind)
+-- the first spot around the keep where `kind` may stand at every one of the given rots (0..3)
+local function freeSpot(sim, k, kind, ...)
+	local rots = { ... }
 	local keep = sim.buildings[k.keepId]
 	for radius = 40, 140, 10 do
 		for step = 0, 23 do
 			local a = step / 24 * 2 * math.pi
 			local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
-			if sim:canPlace(k, kind, x, z) then
+			local free = true
+			for _, rot in rots do
+				free = free and sim:canPlace(k, kind, x, z, rot * math.pi / 2)
+			end
+			if free then
 				return Vector3.new(x, 0, z)
 			end
 		end
@@ -116,7 +122,7 @@ describe("BuildingService (G6, G8)", function()
 		env.mock:advance(0.5)
 		local sim = match.host.match.sim
 		local k = sim.kingdoms.crimson
-		local spot = freeSpot(sim, k, "house")
+		local spot = freeSpot(sim, k, "house", 1, 2)
 		expect({ invoke(env, p1, "Build.CanPlace", "house", spot, 1) }).toEqual({ true })
 		local keep = sim.buildings[k.keepId]
 		expect({ invoke(env, p1, "Build.CanPlace", "house", Vector3.new(keep.x, 0, keep.z), 0) }).toEqual({
@@ -138,6 +144,40 @@ describe("BuildingService (G6, G8)", function()
 		local yaw = math.atan2(-look.X, -look.Z) % (2 * math.pi)
 		expect(math.abs(yaw - math.pi) < 1e-6).toBe(true) -- rot 2 = 180°, whatever way the keep lies
 		expect({ invoke(env, p1, "Build.CanPlace", "house", spot, 0) }).toEqual({ false, "blocked" }) -- taken now
+	end)
+
+	it("CanPlace and Place agree on the facing: a barracks blocked at rot 0 fits turned at rot 1", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		for _, res in { "food", "wood", "stone", "gold" } do
+			sim.treasury:deposit(k.id, res, 2000, `spec:{res}`, "spec")
+		end
+		-- a spot where only the turned barracks (34 x 22, long side on Z at rot 1) fits
+		local keep = sim.buildings[k.keepId]
+		local spot
+		for radius = 30, 140, 2 do
+			for step = 0, 71 do
+				local a = step / 72 * 2 * math.pi
+				local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
+				if spot == nil and sim:canPlace(k, "barracks", x, z, math.pi / 2) then
+					local ok, reason = sim:canPlace(k, "barracks", x, z, 0)
+					if not ok and reason == "blocked" then
+						spot = Vector3.new(x, 0, z)
+					end
+				end
+			end
+		end
+		assert(spot, "no spot where the facing decides")
+		expect({ invoke(env, p1, "Build.CanPlace", "barracks", spot, 0) }).toEqual({ false, "blocked" })
+		expect({ invoke(env, p1, "Build.CanPlace", "barracks", spot, 1) }).toEqual({ true })
+		expect({ invoke(env, p1, "Build.Place", "barracks", spot, 0) }).toEqual({ nil, "blocked" })
+		local id = invoke(env, p1, "Build.Place", "barracks", spot, 1)
+		expect(type(id)).toBe("number")
+		local look = assert(sim:buildingView(id)).cframe.LookVector
+		expect(math.abs(math.atan2(-look.X, -look.Z) - math.pi / 2) < 1e-6).toBe(true)
 	end)
 
 	it("refuses bad input before it reaches the kingdom and charges nothing", function()
@@ -201,7 +241,7 @@ describe("BuildingService (G6, G8)", function()
 		expect(seen).toBe(#all) -- everything once at the start, nothing repeated while nothing changes
 		env.mock:advance(5)
 		expect(#broadcasts(env)).toBe(#first)
-		local spot = freeSpot(sim, sim.kingdoms.crimson, "house")
+		local spot = freeSpot(sim, sim.kingdoms.crimson, "house", 0)
 		local id = invoke(env, p1, "Build.Place", "house", spot, 0)
 		env.mock:advance(2)
 		local later = broadcasts(env)

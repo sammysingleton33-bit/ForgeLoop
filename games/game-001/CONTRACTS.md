@@ -466,6 +466,7 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
 - **Chemistry and memories.** Chemistry is rolled once per citizen and may drift at most ±5 from its rolled value (`ContentQuery.driftChemistry`). Memories set by content are **pinned**: the G5 cap of 8 never evicts them.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
+- **Soldier kingdom marker (D-033(3), FORGE-05 colour-vision check).** Soldiers wear a helmet, so their 9th part is a **helmet crest shaped per kingdom**, matching the tower style: crimson spire, azure square, emerald plume, gold dome. That keeps friend and foe distinguishable without colour. `Kit.character(kind, job, kingdomColor, look?, kingdom: KingdomId?)` takes an optional `kingdom` for this. FORGE-01 passes it for soldiers. VS-1 acceptance requires it.
 - **Looks.** Hair is the 9th rig part, welded to the Head (D-032). The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
 - **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
 
@@ -543,7 +544,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `population.reseed <seed>`
 
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
+- v0.4-g4 (2026-10-13) FORGE-00: G13.2 soldier kingdom crest (D-033). G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
   - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
   - G13.2 chemistry drift ±5 and pinned memories;
   - G13.3 `cue` event and option cost/risks;
