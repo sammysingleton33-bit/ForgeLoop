@@ -6,7 +6,8 @@
 	Citizens live in the kingdom simulation (MatchService's host); this service is their API.
 	API (G5)
 		CitizenService:getPopulation(kingdom): { total, byJob: { [JobId]: number }, cap, quotas }?
-			-- citizens and soldiers (soldiers count in byJob.soldier and in total); quotas = the
+			-- citizens and soldiers (soldiers count in byJob.soldier and in total); cap = beds + barracks
+			   bunks (soldiers sleep in the barracks, D-041), so it counts the same people as total; quotas = the
 			   Kingdom.SetJobQuota targets per job, hauler excepted (additive to G5, for the job panel);
 			   whole numbers >= 0; nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
@@ -27,11 +28,18 @@
 	fed and rested = high); intent is the current activity and why, e.g. "Gathering (best job)";
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
+<<<<<<< HEAD
 	hasRequest is true while the citizen has an open request (ConversationService:hasRequest, its thought
 	bubble; false without that service).
 	Studio debug hook (G13.7 strike.start, FORGE-05's DebugPresetService):
 		CitizenService:debugStrike(kingdom, occupation, on) -> (ok, message)   every citizen of the occupation
 		    strikes for DEBUG_STRIKE_SECONDS (or stops); ConversationService:announceStrike sends the events
+=======
+	hasRequest is false until conversations (FL-0079).
+	Studio debug hooks (G13.7, called by FORGE-05's DebugPresetService; each `(kingdom, ...) -> (ok, message)`):
+		debugReseed(kingdom, seed)              new identities for the kingdom's living citizens (People.reseed)
+		(debugStrike and debugRequest come with the conversations, FL-0079)
+>>>>>>> origin/main
 ]]
 
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
@@ -181,7 +189,22 @@ function CitizenService:getPopulation(kingdomId: string): {
 			quotas[job] = count(n)
 		end
 	end
-	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = count(k.popCap), quotas = quotas }
+	-- citizens sleep in beds, soldiers in barracks bunks (D-041): cap counts both, like total
+	local cap = count(sim:sleepCap(k))
+	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = cap, quotas = quotas }
+end
+
+-- ---------------------------------------------------------------- Studio debug hooks (G13.7)
+function CitizenService:debugReseed(kingdomId: string, seed: number): (boolean, string?)
+	local sim = self:_sim()
+	if sim.kingdoms[kingdomId] == nil then
+		return false, `unknown kingdom {kingdomId}`
+	end
+	if sim.profiler == nil then
+		return false, "this world has no generated population"
+	end
+	local reseeded = People.reseed(sim, kingdomId, seed, People.CONTENT)
+	return true, `{reseeded} citizens of {kingdomId} reseeded from {seed}`
 end
 
 -- ---------------------------------------------------------------- Studio debug hooks (G13.7)

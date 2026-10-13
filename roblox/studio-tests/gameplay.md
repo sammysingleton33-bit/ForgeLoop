@@ -14,6 +14,8 @@ Which steps are runnable after which PR:
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
+| K10 (conversations, thought bubbles, walk-out placard) | FL-0079 (`Kingdom.Converse/Choose`, PR #77); FORGE-03's panel and FORGE-04's bubbles |
+| K11 (build slots, throne) | FL-0081; the plot picker and build menu on slots are FORGE-03's |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
 The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
@@ -82,12 +84,23 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 
 ## K6 — Capture the watchtower (VS-1 row 7)
 1. Walk your ruler onto the neutral watchtower near the valley centre and stay inside its ring.
-2. With FL-0052: recruit soldiers (`Army.Recruit`) and press Send-to-capture (`Army.Command` with no ids).
+2. With FL-0052 (fresh server): build a barracks. No house is needed: soldiers sleep in the barracks' bunks
+   (4 at level 1, D-041), not in the keep's 12 beds that the starting citizens fill. The barracks and 3
+   soldiers cost 150 wood, 60 stone and 90 food (`Costs.luau`) against a start of 100 wood and 50 stone, so
+   gather or let the citizens work first. Recruit 3 soldiers at it
+   (`Army.Recruit(barracksId, "soldier", 3)`, or the army panel), wait about 24 s, and press Send-to-capture
+   (`Army.Command({}, "capture", nil, "watchtower")`).
 
 **Expected:**
+- The tower stands neutral (`Workspace.KingdomObjectives.watchtower`, Kit neutral colour) from the start.
+- Recruiting charges `Costs.unit("soldier")` × 3 once (`Treasury.Changed`); a 5th soldier at one level 1
+  barracks answers `recruit_cap` (no free bunk). Each soldier appears in front of
+  the barracks door (the Kit `Rally`), then walks to the keep.
+- After Send-to-capture, every idle soldier walks the road over the bridge and stands in a ring around the
+  tower, inside the zone. `Army.Objectives` reports the progress at most twice a second.
 - Capture progress rises to 1 in 20 s while uncontested; a second kingdom in the zone freezes it.
-- On capture: the kingdom owns the tower, gains +100 Crown Points and the `heartland` region
-  (`Kingdom.State` shows it in `regions`).
+- On capture: the kingdom owns the tower, the tower's trims and banners turn the kingdom colour, the kingdom
+  gains +100 Crown Points and the `heartland` region (`Kingdom.State` shows it in `regions`).
 - Slice mode: `Match.Ended` fires once with your kingdom as `winner`; the phase becomes `Results` and stays.
 
 ## K7 — Multiplayer integrity
@@ -145,6 +158,29 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - A walk-out answer (breaking the grain-sacks promise, "The kingdom needs that grain more than you do."
   → `speaker_refuses_work`) shows an "On strike" placard on that citizen only (FORGE-04 bubbles), never
   on the rest of the occupation; it goes away when the walk-out ends (60 s).
+
+## K11 — Build on a slot, upgrade, sit on the throne (FL-0081; VS-1 rows 2 and 6; G13.5, G13.6)
+1. Play Solo. Watch your ruler right after spawning, from the aerial camera and up close.
+2. Reset the character (Esc → Reset) and watch the respawn.
+3. Tap a free plot (`BuildSlot` marker) and build a House with FORGE-03's menu, or call
+   `ForgeRemotes.Build.GetSlots:InvokeServer()` and then `Build.PlaceSlot:InvokeServer(slotId, "house")`
+   with an `S` slot's id.
+4. Try the same slot again, and a Barracks on an `S` slot.
+5. Upgrade the keep (`Build.Upgrade(keepId)`) once wood and stone allow it, and stay seated meanwhile.
+6. Press Space to stand up (walk mode), then let the keep upgrade again.
+
+**Expected:**
+- After spawning (and after every respawn) the ruler sits on the keep's throne, wearing crown and cape.
+  A co-ruler in the same kingdom stands at the keep door while the throne is taken.
+- The house stands on the plot, facing its street; the treasury drops by the house price once;
+  `Build.Slots` arrives with that slot `occupiedBy` the new building's id.
+- The taken slot answers `nil, "slot_occupied"`; the barracks answers `nil, "does_not_fit"`; neither costs
+  anything.
+- Builders walk to the site and work it together (two or three at once); the upgrade finishes in about its
+  `Costs` build time divided by the builders on site.
+- When the keep upgrade completes, the seated ruler sits on the new keep's throne within half a second.
+  A ruler who stood up stays standing after the next upgrade.
+- No errors in Output (`KingdomService: throne check failed` would be one).
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:
