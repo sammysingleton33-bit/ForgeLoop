@@ -10,7 +10,7 @@
       "dimensions_studs": {
         "x": 9.4,
         "y": 12.057,
-        "z": 17.32
+        "z": 15.32
       },
       "double_sided": false,
       "files": {
@@ -19,7 +19,7 @@
       },
       "generator": "siege_ram",
       "generator_version": 1,
-      "geometry_hash": "701cf320fbd38c15",
+      "geometry_hash": "6d6b3d7e767aa954",
       "id": "siege_ram_blue_01",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -39,24 +39,24 @@
         "crew_1": [
           1.6,
           -0.086,
-          4.903
+          3.903
         ],
         "crew_2": [
           -1.6,
           -0.086,
-          4.903
+          3.903
         ],
         "ram_head": [
           -0.0,
-          4.514,
-          -8.66
+          4.214,
+          -7.66
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 2744,
-        "lod1": 960
+        "lod0": 2740,
+        "lod1": 958
       },
       "validation_pass": true
     },
@@ -68,8 +68,8 @@
         "fidelity": "Hull"
       },
       "dimensions_studs": {
-        "x": 10.2,
-        "y": 12.835,
+        "x": 10.235,
+        "y": 16.355,
         "z": 17.036
       },
       "double_sided": false,
@@ -79,7 +79,7 @@
       },
       "generator": "siege_ram",
       "generator_version": 1,
-      "geometry_hash": "4ee334b86064b7aa",
+      "geometry_hash": "5ce00a94f8a71cac",
       "id": "siege_ram_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -115,8 +115,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3632,
-        "lod1": 1270
+        "lod0": 3808,
+        "lod1": 1332
       },
       "validation_pass": true
     },
@@ -128,7 +128,7 @@
         "fidelity": "Hull"
       },
       "dimensions_studs": {
-        "x": 10.2,
+        "x": 10.235,
         "y": 14.667,
         "z": 16.393
       },
@@ -139,7 +139,7 @@
       },
       "generator": "siege_ram",
       "generator_version": 1,
-      "geometry_hash": "da592177b34fbfff",
+      "geometry_hash": "c5483cb036c64c2b",
       "id": "siege_ram_red_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -189,7 +189,7 @@
       },
       "dimensions_studs": {
         "x": 10.2,
-        "y": 9.628,
+        "y": 12.928,
         "z": 16.416
       },
       "double_sided": false,
@@ -199,7 +199,7 @@
       },
       "generator": "siege_ram",
       "generator_version": 1,
-      "geometry_hash": "0f64150c92906ee6",
+      "geometry_hash": "b4e992a811380709",
       "id": "siege_ram_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -235,8 +235,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3396,
-        "lod1": 1188
+        "lod0": 3492,
+        "lod1": 1222
       },
       "validation_pass": true
     }
@@ -251,8 +251,8 @@
       "siege_ram_green_01",
       "siege_ram_red_01"
     ],
-    "mean_pair_diff": 0.3804,
-    "min_pair_diff": 0.2665,
+    "mean_pair_diff": 0.3744,
+    "min_pair_diff": 0.2685,
     "pass": true,
     "threshold": 0.08
   }

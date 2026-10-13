@@ -183,7 +183,7 @@ CROWN = [(-0.95, -0.62), (0.95, -0.62), (0.92, -0.18), (1.04, 0.6), (0.46, 0.02)
 def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
     """Kingdom emblem as raised geometry in the XZ plane, centred on the origin, front at
     -Y, about `size` studs across. kind: crown | star | oak | sun (flame: retired, kept for
-    old callers). mid=None for
+    old callers; oak_tilted: the earlier leaf, kept so committed banner geometry stays frozen). mid=None for
     emblems that stay flat (cheaper); keep the mid ring when bending onto cloth."""
     s = size / 2
     out = []
@@ -216,7 +216,23 @@ def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
         disc = [(x * 0.84, z * 0.84) for x, z in ring]
         out.append(fan_solid(disc, depth, "yellow_roof_light", mid=None).move(0, -depth * 0.85, 0))
     elif kind == "oak":
-        # oak leaf: elongated, 4 rounded lobes per side STAGGERED between the sides (no mirror
+        # full oak leaf (reads at 80 studs, never a feather): wide and mirror-symmetric, 4 rounded
+        # lobes per side with deep sinuses, a rounded tip lobe, midrib and a visible stem.
+        # Concave outline -> prism (the builder triangulates the caps).
+        lobes = ((-0.46, 0.56), (-0.1, 0.8), (0.26, 0.8), (0.6, 0.6))  # (z, half-width at lobe tip)
+        sinus = (0.3, 0.44, 0.44, 0.34)
+        right = [(0.1, -0.84)]
+        for (zc, w), sw in zip(lobes, sinus):
+            right.append((sw, zc - 0.17))  # sinus below the lobe
+            right += [(w * 0.86, zc - 0.09), (w, zc), (w * 0.86, zc + 0.09)]
+        right += [(0.26, 0.79), (0.3, 0.9), (0.15, 1.02)]
+        outline = right + [(0.0, 1.06)] + [(-x, z) for x, z in reversed(right)]
+        from lib.geo import prism
+        out.append(prism([(x * s, z * s) for x, z in outline], depth, color, axis="Y"))
+        out.append(box(0.1 * s, depth, 1.7 * s, accent, base=False).move(0, -depth * 0.55, 0.08 * s))  # midrib
+        out.append(box(0.16 * s, depth, 0.5 * s, accent, base=False).move(0, 0, -1.04 * s))  # stem
+    elif kind == "oak_tilted":
+        # legacy (prop_banner, frozen geometry): elongated leaf, 4 rounded lobes per side STAGGERED (no mirror
         # symmetry), deep sinuses, a midrib and a visible stem, tilted ~14 deg so it reads as a
         # leaf, not a rosette. Concave outline -> prism (the builder triangulates the caps).
         def env(z):
@@ -365,9 +381,9 @@ def field(k):
 def emblem_colors(k, kind):
     """(main, accent) colours of a kingdom emblem on its field (crown in gold with cream band and
     gems, star / oak in cream or bronze; the sun uses its own fixed colours)."""
-    if kind in ("crown", "oak"):
+    if kind == "crown":
         return kcol(k, "trim"), kcol(k, "emblem")
-    return kcol(k, "emblem"), kcol(k, "trim")
+    return kcol(k, "emblem"), kcol(k, "trim")  # star / oak: ivory emblem, metal accent
 
 
 def border(k):

@@ -9,7 +9,7 @@
       },
       "dimensions_studs": {
         "x": 8.6,
-        "y": 12.205,
+        "y": 14.066,
         "z": 7.727
       },
       "double_sided": false,
@@ -19,7 +19,7 @@
       },
       "generator": "prop_well",
       "generator_version": 1,
-      "geometry_hash": "02449662d6c979a9",
+      "geometry_hash": "2b079e4db4d93703",
       "id": "prop_well_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -49,8 +49,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 1800,
-        "lod0": 1460,
-        "lod1": 510
+        "lod0": 1528,
+        "lod1": 534
       },
       "validation_pass": true
     },
@@ -63,7 +63,7 @@
       },
       "dimensions_studs": {
         "x": 10.038,
-        "y": 14.009,
+        "y": 13.609,
         "z": 10.025
       },
       "double_sided": false,
@@ -73,7 +73,7 @@
       },
       "generator": "prop_well",
       "generator_version": 1,
-      "geometry_hash": "e5a03641e34c617b",
+      "geometry_hash": "e1890bf219aa367e",
       "id": "prop_well_02",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -103,8 +103,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 1800,
-        "lod0": 1364,
-        "lod1": 476
+        "lod0": 1450,
+        "lod1": 506
       },
       "validation_pass": true
     },
@@ -117,8 +117,8 @@
       },
       "dimensions_studs": {
         "x": 10.975,
-        "y": 12.098,
-        "z": 6.953
+        "y": 12.148,
+        "z": 6.837
       },
       "double_sided": false,
       "files": {
@@ -127,7 +127,7 @@
       },
       "generator": "prop_well",
       "generator_version": 1,
-      "geometry_hash": "927e47ac4c15b820",
+      "geometry_hash": "1ebda265418805d9",
       "id": "prop_well_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -151,14 +151,14 @@
         "interact": [
           -0.712,
           0.076,
-          -4.728
+          -4.786
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 1800,
-        "lod0": 1728,
-        "lod1": 604
+        "lod0": 1706,
+        "lod1": 596
       },
       "validation_pass": true
     },
@@ -170,9 +170,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 9.751,
-        "y": 16.051,
-        "z": 9.88
+        "x": 8.9,
+        "y": 16.356,
+        "z": 8.799
       },
       "double_sided": false,
       "files": {
@@ -181,12 +181,12 @@
       },
       "generator": "prop_well",
       "generator_version": 1,
-      "geometry_hash": "8f7ab84d133051dd",
+      "geometry_hash": "00c489784eaa76ad",
       "id": "prop_well_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
       "params": {
-        "apron": true,
+        "apron": false,
         "curb_h": 2.8,
         "kingdom": "yellow",
         "radius": 3.3,
@@ -203,16 +203,16 @@
       "seed": 7003,
       "sockets": {
         "interact": [
-          -0.062,
+          0.175,
           0.0,
-          -5.098
+          -5.1
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 1800,
-        "lod0": 1780,
-        "lod1": 622
+        "lod0": 1592,
+        "lod1": 556
       },
       "validation_pass": true
     }
@@ -227,8 +227,8 @@
       "prop_well_01",
       "prop_well_04"
     ],
-    "mean_pair_diff": 0.4013,
-    "min_pair_diff": 0.2958,
+    "mean_pair_diff": 0.3904,
+    "min_pair_diff": 0.2617,
     "pass": true,
     "threshold": 0.08
   }

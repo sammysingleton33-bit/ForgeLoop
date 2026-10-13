@@ -47,3 +47,17 @@ Budget: curb blocks every 2.4 studs, one bucket hoop, fewer tufts, no purple flo
 by `posts>=2` (the open frame has no roof).
 Seen (sheet): four distinct silhouettes (min diff 0.30). Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3.
 Tris 1364-1780 / 1800.
+
+## Fresh-review round 3 (final; FORGE-02 lead notes)
+Problems reported: well_01 salmon terracotta with flame-like gold spikes; well_04 thatch reads as hay and
+dominates (1780 tris); well_02 mostly blue with a white spire; well_03 plaque/pennant borders and leaf small.
+Changes:
+- 01: neutral timber shingles with brick-red fascia boards, barge boards and ridge; gold crown on a ridge post.
+- 02: grey slate square pyramid, azure fascia band as trim, white star finial on an iron spike.
+- 03: 3.0 x 2.7 emerald plaque with ivory border and a 1.9 ivory oak leaf; pennant with ivory border bands.
+- 04: slimmer thatch (no pins, 0.85 overhang) with a saturated gold ridge cap, ivory bands and bronze end caps,
+  large sun on a ridge post; no apron / spare bucket / tufts -> 1592 tris.
+Seen (`previews/prop_well.jpg`): four forms, kingdom colour as trim and finials. Tris 1450-1706 / 1800,
+min silhouette diff 0.26. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
+Note: `emblem("oak")` is now the full leaf for all callers; prop_banner pins the earlier leaf ("oak_tilted") so
+its committed geometry hashes are unchanged (checked: 25/25 banner/goods/cart/bridge assets identical).

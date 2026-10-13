@@ -6,7 +6,7 @@
                              A-frame towers, long arm pulled down to the rear by the winch
 
 Shared: chunky bevelled timber chassis, iron corner straps, rear winch with rope, kingdom
-heater shields on the rails and a kingdom pennant. Kingdom extras: red fire brazier, green
+heater shields on the rails and a kingdom pennant. Kingdom extras: red big crown shield, green
 front timber mantlet (Thornwood hoardings), blue crisp compact frame, yellow gilded domes.
 
 Front (firing direction) faces Blender -Y. Sockets: crew_1 / crew_2 = crew standing spots
@@ -53,16 +53,22 @@ def beam(p0, p1, w, d, color="siege_wood", normal=(0, 0, 1), bev=0.0):
     return kit.oriented_box(p0, p1, w, d, color, Vector(normal), bev=bev)
 
 
+def shield_field(k):
+    """Shield field: never the emblem's own colour; the gold kingdom's sun sits on ivory."""
+    return kcol(k, "accent") if k == "yellow" else field(k)
+
+
 def heater_shield(k, h=2.6, depth=0.25):
-    """Kingdom heater shield in the XZ plane facing -Y, centred on the origin."""
-    w = h * 0.4
+    """Kingdom heater shield in the XZ plane facing -Y, centred on the origin: rim in the kingdom
+    border metal / ivory, field, and a large raised emblem (56 % of the height)."""
+    w = h * 0.42
     pts = [(0.0, -h * 0.5), (w * 0.62, -h * 0.26), (w * 0.9, h * 0.05), (w, h * 0.42), (w * 0.5, h * 0.5),
            (-w * 0.5, h * 0.5), (-w, h * 0.42), (-w * 0.9, h * 0.05), (-w * 0.62, -h * 0.26)]
-    out = [fan_solid(pts, depth, kcol(k, "trim"), center=(0, h * 0.05), mid=None)]
-    inner = [(x * 0.82, z * 0.84 + h * 0.03) for x, z in pts]
-    out.append(fan_solid(inner, depth, field(k), center=(0, h * 0.06), mid=None).move(0, -0.08, 0))
-    for pc in emblem(EMB[k], h * 0.48, *emblem_colors(k, EMB[k]), depth=0.14, mid=None):
-        out.append(pc.move(0, -0.22, h * 0.08))
+    out = [fan_solid(pts, depth, border(k), center=(0, h * 0.05), mid=None)]
+    inner = [(x * 0.84, z * 0.86 + h * 0.03) for x, z in pts]
+    out.append(fan_solid(inner, depth, shield_field(k), center=(0, h * 0.06), mid=None).move(0, -0.08, 0))
+    for pc in emblem(EMB[k], h * 0.56, *emblem_colors(k, EMB[k]), depth=0.16, mid=None):
+        out.append(pc.move(0, -0.24, h * 0.07))
     return out
 
 
@@ -83,7 +89,8 @@ def chassis(b, k, L, Wd, R, rng, spokes, layout="four"):
     for y in axles:
         b.add(box(2 * xw + 1.2, 0.7, 0.7, dark).move(0, y, R - 0.35))  # axle beam
         for sx in (-1, 1):
-            b.add([pc.move(sx * xw, y, R) for pc in wheel(R, 0.75, spokes, 12, wood="wood", hub="siege_wood_dark")])
+            b.add([pc.move(sx * xw, y, R) for pc in wheel(R, 0.75, spokes, 10, wood="wood", hub="siege_wood_dark",
+                                                          cap=None)])
             b.stats["wheels"] = b.stats.get("wheels", 0) + 1
             b.stats["spokes"] = b.stats.get("spokes", 0) + spokes
     if layout == "skid":
@@ -180,7 +187,7 @@ def build_torsion(b, p, rng):
     L = rng.uniform(17.0, 18.0) if green else rng.uniform(15.5, 16.5)
     Wd = rng.uniform(6.2, 6.6) if green else rng.uniform(5.6, 6.0)
     R = 2.7 if green else 2.3
-    top, ys, yw, xw = chassis(b, k, L, Wd, R, rng, 8, layout="skid" if green else "four")
+    top, ys, yw, xw = chassis(b, k, L, Wd, R, rng, 6, layout="skid" if green else "four")
     zc = top - 0.5
     yp = -L * 0.22  # skein axis
     # torsion skein: thick rope bundle through the rails, iron washers + ratchet levers outside
@@ -236,17 +243,13 @@ def build_torsion(b, p, rng):
     for sx in (-1, 1):
         if not green:  # Thornwood carries its colour on the mantlet, shields, pad and pennant instead
             drape(b, k, sx * (Wd / 2 + 0.6), yp + 1.3, yw - R - 0.3, top - 0.05, 1.9, rng)
-        for pc in heater_shield(k, 2.6):
-            b.add(pc.rotate(sx * math.pi / 2, "Z").move(sx * (Wd / 2 + 0.85), (yp + yw - R) / 2 + 0.5, top + 0.1))
+        for pc in heater_shield(k, 2.8):  # angled 45 deg so the front camera reads them
+            b.add(pc.rotate(sx * 0.8, "Z").move(sx * (Wd / 2 + 0.95), (yp + yw - R) / 2 + 0.5, top + 0.3))
     if k == "red":
-        # fire brazier with glowing coals on the front deck: Emberhold fire pots
-        bx, by = -Wd * 0.15, ys[0] + 1.2
-        b.add(lathe([(0.0, 0.0), (0.7, 0.05), (1.0, 0.85), (0.86, 0.95), (0.0, 0.7)], 7, "iron_dark")
-              .move(bx, by, top))
-        b.add(lathe([(0.82, 0.0), (0.6, 0.35), (0.0, 0.6)], 7, kcol(k, "glow")).move(bx, by, top + 0.7))
-        for i in range(3):
-            fl = cone(0.32 - i * 0.06, 1.1 - i * 0.2, 5, "fire" if i else "ember")
-            b.add(fl.move(bx + (i - 1) * 0.3, by + (i % 2) * 0.2, top + 0.9))
+        # Emberhold: big crown shield on the front frame facing the camera (no fire: red never uses a flame)
+        for pc in heater_shield(k, 3.6):
+            b.add(pc.move(0, -L / 2 - 0.15, top + 1.3))
+        b.add(box(1.6, 0.3, 0.4, "iron_dark").move(0, -L / 2 + 0.05, top + 2.4))  # hanger bracket
         pennant(b, k, Wd / 2, yf + 0.5, hz + 0.3, rng)
     else:
         # Thornwood timber mantlet across the front: vertical planks with a sight slot
@@ -261,8 +264,8 @@ def build_torsion(b, p, rng):
             b.add(cone(0.38, 0.6, 4, "wood_dark").move(x, ym, top - 0.6 + hh))
         for z in (top + 0.6, top + 3.4):
             b.add(box(Wd + 1.3, 0.3, 0.45, "siege_wood_dark").move(0, ym - 0.32, z))
-        for pc in heater_shield(k, 2.4):
-            b.add(pc.move(0, ym - 0.55, top + 2.0))
+        for pc in heater_shield(k, 3.6):
+            b.add(pc.move(0, ym - 0.55, top + 2.2))
         pennant(b, k, -Wd / 2, yf + 0.5, hz + 0.3, rng)
     b.socket("crew_1", -(Wd / 2 + 2.2), yw_, 0)
     b.socket("crew_2", Wd / 2 + 2.2, yw_, 0)
@@ -274,12 +277,12 @@ def build_counterweight(b, p, rng):
     L = rng.uniform(17.5, 18.5) if yellow else rng.uniform(16.0, 17.0)
     Wd = rng.uniform(6.4, 6.8) if yellow else rng.uniform(5.8, 6.2)
     R = 2.2
-    top, ys, yw, xw = chassis(b, k, L, Wd, R, rng, 8)
+    top, ys, yw, xw = chassis(b, k, L, Wd, R, rng, 6)
     # towers on both rails: blue = crisp A-frames, yellow = tall vertical trestle towers with
     # X-braces, raking struts and gold ball finials (Sunspire)
-    H = top + (rng.uniform(8.6, 9.2) if yellow else rng.uniform(7.4, 7.9))
+    H = top + (rng.uniform(10.0, 10.4) if yellow else rng.uniform(6.4, 6.8))
     ya = -L * 0.12
-    spread = 3.6 if yellow else 3.2
+    spread = 3.6 if yellow else 4.2
     for sx in (-1, 1):
         x = sx * Wd / 2
         if yellow:
@@ -303,6 +306,10 @@ def build_counterweight(b, p, rng):
             b.add(beam((x, ya - spread * 0.6, zm), (x, ya + spread * 0.6, zm), 0.5, 0.6, "siege_wood_dark",
                        normal=(1, 0, 0)))
             b.add(lashing(0.5, 0.8, turns=1)[0].rotate(math.pi / 2, "X").move(x, ya + 0.4, zm))
+            # Frostmere square-pyramid caps on the A-frame apexes (crisp, silver-tipped)
+            for pc in kit.cone_roof(0.75, 1.3, seg=4, color=kcol(k, "roof"), overhang=0.25, flare=False,
+                                    finial=None, rows=0):
+                b.add(pc.move(x, ya, H + 0.35))
         b.add(box(1.0, 1.4, 1.0, "iron_dark").move(x, ya, H - 0.6))  # axle bearing
     # axle across the towers
     b.add(cylinder(0.32, 0.32, Wd + 1.4, 8, "iron").rotate(math.pi / 2, "Y").move(-(Wd + 1.4) / 2, ya, H - 0.2))
@@ -350,10 +357,10 @@ def build_counterweight(b, p, rng):
     ysh = (ya + spread + (yw - R)) / 2 + (0.3 if yellow else 0.0)
     for sx in (-1, 1):
         drape(b, k, sx * (Wd / 2 + 0.6), -yw + R + 0.3, yw - R - 0.3, top - 0.05, 1.9, rng)
-        for pc in heater_shield(k, 2.6):
-            b.add(pc.rotate(sx * math.pi / 2, "Z").move(sx * (Wd / 2 + 0.85), ysh, top + 0.1))
-    for pc in heater_shield(k, 2.4):  # front shield on the nose beam, reads from the gameplay camera
-        b.add(pc.move(0, -L / 2 + 0.2, top - 0.2))
+        for pc in heater_shield(k, 2.8):  # angled 45 deg so the front camera reads them
+            b.add(pc.rotate(sx * 0.8, "Z").move(sx * (Wd / 2 + 0.95), ysh, top + 0.3))
+    for pc in heater_shield(k, 3.6):  # big front shield on the nose beam, faces the gameplay camera
+        b.add(pc.move(0, -L / 2 - 0.1, top + 0.6))
     pennant(b, k, (1 if not yellow else -1) * Wd / 2, ya, H + (0.2 if not yellow else 1.4), rng, L=4.2, H=1.8)
     b.socket("crew_1", -(Wd / 2 + 2.2), yw_, 0)
     b.socket("crew_2", Wd / 2 + 2.2, yw_, 0)

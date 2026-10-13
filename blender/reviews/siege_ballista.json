@@ -1,36 +1,36 @@
 {
   "assets": {
     "siege_ballista_blue_01": {
-      "geometry_hash": "9fc5adc8a0e84377",
+      "geometry_hash": "d4b27b904624fc6e",
       "verdict": "NEEDS-WORK"
     },
     "siege_ballista_green_01": {
-      "geometry_hash": "74bf41f8bf038f78",
+      "geometry_hash": "b46dd46dba5a0bb1",
       "verdict": "NEEDS-WORK"
     },
     "siege_ballista_red_01": {
-      "geometry_hash": "90f33729b0f149dd",
+      "geometry_hash": "d3a7548560f2c8ed",
       "verdict": "NEEDS-WORK"
     },
     "siege_ballista_yellow_01": {
-      "geometry_hash": "11dfee79fef75a8d",
+      "geometry_hash": "14163f148ae668bb",
       "verdict": "NEEDS-WORK"
     }
   },
   "generator": "siege_ballista",
   "generator_version": 1,
-  "notes": "blue_01 and green_01 are the same ballista behind the same plank mantlet and are indistinguishable except by colour at 40 studs; red_01 and yellow_01 carry no emblem at all (flag only), and yellow_01 uses purple tips and onion-like gold caps. Tri cost (1954-2686) is comfortable.",
+  "notes": "The mounts are distinct and tris are efficient, but at 40 studs the yellow_01 sun (a gold disc on a gold shield) and the green_01 oak leaf (a pale streak on a muted teal shield) cannot be read, so only the pennants carry kingdom identity. The shared head's arms and bolt are thin for a phone read, and red_01 and green_01 share the same carriage.",
   "reviewer": "fresh-context subagent",
-  "round": 1,
+  "round": 2,
   "scores": {
-    "cohesion": 3,
+    "cohesion": 4,
     "detail_density": 4,
     "palette": 3,
     "proportions": 4,
     "readability": 3,
-    "silhouette": 3,
-    "triangle_cost": 5,
-    "variation": 3
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 4
   },
   "verdict": "NEEDS-WORK"
 }

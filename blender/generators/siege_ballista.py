@@ -2,7 +2,7 @@
 
   red     field carriage: two spoked wheels + split trail, flame-red fletching
   blue    square stone dais with a round turntable and pivot post, star badge on the frame
-  green   field carriage with a Thornwood timber mantlet and extra rope lashings
+  green   Thornwood sled runners (iron shoes, upturned noses), spiked mantlet with emerald bands
   yellow  four-legged trestle stand on a turntable, bronze-capped skeins, sun badge
 
 Shared parts: stock with a slider and claw, spring frame (capitulum) with two twisted rope
@@ -17,7 +17,7 @@ import math
 from lib import kit
 from lib.geo import Matrix, Vector, bevel, box, cone, cylinder, lathe, look_rot
 
-from generators._kingdom_props_common import KINGDOMS, fan_solid, kcol, lashing, rope, wheel
+from generators._kingdom_props_common import KINGDOMS, fan_solid, field, kcol, lashing, rope, wheel
 from generators.siege_catapult import heater_shield, pennant
 
 NAME = "siege_ballista"
@@ -34,7 +34,7 @@ def variants(n, seed):
     out = []
     for i in range(n):
         k = KINGDOMS[i % 4]
-        out.append({"kingdom": k, "mount": {"red": "carriage", "green": "carriage", "blue": "dais",
+        out.append({"kingdom": k, "mount": {"red": "carriage", "green": "skid", "blue": "dais",
                                             "yellow": "stand"}[k],
                     "seed": seed * 1000 + i})
     return out
@@ -109,13 +109,29 @@ def build(b, p):
             z = zp * 0.32
             b.add(beam((math.cos(a0) * r, math.sin(a0) * r, z), (math.cos(a1) * r, math.sin(a1) * r, z), 0.32, 0.32,
                        "siege_wood_dark", normal=(0, 0, 1)))
+    elif p["mount"] == "skid":
+        # Thornwood: heavy sled runners with upturned noses and iron shoes, cross sleepers, pivot post
+        R = 2.1
+        for sx in (-1, 1):
+            x = sx * 2.2
+            b.add(kit.bbox(1.0, 9.0, 0.8, "siege_wood_dark", 0.12).move(x, 1.4, 0.0))
+            b.add(beam((x, -2.9, 0.4), (x, -4.2, 1.7), 0.95, 0.7, "siege_wood_dark", normal=(1, 0, 0)))  # nose
+            b.add(box(0.14, 8.4, 0.3, "iron_dark").move(x + sx * 0.52, 1.4, 0.2))  # iron shoe
+        for y in (-1.6, 0.6, 2.8, 5.0):
+            b.add(box(5.4, 0.7, 0.5, "siege_wood").move(0, y, 0.8))  # sleepers
+        b.add(kit.bbox(1.1, 1.1, zp - 1.9, "siege_wood", 0.08).move(0, 0.6, 1.3))  # pivot post
+        for sy in (-1, 1):
+            b.add(beam((0, 0.6 + sy * 2.1, 1.3), (0, 0.6 + sy * 0.45, zp - 1.3), 0.45, 0.45, "siege_wood_dark",
+                       normal=(1, 0, 0)))
+        b.add(cylinder(0.75, 0.75, 0.3, 8, "iron_dark").move(0, 0.6, zp - 0.6))
     else:
         # field carriage: axle, two wheels, split trail to the rear, pivot post
         R = 2.1
         xw = 2.5
         b.add(kit.bbox(2 * xw + 0.4, 0.8, 0.8, "siege_wood_dark", 0.08).move(0, 0.6, R - 0.4))
         for sx in (-1, 1):
-            b.add([pc.move(sx * xw, 0.6, R) for pc in wheel(R, 0.7, 8, 12, wood="wood", hub="siege_wood_dark")])
+            b.add([pc.move(sx * xw, 0.6, R) for pc in wheel(R, 0.7, 6, 10, wood="wood", hub="siege_wood_dark",
+                                                            cap=None)])
             b.add(beam((sx * 1.3, -0.4, R + 0.2), (sx * 0.55, 7.2, 0.3), 0.7, 0.75, "siege_wood", normal=(0, 0, 1),
                        bev=0.07))
         b.add(box(1.7, 0.6, 0.55, "siege_wood_dark").move(0, 5.6, 0.75))
@@ -166,43 +182,43 @@ def build(b, p):
         ropes += 1
         for zz in (hh + 0.62, -hh - 0.05):  # iron washers with levers
             c = T(x, yc - 0.45, zz)
-            b.add(cylinder(0.72, 0.72, 0.28, 8, "iron_dark").move(c.x, c.y, c.z - 0.14))
-            b.add(sbeam((x - 0.75, yc - 0.45, zz + 0.05), (x + 0.75, yc - 0.45, zz + 0.05), 0.16, 0.16, "iron"))
+            b.add(cylinder(0.95, 0.95, 0.45, 8, "iron_dark").move(c.x, c.y, c.z - 0.2))
+            b.add(sbeam((x - 0.95, yc - 0.45, zz + 0.12), (x + 0.95, yc - 0.45, zz + 0.12), 0.3, 0.3, "iron"))
         b.add(sbeam((sx * (hw + 0.85), yc - 0.45, -hh), (sx * (hw + 0.85), yc - 0.45, hh + 0.6), 0.35, 0.5,
                     "siege_wood_dark"))  # outer stanchion
         if k == "yellow":  # bronze skein caps (no domes on a siege engine)
-            c = T(x, yc - 0.45, hh + 0.76)
-            b.add(cylinder(0.6, 0.45, 0.3, 8, kcol(k, "trim")).move(c.x, c.y, c.z))
+            c = T(x, yc - 0.45, hh + 0.86)
+            b.add(cylinder(0.8, 0.6, 0.35, 8, kcol(k, "trim")).move(c.x, c.y, c.z))
     # bow arms: two-segment, swept back (drawn), iron bands, horn tips
     tips = []
     for sx in (-1, 1):
         a0 = (sx * hw, yc - 0.45, 0.3)
         a1 = (sx * (hw + 1.9 * S), yc + 0.35 * S, 0.3)
         a2 = (sx * (hw + 3.7 * S), yc + 1.75 * S, 0.3)
-        b.add(sbeam(a0, a1, 0.62, 0.66, "siege_wood_dark", bev=0.05))
-        b.add(sbeam(a1, a2, 0.5, 0.56, "siege_wood_dark", bev=0.05))
-        b.add(sbeam((a1[0] - sx * 0.15, a1[1] - 0.1, 0.3), (a1[0] + sx * 0.15, a1[1] + 0.1, 0.3), 0.8, 0.8,
+        b.add(sbeam(a0, a1, 0.95, 0.95, "siege_wood_dark", bev=0.06))
+        b.add(sbeam(a1, a2, 0.78, 0.8, "siege_wood_dark", bev=0.06))
+        b.add(sbeam((a1[0] - sx * 0.18, a1[1] - 0.12, 0.3), (a1[0] + sx * 0.18, a1[1] + 0.12, 0.3), 1.1, 1.1,
                     "iron_dark"))
         tip = T(*a2)
-        b.add(lathe([(0.3, 0.0), (0.36, 0.35), (0.0, 0.85)], 6, kcol(k, "trim")).move(tip.x, tip.y, tip.z - 0.2))
+        b.add(lathe([(0.44, 0.0), (0.5, 0.4), (0.0, 1.0)], 6, kcol(k, "trim")).move(tip.x, tip.y, tip.z - 0.3))
         tips.append(tip)
     # claw on the slider, bowstring drawn back to it
     ycl = yc + 5.2 * S
     b.add(sbeam((0, ycl - 0.6, 0.5), (0, ycl + 0.6, 0.5), 0.75, 0.6, "siege_wood"))
     b.add(sbeam((0, ycl - 0.7, 0.85), (0, ycl - 0.2, 0.85), 0.42, 0.42, "iron_dark"))
     nock = T(0, ycl - 0.8, 0.85)
-    b.add(rope([tips[0], nock, tips[1]], r=0.13, seg=4), tag="rope")
+    b.add(rope([tips[0], nock, tips[1]], r=0.18, seg=4), tag="rope")
     ropes += 1
     # bolt: shaft along the groove, iron head, kingdom fletching
     bl = 6.6 * S
     q0 = T(0, ycl - 0.75, 0.85)
     q1 = T(0, ycl - 0.75 - bl, 0.85)
-    b.add(beam(q0, q1, 0.22, 0.22, "wood_light", normal=(1, 0, 0)))
+    b.add(beam(q0, q1, 0.42, 0.42, "wood_light", normal=(1, 0, 0)))
     d = (q1 - q0).normalized()
-    head = lathe([(0.26, 0.0), (0.42, 0.25), (0.0, 1.1)], 4, "steel")
+    head = lathe([(0.42, 0.0), (0.66, 0.35), (0.0, 1.5)], 4, "steel")
     b.add(head.transform(look_rot(d)).move(*q1))
     for ang in (0.0, 2.1, -2.1):
-        fl = fan_solid([(0.0, 0.0), (0.38, 0.0), (0.42, 0.9), (0.0, 1.3)], 0.06, kcol(k, "cloth"), center=(0.18, 0.5),
+        fl = fan_solid([(0.0, 0.0), (0.55, 0.0), (0.6, 1.0), (0.0, 1.5)], 0.1, field(k), center=(0.25, 0.6),
                        mid=None)
         fl.rotate(math.pi / 2, "X").rotate(ang + math.pi / 2, "Y")
         fl.rotate(tilt, "X").move(*(q0 + d * 0.3))
@@ -240,19 +256,20 @@ def build(b, p):
                   .paint(tint=rng.uniform(0.2, 0.8)))
             b.add(cone(0.3, 0.55, 4, "wood_dark").move(x, ym, h_))
         for z in (0.6, hm - 0.7):
-            b.add(box(Wm + 0.3, 0.3, 0.4, kcol(k, "shutter")).move(0, ym - 0.3, z))
+            b.add(box(Wm + 0.3, 0.3, 0.45, field(k)).move(0, ym - 0.3, z))  # emerald bands
         for sx in (-1, 1):
             b.add(beam((sx * (Wm / 2 - 0.6), ym + 0.2, hm - 0.5), (sx * (Wm / 2 - 0.6), ym + 2.0, 0.0), 0.3, 0.3,
                        "siege_wood_dark", normal=(1, 0, 0)))
-        for pc in heater_shield(k, 2.2):
+        for pc in heater_shield(k, 3.2):
             b.add(pc.move(0.0, ym - 0.5, hm * 0.5))
         b.add([pc.move(0, 0.6, R + 0.5) for pc in lashing(0.55, 0.9, turns=2)])
     else:
-        # kingdom badge shield bolted to the front of the spring frame, under the bolt
-        c = T(0, yc - 1.05, -hh * 0.45)
-        for pc in heater_shield(k, 2.3):
+        # big kingdom badge shield bolted to the front of the spring frame, under the bolt
+        hs = 3.4
+        c = T(0, yc - 1.1, -hh * 0.2 - hs * 0.5 + 0.2)
+        for pc in heater_shield(k, hs):
             b.add(pc.move(c.x, c.y, c.z))
-        b.add(sbeam((0, yc - 0.85, -hh * 0.45), (0, yc - 0.4, -hh * 0.45), 0.5, 0.5, "iron_dark"))  # mount bracket
+        b.add(sbeam((0, yc - 0.9, -hh * 0.6), (0, yc - 0.4, -hh * 0.6), 0.6, 0.6, "iron_dark"))  # mount bracket
     pf = T(-(hw + 0.85), yc - 0.45, hh + 0.7)
     pennant(b, k, pf.x, pf.y, pf.z, rng, L=3.2, H=1.4)
 

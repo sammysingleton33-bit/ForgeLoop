@@ -33,7 +33,7 @@ def variants(n, seed):
             "roof": ("tile", "pyramid", "frame", "thatch")[i % 4],
             "radius": (3.1, 3.5, 3.0, 3.3)[i % 4],
             "curb_h": (3.0, 2.6, 3.2, 2.8)[i % 4],
-            "apron": i % 4 in (1, 3),
+            "apron": i % 4 == 1,
             "trough": i % 4 == 2,
             "seed": seed * 1000 + i,
         })
@@ -131,7 +131,7 @@ def two_posts(b, px, zt, h):
 
 def build_pyramid(b, k, px, zt, top, rng):
     """Frostmere: four corner posts, square top frame, crisp square-pyramid shingle roof (kit
-    cone_roof with 4 sides: stepped shingle courses) with a silver finial. Returns axle support x."""
+    cone_roof with 4 sides: stepped grey slate courses), azure fascia band, star finial. Returns axle x."""
     a = px * 0.72
     for sx in (-1, 1):
         for sy in (-1, 1):
@@ -141,10 +141,16 @@ def build_pyramid(b, k, px, zt, top, rng):
     for sy in (-1, 1):
         b.add(box(2 * a + 0.6, 0.55, 0.55, "wood_dark").move(0, sy * a, zt))  # top frame (X)
     half = a + 1.15  # eave half-side
-    roof = kit.cone_roof(half * math.sqrt(2) - 0.6, 3.4, seg=4, color=kcol(k, "roof"), overhang=0.6, flare=True,
-                         finial=kcol(k, "trim"), rows=3)
+    rr = half * math.sqrt(2) - 0.6
+    roof = kit.cone_roof(rr, 3.4, seg=4, color="slate", overhang=0.6, flare=True, finial=None, rows=3)
     for pc in roof:
         b.add(pc.move(0, 0, zt + 0.5), tag="roof")
+    r0 = rr + 0.6  # azure fascia band round the eave: the kingdom colour as trim only
+    b.add(ring_solid(r0 + 0.3, r0 + 0.55, 0.6, 4, kcol(k, "roof"), phase=math.pi / 4).move(0, 0, zt + 0.72))
+    zs = zt + 0.5 + 3.4  # star finial on a short iron spike
+    b.add(cylinder(0.14, 0.1, 1.0, 6, "iron_dark").move(0, 0, zs - 0.3))
+    for pc in emblem("star", 1.8, *emblem_colors(k, "star"), depth=0.24, mid=None):
+        b.add(pc.move(0, 0, zs + 1.4))
     for sx in (-1, 1):  # king struts from the frame up into the roof
         b.add(kit.oriented_box((sx * a, 0, zt + 0.5), (0, 0, zt + 2.2), 0.35, 0.35, "timber", Vector((0, 1, 0))))
     return a
@@ -156,15 +162,15 @@ def build_frame(b, k, px, zt, rng):
     two_posts(b, px, zt, zt)
     b.add(kit.bbox(2 * px + 1.8, 0.85, 0.75, "wood_dark", 0.1).move(0, 0, zt))  # head beam
     for sx in (-1, 1):
-        for sy in (-1, 1):  # raking struts down to the ground outside the curb
+        for sy in (1,):  # raking struts down to the ground behind the curb
             b.add(kit.oriented_box((sx * px, sy * 0.2, zt - 2.0), (sx * (px + 0.4), sy * 2.6, 0.0), 0.4, 0.4,
                                    "timber", Vector((1, 0, 0))))
     # kingdom board (ivory border, emerald field, oak leaf) on the head beam: reads at 80 studs
     emb = {"red": "crown", "blue": "star", "green": "oak", "yellow": "sun"}[k]
-    b.add(kit.bbox(2.7, 0.3, 1.7, border(k), 0.06).move(0, -0.55, zt + 0.55))
-    b.add(kit.bbox(2.3, 0.3, 1.35, field(k), 0.06).move(0, -0.65, zt + 0.72))
-    for pc in emblem(emb, 1.25, *emblem_colors(k, emb), depth=0.14, mid=None):
-        b.add(pc.move(0, -0.88, zt + 1.4))
+    b.add(kit.bbox(3.0, 0.3, 2.7, border(k), 0.06).move(0, -0.55, zt + 0.5))
+    b.add(kit.bbox(2.55, 0.3, 2.3, field(k), 0.06).move(0, -0.65, zt + 0.7))
+    for pc in emblem(emb, 1.9, *emblem_colors(k, emb), depth=0.16, mid=None):
+        b.add(pc.move(0, -0.9, zt + 1.85))
     # pennant on the right post
     fx, fz = px, zt + 0.75
     b.add(cylinder(0.1, 0.08, 2.4, 6, "timber").move(fx, 0, fz))
@@ -172,8 +178,13 @@ def build_frame(b, k, px, zt, rng):
     def pos(u, v):
         return (fx + 0.1 + u * 2.2, 0.15 * math.sin(u * 4) * u, fz + 2.3 - v * 1.0 * (1 - 0.75 * u) - 0.2 * u * u)
 
-    b.add(sheet([0.0, 0.33, 0.66, 1.0], [0.0, 0.5, 1.0], pos, 0.16, field(k),
-                lambda kind, i, j: border(k) if kind == "edge" else None), grad=("range", 0.3, 0.9))
+    def cols(kind, i, j):  # ivory border along top, bottom and the fly end
+        if kind == "edge" or j in (0, 2) or i == 3:
+            return border(k)
+        return None
+
+    b.add(sheet([0.0, 0.3, 0.6, 0.86, 1.0], [0.0, 0.16, 0.84, 1.0], pos, 0.18, field(k), cols),
+          grad=("range", 0.3, 0.9))
 
 
 def build_gable(b, k, px, zt, style, rng):
@@ -183,14 +194,16 @@ def build_gable(b, k, px, zt, style, rng):
     b.add(box(2 * px + 1.6, 0.7, 0.6, "wood_dark").move(0, 0, zt))  # tie beam
     for sy in (-1, 1):  # eave purlins
         b.add(box(2 * px + 2.0, 0.5, 0.45, "timber").move(0, sy * 2.05, zt + 0.6))
-    # roof (shared kit): ridge along X; tile = terracotta with kingdom-red trim (well_01),
-    # thatch = muted straw with pinned ridge + layered rows, gold accents (well_04)
-    pitch = rng.uniform(48, 53) if style == "thatch" else rng.uniform(40, 45)
-    color = "thatch" if style == "thatch" else "clay"
-    ridge = "thatch_dark" if style == "thatch" else kcol(k, "roof_dark")
-    roof, rise = kit.gable_roof(4.6, 2 * px + 1.0, pitch, overhang=1.1, gable_overhang=0.9,
-                                thickness=0.55 if style == "tile" else 0.72, color=color, rows=3,
-                                ridge_color=ridge, style=style, rng=rng, pins=True, trim=kcol(k, "roof"))
+    # roof (shared kit): ridge along X; tile = neutral timber shingles with brick-red fascia, ridge and
+    # barge boards + crown (well_01); thatch = muted straw, gold ridge cap, ivory/bronze bands, sun (well_04)
+    thatch = style == "thatch"
+    pitch = rng.uniform(48, 53) if thatch else rng.uniform(40, 45)
+    color = "thatch" if thatch else "wood"
+    ridge = kcol(k, "roof") if thatch else kcol(k, "roof_dark")  # gold ridge cap on the thatch
+    ov = 0.85 if thatch else 1.1
+    roof, rise = kit.gable_roof(4.6, 2 * px + 1.0, pitch, overhang=ov, gable_overhang=0.7 if thatch else 0.9,
+                                thickness=0.55 if not thatch else 0.62, color=color, rows=3,
+                                ridge_color=ridge, style=style, rng=rng, pins=False, trim=kcol(k, "roof"))
     zr = zt + 1.05
     for pc in roof:
         b.add(pc.rotate(math.pi / 2, "Z").move(0, 0, zr), tag="roof")
@@ -201,16 +214,27 @@ def build_gable(b, k, px, zt, style, rng):
         b.add(kit.oriented_box((xg, 0, zr - 0.4), (xg, 0, zr + rise - 0.3), 0.45, 0.35, "timber", n_))
         for s in (-1, 1):
             b.add(kit.oriented_box((xg, s * 2.1, zr), (xg, s * 0.25, zr + rise * 0.8), 0.4, 0.35, "timber", n_))
-    if style == "thatch":  # Sunspire: gold sun standing on the ridge on a short post + gold finial
-        zs = zr + rise + 1.0
-        b.add(cylinder(0.14, 0.12, 1.6, 6, "timber").move(0, 0, zs - 0.4))
-        for pc in emblem("sun", 2.8, *emblem_colors(k, "sun"), depth=0.26, mid=None):
-            b.add(pc.move(0, 0, zs + 2.4))
-        b.add(lathe([(0.25, 0.0), (0.42, 0.25), (0.3, 0.6), (0.0, 0.75)], 6, "gold").move(px + 1.2, 0, zr + rise + 0.6))
-    else:  # gold ridge finials on the terracotta roof
-        for sx in (-1, 1):
-            b.add(lathe([(0.0, 0.0), (0.3, 0.1), (0.32, 0.4), (0.0, 0.85)], 6, kcol(k, "trim"))
-                  .move(sx * (px + 1.0), 0, zr + rise + 0.45))
+    if thatch:  # Sunspire: gold ridge cap with ivory bands and bronze end caps, gold sun on the ridge
+        t = 0.62 * 1.6
+        zroll = zr + rise + t
+        lr = 2 * px + 1.0 + 2 * 0.7
+        for xx, rad, w, col in ((-px * 0.55, t * 0.7, 0.4, kcol(k, "accent")), (px * 0.55, t * 0.7, 0.4, kcol(k, "accent")),
+                                (-lr / 2 - 0.05, t * 0.66, 0.3, kcol(k, "trim")), (lr / 2 - 0.25, t * 0.66, 0.3, kcol(k, "trim"))):
+            b.add(cylinder(rad, rad, w, 6, col).rotate(math.pi / 2, "Y").move(xx, 0, zroll))
+        zs = zroll + 0.4
+        b.add(cylinder(0.14, 0.12, 1.4, 6, "timber").move(0, 0, zs - 0.2))
+        for pc in emblem("sun", 2.6, *emblem_colors(k, "sun"), depth=0.26, mid=None):
+            b.add(pc.move(0, 0, zs + 2.3))
+    else:  # neutral shingles with a brick-red fascia along both eaves and a gold crown on the ridge
+        ze = zr - ov * math.tan(math.radians(pitch))
+        for sy in (-1, 1):
+            ye = sy * (2.3 + ov - 0.05)
+            b.add(kit.oriented_box((-(px + 1.4), ye, ze - 0.25), (px + 1.4, ye, ze - 0.25), 0.3, 0.55,
+                                   kcol(k, "roof"), Vector((0, sy, 0))))
+        zs = zr + rise + 0.7
+        b.add(cylinder(0.14, 0.12, 1.2, 6, "timber").move(0, 0, zs - 0.4))
+        for pc in emblem("crown", 2.0, *emblem_colors(k, "crown"), depth=0.24, mid=None):
+            b.add(pc.move(0, 0, zs + 1.4))
 
 
 def build_winch(b, k, p, R, r_in, px, top, z0, rng, wheel_crank=False):
@@ -243,12 +267,12 @@ def build_winch(b, k, p, R, r_in, px, top, z0, rng, wheel_crank=False):
         tx = -(R + 2.2)
         b.add(kit.bbox(2.0, 4.2, 1.4, "stone", 0.15).move(tx, 0.4, 0))
         b.add(box(1.4, 3.6, 0.2, "water").move(tx, 0.4, 1.2))
-    elif not p["apron"]:
+    elif not p["apron"] and p["roof"] != "thatch":
         a = math.radians(rng.uniform(-60, -40))
         for pc in bucket(handle=False):
             b.add(pc.move(math.cos(a) * (R + r_in) / 2, math.sin(a) * (R + r_in) / 2, top))
     # leafy flower tufts at the foot of the curb
-    for i in range(1 if p["roof"] == "thatch" else 2):
+    for i in range({"thatch": 0, "frame": 1}.get(p["roof"], 2)):
         aa = math.radians(-140 + 75 * i + rng.uniform(-12, 12))
         rr = R + 0.35
         cx, cy = math.cos(aa) * rr, math.sin(aa) * rr

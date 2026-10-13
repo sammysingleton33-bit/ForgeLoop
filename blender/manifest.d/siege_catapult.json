@@ -9,8 +9,8 @@
       },
       "dimensions_studs": {
         "x": 12.553,
-        "y": 14.256,
-        "z": 16.552
+        "y": 13.238,
+        "z": 16.894
       },
       "double_sided": false,
       "files": {
@@ -19,7 +19,7 @@
       },
       "generator": "siege_catapult",
       "generator_version": 1,
-      "geometry_hash": "ee4360638519641e",
+      "geometry_hash": "05e3ea9ba07b1215",
       "id": "siege_catapult_blue_01",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -38,25 +38,25 @@
       "sockets": {
         "crew_1": [
           6.152,
-          -0.075,
-          6.815
+          -0.108,
+          6.986
         ],
         "crew_2": [
           -4.177,
-          -0.075,
-          6.815
+          -0.108,
+          6.986
         ],
         "projectile": [
           0.987,
-          6.325,
-          5.215
+          6.292,
+          5.386
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3742,
-        "lod1": 1308
+        "lod0": 3354,
+        "lod1": 1172
       },
       "validation_pass": true
     },
@@ -69,7 +69,7 @@
       },
       "dimensions_studs": {
         "x": 11.058,
-        "y": 13.181,
+        "y": 13.114,
         "z": 19.321
       },
       "double_sided": false,
@@ -79,7 +79,7 @@
       },
       "generator": "siege_catapult",
       "generator_version": 1,
-      "geometry_hash": "6594f48485707f34",
+      "geometry_hash": "6d55a193dee79f24",
       "id": "siege_catapult_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -108,15 +108,15 @@
         ],
         "projectile": [
           -0.0,
-          9.007,
+          8.885,
           6.96
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3416,
-        "lod1": 1194
+        "lod0": 3256,
+        "lod1": 1138
       },
       "validation_pass": true
     },
@@ -129,8 +129,8 @@
       },
       "dimensions_studs": {
         "x": 11.761,
-        "y": 12.777,
-        "z": 15.852
+        "y": 12.631,
+        "z": 16.464
       },
       "double_sided": false,
       "files": {
@@ -139,7 +139,7 @@
       },
       "generator": "siege_catapult",
       "generator_version": 1,
-      "geometry_hash": "69d3a6d58e3434a7",
+      "geometry_hash": "224d4fe2856e04d0",
       "id": "siege_catapult_red_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -158,25 +158,25 @@
       "sockets": {
         "crew_1": [
           5.755,
-          -0.078,
-          6.326
+          -0.113,
+          6.632
         ],
         "crew_2": [
           -4.38,
-          -0.078,
-          6.326
+          -0.113,
+          6.632
         ],
         "projectile": [
           0.687,
-          7.455,
-          5.226
+          8.017,
+          5.532
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3526,
-        "lod1": 1234
+        "lod0": 3174,
+        "lod1": 1110
       },
       "validation_pass": true
     },
@@ -189,8 +189,8 @@
       },
       "dimensions_studs": {
         "x": 11.1,
-        "y": 16.969,
-        "z": 18.629
+        "y": 18.273,
+        "z": 18.976
       },
       "double_sided": false,
       "files": {
@@ -199,7 +199,7 @@
       },
       "generator": "siege_catapult",
       "generator_version": 1,
-      "geometry_hash": "81864e39ad9e2b8f",
+      "geometry_hash": "f8e352e5306e215b",
       "id": "siege_catapult_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -218,25 +218,25 @@
       "sockets": {
         "crew_1": [
           5.425,
-          -0.075,
-          7.854
+          -0.108,
+          8.027
         ],
         "crew_2": [
           -5.425,
-          -0.075,
-          7.854
+          -0.108,
+          8.027
         ],
         "projectile": [
           -0.0,
-          6.325,
-          6.254
+          6.292,
+          6.427
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3982,
-        "lod1": 1392
+        "lod0": 3566,
+        "lod1": 1248
       },
       "validation_pass": true
     }
@@ -251,8 +251,8 @@
       "siege_catapult_blue_01",
       "siege_catapult_red_01"
     ],
-    "mean_pair_diff": 0.4774,
-    "min_pair_diff": 0.4158,
+    "mean_pair_diff": 0.4776,
+    "min_pair_diff": 0.3427,
     "pass": true,
     "threshold": 0.08
   }

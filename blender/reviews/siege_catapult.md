@@ -56,3 +56,19 @@ Changes:
 - Yellow trimmed (lower X-braces, guy ropes) to stay under budget; winch rope coil tagged as rope.
 Seen (`siege_catapult_yellow_01_hero.png`, sheet): four different silhouettes (min diff 0.42), every engine
 shows its emblem on a visible shield. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3. Tris 3416-3982 / 4000.
+
+## Fresh-review round 3 (final; FORGE-02 lead notes)
+Problems reported: red brazier (red never uses a flame); shields too small and side-on to the front camera;
+sun gold-on-gold; oak read as a feather streak; yellow at 3982/4000; blue vs yellow not distinct enough.
+Changes:
+- Shared shield (`heater_shield`): border rim (ivory on emerald, bronze on gold), field never the emblem's
+  colour (gold kingdom: ivory field), emblem 56 % of the shield; new full symmetric oak leaf (4 lobes per
+  side, midrib, stem) in ivory on the saturated emerald field.
+- red: brazier removed, 3.6-stud crown shield on the front frame facing the camera.
+- Front shields 3.6 (about 1.5x), side shields 2.8 angled 45 deg toward the front camera.
+- Wheels: 10 rim segments, 6 spokes, no hub caps (about -10 to -12 % tris overall).
+- blue: squat wide A-frames (H top+6.6, spread 4.2) with slate-blue square-pyramid apex caps; yellow: tall
+  trestle towers (H top+10.2) with gold finials.
+Seen (`previews/siege_catapult.jpg`, gameplay strip): crown, star, oak and sun-on-ivory read on large shields;
+squat blue vs tall yellow. Tris 3174-3566 / 4000, min silhouette diff 0.34.
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.

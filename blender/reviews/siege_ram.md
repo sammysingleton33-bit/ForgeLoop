@@ -36,3 +36,13 @@ Changes (one cover per kingdom, different pitch / drape / front):
   finials, a tall sun pavise standing in front of the ram (no canvas stripes, no purple).
 Seen (`siege_ram_blue_01_hero.png`, `siege_ram_yellow_01_hero.png`, sheet): four silhouettes (min diff 0.27),
 none reads as a catapult. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4. Tris 2744-3632 / 4000.
+
+## Fresh-review round 3 (final; FORGE-02 lead notes)
+Problems reported: blue roof almost all royal blue and an oversized pale head (boulder / face); green lacked
+pennant and emerald shields; yellow sun gold-on-gold and no pennant.
+Changes: blue tortoise roofed in neutral timber shingles with azure ridge cap, barge boards and eave hem
+boards, 3.0 star shield on the gable, and the same dark iron head on a visible log as the others; green gets
+an emerald pennant and emerald oak shields with ivory borders (3.0-3.2); yellow pavise 3.6 with the sun on an
+ivory field plus a gold pennant; side shields 3.0 angled 45 deg toward the front camera.
+Seen (`previews/siege_ram.jpg`): four covers read apart, kingdom colour now as trim/shields/pennants.
+Tris 2740-3808 / 4000, min silhouette diff 0.27. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.

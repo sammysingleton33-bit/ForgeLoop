@@ -2,10 +2,12 @@
 the silhouettes differ, not just the colours:
 
   red     shed roofed with lashed wet hides at 40 deg over posts, kingdom drapes, ridge pennant
-  blue    Frostmere "tortoise": steep 62 deg slate-shingle roof straight down to the rails (no
-          walls), star shield on the open front gable, oversized steel ram head
-  green   Thornwood steep 56 deg plank roof (shared-kit tile roof in timber), planked front hoarding
-  yellow  low 24 deg roof of neutral hides draped long down the sides, gold-trimmed hem, front pavise
+  blue    Frostmere "tortoise": steep 62 deg timber-shingle roof straight down to the rails (no
+          walls), azure ridge / barge boards / eave hem, star shield on the open front gable
+  green   Thornwood steep 56 deg plank roof (shared-kit tile roof in timber), planked front hoarding,
+          emerald oak shields with ivory borders, emerald pennant
+  yellow  low 24 deg roof of neutral hides draped long down the sides, gold-trimmed hem, sun pavise
+          on an ivory field, gold pennant
 
 Front (ram head) faces Blender -Y. Sockets: crew_1 / crew_2 = pushing spots inside the shed
 beside the log (ground level), ram_head = tip of the iron head (impact point for hits).
@@ -90,11 +92,16 @@ def build(b, p):
     if roof == "tortoise":
         # ---- steep shingle roof straight off the rails; A-trusses carry the ridge beam
         span = Wd + 0.4
+        # neutral timber shingles; azure only as trim: ridge cap, barge boards and an eave hem
         rf, rise = kit.gable_roof(span, L - 0.4, pitch, overhang=0.25, gable_overhang=0.35, thickness=0.5,
-                                  color=kcol(k, "roof"), rows=5, ridge_color=kcol(k, "roof_dark"), style="tile",
-                                  rng=rng, trim=kcol(k, "trim"))
+                                  color="wood", rows=5, ridge_color=kcol(k, "roof_dark"), style="tile",
+                                  rng=rng, trim=kcol(k, "roof"))
         for pc in rf:
             b.add(pc.move(0, 0, top + 0.05), tag="roof")
+        for sx in (-1, 1):  # azure hem board along both eaves
+            ex = sx * (span / 2 + 0.2)
+            b.add(kit.oriented_box((ex, -L / 2 + 0.05, top - 0.25), (ex, L / 2 - 0.05, top - 0.25), 0.7, 0.4,
+                                   kcol(k, "roof"), Vector((0, 0, 1))))
         posts_y = [-L / 2 + 0.7, 0.0, L / 2 - 0.7]
         zr_ = top + rise
         for y in posts_y:
@@ -105,9 +112,9 @@ def build(b, p):
         b.add(box(0.6, L - 0.8, 0.6, "siege_wood_dark").move(0, 0, zr_ - 1.4))  # ridge beam (ram hangs here)
         hang_z = zr_ - 1.4
         He = top + rise
-        for pc in heater_shield(k, 2.0):  # star shield on the open front gable, above the ram head
-            b.add(pc.move(0, -L / 2 - 0.35, top + rise * 0.66))
-        b.add(box(1.6, 0.3, 0.3, "iron_dark").move(0, -L / 2 - 0.1, top + rise * 0.66 - 0.15))  # hanger bar
+        for pc in heater_shield(k, 3.0):  # star shield on the open front gable, above the ram
+            b.add(pc.move(0, -L / 2 - 0.35, top + rise * 0.6))
+        b.add(box(1.8, 0.3, 0.3, "iron_dark").move(0, -L / 2 - 0.1, top + rise * 0.6 + 1.0))  # hanger bar
         pennant(b, k, 0.0, L / 2 - 0.5, top + rise + 0.2, rng, L=3.6, H=1.6)
     else:
         # ---- posts, tie beams, wall plates, side braces
@@ -137,8 +144,9 @@ def build(b, p):
                 hh = max(0.6, rise * (1 - abs(x) / (Wd / 2 + 0.2)))
                 b.add(box(Wd / n - 0.06, 0.3, hh + 0.7, "wood_dark" if i % 2 else "wood")
                       .move(x, -L / 2 + 0.3, He - 0.7))
-            for pc in heater_shield(k, 2.4):
-                b.add(pc.move(0, -L / 2 + 0.05, He + 0.25))
+            for pc in heater_shield(k, 3.2):
+                b.add(pc.move(0, -L / 2 + 0.0, He + 0.45))
+            pennant(b, k, 0.0, L / 2 - 0.3, He + rise + 0.2, rng, L=3.6, H=1.6)
         else:
             # hide roof over rafters and a ridge beam; red = 40 deg short eaves, yellow = 24 deg
             # with the hides cloaked far down the sides and a gold-trimmed hem
@@ -186,21 +194,22 @@ def build(b, p):
                 for sy in (-1, 1):  # gold ball finials on the ridge ends
                     b.add(lathe([(0.25, 0.0), (0.42, 0.25), (0.3, 0.6), (0.0, 0.75)], 6, "gold")
                           .move(0, sy * (L / 2 + 0.1), He + rise + 0.15))
-                # pavise: tall sun shield standing on the nose beam in front of the ram, with a prop
-                for pc in heater_shield(k, 3.0):
-                    b.add(pc.move(0, -L / 2 - 0.25, top + 3.0))
+                # pavise: tall sun shield (ivory field) standing on the nose beam in front of the ram
+                for pc in heater_shield(k, 3.6):
+                    b.add(pc.move(0, -L / 2 - 0.25, top + 3.2))
+                pennant(b, k, 0.0, L / 2 - 0.2, He + rise + 0.2, rng, L=3.4, H=1.5)
                 b.add(beam((0, -L / 2 + 0.1, top + 0.1), (0, -L / 2 + 0.05, top + 4.4), 0.3, 0.3, "siege_wood_dark"))
             else:
                 for sx in (-1, 1):
                     drape(b, k, sx * (Wd / 2 + 0.55), -yw + R + 0.3, yw - R - 0.3, top - 0.05, 1.5, rng)
                 pennant(b, k, 0.0, L / 2 - 0.2, He + rise + 0.2, rng, L=3.4, H=1.5)
         for sx in (-1, 1):
-            if roof != "cloak":
-                for pc in heater_shield(k, 2.2):
-                    b.add(pc.rotate(sx * math.pi / 2, "Z").move(sx * (Wd / 2 + 0.75), 0.4, top + 1.6))
+            if roof != "cloak":  # side shields angled 45 deg toward the front camera
+                for pc in heater_shield(k, 3.0):
+                    b.add(pc.rotate(sx * 0.8, "Z").move(sx * (Wd / 2 + 0.95), 0.4, top + 1.8))
 
     # ---- the ram: log on rope slings, iron head with kingdom plates, bands
-    big = roof == "tortoise"
+    big = False  # every ram uses the same dark iron head on a visible log
     rl = 0.9 if big else 0.72
     y_head = -L / 2 - (3.6 if big else 2.6)
     y_tail = L / 2 - 0.6

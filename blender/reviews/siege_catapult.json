@@ -1,27 +1,27 @@
 {
   "assets": {
     "siege_catapult_blue_01": {
-      "geometry_hash": "0f326ba7726711f6",
+      "geometry_hash": "ee4360638519641e",
       "verdict": "NEEDS-WORK"
     },
     "siege_catapult_green_01": {
-      "geometry_hash": "286ea587ec8a4538",
+      "geometry_hash": "6594f48485707f34",
       "verdict": "NEEDS-WORK"
     },
     "siege_catapult_red_01": {
-      "geometry_hash": "7aedccd151022c21",
+      "geometry_hash": "69d3a6d58e3434a7",
       "verdict": "NEEDS-WORK"
     },
     "siege_catapult_yellow_01": {
-      "geometry_hash": "bdb13b6969ba888d",
+      "geometry_hash": "81864e39ad9e2b8f",
       "verdict": "NEEDS-WORK"
     }
   },
   "generator": "siege_catapult",
   "generator_version": 1,
-  "notes": "Pennants read well at 40 studs, but red_01 shield shows a flame not a crown and yellow_01 shield shows a purple ring/crescent that does not read as a sun and is hidden behind the A-frame; red/green share one chassis and blue/yellow share the counterweight A-frame. green_01 at 3956 tris is at the 4000 cap.",
+  "notes": "red_01 carries a fire brazier, which breaks the rule that red uses the crown and never a flame, and its only crown shield is side-on behind the rear wheel, so at gameplay distance the variant reads as red plus flame. The yellow_01 sun on a gold shield and the green_01 leaf on a teal shield cannot be read at 40 studs, and yellow_01 is at 3982/4000 tris.",
   "reviewer": "fresh-context subagent",
-  "round": 1,
+  "round": 2,
   "scores": {
     "cohesion": 3,
     "detail_density": 4,
@@ -30,7 +30,7 @@
     "readability": 3,
     "silhouette": 4,
     "triangle_cost": 3,
-    "variation": 3
+    "variation": 4
   },
   "verdict": "NEEDS-WORK"
 }

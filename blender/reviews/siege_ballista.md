@@ -40,3 +40,13 @@ blue get a kingdom badge shield bolted to the front of the spring frame under th
 yellow dome caps replaced by bronze skein caps; horn tips use the bronze trim (palette).
 Seen (sheet + gameplay strip): carriage, dais, carriage+mantlet and trestle read apart at 40 studs and each
 shows its emblem from the front. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4. Tris 1798-2686 / 4000.
+
+## Fresh-review round 3 (final; FORGE-02 lead notes)
+Problems reported: yellow sun too small and gold-on-gold; green oak a feather streak on teal bands and the
+same wheeled carriage as red; arms, bolt and spring caps spindly on a phone.
+Changes: green now on Thornwood sled runners (upturned noses, iron shoes, sleepers, braced pivot post) with
+saturated emerald mantlet bands and a 3.2 oak shield; front badge shields 3.4 (crown / star / sun on ivory);
+arms 0.95 / 0.78 thick with bigger bronze/gold horn tips; bolt 0.42 with a 1.5 steel head and larger
+kingdom-cloth fletching; spring washers 0.95 x 0.45 with heavier levers; bowstring 0.18.
+Seen (`previews/siege_ballista.jpg`): carriage / dais / sled / trestle mounts read apart; every badge faces the
+front camera. Tris 1798-2082 / 4000, min silhouette diff 0.31. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
