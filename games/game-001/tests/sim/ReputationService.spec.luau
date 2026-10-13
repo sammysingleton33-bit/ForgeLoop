@@ -561,6 +561,19 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		reputation:rulerVisited(1, visited.id)
 		expect(visited.loyalty > a).toBe(true)
 		expect(other.loyalty).toBe(b)
+		-- the visited citizen remembers it and cheers up (G5, FL-0050); the other one doesn't
+		expect(visited.moodLift).never.toBeNil()
+		expect(other.moodLift).toBeNil()
+		local remembered = false
+		for _, entry in visited.memory do
+			remembered = remembered or (entry.kind == "rulerVisited" and entry.ref == 1)
+		end
+		expect(remembered).toBe(true)
+		-- another kingdom's citizen: no reaction from a crimson ruler
+		local azure = sim.kingdoms.azure
+		local stranger = sim:_spawnCitizen(azure, "farmer", azure.x, azure.z)
+		reputation:rulerVisited(1, stranger.id)
+		expect(stranger.moodLift).toBeNil()
 	end)
 end)
 

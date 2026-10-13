@@ -56,6 +56,10 @@
 		.remotes                   MockRemotes network (:asClient, :sent, ...)
 	Instances in the DataModel (and from newInstance) also get WaitForChild, ChildAdded and
 	ChildRemoved on the virtual clock: see MockInstanceEvents.luau for what is (not) provided.
+	Engine-only members (ParticleEmitter:Emit/:Clear, Sound:Play/:Stop) come from FORGE-04's
+	EngineStubs, installed once per process here: Lune lacks them, so a client spec that fires a
+	celebration (#49) would otherwise crash in VFXController. Lune allows one registration per
+	member per process, so EngineStubs stays the only registrar (its install is idempotent).
 ]]
 
 local roblox = require("@lune/roblox")
@@ -73,6 +77,7 @@ local MockRandom = require("./MockRandom")
 local MockRemotes = require("./MockRemotes")
 local MockServices = require("./MockServices")
 local MockSignal = require("./MockSignal")
+local EngineStubs = require("../unit/experience/doubles/EngineStubs")
 
 local MockEnv = {}
 
@@ -93,6 +98,7 @@ local LEVELS = { info = true, warn = true, error = true }
 local jobCounter = 0
 
 function MockEnv.new(options: { [string]: any }?)
+	EngineStubs.install()
 	local opts = options or {}
 	local overrides = opts.services or {}
 	jobCounter += 1
