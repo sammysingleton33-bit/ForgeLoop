@@ -10,7 +10,7 @@
 		HudModel.queue(store) -> { Chip }          my buildings being built, oldest first
 			Chip = { id, type, name, icon, category, progress (0..1), waiting, level }
 		HudModel.standings(store) -> { { id, name, emblem, color, crownPoints, regions, ai, me, rank } }
-		HudModel.EMBLEMS[kingdomId] -> icon name   (BRIEF §3 working names: flame, star, oak, sun)
+		HudModel.EMBLEMS[kingdomId] -> icon name   (ART_DIRECTION §3, as the world: crown, star, oak leaf, sun)
 		HudModel.color(kingdom) -> Color3          `kingdom.color` from the server, else the theme tincture
 ]]
 
@@ -22,7 +22,7 @@ local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
 local HudModel = {}
 
 HudModel.EMBLEMS = table.freeze({
-	crimson = "emblem_flame",
+	crimson = "emblem_crown",
 	azure = "emblem_star",
 	emerald = "emblem_oak",
 	gold = "emblem_sun",

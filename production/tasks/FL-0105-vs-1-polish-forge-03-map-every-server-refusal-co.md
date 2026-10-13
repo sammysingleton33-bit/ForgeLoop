@@ -3,7 +3,7 @@ id: FL-0105
 title: "VS-1 polish (FORGE-03): map every server refusal code, dark emblem on light tinctures, Toast achievement accent"
 track: build
 owner: forge-03
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-13
@@ -11,7 +11,9 @@ updated: 2026-10-13
 depends_on: [FL-0059]
 context: [games/game-001/CONTRACTS.md, DECISIONS.md, games/game-001/STUDIO_PLAYTEST.md]
 estimate_h: 2
-evidence: []
+evidence:
+  - "bash roblox/scripts/check.sh PASS (framework 512/0, game-001 940/0); 17/17 mutations killed; renders looked at: crests-900x420, kingdom-*, placing-bad-*, kit-1280x1400 (toast row)"
+  - "main 2a6a247: check.sh PASS on 4502935+#86 (game-001 1101/0); ownership PASS 72 files; CI 3/3 on 5eb2d61; e2e refusal texts in words for 9 cases; mutations 27/34 caught"
 ---
 
 # VS-1 polish (FORGE-03): map every server refusal code, dark emblem on light tinctures, Toast achievement accent
@@ -39,3 +41,6 @@ When the server refuses a build or an order, the player reads the real reason (o
 
 ## Log
 - 2026-10-13 forge-00: created from the backlog audit (D-038) (READY).
+- 2026-10-13 forge-03: READY → BUILDING. Started in #86 (forge/03-ui-economy-crest): server refusal codes, gold crest sunburst on ivory roundel, Toast achievement accent
+- 2026-10-13 forge-03: BUILDING → REVIEW. PR #86: Text maps every code of Build/Remotes Reasons + Upgrade/Gather/SetJobQuota (Army codes are UI/ArmyText's, #63); drawn sunburst on ivory roundel (FORGE-02 design), >=3:1 for all 4 canonical colours; Toast achievement = purpure + laurel (FORGE-04 can drop KIND_ICON). Studio unverified.
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #86 (2a6a247, FORGE-05 D-040 fallback verdict on 5eb2d61; promoted by FORGE-00). Every server refusal code is worded (Build, PlaceSlot incl. #89 codes, Upgrade, Army.Recruit bunks per D-041; not_on_plot per v0.4-g9a); D-039 emblems and gem badge. REVIEW: remaining non-Studio item M1 (ui-economy.md:41 U4 step 2 and prototype kingdom.js:236,439 still say 'Outside your territory'); then G6 (STUDIO_PLAYTEST row 6 step 3, U4, U7). Lows L1-L9 in the review. FORGE-07 post-merge review owed.
