@@ -122,6 +122,7 @@ Chopping, mining, building hammer, coin and resource pickups, construction compl
 
 ## 13. Analytics (VS-1)
 - **Funnel:** spawn → first gather → first build placed → first building complete → first recruit → first capture. Attribution rules: CONTRACTS G9.
+  - "First gather" is the first gather credited to the player: their own, or any citizen deposit while they are a member. It measures that the kingdom's economy started, not that the ruler gathered (D-044 (2)). Conversations are measured by a custom event, not a funnel step.
 - **Also logged:** match length, kingdom outcomes, disconnects.
 
 ## 14. Performance budget

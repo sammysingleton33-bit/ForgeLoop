@@ -74,7 +74,8 @@ upgrade and confirm renders were re-shot because the detail pane now shows what 
 
 What the prototype settled:
 - The plot picker **is** the build drawer (same rows, costs and detail), with one tab naming the plot
-  size and a CTA "Build <name> here"; only structures that fit the plot are listed (`UI/SlotFit`).
+  size and a CTA "Build <name> here"; only structures that fit the plot are listed (FORGE-01's `Build/Fit.typesFor`, less the keep,
+  walls and gates: `BuildModel.plotTypes`).
 - The upgrade panel is the same detail pane: the next level's cost and time, plus two lines —
   **Now** (what the building gives) and **Lv N** (what the next level adds, green).
 - A tapped building of another kingdom opens a read-only card.

@@ -149,7 +149,10 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 				new = function()
 					return {
 						play = function(_, id, opts)
-							table.insert(effects, { id = id, position = opts and opts.position })
+							table.insert(
+								effects,
+								{ id = id, position = opts and opts.position, tint = opts and opts.tint }
+							)
 						end,
 					}
 				end,
@@ -269,6 +272,15 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 		end
 		table.sort(shownTitles)
 		expect(shownTitles).toEqual({ "Bridge captured", "Watchtower captured" })
+	end)
+
+	it("payload.tint colours the celebration's effect; anything else is ignored", function()
+		local red = Color3.fromRGB(190, 40, 50)
+		controller:celebrate("achievement", { title = "A", tint = red })
+		env.mock:advance(1.1)
+		controller:celebrate("achievement", { title = "B", tint = "red" })
+		expect(effects[1].tint).toBe(red)
+		expect(effects[2].tint).toBeNil()
 	end)
 
 	it("a payload that is not a table counts as none and never throws", function()

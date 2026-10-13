@@ -29,6 +29,11 @@
 		hud.menuChanged: Signal<(menu?)>    "build" | "kingdom" | nil
 		hud:setMenu(id?)                    opens a menu (closes the other); the same id again closes it
 		hud:setPlacing(on)                  hides the construction chips while the placement bar shows
+		hud:addRailItem({ id, icon, label, target?, order? })   a rail button for another controller's
+		                                    menu (ArmyPanelController: "army"); it calls hud:setMenu(id)
+		hud:removeRailItem(id)              undoes it (the owner's destroy)
+		hud:setStackBottom(y?)              the bottom of a widget hung under the top-left stack (the
+		                                    objective tracker): phone toasts with an open drawer start below it
 		hud:notify({ title, body?, kind? })
 		hud:hasRemote(name) -> boolean      the server declared this remote (ReplicatedStorage
 		                                    .ForgeRemotes.<Area>.<Action> exists; never yields)
@@ -95,6 +100,8 @@ function Def.new(env: any, registry: any)
 			confirm = nil :: any,
 		},
 		_viewport = nil :: Vector2?,
+		_railItems = {} :: { any },
+		_stackBottom = nil :: number?,
 		_sheets = {} :: { [string]: boolean },
 		_mounted = false,
 		_running = false,
@@ -169,6 +176,9 @@ function KingdomHudController:mount(parent: Instance)
 		Parent = g.hud,
 	})
 	self.view = KingdomHud.new(self.roots.hud, g.topbar, self._motion)
+	for _, item in self._railItems do
+		self.view:addMenu(item)
+	end
 	self.panel = KingdomPanel.new(self.roots.menus)
 	self.toasts = ToastStack.new(self.roots.notices, self._motion)
 	for _, key in { "hud", "topbar", "menus", "modals", "notices" } do
@@ -452,6 +462,66 @@ function KingdomHudController:setMenu(id: string?)
 	end
 	self.menuChanged:fire(id)
 	self:render()
+end
+
+-- Undoes addRailItem (a controller that is destroyed takes its rail button with it).
+function KingdomHudController:removeRailItem(id: string)
+	for i, item in self._railItems do
+		if item.id == id then
+			table.remove(self._railItems, i)
+			break
+		end
+	end
+	if self.view and not self._destroyed then
+		self.view:removeMenu(id)
+		self:render()
+	end
+end
+
+function KingdomHudController:addRailItem(item: {
+	id: string,
+	icon: string,
+	label: string,
+	target: string?,
+	order: number?,
+})
+	table.insert(self._railItems, item)
+	if self.view then
+		self.view:addMenu(item)
+		self:render()
+	end
+end
+
+-- Only the toasts move (no full render): the tracker calls this from its own render.
+function KingdomHudController:setStackBottom(y: number?)
+	if y == self._stackBottom then
+		return
+	end
+	self._stackBottom = y
+	if self._mounted then
+		self:_placeToasts(self:metrics())
+	end
+end
+
+function KingdomHudController:_placeToasts(m: any)
+	if self:sheetOpen(m) then
+		-- A phone sheet covers the usual toast corner (FORGE-05 L4): in the band between the pills and
+		-- the sheet's right edge, above the sheet; one at a time in the fallback stack
+		-- (NotificationController's place() has no limit: it keeps its own queue of three).
+		local band = Layout.sheetToast(m)
+		self.toasts:place(UDim2.fromOffset(band.right, band.y), Vector2.new(1, 0), band.width, 1)
+		self:_placeNotifications(band.right, band.y, band.width, m.scale)
+		return
+	end
+	local drawerOpen = self.state.menu ~= nil
+	local free = Layout.freeArea(m, drawerOpen)
+	local right = if drawerOpen and m.breakpoint == "phone"
+		then free.width - 10
+		else m.width - m.rail.right - m.rail.button - 12
+	local top = Layout.toastTop(m, drawerOpen, self._stackBottom)
+	self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), m.toast.width)
+	-- FORGE-04's stack goes to the same spot, in screen px (#74)
+	self:_placeNotifications(right, top, m.toast.width, m.scale)
 end
 
 function KingdomHudController:setPlacing(on: boolean)
@@ -793,23 +863,7 @@ function KingdomHudController:render()
 		self._modalBreakpoint = m.breakpoint
 	end
 
-	local drawerOpen = s.menu ~= nil
-	if self:sheetOpen(m) then
-		-- A phone sheet covers the usual toast corner (FORGE-05 L4): in the band between the pills and
-		-- the sheet's right edge, above the sheet; one at a time in the fallback stack
-		-- (NotificationController's place() has no limit: it keeps its own queue of three).
-		local band = Layout.sheetToast(m)
-		self.toasts:place(UDim2.fromOffset(band.right, band.y), Vector2.new(1, 0), band.width, 1)
-		self:_placeNotifications(band.right, band.y, band.width, m.scale)
-	else
-		local free = Layout.freeArea(m, drawerOpen)
-		local right = if drawerOpen and m.breakpoint == "phone"
-			then free.width - 10
-			else m.width - m.rail.right - m.rail.button - 12
-		local top = Layout.toastTop(m, drawerOpen)
-		self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), m.toast.width)
-		self:_placeNotifications(right, top, m.toast.width, m.scale)
-	end
+	self:_placeToasts(m)
 	self.rendered:fire(m)
 end
 

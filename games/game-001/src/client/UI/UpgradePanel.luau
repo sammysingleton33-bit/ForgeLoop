@@ -6,7 +6,10 @@
 	building gives now and what the next level adds, and one CTA (Upgrade, or why not).
 
 	UpgradePanel.new(parent) -> panel
-	panel:render(detail: BuildModel Detail, metrics, ui: { onUpgrade(detail), onClose() })
+	panel:render(detail: BuildModel Detail, metrics, ui: { onUpgrade(detail), onClose(),
+		tabs: { { id, label, icon } }?, onTab(id)? })
+		`tabs` are extra tabs after the building's own (FL-0060: "Army" on my barracks); tapping one
+		calls onTab(id). The panel itself always shows the building tab.
 	panel:destroy()
 	The panel is named "UpgradePanel"; its CTA face carries the attribute `cta`.
 	A render that shows the same building at the same level patches the costs and the CTA in place
@@ -41,6 +44,7 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		breakpoint = metrics.breakpoint,
 		drawer = metrics.drawer,
 		detail = DetailView.key(detail, phone, nil),
+		tabs = ui.tabs,
 	})
 	if self.panel and key == self._key then
 		self.detail:update(detail, handlers)
@@ -65,12 +69,38 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		Size = UDim2.fromScale(1, 1),
 	})
 	local level = if detail.action == "upgrade" then detail.level - 1 else detail.level
-	Tabs.new({
-		tabs = { { id = "building", label = `{detail.name} · Lv {level}`, icon = detail.icon } },
-		selected = "building",
-		compact = false,
-	}).instance.Parent =
-		header
+	local tabs = { { id = "building", label = `{detail.name} · Lv {level}`, icon = detail.icon } }
+	for _, tab in ui.tabs or {} do
+		table.insert(tabs, { id = tab.id, label = tab.label, icon = tab.icon })
+	end
+	local function chooseTab(id: string)
+		if id ~= "building" and self._ui.onTab then
+			self._ui.onTab(id)
+		end
+	end
+	local strip = Tabs.new({ tabs = tabs, selected = "building", compact = false, onSelect = chooseTab })
+	if phone then
+		-- The kit tabs are 34 px tall: on phones an extra tab gets a 44 px hit area (same look).
+		for id, button in strip.buttons do
+			if id ~= "building" then
+				Create("TextButton", {
+					Name = "Hit",
+					Text = "",
+					AutoButtonColor = false,
+					BackgroundTransparency = 1,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.new(1, 0, 0, 44),
+					ZIndex = 4,
+					Parent = button,
+					[Create.Event.Activated] = function()
+						chooseTab(id)
+					end,
+				})
+			end
+		end
+	end
+	strip.instance.Parent = header
 	local close = IconButton.new({
 		icon = "close",
 		variant = "plain",

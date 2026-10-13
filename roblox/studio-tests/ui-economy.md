@@ -12,6 +12,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 | P2 | FORGE-01's `Kingdom`, `Match` and `Build` remotes and services merged (CONTRACTS G8) | U2–U9 |
 | P3 | FORGE-04's InputModeController merged (G4.1; G13.6 `selected` for U10–U11) | U5 build-mode camera/taps, U10–U11 |
 | P4 | Icons uploaded and their ids in `games/game-001/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U9 only; otherwise emoji fallbacks show |
+| P5 | FORGE-01's army and objectives (FL-0052: `Army.Recruit`, `Army.Command`, `Army.Objectives` / `Army.GetObjectives`), `Match.Ended` and `Kingdom.Population` merged (CONTRACTS G8, G13.2) | U14 |
 
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
@@ -37,7 +38,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 1. **Place Farm**. The drawer closes; a translucent footprint follows the mouse with an arrow on
    its front; a bar at the bottom shows Farm, its cost, "✓ Good spot", Rotate / Cancel / Place and
    the hint "R rotates · Click places · Q cancels".
-2. Move outside your land: the footprint turns red and the bar says why ("Outside your territory").
+2. Move outside your land: the footprint turns red and the bar says why ("Build inside your kingdom").
    Clicking does nothing.
 3. Press **R**: the footprint turns 90°. Back on your land, click: within a second the footprint
    disappears, a toast says "Farm placed — Builders are on their way", a red "−50" floats under
@@ -45,7 +46,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 4. Place again and press **Q**: build mode ends, nothing is spent.
 5. Around the footprint a fainter outline shows the room the building keeps for its upgrades
    (largest level plus 2 studs). Move it towards a building or a tree: the ghost turns red with
-   "Leave room for upgrades" as the faint outline reaches them, not only when the slab does
+   "Not enough room here" as the faint outline reaches them, not only when the slab does
    (#62: the server checks the largest level plus the gap). Rotate: the outline turns too.
 
 ## U5 — place a building, phone (P2; P3 for camera/taps)
@@ -134,6 +135,38 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    and open Build before the question arrives: Build stays open (no conversation pops up later).
 7. Phone: the conversation sheet covers the reputation strip completely (no sliver above it); a
    notice during the conversation appears above the sheet, right of the pills, not over the answers.
+
+## U14 — army, objectives and the slice summary (P2 + P5; FORGE-04 selection for step 6; FL-0060)
+Phone first (844 × 390 landscape), then tablet and desktop. Screenshots: the army drawer and the
+tracker on the phone, the summary on the phone and on desktop.
+1. HUD: under the reputation strip, the objective tracker reads "Watchtower" with a "Neutral" chip and
+   "Send soldiers to capture it". It covers neither the pills, the strip nor the rail, which now has a
+   third button, **Army** (crossed swords). Without FORGE-01's army server (before #70) there is
+   no Army button and no Army tab on the barracks: expected (D-038 (2)).
+2. Tap **Army**: the drawer shows your soldier count (the same number as the Kingdom/jobs panel),
+   tabs "Barracks · Lv N" and "Army" once you have a barracks, the recruit block and **Send to
+   capture**. Without a barracks: "Build a Barracks to recruit soldiers"; Send still works.
+3. Recruit: − / + change the count from 1 to 10; Food and Wood are the cost × count against what you
+   have. Short → the button reads "Need N Food" and does nothing. Tap **Recruit 3 soldiers**: the button
+   shows "Recruiting…", then a toast "3 soldiers recruited", the Food and Wood pills drop, and the count
+   rises when the server says so (soldiers appear at the barracks). Tap it twice quickly: one recruit.
+4. Tap **Send to capture**: a toast "Soldiers sent", the button reads "Sent" for about 3 s (taps are
+   ignored), and the idle soldiers march to the nearest tower you don't hold. With 0 soldiers the button
+   reads "No soldiers yet".
+5. While they capture: the tracker shows a bar "You" with a rising percentage (gold text); another
+   kingdom contesting gets its own bar with its name and percentage. The bars move without the HUD
+   flickering, and an open army drawer keeps the button under your finger. Tap the tracker: it expands
+   (all objectives and bars) and collapses again.
+6. Tap your barracks in the world: its upgrade panel has an **Army** tab → the army drawer for that
+   barracks; its "Barracks" tab goes back. Another kingdom's barracks and your keep have no Army tab.
+   Tapping empty ground closes the army drawer.
+7. The first capture ends the slice: the screen dims (notch strips too) and a centred summary shows
+   "Victory" + your kingdom (or "Match over" + the winner, or "No winner"), "Lasted m:ss" and the
+   standings with Crown Points: you highlighted with a "you" tag, AI kingdoms tagged "AI", the winner
+   with a crown. Tapping the dimmed area does nothing; **Continue** closes it. Phone: the panel sits
+   clear of the notch, the Roblox top bar and the home bar.
+8. Report: whether the soldier count, the bars and the summary always matched what happened in the
+   world (the client shows only what the server sends).
 
 ## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
 1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free

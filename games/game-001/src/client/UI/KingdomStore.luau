@@ -23,7 +23,9 @@
 		store:balances() -> ResourceBag           ({} until the treasury arrives)
 		store:hasTreasury() -> boolean
 		store:buildingCost(type, level) -> { cost, buildSeconds }?
-		store:slot(id) -> { id, size, occupiedBy?, fits? }?   store:slots() -> { slot } (by id)
+		store:unitCost(unitType) -> { cost, trainSeconds, upkeepFood }?   Treasury.GetCosts `units`
+		                                          (config Costs.unit until it answers; FL-0060)
+		store:slot(id) -> { id, size, occupiedBy? }?   store:slots() -> { slot } (by id)
 		store:building(id) -> Building?           any kingdom's building (foreign ones too)
 		store:population() -> { total, byJob, cap?, quotas? }?   nil until the server sends it
 		store.match = { phase, endsAt?, startedAt? }?
@@ -299,6 +301,24 @@ function KingdomStore:buildingCost(
 		return nil
 	end
 	return Costs.building(buildingType, level)
+end
+
+function KingdomStore:unitCost(
+	unitType: string
+): { cost: { [string]: number }, trainSeconds: number, upkeepFood: number }?
+	local catalogue = self._costs
+	if catalogue and type(catalogue.units) == "table" then
+		local entry = catalogue.units[unitType]
+		if type(entry) == "table" and isBag(entry.cost) and type(entry.trainSeconds) == "number" then
+			return {
+				cost = table.clone(entry.cost),
+				trainSeconds = entry.trainSeconds,
+				upkeepFood = if type(entry.upkeepFood) == "number" then entry.upkeepFood else 0,
+			}
+		end
+		return nil
+	end
+	return Costs.unit(unitType)
 end
 
 return KingdomStore
