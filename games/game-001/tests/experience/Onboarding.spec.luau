@@ -79,7 +79,8 @@ describe("game-001 VS-1 onboarding config", function()
 			end
 		end
 		expect(FLOW.steps[3].trigger.bus).toBe("BuildingPlaced")
-		expect(FLOW.steps[3].hint.target.tag).toBe("BuildSlot") -- G13.5 plot markers
+		-- the Build button until FL-0081 declares Build.PlaceSlot (FORGE-05 #45 M1); then the BuildSlot tag
+		expect(FLOW.steps[3].hint.target).toEqual({ kind = "ui", name = "HUD.BuildButton" })
 	end)
 end)
 

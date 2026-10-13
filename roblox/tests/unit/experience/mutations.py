@@ -158,6 +158,7 @@ M = [
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not Def.LATER_PHASE_MODES[mode] then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", C+"OnboardingController.luau", '	if state.clientAction ~= action then\n		return false -- the server would ignore it', '	if false then\n		return false -- the server would ignore it', "OnboardingController", "UI code reports actions through report()", "fw"),
  ("FL-0092", S+"OnboardingService.luau", 'if not isPlayer(player) or player.Parent == nil then', 'if not isPlayer(player) then', "Onboarding", "a start event for a player who already left keeps no state", "fw"),
+ ("FL-0092", G+"config/Onboarding.luau", 'target = { kind = "ui", name = "HUD.BuildButton" },', 'target = { kind = "world", tag = "BuildSlot" },', "Onboarding", "client-reported steps grant nothing and are whitelisted", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

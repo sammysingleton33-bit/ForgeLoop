@@ -71,22 +71,23 @@ Needs:
 - FORGE-04: InputModeController's selection (FL-0090, PR #29). It reports `CitizenInspected`.
 - FORGE-03:
   - the citizen card;
-  - the plot menu;
+  - the Build menu (`HUD.BuildButton`; the plot menu takes over once FL-0081 declares `Build.PlaceSlot`);
   - the conversation panel, which reports `CitizenAnswered` after a successful `Kingdom.Choose`;
   - the HUD target `HUD.Recruit`.
 - DataService is not needed (session-only progress, D-027).
 
-Step 4 (AnswerCitizen) never stalls the tutorial:
-- **Without FORGE-01's ConversationService on the build,** it is passed over at once. Output shows `onboarding: a step's service is missing` at boot, and the card goes from "Build on a free plot" straight to Recruit.
+No step waits for a system the build doesn't have:
+- **Without FORGE-01's ConversationService on the build,** step 4 (AnswerCitizen) is passed over at once. Output shows `onboarding: a step's service is missing` at boot, and the card goes from the Build step straight to Recruit.
+- **Without FORGE-01's MilitaryService and ObjectiveService (FL-0052),** Recruit and Capture are passed over too, and the tutorial completes after the Build step (and step 4).
 - **With ConversationService but without the panel's `CitizenAnswered` report,** the card nudges at 45 s and moves on at 120 s.
 
-Neither case logs the step in the Onboarding funnel. Write which case you saw.
+Each passed or timed-out step is still logged as its funnel step (Roblox counts skipped steps as done) and also as `analytics event OnboardingStepPassed` with `via=unavailable` or `via=timeout`. Write which case you saw.
 
 Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions).
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
 2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
-3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
-4. Build a House or Farm on a plot. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
+3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build a House or a Farm", with the Build button highlighted.
+4. Open Build and place a House or Farm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
 5. Build a Barracks, recruit 3 soldiers, press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
 6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
 
