@@ -339,7 +339,90 @@ describe("Follow-ups from the #41 review (FORGE-05)", function()
 		world:advance(0.1)
 		expect(hud._modal).toBeNil()
 		expect(hud.state.confirm).toBeNil()
+		-- and says why, so the vanished dialog is not a mystery (FORGE-05 #58 follow-up 6)
+		local said = {}
+		for _, d in hud.guis.notices:GetDescendants() do
+			if d:IsA("TextLabel") then
+				table.insert(said, d.Text)
+			end
+		end
+		expect(table.concat(said, " | ")).toContain("Keep changed")
+		expect(#world:callsNamed("Upgrade")).toBe(0)
 		world:destroy()
+	end)
+
+	it("the confirm dialog closes, sending nothing, when its building is damaged (#58 follow-up 2)", function()
+		local world = newWorld({ treasury = { food = 120, wood = 300, stone = 300, gold = 0 } })
+		local hud = world.hud
+		tap(find(hud.guis.hud, "Menu_kingdom"))
+		hud:panelTab("buildings")
+		tap(find(find(hud.guis.menus, "Building_1"), "Upgrade"))
+		tap(find(hud.guis.menus, "Cta"))
+		expect(hud._modal).toBeTruthy()
+		local before = world.treasury:get("crimson")
+		world.build:progress(1, 1, "damaged")
+		world:advance(0.1)
+		expect(hud._modal).toBeNil()
+		expect(hud.state.confirm).toBeNil()
+		hud:confirm() -- a late tap on the old dialog's button
+		world:advance(0.2)
+		expect(#world:callsNamed("Upgrade")).toBe(0)
+		expect(world.treasury:get("crimson").wood).toBe(before.wood)
+		world:destroy()
+	end)
+
+	it("Build.Slots replicating only after destroy: the picker never listens or fetches (#58 follow-up 1)", function()
+		-- A HUD double whose remotes:on yields until the remote "replicates", as on a slow join.
+		local release
+		local disconnected, fetched, applied = 0, 0, 0
+		local hudDouble = {
+			rendered = Signal.new(),
+			menuChanged = Signal.new(),
+			state = {},
+			store = {
+				applySlots = function()
+					applied += 1
+				end,
+			},
+			remotes = {
+				on = function(_, _name, _fn)
+					release = coroutine.running()
+					coroutine.yield()
+					return {
+						Disconnect = function()
+							disconnected += 1
+						end,
+					}
+				end,
+				invoke = function()
+					fetched += 1
+					return {}
+				end,
+			},
+		}
+		local env = {
+			spawn = function(fn)
+				coroutine.wrap(fn)()
+			end,
+			log = function() end,
+			clock = os.clock,
+		}
+		local registry = {
+			get = function()
+				return hudDouble
+			end,
+			find = function()
+				return nil
+			end,
+		}
+		local picker = PlotPickerDef.new(env, registry)
+		picker:start()
+		expect(release).toBeTruthy() -- waiting for Build.Slots
+		picker:destroy()
+		assert(coroutine.resume(release)) -- the remote appears now
+		expect(disconnected).toBe(1) -- its connection is dropped at once
+		expect(fetched).toBe(0) -- and Build.GetSlots is never called
+		expect(applied).toBe(0)
 	end)
 
 	it("the plot picker stops following Build.Slots after destroy", function()

@@ -432,6 +432,30 @@ describe("Follow-ups from the #44 review (FORGE-05)", function()
 		world:destroy()
 	end)
 
+	it(
+		"each tab keys on what it shows: a condition push keeps History, a history line keeps Kingdom (#58 f3)",
+		function()
+			local world = newWorld()
+			world.rep:open()
+			world.rep:selectTab("history")
+			local open = panel(world)
+			local list = find(open, "History")
+			world.server_rep:setCondition("stability", 31) -- not shown on the History tab
+			world:advance(0.1)
+			expect(panel(world)).toBe(open)
+			expect(find(panel(world), "History")).toBe(list)
+			world.rep:selectTab("kingdom")
+			local kingdom = panel(world)
+			world.server_rep:apply("honor", 2, "You kept your word to the miners.") -- History only
+			world:advance(0.1)
+			expect(panel(world)).toBe(kingdom)
+			world.server_rep:setCondition("stability", 12) -- the Kingdom tab shows this one
+			world:advance(0.1)
+			expect(texts(panel(world))).toContain("12")
+			world:destroy()
+		end
+	)
+
 	it("reserves the strip's room only while it shows: no empty gap before the server sends any", function()
 		local world = KingdomWorld.new({ clientDefinitions = { KingdomHudDef, ReputationDef } })
 		local hud = world.client:get("KingdomHudController")

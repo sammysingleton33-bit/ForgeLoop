@@ -13,8 +13,8 @@ return {
 	identities = {
 		{ id = "crimson", name = "Crimson Kingdom", color = { 190, 40, 50 }, teamColor = "Crimson" },
 		{ id = "azure", name = "Azure Kingdom", color = { 40, 110, 210 }, teamColor = "Bright blue" },
-		{ id = "emerald", name = "Emerald Kingdom", color = { 40, 160, 90 }, teamColor = "Bright green" },
-		{ id = "gold", name = "Gold Kingdom", color = { 225, 175, 40 }, teamColor = "Bright yellow" },
+		{ id = "emerald", name = "Emerald Kingdom", color = { 35, 128, 95 }, teamColor = "Bright green" },
+		{ id = "gold", name = "Gold Kingdom", color = { 235, 185, 16 }, teamColor = "Bright yellow" },
 	},
 	maxRulersPerKingdom = 4,
 	startCitizens = { farmer = 3, woodcutter = 3, miner = 2, builder = 2, hauler = 2 },

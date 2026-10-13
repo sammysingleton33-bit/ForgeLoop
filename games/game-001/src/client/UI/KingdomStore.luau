@@ -13,8 +13,9 @@
 		store:applyCosts(catalogue)               Treasury.GetCosts (config Costs is the fallback)
 		store:applySlots(list)                    Build.Slots / Build.GetSlots: my kingdom's plots (G13.5)
 		store:applyPopulation(payload)            Kingdom.Population / Kingdom.GetPopulation: my kingdom's
-		                                          CitizenService:getPopulation { total, byJob, cap } (G13.2;
-		                                          soldiers count as byJob.soldier)
+		                                          CitizenService:getPopulation { total, byJob, cap, quotas? }
+		                                          (G13.2; soldiers count as byJob.soldier; quotas proposed)
+		store:clearPopulation()                   another kingdom: forget the old counts
 	Reading:
 		store:mine() -> Kingdom?                  store:kingdoms() -> { Kingdom } (server order)
 		store:myBuildings() -> { Building }       mine, by id, destroyed ones dropped
@@ -24,7 +25,7 @@
 		store:buildingCost(type, level) -> { cost, buildSeconds }?
 		store:slot(id) -> { id, size, occupiedBy?, fits? }?   store:slots() -> { slot } (by id)
 		store:building(id) -> Building?           any kingdom's building (foreign ones too)
-		store:population() -> { total, byJob, cap }?   nil until the server sends it
+		store:population() -> { total, byJob, cap?, quotas? }?   nil until the server sends it
 		store.match = { phase, endsAt?, startedAt? }?
 		store.changed: Signal<(what: "kingdoms" | "match" | "treasury" | "buildings" | "costs" | "slots"
 			| "population", ...)>
@@ -151,27 +152,60 @@ function KingdomStore:slot(id: any): any
 	return if type(id) == "string" then self._slots[id] else nil
 end
 
-function KingdomStore:applyPopulation(payload: any)
-	if type(payload) ~= "table" or type(payload.byJob) ~= "table" then
-		return
+-- A count the HUD may show: a finite whole number >= 0 (no NaN, no inf, no negatives; L3).
+local function count(value: any): number?
+	if type(value) ~= "number" or value ~= value or value < 0 or value == math.huge then
+		return nil
 	end
-	local byJob = {}
-	for job, count in payload.byJob do
-		if type(job) == "string" and type(count) == "number" and count >= 0 then
-			byJob[job] = math.floor(count)
+	return math.floor(value)
+end
+
+local function counts(map: any): { [string]: number }?
+	if type(map) ~= "table" then
+		return nil
+	end
+	local out = {}
+	for key, value in map do
+		local n = count(value)
+		if type(key) == "string" and n then
+			out[key] = n
 		end
 	end
+	return out
+end
+
+function KingdomStore:applyPopulation(payload: any)
+	local byJob = if type(payload) == "table" then counts(payload.byJob) else nil
+	if byJob == nil then
+		return
+	end
 	self._population = {
-		total = if type(payload.total) == "number" then math.floor(payload.total) else 0,
-		cap = if type(payload.cap) == "number" then math.floor(payload.cap) else nil,
+		total = count(payload.total) or 0,
+		cap = count(payload.cap),
 		byJob = byJob,
+		quotas = counts(payload.quotas),
 	}
 	self.changed:fire("population")
 end
 
+function KingdomStore:clearPopulation()
+	if self._population ~= nil then
+		self._population = nil
+		self.changed:fire("population")
+	end
+end
+
 function KingdomStore:population(): any
 	local p = self._population
-	return if p then { total = p.total, cap = p.cap, byJob = table.clone(p.byJob) } else nil
+	if p == nil then
+		return nil
+	end
+	return {
+		total = p.total,
+		cap = p.cap,
+		byJob = table.clone(p.byJob),
+		quotas = if p.quotas then table.clone(p.quotas) else nil,
+	}
 end
 
 function KingdomStore:slots(): { any }
