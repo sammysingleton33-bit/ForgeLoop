@@ -17,9 +17,9 @@ local KINDS = { "citizen", "soldier", "governor" }
 local JOBS = { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" }
 local CITIZEN_TOOLS =
 	{ idle = false, farmer = "hoe", woodcutter = "axe", miner = "pick", builder = "hammer", hauler = "sack" }
-local CRIMSON = Color3.fromRGB(196, 40, 28)
-local AZURE = Color3.fromRGB(13, 105, 172)
-local GOLD = Color3.fromRGB(245, 205, 48)
+local CRIMSON = Color3.fromRGB(190, 40, 50)
+local AZURE = Color3.fromRGB(40, 110, 210)
+local GOLD = Color3.fromRGB(235, 185, 16)
 local EMERALD = Color3.fromRGB(35, 128, 95)
 local R = Kit.LOOK_RANGES
 -- G13.2 / D-033(3): a soldier's helmet crest follows its KingdomId, in the kingdom's tower style

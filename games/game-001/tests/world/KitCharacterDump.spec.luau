@@ -23,10 +23,10 @@ local Character = require("@game/ReplicatedStorage/Game/Kit/Character")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 
 local KINGDOMS = {
-	{ id = "crimson", color = Color3.fromRGB(196, 40, 28) },
-	{ id = "azure", color = Color3.fromRGB(13, 105, 172) },
-	{ id = "emerald", color = Color3.fromRGB(40, 127, 71) },
-	{ id = "gold", color = Color3.fromRGB(245, 205, 48) },
+	{ id = "crimson", color = Color3.fromRGB(190, 40, 50) },
+	{ id = "azure", color = Color3.fromRGB(40, 110, 210) },
+	{ id = "emerald", color = Color3.fromRGB(35, 128, 95) },
+	{ id = "gold", color = Color3.fromRGB(235, 185, 16) },
 }
 
 local function round(n: number): number

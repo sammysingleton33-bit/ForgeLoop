@@ -30,6 +30,7 @@
 	near the ground.
 ]]
 
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
@@ -123,14 +124,13 @@ end
 
 -- ---------------------------------------------------------------- helpers
 
--- Slot marker pennants until FORGE-01's kingdom colours reach the world (pennants carry KitTint, so
--- Kit.setKingdomColor recolours them); art-direction recommendation, games/game-001/art/ART_DIRECTION.md.
-local KINGDOM_COLORS = {
-	crimson = Color3.fromRGB(196, 40, 28),
-	azure = Color3.fromRGB(13, 105, 172),
-	emerald = Color3.fromRGB(40, 127, 71),
-	gold = Color3.fromRGB(245, 205, 48),
-}
+-- Slot marker pennants in the canonical kingdom colours (config Kingdoms, D-033); pennants carry KitTint,
+-- so Kit.setKingdomColor recolours them.
+local KINGDOM_COLORS: { [string]: Color3 } = {}
+for _, identity in KingdomsConfig.identities do
+	local c = identity.color
+	KINGDOM_COLORS[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+end
 
 local function setProps(instance: any, props: { [string]: any })
 	for k, v in props do
