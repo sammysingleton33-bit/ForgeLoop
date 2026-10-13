@@ -121,6 +121,7 @@ return table.freeze({
 		gate = { image = "", glyph = "🚪" },
 		rotate = { image = "", glyph = "⟳" },
 		emblem_flame = { image = "", glyph = "🔥" },
+		emblem_crown = { image = "", glyph = "♛" }, -- Emberhold (drawn by UI/Crest unless an image is uploaded)
 		emblem_star = { image = "", glyph = "★" },
 		emblem_oak = { image = "", glyph = "🌳" },
 		emblem_sun = { image = "", glyph = "☀" },

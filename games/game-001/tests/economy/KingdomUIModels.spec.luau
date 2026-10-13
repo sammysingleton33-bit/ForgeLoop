@@ -217,7 +217,7 @@ describe("HudModel", function()
 		local s = store()
 		local banner = HudModel.banner(s)
 		expect(banner.name).toBe("Emberhold")
-		expect(banner.emblem).toBe("emblem_flame")
+		expect(banner.emblem).toBe("emblem_crown") -- the world's emblems: crown, star, oak leaf, sun
 		expect(banner.sub).toBe("Keep Lv 1 · 1 region · 12 Crown Points")
 		local names = { [1] = "Sam", [2] = "Mira" }
 		local members = HudModel.members(s, function(id)
@@ -407,17 +407,32 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 		expect(plate.BackgroundColor3).toBe(Crest.backdrop(gold))
 		local emblem = sun:FindFirstChild("Emblem")
 		expect(emblem:GetAttribute("drawn")).toBe("sunburst")
-		local rays = 0
+		-- eight rays, each a stack of bars narrowing as they reach out: a point, not a bar
+		local rays = {}
 		for _, child in emblem:GetChildren() do
-			if string.match(child.Name, "^Ray_") then
-				rays += 1
+			local i, k = string.match(child.Name, "^Ray_(%d+)_(%d+)$")
+			if i then
+				rays[i] = rays[i] or {}
+				rays[i][tonumber(k)] = child
 				expect(Crest.contrast(child.BackgroundColor3, Crest.backdrop(gold))).toBeGreaterThan(3)
+				expect(child.Rotation).toBe(tonumber(i) * 45)
 			end
 		end
-		expect(rays).toBe(4) -- four bars through the centre: eight rays
+		local count = 0
+		for _, steps in rays do
+			count += 1
+			expect(#steps).toBe(#Crest.RAY_STEPS)
+			for k = 2, #steps do
+				expect(steps[k].Size.Y.Scale < steps[k - 1].Size.Y.Scale).toBe(true) -- narrower
+				expect(steps[k].Size.X.Scale > steps[k - 1].Size.X.Scale).toBe(true) -- reaches further
+			end
+			expect(steps[#steps].Size.X.Scale + Crest.RAY_INNER).toBeGreaterThan(0.49) -- to the edge
+			expect(steps[1].Size.X.Scale + Crest.RAY_INNER).toBeGreaterThan(Crest.DISC / 2) -- out of the disc
+		end
+		expect(count).toBe(8)
 		expect(plate.ZIndex < emblem.ZIndex).toBe(true) -- the roundel under the sun
 		-- recolouring a crest adds the roundel once and takes it away again
-		local crest = Crest.new(58, crimson, "emblem_flame")
+		local crest = Crest.new(58, crimson, "emblem_star") -- a text glyph
 		expect(crest:FindFirstChild("Plate")).toBeNil()
 		Crest.recolor(crest, gold)
 		Crest.recolor(crest, gold)
@@ -432,6 +447,46 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 		Crest.recolor(crest, crimson)
 		expect(crest:FindFirstChild("Plate")).toBeNil()
 		expect(crest:FindFirstChild("Emblem").TextColor3).toBe(Crest.emblemColor(crimson))
+	end)
+
+	it("crimson's crown and emerald's oak leaf are drawn like the world banners, and repaint on a recolour", function()
+		expect(HudModel.EMBLEMS.crimson).toBe("emblem_crown")
+		expect(HudModel.EMBLEMS.emerald).toBe("emblem_oak")
+		for _, case in { { "crimson", "crown" }, { "emerald", "oakleaf" } } do
+			local k
+			for _, identity in KingdomsConfig.identities do
+				if identity.id == case[1] then
+					k = identity
+				end
+			end
+			local color = Color3.fromRGB(k.color[1], k.color[2], k.color[3])
+			local crest = Crest.new(58, color, HudModel.EMBLEMS[case[1]])
+			local emblem = crest:FindFirstChild("Emblem")
+			expect(emblem:GetAttribute("drawn")).toBe(case[2])
+			expect(crest:FindFirstChild("Plate")).toBeNil()
+			local fills = 0
+			for _, piece in emblem:GetChildren() do
+				if piece:GetAttribute("fill") then
+					fills += 1
+					for _, backdrop in
+						{ color, color:Lerp(Color3.new(1, 1, 1), 0.15), color:Lerp(Color3.new(0, 0, 0), 0.3) }
+					do
+						expect(Crest.contrast(piece.BackgroundColor3, backdrop) >= 3).toBe(true)
+					end
+				end
+			end
+			expect(fills >= 5).toBe(true) -- a shape, not a single block
+			-- on a light tile the same drawing goes dark, on the ivory roundel
+			local gold = Color3.fromRGB(235, 185, 16)
+			Crest.recolor(crest, gold)
+			expect(crest:FindFirstChild("Plate")).toBeTruthy()
+			for _, piece in emblem:GetChildren() do
+				if piece:GetAttribute("fill") then
+					expect(piece.BackgroundColor3).toBe(Crest.emblemColor(gold))
+				end
+			end
+		end
+		expect(Crest.crown(40):FindFirstChild("Pearl_3")).toBeTruthy() -- three points
 	end)
 end)
 
