@@ -65,14 +65,15 @@ Seen, not changed here (not this task's files):
 - The renderer draws emoji glyphs until the icons are uploaded (5 new icons in `design/ui/icons.js`:
   talk, heart, mood, scroll, laurel; sheet `design/ui/screenshots/icons-sheet.png`).
 
-## 3. Screenshots committed (palette-compressed, 0.55 MB for 15)
+## 3. Screenshots committed (palette-compressed; first round 0.55 MB for 15)
 Prototype (`screenshots/prototype/`): `citizen-card-phone.png`, `citizen-talk-4-phone.png`,
 `citizen-answered-phone.png`, `citizen-talk-3-desktop.png`.
 Luau (`screenshots/luau/`): `citizen-card-phone.png`, `citizen-card-desktop.png`,
 `citizen-card-quiet-tablet.png`, `citizen-talk-4-phone.png`, `citizen-talk-long-phone.png`,
 `citizen-talk-3-desktop.png`, `citizen-talk-long-desktop.png`, `citizen-choosing-desktop.png`,
-`citizen-answered-phone.png`, `citizen-answered-tablet.png`, `citizen-refused-phone.png`.
-The rest are regenerated with the two commands above.
+`citizen-answered-phone.png`, `citizen-answered-tablet.png`, `citizen-refused-phone.png`; since the
+FORGE-05 fixes (section 5) also `citizen-talk-risks-phone.png`, `citizen-talk-risks-desktop.png` and
+`citizen-toast-phone.png`. The rest are regenerated with the two commands above.
 
 ## 4. Checklist
 | Check | Result (headless) |
@@ -85,4 +86,43 @@ The rest are regenerated with the two commands above.
 | World visible on desktop | the panels take the drawer's place (≤ 620 × 480 logical); the world's left two thirds stay clear |
 | Closes on selection | "none", a building or a slot closes the card and the conversation; another menu replaces them (specs; mutations M3, M4) |
 | Colour is never the only signal | chip texts carry the sign; loyalty, mood and obedience show numbers and a mood word |
-| Studio | **unverified**: one full conversation in Studio per `games/game-001/STUDIO_PLAYTEST.md` |
+| Costs and risks before choosing | every answer's cost as chips against the treasury (short: red **and** "Need 25 Gold", disabled) and every risk with its whole-percent chance, before the pick (specs at desktop and 750 × 311; mutations 1-7) |
+| Late replies | a Converse or Sim.Inspect reply after the menu changed is ignored; a Choose reply after a close/reopen lands on the reopened panel or becomes a notice, and is never re-sent (specs; mutations 8-12) |
+| Studio | **unverified**: one full conversation in Studio per `games/game-001/STUDIO_PLAYTEST.md` and `roblox/studio-tests/ui-economy.md` U13 (costs and every risk) |
+
+## 5. FORGE-05 review of #52 — fixes (2026-10-12, branch `forge/03-ui-economy-fl0088-gate`)
+| Finding | Fix | Specs |
+|---|---|---|
+| **M1** cost and risks not shown | `CitizenModel.conversation` keeps each option's `cost` (known resources, whole amounts > 0, resource order) and `risks` (text, or the content `notice`; a chance outside 0..1 shows "?" rather than hiding the risk; at most 4 listed, then "+N more risks"). Each answer shows resource chips; an amount the treasury can't cover is red and the answer says "Need 25 Gold" (`Text.missing`, the build menu's words) and is disabled (`choose` refuses it too). Each risk is a line "⚠ 40 % · the server's sentence", wrapping, never truncated. A treasury push patches in place: only an answer whose affordability changed is rebuilt (`ConversationPanel:patch`). The height estimate counts the cost row and risk lines. | `CitizenModel.spec` (parsing, loose validation, caps, chance labels, price, height), `CitizenUI.spec` "Answer costs and risks…" (desktop, phone 750 × 311 without scroll, talk-3, push patch) |
+| **M2** a late reply takes the drawer back | Both controllers bump their request token on any `menuChanged` away from their menu (the conversation also clears its loading state). | "Late replies never take the drawer back" (Talk→close, Talk→Build, tap→Build) |
+| **M3** Choose guard per showing | `ConversationController.inflight[entityId:scenarioId]` survives close/reopen: a reopened in-flight showing shows the pick as waiting (answers disabled); the reply lands on the reopened panel, or, when nothing of that showing is on screen, becomes a notice (speaker + reaction / reason). Never re-sent. | "Kingdom.Choose in flight is guarded per showing" (2 specs) |
+| L1 invalid UTF-8 | `initial()` checks `utf8.len` first; falls back to the first ASCII letter/digit, else "?". | `CitizenModel.spec` |
+| L2 caps | 4 answers, 4 risks per answer (+N more), 8 effect chips. | `CitizenModel.spec` |
+| L3 strip sliver | The phone sheet starts just under the pills and the Crown Points badge (y 50 at 750 × 311, was 58): the spend badge sits on the pill's top edge now (CurrencyPill), so the old 16 px gap was no longer needed; the sheet starts above the reputation strip (y 52) and covers it whole. 8 px more for answers. | geometry spec |
+| L4 toasts over the sheet | `hud:setSheet("conversation")`; while it is open on a phone, toasts sit in the band right of the pills above the sheet (`Layout.sheetToast`, 330 px wide), one at a time (`ToastStack:place(…, limit)`). | "L4 phone: toasts…" |
+| L5 10 s wait on main | `hud:hasRemote(name)` (FindFirstChild on ReplicatedStorage.ForgeRemotes, never yields); no `Kingdom.Converse` → "Conversations aren't available yet" at once; no `Kingdom.Choose` → the same as the answer's error. | "L5 …today's main" (inspect-only double) |
+| L6 destroy leaves the menu | Both controllers close their own menu in `destroy()`. | "L6 …" |
+| L7 foreign tap leaves the card | A non-refresh Sim.Inspect nil closes the open card, with the notice. | "L7 …" |
+| L8 conversation after despawn | Every 4 s while open (not while a Choose is in flight) `Sim.Inspect`; nil closes it with "They're no longer here." | "L8 …" |
+
+Render rounds (`scenes/citizen-*.luau`; `_citizen.luau` now runs the reputation strip too, as the game does):
+1. New `citizen-talk-risks` (Wulf, "Need 25 Gold" + two risks) and `citizen-toast`, plus talk-2/3, all
+   sizes. Seen: everything fits on the phone; the toast touched the sheet's top edge → the toast band
+   moved to the top of the safe area (2 px gap). ">99 %" measures 34 px in the renderer page, the
+   column was 34 → 38 px (Studio slack). The phone panel had 26 px of empty space: a 37-character
+   risk line was estimated as two lines and every answer kept the old +4 px slack.
+2. Every citizen scene with the strip on. Seen: the sheet covers the strip whole (no sliver; before
+   y 52-58 showed); the −20 spend badge stays visible above the sheet (answered, phone); talk-3 and
+   talk-long scroll on phones with an honest "SCROLL FOR ALL 3". Measured the risk font in the
+   renderer page (Montserrat SemiBold 11: 5.5-5.6 px per character → 5.9 with slack) and dropped the
+   +4 px for answers with costs/risks.
+3. Slack between the content and the panel bottom, from `out/*.layout.json`: answers with costs or
+   risks 12-13 device px on tablet/desktop (was 21-28); phone talk-risks 22 px, kept on purpose: the
+   second risk fits its line by 3 px in the renderer and may wrap in Studio.
+
+Seen, not changed:
+- **Phones with 3-4 answers scroll** (allowed by the review). The second row can sit across the fold, so
+  an answer's top can be tappable while its risk line is still below the fold; the kicker says
+  "SCROLL FOR ALL N". A first-line risk marker is a possible follow-up; content with risks has 2-3
+  answers today.
+- The phone header's X is the kit's 36 px IconButton (below 44 px), same as the card (pre-existing).
