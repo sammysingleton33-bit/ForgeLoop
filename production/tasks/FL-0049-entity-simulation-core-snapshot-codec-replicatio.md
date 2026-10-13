@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0046, FL-0055, FL-0056]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 9
@@ -15,6 +15,7 @@ evidence:
   - "check.sh OVERALL PASS: framework 485/0, game-001 412/0 (38 files), Selene 0/0, builds + place checks PASS"
   - "mutations caught: EntityService 6/6, client 23/23, tick + staggering 2/2, Nav for units 1/1"
   - "codec spec: every packet <= 900 B at 50 and 300 entities; EntityService spec: <= 900 B with 300 live entities"
+  - "#39 b37cf9f, #54 a65d99b; integration-log.md"
 ---
 
 # Entity simulation core, snapshot codec, replication and client rendering
@@ -57,3 +58,4 @@ Server-simulated entities appear and move smoothly on every client at scale (D-0
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): snapshot v2 (≤900 B chunks, seq/time), batched events, GetEntities, procedural animation, G4.1 API; interest tiers moved to VS-2
 - 2026-10-12 forge-01: READY → BUILDING. codec v2, EventCodec, EntityService, EntityController (sub-worker), 16 Hz tick, staggered decisions, Layout.nav routing
 - 2026-10-12 forge-01: BUILDING → REVIEW. In PR [FORGE-01] FL-0049 (stacked on #31). Studio K8 and the perf capture (PERF.md) are pending a user run.
+- 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0104 (#39 M1: citizens more than 150 studs from the ruler hidden in the aerial view).
