@@ -5,7 +5,7 @@
 		            Crown Points sit on the crest), resource pills (food, wood, stone, gold) and,
 		            below them, the rulers of the kingdom (not on phones)
 		top bar     phase and match clock (a TopbarSafeInsets ScreenGui, centred in the free space)
-		right edge  menu rail: Build, Kingdom
+		right edge  menu rail: Build, Kingdom (+ items controllers add: Army, FL-0060)
 		bottom      construction chips, centred in the area an open drawer leaves free
 	Small, edge-anchored and translucent so the kingdom stays visible.
 
@@ -17,6 +17,9 @@
 	hud:refreshTimer(timer?, metrics)        every tick
 	hud:refreshQueue(queue, metrics, drawerOpen, hidden?)
 	hud:pulse(deltas)                        float each change under its pill (visual confirmation)
+	hud:addMenu({ id, icon, label, target?, order? })   another rail button (the next render rebuilds
+	                                         the rail); `order` sorts it after the built-in ones
+	hud:removeMenu(id)                       takes it away again
 	hud.pills[resourceId] -> CurrencyPill handle      hud.rail[id] -> IconButton handle
 	Onboarding hooks (FORGE-04, G11): the pill row has OnboardingTarget = "HUD.Resources" and the
 	Build button OnboardingTarget = "HUD.BuildButton".
@@ -52,7 +55,44 @@ function KingdomHud.new(root: Instance, topbar: Instance, motion: any)
 		pills = {},
 		rail = {},
 		_chips = {},
+		menus = table.clone(KingdomHud.MENUS) :: { any },
 	}, KingdomHud)
+end
+
+function KingdomHud:addMenu(item: { id: string, icon: string, label: string, target: string?, order: number? })
+	for _, menu in self.menus do
+		if menu.id == item.id then
+			return
+		end
+	end
+	table.insert(self.menus, table.freeze(table.clone(item)))
+	local function order(menu: any, index: number): number
+		return menu.order or index
+	end
+	local indexed = {}
+	for i, menu in self.menus do
+		indexed[i] = { menu = menu, key = order(menu, i), i = i }
+	end
+	table.sort(indexed, function(a, b)
+		if a.key ~= b.key then
+			return a.key < b.key
+		end
+		return a.i < b.i
+	end)
+	for i, entry in indexed do
+		self.menus[i] = entry.menu
+	end
+	self._breakpoint = nil -- rebuild the rail on the next render
+end
+
+function KingdomHud:removeMenu(id: string)
+	for i, menu in self.menus do
+		if menu.id == id then
+			table.remove(self.menus, i)
+			self._breakpoint = nil -- rebuild the rail on the next render
+			return
+		end
+	end
 end
 
 local function plate(): Frame
@@ -206,7 +246,7 @@ function KingdomHud:_build(metrics: any, banner: any)
 		AutomaticSize = Enum.AutomaticSize.Y,
 		Parent = container,
 	}, { List = Style.list("y", metrics.rail.gap, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center) })
-	for i, menu in KingdomHud.MENUS do
+	for i, menu in self.menus do
 		local button = IconButton.new({
 			icon = menu.icon,
 			label = if phone then nil else menu.label,

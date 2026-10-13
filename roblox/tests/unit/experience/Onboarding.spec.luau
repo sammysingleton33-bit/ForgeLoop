@@ -122,6 +122,37 @@ describe("Experience/Onboarding step graph", function()
 		return state
 	end
 
+	it("a step's `requires` names a service, never on an auto step", function()
+		local text = problemsOf(function(c)
+			c.flows[1].steps[2].requires = "conversation service"
+			c.flows[1].steps[1].requires = "ConversationService"
+		end)
+		expect(text).toContain("requires must name a service (PascalCase)")
+		expect(text).toContain("an auto step needs no service")
+	end)
+
+	it("a step whose service is missing is passed over (via unavailable) when it becomes current", function()
+		local flow = table.clone(FLOW)
+		flow.steps = table.clone(FLOW.steps)
+		local needs = table.clone(flow.steps[3])
+		needs.requires = "MissingService"
+		flow.steps[3] = needs
+		local unavailable = Onboarding.unavailable(flow, function(name)
+			return name ~= "MissingService"
+		end)
+		expect(unavailable).toEqual({ [needs.id] = true })
+		expect(Onboarding.unavailable(flow, function()
+			return true
+		end)).toEqual({})
+		local state = Onboarding.restore(flow, nil, 0)
+		state.unavailable = unavailable
+		Onboarding.begin(flow, state, 0)
+		local transitions = Onboarding.handle(flow, state, { client = "RulerMoved" }, 1)
+		expect(transitions[2].id).toBe(needs.id)
+		expect(transitions[2].via).toBe("unavailable")
+		expect(Onboarding.persisted(state).unavailable).toBeNil() -- a later server may have the service
+	end)
+
 	it("begins by completing the automatic first step", function()
 		local state = Onboarding.restore(FLOW, nil, 0)
 		local transitions = Onboarding.begin(FLOW, state, 0)
@@ -297,6 +328,15 @@ describe("OnboardingService", function()
 		player = env.mock.players:add({ userId = 901 })
 		data:load(player, nil)
 		bus.PlayerReady:fire(player)
+	end)
+
+	it("a start event for a player who already left keeps no state (FORGE-05 #22 ghost state)", function()
+		local gone = env.mock.players:add({ userId = 902 })
+		data:load(gone, nil)
+		env.mock.players:remove(gone)
+		bus.PlayerReady:fire(gone) -- late, after PlayerRemoving
+		expect(service._players[902]).toBeNil()
+		expect(select(1, service:_stateOf(gone, "first_session"))).toBeNil()
 	end)
 
 	it("logs step 1 at join, fires OnboardingStep and tells the client the next step", function()

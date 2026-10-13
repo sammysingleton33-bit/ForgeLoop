@@ -46,9 +46,23 @@
 		ContentQuery.markShown(history, citizenKey, scenarioId, now) -> history     records a showing
 			(pass citizenKey(citizen), so eligibleScenarios finds it). A nil history, citizenKey or bad
 			`now` is an error.
-		ContentQuery.choicePreview(scenarioId, responseId) -> ChoicePreview?
-			{ decision, cost, risks } of one answer, for the conversation panel: the cost and the
-			chance < 1 consequences the player must see before choosing (model decision 7).
+		ContentQuery.choicePreview(scenarioId, responseId, fillNames) -> ChoicePreview?
+			Exactly the CONTRACTS G13.3 option extras of one answer: { cost: ResourceBag?, risks:
+			{ Risk }? }, so Kingdom.Converse sends { id, text, cost?, risks? }. `cost` is a fresh copy of
+			what the answer costs, nil when it is free; `risks` = choiceRisks(decision, fillNames), nil
+			when there are none (model decision 7). No decision id and no consequence records. nil for an
+			unknown scenario or response. fillNames is REQUIRED: the conversation's { name, ruler,
+			kingdom, occupation }, because risk texts name the citizen. A nil fillNames is an error on
+			every call (not only on the answers whose risk names someone). The cost a server PAYS is
+			decisionEffects(response.decision).cost (always a table, {} when free; SPEC §6.5), not this
+			preview's `cost`, which is nil for a free answer.
+		ContentQuery.choiceRisks(decisionId, fillNames) -> { Risk }?
+			Risk = { text: string, chance: number }: one per consequence of the decision with chance < 1,
+			in the decision's order. `text` is its notice FULLY filled: fillNames = { name, ruler,
+			kingdom, occupation } of the conversation, then the mechanics placeholders (consequenceNotice).
+			The panel shows `chance` itself, so content never writes it in the text (FORGE-00 ruling on
+			the PR #67 review, item 2). A placeholder fillNames does not cover, or a risk without notice
+			text, is an error (a risk is never shown half-filled or hidden). nil for an unknown decision.
 
 	Decisions (dialogue)
 		ContentQuery.decisionEffects(decisionId, multiplier: number?, kingdomMultiplier: number?) -> Effects?
@@ -75,9 +89,12 @@
 			result is APPLIED AS GIVEN: no second decay, no second clamp (ReputationService included).
 			`cost` is informational (already paid). Each listener once, under its closest relation
 			(speaker > family > friends > rivals > kingdom); a listener's change is its `loyalty`, never
-			loyalty plus the explicit column. Every listener is checked first (a traits list of known
-			trait ids, a known relation): an error names the listener (`listener #i has an unknown
-			trait ...`) and records nothing. Unknown decision: nil and nothing recorded.
+			loyalty plus the explicit column. The change is the listener's NET change for this decision
+			(personality + column + overrides), decayed as one value when it is a gain (SPEC §6.5).
+			Every listener is checked first (a citizen key, given once across all relations; a traits
+			list of known trait ids; a known relation): an error names the listener (`listener #i has an
+			unknown trait ...`, `listener #3 repeats citizen 7 (listener #1)`) and records nothing.
+			Unknown decision: nil and nothing recorded.
 		ContentQuery.loyaltyDelta(rep: RepVector, traits: { string }, relation: Relation,
 			chemistry: number?, extra: number?) -> number
 			Model decisions 3–4, a building block (no decay, no clamp): (Σ_category Σ_trait weight ×
@@ -96,20 +113,29 @@
 			audience is "none".
 
 	Actions (non-dialogue ruler acts, SPEC §6.9)
-		ContentQuery.fireAction(event, ctx: Ctx?, rulerHistory, kingdomHistory, now,
-			listeners: { ActionListener }?) -> { ActionEffects }
+		ContentQuery.fireAction(event, ctx: Ctx?, rulerHistories: { [rulerKey]: FarmHistory },
+			creditedRulers: { rulerKey }, kingdomHistory, now, listeners: { ActionListener }?)
+			-> { ActionEffects }
 			The single anti-farming point of actions.csv (mirrors fireDecision). One entry per firing
-			of actionFirings(event, ctx), in file order. Each firing takes its multipliers from its
-			farm_key (ruler history: reputation; kingdom history: loyalty and kingdom conditions) and
-			records itself in both histories before the next firing is computed. `rep` = the sum over
-			its rows of each row's rep with gains × ruler multiplier, `kingdom` = the same with the
-			kingdom multiplier: each row is decayed on its own, then summed, so one row's loss is never
-			decayed with another row's gain (model decision 5; the same rule as the listeners). Raw sums
-			in `rep_raw`, `kingdom_raw`. `listeners`: every given listener who hears at least one row
-			(ActionListener = { citizen, occupation?, speaker?, traits, chemistry?, ctx? }) as
-			{ citizen, relation, loyalty }: the sum over the rows it hears of actionLoyalty before the
-			clamp (gains × kingdom multiplier), clamped once to LOYALTY_CLAMP of its relation ("speaker"
-			when it hears a speaker row, else "kingdom"). Apply as given.
+			of actionFirings(event, ctx), in file order.
+			Credit (FORGE-00 ruling on the PR #67 review, item 3, SPEC §6.8): reputation goes to the
+			CREDITED rulers: the attributed actor when the event has one (e.g. Building.placedBy, the
+			capturing or acting player), otherwise every current co-ruler (kingdom-wide events such as
+			FoodShortage). Each credited ruler key must have its own FarmHistory in rulerHistories and
+			appear once; an empty list credits nobody (the kingdom effects still apply).
+			Each firing takes one multiplier per credited ruler from that ruler's history (reputation)
+			and one from the kingdom history (loyalty and kingdom conditions), then records itself once
+			in every history it used (a table passed twice is recorded once) before the next firing is
+			computed. `rulers` = { { ruler, multiplier, rep } } in creditedRulers order: rep = the sum
+			over the firing's rows of each row's rep with gains × that ruler's multiplier. `kingdom` =
+			the same with the kingdom multiplier, computed ONCE however many rulers are credited, like
+			`listeners`. Each row is decayed on its own, then summed, so one row's loss is never decayed
+			with another row's gain (model decision 5; the same rule as the listeners). Raw sums in
+			`rep_raw`, `kingdom_raw`. `listeners`: every given listener who hears at least one row
+			(ActionListener = { citizen, occupation?, speaker?, traits, chemistry?, ctx? }, each citizen
+			once) as { citizen, relation, loyalty }: the sum over the rows it hears of actionLoyalty
+			before the clamp (gains × kingdom multiplier), clamped once to LOYALTY_CLAMP of its relation
+			("speaker" when it hears a speaker row, else "kingdom"). Apply as given.
 		ContentQuery.actionFirings(event: string, ctx: Ctx?) -> { ActionFiring }
 			The rows that apply when `event` fires ("Name:arg" also matches rows of the bare "Name"),
 			filtered by their kingdom `condition`, grouped per action id in file order. Each firing
@@ -129,7 +155,12 @@
 		ContentQuery.repeatMultiplier(history: FarmHistory?, farmKey, now, decay?, window?) -> number
 			Model decision 5: decay ^ (earlier firings of farmKey with now − t < window), i.e. the
 			n-th firing inside the window gets decay^(n−1). decay is clamped to [0, 1]; window <= 0
-			or decay 1 gives 1. FarmHistory = { [farmKey]: { fireTime } }: one per ruler (reputation)
+			or decay 1 gives 1. Once the window holds MAX_FARM_HISTORY firings (all recordFire keeps),
+			the multiplier is 0, not decay^MAX_FARM_HISTORY (FORGE-00 ruling on the PR #67 review, item
+			8). So while the window stays full (e.g. a steady one firing per second for a whole window),
+			the total of a farmed gain stays below one firing / (1 − decay). The bound needs a full
+			window: firings spaced so the window holds MAX_FARM_HISTORY − 1 get decay^31 each, small but
+			not 0 (0.8^31 ≈ 0.001 of one firing; negligible for decay ≤ 0.8). FarmHistory = { [farmKey]: { fireTime } }: one per ruler (reputation)
 			and one per kingdom (loyalty and kingdom conditions), SPEC §6.8. A building block: its
 			history is optional, and nil means no earlier firings (1). fireDecision, fireAction,
 			recordFire and markShown require theirs.
@@ -365,21 +396,26 @@ export type ActionEffects = {
 	farm_key: string,
 	repeat_decay: number,
 	repeat_window_s: number,
-	multiplier: number,
 	kingdom_multiplier: number,
 	rows: { ActionRow },
-	rep: RepVector,
+	rulers: { RulerRep },
 	rep_raw: RepVector,
 	kingdom: KingdomDelta,
 	kingdom_raw: KingdomDelta,
 	listeners: { ListenerLoyalty },
 }
-export type ChoicePreview = { decision: string, cost: { [string]: number }, risks: { Consequence } }
+-- One credited ruler's share of an action firing: reputation decayed by that ruler's own history.
+export type RulerRep = { ruler: any, multiplier: number, rep: RepVector }
+-- A risk as the conversation panel shows it (CONTRACTS G13.3): filled text, and the chance shown beside it.
+export type Risk = { text: string, chance: number }
+-- Exactly the CONTRACTS G13.3 option extras: nil when free / without risks.
+export type ChoicePreview = { cost: { [string]: number }?, risks: { Risk }? }
 
 export type Query = {
 	data: Data,
 	eligibleScenarios: (ctx: Ctx?, citizen: CitizenState, now: number, history: ShownHistory?) -> { Scenario },
-	choicePreview: (scenarioId: string, responseId: string) -> ChoicePreview?,
+	choicePreview: (scenarioId: string, responseId: string, fillNames: { [string]: string }) -> ChoicePreview?,
+	choiceRisks: (decisionId: string, fillNames: { [string]: string }) -> { Risk }?,
 	decisionEffects: (decisionId: string, multiplier: number?, kingdomMultiplier: number?) -> Effects?,
 	fireDecision: (
 		decisionId: string,
@@ -391,7 +427,8 @@ export type Query = {
 	fireAction: (
 		event: string,
 		ctx: Ctx?,
-		rulerHistory: FarmHistory,
+		rulerHistories: { [any]: FarmHistory },
+		creditedRulers: { any },
 		kingdomHistory: FarmHistory,
 		now: number,
 		listeners: { ActionListener }?
@@ -657,6 +694,12 @@ function ContentQuery.repeatMultiplier(
 			earlier += 1
 		end
 	end
+	-- The window is full (recordFire keeps only MAX_FARM_HISTORY): further gains get nothing, never decay^cap
+	-- (ruling on the PR #67 review, item 8). While the window stays full, a farmed gain totals below one firing /
+	-- (1 - decay); firings spaced to keep it just below the cap still get decay^(cap - 1) each.
+	if earlier >= ContentQuery.MAX_FARM_HISTORY then
+		return 0
+	end
 	return d ^ earlier
 end
 
@@ -837,11 +880,31 @@ function ContentQuery.new(input: DataInput): Query
 
 	-- Every listener is checked before the first firing is recorded, so a bad listener records nothing and the
 	-- error names the function and the listener. `relations`: whether each listener names a known relation.
+	-- Each citizen is one listener: a citizen given twice (speaker and family, ...) would be counted twice.
 	local function checkListeners(fn: string, listeners: { any }?, relations: boolean)
+		local seen: { [any]: number } = {}
 		for i, listener in listeners or {} do
 			if type(listener) ~= "table" or type(listener.traits) ~= "table" then
 				error(`ContentQuery.{fn}: listener #{i} must be a table with a traits list`, 3)
 			end
+			local citizen = listener.citizen
+			if citizen == nil or citizen ~= citizen then
+				error(`ContentQuery.{fn}: listener #{i} has no citizen key (the caller's id for that citizen)`, 3)
+			end
+			local first = seen[citizen]
+			if first ~= nil then
+				error(
+					`ContentQuery.{fn}: listener #{i} repeats citizen {tostring(citizen)} (listener #{first}): `
+						.. "pass each citizen once"
+						.. (
+							if relations
+								then ", under its closest relation (speaker > family > friends > rivals > kingdom)"
+								else ""
+						),
+					3
+				)
+			end
+			seen[citizen] = i
 			if relations and REACH[listener.relation] == nil then
 				error(
 					`ContentQuery.{fn}: listener #{i} has an unknown relation '{tostring(listener.relation)}' `
@@ -966,18 +1029,75 @@ function ContentQuery.new(input: DataInput): Query
 		return effects
 	end
 
-	function query.choicePreview(scenarioId: string, responseId: string): ChoicePreview?
+	function query.choiceRisks(decisionId: string, fillNames: { [string]: string }): { Risk }?
+		local d = data.decisions[decisionId]
+		if d == nil then
+			return nil
+		end
+		local out: { Risk } = {}
+		for _, id in d.consequences do
+			local record = data.consequences[id]
+			if record == nil then
+				error(`ContentQuery: decision '{decisionId}' references unknown consequence '{id}'`, 2)
+			end
+			if record.chance < 1 then
+				local text = ContentQuery.consequenceNotice(record, fillNames)
+				if text == nil then
+					error(
+						`ContentQuery.choiceRisks: risk '{id}' of decision '{decisionId}' has no notice text, so the `
+							.. "player could not see it (model decision 7, SPEC §5.4)",
+						2
+					)
+				end
+				local missing = string.match(text, "{([%w_]+)}")
+				if missing ~= nil then
+					error(
+						`ContentQuery.choiceRisks: risk '{id}' of decision '{decisionId}' uses `
+							.. "{"
+							.. missing
+							.. "}: pass fillNames."
+							.. missing,
+						2
+					)
+				end
+				table.insert(out, { text = text, chance = record.chance })
+			end
+		end
+		return out
+	end
+
+	function query.choicePreview(
+		scenarioId: string,
+		responseId: string,
+		fillNames: { [string]: string }
+	): ChoicePreview?
+		if type(fillNames) ~= "table" then
+			-- every call, not only on the answers whose risk names someone: a server that forgets it fails at once
+			error(
+				"ContentQuery.choicePreview: fillNames is required: pass the conversation's "
+					.. "{ name, ruler, kingdom, occupation } (risk texts name the citizen; SPEC §6.7)",
+				2
+			)
+		end
 		local s = scenarios[scenarioId]
 		if s == nil then
 			return nil
 		end
 		for _, r in s.responses do
 			if r.id == responseId then
-				local e = query.decisionEffects(r.decision)
-				if e == nil then
+				local d = data.decisions[r.decision]
+				if d == nil then
 					return nil
 				end
-				return { decision = r.decision, cost = e.cost, risks = e.risks }
+				local preview: ChoicePreview = {}
+				if next(d.cost) ~= nil then
+					preview.cost = copyMap(d.cost)
+				end
+				local risks = query.choiceRisks(r.decision, fillNames)
+				if risks ~= nil and #risks > 0 then
+					preview.risks = risks
+				end
+				return preview
 			end
 		end
 		return nil
@@ -1144,10 +1264,41 @@ function ContentQuery.new(input: DataInput): Query
 		return ContentQuery.clampLoyalty(rowLoyalty(row, traits, chemistry, multiplier), rowRelation(row))
 	end
 
+	-- The credited rulers of an action (ruling on the PR #67 review, item 3): each once, each with a history.
+	local function checkCredited(rulerHistories: any, creditedRulers: any)
+		if type(rulerHistories) ~= "table" then
+			error(
+				"ContentQuery.fireAction: rulerHistories must be a table of FarmHistory by ruler key, got "
+					.. typeof(rulerHistories),
+				3
+			)
+		end
+		if type(creditedRulers) ~= "table" then
+			error(
+				`ContentQuery.fireAction: creditedRulers must be a list of ruler keys, got {typeof(creditedRulers)}`,
+				3
+			)
+		end
+		local seen: { [any]: boolean } = {}
+		for i, ruler in creditedRulers do
+			if type(rulerHistories[ruler]) ~= "table" then
+				error(
+					`ContentQuery.fireAction: credited ruler #{i} '{tostring(ruler)}' has no FarmHistory in rulerHistories`,
+					3
+				)
+			end
+			if seen[ruler] then
+				error(`ContentQuery.fireAction: credited ruler #{i} '{tostring(ruler)}' is listed twice`, 3)
+			end
+			seen[ruler] = true
+		end
+	end
+
 	function query.fireAction(
 		event: string,
 		ctx: Ctx?,
-		rulerHistory: FarmHistory,
+		rulerHistories: { [any]: FarmHistory },
+		creditedRulers: { any },
 		kingdomHistory: FarmHistory,
 		now: number,
 		listeners: { ActionListener }?
@@ -1155,14 +1306,13 @@ function ContentQuery.new(input: DataInput): Query
 		if type(event) ~= "string" then
 			error(`ContentQuery.fireAction: event must be a string, got {typeof(event)}`, 2)
 		end
-		checkHistory("fireAction", "rulerHistory", rulerHistory)
+		checkCredited(rulerHistories, creditedRulers)
 		checkHistory("fireAction", "kingdomHistory", kingdomHistory)
 		checkNow("fireAction", now)
 		checkListeners("fireAction", listeners, false)
 		local out: { ActionEffects } = {}
 		for _, firing in query.actionFirings(event, ctx) do
 			local key, decay, window = firing.farm_key, firing.repeat_decay, firing.repeat_window_s
-			local m = ContentQuery.repeatMultiplier(rulerHistory, key, now, decay, window)
 			local km = ContentQuery.repeatMultiplier(kingdomHistory, key, now, decay, window)
 			local heard: { ListenerLoyalty } = {}
 			for _, listener in listeners or {} do
@@ -1186,23 +1336,37 @@ function ContentQuery.new(input: DataInput): Query
 				end
 			end
 			-- Decay each row, then sum (model decision 5): a loss in one row is never decayed together with a
-			-- gain in another row of the same category, exactly as rowLoyalty treats the listeners.
-			local rep: RepVector = {}
-			for _, category in CATEGORIES do
-				rep[category] = 0
-			end
+			-- gain in another row of the same category, exactly as rowLoyalty treats the listeners. The kingdom
+			-- and the listeners once per firing; reputation once per credited ruler, with that ruler's history.
 			local kingdom: KingdomDelta = { happiness = 0, stability = 0, morale = 0 }
 			for _, row in firing.rows do
-				for _, category in CATEGORIES do
-					rep[category] += ContentQuery.scaleGain(row.rep[category] or 0, m)
-				end
 				kingdom.happiness += ContentQuery.scaleGain(row.kingdom.happiness, km)
 				kingdom.stability += ContentQuery.scaleGain(row.kingdom.stability, km)
 				kingdom.morale += ContentQuery.scaleGain(row.kingdom.morale, km)
 			end
-			ContentQuery.recordFire(rulerHistory, key, now)
-			if kingdomHistory ~= rulerHistory then
-				ContentQuery.recordFire(kingdomHistory, key, now)
+			local rulers: { RulerRep } = {}
+			for _, ruler in creditedRulers do
+				local m = ContentQuery.repeatMultiplier(rulerHistories[ruler], key, now, decay, window)
+				local rep: RepVector = {}
+				for _, category in CATEGORIES do
+					rep[category] = 0
+				end
+				for _, row in firing.rows do
+					for _, category in CATEGORIES do
+						rep[category] += ContentQuery.scaleGain(row.rep[category] or 0, m)
+					end
+				end
+				table.insert(rulers, { ruler = ruler, multiplier = m, rep = rep })
+			end
+			-- record once in every history used (a table passed as two histories is one history)
+			local recorded: { [FarmHistory]: boolean } = { [kingdomHistory] = true }
+			ContentQuery.recordFire(kingdomHistory, key, now)
+			for _, ruler in creditedRulers do
+				local history = rulerHistories[ruler]
+				if not recorded[history] then
+					recorded[history] = true
+					ContentQuery.recordFire(history, key, now)
+				end
 			end
 			table.insert(out, {
 				id = firing.id,
@@ -1210,10 +1374,9 @@ function ContentQuery.new(input: DataInput): Query
 				farm_key = key,
 				repeat_decay = decay,
 				repeat_window_s = window,
-				multiplier = m,
 				kingdom_multiplier = km,
 				rows = firing.rows,
-				rep = rep,
+				rulers = rulers,
 				rep_raw = firing.rep,
 				kingdom = kingdom,
 				kingdom_raw = firing.kingdom,
@@ -1240,6 +1403,7 @@ local default = ContentQuery.new({
 ContentQuery.data = default.data
 ContentQuery.eligibleScenarios = default.eligibleScenarios
 ContentQuery.choicePreview = default.choicePreview
+ContentQuery.choiceRisks = default.choiceRisks
 ContentQuery.decisionEffects = default.decisionEffects
 ContentQuery.fireDecision = default.fireDecision
 ContentQuery.fireAction = default.fireAction
