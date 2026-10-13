@@ -73,10 +73,15 @@ which is how BRIEF §4 row 6 is checked in Studio.
   end, because keep level 2 is optional, but the row 6 keep check then comes later.
 - Without keep level 2 the slice needs only 90 more wood and 10 more stone (house, barracks,
   3 soldiers). PACING's assumed rates earn that in about 2 minutes of gathering.
+- Measured: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`) found
+  that an idle kingdom earns about 76–86 wood, 52 stone and 86 food per minute over its first
+  5 minutes, which is above every target here. The 70-stone shortfall holds only at PACING's assumed
+  rates. This is headless evidence, not a play test; tuning waits for the user's play (D-043).
 - Food: 12 starting citizens eat 12 food/min; 3 soldiers add 3. 3 farmers must bring **≥ 5 food/min
   each** so the kingdom stays fed with a small surplus (the 120 starting food covers ~10 minutes of
-  upkeep if farms stall, but only ~2 minutes once 3 soldiers are bought). Staying at a fed ratio of 0.9 or more is also what lets the kingdom grow
-  (D-045), so a food shortfall now costs growth as well as hunger.
+  upkeep if farms stall, but only ~2 minutes once 3 soldiers are bought). Staying at a fed ratio of
+  0.9 or more is also what lets the kingdom grow (D-045), so a food shortfall now costs growth as
+  well as hunger.
 - Ruler gathering: 5–10 per harvest with a short cooldown, so a player who gathers feels it but the
   citizens remain the main source (the AI-citizen hook).
 
