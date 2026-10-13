@@ -105,3 +105,10 @@ Images: `previews/castle_gatehouse.jpg`, `renders/castle_gatehouse/castle_gateho
 `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_gate_gp_finials.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_gate_gp_finials_g.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_gate_finial_nn_g.png` (12x nearest,
 grayscale; compare the reviewer's `scratchpad/review/gate_finial_nn1_g.png`), `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_yellow_heroes_tops_g.png`.
 Author verdict: no crescent reading remains.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_gatehouse.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: none
+- Scores: silhouette 5, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 4
+- Notes: Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.

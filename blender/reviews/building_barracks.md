@@ -75,3 +75,10 @@ Tris 8734–11426 / 12000, validation PASS 6/6, variation min diff 0.111 (01 vs 
 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 3 |
 
 Remaining weaknesses: racks partly read as low fences at 80 studs; 03 uses 95% of the budget.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/building_barracks.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: none
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 4
+- Notes: Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.

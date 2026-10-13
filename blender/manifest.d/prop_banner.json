@@ -32,18 +32,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -101,18 +101,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -170,21 +170,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7004,
       "sockets": {
@@ -239,21 +239,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7005,
       "sockets": {
@@ -308,18 +308,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -377,18 +377,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -446,9 +446,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7006,
       "sockets": {
@@ -503,9 +515,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7007,
       "sockets": {

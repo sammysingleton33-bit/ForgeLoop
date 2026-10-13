@@ -127,3 +127,10 @@ Images: `previews/castle_tower.jpg`, `renders/castle_tower/castle_tower_gameplay
 `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_yellow_heroes_tops.png` / `_g.png` (hero tops); round 1 `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_tower_gp_finials_g.png`;
 before `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/before_tower_gp_finials_g.png`.
 Author verdict: no crescent reading in colour or grayscale at gameplay or hero distance. The orb + staff reads as a royal orb.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_tower.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: none
+- Scores: silhouette 5, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 4
+- Notes: All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.

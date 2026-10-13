@@ -141,9 +141,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7700,
       "sockets": {
@@ -319,16 +331,16 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
@@ -509,9 +521,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7702,
       "sockets": {
@@ -687,9 +711,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7703,
       "sockets": {

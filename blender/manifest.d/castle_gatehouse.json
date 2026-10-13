@@ -161,10 +161,10 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -172,7 +172,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -376,10 +376,10 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -387,7 +387,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -591,10 +591,10 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -602,7 +602,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -806,9 +806,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7903,
       "sockets": {

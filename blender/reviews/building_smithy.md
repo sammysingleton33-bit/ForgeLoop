@@ -61,3 +61,10 @@ Remaining weaknesses:
 - The back of the workshop (weapon rack, shields, bellows) is in deep shade and barely visible from the street.
 - The loft chimneys reach 31 studs, which is very tall but deliberate.
 - Variant 06 sits at 7760 of 8000 tris, with little headroom for additions.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/building_smithy.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **NEEDS-WORK**; per-asset overrides: building_smithy_01=PASS, building_smithy_02=PASS, building_smithy_03=PASS, building_smithy_04=PASS, building_smithy_06=PASS
+- Scores: silhouette 4, variation 3, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 4
+- Notes: It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.

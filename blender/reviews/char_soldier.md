@@ -56,3 +56,10 @@ Final self-scores: silhouette 4, variation 4, readability 4, proportions 4, pale
 Remaining weaknesses: black eye shapes are low-contrast on `skin_3/4`; spearman hero tiles are small because the spear sets
 the framing; back quiver only visible from the side/back; hands are mittens (no fingers); little triangle headroom (~60-350)
 for further detail on spearmen/knights.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/char_soldier.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **NEEDS-WORK**; per-asset overrides: char_soldier_02=PASS, char_soldier_03=PASS, char_soldier_04=PASS, char_soldier_06=PASS, char_soldier_07=PASS, char_soldier_08=PASS, char_soldier_10=PASS, char_soldier_12=PASS
+- Scores: silhouette 4, variation 4, readability 3, proportions 4, palette 4, detail_density 4, cohesion 2, triangle_cost 3
+- Notes: FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).
