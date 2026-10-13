@@ -81,7 +81,9 @@ Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spe
 | Celebrations | kingdom founded, keep upgraded, watchtower captured, victory, defeat |
 | Toasts | one line each; repeats coalesce ("House placed ×3"); silent when the moment has its own sound |
 | Deposits | at most one clink per 1.5 s |
-| Citizens' work sounds | at most one per citizen per 1.5 s, only within 150 studs of the camera |
+| Citizens' work sounds | at most one per citizen per 1.5 s, only within 150 studs of the camera focus (the centre of the aerial view, not the camera) |
+| Placements | the placer sees FORGE-03's own notice only; co-rulers get "<building> placed" with the placer's name |
+| Match end | Victory or Defeat only for a ruler who won or lost; a draw shows "A draw", a spectator "<kingdom> wins the match", both without the defeat music |
 | Pooled rigs | a released rig keeps no effect |
 | Music | Founding calm, Expansion build, Conflict/Endgame tension, Results calm; victory/defeat at once |
 
@@ -89,7 +91,9 @@ Steps
 1. Play Solo. In F8, run `fx.announce kingdomFounded`: a gold burst over the ruler and "Emberhold is yours" with the founding horn (when chosen).
 2. Run `fx.burst`: at most 3 toasts, "House placed ×2", the newest on top, the warning ("Frostmere took a watchtower") above info.
 3. Run `fx.announce keepUpgraded`, then `objectiveCaptured`, then `victory`: each is a celebration (sound, effect, toast). The music changes to victory.
-4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. A co-ruler sees the same toasts, with your name on "placed".
+4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. **One** toast for your own placement (FORGE-03's). A co-ruler sees "House placed" with your name. The completion effect and the capture effect take your kingdom's colour.
+   - Zoom the aerial view all the way out: work sounds and glints at the citizens under the view still play.
+   - Join a match already in Conflict (a second client): the tension music plays at once, not only at the next phase.
 5. Watch citizens work from close up (40 studs) and far away (more than 150 studs): close up you hear the chops and hammering, with chips; far away, silence. Deposits at the storehouse clink at most about once a second and a half.
 6. Phase changes (with FORGE-01's MatchService, or its `match.phase` debug command): an announcement for Expansion, "War is declared" with the war horn at Conflict, and the music changes after its minimum dwell.
 

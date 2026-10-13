@@ -8,9 +8,14 @@
 		    "deposit"   -> a small clink + glint at the citizen, coalesced (DEPOSIT_GAP_SEC)
 		    "celebrate" -> a cheer (G5: keep level 2) at the citizen
 		    "swing"     -> the citizen's work sound by job, at most one per SWING_GAP_SEC per citizen,
-		                   only within MAX_STUDS of the camera (proposed client-only cue, FORGE-01)
+		                   only within MAX_STUDS of the camera focus (a proposed cue that EntityController
+		                   would fire locally from its pose loop: nothing on the network, so G4's "no
+		                   per-swing events" holds; inert until FORGE-01 adds it)
 		EntityController.released(id, model) -> stops every effect attached to that rig (pooled rigs
-		    must not carry effects to their next citizen)
+		    must not carry effects to their next citizen); finished effects leave that list after
+		    ATTACH_KEEP_SEC, so it never grows with the match
+	Distances are measured from the camera focus (RulerCameraController:getFocus(), else the camera),
+	so a zoomed-out overview (up to 220 studs) still hears and sees the citizens under the view.
 	Registers the kingdom presets (Feedback/Presets) with VFXController at start; presets already
 	registered are skipped, so a second boot never fails.
 	Every sound here has a visual counterpart (the effect or the float), the accessibility rule.
@@ -27,7 +32,8 @@ local Def = { name = "FeedbackController", dependencies = {} }
 
 Def.DEPOSIT_GAP_SEC = 1.5
 Def.SWING_GAP_SEC = 1.5
-Def.MAX_STUDS = 150
+Def.MAX_STUDS = 150 -- from the camera focus
+Def.ATTACH_KEEP_SEC = 5 -- longer than any burst preset in Feedback/Presets
 Def.RESOURCE = table.freeze({
 	wood = table.freeze({ sound = "kingdom.chop", vfx = "kingdom.harvest.wood", label = "Wood" }),
 	stone = table.freeze({ sound = "kingdom.mine", vfx = "kingdom.harvest.stone", label = "Stone" }),
@@ -75,7 +81,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_origin = options.origin,
 		_nodes = nodes,
 		_connections = {},
-		_attached = {} :: { [number]: { any } },
+		_attached = {} :: { [number]: { { effect: any, at: number } } },
 		_lastDeposit = -math.huge,
 		_lastSwing = {} :: { [number]: number },
 		registered = {} :: { string },
@@ -90,6 +96,7 @@ function FeedbackController:start()
 	local registry = self._registry
 	self._audio = registry:find("AudioController")
 	self._vfx = registry:find("VFXController")
+	self._camera = registry:find("RulerCameraController")
 	self:_registerPresets()
 	local interaction = registry:find("InteractionController")
 	local entities = registry:find("EntityController")
@@ -154,13 +161,18 @@ function FeedbackController:_near(position: Vector3?): boolean
 		return false
 	end
 	local origin
+	local camera = self._camera
 	if self._origin then
 		origin = self._origin()
-	else
-		local ok, camera = pcall(function()
+	elseif camera ~= nil and camera.getFocus ~= nil then
+		local okFocus, focus = pcall(camera.getFocus, camera)
+		origin = if okFocus and typeof(focus) == "Vector3" then focus else nil
+	end
+	if origin == nil and not self._origin then
+		local ok, cameraPosition = pcall(function()
 			return self._env.Workspace.CurrentCamera.CFrame.Position
 		end)
-		origin = if ok then camera else nil
+		origin = if ok then cameraPosition else nil
 	end
 	return origin == nil or (position - origin).Magnitude <= Def.MAX_STUDS
 end
@@ -232,12 +244,15 @@ function FeedbackController:_attach(id: any, presetId: string, model: any, posit
 	end
 	local effect = vfx:play(presetId, { position = position, parent = model })
 	if effect ~= nil and type(id) == "number" then
-		local list = self._attached[id]
-		if list == nil then
-			list = {}
-			self._attached[id] = list
+		local now = self._env.clock()
+		local list = {}
+		for _, entry in self._attached[id] or {} do
+			if now - entry.at < Def.ATTACH_KEEP_SEC then
+				table.insert(list, entry) -- older bursts have ended (VFXController cleans them up)
+			end
 		end
-		table.insert(list, effect)
+		table.insert(list, { effect = effect, at = now })
+		self._attached[id] = list
 	end
 end
 
@@ -249,8 +264,8 @@ function FeedbackController:released(id: any)
 	if list == nil or self._vfx == nil then
 		return
 	end
-	for _, effect in list do
-		pcall(self._vfx.stop, self._vfx, effect)
+	for _, entry in list do
+		pcall(self._vfx.stop, self._vfx, entry.effect)
 	end
 end
 
