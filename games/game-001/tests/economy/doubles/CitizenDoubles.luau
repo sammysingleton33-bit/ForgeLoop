@@ -33,6 +33,8 @@
 	library (G13.1) through FORGE-01's server; the UI never contains them.
 ]]
 
+local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
+local Dialogue = require("@game/ReplicatedStorage/Game/Content/Dialogue")
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
 
 local CitizenDoubles = {}
@@ -187,6 +189,24 @@ CitizenDoubles.CITIZENS = {
 		friends = {},
 		rivals = {},
 		hasRequest = false,
+		look = LOOK,
+	},
+	{
+		entityId = 47,
+		kingdom = "crimson",
+		name = "Bran Cooper",
+		occupation = "Builder",
+		job = "builder",
+		traits = { "Hardworking" },
+		mood = 41,
+		loyalty = 55,
+		obedience = 52,
+		intent = "Raising the storehouse wall",
+		memories = {},
+		family = {},
+		friends = {},
+		rivals = {},
+		hasRequest = true,
 		look = LOOK,
 	},
 	{
@@ -364,6 +384,36 @@ CitizenDoubles.SCENARIOS = {
 	},
 }
 
+-- FORGE-05's B1 case on #66: the content library's real "builder_overworked" (Dialogue +
+-- ContentQuery.choicePreview), three answers, one with a cost and one with a 50 % risk. The risk
+-- sentence is the content notice filled as FORGE-01's server will send it (FORGE-00: choiceRisks,
+-- no "Risk ({chance}):" prefix): {name} the speaker, {duration} the consequence's duration.
+local function fromContent(scenarioId: string, speaker: string): any
+	local scenario = Dialogue.scenarios[scenarioId]
+	local responses = {}
+	for _, r in scenario.responses do
+		local preview = ContentQuery.choicePreview(scenarioId, r.id)
+		local risks = {}
+		for _, risk in preview.risks do
+			local sentence = string.gsub(risk.notice, "^Risk %b(): ", "")
+			sentence = string.gsub(sentence, "{name}", speaker)
+			sentence = string.gsub(sentence, "{duration}", `{risk.duration_s} s`)
+			table.insert(risks, { text = sentence, chance = risk.chance })
+		end
+		table.insert(responses, {
+			id = r.id,
+			text = r.text,
+			cost = if next(preview.cost) then preview.cost else nil,
+			risks = if #risks > 0 then risks else nil,
+			loyalty = 0,
+			reaction = r.reaction,
+			effects = {},
+		})
+	end
+	return { scenarioId = scenarioId, question = scenario.question, responses = responses }
+end
+CitizenDoubles.SCENARIOS.builder = fromContent("builder_overworked", "Bran")
+
 local function clone(t)
 	local out = {}
 	for k, v in t do
@@ -402,6 +452,7 @@ function CitizenDoubles.service(world, opts: { conversations: boolean? }?)
 			svc.scenarios[43] = CitizenDoubles.SCENARIOS.four
 			svc.scenarios[45] = CitizenDoubles.SCENARIOS.long
 			svc.scenarios[46] = CitizenDoubles.SCENARIOS.risky
+			svc.scenarios[47] = CitizenDoubles.SCENARIOS.builder
 			function svc:setScenario(entityId, scenario)
 				self.scenarios[entityId] = scenario
 				self.citizens[entityId].hasRequest = scenario ~= nil

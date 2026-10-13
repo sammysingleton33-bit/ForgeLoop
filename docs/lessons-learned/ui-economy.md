@@ -85,3 +85,9 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   the scrolling body's bottom is the height estimate's error, per scene and size (FL-0088 gate: 21-28
   device px on desktop → 12-13 after measuring the risk font, 5.5-5.6 px per character, in the
   renderer page). `observed-once` (2026-10-12).
+- **Fit checks on phones run in the safe area, not the device size.** A spec sized 844 × 390 said
+  the 3-answer builder question fit a phone, while the renderer (and Roblox's CoreUISafeInsets) lay
+  it out in 750 × 311, where it scrolls and hides a risk (FORGE-05 B1 on #66). A mutation that gave
+  the confirm step the full answer list's height survived until the spec used 750 × 311. Size phone
+  specs to the safe area, and assert the failing case too (the list overflows) so the check can
+  fail. `observed-once` (2026-10-13).

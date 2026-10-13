@@ -135,6 +135,7 @@ end
 
 function CitizenCardController:destroy()
 	self._running = false
+	self._token += 1 -- a Sim.Inspect still on its way never opens a menu after destroy (FORGE-05 L2)
 	for _, connection in self._connections do
 		disconnect(connection)
 	end

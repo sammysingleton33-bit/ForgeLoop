@@ -177,7 +177,15 @@ describe("CitizenModel.conversation", function()
 			},
 		})
 		expect(#c.options).toBe(2)
-		expect(c.options[2]).toEqual({ id = "d", text = "D", index = 2, cost = {}, risks = {}, hiddenRisks = 0 })
+		expect(c.options[2]).toEqual({
+			id = "d",
+			text = "D",
+			index = 2,
+			cost = {},
+			costUnknown = false,
+			risks = {},
+			hiddenRisks = 0,
+		})
 		expect(CitizenModel.conversation(nil)).toBeNil()
 		expect(CitizenModel.conversation({ scenarioId = "s", question = "Q?", options = {} })).toBeNil()
 		expect(CitizenModel.conversation({ scenarioId = "s", options = { { id = "a", text = "A" } } })).toBeNil()
@@ -232,33 +240,42 @@ describe("CitizenModel answer costs and risks (G13.3, FORGE-05 M1)", function()
 		expect(dig.risks[2].label).toBe("50 %")
 	end)
 
-	it("validates loosely: malformed cost entries are ignored, a risk with a bad chance still shows", function()
+	it("fails closed (FORGE-05 L4, M1 on #66): a cost it can't show disables the answer; no risk vanishes", function()
 		local o = option({
 			id = "a",
 			text = "A",
 			cost = { wood = 10, iron = 5, stone = -3, food = 2.5, gold = "7", [3] = 4 },
 			risks = {
 				{ text = "Fine", chance = 0.3 },
-				{ chance = 0.5 }, -- no text: nothing to show
+				{ chance = 0.5 }, -- no text: counted, never dropped
 				"loose",
 				{ text = "", chance = 0.1 },
 				{ text = "Odd chance", chance = 30 },
 				{ text = "No chance" },
-				{ notice = "From the content notice", chance = 0.2 },
+				{ notice = "Risk ({chance}): {name} may lay down tools.", chance = 0.2 }, -- raw template: never shown
 			},
 		})
 		expect(o.cost).toEqual({ { id = "wood", amount = 10, name = "Wood", icon = "wood" } })
-		expect(#o.risks).toBe(4)
+		expect(o.costUnknown).toBe(true)
+		expect(CitizenModel.price(o, { wood = 100 }).need).toBe(CitizenText.COST_UNKNOWN)
+		expect(CitizenModel.price(o, nil).need).toBe(CitizenText.COST_UNKNOWN) -- even before the treasury
+		expect(#o.risks).toBe(3)
 		expect(o.risks[1].label).toBe("30 %")
 		expect(o.risks[2].text).toBe("Odd chance")
 		expect(o.risks[2].chance).toBeNil()
 		expect(o.risks[2].label).toBe("?")
 		expect(o.risks[3].label).toBe("?")
-		expect(o.risks[4].text).toBe("From the content notice")
-		expect(o.hiddenRisks).toBe(0)
+		expect(o.hiddenRisks).toBe(4) -- no text, "loose", "", the raw notice
+		for _, r in o.risks do
+			expect(r.text).never.toContain("{")
+		end
 		local bare = option({ id = "b", text = "B", cost = "lots", risks = 5 })
-		expect(#bare.cost).toBe(0)
-		expect(#bare.risks).toBe(0)
+		expect(bare.costUnknown).toBe(true)
+		expect(bare.hiddenRisks).toBe(1)
+		local clean = option({ id = "c", text = "C", cost = { wood = 10 } })
+		expect(clean.costUnknown).toBe(false)
+		expect(CitizenModel.needsConfirm(clean)).toBe(true)
+		expect(CitizenModel.needsConfirm(option({ id = "d", text = "D" }))).toBe(false)
 	end)
 
 	it("caps the risks listed per answer and counts the rest", function()

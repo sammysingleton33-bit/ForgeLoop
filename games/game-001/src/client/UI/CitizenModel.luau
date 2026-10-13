@@ -14,16 +14,20 @@
 			options keep the payload's order; duplicates and options without id or text are dropped;
 			at most OPTION_LIMIT (the contract says 2-4).
 			fallback = { name, occupation } names the speaker when the payload has no `speaker`.
-			Option = { id, text, index, cost: { { id, amount, name, icon } }, risks: { Risk },
-			hiddenRisks: number } from the payload's optional `cost` (ResourceBag) and `risks`
-			({ { text, chance } }, ContentQuery.choicePreview, G13.3). Loose: cost entries that are
-			not a known resource with a whole amount > 0 are ignored; a risk needs a text (`notice`
-			is accepted for it); a chance outside 0..1 shows as "?" instead of hiding the risk. At most
-			RISK_LIMIT risks are listed; `hiddenRisks` counts the rest ("+N more risks").
+			Option = { id, text, index, cost: { { id, amount, name, icon } }, costUnknown: boolean,
+			risks: { Risk }, hiddenRisks: number } from the payload's optional `cost` (ResourceBag) and
+			`risks` ({ { text, chance } }, ContentQuery.choiceRisks, G13.3). Fails closed (FORGE-05 L4
+			on #66): a cost entry the panel can't show (not a known resource, not a whole amount > 0)
+			sets `costUnknown` and the answer can't be chosen; a risk without a text counts in
+			`hiddenRisks` ("+N more risks"; the raw `notice` template is never shown, M1); a chance
+			outside 0..1 shows as "?" instead of hiding the risk. At most RISK_LIMIT risks are listed.
+		CitizenModel.needsConfirm(option) -> boolean     an answer with a cost or a risk is confirmed in a
+			second step that shows all of it unscrolled (FORGE-05 B1 on #66)
 			Risk = { text, chance: number?, percent: number?, label ("30 %", UI/CitizenText.chance) }
 		CitizenModel.price(option, balances?) -> { short: { [id]: true }, need: string? }
 			which cost entries the treasury cannot cover and the reason ("Need 20 Wood", UI/Text.missing,
-			the build menu's words); nothing is short while the treasury is unknown (balances nil)
+			the build menu's words); nothing is short while the treasury is unknown (balances nil); an
+			answer whose cost can't be shown needs CitizenText.COST_UNKNOWN
 		CitizenModel.key(entityId, scenarioId) -> string   one showing of a scenario (Choose is
 			idempotent per showing on the server)
 		CitizenModel.effect(e) -> Effect?                { kind, text, icon, tint, tone }
@@ -208,48 +212,51 @@ end
 
 -- A ResourceBag from the payload as display entries in resource order. Loose: anything that is not
 -- a known resource id with a whole amount > 0 is ignored (the treasury could not spend it either).
-local function costEntries(raw: any): { any }
+local function costEntries(raw: any): ({ any }, boolean)
 	local out = {}
-	if type(raw) ~= "table" then
-		return out
+	if raw == nil then
+		return out, false
+	elseif type(raw) ~= "table" then
+		return out, true
 	end
-	local bag = {}
+	local bag, unknown = {}, false
 	for id, amount in raw do
 		if type(id) == "string" and Resources.defs[id] ~= nil and Bundle.isAmount(amount) then
 			bag[id] = amount
+		else
+			unknown = true -- a cost the player can't see is never charged blind
 		end
 	end
 	for _, entry in Bundle.ordered(bag, Resources.ids) do
 		local def = Resources.defs[entry.id]
 		table.insert(out, { id = entry.id, amount = entry.amount, name = def.name, icon = def.icon })
 	end
-	return out
+	return out, unknown
 end
 
 -- Risks keep the payload's order. A risk without text has nothing to show and is ignored; one with a
 -- bad chance is still shown (label "?"): the rule is that every risk is visible before choosing.
 local function riskEntries(raw: any): ({ any }, number)
 	local out, hidden = {}, 0
-	if type(raw) ~= "table" then
+	if raw == nil then
 		return out, 0
+	elseif type(raw) ~= "table" then
+		return out, 1 -- risks we can't read still count as one we can't show
 	end
 	for _, r in ipairs(raw) do
-		if type(r) == "table" then
-			local label = text(r.text) or text(r.notice)
-			if label then
-				if #out >= CitizenModel.RISK_LIMIT then
-					hidden += 1
-				else
-					local c = r.chance
-					local chance = if type(c) == "number" and c == c and c >= 0 and c <= 1 then c else nil
-					table.insert(out, {
-						text = label,
-						chance = chance,
-						percent = if chance then math.floor(chance * 100 + 0.5) else nil,
-						label = CitizenText.chance(chance),
-					})
-				end
-			end
+		local label = if type(r) == "table" then text(r.text) else nil
+		if label == nil or #out >= CitizenModel.RISK_LIMIT then
+			-- a risk without a sentence still counts ("+1 more risk"): it never vanishes (FORGE-05 L4)
+			hidden += 1
+		else
+			local c = r.chance
+			local chance = if type(c) == "number" and c == c and c >= 0 and c <= 1 then c else nil
+			table.insert(out, {
+				text = label,
+				chance = chance,
+				percent = if chance then math.floor(chance * 100 + 0.5) else nil,
+				label = CitizenText.chance(chance),
+			})
 		end
 	end
 	return out, hidden
@@ -374,11 +381,13 @@ function CitizenModel.conversation(payload: any, fallback: any?): any
 			if id and label and not seen[id] then
 				seen[id] = true
 				local risks, hidden = riskEntries(o.risks)
+				local cost, costUnknown = costEntries(o.cost)
 				table.insert(options, {
 					id = id,
 					text = label,
 					index = #options + 1,
-					cost = costEntries(o.cost),
+					cost = cost,
+					costUnknown = costUnknown,
 					risks = risks,
 					hiddenRisks = hidden,
 				})
@@ -404,8 +413,15 @@ function CitizenModel.key(entityId: any, scenarioId: any): string
 	return `{tostring(entityId)}:{tostring(scenarioId)}`
 end
 
+function CitizenModel.needsConfirm(option: any): boolean
+	return #option.cost > 0 or #option.risks > 0 or option.hiddenRisks > 0 or option.costUnknown == true
+end
+
 function CitizenModel.price(option: any, balances: { [string]: number }?): any
 	local short = {}
+	if type(option) == "table" and option.costUnknown then
+		return { short = short, need = CitizenText.COST_UNKNOWN }
+	end
 	local cost = if type(option) == "table" and type(option.cost) == "table" then option.cost else {}
 	if balances == nil or #cost == 0 then
 		return { short = short, need = nil }
@@ -502,7 +518,7 @@ function CitizenModel.optionMeta(o: any, width: number, balances: { [string]: nu
 	local C = CitizenModel.CONVO
 	local K = CitizenModel.CHAR
 	local h = 0
-	if #o.cost > 0 then
+	if #o.cost > 0 or o.costUnknown then
 		local rows, used = 1, 0
 		local function place(w: number)
 			if used > 0 and used + C.costGap + w > width then
@@ -575,6 +591,24 @@ function CitizenModel.conversationHeight(state: any, rect: any, phone: boolean, 
 			end
 		else
 			h += CitizenModel.lines(outcome.message, inner - 50, K.body) * 18 + 2 * C.speechPad
+		end
+		h += C.footer
+	elseif state.phase == "confirming" then
+		-- the question (not on phones: the sheet keeps its room for the answer), the kicker, the picked
+		-- answer full width with its cost and every risk, and the Back / Choose footer
+		if not phone then
+			h += speech(convo.question, questionChar, speechLine) + C.gap
+		end
+		h += C.kicker + C.gap
+		for _, o in convo.options do
+			if o.id == state.picked then
+				local column = inner - C.optionChrome
+				local n = CitizenModel.lines(o.text, column, K.option)
+				h += math.max(
+					C.optionMin,
+					n * C.optionLine + CitizenModel.optionMeta(o, column, balances) + 2 * C.optionPadY
+				)
+			end
 		end
 		h += C.footer
 	else

@@ -121,7 +121,11 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    tapped. Every risk of every answer is listed with its whole-percent chance ("40 %" + the server's
    sentence), none cut off or hidden. Compare with the scenario's preview on the server
    (`ContentQuery.choicePreview`): same cost, same number of risks, same chances.
-4. Tap an answer: all answers grey out at once; then the reaction and the "What changed" chips
+4. Tap an answer with a cost or a risk (phone: the builder's "The kingdom needs walls…"): a confirm
+   step shows that answer alone, whole, with its cost and every risk, and **Back** / **Choose**
+   under it; nothing is spent yet. Back shows the answers again. A quick double tap on the answer
+   only opens the step; it never chooses. An answer with neither is sent at once.
+   Then Choose (or an answer with neither): all answers grey out at once; then the reaction and the "What changed" chips
    (resources, loyalty, reputation). The pills and the reputation strip move to match. **Done** closes.
 5. Tap the same answer twice quickly, or tap during a resource tick: only one answer is sent, and the
    panel does not flicker or lose the tap. Gain the missing resource while the question is open: the

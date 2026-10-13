@@ -8,6 +8,7 @@ local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, 
 
 local CitizenCardDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenCardController")
 local CitizenDoubles = require("./doubles/CitizenDoubles")
+local CitizenModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/CitizenModel")
 local CitizenText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/CitizenText")
 local ConversationDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ConversationController")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
@@ -187,6 +188,17 @@ end
 
 local function options(panel)
 	return findAll(panel, "^Option_")
+end
+
+-- Answers as a player does: a tap on the answer and, for an answer with a cost or a risk, Choose in
+-- the confirm step once its short guard has passed (FORGE-05 B1 on #66).
+local function answer(world, id)
+	tap(find(convoPanel(world), "Option_" .. id))
+	local panel = convoPanel(world)
+	if panel and panel:GetAttribute("phase") == "confirming" then
+		world:advance(world.conversation.CONFIRM_DELAY + 0.05)
+		tap(find(convoPanel(world), "Confirm"))
+	end
 end
 
 local function amountOf(hud, id)
@@ -423,10 +435,24 @@ describe("Conversation panel (G13.3)", function()
 		local panel = talkTo(world, 41)
 		local help = find(panel, "Option_help")
 		local bread = find(panel, "Option_bread")
-		tap(help)
-		fire(help, "Activated") -- the second tap of a double tap (same, now replaced, button)
+		tap(help) -- 20 Wood: the confirm step first (FORGE-05 B1)
+		fire(help, "Activated") -- the second tap of a double tap (the old, replaced, button)
 		fire(bread, "Activated")
 		world.conversation:choose("work")
+		local confirming = convoPanel(world)
+		expect(confirming:GetAttribute("phase")).toBe("confirming")
+		expect(#options(confirming)).toBe(1) -- only the picked answer, whole
+		-- the double tap that opened the step does not confirm it
+		tap(find(confirming, "Confirm"))
+		world.conversation:confirm()
+		expect(convoPanel(world):GetAttribute("phase")).toBe("confirming")
+		world:advance(world.conversation.CONFIRM_DELAY + 0.05)
+		local confirm = find(convoPanel(world), "Confirm")
+		local face = find(confirm, "Face")
+		tap(confirm)
+		fire(face, "Activated") -- a double tap on Choose (that button is gone by now)
+		world.conversation:confirm()
+		world.conversation:choose("bread")
 		-- While waiting: the pick is marked and every answer is disabled.
 		local waiting = convoPanel(world)
 		expect(waiting:GetAttribute("phase")).toBe("choosing")
@@ -442,8 +468,8 @@ describe("Conversation panel (G13.3)", function()
 	end)
 
 	it("shows the server's reaction and its effect chips, then Done closes", function()
-		local panel = talkTo(world, 41)
-		tap(find(panel, "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world:advance(0.2)
 		local done = convoPanel(world)
 		local response = SCENARIOS.three.responses[1]
@@ -480,8 +506,8 @@ describe("Conversation panel (G13.3)", function()
 
 	it("a refusal shows the reason as a sentence and Close; unknown codes get the generic one", function()
 		world.citizens.refuse = "not_eligible"
-		local panel = talkTo(world, 41)
-		tap(find(panel, "Option_bread"))
+		talkTo(world, 41)
+		answer(world, "bread")
 		world:advance(0.2)
 		local refused = convoPanel(world)
 		expect(refused:GetAttribute("phase")).toBe("refused")
@@ -490,15 +516,16 @@ describe("Conversation panel (G13.3)", function()
 		tap(find(find(refused, "Body").Parent, "Close"))
 		expect(world.hud.state.menu).toBeNil()
 		world.citizens.refuse = "weird_code"
-		tap(find(talkTo(world, 41), "Option_bread"))
+		talkTo(world, 41)
+		answer(world, "bread")
 		world:advance(0.2)
 		expect(find(convoPanel(world), "Reason").Text).toBe(CitizenText.GENERIC)
 	end)
 
 	it("a dropped Kingdom.Choose opens the answers again with an error; the retry goes through", function()
 		world.citizens.drop = true
-		local panel = talkTo(world, 41)
-		tap(find(panel, "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world:advance(0.2)
 		local again = convoPanel(world)
 		expect(again:GetAttribute("phase")).toBe("asking")
@@ -506,7 +533,7 @@ describe("Conversation panel (G13.3)", function()
 		for _, button in options(again) do
 			expect(button.Active).toBe(true)
 		end
-		tap(find(again, "Option_help"))
+		answer(world, "help")
 		world:advance(0.2)
 		expect(#world.citizens:callsNamed("Choose")).toBe(2)
 		expect(convoPanel(world):GetAttribute("phase")).toBe("answered")
@@ -515,7 +542,7 @@ describe("Conversation panel (G13.3)", function()
 	it("selection 'none' closes the conversation; a late reply does not bring it back", function()
 		world.citizens.latency = 0.3
 		expect(talkTo(world, 41)).toBeTruthy()
-		tap(find(convoPanel(world), "Option_help"))
+		answer(world, "help")
 		pickSelection(world, "none", 0)
 		expect(world.hud.state.menu).toBeNil()
 		expect(world.conversation.state).toBeNil()
@@ -575,7 +602,10 @@ describe("Citizen card and conversation survive pushes (FORGE-05 M1)", function(
 		pushes("conversation")
 		expect(convoPanel(world)).toBe(panel)
 		expect(options(panel)[1]).toBe(first)
-		tap(first)
+		tap(first) -- the kept button still works: it opens the confirm step (it costs 20 Wood)
+		expect(convoPanel(world):GetAttribute("phase")).toBe("confirming")
+		world:advance(world.conversation.CONFIRM_DELAY + 0.05)
+		tap(find(convoPanel(world), "Confirm"))
 		world:advance(0.1 + world.citizens.latency)
 		expect(#world.citizens:callsNamed("Choose")).toBe(1)
 		world:destroy()
@@ -632,7 +662,7 @@ describe("Answer costs and risks before choosing (G13.3, FORGE-05 M1)", function
 		expect(#world.citizens:callsNamed("Choose")).toBe(0)
 		expect(convoPanel(world):GetAttribute("phase")).toBe("asking")
 		-- The risky one goes through.
-		tap(find(convoPanel(world), "Option_dig"))
+		answer(world, "dig")
 		world:advance(0.2)
 		expect(world.citizens:callsNamed("Choose")[1].args).toEqual({ 46, "cracked_face", "dig" })
 	end)
@@ -674,11 +704,12 @@ describe("Answer costs and risks before choosing (G13.3, FORGE-05 M1)", function
 		expect(convoPanel(world)).toBe(panel)
 		expect(find(panel, "Option_dig")).toBe(dig) -- untouched
 		local now = find(panel, "Option_shore")
+		expect(now).toBe(shore) -- repainted inside the same button (FORGE-05 L5 on #66)
 		expect(now:GetAttribute("affordable")).toBe(true)
 		expect(now.Active).toBe(true)
 		expect(find(now, "Need")).toBeNil()
 		expect(find(now, "Cost_gold"):GetAttribute("short")).toBe(false)
-		tap(now)
+		answer(world, "shore")
 		world:advance(0.2)
 		expect(world.citizens:callsNamed("Choose")[1].args).toEqual({ 46, "cracked_face", "shore" })
 		expect(amountOf(world.hud, "gold")).toBe(tostring(30 - 25))
@@ -748,7 +779,8 @@ describe("Kingdom.Choose in flight is guarded per showing (FORGE-05 M3)", functi
 
 	it("close and reopen while Choose is in flight: one Choose, and the reply lands on the reopened panel", function()
 		world.citizens.chooseLatency = 1
-		tap(find(talkTo(world, 41), "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world.conversation:close()
 		expect(world.hud.state.menu).toBeNil()
 		local again = talkTo(world, 41) -- the server still offers the same showing
@@ -768,7 +800,8 @@ describe("Kingdom.Choose in flight is guarded per showing (FORGE-05 M3)", functi
 
 	it("a reply that lands after the panel closed becomes a notice; nothing is sent again", function()
 		world.citizens.chooseLatency = 0.5
-		tap(find(talkTo(world, 41), "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world.conversation:close()
 		world:advance(0.6)
 		local notices = texts(world.hud.guis.notices)
@@ -796,15 +829,17 @@ describe("Onboarding step AnswerCitizen (FORGE-04 #45)", function()
 		local reported = {}
 		local world = newWorld({ onboarding = reported })
 		world.citizens.refuse = "not_eligible"
-		tap(find(talkTo(world, 41), "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world:advance(0.2)
 		expect(#reported).toBe(0) -- refused
 		world.conversation:close()
 		world.citizens.drop = true
-		tap(find(talkTo(world, 41), "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world:advance(0.2)
 		expect(#reported).toBe(0) -- dropped: the answers open again
-		tap(find(convoPanel(world), "Option_help"))
+		answer(world, "help")
 		world:advance(0.2)
 		expect(convoPanel(world):GetAttribute("phase")).toBe("answered")
 		expect(#reported).toBe(1)
@@ -816,7 +851,8 @@ describe("Onboarding step AnswerCitizen (FORGE-04 #45)", function()
 		local reported = {}
 		local world = newWorld({ onboarding = reported })
 		world.citizens.chooseLatency = 0.5
-		tap(find(talkTo(world, 41), "Option_help"))
+		talkTo(world, 41)
+		answer(world, "help")
 		world.conversation:close()
 		world:advance(0.6)
 		expect(table.concat(reported, ",")).toBe("CitizenAnswered")
@@ -911,5 +947,140 @@ describe("Citizen card and conversation lows (FORGE-05 L4-L8)", function()
 		local notices = texts(world.hud.guis.notices)
 		expect(notices).toContain(CitizenText.GONE)
 		expect(notices).toContain("Bran Thornbury")
+	end)
+end)
+
+describe("FORGE-05 review of #66: risks never below the fold (B1), L1-L5", function()
+	local world, previous
+	beforeEach(function()
+		previous = useStrongConnector()
+	end)
+	afterEach(function()
+		if world then
+			world:destroy()
+			world = nil
+		end
+		restoreConnector(previous)
+	end)
+
+	local PUSH_ON = "builder_overworked_push_on"
+
+	it("B1 phone (844 × 390, safe area 750 × 311), builder_overworked: a risky answer is confirmed whole", function()
+		-- the layout works in the safe area, as the renderer and Roblox's CoreUISafeInsets do
+		world = newWorld({ width = 750, height = 311 })
+		local asking = talkTo(world, 47)
+		expect(asking:GetAttribute("scenarioId")).toBe("builder_overworked")
+		expect(#options(asking)).toBe(3)
+		-- the bug: the three answers scroll, so the third answer's risk can sit below the fold
+		local rect = CitizenModel.conversationRect(world.hud:metrics())
+		expect(CitizenModel.conversationOverflows(world.conversation.state, rect, true, nil)).toBe(true)
+		tap(find(asking, "Option_" .. PUSH_ON))
+		local confirming = convoPanel(world)
+		expect(confirming:GetAttribute("phase")).toBe("confirming")
+		expect(#world.citizens:callsNamed("Choose")).toBe(0) -- nothing sent yet
+		local card = find(confirming, "Option_" .. PUSH_ON)
+		local risk = find(card, "Risk_1")
+		expect(find(risk, "Chance").Text).toBe("50 %")
+		expect(find(risk, "RiskText").Text).toBe("Bran may lay down tools for 45 s.")
+		expect(find(confirming, "Back")).toBeTruthy()
+		expect(find(confirming, "Confirm")).toBeTruthy()
+		-- the step fits the sheet without scrolling: nothing of the answer is below the fold
+		local state = world.conversation.state
+		expect(CitizenModel.conversationOverflows(state, rect, true, nil)).toBe(false)
+		expect(confirming.Size.Y.Offset).toBeLessThanOrEqual(rect.height)
+		-- Back: the answers again, nothing sent; Choose (after its guard) sends exactly this answer
+		tap(find(confirming, "Back"))
+		expect(convoPanel(world):GetAttribute("phase")).toBe("asking")
+		answer(world, PUSH_ON)
+		world:advance(0.2)
+		expect(world.citizens:callsNamed("Choose")[1].args).toEqual({ 47, "builder_overworked", PUSH_ON })
+	end)
+
+	it("B1: an answer with neither a cost nor a risk is sent at once; the smallest phone fits two risks", function()
+		world = newWorld({ width = 750, height = 311 })
+		talkTo(world, 47)
+		tap(find(convoPanel(world), "Option_builder_overworked_rest"))
+		world:advance(0.2)
+		expect(#world.citizens:callsNamed("Choose")).toBe(1)
+		world:destroy()
+		-- 750 × 311 (the smallest safe area), the answer with two risks
+		world = newWorld({ width = 750, height = 311 })
+		talkTo(world, 46)
+		tap(find(convoPanel(world), "Option_dig"))
+		local m = world.hud:metrics()
+		expect(world.conversation.state.phase).toBe("confirming")
+		expect(
+			CitizenModel.conversationOverflows(world.conversation.state, CitizenModel.conversationRect(m), true, nil)
+		).toBe(false)
+		expect(#findAll(convoPanel(world), "^Risk_")).toBe(2)
+	end)
+
+	it("L1: an answered result stays when its citizen leaves; only a deciding panel closes", function()
+		world = newWorld()
+		talkTo(world, 42)
+		answer(world, SCENARIOS.two.responses[1].id)
+		world:advance(0.2)
+		expect(convoPanel(world):GetAttribute("phase")).toBe("answered")
+		world.citizens.citizens[42] = nil -- gone
+		world:advance(world.conversation.CHECK_SEC * 2 + 0.5)
+		expect(convoPanel(world):GetAttribute("phase")).toBe("answered")
+		expect(#world.citizens:callsNamed("Inspect")).toBe(1) -- only the card's tap, no presence checks
+	end)
+
+	it("L2: a Converse or Inspect still on its way when its controller is destroyed opens no menu", function()
+		world = newWorld()
+		world.citizens.latency = 0.5
+		pickSelection(world, "citizen", 41)
+		tap(find(cardPanel(world), "Talk"))
+		world.conversation:destroy()
+		world:advance(0.8)
+		expect(world.hud.state.menu).never.toBe("conversation")
+		world.hud:setMenu(nil)
+		world.citizens.inspectDelay[41] = 0.5
+		pickSelection(world, "citizen", 41)
+		world.card:destroy()
+		world:advance(0.8)
+		expect(world.hud.state.menu).never.toBe("citizen")
+	end)
+
+	it("L3: once the choice is on its way, a treasury change never marks the picked answer short", function()
+		world = newWorld({ treasury = { food = 120, wood = 100, stone = 50, gold = 30 } })
+		world.citizens.chooseLatency = 1
+		talkTo(world, 46)
+		answer(world, "shore") -- 20 Wood, 25 Gold
+		local waiting = convoPanel(world)
+		expect(waiting:GetAttribute("phase")).toBe("choosing")
+		world.treasury:spend("crimson", { gold = 30 }, "spec:gold", "test")
+		world:advance(0.2)
+		local picked = find(convoPanel(world), "Option_shore")
+		expect(picked:GetAttribute("state")).toBe("picked")
+		expect(find(picked, "Need")).toBeNil()
+	end)
+
+	it("L4: an answer whose cost can't be shown is disabled and says so; it is never sent", function()
+		world = newWorld()
+		world.citizens:setScenario(42, {
+			scenarioId = "odd_cost",
+			question = "Shall we?",
+			responses = {
+				{
+					id = "yes",
+					text = "Yes.",
+					cost = { wood = 5, iron = 3 },
+					loyalty = 0,
+					reaction = "Yes!",
+					effects = {},
+				},
+				{ id = "no", text = "No.", loyalty = 0, reaction = "No.", effects = {} },
+			},
+		})
+		local panel = talkTo(world, 42)
+		local yes = find(panel, "Option_yes")
+		expect(yes.Active).toBe(false)
+		expect(find(yes, "Need").Text).toBe(CitizenText.COST_UNKNOWN)
+		fire(yes, "Activated")
+		world.conversation:choose("yes")
+		world:advance(0.5)
+		expect(#world.citizens:callsNamed("Choose")).toBe(0)
 	end)
 end)

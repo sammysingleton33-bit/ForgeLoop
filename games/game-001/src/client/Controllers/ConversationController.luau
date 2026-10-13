@@ -9,8 +9,12 @@
 		   (`hud:setMenu("conversation")`) with the speaker, the question and the 2-4 answers, exactly
 		   as the server sent them, each with its cost and every risk (G13.3 `cost`, `risks`) shown
 		   before the player chooses. An answer the treasury can't pay is disabled ("Need 20 Wood").
-		2. Picking an answer disables every answer at once (answer once: a double tap or a second
-		   answer sends nothing) and calls `Kingdom.Choose(entityId, scenarioId, responseId)`. The
+		2. An answer with a cost or a risk first opens the confirm step ("confirming": that answer
+		   alone with its cost and every risk, Back / Choose; FORGE-05 B1 on #66); Choose (or an
+		   answer with neither) disables every answer at once (answer once: a double tap or a second
+		   answer sends nothing) and calls `Kingdom.Choose(entityId, scenarioId, responseId)`.
+		   Choose ignores taps for CONFIRM_DELAY after the step opens, so the double tap that
+		   opened it can't also confirm it. The
 		   guard is per showing (`entityId:scenarioId`) and lives in the controller, not in the open
 		   panel: closing and reopening the same question while Choose is in flight shows the pick as
 		   waiting and sends nothing more.
@@ -23,8 +27,9 @@
 		4. Done / Close / the X close the panel. Selecting anything ("none", a building, a slot or
 		   another citizen) closes it too; opening another menu replaces it. Any menu change away
 		   from the conversation also cancels a Converse still loading (its reply is ignored).
-		5. While open, the citizen is re-checked every CHECK_SEC with `Sim.Inspect`; nil (gone, or no
-		   longer yours) closes the panel with a notice — except while a Choose is in flight.
+		5. While the player is still deciding ("asking" / "confirming"), the citizen is re-checked
+		   every CHECK_SEC with `Sim.Inspect`; nil (gone, or no longer yours) closes the panel with a
+		   notice. Never once the choice is sent or answered (FORGE-05 L1 on #66).
 	The client decides nothing: no question, answer, reaction or effect text lives in this code.
 
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional (registry:find in
@@ -33,8 +38,9 @@
 
 	API (specs and scenes)
 		conversation:open(entityId)    ask Kingdom.Converse and show the panel
-		conversation:choose(responseId)  conversation:done()  conversation:close()
-		conversation.state = { entityId, phase ("asking" | "choosing" | "answered" | "refused"),
+		conversation:choose(responseId)  conversation:confirm()  conversation:back()
+		conversation:done()  conversation:close()
+		conversation.state = { entityId, phase ("asking" | "confirming" | "choosing" | "answered" | "refused"),
 			conversation (UI/CitizenModel Conversation), picked?, outcome?, error? }?
 		conversation.inflight = { [CitizenModel.key(entityId, scenarioId)]: responseId }
 		conversation.panel (UI/ConversationPanel)    ConversationController.MENU = "conversation"
@@ -54,6 +60,7 @@ local Def = { name = "ConversationController", dependencies = { "KingdomHudContr
 
 ConversationController.MENU = "conversation"
 ConversationController.CHECK_SEC = 4 -- the citizen card's refresh period (CitizenCardController)
+ConversationController.CONFIRM_DELAY = 0.35 -- seconds Choose ignores taps after the confirm step opens
 ConversationController.CONVERSE = "Kingdom.Converse"
 ConversationController.CHOOSE = "Kingdom.Choose"
 
@@ -154,6 +161,7 @@ end
 function ConversationController:destroy()
 	self._running = false
 	self._destroyed = true
+	self._token += 1 -- a Converse still loading never opens a menu after destroy (FORGE-05 L2)
 	for _, connection in self._connections do
 		disconnect(connection)
 	end
@@ -181,10 +189,15 @@ function ConversationController:_hasRemote(name: string): boolean
 	return hud.hasRemote == nil or hud:hasRemote(name)
 end
 
+-- Before the choice is sent: the only phases a vanished citizen may close (FORGE-05 L1 on #66).
+local function deciding(s: any): boolean
+	return s.phase == "asking" or s.phase == "confirming"
+end
+
 -- Every CHECK_SEC while a conversation is open: is the citizen still there (and still ours)?
 function ConversationController:_checkPresence()
 	local s = self.state
-	if s == nil or s.phase == "choosing" or self._checking or not self:_hasRemote("Sim.Inspect") then
+	if s == nil or not deciding(s) or self._checking or not self:_hasRemote("Sim.Inspect") then
 		return
 	end
 	local hud = self.hud
@@ -194,7 +207,7 @@ function ConversationController:_checkPresence()
 			return hud.remotes:invoke("Sim.Inspect", s.entityId)
 		end)
 		self._checking = false
-		if not called or view ~= nil or self.state ~= s or s.phase == "choosing" then
+		if not called or view ~= nil or self.state ~= s or not deciding(s) then
 			return -- unknown (no reply), still here, or the panel moved on
 		end
 		self:close()
@@ -307,9 +320,16 @@ function ConversationController:_reportAnswered()
 	end
 end
 
-function ConversationController:choose(responseId: string)
+function ConversationController:choose(responseId: string, confirmed: boolean?)
 	local s = self.state
-	if s == nil or s.phase ~= "asking" then
+	if s == nil then
+		return
+	end
+	if confirmed then
+		if s.phase ~= "confirming" or s.picked ~= responseId then
+			return
+		end
+	elseif s.phase ~= "asking" then
 		return -- answer once: everything after the first pick is ignored
 	end
 	local option = nil
@@ -330,6 +350,15 @@ function ConversationController:choose(responseId: string)
 	local hud = self.hud
 	if not self:_hasRemote(ConversationController.CHOOSE) then
 		s.error = CitizenText.UNAVAILABLE
+		hud:render()
+		return
+	end
+	if not confirmed and CitizenModel.needsConfirm(option) then
+		-- A cost or a risk: show it all, unscrolled, before anything is sent (FORGE-05 B1 on #66).
+		s.phase = "confirming"
+		s.picked = responseId
+		s.error = nil
+		self._confirmAt = self._env.clock()
 		hud:render()
 		return
 	end
@@ -373,6 +402,29 @@ function ConversationController:choose(responseId: string)
 		end
 		hud:render()
 	end)
+end
+
+-- The confirm step's Choose: sends the answer it shows (ignored right after the step opened).
+function ConversationController:confirm()
+	local s = self.state
+	if s == nil or s.phase ~= "confirming" or s.picked == nil then
+		return
+	end
+	if self._env.clock() - (self._confirmAt or 0) < ConversationController.CONFIRM_DELAY then
+		return -- the double tap that opened the step must not also confirm it
+	end
+	self:choose(s.picked, true)
+end
+
+-- The confirm step's Back: the answers again, nothing sent.
+function ConversationController:back()
+	local s = self.state
+	if s == nil or s.phase ~= "confirming" then
+		return
+	end
+	s.phase = "asking"
+	s.picked = nil
+	self.hud:render()
 end
 
 function ConversationController:done()
@@ -426,6 +478,12 @@ function ConversationController:render(metrics: any)
 		end,
 		onClose = function()
 			self:close()
+		end,
+		onConfirm = function()
+			self:confirm()
+		end,
+		onBack = function()
+			self:back()
 		end,
 	})
 end

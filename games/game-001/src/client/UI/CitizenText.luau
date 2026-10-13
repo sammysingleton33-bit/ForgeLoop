@@ -11,6 +11,7 @@
 		CitizenText.CANT_INSPECT -> string      Sim.Inspect returned nil (not yours, or gone)
 		CitizenText.UNAVAILABLE -> string       the server has no Kingdom.Converse / Kingdom.Choose yet
 		CitizenText.GONE -> string              the citizen of an open conversation is gone
+		CitizenText.COST_UNKNOWN, CONFIRM_KICKER, CONFIRM, BACK   the confirm step (B1) and fail-closed costs
 		CitizenText.chance(c?) -> string        a risk's chance (0..1) as a whole percent: "30 %";
 		                                        "<1 %" / ">99 %" at the ends, "?" when unknown
 		CitizenText.hiddenRisks(n) -> string    "+2 more risks": the answer has more than the panel lists
@@ -43,6 +44,12 @@ CitizenText.NOTHING = "Nothing on their mind right now"
 CitizenText.CANT_INSPECT = "Can't inspect that citizen"
 CitizenText.UNAVAILABLE = "Conversations aren't available yet"
 CitizenText.GONE = "They're no longer here."
+-- An answer whose cost the panel can't show is never sent (FORGE-05 L4 on #66).
+CitizenText.COST_UNKNOWN = "Its cost can't be shown"
+-- The second step for an answer with a cost or a risk (FORGE-05 B1 on #66).
+CitizenText.CONFIRM_KICKER = "CHOOSE THIS ANSWER?"
+CitizenText.CONFIRM = "Choose"
+CitizenText.BACK = "Back"
 
 function CitizenText.reason(code: any): string
 	if code == nil then
