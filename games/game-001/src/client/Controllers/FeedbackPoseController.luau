@@ -190,8 +190,8 @@ function Controller:stopPortrait(portrait: any)
 end
 
 function Controller:step(dt: number)
-	if type(dt) ~= "number" or dt ~= dt or dt <= 0 then
-		return
+	if type(dt) ~= "number" or dt ~= dt or dt <= 0 or next(self.playing) == nil then
+		return -- idle frames cost nothing (FORGE-05 #121 L5)
 	end
 	for portrait, entry in table.clone(self.playing) do
 		if not entry.held then
