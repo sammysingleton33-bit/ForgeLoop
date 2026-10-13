@@ -35,6 +35,11 @@
 		hud:setStackBottom(y?)              the bottom of a widget hung under the top-left stack (the
 		                                    objective tracker): phone toasts with an open drawer start below it
 		hud:notify({ title, body?, kind? })
+		hud:hasRemote(name) -> boolean      the server declared this remote (ReplicatedStorage
+		                                    .ForgeRemotes.<Area>.<Action> exists; never yields)
+		hud:setSheet(menu, on?)             this menu is a wide sheet on phones (the conversation):
+		hud:sheetOpen(metrics?) -> boolean  while one is open on a phone, toasts sit above it (one
+		                                    at a time) and the reputation strip is under it
 		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
@@ -97,6 +102,7 @@ function Def.new(env: any, registry: any)
 		_viewport = nil :: Vector2?,
 		_railItems = {} :: { any },
 		_stackBottom = nil :: number?,
+		_sheets = {} :: { [string]: boolean },
 		_mounted = false,
 		_running = false,
 		_mine = nil :: string?,
@@ -349,6 +355,35 @@ function KingdomHudController:notify(spec: { title: string, body: string?, kind:
 	end
 end
 
+-- Non-yielding: RemoteClient:invoke waits up to 10 s for a remote to replicate, which for a remote
+-- the server never declared means a 10 s wait before "Couldn't reach the server" (FORGE-05 L5).
+-- RemoteService creates every declared remote at server start, before any player can tap.
+function KingdomHudController:hasRemote(name: string): boolean
+	local area, action = string.match(name, "^([%w_]+)%.([%w_]+)$")
+	if area == nil or action == nil then
+		return false
+	end
+	local ok, found = pcall(function()
+		local root = self._env.ReplicatedStorage:FindFirstChild("ForgeRemotes") -- Core/RemoteClient ROOT
+		local folder = if root then root:FindFirstChild(area) else nil
+		return folder ~= nil and folder:FindFirstChild(action) ~= nil
+	end)
+	return ok and found == true
+end
+
+function KingdomHudController:setSheet(menu: string, on: boolean?)
+	self._sheets[menu] = if on == false then nil else true
+end
+
+function KingdomHudController:sheetOpen(metrics: any?): boolean
+	local menu = self.state.menu
+	if menu == nil or self._sheets[menu] ~= true then
+		return false
+	end
+	local m = metrics or self:metrics()
+	return m.breakpoint == "phone"
+end
+
 -- FORGE-04's NotificationController shows the toasts when it is present (notify above), so it goes
 -- where the fallback stack goes: under the pills beside an open phone drawer, else left of the rail
 -- (FORGE-05 M1 on #33: unplaced, its top-right stack covered the rail and the drawer's Close on
@@ -469,6 +504,15 @@ function KingdomHudController:setStackBottom(y: number?)
 end
 
 function KingdomHudController:_placeToasts(m: any)
+	if self:sheetOpen(m) then
+		-- A phone sheet covers the usual toast corner (FORGE-05 L4): in the band between the pills and
+		-- the sheet's right edge, above the sheet; one at a time in the fallback stack
+		-- (NotificationController's place() has no limit: it keeps its own queue of three).
+		local band = Layout.sheetToast(m)
+		self.toasts:place(UDim2.fromOffset(band.right, band.y), Vector2.new(1, 0), band.width, 1)
+		self:_placeNotifications(band.right, band.y, band.width, m.scale)
+		return
+	end
 	local drawerOpen = self.state.menu ~= nil
 	local free = Layout.freeArea(m, drawerOpen)
 	local right = if drawerOpen and m.breakpoint == "phone"

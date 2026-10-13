@@ -117,7 +117,7 @@ local CONSEQUENCES = {
 	walkout_risk = consequence("walkout_risk", "strike", "speaker", 0.25, {
 		magnitude = 1,
 		duration_s = 30,
-		notice = "Risk: {name} may walk out.",
+		notice = "{name} may walk out for {duration}.",
 	}),
 	calm = consequence("calm", "unrest_pressure", "kingdom", 1, { magnitude = -4, duration_s = 60 }),
 	unrest = consequence("unrest", "unrest_pressure", "kingdom", 1, { magnitude = 5, duration_s = 60 }),
@@ -624,7 +624,8 @@ describe("ContentQuery.eligibleScenarios", function()
 		expect(q.eligibleScenarios(farmerCtx, { id = 1, occupation = "farmer" }, 0, {})).toEqual({})
 		expect(q.decisionEffects("kind_act")).toBeNil()
 		expect(q.actionFirings("BuildingCompleted", {})).toEqual({})
-		expect(q.choicePreview("a", "b")).toBeNil()
+		expect(q.choicePreview("a", "b", {})).toBeNil()
+		expect(q.choiceRisks("kind_act", {})).toBeNil()
 	end)
 end)
 
@@ -781,20 +782,109 @@ describe("ContentQuery.fireDecision (one call per choice, SPEC §6.5 and §6.8)"
 	end)
 end)
 
-describe("ContentQuery.choicePreview (model decision 7)", function()
-	it("returns the cost and the visible risks of one answer", function()
+describe("ContentQuery.choicePreview (model decision 7, CONTRACTS G13.3 option extras)", function()
+	local NAMES = { name = "Agnes", ruler = "Ruler", kingdom = "Kingdom", occupation = "Farmer" }
+
+	it("returns exactly the G13.3 option extras: cost? and risks? with filled text and the chance", function()
 		local q = newQuery()
-		local p = q.choicePreview("a_farmer_high", "a_farmer_high_yes")
+		local p = q.choicePreview("a_farmer_high", "a_farmer_high_yes", NAMES)
 		assert(p, "the answer exists")
-		expect(p.decision).toBe("kind_act")
-		expect(p.cost).toEqual({ food = 25 })
-		expect(ids(p.risks)).toEqual({ "walkout_risk" })
-		local harsh = q.choicePreview("a_farmer_high", "a_farmer_high_no")
-		assert(harsh, "the answer exists")
-		expect(harsh.cost).toEqual({})
-		expect(harsh.risks).toEqual({})
-		expect(q.choicePreview("a_farmer_high", "nope")).toBeNil()
-		expect(q.choicePreview("nope", "a_farmer_high_yes")).toBeNil()
+		-- no decision id and no raw consequence records: only { cost, risks }
+		expect(p).toEqual({
+			cost = { food = 25 },
+			risks = { { text = "Agnes may walk out for 30 s.", chance = 0.25 } },
+		})
+		local keys = {}
+		for key in p do
+			table.insert(keys, key)
+		end
+		table.sort(keys)
+		expect(keys).toEqual({ "cost", "risks" })
+		-- a free answer without risks: both are omitted (nil), so the option is just { id, text }
+		local harsh = q.choicePreview("a_farmer_high", "a_farmer_high_no", NAMES)
+		expect(harsh).toEqual({})
+		expect(q.choicePreview("a_farmer_high", "nope", NAMES)).toBeNil()
+		expect(q.choicePreview("nope", "a_farmer_high_yes", NAMES)).toBeNil()
+	end)
+
+	it("hands out a fresh cost table and never the shared consequence records", function()
+		local q = newQuery()
+		local p = q.choicePreview("a_farmer_high", "a_farmer_high_yes", NAMES)
+		assert(p and p.cost and p.risks, "the answer exists")
+		p.cost.food = 1
+		expect(table.isfrozen(p.cost)).toBe(false)
+		expect(DECISIONS.kind_act.cost.food).toBe(25)
+		expect((p.risks[1] :: any).id).toBeNil()
+		expect((p.risks[1] :: any).kind).toBeNil()
+	end)
+
+	it("requires fillNames on every call, not only where a risk names someone (SPEC §6.7)", function()
+		local q = newQuery()
+		local message = "ContentQuery.choicePreview: fillNames is required"
+		expect(function()
+			q.choicePreview("a_farmer_high", "a_farmer_high_yes", nil :: any)
+		end).toThrow(message)
+		-- a free answer without risks, and an unknown answer, fail the same way: a forgetful server fails at once
+		expect(function()
+			q.choicePreview("a_farmer_high", "a_farmer_high_no", nil :: any)
+		end).toThrow(message)
+		expect(function()
+			q.choicePreview("nope", "nope", nil :: any)
+		end).toThrow(message)
+		expect(q.choicePreview("a_farmer_high", "a_farmer_high_no", {})).toEqual({})
+	end)
+
+	it("leaves the cost to pay to decisionEffects: always a table, {} when free (SPEC §6.5)", function()
+		local q = newQuery()
+		for _, answer in { { "a_farmer_high_yes", "kind_act" }, { "a_farmer_high_no", "harsh_act" } } do
+			local p = q.choicePreview("a_farmer_high", answer[1], NAMES)
+			local e = q.decisionEffects(answer[2])
+			assert(p and e, answer[1])
+			expect(e.cost).toEqual(p.cost or {})
+		end
+		expect((q.decisionEffects("harsh_act") :: any).cost).toEqual({})
+	end)
+end)
+
+describe("ContentQuery.choiceRisks (FORGE-00 ruling on the PR #67 review, item 2)", function()
+	local NAMES = { name = "Agnes", ruler = "Ruler", kingdom = "Kingdom", occupation = "Farmer" }
+
+	it("lists only the chance < 1 consequences, as { text, chance } with every placeholder filled", function()
+		local q = newQuery()
+		expect(q.choiceRisks("kind_act", NAMES)).toEqual({
+			{ text = "Agnes may walk out for 30 s.", chance = 0.25 },
+		})
+		-- certain consequences are never risks; a decision without risks gives an empty list
+		expect(q.choiceRisks("gain_act", NAMES)).toEqual({})
+		expect(q.choiceRisks("harsh_act", NAMES)).toEqual({})
+		expect(q.choiceRisks("nope", NAMES)).toBeNil()
+	end)
+
+	it("fills the mechanics last, so a name entry can never replace them", function()
+		local q = newQuery()
+		local risks = q.choiceRisks("kind_act", { name = "Agnes", duration = "a blink" })
+		assert(risks, "kind_act exists")
+		expect(risks[1].text).toBe("Agnes may walk out for 30 s.")
+	end)
+
+	it("errors instead of showing an unfilled placeholder or a risk without text", function()
+		local q = newQuery()
+		expect(function()
+			q.choiceRisks("kind_act", { ruler = "Ruler" })
+		end).toThrow(
+			"ContentQuery.choiceRisks: risk 'walkout_risk' of decision 'kind_act' uses {name}: pass fillNames.name"
+		)
+		expect(function()
+			q.choiceRisks("kind_act", nil :: any)
+		end).toThrow("pass fillNames.name")
+		local silent = ContentQuery.new({
+			decisions = { d = decision("d", { consequences = { "hidden" } }) },
+			consequences = { hidden = consequence("hidden", "morale", "soldiers", 0.5, { magnitude = -2 }) },
+		} :: any)
+		expect(function()
+			silent.choiceRisks("d", NAMES)
+		end).toThrow("risk 'hidden' of decision 'd' has no notice text")
+		expect(ContentQuery.choiceRisks).toBeA("function")
 	end)
 end)
 
@@ -1006,6 +1096,18 @@ describe("ContentQuery.decisionLoyalty", function()
 		expect(q.decisionLoyalty("private_act", { "kind" }, "speaker", 0)).toBe(5) -- 1*2 + 3
 	end)
 
+	it("decays a listener's net change for one decision as one value, gains only (ruling #11, SPEC §6.5)", function()
+		local q = newQuery()
+		-- kind_act (compassion +3, authority -1; speaker column +6) for a brave speaker: personality 1 x -1 = -1,
+		-- net -1 + 6 = 5 is a gain: 5 x 0.5 = 2.5 (not 6 x 0.5 - 1 = 2, as decaying each part would give)
+		expect(q.loyaltyDelta(DECISIONS.kind_act.rep, { "brave" }, "speaker", 0, 6)).toBe(5)
+		expect(q.decisionLoyalty("kind_act", { "brave" }, "speaker", 0, 0.5)).toBe(2.5)
+		-- a cruel speaker: personality -4, column +6, override -3: the net -1 is a loss and never decays
+		-- (not 6 x 0.5 - 4 - 3 = -4)
+		expect(q.decisionLoyalty("kind_act", { "cruel" }, "speaker", 0, 0.5)).toBe(-1)
+		expect(q.decisionLoyalty("kind_act", { "cruel" }, "speaker", 0, 1)).toBe(-1)
+	end)
+
 	it("applies the repeat multiplier to gains only (model decision 5)", function()
 		local q = newQuery()
 		expect(q.decisionLoyalty("kind_act", { "kind" }, "speaker", 0, 0.5)).toBe(6)
@@ -1086,6 +1188,84 @@ describe("ContentQuery.repeatMultiplier and recordFire (model decision 5)", func
 		expect(#history.k).toBe(max)
 		expect(history.k[1]).toBe(6)
 		expect(history.k[max]).toBe(max + 5)
+	end)
+
+	it("gives 0, not decay^cap, once the window holds MAX_FARM_HISTORY firings (ruling #8)", function()
+		local max = ContentQuery.MAX_FARM_HISTORY
+		local full, almost = {}, {}
+		for i = 1, max do
+			table.insert(full, i)
+			if i > 1 then
+				table.insert(almost, i)
+			end
+		end
+		expect(ContentQuery.repeatMultiplier({ k = almost }, "k", max + 1, 0.8, 600)).toBe(0.8 ^ (max - 1))
+		expect(ContentQuery.repeatMultiplier({ k = full }, "k", max + 1, 0.8, 600)).toBe(0)
+		-- only firings inside the window count towards the cap
+		expect(ContentQuery.repeatMultiplier({ k = full }, "k", max + 1, 0.8, max)).toBe(0.8 ^ (max - 1)) -- t = 1 expired
+		-- decay 1 or window 0 still means no anti-farming at all
+		expect(ContentQuery.repeatMultiplier({ k = full }, "k", max + 1, 1, 600)).toBe(1)
+		expect(ContentQuery.repeatMultiplier({ k = full }, "k", max + 1, 0.8, 0)).toBe(1)
+	end)
+
+	it("bounds 30 minutes of one firing per second by one firing / (1 - decay) (ruling #8)", function()
+		-- the review's repro: past the cap every further firing still got decay^32 (0.8^32 x 1768 firings = +7 here)
+		local q = ContentQuery.new({
+			reputation = {
+				categories = {},
+				order = CATEGORIES,
+				actions = {
+					actionRow("drill", "Drill", {
+						farm_key = "drill",
+						repeat_decay = 0.8,
+						repeat_window_s = 600,
+						rep = repVector({ courage = 5, fear = -1 }),
+						audience = "kingdom",
+						audience_loyalty = 2,
+						kingdom = { happiness = 0, stability = 0, morale = 4 },
+					}),
+				},
+				byEvent = { Drill = { 1 } },
+			},
+			traits = TRAITS,
+		} :: any)
+		local rulers, kingdom = { r = {} }, {}
+		local listeners = { { citizen = 1, traits = {} } }
+		local courage, fear, morale, loyalty = 0, 0, 0, 0
+		for now = 0, 30 * 60 - 1 do
+			local f = q.fireAction("Drill", {}, rulers, { "r" }, kingdom, now, listeners :: any)[1]
+			courage += f.rulers[1].rep.courage
+			fear += f.rulers[1].rep.fear
+			morale += f.kingdom.morale
+			loyalty += f.listeners[1].loyalty
+		end
+		local bound = 1 / (1 - 0.8)
+		expect(courage <= 5 * bound + 1e-9).toBe(true)
+		expect(morale <= 4 * bound + 1e-9).toBe(true)
+		expect(loyalty <= 2 * bound + 1e-9).toBe(true)
+		expect(courage).toBeGreaterThan(5 * (1 - 0.8 ^ 32) * bound - 1e-9) -- the first 32 firings still count
+		expect(fear).toBe(-1 * 30 * 60) -- losses never decay
+		expect(#kingdom.drill).toBe(ContentQuery.MAX_FARM_HISTORY)
+	end)
+
+	it("needs a full window for that bound: spaced firings get decay^(cap - 1) each (ruling #8 wording)", function()
+		-- the review's repro: one firing every 19 s keeps 31 firings in the 600 s window, so the cap never bites
+		local max = ContentQuery.MAX_FARM_HISTORY
+		local history = {}
+		local total, n = 0, 0
+		for now = 0, 30 * 60 - 1, 19 do
+			local m = ContentQuery.repeatMultiplier(history, "drill", now, 0.8, 600)
+			n += 1
+			if n > max then
+				expect(m).toBe(0.8 ^ (max - 1)) -- small, never 0
+			end
+			total += 5 * m
+			ContentQuery.recordFire(history, "drill", now)
+		end
+		expect(n).toBe(95)
+		expect(total).toBeGreaterThan(5 / (1 - 0.8)) -- past one firing / (1 - decay): the bound needs a full window
+		expect(total).toBeLessThan(5 / (1 - 0.8) + 5 * (n - max) * 0.8 ^ (max - 1) + 1e-9)
+		expect(0.8 ^ (max - 1)).toBeLessThan(0.001) -- negligible for decay <= 0.8
 	end)
 
 	it("scaleGain scales only positive deltas", function()
@@ -1292,35 +1472,112 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 
 	it("decays reputation per ruler and kingdom gains per kingdom, records both, never decays losses", function()
 		local q = newQuery()
-		local rulerA, rulerB, kingdom = {}, {}, {}
-		local first = q.fireAction("Festival", {}, rulerA, kingdom, 0)
+		local rulers = { A = {}, B = {} }
+		local kingdom = {}
+		local first = q.fireAction("Festival", {}, rulers, { "A" }, kingdom, 0)
 		expect(#first).toBe(1)
 		local f = first[1]
 		expect(f.id).toBe("festival")
 		expect(f.event).toBe("Festival")
-		expect(f.multiplier).toBe(1)
 		expect(f.kingdom_multiplier).toBe(1)
-		expect(f.rep).toEqual(repVector({ compassion = 10, fear = -2 }))
+		expect(f.rulers).toEqual({
+			{ ruler = "A", multiplier = 1, rep = repVector({ compassion = 10, fear = -2 }) },
+		})
 		expect(f.rep_raw).toEqual(repVector({ compassion = 10, fear = -2 }))
 		expect(f.kingdom).toEqual({ happiness = 4, stability = -1, morale = 0 })
-		expect(rulerA).toEqual({ festival = { 0 } })
+		expect(rulers.A).toEqual({ festival = { 0 } })
+		expect(rulers.B).toEqual({})
 		expect(kingdom).toEqual({ festival = { 0 } })
 		expect(f.rows[1]).toBe(ACTIONS[6]) -- the shared, frozen content rows
 		expect(table.isfrozen(f.rows[1])).toBe(true)
-		-- a co-ruler: full reputation for them, but the kingdom heard it before
-		local g = q.fireAction("Festival", {}, rulerB, kingdom, 10)[1]
-		expect(g.multiplier).toBe(1)
+		-- a co-ruler credited alone: full reputation for them, but the kingdom heard it before
+		local g = q.fireAction("Festival", {}, rulers, { "B" }, kingdom, 10)[1]
+		expect(g.rulers[1].ruler).toBe("B")
+		expect(g.rulers[1].multiplier).toBe(1)
 		expect(g.kingdom_multiplier).toBe(0.5)
-		expect(g.rep.compassion).toBe(10)
+		expect(g.rulers[1].rep.compassion).toBe(10)
 		expect(g.kingdom).toEqual({ happiness = 2, stability = -1, morale = 0 })
-		local h = q.fireAction("Festival", {}, rulerA, kingdom, 20)[1]
-		expect(h.multiplier).toBe(0.5)
+		local h = q.fireAction("Festival", {}, rulers, { "A" }, kingdom, 20)[1]
+		expect(h.rulers[1].multiplier).toBe(0.5)
 		expect(h.kingdom_multiplier).toBe(0.25)
-		expect(h.rep).toEqual(repVector({ compassion = 5, fear = -2 })) -- the fear loss stays whole
+		expect(h.rulers[1].rep).toEqual(repVector({ compassion = 5, fear = -2 })) -- the fear loss stays whole
 		expect(h.rep_raw).toEqual(repVector({ compassion = 10, fear = -2 }))
 		expect(kingdom).toEqual({ festival = { 0, 10, 20 } })
 		-- the raw sums of the content are untouched
 		expect(q.actionFirings("Festival", {})[1].rep.compassion).toBe(10)
+	end)
+
+	it("credits every given co-ruler with reputation; kingdom and listeners apply once (ruling #3)", function()
+		-- a kingdom-wide event (no attributed actor) credits every current co-ruler
+		local q = newQuery()
+		local rulers = { [101] = {}, [202] = {} }
+		local kingdom = {}
+		local listeners = { kindListener("crowd") }
+		local both = q.fireAction("Festival", {}, rulers, { 101, 202 }, kingdom, 0, listeners :: any)
+		expect(#both).toBe(1)
+		local f = both[1]
+		expect(f.rulers).toEqual({
+			{ ruler = 101, multiplier = 1, rep = repVector({ compassion = 10, fear = -2 }) },
+			{ ruler = 202, multiplier = 1, rep = repVector({ compassion = 10, fear = -2 }) },
+		})
+		-- once per firing, however many rulers are credited: not doubled
+		expect(f.kingdom).toEqual({ happiness = 4, stability = -1, morale = 0 })
+		expect(f.listeners).toEqual({ { citizen = "crowd", relation = "kingdom", loyalty = 5 } })
+		expect(rulers[101]).toEqual({ festival = { 0 } })
+		expect(rulers[202]).toEqual({ festival = { 0 } })
+		expect(kingdom).toEqual({ festival = { 0 } }) -- one kingdom firing, not two
+		-- per-ruler decay is independent: only 101 is credited the second time (an attributed act)
+		local solo = q.fireAction("Festival", {}, rulers, { 101 }, kingdom, 10)[1]
+		expect(#solo.rulers).toBe(1)
+		expect(solo.rulers[1].multiplier).toBe(0.5)
+		expect(rulers[202]).toEqual({ festival = { 0 } })
+		local again = q.fireAction("Festival", {}, rulers, { 101, 202 }, kingdom, 20, listeners :: any)[1]
+		expect(again.rulers[1]).toEqual({
+			ruler = 101,
+			multiplier = 0.25,
+			rep = repVector({ compassion = 2.5, fear = -2 }),
+		})
+		expect(again.rulers[2]).toEqual({
+			ruler = 202,
+			multiplier = 0.5,
+			rep = repVector({ compassion = 5, fear = -2 }),
+		})
+		expect(again.kingdom_multiplier).toBe(0.25)
+		expect(again.kingdom).toEqual({ happiness = 1, stability = -1, morale = 0 })
+		expect(kingdom).toEqual({ festival = { 0, 10, 20 } })
+	end)
+
+	it("applies the kingdom effects with no credited ruler, and records each history table once", function()
+		local q = newQuery()
+		local rulers, kingdom = { A = {} }, {}
+		local f = q.fireAction("Festival", {}, rulers, {}, kingdom, 0)[1]
+		expect(f.rulers).toEqual({})
+		expect(f.kingdom).toEqual({ happiness = 4, stability = -1, morale = 0 })
+		expect(kingdom).toEqual({ festival = { 0 } })
+		expect(rulers.A).toEqual({})
+		-- one table passed as a ruler's and as the kingdom's history is recorded once (as fireDecision does)
+		local shared = {}
+		q.fireAction("Festival", {}, { A = shared }, { "A" }, shared, 0)
+		expect(shared).toEqual({ festival = { 0 } })
+	end)
+
+	it("refuses a credited ruler without a history or listed twice, and records nothing", function()
+		local q = newQuery()
+		local rulers, kingdom = { A = {} }, {}
+		expect(function()
+			q.fireAction("Festival", {}, rulers, { "A", "B" }, kingdom, 0)
+		end).toThrow("ContentQuery.fireAction: credited ruler #2 'B' has no FarmHistory in rulerHistories")
+		expect(function()
+			q.fireAction("Festival", {}, rulers, { "A", "A" }, kingdom, 0)
+		end).toThrow("ContentQuery.fireAction: credited ruler #2 'A' is listed twice")
+		expect(function()
+			q.fireAction("Festival", {}, nil :: any, { "A" }, kingdom, 0)
+		end).toThrow("ContentQuery.fireAction: rulerHistories must be a table")
+		expect(function()
+			q.fireAction("Festival", {}, rulers, nil :: any, kingdom, 0)
+		end).toThrow("ContentQuery.fireAction: creditedRulers must be a list of ruler keys, got nil")
+		expect(rulers.A).toEqual({})
+		expect(kingdom).toEqual({})
 	end)
 
 	it("gives every listener who hears a row its summed, decayed and clamped loyalty", function()
@@ -1331,7 +1588,7 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 			kindListener("crowd"),
 			{ citizen = "plain", occupation = "farmer", traits = { "plain" } },
 		}
-		local f = q.fireAction("Festival", {}, ruler, kingdom, 0, listeners :: any)[1]
+		local f = q.fireAction("Festival", {}, { r = ruler }, { "r" }, kingdom, 0, listeners :: any)[1]
 		-- crowd: kingdom row 2*5*0.2 + 10 = 12 -> 5; speaker: 12 + (2*5 + 4... see below) clamped to 25
 		-- speaker row for kind: compassion 2*5 + fear -2*-2 = 14, + 10 = 24; with the kingdom row 36 -> 25
 		expect(f.listeners).toEqual({
@@ -1339,7 +1596,7 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 			{ citizen = "crowd", relation = "kingdom", loyalty = 5 },
 			{ citizen = "plain", relation = "kingdom", loyalty = 5 }, -- the column alone: 10 -> 5
 		})
-		local second = q.fireAction("Festival", {}, ruler, kingdom, 10, listeners :: any)[1]
+		local second = q.fireAction("Festival", {}, { r = ruler }, { "r" }, kingdom, 10, listeners :: any)[1]
 		-- kingdom multiplier 0.5: speaker 12 x 0.5 + 24 x 0.5 = 18; crowd 6 -> 5
 		expect(second.listeners[1].loyalty).toBe(18)
 		expect(second.listeners[2].loyalty).toBe(5)
@@ -1358,7 +1615,15 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 			{ citizen = 3, occupation = "soldier", traits = { "plain" } },
 		}
 		local starving = { ["kingdom.fed_ratio"] = 0.5 }
-		local firings = q.fireAction("BuildingCompleted:barracks", starving, ruler, kingdom, 0, listeners :: any)
+		local firings = q.fireAction(
+			"BuildingCompleted:barracks",
+			starving,
+			{ r = ruler },
+			{ "r" },
+			kingdom,
+			0,
+			listeners :: any
+		)
 		expect(#firings).toBe(2)
 		local barracks = firings[1]
 		expect(barracks.id).toBe("fund_barracks")
@@ -1367,14 +1632,22 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 		expect(barracks.listeners[1].citizen).toBe(1)
 		expect(barracks.listeners[1].loyalty).toBeNear(-3.4)
 		expect(barracks.listeners[2]).toEqual({ citizen = 3, relation = "kingdom", loyalty = 3 })
-		local again = q.fireAction("BuildingCompleted:barracks", starving, ruler, kingdom, 10, listeners :: any)
+		local again = q.fireAction(
+			"BuildingCompleted:barracks",
+			starving,
+			{ r = ruler },
+			{ "r" },
+			kingdom,
+			10,
+			listeners :: any
+		)
 		expect(again[1].kingdom_multiplier).toBe(0.5)
 		expect(again[1].listeners[1].loyalty).toBeNear(-3.4) -- a loss is never decayed
 		expect(again[1].listeners[2].loyalty).toBe(1.5)
 		expect(again[1].kingdom).toEqual({ happiness = -2, stability = 0, morale = 1.5 })
 		-- no matching rows: nothing fires and nothing is recorded
 		local before = table.clone(ruler)
-		expect(q.fireAction("Nothing", {}, ruler, kingdom, 30, listeners :: any)).toEqual({})
+		expect(q.fireAction("Nothing", {}, { r = ruler }, { "r" }, kingdom, 30, listeners :: any)).toEqual({})
 		expect(ruler).toEqual(before)
 	end)
 
@@ -1386,22 +1659,24 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 		local hungry = {
 			{ citizen = "farmer", occupation = "farmer", traits = { "plain" }, chemistry = 0 },
 		}
-		local first = q.fireAction("BuildingUpgraded:keep", starving, ruler, kingdom, 0, hungry :: any)[1]
+		local rulers = { r = ruler }
+		local first = q.fireAction("BuildingUpgraded:keep", starving, rulers, { "r" }, kingdom, 0, hungry :: any)[1]
 		expect(first.id).toBe("keep_up")
-		expect(first.rep.authority).toBe(1) -- 2 - 1
+		expect(first.rulers[1].rep.authority).toBe(1) -- 2 - 1
 		expect(first.kingdom.happiness).toBe(2) -- 3 - 1
 		expect(first.listeners[1].loyalty).toBe(-1) -- 1 - 2
-		local second = q.fireAction("BuildingUpgraded:keep", starving, ruler, kingdom, 60, hungry :: any)[1]
-		expect(second.multiplier).toBe(0.5)
+		local second = q.fireAction("BuildingUpgraded:keep", starving, rulers, { "r" }, kingdom, 60, hungry :: any)[1]
+		expect(second.rulers[1].multiplier).toBe(0.5)
 		expect(second.kingdom_multiplier).toBe(0.5)
-		expect(second.rep.authority).toBe(0) -- 2 x 0.5 - 1, not (2 - 1) x 0.5
+		expect(second.rulers[1].rep.authority).toBe(0) -- 2 x 0.5 - 1, not (2 - 1) x 0.5
 		expect(second.kingdom.happiness).toBe(0.5) -- 3 x 0.5 - 1, not (3 - 1) x 0.5
 		expect(second.listeners[1].loyalty).toBe(-1.5) -- the listener path uses the same rule
 		-- the raw sums stay raw
 		expect(second.rep_raw.authority).toBe(1)
 		expect(second.kingdom_raw).toEqual({ happiness = 2, stability = 0, morale = 0 })
 		-- a well-fed kingdom: only the gain row fires, and it decays whole
-		local fed = q.fireAction("BuildingUpgraded:keep", { ["kingdom.fed_ratio"] = 0.9 }, ruler, kingdom, 120)[1]
+		local fed =
+			q.fireAction("BuildingUpgraded:keep", { ["kingdom.fed_ratio"] = 0.9 }, rulers, { "r" }, kingdom, 120)[1]
 		expect(fed.kingdom_multiplier).toBe(0.25)
 		expect(fed.kingdom.happiness).toBe(0.75)
 	end)
@@ -1409,21 +1684,21 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 	it("errors clearly on a bad event, history, now or listener", function()
 		local q = newQuery()
 		expect(function()
-			q.fireAction(nil :: any, {}, {}, {}, 0)
+			q.fireAction(nil :: any, {}, { r = {} }, { "r" }, {}, 0)
 		end).toThrow("event must be a string")
 		expect(function()
-			q.fireAction("Festival", {}, nil :: any, {}, 0)
-		end).toThrow("rulerHistory must be a FarmHistory table")
+			q.fireAction("Festival", {}, { r = {} }, { "r" }, nil :: any, 0)
+		end).toThrow("kingdomHistory must be a FarmHistory table")
 		expect(function()
-			q.fireAction("Festival", {}, {}, {}, nil :: any)
+			q.fireAction("Festival", {}, { r = {} }, { "r" }, {}, nil :: any)
 		end).toThrow("now must be a finite number")
 		expect(function()
-			q.fireAction("Festival", {}, {}, {}, 0, { { citizen = 1 } } :: any)
+			q.fireAction("Festival", {}, { r = {} }, { "r" }, {}, 0, { { citizen = 1 } } :: any)
 		end).toThrow("listener #1 must be a table with a traits list")
 		-- an unknown trait is found before anything is recorded (two firings would otherwise record one)
 		local ruler, kingdom = {}, {}
 		expect(function()
-			q.fireAction("BuildingCompleted:barracks", {}, ruler, kingdom, 0, {
+			q.fireAction("BuildingCompleted:barracks", {}, { r = ruler }, { "r" }, kingdom, 0, {
 				{ citizen = 1, occupation = "farmer", traits = { "kind" } },
 				{ citizen = 2, occupation = "farmer", traits = { "dragonborn" } },
 			})
@@ -1431,6 +1706,50 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 		expect(ruler).toEqual({})
 		expect(kingdom).toEqual({})
 		expect(ContentQuery.fireAction).toBeA("function")
+	end)
+end)
+
+describe("ContentQuery listeners are each citizen once (FORGE-00 ruling on the PR #67 review, item 9)", function()
+	it("fireDecision refuses a citizen given under two relations, and records nothing", function()
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, {
+				{ citizen = 7, relation = "speaker", traits = { "kind" } },
+				{ citizen = 8, relation = "friends", traits = {} },
+				{ citizen = 7, relation = "family", traits = { "kind" } },
+			})
+		end).toThrow(
+			"ContentQuery.fireDecision: listener #3 repeats citizen 7 (listener #1): pass each citizen once, "
+				.. "under its closest relation (speaker > family > friends > rivals > kingdom)"
+		)
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, { { relation = "speaker", traits = {} } } :: any)
+		end).toThrow("ContentQuery.fireDecision: listener #1 has no citizen key")
+		expect(ruler).toEqual({})
+		expect(kingdom).toEqual({})
+		-- 7 and "7" are different citizens, as in the shown-history
+		local e = q.fireDecision("kind_act", ruler, kingdom, 0, {
+			{ citizen = 7, relation = "speaker", traits = {} },
+			{ citizen = "7", relation = "family", traits = {} },
+		})
+		assert(e, "kind_act exists")
+		expect(#e.listeners).toBe(2)
+	end)
+
+	it("fireAction refuses a citizen given twice, and records nothing", function()
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		expect(function()
+			q.fireAction("Festival", {}, { r = ruler }, { "r" }, kingdom, 0, {
+				{ citizen = "agnes", occupation = "farmer", speaker = true, traits = {} },
+				{ citizen = "agnes", occupation = "farmer", traits = {} },
+			})
+		end).toThrow(
+			"ContentQuery.fireAction: listener #2 repeats citizen agnes (listener #1): pass each citizen once"
+		)
+		expect(ruler).toEqual({})
+		expect(kingdom).toEqual({})
 	end)
 end)
 
