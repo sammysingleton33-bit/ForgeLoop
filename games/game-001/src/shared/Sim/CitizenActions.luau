@@ -3,7 +3,8 @@
 	Sim/CitizenActions — executes a citizen's current activity for one tick.
 
 	Each activity is a tiny state machine over `citizen.phase`:
-		Gather  Go (to node) -> Work (fill carry at the node's rate) -> Return (to nearest drop-off) -> done
+		Gather  Go (to node) -> Work (fill carry at the node's rate, faster by the kingdom's best lumber camp
+		        or quarry level: kingdom.gatherBonus) -> Return (to nearest drop-off) -> done
 		Farm    Go (to farm) -> Work (harvest every harvestTime: +yield food) -> Return -> done
 		Build   Go (to site) -> Work (add work; the site completes when work reaches the level's cost) -> done
 		Eat     Go (to keep) -> eat a meal; with tuning.mealsChargeTreasury the meal is paid from the
@@ -73,7 +74,7 @@ function CitizenActions.skill(sim: any, c: any, kind: string): number
 	if c.hunger >= 1 then
 		multiplier *= 0.5 -- starving citizens work at half speed
 	end
-	return multiplier
+	return multiplier * sim:productivityOf(c) -- decision consequences (G13.3), 1 by default
 end
 
 local function finish(c: any)
@@ -131,6 +132,13 @@ local function gather(sim: any, c: any, dt: number)
 		end
 		return
 	end
+	if c.carrying and c.carrying.amount > 0 and c.carrying.resource ~= node.resource then
+		-- a load from before (a walk-out stopped the delivery): delivered first, never swapped (#107 M3)
+		c.phase = "Return"
+		sim:releaseClaim(c)
+		returnCargo(sim, c, dt)
+		return
+	end
 	if c.phase == "Go" then
 		if CitizenActions.moveTo(sim, c, node.x, node.z, node.footprint + 1, dt) then
 			c.phase = "Work"
@@ -144,7 +152,9 @@ local function gather(sim: any, c: any, dt: number)
 		c.carrying = { resource = node.resource, amount = 0 }
 	end
 	local cargo = c.carrying :: { resource: string, amount: number }
-	c.workTimer += dt * (tuning.gatherRate[node.resource] or 0.5) * CitizenActions.skill(sim, c, node.resource)
+	local kingdom = sim.kingdoms[c.kingdomId]
+	local bonus = 1 + (kingdom and kingdom.gatherBonus and kingdom.gatherBonus[node.resource] or 0)
+	c.workTimer += dt * (tuning.gatherRate[node.resource] or 0.5) * CitizenActions.skill(sim, c, node.resource) * bonus
 	while c.workTimer >= 1 and cargo.amount < carry and node.amount > 0 do
 		c.workTimer -= 1
 		cargo.amount += 1
@@ -163,6 +173,12 @@ end
 
 local function farm(sim: any, c: any, dt: number)
 	if c.phase == "Return" then
+		returnCargo(sim, c, dt)
+		return
+	end
+	if c.carrying and c.carrying.amount > 0 and c.carrying.resource ~= "food" then
+		-- a load from before (a walk-out stopped the delivery): delivered first, never counted as food (#107 M3)
+		c.phase = "Return"
 		returnCargo(sim, c, dt)
 		return
 	end
@@ -187,7 +203,9 @@ local function farm(sim: any, c: any, dt: number)
 	c.workTimer += dt * CitizenActions.skill(sim, c, "farm")
 	if c.workTimer >= tuning.harvestTime then
 		c.workTimer -= tuning.harvestTime
-		local cargo = c.carrying or { resource = "food", amount = 0 }
+		local cargo = if c.carrying and c.carrying.resource == "food"
+			then c.carrying
+			else { resource = "food", amount = 0 }
 		cargo.amount = math.min(tuning.carry, cargo.amount + yield)
 		c.carrying = cargo
 		if cargo.amount + yield > tuning.carry then

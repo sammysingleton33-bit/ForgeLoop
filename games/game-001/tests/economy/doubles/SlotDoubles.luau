@@ -12,16 +12,15 @@
 		world.server:get("SlotService"):occupy("m1", buildingId)
 
 	Plots of crimson (the local player's kingdom): m1 M, s1 S, l1 L, m2 M (built on: a house).
-	The double's own fit check, written apart from the client's UI/SlotFit: the biggest footprint
-	over the type's levels must fit the slot's width and depth from FORGE-02's world Layout
-	(`slotSizes`), so a client that offers a misfit gets "zone" back. Costs from config Costs; refusals use the
+	The fit check is FORGE-01's shared Build/Fit (CONTRACTS G13.5: the server's Build.PlaceSlot calls
+	it too), and refusals use the server's codes (#89: unknown_slot, slot_occupied, does_not_fit), so a
+	client that offers a misfit gets "does_not_fit" back. Costs from config Costs; refusals use the
 	reason vocabulary of production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md.
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
-local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
-local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local SlotDoubles = {}
 
@@ -41,19 +40,9 @@ SlotDoubles.REMOTES = {
 	},
 }
 
--- Whether a type fits a slot size, as the double's server sees it.
+-- Whether a type fits a slot size, as the server sees it: the shared rule (G13.5), as PlaceSlot calls it.
 function SlotDoubles.fits(size: string, buildingType: string): boolean
-	local slot = WorldLayout.slotSizes[size]
-	if slot == nil then
-		return false
-	end
-	for level = 1, math.max(1, Costs.maxLevel(buildingType)) do
-		local ok, footprint = pcall(Kit.footprint, buildingType, level)
-		if not ok or typeof(footprint) ~= "Vector2" or footprint.X > slot.X or footprint.Y > slot.Y then
-			return false
-		end
-	end
-	return true
+	return Fit.fits(buildingType, size)
 end
 
 function SlotDoubles.service(world)
@@ -110,18 +99,18 @@ function SlotDoubles.service(world)
 					local kingdom = kingdoms:getKingdomOf(player)
 					local slot = self.slots[slotId]
 					if kingdom == nil then
-						return nil, "no_kingdom"
+						return nil, "not_in_match"
 					elseif slot == nil or slot.kingdom ~= kingdom then
-						return nil, "territory"
+						return nil, "unknown_slot"
 					elseif slot.occupiedBy then
-						return nil, "overlap"
+						return nil, "slot_occupied"
 					end
 					if not SlotDoubles.fits(slot.size, buildingType) then
-						return nil, "zone"
+						return nil, "does_not_fit"
 					end
 					local entry = Costs.building(buildingType, 1)
 					if not treasury:spend(kingdom, entry.cost, `slot:{slotId}:{buildingType}`, "construction") then
-						return nil, "cost"
+						return nil, "cannot_afford"
 					end
 					local id = build:add(kingdom, buildingType, 1, "planned", slot.center)
 					build.buildings[id].placedBy = player.UserId

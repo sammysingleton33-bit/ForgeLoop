@@ -293,8 +293,8 @@ function RulerAI.think(sim: any, kingdom: any): string?
 		end
 	end
 
-	-- housing
-	if pop >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "house") then
+	-- housing: beds are for citizens only, soldiers sleep in barracks bunks (D-041)
+	if #kingdom.citizenIds >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "house") then
 		local issued = place(sim, kingdom, "house")
 		if issued then
 			return issued
@@ -346,7 +346,7 @@ function RulerAI.think(sim: any, kingdom: any): string?
 				return issued
 			end
 		else
-			-- only what Recruit accepts: a finished barracks, room for the batch (queued units
+			-- only what Recruit accepts: a finished barracks, bunks for the batch (queued units
 			-- count, and count toward the army) and its full price
 			local training = queuedUnits(sim, kingdom)
 			local target = math.max(2, math.floor(pop * (0.15 + 0.2 * aggression)))
@@ -361,7 +361,6 @@ function RulerAI.think(sim: any, kingdom: any): string?
 				count(sim, kingdom, "barracks", false) > 0
 				and army + training + 2 <= Military.recruitCap(sim, kingdom)
 				and army + training < target
-				and pop + training + 2 <= kingdom.popCap
 				and sim:canAfford(kingdom.id, cost)
 				and Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2)
 			then

@@ -10,6 +10,8 @@
 	- Roofs take a RoofSpec; the ridge runs along the spec's local X (spec.cf, default world X).
 	- Kingdom colour: a piece that takes `color` + `tint` builds shade(color, tint) and stores KitTint, so
 	  Kit.setKingdomColor recolours it in place. Pass the raw kingdom colour, never a pre-shaded one.
+	- Kingdom emblems (D-039): every banner, flag, pennant, shield and aerial plaque carries one, built by
+	  `emblem` on its field part (see "kingdom emblems" below); Kit.setKingdomColor re-forms them.
 	- Jitter is deterministic (no Random): the same arguments always build the same model.
 ]]
 
@@ -204,6 +206,264 @@ local function beamBetween(
 	local mid = (a + b) / 2
 	local len = (b - a).Magnitude
 	return block(ctx, name, Vector3.new(thick, thick, len), CFrame.lookAt(mid, b), color, material or M.Wood)
+end
+
+-- WedgePart whose right triangle lies in the XY plane of cf: right angle at a, legs to b and c (Vector2 in
+-- cf's X/Y), extruded `thick` along cf's Z and centred at depth z (negative = out of the face, toward -Z).
+local function triangle(
+	ctx: Ctx,
+	name: string,
+	cf: CFrame,
+	a: Vector2,
+	b: Vector2,
+	c: Vector2,
+	z: number,
+	thick: number,
+	color: Color3,
+	material: Enum.Material?,
+	tint: number?
+)
+	local ab, ac = b - a, c - a
+	local ly, lz = ab.Magnitude, ac.Magnitude
+	-- a WedgePart's right angle sits at local (-Y, +Z): its +Y leg runs to b, its -Z leg to c
+	local yAxis = Vector3.new(ab.X / ly, ab.Y / ly, 0)
+	local zAxis = Vector3.new(-ac.X / lz, -ac.Y / lz, 0)
+	local mid = (b + c) / 2 -- the box centre is the hypotenuse midpoint
+	local p = Instance.new("WedgePart")
+	p.Size = Vector3.new(thick, ly, lz)
+	p.CFrame = cf * CFrame.fromMatrix(Vector3.new(mid.X, mid.Y, z), yAxis:Cross(zAxis), yAxis, zAxis)
+	return finish(p, ctx, name, color, material or M.SmoothPlastic, tint)
+end
+
+-- ------------------------------------------------------------------ kingdom emblems (D-033, D-039)
+
+-- One shared builder for every emblem in the world: banners, flags, pennants, shields, the keep's aerial
+-- plaques, prop banners and slot signs. The kind follows the colour (Parts.emblemKind, the same hue map as
+-- the tower caps): crimson crown, azure star, emerald oak leaf, gold sun; neutral none. Large, simple
+-- silhouettes from a few primitive parts (D-026), ivory on the kingdom field, except the sun: on the light
+-- gold field an ivory sun has no contrast, so it is deep gold (as in the Blender bible). Every emblem part
+-- differs from its field by ΔL* ≥ 25 (KitEmblems.spec).
+--   crown 3: two tall wedges (outer edges upright, slopes meeting at the base centre) + a diamond whose lower
+--            half fills the band; three points, notches at 2/3 of the height
+--   star  5: five 36-54-90 wedges in a pinwheel; their union is exactly the regular five-pointed star
+--   oak   5: three round lobes + a diamond base (the leaf tapers to the stem) + a darker midrib and stem,
+--            the leaf in bend (tilted 35°) so it never reads as a tree
+--   sun   4: compact: two squares (8 pointed rays) + a field-colour ring + the disc
+--         9: full (aerial plaques): the disc + 8 separate wedge rays
+local EMBLEM_IVORY = Color3.fromRGB(240, 232, 212)
+local SUN_TINT = 0.42 -- the sun is shade(kingdom colour, 0.42): deep gold on the gold field
+local RIB_TINT = 0.6 -- the oak's midrib and stem
+local EMBLEM_GAP = 0.03 -- the first part's back face sits this far out of the field face (never coplanar)
+local EMBLEM_T = 0.08 -- part thickness
+-- every further part sits this much further out than the one before it (build order = stacking order), so no
+-- two emblem faces are coplanar where they overlap: no z-fighting in Studio, no shading seams in renders
+local EMBLEM_STEP = 0.015
+local SQRT2 = math.sqrt(2)
+
+-- Emblems are decoration: never collide, touch, catch a raycast or cast a shadow on their own field.
+local function emblemPart(p: BasePart, kind: string, slot: number, accent: boolean?): BasePart
+	p.CanCollide = false
+	p.CanTouch = false
+	p.CanQuery = false
+	p.CastShadow = false
+	p:SetAttribute("KitEmblem", kind)
+	p:SetAttribute("KitEmblemSlot", slot)
+	if accent then
+		p:SetAttribute("KitEmblemAccent", true) -- detail in a field-derived shade (oak midrib, sun ring)
+	end
+	return p
+end
+
+-- Builds one emblem of `kind` centred on cf (local -Z out of the field face, +Y up the emblem), filling a
+-- `size` box. fieldTint: the field's KitTint (the compact sun's ring repeats the field colour).
+local function buildEmblem(
+	ctx: Ctx,
+	cf: CFrame,
+	size: number,
+	kind: string,
+	color: Color3,
+	fieldTint: number,
+	detail: string,
+	slot: number
+): { BasePart }
+	local out = {}
+	local s = size
+	local stack = 0
+	local function z(): number -- depth of the next part: in front of every part built before it
+		stack += 1
+		return -(EMBLEM_GAP + EMBLEM_T / 2 + (stack - 1) * EMBLEM_STEP)
+	end
+	local function add(p: BasePart, accent: boolean?)
+		table.insert(out, emblemPart(p, kind, slot, accent))
+	end
+	local function v(x: number, y: number): Vector2
+		return Vector2.new(x * s, y * s)
+	end
+	if kind == "crown" then
+		local y0, y1, y2 = -0.36, 0.26, 0.36
+		for _, sx in { -1, 1 } do
+			add(
+				triangle(
+					ctx,
+					"EmblemPoint",
+					cf,
+					v(sx * 0.5, y0),
+					v(sx * 0.5, y1),
+					v(0, y0),
+					z(),
+					EMBLEM_T,
+					EMBLEM_IVORY
+				)
+			)
+		end
+		local hd = (y2 - y0) / 2
+		add(
+			block(
+				ctx,
+				"Emblem",
+				Vector3.new(hd * s * SQRT2, hd * s * SQRT2, EMBLEM_T),
+				cf * CFrame.new(0, (y0 + hd) * s, z()) * CFrame.Angles(0, 0, PI / 4),
+				EMBLEM_IVORY
+			)
+		)
+	elseif kind == "star" then
+		local R, r = 0.5, 0.5 * 0.381966
+		local dy = -(R - R * math.cos(rad(36))) / 2 -- centre the star's box
+		local function at(deg: number, radius: number): Vector2
+			return Vector2.new(math.cos(rad(deg)) * radius, math.sin(rad(deg)) * radius + dy) * s
+		end
+		for k = 0, 4 do
+			local t = 90 + 72 * k
+			local tip, far = at(t, R), at(t + 144, R)
+			-- right angle at the midpoint of the tip's star line; the far leg reaches the opposite inner vertex
+			add(triangle(ctx, "EmblemPoint", cf, (tip + far) / 2, tip, at(t - 108, r), z(), EMBLEM_T, EMBLEM_IVORY))
+		end
+	elseif kind == "oak" then
+		-- the leaf lies in bend (seen from the front: stem lower left, tip upper right; local +X shows on the
+		-- viewer's left, so the turn is +35°). Upright, the aerial view's foreshortening made it a lollipop tree.
+		local leaf = cf * CFrame.Angles(0, 0, rad(35))
+		local oy = 0.025
+		add(disc(ctx, "Emblem", leaf * CFrame.new(0, (0.26 + oy) * s, z()), 0.3 * s, EMBLEM_T, EMBLEM_IVORY))
+		for _, sx in { -1, 1 } do
+			add(
+				disc(
+					ctx,
+					"EmblemLobe",
+					leaf * CFrame.new(sx * 0.13 * s, (0.06 + oy) * s, z()),
+					0.28 * s,
+					EMBLEM_T,
+					EMBLEM_IVORY
+				)
+			)
+		end
+		local d = 0.22 * s
+		add(
+			block(
+				ctx,
+				"EmblemBase",
+				Vector3.new(d, d, EMBLEM_T),
+				leaf * CFrame.new(0, (-0.12 + oy) * s, z()) * CFrame.Angles(0, 0, PI / 4),
+				EMBLEM_IVORY
+			)
+		)
+		add(
+			block(
+				ctx,
+				"EmblemRib",
+				Vector3.new(math.max(0.055 * s, 0.12), 0.74 * s, EMBLEM_T),
+				leaf * CFrame.new(0, (-0.09 + oy) * s, z()),
+				shade(color, RIB_TINT),
+				M.SmoothPlastic,
+				RIB_TINT
+			),
+			true
+		)
+	elseif kind == "sun" then
+		local dark = shade(color, SUN_TINT)
+		if detail == "full" then
+			add(disc(ctx, "Emblem", cf * CFrame.new(0, 0, z()), 0.5 * s, EMBLEM_T, dark, M.SmoothPlastic, SUN_TINT))
+			local rin, R, b = 0.31, 0.5, 0.15
+			for i = 0, 7 do
+				local a = rad(90 + 45 * i)
+				local u, w = Vector2.new(math.cos(a), math.sin(a)), Vector2.new(math.sin(a), -math.cos(a))
+				local base = u * rin - w * (b / 2)
+				add(
+					triangle(
+						ctx,
+						"EmblemRay",
+						cf,
+						base * s,
+						(base + u * (R - rin)) * s,
+						(base + w * b) * s,
+						z(),
+						EMBLEM_T,
+						dark,
+						M.SmoothPlastic,
+						SUN_TINT
+					)
+				)
+			end
+		else
+			local Rt = 0.49
+			for _, a in { 0, 45 } do
+				add(
+					block(
+						ctx,
+						"EmblemRay",
+						Vector3.new(Rt * SQRT2 * s, Rt * SQRT2 * s, EMBLEM_T),
+						cf * CFrame.new(0, 0, z()) * CFrame.Angles(0, 0, rad(a)),
+						dark,
+						M.SmoothPlastic,
+						SUN_TINT
+					)
+				)
+			end
+			add(
+				disc(
+					ctx,
+					"EmblemRing",
+					cf * CFrame.new(0, 0, z()),
+					2 * (0.765 * Rt + 0.01) * s,
+					EMBLEM_T,
+					shade(color, fieldTint),
+					M.SmoothPlastic,
+					fieldTint
+				),
+				true
+			)
+			add(disc(ctx, "Emblem", cf * CFrame.new(0, 0, z()), 0.54 * s, EMBLEM_T, dark, M.SmoothPlastic, SUN_TINT))
+		end
+	end
+	return out
+end
+
+-- Kingdom emblem on a field part (banner cloth, flag, pennant, shield, plaque, sign): cf on the field's front
+-- face at the emblem centre, local -Z out of the face, +Y up the emblem; size = the emblem's box. The field
+-- records the slot (KitEmblemSlot, KitEmblemCF relative to the field, KitEmblemSize, KitEmblemDetail) even
+-- for a neutral colour, which builds no emblem, so Kit.setKingdomColor can add, swap or remove it later.
+-- Emblem parts carry KitEmblem (the kind) and KitEmblemSlot. detail "full" gives the sun its separate rays.
+local function emblem(ctx: Ctx, field: BasePart, cf: CFrame, size: number, color: Color3, detail: string?): { BasePart }
+	local slot = (ctx.slots or 0) + 1
+	ctx.slots = slot
+	field:SetAttribute("KitEmblemSlot", slot)
+	field:SetAttribute("KitEmblemCF", field.CFrame:ToObjectSpace(cf))
+	field:SetAttribute("KitEmblemSize", size)
+	field:SetAttribute("KitEmblemDetail", detail or "compact")
+	local kind = Parts.emblemKind(color)
+	if kind == nil then
+		return {}
+	end
+	local tint = field:GetAttribute("KitTint")
+	return buildEmblem(
+		ctx,
+		cf,
+		size,
+		kind,
+		color,
+		if type(tint) == "number" then tint else 1,
+		detail or "compact",
+		slot
+	)
 end
 
 -- ------------------------------------------------------------------ plinth, walls, timber framing
@@ -672,24 +932,33 @@ local function finial(ctx: Ctx, x: number, y: number, z: number, color: Color3, 
 	return y + hh + 0.35
 end
 
--- Kingdom flag on a pole. style "emerald" (FORGE-00 calibration: the emerald plot sits on green terrain)
--- flies a lighter, high-saturation tint with a cream border; without style the Flag is the exact kingdom
--- colour (region markers, Kit.spec).
+-- Kingdom flag on a pole, with the kingdom emblem on its -Z face. style "emerald" (FORGE-00 calibration: the
+-- emerald plot sits on green terrain) flies a lighter, high-saturation tint with a cream border; without
+-- style the Flag is the exact kingdom colour (region markers, Kit.spec).
 local function flagpole(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3, style: string?)
 	column(ctx, "FlagPole", 0.2, h, Vector3.new(x, y, z), C.woodDark, M.Wood)
 	local f = if style == "emerald" then EMERALD_LIGHT else 1
-	block(ctx, "Flag", Vector3.new(3.4, 2.0, 0.15), CFrame.new(x + 1.8, y + h - 1.2, z), shade(color, f), M.Fabric, f)
+	local flag = block(
+		ctx,
+		"Flag",
+		Vector3.new(3.4, 2.0, 0.15),
+		CFrame.new(x + 1.8, y + h - 1.2, z),
+		shade(color, f),
+		M.Fabric,
+		f
+	)
 	if style == "emerald" then
 		block(ctx, "FlagBorder", Vector3.new(3.75, 2.35, 0.1), CFrame.new(x + 1.85, y + h - 1.2, z), IVORY, M.Fabric)
 	end
+	emblem(ctx, flag, CFrame.new(x + 1.85, y + h - 1.2, z - 0.075), 1.6, color)
 	ball(ctx, "FlagFinial", 0.55, Vector3.new(x, y + h + 0.2, z), C.gold, M.Metal)
 end
 
--- Small pennant on a pole (ridge pennants): pole, pointed kingdom-colour flag, gold knob.
+-- Small pennant on a pole (ridge pennants): pole, pointed kingdom-colour flag with the emblem, gold knob.
 local function pennant(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3, style: string?)
 	column(ctx, "PennantPole", 0.13, h, Vector3.new(x, y, z), C.woodDark, M.Wood)
 	local f = if style == "emerald" then EMERALD_LIGHT else 1
-	block(
+	local cloth = block(
 		ctx,
 		"Pennant",
 		Vector3.new(2.2, 1.3, 0.12),
@@ -698,6 +967,7 @@ local function pennant(ctx: Ctx, x: number, y: number, z: number, h: number, col
 		M.Fabric,
 		f
 	)
+	emblem(ctx, cloth, CFrame.new(x + 1.05, y + h - 0.85, z - 0.06), 1.1, color)
 	block(
 		ctx,
 		"PennantTip",
@@ -1058,71 +1328,8 @@ end
 
 -- ------------------------------------------------------------------ heraldry
 
--- Kingdom emblem on a cloth/shield, centred on cf (facing -Z): crown, star, oak leaf, sun disc.
-local function emblem(ctx: Ctx, cf: CFrame, size: number, style: string)
-	local col = trimFor(style)
-	if style == "crimson" then
-		block(ctx, "Emblem", Vector3.new(size, size * 0.34, 0.12), cf * CFrame.new(0, -size * 0.22, 0), col, M.Fabric)
-		-- crown: band + a wide three-point top (a long bar rotated 45° reads as the peaks at banner scale)
-		block(
-			ctx,
-			"EmblemPoint",
-			Vector3.new(size * 0.5, size * 0.5, 0.1),
-			cf * CFrame.new(0, size * 0.06, 0) * CFrame.Angles(0, 0, rad(45)),
-			col,
-			M.Fabric
-		)
-	elseif style == "azure" then
-		for _, a in { 0, 45 } do
-			block(
-				ctx,
-				"Emblem",
-				Vector3.new(size * 0.6, size * 0.6, if a == 0 then 0.12 else 0.1),
-				cf * CFrame.Angles(0, 0, rad(a)),
-				col,
-				M.Fabric
-			)
-		end
-	elseif style == "emerald" then
-		block(
-			ctx,
-			"Emblem",
-			Vector3.new(size * 0.6, size * 0.6, 0.12),
-			cf * CFrame.new(0, size * 0.1, 0) * CFrame.Angles(0, 0, rad(45)),
-			col,
-			M.Fabric
-		)
-		block(
-			ctx,
-			"EmblemStem",
-			Vector3.new(size * 0.12, size * 0.5, 0.1),
-			cf * CFrame.new(0, -size * 0.38, 0),
-			col,
-			M.Fabric
-		)
-	elseif style == "gold" then
-		block(
-			ctx,
-			"EmblemRays",
-			Vector3.new(size * 0.66, size * 0.66, 0.1),
-			cf * CFrame.Angles(0, 0, rad(45)),
-			col,
-			M.Fabric
-		)
-		disc(ctx, "Emblem", cf * CFrame.new(0, 0, -0.06), size * 0.62, 0.12, IVORY, M.Fabric)
-	else
-		block(
-			ctx,
-			"Emblem",
-			Vector3.new(size * 0.5, size * 0.5, 0.12),
-			cf * CFrame.Angles(0, 0, rad(45)),
-			col,
-			M.Fabric
-		)
-	end
-end
-
--- Hanging banner: pole, cloth with a pointed tail, dark trim band, kingdom emblem. y = pole height.
+-- Hanging banner: pole, cloth with a pointed tail, the kingdom emblem as large as the cloth allows (80 % of
+-- its width). y = pole height.
 local function banner(
 	ctx: Ctx,
 	x: number,
@@ -1138,10 +1345,18 @@ local function banner(
 	local bw = width or 2.6
 	local base = CFrame.new(x, y, z) * CFrame.Angles(0, rad(facing), 0)
 	cyl(ctx, "BannerPole", base * CFrame.new(0, 0.1, -0.45), bw + 0.9, 0.34, C.woodDark, M.Wood)
-	-- emerald (on green terrain): lighter, high-saturation cloth with a cream border and cream trim
+	-- emerald (on green terrain): lighter, high-saturation cloth with a cream border
 	local emerald = (style or hueStyle(color)) == "emerald"
 	local f = if emerald then EMERALD_LIGHT else 1
-	block(ctx, "Banner", Vector3.new(bw, hh, 0.2), base * CFrame.new(0, -hh / 2, -0.45), shade(color, f), M.Fabric, f)
+	local cloth = block(
+		ctx,
+		"Banner",
+		Vector3.new(bw, hh, 0.2),
+		base * CFrame.new(0, -hh / 2, -0.45),
+		shade(color, f),
+		M.Fabric,
+		f
+	)
 	local s = bw / math.sqrt(2)
 	block(
 		ctx,
@@ -1169,24 +1384,16 @@ local function banner(
 			IVORY,
 			M.Fabric
 		)
-		block(ctx, "BannerTrim", Vector3.new(bw + 0.04, 0.42, 0.24), base * CFrame.new(0, -0.6, -0.45), IVORY, M.Fabric)
-	else
-		block(
-			ctx,
-			"BannerTrim",
-			Vector3.new(bw + 0.04, 0.42, 0.24),
-			base * CFrame.new(0, -0.6, -0.45),
-			shade(color, 0.55),
-			M.Fabric,
-			0.55
-		)
 	end
-	emblem(ctx, base * CFrame.new(0, -hh * 0.48, -0.6), bw * 0.62, style or "neutral")
+	-- the emblem fills the cloth under the pole (the box stays inside the cloth on short banners); it replaced
+	-- the old trim band, which paid for the emblem's parts
+	local es = math.min(bw * 0.8, (hh - 0.5) * 0.9)
+	emblem(ctx, cloth, base * CFrame.new(0, -(hh + 0.25) / 2, -0.55), es, color)
 end
 
 -- Heater shield crest (kingdom colour + emblem) on a wall: cf at the shield centre, facing -Z.
-local function crest(ctx: Ctx, cf: CFrame, size: number, color: Color3, style: string)
-	block(
+local function crest(ctx: Ctx, cf: CFrame, size: number, color: Color3, _style: string?)
+	local shield = block(
 		ctx,
 		"Crest",
 		Vector3.new(size, size * 0.75, 0.35),
@@ -1205,7 +1412,28 @@ local function crest(ctx: Ctx, cf: CFrame, size: number, color: Color3, style: s
 		M.SmoothPlastic,
 		1
 	)
-	emblem(ctx, cf * CFrame.new(0, 0, -0.24), size * 0.55, style)
+	emblem(ctx, shield, cf * CFrame.new(0, size * 0.06, -0.175), size * 0.64, color)
+end
+
+-- Aerial heraldry plaque (colour-vision finding 3): a square kingdom field with an ivory border and the
+-- full-detail emblem, for faces the overview camera sees (the keep's roof, facing up; the donjon's back).
+-- cf = the field's front face centre, local -Z out of it, +Y up the emblem; size = the field's side. The
+-- border reaches 0.12 behind the face it is mounted on, so it never floats; `raise` (default 0) lifts the
+-- plaque that much off that face on the border block itself (a pedestal: no extra part). Returns the field.
+local function emblemPlaque(ctx: Ctx, cf: CFrame, size: number, color: Color3, raise: number?): BasePart
+	local r = raise or 0
+	local field =
+		block(ctx, "EmblemPlaque", Vector3.new(size, size, 0.2), cf * CFrame.new(0, 0, 0.1), color, M.SmoothPlastic, 1)
+	block(
+		ctx,
+		"EmblemPlaqueBorder",
+		Vector3.new(size + 0.7, size + 0.7, 0.3 + r),
+		cf * CFrame.new(0, 0, 0.22 + r / 2),
+		IVORY,
+		M.SmoothPlastic
+	)
+	emblem(ctx, field, cf, size * 0.88, color, "full")
+	return field
 end
 
 -- Throne on a three-step dais (G13.6). cf = the dais' back-centre on the floor, local -Z = the way the
@@ -1260,7 +1488,7 @@ local function throne(
 	-- back: rear face 0.45 in front of cf (the keep puts cf 0.4 before the bay face: clear of door and voussoirs)
 	block(ctx, "ThroneBack", Vector3.new(3.6, 5.5, 0.7), cf * CFrame.new(0, top + 3.85, sz + 0.8), color, M.Fabric, 1)
 	block(ctx, "ThroneTrim", Vector3.new(4.1, 0.5, 0.9), cf * CFrame.new(0, top + 6.85, sz + 0.7), C.gold, M.Metal)
-	emblem(ctx, cf * CFrame.new(0, top + 4.6, sz + 0.37), 1.8, style)
+	-- no emblem on the back: the seated ruler covers it (the kingdom reads from the standards and the crest)
 	if canopyY then
 		local f = if style == "emerald" then EMERALD_LIGHT else 1
 		local pz, cw, rise = -4.0, 8.2, 1.7
@@ -1543,7 +1771,12 @@ Pieces.windowAt = windowAt
 Pieces.doorAt = doorAt
 Pieces.bracket = bracket
 Pieces.dormer = dormer
+Pieces.triangle = triangle
+Pieces.EMBLEM_IVORY = EMBLEM_IVORY
+Pieces.SUN_TINT = SUN_TINT
+Pieces.buildEmblem = buildEmblem
 Pieces.emblem = emblem
+Pieces.emblemPlaque = emblemPlaque
 Pieces.banner = banner
 Pieces.crest = crest
 Pieces.throne = throne

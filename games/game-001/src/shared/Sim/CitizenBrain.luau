@@ -16,7 +16,8 @@
 	API
 		CitizenBrain.decide(world, citizen): Decision     -- pure: reads world state, never mutates it
 		CitizenBrain.WORK_KINDS: { string }               -- "farm", "wood", "stone", "gold", "build"
-		CitizenBrain.need(world, kingdom, kind): number   -- 0..3, exposed for specs and the debug view
+		CitizenBrain.need(world, kingdom, kind, citizen?): number   -- 0..3, for specs and the debug view; a
+		                                                  citizen's own site keeps its build need
 
 	Decision = { activity: string, target: string?, score: number, reason: string }
 	Activities: "Flee" | "Sleep" | "Eat" | "Farm" | "Gather" | "Build" | "Idle".
@@ -58,9 +59,9 @@ local function nearRememberedThreat(world: any, citizen: any, x: number, z: numb
 	return false
 end
 
-function CitizenBrain.need(world: any, kingdom: any, kind: string): number
+function CitizenBrain.need(world: any, kingdom: any, kind: string, citizen: any?): number
 	if kind == "build" then
-		return if world:hasOpenSite(kingdom) then 1 else 0
+		return if world:hasOpenSite(kingdom, citizen) then 1 else 0 -- its own site stays needed when full
 	end
 	local resource = resourceOfKind(kind)
 	local weight = kingdom.priorities[resource] or 1
@@ -86,6 +87,9 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 	if world:isNight() then
 		return { activity = "Sleep", target = citizen.home or kingdom.keepId, score = 5, reason = "night" }
 	end
+	if world:isStriking(citizen) then
+		return { activity = "Idle", target = nil, score = 5, reason = "on strike" }
+	end
 	if not world.fedByUpkeep and citizen.hunger >= tuning.eatThreshold and world:balance(kingdom.id, "food") > 0 then
 		return { activity = "Eat", target = kingdom.keepId, score = 1 + citizen.hunger, reason = "hungry" }
 	end
@@ -97,7 +101,7 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 		if affinity <= 0 then
 			continue
 		end
-		local need = CitizenBrain.need(world, kingdom, kind)
+		local need = CitizenBrain.need(world, kingdom, kind, citizen)
 		if need <= 0 then
 			continue
 		end

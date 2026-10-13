@@ -38,7 +38,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 1. **Place Farm**. The drawer closes; a translucent footprint follows the mouse with an arrow on
    its front; a bar at the bottom shows Farm, its cost, "✓ Good spot", Rotate / Cancel / Place and
    the hint "R rotates · Click places · Q cancels".
-2. Move outside your land: the footprint turns red and the bar says why ("Outside your territory").
+2. Move outside your land: the footprint turns red and the bar says why ("Build inside your kingdom").
    Clicking does nothing.
 3. Press **R**: the footprint turns 90°. Back on your land, click: within a second the footprint
    disappears, a toast says "Farm placed — Builders are on their way", a red "−50" floats under
@@ -46,7 +46,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 4. Place again and press **Q**: build mode ends, nothing is spent.
 5. Around the footprint a fainter outline shows the room the building keeps for its upgrades
    (largest level plus 2 studs). Move it towards a building or a tree: the ghost turns red with
-   "Leave room for upgrades" as the faint outline reaches them, not only when the slab does
+   "Not enough room here" as the faint outline reaches them, not only when the slab does
    (#62: the server checks the largest level plus the gap). Rotate: the outline turns too.
 
 ## U5 — place a building, phone (P2; P3 for camera/taps)

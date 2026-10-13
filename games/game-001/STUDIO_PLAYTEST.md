@@ -38,8 +38,9 @@ Press **Play**, then **F8** (or the **Debug (F8)** button, top left) to open the
 
   Row owners add their own presets (e.g. treasury, construction). A preset that fails says why. For
   example, `KingdomService is not running yet` means that part of the game is still **waiting**.
-  **As of B6:** `vs1.reseed`, `vs1.request` and `vs1.strike` answer **FAIL** on purpose: they fail closed
-  until FORGE-01 adds their server hooks (FL-0104). Write `SKIPPED (waiting FL-0104)` for the steps that use them.
+  **From the build after B7 (main `751138b` on):** all three work: `vs1.reseed` (#91, #101), `vs1.request`
+  and `vs1.strike` (the conversation server, #77). In **B7** `vs1.request` and `vs1.strike` still answer
+  **FAIL** on purpose: write `SKIPPED (B7)` for the steps that use them there.
 - **Commands** such as `forge.buildInfo` (shows the sha; use it for the report) and `forge.services`.
   Commands with arguments are listed as text only. Use the presets.
 
@@ -93,10 +94,11 @@ WASD, mouse wheel to zoom.
 **Pass:** the valley as described, readable lighting, `WorldService ready` logged. **Fail:** holes, floating
 or sunk props, unreadable lighting. Describe what you see next to the screenshot.
 
-## 3. Rule from the throne with an aerial camera (row 2; runnable from B6 except the seat: waiting FL-0081)
-1. Press **Play**. Your ruler (crown and cape in your kingdom's colour) appears at your keep. The **throne**
-   stands on a dais in the keep's entrance arch. *Sitting on it waits on FL-0081*: until then write
-   `SKIPPED (waiting FL-0081)` for the seat and check only that the throne is there and clear of the door.
+## 3. Rule from the throne with an aerial camera (row 2; runnable from B7)
+1. Press **Play**. Your ruler (crown and cape in your kingdom's colour) appears at your keep **seated on the
+   throne** on the dais in the keep's entrance arch (FL-0081, #89). Esc → Reset: after the respawn the
+   ruler is seated again. Press Space to stand up; the ruler then stays standing (they are seated again
+   only after a respawn). Details: `roblox/studio-tests/gameplay.md` K11.
 2. The camera is an aerial view over your kingdom: pan (WASD or drag), zoom (wheel, about 40–220 studs),
    rotate (Q/E).
 3. **Test → Device** → pick a phone. Drag pans, pinch zooms, two fingers rotate.
@@ -104,9 +106,12 @@ or sunk props, unreadable lighting. Describe what you see next to the screenshot
 5. Optional: V switches to walking behind the ruler, and back.
 6. Screenshots **R1** (ruler on the throne) and **R2** (the aerial view in the phone emulator).
 
-**Pass:** ruler with crown and cape at the keep, throne visible (seated once FL-0081 lands); smooth pan, zoom
-and rotate on PC and phone; tap selects. Known: citizens more than 150 studs from your ruler are hidden in
-the aerial view (#39 M1, fix FL-0104); note it, it is not a fail.
+**Pass:** ruler with crown and cape seated on the throne after spawn and respawn; smooth pan, zoom and
+rotate on PC and phone; tap selects. In the aerial view, citizens near the **centre of the screen** show
+wherever you pan (#39 M1 fixed in B7, #91), and from the build after B7 they also stay when you zoom all the
+way out (#101; in B7, citizens more than 150 studs from the screen centre are hidden when zoomed out, known,
+not a fail). From main `1c48149` (#112) only your kingdom's rulers can sit on your throne: anyone else is
+put down in front of the dais within half a second (in B7-B9 anyone could sit there: known, not a fail).
 
 ## 4. Belong to a kingdom (row 3; runnable from B6)
 1. Play. The HUD shows your kingdom's name, banner colour and member list.
@@ -121,17 +126,19 @@ the aerial view (#39 M1, fix FL-0104); note it, it is not a fail.
 **Pass:** auto-assigned to crimson, azure, emerald or gold; HUD name, colour and members correct; the
 party stays together.
 
-## 5. Watch AI citizens live and work (row 4; runnable from B6; `vs1.reseed` waits on FL-0104)
-Preset: `vs1.reseed` (fails closed until FL-0104; skip step 3 until then).
+## 5. Watch AI citizens live and work (row 4; runnable from B7)
+Preset: `vs1.reseed`.
 1. At least **12** citizens of your kingdom. Each has a name, 2–3 traits and its own look.
 2. Watch 60 s: they walk to work, gather or farm, carry goods to the storehouse; the HUD stockpile rises.
    Note the stockpile at the start and after 60 s.
-3. Press `vs1.reseed` again: the **same** names and looks appear (same seed, same population).
-   As of B6: `SKIPPED (waiting FL-0104)`.
+3. Press `vs1.reseed` again (don't change jobs in between): the **same** names appear on the citizen
+   cards and the **same looks** on the citizens in the world (from the build after B7, #101). In B7 the
+   world rigs keep the looks they had before the first press: there, check names only and write looks as
+   `SKIPPED (B7)`. Changing a job between the presses changes some people (the message says so).
 4. Screenshot **C1**: citizens at work with the stockpile visible.
 
 **Pass:** ≥ 12 distinct citizens, every job visible, the stockpile rose, no citizen stuck, same seed →
-same people.
+same names.
 
 ## 6. See that citizens think (row 4b; runnable from B6; conversation answers wait on FL-0079/FL-0088 #66)
 1. Select a citizen. The card shows name, occupation, traits, mood, loyalty, current intent, family,
@@ -150,29 +157,45 @@ same people.
 
 **Pass:** numbers move only when something in the world explains it; no negative values.
 
-## 8. Construct and upgrade (row 6; runnable from B4 through the Build rail; ordering on a plot waits on FL-0081)
+## 8. Construct and upgrade (row 6; runnable from B7)
 1. Open **Build** on the rail, choose a structure (House, Farm, Barracks and more) with its cost, place the
-   ghost (R rotates; the fainter "Room" outline is the space kept for upgrades), then confirm. Ordering by
-   selecting a free plot marker waits on FL-0081: write `SKIPPED (waiting FL-0081)` for that part.
+   ghost (R rotates; the fainter "Room" outline is the space kept for upgrades), then confirm.
    A spend of half or more of any resource asks you to confirm once more.
+   Then tap a **free plot marker**: the picker lists what fits that plot; pick one and press
+   **Build … here**. The building goes up exactly on the plot (FL-0081, #89).
 2. Builders walk over and raise it through visible stages. The cost leaves the treasury **once**.
-3. Try a plot that is taken, or a structure you cannot afford: it is refused with a reason.
+3. Try a plot that is taken, or a structure you cannot afford: it is refused with the reason in words
+   ("This plot is already built on", "Not enough resources", "That doesn't fit this plot", "Upgrade your
+   keep first"; FL-0105, #86, from the build after B7) and nothing is charged. In **B7** the plot refusals
+   still read "That didn't work. Try again." (known, not a fail). A building placed with the Build rail on
+   top of a plot takes that plot (from the build after B7, #106): the plot reads as built on and ordering
+   there says "This plot is already built on". (In B7 the plot stays free and ordering there is refused
+   with "Leave room for upgrades".) Walls and gates are never offered on a plot, and the server refuses
+   them there too.
 4. Upgrade the **Barracks** to level 2 (about 8 s for level 1 and 18 s for level 2, PROVISIONAL), then
    the **Keep**. Each level looks different.
 5. Screenshots **B1** (mid-construction) and **B2** (Barracks level 2 next to level 1, or before/after).
 
 **Pass:** costs shown and charged once, refusals explained, stages and levels visible.
 
-## 9. Recruit and capture (row 7; waiting: FL-0052 Army server #70, FL-0060 Army drawer #63)
-1. At the Barracks, recruit **3 soldiers** (paid once from the treasury).
+## 9. Recruit and capture (row 7; runnable from B7)
+1. Build a **Barracks** (120 wood + 60 stone; Build rail or a free plot) and wait until it is complete.
+   Open **Army** on the rail (or the **Army** tab on your barracks' panel) and recruit **3 soldiers**
+   (30 food + 10 wood each, 8 s training). The treasury drops once for the order. A level-1 barracks has
+   4 bunks: soldiers sleep there, and a 5th recruit is refused until you upgrade it (D-041). Soldiers wear
+   your kingdom's crest on the helmet (spire / square / plume / dome).
 2. Press **Send to capture**. They walk to the neutral Watchtower, a capture bar fills, and the tower
-   takes your colour. Crown Points rise, and the slice summary appears (the first capture ends the
+   takes your colour. From main `38526a4` (#115) the captured tower is rebuilt in your kingdom's look:
+   its cap, roof and emblem match your own towers, not the neutral roof in your colour. The capture
+   ring stays where it was; put this in **O2**. Crown Points rise, and the slice summary appears (the first capture ends the
    slice: CONTRACTS G3).
 3. Screenshots **O1** (capture in progress), **O2** (captured) and **O3** (summary).
 
-**Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear.
+**Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear. A 5th recruit
+at a level-1 barracks reads "No free bunks. Upgrade the barracks or build another" (#86, from the build
+after B7; B7 says "…Upgrade it").
 
-## 10. Use the kingdom HUD and reputation screen (row 8; HUD and screen runnable from B6; history waits on FL-0080 #68)
+## 10. Use the kingdom HUD and reputation screen (row 8; runnable from B7: reputation server FL-0080 #68 is on main)
 1. The HUD shows resources, population, kingdom, Crown Points, the build/army/objective panels and the
    **six reputation values** (compassion, honor, competence, courage, authority, fear).
 2. Press `vs1.repLow`, then `vs1.repHigh`. The values change. The reputation screen lists each change in
@@ -181,25 +204,38 @@ same people.
 
 **Pass:** all HUD parts present and current; the history matches what you did.
 
-## 11. Decide in a conversation and see the result (row 9; waiting: FL-0079 server #77, FL-0088 panel #66; bubbles FL-0091 and content FL-0083 are on main; `vs1.request` / `vs1.strike` wait on FL-0104)
-1. Within a minute at least one citizen shows a **thought bubble** with a real request. If none does,
-   press `vs1.request`.
-2. Select that citizen. A conversation opens with 2–4 choices. Pick one.
+## 11. Decide in a conversation and see the result (row 9; runnable from the build after B7: conversation server #77, panel #66, bubbles #42/#87, content #83 are all on main)
+1. Within a minute at least one citizen shows a **thought bubble** with "!" and a real request. It stays
+   up until you answer (zoom out and pan: it follows the citizen). If none appears, press `vs1.request`.
+2. Tap that citizen: the card shows **Talk** (a citizen without a request shows **Ask**). Press Talk: the
+   panel shows the question and 2–4 choices; each shows its cost and any risk with its chance (e.g.
+   "50 % ⚠ … may walk off the job for 45 s"). A large spend asks you to confirm once more. Pick one.
 3. The citizen reacts, and the world changes visibly, at least:
-   - your resources;
+   - your resources (charged once);
    - the citizen's loyalty and mood on their card;
    - a reputation value, with a history line;
-   - a work boost, a strike or a follow-up.
-4. Press `vs1.strike`: the farmers stop working until it is resolved (visible). `vs1.hungry` makes
-   food-related requests more likely.
+   - a work boost, a strike (the "On strike" placard on exactly the citizens who walk out) or a
+     follow-up. A walk-out is not ended by a boost (D-042).
+4. Press `vs1.strike`: every farmer shows "On strike" and stops work for about 2 minutes, then goes back.
+   `vs1.hungry` makes food-related requests more likely.
+   From main `276d933` (#107): press Talk and close without answering, then tap Talk again: the **same**
+   question comes back and the bubble stays up (in B8 the request was gone for the match); a citizen who
+   walks out stops at once, even while carrying a load. From main `74db60c` (#114), with two rulers: if
+   one leaves a conversation open, the other's Talk shows the same question and the one who asked last
+   answers it. (In B9 the other ruler may get "Nothing on their mind right now" or a different question:
+   known, not a fail there.)
 5. Screenshots **D1** (bubble), **D2** (conversation), **D3** (the visible result).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
 
-## 12. First minutes guided (onboarding; waiting: FL-0092 onboarding v2 #45)
-Start a fresh Play and follow the hints: inspect a citizen → build on a plot → answer a citizen →
-recruit → capture. **Pass:** each hint appears at the right moment and can be skipped. (On main today the
-onboarding still waits for the ruler to gather; that is FL-0092's to change.)
+## 12. First minutes guided (onboarding; runnable from B7; "answer a citizen" from the build after B7)
+Start a fresh Play and follow the hints: inspect a citizen → build (House or Farm) → answer a citizen →
+recruit → capture. In B7 the "answer a citizen" hint is passed over (no conversation server); from the
+build after B7 it waits for your answer (it moves on by itself after 2 minutes).
+**Pass:** each hint appears at the right moment and can be skipped. From main `d887beb` (#99) the build
+hint points at the nearest free plot marker and the recruit hint at the **Army** rail button. In B7 and
+B8 the build hint highlights the **Build** button and the recruit hint highlights nothing (known, not a
+fail). In walk mode, standing up from the throne keeps the ruler standing (#99).
 
 ## M1 / M2 — two players (Test → Clients and Servers → Local Server, 2 players → Start)
 (Later multiplayer checks M3–M8: `production/quality-gates/multiplayer-test-plan.md`.)
@@ -221,6 +257,9 @@ In the **Server** window: **View → Script Performance**; note the Activity % o
 4. Pass: every kingdom is identifiable without colour (emblem, silhouette or name) in both views.
 5. VS-1 acceptance (CONTRACTS G13.2, D-033 (3)): soldiers of different kingdoms are told apart by their helmet crest in the kingdom's tower style (spire, square, plume, dome), not only by torso colour; check two kingdoms' soldiers side by side in the grayscale/protanopia view.
 6. Tritanopia: azure and emerald are told apart by tower silhouette and emblem in the four-kingdom screenshot.
+7. From main `f562a31` (#105): from the aerial camera, each keep shows its kingdom's emblem on a roof plaque
+   (crown, star, oak leaf, sun) and on its banners, flags and plot signs; check they read in the grayscale
+   view too. A captured watchtower takes the capturer's emblem.
 
 ## Report (paste into the FORGE-05 chat)
 ```
