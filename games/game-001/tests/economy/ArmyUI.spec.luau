@@ -216,13 +216,13 @@ describe("Army drawer (FL-0060)", function()
 	it("refusals: the server's reason as a sentence; unknown reasons a generic one, never the raw code", function()
 		world = newWorld()
 		openArmy(world)
-		world.military.refuse = "population_cap"
+		world.military.refuse = "recruit_cap"
 		tap(face(world, "Recruit"))
 		world:advance(0.2)
 		local notices = texts(world.hud.guis.notices)
 		expect(notices).toContain(ArmyText.RECRUIT_FAILED)
-		expect(notices).toContain("No room for more people. Build houses first")
-		expect(notices).never.toContain("population_cap")
+		expect(notices).toContain("No free bunks. Upgrade the barracks or build another")
+		expect(notices).never.toContain("recruit_cap")
 		world:advance(4) -- let the toasts expire
 		world.military.refuse = "weird_code_42"
 		tap(face(world, "Recruit"))

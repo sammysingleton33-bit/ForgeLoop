@@ -55,15 +55,14 @@ local REASONS: { [string]: string } = {
 	kingdom_eliminated = "Your kingdom has fallen",
 }
 
--- Build.PlaceSlot names the same codes after the plot (plots-ui handoff: `territory` not your plot,
--- `overlap` already built on, `zone` does not fit).
+-- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of
+-- Build/Remotes.luau) in the plot's words. Its other refusals come from the simulation's placement and
+-- read as in REASONS, except `blocked`: on a plot that means something stands in the footprint.
 local SLOT_REASONS: { [string]: string } = {
-	territory = "This plot isn't yours",
-	overlap = "This plot is already built on",
-	zone = "That doesn't fit this plot",
-	-- the same refusals in the server's words, should Build.PlaceSlot use them (FL-0081 pending)
-	out_of_territory = "This plot isn't yours",
-	blocked = "This plot is already built on",
+	unknown_slot = "This plot isn't yours",
+	slot_occupied = "This plot is already built on",
+	does_not_fit = "That doesn't fit this plot",
+	blocked = "Something is in the way on this plot",
 }
 
 function Text.reason(reason: any, context: string?): string

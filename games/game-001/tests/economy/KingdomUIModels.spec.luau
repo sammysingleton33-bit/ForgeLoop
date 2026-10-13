@@ -102,15 +102,18 @@ describe("Text", function()
 		expect(Text.reason("requires_keep_level")).toBe("Upgrade your keep first")
 		expect(Text.reason("weird_code")).toBe("That didn't work. Try again.")
 		expect(Text.reason(nil)).toBe("No answer from the server. Try again in a moment.")
-		-- on a plot, the same refusals name the plot
-		expect(Text.reason("blocked", "slot")).toBe("This plot is already built on")
-		expect(Text.reason("out_of_territory", "slot")).toBe("This plot isn't yours")
+		-- Build.PlaceSlot's own codes name the plot; its other refusals read as anywhere else
+		expect(Text.reason("unknown_slot", "slot")).toBe("This plot isn't yours")
+		expect(Text.reason("slot_occupied", "slot")).toBe("This plot is already built on")
+		expect(Text.reason("does_not_fit", "slot")).toBe("That doesn't fit this plot")
+		expect(Text.reason("blocked", "slot")).toBe("Something is in the way on this plot")
+		expect(Text.reason("cannot_afford", "slot")).toBe("Not enough resources")
 	end)
 
 	it("FL-0105: every refusal code the server returns has its own sentence", function()
 		local generic = Text.reason("not_a_code_at_all")
-		local function covered(code: string, where: string)
-			local sentence = Text.reason(code)
+		local function covered(code: string, where: string, context: string?)
+			local sentence = Text.reason(code, context)
 			if sentence == generic or string.find(sentence, code, 1, true) then
 				error(`{where}: "{code}" reads "{sentence}"`)
 			end
@@ -120,12 +123,22 @@ describe("Text", function()
 		local source = fs.readFile(T.root .. "/games/game-001/src/shared/Build/Remotes.luau")
 		local line = string.match(source, "Reasons:%s*([^%]]-)%]%]")
 		assert(line, "Build/Remotes.luau has no Reasons line")
+		-- "<codes>; PlaceSlot also <codes>.", parentheses explain a code (#89)
+		local build, slot = string.match((string.gsub(line, "%b()", "")), "^(.-);%s*PlaceSlot also(.*)$")
+		assert(build and slot, "Build/Remotes.luau's Reasons line changed shape: update this spec")
 		local count = 0
-		for code in string.gmatch(line, "[%a_]+") do
+		for code in string.gmatch(build, "[%l_]+") do
 			covered(code, "Build/Remotes")
+			covered(code, "Build.PlaceSlot", "slot") -- PlaceSlot passes the placement refusals through
 			count += 1
 		end
 		expect(count).toBeGreaterThan(10)
+		local slotCodes = 0
+		for code in string.gmatch(slot, "[%l_]+") do
+			covered(code, "Build.PlaceSlot", "slot")
+			slotCodes += 1
+		end
+		expect(slotCodes).toBe(3)
 		-- the rest of FORGE-01's table (handoff 2026-10-13-forge-01-to-forge-03-refusal-codes.md)
 		for remote, codes in
 			{
@@ -152,6 +165,7 @@ describe("Text", function()
 			{ "territory", "overlap", "zone", "cost", "insufficient", "phase", "no_kingdom", "rate", "unknown_type" }
 		do
 			expect(Text.reason(code)).toBe(generic)
+			expect(Text.reason(code, "slot")).toBe(generic)
 		end
 	end)
 
@@ -319,7 +333,7 @@ describe("Placement", function()
 			invoke = function(_, position)
 				table.insert(started, env.clock())
 				env.wait(0.05) -- the round trip
-				return position.X < 100, if position.X < 100 then nil else "territory"
+				return position.X < 100, if position.X < 100 then nil else "out_of_territory"
 			end,
 			onResult = function(key, ok, reason)
 				table.insert(results, { key = key, ok = ok, reason = reason })
@@ -335,7 +349,7 @@ describe("Placement", function()
 		expect(checker.calls).toBe(2)
 		expect(results[#results].key).toBe(Placement.key("farm", Vector3.new(200, 0, 0), 0))
 		expect(results[#results].ok).toBe(false)
-		expect(results[#results].reason).toBe("territory")
+		expect(results[#results].reason).toBe("out_of_territory")
 		expect(started[2] - started[1]).toBeGreaterThan(0.119)
 		-- 3 s of a moving mouse (a new spot every frame) stays under the remote's 10/s limit.
 		local before = checker.calls
