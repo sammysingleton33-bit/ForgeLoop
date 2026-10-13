@@ -14,6 +14,7 @@ from lib import kit
 from lib.geo import Vector, box, cylinder, lathe, merge, prism
 from lib.palette import kingdom_color
 
+from generators._kingdom_props_common import emblem as kit_emblem
 from generators._kingdom_props_common import sun_badge
 
 KINGDOM_CYCLE = ("red", "blue", "green", "yellow")
@@ -30,38 +31,39 @@ def grounded(piece):
 # ------------------------------------------------------------------ heraldry
 
 def emblem_poly(k, s=1.0):
-    """Kingdom emblem outline (x, z), about s studs tall, centred on the origin.
-    red crown, blue star, green oak leaf. (No yellow: the kit-wide sun is layered, see `emblem`.)"""
+    """Kingdom emblem outline (x, z), about s studs tall, centred on the origin: red crown, blue star.
+    (No green / yellow: the kit-wide oak leaf and sun are layered, see `emblem`.)"""
     pts = []
     if k == "blue":
         for i in range(10):
             a = math.pi / 2 + math.pi * i / 5
             r = 0.52 if i % 2 == 0 else 0.22
             pts.append((math.cos(a) * r, math.sin(a) * r))
-    elif k == "yellow":
-        raise ValueError("emblem_poly('yellow'): the kit-wide sun is layered, draw it with emblem('yellow', ...)")
-    elif k == "green":
-        n = 26
-        for i in range(n):
-            a = -math.pi / 2 + 2 * math.pi * i / n
-            m = 1.0 + 0.14 * math.cos(8 * (a + math.pi / 2))
-            pts.append((0.3 * math.cos(a) * m, 0.5 * math.sin(a) * m))
+    elif k in ("yellow", "green"):
+        raise ValueError(f"emblem_poly({k!r}): the kit-wide sun / oak leaf is layered, draw it with emblem({k!r}, ...)")
     else:  # red crown
         pts = [(-0.5, -0.3), (0.5, -0.3), (0.5, 0.06), (0.58, 0.44), (0.27, 0.14), (0.0, 0.52),
                (-0.27, 0.14), (-0.58, 0.44), (-0.5, 0.06)]
     return [(x * s, z * s) for x, z in pts]
 
 
-def emblem(k, s=1.0, depth=0.14, color=None):
+def emblem(k, s=1.0, depth=0.14, color=None, lobe_pts=2):
     """Solid emblem facing -Y (plane XZ), centred on the origin (`depth` thick around y = 0).
     Yellow is the kit-wide Sunspire sun (_kingdom_props_common.sun_badge, `color` ignored): deep-gold
     rays + disc on an ivory roundel with a bronze rim, s studs across, because the banners, flags and
     shields put it on gold cloth (D-033: never an emblem on its own colour). The roundel fills the
-    old `depth` envelope, the sun stands proud of it; merged into ONE piece like the other emblems."""
+    old `depth` envelope, the sun stands proud of it; merged into ONE piece like the other emblems.
+    Green is the kit-wide oak leaf (_kingdom_props_common.emblem("oak"): ivory leaf, bronze midrib and
+    stem), 0.8 s wide and 1.18 s tall; lobe_pts=2 (flat-topped lobes) keeps the small shields and flags
+    cheap, the big banners pass 3 (the full round lobes)."""
     if k == "yellow":
         parts = sun_badge(0.52 * s, depth, sun_depth=depth * 0.9)
         parts[0].paint(grad=("range", 0.55, 0.95))  # merge() keeps the first piece's gradient
         return merge(parts)
+    if k == "green":
+        parts = kit_emblem("oak", s, color or kingdom_color(k, "emblem"), kingdom_color(k, "trim"), depth=depth,
+                           mid=None, lobe_pts=lobe_pts)
+        return merge(parts).move(0, 0, 0.0575 * s)  # leaf + stem centred on the origin
     return prism(emblem_poly(k, s), depth, color or kingdom_color(k, "emblem"))
 
 
@@ -83,7 +85,7 @@ def banner(k, w=2.6, h=8.0, tail="swallow", rod=True, emblem_color=None):
     out.append(prism(shape(w, h), 0.2, cloth).move(0, -0.36, 0).paint(grad=("range", 0.35, 0.95)))
     out.append(box(w, 0.12, 0.4, trim).move(0, -0.5, -1.0))
     out.append(box(w, 0.12, 0.28, trim).move(0, -0.5, -h * 0.72))
-    out.append(emblem(k, w * 0.66, 0.12, emblem_color).move(0, -0.52, -h * 0.42))
+    out.append(emblem(k, w * 0.66, 0.12, emblem_color, lobe_pts=3).move(0, -0.52, -h * 0.42))
     if rod:
         r = cylinder(0.15, 0.15, w + 1.0, 6, "iron_dark").rotate(math.pi / 2, "Y")
         out.append(r.move(-(w + 1.0) / 2, -0.42, 0.12))

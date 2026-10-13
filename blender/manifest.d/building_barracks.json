@@ -173,7 +173,7 @@
       },
       "generator": "building_barracks",
       "generator_version": 2,
-      "geometry_hash": "f188ecdc0f71a9c6",
+      "geometry_hash": "66269b38e98d60a8",
       "id": "building_barracks_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -189,21 +189,9 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7302,
       "sockets": {
@@ -226,8 +214,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 12000,
-        "lod0": 11426,
-        "lod1": 3998
+        "lod0": 11698,
+        "lod1": 4094
       },
       "validation_pass": true
     },
@@ -473,8 +461,8 @@
       "building_barracks_01",
       "building_barracks_03"
     ],
-    "mean_pair_diff": 0.2467,
-    "min_pair_diff": 0.1111,
+    "mean_pair_diff": 0.2464,
+    "min_pair_diff": 0.111,
     "pass": true,
     "threshold": 0.08
   }

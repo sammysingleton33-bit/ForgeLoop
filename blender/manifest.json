@@ -578,7 +578,7 @@
       },
       "generator": "building_barracks",
       "generator_version": 2,
-      "geometry_hash": "f188ecdc0f71a9c6",
+      "geometry_hash": "66269b38e98d60a8",
       "id": "building_barracks_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -594,21 +594,9 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7302,
       "sockets": {
@@ -631,8 +619,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 12000,
-        "lod0": 11426,
-        "lod1": 3998
+        "lod0": 11698,
+        "lod1": 4094
       },
       "validation_pass": true
     },
@@ -1487,7 +1475,7 @@
       },
       "generator": "building_smithy",
       "generator_version": 1,
-      "geometry_hash": "21e9a159f73a5115",
+      "geometry_hash": "2ceaf8e487e54776",
       "id": "building_smithy_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -1504,21 +1492,9 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 3
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7502,
       "sockets": {
@@ -1536,8 +1512,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 7352,
-        "lod1": 2572
+        "lod0": 7652,
+        "lod1": 2678
       },
       "validation_pass": true
     },
@@ -1549,9 +1525,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 26.278,
-        "y": 24.435,
-        "z": 24.135
+        "x": 26.429,
+        "y": 23.848,
+        "z": 23.285
       },
       "double_sided": false,
       "files": {
@@ -1560,13 +1536,14 @@
       },
       "generator": "building_smithy",
       "generator_version": 1,
-      "geometry_hash": "97d6cf24f49d4143",
+      "geometry_hash": "29ae2c8c91ca9f78",
       "id": "building_smithy_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
       "params": {
         "D": 15.9,
         "W": 21.0,
+        "cross": true,
         "forge": 1,
         "h1": 12.4,
         "kingdom": "yellow",
@@ -1576,40 +1553,28 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 3
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7503,
       "sockets": {
         "forge": [
-          -5.659,
+          -5.735,
           4.38,
-          -2.868
+          -2.443
         ],
         "interact": [
-          -2.259,
+          -2.335,
           1.08,
-          -10.018
+          -9.593
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 7404,
-        "lod1": 2590
+        "lod0": 7236,
+        "lod1": 2532
       },
       "validation_pass": true
     },
@@ -1621,9 +1586,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 23.139,
-        "y": 21.7,
-        "z": 21.218
+        "x": 25.585,
+        "y": 23.688,
+        "z": 22.064
       },
       "double_sided": false,
       "files": {
@@ -1632,56 +1597,46 @@
       },
       "generator": "building_smithy",
       "generator_version": 1,
-      "geometry_hash": "6e566be34f3d343a",
+      "geometry_hash": "2f5a168ca6cfcc69",
       "id": "building_smithy_05",
       "kingdom": "red",
       "material": "M_forge_palette",
       "params": {
-        "D": 14.2,
-        "W": 18.0,
+        "D": 14.6,
+        "W": 20.0,
+        "Ww": 8.6,
         "forge": -1,
-        "h1": 13.0,
+        "h1": 7.2,
+        "h2": 5.4,
         "kingdom": "red",
-        "layout": "shed",
-        "walls": "timber"
+        "layout": "ell",
+        "walls": "stone"
       },
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 3
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7504,
       "sockets": {
         "forge": [
-          4.169,
+          5.393,
           4.38,
-          -1.409
+          -1.832
         ],
         "interact": [
-          0.769,
+          1.993,
           1.08,
-          -8.559
+          -8.982
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 6212,
-        "lod1": 2174
+        "lod0": 6540,
+        "lod1": 2288
       },
       "validation_pass": true
     },
@@ -7211,7 +7166,7 @@
             "center": [
               -0.351,
               2.839,
-              0.015
+              0.02
             ],
             "name": "body",
             "size": [
@@ -7226,7 +7181,7 @@
       "dimensions_studs": {
         "x": 5.622,
         "y": 9.57,
-        "z": 1.75
+        "z": 1.759
       },
       "double_sided": false,
       "files": {
@@ -7235,7 +7190,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "fcf2b7626172f069",
+      "geometry_hash": "2eef25aebac4cd9c",
       "id": "char_soldier_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -7248,125 +7203,113 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 2,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7000,
       "sockets": {
         "hand_l": [
           -1.894,
           2.042,
-          -0.042
+          -0.038
         ],
         "hand_r": [
           1.231,
           2.576,
-          -0.584
+          -0.58
         ],
         "head_top": [
           -0.351,
           7.073,
-          0.015
+          0.02
         ],
         "rig_ankle_l": [
           -0.825,
           0.418,
-          0.015
+          0.02
         ],
         "rig_ankle_r": [
           0.122,
           0.418,
-          0.015
+          0.02
         ],
         "rig_elbow_l": [
           -1.63,
           3.008,
-          0.115
+          0.12
         ],
         "rig_elbow_r": [
           0.958,
           3.008,
-          0.175
+          0.18
         ],
         "rig_head": [
           -0.351,
           4.781,
-          0.015
+          0.02
         ],
         "rig_hip_l": [
           -0.774,
           2.251,
-          0.015
+          0.02
         ],
         "rig_hip_r": [
           0.072,
           2.251,
-          0.015
+          0.02
         ],
         "rig_knee_l": [
           -0.814,
           1.295,
-          -0.035
+          -0.03
         ],
         "rig_knee_r": [
           0.112,
           1.295,
-          -0.035
+          -0.03
         ],
         "rig_neck": [
           -0.351,
           4.084,
-          0.015
+          0.02
         ],
         "rig_root": [
           -0.351,
           2.291,
-          0.015
+          0.02
         ],
         "rig_shoulder_l": [
           -1.338,
           3.785,
-          0.015
+          0.02
         ],
         "rig_shoulder_r": [
           0.636,
           3.785,
-          0.015
+          0.02
         ],
         "rig_waist": [
           -0.351,
           2.61,
-          0.015
+          0.02
         ],
         "rig_wrist_l": [
           -1.832,
           2.271,
-          -0.005
+          -0.0
         ],
         "rig_wrist_r": [
           1.16,
           2.69,
-          -0.385
+          -0.38
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2380,
-        "lod1": 832
+        "lod0": 2348,
+        "lod1": 820
       },
       "validation_pass": true
     },
@@ -7571,7 +7514,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "9f2b0fbba6185326",
+      "geometry_hash": "9b25d1344bd58e60",
       "id": "char_soldier_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -7584,21 +7527,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 2,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7002,
       "sockets": {
@@ -7701,8 +7632,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2442,
-        "lod1": 854
+        "lod0": 2470,
+        "lod1": 864
       },
       "validation_pass": true
     },
@@ -7907,7 +7838,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "f350991516674e96",
+      "geometry_hash": "8c77c620733ec3af",
       "id": "char_soldier_05",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -7920,21 +7851,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 2,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7004,
       "sockets": {
@@ -8037,8 +7956,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2276,
-        "lod1": 796
+        "lod0": 2288,
+        "lod1": 800
       },
       "validation_pass": true
     },
@@ -8243,7 +8162,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "c9553afe3d1a7597",
+      "geometry_hash": "8d96e6d81ba8b482",
       "id": "char_soldier_07",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -8256,21 +8175,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 2,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7006,
       "sockets": {
@@ -8373,8 +8280,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2352,
-        "lod1": 822
+        "lod0": 2412,
+        "lod1": 844
       },
       "validation_pass": true
     },
@@ -8579,7 +8486,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "5222b497b4c131c1",
+      "geometry_hash": "54bd0ac5e99cebd4",
       "id": "char_soldier_09",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -8592,21 +8499,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 2,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7008,
       "sockets": {
@@ -8709,8 +8604,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2274,
-        "lod1": 794
+        "lod0": 2242,
+        "lod1": 784
       },
       "validation_pass": true
     },
@@ -8915,7 +8810,7 @@
       },
       "generator": "char_soldier",
       "generator_version": 1,
-      "geometry_hash": "b11d58f21764ca50",
+      "geometry_hash": "edd6ed3513d529e2",
       "id": "char_soldier_11",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -8928,21 +8823,9 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent",
-        "round": 5,
-        "scores": {
-          "cohesion": 2,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7010,
       "sockets": {
@@ -9045,8 +8928,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 2500,
-        "lod0": 2368,
-        "lod1": 828
+        "lod0": 2424,
+        "lod1": 848
       },
       "validation_pass": true
     },
@@ -13145,7 +13028,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "6e20df099aaaef90",
+      "geometry_hash": "ffc553b57c006d59",
       "id": "prop_banner_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -13158,21 +13041,9 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/prop_banner.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7004,
       "sockets": {
@@ -13190,8 +13061,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 628,
-        "lod1": 218
+        "lod0": 644,
+        "lod1": 224
       },
       "validation_pass": true
     },
@@ -13204,7 +13075,7 @@
       },
       "dimensions_studs": {
         "x": 8.21,
-        "y": 18.693,
+        "y": 18.79,
         "z": 3.189
       },
       "double_sided": false,
@@ -13214,7 +13085,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "11521f14bdebd09a",
+      "geometry_hash": "f437abb3e0c4fbf6",
       "id": "prop_banner_green_02",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -13227,21 +13098,9 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/prop_banner.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7005,
       "sockets": {

@@ -85,12 +85,8 @@ def interp(profile, z):
 
 
 def emblem_poly(k):
-    """Kingdom emblem outline in a unit box (x -0.5..0.5, z 0..1), CCW. (No yellow: the kit-wide sun
-    is layered, see `emblem`.)"""
-    if k == "red":  # flame
-        return [(0.0, 0.0), (0.26, 0.03), (0.42, 0.18), (0.46, 0.4), (0.38, 0.58), (0.42, 0.8), (0.24, 0.64),
-                (0.18, 0.84), (0.02, 1.0), (-0.06, 0.78), (-0.2, 0.9), (-0.26, 0.66), (-0.42, 0.5),
-                (-0.46, 0.28), (-0.3, 0.05)]
+    """Star outline (blue) in a unit box (x -0.5..0.5, z 0..1), CCW. The other emblems are the kit-wide
+    shared designs, drawn from `_kingdom_props_common` (see `crown`, `oak`, `sun`, `emblem`)."""
     if k == "blue":  # five-point star
         pts = []
         for i in range(10):
@@ -98,23 +94,43 @@ def emblem_poly(k):
             r = 0.52 if i % 2 == 0 else 0.22
             pts.append((math.cos(a) * r, 0.48 + math.sin(a) * r))
         return pts
-    if k == "green":  # oak leaf with three lobes a side and a stem
-        right = []
-        for j in range(11):
-            t = j / 10
-            env = 0.4 * math.sin(math.pi * min(1.0, 0.08 + 0.92 * t)) ** 0.7
-            lob = 0.62 + 0.38 * abs(math.cos(3 * math.pi * t))
-            right.append((max(0.05, env * lob), 0.16 + 0.84 * t))
-        right[-1] = (0.03, 1.0)
-        return [(-0.05, 0.0), (0.05, 0.0)] + right + [(-x, z) for x, z in reversed(right)]
-    raise ValueError("emblem_poly('yellow'): the kit-wide sun is layered, draw it with emblem('yellow', ...)")
+    raise ValueError(f"emblem_poly({k!r}): only the star is a plain outline; draw {k} with emblem({k!r}, ...)")
 
 
 EMBLEM_STYLE = {  # fill, outline (None = no outline) when drawn on kingdom cloth
-    "red": ("red_trim", "red_cloth_dark"),
     "blue": ("blue_emblem", "blue_cloth_dark"),
-    "green": ("green_emblem", "green_cloth_dark"),
-}  # yellow: see `sun`
+}  # red: see `crown`, green: see `oak`, yellow: see `sun` (no outline: they read on their fields)
+
+
+def crown(size, depth=0.08):
+    """The kit-wide Emberhold crown (_kingdom_props_common.crown_outlines: three points on a band, gold
+    with an ivory band and three ivory gems, as on the castle banners) as cheap prisms, centred on the
+    origin, facing -Y, about 1.0 x size wide and 0.7 x size tall (0.85 x size with the gems)."""
+    s = 0.48 * size
+    pts, (bx, bz, bw, bh), gems = kp.crown_outlines(s)
+    dz = -0.12 * s  # centre the crown body (base -0.62 s .. middle point 0.86 s) on the origin
+    gold, ivory = kp.emblem_colors("red", "crown")
+    out = [slab([(x, z + dz) for x, z in pts], depth, gold)]
+    out.append(box(bw, depth * 0.6, bh, ivory, base=False).move(bx, -depth * 0.5, bz + dz))
+    for gx, gz, gr in gems:
+        gem = lathe([(0.0, -gr), (gr, 0.0), (0.0, gr)], 4, ivory)
+        out.append(gem.rotate(math.pi / 2, "X").move(gx, -depth * 0.4, gz + dz))
+    return out
+
+
+def oak(size, depth=0.08):
+    """The kit-wide Thornwood oak leaf (_kingdom_props_common.oak_outlines: ivory leaf, 4 lobes a side,
+    bronze midrib and stem, as on the castle banners) as cheap prisms (flat-topped lobes: same outline at
+    character scale, 32 tris cheaper), centred on the origin, facing -Y, 0.75 x size wide and 1.1 x size
+    tall with the stem."""
+    s = 0.47 * size
+    leaf, (mx, mz, mw, mh), (sx, sz, sw, sh) = kp.oak_outlines(s, lobe_pts=2)
+    dz = 0.115 * s  # centre the leaf + stem (-1.29 s .. 1.06 s) on the origin
+    ivory, bronze = kp.emblem_colors("green", "oak")
+    out = [slab([(x, z + dz) for x, z in leaf], depth, ivory)]
+    out.append(box(mw, depth, mh, bronze, base=False).move(mx, -depth * 0.55, mz + dz))  # midrib
+    out.append(box(sw, depth, sh, bronze, base=False).move(sx, 0, sz + dz))  # stem
+    return out
 
 
 def sun(size, depth=0.08, roundel=True):
@@ -137,10 +153,13 @@ def sun(size, depth=0.08, roundel=True):
 
 
 def emblem(k, size, depth=0.08, outline=True):
-    """Emblem slab centred on the origin, facing -Y. outline=None: only where the fill needs it.
-    Yellow is the kit-wide sun (`sun`); its "outline" is the ivory roundel it needs on gold cloth."""
+    """Kingdom emblem centred on the origin, facing -Y, about `size` across: the kit-wide crown (red),
+    star (blue), oak leaf (green) and sun (yellow). outline: the star's dark outline (None: no outline);
+    the sun's "outline" is the ivory roundel it needs on gold cloth. (The flame is retired, D-039.)"""
     if k == "yellow":
         return sun(size, depth, roundel=outline is not False)
+    if k in ("red", "green"):
+        return [p.paint(grad=("range", 0.55, 0.95)) for p in (crown if k == "red" else oak)(size, depth)]
     poly = [(x * size, (z - 0.5) * size) for x, z in emblem_poly(k)]
     fill, line = EMBLEM_STYLE[k]
     out = [slab(poly, depth, fill)]
@@ -196,8 +215,9 @@ def round_poly(R, n=12):
 
 
 def shield(k, poly, emblem_size, rim=None, field=None, boss=False, depth=0.2):
-    """Shield standing on its lowest point at the origin, face towards -Y.
-    Returns (pieces, centre_z)."""
+    """Shield standing on its lowest point at the origin, face towards -Y. boss: a metal boss in the
+    centre, only on a shield without an emblem (emblem_size 0): on an emblem it turns the oak leaf into
+    a flower. Returns (pieces, centre_z)."""
     sun_on_ivory = k == "yellow" and field is None  # D-033: the gold sun gets an ivory field, not gold
     rim = rim or kingdom_color(k, "trim")
     field = field or kingdom_color(k, "accent" if sun_on_ivory else "cloth")
@@ -207,9 +227,9 @@ def shield(k, poly, emblem_size, rim=None, field=None, boss=False, depth=0.2):
     out.append(slab(shrink(poly, 0.86, 0.0, cz), depth * 0.6, field).move(0, -depth * 0.4, 0)
                .paint(grad=("range", 0.35, 0.9)))
     ez = cz + (max(zs) - cz) * 0.12
-    for e in emblem(k, emblem_size, 0.08, outline=not sun_on_ivory):
+    for e in (emblem(k, emblem_size, 0.08, outline=not sun_on_ivory) if emblem_size else ()):
         out.append(e.move(0, -depth * 0.75, ez))
-    if boss:
+    if boss and not emblem_size:
         out.append(lathe([(0.0, 0.0), (0.3, 0.0), (0.26, 0.12), (0.0, 0.2)], 8, rim).rotate(math.pi / 2, "X")
                    .move(0, -depth * 0.8, cz))
     return out, cz
@@ -781,9 +801,9 @@ def great_helm(body, k, metal="armor"):
     elif k == "blue":
         out.append(lathe([(0.42, 0.0), (0.0, 0.42)], 4, trim, phase=math.pi / 4).move(0, 0, 0.8))
         top += 0.4
-    elif k == "green":
-        lf = slab([(x * 0.95, z * 0.95) for x, z in emblem_poly("green")], 0.12, trim)
-        out.append(lf.move(0, 0.05, 0.92))
+    elif k == "green":  # the kit oak leaf as a crest, its stem planted in the helm top
+        cs = 0.86  # 0.95 tall with the stem, like the old crest
+        out += [q.move(0, 0.05, 0.92 + 0.55 * cs) for q in oak(cs, 0.12)]
         top += 0.85
     else:
         out.append(lathe([(0.0, 1.4), (0.12, 1.46), (0.13, 1.66), (0.0, 1.92)], 6, "gold"))
@@ -819,6 +839,6 @@ def mace(hand, direction, length=1.9):
 
 
 __all__ = ["KINGDOMS", "BASE", "HEAD_R", "ARM_POSES", "Body", "ellipsoid", "along", "elathe", "slab", "shrink",
-           "interp", "emblem_poly", "sun", "emblem", "kite_poly", "heater_poly", "almond_poly", "round_poly", "shield", "hair_cap",
+           "interp", "emblem_poly", "crown", "oak", "sun", "emblem", "kite_poly", "heater_poly", "almond_poly", "round_poly", "shield", "hair_cap",
            "hair_long", "beard", "hood", "brimmed_hat", "scarf_head", "helmet", "spear", "pennant_flag", "bow",
            "quiver", "sword", "hammer", "great_helm", "axe", "mace", "pitchfork", "basket", "pouch", "stick"]

@@ -6,7 +6,9 @@ grindstone, a weapon/tool rack with kingdom shields, coal and iron stock, horses
 kingdom banner and an anvil trade sign.
 
 Layouts: "pent" (gable rear block + lean-to), "loft" (two-storey rear block + lean-to),
-"shed" (one big mono-pitch roof from a tall back wall to the front posts).
+"shed" (one big mono-pitch roof from a tall back wall to the front posts), "ell" (L-plan: a
+two-storey gable-fronted wing with a kingdom-stone ground floor and a big gable banner on one side,
+the open workshop under a side lean-to on the other, its chimney rising at the far end).
 Front (open side) faces Blender -Y. Sockets: `interact` = in front of the anvil (player
 stands here to smith), `forge` = centre of the glowing hearth (VFX/fire attach).
 """
@@ -31,8 +33,8 @@ _TABLE = [
     dict(layout="pent", forge=-1, walls="timber", W=20.0, D=15.6, h1=12.2),
     dict(layout="shed", forge=1, walls="stone", W=19.0, D=14.5, h1=13.4),
     dict(layout="loft", forge=1, walls="timber", W=18.0, D=15.4, h1=11.8, h2=7.6),
-    dict(layout="pent", forge=1, walls="stone", W=21.0, D=15.9, h1=12.4),
-    dict(layout="shed", forge=-1, walls="timber", W=18.0, D=14.2, h1=13.0),
+    dict(layout="pent", forge=1, walls="stone", W=21.0, D=15.9, h1=12.4, cross=True),
+    dict(layout="ell", forge=-1, walls="stone", W=20.0, D=14.6, h1=7.2, h2=5.4, Ww=8.6),
     dict(layout="loft", forge=-1, walls="stone", W=19.5, D=15.6, h1=11.9, h2=7.8),
 ]
 
@@ -206,8 +208,10 @@ def _horseshoe(s=0.5, color="iron_dark"):
 
 # ------------------------------------------------------------------ building shell
 
-def _rear_block(b, rng, k, W, Dr, yc, z0, h1, h2, walls, fs):
-    """Enclosed rear block centred at (0, yc). Returns (wall top z, ridge rise, windows)."""
+def _rear_block(b, rng, k, W, Dr, yc, z0, h1, h2, walls, fs, cross=False):
+    """Enclosed rear block centred at (0, yc). cross: the ridge runs front-to-back, so a wide gable
+    faces the street above the lean-to (a different roofline from the side-gabled blocks).
+    Returns (wall top z, ridge rise, windows)."""
     plaster = rng.choice(("plaster", "plaster", "plaster_white"))
     shutter = kingdom_color(k, "shutter")
     windows = 0
@@ -263,6 +267,25 @@ def _rear_block(b, rng, k, W, Dr, yc, z0, h1, h2, walls, fs):
             local += [pc.move(ux, -Dr / 2, top + 2.4) for pc in kit.window(kit.WIN_W, kit.WIN_H * 0.9, "timber", shutter)]
             windows += 1
         top += h2
+    if cross:
+        roof, rise = kit.gable_roof(W, Dr, 34.0, overhang=1.4, gable_overhang=1.0, thickness=0.75,
+                                    color=kingdom_color(k, "roof"), rows=4, ridge_color=kingdom_color(k, "roof_dark"),
+                                    style="tile", rng=rng)
+        for pc in roof:
+            b.add(pc.move(0, yc, top), tag="roof")
+        for sy in (-1, 1):
+            g = kit.gable_end(W, rise, 0.8, plaster)
+            local.append(g.move(0, sy * (Dr / 2 - 0.4), top).paint(grad=("range", 0.5, 0.85)))
+            yg = sy * (Dr / 2 + 0.1)
+            n = (0, sy, 0)
+            local.append(kit.oriented_box((-W / 2 + 0.5, yg, top + 0.35), (W / 2 - 0.5, yg, top + 0.35), kit.TIMBER,
+                                          0.4, "timber", n))
+            for ux in (-W * 0.2, 0.0, W * 0.2):  # king post + queen posts
+                zt = top + rise * (1 - abs(ux) / (W / 2)) - 0.8
+                local.append(kit.oriented_box((ux, yg, top + 0.6), (ux, yg, zt), kit.TIMBER, 0.4, "timber", n))
+        for pc in local:
+            b.add(pc.move(0, yc, 0))
+        return top, rise, windows
     roof, rise = kit.gable_roof(Dr, W, 46.0, overhang=1.4, gable_overhang=1.0, thickness=0.75,
                                 color=kingdom_color(k, "roof"), rows=4, ridge_color=kingdom_color(k, "roof_dark"),
                                 style="tile", rng=rng)
@@ -342,6 +365,64 @@ def _shed_walls(b, rng, k, W, D, yb, z0, zf, zb, walls, fs):
     return windows
 
 
+def _ell_wing(b, rng, k, Ww, Dw, xc, yc, z0, hg, hu, fs):
+    """Gable-fronted two-storey wing of the L-plan smithy, centred on (xc, yc): kingdom-stone ground
+    floor with quoins, a door and a window on the street gable; jettied timber-framed plaster upper
+    floor; steep kit-tile roof with the ridge along Y (gable to the street) and a big kingdom banner on
+    the front gable. The workshop lean-to leans on its inner side wall (towards +fs). Returns
+    (eave z, ridge rise, windows)."""
+    plaster = rng.choice(("plaster", "plaster_white"))
+    shutter = kingdom_color(k, "shutter")
+    st, stl, std = kingdom_color(k, "stone"), kingdom_color(k, "stone_light"), kingdom_color(k, "stone_dark")
+    local = [kit.bbox(Ww, Dw, hg, st, 0.2).move(0, 0, z0).paint(grad=("range", 0.2, 0.8))]
+    for sx in (-1, 1):  # quoins
+        for sy in (-1, 1):
+            for j in range(int(hg // 1.9)):
+                big = j % 2 == 0
+                q = box(1.9 if big else 1.2, 1.2 if big else 1.9, 1.7, stl)
+                local.append(q.move(sx * (Ww / 2 - (0.75 if big else 0.4)) + sx * 0.18,
+                                    sy * (Dw / 2 - (0.4 if big else 0.75)) + sy * 0.18, z0 + 0.12 + j * 1.9))
+    local += cc.wall_stones(rng, Dw, hg - 0.5, "y", -fs * Ww / 2, 4, (stl, std), z0, margin=2.2)
+    windows = 0
+    # street gable, ground floor: the store door in the middle, between the quoins
+    local += [pc.move(0, -Dw / 2, z0) for pc in kit.door(kit.DOOR_W * 0.8, kit.DOOR_H * 0.85, "wood_dark", stl,
+                                                          step="stone")]
+    # jetty beam, then the jettied upper floor
+    top = z0 + hg
+    local.append(kit.bbox(Ww + 1.0, Dw + 1.0, 0.6, "timber", 0.1).move(0, 0, top))
+    top += 0.6
+    Wu, Du = Ww + 0.6, Dw + 0.6
+    local.append(kit.bbox(Wu, Du, hu, plaster, 0.18).move(0, 0, top).paint(grad=("range", 0.4, 0.85)))
+    local += [f.move(0, 0, top) for f in kit.wall_face_frame(Wu, hu, "x", -Du / 2, "timber", posts=3, braces=True,
+                                                               rng=rng)]
+    local += [f.move(0, 0, top) for f in kit.wall_face_frame(Du, hu, "y", -fs * Wu / 2, "timber", posts=4,
+                                                               braces=True, rng=rng)]
+    for wx in (-Wu * 0.25, Wu * 0.25):  # two windows on the street gable
+        local += [pc.move(wx, -Du / 2, top + 1.2) for pc in kit.window(kit.WIN_W * 0.85, kit.WIN_H * 0.85, "timber",
+                                                                        shutter)]
+        windows += 1
+    local += [pc.rotate(fs * math.pi / 2, "Z").move(-fs * Wu / 2, Du * 0.12, top + 1.2)  # outer side window
+              for pc in kit.window(kit.WIN_W * 0.85, kit.WIN_H * 0.85, "timber", shutter)]
+    windows += 1
+    top += hu
+    roof, rise = kit.gable_roof(Wu, Du, 52.0, overhang=1.2, gable_overhang=1.0, thickness=0.75,
+                                color=kingdom_color(k, "roof"), rows=4, ridge_color=kingdom_color(k, "roof_dark"),
+                                style="tile", rng=rng)
+    for pc in roof:
+        b.add(pc.move(xc, yc, top), tag="roof")
+    for sy in (-1, 1):
+        local.append(kit.gable_end(Wu, rise, 0.8, plaster).move(0, sy * (Du / 2 - 0.4), top)
+                     .paint(grad=("range", 0.5, 0.85)))
+    # tie beam on the street gable and the big kingdom banner hanging in the gable (reads at 84 studs)
+    yg = -Du / 2 - 0.1
+    local.append(kit.oriented_box((-Wu / 2 + 0.5, yg, top + 0.35), (Wu / 2 - 0.5, yg, top + 0.35), kit.TIMBER, 0.4,
+                                  "timber", (0, -1, 0)))
+    local += [pc.move(0, yg - 0.55, top + rise - 2.6) for pc in cc.banner(k, 2.8, 3.6)]
+    for pc in local:
+        b.add(pc.move(xc, yc, 0))
+    return top, rise, windows
+
+
 def build(b, p):
     rng = b.rng
     k = p["kingdom"]
@@ -359,7 +440,7 @@ def build(b, p):
     for pc in cc.plinth(W, D + YARD, PH, rng, "stone_dark", 0.0, cyp, block=(3.4, 5.2)):
         b.add(pc)
     yp = -D / 2 + 0.7  # front post line
-    if lay == "shed":
+    if lay in ("shed", "ell"):
         yr = D / 2 - 1.0  # inner face of the back wall
     else:
         Dr = 7.6
@@ -367,10 +448,16 @@ def build(b, p):
     yfront = -D / 2 - YARD
     nx, ny = max(3, int(W / 3.3)), max(3, int((yr - yfront) / 3.3))
     tw, td = (W - 0.6) / nx, (yr - yfront - 0.3) / ny
+    wing = None  # ell: (x0, x1, y0) footprint of the wing (no floor tiles under it)
+    if lay == "ell":
+        xw = -fs * (W / 2 - p["Ww"] / 2)
+        wing = (xw - p["Ww"] / 2 - 0.3, xw + p["Ww"] / 2 + 0.3, yp - 0.4)
     for i in range(nx):
         for j in range(ny):
             x = -W / 2 + 0.3 + tw * (i + 0.5)
             y = yfront + 0.3 + td * (j + 0.5)
+            if wing and wing[0] < x < wing[1] and y > wing[2]:
+                continue
             b.add(box(tw - 0.16, td - 0.16, 0.14, rng.choice(("cobble", "stone_light", "cobble")))
                   .move(x + rng.uniform(-0.05, 0.05), y, PH - 0.06).paint(tint=rng.uniform(0, 1), grad=0.55))
     floor = PH + 0.08
@@ -391,8 +478,34 @@ def build(b, p):
         for pc in lean:
             b.add(pc.move(0, D / 2, zf + 0.7), tag="roof")
         top_z = zb + 0.7 + 0.8
+    elif lay == "ell":
+        Ww = p["Ww"]
+        xw = -fs * (W / 2 - Ww / 2)
+        yw0 = yp - 0.4  # street gable of the wing, just behind the yard
+        eave, wrise, w_ = _ell_wing(b, rng, k, Ww, D / 2 - yw0, xw, (D / 2 + yw0) / 2, PH, h1, h2, fs)
+        windows += w_
+        ridge = eave + wrise
+        x_in = xw + fs * Ww / 2  # inner face of the wing: the lean-to's high edge
+        x_out = fs * (W / 2 - 0.55)  # outer eave post line
+        run = abs(x_out - x_in)
+        zlo, z_hi = zf + 0.7, eave - 1.0  # high edge 1 stud under the wing eave
+        pitch = math.degrees(math.atan2(z_hi - zlo, run))
+        Ls = D / 2 - yp
+        ys = (D / 2 + yp) / 2
+        lean, _ = cc.mono_tile_roof(run, Ls, pitch, roof_col, rows=4, overhang=1.3, gable_overhang=0.9, thickness=0.65,
+                                    rng=rng)
+        for pc in lean:
+            b.add(pc.rotate(fs * math.pi / 2, "Z").move(x_in, ys, zlo), tag="roof")
+        # plaster back wall under the slope, timber corner post + sloped top plate
+        xo = x_out + fs * 0.45
+        back = prism([(xo, PH), (x_in, PH), (x_in, z_hi - 0.2), (xo, zlo - 0.1)], 0.9, "plaster")
+        b.add(back.move(0, D / 2 - 0.45, 0).paint(grad=("range", 0.35, 0.85)))
+        b.add(kit.oriented_box((xo, D / 2 - 0.95, zlo - 0.4), (x_in, D / 2 - 0.95, z_hi - 0.5), kit.TIMBER, 0.4,
+                               "timber", (0, -1, 0)))
+        top_z = ridge + 0.9
     else:
-        wall_top, rrise, w_ = _rear_block(b, rng, k, W, Dr, D / 2 - Dr / 2, PH, h1, h2, p["walls"], fs)
+        wall_top, rrise, w_ = _rear_block(b, rng, k, W, Dr, D / 2 - Dr / 2, PH, h1, h2, p["walls"], fs,
+                                          cross=p.get("cross", False))
         windows += w_
         ridge = wall_top + rrise
         hi = PH + h1 - 0.45
@@ -407,7 +520,22 @@ def build(b, p):
     # --- front posts, beam, braces, tie beams back to the wall
     nposts = 4 if W > 18.5 else 3
     xs = [-W / 2 + 0.55 + (W - 1.1) * i / (nposts - 1) for i in range(nposts)]
-    for x in xs:
+    if lay == "ell":  # posts along the outer eave, a raking beam across the open street end
+        for y in (yp, (yp + D / 2) / 2, D / 2 - 0.5):
+            for pc in cc.post(zf - floor, 0.9, "timber", pad=True):
+                b.add(pc.move(x_out, y, floor - 0.08))
+            for s_ in (-1, 1):
+                if (s_ < 0 and y == yp) or (s_ > 0 and y > 0.5 * D / 2):
+                    continue
+                b.add(cc.knee_brace((x_out, y + s_ * 0.4, zf - 1.9), (x_out, y + s_ * 1.9, zf + 0.05), (fs, 0, 0)))
+        b.add(kit.bbox(0.8, D / 2 - yp + 0.9, 0.75, "timber", 0.08).move(x_out, ys + 0.2, zf - 0.05))
+        b.add(kit.oriented_box((x_out, yp, zf + 0.35), (x_in, yp, z_hi - 0.35), 0.75, 0.8, "timber", (0, -1, 0)))
+        b.add(kit.oriented_box((x_out, yp, zf - 1.6), (x_out - fs * 1.6, yp, zf + 0.6), kit.TIMBER * 0.8,
+                               kit.TIMBER * 0.8, "timber", (0, -1, 0)))
+        for j in range(2):  # horseshoes nailed to the corner post
+            b.add(_horseshoe(0.42).move(x_out, yp - 0.52, zf - 2.8 - 1.1 * j + rng.uniform(-0.1, 0.1)))
+        xs = [x_out]
+    for x in (xs if lay != "ell" else ()):
         for pc in cc.post(zf - floor, 0.9, "timber", pad=True):
             b.add(pc.move(x, yp, floor - 0.08))
         b.add(kit.oriented_box((x, yp, zf + 0.35), (x, yr, zf + 0.35), 0.5, 0.5, "timber", (1, 0, 0)))
@@ -415,9 +543,10 @@ def build(b, p):
             if (s < 0 and x == xs[0]) or (s > 0 and x == xs[-1]):
                 continue
             b.add(cc.knee_brace((x + s * 0.4, yp, zf - 1.9), (x + s * 1.9, yp, zf + 0.05), (0, -1, 0)))
-    b.add(kit.bbox(W + 0.7, 0.8, 0.75, "timber", 0.08).move(0, yp, zf - 0.05))
-    for j, x in enumerate((-W * 0.06, W * 0.06)):  # horseshoes nailed to the beam
-        b.add(_horseshoe(0.42).move(x + rng.uniform(-0.3, 0.3), yp - 0.47, zf + 0.35))
+    if lay != "ell":
+        b.add(kit.bbox(W + 0.7, 0.8, 0.75, "timber", 0.08).move(0, yp, zf - 0.05))
+        for j, x in enumerate((-W * 0.06, W * 0.06)):  # horseshoes nailed to the beam
+            b.add(_horseshoe(0.42).move(x + rng.uniform(-0.3, 0.3), yp - 0.47, zf + 0.35))
 
     # --- forge at the front of the workshop on one side: the glowing fire-box and hood face the
     #     street, the tall chimney rises through the lean-to and clears the ridge
@@ -425,6 +554,10 @@ def build(b, p):
     hd = 4.4
     yfh = yp + hd / 2 + 0.35
     chim_top = max(ridge, top_z) + (3.4 if h2 else 4.4)
+    if lay == "ell":  # the end stack rises just above the wing ridge: tall - low - tall silhouette
+        chim_top = ridge + 1.8
+    elif p.get("cross"):  # off-centre stack beside the street gable, just clearing its ridge
+        chim_top = ridge + 1.6
     fpcs, hearth_top = _forge(rng, k, chim_top - floor, -fs)
     for pc in fpcs:
         b.add(pc.move(xf, yfh, floor))
@@ -432,9 +565,10 @@ def build(b, p):
     b.socket("forge", xf, yfh - 0.1, floor + hearth_top)
     # coal heap in the forecourt corner, iron bar stock inside by the rack
     b.add(cc.mound(2.4, 2.0, 1.0, "coal", rng).move(fs * (W / 2 - 1.5), yp - 2.4, floor))
+    rx = -fs * (W / 2 - 4.0) if lay != "ell" else x_in + fs * 3.0  # rack + bar stock (ell: in the workshop)
     for j in range(4):
         b.add(box(2.4, 0.22, 0.22, "iron").rotate(rng.uniform(-0.08, 0.08), "Z")
-              .move(-fs * (W / 2 - 4.0), yr - 1.6 - j * 0.3, floor + (0.0 if j < 3 else 0.22)))
+              .move(rx, yr - 1.6 - j * 0.3, floor + (0.0 if j < 3 else 0.22)))
 
     # --- anvil out in the forecourt (reads from the street), quench barrel with tongs
     xa = xf - fs * 3.4
@@ -450,22 +584,25 @@ def build(b, p):
         b.add(kit.oriented_box((bx + s * 0.12, ya + 0.5, floor + 1.4), (bx + s * 0.3 + fs * 0.4, ya + 0.2, floor + 3.6),
                                0.12, 0.12, "iron_dark", (0, -1, 0)))
 
-    # --- grindstone in the forecourt corner (non-forge side), rack on the back wall
+    # --- grindstone in the forecourt corner (non-forge side; ell: in the workshop by the wing), rack on
+    #     the back wall
+    gx, gy = (-fs * (W / 2 - 2.5), yp - 2.3) if lay != "ell" else (x_in + fs * 1.5, yp + 1.0)  # ell: clear of the door
     for pc in _grindstone():
-        b.add(pc.rotate(0.35 * fs, "Z").move(-fs * (W / 2 - 2.5), yp - 2.3, floor))
-    rx = -fs * (W / 2 - 4.0)
+        b.add(pc.rotate(0.35 * fs, "Z").move(gx, gy, floor))
     for pc in _rack(rng, k, 5.0):
         b.add(pc.move(rx, yr, floor))
 
     # --- log pile against the outer forge-side wall
     for pc in cc.log_pile(rng, 3.6, 3, 0.55):
-        b.add(pc.rotate(math.pi / 2, "Z").move(fs * (W / 2 + 1.7), (D / 2 - D * 0.25) if lay == "shed" else yr + 3.8,
-                                                0.0))
+        b.add(pc.rotate(math.pi / 2, "Z").move(fs * (W / 2 + 1.7), (D / 2 - D * 0.25) if lay in ("shed", "ell")
+                                                else yr + 3.8, 0.0))
 
-    # --- kingdom banner on the outer non-forge post, anvil sign on the forge-side post
-    bxp = xs[0] if fs > 0 else xs[-1]
-    for pc in cc.banner(k, 2.0, 4.4):
-        b.add(pc.move(bxp, yp - 0.75, zf - 0.3))
+    # --- kingdom banner on the outer non-forge post (ell: the big gable banner), anvil sign on the
+    #     forge-side post
+    if lay != "ell":
+        bxp = xs[0] if fs > 0 else xs[-1]
+        for pc in cc.banner(k, 2.0, 4.4):
+            b.add(pc.move(bxp, yp - 0.75, zf - 0.3))
     sxp = xs[-1] if fs > 0 else xs[0]
     for pc in cc.hanging_sign("anvil", "iron_dark", side=fs, arm=3.0, w=2.5, h=1.8, board="wood_pale"):
         b.add(pc.move(sxp + fs * 0.45, yp, zf - 0.6))

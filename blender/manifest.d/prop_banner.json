@@ -157,7 +157,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "6e20df099aaaef90",
+      "geometry_hash": "ffc553b57c006d59",
       "id": "prop_banner_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -170,21 +170,9 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/prop_banner.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7004,
       "sockets": {
@@ -202,8 +190,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 628,
-        "lod1": 218
+        "lod0": 644,
+        "lod1": 224
       },
       "validation_pass": true
     },
@@ -216,7 +204,7 @@
       },
       "dimensions_studs": {
         "x": 8.21,
-        "y": 18.693,
+        "y": 18.79,
         "z": 3.189
       },
       "double_sided": false,
@@ -226,7 +214,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "11521f14bdebd09a",
+      "geometry_hash": "f437abb3e0c4fbf6",
       "id": "prop_banner_green_02",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -239,21 +227,9 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/prop_banner.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7005,
       "sockets": {
@@ -563,7 +539,7 @@
       "prop_banner_red_01",
       "prop_banner_yellow_02"
     ],
-    "mean_pair_diff": 0.5704,
+    "mean_pair_diff": 0.5712,
     "min_pair_diff": 0.1817,
     "pass": true,
     "threshold": 0.08
