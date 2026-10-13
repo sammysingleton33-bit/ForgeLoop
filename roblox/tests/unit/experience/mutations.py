@@ -124,6 +124,7 @@ M = [
  ("FL-0027", C+"NotificationController.luau", 'local data = if type(payload) == "table" then payload else nil', 'local data = payload', "Notification", "a payload that is not a table", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'root.stack.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, top)', 'root.stack.Position = Def.POSITION', "Notification", "place() follows the game's layout", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'top = math.max(top, px)', 'local _ = px', "Notification", "place() follows the game's layout", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'position = position or self:_rulerPosition(), tint = tint }', 'position = position or self:_rulerPosition() }', "Notification", "payload.tint colours the celebration's effect", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", ' and spec.durationSec == spec.durationSec -- not NaN', '', "Notification", "a NaN duration gets the kind's default", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'return if #text > limit then string.sub(text, 1, limit) .. "…" else text', 'return text', "Notification", "a NaN duration gets the kind's default", "fw"),
  ("FL-0027", C+"OnboardingController.luau", '	self:_reserve(Def.CARD_RESERVE)\n', '', "OnboardingController", "keeps the toast stack below the card", "fw"),
