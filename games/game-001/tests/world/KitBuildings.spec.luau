@@ -269,19 +269,83 @@ describe("Kit keep throne (G13.6)", function()
 				expect(steps >= 2 and steps <= 3).toBe(true)
 				expect(daisTop - floorTop).toBeGreaterThanOrEqual(1.5)
 				expect(s.CFrame.Position.Y - s.Size.Y / 2).toBeGreaterThanOrEqual(daisTop - 0.01)
-				-- nothing above the seat: visible from the aerial camera (40–220 studs, looking down)
+				-- open to the aerial camera (40–220 studs, looking down): the only thing above the seat is the
+				-- baldachin, held high (≥ 8 studs over the seat) so oblique views see under it
 				local top = s.CFrame.Position.Y + s.Size.Y / 2
 				for _, p in parts(m) do
 					if p ~= s and p.Transparency < 1 then
 						local e, c = halfExtents(p), p.CFrame.Position
 						local covers = math.abs(c.X - s.CFrame.Position.X) < e.X
 							and math.abs(c.Z - s.CFrame.Position.Z) < e.Z
-						if covers and c.Y - e.Y > top then
+						local baldachin = p:GetAttribute("KitThrone") == true
+							and string.sub(p.Name, 1, 9) == "Baldachin"
+						if covers and c.Y - e.Y > top and not (baldachin and c.Y - e.Y >= top + 8) then
 							error(`keep L{level}: {p.Name} roofs over the throne`)
 						end
 					end
 				end
 			end
+		end
+	end)
+
+	it("keeps every throne part clear of the entrance bay and the door behind it", function()
+		local door = {
+			EntranceBay = true,
+			Door = true,
+			DoorArch = true,
+			DoorStrap = true,
+			DoorJamb = true,
+			Voussoir = true,
+			Keystone = true,
+		}
+		for level = 1, 3 do
+			for _, color in COLORS do
+				local m = Kit.build("keep", level, "complete", color)
+				local throneParts, doorParts = {}, {}
+				for _, p in parts(m) do
+					if p:GetAttribute("KitThrone") == true then
+						table.insert(throneParts, p)
+					elseif door[p.Name] then
+						table.insert(doorParts, p)
+					end
+				end
+				expect(#throneParts).toBeGreaterThan(10)
+				expect(#doorParts).toBeGreaterThan(8)
+				for _, a in throneParts do
+					local ea, ca = halfExtents(a), a.CFrame.Position
+					for _, b in doorParts do
+						local eb, cb = halfExtents(b), b.CFrame.Position
+						local dc = ca - cb
+						local gap = Vector3.new(math.abs(dc.X), math.abs(dc.Y), math.abs(dc.Z)) - (ea + eb) -- < 0 everywhere = overlap
+						if gap.X < -0.001 and gap.Y < -0.001 and gap.Z < -0.001 then
+							error(`keep L{level}: throne part {a.Name} intersects {b.Name}`)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	it("marks the throne from behind with a high kingdom baldachin (≤ 6 parts, over the bay merlons)", function()
+		for level = 1, 3 do
+			local m = Kit.build("keep", level, "complete", COLORS[2])
+			local n, canopyLow, tinted = 0, math.huge, true
+			local bayTop = 0
+			for _, p in parts(m) do
+				if string.sub(p.Name, 1, 9) == "Baldachin" then
+					n += 1
+					if p.Name == "BaldachinCanopy" then
+						canopyLow = math.min(canopyLow, p.CFrame.Position.Y - halfExtents(p).Y)
+						tinted = tinted and p:GetAttribute("KitTint") ~= nil
+					end
+				elseif p.Name == "EntranceBay" then
+					bayTop = p.CFrame.Position.Y + p.Size.Y / 2
+				end
+			end
+			expect(n >= 4 and n <= 6).toBe(true)
+			expect(tinted).toBe(true)
+			-- the bay merlons are 2.4 tall on a corbel that tops the bay by 0.55
+			expect(canopyLow).toBeGreaterThan(bayTop + 2.95)
 		end
 	end)
 
@@ -335,6 +399,82 @@ describe("Kit VS-2 stand-ins (G13.5)", function()
 					end
 				end
 			end
+		end
+	end)
+end)
+
+-- Coplanar overlapping faces between axis-aligned blocks (z-fighting / flicker in Studio): two faces facing the
+-- same way within 0.005 studs of one plane that share > 0.05 stud². Downward faces resting on the ground
+-- (y ≈ 0) are skipped: the terrain hides them and the camera never looks up at them.
+local AXES = { "X", "Y", "Z" }
+
+local function axisAligned(cf: CFrame): boolean
+	for _, v in { cf.RightVector, cf.UpVector, cf.LookVector } do
+		if math.max(math.abs(v.X), math.abs(v.Y), math.abs(v.Z)) < 0.9999 then
+			return false
+		end
+	end
+	return true
+end
+
+local function zFights(model: Model): { string }
+	local boxes = {}
+	for _, p in parts(model) do
+		if (p.ClassName == "Part" or p.ClassName == "Seat") and (p :: Part).Shape == Enum.PartType.Block then
+			if p.Transparency < 1 and axisAligned(p.CFrame) then
+				local e = halfExtents(p)
+				table.insert(boxes, { name = p.Name, lo = p.CFrame.Position - e, hi = p.CFrame.Position + e })
+			end
+		end
+	end
+	local out = {}
+	for i = 1, #boxes do
+		local a = boxes[i]
+		for j = i + 1, #boxes do
+			local b = boxes[j]
+			local touch = a.lo.X <= b.hi.X + 0.005
+				and b.lo.X <= a.hi.X + 0.005
+				and a.lo.Y <= b.hi.Y + 0.005
+				and b.lo.Y <= a.hi.Y + 0.005
+				and a.lo.Z <= b.hi.Z + 0.005
+				and b.lo.Z <= a.hi.Z + 0.005
+			if touch then
+				for k, ax in AXES do
+					local u, v = AXES[k % 3 + 1], AXES[(k + 1) % 3 + 1]
+					local ou = math.min(a.hi[u], b.hi[u]) - math.max(a.lo[u], b.lo[u])
+					local ov = math.min(a.hi[v], b.hi[v]) - math.max(a.lo[v], b.lo[v])
+					if ou > 0 and ov > 0 and ou * ov > 0.05 then
+						if math.abs(a.hi[ax] - b.hi[ax]) < 0.005 then
+							table.insert(out, `{a.name}/{b.name} +{ax}`)
+						end
+						local ground = ax == "Y" and math.abs(a.lo.Y) < 0.01
+						if math.abs(a.lo[ax] - b.lo[ax]) < 0.005 and not ground then
+							table.insert(out, `{a.name}/{b.name} -{ax}`)
+						end
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+describe("Kit z-fighting probe", function()
+	it("has no coplanar overlapping block faces in any building, level, house archetype or kingdom", function()
+		local found = {}
+		for _, bt in Kit.BUILDING_TYPES do
+			for level = 1, levelsFor(bt) do
+				for v = 1, (if bt == "house" then 4 else 1) do
+					for _, color in COLORS do
+						for _, hit in zFights(Buildings.build(bt, level, "complete", color, v)) do
+							table.insert(found, `{bt} L{level} v{v}: {hit}`)
+						end
+					end
+				end
+			end
+		end
+		if #found > 0 then
+			error(`{#found} coplanar face pairs, e.g. ` .. table.concat(found, "; ", 1, math.min(#found, 8)))
 		end
 	end)
 end)

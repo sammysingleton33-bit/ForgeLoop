@@ -14,7 +14,10 @@ local KINGDOM_COLORS = {
 }
 local STAGES = { 1, 2, 3, "complete" }
 local PRIMITIVE_CLASSES = { Part = true, WedgePart = true, CornerWedgePart = true, Seat = true } -- Seat: keep Throne (G13.6)
-local MAX_BUILDING_PARTS = 260 -- per model; world budget ≤ 25k parts (BRIEF §14)
+local MAX_BUILDING_PARTS = 260 -- per model at levels 1–2; world budget ≤ 25k parts (BRIEF §14)
+-- Documented exception: the keep's level 3 (the kingdom centrepiece, one per kingdom) may use up to
+-- Buildings.PART_BUDGET.keep = 300 parts; asserted below. Every other model and level stays ≤ 260.
+local KEEP_L3_MAX_PARTS = 300
 
 local function parts(model: Instance): { BasePart }
 	local out = {}
@@ -57,6 +60,18 @@ describe("Kit.build (G10)", function()
 						expect(#parts(model)).toBeLessThanOrEqual(MAX_BUILDING_PARTS)
 					end
 				end
+			end
+		end
+	end)
+
+	it("keeps the keep's level 3 within its documented exception (≤ 300 parts) and its stages ≤ 260", function()
+		local Buildings = require("@game/ReplicatedStorage/Game/Kit/Buildings")
+		expect(Buildings.PART_BUDGET.keep).toBe(KEEP_L3_MAX_PARTS)
+		for _, color in KINGDOM_COLORS do
+			for _, stage in STAGES do
+				local model = Kit.build("keep", 3, stage, color)
+				local limit = if stage == "complete" then KEEP_L3_MAX_PARTS else MAX_BUILDING_PARTS
+				expect(#parts(model)).toBeLessThanOrEqual(limit)
 			end
 		end
 	end)
