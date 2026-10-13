@@ -256,4 +256,43 @@ describe("BuildingService (G6, G8)", function()
 		end
 		expect(found).toBe(true)
 	end)
+
+	it("sends a removed building once as destroyed, and every old building when a new world starts", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local spot = freeSpot(sim, k, "house", 0)
+		local id = invoke(env, p1, "Build.Place", "house", spot, 0)
+		env.mock:advance(1)
+		assert(sim:cancelConstruction(k, id, 1))
+		env.mock:advance(1)
+		local function statesOf(fromIndex)
+			local out = {}
+			local all = broadcasts(env)
+			for i = fromIndex, #all do
+				for _, view in all[i] do
+					out[view.id] = out[view.id] or {}
+					table.insert(out[view.id], view.state)
+				end
+			end
+			return out
+		end
+		local states = statesOf(1)[id]
+		expect(states[#states]).toBe("destroyed")
+		local count = #broadcasts(env)
+		env.mock:advance(3)
+		expect(#broadcasts(env)).toBe(count) -- once
+		-- a new world: every building of the old one goes out as destroyed, before the new world's
+		local old = #sim.buildingOrder
+		match.host.match:_newWorld()
+		env.mock:advance(1)
+		local batches = broadcasts(env)
+		local gone = batches[count + 1]
+		expect(#gone).toBe(old)
+		for _, view in gone do
+			expect(view.state).toBe("destroyed")
+		end
+	end)
 end)
