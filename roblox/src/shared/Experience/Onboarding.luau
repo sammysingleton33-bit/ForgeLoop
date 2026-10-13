@@ -262,6 +262,10 @@ function Onboarding.current(flow: any, state: any): (number?, any)
 	return index, flow.steps[index]
 end
 
+-- Only the real action pays a step's reward: a bus trigger now or one remembered earlier. A step that
+-- timed out or was passed over (its service missing) never does (FORGE-00 ruling on #124).
+local PAID_VIA = table.freeze({ bus = true, satisfied = true })
+
 local function complete(flow: any, state: any, via: string, now: number, out: { Transition })
 	local index = state.completed + 1
 	local step = flow.steps[index]
@@ -273,7 +277,7 @@ local function complete(flow: any, state: any, via: string, now: number, out: { 
 	if state.completed >= #flow.steps then
 		state.finishedAt = now
 	end
-	table.insert(out, { index = index, id = step.id, via = via, reward = step.reward })
+	table.insert(out, { index = index, id = step.id, via = via, reward = if PAID_VIA[via] then step.reward else nil })
 end
 
 -- Completes the current step and every following step that is already satisfied or automatic.

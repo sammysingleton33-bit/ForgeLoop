@@ -157,6 +157,36 @@ describe("Experience/Onboarding step graph", function()
 		expect(Onboarding.persisted(state).unavailable).toBeNil() -- a later server may have the service
 	end)
 
+	it(
+		"only the real action pays a reward: a rewarded step passed over pays nothing (FORGE-00 ruling on #124)",
+		function()
+			local paid = {
+				id = "Paid",
+				trigger = { bus = "RoundEnded" },
+				hint = { title = "Finish a round" },
+				expectSec = 5,
+				requires = "MissingService",
+				reward = { currency = "Coins", amount = 5 },
+			}
+			local flow = {
+				id = "pay",
+				version = 1,
+				steps = { { id = "Start", trigger = { auto = true }, hint = { title = "Hi" }, expectSec = 1 }, paid },
+			}
+			local state = Onboarding.restore(flow, nil, 0)
+			state.unavailable = { Paid = true }
+			local transitions = Onboarding.begin(flow, state, 0)
+			expect(transitions[2].via).toBe("unavailable")
+			expect(transitions[2].reward).toBeNil()
+			-- the same step done for real pays
+			local real = Onboarding.restore(flow, nil, 0)
+			Onboarding.begin(flow, real, 0)
+			local done = Onboarding.handle(flow, real, { bus = "RoundEnded" }, 1)
+			expect(done[1].via).toBe("bus")
+			expect(done[1].reward).toEqual({ currency = "Coins", amount = 5 })
+		end
+	)
+
 	it("begins by completing the automatic first step", function()
 		local state = Onboarding.restore(FLOW, nil, 0)
 		local transitions = Onboarding.begin(FLOW, state, 0)

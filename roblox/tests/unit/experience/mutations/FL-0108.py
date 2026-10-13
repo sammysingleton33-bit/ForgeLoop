@@ -7,4 +7,5 @@ M = [
  ("FL-0108", G+"config/Onboarding.luau", 'trigger = { bus = "CitizenAnswered" }', 'trigger = { client = "CitizenInspected" }', "Onboarding", "AnswerCitizen follows G9 CitizenAnswered", "game"),
  ("FL-0108", F+"Signals.luau", '\t\treturn { { player = player, info = info } }\n', '\t\treturn {}\n', "Onboarding", "AnswerCitizen follows G9 CitizenAnswered", "game"),
  ("FL-0108", X+"Onboarding.luau", 'step.trigger.bus and step.reward ~= nil then', 'step.trigger.bus then', "Onboarding", "auto-advancing rewarded bus steps", "fw"),
+ ("FL-0108", X+"Onboarding.luau", 'reward = if PAID_VIA[via] then step.reward else nil', 'reward = step.reward', "Onboarding", "only the real action pays a reward", "fw"),
 ]
