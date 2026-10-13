@@ -62,6 +62,8 @@ local SLOT_REASONS: { [string]: string } = {
 	unknown_slot = "This plot isn't yours",
 	slot_occupied = "This plot is already built on",
 	does_not_fit = "That doesn't fit this plot",
+	-- walls and gates are line structures (CONTRACTS G13.5 v0.4-g9a; FORGE-01 adds it to the server)
+	not_on_plot = "Walls and gates go on your borders, not on a plot",
 	blocked = "Something is in the way on this plot",
 }
 
