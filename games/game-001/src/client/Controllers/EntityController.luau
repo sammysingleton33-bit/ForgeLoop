@@ -14,11 +14,13 @@
 			bubbles and FORGE-03 panels:
 			  thought   (id, "thought", { scenarioId, text, icon = "request" | "concern" | "idea" }, Model?)
 			  reaction  (id, "reaction", { text, tone = "happy" | "angry" | "sad" | "neutral" }, Model?)
-			  kcue      with an entity:  (id, <cue>, { occupation? }, Model?)
-			            kingdom or occupation wide:  (nil, <cue>, { occupation? }, nil)
-			            <cue> is one of EventCodec.KINGDOM_CUES (celebrate, grumble, salute, bow, cower,
-			            strike_placard, work_fast, rest, hammer); "celebrate" also arrives as a G4 cue
-			  strike    (nil, "strike", { occupation, on: boolean }, nil)
+			  kcue      on citizens: (id, <cue>, { occupation? }, Model?) once per id (its entityId and its
+			            entityIds, each once); with neither: (nil, <cue>, { occupation? }, nil), for the
+			            HUD or the keep only. <cue> is one of EventCodec.KINGDOM_CUES (celebrate, grumble,
+			            salute, bow, cower, strike_placard, work_fast, rest, hammer); "celebrate" also
+			            arrives as a G4 cue
+			  strike    (id, "strike", { occupation, on: boolean }, Model?) once per id in its entityIds:
+			            exactly the citizens whose strike changed; never fanned out by occupation (v0.4-g6)
 			As for cues, an event with an entity id fires only while that entity is known and not
 			despawned (otherwise it is dropped); text may be empty.
 		EntityController:pick(screenPos: Vector2): EntityId?      -- nearest visible rig within PICK_RADIUS px
@@ -315,13 +317,20 @@ function EntityController:_applyBatch(buf: any, initial: boolean)
 		elseif kind == "reaction" then
 			self:_fireFor(e.id, "reaction", { text = e.text, tone = e.tone })
 		elseif kind == "kcue" then
-			if e.id ~= nil then
-				self:_fireFor(e.id, e.cue, { occupation = e.occupation })
-			else
-				self.event:fire(nil, e.cue, { occupation = e.occupation }, nil)
+			local ids = e.entityIds or {}
+			if e.id ~= nil and not table.find(ids, e.id) then
+				table.insert(ids, 1, e.id)
+			end
+			for _, id in ids do
+				self:_fireFor(id, e.cue, { occupation = e.occupation })
+			end
+			if #ids == 0 then
+				self.event:fire(nil, e.cue, { occupation = e.occupation }, nil) -- HUD or keep only
 			end
 		elseif kind == "strike" then
-			self.event:fire(nil, "strike", { occupation = e.occupation, on = e.on }, nil)
+			for _, id in e.entityIds do -- exactly the citizens whose strike changed (G13.3 v0.4-g6)
+				self:_fireFor(id, "strike", { occupation = e.occupation, on = e.on })
+			end
 		elseif kind == "reset" then
 			self:_reset()
 		end

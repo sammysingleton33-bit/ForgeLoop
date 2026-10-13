@@ -19,10 +19,12 @@
 			6 reset    (no fields: a new match world; drop every entity, ids start over)      (1 B)
 			7 thought  id u16 · icon u8 · scenarioId str · text str        (8 B + both strings)
 			8 reaction id u16 · tone u8 · text str                                (6 B + text)
-			9 strike   on u8 (1 = on, 0 = off) · occupation str                 (4 B + occupation)
-			10 kcue    id u16 (0 = none) · cue u8 · occupation str (0 B = none)  (6 B + occupation)
+			9 strike   on u8 (1 = on, 0 = off) · ids · occupation str      (6 B + 2 B per id + occupation)
+			10 kcue    id u16 (0 = none) · cue u8 · ids · occupation str (0 B = none)
+			                                                              (8 B + 2 B per id + occupation)
 		str = byte length u16 · UTF-8 bytes. text: 0..TEXT_MAX (1024) bytes; scenarioId and
-		occupation: 1..ID_MAX (48) bytes.
+		occupation: 1..ID_MAX (48) bytes. ids = count u16 (0..ID_LIST_MAX) · id u16 each (1..65535):
+		the G13.3 `entityIds` (v0.4-g6), the citizens a strike or a cue applies to.
 	Codes (index in the list, from 1): KINDS = G2 EntityKind, JOBS = G2 JobId, KINGDOMS = G2 KingdomId,
 	CUES = { deposit, hit, die, celebrate } (G4: looping work animations derive from action + job,
 	so there are no per-swing cues), resources = SnapshotCodec.CARRYING, ICONS = { request, concern,
@@ -35,7 +37,7 @@
 	API
 		EventCodec.encode(serverTime, events): buffer
 		EventCodec.decode(buf): (Batch?, string?)    -- nil + reason for a malformed buffer; never errors
-		EventCodec.CUES, KINDS, JOBS, KINGDOMS, ICONS, TONES, KINGDOM_CUES, TEXT_MAX, ID_MAX
+		EventCodec.CUES, KINDS, JOBS, KINGDOMS, ICONS, TONES, KINGDOM_CUES, TEXT_MAX, ID_MAX, ID_LIST_MAX
 	Event (input and decoded output), by type:
 		{ type = "spawn", id, kind, job, kingdom, look? }   { type = "despawn", id }
 		{ type = "job", id, job }                        { type = "cue", id, cue, resource? }
@@ -43,10 +45,12 @@
 	look = CitizenLook { skin, hair, hairColor, outfit } (G13.2): palette indices 1..255.
 		{ type = "reset" }
 		{ type = "thought", id, scenarioId, text, icon }   { type = "reaction", id, text, tone }
-		{ type = "strike", occupation, on: boolean }       { type = "kcue", id?, occupation?, cue }
+		{ type = "strike", occupation, on: boolean, entityIds: { id } }
+		{ type = "kcue", id?, entityIds: { id }?, occupation?, cue }   (decoded: entityIds only when non-empty)
 	encode errors on unknown codes, ids outside 1..65535, look fields outside 1..255, coordinates
 	SnapshotCodec rejects, string fields that are not strings, not UTF-8 or outside their byte range,
-	and a strike `on` that is not a boolean.
+	a strike `on` that is not a boolean, a strike without an entityIds list, and id lists longer than
+	ID_LIST_MAX or holding an id outside 1..65535.
 ]]
 
 local SnapshotCodec = require("./SnapshotCodec")
@@ -77,6 +81,7 @@ EventCodec.KINGDOM_CUES = table.freeze({
 })
 EventCodec.TEXT_MAX = 1024 -- bytes of a thought or reaction text
 EventCodec.ID_MAX = 48 -- bytes of a scenarioId or occupation (Kingdom.Choose takes string(1,48))
+EventCodec.ID_LIST_MAX = 1024 -- ids in one strike or cue (G13.3: bounded by a kingdom's population)
 
 local TAGS = {
 	spawn = 1,
@@ -90,8 +95,10 @@ local TAGS = {
 	strike = 9,
 	kcue = 10,
 }
--- Fixed bytes per record; for 7..10 this counts each string's u16 length but not its bytes.
-local SIZES = { [1] = 10, [2] = 3, [3] = 4, [4] = 5, [5] = 18, [6] = 1, [7] = 8, [8] = 6, [9] = 4, [10] = 6 }
+-- Fixed bytes per record; for 7..10 this counts each string's u16 length (and the id count of 9, 10)
+-- but not the bytes of the strings or of the ids.
+local SIZES = { [1] = 10, [2] = 3, [3] = 4, [4] = 5, [5] = 18, [6] = 1, [7] = 8, [8] = 6, [9] = 6, [10] = 8 }
+local HAS_IDS = { [9] = true, [10] = true } -- an id list at `head`, before the strings
 local LOOK_FIELDS = { "skin", "hair", "hairColor", "outfit" }
 local SPAWN_BYTES = 10 -- where a full record's state part starts
 local TYPE_OF = { "spawn", "despawn", "job", "cue", "full", "reset", "thought", "reaction", "strike", "kcue" }
@@ -110,6 +117,7 @@ local STRINGS: { [number]: { head: number, fields: { StringField } } } = {
 	},
 	[8] = { head = 4, fields = { { field = "text", min = 0, max = EventCodec.TEXT_MAX, optional = false } } },
 	[9] = { head = 2, fields = { { field = "occupation", min = 1, max = EventCodec.ID_MAX, optional = false } } },
+	-- 9 and 10: `head` is where the id list starts; their strings follow the list
 	[10] = { head = 4, fields = { { field = "occupation", min = 0, max = EventCodec.ID_MAX, optional = true } } },
 }
 local NO_STRINGS: { string } = table.freeze({})
@@ -149,6 +157,22 @@ local function stringsOf(tag: number, e: Event): { string }
 	return out
 end
 
+local NO_IDS: { number } = table.freeze({})
+
+-- The id list of a strike (required) or a kcue (optional), checked.
+local function idsOf(tag: number, e: Event): { number }
+	local ids = e.entityIds
+	if ids == nil and tag == 10 then
+		return NO_IDS
+	end
+	assert(type(ids) == "table", `EventCodec: entityIds must be a list, got {typeof(ids)}`)
+	assert(#ids <= EventCodec.ID_LIST_MAX, `EventCodec: {#ids} entityIds, more than {EventCodec.ID_LIST_MAX}`)
+	for _, id in ids do
+		checkId(id)
+	end
+	return ids
+end
+
 function EventCodec.encode(serverTime: number, events: { Event }): buffer
 	assert(
 		type(serverTime) == "number" and serverTime == serverTime and serverTime >= 0 and serverTime < math.huge,
@@ -157,11 +181,13 @@ function EventCodec.encode(serverTime: number, events: { Event }): buffer
 	assert(#events <= 65535, "EventCodec.encode: too many events")
 	local size = EventCodec.HEADER_BYTES
 	local strings = table.create(#events) :: { { string } }
+	local lists = table.create(#events) :: { { number } }
 	for index, e in events do
 		local tag = TAGS[e.type]
 		assert(tag ~= nil, `EventCodec: unknown event type '{tostring(e.type)}'`)
 		strings[index] = stringsOf(tag, e)
-		size += SIZES[tag]
+		lists[index] = if HAS_IDS[tag] then idsOf(tag, e) else NO_IDS
+		size += SIZES[tag] + 2 * #lists[index]
 		for _, s in strings[index] do
 			size += #s
 		end
@@ -219,6 +245,13 @@ function EventCodec.encode(serverTime: number, events: { Event }): buffer
 		local spec = STRINGS[tag]
 		if spec then
 			local p = o + spec.head
+			if HAS_IDS[tag] then
+				buffer.writeu16(buf, p, #lists[index])
+				for i, id in lists[index] do
+					buffer.writeu16(buf, p + 2 * i, id)
+				end
+				p += 2 + 2 * #lists[index]
+			end
 			for _, s in strings[index] do
 				buffer.writeu16(buf, p, #s)
 				buffer.writestring(buf, p + 2, s)
@@ -320,8 +353,29 @@ function EventCodec.decode(buf: any): (Batch?, string?)
 		end
 		local spec = STRINGS[tag]
 		if spec then
-			-- the fixed size already covered every length prefix as if the strings were empty
+			-- the fixed size already covered every length prefix as if the strings and lists were empty
 			local p = o + spec.head
+			if HAS_IDS[tag] then
+				local count = buffer.readu16(buf, p)
+				if count > EventCodec.ID_LIST_MAX then
+					return nil, `record {i}: {count} ids`
+				end
+				if p + 2 + 2 * count > len then
+					return nil, `record {i}: truncated ids`
+				end
+				local ids = table.create(count)
+				for k = 1, count do
+					local id = buffer.readu16(buf, p + 2 * k)
+					if id == 0 then
+						return nil, `record {i}: id 0 in entityIds`
+					end
+					ids[k] = id
+				end
+				if tag == 9 or count > 0 then
+					e.entityIds = ids
+				end
+				p += 2 + 2 * count
+			end
 			for _, f in spec.fields do
 				if p + 2 > len then
 					return nil, `record {i}: truncated`

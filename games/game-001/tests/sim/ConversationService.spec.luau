@@ -369,6 +369,102 @@ describe("ConversationService: Choose (G13.3)", function()
 	end)
 end)
 
+describe("ConversationService: strikes on the wire (G13.3 v0.4-g6)", function()
+	local function strikes(sent, from)
+		local out = {}
+		for i = from or 1, #sent do
+			local e = sent[i].event
+			if e.type == "strike" then
+				table.insert(out, { occupation = e.occupation, on = e.on, ids = e.entityIds })
+			end
+		end
+		return out
+	end
+
+	it("a walk-out sends strike on, then off, for exactly the speaker, with its placard cue", function()
+		local env, conversations, match, registry, sent = boot()
+		seat(env, 1)
+		local farmer, sim = hungryFarmer(match, registry)
+		local walkout = ContentQuery.data.consequences.speaker_refuses_work -- productivity −1 for 60 s
+		conversations:_applyConsequence("crimson", farmer, walkout)
+		expect(sim:isStriking(farmer)).toBe(true)
+		expect(strikes(sent)).toEqual({ { occupation = farmer.profile.occupation, on = true, ids = { farmer.id } } })
+		local cue = sent[#sent].event
+		expect({ cue.type, cue.id, cue.cue }).toEqual({ "kcue", farmer.id, "strike_placard" })
+		local mark = #sent + 1
+		conversations:_applyConsequence("crimson", farmer, walkout) -- already out: no second "on"
+		expect(strikes(sent, mark)).toEqual({})
+		env.mock:advance(walkout.duration_s + 1.5)
+		expect(sim:isStriking(farmer)).toBe(false)
+		expect(strikes(sent, mark)).toEqual({
+			{ occupation = farmer.profile.occupation, on = false, ids = { farmer.id } },
+		})
+		-- productivity that leaves the citizen working is no strike
+		mark = #sent + 1
+		conversations:_applyConsequence("crimson", farmer, ContentQuery.data.consequences.farmers_work_up)
+		expect(strikes(sent, mark)).toEqual({})
+	end)
+
+	it("a strike lists only the least loyal share it struck; an extended strike ends later on its own", function()
+		local env, conversations, match, registry, sent = boot()
+		seat(env, 1)
+		local farmer, sim = hungryFarmer(match, registry)
+		local k = sim.kingdoms.crimson
+		local occupation = farmer.profile.occupation
+		for _ = 1, 3 do -- four or more of the occupation
+			local c = sim:_spawnCitizen(k, farmer.job, farmer.x, farmer.z)
+			k.stats.born += 1
+			sim.profiler.birth(sim, k, c)
+		end
+		local same = {}
+		for _, id in k.citizenIds do
+			local c = sim.citizens[id]
+			if c.profile.occupation == occupation then
+				table.insert(same, c)
+			end
+		end
+		for i, c in same do
+			c.loyalty = 10 * i -- same[1] is the least loyal
+		end
+		local strike = {
+			id = "test_strike",
+			kind = "strike",
+			target = `occupation:{occupation}`,
+			magnitude = 0.5,
+			duration_s = 30,
+			delay_s = 0,
+			chance = 1,
+			cue_id = "strike_placard",
+		}
+		conversations:_applyConsequence("crimson", farmer, strike)
+		local count = math.floor(#same * 0.5 + 0.5)
+		local struck = {}
+		for i = 1, count do
+			table.insert(struck, same[i].id)
+		end
+		expect(strikes(sent)).toEqual({ { occupation = occupation, on = true, ids = struck } })
+		local cue = sent[#sent].event
+		expect({ cue.type, cue.cue, cue.occupation, cue.entityIds }).toEqual({
+			"kcue",
+			"strike_placard",
+			occupation,
+			struck,
+		})
+		sim:strike(same[1], 100) -- a longer strike on top for the least loyal
+		local mark = #sent + 1
+		env.mock:advance(31.5)
+		local rest = table.clone(struck)
+		table.remove(rest, 1)
+		expect(strikes(sent, mark)).toEqual({ { occupation = occupation, on = false, ids = rest } })
+		mark = #sent + 1
+		env.mock:advance(70)
+		expect(strikes(sent, mark)).toEqual({ { occupation = occupation, on = false, ids = { same[1].id } } })
+		mark = #sent + 1
+		env.mock:advance(5)
+		expect(strikes(sent, mark)).toEqual({}) -- each change once
+	end)
+end)
+
 describe("ConversationService: thought bubbles", function()
 	it("opens up to Society.openRequests requests, highest priority first, and closes stale ones", function()
 		local env, conversations, match, registry, sent = boot()

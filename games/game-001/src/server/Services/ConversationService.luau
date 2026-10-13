@@ -27,10 +27,13 @@
 		  (ContentQuery.driftChemistry);
 		- kingdom conditions (Kingdom/Reputation.applyConditions); memory_tag pinned on the speaker;
 		  decision.<id> remembered for the ruler;
-		- consequences (after delay_s; a chance < 1 rolls the match's random): productivity (sim:addProductivity),
-		  strike (the least loyal share of an occupation, sim:strike; strike on/off events), loyalty, morale /
+		- consequences (after delay_s; a chance < 1 rolls the match's random): productivity (sim:addProductivity;
+		  down to 0 is a walk-out), strike (the least loyal share of an occupation, sim:strike), loyalty, morale /
 		  happiness / stability, unlock_scenario, memory (pinned), resource_over_time (per second),
-		  unrest_pressure and desertion_risk (recorded for FL-0082), cue;
+		  unrest_pressure and desertion_risk (recorded for FL-0082), cue (the speaker's id, else `entityIds`:
+		  the citizens it affected);
+		- `strike` on/off events (G13.3 v0.4-g6) listing exactly the citizens whose strike or walk-out
+		  started, and later ended, one event per occupation;
 		- a `reaction` event to the kingdom's members.
 	Thought bubbles: every Society.requestRefreshSeconds, each ruled kingdom keeps up to Society.openRequests
 	open requests: the highest-priority eligible scenario of citizens without one (thought ctx: the best
@@ -197,8 +200,10 @@ function ConversationService:_send(kingdomId: string, event: { [string]: any })
 		event.tone = "neutral"
 	elseif event.type == "kcue" and table.find(EventCodec.KINGDOM_CUES, event.cue) == nil then
 		return -- outside the G13.3 cue vocabulary: the reaction's tone carries it
-	elseif event.type == "strike" and event.occupation == nil then
-		return
+	elseif event.type == "strike" and (event.occupation == nil or #event.entityIds == 0) then
+		return -- nobody's strike changed
+	elseif event.entityIds and #event.entityIds > EventCodec.ID_LIST_MAX then
+		event.entityIds = table.move(event.entityIds, 1, EventCodec.ID_LIST_MAX, 1, {})
 	end
 	local entities = self._registry:find("EntityService")
 	if entities and entities.sendKingdomEvent then
@@ -339,6 +344,14 @@ local function targetsOf(sim: any, speaker: any, target: string): { any }
 	return out
 end
 
+local function idsOf(citizens: { any }): { number }
+	local out = table.create(#citizens)
+	for i, c in citizens do
+		out[i] = c.id
+	end
+	return out
+end
+
 local function changeLoyalty(c: any, delta: number)
 	c.loyalty = math.clamp((c.loyalty or 50) + delta, 0, 100)
 end
@@ -351,6 +364,11 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 	end
 	local kind, magnitude, duration = consequence.kind, consequence.magnitude, consequence.duration_s
 	local targets = targetsOf(sim, speaker, consequence.target)
+	local affected = targets -- the citizens its cue shows on (a strike: only those struck)
+	local wasStriking: { [any]: boolean } = {}
+	for _, c in targets do
+		wasStriking[c] = sim:isStriking(c)
+	end
 	if kind == "productivity" then
 		for _, c in targets do
 			sim:addProductivity(c, magnitude, duration)
@@ -363,17 +381,12 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 			return a.id < b.id
 		end)
 		local count = math.min(#targets, math.max(1, math.floor(#targets * magnitude + 0.5)))
+		local struck = {}
 		for i = 1, count do
 			sim:strike(targets[i], duration)
+			table.insert(struck, targets[i])
 		end
-		local occupation = string.match(consequence.target, "^occupation:(.+)$")
-		self:_send(kingdomId, { type = "strike", occupation = occupation, on = true })
-		table.insert(self._pending, {
-			at = sim.time + duration,
-			run = function()
-				self:_send(kingdomId, { type = "strike", occupation = occupation, on = false })
-			end,
-		})
+		affected = struck
 	elseif kind == "loyalty" then
 		for _, c in targets do
 			changeLoyalty(c, magnitude)
@@ -405,14 +418,67 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 			c.desertionRisk = (c.desertionRisk or 0) + magnitude -- soldiers (VS-2)
 		end
 	end
+	if kind == "strike" or kind == "productivity" then -- a strike, or a walk-out (productivity down to 0)
+		local started = {}
+		for _, c in affected do
+			if not wasStriking[c] and sim:isStriking(c) then
+				table.insert(started, c)
+			end
+		end
+		self:_sendStrike(kingdomId, started, true)
+		self:_watchStrike(kingdomId, started, sim.time + duration)
+	end
 	if consequence.cue_id then
 		local event: { [string]: any } = { type = "kcue", cue = consequence.cue_id }
 		if consequence.target == "speaker" then
 			event.id = speaker.id
 		else
 			event.occupation = string.match(consequence.target, "^occupation:(.+)$")
+			event.entityIds = idsOf(affected) -- G13.3 v0.4-g6: the server picks who shows it
 		end
 		self:_send(kingdomId, event)
+	end
+end
+
+-- Strike off for the citizens among `citizens` whose strike has ended by `at`; those still striking (a
+-- longer strike or walk-out came on top) are checked again every second until it ends or they leave.
+function ConversationService:_watchStrike(kingdomId: string, citizens: { any }, at: number)
+	if #citizens == 0 then
+		return
+	end
+	table.insert(self._pending, {
+		at = at,
+		run = function()
+			local sim = self:_sim()
+			local ended, still = {}, {}
+			for _, c in citizens do
+				if sim.citizens[c.id] == c then
+					table.insert(if sim:isStriking(c) then still else ended, c)
+				end
+			end
+			self:_sendStrike(kingdomId, ended, false)
+			self:_watchStrike(kingdomId, still, sim.time + 1)
+		end,
+	})
+end
+
+-- One `strike` event per occupation among `citizens`, listing exactly them (G13.3 v0.4-g6).
+function ConversationService:_sendStrike(kingdomId: string, citizens: { any }, on: boolean)
+	local byOccupation: { [string]: { number } } = {}
+	local order = {}
+	for _, c in citizens do
+		local occupation = if c.profile then c.profile.occupation else c.job
+		if byOccupation[occupation] == nil then
+			byOccupation[occupation] = {}
+			table.insert(order, occupation)
+		end
+		table.insert(byOccupation[occupation], c.id)
+	end
+	for _, occupation in order do
+		self:_send(
+			kingdomId,
+			{ type = "strike", occupation = occupation, on = on, entityIds = byOccupation[occupation] }
+		)
 	end
 end
 

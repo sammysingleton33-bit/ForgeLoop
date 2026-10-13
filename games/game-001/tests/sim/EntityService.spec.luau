@@ -446,18 +446,21 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 				text = "Le blé ! 🌾",
 				icon = "request",
 			},
-			{ type = "strike", occupation = "farmer", on = true },
-			{ type = "kcue", occupation = "farmer", cue = "strike_placard" },
+			{ type = "strike", occupation = "farmer", on = true, entityIds = { citizen } },
+			{ type = "kcue", occupation = "farmer", cue = "strike_placard", entityIds = { citizen } },
 			{ type = "reaction", id = citizen, text = "", tone = "angry" },
 		}
 		local azure = { { type = "kcue", id = other, cue = "salute" } }
 		local first = table.clone(crimson[1])
 		entities:sendKingdomEvent("crimson", first)
 		entities:sendKingdomEvent("azure", azure[1])
-		entities:sendKingdomEvent("crimson", crimson[2])
+		local struck = table.clone(crimson[2])
+		struck.entityIds = table.clone(crimson[2].entityIds)
+		entities:sendKingdomEvent("crimson", struck)
 		entities:sendKingdomEvent("crimson", crimson[3])
 		entities:sendKingdomEvent("crimson", crimson[4])
 		first.text = "changed after queueing" -- the queue keeps its own copy
+		table.insert(struck.entityIds, 999) -- of the id list too
 		for _, player in env.Players:GetPlayers() do
 			expect(#kingdomBatches(env, player)).toBe(0) -- nothing before the next tick
 		end
@@ -504,7 +507,7 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 			"crimson",
 			{ type = "thought", id = citizen, scenarioId = "s", text = 42, icon = "idea" }
 		)
-		entities:sendKingdomEvent("azure", { type = "strike", occupation = "miner", on = false })
+		entities:sendKingdomEvent("azure", { type = "strike", occupation = "miner", on = false, entityIds = { 2 } })
 		local snapshotsBefore = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
 		env.mock:advance(0.1)
 		local errors = {}
@@ -521,7 +524,7 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 		expect(#kingdomBatches(env, crimsonPlayer)).toBe(0) -- the whole batch is dropped
 		expect(#kingdomBatches(env, azurePlayer)).toBe(1)
 		expect(kingdomBatches(env, azurePlayer)[1].events).toEqual({
-			{ type = "strike", occupation = "miner", on = false },
+			{ type = "strike", occupation = "miner", on = false, entityIds = { 2 } },
 		})
 		env.mock:advance(1)
 		expect(#sent(env, "Sim.Snapshot", SnapshotCodec.decode) >= snapshotsBefore + 10).toBe(true)
@@ -539,7 +542,7 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 		local byKingdom = seat(env, match, 1)
 		local player = byKingdom.crimson[1]
 		expect(function()
-			entities:sendKingdomEvent("violet", { type = "strike", occupation = "miner", on = true })
+			entities:sendKingdomEvent("violet", { type = "strike", occupation = "miner", on = true, entityIds = {} })
 		end).toThrow("unknown kingdom")
 		expect(function()
 			entities:sendKingdomEvent(
@@ -550,7 +553,7 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 		expect(function()
 			entities:sendKingdomEvent("crimson", "strike" :: any)
 		end).toThrow("not a G13.3 event type")
-		entities:sendKingdomEvent("crimson", { type = "strike", occupation = "miner", on = true })
+		entities:sendKingdomEvent("crimson", { type = "strike", occupation = "miner", on = true, entityIds = { 1 } })
 		entities:_resetWorld() -- a new match world: ids start over
 		env.mock:advance(0.1)
 		expect(#kingdomBatches(env, player)).toBe(0)

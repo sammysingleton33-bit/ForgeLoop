@@ -57,12 +57,12 @@ local CONVERSATION = {
 	{ type = "reaction", id = 3, text = "", tone = "sad" }, -- empty text
 	{ type = "thought", id = 65535, scenarioId = "x", text = "Idea!", icon = "idea" },
 	{ type = "reaction", id = 4, text = "Long live the crown!", tone = "happy" },
-	{ type = "strike", occupation = "farmer", on = true },
+	{ type = "strike", occupation = "farmer", on = true, entityIds = { 3, 4, 65535 } },
 	{ type = "cue", id = 4, cue = "celebrate" }, -- the G4 entity cue (tag 4)
-	{ type = "strike", occupation = "blacksmith", on = false },
+	{ type = "strike", occupation = "blacksmith", on = false, entityIds = {} }, -- an empty list is still a list
 	{ type = "kcue", id = 3, cue = "bow" },
-	{ type = "kcue", occupation = "farmer", cue = "strike_placard" },
-	{ type = "kcue", cue = "celebrate" }, -- kingdom-wide
+	{ type = "kcue", occupation = "farmer", cue = "strike_placard", entityIds = { 3, 4 } },
+	{ type = "kcue", cue = "celebrate" }, -- kingdom-wide, HUD only
 	{ type = "kcue", id = 65535, occupation = "miner", cue = "hammer" },
 	{ type = "despawn", id = 4 },
 }
@@ -101,13 +101,13 @@ describe("Sim/EventCodec", function()
 			+ 6 -- reaction, empty text
 			+ (8 + 1 + 5) -- thought
 			+ (6 + #"Long live the crown!") -- reaction
-			+ (4 + #"farmer") -- strike
+			+ (6 + 2 * 3 + #"farmer") -- strike, 3 ids
 			+ 5 -- G4 cue
-			+ (4 + #"blacksmith") -- strike
-			+ 6 -- kcue, id only
-			+ (6 + #"farmer") -- kcue, occupation only
-			+ 6 -- kcue, neither
-			+ (6 + #"miner") -- kcue, both
+			+ (6 + #"blacksmith") -- strike, no ids
+			+ 8 -- kcue, id only
+			+ (8 + 2 * 2 + #"farmer") -- kcue, occupation and 2 ids
+			+ 8 -- kcue, neither
+			+ (8 + #"miner") -- kcue, id and occupation
 			+ 3 -- despawn
 		expect(buffer.len(buf)).toBe(expected)
 		local batch = assert(EventCodec.decode(buf))
@@ -119,9 +119,21 @@ describe("Sim/EventCodec", function()
 		expect(batch.events[8].on).toBe(false)
 		expect(batch.events[11].id).toBeNil()
 		expect(batch.events[11].occupation).toBeNil()
-		-- strings are a u16 byte length, then the bytes: the strike's occupation follows its on flag
-		local strike = EventCodec.encode(0, { { type = "strike", occupation = "farmer", on = true } })
-		expect(hex(strike)).toBe("00000000" .. "0100" .. "09" .. "01" .. "0600" .. "6661726d6572")
+		-- after the on flag: the id count and ids (u16 each), then the occupation (u16 byte length, bytes)
+		local strike =
+			EventCodec.encode(0, { { type = "strike", occupation = "farmer", on = true, entityIds = { 7, 258 } } })
+		expect(hex(strike)).toBe(
+			"00000000" .. "0100" .. "09" .. "01" .. "0200" .. "0700" .. "0201" .. "0600" .. "6661726d6572"
+		)
+		local kcue = EventCodec.encode(0, { { type = "kcue", id = 5, cue = "bow", entityIds = { 9 } } })
+		expect(hex(kcue)).toBe("00000000" .. "0100" .. "0a" .. "0500" .. "04" .. "0100" .. "0900" .. "0000")
+		-- the most ids a list may carry round-trip
+		local many = {}
+		for i = 1, EventCodec.ID_LIST_MAX do
+			many[i] = i
+		end
+		local wide = { type = "strike", occupation = "farmer", on = false, entityIds = many }
+		expect(assert(EventCodec.decode(EventCodec.encode(0, { wide }))).events[1]).toEqual(wide)
 	end)
 
 	it("covers every icon, tone and consequence cue, and text up to TEXT_MAX bytes", function()
@@ -138,7 +150,7 @@ describe("Sim/EventCodec", function()
 		local longest = string.rep("é", EventCodec.TEXT_MAX // 2) -- 1024 bytes
 		table.insert(events, { type = "reaction", id = 1, text = longest, tone = "neutral" })
 		local longId = string.rep("o", EventCodec.ID_MAX)
-		table.insert(events, { type = "strike", occupation = longId, on = true })
+		table.insert(events, { type = "strike", occupation = longId, on = true, entityIds = { 1 } })
 		local batch = assert(EventCodec.decode(EventCodec.encode(0, events)))
 		expect(batch.events).toEqual(events)
 		expect(EventCodec.ICONS).toEqual({ "request", "concern", "idea" }) -- G13.3
@@ -255,10 +267,21 @@ describe("Sim/EventCodec", function()
 		expect(bad({ type = "reaction", id = 1, text = "hm", tone = "furious" })).toThrow("unknown tone")
 		expect(bad({ type = "reaction", id = 1, text = {}, tone = "sad" })).toThrow("text must be a string")
 		expect(bad({ type = "reaction", text = "hm", tone = "sad" })).toThrow("outside 1..65535")
-		expect(bad({ type = "strike", occupation = "farmer", on = 1 })).toThrow("on must be a boolean")
-		expect(bad({ type = "strike", occupation = "farmer" })).toThrow("on must be a boolean")
-		expect(bad({ type = "strike", on = true })).toThrow("occupation must be a string")
-		expect(bad({ type = "strike", occupation = "", on = true })).toThrow("occupation is 0 bytes")
+		expect(bad({ type = "strike", occupation = "farmer", on = 1, entityIds = {} })).toThrow("on must be a boolean")
+		expect(bad({ type = "strike", occupation = "farmer", entityIds = {} })).toThrow("on must be a boolean")
+		expect(bad({ type = "strike", on = true, entityIds = {} })).toThrow("occupation must be a string")
+		expect(bad({ type = "strike", occupation = "", on = true, entityIds = {} })).toThrow("occupation is 0 bytes")
+		expect(bad({ type = "strike", occupation = "farmer", on = true })).toThrow("entityIds must be a list")
+		expect(bad({ type = "strike", occupation = "farmer", on = true, entityIds = { 0 } })).toThrow(
+			"outside 1..65535"
+		)
+		expect(bad({ type = "kcue", cue = "bow", entityIds = { 1.5 } })).toThrow("outside 1..65535")
+		expect(bad({ type = "kcue", cue = "bow", entityIds = "1,2" })).toThrow("entityIds must be a list")
+		local tooMany = {}
+		for i = 1, EventCodec.ID_LIST_MAX + 1 do
+			tooMany[i] = i
+		end
+		expect(bad({ type = "kcue", cue = "bow", entityIds = tooMany })).toThrow("more than")
 		expect(bad({ type = "kcue", id = 1, cue = "dance" })).toThrow("unknown cue")
 		expect(bad({ type = "kcue", id = 1, cue = "deposit" })).toThrow("unknown cue") -- a G4 cue, not G13.3
 		expect(bad({ type = "kcue", id = 70000, cue = "bow" })).toThrow("outside 1..65535")
@@ -327,12 +350,25 @@ describe("Sim/EventCodec", function()
 		end
 		local thought = one({ type = "thought", id = 1, scenarioId = "sc", text = "héllo", icon = "idea" })
 		local reaction = one({ type = "reaction", id = 1, text = "ok", tone = "happy" })
-		local strike = one({ type = "strike", occupation = "farmer", on = true })
+		local strike = one({ type = "strike", occupation = "farmer", on = true, entityIds = { 5, 6 } })
 		local kcue = one({ type = "kcue", id = 1, occupation = "farmer", cue = "bow" })
 		local cases = {
 			{ cut(thought, 1), "truncated text" }, -- the last byte of the text is missing
 			{ cut(thought, 7), "truncated" }, -- the text's length prefix is cut
 			{ cut(strike, 3), "truncated occupation" },
+			{ cut(strike, 9), "truncated ids" }, -- 7 of 16 bytes: the second id is cut
+			{
+				mutated(strike, function(b)
+					buffer.writeu16(b, 6 + 2, EventCodec.ID_LIST_MAX + 1) -- the count is checked first
+				end),
+				`{EventCodec.ID_LIST_MAX + 1} ids`,
+			},
+			{
+				mutated(strike, function(b)
+					buffer.writeu16(b, 6 + 2 + 2 + 2, 0) -- the second id
+				end),
+				"id 0 in entityIds",
+			},
 			{
 				mutated(thought, function(b)
 					buffer.writeu16(b, 6 + 4, 2000) -- scenarioId longer than the buffer and than ID_MAX

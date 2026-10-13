@@ -226,7 +226,11 @@ function EntityService:sendKingdomEvent(kingdomId: string, event: { [string]: an
 		queue = {}
 		self._kingdomPending[kingdomId] = queue
 	end
-	table.insert(queue, table.clone(event))
+	local copy = table.clone(event)
+	if type(copy.entityIds) == "table" then
+		copy.entityIds = table.clone(copy.entityIds) -- the queue keeps its own list too
+	end
+	table.insert(queue, copy)
 end
 
 -- This tick's kingdom batches, in KINGDOMS order. A batch that fails to encode is logged and dropped.

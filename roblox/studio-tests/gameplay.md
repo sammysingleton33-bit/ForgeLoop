@@ -142,6 +142,9 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   its history text; the farmer's loyalty rises; farmers work faster for 2 minutes (they harvest more
   often); a reaction bubble and cheer/work-fast cues play.
 - Talking again right away offers nothing (the scenario's cooldown); answering twice is impossible.
+- A walk-out answer (breaking the grain-sacks promise, "The kingdom needs that grain more than you do."
+  → `speaker_refuses_work`) shows an "On strike" placard on that citizen only (FORGE-04 bubbles), never
+  on the rest of the occupation; it goes away when the walk-out ends (60 s).
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:

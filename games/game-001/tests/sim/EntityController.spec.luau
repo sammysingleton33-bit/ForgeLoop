@@ -512,7 +512,7 @@ describe("EntityController: rigs, cues and reset", function()
 		})
 	end)
 
-	it("fires event for the G13.3 thought, reaction, kcue and strike events (FL-0079)", function()
+	it("fires event for the G13.3 thought, reaction, kcue and strike events, per listed citizen (v0.4-g6)", function()
 		local h = start(setup({ full(1, 0, 0), full(2, 5, 0) }))
 		frame(h, 0)
 		local model = h.controller:getModel(1)
@@ -526,10 +526,13 @@ describe("EntityController: rigs, cues and reset", function()
 			{ type = "reaction", id = 3, text = "Hm.", tone = "neutral" },
 			{ type = "kcue", id = 1, cue = "bow" },
 			{ type = "kcue", id = 3, occupation = "farmer", cue = "salute" },
-			{ type = "kcue", occupation = "farmer", cue = "strike_placard" },
+			{ type = "kcue", occupation = "farmer", cue = "strike_placard", entityIds = { 1, 3, 99 } }, -- 99 unknown
+			{ type = "kcue", id = 1, cue = "grumble", entityIds = { 1, 3 } }, -- 1 listed twice: once
+			{ type = "kcue", occupation = "farmer", cue = "rest" }, -- no ids: never fanned out by occupation
 			{ type = "kcue", cue = "celebrate" },
-			{ type = "strike", occupation = "farmer", on = true },
-			{ type = "strike", occupation = "miner", on = false },
+			{ type = "strike", occupation = "farmer", on = true, entityIds = { 1, 99, 2 } }, -- only the known
+			{ type = "strike", occupation = "miner", on = false, entityIds = { 3 } },
+			{ type = "strike", occupation = "farmer", on = false, entityIds = {} }, -- nobody: nothing
 			{ type = "thought", id = 99, scenarioId = "s", text = "?", icon = "idea" }, -- unknown: dropped
 			{ type = "reaction", id = 2, text = "…", tone = "sad" }, -- despawned: dropped
 			{ type = "kcue", id = 99, cue = "cower" }, -- unknown: dropped
@@ -545,10 +548,14 @@ describe("EntityController: rigs, cues and reset", function()
 			{ id = 3, cue = "reaction", payload = { text = "Hm.", tone = "neutral" } }, -- no rig: model nil
 			{ id = 1, cue = "bow", payload = {}, model = model },
 			{ id = 3, cue = "salute", payload = { occupation = "farmer" } },
-			{ cue = "strike_placard", payload = { occupation = "farmer" } }, -- no entity: id and model nil
+			{ id = 1, cue = "strike_placard", payload = { occupation = "farmer" }, model = model },
+			{ id = 3, cue = "strike_placard", payload = { occupation = "farmer" } },
+			{ id = 1, cue = "grumble", payload = {}, model = model },
+			{ id = 3, cue = "grumble", payload = {} },
+			{ cue = "rest", payload = { occupation = "farmer" } }, -- HUD or keep only: id and model nil
 			{ cue = "celebrate", payload = {} },
-			{ cue = "strike", payload = { occupation = "farmer", on = true } },
-			{ cue = "strike", payload = { occupation = "miner", on = false } },
+			{ id = 1, cue = "strike", payload = { occupation = "farmer", on = true }, model = model },
+			{ id = 3, cue = "strike", payload = { occupation = "miner", on = false } },
 		})
 	end)
 
