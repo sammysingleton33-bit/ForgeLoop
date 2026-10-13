@@ -23,7 +23,7 @@
 		store:balances() -> ResourceBag           ({} until the treasury arrives)
 		store:hasTreasury() -> boolean
 		store:buildingCost(type, level) -> { cost, buildSeconds }?
-		store:slot(id) -> { id, size, occupiedBy?, fits? }?   store:slots() -> { slot } (by id)
+		store:slot(id) -> { id, size, occupiedBy? }?   store:slots() -> { slot } (by id)
 		store:building(id) -> Building?           any kingdom's building (foreign ones too)
 		store:population() -> { total, byJob, cap?, quotas? }?   nil until the server sends it
 		store.match = { phase, endsAt?, startedAt? }?

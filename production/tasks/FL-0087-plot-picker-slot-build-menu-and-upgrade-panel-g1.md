@@ -16,6 +16,7 @@ evidence:
   - "games/game-001/tests/economy/PlotUI.spec.luau: 9 specs (slot-size filter, affordability, PlaceSlot, refusals, pending guard, upgrade, foreign building)"
   - "games/game-001/design/ui/screenshots/luau: plot-pick and building-upgrade at phone/tablet/desktop, plot-pick-list (phone), building-foreign (desktop)"
   - "#34 f33e434, #48 8685b4a, #76 36d5ca9; integration-log.md"
+  - check.sh PASS (512/0, game-001 937/0); 6/6 mutations killed; plot-pick renders re-shot and looked at
 ---
 
 # Plot picker, slot build menu and upgrade panel (G13.5)
@@ -39,3 +40,4 @@ UI specs for affordability state and slot-size filtering. Prototype screenshots.
 - 2026-10-12 forge-03: READY → BUILDING. FORGE-03: PlotPickerController + UpgradePanelController on G13.5/G13.6, SlotDoubles for FORGE-01's plots
 - 2026-10-12 forge-03: BUILDING → REVIEW. PR #34 (stacked on #25): plot picker and upgrade panel; Studio steps U10-U11 for the user
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0081 (ordering by tapping a plot marker needs the PlaceSlot server).
+- 2026-10-13 forge-03: REVIEW → REVIEW. D-038: plot picker on FORGE-01's Build/Fit.typesFor (BuildModel.plotTypes = Fit.typesFor(size) less wall/gate); UI/SlotFit deleted; SlotDoubles judges with Fit.fits; CONTRACTS G13.5 interim-copy note can go (FORGE-00).

@@ -12,16 +12,14 @@
 		world.server:get("SlotService"):occupy("m1", buildingId)
 
 	Plots of crimson (the local player's kingdom): m1 M, s1 S, l1 L, m2 M (built on: a house).
-	The double's own fit check, written apart from the client's UI/SlotFit: the biggest footprint
-	over the type's levels must fit the slot's width and depth from FORGE-02's world Layout
-	(`slotSizes`), so a client that offers a misfit gets "zone" back. Costs from config Costs; refusals use the
+	The fit check is FORGE-01's shared Build/Fit (CONTRACTS G13.5: the server's Build.PlaceSlot calls
+	it too), so a client that offers a misfit gets "zone" back. Costs from config Costs; refusals use the
 	reason vocabulary of production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md.
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
-local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
-local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local SlotDoubles = {}
 
@@ -41,19 +39,9 @@ SlotDoubles.REMOTES = {
 	},
 }
 
--- Whether a type fits a slot size, as the double's server sees it.
+-- Whether a type fits a slot size, as the server sees it: the shared rule (G13.5), as PlaceSlot calls it.
 function SlotDoubles.fits(size: string, buildingType: string): boolean
-	local slot = WorldLayout.slotSizes[size]
-	if slot == nil then
-		return false
-	end
-	for level = 1, math.max(1, Costs.maxLevel(buildingType)) do
-		local ok, footprint = pcall(Kit.footprint, buildingType, level)
-		if not ok or typeof(footprint) ~= "Vector2" or footprint.X > slot.X or footprint.Y > slot.Y then
-			return false
-		end
-	end
-	return true
+	return Fit.fits(buildingType, size)
 end
 
 function SlotDoubles.service(world)
