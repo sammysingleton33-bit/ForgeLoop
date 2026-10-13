@@ -127,6 +127,46 @@ local function firing(event, ctx)
 	return ContentQuery.actionFirings(event, ctx)[1]
 end
 
+-- A content query whose actions.csv is `rows` (each row: id, event, rep, kingdom?, audience?,
+-- audience_condition?, audience_loyalty?, farm_key?, repeat_decay?, repeat_window_s?); everything else is
+-- the shipped content.
+local function contentWith(rows)
+	local actions, byEvent = {}, {}
+	for i, row in rows do
+		actions[i] = {
+			id = row.id,
+			event = row.event,
+			condition = {},
+			farm_key = row.farm_key or row.id,
+			repeat_decay = row.repeat_decay or 1,
+			repeat_window_s = row.repeat_window_s or 0,
+			rep = row.rep,
+			audience = row.audience,
+			audience_condition = row.audience_condition or {},
+			audience_loyalty = row.audience_loyalty or 0,
+			kingdom = row.kingdom or { happiness = 0, stability = 0, morale = 0 },
+		}
+		byEvent[row.event] = byEvent[row.event] or {}
+		table.insert(byEvent[row.event], i)
+	end
+	local data = ContentQuery.data
+	return ContentQuery.new({
+		dialogue = data.dialogue,
+		decisions = data.decisions,
+		consequences = data.consequences,
+		traits = data.traits,
+		occupations = data.occupations,
+		reputation = {
+			categories = data.reputation.categories,
+			order = data.reputation.order,
+			actions = actions,
+			byEvent = byEvent,
+		},
+	})
+end
+
+local ZERO_REP = { compassion = 0, honor = 0, competence = 0, courage = 0, authority = 0, fear = 0 }
+
 local function seat(env, n)
 	local players = {}
 	for i = 1, n do
@@ -301,33 +341,91 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 
 	it("applies the user rules: a fight row cannot lower compassion or honor (Society.rules)", function()
 		local env, reputation = boot()
-		seat(env, 1)
-		local original = ContentQuery.actionFirings
-		ContentQuery.actionFirings = function(event)
-			if event ~= "EnemyAttacked" then
-				return {}
-			end
-			return {
-				{
-					id = "test_fight",
-					farm_key = "test_fight",
-					repeat_decay = 1,
-					repeat_window_s = 0,
-					rows = {},
-					rep = { compassion = -3, honor = -2, courage = 2 },
-					kingdom = { happiness = 0, stability = 0, morale = 0 },
-				},
-			}
+		seat(env, 2) -- both co-rulers are credited: the rules hold for each
+		local rep = table.clone(ZERO_REP)
+		rep.compassion, rep.honor, rep.courage = -3, -2, 2
+		reputation.content = contentWith({ { id = "test_fight", event = "EnemyAttacked", rep = rep } })
+		reputation:fireAction("EnemyAttacked", "crimson")
+		for userId = 1, 2 do
+			local values = reputation:get(userId).values
+			expect(values.compassion).toBe(50)
+			expect(values.honor).toBe(50)
+			expect(values.courage).toBe(52)
 		end
-		local ok, err = pcall(function()
-			reputation:fireAction("EnemyAttacked", "crimson")
-		end)
-		ContentQuery.actionFirings = original
-		assert(ok, err)
-		local values = reputation:get(1).values
-		expect(values.compassion).toBe(50)
-		expect(values.honor).toBe(50)
-		expect(values.courage).toBe(52)
+	end)
+
+	it(
+		"applies ContentQuery.fireAction as given: rows summed, then clamped once; the kingdom once per firing",
+		function()
+			local env, reputation, match = boot()
+			seat(env, 2) -- users 1 and 2 rule crimson together
+			local sim = match.host.match.sim
+			local k = sim.kingdoms.crimson
+			local clamp = ContentQuery.LOYALTY_CLAMP.kingdom
+			-- two rows of one action, each worth the whole kingdom clamp: a listener gets the clamp, not twice it
+			local rep = table.clone(ZERO_REP)
+			rep.honor = 4
+			local rows = {}
+			for i = 1, 2 do
+				table.insert(rows, {
+					id = "test_feast",
+					event = "Feast",
+					farm_key = "feast",
+					repeat_decay = 0.5,
+					repeat_window_s = 600,
+					rep = rep,
+					audience = "kingdom",
+					audience_loyalty = clamp,
+					kingdom = { happiness = 2 * i, stability = 0, morale = 0 },
+				})
+			end
+			reputation.content = contentWith(rows)
+			local loyalty = {}
+			for _, id in k.citizenIds do
+				loyalty[id] = sim.citizens[id].loyalty
+			end
+			local happiness = k.conditions.happiness
+			reputation:fireAction("Feast", "crimson")
+			for id, before in loyalty do
+				expect(sim.citizens[id].loyalty).toBeNear(math.min(100, before + clamp), 1e-9)
+			end
+			expect(k.conditions.happiness).toBeNear(happiness + 2 + 4, 1e-9) -- both rows, once (not per ruler)
+			expect(reputation:get(1).values.honor).toBe(58) -- the rows summed for each credited ruler
+			expect(reputation:get(2).values.honor).toBe(58)
+			expect(#reputation._kingdomFarm.crimson.feast).toBe(1) -- one firing, however many rulers
+			-- again: each ruler's own history and the kingdom's decay their part (0.5 per earlier firing)
+			happiness = k.conditions.happiness
+			reputation:fireAction("Feast", "crimson", { rulers = { 2 } })
+			expect(reputation:get(1).values.honor).toBe(58)
+			expect(reputation:get(2).values.honor).toBe(58 + 4) -- 2 rows × 4 × 0.5
+			expect(k.conditions.happiness).toBeNear(happiness + (2 + 4) * 0.5, 1e-9)
+			expect(#reputation._rulerFarm[1].feast).toBe(1)
+			expect(#reputation._rulerFarm[2].feast).toBe(2)
+			expect(#reputation._kingdomFarm.crimson.feast).toBe(2)
+		end
+	)
+
+	it("an audience condition reads each listener's own context (citizen.hunger)", function()
+		local env, reputation, match = boot()
+		seat(env, 1)
+		local sim = match.host.match.sim
+		local ids = sim.kingdoms.crimson.citizenIds
+		reputation.content = contentWith({
+			{
+				id = "test_bread",
+				event = "BreadShared",
+				rep = ZERO_REP,
+				audience = "kingdom",
+				audience_condition = { { var = "citizen.hunger", op = ">=", value = 0.5 } },
+				audience_loyalty = 2,
+			},
+		})
+		local hungry, fed = sim.citizens[ids[1]], sim.citizens[ids[2]]
+		hungry.hunger, fed.hunger = 0.8, 0
+		local a, b = hungry.loyalty, fed.loyalty
+		reputation:fireAction("BreadShared", "crimson")
+		expect(hungry.loyalty > a).toBe(true)
+		expect(fed.loyalty).toBe(b)
 	end)
 
 	it("rulerVisited: only the visited citizen reacts", function()
