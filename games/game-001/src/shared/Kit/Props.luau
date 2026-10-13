@@ -252,15 +252,25 @@ end
 
 -- ---------------------------------------------------------------- village props
 
+-- Kingdom banner on a stand: the cloth in the kingdom colour on an ivory backing (reads against grass under
+-- every colour-vision type), with the kingdom's emblem (D-039) filling 80 % of its width.
 local function bannerProp(ctx, color: Color3)
 	column(ctx, "Pole", 0.25, 12, Vector3.new(0, 0, 0), C.woodDark, Enum.Material.Wood)
 	block(ctx, "Base", Vector3.new(2, 0.8, 2), CFrame.new(0, 0.4, 0), C.stone, Enum.Material.Slate)
 	block(ctx, "CrossBar", Vector3.new(4, 0.3, 0.3), CFrame.new(0, 11, -0.3), C.woodDark, Enum.Material.Wood)
-	block(ctx, "Banner", Vector3.new(3.4, 6, 0.25), CFrame.new(0, 7.9, -0.4), color, Enum.Material.Fabric, 1)
+	local cloth =
+		block(ctx, "Banner", Vector3.new(3.4, 6, 0.25), CFrame.new(0, 7.9, -0.4), color, Enum.Material.Fabric, 1)
+	block(
+		ctx,
+		"BannerBorder",
+		Vector3.new(3.8, 6.2, 0.15),
+		CFrame.new(0, 7.9, -0.33),
+		Pieces.IVORY,
+		Enum.Material.Fabric
+	)
 	local tip = CFrame.new(0, 4.9, -0.4) * CFrame.Angles(0, 0, math.rad(45))
 	block(ctx, "BannerTip", Vector3.new(2.4, 2.4, 0.25), tip, color, Enum.Material.Fabric, 1)
-	local emblem = CFrame.new(0, 8.4, -0.45) * CFrame.Angles(0, 0, math.rad(45))
-	block(ctx, "Emblem", Vector3.new(1.4, 1.4, 0.3), emblem, C.gold, Enum.Material.Fabric)
+	Pieces.emblem(ctx, cloth, CFrame.new(0, 8.3, -0.525), 2.75, color)
 	ball(ctx, "Finial", 0.7, Vector3.new(0, 12.3, 0), C.gold, Enum.Material.Metal)
 end
 
@@ -454,7 +464,8 @@ end
 -- ------------------------------------------------------------------ build slot markers (G13.5)
 
 -- Ground marker for a free build slot: a cleared-earth pad inside a low timber sill, survey stakes with
--- kingdom pennants on the corners and a signpost at the front (-Z). `size` is slot-local (X width, Y depth).
+-- kingdom pennants on the corners and a kingdom sign tablet with the emblem at the front (-Z). `size` is
+-- slot-local (X width, Y depth). At most 20 parts (BuildSlots.spec).
 -- Only Root (0.12 thick, under a building's 0.2 Root) is queryable, so a selection raycast hits the slot
 -- Root unless a building stands on it. Nothing collides; units walk across.
 function Props.slotMarker(size: Vector2, kingdomColor: Color3): Model
@@ -506,31 +517,19 @@ function Props.slotMarker(size: Vector2, kingdomColor: Color3): Model
 			)
 		end
 	end
-	block(
-		ctx,
-		"SignPost",
-		Vector3.new(0.5, 4.2, 0.5),
-		CFrame.new(w / 2 - 3.5, 2.1, -d / 2 - 0.2),
-		C.woodDark,
-		Enum.Material.Wood
-	)
-	block(
+	-- the slot sign: a kingdom-colour tablet planted at the front, leaning back 35° so its emblem (D-039)
+	-- faces the overview camera as well as a walker; the bottom edge sits 0.15 in the ground
+	local sign = CFrame.new(w / 2 - 3.5, 0, -d / 2 - 1.7) * CFrame.Angles(math.rad(35), 0, 0) -- top stays outside
+	local board = block(
 		ctx,
 		"SignBoard",
-		Vector3.new(3.2, 1.8, 0.25),
-		CFrame.new(w / 2 - 3.5, 3.4, -d / 2 - 0.5),
-		C.woodLight,
-		Enum.Material.WoodPlanks
-	)
-	block(
-		ctx,
-		"SignMark",
-		Vector3.new(1.1, 1.1, 0.12),
-		CFrame.new(w / 2 - 3.5, 3.4, -d / 2 - 0.66) * CFrame.Angles(0, 0, math.rad(45)),
+		Vector3.new(2.6, 2.8, 0.3),
+		sign * CFrame.new(0, 1.25, 0),
 		kingdomColor,
 		Enum.Material.SmoothPlastic,
 		1
 	)
+	Pieces.emblem(ctx, board, sign * CFrame.new(0, 1.3, -0.15), 2.15, kingdomColor)
 	for _, part in ctx.model:GetChildren() do
 		if part:IsA("BasePart") then
 			part.CanCollide = false

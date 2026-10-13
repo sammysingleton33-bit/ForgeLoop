@@ -124,8 +124,9 @@ end
 
 -- ---------------------------------------------------------------- helpers
 
--- Slot marker pennants in the canonical kingdom colours (config Kingdoms, D-033); pennants carry KitTint,
--- so Kit.setKingdomColor recolours them.
+-- Slot markers in the canonical kingdom colours (config Kingdoms, D-033): the pennants and the sign tablet
+-- carry KitTint and the tablet the kingdom's emblem (D-039), so Kit.setKingdomColor recolours them and
+-- re-forms the emblem.
 local KINGDOM_COLORS: { [string]: Color3 } = {}
 for _, identity in KingdomsConfig.identities do
 	local c = identity.color
