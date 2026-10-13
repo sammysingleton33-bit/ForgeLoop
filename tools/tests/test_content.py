@@ -482,6 +482,100 @@ def test_bubble_texts_fit_the_bubble_with_the_longest_names(lib, capsys):
     assert code == 0, out
 
 
+def test_risk_notices_describe_the_outcome_and_never_repeat_the_chance(lib, capsys):
+    """FORGE-00 ruling on PR #67 review #2: the conversation panel shows a risk's chance itself, so no notice
+    may write {chance}; a risk (chance < 1) still needs a notice that describes the outcome."""
+    rows = read_rows(lib / "dialogue" / "consequences.csv")
+    assert rows[5][0] == "c_desert_risk" and "{chance}" not in rows[5][rows[0].index("notice_text")]
+    set_cell(lib, "dialogue/consequences.csv", 6, "notice_text", "Some soldiers may desert for {duration}.")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+    for row, text in ((6, "{chance}: some soldiers may desert."), (2, "Farmers ({chance}) work slower.")):
+        set_cell(lib, "dialogue/consequences.csv", row, "notice_text", text)
+        code, out = run(capsys, "validate", "--content", lib)
+        assert code == 1
+        assert (f"dialogue/consequences.csv:{row}:10: [notice_text] do not write {{chance}}: the conversation panel "
+                "already shows a risk's chance next to its text") in out, out
+        assert "allowed here" not in out  # one clear message, not the generic placeholder error
+        set_cell(lib, "dialogue/consequences.csv", row, "notice_text", "Some soldiers may desert.")
+    # the other columns keep the generic message ({chance} never meant anything there)
+    set_cell(lib, "reputation/actions.csv", 2, "notice_text", "Odds {chance}.")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert "[notice_text] placeholder '{chance}' cannot be used in this column" in out
+    # lint no longer tells writers to type {chance}
+    set_cell(lib, "reputation/actions.csv", 2, "notice_text", "The soldiers appreciate the new barracks.")
+    set_cell(lib, "dialogue/consequences.csv", 6, "notice_text", "Half of the soldiers may desert in 5 minutes.")
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "consequences.csv:6:10: [notice_text] the notice types a number" in out
+    assert "write {magnitude}, {magnitude_pct} or {duration}" in out and "write {chance}" not in out
+    # the workbook header note lists the placeholders without {chance} and says why
+    col = content.SPEC_BY_KEY["consequences"].col("notice_text")
+    note = content._column_comment(content.SPEC_BY_KEY["consequences"], col)
+    assert "{chance}" not in note.split("Placeholders:")[1].split(".")[0]
+    assert "the game shows a risk's chance next to this text" in note
+    assert content._column_placeholders("consequences", "notice_text") == content.CONSEQUENCE_NOTICE_PLACEHOLDERS
+    assert "chance" not in content.CONSEQUENCE_NOTICE_PLACEHOLDERS
+
+
+@pytest.mark.parametrize("text", ["Ruler,\u2003we starve.", "A\u2009thin space", "Wait\u00a0here."])
+def test_typographic_spaces_inside_a_text_are_fine(lib, capsys, text):
+    """Ruling #10: U+2000-U+200A (and other spaces) are refused only as a text's whole content."""
+    set_cell(lib, "dialogue/scenarios.csv", 2, "question_text", text)
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+
+
+def test_blank_and_invisible_character_sets():
+    for ch in ("\u2800", "\u034f", "\U0001D159", "\u115f", "\u1160", "\u3164", "\uffa0", "\u180e"):
+        assert content._invisible_problem(f"a{ch}b", "text"), f"U+{ord(ch):04X} must be refused"
+        assert content._invisible_problem(f"a{ch}b", "notes"), f"U+{ord(ch):04X} must be refused in notes too"
+    for o in range(0x2000, 0x200B):
+        assert content._invisible_problem(f"a{chr(o)}b", "text") is None  # a visible space between words
+        assert content._blank_text(chr(o)) is not None  # ... but never a whole text
+    assert content._blank_text("x") is None and content._blank_text(" \u2800x ") is None
+    assert content._blank_text("\u200b \u3000") == "U+200B zero-width space"
+
+
+DEFAULT_IGNORABLE_MARKS = ["\ufe00", "\ufe0f", "\U000e0100", "\U000e01ef", "\u17b4", "\u17b5", "\u180b", "\u180c",
+                           "\u180d", "\u180f", "\ufff0", "\ufff8", "\U000e0000", "\U000e0002", "\u2065"]
+
+
+@pytest.mark.parametrize("ch", DEFAULT_IGNORABLE_MARKS, ids=[f"U+{ord(c):04X}" for c in DEFAULT_IGNORABLE_MARKS])
+def test_default_ignorable_characters_are_a_blank_text(lib, capsys, ch):
+    """Ruling #10 follow-up: a TEXT holding only default-ignorable code points (variation selectors, Khmer inherent
+    vowels, Mongolian free variation selectors, reserved ones) shows as an empty line, so it is refused as blank."""
+    assert content._blank_text(ch) == f"U+{ord(ch):04X} {content._char_name(ch)}"
+    assert content._blank_text(f"{ch} {ch}") is not None
+    set_cell(lib, "dialogue/responses.csv", 2, "response_text", ch)
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1, out
+    assert f"dialogue/responses.csv:2:4: [response_text] text is blank: it holds only spaces or invisible characters " \
+           f"(U+{ord(ch):04X} " in out
+
+
+@pytest.mark.parametrize("text", ["Yes \u2764\ufe0f", "Hm\u2026 \u263a\ufe0f fine", "Ok \u2764\U000e0100"])
+def test_variation_selector_after_a_character_is_fine(lib, capsys, text):
+    """Ruling #10 follow-up: a variation selector is refused only as a text's whole content, never after an emoji."""
+    assert content._invisible_problem(text, "text") is None and content._blank_text(text) is None
+    set_cell(lib, "dialogue/responses.csv", 2, "response_text", text)
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+
+
+def test_default_ignorable_table_is_the_unicode_property():
+    """_DEFAULT_IGNORABLE is DerivedCoreProperties Default_Ignorable_Code_Point: 4174 code points (Unicode 15.1)."""
+    import unicodedata
+    counts: dict[str, int] = {}
+    for lo, hi in content._DEFAULT_IGNORABLE:
+        for o in range(lo, hi + 1):
+            cat = unicodedata.category(chr(o))
+            counts[cat] = counts.get(cat, 0) + 1
+            if cat == "Cn":
+                assert content._char_name(chr(o)) == "unassigned character"
+    assert sum(counts.values()) == 4174
+    assert counts["Mn"] == 263 and counts["Lo"] == 4  # the marks and fillers category Cf does not cover
+
+
 def test_thought_icon_and_reaction_tone_columns(lib, tmp_path, capsys):
     rows = read_rows(lib / "dialogue" / "scenarios.csv")
     rows[0].insert(6, "thought_icon")
@@ -1138,6 +1232,49 @@ def test_real_content_keeps_the_balance_review_fixes(capsys):
     for a in model.actions:  # construction reputation only through a measured need
         if (a["event"] or "").startswith(content.CONSTRUCTION_EVENTS) and any(v > 0 for v in a["rep"].values()):
             assert a["condition"], a
+
+
+def test_real_content_risk_notices_describe_only_the_outcome():
+    """FORGE-00 ruling #2(a): the panel shows the chance, so no notice repeats it ('Risk (50%): ...')."""
+    _, model, report = content.load_and_validate(REAL)
+    assert not report.errors
+    risks = [c for c in model.consequences.values() if c["chance"] < 1]
+    assert len(risks) >= 3
+    for c in model.consequences.values():
+        assert c["notice"] is None or "{chance}" not in c["notice"], c["id"]
+    for c in risks:
+        assert c["notice"] and not c["notice"].lower().startswith("risk"), (c["id"], c["notice"])
+    assert model.consequences["speaker_walkout_risk"]["notice"] == "{name} may walk off the job for {duration}."
+
+
+def test_real_content_tuning_rulings():
+    """FORGE-00 ruling #7: raid_defended decays by 0.5 per repeat; phase_fed_* by 0.8."""
+    _, model, report = content.load_and_validate(REAL)
+    assert not report.errors
+    by_id: dict[str, list[dict]] = {}
+    for a in model.actions:
+        by_id.setdefault(a["id"], []).append(a)
+    assert {a["repeat_decay"] for a in by_id["raid_defended"]} == {0.5}
+    phase = [a for aid, rows in by_id.items() if aid.startswith("phase_fed_") for a in rows]
+    assert len(phase) == 3 and {a["repeat_decay"] for a in phase} == {0.8}
+
+
+def test_spec_and_readme_follow_the_rulings():
+    """Doc rulings #2, #5, #6, #7, #11 of the FORGE-05 review of PR #67 (wording pinned loosely)."""
+    spec = (REAL / "SPEC.md").read_text(encoding="utf-8")
+    readme = (REAL / "README.md").read_text(encoding="utf-8")
+    assert "Open for FORGE-00: loyalty consequences" not in spec  # #5: ruled in §6.3
+    assert "`{ id, text, cost?, risks? }`" in spec and "choiceRisks" in spec  # #6, #2
+    assert "PhaseEndedWellFed` fires at most once per phase end" in spec  # #7
+    assert "decayed as one value" in spec  # #11
+    assert "creditedRulers" in spec  # #3
+    # follow-ups: the cost paid comes from decisionEffects, choicePreview needs fillNames, the bound needs a full window
+    assert "pay the cost (`choicePreview(...).cost`)" not in spec and "`decisionEffects(response.decision).cost`" in spec
+    assert "**`fillNames` is required**" in spec
+    assert "forever adds nothing" not in spec and "The bound needs a full window" in spec
+    assert "default-ignorable" in spec
+    assert "must show its odds with `{chance}`" not in readme and "never write `{chance}`" in readme
+    assert "the numbers `{chance}`" not in readme
 
 
 def test_real_content_player_text_is_13_plus_friendly():
