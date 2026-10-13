@@ -3782,9 +3782,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7901,
       "sockets": {
@@ -3985,9 +3997,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7902,
       "sockets": {
@@ -4188,9 +4212,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7900,
       "sockets": {
@@ -4391,9 +4427,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7903,
       "sockets": {
@@ -4475,9 +4523,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7701,
       "sockets": {
@@ -4534,9 +4594,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7702,
       "sockets": {
@@ -4593,9 +4665,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7700,
       "sockets": {
@@ -4652,9 +4736,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7703,
       "sockets": {
@@ -4714,9 +4810,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7302,
       "sockets": {
@@ -4786,9 +4894,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7303,
       "sockets": {
@@ -4858,9 +4978,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7304,
       "sockets": {
@@ -4930,9 +5062,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7305,
       "sockets": {
@@ -5002,9 +5146,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7300,
       "sockets": {
@@ -5074,9 +5230,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7301,
       "sockets": {
@@ -5146,9 +5314,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7306,
       "sockets": {
@@ -5218,9 +5398,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7307,
       "sockets": {
@@ -5289,9 +5481,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7502,
       "sockets": {
@@ -5365,9 +5569,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7503,
       "sockets": {
@@ -5451,9 +5667,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7504,
       "sockets": {
@@ -5527,9 +5755,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7505,
       "sockets": {
@@ -5613,9 +5853,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7500,
       "sockets": {
@@ -5689,9 +5941,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7501,
       "sockets": {
@@ -5775,9 +6039,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7506,
       "sockets": {
@@ -5851,9 +6127,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7507,
       "sockets": {
@@ -9070,16 +9358,16 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "barn_03 silo banner is a tone-on-tone gold sun on a gold field (emblem on its own colour, a rule breach) and does not match the castle sun emblem; barn_02 (blue) has a hay-thatch roof, so blue reads only from the doors and one banner at 74 studs. All four repeat the same front dressing (hoist and bale, lantern, sack, bale stack), but the roof forms (gambrel, thatch, silo, wide gable) keep the silhouettes distinct.",
+        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
         "review_file": "reviews/farm_barn.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
@@ -9260,21 +9548,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "barn_03 silo banner is a tone-on-tone gold sun on a gold field (emblem on its own colour, a rule breach) and does not match the castle sun emblem; barn_02 (blue) has a hay-thatch roof, so blue reads only from the doors and one banner at 74 studs. All four repeat the same front dressing (hoist and bale, lantern, sack, bale stack), but the roof forms (gambrel, thatch, silo, wide gable) keep the silhouettes distinct.",
+        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
         "review_file": "reviews/farm_barn.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7701,
       "sockets": {
@@ -9450,9 +9738,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7702,
       "sockets": {
@@ -9628,16 +9928,16 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "barn_03 silo banner is a tone-on-tone gold sun on a gold field (emblem on its own colour, a rule breach) and does not match the castle sun emblem; barn_02 (blue) has a hay-thatch roof, so blue reads only from the doors and one banner at 74 studs. All four repeat the same front dressing (hoist and bale, lantern, sack, bale stack), but the roof forms (gambrel, thatch, silo, wide gable) keep the silhouettes distinct.",
+        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
         "review_file": "reviews/farm_barn.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
@@ -11387,21 +11687,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
         "review_file": "reviews/farm_windmill.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 4,
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
           "triangle_cost": 4,
-          "variation": 4
+          "variation": 5
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7600,
       "sockets": {
@@ -11458,21 +11758,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
         "review_file": "reviews/farm_windmill.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 4,
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
           "triangle_cost": 4,
-          "variation": 4
+          "variation": 5
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7601,
       "sockets": {
@@ -11529,21 +11829,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
         "review_file": "reviews/farm_windmill.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 4,
           "detail_density": 4,
-          "palette": 2,
+          "palette": 4,
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
           "triangle_cost": 4,
-          "variation": 4
+          "variation": 5
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7602,
       "sockets": {
@@ -11600,9 +11900,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
         "review_file": "reviews/farm_windmill.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
       },
       "seed": 7603,
       "sockets": {
@@ -16271,16 +16583,16 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 5,
           "silhouette": 4,
           "triangle_cost": 5,
           "variation": 4
@@ -16343,16 +16655,16 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 5,
           "silhouette": 4,
           "triangle_cost": 5,
           "variation": 4
@@ -16415,16 +16727,16 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 5,
           "silhouette": 4,
           "triangle_cost": 5,
           "variation": 4
@@ -16487,9 +16799,21 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
@@ -16547,10 +16871,10 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
         "review_file": "reviews/siege_catapult.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -16558,7 +16882,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -16619,10 +16943,10 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
         "review_file": "reviews/siege_catapult.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -16630,7 +16954,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -16691,10 +17015,10 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
         "review_file": "reviews/siege_catapult.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -16702,7 +17026,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -16763,9 +17087,21 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
         "review_file": "reviews/siege_catapult.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
@@ -16823,15 +17159,15 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
-          "detail_density": 3,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -16895,15 +17231,15 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
-          "detail_density": 3,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -16967,15 +17303,15 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
-          "detail_density": 3,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -17039,9 +17375,21 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
