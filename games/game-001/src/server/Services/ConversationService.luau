@@ -47,7 +47,8 @@
 		- a `reaction` event to the kingdom's members.
 	Thought bubbles: every Society.requestRefreshSeconds, each ruled kingdom keeps up to Society.openRequests
 	open requests: the highest-priority eligible scenario of citizens without one (thought ctx: the best
-	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request that stops holding closes;
+	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request stays open while its showing
+	waits for an answer and closes when answered (#77 N3); one that stops holding otherwise closes;
 	every request still open goes to the members as a `thought` event again on each refresh (G13.3: the
 	client bubble lasts Vfx.thoughtSec, so it stays up while the request is open, and a co-ruler who joins
 	later sees it within one refresh); new ones are sent when they open.
@@ -297,8 +298,9 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	local base, rep = self:_kingdomCtx(kingdomId, userId)
 	local ctx = self:_citizenCtx(c, base, rep)
 	local showing = self._showing[entityId]
-	if showing and showing.userId == userId then
-		-- asked again before answering: the same showing, while it still holds (a forced one always does)
+	if showing and showing.kingdomId == kingdomId then
+		-- asked again before answering, by this ruler or a co-ruler (#107 M1): the same showing, while it
+		-- still holds (a forced one always does); the ruler who asked last answers it
 		local still = if showing.forced
 			then ContentQuery.data.dialogue.scenarios[showing.scenarioId]
 			else find(ContentQuery.eligibleScenarios(ctx, citizenState(c), self:_now(), nil), function(s)
@@ -307,6 +309,7 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 		if still then
 			local ok, payload = pcall(self._payload, self, c, still, userId)
 			if ok then
+				showing.userId = userId
 				return payload
 			end
 		end
@@ -340,7 +343,8 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 		return nil
 	end
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
-	self:_closeRequest(kingdomId, entityId)
+	-- the request stays open until it is answered (#77 N3): closing the panel without an answer leaves the
+	-- thought up, and asking again shows the same question
 	self._showing[entityId] =
 		{ scenarioId = scenario.id, userId = userId, kingdomId = kingdomId, forced = forced or nil }
 	self._reputation:rulerVisited(userId, entityId)
@@ -601,6 +605,7 @@ function ConversationService:choose(
 	end
 	local userId = player.UserId
 	local showing = self._showing[entityId]
+	-- the ruler who asked last answers (a co-ruler who asks again takes the showing over, #107 M1)
 	if showing == nil or showing.userId ~= userId or showing.scenarioId ~= scenarioId then
 		return false, nil, "not_offered"
 	end
@@ -621,6 +626,7 @@ function ConversationService:choose(
 			== nil
 	then
 		self._showing[entityId] = nil
+		self:_closeRequest(kingdomId, entityId)
 		return false, nil, "not_eligible"
 	end
 	local sim = self:_sim()
@@ -655,6 +661,7 @@ function ConversationService:choose(
 		return false, nil, "unknown_response"
 	end
 	self._showing[entityId] = nil -- answered: a second Choose for this showing is not_offered
+	self:_closeRequest(kingdomId, entityId) -- and the request it came from is settled
 
 	local names = self:_names(c, userId)
 	local applied: { { kind: string, text: string } } = {}
@@ -792,6 +799,7 @@ end
 
 -- True while the citizen has an open request (its thought bubble): CitizenService's CitizenView.hasRequest.
 function ConversationService:hasRequest(kingdomId: string, entityId: number): boolean
+	self:_sim() -- a new world (round) starts with no requests (#77 N5)
 	return find(self._open[kingdomId] or {}, function(r)
 		return r.entityId == entityId
 	end) ~= nil
@@ -820,15 +828,31 @@ function ConversationService:refresh()
 		self._shown[kid] = shown
 		local open = self._open[kid] or {}
 		self._open[kid] = open
-		-- close requests that no longer hold
+		-- a showing whose ruler has left this kingdom is nobody's to answer (#107 M2)
+		for id, showing in self._showing do
+			if
+				showing.kingdomId == kid and (sim.citizens[id] == nil or table.find(k.rulers, showing.userId) == nil)
+			then
+				self._showing[id] = nil
+			end
+		end
+		-- close requests that no longer hold. One asked and not yet answered (#77 N3) stays while its matter
+		-- does, judged without the shown history (asking marked it shown); when the matter has passed, its
+		-- showing goes with it (#107 M2)
 		for i = #open, 1, -1 do
 			local r = open[i]
 			local c = sim.citizens[r.entityId]
+			local pending = self._showing[r.entityId] ~= nil
 			local holds = c ~= nil
 				and (
 					r.forced
 					or find(
-							ContentQuery.eligibleScenarios(self:_citizenCtx(c, base, rep), citizenState(c), now, shown),
+							ContentQuery.eligibleScenarios(
+								self:_citizenCtx(c, base, rep),
+								citizenState(c),
+								now,
+								if pending then nil else shown
+							),
 							function(s)
 								return s.id == r.scenarioId
 							end
@@ -837,6 +861,10 @@ function ConversationService:refresh()
 				)
 			if not holds then
 				table.remove(open, i)
+				local showing = self._showing[r.entityId]
+				if showing and not showing.forced and showing.scenarioId == r.scenarioId then
+					self._showing[r.entityId] = nil
+				end
 			end
 		end
 		-- the client's bubble lasts Vfx.thoughtSec (45 s): a request still open is sent again, which also

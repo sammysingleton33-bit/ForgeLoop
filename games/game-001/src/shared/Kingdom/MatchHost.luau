@@ -37,7 +37,8 @@
 		Match.GetState() -> (phase, endsAtServerTime?, startedAtServerTime)
 		Match.State(phase, endsAtServerTime?, startedAtServerTime) to everyone on every phase or countdown
 		                                              change, and to each arriving player
-		Match.Ended({ winner?, standings, durationSec }) to everyone when the match (or the slice) ends
+		Match.Ended({ winner?, standings, durationSec }) to everyone when the match (or the slice) ends, and
+		                                              to each player who arrives while Results is on
 		startedAtServerTime: server time Founding began (sim time 0); in the Lobby, when the Lobby opened.
 	GameEvents (CONTRACTS G9, framework bus), each exactly once:
 		MatchPhaseChanged(phase) · KingdomEliminated(kingdomId, by?) · MatchEnded({ winner?, standings,
@@ -194,6 +195,9 @@ function MatchHost:_onPlayerAdded(player: any)
 	local info = self:phaseInfo()
 	self._remotes:fire("Match.State", player, info.phase, info.endsAtServerTime, info.startedAtServerTime)
 	self._remotes:fire("Kingdom.State", player, self:kingdomsState(player))
+	if self._ended then -- set by MatchEnded, cleared when Results ends
+		self._remotes:fire("Match.Ended", player, MatchHost.endedPayload(self._ended)) -- what a late joiner missed
+	end
 end
 
 function MatchHost:_onPlayerRemoving(player: any)
@@ -398,12 +402,16 @@ function MatchHost:_handleEvent(event: any)
 	elseif name == "CountdownChanged" then
 		self:_broadcastPhase()
 	elseif name == "MatchEnded" then
+		self._ended = MatchHost.endedPayload(event) -- for players who arrive during Results
 		self._remotes:fireAll("Match.Ended", MatchHost.endedPayload(event))
 	elseif name == "MatchPhaseChanged" then
 		if event.phase == "Founding" or event.phase == "Lobby" then
 			self._startedAtServerTime = self._env.serverTimeNow()
 		end
 		self:_broadcastPhase()
+		if event.phase ~= "Results" then
+			self._ended = nil
+		end
 		if event.previous == "Results" then
 			-- a fresh world was created for the next match: rebuild the view and re-team everyone
 			self:_destroyWorld()

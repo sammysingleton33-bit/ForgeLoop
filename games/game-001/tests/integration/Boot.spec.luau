@@ -152,4 +152,25 @@ describe("game-001 headless boot (FL-0046)", function()
 		expect(errorLogs(env)).toEqual({})
 		registry:destroy()
 	end)
+
+	it("a booted client presents a celebration and a kingdom effect (engine members stubbed by MockEnv)", function()
+		-- #49's announcer reaches ParticleEmitter:Emit, which Lune lacks: without MockEnv's EngineStubs.install
+		-- this crashes with "Emit is not a valid member". Nothing here reads the stub's counts.
+		local env = MockEnv.new({
+			seed = 1,
+			isServer = false,
+			localPlayer = { userId = 1001, name = "Ruler" },
+			sharedModules = { Remotes = remotesByArea() },
+		})
+		local registry = Loader.load(env, definitionsIn(CLIENT_TREES))
+		env.mock:advance(1)
+		local announcer = registry:get("AnnouncerController")
+		local at = Vector3.new(10, 0, 10)
+		announcer:onMoment({ kind = "objectiveCaptured", kingdom = "crimson", objectiveId = "tower1", position = at })
+		announcer:onMoment({ kind = "buildingCompleted", kingdom = "crimson", buildingType = "house", position = at })
+		env.mock:advance(5)
+		expect(env.mock.threadErrors).toEqual({})
+		expect(errorLogs(env)).toEqual({})
+		registry:destroy()
+	end)
 end)

@@ -1,7 +1,8 @@
 # AI Kingdoms — VS-1 Studio playtest (gate G6; FL-0047, FL-0093; owner FORGE-05)
 
 VS-1 (the nine first-playable items of BRIEF §4, D-030) is accepted **only** by this playtest. It takes about 25 minutes. You (the user) run
-it on Windows in Roblox Studio against an integrated build of `main`; FORGE-05 records the result in
+it on your Mac in Roblox Studio against an integrated build of `main` (Mac keys below; on Windows use
+the plain F-keys, Ctrl for ⌘ and the Snipping Tool); FORGE-05 records the result in
 `production/quality-gates/studio-runs.md` and on the VS-1 tasks.
 
 Each check says what to do, what you should see, which screenshot to take and which Output lines to
@@ -15,16 +16,27 @@ Pick one:
 - **Downloaded build (no tools):** GitHub → ForgeLoop → **Actions** → newest **CI** run on `main` with
   artifacts → download `forgeloop-game001-<sha>` → unzip → Studio → **File → Open from File…** →
   `forgeloop-game001-<sha>.rbxl`.
-- **Local build:** Git Bash in the repo: `git checkout main && git pull && bash roblox/scripts/stamp_build.sh &&
+- **Local build:** Terminal in the repo: `git checkout main && git pull && bash roblox/scripts/stamp_build.sh &&
   mkdir -p roblox/build && rojo build games/game-001/default.project.json -o roblox/build/game-001.rbxl`,
   then open `roblox/build/game-001.rbxl` in Studio.
+
+**On a Mac** (Studio's menus are the same as on Windows; only the keys differ):
+
+| What | Mac | Notes |
+|---|---|---|
+| Open the build | **File → Open from File…** (⌘O) | pick the `.rbxl` |
+| Play / Stop | **F5** / **⇧F5** | on many Mac keyboards the F-keys control brightness and volume: hold **fn** (fn+F5, fn+⇧F5), or use the **Play** / **Stop** buttons on the Home tab |
+| Debug panel | **F8** (fn+F8) | or the **Debug (F8)** button, top left |
+| Screenshot | **⌘⇧4**, then drag over the window (or ⌘⇧4 then Space, click the window) | saved to the Desktop |
+| Output / Stats | **View → Output**, **View → Stats** | |
+| Two players | **Test → Clients and Servers → Local Server, 2 players → Start** | opens a server and two client windows |
 
 Then: **View → Output** open. **Home → Game Settings → Security → Enable Studio Access to API
 Services: ON** (only needed once player data saving lands; harmless before). Write down the sha:
 Explorer → ReplicatedStorage → Forge → **BuildInfo** (double-click) → `sha`.
 
 ## Debug panel and presets (FL-0068, FL-0093; Studio only)
-Press **Play**, then **F8** (or the **Debug (F8)** button, top left) to open the panel. It lists:
+Press **Play**, then **F8** (fn+F8 on a Mac; or the **Debug (F8)** button, top left) to open the panel. It lists:
 - **Presets**: each puts the server into a known start state for a check. Press the one a check names
   before you start it. The G13.7 presets (FORGE-05) are:
 
@@ -48,7 +60,7 @@ The panel only exists in Studio; live servers create no debug remotes. Every but
 **FAIL** with the server's message at the bottom of the panel. Copy any FAIL text into the report.
 
 ## 1. Boot (always runnable)
-1. Press **Play** (F5), wait 10 s.
+1. Press **Play** (F5; fn+F5 on a Mac), wait 10 s.
 2. Output shows, with the same sha, and no red errors:
    - `ForgeLoop server starting ... game=game-001 ... sha=<sha>`
    - `ForgeLoop server services started count=<n> order=... trees=Forge,Game`
@@ -110,8 +122,8 @@ or sunk props, unreadable lighting. Describe what you see next to the screenshot
 rotate on PC and phone; tap selects. In the aerial view, citizens near the **centre of the screen** show
 wherever you pan (#39 M1 fixed in B7, #91), and from the build after B7 they also stay when you zoom all the
 way out (#101; in B7, citizens more than 150 studs from the screen centre are hidden when zoomed out, known,
-not a fail). Known, not a fail: any character that touches
-the throne can sit on it, so in M1/M2 another player can take your seat (#89 L2).
+not a fail). From main `1c48149` (#112) only your kingdom's rulers can sit on your throne: anyone else is
+put down in front of the dais within half a second (in B7-B9 anyone could sit there: known, not a fail).
 
 ## 4. Belong to a kingdom (row 3; runnable from B6)
 1. Play. The HUD shows your kingdom's name, banner colour and member list.
@@ -185,9 +197,14 @@ same names.
    4 bunks: soldiers sleep there, and a 5th recruit is refused until you upgrade it (D-041). Soldiers wear
    your kingdom's crest on the helmet (spire / square / plume / dome).
 2. Press **Send to capture**. They walk to the neutral Watchtower, a capture bar fills, and the tower
-   takes your colour. Crown Points rise, and the slice summary appears (the first capture ends the
+   takes your colour. From main `38526a4` (#115) the captured tower is rebuilt in your kingdom's look:
+   its cap, roof and emblem match your own towers, not the neutral roof in your colour. The capture
+   ring stays where it was; put this in **O2**. Crown Points rise, and the slice summary appears (the first capture ends the
    slice: CONTRACTS G3).
 3. Screenshots **O1** (capture in progress), **O2** (captured) and **O3** (summary).
+   From main `21904e4` (#49): at that capture you get the capture celebration, the **Victory!**
+   celebration with its music (silent until sounds are chosen) and the slice summary, all at once.
+   Note whether they read in order or cover each other; put it in **O3**.
 
 **Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear. A 5th recruit
 at a level-1 barracks reads "No free bunks. Upgrade the barracks or build another" (#86, from the build
@@ -216,9 +233,12 @@ after B7; B7 says "…Upgrade it").
      follow-up. A walk-out is not ended by a boost (D-042).
 4. Press `vs1.strike`: every farmer shows "On strike" and stops work for about 2 minutes, then goes back.
    `vs1.hungry` makes food-related requests more likely.
-   Known, not a fail (#77 N3, N2; FORGE-01 fixes next): if you press Talk and close the panel without
-   answering, that request does not come back this match; a citizen who walks out while carrying a load
-   finishes that delivery first.
+   From main `276d933` (#107): press Talk and close without answering, then tap Talk again: the **same**
+   question comes back and the bubble stays up (in B8 the request was gone for the match); a citizen who
+   walks out stops at once, even while carrying a load. From main `74db60c` (#114), with two rulers: if
+   one leaves a conversation open, the other's Talk shows the same question and the one who asked last
+   answers it. (In B9 the other ruler may get "Nothing on their mind right now" or a different question:
+   known, not a fail there.)
 5. Screenshots **D1** (bubble), **D2** (conversation), **D3** (the visible result).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
@@ -252,6 +272,9 @@ In the **Server** window: **View → Script Performance**; note the Activity % o
 4. Pass: every kingdom is identifiable without colour (emblem, silhouette or name) in both views.
 5. VS-1 acceptance (CONTRACTS G13.2, D-033 (3)): soldiers of different kingdoms are told apart by their helmet crest in the kingdom's tower style (spire, square, plume, dome), not only by torso colour; check two kingdoms' soldiers side by side in the grayscale/protanopia view.
 6. Tritanopia: azure and emerald are told apart by tower silhouette and emblem in the four-kingdom screenshot.
+7. From main `f562a31` (#105): from the aerial camera, each keep shows its kingdom's emblem on a roof plaque
+   (crown, star, oak leaf, sun) and on its banners, flags and plot signs; check they read in the grayscale
+   view too. A captured watchtower takes the capturer's emblem.
 
 ## Report (paste into the FORGE-05 chat)
 ```

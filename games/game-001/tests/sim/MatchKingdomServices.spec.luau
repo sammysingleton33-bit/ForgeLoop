@@ -96,6 +96,7 @@ function useAdapter(env, kingdoms, parties: { [number]: string }?)
 		died = {},
 		respawnDelay = 5,
 		sits = {},
+		unseats = {}, -- { character, seat } per unseat (#89 L2)
 		seatOf = {}, -- character -> seat (Humanoid.SeatPart)
 		occupant = {}, -- seat -> character (Seat.Occupant)
 	}
@@ -149,6 +150,15 @@ function useAdapter(env, kingdoms, parties: { [number]: string }?)
 		end,
 		occupant = function(seat)
 			return log.occupant[seat]
+		end,
+		unseat = function(character, seat)
+			if log.occupant[seat] == character then
+				log.occupant[seat] = nil
+			end
+			if log.seatOf[character] == seat then
+				log.seatOf[character] = nil
+			end
+			table.insert(log.unseats, { character = character, seat = seat })
 		end,
 	}
 	return log
@@ -806,6 +816,114 @@ describe("KingdomService spawning (G3, D-026)", function()
 		expect(#log.sits).toBe(2)
 	end)
 
+	-- #89 L2: a character sits on a throne the way a touch would (no server seat call)
+	local function touchSit(log, character, seat)
+		local old = log.seatOf[character]
+		if old then
+			log.occupant[old] = nil
+		end
+		log.seatOf[character] = seat
+		log.occupant[seat] = character
+	end
+
+	-- walk mode: the character gets up
+	local function standUp(log, character)
+		local old = log.seatOf[character]
+		if old then
+			log.occupant[old] = nil
+		end
+		log.seatOf[character] = nil
+	end
+
+	local function throneOf(match, kingdomId)
+		local host = match.host
+		return host:buildingModel(host.match.sim.kingdoms[kingdomId].keepId):FindFirstChild("Throne", true)
+	end
+
+	it("unseats another kingdom's ruler, a spectator and any other humanoid from a throne (#89 L2)", function()
+		local env, match, kingdoms, log = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		local p3 = env.mock.players:add({ userId = 3 })
+		env.mock:advance(1)
+		local host = match.host
+		expect(host:kingdomOf(p3)).never.toBe("crimson")
+		local throne = throneOf(match, "crimson")
+		expect(log.occupant[throne]).toBe(p1.Character)
+		standUp(log, p1.Character)
+		local theirs = throneOf(match, host:kingdomOf(p3))
+		-- another kingdom's ruler walks over and sits down
+		touchSit(log, p3.Character, throne)
+		env.mock:advance(KingdomServiceDef.THRONE_CHECK + 0.1)
+		expect(log.occupant[throne]).toBeNil()
+		expect(log.seatOf[p3.Character]).toBeNil()
+		expect(#log.unseats).toBe(1)
+		expect(log.unseats[1].character).toBe(p3.Character)
+		expect(log.unseats[1].seat).toBe(throne)
+		-- on their own throne they stay
+		touchSit(log, p3.Character, theirs)
+		env.mock:advance(2)
+		expect(log.occupant[theirs]).toBe(p3.Character)
+		expect(#log.unseats).toBe(1)
+		-- a spectator's character, and a humanoid that is nobody's character
+		for userId = 4, 17 do -- every seat taken: the next arrival watches
+			env.mock.players:add({ userId = userId })
+		end
+		local spectator = env.mock.players:add({ userId = 99 })
+		env.mock:advance(1)
+		expect(kingdoms:getKingdomOf(spectator)).toBeNil()
+		if log.occupant[throne] then -- a crimson ruler who just spawned sat down: up again
+			standUp(log, log.occupant[throne])
+		end
+		local stray = env.newInstance("Model")
+		spectator.Character = stray
+		touchSit(log, stray, throne)
+		env.mock:advance(KingdomServiceDef.THRONE_CHECK + 0.1)
+		expect(log.occupant[throne]).toBeNil()
+		local npc = env.newInstance("Model")
+		touchSit(log, npc, throne)
+		env.mock:advance(KingdomServiceDef.THRONE_CHECK + 0.1)
+		expect(log.occupant[throne]).toBeNil()
+		expect(#log.unseats).toBe(3)
+		expect(log.unseats[2].character).toBe(stray)
+		expect(log.unseats[3].character).toBe(npc)
+	end)
+
+	it("lets a co-ruler sit on their own throne while the other ruler is up (#89 L2)", function()
+		local env, match, kingdoms, log = boot({ parties = { [1] = "party", [2] = "party" } })
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local p2 = env.mock.players:add({ userId = 2 })
+		env.mock:advance(1)
+		expect(kingdoms:getKingdomOf(p2)).toBe("crimson")
+		local throne = throneOf(match, "crimson")
+		standUp(log, p1.Character)
+		touchSit(log, p2.Character, throne)
+		env.mock:advance(3)
+		expect(log.occupant[throne]).toBe(p2.Character)
+		expect(#log.unseats).toBe(0)
+	end)
+
+	it("a ruler who spawns onto a throne an outsider holds takes it at once (#89 L2)", function()
+		local env, match, kingdoms, log = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		local p3 = env.mock.players:add({ userId = 3 })
+		env.mock:advance(1)
+		local throne = throneOf(match, "crimson")
+		standUp(log, p1.Character)
+		touchSit(log, p3.Character, throne)
+		-- before any throne check runs: the seat call itself clears the outsider
+		local sits = #log.sits
+		kingdoms:_seat(p1.UserId, p1.Character, "crimson")
+		expect(#log.sits).toBe(sits + 1)
+		expect(log.occupant[throne]).toBe(p1.Character)
+		expect(log.seatOf[p3.Character]).toBeNil()
+		expect(#log.unseats).toBe(1)
+		expect(log.unseats[1].character).toBe(p3.Character)
+		env.mock:advance(2) -- and the checks leave the rightful ruler alone
+		expect(log.occupant[throne]).toBe(p1.Character)
+		expect(#log.unseats).toBe(1)
+	end)
+
 	it("gives spectators no character", function()
 		local env, _, _, log = boot()
 		for userId = 1, 17 do
@@ -1073,5 +1191,56 @@ describe("Kingdom and Match remotes (G8)", function()
 		env.mock:advance(120)
 		expect(match:getPhase()).toBe("Results")
 		expect(#ended).toBe(1)
+		-- a player who arrives during Results gets the summary too (#70 M2); the first one not again
+		local late = env.mock.players:add({ userId = 2 })
+		env.mock:advance(TICK)
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote(env, "Match.Ended")) do
+				if entry.player == player then
+					table.insert(out, entry.args)
+				end
+			end
+			return out
+		end
+		local lateEnded = sentTo(late) -- (the broadcast went out before this player existed)
+		expect(#lateEnded).toBe(1)
+		expect(lateEnded[1][1]).toEqual(ended[1])
+		expect(#sentTo(p1)).toBe(0) -- the first player had the broadcast only
+		expect(#received(env, "Match.Ended", p1)).toBe(1)
+	end)
+
+	it("match mode: the summary goes to arrivals during Results only, never after (#70 M2)", function()
+		local env, match = boot({ mode = "match", pacing = fastPacing() })
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote(env, "Match.Ended")) do
+				if entry.player == player then
+					table.insert(out, entry.args)
+				end
+			end
+			return out
+		end
+		local early = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		expect(#sentTo(early)).toBe(0) -- nothing to summarise yet
+		local guard = 0
+		while match:getPhase() ~= "Results" and guard < 400 do
+			env.mock:advance(TICK)
+			guard += 1
+		end
+		expect(match:getPhase()).toBe("Results")
+		local during = env.mock.players:add({ userId = 2 })
+		env.mock:advance(TICK)
+		expect(#sentTo(during)).toBe(1)
+		guard = 0
+		while match:getPhase() == "Results" and guard < 400 do
+			env.mock:advance(TICK)
+			guard += 1
+		end
+		expect(match:getPhase()).toBe("Lobby")
+		local after = env.mock.players:add({ userId = 3 })
+		env.mock:advance(TICK)
+		expect(#sentTo(after)).toBe(0) -- a new match: the old summary is gone
 	end)
 end)

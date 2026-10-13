@@ -17,7 +17,9 @@
 			"RulerVisited"; opts = { rulers?: { userId } (default: every current ruler), speaker?: entityId,
 			events?: { tag } (event.<tag> flags), before?: { buildingId, level } (Sim/Context) }
 		ReputationService:rulerVisited(userId, entityId)        -- RulerVisited (audience speaker), for
-		                                                           conversations (FL-0079)
+		                                                           conversations (FL-0079); also the
+		                                                           citizen's rulerVisited memory and mood
+		                                                           lift (sim:rulerVisit, G5)
 		ReputationService:farmHistories(userId, kingdomId): (rulerHistory, kingdomHistory)
 			-- the anti-farming histories (SPEC §6.8) ConversationService hands ContentQuery.fireDecision
 		ReputationService:values(userId): { [Category]: number }   -- a copy of the ruler's current values
@@ -241,6 +243,12 @@ function ReputationService:rulerVisited(userId: number, entityId: number)
 	local kingdomId = self._match.host.match:kingdomOf(userId)
 	if kingdomId then
 		self:fireAction("RulerVisited", kingdomId, { rulers = { userId }, speaker = entityId })
+		-- the citizen remembers it and cheers up, at most once per few minutes (CONTRACTS G5 reaction)
+		local sim = self:_sim()
+		local c = sim.citizens[entityId]
+		if c and c.kingdomId == kingdomId then
+			sim:rulerVisit(c, userId)
+		end
 	end
 end
 
