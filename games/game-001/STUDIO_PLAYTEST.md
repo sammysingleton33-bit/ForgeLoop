@@ -190,6 +190,9 @@ same names.
    ring stays where it was; put this in **O2**. Crown Points rise, and the slice summary appears (the first capture ends the
    slice: CONTRACTS G3).
 3. Screenshots **O1** (capture in progress), **O2** (captured) and **O3** (summary).
+   From main `21904e4` (#49): at that capture you get the capture celebration, the **Victory!**
+   celebration with its music (silent until sounds are chosen) and the slice summary, all at once.
+   Note whether they read in order or cover each other; put it in **O3**.
 
 **Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear. A 5th recruit
 at a level-1 barracks reads "No free bunks. Upgrade the barracks or build another" (#86, from the build

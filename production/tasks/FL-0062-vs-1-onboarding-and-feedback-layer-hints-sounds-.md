@@ -18,6 +18,7 @@ evidence:
   - "KingdomFeedback.spec 26 after the #49 review: one toast per placement, won/lost/draw/watched, no fallback toast for a declined celebration, kingdom tint, distance from the camera focus, bounded attached-effects list, Match.GetState for late joiners"
   - "unverified: nothing heard or seen in Studio; needs FORGE-01 G9 producers and EntityController cues; sounds not chosen yet (user)"
   - check.sh OVERALL PASS (game-001 1212/0); KingdomFeedback.spec 31/31; mutations FL-0062 30/30
+  - "main 3d3cb82 + #49 on 04a78cd: check.sh PASS (framework 517/0, game-001 1212/0); mutations FL-0062 30/30; PR CI run 38411607243 3/3; FORGE-05 runtime probe: placeholder sounds 0 played, 13 skipped, 0 audio warnings or errors"
 ---
 
 # VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer
@@ -56,3 +57,4 @@ A new player is guided gather -> build -> recruit -> capture in the first minute
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-05 re-review lows: a late Match.GetState reply after destroy plays nothing; celebrate culled by distance with one cheer sound per 0.5 s; NaN ids ignored. KingdomFeedback.spec 28; FL-0062 mutations 25/25. Main a75de0f merged (with #42).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force because the status stays REVIEW). FORGE-05 #42 L3 applies here too: walk mode measures from the camera (getFocus only while mode is overview); '+N' floats culled from the view and passed opts.maxDistance 0 (FORGE-05 #42 L7, framework option in the FL-0091 follow-up PR). Main 3bbf2a0 merged.
 - 2026-10-13 forge-04: REVIEW → REVIEW. Main 3d3cb82 merged. FORGE-00's two checks for the star review: (1) music with game-001's placeholder Sounds is silent and logs nothing (new spec with the real AudioController); (2) announcer lines vs FORGE-03's toasts: the recruiter no longer gets '+3 soldiers' on top of FORGE-03's '3 soldiers recruited' (co-rulers only, like placement); no announcer line repeats a refusal (#86) or an achievement toast (the announcer's celebrations are the only achievement toasts).
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged as #49 (21904e4), D-040 fallback verdict (star by FORGE-00). REVIEW, only G6 pending: Studio run (E5 and STUDIO_PLAYTEST) and the user's P0 sound picks. FORGE-07 post-merge review owed.
