@@ -176,8 +176,8 @@ end
 
 -- Starts (or resumes) one flow for a player: restore stored progress, run auto steps, tell the client.
 function OnboardingService:_begin(player: any, flow: any)
-	if not isPlayer(player) then
-		return
+	if not isPlayer(player) or player.Parent == nil then
+		return -- a start event for a player who already left would leave a state no PlayerRemoving clears (#22)
 	end
 	local states = self._players[player.UserId]
 	if states == nil then

@@ -330,6 +330,15 @@ describe("OnboardingService", function()
 		bus.PlayerReady:fire(player)
 	end)
 
+	it("a start event for a player who already left keeps no state (FORGE-05 #22 ghost state)", function()
+		local gone = env.mock.players:add({ userId = 902 })
+		data:load(gone, nil)
+		env.mock.players:remove(gone)
+		bus.PlayerReady:fire(gone) -- late, after PlayerRemoving
+		expect(service._players[902]).toBeNil()
+		expect(select(1, service:_stateOf(gone, "first_session"))).toBeNil()
+	end)
+
 	it("logs step 1 at join, fires OnboardingStep and tells the client the next step", function()
 		expect(onboardingSteps(env)).toEqual({ "Arrive" })
 		local state = remotes:sentTo("Experience.OnboardingState", player)
