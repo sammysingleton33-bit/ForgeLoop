@@ -83,7 +83,7 @@ Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spe
 | Deposits | at most one clink per 1.5 s |
 | Citizens' work sounds | at most one per citizen per 1.5 s, only within 150 studs of the camera focus (the centre of the aerial view, not the camera) |
 | Placements | the placer sees FORGE-03's own notice only; co-rulers get "<building> placed" with the placer's name |
-| Match end | Victory or Defeat only for a ruler who won or lost; a draw shows "A draw", a spectator "<kingdom> wins the match", both without the defeat music |
+| Match end | Victory or Defeat only for a ruler who won or lost. A draw and a spectator get no toast: the slice summary shows the result line (FORGE-00 ruling). Only a client without the summary shows "A draw" / "<kingdom> wins the match". Neither plays the defeat music |
 | Pooled rigs | a released rig keeps no effect |
 | Music | Founding calm, Expansion build, Conflict/Endgame tension, Results calm; victory/defeat at once |
 
@@ -224,3 +224,4 @@ Pass: steps 1–8 hold. Record a short video of a request, an answer, the reacti
 - 2026-10-12 FORGE-04: E8 citizen bubbles, reactions and strike placards (FL-0091).
 - 2026-10-12 FORGE-04: E6 rewritten for onboarding v2 (D-030, FL-0092): inspect → build on a plot → answer → recruit → capture.
 - 2026-10-12 FORGE-04: E5 back in this file for FL-0062 (game-001 feedback, announcer, music) with the fx.announce and fx.burst debug commands.
+- 2026-10-13 FORGE-04: E5 match end: no draw or spectator toast while the slice summary shows the result (FORGE-00 ruling on #49).
