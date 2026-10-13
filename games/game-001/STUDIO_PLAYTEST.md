@@ -38,9 +38,9 @@ Press **Play**, then **F8** (or the **Debug (F8)** button, top left) to open the
 
   Row owners add their own presets (e.g. treasury, construction). A preset that fails says why. For
   example, `KingdomService is not running yet` means that part of the game is still **waiting**.
-  **As of B7:** `vs1.reseed` works (FL-0104, #91). `vs1.request` and `vs1.strike` still answer **FAIL** on
-  purpose: they fail closed until their server hooks land with the conversation server (#77). Write
-  `SKIPPED (waiting #77)` for the steps that use them.
+  **From the build after B7 (main `751138b` on):** all three work: `vs1.reseed` (#91, #101), `vs1.request`
+  and `vs1.strike` (the conversation server, #77). In **B7** `vs1.request` and `vs1.strike` still answer
+  **FAIL** on purpose: write `SKIPPED (B7)` for the steps that use them there.
 - **Commands** such as `forge.buildInfo` (shows the sha; use it for the report) and `forge.services`.
   Commands with arguments are listed as text only. Use the presets.
 
@@ -202,24 +202,31 @@ after B7; B7 says "…Upgrade it").
 
 **Pass:** all HUD parts present and current; the history matches what you did.
 
-## 11. Decide in a conversation and see the result (row 9; waiting: FL-0079 server #77 — the cost/risk panel #66, bubbles FL-0091 and content FL-0083 are on main; `vs1.request` / `vs1.strike` arrive with #77)
-1. Within a minute at least one citizen shows a **thought bubble** with a real request. If none does,
-   press `vs1.request`.
-2. Select that citizen. A conversation opens with 2–4 choices. Pick one.
+## 11. Decide in a conversation and see the result (row 9; runnable from the build after B7: conversation server #77, panel #66, bubbles #42/#87, content #83 are all on main)
+1. Within a minute at least one citizen shows a **thought bubble** with "!" and a real request. It stays
+   up until you answer (zoom out and pan: it follows the citizen). If none appears, press `vs1.request`.
+2. Tap that citizen: the card shows **Talk** (a citizen without a request shows **Ask**). Press Talk: the
+   panel shows the question and 2–4 choices; each shows its cost and any risk with its chance (e.g.
+   "50 % ⚠ … may walk off the job for 45 s"). A large spend asks you to confirm once more. Pick one.
 3. The citizen reacts, and the world changes visibly, at least:
-   - your resources;
+   - your resources (charged once);
    - the citizen's loyalty and mood on their card;
    - a reputation value, with a history line;
-   - a work boost, a strike or a follow-up.
-4. Press `vs1.strike`: the farmers stop working until it is resolved (visible). `vs1.hungry` makes
-   food-related requests more likely.
+   - a work boost, a strike (the "On strike" placard on exactly the citizens who walk out) or a
+     follow-up. A walk-out is not ended by a boost (D-042).
+4. Press `vs1.strike`: every farmer shows "On strike" and stops work for about 2 minutes, then goes back.
+   `vs1.hungry` makes food-related requests more likely.
+   Known, not a fail (#77 N3, N2; FORGE-01 fixes next): if you press Talk and close the panel without
+   answering, that request does not come back this match; a citizen who walks out while carrying a load
+   finishes that delivery first.
 5. Screenshots **D1** (bubble), **D2** (conversation), **D3** (the visible result).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
 
-## 12. First minutes guided (onboarding; runnable from B7 except "answer a citizen")
+## 12. First minutes guided (onboarding; runnable from B7; "answer a citizen" from the build after B7)
 Start a fresh Play and follow the hints: inspect a citizen → build (House or Farm) → answer a citizen →
-recruit → capture. The "answer a citizen" hint is passed over until the conversation server (#77) lands.
+recruit → capture. In B7 the "answer a citizen" hint is passed over (no conversation server); from the
+build after B7 it waits for your answer (it moves on by itself after 2 minutes).
 **Pass:** each hint appears at the right moment and can be skipped. Known, not a fail: the build hint
 highlights the **Build** button rather than a plot marker, and the recruit hint highlights nothing
 (FORGE-04 follow-ups: retarget to `BuildSlot` now that FL-0081 is on main, and to `HUD.ArmyButton`).
