@@ -6,7 +6,7 @@ CONTRACTS describe. All the changes are additive, apart from the `Sim.GetEntitie
 only one caller, FORGE-01's EntityController, and it changes in the same PR.
 
 ## Done (with commits)
-- See the FL-0109 PR from `forge/01-gameplay-fl0109`; the link is in the task log.
+- PR [#127](https://github.com/sammysingleton33-bit/ForgeLoop/pull/127) from `forge/01-gameplay-fl0109` (047cd882).
 
 ## Evidence
 - Headless Lune specs and mutations only; the counts are in the PR.
