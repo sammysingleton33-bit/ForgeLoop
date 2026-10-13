@@ -10,7 +10,10 @@
 			A ruler of the citizen's kingdom only. The scenario: the citizen's open request when it still
 			holds, else the first eligible one (ContentQuery.eligibleScenarios on the acting ruler's ctx, SPEC
 			§6.8). Opening it marks it shown (cooldowns, once_per_citizen) and fires RulerVisited (FL-0080).
-			Asking again while the answer is pending returns the same showing.
+			Asking again while the answer is pending returns the same showing. Option cost? and risks? are
+			ContentQuery.choicePreview(scenario, response, names) as given (G13.1 v0.4-g7: risks filled with
+			this conversation's names, no "Risk" prefix); a scenario the names cannot fill returns nil and
+			logs a warning, never a failed remote.
 		Kingdom.Choose(entityId, scenarioId, responseId) -> (ok, { reaction, effects: { { kind, text } } }?,
 		                                                     reason?)
 			Answers the showing that Converse opened for this ruler, once (idempotent per showing). Refusal
@@ -19,7 +22,9 @@
 			scenario no longer holds; the showing closes), cost (the kingdom cannot pay; the showing stays open).
 	Effects of a choice (ContentQuery.fireDecision with the ruler's and the kingdom's farm histories, so the
 	bundle is already decayed; ReputationService:farmHistories):
-		- cost spent and resource_effects through the treasury (txId decision:<round>:<entity>:<scenario>:<n>);
+		- cost = decisionEffects(decision).cost, paid FIRST (txId decision:<round>:<entity>:<scenario>:<n>);
+		  fireDecision runs only for a paid answer, so a refused payment records no firing;
+		- resource_effects through the treasury;
 		- reputation: ReputationService:apply(ruler, decisionId, rep, response text);
 		- loyalty: every listener once under its closest relation (speaker > family > friends > rivals >
 		  audience), as fireDecision's `listeners` give it (decisionLoyalty with the kingdom multiplier,
@@ -257,21 +262,12 @@ function ConversationService:_payload(c: any, scenario: any, userId: number): { 
 	end)
 	for _, response in responses do
 		local option: { [string]: any } = { id = response.id, text = ContentQuery.fill(response.text, names) }
-		local preview = ContentQuery.choicePreview(scenario.id, response.id)
+		-- G13.3 extras exactly as ContentQuery gives them (v0.4-g7): cost? and risks? = { { text, chance } },
+		-- filled with this conversation's names; it errors on a placeholder the names do not cover
+		local preview = ContentQuery.choicePreview(scenario.id, response.id, names)
 		if preview then
-			if next(preview.cost) ~= nil then
-				option.cost = table.clone(preview.cost)
-			end
-			if #preview.risks > 0 then
-				local risks = {}
-				for _, risk in preview.risks do
-					table.insert(risks, {
-						text = ContentQuery.consequenceNotice(risk, names) or risk.id,
-						chance = risk.chance,
-					})
-				end
-				option.risks = risks
-			end
+			option.cost = preview.cost
+			option.risks = preview.risks
 		end
 		table.insert(options, option)
 	end
@@ -301,7 +297,10 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 				return s.id == showing.scenarioId
 			end)
 		if still then
-			return self:_payload(c, still, userId)
+			local ok, payload = pcall(self._payload, self, c, still, userId)
+			if ok then
+				return payload
+			end
 		end
 		self._showing[entityId] = nil
 	end
@@ -321,12 +320,23 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	if scenario == nil then
 		return nil
 	end
+	local ok, payload = pcall(self._payload, self, c, scenario, userId)
+	if not ok then
+		-- content the server cannot show (e.g. a placeholder these names do not cover): nothing on the
+		-- citizen's mind, and a warning for the content team, rather than a failed remote
+		self._env.log("warn", "ConversationService: scenario cannot be shown", {
+			scenario = scenario.id,
+			entityId = entityId,
+			error = tostring(payload),
+		})
+		return nil
+	end
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
 	self:_closeRequest(kingdomId, entityId)
 	self._showing[entityId] =
 		{ scenarioId = scenario.id, userId = userId, kingdomId = kingdomId, forced = forced or nil }
 	self._reputation:rulerVisited(userId, entityId)
-	return self:_payload(c, scenario, userId)
+	return payload
 end
 
 -- ---------------------------------------------------------------- Choose
@@ -571,24 +581,22 @@ function ConversationService:choose(
 		return false, nil, "not_eligible"
 	end
 	local sim = self:_sim()
-	local preview = ContentQuery.choicePreview(scenarioId, responseId)
-	local cost = if preview then preview.cost else {}
-	if not sim:canAfford(kingdomId, cost) then
-		return false, nil, "cost"
-	end
 	local decision = ContentQuery.data.decisions[response.decision]
-	if decision == nil then
+	local bundle = ContentQuery.decisionEffects(response.decision)
+	if decision == nil or bundle == nil then
 		return false, nil, "unknown_response"
+	end
+	-- pay first (decisionEffects cost, G13.1 v0.4-g7); only a paid answer records its firing
+	local cost = bundle.cost
+	self._seq += 1
+	local tx = `decision:{self._round}:{entityId}:{scenarioId}:{self._seq}`
+	if next(cost) ~= nil and not sim:spend(kingdomId, cost, tx, `decision:{response.decision}`) then
+		return false, nil, "cost"
 	end
 	local now = self:_now()
 	local rulerHistory, kingdomHistory = self._reputation:farmHistories(userId, kingdomId)
 	local listeners = self:_listeners(c, decision.audience)
 	local effects = assert(ContentQuery.fireDecision(response.decision, rulerHistory, kingdomHistory, now, listeners))
-	self._seq += 1
-	local tx = `decision:{self._round}:{entityId}:{scenarioId}:{self._seq}`
-	if next(cost) ~= nil and not sim:spend(kingdomId, cost, tx, `decision:{effects.id}`) then
-		return false, nil, "cost"
-	end
 	self._showing[entityId] = nil -- answered: a second Choose for this showing is not_offered
 
 	local names = self:_names(c, userId)

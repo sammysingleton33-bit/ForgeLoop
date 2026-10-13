@@ -465,6 +465,88 @@ describe("ConversationService: strikes on the wire (G13.3 v0.4-g6)", function()
 	end)
 end)
 
+describe("ConversationService: every real scenario (G13.1 v0.4-g7, #83 review L1)", function()
+	it(
+		"shows every scenario through Converse with the names this server builds: all filled, risks { text, chance }",
+		function()
+			local env, conversations, match = boot()
+			local p1 = seat(env, 1)[1]
+			local sim = match.host.match.sim
+			local ids = sim.kingdoms.crimson.citizenIds
+			local c = sim.citizens[ids[1]]
+			-- every relation a scenario may name
+			c.profile.family = { ids[2] }
+			c.profile.friends = { ids[3] }
+			c.profile.rivals = { ids[4] }
+			for _, resource in { "food", "wood", "stone", "gold" } do
+				sim:deposit("crimson", resource, 1000, `test:{resource}`, "test")
+			end
+			local function filled(text)
+				return type(text) == "string" and #text > 0 and string.find(text, "{", 1, true) == nil
+			end
+			local shown, risks = 0, 0
+			for _, scenarioId in ContentQuery.data.dialogue.order do
+				local scenario = ContentQuery.data.dialogue.scenarios[scenarioId]
+				c.profile.occupation = scenario.occupation or c.profile.occupation
+				conversations._showing[c.id] = nil
+				assert(conversations:debugRequest("crimson", c.id, scenarioId))
+				local payload = conversations:converse(p1, c.id)
+				expect(payload).never.toBeNil()
+				expect(payload.scenarioId).toBe(scenarioId)
+				expect(filled(payload.question)).toBe(true)
+				expect(#payload.options).toBe(#scenario.responses)
+				local responses = {}
+				for _, r in scenario.responses do
+					responses[r.id] = r
+				end
+				for _, option in payload.options do
+					expect(filled(option.text)).toBe(true)
+					local expected = 0 -- every risk is shown before choosing (model decision 7)
+					for _, id in ContentQuery.data.decisions[responses[option.id].decision].consequences do
+						if ContentQuery.data.consequences[id].chance < 1 then
+							expected += 1
+						end
+					end
+					expect(#(option.risks or {})).toBe(expected)
+					risks += expected
+					for resource, amount in option.cost or {} do
+						expect(type(resource)).toBe("string")
+						expect(amount > 0).toBe(true)
+					end
+					for _, risk in option.risks or {} do
+						expect(filled(risk.text)).toBe(true)
+						expect(string.find(risk.text, "Risk (", 1, true)).toBeNil() -- the panel shows the chance
+						expect(risk.chance > 0 and risk.chance < 1).toBe(true)
+					end
+				end
+				shown += 1
+			end
+			expect(shown).toBe(#ContentQuery.data.dialogue.order)
+			expect(risks > 0).toBe(true)
+			expect(env.mock:hasLog("warn", "cannot be shown")).toBe(false)
+		end
+	)
+
+	it("a scenario whose text the names cannot fill is refused quietly, not as a failed remote", function()
+		local env, conversations, match = boot()
+		local p1 = seat(env, 1)[1]
+		local sim = match.host.match.sim
+		local c = sim.citizens[sim.kingdoms.crimson.citizenIds[1]]
+		local original = ContentQuery.choicePreview
+		local ok, err = pcall(function()
+			ContentQuery.choicePreview = function()
+				error("ContentQuery.choiceRisks: no fill for {sibling}")
+			end
+			assert(conversations:debugRequest("crimson", c.id, ContentQuery.data.dialogue.order[1]))
+			expect(conversations:converse(p1, c.id)).toBeNil()
+		end)
+		ContentQuery.choicePreview = original
+		assert(ok, err)
+		expect(env.mock:hasLog("warn", "cannot be shown")).toBe(true)
+		env.mock:clearLogs()
+	end)
+end)
+
 describe("ConversationService: Studio debug hooks (G13.7)", function()
 	local function presets(env, registry)
 		local Def = require("@game/ServerScriptService/Game/Services/DebugPresetService")
