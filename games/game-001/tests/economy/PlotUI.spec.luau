@@ -5,17 +5,18 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
+local BuildMenu = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/BuildMenu")
 local BuildModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/BuildModel")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomStore = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/KingdomStore")
-local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local KingdomWorld = require("./doubles/KingdomWorld")
+local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 local PlotPickerDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/PlotPickerController")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local SlotDoubles = require("./doubles/SlotDoubles")
-local SlotFit = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/SlotFit")
 local UpgradePanelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/UpgradePanelController")
 local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
@@ -104,45 +105,37 @@ local function pick(world, kind, id)
 end
 
 describe("Plot models (FL-0087)", function()
-	it("fits structures to FORGE-02's real slot sizes, not to a size guess (M2)", function()
-		-- The world Layout's slots (S 24×20, M 36×30, L 46×40): each type's biggest footprint over its
-		-- levels must fit width and depth. Checked against Layout and Kit here, not against the double.
+	it("offers what FORGE-01's Build/Fit says fits the plot, less the keep, walls and gates (M2, G13.5)", function()
+		-- The world Layout's slots (S 24×20, M 36×30, L 46×40). The picker calls the one shared rule
+		-- (Fit.typesFor; Build.PlaceSlot calls it too) and only chooses which fitting types a menu offers.
 		local sizes = WorldLayout.slotSizes
 		expect(sizes.S).toBe(Vector2.new(24, 20))
 		expect(sizes.M).toBe(Vector2.new(36, 30))
 		expect(sizes.L).toBe(Vector2.new(46, 40))
-		for _, t in SlotFit.TYPES do
-			for _, size in { "S", "M", "L" } do
-				local fits = true
-				for level = 1, math.max(1, Costs.maxLevel(t)) do
-					local fp = Kit.footprint(t, level)
-					fits = fits and fp.X <= sizes[size].X and fp.Y <= sizes[size].Y
-				end
-				expect(SlotFit.fits({ size = size }, t)).toBe(fits)
+		for _, size in Fit.SIZES do
+			local offered = BuildModel.plotTypes(size)
+			for _, t in offered do
+				expect(Fit.fits(t, size)).toBe(true)
+			end
+			for _, t in Fit.typesFor(size) do
+				local plot = t ~= "keep" and t ~= "wall" and t ~= "gate"
+				expect(table.find(offered, t) ~= nil).toBe(plot)
 			end
 		end
-		-- What that means with the D-030 footprints (house 22×18 at Lv 2, barracks 34×22, farm 40×32):
-		for _, t in { "house", "lumbercamp", "quarry", "storehouse", "watchtower" } do
-			expect(SlotFit.sizeOf(t)).toBe("S")
-		end
-		expect(SlotFit.sizeOf("barracks")).toBe("M")
-		expect(SlotFit.sizeOf("farm")).toBe("L")
-		expect(table.concat(SlotFit.typesFor({ size = "S" }), ",")).toBe(
-			"house,lumbercamp,quarry,storehouse,watchtower"
+		-- What that means with the D-030 footprints (house 22×18 at Lv 2, barracks 34×22, farm 40×32;
+		-- wall 32×8 and gate 32×12 fit M and L but are lines, VS-2):
+		expect(table.concat(BuildModel.plotTypes("S"), ",")).toBe("house,storehouse,lumbercamp,quarry,watchtower")
+		expect(table.concat(BuildModel.plotTypes("M"), ",")).toBe(
+			"house,storehouse,lumbercamp,quarry,barracks,watchtower"
 		)
-		expect(table.concat(SlotFit.typesFor({ size = "M" }), ",")).toBe(
-			"house,lumbercamp,quarry,storehouse,barracks,watchtower"
+		expect(table.concat(BuildModel.plotTypes("L"), ",")).toBe(
+			"house,farm,storehouse,lumbercamp,quarry,barracks,watchtower"
 		)
-		expect(#SlotFit.typesFor({ size = "L" })).toBe(#SlotFit.TYPES)
-		-- the server's own list wins when it sends one (proposed additive field)
-		expect(table.concat(SlotFit.typesFor({ size = "S", fits = { "house" } }), ",")).toBe("house")
-		expect(#SlotFit.typesFor({ size = "XL" })).toBe(0)
-		-- the double's server agrees with the client for every plot type and size
-		for _, t in SlotFit.TYPES do
-			for _, size in { "S", "M", "L" } do
-				expect(SlotDoubles.fits(size, t)).toBe(SlotFit.fits({ size = size }, t))
-			end
-		end
+		expect(#BuildModel.plotTypes("XL")).toBe(0)
+		expect(#BuildModel.plotTypes(nil)).toBe(0)
+		local menu = BuildModel.plotMenu(KingdomStore.new(), { slot = { id = "s1", size = "S" } })
+		expect(menu.tabs[1].label).toBe("Small plot")
+		expect(#menu.rows).toBe(5)
 	end)
 
 	it("builds the plot menu with costs, time, what it gives and a slot CTA", function()
@@ -258,6 +251,20 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		expect(texts(hud.guis.notices)).toContain("Couldn't build here")
 		expect(texts(hud.guis.notices)).toContain("Not enough resources")
 		expect(hud.state.menu).toBe("plot")
+		world:destroy()
+	end)
+
+	it("the server judges the fit with the same Build/Fit: a misfit forced through is refused", function()
+		local world = newWorld({ treasury = { food = 100, wood = 1000, stone = 1000, gold = 0 } })
+		local hud = world.hud
+		pick(world, "slot", "s1")
+		-- a farm (40×32) doesn't fit a small plot (24×20); a stale view claiming a large one sends it anyway
+		local forged = BuildModel.placeDetail(hud.store, "farm", { slot = { id = "s1", size = "L" } })
+		world.picker:place(forged)
+		world:advance(0.2)
+		expect(#world:callsNamed("PlaceSlot")).toBe(1)
+		expect(texts(hud.guis.notices)).toContain("That doesn't fit this plot")
+		expect(hud.store:slot("s1").occupiedBy).toBeNil()
 		world:destroy()
 	end)
 
@@ -418,13 +425,16 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world:destroy()
 	end)
 
-	it("says so when nothing can be built on a plot (an empty server fits list)", function()
-		local world = newWorld()
-		local hud = world.hud
-		hud.store:applySlots({ { id = "m9", size = "M", fits = {} } })
-		pick(world, "slot", "m9")
-		expect(texts(find(hud.guis.menus, "PlotPicker"))).toContain("Nothing can be built on this plot yet.")
-		world:destroy()
+	it("says so when nothing can be built on a plot (a size Build/Fit doesn't know yet)", function()
+		-- the store keeps only S, M and L plots, so this is drawn from the model directly
+		local store = KingdomStore.new()
+		local view = BuildModel.plotMenu(store, { slot = { id = "x9", size = "XL" } })
+		expect(#view.rows).toBe(0)
+		local root = Instance.new("Frame")
+		local menu = BuildMenu.new(root)
+		menu:render(view, Layout.compute(1280, 720), { phoneView = "list", title = "Plot", name = "PlotPicker" })
+		expect(texts(root)).toContain("Nothing can be built on this plot yet.")
+		menu:destroy()
 	end)
 
 	it("closes, and says why, when someone else builds on the open plot", function()
