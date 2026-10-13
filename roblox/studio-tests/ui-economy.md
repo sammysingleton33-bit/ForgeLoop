@@ -52,6 +52,10 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    footprint moves there. Tap **Place** to build; the ⟳ button rotates; ✕ cancels. A tap on the
    ground never builds by itself.
 4. Screenshot the HUD, the build detail and the placement bar.
+5. Toasts (FORGE-04's NotificationController, placed by the HUD): with the Build drawer open, try
+   to place something you can't afford, then something you can. The toasts appear under the
+   pills, left of the drawer: the drawer's tabs and ✕ and the Build / Kingdom buttons stay
+   tappable while they show. With the drawer closed they sit at the top, left of the rail.
 
 ## U6 — tablet and desktop layout (P2)
 1. Device emulator: an iPad in landscape (1024 × 768), then off at 1920 × 1080.

@@ -5,13 +5,13 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
-| Open PR | none of mine (#47 G13.5 spec and #57 CI openpyxl merged) |
-| Current task | D-030 / FL-0093: merge in dependency order; user builds B1–B4 delivered, B5 being prepared from `71a0257` (#60 throne/levels/looks, #62 no trees in buildings + rectangle placement, #58/#65 UI fixes, #33 notifications). Waiting on the user's first Studio report |
-| Last verified check | main `bcd0d23` CI green [run 38321307926](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38321307926); user build B4 `forgeloop-game001-bcd0d23` (id 11779067478) |
+| Open PR | none of mine (#47, #57, #69 merged) |
+| Current task | D-030 / FL-0093: merge in dependency order. B5 (`71a0257`) delivered; B6 after #61 (citizens look different, Jobs tab works end to end). Waiting on the user's first Studio report |
+| Last verified check | main `0a7c9f1` CI green [run 38342038293](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38342038293); `bf84416` CI running |
 | Blockers | none |
-| In review / queued | #61 (FORGE-01 population; reviewed, held for FORGE-03's JobModel target-order fix) · #45 (reviewed; held: tutorial stalls at AnswerCitizen until FORGE-03 reports it) · #42, #49 (reviewed; need FORGE-04 main merge) · #63 (needs FORGE-03 main merge) |
-| Merge gates I hold | FORGE-01 `Kingdom.Converse` server only after the client shows option cost and risks (#52 M1, G13.3); #61 only with FORGE-03's JobModel fix (stale `quotas` loses quick taps) |
-| Needs from others | User: run B4 and send the Output/FPS/screenshots ask-list (via FORGE-00). FORGE-01: #46 M1 trees through starting buildings, #50 M1/M2/M4/M5, population remotes, FL-0081 PlaceSlot server. FORGE-03: #58 re-sync, FL-0088 gate PR. FORGE-04: R42-1/R42-6, #49 M1/M2 |
+| In review / queued | #61 (needs FORGE-01's `ContentQuery.startLoyalty` fix after #67; then merge, then retarget #68) · #66 (gate passed 916/0; GitHub false conflict from a criss-cross base, FORGE-03 to merge main) · #63 (changes requested: 2 destroy-path Mediums; timing vs #70 is FORGE-00's call) · #70, #42/#49, #64 (review agents running) · #45 (held per FORGE-00 until Converse + CitizenAnswered work end to end) |
+| Merge gates I hold | FORGE-01 `Kingdom.Converse` server only after #66 is on main and FORGE-03 fixes #66 B1 (phone: risky answer tappable while its risk is below the fold); #61 only once main + #61 passes (Population.spec:447 after #67) |
+| Needs from others | User: run a user build and send Output/FPS/screenshots (via FORGE-00). FORGE-00: #63 timing, risk-prefix ruling (#67 M2), `fireAction` co-ruler rule (M3), CONTRACTS/handoff (M4). FORGE-01: #61 `startLoyalty`, risks as `{text, chance}`. FORGE-03: #66 main merge, #66 B1, #63 M1/M2. FORGE-02: soldier helmet crest (D-033 VS-1 row) |
 
 ## Merged so far (integration log: `production/quality-gates/integration-log.md`)
 | PR | What | main sha |
@@ -67,7 +67,13 @@ _Maintained by the worker. Keep it short and current._
 | #60 | FORGE-02 throne, building levels, citizen looks | `25b11cb` |
 | #65 | FORGE-03 Jobs tab M1/M2 + #58 follow-ups | `0072e9d` |
 | #33 | FORGE-04 NotificationController | `575fa3e` |
-| #62 | FORGE-01 Kit-rectangle placement, nodes clear of buildings/slots | `71a0257` |
+| #62 | FORGE-01 Kit-rectangle placement, nodes clear of buildings/slots | `71a0257` (user build B5) |
+| #69 | FORGE-05 D-033 (4) colour-vision check, run 1 | `124af89` |
+| #72 | FORGE-01 destroyed buildings broadcast (#50 M1) | `c5208ac` |
+| #67 | FORGE-00 content follow-ups, `fireAction`, integer `startLoyalty` | `27c8cbe` |
+| #71 | FORGE-03 Jobs ack beats older payload (unblocks #61) | `0c272f6` |
+| #74 | FORGE-03 HUD places NotificationController (#33 M1) | `0a7c9f1` |
+| #73 | FORGE-02 kingdom colours from `config/Kingdoms.luau` (D-033) | `bf84416` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
