@@ -94,7 +94,7 @@ describe("Text", function()
 		expect(Text.reason("overlap")).toBe("Too close to another building")
 		expect(Text.reason("cost")).toBe("Not enough resources")
 		expect(Text.reason("weird_code")).toBe("That didn't work. Try again.")
-		expect(Text.reason(nil)).toBe("Couldn't reach the server. Try again.")
+		expect(Text.reason(nil)).toBe("No answer from the server. Try again in a moment.")
 	end)
 
 	it("names every shortfall in resource order", function()
