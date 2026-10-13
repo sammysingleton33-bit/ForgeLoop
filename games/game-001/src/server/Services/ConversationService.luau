@@ -374,11 +374,17 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 		})
 		return nil
 	end
+	local shownBefore = (shown[entityId] or {})[scenario.id] -- restored if the question is never answered
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
 	-- the request stays open until it is answered (#77 N3): closing the panel without an answer leaves the
 	-- thought up, and asking again shows the same question
-	self._showing[entityId] =
-		{ scenarioId = scenario.id, userId = userId, kingdomId = kingdomId, forced = forced or nil }
+	self._showing[entityId] = {
+		scenarioId = scenario.id,
+		userId = userId,
+		kingdomId = kingdomId,
+		forced = forced or nil,
+		shownBefore = shownBefore,
+	}
 	self._reputation:rulerVisited(userId, entityId)
 	return self:_hold(player, c, payload)
 end
@@ -886,6 +892,18 @@ function ConversationService:refresh()
 				showing.kingdomId == kid and (sim.citizens[id] == nil or table.find(k.rulers, showing.userId) == nil)
 			then
 				self._showing[id] = nil
+				-- never answered: the question is not used up for the co-rulers who stay (G13.8)
+				local stamps = shown[id]
+				if stamps then
+					stamps[showing.scenarioId] = showing.shownBefore
+				end
+			end
+		end
+		-- nor is a hold: a ruler who left mid-conversation frees the citizen for a co-ruler at once (G13.8)
+		for _, id in k.citizenIds do
+			local c = sim.citizens[id]
+			if c and c.hold and table.find(k.rulers, c.hold.by) == nil then
+				sim:releaseCitizen(c)
 			end
 		end
 		-- close requests that no longer hold. One asked and not yet answered (#77 N3) stays while its matter

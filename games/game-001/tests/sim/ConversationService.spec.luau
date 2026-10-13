@@ -1231,6 +1231,28 @@ describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function(
 		)
 	end)
 
+	it("G13.8 + M2: a ruler who leaves mid-conversation frees the citizen at the next refresh", function()
+		local env, conversations, match, registry = boot()
+		local rulers = crimsonRulers(env, match, 5)
+		assert(#rulers >= 2, "two crimson rulers")
+		local p1, p2 = rulers[1], rulers[2]
+		local farmer, sim = hungryFarmer(match, registry)
+		conversations:refresh()
+		local first = assert(conversations:converse(p1, farmer.id)) -- the panel is open: held for ruler 1
+		expect(sim:isHeld(farmer)).toBe(true)
+		expect(conversations:converse(p2, farmer.id)).toBeNil()
+		env.mock.players:remove(p1) -- ruler 1 leaves without closing it
+		env.mock:advance(1)
+		conversations:refresh()
+		expect(sim:isHeld(farmer)).toBe(false) -- not after the hold's own 30 s timeout: now
+		-- the question was never answered, so it is not used up: the request stays and ruler 2 gets it
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local again = assert(conversations:converse(p2, farmer.id))
+		expect(again.scenarioId).toBe(first.scenarioId)
+		expect(farmer.hold.by).toBe(p2.UserId)
+		assert(choose(conversations, p2, farmer, first.scenarioId, "farmer_hungry_grain_open_store"))
+	end)
+
 	it("M2: requests a departed ruler asked about stop holding the kingdom's slots", function()
 		local env, conversations, match, registry = boot()
 		local rulers = crimsonRulers(env, match, 5)
