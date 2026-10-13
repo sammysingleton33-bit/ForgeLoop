@@ -94,6 +94,9 @@ _Maintained by the worker. Keep it short and current._
 | #87 | FORGE-04 bubble targets v0.4-g6, rest effect stops, D-040 | `42b6709` |
 | #86 | FORGE-03 FL-0105 refusal words, D-039 emblems + gem badge (M1 tracked), D-040 ★ | `2a6a247` |
 | #88 | FORGE-03 FL-0087 plot picker on Build/Fit, D-040 ★ | `c338f44` |
+| #101 | FORGE-01 #91 follow-ups (reseed looks, LOD zoom), D-040 ★ | `c8572f4` |
+| #103 | FORGE-03 #86 follow-ups (Studio text, gem, banner tab), D-040 ★ | `f2d430a` |
+| #106 | FORGE-01 #89 follow-ups (slot reservation, not_on_plot, camp levels), D-040 ★ | `aecd245` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

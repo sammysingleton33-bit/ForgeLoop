@@ -108,8 +108,9 @@ or sunk props, unreadable lighting. Describe what you see next to the screenshot
 
 **Pass:** ruler with crown and cape seated on the throne after spawn and respawn; smooth pan, zoom and
 rotate on PC and phone; tap selects. In the aerial view, citizens near the **centre of the screen** show
-wherever you pan (#39 M1 fixed in B7, #91). Known, not a fail: zoomed further out than the start view, citizens
-more than 150 studs from the screen centre are hidden (#91 L1). Known, not a fail: any character that touches
+wherever you pan (#39 M1 fixed in B7, #91), and from the build after B7 they also stay when you zoom all the
+way out (#101; in B7, citizens more than 150 studs from the screen centre are hidden when zoomed out, known,
+not a fail). Known, not a fail: any character that touches
 the throne can sit on it, so in M1/M2 another player can take your seat (#89 L2).
 
 ## 4. Belong to a kingdom (row 3; runnable from B6)
@@ -131,9 +132,9 @@ Preset: `vs1.reseed`.
 2. Watch 60 s: they walk to work, gather or farm, carry goods to the storehouse; the HUD stockpile rises.
    Note the stockpile at the start and after 60 s.
 3. Press `vs1.reseed` again (don't change jobs in between): the **same** names appear on the citizen
-   cards (same seed, same population). Known (#91 M1, FL-0104 follow-up): the world rigs keep the looks
-   they had before the first press, so check **names only** and write looks as
-   `SKIPPED (waiting FL-0104)`. Changing a job between the presses changes some people (#91 L2).
+   cards and the **same looks** on the citizens in the world (from the build after B7, #101). In B7 the
+   world rigs keep the looks they had before the first press: there, check names only and write looks as
+   `SKIPPED (B7)`. Changing a job between the presses changes some people (the message says so).
 4. Screenshot **C1**: citizens at work with the stockpile visible.
 
 **Pass:** ≥ 12 distinct citizens, every job visible, the stockpile rose, no citizen stuck, same seed →
@@ -167,8 +168,10 @@ same names.
    ("This plot is already built on", "Not enough resources", "That doesn't fit this plot", "Upgrade your
    keep first"; FL-0105, #86, from the build after B7) and nothing is charged. In **B7** the plot refusals
    still read "That didn't work. Try again." (known, not a fail). A building placed with the Build rail on
-   top of a plot does not mark that plot as taken; ordering there is refused ("Something is in the way on
-   this plot" after #86; "Leave room for upgrades" in B7) (#89 M1).
+   top of a plot takes that plot (from the build after B7, #106): the plot reads as built on and ordering
+   there says "This plot is already built on". (In B7 the plot stays free and ordering there is refused
+   with "Leave room for upgrades".) Walls and gates are never offered on a plot, and the server refuses
+   them there too.
 4. Upgrade the **Barracks** to level 2 (about 8 s for level 1 and 18 s for level 2, PROVISIONAL), then
    the **Keep**. Each level looks different.
 5. Screenshots **B1** (mid-construction) and **B2** (Barracks level 2 next to level 1, or before/after).
