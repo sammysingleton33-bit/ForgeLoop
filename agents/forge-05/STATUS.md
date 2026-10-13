@@ -6,8 +6,8 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | none of mine (#47, #57, #69 merged) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. Capture lane landed (#70 + #63, D-041 bunks) with #91 (aerial LOD, crests) and #89 (plots, throne): **B7** (`297eac5`) prepared and sent to FORGE-00. Next: pacing probe (FORGE-00 request), then #77/#87 re-verify. D-040 fallback verdicts while FORGE-07 is paused; FORGE-07 post-merge review owed on every D-040 merge |
-| Last verified check | main `297eac5` (#89): check.sh 9/9 PASS on the merge result (game-001 1087/0); main CI [run 38362808466](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38362808466) green; B7 artifact id 11796015838; slice e2e on `297eac5`: capture at t = 131 s, 0 errors |
+| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. **B8** (`751138b`, conversation lane: #77 + #101/#103/#106) prepared and sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused; next: #104 (after FORGE-01 merges main), #105 (review running) |
+| Last verified check | main `751138b` (#77): check.sh 9/9 on the merge result (game-001 1146/0); main CI [run 38375686542](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38375686542) green; B8 artifact id 11801272018 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
 | In review / queued | #77 re-review running on c5ad31d (B1/M1/M2 fixes pushed) → B8. Not ★ (wait for FORGE-07 unless promoted): #100 (gather, on #94), #101 (#91 follow-ups), #102 (my pacing probe spec). Waiting for FORGE-07 (not on the D-040 list): #86, #88, #85, #93, #94, #90, #96, #97, #49, #64, #82, #84, #92 |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
