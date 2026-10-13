@@ -167,7 +167,7 @@ M = [
  ("FL-0027", X+"NotificationQueue.luau", '		item.expiresAt = nil\n', '', "Notification", "fewer cards fit", "fw"),
  ("FL-0027", C+"NotificationController.luau", '	if self._destroyed then\n		return nil, "dropped"', '	if false then\n		return nil, "dropped"', "Notification", "after destroy(), show and celebrate do nothing", "fw"),
  ("FL-0027", C+"NotificationController.luau", '	if self._destroyed then\n		return nil\n	end', '	if false then\n		return nil\n	end', "Notification", "after destroy(), show and celebrate do nothing", "fw"),
- ("FL-0027", C+"NotificationController.luau", '	return item.icon or Def.KIND_ICON[item.kind]', '	return item.icon', "Notification", "achievement toasts carry the laurel icon", "fw"),
+ ("FL-0027", C+"NotificationController.luau", '		icon = item.icon,', '		icon = nil,', "Notification", "a toast's own icon reaches the card", "fw"),
  ("FL-0027", C+"NotificationController.luau", '	local hidden = self:_fit(top)', '	local hidden = {}', "Notification", "a short screen under the onboarding card", "fw"),
  ("FL-0027", C+"NotificationController.luau", '		fit = if fit then math.min(fit, limit) else limit', '		fit = fit', "Notification", "place()'s limit caps the cards", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'return self.queue:setMaxVisible(fit or math.huge)', 'return if fit then self.queue:setMaxVisible(fit) else {}', "Notification", "place()'s limit caps the cards", "fw"),

@@ -5,6 +5,7 @@ local MockEnv = require("../../mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local NotificationQueue = require("@game/ReplicatedStorage/Forge/Experience/NotificationQueue")
 local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
+local Toast = require("@game/ReplicatedStorage/Forge/UI/Components/Toast")
 local SettingsDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/SettingsController")
 local NotificationDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/NotificationController")
 
@@ -369,29 +370,42 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 		expect(#effects).toBe(0)
 	end)
 
-	it("achievement toasts carry the laurel icon until Toast has an achievement accent (#33 L2)", function()
-		controller:show({ title = "First capture", kind = "achievement" })
-		controller:show({ title = "Note", kind = "info" })
-		local function iconOf(title)
+	it(
+		"a toast's own icon reaches the card; without one, Toast's default for the kind (achievement: laurel)",
+		function()
+			-- FORGE-03's Toast has the achievement icon itself since FL-0105 (#86), so nothing here picks one
+			local seen = {}
+			local original = Toast.new
+			Toast.new = function(props)
+				seen[props.title] = { icon = props.icon }
+				return original(props)
+			end
+			local ok, err = pcall(function()
+				controller:show({ title = "First capture", kind = "achievement" })
+				controller:show({ title = "Crest", kind = "achievement", icon = "crest" })
+			end)
+			Toast.new = original
+			assert(ok, err)
+			expect(seen["Crest"]).never.toBeNil()
+			expect(seen["Crest"].icon).toBe("crest")
+			expect(seen["First capture"]).never.toBeNil()
+			expect(seen["First capture"].icon).toBeNil() -- Toast's own default
+			expect(Toast.ICON.achievement).toBe("laurel")
+			local laurel = Theme.icon("laurel") -- the card really renders it (glyph fallback headless)
+			local achievement
 			for _, toast in toasts() do
-				if toast:FindFirstChild("Title", true).Text == title then
-					return toast:FindFirstChild("Icon", true)
+				if toast:FindFirstChild("Title", true).Text == "First capture" then
+					achievement = toast:FindFirstChild("Icon", true)
 				end
 			end
-			return nil
+			expect(achievement).never.toBeNil()
+			if laurel.image ~= "" then
+				expect(achievement.Image).toBe(laurel.image)
+			else
+				expect(achievement.Text).toBe(laurel.glyph)
+			end
 		end
-		expect(NotificationDef.iconFor({ kind = "achievement" })).toBe("laurel")
-		expect(NotificationDef.iconFor({ kind = "achievement", icon = "crest" })).toBe("crest")
-		expect(NotificationDef.iconFor({ kind = "info" })).toBeNil() -- Toast's own default
-		local laurel = Theme.icon("laurel") -- the card really renders it (glyph fallback headless)
-		local achievement = iconOf("First capture")
-		if laurel.image ~= "" then
-			expect(achievement.Image).toBe(laurel.image)
-		else
-			expect(achievement.Text).toBe(laurel.glyph)
-		end
-		expect(iconOf("Note")).never.toBeNil()
-	end)
+	)
 
 	it(
 		"a short screen under the onboarding card shows fewer cards, and all three again when it frees (#33 L3)",

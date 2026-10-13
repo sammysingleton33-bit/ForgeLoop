@@ -64,13 +64,6 @@ Def.DISPLAY_ORDER = 70
 Def.TICK_SEC = 0.1
 Def.WIDTH = 300
 Def.CARD_ESTIMATE = 64 -- px of one Toast with a one-line body: how many fit below the stack's top
--- Toast has no achievement accent yet (FORGE-03): its icon by kind until it does
-Def.KIND_ICON = table.freeze({ achievement = "laurel" })
-
--- The icon a card shows: the toast's own, else the kind's (nil = Toast's default for the kind).
-function Def.iconFor(item: any): string?
-	return item.icon or Def.KIND_ICON[item.kind]
-end
 Def.POSITION = UDim2.new(1, -12, 0, 12) -- top right, until a game places the stack
 Def.KIND_SOUND = table.freeze({
 	info = "notify.info",
@@ -511,7 +504,7 @@ function NotificationController:_buildToast(item: any, parent: any, layoutOrder:
 		kind = item.kind,
 		title = item.title,
 		body = item.body,
-		icon = Def.iconFor(item),
+		icon = item.icon, -- nil: Toast's own icon for the kind (achievement: laurel, FL-0105)
 		count = item.count,
 		width = self._placement.width,
 		layoutOrder = layoutOrder,

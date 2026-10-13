@@ -18,6 +18,7 @@ evidence:
   - "unverified: look and feel in Studio, phone layout, FORGE-03 Toast component not yet adopted (FL-0020 not on main)"
   - "check.sh OVERALL PASS @901c9c0: framework 502, game-001 109 specs; FL-0027 mutations 13/13 CAUGHT with the Toast view"
   - "FORGE-05 #33 follow-ups: Notification.spec 20 (+ different moment within the cooldown, non-table payload, NaN duration, invalid UTF-8, place/reserveTop) and OnboardingController.spec (card reserves the stack top); FL-0027 mutations 21/21 CAUGHT"
+  - check.sh OVERALL PASS (framework 521/0, game-001 1181/0); Notification.spec 25/25; mutations FL-0027 30/30
 ---
 
 # Notifications and celebration moments
@@ -46,3 +47,4 @@ Prototype/screenshot review; Lune specs for queue logic
 - 2026-10-12 forge-04: REVIEW (unchanged). FORGE-05 follow-ups: M1 toasts start below the onboarding card (reserveTop), M2 place() for the HUD layout; L1 different moments within the cooldown keep their toast; L2 non-table payload; L3 NaN duration; L4 invalid UTF-8 cut; text note; interfaces §8 text handed to FORGE-00.
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-05 #33 follow-ups (PR from forge/04-experience-fl0027b): M2 place() takes screen px (FORGE-03 #74 scales); L1 no show/celebrate/GUI after destroy; L2 achievement toasts use the laurel icon; L3 fewer cards when the screen is short (NotificationQueue:setMaxVisible). Notification.spec 24; FL-0027 mutations 28/28.
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-03's request: place() takes an optional limit (cards in that placement, e.g. 1 above the phone conversation sheet). FL-0027 mutations 30/30.
+- 2026-10-13 forge-04: REVIEW → REVIEW. Main 3d3cb82 merged. NotificationController.KIND_ICON and iconFor are gone: FORGE-03's Toast has the achievement icon (laurel) and accent itself since FL-0105 (#86), so a card passes only a toast's own icon.
