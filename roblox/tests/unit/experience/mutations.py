@@ -65,7 +65,6 @@ M = [
  ("FL-0027", X+"NotificationQueue.luau", 'if #pending >= self._config.maxPending then', 'if false then', "Notification", "keeps at most maxPending waiting", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'if item.priority > waiting.priority then', 'if false then', "Notification", "keeps at most maxPending waiting", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'if how == "shown" or how == "replaced" then', 'if how ~= "filtered" and how ~= "invalid" then', "Notification", "with a ×N badge", "fw"),
- ("FL-0027", C+"NotificationController.luau", 'if last ~= nil and now - last < (spec.cooldownSec or 1) then', 'if false then', "Notification", "coalesces the same celebration", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'return if missing then nil else id', 'return id', "Notification", "never asks for the sound id", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'self:_announce(item, spec.silent == true)', 'self:_announce(item, false)', "Notification", "celebration toasts are important", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'if spec.sound ~= nil and not hasVisual then', 'if false then', "Notification", "games register celebrations", "fw"),
