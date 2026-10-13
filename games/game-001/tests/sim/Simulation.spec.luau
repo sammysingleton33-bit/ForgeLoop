@@ -1,6 +1,7 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
+local CitizenActions = require("@game/ReplicatedStorage/Game/Sim/CitizenActions")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local F = require("./KingdomFixtures")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
@@ -632,6 +633,84 @@ describe("Kingdom/Simulation: daily life", function()
 	end)
 end)
 
+describe("Kingdom/Simulation: a load from before a walk-out (#107 M3)", function()
+	-- runs one citizen's action alone until it has nothing in hand (or 120 s pass); returns its deliveries
+	local function deliver(sim, c)
+		F.events(sim) -- drop what came before
+		for _ = 1, 1200 do
+			CitizenActions.step(sim, c, 0.1)
+			if c.carrying == nil then
+				break
+			end
+		end
+		local out = {}
+		for _, e in F.events(sim, "ResourceGathered") do
+			if e.citizenId == c.id then
+				out[e.resource] = (out[e.resource] or 0) + e.amount
+			end
+		end
+		return out
+	end
+
+	local function nodeOf(sim, resource)
+		for _, id in sim.nodeOrder do
+			local node = sim.nodes[id]
+			if node.resource == resource and node.amount > 0 then
+				return node
+			end
+		end
+		return nil
+	end
+
+	it("a gatherer sent to another resource delivers its old load first, unchanged", function()
+		local sim, k = F.kingdom()
+		local c = sim.citizens[k.citizenIds[1]]
+		local wood = assert(nodeOf(sim, "wood"))
+		local stone = F.stock(sim, k):get("stone")
+		sim:setActivity(c, "Gather", wood.id)
+		c.phase = "Work" -- as if it stood at the trees already
+		c.carrying = { resource = "stone", amount = 4 }
+		local delivered = deliver(sim, c)
+		expect(delivered).toEqual({ stone = 4 })
+		expect(F.stock(sim, k):get("stone")).toBe(stone + 4)
+	end)
+
+	it("a farmer carrying something else delivers it first; it is never counted as food", function()
+		local sim, k = F.kingdom()
+		local farm = sim:_createBuilding(k, "farm", 40, 40) -- placement rules are not under test here
+		sim:_completeInstantly(farm)
+		sim:_recompute(k)
+		local c = sim.citizens[k.citizenIds[1]]
+		sim:setActivity(c, "Farm", farm.id)
+		c.phase = "Work"
+		c.workTimer = sim.catalog.tuning.harvestTime -- a harvest is due this very step
+		c.carrying = { resource = "wood", amount = 6 }
+		local delivered = deliver(sim, c)
+		expect(delivered).toEqual({ wood = 6 })
+	end)
+
+	it("an empty load of something else (stopped right at the trees) never turns a harvest into it", function()
+		local sim, k = F.kingdom()
+		local farm = sim:_createBuilding(k, "farm", 40, 40)
+		sim:_completeInstantly(farm)
+		sim:_recompute(k)
+		local c = sim.citizens[k.citizenIds[1]]
+		sim:setActivity(c, "Farm", farm.id)
+		c.phase = "Work"
+		c.carrying = { resource = "wood", amount = 0 }
+		local harvests = 0
+		for _ = 1, 1200 do
+			CitizenActions.step(sim, c, 0.1)
+			if c.carrying and c.carrying.amount > 0 then
+				harvests += 1
+				break
+			end
+		end
+		expect(harvests).toBe(1)
+		expect(c.carrying.resource).toBe("food")
+	end)
+end)
+
 describe("Kingdom/Simulation: fixed tick and staggered decisions (G4)", function()
 	it("moves entities every tick and spreads routine re-planning across ticks", function()
 		local sim, k = F.kingdom({
@@ -715,7 +794,6 @@ describe("Kingdom/Simulation: work modifiers (G13.3 consequences)", function()
 		local sim, k = F.kingdom()
 		local c = sim.citizens[k.citizenIds[1]]
 		expect(sim:productivityOf(c)).toBe(1)
-		local CitizenActions = require("@game/ReplicatedStorage/Game/Sim/CitizenActions")
 		local base = CitizenActions.skill(sim, c, "farm")
 		sim:addProductivity(c, 0.25, 10)
 		sim:addProductivity(c, -0.5, 20)

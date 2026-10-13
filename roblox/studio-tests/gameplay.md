@@ -151,6 +151,9 @@ starts on the first join and is untimed; the first watchtower capture ends the s
    it without answering; wait 30 s.
 5. Open it again and choose "open the grain store" (costs 25 food), then talk to the same farmer again.
 6. On a builder's "overworked" request, answer "push on" until its 50 % walk-out happens.
+7. (#107 M1–M3) With 2 rulers in one kingdom: ruler 1 opens a bubble's conversation and closes it
+   unanswered; ruler 2 taps the same citizen and answers. Then feed the kingdom (fed ratio 1) while a
+   farmer's question is open but unanswered, and wait 20 s. Then let ruler 1 open all bubbles and leave.
 
 **Expected:**
 - The farmer has a generated name and occupation; the question names a family member (no `{...}` left).
@@ -161,6 +164,13 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - A bubble stays up for as long as its request is open (it is re-sent every 20 s; one bubble lasts 45 s),
   and a co-ruler who joins later sees it too.
 - Closing the panel without answering leaves the bubble up; opening it again shows the same question.
+- Step 7: ruler 2 sees ruler 1's question (same text and options) and their answer is charged once; ruler 1's
+  panel, if still open, is then refused (`not_offered`, FORGE-03's wording) and charges nothing. Once the
+  kingdom is fed, the farmer's bubble goes within 20 s, and its open panel answers with a refusal. When
+  ruler 1 leaves, new bubbles appear for ruler 2 within 20 s (ruler 1's unanswered questions don't hold the
+  3 slots).
+- Carriers on strike keep their load and deliver it when they are back at work: a woodcutter never turns
+  stone into wood, and a farmer never delivers wood as food.
 - Talking again right after answering offers nothing (the scenario's cooldown); answering twice is
   impossible.
 - The push-on walk-out puts an "On strike" placard on that builder only, even though the other builders
