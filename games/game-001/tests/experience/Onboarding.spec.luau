@@ -86,7 +86,8 @@ end)
 describe("game-001 VS-1 onboarding with the framework services (no DataService, D-027)", function()
 	local env, bus, kingdoms, registry, onboarding, p1, p2, remotes
 
-	local function boot(withKingdoms)
+	-- conversations ~= false adds a ConversationService stub (FORGE-01's FL-0079 is not on main yet)
+	local function boot(withKingdoms, conversations)
 		local defs = {
 			{
 				name = "RemoteService",
@@ -114,6 +115,14 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 				name = "KingdomService",
 				new = function()
 					return kingdoms
+				end,
+			})
+		end
+		if conversations ~= false then
+			table.insert(defs, {
+				name = "ConversationService",
+				new = function()
+					return {}
 				end,
 			})
 		end
@@ -225,6 +234,35 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		bus.KingdomJoined:fire(again, "crimson")
 		expect(onboarding:state(again, "vs1").stepId).toBe("InspectCitizen")
 	end)
+
+	it("without ConversationService, AnswerCitizen is passed over and not counted; the tutorial goes on", function()
+		boot(true, false)
+		join(p1, "crimson")
+		act(p1, "CitizenInspected")
+		place(p1, "crimson", 11)
+		expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
+		bus.UnitsRecruited:fire(p1, "crimson", 3)
+		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "Recruit" })
+		expect(env.mock:hasLog("info", "a step's service is missing")).toBe(true)
+	end)
+
+	it(
+		"with ConversationService but no answer reported, AnswerCitizen moves on after autoAdvanceSec, uncounted",
+		function()
+			boot(true)
+			join(p1, "crimson")
+			act(p1, "CitizenInspected")
+			place(p1, "crimson", 12)
+			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
+			local answer = OnboardingConfig.flows[1].steps[4]
+			expect(answer.id).toBe("AnswerCitizen")
+			env.mock:advance(answer.nudgeAfterSec + 1)
+			expect(onboarding:state(p1, "vs1").escalated).toBe(true) -- nudged first
+			env.mock:advance(answer.autoAdvanceSec - answer.nudgeAfterSec + 1)
+			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit") -- never stalls
+			expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot" }) -- the funnel counts what players did
+		end
+	)
 
 	it("without KingdomService, the player's own steps still work and kingdom-wide ones credit nobody", function()
 		boot(false)

@@ -78,6 +78,10 @@ return table.freeze({
 				{
 					id = "AnswerCitizen",
 					trigger = { client = "CitizenAnswered" },
+					-- conversations are FORGE-01's ConversationService (FL-0079): without it the step is
+					-- passed over; with it, the tutorial still moves on after autoAdvanceSec (no stall)
+					requires = "ConversationService",
+					autoAdvanceSec = 120,
 					hint = {
 						title = 'A citizen with "!" has a request',
 						body = "Tap them and choose an answer. Every choice changes your kingdom.",

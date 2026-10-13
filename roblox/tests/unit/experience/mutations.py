@@ -145,6 +145,7 @@ M = [
  ("FL-0091", C+"VFXController.luau", '			elseif host ~= nil then', '			elseif false then', "Vfx", "puts an effect on a Model into an owned Attachment", "fw"),
  ("FL-0091", C+"VFXController.luau", '		if ok and direct then\n			return parent, true', '		if false then\n			return parent, true', "Vfx", "uses a BasePart or Attachment parent as is", "fw"),
  ("FL-0091", C2+"CitizenBubbleController.luau", '	if position == nil then\n		return -- no rendered rig', '	if false then\n		return -- no rendered rig', "CitizenBubbles", "a cue for a citizen with no rendered rig", "game"),
+ ("FL-0092", C2+"InputModeController.luau", 'if kind == "citizen" then\n		local onboarding', 'if false then\n		local onboarding', "InputMode", "reports CitizenInspected", "game"),
  ("FL-0027", X+"NotificationQueue.luau", 'if #self._visible < config.maxVisible then', 'if true then', "Notification", "shows at most 3", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'if shown.priority < item.priority and', 'if shown.priority <= item.priority and', "Notification", "shows at most 3", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'item.expiresAt = math.min(refreshed, (item.shownAt :: number) + config.maxRefreshSec)', 'item.expiresAt = refreshed', "Notification", "not past maxRefreshSec", "fw"),
@@ -166,6 +167,14 @@ M = [
  ("FL-0027", C+"NotificationController.luau", 'if spec.sound ~= nil and not hasVisual then', 'if false then', "Notification", "games register celebrations", "fw"),
  ("FL-0027", C+"NotificationController.luau", '				self.queue:setFilter(value)', '				local _ = value', "Notification", "applies the notifications setting live", "fw"),
  ("FL-0027", C+"OnboardingController.luau", 'if wasActive and state.done and not state.skipped then', 'if state.done then', "OnboardingController", "celebrates when the last step completes", "fw"),
+ ("FL-0092", X+"Onboarding.luau", 'elseif state.unavailable and state.unavailable[step.id] then', 'elseif false then', "Onboarding", "a step whose service is missing is passed over", "fw"),
+ ("FL-0092", X+"Onboarding.luau", 'if type(step.requires) == "string" and not has(step.requires) then', 'if false then', "Onboarding", "a step whose service is missing is passed over", "fw"),
+ ("FL-0092", X+"Onboarding.luau", 'if type(step.requires) ~= "string" or not string.match(step.requires, NAME_PATTERN) then', 'if false then', "Onboarding", "a step's `requires` names a service", "fw"),
+ ("FL-0092", S+"OnboardingService.luau", '			and not (transition.via == "timeout" and step and step.interactive)\n', '', "Onboarding", "moves on after autoAdvanceSec, uncounted", "game"),
+ ("FL-0092", S+"OnboardingService.luau", 'local didIt = transition.via ~= "unavailable"\n', 'local didIt = true\n', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
+ ("FL-0092", S+"OnboardingService.luau", '	state.unavailable = self._unavailable[flow.id]\n', '', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", '					requires = "ConversationService",\n', '', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", '					autoAdvanceSec = 120,\n', '', "Onboarding", "moves on after autoAdvanceSec, uncounted", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
