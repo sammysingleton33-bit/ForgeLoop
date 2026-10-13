@@ -11,7 +11,8 @@
 		    FORGE-04 never reacts to RewardRolled itself, so a reward is never celebrated twice.
 		NotificationController:registerCelebration(kind, spec) -> { string }   -- games add moments (FL-0062)
 		NotificationController:dismiss(id)
-		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)   -- the HUD's layout,
+		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?, limit: number?)
+		    -- the HUD's layout (limit: at most that many cards there, e.g. 1 in a narrow band; default 3),
 		    in screen px: this ScreenGui has no UIScale, so a caller laying out in logical px multiplies by
 		    its layout scale first (KingdomHudController does, FORGE-03 #74)
 		NotificationController:reserveTop(owner: string, px: number?)   -- keep the stack below a card; nil frees
@@ -323,11 +324,12 @@ function NotificationController:celebrate(kind: string, payload: any): boolean
 	return true
 end
 
-function NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)
+function NotificationController:place(position: UDim2, anchor: Vector2?, width: number?, limit: number?)
 	self._placement = {
 		position = position,
 		anchor = anchor or Vector2.new(1, 0),
 		width = if type(width) == "number" and width > 0 then width else Def.WIDTH,
+		limit = if type(limit) == "number" and limit >= 1 then math.floor(limit) else nil,
 	}
 	self:_layout()
 	self:_rebuild() -- cards take the new width
@@ -479,11 +481,16 @@ function NotificationController:_fit(top: number): { any }
 		end)
 		height = if ok then size else nil
 	end
-	if type(height) ~= "number" or height <= 0 then
-		return {}
+	local fit = nil
+	if type(height) == "number" and height > 0 then
+		fit = math.max(1, math.floor((height - top - 12 + 8) / (Def.CARD_ESTIMATE + 8)))
 	end
-	local fit = math.floor((height - top - 12 + 8) / (Def.CARD_ESTIMATE + 8))
-	return self.queue:setMaxVisible(math.max(1, fit))
+	local limit = self._placement.limit -- the game's cap for this placement (FORGE-03: 1 above a sheet)
+	if limit then
+		fit = if fit then math.min(fit, limit) else limit
+	end
+	-- nothing known: back to the configured cap (a cleared limit must not stay)
+	return self.queue:setMaxVisible(fit or math.huge)
 end
 
 -- Rebuilds every visible card (after a width change).

@@ -410,6 +410,21 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 		end
 	)
 
+	it(
+		"place()'s limit caps the cards in that placement; a later place() without it shows 3 again (FORGE-03)",
+		function()
+			for i = 1, 3 do
+				controller:show({ title = `t{i}` })
+			end
+			controller:place(UDim2.fromOffset(300, 200), Vector2.new(1, 0), 240, 1) -- a narrow band above a sheet
+			expect(#toasts()).toBe(1)
+			expect(toasts()[1]:FindFirstChild("Title", true).Text).toBe("t3") -- the newest stays
+			controller:place(UDim2.fromOffset(300, 60), Vector2.new(1, 0), 240)
+			env.mock:advance(0.2)
+			expect(#toasts()).toBe(3)
+		end
+	)
+
 	it("dismiss() removes a toast at once and lets the next one in", function()
 		local items = {}
 		for i = 1, 4 do
