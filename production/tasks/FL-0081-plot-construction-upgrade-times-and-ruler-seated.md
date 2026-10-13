@@ -3,15 +3,16 @@ id: FL-0081
 title: Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6)
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0085]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 4
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 946/0); ownership PASS; validate 0 errors; pytest 345; mutations 12/13 (miss = removed unreachable check); Studio K11 unverified
 ---
 
 # Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6)
@@ -41,3 +42,5 @@ Studio: tap a plot, build a house, upgrade the barracks to level 2.
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-13 forge-01: READY → BUILDING. Build.PlaceSlot/GetSlots/Slots on Layout build slots; ruler seated on the keep Throne after spawn/respawn/keep rebuild
+- 2026-10-13 forge-01: BUILDING → REVIEW. Build.PlaceSlot/GetSlots/Slots; ruler seated on the keep Throne (spawn, respawn, keep rebuild); sim fixes: claim kind, own full site, loaded gatherer to site
