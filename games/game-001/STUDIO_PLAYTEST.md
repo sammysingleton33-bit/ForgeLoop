@@ -1,9 +1,8 @@
 # AI Kingdoms — VS-1 Studio playtest (gate G6; FL-0047, FL-0093; owner FORGE-05)
 
 VS-1 (the nine first-playable items of BRIEF §4, D-030) is accepted **only** by this playtest. It takes about 25 minutes. You (the user) run
-it on your Windows PC in Roblox Studio against an integrated build of `main` (the keys below are Windows; on a
-Mac see "On a Mac" in §0); FORGE-05 records the result in
-`production/quality-gates/studio-runs.md` and on the VS-1 tasks.
+it on your Windows PC or your Mac in Roblox Studio against an integrated build of `main` (keys for both in §0);
+FORGE-05 records the result in `production/quality-gates/studio-runs.md` and on the VS-1 tasks.
 
 Each check says what to do, what you should see, which screenshot to take and which Output lines to
 copy. Framework smoke tests S1–S3 (`roblox/STUDIO_TEST_PLAN.md`) use the same build; check 1 below
@@ -20,18 +19,16 @@ Pick one:
   mkdir -p roblox/build && rojo build games/game-001/default.project.json -o roblox/build/game-001.rbxl`,
   then open `roblox/build/game-001.rbxl` in Studio.
 
-**On Windows:** Play **F5**, Stop **Shift+F5**, debug panel **F8**, screenshot **Win+Shift+S** (Snipping Tool), open a build **Ctrl+O**.
+**Keys** (Studio's menus are the same on both; only the keys differ):
 
-**On a Mac** (Studio's menus are the same as on Windows; only the keys differ):
-
-| What | Mac | Notes |
-|---|---|---|
-| Open the build | **File → Open from File…** (⌘O) | pick the `.rbxl` |
-| Play / Stop | **F5** / **⇧F5** | on many Mac keyboards the F-keys control brightness and volume: hold **fn** (fn+F5, fn+⇧F5), or use the **Play** / **Stop** buttons on the Home tab |
-| Debug panel | **F8** (fn+F8) | or the **Debug (F8)** button, top left |
-| Screenshot | **⌘⇧4**, then drag over the window (or ⌘⇧4 then Space, click the window) | saved to the Desktop |
-| Output / Stats | **View → Output**, **View → Stats** | |
-| Two players | **Test → Clients and Servers → Local Server, 2 players → Start** | opens a server and two client windows |
+| What | Windows | Mac | Notes |
+|---|---|---|---|
+| Open the build | **File → Open from File…** (Ctrl+O) | **File → Open from File…** (⌘O) | pick the `.rbxl` |
+| Play / Stop | **F5** / **Shift+F5** | **F5** / **⇧F5** | Mac: the F-keys often control brightness and volume, so hold **fn** (fn+F5, fn+⇧F5) or use the **Play** / **Stop** buttons on the Home tab |
+| Debug panel | **F8** | **F8** (fn+F8) | or the **Debug (F8)** button, top left |
+| Screenshot | **Win+Shift+S** (Snipping Tool), drag over the window | **⌘⇧4**, then drag over the window (or ⌘⇧4, Space, click the window) | Windows: the snip goes to the clipboard (Windows 11 also saves it in Pictures → Screenshots); Mac: to the Desktop |
+| Output / Stats | **View → Output**, **View → Stats** | same | |
+| Two players | **Test → Clients and Servers → Local Server, 2 players → Start** | same | opens a server and two client windows |
 
 Then: **View → Output** open. **Home → Game Settings → Security → Enable Studio Access to API
 Services: ON** (only needed once player data saving lands; harmless before). Write down the sha:
@@ -224,6 +221,9 @@ after B7; B7 says "…Upgrade it").
 ## 11. Decide in a conversation and see the result (row 9; runnable from the build after B7: conversation server #77, panel #66, bubbles #42/#87, content #83 are all on main)
 1. Within a minute at least one citizen shows a **thought bubble** with "!" and a real request. It stays
    up until you answer (zoom out and pan: it follows the citizen). If none appears, press `vs1.request`.
+   If `vs1.request` answers "no citizen of <kingdom> can raise any", no request is possible yet: most need
+   stock in the stores (e.g. 120 wood for the woodcutter's), so let the kingdom gather and press it again
+   (headless B14 probe; at match start every request was refused).
 2. Tap that citizen: the card shows **Talk** (a citizen without a request shows **Ask**). Press Talk: the
    panel shows the question and 2–4 choices; each shows its cost and any risk with its chance (e.g.
    "50 % ⚠ … may walk off the job for 45 s"). A large spend asks you to confirm once more. Pick one.
