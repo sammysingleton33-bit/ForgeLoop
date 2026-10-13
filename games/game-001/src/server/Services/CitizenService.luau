@@ -28,10 +28,13 @@
 	fed and rested = high); intent is the current activity and why, e.g. "Gathering (best job)";
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
-	hasRequest is false until conversations (FL-0079).
+	hasRequest is true while the citizen has an open request (ConversationService:hasRequest, its thought
+	bubble; false without that service).
 	Studio debug hooks (G13.7, called by FORGE-05's DebugPresetService; each `(kingdom, ...) -> (ok, message)`):
 		debugReseed(kingdom, seed)              new identities for the kingdom's living citizens (People.reseed)
-		(debugStrike and debugRequest come with the conversations, FL-0079)
+		debugStrike(kingdom, occupation, on)    every citizen of the occupation strikes for DEBUG_STRIKE_SECONDS
+		                                        (or stops); ConversationService:announceStrike sends the events
+		(debugRequest, the citizen.request hook, is ConversationService's)
 ]]
 
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
@@ -41,6 +44,8 @@ local CitizenService = {}
 CitizenService.__index = CitizenService
 
 local Def = { name = "CitizenService", dependencies = { "MatchService", "RemoteService" } }
+
+Def.DEBUG_STRIKE_SECONDS = 120 -- G13.7 strike.start
 
 local ACTIVITY_TEXT = {
 	Gather = "Gathering",
@@ -198,6 +203,38 @@ function CitizenService:debugReseed(kingdomId: string, seed: number): (boolean, 
 	return true, `{reseeded} citizens of {kingdomId} reseeded from {seed} (same seed and same jobs: same people)`
 end
 
+-- ---------------------------------------------------------------- Studio debug hooks (G13.7)
+-- Every citizen of `occupation` strikes for DEBUG_STRIKE_SECONDS, or stops; the strike events go out
+-- through ConversationService:announceStrike when it runs. -> (ok, message)
+function CitizenService:debugStrike(kingdomId: string, occupation: string, on: boolean): (boolean, string?)
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdomId]
+	if k == nil then
+		return false, `unknown kingdom {kingdomId}`
+	end
+	local changed = {}
+	for _, id in k.citizenIds do
+		local c = sim.citizens[id]
+		local occ = if c.profile then c.profile.occupation else c.job
+		if occ == occupation and sim:isStriking(c) ~= on then
+			if on then
+				sim:strike(c, Def.DEBUG_STRIKE_SECONDS)
+			else
+				c.strikeUntil = nil
+			end
+			table.insert(changed, c)
+		end
+	end
+	if #changed == 0 then
+		return false, `no {occupation} of {kingdomId} to {if on then "strike" else "end a strike for"}`
+	end
+	local conversations = self._registry:find("ConversationService")
+	if conversations and conversations.announceStrike then
+		conversations:announceStrike(kingdomId, changed, on)
+	end
+	return true, `{#changed} {occupation} {if on then `on strike for {Def.DEBUG_STRIKE_SECONDS} s` else "back at work"}`
+end
+
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)
 	assert(type(ratio) == "number" and ratio == ratio, "CitizenService:setFedRatio: ratio must be a number")
 	local k = self:_sim().kingdoms[kingdomId]
@@ -215,6 +252,11 @@ local function namesOf(sim: any, ids: { number }?): { string }
 		end
 	end
 	return out
+end
+
+function CitizenService:_hasRequest(c: any): boolean
+	local conversations = self._registry:find("ConversationService")
+	return conversations ~= nil and conversations.hasRequest ~= nil and conversations:hasRequest(c.kingdomId, c.id)
 end
 
 function CitizenService:inspect(entityId: number): { [string]: any }?
@@ -247,7 +289,7 @@ function CitizenService:inspect(entityId: number): { [string]: any }?
 		family = namesOf(sim, profile and profile.family),
 		friends = namesOf(sim, profile and profile.friends),
 		rivals = namesOf(sim, profile and profile.rivals),
-		hasRequest = false,
+		hasRequest = self:_hasRequest(c),
 		look = table.clone(if profile then profile.look else People.DEFAULT_LOOK),
 	}
 end

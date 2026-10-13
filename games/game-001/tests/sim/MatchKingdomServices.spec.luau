@@ -1011,7 +1011,6 @@ describe("Kingdom and Match remotes (G8)", function()
 		local p1 = env.mock.players:add({ userId = 1 })
 		env.mock:advance(TICK)
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 5)).toBe(true)
-		expect(env.ReplicatedStorage.ForgeRemotes.Kingdom:FindFirstChild("Choose")).toBeNil() -- VS-2
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 51)).toBeNil() -- rejected before the handler
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "hauler", 2)).toBeNil() -- the pool has no quota
 		expect(invoke(env, p1, "Kingdom.SetJobQuota", "farmer", 1.5)).toBeNil()

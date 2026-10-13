@@ -462,3 +462,169 @@ describe("EntityService replication (G4)", function()
 		end
 	end)
 end)
+
+-- every Sim.Events batch fired to this one player alone (G13.3 kingdom batches), decoded, oldest first
+local function kingdomBatches(env, player)
+	local out = {}
+	for _, entry in env.mock.remotes:sent(remote(env, "Sim.Events"), "toClient") do
+		if entry.player == player then
+			table.insert(out, (assert(EventCodec.decode(entry.args[1]))))
+		end
+	end
+	return out
+end
+
+-- seats userIds 1..count (4 kingdoms of 4 rulers; the 17th is a spectator) and groups them
+local function seat(env, match, count: number)
+	local byKingdom, spectators = {}, {}
+	for userId = 1, count do
+		env.mock.players:add({ userId = userId })
+	end
+	env.mock:advance(0.5)
+	for _, player in env.Players:GetPlayers() do
+		local kingdomId = match.host.match:kingdomOf(player.UserId)
+		if kingdomId == nil then
+			table.insert(spectators, player)
+		else
+			byKingdom[kingdomId] = byKingdom[kingdomId] or {}
+			table.insert(byKingdom[kingdomId], player)
+		end
+	end
+	return byKingdom, spectators
+end
+
+describe("EntityService kingdom events (G13.3, FL-0079)", function()
+	it("sends each kingdom's events to its members only, in order, once, on the next tick", function()
+		local env, entities, match = boot()
+		local byKingdom, spectators = seat(env, match, 17)
+		expect(#byKingdom.crimson >= 1 and #byKingdom.azure >= 1 and #spectators == 1).toBe(true)
+		local sim = entities:_sim()
+		local citizen = sim.kingdoms.crimson.citizenIds[1]
+		local other = sim.kingdoms.azure.citizenIds[1]
+		local crimson = {
+			{
+				type = "thought",
+				id = citizen,
+				scenarioId = "farmer_drought",
+				text = "Le blé ! 🌾",
+				icon = "request",
+			},
+			{ type = "strike", occupation = "farmer", on = true, entityIds = { citizen } },
+			{ type = "kcue", occupation = "farmer", cue = "strike_placard", entityIds = { citizen } },
+			{ type = "reaction", id = citizen, text = "", tone = "angry" },
+		}
+		local azure = { { type = "kcue", id = other, cue = "salute" } }
+		local first = table.clone(crimson[1])
+		entities:sendKingdomEvent("crimson", first)
+		entities:sendKingdomEvent("azure", azure[1])
+		local struck = table.clone(crimson[2])
+		struck.entityIds = table.clone(crimson[2].entityIds)
+		entities:sendKingdomEvent("crimson", struck)
+		entities:sendKingdomEvent("crimson", crimson[3])
+		entities:sendKingdomEvent("crimson", crimson[4])
+		first.text = "changed after queueing" -- the queue keeps its own copy
+		table.insert(struck.entityIds, 999) -- of the id list too
+		for _, player in env.Players:GetPlayers() do
+			expect(#kingdomBatches(env, player)).toBe(0) -- nothing before the next tick
+		end
+		local snapshotsBefore = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		env.mock:advance(0.1)
+		local snapshots = sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		expect(#snapshots).toBe(snapshotsBefore + 1) -- exactly one tick ran
+		local tickTime = snapshots[#snapshots].decoded.serverTime
+		env.mock:advance(1) -- later ticks never repeat them
+		for kingdomId, members in byKingdom do
+			for _, player in members do
+				local batches = kingdomBatches(env, player)
+				if kingdomId == "crimson" then
+					expect(#batches).toBe(1)
+					expect(batches[1].events).toEqual(crimson)
+					expect(batches[1].serverTime).toBe(tickTime) -- the tick's serverTime
+				elseif kingdomId == "azure" then
+					expect(#batches).toBe(1)
+					expect(batches[1].events).toEqual(azure)
+				else
+					expect(#batches).toBe(0)
+				end
+			end
+		end
+		expect(#kingdomBatches(env, spectators[1])).toBe(0)
+		for _, entry in env.mock.remotes:sent(remote(env, "Sim.Events"), "toAllClients") do
+			for _, e in assert(EventCodec.decode(entry.args[1])).events do
+				expect(e.type).never.toBe("thought") -- G13.3 events never go to everyone
+				expect(e.type).never.toBe("reaction")
+				expect(e.type).never.toBe("strike")
+				expect(e.type).never.toBe("kcue")
+			end
+		end
+	end)
+
+	it("drops a batch that does not encode with one error log; snapshots and other kingdoms go on", function()
+		local env, entities, match = boot()
+		local byKingdom = seat(env, match, 17)
+		local crimsonPlayer, azurePlayer = byKingdom.crimson[1], byKingdom.azure[1]
+		local sim = entities:_sim()
+		local citizen = sim.kingdoms.crimson.citizenIds[1]
+		entities:sendKingdomEvent("crimson", { type = "reaction", id = citizen, text = "fine", tone = "happy" })
+		entities:sendKingdomEvent(
+			"crimson",
+			{ type = "thought", id = citizen, scenarioId = "s", text = 42, icon = "idea" }
+		)
+		entities:sendKingdomEvent("azure", { type = "strike", occupation = "miner", on = false, entityIds = { 2 } })
+		local snapshotsBefore = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		env.mock:advance(0.1)
+		local errors = {}
+		for _, entry in env.mock.logs do
+			if entry.level == "error" then
+				table.insert(errors, entry)
+			end
+		end
+		expect(#errors).toBe(1)
+		expect(errors[1].message).toContain("dropped a kingdom event batch")
+		expect(errors[1].fields.kingdom).toBe("crimson")
+		expect(errors[1].fields.error).toContain("text must be a string")
+		env.mock:clearLogs() -- the error was expected (afterEach fails on any other)
+		expect(#kingdomBatches(env, crimsonPlayer)).toBe(0) -- the whole batch is dropped
+		expect(#kingdomBatches(env, azurePlayer)).toBe(1)
+		expect(kingdomBatches(env, azurePlayer)[1].events).toEqual({
+			{ type = "strike", occupation = "miner", on = false, entityIds = { 2 } },
+		})
+		env.mock:advance(1)
+		expect(#sent(env, "Sim.Snapshot", SnapshotCodec.decode) >= snapshotsBefore + 10).toBe(true)
+		expect(env.mock:hasLog("error", "replication failed")).toBe(false)
+		-- the queue is not stuck: the next good event goes out
+		entities:sendKingdomEvent("crimson", { type = "kcue", id = citizen, cue = "cower" })
+		env.mock:advance(0.1)
+		local batches = kingdomBatches(env, crimsonPlayer)
+		expect(#batches).toBe(1)
+		expect(batches[1].events).toEqual({ { type = "kcue", id = citizen, cue = "cower" } })
+	end)
+
+	it("refuses unknown kingdoms and non-G13.3 types, and a reset drops queued events", function()
+		local env, entities, match = boot()
+		local byKingdom = seat(env, match, 1)
+		local player = byKingdom.crimson[1]
+		expect(function()
+			entities:sendKingdomEvent("violet", { type = "strike", occupation = "miner", on = true, entityIds = {} })
+		end).toThrow("unknown kingdom")
+		expect(function()
+			entities:sendKingdomEvent(
+				"crimson",
+				{ type = "spawn", id = 1, kind = "citizen", job = "farmer", kingdom = "gold" }
+			)
+		end).toThrow("not a G13.3 event type")
+		expect(function()
+			entities:sendKingdomEvent("crimson", "strike" :: any)
+		end).toThrow("not a G13.3 event type")
+		entities:sendKingdomEvent("crimson", { type = "strike", occupation = "miner", on = true, entityIds = { 1 } })
+		entities:_resetWorld() -- a new match world: ids start over
+		env.mock:advance(0.1)
+		expect(#kingdomBatches(env, player)).toBe(0)
+		local last = eventsOf(env)
+		local sawReset = false
+		for _, e in last do
+			sawReset = sawReset or e.type == "reset"
+		end
+		expect(sawReset).toBe(true)
+	end)
+end)

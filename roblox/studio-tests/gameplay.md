@@ -14,6 +14,7 @@ Which steps are runnable after which PR:
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
+| K10 (conversations, thought bubbles, walk-out placard) | FL-0079 (`Kingdom.Converse/Choose`, PR #77); FORGE-03's panel and FORGE-04's bubbles |
 | K11 (build slots, throne) | FL-0081; the plot picker and build menu on slots are FORGE-03's |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
@@ -139,6 +140,24 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - While fed, citizens never walk to the keep to eat; food drops once per upkeep interval instead
   (FORGE-03's ProductionService). With no food, citizens' hunger rises: `Sim.Inspect` on a citizen
   shows mood falling.
+
+## K10 — Talk to a hungry farmer (FL-0079 conversations, FL-0080 reputation, FL-0078 people; VS-1 row 9)
+1. Play Solo. Set food low enough that the kingdom is underfed (fed ratio below 0.8; e.g. spend food with
+   FORGE-03's treasury debug command) and wait about a minute so farmers get hungry.
+2. Within 20 s a thought bubble appears over one or more citizens (FORGE-04 bubbles; at most 3).
+3. Select a farmer with a bubble and open the conversation (FORGE-03 panel → `Kingdom.Converse`).
+4. Choose "open the grain store" (costs 25 food), then talk to the same farmer again.
+
+**Expected:**
+- The farmer has a generated name and occupation; the question names a family member (no `{...}` left).
+- The option shows its food cost before you choose; options with risks show their odds.
+- After choosing: food −25 once; the reputation screen (FORGE-03) shows Compassion up with the answer as
+  its history text; the farmer's loyalty rises; farmers work faster for 2 minutes (they harvest more
+  often); a reaction bubble and cheer/work-fast cues play.
+- Talking again right away offers nothing (the scenario's cooldown); answering twice is impossible.
+- A walk-out answer (breaking the grain-sacks promise, "The kingdom needs that grain more than you do."
+  → `speaker_refuses_work`) shows an "On strike" placard on that citizen only (FORGE-04 bubbles), never
+  on the rest of the occupation; it goes away when the walk-out ends (60 s).
 
 ## K11 — Build on a slot, upgrade, sit on the throne (FL-0081; VS-1 rows 2 and 6; G13.5, G13.6)
 1. Play Solo. Watch your ruler right after spawning, from the aerial camera and up close.
