@@ -4,13 +4,16 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/01-gameplay` (PR branches `forge/01-gameplay-fl00xx`) |
-| Open PR | #31 FL-0048 · #39 FL-0049 (stacked on #31) · living-kingdom groundwork (stacked on #39): Kit buildings at anchors, CitizenService + upkeep, Population/Reputation cores |
-| Merged | #4 FL-0007, #5 FL-0009, #8 review follow-ups (Validate cframe/record/oneOf) |
-| Current task | D-030 VS-1 v2: FL-0078 population (sub-worker on the pure generator) → FL-0080 reputation → FL-0079 conversations → FL-0081 plots + throne |
-| Last verified check | `check.sh` OVERALL PASS on 5478da6: framework 485/0, game-001 479/0 (42 files), Selene 0/0 |
-| Blockers | FL-0078/80/79 consume FORGE-00's content library (FL-0083, branch forge/00-content-library, not on main yet): built as pure modules on fixture tables until it lands. Studio evidence for FL-0048/FL-0049 needs a user run |
-| Needs from others | FORGE-02: WorldService `ready` shape + regalia attachments (handoff 2026-10-12-forge-01-to-forge-02-05-fl0048-spawn). FORGE-04: KingdomJoined once-per-session? (handoff …-fl0048-pacing-wired) |
+| Session branch | `forge/01-gameplay`; PR branches `forge/01-gameplay-<topic>` |
+| Open PR | #61 FL-0078 population (REVIEW) · #68 FL-0080 reputation (stacked on #61) · #70 FL-0052 army · this PR (#50 M1 destroyed broadcast, refusal codes, STATUS) |
+| Merged | #4, #5, #8, #26, #31 FL-0048, #39 FL-0049, #46 living-kingdom groundwork, #50 FL-0051 Build remotes, #51 F1, #54 citizen height, #56 G13.5, #59 F2/F3, #62 placement rectangles |
+| Current task | FL-0079 ConversationService (stacked on #68; event transport by a sub-worker), then FL-0081 plots + throne |
+| Last verified check | `check.sh` OVERALL PASS on the branches above (game-001 806–864/0); mutations caught per PR |
+| Blockers | none. Studio evidence for everything needs user runs (gameplay.md K1–K9) |
+| Needs from others | FORGE-00: G8 wording for `SetJobQuota → (boolean, code?)` and Army attack `targetId`; ContentQuery `fireAction` / decayed decision loyalty (using the interim path meanwhile). FORGE-03: refusal codes (handoff 2026-10-13-forge-01-to-forge-03-refusal-codes) |
+
+## Hours to VS-1 (honest estimate)
+About 10–14 working hours of FORGE-01 code, plus review/merge time: FL-0079 conversations 4–5 h (in progress), FL-0081 slots/upgrade times/throne seat 3–4 h, #39 replication follow-ups 2 h, then playtest fixes. Studio verification is the user's.
 
 ## What exists (headless-verified only; nothing run in Studio)
 - `games/game-001/src/shared/{Kingdom,Sim,Match}` and `src/server/Services/{Match,Kingdom}Service.luau`:
@@ -24,13 +27,12 @@ _Maintained by the worker. Keep it short and current._
 - Snapshot codec v1 (G4 v1 layout) — to be replaced by v2 (D-025) in FL-0049.
 
 ## Next
-1. FL-0078: wire Sim/Population (sub-worker) into CitizenService (G5 getPopulation / setFedRatio / inspect → CitizenView) and the spawn record (look), on top of the content library once it merges.
-2. FL-0080 ReputationService + Society.luau; FL-0079 ConversationService; FL-0081 build slots, upgrade times, throne seat.
-3. FL-0050 to FL-0052 rows that VS-1 v2 still needs (fed ratio, Build/Army remotes, Send-to-capture).
+1. FL-0079 ConversationService: Converse/Choose, thought bubbles, decision effects and consequences (G13.3).
+2. FL-0081: Build.PlaceSlot / Build.Slots on Build/Fit, upgrade times from Costs, ruler seated on the keep Throne.
+3. #39 follow-ups: LOD centre = overview camera, encode before commit + spawn cap, lazy codec asserts, clear tracks on clock snap.
 
 ## Last report
-Done: FL-0049: SnapshotCodec v2, EventCodec, EntityService (diffed spawns/despawns/jobs, cues, reset,
-10 Hz snapshots ≤ 900 B), EntityController with pooled Kit rigs and procedural poses (sub-worker),
-16 Hz fixed tick with staggered decisions, Layout.nav routing, sim.spawn debug command.
-Verified: check.sh PASS; mutations caught (EntityService 6/6, client 23/23, tick/staggering 2/2, Nav 1/1).
-Unverified: everything in Studio (K1/K2/K7/K8, PERF.md).
+Done: FL-0078 generated population (#61), FL-0080 ReputationService (#68), FL-0052 army (#70), placement
+rectangles and node clearance (#62, merged), F2/F3 (#59, merged), G13.5 (#56, merged), citizen height (#54, merged).
+Verified: check.sh PASS on each branch; mutation checks caught (FL-0078 16/16, FL-0080 19/19, FL-0052 14/14).
+Unverified: everything in Studio.
