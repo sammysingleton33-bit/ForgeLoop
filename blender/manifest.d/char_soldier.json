@@ -46,9 +46,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7000,
       "sockets": {
@@ -202,21 +214,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7001,
       "sockets": {
@@ -370,9 +382,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7002,
       "sockets": {
@@ -526,21 +550,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7003,
       "sockets": {
@@ -694,9 +718,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7004,
       "sockets": {
@@ -850,21 +886,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7005,
       "sockets": {
@@ -1018,9 +1054,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7006,
       "sockets": {
@@ -1174,21 +1222,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7007,
       "sockets": {
@@ -1342,9 +1390,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7008,
       "sockets": {
@@ -1498,21 +1558,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7009,
       "sockets": {
@@ -1666,9 +1726,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7010,
       "sockets": {
@@ -1822,21 +1894,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7011,
       "sockets": {

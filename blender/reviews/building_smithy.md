@@ -91,3 +91,10 @@ plaster and stone gable, which is acceptable for a side rarely seen.
 Remaining: the civic crown (01, 05 banners and shields) is still the civic single-colour outline, not
 `crown_outlines`. Aligning it would change 01's hash.
 Self-scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail 4, cohesion 4, tris 3.
+
+## Fresh review round 6
+
+- Reviewer: fresh-context subagent (contact sheet `blender/previews/building_smithy.jpg` only; crops, zooms and grayscale checks; 2026-10-13)
+- Verdict: **PASS** (asset overrides: building_smithy_04=NEEDS-WORK)
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 3
+- Notes: 01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).

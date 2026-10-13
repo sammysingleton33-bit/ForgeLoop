@@ -9,12 +9,12 @@
       "verdict": "PASS"
     },
     "prop_banner_green_01": {
-      "geometry_hash": "6e20df099aaaef90",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "ffc553b57c006d59",
+      "verdict": "PASS"
     },
     "prop_banner_green_02": {
-      "geometry_hash": "11521f14bdebd09a",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "f437abb3e0c4fbf6",
+      "verdict": "PASS"
     },
     "prop_banner_red_01": {
       "geometry_hash": "b1fb92952605a3e7",
@@ -35,18 +35,18 @@
   },
   "generator": "prop_banner",
   "generator_version": 1,
-  "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+  "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
   "reviewer": "fresh-context subagent",
-  "round": 3,
+  "round": 4,
   "scores": {
     "cohesion": 3,
     "detail_density": 4,
-    "palette": 3,
+    "palette": 4,
     "proportions": 4,
-    "readability": 3,
+    "readability": 4,
     "silhouette": 4,
     "triangle_cost": 3,
     "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

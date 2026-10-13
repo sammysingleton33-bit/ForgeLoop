@@ -84,3 +84,10 @@ castle crown. The oak reads as a lobed light leaf with a dark midrib line, not a
 crown, star, leaf and sun are four different shapes. On the archers (05, 07) the quiver strap still crosses the top
 corner of the tabard emblem, as it did before.
 Self-scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail 4, cohesion 4, tris 3.
+
+## Fresh review round 6
+
+- Reviewer: fresh-context subagent (contact sheet `blender/previews/char_soldier.jpg` only; crops, zooms and grayscale checks; 2026-10-13)
+- Verdict: **NEEDS-WORK**
+- Scores: silhouette 4, variation 4, readability 3, proportions 4, palette 3, detail_density 4, cohesion 3, triangle_cost 3
+- Notes: Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).

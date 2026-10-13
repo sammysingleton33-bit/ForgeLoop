@@ -9,16 +9,16 @@
       "verdict": "PASS"
     },
     "building_smithy_03": {
-      "geometry_hash": "21e9a159f73a5115",
+      "geometry_hash": "2ceaf8e487e54776",
       "verdict": "PASS"
     },
     "building_smithy_04": {
-      "geometry_hash": "97d6cf24f49d4143",
-      "verdict": "PASS"
+      "geometry_hash": "29ae2c8c91ca9f78",
+      "verdict": "NEEDS-WORK"
     },
     "building_smithy_05": {
-      "geometry_hash": "6e566be34f3d343a",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "2f5a168ca6cfcc69",
+      "verdict": "PASS"
     },
     "building_smithy_06": {
       "geometry_hash": "6c5239ab4e2a6031",
@@ -27,18 +27,18 @@
   },
   "generator": "building_smithy",
   "generator_version": 1,
-  "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+  "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
   "reviewer": "fresh-context subagent",
-  "round": 5,
+  "round": 6,
   "scores": {
-    "cohesion": 4,
+    "cohesion": 3,
     "detail_density": 4,
     "palette": 4,
     "proportions": 4,
     "readability": 4,
     "silhouette": 4,
-    "triangle_cost": 4,
-    "variation": 3
+    "triangle_cost": 3,
+    "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

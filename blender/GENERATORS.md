@@ -141,3 +141,21 @@ Round 3 failed on readability only (3/5). Silhouette, variation, palette rules a
 - gold: the thatch reads as khaki hay. Put the sun on an ivory or bronze roundel, add bronze/ivory eave trim, and warm the thatch.
 - 01 and 04 share a body (posts, crank, ring). Give 04 its own well head (round pavilion roof or bronze-banded rim).
 The in-game well is the Kit stand-in, so VS-1 is not blocked.
+
+## Parked: kingdom emblem polish (char_soldier archers, smithy_04 / barracks_04 sun, crown consistency) — 2026-10-13
+Emblem readability went through fresh rounds 4–6. Each round fixed the named defects (crescent finials,
+flame → crown per D-039, one oak design, sun never on gold) and then found smaller ones. Per the two-attempt
+rule this is parked with a change of strategy instead of another detail round.
+- Open (fresh round 6): char_soldier archers 05–08 (chest emblem only marker, pouch covers it; 07 red
+  feather, 08 green panel, 08 sun on cream-on-yellow vanishes in grayscale); smithy_04 and barracks_04 sun is
+  a small sun-in-ring on gold that reads as a dot / cog at range; crown differs (gold + band on soldiers and
+  banners, plain cream on smithy/barracks via their own `emblem_poly`).
+- Strategy for the next pass: **one kit-wide emblem plaque**, not per-generator emblem tweaks. A helper in
+  `_kingdom_props_common` that every generator calls for kingdom identity: an ivory field (almond shield or
+  square plaque) carrying the large emblem in the kingdom's dark tone. Reference: the soldier's large ringless
+  sun on a cream almond shield (fresh round 6: "the best sun in the kit"); crown = gold with band.
+  Size it from the gameplay camera distance (emblem ≥ ~10 px at the sheet's gameplay strip), retire
+  `_civic_common.emblem_poly` / `_village_large_common.emblem_poly`, then one fresh review across all
+  emblem-bearing generators.
+- Not on the VS-1 critical path: VS-1 renders the part-built Luau Kit (D-021); Blender meshes swap in later
+  by asset id.

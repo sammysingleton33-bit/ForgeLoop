@@ -86,3 +86,10 @@ with a grayscale copy): the ivory leaf is far lighter than the emerald field in 
 with a dark midrib and stem, not a stick or feather. The ivory topper reads in colour. In grayscale it is lighter
 than the sky but has low contrast against it (outline visible, weaker than the old orange topper).
 Self-scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail 4, cohesion 4, tris 3.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `blender/previews/prop_banner.jpg` only; crops, zooms and grayscale checks; 2026-10-13)
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 3
+- Notes: All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).

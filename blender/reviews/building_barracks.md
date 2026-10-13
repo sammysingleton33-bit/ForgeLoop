@@ -96,3 +96,10 @@ the same as the castles. At 144 studs every emblem is a few pixels. Kingdom iden
 tower language.
 Remaining: the red crown here (01, 05) is still the village single-colour cream outline, not `crown_outlines`.
 Self-scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail 4, cohesion 4, tris 3.
+
+## Fresh review round 6
+
+- Reviewer: fresh-context subagent (contact sheet `blender/previews/building_barracks.jpg` only; crops, zooms and grayscale checks; 2026-10-13)
+- Verdict: **PASS** (asset overrides: building_barracks_04=NEEDS-WORK)
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 3
+- Notes: 01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).
