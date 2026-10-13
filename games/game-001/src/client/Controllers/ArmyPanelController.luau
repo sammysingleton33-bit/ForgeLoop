@@ -129,7 +129,25 @@ function ArmyPanelController:start()
 	end
 end
 
+-- FORGE-05 M1 on #63: nothing renders after destroy. The drawer closes if it is open (the HUD is
+-- destroyed after its dependants), a recruit reply or the Send cooldown still running returns early,
+-- and the rail item and the upgrade tab go away with the controller.
 function ArmyPanelController:destroy()
+	self._destroyed = true
+	self._cooldownToken += 1
+	if self:isOpen() then
+		pcall(function()
+			self.hud:setMenu(nil)
+		end)
+	end
+	pcall(function()
+		self.hud:removeRailItem(ArmyPanelController.RAIL.id)
+	end)
+	if self._upgrade and self._upgrade.removeTab then
+		pcall(function()
+			self._upgrade:removeTab("army")
+		end)
+	end
 	for _, connection in self._connections do
 		pcall(function()
 			if connection.disconnect then
@@ -142,6 +160,7 @@ function ArmyPanelController:destroy()
 	self._connections = {}
 	if self.view then
 		self.view:destroy()
+		self.view = nil
 	end
 end
 
@@ -220,6 +239,9 @@ function ArmyPanelController:recruit()
 			return hud.remotes:invoke(ArmyPanelController.RECRUIT, barracksId, ArmyModel.UNIT, count)
 		end)
 		s.pending = false
+		if self._destroyed then
+			return -- the reply landed after destroy: no drawer, no toast stack to speak on
+		end
 		if called and ok == true then
 			hud:notify({ kind = "success", title = ArmyText.recruited(count), body = ArmyText.RECRUITED_BODY })
 		else
@@ -249,7 +271,7 @@ function ArmyPanelController:send()
 		local ok, err = pcall(function()
 			hud.remotes:send(ArmyPanelController.COMMAND, {}, "capture")
 		end)
-		if not ok then
+		if not ok and not self._destroyed then
 			self._env.log("warn", "ArmyPanelController: " .. ArmyPanelController.COMMAND .. " failed", {
 				error = tostring(err),
 			})
@@ -257,7 +279,7 @@ function ArmyPanelController:send()
 		end
 	end)
 	self._motion:after(ArmyPanelController.COOLDOWN_SEC, function()
-		if token == self._cooldownToken then
+		if token == self._cooldownToken and not self._destroyed then
 			s.cooling = false
 			self:render()
 		end
@@ -268,7 +290,7 @@ end
 
 function ArmyPanelController:render(metrics: any?)
 	local hud = self.hud
-	if hud.roots.menus == nil then
+	if self._destroyed or hud.roots.menus == nil then
 		return -- not mounted yet (no PlayerGui)
 	end
 	self.view = self.view or ArmyPanel.new(hud.roots.menus)

@@ -17,7 +17,8 @@
 	when `applies` says so (ArmyPanelController: "Army" on my barracks, which opens the army drawer).
 
 	Depends on KingdomHudController. Optional: InputModeController (FORGE-04).
-	API: panel:open(buildingId)  panel:close()  panel:addTab(tab)  panel.state = { buildingId? }
+	API: panel:open(buildingId)  panel:close()  panel:addTab(tab)  panel:removeTab(id)
+	     panel.state = { buildingId? }
 		panel.view (UI/UpgradePanel)
 ]]
 
@@ -141,6 +142,18 @@ function UpgradePanelController:addTab(tab: { [string]: any })
 	table.insert(self._tabs, tab)
 	if self.hud.state.menu == UpgradePanelController.MENU then
 		self.hud:render()
+	end
+end
+
+function UpgradePanelController:removeTab(id: string)
+	for i, existing in self._tabs do
+		if existing.id == id then
+			table.remove(self._tabs, i)
+			if self.hud.state.menu == UpgradePanelController.MENU then
+				self.hud:render()
+			end
+			return
+		end
 	end
 end
 

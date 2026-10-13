@@ -77,7 +77,7 @@ function ObjectivePanelController:start()
 				error = tostring(err),
 			})
 		end
-		self:refresh()
+		self:refresh() -- returns at once after destroy (FORGE-05 M2 on #63)
 	end)
 end
 
@@ -100,6 +100,9 @@ function ObjectivePanelController:destroy()
 end
 
 function ObjectivePanelController:refresh()
+	if self._destroyed then
+		return
+	end
 	local ok, payload = pcall(function()
 		return self.hud.remotes:invoke(ObjectivePanelController.GET)
 	end)
@@ -113,6 +116,9 @@ function ObjectivePanelController:refresh()
 end
 
 function ObjectivePanelController:apply(payload: any, _pushed: boolean?)
+	if self._destroyed then
+		return -- a reply that lands after destroy changes nothing and draws nothing
+	end
 	local list = ObjectiveModel.normalize(payload)
 	if list == nil then
 		return -- a malformed reply or push never wipes what the server told us before
@@ -133,7 +139,7 @@ end
 
 function ObjectivePanelController:render(metrics: any?)
 	local hud = self.hud
-	if hud.roots.hud == nil then
+	if self._destroyed or hud.roots.hud == nil then
 		return -- not mounted yet (no PlayerGui)
 	end
 	local m = metrics or hud:metrics()

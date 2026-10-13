@@ -19,6 +19,7 @@
 	hud:pulse(deltas)                        float each change under its pill (visual confirmation)
 	hud:addMenu({ id, icon, label, target?, order? })   another rail button (the next render rebuilds
 	                                         the rail); `order` sorts it after the built-in ones
+	hud:removeMenu(id)                       takes it away again
 	hud.pills[resourceId] -> CurrencyPill handle      hud.rail[id] -> IconButton handle
 	Onboarding hooks (FORGE-04, G11): the pill row has OnboardingTarget = "HUD.Resources" and the
 	Build button OnboardingTarget = "HUD.BuildButton".
@@ -82,6 +83,16 @@ function KingdomHud:addMenu(item: { id: string, icon: string, label: string, tar
 		self.menus[i] = entry.menu
 	end
 	self._breakpoint = nil -- rebuild the rail on the next render
+end
+
+function KingdomHud:removeMenu(id: string)
+	for i, menu in self.menus do
+		if menu.id == id then
+			table.remove(self.menus, i)
+			self._breakpoint = nil -- rebuild the rail on the next render
+			return
+		end
+	end
 end
 
 local function plate(): Frame

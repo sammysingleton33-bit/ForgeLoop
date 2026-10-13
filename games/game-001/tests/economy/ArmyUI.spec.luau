@@ -593,10 +593,6 @@ describe("FL-0060 views survive pushes (FORGE-05 M1)", function()
 		local t = tracker(world)
 		local row = find(t, "Objective_watchtower")
 		local bar = find(row, "Bar_crimson")
-		world.military:endMatch({ winner = "azure", standings = STANDINGS, durationSec = 754 })
-		world:advance(0.1)
-		local s = summaryRoot(world)
-		local continue = find(find(s, "Continue"), "Face")
 		expect(recruit:GetAttribute("cta")).toBe("disabled")
 
 		-- a treasury push that covers the cost, then another kingdom's building push
@@ -612,8 +608,6 @@ describe("FL-0060 views survive pushes (FORGE-05 M1)", function()
 		expect(tracker(world)).toBe(t)
 		expect(find(t, "Objective_watchtower")).toBe(row)
 		expect(find(row, "Bar_crimson")).toBe(bar)
-		expect(summaryRoot(world)).toBe(s)
-		expect(find(find(s, "Continue"), "Face")).toBe(continue)
 
 		-- a population push and an objective push patch the same instances too
 		world.population:set("crimson", "soldier", 5)
@@ -623,16 +617,153 @@ describe("FL-0060 views survive pushes (FORGE-05 M1)", function()
 		expect(find(p, "Soldiers").Text).toBe("5")
 		expect(find(row, "Bar_crimson")).toBe(bar)
 		expect(find(bar, "Pct").Text).toBe("70%")
-		expect(summaryRoot(world)).toBe(s)
 
 		-- the kept buttons act on the newest state
-		tap(continue)
-		expect(summaryRoot(world)).toBeNil()
 		tap(recruit)
 		world:advance(0.2)
 		expect(#world:callsNamed("Recruit")).toBe(1)
 		tap(send)
 		world:advance(0.1)
 		expect(#world:callsNamed("Command")).toBe(1)
+
+		-- the match ends: the drawer closes (no live buttons under the summary, FORGE-05 low 6), and
+		-- the summary keeps its instances across pushes until Continue
+		world.military:endMatch({ winner = "azure", standings = STANDINGS, durationSec = 754 })
+		world:advance(0.1)
+		expect(world.hud.state.menu).toBeNil()
+		local s = summaryRoot(world)
+		local continue = find(find(s, "Continue"), "Face")
+		world.treasury:deposit("crimson", "food", 5, "m1:food2", "test")
+		world.military:setProgress("watchtower", "crimson", 0.8)
+		world:advance(0.1)
+		expect(summaryRoot(world)).toBe(s)
+		expect(find(find(s, "Continue"), "Face")).toBe(continue)
+		tap(continue)
+		expect(summaryRoot(world)).toBeNil()
+	end)
+end)
+
+describe("FL-0060 destroy paths and match end (FORGE-05 review of #63)", function()
+	local world, previous
+	beforeEach(function()
+		previous = Create.useTestConnector()
+	end)
+	afterEach(function()
+		if world then
+			world:destroy()
+			world = nil
+		end
+		Create.setConnector(previous)
+	end)
+
+	it("M1: a recruit reply and the Send cooldown that land after destroy draw nothing", function()
+		world = newWorld({ soldiers = 2, latency = 0.5, treasury = { food = 200, wood = 100, stone = 0, gold = 0 } })
+		world:advance(1) -- the first fetches have the same round trip
+		openArmy(world)
+		expect(face(world, "Recruit"):GetAttribute("cta")).toBe("ready")
+		tap(face(world, "Recruit"))
+		tap(face(world, "Send"))
+		world:advance(0.1)
+		local spoken = 0
+		local notify = world.hud.notify
+		world.hud.notify = function(hud, spec)
+			spoken += 1
+			return notify(hud, spec)
+		end
+		world.army:destroy()
+		expect(world.hud.state.menu).toBeNil() -- the drawer closed with its controller
+		expect(world.army.view).toBeNil()
+		expect(find(world.hud.guis.hud, "Menu_army")).toBeNil() -- the rail button went too
+		world:advance(world.army.COOLDOWN_SEC + 1) -- the reply and the cooldown both land now
+		expect(panel(world)).toBeNil()
+		expect(spoken).toBe(0) -- the recruit reply that landed after destroy said nothing
+		expect(#world:callsNamed("Recruit")).toBe(1)
+		-- the HUD opens "army" again (a stale rail tap): the destroyed controller draws nothing
+		world.hud:setMenu("army")
+		world.army:render()
+		world:advance(0.1)
+		expect(panel(world)).toBeNil()
+	end)
+
+	it("M2: Army.Objectives replicating only after destroy: no fetch, no tracker", function()
+		local release
+		local fetched, placed = 0, 0
+		local hudDouble = {
+			rendered = Signal.new(),
+			roots = {},
+			setStackBottom = function()
+				placed += 1
+			end,
+			remotes = {
+				on = function()
+					release = coroutine.running()
+					coroutine.yield()
+					return { Disconnect = function() end }
+				end,
+				invoke = function()
+					fetched += 1
+					return {}
+				end,
+			},
+		}
+		local env = {
+			spawn = function(fn)
+				coroutine.wrap(fn)()
+			end,
+			log = function() end,
+		}
+		local objectives = ObjectiveDef.new(env, {
+			get = function()
+				return hudDouble
+			end,
+		})
+		local changes = 0
+		objectives.changed:connect(function()
+			changes += 1
+		end)
+		objectives:start()
+		expect(release).toBeTruthy()
+		objectives:destroy()
+		assert(coroutine.resume(release))
+		expect(fetched).toBe(0)
+		objectives:apply({ { id = "watchtower" } }, true) -- a reply already on its way
+		expect(changes).toBe(0)
+		expect(objectives.tracker).toBeNil()
+	end)
+
+	it("after destroy the tracker and the summary draw nothing, whoever calls them", function()
+		world = newWorld()
+		expect(tracker(world)).toBeTruthy()
+		world.objectives:destroy()
+		world.summary:destroy()
+		expect(tracker(world)).toBeNil()
+		world.objectives:render()
+		world.summary:show({ winner = "azure", standings = STANDINGS, durationSec = 754 })
+		world:advance(0.1)
+		expect(tracker(world)).toBeNil()
+		expect(summaryRoot(world)).toBeNil()
+	end)
+
+	it("low 4: FORGE-01's recruit refusals read as sentences", function()
+		for _, code in { "recruit_cap", "match_not_active", "not_in_match", "not_ruler", "kingdom_eliminated" } do
+			local sentence = ArmyText.reason(code)
+			expect(sentence).never.toBe(ArmyText.GENERIC)
+			expect(sentence).never.toContain(code)
+		end
+	end)
+
+	it("low 6: the summary closes when the next match begins, not when Results starts", function()
+		world = newWorld()
+		world.match:setPhase("Endgame")
+		world:advance(0.1)
+		world.military:endMatch({ winner = "azure", standings = STANDINGS, durationSec = 754 })
+		world:advance(0.1)
+		expect(summaryRoot(world)).toBeTruthy()
+		world.match:setPhase("Results")
+		world:advance(0.1)
+		expect(summaryRoot(world)).toBeTruthy()
+		world.match:setPhase("Lobby")
+		world:advance(0.1)
+		expect(summaryRoot(world)).toBeNil()
 	end)
 end)

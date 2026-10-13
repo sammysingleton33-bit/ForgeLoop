@@ -30,6 +30,7 @@
 		hud:setPlacing(on)                  hides the construction chips while the placement bar shows
 		hud:addRailItem({ id, icon, label, target?, order? })   a rail button for another controller's
 		                                    menu (ArmyPanelController: "army"); it calls hud:setMenu(id)
+		hud:removeRailItem(id)              undoes it (the owner's destroy)
 		hud:setStackBottom(y?)              the bottom of a widget hung under the top-left stack (the
 		                                    objective tracker): phone toasts with an open drawer start below it
 		hud:notify({ title, body?, kind? })
@@ -401,6 +402,20 @@ function KingdomHudController:setMenu(id: string?)
 	end
 	self.menuChanged:fire(id)
 	self:render()
+end
+
+-- Undoes addRailItem (a controller that is destroyed takes its rail button with it).
+function KingdomHudController:removeRailItem(id: string)
+	for i, item in self._railItems do
+		if item.id == id then
+			table.remove(self._railItems, i)
+			break
+		end
+	end
+	if self.view and not self._destroyed then
+		self.view:removeMenu(id)
+		self:render()
+	end
 end
 
 function KingdomHudController:addRailItem(item: {

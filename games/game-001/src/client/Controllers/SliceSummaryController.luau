@@ -95,6 +95,12 @@ function SliceSummaryController:show(payload: any)
 	end
 	self.ended = ended
 	self.isOpen = true
+	-- The match is over: no drawer stays open with live buttons under the summary (FORGE-05 low 6).
+	local hud = self.hud
+	self._shownPhase = if hud.store.match then hud.store.match.phase else nil
+	if hud.state.menu ~= nil then
+		hud:setMenu(nil)
+	end
 	self:render()
 end
 
@@ -105,8 +111,14 @@ end
 
 function SliceSummaryController:render(metrics: any?)
 	local hud = self.hud
-	if hud.roots.modals == nil then
+	if self._destroyed or hud.roots.modals == nil then
 		return -- not mounted yet (no PlayerGui)
+	end
+	-- A new match began (the phase moved past Results, or away from the phase it was shown in, other
+	-- than into Results): the old summary goes.
+	local phase = if hud.store.match then hud.store.match.phase else nil
+	if self.isOpen and phase ~= nil and phase ~= "Results" and phase ~= self._shownPhase then
+		self.isOpen = false
 	end
 	self.view = self.view or SliceSummary.new(hud.roots.modals)
 	if not self.isOpen or self.ended == nil then

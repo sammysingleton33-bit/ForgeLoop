@@ -38,6 +38,12 @@ local REASONS: { [string]: string } = {
 	no_kingdom = "You don't rule a kingdom yet",
 	phase = "You can't recruit right now",
 	rate = "Slow down a moment, then try again",
+	-- FORGE-01 Sim/Military and Sim/Commands codes (FORGE-05 low 4 on #63)
+	recruit_cap = "Your barracks can't train more soldiers. Upgrade it",
+	match_not_active = "The match isn't running",
+	not_in_match = "The match isn't running",
+	not_ruler = "Only rulers can do that",
+	kingdom_eliminated = "Your kingdom has fallen",
 }
 
 ArmyText.GENERIC = "That didn't work. Try again."
@@ -64,8 +70,10 @@ ArmyText.SEND = "Send to capture"
 ArmyText.SEND_DESCRIPTION = "Idle soldiers march to the nearest tower you don't hold and take it."
 ArmyText.SENT = "Sent"
 ArmyText.SENT_STATUS = "Sent to the nearest tower"
-ArmyText.SENT_TOAST = "Soldiers sent"
-ArmyText.SENT_TOAST_BODY = "They march to the nearest tower"
+-- The order is an event: nothing confirms it, so the toast says what was sent, not what happened
+-- (FORGE-05 low 5 on #63).
+ArmyText.SENT_TOAST = "Orders sent"
+ArmyText.SENT_TOAST_BODY = "To the nearest tower"
 ArmyText.SEND_DEFAULT = "Idle soldiers march to the nearest tower"
 ArmyText.NO_SOLDIERS = "No soldiers yet"
 ArmyText.NO_SOLDIERS_STATUS = "Recruit soldiers first"
