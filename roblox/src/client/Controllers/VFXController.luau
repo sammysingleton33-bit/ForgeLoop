@@ -5,6 +5,10 @@
 	FeedbackController in games/game-001/src/client/Controllers, FL-0062).
 
 		VFXController:play(presetId, opts?: { position: Vector3?, parent: Instance?, tint: Color3? }) -> Effect?
+		    parent: a BasePart or Attachment is used as is; any other instance (a citizen's Model) gets an
+		    owned Attachment under its PrimaryPart (else its first BasePart), because a ParticleEmitter
+		    emits only from a BasePart or an Attachment. Without either, the effect plays at `position`.
+		    The owned Attachment goes with the effect, so a pooled rig never keeps an emitter.
 		VFXController:stop(effect)                         -- continuous presets; bursts clean up themselves
 		VFXController:register(presets) -> { string }      -- add game presets (validated; problems returned)
 		VFXController:float(text, position?) -> Instance?  -- rising text ("+3 Wood"), FLOAT_SEC, max FLOATS
@@ -65,10 +69,35 @@ function Def.liveBackend(env: any)
 	end
 	backend.anchor = anchor
 
-	-- Returns the attachment (or given parent) and the emitters built from the preset.
+	-- Where emitters can live on `parent`: itself (BasePart, Attachment), a BasePart of it (Model), or nil.
+	local function emitterHost(parent: any): (any, boolean)
+		local ok, direct = pcall(function()
+			return parent:IsA("BasePart") or parent:IsA("Attachment")
+		end)
+		if ok and direct then
+			return parent, true
+		end
+		local okPart, part = pcall(function()
+			return parent.PrimaryPart or parent:FindFirstChildWhichIsA("BasePart", true)
+		end)
+		return if okPart then part else nil, false
+	end
+
+	-- Returns the owned attachment (nil when the given parent is used as is) and the emitters.
 	function backend.build(preset: any, scale: number, opts: { [string]: any }): (any, { any })
-		local parent = opts.parent
+		local parent = nil
 		local owned = nil
+		if opts.parent ~= nil then
+			local host, direct = emitterHost(opts.parent)
+			if direct then
+				parent = host
+			elseif host ~= nil then
+				owned = env.newInstance("Attachment")
+				owned.Name = preset.id
+				owned.Parent = host
+				parent = owned
+			end
+		end
 		if parent == nil then
 			owned = env.newInstance("Attachment")
 			owned.Name = preset.id

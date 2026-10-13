@@ -24,6 +24,10 @@
    - Cues use the `pose` in `Vfx.cues`: cheer, grumble, salute, bow, cower, work_fast, rest, hammer.
    - Without it, the bubble and the cue's effect still show. Every cue with a sound also has an effect.
    - The 9th `Hair` part (D-032) needs no pose work from me.
+4. **LOD centre in the overview (EntityController, #39):**
+   - Rigs hide beyond 150 studs from the local character, else from the camera focus. In the overview the ruler sits on the throne, so panning the camera away from the keep hides the citizens under the view.
+   - Suggestion: use `RulerCameraController:getFocus()` as the LOD centre while the camera is in `overview`.
+   - Bubbles already measure from that focus, and skip LOD-hidden (unparented) rigs.
 
 ### FORGE-00 (contract custodian)
 1. **A G9 event for onboarding v2 (FL-0092):** `CitizenAnswered(player, entityId, scenarioId, responseId)`, fired by ConversationService when `Kingdom.Choose` succeeds.
@@ -38,11 +42,11 @@
    - §5.4 also still says no cue event is contracted, and that cues show only through the reaction tone. G13.3 now contracts it.
 
 ## Evidence
-- `games/game-001/tests/experience/CitizenBubbles.spec.luau`: 16 specs.
+- `games/game-001/tests/experience/CitizenBubbles.spec.luau`: 22 specs.
   - Model rules: one bubble per citizen; text from the event only; glyphs; placards; distance; cap; release.
   - The cue map: exactly the G13.3 vocabulary, every content `cue_id` mapped, registered sounds and effects, never sound-only.
-  - The controller: drawing, pooling on `released`, the cap and distance, placards, `citizenBarks`, cues (direct and `"cue"`), the unknown-cue tone fallback, the headless boot.
-- `mutations.py FL-0091`: 14/14 caught.
+  - The controller: drawing, pooling on `released`, the cap and distance from the camera focus, LOD-hidden rigs, a job-change rig swap, NaN ids, placards, `citizenBarks`, cues (direct and `"cue"`), the unknown-cue tone fallback, the headless boot.
+- `mutations.py FL-0091`: 25/25 caught. That includes the VFXController rows: an effect on a citizen's Model goes into an owned Attachment under its PrimaryPart, because ParticleEmitters emit only from a BasePart or Attachment.
 
 ## Interfaces touched
 None. The cue routing follows CONTRACTS G13.3 `cue` (v0.4-g4). `playPose`, the per-citizen strike and cue fan-out, and `CitizenAnswered` are proposals in this file.

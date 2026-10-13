@@ -19,9 +19,14 @@
 	The reaction pose (Bubbles.POSE[tone]: cheer, grumble, slump, salute) is requested from
 	EntityController:playPose(entityId, pose) when it has one (proposed to FORGE-01).
 
-	View: a pool of BillboardGuis (at most bubbles.maxOnScreen), reparented to the citizen's model,
-	with MaxDistance as a second guard. Bubbles never take input (Active = false, no buttons), so a
-	tap on a citizen still reaches InputModeController's selection (G13.6).
+	View: a pool of BillboardGuis (at most bubbles.maxOnScreen), reparented to the citizen's model.
+	Distance is measured from the camera focus (RulerCameraController:getFocus(), else the camera),
+	so zooming the overview out (40-220 studs) never hides the citizens under the view; the GUIs
+	carry no MaxDistance of their own (0 = no limit) for the same reason. Rigs that EntityController's
+	LOD hides (unparented) never take a slot. A job change swaps the rig (released, then rendered at
+	once): the citizen keeps its thought, and drops a strike placard, because it left the striking
+	occupation. Bubbles never take input (Active = false, no buttons), so a tap on a citizen still
+	reaches InputModeController's selection (G13.6).
 
 		CitizenBubbleController:refresh()   -- re-pick and redraw (Heartbeat calls it every POLL_SEC)
 		CitizenBubbleController.bubbles     -- the Feedback/Bubbles model (specs)
@@ -58,6 +63,11 @@ local function connect(target: any, signalName: string, handler: (...any) -> ())
 	return if ok then connection else nil
 end
 
+-- An entity id: a number, never NaN (NaN cannot be a table key).
+local function isId(value: any): boolean
+	return type(value) == "number" and value == value
+end
+
 local function pivotOf(model: any): Vector3?
 	local ok, position = pcall(function()
 		local primary = model.PrimaryPart
@@ -84,6 +94,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_connections = {},
 		_running = false,
 		_warned = {},
+		_leaving = {} :: { [number]: boolean },
 		bubbles = Bubbles.new({ now = env.clock, config = config.bubbles }),
 	}, Controller)
 end
@@ -98,6 +109,7 @@ function Controller:start()
 	self._settings = registry:find("SettingsController")
 	self._audio = registry:find("AudioController")
 	self._vfx = registry:find("VFXController")
+	self._camera = registry:find("RulerCameraController")
 	local entities = self._entities
 	if entities == nil then
 		self._env.log(
@@ -109,7 +121,11 @@ function Controller:start()
 	for _, item in
 		{
 			connect(entities, "rendered", function(id, model)
+				if not isId(id) then
+					return
+				end
 				self._models[id] = model
+				self._leaving[id] = nil -- a rig swap: the citizen stays
 			end),
 			connect(entities, "released", function(id)
 				self:_release(id)
@@ -150,7 +166,10 @@ function Controller:destroy()
 end
 
 function Controller:onEvent(entityId: any, cue: string, payload: any, model: any)
-	if model ~= nil and type(entityId) == "number" then
+	if not isId(entityId) then
+		return -- no citizen (or NaN): nothing to draw on
+	end
+	if model ~= nil then
 		self._models[entityId] = model
 	end
 	if type(payload) ~= "table" then
@@ -178,6 +197,10 @@ function Controller:onEvent(entityId: any, cue: string, payload: any, model: any
 end
 
 function Controller:refresh()
+	for id in self._leaving do
+		self.bubbles:release(id) -- released and not rendered again: the citizen is gone
+	end
+	table.clear(self._leaving)
 	for _, id in self.bubbles:tick() do
 		self:_undraw(id)
 	end
@@ -185,11 +208,11 @@ function Controller:refresh()
 	if origin == nil then
 		return
 	end
+	-- only citizens with something to show, and only rigs in the world (LOD-hidden rigs are unparented)
 	local positions = {}
 	for id, model in self._models do
-		local position = pivotOf(model)
-		if position ~= nil then
-			positions[id] = position
+		if self.bubbles:get(id) ~= nil and model.Parent ~= nil then
+			positions[id] = pivotOf(model)
 		end
 	end
 	local keep = {}
@@ -218,14 +241,27 @@ function Controller:_originPosition(): Vector3?
 	if self._origin then
 		return self._origin()
 	end
+	local camera = self._camera
+	if camera ~= nil and camera.getFocus ~= nil then
+		local okFocus, focus = pcall(camera.getFocus, camera)
+		if okFocus and typeof(focus) == "Vector3" then
+			return focus
+		end
+	end
 	local ok, position = pcall(function()
 		return self._env.Workspace.CurrentCamera.CFrame.Position
 	end)
 	return if ok then position else nil
 end
 
+-- The rig goes back to the pool. The bubble state waits until the next refresh: a job change renders
+-- the citizen's new rig straight after (EntityController), and then the thought stays.
 function Controller:_release(entityId: number)
-	self.bubbles:release(entityId)
+	if not isId(entityId) then
+		return
+	end
+	self.bubbles:strike(entityId, false) -- a new job is a new occupation, so off strike
+	self._leaving[entityId] = true
 	self:_undraw(entityId)
 	self._models[entityId] = nil
 end
@@ -267,6 +303,9 @@ function Controller:_playCue(entityId: any, cueId: any, tone: any)
 	self:_pose(entityId, spec.pose)
 	local model = if type(entityId) == "number" then self._models[entityId] else nil
 	local position = if model then pivotOf(model) else nil
+	if position == nil then
+		return -- no rendered rig: nothing to show it on (never at the world origin)
+	end
 	if spec.sound and self._audio then
 		self._audio:play(spec.sound, { position = position })
 	end
@@ -318,8 +357,7 @@ function Controller:_draw(entityId: number, bubble: any)
 		gui = table.remove(self._pool) or build(self._env)
 		self._drawn[entityId] = gui
 	end
-	local config = self._config.bubbles or Bubbles.DEFAULTS
-	gui.MaxDistance = config.maxDistance or Bubbles.DEFAULTS.maxDistance
+	gui.MaxDistance = 0 -- no engine limit: the model culls by distance to the camera focus
 	local style = Def.STYLE[bubble.kind]
 	local frame = gui:FindFirstChild("Bubble")
 	frame.BackgroundColor3 = style.background

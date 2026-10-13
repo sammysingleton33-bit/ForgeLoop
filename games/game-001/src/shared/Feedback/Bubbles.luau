@@ -69,6 +69,11 @@ local function cut(text: any, limit: number): string?
 	return trimmed
 end
 
+-- An entity id: a number, never NaN (NaN cannot be a table key).
+local function isId(value: any): boolean
+	return type(value) == "number" and value == value
+end
+
 function Bubbles.new(opts: { now: () -> number, config: { [string]: any }? })
 	local config = table.clone(Bubbles.DEFAULTS)
 	for key, value in opts.config or {} do
@@ -102,7 +107,7 @@ function Bubbles:get(entityId: number): Bubble?
 end
 
 function Bubbles:thought(entityId: any, data: any): Bubble?
-	if type(entityId) ~= "number" or type(data) ~= "table" then
+	if not isId(entityId) or type(data) ~= "table" then
 		self.stats.ignored += 1
 		return nil
 	end
@@ -132,7 +137,7 @@ function Bubbles:thought(entityId: any, data: any): Bubble?
 end
 
 function Bubbles:reaction(entityId: any, data: any): Bubble?
-	if type(entityId) ~= "number" or type(data) ~= "table" then
+	if not isId(entityId) or type(data) ~= "table" then
 		self.stats.ignored += 1
 		return nil
 	end
@@ -156,7 +161,7 @@ function Bubbles:reaction(entityId: any, data: any): Bubble?
 end
 
 function Bubbles:strike(entityId: any, on: boolean)
-	if type(entityId) ~= "number" then
+	if not isId(entityId) then
 		self.stats.ignored += 1
 		return
 	end
@@ -164,6 +169,9 @@ function Bubbles:strike(entityId: any, on: boolean)
 end
 
 function Bubbles:release(entityId: number)
+	if not isId(entityId) then
+		return
+	end
 	self._bubbles[entityId] = nil
 	self._striking[entityId] = nil
 end

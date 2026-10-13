@@ -189,7 +189,7 @@ Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec
 | Text | only from the event, at most 80 characters (an ellipsis beyond) |
 | Meaning | "!" request, "?" concern, "…" idea; placards say "On strike"; never colour alone |
 | Lifetimes | thought 45 s or until answered; reaction 4 s; placard until the strike ends |
-| On screen | at most 8, within 160 studs of the camera; reactions first, then the nearest |
+| On screen | at most 8, within 160 studs of the camera focus (not the camera, so zoom never hides them); reactions first, then the nearest; never on LOD-hidden rigs |
 | `citizenBarks` off | hides reaction bubbles only; thoughts and placards stay (they are gameplay) |
 | Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose |
 
@@ -197,7 +197,8 @@ Steps
 1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
 2. Tap the citizen: the selection still works through the bubble (FORGE-03's card opens). Answer in the conversation panel: the bubble changes to the reaction line for about 4 s. The citizen poses (cheer, grumble, slump or salute) if FORGE-01's `playPose` exists; otherwise only the bubble shows.
 3. `strike.start miner`: each striking miner shows "On strike" until the strike ends.
-4. Zoom out past about 160 studs: the bubbles disappear. Zoom back in: they return. With more than 8 requests open, at most 8 bubbles show, the nearest first.
+4. Zoom all the way out (about 220 studs): the bubbles under the view stay. Pan until a citizen is more than about 160 studs from the centre of the view: its bubble disappears. Pan back: it returns. With more than 8 requests open, at most 8 bubbles show, the nearest to the centre first.
+   - A citizen with a request who changes job keeps the bubble on the new rig.
 5. Settings → Citizen barks off: reaction bubbles no longer show; request bubbles and placards still do.
 6. Device emulator, a small phone: bubble text is readable at the default zoom, and bubbles don't cover the HUD.
 7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists.
