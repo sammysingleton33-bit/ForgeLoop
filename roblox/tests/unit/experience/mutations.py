@@ -118,6 +118,14 @@ M = [
  ("FL-0027", C+"NotificationController.luau", 'if spec.sound ~= nil and not hasVisual then', 'if false then', "Notification", "games register celebrations", "fw"),
  ("FL-0027", C+"NotificationController.luau", '				self.queue:setFilter(value)', '				local _ = value', "Notification", "applies the notifications setting live", "fw"),
  ("FL-0027", C+"OnboardingController.luau", 'if wasActive and state.done and not state.skipped then', 'if state.done then', "OnboardingController", "celebrates when the last step completes", "fw"),
+ ("FL-0092", X+"Onboarding.luau", 'elseif state.unavailable and state.unavailable[step.id] then', 'elseif false then', "Onboarding", "a step whose service is missing is passed over", "fw"),
+ ("FL-0092", X+"Onboarding.luau", 'if type(step.requires) == "string" and not has(step.requires) then', 'if false then', "Onboarding", "a step whose service is missing is passed over", "fw"),
+ ("FL-0092", X+"Onboarding.luau", 'if type(step.requires) ~= "string" or not string.match(step.requires, NAME_PATTERN) then', 'if false then', "Onboarding", "a step's `requires` names a service", "fw"),
+ ("FL-0092", S+"OnboardingService.luau", '			and not (transition.via == "timeout" and step and step.interactive)\n', '', "Onboarding", "moves on after autoAdvanceSec, uncounted", "game"),
+ ("FL-0092", S+"OnboardingService.luau", 'local didIt = transition.via ~= "unavailable"\n', 'local didIt = true\n', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
+ ("FL-0092", S+"OnboardingService.luau", '	state.unavailable = self._unavailable[flow.id]\n', '', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", '					requires = "ConversationService",\n', '', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", '					autoAdvanceSec = 120,\n', '', "Onboarding", "moves on after autoAdvanceSec, uncounted", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

@@ -76,7 +76,11 @@ Needs:
   - the HUD target `HUD.Recruit`.
 - DataService is not needed (session-only progress, D-027).
 
-If the conversation panel is not on the build yet, step 4 cannot complete: use Skip, and write "blocked: no CitizenAnswered".
+Step 4 (AnswerCitizen) never stalls the tutorial:
+- **Without FORGE-01's ConversationService on the build,** it is passed over at once. Output shows `onboarding: a step's service is missing` at boot, and the card goes from "Build on a free plot" straight to Recruit.
+- **With ConversationService but without the panel's `CitizenAnswered` report,** the card nudges at 45 s and moves on at 120 s.
+
+Neither case logs the step in the Onboarding funnel. Write which case you saw.
 
 Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions).
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.

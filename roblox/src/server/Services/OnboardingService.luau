@@ -14,8 +14,12 @@
 		Experience.OnboardingAction(flowId, action)   client-observed actions; only the current step
 		Experience.OnboardingSkip(flowId)             skip: OnboardingSkipped, then no funnel step ever again
 		every second           nudge escalation (OnboardingHintEscalated) and auto-advance of info steps
+		                       (and of client steps that set autoAdvanceSec, so nothing stalls)
+		a step's `requires`    a service missing from this server (registry:find at start) passes that step
+		                       over (via "unavailable"), e.g. AnswerCitizen before ConversationService exists
 	On each completed step: persist (SettingsService:update "onboarding"), AnalyticsService:funnel
-	("Onboarding", index, id) for the funnel flow, GameEvents.OnboardingStep(player, flow, index, id),
+	("Onboarding", index, id) for the funnel flow (not for a step passed over as unavailable, nor for an
+	interactive step that timed out: the funnel counts what players did), GameEvents.OnboardingStep(player, flow, index, id),
 	the step reward through EconomyService:grant (txId "onboarding:<flow>:<step>:<userId>", idempotent),
 	and a new state for the client. On the last step: OnboardingCompleted (value = seconds) and the
 	flow's completeReward.
@@ -57,6 +61,7 @@ function Def.create(env: any, registry: any, options: { config: any?, bus: any? 
 		_config = config,
 		_bus = bus,
 		_flows = {},
+		_unavailable = {} :: { [string]: { [string]: boolean } }, -- flowId -> steps passed over here
 		_players = {},
 		_connections = {},
 		_running = false,
@@ -100,6 +105,17 @@ function OnboardingService:start()
 		end)
 	else
 		env.log("warn", "OnboardingService: RemoteService not loaded; client actions and skip inactive", {})
+	end
+	for _, flow in self._config.flows do
+		self._unavailable[flow.id] = Onboarding.unavailable(flow, function(name)
+			return self._registry:find(name) ~= nil
+		end)
+		for stepId in self._unavailable[flow.id] do
+			env.log("info", "onboarding: a step's service is missing; the step is passed over", {
+				flow = flow.id,
+				step = stepId,
+			})
+		end
 	end
 	local busEvents = {}
 	for _, flow in self._config.flows do
@@ -176,6 +192,7 @@ function OnboardingService:_begin(player: any, flow: any)
 	local now = self._env.now()
 	local state = Onboarding.restore(flow, stored[flow.id], now)
 	states[flow.id] = state
+	state.unavailable = self._unavailable[flow.id]
 	local transitions = Onboarding.begin(flow, state, now)
 	if #transitions > 0 then
 		self:_apply(player, flow, state, transitions) -- persists and pushes
@@ -239,7 +256,10 @@ function OnboardingService:_apply(player: any, flow: any, state: any, transition
 		return
 	end
 	for _, transition in transitions do
-		if flow.funnel and not state.skipped then
+		local step = flow.steps[transition.index]
+		local didIt = transition.via ~= "unavailable"
+			and not (transition.via == "timeout" and step and step.interactive)
+		if flow.funnel and not state.skipped and didIt then
 			self._analytics:funnel(player, FUNNEL, transition.index, transition.id)
 		end
 		if Bus.declared(self._bus, "OnboardingStep") then

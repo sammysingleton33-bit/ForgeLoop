@@ -122,6 +122,37 @@ describe("Experience/Onboarding step graph", function()
 		return state
 	end
 
+	it("a step's `requires` names a service, never on an auto step", function()
+		local text = problemsOf(function(c)
+			c.flows[1].steps[2].requires = "conversation service"
+			c.flows[1].steps[1].requires = "ConversationService"
+		end)
+		expect(text).toContain("requires must name a service (PascalCase)")
+		expect(text).toContain("an auto step needs no service")
+	end)
+
+	it("a step whose service is missing is passed over (via unavailable) when it becomes current", function()
+		local flow = table.clone(FLOW)
+		flow.steps = table.clone(FLOW.steps)
+		local needs = table.clone(flow.steps[3])
+		needs.requires = "MissingService"
+		flow.steps[3] = needs
+		local unavailable = Onboarding.unavailable(flow, function(name)
+			return name ~= "MissingService"
+		end)
+		expect(unavailable).toEqual({ [needs.id] = true })
+		expect(Onboarding.unavailable(flow, function()
+			return true
+		end)).toEqual({})
+		local state = Onboarding.restore(flow, nil, 0)
+		state.unavailable = unavailable
+		Onboarding.begin(flow, state, 0)
+		local transitions = Onboarding.handle(flow, state, { client = "RulerMoved" }, 1)
+		expect(transitions[2].id).toBe(needs.id)
+		expect(transitions[2].via).toBe("unavailable")
+		expect(Onboarding.persisted(state).unavailable).toBeNil() -- a later server may have the service
+	end)
+
 	it("begins by completing the automatic first step", function()
 		local state = Onboarding.restore(FLOW, nil, 0)
 		local transitions = Onboarding.begin(FLOW, state, 0)

@@ -9,7 +9,10 @@
 
 ## What I need
 ### FORGE-03
-1. **Conversation panel:** after `Kingdom.Choose` returns ok, call `registry:find("OnboardingController"):report("CitizenAnswered")`. Without it the tutorial's "answer a citizen" step can only be skipped. Once FORGE-00 adds the proposed G9 `CitizenAnswered` event, I switch the step to it and you can drop the call (handoff `2026-10-12-forge-04-to-forge-01-00-bubbles-events.md`).
+1. **Conversation panel:** after `Kingdom.Choose` returns ok, call `registry:find("OnboardingController"):report("CitizenAnswered")`. Without it the step can't be *completed*, but it no longer stalls the tutorial:
+   - it is passed over while FORGE-01's ConversationService is missing (`requires`);
+   - otherwise it moves on after 120 s (`autoAdvanceSec`);
+   - either way, the Onboarding funnel doesn't count it, so the report is what makes the step measurable. This answers FORGE-05's hold on #45. Once FORGE-00 adds the proposed G9 `CitizenAnswered` event, I switch the step to it and you can drop the call (handoff `2026-10-12-forge-04-to-forge-01-00-bubbles-events.md`).
 2. **Plot menu:** placing on a plot (`Build.PlaceSlot`) must end in G9 `BuildingPlaced` with `placedBy` (FORGE-01's side). Your menu needs nothing extra.
 3. "Inspect a citizen" needs nothing from you. InputModeController reports `CitizenInspected` when a citizen is selected (FL-0090, PR #29).
 
