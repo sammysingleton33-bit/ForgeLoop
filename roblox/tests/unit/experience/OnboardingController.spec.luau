@@ -64,6 +64,15 @@ describe("OnboardingController (client)", function()
 		function notifications.show(_, n)
 			table.insert(notifications.shown, n)
 		end
+		notifications.reserved = {}
+		function notifications.reserveTop(_, owner, px)
+			table.insert(notifications.reserved, `{owner}:{tostring(px)}`)
+		end
+		notifications.celebrated = {}
+		function notifications.celebrate(_, kind, payload)
+			table.insert(notifications.celebrated, { kind = kind, payload = payload })
+			return true
+		end
 		local registry = Loader.load(env, {
 			SettingsDef,
 			{
@@ -141,6 +150,26 @@ describe("OnboardingController (client)", function()
 		local stroke = button:FindFirstChild("ForgeOnboardingStroke")
 		expect(stroke).never.toBeNil()
 		expect(stroke.Thickness).toBe(4)
+	end)
+
+	it("celebrates when the last step completes, never on skip or on a late snapshot that is already done", function()
+		controller:apply(state({ done = true, hint = nil })) -- joined with the tutorial already finished
+		expect(#notifications.celebrated).toBe(0)
+		controller:apply(state())
+		controller:apply(state({ done = true, hint = nil }))
+		expect(#notifications.celebrated).toBe(1)
+		expect(notifications.celebrated[1].kind).toBe("onboardingComplete")
+		controller:apply(state())
+		controller:skip()
+		expect(#notifications.celebrated).toBe(1)
+	end)
+
+	it("keeps the toast stack below the card while it shows, and frees the space when it hides", function()
+		controller:apply(state())
+		expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{OnboardingDef.CARD_RESERVE}`)
+		expect(OnboardingDef.CARD_RESERVE).toBe(OnboardingDef.CARD_TOP + OnboardingDef.CARD_HEIGHT + 8)
+		controller:skip()
+		expect(notifications.reserved[#notifications.reserved]).toBe("onboarding:nil")
 	end)
 
 	it("Skip tells the server and hides the card at once", function()

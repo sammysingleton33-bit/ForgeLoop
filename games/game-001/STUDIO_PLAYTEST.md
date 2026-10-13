@@ -203,6 +203,14 @@ onboarding still waits for the ruler to gather; that is FL-0092's to change.)
 In the **Server** window: **View → Script Performance**; note the Activity % of
 `ServerScriptService.Forge.Main` while citizens work, and **View → Stats** frame rate. Paste both.
 
+## Colour vision (D-033 (4), before VS-1 acceptance)
+1. In Play, pan the aerial camera to a spot where at least two kingdoms' buildings and soldiers are in view; take a screenshot.
+2. Open the Kingdom panel (Overview tab, standings visible); take a screenshot.
+3. Send both screenshots to FORGE-05, who runs `production/quality-gates/cvd/cvd.py` over them (protanopia, deuteranopia, tritanopia) and records the result in `production/quality-gates/colour-vision.md`.
+4. Pass: every kingdom is identifiable without colour (emblem, silhouette or name) in both views.
+5. VS-1 acceptance (CONTRACTS G13.2, D-033 (3)): soldiers of different kingdoms are told apart by their helmet crest in the kingdom's tower style (spire, square, plume, dome), not only by torso colour; check two kingdoms' soldiers side by side in the grayscale/protanopia view.
+6. Tritanopia: azure and emerald are told apart by tower silhouette and emblem in the four-kingdom screenshot.
+
 ## Report (paste into the FORGE-05 chat)
 ```
 VS-1 playtest — date, build (B<n> / artifact / local), BuildInfo sha: <sha>
