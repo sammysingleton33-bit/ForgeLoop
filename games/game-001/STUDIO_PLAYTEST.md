@@ -163,10 +163,12 @@ same names.
    Then tap a **free plot marker**: the picker lists what fits that plot; pick one and press
    **Build … here**. The building goes up exactly on the plot (FL-0081, #89).
 2. Builders walk over and raise it through visible stages. The cost leaves the treasury **once**.
-3. Try a plot that is taken, or a structure you cannot afford: it is refused and nothing is charged.
-   Known, not a fail: on plots the refusal still reads "That didn't work. Try again." instead of the
-   reason (#89 M2, FORGE-03 FL-0105). A building placed with the Build rail on top of a plot does not
-   mark that plot as taken; ordering there then reads "Leave room for upgrades" (#89 M1).
+3. Try a plot that is taken, or a structure you cannot afford: it is refused with the reason in words
+   ("This plot is already built on", "Not enough resources", "That doesn't fit this plot", "Upgrade your
+   keep first"; FL-0105, #86, from the build after B7) and nothing is charged. In **B7** the plot refusals
+   still read "That didn't work. Try again." (known, not a fail). A building placed with the Build rail on
+   top of a plot does not mark that plot as taken; ordering there is refused ("Something is in the way on
+   this plot" after #86; "Leave room for upgrades" in B7) (#89 M1).
 4. Upgrade the **Barracks** to level 2 (about 8 s for level 1 and 18 s for level 2, PROVISIONAL), then
    the **Keep**. Each level looks different.
 5. Screenshots **B1** (mid-construction) and **B2** (Barracks level 2 next to level 1, or before/after).
@@ -184,9 +186,9 @@ same names.
    slice: CONTRACTS G3).
 3. Screenshots **O1** (capture in progress), **O2** (captured) and **O3** (summary).
 
-**Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear. Known: the
-Army panel's advice for a full barracks still says "Build houses first"; it should say to upgrade the
-barracks (FORGE-03 follow-up).
+**Pass:** charged once, soldiers obey, capture completes, Crown Points and summary appear. A 5th recruit
+at a level-1 barracks reads "No free bunks. Upgrade the barracks or build another" (#86, from the build
+after B7; B7 says "…Upgrade it").
 
 ## 10. Use the kingdom HUD and reputation screen (row 8; runnable from B7: reputation server FL-0080 #68 is on main)
 1. The HUD shows resources, population, kingdom, Crown Points, the build/army/objective panels and the
