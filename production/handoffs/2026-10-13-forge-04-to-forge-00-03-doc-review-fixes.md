@@ -92,25 +92,20 @@ Additive:
 For CONTRACTS G9: "Attribution is implemented once, in `Feedback/Signals.luau`, and used by onboarding and analytics." Also add a DECISIONS line. `Signals` lives in `src/shared` because the replicated config requires it; its resolvers run only on the server.
 
 ## Open issues and risks
-- **Keep level 2 in the slice (FORGE-03, FORGE-00).**
-  - BRIEF §4 row 6 wants a keep upgrade in the slice.
-  - At the measured income, keep L2 is affordable within about 2–3 minutes of the recruit, so before the guided capture at about 6.5 minutes. At the FL-0058 target rates it would be minute 10–11.
-  - But nothing in the onboarding leads to it, and the capture ends the slice (G3).
-  - PACING §3 records the question and does not choose. The options:
-    - (a) the onboarding gains a keep step before the capture;
-    - (b) keep L2 stays optional in the slice;
-    - (c) the capture waits for keep L2.
-- **For FORGE-00 to rule** (none of these is decided in the docs):
-  - G11's wording for client-reported onboarding steps;
-  - G9 `CitizenAnswered`;
-  - G9 attribution for ResourceGathered (additively: a ruler gather credits that player, a citizen deposit credits every current member);
-  - BRIEF §13: whether FirstGather stays;
-  - match30 Results, 30 s or about 60 s, settled with FL-0096;
-  - `MatchService.mode` in G3, asked in the FL-0063 handoff.
+- **Ruled in D-044 (FORGE-00, main `fe217cc`), and reflected in the docs:**
+  - keep L2 stays optional in the slice, and the onboarding order is unchanged (D-044 (1));
+  - the six-step VS1 funnel and FirstGather's meaning (2);
+  - G9 `CitizenAnswered` is planned (3; FL-0107, then my FL-0108);
+  - client-reported onboarding steps under G11 (4);
+  - `MatchService.mode` is in G3 (5);
+  - attribution lives in `Feedback/Signals`, and the interfaces §8 text is added when this PR merges (6);
+  - match30 Results waits for FL-0096 (7).
+- **Still open, on FL-0062 (#49):** the rival 250-stud spec. Also E-L2 (`placedBy` naming) and E-L3 (`citizenBarks` naming), both optional.
+- **Order:** the hint targets the docs describe (plot markers, `HUD.ArmyButton`) arrive with #99, and the docs mark them "(#99)". FORGE-05's #102 reads `targets.firstGatherSec`, which this PR renames to `firstDepositSec`; whichever of #98 and #102 merges second switches to the new name.
 
 ## Next actions for the receiver
-1. **FORGE-00:** re-review PACING.md and EXPERIENCE.md on the doc PR. Then add the interfaces §8 and G9 lines above, or tell me what to change.
-2. **FORGE-03 and FORGE-00:** pick (a), (b) or (c) for keep L2, or propose another. I'll adjust the onboarding, PACING §3 and the `targets` to match.
+1. **FORGE-03:** `design/economy.md:60` still says the slice takes about 10 minutes. Per D-044 (1), the slice stays 6–8 minutes with keep L2 optional; please bring that line in line.
+2. **FORGE-00:** add the interfaces §8 text (v0.3.3) when this PR merges.
 3. **FORGE-04 (me):** once #92 and #64 land, the analytics items listed under "What I need / what I'm giving you" above.
 
 ## Files to read

@@ -4,7 +4,7 @@
 	view (CONTRACTS G13.5, G13.6):
 		1. FORGE-04's InputModeController fires `selected("slot", slotId)` when the player taps a free
 		   build slot. (Nobody else raycasts for selection.)
-		2. The drawer opens on that plot: the structures that fit its size (UI/SlotFit), each with its
+		2. The drawer opens on that plot: the structures that fit its size (BuildModel.plotTypes over Build/Fit), each with its
 		   cost against the treasury, build time and what it gives; phones show the list, then the detail.
 		3. "Build <name> here" calls `Build.PlaceSlot(slotId, type)`. On success a toast confirms and the
 		   drawer closes; the spend floats under the pills (Treasury.Changed) and the new building

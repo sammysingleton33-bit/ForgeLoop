@@ -1,6 +1,6 @@
 # AI Kingdoms — match pacing (FL-0061)
 
-_Owner: FORGE-04. Status: **revised after FORGE-00's review** (`production/handoffs/2026-10-13-forge-00-to-forge-04-doc-reviews.md` §2). Numbers: costs from `config/Costs.luau` (FL-0058). Income measured headless by FORGE-05's pacing probe (2026-10-13). Open: keep level 2 in the slice (§3). Last updated 2026-10-13._
+_Owner: FORGE-04. Status: **revised after FORGE-00's review** (`production/handoffs/2026-10-13-forge-00-to-forge-04-doc-reviews.md` §2). Numbers: costs from `config/Costs.luau` (FL-0058). Income measured headless by FORGE-05's pacing probe (2026-10-13). Keep level 2 is optional in the slice (D-044 (1)). Last updated 2026-10-13._
 
 Code:
 - config `games/game-001/config/Pacing.luau`;
@@ -59,7 +59,7 @@ EXPERIENCE.md §2 cites these numbers; this section holds them.
 Assumptions (code on `main`; income **measured headless**, not played):
 - Costs (`config/Costs.luau`): starting treasury food 120 / wood 100 / stone 50; house 40 wood (20 builder-s); farm 50 wood (25 s); barracks 120 wood + 60 stone (**8 builder-s**, D-030); soldier 30 food + 10 wood (8 s, 1 food/min upkeep); keep L2 150 wood + 150 stone (60 s); upkeep 1 food per citizen per minute.
 - Starting population (FORGE-01): farmer 3, woodcutter 3, miner 2, builder 2, hauler 2.
-- Income: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`; every real server service in one MockEnv; not a Studio play test) measured an idle kingdom earning **food 86, wood 76–86 and stone 52 per minute** over 0–300 s. That is 3–5× the FL-0058 per-worker targets in `design/economy.md` (8 wood, ≥ 5 food, 8 stone per worker, so about 24 / 15 / 16 per minute), with `config/Jobs.luau` and `config/Citizens.luau` as they are. Citizens make their first deposit at a median of 17 s, and sleep at night (90–120 s, 210–240 s, …), which slows slower players. Tuning waits for the user's play (FORGE-00); this section follows the code.
+- Income: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`; every real server service in one MockEnv; not a Studio play test) measured an idle kingdom earning **food 86, wood 76–86 and stone 52 per minute** over 0–300 s. That is 3–6× the FL-0058 per-worker targets (food about 5.7×) in `design/economy.md` (8 wood, ≥ 5 food, 8 stone per worker, so about 24 / 15 / 16 per minute), with `config/Jobs.luau` and `config/Citizens.luau` as they are. Citizens make their first deposit at a median of 17 s, and sleep at night (90–120 s, 210–240 s, …), which slows slower players. Tuning waits for the user's play (FORGE-00); this section follows the code.
 - In slice mode on `main`, the AI kingdoms are idle (no citizens or rulers; probe), so a new player cannot lose the slice to an AI capture.
 - **Ruler gathering is optional (D-030): an accelerator, not a step.** The ruler starts seated on the throne in the aerial view (G13.6).
 
@@ -67,10 +67,10 @@ Assumptions (code on `main`; income **measured headless**, not played):
 |---|---|---|---|---|
 | 0:00 | The view opens above the keep with the ruler seated; citizens already working | founding horn, kingdom toast | 1 Spawn (`KingdomJoined`, auto) | VS1 1 Spawn |
 | 0:02–0:20 | taps a citizen; the citizen card opens | selection sound | 2 InspectCitizen (client-reported; first interaction ≤ 30 s = Onboarding `limits.firstInteractionSec`) | `targets.firstInspectSec` 30 (timing only; no funnel step) |
-| 0:20–1:10 | taps a free plot marker and builds a House or Farm (affordable from the start: 100 wood). Builders raise it (20–25 builder-s) | place thunk, dust puff, hammering, completion fanfare | 3 BuildOnPlot (`BuildingPlaced` with the placer match; plot-marker hint, `Build.PlaceSlot` FL-0081) | VS1 3 FirstBuildPlaced (*≤ 90 s*); VS1 4 FirstBuildingComplete (*≤ 150 s*; a funnel step, not an onboarding step in v2) |
+| 0:20–1:10 | taps a free plot marker and builds a House or Farm (affordable from the start: 100 wood). Builders raise it (20–25 builder-s) | place thunk, dust puff, hammering, completion fanfare | 3 BuildOnPlot (`BuildingPlaced` with the placer match; plot-marker hint (#99), `Build.PlaceSlot` FL-0081) | VS1 3 FirstBuildPlaced (*≤ 90 s*); VS1 4 FirstBuildingComplete (*≤ 150 s*; a funnel step, not an onboarding step in v2) |
 | 1:10–2:40 | answers a citizen's "!" request (`Kingdom.Choose` ok) | reaction bubble and pose, the visible consequence | 4 AnswerCitizen (client-reported; passed over without ConversationService, moves on after 120 s) | `targets.firstAnswerSec` 180 (timing only) |
 | 2:40–3:10 | places the Barracks (the treasury had its 120 wood and 60 stone long before: wood reaches 120 at about 44 s). It builds in seconds (8 builder-s) | hammering | (Recruit card: "Build a Barracks, then recruit 3 soldiers") | — |
-| 3:10–5:10 | recruits 3 soldiers from the Army rail button (90 food + 30 wood; trained one at a time, 3 × 8 s) | horn, soldiers at the Rally | 5 Recruit (`UnitsRecruited`; hint on `HUD.ArmyButton`) | VS1 5 FirstRecruit (*≤ 330 s*) |
+| 3:10–5:10 | recruits 3 soldiers from the Army rail button (90 food + 30 wood; trained one at a time, 3 × 8 s) | horn, soldiers at the Rally | 5 Recruit (`UnitsRecruited`; hint on `HUD.ArmyButton` (#99)) | VS1 5 FirstRecruit (*≤ 330 s*) |
 | 5:10–6:40 | presses Send-to-capture; soldiers march about 35 s to the neutral Watchtower; the capture bar fills in about 20 s | capture sting, tower recolours, border flags, celebration | 6 Capture (`ObjectiveCaptured`) | VS1 6 FirstCapture (*≤ 450 s*) |
 | ~7:00 | slice summary (FORGE-03) | — | done | `MatchEnded` |
 
@@ -81,7 +81,7 @@ Measured against this timeline (probe medians; seconds after spawn; targets 90 /
 | First building placed | 1 | 70.5 | 90 |
 | First building complete | 19 | 128 | 150 |
 | First recruit (3 soldiers) | 65 | 220.5 (AnswerCitizen passed over); about 310 with its 90 s (inferred) | 330 |
-| First capture | 144 | 395 | 450 |
+| First capture | 144 | 395 (AnswerCitizen passed over; about 485 with its 90 s, inferred) | 450 |
 
 **The tutorial's pace, not the economy, sets the guided path:** the economy would allow the recruit at about 81 s. Whether the targets or the step times should move is a tuning call after the user's play (FORGE-00 holds tuning).
 
@@ -89,7 +89,7 @@ Measured against this timeline (probe medians; seconds after spawn; targets 90 /
 
 The guided path above follows BRIEF §4 "First minutes guided": inspect a citizen → build on a plot → answer a citizen → recruit → capture. Its target length is **6–8 minutes** for a new player.
 
-**Open, with FORGE-03 and FORGE-00: keep level 2 in the slice.** BRIEF §4 row 6 asks for a keep upgrade in the slice. At the measured income, keep L2 (150 wood + 150 stone after the barracks and soldiers) is affordable within about 2–3 minutes of the recruit, so before the guided capture (at the FL-0058 target rates it would be minute 10–11). But nothing in the onboarding leads the player to it, and the capture ends the slice (G3). Either the onboarding gains a keep step before the capture, or keep L2 stays optional in the slice. This doc does not choose; it records the question (handoff to FORGE-03 and FORGE-00).
+**Keep level 2 in the slice: optional (D-044 (1)).** The onboarding order stays BRIEF §4's (inspect → build → answer → recruit → capture), and the capture still ends the slice (G3). At the measured income, keep L2 (150 wood + 150 stone after the barracks and soldiers) is affordable within about 2–3 minutes of the recruit (*inferred* from the probe's income, not measured), so a player can upgrade before pressing Send-to-capture; the Studio check of BRIEF §4 row 6 does exactly that (FORGE-05's STUDIO_PLAYTEST row). The slice stays **6–8 minutes**; FORGE-03 is asked to bring `design/economy.md` ("about 10 minutes") in line.
 
 Watch points (*unverified*):
 - **Food** is never the limit in the probe (86 food/min against about 15/min of upkeep after recruiting), before births (Citizens.luau `birthFood` 25 each) and meals (while `mealsChargeTreasury = true`).
@@ -100,8 +100,8 @@ Watch points (*unverified*):
 | Minute | Phase | Typical state of a kingdom | Big moment | First-conflict guard |
 |---|---|---|---|---|
 | 0–2 | Founding | the slice flow above | founding, first answered request | — |
-| 2–8 | Founding | 3–5 new buildings; population grows with houses; keep level 2 around minute 8–11 | keep L2 (citizens cheer) | no war: diplomacy default is war only from Conflict (CONTRACTS G3 clarification) |
-| 8–20 | Expansion | outposts and neutral nodes claimed; walls start; ~25–40 citizens | first outpost captured | border contact is possible but there is no PvP damage until Conflict |
+| 2–8 | Founding | 3–5 new buildings; population grows with houses; keep level 2 (optional in the slice, D-044 (1); in the match whenever the player chooses, affordable within minutes at the measured income) | keep L2 (citizens cheer) | no war: diplomacy default is war only from Conflict (CONTRACTS G3 clarification) |
+| 8–20 | Expansion | outposts and neutral nodes claimed; walls start; ~25–40 citizens | first outpost captured | border contact is possible but there is no PvP damage until Conflict, and only when `pvp.enabled` |
 | 20 | Conflict starts | first armies (5–10 soldiers) | only when Match.luau `pvp.enabled` (BRIEF §16.2): "War is declared" announcement + horn. With PvP off (the shipped default): "The Conflict begins: rivals arm themselves" | only when `pvp.enabled`: **earliest raid ≈ minute 21–22**: soldiers must walk across the valley, so defenders have about 60 s of warning |
 | 20–32 | Conflict | raids on farms and stores (with PvP on); alliances form and break (VS-3) | first raid repelled / first raid landed | — |
 | 32–38 | Endgame | sieges; Crown Points decide who reaches the arena | siege, keep falls / holds | — |
@@ -113,9 +113,9 @@ Watch points (*unverified*):
 ## 5. Economy growth targets (for FORGE-03's balance sheet, FL-0058)
 | By minute | Population | Buildings (own) | Stockpile income (all resources) | Army |
 |---|---|---|---|---|
-| 2 | 12 | starting 5 + 1 | ~220/min measured headless (86 food + ~80 wood + 52 stone); the FL-0058 targets give ~55/min | 0 |
-| 8 | 18–22 | 8–10 | ~150/min | 0–3 |
-| 20 | 25–40 | 12–16, keep L2 | ~250/min | 5–10 |
+| 2 | 12 | starting 5 + 1 | ~220/min, the measured 0–300 s average (86 food + ~80 wood + 52 stone; headless); the FL-0058 targets give ~55/min | 0 |
+| 8 | 18–22 | 8–10, keep L2 (optional, D-044 (1)) | ~150/min | 0–3 |
+| 20 | 25–40 | 12–16 | ~250/min | 5–10 |
 | 32 (Endgame starts) | 35–50 | 15–20, walls | ~300/min | 10–20 |
 
 These are targets for pacing, not balance decisions. FORGE-03 owns the numbers and tells me where they disagree.

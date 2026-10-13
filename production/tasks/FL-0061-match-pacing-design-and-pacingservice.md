@@ -16,6 +16,7 @@ evidence:
   - PacingService.spec 10 specs; 5/5 mutations of its rules caught
   - "unverified: no playtest yet; gather rates in PACING.md are assumptions until FL-0050/FL-0058"
   - check.sh OVERALL PASS on forge/04-experience-docs; PacingService.spec 12/0; mutations.py FL-0061 8/8
+  - PACING §3 income and milestone times from production/quality-gates/pacing-probe.md (headless, not played); check.sh OVERALL PASS on forge/04-experience-docs after main fe217cc
 ---
 
 # Match pacing design and PacingService
@@ -43,3 +44,5 @@ Review against FORGE-03 numbers; Lune specs for config validation
 - 2026-10-12 forge-04: TESTING → REVIEW. PacingService:phaseDurations(slice|match) from Pacing.luau (pull-only, no deps, defaults on invalid config); PACING.md for FORGE-00 review; numbers sent to FORGE-03 (handoff) and API to FORGE-01 (handoff).
 - 2026-10-13 forge-00: REVIEW → REVIEW. FORGE-00 pacing review done 2026-10-13: CHANGES NEEDED (B1 pre-D-029 match split without the Crown Arena; B2 pre-D-030 VS-1 minute-by-minute; M1-M5). Handoff 2026-10-13-forge-00-to-forge-04-doc-reviews.md. Match length stays an open user decision (FL-0096).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-00 doc review (2026-10-13) §2 fixed on forge/04-experience-docs: B1 (§2 pre-D-029 split held until FL-0096, Arena row, BRIEF §3 re-key of §4, comments and spec name), B2 (§3 for onboarding v2; targets firstInspectSec/firstAnswerSec, firstGatherSec -> firstDepositSec), M1 (FL-0058 numbers), M2 (FirstGather), M3 (§9), M4 (meaningful actions; idleSec config + PacingService:idleSec), M5 (Barracks wait guidance), L1, L2. Open: keep L2 vs slice length (FORGE-03/FORGE-00). Handoff forge-04-to-forge-00-03-doc-review-fixes.
+- 2026-10-13 forge-00: REVIEW → REVIEW. FORGE-00 design re-review of #98 (5f9d8f4): APPROVED WITH CHANGES. B1/B2 resolved; open M: N1 cite D-044 (1) for keep L2, N2 hint targets depend on #99, N3 tag #49/#84 behaviour as planned. Code still needs a FORGE-07 verdict. PR comment 6142078333.
+- 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-00 #98 re-review (approved with changes): N1 keep L2 optional per D-044 (1), slice 6-8 min (FORGE-03 asked to align economy.md); N2 hint targets marked (#99); N3 planned work tagged (#49)/(#84); optional Ls (3-6x income, 0-300 s average, 485 s inferred, pvp.enabled, §5 keep L2 row). PACING §3 now uses FORGE-05's headless probe income, not the FL-0058 rates.

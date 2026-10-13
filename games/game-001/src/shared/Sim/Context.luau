@@ -8,7 +8,7 @@
 	API
 		Context.kingdom(sim, kingdomId, extra?): Ctx
 			phase (extra.phase), kingdom.food/wood/stone/gold, kingdom.fed_ratio (kingdom.fedRatio, 1 when
-			unknown), kingdom.housing_ratio ((citizens + soldiers) / popCap, as the sim houses them; 0 → 10),
+			unknown), kingdom.housing_ratio (citizens / popCap: soldiers sleep in the barracks, D-041; 0 → 10),
 			kingdom.happiness / stability / morale (kingdom.conditions), kingdom.population (citizens),
 			kingdom.soldiers,
 			kingdom.count.<type> for every G2 BuildingType (standing, at least level 1), kingdom.level.keep,
@@ -60,7 +60,7 @@ function Context.kingdom(sim: any, kingdomId: string, extra: { [string]: any }?)
 			capacity -= ((now and now.popCap) or 0) - ((previous and previous.popCap) or 0)
 		end
 	end
-	ctx["kingdom.housing_ratio"] = if capacity > 0 then math.min(10, (population + #k.unitIds) / capacity) else 10
+	ctx["kingdom.housing_ratio"] = if capacity > 0 then math.min(10, population / capacity) else 10
 	local conditions = k.conditions
 	if conditions then
 		ctx["kingdom.happiness"] = conditions.happiness

@@ -7,8 +7,8 @@ Companion docs:
 - `analytics/schemas/events.md`: what we measure.
 
 Contracts:
-- `games/game-001/CONTRACTS.md` v0.4-g8: G4.1, G9 (incl. the v0.4-g6 funnel order), G11, G12 (VS-2 draft), G13.3, G13.6, G13.8.
-- `DECISIONS.md` D-020–D-038 (esp. D-027, D-029, D-030, D-033, D-036, D-038).
+- `games/game-001/CONTRACTS.md` v0.4-g9c: G3 (`MatchService.mode`), G4.1, G9 (incl. the v0.4-g6 funnel order), G11 (client-reported steps, D-044 (4)), G12 (VS-2 draft), G13.3, G13.6, G13.8.
+- `DECISIONS.md` D-020–D-044 (esp. D-027, D-029, D-030, D-033, D-036, D-038, D-044).
 
 ## 1. Experience pillars
 1. **"This kingdom is mine."** Within 15 seconds the player knows which banner, keep and border are theirs.
@@ -25,9 +25,9 @@ _Onboarding v2 (D-030, FL-0092)._ The player rules from the throne in the aerial
 | 0:00 | The view opens high above their own keep, with the ruler seated on the throne (regalia in kingdom colours). Founding horn; card "Welcome, ruler. Your kingdom awaits." Calm music | step `Spawn` on `KingdomJoined` (auto); RulerCameraController `overview`; MusicController `Founding → calm` (planned FL-0062, #49) |
 | 0:02–0:20 | "Tap a citizen to see what they think". A tap opens the citizen card: name, job, mood, loyalty | step `InspectCitizen` (client action `CitizenInspected`, sent by InputModeController's selection) |
 | ~0:20 | **First meaningful interaction** (design estimate ≤ 30 s, checked by `Onboarding.validate` on the sum of `expectSec`; real timing from the OnboardingStep logs in playtests) | |
-| 0:20–1:10 | "Build on a free plot", with the nearest free plot marker highlighted. Tap it, pick a House or a Farm and confirm: a thunk and dust, then builders walk over | step `BuildOnPlot` (G9 `BuildingPlaced`, `placedBy`; BuildSlot tag, `Build.PlaceSlot` FL-0081) |
-| 1:10–2:40 | A citizen shows a "!" request bubble. Tap them and choose an answer: the reaction line, the citizen's pose, and the visible consequence (resources, loyalty, a work boost or a strike) | step `AnswerCitizen` (client action `CitizenAnswered` from FORGE-03's panel until the proposed G9 `CitizenAnswered`); FL-0091 bubbles |
-| 2:40–5:10 | Builds a Barracks, then recruits 3 soldiers from the Army rail button: horn and armour rattle at the Rally | step `Recruit` (G9 `UnitsRecruited`; hint target `HUD.ArmyButton`) |
+| 0:20–1:10 | "Build on a free plot", with the nearest free plot marker highlighted (#99). Tap it, pick a House or a Farm and confirm: a thunk and dust, then builders walk over | step `BuildOnPlot` (G9 `BuildingPlaced`, `placedBy`; BuildSlot tag, `Build.PlaceSlot` FL-0081) |
+| 1:10–2:40 | A citizen shows a "!" request bubble. Tap them and choose an answer: the reaction line, the citizen's pose, and the visible consequence (resources, loyalty, a work boost or a strike) | step `AnswerCitizen` (client action `CitizenAnswered` from FORGE-03's panel until G9 `CitizenAnswered`, planned (D-044 (3); FL-0107, FL-0108)); FL-0091 bubbles |
+| 2:40–5:10 | Builds a Barracks, then recruits 3 soldiers from the Army rail button: horn and armour rattle at the Rally | step `Recruit` (G9 `UnitsRecruited`; hint target `HUD.ArmyButton` (#99)) |
 | 5:10–7:10 | "Send your soldiers to the watchtower"; a capture bar fills; capture sting, tower recolours, border flags, celebration, slice summary | step `Capture` (G9 `ObjectiveCaptured`); `OnboardingCompleted`; announcer |
 
 Teaching rules (built into `Experience/Onboarding`, specs prove each one):
@@ -37,7 +37,7 @@ Teaching rules (built into `Experience/Onboarding`, specs prove each one):
 - A step already done is remembered and completes the moment it comes up. Example: a co-ruler captured first.
 - A step whose system is not on the server yet (`requires`) is passed over, and an interactive step can time out (`autoAdvanceSec`). Both are logged as `OnboardingStepPassed`, because the funnel counts them anyway (Roblox counts skipped steps as done).
 - Client actions complete only the current step. Rewards can only come from server-verified steps.
-- **VS-1 grants no rewards:** no `reward` or `completeReward` in the game config, and `limits.firstRewardSec` unset (BRIEF §7; FORGE-00 answers §2).
+- **VS-1 grants no rewards:** no `reward` or `completeReward` in the game config, and `limits.firstRewardSec` unset (BRIEF §7; FORGE-00 answers §2). Spec: game `Onboarding.spec` ("grants no rewards").
 - A stuck step escalates after its nudge time (gold outline, `OnboardingHintEscalated`) but never forces anything.
 - VS-1 keeps progress for the session only (D-027). A new server starts the tutorial again.
 
@@ -49,9 +49,9 @@ FORGE-04 hooks only these signals (CONTRACTS G4.1, G8, G9, G13.8):
 
 It never touches `Sim.*`. Everything plays through the framework AudioController, VFXController and NotificationController (CONTRACTS G11: no game-tree duplicates).
 
-**Transport.** Client UI never reads G9 directly (G9: clients learn through G8 remotes). Server-side G9 moments reach clients through one relay: AnnouncerService fires the `Feedback.Moment` serverEvent (remote area `Feedback`, declared in `games/game-001/src/shared/Feedback/Remotes.luau`, FL-0062 #49) to the players the moment is about, with a primitive payload (kind, kingdom, buildingType?, count?, position?). Mine vs rival compares the payload's kingdom with `Kingdom.State.mine`. Music reads `Match.State` / `Match.GetState`, never G9.
+**Transport.** Client UI never reads G9 directly (G9: clients learn through G8 remotes). Server-side G9 moments reach clients through one relay, planned (#49): AnnouncerService fires the `Feedback.Moment` serverEvent (remote area `Feedback`, declared in `games/game-001/src/shared/Feedback/Remotes.luau`, FL-0062 #49) to the players the moment is about, with a primitive payload (kind, kingdom, buildingType?, count?, position?). The server decides each moment's audience (own kingdom, rivals, everyone) in `Feedback/Moments.luau`, including the phase moments; the client compares the payload's kingdom with `Kingdom.State.mine` only to pick the mine or rival presentation. Music reads `Match.State` / `Match.GetState`, never G9.
 
-**Distances** are measured from the camera focus point (RulerCameraController:getFocus() in the overview; the camera in walk mode), never from the camera position or the seated ruler. CitizenBubbleController and FeedbackController do this. (EntityController's LOD still measures from the ruler: #39 M1, kept in the user build notes, D-038 (6).)
+**Distances** are measured from the camera focus point (RulerCameraController:getFocus() in the overview; the camera in walk mode), never from the camera position or the seated ruler. CitizenBubbleController does this; FeedbackController, planned (#49), too. (EntityController's LOD still measures from the ruler: #39 M1, kept in the user build notes, D-038 (6).)
 
 | Signal | Transport | Mine | Against me / rival | Notes | System |
 |---|---|---|---|---|---|
@@ -91,8 +91,8 @@ CitizenBubbleController (built; FL-0091, follow-up #87) draws one bubble per cit
 The living-kingdom consequences of `design/living-kingdom.md` §5 (placards, grumbles, hungry bubbles, fire and alarm, warnings) reach the player through these four kinds; nothing else is invented on the client.
 
 ### 3b. Conversation presentation (D-036, CONTRACTS G13.8; FL-0100)
-- On `ConversationController.opened(entityId, position)`, `RulerCameraController:focusOn(position, { duration = 0.6 })` eases to about 25–35 studs from the citizen, framing them off-centre so the portrait does not cover them. On `.closed`, `restore()` returns to the saved overview (FL-0100 part 1, #84).
-- With reduced motion, the camera cuts instead of gliding.
+- Planned (#84; `ConversationController.opened` / `.closed` are FORGE-03's, G13.8): on `ConversationController.opened(entityId, position)`, `RulerCameraController:focusOn(position, { duration = 0.6 })` eases to about 25–35 studs from the citizen, framing them off-centre so the portrait does not cover them. On `.closed`, `restore()` returns to the saved overview (FL-0100 part 1, #84).
+- With reduced motion, the camera cuts instead of gliding (planned, #84). Main has only `focusOn(position)`, a plain pan.
 - The citizen's own bubble hides while their conversation is open (the panel shows the same words; #87).
 - Reaction poses play on the portrait (`Kit.posePortrait`, FORGE-02 #85) and on the world rig (`EntityController:playPose`, FORGE-01). FL-0100 part 2, pending both.
 
@@ -128,7 +128,7 @@ The living-kingdom consequences of `design/living-kingdom.md` §5 (placards, gru
   - keep level 2;
   - first capture;
   - a strike resolved;
-  - victory (from VS-2: the crowning in the Crown Arena).
+  - victory (from VS-2: the crowning in the Crown Arena; what the duel decides is open, BRIEF §16.9c).
 
 ## 7. Retention and replay (after VS-1; FL-0026 is P3; monetization needs the user's approval, BRIEF §16)
 Proposals for FORGE-00 and the user, **not built**:

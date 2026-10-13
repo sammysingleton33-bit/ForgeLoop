@@ -11,8 +11,11 @@
 		    The owned Attachment goes with the effect, so a pooled rig never keeps an emitter.
 		VFXController:stop(effect)                         -- continuous presets; bursts clean up themselves
 		VFXController:register(presets) -> { string }      -- add game presets (validated; problems returned)
-		VFXController:float(text, position?) -> Instance?  -- rising text ("+3 Wood"), FLOAT_SEC, max FLOATS
-		VFXController:bubble(adornee, text, seconds) -> Instance?  -- a speech bubble over a part or model
+		VFXController:float(text, position?, opts?) -> Instance?  -- rising text ("+3 Wood"), FLOAT_SEC, max FLOATS
+		VFXController:bubble(adornee, text, seconds, opts?) -> Instance?  -- a speech bubble over a part or model
+		    opts.maxDistance: studs from the camera beyond which the engine hides the text (default
+		    TEXT_MAX_DISTANCE; 0 = no limit, for a game that culls by its own distance, e.g. from an aerial
+		    camera's focus while the camera itself is 220 studs up)
 		VFXController.shakeRequested: Signal (magnitude, duration) -- the game's camera controller applies it
 		VFXController.stats = { played, skipped = { [reason]: number } }
 	Budget (Experience/VfxPresets.BUDGET): live particles on screen <= particlesOnScreen and at most
@@ -33,6 +36,7 @@ local Def = { name = "VFXController", dependencies = { "SettingsController" } }
 Def.FLOAT_SEC = 1.2
 Def.FLOATS = 12
 Def.BUBBLES = 8
+Def.TEXT_MAX_DISTANCE = 150
 
 export type Effect = { id: string, preset: any, live: number, priority: number, continuous: boolean, parts: { any } }
 
@@ -303,12 +307,17 @@ end
 
 -- ------------------------------------------------------------------ floating text and barks
 
-local function billboard(env: any, text: string, color: any, size: any): (any, any)
+local function maxDistanceOf(opts: { [string]: any }?): number
+	local value = opts and opts.maxDistance
+	return if type(value) == "number" and value >= 0 then value else Def.TEXT_MAX_DISTANCE
+end
+
+local function billboard(env: any, text: string, color: any, size: any, maxDistance: number): (any, any)
 	local gui = env.newInstance("BillboardGui")
 	gui.Size = size
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
-	gui.MaxDistance = 150
+	gui.MaxDistance = maxDistance
 	local label = env.newInstance("TextLabel")
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.fromScale(1, 1)
@@ -321,7 +330,7 @@ local function billboard(env: any, text: string, color: any, size: any): (any, a
 	return gui, label
 end
 
-function VFXController:float(text: string, position: any?): any
+function VFXController:float(text: string, position: any?, opts: { [string]: any }?): any
 	if text == "" or position == nil then
 		return self:_skip("float")
 	end
@@ -333,7 +342,8 @@ function VFXController:float(text: string, position: any?): any
 	attachment.Name = "ForgeFloat"
 	attachment.Position = position
 	attachment.Parent = self._backend.anchor()
-	local gui, label = billboard(self._env, text, Color3.fromRGB(255, 236, 170), UDim2.fromOffset(160, 36))
+	local gui, label =
+		billboard(self._env, text, Color3.fromRGB(255, 236, 170), UDim2.fromOffset(160, 36), maxDistanceOf(opts))
 	gui.Adornee = attachment
 	gui.Parent = attachment
 	table.insert(self._floats, attachment)
@@ -359,7 +369,7 @@ function VFXController:float(text: string, position: any?): any
 	return attachment
 end
 
-function VFXController:bubble(adornee: any, text: string, seconds: number): any
+function VFXController:bubble(adornee: any, text: string, seconds: number, opts: { [string]: any }?): any
 	if adornee == nil or text == "" then
 		return self:_skip("bubble")
 	end
@@ -367,7 +377,8 @@ function VFXController:bubble(adornee: any, text: string, seconds: number): any
 		local oldest = table.remove(self._bubbles, 1)
 		self._backend.destroy(oldest)
 	end
-	local gui = billboard(self._env, text, Color3.fromRGB(255, 255, 255), UDim2.fromOffset(180, 40))
+	local gui =
+		billboard(self._env, text, Color3.fromRGB(255, 255, 255), UDim2.fromOffset(180, 40), maxDistanceOf(opts))
 	gui.Name = "ForgeBubble"
 	gui.StudsOffset = Vector3.new(0, 3, 0)
 	gui.Adornee = adornee

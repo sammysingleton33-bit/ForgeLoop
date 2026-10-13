@@ -154,8 +154,8 @@ function KingdomHud:_build(metrics: any, banner: any)
 	self._crest.Position = UDim2.fromOffset(h.x, h.y)
 	self._crest.Parent = container
 	if phone then
-		local crown = Icon.new("crown", 11)
-		crown.LayoutOrder = 1
+		local gem = Icon.new("gem", 11) -- Crown Points: never a crown, Emberhold's emblem (D-039)
+		gem.LayoutOrder = 1
 		self._points = Create("Frame", {
 			Name = "CrownPoints",
 			AnchorPoint = Vector2.new(0.5, 0),
@@ -170,7 +170,7 @@ function KingdomHud:_build(metrics: any, banner: any)
 			Stroke = Style.stroke(Theme.color("gold600"), 1),
 			Padding = Style.padding(0, 5, 0, 3),
 			List = Style.list("x", 2, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center),
-			Crown = crown,
+			Gem = gem,
 			Value = Style.text({
 				text = "",
 				weight = Enum.FontWeight.Bold,

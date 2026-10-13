@@ -15,7 +15,7 @@
 		army:setProgress("watchtower", "azure", 0.3)  -- server side: move a capture bar and push the list
 		army:setOwner("watchtower", "crimson")         -- capture: owner, progress { [owner] = 1 }
 		army:endMatch({ winner = "azure", standings = { ... }, durationSec = 754 })
-		army.refuse = "population_cap"                 -- the next recruits answer (false, reason)
+		army.refuse = "recruit_cap"                    -- the next recruits answer (false, reason)
 
 	Double rules (stand-ins for FORGE-01, not the game's): a recruit needs the caller's own barracks
 	("not_found", "not_owner", "not_barracks"), finished ("barracks_not_ready"), with #70's codes; it spends Costs.unit("soldier").cost × count
