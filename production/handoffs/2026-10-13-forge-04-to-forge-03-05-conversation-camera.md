@@ -6,6 +6,7 @@
   - It saves the overview view (focus, rotation, zoom) the first time.
   - It then glides, eased, to `conversation.zoom` = 30 studs (25–35) from the citizen.
   - The focus moves 6 studs toward the camera, so the citizen sits **above the screen centre**, clear of the portrait rising from the bottom.
+  - On a phone (FORGE-03's `UI/Layout` breakpoint) it moves 10 studs (`conversation.phoneOffset`). That puts the citizen at 33–38 % from the top at zoom 30 and 38° pitch, above the FL-0099 stage, which starts about 47 % down. A spec projects the citizen through the camera at 750 × 311 and checks this.
   - It stays inside the map bounds.
   - It returns false in walk mode, or before the overview has a focus.
 - **In front of the citizen's face** (CONTRACTS G13.8 v0.4-g9e: the held citizen turns to face the ruler's character, #108).

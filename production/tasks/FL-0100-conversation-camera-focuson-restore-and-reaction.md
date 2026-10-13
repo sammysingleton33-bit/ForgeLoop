@@ -15,6 +15,7 @@ evidence:
   - "check.sh OVERALL PASS on main c1ba099 (part 1): framework 512, game-001 940 specs (71 files), Selene 0/0, StyLua 406, both builds and place checks"
   - "RulerCamera.spec 25 (4 new: conversationView, glide + restore equality, reduced-motion cut, opened/closed + pan + walk mode); mutations FL-0100 7/7 CAUGHT"
   - RulerCamera.spec 29/29 (2 new); mutations FL-0100 12/12 on #84
+  - RulerCamera.spec 30/30; mutations FL-0100 14/14 on #84
 ---
 
 # Conversation camera focusOn/restore and reaction poses (G13.8)
@@ -46,3 +47,4 @@ When a conversation opens, the camera glides from the aerial view toward the cit
 - 2026-10-13 forge-04: BUILDING → TESTING. Part 1 (focusOn/restore + ConversationController opened/closed) built; headless gates next. Part 2 (reaction poses) follows.
 - 2026-10-13 forge-04: TESTING (unchanged). PR (1/2) from forge/04-experience-fl0100: focusOn/restore. Reaction poses (2/2) follow in a second PR. Handoff forge-04-to-forge-03-05-conversation-camera.
 - 2026-10-13 forge-04: TESTING → TESTING. G13.8 v0.4-g9e (FORGE-00 ruling on #108): the conversation camera stands in front of the citizen's face. focusOn takes { facing }; on opened the yaw comes from the citizen's rig (EntityController:getModel), and the camera follows the server's turn toward the ruler while the panel is open; a pan, a go-to or a turn by the player stops the following.
+- 2026-10-13 forge-04: TESTING → TESTING. FORGE-03's FL-0099 (#126) phone check: the conversation focus moves 10 studs on a phone (FORGE-03's UI/Layout breakpoint), so the citizen sits at 33-38 % from the top, above the stage that starts about 47 % down; 6 studs elsewhere. A spec projects the citizen through the camera at 750x311.

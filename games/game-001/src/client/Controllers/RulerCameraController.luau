@@ -53,6 +53,7 @@
 ]]
 
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local ScreenLayout = require("../UI/Layout") -- FORGE-03's breakpoints (read only)
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
 local Def = {
@@ -112,6 +113,9 @@ Def.DEFAULTS = table.freeze({
 	conversation = table.freeze({
 		zoom = 30,
 		offset = Vector2.new(0, -6), -- focus shift in screen studs (x right, y forward): the citizen above the centre
+		-- phones: the conversation stage starts about 47 % down the screen (FORGE-03, FL-0099), so the
+		-- citizen goes higher: at zoom 30 and 38° pitch, 10 studs put them at 33-38 % from the top
+		phoneOffset = Vector2.new(0, -10),
 		durationSec = 0.6,
 	}),
 	overviewInBuild = true,
@@ -163,9 +167,18 @@ function Def.aerialCFrame(focus: Vector3, yaw: number, zoom: number, overview: a
 end
 
 -- The overview view that frames a citizen at `position` for a conversation (G13.8): the focus moves
--- by `conversation.offset` in screen studs, so the citizen sits above the centre; clamped to the map.
-function Def.conversationView(position: Vector3, yaw: number, conversation: any, bounds: any, margin: number): any
-	local focus = Def.clampFocus(position + Def.panVector(conversation.offset, yaw), bounds, margin)
+-- by `conversation.offset` in screen studs (`phoneOffset` on a phone), so the citizen sits above the
+-- centre; clamped to the map.
+function Def.conversationView(
+	position: Vector3,
+	yaw: number,
+	conversation: any,
+	bounds: any,
+	margin: number,
+	phone: boolean?
+): any
+	local offset = if phone and conversation.phoneOffset then conversation.phoneOffset else conversation.offset
+	local focus = Def.clampFocus(position + Def.panVector(offset, yaw), bounds, margin)
 	return { focus = focus, yaw = yaw, zoom = conversation.zoom }
 end
 
@@ -453,7 +466,14 @@ function Controller:focusOn(position: Vector3, opts: { duration: number?, facing
 		self._saved = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
 	end
 	local yaw = Def.conversationYaw(opts.facing, target.yaw)
-	local view = Def.conversationView(position, yaw, conversation, self._bounds, self._config.overview.boundsMargin)
+	local view = Def.conversationView(
+		position,
+		yaw,
+		conversation,
+		self._bounds,
+		self._config.overview.boundsMargin,
+		self:_isPhone()
+	)
 	self:_glideTo(view, if type(opts.duration) == "number" then opts.duration else conversation.durationSec)
 	return true
 end
@@ -489,8 +509,14 @@ function Controller:_followTalker(dt: number)
 	end
 	talking.yaw = yaw
 	local conversation = self._config.conversation or Def.DEFAULTS.conversation
-	local view =
-		Def.conversationView(talking.position, yaw, conversation, self._bounds, self._config.overview.boundsMargin)
+	local view = Def.conversationView(
+		talking.position,
+		yaw,
+		conversation,
+		self._bounds,
+		self._config.overview.boundsMargin,
+		self:_isPhone()
+	)
 	self:_glideTo(view, conversation.durationSec)
 end
 
@@ -950,6 +976,18 @@ function Controller:_bindRotateKeys(on: boolean)
 			return Enum.ContextActionResult.Sink
 		end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Q, Enum.KeyCode.E)
 	end)
+end
+
+-- FORGE-03's phone breakpoint (UI/Layout) for the viewport; specs set opts.viewportWidth/Height.
+function Controller:_isPhone(): boolean
+	local width = self._opts.viewportWidth
+	if width == nil then
+		local ok, size = pcall(function()
+			return self._camera.ViewportSize.X
+		end)
+		width = if ok and type(size) == "number" and size > 0 then size else 1280
+	end
+	return ScreenLayout.breakpoint(width, self:_viewportHeight()) == "phone"
 end
 
 function Controller:_viewportHeight(): number
