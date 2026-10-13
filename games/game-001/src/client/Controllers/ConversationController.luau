@@ -28,7 +28,8 @@
 	The client decides nothing: no question, answer, reaction or effect text lives in this code.
 
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional (registry:find in
-	start): CitizenCardController (the Talk button and its busy state), InputModeController (.selected).
+	start): CitizenCardController (the Talk button and its busy state), InputModeController (.selected),
+	OnboardingController (`report("CitizenAnswered")` after an accepted Kingdom.Choose, FORGE-04 #45).
 
 	API (specs and scenes)
 		conversation:open(entityId)    ask Kingdom.Converse and show the panel
@@ -294,6 +295,18 @@ function ConversationController:_notifyOutcome(speaker: any, outcome: any)
 	end
 end
 
+-- FORGE-04's onboarding v2 step AnswerCitizen (#45): a Kingdom.Choose the server accepted, whether
+-- or not its panel is still open. Until G9 has a CitizenAnswered event (FORGE-04 handoff
+-- 2026-10-12-forge-04-to-forge-03-01-05-onboarding-v2-match30).
+function ConversationController:_reportAnswered()
+	local onboarding = self._registry:find("OnboardingController")
+	if onboarding and onboarding.report then
+		pcall(function()
+			onboarding:report("CitizenAnswered")
+		end)
+	end
+end
+
 function ConversationController:choose(responseId: string)
 	local s = self.state
 	if s == nil or s.phase ~= "asking" then
@@ -335,6 +348,9 @@ function ConversationController:choose(responseId: string)
 			return
 		end
 		local outcome = CitizenModel.outcome(called, ok, result, reason)
+		if outcome.phase == "answered" then
+			self:_reportAnswered()
+		end
 		-- The panel on screen now may be a reopen of the same showing (a new state table).
 		local current = self.state
 		if

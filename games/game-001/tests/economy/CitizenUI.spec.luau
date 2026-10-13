@@ -121,6 +121,19 @@ local function newWorld(opts)
 	o.remotes = if o.inspectOnly then CitizenDoubles.INSPECT_ONLY else CitizenDoubles.REMOTES
 	o.services = { if o.inspectOnly then CitizenDoubles.inspectOnly else CitizenDoubles.service }
 	o.clientDefinitions = { KingdomHudDef, CitizenCardDef, ConversationDef, inputModeDef(o.rbxSignal) }
+	if o.onboarding then
+		-- FORGE-04's OnboardingController (#45) as a recording double: report(action)
+		table.insert(o.clientDefinitions, {
+			name = "OnboardingController",
+			new = function()
+				return {
+					report = function(_, action)
+						table.insert(o.onboarding, action)
+					end,
+				}
+			end,
+		})
+	end
 	local world = KingdomWorld.new(o)
 	world.hud = world.client:get("KingdomHudController")
 	world.card = world.client:get("CitizenCardController")
@@ -753,6 +766,47 @@ describe("Kingdom.Choose in flight is guarded per showing (FORGE-05 M3)", functi
 		world:advance(0.1)
 		expect(#world.citizens:callsNamed("Choose")).toBe(1)
 		expect(texts(world.hud.guis.notices)).toContain(CitizenText.NOTHING) -- answered: nothing left to ask
+	end)
+end)
+
+describe("Onboarding step AnswerCitizen (FORGE-04 #45)", function()
+	local previous
+	beforeEach(function()
+		previous = useStrongConnector()
+	end)
+	afterEach(function()
+		restoreConnector(previous)
+	end)
+
+	it("reports CitizenAnswered once per accepted Choose, never for a refusal or a dropped call", function()
+		local reported = {}
+		local world = newWorld({ onboarding = reported })
+		world.citizens.refuse = "not_eligible"
+		tap(find(talkTo(world, 41), "Option_help"))
+		world:advance(0.2)
+		expect(#reported).toBe(0) -- refused
+		world.conversation:close()
+		world.citizens.drop = true
+		tap(find(talkTo(world, 41), "Option_help"))
+		world:advance(0.2)
+		expect(#reported).toBe(0) -- dropped: the answers open again
+		tap(find(convoPanel(world), "Option_help"))
+		world:advance(0.2)
+		expect(convoPanel(world):GetAttribute("phase")).toBe("answered")
+		expect(#reported).toBe(1)
+		expect(reported[1]).toBe("CitizenAnswered")
+		world:destroy()
+	end)
+
+	it("a reply that lands after the panel closed still counts", function()
+		local reported = {}
+		local world = newWorld({ onboarding = reported })
+		world.citizens.chooseLatency = 0.5
+		tap(find(talkTo(world, 41), "Option_help"))
+		world.conversation:close()
+		world:advance(0.6)
+		expect(table.concat(reported, ",")).toBe("CitizenAnswered")
+		world:destroy()
 	end)
 end)
 
