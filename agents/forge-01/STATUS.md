@@ -5,8 +5,8 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | worktrees per PR, branches `forge/01-gameplay-<topic>` |
-| Open PR | #93 FL-0049 L2 · #94 · #97 · #100 (hold) · #108 FL-0097 · #111 FL-0107 · #113 FL-0050 · #118 spec loops · FL-0082 consequences (this branch) |
-| Merged (latest) | #112 throne, #114 #107 fix-forward, #115 WorldView key + tower rebuild, #117 tower spec |
+| Open PR | #93 FL-0049 L2 · #94 · #100 (hold) · #108 FL-0097 · #118 spec loops · #125 FL-0082 consequences |
+| Merged (latest) | #97 Match.Ended in Results, #111 FL-0107, #113 FL-0050 remainder, #112 throne, #114, #115, #117 |
 | Current task | FL-0082 consequence rules in REVIEW; next FL-0109 (#61 review lows) |
 | Last verified check | `check.sh` OVERALL PASS on each open branch; FL-0082 mutations in its PR |
 | Blockers | none. Studio evidence for everything needs user runs (gameplay.md) |

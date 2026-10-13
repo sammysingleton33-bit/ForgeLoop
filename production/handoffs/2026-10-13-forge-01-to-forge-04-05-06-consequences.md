@@ -7,7 +7,7 @@ channels (G13.3 `strike` events and `kcue` cues, a `Burning` attribute on buildi
 small follow-up so the consequences read clearly to players.
 
 ## Done (with commits)
-- See the FL-0082 PR from `forge/01-gameplay-fl0082` (link in the task log). New code:
+- PR [#125](https://github.com/sammysingleton33-bit/ForgeLoop/pull/125) from `forge/01-gameplay-fl0082` (3191a79e). New code:
   `src/shared/Sim/Consequences.luau` (pure checks), `src/server/Services/ConsequenceService.luau`, config
   `Society.consequences` (+ `strike.memoryTags`), `Burning` attribute in `src/shared/Sim/WorldView.luau`.
 
