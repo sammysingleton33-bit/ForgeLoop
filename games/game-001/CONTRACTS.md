@@ -66,6 +66,7 @@ export type ResourceBag = { [ResourceId]: number }
 MatchService:getPhase(): MatchPhase
 MatchService:getEndsAt(): number?                  -- serverTimeNow deadline of the current phase; nil = untimed
 MatchService.phaseChanged: Signal<(MatchPhase, { endsAt: number? })>
+MatchService.mode: "slice" | "match"           -- read-only; config Match.mode, PROVISIONAL (v0.4-g9c, D-044 (5)); "match30" only if FL-0096 picks it
 KingdomService:getKingdom(id: KingdomId): Kingdom
 KingdomService:getKingdomOf(player): KingdomId?
 KingdomService:assign(player, preferred: KingdomId?): KingdomId?   -- nil when no kingdom can take the player (v0.4-g8)
@@ -285,6 +286,7 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `UnitsRecruited` | FORGE-01 | (player, KingdomId, count) |
 | `ObjectiveCaptured` | FORGE-01 | (objectiveId, KingdomId) |
 | `KingdomEliminated` | FORGE-01 | (KingdomId, by: KingdomId?) |
+| `CitizenAnswered` (planned, after #77; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose` |
 | `MatchEnded` | FORGE-01 | ({ winner: KingdomId?, standings: { { kingdom: KingdomId, crownPoints: number } }, durationSec: number }) |
 
 - Producers fire each event exactly once, per framework rules.
@@ -294,6 +296,9 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
   - "spawn" = `KingdomJoined`;
   - "first build placed" credits `Building.placedBy`;
   - building completions and captures credit every current member of the kingdom.
+  - `ResourceGathered`: a ruler gather (`source = "ruler"`) credits that player; a citizen deposit credits every current member. So "first gather" means the kingdom's economy started (D-044 (2)).
+  - "first recruit" credits the player named in `UnitsRecruited`.
+  - Attribution is implemented once, in `Feedback/Signals.luau` (`Signals.subjects`), and onboarding and analytics both use it. Nobody re-implements it.
   - **Funnel order (v0.4-g6).** The analytics funnel credits a step to a player only if that player already holds the previous step.
     - Example: a co-ruler who never placed a building is not credited "first building complete" or "first capture".
     - Reason: Roblox counts skipped funnel steps as completed, so kingdom-wide credit would inflate the steps before it.
@@ -346,6 +351,7 @@ Kit.setKingdomColor(model: Model, color: Color3)                     -- recolour
 - `PacingService:phaseDurations(mode: "slice" | "match"): { Lobby: number, Founding: number, Expansion: number, Conflict: number, Endgame: number, Results: number }` returns seconds from config `Pacing.luau`; `math.huge` means untimed. MatchService pulls it (G3).
 - **No game-tree duplicates of framework services.** VS-1 uses the framework services and controllers, fed by game config:
   - onboarding: OnboardingService (FL-0025) with `Onboarding.luau`. Steps are triggered by G9 events; the first step is on `KingdomJoined`.
+    - **Client-reported steps (`clientActions`, D-044 (4)).** These are allowed only for UI moments that have no server event (`CitizenInspected`, `GoalAcknowledged`). They complete only the reporting player's current step and grant nothing. They may feed that player's onboarding funnel step, but no other analytics event. `CitizenAnswered` moves to the G9 event once it exists.
   - announcements: `AnnouncerService` turns G9 events into kingdom-scoped messages shown through `NotificationController`.
   - audio: `AudioController` with `Sounds.luau`.
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
@@ -593,6 +599,10 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 
 ## Changelog
 - v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
+- v0.4-g9c (2026-10-13) FORGE-00, rulings on FORGE-04's #98 questions (D-044). These are additive:
+  - G3 lists `MatchService.mode`.
+  - G9 adds the planned `CitizenAnswered` event and the attribution of `ResourceGathered` and `UnitsRecruited`, and says attribution lives in `Feedback/Signals`.
+  - G11 sets the rule for client-reported onboarding steps.
 - v0.4-g9b (2026-10-13) FORGE-00: G13.5 drops the interim `UI/SlotFit` allowance; #88 deleted it and the picker calls `Fit.typesFor`. Wording only. The header now names the latest version.
 - v0.4-g9a (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` refuses `wall`/`gate` on plots (`not_on_plot`), enforced on the server (#89 L3).
 - v0.4-g8a (2026-10-13) FORGE-00: G13.5 Buildings stats name barracks `bunks` instead of a recruit cap (D-041). Wording only.
