@@ -60,10 +60,10 @@ It never touches `Sim.*`. Everything plays through the framework AudioController
 | `EntityController.event` work loop (chop, mine, hammer) | local | positional work sounds near the focus, cheap particles | quieter by distance (roll-off) | culled beyond 150 studs from the camera focus | planned FL-0062 (#49) |
 | `EntityController.event` `deposit` | local | small clink + coin glint at the storehouse | — | coalesced; a busy storehouse never chatters | planned FL-0062 (#49) |
 | `EntityController.event` `celebrate` | local | cheer, a speech bubble over a few citizens | — | keep level 2 (G5) | planned FL-0062 (#49) |
-| `BuildingPlaced` | Feedback.Moment | thunk + dust | dust only | `placedBy` me → onboarding | planned FL-0062 (#49) |
+| `BuildingPlaced` | Feedback.Moment | co-rulers: thunk + dust, toast with the placer's name; the placer: FORGE-03's "House placed" toast only | dust only | `placedBy` me → onboarding | planned FL-0062 (#49) |
 | `BuildingCompleted` | Feedback.Moment | flourish + sparkle, toast "House complete" (×N within 2 s) | sparkle only, within 250 studs of the focus | | planned FL-0062 (#49) |
 | `BuildingUpgraded` (keep) | Feedback.Moment | royal fanfare, golden column, small camera shake request | toast naming the kingdom, e.g. "Frostmere's keep reached level 2" | the biggest moment before a capture | planned FL-0062 (#49) |
-| `UnitsRecruited` | Feedback.Moment | horn + dust stomp, "+3 Soldiers" | — | | planned FL-0062 (#49) |
+| `UnitsRecruited` | Feedback.Moment | co-rulers: horn + dust stomp, "+3 soldiers" with the recruiter's name; the recruiter: FORGE-03's "3 soldiers recruited" toast only | — | one toast per action: the player who acted never gets the announcer's line too | planned FL-0062 (#49) |
 | `ObjectiveCaptured` | Feedback.Moment | capture sting, recolour sparkle with the kingdom's banner emblem, celebration, announcer | low horn, warning toast naming the kingdom | the slice ends here (G3) | planned FL-0062 (#49) |
 | `MatchPhaseChanged` | Match.State | announcer line + music state | same | e.g. at Conflict, "War is declared" only when PvP is on (PACING §4) | planned FL-0062 (#49) |
 | `MatchEnded` | Feedback.Moment, Match.State | victory / defeat music and presentation | | VS-1: the slice summary | planned FL-0062 (#49) |
