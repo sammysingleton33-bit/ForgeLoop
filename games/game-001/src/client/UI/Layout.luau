@@ -13,7 +13,9 @@
 		desktop  width >= 1400 and height >= 760     scale = clamp(height / 850, 1, 1.5)
 		tablet   otherwise                           scale = clamp(height / 630, 1, 1.25)
 
-	Layout.compute(width, height) -> Metrics
+	Layout.compute(width, height, { reputation: boolean? }?) -> Metrics
+		reputation = false: the strip is hidden (no reputation from the server yet), so `bottom` and
+		everything placed under it ignore its room; omitted means shown
 		{ breakpoint, scale, width, height (logical), margin, touch,
 		  hud = { x, y, crest, compact, pills = { x, y }, members = { x, y }?,
 		          reputation = { x, y, width, height, columns, item = { width, height }, gap = { x, y }, pad },
@@ -136,8 +138,11 @@ function Layout.reputationStrip(phone: boolean, x: number, top: number, maxWidth
 	}
 end
 
-function Layout.compute(width: number, height: number): Metrics
+function Layout.compute(width: number, height: number, options: { reputation: boolean? }?): Metrics
 	assert(width > 0 and height > 0, "Layout.compute: size must be positive")
+	-- The strip's room is reserved only while it shows (it is hidden until the server sends
+	-- reputation): otherwise tablet/desktop drawers and phone toasts would sit under an empty gap.
+	local strip = options == nil or options.reputation ~= false
 	local bp = Layout.breakpoint(width, height)
 	local scale = if bp == "desktop"
 		then clamp(height / 850, 1, 1.5)
@@ -167,7 +172,10 @@ function Layout.compute(width: number, height: number): Metrics
 	else
 		reputation = Layout.reputationStrip(false, x, (members :: any).y + Layout.MEMBERS_HEIGHT + 6)
 	end
-	local bottom = reputation.y + reputation.height
+	local bottom = if strip
+		then reputation.y + reputation.height
+		elseif members then members.y + Layout.MEMBERS_HEIGHT
+		else y + 36
 	if not phone then
 		local w = if bp == "tablet" then 560 else 620
 		local maxH = if bp == "tablet" then 470 else 480

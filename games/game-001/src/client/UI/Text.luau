@@ -37,6 +37,7 @@ local REASONS: { [string]: string } = {
 	-- Kingdom.SetJobQuota and other sim commands (FORGE-01 Sim/Commands error codes)
 	unknown_job = "That job can't be changed",
 	match_not_active = "The match isn't running",
+	not_in_match = "The match isn't running",
 	not_ruler = "Only rulers can do that",
 	kingdom_eliminated = "Your kingdom has fallen",
 }
@@ -51,7 +52,8 @@ local SLOT_REASONS: { [string]: string } = {
 
 function Text.reason(reason: any, context: string?): string
 	if reason == nil then
-		return "Couldn't reach the server. Try again."
+		-- nil: the call was dropped or rate-limited (both answer nil), so never claim the server is down (L8)
+		return "No answer from the server. Try again in a moment."
 	end
 	local key = tostring(reason)
 	if context == "slot" and SLOT_REASONS[key] then
