@@ -34,3 +34,4 @@ blender/scripts/check.sh; contact sheets reviewed; user import in Studio
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): calibration on the first oak sheet (D-026)
 - 2026-10-13 forge-02: READY → BUILDING. Organic batch generators built and reviewed (oak, pine, bush, grass, flowers, boulder, wood, haystack, fence, banners PASS; birch, cliff, stone, ore, wheat field parked after 3 rounds); import pack + guide not done.
+- 2026-10-13 forge-02: BUILDING → BUILDING. Calibration verdict (D-026, FORGE-00 on #90, 2026-10-13, renders only): first oak sheet tree_oak PASS (silhouette 4, variation 4, readability 4, cohesion/budget 4); note: autumn variants 06/08 sit close to Sunspire gold at distance -> keep them out of Sunspire's plot and below ~25% of any one forest. Import pack + guide still to do.

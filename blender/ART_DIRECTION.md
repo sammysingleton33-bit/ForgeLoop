@@ -96,3 +96,6 @@ One material, one UV map in 0–1, palette texture ≤ 512 px, closed shells, no
 Cycles CPU, AgX + Punchy, warm sun at 46°, cool sky fill, neutral ground, 5.5-stud proxy, backfaces
 transparent (Roblox single-sided). Hero 3/4 view per variant + gameplay strip at 40–80 studs with the
 Roblox default 70° vertical FOV.
+
+## Placement rules from calibration
+- Autumn oaks (`tree_oak_06`, `tree_oak_08`) read close to Sunspire's gold at distance (FORGE-00 calibration, #90): keep them out of the gold kingdom's plot and below about 25 % of any one forest.
