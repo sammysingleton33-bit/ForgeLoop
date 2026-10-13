@@ -134,3 +134,8 @@ the plain helm (8 parts). Renders: `KitCharacterDump` groups `characters_crests`
 - Long hair and the hood share a ball shape (they differ by colour and size).
 - Regalia fit was checked on stand-in R15/R6 attachment positions; real bundles vary (BodyBackAttachment height),
   so the cape top can sit up to ~0.3 above or below the shoulders.
+
+Committed review images (soldier crests, for FORGE-05's CVD re-run with `production/quality-gates/cvd/cvd.py`):
+`art/reviews/img/kit_characters_crests.jpg` (front sheet), `kit_characters_crests_side.jpg` (side sheet),
+`kit_characters_crests_gameplay.jpg` and `kit_characters_crests_side_gameplay.jpg` (≈40-stud gameplay view, colour;
+grayscale is a straight luminance conversion of these).
