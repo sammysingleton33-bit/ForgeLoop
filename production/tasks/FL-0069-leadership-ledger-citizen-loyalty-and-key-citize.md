@@ -7,7 +7,7 @@ status: SPECIFIED
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0052]
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 14
@@ -40,3 +40,4 @@ Lune specs: act recording and sampling with a fake clock; loyalty rises and fall
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (SPECIFIED).
 - 2026-10-12 forge-00: D-030: key citizens are drawn from the generated population (FL-0078); petitions become conversation scenarios in the content library (FL-0079, FL-0083).
+- 2026-10-13 forge-00: SPECIFIED → SPECIFIED. FORGE-00 2026-10-13 (D-046 (4)): dependencies are met, but this is a VS-2 item tagged §16.x. It stays SPECIFIED until the user approves the VS-2 start (BRIEF §4).
