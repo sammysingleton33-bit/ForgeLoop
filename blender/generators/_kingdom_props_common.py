@@ -206,15 +206,17 @@ def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
         out.append(fan_solid([(x * s, z * s) for x, z in _star(5, 0.36, 0.16)], depth, accent, mid=None)
                    .move(0, -depth * 0.6, 0))
     elif kind == "sun":
-        # Sunspire sun straight on the cloth / shield (no roundel, no purple): 8 short broad rays
-        # in dark gold, a big bright-gold disc with a thin deep-bronze rim that covers the ray
-        # roots (so it never reads as a star). Fixed colours; `color` / `accent` are ignored.
-        rays = [(x * s, z * s) for x, z in _star(8, 1.0, 0.7, rot=math.pi / 2)]
+        # Sunspire sun (no purple; fixed colours, `color` / `accent` are ignored): ONE deep-gold
+        # silhouette, a big round 16-sided disc with 8 long pointed rays, darker than every field it
+        # sits on (ivory roundel, gold cloth, sky), so the whole sun is the figure. The ray valleys hide
+        # under the disc and the disc is only 0.3 x depth proud of the rays. (The earlier pale disc,
+        # raised 0.85 x depth over a dark bronze ring, nearly matched the ivory roundel: the dark ring
+        # was the figure, and parallax / the key light's shadow thinned one side into a "C" crescent.)
+        rays = [(x * s, z * s) for x, z in _star(8, 1.0, 0.4, rot=math.pi / 2)]
         out.append(fan_solid(rays, depth, "gold_dark", mid=mid))
-        ring = [(math.cos(math.tau * i / 10) * 0.7 * s, math.sin(math.tau * i / 10) * 0.7 * s) for i in range(10)]
-        out.append(fan_solid(ring, depth, "yellow_trim", mid=None).move(0, -depth * 0.45, 0))
-        disc = [(x * 0.84, z * 0.84) for x, z in ring]
-        out.append(fan_solid(disc, depth, "yellow_roof_light", mid=None).move(0, -depth * 0.85, 0))
+        angles = [math.pi / 2 + math.tau * i / 16 for i in range(16)]
+        disc = [(math.cos(a) * 0.56 * s, math.sin(a) * 0.56 * s) for a in angles]
+        out.append(fan_solid(disc, depth, "yellow_shutter", mid=None).move(0, -depth * 0.3, 0))
     elif kind == "oak":
         # full oak leaf (reads at 80 studs, never a feather): wide and mirror-symmetric, 4 rounded
         # lobes per side with deep sinuses, a rounded tip lobe, midrib and a visible stem.

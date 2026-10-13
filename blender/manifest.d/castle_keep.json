@@ -187,7 +187,7 @@
       "dimensions_studs": {
         "x": 46.763,
         "y": 68.8,
-        "z": 42.33
+        "z": 42.316
       },
       "double_sided": false,
       "files": {
@@ -196,7 +196,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "186e3622a73f3d60",
+      "geometry_hash": "b2bd5cb7335899bd",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -215,24 +215,24 @@
         "balcony": [
           -0.058,
           17.8,
-          -13.665
+          -13.658
         ],
         "door": [
           -0.058,
           0.0,
-          -22.765
+          -22.758
         ],
         "flag": [
           -0.058,
           68.8,
-          2.935
+          2.942
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 14144,
-        "lod1": 4950
+        "lod0": 14120,
+        "lod1": 4942
       },
       "validation_pass": true
     }
@@ -247,8 +247,8 @@
       "castle_keep_blue_01",
       "castle_keep_yellow_01"
     ],
-    "mean_pair_diff": 0.1823,
-    "min_pair_diff": 0.1086,
+    "mean_pair_diff": 0.1821,
+    "min_pair_diff": 0.1082,
     "pass": true,
     "threshold": 0.08
   }

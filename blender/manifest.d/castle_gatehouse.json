@@ -759,7 +759,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "c2d57a4b735e587c",
+      "geometry_hash": "92f0d279f09f317e",
       "id": "castle_gatehouse_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -820,8 +820,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 8594,
-        "lod1": 3006
+        "lod0": 8530,
+        "lod1": 2984
       },
       "validation_pass": true
     }
@@ -837,7 +837,7 @@
       "castle_gatehouse_yellow_01"
     ],
     "mean_pair_diff": 0.1624,
-    "min_pair_diff": 0.0994,
+    "min_pair_diff": 0.0991,
     "pass": true,
     "threshold": 0.08
   }

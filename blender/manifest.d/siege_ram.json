@@ -235,7 +235,7 @@
       },
       "generator": "siege_ram",
       "generator_version": 1,
-      "geometry_hash": "b4e992a811380709",
+      "geometry_hash": "dfb054abc06fc37c",
       "id": "siege_ram_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -246,21 +246,9 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/siege_ram.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 3,
-          "palette": 4,
-          "proportions": 3,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7003,
       "sockets": {
@@ -283,8 +271,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3492,
-        "lod1": 1222
+        "lod0": 3444,
+        "lod1": 1204
       },
       "validation_pass": true
     }

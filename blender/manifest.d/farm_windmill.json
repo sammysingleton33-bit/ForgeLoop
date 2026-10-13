@@ -232,7 +232,7 @@
       },
       "generator": "farm_windmill",
       "generator_version": 2,
-      "geometry_hash": "963cf4b51eb4d815",
+      "geometry_hash": "c0c11f639e395b7d",
       "id": "farm_windmill_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -267,8 +267,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 4076,
-        "lod1": 1426
+        "lod0": 4060,
+        "lod1": 1420
       },
       "validation_pass": true
     }
@@ -283,7 +283,7 @@
       "farm_windmill_01",
       "farm_windmill_03"
     ],
-    "mean_pair_diff": 0.4369,
+    "mean_pair_diff": 0.4378,
     "min_pair_diff": 0.275,
     "pass": true,
     "threshold": 0.08

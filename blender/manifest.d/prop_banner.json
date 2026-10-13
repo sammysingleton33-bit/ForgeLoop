@@ -433,7 +433,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "db710b6f159ab4e6",
+      "geometry_hash": "09d98959f4b4e40f",
       "id": "prop_banner_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -446,21 +446,9 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/prop_banner.md",
-        "reviewer": "fresh-context subagent",
-        "round": 2,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7006,
       "sockets": {
@@ -478,8 +466,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 740,
-        "lod1": 258
+        "lod0": 708,
+        "lod1": 246
       },
       "validation_pass": true
     },
@@ -502,7 +490,7 @@
       },
       "generator": "prop_banner",
       "generator_version": 1,
-      "geometry_hash": "5555d306b9b98703",
+      "geometry_hash": "e7c36ba0207b1938",
       "id": "prop_banner_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -515,21 +503,9 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/prop_banner.md",
-        "reviewer": "fresh-context subagent",
-        "round": 2,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7007,
       "sockets": {
@@ -547,8 +523,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 800,
-        "lod0": 722,
-        "lod1": 252
+        "lod0": 706,
+        "lod1": 246
       },
       "validation_pass": true
     }
@@ -563,8 +539,8 @@
       "prop_banner_red_01",
       "prop_banner_yellow_02"
     ],
-    "mean_pair_diff": 0.5719,
-    "min_pair_diff": 0.1846,
+    "mean_pair_diff": 0.5721,
+    "min_pair_diff": 0.186,
     "pass": true,
     "threshold": 0.08
   }

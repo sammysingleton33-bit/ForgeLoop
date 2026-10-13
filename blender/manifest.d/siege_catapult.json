@@ -226,7 +226,7 @@
       "dimensions_studs": {
         "x": 11.1,
         "y": 18.273,
-        "z": 18.976
+        "z": 18.888
       },
       "double_sided": false,
       "files": {
@@ -235,7 +235,7 @@
       },
       "generator": "siege_catapult",
       "generator_version": 1,
-      "geometry_hash": "f8e352e5306e215b",
+      "geometry_hash": "7e7f46f1b04a4558",
       "id": "siege_catapult_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -246,45 +246,33 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/siege_catapult.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7003,
       "sockets": {
         "crew_1": [
           5.425,
           -0.108,
-          8.027
+          7.983
         ],
         "crew_2": [
           -5.425,
           -0.108,
-          8.027
+          7.983
         ],
         "projectile": [
           -0.0,
           6.292,
-          6.427
+          6.383
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 4000,
-        "lod0": 3566,
-        "lod1": 1248
+        "lod0": 3518,
+        "lod1": 1230
       },
       "validation_pass": true
     }
@@ -299,7 +287,7 @@
       "siege_catapult_blue_01",
       "siege_catapult_red_01"
     ],
-    "mean_pair_diff": 0.4776,
+    "mean_pair_diff": 0.4784,
     "min_pair_diff": 0.3427,
     "pass": true,
     "threshold": 0.08
