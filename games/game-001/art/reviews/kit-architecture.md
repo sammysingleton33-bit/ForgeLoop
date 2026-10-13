@@ -153,3 +153,86 @@ coordinator's wrap-up; geometry changed only to stay inside the footprint): `kit
   glass shorter than its frame; banner borders below the cloth top; farm fences share corner posts; barn walls
   and posts inset; gate passage merlons inside the passage; quarry tiers offset; market counters lifted 0.03;
   keep terrace raised 0.03 with its walls inset.
+
+
+## Round 5 — kingdom emblems from the overview camera (FORGE-05 colour-vision finding 3) — 2026-10-13
+Branch `forge/02-blender-aerial-emblems`. Evidence: headless specs (`KitEmblems.spec`, budgets, coplanar probe)
+and Blender (`bpy`) renders of a scratch Lune dump. These are not Studio screenshots (D-034).
+
+**Inventory (before):**
+- Every kingdom-identity element the Kit or world builds:
+  - keep: crest, two terrace standards, two hall banners, two turret banners (L2+), the throne back, the donjon flag;
+  - barracks: jetty banners (L2–L4), the gatehouse's banners, crest and flag (L4), the yard flag (L1–L2);
+  - watchtower, wall, gate: banners, caps' flags, crest;
+  - farm, lumber camp, quarry, mine, market, building sites: flags;
+  - thatch-house and granary ridge pennants;
+  - `prop_banner_*`, slot-marker pennants and sign, region-marker flags;
+  - kingdom roofs and tower caps.
+- Banners, crests and the throne carried a 2-part emblem in the kingdom's trim metal. Azure's was an 8-point star, not D-039's five. Crimson's read as a house.
+- Flags, pennants and the slot sign had no emblem. The `prop_banner_*` emblem was the same gold diamond for every kingdom. These were colour only.
+- **Visible from above (50°, 120–220 studs):**
+  - roofs and caps (colour and silhouette);
+  - flags (a few pixels);
+  - the baldachin canopy.
+- Hanging banners and shields are foreshortened to cos 50° ≈ 0.64 and are 7–12 px at 170 studs, so no emblem read from the overview camera.
+
+**Design (one builder, `Pieces.emblem`):**
+- **Mapping:**
+  - The kind follows the colour through the tower-cap hue map (`Kit.emblemKind`): crimson crown, azure star, emerald oak leaf, gold sun. Neutral gets none.
+  - Each emblem part carries `KitEmblem` = kind and `KitEmblemSlot`.
+  - Each field (cloth, flag, pennant, shield, plaque, sign) records the slot: `KitEmblemCF` (relative to the field), `KitEmblemSize` and `KitEmblemDetail`.
+- **Shapes** (anchored, no collide/touch/query, no shadow):
+  - **crown 3**: two tall wedges and a diamond.
+  - **star 5**: five 36-54-90 wedges in a pinwheel, whose union is exactly the regular star.
+  - **oak 5**: three disc lobes, a diamond base, and a darker midrib and stem, tilted 35° (in bend).
+  - **sun 4**: two squares for 8 points, a field-colour ring and the disc. On the plaques, 9: a disc and 8 wedge rays.
+- **Colour:** ivory on the kingdom field. The sun is deep gold (`shade(colour, 0.42)`) on the light gold field.
+- **Size:** 80 % of a banner's width.
+- **Aerial plaques on the keep** (kingdom field, ivory border, full emblem):
+  - **Roof plaque:** on the hall roof in front of the donjon, facing up, raised 2.4 on its border block. 6.7 / 9 / 10.5 studs at L1 / L2 / L3; the L1 donjon moved one stud back.
+  - **Donjon-back plaque:** on the donjon's windowless back face, 6 / 7.5 / 8.5 studs, for views from behind, where the donjon hides the roof plaque.
+- **Recolour:** `Kit.setKingdomColor` re-forms every slot to the new colour's kind on the stored anchor.
+  - Works after the model has moved.
+  - A neutral colour removes the emblem; neutral → kingdom adds it.
+  - Other parts keep their identity.
+  - Tower caps, stone and trim stay as built; a style change needs `Kit.build`.
+
+**Iterations:**
+1. **2D prototypes** (same primitives, at 12–40 px, normal, CVD and grayscale):
+   - An ivory sun on a dark roundel read as a gear in grayscale. The deep-gold sun on gold read best.
+   - An upright oak read as a lollipop tree.
+2. **First render:** the star had a black pentagon centre. Five coplanar wedges overlapping make Cycles' shadow rays self-intersect, and the same overlap could z-fight in Studio. Every emblem part now sits 0.015 in front of the one before it.
+3. **Visibility probe** (new spec: rays toward the camera at the controller's 50 / 57.5 / 65° pitches, exact wedge and corner-wedge shapes):
+   - The L1 roof plaque was 84 % visible head-on and 63–65 % from the front diagonals at 50°: the front merlons and the turret hoardings and spires hid it.
+   - Raised 2.4 and enlarged, it is now 100 % head-on and ≥ 84 % on the diagonals. The donjon-back plaque is 100 % from behind and from the rear diagonals.
+   - Pure side views at 50° stay at 69 % for L1 (turrets on both sides). They are reported in the spec, not gated.
+4. **The oak still read as a tree at 120 studs** (foreshortening). It is now in bend.
+
+**Images** (`img/`, 1:1 crops of 1920×1080, Roblox 70° FOV, grass ground, Cycles 32 samples):
+- `kit_emblems_aerial_distances.jpg`: own keep L1, centred, at 120 / 170 / 220 studs.
+- `kit_emblems_aerial_170.jpg`: four keeps in one frame at 170 studs, front and rear; the outer two are seen from about 45°.
+- `kit_emblems_aerial_plots.jpg`: own plot at 170 studs.
+- `kit_emblems_aerial_170_cvd.jpg`: `cvd.py`'s simulation (normal, protanopia, deuteranopia, tritanopia) plus grayscale.
+
+**Verdict at 170 studs (own keep, 1:1), looked at by FORGE-02:**
+- Normal: crown, star, oak leaf and sun all read on the roof plaques; banners and flags carry them too (small).
+- Protanopia / deuteranopia: crimson and emerald fields go olive and grey, but crown and leaf stay distinct shapes;
+  star and sun unaffected.
+- Tritanopia: azure and emerald are both teal; star vs oak separates them.
+- Grayscale: all four read. Weakest is the oak (a tilted lobed leaf with a dark midrib; at 220 studs it is a
+  diagonal leaf blob), strongest star and sun. From behind, the donjon-back plaques read; a crimson spire clips
+  a corner from the rear diagonal.
+
+**Part cost:** every model stays within budget (keep L2 emerald at 260/260). Ranges before → after across the
+four canonical colours, neutral and two off-palette tints: keep L1 198–218 → 182–236, L2 230–258 → 204–260,
+L3 261–292 → 234–292; barracks L4 236–252 → 221–248; watchtower L2 106–122 → 113–125; `prop_banner` 8 → 11–13;
+slot marker 17 → 15–20. Paid for by: banner trim bands, the throne-back emblem, the keep's L2+ turret banners
+(the roof plaque replaces them), standard finials, the hall's low side/back slits, barracks L4 jetty banners, and
+fewer, larger plinth facing stones.
+
+**Specs:** `KitEmblems.spec` (12) plus the existing budget and coplanar specs; 15 mutations all caught.
+
+**Unverified:**
+- Studio: SmoothPlastic emblems on Fabric cloth, Future lighting, and depth precision of the 0.015 stacking at 220 studs.
+- Phone screens (fewer pixels per stud).
+- The aerial camera's real azimuth relative to each keep (Layout yaw).

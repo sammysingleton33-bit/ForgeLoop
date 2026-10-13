@@ -244,6 +244,12 @@ end
 
 -- What clients can see of the views; Crown Points count in whole points so hold income does not
 -- resend the state every tick.
+local function whole(x: number?): number
+	return math.floor((x or 0) + 0.5)
+end
+
+-- What makes Kingdom.State worth sending again. The conditions drift every second, so they count when a
+-- whole point changes (#68 L4), not on every fraction.
 function MatchHost:_stateSignature(): string
 	local parts = {}
 	for _, view in self:kingdomsState().kingdoms do
@@ -252,7 +258,7 @@ function MatchHost:_stateSignature(): string
 			`{view.id}:{table.concat(view.rulers, ",")}:{math.floor(view.crownPoints)}:{view.alive}:{view.keepBuildingId}:{table.concat(
 				view.regions,
 				","
-			)}`
+			)}:{whole(view.happiness)}:{whole(view.stability)}:{whole(view.morale)}`
 		)
 	end
 	return table.concat(parts, "|")

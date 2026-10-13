@@ -337,6 +337,71 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		expect(reputation:get(1).history).toEqual({})
 	end)
 
+	it("a keep upgrade credits the ruler who started it, not the co-ruler (#68 M1)", function()
+		local env, reputation, match = boot()
+		seat(env, 2) -- users 1 and 2 rule crimson together
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local keep = sim.buildings[k.keepId]
+		expect(keep.placedBy).toBeNil() -- the keep has no placer: crediting the placer meant every ruler
+		local f = firing("BuildingUpgraded:keep", Context.kingdom(sim, "crimson"))
+		expect(f).never.toBeNil()
+		stock(sim, k)
+		assert(sim:startUpgrade(k, keep.id, 2))
+		sim:addWork(keep, sim:workFor("keep", 2))
+		env.mock:advance(0.25)
+		expect(keep.level).toBe(2)
+		local theirs = reputation:get(2)
+		expect(theirs.values.competence).toBe(50 + f.rep.competence)
+		expect(theirs.history[1].source).toBe("keep_upgraded")
+		expect(reputation:get(1).history).toEqual({})
+		expect(reputation._upgradedBy[keep.id]).toBeNil() -- forgotten once credited
+	end)
+
+	it("an actor who has left the kingdom earns nothing, and nobody else is credited (#68 L1)", function()
+		local env, reputation, match = boot()
+		seat(env, 3) -- users 1 and 2 in crimson, 3 elsewhere
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		expect(table.find(k.rulers, 3)).toBeNil()
+		local farm = reputation._kingdomFarm.crimson
+		sim:emit("RecruitQueued", { kingdomId = "crimson", unit = "soldier", count = 1, barracksId = 0, by = 3 })
+		env.mock:advance(0.25)
+		expect(reputation:get(1).history).toEqual({})
+		expect(reputation:get(2).history).toEqual({})
+		expect(reputation:get(3).history).toEqual({})
+		-- the kingdom still reacted once (its own history records the firing)
+		farm = reputation._kingdomFarm.crimson
+		expect(farm ~= nil and next(farm) ~= nil).toBe(true)
+		-- no actor at all (the AI, a starting building): every ruler, as before
+		sim:emit("RecruitQueued", { kingdomId = "crimson", unit = "soldier", count = 1, barracksId = 0 })
+		env.mock:advance(0.25)
+		expect(#reputation:get(1).history > 0).toBe(true)
+		expect(#reputation:get(2).history > 0).toBe(true)
+	end)
+
+	it("an upgrade cancelled or destroyed forgets its upgrader", function()
+		local env, reputation, match = boot()
+		seat(env, 2)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local keep = sim.buildings[k.keepId]
+		stock(sim, k)
+		assert(sim:startUpgrade(k, keep.id, 2))
+		env.mock:advance(0.25)
+		expect(reputation._upgradedBy[keep.id]).toBe(2)
+		assert(sim:cancelConstruction(k, keep.id, 2))
+		env.mock:advance(0.25)
+		expect(reputation._upgradedBy[keep.id]).toBeNil()
+		-- started by ruler 1 now: ruler 2's old start does not count
+		stock(sim, k)
+		assert(sim:startUpgrade(k, keep.id, 1))
+		sim:addWork(keep, sim:workFor("keep", 2))
+		env.mock:advance(0.25)
+		expect(#reputation:get(1).history > 0).toBe(true)
+		expect(reputation:get(2).history).toEqual({})
+	end)
+
 	it("an objective's capture and loss go to the right kingdoms' rulers", function()
 		local env, reputation, match = boot()
 		seat(env, 3) -- users 1 and 2 in crimson, 3 elsewhere
@@ -350,6 +415,51 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		expect(reputation:get(1).values.courage).toBe(50 + won.rep.courage)
 		expect(reputation:get(2).values.courage).toBe(50 + won.rep.courage)
 		expect(reputation:get(3).values.fear).toBe(ReputationContent.categories.fear.start + lost.rep.fear)
+	end)
+
+	it("PhaseEndedWellFed pays only when the phase's lowest fed ratio stayed >= wellFedAtLeast (#68 L2)", function()
+		local env, reputation, match, citizens = boot()
+		seat(env, 1)
+		local host = match.host
+		reputation.content = contentWith({
+			{ id = "fed_expansion", event = "PhaseEndedWellFed:Expansion", rep = { compassion = 4 } },
+			{ id = "fed_conflict", event = "PhaseEndedWellFed:Conflict", rep = { compassion = 4 } },
+		})
+		local threshold = Society.food.wellFedAtLeast
+		expect(Society.food.shortageBelow < 0.6 and 0.6 < threshold).toBe(true)
+		assert(host.match:debugSetPhase("Expansion"))
+		env.mock:advance(1.5)
+		assert(host.match:debugSetPhase("Conflict")) -- Expansion stayed fed: it pays
+		env.mock:advance(1.5)
+		local paid = reputation:get(1).values.compassion
+		expect(paid).toBe(50 + 4)
+		citizens:setFedRatio("crimson", 0.6) -- a dip: no shortage (>= 0.5), but not well fed either
+		env.mock:advance(2)
+		citizens:setFedRatio("crimson", 1)
+		env.mock:advance(2)
+		assert(host.match:debugSetPhase("Endgame")) -- Conflict's low was 0.6: nothing
+		env.mock:advance(1.5)
+		expect(reputation:get(1).values.compassion).toBe(paid)
+	end)
+
+	it("keeps citizens' loyalty within 0..100 whatever a firing adds (#68 L3)", function()
+		local env, reputation, match = boot()
+		seat(env, 1)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		reputation.content = contentWith({
+			{ id = "cheer", event = "TestCheer", rep = ZERO_REP, audience = "kingdom", audience_loyalty = 10 },
+			{ id = "boo", event = "TestBoo", rep = ZERO_REP, audience = "kingdom", audience_loyalty = -10 },
+		})
+		local high, low = sim.citizens[k.citizenIds[1]], sim.citizens[k.citizenIds[2]]
+		high.loyalty, low.loyalty = 98, 2
+		reputation:fireAction("TestCheer", "crimson")
+		expect(high.loyalty).toBe(100)
+		expect(low.loyalty > 2).toBe(true)
+		low.loyalty = 2
+		reputation:fireAction("TestBoo", "crimson")
+		expect(low.loyalty).toBe(0)
+		expect(high.loyalty < 100).toBe(true)
 	end)
 
 	it("applies the user rules: a fight row cannot lower compassion or honor (Society.rules)", function()
@@ -451,6 +561,19 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		reputation:rulerVisited(1, visited.id)
 		expect(visited.loyalty > a).toBe(true)
 		expect(other.loyalty).toBe(b)
+		-- the visited citizen remembers it and cheers up (G5, FL-0050); the other one doesn't
+		expect(visited.moodLift).never.toBeNil()
+		expect(other.moodLift).toBeNil()
+		local remembered = false
+		for _, entry in visited.memory do
+			remembered = remembered or (entry.kind == "rulerVisited" and entry.ref == 1)
+		end
+		expect(remembered).toBe(true)
+		-- another kingdom's citizen: no reaction from a crimson ruler
+		local azure = sim.kingdoms.azure
+		local stranger = sim:_spawnCitizen(azure, "farmer", azure.x, azure.z)
+		reputation:rulerVisited(1, stranger.id)
+		expect(stranger.moodLift).toBeNil()
 	end)
 end)
 

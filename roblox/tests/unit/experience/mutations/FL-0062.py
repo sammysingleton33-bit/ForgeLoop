@@ -1,0 +1,37 @@
+"""FL-0062 mutation rows, run by ../mutations.py (FL-0062 only: `mutations.py FL-0062`).
+
+One row: (task, file, old, new, spec filter, expected failing test, project). The path prefixes
+S, C, X, G, C2 and F come from mutations.py. Add rows for FL-0062 here only (D-038 (7)).
+"""
+M = [
+ ("FL-0062", F+"Moments.luau", 'rival.position = nil', 'local _ = rival', "KingdomFeedback", "without its location", "game"),
+ ("FL-0062", F+"Moments.luau", 'if member ~= player then', 'if true then', "KingdomFeedback", "the other members learn who joined", "game"),
+ ("FL-0062", F+"Moments.luau", 'won = outcome == "won",', 'won = true,', "KingdomFeedback", "whether their kingdom won", "game"),
+ ("FL-0062", F+"Moments.luau", 'if not isMember(members, player) then', 'if true then', "KingdomFeedback", "members celebrate, everyone else is warned", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", 'silent = presentation.sound ~= nil,', 'silent = false,', "KingdomFeedback", "silently when they have a sound", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '		celebrated = true\n	end', '		celebrated = false\n	end', "KingdomFeedback", "celebrations celebrate", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if now - self._lastDeposit < Def.DEPOSIT_GAP_SEC or not self:_near(position) then', 'if not self:_near(position) then', "KingdomFeedback", "deposits coalesce", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'pcall(self._vfx.stop, self._vfx, entry.effect)', 'local _ = entry', "KingdomFeedback", "a released rig loses every effect", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if sound == nil or type(id) ~= "number" or not self:_near(position) then', 'if sound == nil or type(id) ~= "number" then', "KingdomFeedback", "culled by distance", "game"),
+ ("FL-0062", C2+"MusicController.luau", 'if type(phase) ~= "string" or Def.PHASE_STATES[phase] == nil then', 'if type(phase) ~= "string" then', "KingdomFeedback", "the match result wins at once", "game"),
+ ("FL-0062", F+"Moments.luau", 'if member ~= actor then', 'if true then', "KingdomFeedback", "buildings: members only", "game"),
+ ("FL-0062", F+"Moments.luau", 'to(out, except(members, placer), moment)', 'to(out, members, moment)', "KingdomFeedback", "buildings: members only", "game"),
+ ("FL-0062", F+"Moments.luau", 'to(out, except(ctx.members(kingdom), player), {', 'to(out, ctx.members(kingdom), {', "KingdomFeedback", "the recruiter already has FORGE-03's own toast", "game"),
+ ("FL-0062", F+"Moments.luau", 'elseif mine == nil then "watched"', 'elseif false then "watched"', "KingdomFeedback", "MatchEnded outcome", "game"),
+ ("FL-0062", F+"Moments.luau", 'local outcome = if winner == nil', 'local outcome = if false', "KingdomFeedback", "MatchEnded outcome", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '		notifications:celebrate(presentation.celebrate, payload)\n		celebrated = true', '		celebrated = notifications:celebrate(presentation.celebrate, payload) == true', "KingdomFeedback", "a celebration declined inside its cooldown", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '		and self._celebrations[presentation.celebrate]\n', '', "KingdomFeedback", "a celebration declined inside its cooldown", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '{ position = position, tint = tint }', '{ position = position }', "KingdomFeedback", "effects and celebrations get the kingdom colour", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '			payload.tint = tint', '			local _ = tint', "KingdomFeedback", "effects and celebrations get the kingdom colour", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'elseif camera ~= nil and camera.mode == "overview" and camera.getFocus ~= nil then', 'elseif false then', "KingdomFeedback", "distance is from the camera focus", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'camera ~= nil and camera.mode == "overview" and camera.getFocus ~= nil', 'camera ~= nil and camera.getFocus ~= nil', "KingdomFeedback", "walk mode measures from the camera", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'amount > 0 and self:_near(position) then', 'amount > 0 then', "KingdomFeedback", "floats only within MAX_STUDS of the view", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'position, { maxDistance = 0 })', 'position)', "KingdomFeedback", "a gather sounds, bursts chips at the node and floats", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if now - entry.at < Def.ATTACH_KEEP_SEC then', 'if true then', "KingdomFeedback", "attached effects list never grows", "game"),
+ ("FL-0062", C2+"MusicController.luau", '		if self.phase == nil and not self._destroyed then -- a late reply after destroy plays nothing\n			self:setPhase(phase)', '		if false then\n			self:setPhase(phase)', "KingdomFeedback", "a late joiner asks Match.GetState once", "game"),
+ ("FL-0062", C2+"MusicController.luau", 'if outcome == "won" or outcome == "lost" then', 'if true then', "KingdomFeedback", "a late joiner asks Match.GetState once", "game"),
+ ("FL-0062", C2+"MusicController.luau", 'if self.phase == nil and not self._destroyed then', 'if self.phase == nil then', "KingdomFeedback", "a Match.GetState reply that arrives after destroy", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", '		if not self:_near(position) then\n			return -- far from the view', '		if false then\n			return -- far from the view', "KingdomFeedback", "cheers are culled by distance", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if self._audio and now - self._lastCheer >= Def.CHEER_GAP_SEC then', 'if self._audio then', "KingdomFeedback", "cheers are culled by distance", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", '	if type(id) == "number" and id ~= id then\n		return -- NaN: never a table key', '	if false then\n		return -- NaN: never a table key', "KingdomFeedback", "cheers are culled by distance", "game"),
+]

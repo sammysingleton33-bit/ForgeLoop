@@ -17,7 +17,9 @@
 			"RulerVisited"; opts = { rulers?: { userId } (default: every current ruler), speaker?: entityId,
 			events?: { tag } (event.<tag> flags), before?: { buildingId, level } (Sim/Context) }
 		ReputationService:rulerVisited(userId, entityId)        -- RulerVisited (audience speaker), for
-		                                                           conversations (FL-0079)
+		                                                           conversations (FL-0079); also the
+		                                                           citizen's rulerVisited memory and mood
+		                                                           lift (sim:rulerVisit, G5)
 		ReputationService:farmHistories(userId, kingdomId): (rulerHistory, kingdomHistory)
 			-- the anti-farming histories (SPEC §6.8) ConversationService hands ContentQuery.fireDecision
 		ReputationService:values(userId): { [Category]: number }   -- a copy of the ruler's current values
@@ -25,11 +27,13 @@
 	for the asker (nil for a spectator); Kingdom.Reputation(the same) to a ruler when it changes.
 
 	Action events → content (ContentQuery, one effect path for every service):
-		simulation BuildingCompleted   → BuildingCompleted:<type> (level 1) / BuildingUpgraded:<type>
-		                                 (credited to the ruler who placed it while they rule here, else to
-		                                 every ruler of the kingdom); its conditions see the kingdom as it was
+		simulation BuildingCompleted   → BuildingCompleted:<type> (level 1, credited to the ruler who placed
+		                                 it) / BuildingUpgraded:<type> (credited to the ruler who started the
+		                                 upgrade: UpgradeStarted.by); its conditions see the kingdom as it was
 		                                 just before (Context `before`: the need the building answered)
 		RecruitQueued                  → UnitsRecruited (the recruiting ruler)
+		Credit (SPEC §6.9): the act's actor while they rule this kingdom; nobody when the actor has left (the
+		kingdom's conditions and its citizens still react); every ruler when the act has no actor.
 		ObjectiveCaptured              → ObjectiveCaptured for the captor, ObjectiveLost for the old owner
 		MatchPhaseChanged              → MatchPhaseChanged:<phase> for every kingdom (event.shortage if it had
 		                                 a shortage that phase), then PhaseEndedWellFed:<ended phase> when its
@@ -82,6 +86,7 @@ function ReputationService:_reset(roundId: string?)
 	self._rulerFarm = {} :: { [number]: any }
 	self._kingdomFarm = {} :: { [string]: any }
 	self._food = {} :: { [string]: { low: number, shortage: boolean, below: boolean } }
+	self._upgradedBy = {} :: { [string]: number } -- buildingId -> the ruler who started its upgrade (#68 M1)
 	self._fearClock = 0
 	self._sent = {} :: { [any]: string }
 end
@@ -238,27 +243,42 @@ function ReputationService:rulerVisited(userId: number, entityId: number)
 	local kingdomId = self._match.host.match:kingdomOf(userId)
 	if kingdomId then
 		self:fireAction("RulerVisited", kingdomId, { rulers = { userId }, speaker = entityId })
+		-- the citizen remembers it and cheers up, at most once per few minutes (CONTRACTS G5 reaction)
+		local sim = self:_sim()
+		local c = sim.citizens[entityId]
+		if c and c.kingdomId == kingdomId then
+			sim:rulerVisit(c, userId)
+		end
 	end
 end
 
 -- ---------------------------------------------------------------- simulation events
--- The ruler a building is credited to: who placed it while they still rule this kingdom, else every ruler.
+-- The rulers an act is credited to: its actor while they still rule this kingdom; nobody when the actor
+-- has left (SPEC §6.9 allows no credited ruler: the kingdom and its citizens still react, #68 L1); every
+-- ruler when the act has no actor (a starting building, the AI, a debug command).
 function ReputationService:_credited(kingdom: any, userId: number?): { number }
-	if userId and table.find(kingdom.rulers, userId) then
-		return { userId }
+	if userId == nil then
+		return kingdom.rulers
 	end
-	return kingdom.rulers
+	return if table.find(kingdom.rulers, userId) then { userId } else {}
 end
 
 function ReputationService:_onEvent(name: string, event: any)
 	local sim = self:_sim()
-	if name == "BuildingCompleted" then
+	if name == "UpgradeStarted" then
+		self._upgradedBy[event.buildingId] = event.by -- nil (no actor) clears an older one
+	elseif name == "ConstructionCancelled" or name == "BuildingDestroyed" then
+		self._upgradedBy[event.buildingId] = nil
+	elseif name == "BuildingCompleted" then
 		local k = sim.kingdoms[event.kingdomId]
 		local b = sim.buildings[event.buildingId]
+		local upgrader = self._upgradedBy[event.buildingId]
+		self._upgradedBy[event.buildingId] = nil
 		if k and b then
-			local prefix = if event.level > 1 then "BuildingUpgraded" else "BuildingCompleted"
-			self:fireAction(`{prefix}:{b.kind}`, k.id, {
-				rulers = self:_credited(k, b.placedBy),
+			-- a new building is the placer's; an upgrade is whoever started it (#68 M1: the keep has no placer)
+			local upgrade = event.level > 1
+			self:fireAction(`{if upgrade then "BuildingUpgraded" else "BuildingCompleted"}:{b.kind}`, k.id, {
+				rulers = self:_credited(k, if upgrade then upgrader else b.placedBy),
 				before = { buildingId = b.id, level = event.level }, -- judge the need it answered
 			})
 		end
