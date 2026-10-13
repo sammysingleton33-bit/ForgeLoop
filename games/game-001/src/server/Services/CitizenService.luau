@@ -11,11 +11,17 @@
 			   Kingdom.SetJobQuota targets per job, hauler excepted (additive to G5, for the job panel);
 			   whole numbers >= 0; nil for an unknown kingdom
 		CitizenService:setFedRatio(kingdom, ratio)   -- 0..1 from ProductionService's upkeep (FORGE-03)
+		CitizenService:setJob(entityId, job): boolean   -- one citizen to `job` (a G2 JobId, not soldier); the
+		                                                   kingdom's quotas follow, so it stays there
+		CitizenService:requestWorkers(kingdom, job, count): (boolean, reason?)   -- the job's quota (as
+		                                                   Kingdom.SetJobQuota): haulers move to or from it
 		CitizenService:inspect(entityId): CitizenView?   -- G13.2 (a superset of G5's name, job, mood,
 		                                                  intent, lastMemory?); citizens only
 	G7: ProductionService is the only food consumer. Once this service runs, citizens never buy meals:
 	their hunger follows the kingdom's fed ratio (fully fed: hunger falls; half fed: holds; unfed: rises;
-	Sim/Simulation fedByUpkeep). Without this service the simulation keeps its own meal double.
+	Sim/Simulation fedByUpkeep). Births cost no treasury food then: a kingdom grows while its fed ratio is
+	>= Society.food.wellFedAtLeast and it has a free bed (D-045). Without this service the simulation keeps
+	its own meal double (meals and births paid from the treasury).
 	Remotes (G8, G13.2): Sim.Inspect(entityId) -> inspect(entityId) for a citizen of the asker's own
 	kingdom, else nil. Kingdom.GetPopulation() -> getPopulation(my kingdom) (nil for a spectator);
 	Kingdom.Population(population) to a kingdom's members when it changes (checked every second) and
@@ -25,7 +31,7 @@
 	occupation, 2-3 traits, a household, friends and rivals, chemistry, loyalty and a look.
 	CitizenView = { entityId, name, occupation, job, traits, mood, loyalty, obedience, intent,
 	lastMemory?, memories, family, friends, rivals (names), hasRequest, look }. mood is 0..100 (well
-	fed and rested = high); intent is the current activity and why, e.g. "Gathering (best job)";
+	fed = high, plus tuning.visitMood for visitMoodSeconds after a ruler's visit, Sim/Context mood); intent is the current activity and why, e.g. "Gathering (best job)";
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
 	hasRequest is true while the citizen has an open request (ConversationService:hasRequest, its thought
@@ -37,6 +43,8 @@
 		(debugRequest, the citizen.request hook, is ConversationService's)
 ]]
 
+local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
+local Context = require("@game/ReplicatedStorage/Game/Sim/Context")
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
 
@@ -235,6 +243,27 @@ function CitizenService:debugStrike(kingdomId: string, occupation: string, on: b
 	return true, `{#changed} {occupation} {if on then `on strike for {Def.DEBUG_STRIKE_SECONDS} s` else "back at work"}`
 end
 
+function CitizenService:setJob(entityId: number, job: string): boolean
+	local sim = self:_sim()
+	local c = sim.citizens[entityId]
+	-- a citizen job from the catalog only; soldiers are Military's units, never a catalog job
+	if c == nil or type(job) ~= "string" or sim.catalog.jobs[job] == nil then
+		return false
+	end
+	sim:setJob(c, job)
+	return true
+end
+
+function CitizenService:requestWorkers(kingdomId: string, job: string, wanted: number): (boolean, string?)
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdomId]
+	if k == nil then
+		return false, "unknown_kingdom"
+	end
+	local ok, err = Commands.executeFor(sim, k, nil, "SetJobQuota", job, wanted)
+	return ok, err
+end
+
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)
 	assert(type(ratio) == "number" and ratio == ratio, "CitizenService:setFedRatio: ratio must be a number")
 	local k = self:_sim().kingdoms[kingdomId]
@@ -280,7 +309,7 @@ function CitizenService:inspect(entityId: number): { [string]: any }?
 		occupation = if profile then profile.occupation else c.job,
 		job = c.job,
 		traits = traits,
-		mood = math.clamp(math.floor((1 - math.min(1, c.hunger)) * 100 + 0.5), 0, 100),
+		mood = Context.mood(c, sim.time), -- fed, plus a recent ruler's visit (G5)
 		loyalty = c.loyalty or 50,
 		obedience = Population.obedience(traits, self:reputationOf(c.kingdomId), People.CONTENT),
 		intent = if why then `{doing} ({why})` else doing,
