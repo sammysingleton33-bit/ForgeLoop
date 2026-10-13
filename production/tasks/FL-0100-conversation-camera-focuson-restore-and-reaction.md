@@ -16,6 +16,7 @@ evidence:
   - "RulerCamera.spec 25 (4 new: conversationView, glide + restore equality, reduced-motion cut, opened/closed + pan + walk mode); mutations FL-0100 7/7 CAUGHT"
   - RulerCamera.spec 29/29 (2 new); mutations FL-0100 12/12 on #84
   - RulerCamera.spec 30/30; mutations FL-0100 14/14 on #84
+  - RulerCamera.spec 33/33; mutations FL-0100 21/21 and FL-0053 22/22 on #84
 ---
 
 # Conversation camera focusOn/restore and reaction poses (G13.8)
@@ -48,3 +49,4 @@ When a conversation opens, the camera glides from the aerial view toward the cit
 - 2026-10-13 forge-04: TESTING (unchanged). PR (1/2) from forge/04-experience-fl0100: focusOn/restore. Reaction poses (2/2) follow in a second PR. Handoff forge-04-to-forge-03-05-conversation-camera.
 - 2026-10-13 forge-04: TESTING → TESTING. G13.8 v0.4-g9e (FORGE-00 ruling on #108): the conversation camera stands in front of the citizen's face. focusOn takes { facing }; on opened the yaw comes from the citizen's rig (EntityController:getModel), and the camera follows the server's turn toward the ruler while the panel is open; a pan, a go-to or a turn by the player stops the following.
 - 2026-10-13 forge-04: TESTING → TESTING. FORGE-03's FL-0099 (#126) phone check: the conversation focus moves 10 studs on a phone (FORGE-03's UI/Layout breakpoint), so the citizen sits at 33-38 % from the top, above the stage that starts about 47 % down; 6 studs elsewhere. A spec projects the citizen through the camera at 750x311.
+- 2026-10-13 forge-04: TESTING → TESTING. FORGE-05 B14 review on #84. M1: the facing is the line from the citizen to the ruler's character, as the server turns them, so nothing follows a released citizen; the rig fallback (no ruler character) follows one turn within 1.5 s and 2 studs. L1: returning to the overview drops a glide left from a conversation that ended in walk mode. L2: during a conversation the zoom floor is the conversation's. L3: glide durations clamped. Studio rows in experience.md E10.

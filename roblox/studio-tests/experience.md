@@ -248,3 +248,37 @@ Pass: steps 1–8 hold. Record a short video of a request, an answer, the reacti
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+
+## E10 — Conversation camera (FL-0100 (1/2), game-001)
+Needs:
+- FORGE-03's cinematic panel (FL-0099, #126), firing `ConversationController.opened(entityId, position)` and `.closed(entityId)`;
+- FORGE-01's ConversationService with the hold (FL-0097, #108);
+- a citizen with a request.
+
+Until those are on the build, write "blocked: needs FL-0099 / #108".
+
+Rules under test (headless: `games/game-001/tests/experience/RulerCamera.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Glide | about 0.6 s in and back; reduced motion cuts; durations clamped (≤ 3 s) |
+| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 10 on a phone, so 33–38 % from the top) |
+| Facing | in front of the citizen's face: the line from the citizen to your ruler, which the server turns them along (v0.4-g9e) |
+| Following | none once the citizen is released; without a ruler character, one turn within 1.5 s and 2 studs at most |
+| Restore | the saved overview focus, rotation and zoom |
+
+Steps
+1. From the aerial view, open a conversation. The camera glides in about 0.6 s to the citizen, who stays visible above the portrait with the kingdom around them. You see the citizen's face, not their back.
+2. Close it. The camera glides back to the same view: position, rotation and zoom.
+3. Settings → Reduced motion on: steps 1 and 2 cut instead of gliding.
+4. Pan during the glide in: the glide stops and the pan works.
+5. A citizen near the map edge: the view stays inside the map.
+6. Phone emulator: the citizen is above the conversation stage, not under it.
+7. Answer, and keep the panel open after the reaction (the stage reads for several seconds). When the citizen is released and walks off, the camera stays still; it doesn't swing round to follow them.
+8. Open a conversation, switch to walk mode, close the panel, and come back to the aerial view a while later. The view is your normal overview, with no jump back to the old conversation.
+9. During a conversation, zoom in (wheel or pinch): the camera doesn't move out. Zoom out: it does.
+
+Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Studio evidence).
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
