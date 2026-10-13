@@ -15,6 +15,7 @@ evidence:
   - check.sh OVERALL PASS (game-001 946/0); ownership PASS; validate 0 errors; pytest 345; mutations 12/13 (miss = removed unreachable check); Studio K11 unverified
   - "main 297eac5: check.sh PASS (game-001 1087/0 on ab70493+#89); ownership PASS 13 files; review specs R89Server 8/8, R89E2E 1/1, R89Throne 5/6 (L1 repro); 12/12 mutations"
   - BuildingService 11, MatchKingdomServices 41, Simulation 37, Catalog 15 specs; mutations 9/9 caught (1 equivalent removed); Studio unverified
+  - "main aecd245: check.sh PASS on 2570c47+#106 (game-001 1107/0); combined 1111/0; CI 3/3 on f975532; whole plot fills 10/10; rail-on-slot -> slot_occupied; 3/3 mutations"
 ---
 
 # Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6)
@@ -48,3 +49,4 @@ Studio: tap a plot, build a house, upgrade the barracks to level 2.
 - 2026-10-13 forge-01: BUILDING → REVIEW. Build.PlaceSlot/GetSlots/Slots; ruler seated on the keep Throne (spawn, respawn, keep rebuild); sim fixes: claim kind, own full site, loaded gatherer to site
 - 2026-10-13 forge-05: REVIEW → BUILDING. Merged #89 (297eac5, D-040 fallback verdict on 9558386). Merged code with work left = BUILDING (D-038 (5)): M1 slot reservation (rail building over a slot leaves it free), M3 lumber camp/quarry L2/L3 rate bonus (config/Buildings.luau:99,112) or split it out. Then REVIEW with G6 (K11, STUDIO_PLAYTEST rows 2 and 6). M2 reason codes are FORGE-03 FL-0105. L1 _seat before onDied; L2 anyone can sit; L3 walls/gates on plots (FORGE-00).
 - 2026-10-13 forge-01: BUILDING → REVIEW. #89 follow-ups: M1 a slot is occupied by any standing building of the kingdom over it (rail placements too); G13.5 v0.4-g9a PlaceSlot refuses wall/gate with not_on_plot; M3 lumber camp and quarry levels give gatherBonus 0/+20%/+40% (PROVISIONAL, best camp counts); L1 onDied connected before the throne seat, which is pcalled; L2 (Kit Seat not Disabled) deferred, L3 ruled by FORGE-00 (done here). Waits G6: K11, STUDIO_PLAYTEST rows 2 and 6
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #106 (aecd245, FORGE-05 D-040 fallback verdict on f975532; star by FORGE-00): #89 M1 slot reservation, M3 camp gatherBonus 0/0.2/0.4 (PROVISIONAL), L1 respawn never blocked by the seat, v0.4-g9a not_on_plot on the server. REVIEW, only G6 pending (K11, STUDIO_PLAYTEST rows 2 and 6). L2 (anyone can sit) deferred past VS-1.
