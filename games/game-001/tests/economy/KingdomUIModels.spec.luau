@@ -6,11 +6,14 @@ local describe, it, expect = T.describe, T.it, T.expect
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local BuildModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/BuildModel")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
+local Crest = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Crest")
 local HudModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/HudModel")
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local KingdomStore = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/KingdomStore")
 local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 local Placement = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Placement")
 local Text = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Text")
+local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
 
 local function kingdoms(mine: string?)
 	return {
@@ -317,5 +320,48 @@ describe("Placement", function()
 		expect(#results).toBe(1)
 		expect(results[1].ok).toBe(false)
 		expect(results[1].reason).toBeNil()
+	end)
+end)
+
+describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on #79)", function()
+	it("the light emblem keeps at least 3:1 against what it sits on, across the tile's gradient", function()
+		local emblem = Theme.color("textPrimary")
+		for _, k in KingdomsConfig.identities do
+			local color = Color3.fromRGB(k.color[1], k.color[2], k.color[3])
+			-- the tile is a gradient from 15 % lighter to 30 % darker (Crest); a light tile's emblem
+			-- sits on the sable plate instead
+			local backdrops = if Crest.isLight(color)
+				then { Crest.backdrop(color) }
+				else { color, color:Lerp(Color3.new(1, 1, 1), 0.15), color:Lerp(Color3.new(0, 0, 0), 0.3) }
+			for _, backdrop in backdrops do
+				local ratio = Crest.contrast(emblem, backdrop)
+				if ratio < 3 then
+					error(`{k.id}: emblem contrast {string.format("%.2f", ratio)} < 3 on {tostring(backdrop)}`)
+				end
+			end
+		end
+		expect(Crest.isLight(Color3.fromRGB(235, 185, 16))).toBe(true) -- gold needs the plate
+	end)
+
+	it("gold gets the plate; a recolour adds or removes it", function()
+		local gold = Color3.fromRGB(235, 185, 16)
+		local crimson = Color3.fromRGB(190, 40, 50)
+		local crest = Crest.new(58, crimson, "emblem_sun")
+		expect(crest:FindFirstChild("Plate")).toBeNil()
+		Crest.recolor(crest, gold)
+		local plate = crest:FindFirstChild("Plate")
+		expect(plate).toBeTruthy()
+		expect(plate.ZIndex < crest:FindFirstChild("Emblem").ZIndex).toBe(true) -- under the emblem
+		Crest.recolor(crest, gold)
+		local plates = 0
+		for _, child in crest:GetChildren() do
+			if child.Name == "Plate" then
+				plates += 1
+			end
+		end
+		expect(plates).toBe(1)
+		Crest.recolor(crest, crimson)
+		expect(crest:FindFirstChild("Plate")).toBeNil()
+		expect(Crest.new(22, gold, "emblem_sun"):FindFirstChild("Plate")).toBeTruthy()
 	end)
 end)
