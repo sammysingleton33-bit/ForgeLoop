@@ -527,6 +527,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Build slots (G10.1, additive).** `Layout.plots[k].buildSlots = { { id: string, center: Vector3, size: "S" | "M" | "L", rot: number } }`, at least 8 per kingdom. WorldService tags each slot's ground marker `BuildSlot` with attribute `SlotId`.
 - **Remotes.**
   - `Build.PlaceSlot`: `(slotId: string(1,32), type: enum BuildingType)` → `(buildingId?, reason?)`.
+    - Plots take only the building types that sit on a plot. `wall` and `gate` are line structures (VS-2, placed on territory lines). The server refuses them on a plot with reason `not_on_plot`, even though they fit physically. Fit stays purely physical; this is placement policy, and the server enforces it, not only the picker (v0.4-g9a, #89 L3).
   - `Build.Slots` / `Build.GetSlots`: own kingdom's slots `{ id, size, occupiedBy: number? }`.
   - `Build.Place` stays as it is.
 - **BuildingType (G2, additive, used from VS-2):** `"mine" | "blacksmith" | "market" | "infirmary" | "granary" | "shrine"`. The Kit returns a labelled part-built stand-in until FORGE-02 models each type.
@@ -585,6 +586,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
+- v0.4-g9a (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` refuses `wall`/`gate` on plots (`not_on_plot`), enforced on the server (#89 L3).
 - v0.4-g8a (2026-10-13) FORGE-00: G13.5 Buildings stats name barracks `bunks` instead of a recruit cap (D-041). Wording only.
 - v0.4-g8 (2026-10-13) FORGE-00, ruling on the three #31 contract nits (backlog audit): the contract follows the shipped code. `assign` returns `KingdomId?`; `Kingdom.Gather` returns `(true, ResourceId, amount)` or `(false, errorCode)`; `Kingdom.SetJobQuota` covers farmer/woodcutter/miner/builder and returns `(ok, errorCode?)`. The v0.4-g7 G13.1 signatures arrive with PR #83.
 - v0.4-g7 (2026-10-13) FORGE-00, content follow-ups round 2 (FORGE-05 #67 review). G13.1 now gives exact signatures: `fireAction` takes one call per event with `rulerHistories` and `creditedRulers`; `choicePreview` requires `fillNames`; `choiceRisks(decisionId, fillNames)`; cost is paid from `decisionEffects`; the farm cap gives multiplier 0. Breaking for open PRs #68 and #77; a migration note is in their handoff.
