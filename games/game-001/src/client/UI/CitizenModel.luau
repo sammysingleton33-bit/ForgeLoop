@@ -11,35 +11,58 @@
 		CitizenModel.card(view) -> Card?                 nil when the view has no name (not a citizen)
 		CitizenModel.conversation(payload, fallback?) -> Conversation?
 			nil when the payload is nil or has no question, no scenarioId or no valid option;
-			options keep the payload's order; duplicates and options without id or text are dropped.
+			options keep the payload's order; duplicates and options without id or text are dropped;
+			at most OPTION_LIMIT (the contract says 2-4).
 			fallback = { name, occupation } names the speaker when the payload has no `speaker`.
+			Option = { id, text, index, cost: { { id, amount, name, icon } }, risks: { Risk },
+			hiddenRisks: number } from the payload's optional `cost` (ResourceBag) and `risks`
+			({ { text, chance } }, ContentQuery.choicePreview, G13.3). Loose: cost entries that are
+			not a known resource with a whole amount > 0 are ignored; a risk needs a text (`notice`
+			is accepted for it); a chance outside 0..1 shows as "?" instead of hiding the risk. At most
+			RISK_LIMIT risks are listed; `hiddenRisks` counts the rest ("+N more risks").
+			Risk = { text, chance: number?, percent: number?, label ("30 %", UI/CitizenText.chance) }
+		CitizenModel.price(option, balances?) -> { short: { [id]: true }, need: string? }
+			which cost entries the treasury cannot cover and the reason ("Need 20 Wood", UI/Text.missing,
+			the build menu's words); nothing is short while the treasury is unknown (balances nil)
+		CitizenModel.key(entityId, scenarioId) -> string   one showing of a scenario (Choose is
+			idempotent per showing on the server)
 		CitizenModel.effect(e) -> Effect?                { kind, text, icon, tint, tone }
 		CitizenModel.outcome(called, ok, result, reason) -> Outcome
-			{ phase = "answered", reaction?, effects }  ok == true
+			{ phase = "answered", reaction?, effects }  ok == true (at most EFFECT_LIMIT effects)
 			{ phase = "refused", message, code? }        ok == false (or any other non-nil value)
 			{ phase = "failed", message }               the call errored or the server dropped it (nil)
 		CitizenModel.moodBand(mood) -> string
 		CitizenModel.cardRect(metrics), CitizenModel.conversationRect(metrics) -> { x, y, width, height }
-		CitizenModel.conversationHeight(state, rect, phone) -> number   a fitted panel height (below)
-		CitizenModel.conversationOverflows(state, rect, phone) -> boolean the body will scroll
+		CitizenModel.conversationHeight(state, rect, phone, balances?) -> number   a fitted panel height
+		CitizenModel.conversationOverflows(state, rect, phone, balances?) -> boolean the body will scroll
 		CitizenModel.lines(text, width, charWidth) -> number            greedy word wrap estimate
 
 	Geometry (logical px, UI/Layout metrics):
 		card          the drawer; on tablet and desktop at most CARD_HEIGHT tall (the content is short)
 		conversation  tablet/desktop: the drawer's place; phone: from the left margin to the drawer's
-		              right edge, below the resource pills and their spend float (so a cost or gain stays
-		              visible), left of the rail. Its height is fitted to the text (average glyph widths,
-		              greedy word wrap); the body scrolls when the estimate falls short.
+		              right edge, just below the resource pills and the crest's Crown Points badge (the
+		              pills and their spend badge stay visible, the reputation strip is covered whole),
+		              left of the rail. Its height is fitted to the text (average glyph widths, greedy
+		              word wrap); the body scrolls when the estimate falls short.
 ]]
 
+local Bundle = require("@game/ReplicatedStorage/Forge/Economy/Bundle")
 local CitizenText = require("./CitizenText")
 local Layout = require("./Layout")
+local Resources = require("@game/ReplicatedStorage/Forge/Config/Resources")
+local Text = require("./Text")
 
 local CitizenModel = {}
 
 CitizenModel.CARD_HEIGHT = 376
+CitizenModel.CROWN_BADGE = 8 -- the crest's Crown Points badge hangs this far below the crest (UI/Crest)
 CitizenModel.MEMORY_LIMIT = 8
 CitizenModel.TRAIT_LIMIT = 6
+-- Caps against a malformed or abusive payload (FORGE-05 L2): the contract says 2-4 answers; content
+-- has at most 2 risks per answer today (handoff: keep it <= 3); effect chips wrap in rows.
+CitizenModel.OPTION_LIMIT = 4
+CitizenModel.RISK_LIMIT = 4
+CitizenModel.EFFECT_LIMIT = 8
 
 CitizenModel.JOBS = table.freeze({
 	idle = "Idle",
@@ -112,13 +135,33 @@ CitizenModel.CONVO = table.freeze({
 	chipChrome = 38, -- 4 + 20 icon + 4 + 10 padding
 	footer = 52, -- 44 px button + 8 px gap
 	errorLine = 22,
+	-- What an answer costs and risks, under its text (UI/ConversationPanel).
+	metaGap = 4, -- between the text, the cost row and each risk line
+	costRow = 16, -- resource chips (16 px icon + amount) and "Need ..."
+	costIcon = 16,
+	costGap = 6,
+	riskLine = 14, -- one line of risk text (11 px, LineHeight 1.15)
+	riskIcon = 14,
+	riskChance = 38, -- "30 %" column (">99 %" measures 34 px in the renderer; room for Studio)
+	riskIndent = 58, -- 14 icon + 4 + 38 chance + 2: where the risk text starts
 })
 
 -- Average glyph widths (px) at the sizes the panel uses: Merriweather 14 / 13 (question, phone),
 -- Montserrat Bold 13 (answers), Montserrat 12 (body), Montserrat Bold 12 (chips). Measured on the
 -- headless renders: question at 14 px ≈ 6.6, answers ≈ 6.9-7.0, chips at 11 px ≈ 5.4; the others
 -- are scaled from those. Each carries a little slack: a short estimate means a scroll.
-CitizenModel.CHAR = table.freeze({ question = 7.0, phoneQuestion = 6.6, option = 7.1, body = 6.9, chip = 6.4 })
+-- Risk text is Montserrat SemiBold 11 (measured 5.5-5.6 in the renderer page), cost amounts and
+-- "Need ..." Bold 12 / 11 (7.1-7.6 per digit, 6.3).
+CitizenModel.CHAR = table.freeze({
+	question = 7.0,
+	phoneQuestion = 6.6,
+	option = 7.1,
+	body = 6.9,
+	chip = 6.4,
+	risk = 5.9,
+	cost = 7.4,
+	need = 6.6,
+})
 
 -- Line spacing of wrapped text (TextLabel.LineHeight): Merriweather's tall ascenders need air.
 CitizenModel.SPEECH_LINE_HEIGHT = 1.25
@@ -151,10 +194,65 @@ local function text(s: any): string?
 	return if type(s) == "string" and s ~= "" then s else nil
 end
 
+-- The first character of a name, upper-cased. Server text may be invalid UTF-8 (utf8.offset then
+-- throws, FORGE-05 L1): fall back to its first ASCII letter or digit, else "?".
 local function initial(name: string): string
+	if utf8.len(name) == nil then
+		local ascii = string.match(name, "%w")
+		return if ascii then string.upper(ascii) else "?"
+	end
 	local stop = utf8.offset(name, 2)
 	local first = if stop then string.sub(name, 1, stop - 1) else name
 	return string.upper(first)
+end
+
+-- A ResourceBag from the payload as display entries in resource order. Loose: anything that is not
+-- a known resource id with a whole amount > 0 is ignored (the treasury could not spend it either).
+local function costEntries(raw: any): { any }
+	local out = {}
+	if type(raw) ~= "table" then
+		return out
+	end
+	local bag = {}
+	for id, amount in raw do
+		if type(id) == "string" and Resources.defs[id] ~= nil and Bundle.isAmount(amount) then
+			bag[id] = amount
+		end
+	end
+	for _, entry in Bundle.ordered(bag, Resources.ids) do
+		local def = Resources.defs[entry.id]
+		table.insert(out, { id = entry.id, amount = entry.amount, name = def.name, icon = def.icon })
+	end
+	return out
+end
+
+-- Risks keep the payload's order. A risk without text has nothing to show and is ignored; one with a
+-- bad chance is still shown (label "?"): the rule is that every risk is visible before choosing.
+local function riskEntries(raw: any): ({ any }, number)
+	local out, hidden = {}, 0
+	if type(raw) ~= "table" then
+		return out, 0
+	end
+	for _, r in ipairs(raw) do
+		if type(r) == "table" then
+			local label = text(r.text) or text(r.notice)
+			if label then
+				if #out >= CitizenModel.RISK_LIMIT then
+					hidden += 1
+				else
+					local c = r.chance
+					local chance = if type(c) == "number" and c == c and c >= 0 and c <= 1 then c else nil
+					table.insert(out, {
+						text = label,
+						chance = chance,
+						percent = if chance then math.floor(chance * 100 + 0.5) else nil,
+						label = CitizenText.chance(chance),
+					})
+				end
+			end
+		end
+	end
+	return out, hidden
 end
 
 function CitizenModel.moodBand(mood: number): string
@@ -268,11 +366,22 @@ function CitizenModel.conversation(payload: any, fallback: any?): any
 	local options = {}
 	local seen: { [string]: boolean } = {}
 	for _, o in ipairs(payload.options) do
+		if #options >= CitizenModel.OPTION_LIMIT then
+			break
+		end
 		if type(o) == "table" then
 			local id, label = text(o.id), text(o.text)
 			if id and label and not seen[id] then
 				seen[id] = true
-				table.insert(options, { id = id, text = label, index = #options + 1 })
+				local risks, hidden = riskEntries(o.risks)
+				table.insert(options, {
+					id = id,
+					text = label,
+					index = #options + 1,
+					cost = costEntries(o.cost),
+					risks = risks,
+					hiddenRisks = hidden,
+				})
 			end
 		end
 	end
@@ -289,6 +398,26 @@ function CitizenModel.conversation(payload: any, fallback: any?): any
 		options = options,
 		speaker = { name = name, occupation = text(speaker.occupation) or text(fb.occupation), initial = initial(name) },
 	}
+end
+
+function CitizenModel.key(entityId: any, scenarioId: any): string
+	return `{tostring(entityId)}:{tostring(scenarioId)}`
+end
+
+function CitizenModel.price(option: any, balances: { [string]: number }?): any
+	local short = {}
+	local cost = if type(option) == "table" and type(option.cost) == "table" then option.cost else {}
+	if balances == nil or #cost == 0 then
+		return { short = short, need = nil }
+	end
+	local bag = {}
+	for _, c in cost do
+		bag[c.id] = c.amount
+		if (balances[c.id] or 0) < c.amount then
+			short[c.id] = true
+		end
+	end
+	return { short = short, need = Text.missing(bag, balances) }
 end
 
 function CitizenModel.effect(e: any): any
@@ -321,7 +450,7 @@ function CitizenModel.outcome(called: boolean, ok: any, result: any, reason: any
 			if type(result.effects) == "table" then
 				for _, e in ipairs(result.effects) do
 					local effect = CitizenModel.effect(e)
-					if effect then
+					if effect and #effects < CitizenModel.EFFECT_LIMIT then
 						table.insert(effects, effect)
 					end
 				end
@@ -345,10 +474,11 @@ function CitizenModel.conversationRect(m: any): { x: number, y: number, width: n
 	if m.breakpoint ~= "phone" then
 		return { x = d.x, y = d.y, width = d.width, height = d.height }
 	end
-	-- Below the pills and the CurrencyPill spend float (16 px under the pill). Not below
-	-- `hud.bottom`: on phones that includes the reputation strip (FL-0089), and a conversation is
-	-- worth covering it — the sheet needs the height for four answers at 844 × 390.
-	local y = m.hud.pills.y + Layout.PILL_HEIGHT + 16
+	-- Just below the pills (their spend badge sits on the pill's top edge) and the crest's Crown
+	-- Points badge. Not below `hud.bottom`: on phones that includes the reputation strip (FL-0089),
+	-- and a conversation is worth covering it — the sheet needs the height for answers with costs
+	-- and risks at 844 × 390. Starting above the strip covers it whole (no sliver, FORGE-05 L3).
+	local y = math.max(m.hud.pills.y + Layout.PILL_HEIGHT, m.hud.y + m.hud.crest + CitizenModel.CROWN_BADGE) + 2
 	return { x = m.margin, y = y, width = d.x + d.width - m.margin, height = m.height - y - m.margin }
 end
 
@@ -366,9 +496,44 @@ function CitizenModel.lines(s: string, width: number, char: number): number
 	return n
 end
 
+-- Height of the cost row and the risk lines under an answer's text (0 without either), for a text
+-- column `width` px wide. The cost row wraps when the chips and "Need ..." do not fit one line.
+function CitizenModel.optionMeta(o: any, width: number, balances: { [string]: number }?): number
+	local C = CitizenModel.CONVO
+	local K = CitizenModel.CHAR
+	local h = 0
+	if #o.cost > 0 then
+		local rows, used = 1, 0
+		local function place(w: number)
+			if used > 0 and used + C.costGap + w > width then
+				rows += 1
+				used = w
+			else
+				used += (if used > 0 then C.costGap else 0) + w
+			end
+		end
+		for _, c in o.cost do
+			place(C.costIcon + 2 + #tostring(c.amount) * K.cost)
+		end
+		local need = CitizenModel.price(o, balances).need
+		if need then
+			place((utf8.len(need) or #need) * K.need)
+		end
+		h += C.metaGap + rows * C.costRow + (rows - 1) * C.metaGap
+	end
+	for _, r in o.risks do
+		h += C.metaGap + CitizenModel.lines(r.text, width - C.riskIndent, K.risk) * C.riskLine
+	end
+	if o.hiddenRisks > 0 then
+		h += C.metaGap + C.riskLine
+	end
+	return h
+end
+
 -- state = { phase = "asking" | "choosing" | "answered" | "refused", conversation, picked?, outcome?,
--- error? } (ConversationController.state).
-function CitizenModel.conversationHeight(state: any, rect: any, phone: boolean): number
+-- error? } (ConversationController.state). `balances` (the treasury) decides whether an answer shows
+-- "Need ..." in its cost row.
+function CitizenModel.conversationHeight(state: any, rect: any, phone: boolean, balances: { [string]: number }?): number
 	local C = CitizenModel.CONVO
 	local K = CitizenModel.CHAR
 	local pad = if phone then C.phonePad else C.pad
@@ -415,8 +580,12 @@ function CitizenModel.conversationHeight(state: any, rect: any, phone: boolean):
 	else
 		h += speech(convo.question, questionChar, speechLine) + C.gap + C.kicker + C.gap
 		local function option(o: any, width: number): number
-			local n = CitizenModel.lines(o.text, width - C.optionChrome, K.option)
-			return math.max(C.optionMin, n * C.optionLine + 2 * C.optionPadY + 4)
+			local column = width - C.optionChrome
+			local n = CitizenModel.lines(o.text, column, K.option)
+			local meta = CitizenModel.optionMeta(o, column, balances)
+			-- +4 slack for a wrapped answer; the cost and risk rows are already rounded up (14 px per
+			-- risk line, 13 measured).
+			return math.max(C.optionMin, n * C.optionLine + (if meta > 0 then meta else 4) + 2 * C.optionPadY)
 		end
 		local options = convo.options
 		if phone then
@@ -442,12 +611,18 @@ end
 
 -- True when the estimated content is taller than the space: the body will scroll, so the panel says
 -- so ("YOUR ANSWER · SCROLL FOR ALL 3") instead of hiding an answer below the fold without a cue.
-function CitizenModel.conversationOverflows(state: any, rect: any, phone: boolean): boolean
+function CitizenModel.conversationOverflows(
+	state: any,
+	rect: any,
+	phone: boolean,
+	balances: { [string]: number }?
+): boolean
 	local saved = rect.height
 	local unbounded = CitizenModel.conversationHeight(
 		state,
 		{ x = rect.x, y = rect.y, width = rect.width, height = math.huge },
-		phone
+		phone,
+		balances
 	)
 	return unbounded > saved
 end

@@ -104,14 +104,24 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 1. Tap one of your citizens: the drawer (phone: the right-hand panel) shows the name, occupation,
    Loyalty / Mood / Obedience each with a bar **and a number**, what they are doing now, traits,
    family and friends. A citizen with something to say has a "!" on the portrait and a gold **Talk**.
-2. Tap **Talk**: the question and 2–4 answers appear (phone 844 × 390: all four visible without
-   scrolling; a very long question shows a "scroll for all" cue). Every word comes from the server:
-   nothing in English is built into the client.
-3. Tap an answer: all answers grey out at once; then the reaction and the "What changed" chips
+2. Tap **Talk**: the question and 2–4 answers appear (phone 844 × 390: a 2-answer question is fully
+   visible, costs and risks included; more answers may scroll, and then the kicker says "scroll for
+   all N"). Every word comes from the server: nothing in English is built into the client.
+3. **Before answering, check costs and every risk** (FORGE-05 M1; needs FORGE-01's options with
+   `cost` / `risks`): an answer that costs something shows resource chips with the amounts; one the
+   treasury can't pay has its short amount in red **and** "Need … <Resource>" in words and can't be
+   tapped. Every risk of every answer is listed with its whole-percent chance ("40 %" + the server's
+   sentence), none cut off or hidden. Compare with the scenario's preview on the server
+   (`ContentQuery.choicePreview`): same cost, same number of risks, same chances.
+4. Tap an answer: all answers grey out at once; then the reaction and the "What changed" chips
    (resources, loyalty, reputation). The pills and the reputation strip move to match. **Done** closes.
-4. Tap the same answer twice quickly, or tap during a resource tick: only one answer is sent, and the
-   panel does not flicker or lose the tap.
-5. Tap empty ground or enter build mode while the card or conversation is open: it closes.
+5. Tap the same answer twice quickly, or tap during a resource tick: only one answer is sent, and the
+   panel does not flicker or lose the tap. Gain the missing resource while the question is open: the
+   disabled answer becomes tappable without the panel jumping.
+6. Tap empty ground or enter build mode while the card or conversation is open: it closes. Tap Talk
+   and open Build before the question arrives: Build stays open (no conversation pops up later).
+7. Phone: the conversation sheet covers the reputation strip completely (no sliver above it); a
+   notice during the conversation appears above the sheet, right of the pills, not over the answers.
 
 ## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
 1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free

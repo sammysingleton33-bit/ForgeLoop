@@ -3,7 +3,10 @@
 	UI/ConversationPanel — a structured conversation with a citizen (CONTRACTS G13.3; prototype scenes
 	"talk-2", "talk-3", "talk-4", "talk-long", "choosing", "answered", "refused").
 		asking     the speaker, their question in a speech box, 2-4 answers (full-width buttons on
-		           tablet/desktop; two columns on phones), each at least 44 px tall and wrapping
+		           tablet/desktop; two columns on phones), each at least 44 px tall and wrapping. Under
+		           an answer's text: what it costs (resource chips against the treasury; a short
+		           amount is red AND the answer says "Need 20 Wood" and is disabled) and every risk
+		           with its chance ("30 %" + the server's text), all before the player chooses
 		choosing   the picked answer is marked and every answer is disabled (answer once)
 		answered   the reaction in the speech box and "What changed" effect chips, then Done
 		refused    the reason as a sentence, then Close
@@ -12,20 +15,29 @@
 	(YOUR ANSWER, WHAT CHANGED, Done, Close) and the refusal sentences (UI/CitizenText).
 
 	ConversationPanel.new(parent: GuiObject) -> panel
-	panel:render(state, metrics, ui: { color: Color3?, onPick(optionId), onDone(), onClose() })
+	panel:render(state, metrics, ui: { color: Color3?, balances: ResourceBag?, onPick(optionId), onDone(),
+		onClose() })
 		state = ConversationController.state: { phase, conversation (CitizenModel Conversation),
 		        picked?, outcome? (CitizenModel Outcome), error? }
+		balances = the treasury (nil while unknown: nothing is marked short)
+	panel:patch(balances)   a treasury push: re-checks what each answer costs and rebuilds only the
+	                        answers whose affordability changed (the rest keep their instances,
+	                        FORGE-05 M1); refits the height and the scroll cue
 	panel:destroy()
 	Names: panel "Conversation"; "Question" and "Reaction" (wrapped TextLabels in "Speech" boxes);
-	"Options" with buttons "Option_<id>" (attributes `option`, `state` = idle | picked | off) and
-	their "Label"; "Error"; "Echo"; "Effects" with "Effect_<n>" (attributes `kind`, `tone`) and their
-	"Label"; "Refusal" with "Reason"; buttons "Done" / "Close" (footer) and the header's X "Close".
+	"Options" with buttons "Option_<id>" (attributes `option`, `state` = idle | picked | off,
+	`affordable`) holding "Body" with the "Label", "Cost" (chips "Cost_<resource>" with "Amount",
+	attribute `short`; "Need") and "Risk_<n>" (attribute `percent`; "Chance", "RiskText"), "MoreRisks";
+	"Error"; "Echo"; "Effects" with "Effect_<n>" (attributes `kind`, `tone`) and their "Label";
+	"Refusal" with "Reason"; buttons "Done" / "Close" (footer) and the header's X "Close".
 ]]
 
 local Button = require("@game/ReplicatedStorage/Forge/UI/Components/Button")
 local CitizenCard = require("./CitizenCard")
 local CitizenModel = require("./CitizenModel")
+local CitizenText = require("./CitizenText")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
 local Panel = require("@game/ReplicatedStorage/Forge/UI/Components/Panel")
 local Style = require("@game/ReplicatedStorage/Forge/UI/Style")
@@ -42,7 +54,7 @@ local PICKED_TOP = Color3.fromRGB(74, 64, 48)
 local PICKED_BOTTOM = Color3.fromRGB(46, 42, 34)
 
 function ConversationPanel.new(parent: Instance)
-	return setmetatable({ _parent = parent, panel = nil, options = {} }, ConversationPanel)
+	return setmetatable({ _parent = parent, panel = nil, options = {}, _needs = {} }, ConversationPanel)
 end
 
 local function tint(name: string): Color3
@@ -138,41 +150,175 @@ local function numberBadge(n: number, dim: boolean): Frame
 	})
 end
 
-function ConversationPanel:_option(o: any, state: any, width: UDim, onPick: (string) -> ()): TextButton
+-- What an answer costs, as resource chips; a short amount is red and "Need ..." says it in words.
+local function costRow(o: any, price: any, dim: boolean): Frame
+	local C = CitizenModel.CONVO
+	local list = Style.list("x", C.costGap, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
+	list.Wraps = true
+	local row = Create("Frame", {
+		Name = "Cost",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, C.costRow),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 2,
+	}, { List = list })
+	for i, c in o.cost do
+		local short = price.short[c.id] == true
+		local icon = Icon.new(c.icon, C.costIcon)
+		icon.LayoutOrder = 1
+		local chip = Create("Frame", {
+			Name = "Cost_" .. c.id,
+			BackgroundTransparency = 1,
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = UDim2.fromOffset(0, C.costRow),
+			LayoutOrder = i,
+			Parent = row,
+		}, {
+			List = Style.list("x", 2, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
+			Icon = icon,
+			Amount = Style.text({
+				text = Format.amount(c.amount),
+				weight = Enum.FontWeight.Bold,
+				size = 12,
+				color = if short then DOWN elseif dim then Theme.color("textMuted") else Theme.color("textPrimary"),
+				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 2 },
+			}),
+		})
+		chip:SetAttribute("short", short)
+	end
+	if price.need then
+		Style.text({
+			text = price.need,
+			weight = Enum.FontWeight.Bold,
+			size = 11,
+			color = DOWN,
+			extra = {
+				Name = "Need",
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2.fromOffset(0, C.costRow),
+				LayoutOrder = #o.cost + 1,
+			},
+		}).Parent =
+			row
+	end
+	return row
+end
+
+-- One risk: a warning icon, the chance ("30 %") and the server's text, wrapping under itself.
+local function riskLine(r: any, index: number, dim: boolean): Frame
+	local C = CitizenModel.CONVO
+	local icon = Icon.new("warning", C.riskIcon)
+	icon.Position = UDim2.fromOffset(0, 0)
+	local frame = Create("Frame", {
+		Name = "Risk_" .. index,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, C.riskLine),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 10 + index,
+	}, {
+		Icon = icon,
+		Chance = Style.text({
+			text = r.label,
+			weight = Enum.FontWeight.ExtraBold,
+			size = 11,
+			color = if dim then Theme.color("textMuted") else WARN_TEXT,
+			yAlign = "Top",
+			extra = {
+				Position = UDim2.fromOffset(C.riskIcon + 4, 0),
+				Size = UDim2.fromOffset(C.riskChance, C.riskLine),
+			},
+		}),
+		RiskText = Style.text({
+			text = r.text,
+			size = 11,
+			color = if dim then Theme.color("textMuted") else Theme.color("textSecondary"),
+			wrap = true,
+			yAlign = "Top",
+			extra = {
+				Position = UDim2.fromOffset(C.riskIndent, 0),
+				Size = UDim2.new(1, -C.riskIndent, 0, C.riskLine),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LineHeight = CitizenModel.LINE_HEIGHT,
+			},
+		}),
+	})
+	if r.percent then
+		frame:SetAttribute("percent", r.percent)
+	end
+	return frame
+end
+
+function ConversationPanel:_option(o: any, state: any, width: UDim, onPick: (string) -> (), balances: any): TextButton
+	local C = CitizenModel.CONVO
+	local price = CitizenModel.price(o, balances)
+	local affordable = price.need == nil
 	local status = if state.picked == nil then "idle" elseif state.picked == o.id then "picked" else "off"
 	local waiting = status == "picked" and state.phase == "choosing"
-	local open = state.phase == "asking"
+	local open = state.phase == "asking" and affordable
+	local dim = status == "off" or (status == "idle" and not affordable)
+	local meta = #o.cost > 0 or #o.risks > 0 or o.hiddenRisks > 0
 	local top, bottom = Theme.color("ink600"), Theme.color("ink800")
 	if status == "picked" then
 		top, bottom = PICKED_TOP, PICKED_BOTTOM
-	elseif status == "off" then
+	elseif dim then
 		top, bottom = Theme.color("ink700"), Theme.color("ink800")
+	end
+	local body: { [any]: any } = {
+		List = Style.list("y", C.metaGap, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top),
+		Label = Style.text({
+			text = o.text,
+			weight = Enum.FontWeight.Bold,
+			size = 13,
+			color = if dim then Theme.color("textMuted") else Theme.color("parchment100"),
+			wrap = true,
+			yAlign = if meta then "Top" else "Center",
+			extra = {
+				Size = UDim2.new(1, 0, 0, if meta then C.optionLine else 28),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LineHeight = CitizenModel.LINE_HEIGHT,
+				LayoutOrder = 1,
+			},
+		}),
+	}
+	if #o.cost > 0 then
+		body.Cost = costRow(o, price, dim)
+	end
+	for i, r in o.risks do
+		body["Risk_" .. i] = riskLine(r, i, status == "off")
+	end
+	if o.hiddenRisks > 0 then
+		body.MoreRisks = Style.text({
+			text = CitizenText.hiddenRisks(o.hiddenRisks),
+			weight = Enum.FontWeight.Bold,
+			size = 11,
+			color = WARN_TEXT,
+			extra = { Size = UDim2.new(1, 0, 0, C.riskLine), LayoutOrder = 50 },
+		})
+	end
+	local number = numberBadge(o.index, dim)
+	if meta then
+		-- Level with the first line of the text rather than the middle of a tall answer.
+		number.AnchorPoint = Vector2.new(0, 0)
+		number.Position = UDim2.fromOffset(0, -4)
 	end
 	local children: { [any]: any } = {
 		Corner = Style.corner(10),
 		Stroke = Style.stroke(
 			if status == "picked"
 				then Theme.color("gold300")
-				elseif status == "off" then Theme.color("ink500")
+				elseif dim then Theme.color("ink500")
 				else Theme.color("gold600"),
 			1.5
 		),
 		Gradient = Style.gradient(top, bottom),
 		Padding = Style.padding(8, 12, 8, 8),
-		Number = numberBadge(o.index, status == "off"),
-		Label = Style.text({
-			text = o.text,
-			weight = Enum.FontWeight.Bold,
-			size = 13,
-			color = if status == "off" then Theme.color("textMuted") else Theme.color("parchment100"),
-			wrap = true,
-			extra = {
-				Position = UDim2.fromOffset(34, 0),
-				Size = UDim2.new(1, -(34 + (if waiting then 24 else 0)), 0, 28),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				LineHeight = CitizenModel.LINE_HEIGHT,
-			},
-		}),
+		Number = number,
+		Body = Create("Frame", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(34, 0),
+			Size = UDim2.new(1, -(34 + (if waiting then 24 else 0)), 0, if meta then C.optionLine else 28),
+			AutomaticSize = Enum.AutomaticSize.Y,
+		}, body),
 	}
 	if waiting then
 		local icon = Icon.new("timer", 18)
@@ -197,11 +343,13 @@ function ConversationPanel:_option(o: any, state: any, width: UDim, onPick: (str
 	}, children)
 	button:SetAttribute("option", o.id)
 	button:SetAttribute("state", status)
+	button:SetAttribute("affordable", affordable)
 	self.options[o.id] = button
+	self._needs[o.id] = price.need or ""
 	return button
 end
 
-function ConversationPanel:_options(state: any, phone: boolean, onPick: (string) -> ()): Frame
+function ConversationPanel:_options(state: any, phone: boolean, onPick: (string) -> (), balances: any): Frame
 	local C = CitizenModel.CONVO
 	local frame = Create("Frame", {
 		Name = "Options",
@@ -218,9 +366,11 @@ function ConversationPanel:_options(state: any, phone: boolean, onPick: (string)
 		),
 	})
 	local options = state.conversation.options
+	self._slots = {}
 	if not phone then
 		for _, o in options do
-			self:_option(o, state, UDim.new(1, 0), onPick).Parent = frame
+			self._slots[o.id] = { parent = frame, width = UDim.new(1, 0) }
+			self:_option(o, state, UDim.new(1, 0), onPick, balances).Parent = frame
 		end
 		return frame
 	end
@@ -237,9 +387,9 @@ function ConversationPanel:_options(state: any, phone: boolean, onPick: (string)
 			Parent = frame,
 		}, { List = list })
 		local half = UDim.new(0.5, -math.floor(C.gridGap / 2))
-		self:_option(options[i], state, half, onPick).Parent = row
-		if options[i + 1] then
-			self:_option(options[i + 1], state, half, onPick).Parent = row
+		for j = i, math.min(i + 1, #options) do
+			self._slots[options[j].id] = { parent = row, width = half }
+			self:_option(options[j], state, half, onPick, balances).Parent = row
 		end
 	end
 	return frame
@@ -359,12 +509,21 @@ local function refusal(message: string, order: number): Frame
 	})
 end
 
+local function kickerText(state: any, rect: any, phone: boolean, balances: any): string
+	if CitizenModel.conversationOverflows(state, rect, phone, balances) then
+		return `YOUR ANSWER · SCROLL FOR ALL {#state.conversation.options}`
+	end
+	return "YOUR ANSWER"
+end
+
 function ConversationPanel:render(state: any, metrics: any, ui: { [string]: any })
 	self:destroy()
 	local C = CitizenModel.CONVO
 	local phone = metrics.breakpoint == "phone"
 	local rect = CitizenModel.conversationRect(metrics)
-	local height = CitizenModel.conversationHeight(state, rect, phone)
+	local balances = ui.balances
+	local height = CitizenModel.conversationHeight(state, rect, phone, balances)
+	self._state, self._rect, self._phone, self._onPick = state, rect, phone, ui.onPick
 	local pad = if phone then C.phonePad else C.pad
 	local speaker = state.conversation.speaker
 	local header = CitizenCard.header({
@@ -429,15 +588,9 @@ function ConversationPanel:render(state: any, metrics: any, ui: { [string]: any 
 		self.footer.instance.Name = "Close"
 	else
 		speech("Question", state.conversation.question, phone, 1).Parent = body
-		local count = #state.conversation.options
-		kicker(
-			if CitizenModel.conversationOverflows(state, rect, phone)
-				then `YOUR ANSWER · SCROLL FOR ALL {count}`
-				else "YOUR ANSWER",
-			2
-		).Parent =
-			body
-		self:_options(state, phone, ui.onPick).Parent = body
+		self._kicker = kicker(kickerText(state, rect, phone, balances), 2)
+		self._kicker.Parent = body
+		self:_options(state, phone, ui.onPick, balances).Parent = body
 		if state.error then
 			Style.text({
 				text = state.error,
@@ -464,12 +617,43 @@ function ConversationPanel:render(state: any, metrics: any, ui: { [string]: any 
 	root.Parent = self._parent
 end
 
+-- A treasury push: only answers whose "Need ..." changed are rebuilt (in the same place); the other
+-- buttons keep their instances, so a tap in progress still lands (FORGE-05 M1).
+function ConversationPanel:patch(balances: any)
+	local state = self._state
+	if self.panel == nil or state == nil or state.phase == "answered" or state.phase == "refused" then
+		return
+	end
+	local changed = false
+	for _, o in state.conversation.options do
+		local button, slot = self.options[o.id], self._slots and self._slots[o.id]
+		local need = CitizenModel.price(o, balances).need or ""
+		if button and slot and need ~= self._needs[o.id] then
+			button:Destroy()
+			self:_option(o, state, slot.width, self._onPick, balances).Parent = slot.parent
+			changed = true
+		end
+	end
+	if not changed then
+		return
+	end
+	local height = CitizenModel.conversationHeight(state, self._rect, self._phone, balances)
+	self.panel.instance.Size = UDim2.fromOffset(self._rect.width, height)
+	if self._kicker then
+		self._kicker.Text = kickerText(state, self._rect, self._phone, balances)
+	end
+end
+
 function ConversationPanel:destroy()
 	if self.panel then
 		self.panel:destroy()
 		self.panel = nil
 	end
 	self.options = {}
+	self._needs = {}
+	self._slots = {}
+	self._kicker = nil
+	self._state = nil
 	self.footer = nil
 end
 

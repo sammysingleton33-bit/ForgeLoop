@@ -3,17 +3,28 @@
 	ConversationController (FORGE-03, game-001 client, FL-0088) — structured conversations with
 	citizens (CONTRACTS G13.3, design/living-kingdom.md §2), end to end:
 		1. Talk / Ask on the citizen card (CitizenCardController:onTalk) → `Kingdom.Converse(entityId)`
-		   in a spawned thread. nil (nothing to say) → a notice "Nothing on their mind right now"; the
-		   card stays. A payload → the panel opens (`hud:setMenu("conversation")`) with the speaker,
-		   the question and the 2-4 answers, exactly as the server sent them.
+		   in a spawned thread. No such remote on the server yet → "Conversations aren't available
+		   yet" at once (no 10 s wait for a remote that will never replicate). nil (nothing to say) →
+		   a notice "Nothing on their mind right now"; the card stays. A payload → the panel opens
+		   (`hud:setMenu("conversation")`) with the speaker, the question and the 2-4 answers, exactly
+		   as the server sent them, each with its cost and every risk (G13.3 `cost`, `risks`) shown
+		   before the player chooses. An answer the treasury can't pay is disabled ("Need 20 Wood").
 		2. Picking an answer disables every answer at once (answer once: a double tap or a second
-		   answer sends nothing) and calls `Kingdom.Choose(entityId, scenarioId, responseId)`.
+		   answer sends nothing) and calls `Kingdom.Choose(entityId, scenarioId, responseId)`. The
+		   guard is per showing (`entityId:scenarioId`) and lives in the controller, not in the open
+		   panel: closing and reopening the same question while Choose is in flight shows the pick as
+		   waiting and sends nothing more.
 		3. `(true, { reaction, effects })` → the reaction and the effect chips (text from the server,
 		   icon and colour by `kind`), then Done. `(false, nil, reason)` → the reason as a sentence
 		   (UI/CitizenText), then Close. nil (the call failed or was dropped) → the answers open again
-		   with "Couldn't reach the server" (Choose is idempotent per showing on the server).
+		   with "Couldn't reach the server" (Choose is idempotent per showing on the server). A reply
+		   for a showing that is no longer on screen is never dropped silently: it lands on the
+		   reopened panel of the same showing, or else becomes a notice (speaker + reaction/reason).
 		4. Done / Close / the X close the panel. Selecting anything ("none", a building, a slot or
-		   another citizen) closes it too; opening another menu replaces it.
+		   another citizen) closes it too; opening another menu replaces it. Any menu change away
+		   from the conversation also cancels a Converse still loading (its reply is ignored).
+		5. While open, the citizen is re-checked every CHECK_SEC with `Sim.Inspect`; nil (gone, or no
+		   longer yours) closes the panel with a notice — except while a Choose is in flight.
 	The client decides nothing: no question, answer, reaction or effect text lives in this code.
 
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional (registry:find in
@@ -24,7 +35,9 @@
 		conversation:choose(responseId)  conversation:done()  conversation:close()
 		conversation.state = { entityId, phase ("asking" | "choosing" | "answered" | "refused"),
 			conversation (UI/CitizenModel Conversation), picked?, outcome?, error? }?
+		conversation.inflight = { [CitizenModel.key(entityId, scenarioId)]: responseId }
 		conversation.panel (UI/ConversationPanel)    ConversationController.MENU = "conversation"
+		ConversationController.CHECK_SEC
 ]]
 
 local CitizenModel = require("../UI/CitizenModel")
@@ -39,6 +52,9 @@ ConversationController.__index = ConversationController
 local Def = { name = "ConversationController", dependencies = { "KingdomHudController" } }
 
 ConversationController.MENU = "conversation"
+ConversationController.CHECK_SEC = 4 -- the citizen card's refresh period (CitizenCardController)
+ConversationController.CONVERSE = "Kingdom.Converse"
+ConversationController.CHOOSE = "Kingdom.Choose"
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -47,9 +63,12 @@ function Def.new(env: any, registry: any)
 		hud = registry:get("KingdomHudController"),
 		state = nil :: any,
 		panel = nil :: any,
+		inflight = {} :: { [string]: string },
 		_loading = nil :: number?,
 		_token = 0,
 		_connections = {},
+		_running = false,
+		_checking = false,
 	}, ConversationController)
 end
 
@@ -97,8 +116,13 @@ function ConversationController:start()
 		self._connections,
 		hud.menuChanged:connect(function(menu)
 			if menu ~= ConversationController.MENU then
-				-- Another panel took the drawer (or it closed): this conversation is over on screen.
-				-- A Choose still in flight is applied by the server; its reply is ignored here.
+				-- Another panel took the drawer (or it closed): this conversation is over on screen,
+				-- and a Converse still loading must not take the drawer back (FORGE-05 M2). A Choose
+				-- in flight stays in `inflight`; its reply becomes a notice (or lands on a reopen).
+				self._token += 1
+				if self._loading ~= nil then
+					self:_setLoading(nil)
+				end
 				self.state = nil
 			end
 		end)
@@ -110,19 +134,71 @@ function ConversationController:start()
 	if connection then
 		table.insert(self._connections, connection)
 	end
+	-- The phone sheet covers the reputation strip and the toast corner: the HUD moves toasts above it.
+	if hud.setSheet then
+		hud:setSheet(ConversationController.MENU, true)
+	end
+	local env = self._env
+	self._running = true
+	env.spawn(function()
+		while self._running do
+			env.wait(ConversationController.CHECK_SEC)
+			if self._running then
+				self:_checkPresence()
+			end
+		end
+	end)
 end
 
 function ConversationController:destroy()
+	self._running = false
+	self._destroyed = true
 	for _, connection in self._connections do
 		disconnect(connection)
 	end
 	self._connections = {}
 	if self._removeTalk then
 		self._removeTalk()
+		self._removeTalk = nil
 	end
 	if self.panel then
 		self.panel:destroy()
 	end
+	-- Leave no menu pointing at a panel that no longer exists (FORGE-05 L6).
+	self.state = nil
+	local hud = self.hud
+	if hud.state.menu == ConversationController.MENU then
+		pcall(function()
+			hud:setMenu(nil)
+		end)
+	end
+end
+
+-- The server has the remote (non-yielding). An older HUD without hasRemote: assume it does.
+function ConversationController:_hasRemote(name: string): boolean
+	local hud = self.hud
+	return hud.hasRemote == nil or hud:hasRemote(name)
+end
+
+-- Every CHECK_SEC while a conversation is open: is the citizen still there (and still ours)?
+function ConversationController:_checkPresence()
+	local s = self.state
+	if s == nil or s.phase == "choosing" or self._checking or not self:_hasRemote("Sim.Inspect") then
+		return
+	end
+	local hud = self.hud
+	self._checking = true
+	self._env.spawn(function()
+		local called, view = pcall(function()
+			return hud.remotes:invoke("Sim.Inspect", s.entityId)
+		end)
+		self._checking = false
+		if not called or view ~= nil or self.state ~= s or s.phase == "choosing" then
+			return -- unknown (no reply), still here, or the panel moved on
+		end
+		self:close()
+		hud:notify({ kind = "info", title = CitizenText.GONE, body = s.conversation.speaker.name })
+	end)
 end
 
 function ConversationController:_onSelected()
@@ -152,12 +228,17 @@ function ConversationController:open(entityId: number)
 		return -- one Converse at a time (a double tap on Talk asks once)
 	end
 	local hud = self.hud
+	if not self:_hasRemote(ConversationController.CONVERSE) then
+		-- The server has no conversations yet (FORGE-05 L5): say so now instead of after 10 s.
+		hud:notify({ kind = "info", title = CitizenText.UNAVAILABLE })
+		return
+	end
 	self._token += 1
 	local token = self._token
 	self:_setLoading(entityId)
 	self._env.spawn(function()
 		local called, payload = pcall(function()
-			return hud.remotes:invoke("Kingdom.Converse", entityId)
+			return hud.remotes:invoke(ConversationController.CONVERSE, entityId)
 		end)
 		if token ~= self._token then
 			return
@@ -173,11 +254,13 @@ function ConversationController:open(entityId: number)
 			})
 			return
 		end
+		-- The same showing reopened while its Choose is still in flight: show the pick as waiting.
+		local pending = self.inflight[CitizenModel.key(entityId, conversation.scenarioId)]
 		self.state = {
 			entityId = entityId,
-			phase = "asking",
+			phase = if pending then "choosing" else "asking",
 			conversation = conversation,
-			picked = nil :: string?,
+			picked = pending :: string?,
 			outcome = nil :: any,
 			error = nil :: string?,
 		}
@@ -189,40 +272,88 @@ function ConversationController:open(entityId: number)
 	end)
 end
 
+function ConversationController:_balances(): { [string]: number }?
+	local store = self.hud.store
+	return if store:hasTreasury() then store:balances() else nil
+end
+
+-- A Choose reply for a showing that is no longer on screen: the server has decided, say so.
+function ConversationController:_notifyOutcome(speaker: any, outcome: any)
+	local hud = self.hud
+	if outcome.phase == "answered" then
+		local first = outcome.effects[1]
+		hud:notify({
+			kind = "success",
+			title = speaker.name,
+			body = outcome.reaction or (if first then first.text else nil),
+		})
+	elseif outcome.phase == "refused" then
+		hud:notify({ kind = "warning", title = speaker.name, body = outcome.message })
+	else
+		hud:notify({ kind = "error", title = outcome.message, body = speaker.name })
+	end
+end
+
 function ConversationController:choose(responseId: string)
 	local s = self.state
 	if s == nil or s.phase ~= "asking" then
 		return -- answer once: everything after the first pick is ignored
 	end
-	local known = false
+	local option = nil
 	for _, o in s.conversation.options do
 		if o.id == responseId then
-			known = true
+			option = o
 		end
 	end
-	if not known then
+	if option == nil then
 		return
 	end
+	-- No separate in-flight check here: `inflight` is the one guard, applied when a showing is put on
+	-- screen (open() shows an in-flight showing as "choosing", and choose() only answers "asking").
+	local key = CitizenModel.key(s.entityId, s.conversation.scenarioId)
+	if CitizenModel.price(option, self:_balances()).need then
+		return -- the treasury can't pay: the answer is disabled and says why (the server checks again)
+	end
+	local hud = self.hud
+	if not self:_hasRemote(ConversationController.CHOOSE) then
+		s.error = CitizenText.UNAVAILABLE
+		hud:render()
+		return
+	end
+	self.inflight[key] = responseId
 	s.phase = "choosing"
 	s.picked = responseId
 	s.error = nil
-	local hud = self.hud
 	hud:render()
+	local entityId, scenarioId, speaker = s.entityId, s.conversation.scenarioId, s.conversation.speaker
 	self._env.spawn(function()
 		local called, ok, result, reason = pcall(function()
-			return hud.remotes:invoke("Kingdom.Choose", s.entityId, s.conversation.scenarioId, responseId)
+			return hud.remotes:invoke(ConversationController.CHOOSE, entityId, scenarioId, responseId)
 		end)
-		if self.state ~= s then
-			return -- closed while waiting
+		self.inflight[key] = nil
+		if self._destroyed then
+			return
 		end
 		local outcome = CitizenModel.outcome(called, ok, result, reason)
+		-- The panel on screen now may be a reopen of the same showing (a new state table).
+		local current = self.state
+		if
+			current == nil
+			or current.entityId ~= entityId
+			or current.conversation.scenarioId ~= scenarioId
+			or current.phase ~= "choosing"
+		then
+			self:_notifyOutcome(speaker, outcome)
+			return
+		end
 		if outcome.phase == "failed" then
-			s.phase = "asking"
-			s.picked = nil
-			s.error = outcome.message
+			current.phase = "asking"
+			current.picked = nil
+			current.error = outcome.message
 		else
-			s.phase = outcome.phase
-			s.outcome = outcome
+			current.phase = outcome.phase
+			current.picked = responseId
+			current.outcome = outcome
 		end
 		hud:render()
 	end)
@@ -262,12 +393,15 @@ function ConversationController:render(metrics: any)
 		width = metrics.width,
 		height = metrics.height,
 	})
+	local balances = self:_balances()
 	if key == self._renderKey and self.panel.panel ~= nil then
+		self.panel:patch(balances) -- what each answer costs against the new treasury, in place
 		return
 	end
 	self._renderKey = key
 	self.panel:render(self.state, metrics, {
 		color = color,
+		balances = balances,
 		onPick = function(responseId)
 			self:choose(responseId)
 		end,

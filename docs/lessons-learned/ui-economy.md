@@ -71,3 +71,17 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   rebuild when it changes; balances, CTA state and progress are patched. Check it with instance
   identity in specs (`expect(find(...)).toBe(before)`) and pixel-compare the committed renders.
   `observed-once` (2026-10-12).
+- **A request token must move on every menu change, not only on selection.** The card and the
+  conversation ignored stale replies only when the player selected something else; opening Build or
+  closing the drawer left the token alone, so a slow `Sim.Inspect` / `Kingdom.Converse` reply took
+  the drawer back (FORGE-05 M2 on #52). Bump the token in the `menuChanged` handler whenever the menu
+  is no longer yours, and spec it with latency in the double. `observed-once` (2026-10-12).
+- **A guard whose mutation survives is dead code.** FL-0088 gate: removing the in-flight check in
+  `choose()` failed no spec, because `open()` already shows an in-flight showing as "choosing" and
+  `choose()` answers only "asking". Keep one guard, at the place the state is put on screen, and
+  mutate it. `observed-once` (2026-10-12).
+- **Measure a fitted panel's slack from the renderer's layout file.** `design/ui/render/out/
+  <scene>-<device>.layout.json` has every object's rect: the gap between the last laid-out child and
+  the scrolling body's bottom is the height estimate's error, per scene and size (FL-0088 gate: 21-28
+  device px on desktop → 12-13 after measuring the risk font, 5.5-5.6 px per character, in the
+  renderer page). `observed-once` (2026-10-12).

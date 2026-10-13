@@ -13,15 +13,21 @@
 		citizens:setScenario(entityId, CitizenDoubles.SCENARIOS.three)   -- or nil: nothing to say
 		citizens.refuse = "not_eligible"                     -- the next Choose answers (false, nil, reason)
 		citizens.latency = 0.2                               -- seconds Choose / Converse take to answer
+		citizens.chooseLatency = 1                           -- Choose only (default: latency)
 		citizens.inspectDelay[41] = 0.3                      -- seconds Sim.Inspect takes for one citizen
 		citizens.drop = true                                 -- the next Choose returns nil (a dropped call)
+
+	Today's main (FORGE-01 CitizenService has Sim.Inspect, no conversations yet):
+		KingdomWorld.new({ remotes = CitizenDoubles.INSPECT_ONLY, services = { CitizenDoubles.inspectOnly } })
 
 	Double rules (stand-ins, not the game's rules): only the caller's kingdom's citizens can be
 	inspected or talked to (else nil / "not_yours"); Choose checks the scenario id and the response
 	id ("not_eligible" / "unknown_response"), spends the response's `cost` through the real
 	TreasuryService ("cost"), adds its loyalty to the citizen, records a memory, clears the request,
 	and answers the response's reaction and effects. A repeated Choose for the same showing returns the
-	stored answer (idempotent per (entityId, scenarioId) showing, G13.3).
+	stored answer (idempotent per (entityId, scenarioId) showing, G13.3). Converse sends each
+	response's `cost` and `risks` with its option, as FORGE-01's server will from
+	ContentQuery.choicePreview (G13.3).
 
 	The sample names and lines below are spec fixtures. In the game every line comes from the content
 	library (G13.1) through FORGE-01's server; the UI never contains them.
@@ -34,15 +40,17 @@ local CitizenDoubles = {}
 -- FORGE-01's declarations as CONTRACTS G8/G13.3 describe them (kinds, arguments, rates). Sim is a new
 -- area in KingdomWorld; Kingdom exists and is appended to. Sim.Inspect and Kingdom.Choose have no rate
 -- in the contract: these are FORGE-03's proposals (handoff).
+local INSPECT = {
+	name = "Sim.Inspect",
+	kind = "function",
+	args = { V.integer(1, 65535) },
+	rate = { burst = 6, perSecond = 3 },
+}
+
+CitizenDoubles.INSPECT_ONLY = { Sim = { INSPECT } }
+
 CitizenDoubles.REMOTES = {
-	Sim = {
-		{
-			name = "Sim.Inspect",
-			kind = "function",
-			args = { V.integer(1, 65535) },
-			rate = { burst = 6, perSecond = 3 },
-		},
-	},
+	Sim = { INSPECT },
 	Kingdom = {
 		{
 			name = "Kingdom.Converse",
@@ -181,9 +189,30 @@ CitizenDoubles.CITIZENS = {
 		hasRequest = false,
 		look = LOOK,
 	},
+	{
+		entityId = 46,
+		kingdom = "crimson",
+		name = "Wulf Ashby",
+		occupation = "Miner",
+		job = "miner",
+		traits = { "Brave", "Blunt" },
+		mood = 47,
+		loyalty = 58,
+		obedience = 44,
+		intent = "Checking the cracked quarry face",
+		lastMemory = "The quarry was raided",
+		memories = { "The quarry was raided" },
+		family = {},
+		friends = { "Osric Vale" },
+		rivals = {},
+		hasRequest = true,
+		look = LOOK,
+	},
 }
 
--- Scenarios with 2, 3 and 4 answers and a very long question. Each response: text (shown), and the
+-- Scenarios with 2, 3 and 4 answers and a very long question; "risky" has an answer the starting
+-- treasury can't pay (25 Gold, the kingdom starts with none) and one with two risks. `risks` are
+-- what ContentQuery.choicePreview calls risks (chance < 1 consequences), as the server words them. Each response: text (shown), and the
 -- double's own consequences: cost (ResourceBag), loyalty, reaction and effects (the server's texts).
 CitizenDoubles.SCENARIOS = {
 	two = {
@@ -236,6 +265,7 @@ CitizenDoubles.SCENARIOS = {
 			{
 				id = "work",
 				text = "Farmers deal with floods. Get back to work.",
+				risks = { { text = "Edda's family may lay down their tools for 60 s.", chance = 0.2 } },
 				loyalty = -6,
 				reaction = "...Yes, my lord.",
 				effects = { { kind = "loyalty", text = "−6 Loyalty" }, { kind = "authority", text = "+2 Authority" } },
@@ -307,6 +337,31 @@ CitizenDoubles.SCENARIOS = {
 			},
 		},
 	},
+	risky = {
+		scenarioId = "cracked_face",
+		question = "The quarry face has cracked, my lord. Do we shore it up before the miners go back in?",
+		responses = {
+			{
+				id = "shore",
+				text = "Shore it up first, whatever it costs.",
+				cost = { wood = 20, gold = 25 },
+				loyalty = 5,
+				reaction = "Thank you, my lord. The lads will sleep easier.",
+				effects = { { kind = "wood", text = "−20 Wood" }, { kind = "gold", text = "−25 Gold" } },
+			},
+			{
+				id = "dig",
+				text = "Keep digging. We need the stone.",
+				risks = {
+					{ text = "The cracked face may fall on the miners. Happiness −8 for 90 s.", chance = 0.4 },
+					{ text = "Wulf may lay down his tools for 60 s.", chance = 0.5 },
+				},
+				loyalty = -4,
+				reaction = "As you command.",
+				effects = { { kind = "authority", text = "+2 Authority" } },
+			},
+		},
+	},
 }
 
 local function clone(t)
@@ -318,7 +373,9 @@ local function clone(t)
 end
 
 -- The server double: register with KingdomWorld `services = { CitizenDoubles.service }`.
-function CitizenDoubles.service(world)
+-- opts.conversations = false: Sim.Inspect only (CitizenDoubles.inspectOnly, with INSPECT_ONLY).
+function CitizenDoubles.service(world, opts: { conversations: boolean? }?)
+	local conversations = not (opts and opts.conversations == false)
 	return {
 		name = "CitizenService",
 		dependencies = { "RemoteService", "TreasuryService", "KingdomService" },
@@ -332,6 +389,7 @@ function CitizenDoubles.service(world)
 				answers = {} :: { [string]: any },
 				calls = {} :: { any },
 				latency = 0,
+				chooseLatency = nil :: number?,
 				inspectDelay = {} :: { [number]: number },
 				refuse = nil :: string?,
 				drop = false,
@@ -343,6 +401,7 @@ function CitizenDoubles.service(world)
 			svc.scenarios[42] = CitizenDoubles.SCENARIOS.two
 			svc.scenarios[43] = CitizenDoubles.SCENARIOS.four
 			svc.scenarios[45] = CitizenDoubles.SCENARIOS.long
+			svc.scenarios[46] = CitizenDoubles.SCENARIOS.risky
 			function svc:setScenario(entityId, scenario)
 				self.scenarios[entityId] = scenario
 				self.citizens[entityId].hasRequest = scenario ~= nil
@@ -375,6 +434,9 @@ function CitizenDoubles.service(world)
 					local mine, c = own(player, entityId)
 					return if mine then view(c) else nil
 				end)
+				if not conversations then
+					return
+				end
 				remotes:handle("Kingdom.Converse", function(player, entityId)
 					table.insert(self.calls, { name = "Converse", args = { entityId } })
 					if self.latency > 0 then
@@ -387,7 +449,12 @@ function CitizenDoubles.service(world)
 					end
 					local options = {}
 					for _, r in scenario.responses do
-						table.insert(options, { id = r.id, text = r.text })
+						table.insert(options, {
+							id = r.id,
+							text = r.text,
+							cost = if r.cost then clone(r.cost) else nil,
+							risks = if r.risks then clone(r.risks) else nil,
+						})
 					end
 					return {
 						entityId = entityId,
@@ -399,8 +466,9 @@ function CitizenDoubles.service(world)
 				end)
 				remotes:handle("Kingdom.Choose", function(player, entityId, scenarioId, responseId)
 					table.insert(self.calls, { name = "Choose", args = { entityId, scenarioId, responseId } })
-					if self.latency > 0 then
-						world.env.wait(self.latency)
+					local latency = self.chooseLatency or self.latency
+					if latency > 0 then
+						world.env.wait(latency)
 					end
 					if self.drop then
 						self.drop = false
@@ -453,6 +521,10 @@ function CitizenDoubles.service(world)
 			return svc
 		end,
 	}
+end
+
+function CitizenDoubles.inspectOnly(world)
+	return CitizenDoubles.service(world, { conversations = false })
 end
 
 return CitizenDoubles

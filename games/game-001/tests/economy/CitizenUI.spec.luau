@@ -14,6 +14,7 @@ local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomWorld = require("./doubles/KingdomWorld")
+local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
 local SCENARIOS = CitizenDoubles.SCENARIOS
@@ -116,8 +117,9 @@ end
 
 local function newWorld(opts)
 	local o = opts or {}
-	o.remotes = CitizenDoubles.REMOTES
-	o.services = { CitizenDoubles.service }
+	-- inspectOnly: today's main (Sim.Inspect, no Kingdom.Converse / Kingdom.Choose on the server)
+	o.remotes = if o.inspectOnly then CitizenDoubles.INSPECT_ONLY else CitizenDoubles.REMOTES
+	o.services = { if o.inspectOnly then CitizenDoubles.inspectOnly else CitizenDoubles.service }
 	o.clientDefinitions = { KingdomHudDef, CitizenCardDef, ConversationDef, inputModeDef(o.rbxSignal) }
 	local world = KingdomWorld.new(o)
 	world.hud = world.client:get("KingdomHudController")
@@ -550,5 +552,280 @@ describe("Citizen card and conversation survive pushes (FORGE-05 M1)", function(
 		world:advance(0.1 + world.citizens.latency)
 		expect(#world.citizens:callsNamed("Choose")).toBe(1)
 		world:destroy()
+	end)
+end)
+
+describe("Answer costs and risks before choosing (G13.3, FORGE-05 M1)", function()
+	local world, previous
+	beforeEach(function()
+		previous = useStrongConnector()
+		world = newWorld()
+	end)
+	afterEach(function()
+		world:destroy()
+		restoreConnector(previous)
+	end)
+
+	local function checkRisky(panel)
+		local shore, dig = find(panel, "Option_shore"), find(panel, "Option_dig")
+		-- What it costs, against the treasury: 20 Wood (have 100), 25 Gold (have 0).
+		local wood, gold = find(shore, "Cost_wood"), find(shore, "Cost_gold")
+		expect(find(wood, "Amount").Text).toBe("20")
+		expect(wood:GetAttribute("short")).toBe(false)
+		expect(find(gold, "Amount").Text).toBe("25")
+		expect(gold:GetAttribute("short")).toBe(true)
+		expect(find(shore, "Need").Text).toBe("Need 25 Gold") -- a word, not colour alone
+		expect(shore:GetAttribute("affordable")).toBe(false)
+		expect(shore.Active).toBe(false)
+		-- Every risk, with its chance, in the server's words, wrapping (never truncated).
+		local sent = SCENARIOS.risky.responses[2].risks
+		local risks = findAll(dig, "^Risk_")
+		expect(#risks).toBe(#sent)
+		for i, risk in risks do
+			local riskText = find(risk, "RiskText")
+			expect(riskText.Text).toBe(sent[i].text)
+			expect(riskText.TextWrapped).toBe(true)
+			expect(riskText.TextTruncate).toBe(Enum.TextTruncate.None)
+			expect(find(risk, "Chance").Text).toBe(`{math.floor(sent[i].chance * 100 + 0.5)} %`)
+			expect(risk:GetAttribute("percent")).toBe(math.floor(sent[i].chance * 100 + 0.5))
+		end
+		expect(find(dig, "Cost")).toBeNil() -- no cost: no row
+		expect(find(shore, "Risk_1")).toBeNil() -- no risk: nothing
+		expect(dig:GetAttribute("affordable")).toBe(true)
+		expect(dig.Active).toBe(true)
+	end
+
+	it("desktop: each answer shows its cost and every risk; an answer the treasury can't pay is disabled", function()
+		local panel = talkTo(world, 46)
+		checkRisky(panel)
+		-- The disabled answer sends nothing, by tap or by call.
+		fire(find(panel, "Option_shore"), "Activated")
+		world.conversation:choose("shore")
+		world:advance(0.2)
+		expect(#world.citizens:callsNamed("Choose")).toBe(0)
+		expect(convoPanel(world):GetAttribute("phase")).toBe("asking")
+		-- The risky one goes through.
+		tap(find(convoPanel(world), "Option_dig"))
+		world:advance(0.2)
+		expect(world.citizens:callsNamed("Choose")[1].args).toEqual({ 46, "cracked_face", "dig" })
+	end)
+
+	it("phone 750 × 311: the 2-answer question with costs and risks shows whole, without scrolling", function()
+		world:destroy()
+		world = newWorld({ width = 750, height = 311 })
+		local m = world.hud:metrics()
+		local panel = talkTo(world, 46)
+		checkRisky(panel)
+		expect(find(panel, "Kicker").Text).toBe("YOUR ANSWER") -- no scroll cue: it all fits
+		expect(panel.Position.Y.Offset + panel.Size.Y.Offset).toBeLessThanOrEqual(m.height - m.margin)
+		for _, button in options(panel) do
+			expect(button.Size.Y.Offset).toBeGreaterThanOrEqual(44)
+		end
+		-- the cue stays honest where it does scroll
+		world.conversation:close()
+		expect(find(talkTo(world, 45), "Kicker").Text).toBe("YOUR ANSWER · SCROLL FOR ALL 3")
+	end)
+
+	it("costs in the 3-answer question too (talk-3): 20 Wood and 15 Food, covered", function()
+		local panel = talkTo(world, 41)
+		expect(find(find(find(panel, "Option_help"), "Cost_wood"), "Amount").Text).toBe("20")
+		expect(find(find(find(panel, "Option_bread"), "Cost_food"), "Amount").Text).toBe("15")
+		expect(find(find(panel, "Option_help"), "Need")).toBeNil()
+		expect(find(find(panel, "Option_work"), "RiskText").Text).toBe(SCENARIOS.three.responses[3].risks[1].text)
+		expect(find(find(panel, "Option_work"), "Chance").Text).toBe("20 %")
+	end)
+
+	it("a treasury push re-checks costs in place: only an answer whose affordability changed is rebuilt", function()
+		local panel = talkTo(world, 46)
+		local shore, dig = find(panel, "Option_shore"), find(panel, "Option_dig")
+		world.treasury:deposit("crimson", "food", 5, "spec:food", "test")
+		world:advance(0.2)
+		expect(convoPanel(world)).toBe(panel)
+		expect(find(panel, "Option_shore")).toBe(shore) -- nothing changed for it
+		world.treasury:deposit("crimson", "gold", 30, "spec:gold", "test")
+		world:advance(0.2)
+		expect(convoPanel(world)).toBe(panel)
+		expect(find(panel, "Option_dig")).toBe(dig) -- untouched
+		local now = find(panel, "Option_shore")
+		expect(now:GetAttribute("affordable")).toBe(true)
+		expect(now.Active).toBe(true)
+		expect(find(now, "Need")).toBeNil()
+		expect(find(now, "Cost_gold"):GetAttribute("short")).toBe(false)
+		tap(now)
+		world:advance(0.2)
+		expect(world.citizens:callsNamed("Choose")[1].args).toEqual({ 46, "cracked_face", "shore" })
+		expect(amountOf(world.hud, "gold")).toBe(tostring(30 - 25))
+	end)
+end)
+
+describe("Late replies never take the drawer back (FORGE-05 M2)", function()
+	local world, previous
+	beforeEach(function()
+		previous = useStrongConnector()
+		world = newWorld()
+	end)
+	afterEach(function()
+		world:destroy()
+		restoreConnector(previous)
+	end)
+
+	it("Talk, then close the card: the late Converse reply does not open the conversation", function()
+		world.citizens.latency = 0.3
+		pickSelection(world, "citizen", 41)
+		tap(find(cardPanel(world), "Talk"))
+		tap(find(cardPanel(world), "Close"))
+		expect(world.hud.state.menu).toBeNil()
+		world:advance(0.5)
+		expect(world.hud.state.menu).toBeNil()
+		expect(convoPanel(world)).toBeNil()
+		-- and Talk works again afterwards
+		pickSelection(world, "citizen", 41)
+		expect(find(find(cardPanel(world), "Talk"), "Face"):GetAttribute("talk")).toBe("request")
+		tap(find(cardPanel(world), "Talk"))
+		world:advance(0.5)
+		expect(world.hud.state.menu).toBe("conversation")
+	end)
+
+	it("Talk, then Build: the late Converse reply does not replace the Build drawer", function()
+		world.citizens.latency = 0.3
+		pickSelection(world, "citizen", 41)
+		tap(find(cardPanel(world), "Talk"))
+		world.hud:setMenu("build")
+		world:advance(0.5)
+		expect(world.hud.state.menu).toBe("build")
+		expect(convoPanel(world)).toBeNil()
+		expect(world.conversation.state).toBeNil()
+	end)
+
+	it("tap a citizen, then Build: the late Sim.Inspect reply does not replace the Build drawer", function()
+		world.citizens.inspectDelay[41] = 0.3
+		world.input.selected:fire("citizen", 41)
+		world:advance(0.05)
+		world.hud:setMenu("build")
+		world:advance(0.5)
+		expect(world.hud.state.menu).toBe("build")
+		expect(cardPanel(world)).toBeNil()
+	end)
+end)
+
+describe("Kingdom.Choose in flight is guarded per showing (FORGE-05 M3)", function()
+	local world, previous
+	beforeEach(function()
+		previous = useStrongConnector()
+		world = newWorld()
+	end)
+	afterEach(function()
+		world:destroy()
+		restoreConnector(previous)
+	end)
+
+	it("close and reopen while Choose is in flight: one Choose, and the reply lands on the reopened panel", function()
+		world.citizens.chooseLatency = 1
+		tap(find(talkTo(world, 41), "Option_help"))
+		world.conversation:close()
+		expect(world.hud.state.menu).toBeNil()
+		local again = talkTo(world, 41) -- the server still offers the same showing
+		expect(again:GetAttribute("scenarioId")).toBe("flooded_field")
+		expect(again:GetAttribute("phase")).toBe("choosing")
+		expect(find(again, "Option_help"):GetAttribute("state")).toBe("picked")
+		fire(find(again, "Option_bread"), "Activated")
+		world.conversation:choose("bread")
+		world.conversation:choose("help")
+		world:advance(1.1)
+		expect(#world.citizens:callsNamed("Choose")).toBe(1)
+		local done = convoPanel(world)
+		expect(done:GetAttribute("phase")).toBe("answered")
+		expect(find(done, "Reaction").Text).toBe(SCENARIOS.three.responses[1].reaction)
+		expect(amountOf(world.hud, "wood")).toBe(tostring(Costs.starting.wood - 20))
+	end)
+
+	it("a reply that lands after the panel closed becomes a notice; nothing is sent again", function()
+		world.citizens.chooseLatency = 0.5
+		tap(find(talkTo(world, 41), "Option_help"))
+		world.conversation:close()
+		world:advance(0.6)
+		local notices = texts(world.hud.guis.notices)
+		expect(notices).toContain(SCENARIOS.three.responses[1].reaction)
+		expect(notices).toContain("Edda Thornbury")
+		expect(amountOf(world.hud, "wood")).toBe(tostring(Costs.starting.wood - 20))
+		pickSelection(world, "citizen", 41)
+		tap(find(cardPanel(world), "Talk"))
+		world:advance(0.1)
+		expect(#world.citizens:callsNamed("Choose")).toBe(1)
+		expect(texts(world.hud.guis.notices)).toContain(CitizenText.NOTHING) -- answered: nothing left to ask
+	end)
+end)
+
+describe("Citizen card and conversation lows (FORGE-05 L4-L8)", function()
+	local world, previous
+	beforeEach(function()
+		previous = useStrongConnector()
+		world = newWorld()
+	end)
+	afterEach(function()
+		world:destroy()
+		restoreConnector(previous)
+	end)
+
+	it("L4 phone: toasts sit above the conversation sheet, one at a time, and go back after", function()
+		world:destroy()
+		world = newWorld({ width = 750, height = 311 })
+		local m = world.hud:metrics()
+		local panel = talkTo(world, 42)
+		world.hud:notify({ title = "First" })
+		world.hud:notify({ title = "Second", body = "One line of body" })
+		local stack = world.hud.toasts
+		expect(stack:count()).toBe(1)
+		local band = Layout.sheetToast(m)
+		expect(stack.instance.Position).toBe(UDim2.fromOffset(band.right, band.y))
+		expect(stack.instance.Size.X.Offset).toBe(band.width)
+		expect(band.y + 48).toBeLessThanOrEqual(panel.Position.Y.Offset)
+		world.conversation:close()
+		expect(stack.instance.Position.Y.Offset).toBe(Layout.toastTop(m, false))
+		world.hud:notify({ title = "Third" })
+		expect(stack:count()).toBe(2)
+	end)
+
+	it("L5 no Kingdom.Converse on the server (today's main): Talk says so at once", function()
+		world:destroy()
+		world = newWorld({ inspectOnly = true })
+		pickSelection(world, "citizen", 41)
+		tap(find(cardPanel(world), "Talk"))
+		world:advance(0.1)
+		expect(texts(world.hud.guis.notices)).toContain(CitizenText.UNAVAILABLE)
+		expect(world.hud.state.menu).toBe("citizen")
+		expect(find(find(cardPanel(world), "Talk"), "Face"):GetAttribute("talk")).toBe("request")
+	end)
+
+	it("L6 destroying a controller closes its menu", function()
+		talkTo(world, 41)
+		world.conversation:destroy()
+		expect(world.hud.state.menu).toBeNil()
+		pickSelection(world, "citizen", 42)
+		expect(world.hud.state.menu).toBe("citizen")
+		world.card:destroy()
+		expect(world.hud.state.menu).toBeNil()
+	end)
+
+	it("L7 a tap on someone else's citizen closes the open card, with a notice", function()
+		pickSelection(world, "citizen", 41)
+		expect(world.hud.state.menu).toBe("citizen")
+		pickSelection(world, "citizen", 51)
+		expect(world.hud.state.menu).toBeNil()
+		expect(cardPanel(world)).toBeNil()
+		expect(texts(world.hud.guis.notices)).toContain(CitizenText.CANT_INSPECT)
+	end)
+
+	it("L8 the conversation closes when its citizen is gone", function()
+		talkTo(world, 42)
+		world:advance(world.conversation.CHECK_SEC + 0.1)
+		expect(world.hud.state.menu).toBe("conversation") -- still there: stays open
+		world.citizens.citizens[42] = nil
+		world:advance(world.conversation.CHECK_SEC + 0.1)
+		expect(world.hud.state.menu).toBeNil()
+		expect(world.conversation.state).toBeNil()
+		local notices = texts(world.hud.guis.notices)
+		expect(notices).toContain(CitizenText.GONE)
+		expect(notices).toContain("Bran Thornbury")
 	end)
 end)

@@ -8,10 +8,12 @@
 	:connect or an RBXScriptSignal with :Connect). kind "citizen" → `Sim.Inspect(id)` in a spawned
 	thread, then the card opens in the drawer (`hud:setMenu("citizen")`); any other kind ("none",
 	"building", "slot") closes the card if it is open. Only the newest request counts: a slow reply for
-	a citizen tapped earlier never replaces the card of the one tapped last. Sim.Inspect returns nil
-	for someone else's citizen (or one that is gone): a short notice, no card. While the card is open
-	it is refreshed every REFRESH_SEC (intent, mood and requests change as the citizen lives); when
-	the refresh returns nil the card closes.
+	a citizen tapped earlier never replaces the card of the one tapped last, and a menu opened while
+	the reply is on its way (Build, Kingdom, the X) keeps the drawer (FORGE-05 M2). Sim.Inspect
+	returns nil for someone else's citizen (or one that is gone): a short notice, and the card of the
+	citizen tapped before closes (the selection moved on, FORGE-05 L7). While the card is open it is
+	refreshed every REFRESH_SEC (intent, mood and requests change as the citizen lives); when the
+	refresh returns nil the card closes.
 
 	Talk / Ask: shown when a handler is registered (ConversationController does in its start()).
 	Talk (primary) when the citizen has a request (`hasRequest`), Ask (secondary) otherwise.
@@ -109,6 +111,17 @@ function CitizenCardController:start()
 	if connection then
 		table.insert(self._connections, connection)
 	end
+	table.insert(
+		self._connections,
+		hud.menuChanged:connect(function(menu)
+			if menu ~= CitizenCardController.MENU then
+				-- Another menu took the drawer (or it closed): an inspect still on its way must not
+				-- take it back.
+				self._token += 1
+				self._pending = nil
+			end
+		end)
+	)
 	self._running = true
 	env.spawn(function()
 		while self._running do
@@ -128,6 +141,13 @@ function CitizenCardController:destroy()
 	self._connections = {}
 	if self.card then
 		self.card:destroy()
+	end
+	-- Leave no menu pointing at a card that no longer exists (FORGE-05 L6).
+	local hud = self.hud
+	if hud.state.menu == CitizenCardController.MENU then
+		pcall(function()
+			hud:setMenu(nil)
+		end)
 	end
 end
 
@@ -184,6 +204,7 @@ function CitizenCardController:_inspect(entityId: number, refresh: boolean)
 					self:close()
 				end
 			else
+				self:close() -- the card of the citizen tapped before is no longer the selection
 				hud:notify({
 					kind = "info",
 					title = if called then CitizenText.CANT_INSPECT else CitizenText.unreachable(),
