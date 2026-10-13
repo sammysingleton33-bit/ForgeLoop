@@ -297,18 +297,24 @@ def kingdom_banner(k, h=5.6, w=2.6, depth=0.14):
     cloth in the kingdom colour, dark hem at the top, trim edges and the kingdom emblem
     (crown / star / oak leaf / sun, from the shared kingdom-props helper)."""
     from lib.palette import kingdom_color
-    from generators._kingdom_props_common import emblem
+    from generators._kingdom_props_common import border, emblem, field
 
-    cloth = kingdom_color(k, "cloth")
+    cloth = field(k)  # emerald flies the bright cloth (ART_DIRECTION 3)
     out = [prism([(-w / 2, 0.0), (0.0, 0.9), (w / 2, 0.0), (w / 2, h), (-w / 2, h)], depth, cloth, axis="Y")
            .paint(grad=("range", 0.35, 0.95))]
     out.append(box(w + 0.1, depth + 0.06, 0.5, kingdom_color(k, "cloth_dark")).move(0, 0, h - 0.5))
     for sx in (-1, 1):
-        out.append(box(0.16, depth + 0.04, h - 1.0, kingdom_color(k, "trim")).move(sx * (w / 2 - 0.08), 0, 0.5))
+        out.append(box(0.16, depth + 0.04, h - 1.0, border(k)).move(sx * (w / 2 - 0.08), 0, 0.5))
     out.append(cylinder(0.11, 0.11, w + 0.9, 5, "wood_dark").move(0, 0, -(w + 0.9) / 2).rotate(math.pi / 2, "Y")
                .move(0, 0, h + 0.12))
+    ey = -depth / 2 - 0.02
+    if EMBLEMS[k] == "sun":
+        # never an emblem on its own colour: the gold sun sits on an ivory roundel with a bronze rim
+        for r, col, dy in ((w * 0.42, kingdom_color(k, "trim"), 0.0), (w * 0.37, kingdom_color(k, "accent"), -0.03)):
+            out.append(cylinder(r, r, 0.06, 16, col).rotate(math.pi / 2, "X").move(0, ey + dy, h * 0.58))
+        ey -= 0.08
     for q in emblem(EMBLEMS[k], w * 0.62, kingdom_color(k, "emblem"), kingdom_color(k, "trim"), depth=0.12, mid=None):
-        out.append(q.move(0, -depth / 2 - 0.02, h * 0.58))
+        out.append(q.move(0, ey, h * 0.58))
     return out
 
 
