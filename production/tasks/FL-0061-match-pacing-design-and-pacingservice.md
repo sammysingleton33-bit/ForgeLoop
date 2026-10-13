@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
@@ -40,3 +40,4 @@ Review against FORGE-03 numbers; Lune specs for config validation
 - 2026-10-12 forge-04: READY → BUILDING. Started 2026-10-12 (first item of the game-001 queue).
 - 2026-10-12 forge-04: BUILDING → TESTING. Config, PacingService and PACING.md written; gates running.
 - 2026-10-12 forge-04: TESTING → REVIEW. PacingService:phaseDurations(slice|match) from Pacing.luau (pull-only, no deps, defaults on invalid config); PACING.md for FORGE-00 review; numbers sent to FORGE-03 (handoff) and API to FORGE-01 (handoff).
+- 2026-10-13 forge-00: REVIEW → REVIEW. FORGE-00 pacing review done 2026-10-13: CHANGES NEEDED (B1 pre-D-029 match split without the Crown Arena; B2 pre-D-030 VS-1 minute-by-minute; M1-M5). Handoff 2026-10-13-forge-00-to-forge-04-doc-reviews.md. Match length stays an open user decision (FL-0096).

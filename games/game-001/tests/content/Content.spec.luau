@@ -603,6 +603,50 @@ describe("Decisions and Consequences", function()
 		end
 	end)
 
+	it("give every answer the G13.3 option extras: cost? and fully filled { text, chance } risks?", function()
+		local names = { name = "Agnes", ruler = "Ruler", kingdom = "Kingdom", occupation = "Farmer" }
+		local seenRisk = false
+		for _, sid in Dialogue.order do
+			for _, r in Dialogue.scenarios[sid].responses do
+				local p = ContentQuery.choicePreview(sid, r.id, names)
+				assert(p, `{sid}/{r.id}`)
+				for key in p do
+					if key ~= "cost" and key ~= "risks" then
+						error(`choicePreview({sid}, {r.id}) has a field '{key}' beyond the G13.3 option extras`)
+					end
+				end
+				local d = Decisions[r.decision]
+				expect(p.cost == nil).toBe(next(d.cost) == nil)
+				-- what ConversationService pays (SPEC §6.5): always a table, {} for a free answer
+				local e = ContentQuery.decisionEffects(r.decision)
+				assert(e, r.decision)
+				expect(e.cost).toEqual(p.cost or {})
+				expect(function()
+					ContentQuery.choicePreview(sid, r.id, nil :: any)
+				end).toThrow("fillNames is required")
+				local expected = {}
+				for _, cid in d.consequences do
+					if Consequences[cid].chance < 1 then
+						table.insert(expected, Consequences[cid].chance)
+					end
+				end
+				local risks = ContentQuery.choiceRisks(r.decision, names)
+				assert(risks, r.decision)
+				expect(#risks).toBe(#expected)
+				expect(p.risks == nil).toBe(#expected == 0)
+				for i, risk in risks do
+					seenRisk = true
+					expect(risk.chance).toBe(expected[i])
+					if string.find(risk.text, "{", 1, true) or string.find(risk.text, "%d+%%") then
+						error(`{r.decision}: risk text '{risk.text}' keeps a placeholder or repeats the odds`)
+					end
+					expect((p.risks :: any)[i]).toEqual(risk)
+				end
+			end
+		end
+		expect(seenRisk).toBe(true)
+	end)
+
 	it("keep every consequence well-formed; no strike stops a whole kingdom (model decision 6)", function()
 		for _, id in sortedKeys(Consequences) do
 			local c = Consequences[id]
@@ -643,8 +687,12 @@ describe("Decisions and Consequences", function()
 			if c.kind == "productivity" and not LOCAL_TARGETS[c.target] and c.magnitude < GROUP_PRODUCTIVITY_FLOOR then
 				error(`consequence {id}: productivity {c.magnitude} on {c.target} would stop a whole group`)
 			end
-			if c.chance < 1 and (c.notice == nil or string.find(c.notice, "{chance}", 1, true) == nil) then
-				error(`consequence {id}: a risk (chance {c.chance}) must show its odds with \{chance\}`)
+			-- FORGE-00 ruling (PR #67 review #2): the panel shows a risk's chance; the text describes the outcome
+			if c.notice and string.find(c.notice, "{chance}", 1, true) then
+				error(`consequence {id}: a notice never repeats the chance (the conversation panel shows it)`)
+			end
+			if c.chance < 1 and c.notice == nil then
+				error(`consequence {id}: a risk (chance {c.chance}) needs a notice that describes the outcome`)
 			end
 			if c.notice then
 				local filled = ContentQuery.consequenceNotice(
@@ -756,7 +804,7 @@ describe("loyalty clamp over the real library (FORGE-00 decision M3)", function(
 					})
 				end
 			end
-			for _, f in ContentQuery.fireAction(event, ctx, {}, {}, 0, listeners :: any) do
+			for _, f in ContentQuery.fireAction(event, ctx, { r = {} }, { "r" }, {}, 0, listeners :: any) do
 				for _, l in f.listeners do
 					if math.abs(l.loyalty) > clamp[l.relation] then
 						error(`action {f.id}: {l.relation} loyalty {l.loyalty} outside ±{clamp[l.relation]}`)
@@ -929,9 +977,9 @@ describe("Reputation", function()
 		starving["event.shortage"] = true
 		for _, ctx in { fed, starving } do
 			for _, event in sortedKeys(Reputation.byEvent) do
-				local ruler, kingdom = {}, {}
-				ContentQuery.fireAction(event, ctx, ruler, kingdom, 0)
-				for _, f in ContentQuery.fireAction(event, ctx, ruler, kingdom, 1) do
+				local rulers, kingdom = { a = {}, b = {} }, {}
+				ContentQuery.fireAction(event, ctx, rulers, { "a" }, kingdom, 0)
+				for _, f in ContentQuery.fireAction(event, ctx, rulers, { "a", "b" }, kingdom, 1) do
 					local function check(field: string, key: string, got: number, multiplier: number)
 						local gains, losses = 0, 0
 						for _, row in f.rows do
@@ -946,8 +994,11 @@ describe("Reputation", function()
 							error(`{event} {f.id}: {field}.{key} = {got}, expected {gains} x {multiplier} + {losses}`)
 						end
 					end
-					for _, c in CATEGORIES do
-						check("rep", c, f.rep[c], f.multiplier)
+					expect(#f.rulers).toBe(2) -- two co-rulers, each decayed by their own history
+					for _, credited in f.rulers do
+						for _, c in CATEGORIES do
+							check("rep", c, credited.rep[c], credited.multiplier)
+						end
 					end
 					for _, k in { "happiness", "stability", "morale" } do
 						check("kingdom", k, (f.kingdom :: any)[k], f.kingdom_multiplier)
@@ -955,5 +1006,73 @@ describe("Reputation", function()
 				end
 			end
 		end
+	end)
+
+	it("bounds 30 minutes of RaidDefended at one per second by one firing / (1 - decay) (ruling #8)", function()
+		local ctx = fullSampleCtx()
+		local firings = ContentQuery.actionFirings("RaidDefended", ctx)
+		expect(#firings).toBe(1)
+		local rows = firings[1].rows
+		local decay = firings[1].repeat_decay
+		expect(decay < 1 and firings[1].repeat_window_s > 0).toBe(true)
+		-- per firing: the gains of each row (decayed on a repeat) and its losses (never decayed)
+		local gains, losses = {}, {}
+		local keys = table.clone(CATEGORIES)
+		for _, k in { "happiness", "stability", "morale" } do
+			table.insert(keys, k)
+		end
+		for _, key in keys do
+			gains[key], losses[key] = 0, 0
+			for _, row in rows do
+				local v = (row.rep :: any)[key] or (row.kingdom :: any)[key] or 0
+				if v > 0 then
+					gains[key] += v
+				else
+					losses[key] += v
+				end
+			end
+		end
+		local listeners = {
+			{ citizen = 1, occupation = "farmer", traits = {}, chemistry = 0, ctx = ctx },
+			{ citizen = 2, occupation = "soldier", traits = {}, chemistry = 0, ctx = ctx },
+		}
+		local rulers, kingdom = { ruler = {} }, {}
+		local totals: { [string]: number } = {}
+		local heard: { [any]: number } = {}
+		local firstLoyalty: { [any]: number } = {}
+		local n = 30 * 60
+		for now = 0, n - 1 do
+			for _, f in
+				ContentQuery.fireAction("RaidDefended", ctx, rulers, { "ruler" }, kingdom, now, listeners :: any)
+			do
+				for key, v in f.rulers[1].rep do
+					totals[key] = (totals[key] or 0) + v
+				end
+				for key, v in f.kingdom :: any do
+					totals[key] = (totals[key] or 0) + v
+				end
+				for _, l in f.listeners do
+					heard[l.citizen] = (heard[l.citizen] or 0) + l.loyalty
+					if firstLoyalty[l.citizen] == nil then
+						firstLoyalty[l.citizen] = l.loyalty
+					end
+				end
+			end
+		end
+		for _, key in keys do
+			local bound = gains[key] / (1 - decay) + losses[key] * n + 1e-9
+			if (totals[key] or 0) > bound then
+				error(`RaidDefended {key}: {totals[key]} over {n} firings exceeds the bound {bound}`)
+			end
+		end
+		expect(totals.courage).toBeGreaterThan(0)
+		-- no traits and no clamp reached: each firing is the row's column decayed, so the same bound holds
+		for citizen, total in heard do
+			if total > firstLoyalty[citizen] / (1 - decay) + 1e-9 then
+				error(`RaidDefended listener {citizen}: loyalty {total} exceeds the bound`)
+			end
+		end
+		expect(heard[1]).toBeGreaterThan(0)
+		expect(heard[2]).toBeGreaterThan(0)
 	end)
 end)
