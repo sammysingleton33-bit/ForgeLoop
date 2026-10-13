@@ -298,18 +298,18 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 	end)
 
 	it(
-		"with ConversationService but no answer reported, AnswerCitizen moves on after autoAdvanceSec, logged as passed",
+		"with ConversationService but no answer, AnswerCitizen moves on after autoAdvanceSec, logged as passed",
 		function()
 			boot(true)
 			join(p1, "crimson")
 			act(p1, "CitizenInspected")
 			place(p1, "crimson", 12)
 			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
-			local answer = OnboardingConfig.flows[1].steps[4]
-			expect(answer.id).toBe("AnswerCitizen")
-			env.mock:advance(answer.nudgeAfterSec + 1)
+			local answerStep = OnboardingConfig.flows[1].steps[4]
+			expect(answerStep.id).toBe("AnswerCitizen")
+			env.mock:advance(answerStep.nudgeAfterSec + 1)
 			expect(onboarding:state(p1, "vs1").escalated).toBe(true) -- nudged first
-			env.mock:advance(answer.autoAdvanceSec - answer.nudgeAfterSec + 1)
+			env.mock:advance(answerStep.autoAdvanceSec - answerStep.nudgeAfterSec + 1)
 			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit") -- never stalls
 			expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen" })
 			expect(passed(p1)).toEqual({ "4:AnswerCitizen:timeout" })
