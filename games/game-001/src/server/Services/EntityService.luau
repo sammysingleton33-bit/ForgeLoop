@@ -492,6 +492,7 @@ function EntityService:replicate()
 		vanishing = table.clone(self._vanishing),
 		dieQueued = table.clone(self._dieQueued),
 		despawnReason = table.clone(self._despawnReason),
+		kingdomPending = self._kingdomPending, -- _kingdomBatches swaps it out during the encode (#93 M1)
 	}
 	self._deferred = {}
 	local ok, result = pcall(self._encodeTick, self, frame)
@@ -501,6 +502,7 @@ function EntityService:replicate()
 		self._pending, self._known, self._frame, self._seq = saved.pending, saved.known, saved.frame, saved.seq
 		self._sentState, self._vanishing = saved.sentState, saved.vanishing
 		self._dieQueued, self._despawnReason = saved.dieQueued, saved.despawnReason
+		self._kingdomPending = saved.kingdomPending -- a failed tick keeps its thoughts, reactions, strikes, cues
 		error(result, 0)
 	end
 	local outgoing = result :: { any }
