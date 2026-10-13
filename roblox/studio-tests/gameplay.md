@@ -165,17 +165,26 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 3. Tap a free plot (`BuildSlot` marker) and build a House with FORGE-03's menu, or call
    `ForgeRemotes.Build.GetSlots:InvokeServer()` and then `Build.PlaceSlot:InvokeServer(slotId, "house")`
    with an `S` slot's id.
-4. Try the same slot again, and a Barracks on an `S` slot.
+4. Try the same slot again, a Barracks on an `S` slot, and a Wall on any slot
+   (`Build.PlaceSlot:InvokeServer(slotId, "wall")`).
 5. Upgrade the keep (`Build.Upgrade(keepId)`) once wood and stone allow it, and stay seated meanwhile.
 6. Press Space to stand up (walk mode), then let the keep upgrade again.
+7. Build a House with the Build rail (`Build.Place`) right on a free `L` slot, then open the plot picker on
+   that slot.
+8. Upgrade the lumber camp to level 2 (`Build.Upgrade(lumbercampId)`) and note the wood on the HUD for a
+   minute before and after.
 
 **Expected:**
 - After spawning (and after every respawn) the ruler sits on the keep's throne, wearing crown and cape.
   A co-ruler in the same kingdom stands at the keep door while the throne is taken.
 - The house stands on the plot, facing its street; the treasury drops by the house price once;
   `Build.Slots` arrives with that slot `occupiedBy` the new building's id.
-- The taken slot answers `nil, "slot_occupied"`; the barracks answers `nil, "does_not_fit"`; neither costs
-  anything.
+- The taken slot answers `nil, "slot_occupied"`; the barracks answers `nil, "does_not_fit"`; the wall
+  answers `nil, "not_on_plot"`; none of them costs anything.
+- A slot with a rail-placed building on it shows as taken (`Build.Slots` `occupiedBy` that building), and
+  `PlaceSlot` there answers `slot_occupied`, never `blocked`.
+- With the lumber camp at level 2 the woodcutters bring wood in noticeably faster (about +20 % while they
+  work the trees; walking time is unchanged).
 - Builders walk to the site and work it together (two or three at once); the upgrade finishes in about its
   `Costs` build time divided by the builders on site.
 - When the keep upgrade completes, the seated ruler sits on the new keep's throne within half a second.

@@ -44,6 +44,7 @@ export type BuildingLevel = {
 	trains: { string }?, -- unit ids this level can train (barracks)
 	bunks: number?, -- soldiers (living + training) this barracks sleeps (D-041; barracks)
 	trainSpeed: number?, -- divides a unit's trainSeconds (barracks; default 1)
+	gatherBonus: number?, -- citizens gather the resources this dropoff accepts this much faster (0.2 = +20%)
 }
 
 export type BuildingDef = {
@@ -341,6 +342,9 @@ function Catalog.validate(catalog: any): (boolean, { string })
 			end
 			if stats.trainSpeed ~= nil and not isPositive(stats.trainSpeed) then
 				table.insert(errors, `{lw}: trainSpeed must be positive`)
+			end
+			if stats.gatherBonus ~= nil and not (isPositive(stats.gatherBonus) or stats.gatherBonus == 0) then
+				table.insert(errors, `{lw}: gatherBonus must be a number >= 0`)
 			end
 			if stats.trains then
 				for _, unitId in stats.trains do

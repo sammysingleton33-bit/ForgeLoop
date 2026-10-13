@@ -63,7 +63,7 @@ local function record(id: number, x: number, z: number, extra: { [string]: any }
 end
 
 local function recorder()
-	local rec = { moves = {}, transforms = {}, writes = 0, focus = nil :: Vector3? }
+	local rec = { moves = {}, transforms = {}, writes = 0, focus = nil :: Vector3?, eye = nil :: Vector3? }
 	rec.adapter = {
 		bulkMove = function(parts, cframes)
 			table.insert(rec.moves, #parts)
@@ -77,6 +77,9 @@ local function recorder()
 		end,
 		focus = function()
 			return rec.focus
+		end,
+		eye = function()
+			return rec.eye
 		end,
 		-- top-down camera: screen = (500 + 2x, 500 + 2z), depth = 200 - y
 		project = function(p: Vector3)
@@ -496,6 +499,27 @@ describe("EntityController: rigs, cues and reset", function()
 		expect(#h.order).toBe(2)
 	end)
 
+	it("swaps the rig when a spawn record brings a new look (the Studio reseed, #91 M1)", function()
+		local function look(skin: number)
+			return { skin = skin, hair = 1, hairColor = 1, outfit = 1 }
+		end
+		local h = start(setup({ full(1, 4, 0, { look = look(2) }) }))
+		frame(h, 0)
+		local old = h.controller:getModel(1)
+		expect(old:GetAttribute("KitLook")).toBe(Kit.lookKey(look(2)))
+		table.clear(h.order)
+		events(h, { spawnRecord(1, { look = look(2) }) }) -- the same look again: nothing to do
+		expect(h.order).toEqual({})
+		events(h, { spawnRecord(1) }) -- a spawn without a look keeps the rig (not Kit's default look)
+		expect(h.order).toEqual({})
+		events(h, { spawnRecord(1, { look = look(3) }) })
+		expect(h.order).toEqual({ "released:1", "rendered:1" })
+		local new = h.controller:getModel(1)
+		expect(new).never.toBe(old)
+		expect(new:GetAttribute("KitLook")).toBe(Kit.lookKey(look(3)))
+		expect((pivotOf(new) - Vector3.new(4, 0, 0)).Magnitude).toBeLessThan(1e-3) -- where the citizen was
+	end)
+
 	it("fires event for cues with their payload and the model", function()
 		local h = start(setup({ full(1, 0, 0) }))
 		frame(h, 0)
@@ -669,6 +693,43 @@ describe("EntityController: frames, LOD and pick", function()
 		frame(h, 1 / 60)
 		expect(near.Parent).toBe(h.controller.folder)
 		expect(far.Parent).toBeNil()
+	end)
+
+	it("in the overview the hide distance grows with the zoom: LOD_ZOOM x camera distance (#91 L1)", function()
+		local camera = { mode = "overview", focus = Vector3.zero :: Vector3? }
+		function camera.getFocus(_self)
+			return camera.focus
+		end
+		local registry = {
+			find = function(_self, name)
+				return if name == "RulerCameraController" then camera else nil
+			end,
+		}
+		local h = setup({ full(1, 10, 0), full(2, 200, 0) }, registry)
+		h.rec.eye = Vector3.new(0, 60, 60) -- zoom ~85: LOD_HIDE (150) still applies
+		start(h)
+		frame(h, 0)
+		local near, far = h.controller:getModel(1), h.controller:getModel(2)
+		expect(near.Parent).toBe(h.controller.folder)
+		expect(far.Parent).toBeNil()
+		h.rec.eye = Vector3.new(0, 155, 155) -- zoom ~219: hide at ~274 studs
+		frame(h, 1 / 60)
+		expect(far.Parent).toBe(h.controller.folder) -- on screen at a far zoom, so it keeps its rig
+		h.rec.eye = Vector3.new(0, 115, 115) -- zoom ~163: hide at ~203, show again inside ~193
+		frame(h, 1 / 60)
+		expect(far.Parent).toBe(h.controller.folder) -- 200 < 203: still shown
+		h.rec.eye = Vector3.new(0, 110, 110) -- zoom ~156: hide at ~194
+		frame(h, 1 / 60)
+		expect(far.Parent).toBeNil()
+		h.rec.eye = Vector3.new(0, 115, 115) -- back to ~203: inside hide, outside the ~193 show line
+		frame(h, 1 / 60)
+		expect(far.Parent).toBeNil() -- hysteresis, as at LOD_HIDE / LOD_SHOW
+		camera.mode = "follow" -- walk mode: the fixed LOD_HIDE around the character, whatever the camera
+		h.rec.focus = Vector3.zero
+		h.rec.eye = Vector3.new(0, 300, 300)
+		frame(h, 1 / 60)
+		expect(far.Parent).toBeNil()
+		expect(near.Parent).toBe(h.controller.folder)
 	end)
 
 	it("passes the kingdom to Kit.character for soldiers only (the helmet crest, G13.2)", function()
