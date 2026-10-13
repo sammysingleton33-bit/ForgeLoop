@@ -87,12 +87,14 @@ function F.stock(sim: any, k: any)
 	return view
 end
 
--- Mechanics specs use the config's small footprint circles (simple geometry); the game derives them
--- from Kit.footprint (Catalog.kitFootprints, G6), which Match and the service specs exercise.
+-- Mechanics specs use the config's small footprint circles (simple geometry), for reach and for
+-- placement (no placeSize rectangle); the game derives both from Kit.footprint (Catalog.kitFootprints,
+-- G6), which Match, the service specs and the placement specs exercise.
 function F.catalog(tuning: { [string]: any }?)
 	local catalog = Catalog.default()
 	for kind, def in catalog.buildings do
 		def.footprint = BuildingsConfig.buildings[kind].footprint
+		def.placeSize = nil
 	end
 	for key, value in tuning or {} do
 		catalog.tuning[key] = value

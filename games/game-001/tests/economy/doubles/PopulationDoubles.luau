@@ -16,7 +16,8 @@
 	hauler pool. The double's rule (a stand-in, not the game's): the quota moves haulers into the job,
 	or back into the pool, at once; it never takes more haulers than there are.
 	Spec knobs on the service: `refuse = "<code>"` answers (false, code); `immediate = false` records
-	the quota but moves nobody until `svc:rebalance(kingdom)` (the real sim fills quotas each second).
+	the quota but moves nobody until `svc:rebalance(kingdom)` (the real sim fills quotas each second);
+	`getLatency = <seconds>` delays Kingdom.GetPopulation's answer.
 ]]
 
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
@@ -47,7 +48,7 @@ function PopulationDoubles.service(world)
 		new = function(_, registry)
 			local remotes = registry:get("RemoteService")
 			local kingdoms = registry:get("KingdomService")
-			local svc = { byKingdom = {}, immediate = true, refuse = nil, quotas = {} }
+			local svc = { byKingdom = {}, immediate = true, refuse = nil, quotas = {}, getLatency = nil }
 			function svc:_of(kingdom)
 				local p = self.byKingdom[kingdom]
 				if p == nil then
@@ -88,6 +89,9 @@ function PopulationDoubles.service(world)
 			end
 			function svc:start()
 				remotes:handle("Kingdom.GetPopulation", function(player)
+					if self.getLatency then
+						world.env.wait(self.getLatency)
+					end
 					local kingdom = kingdoms:getKingdomOf(player)
 					return if kingdom then self:get(kingdom) else nil
 				end)

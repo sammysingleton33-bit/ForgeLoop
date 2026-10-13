@@ -314,7 +314,7 @@
 				<div class="iconbtn ${add ? "" : "off"}" style="width:${btn}px;height:${btn}px">${I("plus", 20)}</div></div></div>`;
 		}).join("");
 		const pool = `<div class="brow jrow muted"><div class="tile civic" style="width:${phone ? 34 : 40}px;height:${phone ? 34 : 40}px">${I("citizens", phone ? 26 : 30)}</div>
-			<div class="bmid"><div class="rname">Free citizens</div><div class="bsub">${free > 0 ? "Carry goods · + gives them a job" : "None free: lower a job first"}</div></div><div class="jn solo">${free}</div></div>`;
+			<div class="bmid"><div class="rname">Free citizens</div><div class="bsub">${free > 0 ? "Carry goods · + hires one" : "None free: lower a job"}</div></div><div class="jn solo">${free}</div></div>`;
 		const army = `<div class="brow jrow muted"><div class="tile military" style="width:${phone ? 34 : 40}px;height:${phone ? 34 : 40}px">${I("army", phone ? 26 : 30)}</div>
 			<div class="bmid"><div class="rname">Soldiers</div><div class="bsub">Train them at the barracks</div></div><div class="jn solo">${b.soldier || 0}</div></div>`;
 		const summary = `<div class="jsum">${I("citizens", 16)}<b>${total}</b> citizens · homes for <b>${P.cap}</b> · <b>${free}</b> free</div>`;

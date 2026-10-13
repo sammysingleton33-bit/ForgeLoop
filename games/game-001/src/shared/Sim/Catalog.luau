@@ -49,7 +49,8 @@ export type BuildingLevel = {
 export type BuildingDef = {
 	id: string,
 	name: string,
-	footprint: number, -- radius in studs used for placement overlap checks
+	footprint: number, -- radius in studs: reach for citizens, units, combat and territory checks
+	placeSize: Vector2?, -- placement rectangle (X width, Y depth; Sim/Footprint); nil = place the circle
 	placeable: boolean, -- false for the keep (granted at kingdom creation)
 	dropoff: boolean, -- citizens deliver resources here
 	accepts: { string }?, -- drop-off for these resources only (nil = all)
@@ -142,6 +143,7 @@ local JobsConfig = require("@game/ReplicatedStorage/Forge/Config/Jobs")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local MilitaryConfig = require("@game/ReplicatedStorage/Forge/Config/Military")
+local Fit = require("../Build/Fit")
 local Kit = require("../Kit/Kit")
 local Types = require("../Kingdom/Types")
 
@@ -191,15 +193,17 @@ local function assemble(): Catalog
 	}
 end
 
--- G6: Kit.footprint is the one source for placement. The simulation places circles, so each building's
--- footprint radius is half the longer side of its level-1 Kit footprint (config `footprint` is the
--- fallback for a type the Kit does not know).
+-- G6: Kit.footprint is the one source for placement. Each building places as the rectangle of its
+-- largest level (`placeSize`, Build/Fit.largestFootprint: upgrades never grow into a neighbour); its
+-- `footprint` radius (reach for citizens, units and combat) is half the longer side of its level-1 Kit
+-- footprint. A type the Kit does not know keeps the config `footprint` circle for both.
 function Catalog.kitFootprints(catalog: Catalog): Catalog
 	for kind, def in catalog.buildings do
 		local ok, size = pcall(Kit.footprint, kind, 1)
 		if ok and typeof(size) == "Vector2" then
 			def.footprint = math.max(size.X, size.Y) / 2
 		end
+		def.placeSize = Fit.largestFootprint(kind)
 	end
 	return catalog
 end
@@ -315,6 +319,10 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		end
 		if not isPositive(def.footprint) then
 			table.insert(errors, `{where}: footprint must be positive`)
+		end
+		local size = def.placeSize
+		if size ~= nil and (typeof(size) ~= "Vector2" or not isPositive(size.X) or not isPositive(size.Y)) then
+			table.insert(errors, `{where}: placeSize must be a Vector2 with positive sides when set`)
 		end
 		if type(def.levels) ~= "table" or #def.levels == 0 then
 			table.insert(errors, `{where}: needs at least one level`)

@@ -11,6 +11,9 @@
 		Fit.typesFor(size): { BuildingType }    -- every type that fits, in Types.BUILDING_TYPES order
 		                                           (a fresh table)
 		Fit.SIZES: { "S", "M", "L" }
+		Fit.largestFootprint(buildingType): Vector2?   -- Kit.footprint(type, Costs.maxLevel(type)); nil
+		                                           without a Kit footprint or a Costs level (Sim/Catalog
+		                                           places buildings with it, G6)
 	The rule is purely physical: slots never grow, so a type must fit at its largest level. Which of
 	the fitting types a menu offers (placeable, unlocked, phase) is the caller's choice. Unknown types,
 	types without a Kit footprint or a Costs level, and unknown sizes fit nothing.
@@ -25,7 +28,7 @@ local Fit = {}
 
 Fit.SIZES = table.freeze({ "S", "M", "L" })
 
-local function largestFootprint(buildingType: string): Vector2?
+function Fit.largestFootprint(buildingType: string): Vector2?
 	local maxLevel = Costs.maxLevel(buildingType)
 	if maxLevel < 1 then
 		return nil
@@ -39,7 +42,7 @@ function Fit.fits(buildingType: string, size: string): boolean
 	if typeof(slot) ~= "Vector2" then
 		return false
 	end
-	local footprint = largestFootprint(buildingType)
+	local footprint = Fit.largestFootprint(buildingType)
 	return footprint ~= nil and footprint.X <= slot.X and footprint.Y <= slot.Y
 end
 

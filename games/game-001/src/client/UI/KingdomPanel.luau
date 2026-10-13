@@ -414,7 +414,9 @@ local function jobRow(
 ): Frame
 	local tile = if phone then 34 else 40
 	-- room on the right: − count + (150 px), or only the count for the pool and soldiers rows
-	local right = if controls then 150 else 64
+	-- the count sits 50 px from the right (between − and +) in every row, so count-only rows keep
+	-- that column clear too (FORGE-05 L1 on #55: it overlapped the subtitle on phones)
+	local right = if controls then 150 else 100
 	return Create("Frame", {
 		Name = "Job_" .. id,
 		BackgroundColor3 = Theme.color("ink700"),
@@ -520,12 +522,21 @@ function KingdomPanel:_jobs(content: Instance, jobs: any, phone: boolean): Insta
 	return scroll
 end
 
-local function setCount(row: Instance, count: number)
+-- "–" until the server has sent counts (L2): a 0 would read as "nobody".
+local function setCount(row: Instance, count: number, known: boolean)
 	local label = row:FindFirstChild("Count") :: TextLabel?
 	if label then
-		label.Text = tostring(count)
+		label.Text = if known then tostring(count) else "–"
 	end
-	row:SetAttribute("count", count)
+	row:SetAttribute("count", if known then count else nil)
+end
+
+-- An IconButton rebuilds its icon on update: only when its state really changes (L6).
+local function setDisabled(entry: any, key: string, disabled: boolean)
+	if entry[key .. "Off"] ~= disabled then
+		entry[key .. "Off"] = disabled
+		entry[key]:update({ disabled = disabled })
+	end
 end
 
 local function setSub(row: Instance, text: string, highlight: boolean)
@@ -546,15 +557,15 @@ function KingdomPanel:_paintJobs(jobs: any)
 	for _, r in jobs.rows do
 		local entry = self.jobRows[r.id]
 		if entry then
-			setCount(entry.row, r.count)
+			setCount(entry.row, r.count, jobs.known)
 			setSub(entry.row, r.note or r.sub, r.note ~= nil)
-			entry.minus:update({ disabled = not r.canRemove })
-			entry.plus:update({ disabled = not r.canAdd })
+			setDisabled(entry, "minus", not r.canRemove)
+			setDisabled(entry, "plus", not r.canAdd)
 		end
 	end
-	setCount(self.jobPool, jobs.pool.count)
+	setCount(self.jobPool, jobs.pool.count, jobs.known)
 	setSub(self.jobPool, jobs.pool.text, false)
-	setCount(self.jobSoldiers, jobs.soldiers.count)
+	setCount(self.jobSoldiers, jobs.soldiers.count, jobs.known)
 	setSub(self.jobSoldiers, "Train them at the barracks", false)
 end
 
