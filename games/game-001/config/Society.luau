@@ -11,8 +11,6 @@
 		requestRefreshSeconds   how often the open-request list is refreshed
 		conversation.eventSeconds   how long an event flag (event.building_completed, event.shortage, ...)
 		                        stays true for scenario triggers after the event
-		conversation.loyaltyCap one decision's loyalty change per listener, by relation (FORGE-00 decision M3:
-		                        speaker ±25, family/friends/rivals ±10, kingdom listeners ±5)
 	Reputation (G13.4, Kingdom/Reputation)
 		historyLimit            history entries kept per ruler (oldest dropped first)
 		historySent             entries `Kingdom.GetReputation` sends (the latest 30, G13.4)
@@ -52,7 +50,6 @@ return {
 	requestRefreshSeconds = 20,
 	conversation = {
 		eventSeconds = 180, -- PROVISIONAL
-		loyaltyCap = { speaker = 25, family = 10, friends = 10, rivals = 10, kingdom = 5 },
 	},
 
 	historyLimit = 50,

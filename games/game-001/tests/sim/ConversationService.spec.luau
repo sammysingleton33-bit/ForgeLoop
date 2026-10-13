@@ -185,6 +185,40 @@ describe("ConversationService: Choose (G13.3)", function()
 		local compassion = reputation:get(1).values.compassion
 		local stability = k.conditions.stability
 		assert(conversations:converse(p1, farmer.id))
+		local family = sim.citizens[farmer.profile.family[1]]
+		-- after Converse (its RulerVisited already moved the speaker)
+		-- the decision's audience (occupation): another farmer with no tie to the speaker; others do not hear
+		local function arrival(job)
+			local c = sim:_spawnCitizen(k, job, farmer.x, farmer.z)
+			k.stats.born += 1
+			sim.profiler.birth(sim, k, c) -- an arrival: no family, friends or rivals
+			return c
+		end
+		local peer, stranger = arrival(farmer.job), arrival("woodcutter")
+		expect(peer.profile.occupation).toBe(farmer.profile.occupation)
+		expect(stranger.profile.occupation).never.toBe(farmer.profile.occupation)
+		local before = {
+			speaker = farmer.loyalty,
+			family = family.loyalty,
+			peer = peer.loyalty,
+			stranger = stranger.loyalty,
+		}
+		local expected = { -- fireDecision's listeners, applied as given (first firing: multiplier 1)
+			speaker = ContentQuery.decisionLoyalty(
+				"grain_open_store",
+				farmer.profile.traits,
+				"speaker",
+				farmer.chemistry,
+				1
+			),
+			family = ContentQuery.decisionLoyalty(
+				"grain_open_store",
+				family.profile.traits,
+				"family",
+				family.chemistry,
+				1
+			),
+		}
 		local ok, result, reason =
 			choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store")
 		expect(reason).toBeNil()
@@ -193,10 +227,17 @@ describe("ConversationService: Choose (G13.3)", function()
 		expect(sim:balance("crimson", "food")).toBe(food - 25)
 		expect(reputation:get(1).values.compassion).toBe(compassion + 3)
 		expect(farmer.loyalty > loyalty).toBe(true)
+		expect(farmer.loyalty).toBeNear(math.clamp(before.speaker + expected.speaker, 0, 100), 1e-9)
+		expect(family.loyalty).toBeNear(math.clamp(before.family + expected.family, 0, 100), 1e-9)
+		local heard =
+			ContentQuery.decisionLoyalty("grain_open_store", peer.profile.traits, "kingdom", peer.chemistry, 1)
+		expect(heard ~= 0).toBe(true)
+		expect(peer.loyalty).toBeNear(math.clamp(before.peer + heard, 0, 100), 1e-9)
+		expect(stranger.loyalty).toBe(before.stranger)
+		expect(math.abs(expected.speaker) <= ContentQuery.LOYALTY_CLAMP.speaker).toBe(true)
 		local decision = ContentQuery.data.decisions.grain_open_store
 		expect(k.conditions.stability).toBeNear(stability + decision.kingdom.stability, 1e-9)
 		expect(sim:productivityOf(farmer)).toBeNear(1.15, 1e-9) -- farmers_work_up (occupation:farmer)
-		local family = sim.citizens[farmer.profile.family[1]]
 		expect(family.pinned.fed_by_ruler).toBe(true) -- family_remembers_bread
 		local reactions, cues = 0, {}
 		for _, entry in sent do

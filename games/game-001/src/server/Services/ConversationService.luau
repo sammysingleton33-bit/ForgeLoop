@@ -22,8 +22,9 @@
 		- cost spent and resource_effects through the treasury (txId decision:<round>:<entity>:<scenario>:<n>);
 		- reputation: ReputationService:apply(ruler, decisionId, rep, response text);
 		- loyalty: every listener once under its closest relation (speaker > family > friends > rivals >
-		  audience), ContentQuery.decisionLoyalty(..., kingdom multiplier), capped per relation
-		  (Society.conversation.loyaltyCap); the speaker's chemistry drifts (ContentQuery.driftChemistry);
+		  audience), as fireDecision's `listeners` give it (decisionLoyalty with the kingdom multiplier,
+		  clamped to ContentQuery.LOYALTY_CLAMP; applied as given); the speaker's chemistry drifts
+		  (ContentQuery.driftChemistry);
 		- kingdom conditions (Kingdom/Reputation.applyConditions); memory_tag pinned on the speaker;
 		  decision.<id> remembered for the ruler;
 		- consequences (after delay_s; a chance < 1 rolls the match's random): productivity (sim:addProductivity),
@@ -415,28 +416,34 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 	end
 end
 
-function ConversationService:_listeners(c: any, effects: any): { { citizen: any, relation: string } }
+-- ContentQuery DecisionListeners: the speaker, its relations, then the decision's audience ("kingdom").
+local function listenerOf(citizen: any, relation: string): { [string]: any }
+	local traits = if citizen.profile then citizen.profile.traits else {}
+	return { citizen = citizen, relation = relation, traits = traits, chemistry = citizen.chemistry }
+end
+
+function ConversationService:_listeners(c: any, audience: string?): { { [string]: any } }
 	local sim = self:_sim()
 	local seen: { [number]: boolean } = { [c.id] = true }
-	local out = { { citizen = c, relation = "speaker" } }
+	local out = { listenerOf(c, "speaker") }
 	local profile = c.profile or {}
 	for _, relation in { "family", "friends", "rivals" } do
 		for _, id in profile[relation] or {} do
 			local other = sim.citizens[id]
 			if other and not seen[id] then
 				seen[id] = true
-				table.insert(out, { citizen = other, relation = relation })
+				table.insert(out, listenerOf(other, relation))
 			end
 		end
 	end
-	if effects.audience == "kingdom" or effects.audience == "occupation" then
+	if audience == "kingdom" or audience == "occupation" then
 		local occupation = profile.occupation or c.job
 		for _, id in sim.kingdoms[c.kingdomId].citizenIds do
 			local other = sim.citizens[id]
 			local occ = if other.profile then other.profile.occupation else other.job
-			if not seen[id] and (effects.audience == "kingdom" or occ == occupation) then
+			if not seen[id] and (audience == "kingdom" or occ == occupation) then
 				seen[id] = true
-				table.insert(out, { citizen = other, relation = "kingdom" })
+				table.insert(out, listenerOf(other, "kingdom"))
 			end
 		end
 	end
@@ -484,12 +491,14 @@ function ConversationService:choose(
 	if not sim:canAfford(kingdomId, cost) then
 		return false, nil, "cost"
 	end
-	local now = self:_now()
-	local rulerHistory, kingdomHistory = self._reputation:farmHistories(userId, kingdomId)
-	local effects = ContentQuery.fireDecision(response.decision, rulerHistory, kingdomHistory, now)
-	if effects == nil then
+	local decision = ContentQuery.data.decisions[response.decision]
+	if decision == nil then
 		return false, nil, "unknown_response"
 	end
+	local now = self:_now()
+	local rulerHistory, kingdomHistory = self._reputation:farmHistories(userId, kingdomId)
+	local listeners = self:_listeners(c, decision.audience)
+	local effects = assert(ContentQuery.fireDecision(response.decision, rulerHistory, kingdomHistory, now, listeners))
 	self._seq += 1
 	local tx = `decision:{self._round}:{entityId}:{scenarioId}:{self._seq}`
 	if next(cost) ~= nil and not sim:spend(kingdomId, cost, tx, `decision:{effects.id}`) then
@@ -510,19 +519,8 @@ function ConversationService:choose(
 		end
 	end
 	self._reputation:apply(userId, effects.id, effects.rep, ContentQuery.fill(response.text, names))
-	local caps = SocietyConfig.conversation.loyaltyCap
-	for _, listener in self:_listeners(c, effects) do
-		local other = listener.citizen
-		local traits = if other.profile then other.profile.traits else {}
-		local delta = ContentQuery.decisionLoyalty(
-			effects.id,
-			traits,
-			listener.relation,
-			other.chemistry,
-			effects.kingdom_multiplier
-		)
-		local cap = caps[listener.relation]
-		changeLoyalty(other, math.clamp(delta, -cap, cap))
+	for _, heard in effects.listeners do -- decayed and clamped per relation (LOYALTY_CLAMP): applied as given
+		changeLoyalty(heard.citizen, heard.loyalty)
 	end
 	if c.profile then
 		c.chemistry = ContentQuery.driftChemistry(c.profile.chemistryBase, c.chemistry or 0, effects.speaker.chemistry)

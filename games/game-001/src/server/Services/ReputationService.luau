@@ -239,11 +239,9 @@ end
 
 function ReputationService:farmHistories(userId: number, kingdomId: string): (any, any)
 	self:_sim()
-	local ruler = self._rulerFarm[userId] or {}
-	self._rulerFarm[userId] = ruler
 	local kingdom = self._kingdomFarm[kingdomId] or {}
 	self._kingdomFarm[kingdomId] = kingdom
-	return ruler, kingdom
+	return self:_rulerHistory(userId), kingdom
 end
 
 function ReputationService:values(userId: number): { [string]: number }
