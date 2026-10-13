@@ -9,8 +9,10 @@ Front (door) faces Blender -Y (Roblox -Z, the Model's front). Door is walkable (
 
 import math
 
+from generators._kingdom_props_common import (SUN_DISC, SUN_FIELD, SUN_RAYS, SUN_RIM, SUN_ROUNDEL, crown_outlines,
+                                              emblem, emblem_colors, field, oak_outlines, sun_outlines)
 from lib import kit
-from lib.geo import Vector, bevel, box, cylinder, frustum_box, lathe
+from lib.geo import Vector, bevel, box, cylinder, frustum_box, lathe, prism
 from lib.palette import kingdom_color
 
 NAME = "house_cottage"
@@ -32,6 +34,8 @@ ARCHETYPES = (
     (2, "tile", "plaster", ("dormers", "ext_chimney", "steep")),
 )
 FEATURES = ("porch", "lean_to", "tower", "ext_chimney", "dormers", "catslide", "wing", "steep")
+PENNANT_EMBLEM = {"red": "crown", "blue": "star", "green": "oak", "yellow": "sun"}  # D-039 (the flame is retired)
+PENNANT_W, PENNANT_H, PENNANT_T = 3.6, 3.4, 0.14  # square kingdom banner on the ridge pole (studs)
 
 
 def variants(n, seed):
@@ -116,9 +120,18 @@ def build(b, p):
         b.add([pc.move(wx, wy, z0 + kit.SILL_Z) for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", shutter)])
     windows += 1
     side = -ws if p["ext_chimney"] else rng.choice((-1, 1))
+    # A stair-tower house moves its chimney breast to this gable (sx = -ws below), which buries this window
+    # (only a shutter edge poked out beside the stack). Skip it there: its triangles pay for the oak leaf on
+    # the pennant. The rng draws stay identical, so the rest of the house does not change.
+    buried = p["ext_chimney"] and p["tower"]
     for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", shutter):
-        b.add(pc.rotate(side * math.pi / 2, "Z").move(side * W / 2, rng.uniform(-1.5, 1.5), z0 + kit.SILL_Z))
-    windows += 1
+        y = rng.uniform(-1.5, 1.5)
+        if buried:
+            if pc.tint is None:
+                rng.uniform(0.15, 0.85)  # the tint draw Builder.add would have made
+            continue
+        b.add(pc.rotate(side * math.pi / 2, "Z").move(side * W / 2, y, z0 + kit.SILL_Z))
+    windows += 0 if buried else 1
     if not p["catslide"]:
         for pc in kit.window(kit.WIN_W, kit.WIN_H, "timber", None):
             b.add(pc.rotate(math.pi, "Z").move(rng.uniform(-W / 4, W / 4), D / 2, z0 + kit.SILL_Z))
@@ -192,9 +205,15 @@ def build(b, p):
         for s in (-1, 1):
             b.add(kit.oriented_box((xg, s * Dr * 0.36, top + 0.6), (xg, s * 0.4, top + rise * 0.62), kit.TIMBER * 0.8,
                                    0.4, "timber", n))
+    # kingdom pennant at the ridge end away from the chimney (D-033: every cottage shows its emblem, D-039)
+    end = 1 if p["chimney"] == "left" else -1
+    if p["ext_chimney"]:  # never on the gable that carries the chimney breast (sx below)
+        end = ws if p["tower"] else -ws
+    px = end * (Wr / 2 - 0.4) + lean_dx
     if style == "thatch":
-        px = (1 if p["chimney"] == "left" else -1) * (Wr / 2 - 0.4) + lean_dx
-        _ridge_pennant(b, k, px, top + rise + 1.4)
+        _ridge_pennant(b, k, px, top + rise + 1.4, -end)
+    else:  # tile ridge sits lower than the rolled thatch ridge; fixed pole tint: no rng draw, rest unchanged
+        _ridge_pennant(b, k, px, top + rise + 0.9, -end, pole_tint=0.5)
     if p["catslide"]:
         _outshut(b, W, D, z0, pitch, top)
     if p["dormers"] and style == "tile":
@@ -355,10 +374,60 @@ def _stair_tower(b, k, x, y, height):
     return n
 
 
-def _ridge_pennant(b, k, x, z):
-    """Kingdom pennant on a pole at the ridge end: makes thatch houses read by kingdom at 80 studs."""
-    b.add(box(0.3, 0.3, 6.2, "timber").move(x, 0, z - 0.6))
-    b.add(box(0.14, 4.2, 1.9, kingdom_color(k, "cloth")).move(x, -2.15, z + 3.7), tint=0.5)
+def _ridge_pennant(b, k, x, z, inward, pole_tint=None):
+    """Kingdom pennant on a pole at the ridge end: a square banner of kingdom cloth flying `inward` (+-1)
+    along the ridge, facing the street and the back, with the kingdom emblem (D-039) filling it, so the
+    cottage reads by kingdom at 80 studs by shape, not colour alone (D-033). The pole takes the only rng draw
+    (its tint) unless `pole_tint` is given; everything else has a fixed tint."""
+    W, H, T = PENNANT_W, PENNANT_H, PENNANT_T
+    b.add(cylinder(0.17, 0.17, 6.5, 3, "timber").move(x, 0, z - 0.6), tint=pole_tint)
+    cx, cz = x + inward * (W / 2 + 0.1), z + 5.6 - H / 2
+    b.add(box(W, T, H, field(k), base=False).move(cx, 0, cz), tint=0.5)
+    for pc in _pennant_emblem(k, W, H, T):
+        b.add(pc.move(cx, 0, cz), tint=0.5, grad=("range", 0.55, 0.95))
+
+
+def _pennant_emblem(k, W, H, T, margin=0.24):
+    """The kit-wide emblem of kingdom k (`_kingdom_props_common` outlines) as cheap prisms filling a W x H
+    cloth `T` thick, centred on the origin. Every part passes through the cloth and stands proud of both
+    faces, so the emblem reads from the front and the back of the pennant."""
+    d = T + 0.16  # emblem body: 0.08 proud of each face
+    hw, hh = W / 2 - margin, H / 2 - margin
+    kind = PENNANT_EMBLEM[k]
+    if kind == "crown":  # gold crown, ivory band and gems (flat-sided gems: cheap, ~2 px at 80 studs)
+        s = min(hw / 1.04, hh / 0.99)
+        pts, (bx, bz, bw, bh), gems = crown_outlines(s)
+        dz = -0.12 * s  # centre the crown body (-0.62 s .. 0.86 s; the top gem reaches 1.11 s)
+        gold, ivory = emblem_colors(k, "crown")
+        out = [prism([(x, z + dz) for x, z in pts], d, gold),
+               box(bw, d + 0.08, bh, ivory, base=False).move(bx, 0, bz + dz)]
+        for gx, gz, gr in gems:
+            gem = lathe([(0.0, -gr), (gr, 0.0), (0.0, gr)], 3, ivory, phase=math.pi / 2)
+            out.append(gem.rotate(math.pi / 2, "X").move(gx, 0, gz + dz))
+        return out
+    if kind == "oak":  # ivory leaf (flat-topped lobes), bronze midrib and stem: light on the bright emerald
+        s = min(hw / 0.8, hh / 1.175)
+        leaf, (mx, mz, mw, mh), (sx, sz, sw, sh) = oak_outlines(s, lobe_pts=2)
+        dz = 0.115 * s  # centre leaf + stem (-1.29 s .. 1.06 s)
+        ivory, bronze = emblem_colors(k, "oak")
+        return [prism([(x, z + dz) for x, z in leaf], d, ivory),
+                box(mw, d + 0.08, mh, bronze, base=False).move(mx, 0, mz + dz),
+                box(sw, d, sh, bronze, base=False).move(sx, 0, sz + dz)]
+    if kind == "star":  # ivory star with the small silver star at its heart
+        s = min(hw / 0.951, hh / 0.905)
+        ivory, silver = emblem_colors(k, "star")
+        outer, inner = emblem("star", 2 * s, ivory, silver, depth=d, mid=None)
+        inner.move(0, d * 0.6, 0).scale(1.0, 1.4, 1.0)  # centred, proud of the star on both faces
+        return [pc.move(0, 0, -0.095 * s) for pc in (outer, inner)]  # centre the points (-0.81 s .. s)
+    # sun on gold cloth: never gold on gold (D-033), so the kit sun sits on an ivory roundel with a bronze rim
+    r = min(hw, hh)
+    out = []
+    for rr, dd, col in ((r, T + 0.06, SUN_RIM), (r * 0.88, T + 0.12, SUN_FIELD)):
+        out.append(cylinder(rr, rr, dd, 12, col).rotate(math.pi / 2, "X").move(0, dd / 2, 0))
+    rays, disc = sun_outlines(r / SUN_ROUNDEL)
+    out.append(prism(rays, T + 0.2, SUN_RAYS))
+    out.append(prism(disc, T + 0.28, SUN_DISC))
+    return out
 
 
 def _kingdom_banner(b, k, x, y, z):

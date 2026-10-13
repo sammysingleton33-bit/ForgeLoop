@@ -440,10 +440,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
         "review_file": "reviews/building_barracks.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -451,7 +451,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -517,10 +517,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
         "review_file": "reviews/building_barracks.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -528,7 +528,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -594,9 +594,21 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
         "review_file": "reviews/building_barracks.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7302,
       "sockets": {
@@ -659,10 +671,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
         "review_file": "reviews/building_barracks.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -670,10 +682,10 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7303,
       "sockets": {
@@ -736,10 +748,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
         "review_file": "reviews/building_barracks.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -747,7 +759,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -813,10 +825,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
         "review_file": "reviews/building_barracks.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -824,7 +836,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -1347,19 +1359,19 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
         "review_file": "reviews/building_smithy.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 3
+          "triangle_cost": 3,
+          "variation": 4
         },
         "verdict": "PASS"
       },
@@ -1419,19 +1431,19 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
         "review_file": "reviews/building_smithy.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 3
+          "triangle_cost": 3,
+          "variation": 4
         },
         "verdict": "PASS"
       },
@@ -1492,9 +1504,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
         "review_file": "reviews/building_smithy.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7502,
       "sockets": {
@@ -1553,9 +1577,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
         "review_file": "reviews/building_smithy.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7503,
       "sockets": {
@@ -1615,9 +1651,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
         "review_file": "reviews/building_smithy.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7504,
       "sockets": {
@@ -1676,19 +1724,19 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
         "review_file": "reviews/building_smithy.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 3
+          "triangle_cost": 3,
+          "variation": 4
         },
         "verdict": "PASS"
       },
@@ -7203,9 +7251,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7000,
       "sockets": {
@@ -7359,21 +7419,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7001,
       "sockets": {
@@ -7527,9 +7587,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7002,
       "sockets": {
@@ -7683,21 +7755,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7003,
       "sockets": {
@@ -7851,9 +7923,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7004,
       "sockets": {
@@ -8007,21 +8091,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7005,
       "sockets": {
@@ -8175,9 +8259,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7006,
       "sockets": {
@@ -8331,21 +8427,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7007,
       "sockets": {
@@ -8499,9 +8595,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7008,
       "sockets": {
@@ -8655,21 +8763,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7009,
       "sockets": {
@@ -8823,9 +8931,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7010,
       "sockets": {
@@ -8979,21 +9099,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
         "review_file": "reviews/char_soldier.md",
         "reviewer": "fresh-context subagent",
-        "round": 5,
+        "round": 6,
         "scores": {
-          "cohesion": 2,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 3,
           "proportions": 4,
           "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7011,
       "sockets": {
@@ -11830,7 +11950,7 @@
       },
       "dimensions_studs": {
         "x": 20.429,
-        "y": 26.981,
+        "y": 27.281,
         "z": 21.027
       },
       "double_sided": false,
@@ -11840,7 +11960,7 @@
       },
       "generator": "house_cottage",
       "generator_version": 5,
-      "geometry_hash": "a611061eacc322ce",
+      "geometry_hash": "89d94e32e045ad0f",
       "id": "house_cottage_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -11875,8 +11995,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 3870,
-        "lod1": 1354
+        "lod0": 3928,
+        "lod1": 1374
       },
       "validation_pass": true
     },
@@ -11889,7 +12009,7 @@
       },
       "dimensions_studs": {
         "x": 26.068,
-        "y": 34.38,
+        "y": 35.184,
         "z": 19.776
       },
       "double_sided": false,
@@ -11899,7 +12019,7 @@
       },
       "generator": "house_cottage",
       "generator_version": 5,
-      "geometry_hash": "2baa54904209bbaa",
+      "geometry_hash": "60f789137014c0ff",
       "id": "house_cottage_02",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -11934,8 +12054,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4812,
-        "lod1": 1684
+        "lod0": 4912,
+        "lod1": 1718
       },
       "validation_pass": true
     },
@@ -11948,7 +12068,7 @@
       },
       "dimensions_studs": {
         "x": 25.588,
-        "y": 38.394,
+        "y": 38.694,
         "z": 21.352
       },
       "double_sided": false,
@@ -11958,7 +12078,7 @@
       },
       "generator": "house_cottage",
       "generator_version": 5,
-      "geometry_hash": "c95378e9f05c6282",
+      "geometry_hash": "f919c1c2062c8417",
       "id": "house_cottage_03",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -11993,8 +12113,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4976,
-        "lod1": 1740
+        "lod0": 4936,
+        "lod1": 1726
       },
       "validation_pass": true
     },
@@ -12007,7 +12127,7 @@
       },
       "dimensions_studs": {
         "x": 21.407,
-        "y": 23.802,
+        "y": 24.61,
         "z": 22.695
       },
       "double_sided": false,
@@ -12017,7 +12137,7 @@
       },
       "generator": "house_cottage",
       "generator_version": 5,
-      "geometry_hash": "a081fb07515f84e0",
+      "geometry_hash": "755c02dc562455ac",
       "id": "house_cottage_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -12052,8 +12172,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 3986,
-        "lod1": 1394
+        "lod0": 4214,
+        "lod1": 1474
       },
       "validation_pass": true
     },
@@ -12066,7 +12186,7 @@
       },
       "dimensions_studs": {
         "x": 21.626,
-        "y": 37.395,
+        "y": 37.695,
         "z": 26.601
       },
       "double_sided": false,
@@ -12076,7 +12196,7 @@
       },
       "generator": "house_cottage",
       "generator_version": 5,
-      "geometry_hash": "53d0e2eb05c8ea59",
+      "geometry_hash": "eb679db1456e9f3f",
       "id": "house_cottage_05",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -12111,8 +12231,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4942,
-        "lod1": 1728
+        "lod0": 5000,
+        "lod1": 1750
       },
       "validation_pass": true
     },
@@ -12125,7 +12245,7 @@
       },
       "dimensions_studs": {
         "x": 23.227,
-        "y": 36.523,
+        "y": 38.022,
         "z": 19.881
       },
       "double_sided": false,
@@ -12135,7 +12255,7 @@
       },
       "generator": "house_cottage",
       "generator_version": 5,
-      "geometry_hash": "61020ae20bf28e72",
+      "geometry_hash": "e7848bc0fdf3fb2a",
       "id": "house_cottage_06",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -12170,8 +12290,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 5000,
-        "lod0": 4736,
-        "lod1": 1656
+        "lod0": 4836,
+        "lod1": 1692
       },
       "validation_pass": true
     },
@@ -12903,16 +13023,16 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 3,
+          "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -12972,16 +13092,16 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 3,
+          "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -13041,9 +13161,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7004,
       "sockets": {
@@ -13098,9 +13230,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7005,
       "sockets": {
@@ -13155,16 +13299,16 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 3,
+          "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -13224,16 +13368,16 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 3,
+          "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -13293,16 +13437,16 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 3,
+          "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -13362,16 +13506,16 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
+        "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
-          "palette": 3,
+          "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
