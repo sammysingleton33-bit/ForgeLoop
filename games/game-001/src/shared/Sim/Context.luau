@@ -8,8 +8,9 @@
 	API
 		Context.kingdom(sim, kingdomId, extra?): Ctx
 			phase (extra.phase), kingdom.food/wood/stone/gold, kingdom.fed_ratio (kingdom.fedRatio, 1 when
-			unknown), kingdom.housing_ratio (population / capacity; 0 capacity → 10), kingdom.happiness /
-			stability / morale (kingdom.conditions), kingdom.population (citizens), kingdom.soldiers,
+			unknown), kingdom.housing_ratio ((citizens + soldiers) / popCap, as the sim houses them; 0 → 10),
+			kingdom.happiness / stability / morale (kingdom.conditions), kingdom.population (citizens),
+			kingdom.soldiers,
 			kingdom.count.<type> for every G2 BuildingType (standing, at least level 1), kingdom.level.keep,
 			event.<tag> = true for each tag in extra.events, and rep.<category> from extra.rep.
 			extra.before = { buildingId, level }: the state just before that building reached `level` (it

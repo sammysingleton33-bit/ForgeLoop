@@ -324,6 +324,19 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		expect(reputation:get(1).values.compassion).toBe(before + fed.rep.compassion)
 	end)
 
+	it("recruiting credits the recruiting ruler only, not the co-ruler (#68 L2)", function()
+		local env, reputation, match = boot()
+		seat(env, 2) -- users 1 and 2 rule crimson together
+		local sim = match.host.match.sim
+		local ctx = Context.kingdom(sim, "crimson", { phase = match.host.match.state })
+		local f = firing("UnitsRecruited", ctx)
+		expect(f).never.toBeNil()
+		sim:emit("RecruitQueued", { kingdomId = "crimson", unit = "soldier", count = 1, barracksId = 0, by = 2 })
+		env.mock:advance(0.25)
+		expect(#reputation:get(2).history > 0).toBe(true)
+		expect(reputation:get(1).history).toEqual({})
+	end)
+
 	it("an objective's capture and loss go to the right kingdoms' rulers", function()
 		local env, reputation, match = boot()
 		seat(env, 3) -- users 1 and 2 in crimson, 3 elsewhere
