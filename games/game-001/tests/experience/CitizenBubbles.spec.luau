@@ -147,6 +147,23 @@ describe("config Vfx.luau cues (FL-0091)", function()
 		})
 	end)
 
+	it("a cue with a continuous effect says how long it runs (FORGE-05 #42 M1)", function()
+		for id, cue in Vfx.cues do
+			local preset = cue.vfx and VfxPresets.byId[cue.vfx]
+			local continuous = false
+			for _, emitter in (if preset then preset.emitters else {}) do
+				continuous = continuous or (emitter.rate ~= nil and preset.durationSec == nil)
+			end
+			if continuous then
+				assert(
+					type(cue.seconds) == "number" and cue.seconds > 0,
+					`cue {id}: continuous {cue.vfx} needs seconds`
+				)
+			end
+		end
+		expect(Vfx.cues.rest.seconds).toBe(6)
+	end)
+
 	it("maps every cue_id the content library uses (Content/Consequences, FL-0083)", function()
 		local used = 0
 		for id, row in Consequences do
@@ -160,7 +177,7 @@ describe("config Vfx.luau cues (FL-0091)", function()
 end)
 
 describe("CitizenBubbleController (FL-0091)", function()
-	local env, entities, played, effects, poses, settingsValues, world
+	local env, entities, played, effects, stopped, poses, settingsValues, world, controller
 
 	-- A rendered rig. `hidden` = unparented, as EntityController's LOD leaves a far rig.
 	local function citizen(id, x, hidden)
@@ -181,6 +198,60 @@ describe("CitizenBubbleController (FL-0091)", function()
 		return model:FindFirstChild("ForgeCitizenBubble")
 	end
 
+	-- A VFXController double whose effects know whether they are continuous, as the real Effect does.
+	local function vfxDouble()
+		return {
+			name = "VFXController",
+			new = function()
+				return {
+					play = function(_, id)
+						table.insert(effects, id)
+						local continuous = false
+						for _, emitter in VfxPresets.byId[id].emitters do
+							continuous = continuous or emitter.rate ~= nil
+						end
+						return { id = id, continuous = continuous and VfxPresets.byId[id].durationSec == nil }
+					end,
+					stop = function(_, effect)
+						table.insert(stopped, effect.id)
+					end,
+				}
+			end,
+		}
+	end
+
+	-- A second client with its own doubles (camera, conversation): { env, signals, controller }.
+	local function bootWith(extra)
+		local own = MockEnv.new({ seed = 94, isServer = false, localPlayer = { userId = 9104 } })
+		local signals = { rendered = Signal.new(), released = Signal.new(), event = Signal.new() }
+		local defs = {
+			{
+				name = "EntityController",
+				new = function()
+					return signals
+				end,
+			},
+			BubbleDef,
+		}
+		for _, def in extra do
+			table.insert(defs, def)
+		end
+		local reg = Loader.load(own, defs)
+		return { env = own, signals = signals, controller = reg:get("CitizenBubbleController") }
+	end
+
+	local function rigFor(signals, id, x)
+		local model = roblox.Instance.new("Model")
+		local root = roblox.Instance.new("Part")
+		root.CFrame = CFrame.new(x, 2, 0)
+		root.Parent = model
+		model.PrimaryPart = root
+		model.Parent = world
+		signals.rendered:fire(id, model)
+		signals.event:fire(id, "thought", { text = `t{id}` }, model)
+		return model
+	end
+
 	beforeEach(function()
 		env = MockEnv.new({ seed = 91, isServer = false, localPlayer = { userId = 9101 } })
 		world = roblox.Instance.new("Folder")
@@ -193,8 +264,8 @@ describe("CitizenBubbleController (FL-0091)", function()
 		function entities.playPose(_, id, pose)
 			table.insert(poses, `{id}:{pose}`)
 		end
-		played, effects, settingsValues = {}, {}, {}
-		Loader.load(env, {
+		played, effects, stopped, settingsValues = {}, {}, {}, {}
+		local registry = Loader.load(env, {
 			{
 				name = "EntityController",
 				new = function()
@@ -221,16 +292,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 					}
 				end,
 			},
-			{
-				name = "VFXController",
-				new = function()
-					return {
-						play = function(_, id)
-							table.insert(effects, id)
-						end,
-					}
-				end,
-			},
+			vfxDouble(),
 			{
 				name = "CitizenBubbleController",
 				new = function(e, r)
@@ -242,6 +304,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 				end,
 			},
 		})
+		controller = registry:get("CitizenBubbleController")
 	end)
 
 	it("draws a thought over the citizen; the reaction replaces it and asks for a pose", function()
@@ -304,7 +367,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 	end)
 
 	it(
-		"a job change swaps the rig: the thought stays, a strike placard drops; a despawn clears both (R42-3)",
+		"a job change swaps the rig: the thought and the strike placard stay; a despawn clears both (FORGE-05 #87 M1)",
 		function()
 			local miner = citizen(3, 20)
 			entities.event:fire(3, "thought", { text = "More lamps, please." }, miner)
@@ -318,13 +381,18 @@ describe("CitizenBubbleController (FL-0091)", function()
 			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
 			assert(bubbleOf(farmer), "the thought follows the citizen to its new rig")
 			expect(bubbleOf(farmer):FindFirstChild("Text", true).Text).toBe("More lamps, please.")
-			expect(bubbleOf(newStriker)).toBeNil() -- a new occupation: off strike
+			-- a strike belongs to the citizen (v0.4-g6): the server sends "off" only when it ends
+			assert(bubbleOf(newStriker), "the placard follows the striker to its new job")
+			expect(bubbleOf(newStriker):FindFirstChild("Text", true).Text).toBe(Bubbles.STRIKE_TEXT)
 			-- a despawn: released and not rendered again
 			entities.released:fire(3, farmer)
+			entities.released:fire(4, newStriker)
 			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
 			local reused = citizen(3, 20) -- the id comes back for another citizen
+			local reusedStriker = citizen(4, 25)
 			env.mock:advance(BubbleDef.POLL_SEC + 0.01)
 			expect(bubbleOf(reused)).toBeNil()
+			expect(bubbleOf(reusedStriker)).toBeNil() -- the departed striker's placard is gone
 		end
 	)
 
@@ -389,6 +457,167 @@ describe("CitizenBubbleController (FL-0091)", function()
 		expect(warnings).toBe(1)
 	end)
 
+	it("marks exactly the citizens in entityIds, never every citizen of the occupation (CONTRACTS v0.4-g6)", function()
+		local miners = { citizen(1, 10), citizen(2, 20), citizen(3, 30) }
+		entities.event:fire(nil, "strike", { occupation = "miner", on = true, entityIds = { 1, 3 } }, nil)
+		expect(bubbleOf(miners[1]):FindFirstChild("Text", true).Text).toBe(Bubbles.STRIKE_TEXT)
+		expect(bubbleOf(miners[2])).toBeNil() -- the same occupation, but not one the server struck
+		expect(bubbleOf(miners[3]):FindFirstChild("Text", true).Text).toBe(Bubbles.STRIKE_TEXT)
+		entities.event:fire(nil, "cue", { cue = "hammer", occupation = "miner", entityIds = { 2, 2, 0 / 0 } }, nil)
+		expect(poses).toEqual({ "2:hammer" }) -- each id once; a NaN id is skipped
+		entities.event:fire(1, "cue", { cue = "bow", entityIds = { 1, 3 } }, miners[1])
+		expect(poses).toEqual({ "2:hammer", "1:bow", "3:bow" })
+		-- neither entityId nor entityIds: the HUD's or the keep's, never on citizens
+		entities.event:fire(nil, "hammer", { occupation = "miner" }, nil)
+		entities.event:fire(nil, "cue", { cue = "salute", entityIds = {} }, nil)
+		expect(poses).toEqual({ "2:hammer", "1:bow", "3:bow" })
+		expect(controller.stats.untargeted).toBe(2)
+		expect(env.mock.threadErrors).toEqual({})
+	end)
+
+	it(
+		"a continuous cue effect (rest) stops after its seconds, at the next cue's effect and on release (FORGE-05 #42 M1)",
+		function()
+			local farmer = citizen(1, 20)
+			entities.event:fire(1, "rest", {}, farmer)
+			expect(effects).toEqual({ "ambience.motes" })
+			env.mock:advance(Vfx.cues.rest.seconds - 0.5)
+			expect(stopped).toEqual({})
+			env.mock:advance(1)
+			expect(stopped).toEqual({ "ambience.motes" }) -- its seconds are up
+			entities.event:fire(1, "rest", {}, farmer)
+			entities.event:fire(1, "hammer", {}, farmer)
+			expect(stopped).toEqual({ "ambience.motes", "ambience.motes" }) -- replaced by the next cue
+			entities.event:fire(1, "rest", {}, farmer)
+			entities.released:fire(1, farmer)
+			expect(#stopped).toBe(3) -- the pooled rig keeps no emitter
+			env.mock:advance(Vfx.cues.rest.seconds + 1)
+			expect(#stopped).toBe(3) -- stopped once, never twice; bursts (hammer) clean up themselves
+		end
+	)
+
+	it("an older cue timer never stops a newer effect on the same citizen (FORGE-05 #87 L1)", function()
+		local farmer = citizen(1, 20)
+		entities.event:fire(1, "rest", {}, farmer)
+		env.mock:advance(1)
+		entities.event:fire(1, "rest", {}, farmer) -- replaces the first; its timer is still pending
+		expect(#stopped).toBe(1)
+		env.mock:advance(Vfx.cues.rest.seconds - 0.5) -- the first timer fires here
+		expect(#stopped).toBe(1) -- the second rest is still live
+		env.mock:advance(1)
+		expect(#stopped).toBe(2) -- and ends after its own seconds
+	end)
+
+	it("takes only whole entity ids >= 1 from the list part of entityIds (FORGE-05 #87 L3)", function()
+		for id = 1, 3 do
+			citizen(id, id * 10)
+		end
+		local listed = { 1, -1, 1.5, math.huge, 0, 3 }
+		listed.extra = 2 -- a hash-part value is not part of the list
+		entities.event:fire(nil, "cue", { cue = "bow", entityIds = listed }, nil)
+		expect(poses).toEqual({ "1:bow", "3:bow" })
+		entities.event:fire(0, "cue", { cue = "bow" }, nil)
+		entities.event:fire(2.5, "cue", { cue = "bow" }, nil)
+		expect(poses).toEqual({ "1:bow", "3:bow" })
+	end)
+
+	it("never holds more bubble GUIs than maxOnScreen while bubbles swap (FORGE-05 #42 L4)", function()
+		for id = 1, Vfx.bubbles.maxOnScreen do
+			entities.event:fire(id, "thought", { text = `t{id}` }, citizen(id, id * 10))
+		end
+		local near = citizen(50, 5)
+		entities.event:fire(50, "reaction", { text = "Hooray!", tone = "happy" }, near) -- takes the farthest slot
+		assert(bubbleOf(near), "the reaction is drawn")
+		local drawn = 0
+		for _ in controller._drawn do
+			drawn += 1
+		end
+		expect(drawn).toBe(Vfx.bubbles.maxOnScreen)
+		expect(drawn + #controller._pool).toBe(Vfx.bubbles.maxOnScreen)
+	end)
+
+	it("warns about the first UNKNOWN_CUE_LOG unknown cue names only (FORGE-05 #42 L5)", function()
+		local farmer = citizen(1, 20)
+		for index = 1, 20 do
+			entities.event:fire(1, "cue", { cue = `dragons{index}` }, farmer)
+			entities.event:fire(1, "cue", { cue = `dragons{index}` }, farmer)
+		end
+		local warnings = 0
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "unknown cue", 1, true) then
+				warnings += 1
+			end
+		end
+		expect(warnings).toBe(BubbleDef.UNKNOWN_CUE_LOG + 1) -- plus one "no longer logged"
+		expect(env.mock:hasLog("warn", "more unknown cues; no longer logged")).toBe(true)
+	end)
+
+	it("walk mode measures from the camera, not the overview's stale focus (FORGE-05 #42 L3)", function()
+		local camera = { mode = "follow" }
+		function camera.getFocus()
+			return Vector3.new(500, 0, 0) -- left over from the overview
+		end
+		local client = bootWith({
+			{
+				name = "RulerCameraController",
+				new = function()
+					return camera
+				end,
+			},
+		})
+		local view = roblox.Instance.new("Camera")
+		view.CFrame = CFrame.new(0, 12, 18)
+		view.Parent = client.env.Workspace
+		client.env.Workspace.CurrentCamera = view
+		local beside = rigFor(client.signals, 1, 10)
+		assert(bubbleOf(beside), "the citizen next to the walking ruler has a bubble")
+		camera.mode = "overview"
+		client.controller:refresh()
+		expect(bubbleOf(beside)).toBeNil() -- 490 studs from the overview's focus
+	end)
+
+	it("hides the citizen's bubble while their conversation is open (G13.8; FORGE-05 #42 L6)", function()
+		local talk = { opened = Signal.new(), closed = Signal.new() }
+		local client = bootWith({
+			{
+				name = "ConversationController",
+				new = function()
+					return talk
+				end,
+			},
+		})
+		client.controller._origin = function()
+			return Vector3.zero
+		end
+		local speaker = rigFor(client.signals, 1, 10)
+		local other = rigFor(client.signals, 2, 12)
+		talk.opened:fire(1, Vector3.new(10, 2, 0))
+		expect(bubbleOf(speaker)).toBeNil() -- the panel shows the same words
+		assert(bubbleOf(other), "other citizens keep theirs")
+		talk.closed:fire(1)
+		assert(bubbleOf(speaker), "back after the conversation")
+		-- main's ConversationController has no signals yet: its state names the citizen
+		local panel = { state = nil }
+		local plain = bootWith({
+			{
+				name = "ConversationController",
+				new = function()
+					return panel
+				end,
+			},
+		})
+		plain.controller._origin = function()
+			return Vector3.zero
+		end
+		local asked = rigFor(plain.signals, 7, 10)
+		panel.state = { entityId = 7, phase = "choosing" }
+		plain.controller:refresh()
+		expect(bubbleOf(asked)).toBeNil()
+		panel.state = nil
+		plain.controller:refresh()
+		assert(bubbleOf(asked), "back once the panel closed")
+	end)
+
 	it(
 		"measures distance from the camera focus, so a zoomed-out overview shows the citizens under it (R42-1)",
 		function()
@@ -405,6 +634,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 					name = "RulerCameraController",
 					new = function()
 						return {
+							mode = "overview",
 							getFocus = function()
 								return Vector3.new(500, 0, 0) -- the overview's focus; the camera is up to 220 studs away
 							end,

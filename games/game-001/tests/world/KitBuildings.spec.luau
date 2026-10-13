@@ -150,10 +150,16 @@ describe("Kit architecture budgets (FL-0054)", function()
 		for _, bt in Kit.BUILDING_TYPES do
 			for level = 1, levelsFor(bt) do
 				for stage = 1, 3 do
-					local n = Kit.partCount(Buildings.build(bt, level, stage, COLORS[1]))
-					slo, shi = math.min(slo, n), math.max(shi, n)
-					if n > Buildings.PART_BUDGET.stage then
-						table.insert(over, `{bt} L{level} stage {stage}: {n} > {Buildings.PART_BUDGET.stage}`)
+					-- every colour: emblems make stage part counts differ by kingdom
+					for ci, color in COLORS do
+						local n = Kit.partCount(Buildings.build(bt, level, stage, color))
+						slo, shi = math.min(slo, n), math.max(shi, n)
+						if n > Buildings.PART_BUDGET.stage then
+							table.insert(
+								over,
+								`{bt} L{level} stage {stage} colour {ci}: {n} > {Buildings.PART_BUDGET.stage}`
+							)
+						end
 					end
 				end
 			end

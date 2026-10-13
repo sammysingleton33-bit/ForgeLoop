@@ -163,7 +163,7 @@
 
 	// ------------------------------------------------------------------ HUD (as kingdom.js, trimmed)
 	const fmt = (n) => String(n);
-	const crest = (px, extra = "") => `<div class="crest tinted k-crimson" style="width:${px}px;height:${px}px">${I("emblem_flame", Math.round(px * 0.66))}${extra}</div>`;
+	const crest = (px, extra = "") => `<div class="crest tinted k-crimson" style="width:${px}px;height:${px}px">${I("emblem_crown", Math.round(px * 0.66))}${extra}</div>`;
 	const medallion = (res, px) => {
 		const c = T.resource[res];
 		return `<div class="medallion" style="width:${px}px;height:${px}px;background:linear-gradient(180deg, ${c} 0%, color-mix(in srgb, ${c} 55%, #0B0F18) 100%)">${I(res, Math.round(px * 0.78))}</div>`;
@@ -176,7 +176,7 @@
 			return `<div class="pill ${phone ? "compact" : ""} ${d ? "flash-" + (d < 0 ? "neg" : "pos") : ""}">${medallion(r, phone ? 24 : 28)}<div class="stack"><div class="amt">${fmt(state.treasury[r])}</div>
 				${phone ? "" : `<div class="rate zero">${r[0].toUpperCase() + r.slice(1)}</div>`}</div>${d ? `<div class="delta ${d < 0 ? "neg" : "pos"}">${d > 0 ? "+" : "−"}${Math.abs(d)}</div>` : ""}</div>`;
 		});
-		let html = `<div class="badge" style="left:${h.x}px;top:${h.y}px">${crest(h.crest, phone ? `<div class="pop cp">${I("crown", 11)}${state.crown}</div>` : "")}
+		let html = `<div class="badge" style="left:${h.x}px;top:${h.y}px">${crest(h.crest, phone ? `<div class="pop cp">${I("gem", 11)}${state.crown}</div>` : "")}
 			${phone ? "" : `<div class="plate"><div class="kname" style="font-size:26px">Emberhold</div><div class="ksub">Keep <b>Lv 1</b> · 1 region · <b>${state.crown}</b> Crown Points</div></div>`}</div>`;
 		html += `<div class="pills" style="left:${h.pills.x}px;top:${h.pills.y}px">${pills.join("")}</div>`;
 		if (h.members) {

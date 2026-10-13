@@ -3,7 +3,8 @@
 	≤ 9-part rigs with an invisible anchored Root, Motor6Ds named after the moving part and matching
 	Sim/Pose.JOINTS (Torso: Root → Torso at the hips), Hair welded to the Head, joint pivots where Pose expects
 	them, a tool per job, citizen looks that are deterministic and never error, kingdom recolouring of pooled
-	rigs, the one-part far LOD, regalia that fit R15 and R6 avatars, and a Pose smoke test (walk and death fall).
+	rigs, soldier kingdom crests (G13.2, D-033(3)), the one-part far LOD, regalia that fit R15 and R6 avatars,
+	and a Pose smoke test (walk and death fall).
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -19,7 +20,12 @@ local CITIZEN_TOOLS =
 local CRIMSON = Color3.fromRGB(190, 40, 50)
 local AZURE = Color3.fromRGB(40, 110, 210)
 local GOLD = Color3.fromRGB(235, 185, 16)
+local EMERALD = Color3.fromRGB(35, 128, 95)
 local R = Kit.LOOK_RANGES
+-- G13.2 / D-033(3): a soldier's helmet crest follows its KingdomId, in the kingdom's tower style
+local KINGDOM_IDS = { "crimson", "azure", "emerald", "gold" }
+local KINGDOM_COLORS = { crimson = CRIMSON, azure = AZURE, emerald = EMERALD, gold = GOLD }
+local CREST_NAMES = { crimson = "crest_spire", azure = "crest_square", emerald = "crest_plume", gold = "crest_dome" }
 
 -- Sim/Pose (FORGE-04, on main) when this tree has it; otherwise the same joints and the walk / dead samples
 -- of the 2026-10-12 version, so the smoke test runs on this branch too.
@@ -158,7 +164,7 @@ local function cornerLooks(): { Character.CitizenLook }
 	return out
 end
 
-local function each(fn: (kind: string, job: string, rig: Model, look: Character.CitizenLook?) -> ())
+local function each(fn: (kind: string, job: string, rig: Model, look: Character.CitizenLook?, kingdom: string?) -> ())
 	for _, kind in KINDS do
 		for _, job in JOBS do
 			fn(
@@ -174,6 +180,35 @@ local function each(fn: (kind: string, job: string, rig: Model, look: Character.
 			end
 		end
 	end
+	-- with a kingdom (G13.2): soldiers and drafted citizens wear its crest; citizens and governors ignore it
+	local roles = { { "soldier", "soldier" }, { "citizen", "soldier" }, { "soldier", "idle" } }
+	table.insert(roles, { "citizen", "farmer" })
+	table.insert(roles, { "governor", "idle" })
+	local look = { skin = R.skin, hair = R.hair, hairColor = 1, outfit = R.outfit }
+	for _, kingdom in KINGDOM_IDS do
+		for _, role in roles do
+			local kind, job = role[1], role[2]
+			fn(
+				kind,
+				job,
+				noYield(function()
+					return Kit.character(kind, job, AZURE, nil, kingdom)
+				end),
+				nil,
+				kingdom
+			)
+			fn(kind, job, Kit.character(kind, job, AZURE, look, kingdom), look, kingdom)
+		end
+	end
+end
+
+-- the soldier's kingdom crest (the welded Hair with a "crest_" KitHeadwear), if any
+local function crestOf(rig: Model): BasePart?
+	local hair = rig:FindFirstChild("Hair") :: BasePart?
+	if hair and string.sub(tostring(hair:GetAttribute("KitHeadwear")), 1, 6) == "crest_" then
+		return hair
+	end
+	return nil
 end
 
 -- Forward kinematics as the engine does it: Part1 = Part0 * C0 * Transform * C1:Inverse(); welds follow.
@@ -207,18 +242,19 @@ end
 
 describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 	it("has ≤ 9 non-colliding, massless parts, only the Root anchored, no Humanoid or Animator", function()
-		each(function(kind, job, rig, look)
+		each(function(kind, job, rig, look, kingdom)
 			local ps = parts(rig)
 			local hasTool = rig:FindFirstChild("Tool") ~= nil
 			local hasHair = rig:FindFirstChild("Hair") ~= nil
 			expect(hasTool).toBe(not (kind == "citizen" and job == "idle"))
 			expect(#ps).toBe(7 + (if hasTool then 1 else 0) + (if hasHair then 1 else 0))
 			expect(#ps).toBeLessThanOrEqual(9)
-			-- soldiers: the helm is the Head (8 parts); governors: crown (9); citizens: per hair style
+			-- soldiers: the helm is the Head (8 parts, 9 with a kingdom crest); governors: crown (9);
+			-- citizens: per hair style
 			expect(hasHair).toBe(
 				if kind == "governor"
 					then true
-					elseif kind == "soldier" or job == "soldier" then false
+					elseif kind == "soldier" or job == "soldier" then kingdom ~= nil
 					else Kit.LOOK_PALETTES.hair[Kit.normalizeLook(look).hair] ~= "bald"
 			)
 			if look == nil and kind == "citizen" and job ~= "soldier" then
@@ -315,11 +351,12 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 		end)
 	end)
 
-	it("stands about 5.5 studs tall with the feet on y = 0 (tool excluded), for every look", function()
+	it("stands about 5.5 studs tall with the feet on y = 0 (tool and crest excluded), for every look", function()
 		each(function(_, _, rig)
 			local body = {}
+			local crest = crestOf(rig)
 			for _, p in parts(rig) do
-				if p.Name ~= "Tool" and p ~= rig.PrimaryPart then
+				if p.Name ~= "Tool" and p ~= rig.PrimaryPart and p ~= crest then
 					table.insert(body, p)
 				end
 			end
@@ -327,6 +364,12 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 			expect(mn.Y).toBeNear(0, 1e-3)
 			expect(mx.Y).toBeNear(5.5, 0.25)
 			expect(mx.X - mn.X).toBeLessThan(4.5)
+			if crest then -- rises clearly above the helm, still under the spear tip
+				local _, top = bounds(crest)
+				local _, spearTop = bounds(child(rig, "Tool"))
+				expect(top.Y).toBeGreaterThan(mx.Y + 0.3)
+				expect(top.Y).toBeLessThan(spearTop.Y)
+			end
 		end)
 	end)
 
@@ -469,9 +512,9 @@ describe("Kit.character jobs and tools", function()
 	end)
 
 	it("recolours a pooled rig with Kit.setKingdomColor exactly like a fresh build", function()
-		each(function(kind, job, rig, look)
+		each(function(kind, job, rig, look, kingdom)
 			Kit.setKingdomColor(rig, GOLD)
-			expect(signature(rig)).toBe(signature(Kit.character(kind, job, GOLD, look)))
+			expect(signature(rig)).toBe(signature(Kit.character(kind, job, GOLD, look, kingdom)))
 			expect(
 				child(rig, "Torso"):GetAttribute("KitTint") ~= nil
 					or child(rig, "LeftArm"):GetAttribute("KitTint") ~= nil
@@ -600,6 +643,182 @@ describe("Kit.character looks (CONTRACTS G13.2)", function()
 			end
 		end
 	)
+end)
+
+describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", function()
+	local HELM_TOP = 5.5 -- top of today's great helm (the soldier's Head)
+
+	-- primitive kind and the crest's outline above the helm: height over the helm top, width (X), depth (Z)
+	local function outline(crest: BasePart): (string, number, number, number)
+		local kind = if crest:IsA("Part") then `Part/{crest.Shape.Name}` else crest.ClassName
+		local mn, mx = bounds(crest)
+		return kind, mx.Y - HELM_TOP, mx.X - mn.X, mx.Z - mn.Z
+	end
+
+	it("gives each kingdom's soldier a 9-part rig whose 9th part is the kingdom crest welded to the helm", function()
+		local crown = child(Kit.character("governor", "idle", CRIMSON), "Hair") -- existing welded headwear
+		local plainMotors = {}
+		for _, d in Kit.character("soldier", "soldier", CRIMSON):GetDescendants() do
+			if d:IsA("Motor6D") then
+				plainMotors[d.Name] = true
+			end
+		end
+		for _, kingdom in KINGDOM_IDS do
+			expect(Kit.SOLDIER_CRESTS[kingdom]).toBe(CREST_NAMES[kingdom])
+			for _, role in { { "soldier", "soldier" }, { "citizen", "soldier" }, { "soldier", "farmer" } } do
+				local color = KINGDOM_COLORS[kingdom]
+				local rig = noYield(function()
+					return Kit.character(role[1], role[2], color, nil, kingdom)
+				end)
+				expect(#parts(rig)).toBe(9)
+				local crest = crestOf(rig)
+				assert(crest, `{role[1]} {role[2]} {kingdom} has no crest`)
+				expect(crest.Name).toBe("Hair")
+				expect(crest:GetAttribute("KitHeadwear")).toBe(CREST_NAMES[kingdom])
+				-- the helm is still today's steel great helm, and the crest sits on it
+				local head = child(rig, "Head")
+				expect(head.Material).toBe(Enum.Material.Metal)
+				local _, helmTop = bounds(head)
+				expect(helmTop.Y).toBeNear(HELM_TOP, 1e-3)
+				local cMin, cMax = bounds(crest)
+				expect(cMin.Y).toBeLessThan(HELM_TOP + 0.01) -- seated on (into) the helm, not floating
+				expect(cMax.Y).toBeGreaterThan(HELM_TOP + 0.3)
+				-- welded to the Head (Weld "HairWeld"), never a Motor6D; the motors are the plain soldier's
+				local weld = crest:FindFirstChild("HairWeld") :: Weld
+				expect(weld).never.toBeNil()
+				expect(weld.ClassName).toBe("Weld")
+				expect(weld.Part0).toBe(head)
+				expect(weld.Part1).toBe(crest)
+				local cf = head.CFrame * weld.C0 * weld.C1:Inverse()
+				expect((cf.Position - pos(crest)).Magnitude).toBeLessThan(1e-3)
+				local motors = {}
+				for _, d in rig:GetDescendants() do
+					if d:IsA("Motor6D") then
+						expect(d.Part1 ~= crest).toBe(true)
+						motors[d.Name] = true
+					end
+				end
+				expect(motors).toEqual(plainMotors)
+				-- same physics flags as the other welded headwear (the governor's crown)
+				for _, prop in { "CanCollide", "CanTouch", "CanQuery", "Massless", "Anchored", "CastShadow" } do
+					expect((crest :: any)[prop]).toBe((crown :: any)[prop])
+				end
+				-- the kingdom colour, recoloured by Kit.setKingdomColor
+				expect(crest:GetAttribute("KitTint")).toBe(1)
+				expect(crest.Color:ToHex()).toBe(color:ToHex())
+				expect(rig:GetAttribute("KitLook")).toBe(Kit.lookKey(nil, kingdom))
+			end
+		end
+	end)
+
+	it("gives the four crests different silhouettes, so kingdoms read apart without colour", function()
+		local rows = {}
+		for _, kingdom in KINGDOM_IDS do
+			local crest = crestOf(Kit.character("soldier", "soldier", AZURE, nil, kingdom)) :: BasePart
+			local kind, h, w, d = outline(crest)
+			rows[kingdom] = { kind = kind, h = h, w = w, d = d, crest = crest }
+		end
+		-- pairwise: another primitive AND an outline at least 0.3 studs apart from the front (height or
+		-- width) and from the side (height or depth)
+		for i, a in KINGDOM_IDS do
+			for j = i + 1, #KINGDOM_IDS do
+				local b = KINGDOM_IDS[j]
+				local A, B = rows[a], rows[b]
+				expect(A.kind ~= B.kind).toBe(true)
+				local dh = math.abs(A.h - B.h)
+				expect(math.max(dh, math.abs(A.w - B.w))).toBeGreaterThanOrEqual(0.3)
+				expect(math.max(dh, math.abs(A.d - B.d))).toBeGreaterThanOrEqual(0.3)
+			end
+		end
+		-- each in its tower style: the spire is the tallest and a pointed wedge, taller than wide
+		local spire, square, plume, dome = rows.crimson, rows.azure, rows.emerald, rows.gold
+		expect(spire.kind == "CornerWedgePart" or spire.kind == "WedgePart").toBe(true)
+		for _, other in { square, plume, dome } do
+			expect(spire.h).toBeGreaterThan(other.h + 0.3)
+		end
+		expect(spire.h).toBeGreaterThan(spire.w)
+		-- the square is a level, flat-topped block, wider than the helm and lower than it is wide
+		expect(square.kind).toBe("Part/Block")
+		expect(square.crest.CFrame.UpVector.Y).toBeNear(1, 1e-6)
+		expect(square.w).toBeGreaterThan(1.45 + 0.3)
+		expect(square.h).toBeLessThan(square.w / 2)
+		-- the plume is narrow and swept back past the helm's back face (+Z is the back)
+		local _, plumeMax = bounds(plume.crest)
+		expect(plumeMax.Z).toBeGreaterThan(1.45 / 2 + 0.3)
+		expect(plume.w).toBeLessThan(1.45 / 2)
+		-- the dome is round, and wider than its seat on the helm (it bulges)
+		expect(dome.kind).toBe("Part/Ball")
+		local r = dome.crest.Size.X / 2
+		local over = pos(dome.crest).Y - HELM_TOP -- ball centre above the helm top
+		expect(over).toBeGreaterThan(0)
+		expect(over).toBeLessThan(r)
+		expect(2 * math.sqrt(r * r - over * over)).toBeLessThan(dome.w - 0.2)
+	end)
+
+	it("keeps today's plain helm (8 parts) with no kingdom or an unknown one", function()
+		local plain = Kit.character("soldier", "soldier", CRIMSON)
+		expect(#parts(plain)).toBe(8)
+		expect(plain:FindFirstChild("Hair")).toBeNil()
+		local head = child(plain, "Head")
+		expect(head.ClassName).toBe("Part")
+		expect((head :: Part).Shape).toBe(Enum.PartType.Block)
+		expect((head.Size - Vector3.new(1.45, 1.6, 1.45)).Magnitude).toBeLessThan(1e-4) -- float32 sizes
+		expect(head.Material).toBe(Enum.Material.Metal)
+		expect(plain:GetAttribute("KitLook")).toBe(Kit.lookKey(nil))
+		local sig = signature(plain)
+		for _, bad in { "", "Crimson", "purple", "neutral", "crest_spire", 42, true, {} } do
+			local rig = Kit.character("soldier", "soldier", CRIMSON, nil, bad :: any)
+			expect(signature(rig)).toBe(sig)
+			expect(rig:GetAttribute("KitLook")).toBe(Kit.lookKey(nil))
+		end
+		expect(signature(Kit.character("soldier", "soldier", CRIMSON, nil, nil))).toBe(sig)
+	end)
+
+	it("leaves citizens and governors unchanged by the kingdom", function()
+		local looks: { any } = { nil, { skin = 3, hair = 5, hairColor = 2, outfit = 4 }, { hair = 2 } }
+		for _, kind in { "citizen", "governor" } do
+			for _, job in { "idle", "farmer", "woodcutter", "miner", "builder", "hauler" } do
+				for i = 1, 3 do
+					local look = looks[i]
+					local base = Kit.character(kind, job, CRIMSON, look)
+					for _, kingdom in KINGDOM_IDS do
+						local rig = Kit.character(kind, job, CRIMSON, look, kingdom)
+						expect(signature(rig)).toBe(signature(base))
+						expect(crestOf(rig)).toBeNil()
+						expect(rig:GetAttribute("KitLook")).toBe(base:GetAttribute("KitLook"))
+						local hair = rig:FindFirstChild("Hair")
+						expect(if hair then hair:GetAttribute("KitHeadwear") else nil).toBe(
+							if base:FindFirstChild("Hair")
+								then (base:FindFirstChild("Hair") :: Instance):GetAttribute("KitHeadwear")
+								else nil
+						)
+					end
+				end
+			end
+		end
+	end)
+
+	it("puts the kingdom in the soldier pool key, since recolouring cannot change a crest", function()
+		local look = { skin = 2, hair = 3, hairColor = 4, outfit = 5 }
+		expect(Kit.lookKey(look)).toBe("2.3.4.5") -- unchanged without a kingdom
+		expect(Kit.lookKey(look, "bogus")).toBe("2.3.4.5")
+		local keys = {}
+		for _, kingdom in KINGDOM_IDS do
+			local key = Kit.lookKey(look, kingdom)
+			expect(key).toBe(`2.3.4.5.{kingdom}`)
+			expect(keys[key]).toBeNil()
+			keys[key] = true
+			local rig = Kit.character("soldier", "soldier", KINGDOM_COLORS[kingdom], look, kingdom)
+			expect(rig:GetAttribute("KitLook")).toBe(key)
+		end
+		-- two soldiers of different kingdoms never share a key, and a pooled crimson soldier recoloured
+		-- azure is still not an azure soldier
+		local crimson = Kit.character("soldier", "soldier", CRIMSON, nil, "crimson")
+		local azure = Kit.character("soldier", "soldier", AZURE, nil, "azure")
+		expect(crimson:GetAttribute("KitLook") ~= azure:GetAttribute("KitLook")).toBe(true)
+		Kit.setKingdomColor(crimson, AZURE)
+		expect(signature(crimson) ~= signature(azure)).toBe(true)
+	end)
 end)
 
 describe("Character.lod (one-part stand-in beyond 150 studs)", function()

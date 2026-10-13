@@ -71,3 +71,39 @@ Tag each lesson: `observed-once`, `repeated` or `standard`.
   rebuild when it changes; balances, CTA state and progress are patched. Check it with instance
   identity in specs (`expect(find(...)).toBe(before)`) and pixel-compare the committed renders.
   `observed-once` (2026-10-12).
+- **A rebuild that starts with `destroy()` must set the render key after building.** The objective
+  tracker did `self._key = key; self:_build()` and `_build` began with `self:destroy()`, which cleared
+  the key: every push rebuilt the tracker, invisible in renders and caught only by the M1
+  instance-identity spec (`expect(find(...)).toBe(before)`). Set the key last, and keep an identity
+  spec per keyed view. `observed-once` (FL-0060, 2026-10-12).
+- **StyLua 2.6 can need a second pass.** A long typed parameter list was reformatted again by the
+  next `stylua` run, so `stylua --check` failed right after `stylua`. Run it twice (or run `--check`)
+  before committing. `observed-once` (FL-0060).
+- **A request token must move on every menu change, not only on selection.** The card and the
+  conversation ignored stale replies only when the player selected something else; opening Build or
+  closing the drawer left the token alone, so a slow `Sim.Inspect` / `Kingdom.Converse` reply took
+  the drawer back (FORGE-05 M2 on #52). Bump the token in the `menuChanged` handler whenever the menu
+  is no longer yours, and spec it with latency in the double. `observed-once` (2026-10-12).
+- **A guard whose mutation survives is dead code.** FL-0088 gate: removing the in-flight check in
+  `choose()` failed no spec, because `open()` already shows an in-flight showing as "choosing" and
+  `choose()` answers only "asking". Keep one guard, at the place the state is put on screen, and
+  mutate it. `observed-once` (2026-10-12).
+- **Measure a fitted panel's slack from the renderer's layout file.** `design/ui/render/out/
+  <scene>-<device>.layout.json` has every object's rect: the gap between the last laid-out child and
+  the scrolling body's bottom is the height estimate's error, per scene and size (FL-0088 gate: 21-28
+  device px on desktop → 12-13 after measuring the risk font, 5.5-5.6 px per character, in the
+  renderer page). `observed-once` (2026-10-12).
+- **Fit checks on phones run in the safe area, not the device size.** A spec sized 844 × 390 said
+  the 3-answer builder question fit a phone, while the renderer (and Roblox's CoreUISafeInsets) lay
+  it out in 750 × 311, where it scrolls and hides a risk (FORGE-05 B1 on #66). A mutation that gave
+  the confirm step the full answer list's height survived until the spec used 750 × 311. Size phone
+  specs to the safe area, and assert the failing case too (the list overflows) so the check can
+  fail. `observed-once` (2026-10-13).
+- **A fresh git worktree renders with fallback fonts, silently enough to commit.** `design/ui/
+  node_modules` (the @fontsource fonts) is untracked, so a new worktree has none; the renderer prints
+  "no @fontsource fonts found … text uses fallbacks" once and draws digits and words spread apart
+  (#86 follow-ups). Check for that line before trusting a render; link or install the fonts in the
+  new worktree first. `observed-once` (2026-10-13).
+- **`check.sh | grep … && git push` pushes a failing build.** The pipeline's status is grep's, not
+  check.sh's: a Selene warning failed OVERALL and the push went out anyway (#95). Capture the exit
+  code (`bash roblox/scripts/check.sh > log; rc=$?`) and push only on 0. `observed-once` (2026-10-13).

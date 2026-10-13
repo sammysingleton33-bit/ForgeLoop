@@ -32,6 +32,11 @@ return table.freeze({
 			value = "step",
 			fields = { "stepName" },
 		},
+		OnboardingStepPassed = {
+			description = "A tutorial step the player was moved past (unavailable or timed out). Value: step number.",
+			value = "step",
+			fields = { "stepName", "via" },
+		},
 		RoundFinished = {
 			description = "Round results for a participant. Value: seconds survived.",
 			value = "survivedSec",

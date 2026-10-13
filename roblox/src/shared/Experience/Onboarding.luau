@@ -22,7 +22,11 @@
 			expectSec: number,                -- design estimate, used for the 30 s / first-reward checks
 			interactive: boolean?,            -- the player does something meaningful (move, tap, build)
 			nudgeAfterSec: number?,           -- hint escalates (arrow pulses, OnboardingHintEscalated)
-			autoAdvanceSec: number?,          -- informational steps move on by themselves (via = "timeout")
+			autoAdvanceSec: number?,          -- informational steps move on by themselves (via = "timeout");
+			                                  -- a client step may set it too, so a step that depends on
+			                                  -- another system never stalls the tutorial
+			requires: string?,                -- a server service the step needs (e.g. "ConversationService");
+			                                  -- while it is missing the step is passed over (via = "unavailable")
 			reward: Reward?,                  -- only on bus-triggered steps (server-verified)
 		}
 		Target = { kind: "world", tag: string } | { kind: "ui", name: string }  -- ui: an OnboardingTarget attribute
@@ -48,7 +52,8 @@
 		Onboarding.current(flow, state) -> (index?, Step?)
 		Onboarding.snapshot(flow, state) -> table                           -- what the client renders
 		Onboarding.persisted(state) -> table                                -- what is stored
-		Transition = { index: number, id: string, via: "auto" | "bus" | "client" | "timeout" | "satisfied", reward: Reward? }
+		Onboarding.unavailable(flow, has: (service) -> boolean) -> { [stepId]: true }  -- the caller sets state.unavailable
+		Transition = { index: number, id: string, via: "auto" | "bus" | "client" | "timeout" | "satisfied" | "unavailable", reward: Reward? }
 ]]
 
 local Onboarding = {}
@@ -160,6 +165,13 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 					table.insert(problems, `{at}: target must be a world tag or a ui name`)
 				end
 			end
+			if step.requires ~= nil then
+				if type(step.requires) ~= "string" or not string.match(step.requires, NAME_PATTERN) then
+					table.insert(problems, `{at}: requires must name a service (PascalCase)`)
+				elseif step.trigger and step.trigger.auto then
+					table.insert(problems, `{at}: an auto step needs no service`)
+				end
+			end
 			if type(step.expectSec) ~= "number" or step.expectSec <= 0 then
 				table.insert(problems, `{at}: expectSec must be a positive number`)
 			else
@@ -269,10 +281,23 @@ local function cascade(flow: any, state: any, now: number, out: { Transition })
 			complete(flow, state, "auto", now, out)
 		elseif state.satisfied[step.id] then
 			complete(flow, state, "satisfied", now, out)
+		elseif state.unavailable and state.unavailable[step.id] then
+			complete(flow, state, "unavailable", now, out) -- what it teaches does not exist on this server yet
 		else
 			return
 		end
 	end
+end
+
+-- Steps whose required service is missing (has(name) false). Not persisted: a later server may have it.
+function Onboarding.unavailable(flow: any, has: (string) -> boolean): { [string]: boolean }
+	local out = {}
+	for _, step in flow.steps do
+		if type(step.requires) == "string" and not has(step.requires) then
+			out[step.id] = true
+		end
+	end
+	return out
 end
 
 function Onboarding.begin(flow: any, state: any, now: number): { Transition }
