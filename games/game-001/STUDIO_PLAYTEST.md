@@ -1,8 +1,8 @@
 # AI Kingdoms — VS-1 Studio playtest (gate G6; FL-0047, FL-0093; owner FORGE-05)
 
 VS-1 (the nine first-playable items of BRIEF §4, D-030) is accepted **only** by this playtest. It takes about 25 minutes. You (the user) run
-it on your Mac in Roblox Studio against an integrated build of `main` (Mac keys below; on Windows use
-the plain F-keys, Ctrl for ⌘ and the Snipping Tool); FORGE-05 records the result in
+it on your Windows PC in Roblox Studio against an integrated build of `main` (the keys below are Windows; on a
+Mac see "On a Mac" in §0); FORGE-05 records the result in
 `production/quality-gates/studio-runs.md` and on the VS-1 tasks.
 
 Each check says what to do, what you should see, which screenshot to take and which Output lines to
@@ -16,9 +16,11 @@ Pick one:
 - **Downloaded build (no tools):** GitHub → ForgeLoop → **Actions** → newest **CI** run on `main` with
   artifacts → download `forgeloop-game001-<sha>` → unzip → Studio → **File → Open from File…** →
   `forgeloop-game001-<sha>.rbxl`.
-- **Local build:** Terminal in the repo: `git checkout main && git pull && bash roblox/scripts/stamp_build.sh &&
+- **Local build:** Git Bash (Windows) or Terminal (Mac) in the repo: `git checkout main && git pull && bash roblox/scripts/stamp_build.sh &&
   mkdir -p roblox/build && rojo build games/game-001/default.project.json -o roblox/build/game-001.rbxl`,
   then open `roblox/build/game-001.rbxl` in Studio.
+
+**On Windows:** Play **F5**, Stop **Shift+F5**, debug panel **F8**, screenshot **Win+Shift+S** (Snipping Tool), open a build **Ctrl+O**.
 
 **On a Mac** (Studio's menus are the same as on Windows; only the keys differ):
 
@@ -240,6 +242,19 @@ after B7; B7 says "…Upgrade it").
    answers it. (In B9 the other ruler may get "Nothing on their mind right now" or a different question:
    known, not a fail there.)
 5. Screenshots **D1** (bubble), **D2** (conversation), **D3** (the visible result).
+6. **From B14 (cinematic conversation, FL-0101: #85, #108, #84, #121, #126).** Talk now opens a stage instead of
+   the old panel. Full checklist with IDs (B1–B8, C1–C5, D1–D2), including the steps for your local Studio MCP session:
+   `production/handoffs/2026-10-13-forge-00-to-forge-05-b14-studio-checklist.md`. In short:
+   - Press Talk: the camera glides to the citizen's face, the screen dims, and a 3D portrait of **that** citizen
+     (same skin, hair and outfit) rises with a speech bubble holding the question and 2–4 choices.
+   - Wait 20 s without answering: the citizen stays put, **facing your ruler**.
+   - Answer: the portrait plays a reaction pose that fits the answer, the consequence chips show, and the
+     resources change once. The citizen stays held while you read: released on **Done**, or at most **12 s**
+     after you answer (an alarm or your leaving releases at once; CONTRACTS v0.4-g9f).
+   - Every way out (Done, Close/X before answering, gamepad B or Backspace once #130 is in) brings the camera back to where
+     it was, in the same view (aerial or behind the ruler). Closing before answering keeps the bubble, and
+     Talk again shows the **same** question.
+   - Screenshots **D4** (stage with portrait and choices), **D5** (reaction and chips), **D6** (camera after closing).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
 
@@ -283,6 +298,6 @@ VS-1 playtest — date, build (B<n> / artifact / local), BuildInfo sha: <sha>
 6 Citizen card: ...   7 Economy: ...   8 Build: ...   9 Recruit+capture: ...   10 HUD+reputation: ...
 11 Conversation: ...   12 Onboarding: ...   M1: ...   M2: ...   (SKIPPED (waiting) where marked)
 WorldService ready ms: <ms>   FPS flying: <fps>   Perf: Main activity <x>%, FPS <y>
-Screenshots: W1 W2 W3 R1 R2 K1 C1 C2 B1 B2 O1 O2 O3 H1 H2 D1 D2 D3 (attached)
+Screenshots: W1 W2 W3 R1 R2 K1 C1 C2 B1 B2 O1 O2 O3 H1 H2 D1 D2 D3 D4 D5 D6 (attached)
 <Output lines and any FAIL text from the debug panel>
 ```

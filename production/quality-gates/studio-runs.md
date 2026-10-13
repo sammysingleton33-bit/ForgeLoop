@@ -6,7 +6,7 @@ nothing is recorded that the user has not run. Plans: `roblox/STUDIO_TEST_PLAN.m
 
 | date | BuildInfo sha | place (artifact / local) | tests | result | evidence (Output lines, screenshots) | recorded on |
 |---|---|---|---|---|---|---|
-| — | — | — | (no Studio run yet) | — | — | — |
+| 2026-10-13 (evening) | not reported (latest delivered: B13 `d65fb2e`) | not named | free play on the user's own PC (Windows), not the scripted STUDIO_PLAYTEST; no check IDs | **No PASS/FAIL recorded.** The user likes the overall look and direction. Defects they saw: (1) trees and rocks inside the starting farm areas; (2) chat bubbles hard to see and tap from the aerial view; (3) buildings and walls can't be rotated; (4) trees blocky, rocks and props primitive; (5) citizens, clothing and tools too plain to tell apart from the air. They asked for base editing (move/rearrange). | The user's own words, recorded by FORGE-00 in `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md` (ec44e94). No Output lines or screenshots were passed on. Priorities: D-049; next-build order (to FORGE-05): cleanup, rotation, bubbles, first art. | 2026-10-13 |
 
 ## Builds delivered to the user (FL-0093, D-030)
 After every merge that changes what can be seen or played, FORGE-05 sends FORGE-00 the CI
