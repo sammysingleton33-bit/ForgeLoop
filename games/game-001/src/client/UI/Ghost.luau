@@ -2,11 +2,16 @@
 --[[
 	UI/Ghost — the see-through footprint shown in the world while placing a building: a flat slab
 	the size of `Kit.footprint` (rotated with the placement), an outline, and a marker on the front
-	edge (Kit models face -Z) so rotation is readable. Tinted by the server's verdict.
+	edge (Kit models face -Z) so rotation is readable. Around it a fainter "Room" outline: the ground
+	the server keeps free for the building's upgrades plus the placement gap (BuildModel.room), so a
+	red verdict next to a neighbour or a tree is visible (FORGE-05 M-2 on #62). Tinted by the
+	server's verdict.
 
 		Ghost.new(env, parent?: Instance) -> ghost   parent defaults to env.Workspace; the ghost lives in
 		                                             its own client-created Folder "BuildGhost" (D-025)
-		ghost:show(size: Vector2 (X × Z studs), cframe: CFrame)   cframe = Placement.cframe(position, rot)
+		ghost:show(size: Vector2 (X × Z studs), cframe: CFrame, room: Vector2?)
+		                                             cframe = Placement.cframe(position, rot); no room,
+		                                             no outer outline
 		ghost:tint(state)                            "pending" | "ok" | "bad"
 		ghost:hide()      ghost:destroy()
 		ghost.folder -> Folder                       exclude it from placement raycasts
@@ -22,6 +27,7 @@ Ghost.COLORS = table.freeze({
 	bad = Color3.fromRGB(217, 87, 63),
 })
 Ghost.HEIGHT = 0.6
+Ghost.ROOM_HEIGHT = 0.2
 
 local function part(env: any, name: string, parent: Instance): BasePart
 	local p = env.newInstance("Part")
@@ -52,15 +58,31 @@ function Ghost.new(env: any, parent: Instance?)
 	outline.LineThickness = 0.12
 	outline.SurfaceTransparency = 1
 	outline.Parent = base
+	local room = part(env, "Room", folder)
+	room.Transparency = 0.88
+	local roomOutline = env.newInstance("SelectionBox")
+	roomOutline.Name = "RoomOutline"
+	roomOutline.Adornee = room
+	roomOutline.LineThickness = 0.06
+	roomOutline.SurfaceTransparency = 1
+	roomOutline.Transparency = 0.35
+	roomOutline.Parent = room
 	folder.Parent = parent or env.Workspace
-	local self =
-		setmetatable({ folder = folder, base = base, front = front, outline = outline, state = "pending" }, Ghost)
+	local self = setmetatable({
+		folder = folder,
+		base = base,
+		front = front,
+		outline = outline,
+		room = room,
+		roomOutline = roomOutline,
+		state = "pending",
+	}, Ghost)
 	self:tint("pending")
 	self:hide()
 	return self
 end
 
-function Ghost:show(size: Vector2, cframe: CFrame)
+function Ghost:show(size: Vector2, cframe: CFrame, room: Vector2?)
 	local base, front = self.base, self.front
 	base.Size = Vector3.new(size.X, Ghost.HEIGHT, size.Y)
 	base.CFrame = cframe * CFrame.new(0, Ghost.HEIGHT / 2, 0)
@@ -69,6 +91,16 @@ function Ghost:show(size: Vector2, cframe: CFrame)
 	base.Transparency = 0.45
 	front.Transparency = 0.15
 	self.outline.Visible = true
+	if room then
+		-- under the slab, so the building's own footprint reads first
+		self.room.Size = Vector3.new(room.X, Ghost.ROOM_HEIGHT, room.Y)
+		self.room.CFrame = cframe * CFrame.new(0, Ghost.ROOM_HEIGHT / 2, 0)
+		self.room.Transparency = 0.88
+		self.roomOutline.Visible = true
+	else
+		self.room.Transparency = 1
+		self.roomOutline.Visible = false
+	end
 	self.visible = true
 end
 
@@ -78,12 +110,16 @@ function Ghost:tint(state: string)
 	self.base.Color = color
 	self.front.Color = color
 	self.outline.Color3 = color
+	self.room.Color = color
+	self.roomOutline.Color3 = color
 end
 
 function Ghost:hide()
 	self.base.Transparency = 1
 	self.front.Transparency = 1
 	self.outline.Visible = false
+	self.room.Transparency = 1
+	self.roomOutline.Visible = false
 	self.visible = false
 end
 

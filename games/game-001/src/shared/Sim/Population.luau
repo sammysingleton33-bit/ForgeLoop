@@ -18,6 +18,7 @@
 			Exactly Σ jobs citizens, in job order then one by one; citizen i has key "<kingdomId>:<i>".
 		Population.obedience(traits, rep, content): number   -- 0..100; derived, never stored
 		Population.loyaltyFor(chemistry): number              -- the starting loyalty
+		Population.lookKey(look): string                      -- equal for equal looks
 		Population.validate(citizens, content?): { string }   -- rule violations; {} = valid.
 			                                                      Checks marked (content) need content.
 		Population.LOOK_RANGES, LOOK_FIELDS, RULES, GENDERS, RIVAL_CHANCE, OBEDIENCE
@@ -37,7 +38,7 @@
 		  occupation's trait_affinity (missing = 1; 0 = never, unless the citizen would otherwise end
 		  up with fewer than 2).
 		- Chemistry: integer −20..+20, the sum of two uniform rolls −10..+10 (most citizens near 0).
-		- Loyalty (start): floor(50 + chemistry/4 + 0.5), clamped 0..100, so 45..55.
+		- Loyalty (start): 50 + chemistry/4 (ContentQuery.startLoyalty), clamped 0..100, so 45..55.
 		- Households: 1–4 members (odds 1:3:3:2 for sizes 1..4) over a seeded shuffle; members share
 		  familyName; family = the keys of the other members.
 		- Friends: 1–3, mutual, never self, never the rival; outside the household when possible.
@@ -54,6 +55,7 @@
 	It rises with authority, fear and bias. Start reputation (authority 50, fear 20) gives 35 + 5·bias.
 ]]
 
+local ContentQuery = require("../Content/ContentQuery")
 local Types = require("../Kingdom/Types")
 
 export type CitizenLook = { skin: number, hair: number, hairColor: number, outfit: number }
@@ -97,7 +99,6 @@ Population.RULES = table.freeze({
 	household = table.freeze({ min = 1, max = 4 }),
 	friends = table.freeze({ min = 1, max = 3 }),
 	rivals = table.freeze({ min = 0, max = 1 }),
-	loyaltyBase = 50,
 	rivalsFromPopulation = 3,
 })
 Population.GENDERS = table.freeze({ "f", "m", "n" })
@@ -519,6 +520,7 @@ end
 local function lookKey(look: CitizenLook): string
 	return `{look.skin}/{look.hair}/{look.hairColor}/{look.outfit}`
 end
+Population.lookKey = lookKey
 
 local function assignLooks(rng: Rng, citizens: { Citizen })
 	local ranges = Population.LOOK_RANGES
@@ -547,8 +549,10 @@ local function assignLooks(rng: Rng, citizens: { Citizen })
 end
 
 -- ---------------------------------------------------------------- API
+-- ContentQuery.startLoyalty itself (one formula, FORGE-00/FORGE-05 #46 review (d), #67 L12):
+-- round(50 + chemistry/4), chemistry clamped to ±20
 function Population.loyaltyFor(chemistry: number): number
-	return math.clamp(math.floor(RULES.loyaltyBase + chemistry / 4 + 0.5), 0, 100)
+	return ContentQuery.startLoyalty(chemistry)
 end
 
 function Population.obedience(traits: { string }, rep: { [string]: number }, content: Content): number
@@ -700,7 +704,7 @@ local function checkNumbers(c: any, report: Report)
 	if not isInt(c.chemistry, RULES.chemistry) then
 		report(`chemistry {tostring(c.chemistry)} is not an integer in -20..20`)
 	elseif c.loyalty ~= Population.loyaltyFor(c.chemistry) then
-		report(`loyalty {tostring(c.loyalty)} is not 50 + chemistry/4 ({Population.loyaltyFor(c.chemistry)})`)
+		report(`loyalty {tostring(c.loyalty)} is not round(50 + chemistry/4) ({Population.loyaltyFor(c.chemistry)})`)
 	end
 	if type(c.look) ~= "table" then
 		report("has no look")

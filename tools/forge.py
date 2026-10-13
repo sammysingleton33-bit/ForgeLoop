@@ -35,7 +35,7 @@ AUTO_END = "<!-- forge:auto:end -->"
 LIFECYCLE = ["RESEARCH", "SPECIFIED", "READY", "BUILDING", "TESTING", "REVIEW", "ACCEPTED", "REUSABLE"]
 SIDE_STATES = ["BLOCKED", "REJECTED"]
 STATUSES = LIFECYCLE + SIDE_STATES
-OWNERS = ["forge-00", "forge-01", "forge-02", "forge-03", "forge-04", "forge-05", "forge-06", "codex", "user", "any"]
+OWNERS = ["forge-00", "forge-01", "forge-02", "forge-03", "forge-04", "forge-05", "forge-06", "forge-07", "codex", "user", "any"]
 OWNER_LABELS = {
     "forge-00": "FORGE-00 Director",
     "forge-01": "FORGE-01 Gameplay",
