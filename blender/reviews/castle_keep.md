@@ -103,3 +103,10 @@ Images: `previews/castle_keep.jpg`, `renders/castle_keep/castle_keep_gameplay.pn
 `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_keep_gp_finials.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_keep_gp_finials_g.png` (grayscale, 115 studs), `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_yellow_heroes_tops_g.png`.
 Author verdict: no crescent. At 115 studs the orb is a small dark knob under the flag. Not addressed (out of scope):
 the "1 big + 4 small domes" church-likeness and colour-only flag stripes.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_keep.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: none
+- Scores: silhouette 5, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 4
+- Notes: Distinct grayscale silhouettes at 115 studs: red has a tall central cone spire plus cone turrets, blue square pyramids, green a half-timbered hall under a big emerald roof with hoarded corner towers and a lantern, yellow a central onion dome plus four onion turrets. No crescent: every gold finial is a spike or ball. Door banners are small at 115 studs, but the silhouette carries the identity. Red vs blue is the closest pair: both are stone blocks with pointed roofs, separated by cone vs pyramid and the red central spire. The green keep reads more manor than fortress (advisory). Tris 13306-14088/16000.

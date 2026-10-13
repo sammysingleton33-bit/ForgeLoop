@@ -440,10 +440,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -451,7 +451,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -517,10 +517,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -528,7 +528,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -594,10 +594,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -605,7 +605,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -671,9 +671,21 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
         "review_file": "reviews/building_barracks.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7303,
       "sockets": {
@@ -736,10 +748,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -747,7 +759,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -813,10 +825,10 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "notes": "Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
@@ -824,7 +836,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 4,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -1347,21 +1359,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
-          "detail_density": 3,
+          "cohesion": 4,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
-          "silhouette": 3,
-          "triangle_cost": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
           "variation": 3
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7500,
       "sockets": {
@@ -1419,21 +1431,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
-          "detail_density": 3,
+          "cohesion": 4,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
-          "silhouette": 3,
-          "triangle_cost": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
           "variation": 3
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7501,
       "sockets": {
@@ -1492,21 +1504,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
-          "detail_density": 3,
+          "cohesion": 4,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
-          "silhouette": 3,
-          "triangle_cost": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
           "variation": 3
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7502,
       "sockets": {
@@ -1564,9 +1576,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
         "review_file": "reviews/building_smithy.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "PASS"
       },
       "seed": 7503,
       "sockets": {
@@ -1624,18 +1648,18 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
-          "detail_density": 3,
+          "cohesion": 4,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
-          "silhouette": 3,
-          "triangle_cost": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
           "variation": 3
         },
         "verdict": "NEEDS-WORK"
@@ -1697,21 +1721,21 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
-          "detail_density": 3,
+          "cohesion": 4,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
-          "silhouette": 3,
-          "triangle_cost": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
           "variation": 3
         },
-        "verdict": "NEEDS-WORK"
+        "verdict": "PASS"
       },
       "seed": 7505,
       "sockets": {
@@ -3758,10 +3782,10 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -3769,7 +3793,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -3973,10 +3997,10 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -3984,7 +4008,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4188,10 +4212,10 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -4199,7 +4223,7 @@
           "proportions": 4,
           "readability": 5,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4403,9 +4427,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7903,
       "sockets": {
@@ -4487,18 +4523,18 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "notes": "Distinct grayscale silhouettes at 115 studs: red has a tall central cone spire plus cone turrets, blue square pyramids, green a half-timbered hall under a big emerald roof with hoarded corner towers and a lantern, yellow a central onion dome plus four onion turrets. No crescent: every gold finial is a spike or ball. Door banners are small at 115 studs, but the silhouette carries the identity. Red vs blue is the closest pair: both are stone blocks with pointed roofs, separated by cone vs pyramid and the red central spire. The green keep reads more manor than fortress (advisory). Tris 13306-14088/16000.",
         "review_file": "reviews/castle_keep.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
           "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
+          "silhouette": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4558,18 +4594,18 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "notes": "Distinct grayscale silhouettes at 115 studs: red has a tall central cone spire plus cone turrets, blue square pyramids, green a half-timbered hall under a big emerald roof with hoarded corner towers and a lantern, yellow a central onion dome plus four onion turrets. No crescent: every gold finial is a spike or ball. Door banners are small at 115 studs, but the silhouette carries the identity. Red vs blue is the closest pair: both are stone blocks with pointed roofs, separated by cone vs pyramid and the red central spire. The green keep reads more manor than fortress (advisory). Tris 13306-14088/16000.",
         "review_file": "reviews/castle_keep.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
           "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
+          "silhouette": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4629,18 +4665,18 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "notes": "Distinct grayscale silhouettes at 115 studs: red has a tall central cone spire plus cone turrets, blue square pyramids, green a half-timbered hall under a big emerald roof with hoarded corner towers and a lantern, yellow a central onion dome plus four onion turrets. No crescent: every gold finial is a spike or ball. Door banners are small at 115 studs, but the silhouette carries the identity. Red vs blue is the closest pair: both are stone blocks with pointed roofs, separated by cone vs pyramid and the red central spire. The green keep reads more manor than fortress (advisory). Tris 13306-14088/16000.",
         "review_file": "reviews/castle_keep.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
           "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
+          "silhouette": 5,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4700,9 +4736,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Distinct grayscale silhouettes at 115 studs: red has a tall central cone spire plus cone turrets, blue square pyramids, green a half-timbered hall under a big emerald roof with hoarded corner towers and a lantern, yellow a central onion dome plus four onion turrets. No crescent: every gold finial is a spike or ball. Door banners are small at 115 studs, but the silhouette carries the identity. Red vs blue is the closest pair: both are stone blocks with pointed roofs, separated by cone vs pyramid and the red central spire. The green keep reads more manor than fortress (advisory). Tris 13306-14088/16000.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7703,
       "sockets": {
@@ -4762,10 +4810,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -4773,7 +4821,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4846,10 +4894,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -4857,7 +4905,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -4930,10 +4978,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -4941,7 +4989,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -5014,10 +5062,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -5025,7 +5073,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -5098,10 +5146,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -5109,7 +5157,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -5182,10 +5230,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -5193,7 +5241,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -5266,9 +5314,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7306,
       "sockets": {
@@ -5338,9 +5398,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7307,
       "sockets": {
@@ -7176,21 +7248,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7000,
       "sockets": {
@@ -7344,16 +7416,16 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -7512,16 +7584,16 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -7680,9 +7752,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
@@ -7836,21 +7920,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7004,
       "sockets": {
@@ -8004,16 +8088,16 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -8172,16 +8256,16 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -8340,9 +8424,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7007,
       "sockets": {
@@ -8496,21 +8592,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7008,
       "sockets": {
@@ -8664,16 +8760,16 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
@@ -8832,21 +8928,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
+        "reviewer": "fresh-context subagent",
+        "round": 5,
         "scores": {
-          "cohesion": 3,
+          "cohesion": 2,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
           "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7010,
       "sockets": {
@@ -9000,9 +9096,21 @@
       "preview": "previews/char_soldier.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
         "review_file": "reviews/char_soldier.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7011,
       "sockets": {
@@ -9251,9 +9359,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7700,
       "sockets": {
@@ -9429,16 +9549,16 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 3,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 3,
+          "readability": 4,
           "silhouette": 4,
           "triangle_cost": 4,
           "variation": 4
@@ -9619,9 +9739,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7702,
       "sockets": {
@@ -9797,9 +9929,21 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
         "review_file": "reviews/farm_barn.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7703,
       "sockets": {
@@ -12876,18 +13020,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -12945,18 +13089,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -13014,21 +13158,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7004,
       "sockets": {
@@ -13083,21 +13227,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7005,
       "sockets": {
@@ -13152,18 +13296,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -13221,18 +13365,18 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
           "palette": 3,
           "proportions": 4,
-          "readability": 4,
+          "readability": 3,
           "silhouette": 4,
-          "triangle_cost": 4,
+          "triangle_cost": 3,
           "variation": 4
         },
         "verdict": "PASS"
@@ -13290,9 +13434,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7006,
       "sockets": {
@@ -13347,9 +13503,21 @@
       "preview": "previews/prop_banner.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.",
         "review_file": "reviews/prop_banner.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7007,
       "sockets": {

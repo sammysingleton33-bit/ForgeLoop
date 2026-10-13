@@ -118,3 +118,10 @@ Author verdict: each barn's kingdom reads in grayscale at 75 studs. Cohesion now
 hip, granary on staddles, pennant vane). Known nit: tiny tile-corner tabs at the hip eave corners of barn_01 show in
 the hero close-up but not at gameplay distance. The ridge louvre on 01/04 is kept; it is plausible for medieval but
 still the most "farm-generic" element.
+
+## Fresh review round 5
+
+- Reviewer: fresh-context subagent (contact sheet `previews/farm_barn.jpg` only, zoomed PIL crops incl. grayscale; manifest tris), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: none
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 4
+- Notes: Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.

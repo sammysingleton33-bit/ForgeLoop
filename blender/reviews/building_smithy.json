@@ -2,19 +2,19 @@
   "assets": {
     "building_smithy_01": {
       "geometry_hash": "fdc9aee6816a51e2",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     },
     "building_smithy_02": {
       "geometry_hash": "83c4f7ee5b59ce02",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     },
     "building_smithy_03": {
       "geometry_hash": "21e9a159f73a5115",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     },
     "building_smithy_04": {
-      "geometry_hash": "b06204c350b9ea72",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "97d6cf24f49d4143",
+      "verdict": "PASS"
     },
     "building_smithy_05": {
       "geometry_hash": "6e566be34f3d343a",
@@ -22,22 +22,22 @@
     },
     "building_smithy_06": {
       "geometry_hash": "6c5239ab4e2a6031",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     }
   },
   "generator": "building_smithy",
   "generator_version": 1,
-  "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
-  "reviewer": "fresh-context subagent (images + rubric only)",
-  "round": 4,
+  "notes": "It reads instantly as a forge (tall chimney, open front, glowing hearth, anvil signs), and the emblem banners are correct: crown, star, ivory oak leaf, and sun in a cream roundel. Variation fails: 01, 02, 04 and 05 are the same single-storey open gable shed with one ridge chimney, and in grayscale at 84 studs they are interchangeable. Only 03 and 06 (two-storey jettied) break the pattern. 05 is a near-duplicate of 01 in the same kingdom (asset NEEDS-WORK). Fix: give 05 (and ideally one of 02 or 04) its own massing, for example an L-plan with a stone forge hood and side bellows lean-to, a hipped roof with the chimney at the gable end, or a stone ground floor. Banners are small (~12 px at 84 studs) and smithies have no kingdom silhouette cue, so a larger gable banner would help. Tris 6212-7760/8000.",
+  "reviewer": "fresh-context subagent",
+  "round": 5,
   "scores": {
-    "cohesion": 3,
-    "detail_density": 3,
+    "cohesion": 4,
+    "detail_density": 4,
     "palette": 4,
-    "proportions": 3,
+    "proportions": 4,
     "readability": 4,
-    "silhouette": 3,
-    "triangle_cost": 3,
+    "silhouette": 4,
+    "triangle_cost": 4,
     "variation": 3
   },
   "verdict": "NEEDS-WORK"

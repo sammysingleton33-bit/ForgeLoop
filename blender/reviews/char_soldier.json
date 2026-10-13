@@ -2,7 +2,7 @@
   "assets": {
     "char_soldier_01": {
       "geometry_hash": "fcf2b7626172f069",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     },
     "char_soldier_02": {
       "geometry_hash": "67817a51e2cdd701",
@@ -13,12 +13,12 @@
       "verdict": "PASS"
     },
     "char_soldier_04": {
-      "geometry_hash": "e93f93cbddcbf0d2",
+      "geometry_hash": "63fc7f669f80b14b",
       "verdict": "PASS"
     },
     "char_soldier_05": {
       "geometry_hash": "f350991516674e96",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     },
     "char_soldier_06": {
       "geometry_hash": "8f736bb54a888891",
@@ -29,12 +29,12 @@
       "verdict": "PASS"
     },
     "char_soldier_08": {
-      "geometry_hash": "6f51e3db76665a3f",
+      "geometry_hash": "5679c6d33da29e91",
       "verdict": "PASS"
     },
     "char_soldier_09": {
       "geometry_hash": "5222b497b4c131c1",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     },
     "char_soldier_10": {
       "geometry_hash": "52e1729f0c8cbaf9",
@@ -42,27 +42,27 @@
     },
     "char_soldier_11": {
       "geometry_hash": "b11d58f21764ca50",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     },
     "char_soldier_12": {
-      "geometry_hash": "717413c4e728b7af",
+      "geometry_hash": "3fc27e7f2470c29a",
       "verdict": "PASS"
     }
   },
   "generator": "char_soldier",
   "generator_version": 1,
-  "notes": "Class reads by silhouette, kingdom by tabard/shield; faceted heads; near the 2.5k cap; red flame emblem conflicts with crown on buildings.",
-  "reviewer": "fresh-context subagent (images + rubric only)",
-  "round": 4,
+  "notes": "FAIL red 01, 05 and 09: the tabard and shield emblem is a gold FLAME. ART_DIRECTION retires the flame, and every red building, banner and flag in the kit uses the crown. 09 has a crown circlet on its helm, but its chest and shield still show the flame. Fix: the kit crown (three points + band, gold on red) on tabard and shield. FAIL 11: the orange shield boss sits on the centre of the ivory oak leaf and turns it into a flower (orange centre, ivory petals). Fix: move the boss or drop it on emblem shields. Kit note: the soldier oak leaf is a symmetric ivory lozenge with no stem or midrib, a third oak design that reads as a leaf only up close. At 40 studs in grayscale the red flame and green lozenge are both light blobs. Star (blue) and sun (yellow: cream roundel on tabard, gold sun on an ivory shield) are consistent and read correctly. Class silhouettes (spear, archer, knight) are clear; red and blue archers share an identical hood. Tris up to 2490/2500 (99.6%).",
+  "reviewer": "fresh-context subagent",
+  "round": 5,
   "scores": {
-    "cohesion": 3,
+    "cohesion": 2,
     "detail_density": 4,
     "palette": 4,
     "proportions": 4,
-    "readability": 4,
+    "readability": 3,
     "silhouette": 4,
     "triangle_cost": 3,
     "variation": 4
   },
-  "verdict": "PASS"
+  "verdict": "NEEDS-WORK"
 }

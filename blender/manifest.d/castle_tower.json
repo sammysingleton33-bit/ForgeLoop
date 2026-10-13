@@ -32,10 +32,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -43,7 +43,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -116,10 +116,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -127,7 +127,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -200,10 +200,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -211,7 +211,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -284,10 +284,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -295,7 +295,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -368,10 +368,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -379,7 +379,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -452,10 +452,10 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
         "reviewer": "fresh-context subagent",
-        "round": 4,
+        "round": 5,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
@@ -463,7 +463,7 @@
           "proportions": 4,
           "readability": 4,
           "silhouette": 5,
-          "triangle_cost": 3,
+          "triangle_cost": 4,
           "variation": 4
         },
         "verdict": "PASS"
@@ -536,9 +536,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7306,
       "sockets": {
@@ -608,9 +620,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7307,
       "sockets": {
