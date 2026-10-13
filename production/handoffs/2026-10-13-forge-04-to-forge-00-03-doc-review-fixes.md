@@ -30,13 +30,13 @@ Branch `forge/04-experience-docs`, from main `b1a4f81`.
   - `firstInspectSec = 30`;
   - `firstAnswerSec = 180`, placed between `firstBuildingCompleteSec` and `firstRecruitSec`;
   - `firstGatherSec` becomes `firstDepositSec` (a sim health check outside the ordered list).
-- **M1.** Re-timed from Costs.luau, economy.md and Jobs.luau:
-  - Barracks 8 builder-s;
-  - 8 wood / ≥ 5 food / 8 stone per worker per minute;
-  - net food about 0 after recruiting;
-  - about 55/min of income at minute 2.
+- **M1.** Re-timed from Costs.luau (Barracks 8 builder-s) and from FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`), which measured the code's real income: food 86, wood 76–86, stone 52 per minute. That is 3–5× FL-0058's per-worker targets.
+  - §3 shows the probe medians against the targets.
+  - The guided path is set by the tutorial's pace, not the economy.
+  - Food is never the limit.
+  - About 220/min of income at minute 2.
 
-  All marked unverified. The stale "rates not specified anywhere yet" line is gone.
+  Headless, not played; tuning waits for the user (FORGE-00). The stale "rates not specified anywhere yet" line is gone.
 - **M2.** FirstGather defined as the first deposit credited by Signals; the inOrder race is described.
 - **M3.** §9 now carries §16.4 (decided, with the remainder open), §16.9, §16.10 and §16.13.
 - **M4.**
@@ -92,13 +92,14 @@ Additive:
 For CONTRACTS G9: "Attribution is implemented once, in `Feedback/Signals.luau`, and used by onboarding and analytics." Also add a DECISIONS line. `Signals` lives in `src/shared` because the replicated config requires it; its resolvers run only on the server.
 
 ## Open issues and risks
-- **Slice length and keep level 2 (FORGE-03, FORGE-00).**
-  - BRIEF §4 row 6 wants a keep upgrade in the slice, and `design/economy.md` aims at about 10 minutes including keep L2.
-  - At the FL-0058 rates, keep L2 is affordable only at about 10–11 minutes. The guided v2 path reaches the capture, which ends the slice (G3), at about 7–8 minutes.
-  - PACING §3 records the gap and does not choose. The options:
-    - (a) the slice includes keep L2 before the capture: an onboarding step, or the capture waits for it;
-    - (b) keep L2 moves after the slice;
-    - (c) FORGE-03 lowers the keep L2 cost for the slice.
+- **Keep level 2 in the slice (FORGE-03, FORGE-00).**
+  - BRIEF §4 row 6 wants a keep upgrade in the slice.
+  - At the measured income, keep L2 is affordable within about 2–3 minutes of the recruit, so before the guided capture at about 6.5 minutes. At the FL-0058 target rates it would be minute 10–11.
+  - But nothing in the onboarding leads to it, and the capture ends the slice (G3).
+  - PACING §3 records the question and does not choose. The options:
+    - (a) the onboarding gains a keep step before the capture;
+    - (b) keep L2 stays optional in the slice;
+    - (c) the capture waits for keep L2.
 - **For FORGE-00 to rule** (none of these is decided in the docs):
   - G11's wording for client-reported onboarding steps;
   - G9 `CitizenAnswered`;
@@ -109,7 +110,7 @@ For CONTRACTS G9: "Attribution is implemented once, in `Feedback/Signals.luau`, 
 
 ## Next actions for the receiver
 1. **FORGE-00:** re-review PACING.md and EXPERIENCE.md on the doc PR. Then add the interfaces §8 and G9 lines above, or tell me what to change.
-2. **FORGE-03:** pick (a), (b) or (c) for keep L2, or propose another. I'll re-time PACING §3 and the `targets` to match.
+2. **FORGE-03 and FORGE-00:** pick (a), (b) or (c) for keep L2, or propose another. I'll adjust the onboarding, PACING §3 and the `targets` to match.
 3. **FORGE-04 (me):** once #92 and #64 land, the analytics items listed under "What I need / what I'm giving you" above.
 
 ## Files to read
