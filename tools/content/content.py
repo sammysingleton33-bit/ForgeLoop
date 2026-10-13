@@ -3,7 +3,8 @@
 
 The CSV files under games/game-001/content are the canonical source (schema: content/SPEC.md,
 editor guide: content/README.md). This tool turns them into generated Luau modules under
-games/game-001/src/shared/Content, so the game never parses text at runtime.
+games/game-001/src/shared/Content, so the game never parses text at runtime. Optional parts (SPEC §5.10): the
+presentation columns may be absent or blank, and dialogue/question_variants.csv may be absent.
 
 Commands (all take --content DIR; build/check also take --out DIR)
   validate                 check every CSV; prints 'N scenarios, ... — 0 errors' or file:row:column errors (exit 1)
@@ -17,7 +18,8 @@ Commands (all take --content DIR; build/check also take --out DIR)
                            MECHANICS / NOTES), refuses formulas, error values and mechanics from a workbook older
                            than the CSVs, never reverts a CSV text edited after the export, never replaces a CSV it
                            cannot read, restores the original row order;
-                           --text-only takes only the text. Unchanged rows keep their bytes
+                           --text-only takes only the text (presentation tags included). Unchanged rows keep
+                           their bytes, and an offered column left empty is never added to a CSV
   fmt                      rewrite every CSV in canonical form
 
 Standard library + openpyxl (only for the two workbook commands).
@@ -229,7 +231,8 @@ def _tag_cols(prefix: str, what: str, bubble: bool = False) -> tuple[Column, ...
         Column(f"{prefix}_expression", "style", f"{what}: facial expression (optional)", required=False,
                choices="expressions"),
         Column(f"{prefix}_gesture", "style", f"{what}: gesture (optional; bow, salute, step_back, fist_pump and "
-                                             "cross_arms also play a feedback cue)", required=False, choices="gestures"),
+                                             "cross_arms also play a feedback cue)", required=False,
+               choices="gestures"),
         Column(f"{prefix}_delivery", "style", f"{what}: how it is said (optional)", required=False,
                choices="deliveries"),
     )
@@ -1060,11 +1063,14 @@ class Validator:
     def relation_guard(self, table: Table, row: Row, cols: tuple[str, ...], trigger: list[dict] | None,
                        sid: str, also: list[dict] | None = None) -> None:
         """{family} / {friend} / {rival} only when the scenario's trigger guarantees that relation (SPEC §3).
-        `also`: the clauses of a question variant's cond: selector, which guarantee it too (SPEC §5.10)."""
+        `also`: the clauses of a question variant's cond: selector, which guarantee it too (SPEC §5.10); None when
+        the line has no cond: selector (a trait: variant), so the hint never suggests one."""
         if trigger is None:
             return
         have = {c["var"] for c in trigger + (also or []) if c["op"] == "=" and c["value"] is True}
-        where = f"the trigger of scenario '{sid}'" + (" or to this variant's cond: selector" if also is not None else "")
+        where = f"the trigger of scenario '{sid}'"
+        if also is not None:
+            where += " or to this variant's cond: selector"
         for col in cols:
             for m in _PLACEHOLDER.finditer(row.get(col)):
                 flag = RELATION_FLAGS.get(m.group(1))
@@ -1095,7 +1101,7 @@ class Validator:
         emotion = out["emotion"]
         if emotion is not None and tone in TONE_EMOTIONS and emotion not in TONE_EMOTIONS[tone]:
             self.err(table, row, f"{prefix}_emotion",
-                     f"emotion '{emotion}' does not fit tone '{tone}'{tone_from}: a {tone} line takes "
+                     f"emotion '{emotion}' does not fit tone '{tone}'{tone_from}: {_article(tone)} {tone} line takes "
                      f"{', '.join(TONE_EMOTIONS[tone])}; pick one of those or change the tone")
         return out
 
@@ -1636,7 +1642,9 @@ class Validator:
             elif self.ref(tt, row, "decision_id", "decisions", did):
                 self.m.referenced_decisions.add(did)
             tone = self.p_enum(tt, row, "reaction_tone", REACTION_TONES, default="neutral")
-            tone_from = " (reaction_tone is empty, so the tone is neutral)" if self.raw(row, "reaction_tone") == "" else ""
+            tone_from = ""
+            if self.raw(row, "reaction_tone") == "":
+                tone_from = " (reaction_tone is empty, so the tone is neutral)"
             bands = {band: self.band(tt, row, band) for band in REACTION_BANDS}
             rec = {
                 "id": rid,
@@ -1731,7 +1739,7 @@ class Validator:
             }
             scenario = self.m.scenarios.get(sid)
             if scenario is not None:
-                self.relation_guard(tt, row, ("question_text",), scenario["trigger"], sid, also=cond or [])
+                self.relation_guard(tt, row, ("question_text",), scenario["trigger"], sid, also=cond)
             by_scenario.setdefault(sid, []).append((row, rec))
         for sid, items in by_scenario.items():
             seen: dict[int, tuple[int, str]] = {}
@@ -1877,6 +1885,11 @@ def _char_name(ch: str) -> str:
     if name:
         return name
     return "unassigned character" if unicodedata.category(ch) == "Cn" else "control character"
+
+
+def _article(word: str) -> str:
+    """'an' before a vowel ('an angry line'), else 'a' ('a happy line')."""
+    return "an" if word[:1] != "" and word[:1].lower() in "aeiou" else "a"
 
 
 def _invisible_problem(value: str, kind: str) -> str | None:
@@ -3018,9 +3031,12 @@ class Change:
     new: str | None  # None: the row was removed
     row: int | None = None  # workbook row, for error locations
     applied: bool = True
+    summary: str | None = None  # replaces 'old → new' (a header change names the columns added and removed)
 
     def describe(self) -> str:
         where = f"{self.sheet} › {self.label}" + (f" [{self.column}]" if self.column else "")
+        if self.summary is not None:
+            return f"{where}: {self.summary}"
         if self.old is None:
             return f"{where}: new row"
         if self.new is None:
@@ -3111,10 +3127,16 @@ def _match_rows(spec: TableSpec, cur_rows: list[Row], wb_rows: list[Row]):
 def _diff_table(spec: TableSpec, cur: Table, wb: Table) -> list[Change]:
     changes: list[Change] = []
     if set(cur.header) != set(wb.header):
-        # adding or removing only TEXT / presentation columns is a text change (SPEC §10); any other is mechanics
-        moved = set(cur.header) ^ set(wb.header)
-        kind = "TEXT" if all((c := spec.col(h)) is not None and c.kind in OFFERED_KINDS for h in moved) else "MECHANICS"
-        changes.append(Change(kind, spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header)))
+        # Adding offered TEXT / presentation columns is a text change (SPEC §10). Removing a column stays a
+        # mechanics change, so a stale workbook can never drop cells that changed in the CSV after the export.
+        added = [h for h in wb.header if h not in cur.header]
+        removed = [h for h in cur.header if h not in wb.header]
+        offered = all((c := spec.col(h)) is not None and c.kind in OFFERED_KINDS and not c.required for h in added)
+        kind = "TEXT" if offered and not removed else "MECHANICS"
+        summary = "; ".join(part for part in (f"columns added: {', '.join(added)}" if added else "",
+                                              f"columns removed: {', '.join(removed)}" if removed else "") if part)
+        changes.append(Change(kind, spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header),
+                              summary=summary))
     cols = list(dict.fromkeys([*cur.header, *wb.header]))
     pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
     for c_row, w_row, label in pairs:
@@ -3168,7 +3190,8 @@ def _guard_editable(spec: TableSpec, cur: Table, wbt: Table, stamps: Stamps, fil
 
 def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[str], list[Row] | None, str | None]:
     """(header, rows, problem): the current CSV rows with only the TEXT, choice and notes cells taken from the
-    workbook; an offered column the workbook fills in is added to the header."""
+    workbook; an offered column is added to the header only when a row it imports fills it in. A value only in a
+    row --text-only ignores (a new row, a renamed id) adds nothing, or every CSV line would gain an empty cell."""
     pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
     if not KEY_COLUMN.get(spec.key):
         ident = POSITION_IDENTITY.get(spec.key, ())
@@ -3177,7 +3200,8 @@ def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[str], 
             return [], None, (f"rows were added, removed or moved in sheet '{spec.key}', so --text-only cannot match "
                               "them to the CSV: undo that, or import without --text-only")
     take = {c.name for c in spec.columns if c.kind in EDITABLE_KINDS} & set(wb.header)
-    header = list(cur.header) + [h for h in wb.header if h in take and h not in cur.header]
+    header = list(cur.header) + [h for h in wb.header if h in take and h not in cur.header
+                                 and any(w.values.get(h, "") != "" for _, w, _ in pairs)]
     by_cur = {id(c): w for c, w, _ in pairs}
     out = []
     for c in cur.rows:
@@ -3188,6 +3212,29 @@ def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[str], 
         values = {col: (w.values.get(col, "") if col in take else c.values.get(col, "")) for col in header}
         out.append(Row(w.num, values))
     return header, out, None
+
+
+def _text_only_header(spec: TableSpec, cur: Table, wb: Table, header: list[str], diff: list[Change]) -> list[Change]:
+    """`diff` with its header change as --text-only applies it: the columns it really adds (TEXT) apart from the
+    column changes it ignores (MECHANICS: removed columns, and added ones it never takes). An offered column whose
+    only values are in rows it ignores is not mentioned: those rows are listed as ignored themselves."""
+    out = [c for c in diff if c.summary is None]  # only a header change has a summary
+    if len(out) == len(diff):
+        return diff
+    taken = [h for h in header if h not in cur.header]
+    left = [h for h in wb.header if h not in cur.header and h not in taken
+            and ((c := spec.col(h)) is None or c.kind not in EDITABLE_KINDS)]
+    removed = [h for h in cur.header if h not in wb.header]
+    head: list[Change] = []
+    if taken:
+        head.append(Change("TEXT", spec.key, "(header)", None, ", ".join(cur.header), ", ".join(header),
+                           summary=f"columns added: {', '.join(taken)}"))
+    if left or removed:
+        summary = "; ".join(part for part in (f"columns added: {', '.join(left)}" if left else "",
+                                              f"columns removed: {', '.join(removed)}" if removed else "") if part)
+        head.append(Change("MECHANICS", spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header),
+                           summary=summary))
+    return head + out
 
 
 @dataclass
@@ -3213,6 +3260,20 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
         csv_path = content_dir / spec.path
         loaded = Report()
         cur = load_csv_table(spec, content_dir, loaded)
+        if wbt.usable:
+            _drop_unused_columns(spec, wbt, cur.header if cur is not None else None)
+        if cur is None and spec.optional and not csv_path.exists() and wbt.usable:
+            # An optional table without a file (question_variants.csv): only rows the workbook adds create it. New
+            # rows are mechanics (ids, order, selector), so --text-only lists them as not imported.
+            new = [Change("MECHANICS", key, _row_key(spec, w) or f"row {w.num}", None, None, "", w.num)
+                   for w in wbt.rows]
+            changes += new
+            if text_only:
+                for c in new:
+                    c.applied = False
+            elif wbt.rows:
+                merged[key] = wbt
+            continue
         if cur is None or not cur.usable or not wbt.usable:
             if text_only:
                 report.add("error", wbt, None, None, f"--text-only needs a readable {spec.path} to merge into")
@@ -3233,17 +3294,21 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
         wbt.rows = _restore_order(spec, cur, wbt.rows)
         file_unchanged = stamps.files is not None and stamps.files.get(spec.path) == _sha256(content_dir / spec.path)
         kept += _guard_editable(spec, cur, wbt, stamps, file_unchanged, report)
+        _drop_unused_columns(spec, wbt, cur.header)  # again: a cell kept as in the CSV may have emptied a column
         diff = _diff_table(spec, cur, wbt)
-        changes += diff
         if text_only:
-            rows, problem = _text_only_rows(spec, cur, wbt)
+            header, rows, problem = _text_only_rows(spec, cur, wbt)
             if rows is None:
+                changes += diff
                 report.add("error", wbt, None, None, problem or "cannot merge")
                 continue
+            diff = _text_only_header(spec, cur, wbt, header, diff)
             for c in diff:
                 c.applied = c.kind != "MECHANICS"
-            merged[key] = Table(spec, wbt.source, list(cur.header), rows, sheet=wbt.sheet)
+            changes += diff
+            merged[key] = Table(spec, wbt.source, header, rows, sheet=wbt.sheet, layout=wbt.layout)
             continue
+        changes += diff
         stale = None
         if stamps.files is None:
             stale = "this workbook has no export stamp (made by an older tool or by hand)"
@@ -3277,10 +3342,7 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
                 old = None  # an unreadable file is replaced as a whole
             if old is not None and old.records:
                 old_header = [h.strip() for h in old.records[0].fields]
-        if old_header is not None and set(old_header) == set(table.header):
-            order = old_header
-        else:
-            order = [c.name for c in spec.columns if c.name in table.header]
+        order = _column_order(spec, old_header, table.header)
         rows = [order] + [[r.values.get(c, "") for c in order] for r in table.rows]
         text = render_csv(rows, old)
         if not csv_path.is_file() or csv_path.read_bytes() != text.encode("utf-8"):

@@ -1901,6 +1901,298 @@ describe("ContentQuery content is read-only (review finding L6)", function()
 	end)
 end)
 
+-- ---------------------------------------------------------------- presentation (SPEC §5.10)
+
+-- The generated Dialogue.luau of the pytest fixture library with every presentation column in use (written by
+-- tools/tests/test_content.py, which fails when it is stale): the runtime runs on the generator's real output.
+local PresentationDialogue = require("./PresentationDialogue")
+
+local function presentationQuery()
+	return ContentQuery.new({ dialogue = PresentationDialogue :: any })
+end
+
+-- A deep copy of dialogue data without any presentation field (what the game sees when it ignores the tags).
+local PRESENTATION_FIELDS = {
+	urgency = true,
+	delivery_mode = true,
+	thought_bubble_s = true,
+	question_emotion = true,
+	question_expression = true,
+	question_gesture = true,
+	question_delivery = true,
+	variants = true,
+	emotion = true,
+	expression = true,
+	gesture = true,
+	delivery = true,
+	bubble_s = true,
+	bands = true,
+}
+local function withoutPresentation(value: any): any
+	if type(value) ~= "table" then
+		return value
+	end
+	local out = {}
+	for k, v in value do
+		if not PRESENTATION_FIELDS[k] then
+			out[k] = withoutPresentation(v)
+		end
+	end
+	return out
+end
+
+describe("ContentQuery presentation constants (SPEC §5.10)", function()
+	it("maps the cue gestures to the feedback cue vocabulary and nothing else", function()
+		expect(ContentQuery.GESTURE_CUE).toEqual({
+			bow = "bow",
+			salute = "salute",
+			step_back = "cower",
+			fist_pump = "celebrate",
+			cross_arms = "grumble",
+		})
+		expect(ContentQuery.GESTURE_CUE.nod).toBeNil()
+		expect(ContentQuery.GESTURE_CUE.none).toBeNil()
+		expect(table.isfrozen(ContentQuery.GESTURE_CUE)).toBe(true)
+	end)
+
+	it("sets the PROVISIONAL loyalty bands at 70 and 30", function()
+		expect(ContentQuery.LOYALTY_BANDS).toEqual({ high = 70, low = 30 })
+		expect(table.isfrozen(ContentQuery.LOYALTY_BANDS)).toBe(true)
+	end)
+end)
+
+describe("ContentQuery.reactionFor (SPEC §5.10)", function()
+	it("shows the high-loyalty reaction at loyalty >= 70, with its own tone and tags", function()
+		local q = presentationQuery()
+		local high = {
+			text = "You never fail us, {ruler}!",
+			tone = "happy",
+			emotion = "joy",
+			gesture = "fist_pump",
+			band = "high",
+		}
+		expect(q.reactionFor("r_hf_share", 80)).toEqual(high)
+		expect(q.reactionFor("r_hf_share", 70)).toEqual(high) -- inclusive
+		expect(q.reactionFor("r_hf_share", 100)).toEqual(high)
+		local reaction = q.reactionFor("r_hf_share", 80) :: any
+		expect(ContentQuery.GESTURE_CUE[reaction.gesture]).toBe("celebrate")
+	end)
+
+	it("shows the low-loyalty reaction at loyalty <= 30", function()
+		local q = presentationQuery()
+		local low = {
+			text = "Bread at last. Do not expect thanks.",
+			tone = "angry",
+			emotion = "contempt",
+			expression = "eye_roll",
+			bubble_s = 5,
+			band = "low",
+		}
+		expect(q.reactionFor("r_hf_share", 30)).toEqual(low) -- inclusive
+		expect(q.reactionFor("r_hf_share", 0)).toEqual(low)
+		expect(q.reactionFor("r_hf_share", -5)).toEqual(low)
+	end)
+
+	it("shows the base reaction with its tags between the bands", function()
+		local q = presentationQuery()
+		local base = {
+			text = "Bless you, {ruler}! We will not forget this.",
+			tone = "happy",
+			emotion = "gratitude",
+			expression = "beam",
+			gesture = "bow",
+			delivery = "warm",
+			bubble_s = 3.5,
+			band = "base",
+		}
+		expect(q.reactionFor("r_hf_share", 69.9)).toEqual(base)
+		expect(q.reactionFor("r_hf_share", 30.1)).toEqual(base)
+		expect(q.reactionFor("r_hf_share", 50)).toEqual(base)
+		expect(ContentQuery.GESTURE_CUE[base.gesture]).toBe("bow")
+	end)
+
+	it("treats a missing or non-finite loyalty as the base reaction", function()
+		local q = presentationQuery()
+		for _, loyalty in { nil, 0 / 0, math.huge, -math.huge } :: { any } do
+			expect((q.reactionFor("r_hf_share", loyalty) :: any).band).toBe("base")
+		end
+		expect((q.reactionFor("r_hf_share") :: any).band).toBe("base")
+		expect((q.reactionFor("r_hf_share", "80" :: any) :: any).band).toBe("base") -- never coerces a string
+	end)
+
+	it("falls back to the base reaction when the matching band has no text", function()
+		local q = presentationQuery()
+		-- r_hf_ration has only a low band; r_hf_gift and r_sp_pay none (tone defaults to neutral, no tags)
+		expect(q.reactionFor("r_hf_ration", 95)).toEqual({
+			text = "She nods slowly. Her eyes say otherwise.",
+			tone = "neutral",
+			band = "base",
+		})
+		expect(q.reactionFor("r_hf_ration", 10)).toEqual({
+			text = "Rations again. Of course.",
+			tone = "sad",
+			emotion = "sadness",
+			band = "low",
+		})
+		expect(q.reactionFor("r_hf_gift", 0)).toEqual({
+			text = '"Seed grain? Then we eat next season," she laughs.',
+			tone = "neutral",
+			band = "base",
+		})
+		expect(q.reactionFor("r_sp_pay", 100)).toEqual({
+			text = "The yard erupts in cheers.",
+			tone = "neutral",
+			band = "base",
+		})
+	end)
+
+	it("returns nil for an unknown response and a fresh table otherwise", function()
+		local q = presentationQuery()
+		expect(q.reactionFor("no_such_response", 50)).toBeNil()
+		local first = q.reactionFor("r_hf_share", 80) :: any
+		first.text = "changed by the caller"
+		expect((q.reactionFor("r_hf_share", 80) :: any).text).toBe("You never fail us, {ruler}!")
+		expect(table.isfrozen(q.data.dialogue.scenarios.s_hungry_farmer.responses[1].bands.high)).toBe(true)
+	end)
+
+	it("tolerates a scenario without a tone, tags or bands (hand-made data)", function()
+		local q = ContentQuery.new({ dialogue = { scenarios = SCENARIOS, order = ORDER } })
+		expect(q.reactionFor("z_farmer_low_yes", 90)).toEqual({ text = "Thanks.", tone = "neutral", band = "base" })
+	end)
+end)
+
+describe("ContentQuery.questionFor (SPEC §5.10)", function()
+	local LOYAL = { ["citizen.loyalty"] = 80 }
+
+	it("asks the first variant by order whose selector matches", function()
+		local q = presentationQuery()
+		-- v_hf_greedy (order 1) wins over v_hf_loyal (order 2), although the CSV lists v_hf_loyal first
+		expect(q.questionFor("s_hungry_farmer", { traits = { "greedy", "kind" } }, LOYAL)).toEqual({
+			text = "Bare shelves, {ruler}. Share your stores and I'll remember it... at a fair price.",
+			emotion = "suspicion",
+			expression = "smirk",
+			gesture = "lean_in",
+			delivery = "sarcastic",
+			variantId = "v_hf_greedy",
+		})
+		expect(q.questionFor("s_hungry_farmer", { traits = { "kind" } }, LOYAL)).toEqual({
+			text = "{ruler}, you have never let us starve. Will the granary feed us again?",
+			emotion = "hope",
+			expression = "smile",
+			gesture = "hand_on_heart",
+			delivery = "warm",
+			variantId = "v_hf_loyal",
+		})
+		expect((q.questionFor("s_soldier_pay", { traits = { "brave" } }, {}) :: any).variantId).toBe("v_sp_brave")
+	end)
+
+	it("asks the scenario's question with its question tags when no variant matches", function()
+		local q = presentationQuery()
+		local base = {
+			text = "{ruler}, the granary is low and my family is hungry. Will you share the stores, or must we tighten our belts?",
+			emotion = "worry",
+			expression = "downcast",
+			gesture = "wring_hands",
+			delivery = "pleading",
+		}
+		expect(q.questionFor("s_hungry_farmer", { traits = { "kind" } }, { ["citizen.loyalty"] = 69 })).toEqual(base)
+		expect(q.questionFor("s_hungry_farmer", {}, nil)).toEqual(base) -- no traits, no ctx
+		expect(q.questionFor("s_hungry_farmer", { traits = "greedy" :: any }, {})).toEqual(base) -- not a list
+		expect(q.questionFor("s_smith_tools", { traits = { "brave" } }, {})).toEqual({
+			text = "My hammer is cracked, {ruler}. Good iron costs gold, but bad tools cost more.",
+		})
+	end)
+
+	it("evaluates a cond: selector with the trigger rules (absent flags are false, counts are 0)", function()
+		local s = scenario("s", "any", 50, {
+			variants = {
+				-- deliberately out of order: questionFor sorts by order
+				{
+					id = "v_count",
+					order = 3,
+					cond = { clause("kingdom.count.blacksmith", "<", 1) },
+					text = "No smithy.",
+				},
+				{ id = "v_none", order = 1, text = "Never chosen: no selector." },
+				{
+					id = "v_flag",
+					order = 2,
+					cond = { clause("citizen.memory.promised", "=", false) },
+					text = "No promise.",
+				},
+			},
+		})
+		local q = ContentQuery.new({ dialogue = { scenarios = { s = s }, order = { "s" } } })
+		expect((q.questionFor("s", {}, {}) :: any).variantId).toBe("v_flag")
+		expect((q.questionFor("s", {}, { ["citizen.memory.promised"] = true }) :: any).variantId).toBe("v_count")
+		local base = q.questionFor("s", {}, { ["citizen.memory.promised"] = true, ["kingdom.count.blacksmith"] = 2 })
+		expect(base).toEqual({ text = "s question" })
+	end)
+
+	it("returns nil for an unknown scenario and errors without a citizen table", function()
+		local q = presentationQuery()
+		expect(q.questionFor("no_such_scenario", {}, {})).toBeNil()
+		expect(function()
+			q.questionFor("s_hungry_farmer", nil :: any, {})
+		end).toThrow("ContentQuery.questionFor: citizen must be a CitizenState table, got nil")
+		local first = q.questionFor("s_hungry_farmer", { traits = { "greedy" } }, {}) :: any
+		first.text = "changed by the caller"
+		expect((q.questionFor("s_hungry_farmer", { traits = { "greedy" } }, {}) :: any).text).never.toBe(
+			"changed by the caller"
+		)
+	end)
+end)
+
+describe("ContentQuery.presentation (SPEC §5.10)", function()
+	it("gives a scenario's urgency, delivery mode and thought bubble time, nil fields when absent", function()
+		local q = presentationQuery()
+		expect(q.presentation("s_hungry_farmer")).toEqual({
+			urgency = "high",
+			delivery_mode = "direct",
+			thought_bubble_s = 4.5,
+		})
+		expect(q.presentation("s_smith_tools")).toEqual({ urgency = "low", delivery_mode = "ambient" })
+		expect(q.presentation("s_soldier_pay")).toEqual({})
+		expect(q.presentation("no_such_scenario")).toBeNil()
+	end)
+
+	it("is bound to the generated content at module level", function()
+		expect(ContentQuery.reactionFor).toBeA("function")
+		expect(ContentQuery.questionFor).toBeA("function")
+		expect(ContentQuery.presentation).toBeA("function")
+		expect(ContentQuery.reactionFor("no_such_response", 50)).toBeNil()
+	end)
+end)
+
+describe("ContentQuery presentation never changes gameplay (SPEC §5.10)", function()
+	it("offers the same scenarios in the same order with or without the tags and variants", function()
+		local tagged = presentationQuery()
+		local plain = ContentQuery.new({ dialogue = withoutPresentation(PresentationDialogue) })
+		expect(plain.data.dialogue.scenarios.s_hungry_farmer.variants).toBeNil()
+		local ctxs = {
+			{ ["kingdom.fed_ratio"] = 0.4, ["citizen.hunger"] = 0.9, occupation = "farmer" },
+			{ ["kingdom.count.storehouse"] = 1, phase = "Founding", ["citizen.memory.promised_tools"] = true },
+			{ ["rep.authority"] = 40, ["kingdom.gold"] = 50, ["citizen.trait.greedy"] = true, occupation = "soldier" },
+		}
+		for _, ctx in ctxs do
+			for _, citizen in
+				{
+					{ id = 1, occupation = ctx.occupation },
+					{ id = 2, occupation = "smith", unlocked = { s_smith_tools = true } },
+				}
+			do
+				local a = ids(tagged.eligibleScenarios(ctx, citizen, 0, {}))
+				local b = ids(plain.eligibleScenarios(ctx, citizen, 0, {}))
+				expect(a).toEqual(b)
+			end
+		end
+		-- the base question and reaction are the same text the game shows without tags
+		local s = PresentationDialogue.scenarios.s_hungry_farmer
+		expect((tagged.questionFor("s_hungry_farmer", {}, {}) :: any).text).toBe(s.question)
+		expect((tagged.reactionFor("r_hf_share", 50) :: any).text).toBe(s.responses[1].reaction)
+	end)
+end)
+
 describe("ContentQuery purity", function()
 	it("uses no services, yields, clocks or randomness", function()
 		local source = fs.readFile(T.root .. "/games/game-001/src/shared/Content/ContentQuery.luau")

@@ -50,9 +50,14 @@ def write_rows(path: Path, rows: list[list[str]]) -> None:
 
 
 def set_cell(lib: Path, rel: str, row: int, column: str, value: str) -> None:
-    """row is the spreadsheet row (header = 1)."""
+    """row is the spreadsheet row (header = 1). A column the file lacks (an optional one, e.g. the SPEC §5.10
+    presentation columns) is appended to the header first, so its 1-based number is the old width + 1."""
     path = lib / rel
     rows = read_rows(path)
+    if column not in rows[0]:
+        rows[0].append(column)
+        for r in rows[1:]:
+            r.append("")
     rows[row - 1][rows[0].index(column)] = value
     write_rows(path, rows)
 
@@ -61,8 +66,19 @@ def snapshot(directory: Path) -> dict[str, bytes]:
     return {p.relative_to(directory).as_posix(): p.read_bytes() for p in sorted(directory.rglob("*")) if p.is_file()}
 
 
-def csv_bytes(lib: Path) -> dict[str, bytes]:
-    return {rel: (lib / rel).read_bytes() for rel in CSV_PATHS}
+def csv_bytes(lib: Path) -> dict[str, bytes | None]:
+    """Every CSV's bytes; None for an absent optional file (dialogue/question_variants.csv)."""
+    return {rel: (lib / rel).read_bytes() if (lib / rel).is_file() else None for rel in CSV_PATHS}
+
+
+def copy_real(tmp_path: Path) -> Path:
+    """A copy of the real library (only the files it has: an optional table may be absent)."""
+    lib = tmp_path / "content"
+    for spec in content.SPECS:
+        (lib / spec.path).parent.mkdir(parents=True, exist_ok=True)
+        if (REAL / spec.path).is_file() or not spec.optional:
+            shutil.copyfile(REAL / spec.path, lib / spec.path)
+    return lib
 
 
 @pytest.fixture
@@ -81,8 +97,8 @@ def find_tool(name: str) -> str | None:
 def test_fixture_library_validates(capsys):
     code, out = run(capsys, "validate", "--content", FIXTURE)
     assert code == 0, out
-    assert "3 scenarios, 7 responses, 7 decisions, 6 consequences, 6 traits, 101 names, 4 occupations, " \
-           "6 categories, 4 actions — 0 errors" in out
+    assert "3 scenarios, 7 responses, 3 question variants, 7 decisions, 6 consequences, 6 traits, 101 names, " \
+           "4 occupations, 6 categories, 4 actions — 0 errors" in out
 
 
 def test_real_content_validates(capsys):
@@ -342,6 +358,7 @@ def test_generated_luau_passes_stylua_and_selene(lib, tmp_path, capsys):
     stylua, selene = find_tool("stylua"), find_tool("selene")
     if not stylua or not selene:
         pytest.skip("stylua/selene not installed")
+    add_presentation(lib)  # every SPEC §5.10 field and question variants, too
     # awkward strings: both quote kinds, a backslash, non-ASCII letters, a Luau keyword as a trait id
     set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "It's \"fine\", he says \\ shrugs. Ça va.")
     set_cell(lib, "citizens/names.csv", 2, "name", "Ébrel")
@@ -598,6 +615,204 @@ def test_thought_icon_and_reaction_tone_columns(lib, tmp_path, capsys):
     assert code == 1 and "dialogue/scenarios.csv:2:7: [thought_icon] 'shout' is not allowed" in text
 
 
+# ----------------------------------------------------------------------------- presentation (SPEC §5.10)
+PRESENTATION_FIXTURE = ROOT / "games" / "game-001" / "tests" / "content" / "PresentationDialogue.luau"
+PRESENTATION_LABEL = "tools/tests/fixtures/content/valid + add_presentation() in tools/tests/test_content.py"
+SCENARIO_TAGS = ("urgency", "delivery_mode", "thought_bubble_s", "question_emotion", "question_expression",
+                 "question_gesture", "question_delivery")
+RESPONSE_TAGS = tuple(f"reaction_{t}" for t in ("emotion", "expression", "gesture", "delivery", "bubble_s")) + tuple(
+    f"reaction_{b}_{t}" for b in ("high", "low")
+    for t in ("text", "tone", "emotion", "expression", "gesture", "delivery", "bubble_s"))
+
+
+def add_presentation(lib: Path) -> None:
+    """Put the SPEC §5.10 presentation columns to use in the fixture library, whose CSVs lack them. The generated
+    Dialogue.luau of the result is the committed Luau fixture PresentationDialogue.luau (ContentQuery.spec.luau)."""
+    s, r = "dialogue/scenarios.csv", "dialogue/responses.csv"
+    for row, values in ((2, {"urgency": "high", "delivery_mode": "direct", "thought_bubble_s": "4.5",
+                              "question_emotion": "worry", "question_expression": "downcast",
+                              "question_gesture": "wring_hands", "question_delivery": "pleading"}),
+                        (3, {"urgency": "low", "delivery_mode": "ambient"})):
+        for col, value in values.items():
+            set_cell(lib, s, row, col, value)
+    share = {"reaction_tone": "happy", "reaction_emotion": "gratitude", "reaction_expression": "beam",
+             "reaction_gesture": "bow", "reaction_delivery": "warm", "reaction_bubble_s": "3.5",
+             "reaction_high_text": "You never fail us, {ruler}!", "reaction_high_tone": "happy",
+             "reaction_high_emotion": "joy", "reaction_high_gesture": "fist_pump",
+             "reaction_low_text": "Bread at last. Do not expect thanks.", "reaction_low_tone": "angry",
+             "reaction_low_emotion": "contempt", "reaction_low_expression": "eye_roll", "reaction_low_bubble_s": "5"}
+    for col, value in share.items():
+        set_cell(lib, r, 2, col, value)
+    for col, value in {"reaction_low_text": "Rations again. Of course.", "reaction_low_tone": "sad",
+                       "reaction_low_emotion": "sadness"}.items():
+        set_cell(lib, r, 3, col, value)
+
+
+def test_presentation_vocabulary_is_the_measured_one():
+    """D-035 (4): FORGE-06's measured vocabulary, exactly (SPEC §5.10)."""
+    assert len(content.EMOTIONS) == 20 and len(set(content.EMOTIONS)) == 20
+    assert len(content.EXPRESSIONS) == 13 and len(set(content.EXPRESSIONS)) == 13
+    assert len(content.GESTURES) == 21 and len(set(content.GESTURES)) == 21
+    assert len(content.DELIVERIES) == 15 and len(set(content.DELIVERIES)) == 15 and "defiant" not in content.DELIVERIES
+    assert content.URGENCIES == ("low", "normal", "high", "critical")
+    assert content.DELIVERY_MODES == ("ambient", "direct")
+    assert set(content.TONE_EMOTIONS) == set(content.REACTION_TONES)
+    fitting = {e for emotions in content.TONE_EMOTIONS.values() for e in emotions}
+    assert fitting == set(content.EMOTIONS)  # every emotion fits some tone, and nothing else is listed
+    assert set(content.GESTURE_CUE) <= set(content.GESTURES)
+    assert set(content.GESTURE_CUE.values()) <= set(content.CUE_IDS)  # G13.3 cue vocabulary (SPEC §5.4)
+    assert content.GESTURE_CUE == {"bow": "bow", "salute": "salute", "step_back": "cower", "fist_pump": "celebrate",
+                                   "cross_arms": "grumble"}
+
+
+def _luau_table(source: str, name: str) -> str:
+    m = re.search(rf"{re.escape(name)} =\s*(?:table\.freeze\()?\{{(.*?)\n?\}}\)?\n", source, re.S)
+    assert m, f"{name} not found"
+    return m.group(1)
+
+
+def test_contentquery_and_the_tool_share_the_presentation_tables():
+    """ContentQuery.GESTURE_CUE / LOYALTY_BANDS and the Luau specs' vocabulary lists follow content.py."""
+    source = (REAL_OUT / "ContentQuery.luau").read_text(encoding="utf-8")
+    cue = dict(re.findall(r'(\w+) = "(\w+)"', _luau_table(source, "ContentQuery.GESTURE_CUE")))
+    assert cue == content.GESTURE_CUE
+    bands = {k: int(v) for k, v in re.findall(r"(\w+) = (\d+)", _luau_table(source, "ContentQuery.LOYALTY_BANDS"))}
+    assert bands == content.LOYALTY_BANDS
+    spec = (ROOT / "games" / "game-001" / "tests" / "content" / "Content.spec.luau").read_text(encoding="utf-8")
+    for name, values in (("EMOTIONS", content.EMOTIONS), ("EXPRESSIONS", content.EXPRESSIONS),
+                         ("GESTURES", content.GESTURES), ("DELIVERIES", content.DELIVERIES),
+                         ("URGENCIES", content.URGENCIES), ("DELIVERY_MODES", content.DELIVERY_MODES)):
+        assert re.findall(r'"(\w+)"', _luau_table(spec, f"local {name}")) == list(values), name
+    tones = _luau_table(spec, "local TONE_EMOTIONS")
+    parsed = {tone: tuple(re.findall(r'"(\w+)"', body)) for tone, body in re.findall(r"(\w+) = \{([^}]*)\}", tones)}
+    assert parsed == content.TONE_EMOTIONS
+
+
+def test_presentation_columns_and_variants_are_optional(lib, tmp_path, capsys):
+    """Every SPEC §5.10 column may be absent (the real CSVs and the fixture lack them) or blank, and the
+    question_variants.csv file may be absent: neither changes a generated byte."""
+    for rel in ("dialogue/scenarios.csv", "dialogue/responses.csv"):
+        header = read_rows(REAL / rel)[0] + read_rows(lib / rel)[0]
+        assert not set(header) & set(SCENARIO_TAGS + RESPONSE_TAGS), rel
+    _, model, report = content.load_and_validate(lib)
+    assert not report.errors
+    before = content.generate(model, "x")
+    for col in SCENARIO_TAGS:
+        set_cell(lib, "dialogue/scenarios.csv", 2, col, "")
+    for col in RESPONSE_TAGS:
+        set_cell(lib, "dialogue/responses.csv", 2, col, "")
+    _, model, report = content.load_and_validate(lib)
+    assert not report.errors
+    assert content.generate(model, "x") == before  # blank cells are absent values
+    (lib / "dialogue" / "question_variants.csv").unlink()
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+    assert "question variants" not in out and "missing file" not in out
+    _, model, _ = content.load_and_validate(lib)
+    dialogue = content.generate(model, "x")["Dialogue.luau"]
+    assert "variants" not in dialogue and "question_variants.csv" not in dialogue
+    assert dialogue.splitlines()[2].startswith("-- Source: dialogue/scenarios.csv, dialogue/responses.csv. ")
+    # a question_variants.csv that exists but is not readable is an error, never "no variants"
+    (lib / "dialogue" / "question_variants.csv").write_text("scenario_id,variant_id\n", encoding="utf-8")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1 and "dialogue/question_variants.csv:1: missing column 'order'" in out, out
+
+
+def test_generated_presentation_shape(lib, tmp_path, capsys):
+    """SPEC §7: the new fields are emitted only when present; variants sorted by order under their scenario."""
+    add_presentation(lib)
+    out = tmp_path / "out"
+    code, text = run(capsys, "build", "--content", lib, "--out", out)
+    assert code == 0, text
+    dialogue = (out / "Dialogue.luau").read_text(encoding="utf-8")
+    for line in ('urgency = "high",', 'delivery_mode = "direct",', "thought_bubble_s = 4.5,",
+                 'question_emotion = "worry",', 'question_expression = "downcast",',
+                 'question_gesture = "wring_hands",', 'question_delivery = "pleading",',
+                 'emotion = "gratitude",', 'expression = "beam",', 'gesture = "bow",', 'delivery = "warm",',
+                 "bubble_s = 3.5,", "bubble_s = 5,", 'text = "You never fail us, {ruler}!",',
+                 'low = { text = "Rations again. Of course.", tone = "sad", emotion = "sadness" },',
+                 'trait = "greedy",', 'cond = { { var = "citizen.loyalty", op = ">=", value = 70 } },'):
+        assert line in dialogue, line
+    assert dialogue.count("bands = {") == 2 and dialogue.count("variants = {") == 2
+    # variants are sorted by order, not by file row (v_hf_loyal is row 2 with order 2)
+    assert dialogue.index('id = "v_hf_greedy"') < dialogue.index('id = "v_hf_loyal"')
+    # the scenario without tags has none of the fields; the response without tags neither
+    soldier = dialogue[dialogue.index("s_soldier_pay = {"):]
+    assert "urgency" not in soldier.split("responses = {")[0]
+    assert "bubble_s" not in soldier and "bands" not in soldier
+    assert "Source: dialogue/scenarios.csv, dialogue/responses.csv, dialogue/question_variants.csv." in dialogue
+    # deterministic, and unchanged by a second build
+    code, text = run(capsys, "build", "--content", lib, "--out", out)
+    assert code == 0 and "(0 changed)" in text
+
+
+def test_generated_presentation_shape_matches_the_luau_fixture(lib):
+    """ContentQuery.spec.luau runs reactionFor/questionFor/presentation on PresentationDialogue.luau, which is the
+    generated Dialogue.luau of add_presentation(): the runtime is tested on the generator's real output.
+    Regenerate it with: CONTENT_UPDATE_FIXTURES=1 python3 -m pytest -q tools/tests -k luau_fixture"""
+    add_presentation(lib)
+    _, model, report = content.load_and_validate(lib)
+    assert not report.errors
+    text = content.generate(model, PRESENTATION_LABEL)["Dialogue.luau"]
+    if os.environ.get("CONTENT_UPDATE_FIXTURES") == "1":
+        PRESENTATION_FIXTURE.write_text(text, encoding="utf-8", newline="\n")
+    assert PRESENTATION_FIXTURE.is_file(), f"missing {PRESENTATION_FIXTURE}"
+    assert PRESENTATION_FIXTURE.read_text(encoding="utf-8") == text, \
+        "PresentationDialogue.luau is stale: CONTENT_UPDATE_FIXTURES=1 python3 -m pytest -q tools/tests -k luau_fixture"
+
+
+def test_question_variant_may_name_a_relative_its_cond_guarantees(lib, capsys):
+    set_cell(lib, "dialogue/question_variants.csv", 2, "selector", "cond:citizen.has_family & citizen.loyalty >= 70")
+    set_cell(lib, "dialogue/question_variants.csv", 2, "question_text", "{family} trusts you, {ruler}. Feed us?")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+    # the trait: selector guarantees no relation
+    set_cell(lib, "dialogue/question_variants.csv", 3, "question_text", "{family} is hungry too, {ruler}.")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1 and "dialogue/question_variants.csv:3:5: [question_text] '{family}' needs a family" in out
+
+
+def test_question_variant_cond_memories_count_as_trigger_reads(lib, capsys):
+    """A cond: selector reads memories like a trigger does (lint knows who reads them)."""
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "memory 'fed_by_ruler' is set but no trigger reads it" in out
+    set_cell(lib, "dialogue/question_variants.csv", 2, "selector", "cond:citizen.memory.fed_by_ruler")
+    code, out = run(capsys, "lint", "--content", lib)
+    assert code == 0 and "memory 'fed_by_ruler' is set but" not in out, out
+    set_cell(lib, "dialogue/question_variants.csv", 2, "selector", "cond:citizen.memory.never_set")
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "dialogue/question_variants.csv:2:4: [selector] memory 'never_set' is never set" in out
+
+
+def test_lint_presentation_hints(lib, capsys):
+    """SPEC §9: a direct scenario with urgency low; a reaction with tags but no emotion (both non-fatal)."""
+    add_presentation(lib)
+    code, out = run(capsys, "lint", "--content", lib)
+    assert code == 0 and "urgency is low" not in out and "has presentation tags but no emotion" not in out, out
+    set_cell(lib, "dialogue/scenarios.csv", 2, "urgency", "low")  # s_hungry_farmer is direct
+    set_cell(lib, "dialogue/scenarios.csv", 3, "delivery_mode", "direct")  # s_smith_tools: low
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_emotion", "")  # r_hf_share keeps beam, bow, warm, 3.5 s
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_low_emotion", "")  # keeps eye_roll, 5 s
+    set_cell(lib, "dialogue/responses.csv", 6, "reaction_delivery", "warm")  # r_st_later: delivery only
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out  # hints, never errors
+    code, out = run(capsys, "lint", "--content", lib)
+    assert code == 0
+    header = read_rows(lib / "dialogue" / "scenarios.csv")[0]
+    col = header.index("urgency") + 1
+    for row, sid in ((2, "s_hungry_farmer"), (3, "s_smith_tools")):
+        assert (f"dialogue/scenarios.csv:{row}:{col}: [urgency] scenario '{sid}' is delivered direct (the citizen "
+                "seeks the ruler out) but its urgency is low") in out, out
+    rheader = read_rows(lib / "dialogue" / "responses.csv")[0]
+    emotion, low_emotion = rheader.index("reaction_emotion") + 1, rheader.index("reaction_low_emotion") + 1
+    assert (f"dialogue/responses.csv:2:{emotion}: [reaction_emotion] the reaction of 'r_hf_share' has presentation "
+            "tags but no emotion") in out
+    assert (f"dialogue/responses.csv:2:{low_emotion}: [reaction_low_emotion] the low-loyalty reaction of "
+            "'r_hf_share' has presentation tags but no emotion") in out
+    assert f"dialogue/responses.csv:6:{emotion}: [reaction_emotion] the reaction of 'r_st_later'" in out
+    assert out.count("has presentation tags but no emotion") == 3  # r_hf_ration's low band has its emotion
+
+
 # ----------------------------------------------------------------------------- CSV round trip helpers
 def test_csv_parser_keeps_raw_bytes_for_unchanged_rows():
     text = '﻿a,b\r\n"x, y","say ""hi"""\r\n"quoted",plain\r\n'
@@ -638,11 +853,10 @@ def test_xlsx_roundtrip_keeps_crlf_and_extra_quoting(lib, tmp_path, capsys):
 
 @needs_openpyxl
 def test_xlsx_roundtrip_real_content(tmp_path, capsys):
-    lib = tmp_path / "content"
-    for spec in content.SPECS:
-        (lib / spec.path).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(REAL / spec.path, lib / spec.path)
+    lib = copy_real(tmp_path)
     _xlsx_roundtrip(lib, tmp_path, capsys)
+    # the real CSVs have none of the SPEC §5.10 columns and no question_variants.csv: the import adds none
+    assert not (lib / "dialogue" / "question_variants.csv").exists()
 
 
 @needs_openpyxl
@@ -1185,6 +1399,286 @@ def test_editing_one_cell_twice_in_one_workbook_needs_a_fresh_export(lib, tmp_pa
     assert read_rows(lib / "dialogue" / "responses.csv")[2][4] == "Writer second try."
 
 
+@needs_openpyxl
+def test_workbook_offers_the_presentation_columns_and_a_variants_sheet(lib, tmp_path, capsys):
+    """SPEC §10: optional TEXT and presentation columns appear in every sheet (after the CSV's own columns, so the
+    existing cells keep their letters), as yellow EDIT columns; enum tags are strict dropdowns."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    assert run(capsys, "export-xlsx", "--content", lib, book)[0] == 0
+    wb = load_workbook(book)
+    assert "question_variants" in wb.sheetnames
+    ws = wb["scenarios"]
+    header = [c.value for c in ws[1]]
+    csv_header = read_rows(lib / "dialogue" / "scenarios.csv")[0]
+    assert header[:len(csv_header)] == csv_header
+    assert header[len(csv_header):] == ["urgency", "delivery_mode", "thought_icon", "thought_bubble_s",
+                                        "question_emotion", "question_expression", "question_gesture",
+                                        "question_delivery"]
+    col = header.index("question_emotion") + 1
+    assert ws.cell(1, col).comment.text.startswith("EDIT — presentation, pick from the dropdown")
+    assert "never changes gameplay" in ws.cell(1, col).comment.text
+    assert ws.cell(2, col).fill.fgColor.rgb.endswith(content.FILL["style"])
+    bubble = header.index("thought_bubble_s") + 1
+    assert ws.cell(1, bubble).comment.text.startswith("EDIT — presentation, a number")
+    lists = [c.value for c in wb["lists"][1]]
+    for name in ("emotions", "expressions", "gestures", "deliveries", "urgencies", "delivery_modes"):
+        assert name in lists, name
+    emotions = content._col_letter(lists.index("emotions") + 1)
+    dvs = {str(dv.formula1): dv for dv in ws.data_validations.dataValidation if dv.type == "list"}
+    dv = dvs[f"lists!${emotions}$2:${emotions}${len(content.EMOTIONS) + 1}"]
+    assert dv.errorStyle == "stop" and f"{content._col_letter(col)}2" in str(dv.sqref)
+    rheader = [c.value for c in wb["responses"][1]]
+    assert rheader[-2:] == ["info: question", "info: effects"]
+    assert "reaction_high_text" in rheader and "reaction_low_bubble_s" in rheader
+    rv = {(dv.type, str(dv.formula1)) for dv in wb["responses"].data_validations.dataValidation}
+    assert rv >= {("textLength", "80")}
+    high = rheader.index("reaction_high_text") + 1
+    assert wb["responses"].cell(1, high).comment.text.startswith("EDIT — player-facing text")
+    assert "80 characters with the longest names" in wb["responses"].cell(1, high).comment.text
+    qv = wb["question_variants"]
+    qheader = [c.value for c in qv[1]]
+    assert qheader == [c.name for c in content.SPEC_BY_KEY["question_variants"].columns] + ["info: question"]
+    assert qv.cell(1, qheader.index("selector") + 1).comment.text.startswith("MECHANICS")
+    assert qv.cell(2, qheader.index("selector") + 1).fill.fgColor.rgb.endswith(content.FILL["mech"])
+    assert qv.cell(2, qheader.index("info: question") + 1).value.startswith("{ruler}, the granary is low")
+    readme = [c.value for c in wb["README"]["A"] if c.value]
+    assert any(str(v).startswith("10. Presentation tags") for v in readme)
+
+
+@needs_openpyxl
+@pytest.mark.parametrize("text_only", [False, True], ids=["full", "text-only"])
+def test_import_adds_a_presentation_column_only_when_the_workbook_uses_it(lib, tmp_path, capsys, text_only):
+    """An import adds an offered column to a CSV only for a value in it; every other CSV keeps its bytes."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    before = csv_bytes(lib)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 2, "reaction_emotion").value = "gratitude"
+    _sheet_cell(wb, "responses", 2, "reaction_tone").value = "happy"
+    _sheet_cell(wb, "responses", 3, "reaction_low_text").value = "Rations again. Of course."
+    _sheet_cell(wb, "responses", 3, "reaction_low_tone").value = "sad"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, *(["--text-only"] if text_only else []))
+    assert code == 0, out
+    assert "TEXT      responses › (header): columns added: reaction_tone, reaction_emotion, reaction_low_text, " \
+           "reaction_low_tone" in out
+    assert "TEXT      responses › r_hf_share [reaction_emotion]: \"\" → 'gratitude'" in out
+    assert "MECHANICS 0" in out and "1 CSV file(s) updated: dialogue/responses.csv" in out
+    after = csv_bytes(lib)
+    assert [rel for rel in CSV_PATHS if after[rel] != before[rel]] == ["dialogue/responses.csv"]
+    rows = read_rows(lib / "dialogue" / "responses.csv")
+    # new columns go next to reaction_text (schema order), the existing ones keep their order
+    assert rows[0] == ["scenario_id", "response_id", "order", "response_text", "reaction_text", "reaction_tone",
+                       "reaction_emotion", "reaction_low_text", "reaction_low_tone", "decision_id"]
+    assert rows[1][5:7] == ["happy", "gratitude"] and rows[2][7:9] == ["Rations again. Of course.", "sad"]
+    assert rows[3][5:9] == ["", "", "", ""]
+    # a fresh export and import of the result changes nothing
+    _xlsx_roundtrip(lib, tmp_path, capsys)
+
+
+@needs_openpyxl
+@pytest.mark.parametrize("how", ["new row", "renamed id"])
+def test_text_only_never_adds_a_column_that_only_an_ignored_row_fills(lib, tmp_path, capsys, how):
+    """Review finding: a tag value only in a row that --text-only ignores (a new row, or a row whose id was renamed)
+    still added its column to the CSV, rewriting every line with an empty cell. The CSV must keep its bytes."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    before = csv_bytes(lib)
+    wb = load_workbook(book)
+    if how == "new row":
+        row, label = wb["responses"].max_row + 1, "r_hf_new"
+        for column, value in (("scenario_id", "s_hungry_farmer"), ("response_id", label), ("order", "4"),
+                              ("response_text", "Eat with me tonight."), ("reaction_text", "Truly, {ruler}?"),
+                              ("decision_id", "d_share_grain")):
+            _sheet_cell(wb, "responses", row, column).value = value
+    else:
+        row, label = 2, "r_hf_shared"
+        _sheet_cell(wb, "responses", row, "response_id").value = label
+    _sheet_cell(wb, "responses", row, "reaction_tone").value = "happy"
+    _sheet_cell(wb, "responses", row, "reaction_emotion").value = "joy"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 0, out
+    assert f"ignored   responses › {label}: new row" in out
+    assert "columns added" not in out and "TEXT 0, MECHANICS 0" in out
+    assert "0 CSV file(s) updated" in out
+    assert csv_bytes(lib) == before
+    # a value in a row it does import still adds the column (and only the columns that row fills)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 3, "reaction_expression").value = "frown"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 0, out
+    assert "TEXT      responses › (header): columns added: reaction_expression\n" in out
+    assert read_rows(lib / "dialogue" / "responses.csv")[0] == [
+        "scenario_id", "response_id", "order", "response_text", "reaction_text", "reaction_expression", "decision_id"]
+
+
+@needs_openpyxl
+def test_text_only_reports_the_columns_it_adds_apart_from_those_it_ignores(lib, tmp_path, capsys):
+    """--text-only adds a filled offered column but never removes one: the report says which part it applied."""
+    from openpyxl import load_workbook
+
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_tone", "happy")
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    ws = wb["responses"]
+    ws.delete_cols([c.value for c in ws[1]].index("reaction_tone") + 1)
+    _sheet_cell(wb, "responses", 3, "reaction_emotion").value = "worry"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 0, out
+    assert "TEXT      responses › (header): columns added: reaction_emotion\n" in out
+    assert "ignored   responses › (header): columns removed: reaction_tone\n" in out
+    rows = read_rows(lib / "dialogue" / "responses.csv")
+    assert rows[0][4:] == ["reaction_text", "decision_id", "reaction_tone", "reaction_emotion"]
+    assert rows[1][6:] == ["happy", ""] and rows[2][6:] == ["", "worry"]
+
+
+@needs_openpyxl
+def test_import_never_adds_a_column_whose_only_value_it_keeps_from_the_csv(lib, tmp_path, capsys):
+    """A tag the CSV dropped after the export, still in the workbook as exported, is kept as in the CSV (finding
+    M4), so its column must not come back empty either."""
+    from openpyxl import load_workbook
+
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_emotion", "curiosity")
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    rows = read_rows(lib / "dialogue" / "responses.csv")  # a developer removes the column after the export
+    write_rows(lib / "dialogue" / "responses.csv", [r[:-1] for r in rows])
+    before = csv_bytes(lib)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "She nods. Slowly."
+    wb.save(book)
+    for flags in ([], ["--text-only"]):
+        code, out = run(capsys, "import-xlsx", "--content", lib, book, *flags)
+        assert code == 0, out
+        assert "kept      responses › r_hf_share [reaction_emotion]: 'curiosity' → \"\"" in out
+        assert "columns added" not in out
+        rows = read_rows(lib / "dialogue" / "responses.csv")
+        assert "reaction_emotion" not in rows[0] and rows[2][4] == "She nods. Slowly."
+        (lib / "dialogue" / "responses.csv").write_bytes(before["dialogue/responses.csv"])
+
+
+@needs_openpyxl
+def test_import_adding_a_column_keeps_the_three_way_merge(lib, tmp_path, capsys):
+    """A new presentation column is TEXT, so a stale workbook may add it, and a CSV text edited after the export
+    is still kept (finding M4); mechanics from the stale workbook are still refused."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    set_cell(lib, "dialogue/responses.csv", 3, "reaction_text", "Dev fixed this line.")  # after the export
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 2, "reaction_emotion").value = "relief"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0, out
+    assert "kept      responses › r_hf_ration [reaction_text]" in out
+    rows = read_rows(lib / "dialogue" / "responses.csv")
+    assert rows[0][5] == "reaction_emotion" and rows[1][5] == "relief" and rows[2][4] == "Dev fixed this line."
+    wb = load_workbook(book)  # the same stale workbook, now with a mechanics edit as well
+    _sheet_cell(wb, "responses", 2, "decision_id").value = "d_grain_gift"
+    wb.save(book)
+    before = csv_bytes(lib)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1 and "refused: dialogue/responses.csv changed after this workbook was exported" in out
+    assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+def test_removing_a_column_from_a_stale_workbook_is_refused(lib, tmp_path, capsys):
+    """Only an added offered column is TEXT: a removed one stays MECHANICS, so a stale workbook can never drop
+    cells that changed in the CSV after the export."""
+    from openpyxl import load_workbook
+
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_tone", "happy")
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    set_cell(lib, "dialogue/responses.csv", 3, "reaction_tone", "sad")  # a developer edit after the export
+    before = csv_bytes(lib)
+    wb = load_workbook(book)
+    ws = wb["responses"]
+    ws.delete_cols([c.value for c in ws[1]].index("reaction_tone") + 1)
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1, out
+    assert ("responses › (header): columns removed: reaction_tone — refused: dialogue/responses.csv changed after "
+            "this workbook was exported") in out
+    assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+def test_question_variants_sheet_creates_the_file_only_from_real_rows(lib, tmp_path, capsys):
+    """question_variants.csv is optional: an empty sheet never creates it; new rows are mechanics (ids, order,
+    selector), so --text-only lists them as not imported and a full import creates the file."""
+    from openpyxl import load_workbook
+
+    (lib / "dialogue" / "question_variants.csv").unlink()
+    book = tmp_path / "book.xlsx"
+    assert run(capsys, "export-xlsx", "--content", lib, book)[0] == 0
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0 and "0 CSV file(s) updated" in out, out
+    assert not (lib / "dialogue" / "question_variants.csv").exists()
+    wb = load_workbook(book)
+    ws = wb["question_variants"]
+    header = [c.value for c in ws[1]]
+    assert ws.max_row == 1  # header only
+    for column, value in (("scenario_id", "s_soldier_pay"), ("variant_id", "v_sp_kind"), ("order", "1"),
+                          ("selector", "trait:kind"), ("question_text", "Our families are hungry, {ruler}. Pay us?"),
+                          ("question_emotion", "worry")):
+        ws.cell(2, header.index(column) + 1).value = value
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 0, out
+    assert "1 mechanics change(s) in the workbook were NOT imported" in out
+    assert "ignored   question_variants › v_sp_kind: new row" in out
+    assert not (lib / "dialogue" / "question_variants.csv").exists()
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0, out
+    assert "MECHANICS question_variants › v_sp_kind: new row" in out
+    assert "1 CSV file(s) updated: dialogue/question_variants.csv" in out
+    assert "1 question variants" in out
+    assert read_rows(lib / "dialogue" / "question_variants.csv") == [
+        ["scenario_id", "variant_id", "order", "selector", "question_text", "question_emotion", "notes"],
+        ["s_soldier_pay", "v_sp_kind", "1", "trait:kind", "Our families are hungry, {ruler}. Pay us?", "worry", ""]]
+    # an invalid new row is refused like any other, naming the sheet cell
+    (lib / "dialogue" / "question_variants.csv").unlink()
+    wb = load_workbook(book)
+    wb["question_variants"].cell(2, header.index("selector") + 1).value = "trait:kindly"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1 and "question_variants!D2 [selector]: unknown trait 'kindly'" in out, out
+    assert not (lib / "dialogue" / "question_variants.csv").exists()
+
+
+@needs_openpyxl
+def test_text_only_takes_variant_text_and_tags_but_never_the_selector(lib, tmp_path, capsys):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "question_variants", 2, "selector").value = "trait:kind"
+    _sheet_cell(wb, "question_variants", 2, "question_gesture").value = "nod"
+    _sheet_cell(wb, "question_variants", 4, "question_text").value = "We held the wall. Where is our pay, {ruler}?"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 0, out
+    assert "TEXT 2, MECHANICS 0" in out
+    assert "ignored   question_variants › v_hf_loyal [selector]: 'cond:citizen.loyalty >= 70' → 'trait:kind'" in out
+    rows = read_rows(lib / "dialogue" / "question_variants.csv")
+    assert rows[1][3] == "cond:citizen.loyalty >= 70" and rows[1][7] == "nod"
+    assert rows[3][4] == "We held the wall. Where is our pay, {ruler}?"
+
+
 def test_export_names_the_cell_with_an_invisible_character(lib, tmp_path, capsys):
     pytest.importorskip("openpyxl")
     set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Bless you!\x0bWe'll work those fields.")
@@ -1277,22 +1771,35 @@ def test_spec_and_readme_follow_the_rulings():
     assert "the numbers `{chance}`" not in readme
 
 
+def test_spec_and_readme_document_the_presentation_columns():
+    """SPEC v1.5 (§5.10) and the editor guide describe the optional presentation metadata."""
+    spec = (REAL / "SPEC.md").read_text(encoding="utf-8")
+    readme = (REAL / "README.md").read_text(encoding="utf-8")
+    assert spec.startswith("# AI Kingdoms content library — formal schema (v1.5, ")
+    assert "\nv1.5 " in spec and "### 5.10" in spec and "dialogue/question_variants.csv" in spec
+    for name in ("reactionFor", "questionFor", "presentation(scenarioId)", "LOYALTY_BANDS", "GESTURE_CUE"):
+        assert name in spec, name
+    for word in content.EMOTIONS + content.EXPRESSIONS + content.GESTURES + content.DELIVERIES:
+        assert f"`{word}`" in spec, word
+    assert "## Presentation tags (optional)" in readme and "question_variants" in readme
+
+
 def test_real_content_player_text_is_13_plus_friendly():
     """Content review: no execution wording in player-facing text (the mechanics keep DeserterExecuted)."""
     tables, _, report = content.load_and_validate(REAL)
     assert not report.errors
     for spec in content.SPECS:
         texts = [c.name for c in spec.columns if c.kind == "text"]
+        if spec.key not in tables:
+            assert spec.optional, spec.path
+            continue
         for row in tables[spec.key].rows:
             for col in texts:
                 assert "execut" not in row.get(col).lower(), f"{spec.path}:{row.num} [{col}]: {row.get(col)}"
 
 
 def test_real_content_rejects_a_strike_by_the_captains(tmp_path, capsys):
-    lib = tmp_path / "content"
-    for spec in content.SPECS:
-        (lib / spec.path).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(REAL / spec.path, lib / spec.path)
+    lib = copy_real(tmp_path)
     rows = read_rows(lib / "dialogue" / "consequences.csv")
     row = next(i for i, r in enumerate(rows, 1) if r[0] == "speaker_refuses_work")
     set_cell(lib, "dialogue/consequences.csv", row, "kind", "strike")
