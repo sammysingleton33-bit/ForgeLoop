@@ -1,9 +1,11 @@
-# AI Kingdoms content library — formal schema (v1.1, 2026-10-12)
+# AI Kingdoms content library — formal schema (v1.2, 2026-10-12)
 
 Owner of the format and the importer: `tools/content/content.py`. Editor guide for writers: [`README.md`](README.md).
 Model rules come from FORGE-00 (model decisions 1–7, 2026-10-12). The starter rows are a **DRAFT proposal**, not approved dialogue.
 
 v1.1 applies the content review of 2026-10-12: model decision 6 guards in the validator, mechanics placeholders in notices, presentation columns (`thought_icon`, `reaction_tone`), unlock gating, kingdom-gain anti-farming, rules for several rulers per kingdom, the runtime meaning of `actions.csv`, and a safer workbook import. Items that need a contract change are marked **(contract: FORGE-00)**.
+
+v1.2 applies the FORGE-05 review of PR #53 and the FORGE-00 decisions on it: `fireDecision` results are final (loyalty decayed and clamped, §6.5), a runtime loyalty clamp per decision (§6.3), `fireAction` as the one anti-farming point of `actions.csv` (§6.9), integer start loyalty (§6.2), citizen keys for the shown history (§6.8), frozen generated modules (§7), the contracted G13.4 events (§8), `reaction_text` ≤ 80, stricter text and number checks (§2), and a workbook import that refuses formulas and never reverts a newer CSV text (§10).
 
 ## 1. Files and pipeline
 
@@ -26,7 +28,7 @@ games/game-001/src/shared/Content/ (ReplicatedStorage.Game.Content)
 | `build` | Runs validate, then writes the generated modules. Output is deterministic: running it twice gives identical bytes. |
 | `check` | Exits 1 if validation fails or a generated file is missing or differs from what `build` would write (CI). |
 | `export-xlsx [path]` | Writes the editing workbook (default `games/game-001/content/AI_Kingdoms_Content.xlsx`), stamped with the CSV versions it was made from (§10). |
-| `import-xlsx <path> [--build] [--text-only]` | Reads the workbook back (§10). It validates first and writes the CSVs only when there are 0 errors. It always lists every change, split into TEXT, MECHANICS and NOTES. Rows you did not change keep their exact original bytes. `--build` regenerates the Luau too; `--text-only` takes only the TEXT, choice and notes columns. |
+| `import-xlsx <path> [--build] [--text-only]` | Reads the workbook back (§10). It validates first and writes the CSVs only when there are 0 errors. It always lists every change, split into TEXT, MECHANICS and NOTES, and the cells it kept as in the CSV. Rows you did not change keep their exact original bytes. `--build` regenerates the Luau too; `--text-only` takes only the TEXT, choice and notes columns. Formula cells, and text that a CSV edited after the export changed too, are refused. |
 | `fmt` | Rewrites every CSV in canonical form (Python `csv` minimal quoting, `\n` line ends). |
 
 All commands take `--content DIR` (default `games/game-001/content`). `build`, `check` and `import-xlsx` also take `--out DIR` (default `games/game-001/src/shared/Content`).
@@ -39,19 +41,20 @@ All commands take `--content DIR` (default `games/game-001/content`). `build`, `
 |---|---|---|
 | `id` | `^[a-z][a-z0-9_]*$`, ≤ 40 chars | Lower-case snake case. Luau keywords are allowed (emitted as `["end"]`). |
 | `tag` | `^[A-Za-z][A-Za-z0-9_]*$`, ≤ 40 chars | Memory tags; `rulerVisited` style is allowed. |
-| `int` | `-3`, `+3`, `3` (`3.0` is accepted as 3) | Signed columns may use an explicit `+`. |
-| `number` | decimal, e.g. `0.85`, `-1.5` | No `nan` or `inf`. |
+| `int` | `-3`, `+3`, `3` (`3.0` is accepted as 3) | Signed columns may use an explicit `+`. ASCII digits only, like `number`. |
+| `number` | decimal, e.g. `0.85`, `-1.5`, `.5`, `1e3` | ASCII digits `0-9` only: no `_` separators, no Arabic-Indic, full-width or superscript digits, no `nan`, `inf` or hex (also inside conditions). |
 | `bool` | `true` / `false` (any case) | Empty means the column default. |
 | `list` | `a;b;c` | Spaces around items are ignored. A trailing `;` is allowed. |
 | `kv list` | `food:-20;gold:5`, `greedy:+3;kind:-2` | Each key at most once. |
 | `resource` | `food`, `wood`, `stone`, `gold` | CONTRACTS G2 (`iron` is VS-2). |
 | `cond` | condition expression (§4) | Parsed at build time into `{ Clause }`. |
-| `TEXT` | player-facing text, one line | It has a length limit. It may not have leading or trailing spaces or line breaks. Placeholders: §3. |
+| `TEXT` | player-facing text, one line | It has a length limit. It may not have leading or trailing spaces or line breaks, and it may not **start** with `=`, `+`, `-` or `@`: a spreadsheet opening the CSV would run it as a formula (CSV injection). Start with a letter, a digit or a quote mark instead (a dialogue dash is `—`). Placeholders: §3. |
 | `choice` | a value from a short list | Presentation, edited together with the text (`thought_icon`, `reaction_tone`). |
 | `notes` | free text for designers | Multi-line is allowed. It is never exported to the game. |
 
 - Unknown columns are errors, and so are missing required columns. Column order inside a file is free, because the importer reads by header name. Fully blank rows are ignored.
-- **Invisible characters are errors in every cell**: control characters U+0000–U+001F (a notes cell may hold tabs and line breaks), U+007F–U+009F, zero-width U+200B–U+200D and U+2060, U+FEFF, and the line/paragraph separators U+2028/U+2029. The message names the character and its position, e.g. `invisible character U+000B (vertical tab (Shift+Enter in Word)) at position 11`. A workbook cannot hold most of them, so this keeps `export-xlsx` working.
+- **Invisible characters are errors in every cell**: control characters U+0000–U+001F (a notes cell may hold tabs and line breaks), U+007F–U+009F, the soft hyphen U+00AD, zero-width U+200B–U+200D and U+2060, U+FEFF, the line/paragraph separators U+2028/U+2029, and the bidirectional controls U+200E/U+200F (marks), U+202A–U+202E (embeddings and overrides) and U+2066–U+2069 (isolates), which reorder how a line is shown. The message names the character and its position, e.g. `invisible character U+202E (right-to-left override) at position 6`. A workbook cannot hold most of them, so this also keeps `export-xlsx` working.
+- **Encoding.** Every CSV is UTF-8. A file that is not names the first bad byte, its byte offset, and the spreadsheet row and column it falls in, e.g. `dialogue/scenarios.csv:3: not UTF-8 text: byte 0xE9 at byte offset 538 (column 8)`.
 
 ## 3. TEXT placeholders
 The game fills placeholders in at runtime. Which ones a column may use depends on whether a single citizen is speaking:
@@ -142,7 +145,7 @@ A scenario named by an `unlock_scenario` consequence is generated with `locked =
 | response_id | K | id | globally unique |
 | order | M | int | 1–4, unique within the scenario; each scenario has **2–4** responses |
 | response_text | T | ≤ 70 | the ruler's answer |
-| reaction_text | T | ≤ 140 | the citizen's reaction |
+| reaction_text | T | ≤ 80 | the citizen's reaction, shown in a speech bubble (FORGE-04's reaction bubble `maxChars` is 80; FORGE-00 decision L7) |
 | reaction_tone | C | `happy` `angry` `sad` `neutral` | optional column; default `neutral` (CONTRACTS G13.3 `reaction.tone`) |
 | decision_id | M | id | must exist in decisions; the underlying mechanics |
 | notes | N | | optional column |
@@ -274,17 +277,22 @@ Each row is an independent effect that fires when its event fires and its `condi
 ## 6. Effect model (what the runtime does with the data; ContentQuery implements 3–5 and 9)
 1. **Reputation.** Every ruler has six values, 0–100, starting from `categories.start`. Every change is a history entry `{ t, category, delta, source, text }` (the field names of CONTRACTS G13.4). `source` is the decision_id or action_id, and `text` is the action notice_text or the scenario/response text.
 2. **Loyalty and obedience.**
-   - Loyalty is affection. It is stored per citizen, 0–100, and starts at 50 + chemistry/4.
+   - Loyalty is affection. It is stored per citizen, 0–100, and starts at the integer `ContentQuery.startLoyalty(chemistry)` = `math.floor(50 + chemistry/4 + 0.5)` (45–55, halves round up; FORGE-00 decision L12). CitizenService uses this function for every citizen it generates, so the formula lives in one place.
    - Obedience is compliance. It is derived from rep.authority and rep.fear, weighted by the citizen's traits' `obedience_bias`.
    - Unrest risk uses both, plus kingdom happiness and stability.
 3. **Personality.** Listener loyalty change = Σ_c(`weight_c` of the listener's traits × dR_c) × reach × chemistry multiplier.
    - reach: speaker 1, family 0.6, friends 0.4, rivals −0.3, whole kingdom 0.2 for public acts.
    - Explicit `*_loyalty` columns and `trait_overrides` are added on top.
+   - **Clamp (FORGE-00 decision M3).** The change one decision, or one action firing, applies to one listener is clamped at runtime, after the personality term, chemistry and anti-farming decay: speaker ±25, family, friends and rivals ±10, kingdom/audience listeners ±5 (`ContentQuery.LOYALTY_CLAMP`). The cap therefore includes the personality term, which the validator cannot see. The validator still checks the explicit columns (`*_loyalty` −10..+10, and the kingdom-wide floor of §5.3). Loyalty **consequences** are separate effects with their own magnitude (validated −20..+20 and by the §5.3 floor); they are not part of this clamp.
 4. **Chemistry.** −20 to +20 per citizen, rolled at generation (seeded). Gains are multiplied by (1 + chem/40) and losses by (1 − chem/40). `speaker_chemistry` may move it by at most **±5** from the rolled value over a whole match (`ContentQuery.driftChemistry`), and its gains decay like loyalty (6.5). living-kingdom.md §1 says "fixed for the match": **FORGE-00 to confirm the ±5 drift or rule chemistry fixed** (then validate speaker_chemistry as 0).
 5. **Anti-farming.** The n-th firing of a farm_key within `repeat_window_s` multiplies gains by `repeat_decay^(n−1)`. Losses are never reduced.
    - Reputation gains use the **ruler's** firing history.
    - Loyalty gains, kingdom happiness/stability/morale gains, chemistry gains and gain consequences (loyalty, morale, happiness, stability > 0; unrest_pressure < 0) use the **kingdom's** firing history. This extends model decision 5 so repeated cheap construction and free answers cannot farm the conditions that gate riots and the Crown Arena **(FORGE-00 to confirm)**.
-   - `ContentQuery.fireDecision(id, rulerHistory, kingdomHistory, now)` computes both multipliers, records the firing and returns the decayed bundle. The runtime applies it **as given**: ReputationService must not decay it again **(contract: FORGE-00 — the G13.4 comment "anti-farming per content farm_key" should read "delta already decayed by ContentQuery")**.
+   - `ContentQuery.fireDecision(id, rulerHistory, kingdomHistory, now, listeners?)` is the single anti-farming point of a choice (CONTRACTS G13.1). It computes both multipliers, records the firing and returns the final bundle, which the runtime applies **as given**: no second decay and no second clamp, in ReputationService or anywhere else.
+     - Order in ConversationService: re-check eligibility; pay the cost (`choicePreview(...).cost`) through TreasuryService and stop if that fails; then call `fireDecision` once. The result's `cost` is informational: it is already paid.
+     - Reputation `rep` is decayed with the ruler's multiplier. Kingdom happiness/stability/morale, `speaker.chemistry`, gain consequences and the explicit loyalty columns are decayed with the kingdom's. Losses are never decayed.
+     - `speaker.loyalty`, `family_loyalty`, `friends_loyalty`, `rivals_loyalty`, `audience_loyalty` are what a listener with no personality reaction gets: the column, decayed, clamped (§6.3). The raw columns are in `loyalty_raw`, the raw reputation vector in `rep_raw` (both for logs and previews).
+     - `listeners`: pass `{ { citizen, relation, traits, chemistry? } }` (the speaker, their family, friends, rivals and the decision's audience, each once under its closest relation) and the result holds `{ citizen, relation, loyalty }` per listener: personality, trait overrides, chemistry, decay and clamp included. A listener's change is that `loyalty`, never `loyalty` plus a column. `ContentQuery.decisionLoyalty(id, traits, relation, chemistry, e.kingdom_multiplier)` gives the same number one listener at a time.
    - Construction gives reputation only through rows whose `condition` measures a need.
 6. **Unrest.** Rebellions, riots and kingdom strikes come only from sustained conditions (threshold + minimum duration + instigator), configured outside this library. A decision can only add `unrest_pressure` or local consequences, within the caps of §5.3 and §5.4: no strike of soldiers or of more than half an occupation, no group stoppage below −50 %, no consequence longer than 600 s, kingdom-wide loyalty and stability each ≥ −5 per decision.
 7. **No hidden rolls.** Dialogue outcomes are deterministic. A consequence with `chance` < 1 is shown to the player as a risk before they choose, with its real odds (`{chance}`). The Kingdom.Converse options carry only `{ id, text }`, so the conversation panel reads cost and risks client-side from the replicated content: `ContentQuery.choicePreview(scenarioId, responseId)` → `{ decision, cost, risks }`, and `ContentQuery.consequenceNotice(risk, names)` for the text **(contract: FORGE-00 may instead extend G13.3 options with `cost?` and `risks?`)**.
@@ -292,14 +300,15 @@ Each row is an independent effect that fires when its event fires and its `condi
    - Reputation and `decision.*` belong to each ruler.
    - **Conversations** (`Kingdom.Converse` / `Kingdom.Choose`): the ctx uses the acting ruler's `rep.*`, `decision.*` and the citizen's obedience towards that ruler.
    - **Thought bubbles** (kingdom-wide, refreshed every 20 s): `rep.<c>` is the highest value among the kingdom's current rulers, `decision.<id>` is true when any of them chose it, and obedience is computed from those values. When a ruler opens the conversation, Converse re-checks with that ruler's own values and offers the next eligible scenario, or nil.
-   - **Histories.** `FarmHistory`: one per ruler (reputation) and one per kingdom (loyalty and kingdom conditions), so co-rulers cannot each farm the same citizens. `ShownHistory` (cooldowns, once_per_citizen) is one per kingdom.
+   - **Histories.** `FarmHistory`: one per ruler (reputation) and one per kingdom (loyalty and kingdom conditions), so co-rulers cannot each farm the same citizens. `ShownHistory` (cooldowns, once_per_citizen) is one per kingdom, keyed by `ContentQuery.citizenKey(citizen)`: the citizen's `id`, else `entityId` (G13.2 `CitizenView`), else `key` (FORGE-01 `Population.Citizen`). `eligibleScenarios` errors when it gets a history for a citizen with none of the three, and `markShown` takes the same key.
    - **Memories set by content** (`memory_tag` and `memory` consequences) are **pinned**: they are kept apart from, or never evicted by, the G5 rule of at most 8 memories, so a promise always comes due and `!citizen.memory.quarry_shored` stays false once the quarry is shored **(contract: FORGE-00 to note this in G5/G13.2)**.
    - **(contract: FORGE-00)** Record these rules in CONTRACTS G13.1.
 9. **Actions at runtime** (`reputation/actions.csv`).
-   - When an event fires, `ContentQuery.actionFirings(event, kingdomCtx)` returns the rows whose `condition` holds. `Name:arg` also matches rows written for the bare `Name`. Rows are grouped per action_id: **one event = one firing of that action's farm_key**.
-   - A firing's reputation and kingdom deltas are the sums of its rows, decayed with `scaleGains(…, multiplier)` (gains only).
+   - **`ContentQuery.fireAction(event, kingdomCtx, rulerHistory, kingdomHistory, now, listeners?)` is the single anti-farming point of `actions.csv`** and mirrors `fireDecision`. ReputationService calls it once per event and applies every result **as given**.
+   - It reads `actionFirings(event, kingdomCtx)`: the rows whose `condition` holds. `Name:arg` also matches rows written for the bare `Name`. Rows are grouped per action_id: **one event = one firing of that action's farm_key**, recorded in the ruler's and the kingdom's FarmHistory before the next firing is computed.
+   - A firing's `rep` is the sum of its rows with gains × the ruler's multiplier; its `kingdom` (happiness, stability, morale) is the sum with gains × the kingdom's multiplier. Losses are never decayed. The raw sums are in `rep_raw` and `kingdom_raw`; `rows` are the shared, frozen content rows (for notices).
    - Each citizen hears a row when `inActionAudience(row, listener, listenerCtx)` holds: `kingdom` = everyone; `soldiers` = occupations whose job is soldier (the captain too); `civilians` = everyone else; `occupation:<id>`; `speaker` = the one citizen the event is about (e.g. the visited citizen). Then the row's `audience_condition` must hold for that listener.
-   - A listener reacts to **that row's own** rep vector: `actionLoyalty(row, traits, chemistry, multiplier)` = personality at reach 1 for `speaker` and 0.2 for every group, plus `audience_loyalty`. A listener who matches several rows of one firing adds them up.
+   - A listener reacts to **that row's own** rep vector: personality at reach 1 for `speaker` and 0.2 for every group, plus `audience_loyalty`, then gains × the kingdom's multiplier. Pass `listeners = { { citizen, occupation?, speaker?, traits, chemistry?, ctx? } }` and each firing returns `listeners = { { citizen, relation, loyalty } }` for every listener who hears at least one row: the rows it hears are summed, then clamped once (§6.3) as `speaker` when it hears a speaker row, else as `kingdom`. `actionLoyalty(row, …)` is the same for one row.
 10. **Not in this library.** Thresholds, rates and windows of the sustained rules live in FORGE-01 config `Society.luau`, including a **fear relaxation rate** (fear drifts back towards its start when nothing feeds it), so fear-led rule keeps its risk "when fear drops" **(request: FORGE-01)**.
 
 ## 7. Generated Luau (`games/game-001/src/shared/Content/`)
@@ -308,6 +317,7 @@ Every file starts with:
 --!strict
 -- GENERATED by tools/content/content.py from games/game-001/content — do not edit
 ```
+- Every module is **deeply frozen** when it is required (a local `deepFreeze` helper the generator writes into each file): the tables are shared by every consumer, so writing into one is an error, never a silent change for everybody. `ContentQuery.new(data)` freezes the tables it is given the same way, so nothing ContentQuery returns is a mutable shared record; everything else it returns (effects, previews, firings) is a fresh table the caller owns.
 - Map keys are sorted, except resources (G2 order) and categories (canonical order).
 - Lists keep file order.
 - Empty optional values are **omitted** (nil), never `""`.
@@ -340,26 +350,30 @@ Every file starts with:
       audience?, audience_condition = { Clause }, audience_loyalty, kingdom = { happiness, stability, morale }, notice? } },  -- file order
   byEvent = { [event] = { index into actions } } }
 ```
+**Reading trait weights.** A trait's value weight for a category is `Traits[traitId].weights[category]` (e.g. `Traits.kind.weights.compassion`); the CSV columns `weight_<category>` are not flat fields of the record. `ContentQuery.loyaltyDelta` reads them this way; any consumer that scores a decision for a citizen must too.
+
 `target` keeps the source spelling, e.g. `"occupation:farmer"`. `param` is a string, or `nil` when empty. For `memory` it is always set: it falls back to consequence_id. `icon` and `tone` are always set (defaults `request`, `neutral`); `locked` is always a boolean.
 
-**ContentQuery** (hand-written, pure; full API in its header): `evaluate`, `eligibleScenarios` (respects `locked` via `CitizenState.unlocked`), `markShown`, `choicePreview`, `decisionEffects`, `fireDecision`, `loyaltyDelta`, `decisionLoyalty`, `actionFirings`, `inActionAudience`, `actionLoyalty`, `repeatMultiplier`, `recordFire`, `scaleGain`, `scaleGains`, `applyChemistry`, `startLoyalty`, `driftChemistry`, `noticeValues`, `fill`, `consequenceNotice`, `durationText`, `REACH`, `CATEGORIES`, `OPS`, `GAIN_SIGN`.
+**ContentQuery** (hand-written, pure; full API in its header): `evaluate`, `eligibleScenarios` (respects `locked` via `CitizenState.unlocked`), `citizenKey`, `markShown`, `choicePreview`, `decisionEffects`, `fireDecision`, `fireAction`, `loyaltyDelta`, `decisionLoyalty`, `actionFirings`, `inActionAudience`, `actionLoyalty`, `repeatMultiplier`, `recordFire`, `scaleGain`, `scaleGains`, `clampLoyalty`, `applyChemistry`, `startLoyalty`, `driftChemistry`, `noticeValues`, `fill`, `consequenceNotice` (the mechanics values are filled last, so a name can never replace the real odds), `durationText`, `REACH`, `LOYALTY_CLAMP`, `CATEGORIES`, `OPS`, `GAIN_SIGN`. A nil citizen, a nil/NaN/infinite `now` or a missing history is an error with a clear message, never a silent "no decay".
 
 ## 8. Action events
 **Bus events (CONTRACTS G9, on `Contracts/GameEvents`).** `KingdomJoined` `MatchPhaseChanged` `BuildingPlaced` `BuildingCompleted` `BuildingUpgraded` `BuildingDestroyed` `ResourceGathered` `UnitsRecruited` `ObjectiveCaptured` `KingdomEliminated` `MatchEnded`. A keep upgrade is `BuildingUpgraded:keep` (there is no separate KeepUpgraded event, so it is never counted twice).
 
-**Proposed reputation triggers (no contract yet).** These are not bus events: `GameEvents` throws on an undeclared name. ReputationService (FORGE-01) would raise them internally from its own state, or FORGE-00 adds them to G13 with these payloads **(contract: FORGE-00; producer: FORGE-01)**. Lint warns once per name until then.
+**Reputation action events (CONTRACTS G13.4).** FORGE-01 produces them and appends them to the GameEvents bus as D-024 did. Lint treats every G9 and G13.4 event as known and warns once per name on any other.
 
-| Event | Fired when | Suggested payload |
-|---|---|---|
-| `ObjectiveLost` | an objective owned by the kingdom is captured by another (derived from `ObjectiveCaptured`) | (objectiveId, KingdomId lost, by: KingdomId) |
-| `RaidDefended` / `RaidSuffered` / `RaidAbandoned` | a raid on the kingdom ends: driven off / not stopped / not stopped while the ruler was nearby (VS-2 raids) | (KingdomId, raidId, rulerUserId?) |
-| `FoodShortage` | fed ratio falls below 0.5 (also sets `event.shortage`) | (KingdomId, fedRatio) |
-| `RulerVisited` | a ruler talks to a citizen (the G5 `rulerVisited` memory); audience `speaker` | (rulerUserId, entityId) |
-| `EnemyAttacked` | the kingdom's army engages an enemy kingdom | (KingdomId, target: KingdomId) |
-| `EnemyFarmsBurned` | the kingdom burns enemy farms (VS-2) | (KingdomId, target: KingdomId) |
-| `TruceBroken` | the kingdom breaks a truce (VS-3) | (KingdomId, target: KingdomId) |
-| `DeserterExecuted` / `DeserterForgiven` | the ruler's choice about a caught deserter (VS-2) | (rulerUserId, entityId) |
-| `PhaseEndedWellFed` (requested) | a phase ends and the lowest fed ratio during it was ≥ 0.9; would replace the interim `MatchPhaseChanged:<phase>` rows of `phase_fed_*` | (KingdomId, phase) |
+| Event | Stage | Fired when | Suggested payload |
+|---|---|---|---|
+| `FoodShortage` | VS-1 | fed ratio falls below 0.5 (also sets `event.shortage`) | (KingdomId, fedRatio) |
+| `RulerVisited` | VS-1 | a ruler talks to a citizen (the G5 `rulerVisited` memory); audience `speaker` | (rulerUserId, entityId) |
+| `ObjectiveLost` | VS-1 | an objective owned by the kingdom is captured by another (derived from `ObjectiveCaptured`) | (objectiveId, KingdomId lost, by: KingdomId) |
+| `PhaseEndedWellFed` | VS-1 | a phase ends and the lowest fed ratio during it was ≥ 0.9; replaces the interim `MatchPhaseChanged:<phase>` rows of `phase_fed_*` once FORGE-01 fires it | (KingdomId, phase) |
+| `RaidDefended` / `RaidAbandoned` | VS-2 | a raid on the kingdom ends: driven off / not stopped while the ruler was nearby | (KingdomId, raidId, rulerUserId?) |
+| `EnemyAttacked` | VS-2 | the kingdom's army engages an enemy kingdom | (KingdomId, target: KingdomId) |
+| `EnemyFarmsBurned` | VS-2 | the kingdom burns enemy farms | (KingdomId, target: KingdomId) |
+| `TruceBroken` | VS-2 | the kingdom breaks a truce | (KingdomId, target: KingdomId) |
+| `DeserterExecuted` / `DeserterForgiven` | VS-2 | the ruler's choice about a caught deserter (player-facing text stays 13+: "faced the ruler's justice") | (rulerUserId, entityId) |
+
+**Not contracted.** `RaidSuffered` (a raid ends not stopped while the ruler was elsewhere) is used by `raid_suffered` but is **not** in G13.4. It is not the same as `RaidAbandoned` (the ruler was nearby and left), so the row is kept rather than re-pointed, and lint warns once **(contract: FORGE-00 to add it to G13.4, producer FORGE-01; until then nothing fires the row)**.
 
 Arena results are not reputation events: the Crown Arena ends the match, so nothing could follow from them.
 
@@ -382,7 +396,7 @@ Arena results are not reputation events: the Crown Arena ends the match, so noth
 
 **Actions**
 - A construction event gives positive reputation without a `condition`.
-- An event name that is not a CONTRACTS G9 bus event (once per name).
+- An event name that is neither a CONTRACTS G9 bus event nor a G13.4 reputation event (once per name; today only `RaidSuffered`, §8).
 
 **Library**
 - A `citizen.memory.<tag>` is used but no decision or memory consequence sets it (system memories `rulerVisited` and `raided` are known).
@@ -401,12 +415,17 @@ Former lint "chance < 1 without notice_text" is now a validate error (§5.4).
   - consequence kind and target, audience, job_id, key_role, names kind, opposite, once_per_citizen, thought_icon and reaction_tone.
 - Text-length validations reject over-long text.
 - Every cell is stored as text (`@`), so Excel keeps `+3`, `true` and ids unchanged.
-- **Export stamp.** The hidden `lists` sheet records the SHA-256 of every CSV at export time.
+- **Export stamp.** The hidden `lists` sheet records the SHA-256 of every CSV at export time (`stamp_file`, `stamp_sha256`), and a short hash of every editable cell (text, choice and notes) keyed `table|row|column` (`stamp_cell`, `stamp_cell_sha256`; the row is the id, or `row N` in names and actions).
 - Import:
+  - **Formulas are refused.** The workbook is read with formulas as formulas (openpyxl `data_only=False`), and any cell holding one is an error naming the cell, e.g. `consequences!J2: this cell is a formula ('=…')`. Reading cached values instead would silently blank a formula that has no cached value and take whatever value another one last showed. TEXT that starts with `=`, `+`, `-` or `@` is refused by validation (§2).
   - It reads only the known sheets and columns. An unknown sheet or column is an error: never add or remove columns.
   - A missing table sheet leaves that CSV untouched.
   - **Order.** Rows go back to their CSV order (by id; new ids at the end, in workbook order). A table without an id (names, actions) is restored when its rows are only re-sorted. Sorting and filtering are therefore safe, and the priority tie-break (file order) cannot change from the workbook.
-  - **Stale workbooks.** If a CSV changed after the export (or the workbook has no stamp), any MECHANICS difference from the current CSV is refused with the cell, the old and new value and the reason; text-only differences are still taken. Export a fresh workbook, or use `--text-only`.
+  - **Stale workbooks: mechanics.** If a CSV changed after the export (or the workbook has no stamp), any MECHANICS difference from the current CSV is refused with the cell, the old and new value and the reason. Export a fresh workbook, or use `--text-only`.
+  - **Stale workbooks: text, choice and notes (review finding M4), with or without `--text-only`.** For every editable cell where the workbook and the current CSV differ:
+    - the CSV cell is as exported (its file is unchanged, or the cell stamp matches the CSV): the workbook value is taken;
+    - the workbook cell is as exported (the cell stamp matches the workbook): only the CSV changed, so the newer CSV value is **kept** and listed as `kept`;
+    - both changed, or the workbook has no cell stamp and the file changed: the cell is **refused**, named with both values (`… refused: it was also changed in dialogue/responses.csv after this workbook was exported …`), and nothing is written. Export a fresh workbook and redo that edit.
   - **`--text-only`** takes only TEXT, choice and notes cells, matched by id (by position for names and actions, where moved rows are refused); every mechanics difference is listed as ignored.
-  - It always prints every change as `TEXT`, `MECHANICS` or `NOTES` lines.
+  - It always prints every change as `TEXT`, `MECHANICS` or `NOTES` lines, plus the `kept` cells.
   - It validates the whole library before writing anything, and rewrites only the rows that changed.

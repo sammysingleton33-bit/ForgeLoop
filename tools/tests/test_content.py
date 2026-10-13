@@ -1,13 +1,15 @@
 """Tests for tools/content/content.py (game-001 content library). Run: python -m pytest -q tools/tests
 
 Most tests run on the mini library in tools/tests/fixtures/content/valid, so they do not depend on the
-starter content. Tests marked `real_only` also run against games/game-001/content when it exists.
+starter content. The tests named test_real_* always run against games/game-001/content: it is on main, so
+a missing or renamed CSV must fail them (never skip them; review finding L4).
 """
 import csv
 import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -26,8 +28,6 @@ FIXTURE = HERE / "fixtures" / "content" / "valid"
 BROKEN_CASES = json.loads((HERE / "fixtures" / "content" / "broken_cases.json").read_text(encoding="utf-8"))
 REAL = ROOT / "games" / "game-001" / "content"
 REAL_OUT = ROOT / "games" / "game-001" / "src" / "shared" / "Content"
-HAS_REAL = all((REAL / s.path).is_file() for s in content.SPECS)
-real_only = pytest.mark.skipif(not HAS_REAL, reason="starter content not present yet")
 # Workbook tests need openpyxl. CI must install it (pip install pytest openpyxl) or these are skipped.
 needs_openpyxl = pytest.mark.skipif(importlib.util.find_spec("openpyxl") is None,
                                     reason="openpyxl not installed (python3 -m pip install openpyxl)")
@@ -85,17 +85,33 @@ def test_fixture_library_validates(capsys):
            "6 categories, 4 actions — 0 errors" in out
 
 
-@real_only
 def test_real_content_validates(capsys):
     code, out = run(capsys, "validate")
     assert code == 0, out
     assert out.strip().endswith("— 0 errors")
 
 
-@real_only
 def test_real_generated_luau_is_up_to_date(capsys):
     code, out = run(capsys, "check")
     assert code == 0, out + f"\n(run: python3 tools/content/content.py build)"
+
+
+def test_real_content_gates_can_never_be_skipped():
+    """Review finding L4: a skipif on the real library would silently drop the staleness gate if a CSV were
+    renamed. The real-content tests carry no skip marker, and a renamed CSV fails `check`."""
+    real_tests = [v for k, v in globals().items() if k.startswith("test_real_") and callable(v)]
+    assert test_real_generated_luau_is_up_to_date in real_tests and len(real_tests) >= 5
+    for fn in real_tests:
+        marks = [m.name for m in getattr(fn, "pytestmark", [])]
+        assert "skipif" not in marks and "skip" not in marks, f"{fn.__name__} must always run"
+
+
+def test_check_fails_when_a_csv_is_renamed(lib, tmp_path, capsys):
+    out = tmp_path / "out"
+    assert run(capsys, "build", "--content", lib, "--out", out)[0] == 0
+    (lib / "reputation" / "actions.csv").rename(lib / "reputation" / "actions_old.csv")
+    code, text = run(capsys, "check", "--content", lib, "--out", out)
+    assert code == 1 and "reputation/actions.csv: missing file" in text
 
 
 @pytest.mark.parametrize("case", BROKEN_CASES, ids=[c["name"] for c in BROKEN_CASES])
@@ -120,6 +136,35 @@ def test_missing_file_and_csv_syntax_errors(lib, capsys):
     assert code == 1
     assert "citizens/names.csv: missing file" in out
     assert "dialogue/responses.csv:2: a quoted cell is never closed" in out
+
+
+def test_non_utf8_file_names_the_row_and_byte(lib, capsys):
+    """Review finding L10: the error gives the byte offset and the spreadsheet row of the bad byte."""
+    path = lib / "dialogue" / "scenarios.csv"
+    rows = read_rows(path)
+    rows[1][-1] = "line one\nline two, with a comma"  # a quoted multi-line cell: row numbers count records
+    write_rows(path, rows)
+    data = path.read_bytes().replace(b"My hammer is cracked", b"My hammer is caf\xe9 cracked")
+    path.write_bytes(data)
+    offset = data.index(b"\xe9")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1
+    assert (f"dialogue/scenarios.csv:3: not UTF-8 text: byte 0xE9 at byte offset {offset} (column 8) is not "
+            "valid UTF-8; save the CSV as 'CSV UTF-8'") in out
+
+
+@pytest.mark.parametrize("text, ok", [
+    ("3", True), ("+3", True), ("-0.5", True), (".5", True), ("5.", True), ("1e3", True), ("3.0", True),
+    ("1_0", False), ("\u0661\u0662", False), ("\uff11\uff12", False), ("\u0663.\u0665", False), ("nan", False),
+    ("inf", False), ("0x10", False), ("1,5", False), ("--1", False), ("", False), ("\u00b2", False),
+])
+def test_numbers_are_ascii_decimal_only(text, ok):
+    """Review finding L3: float() alone took '1_0', Arabic-Indic and full-width digits."""
+    if ok:
+        assert content._num(text) == float(text)
+    else:
+        with pytest.raises(ValueError):
+            content._num(text)
 
 
 def test_names_minimum_counts(lib, capsys):
@@ -259,6 +304,10 @@ def test_generated_shapes(lib):
     assert 'audience_condition = { { var = "citizen.hunger", op = ">=", value = 0.5 } },' in reputation
     names = files["Names.luau"]
     assert '"D\'Arcy-Mae",' in names
+    # every module is deeply frozen at require time (review finding L6)
+    for name, text in files.items():
+        assert "local function deepFreeze<T>(value: T): T" in text, name
+        assert "\nreturn deepFreeze({\n" in text and text.endswith("\n})\n"), name
     # presentation (CONTRACTS G13.3) and unlock gating (SPEC §5.4)
     assert dialogue.count("locked = true,") == 1  # s_smith_tools, opened by c_unlock_followup
     assert 'icon = "request",' in dialogue and 'tone = "neutral",' in dialogue
@@ -329,13 +378,27 @@ def test_lint_contract_memory_cue_and_number_warnings(lib, capsys):
     set_cell(lib, "dialogue/consequences.csv", 2, "notice_text", "Farmers work 20% slower for 2 minutes.")
     code, out = run(capsys, "lint", "--content", lib)
     assert code == 0
-    # one warning per event name that is not on the CONTRACTS G9 bus
-    assert "event 'RaidDefended' (rows 5) is not a CONTRACTS G9 bus event" in out
-    assert out.count("is not a CONTRACTS G9 bus event") == 1
+    # RaidDefended is a contracted CONTRACTS G13.4 event: no warning (review finding L5)
+    assert "RaidDefended" not in out and "is not a contracted event" not in out
+    set_cell(lib, "reputation/actions.csv", 5, "event", "RaidSuffered")
+    code, out = run(capsys, "lint", "--content", lib)
+    # one warning per event name that is neither a G9 bus event nor a G13.4 reputation event
+    assert ("event 'RaidSuffered' (rows 5) is not a contracted event (CONTRACTS G9 bus or G13.4 reputation "
+            "events)") in out
+    assert out.count("is not a contracted event") == 1
     assert "memory 'fed_by_ruler' is set but no trigger reads it" in out
     assert "memory 'promised_tools' is set but" not in out  # s_smith_tools reads it
     assert "cue 'cue_grumble' is not in the cue vocabulary" in out
     assert "consequences.csv:2:10: [notice_text] the notice types a number" in out
+
+
+@pytest.mark.parametrize("event", content.REPUTATION_EVENTS + ("UnitsRecruited", "MatchPhaseChanged:Conflict"))
+def test_lint_knows_every_contracted_event(lib, capsys, event):
+    """Review finding L5: every CONTRACTS G9 and G13.4 event (VS-1 and VS-2) is known to lint."""
+    set_cell(lib, "reputation/actions.csv", 5, "event", event)
+    code, out = run(capsys, "lint", "--content", lib)
+    name = event.split(":")[0]
+    assert code == 0 and f"event '{name}'" not in out and "[event]" not in out, out
 
 
 def test_lint_flags_a_locked_scenario_that_nothing_unlocks(lib, capsys):
@@ -410,7 +473,6 @@ def test_xlsx_roundtrip_keeps_crlf_and_extra_quoting(lib, tmp_path, capsys):
     _xlsx_roundtrip(lib, tmp_path, capsys)
 
 
-@real_only
 @needs_openpyxl
 def test_xlsx_roundtrip_real_content(tmp_path, capsys):
     lib = tmp_path / "content"
@@ -445,6 +507,11 @@ def test_workbook_layout(lib, tmp_path, capsys):
     assert any(t == "list" and f.startswith("lists!") for t, f in kinds)  # occupation dropdown
     rv = {(dv.type, str(dv.formula1)) for dv in wb["responses"].data_validations.dataValidation}
     assert ("list", "decisions!$A$2:$A$2000") in rv  # decision_id dropdown, live from the decisions sheet
+    assert ("textLength", "80") in rv  # reaction_text: FORGE-04's bubble maxChars (decision L7)
+    rheader = [c.value for c in wb["responses"][1]]
+    assert "Max 80 characters" in wb["responses"].cell(1, rheader.index("reaction_text") + 1).comment.text
+    stamps = [c.value for c in wb["lists"][1]]
+    assert stamps[-4:] == ["stamp_file", "stamp_sha256", "stamp_cell", "stamp_cell_sha256"]
     cv = {str(dv.formula1) for dv in wb["consequences"].data_validations.dataValidation if dv.type == "list"}
     assert len(cv) == 2  # kind and target
 
@@ -720,6 +787,126 @@ def test_responses_sheet_has_read_only_help_columns(lib, tmp_path, capsys):
     assert csv_bytes(lib) == before
 
 
+@needs_openpyxl
+def test_import_refuses_formula_cells(lib, tmp_path, capsys):
+    """Review finding L1: data_only=True blanked a formula without a cached value (here an optional notice, so
+    the import 'succeeded' and lost the text) and silently took the cached value of any other formula."""
+    from openpyxl import load_workbook
+
+    before = csv_bytes(lib)
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    cell = _sheet_cell(wb, "consequences", 2, "notice_text")
+    cell.value = '="Farmers work slower."'  # openpyxl stores this as a formula (data_type 'f'), no cached value
+    assert cell.data_type == "f"
+    _sheet_cell(wb, "scenarios", 2, "priority").value = "=80+1"
+    wb.save(book)
+    for flags in ((), ("--text-only",)):
+        code, out = run(capsys, "import-xlsx", "--content", lib, book, *flags)
+        assert code == 1, out
+        assert ("book.xlsx: consequences!J2: this cell is a formula ('=\"Farmers work slower.\"'); formulas are "
+                "never imported: type the value itself, as text") in out
+        assert "book.xlsx: scenarios!D2: this cell is a formula ('=80+1')" in out
+        assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+@pytest.mark.parametrize("value", ["=cmd|' /C calc'!A0", "+5 rations for all", "-2+3+cmd|' /C calc'!A0",
+                                   "@SUM(1+1)"])
+def test_import_refuses_text_that_a_spreadsheet_would_run(lib, tmp_path, capsys, value):
+    """Review finding L1 (CSV injection): a TEXT cell typed as text but starting with = + - @ is refused."""
+    from openpyxl import load_workbook
+
+    before = csv_bytes(lib)
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    cell = _sheet_cell(wb, "responses", 2, "reaction_text")
+    cell.value = value
+    cell.data_type = "s"  # a string, as Excel stores text typed into a Text cell
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 1, out
+    assert f"book.xlsx › responses!E2 [reaction_text]: text may not start with '{value[0]}'" in out
+    assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+@pytest.mark.parametrize("text_only", [False, True], ids=["full", "text-only"])
+def test_import_keeps_text_that_changed_in_the_csv_after_the_export(lib, tmp_path, capsys, text_only):
+    """Review finding M4: a CSV text edited after the export was silently reverted by the old workbook,
+    even with --text-only. Now a cell the writer did not touch keeps the newer CSV text (and is listed)."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Dev fixed this line.")  # after the export
+    set_cell(lib, "dialogue/scenarios.csv", 2, "notes", "dev note")
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "The writer's new line."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, *(["--text-only"] if text_only else []))
+    assert code == 0, out
+    rows = read_rows(lib / "dialogue" / "responses.csv")
+    assert rows[1][4] == "Dev fixed this line."
+    assert rows[2][4] == "The writer's new line."
+    assert read_rows(lib / "dialogue" / "scenarios.csv")[1][-1] == "dev note"
+    assert "1 change(s) from the workbook: TEXT 1, MECHANICS 0, NOTES 0" in out
+    assert "import-xlsx: 2 cell(s) kept as in the CSV (changed there after your export" in out
+    assert ("kept      responses › r_hf_share [reaction_text]: 'Bless you, {ruler}! We will not forget this.' → "
+            "'Dev fixed this line.'") in out
+    assert "kept      scenarios › s_hungry_farmer [notes]" in out
+
+
+@needs_openpyxl
+@pytest.mark.parametrize("text_only", [False, True], ids=["full", "text-only"])
+def test_import_refuses_text_changed_in_both_the_csv_and_the_workbook(lib, tmp_path, capsys, text_only):
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Dev fixed this line.")
+    after_dev = csv_bytes(lib)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 2, "reaction_text").value = "The writer rewrote it too."
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "An unrelated edit."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, *(["--text-only"] if text_only else []))
+    assert code == 1, out
+    assert ("book.xlsx › responses!E2 [reaction_text]: responses › r_hf_share [reaction_text]: refused: it was "
+            "also changed in dialogue/responses.csv after this workbook was exported (CSV now 'Dev fixed this "
+            "line.', workbook 'The writer rewrote it too.'). Export a fresh workbook and redo this edit there") in out
+    assert "no CSV was changed" in out
+    assert csv_bytes(lib) == after_dev
+
+
+@needs_openpyxl
+def test_import_without_cell_stamps_refuses_text_only_where_the_csv_changed(lib, tmp_path, capsys):
+    """A workbook from the older tool has file stamps only: text is taken from tables whose CSV is unchanged,
+    and refused where the CSV changed (the import cannot tell which cells moved)."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    lists = wb["lists"]
+    header = [c.value for c in lists[1]]
+    lists.delete_cols(header.index("stamp_cell") + 1, 2)
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "A writer's line."
+    _sheet_cell(wb, "scenarios", 2, "thought_text").value = "Still hungry."
+    wb.save(book)
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Dev fixed this line.")
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1, out
+    assert "responses!E2 [reaction_text]" in out and "no per-cell export stamp" in out
+    assert "scenarios!" not in out  # scenarios.csv did not change: its text would be taken
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Bless you, {ruler}! We will not forget this.")
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)  # the CSV is as exported again
+    assert code == 0, out
+    assert read_rows(lib / "dialogue" / "responses.csv")[2][4] == "A writer's line."
+
+
 def test_export_names_the_cell_with_an_invisible_character(lib, tmp_path, capsys):
     pytest.importorskip("openpyxl")
     set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Bless you!\x0bWe'll work those fields.")
@@ -749,12 +936,12 @@ def test_import_rejects_invisible_characters(lib, tmp_path, capsys):
 
 
 # ----------------------------------------------------------------------------- real content regressions
-@real_only
 def test_real_content_keeps_the_balance_review_fixes(capsys):
     code, out = run(capsys, "lint")
     assert code == 0
-    for rid in ("captain_drill_drill_myself", "miner_rockfall_inspect"):
-        assert f"free answer '{rid}'" not in out  # finding: free 'ruler present' answers dominated
+    for rid in ("captain_drill_drill_myself", "miner_rockfall_inspect", "elder_fear_whispers_open_court"):
+        assert f"free answer '{rid}'" not in out  # findings: free answers dominated (L11: elder open court)
+    assert "free answer" not in out
     for tag in ("feast_promised", "forge_half_promise", "promised_harvest", "promised_pay", "inspected_face"):
         assert f"memory '{tag}' is set but no trigger reads it" not in out  # every promise comes due
     _, model, report = content.load_and_validate(REAL)
@@ -769,7 +956,17 @@ def test_real_content_keeps_the_balance_review_fixes(capsys):
             assert a["condition"], a
 
 
-@real_only
+def test_real_content_player_text_is_13_plus_friendly():
+    """Content review: no execution wording in player-facing text (the mechanics keep DeserterExecuted)."""
+    tables, _, report = content.load_and_validate(REAL)
+    assert not report.errors
+    for spec in content.SPECS:
+        texts = [c.name for c in spec.columns if c.kind == "text"]
+        for row in tables[spec.key].rows:
+            for col in texts:
+                assert "execut" not in row.get(col).lower(), f"{spec.path}:{row.num} [{col}]: {row.get(col)}"
+
+
 def test_real_content_rejects_a_strike_by_the_captains(tmp_path, capsys):
     lib = tmp_path / "content"
     for spec in content.SPECS:
@@ -783,6 +980,15 @@ def test_real_content_rejects_a_strike_by_the_captains(tmp_path, capsys):
     code, out = run(capsys, "validate", "--content", lib)
     assert code == 1
     assert f"dialogue/consequences.csv:{row}:3: [target] 'captain' are soldiers" in out
+
+
+def test_lint_and_contentquery_share_the_loyalty_clamp():
+    """Lint scores answers with ContentQuery's formula, so the two copies of the M3 clamp must agree."""
+    source = (REAL_OUT / "ContentQuery.luau").read_text(encoding="utf-8")
+    m = re.search(r"ContentQuery\.LOYALTY_CLAMP = table\.freeze\(\{([^}]*)\}\)", source)
+    assert m, "ContentQuery.LOYALTY_CLAMP not found"
+    luau = {k.strip(): int(v) for k, v in (item.split("=") for item in m.group(1).split(","))}
+    assert luau == content.LOYALTY_CLAMP
 
 
 def test_cli_entry_point_runs():

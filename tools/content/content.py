@@ -14,8 +14,9 @@ Commands (all take --content DIR; build/check also take --out DIR)
                            the CSV versions it was made from
   import-xlsx PATH [--build] [--text-only]
                            read the workbook back into the CSVs: validates first, lists every change (TEXT /
-                           MECHANICS / NOTES), refuses mechanics from a workbook older than the CSVs, restores
-                           the original row order; --text-only takes only the text. Unchanged rows keep their bytes
+                           MECHANICS / NOTES), refuses formulas and mechanics from a workbook older than the CSVs,
+                           never reverts a CSV text edited after the export, restores the original row order;
+                           --text-only takes only the text. Unchanged rows keep their bytes
   fmt                      rewrite every CSV in canonical form
 
 Standard library + openpyxl (only for the two workbook commands).
@@ -83,6 +84,13 @@ BUS_EVENTS = (
     "BuildingDestroyed", "ResourceGathered", "UnitsRecruited", "ObjectiveCaptured", "KingdomEliminated",
     "MatchEnded",
 )
+# CONTRACTS G13.4: the reputation action events FORGE-01 produces and appends to the GameEvents bus.
+REPUTATION_EVENTS = (
+    "FoodShortage", "RulerVisited", "ObjectiveLost", "PhaseEndedWellFed",  # VS-1
+    "RaidDefended", "RaidAbandoned", "EnemyAttacked", "EnemyFarmsBurned", "TruceBroken", "DeserterExecuted",
+    "DeserterForgiven",  # VS-2
+)
+CONTRACTED_EVENTS = BUS_EVENTS + REPUTATION_EVENTS  # lint warns on any other event name in actions.csv
 CONSTRUCTION_EVENTS = ("BuildingPlaced", "BuildingCompleted", "BuildingUpgraded")
 MIN_GIVEN_NAMES = 60
 MIN_FAMILY_NAMES = 40
@@ -101,11 +109,25 @@ STRIKE_MAX_DURATION_S = 120  # ... for at most two minutes
 GROUP_PRODUCTIVITY_FLOOR = -0.5  # productivity on any group target (not speaker/family/friends)
 KINGDOM_LOYALTY_FLOOR = -5  # per decision: kingdom audience_loyalty + loyalty consequences on broad targets
 KINGDOM_STABILITY_FLOOR = -5  # per decision: stability column + stability consequences
-# Characters that are invisible or break a workbook (openpyxl refuses C0 controls).
+# Runtime clamp of one decision's applied loyalty change per listener (ContentQuery.LOYALTY_CLAMP, decision M3).
+LOYALTY_CLAMP = {"speaker": 25, "family": 10, "friends": 10, "rivals": 10, "kingdom": 5}
+# Characters that are invisible, reorder text or break a workbook (openpyxl refuses C0 controls).
 _INVISIBLE_NAMES = {0x2028: "line separator", 0x2029: "paragraph separator", 0x200B: "zero-width space",
                     0x200C: "zero-width non-joiner", 0x200D: "zero-width joiner", 0x2060: "word joiner",
                     0xFEFF: "zero-width no-break space", 0x7F: "delete", 0x09: "tab", 0x0A: "line break",
-                    0x0D: "carriage return", 0x0B: "vertical tab (Shift+Enter in Word)"}
+                    0x0D: "carriage return", 0x0B: "vertical tab (Shift+Enter in Word)",
+                    0x00AD: "soft hyphen",
+                    # bidirectional controls: they reorder how the text is shown (review finding L2)
+                    0x200E: "left-to-right mark", 0x200F: "right-to-left mark",
+                    0x202A: "left-to-right embedding", 0x202B: "right-to-left embedding",
+                    0x202C: "pop directional formatting", 0x202D: "left-to-right override",
+                    0x202E: "right-to-left override", 0x2066: "left-to-right isolate",
+                    0x2067: "right-to-left isolate", 0x2068: "first strong isolate",
+                    0x2069: "pop directional isolate"}
+# Player-facing text may not start with these: a spreadsheet would run the cell as a formula when the CSV is
+# opened (CSV injection, review finding L1). Notes are not checked: they never reach the game, and they often
+# start with '+' or '-' ("+housing capacity").
+FORMULA_STARTS = ("=", "+", "-", "@")
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 TAG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -163,7 +185,7 @@ SPECS: tuple[TableSpec, ...] = (
         Column("response_id", "key", "unique id of the answer"),
         Column("order", "mech", "1-4 position in the menu"),
         Column("response_text", "text", "the ruler's answer", 70),
-        Column("reaction_text", "text", "the citizen's reaction", 140),
+        Column("reaction_text", "text", "the citizen's reaction (speech bubble)", 80),
         Column("reaction_tone", "style", "how the reaction is shown: happy | angry | sad | neutral (default neutral)",
                required=False, choices="reaction_tones"),
         Column("decision_id", "mech", "the mechanics this answer applies (decisions sheet)", choices="decision_ids"),
@@ -500,15 +522,37 @@ def load_csv_table(spec: TableSpec, content_dir: Path, report: Report) -> Table 
     if not path.is_file():
         report.add("error", None, None, None, f"missing file (expected {spec.path})", source=source)
         return None
+    data = path.read_bytes()
     try:
-        doc = parse_csv(path.read_bytes().decode("utf-8"))
-    except UnicodeDecodeError:
-        report.add("error", None, None, None, "not UTF-8 text (save the CSV as 'CSV UTF-8')", source=source)
+        doc = parse_csv(data.decode("utf-8"))
+    except UnicodeDecodeError as e:
+        row, col = _csv_position(data[:e.start].decode("utf-8"))
+        report.add("error", None, row, None, f"not UTF-8 text: byte 0x{data[e.start]:02X} at byte offset {e.start} "
+                                             f"(column {col}) is not valid UTF-8; save the CSV as 'CSV UTF-8'",
+                   source=source)
         return None
     except CsvSyntaxError as e:
         report.add("error", None, e.row, None, str(e), source=source)
         return None
     return table_from_records(spec, source, [(r.row, r.fields) for r in doc.records], report)
+
+
+def _csv_position(prefix: str) -> tuple[int, int]:
+    """(spreadsheet row, 1-based column) where `prefix` ends: record breaks and commas outside quotes count."""
+    row, col, quoted = 1, 1, False
+    i, n = 0, len(prefix)
+    while i < n:
+        c = prefix[i]
+        if c == '"':
+            quoted = not quoted
+        elif not quoted and c == ",":
+            col += 1
+        elif not quoted and c in "\r\n":
+            if c == "\r" and i + 1 < n and prefix[i + 1] == "\n":
+                i += 1
+            row, col = row + 1, 1
+        i += 1
+    return row, col
 
 
 def load_tables(content_dir: Path, report: Report, overrides: dict[str, Table] | None = None) -> dict[str, Table]:
@@ -612,7 +656,13 @@ class Vocab:
         return names
 
 
+# ASCII decimal only (review finding L3): float() alone also takes '1_0', Arabic-Indic and full-width digits.
+_NUM_RE = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
+
+
 def _num(text: str) -> float:
+    if not _NUM_RE.fullmatch(text.strip(" ")):
+        raise ValueError(text)
     v = float(text)
     if math.isnan(v) or math.isinf(v):
         raise ValueError(text)
@@ -843,6 +893,10 @@ class Validator:
             ok = False
         if spec is not None and spec.limit is not None and len(v) > spec.limit:
             self.err(table, row, col, f"text is {len(v)} characters; the limit is {spec.limit}")
+            ok = False
+        if v[:1] in FORMULA_STARTS:
+            self.err(table, row, col, f"text may not start with '{v[0]}': a spreadsheet would run it as a formula "
+                                      "(CSV injection); reword it so it starts with a letter, a digit or a quote mark")
             ok = False
         for problem in _placeholder_problems(v, placeholders):
             self.err(table, row, col, problem)
@@ -1571,10 +1625,12 @@ def sample_population(model: Model, occupation: str, n: int, rng) -> list[tuple[
 
 
 def speaker_loyalty(model: Model, d: dict, traits: list[str], chemistry: float) -> float:
-    """ContentQuery.decisionLoyalty(d, traits, "speaker", chemistry) at multiplier 1 (model decisions 3-4)."""
+    """ContentQuery.decisionLoyalty(d, traits, "speaker", chemistry) at multiplier 1 (model decisions 3-4),
+    clamped like the runtime (LOYALTY_CLAMP)."""
     total = sum((model.traits[t]["weights"][c] or 0) * (d["rep"][c] or 0) for t in traits for c in CATEGORIES)
     total += (d["speaker"]["loyalty"] or 0) + sum(d["trait_overrides"].get(t, 0) for t in traits)
-    return total * (1 + chemistry / 40) if total > 0 else total * (1 - chemistry / 40)
+    value = total * (1 + chemistry / 40) if total > 0 else total * (1 - chemistry / 40)
+    return max(-LOYALTY_CLAMP["speaker"], min(LOYALTY_CLAMP["speaker"], value))
 
 
 def _scenario_sample(model: Model, sid: str, n: int = 400) -> list[tuple[list[str], int]]:
@@ -1700,7 +1756,7 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
     event_rows: dict[str, tuple[Table, Row]] = {}
     for (t, row), a in zip(model.action_rows, model.actions):
         name = (a["event"] or "").split(":")[0]
-        if a["event"] and name not in BUS_EVENTS:
+        if a["event"] and name not in CONTRACTED_EVENTS:
             events.setdefault(name, []).append(row.num)
             event_rows.setdefault(name, (t, row))
         if name in CONSTRUCTION_EVENTS and not a["condition"] and any((a["rep"][c] or 0) > 0 for c in CATEGORIES):
@@ -1714,9 +1770,10 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
                                                    "columns, so the text cannot go stale")
     for name, nums in events.items():
         t, row = event_rows[name]
-        report.warn(t, row.num, "event", f"event '{name}' (rows {', '.join(map(str, nums))}) is not a CONTRACTS G9 bus "
-                                         "event: it is a proposed reputation trigger (SPEC §8) that needs a contract "
-                                         "(FORGE-00) and FORGE-01 must fire it")
+        report.warn(t, row.num, "event", f"event '{name}' (rows {', '.join(map(str, nums))}) is not a contracted event "
+                                         "(CONTRACTS G9 bus or G13.4 reputation events): nothing fires it until "
+                                         "FORGE-00 contracts it and FORGE-01 produces it, or point the rows at a "
+                                         "contracted event (SPEC §8)")
     known_memories = set(SYSTEM_MEMORIES)
     setters: dict[str, tuple[Table, int, str]] = {}
     for did, d in model.decisions.items():
@@ -1832,6 +1889,22 @@ def lua_emit(v: Any, depth: int, prefix: str, suffix: str) -> list[str]:
     return lines
 
 
+# Every generated module is deeply frozen (review finding L6): the tables are shared by every consumer, so a
+# caller that writes into one gets an error instead of silently changing the content for everybody.
+FREEZE_HELPER = [
+    "-- Deeply frozen: the content is shared by every consumer, so nobody may change it.",
+    "local function deepFreeze<T>(value: T): T",
+    "\tfor _, child in value :: any do",
+    '\t\tif type(child) == "table" and not table.isfrozen(child) then',
+    "\t\t\tdeepFreeze(child)",
+    "\t\tend",
+    "\tend",
+    "\treturn table.freeze(value :: any) :: any",
+    "end",
+    "",
+]
+
+
 def luau_module(data: Any, sources: list[str], content_label: str) -> str:
     header = [
         "--!strict",
@@ -1840,8 +1913,8 @@ def luau_module(data: Any, sources: list[str], content_label: str) -> str:
         f"-- then run: python3 {GENERATOR} build",
         "",
     ]
-    body = lua_emit(data, 0, "return ", "")
-    return "\n".join(header + body) + "\n"
+    body = lua_emit(data, 0, "return deepFreeze(", ")")
+    return "\n".join(header + FREEZE_HELPER + body) + "\n"
 
 
 def _clean(rec: dict) -> dict:
@@ -2019,6 +2092,9 @@ LIST_SHEET = "lists"
 README_SHEET = "README"
 MAX_ROWS = 2000  # validations cover this many rows so new rows get dropdowns too
 STAMP_HEADERS = ("stamp_file", "stamp_sha256")  # export stamp in the hidden lists sheet (stale-workbook check)
+# Per-cell export stamp of every editable cell (text, choice, notes): "table|row label|column" -> short SHA-256 of
+# the value at export. import-xlsx uses it to never revert a CSV cell edited after the export (finding M4).
+CELL_STAMP_HEADERS = ("stamp_cell", "stamp_cell_sha256")
 # Read-only helper columns: export-xlsx fills them in, import-xlsx ignores them.
 INFO_COLUMNS = {"responses": ("info: question", "info: effects")}
 EDITABLE_KINDS = ("text", "style", "notes")  # what import-xlsx --text-only takes from the workbook
@@ -2156,6 +2232,11 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
     for j, spec in enumerate(SPECS, 2):
         list_ws.cell(row=j, column=stamp_col, value=spec.path)
         list_ws.cell(row=j, column=stamp_col + 1, value=_sha256(content_dir / spec.path) or "")
+    list_ws.cell(row=1, column=stamp_col + 2, value=CELL_STAMP_HEADERS[0])
+    list_ws.cell(row=1, column=stamp_col + 3, value=CELL_STAMP_HEADERS[1])
+    for j, (cell_key, digest) in enumerate(_cell_stamps(tables).items(), 2):
+        list_ws.cell(row=j, column=stamp_col + 2, value=cell_key).number_format = "@"
+        list_ws.cell(row=j, column=stamp_col + 3, value=digest).number_format = "@"
     for name, (sheet, col) in live.items():
         if col in headers[sheet]:
             letter = _col_letter(headers[sheet].index(col) + 1)
@@ -2264,6 +2345,44 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
     return 0, report
 
 
+def _cell_hash(value: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
+def _row_labels(spec: TableSpec, rows: list[Row]) -> list[str | None]:
+    """The label _match_rows gives each CSV row: its key (first occurrence only), or 'row N' without a key."""
+    key = KEY_COLUMN.get(spec.key)
+    labels: list[str | None] = []
+    seen: set[str] = set()
+    for i, r in enumerate(rows):
+        if not key:
+            labels.append(f"row {i + 2}")
+            continue
+        k = _row_key(spec, r)
+        labels.append(k if k is not None and k not in seen else None)
+        if k is not None:
+            seen.add(k)
+    return labels
+
+
+def _cell_stamps(tables: dict[str, Table]) -> dict[str, str]:
+    """{'table|row label|column': hash of the value} for every editable cell, absent optional columns included."""
+    out: dict[str, str] = {}
+    for spec in SPECS:
+        t = tables.get(spec.key)
+        if t is None:
+            continue
+        cols = [c.name for c in spec.columns if c.kind in EDITABLE_KINDS]
+        for label, r in zip(_row_labels(spec, t.rows), t.rows):
+            if label is None:
+                continue
+            for col in cols:
+                out[f"{spec.key}|{label}|{col}"] = _cell_hash(r.values.get(col, ""))
+    return out
+
+
 def _column_values(t: Table | None, col: str) -> list[str]:
     if t is None:
         return []
@@ -2284,6 +2403,7 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         ("", ""),
         ("HOW TO EDIT", "head"),
         ("1. Change text only in YELLOW columns (marked EDIT in the header comment). Stay within the character limit.", ""),
+        ("   Text may not start with = + - or @ (a spreadsheet would run it as a formula). Never type formulas.", ""),
         ("2. GREY columns are mechanics (ids, numbers, conditions). Changing them changes gameplay — see SPEC.md first.", ""),
         ("3. WHITE columns are notes for designers; they never reach the game. BLUE columns are read-only help.", ""),
         ("4. Never rename sheets or header cells, never add or remove columns or sheets. Add rows at the bottom.", ""),
@@ -2300,6 +2420,8 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         ("    python3 tools/content/content.py import-xlsx <file.xlsx> --text-only --build", "code"),
         ("--text-only takes only the yellow and white columns, so mechanics can never change by accident (safest).", ""),
         ("Without it, grey columns are imported too, but only if nobody changed the CSV files since this export.", ""),
+        ("Text a developer changed in the CSV after this export is never undone: cells you did not edit keep the newer "
+         "text; a cell you both changed is refused (export a fresh workbook).", ""),
         ("The import checks everything first and changes nothing if it finds an error; errors name the sheet and cell.", ""),
         ("It always lists every change it made, split into TEXT, MECHANICS and NOTES.", ""),
         ("", ""),
@@ -2357,11 +2479,12 @@ def _cell_text(value: Any) -> str:
     return str(value)
 
 
-def _read_stamps(ws) -> dict[str, str] | None:
+def _read_stamps(ws, headers: tuple[str, str] = STAMP_HEADERS) -> dict[str, str] | None:
+    """{key: digest} from two columns of the hidden lists sheet; None when the columns are absent."""
     header = [str(c.value).strip() if c.value is not None else "" for c in ws[1]]
-    if STAMP_HEADERS[0] not in header or STAMP_HEADERS[1] not in header:
+    if headers[0] not in header or headers[1] not in header:
         return None
-    fi, si = header.index(STAMP_HEADERS[0]), header.index(STAMP_HEADERS[1])
+    fi, si = header.index(headers[0]), header.index(headers[1])
     stamps: dict[str, str] = {}
     for row in ws.iter_rows(min_row=2, values_only=True):
         if fi < len(row) and row[fi]:
@@ -2369,22 +2492,30 @@ def _read_stamps(ws) -> dict[str, str] | None:
     return stamps
 
 
-def read_workbook(path: Path, report: Report) -> tuple[dict[str, Table], dict[str, str] | None]:
-    """The table sheets (info columns dropped) and the export stamp ({csv path: sha256}, None when absent)."""
+@dataclass
+class Stamps:
+    files: dict[str, str] | None = None  # {csv path: sha256 of the file at export}
+    cells: dict[str, str] | None = None  # {'table|row label|column': hash of the editable cell at export}
+
+
+def read_workbook(path: Path, report: Report) -> tuple[dict[str, Table], Stamps]:
+    """The table sheets (info columns dropped) and the export stamps (files and editable cells; None when absent)."""
     _require_openpyxl()
     from openpyxl import load_workbook
 
     source = path.name
     try:
-        wb = load_workbook(path, data_only=True)
+        # data_only=False: a formula is read as a formula and refused below. data_only=True would blank a formula
+        # without a cached value and silently take the cached value of any other (review finding L1).
+        wb = load_workbook(path, data_only=False)
     except Exception as e:  # noqa: BLE001 - any unreadable file
         report.add("error", None, None, None, f"cannot open workbook: {e}", source=source)
-        return {}, None
+        return {}, Stamps()
     tables: dict[str, Table] = {}
-    stamps: dict[str, str] | None = None
+    stamps = Stamps()
     for ws in wb.worksheets:
         if ws.title == LIST_SHEET:
-            stamps = _read_stamps(ws)
+            stamps = Stamps(_read_stamps(ws), _read_stamps(ws, CELL_STAMP_HEADERS))
             continue
         if ws.title == README_SHEET:
             continue
@@ -2395,13 +2526,21 @@ def read_workbook(path: Path, report: Report) -> tuple[dict[str, Table], dict[st
                                                   f"(known sheets: {known}, {README_SHEET}, {LIST_SHEET})", source=source)
             continue
         records: list[tuple[int, list[str]]] = []
-        for r_idx, row in enumerate(ws.iter_rows(values_only=True), 1):
+        for r_idx, row in enumerate(ws.iter_rows(), 1):
             cells = []
-            for c_idx, value in enumerate(row, 1):
+            for c_idx, cell in enumerate(row, 1):
+                where = f"{ws.title}!{_col_letter(c_idx)}{r_idx}"
+                if cell.data_type == "f":
+                    formula = getattr(cell.value, "text", None) or str(cell.value)
+                    report.add("error", None, None, None, f"{where}: this cell is a formula ({_short(formula, 40)}); "
+                                                          "formulas are never imported: type the value itself, as "
+                                                          "text", source=source)
+                    cells.append("")
+                    continue
                 try:
-                    cells.append(_cell_text(value))
+                    cells.append(_cell_text(cell.value))
                 except ValueError as e:
-                    report.add("error", None, None, None, f"{ws.title}!{_col_letter(c_idx)}{r_idx}: {e}", source=source)
+                    report.add("error", None, None, None, f"{where}: {e}", source=source)
                     cells.append("")
             while cells and cells[-1] == "" and records:
                 cells.pop()
@@ -2535,6 +2674,44 @@ def _diff_table(spec: TableSpec, cur: Table, wb: Table) -> list[Change]:
     return changes
 
 
+def _guard_editable(spec: TableSpec, cur: Table, wbt: Table, stamps: Stamps, file_unchanged: bool,
+                    report: Report) -> list[Change]:
+    """Review finding M4: never revert a text, choice or notes cell of the CSV that changed after the export.
+    For each editable cell where the workbook and the current CSV differ:
+      - the CSV cell is as exported (file stamp unchanged, or cell stamp = CSV value): take the workbook value;
+      - the workbook cell is as exported (cell stamp = workbook value): only the CSV changed, so keep the CSV
+        value (the cell is reset in `wbt` and returned, so the import can list it);
+      - both changed, or no stamp can tell: refuse it, naming the cell (export a fresh workbook)."""
+    kept: list[Change] = []
+    if file_unchanged:
+        return kept
+    pairs, _, _ = _match_rows(spec, cur.rows, wbt.rows)
+    cols = [c.name for c in spec.columns if c.kind in EDITABLE_KINDS and c.name in wbt.header]
+    for c_row, w_row, label in pairs:
+        for col in cols:
+            now, theirs = c_row.values.get(col, ""), w_row.values.get(col, "")
+            if now == theirs:
+                continue
+            stamp = stamps.cells.get(f"{spec.key}|{label}|{col}") if stamps.cells is not None else None
+            if stamp is not None and stamp == _cell_hash(now):
+                continue  # only the workbook changed it
+            if stamp is not None and stamp == _cell_hash(theirs):
+                w_row.values[col] = now
+                kept.append(Change(_change_kind(spec, col), spec.key, label, col, theirs, now, w_row.num, False))
+                continue
+            if stamp is not None:
+                why = f"it was also changed in {spec.path} after this workbook was exported"
+            elif stamps.cells is None:
+                why = (f"{spec.path} changed after the export, and this workbook has no per-cell export stamp (made "
+                       "by an older tool), so the import cannot tell whether this would undo a newer edit")
+            else:
+                why = f"this row was not in {spec.path} when the workbook was exported"
+            report.add("error", wbt, w_row.num, col,
+                       f"{spec.key} › {label} [{col}]: refused: {why} (CSV now {_short(now)}, workbook "
+                       f"{_short(theirs)}). Export a fresh workbook and redo this edit there")
+    return kept
+
+
 def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[Row] | None, str | None]:
     """The current CSV rows with only the TEXT, choice and notes cells taken from the workbook."""
     pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
@@ -2564,6 +2741,7 @@ class ImportResult:
     written: list[str]
     model: Model | None
     changes: list[Change]
+    kept: list[Change] = field(default_factory=list)  # editable cells kept as in the CSV (newer than the export)
 
 
 def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> ImportResult:
@@ -2572,6 +2750,7 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
     if report.errors:
         return ImportResult(1, report, [], None, [])
     changes: list[Change] = []
+    kept: list[Change] = []
     merged: dict[str, Table] = {}
     for key, wbt in sheets.items():
         spec = SPEC_BY_KEY[key]
@@ -2583,6 +2762,8 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
             merged[key] = wbt  # nothing to compare with: validation below has the last word
             continue
         wbt.rows = _restore_order(spec, cur, wbt.rows)
+        file_unchanged = stamps.files is not None and stamps.files.get(spec.path) == _sha256(content_dir / spec.path)
+        kept += _guard_editable(spec, cur, wbt, stamps, file_unchanged, report)
         diff = _diff_table(spec, cur, wbt)
         changes += diff
         if text_only:
@@ -2595,9 +2776,9 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
             merged[key] = Table(spec, wbt.source, list(cur.header), rows, sheet=wbt.sheet)
             continue
         stale = None
-        if stamps is None:
+        if stamps.files is None:
             stale = "this workbook has no export stamp (made by an older tool or by hand)"
-        elif stamps.get(spec.path) != _sha256(content_dir / spec.path):
+        elif not file_unchanged:
             stale = f"{spec.path} changed after this workbook was exported"
         mechanics = [c for c in diff if c.kind == "MECHANICS"]
         if stale and mechanics:
@@ -2609,11 +2790,11 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
             continue
         merged[key] = wbt
     if report.errors:
-        return ImportResult(1, report, [], None, changes)
+        return ImportResult(1, report, [], None, changes, kept)
     tables = load_tables(content_dir, report, overrides=merged)
     model = validate_tables(tables, report)
     if report.errors:
-        return ImportResult(1, report, [], model, changes)
+        return ImportResult(1, report, [], model, changes, kept)
     written = []
     for key, table in merged.items():
         spec = SPEC_BY_KEY[key]
@@ -2621,8 +2802,11 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
         old = None
         old_header: list[str] | None = None
         if csv_path.is_file():
-            old = parse_csv(csv_path.read_bytes().decode("utf-8"))
-            if old.records:
+            try:
+                old = parse_csv(csv_path.read_bytes().decode("utf-8"))
+            except (UnicodeDecodeError, CsvSyntaxError):
+                old = None  # an unreadable file is replaced as a whole
+            if old is not None and old.records:
                 old_header = [h.strip() for h in old.records[0].fields]
         if old_header is not None and set(old_header) == set(table.header):
             order = old_header
@@ -2634,10 +2818,10 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
             csv_path.parent.mkdir(parents=True, exist_ok=True)
             csv_path.write_text(text, encoding="utf-8", newline="")
             written.append(spec.path)
-    return ImportResult(0, report, written, model, changes)
+    return ImportResult(0, report, written, model, changes, kept)
 
 
-def print_changes(changes: list[Change], out=None) -> None:
+def print_changes(changes: list[Change], out=None, kept: list[Change] | None = None) -> None:
     out = out or sys.stdout
     applied = [c for c in changes if c.applied]
     ignored = [c for c in changes if not c.applied]
@@ -2652,6 +2836,11 @@ def print_changes(changes: list[Change], out=None) -> None:
         print(f"import-xlsx: {len(ignored)} mechanics change(s) in the workbook were NOT imported:", file=out)
         for c in ignored[:CHANGE_LINES]:
             print(f"  ignored   {c.describe()}", file=out)
+    if kept:
+        print(f"import-xlsx: {len(kept)} cell(s) kept as in the CSV (changed there after your export; you had not "
+              "edited them in the workbook):", file=out)
+        for c in kept[:CHANGE_LINES]:
+            print(f"  kept      {c.describe()}", file=out)
 
 
 def cmd_export(args) -> int:
@@ -2673,7 +2862,7 @@ def cmd_import(args) -> int:
         print_diags(res.report.errors)
         print(f"import-xlsx: {len(res.report.errors)} error(s); no CSV was changed")
         return 1
-    print_changes(res.changes)
+    print_changes(res.changes, kept=res.kept)
     print(f"import-xlsx: {len(res.written)} CSV file(s) updated{': ' + ', '.join(res.written) if res.written else ''}")
     print(summary_line(res.model, 0))
     if args.build:

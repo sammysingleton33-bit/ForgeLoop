@@ -3,7 +3,17 @@
 -- Source: dialogue/decisions.csv. Edit the CSV files (or the workbook, see content/README.md),
 -- then run: python3 tools/content/content.py build
 
-return {
+-- Deeply frozen: the content is shared by every consumer, so nobody may change it.
+local function deepFreeze<T>(value: T): T
+	for _, child in value :: any do
+		if type(child) == "table" and not table.isfrozen(child) then
+			deepFreeze(child)
+		end
+	end
+	return table.freeze(value :: any) :: any
+end
+
+return deepFreeze({
 	builder_push_on = {
 		id = "builder_push_on",
 		farm_key = "firm_ruling",
@@ -153,7 +163,7 @@ return {
 		farm_key = "open_court",
 		repeat_decay = 0.3,
 		repeat_window_s = 1800,
-		cost = {},
+		cost = { gold = 10 },
 		resources = {},
 		rep = { compassion = 2, honor = 1, competence = 0, courage = 0, authority = -1, fear = -2 },
 		speaker = { loyalty = 5, chemistry = 1 },
@@ -906,4 +916,4 @@ return {
 		consequences = { "kingdom_small_cheer" },
 		memory_tag = "feast_kept",
 	},
-}
+})

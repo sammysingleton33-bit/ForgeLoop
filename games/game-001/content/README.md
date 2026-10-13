@@ -22,6 +22,8 @@ You can rewrite any question, answer or reaction without touching how the game w
    ```
    - `--text-only` (recommended for writing work) takes only the yellow and white columns. Mechanics can never change by accident, even if the developers changed the files after your export.
    - Without `--text-only`, grey columns are imported too, but only if nobody changed the CSV files since your export. Otherwise the import refuses those cells, names them, and asks you to export a fresh workbook.
+   - If a developer changed a text in the CSV files after your export, your workbook never undoes it (with or without `--text-only`). A cell you did not edit keeps the developer's newer text, and the import lists it as `kept`. A cell you both changed is refused and named: export a fresh workbook and redo that one edit.
+   - Formulas are refused (a cell starting with `=` that the spreadsheet calculates). Type the value itself.
    - The import checks the whole workbook first. If anything is wrong it changes **nothing** and names the sheet and cell, e.g. `responses!D5 [response_text]: text is 71 characters; the limit is 70`.
    - It always prints every change it made, marked `TEXT`, `MECHANICS` or `NOTES`, so you can see that only your text moved. Only the rows you changed are rewritten.
 
@@ -32,7 +34,7 @@ You can rewrite any question, answer or reaction without touching how the game w
 | scenarios | question_text | what the citizen says when you select them | 160 |
 | scenarios | thought_icon | bubble icon: request, concern or idea | dropdown |
 | responses | response_text | one of the ruler's 2–4 answers | 70 |
-| responses | reaction_text | the citizen's reaction to that answer | 140 |
+| responses | reaction_text | the citizen's reaction to that answer (a speech bubble) | 80 |
 | responses | reaction_tone | how the reaction looks: happy, angry, sad or neutral | dropdown |
 | consequences | notice_text | short notice when a consequence happens | 100 |
 | actions | notice_text | history-log line explaining a reputation change | 100 |
@@ -43,7 +45,8 @@ You can rewrite any question, answer or reaction without touching how the game w
 
 **Text rules.**
 - Text must be one line, with no spaces at the start or end.
-- No invisible characters. Shift+Enter in Word, zero-width spaces and similar copy-paste leftovers are refused, with their position.
+- Text may not start with `=`, `+`, `-` or `@`: a spreadsheet would treat it as a formula. Start with a letter, a digit or a quote mark; for a dialogue dash use `—`.
+- No invisible characters. Shift+Enter in Word, zero-width spaces, soft hyphens, right-to-left marks and similar copy-paste leftovers are refused, with their position.
 - **Placeholders** are filled in by the game. Use only the ones a column accepts (the header note lists them):
   - in scenarios and responses: `{name}` (the citizen), `{ruler}` (you), `{kingdom}`, `{occupation}` (the citizen's job), and `{family}`, `{friend}`, `{rival}` (a relative's, friend's or rival's name). The last three only work when the scenario's `trigger` requires that relation (`citizen.has_family`, `citizen.has_friend`, `citizen.has_rival`); otherwise the import refuses them, because the name could be missing in the game;
   - in consequence notices: `{name}`, `{ruler}`, `{kingdom}`, `{occupation}`, and the numbers `{chance}` (e.g. 50%), `{magnitude}` (e.g. +5), `{magnitude_pct}` (e.g. 15%) and `{duration}` (e.g. 2 minutes);
@@ -57,7 +60,7 @@ You can rewrite any question, answer or reaction without touching how the game w
 - `responses`: 2–4 rows per scenario. Each one is an answer plus the citizen's reaction, and it points to a `decision_id`.
 - `decisions`: the mechanics of an answer. They cover what it costs, how each reputation category moves, whose loyalty changes, its anti-farming settings, and which `consequences` follow.
 - `consequences`: what happens after an answer (a work boost, unrest, a follow-up conversation). A follow-up scenario (for example a promise that comes due) only appears for the citizen it was unlocked for.
-- `actions`: reputation effects of things the ruler *does* rather than says, such as building a barracks or defending a raid. One row per audience, so soldiers can approve while hungry civilians resent it.
+- `actions`: reputation effects of things the ruler *does* rather than says, such as building a barracks or defending a raid. One row per audience, so soldiers can approve while hungry civilians resent it. The `event` must be one the game fires (CONTRACTS G9 or G13.4); `lint` warns about any other.
 
 Two answers may share one decision. Changing a decision changes every answer that uses it.
 

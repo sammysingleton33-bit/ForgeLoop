@@ -561,5 +561,128 @@
    "dialogue/scenarios.csv:2:3:",
    "join clauses with ' & ' (not 'and')"
   ]
+ },
+ {
+  "name": "reaction over the 80-character bubble",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless you, {ruler}! We will not forget this, not this winter, not the next one, ever.",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "85 characters; the limit is 80"
+  ]
+ },
+ {
+  "name": "text starting with = (CSV injection)",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "question_text",
+  "value": "=cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/scenarios.csv:2:8:",
+   "text may not start with '='",
+   "CSV injection"
+  ]
+ },
+ {
+  "name": "text starting with +",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "response_text",
+  "value": "+5 rations for everyone.",
+  "expect": [
+   "dialogue/responses.csv:3:4:",
+   "text may not start with '+'"
+  ]
+ },
+ {
+  "name": "text starting with -",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "reaction_text",
+  "value": "-2+3+cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/responses.csv:3:5:",
+   "text may not start with '-'"
+  ]
+ },
+ {
+  "name": "text starting with @",
+  "file": "dialogue/consequences.csv",
+  "row": 2,
+  "column": "notice_text",
+  "value": "@SUM(1+1)*cmd|' /C calc'!A0",
+  "expect": [
+   "dialogue/consequences.csv:2:10:",
+   "text may not start with '@'"
+  ]
+ },
+ {
+  "name": "full-width digits in a number",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "priority",
+  "value": "\uff18\uff10",
+  "expect": [
+   "dialogue/scenarios.csv:2:4:",
+   "is not a whole number"
+  ]
+ },
+ {
+  "name": "Arabic-Indic digits in a number",
+  "file": "dialogue/decisions.csv",
+  "row": 2,
+  "column": "rep_honor",
+  "value": "\u0661",
+  "expect": [
+   "dialogue/decisions.csv:2:",
+   "[rep_honor]",
+   "is not a whole number"
+  ]
+ },
+ {
+  "name": "underscore in a number",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "cooldown_s",
+  "value": "3_00",
+  "expect": [
+   "dialogue/scenarios.csv:2:5:",
+   "'3_00' is not a whole number"
+  ]
+ },
+ {
+  "name": "non-ASCII digits in a condition",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "trigger",
+  "value": "kingdom.fed_ratio < \u0660.6",
+  "expect": [
+   "dialogue/scenarios.csv:2:3:",
+   "is not a number"
+  ]
+ },
+ {
+  "name": "right-to-left override in text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_text",
+  "value": "Bless\u202eyou, {ruler}!",
+  "expect": [
+   "dialogue/responses.csv:2:5:",
+   "invisible character U+202E (right-to-left override) at position 6"
+  ]
+ },
+ {
+  "name": "soft hyphen in text",
+  "file": "dialogue/scenarios.csv",
+  "row": 3,
+  "column": "thought_text",
+  "value": "My tools are worn\u00adthin.",
+  "expect": [
+   "dialogue/scenarios.csv:3:7:",
+   "invisible character U+00AD (soft hyphen) at position 18"
+  ]
  }
 ]

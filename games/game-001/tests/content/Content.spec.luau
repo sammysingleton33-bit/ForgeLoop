@@ -74,7 +74,8 @@ local CONSEQUENCE_KINDS = {
 	unrest_pressure = true,
 	cue = true,
 }
-local TEXT_LIMITS = { thought = 48, question = 160, response = 70, reaction = 140, notice = 100 }
+-- reaction 80 = FORGE-04's reaction bubble maxChars (FORGE-00 decision L7)
+local TEXT_LIMITS = { thought = 48, question = 160, response = 70, reaction = 80, notice = 100 }
 local THOUGHT_ICONS = { request = true, concern = true, idea = true } -- CONTRACTS G13.3
 local REACTION_TONES = { happy = true, angry = true, sad = true, neutral = true } -- CONTRACTS G13.3
 local RELATION_FLAGS = { family = "citizen.has_family", friend = "citizen.has_friend", rival = "citizen.has_rival" }
@@ -307,6 +308,29 @@ describe("generated content modules (SPEC §7)", function()
 		expect(ContentQuery.data.decisions).toBe(Decisions)
 		expect(ContentQuery.data.consequences).toBe(Consequences)
 		expect(ContentQuery.data.traits).toBe(Traits)
+	end)
+
+	it("are deeply frozen, so no consumer can change the shared content (review finding L6)", function()
+		local function walk(value: any, path: string)
+			if not table.isfrozen(value) then
+				error(`{path} is not frozen`)
+			end
+			for key, child in value do
+				if type(child) == "table" then
+					walk(child, `{path}.{tostring(key)}`)
+				end
+			end
+		end
+		for _, name in sortedKeys(MODULES) do
+			walk(MODULES[name], name)
+		end
+		local id = Dialogue.order[1]
+		expect(function()
+			(Dialogue.scenarios[id] :: any).priority = 1
+		end).toThrow("readonly")
+		expect(function()
+			table.insert(Dialogue.order :: any, "extra")
+		end).toThrow("readonly")
 	end)
 end)
 
@@ -665,6 +689,84 @@ describe("model decision 6: no single decision turns the kingdom", function()
 	end)
 end)
 
+describe("loyalty clamp over the real library (FORGE-00 decision M3)", function()
+	-- The most extreme listeners the generator can make: three traits that agree, chemistry at either end.
+	local function extremeTraitSets(): { { string } }
+		local ids = sortedKeys(Traits)
+		local sets = {}
+		for _, c in CATEGORIES do
+			for _, sign in { 1, -1 } do
+				table.sort(ids, function(a: string, b: string): boolean
+					local wa, wb = Traits[a].weights[c] * sign, Traits[b].weights[c] * sign
+					if wa ~= wb then
+						return wa > wb
+					end
+					return a < b
+				end)
+				local chosen = {}
+				for _, traitId in ids do
+					local opposite = Traits[traitId].opposite
+					if #chosen < 3 and not (opposite and table.find(chosen, opposite)) then
+						table.insert(chosen, traitId)
+					end
+				end
+				table.insert(sets, chosen)
+			end
+		end
+		return sets
+	end
+
+	it("keeps every listener of every decision and action firing inside its relation's clamp", function()
+		local clamp = ContentQuery.LOYALTY_CLAMP
+		local sets = extremeTraitSets()
+		local relations = { "speaker", "family", "friends", "rivals", "kingdom" }
+		for _, id in sortedKeys(Decisions) do
+			local listeners = {}
+			for _, traits in sets do
+				for _, chemistry in { -20, 0, 20 } do
+					for _, relation in relations do
+						table.insert(
+							listeners,
+							{ citizen = #listeners + 1, relation = relation, traits = traits, chemistry = chemistry }
+						)
+					end
+				end
+			end
+			local e = ContentQuery.fireDecision(id, {}, {}, 0, listeners :: any)
+			assert(e, id)
+			expect(#e.listeners).toBe(#listeners)
+			for _, l in e.listeners do
+				if math.abs(l.loyalty) > clamp[l.relation] then
+					error(`decision {id}: {l.relation} loyalty {l.loyalty} outside ±{clamp[l.relation]}`)
+				end
+			end
+		end
+		local ctx = fullSampleCtx()
+		for _, event in sortedKeys(Reputation.byEvent) do
+			local listeners = {}
+			for _, traits in sets do
+				for _, occupation in sortedKeys(Occupations) do
+					table.insert(listeners, {
+						citizen = #listeners + 1,
+						occupation = occupation,
+						speaker = #listeners % 2 == 0,
+						traits = traits,
+						chemistry = 20,
+						ctx = ctx,
+					})
+				end
+			end
+			for _, f in ContentQuery.fireAction(event, ctx, {}, {}, 0, listeners :: any) do
+				for _, l in f.listeners do
+					if math.abs(l.loyalty) > clamp[l.relation] then
+						error(`action {f.id}: {l.relation} loyalty {l.loyalty} outside ±{clamp[l.relation]}`)
+					end
+				end
+			end
+		end
+	end)
+end)
+
 describe("Traits, Occupations and Names", function()
 	it("give every trait six weights in -2..+2 and symmetric opposites", function()
 		for _, id in sortedKeys(Traits) do
@@ -683,6 +785,23 @@ describe("Traits, Occupations and Names", function()
 				end
 			end
 			expect(ContentQuery.loyaltyDelta({ compassion = 1, fear = 1 }, { id }, "speaker", 0)).toBeA("number")
+		end
+	end)
+
+	it("expose a trait's value weights as Traits[id].weights[category] for consumers (SPEC §7)", function()
+		for _, id in sortedKeys(Traits) do
+			local t = Traits[id] :: any
+			expect(sortedKeys(t.weights)).toEqual(sortedKeys({
+				compassion = 1,
+				honor = 1,
+				competence = 1,
+				courage = 1,
+				authority = 1,
+				fear = 1,
+			}))
+			for _, c in CATEGORIES do
+				expect(t[`weight_{c}`]).toBeNil() -- no flat CSV-style fields
+			end
 		end
 	end)
 
