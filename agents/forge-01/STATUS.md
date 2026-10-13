@@ -4,13 +4,13 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/01-gameplay`; PR branches `forge/01-gameplay-<topic>` |
-| Open PR | #68 FL-0080 reputation (base main) · #77 FL-0079 conversations (stacked on #68) · #70 FL-0052 army · FL-0081 slots + throne (this branch) |
-| Merged | #4, #5, #8, #26, #31 FL-0048, #39 FL-0049, #46 living-kingdom groundwork, #50 FL-0051 Build remotes, #51 F1, #54 citizen height, #56 G13.5, #59 F2/F3, #61 FL-0078 population, #62 placement rectangles, #72 destroyed broadcast |
-| Current task | FL-0081 in REVIEW; next #39 replication follow-ups |
-| Last verified check | `check.sh` OVERALL PASS on every open branch (game-001 944–967/0); mutations caught per PR |
-| Blockers | none. Studio evidence for everything needs user runs (gameplay.md K1–K9) |
-| Needs from others | FORGE-00: G8 wording for Army attack `targetId`; consequence notices start "Risk ({chance}):" also once fired (content wording). FORGE-03: slots UI on `Build.PlaceSlot` (handoff 2026-10-13-forge-01-to-forge-03-04-slots-throne). FORGE-04: walk mode unseats (same handoff) |
+| Session branch | worktrees per PR, branches `forge/01-gameplay-<topic>` |
+| Open PR | #93 FL-0049 L2 · #94 · #97 · #100 (hold) · #108 FL-0097 · #111 FL-0107 · #113 FL-0050 · #118 spec loops · FL-0082 consequences (this branch) |
+| Merged (latest) | #112 throne, #114 #107 fix-forward, #115 WorldView key + tower rebuild, #117 tower spec |
+| Current task | FL-0082 consequence rules in REVIEW; next FL-0109 (#61 review lows) |
+| Last verified check | `check.sh` OVERALL PASS on each open branch; FL-0082 mutations in its PR |
+| Blockers | none. Studio evidence for everything needs user runs (gameplay.md) |
+| Needs from others | FORGE-05: G9 `Kingdom.Consequence` notice event (handoff 2026-10-13-forge-01-to-forge-04-05-06-consequences). FORGE-04: fire VFX on `Burning`. FORGE-06: confirm `Society.strike.memoryTags` |
 
 ## Hours to VS-1 (honest estimate)
 About 3–5 working hours of FORGE-01 code, plus review/merge time: #39 replication follow-ups 2 h, review fixes on #68/#70/#77/FL-0081, then playtest fixes. Studio verification is the user's.

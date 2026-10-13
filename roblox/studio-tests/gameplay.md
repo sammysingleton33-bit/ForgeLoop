@@ -16,6 +16,7 @@ Which steps are runnable after which PR:
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
 | K10 (conversations, thought bubbles, walk-out placard) | FL-0079 (`Kingdom.Converse/Choose`, PR #77); FORGE-03's panel and FORGE-04's bubbles |
 | K11 (build slots, throne) | FL-0081; the plot picker and build menu on slots are FORGE-03's |
+| K12 (riot, fire, shortage, strike rule) | FL-0082 (ConsequenceService); a fire effect on `Burning` is FORGE-04's |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
 The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
@@ -217,6 +218,30 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   respawns, they sit on their throne at once, and player 2 ends up in front of the dais. A co-ruler of
   player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
+
+## K12 — Riot and fire, food shortage, a sustained strike (FL-0082; living-kingdom §5)
+1. Play Solo. Open the debug panel and press the `vs1.riot` preset (five minutes of unrest in your
+   kingdom; the command is `consequence.unrest <seconds>`). Watch your kingdom from the aerial camera for
+   about four minutes.
+2. In the Explorer, find `Workspace.ForgeKingdoms.<your kingdom>.Buildings`, and watch the `Burning` and
+   `Hp` attributes of the building that catches fire.
+3. Spend your kingdom's food (FORGE-03's treasury debug command) so the citizens go hungry, and watch for
+   about two minutes.
+4. Optional (needs a grievance): refuse a soldier's pay (`soldier_pay_due` → refuse) and push that
+   occupation's loyalty low with harsh answers. Then wait a minute.
+
+**Expected:**
+- Step 1: nothing happens for about two minutes (`riot.sustainSeconds`, 120 s). Then one finished building
+  near the least loyal citizen, never the keep, gets `Burning = true` and loses `Hp` (4 a second). It
+  never drops below a quarter of `MaxHp`. The instigator and up to a fifth of the disloyal citizens stop
+  work and show the `grumble` cue, and the HUD or keep shows one `cower` cue.
+- The riot ends after at most 90 s: `Burning` disappears and the rioters go back to work within about
+  two seconds. No new riot starts for three minutes after that.
+- Step 3: after a minute below half fed, the hungriest third of citizens grumble once. Happiness and
+  stability then fall a little every 10 s, until the food comes back above 60 %.
+- Step 4: if at least half of that occupation is aggrieved for a whole minute, they show "On strike" and
+  stop work until their loyalty is back above 40.
+- No errors in Output (`ConsequenceService: step failed` would be one).
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:

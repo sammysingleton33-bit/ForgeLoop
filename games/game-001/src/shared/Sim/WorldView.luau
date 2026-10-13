@@ -11,7 +11,8 @@
 		Workspace.ForgeKingdoms
 			Ground                      flat ground sized to the map bounds (createGround = true)
 			Nodes/node:<nodeId>                  attributes: EntityId, Kind, Resource, Amount
-			<kingdomId>/Buildings/building:<id>  attributes: EntityId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
+			<kingdomId>/Buildings/building:<id>  attributes: EntityId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp,
+			                                     Burning (true while a riot burns it, FL-0082; absent otherwise)
 			<kingdomId>/Citizens/entity:<id>     attributes: EntityId, KingdomId, Job, Activity, CitizenName
 			<kingdomId>/Units/entity:<id>        attributes: EntityId, KingdomId, Kind, Hp, MaxHp
 	(D-023 moves entity rendering to clients via Sim.Snapshot; these server parts are the interim view.)
@@ -24,7 +25,7 @@
 			  stage 1..3 by progress while first being built, then "complete"; a model is replaced whole
 			  when its (type, level, stage, kingdom) changes (a building that changes kingdom is rebuilt in
 			  the new kingdom's colour, emblems and folder: FORGE-02's Kit emblem handoff), placed at the building's position and yaw, and carries
-			  the attributes BuildingId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
+			  the attributes BuildingId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp, Burning
 			  (G13.6 selection reads BuildingId)
 			entities = false: no citizen/soldier parts (clients render them with EntityController, D-023)
 		view:sync(sim)                 -- create, update and remove parts to match the simulation
@@ -166,6 +167,7 @@ function WorldView:_kitBuilding(sim: any, b: any, parent: any, kingdomColor: Col
 	model:SetAttribute("Progress", if b.pendingLevel then b.progress / sim:workFor(b.kind, b.pendingLevel) else 1)
 	model:SetAttribute("Hp", b.hp)
 	model:SetAttribute("MaxHp", b.maxHp)
+	model:SetAttribute("Burning", if b.burning then true else nil)
 end
 
 -- Parts are keyed "node:<id>", "building:<id>" and "entity:<id>": buildings and entities have
@@ -279,6 +281,7 @@ function WorldView:sync(sim: any)
 			part:SetAttribute("Progress", progress)
 			part:SetAttribute("Hp", b.hp)
 			part:SetAttribute("MaxHp", b.maxHp)
+			part:SetAttribute("Burning", if b.burning then true else nil)
 			self:_place(part, b.x, b.z, height)
 			live["building:" .. bid] = true
 		end
