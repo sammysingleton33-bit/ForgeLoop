@@ -17,9 +17,11 @@
 		Kingdom.Choose(entityId, scenarioId, responseId) -> (ok, { reaction, effects: { { kind, text } } }?,
 		                                                     reason?)
 			Answers the showing that Converse opened for this ruler, once (idempotent per showing). Refusal
-			reasons (stable): not_in_match, unknown_citizen, not_offered (no open showing for this ruler and
-			scenario: never opened, already answered, or another ruler's), unknown_response, not_eligible (the
-			scenario no longer holds; the showing closes), cost (the kingdom cannot pay; the showing stays open).
+			reasons (stable): not_in_match, unknown_citizen, phase (the match is not in an active phase: Lobby
+			or Results; Converse returns nil then too), not_offered (no open showing for this ruler and
+			scenario: never opened, already answered, or another ruler's), unknown_response (also: content the
+			server cannot apply; any payment is refunded), not_eligible (the scenario no longer holds; the
+			showing closes), cost (the kingdom cannot pay; the showing stays open).
 	Effects of a choice (ContentQuery.fireDecision with the ruler's and the kingdom's farm histories, so the
 	bundle is already decayed; ReputationService:farmHistories):
 		- cost = decisionEffects(decision).cost, paid FIRST (txId decision:<round>:<entity>:<scenario>:<n>);
@@ -33,17 +35,22 @@
 		- kingdom conditions (Kingdom/Reputation.applyConditions); memory_tag pinned on the speaker;
 		  decision.<id> remembered for the ruler;
 		- consequences (after delay_s; a chance < 1 rolls the match's random): productivity (sim:addProductivity;
-		  down to 0 is a walk-out), strike (the least loyal share of an occupation, sim:strike), loyalty, morale /
-		  happiness / stability, unlock_scenario, memory (pinned), resource_over_time (per second),
-		  unrest_pressure and desertion_risk (recorded for FL-0082), cue (the speaker's id, else `entityIds`:
-		  the citizens it affected);
+		  a magnitude of -1 or below is a walk-out (D-042), sim:strike for duration_s, which no boost cancels;
+		  summed productivity down to 0 also stops work), strike (the least loyal share of an occupation,
+		  sim:strike), loyalty, morale / happiness / stability, unlock_scenario, memory (pinned),
+		  resource_over_time (per second), unrest_pressure and desertion_risk (recorded for FL-0082), cue
+		  (the speaker's id, else `entityIds`: the citizens it affected). A condition, unrest_pressure or
+		  desertion_risk with duration_s > 0 is undone after it ("{magnitude} for {duration}"): exactly what
+		  was applied comes off again;
 		- `strike` on/off events (G13.3 v0.4-g6) listing exactly the citizens whose strike or walk-out
 		  started, and later ended, one event per occupation;
 		- a `reaction` event to the kingdom's members.
 	Thought bubbles: every Society.requestRefreshSeconds, each ruled kingdom keeps up to Society.openRequests
 	open requests: the highest-priority eligible scenario of citizens without one (thought ctx: the best
-	reputation among its rulers, any ruler's decisions, SPEC §6.8). New ones go to the members as `thought`
-	events; a request that stops holding closes.
+	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request that stops holding closes;
+	every request still open goes to the members as a `thought` event again on each refresh (G13.3: the
+	client bubble lasts Vfx.thoughtSec, so it stays up while the request is open, and a co-ruler who joins
+	later sees it within one refresh); new ones are sent when they open.
 	Events (G13.3) go through EntityService:sendKingdomEvent when EntityService runs (else they are dropped).
 	Event flags for triggers: event.<tag> holds for Society.conversation.eventSeconds after the event
 	(building_completed, keep_upgraded, soldiers_recruited, objective_captured), and event.shortage while the
@@ -53,6 +60,7 @@
 		ConversationService:refresh()          -- one thought-bubble refresh (the loop calls it)
 		ConversationService:step(dt)           -- consequences over time (the loop calls it)
 		ConversationService:openRequests(kingdomId): { { entityId, scenarioId } }
+		ConversationService:hasRequest(kingdomId, entityId): boolean   -- CitizenView.hasRequest (G13.2)
 		ConversationService:announceStrike(kingdomId, citizens, on)   -- strike events for a strike started
 		                                       elsewhere (CitizenService:debugStrike); off follows when it ends
 	Studio debug hook (G13.7 citizen.request, FORGE-05's DebugPresetService):
@@ -282,8 +290,8 @@ end
 
 function ConversationService:converse(player: any, entityId: number): { [string]: any }?
 	local kingdomId, c = self:_ruled(player, entityId)
-	if kingdomId == nil or c == nil then
-		return nil
+	if kingdomId == nil or c == nil or not self:_sim().active then
+		return nil -- outside an active phase (Lobby, Results) nobody brings the ruler a matter (#77 L3)
 	end
 	local userId = player.UserId
 	local base, rep = self:_kingdomCtx(kingdomId, userId)
@@ -379,6 +387,11 @@ local function changeLoyalty(c: any, delta: number)
 	c.loyalty = math.clamp((c.loyalty or 50) + delta, 0, 100)
 end
 
+-- Runs fn once the simulation reaches now + seconds (step() drains the queue every second).
+function ConversationService:_after(seconds: number, fn: () -> ())
+	table.insert(self._pending, { at = self:_sim().time + seconds, run = fn })
+end
+
 function ConversationService:_applyConsequence(kingdomId: string, speaker: any, consequence: any)
 	local sim = self:_sim()
 	local k = sim.kingdoms[kingdomId]
@@ -392,7 +405,14 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 	for _, c in targets do
 		wasStriking[c] = sim:isStriking(c)
 	end
-	if kind == "productivity" then
+	if kind == "productivity" and magnitude <= -1 then
+		-- a walk-out (D-042; SPEC §5.4 "-1 = one citizen's walk-out"): a strike for the duration that no boost
+		-- cancels (builders_push +0.1 beside speaker_walkout_risk -1, #77 M1); boosts and smaller penalties
+		-- keep adding up on working citizens, and still apply once the walk-out ends
+		for _, c in targets do
+			sim:strike(c, duration)
+		end
+	elseif kind == "productivity" then
 		for _, c in targets do
 			sim:addProductivity(c, magnitude, duration)
 		end
@@ -415,7 +435,15 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 			changeLoyalty(c, magnitude)
 		end
 	elseif kind == "morale" or kind == "happiness" or kind == "stability" then
-		Reputation.applyConditions(k.conditions, { [kind] = magnitude })
+		local _, applied = Reputation.applyConditions(k.conditions, { [kind] = magnitude })
+		local delta = (applied :: any)[kind]
+		if duration > 0 and delta ~= 0 then -- "{magnitude} for {duration}": what was applied comes off again
+			self:_after(duration, function()
+				if k.alive then
+					Reputation.applyConditions(k.conditions, { [kind] = -delta })
+				end
+			end)
+		end
 	elseif kind == "unlock_scenario" then
 		for _, c in targets do
 			c.unlocked = c.unlocked or {}
@@ -436,9 +464,21 @@ function ConversationService:_applyConsequence(kingdomId: string, speaker: any, 
 		})
 	elseif kind == "unrest_pressure" then
 		k.unrestPressure = (k.unrestPressure or 0) + magnitude -- read by the unrest rules (FL-0082)
+		if duration > 0 then
+			self:_after(duration, function()
+				k.unrestPressure = (k.unrestPressure or 0) - magnitude
+			end)
+		end
 	elseif kind == "desertion_risk" then
 		for _, c in targets do
 			c.desertionRisk = (c.desertionRisk or 0) + magnitude -- soldiers (VS-2)
+		end
+		if duration > 0 then
+			self:_after(duration, function()
+				for _, c in targets do
+					c.desertionRisk = (c.desertionRisk or 0) - magnitude
+				end
+			end)
 		end
 	end
 	if kind == "strike" or kind == "productivity" then -- a strike, or a walk-out (productivity down to 0)
@@ -556,6 +596,9 @@ function ConversationService:choose(
 	if c == nil then
 		return false, nil, "unknown_citizen"
 	end
+	if not self:_sim().active then
+		return false, nil, "phase" -- Lobby or Results: the showing waits (#77 L3)
+	end
 	local userId = player.UserId
 	local showing = self._showing[entityId]
 	if showing == nil or showing.userId ~= userId or showing.scenarioId ~= scenarioId then
@@ -586,6 +629,10 @@ function ConversationService:choose(
 	if decision == nil or bundle == nil then
 		return false, nil, "unknown_response"
 	end
+	-- everything that can fail is gathered before the payment (#77 L2)
+	local now = self:_now()
+	local rulerHistory, kingdomHistory = self._reputation:farmHistories(userId, kingdomId)
+	local listeners = self:_listeners(c, decision.audience)
 	-- pay first (decisionEffects cost, G13.1 v0.4-g7); only a paid answer records its firing
 	local cost = bundle.cost
 	self._seq += 1
@@ -593,10 +640,20 @@ function ConversationService:choose(
 	if next(cost) ~= nil and not sim:spend(kingdomId, cost, tx, `decision:{response.decision}`) then
 		return false, nil, "cost"
 	end
-	local now = self:_now()
-	local rulerHistory, kingdomHistory = self._reputation:farmHistories(userId, kingdomId)
-	local listeners = self:_listeners(c, decision.audience)
-	local effects = assert(ContentQuery.fireDecision(response.decision, rulerHistory, kingdomHistory, now, listeners))
+	local fired, effects =
+		pcall(ContentQuery.fireDecision, response.decision, rulerHistory, kingdomHistory, now, listeners)
+	if not fired or effects == nil then
+		-- content the server cannot apply: the payment goes back, and the content team gets a warning
+		for resource, amount in cost do
+			sim:deposit(kingdomId, resource, amount, `{tx}:refund:{resource}`, "refund")
+		end
+		self._env.log("warn", "ConversationService: decision cannot be applied", {
+			decision = response.decision,
+			entityId = entityId,
+			error = tostring(effects),
+		})
+		return false, nil, "unknown_response"
+	end
 	self._showing[entityId] = nil -- answered: a second Choose for this showing is not_offered
 
 	local names = self:_names(c, userId)
@@ -703,18 +760,24 @@ function ConversationService:debugRequest(kingdomId: string, entityId: number, s
 	end
 	self:_closeRequest(kingdomId, c.id)
 	self._open[kingdomId] = self._open[kingdomId] or {}
-	table.insert(self._open[kingdomId], { entityId = c.id, scenarioId = scenario.id, forced = true })
-	self:_send(kingdomId, {
+	self:_openRequest(kingdomId, self._open[kingdomId], c, scenario, true)
+	return true, `{c.name} ({c.id}) raises {scenario.id}`
+end
+
+-- ---------------------------------------------------------------- thoughts and time
+-- Opens a request and sends its thought; the record keeps the event, so every refresh can send it again.
+function ConversationService:_openRequest(kingdomId: string, open: { any }, c: any, scenario: any, forced: boolean?)
+	local thought = {
 		type = "thought",
 		id = c.id,
 		scenarioId = scenario.id,
 		text = ContentQuery.fill(scenario.thought, self:_names(c, nil)),
 		icon = scenario.icon or "request",
-	})
-	return true, `{c.name} ({c.id}) raises {scenario.id}`
+	}
+	table.insert(open, { entityId = c.id, scenarioId = scenario.id, forced = forced, thought = thought })
+	self:_send(kingdomId, thought)
 end
 
--- ---------------------------------------------------------------- thoughts and time
 function ConversationService:_closeRequest(kingdomId: string, entityId: number)
 	local open = self._open[kingdomId]
 	if open == nil then
@@ -725,6 +788,13 @@ function ConversationService:_closeRequest(kingdomId: string, entityId: number)
 			table.remove(open, i)
 		end
 	end
+end
+
+-- True while the citizen has an open request (its thought bubble): CitizenService's CitizenView.hasRequest.
+function ConversationService:hasRequest(kingdomId: string, entityId: number): boolean
+	return find(self._open[kingdomId] or {}, function(r)
+		return r.entityId == entityId
+	end) ~= nil
 end
 
 function ConversationService:openRequests(kingdomId: string): { { entityId: number, scenarioId: string } }
@@ -769,6 +839,11 @@ function ConversationService:refresh()
 				table.remove(open, i)
 			end
 		end
+		-- the client's bubble lasts Vfx.thoughtSec (45 s): a request still open is sent again, which also
+		-- shows it to a co-ruler who joined since (at most Society.openRequests per kingdom per refresh)
+		for _, r in open do
+			self:_send(kid, r.thought)
+		end
 		-- open the highest-priority requests of citizens without one
 		local candidates = {}
 		for _, id in k.citizenIds do
@@ -793,15 +868,7 @@ function ConversationService:refresh()
 			if #open >= SocietyConfig.openRequests then
 				break
 			end
-			local c, scenario = candidate.citizen, candidate.scenario
-			table.insert(open, { entityId = c.id, scenarioId = scenario.id })
-			self:_send(kid, {
-				type = "thought",
-				id = c.id,
-				scenarioId = scenario.id,
-				text = ContentQuery.fill(scenario.thought, self:_names(c, nil)),
-				icon = scenario.icon or "request",
-			})
+			self:_openRequest(kid, open, candidate.citizen, candidate.scenario)
 		end
 	end
 end

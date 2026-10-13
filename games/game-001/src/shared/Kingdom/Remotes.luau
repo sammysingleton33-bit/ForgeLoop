@@ -16,8 +16,11 @@
 		Kingdom.Converse(entityId: integer) -> { entityId, scenarioId, speaker: { name, occupation }, question,
 		                                     options: { { id, text, cost?, risks? } } }?   (G13.3) own kingdom's
 		                                     citizens, rulers only; nil when the citizen has nothing to say
+		                                     or the match is not in an active phase (Lobby, Results)
 		Kingdom.Choose(entityId, scenarioId: string(1,48), responseId: string(1,48))
 		                                  -> (ok, { reaction, effects: { { kind, text } } }?, reason?)   (G13.3)
+		                                     reasons: not_in_match, unknown_citizen, phase, not_offered,
+		                                     unknown_response, not_eligible, cost (ConversationService)
 	Server -> client
 		Kingdom.State({ kingdoms, mine })    on change (to every player) and to each arriving player
 		Kingdom.Population({ total, byJob, cap, quotas })   to a kingdom's members on change (G13.2)

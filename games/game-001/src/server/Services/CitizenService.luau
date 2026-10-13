@@ -27,7 +27,8 @@
 	fed and rested = high); intent is the current activity and why, e.g. "Gathering (best job)";
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
-	hasRequest is false until conversations (FL-0079).
+	hasRequest is true while the citizen has an open request (ConversationService:hasRequest, its thought
+	bubble; false without that service).
 	Studio debug hook (G13.7 strike.start, FORGE-05's DebugPresetService):
 		CitizenService:debugStrike(kingdom, occupation, on) -> (ok, message)   every citizen of the occupation
 		    strikes for DEBUG_STRIKE_SECONDS (or stops); ConversationService:announceStrike sends the events
@@ -234,6 +235,11 @@ local function namesOf(sim: any, ids: { number }?): { string }
 	return out
 end
 
+function CitizenService:_hasRequest(c: any): boolean
+	local conversations = self._registry:find("ConversationService")
+	return conversations ~= nil and conversations.hasRequest ~= nil and conversations:hasRequest(c.kingdomId, c.id)
+end
+
 function CitizenService:inspect(entityId: number): { [string]: any }?
 	local sim = self:_sim()
 	local c = sim.citizens[entityId]
@@ -264,7 +270,7 @@ function CitizenService:inspect(entityId: number): { [string]: any }?
 		family = namesOf(sim, profile and profile.family),
 		friends = namesOf(sim, profile and profile.friends),
 		rivals = namesOf(sim, profile and profile.rivals),
-		hasRequest = false,
+		hasRequest = self:_hasRequest(c),
 		look = table.clone(if profile then profile.look else People.DEFAULT_LOOK),
 	}
 end

@@ -11,6 +11,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
+local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
@@ -669,6 +670,18 @@ describe("ConversationService: thought bubbles", function()
 			end
 		end
 		expect(thoughts).toBe(#open)
+		-- the next refresh sends every request that is still open again (G13.3: the bubble keeps showing)
+		table.clear(sent)
+		conversations:refresh()
+		local again = {}
+		for _, entry in sent do
+			if entry.event.type == "thought" then
+				again[entry.event.id] = (again[entry.event.id] or 0) + 1
+			end
+		end
+		for _, r in conversations:openRequests("crimson") do
+			expect(again[r.entityId]).toBe(1)
+		end
 		local mine = false
 		for _, r in open do
 			mine = mine or r.entityId == farmer.id
@@ -680,6 +693,231 @@ describe("ConversationService: thought bubbles", function()
 			expect(r.scenarioId).never.toBe("farmer_hungry_grain")
 		end
 		expect(sim.kingdoms.azure and #conversations:openRequests("azure")).toBe(0) -- no ruler, no bubbles
+	end)
+end)
+
+describe("ConversationService: thought bubbles stay up while the request is open (#77 B1)", function()
+	it("sends an open request's thought on every refresh, never further apart than Vfx thoughtSec", function()
+		local env, conversations, match, registry = boot()
+		seat(env, 1)
+		local farmer, sim = hungryFarmer(match, registry)
+		local thoughtSec = Vfx.bubbles.thoughtSec
+		expect(Society.requestRefreshSeconds < thoughtSec).toBe(true)
+		local times = {}
+		conversations._send = function(_, kingdomId, event)
+			if event.type == "thought" and event.id == farmer.id then
+				expect(kingdomId).toBe("crimson")
+				table.insert(times, sim.time)
+			end
+		end
+		-- a request that holds whatever the state does (the G13.7 hook's forced request)
+		assert(conversations:debugRequest("crimson", farmer.id, "farmer_hungry_grain"))
+		local opened = sim.time
+		while sim.time < opened + 90 do
+			env.mock:advance(1) -- the service's own loop refreshes every Society.requestRefreshSeconds
+			local open = conversations:openRequests("crimson")
+			expect(#open >= 1).toBe(true)
+			-- the bubble is up: the last thought for the farmer is younger than the client's thoughtSec
+			expect(sim.time - times[#times] < thoughtSec).toBe(true)
+		end
+		expect(#times >= math.floor(90 / Society.requestRefreshSeconds)).toBe(true)
+		for i = 2, #times do
+			expect(times[i] - times[i - 1] <= Society.requestRefreshSeconds + 1).toBe(true)
+		end
+	end)
+end)
+
+describe("ConversationService: FORGE-05 verdict on #77 (M1, M2, L1, L2, L3, L5)", function()
+	-- a crimson builder whose builder_overworked showing is open for ruler 1
+	local function overworked()
+		local env, conversations, match, registry, sent = boot()
+		local p1 = seat(env, 1)[1]
+		local _, sim = hungryFarmer(match, registry)
+		local builder
+		for _, id in sim.kingdoms.crimson.citizenIds do
+			local c = sim.citizens[id]
+			if c.profile.occupation == "builder" then
+				builder = c
+				break
+			end
+		end
+		conversations:_raise("crimson", "building_completed")
+		builder.hunger = 0.9 -- mood < 60
+		expect(assert(conversations:converse(p1, builder.id)).scenarioId).toBe("builder_overworked")
+		return env, conversations, sim, p1, builder, sent, registry
+	end
+
+	-- runs fn with the match's random answering `roll` to every NextNumber (consequence chances)
+	local function withRoll(sim, roll: number, fn: () -> ...any): ...any
+		local real = sim.rng
+		sim.rng = {
+			NextNumber = function()
+				return roll
+			end,
+		}
+		local results = table.pack(pcall(fn))
+		sim.rng = real
+		assert(results[1], results[2])
+		return table.unpack(results, 2, results.n)
+	end
+
+	it("M1 + L5: a walk-out risk that wins its roll lands beside a boost; one that loses does nothing", function()
+		local env, conversations, sim, p1, builder, sent = overworked()
+		local risk = ContentQuery.data.consequences.speaker_walkout_risk
+		expect(risk.magnitude <= -1).toBe(true)
+		expect(risk.chance < 1).toBe(true)
+		local ok, result = withRoll(sim, 0, function() -- 0 < chance: the risk fires (rolled at Choose)
+			return choose(conversations, p1, builder, "builder_overworked", "builder_overworked_push_on")
+		end)
+		expect(ok).toBe(true)
+		expect(#result.effects).toBe(3) -- push, unrest and the walk-out: every consequence fired
+		env.mock:advance(risk.delay_s + 1)
+		expect(sim:productivityOf(builder) > 1).toBe(true) -- builders_push (+0.1) is on the builder too
+		expect(sim:isStriking(builder)).toBe(true) -- and still the walk-out holds
+		local on = {}
+		for _, entry in sent do
+			if entry.event.type == "strike" and entry.event.on then
+				table.insert(on, entry.event.entityIds)
+			end
+		end
+		expect(on).toEqual({ { builder.id } })
+		env.mock:advance(risk.duration_s + 1)
+		expect(sim:isStriking(builder)).toBe(false) -- back at work once it ends
+
+		-- the same answer whose roll loses: no walk-out, no strike event, no notice for it
+		local env2, conversations2, sim2, p2, builder2, sent2 = overworked()
+		local ok2, result2 = withRoll(sim2, 0.99, function()
+			return choose(conversations2, p2, builder2, "builder_overworked", "builder_overworked_push_on")
+		end)
+		expect(ok2).toBe(true)
+		expect(#result2.effects).toBe(2) -- push and unrest only
+		env2.mock:advance(risk.delay_s + 1)
+		expect(sim2:isStriking(builder2)).toBe(false)
+		for _, entry in sent2 do
+			expect(entry.event.type).never.toBe("strike")
+		end
+	end)
+
+	it("D-042: promise_sacks_break's refusal to work lands on a boosted farmer; the boost resumes after", function()
+		local env, conversations, match, registry, sent = boot()
+		seat(env, 1)
+		local farmer, sim = hungryFarmer(match, registry)
+		local consequences = ContentQuery.data.consequences
+		expect(table.find(ContentQuery.data.decisions.promise_sacks_break.consequences, "speaker_refuses_work")).never.toBeNil()
+		conversations:_applyConsequence("crimson", farmer, consequences.farmers_work_up) -- +0.15, 120 s
+		conversations:_applyConsequence("crimson", farmer, consequences.speaker_refuses_work) -- -1, 60 s
+		expect(sim:isStriking(farmer)).toBe(true)
+		local on = {}
+		for _, entry in sent do
+			if entry.event.type == "strike" and entry.event.on then
+				table.insert(on, entry.event.entityIds)
+			end
+		end
+		expect(on).toEqual({ { farmer.id } })
+		env.mock:advance(consequences.speaker_refuses_work.duration_s + 1)
+		expect(sim:isStriking(farmer)).toBe(false)
+		expect(sim:productivityOf(farmer)).toBeNear(1.15, 1e-9) -- back under the boost still running
+	end)
+
+	it("M2: CitizenView.hasRequest is true exactly while the citizen has an open request", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer = hungryFarmer(match, registry)
+		local citizens = registry:get("CitizenService")
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(false)
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(true)
+		local open = conversations:openRequests("crimson")
+		for _, id in match.host.match.sim.kingdoms.crimson.citizenIds do
+			local listed = false
+			for _, r in open do
+				listed = listed or r.entityId == id
+			end
+			expect(assert(citizens:inspect(id)).hasRequest).toBe(listed)
+		end
+		assert(conversations:converse(p1, farmer.id)) -- talking to them takes the request
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(false)
+	end)
+
+	it("L1: a timed condition, unrest or desertion consequence comes off again after its duration", function()
+		local env, conversations, match, registry = boot()
+		seat(env, 1)
+		local farmer, sim = hungryFarmer(match, registry)
+		local k = sim.kingdoms.crimson
+		local festive = ContentQuery.data.consequences.kingdom_festive -- happiness +5 for 300 s
+		local unrest = ContentQuery.data.consequences.builders_unrest -- unrest +8 for 300 s
+		expect(festive.duration_s).toBe(unrest.duration_s)
+		k.conditions.happiness = 50
+		local pressure = k.unrestPressure or 0
+		conversations:_applyConsequence("crimson", farmer, festive)
+		conversations:_applyConsequence("crimson", farmer, unrest)
+		expect(k.conditions.happiness).toBe(50 + festive.magnitude)
+		expect(k.unrestPressure).toBe(pressure + unrest.magnitude)
+		env.mock:advance(festive.duration_s - 2)
+		expect(k.unrestPressure).toBe(pressure + unrest.magnitude) -- still in force
+		-- (the conditions also drift on their own, a fraction of a point in these seconds)
+		local happiness = k.conditions.happiness
+		env.mock:advance(3)
+		expect(k.conditions.happiness).toBeNear(happiness - festive.magnitude, 0.5) -- what was applied
+		expect(k.unrestPressure).toBe(pressure)
+		-- a clamped change comes off only as far as it went
+		k.conditions.happiness = 98
+		conversations:_applyConsequence("crimson", farmer, festive)
+		expect(k.conditions.happiness).toBe(100)
+		env.mock:advance(festive.duration_s - 2)
+		k.conditions.happiness = 100
+		env.mock:advance(3)
+		expect(k.conditions.happiness).toBeNear(98, 0.5) -- 2 came off, not 5
+		-- desertion_risk on the soldiers (none in the slice: nothing to undo, nothing fails)
+		conversations:_applyConsequence("crimson", farmer, ContentQuery.data.consequences.soldiers_desertion_pressure)
+		env.mock:advance(301)
+	end)
+
+	it("L2: a decision the server cannot apply refunds its payment and leaves the showing open", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local food = sim:balance("crimson", "food")
+		assert(conversations:converse(p1, farmer.id))
+		local real = ContentQuery.fireDecision
+		ContentQuery.fireDecision = function()
+			error("broken content")
+		end
+		local ok, okResult, _, reason =
+			pcall(choose, conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store")
+		ContentQuery.fireDecision = real
+		assert(ok, okResult)
+		expect(okResult).toBe(false)
+		expect(reason).toBe("unknown_response")
+		expect(sim:balance("crimson", "food")).toBe(food) -- paid, then refunded
+		local warned = false
+		for _, entry in env.mock.logs do
+			warned = warned
+				or (entry.level == "warn" and string.find(entry.message, "cannot be applied", 1, true) ~= nil)
+		end
+		expect(warned).toBe(true)
+		-- the showing stays open: the answer goes through once the content works, charged once
+		expect((choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(true)
+		expect(sim:balance("crimson", "food")).toBe(food - 25)
+	end)
+
+	it("L3: outside an active phase Converse shows nothing and Choose answers phase", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(p1, farmer.id))
+		local food = sim:balance("crimson", "food")
+		sim.active = false -- Lobby or Results
+		expect(conversations:converse(p1, farmer.id)).toBeNil()
+		expect({ choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store") }).toEqual({
+			false,
+			nil,
+			"phase",
+		})
+		expect(sim:balance("crimson", "food")).toBe(food)
+		sim.active = true
+		expect((choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(true)
 	end)
 end)
 
