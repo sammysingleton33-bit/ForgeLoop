@@ -57,7 +57,7 @@ describe("PacingService (CONTRACTS G11)", function()
 		expect(slice.Founding).toBe(math.huge)
 	end)
 
-	it("match mode lasts 30-45 minutes from Founding to the end of Endgame (BRIEF §3)", function()
+	it("match mode lasts 30-45 minutes from Founding to the end of Endgame", function()
 		local match = boot(MockEnv.new()):phaseDurations("match")
 		local total = match.Founding + match.Expansion + match.Conflict + match.Endgame
 		expect(total).toBeGreaterThanOrEqual(30 * 60)
@@ -124,12 +124,23 @@ describe("PacingService (CONTRACTS G11)", function()
 		expect(touched).toEqual({})
 	end)
 
-	it("orders the VS-1 milestone targets: gather < build placed < complete < recruit < capture", function()
+	it("orders the VS-1 v2 milestones: inspect < build placed < complete < answer < recruit < capture", function()
 		local targets = boot(MockEnv.new()):targets()
-		expect(targets.firstGatherSec).toBeLessThan(targets.firstBuildPlacedSec)
-		expect(targets.firstBuildingCompleteSec).toBeLessThan(targets.firstRecruitSec)
+		expect(targets.firstInspectSec).toBeLessThanOrEqual(30) -- Onboarding limits.firstInteractionSec
+		expect(targets.firstInspectSec).toBeLessThan(targets.firstBuildPlacedSec)
+		expect(targets.firstBuildingCompleteSec).toBeLessThan(targets.firstAnswerSec)
+		expect(targets.firstAnswerSec).toBeLessThan(targets.firstRecruitSec)
+		expect(targets.firstGatherSec).toBeNil() -- D-030: ruler gathering is optional, not a milestone
+		expect(targets.firstDepositSec > 0).toBe(true) -- the sim health check instead
 		expect(targets.firstRecruitSec).toBeLessThan(targets.firstCaptureSec)
 		expect(targets.firstCaptureSec).toBeLessThanOrEqual(10 * 60)
+	end)
+
+	it("serves the dead-air threshold per playing phase (PACING.md §6), none for Lobby or Results", function()
+		local pacing = boot(MockEnv.new())
+		expect(pacing:idleSec("Founding")).toBe(25)
+		expect(pacing:idleSec("Endgame")).toBe(90)
+		expect(pacing:idleSec("Results")).toBeNil()
 	end)
 
 	it("validation catches each broken rule", function()
@@ -154,6 +165,18 @@ describe("PacingService (CONTRACTS G11)", function()
 		expect(problemsOf(function(c)
 			c.targets.firstRecruitSec = 60
 		end)).toContain("targets.firstRecruitSec must be a number after the previous milestone")
+		expect(problemsOf(function(c)
+			c.targets.firstAnswerSec = 120 -- before the first building completes
+		end)).toContain("targets.firstAnswerSec must be a number after the previous milestone")
+		expect(problemsOf(function(c)
+			c.targets.firstDepositSec = -1
+		end)).toContain("targets.firstDepositSec must be a positive number")
+		expect(problemsOf(function(c)
+			c.idleSec.Arena = 30 -- no Arena entry until G12 freezes
+		end)).toContain("idleSec.Arena is not a playing MatchPhase")
+		expect(problemsOf(function(c)
+			c.idleSec.Conflict = 0
+		end)).toContain("idleSec.Conflict must be a positive number")
 		expect(problemsOf(function(c)
 			c.modes.slice = nil
 		end)).toContain("modes.slice missing")

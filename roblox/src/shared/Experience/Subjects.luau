@@ -13,6 +13,9 @@
 			args = table.pack(...) of the event; ctx = { byUserId, all, registry }
 			resolver(args, ctx) -> { Subject }; an error is caught and returned (callers log it) with {}
 		Subjects.validate(resolvers, knownEvents) -> { string }
+		Subjects.missing(eventNames, resolvers?) -> { string }
+			the names that neither DEFAULTS nor `resolvers` cover: an event a config listens to without a
+			resolver resolves to nobody, so its step or rule would silently never fire (FORGE-00 review M8)
 		Subjects.primitives(t) -> table   -- strings, numbers and booleans of t (no Instances, no tables)
 
 	Subject = { player: Player, info: { [string]: string | number | boolean } }. Info keeps only
@@ -178,6 +181,17 @@ function Subjects.validate(resolvers: any, knownEvents: { string }): { string }
 		end
 	end
 	return problems
+end
+
+function Subjects.missing(eventNames: { string }, resolvers: { [string]: any }?): { string }
+	local out = {}
+	for _, name in eventNames do
+		local covered = Subjects.DEFAULTS[name] ~= nil or (type(resolvers) == "table" and resolvers[name] ~= nil)
+		if not covered and not table.find(out, name) then
+			table.insert(out, name)
+		end
+	end
+	return out
 end
 
 return table.freeze(Subjects)

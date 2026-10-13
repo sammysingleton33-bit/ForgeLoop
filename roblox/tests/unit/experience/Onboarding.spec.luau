@@ -435,6 +435,25 @@ describe("OnboardingService", function()
 		expect(steps[1].args[1]).toBe(7)
 	end)
 
+	it("a config listening to an event that no resolver covers is invalid, not silently stuck (FORGE-00 M8)", function()
+		local noSubjects = table.clone(CONFIG)
+		noSubjects.subjects = nil -- the test flow's CitizenTaskChanged etc. now resolve to nobody
+		local broken = OnboardingDef.create(env, registry, { config = noSubjects, bus = bus })
+		expect(broken._enabled).toBe(false)
+		local named = false
+		for _, entry in env.mock.logs do
+			local fields = entry.fields or {}
+			named = named
+				or (
+					entry.level == "error"
+					and string.find(tostring(fields.problems), "no resolver for 'CitizenTaskChanged'", 1, true)
+						~= nil
+				)
+		end
+		expect(named).toBe(true)
+		expect(Onboarding.events(CONFIG)).toContain("PlayerReady") -- the default startOn counts too
+	end)
+
 	it("ignores client actions that are not whitelisted, not current, or for another flow", function()
 		expect((remotes:call("Experience.OnboardingAction", player, "first_session", "Teleported"))).toBe(true) -- accepted by the remote
 		expect(service:action(player, "first_session", "Teleported")).toBe(false)
