@@ -136,7 +136,40 @@ Steps
 
 Pass: steps 1–6 hold. Note anything that feels noisy (too many toasts in a busy minute) for the FL-0062 tuning.
 
+## E8 — Citizen bubbles, reactions and strike placards (FL-0091, game-001)
+Needs:
+- FORGE-01's EntityController (G4.1) re-emitting the G13.3 `Sim.Events` kinds as `EntityController.event(entityId, "thought" | "reaction" | "strike" | <cue>, payload, model)`;
+- ConversationService (FL-0079) and FORGE-03's conversation panel;
+- the debug presets `citizen.request` and `strike.start` (G13.7, FORGE-05).
+
+Until those are on the build, write "blocked: needs EntityController thought/reaction events".
+
+Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Bubbles per citizen | 1. A reaction replaces the thought; a strike placard shows when nothing else does |
+| Text | only from the event, at most 80 characters (an ellipsis beyond) |
+| Meaning | "!" request, "?" concern, "…" idea; placards say "On strike"; never colour alone |
+| Lifetimes | thought 45 s or until answered; reaction 4 s; placard until the strike ends |
+| On screen | at most 8, within 160 studs of the camera focus (not the camera, so zoom never hides them); reactions first, then the nearest; never on LOD-hidden rigs |
+| `citizenBarks` off | hides reaction bubbles only; thoughts and placards stay (they are gameplay) |
+| Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose |
+
+Steps
+1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
+2. Tap the citizen: the selection still works through the bubble (FORGE-03's card opens). Answer in the conversation panel: the bubble changes to the reaction line for about 4 s. The citizen poses (cheer, grumble, slump or salute) if FORGE-01's `playPose` exists; otherwise only the bubble shows.
+3. `strike.start miner`: each striking miner shows "On strike" until the strike ends.
+4. Zoom all the way out (about 220 studs): the bubbles under the view stay. Pan until a citizen is more than about 160 studs from the centre of the view: its bubble disappears. Pan back: it returns. With more than 8 requests open, at most 8 bubbles show, the nearest to the centre first.
+   - A citizen with a request who changes job keeps the bubble on the new rig.
+5. Settings → Citizen barks off: reaction bubbles no longer show; request bubbles and placards still do.
+6. Device emulator, a small phone: bubble text is readable at the default zoom, and bubbles don't cover the HUD.
+7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists.
+
+Pass: steps 1–7 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
+
 ## Changelog
 - 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2 and D-027. Session-only settings and progress; E5 moved to FL-0062 (game tree); E6 rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture).
 - 2026-10-12 FORGE-04: E7 notifications and celebrations (FL-0027).
+- 2026-10-12 FORGE-04: E8 citizen bubbles, reactions and strike placards (FL-0091).
