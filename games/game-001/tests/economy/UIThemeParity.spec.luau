@@ -34,6 +34,17 @@ describe("game-001 UITheme parity with design/ui/tokens.json", function()
 		expect(UITheme.touchTarget).toBe(tokens.touchTarget)
 	end)
 
+	it("D-033: the kingdom tinctures are config/Kingdoms.luau's canonical colours, not variants", function()
+		local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+		expect(#KingdomsConfig.identities).toBe(4)
+		for _, k in KingdomsConfig.identities do
+			local canonical = Color3.fromRGB(k.color[1], k.color[2], k.color[3])
+			if Theme.tincture(k.id) ~= canonical then
+				error(`tinctures.{k.id} {UITheme.tinctures[k.id]} vs Kingdoms.luau {table.concat(k.color, ",")}`)
+			end
+		end
+	end)
+
 	it("resolves through shared/UI/Theme for the four G2 kingdoms", function()
 		for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
 			expect(Theme.tincture(kingdom)).toEqual(Theme.hex(UITheme.tinctures[kingdom]))
