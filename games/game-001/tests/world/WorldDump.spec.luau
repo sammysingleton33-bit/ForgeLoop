@@ -21,10 +21,10 @@ local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local KINGDOM_COLORS = {
-	crimson = Color3.fromRGB(196, 40, 28),
-	azure = Color3.fromRGB(13, 105, 172),
-	emerald = Color3.fromRGB(40, 127, 71),
-	gold = Color3.fromRGB(245, 205, 48),
+	crimson = Color3.fromRGB(190, 40, 50),
+	azure = Color3.fromRGB(40, 110, 210),
+	emerald = Color3.fromRGB(35, 128, 95),
+	gold = Color3.fromRGB(235, 185, 16),
 }
 local STEP = 6
 

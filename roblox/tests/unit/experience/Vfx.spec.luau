@@ -216,6 +216,32 @@ describe("VFXController", function()
 		expect(EngineStubs.emitted(e)).toEqual({ 28 })
 	end)
 
+	it("puts an effect on a Model into an owned Attachment under its PrimaryPart, gone with the burst", function()
+		local model = env.newInstance("Model")
+		local root = env.newInstance("Part")
+		root.Parent = model
+		model.PrimaryPart = root
+		local effect = vfx:play("reward.burst", { position = Vector3.zero, parent = model })
+		local holder, emitters = effect.parts[1], effect.parts[2]
+		expect(holder.ClassName).toBe("Attachment") -- a ParticleEmitter emits only from a BasePart or Attachment
+		expect(holder.Parent).toBe(root)
+		expect(emitters[1].Parent).toBe(holder)
+		env.mock:advance(1.3)
+		expect(holder.Parent).toBeNil() -- a pooled rig keeps no emitter
+		expect(#root:GetChildren()).toBe(0)
+	end)
+
+	it("uses a BasePart or Attachment parent as is; a Model without parts plays at the position", function()
+		local part = env.newInstance("Part")
+		local onPart = vfx:play("hit.generic", { parent = part })
+		expect(onPart.parts[1]).toBeNil()
+		expect(onPart.parts[2][1].Parent).toBe(part)
+		local empty = env.newInstance("Model")
+		local atPosition = vfx:play("hit.generic", { position = Vector3.new(1, 2, 3), parent = empty })
+		expect(atPosition.parts[1].Parent).toBe(vfx._backend.anchor())
+		expect(atPosition.parts[1].Position).toBe(Vector3.new(1, 2, 3))
+	end)
+
 	it("cleans a burst up after its longest lifetime", function()
 		local effect = vfx:play("reward.burst", { position = Vector3.zero })
 		expect(vfx:activeEffects()).toBe(1)

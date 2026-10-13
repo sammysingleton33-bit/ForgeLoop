@@ -228,7 +228,8 @@ local function stonePlinth(
 	local k = 0
 	for side = 0, 3 do
 		local alongX = side % 2 == 0
-		local len = if alongX then w + 0.5 else d - 0.3
+		-- side stones stop short of the corners: no overlap (and no shared top face) with the front/back stones
+		local len = if alongX then w + 0.5 else d - 1.8
 		local sgn = if side < 2 then -1 else 1
 		local n = math.max(2, math.floor(len / bl0 + 0.5))
 		local weights, total = {}, 0
@@ -241,6 +242,9 @@ local function stonePlinth(
 			k += 1
 			local bl = len * weights[i] / total
 			local bh = h + jit(sd * 17 + k, 0.14) - 0.04
+			if math.abs(bh - h) < 0.02 then
+				bh = h + 0.03 -- never flush with the core's top face
+			end
 			local out = 0.32 + jit(sd * 5 + k, 0.1)
 			local col = if k % 3 == 0 then S.light elseif k % 3 == 1 then S.base else shade(S.base, 1.07)
 			local size, pos
@@ -276,7 +280,7 @@ local function quoins(
 			for k = 0, n - 1 do
 				local qy = y + 0.75 + k * (h - 1.5) / math.max(1, n - 1)
 				local long = (k + (if sx * sz > 0 then 1 else 0)) % 2 == 0
-				local size = if long then Vector3.new(2, 1.2, 1.3) else Vector3.new(1.3, 1.2, 2)
+				local size = if long then Vector3.new(2, 1.16, 1.3) else Vector3.new(1.3, 1.16, 2)
 				local pos =
 					Vector3.new(ox + sx * (w / 2 + 0.15 - size.X / 2), qy, oz + sz * (d / 2 + 0.15 - size.Z / 2))
 				block(ctx, "Quoin", size, CFrame.new(pos), color, M.Slate)
@@ -380,15 +384,16 @@ local function timberBox(
 	cz: number?
 )
 	local ox, oz = cx or 0, cz or 0
-	block(ctx, "Walls", Vector3.new(w, h, d), CFrame.new(ox, y + h / 2, oz), plaster or C.plaster, M.Plaster)
-	block(ctx, "SolePlate", Vector3.new(w + 0.5, 0.6, d + 0.5), CFrame.new(ox, y + 0.3, oz), C.timber, M.Wood)
+	-- walls and corner posts stop 0.03/0.02 short of the plates' faces (no coplanar faces, no z-fighting)
+	block(ctx, "Walls", Vector3.new(w, h - 0.06, d), CFrame.new(ox, y + h / 2, oz), plaster or C.plaster, M.Plaster)
+	block(ctx, "SolePlate", Vector3.new(w + 0.46, 0.6, d + 0.46), CFrame.new(ox, y + 0.28, oz), C.timber, M.Wood)
 	block(ctx, "TopPlate", Vector3.new(w + 0.5, 0.6, d + 0.5), CFrame.new(ox, y + h - 0.3, oz), C.timber, M.Wood)
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
 			block(
 				ctx,
 				"CornerPost",
-				Vector3.new(0.72, h, 0.72),
+				Vector3.new(0.72, h - 0.04, 0.72),
 				CFrame.new(ox + sx * w / 2, y + h / 2, oz + sz * d / 2),
 				C.timber,
 				M.Wood
@@ -889,7 +894,7 @@ local function windowAt(ctx: Ctx, cf: CFrame, o: WindowOpts?)
 		block(
 			ctx,
 			"SlitFrame",
-			Vector3.new(1.3, hh + 0.6, 0.4),
+			Vector3.new(1.3, hh + 0.6, 0.36),
 			cf * CFrame.new(0, hh / 2, -0.1),
 			opts.frame or C.stoneLight,
 			M.Slate
@@ -904,7 +909,7 @@ local function windowAt(ctx: Ctx, cf: CFrame, o: WindowOpts?)
 		local hr = H - W / 2
 		block(ctx, "WindowFrame", Vector3.new(W + 0.9, hr, 0.4), cf * CFrame.new(0, hr / 2, -0.1), fc, fm)
 		disc(ctx, "WindowArchFrame", cf * CFrame.new(0, hr, -0.08), W + 0.9, 0.34, fc, fm)
-		block(ctx, "Window", Vector3.new(W, hr, 0.3), cf * CFrame.new(0, hr / 2, -0.24), C.glass, M.Glass)
+		block(ctx, "Window", Vector3.new(W, hr - 0.04, 0.3), cf * CFrame.new(0, hr / 2, -0.24), C.glass, M.Glass)
 		disc(ctx, "WindowArch", cf * CFrame.new(0, hr, -0.22), W, 0.26, C.glass, M.Glass)
 	else
 		block(ctx, "WindowFrame", Vector3.new(W + 0.7, H + 0.7, 0.4), cf * CFrame.new(0, H / 2, -0.1), fc, fm)
@@ -915,7 +920,7 @@ local function windowAt(ctx: Ctx, cf: CFrame, o: WindowOpts?)
 	end
 	block(ctx, "Mullion", Vector3.new(0.26, H - 0.1, 0.16), cf * CFrame.new(0, H / 2, -0.44), fc, fm)
 	if not opts.simple then
-		block(ctx, "Transom", Vector3.new(W, 0.26, 0.16), cf * CFrame.new(0, H * 0.6, -0.44), fc, fm)
+		block(ctx, "Transom", Vector3.new(W, 0.26, 0.13), cf * CFrame.new(0, H * 0.6, -0.44), fc, fm)
 	end
 	if opts.box then
 		block(ctx, "FlowerBox", Vector3.new(W + 0.7, 0.8, 0.9), cf * CFrame.new(0, -0.45, -0.7), C.wood, M.WoodPlanks)
@@ -988,7 +993,8 @@ local function doorAt(ctx: Ctx, cf: CFrame, o: DoorOpts?)
 	end
 	local sh = opts.step or 0
 	if sh > 0 then
-		block(ctx, "Step", Vector3.new(W + 1.9, sh, 1.9), cf * CFrame.new(0, -sh / 2, -1.0), st, M.Slate)
+		-- the stoop's top sits 0.03 under the floor (never flush with the plinth's top face)
+		block(ctx, "Step", Vector3.new(W + 1.9, sh - 0.03, 1.9), cf * CFrame.new(0, -sh / 2 - 0.015, -1.0), st, M.Slate)
 		if sh > 0.9 then
 			block(ctx, "Step", Vector3.new(W + 2.6, sh / 2, 1.1), cf * CFrame.new(0, -sh * 0.75, -2.45), stl, M.Slate)
 		end
@@ -1150,8 +1156,8 @@ local function banner(
 		block(
 			ctx,
 			"BannerBorder",
-			Vector3.new(bw + 0.36, hh + 0.1, 0.12),
-			base * CFrame.new(0, -hh / 2 - 0.05, -0.38),
+			Vector3.new(bw + 0.36, hh + 0.05, 0.12),
+			base * CFrame.new(0, -hh / 2 - 0.075, -0.38),
 			IVORY,
 			M.Fabric
 		)
@@ -1203,11 +1209,22 @@ local function crest(ctx: Ctx, cf: CFrame, size: number, color: Color3, style: s
 end
 
 -- Throne on a three-step dais (G13.6). cf = the dais' back-centre on the floor, local -Z = the way the
--- throne faces. Seat "Throne" (Anchored, CanCollide) with a tall kingdom-colour back and gold trim.
--- Returns the Seat and the dais top height above cf.
-local function throne(ctx: Ctx, cf: CFrame, color: Color3, style: string, stone: Stone?): (BasePart, number)
+-- throne faces. Seat "Throne" (Anchored, CanCollide) with a tall kingdom-colour back and gold trim. The back
+-- stands 0.35 in front of cf (clear of a door leaf and its straps behind it). canopyY (height above cf)
+-- adds a baldachin: two tall posts, a kingdom-cloth gabled canopy and a gold finial (5 parts),
+-- high above the seat so the throne spot reads from behind and from high aerial angles while the seat stays
+-- open to oblique views. Every part carries the attribute KitThrone. Returns the Seat and the dais top.
+local function throne(
+	ctx: Ctx,
+	cf: CFrame,
+	color: Color3,
+	style: string,
+	stone: Stone?,
+	canopyY: number?
+): (BasePart, number)
 	local S = stone or STONE.neutral
-	local steps = { { 6.6, 4.4 }, { 5.6, 3.6 }, { 4.6, 3.0 } }
+	local first = #ctx.model:GetChildren()
+	local steps = { { 5.8, 4.4 }, { 5.0, 3.6 }, { 4.4, 3.0 } } -- narrower than a 6-wide door's jambs
 	for k, st in steps do
 		block(
 			ctx,
@@ -1223,13 +1240,13 @@ local function throne(ctx: Ctx, cf: CFrame, color: Color3, style: string, stone:
 	block(
 		ctx,
 		"DaisCarpet",
-		Vector3.new(4, 0.1, 3),
+		Vector3.new(4, 0.1, 3.2),
 		cf * CFrame.new(0, top + 0.05, sz),
 		shade(color, 0.7),
 		M.Fabric,
 		0.7
 	)
-	block(ctx, "ThroneBase", Vector3.new(3.6, 1, 3), cf * CFrame.new(0, top + 0.5, sz), C.woodDark, M.Wood)
+	block(ctx, "ThroneBase", Vector3.new(3.6, 1, 3.1), cf * CFrame.new(0, top + 0.53, sz), C.woodDark, M.Wood)
 	local seat = Instance.new("Seat")
 	seat.Shape = Enum.PartType.Block
 	seat.Size = Vector3.new(3, 1, 3)
@@ -1238,11 +1255,53 @@ local function throne(ctx: Ctx, cf: CFrame, color: Color3, style: string, stone:
 	finish(seat, ctx, "Throne", shade(color, 0.85), M.Fabric, 0.85)
 	for _, sx in { -1, 1 } do
 		block(ctx, "ThroneArm", Vector3.new(0.5, 1, 2.8), cf * CFrame.new(sx * 1.85, top + 2.4, sz), C.gold, M.Metal)
-		ball(ctx, "ThroneFinial", 0.85, (cf * CFrame.new(sx * 1.8, top + 7.35, sz + 1.85)).Position, C.gold, M.Metal)
+		ball(ctx, "ThroneFinial", 0.85, (cf * CFrame.new(sx * 1.8, top + 7.35, sz + 0.8)).Position, C.gold, M.Metal)
 	end
-	block(ctx, "ThroneBack", Vector3.new(3.6, 5.6, 0.7), cf * CFrame.new(0, top + 3.8, sz + 1.85), color, M.Fabric, 1)
-	block(ctx, "ThroneTrim", Vector3.new(4.1, 0.5, 0.9), cf * CFrame.new(0, top + 6.85, sz + 1.85), C.gold, M.Metal)
-	emblem(ctx, cf * CFrame.new(0, top + 4.6, sz + 1.42), 1.8, style)
+	-- back: rear face 0.45 in front of cf (the keep puts cf 0.4 before the bay face: clear of door and voussoirs)
+	block(ctx, "ThroneBack", Vector3.new(3.6, 5.5, 0.7), cf * CFrame.new(0, top + 3.85, sz + 0.8), color, M.Fabric, 1)
+	block(ctx, "ThroneTrim", Vector3.new(4.1, 0.5, 0.9), cf * CFrame.new(0, top + 6.85, sz + 0.7), C.gold, M.Metal)
+	emblem(ctx, cf * CFrame.new(0, top + 4.6, sz + 0.37), 1.8, style)
+	if canopyY then
+		local f = if style == "emerald" then EMERALD_LIGHT else 1
+		local pz, cw, rise = -4.0, 8.2, 1.7
+		for _, sx in { -1, 1 } do
+			column(
+				ctx,
+				"BaldachinPost",
+				0.22,
+				canopyY + 0.2,
+				(cf * CFrame.new(sx * 3.6, 0, pz)).Position,
+				C.woodDark,
+				M.Wood
+			)
+		end
+		local zf, zb = pz - 0.45, 0.35 -- canopy from just past the posts back over the bay's merlons
+		local half = (zb - zf) / 2
+		local zc = (zf + zb) / 2
+		wedge(
+			ctx,
+			"BaldachinCanopy",
+			Vector3.new(cw, rise, half),
+			cf * CFrame.new(0, canopyY + rise / 2, zc - half / 2),
+			shade(color, f),
+			M.Fabric,
+			f
+		)
+		wedge(
+			ctx,
+			"BaldachinCanopy",
+			Vector3.new(cw, rise, half),
+			cf * CFrame.new(0, canopyY + rise / 2, zc + half / 2) * CFrame.Angles(0, PI, 0),
+			shade(color, f),
+			M.Fabric,
+			f
+		)
+		ball(ctx, "BaldachinFinial", 1.1, (cf * CFrame.new(0, canopyY + rise + 0.35, zc)).Position, C.gold, M.Metal)
+	end
+	local children = ctx.model:GetChildren()
+	for i = first + 1, #children do
+		children[i]:SetAttribute("KitThrone", true)
+	end
 	return seat, top
 end
 
@@ -1322,11 +1381,11 @@ local function logStack(ctx: Ctx, cf: CFrame, len: number, rows: number, r: numb
 end
 
 -- Fence from a to b (ground points): posts every ~4 studs and two rails.
-local function fence(ctx: Ctx, a: Vector3, b: Vector3, h: number?)
+local function fence(ctx: Ctx, a: Vector3, b: Vector3, h: number?, skipFirst: boolean?)
 	local hh = h or 3
 	local len = (b - a).Magnitude
 	local n = math.max(1, math.floor(len / 4.2 + 0.5))
-	for i = 0, n do
+	for i = if skipFirst then 1 else 0, n do
 		local p = a:Lerp(b, i / n)
 		block(
 			ctx,
