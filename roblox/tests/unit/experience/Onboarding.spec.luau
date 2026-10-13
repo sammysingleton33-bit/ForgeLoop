@@ -88,15 +88,19 @@ describe("Experience/Onboarding config rules", function()
 		end)).toContain("startOn 'KingdomJoind' is not a declared bus event")
 	end)
 
-	it("rejects unknown bus events, unlisted client actions and auto-advancing bus steps", function()
+	it("rejects unknown bus events, unlisted client actions and auto-advancing rewarded bus steps", function()
 		local text = problemsOf(function(c)
 			c.flows[1].steps[5].trigger = { bus = "CitizenTaskChangd" }
 			c.flows[1].steps[2].trigger = { client = "Teleported" }
-			c.flows[1].steps[6].autoAdvanceSec = 5
+			c.flows[1].steps[7].autoAdvanceSec = 5 -- FirstHarvest pays 25 Coins
 		end)
 		expect(text).toContain("unknown bus event 'CitizenTaskChangd'")
 		expect(text).toContain("client action 'Teleported' is not in clientActions")
-		expect(text).toContain("bus steps never auto-advance")
+		expect(text).toContain("a rewarded bus step never auto-advances")
+		-- an unrewarded bus step may move on, so a step waiting on another system never stalls (FL-0108)
+		expect(problemsOf(function(c)
+			c.flows[1].steps[6].autoAdvanceSec = 5 -- PlaceFarm: no reward
+		end)).toBe("")
 	end)
 
 	it("rejects long hints, bad ids, duplicate steps and two funnel flows", function()

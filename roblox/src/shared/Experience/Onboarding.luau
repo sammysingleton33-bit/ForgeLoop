@@ -23,8 +23,9 @@
 			interactive: boolean?,            -- the player does something meaningful (move, tap, build)
 			nudgeAfterSec: number?,           -- hint escalates (arrow pulses, OnboardingHintEscalated)
 			autoAdvanceSec: number?,          -- informational steps move on by themselves (via = "timeout");
-			                                  -- a client step may set it too, so a step that depends on
-			                                  -- another system never stalls the tutorial
+			                                  -- a client or unrewarded bus step may set it too, so a step
+			                                  -- that depends on another system never stalls the tutorial
+			                                  -- (a rewarded step never does: the reward needs the action)
 			requires: string?,                -- a server service the step needs (e.g. "ConversationService");
 			                                  -- while it is missing the step is passed over (via = "unavailable")
 			reward: Reward?,                  -- only on bus-triggered steps (server-verified)
@@ -183,8 +184,13 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 			if step.reward and firstReward == nil then
 				firstReward = elapsed
 			end
-			if step.autoAdvanceSec ~= nil and step.trigger and step.trigger.bus then
-				table.insert(problems, `{at}: bus steps never auto-advance (they wait for the real action)`)
+			-- a reward needs the real action; an unrewarded bus step may move on, like a client step,
+			-- so a step that waits on another system never stalls the tutorial (FL-0108)
+			if step.autoAdvanceSec ~= nil and step.trigger and step.trigger.bus and step.reward ~= nil then
+				table.insert(
+					problems,
+					`{at}: a rewarded bus step never auto-advances (the reward needs the real action)`
+				)
 			end
 		end
 		if flow.funnel then
