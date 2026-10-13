@@ -1008,9 +1008,14 @@ describe("ConversationService: G9 CitizenAnswered (FL-0107, D-044 (3))", functio
 		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
 		env.mock:advance(5)
 		local food = sim:balance("crimson", "food")
+		local reputation = registry:get("ReputationService")
+		local compassion = reputation:get(1).values.compassion
 		local effectsApplied = false
 		GameEvents.CitizenAnswered:connect(function()
-			effectsApplied = sim:balance("crimson", "food") == food - 25 -- the cost is already paid
+			-- the cost is paid, the reputation moved and the consequence (farmers_work_up) runs already
+			effectsApplied = sim:balance("crimson", "food") == food - 25
+				and reputation:get(1).values.compassion == compassion + 3
+				and math.abs(sim:productivityOf(farmer) - 1.15) < 1e-9
 		end)
 		assert(conversations:converse(p1, farmer.id))
 		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
