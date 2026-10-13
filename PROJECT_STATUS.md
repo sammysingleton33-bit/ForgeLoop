@@ -16,7 +16,7 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
     - The tutorial hints point at the right controls (#99).
     - Keep-upgrade credit goes to the ruler who started it (#104).
   - **Not yet:**
-    - A captured building keeps its roof shape.
+    - A captured building keeps its roof shape (#115 in review).
     - The oak leaf is hard to read at full zoom.
     - No sound (#49).
     - Dialogue is DRAFT.
@@ -24,7 +24,7 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
     - The throne is hard to see from behind.
     - FPS is unknown.
   - The Studio asks are in `production/quality-gates/studio-runs.md` (B9 row; the B8 asks still stand).
-- **Next build: B11.** It follows the first Studio feedback or FORGE-07 merges. There is no known open B-defect queue.
+- **Next build: B11.** It brings #115 (a captured building takes the new owner's look), plus whatever the first Studio feedback or FORGE-07 merges add.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -43,14 +43,15 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
   - The flow is in `docs/workflows/git-and-integration.md` → Review lane.
 
 ## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
-Updated 2026-10-13 11:45 UTC, main f3de21a (CI green).
+Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs per folder for CI headroom).
 
 **Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114 and #112. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
 
-**No ★ rows are open.** Every known VS-1 defect from B8 and B9 is merged.
+**One ★ row is open:** #115, the B11 candidate. Every other known VS-1 defect from B8 and B9 is merged.
 
 | # | PR | Owner | Lane | State | Next |
 |---|---|---|---|---|---|
+| ★ | #115 WorldView: a captured building is rebuilt in the new kingdom's Kit model (roof shape follows the owner) | FORGE-01 | World (B9/B10 defect) | D-040 review | Verdict, then B11 |
 | 1 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable. It unblocks FORGE-06's starter pack | FORGE-07 |
 | 2 | #111 FL-0107 G9 `CitizenAnswered` fired | FORGE-01 | Conversation | Unreviewed | FORGE-07 |
 | 3 | #113 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget | FORGE-01 | Living kingdom | Unreviewed | FORGE-07 |
@@ -277,14 +278,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+2b7a89f8 2026-10-13 integration-log: #116 merged (check.sh per-folder game spec steps)
+50ba0b7c 2026-10-13 check.sh: run game specs one top-level folder at a time, each under STEP_TIMEOUT; sum into one row with the slowest folders
+4522a40b 2026-10-13 [FORGE-00] B10 delivered (1c48149): Now, review queue (no star rows open), blockers, dashboard
 f3de21a5 2026-10-13 Integration bookkeeping: #114 and #112 merged (D-040 star); FL-0079 and FL-0081 REVIEW only G6; STUDIO_PLAYTEST co-ruler conversation and throne
 1c481491 2026-10-13 Merge PR #112: [FORGE-01] FL-0081 #89 L2: a throne is for its kingdom's rulers only (server-side unseat)
 61d51c36 2026-10-13 [FORGE-01] FL-0079 log: correct the fix-forward's spec counts
 5f53d83e 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-fl0079c
 2189329c 2026-10-13 [FORGE-01] #107 fix-forward: co-ruler showing (M1), requests no longer pinned (M2), struck carriers keep their load (M3), L1 specs, K10 co-ruler steps (L2)
-8357596d 2026-10-13 [FORGE-00] B9 delivered (f562a31): Now section, dashboard
-0403d32b 2026-10-13 B9 (f562a31): emblems in the world, conversation re-ask, tutorial hints, upgrade credit; build notes and Studio asks; main CI green for #107, #105
-5633e4df 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-throne
 ```
 
 <!-- forge:auto:end -->
