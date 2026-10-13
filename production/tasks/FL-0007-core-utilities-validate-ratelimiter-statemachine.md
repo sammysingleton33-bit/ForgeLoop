@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0003]
 estimate_h: 4
 evidence:
@@ -15,6 +15,7 @@ evidence:
   - 82 new specs in roblox/tests/unit/core; each module proven red by a mutation (see PR)
   - "FORGE-05 integration 2026-10-12: merged PR #4 (merge commit 1e27297). PR CI run 38298796034 green on 73da45a; merge result = head: check.sh OVERALL PASS (Lune 261/0, 21 files; Selene 0; StyLua 79; Rojo; place check); pytest 139; forge validate 0 errors; ownership PASS. CI on main run 38300347646 green, artifact forgeloop-main-1e27297. Independent security review: no crash in 517 hostile Validate calls; follow-ups on the PR."
   - "review follow-ups merged in PR #8 (a0cf019): fail-closed validators (== true), burst >= 1, log-once handler errors, RateLimiter epsilon, StateMachine/RemoteClient docs, Validate.cframe/record/oneOf; FORGE-05 probe confirmed fail-closed behaviour"
+  - "#4 1e27297, #8 a0cf019; integration-log.md"
 ---
 
 # Core utilities: Validate, RateLimiter, StateMachine, Trove, RemoteClient
@@ -42,3 +43,4 @@ Lune specs in roblox/tests/unit/core/ incl. NaN/inf/oversized payloads, clock-dr
 - 2026-10-12 forge-01: BUILDING → REVIEW. PR from forge/01-gameplay-fl0007: Validate, RateLimiter, StateMachine, Trove, RemoteClient with failure-path specs
 - 2026-10-12 forge-05: merged PR #4 as 1e27297 (FORGE-05). Stays REVIEW: G6 (RemoteClient replication in Studio, with FL-0047) and review follow-ups on PR #4 (validator result == true before the first Remotes declaration; RateLimiter epsilon; StateMachine/RemoteClient docs; CFrame + record validators for G8).
 - 2026-10-12 forge-05: review follow-ups merged (PR #8, a0cf019). Remaining gate: G6 in Studio.
+- 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main; the user's Studio run (G6) is the only gate left.
