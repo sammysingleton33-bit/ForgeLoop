@@ -12,9 +12,14 @@
 		  and the chip "Barracks Lv 2" once the server pushes the building.
 		- Another kingdom's building opens a read-only card ("Not your building").
 	Any other selection (citizen, a free plot, none) closes the panel.
+	Extra tabs (FL-0060): another controller adds a tab with `panel:addTab({ id, label, icon,
+	applies(building, store) -> boolean, onSelect(buildingId) })`; it shows after the building's tab
+	when `applies` says so (ArmyPanelController: "Army" on my barracks, which opens the army drawer).
 
 	Depends on KingdomHudController. Optional: InputModeController (FORGE-04).
-	API: panel:open(buildingId)  panel:close()  panel.state = { buildingId? }  panel.view (UI/UpgradePanel)
+	API: panel:open(buildingId)  panel:close()  panel:addTab(tab)  panel:removeTab(id)
+	     panel.state = { buildingId? }
+		panel.view (UI/UpgradePanel)
 ]]
 
 local BuildModel = require("../UI/BuildModel")
@@ -35,6 +40,7 @@ function Def.new(env: any, registry: any)
 		_registry = registry,
 		hud = registry:get("KingdomHudController"),
 		state = { buildingId = nil :: number? },
+		_tabs = {} :: { any },
 		_connections = {},
 	}, UpgradePanelController)
 end
@@ -127,6 +133,57 @@ function UpgradePanelController:close()
 	end
 end
 
+function UpgradePanelController:addTab(tab: { [string]: any })
+	for _, existing in self._tabs do
+		if existing.id == tab.id then
+			return
+		end
+	end
+	table.insert(self._tabs, tab)
+	if self.hud.state.menu == UpgradePanelController.MENU then
+		self.hud:render()
+	end
+end
+
+function UpgradePanelController:removeTab(id: string)
+	for i, existing in self._tabs do
+		if existing.id == id then
+			table.remove(self._tabs, i)
+			if self.hud.state.menu == UpgradePanelController.MENU then
+				self.hud:render()
+			end
+			return
+		end
+	end
+end
+
+-- The extra tabs that apply to this building (only buildings of my kingdom get any).
+function UpgradePanelController:_extraTabs(building: any): { any }
+	local store = self.hud.store
+	local mine = store:mine()
+	local out = {}
+	if building == nil or mine == nil or building.kingdom ~= mine.id then
+		return out
+	end
+	for _, tab in self._tabs do
+		local ok, applies = pcall(tab.applies, building, store)
+		if ok and applies then
+			table.insert(out, { id = tab.id, label = tab.label, icon = tab.icon })
+		end
+	end
+	return out
+end
+
+function UpgradePanelController:_selectTab(id: string)
+	local buildingId = self.state.buildingId
+	for _, tab in self._tabs do
+		if tab.id == id and buildingId ~= nil then
+			tab.onSelect(buildingId)
+			return
+		end
+	end
+end
+
 -- A building of another kingdom: what it is and its level, nothing to buy.
 local function foreignDetail(store: any, building: any): any
 	local info = Buildings.get(building.type)
@@ -186,7 +243,12 @@ function UpgradePanelController:render(metrics: any)
 		self.view:destroy()
 		return
 	end
+	local extra = self:_extraTabs(hud.store:building(self.state.buildingId))
 	self.view:render(detail, metrics, {
+		tabs = if #extra > 0 then extra else nil,
+		onTab = function(id)
+			self:_selectTab(id)
+		end,
 		onUpgrade = function(d)
 			hud:requestUpgrade(d)
 		end,
