@@ -101,7 +101,7 @@ For CONTRACTS G9: "Attribution is implemented once, in `Feedback/Signals.luau`, 
   - attribution lives in `Feedback/Signals`, and the interfaces §8 text is added when this PR merges (6);
   - match30 Results waits for FL-0096 (7).
 - **Still open, on FL-0062 (#49):** the rival 250-stud spec. Also E-L2 (`placedBy` naming) and E-L3 (`citizenBarks` naming), both optional.
-- **Order:** the hint targets the docs describe (plot markers, `HUD.ArmyButton`) arrive with #99, and the docs mark them "(#99)". FORGE-05's #102 reads `targets.firstGatherSec`, which this PR renames to `firstDepositSec`; whichever of #98 and #102 merges second switches to the new name.
+- **Order:** the hint targets the docs describe (plot markers, `HUD.ArmyButton`) are on main since #99. FORGE-05's #102 reads `targets.firstGatherSec`, which this PR renames to `firstDepositSec`; whichever of #98 and #102 merges second switches to the new name.
 
 ## Next actions for the receiver
 1. **FORGE-03:** `design/economy.md:60` still says the slice takes about 10 minutes. Per D-044 (1), the slice stays 6–8 minutes with keep L2 optional; please bring that line in line.
