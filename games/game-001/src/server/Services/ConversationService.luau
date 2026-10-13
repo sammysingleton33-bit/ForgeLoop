@@ -48,6 +48,13 @@
 		ConversationService:refresh()          -- one thought-bubble refresh (the loop calls it)
 		ConversationService:step(dt)           -- consequences over time (the loop calls it)
 		ConversationService:openRequests(kingdomId): { { entityId, scenarioId } }
+		ConversationService:announceStrike(kingdomId, citizens, on)   -- strike events for a strike started
+		                                       elsewhere (CitizenService:debugStrike); off follows when it ends
+	Studio debug hook (G13.7 citizen.request, FORGE-05's DebugPresetService):
+		ConversationService:debugRequest(kingdomId, entityId, scenarioId) -> (ok, message)
+			entityId 0 / scenarioId "any" = the hook picks (a citizen without a request; its first eligible
+			scenario). The request is forced: Converse shows it even if its trigger does not hold, Choose does
+			not re-check the trigger for that showing, and refresh never closes it.
 ]]
 
 local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
@@ -287,10 +294,12 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	local ctx = self:_citizenCtx(c, base, rep)
 	local showing = self._showing[entityId]
 	if showing and showing.userId == userId then
-		-- asked again before answering: the same showing, while it still holds
-		local still = find(ContentQuery.eligibleScenarios(ctx, citizenState(c), self:_now(), nil), function(s)
-			return s.id == showing.scenarioId
-		end)
+		-- asked again before answering: the same showing, while it still holds (a forced one always does)
+		local still = if showing.forced
+			then ContentQuery.data.dialogue.scenarios[showing.scenarioId]
+			else find(ContentQuery.eligibleScenarios(ctx, citizenState(c), self:_now(), nil), function(s)
+				return s.id == showing.scenarioId
+			end)
 		if still then
 			return self:_payload(c, still, userId)
 		end
@@ -303,15 +312,19 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	local open = find(self._open[kingdomId] or {}, function(r)
 		return r.entityId == entityId
 	end)
-	local scenario = (open and find(eligible, function(s)
-		return s.id == open.scenarioId
-	end)) or eligible[1]
+	local forced = open ~= nil and open.forced == true
+	local scenario = if forced
+		then ContentQuery.data.dialogue.scenarios[open.scenarioId]
+		else (open and find(eligible, function(s)
+			return s.id == open.scenarioId
+		end)) or eligible[1]
 	if scenario == nil then
 		return nil
 	end
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
 	self:_closeRequest(kingdomId, entityId)
-	self._showing[entityId] = { scenarioId = scenario.id, userId = userId, kingdomId = kingdomId }
+	self._showing[entityId] =
+		{ scenarioId = scenario.id, userId = userId, kingdomId = kingdomId, forced = forced or nil }
 	self._reputation:rulerVisited(userId, entityId)
 	return self:_payload(c, scenario, userId)
 end
@@ -467,6 +480,10 @@ function ConversationService:_sendStrike(kingdomId: string, citizens: { any }, o
 	local byOccupation: { [string]: { number } } = {}
 	local order = {}
 	for _, c in citizens do
+		if (c.strikeShown == true) == on then
+			continue -- already shown so: each change goes out once
+		end
+		c.strikeShown = on
 		local occupation = if c.profile then c.profile.occupation else c.job
 		if byOccupation[occupation] == nil then
 			byOccupation[occupation] = {}
@@ -544,9 +561,11 @@ function ConversationService:choose(
 	local base, rep = self:_kingdomCtx(kingdomId, userId)
 	local ctx = self:_citizenCtx(c, base, rep)
 	if
-		find(ContentQuery.eligibleScenarios(ctx, citizenState(c), self:_now(), nil), function(s)
-			return s.id == scenarioId
-		end) == nil
+		not showing.forced
+		and find(ContentQuery.eligibleScenarios(ctx, citizenState(c), self:_now(), nil), function(s)
+				return s.id == scenarioId
+			end)
+			== nil
 	then
 		self._showing[entityId] = nil
 		return false, nil, "not_eligible"
@@ -624,6 +643,69 @@ function ConversationService:choose(
 	return true, { reaction = reaction, effects = applied }, nil
 end
 
+-- Strike events for citizens whose strike started elsewhere (CitizenService:debugStrike): on now, and
+-- off once each strike ends.
+function ConversationService:announceStrike(kingdomId: string, citizens: { any }, on: boolean)
+	self:_sendStrike(kingdomId, citizens, on)
+	if on then
+		self:_watchStrike(kingdomId, citizens, self:_sim().time + 1)
+	end
+end
+
+-- ---------------------------------------------------------------- Studio debug hook (G13.7)
+function ConversationService:debugRequest(kingdomId: string, entityId: number, scenarioId: string): (boolean, string?)
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdomId]
+	if k == nil then
+		return false, `unknown kingdom {kingdomId}`
+	end
+	local base, rep = self:_kingdomCtx(kingdomId)
+	local now = self:_now()
+	local function firstEligible(c: any): any?
+		return ContentQuery.eligibleScenarios(self:_citizenCtx(c, base, rep), citizenState(c), now, nil)[1]
+	end
+	local c, scenario
+	if entityId ~= 0 then
+		c = sim.citizens[entityId]
+		if c == nil or c.kingdomId ~= kingdomId then
+			return false, `no citizen {entityId} in {kingdomId}`
+		end
+	end
+	if scenarioId ~= "any" then
+		scenario = ContentQuery.data.dialogue.scenarios[scenarioId]
+		if scenario == nil then
+			return false, `unknown scenario {scenarioId}`
+		end
+	end
+	if c == nil then
+		for _, id in k.citizenIds do
+			local candidate = sim.citizens[id]
+			if self._showing[id] == nil and (scenario ~= nil or firstEligible(candidate) ~= nil) then
+				c = candidate
+				break
+			end
+		end
+		if c == nil then
+			return false, `no citizen of {kingdomId} can raise {scenarioId}`
+		end
+	end
+	scenario = scenario or firstEligible(c)
+	if scenario == nil then
+		return false, `{c.name} has no eligible scenario; pass a scenarioId`
+	end
+	self:_closeRequest(kingdomId, c.id)
+	self._open[kingdomId] = self._open[kingdomId] or {}
+	table.insert(self._open[kingdomId], { entityId = c.id, scenarioId = scenario.id, forced = true })
+	self:_send(kingdomId, {
+		type = "thought",
+		id = c.id,
+		scenarioId = scenario.id,
+		text = ContentQuery.fill(scenario.thought, self:_names(c, nil)),
+		icon = scenario.icon or "request",
+	})
+	return true, `{c.name} ({c.id}) raises {scenario.id}`
+end
+
 -- ---------------------------------------------------------------- thoughts and time
 function ConversationService:_closeRequest(kingdomId: string, entityId: number)
 	local open = self._open[kingdomId]
@@ -664,12 +746,16 @@ function ConversationService:refresh()
 		for i = #open, 1, -1 do
 			local r = open[i]
 			local c = sim.citizens[r.entityId]
-			local holds = c
-				and find(
-					ContentQuery.eligibleScenarios(self:_citizenCtx(c, base, rep), citizenState(c), now, shown),
-					function(s)
-						return s.id == r.scenarioId
-					end
+			local holds = c ~= nil
+				and (
+					r.forced
+					or find(
+							ContentQuery.eligibleScenarios(self:_citizenCtx(c, base, rep), citizenState(c), now, shown),
+							function(s)
+								return s.id == r.scenarioId
+							end
+						)
+						~= nil
 				)
 			if not holds then
 				table.remove(open, i)

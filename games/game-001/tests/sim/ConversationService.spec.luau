@@ -465,6 +465,110 @@ describe("ConversationService: strikes on the wire (G13.3 v0.4-g6)", function()
 	end)
 end)
 
+describe("ConversationService: Studio debug hooks (G13.7)", function()
+	local function presets(env, registry)
+		local Def = require("@game/ServerScriptService/Game/Services/DebugPresetService")
+		return Def.new(env, registry)
+	end
+
+	it("citizen.request forces a request: shown on Converse and answerable though its trigger does not hold", function()
+		local env, conversations, match, registry, sent = boot()
+		local p1 = seat(env, 1)[1]
+		local sim = match.host.match.sim
+		local farmer
+		for _, id in sim.kingdoms.crimson.citizenIds do
+			if sim.citizens[id].profile.occupation == "farmer" then
+				farmer = sim.citizens[id]
+				break
+			end
+		end
+		farmer.hunger = 0 -- well fed: farmer_hungry_grain does not hold
+		for _, resource in { "food", "wood", "stone" } do
+			sim:deposit("crimson", resource, 300, `test:{resource}`, "test")
+		end
+		expect(conversations:converse(p1, farmer.id)).toBeNil()
+		local message = presets(env, registry):_hook("request", "crimson", farmer.id, "farmer_hungry_grain")
+		expect(message).toContain("farmer_hungry_grain")
+		local thought = sent[#sent].event
+		expect({ thought.type, thought.id, thought.scenarioId }).toEqual({ "thought", farmer.id, "farmer_hungry_grain" })
+		conversations:refresh() -- a forced request is never closed for not holding
+		expect(conversations:openRequests("crimson")[1]).toEqual({
+			entityId = farmer.id,
+			scenarioId = "farmer_hungry_grain",
+		})
+		local shown = assert(conversations:converse(p1, farmer.id))
+		expect(shown.scenarioId).toBe("farmer_hungry_grain")
+		expect(assert(conversations:converse(p1, farmer.id)).scenarioId).toBe("farmer_hungry_grain") -- asked again
+		local ok, _, reason = choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store")
+		expect(reason).toBeNil()
+		expect(ok).toBe(true)
+		-- refusals name the problem
+		expect({ conversations:debugRequest("crimson", farmer.id, "no_such_scenario") }).toEqual({
+			false,
+			"unknown scenario no_such_scenario",
+		})
+		local other = sim.kingdoms.azure.citizenIds[1]
+		expect(conversations:debugRequest("crimson", other, "any")).toBe(false)
+		expect(conversations:debugRequest("violet", 0, "any")).toBe(false)
+	end)
+
+	it("citizen.request 0 any: the hook picks a citizen and its first eligible scenario", function()
+		local env, conversations, match, registry, sent = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer = hungryFarmer(match, registry)
+		local message = presets(env, registry):_hook("request", "crimson", 0, "any")
+		expect(message).toContain("raises")
+		local request = conversations:openRequests("crimson")[1]
+		expect(request).never.toBeNil()
+		local thought = sent[#sent].event
+		expect({ thought.type, thought.id, thought.scenarioId }).toEqual({
+			"thought",
+			request.entityId,
+			request.scenarioId,
+		})
+		expect(assert(conversations:converse(p1, request.entityId)).scenarioId).toBe(request.scenarioId)
+		expect(farmer).never.toBeNil()
+	end)
+
+	it("strike.start: the occupation strikes, its strike events go out once each way", function()
+		local env, conversations, match, registry, sent = boot()
+		seat(env, 1)
+		local sim = match.host.match.sim
+		local citizens = registry:get("CitizenService")
+		local farmers = {}
+		for _, id in sim.kingdoms.crimson.citizenIds do
+			if sim.citizens[id].profile.occupation == "farmer" then
+				table.insert(farmers, id)
+			end
+		end
+		local function strikes(from)
+			local out = {}
+			for i = from, #sent do
+				if sent[i].event.type == "strike" then
+					table.insert(out, { on = sent[i].event.on, ids = sent[i].event.entityIds })
+				end
+			end
+			return out
+		end
+		expect(presets(env, registry):_hook("strike", "crimson", "farmer", true)).toContain("on strike")
+		for _, id in farmers do
+			expect(sim:isStriking(sim.citizens[id])).toBe(true)
+		end
+		expect(strikes(1)).toEqual({ { on = true, ids = farmers } })
+		local mark = #sent + 1
+		local ok, message = citizens:debugStrike("crimson", "farmer", false)
+		expect({ ok, message }).toEqual({ true, `{#farmers} farmer back at work` })
+		env.mock:advance(3) -- the watcher sees them back at work: no second "off"
+		expect(strikes(mark)).toEqual({ { on = false, ids = farmers } })
+		-- a strike that runs out ends on its own, once
+		mark = #sent + 1
+		citizens:debugStrike("crimson", "farmer", true)
+		env.mock:advance(service("CitizenService").DEBUG_STRIKE_SECONDS + 2)
+		expect(strikes(mark)).toEqual({ { on = true, ids = farmers }, { on = false, ids = farmers } })
+		expect(conversations).never.toBeNil()
+	end)
+end)
+
 describe("ConversationService: thought bubbles", function()
 	it("opens up to Society.openRequests requests, highest priority first, and closes stale ones", function()
 		local env, conversations, match, registry, sent = boot()

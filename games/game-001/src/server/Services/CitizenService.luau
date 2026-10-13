@@ -28,6 +28,9 @@
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
 	hasRequest is false until conversations (FL-0079).
+	Studio debug hook (G13.7 strike.start, FORGE-05's DebugPresetService):
+		CitizenService:debugStrike(kingdom, occupation, on) -> (ok, message)   every citizen of the occupation
+		    strikes for DEBUG_STRIKE_SECONDS (or stops); ConversationService:announceStrike sends the events
 ]]
 
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
@@ -37,6 +40,8 @@ local CitizenService = {}
 CitizenService.__index = CitizenService
 
 local Def = { name = "CitizenService", dependencies = { "MatchService", "RemoteService" } }
+
+Def.DEBUG_STRIKE_SECONDS = 120 -- G13.7 strike.start
 
 local ACTIVITY_TEXT = {
 	Gather = "Gathering",
@@ -176,6 +181,38 @@ function CitizenService:getPopulation(kingdomId: string): {
 		end
 	end
 	return { total = count(#k.citizenIds + #k.unitIds), byJob = byJob, cap = count(k.popCap), quotas = quotas }
+end
+
+-- ---------------------------------------------------------------- Studio debug hooks (G13.7)
+-- Every citizen of `occupation` strikes for DEBUG_STRIKE_SECONDS, or stops; the strike events go out
+-- through ConversationService:announceStrike when it runs. -> (ok, message)
+function CitizenService:debugStrike(kingdomId: string, occupation: string, on: boolean): (boolean, string?)
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdomId]
+	if k == nil then
+		return false, `unknown kingdom {kingdomId}`
+	end
+	local changed = {}
+	for _, id in k.citizenIds do
+		local c = sim.citizens[id]
+		local occ = if c.profile then c.profile.occupation else c.job
+		if occ == occupation and sim:isStriking(c) ~= on then
+			if on then
+				sim:strike(c, Def.DEBUG_STRIKE_SECONDS)
+			else
+				c.strikeUntil = nil
+			end
+			table.insert(changed, c)
+		end
+	end
+	if #changed == 0 then
+		return false, `no {occupation} of {kingdomId} to {if on then "strike" else "end a strike for"}`
+	end
+	local conversations = self._registry:find("ConversationService")
+	if conversations and conversations.announceStrike then
+		conversations:announceStrike(kingdomId, changed, on)
+	end
+	return true, `{#changed} {occupation} {if on then `on strike for {Def.DEBUG_STRIKE_SECONDS} s` else "back at work"}`
 end
 
 function CitizenService:setFedRatio(kingdomId: string, ratio: number)
