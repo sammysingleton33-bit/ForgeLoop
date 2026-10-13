@@ -12,7 +12,7 @@
 			bounds    { minX, maxX, minZ, maxZ } in studs; placement outside is rejected (default ±1024)
 			treasury  CONTRACTS G7 TreasuryService (get/canAfford/spend/deposit, txIds); default TreasuryDouble
 			costs     CONTRACTS G6 Costs (building(type, level) -> { cost, buildSeconds }, unit(type));
-			          default Catalog.costs(catalog), the double of FORGE-03's Costs.luau
+			          default Catalog.costs(catalog), on FORGE-03's Costs.luau
 
 	World setup
 		sim:addKingdom({ id, name, color: {number}, x, z, yaw?, startAt?, populate? }): Kingdom   -- keep + start
@@ -824,6 +824,18 @@ function Simulation:viewOf(b: any): { [string]: any }
 	}
 end
 
+-- Every standing building as a G2 Building view, in id order.
+function Simulation:buildingViews(): { { [string]: any } }
+	local out = {}
+	for _, id in self.buildingOrder do
+		local b = self.buildings[id]
+		if b and not b.destroyed then
+			table.insert(out, self:viewOf(b))
+		end
+	end
+	return out
+end
+
 function Simulation:buildingView(id: number): { [string]: any }?
 	local b = self.buildings[id]
 	return if b then self:viewOf(b) else nil
@@ -849,9 +861,11 @@ function Simulation:deposit(kingdomId: string, resource: string, amount: number,
 	return self.treasury:deposit(kingdomId, resource, amount, txId, source)
 end
 
+-- builder-seconds of work for a level (Costs.building(kind, level).buildSeconds, CONTRACTS G13.5)
 function Simulation:workFor(kind: string, level: number): number
 	local price = self.costs.building(kind, level)
-	return if price then price.buildSeconds else self.catalog.buildings[kind].levels[level].work
+	assert(price, `no Costs.building({kind}, {level})`)
+	return price.buildSeconds
 end
 
 function Simulation:addCrownPoints(kingdomId: string, amount: number, reason: string)
@@ -996,7 +1010,14 @@ function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number): 
 	return true, nil
 end
 
-function Simulation:placeBuilding(kingdom: any, kind: string, x: number, z: number, by: number?): (any?, string?)
+function Simulation:placeBuilding(
+	kingdom: any,
+	kind: string,
+	x: number,
+	z: number,
+	by: number?,
+	yaw: number?
+): (any?, string?)
 	local ok, err = self:canPlace(kingdom, kind, x, z)
 	if not ok then
 		return nil, err
@@ -1006,7 +1027,7 @@ function Simulation:placeBuilding(kingdom: any, kind: string, x: number, z: numb
 	if not self:spend(kingdom.id, cost, `build:{nextId}:1`, `building:{kind}`) then
 		return nil, "cannot_afford" -- e.g. another server-side spend raced us
 	end
-	local building = self:_createBuilding(kingdom, kind, x, z)
+	local building = self:_createBuilding(kingdom, kind, x, z, yaw)
 	assert(building.id == nextId, "building id changed between spend and create")
 	building.pendingCost = table.clone(cost)
 	building.placedBy = by
