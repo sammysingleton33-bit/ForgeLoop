@@ -27,7 +27,8 @@ local REASONS: { [string]: string } = {
 	-- Build.CanPlace / Build.Place
 	-- the server keeps a building's largest-level footprint plus Buildings.placementGap free
 	-- (Sim/Footprint, #62): the ghost's outer outline shows that room (FORGE-05 M-2 on #62)
-	blocked = "Leave room for upgrades",
+	-- one code for both the slab on something and the upgrade room touching it (FORGE-05 L8 on #86)
+	blocked = "Not enough room here",
 	out_of_territory = "Build inside your kingdom",
 	out_of_bounds = "That's off the edge of the map",
 	cannot_afford = "Not enough resources",

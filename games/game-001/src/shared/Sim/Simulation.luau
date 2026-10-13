@@ -20,6 +20,8 @@
 		                                       citizens (populate = false: none until sim:populate(id));
 		                                       seeds the treasury when it is the double
 		sim:populate(kingdomId): boolean       -- spawns the starting citizens once (slice mode: on first ruler)
+		sim:addProductivity(citizen, amount, seconds), sim:productivityOf(citizen): number,
+		sim:strike(citizen, seconds), sim:isStriking(citizen)   -- decision consequences (G13.3)
 		sim.profiler: { start: (sim, kingdom, citizens), birth: (sim, kingdom, citizen) }?
 		                                       -- optional; gives citizens names, traits and families
 		                                          (Sim/People, G13.2) right after they spawn
@@ -519,18 +521,25 @@ end
 -- ---------------------------------------------------------------- derived kingdom stats
 function Simulation:_recompute(kingdom: any)
 	local popCap, territory = 0, 0
+	local bonus: { [string]: number } = {}
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
 		if b.destroyed or b.level < 1 then
 			continue
 		end
-		local stats = self.catalog.buildings[b.kind].levels[b.level]
+		local def = self.catalog.buildings[b.kind]
+		local stats = def.levels[b.level]
 		popCap += stats.popCap or 0
 		if b.kind == "keep" then
 			territory = stats.territory or 0
 		end
+		-- the best standing camp's level speeds up gathering what it accepts (FL-0081)
+		for _, resource in if stats.gatherBonus then def.accepts or {} else {} do
+			bonus[resource] = math.max(bonus[resource] or 0, stats.gatherBonus)
+		end
 	end
 	kingdom.popCap = popCap
+	kingdom.gatherBonus = bonus
 	if territory ~= kingdom.territory then
 		kingdom.territory = territory
 		self:_refreshNearNodes(kingdom)
@@ -931,6 +940,44 @@ function Simulation:deposit(kingdomId: string, resource: string, amount: number,
 		return true
 	end
 	return self.treasury:deposit(kingdomId, resource, amount, txId, source)
+end
+
+-- ---------------------------------------------------------------- work modifiers (G13.3 consequences)
+-- A productivity change of `amount` (−1..+1: −0.2 = 20 % slower) for `seconds`; changes add up.
+function Simulation:addProductivity(citizen: any, amount: number, seconds: number)
+	citizen.boosts = citizen.boosts or {}
+	table.insert(citizen.boosts, { amount = amount, untilTime = self.time + seconds })
+end
+
+-- The citizen's work-rate factor: 1 + the active productivity changes, never below 0.
+function Simulation:productivityOf(citizen: any): number
+	local boosts = citizen.boosts
+	if boosts == nil then
+		return 1
+	end
+	local total = 1
+	for i = #boosts, 1, -1 do
+		local boost = boosts[i]
+		if self.time >= boost.untilTime then
+			table.remove(boosts, i)
+		else
+			total += boost.amount
+		end
+	end
+	if #boosts == 0 then
+		citizen.boosts = nil
+	end
+	return math.max(0, total)
+end
+
+-- Stops the citizen working for `seconds` (a strike); they idle instead.
+function Simulation:strike(citizen: any, seconds: number)
+	citizen.strikeUntil = math.max(citizen.strikeUntil or 0, self.time + seconds)
+end
+
+-- On strike, or walked out (productivity down to 0: SPEC §5.4 "−1 = one citizen's walk-out").
+function Simulation:isStriking(citizen: any): boolean
+	return (citizen.strikeUntil ~= nil and self.time < citizen.strikeUntil) or self:productivityOf(citizen) <= 0
 end
 
 -- builder-seconds of work for a level (Costs.building(kind, level).buildSeconds, CONTRACTS G13.5)

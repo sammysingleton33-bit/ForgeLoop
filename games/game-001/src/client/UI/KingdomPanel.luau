@@ -44,7 +44,8 @@ local KingdomPanel = {}
 KingdomPanel.__index = KingdomPanel
 
 KingdomPanel.TABS = table.freeze({
-	table.freeze({ id = "overview", label = "Overview", icon = "crown" }),
+	-- the banner, not a crown: the crown is Emberhold's emblem (D-039; FORGE-05 L5 on #86)
+	table.freeze({ id = "overview", label = "Overview", icon = "banner" }),
 	table.freeze({ id = "buildings", label = "Buildings", icon = "keep" }),
 	table.freeze({ id = "jobs", label = "Jobs", icon = "citizens" }),
 })

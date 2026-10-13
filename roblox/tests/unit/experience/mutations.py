@@ -83,6 +83,7 @@ M = [
  ("FL-0053", C2+"RulerCameraController.luau", 'local ratio = scale / self._pinch', 'local ratio = scale', "RulerCamera", "zoom stays within", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'while #self._shakes > limits.maxActive do', 'while false do', "RulerCamera", "caps the duration and the number of shakes", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'return Def.clamp(magnitude, 0, 1) * maxDegrees * left * left', 'return magnitude * maxDegrees * left * left', "RulerCamera", "shakeAmplitude() eases out and clamps", "game"),
+ ("FL-0053", C2+"RulerController.luau", '			humanoid.Sit = false -- FORGE-01', '			local _ = false -- FORGE-01', "Ruler", "standUp() leaves the throne", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)', 'self._target.focus = position', "RulerCamera", "the focus never leaves the map bounds", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'if moved.Magnitude < self:_tapPixels() then', 'if false then', "RulerCamera", "left-drag pans the ground", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'type(touches) ~= "table" or #touches ~= 1 then', 'type(touches) ~= "table" or #touches < 1 then', "RulerCamera", "two-finger moves never pan", "game"),
@@ -183,7 +184,8 @@ M = [
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not Def.LATER_PHASE_MODES[mode] then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", C+"OnboardingController.luau", '	if state.clientAction ~= action then\n		return false -- the server would ignore it', '	if false then\n		return false -- the server would ignore it', "OnboardingController", "UI code reports actions through report()", "fw"),
  ("FL-0092", S+"OnboardingService.luau", 'if not isPlayer(player) or player.Parent == nil then', 'if not isPlayer(player) then', "Onboarding", "a start event for a player who already left keeps no state", "fw"),
- ("FL-0092", G+"config/Onboarding.luau", 'target = { kind = "ui", name = "HUD.BuildButton" },', 'target = { kind = "world", tag = "BuildSlot" },', "Onboarding", "client-reported steps grant nothing and are whitelisted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", 'target = { kind = "world", tag = "BuildSlot" }, -- Build.PlaceSlot', 'target = { kind = "ui", name = "HUD.BuildButton" }, -- Build.PlaceSlot', "Onboarding", "client-reported steps grant nothing and are whitelisted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", 'name = "HUD.ArmyButton" }', 'name = "HUD.Recruit" }', "Onboarding", "client-reported steps grant nothing and are whitelisted", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

@@ -371,6 +371,19 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world:destroy()
 	end)
 
+	it("a plot that isn't the player's kingdom's reads 'This plot isn't yours' (unknown_slot, #89)", function()
+		local world = newWorld()
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		local ready = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.slots.slots.m1.kingdom = "azure" -- the plot is no longer this kingdom's (no push yet)
+		world.picker:place(ready)
+		world:advance(0.2)
+		expect(#world:callsNamed("PlaceSlot")).toBe(1)
+		expect(texts(hud.guis.notices)).toContain("This plot isn't yours")
+		world:destroy()
+	end)
+
 	it("L3: entering build mode clears the selection and closes the picker and the upgrade panel", function()
 		local world = newWorld()
 		local hud = world.hud

@@ -89,8 +89,9 @@ describe("game-001 VS-1 onboarding config", function()
 			end
 		end
 		expect(FLOW.steps[3].trigger.bus).toBe("BuildingPlaced")
-		-- the Build button until FL-0081 declares Build.PlaceSlot (FORGE-05 #45 M1); then the BuildSlot tag
-		expect(FLOW.steps[3].hint.target).toEqual({ kind = "ui", name = "HUD.BuildButton" })
+		expect(FLOW.steps[3].hint.target).toEqual({ kind = "world", tag = "BuildSlot" }) -- G13.5 plot markers (FL-0081)
+		-- the Army rail button is the only Recruit control with an OnboardingTarget (ArmyPanelController)
+		expect(FLOW.steps[5].hint.target).toEqual({ kind = "ui", name = "HUD.ArmyButton" })
 	end)
 end)
 
