@@ -51,3 +51,26 @@ kingdoms separate instantly by sail cloth + cap shape (red cone, thatch boat, bl
 Remaining weaknesses: sails are static (a rigged/rotating sail assembly would need to be a separate mesh —
 see the report); the windows on the round towers are flat kit windows tangent to a curved wall (small gaps
 at the jambs); the smock mill is the darkest/brownest of the set.
+
+## Round 4 — fix round after the fresh-context review (NEEDS-WORK) + palette retune (v2)
+Reviewer issues: 04 gold did not read as gold (hay-like), purple shutters, 02 thatch cap not muted, 03 and 04 shared
+the same plaster-tower-with-gallery massing.
+Images: `previews/farm_windmill.jpg` (final), `scratchpad/farm/windmill_fix_quick.jpg`.
+
+Changes (VERSION 2)
+- **04 is now a timber post mill**: weatherboarded buck (alternating board tones, corner posts) on a central post
+  carried by cross-trees and quarter-bars on four stone piers, steps + landing + door at the back, tail pole with a
+  winding wheel, kingdom-gold tile roof with gold fascia, gold canvas sails, gold sun banner on the flank, goldenrod
+  shutters (palette `yellow_shutter` is now dark goldenrod). 30.2 studs tall.
+- Sail cloth now uses the saturated kingdom `cloth` (was `cloth_light`); cap curb ring in the kingdom `roof_dark`.
+- 02 thatch cap forced to muted `thatch`/`thatch_dark` (it had picked up the kingdom roof colour); 02 now belongs to
+  the green kingdom via 2 emerald canvas sails + an oak-leaf banner (thatch carries its kingdom on a large element).
+- Every mill hangs a kingdom banner (shared `emblem()`: crown / star / oak / sun) on an iron bracket at the
+  front-right (from the gallery rail on 03); front-right window moved to -18 deg to make room.
+
+| silhouette | variation | readability | proportions | palette | detail | cohesion | tris |
+|---|---|---|---|---|---|---|---|
+| 5 | 5 | 5 | 4 | 4 | 4 | 4 | 4 |
+
+Quick build: 3932-5594 tris, variation min 0.275 (01 vs 03), BUILD PASS. Final full-build numbers in the report.
+Final full build: 3932-5594 tris / 8000, 30.2-39.9 studs tall, variation min 0.275, BUILD PASS.

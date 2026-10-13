@@ -1,9 +1,9 @@
-"""Tower windmills: a tapered round stone (or whitewashed, or sandstone) tower or an octagonal
-timber smock mill on a stone base, a turning timber cap (conical, boat-gabled tile or thatch,
+"""Windmills: a tapered round stone (or whitewashed) tower mill, an octagonal timber smock mill on a
+stone base, or a timber post mill (weatherboarded buck on a trestle with ladder and tail pole), a turning timber cap (conical, boat-gabled tile or thatch,
 or a domed cap echoing the kingdom's tower language), four big lattice sails (whips, sail
 bars, longitudinal bars, angled slats or spread canvas: all solid geometry), a tail pole with a
 winding wheel, an optional timber gallery, a walkable door, small windows with kingdom-colour
-shutters, and grain sacks + a spare millstone at the foot.
+shutters, a hanging kingdom banner (emblem) and grain sacks + a spare millstone at the foot.
 
 Front (door, sails) faces Blender -Y. ~33-39 studs tall including the sails.
 """
@@ -17,7 +17,7 @@ from lib.palette import kingdom_color
 from generators import _farm_common as fc
 
 NAME = "farm_windmill"
-VERSION = 1
+VERSION = 2
 CATEGORY = "farm"
 BUDGET = "building_medium"
 COLLISION = {"fidelity": "PreciseConvexDecomposition"}
@@ -28,9 +28,9 @@ LINEUP_GAP = 6.0
 
 PLANS = [
     {"kingdom": "red", "tower": "stone", "cap": "cone", "sails": "canvas", "gallery": False, "angle": 12},
-    {"kingdom": None, "tower": "smock", "cap": "thatch", "sails": "slats", "gallery": False, "angle": 40},
+    {"kingdom": "green", "tower": "smock", "cap": "thatch", "sails": "mixed", "gallery": False, "angle": 40},
     {"kingdom": "blue", "tower": "white", "cap": "boat", "sails": "mixed", "gallery": True, "angle": 0},
-    {"kingdom": "yellow", "tower": "sand", "cap": "dome", "sails": "canvas", "gallery": True, "angle": 28},
+    {"kingdom": "yellow", "tower": "post", "cap": "post", "sails": "canvas", "gallery": False, "angle": 28},
 ]
 
 
@@ -194,11 +194,13 @@ def sails(rng, style, angle0, length=15.0, width=3.6, cloth="canvas_dark"):
 def cap(b, rng, p, rt, ztop, k):
     """Cap on the tower top; returns (hub position, cap height)."""
     style = p["cap"]
-    roof = kingdom_color(k, "roof") if k else "thatch"
-    roof_d = kingdom_color(k, "roof_dark") if k else "thatch_dark"
+    thatch = style == "thatch" or not k  # thatch stays muted straw; the kingdom shows on banner + sails
+    roof = "thatch" if thatch else kingdom_color(k, "roof")
+    roof_d = "thatch_dark" if thatch else kingdom_color(k, "roof_dark")
     trim = kingdom_color(k, "trim") if k else "wood_dark"
     # curb ring
-    b.add(lathe([(rt + 0.45, 0.0), (rt + 0.45, 0.6), (rt - 0.3, 0.6), (rt - 0.3, 0.0)], 14, "timber")
+    curb = kingdom_color(k, "roof_dark") if (k and style != "thatch") else "timber"
+    b.add(lathe([(rt + 0.45, 0.0), (rt + 0.45, 0.6), (rt - 0.3, 0.6), (rt - 0.3, 0.0)], 14, curb)
           .move(0, 0, ztop), tag="cap")
     z = ztop + 0.6
     if style in ("boat", "thatch"):
@@ -280,9 +282,129 @@ def gallery(b, rng, r, z, color="wood"):
 
 # ------------------------------------------------------------------ build
 
+def sack_pile(b, rng, x0, y0, side=1):
+    """Grain sacks stacked by the door (two lying on top) and a banded barrel. Returns sack count."""
+    n = 0
+    pile = ((0.0, 0.0, 0.0, 0.0), (1.5, 0.35, 0.0, 0.0), (0.6, -1.15, 0.0, 0.0), (2.7, -0.7, 0.0, 0.0),
+            (0.8, -0.2, 1.25, 1.35), (2.0, -0.4, 1.2, 1.25))  # x, y, z, lying (rotation about X)
+    for dx, dy, dz, lie in pile:
+        col = rng.choice(("cloth_brown", "canvas_dark", "apron", "canvas_dark"))
+        for q in fc.sack(rng, rng.uniform(1.9, 2.2), col):
+            if lie:
+                q.move(0, 0, -0.9).rotate(lie, "X").move(0, 0, 0.75)
+            b.add(q.rotate(rng.uniform(-0.5, 0.5), "Z").move(x0 + side * dx, y0 + dy, dz), tag="sack")
+        n += 1
+    barrel = lathe([(0.0, 0.0), (1.0, 0.0), (1.18, 1.0), (1.18, 1.5), (1.0, 2.5), (0.0, 2.5)], 8, "wood")
+    bx, by = x0 + side * 4.4, y0 + 1.0
+    b.add(barrel.move(bx, by, 0), tag="prop")
+    for zz in (0.5, 1.85):
+        b.add(cylinder(1.17, 1.17, 0.18, 8, "iron_dark").move(bx, by, zz), tag="prop")
+    return n
+
+
+def banner_on(b, k, x, y, ztop, face_phi, h=5.6, w=2.6):
+    """Kingdom banner hanging from a short wall bracket, facing direction face_phi."""
+    for q in fc.kingdom_banner(k, h, w):
+        b.add(q.move(0, 0, ztop - h - 0.12).rotate(facing(face_phi), "Z").move(x, y, 0), tag="banner")
+    for sx in (-1, 1):  # bracket arms back to the wall
+        c, s_ = math.cos(face_phi), math.sin(face_phi)
+        px, py = x + sx * (w / 2 + 0.2) * -s_, y + sx * (w / 2 + 0.2) * c
+        b.add(kit.oriented_box((px - c * 0.9, py - s_ * 0.9, ztop), (px, py, ztop), 0.2, 0.2, "iron_dark",
+                               Vector((0, 0, 1))), tag="banner")
+
+
+def post_mill(b, rng, p, k):
+    """Timber post mill: weatherboarded buck (body) turning on a central post carried by a
+    trestle of cross-trees and quarter-bars on stone piers; kingdom-gold roof and sails on the
+    front, steps and tail pole at the back."""
+    roof, roof_d = kingdom_color(k, "roof"), kingdom_color(k, "roof_dark")
+    shutter = kingdom_color(k, "shutter")
+    # trestle
+    for (x, y) in ((4.9, 0.0), (-4.9, 0.0), (0.0, 4.9), (0.0, -4.9)):
+        b.add(kit.bbox(1.7, 1.7, 1.3, rng.choice(("stone", "stone_light")), 0.12).move(x, y, 0), tag="trestle")
+    b.add(kit.bbox(10.6, 1.0, 0.9, "timber", 0.08).move(0, 0, 1.3), tag="trestle")
+    b.add(kit.bbox(1.0, 10.6, 0.9, "timber", 0.08).move(0, 0, 2.2), tag="trestle")
+    zb = 9.6
+    b.add(kit.bbox(1.4, 1.4, zb - 1.3, "wood_dark", 0.12).move(0, 0, 1.3), tag="trestle")
+    for (x, y) in ((4.6, 0.0), (-4.6, 0.0), (0.0, 4.6), (0.0, -4.6)):
+        z0 = 2.2 if x else 3.1
+        b.add(kit.oriented_box((x, y, z0), (x * 0.12, y * 0.12, 7.0), 0.55, 0.55, "timber",
+                               Vector((-y, x, 0)).normalized()), tag="trestle")
+    # buck
+    BW, BD, BH = 7.4, 9.0, 10.2
+    b.add(kit.bbox(BW + 0.5, BD + 0.5, 0.7, "timber", 0.08).move(0, 0, zb), tag="buck")
+    b.add(kit.bbox(BW, BD, BH, "wood", 0.1).move(0, 0, zb + 0.7).paint(grad=("range", 0.3, 0.85)), tag="buck")
+    rows = 11
+    for r in range(rows):  # weatherboards, alternating tones
+        z = zb + 0.8 + r * (BH - 0.4) / rows
+        col = ("wood_light", "wood")[r % 2]
+        for sy in (-1, 1):
+            b.add(box(BW + 0.12, 0.12, 0.62, col).move(0, sy * (BD / 2 + 0.03), z), tag="board")
+        for sx in (-1, 1):
+            b.add(box(0.12, BD + 0.12, 0.62, col).move(sx * (BW / 2 + 0.03), 0, z), tag="board")
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            b.add(box(0.5, 0.5, BH, "timber").move(sx * (BW / 2 - 0.05), sy * (BD / 2 - 0.05), zb + 0.7), tag="buck")
+    ztop = zb + 0.7 + BH
+    pieces, rise = kit.gable_roof(BW, BD, 38, overhang=0.7, gable_overhang=0.6, thickness=0.55, color=roof, rows=3,
+                                  ridge_color=roof_d, style="tile", rng=rng, trim="timber", pins=False)
+    for q in pieces:
+        b.add(q.move(0, 0, ztop), tag="roof")
+    for sy in (-1, 1):
+        b.add(kit.gable_end(BW, rise, 0.4, "wood").move(0, sy * (BD / 2 - 0.2), ztop), tag="buck")
+    for sy in (-1, 1):  # gold fascia under the eaves
+        b.add(box(BW + 1.2, 0.2, 0.4, roof_d).move(0, sy * (BD / 2 + 0.25), ztop - 0.4), tag="trim")
+    for sx in (-1, 1):
+        b.add(box(0.2, BD + 0.6, 0.4, roof_d).move(sx * (BW / 2 + 0.25), 0, ztop - 0.4), tag="trim")
+    # windows: front-left side and rear-right side
+    windows = 0
+    for sx, wy in ((-1, -1.8), (1, 2.4)):
+        for q in kit.window(1.7, 2.2, "timber", shutter, arched=False):
+            b.add(q.rotate(sx * math.pi / 2, "Z").move(sx * (BW / 2 + 0.1), wy, zb + 5.4), tag="window")
+        windows += 1
+    for q in kit.window(1.6, 1.9, "timber", shutter, arched=False):
+        b.add(q.move(-1.9, -BD / 2 - 0.1, zb + 3.2), tag="window")
+    windows += 1
+    # windshaft + sails on the breast
+    hub = Vector((0.8, -BD / 2 - 2.2, zb + BH * 0.84))
+    b.add(kit.oriented_box((hub.x, -BD / 2 + 1.0, hub.z - 0.4), (hub.x, hub.y, hub.z), 0.9, 0.9, "wood_dark",
+                           Vector((1, 0, 0))), tag="cap")
+    for q in sails(rng, p["sails"], p["angle"], 13.4, cloth=kingdom_color(k, "cloth")):
+        q.rotate(math.radians(-6), "X")
+        b.add(q.move(hub.x, hub.y, hub.z), tag="sail")
+    # back: landing, door, steps and tail pole
+    b.add(kit.bbox(3.6, 1.8, 0.35, "wood", 0.06).move(0, BD / 2 + 0.9, zb + 0.35), tag="steps")
+    for q in kit.door(2.8, 5.2, "wood_dark", None, arched=False, step=None):
+        b.add(q.rotate(math.pi, "Z").move(0, BD / 2 + 0.1, zb + 0.7), tag="door")
+    foot_y = BD / 2 + 7.4
+    for sx in (-1, 1):
+        b.add(kit.oriented_box((sx * 1.3, BD / 2 + 1.6, zb + 0.6), (sx * 1.5, foot_y, 0.0), 0.32, 0.32, "wood",
+                               Vector((0, 0, 1))), tag="steps")
+    for j in range(10):
+        t = (j + 0.5) / 10
+        yy = BD / 2 + 1.6 + (foot_y - BD / 2 - 1.6) * t
+        zz = zb + 0.6 - (zb + 0.6) * t
+        b.add(box(2.9, 0.7, 0.18, "wood_light").move(0, yy, zz), tag="steps")
+    b.add(kit.oriented_box((-0.6, BD / 2, zb + 0.4), (-2.8, foot_y + 2.6, 1.6), 0.5, 0.5, "timber",
+                           Vector((0, 0, 1))), tag="tail")
+    for q in fc.wheel(1.1, 0.26, 6, "wood", "iron_dark", 10, hub_len=0.5):
+        b.add(q.rotate(0.3, "Z").move(-2.9, foot_y + 2.8, 1.1), tag="tail")
+    b.socket("door", 0.0, foot_y + 1.6, 0.0)
+    # banner on the right flank, facing the hero camera side
+    banner_on(b, k, BW / 2 + 1.05, -1.4, ztop - 0.5, 0.0, h=6.6, w=3.1)
+    sacks = sack_pile(b, rng, 3.0, foot_y - 0.4, 1)
+    b.socket("deposit", 4.2, foot_y + 1.6, 0.0)
+    b.stats["windows"] = windows
+    b.stats["sacks"] = sacks
+    b.stats["sails"] = 4
+
+
 def build(b, p):
     rng = b.rng
     k = p["kingdom"]
+    if p["tower"] == "post":
+        post_mill(b, rng, p, k)
+        return
     shutter = kingdom_color(k, "shutter") if k else "wood"
     if p["tower"] == "smock":
         r0, r1, H = 5.6, 3.7, 21.0
@@ -301,7 +423,7 @@ def build(b, p):
     b.socket("door", 0.0, door_y - 2.2, 0.0)
     # windows climbing round the tower
     windows = 0
-    for i, (phi_deg, zf) in enumerate(((-90, 0.62), (-30, 0.36), (-150, 0.8), (40, 0.55))):
+    for i, (phi_deg, zf) in enumerate(((-90, 0.62), (-18, 0.36), (-150, 0.8), (40, 0.55))):
         phi = math.radians(phi_deg + rng.uniform(-8, 8))
         zz = H * zf
         if p["tower"] == "smock":
@@ -318,7 +440,7 @@ def build(b, p):
     rt = tower_radius(H, r0, r1, H)
     hub, cap_h, trim = cap(b, rng, p, rt, H, k)
     sl = 14.8 if p["tower"] != "smock" else 14.3
-    cloth = kingdom_color(k, "cloth_light") if k else "canvas_dark"
+    cloth = kingdom_color(k, "cloth") if k else "canvas_dark"
     for q in sails(rng, p["sails"], p["angle"], sl, cloth=cloth):
         q.rotate(math.radians(-8), "X")
         b.add(q.move(hub.x, hub.y, hub.z), tag="sail")
@@ -334,26 +456,27 @@ def build(b, p):
     hx, hy = math.cos(ha) * (hr + 2.2), math.sin(ha) * (hr + 2.2)
     b.add(box(0.1, 0.1, 4.0, "rope").move(hx, hy, hz - 4.0), tag="hoist")
     b.add([q.move(hx, hy, hz - 5.6) for q in fc.sack(rng, 1.7, "canvas_dark")], tag="hoist")
-    sacks = 0
     sx0 = kit.DOOR_W / 2 + 1.6
-    pile = ((0.0, 0.0, 0.0, 0.0), (1.5, 0.35, 0.0, 0.0), (0.6, -1.15, 0.0, 0.0), (2.7, -0.7, 0.0, 0.0),
-            (0.8, -0.2, 1.25, 1.35), (2.0, -0.4, 1.2, 1.25))  # x, y, z, lying (rotation about X)
-    for j, (dx, dy, dz, lie) in enumerate(pile):
-        col = rng.choice(("cloth_brown", "canvas_dark", "apron", "canvas_dark"))
-        for q in fc.sack(rng, rng.uniform(1.9, 2.2), col):
-            if lie:
-                q.move(0, 0, -0.9).rotate(lie, "X").move(0, 0, 0.75)
-            b.add(q.rotate(rng.uniform(-0.5, 0.5), "Z").move(side * (sx0 + dx), door_y - 1.6 + dy, dz), tag="sack")
-        sacks += 1
-    barrel = lathe([(0.0, 0.0), (1.0, 0.0), (1.18, 1.0), (1.18, 1.5), (1.0, 2.5), (0.0, 2.5)], 8, "wood")
-    bx, by = side * (sx0 + 4.4), door_y - 0.6
-    b.add(barrel.move(bx, by, 0), tag="prop")
-    for zz in (0.5, 1.85):
-        b.add(cylinder(1.17, 1.17, 0.18, 8, "iron_dark").move(bx, by, zz), tag="prop")
+    sacks = sack_pile(b, rng, side * sx0, door_y - 1.6, side)
     stone = lathe([(0.55, 0.0), (2.0, 0.0), (2.0, 0.75), (0.55, 0.75)], 12, "stone_light")
     stone.rotate(math.pi / 2, "X").rotate(0.12, "Y").rotate(0.25, "Z").move(-(sx0 + 1.3), door_y - 0.5, 2.0)
     b.add(stone.paint(grad=("range", 0.3, 0.9)), tag="millstone")
     b.socket("deposit", side * (sx0 + 1.2), door_y - 3.2, 0.0)
+    # hanging kingdom banner on the front-left of the tower (from the gallery rail when there is one)
+    if k:
+        phi = math.radians(-60)
+        if p["gallery"]:
+            zg = H * 0.45
+            rr = tower_radius(zg, r0, r1, H) + 2.55
+            banner_on(b, k, math.cos(phi) * rr, math.sin(phi) * rr, zg + 0.2, phi, h=5.0, w=2.4)
+        else:
+            zt = H * 0.52
+            if p["tower"] == "smock":
+                phi = math.radians(-45)
+                rr = tower_radius(zt, r0, r1, H) * math.cos(math.pi / 8) + 1.05
+            else:
+                rr = tower_radius(zt, r0, r1, H) + 1.05
+            banner_on(b, k, math.cos(phi) * rr, math.sin(phi) * rr, zt, phi)
     for j in range(7):  # weeds and flowers hugging the foot of the tower
         a = math.radians(rng.uniform(-60, 230))
         rr = r0 + 0.9

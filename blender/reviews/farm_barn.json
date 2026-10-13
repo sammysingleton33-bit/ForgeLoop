@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "farm_barn_01": {
+      "geometry_hash": "b65ec9ab24d04a5a",
+      "verdict": "PASS"
+    },
+    "farm_barn_02": {
+      "geometry_hash": "fedb9b8f00a1b234",
+      "verdict": "PASS"
+    },
+    "farm_barn_03": {
+      "geometry_hash": "64913b40fe67688e",
+      "verdict": "PASS"
+    },
+    "farm_barn_04": {
+      "geometry_hash": "55aa7eeb7a937644",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "farm_barn",
+  "generator_version": 2,
+  "notes": "Passes: the kingdom colour sits on roofs and trim only, thatch and hay stay muted tan apart from the gold roof, and the gambrel/thatch/silo/cupola silhouettes read at 74 studs within 5.2k-6.0k tris. Minor: barn_02 blue reads weakly because the roof is thatch, barn_01/04 have no banner, all four repeat the plank/bale/sack prop layout, and the open doors are flat black voids.",
+  "reviewer": "fresh-context subagent",
+  "round": 2,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

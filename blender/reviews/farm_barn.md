@@ -50,3 +50,27 @@ Images: `previews/farm_barn.jpg` (final), `renders/farm_barn/farm_barn_0N_hero.p
 Collision switched to fidelity `None` + boxes (side/back walls, two front piers, door header, floor, bale
 stack, lean-to) so the 9.2 x 10.6 doorway is walkable. Final 5104-5916 tris / 8000, 33-34 studs tall,
 variation min 0.101, BUILD PASS. At 72 studs: unmistakable barns (gable doors, X-braced leaves, hoist, cupola).
+
+## Round 4 — fix round after the fresh-context review (NEEDS-WORK) + ART_DIRECTION 3 (v2)
+Reviewer issues: barn_01/03 read as solid red/blue blocks (painted walls); identical massing on all four; no
+clearly gold-kingdom barn.
+Images: `previews/farm_barn.jpg` (final), `scratchpad/farm/barn_fix_quick.jpg`.
+
+Changes (VERSION 2)
+- Walls are neutral on every variant (natural `wood` / `wood_light`, or whitewash `plaster` on 03); the kingdom
+  colour is only on the roof, door frame + braces, the closed loft door brace and window shutters.
+- Massing now differs per variant:
+  01 red **gambrel roof** (custom: 62 deg lower / 27 deg upper slopes in stepped courses, barge boards, pentagon gable)
+  + cupola; 02 thatch + **side lean-to woodshed** with log stack + loft hoist with a hanging bale + **blue star banner**
+  beside the doors; 03 **gold kingdom**: saturated gold tile roof, goldenrod braces, whitewashed walls and an
+  **attached round fieldstone silo** with iron hoops, gold dome + finial, ladder, slit windows and a gold sun banner;
+  04 green **catslide roof** (kit `gable_roof(extend=...)`) sweeping down over a 5.2-wide side aisle with its own
+  arched door and two windows (wider footprint) + cupola.
+- Fixed a bug where the lean-to collision box reused the lantern's x.
+
+| silhouette | variation | readability | proportions | palette | detail | cohesion | tris |
+|---|---|---|---|---|---|---|---|
+| 5 | 5 | 5 | 4 | 4 | 4 | 4 | 4 |
+
+Quick build: 5220-6036 tris, variation min 0.154 (03 vs 04), BUILD PASS. Final full-build numbers in the report.
+Final full build: 5220-6036 tris / 8000, variation min 0.154, BUILD PASS.
