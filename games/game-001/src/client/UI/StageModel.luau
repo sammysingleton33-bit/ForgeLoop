@@ -6,21 +6,28 @@
 	The stage sits at the bottom of the screen, centred in the space left of the rail, so the world
 	(and the citizen the camera frames above the centre, FORGE-04 #84) stays visible:
 		portrait  a square at the stage's bottom left, the citizen's name plate inside its lower edge
-		column    right of the portrait: the speech bubble (its tail points left at the portrait) with
-		          the close button at its right, then the answers (two columns when they fit, else
+		column    right of the portrait: the speech bubble (its tail points left at the portrait; on
+		          phones it spans the stage above the portrait and the column, its tail pointing
+		          down) with the close button at its right, then the answers (two columns when they
+		          fit, else
 		          one), the confirm step, or the reaction and its consequence chips, and a footer
 		dim       a band from DIM_FADE above the stage to the bottom edge, at most DIM_OPACITY dark
 		          (the contract allows 20 %); nothing else covers the world
 	The stage never rises above the top-left HUD stack (`hud.bottom`) and never reaches the rail.
 
-		StageModel.rects(metrics) -> Rects
+		StageModel.rects(metrics, state?) -> Rects   (with the state, a phone bubble too tall for the
+			band goes back beside the portrait)
 			{ breakpoint, phone, x, width, bottom, maxHeight, portrait (side), gap, tail, close,
-			  column = { x, width }, body = { x, width } (the scrolling body: the column plus the
-			  tail's room on its left), columns (1 | 2), answerWidth, bubbleWidth, dim = { y } }
+			  bubbleAbove (phones), column = { x, width }, body = { x, width } (the scrolling body:
+			  the column, plus the tail's room on its left beside the portrait), bodyPad,
+			  columns (1 | 2), answerWidth, bubbleWidth, dim = { y } }
 		StageModel.height(state, rects, balances?) -> number
-			the stage height: the taller of the portrait and the estimated column, at most
+			the stage height: the band (phones) plus the taller of the portrait and the estimated
+			column, at most
 			rects.maxHeight (the body scrolls when the estimate falls short)
 		StageModel.columnHeight(state, rects, balances?) -> number   the unbounded column estimate
+		StageModel.band(state, rects) -> number   phones: the bubble above the portrait and the column
+			(with its gap), 0 elsewhere or without a bubble; StageModel.bubbleText(state, phone)
 		StageModel.overflows(state, rects, balances?) -> boolean      the column will scroll
 		StageModel.answerHeight(option, width, balances?, phone) -> number
 		StageModel.showsBubble(state, phone) -> boolean   the confirm step on phones hides the question
@@ -96,15 +103,29 @@ export type Rects = {
 	gap: number,
 	tail: number,
 	close: number,
+	bubbleAbove: boolean,
 	column: { x: number, width: number },
 	body: { x: number, width: number },
+	bodyPad: number,
 	columns: number,
 	answerWidth: number,
 	bubbleWidth: number,
 	dim: { y: number },
 }
 
-function StageModel.rects(m: any): Rects
+local build: (any, boolean) -> Rects
+
+-- state (optional): on phones, a bubble too tall to leave the portrait its room above the column
+-- goes back beside the portrait (the column scrolls instead).
+function StageModel.rects(m: any, state: any?): Rects
+	local r = build(m, m.breakpoint == "phone")
+	if r.bubbleAbove and state ~= nil and StageModel.band(state, r) + r.portrait > r.maxHeight then
+		return build(m, false)
+	end
+	return r
+end
+
+function build(m: any, above: boolean): Rects
 	local G = StageModel.GEO
 	local bp = m.breakpoint
 	local phone = bp == "phone"
@@ -115,7 +136,9 @@ function StageModel.rects(m: any): Rects
 	local x = left + math.floor((right - left - width) / 2)
 	local portrait = G.portrait[bp]
 	local gap = G.gap[bp]
-	local columnX = x + portrait + gap + G.tail
+	-- Phones: the bubble spans the stage above the portrait and the column (two lines where the
+	-- column would wrap a long question to three); its tail points down at the portrait.
+	local columnX = x + portrait + gap + (if above then 0 else G.tail)
 	local columnW = x + width - columnX
 	local columns = if columnW >= 2 * G.answerColumnMin + G.answerGap then 2 else 1
 	local bottom = m.height - m.margin
@@ -132,11 +155,13 @@ function StageModel.rects(m: any): Rects
 		gap = gap,
 		tail = G.tail,
 		close = close,
+		bubbleAbove = above,
 		column = { x = columnX, width = columnW },
-		body = { x = columnX - G.tail, width = columnW + G.tail },
+		body = if above then { x = columnX, width = columnW } else { x = columnX - G.tail, width = columnW + G.tail },
+		bodyPad = if above then 0 else G.tail,
 		columns = columns,
 		answerWidth = if columns == 2 then math.floor((columnW - G.answerGap) / 2) else columnW,
-		bubbleWidth = columnW - close - G.closeGap,
+		bubbleWidth = (if above then width else columnW) - close - G.closeGap,
 		dim = { y = 0 }, -- set by height(): DIM_FADE above the stage's top
 	}
 end
@@ -244,8 +269,9 @@ function StageModel.columnHeight(state: any, r: Rects, balances: { [string]: num
 	if StageModel.hasHead(state, r.phone) then
 		add(r.close)
 	end
+	local inColumn = not r.bubbleAbove -- the bubble is in the column (else above it: StageModel.band)
 	if finished and state.phase == "answered" then
-		if outcome.reaction then
+		if outcome.reaction and inColumn then
 			add(bubbleHeight(outcome.reaction, r))
 		end
 		if #outcome.effects > 0 then
@@ -265,14 +291,16 @@ function StageModel.columnHeight(state: any, r: Rects, balances: { [string]: num
 		end
 		add(G.footer)
 	elseif finished then
-		if StageModel.showsBubble(state, r.phone) then
+		if StageModel.showsBubble(state, r.phone) and inColumn then
 			add(bubbleHeight(convo.question, r))
 		end
 		add(CitizenModel.lines(outcome.message, r.column.width - 50, StageModel.CHAR.body) * 18 + 20)
 		add(G.footer)
 	elseif state.phase == "confirming" then
 		if StageModel.showsBubble(state, r.phone) then
-			add(bubbleHeight(convo.question, r))
+			if inColumn then
+				add(bubbleHeight(convo.question, r))
+			end
 			add(G.kicker)
 		end
 		for _, o in convo.options do
@@ -282,7 +310,9 @@ function StageModel.columnHeight(state: any, r: Rects, balances: { [string]: num
 		end
 		add(G.footer)
 	else
-		add(bubbleHeight(convo.question, r))
+		if inColumn then
+			add(bubbleHeight(convo.question, r))
+		end
 		if not r.phone then
 			add(G.kicker)
 		end
@@ -305,13 +335,33 @@ function StageModel.columnHeight(state: any, r: Rects, balances: { [string]: num
 	return math.ceil(h + G.slack)
 end
 
+-- The bubble's words and name: the reaction once answered, else the question; nil without a bubble.
+function StageModel.bubbleText(state: any, phone: boolean): (string?, string)
+	if not StageModel.showsBubble(state, phone) then
+		return nil, ""
+	end
+	if state.phase == "answered" then
+		return state.outcome.reaction, "Reaction"
+	end
+	return state.conversation.question, "Question"
+end
+
+-- The band the bubble takes above the portrait and the column (phones), with its gap; else 0.
+function StageModel.band(state: any, r: Rects): number
+	if not r.bubbleAbove then
+		return 0
+	end
+	local text = StageModel.bubbleText(state, r.phone)
+	return if text then bubbleHeight(text, r) + StageModel.GEO.gap6 else 0
+end
+
 function StageModel.height(state: any, r: Rects, balances: { [string]: number }?): number
 	local column = StageModel.columnHeight(state, r, balances)
-	return math.floor(math.min(r.maxHeight, math.max(r.portrait, column)))
+	return math.floor(math.min(r.maxHeight, StageModel.band(state, r) + math.max(r.portrait, column)))
 end
 
 function StageModel.overflows(state: any, r: Rects, balances: { [string]: number }?): boolean
-	return StageModel.columnHeight(state, r, balances) > r.maxHeight
+	return StageModel.band(state, r) + StageModel.columnHeight(state, r, balances) > r.maxHeight
 end
 
 function StageModel.readSeconds(outcome: any): number

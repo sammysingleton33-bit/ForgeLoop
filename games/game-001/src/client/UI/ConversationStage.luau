@@ -85,6 +85,10 @@ local function bubble(name: string, s: string, r: any, order: number): Frame
 	local G = StageModel.GEO
 	local bp = r.breakpoint
 	local pad = G.bubblePad[bp]
+	-- beside the portrait: low on the left edge; above it (phones): on the bottom edge over its middle
+	local tail = if r.bubbleAbove
+		then UDim2.new(0, math.floor(r.portrait / 2), 1, -1)
+		else UDim2.new(0, 1, 1, -math.floor(pad + G.bubbleLine[bp] / 2))
 	return Create("Frame", {
 		Name = "Speech",
 		BackgroundTransparency = 1,
@@ -95,8 +99,7 @@ local function bubble(name: string, s: string, r: any, order: number): Frame
 		Tail = Create("Frame", {
 			BackgroundColor3 = Theme.color("parchment100"),
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			-- level with the last line, so it points down-left at the portrait below
-			Position = UDim2.new(0, 1, 1, -math.floor(pad + G.bubbleLine[bp] / 2)),
+			Position = tail,
 			Size = UDim2.fromOffset(14, 14),
 			Rotation = 45,
 			ZIndex = 1,
@@ -443,7 +446,7 @@ end
 
 function ConversationStage:render(state: any, metrics: any, ui: { [string]: any }): boolean
 	local G = StageModel.GEO
-	local r = StageModel.rects(metrics)
+	local r = StageModel.rects(metrics, state)
 	-- The portrait first: without it there is no stage (the caller shows the panel instead).
 	local rise = false
 	if self._key ~= ui.key or self.portrait == nil then
@@ -474,14 +477,14 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 	-- HUD's whole-device backdrop it spans the device's width (past a notch) and is anchored to the
 	-- device's bottom; its top may sit up to DIM_INSET higher (the bottom inset is not known here).
 	local dimTop = math.max(0, r.bottom - height - G.dimFade)
-	local band = metrics.height - dimTop
+	local dimHeight = metrics.height - dimTop
 	self.dim = Create("Frame", {
 		Name = "StageDim",
 		BackgroundColor3 = Theme.color("ink950"),
 		BorderSizePixel = 0,
 		AnchorPoint = if self._backdrop then Vector2.new(0, 1) else Vector2.zero,
 		Position = if self._backdrop then UDim2.fromScale(0, 1) else UDim2.fromOffset(0, dimTop),
-		Size = UDim2.new(1, 0, 0, if self._backdrop then band + DIM_INSET else band),
+		Size = UDim2.new(1, 0, 0, if self._backdrop then dimHeight + DIM_INSET else dimHeight),
 		ZIndex = 0,
 	}, {
 		Gradient = Create("UIGradient", {
@@ -515,6 +518,12 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 		holder.Position = final
 		holder:SetAttribute("risen", true)
 	end
+	-- Phones: the bubble spans the stage above the portrait and the column.
+	local band = StageModel.band(state, r)
+	if band > 0 then
+		local text, name = StageModel.bubbleText(state, r.phone)
+		bubble(name, text :: string, r, 0).Parent = root
+	end
 	-- The column: the body scrolls; the close button and the footer stay put.
 	local outcome = state.outcome
 	local finished = (state.phase == "answered" or state.phase == "refused") and outcome ~= nil
@@ -523,8 +532,8 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 	local column = Create("Frame", {
 		Name = "Column",
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(r.body.x - r.x, 0),
-		Size = UDim2.fromOffset(r.body.width, height),
+		Position = UDim2.fromOffset(r.body.x - r.x, band),
+		Size = UDim2.fromOffset(r.body.width, height - band),
 		Parent = root,
 	})
 	local body = Create("ScrollingFrame", {
@@ -540,7 +549,7 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 		Parent = column,
 	}, {
 		List = Style.list("y", G.gap6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Top),
-		Padding = Style.padding(0, 0, 1, r.tail),
+		Padding = Style.padding(0, 0, 1, r.bodyPad),
 	})
 	local close = IconButton.new({
 		icon = "close",
@@ -551,7 +560,7 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 	close.instance.Name = "Close"
 	close.instance.AnchorPoint = Vector2.new(1, 0)
 	close.instance.Position = UDim2.fromScale(1, 0)
-	close.instance.Parent = column
+	close.instance.Parent = if band > 0 then root else column -- beside the bubble, wherever it is
 	local convo = state.conversation
 	local showsBubble = StageModel.showsBubble(state, r.phone)
 	-- The first row leaves room for the close button: the bubble, else a head row beside it.
@@ -577,7 +586,9 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 			end
 		end
 		if outcome.reaction then
-			bubble("Reaction", outcome.reaction, r, 2).Parent = body
+			if not r.bubbleAbove then
+				bubble("Reaction", outcome.reaction, r, 2).Parent = body
+			end
 		end
 		if #outcome.effects > 0 then
 			if not r.phone then
@@ -602,7 +613,7 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 			ui.motion:to(bar, { Size = UDim2.fromOffset(0, 3) }, ui.readSeconds, Enum.EasingStyle.Linear)
 		end
 	elseif finished then
-		if showsBubble then
+		if showsBubble and not r.bubbleAbove then
 			bubble("Question", convo.question, r, 1).Parent = body
 		end
 		P.refusal(outcome.message, 2).Parent = body
@@ -611,7 +622,9 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 		self.footer = done
 	elseif confirming then
 		if showsBubble then
-			bubble("Question", convo.question, r, 1).Parent = body
+			if not r.bubbleAbove then
+				bubble("Question", convo.question, r, 1).Parent = body
+			end
 			P.kicker(CitizenText.CONFIRM_KICKER, 2).Parent = body
 		elseif head then
 			local kicker = P.kicker(CitizenText.CONFIRM_KICKER, 1)
@@ -639,7 +652,9 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 			end
 		end
 	else
-		bubble("Question", convo.question, r, 1).Parent = body
+		if not r.bubbleAbove then
+			bubble("Question", convo.question, r, 1).Parent = body
+		end
 		if not r.phone or StageModel.overflows(state, r, balances) then
 			self._kicker = P.kicker(self:_kickerText(state, r, balances), 2)
 			self._kicker.Parent = body

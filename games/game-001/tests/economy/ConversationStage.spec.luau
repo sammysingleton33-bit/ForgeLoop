@@ -412,11 +412,51 @@ describe("FL-0099 cinematic conversation (G13.8)", function()
 		expect(texts(picked)).never.toContain("Need")
 	end)
 
-	it("phone: a conversation taller than the room fills it up to the HUD stack and says it scrolls", function()
+	it("phone: the bubble spans the stage above the portrait, its tail down, the close button beside it", function()
 		world = newWorld({ width = 750, height = 311 })
 		local stage = talkTo(world, 45) -- the long question and answers
+		local r = StageModel.rects(world.hud:metrics())
+		expect(r.bubbleAbove).toBe(true)
+		local speech = find(stage, "Speech")
+		expect(speech.Parent).toBe(stage) -- above the column, not in its scrolling body
+		expect(speech.Size.X.Offset).toBe(r.width - r.close - StageModel.GEO.closeGap)
+		expect(find(stage, "Close").Parent).toBe(stage)
+		local column = find(stage, "Column")
+		expect(column.Position.Y.Offset).toBeGreaterThan(0) -- below the bubble
+		expect(find(column, "Speech")).toBeNil()
+		local tail = find(speech, "Tail")
+		expect(tail.Position.Y.Scale).toBe(1) -- on its bottom edge,
+		expect(tail.Position.X.Offset).toBe(math.floor(r.portrait / 2)) -- over the portrait
+	end)
+
+	it("phone: FORGE-06's longest lines fit (160-character question, four 70-character answers)", function()
+		local m = Layout.compute(750, 311) -- with the reputation strip, as in the game
+		local question = string.sub(string.rep("Wordy ", 30), 1, 160)
+		local answer = string.sub(string.rep("Words ", 15), 1, 70)
+		local options = {}
+		for i = 1, 4 do
+			table.insert(options, { id = `a{i}`, text = answer })
+		end
+		local convo = CitizenModel.conversation({ scenarioId = "budget", question = question, options = options })
+		local state = { phase = "asking", conversation = convo }
+		local r = StageModel.rects(m, state)
+		expect(r.bubbleAbove).toBe(true)
+		expect(StageModel.overflows(state, r)).toBe(false) -- (beside the portrait: 228 of 215 px, it scrolled)
+	end)
+
+	it("phone: a bubble too tall for the band goes back beside the portrait and the column scrolls", function()
+		world = newWorld({ width = 750, height = 311 })
+		local long = {
+			scenarioId = "very_long",
+			question = string.rep("My lord, the river has risen again and the mill is under water. ", 9),
+			responses = SCENARIOS.long.responses,
+		}
+		world.citizens:setScenario(44, long)
+		local stage = talkTo(world, 44)
 		local m = world.hud:metrics()
-		local r = StageModel.rects(m)
+		local r = StageModel.rects(m, world.conversation.state)
+		expect(r.bubbleAbove).toBe(false)
+		expect(find(find(stage, "Column"), "Speech")).toBeTruthy() -- in the column again
 		expect(stage.Size.Y.Offset).toBe(r.maxHeight)
 		expect(stage.Position.Y.Offset).toBe(m.hud.bottom + StageModel.GEO.hudGap)
 		expect(find(stage, "Kicker").Text).toContain("SCROLL FOR ALL 3")
