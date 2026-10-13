@@ -499,3 +499,19 @@ All 17 mutations were caught:
 - Studio's Grass material on the tufts and how CornerWedge facets shade under Future lighting.
 - Phone screens.
 - The real aerial azimuth relative to each farm.
+
+## Fresh-context D-019 scoring — farm L1–2, attempt 3 (2026-10-13)
+
+**Reviewer:** a fresh-context subagent that did not build the kit. It read no author logs or Kit source before scoring. **Inputs:** `img/kit_levels_house_farm.jpg` (the farm hero tiles and the right of the gameplay strip at about 90 studs) and `img/kit_levels_farm_aerial.jpg` (emerald and gold, 50° and 140 studs, front, rear and a 2× zoom). **Method:** cropped, zoomed (3×), converted to grayscale and sampled luminance with PIL. **Evidence:** render review only (a Blender approximation with no textures). It is not a Studio play test. **Part cost** uses the same scale as above.
+
+| type | sil | var | read | prop | pal | detail | coh | cost | verdict | notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| farm L1–2 (attempt 3) | 3 | 3 | 3 | 2 | 3 | 3 | 3 | 3 | NEEDS-WORK | **The crop does not read as wheat.** It is a grid of pointed, two-tone orange wedges separated by near-black gaps. From the 140-stud aerial and in grayscale it reads as rows of spikes (dragon's teeth). In the azure L1 hero tile the crossed wedges read as flames or folded paper. At 90 studs, the L2 crop reads as golden pyramids or tents. Only L1 at 90 studs passes as a low golden crop row, and that is mostly because the fence hides it. **L2 vs L1:** the barn makes L2 clearly bigger (39×33 against 33×29 studs). But L2's crop field is smaller than L1's for emerald and azure, so L2 is not richer where it counts. **Gold L2 barn:** the barn body is yawed about 25–30° off its own dark base slab and the plot grid, so a slab corner sticks out in the rear view and the roof overlaps the crop and fence. It reads as a placement bug. **Kingdom read:** at L2 the barn roof reads (green, olive-gold, azure). At L1 the farmhouse roof is the same brown in every kingdom, so kingdom identity rests on door and shutter colour plus a small flag. The emerald and gold flags sit at the rear and are visible only in the rear view. The gold emblem lies flat on the yard, and the emerald emblem is a flat sign at the fence. The azure star flag reads well. In grayscale the three L1 farms are indistinguishable. **Grayscale (luminance, 0–255, front aerial):** lit crop faces 140–160, haystack 150–170, yard 137–146 and the ground plane 153 all fall in one band. The crop gaps (7–46) make strobing stripes. The farmhouse roof (83) and fence (74) are about 10 levels apart, and the emerald barn roof (70) and its wall (93) are 23 apart. **Part cost:** 181/200 and 194/200 (97 %). |
+
+**Fixes:**
+- **Crop:** replace the pointed wedges with a wheat language. Use low, flat-topped or softly bevelled golden rows of uniform height (about 2–2.5 studs, below the fence top) with a lighter top face. Add a few thin ear or stalk accents, or some stooks, and no points. Show the furrows as brown soil at roughly 60–90 luminance, not black shadow. One block per row should cost fewer parts than the wedges.
+- **Gold L2 barn:** align its yaw with its base slab and the plot grid. Keep the crop off the farmhouse's back wall.
+- **L2 richness:** keep at least L1's crop area at L2 and add the barn beside it. Use the parts freed by the cheaper crop rows.
+- **Grayscale separation:** move the haystack at least 25 luminance levels away from the crop tops (a darker straw tone or a shaded band). Make the crop tops differ in value from the ground plane.
+- **L1 kingdom read:** add kingdom colour to the L1 farmhouse (roof trim or ridge, an awning, or the door canopy). Move the emblem flag to the front corner on a taller pole, and stand the emblem upright, not flat on the yard.
+- **Azure L2:** check the light grey strip running past the barn's right side and outside the fence in the hero tile. It reads as a concrete kerb.
