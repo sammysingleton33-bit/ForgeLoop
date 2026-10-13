@@ -11,4 +11,13 @@ M = [
  ("FL-0100", C2+"RulerCameraController.luau", 'local focus = Def.clampFocus(position + Def.panVector(conversation.offset, yaw), bounds, margin)', 'local focus = Def.clampFocus(position, bounds, margin)', "RulerCamera", "conversationView() frames the citizen above the centre", "game"),
  ("FL-0100", C2+"RulerCameraController.luau", 'if typeof(position) ~= "Vector3" or self.mode ~= "overview" or self._target.focus == nil then', 'if typeof(position) ~= "Vector3" or self._target.focus == nil then', "RulerCamera", "walk mode ignores it", "game"),
  ("FL-0100", C2+"RulerCameraController.luau", '			self:focusOn(position, {})', '			local _ = position', "RulerCamera", "follows ConversationController.opened / closed", "game"),
+ ("FL-0100", F+"ReactionPoses.luau", 'local weight = math.min(smooth(t / ReactionPoses.EASE_IN), smooth((duration - t) / ReactionPoses.EASE_OUT))', 'local weight = 1', "ReactionPoses", "eases in, and moves in between", "game"),
+ ("FL-0100", F+"ReactionPoses.luau", 'out.LeftArm = rz(-(132 + 10 * wave))', 'out.LeftArm = rz(-(152 + 10 * wave))', "ReactionPoses", "every pose stays within Sim/Pose limits", "game"),
+ ("FL-0100", F+"ReactionPoses.luau", 'or Bubbles.POSE.neutral', 'or "cheer"', "ReactionPoses", "tones map to Bubbles.POSE", "game"),
+ ("FL-0100", C2+"ReactionPoseController.luau", 'local held = self:_reducedMotion()', 'local held = false', "ReactionPoses", "reduced motion holds the key pose", "game"),
+ ("FL-0100", C2+"ReactionPoseController.luau", '\t\tif not entry.held then\n', '\t\tif true then\n', "ReactionPoses", "reduced motion holds the key pose", "game"),
+ ("FL-0100", C2+"ReactionPoseController.luau", 'local model = portrait or (conversation and conversation.portrait)', 'local model = conversation and conversation.portrait', "ReactionPoses", "follows the conversation", "game"),
+ ("FL-0100", C2+"ReactionPoseController.luau", '\t\t\t\t\tself:stopPortrait(model)\n', '\t\t\t\t\tlocal _ = model\n', "ReactionPoses", "follows the conversation", "game"),
+ ("FL-0100", C2+"ReactionPoseController.luau", '\tself:_apply(portrait, ReactionPoses.rest(self._joints))\n', '', "ReactionPoses", "plays a tone's pose on the portrait, frame by frame, then rests", "game"),
+ ("FL-0100", C2+"ReactionPoseController.luau", 'if not self._warned then', 'if true then', "ReactionPoses", "warns once", "game"),
 ]

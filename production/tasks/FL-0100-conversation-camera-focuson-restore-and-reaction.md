@@ -14,6 +14,7 @@ estimate_h: 3
 evidence:
   - "check.sh OVERALL PASS on main c1ba099 (part 1): framework 512, game-001 940 specs (71 files), Selene 0/0, StyLua 406, both builds and place checks"
   - "RulerCamera.spec 25 (4 new: conversationView, glide + restore equality, reduced-motion cut, opened/closed + pan + walk mode); mutations FL-0100 7/7 CAUGHT"
+  - ReactionPoses.spec 8/8; mutations FL-0100 16/16 (9 new rows); headless silhouette render of all six poses reviewed (box render, not Studio)
 ---
 
 # Conversation camera focusOn/restore and reaction poses (G13.8)
@@ -44,3 +45,4 @@ When a conversation opens, the camera glides from the aerial view toward the cit
 - 2026-10-13 forge-04: SPECIFIED → BUILDING. Started per FORGE-00's handoff 2026-10-13-forge-00-to-all-build-cycle-forge06-cinematic (start after FL-0090 merges; FL-0090 merged in #29). On forge/04-experience-fl0100 from main. Part 1: RulerCameraController focusOn(position, {duration}) + restore(); ConversationController.opened/closed (FORGE-03, G13.8) not on main yet: connected when present.
 - 2026-10-13 forge-04: BUILDING → TESTING. Part 1 (focusOn/restore + ConversationController opened/closed) built; headless gates next. Part 2 (reaction poses) follows.
 - 2026-10-13 forge-04: TESTING (unchanged). PR (1/2) from forge/04-experience-fl0100: focusOn/restore. Reaction poses (2/2) follow in a second PR. Handoff forge-04-to-forge-03-05-conversation-camera.
+- 2026-10-13 forge-04: TESTING → TESTING. Part 2 (reaction poses) on forge/04-experience-fl0100b, stacked on #84: Feedback/ReactionPoses (cheer, grumble, slump, salute, bow, cower; Sim/Pose joint format, within Pose.LIMITS, eased, reduced-motion still pose) and ReactionPoseController (portrait via Kit.posePortrait, following ConversationController.reacted/closed when present). World rig: FORGE-01's proposed playPose samples ReactionPoses (handoff).

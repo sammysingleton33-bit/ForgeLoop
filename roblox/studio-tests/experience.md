@@ -248,3 +248,32 @@ Pass: steps 1–8 hold. Record a short video of a request, an answer, the reacti
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+
+## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
+Needs:
+- FORGE-02's `Kit.posePortrait` (FL-0098, #85) and FORGE-03's cinematic panel (FL-0099) firing `ConversationController.reacted(entityId, tone, portrait?)` or exposing `conversation.portrait`;
+- for the world rig: FORGE-01's `EntityController:playPose(entityId, name)` sampling `Feedback/ReactionPoses` (proposed in the FL-0100 handoff);
+- ConversationService (FL-0079) and a citizen with a request.
+
+Until those are on the build, write "blocked: needs posePortrait / reacted / playPose".
+
+Rules under test (headless: `games/game-001/tests/experience/ReactionPoses.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Poses | cheer (happy), grumble (angry), slump (sad), salute (neutral); bow and cower for those consequence cues |
+| Length | 1.4–2.0 s each, easing in over 0.25 s and out over 0.35 s; never longer than the server's 4 s hold |
+| Bounds | every joint within Sim/Pose limits (arms ≤ 150°, head ≤ 30°), torso lift ≤ 2 studs |
+| Reduced motion | the key pose is held still until the panel closes; no movement |
+| Portrait and rig | the same pose data drives both (`Feedback/ReactionPoses`) |
+
+Steps
+1. Open a conversation and give an answer whose reaction is happy, then one that is angry (or sad). The portrait plays the matching gesture for about 2 s and returns to rest; the citizen in the world plays the same gesture.
+2. Answer a request whose consequence cue is `bow` or `cower`: the citizen in the world bows or cowers.
+3. Settings → Reduced Motion on: the portrait holds the key pose without moving and rests when the panel closes.
+4. A farmer or woodcutter holding a tool: note how the tool reads during cheer and cower (it follows the arm; a headless silhouette render showed the rake across the body).
+
+Pass: steps 1–3 hold. Screenshot each gesture on the portrait (FL-0100's visual evidence; the headless render is a box silhouette, not Studio).
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0100 (2/2)).
