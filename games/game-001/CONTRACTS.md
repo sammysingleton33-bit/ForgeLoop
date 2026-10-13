@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g8, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g9, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -464,6 +464,12 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
     - `cost` is omitted when the answer is free. To pay, use `decisionEffects(response.decision).cost`, which is always a table, never the preview.
   - `choiceRisks(decisionId, fillNames)` returns `{ { text, chance } }` for consequences with chance < 1. The text is fully filled. The panel shows the chance; content text never repeats it (`{chance}` is refused in risk notices).
   - `repeatMultiplier` returns 0 once 32 firings are in the window (`MAX_FARM_HISTORY`).
+  - **Presentation (v0.4-g9, SPEC v1.5; all optional, ignoring them changes no gameplay):**
+    - `reactionFor(responseId, loyalty?)` returns `{ text, tone, emotion?, expression?, gesture?, delivery?, bubble_s?, band }`. It picks the `high` band when loyalty ≥ `LOYALTY_BANDS.high` (70, PROVISIONAL) and that band has text, `low` when loyalty ≤ `LOYALTY_BANDS.low` (30), and otherwise `base`. **Servers send this text as the G13.3 reaction.**
+    - `questionFor(scenarioId, citizen, ctx)` returns `{ text, emotion?, expression?, gesture?, delivery?, variantId? }`: the first matching question variant (`trait:` or `cond:` selector), or else the base question.
+    - `presentation(scenarioId)` returns `{ urgency?, delivery_mode?, thought_bubble_s? }`.
+    - `GESTURE_CUE` maps a gesture to a G13.3 cue (bow, salute, cower, celebrate, grumble).
+    - Clients may show emotion and expression on the G13.8 portrait (FORGE-03/FORGE-04). Nothing waits on them.
   - Servers use these and do not re-implement decay, clamps or start loyalty.
   - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
   - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
@@ -585,6 +591,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
+- v0.4-g9 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive.
 - v0.4-g8 (2026-10-13) FORGE-00, ruling on the three #31 contract nits (backlog audit): the contract follows the shipped code. `assign` returns `KingdomId?`; `Kingdom.Gather` returns `(true, ResourceId, amount)` or `(false, errorCode)`; `Kingdom.SetJobQuota` covers farmer/woodcutter/miner/builder and returns `(ok, errorCode?)`. The v0.4-g7 G13.1 signatures arrive with PR #83.
 - v0.4-g7 (2026-10-13) FORGE-00, content follow-ups round 2 (FORGE-05 #67 review). G13.1 now gives exact signatures: `fireAction` takes one call per event with `rulerHistories` and `creditedRulers`; `choicePreview` requires `fillNames`; `choiceRisks(decisionId, fillNames)`; cost is paid from `decisionEffects`; the farm cap gives multiplier 0. Breaking for open PRs #68 and #77; a migration note is in their handoff.
 - v0.4-g6 (2026-10-13) FORGE-00, rulings on FORGE-05's #42 and #64 reviews: G13.3 `strike` carries `entityIds` and `cue` may carry `entityIds` (additive; no client fan-out by occupation); G9 funnel credits a step only after the player's previous step.
