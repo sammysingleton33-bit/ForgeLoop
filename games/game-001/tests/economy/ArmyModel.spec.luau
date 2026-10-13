@@ -46,8 +46,34 @@ describe("ArmyText (FL-0060)", function()
 	it("turns reason codes into sentences and never shows an unknown code", function()
 		expect(ArmyText.reason("population_cap")).toBe("No room for more people. Build houses first")
 		expect(ArmyText.reason("cannot_afford")).toBe("Not enough resources")
-		expect(ArmyText.reason("no_barracks")).toBe("You need a finished barracks")
-		expect(ArmyText.reason("busy")).toBe("Finish building the barracks first")
+		expect(ArmyText.reason("barracks_not_ready")).toBe("Finish building the barracks first")
+		expect(ArmyText.reason("requires_barracks_level")).toBe("Upgrade the barracks first")
+		-- every code #70's Army.Recruit can send has its own sentence (FORGE-05 on #63)
+		for _, code in
+			{
+				"not_in_match",
+				"match_not_active",
+				"kingdom_eliminated",
+				"not_found",
+				"not_owner",
+				"not_barracks",
+				"barracks_not_ready",
+				"population_cap",
+				"recruit_cap",
+				"cannot_afford",
+				"requires_barracks_level",
+				"unknown_unit",
+				"invalid_args",
+				"not_ruler",
+				"unknown_command",
+			}
+		do
+			expect(ArmyText.reason(code)).never.toBe(ArmyText.GENERIC)
+		end
+		-- codes the server never sends are not vocabulary
+		for _, code in { "busy", "phase", "no_kingdom", "rate", "no_barracks" } do
+			expect(ArmyText.reason(code)).toBe(ArmyText.GENERIC)
+		end
 		expect(ArmyText.reason(nil)).toBe(ArmyText.UNREACHABLE)
 		local generic = ArmyText.reason("weird_code_42")
 		expect(generic).toBe(ArmyText.GENERIC)

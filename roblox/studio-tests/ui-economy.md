@@ -44,6 +44,10 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    disappears, a toast says "Farm placed — Builders are on their way", a red "−50" floats under
    Wood, and a "Farm · waiting" chip appears at the bottom; it fills as builders work.
 4. Place again and press **Q**: build mode ends, nothing is spent.
+5. Around the footprint a fainter outline shows the room the building keeps for its upgrades
+   (largest level plus 2 studs). Move it towards a building or a tree: the ghost turns red with
+   "Leave room for upgrades" as the faint outline reaches them, not only when the slab does
+   (#62: the server checks the largest level plus the gap). Rotate: the outline turns too.
 
 ## U5 — place a building, phone (P2; P3 for camera/taps)
 1. **Test → Device emulator** → an iPhone in **landscape** (e.g. iPhone 14, 844 × 390).
@@ -53,6 +57,10 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    footprint moves there. Tap **Place** to build; the ⟳ button rotates; ✕ cancels. A tap on the
    ground never builds by itself.
 4. Screenshot the HUD, the build detail and the placement bar.
+5. Toasts (FORGE-04's NotificationController, placed by the HUD): with the Build drawer open, try
+   to place something you can't afford, then something you can. The toasts appear under the
+   pills, left of the drawer: the drawer's tabs and ✕ and the Build / Kingdom buttons stay
+   tappable while they show. With the drawer closed they sit at the top, left of the rail.
 
 ## U6 — tablet and desktop layout (P2)
 1. Device emulator: an iPad in landscape (1024 × 768), then off at 1920 × 1080.

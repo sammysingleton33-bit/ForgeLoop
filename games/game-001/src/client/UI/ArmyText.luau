@@ -14,40 +14,36 @@
 		ArmyText.objectiveName(id) -> string      "watchtower" -> "Watchtower", "old_ford" -> "Old Ford"
 		ArmyText.lasted(seconds) -> string        "Lasted 12:34"
 		plus the constant sentences below (ArmyText.<NAME>).
-	The reason vocabulary is FORGE-01's (Sim/Military: unknown_unit, invalid_args, no_barracks,
-	population_cap, cannot_afford) plus the build-UI vocabulary (production/handoffs/
-	2026-10-12-forge-03-to-forge-01-build-ui.md); proposed for Army.Recruit in
-	production/handoffs/2026-10-12-forge-03-to-forge-01-army-ui.md.
+	The reason vocabulary is FORGE-01's Army.Recruit (#70: Sim/Military, MatchHost), nothing else.
 ]]
 
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 
 local ArmyText = {}
 
+-- Army.Recruit's codes as FORGE-01's server sends them (#70, Sim/Military + MatchHost; FORGE-05 on
+-- #63). A nil reply is a dropped call (invalid or rate-limited): the server never sends a code for it.
 local REASONS: { [string]: string } = {
-	no_barracks = "You need a finished barracks",
-	busy = "Finish building the barracks first",
+	not_in_match = "The match isn't running",
+	match_not_active = "The match isn't running",
+	kingdom_eliminated = "Your kingdom has fallen",
+	not_ruler = "Only rulers can do that",
+	not_found = "That barracks no longer exists",
+	not_owner = "That barracks isn't yours",
+	not_barracks = "Soldiers train at a barracks",
+	barracks_not_ready = "Finish building the barracks first",
+	requires_barracks_level = "Upgrade the barracks first",
 	population_cap = "No room for more people. Build houses first",
+	recruit_cap = "Your barracks can't train more soldiers. Upgrade it",
 	cannot_afford = "Not enough resources",
-	cost = "Not enough resources",
-	insufficient = "Not enough resources",
 	unknown_unit = "Those soldiers can't be trained here",
 	invalid_args = "Those soldiers can't be trained here",
-	not_owner = "That barracks isn't yours",
-	not_found = "That barracks no longer exists",
-	no_kingdom = "You don't rule a kingdom yet",
-	phase = "You can't recruit right now",
-	rate = "Slow down a moment, then try again",
-	-- FORGE-01 Sim/Military and Sim/Commands codes (FORGE-05 low 4 on #63)
-	recruit_cap = "Your barracks can't train more soldiers. Upgrade it",
-	match_not_active = "The match isn't running",
-	not_in_match = "The match isn't running",
-	not_ruler = "Only rulers can do that",
-	kingdom_eliminated = "Your kingdom has fallen",
+	unknown_command = "That order can't be given",
 }
 
 ArmyText.GENERIC = "That didn't work. Try again."
-ArmyText.UNREACHABLE = "Couldn't reach the server. Try again."
+-- nil: the call was dropped or rate-limited (both answer nil), so never claim the server is down
+ArmyText.UNREACHABLE = "No answer from the server. Try again in a moment."
 
 -- Army drawer
 ArmyText.TITLE = "Army"

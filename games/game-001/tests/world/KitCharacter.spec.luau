@@ -16,9 +16,9 @@ local KINDS = { "citizen", "soldier", "governor" }
 local JOBS = { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" }
 local CITIZEN_TOOLS =
 	{ idle = false, farmer = "hoe", woodcutter = "axe", miner = "pick", builder = "hammer", hauler = "sack" }
-local CRIMSON = Color3.fromRGB(196, 40, 28)
-local AZURE = Color3.fromRGB(13, 105, 172)
-local GOLD = Color3.fromRGB(245, 205, 48)
+local CRIMSON = Color3.fromRGB(190, 40, 50)
+local AZURE = Color3.fromRGB(40, 110, 210)
+local GOLD = Color3.fromRGB(235, 185, 16)
 local R = Kit.LOOK_RANGES
 
 -- Sim/Pose (FORGE-04, on main) when this tree has it; otherwise the same joints and the walk / dead samples

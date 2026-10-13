@@ -131,3 +131,25 @@ Final sheets after round 4 (non-quick): `kit_building_{house,keep,watchtower,bar
 `kit_levels_{keep,barracks,house_farm}.jpg`, `kit_standins.jpg`. Not re-rendered after round 4 (stopped at the
 coordinator's wrap-up; geometry changed only to stay inside the footprint): `kit_house_variants.jpg`,
 `kit_stages*.jpg`, `kit_building_{lumbercamp,quarry,wall,gate}.jpg`.
+
+## FL-0085 integration follow-ups (FORGE-05 review: L1, L2, L5, L6) — 2026-10-13
+- L2 throne vs door: the throne now stands 0.4 in front of the bay face; its back, trim, finials and emblem
+  sit 0.85+ in front of it (clear of the door leaf, straps and voussoirs), and the dais is 5.8 wide (inside the
+  jambs). Spec: no KitThrone part intersects EntranceBay/Door/DoorArch/DoorStrap/DoorJamb/Voussoir/Keystone at
+  any keep level or kingdom colour.
+- L1 throne visibility: a 5-part baldachin (two tall posts, a gabled kingdom-cloth canopy with KitTint, a gold
+  finial) stands over the throne with its canopy above the bay merlons and the hall's front parapet; the canopy
+  is ≥ 8 studs above the seat (the seat stays open to oblique views; spec-checked). Renders (scratch copies of
+  render_kit, hero at 22° and a rear-oblique 50° aerial): from the front it reads as a royal canopy on lances;
+  from behind at 22° the hall and donjon hide it; at 50° rear-oblique it shows as a kingdom-colour patch at the
+  parapet line, partly behind the donjon. Keep counts: L1 198–218, L2 230–258, L3 261–292 (≤ 300).
+- L5: Kit.spec documents and asserts the keep-L3 exception (≤ 300 = Buildings.PART_BUDGET.keep).
+- L6 z-fighting: new probe in KitBuildings.spec (axis-aligned blocks, same-facing coplanar faces within 0.005 and
+  > 0.05 stud² shared; ground-contact bottoms skipped). Before: 4,027 face pairs (130 distinct type/part-pair/face
+  combinations) over every type, level, house archetype and kingdom colour; after: 0. Fixes: timber walls, corner
+  posts and plates inset 0.02–0.03; sole plate narrowed; stone walls and tower shafts lifted 0.03 off the floor
+  (door leaves/jambs); plinth side stones stop short of the corners and never sit flush with the core; stoops
+  0.03 under the floor; transoms, rack bars, porch beams and well beams thinner than their posts; arched window
+  glass shorter than its frame; banner borders below the cloth top; farm fences share corner posts; barn walls
+  and posts inset; gate passage merlons inside the passage; quarry tiers offset; market counters lifted 0.03;
+  keep terrace raised 0.03 with its walls inset.

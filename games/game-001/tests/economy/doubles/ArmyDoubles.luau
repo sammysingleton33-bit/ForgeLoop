@@ -18,7 +18,7 @@
 		army.refuse = "population_cap"                 -- the next recruits answer (false, reason)
 
 	Double rules (stand-ins for FORGE-01, not the game's): a recruit needs the caller's own barracks
-	("not_owner", "no_barracks"), finished ("busy"); it spends Costs.unit("soldier").cost × count
+	("not_found", "not_owner", "not_barracks"), finished ("barracks_not_ready"), with #70's codes; it spends Costs.unit("soldier").cost × count
 	through TreasuryService:spend ("cannot_afford") and raises byJob.soldier at once (no training
 	time). Army.Command is recorded in world.calls ({ name = "Command", args = { unitIds, kind,
 	targetPos, targetId } }) and does nothing else. The objective list starts with the neutral
@@ -153,15 +153,17 @@ function ArmyDoubles.service(world)
 					local kingdom = kingdoms:getKingdomOf(player)
 					local b = build.buildings[barracksId]
 					if kingdom == nil then
-						return false, "no_kingdom"
+						return false, "not_in_match"
 					elseif self.refuse then
 						return false, self.refuse
-					elseif b == nil or b.type ~= "barracks" then
-						return false, "no_barracks"
+					elseif b == nil then
+						return false, "not_found"
 					elseif b.kingdom ~= kingdom then
 						return false, "not_owner"
+					elseif b.type ~= "barracks" then
+						return false, "not_barracks"
 					elseif b.state ~= "complete" then
-						return false, "busy"
+						return false, "barracks_not_ready"
 					end
 					local unit = Costs.unit(unitType)
 					local cost = {}

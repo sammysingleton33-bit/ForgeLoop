@@ -441,6 +441,18 @@ describe("Objective tracker (FL-0060)", function()
 		world:advance(0.1)
 		local toasts = world.hud.toasts.instance
 		expect(toasts.Position.Y.Offset).toBeGreaterThanOrEqual(t.Position.Y.Offset + t.Size.Y.Offset)
+		-- FORGE-04's NotificationController (#74) goes to the same spot, below the tracker too
+		local placed = {}
+		world.hud._notifications = {
+			place = function(_, position)
+				table.insert(placed, position)
+			end,
+		}
+		world.hud._notificationsAt = nil
+		world.hud:render()
+		local m = world.hud:metrics()
+		expect(#placed).toBe(1)
+		expect(placed[1].Y.Offset).toBeGreaterThanOrEqual(math.floor((t.Position.Y.Offset + t.Size.Y.Offset) * m.scale))
 	end)
 end)
 

@@ -8,8 +8,11 @@ local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Cont
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local KingdomWorld = require("./doubles/KingdomWorld")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Text = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Text")
 
 -- FORGE-04 doubles (G4.1 InputModeController, G11 OnboardingController, interfaces §8 NotificationController).
 local function inputModeDef(log)
@@ -43,13 +46,17 @@ local function onboardingDef(log)
 	}
 end
 
-local function notificationDef(log)
+local function notificationDef(log, places)
 	return {
 		name = "NotificationController",
 		new = function()
 			return {
 				show = function(_, spec)
 					table.insert(log, spec)
+				end,
+				-- interfaces §8: place(position, anchor?, width?) in the stack's own (screen) px
+				place = function(_, position, anchor, width)
+					table.insert(places, { position = position, anchor = anchor, width = width })
 				end,
 			}
 		end,
@@ -93,14 +100,14 @@ end
 
 local function newWorld(opts)
 	local o = opts or {}
-	local log = { modes = {}, onboarding = {}, notices = {} }
+	local log = { modes = {}, onboarding = {}, notices = {}, places = {} }
 	local defs = { KingdomHudDef, BuildMenuDef }
 	if o.inputMode ~= false then
 		table.insert(defs, inputModeDef(log.modes))
 	end
 	table.insert(defs, onboardingDef(log.onboarding))
 	if o.notifications then
-		table.insert(defs, notificationDef(log.notices))
+		table.insert(defs, notificationDef(log.notices, log.places))
 	end
 	o.clientDefinitions = defs
 	local world = KingdomWorld.new(o)
@@ -212,6 +219,20 @@ describe("Kingdom HUD (desktop)", function()
 		expect(build.placing.status).toBe("ok")
 		expect(build.ghost.base.Color).toBe(Color3.fromRGB(91, 174, 95))
 		expect((build.ghost.base.Size - Vector3.new(34, 0.6, 28)).Magnitude).toBeLessThan(1e-3) -- Kit.footprint("farm", 1)
+		-- the room the server keeps free (FORGE-05 M-2 on #62): largest level + the gap on every side,
+		-- centred on the same spot, in the verdict's colour
+		local largest = Fit.largestFootprint("farm")
+		local gap = BuildingsConfig.placementGap
+		expect(gap).toBeGreaterThan(0)
+		local room = build.ghost.room
+		expect(room.Size.X).toBeNear(largest.X + 2 * gap, 1e-3)
+		expect(room.Size.Z).toBeNear(largest.Y + 2 * gap, 1e-3)
+		expect(room.Size.X).toBeGreaterThan(build.ghost.base.Size.X)
+		local offset = room.CFrame.Position - build.ghost.base.CFrame.Position
+		expect(math.abs(offset.X) + math.abs(offset.Z)).toBeLessThan(1e-6)
+		expect(room.Transparency).toBeLessThan(1)
+		expect(build.ghost.roomOutline.Visible).toBe(true)
+		expect(room.Color).toBe(build.ghost.base.Color)
 		local bar = find(hud.guis.hud, "PlacementBar")
 		expect(find(bar, "Status"):GetAttribute("status")).toBe("ok")
 
@@ -257,6 +278,15 @@ describe("Kingdom HUD (desktop)", function()
 		build:aimAt(Vector3.new(0, 0, 10))
 		world:advance(0.2)
 		expect(build.placing.reason).toBe("Too close to another building")
+		-- the real server's reason for the reserved room (Simulation:canPlace "blocked", #62)
+		expect(Text.reason("blocked")).toBe("Leave room for upgrades")
+		-- rotated a quarter turn, the room turns with the building
+		build:rotate()
+		build:aimAt(Vector3.new(60, 0, 62))
+		world:advance(0.2)
+		expect(math.abs(build.ghost.room.CFrame.LookVector.X)).toBeNear(1, 1e-6)
+		build:cancel()
+		expect(build.ghost).toBeNil()
 	end)
 
 	it("ignores a late verdict for a spot the ghost already left", function()
@@ -435,6 +465,43 @@ describe("Kingdom UI edge cases", function()
 		expect(world.log.notices[1].kind).toBe("success")
 		expect(world.hud.toasts:count()).toBe(0)
 		world:destroy()
+	end)
+
+	it("places NotificationController's stack where the HUD's toasts go, in screen px (FORGE-05 M1 on #33)", function()
+		-- desktop 1920 × 1022: scale 1022 / 850; the stack ends left of the rail, at the HUD's top
+		local world = newWorld({ notifications = true })
+		local m = world.hud:metrics()
+		expect(m.scale).toBeGreaterThan(1)
+		local placed = world.log.places[#world.log.places]
+		expect(placed).toBeTruthy()
+		local railLeft = (m.width - m.rail.right - m.rail.button) * m.scale
+		expect(placed.anchor).toBe(Vector2.new(1, 0)) -- the position is the stack's right edge
+		expect(placed.position.X.Offset).toBeLessThan(railLeft)
+		expect(placed.position.X.Offset).toBe(math.floor((m.width - m.rail.right - m.rail.button - 12) * m.scale + 0.5))
+		expect(placed.position.Y.Offset).toBe(math.floor(m.hud.y * m.scale + 0.5))
+		expect(placed.width).toBe(math.floor(m.toast.width * m.scale + 0.5))
+		-- pushes that move nothing never place it again: place() rebuilds every card
+		local count = #world.log.places
+		world.treasury:deposit("crimson", "food", 25, "notify:food", "test")
+		world:advance(0.2)
+		expect(#world.log.places).toBe(count)
+		world:destroy()
+		-- phone 844 × 390 with the Build drawer open: under the pills, clear of the drawer (its tabs
+		-- and Close) and of the rail
+		local phone = newWorld({ notifications = true, width = 844, height = 390 })
+		local hud = phone.hud
+		hud:setMenu("build")
+		phone:advance(0.1)
+		local pm = hud:metrics()
+		local at = phone.log.places[#phone.log.places]
+		expect(at.position.X.Offset).toBeLessThanOrEqual(pm.drawer.x * pm.scale)
+		expect(at.position.Y.Offset).toBeGreaterThanOrEqual(pm.hud.bottom * pm.scale)
+		expect(at.position.X.Offset - at.width).toBeGreaterThanOrEqual(0) -- on screen
+		hud:setMenu(nil)
+		phone:advance(0.1)
+		local closed = phone.log.places[#phone.log.places]
+		expect(closed.position.X.Offset).toBeLessThanOrEqual((pm.width - pm.rail.right - pm.rail.button) * pm.scale)
+		phone:destroy()
 	end)
 
 	it("phone: one pane at a time, a back link, and an X to cancel placing", function()
