@@ -30,16 +30,16 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 5,
           "silhouette": 4,
           "triangle_cost": 5,
           "variation": 4
@@ -102,16 +102,16 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 5,
           "silhouette": 4,
           "triangle_cost": 5,
           "variation": 4
@@ -174,16 +174,16 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
           "proportions": 4,
-          "readability": 4,
+          "readability": 5,
           "silhouette": 4,
           "triangle_cost": 5,
           "variation": 4
@@ -246,9 +246,21 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
         "review_file": "reviews/siege_ballista.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {

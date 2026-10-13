@@ -74,3 +74,10 @@ Changes (VERSION 2)
 
 Quick build: 3932-5594 tris, variation min 0.275 (01 vs 03), BUILD PASS. Final full-build numbers in the report.
 Final full build: 3932-5594 tris / 8000, 30.2-39.9 studs tall, variation min 0.275, BUILD PASS.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/farm_windmill.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 5, variation 5, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 4
+- Notes: Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.

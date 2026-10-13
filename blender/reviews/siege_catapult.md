@@ -72,3 +72,10 @@ Changes:
 Seen (`previews/siege_catapult.jpg`, gameplay strip): crown, star, oak and sun-on-ivory read on large shields;
 squat blue vs tall yellow. Tris 3174-3566 / 4000, min silhouette diff 0.34.
 Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/siege_catapult.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).

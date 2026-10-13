@@ -46,3 +46,10 @@ an emerald pennant and emerald oak shields with ivory borders (3.0-3.2); yellow 
 ivory field plus a gold pennant; side shields 3.0 angled 45 deg toward the front camera.
 Seen (`previews/siege_ram.jpg`): four covers read apart, kingdom colour now as trim/shields/pennants.
 Tris 2740-3808 / 4000, min silhouette diff 0.27. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/siege_ram.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.

@@ -74,3 +74,10 @@ Changes (VERSION 2)
 
 Quick build: 5220-6036 tris, variation min 0.154 (03 vs 04), BUILD PASS. Final full-build numbers in the report.
 Final full build: 5220-6036 tris / 8000, variation min 0.154, BUILD PASS.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/farm_barn.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **NEEDS-WORK**; per-asset overrides: farm_barn_02=PASS
+- Scores: silhouette 4, variation 4, readability 3, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 4
+- Notes: Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.

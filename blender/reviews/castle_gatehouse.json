@@ -1,35 +1,35 @@
 {
   "assets": {
     "castle_gatehouse_blue_01": {
-      "geometry_hash": "86a8b5f9d55fb18b",
+      "geometry_hash": "2e4fb119b7ee6894",
       "verdict": "PASS"
     },
     "castle_gatehouse_green_01": {
-      "geometry_hash": "8c92393cccbfed94",
+      "geometry_hash": "a392fe21a3471e1d",
       "verdict": "PASS"
     },
     "castle_gatehouse_red_01": {
-      "geometry_hash": "2833250d9292d5f7",
+      "geometry_hash": "0808516571d38bff",
       "verdict": "PASS"
     },
     "castle_gatehouse_yellow_01": {
-      "geometry_hash": "073179f6892e1041",
-      "verdict": "PASS"
+      "geometry_hash": "92f0d279f09f317e",
+      "verdict": "NEEDS-WORK"
     }
   },
   "generator": "castle_gatehouse",
   "generator_version": 1,
-  "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
+  "notes": "Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).",
   "reviewer": "fresh-context subagent",
-  "round": 3,
+  "round": 4,
   "scores": {
     "cohesion": 4,
     "detail_density": 4,
-    "palette": 3,
+    "palette": 4,
     "proportions": 4,
     "readability": 5,
-    "silhouette": 4,
-    "triangle_cost": 4,
+    "silhouette": 5,
+    "triangle_cost": 3,
     "variation": 4
   },
   "verdict": "PASS"

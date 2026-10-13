@@ -2,35 +2,35 @@
   "assets": {
     "farm_windmill_01": {
       "geometry_hash": "6ecea280c4d5bc20",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     },
     "farm_windmill_02": {
       "geometry_hash": "75c939539865d331",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     },
     "farm_windmill_03": {
       "geometry_hash": "9f68cd1650c248c9",
-      "verdict": "NEEDS-WORK"
+      "verdict": "PASS"
     },
     "farm_windmill_04": {
-      "geometry_hash": "12d3f94486bdc783",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "c0c11f639e395b7d",
+      "verdict": "PASS"
     }
   },
   "generator": "farm_windmill",
   "generator_version": 2,
-  "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
+  "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
   "reviewer": "fresh-context subagent",
-  "round": 3,
+  "round": 4,
   "scores": {
-    "cohesion": 3,
+    "cohesion": 4,
     "detail_density": 4,
-    "palette": 2,
+    "palette": 4,
     "proportions": 4,
     "readability": 4,
     "silhouette": 5,
     "triangle_cost": 4,
-    "variation": 4
+    "variation": 5
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

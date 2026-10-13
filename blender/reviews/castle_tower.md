@@ -97,3 +97,10 @@ Scores unchanged from round 3 of the fresh review.
 Tris: red_01 4228, red_02 5772, blue_01 4172, blue_02 5468, green_01 4388, green_02 4912, yellow_01 4966, yellow_02 5614 (of 6000); min silhouette diff 0.09; full build BUILD PASS.
 
 Final: full (non-quick) build, see `previews/castle_tower.jpg`.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_tower.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: castle_tower_yellow_01=NEEDS-WORK, castle_tower_yellow_02=NEEDS-WORK
+- Scores: silhouette 5, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.

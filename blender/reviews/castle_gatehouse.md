@@ -81,3 +81,10 @@ Scores unchanged from round 3 of the fresh review.
 Tris: red_01 7906, blue_01 7558, green_01 8202, yellow_01 8594 (of 9000); min silhouette diff 0.0994; full build BUILD PASS.
 
 Final: full (non-quick) build, see `previews/castle_gatehouse.jpg`.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_gatehouse.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**; per-asset overrides: castle_gatehouse_yellow_01=NEEDS-WORK
+- Scores: silhouette 5, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).

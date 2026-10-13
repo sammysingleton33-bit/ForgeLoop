@@ -79,3 +79,10 @@ Scores unchanged from round 3 of the fresh review.
 Tris: red_01 13566, blue_01 13306, green_01 14068, yellow_01 14144 (of 16000); min silhouette diff 0.1086; full build BUILD PASS.
 
 Final: full (non-quick) build, see `previews/castle_keep.jpg`.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_keep.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.

@@ -50,3 +50,10 @@ arms 0.95 / 0.78 thick with bigger bronze/gold horn tips; bolt 0.42 with a 1.5 s
 kingdom-cloth fletching; spring washers 0.95 x 0.45 with heavier levers; bowstring 0.18.
 Seen (`previews/siege_ballista.jpg`): carriage / dais / sled / trestle mounts read apart; every badge faces the
 front camera. Tris 1798-2082 / 4000, min silhouette diff 0.31. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/siege_ballista.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 5
+- Notes: Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.

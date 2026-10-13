@@ -1,51 +1,51 @@
 {
   "assets": {
     "castle_tower_blue_01": {
-      "geometry_hash": "64d2595bd8ee5741",
+      "geometry_hash": "7acd5d64107e3e60",
       "verdict": "PASS"
     },
     "castle_tower_blue_02": {
-      "geometry_hash": "304b919289e3a9c2",
+      "geometry_hash": "e889d06203126994",
       "verdict": "PASS"
     },
     "castle_tower_green_01": {
-      "geometry_hash": "2e68ceb8b781c9a7",
+      "geometry_hash": "98d32b9aadac8212",
       "verdict": "PASS"
     },
     "castle_tower_green_02": {
-      "geometry_hash": "8881daa372d3788c",
+      "geometry_hash": "4524e210e7cbacca",
       "verdict": "PASS"
     },
     "castle_tower_red_01": {
-      "geometry_hash": "7141a6556477871f",
+      "geometry_hash": "923de8a68aed96a3",
       "verdict": "PASS"
     },
     "castle_tower_red_02": {
-      "geometry_hash": "37c886205f24bfda",
+      "geometry_hash": "7888f06cf4bd5a27",
       "verdict": "PASS"
     },
     "castle_tower_yellow_01": {
-      "geometry_hash": "e3946d341b3ddd2d",
-      "verdict": "PASS"
+      "geometry_hash": "5f7db019848c2844",
+      "verdict": "NEEDS-WORK"
     },
     "castle_tower_yellow_02": {
-      "geometry_hash": "39f9b0c65d0423a4",
-      "verdict": "PASS"
+      "geometry_hash": "0dc9bd2071f3395a",
+      "verdict": "NEEDS-WORK"
     }
   },
   "generator": "castle_tower",
   "generator_version": 1,
-  "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+  "notes": "Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.",
   "reviewer": "fresh-context subagent",
-  "round": 3,
+  "round": 4,
   "scores": {
     "cohesion": 4,
     "detail_density": 4,
-    "palette": 3,
+    "palette": 4,
     "proportions": 4,
-    "readability": 5,
+    "readability": 4,
     "silhouette": 5,
-    "triangle_cost": 4,
+    "triangle_cost": 3,
     "variation": 4
   },
   "verdict": "PASS"

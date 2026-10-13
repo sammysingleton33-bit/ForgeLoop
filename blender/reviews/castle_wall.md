@@ -91,3 +91,10 @@ Scores unchanged from round 3 of the fresh review.
 Tris: red_01 2312, red_02 2760, blue_01 2030, blue_02 2438, green_01 2740, green_02 2788, yellow_01 2240, yellow_02 2524 (of 3000); min silhouette diff 0.0991; full build BUILD PASS.
 
 Final: full (non-quick) build, see `previews/castle_wall.jpg`.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/castle_wall.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.

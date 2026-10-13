@@ -30,15 +30,15 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
-          "detail_density": 3,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -102,15 +102,15 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
-          "detail_density": 3,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -174,15 +174,15 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
         "reviewer": "fresh-context subagent",
-        "round": 3,
+        "round": 4,
         "scores": {
           "cohesion": 4,
-          "detail_density": 3,
+          "detail_density": 4,
           "palette": 4,
-          "proportions": 3,
+          "proportions": 4,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -246,9 +246,21 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
         "review_file": "reviews/siege_ram.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {
