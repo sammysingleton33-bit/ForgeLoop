@@ -306,3 +306,36 @@ Per kingdom, the six at their top levels measure 651–683 (stand-ins 384–415)
 
 **Unverified:** Studio look (Rock, Cobblestone, Fabric textures; Future lighting); the ember colours without Neon may
 read flat in shadow in Studio; phone screens; the in-game overview camera's real azimuth per slot.
+
+## Fresh-context D-019 scoring — FL-0086 (2026-10-13)
+
+Reviewer: fresh-context subagent. I did not build these models, and I scored before reading any Round 6 notes or Kit source. Evidence: I opened the six `img/kit_fl0086_*.jpg` sheets and the existing-kit refs `img/kit_emblems_aerial_170.jpg` and `img/kit_emblems_aerial_plots.jpg`. I checked them with PIL crops at 2–4x, grayscale conversions, binary silhouette masks, and grayscale crops upscaled to a 1920-px viewport at 80 studs. These are Blender approximations with no textures, no Neon and no Studio lighting, so they are not Studio evidence. I could judge kingdom variation directly only for shrine L2, the one model shown in all kingdoms. For the other types I judged it from whether each rendered level carries a cap and an emblem.
+
+Columns: Sil = silhouette (≥4), Var = variation (≥4), Read = readability (≥4), Prop = proportions (≥3), Pal = palette (≥3), Det = detail density (≥3), Coh = cohesion with the existing kit (≥3), Cost = part cost (≥3).
+
+| Type | Sil | Var | Read | Prop | Pal | Det | Coh | Cost | Verdict | Note |
+|---|---|---|---|---|---|---|---|---|---|---|
+| mine L1–3 | 3 | 3 | 4 | 3 | 3 | 4 | 3 | 4 | NEEDS-WORK | Reads as a mine through the dark adit, gold cart and rails. L1 has no vertical marker. At L3 the headframe wheel is hidden under a hoarding hut, so it reads as a watchtower. The pale beige rock has almost no contrast with the ground and the silhouette mask drops it. The tiered spoil heap looks like a cake. Kingdom caps appear only at L3. 61/95/104 of 110 parts. |
+| blacksmith L1–3 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | NEEDS-WORK | The silhouette is a house with a big chimney, the same massing as the kit's coloured gable houses. The forge glow (about 1 stud) and the anvil are side clutter that turn to specks at 80 studs. The gold L1 sun plaque is a smudge in grayscale, and caps appear only at L3. The L3 catapult hints at a siege workshop. Levels grow well (16, 21, 31 studs). 82/115/141 of 150 parts. |
+| market L1–2 | 4 | 3 | 4 | 4 | 4 | 4 | 4 | 4 | NEEDS-WORK | Striped awnings ringing a stall-house or market hall read as a market at 80 and 170 studs. L1 to L2 is a large step: the L2 hall on stilts has a dome cupola. It fails on one point: L1 emerald has no cap, and its leaf plate is unreadable in grayscale at 80 studs, so colour alone identifies the kingdom. 90/137 of 150 parts. |
+| infirmary L1–2 | 2 | 3 | 2 | 3 | 4 | 3 | 4 | 3 | NEEDS-WORK | Reads as a house (L1, porch cottage) or a townhouse or inn (L2) from both cameras. The healer cues (cots, herb rack, linen line, herb planter, a 1-stud green-diamond plate) are all ground clutter under 1 stud tall. The L1 roof is about 60 % of the mass. The L2 crimson cap is a squat 4-ring stack on a chimney stub with no finial. No red cross. 110/142 of 150 parts, little headroom for fixes. |
+| granary L1–2 | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 4 | NEEDS-WORK | Kingdom caps appear at every level, the best pattern in this batch. L1 is a hut on staddle stones with a ladder and pure-white spheres, so it reads as a hen-house with eggs, not grain. L2 (16×16×29, slot windows, cupola on a stack) reads as a watchtower or blockhouse. Stage 3 shows a gable truss and plaster walls, but the finished building has a hip roof and plank walls. 57/85 of 110 parts. |
+| shrine L1–2 | 3 | 4 | 3 | 4 | 4 | 3 | 4 | 5 | NEEDS-WORK | L2 is good: an open colonnade pavilion with all four caps distinct in grayscale (stepped spire, pyramid, hoarding, dome). L1 (14×14×10) is a low plinth with uprights and a banner, which reads as a ruin and nearly matches construction stage 1. The braziers are orange spheres in cups that read as fruit or lanterns, not fire. The neutral L2 pyramid matches the azure pyramid in silhouette. No real-world religious symbols: 5-point star, scalloped sun disc, leaf, crown. 34/≤61 of 80 parts. |
+
+Result: 0 of 6 pass. Market is one fix away (a cap on L1). Shrine and mine are close. Infirmary is furthest off: it needs a new type identity, not polish.
+
+Specific checks:
+- Confusion risks:
+  - infirmary vs house or inn (high);
+  - granary L2 vs watchtower (high);
+  - granary L1 vs hen-house (medium);
+  - blacksmith vs house (medium);
+  - shrine L1 vs ruin or construction stage 1 (medium);
+  - mine L3 headframe vs watchtower (low).
+- Every higher level is bigger: yes, for all six types.
+- Kingdom without colour:
+  - Grayscale distinct: every top level; shrine L2 in all 4 kingdoms; granary L1 and L2; shrine L1 (its crown banner reads).
+  - Colour-dependent at 80 studs: market L1 (leaf), blacksmith L1 (sun), mine L1.
+  - Marginal: infirmary L1 (the star is just legible).
+- Fire: the forge hearth reads as embers up close and as an orange speck at 80 studs, with no flame or smoke. The shrine braziers and the altar stack do not read as fire.
+- Prohibited symbols: none on the shrine, and no red cross on the infirmary.
