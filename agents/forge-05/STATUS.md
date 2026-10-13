@@ -116,6 +116,7 @@ _Maintained by the worker. Keep it short and current._
 | #111 | FORGE-01 FL-0107 G9 CitizenAnswered (★, D-046) | `003e180` |
 | #122 | FORGE-00 reputation notices for soldiers_recruited / wall_built (★, B13) | `196b1df` |
 | #119 | FORGE-04 FL-0062 follow-up: the summary owns the result line (★, D-046) | `d65fb2e` |
+| #93 | FORGE-01 FL-0049 replication hardening (★, D-046; M1 fixed) | `7694638` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
