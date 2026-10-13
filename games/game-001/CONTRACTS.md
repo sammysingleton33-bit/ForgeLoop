@@ -584,6 +584,12 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   - The `Kingdom.Converse` result gains `look: CitizenLook`, `job`, `position: Vector3` (the citizen's current position) and `kingdom`.
   - While a conversation is open, the citizen is **held**: its intent reads "Talking (with the ruler)", it stops moving, and it turns to face **the ruler's character** (server-side; the server cannot know the client camera). The conversation camera (FORGE-04, `focusOn`) places itself in front of the citizen's face (v0.4-g9e, ruling on #108). The hold lasts at most `Society.conversationHoldSec` (PROVISIONAL 30 s) or ends at `Kingdom.EndConversation(entityId: integer) -> boolean`, a new function remote (own kingdom, rate-limited).
   - After `Kingdom.Choose`, the hold ends when the reaction finishes, after at most 4 s.
+  - **Presentation tags (optional, v0.4-g10; SPEC v1.5).**
+    - The `Kingdom.Converse` result may carry `presentation = { emotion?, expression?, gesture?, delivery?, urgency?, variantId? }`. It comes from `ContentQuery.questionFor` / `presentation`, and the question text is the variant's, filled.
+    - A successful `Kingdom.Choose` result may carry `tone`, `emotion?`, `expression?`, `gesture?`, `delivery?`, `bubble_s?` and `band?` ("base" | "high" | "low") next to `reaction`, from `ContentQuery.reactionFor(responseId, loyalty)`. The reaction text is the band's.
+    - Every field is optional. A client that ignores them shows plain text, and gameplay never depends on them.
+    - The server sends only the enum values that SPEC v1.5 validates; no free text beyond what is filled from content.
+    - Producer: FORGE-01 (FL-0110). Consumer: FORGE-03 (FL-0111), and FORGE-04's poses through `GESTURE_CUE`.
 - **Portrait (FORGE-02).** `Kit.portrait(kind, job, kingdomColor, look, kingdom?) -> Model` returns the same ≤ 9-part rig as `Kit.character`, with the same look. It also carries a `PortraitFocus` attachment (head and shoulders) for a ViewportFrame camera. The portrait and the world rig must look identical.
 - **UI (FORGE-03).** `ConversationController`:
   - The portrait ViewportFrame rises from the bottom (about 0.35 s).
@@ -599,7 +605,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
-- v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
+- v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. G13.8: optional presentation tags on the `Kingdom.Converse` and `Kingdom.Choose` results (FORGE-03 proposal, FL-0110/FL-0111). (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
 - v0.4-g9e (2026-10-13) FORGE-00: G13.8 held citizen faces the ruler's character, not the camera direction (the server cannot know the camera), and the intent text is "Talking (with the ruler)"; the conversation camera frames the citizen's face. This follows #108 as built.
 - v0.4-g9d (2026-10-13) FORGE-00: G7 births follow upkeep health instead of spending treasury food (D-045). ProductionService stays the only food consumer.
 - v0.4-g9c (2026-10-13) FORGE-00, rulings on FORGE-04's #98 questions (D-044). These are additive:
