@@ -48,7 +48,7 @@ screenshot of a four-kingdom view.
 
 ## Run 2: 2026-10-13, soldier helmet crests, PR #81 head `2ef6606` (not yet merged)
 **Input.** FORGE-02's Blender (`bpy`) renders from #81, `games/game-001/art/reviews/img/`:
-- `kit_characters_crests_gameplay.jpg`: front view at about 40 studs, 960×540;
+- `kit_characters_crests_gameplay.jpg`: front view at about 40 studs, 1280×720;
 - `kit_characters_crests_side_gameplay.jpg`: the same, from the side;
 - one soldier per kingdom, plus a dummy with no kingdom.
 
@@ -62,7 +62,7 @@ Command: `python3 -I production/quality-gates/cvd/cvd.py OUT <both jpgs>`. I enl
 - Azure's flat square plate and gold's round dome are distinct in every simulation.
 - Under tritanopia, azure and emerald are both teal, but the plate and the plume tell them apart.
 - The dummy keeps the plain helm.
-- At 40 studs a crest is about 12–15 px tall in the 960×540 frame. The spire and the plume are the two shapes closest to each other at that size. They differ in outline (triangle vs. bar) rather than in height.
+- At 40 studs a crest is about 12–15 px tall in the 960×540 simulation panel (about 16–20 px in the 1280×720 render). The spire and the plume are the two shapes closest to each other at that size. They differ in outline (triangle vs. bar) rather than in height.
 
 **Verdict.**
 - **Finding 2 is resolved in the renders**: friend and foe can be told apart without colour at gameplay distance in the Blender renders.
