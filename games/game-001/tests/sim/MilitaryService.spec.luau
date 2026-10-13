@@ -502,10 +502,33 @@ describe("MilitaryService: the slice without a house (D-041, VS-1 B7)", function
 		end
 		expect(#k.citizenIds).toBe(k.popCap)
 		-- recruit 3: soldiers sleep in the barracks' bunks, so the full beds do not matter
-		topUp(assert(Costs.unit("soldier")).cost, 3)
+		local unitCost = assert(Costs.unit("soldier")).cost
+		topUp(unitCost, 3)
+		local charges = {}
+		s.treasury.changed:connect(function(kingdom, _totals, deltas)
+			if kingdom == k.id then
+				for res, delta in deltas do
+					if delta < 0 then
+						table.insert(charges, { res, delta })
+					end
+				end
+			end
+		end)
 		expect({ invoke(env, p1, "Army.Recruit", barracks.id, "soldier", 3) }).toEqual({ true })
 		env.mock:advance(3 * assert(Costs.unit("soldier")).trainSeconds + 0.5)
 		expect(#k.unitIds).toBe(3)
+		-- paid once, at queue time: Costs.unit("soldier") x 3 in one charge per resource
+		local expected = {}
+		for res, amount in unitCost do
+			table.insert(expected, { res, -amount * 3 })
+		end
+		table.sort(expected, function(a, b)
+			return a[1] < b[1]
+		end)
+		table.sort(charges, function(a, b)
+			return a[1] < b[1]
+		end)
+		expect(charges).toEqual(expected)
 		expect(s.match:getPhase()).toBe("Founding")
 		-- Send-to-capture (no target): the nearest tower the kingdom does not hold
 		fire(env, p1, "Army.Command", {}, "capture")
@@ -528,6 +551,10 @@ describe("MilitaryService: the slice without a house (D-041, VS-1 B7)", function
 		expect(tower.owner).toBe(k.id)
 		env.mock:advance(0.5)
 		expect(s.match:getPhase()).toBe("Results") -- slice mode: the first capture ends the slice
+		env.mock:advance(5)
+		local ended = sent(env, "Match.Ended")
+		expect(#ended).toBe(1) -- once, with this kingdom as the winner
+		expect(ended[1].winner).toBe(k.id)
 	end)
 end)
 
