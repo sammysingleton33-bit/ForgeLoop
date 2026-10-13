@@ -29,9 +29,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7701,
       "sockets": {
@@ -88,9 +100,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7702,
       "sockets": {
@@ -147,9 +171,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7700,
       "sockets": {
@@ -206,9 +242,21 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
         "review_file": "reviews/castle_keep.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7703,
       "sockets": {

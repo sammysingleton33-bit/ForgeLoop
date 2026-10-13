@@ -1,52 +1,52 @@
 {
   "assets": {
     "castle_tower_blue_01": {
-      "geometry_hash": "7ed5afe2b6cc8ac3",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "64d2595bd8ee5741",
+      "verdict": "PASS"
     },
     "castle_tower_blue_02": {
-      "geometry_hash": "02a9f680520070b5",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "304b919289e3a9c2",
+      "verdict": "PASS"
     },
     "castle_tower_green_01": {
-      "geometry_hash": "c7dc981efca18d21",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "2e68ceb8b781c9a7",
+      "verdict": "PASS"
     },
     "castle_tower_green_02": {
-      "geometry_hash": "f502241b106c9386",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "8881daa372d3788c",
+      "verdict": "PASS"
     },
     "castle_tower_red_01": {
-      "geometry_hash": "66d775a441a9f740",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "7141a6556477871f",
+      "verdict": "PASS"
     },
     "castle_tower_red_02": {
-      "geometry_hash": "92b377792c54523c",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "37c886205f24bfda",
+      "verdict": "PASS"
     },
     "castle_tower_yellow_01": {
-      "geometry_hash": "62a0c7535c662ae0",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "e3946d341b3ddd2d",
+      "verdict": "PASS"
     },
     "castle_tower_yellow_02": {
-      "geometry_hash": "f5d0061dd1e1c036",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "39f9b0c65d0423a4",
+      "verdict": "PASS"
     }
   },
   "generator": "castle_tower",
   "generator_version": 1,
-  "notes": "green_01/green_02 roofs are grass/foliage green (approx #457c40, hue ~117) instead of the emerald (hue ~155) used on wall/gatehouse/keep, breaking the foliage rule and kit cohesion. yellow_02 central dome is a hemisphere, not an onion, and merges with the front corner dome at gameplay distance; red_02/blue_02/yellow_02 sit at 98-99% of the 6000-tri budget.",
+  "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
   "reviewer": "fresh-context subagent",
-  "round": 1,
+  "round": 3,
   "scores": {
-    "cohesion": 3,
+    "cohesion": 4,
     "detail_density": 4,
-    "palette": 2,
+    "palette": 3,
     "proportions": 4,
-    "readability": 4,
-    "silhouette": 4,
-    "triangle_cost": 3,
+    "readability": 5,
+    "silhouette": 5,
+    "triangle_cost": 4,
     "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

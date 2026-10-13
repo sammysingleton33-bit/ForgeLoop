@@ -32,9 +32,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7302,
       "sockets": {
@@ -104,9 +116,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7303,
       "sockets": {
@@ -176,9 +200,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7304,
       "sockets": {
@@ -248,9 +284,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7305,
       "sockets": {
@@ -320,9 +368,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7300,
       "sockets": {
@@ -392,9 +452,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7301,
       "sockets": {
@@ -464,9 +536,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7306,
       "sockets": {
@@ -536,9 +620,21 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
         "review_file": "reviews/castle_tower.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7307,
       "sockets": {

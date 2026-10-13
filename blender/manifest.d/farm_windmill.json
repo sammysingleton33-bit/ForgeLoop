@@ -34,21 +34,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Passes: four distinct mill types (tower, smock, gallery tower, post mill), and the kingdom-coloured sails read clearly at 67 studs on neutral walls, within 3.9k-5.6k tris. Minor: the windmill_02 oak leaf is an indistinct cream blob, the windmill_04 sun has a purple disc that reads as an eye, the windmill_03 blue leans cobalt rather than slate, and 01-03 repeat the same door/millstone/sack layout.",
+        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
         "review_file": "reviews/farm_windmill.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 2,
           "proportions": 4,
           "readability": 4,
-          "silhouette": 4,
+          "silhouette": 5,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7600,
       "sockets": {
@@ -105,9 +105,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
         "review_file": "reviews/farm_windmill.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 2,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7601,
       "sockets": {
@@ -164,21 +176,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Passes: four distinct mill types (tower, smock, gallery tower, post mill), and the kingdom-coloured sails read clearly at 67 studs on neutral walls, within 3.9k-5.6k tris. Minor: the windmill_02 oak leaf is an indistinct cream blob, the windmill_04 sun has a purple disc that reads as an eye, the windmill_03 blue leans cobalt rather than slate, and 01-03 repeat the same door/millstone/sack layout.",
+        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
         "review_file": "reviews/farm_windmill.md",
         "reviewer": "fresh-context subagent",
-        "round": 2,
+        "round": 3,
         "scores": {
-          "cohesion": 4,
+          "cohesion": 3,
           "detail_density": 4,
-          "palette": 4,
+          "palette": 2,
           "proportions": 4,
           "readability": 4,
-          "silhouette": 4,
+          "silhouette": 5,
           "triangle_cost": 4,
           "variation": 4
         },
-        "verdict": "PASS"
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7602,
       "sockets": {
@@ -235,9 +247,21 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
         "review_file": "reviews/farm_windmill.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 2,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7603,
       "sockets": {

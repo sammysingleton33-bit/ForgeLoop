@@ -31,9 +31,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7502,
       "sockets": {
@@ -107,9 +119,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7503,
       "sockets": {
@@ -193,9 +217,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7504,
       "sockets": {
@@ -269,9 +305,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7505,
       "sockets": {
@@ -355,9 +403,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7500,
       "sockets": {
@@ -431,9 +491,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7501,
       "sockets": {
@@ -517,9 +589,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7506,
       "sockets": {
@@ -593,9 +677,21 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
         "review_file": "reviews/castle_wall.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7507,
       "sockets": {

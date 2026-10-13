@@ -1,34 +1,34 @@
 {
   "assets": {
     "castle_keep_blue_01": {
-      "geometry_hash": "7b9e852a34f07cd1",
+      "geometry_hash": "1bb89639ac0e0af2",
       "verdict": "PASS"
     },
     "castle_keep_green_01": {
-      "geometry_hash": "4f3e8ff8caf2b26c",
+      "geometry_hash": "11b00511bf67dbbf",
       "verdict": "PASS"
     },
     "castle_keep_red_01": {
-      "geometry_hash": "c1827b6fbb1e859b",
+      "geometry_hash": "ac178010a3a71af5",
       "verdict": "PASS"
     },
     "castle_keep_yellow_01": {
-      "geometry_hash": "ee8c39495af85ec4",
+      "geometry_hash": "9dc5fec1a79bca29",
       "verdict": "PASS"
     }
   },
   "generator": "castle_keep",
   "generator_version": 1,
-  "notes": "Strong kingdom reads (red cone cluster, blue pyramids, emerald timber hall, gold onions) with accents correctly kept to roofs, shutters and banners. Nits: yellow_01 front-corner onion overlaps the central dome into one gold lump at eye level and its rib lines read as cracks; red/blue/gold share the same 4+1 tower layout.",
+  "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
   "reviewer": "fresh-context subagent",
-  "round": 1,
+  "round": 3,
   "scores": {
     "cohesion": 4,
     "detail_density": 4,
-    "palette": 4,
+    "palette": 3,
     "proportions": 4,
-    "readability": 4,
-    "silhouette": 4,
+    "readability": 5,
+    "silhouette": 5,
     "triangle_cost": 4,
     "variation": 4
   },

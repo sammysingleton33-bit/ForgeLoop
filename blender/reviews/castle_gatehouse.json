@@ -1,35 +1,35 @@
 {
   "assets": {
     "castle_gatehouse_blue_01": {
-      "geometry_hash": "df153c3e56803bae",
+      "geometry_hash": "86a8b5f9d55fb18b",
       "verdict": "PASS"
     },
     "castle_gatehouse_green_01": {
-      "geometry_hash": "140e565be5af47b2",
+      "geometry_hash": "8c92393cccbfed94",
       "verdict": "PASS"
     },
     "castle_gatehouse_red_01": {
-      "geometry_hash": "6ede89735c286466",
+      "geometry_hash": "2833250d9292d5f7",
       "verdict": "PASS"
     },
     "castle_gatehouse_yellow_01": {
-      "geometry_hash": "93790508cf70ad68",
+      "geometry_hash": "073179f6892e1041",
       "verdict": "PASS"
     }
   },
   "generator": "castle_gatehouse",
   "generator_version": 1,
-  "notes": "All four read instantly at 78 studs via cones/pyramids/hoarding/onions, crest and banners; correct emerald and gold. Nits: red/green/gold share identical drum-tower massing, the gold sun reads as a white star at distance, and all variants sit at 96-99% of the 9000-tri budget.",
+  "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
   "reviewer": "fresh-context subagent",
-  "round": 1,
+  "round": 3,
   "scores": {
     "cohesion": 4,
     "detail_density": 4,
-    "palette": 4,
+    "palette": 3,
     "proportions": 4,
     "readability": 5,
     "silhouette": 4,
-    "triangle_cost": 3,
+    "triangle_cost": 4,
     "variation": 4
   },
   "verdict": "PASS"

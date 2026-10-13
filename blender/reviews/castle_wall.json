@@ -1,52 +1,52 @@
 {
   "assets": {
     "castle_wall_blue_01": {
-      "geometry_hash": "78b516b559424960",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "61b4bd255c4f2094",
+      "verdict": "PASS"
     },
     "castle_wall_blue_02": {
-      "geometry_hash": "ad55446273b0c6f7",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "68cd0ce63e1f5862",
+      "verdict": "PASS"
     },
     "castle_wall_green_01": {
-      "geometry_hash": "08539b88ed3b3ad3",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "98ff62e76ecc624b",
+      "verdict": "PASS"
     },
     "castle_wall_green_02": {
-      "geometry_hash": "64d091ceb6588d54",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "1d347aabe605f045",
+      "verdict": "PASS"
     },
     "castle_wall_red_01": {
-      "geometry_hash": "167081d6f35eac94",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "b5cde713b231735d",
+      "verdict": "PASS"
     },
     "castle_wall_red_02": {
-      "geometry_hash": "65acf4cee4f4d582",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "311f978f2ce80c2d",
+      "verdict": "PASS"
     },
     "castle_wall_yellow_01": {
-      "geometry_hash": "1c88ad07a41c5458",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "c6791c7310a67994",
+      "verdict": "PASS"
     },
     "castle_wall_yellow_02": {
-      "geometry_hash": "bc9bf36a433cf531",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "b641d043714bab6d",
+      "verdict": "PASS"
     }
   },
   "generator": "castle_wall",
   "generator_version": 1,
-  "notes": "red_01 and yellow_01 carry no kingdom roof form (no red spire / gold onion), so kingdom ID rests on one small banner; blue_01 and green_01 read as flat boxes with a lid-like shed/gable roof at 80 studs. Banners collide with arrow slits on red_01/green_01/blue_02, and the oak-leaf and sun emblems both read as white blobs at distance.",
+  "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
   "reviewer": "fresh-context subagent",
-  "round": 1,
+  "round": 3,
   "scores": {
     "cohesion": 4,
     "detail_density": 4,
-    "palette": 4,
+    "palette": 3,
     "proportions": 4,
     "readability": 4,
-    "silhouette": 3,
+    "silhouette": 4,
     "triangle_cost": 4,
-    "variation": 3
+    "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

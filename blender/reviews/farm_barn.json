@@ -2,35 +2,35 @@
   "assets": {
     "farm_barn_01": {
       "geometry_hash": "b65ec9ab24d04a5a",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     },
     "farm_barn_02": {
       "geometry_hash": "fedb9b8f00a1b234",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     },
     "farm_barn_03": {
-      "geometry_hash": "64913b40fe67688e",
-      "verdict": "PASS"
+      "geometry_hash": "3df3770b1fdb4151",
+      "verdict": "NEEDS-WORK"
     },
     "farm_barn_04": {
       "geometry_hash": "55aa7eeb7a937644",
-      "verdict": "PASS"
+      "verdict": "NEEDS-WORK"
     }
   },
   "generator": "farm_barn",
   "generator_version": 2,
-  "notes": "Passes: the kingdom colour sits on roofs and trim only, thatch and hay stay muted tan apart from the gold roof, and the gambrel/thatch/silo/cupola silhouettes read at 74 studs within 5.2k-6.0k tris. Minor: barn_02 blue reads weakly because the roof is thatch, barn_01/04 have no banner, all four repeat the plank/bale/sack prop layout, and the open doors are flat black voids.",
+  "notes": "barn_03 silo banner is a tone-on-tone gold sun on a gold field (emblem on its own colour, a rule breach) and does not match the castle sun emblem; barn_02 (blue) has a hay-thatch roof, so blue reads only from the doors and one banner at 74 studs. All four repeat the same front dressing (hoist and bale, lantern, sack, bale stack), but the roof forms (gambrel, thatch, silo, wide gable) keep the silhouettes distinct.",
   "reviewer": "fresh-context subagent",
-  "round": 2,
+  "round": 3,
   "scores": {
-    "cohesion": 4,
+    "cohesion": 3,
     "detail_density": 4,
-    "palette": 4,
+    "palette": 2,
     "proportions": 4,
     "readability": 4,
     "silhouette": 4,
     "triangle_cost": 4,
     "variation": 4
   },
-  "verdict": "PASS"
+  "verdict": "NEEDS-WORK"
 }

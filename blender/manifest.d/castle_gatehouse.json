@@ -161,9 +161,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7901,
       "sockets": {
@@ -364,9 +376,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7902,
       "sockets": {
@@ -567,9 +591,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7900,
       "sockets": {
@@ -770,9 +806,21 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
         "review_file": "reviews/castle_gatehouse.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7903,
       "sockets": {
