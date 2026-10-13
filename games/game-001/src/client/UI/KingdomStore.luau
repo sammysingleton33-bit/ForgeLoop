@@ -25,7 +25,7 @@
 		store:buildingCost(type, level) -> { cost, buildSeconds }?
 		store:unitCost(unitType) -> { cost, trainSeconds, upkeepFood }?   Treasury.GetCosts `units`
 		                                          (config Costs.unit until it answers; FL-0060)
-		store:slot(id) -> { id, size, occupiedBy?, fits? }?   store:slots() -> { slot } (by id)
+		store:slot(id) -> { id, size, occupiedBy? }?   store:slots() -> { slot } (by id)
 		store:building(id) -> Building?           any kingdom's building (foreign ones too)
 		store:population() -> { total, byJob, cap?, quotas? }?   nil until the server sends it
 		store.match = { phase, endsAt?, startedAt? }?
