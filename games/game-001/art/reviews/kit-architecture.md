@@ -236,3 +236,114 @@ fewer, larger plinth facing stones.
 - Studio: SmoothPlastic emblems on Fabric cloth, Future lighting, and depth precision of the 0.015 stacking at 220 studs.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
+
+## Round 6 — FL-0085 visual record: farm L1–2 fix and the level sheets — 2026-10-13
+Branch `forge/02-blender-fl0085-record` (from main 8673907). Evidence: headless specs and Blender (`bpy`) renders
+of the Lune dumps (`KitBuildingsDump.spec`, `KitDump.spec`) through `render_kit.py` from `forge/02-blender`, run
+from a scratch copy. These are not Studio screenshots (D-034). Why: the round 3 table scored farm L1–2 silhouette 3
+and variation 3, below the D-019 pass line of 4 ("wheat still a flat tan slab"; L1 → L2 only a small barn hidden
+behind the cottage). Only the farm builder changed (`BUILDERS.farm` and its farm-only helper `wheatRows`).
+
+**Farm changes:**
+- **Crop rows:**
+  - Rows run along Z (front to back), so every camera sees the dark soil furrows between them. Before, they ran along X, and from the front each row hid the furrow behind it.
+  - Each row is a narrow olive stalk bed (46 % of the row pitch, so furrows are ≥ 0.8 studs) carrying three ear bunches. The bunches step in height (+0, +0.35 and +0.7), cycle three golden tones (wheat, light and a new deep amber), are tilted ±4–6° and turned ±2.5°, and sit with dips between them that show the olive stalks.
+  - Row ends are ragged.
+  - Cost: 4 parts per row.
+- **L1 smallholding (34 × 28):**
+  - 8 rows of shorter wheat (crop top 2.4–3.6) behind a harvested stubble strip, with the three stooks standing on it.
+  - Unchanged: cottage, post-and-rail fence on three sides, vegetable patch, haystack, cart, scarecrow, kingdom flag.
+- **L2 farmstead (40 × 32):**
+  - **Barn:** a tall kingdom-tile barn in the back-left corner. It is 11.4 × 12, with walls 11, and its ridge reaches 21.9, 2.1 above the cottage's thatch ridge. Its gable end faces the front over the crop and carries the threshing doors under a timber lintel, a hayloft door and a hoist beam. The old L2 barn sat behind the cottage, below its ridge (14.9 vs 18.6), and the front views hid it.
+  - **Crop:** 10 taller rows (crop top 3.6–4.8). They wrap round the barn: six short rows in front of it and four full-length rows beside it.
+  - **Cottage:** taller and deeper (walls 8.4 → 9.2, depth 9 → 9.6), with a flower-box window beside the door.
+  - **Yard:** a round hay rick (L1's haystack grown) stands mid-yard, with the vegetable patch (2 × 2 cabbages) and the cart.
+  - **Boundary:** the front fence gets an open two-leaf gate, and dry-stone walls (kingdom stone) run on the left up to the barn and behind the long rows.
+  - Every kingdom keeps its emblem flag (`KitEmblems.spec` green).
+- The footprints are unchanged: G13.5 / `EXPECTED_FOOTPRINTS`.
+
+**Part counts before → after** (`Kit.partCount`; budget 190; the four canonical colours, neutral and the two
+off-palette tints of `KitBuildings.spec`):
+
+| colour | L1 before → after | L2 before → after |
+|---|---|---|
+| crimson | 154 → 164 | 185 → 184 |
+| azure | 156 → 166 | 187 → 186 |
+| emerald | 157 → 167 | 188 → 187 |
+| gold | 155 → 165 | 186 → 185 |
+| neutral | 151 → 161 | 182 → 181 |
+| emerald off-palette 40,127,71 | 157 → 167 | 188 → 187 |
+| gold off-palette 245,205,48 | 155 → 165 | 186 → 185 |
+
+- **L2 (emerald 188 → 187):**
+  - Paid for by:
+    - the post-and-rail fence on the left and back (posts 20 → 7, rails 8 → 4);
+    - the stooks (6);
+    - the barn's corner posts and door braces (6);
+    - the barn haybale;
+    - two cabbages;
+    - two plinth stones (the cottage plinth facing is coarser);
+    - one frame brace.
+  - Spent on:
+    - wheat (24 → 40);
+    - the flower-box window (8);
+    - the hayloft door, hoist beam and lintel (3);
+    - the rick (2);
+    - the gate (2);
+    - the walls (2);
+    - a second field slab for the soil round the barn.
+- **L1 (+10):** wheat 21 → 32 and the stubble strip, less two plinth stones.
+
+**Author rounds** (quick renders 300 px; tiles in scratch only):
+1. **Rows turned to run along Z, two ear segments per row.**
+   - The furrows began to show, but the ears overhung the stalks and filled the gaps, so the field still read as stacked planks.
+   - The new barn behind the cottage was taller than before, but a street-level front render (60 studs, 12°) still showed nothing of it.
+2. **Narrower rows, three bunches per row in three tones and heights.**
+   - The field now read as crop rows from the 50° aerial checks (90 and 140 studs; front, side and rear) and from the hero view.
+   - The barn was still hidden from the front.
+3. **Barn moved to the back-left corner with its gable end to the front, and the rows wrapped round it.**
+   - The front, hero and aerial views all show it, as a second, taller gable beside the cottage.
+4. **Polish.**
+   - Bunches tilted and turned a few degrees, which gives an uneven top at no part cost.
+   - The gabled rick, which read as a small hut, became a round rick.
+   - The vegetable patch is back at L2, so L2 contains everything L1 has.
+
+Then final renders at 420 px and 28 samples.
+
+**Author verdict at gameplay distance:** this is not the D-019 score; a fresh-context reviewer scores the committed images.
+- **Gameplay strip (~90 studs, low front view):** farm L2 reads as clearly bigger and different from L1. It has a second, taller kingdom-roofed gable with barn doors beside the cottage, a wider and taller field, a larger cottage with a window box, and a gate.
+- **Crop:** reads as golden rows with furrows and an uneven top. From the low angle the row ends still look somewhat blocky.
+- **Studio's Grass material texture:** not seen yet. It should soften the bunches further.
+- **Barn from straight in front:** the cottage covers about half of it.
+
+**Spec:** a new `KitBuildings.spec` block, "Kit farm crop and levels (G13.5, D-019)", with 2 tests over 7 colours:
+- **Rows:** ≥ 8 rows at L1 and ≥ 10 at L2; each runs along Z (length > 4 × width); furrows are ≥ 0.8; each row has ≥ 3 ear bunches above the stalks with a top range of ≥ 0.3.
+- **Levels:** L2 has more rows than L1 and a crop ≥ 0.8 taller; there is a barn at L2 only, and its ridge is ≥ 1 stud over the thatch ridge.
+
+All 9 mutations were caught:
+- rows along X;
+- no furrows;
+- flat bunches;
+- one bunch per row;
+- the same row count at L1 and L2;
+- an L2 crop that is not taller;
+- a low barn;
+- no barn;
+- ears sunk below the stalks.
+
+The coplanar probe, the budgets, the footprint containment and `KitEmblems.spec` stay green.
+
+**Images** (`img/`; final renders 420 px / 28 samples; total 589 KB):
+- `kit_levels_keep.jpg`: keep L1–3, azure, plus the gameplay strip. This is main's keep. The throne, emblem and pennant work in progress on another branch is not in it.
+- `kit_levels_barracks.jpg`: barracks L1–4, crimson, plus the gameplay strip.
+- `kit_levels_house_farm.jpg`: house L1–2 (v1 gold, v2 emerald) and farm L1–2 (azure), plus the gameplay strip at ~90 studs.
+- `kit_throne.jpg`: the keep L1 throne close-up.
+  - **Tiles:** the throne, dais, baldachin and standards in each of the four kingdoms (`KitDump` `building_keep` colours), with a 5.5-stud R15 proxy for scale.
+  - **Strip:** azure keep L1 front at ~58 studs, Roblox 70° FOV.
+  - **Seat:** previews as a block (render_kit knows primitive classes only).
+  - **Renderer:** a scratch variant of `render_kit.py` with a close-up camera. It is not committed.
+
+**Unverified:**
+- Studio look: Grass material on the wheat, Slate walls, the gate leaves, and depth precision of the tilted bunches.
+- Phone screens.
+- The real azimuth of the aerial camera relative to each farm. From straight in front, the cottage covers about half the barn.

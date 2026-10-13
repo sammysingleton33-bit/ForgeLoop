@@ -396,6 +396,85 @@ describe("Kit visible levels (G13.5)", function()
 	end)
 end)
 
+-- The farm sheet failed D-019 on silhouette/variation ("wheat still a flat tan slab", L1 → L2 too close): the crop
+-- must stay rows with visible furrows and a ragged top, and L2 must add height, rows and a barn over the cottage.
+describe("Kit farm crop and levels (G13.5, D-019)", function()
+	local function crop(m: Model)
+		local rows, ears = {}, {}
+		for _, p in parts(m) do
+			if p.Name == "Wheat" then
+				table.insert(rows, p)
+			elseif p.Name == "WheatEars" then
+				table.insert(ears, p)
+			end
+		end
+		table.sort(rows, function(a, b)
+			return a.CFrame.Position.X < b.CFrame.Position.X
+		end)
+		return rows, ears
+	end
+	local function maxTop(m: Model, name: string): number
+		local top = -math.huge
+		for _, p in parts(m) do
+			if p.Name == name then
+				top = math.max(top, p.CFrame.Position.Y + halfExtents(p).Y)
+			end
+		end
+		return top
+	end
+
+	it("plants rows along Z with open furrows, each with ≥ 3 ear bunches of uneven height", function()
+		for level = 1, 2 do
+			for _, color in COLORS do
+				local m = Buildings.build("farm", level, "complete", color)
+				local rows, ears = crop(m)
+				expect(#rows).toBeGreaterThanOrEqual(if level == 1 then 8 else 10)
+				for i, r in rows do
+					-- a row is long and narrow along Z (furrows run front to back, so every camera sees them)
+					expect(r.Size.Z).toBeGreaterThan(4 * r.Size.X)
+					if i > 1 then
+						local prev = rows[i - 1]
+						local gap = (r.CFrame.Position.X - halfExtents(r).X)
+							- (prev.CFrame.Position.X + halfExtents(prev).X)
+						if gap < 0.8 then
+							error(`farm L{level}: furrow between rows {i - 1} and {i} is {gap} studs (< 0.8)`)
+						end
+					end
+					local lo, hi, n = math.huge, -math.huge, 0
+					for _, e in ears do
+						local d = e.CFrame.Position - r.CFrame.Position
+						if math.abs(d.X) < r.Size.X / 2 and math.abs(d.Z) < r.Size.Z / 2 then
+							n += 1
+							local t = e.CFrame.Position.Y + halfExtents(e).Y
+							lo, hi = math.min(lo, t), math.max(hi, t)
+							-- ears stand on the stalk bed and rise above it
+							expect(t).toBeGreaterThan(r.CFrame.Position.Y + r.Size.Y / 2 + 0.3)
+						end
+					end
+					if n < 3 or hi - lo < 0.3 then
+						error(`farm L{level} row {i}: {n} ear bunches, top range {hi - lo} (want ≥ 3 and ≥ 0.3)`)
+					end
+				end
+			end
+		end
+	end)
+
+	it("grows the crop and adds a barn that stands over the cottage at L2", function()
+		for _, color in COLORS do
+			local l1 = Buildings.build("farm", 1, "complete", color)
+			local l2 = Buildings.build("farm", 2, "complete", color)
+			local r1 = crop(l1)
+			local r2 = crop(l2)
+			expect(#r2).toBeGreaterThan(#r1)
+			expect(maxTop(l2, "WheatEars")).toBeGreaterThan(maxTop(l1, "WheatEars") + 0.8)
+			expect(l1:FindFirstChild("BarnWalls")).toBeNil()
+			expect(l2:FindFirstChild("BarnWalls")).never.toBeNil()
+			-- the barn's ridge clears the cottage's thatch ridge, so the front view sees a second, taller gable
+			expect(maxTop(l2, "RidgeCap")).toBeGreaterThan(maxTop(l2, "ThatchRidge") + 1)
+		end
+	end)
+end)
+
 describe("Kit VS-2 stand-ins (G13.5)", function()
 	it("builds the new types at every level and stage, labelled, with a Door and a work spot", function()
 		for _, bt in NEW_TYPES do

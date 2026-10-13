@@ -24,7 +24,7 @@
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
 		keep        300   182–292  (L1 182–236, L2 204–260, L3 234–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
 		house       170   99–162   (8 variants, L1–L2)
-		farm        190   151–188
+		farm        190   161–187  (L1 161–167, L2 181–187)
 		storehouse  150   87–96
 		lumbercamp  130   46–59
 		quarry      130   51–64
@@ -168,6 +168,7 @@ end
 
 local WHEAT_LIGHT = Color3.fromRGB(250, 222, 128)
 local WHEAT_STALK = Color3.fromRGB(158, 146, 66)
+local WHEAT_DEEP = Color3.fromRGB(214, 160, 58)
 local SOIL_DARK = Color3.fromRGB(104, 74, 46)
 local QUARRY_STONE = { Color3.fromRGB(168, 160, 148), Color3.fromRGB(146, 139, 129), Color3.fromRGB(124, 118, 110) }
 local CABBAGE = { Color3.fromRGB(96, 160, 64), Color3.fromRGB(126, 176, 78) }
@@ -880,61 +881,176 @@ end
 
 -- ------------------------------------------------------------------ farm
 
-BUILDERS.farm = function(ctx, level, color, _style, fp)
+-- Crop rows run along Z (front to back), so every camera sees the dark furrows between them. Each row is a narrow
+-- olive stalk bed carrying three golden ear bunches of different heights and tones with dips between them: a
+-- two-tone, ragged crop top that never reads as one slab or as planks. 4 parts per row; row ends are ragged.
+-- Rows i0..i1-1 of a field whose row i is centred at x0 + (i + 0.5) * pitch (the jitter follows i).
+local WHEAT_TONES = { C.wheat, WHEAT_LIGHT, WHEAT_DEEP }
+local function wheatRows(
+	ctx: Ctx,
+	x0: number,
+	pitch: number,
+	i0: number,
+	i1: number,
+	z0: number,
+	z1: number,
+	stalkH: number,
+	earH: number,
+	seed: number
+)
+	local rw = pitch * 0.46
+	for i = i0, i1 - 1 do
+		local x = x0 + (i + 0.5) * pitch
+		local a = z0 + math.abs(jit(seed + i * 3.7, 0.7))
+		local b = z1 - math.abs(jit(seed + i * 5.3, 0.7))
+		local h = stalkH + jit(seed + i * 1.3, 0.3)
+		local top = 0.4 + h
+		block(ctx, "Wheat", Vector3.new(rw, h, b - a), CFrame.new(x, 0.4 + h / 2, (a + b) / 2), WHEAT_STALK, M.Grass)
+		-- three bunches split near the thirds, tilted and turned a few degrees (a wavy, uneven top); each gap shows
+		-- the olive stalks below; the bunches sink 0.6 into the stalk bed so a tilted end never lifts off it
+		local len = b - a - 0.6
+		local c1 = a + 0.3 + len * (1 / 3 + jit(seed + i * 7.1, 0.07))
+		local c2 = a + 0.3 + len * (2 / 3 + jit(seed + i * 8.3, 0.07))
+		local g = 0.4 + math.abs(jit(seed + i * 2.9, 0.15))
+		for s, seg in { { a + 0.3, c1 - g }, { c1 + g, c2 - g }, { c2 + g, b - 0.3 } } do
+			local k = (i * 2 + s) % 3
+			local eh = earH + k * 0.35 + jit(seed + i * 4.3 + s, 0.1)
+			block(
+				ctx,
+				"WheatEars",
+				Vector3.new(rw - 0.16, eh, seg[2] - seg[1]),
+				CFrame.new(x, top - 0.6 + eh / 2, (seg[1] + seg[2]) / 2)
+					* CFrame.Angles(
+						rad(if s == 2 then -4 else 4) + rad(jit(seed + i * 6.7 + s, 2)),
+						rad(jit(seed + i * 9.1 + s, 2.5)),
+						0
+					),
+				WHEAT_TONES[(i + s) % 3 + 1],
+				M.Grass
+			)
+		end
+	end
+end
+
+-- L1 smallholding: thatched cottage, 8 rows of wheat behind a harvested stubble strip with stooks, a post-and-rail
+-- fence, vegetable patch and haystack. L2 farmstead (bigger footprint): a taller cottage with a flower-box window;
+-- a tall kingdom-roofed barn in the back-left corner with its gable end (threshing doors, hayloft door, hoist
+-- beam) facing the front over the crop, so the front, hero and aerial views all see it; 10 taller rows wrapping
+-- round the barn; a thatched hay rick and the cart in the yard; dry-stone walls and an open gate.
+BUILDERS.farm = function(ctx, level, color, style, fp)
 	local w, d = fp.X, fp.Y
+	local big = level >= 2
 	local fw = w * 0.62
 	local fx = -w / 2 + fw / 2 + 0.4
 	local fd = d - 2.4
-	block(ctx, "Field", Vector3.new(fw, 0.4, fd), CFrame.new(fx, 0.2, 0), SOIL_DARK, M.Ground)
-	-- wheat rows: darker stalks with lighter, slightly wider ears on top
-	local rows = 6 + level
-	local pitch = (fd - 1) / rows
-	for i = 0, rows - 1 do
-		local z = -fd / 2 + 0.5 + (i + 0.5) * pitch
-		local hh = 2.2 + jit(i * 1.3, 0.3)
-		local len = fw - 1.4 + jit(i * 3, 0.5)
-		local xo = fx + jit(i * 7, 0.3)
-		block(ctx, "Wheat", Vector3.new(len, hh, pitch * 0.56), CFrame.new(xo, 0.4 + hh / 2, z), WHEAT_STALK, M.Grass)
-		-- ears: a ridged (gabled) golden top, lit on one side and shaded on the other, reads as a crop row
-		local ew, eh = pitch * 0.36, 1.3
-		local el = len - 0.5 + jit(i * 5, 0.3)
-		local ex = xo + jit(i * 9, 0.2)
-		local ey = 0.4 + hh + eh / 2 - 0.25
-		local col = if i % 2 == 0 then C.wheat else WHEAT_LIGHT
-		wedge(ctx, "WheatEars", Vector3.new(el, eh, ew), CFrame.new(ex, ey, z - ew / 2), col, M.Grass)
-		wedge(
-			ctx,
-			"WheatEars",
-			Vector3.new(el, eh, ew),
-			CFrame.new(ex, ey, z + ew / 2) * CFrame.Angles(0, PI, 0),
-			col,
-			M.Grass
-		)
-	end
-	-- sheaves (stooks) at the field edge
-	for i = 0, 2 do
-		local p = Vector3.new(fx + fw / 2 - 1.4, 0, -fd / 2 + 3 + i * 3.4)
-		column(ctx, "Sheaf", 0.75, 2.6, p, STRAW, M.Grass)
-		ball(ctx, "SheafTop", 1.3, p + Vector3.new(0, 2.6, 0), C.wheat, M.Grass)
-	end
-	-- fence: front (gap at the path), left, back
 	local x0, x1 = -w / 2 + 0.3, fx + fw / 2 + 0.3
 	local z0, z1 = -d / 2 + 0.3, d / 2 - 0.3
+	local rowX0 = fx - fw / 2 + 0.9 -- clear of the L2 field wall
+	local rows = if big then 10 else 8
+	local pitch = (fx + fw / 2 - 0.5 - rowX0) / rows
+	local stalkH, earH, seed = if big then 2.5 else 1.5, if big then 1.35 else 1.1, if big then 17 else 5
+	-- L2 barn: back-left corner, ridge along Z, gable end to the front (bx: its roof stays inside the footprint)
+	local bw, bd, bh = 11.4, 12, 11
+	local bx, bz = -w / 2 + 7.2, d / 2 - bd / 2 - 1.4
+	local barnFront = bz - bd / 2
+	if big then
+		-- the crop wraps round the barn: rows left of the split stop short of the barn's front
+		local split = 6
+		local xs = rowX0 + split * pitch
+		local zc = barnFront - 1.2
+		block(
+			ctx,
+			"Field",
+			Vector3.new(fw, 0.4, zc + 0.3 + fd / 2),
+			CFrame.new(fx, 0.2, (zc + 0.3 - fd / 2) / 2),
+			SOIL_DARK,
+			M.Ground
+		)
+		local bfw = fx + fw / 2 - (xs - 0.4)
+		block(
+			ctx,
+			"Field",
+			Vector3.new(bfw, 0.4, fd / 2 - zc - 0.3),
+			CFrame.new(fx + fw / 2 - bfw / 2, 0.2, (zc + 0.3 + fd / 2) / 2),
+			SOIL_DARK,
+			M.Ground
+		)
+		wheatRows(ctx, rowX0, pitch, 0, split, -fd / 2 + 0.3, zc, stalkH, earH, seed)
+		wheatRows(ctx, rowX0, pitch, split, rows, -fd / 2 + 0.3, fd / 2 - 0.3, stalkH, earH, seed)
+	else
+		block(ctx, "Field", Vector3.new(fw, 0.4, fd), CFrame.new(fx, 0.2, 0), SOIL_DARK, M.Ground)
+		local rz0 = -fd / 2 + 5.4
+		wheatRows(ctx, rowX0, pitch, 0, rows, rz0, fd / 2 - 0.3, stalkH, earH, seed)
+		-- harvested strip at the front: pale stubble with three stooks
+		local sd = rz0 + fd / 2 - 0.6
+		block(
+			ctx,
+			"Stubble",
+			Vector3.new(fw - 1, 0.22, sd),
+			CFrame.new(fx, 0.51, -fd / 2 + 0.3 + sd / 2),
+			STRAW,
+			M.Grass
+		)
+		for i = 0, 2 do
+			local p = Vector3.new(fx + (i - 1) * fw * 0.3 + jit(i * 4.1, 0.6), 0.4, -fd / 2 + 2.9 + jit(i * 2.3, 0.5))
+			column(ctx, "Sheaf", 0.75, 2.6, p, STRAW, M.Grass)
+			ball(ctx, "SheafTop", 1.3, p + Vector3.new(0, 2.6, 0), C.wheat, M.Grass)
+		end
+	end
+	-- boundary: L1 a post-and-rail fence on the front, left and back; L2 the front fence with an open gate, a
+	-- dry-stone wall on the left up to the barn and one behind the long rows
 	fence(ctx, Vector3.new(x0, 0, z0), Vector3.new(fx + 1.5, 0, z0))
 	fence(ctx, Vector3.new(fx + 5.5, 0, z0), Vector3.new(x1, 0, z0))
-	fence(ctx, Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1), nil, true) -- corner posts are shared
-	fence(ctx, Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1), nil, true)
-	-- farmhouse: small thatched cottage on the right (door on the Door attachment)
-	local hw, hd = w / 2 - 2.15 - (x1 + 1.3), 9
+	if big then
+		for _, s in { -1, 1 } do
+			block(
+				ctx,
+				"Gate",
+				Vector3.new(1.9, 2.1, 0.22),
+				CFrame.new(fx + 3.5 + s * 2, 0, z0) * CFrame.Angles(0, -s * rad(62), 0) * CFrame.new(-s * 0.98, 1.45, 0),
+				C.woodLight,
+				M.Wood
+			)
+		end
+		local S = stoneFor(style)
+		local lz1 = barnFront - 0.6
+		block(
+			ctx,
+			"FieldWall",
+			Vector3.new(1.2, 1.7, lz1 - z0 - 0.4),
+			CFrame.new(x0 + 0.35, 0.85, (z0 + 0.4 + lz1) / 2),
+			S.base,
+			M.Slate
+		)
+		local wx0 = bx + bw / 2 + 1.7
+		block(
+			ctx,
+			"FieldWall",
+			Vector3.new(x1 - wx0, 1.85, 1.2),
+			CFrame.new((wx0 + x1) / 2, 0.925, d / 2 - 0.75),
+			S.light,
+			M.Slate
+		)
+	else
+		fence(ctx, Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1), nil, true) -- corner posts are shared
+		fence(ctx, Vector3.new(x0, 0, z1), Vector3.new(x1, 0, z1), nil, true)
+	end
+	-- farmhouse: thatched cottage on the right (door on the Door attachment); L2 taller and deeper
+	local hw, hd = w / 2 - 2.15 - (x1 + 1.3), if big then 9.6 else 9
 	local hx = w / 2 - 2.15 - hw / 2
 	local hz = -d / 2 + hd / 2 + 2.2
 	local doorX = w / 2 - w * 0.32 / 2
-	stonePlinth(ctx, hw + 0.8, hd + 0.8, 1, hx, hz, nil, 41, 4)
-	local hh = 8.4
+	stonePlinth(ctx, hw + 0.8, hd + 0.8, 1, hx, hz, nil, 41, 6.5)
+	local hh = if big then 9.2 else 8.4
 	timberBox(ctx, hw, hd, 1, hh, PLASTERS[2], hx, hz)
 	local f = wallFrames(hw, hd, 1, hx, hz)
 	local du = doorX - hx
-	frameWall(ctx, f.front, hw, hh, { { u = du, hw = 3.2, door = true } }, 2.6)
+	local frontOps: { Opening } = { { u = du, hw = 3.2, door = true } }
+	local wu = (-hw / 2 + du - 3.2) / 2 -- L2: a flower-box window between the door and the field-side corner
+	if big then
+		table.insert(frontOps, { u = wu, hw = 1.5 })
+	end
+	frameWall(ctx, f.front, hw, hh, frontOps, 2.6)
 	frameWall(ctx, f.left, hd, hh, { { u = 0, hw = 1.8 } }, 2.6)
 	frameWall(ctx, f.right, hd, hh, { { u = 0, hw = 1.8 } }, 2.6)
 	frameWall(ctx, f.back, hw, hh, {}, 2.6)
@@ -943,6 +1059,9 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 		f.front * CFrame.new(du, 0, 0),
 		{ leaf = color, leafTint = 0.72, step = 1, voussoirs = 3, w = 4.2, h = 7.2 }
 	)
+	if big then
+		windowAt(ctx, f.front * CFrame.new(wu, 3, 0), { w = 2, h = 3, box = true })
+	end
 	windowAt(ctx, f.left * CFrame.new(0, 3, 0), { w = 2.2, h = 3, shutters = color })
 	windowAt(ctx, f.right * CFrame.new(0, 3, 0), { w = 2.2, h = 3, shutters = color })
 	local info = thatchRoof(ctx, {
@@ -958,48 +1077,16 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 		kingPost = true,
 	})
 	chimney(ctx, hx + hw * 0.28, hz + 1, 1 + hh - 1, info.ridgeY + 2 - hh)
-	-- vegetable patch behind the farmhouse: soil bed with two rows of cabbages
-	local vx, vz = hx - 0.5, hz + hd / 2 + 3.4
-	block(ctx, "VegBed", Vector3.new(7.4, 0.35, 3.8), CFrame.new(vx, 0.17, vz), SOIL_DARK, M.Ground)
-	for r = 0, 1 do
-		for i = 0, 2 do
-			ball(
-				ctx,
-				"Cabbage",
-				1.35,
-				Vector3.new(vx - 2.4 + i * 2.4 + r * 0.6, 0.75, vz - 0.9 + r * 1.8),
-				CABBAGE[(i + r) % 2 + 1],
-				M.Grass
-			)
-		end
-	end
-	-- haystack, scarecrow, cart behind the farmhouse
-	if level >= 2 then
-		-- L2: a barn with big doors in its gable end and a kingdom-tile roof (ridge along Z)
-		local bw, bd = 9.5, 11
-		local bx, bz = hx + 0.6, d / 2 - bd / 2 - 1.2
+	if big then
 		block(ctx, "BarnBase", Vector3.new(bw + 0.8, 0.8, bd + 0.8), CFrame.new(bx, 0.4, bz), C.stone, M.Cobblestone)
-		local bh = 7.2
-		block(ctx, "BarnWalls", Vector3.new(bw, bh - 0.06, bd), CFrame.new(bx, 0.8 + bh / 2, bz), C.wood, M.WoodPlanks)
-		for _, sx in { -1, 1 } do
-			for _, sz in { -1, 1 } do
-				block(
-					ctx,
-					"BarnPost",
-					Vector3.new(0.7, bh - 0.02, 0.7),
-					CFrame.new(bx + sx * bw / 2, 0.8 + bh / 2, bz + sz * bd / 2),
-					C.timber,
-					M.Wood
-				)
-			end
-		end
+		block(ctx, "BarnWalls", Vector3.new(bw, bh, bd), CFrame.new(bx, 0.8 + bh / 2, bz), C.wood, M.WoodPlanks)
 		tileRoof(ctx, {
 			w = bd,
 			d = bw,
 			y = 0.8 + bh,
-			rise = bw / 2 * 1.05,
+			rise = bw / 2 * 1.4,
 			cf = CFrame.new(bx, 0, bz) * CFrame.Angles(0, PI / 2, 0),
-			over = 1.2,
+			over = 0.7,
 			gable = 0.8,
 			rows = 3,
 			color = color,
@@ -1007,61 +1094,99 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 			infill = C.woodLight,
 			infillMaterial = M.WoodPlanks,
 		})
-		local bf = bz - bd / 2
+		-- gable end to the front: threshing doors under a lintel, hayloft door, hoist beam under the apex
 		for _, sx in { -1, 1 } do
 			block(
 				ctx,
 				"BarnDoor",
-				Vector3.new(2.5, 5.8, 0.3),
-				CFrame.new(bx + sx * 1.3, 0.8 + 2.9, bf - 0.1),
+				Vector3.new(2.9, 6.6, 0.3),
+				CFrame.new(bx + sx * 1.5, 0.83 + 3.3, barnFront - 0.15),
 				C.woodLight,
 				M.WoodPlanks
 			)
-			strut(
-				ctx,
-				"BarnDoorBrace",
-				CFrame.new(bx + sx * 1.3, 0.8, bf - 0.3),
-				-1,
-				0.4,
-				1,
-				5.4,
-				0.36,
-				0.12,
-				C.timber,
-				M.Wood
-			)
 		end
-		block(ctx, "Haybale", Vector3.new(2.6, 1.6, 1.8), CFrame.new(bx - 3.4, 0.8, bf - 1.6), STRAW, M.Grass)
+		block(
+			ctx,
+			"BarnLintel",
+			Vector3.new(6.8, 0.6, 0.6),
+			CFrame.new(bx, 0.8 + 7.0, barnFront - 0.2),
+			C.timber,
+			M.Wood
+		)
+		block(
+			ctx,
+			"HayloftDoor",
+			Vector3.new(3, 2.6, 0.3),
+			CFrame.new(bx, 0.8 + bh - 1.7, barnFront - 0.15),
+			C.woodLight,
+			M.WoodPlanks
+		)
+		block(
+			ctx,
+			"HoistBeam",
+			Vector3.new(0.6, 0.6, 2.6),
+			CFrame.new(bx, 0.8 + bh + 1.6, barnFront - 0.9),
+			C.timber,
+			M.Wood
+		)
+		-- the rick (L1's haystack grown) stands mid-yard; the cart goes behind it
+		local rx, rz = hx - 0.8, 6.2
+		column(ctx, "Rick", 2.5, 4.4, Vector3.new(rx, 0, rz), STRAW, M.Grass)
+		ball(ctx, "RickTop", 5.8, Vector3.new(rx, 4.2, rz), C.wheat, M.Grass)
 	else
 		local sy = Vector3.new(hx - 1, 0, d / 2 - 5)
 		column(ctx, "Haystack", 2.6, 3.4, sy, STRAW, M.Grass)
 		ball(ctx, "HaystackTop", 5.2, sy + Vector3.new(0, 3.2, 0), C.wheat, M.Grass)
 	end
-	local sc = Vector3.new(fx - fw * 0.15, 0, d * 0.12)
-	column(ctx, "ScarecrowPost", 0.2, 5.8, sc, C.wood, M.Wood)
-	block(ctx, "ScarecrowArms", Vector3.new(3.6, 0.3, 0.3), CFrame.new(sc + Vector3.new(0, 4.4, 0)), C.wood, M.Wood)
+	-- vegetable patch behind the cottage: soil bed with two rows of cabbages (L2: two per row, budget), and the cart
+	local vx, vz = hx - 0.5, hz + hd / 2 + 3.4
+	block(ctx, "VegBed", Vector3.new(7.4, 0.35, 3.8), CFrame.new(vx, 0.17, vz), SOIL_DARK, M.Ground)
+	local nc = if big then 2 else 3
+	for r = 0, 1 do
+		for i = 0, nc - 1 do
+			ball(
+				ctx,
+				"Cabbage",
+				1.35,
+				Vector3.new(vx - 2.4 + i * 4.8 / (nc - 1) + r * 0.6, 0.75, vz - 0.9 + r * 1.8),
+				CABBAGE[(i + r) % 2 + 1],
+				M.Grass
+			)
+		end
+	end
+	local cart = CFrame.new(hx + 2.5, 0, d / 2 - 4) * CFrame.Angles(0, rad(-15), 0)
+	-- scarecrow in a furrow, standing above the crop
+	local k = math.floor((fw * 0.35 - 0.5) / pitch + 0.5)
+	local lift = if big then 1.2 else 0
+	local sc = Vector3.new(rowX0 + k * pitch, 0, if big then -d * 0.12 else d * 0.12)
+	column(ctx, "ScarecrowPost", 0.2, 5.8 + lift, sc, C.wood, M.Wood)
+	block(
+		ctx,
+		"ScarecrowArms",
+		Vector3.new(3.6, 0.3, 0.3),
+		CFrame.new(sc + Vector3.new(0, 4.4 + lift, 0)),
+		C.wood,
+		M.Wood
+	)
 	block(
 		ctx,
 		"ScarecrowCoat",
 		Vector3.new(1.6, 2, 0.9),
-		CFrame.new(sc + Vector3.new(0, 4, 0)),
+		CFrame.new(sc + Vector3.new(0, 4 + lift, 0)),
 		shade(color, 0.8),
 		M.Fabric,
 		0.8
 	)
-	ball(ctx, "ScarecrowHead", 1.2, sc + Vector3.new(0, 5.6, 0), C.canvas, M.Fabric)
+	ball(ctx, "ScarecrowHead", 1.2, sc + Vector3.new(0, 5.6 + lift, 0), C.canvas, M.Fabric)
 	cyl(
 		ctx,
 		"ScarecrowHat",
-		CFrame.new(sc + Vector3.new(0, 6.2, 0)) * CFrame.Angles(0, 0, PI / 2),
+		CFrame.new(sc + Vector3.new(0, 6.2 + lift, 0)) * CFrame.Angles(0, 0, PI / 2),
 		0.5,
 		1.9,
 		STRAW,
 		M.Grass
 	)
-	local cart = if level >= 2
-		then CFrame.new(hx - 4.2, 0, 3.6) * CFrame.Angles(0, rad(75), 0)
-		else CFrame.new(hx + 2.5, 0, d / 2 - 4) * CFrame.Angles(0, rad(-15), 0)
 	block(ctx, "CartBed", Vector3.new(4.2, 1.2, 2.6), cart * CFrame.new(0, 1.9, 0), C.wood, M.WoodPlanks)
 	for _, sz in { -1, 1 } do
 		disc(
