@@ -4,35 +4,24 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/02-blender` (pushes verified); PR branches `forge/02-blender-fl00xx*` |
-| Open PRs | [#27](https://github.com/sammysingleton33-bit/ForgeLoop/pull/27) Kit v0.2.0 split (green) → [#28](https://github.com/sammysingleton33-bit/ForgeLoop/pull/28) FL-0055 world v0 (green) → [#37](https://github.com/sammysingleton33-bit/ForgeLoop/pull/37) FL-0085 part 1, build slots. Merge in that order |
-| Current tasks | FL-0085 (BUILDING, P0: slots in #37; throne, citizen looks, visible levels in the Kit next), FL-0054 / FL-0056 Kit v0 (BUILDING), FL-0055 (in #28), FL-0013 + FL-0057 Blender pipeline and batch (BUILDING) |
-| Last verified check | #37 branch: `bash roblox/scripts/check.sh` OVERALL PASS (game-001 91 specs, framework 328, selene 0/0); `blender/tests` 18/19 (the failure is an in-progress props worker asset, not committed) |
+| Session branch | `forge/02-blender` (Blender pipeline + kit, pushes verified); PR branches `forge/02-blender-*` cut from main |
+| Open PRs | [#73](https://github.com/sammysingleton33-bit/ForgeLoop/pull/73) D-033 kingdom colours from `config/Kingdoms.luau` + ART_DIRECTION §3 · [#75](https://github.com/sammysingleton33-bit/ForgeLoop/pull/75) FL-0085 #60 follow-ups L1/L2/L5/L6 (throne clear of door, baldachin, keep L3 budget, zero coplanar faces). Both independent of each other, based on main 124af89 |
+| Merged | #27, #28, #38 (build slots), #43 (world hardening), #60 (FL-0085 part 2: throne, looks, visible levels) |
+| Current tasks | FL-0085 (REVIEW). Next: soldier helmet crest per kingdom (CONTRACTS G13.2, D-033(3), VS-1 acceptance), in progress on `forge/02-blender-soldier-crest`. Blender: gold sun emblem reads as a "C" at distance, fix in progress; then fresh reviews of castle ×4, farm_windmill, farm_barn |
+| Last verified check | #73 and #75 after merging main 124af89: `bash roblox/scripts/check.sh` OVERALL PASS (game-001 866 / 869), validate 96/0, ownership PASS. Blender castle round: all four generators BUILD PASS, manifest 0 errors, `blender/tests` 19/19 |
 | Blockers | none |
-| Needs from others | FORGE-05: merge #27 → #28 → #37. FORGE-01: kingdom Color3s (Kit and WorldService use the art-direction values until then). FORGE-00/user: calibration of `blender/previews/house_cottage.jpg`, `tree_oak.jpg`, and the Kit keep/house sheets |
+| Needs from others | FORGE-05: review/merge #73, #75. FORGE-01: pass `look` (M1) and, once the crest lands, `kingdom` for soldiers into `Kit.character`; L3/L4 (re-seat ruler after keep upgrade, throne CanTouch policy) |
 
-## Hours to VS-1 (FORGE-02 items, honest estimate)
-- Build slots (G13.5): done in #37, pending merge.
-- Throne seat, visible levels (barracks L1–4, keep L1–3, house and farm L1–2), thatch pennants: ~2 h. Kit worker is mid-way; specs are written.
-- Citizen looks (`Kit.character(..., look)`, `Kit.LOOK_RANGES`): ~1–2 h. Kit worker has the API in; review and spec pass pending.
-- Kit v0 art pass (FL-0054/56) PR after that: ~1 h of integration.
-- **Total: about 4–5 h of FORGE-02 time to the VS-1 Kit PR**, plus FORGE-05 merge latency.
+## Blender kit state (D-019 review log in `blender/reviews/`)
+- PASS: siege catapult/ballista/ram, prop_banner, goods, cart, bridges, boulder, wood, oak, pine, bush, grass, flowers, fence, haystack.
+- UNREVIEWED after geometry changes: castle keep/tower/gatehouse/wall (chunky gold drums, shared emblems), farm_windmill, farm_barn.
+- Parked (3 rounds, change of strategy noted in `blender/GENERATORS.md`): farm_field, tree_birch, rock_cliff, resource_stone, resource_ore, prop_well.
 
-## Done so far
-- **Blender pipeline (FL-0013):**
-  - palette texture, geometry and architecture kit, Roblox-like Cycles preview rig;
-  - FBX export per the Roblox docs, validation JSON, manifest fragments and schema;
-  - `build.py --verify`, `check.sh` and tests.
-- **Blender medieval kit** (one generator family per asset type, D-019 log in `blender/reviews/`):
-  - committed (`a024e40`): cottages v5 (kingdom pennants), farm (field, fence, haystack, windmill, barn), vegetation (oak, pine, birch, bush, flowers, grass);
-  - built, not yet committed: castle (wall, tower, gatehouse, keep; fix round for slits and gold), village buildings, citizens and soldiers, rocks and resources, siege, props and bridges.
-- **Palette rules:** muted thatch, true-gold kingdom, one emblem per kingdom (crown, star, oak leaf, sun). Recorded in `blender/ART_DIRECTION.md` §3.
-- **Kit (Luau):**
-  - modules Parts, Pieces, Buildings, Character, Props, WorldPlan, Terrain;
-  - preview path: Lune dump → `blender/scripts/render_kit.py`.
-- **World:**
-  - WorldService, Layout v0 with plot towns and build slots, the Lighting preset;
-  - world preview: `blender/scripts/render_world.py` → `blender/previews/world_*.jpg`.
+## Next
+1. Soldier crest PR (Kit + specs, grayscale render check).
+2. Sun emblem fix → rebuild sun-bearing generators → fresh reviews.
+3. Banner emblems readable from the overview camera (FORGE-05 colour-vision finding 3, VS-1 polish).
+4. FL-0086 new building types; FL-0013 pipeline PR; village vignette and import pack.
 
 ## Unverified
-Nothing has been seen in Roblox Studio. The desktop-Blender rebuild (`roblox/studio-tests/assets.md` A0) has not been run.
+Nothing has been seen in Roblox Studio (headless gates and Blender renders only).
