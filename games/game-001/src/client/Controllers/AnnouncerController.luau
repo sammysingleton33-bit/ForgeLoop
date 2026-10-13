@@ -7,12 +7,17 @@
 		- every other moment as a toast through NotificationController:show (silent when the moment
 		  has its own sound, so nothing plays twice), coalesced by the line's key ("×N");
 		- the moment's own sound and effect at its position (AudioController, VFXController).
+	A celebration that NotificationController declines (the same moment twice inside its cooldown)
+	is simply done: the plain-toast fallback is only for a NotificationController without the
+	celebration API or a kind it rejected. Effects get the moment's kingdom colour (`tint`, config
+	Kingdoms identities) for presets that allow it, and so do celebrations (payload.tint).
 	All of them are found with registry:find, so any may be absent (the headless boot gate).
 
 		AnnouncerController.moment: Signal (moment, presentation)   -- MusicController listens
 		AnnouncerController:onMoment(moment)                        -- what the remote calls (specs too)
 ]]
 
+local Kingdoms = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Lines = require("@game/ReplicatedStorage/Game/Feedback/Lines")
 local Moments = require("@game/ReplicatedStorage/Game/Feedback/Moments")
 local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
@@ -23,12 +28,24 @@ AnnouncerController.__index = AnnouncerController
 
 local Def = { name = "AnnouncerController", dependencies = {} }
 
+-- kingdom id -> banner colour, for presets with tint = true
+Def.COLORS = (function()
+	local out = {}
+	for _, identity in Kingdoms.identities or {} do
+		local c = identity.color
+		if type(identity.id) == "string" and type(c) == "table" then
+			out[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
+		end
+	end
+	return table.freeze(out)
+end)()
+
 function Def.create(env: any, registry: any)
 	return setmetatable({
 		_env = env,
 		_registry = registry,
 		_links = {},
-		_registered = false,
+		_celebrations = {} :: { [string]: boolean }, -- kinds NotificationController accepted
 		moment = Signal.new(),
 	}, AnnouncerController)
 end
@@ -77,9 +94,10 @@ function AnnouncerController:_registerCelebrations()
 				"announcer: celebration rejected",
 				{ kind = kind, problems = table.concat(problems, "; ") }
 			)
+		else
+			self._celebrations[kind] = true
 		end
 	end
-	self._registered = true
 end
 
 function AnnouncerController:onMoment(moment: any)
@@ -88,9 +106,22 @@ function AnnouncerController:onMoment(moment: any)
 	end
 	local presentation = Moments.present(moment)
 	local notifications = self._notifications
+	local tint = if type(moment.kingdom) == "string" then Def.COLORS[moment.kingdom] else nil
 	local celebrated = false
-	if presentation.celebrate and notifications and notifications.celebrate and self._registered then
-		celebrated = notifications:celebrate(presentation.celebrate, moment) == true
+	if
+		presentation.celebrate
+		and notifications
+		and notifications.celebrate
+		and self._celebrations[presentation.celebrate]
+	then
+		local payload = moment
+		if tint then
+			payload = table.clone(moment)
+			payload.tint = tint
+		end
+		-- false = the same moment inside its cooldown: already shown, so no fallback toast
+		notifications:celebrate(presentation.celebrate, payload)
+		celebrated = true
 	end
 	if not celebrated then
 		local toast = presentation.toast
@@ -121,7 +152,7 @@ function AnnouncerController:onMoment(moment: any)
 			self._audio:play(presentation.sound, { position = position })
 		end
 		if presentation.vfx and self._vfx and position then
-			self._vfx:play(presentation.vfx, { position = position })
+			self._vfx:play(presentation.vfx, { position = position, tint = tint })
 		end
 	end
 	self.moment:fire(moment, presentation)

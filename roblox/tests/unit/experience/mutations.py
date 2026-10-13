@@ -9,7 +9,7 @@ Prints one line per row: CAUGHT / NOT CAUGHT / MUTATION NOT APPLIED. Needs lune 
 import subprocess, sys, re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[4]  # repository root
 S = "roblox/src/server/Services/"; C = "roblox/src/client/Controllers/"; X = "roblox/src/shared/Experience/"
-G = "games/game-001/"; C2 = G + "src/client/Controllers/"; F = G + "src/shared/Feedback/"; C2 = G + "src/client/Controllers/"
+G = "games/game-001/"; C2 = G + "src/client/Controllers/"; F = G + "src/shared/Feedback/"
 RUN = {
     "fw": ["lune", "run", "roblox/tests/harness/run.luau"],
     "game": ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-001/default.project.json", "--specs", "games/game-001/tests"],
@@ -93,14 +93,25 @@ M = [
  ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
  ("FL-0062", F+"Moments.luau", 'rival.position = nil', 'local _ = rival', "KingdomFeedback", "without its location", "game"),
  ("FL-0062", F+"Moments.luau", 'if member ~= player then', 'if true then', "KingdomFeedback", "the other members learn who joined", "game"),
- ("FL-0062", F+"Moments.luau", 'won = mine ~= nil and mine == winner,', 'won = true,', "KingdomFeedback", "whether their kingdom won", "game"),
+ ("FL-0062", F+"Moments.luau", 'won = outcome == "won",', 'won = true,', "KingdomFeedback", "whether their kingdom won", "game"),
  ("FL-0062", F+"Moments.luau", 'if not isMember(members, player) then', 'if true then', "KingdomFeedback", "members celebrate, everyone else is warned", "game"),
  ("FL-0062", C2+"AnnouncerController.luau", 'silent = presentation.sound ~= nil,', 'silent = false,', "KingdomFeedback", "silently when they have a sound", "game"),
- ("FL-0062", C2+"AnnouncerController.luau", 'celebrated = notifications:celebrate(presentation.celebrate, moment) == true', 'celebrated = false', "KingdomFeedback", "celebrations celebrate", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '		celebrated = true\n	end', '		celebrated = false\n	end', "KingdomFeedback", "celebrations celebrate", "game"),
  ("FL-0062", C2+"FeedbackController.luau", 'if now - self._lastDeposit < Def.DEPOSIT_GAP_SEC or not self:_near(position) then', 'if not self:_near(position) then', "KingdomFeedback", "deposits coalesce", "game"),
- ("FL-0062", C2+"FeedbackController.luau", 'pcall(self._vfx.stop, self._vfx, effect)', 'local _ = effect', "KingdomFeedback", "a released rig loses every effect", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'pcall(self._vfx.stop, self._vfx, entry.effect)', 'local _ = entry', "KingdomFeedback", "a released rig loses every effect", "game"),
  ("FL-0062", C2+"FeedbackController.luau", 'if sound == nil or type(id) ~= "number" or not self:_near(position) then', 'if sound == nil or type(id) ~= "number" then', "KingdomFeedback", "culled by distance", "game"),
  ("FL-0062", C2+"MusicController.luau", 'if type(phase) ~= "string" or Def.PHASE_STATES[phase] == nil then', 'if type(phase) ~= "string" then', "KingdomFeedback", "the match result wins at once", "game"),
+ ("FL-0062", F+"Moments.luau", 'if member ~= placer then', 'if true then', "KingdomFeedback", "buildings: members only", "game"),
+ ("FL-0062", F+"Moments.luau", 'elseif mine == nil then "watched"', 'elseif false then "watched"', "KingdomFeedback", "MatchEnded outcome", "game"),
+ ("FL-0062", F+"Moments.luau", 'local outcome = if winner == nil', 'local outcome = if false', "KingdomFeedback", "MatchEnded outcome", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '		notifications:celebrate(presentation.celebrate, payload)\n		celebrated = true', '		celebrated = notifications:celebrate(presentation.celebrate, payload) == true', "KingdomFeedback", "a celebration declined inside its cooldown", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '		and self._celebrations[presentation.celebrate]\n', '', "KingdomFeedback", "a celebration declined inside its cooldown", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '{ position = position, tint = tint }', '{ position = position }', "KingdomFeedback", "effects and celebrations get the kingdom colour", "game"),
+ ("FL-0062", C2+"AnnouncerController.luau", '			payload.tint = tint', '			local _ = tint', "KingdomFeedback", "effects and celebrations get the kingdom colour", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'elseif camera ~= nil and camera.getFocus ~= nil then', 'elseif false then', "KingdomFeedback", "distance is from the camera focus", "game"),
+ ("FL-0062", C2+"FeedbackController.luau", 'if now - entry.at < Def.ATTACH_KEEP_SEC then', 'if true then', "KingdomFeedback", "attached effects list never grows", "game"),
+ ("FL-0062", C2+"MusicController.luau", '		if self.phase == nil then\n			self:setPhase(phase)', '		if false then\n			self:setPhase(phase)', "KingdomFeedback", "a late joiner asks Match.GetState once", "game"),
+ ("FL-0062", C2+"MusicController.luau", 'if outcome == "won" or outcome == "lost" then', 'if true then', "KingdomFeedback", "a late joiner asks Match.GetState once", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

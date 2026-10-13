@@ -4,7 +4,10 @@
 		Founding -> calm, Expansion -> build, Conflict / Endgame -> tension, Results -> calm;
 		victory / defeat at the end (Feedback.Moment matchEnded), at once.
 	Phase input: `Match.State` (G8, FORGE-01: (phase, endsAt?, startedAt)) and AnnouncerController's
-	phase moments, whichever arrives. The rules (minimum dwell, urgent states) are the framework's
+	phase moments, whichever arrives. At start it also asks `Match.GetState` once, because the
+	Match.State sent to an arriving player can come before this controller listens (a late joiner
+	would otherwise hear nothing until the next phase); the answer applies only if no phase came yet.
+	Victory / defeat music only for a ruler who won or lost (a draw or a spectator keeps the phase music). The rules (minimum dwell, urgent states) are the framework's
 	Experience/MusicDirector; AudioController crossfades (1.5 s) and plays the registry tracks.
 	The day ambience bed (ambience.birds) starts with the first phase.
 	Combat music (battle) is VS-2: VS-1 has no fights.
@@ -59,6 +62,11 @@ function MusicController:start()
 			self:setPhase(phase)
 		end)
 	)
+	RemoteLink.request(self._env, "Match.GetState", function(phase)
+		if self.phase == nil then
+			self:setPhase(phase)
+		end
+	end)
 	local announcer = registry:find("AnnouncerController")
 	if announcer and announcer.moment then
 		table.insert(
@@ -67,7 +75,10 @@ function MusicController:start()
 				if moment.kind == "phase" then
 					self:setPhase(moment.phase)
 				elseif moment.kind == "matchEnded" then
-					self:setResult(if moment.won then "won" else "lost")
+					local outcome = moment.outcome or (if moment.won then "won" else "lost")
+					if outcome == "won" or outcome == "lost" then
+						self:setResult(outcome)
+					end
 				end
 			end)
 		)

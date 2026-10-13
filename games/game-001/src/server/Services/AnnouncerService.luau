@@ -49,8 +49,9 @@ Def.SAMPLES = table.freeze({
 	objectiveCaptured = { kind = "objectiveCaptured", objectiveId = "watchtower" },
 	rivalCaptured = { kind = "rivalCaptured", kingdomName = "Frostmere", objectiveId = "watchtower" },
 	phase = { kind = "phase", phase = "Conflict" },
-	victory = { kind = "matchEnded", won = true, kingdomName = "Emberhold" },
-	defeat = { kind = "matchEnded", won = false, kingdomName = "Frostmere" },
+	victory = { kind = "matchEnded", outcome = "won", won = true, kingdomName = "Emberhold" },
+	defeat = { kind = "matchEnded", outcome = "lost", won = false, kingdomName = "Frostmere" },
+	draw = { kind = "matchEnded", outcome = "draw", won = false },
 })
 
 -- Debug commands are registered once per server (DebugCommands is module-level); they send through

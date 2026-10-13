@@ -100,8 +100,10 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 
 	it("buildings: members only, with the placer's name and the position as a Vector3", function()
 		local out = Moments.fromEvent("BuildingPlaced", { building(), a1 }, ctx)
-		expect(#out).toBe(2)
+		expect(#out).toBe(1) -- the co-ruler; the placer already has FORGE-03's own notice (#49 M1)
+		expect(only(out, a1)).toEqual({})
 		expect(only(out, b1)).toEqual({})
+		expect(only(out, a2)).toEqual({ "buildingPlaced" })
 		expect(out[1].moment.actor).toBe("Ann")
 		expect(out[1].moment.position).toBe(Vector3.new(10, 0, 5))
 		expect(#Moments.fromEvent("BuildingCompleted", { building() }, ctx)).toBe(2)
@@ -134,6 +136,32 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 		for _, delivery in ended do
 			expect(delivery.moment.won).toBe(delivery.player == b1)
 		end
+	end)
+
+	it("MatchEnded outcome: won / lost per ruler, watched for a spectator, draw without a winner (#49 L4)", function()
+		local spectator = { name = "Dee", userId = 4 }
+		local all = ctxWith({ crimson = { a1, a2 }, azure = { b1 } }, { a1, b1, spectator })
+		local function outcomes(result)
+			local out = {}
+			for _, delivery in Moments.fromEvent("MatchEnded", { result }, all) do
+				out[delivery.player.name] = delivery.moment.outcome
+			end
+			return out
+		end
+		expect(outcomes({ winner = "crimson", standings = {}, durationSec = 60 })).toEqual({
+			Ann = "won",
+			Cat = "lost",
+			Dee = "watched",
+		})
+		expect(outcomes({ standings = {}, durationSec = 60 })).toEqual({ Ann = "draw", Cat = "draw", Dee = "draw" })
+		expect(Moments.present({ kind = "matchEnded", outcome = "won" }).celebrate).toBe("victory")
+		expect(Moments.present({ kind = "matchEnded", outcome = "lost" }).celebrate).toBe("defeat")
+		local draw = Moments.present({ kind = "matchEnded", outcome = "draw" })
+		expect(draw.celebrate).toBeNil()
+		expect(draw.toast.title).toBe("A draw")
+		local watched = Moments.present({ kind = "matchEnded", outcome = "watched", kingdomName = "Emberhold" })
+		expect(watched.celebrate).toBeNil()
+		expect(watched.toast.title).toBe("Emberhold wins the match")
 	end)
 
 	it("gathering is never announced, and bad payloads produce nothing", function()
@@ -285,11 +313,11 @@ describe("AnnouncerService (FL-0062)", function()
 			p1
 		)
 		bus.ObjectiveCaptured:fire("tower_1", "azure")
-		expect(kindsFor(p1)).toEqual({ "buildingPlaced", "rivalCaptured" })
+		expect(kindsFor(p1)).toEqual({ "rivalCaptured" }) -- Ann placed it: no second toast for her
 		expect(kindsFor(p3)).toEqual({ "objectiveCaptured" })
 		local placed = remotes:sentTo("Feedback.Moment", p2)[1].args[1]
 		expect(placed.actor).toBe("Ann")
-		expect(registry:get("AnnouncerService").sent.buildingPlaced).toBe(2)
+		expect(registry:get("AnnouncerService").sent.buildingPlaced).toBe(1)
 	end)
 
 	it("without KingdomService: phases still reach everyone, kingdom moments reach nobody", function()
@@ -344,7 +372,7 @@ describe("client feedback controllers (FL-0062)", function()
 				new = function()
 					return {
 						play = function(_, id, o)
-							local effect = { id = id, position = o and o.position }
+							local effect = { id = id, position = o and o.position, tint = o and o.tint }
 							table.insert(effects, effect)
 							return effect
 						end,
@@ -375,12 +403,12 @@ describe("client feedback controllers (FL-0062)", function()
 						end,
 						celebrate = function(_, kind, payload)
 							table.insert(celebrations, { kind = kind, payload = payload })
-							return true
+							return opts.celebrateResult ~= false
 						end,
 						registerCelebration = if opts.noCelebrations
 							then nil
-							else function()
-								return {}
+							else function(_, kind)
+								return if opts.rejected and opts.rejected[kind] then { "rejected" } else {}
 							end,
 					}
 				end,
@@ -414,6 +442,42 @@ describe("client feedback controllers (FL-0062)", function()
 		expect(notices[2].silent).toBe(false)
 		announcer:onMoment({ kind = "dragons" })
 		expect(#notices).toBe(2)
+	end)
+
+	it(
+		"AnnouncerController: a celebration declined inside its cooldown shows no second toast; a rejected kind falls back (#49 L3)",
+		function()
+			local defs = doubles({ celebrateResult = false, rejected = { objectiveCaptured = true } })
+			table.insert(defs, AnnouncerControllerDef)
+			local announcer = Loader.load(env, defs):get("AnnouncerController")
+			announcer:onMoment({ kind = "keepUpgraded", level = 2 })
+			expect(#celebrations).toBe(1)
+			expect(#notices).toBe(0) -- declined = the same moment twice: nothing more to show
+			announcer:onMoment({ kind = "objectiveCaptured", kingdom = "crimson", objectiveId = "tower_1" })
+			expect(#celebrations).toBe(1) -- not registered, so not celebrated
+			expect(notices[1].title).toBe("Watchtower captured") -- the fallback toast
+		end
+	)
+
+	it("AnnouncerController: effects and celebrations get the kingdom colour (#49 L8)", function()
+		local defs = doubles()
+		table.insert(defs, AnnouncerControllerDef)
+		local announcer = Loader.load(env, defs):get("AnnouncerController")
+		local crimson = Color3.fromRGB(190, 40, 50)
+		announcer:onMoment({
+			kind = "buildingCompleted",
+			kingdom = "crimson",
+			buildingType = "farm",
+			position = Vector3.zero,
+		})
+		expect(effects[1].id).toBe("kingdom.construction.complete")
+		expect(effects[1].tint).toBe(crimson)
+		local moment = { kind = "objectiveCaptured", kingdom = "crimson", objectiveId = "tower_1" }
+		announcer:onMoment(moment)
+		expect(celebrations[1].payload.tint).toBe(crimson)
+		expect(moment.tint).toBeNil() -- the received moment is not changed
+		announcer:onMoment({ kind = "buildingCompleted", buildingType = "farm", position = Vector3.zero })
+		expect(effects[2].tint).toBeNil() -- no kingdom, no colour
 	end)
 
 	it("AnnouncerController without the celebration API still shows the moment's toast", function()
@@ -477,6 +541,70 @@ describe("client feedback controllers (FL-0062)", function()
 		env.mock:advance(FeedbackDef.SWING_GAP_SEC)
 		feedback:onEntityEvent(5, "swing", { job = "woodcutter" }, near)
 		expect(#played).toBe(3) -- beyond MAX_STUDS from the camera
+	end)
+
+	it(
+		"FeedbackController: distance is from the camera focus, so a zoomed-out overview still hears work (#49 L1)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, {
+				name = "RulerCameraController",
+				new = function()
+					return {
+						getFocus = function()
+							return Vector3.new(500, 0, 0)
+						end,
+					}
+				end,
+			})
+			table.insert(defs, {
+				name = "FeedbackController",
+				new = function(e, r)
+					return FeedbackDef.create(e, r, { layout = { resourceNodes = {} } })
+				end,
+			})
+			local feedback = Loader.load(env, defs):get("FeedbackController")
+			local function rig(x)
+				local model = roblox.Instance.new("Model")
+				local part = roblox.Instance.new("Part")
+				part.CFrame = CFrame.new(x, 0, 0)
+				part.Parent = model
+				model.PrimaryPart = part
+				return model
+			end
+			feedback:onEntityEvent(1, "swing", { job = "miner" }, rig(520)) -- under the view
+			feedback:onEntityEvent(2, "swing", { job = "miner" }, rig(0)) -- 500 studs from the focus
+			expect(#played).toBe(1)
+			expect(played[1].position).toBe(Vector3.new(520, 0, 0))
+		end
+	)
+
+	it("FeedbackController: a citizen's attached effects list never grows with the match (#49 L2)", function()
+		local defs = doubles({ notifications = false })
+		table.insert(defs, {
+			name = "FeedbackController",
+			new = function(e, r)
+				return FeedbackDef.create(e, r, {
+					layout = { resourceNodes = {} },
+					origin = function()
+						return Vector3.zero
+					end,
+				})
+			end,
+		})
+		local feedback = Loader.load(env, defs):get("FeedbackController")
+		local model = roblox.Instance.new("Model")
+		local part = roblox.Instance.new("Part")
+		part.CFrame = CFrame.new(10, 0, 0)
+		part.Parent = model
+		model.PrimaryPart = part
+		for _ = 1, 50 do
+			feedback:onEntityEvent(1, "celebrate", {}, model)
+			env.mock:advance(FeedbackDef.ATTACH_KEEP_SEC / 2)
+		end
+		expect(#feedback._attached[1]).toBeLessThanOrEqual(2)
+		feedback:released(1)
+		expect(feedback._attached[1]).toBeNil()
 	end)
 
 	it("FeedbackController: a released rig loses every effect attached to it (pooled rigs)", function()
@@ -544,4 +672,41 @@ describe("client feedback controllers (FL-0062)", function()
 		controller:setPhase("Siege")
 		expect(controller.phase).toBe("Expansion")
 	end)
+
+	it(
+		"MusicController: a late joiner asks Match.GetState once; a draw or a spectator keeps the phase music (#49 L6, L4)",
+		function()
+			local root = env.newInstance("Folder")
+			root.Name = "ForgeRemotes"
+			root.Parent = env.ReplicatedStorage
+			local area = env.newInstance("Folder")
+			area.Name = "Match"
+			area.Parent = root
+			local getState = env.newInstance("RemoteFunction")
+			getState.Name = "GetState"
+			getState.Parent = area
+			getState.OnServerInvoke = function()
+				return "Conflict", nil, 0
+			end
+			local defs = doubles({ notifications = false })
+			local announcer = { moment = Signal.new() }
+			table.insert(defs, {
+				name = "AnnouncerController",
+				new = function()
+					return announcer
+				end,
+			})
+			table.insert(defs, MusicDef)
+			local controller = Loader.load(env, defs):get("MusicController")
+			env.mock:advance(0.1)
+			expect(controller.phase).toBe("Conflict") -- no Match.State needed
+			expect(music[#music]).toBe("tension")
+			announcer.moment:fire({ kind = "matchEnded", outcome = "draw", won = false }, {})
+			expect(controller.result).toBeNil()
+			announcer.moment:fire({ kind = "matchEnded", outcome = "watched", won = false }, {})
+			expect(controller.result).toBeNil()
+			announcer.moment:fire({ kind = "matchEnded", outcome = "lost", won = false }, {})
+			expect(controller.result).toBe("lost")
+		end
+	)
 end)

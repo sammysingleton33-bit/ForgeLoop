@@ -87,6 +87,8 @@ Lines.MOMENT = table.freeze({
 	}),
 	victory = table.freeze({ celebrate = "victory" }),
 	defeat = table.freeze({ celebrate = "defeat" }),
+	draw = table.freeze({ kind = "info", title = "A draw", body = "No kingdom took the crown.", key = "matchEnded" }),
+	watched = table.freeze({ kind = "info", title = "{kingdomName} wins the match", key = "matchEnded" }),
 })
 
 Lines.PHASE = table.freeze({

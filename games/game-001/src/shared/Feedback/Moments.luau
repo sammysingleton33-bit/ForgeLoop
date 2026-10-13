@@ -23,7 +23,8 @@
 		| UnitsRecruited    | unitsRecruited                             | —                              |
 		| ObjectiveCaptured | objectiveCaptured                          | rivalCaptured                  |
 		| MatchPhaseChanged | phase, to every player                                                      |
-		| MatchEnded        | matchEnded with won = (their kingdom is the winner), to every player        |
+		| MatchEnded        | matchEnded to every player: outcome won / lost / draw (no winner) / watched  |
+		|                   | (a spectator), won = outcome == "won"                                      |
 		ResourceGathered is not announced: the client's own gather feedback (FeedbackController) is
 		immediate, and citizens' gathering would flood the stack.
 	Moment (sent as Feedback.Moment): { kind, kingdom?, kingdomName?, actor?, buildingType?, level?,
@@ -126,7 +127,14 @@ function Moments.fromEvent(eventName: string, args: { any }, ctx: any): { Delive
 			local moment = buildingMoment("buildingPlaced", building, ctx)
 			local placer = if type(building.placedBy) == "number" then ctx.byUserId(building.placedBy) else args[2]
 			moment.actor = if placer then ctx.displayName(placer) else nil
-			to(out, members, moment)
+			-- the placer already has FORGE-03's own notice ("House placed"): the co-rulers get this one
+			local coRulers = {}
+			for _, member in members do
+				if member ~= placer then
+					table.insert(coRulers, member)
+				end
+			end
+			to(out, coRulers, moment)
 		elseif eventName == "BuildingCompleted" then
 			to(out, members, buildingMoment("buildingCompleted", building, ctx))
 		elseif eventName == "BuildingDestroyed" then
@@ -174,16 +182,22 @@ function Moments.fromEvent(eventName: string, args: { any }, ctx: any): { Delive
 		if type(result) ~= "table" then
 			return out
 		end
-		local winner = result.winner
+		local winner = if type(result.winner) == "string" then result.winner else nil
 		for _, player in ctx.all() do
 			local mine = ctx.kingdomOf and ctx.kingdomOf(player)
+			local outcome = if winner == nil
+				then "draw"
+				elseif mine == nil then "watched"
+				elseif mine == winner then "won"
+				else "lost"
 			table.insert(out, {
 				player = player,
 				moment = {
 					kind = "matchEnded",
 					winner = winner,
-					kingdomName = if type(winner) == "string" then ctx.kingdomName(winner) else nil,
-					won = mine ~= nil and mine == winner,
+					kingdomName = if winner then ctx.kingdomName(winner) else nil,
+					outcome = outcome,
+					won = outcome == "won",
 				},
 			})
 		end
@@ -210,6 +224,9 @@ local function fill(template: string?, moment: any): string?
 	return if text == "" then nil else text
 end
 
+-- matchEnded outcome -> its line in Lines.MOMENT
+Moments.OUTCOME_LINE = table.freeze({ won = "victory", lost = "defeat", draw = "draw", watched = "watched" })
+
 function Moments.present(moment: any): { [string]: any }
 	if type(moment) ~= "table" then
 		return {}
@@ -226,7 +243,7 @@ function Moments.present(moment: any): { [string]: any }
 		}
 	end
 	local line = if kind == "matchEnded"
-		then (if moment.won then Lines.MOMENT.victory else Lines.MOMENT.defeat)
+		then Lines.MOMENT[Moments.OUTCOME_LINE[moment.outcome or (if moment.won then "won" else "lost")]]
 		else Lines.MOMENT[kind]
 	if line == nil then
 		return {}
