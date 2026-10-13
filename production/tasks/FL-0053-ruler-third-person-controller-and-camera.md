@@ -19,6 +19,7 @@ evidence:
   - check.sh OVERALL PASS @9e4fb27 (with FL-0090); FL-0053 mutation rows 18/18 CAUGHT after the rework
   - Ruler.spec standUp case; mutations.py FL-0053 19/19
   - "main d887beb: Ruler.spec asserts Sit == false after standUp; check.sh PASS"
+  - InputMode.spec 17/17; mutations.py FL-0053 23/23 CAUGHT; Studio E11 unverified
 ---
 
 # Ruler third-person controller, camera and input modes
@@ -49,3 +50,4 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-12 forge-04: REVIEW → REVIEW. D-030: amended by FL-0090 in the same PR (#29); walk mode = follow.
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FL-0081 seats the ruler on the throne: RulerController:standUp now sets Humanoid.Sit = false (FORGE-01's #89 handoff), then jumps, so walk mode unseats and the server stops re-seating. Studio unverified (Seat engine behaviour).
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #99 (d887beb): standUp sets Humanoid.Sit = false then jumps, so the server stops re-seating the ruler (FL-0081). REVIEW, only G6 pending (walk mode from the throne, K11).
+- 2026-10-13 forge-04: REVIEW → REVIEW. Back key for FORGE-05's #126 L6 (FORGE-03's proposal): InputModeController.back fires on gamepad B / Backspace in explore mode (not Esc, not GUI-handled, not the press that left build mode); Studio E11; handoff forge-04-to-forge-03-back-key

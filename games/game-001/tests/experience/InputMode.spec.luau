@@ -228,6 +228,48 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		expect(log).toEqual({ "citizen:9", "none:", "citizen:9" })
 	end)
 
+	it("back fires on gamepad B and Backspace, never on Esc or on a press a GUI handled (#126 L6)", function()
+		local backs = 0
+		input.back:connect(function()
+			backs += 1
+		end)
+		local function press(key, processed)
+			userInput.InputBegan:Fire({ UserInputType = Enum.UserInputType.Keyboard, KeyCode = key }, processed)
+		end
+		press(Enum.KeyCode.ButtonB, false)
+		press(Enum.KeyCode.Backspace, false)
+		expect(backs).toBe(2)
+		press(Enum.KeyCode.Escape, false) -- Roblox's menu key
+		press(Enum.KeyCode.Backspace, true) -- typing in a TextBox
+		press(Enum.KeyCode.ButtonB, true) -- leaving gamepad GUI selection
+		press(Enum.KeyCode.X, false)
+		expect(backs).toBe(2)
+		expect(input.selection.kind).toBe("none") -- a key is never a tap
+	end)
+
+	it("back never fires in build mode, nor for the press that left it (settle window)", function()
+		local backs = 0
+		input.back:connect(function()
+			backs += 1
+		end)
+		local function pressB()
+			userInput.InputBegan:Fire(
+				{ UserInputType = Enum.UserInputType.Gamepad1, KeyCode = Enum.KeyCode.ButtonB },
+				false
+			)
+		end
+		input:set("build")
+		env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		pressB()
+		expect(backs).toBe(0)
+		input:set("explore") -- what the bound B does in build mode
+		pressB()
+		expect(backs).toBe(0)
+		env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		pressB()
+		expect(backs).toBe(1)
+	end)
+
 	it("selecting a citizen reports CitizenInspected to the onboarding (FL-0092)", function()
 		local reports = {}
 		local reg = D.boot(MockEnv.new({ seed = 62, isServer = false, localPlayer = { userId = 6102 } }), {

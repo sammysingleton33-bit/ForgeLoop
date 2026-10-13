@@ -11,6 +11,7 @@
 		input.selected:connect(function(kind, id) ... end)   -- G13.6; FORGE-03's panels listen
 		input.selection                 -- { kind, id } of the last selection
 		input:select(kind, id)          -- programmatic selection (a list row, "go to")
+		input.back:connect(function() ... end)   -- "back": close your topmost panel (FORGE-03)
 
 	Selection (G13.6; nobody else raycasts for selection)
 		- In explore mode a tap or click (pointer moved < tapPixels and released within tapSec;
@@ -24,6 +25,16 @@
 		- Selecting a citizen reports the client action "CitizenInspected" to OnboardingController
 		  (when present), the onboarding v2 step "inspect a citizen" (FL-0092).
 		- Input that a GUI already handled (gameProcessedEvent) never selects.
+
+	Back (FORGE-05's #126 L6; FORGE-03's conversation stage and drawers close on it)
+		- back() fires on gamepad B or keyboard Backspace. Esc is Roblox's own menu key, so it is
+		  never used.
+		- Only while accepts("explore"): in build mode B and X still leave build mode, and the press
+		  that left it does not also fire back (the settle window).
+		- Input a GUI already handled never fires it: Backspace in a TextBox closes nothing, and on a
+		  gamepad the first B leaves GUI selection (Roblox's default) and the next one fires back.
+		- Listened to through UserInputService, never bound, so the keys are not sunk. back fires
+		  whether or not a panel is open; the listeners decide what closes.
 
 	Arbitration (specs: games/game-001/tests/experience/InputMode.spec.luau)
 		- One mode at a time, and each mode has one owner for taps and clicks:
@@ -54,6 +65,7 @@ Def.MODES = table.freeze({ "explore", "build" })
 Def.LATER = table.freeze({ command = "VS-2" })
 Def.ACTION = "ForgeLeaveBuildMode"
 Def.KINDS = table.freeze({ "citizen", "building", "slot", "none" })
+Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace })
 Def.DEFAULTS = table.freeze({
 	settleSec = 0.15,
 	tapPixels = 8,
@@ -135,6 +147,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		selection = { kind = "none", id = "" },
 		changed = Signal.new(),
 		selected = Signal.new(),
+		back = Signal.new(),
 	}, Controller)
 end
 
@@ -160,6 +173,7 @@ function Controller:destroy()
 	table.clear(self._connections)
 	self.changed:disconnectAll()
 	self.selected:disconnectAll()
+	self.back:disconnectAll()
 end
 
 -- Programmatic selection (also what a resolved tap calls). Unknown kinds are refused.
@@ -243,7 +257,7 @@ function Controller:_bindPointer()
 		userInput = if ok then found else nil
 	end
 	if userInput == nil then
-		env.log("info", "InputModeController: no UserInputService; tap selection is skipped")
+		env.log("info", "InputModeController: no UserInputService; tap selection and back are skipped")
 		return
 	end
 	local function isPointer(input: any): boolean
@@ -251,7 +265,16 @@ function Controller:_bindPointer()
 	end
 	local okBegan, began = pcall(function()
 		return userInput.InputBegan:Connect(function(input, processed)
-			if processed or not isPointer(input) then
+			if processed then
+				return
+			end
+			if input.KeyCode ~= nil and table.find(Def.BACK_KEYS, input.KeyCode) then
+				if self:accepts("explore") then
+					self.back:fire()
+				end
+				return
+			end
+			if not isPointer(input) then
 				return
 			end
 			self._press = { at = Vector2.new(input.Position.X, input.Position.Y), t = env.clock() }

@@ -23,4 +23,8 @@ M = [
  ("FL-0053", C2+"RulerCameraController.luau", 'while #self._shakes > limits.maxActive do', 'while false do', "RulerCamera", "caps the duration and the number of shakes", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'return Def.clamp(magnitude, 0, 1) * maxDegrees * left * left', 'return magnitude * maxDegrees * left * left', "RulerCamera", "shakeAmplitude() eases out and clamps", "game"),
  ("FL-0053", C2+"RulerController.luau", '			humanoid.Sit = false -- FORGE-01', '			local _ = false -- FORGE-01', "Ruler", "standUp() leaves the throne", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if self:accepts("explore") then\n\t\t\t\t\tself.back:fire()', 'if true then\n\t\t\t\t\tself.back:fire()', "InputMode", "back never fires in build mode", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if processed then\n\t\t\t\treturn\n\t\t\tend\n\t\t\tif input.KeyCode', 'if input.KeyCode', "InputMode", "back fires on gamepad B and Backspace", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace })', 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB })', "InputMode", "back fires on gamepad B and Backspace", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace })', 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace, Enum.KeyCode.Escape })', "InputMode", "back fires on gamepad B and Backspace", "game"),
 ]

@@ -249,3 +249,24 @@ Pass: steps 1–8 hold. Record a short video of a request, an answer, the reacti
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+
+## E11 — Back key (FL-0053, game-001)
+
+Needs: FORGE-03's conversation stage and drawer menus subscribed to `InputModeController.back` (#126 L6). Until they are on the build, write "blocked: needs FORGE-03's back subscription".
+
+| Rule | Expected |
+|---|---|
+| Keys | gamepad B and keyboard Backspace; Esc only opens Roblox's menu |
+| Build mode | B and X leave build mode; that press never also counts as back |
+| GUI first | Backspace while typing in a text box closes nothing; with a gamepad on a GUI button, the first B leaves the selection and the next B is back |
+
+Steps
+1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it.
+2. With a gamepad (or the emulator's gamepad), open a conversation and press B: the stage closes. Open it again, move the selection onto an answer button, and press B: the selection leaves the button and the stage stays open. Press B again: it closes.
+3. Open the build menu and start placing. Press B: placement ends (explore mode) and nothing else closes. Press B again: back now acts as usual.
+4. Type in any text box (chat, a name field), including Backspace: no panel closes.
+
+Pass: steps 1–4 hold.
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
