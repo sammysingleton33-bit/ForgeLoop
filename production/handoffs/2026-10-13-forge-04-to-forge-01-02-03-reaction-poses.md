@@ -4,7 +4,7 @@
 Reaction poses for G13.8 now exist as data: `Feedback/ReactionPoses` gives joint transforms in the Sim/Pose format for cheer, grumble, slump, salute, bow and cower, so the conversation portrait and the world rig can play the same gesture. I drive the portrait. Each of you owns one small hook:
 - FORGE-01: `EntityController:playPose`, for the world rig.
 - FORGE-02: nothing new; `Kit.posePortrait` from #85 is what I call.
-- FORGE-03: a `reacted` signal from the cinematic panel.
+- FORGE-03: nothing. The poses use what FL-0099 (#126) already gives: `opened`/`closed` and `conversation.stage.portrait.model`.
 
 ## Done (with commits)
 Branch `forge/04-experience-fl0100b`, stacked on #84 (FL-0100 (1/2)).
@@ -17,7 +17,7 @@ Branch `forge/04-experience-fl0100b`, stacked on #84 (FL-0100 (1/2)).
   - The work cues (`work_fast`, `hammer`, `rest`) are not reactions; they stay with EntityController's own loop.
 - **`games/game-001/src/client/Controllers/FeedbackPoseController.luau`:**
   - `playPortrait(portrait, nameOrTone)` animates FORGE-02's portrait through `Kit.posePortrait` every Heartbeat until the pose ends, then rests it. With reduced motion it holds the key pose.
-  - It connects, when present, to `ConversationController.reacted(entityId, tone, portrait?)` (plays on that portrait, else on `conversation.portrait`) and to `.closed` (rests every portrait).
+  - It tracks the open conversation's citizen through `ConversationController.opened` and `.closed` (FL-0099, #126). For that citizen, `EntityController.event` drives the portrait: a `reaction` plays its tone's pose (the server's G13.3 event, `{ text, tone }`), and a consequence cue whose `Vfx.cues` pose is a reaction pose (bow, cower) plays that pose. The portrait is `conversation.stage.portrait.model`. Closing rests it.
   - Without `Kit.posePortrait` it plays nothing and warns once.
 
 ## Evidence
@@ -37,7 +37,7 @@ Additive, game-001 only:
 - `FeedbackPoseController` (new controller).
 
 Proposed, not yet built (owners decide):
-- `ConversationController.reacted(entityId, tone, portrait?)` and `.portrait` (FORGE-03);
+- No new FORGE-03 API: FL-0099's `opened`/`closed` and `stage.portrait.model` are enough.
 - `EntityController:playPose(entityId, name)` (FORGE-01). CitizenBubbleController already calls it by name for every reaction and cue.
 
 ## Open issues and risks
@@ -49,7 +49,7 @@ Proposed, not yet built (owners decide):
    - For `ReactionPoses.DURATION[name]` seconds, write `ReactionPoses.sample(name, t)` onto that rig's Motor6D.Transforms in place of `Pose.sample`, then go back to the action pose. A suggested blend is `Pose.blend` over about 0.2 s.
    - Ignore names where `ReactionPoses.has(name)` is false; the work cues are yours already.
    - CitizenBubbleController calls it with no other changes.
-2. **FORGE-03 (FL-0099):** when the reaction shows, fire `ConversationController.reacted(entityId, tone, portrait)`, with the ViewportFrame's portrait model, or expose it as `conversation.portrait`. Use framework Signals (`:connect`), like `opened`/`closed`.
+2. **FORGE-03 (FL-0099):** nothing to add. Keep `conversation.stage.portrait.model` as the portrait's path, or tell me if it moves.
 3. **FORGE-02:** nothing to change. `Kit.posePortrait(portrait, joints)` from #85 is called exactly as documented, with joints in the Sim/Pose format. Once #85 merges, the portrait poses work with no change on my side.
 
 ## Files to read

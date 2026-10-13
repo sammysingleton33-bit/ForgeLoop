@@ -151,10 +151,12 @@ describe("FeedbackPoseController (FL-0100, G13.8 portrait)", function()
 	end)
 
 	it(
-		"follows the conversation: a reaction plays on its portrait, a new one replaces it, closing rests all",
+		"follows the talking citizen: its reaction tone and pose cues play on FORGE-03's portrait; closing rests it",
 		function()
+			local model = { name = "stage portrait" }
 			local conversation =
-				{ reacted = Signal.new(), closed = Signal.new(), portrait = { name = "panel portrait" } }
+				{ opened = Signal.new(), closed = Signal.new(), stage = { portrait = { model = model } } }
+			local entities = { event = Signal.new() }
 			local poses = load({
 				{
 					name = "ConversationController",
@@ -162,17 +164,28 @@ describe("FeedbackPoseController (FL-0100, G13.8 portrait)", function()
 						return conversation
 					end,
 				},
+				{
+					name = "EntityController",
+					new = function()
+						return entities
+					end,
+				},
 			})
-			conversation.reacted:fire(7, "angry")
-			expect(poses.playing[conversation.portrait].name).toBe("grumble")
-			conversation.reacted:fire(7, "happy")
-			expect(poses.playing[conversation.portrait].name).toBe("cheer")
-			local other = { name = "given portrait" }
-			conversation.reacted:fire(8, "sad", other)
-			expect(poses.playing[other].name).toBe("slump")
+			entities.event:fire(7, "reaction", { text = "Hm.", tone = "angry" })
+			expect(next(poses.playing)).toBeNil() -- no conversation open: the world rig's business only
+			conversation.opened:fire(7, Vector3.zero)
+			entities.event:fire(8, "reaction", { text = "Hooray", tone = "happy" }) -- another citizen
+			expect(next(poses.playing)).toBeNil()
+			entities.event:fire(7, "reaction", { text = "Hm.", tone = "angry" })
+			expect(poses.playing[model].name).toBe("grumble")
+			entities.event:fire(nil, "bow", { entityIds = { 3, 7 } }) -- a consequence cue naming them
+			expect(poses.playing[model].name).toBe("bow")
+			entities.event:fire(7, "hammer", {}) -- a work cue: not a reaction pose
+			expect(poses.playing[model].name).toBe("bow")
 			conversation.closed:fire(7)
 			expect(next(poses.playing)).toBeNil()
-			expect(calls[#calls].size).toBe(0)
+			expect(calls[#calls].size).toBe(0) -- rested
+			expect(poses.talking).toBeNil()
 			env.RunService.Heartbeat:Fire(0.5) -- live frames reach step(): nothing is left to play
 			expect(next(poses.playing)).toBeNil()
 		end

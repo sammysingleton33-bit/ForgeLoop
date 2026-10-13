@@ -251,11 +251,11 @@ History:
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
 Needs:
-- FORGE-02's `Kit.posePortrait` (FL-0098, #85) and FORGE-03's cinematic panel (FL-0099) firing `ConversationController.reacted(entityId, tone, portrait?)` or exposing `conversation.portrait`;
+- FORGE-02's `Kit.posePortrait` (FL-0098, #85) and FORGE-03's cinematic panel (FL-0099, #126: `opened`/`closed`, `conversation.stage.portrait.model`);
 - for the world rig: FORGE-01's `EntityController:playPose(entityId, name)` sampling `Feedback/ReactionPoses` (proposed in the FL-0100 handoff);
 - ConversationService (FL-0079) and a citizen with a request.
 
-Until those are on the build, write "blocked: needs posePortrait / reacted / playPose".
+Until those are on the build, write "blocked: needs posePortrait / FL-0099 / playPose".
 
 Rules under test (headless: `games/game-001/tests/experience/ReactionPoses.spec.luau`):
 

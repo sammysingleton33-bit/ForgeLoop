@@ -21,8 +21,11 @@ M = [
  ("FL-0100", F+"ReactionPoses.luau", 'or Bubbles.POSE.neutral', 'or "cheer"', "ReactionPoses", "tones map to Bubbles.POSE", "game"),
  ("FL-0100", C2+"FeedbackPoseController.luau", 'local held = self:_reducedMotion()', 'local held = false', "ReactionPoses", "reduced motion holds the key pose", "game"),
  ("FL-0100", C2+"FeedbackPoseController.luau", '\t\tif not entry.held then\n', '\t\tif true then\n', "ReactionPoses", "reduced motion holds the key pose", "game"),
- ("FL-0100", C2+"FeedbackPoseController.luau", 'local model = portrait or (conversation and conversation.portrait)', 'local model = conversation and conversation.portrait', "ReactionPoses", "follows the conversation", "game"),
- ("FL-0100", C2+"FeedbackPoseController.luau", '\t\t\t\t\tself:stopPortrait(model)\n', '\t\t\t\t\tlocal _ = model\n', "ReactionPoses", "follows the conversation", "game"),
+ ("FL-0100", C2+"FeedbackPoseController.luau", 'if talking == nil or not names(id, payload, talking) then', 'if talking == nil then', "ReactionPoses", "follows the talking citizen", "game"),
+ ("FL-0100", C2+"FeedbackPoseController.luau", 'return type(listed) == "table" and table.find(listed, talking) ~= nil', 'return false', "ReactionPoses", "follows the talking citizen", "game"),
+ ("FL-0100", C2+"FeedbackPoseController.luau", 'pose = if cue and ReactionPoses.has(cue.pose) then cue.pose else nil', 'pose = if cue then cue.pose else nil', "ReactionPoses", "follows the talking citizen", "game"),
+ ("FL-0100", C2+"FeedbackPoseController.luau", 'self.talking = entityId', 'self.talking = nil', "ReactionPoses", "follows the talking citizen", "game"),
+ ("FL-0100", C2+"FeedbackPoseController.luau", '\t\t\t\t\tself:stopPortrait(model)\n', '\t\t\t\t\tlocal _ = model\n', "ReactionPoses", "follows the talking citizen", "game"),
  ("FL-0100", C2+"FeedbackPoseController.luau", '\tself:_apply(portrait, ReactionPoses.rest(self._joints))\n', '', "ReactionPoses", "plays a tone's pose on the portrait, frame by frame, then rests", "game"),
  ("FL-0100", C2+"FeedbackPoseController.luau", 'if not self._warned then', 'if true then', "ReactionPoses", "warns once", "game"),
 ]
