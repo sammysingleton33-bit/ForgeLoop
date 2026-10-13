@@ -394,3 +394,108 @@ The coplanar probe, the budgets, the footprint containment and `KitEmblems.spec`
 - Studio materials and lighting.
 - Phone-size screens.
 - Whether the throne finials and the arch voussoirs actually intersect in 3D. The renders only show that they touch.
+
+## Round 7 — farm L1–2, attempt 3: a new crop representation (after the fresh-context NEEDS-WORK) — 2026-10-13
+Branch `forge/02-blender-fl0085-record`. Evidence: headless specs and Blender (`bpy`) renders of the Lune dumps.
+These are not Studio screenshots (D-034). This is the farm's third attempt, so the approach changed instead of
+tuning the round 6 rows. Only the farm builder, its helper `wheatRows`, the farm-only colour constants and
+`PART_BUDGET.farm` changed; keep, throne, house and emblem code are untouched.
+
+**Changes, by finding:**
+1. **Stacked planks or hay bales → upright tufts.**
+   - Each row is a low ochre stalk bed (40 % of the row pitch, so bed furrows are ≥ 1.1 studs) carrying upright gold ear tufts. A tuft is one `CornerWedgePart` (a spike with its apex over one corner), 56 % of the pitch wide, taller than wide, and about 3.4 studs long along the row.
+   - The tufts overlap along the row and the apex alternates front and back, so the row is a zigzag. Neighbouring rows are out of phase, and each tuft is turned ±6°, leans ±4° and varies ±0.45 in height.
+   - From the street the crop top is a band of spikes; from 50° it is rows of lit and shaded gold facets over dark soil strips. There are no flat-topped crop parts left.
+   - Crop top: L1 3.5–4.6, L2 4.9–6.0.
+2. **Values.** The value ladder runs dark soil < roof < ochre bed < saturated gold tufts, and it holds in the grayscale check.
+   - Soil 104,74,46 → 74,52,34.
+   - Tufts 244,182,30 / 252,204,58 / 230,156,22 (saturation ≥ 0.75).
+   - The farm cottage moved from thatch to a dark shingle tile roof (104,80,64). This also gives it a crisp gable unlike the house v2 thatch.
+   - Stubble 196,164,96.
+3. **L1 outline.** The haystack moved from behind the cottage to the front-left corner of the field, on the stubble strip, 6 studs tall. The stooks moved right of it. From the front, L1 now reads as haystack | field | cottage.
+4. **L2 barn.** It is narrower (10.4) and moved forward on the left edge: walls now z −5…7, previously 2.6…14.6.
+   - It stands ≥ 10 studs to the side of the cottage, and its front is no deeper than the cottage's back.
+   - A 3.5-stud bare threshing apron lies in front of its doors.
+   - Its ridge is 21.5, against 17.9 for the cottage.
+5. **Budget.** `PART_BUDGET.farm` is 190 → 200, justified in the `Buildings.luau` header. Farms are 3 per VS-2 kingdom, so the raise costs ≤ 120 parts across 4 kingdoms; the measured world stays ≈ 17.0k of the 25k budget.
+
+**Part counts, round 6 → round 7** (budget 200):
+
+| colour | L1 | L2 |
+|---|---|---|
+| crimson | 164 → 179 | 184 → 192 |
+| azure | 166 → 181 | 186 → 194 |
+| emerald | 167 → 182 | 187 → 195 |
+| gold | 165 → 180 | 185 → 193 |
+| neutral | 161 → 176 | 181 → 189 |
+| emerald off-palette 40,127,71 | 167 → 182 | 187 → 195 |
+| gold off-palette 245,205,48 | 165 → 180 | 185 → 193 |
+
+- **L2 (emerald):**
+  - Wheat 40 → 51: 9 beds and 42 tufts, replacing 10 beds and 30 ear blocks.
+  - The thatch roof (17) became a tile roof (15).
+  - One field slab was dropped.
+- **L1 (emerald):** wheat 32 → 49 (7 beds and 42 tufts), and the roof is 2 parts cheaper.
+
+**Author rounds** (quick renders, then a street view at 60 studs and 12°, and aerials at 50°):
+1. **Tufts 4.4 long, 66 % of the pitch, barn at z 4.5.**
+   - Values separated at once.
+   - The crop read as a spiky gold field, but the tufts were long low ramps (shark fins) rather than upright.
+   - The gameplay strip at 10-stud spacing cropped farm L2 at the frame edge.
+2. **Tufts 3.4 long and 3.6 tall at L2, 56 % of the pitch; barn moved forward to z 1; strip widened.**
+   - The strip now keeps the same 70° vertical FOV, widened to 2.09:1 so every model fits at the 90-stud cap. It is a scratch copy of `render_kit.py`; the `forge/02-blender` version has a 6-stud gap and a fixed 16:9 strip.
+   - The barn's doors and body now read beside the cottage in the strip. The cottage eave still touches the barn roof's lower-left corner in that oblique view.
+
+Final renders: 420 px and 28 samples for the sheet; 1920×1080 and 32 samples for the aerial.
+
+**Images** (`img/`; total across the five FL-0085 images is 777 KB):
+- `kit_levels_house_farm.jpg` (152 KB, re-rendered): house L1–2 and farm L1–2 azure. The gameplay strip is ~90 studs at 70° vertical FOV, 2.09:1, with models 10 studs apart.
+- `kit_levels_farm_aerial.jpg` (192 KB, new): farm L1 and L2 in emerald (on green ground) and gold. Panels:
+  - 1:1 crops of 1920×1080 renders at 50° pitch and 140 studs, from the front (azimuth 0) and from behind (azimuth 180, so the order is reversed);
+  - a 2× zoom of the front for detail.
+- Unchanged: `kit_levels_keep.jpg`, `kit_levels_barracks.jpg`, `kit_throne.jpg`.
+
+**Author verdict at gameplay distance** (not the D-019 score; a fresh-context reviewer scores the images):
+- **Strip:**
+  - Farm L1 now has its own outline: a dark-roofed cottage, a bristly gold field, a haystack and stooks.
+  - Farm L2 is wider and taller, with a kingdom-roofed barn showing its doors and hayloft beside the cottage.
+- **Grayscale:** the dark roof, the bright crop and the dark furrows separate.
+- **Aerial:** the crop reads as rows of gold tufts over dark furrows, and the L2 barn roof is the strongest element in both kingdoms.
+- **Weak points:**
+  - In the hero view the tufts are big flat-faced facets. They read as stylised crop but could still be called "gold paper".
+  - The emerald L2 barn roof is the same green family as the ground.
+  - In the oblique strip the cottage eave still overlaps a corner of the barn roof.
+
+**Spec:** the farm block of `KitBuildings.spec` was rewritten as 3 tests over 7 colours.
+- **Rows:** ≥ 7 rows at L1 and ≥ 9 at L2, each along Z; bed furrows ≥ 0.9, and no tuft closes its furrow; ≥ 2 tufts per row. Each tuft is an upright `CornerWedgePart` (taller than wide, up-vector > 0.99) rising ≥ 1.5 over its bed. Apexes alternate along the row, and tuft tops range ≥ 0.5.
+- **Values:** tuft saturation > 0.75; tuft L\* > soil + 40 and > cottage roof + 25.
+- **Levels:**
+  - L1's haystack sits in the front half, ≥ 5 studs left of the cottage.
+  - L2 has more rows than L1, and tufts ≥ 0.8 taller.
+  - The barn exists at L2 only. Its ridge is ≥ 1 over the cottage ridge.
+  - The barn stands ≥ 10 studs to the side of the cottage, and its front is ≤ 2 behind the cottage's back wall.
+
+All 17 mutations were caught:
+- rows along X;
+- beds or tufts closing the furrows;
+- tufts as flat blocks;
+- no zigzag;
+- tufts lying over;
+- stubby tufts;
+- uniform heights;
+- tan tufts;
+- light soil;
+- a thatch-value roof;
+- the haystack behind the cottage;
+- the barn deep at the back;
+- the same row count at L1 and L2;
+- an L2 crop that is not taller;
+- no barn;
+- a low barn.
+
+`KitBuildingsDump.spec` gains the `levels_farm` group (farm L1–L2 in emerald and gold, 37 → 41 models); a mutation dropping gold fails its count.
+
+**Unverified:**
+- Studio's Grass material on the tufts and how CornerWedge facets shade under Future lighting.
+- Phone screens.
+- The real aerial azimuth relative to each farm.

@@ -4,7 +4,8 @@
 
 	Always: asserts the extra catalogue serialises to finite numbers.
 	With FORGE_KIT_DUMP_BUILDINGS=<path.json>: writes the JSON for blender/scripts/render_kit.py
-	(groups house_variants, stages_more, levels_barracks, levels_keep, levels_house_farm, standins). Run:
+	(groups house_variants, stages_more, levels_barracks, levels_keep, levels_house_farm, levels_farm,
+	standins). Run:
 	  FORGE_KIT_DUMP_BUILDINGS=/tmp/kit_arch_extra.json lune run roblox/tests/harness/run.luau \
 	    --project games/game-001/default.project.json --specs games/game-001/tests/world KitBuildingsDump
 ]]
@@ -106,6 +107,12 @@ local function catalogue()
 	for level = 1, 2 do
 		add("levels_house_farm", `farm L{level} azure`, Kit.build("farm", level, "complete", COLORS.azure))
 	end
+	-- farm L1–L2 in two more kingdoms for the aerial farm check (emerald sits on green terrain)
+	for _, k in { "emerald", "gold" } do
+		for level = 1, 2 do
+			add("levels_farm", `farm L{level} {k}`, Kit.build("farm", level, "complete", COLORS[k]))
+		end
+	end
 	for i, bt in { "mine", "blacksmith", "market", "infirmary", "granary", "shrine" } do
 		local k = ({ "crimson", "azure", "emerald", "gold", "crimson", "azure" })[i]
 		add("standins", `{bt} {k}`, Kit.build(bt, 1, "complete", COLORS[k]))
@@ -127,7 +134,7 @@ describe("Kit architecture preview dump", function()
 				end
 			end
 		end
-		expect(n).toBe(37)
+		expect(n).toBe(41)
 		local out = process.env.FORGE_KIT_DUMP_BUILDINGS
 		if out and out ~= "" then
 			fs.writeFile(out, serde.encode("json", { version = Kit.VERSION, groups = groups }, false))
