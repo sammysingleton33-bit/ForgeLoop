@@ -93,6 +93,16 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   real result. Verify pushes with `git ls-remote origin refs/heads/<branch>`, and fetch branches with an
   explicit refspec `+refs/heads/<b>:refs/remotes/origin/<b>`. · FORGE-05 session, `forge/05-integration`
   (ls-remote 5348570 = local) · `observed-once`
+- 2026-10-12 · A stacked PR keeps the lower PR's branch as its base after the lower PR merges. Merging
+  it then succeeds (the API returns `merged: true` and a sha) but lands on that stale branch, not on
+  `main`. Check `base.ref == "main"` before every merge and confirm with `git ls-remote origin
+  refs/heads/main` after it. · PR #37 merged into `forge/02-blender-fl0055-world` as 0590952; main
+  stayed at da90aba; re-targeted as #38 and merged as dc0b09f · `observed-once`
+- 2026-10-12 · Lune hands out a new userdata for an Instance once Lua stops referencing the old one,
+  so a weak-keyed table keyed by Instances loses entries when the GC runs (flaky only in the full
+  suite, under GC pressure). Key test registries strongly and reset them per test. · FORGE-03 #25:
+  `Create.useTestConnector` weak keys made `KingdomUI.spec` fail 2 of 3 full runs; strong keys gave
+  6/6 · `observed-once`
 
 ## Mock change log (FL-0028)
 - 2026-10-12 FL-0003 (FORGE-00 skeleton): first versions of MockEnv, MockDataStoreService,

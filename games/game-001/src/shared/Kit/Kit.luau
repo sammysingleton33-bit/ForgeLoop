@@ -13,15 +13,20 @@
 	factor), so Kit.setKingdomColor recolours trims and banners in place.
 
 	API (G10):
-		Kit.build(type, level, stage, kingdomColor) -> Model   -- attachments Door, WorkSpot1..n, DropOff, Rally
+		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
 		Kit.footprint(type, level) -> Vector2
-		Kit.character(kind, job, kingdomColor) -> Model         -- ≤ 8 parts, Motor6Ds named after the moving part
+		Kit.character(kind, job, kingdomColor, look?) -> Model  -- ≤ 9 parts (Hair welded to the Head, D-032), Motor6Ds
+		                                                        -- named after the moving part (Sim/Pose.JOINTS);
+		                                                        -- look: CitizenLook (G13.2), omitted = DEFAULT_LOOK
 		Kit.regalia(kingdomColor) -> { Accessory }              -- crown + cape
 		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered, else stand-in
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
+		Kit.slotMarker(size: Vector2, kingdomColor) -> Model   -- G13.5 build slot marker (Root is the query target)
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
 		Kit.BUILDING_TYPES, Kit.partCount(model).
+	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.LOOK_RANGES,
+		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look).
 ]]
 
 local Buildings = require("./Buildings")
@@ -35,18 +40,45 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.2.0"
-Kit.BUILDING_TYPES =
-	{ "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks", "watchtower", "wall", "gate" }
-Kit.CHARACTER_ROOT_HEIGHT = 3.2 -- Root part centre above the feet (PivotOffset puts the pivot at the feet)
+Kit.VERSION = "0.3.0"
+-- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
+Kit.BUILDING_TYPES = {
+	"keep",
+	"house",
+	"farm",
+	"storehouse",
+	"lumbercamp",
+	"quarry",
+	"barracks",
+	"watchtower",
+	"wall",
+	"gate",
+	"mine",
+	"blacksmith",
+	"market",
+	"infirmary",
+	"granary",
+	"shrine",
+}
+Kit.CHARACTER_ROOT_HEIGHT = Character.ROOT_HEIGHT -- 3.2: Root centre above the feet, rig and LOD alike
+-- Citizen looks (G13.2): 1-based index counts FORGE-01's population generator samples from, the palettes
+-- behind them (skin and hairColor are Color3 lists; hair and outfit list style names), the default look,
+-- and the pool key (equal keys → identical rigs). Out-of-range values wrap; Kit never errors on a look.
+Kit.LOOK_RANGES = Character.LOOK_RANGES
+Kit.LOOK_PALETTES = Character.LOOK_PALETTES
+Kit.DEFAULT_LOOK = Character.DEFAULT_LOOK
+Kit.normalizeLook = Character.normalizeLook
+Kit.lookKey = Character.lookKey
 
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
 Kit.character = Character.character
 Kit.regalia = Character.regalia
+Kit.characterLod = Character.lod -- one-part stand-in beyond 150 studs (G4), same Root height as the rig
 Kit.prop = Props.prop
 Kit.setAssetSource = Props.setAssetSource
 Kit.regionMarkers = Props.regionMarkers
+Kit.slotMarker = Props.slotMarker -- G13.5 build slot ground marker (WorldService)
 Kit._hueStyle = Parts.hueStyle
 
 local shade = Parts.shade

@@ -9,7 +9,7 @@ game: game-001
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: []
-context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
+context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 6
 evidence: ["PR #38 (build slots, merged dc0b09f): check.sh OVERALL PASS, BuildSlots.spec 8 specs", "PR #43 (hardening, merged 986c773): check.sh OVERALL PASS, game-001 442 specs"]
 ---

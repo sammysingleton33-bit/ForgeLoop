@@ -1,0 +1,37 @@
+--[[
+	Shared setup for the FL-0059 Luau snapshot scenes (design/ui/render, PROJECT=games/game-001/
+	default.project.json): the real KingdomHudController and BuildMenuController on the spec world
+	(tests/economy/doubles/KingdomWorld: real RemoteService + TreasuryService, FORGE-01 doubles),
+	sized to the device's CoreUISafeInsets area. `act(world, hud, build)` drives the UI to a state
+	with the same calls a tap makes.
+]]
+local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/BuildMenuController")
+local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
+local KingdomWorld = require("../../../tests/economy/doubles/KingdomWorld")
+
+return function(ctx, opts, act)
+	Create.useTestConnector()
+	local world = KingdomWorld.new({
+		clientDefinitions = { KingdomHudDef, BuildMenuDef },
+		treasury = opts.treasury,
+		remotes = opts.remotes, -- extra doubles for a scene (e.g. PopulationDoubles)
+		services = opts.services,
+		latency = opts.latency,
+	})
+	local hud = world.client:get("KingdomHudController")
+	local build = world.client:get("BuildMenuController")
+	hud:setViewport(ctx.core.width, ctx.core.height)
+	world.kingdoms:addCrownPoints("crimson", 12)
+	world.kingdoms:addCrownPoints("azure", 20)
+	world:advance(0.2)
+	-- A house under construction, as in the prototype.
+	local houseId = world.build:add("crimson", "house", 1, "constructing", Vector3.new(-60, 0, 60))
+	world.build:progress(houseId, 0.45)
+	world:advance(0.1)
+	if act then
+		act(world, hud, build)
+	end
+	local g = hud.guis
+	return { guis = { g.hud, g.topbar, g.menus, g.modals, g.notices } }
+end

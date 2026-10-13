@@ -1,0 +1,440 @@
+--[[
+	Kit architecture v0 (FL-0054, FORGE-02) + G13 (FL-0085): part budgets, house variants, kingdom tinting,
+	placement sanity, the keep Throne (G13.6), visible levels and the VS-2 stand-in types (G13.5).
+	Budgets live in Kit/Buildings.luau (PART_BUDGET, justified there against BRIEF §14: ≤ 25k parts in the
+	world at VS-2).
+]]
+
+local T = require("../../../../roblox/tests/harness/Test")
+local describe, it, expect = T.describe, T.it, T.expect
+
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Buildings = require("@game/ReplicatedStorage/Game/Kit/Buildings")
+
+local COLORS = {
+	Color3.fromRGB(196, 40, 28), -- crimson
+	Color3.fromRGB(13, 105, 172), -- azure
+	Color3.fromRGB(40, 127, 71), -- emerald
+	Color3.fromRGB(245, 205, 48), -- gold
+	Kit.NEUTRAL_COLOR,
+	Color3.fromRGB(35, 128, 95), -- FORGE-01 emerald (G13)
+	Color3.fromRGB(235, 185, 16), -- FORGE-01 gold (G13)
+}
+-- a second colour of the same hue style as each COLORS entry (same silhouette, different tint)
+local SAME_STYLE = {
+	Color3.fromRGB(170, 30, 50),
+	Color3.fromRGB(40, 80, 200),
+	Color3.fromRGB(30, 150, 60),
+	Color3.fromRGB(230, 180, 30),
+	Color3.fromRGB(190, 190, 190),
+	Color3.fromRGB(30, 150, 80),
+	Color3.fromRGB(225, 175, 30),
+}
+local EXPECTED_FOOTPRINTS = {
+	keep = { Vector2.new(32, 32), Vector2.new(40, 40), Vector2.new(46, 46) },
+	house = { Vector2.new(20, 16), Vector2.new(22, 18) },
+	farm = { Vector2.new(34, 28), Vector2.new(40, 32) },
+	storehouse = { Vector2.new(22, 18), Vector2.new(26, 20) },
+	lumbercamp = { Vector2.new(22, 18) },
+	quarry = { Vector2.new(22, 20) },
+	barracks = { Vector2.new(30, 20), Vector2.new(34, 22) },
+	watchtower = { Vector2.new(14, 14), Vector2.new(16, 16) },
+	wall = { Vector2.new(32, 8) },
+	gate = { Vector2.new(32, 12) },
+	-- G13.5 VS-2 types (announced to FORGE-05; slot sizes: house S, barracks..shrine M, farm/lumber/quarry/mine L)
+	mine = { Vector2.new(22, 20) },
+	blacksmith = { Vector2.new(22, 18) },
+	market = { Vector2.new(26, 22) },
+	infirmary = { Vector2.new(22, 18) },
+	granary = { Vector2.new(18, 18) },
+	shrine = { Vector2.new(16, 16) },
+}
+local NEW_TYPES = { "mine", "blacksmith", "market", "infirmary", "granary", "shrine" }
+-- levels with a distinct look (G13.5); other types build L1–L2
+local MAX_LEVEL = { keep = 3, barracks = 4 }
+
+local function parts(model: Instance): { BasePart }
+	local out = {}
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(out, d)
+		end
+	end
+	return out
+end
+
+-- world-axis half extents of a part's bounding box
+local function halfExtents(p: BasePart): Vector3
+	local s = p.Size
+	local rv, uv, lv = p.CFrame.RightVector, p.CFrame.UpVector, p.CFrame.LookVector
+	return Vector3.new(
+		math.abs(rv.X) * s.X / 2 + math.abs(uv.X) * s.Y / 2 + math.abs(lv.X) * s.Z / 2,
+		math.abs(rv.Y) * s.X / 2 + math.abs(uv.Y) * s.Y / 2 + math.abs(lv.Y) * s.Z / 2,
+		math.abs(rv.Z) * s.X / 2 + math.abs(uv.Z) * s.Y / 2 + math.abs(lv.Z) * s.Z / 2
+	)
+end
+
+local function bounds(model: Model): (Vector3, Vector3)
+	local lo, hi = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+	for _, p in parts(model) do
+		if p.Transparency < 1 then
+			local e, c = halfExtents(p), p.CFrame.Position
+			lo = lo:Min(c - e)
+			hi = hi:Max(c + e)
+		end
+	end
+	return lo, hi
+end
+
+local function signature(model: Model): string
+	local rows = {}
+	for _, p in parts(model) do
+		local s, pos = p.Size, p.CFrame.Position
+		table.insert(
+			rows,
+			string.format(
+				"%s %s %.2f %.2f %.2f %.2f %.2f %.2f",
+				p.ClassName,
+				p.Name,
+				s.X,
+				s.Y,
+				s.Z,
+				pos.X,
+				pos.Y,
+				pos.Z
+			)
+		)
+	end
+	return table.concat(rows, "\n")
+end
+
+local function variantsFor(bt: string): { number }
+	return if bt == "house" then { 1, 2, 3, 4, 5, 6, 7, 8 } else { 1 }
+end
+
+local function levelsFor(bt: string): number
+	return MAX_LEVEL[bt] or 2
+end
+
+describe("Kit architecture budgets (FL-0054)", function()
+	it("keeps every building, level, variant and kingdom colour within its part budget", function()
+		local report, over = {}, {}
+		for _, bt in Kit.BUILDING_TYPES do
+			local budget = Buildings.PART_BUDGET[bt]
+			expect(budget).never.toBeNil()
+			local lo, hi = math.huge, 0
+			for level = 1, levelsFor(bt) do
+				for _, v in variantsFor(bt) do
+					for _, color in COLORS do
+						local n = Kit.partCount(Buildings.build(bt, level, "complete", color, v))
+						lo, hi = math.min(lo, n), math.max(hi, n)
+						if n > budget then
+							table.insert(over, `{bt} L{level} v{v}: {n} > {budget}`)
+						end
+					end
+				end
+			end
+			table.insert(report, `{bt} {lo}-{hi}/{budget}`)
+		end
+		local slo, shi = math.huge, 0
+		for _, bt in Kit.BUILDING_TYPES do
+			for level = 1, levelsFor(bt) do
+				for stage = 1, 3 do
+					local n = Kit.partCount(Buildings.build(bt, level, stage, COLORS[1]))
+					slo, shi = math.min(slo, n), math.max(shi, n)
+					if n > Buildings.PART_BUDGET.stage then
+						table.insert(over, `{bt} L{level} stage {stage}: {n} > {Buildings.PART_BUDGET.stage}`)
+					end
+				end
+			end
+		end
+		table.insert(report, `stages {slo}-{shi}/{Buildings.PART_BUDGET.stage}`)
+		print("kit part counts (min-max/budget): " .. table.concat(report, ", "))
+		if #over > 0 then
+			error("over budget: " .. table.concat(over, "; "))
+		end
+	end)
+
+	it("pins the FOOTPRINTS table for every type and level (slot picker, server and Build/Fit read it)", function()
+		for _, bt in Kit.BUILDING_TYPES do
+			local levels = EXPECTED_FOOTPRINTS[bt]
+			if not levels then
+				error(`{bt}: footprint not pinned in this spec`)
+			end
+			for level = 0, 5 do
+				local want = levels[math.clamp(level, 1, #levels)]
+				local got = Kit.footprint(bt, level)
+				if got ~= want then
+					error(`{bt} L{level}: footprint {got} changed (pinned {want})`)
+				end
+			end
+		end
+		-- barracks L3–4 stay in the level-2 footprint; keep levels in 32/40/46
+		expect(Kit.footprint("barracks", 4)).toEqual(Vector2.new(34, 22))
+		expect(Kit.footprint("keep", 3)).toEqual(Vector2.new(46, 46))
+	end)
+end)
+
+describe("Kit house variants", function()
+	it("keeps the 4-argument call identical to variant 1", function()
+		for level = 1, 2 do
+			local a = Kit.build("house", level, "complete", COLORS[2])
+			local b = Kit.build("house", level, "complete", COLORS[2], 1)
+			expect(signature(a)).toBe(signature(b))
+			expect(a:GetAttribute("KitVariant")).toBe(1)
+		end
+	end)
+
+	it("is deterministic and gives at least four visibly different houses", function()
+		local seen = {}
+		local distinct = 0
+		for v = 1, 8 do
+			local a = signature(Kit.build("house", 1, "complete", COLORS[1], v))
+			local b = signature(Kit.build("house", 1, "complete", COLORS[1], v))
+			expect(a).toBe(b)
+			if not seen[a] then
+				seen[a] = true
+				distinct += 1
+			end
+		end
+		expect(distinct).toBe(8)
+		-- the four archetypes differ in roof style (tile vs thatch) and silhouette
+		local roofs = {}
+		for v = 1, 4 do
+			local m = Kit.build("house", 1, "complete", COLORS[1], v)
+			local tile, thatch = false, false
+			for _, p in parts(m) do
+				tile = tile or p.Name == "RoofTiles"
+				thatch = thatch or p.Name == "Thatch"
+			end
+			roofs[v] = if tile then "tile" elseif thatch then "thatch" else "none"
+		end
+		expect(roofs[1]).toBe("tile")
+		expect(roofs[2]).toBe("thatch")
+		expect(roofs[3]).toBe("tile")
+		expect(roofs[4]).toBe("thatch")
+	end)
+
+	it("flies a kingdom pennant on every thatch roof", function()
+		for v = 1, 8 do
+			for level = 1, 2 do
+				local m = Kit.build("house", level, "complete", COLORS[2], v)
+				if m:FindFirstChild("Thatch") then
+					local pennant = m:FindFirstChild("Pennant")
+					expect(pennant).never.toBeNil()
+					expect((pennant :: BasePart):GetAttribute("KitTint")).toBe(1)
+				end
+			end
+		end
+	end)
+
+	it("puts the Door attachment in front of the visible door for every variant", function()
+		for level = 1, 2 do
+			for v = 1, 8 do
+				local m = Kit.build("house", level, "complete", COLORS[3], v)
+				local fp = Kit.footprint("house", level)
+				local door = (m.PrimaryPart :: BasePart):FindFirstChild("Door") :: Attachment
+				local p = door.CFrame.Position
+				expect(math.abs(p.Z) >= fp.Y / 2 - 0.5).toBe(true)
+				local leaf = m:FindFirstChild("Door") :: BasePart
+				expect(leaf).never.toBeNil()
+				expect(leaf.CFrame.Position.X).toBeNear(p.X, 0.05)
+			end
+		end
+	end)
+end)
+
+describe("Kit keep throne (G13.6)", function()
+	it("seats a Throne on a raised dais, facing -Z, open to the aerial camera, at every keep level", function()
+		for level = 1, 3 do
+			for _, color in COLORS do
+				local m = Kit.build("keep", level, "complete", color)
+				local found = m:FindFirstChild("Throne", true)
+				expect(found).never.toBeNil()
+				local s = found :: BasePart
+				expect(s.ClassName).toBe("Seat")
+				expect(s.Anchored).toBe(true)
+				expect(s.CanCollide).toBe(true)
+				expect(s.CFrame.LookVector:Dot(Vector3.new(0, 0, -1))).toBeGreaterThan(0.99)
+				-- dais: 2–3 steps, raised ≥ 1.5 studs above the keep's floor (the plinth top)
+				local steps, floorTop, daisTop = 0, 0, 0
+				for _, p in parts(m) do
+					if p.Name == "DaisStep" then
+						steps += 1
+						daisTop = math.max(daisTop, p.CFrame.Position.Y + p.Size.Y / 2)
+					elseif p.Name == "Plinth" then
+						floorTop = math.max(floorTop, p.CFrame.Position.Y + p.Size.Y / 2)
+					end
+				end
+				expect(steps >= 2 and steps <= 3).toBe(true)
+				expect(daisTop - floorTop).toBeGreaterThanOrEqual(1.5)
+				expect(s.CFrame.Position.Y - s.Size.Y / 2).toBeGreaterThanOrEqual(daisTop - 0.01)
+				-- nothing above the seat: visible from the aerial camera (40–220 studs, looking down)
+				local top = s.CFrame.Position.Y + s.Size.Y / 2
+				for _, p in parts(m) do
+					if p ~= s and p.Transparency < 1 then
+						local e, c = halfExtents(p), p.CFrame.Position
+						local covers = math.abs(c.X - s.CFrame.Position.X) < e.X
+							and math.abs(c.Z - s.CFrame.Position.Z) < e.Z
+						if covers and c.Y - e.Y > top then
+							error(`keep L{level}: {p.Name} roofs over the throne`)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	it("leaves the throne out of construction stages", function()
+		for stage = 1, 3 do
+			expect(Kit.build("keep", 1, stage, COLORS[1]):FindFirstChild("Throne", true)).toBeNil()
+		end
+	end)
+end)
+
+describe("Kit visible levels (G13.5)", function()
+	it("grows part count, bounding volume and height with every level", function()
+		local cases = { barracks = 4, keep = 3, house = 2, farm = 2 }
+		for bt, maxLevel in cases do
+			for _, v in variantsFor(bt) do
+				local prevN, prevVol, prevH = 0, 0, 0
+				for level = 1, maxLevel do
+					local m = Buildings.build(bt, level, "complete", COLORS[1], v)
+					local n = Kit.partCount(m)
+					local lo, hi = bounds(m)
+					local size = hi - lo
+					local vol = size.X * size.Y * size.Z
+					if n <= prevN or vol <= prevVol or size.Y < prevH then
+						error(
+							`{bt} v{v} L{level}: {n} parts, volume {vol}, height {size.Y} do not grow on L{level - 1}`
+						)
+					end
+					prevN, prevVol, prevH = n, vol, size.Y
+				end
+			end
+		end
+	end)
+end)
+
+describe("Kit VS-2 stand-ins (G13.5)", function()
+	it("builds the new types at every level and stage, labelled, with a Door and a work spot", function()
+		for _, bt in NEW_TYPES do
+			expect(table.find(Kit.BUILDING_TYPES, bt)).never.toBeNil()
+			for level = 1, 3 do
+				local fp = Kit.footprint(bt, level)
+				expect(fp.X > 0 and fp.Y > 0).toBe(true)
+				for _, stage in { 1, 2, 3, "complete" } do
+					local m = Kit.build(bt, level, stage :: any, COLORS[2])
+					local root = m.PrimaryPart :: BasePart
+					expect(root:FindFirstChild("Door")).never.toBeNil()
+					expect(root:FindFirstChild("WorkSpot1")).never.toBeNil()
+					if stage == "complete" then
+						expect(m:GetAttribute("KitStandIn")).toBe(true)
+						expect(m:GetAttribute("KitLabel")).toBe(bt)
+						expect(#parts(m)).toBeGreaterThan(25)
+					end
+				end
+			end
+		end
+	end)
+end)
+
+describe("Kit kingdom tint", function()
+	it("recolours every kingdom-coloured part (recoloured == freshly built) for every type", function()
+		for _, bt in Kit.BUILDING_TYPES do
+			for _, v in variantsFor(bt) do
+				for i, color in COLORS do
+					for _, stage in { 2, "complete" } do
+						local a = Buildings.build(bt, levelsFor(bt), stage :: any, color, v)
+						Kit.setKingdomColor(a, SAME_STYLE[i])
+						local b = Buildings.build(bt, levelsFor(bt), stage :: any, SAME_STYLE[i], v)
+						local pa, pb = parts(a), parts(b)
+						expect(#pa).toBe(#pb)
+						for k, p in pa do
+							local q = pb[k]
+							local same = math.abs(p.Color.R - q.Color.R) < 1e-4
+								and math.abs(p.Color.G - q.Color.G) < 1e-4
+								and math.abs(p.Color.B - q.Color.B) < 1e-4
+							if not same then
+								error(`{bt} v{v} {stage} colour {i}: part {p.Name} is kingdom-coloured without KitTint`)
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	it("gives the neutral watchtower a recolourable roof, banner and flag", function()
+		local m = Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR)
+		local names = {}
+		for _, p in parts(m) do
+			if p:GetAttribute("KitTint") ~= nil then
+				names[p.Name] = true
+			end
+		end
+		expect(names.RoofCorner).toBe(true)
+		expect(names.Banner).toBe(true)
+		expect(names.Flag).toBe(true)
+	end)
+end)
+
+describe("Kit placement sanity", function()
+	it("keeps every part above the ground and inside its footprint (front apron ≤ 2 for steps)", function()
+		for _, bt in Kit.BUILDING_TYPES do
+			for level = 1, levelsFor(bt) do
+				for _, v in variantsFor(bt) do
+					for _, stage in { 1, 2, 3, "complete" } do
+						local colors = if stage == "complete" then COLORS else { COLORS[1] }
+						for _, color in colors do
+							local m = Buildings.build(bt, level, stage :: any, color, v)
+							local fp = Kit.footprint(bt, level)
+							for _, p in parts(m) do
+								local e, pos = halfExtents(p), p.CFrame.Position
+								if pos.Y - e.Y < -0.3 then
+									error(`{bt} L{level} v{v} {stage}: {p.Name} below ground ({pos.Y - e.Y})`)
+								end
+								-- sides and back strictly inside; the front may carry entrance steps/stoops (≤ 2)
+								if
+									math.abs(pos.X) + e.X > fp.X / 2 + 0.05
+									or pos.Z + e.Z > fp.Y / 2 + 0.05
+									or pos.Z - e.Z < -fp.Y / 2 - 2
+								then
+									error(
+										`{bt} L{level} v{v} {stage}: {p.Name} outside footprint {fp} at {pos} (±{e})`
+									)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	it("keeps the Door just outside the front of the footprint and every attachment near it", function()
+		for _, bt in Kit.BUILDING_TYPES do
+			for level = 1, levelsFor(bt) do
+				for _, stage in { 1, "complete" } do
+					local m = Buildings.build(bt, level, stage :: any, COLORS[1])
+					local fp = Kit.footprint(bt, level)
+					for _, a in (m.PrimaryPart :: BasePart):GetChildren() do
+						if a:IsA("Attachment") then
+							local p = a.CFrame.Position + Vector3.new(0, 0.1, 0)
+							expect(math.abs(p.Y)).toBeLessThan(0.01)
+							if a.Name == "Door" then
+								local inside = math.abs(p.X) < fp.X / 2 - 0.5 and math.abs(p.Z) < fp.Y / 2 - 0.5
+								expect(inside).toBe(false)
+								expect(math.abs(p.X) <= fp.X / 2 + 0.01).toBe(true)
+								expect(p.Z >= -fp.Y / 2 - 4.5 and p.Z <= -fp.Y / 2 + 0.6).toBe(true)
+							else
+								expect(math.abs(p.X) <= fp.X / 2 + 12).toBe(true)
+								expect(math.abs(p.Z) <= fp.Y / 2 + 12).toBe(true)
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+end)
