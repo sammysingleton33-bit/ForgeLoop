@@ -30,9 +30,21 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
         "review_file": "reviews/siege_ballista.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7001,
       "sockets": {
@@ -90,9 +102,21 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
         "review_file": "reviews/siege_ballista.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7002,
       "sockets": {
@@ -150,9 +174,21 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
         "review_file": "reviews/siege_ballista.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7000,
       "sockets": {
@@ -210,9 +246,21 @@
       "preview": "previews/siege_ballista.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
         "review_file": "reviews/siege_ballista.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {

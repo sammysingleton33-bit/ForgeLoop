@@ -30,9 +30,21 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
         "review_file": "reviews/siege_ram.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7001,
       "sockets": {
@@ -90,9 +102,21 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
         "review_file": "reviews/siege_ram.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7002,
       "sockets": {
@@ -150,9 +174,21 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
         "review_file": "reviews/siege_ram.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7000,
       "sockets": {
@@ -210,9 +246,21 @@
       "preview": "previews/siege_ram.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
         "review_file": "reviews/siege_ram.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {

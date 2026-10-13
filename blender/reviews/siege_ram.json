@@ -1,36 +1,36 @@
 {
   "assets": {
     "siege_ram_blue_01": {
-      "geometry_hash": "701cf320fbd38c15",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "6d6b3d7e767aa954",
+      "verdict": "PASS"
     },
     "siege_ram_green_01": {
-      "geometry_hash": "4ee334b86064b7aa",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "5ce00a94f8a71cac",
+      "verdict": "PASS"
     },
     "siege_ram_red_01": {
-      "geometry_hash": "da592177b34fbfff",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "c5483cb036c64c2b",
+      "verdict": "PASS"
     },
     "siege_ram_yellow_01": {
-      "geometry_hash": "0f64150c92906ee6",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "b4e992a811380709",
+      "verdict": "PASS"
     }
   },
   "generator": "siege_ram",
   "generator_version": 1,
-  "notes": "blue_01 is almost entirely royal blue, which breaks the accent-not-every-surface rule, and its oversized pale faceted ram head reads as a boulder or face rather than a ram, out of style with the kit. green_01 has no pennant and only small muted-teal leaf shields, so its kingdom barely reads, and the yellow_01 sun on a gold shield is illegible at 40 studs.",
+  "notes": "Four distinct roof forms with readable shields and restrained accents (red dagged skirt, blue edging, gold hem). The iron ram heads are small and shadowed, the green shed reads like a hut on wheels at 3808 tris, and the red/gold hide roofs use blocky square patches that look like pixel noise.",
   "reviewer": "fresh-context subagent",
-  "round": 2,
+  "round": 3,
   "scores": {
-    "cohesion": 3,
-    "detail_density": 4,
-    "palette": 2,
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 4,
     "proportions": 3,
-    "readability": 3,
+    "readability": 4,
     "silhouette": 4,
     "triangle_cost": 3,
     "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

@@ -1,36 +1,36 @@
 {
   "assets": {
     "siege_ballista_blue_01": {
-      "geometry_hash": "d4b27b904624fc6e",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "7e030b17dce04a57",
+      "verdict": "PASS"
     },
     "siege_ballista_green_01": {
-      "geometry_hash": "b46dd46dba5a0bb1",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "655b2162fa77b13c",
+      "verdict": "PASS"
     },
     "siege_ballista_red_01": {
-      "geometry_hash": "d3a7548560f2c8ed",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "b47258eae23d2ba3",
+      "verdict": "PASS"
     },
     "siege_ballista_yellow_01": {
-      "geometry_hash": "14163f148ae668bb",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "721f91e548641db3",
+      "verdict": "PASS"
     }
   },
   "generator": "siege_ballista",
   "generator_version": 1,
-  "notes": "The mounts are distinct and tris are efficient, but at 40 studs the yellow_01 sun (a gold disc on a gold shield) and the green_01 oak leaf (a pale streak on a muted teal shield) cannot be read, so only the pennants carry kingdom identity. The shared head's arms and bolt are thin for a phone read, and red_01 and green_01 share the same carriage.",
+  "notes": "Bases differ well (wheeled carriage, stone turntable, palisade sled, tripod) and front shields read at 40 studs, at about half the triangle budget. The torsion head is identical on all four, and the single front shield turns edge-on at 3/4 angles, leaving only the pennant.",
   "reviewer": "fresh-context subagent",
-  "round": 2,
+  "round": 3,
   "scores": {
     "cohesion": 4,
     "detail_density": 4,
-    "palette": 3,
+    "palette": 4,
     "proportions": 4,
-    "readability": 3,
+    "readability": 4,
     "silhouette": 4,
-    "triangle_cost": 4,
+    "triangle_cost": 5,
     "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

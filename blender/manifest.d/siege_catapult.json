@@ -30,9 +30,21 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
         "review_file": "reviews/siege_catapult.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7001,
       "sockets": {
@@ -90,9 +102,21 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
         "review_file": "reviews/siege_catapult.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7002,
       "sockets": {
@@ -150,9 +174,21 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
         "review_file": "reviews/siege_catapult.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7000,
       "sockets": {
@@ -210,9 +246,21 @@
       "preview": "previews/siege_catapult.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
         "review_file": "reviews/siege_catapult.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7003,
       "sockets": {

@@ -133,3 +133,11 @@ In-game resource nodes use the Kit's part-built stand-ins (`Kit/Props.luau`), so
   improvement. Strategy change: generalise the crystal approach, which reads in colour, greyscale and CVD, to
   every ore. Iron becomes dull steel-grey angular crystals in rust-stained rock; gold becomes bright faceted nuggets
   embedded in a split seam. Use the passed boulder builder for the rock, and give each variant its own layout.
+
+## Parked: prop_well (NEEDS-WORK after 3 fresh-review rounds, 2026-10-13)
+Round 3 failed on readability only (3/5). Silhouette, variation, palette rules and triangle cost pass. Remaining fixes
+(one attempt when unparked):
+- blue: the star finial is a speck at 40 studs. Use an ivory star on a royal-blue roundel, the same size as the crown and sun finials.
+- gold: the thatch reads as khaki hay. Put the sun on an ivory or bronze roundel, add bronze/ivory eave trim, and warm the thatch.
+- 01 and 04 share a body (posts, crank, ring). Give 04 its own well head (round pavilion roof or bronze-banded rim).
+The in-game well is the Kit stand-in, so VS-1 is not blocked.

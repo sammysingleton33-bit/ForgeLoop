@@ -34,9 +34,21 @@
       "preview": "previews/prop_well.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
         "review_file": "reviews/prop_well.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7000,
       "sockets": {
@@ -88,9 +100,21 @@
       "preview": "previews/prop_well.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
         "review_file": "reviews/prop_well.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7001,
       "sockets": {
@@ -142,9 +166,21 @@
       "preview": "previews/prop_well.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
         "review_file": "reviews/prop_well.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7002,
       "sockets": {
@@ -196,9 +232,21 @@
       "preview": "previews/prop_well.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
         "review_file": "reviews/prop_well.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
       },
       "seed": 7003,
       "sockets": {

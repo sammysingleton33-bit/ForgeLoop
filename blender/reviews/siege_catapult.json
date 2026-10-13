@@ -1,36 +1,36 @@
 {
   "assets": {
     "siege_catapult_blue_01": {
-      "geometry_hash": "ee4360638519641e",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "05e3ea9ba07b1215",
+      "verdict": "PASS"
     },
     "siege_catapult_green_01": {
-      "geometry_hash": "6594f48485707f34",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "6d55a193dee79f24",
+      "verdict": "PASS"
     },
     "siege_catapult_red_01": {
-      "geometry_hash": "69d3a6d58e3434a7",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "224d4fe2856e04d0",
+      "verdict": "PASS"
     },
     "siege_catapult_yellow_01": {
-      "geometry_hash": "81864e39ad9e2b8f",
-      "verdict": "NEEDS-WORK"
+      "geometry_hash": "f8e352e5306e215b",
+      "verdict": "PASS"
     }
   },
   "generator": "siege_catapult",
   "generator_version": 1,
-  "notes": "red_01 carries a fire brazier, which breaks the rule that red uses the crown and never a flame, and its only crown shield is side-on behind the rear wheel, so at gameplay distance the variant reads as red plus flame. The yellow_01 sun on a gold shield and the green_01 leaf on a teal shield cannot be read at 40 studs, and yellow_01 is at 3982/4000 tris.",
+  "notes": "Two large shields per variant (crown/red, star/blue, oak/emerald with ivory border, sun/ivory) read clearly at 40 studs; blue twin-tower and gold trebuchet silhouettes are distinct. Red and green share the same A-frame and bucket arm, and only the palisade and skids set green apart.",
   "reviewer": "fresh-context subagent",
-  "round": 2,
+  "round": 3,
   "scores": {
-    "cohesion": 3,
+    "cohesion": 4,
     "detail_density": 4,
-    "palette": 3,
+    "palette": 4,
     "proportions": 4,
-    "readability": 3,
+    "readability": 5,
     "silhouette": 4,
-    "triangle_cost": 3,
+    "triangle_cost": 4,
     "variation": 4
   },
-  "verdict": "NEEDS-WORK"
+  "verdict": "PASS"
 }

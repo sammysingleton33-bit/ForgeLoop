@@ -1,35 +1,35 @@
 {
   "assets": {
     "prop_well_01": {
-      "geometry_hash": "02449662d6c979a9",
+      "geometry_hash": "2b079e4db4d93703",
       "verdict": "NEEDS-WORK"
     },
     "prop_well_02": {
-      "geometry_hash": "e5a03641e34c617b",
+      "geometry_hash": "e1890bf219aa367e",
       "verdict": "NEEDS-WORK"
     },
     "prop_well_03": {
-      "geometry_hash": "927e47ac4c15b820",
+      "geometry_hash": "1ebda265418805d9",
       "verdict": "NEEDS-WORK"
     },
     "prop_well_04": {
-      "geometry_hash": "8f7ab84d133051dd",
+      "geometry_hash": "00c489784eaa76ad",
       "verdict": "NEEDS-WORK"
     }
   },
   "generator": "prop_well",
   "generator_version": 1,
-  "notes": "Palette fails: the well_01 roof is salmon/terracotta orange rather than brick red and has no crown, and the well_04 thatch reads as hay/tan, so gold is only the sun finial. The well_02 roof is all blue with no star, the well_03 plaque is muted jade with an oak leaf too small to read at 40 studs, and well_04 is at 1780/1800 tris.",
+  "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
   "reviewer": "fresh-context subagent",
-  "round": 2,
+  "round": 3,
   "scores": {
-    "cohesion": 3,
+    "cohesion": 4,
     "detail_density": 4,
-    "palette": 2,
+    "palette": 3,
     "proportions": 4,
-    "readability": 4,
+    "readability": 3,
     "silhouette": 4,
-    "triangle_cost": 3,
+    "triangle_cost": 4,
     "variation": 4
   },
   "verdict": "NEEDS-WORK"
