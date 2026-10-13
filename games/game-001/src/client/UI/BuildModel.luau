@@ -10,7 +10,11 @@
 	BuildModel.placeDetail(store, type, { slot?, pending? }?) -> Detail?
 		with a slot (G13.5 plot) the CTA reads "Build <name> here" and action is "slot"
 	BuildModel.plotMenu(store, { slot, selected?, pending? }) -> View?   the plot picker (FL-0087):
-		one tab named after the plot size, the SlotFit types that fit it
+		one tab named after the plot size, BuildModel.plotTypes(slot.size)
+	BuildModel.plotTypes(size) -> { BuildingType }   what the picker offers on a plot of that size:
+		FORGE-01's Build/Fit.typesFor(size) (the one fit rule, G13.5; Build.PlaceSlot calls it too),
+		less walls and gates (lines, not plots: VS-2 defence); the keep (46×46) fits no plot
+	BuildModel.PLOT_NAMES[size] -> "Small" | "Medium" | "Large"
 	BuildModel.upgradeDetail(store, building, { pending: boolean?, done: boolean? }?) -> Detail?
 		Detail = { type, name, icon, category, description, meta, action ("place" | "upgrade"),
 		           buildingId?, level, buildSeconds?, footprint: Vector2?,
@@ -34,12 +38,14 @@ local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Resources = require("@game/ReplicatedStorage/Forge/Config/Resources")
 local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
-local SlotFit = require("./SlotFit")
 local Text = require("./Text")
 
 local BuildModel = {}
 
 BuildModel.LARGE_SPEND_MIN_TOTAL = 150
+BuildModel.PLOT_NAMES = table.freeze({ S = "Small", M = "Medium", L = "Large" })
+-- Walls and gates are lines, not plots (VS-2 defence): they keep the free-placement build menu.
+local NOT_ON_PLOTS = table.freeze({ wall = true, gate = true })
 BuildModel.LARGE_SPEND_SHARE = 0.5
 
 function BuildModel.isLargeSpend(cost: { [string]: number }, balances: { [string]: number }): boolean
@@ -124,7 +130,7 @@ function BuildModel.placeDetail(store: any, buildingType: string, opts: { slot: 
 	end
 	local meta = { Buildings.categoryLabel(info.category) }
 	if slot then
-		table.insert(meta, `{SlotFit.NAMES[slot.size] or slot.size} plot`)
+		table.insert(meta, `{BuildModel.PLOT_NAMES[slot.size] or slot.size} plot`)
 	else
 		local size = sizeText(footprint)
 		if size then
@@ -233,6 +239,16 @@ local function pick(rows: { any }, selected: string?): string?
 	return if rows[1] then rows[1].id else nil
 end
 
+function BuildModel.plotTypes(size: any): { string }
+	local out = {}
+	for _, buildingType in Fit.typesFor(size) do -- an unknown size fits nothing
+		if not NOT_ON_PLOTS[buildingType] then
+			table.insert(out, buildingType)
+		end
+	end
+	return out
+end
+
 function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, pending: boolean? }): any
 	local slot = input.slot
 	if slot == nil then
@@ -240,14 +256,14 @@ function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, 
 	end
 	local have = store:balances()
 	local rows = {}
-	for _, buildingType in SlotFit.typesFor(slot) do
+	for _, buildingType in BuildModel.plotTypes(slot.size) do
 		local info = Buildings.get(buildingType)
 		if info then
 			table.insert(rows, row(store, info, have))
 		end
 	end
 	local selected = pick(rows, input.selected)
-	local label = `{SlotFit.NAMES[slot.size] or slot.size} plot`
+	local label = `{BuildModel.PLOT_NAMES[slot.size] or slot.size} plot`
 	return {
 		empty = if #rows == 0 then "Nothing can be built on this plot yet." else nil,
 		loading = not store:hasTreasury() or store:mine() == nil,

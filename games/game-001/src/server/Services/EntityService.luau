@@ -12,6 +12,9 @@
 		Sim.Events    one EventCodec buffer per snapshot tick when anything happened: spawn, despawn,
 		              job changes (found by diffing the live entity set), the cues deposit (a citizen's
 		              delivery) and die, and reset when a new match world replaces the old one.
+		              Then, per kingdom with queued G13.3 events (sendKingdomEvent), one more buffer
+		              with the same serverTime, fired only to that kingdom's current members
+		              (match:kingdomOf(userId)); never to other kingdoms or spectators.
 		Sim.GetEntities  every live entity as EventCodec "full" records (spawn + current state).
 	serverTime on both = seconds since Founding began (Match.State startedAtServerTime).
 
@@ -22,6 +25,11 @@
 		EntityService.spawned: Signal<(EntityId)> · .despawned: Signal<(EntityId, reason)>
 		EntityService.jobChanged: Signal<(EntityId, JobId)>
 	Extra
+		EntityService:sendKingdomEvent(kingdomId, event)   -- G13.3, FL-0079: queue one thought, reaction,
+			strike or kcue event (EventCodec shapes) for that kingdom's members. The next replicate()
+			encodes the kingdom's queue in order as its own batch, sends it once, then clears it. A batch
+			that does not encode is dropped with one error log; the tick goes on. A reset (new match
+			world) drops queued events: entity ids start over.
 		EntityService:replicate()                    -- one snapshot tick (the loop calls it; specs too)
 		EntityService:stats() -> { entities, bytesPerSecond, encodeMsP99, simMsP99, snapshotsSent }
 	Studio debug (FL-0068): command sim.spawn(count) spawns test citizens around the presser's keep.
@@ -33,6 +41,7 @@ local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SnapshotCodec = require("@game/ReplicatedStorage/Game/Sim/SnapshotCodec")
@@ -106,6 +115,7 @@ function Def.new(env: any, registry: any)
 	self._known = {} :: { [number]: { kind: string, job: string, kingdom: string } }
 	self._sentState = {} :: { [number]: string } -- id -> last sent quantised state
 	self._pending = {} :: { any } -- events gathered since the last tick
+	self._kingdomPending = {} :: { [string]: { any } } -- kingdom -> its G13.3 events since the last tick
 	self._despawnReason = {} :: { [number]: string }
 	self._vanishing = {} :: { [number]: number } -- id -> frame it left the simulation, awaiting its die cue
 	self._dieQueued = {} :: { [number]: boolean }
@@ -167,16 +177,7 @@ function EntityService:start()
 		elseif name == "UnitKilled" then
 			self:_queueDeath(event.unitId, "killed")
 		elseif name == "MatchPhaseChanged" and event.previous == "Results" then
-			-- a fresh world: ids start over, so clients drop everything before the new spawns
-			for id in self._known do
-				self.despawned:fire(id, "reset")
-			end
-			self._known = {}
-			self._sentState = {}
-			self._vanishing = {}
-			self._dieQueued = {}
-			self._tracker = Replication.new()
-			self._pending = { { type = "reset" } }
+			self:_resetWorld()
 		end
 	end)
 	active = self
@@ -194,6 +195,67 @@ function EntityService:start()
 			end
 		end
 	end)
+end
+
+-- A fresh world: ids start over, so clients drop everything before the new spawns, and events
+-- queued for the old world's entities are dropped.
+function EntityService:_resetWorld()
+	for id in self._known do
+		self.despawned:fire(id, "reset")
+	end
+	self._known = {}
+	self._sentState = {}
+	self._vanishing = {}
+	self._dieQueued = {}
+	self._tracker = Replication.new()
+	self._pending = { { type = "reset" } }
+	self._kingdomPending = {}
+end
+
+local KINGDOM_EVENT_TYPES = { thought = true, reaction = true, strike = true, kcue = true }
+
+-- G13.3: queues one conversation event for a kingdom's members (sent on the next tick).
+function EntityService:sendKingdomEvent(kingdomId: string, event: { [string]: any })
+	assert(
+		table.find(EventCodec.KINGDOMS, kingdomId) ~= nil,
+		`EntityService:sendKingdomEvent: unknown kingdom '{tostring(kingdomId)}'`
+	)
+	local kind = if type(event) == "table" then event.type else typeof(event) -- e.g. "string": refused
+	assert(KINGDOM_EVENT_TYPES[kind], `EntityService:sendKingdomEvent: not a G13.3 event type '{tostring(kind)}'`)
+	local queue = self._kingdomPending[kingdomId]
+	if queue == nil then
+		queue = {}
+		self._kingdomPending[kingdomId] = queue
+	end
+	local copy = table.clone(event)
+	if type(copy.entityIds) == "table" then
+		copy.entityIds = table.clone(copy.entityIds) -- the queue keeps its own list too
+	end
+	table.insert(queue, copy)
+end
+
+-- This tick's kingdom batches, in KINGDOMS order. A batch that fails to encode is logged and dropped.
+function EntityService:_kingdomBatches(serverTime: number): { { any } }
+	local out = {}
+	local pending = self._kingdomPending
+	self._kingdomPending = {}
+	for _, kingdomId in EventCodec.KINGDOMS do
+		local queue = pending[kingdomId]
+		if queue == nil then
+			continue
+		end
+		local ok, result = pcall(EventCodec.encode, serverTime, queue)
+		if ok then
+			table.insert(out, { "Sim.Events", result, kingdomId })
+		else
+			self._env.log(
+				"error",
+				"EntityService: dropped a kingdom event batch",
+				{ kingdom = kingdomId, events = #queue, error = tostring(result) }
+			)
+		end
+	end
+	return out
 end
 
 -- A death reaches this service through the host's event fan-out (its own tick), possibly after the
@@ -251,6 +313,18 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 		elseif before.job ~= now.job then
 			table.insert(events, { type = "job", id = id, job = now.job })
 			self.jobChanged:fire(id, now.job)
+		end
+	end
+	-- a citizen whose look changed (the Studio reseed, FL-0104) is sent as a spawn again, so every
+	-- connected client swaps its rig (#91 M1); a new client gets the new look in its first spawn anyway
+	for _, id in ids do
+		local now, before = identity[id], self._known[id]
+		-- (the same profile.look table every tick unless a reseed replaced it: compared by key only then)
+		if before ~= nil and before.look ~= now.look and Kit.lookKey(before.look) ~= Kit.lookKey(now.look) then
+			table.insert(
+				events,
+				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
+			)
 		end
 	end
 	local gone = {}
@@ -312,6 +386,10 @@ function EntityService:replicate()
 	if #events > 0 then
 		table.insert(outgoing, { "Sim.Events", EventCodec.encode(serverTime, events) })
 	end
+	-- after the global batch: a kingdom event may concern an entity spawned this tick
+	for _, item in self:_kingdomBatches(serverTime) do
+		table.insert(outgoing, item)
+	end
 	for _, chunk in SnapshotCodec.encodeChunks(self:_select(frame.records), self._seq, serverTime) do
 		table.insert(outgoing, { "Sim.Snapshot", chunk })
 	end
@@ -319,10 +397,20 @@ function EntityService:replicate()
 	if #self._encodeMs > Def.WINDOW then
 		table.remove(self._encodeMs, 1)
 	end
-	local players = #self._env.Players:GetPlayers()
+	local everyone = self._env.Players:GetPlayers()
+	local match = self._match.host.match
 	for _, item in outgoing do
-		self._remotes:fireAll(item[1], item[2])
-		self._bytes += buffer.len(item[2]) * players
+		local kingdomId = item[3]
+		if kingdomId == nil then
+			self._remotes:fireAll(item[1], item[2])
+			self._bytes += buffer.len(item[2]) * #everyone
+		else
+			for _, player in everyone do
+				if match:kingdomOf(player.UserId) == kingdomId and self._remotes:fire(item[1], player, item[2]) then
+					self._bytes += buffer.len(item[2])
+				end
+			end
+		end
 		self._sent += 1
 	end
 	if self._env.clock() - self._windowStart >= Def.LOG_EVERY then

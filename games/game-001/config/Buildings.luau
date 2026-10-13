@@ -6,7 +6,7 @@
 	simulation, G6), whether rulers may place it, drop-off role (`accepts` limits it to some resources),
 	limits, keep-level requirements and the gameplay stats of every level: hp, popCap (housing),
 	territory, farm workers/yield, defensive attack, trainable units, bunks and trainSpeed
-	(barracks).
+	(barracks), gatherBonus (lumber camp, quarry).
 
 	One source per number (CONTRACTS G13.5): FORGE-03's Costs.luau owns every cost, build time and the
 	number of levels (Costs.maxLevel). This file has stats for exactly levels 1..Costs.maxLevel(type)
@@ -96,10 +96,12 @@ return {
 			placeable = true,
 			dropoff = true,
 			accepts = { "wood" },
-			levels = { -- PROVISIONAL: higher levels are sturdier; their wood-rate bonus lands with FL-0081
-				{ hp = 350 },
-				{ hp = 500 },
-				{ hp = 650 },
+			-- gatherBonus: the kingdom's citizens gather what the camp accepts this much faster (the best
+			-- standing camp counts; FL-0081 "each level unlocks something"). PROVISIONAL 0 / +20% / +40%.
+			levels = {
+				{ hp = 350, gatherBonus = 0 },
+				{ hp = 500, gatherBonus = 0.2 },
+				{ hp = 650, gatherBonus = 0.4 },
 			},
 		},
 		quarry = {
@@ -109,10 +111,11 @@ return {
 			placeable = true,
 			dropoff = true,
 			accepts = { "stone", "gold" },
-			levels = { -- PROVISIONAL: higher levels are sturdier; their stone-rate bonus lands with FL-0081
-				{ hp = 350 },
-				{ hp = 500 },
-				{ hp = 650 },
+			-- gatherBonus as the lumber camp's, for stone and gold. PROVISIONAL 0 / +20% / +40%.
+			levels = {
+				{ hp = 350, gatherBonus = 0 },
+				{ hp = 500, gatherBonus = 0.2 },
+				{ hp = 650, gatherBonus = 0.4 },
 			},
 		},
 		barracks = {

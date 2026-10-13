@@ -1,8 +1,10 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
+local CitizenActions = require("@game/ReplicatedStorage/Game/Sim/CitizenActions")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local F = require("./KingdomFixtures")
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Snapshot = require("@game/ReplicatedStorage/Game/Sim/Snapshot")
 
 local function dist(a, b)
@@ -194,6 +196,56 @@ describe("Kingdom/Simulation: production", function()
 		end)
 		expect(woodcutter).toBe(1) -- it never walked back to the keep 100 studs away
 		expect(sim:balance(k.id, "wood")).toBeGreaterThan(60)
+	end)
+
+	it("a camp's level speeds up gathering what it accepts; the best camp counts (FL-0081)", function()
+		local sim, k = F.kingdom({ nodes = false, tuning = { startCitizens = {}, birthInterval = 1e6 } })
+		local levels = sim.catalog.buildings.lumbercamp.levels
+		expect({ levels[1].gatherBonus, levels[2].gatherBonus, levels[3].gatherBonus }).toEqual({ 0, 0.2, 0.4 })
+		local camp = sim:placeBuilding(k, "lumbercamp", 88, 0)
+		expect(k.gatherBonus.wood).toBeNil() -- a construction site speeds up nothing
+		-- (the real completion path recomputes the kingdom; _completeInstantly needs it by hand)
+		sim:_completeInstantly(camp)
+		sim:_recompute(k)
+		expect(k.gatherBonus.wood).toBe(0)
+		camp.level = 3
+		sim:_recompute(k)
+		expect(k.gatherBonus).toEqual({ wood = 0.4 })
+		local second = sim:_createBuilding(k, "lumbercamp", -88, 0) -- scenario setup: no cost
+		sim:_completeInstantly(second)
+		second.level = 2 -- a level 2 camp beside it: the best one counts (0.4), no stacking (0.6)
+		sim:_recompute(k)
+		expect(k.gatherBonus.wood).toBe(0.4)
+		local quarry = sim:_createBuilding(k, "quarry", 0, 88)
+		sim:_completeInstantly(quarry)
+		quarry.level = 2
+		sim:_recompute(k)
+		expect(k.gatherBonus).toEqual({ wood = 0.4, stone = 0.2, gold = 0.2 })
+		Military.destroyBuilding(sim, camp, nil)
+		expect(k.gatherBonus.wood).toBe(0.2) -- the level 2 camp is the best left
+	end)
+
+	it("a level 3 lumber camp makes the same woodcutter deliver about 40 % more wood", function()
+		local function run(level: number): number
+			local sim, k = F.kingdom({
+				nodes = false,
+				tuning = { startCitizens = { woodcutter = 1 }, hungerPerDay = 0.001, birthInterval = 1e6 },
+			})
+			for i = -2, 2 do -- enough wood that the trees never run out in the run
+				sim:addNode("tree", 100, i * 8)
+			end
+			local camp = sim:placeBuilding(k, "lumbercamp", 88, 0)
+			sim:_completeInstantly(camp)
+			camp.level = level
+			sim:_recompute(k)
+			local start = sim:balance(k.id, "wood")
+			sim:advance(180)
+			return sim:balance(k.id, "wood") - start
+		end
+		local base, boosted = run(1), run(3)
+		expect(base > 0).toBe(true)
+		expect(boosted / base).toBeGreaterThan(1.25) -- walking time is unchanged, so a little under 1.4
+		expect(boosted / base).toBeLessThan(1.45)
 	end)
 
 	it("regrows a depleted tree after its regrow time, and depleted trees still block placement", function()
@@ -509,7 +561,6 @@ describe("Kingdom/Simulation: daily life", function()
 	end)
 
 	it("beds are for citizens only: recruits in training or trained never block a birth (D-041)", function()
-		local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 		local sim, k = F.kingdom({ tuning = { birthInterval = 5, birthFood = 5 } })
 		Military.install(sim)
 		F.stock(sim, k):add("food", 500)
@@ -579,6 +630,84 @@ describe("Kingdom/Simulation: daily life", function()
 		sim:remember(c, { kind = "threat", ref = "u10", x = 1, z = 1 })
 		expect(#c.memory).toBe(sim.catalog.tuning.memorySize)
 		expect(c.memory[#c.memory].x).toBe(1)
+	end)
+end)
+
+describe("Kingdom/Simulation: a load from before a walk-out (#107 M3)", function()
+	-- runs one citizen's action alone until it has nothing in hand (or 120 s pass); returns its deliveries
+	local function deliver(sim, c)
+		F.events(sim) -- drop what came before
+		for _ = 1, 1200 do
+			CitizenActions.step(sim, c, 0.1)
+			if c.carrying == nil then
+				break
+			end
+		end
+		local out = {}
+		for _, e in F.events(sim, "ResourceGathered") do
+			if e.citizenId == c.id then
+				out[e.resource] = (out[e.resource] or 0) + e.amount
+			end
+		end
+		return out
+	end
+
+	local function nodeOf(sim, resource)
+		for _, id in sim.nodeOrder do
+			local node = sim.nodes[id]
+			if node.resource == resource and node.amount > 0 then
+				return node
+			end
+		end
+		return nil
+	end
+
+	it("a gatherer sent to another resource delivers its old load first, unchanged", function()
+		local sim, k = F.kingdom()
+		local c = sim.citizens[k.citizenIds[1]]
+		local wood = assert(nodeOf(sim, "wood"))
+		local stone = F.stock(sim, k):get("stone")
+		sim:setActivity(c, "Gather", wood.id)
+		c.phase = "Work" -- as if it stood at the trees already
+		c.carrying = { resource = "stone", amount = 4 }
+		local delivered = deliver(sim, c)
+		expect(delivered).toEqual({ stone = 4 })
+		expect(F.stock(sim, k):get("stone")).toBe(stone + 4)
+	end)
+
+	it("a farmer carrying something else delivers it first; it is never counted as food", function()
+		local sim, k = F.kingdom()
+		local farm = sim:_createBuilding(k, "farm", 40, 40) -- placement rules are not under test here
+		sim:_completeInstantly(farm)
+		sim:_recompute(k)
+		local c = sim.citizens[k.citizenIds[1]]
+		sim:setActivity(c, "Farm", farm.id)
+		c.phase = "Work"
+		c.workTimer = sim.catalog.tuning.harvestTime -- a harvest is due this very step
+		c.carrying = { resource = "wood", amount = 6 }
+		local delivered = deliver(sim, c)
+		expect(delivered).toEqual({ wood = 6 })
+	end)
+
+	it("an empty load of something else (stopped right at the trees) never turns a harvest into it", function()
+		local sim, k = F.kingdom()
+		local farm = sim:_createBuilding(k, "farm", 40, 40)
+		sim:_completeInstantly(farm)
+		sim:_recompute(k)
+		local c = sim.citizens[k.citizenIds[1]]
+		sim:setActivity(c, "Farm", farm.id)
+		c.phase = "Work"
+		c.carrying = { resource = "wood", amount = 0 }
+		local harvests = 0
+		for _ = 1, 1200 do
+			CitizenActions.step(sim, c, 0.1)
+			if c.carrying and c.carrying.amount > 0 then
+				harvests += 1
+				break
+			end
+		end
+		expect(harvests).toBe(1)
+		expect(c.carrying.resource).toBe("food")
 	end)
 end)
 
@@ -657,5 +786,39 @@ describe("Kingdom/Simulation: determinism", function()
 		expect(function()
 			sim:advance(0 / 0)
 		end).toThrow()
+	end)
+end)
+
+describe("Kingdom/Simulation: work modifiers (G13.3 consequences)", function()
+	it("productivity changes add up, expire and never go below 0", function()
+		local sim, k = F.kingdom()
+		local c = sim.citizens[k.citizenIds[1]]
+		expect(sim:productivityOf(c)).toBe(1)
+		local base = CitizenActions.skill(sim, c, "farm")
+		sim:addProductivity(c, 0.25, 10)
+		sim:addProductivity(c, -0.5, 20)
+		expect(sim:productivityOf(c)).toBeNear(0.75, 1e-9)
+		expect(CitizenActions.skill(sim, c, "farm")).toBeNear(base * 0.75, 1e-9) -- every work rate uses it
+		sim:advance(10)
+		expect(sim:productivityOf(c)).toBeNear(0.5, 1e-9)
+		sim:addProductivity(c, -2, 5)
+		expect(sim:productivityOf(c)).toBe(0)
+		sim:advance(15)
+		expect(sim:productivityOf(c)).toBe(1)
+		expect(c.boosts).toBeNil()
+	end)
+
+	it("striking or walked-out citizens idle instead of working", function()
+		local sim, k = F.kingdom()
+		local c = sim.citizens[k.citizenIds[1]]
+		sim:strike(c, 30)
+		expect(sim:isStriking(c)).toBe(true)
+		sim.active = true
+		sim:advance(1)
+		expect(c.activity == "Idle" or c.activity == "Sleep" or c.activity == "Flee").toBe(true)
+		sim:advance(30)
+		expect(sim:isStriking(c)).toBe(false)
+		sim:addProductivity(c, -1, 10) -- a walk-out (SPEC §5.4)
+		expect(sim:isStriking(c)).toBe(true)
 	end)
 end)

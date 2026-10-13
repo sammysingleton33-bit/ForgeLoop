@@ -14,6 +14,7 @@ Which steps are runnable after which PR:
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
+| K10 (conversations, thought bubbles, walk-out placard) | FL-0079 (`Kingdom.Converse/Choose`, PR #77); FORGE-03's panel and FORGE-04's bubbles |
 | K11 (build slots, throne) | FL-0081; the plot picker and build menu on slots are FORGE-03's |
 | K12 (ruler gathering on plot nodes, Gather prompt) | the FL-0051 gather PR (`InteractionController`, world plot nodes in the sim) |
 
@@ -142,27 +143,81 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   (FORGE-03's ProductionService). With no food, citizens' hunger rises: `Sim.Inspect` on a citizen
   shows mood falling.
 
+## K10 — Talk to a hungry farmer (FL-0079 conversations, FL-0080 reputation, FL-0078 people; VS-1 row 9)
+1. Play Solo. Set food low enough that the kingdom is underfed (fed ratio below 0.8; e.g. spend food with
+   FORGE-03's treasury debug command) and wait about a minute so farmers get hungry.
+2. Within 20 s a thought bubble appears over one or more citizens (FORGE-04 bubbles; at most 3).
+3. Watch one bubble for over a minute without answering. With 2 players (Test → Start, same party),
+   check that the second ruler sees the same bubbles within 20 s of joining.
+4. Select a farmer with a bubble, open the conversation (FORGE-03 panel → `Kingdom.Converse`) and close
+   it without answering; wait 30 s.
+5. Open it again and choose "open the grain store" (costs 25 food), then talk to the same farmer again.
+6. On a builder's "overworked" request, answer "push on" until its 50 % walk-out happens.
+7. (#107 M1–M3) With 2 rulers in one kingdom: ruler 1 opens a bubble's conversation and closes it
+   unanswered; ruler 2 taps the same citizen and answers. Then feed the kingdom (fed ratio 1) while a
+   farmer's question is open but unanswered, and wait 20 s. Then let ruler 1 open all bubbles and leave.
+
+**Expected:**
+- The farmer has a generated name and occupation; the question names a family member (no `{...}` left).
+- The option shows its food cost before you choose; options with risks show their odds.
+- After choosing: food −25 once; the reputation screen (FORGE-03) shows Compassion up with the answer as
+  its history text; the farmer's loyalty rises; farmers work faster for 2 minutes (they harvest more
+  often); a reaction bubble and cheer/work-fast cues play.
+- A bubble stays up for as long as its request is open (it is re-sent every 20 s; one bubble lasts 45 s),
+  and a co-ruler who joins later sees it too.
+- Closing the panel without answering leaves the bubble up; opening it again shows the same question.
+- Step 7: ruler 2 sees ruler 1's question (same text and options) and their answer is charged once; ruler 1's
+  panel, if still open, is then refused (`not_offered`, FORGE-03's wording) and charges nothing. Once the
+  kingdom is fed, the farmer's bubble goes within 20 s, and its open panel answers with a refusal. When
+  ruler 1 leaves, new bubbles appear for ruler 2 within 20 s (ruler 1's unanswered questions don't hold the
+  3 slots).
+- Carriers on strike keep their load and deliver it when they are back at work: a woodcutter never turns
+  stone into wood, and a farmer never delivers wood as food.
+- Talking again right after answering offers nothing (the scenario's cooldown); answering twice is
+  impossible.
+- The push-on walk-out puts an "On strike" placard on that builder only, even though the other builders
+  work faster; the builder stops at once, even with wood in hand.
+- A walk-out answer (breaking the grain-sacks promise, "The kingdom needs that grain more than you do."
+  → `speaker_refuses_work`) shows an "On strike" placard on that citizen only (FORGE-04 bubbles), never
+  on the rest of the occupation; it goes away when the walk-out ends (60 s).
+
 ## K11 — Build on a slot, upgrade, sit on the throne (FL-0081; VS-1 rows 2 and 6; G13.5, G13.6)
 1. Play Solo. Watch your ruler right after spawning, from the aerial camera and up close.
 2. Reset the character (Esc → Reset) and watch the respawn.
 3. Tap a free plot (`BuildSlot` marker) and build a House with FORGE-03's menu, or call
    `ForgeRemotes.Build.GetSlots:InvokeServer()` and then `Build.PlaceSlot:InvokeServer(slotId, "house")`
    with an `S` slot's id.
-4. Try the same slot again, and a Barracks on an `S` slot.
+4. Try the same slot again, a Barracks on an `S` slot, and a Wall on any slot
+   (`Build.PlaceSlot:InvokeServer(slotId, "wall")`).
 5. Upgrade the keep (`Build.Upgrade(keepId)`) once wood and stone allow it, and stay seated meanwhile.
 6. Press Space to stand up (walk mode), then let the keep upgrade again.
+7. Build a House with the Build rail (`Build.Place`) right on a free `L` slot, then open the plot picker on
+   that slot.
+8. Upgrade the lumber camp to level 2 (`Build.Upgrade(lumbercampId)`) and note the wood on the HUD for a
+   minute before and after.
+9. (#89 L2) **Test → Clients and Servers → Local Server, 2 players** in different kingdoms. Player 1 stands
+   up (Space). Player 2 walks (V) to player 1's keep and sits on the empty throne. Then player 2 sits on
+   their own throne. Then player 1 resets while player 2 sits on player 1's throne again.
 
 **Expected:**
 - After spawning (and after every respawn) the ruler sits on the keep's throne, wearing crown and cape.
   A co-ruler in the same kingdom stands at the keep door while the throne is taken.
 - The house stands on the plot, facing its street; the treasury drops by the house price once;
   `Build.Slots` arrives with that slot `occupiedBy` the new building's id.
-- The taken slot answers `nil, "slot_occupied"`; the barracks answers `nil, "does_not_fit"`; neither costs
-  anything.
+- The taken slot answers `nil, "slot_occupied"`; the barracks answers `nil, "does_not_fit"`; the wall
+  answers `nil, "not_on_plot"`; none of them costs anything.
+- A slot with a rail-placed building on it shows as taken (`Build.Slots` `occupiedBy` that building), and
+  `PlaceSlot` there answers `slot_occupied`, never `blocked`.
+- With the lumber camp at level 2 the woodcutters bring wood in noticeably faster (about +20 % while they
+  work the trees; walking time is unchanged).
 - Builders walk to the site and work it together (two or three at once); the upgrade finishes in about its
   `Costs` build time divided by the builders on site.
 - When the keep upgrade completes, the seated ruler sits on the new keep's throne within half a second.
   A ruler who stood up stays standing after the next upgrade.
+- Step 9: player 2 is put down in front of player 1's dais within half a second (Output:
+  `KingdomService: unseated a non-ruler from a throne`) and stays on their own throne. When player 1
+  respawns, they sit on their throne at once, and player 2 ends up in front of the dais. A co-ruler of
+  player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
 
 ## K12 — Ruler gathering on plot nodes (FL-0051)

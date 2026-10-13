@@ -7,7 +7,8 @@
 
 local Parts = {}
 
-export type Ctx = { model: Model, root: BasePart, count: number }
+-- slots: emblem slots handed out so far (Pieces.emblem numbers them per model; nil = none yet)
+export type Ctx = { model: Model, root: BasePart, count: number, slots: number? }
 
 -- Shared palette (same values as blender/lib/palette.py so meshes and parts match).
 local C = {
@@ -56,6 +57,14 @@ local function hueStyle(c: Color3): string
 		return "emerald"
 	end
 	return "azure"
+end
+
+-- Kingdom emblem per hue style (D-039): the same colour → style map as the tower caps, so the emblem and
+-- the silhouette always agree. Neutral (unsaturated) colours carry no emblem.
+local EMBLEM_KINDS: { [string]: string } = { crimson = "crown", azure = "star", emerald = "oak", gold = "sun" }
+
+local function emblemKind(c: Color3): string?
+	return EMBLEM_KINDS[hueStyle(c)]
 end
 
 -- ------------------------------------------------------------------ part builders
@@ -202,6 +211,8 @@ end
 Parts.C = C
 Parts.shade = shade
 Parts.hueStyle = hueStyle
+Parts.EMBLEM_KINDS = EMBLEM_KINDS
+Parts.emblemKind = emblemKind
 Parts.newModel = newModel
 Parts.finish = finish
 Parts.block = block

@@ -95,11 +95,12 @@ local function standingRow(row: any, y: number): Frame
 			color = Theme.color("textSecondary"),
 			extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 1 },
 		}),
-		Crown = if row.winner
+		-- the winner wears a laurel, never a crown: the crown is Emberhold's emblem (D-039)
+		Laurel = if row.winner
 			then (function()
-				local crown = Icon.new("crown", 14)
-				crown.LayoutOrder = 2
-				return crown
+				local laurel = Icon.new("laurel", 14)
+				laurel.LayoutOrder = 2
+				return laurel
 			end)()
 			else nil,
 	})
@@ -199,7 +200,7 @@ local function headline(model: any, crestSize: number, nameSize: number): Frame
 end
 
 local function kicker(model: any): Frame
-	local icon = Icon.new(if model.tone == "win" then "crown" else "standings", 14)
+	local icon = Icon.new(if model.tone == "win" then "laurel" else "standings", 14)
 	icon.LayoutOrder = 1
 	return Create("Frame", {
 		Name = "Kicker",

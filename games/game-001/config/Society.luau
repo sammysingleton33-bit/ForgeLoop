@@ -9,6 +9,8 @@
 	Conversations (G13.3)
 		openRequests            thought bubbles open per kingdom at a time (PROVISIONAL 3, G13.3)
 		requestRefreshSeconds   how often the open-request list is refreshed
+		conversation.eventSeconds   how long an event flag (event.building_completed, event.shortage, ...)
+		                        stays true for scenario triggers after the event
 	Reputation (G13.4, Kingdom/Reputation)
 		historyLimit            history entries kept per ruler (oldest dropped first)
 		historySent             entries `Kingdom.GetReputation` sends (the latest 30, G13.4)
@@ -46,6 +48,9 @@
 return {
 	openRequests = 3, -- PROVISIONAL (G13.3)
 	requestRefreshSeconds = 20,
+	conversation = {
+		eventSeconds = 180, -- PROVISIONAL
+	},
 
 	historyLimit = 50,
 	historySent = 30,

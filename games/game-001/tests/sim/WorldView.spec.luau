@@ -153,4 +153,33 @@ describe("Sim/WorldView Kit buildings", function()
 		expect(view:find("node", "n1").Size.Y).toBe(1.5)
 		expect(#nodes:GetChildren()).toBe(drawn)
 	end)
+
+	it("rebuilds a building that changes kingdom in the new kingdom's colour and folder (Kit emblems)", function()
+		local _, match, view = world()
+		local sim = match.sim
+		local crimson, azure = sim.kingdoms.crimson, sim.kingdoms.azure
+		local farm
+		for _, id in crimson.buildingIds do
+			if sim.buildings[id].kind == "farm" then
+				farm = sim.buildings[id]
+			end
+		end
+		assert(farm, "crimson starts with a farm")
+		local before = assert(view:find("building", farm.id))
+		view:sync(sim)
+		expect(rawequal(view:find("building", farm.id), before)).toBe(true) -- nothing changed: kept
+		-- the farm passes to azure
+		table.remove(crimson.buildingIds, table.find(crimson.buildingIds, farm.id))
+		table.insert(azure.buildingIds, farm.id)
+		farm.kingdomId = "azure"
+		view:sync(sim)
+		local after = assert(view:find("building", farm.id))
+		expect(rawequal(after, before)).toBe(false) -- rebuilt, never recoloured in place
+		expect(before.Parent).toBeNil()
+		expect(after:GetAttribute("KingdomId")).toBe("azure")
+		expect(after.Parent.Parent.Name).toBe("azure") -- <kingdomId>/Buildings/building:<id>
+		local fresh = Kit.build("farm", farm.level, "complete", Color3.fromRGB(table.unpack(azure.color)))
+		expect(#after:GetDescendants()).toBe(#fresh:GetDescendants()) -- what a fresh azure farm is made of
+		fresh:Destroy()
+	end)
 end)

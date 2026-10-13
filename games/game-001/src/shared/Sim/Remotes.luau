@@ -9,7 +9,9 @@
 		                        ~10 per second; moving entities every snapshot, idle and working ones
 		                        round-robin about once per second. VS-1: every client gets every entity.
 		Sim.Events(buffer)      reliable; one EventCodec buffer per tick when anything happened: spawn,
-		                        despawn, job changes, the cues deposit / hit / die / celebrate, reset
+		                        despawn, job changes, the cues deposit / hit / die / celebrate, reset; and
+		                        per kingdom, to its members only, the G13.3 conversation events (thought,
+		                        reaction, strike, kcue) in their own buffer (EntityService:sendKingdomEvent)
 	Client -> server
 		Sim.Inspect(entityId: integer) -> CitizenService:inspect result, own kingdom only (G8); nil otherwise
 		Sim.GetEntities() -> buffer   an EventCodec buffer of "full" records for every live entity; the
