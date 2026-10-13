@@ -715,16 +715,19 @@ describe("ObjectiveService (G8)", function()
 		expect(towers()).toBe(1)
 		-- A again, then neutral: one tower at every step, each old one destroyed
 		local previous = byB
-		for _, owner in { k.id, nil :: any } do
-			o.owner = owner
+		local steps = 0
+		for _, owner in { k.id, false } do -- false stands for neutral: a nil entry would end the list
+			steps += 1
+			o.owner = if owner == false then nil else owner
 			s.objectives:broadcast()
 			local now = assert(s.objectives:getModel(o.id))
 			expect(rawequal(now, previous)).toBe(false)
 			expect(previous.Parent).toBeNil()
 			expect(towers()).toBe(1)
-			expect(now:GetAttribute("Owner")).toBe(owner)
+			expect(now:GetAttribute("Owner")).toBe(o.owner)
 			previous = now
 		end
+		expect(steps).toBe(2)
 	end)
 
 	it("broadcasts progress at most twice a second, builds the tower neutral and rebuilds it on capture", function()
