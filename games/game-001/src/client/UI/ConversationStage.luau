@@ -28,6 +28,7 @@
 		false (and nothing drawn) when the portrait can't be built: the caller falls back to the panel
 		state = ConversationController.state; ui = { key (the showing), figure = { look, job, kingdom },
 		color: Color3?, banner: { color, emblem }?, balances?, motion (UI Motion), readSeconds?,
+		readStarted? and now? (env.clock: the Done bar shows the time left),
 		onPick(optionId), onDone(), onClose(), onConfirm(), onBack() }
 	stage:patch(balances)   a treasury push: repaints, in the same buttons, the answers whose "Need ..."
 	                        changed and refits the height; nothing once the choice is on its way
@@ -514,6 +515,9 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 				holder:SetAttribute("risen", true)
 			end
 		end)
+	elseif holder:GetAttribute("risen") == false and ui.motion and ui.motion.enabled then
+		-- re-rendered mid-rise (a new height): the rise goes on to the new place (FORGE-05 L2)
+		ui.motion:to(holder, { Position = final }, G.rise, Enum.EasingStyle.Quint)
 	else
 		holder.Position = final
 		holder:SetAttribute("risen", true)
@@ -599,18 +603,24 @@ function ConversationStage:render(state: any, metrics: any, ui: { [string]: any 
 		local done = Button.new({ text = "Done", icon = "check", variant = "primary", onActivated = ui.onDone })
 		done.instance.Name = "Done"
 		self.footer = done
-		if ui.readSeconds and ui.motion and ui.motion.enabled then
+		-- The bar shows the time left before the stage closes by itself: a re-render continues it
+		-- from where the controller's timer is (FORGE-05 L3), not from full.
+		local total = ui.readSeconds
+		local left = if total and ui.readStarted and ui.now then total - (ui.now - ui.readStarted) else total
+		if total and left and left > 0 and ui.motion and ui.motion.enabled then
+			local share = math.min(1, left / total)
 			local bar = Create("Frame", {
 				Name = "Timer",
 				BackgroundColor3 = Theme.color("gold300"),
 				BorderSizePixel = 0,
 				AnchorPoint = Vector2.new(0, 1),
 				Position = UDim2.new(0, 10, 1, -3),
-				Size = UDim2.new(1, -20, 0, 3),
+				Size = UDim2.new(share, -math.floor(20 * share), 0, 3),
 				ZIndex = 5,
 				Parent = done.instance,
 			}, { Corner = Style.corner(999) })
-			ui.motion:to(bar, { Size = UDim2.fromOffset(0, 3) }, ui.readSeconds, Enum.EasingStyle.Linear)
+			bar:SetAttribute("secondsLeft", left)
+			ui.motion:to(bar, { Size = UDim2.fromOffset(0, 3) }, left, Enum.EasingStyle.Linear)
 		end
 	elseif finished then
 		if showsBubble and not r.bubbleAbove then

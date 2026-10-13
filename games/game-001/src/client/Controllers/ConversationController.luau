@@ -66,6 +66,10 @@
 		conversation.inflight = { [CitizenModel.key(entityId, scenarioId)]: responseId }
 		conversation.panel (UI/ConversationPanel)    conversation.stage (UI/ConversationStage)
 		conversation.opened: Signal<(entityId, position: Vector3)>   conversation.closed: Signal<(entityId)>
+		conversation.reacted: Signal<(entityId, tone: string?, portrait: Model?)>  once per accepted
+			answer, when its reaction arrives (tone from the Choose result, G13.8 v0.4-g10; the
+			stage's portrait model, nil when it shows the panel or nothing)
+		conversation.portrait: Model?   the stage's portrait while it shows (= conversation.stage.portrait.model)
 		ConversationController.MENU = "conversation"    ConversationController.CHECK_SEC
 		ConversationController.END = "Kingdom.EndConversation"
 ]]
@@ -103,6 +107,8 @@ function Def.new(env: any, registry: any)
 		stage = nil :: any,
 		opened = Signal.new(),
 		closed = Signal.new(),
+		reacted = Signal.new(),
+		portrait = nil :: any, -- the stage's portrait model while it shows (G13.8; FORGE-04's poses)
 		inflight = {} :: { [string]: string },
 		_shown = nil :: any, -- { entityId, signalled }: the conversation on screen (G13.8 hold)
 		_showings = 0,
@@ -249,6 +255,13 @@ function ConversationController:_leave()
 	self:_end(shown.entityId)
 end
 
+-- This citizen's conversation is on screen or loading again (FORGE-05 L1 on #126): a stale
+-- reply must not end its hold.
+function ConversationController:_busyWith(entityId: number): boolean
+	local shown = self._shown
+	return (shown ~= nil and shown.entityId == entityId) or self._loading == entityId
+end
+
 -- A conversation appeared: `opened` when the server said where the citizen stands. The same
 -- citizen again (a reopen while it shows) keeps its `opened` and its hold.
 function ConversationController:_appear(entityId: number, position: any)
@@ -348,7 +361,7 @@ function ConversationController:open(entityId: number)
 		end)
 		local opened = called and type(payload) == "table" -- the server holds the citizen now (G13.8)
 		if token ~= self._token then
-			if opened then
+			if opened and not self:_busyWith(entityId) then
 				self:_end(entityId) -- the player moved on while it loaded: let the citizen go
 			end
 			return
@@ -362,7 +375,7 @@ function ConversationController:open(entityId: number)
 				title = if called then CitizenText.NOTHING else CitizenText.unreachable(),
 				body = if called and fallback then fallback.name else nil,
 			})
-			if opened then
+			if opened and not self:_busyWith(entityId) then
 				self:_end(entityId)
 			end
 			return
@@ -501,6 +514,9 @@ function ConversationController:choose(responseId: string, confirmed: boolean?)
 			or current.phase ~= "choosing"
 		then
 			self:_notifyOutcome(speaker, outcome)
+			if outcome.phase == "answered" then
+				self.reacted:fire(entityId, outcome.tone, nil)
+			end
 			return
 		end
 		if outcome.phase == "failed" then
@@ -511,10 +527,17 @@ function ConversationController:choose(responseId: string, confirmed: boolean?)
 			current.phase = outcome.phase
 			current.picked = responseId
 			current.outcome = outcome
+			if outcome.phase == "answered" then
+				current.answeredAt = self._env.clock() -- the Done bar counts down from here (L3)
+			end
 		end
 		hud:render()
-		if current.phase == "answered" and current.figure ~= nil then
-			-- The stage reads like a scene: it closes by itself once the reaction has been read.
+		if current.phase == "answered" then
+			self.reacted:fire(entityId, outcome.tone, if self.state == current then self.portrait else nil)
+		end
+		-- The stage reads like a scene: it closes by itself once the reaction has been read. Not with
+		-- reduced motion (FORGE-05 L4 on #126): there is no countdown cue, so the player closes it.
+		if current.phase == "answered" and current.figure ~= nil and not self:_reducedMotion() then
 			self._env.spawn(function()
 				self._env.wait(StageModel.readSeconds(outcome))
 				if self.state == current and current.phase == "answered" then
@@ -569,6 +592,7 @@ function ConversationController:render(metrics: any)
 	if hud.state.menu ~= ConversationController.MENU or self.state == nil then
 		self.panel:destroy()
 		self.stage:destroy()
+		self.portrait = nil
 		self._renderKey = nil
 		return
 	end
@@ -576,14 +600,17 @@ function ConversationController:render(metrics: any)
 	local color = if kingdom then HudModel.color(kingdom) else nil
 	-- Rebuild only when the conversation or the screen changed: a treasury push mid-question must
 	-- not swap the answer buttons under the player's finger (FORGE-05 M1).
-	local key = Signature.of({
-		state = self.state,
-		color = color,
-		breakpoint = metrics.breakpoint,
-		drawer = metrics.drawer,
-		width = metrics.width,
-		height = metrics.height,
-	})
+	local function keyOf(): string
+		return Signature.of({
+			state = self.state,
+			color = color,
+			breakpoint = metrics.breakpoint,
+			drawer = metrics.drawer,
+			width = metrics.width,
+			height = metrics.height,
+		})
+	end
+	local key = keyOf()
 	local balances = self:_balances()
 	if key == self._renderKey and (self.panel.panel ~= nil or self.stage.root ~= nil) then
 		-- what each answer costs against the new treasury, in place
@@ -605,6 +632,8 @@ function ConversationController:render(metrics: any)
 			balances = balances,
 			motion = Motion.new(self._env, { reduced = self:_reducedMotion() }),
 			readSeconds = if s.phase == "answered" and s.outcome then StageModel.readSeconds(s.outcome) else nil,
+			readStarted = s.answeredAt,
+			now = self._env.clock(),
 			onPick = function(responseId)
 				self:choose(responseId)
 			end,
@@ -623,11 +652,13 @@ function ConversationController:render(metrics: any)
 		})
 		if shown then
 			self.panel:destroy()
+			self.portrait = self.stage.portrait and self.stage.portrait.model or nil
 			return
 		end
 		s.figure = nil -- no portrait for this showing: the panel from now on
-		self._renderKey = nil
+		self._renderKey = keyOf() -- the key of what is drawn now (no second rebuild, FORGE-05 L7)
 	end
+	self.portrait = nil
 	self.stage:destroy()
 	self.panel:render(self.state, metrics, {
 		color = color,

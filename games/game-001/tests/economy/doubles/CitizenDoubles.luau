@@ -334,6 +334,7 @@ CitizenDoubles.SCENARIOS = {
 				text = "The Thornburys. They were here first.",
 				loyalty = 6,
 				reaction = "A fair ruling.",
+				tone = "happy", -- G13.8 v0.4-g10 (FL-0110 sends it; the specs check it passes through)
 				effects = { { kind = "honor", text = "+2 Honor" } },
 			},
 			{
@@ -614,7 +615,8 @@ function CitizenDoubles.service(world, opts: { conversations: boolean?, cinemati
 					c.lastMemory = response.text
 					c.hasRequest = false
 					self.scenarios[entityId] = nil
-					local result = { reaction = response.reaction, effects = clone(response.effects or {}) }
+					local result =
+						{ reaction = response.reaction, tone = response.tone, effects = clone(response.effects or {}) }
 					self.answers[key] = result
 					return true, result
 				end)

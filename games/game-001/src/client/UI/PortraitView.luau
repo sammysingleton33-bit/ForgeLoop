@@ -4,7 +4,8 @@
 	(CONTRACTS G13.8, D-036; FL-0099): a ViewportFrame holding FORGE-02's `Kit.portrait` rig and a
 	Camera placed by `Kit.portraitCamera`. The portrait is built from the same arguments as the
 	world rig (EntityController): kind "citizen", the job, the kingdom's colour from config Kingdoms
-	and the `look` from the Kingdom.Converse result, so the two look identical.
+	and the `look` from the Kingdom.Converse result, so the two look identical (no kingdom argument:
+	buildRig passes it to soldiers only, for their helmet crest).
 
 		PortraitView.useSource(source? | false)
 			source = { portrait(kind, job, kingdomColor, look?, kingdom?) -> Model,
@@ -90,7 +91,9 @@ function PortraitView.new(spec: { look: any?, job: string?, kingdom: string? }):
 		return nil
 	end
 	local job = if type(spec.job) == "string" and spec.job ~= "" then spec.job else "idle"
-	local ok, model = pcall(src.portrait, "citizen", job, PortraitView.colorOf(spec.kingdom), spec.look, spec.kingdom)
+	-- As EntityController's buildRig: the kingdom argument (a helmet crest) is for soldiers only, and
+	-- a conversation is always with a citizen (FORGE-05, #85 review); the colour is the kingdom's.
+	local ok, model = pcall(src.portrait, "citizen", job, PortraitView.colorOf(spec.kingdom), spec.look, nil)
 	if not ok or typeof(model) ~= "Instance" or not (model :: Instance):IsA("Model") then
 		return nil
 	end

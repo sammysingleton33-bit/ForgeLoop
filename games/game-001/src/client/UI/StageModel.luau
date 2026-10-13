@@ -49,7 +49,7 @@ StageModel.GEO = table.freeze({
 	maxWidth = 920,
 	portrait = table.freeze({ phone = 112, tablet = 172, desktop = 196 }),
 	gap = table.freeze({ phone = 8, tablet = 14, desktop = 16 }), -- portrait to column
-	railGap = table.freeze({ phone = 6, tablet = 12, desktop = 12 }),
+	railGap = table.freeze({ phone = 12, tablet = 12, desktop = 12 }), -- the X clear of the rail's buttons
 	close = table.freeze({ phone = 36, tablet = 32, desktop = 32 }),
 	closeGap = 6,
 	tail = 10, -- the bubble's tail reaches this far left of the column

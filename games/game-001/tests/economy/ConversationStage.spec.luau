@@ -91,6 +91,9 @@ local function cameraDef(events)
 					conversations.closed:connect(function(entityId)
 						table.insert(events, { "closed", entityId })
 					end)
+					conversations.reacted:connect(function(entityId, tone, portrait)
+						table.insert(events, { "reacted", entityId, tone, portrait })
+					end)
 				end,
 			}
 		end,
@@ -298,7 +301,7 @@ describe("FL-0099 cinematic conversation (G13.8)", function()
 			local call = source.calls[1]
 			expect(call.kind).toBe("citizen")
 			expect(call.job).toBe("farmer")
-			expect(call.kingdom).toBe("crimson")
+			expect(call.kingdom).toBeNil() -- as buildRig: the kingdom argument (a helmet crest) is for soldiers
 			expect(call.kingdomColor).toBe(CRIMSON) -- the world rig's colour (config Kingdoms)
 			expect(call.look.skin).toBe(2)
 			local viewport = find(stage, "Viewport")
@@ -375,6 +378,65 @@ describe("FL-0099 cinematic conversation (G13.8)", function()
 			expect(world.citizens.held[43]).toBeNil()
 		end
 	)
+
+	it("reacted fires once per accepted answer with the tone and the stage's portrait (FORGE-04's poses)", function()
+		world = newWorld()
+		local stage = talkTo(world, 43)
+		local model = find(stage, "Viewport"):FindFirstChildWhichIsA("Model")
+		expect(world.conversation.portrait).toBe(model) -- = conversation.stage.portrait.model
+		expect(world.conversation.stage.portrait.model).toBe(model)
+		answer(world, "thornbury")
+		local reacted = named(world.events, "reacted")
+		expect(#reacted).toBe(1)
+		expect(reacted[1][2]).toBe(43)
+		expect(reacted[1][3]).toBe("happy")
+		expect(reacted[1][4]).toBe(model)
+		tap(find(stageOf(world), "Done"))
+		world:advance(0.1)
+		expect(world.conversation.portrait).toBeNil()
+		expect(#named(world.events, "reacted")).toBe(1)
+		-- closed before the reply arrives: still reacted (the world rig may pose), without a portrait
+		world.citizens.chooseLatency = 0.5
+		talkTo(world, 42)
+		answer(world, "wait")
+		world.conversation:close()
+		world:advance(0.6)
+		reacted = named(world.events, "reacted")
+		expect(#reacted).toBe(2)
+		expect(reacted[2][2]).toBe(42)
+		expect(reacted[2][3]).toBeNil() -- no tone in that answer
+		expect(reacted[2][4]).toBeNil()
+		-- a refusal reacts nothing
+		world.citizens.chooseLatency = 0
+		talkTo(world, 41)
+		world.citizens.refuse = "not_eligible"
+		answer(world, "work")
+		expect(#named(world.events, "reacted")).toBe(2)
+	end)
+
+	it("a stale Converse reply never ends the hold of a newer conversation with the same citizen", function()
+		world = newWorld()
+		world.citizens.latency = 0.3
+		pickSelection(world, "citizen", 41)
+		tap(find(find(world.hud.guis.menus, "CitizenCard"), "Talk"))
+		world:advance(0.05)
+		world.hud:setMenu("build") -- moved on while it loads
+		world:advance(0.05)
+		world.conversation:open(41) -- and asks again
+		world:advance(0.5) -- the stale reply arrives first, then the new one
+		expect(stageOf(world)).toBeTruthy()
+		expect(#ends(world)).toBe(0)
+		expect(world.citizens.held[41]).toBe(true)
+		-- with nothing newer, a stale reply does end the hold
+		world.conversation:close()
+		world:advance(0.1)
+		expect(ends(world)).toEqual({ 41 })
+		world.conversation:open(41)
+		world:advance(0.05)
+		pickSelection(world, "none", 0)
+		world:advance(0.5)
+		expect(ends(world)).toEqual({ 41, 41 })
+	end)
 
 	it("Done closes at once; the auto-close that follows does nothing more", function()
 		world = newWorld()
@@ -767,9 +829,12 @@ describe("FL-0099 fallbacks and motion", function()
 		expect(panelOf(world)).toBeTruthy()
 		expect(world.conversation.state.figure).toBeNil()
 		expect(#failing.calls).toBe(1)
-		-- a treasury push re-renders the panel, never retries the portrait
+		-- a treasury push patches the panel in place (no second rebuild, FORGE-05 L7) and never
+		-- retries the portrait
+		local option = find(panelOf(world), "Option_bread")
 		world.treasury:deposit("crimson", "wood", 5, "spec:w", "test")
 		world:advance(0.2)
+		expect(find(panelOf(world), "Option_bread")).toBe(option)
 		expect(#failing.calls).toBe(1)
 	end)
 
@@ -857,5 +922,44 @@ describe("FL-0099 fallbacks and motion", function()
 		expect(portrait.Position.Y.Offset).toBe(stage.Size.Y.Offset - portrait.Size.Y.Offset)
 		expect(portrait:GetAttribute("risen")).toBe(true)
 		expect(#world.events).toBe(count + 1)
+		-- reduced motion: no countdown cue, so the answered stage waits for Done (FORGE-05 L4)
+		answer(world, "thornbury")
+		expect(find(stageOf(world), "Timer")).toBeNil()
+		world:advance(StageModel.READ_MAX + 1)
+		expect(stageOf(world)).toBeTruthy()
+		tap(find(stageOf(world), "Done"))
+		world:advance(0.1)
+		expect(stageOf(world)).toBeNil()
+	end)
+
+	it("a re-render mid-rise sends the portrait to its new place; the Done bar continues, not restarts", function()
+		PortraitView.useSource(PortraitDoubles.source())
+		local tweens = {}
+		world = newWorld({ tweens = tweens })
+		local stage = talkTo(world, 43)
+		local portrait = find(stage, "Portrait")
+		world.hud:setViewport(1280, 662) -- a new size mid-rise: a new stage height
+		world:advance(0.05)
+		stage = stageOf(world)
+		expect(find(stage, "Portrait")).toBe(portrait)
+		local last = nil
+		for _, t in tweens do
+			if t.instance == portrait then
+				last = t
+			end
+		end
+		expect(last.props.Position.Y.Offset).toBe(stage.Size.Y.Offset - portrait.Size.Y.Offset) -- FORGE-05 L2
+		-- the Done bar: full at the answer, then a re-render 2 s later continues from the time left (L3)
+		world:advance(StageModel.GEO.rise)
+		answer(world, "thornbury")
+		local read = StageModel.readSeconds({ reaction = "A fair ruling.", effects = { { text = "+2 Honor" } } })
+		local timer = find(stageOf(world), "Timer")
+		expect(timer:GetAttribute("secondsLeft")).toBeNear(read, 0.2)
+		world:advance(2)
+		world.hud:setViewport(1920, 1022)
+		world:advance(0.05)
+		timer = find(stageOf(world), "Timer")
+		expect(timer:GetAttribute("secondsLeft")).toBeNear(read - 2, 0.25)
+		expect(timer.Size.X.Scale < 1).toBe(true)
 	end)
 end)
