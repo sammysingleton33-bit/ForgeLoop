@@ -8,7 +8,7 @@ local Bubbles = require("@game/ReplicatedStorage/Game/Feedback/Bubbles")
 local ReactionPoses = require("@game/ReplicatedStorage/Game/Feedback/ReactionPoses")
 local Pose = require("@game/ReplicatedStorage/Game/Sim/Pose")
 local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
-local ReactionPoseDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ReactionPoseController")
+local FeedbackPoseDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackPoseController")
 
 -- degrees a joint transform rotates by (axis-angle; 260° about one axis is 100° about the other way)
 local function degrees(cf: CFrame): number
@@ -89,13 +89,13 @@ describe("Feedback/ReactionPoses (FL-0100, G13.8)", function()
 	end)
 end)
 
-describe("ReactionPoseController (FL-0100, G13.8 portrait)", function()
+describe("FeedbackPoseController (FL-0100, G13.8 portrait)", function()
 	local env, calls, logs
 
 	local function load(extra)
 		local defs = extra or {}
-		table.insert(defs, ReactionPoseDef)
-		local poses = Loader.load(env, defs):get("ReactionPoseController")
+		table.insert(defs, FeedbackPoseDef)
+		local poses = Loader.load(env, defs):get("FeedbackPoseController")
 		poses.posePortrait = function(portrait, joints)
 			table.insert(calls, { portrait = portrait, size = largest(joints) })
 		end

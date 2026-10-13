@@ -1,6 +1,6 @@
 --!strict
 --[[
-	ReactionPoseController (game-001, FORGE-04, FL-0100 (2/2); CONTRACTS G13.8): the citizen's reaction
+	FeedbackPoseController (game-001, FORGE-04, FL-0100 (2/2); CONTRACTS G13.8): the citizen's reaction
 	plays on the conversation portrait, with the same gestures the world rig uses (Feedback/ReactionPoses).
 		poses:playPortrait(portrait, nameOrTone) -> boolean
 		    Plays a reaction pose (cheer, grumble, slump, salute, bow, cower) or the pose for a reaction
@@ -27,7 +27,7 @@ local ReactionPoses = require("@game/ReplicatedStorage/Game/Feedback/ReactionPos
 local Controller = {}
 Controller.__index = Controller
 
-local Def = { name = "ReactionPoseController", dependencies = {} }
+local Def = { name = "FeedbackPoseController", dependencies = {} }
 
 local function connect(target: any, name: string, handler: (...any) -> ()): any
 	local signal = target and target[name]
@@ -113,13 +113,13 @@ function Controller:_apply(portrait: any, joints: ReactionPoses.Joints): boolean
 	if pose == nil then
 		if not self._warned then
 			self._warned = true
-			self._env.log("warn", "ReactionPoseController: Kit.posePortrait is not available; portrait poses skipped")
+			self._env.log("warn", "FeedbackPoseController: Kit.posePortrait is not available; portrait poses skipped")
 		end
 		return false
 	end
 	local ok, err = pcall(pose, portrait, joints)
 	if not ok then
-		self._env.log("warn", "ReactionPoseController: posePortrait failed", { error = tostring(err) })
+		self._env.log("warn", "FeedbackPoseController: posePortrait failed", { error = tostring(err) })
 	end
 	return ok
 end

@@ -15,7 +15,7 @@ Branch `forge/04-experience-fl0100b`, stacked on #84 (FL-0100 (1/2)).
   - `rest()` returns every joint at identity.
   - `forTone(tone)` follows `Bubbles.POSE`; `has(name)` checks a name.
   - The work cues (`work_fast`, `hammer`, `rest`) are not reactions; they stay with EntityController's own loop.
-- **`games/game-001/src/client/Controllers/ReactionPoseController.luau`:**
+- **`games/game-001/src/client/Controllers/FeedbackPoseController.luau`:**
   - `playPortrait(portrait, nameOrTone)` animates FORGE-02's portrait through `Kit.posePortrait` every Heartbeat until the pose ends, then rests it. With reduced motion it holds the key pose.
   - It connects, when present, to `ConversationController.reacted(entityId, tone, portrait?)` (plays on that portrait, else on `conversation.portrait`) and to `.closed` (rests every portrait).
   - Without `Kit.posePortrait` it plays nothing and warns once.
@@ -34,7 +34,7 @@ Branch `forge/04-experience-fl0100b`, stacked on #84 (FL-0100 (1/2)).
 ## Interfaces touched
 Additive, game-001 only:
 - `Feedback/ReactionPoses` (new module);
-- `ReactionPoseController` (new controller).
+- `FeedbackPoseController` (new controller).
 
 Proposed, not yet built (owners decide):
 - `ConversationController.reacted(entityId, tone, portrait?)` and `.portrait` (FORGE-03);
@@ -54,5 +54,5 @@ Proposed, not yet built (owners decide):
 
 ## Files to read
 - `games/game-001/src/shared/Feedback/ReactionPoses.luau` — the API in its header.
-- `games/game-001/src/client/Controllers/ReactionPoseController.luau` — the portrait hook.
+- `games/game-001/src/client/Controllers/FeedbackPoseController.luau` — the portrait hook.
 - `roblox/studio-tests/experience.md` E9 — the Studio steps.
