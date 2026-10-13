@@ -95,6 +95,39 @@ function KingdomHud:removeMenu(id: string)
 	end
 end
 
+-- The Crown Points gem: never a crown, which is Emberhold's emblem (D-039). Drawn (a gold diamond with
+-- a light facet) until gem.png is uploaded: the 💎 glyph is a blue colour emoji on most platforms,
+-- which reads as a premium currency and as Frostmere's blue (FORGE-05 L6 on #86).
+function KingdomHud.gem(size: number): GuiObject
+	if Icon.hasImage("gem") then
+		return Icon.new("gem", size)
+	end
+	local gem = Create("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(size, size),
+	}, {
+		Stone = Create("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromScale(0.62, 0.62),
+			Rotation = 45,
+			BackgroundColor3 = Theme.color("gold400"),
+			BorderSizePixel = 0,
+		}, { Edge = Style.stroke(Theme.color("gold700"), 1) }),
+		Facet = Create("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.4),
+			Size = UDim2.fromScale(0.24, 0.24),
+			Rotation = 45,
+			BackgroundColor3 = Theme.color("gold300"),
+			BorderSizePixel = 0,
+			ZIndex = 2,
+		}),
+	})
+	gem:SetAttribute("drawn", "gem")
+	return gem
+end
+
 local function plate(): Frame
 	return Create("Frame", {
 		Name = "Plate",
@@ -154,7 +187,7 @@ function KingdomHud:_build(metrics: any, banner: any)
 	self._crest.Position = UDim2.fromOffset(h.x, h.y)
 	self._crest.Parent = container
 	if phone then
-		local gem = Icon.new("gem", 11) -- Crown Points: never a crown, Emberhold's emblem (D-039)
+		local gem = KingdomHud.gem(11)
 		gem.LayoutOrder = 1
 		self._points = Create("Frame", {
 			Name = "CrownPoints",
