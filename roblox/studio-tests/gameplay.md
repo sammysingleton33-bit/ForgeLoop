@@ -145,8 +145,12 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 1. Play Solo. Set food low enough that the kingdom is underfed (fed ratio below 0.8; e.g. spend food with
    FORGE-03's treasury debug command) and wait about a minute so farmers get hungry.
 2. Within 20 s a thought bubble appears over one or more citizens (FORGE-04 bubbles; at most 3).
-3. Select a farmer with a bubble and open the conversation (FORGE-03 panel → `Kingdom.Converse`).
-4. Choose "open the grain store" (costs 25 food), then talk to the same farmer again.
+3. Watch one bubble for over a minute without answering. With 2 players (Test → Start, same party),
+   check that the second ruler sees the same bubbles within 20 s of joining.
+4. Select a farmer with a bubble, open the conversation (FORGE-03 panel → `Kingdom.Converse`) and close
+   it without answering; wait 30 s.
+5. Open it again and choose "open the grain store" (costs 25 food), then talk to the same farmer again.
+6. On a builder's "overworked" request, answer "push on" until its 50 % walk-out happens.
 
 **Expected:**
 - The farmer has a generated name and occupation; the question names a family member (no `{...}` left).
@@ -154,7 +158,13 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - After choosing: food −25 once; the reputation screen (FORGE-03) shows Compassion up with the answer as
   its history text; the farmer's loyalty rises; farmers work faster for 2 minutes (they harvest more
   often); a reaction bubble and cheer/work-fast cues play.
-- Talking again right away offers nothing (the scenario's cooldown); answering twice is impossible.
+- A bubble stays up for as long as its request is open (it is re-sent every 20 s; one bubble lasts 45 s),
+  and a co-ruler who joins later sees it too.
+- Closing the panel without answering leaves the bubble up; opening it again shows the same question.
+- Talking again right after answering offers nothing (the scenario's cooldown); answering twice is
+  impossible.
+- The push-on walk-out puts an "On strike" placard on that builder only, even though the other builders
+  work faster; the builder stops at once, even with wood in hand.
 - A walk-out answer (breaking the grain-sacks promise, "The kingdom needs that grain more than you do."
   → `speaker_refuses_work`) shows an "On strike" placard on that citizen only (FORGE-04 bubbles), never
   on the rest of the occupation; it goes away when the walk-out ends (60 s).

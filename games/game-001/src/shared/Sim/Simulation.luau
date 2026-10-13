@@ -973,6 +973,7 @@ end
 -- Stops the citizen working for `seconds` (a strike); they idle instead.
 function Simulation:strike(citizen: any, seconds: number)
 	citizen.strikeUntil = math.max(citizen.strikeUntil or 0, self.time + seconds)
+	citizen.done = true -- downs tools at once, even with a load in hand (#77 N2): it re-plans next tick
 end
 
 -- On strike, or walked out (productivity down to 0: SPEC §5.4 "−1 = one citizen's walk-out").

@@ -124,5 +124,9 @@ I looked at all four simulations for both images. Closest kingdom pairs (ΔE): p
 **Verdict: finding 3 passes on render evidence** at 120-220 studs, with the roof silhouette as the main
 cue and the emblem as the second. The oak leaf is the weakest emblem (also #86 L7 in the UI).
 
-**Still open:** #105 has to merge; the Studio four-kingdom screenshot (STUDIO_PLAYTEST colour-vision
-steps 1-6, the B7 ask) would confirm the real camera distance and finding 4 (tritanopia in Studio).
+**Still open:** the Studio four-kingdom screenshot (STUDIO_PLAYTEST colour-vision steps 1-7, the B7/B8
+asks) would confirm the real camera distance and finding 4 (tritanopia in Studio).
+
+**Update 2026-10-13:** #105 merged on main as `f562a31` (FORGE-05 D-040 verdict on `f44cfc3`, after
+CHANGES REQUESTED for the slot-marker and stage budget gates). Finding 3 is resolved on render evidence;
+findings 1, 2 and 3 now wait only for the Studio screenshot.
