@@ -756,6 +756,42 @@ describe("FL-0060 destroy paths and match end (FORGE-05 review of #63)", functio
 		expect(summaryRoot(world)).toBeNil()
 	end)
 
+	it(
+		"D-038 (2): without the server's Army remotes there is no Army button or tab; they appear once served",
+		function()
+			-- today's main without FORGE-01's #70: no Army area under ForgeRemotes
+			world = KingdomWorld.new({
+				remotes = { Kingdom = PopulationDoubles.REMOTES.Kingdom },
+				services = { PopulationDoubles.service },
+				clientDefinitions = { KingdomHudDef, UpgradePanelDef, ArmyDef, inputModeDef() },
+			})
+			world.hud = world.client:get("KingdomHudController")
+			world.army = world.client:get("ArmyPanelController")
+			world.upgrade = world.client:get("UpgradePanelController")
+			world.hud:setViewport(1920, 1022)
+			world:advance(5)
+			expect(find(world.hud.guis.hud, "Menu_army")).toBeNil()
+			expect(world.army.offered).never.toBe(true)
+			local barracks = world.build:add("crimson", "barracks", 1, "complete", Vector3.new(150, 0, 150))
+			world.build:push(barracks)
+			world:advance(0.1)
+			world.upgrade:open(barracks)
+			world:advance(0.1)
+			expect(find(world.hud.guis.menus, "Tab_army")).toBeNil()
+			-- the army remotes replicate later (the server got them): the button and the tab appear
+			local root = world.env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
+			local area = world.env.newInstance("Folder")
+			area.Name = "Army"
+			area.Parent = root
+			local recruit = world.env.newInstance("RemoteFunction")
+			recruit.Name = "Recruit"
+			recruit.Parent = area
+			world:advance(world.army.SERVED_POLL_SEC + 0.1)
+			expect(world.army.offered).toBe(true)
+			expect(find(world.hud.guis.hud, "Menu_army")).toBeTruthy()
+		end
+	)
+
 	it("low 4: FORGE-01's recruit refusals read as sentences", function()
 		for _, code in { "recruit_cap", "match_not_active", "not_in_match", "not_ruler", "kingdom_eliminated" } do
 			local sentence = ArmyText.reason(code)

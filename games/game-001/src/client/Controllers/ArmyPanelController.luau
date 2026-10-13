@@ -26,13 +26,19 @@
 	for COOLDOWN_SEC. Disabled with a reason when the server says there are no soldiers, or when every
 	objective is already mine (ObjectivePanelController's list, optional).
 
+	Offered only once the server serves the army (D-038 (2)): the rail button and the barracks tab
+	appear when `ReplicatedStorage.ForgeRemotes.Army.Recruit` exists (checked at start, then every
+	SERVED_POLL_SEC, never yielding), so a build without FORGE-01's army server never shows a button
+	that fails after 10 s.
+
 	Depends on KingdomHudController. Optional: UpgradePanelController, ObjectivePanelController,
 	InputModeController (registry:find in start).
 	API (specs and the snapshot scenes)
 		army:open(barracksId?)  army:close()  army:setCount(n)  army:less()  army:more()
 		army:recruit()  army:send()  army:model() -> UI/ArmyModel Panel
 		army.state = { barracksId?, count, pending, cooling }   army.view (UI/ArmyPanel)
-		ArmyPanelController.MENU = "army"  .COOLDOWN_SEC  .RECRUIT  .COMMAND
+		ArmyPanelController.MENU = "army"  .COOLDOWN_SEC  .RECRUIT  .COMMAND  .SERVED_POLL_SEC
+		army.offered   true once the rail button and the tab are added
 ]]
 
 local ArmyModel = require("../UI/ArmyModel")
@@ -48,6 +54,7 @@ local Def = { name = "ArmyPanelController", dependencies = { "KingdomHudControll
 
 ArmyPanelController.MENU = "army"
 ArmyPanelController.COOLDOWN_SEC = 3
+ArmyPanelController.SERVED_POLL_SEC = 2
 ArmyPanelController.RECRUIT = "Army.Recruit"
 ArmyPanelController.COMMAND = "Army.Command"
 ArmyPanelController.RAIL = table.freeze({
@@ -85,10 +92,42 @@ local function connect(signal: any, fn: (...any) -> ()): any
 	return if ok then connection else nil
 end
 
+-- The server declares its remotes at start (RemoteService); they replicate under ForgeRemotes.
+function ArmyPanelController:_served(): boolean
+	local ok, found = pcall(function()
+		local root = self._env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
+		local area = if root then root:FindFirstChild("Army") else nil
+		return area ~= nil and area:FindFirstChild("Recruit") ~= nil
+	end)
+	return ok and found == true
+end
+
+-- The rail button and the barracks tab, once (D-038 (2)).
+function ArmyPanelController:_offer()
+	if self.offered or self._destroyed then
+		return
+	end
+	self.offered = true
+	self.hud:addRailItem(ArmyPanelController.RAIL)
+	if self._upgrade and self._upgrade.addTab then
+		self._upgrade:addTab({
+			id = "army",
+			label = ArmyText.TAB,
+			icon = "army",
+			applies = function(building: any)
+				return building.type == "barracks"
+			end,
+			onSelect = function(buildingId: number)
+				self:open(buildingId)
+			end,
+		})
+	end
+end
+
 function ArmyPanelController:start()
 	local hud = self.hud
 	local registry = self._registry
-	hud:addRailItem(ArmyPanelController.RAIL)
+	local env = self._env
 	table.insert(
 		self._connections,
 		hud.rendered:connect(function(metrics)
@@ -114,18 +153,17 @@ function ArmyPanelController:start()
 		)
 	end
 	self._upgrade = registry:find("UpgradePanelController")
-	if self._upgrade and self._upgrade.addTab then
-		self._upgrade:addTab({
-			id = "army",
-			label = ArmyText.TAB,
-			icon = "army",
-			applies = function(building: any)
-				return building.type == "barracks"
-			end,
-			onSelect = function(buildingId: number)
-				self:open(buildingId)
-			end,
-		})
+	if self:_served() then
+		self:_offer()
+	else
+		env.spawn(function()
+			while not self._destroyed and not self.offered do
+				env.wait(ArmyPanelController.SERVED_POLL_SEC)
+				if self:_served() then
+					self:_offer()
+				end
+			end
+		end)
 	end
 end
 
@@ -140,10 +178,12 @@ function ArmyPanelController:destroy()
 			self.hud:setMenu(nil)
 		end)
 	end
-	pcall(function()
-		self.hud:removeRailItem(ArmyPanelController.RAIL.id)
-	end)
-	if self._upgrade and self._upgrade.removeTab then
+	if self.offered then
+		pcall(function()
+			self.hud:removeRailItem(ArmyPanelController.RAIL.id)
+		end)
+	end
+	if self.offered and self._upgrade and self._upgrade.removeTab then
 		pcall(function()
 			self._upgrade:removeTab("army")
 		end)

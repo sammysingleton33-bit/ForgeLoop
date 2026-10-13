@@ -127,7 +127,8 @@ Phone first (844 × 390 landscape), then tablet and desktop. Screenshots: the ar
 tracker on the phone, the summary on the phone and on desktop.
 1. HUD: under the reputation strip, the objective tracker reads "Watchtower" with a "Neutral" chip and
    "Send soldiers to capture it". It covers neither the pills, the strip nor the rail, which now has a
-   third button, **Army** (crossed swords).
+   third button, **Army** (crossed swords). Without FORGE-01's army server (before #70) there is
+   no Army button and no Army tab on the barracks: expected (D-038 (2)).
 2. Tap **Army**: the drawer shows your soldier count (the same number as the Kingdom/jobs panel),
    tabs "Barracks · Lv N" and "Army" once you have a barracks, the recruit block and **Send to
    capture**. Without a barracks: "Build a Barracks to recruit soldiers"; Send still works.
