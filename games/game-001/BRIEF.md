@@ -131,7 +131,7 @@ Chopping, mining, building hammer, coin and resource pickups, construction compl
 | Server sim | ≤ 4 ms at p99 per Heartbeat at 300 entities, including snapshot encoding; decisions staggered (e.g. 300 entities over 6 frames) | `os.clock` timing in code. In Studio it is indicative only, because the test server is the user's PC |
 | Bandwidth | VS-1 broadcast: ≈ 5 KB/s per player at 50 entities. VS-2 with interest tiers: ≤ 20 KB/s per player | logged bytes/s; 16 viewers via a synthetic-viewer harness on the server plus 1–2 real clients. Studio allows at most 8 clients |
 | Client | ≤ 150 rendered entity rigs on screen (custom LOD beyond 150 studs) | Studio stats are skewed by Studio itself. Real phone fps and memory need a published private test place (user approval) |
-| Parts | ≤ 25k in the world at VS-2 | Kit and WorldService part counts in specs |
+| Parts | ≤ 25k in the world for a typical VS-2 match; hard ceiling 27k for the all-built-at-max worst case (≈ 26.3k measured after FL-0086, D-047) | Kit and WorldService part counts in specs; a spec fails above 27k |
 | Texture memory | Mobile-safe | phone test (as above) |
 | Players | 16 per server (4×4) | as above |
 
