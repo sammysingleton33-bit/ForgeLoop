@@ -73,7 +73,7 @@ function CitizenActions.skill(sim: any, c: any, kind: string): number
 	if c.hunger >= 1 then
 		multiplier *= 0.5 -- starving citizens work at half speed
 	end
-	return multiplier
+	return multiplier * sim:productivityOf(c) -- decision consequences (G13.3), 1 by default
 end
 
 local function finish(c: any)

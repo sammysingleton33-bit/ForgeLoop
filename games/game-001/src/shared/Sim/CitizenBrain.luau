@@ -86,6 +86,9 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 	if world:isNight() then
 		return { activity = "Sleep", target = citizen.home or kingdom.keepId, score = 5, reason = "night" }
 	end
+	if world:isStriking(citizen) then
+		return { activity = "Idle", target = nil, score = 5, reason = "on strike" }
+	end
 	if not world.fedByUpkeep and citizen.hunger >= tuning.eatThreshold and world:balance(kingdom.id, "food") > 0 then
 		return { activity = "Eat", target = kingdom.keepId, score = 1 + citizen.hunger, reason = "hungry" }
 	end

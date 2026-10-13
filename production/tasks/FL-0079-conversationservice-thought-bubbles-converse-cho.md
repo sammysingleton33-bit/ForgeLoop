@@ -3,15 +3,16 @@ id: FL-0079
 title: "ConversationService: thought bubbles, Converse/Choose, decision effects and memories (G13.3)"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0078, FL-0080, FL-0083]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 6
-evidence: []
+evidence:
+  - check.sh OVERALL PASS; ConversationService.spec 11, Simulation +2, EventCodec/EntityService/EntityController transport specs; mutations 22/22 (service) + 28/28 (transport)
 ---
 
 # "ConversationService: thought bubbles, Converse/Choose, decision effects and memories (G13.3)"
@@ -50,3 +51,5 @@ Studio: answer a hungry farmer and see food, loyalty and reputation move, plus t
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
+- 2026-10-13 forge-01: READY → BUILDING. ConversationService + G13.3 event transport (sub-worker)
+- 2026-10-13 forge-01: BUILDING → REVIEW. Converse/Choose, thought bubbles, fireDecision effects (cost, reputation, loyalty by relation with caps, chemistry, conditions, memory, consequences incl. productivity/strike/unlock/delays), reaction/thought/strike/kcue events to members
