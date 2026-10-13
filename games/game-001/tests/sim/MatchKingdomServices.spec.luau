@@ -548,6 +548,98 @@ describe("KingdomService spawning (G3, D-026)", function()
 		expect(log.loads).toEqual({ 1 })
 	end)
 
+	it("spawns anyway, with a warning, when WorldService never fires ready (F3)", function()
+		local world = { ready = Signal.new() }
+		function world.isReady()
+			return false
+		end
+		local env, _, kingdoms, log = boot({ world = world })
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(KingdomServiceDef.WORLD_READY_TIMEOUT - 1)
+		expect(kingdoms:getKingdomOf(p1)).toBe("crimson")
+		expect(log.loads).toEqual({})
+		env.mock:advance(2)
+		expect(log.loads).toEqual({ 1 })
+		expect(#log.pivots).toBe(1)
+		local warned = 0
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "WorldService not ready", 1, true) then
+				warned += 1
+			end
+		end
+		expect(warned).toBe(1)
+		world.ready:fire() -- a late ready spawns nobody twice
+		env.mock:advance(1)
+		expect(log.loads).toEqual({ 1 })
+	end)
+
+	it("retries a failing character load with backoff and a warning per attempt (F2)", function()
+		local env, _, kingdoms, log = boot()
+		local load = kingdoms.adapter.load
+		local attempts = {}
+		kingdoms.adapter.load = function(player)
+			table.insert(attempts, env.clock())
+			if #attempts <= 2 then
+				error("LoadCharacter failed: test")
+			elseif #attempts == 3 then
+				return nil -- no character
+			end
+			return load(player)
+		end
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(10)
+		expect(#attempts).toBe(4)
+		expect(attempts[2] - attempts[1]).toBeNear(1, 0.1)
+		expect(attempts[3] - attempts[2]).toBeNear(2, 0.1)
+		expect(attempts[4] - attempts[3]).toBeNear(4, 0.1)
+		expect(log.loads).toEqual({ 1 })
+		expect(#log.pivots).toBe(1)
+		expect(p1.Character).never.toBeNil()
+		local warnings = {}
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "character load failed", 1, true) then
+				table.insert(warnings, entry.fields.error)
+			end
+		end
+		expect(#warnings).toBe(3)
+		expect(string.find(warnings[1], "LoadCharacter failed", 1, true)).never.toBeNil()
+		expect(warnings[3]).toBe("no character")
+	end)
+
+	it("stops retrying once the player leaves (F2)", function()
+		local env, _, kingdoms, log = boot()
+		local attempts = 0
+		kingdoms.adapter.load = function()
+			attempts += 1
+			error("LoadCharacter failed: player left")
+		end
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(2.5) -- attempts at 0 and 1
+		expect(attempts).toBe(2)
+		env.mock.players:remove(p1)
+		env.mock:advance(120)
+		expect(attempts).toBe(2)
+		expect(log.loads).toEqual({})
+	end)
+
+	it("does not warn about a load that fails because the player left during it (F2)", function()
+		local env, _, kingdoms = boot()
+		local attempts = 0
+		kingdoms.adapter.load = function()
+			attempts += 1
+			env.wait(0.5) -- LoadCharacterAsync yields; the player leaves meanwhile
+			error("LoadCharacter failed: player left")
+		end
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.25)
+		env.mock.players:remove(p1)
+		env.mock:advance(10)
+		expect(attempts).toBe(1)
+		for _, entry in env.mock.logs do
+			expect(string.find(entry.message, "character load failed", 1, true)).toBeNil()
+		end
+	end)
+
 	it("spawns at once when there is no WorldService, once per player", function()
 		local env, _, _, log = boot()
 		env.mock.players:add({ userId = 1 })

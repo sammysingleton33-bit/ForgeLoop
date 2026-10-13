@@ -284,6 +284,33 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world:destroy()
 	end)
 
+	it("keeps the upgrade panel's scroll when the reputation strip appears and moves it (#58 f4)", function()
+		local world = newWorld({ width = 1024, height = 690 })
+		local hud = world.hud
+		local barracks = world.build:add("crimson", "barracks", 1, "complete", Vector3.new(150, 0, 150))
+		world.build:push(barracks)
+		world:advance(0.1)
+		pick(world, "building", barracks)
+		local panel = find(hud.guis.menus, "UpgradePanel")
+		local body = find(panel, "Body")
+		expect(body:IsA("ScrollingFrame")).toBe(true)
+		body.CanvasPosition = Vector2.new(0, 40)
+		-- the strip shows for the first time (ReputationPanelController sets the flag): the drawer
+		-- moves down, so the panel is rebuilt once
+		hud.state.reputation = true
+		hud:render()
+		local moved = find(hud.guis.menus, "UpgradePanel")
+		expect(moved == panel).toBe(false) -- rebuilt (the old one is destroyed)
+		expect(find(moved, "Body").CanvasPosition).toBe(Vector2.new(0, 40))
+		-- another building's panel starts at the top
+		local house = world.build:add("crimson", "house", 1, "complete", Vector3.new(170, 0, 150))
+		world.build:push(house)
+		world:advance(0.1)
+		pick(world, "building", house)
+		expect(find(find(hud.guis.menus, "UpgradePanel"), "Body").CanvasPosition).toBe(Vector2.new(0, 0))
+		world:destroy()
+	end)
+
 	it("shows another kingdom's building read-only and closes on other selections", function()
 		local world = newWorld()
 		local hud = world.hud
@@ -332,6 +359,8 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world.picker:place(ready)
 		world:advance(0.2)
 		expect(texts(hud.guis.notices)).toContain("This plot is already built on")
+		-- the reply clears the order: the player may pick again (FORGE-05, #48 review)
+		expect(find(find(hud.guis.menus, "Cta"), "Face"):GetAttribute("cta")).toBe("ready")
 		world:destroy()
 	end)
 
@@ -349,6 +378,64 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world.input:set("build")
 		world:advance(0.1)
 		expect(hud.state.menu).toBeNil()
+		world:destroy()
+	end)
+
+	it("an order on another plot keeps its own wait while the first one's reply arrives", function()
+		local world = newWorld({ latency = 0.3, treasury = { food = 120, wood = 500, stone = 500, gold = 0 } })
+		local hud = world.hud
+		pick(world, "slot", "m1") -- A
+		local a = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.picker:place(a)
+		pick(world, "slot", "l1") -- B, while A is on its way
+		local b = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("l1"), selected = "farm" }).detail
+		world.picker:place(b)
+		world:advance(0.15) -- A replies; B has not
+		expect(world.picker.state.slotId).toBe("l1")
+		expect(find(find(hud.guis.menus, "Cta"), "Face"):GetAttribute("cta")).toBe("loading")
+		world.picker:place(b) -- still waiting: nothing more is sent for B
+		world:advance(0.4)
+		local forB = 0
+		for _, call in world:callsNamed("PlaceSlot") do
+			if call.args[1] == "l1" then
+				forB += 1
+			end
+		end
+		expect(forB).toBe(1)
+		world:destroy()
+	end)
+
+	it("says so when nothing can be built on a plot (an empty server fits list)", function()
+		local world = newWorld()
+		local hud = world.hud
+		hud.store:applySlots({ { id = "m9", size = "M", fits = {} } })
+		pick(world, "slot", "m9")
+		expect(texts(find(hud.guis.menus, "PlotPicker"))).toContain("Nothing can be built on this plot yet.")
+		world:destroy()
+	end)
+
+	it("closes, and says why, when someone else builds on the open plot", function()
+		local world = newWorld()
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		expect(hud.state.menu).toBe("plot")
+		world.slots:occupy("m1", 999) -- a co-ruler's order lands first
+		world:advance(0.1)
+		expect(hud.state.menu).toBeNil()
+		expect(texts(hud.guis.notices)).toContain("This plot was just built on")
+		world:destroy()
+	end)
+
+	it("a reply that arrives after the HUD is destroyed speaks nowhere and breaks nothing", function()
+		local world = newWorld({ latency = 0.3 })
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		local ready = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.picker:place(ready)
+		world.picker:destroy()
+		hud:destroy()
+		world:advance(0.5)
+		expect(#world.env.mock.threadErrors).toBe(0)
 		world:destroy()
 	end)
 

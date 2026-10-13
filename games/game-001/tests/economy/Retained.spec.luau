@@ -8,6 +8,7 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
 local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/BuildMenuController")
+local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomWorld = require("./doubles/KingdomWorld")
@@ -271,6 +272,165 @@ describe("HUD lifecycle (FORGE-05 L5, L6)", function()
 		world:advance(0.3)
 		expect(hud.guis.hud).toBeNil()
 		expect(#playerGui:GetChildren()).toBe(0)
+		world:destroy()
+	end)
+end)
+
+describe("Follow-ups from the #41 review (FORGE-05)", function()
+	local previous
+	beforeEach(function()
+		previous = Create.useTestConnector()
+	end)
+	afterEach(function()
+		Create.setConnector(previous)
+	end)
+
+	it("a finished building's state and level are patched or rebuilt, never left stale", function()
+		local world = newWorld()
+		local hud = world.hud
+		-- A house at its highest level: no Upgrade button either way, so damaged keeps the layout
+		-- (FORGE-05's repro).
+		local top = Costs.maxLevel("house")
+		local house = world.build:add("crimson", "house", top, "complete", Vector3.new(40, 0, 40))
+		world.build:push(house)
+		world:advance(0.1)
+		tap(find(hud.guis.hud, "Menu_kingdom"))
+		hud:panelTab("buildings")
+		local panel = find(hud.guis.menus, "KingdomPanel")
+		local row = find(panel, "Building_" .. house)
+		expect(find(row, "Sub").Text).toBe("Complete")
+		world.build:progress(house, 1, "damaged")
+		world:advance(0.1)
+		expect(find(panel, "Building_" .. house)).toBe(row) -- same layout: patched in place
+		expect(find(row, "Sub").Text).toBe("Damaged")
+		-- A level is part of the layout: the row is rebuilt and says the new level.
+		local keep = find(panel, "Building_1")
+		expect(find(keep, "Title").Text).toContain("Lv 1")
+		world.build.buildings[1].level = 2
+		world.build:push(1)
+		world:advance(0.1)
+		expect(find(find(panel, "Building_1"), "Title").Text).toContain("Lv 2")
+		world:destroy()
+	end)
+
+	it("the confirm dialog follows the breakpoint and closes when a co-ruler upgrades the building", function()
+		local world = newWorld({ treasury = { food = 120, wood = 300, stone = 300, gold = 0 } })
+		local hud = world.hud
+		tap(find(hud.guis.hud, "Menu_kingdom"))
+		hud:panelTab("buildings")
+		tap(find(find(hud.guis.menus, "Building_1"), "Upgrade"))
+		tap(find(hud.guis.menus, "Cta"))
+		local function cardWidth()
+			for _, d in hud._modal.instance:GetDescendants() do
+				if d:IsA("Frame") and (d.Size.X.Offset == 340 or d.Size.X.Offset == 400) then
+					return d.Size.X.Offset
+				end
+			end
+			return nil
+		end
+		expect(cardWidth()).toBe(400)
+		hud:setViewport(844, 390)
+		world:advance(0.1)
+		expect(hud._modal).toBeTruthy()
+		expect(cardWidth()).toBe(340) -- 400 px would not fit a 390 px tall phone's width budget
+		-- Mira upgrades the keep meanwhile: the question no longer holds, so the dialog closes.
+		world.build.buildings[1].level = 2
+		world.build:push(1)
+		world:advance(0.1)
+		expect(hud._modal).toBeNil()
+		expect(hud.state.confirm).toBeNil()
+		-- and says why, so the vanished dialog is not a mystery (FORGE-05 #58 follow-up 6)
+		local said = {}
+		for _, d in hud.guis.notices:GetDescendants() do
+			if d:IsA("TextLabel") then
+				table.insert(said, d.Text)
+			end
+		end
+		expect(table.concat(said, " | ")).toContain("Keep changed")
+		expect(#world:callsNamed("Upgrade")).toBe(0)
+		world:destroy()
+	end)
+
+	it("the confirm dialog closes, sending nothing, when its building is damaged (#58 follow-up 2)", function()
+		local world = newWorld({ treasury = { food = 120, wood = 300, stone = 300, gold = 0 } })
+		local hud = world.hud
+		tap(find(hud.guis.hud, "Menu_kingdom"))
+		hud:panelTab("buildings")
+		tap(find(find(hud.guis.menus, "Building_1"), "Upgrade"))
+		tap(find(hud.guis.menus, "Cta"))
+		expect(hud._modal).toBeTruthy()
+		local before = world.treasury:get("crimson")
+		world.build:progress(1, 1, "damaged")
+		world:advance(0.1)
+		expect(hud._modal).toBeNil()
+		expect(hud.state.confirm).toBeNil()
+		hud:confirm() -- a late tap on the old dialog's button
+		world:advance(0.2)
+		expect(#world:callsNamed("Upgrade")).toBe(0)
+		expect(world.treasury:get("crimson").wood).toBe(before.wood)
+		world:destroy()
+	end)
+
+	it("Build.Slots replicating only after destroy: the picker never listens or fetches (#58 follow-up 1)", function()
+		-- A HUD double whose remotes:on yields until the remote "replicates", as on a slow join.
+		local release
+		local disconnected, fetched, applied = 0, 0, 0
+		local hudDouble = {
+			rendered = Signal.new(),
+			menuChanged = Signal.new(),
+			state = {},
+			store = {
+				applySlots = function()
+					applied += 1
+				end,
+			},
+			remotes = {
+				on = function(_, _name, _fn)
+					release = coroutine.running()
+					coroutine.yield()
+					return {
+						Disconnect = function()
+							disconnected += 1
+						end,
+					}
+				end,
+				invoke = function()
+					fetched += 1
+					return {}
+				end,
+			},
+		}
+		local env = {
+			spawn = function(fn)
+				coroutine.wrap(fn)()
+			end,
+			log = function() end,
+			clock = os.clock,
+		}
+		local registry = {
+			get = function()
+				return hudDouble
+			end,
+			find = function()
+				return nil
+			end,
+		}
+		local picker = PlotPickerDef.new(env, registry)
+		picker:start()
+		expect(release).toBeTruthy() -- waiting for Build.Slots
+		picker:destroy()
+		assert(coroutine.resume(release)) -- the remote appears now
+		expect(disconnected).toBe(1) -- its connection is dropped at once
+		expect(fetched).toBe(0) -- and Build.GetSlots is never called
+		expect(applied).toBe(0)
+	end)
+
+	it("the plot picker stops following Build.Slots after destroy", function()
+		local world = newWorld()
+		world.picker:destroy()
+		world.server:get("SlotService"):occupy("m1", 77)
+		world:advance(0.1)
+		expect(world.hud.store:slot("m1").occupiedBy).toBeNil()
 		world:destroy()
 	end)
 end)

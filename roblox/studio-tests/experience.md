@@ -107,6 +107,36 @@ The same order is asserted headlessly by `games/game-001/tests/experience/Onboar
 
 Pass: all timings recorded and within target; the log order matches; skip and co-ruler behaviour as above.
 
+## E7 — Notifications and celebrations (FL-0027)
+Needs:
+- the build with NotificationController (this PR's stack);
+- for steps 2–3, FORGE-03's kingdom HUD (PR #19), which sends its notices through `NotificationController:show`;
+- for step 4, the E6 tutorial run.
+Until FL-0062 adds the `fx.announce` debug commands (F8 panel), the toasts come from real play.
+
+Rules under test (headless specs: `roblox/tests/unit/experience/Notification.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Visible at once | 3, in the top right (or where the HUD places them), newest on top; ScreenGui DisplayOrder 70 with CoreUISafeInsets; below the onboarding card while it shows |
+| Priority | error = warning > achievement > reward > success = info; a higher one replaces the oldest lower one when full |
+| Waiting | at most 8; the rest are dropped, lowest priority and oldest first |
+| Repeats | the same notice adds "×N" and refreshes its time (at most 12 s after it first showed); no repeated sound |
+| Durations | info/success 3.5 s, reward 4 s, warning/error/achievement 5 s (clamped 1–10 s) |
+| Setting `notifications = important` | only warnings, errors, achievements and celebrations |
+| Celebrations | own sound + effect + silent toast; the same moment within 1 s plays once; a different moment of that kind within 1 s shows its toast without a second fanfare |
+
+Steps
+1. Play Solo, filter Output for `NotificationController`: expect no error line.
+2. Place three buildings quickly (FORGE-03's build menu). You see one toast per kind of notice, with "×2"/"×3" on repeats, never more than 3 cards, and the newest on top. A tap on a card dismisses it.
+3. Settings → Notifications → Important. Place a building: no "placed" toast. A warning or error notice from the HUD, if one comes up, still shows. Set it back to All.
+4. Finish the tutorial (E6): a "Tutorial complete" toast with the onboarding.complete sound (when chosen, user sounds handoff) and the gold burst over the ruler. Skipping the tutorial in a new session shows no celebration.
+5. Device emulator, a small phone: the stack stays inside the safe area, does not cover the top bar or the thumbstick, and its text is readable; each card is at most about half the screen wide.
+6. Same phone, during the tutorial (E6) with HUD notices coming in: the toasts start below the onboarding card, and Skip and the step counter stay visible and tappable.
+
+Pass: steps 1–6 hold. Note anything that feels noisy (too many toasts in a busy minute) for the FL-0062 tuning.
+
 ## Changelog
 - 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2 and D-027. Session-only settings and progress; E5 moved to FL-0062 (game tree); E6 rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture).
+- 2026-10-12 FORGE-04: E7 notifications and celebrations (FL-0027).

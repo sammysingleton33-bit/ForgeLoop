@@ -90,3 +90,12 @@ The FL-0059 scenes do not load the reputation controller, so they show the gap w
 - Emoji fallbacks in Luau until the new icons are uploaded (`design/ui/icons/png/rep_*.png`,
   `happiness.png`, `stability.png`; morale reuses `banner`).
 - History delta chips are top-aligned in Luau (automatic-height rows), centred in the prototype.
+
+## After FORGE-05's review of #44 (follow-up PR)
+- The strip's room is reserved only while it shows (`Layout.compute(w, h, { reputation })`, the HUD
+  passes whether the server has sent reputation). Until FL-0080 lands the drawers sit right under the
+  rulers again, as before FL-0089; the 15 tablet/desktop drawer renders went back to that position
+  (re-shot and looked at, e.g. `build-tablet`). The `rep-*` renders, which have reputation, are
+  unchanged.
+- An identical push no longer rebuilds the open screen; a real change rebuilds it and keeps the
+  scroll position. History is capped at the latest 30.
