@@ -166,14 +166,44 @@ for entry in "${GAME_PROJECTS[@]}"; do
 	IFS=: read -r game_id game_project game_specs <<<"$entry"
 	game_place="roblox/build/$game_id.rbxl"
 	if command -v lune >/dev/null 2>&1; then
-		run_step "$game_id specs" "$LOG_DIR/$game_id-lune.log" with_timeout lune run roblox/tests/harness/run.luau \
-			--project "$game_project" --specs "$game_specs"
-		code=$?
-		summary="$(grep -E '^Lune tests:' "$LOG_DIR/$game_id-lune.log" | tail -1 | sed 's/^Lune tests: //')"
-		if [[ $code == 0 ]] && grep -q '^RESULT: PASS' "$LOG_DIR/$game_id-lune.log"; then
-			record "$game_id specs" "PASS" "$summary"
+		# One Lune run per top-level spec folder, each under STEP_TIMEOUT (sim/ alone is ~5 min), summed into
+		# one row in the usual "N passed, …" form. Spec files directly in the spec root run as one more chunk.
+		chunks=()
+		while IFS= read -r dir; do chunks+=("$dir"); done < <(find "$game_specs" -mindepth 1 -maxdepth 1 -type d | sort)
+		if compgen -G "$game_specs/*.spec.luau" >/dev/null || [[ ${#chunks[@]} == 0 ]]; then
+			chunks=("$game_specs") # specs at the root (or no folders): the whole tree in one run, as before
+		fi
+		passed=0 failed=0 broken=0 files=0 skipped=0 ok=1 why="" times=()
+		for chunk in "${chunks[@]}"; do
+			label="${chunk#"$game_specs"}"
+			label="${label#/}"
+			label="${label:-all}"
+			log="$LOG_DIR/$game_id-lune-${label//\//_}.log"
+			started=$SECONDS
+			run_step "$game_id specs ($label)" "$log" with_timeout lune run roblox/tests/harness/run.luau \
+				--project "$game_project" --specs "$chunk"
+			code=$?
+			times+=("$label $((SECONDS - started))s")
+			line="$(grep -E '^Lune tests:' "$log" | tail -1)"
+			if [[ $line =~ ([0-9]+)\ passed,\ ([0-9]+)\ failed,\ ([0-9]+)\ broken\ file\(s\),\ ([0-9]+)\ spec\ file\(s\),\ ([0-9]+)\ skipped ]]; then
+				passed=$((passed + BASH_REMATCH[1])) failed=$((failed + BASH_REMATCH[2])) broken=$((broken + BASH_REMATCH[3]))
+				files=$((files + BASH_REMATCH[4])) skipped=$((skipped + BASH_REMATCH[5]))
+			fi
+			if [[ $code != 0 ]] || ! grep -q '^RESULT: PASS' "$log"; then
+				ok=0
+				if [[ $code == 124 ]]; then
+					why="${why}${why:+; }$label timed out after ${STEP_TIMEOUT}s"
+				else
+					why="${why}${why:+; }$label failed (exit $code)"
+				fi
+			fi
+		done
+		summary="$passed passed, $failed failed, $broken broken file(s), $files spec file(s), $skipped skipped"
+		slowest="$(printf '%s\n' "${times[@]}" | sort -k2 -t' ' -rn | head -3 | paste -sd, - | sed 's/,/, /g')"
+		if [[ $ok == 1 ]]; then
+			record "$game_id specs" "PASS" "$summary (slowest: $slowest)"
 		else
-			record "$game_id specs" "FAIL" "${summary:-runner exited $code}"
+			record "$game_id specs" "FAIL" "$summary; $why"
 		fi
 	else
 		record "$game_id specs" "FAIL" "lune not found"

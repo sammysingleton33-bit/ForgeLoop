@@ -4,24 +4,27 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B9**, main `f562a31` (CI artifact 11807315580), delivered 2026-10-13 11:00 UTC. Not yet run in Studio.
-  - **New since B8:**
-    - Kingdom emblems are in the world (crown, star, oak leaf and sun on keep roofs, banners, flags and plot signs), and a captured tower takes the capturer's emblem (#105).
-    - Talk, close, then Talk again shows the same question (#107).
-    - A walk-out stops a carrier at once.
-    - The tutorial hints point at a plot marker and at the Army button (#99).
-    - A keep upgrade credits only the ruler who started it (#104).
+- **Latest build: B10**, main `1c48149`, delivered 2026-10-13 11:45 UTC. **This is the build to test.** Not yet run in Studio.
+  - **New since B9:**
+    - A co-ruler can answer a conversation another ruler left open.
+    - Stale requests clear when their matter passes or their ruler leaves.
+    - Struck carriers deliver their load (#114).
+    - Only a kingdom's own rulers can sit on its throne (#112).
+  - **Since B8 (B9):**
+    - Kingdom emblems in the world (#105).
+    - Talk, close, Talk shows the same question (#107).
+    - The tutorial hints point at the right controls (#99).
+    - Keep-upgrade credit goes to the ruler who started it (#104).
   - **Not yet:**
-    - #107 M1–M3: co-rulers on a conversation left open, requests outliving their need, a rare lost load.
-    - Anyone can sit on a throne.
-    - A captured building keeps its roof shape.
+    - A captured building keeps its roof shape (#115 in review).
     - The oak leaf is hard to read at full zoom.
     - No sound (#49).
     - Dialogue is DRAFT.
     - The other kingdoms are empty by design (D-043).
+    - The throne is hard to see from behind.
     - FPS is unknown.
-  - The notes and Studio asks are in `production/quality-gates/studio-runs.md` (B9 row). B8 was delivered at 09:35.
-- **Next build: B10.** It comes with the #107 fix-forward (M1–M3) and the throne fix.
+  - The Studio asks are in `production/quality-gates/studio-runs.md` (B9 row; the B8 asks still stand).
+- **Next build: B11.** It brings #115 (a captured building takes the new owner's look), plus whatever the first Studio feedback or FORGE-07 merges add.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -40,27 +43,27 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
   - The flow is in `docs/workflows/git-and-integration.md` → Review lane.
 
 ## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
-Updated 2026-10-13 10:40 UTC, main 7228b2e (CI green). 20 PRs are open.
+Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs per folder for CI headroom).
 
-**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99 and #104. #109 (the G9 `CitizenAnswered` declaration) was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
+**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114 and #112. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
+
+**One ★ row is open:** #115, the B11 candidate. Every other known VS-1 defect from B8 and B9 is merged.
 
 | # | PR | Owner | Lane | State | Next |
 |---|---|---|---|---|---|
-| 1 ★ | #107 #77 lows: a request stays until answered (N3), a strike downs tools at once (N2), N4, N5 | FORGE-01 | Conversation (B8 defect) | D-040 review running | Verdict, then B9 |
-| 2 ★ | #105 kingdom emblems from the aerial camera (D-033 finding 3) | FORGE-02 | World | B1, M1 and M2 fixed at f44cfc3 | Re-verdict, then B9 |
-| 3 ★ | FORGE-01's throne fix (#89 L2: anyone can sit on a throne) | FORGE-01 | Seat (B8 defect) | Not opened yet | Verdict, B9 if it is in time |
-| 4 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable. It unblocks FORGE-06's starter pack | FORGE-07 |
-| 5 | #111 FL-0107 G9 `CitizenAnswered` fired by ConversationService | FORGE-01 | Conversation | Unreviewed | FORGE-07 |
-| 6 | #98 PACING and EXPERIENCE fixes, `idleSec`, `Subjects.missing` | FORGE-04 | Design and docs | FORGE-00 design verdict: APPROVED WITH CHANGES (N1–N3). #99 has merged | FORGE-04 doc edits, then FORGE-07 |
-| 7 | #110 economy.md: D-045 births, the 6–8 min slice | FORGE-03 | Design | FORGE-00 design verdict: APPROVED (L1 optional) | FORGE-07 |
-| 8 | #92 D-038 (7) per-feature files | FORGE-04 | Process | Unreviewed | FORGE-07 |
-| 9 | #49 feedback layer and music | FORGE-04 | Feel (sound) | M1 fixed; needs re-review | FORGE-07 |
-| 10 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed; D-044 rulings apply | FORGE-04, then FORGE-07 |
-| 11 | #82 notification follow-ups | FORGE-04 | Feel | Unreviewed | FORGE-07 |
-| 12 | #97 late-joiner `Match.Ended`; #93 replication hardening; #94 fair nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
-| 13 | #102 pacing probe spec | FORGE-05 | QA | Unreviewed. It reads either target name | FORGE-07 |
-| 14 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
-| 15 | #108 FL-0097 conversation hold and EndConversation; #84 conversation camera; #85 Kit.portrait | FORGE-01, FORGE-04, FORGE-02 | Cinematic (D-036) | Unreviewed | FORGE-07 |
+| ★ | #115 WorldView: a captured building is rebuilt in the new kingdom's Kit model (roof shape follows the owner) | FORGE-01 | World (B9/B10 defect) | D-040 review | Verdict, then B11 |
+| 1 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable. It unblocks FORGE-06's starter pack | FORGE-07 |
+| 2 | #111 FL-0107 G9 `CitizenAnswered` fired | FORGE-01 | Conversation | Unreviewed | FORGE-07 |
+| 3 | #113 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget | FORGE-01 | Living kingdom | Unreviewed | FORGE-07 |
+| 4 | #98 PACING and EXPERIENCE fixes, `idleSec`, `Subjects.missing` | FORGE-04 | Design and docs | FORGE-00 design verdict: APPROVED WITH CHANGES (N1–N3) | FORGE-04 doc edits, then FORGE-07 |
+| 5 | #110 economy.md: D-045 births, the 6–8 min slice | FORGE-03 | Design | FORGE-00 design verdict: APPROVED | FORGE-07 |
+| 6 | #49 feedback layer and music | FORGE-04 | Feel (sound) | M1 fixed; needs re-review | FORGE-07 |
+| 7 | #92 D-038 (7) per-feature files; #82 notification follow-ups | FORGE-04 | Process, feel | Unreviewed | FORGE-07 |
+| 8 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed; D-044 rulings apply | FORGE-04, then FORGE-07 |
+| 9 | #97 late-joiner `Match.Ended`; #93 replication hardening; #94 fair nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
+| 10 | #102 pacing probe spec | FORGE-05 | QA | Unreviewed | FORGE-07 |
+| 11 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
+| 12 | #108 FL-0097 conversation hold and EndConversation; #84 conversation camera; #85 Kit.portrait | FORGE-01, FORGE-04, FORGE-02 | Cinematic (D-036) | Unreviewed | FORGE-07 |
 | — | #100 ruler gather | FORGE-01 | Off the VS-1 path | On hold until VS-1 is accepted | — |
 | — | Post-merge verdicts: #42, #75, #76, #79 and every D-040 merge | FORGE-07 | — | Owed | B and M findings become fix-forward PRs |
 
@@ -87,13 +90,13 @@ Updated 2026-10-13 10:40 UTC, main 7228b2e (CI green). 20 PRs are open.
 
 ## Top integration blockers (VS-1)
 1. **No Studio evidence on any build (B1–B8).** Every merged task waits on G6, and frame rate (G7) is unknown. B8 is the first build with all nine VS-1 rows present in some form.
-2. **FORGE-07 is paused.** Twelve non-★ PRs wait on it (rows 4–15, some rows group several PRs). They include #96, which unblocks FORGE-06, #49, which brings sound, and the cinematic lane (#108, #84, #85). Post-merge verdicts are also owed on 19 D-040 merges.
-3. **Known B8 defects** go into B9. Already on main: wrong hint targets (#99) and keep-upgrade credit (#104). In review: Talk-then-close (#107), emblems (#105) and the throne seat (not opened yet).
+2. **FORGE-07 is paused.** Every open PR now waits on it (rows 1–12, some rows group several PRs). They include #96, which unblocks FORGE-06, #49, which brings sound, and the cinematic lane (#108, #84, #85). Post-merge verdicts are also owed on 19 D-040 merges.
+3. **No known open VS-1 defects** after B10 (#114, #112). What remains is Studio-only: feel, FPS and readability.
 4. **No sound.** #49 waits on FORGE-07, and the P0 sound picks wait on the user.
 5. **Dialogue is DRAFT.** FORGE-06's starter pack waits on #96 and on the user's approval for temporary testing (FL-0095).
 
 ## Decisions needed from the user
-1. **Run B8 in Studio on your Mac.** It supersedes B6 and B7. The asks are in the B8 row of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
+1. **Run B10 in Studio on your Mac.** It supersedes B6–B9. The asks are in the B8 and B9 rows of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
 2. **Give FORGE-07 its OK.** Type it in the Forge07 session: "FORGE-07 may post COMMENT reviews and push agents/forge-07/STATUS.md and production/reviews/ to main." A relayed OK is not accepted.
 3. **Pick the P0 sounds** (handoff `2026-10-12-forge-04-to-user-sounds.md`) and **upload the icons** `gem.png` and `emblem_crown.png`. Drawn fallbacks are in the game until then.
 4. **Approve FORGE-06's starter pack for temporary testing:** 10 conversations, every row DRAFT (D-035 (2)).
@@ -275,14 +278,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-0403d32b 2026-10-13 B9 (f562a31): emblems in the world, conversation re-ask, tutorial hints, upgrade credit; build notes and Studio asks; main CI green for #107, #105
-e48c728c 2026-10-13 Integration bookkeeping: #107 and #105 merged (B9 set, D-040 star); FL-0079 REVIEW with M1-M3 tracked; colour-vision finding 3 resolved on render; STUDIO_PLAYTEST rows 9 and colour vision
-f562a310 2026-10-13 Merge PR #105: [FORGE-02] Kingdom emblems from the overview camera (colour-vision finding 3): D-039 emblems on banners, flags, pennants, crests, slot signs; keep roof and back plaques
-276d933f 2026-10-13 Merge PR #107: [FORGE-01] FL-0079 #77 follow-ups: an unanswered request stays open (N3), a walk-out stops carriers (N2), K10 steps (N4), hasRequest reads the current round (N5)
-5f337db3 2026-10-13 [FORGE-00] check-in 10:40: review queue (B9 set: #107, #105, throne fix), blockers, dashboard
-7228b2e6 2026-10-13 integration-log: main CI green for #99, #104, #109
-f44cfc3e 2026-10-13 KitEmblems.spec: broad-phase cull in the visibility probe (conservative bounding-sphere test per view)
-5309b48e 2026-10-13 Merge remote-tracking branch 'origin/main'
+2b7a89f8 2026-10-13 integration-log: #116 merged (check.sh per-folder game spec steps)
+50ba0b7c 2026-10-13 check.sh: run game specs one top-level folder at a time, each under STEP_TIMEOUT; sum into one row with the slowest folders
+4522a40b 2026-10-13 [FORGE-00] B10 delivered (1c48149): Now, review queue (no star rows open), blockers, dashboard
+f3de21a5 2026-10-13 Integration bookkeeping: #114 and #112 merged (D-040 star); FL-0079 and FL-0081 REVIEW only G6; STUDIO_PLAYTEST co-ruler conversation and throne
+1c481491 2026-10-13 Merge PR #112: [FORGE-01] FL-0081 #89 L2: a throne is for its kingdom's rulers only (server-side unseat)
+61d51c36 2026-10-13 [FORGE-01] FL-0079 log: correct the fix-forward's spec counts
+5f53d83e 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-fl0079c
+2189329c 2026-10-13 [FORGE-01] #107 fix-forward: co-ruler showing (M1), requests no longer pinned (M2), struck carriers keep their load (M3), L1 specs, K10 co-ruler steps (L2)
 ```
 
 <!-- forge:auto:end -->

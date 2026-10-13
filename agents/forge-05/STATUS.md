@@ -103,6 +103,9 @@ _Maintained by the worker. Keep it short and current._
 | #109 | FORGE-05 G9 CitizenAnswered declaration (FORGE-00 approved) | `b0509b0` |
 | #107 | FORGE-01 #77 follow-ups N2-N5 (M1-M3 tracked), D-040 ★ | `276d933` |
 | #105 | FORGE-02 kingdom emblems from the overview camera, D-040 ★ | `f562a31` (user build B9) |
+| #114 | FORGE-01 #107 follow-ups M1-M3, D-040 ★ | `74db60c` |
+| #112 | FORGE-01 throne for its kingdom's rulers only (#89 L2), D-040 ★ | `1c48149` (user build B10, FORGE-00) |
+| #116 | FORGE-05 check.sh: game specs per top-level folder, each under STEP_TIMEOUT | `56b4d7c` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
