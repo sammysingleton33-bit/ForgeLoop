@@ -12,8 +12,12 @@ local KingdomWorld = require("../../../tests/economy/doubles/KingdomWorld")
 
 return function(ctx, opts, act)
 	Create.useTestConnector()
+	local definitions = { KingdomHudDef, BuildMenuDef }
+	for _, def in opts.clientDefinitions or {} do -- extra controllers for a scene (e.g. FORGE-04's)
+		table.insert(definitions, def)
+	end
 	local world = KingdomWorld.new({
-		clientDefinitions = { KingdomHudDef, BuildMenuDef },
+		clientDefinitions = definitions,
 		treasury = opts.treasury,
 		remotes = opts.remotes, -- extra doubles for a scene (e.g. PopulationDoubles)
 		services = opts.services,
@@ -33,5 +37,14 @@ return function(ctx, opts, act)
 		act(world, hud, build)
 	end
 	local g = hud.guis
-	return { guis = { g.hud, g.topbar, g.menus, g.modals, g.notices } }
+	local guis = { g.hud, g.topbar, g.menus, g.modals, g.notices }
+	for _, extra in opts.extraGuis or {} do -- e.g. "ForgeNotifications" (NotificationController)
+		local gui = world.client:get("KingdomHudController").roots.hud
+		gui = gui and gui:FindFirstAncestorOfClass("PlayerGui")
+		local found = gui and gui:FindFirstChild(extra)
+		if found then
+			table.insert(guis, found)
+		end
+	end
+	return { guis = guis }
 end
