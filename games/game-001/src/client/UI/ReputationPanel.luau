@@ -601,7 +601,17 @@ end
 -- ------------------------------------------------------------------ panel
 
 function ReputationPanel:render(model: { [string]: any }, metrics: any, ui: { [string]: any })
+	-- A rebuild for new data keeps where the player had scrolled on the same tab (FORGE-05 R44-1).
+	local scrolls = {}
+	if self.panel and self._tab == model.tab then
+		for _, scroll in self.panel.instance:GetDescendants() do
+			if scroll:IsA("ScrollingFrame") then
+				scrolls[scroll.Name] = scroll.CanvasPosition
+			end
+		end
+	end
 	self:destroy()
+	self._tab = model.tab
 	local phone = metrics.breakpoint == "phone"
 	local d = metrics.drawer
 	local header = Create("Frame", { Name = "HeaderRow", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) })
@@ -643,6 +653,11 @@ function ReputationPanel:render(model: { [string]: any }, metrics: any, ui: { [s
 		self:_kingdom(content, model, phone)
 	else
 		self:_values(content, model, phone, ui, metrics)
+	end
+	for _, scroll in self.panel.instance:GetDescendants() do
+		if scroll:IsA("ScrollingFrame") and scrolls[scroll.Name] then
+			scroll.CanvasPosition = scrolls[scroll.Name]
+		end
 	end
 	self.panel.instance.Parent = self._parent
 end

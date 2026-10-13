@@ -9,7 +9,7 @@ game: game-001
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: []
-context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
+context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 5
 evidence:
   - "B1: run 38310484338 green, artifact forgeloop-game001-b6f252f id 11774113089; recorded in studio-runs.md"

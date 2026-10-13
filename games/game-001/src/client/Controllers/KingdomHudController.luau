@@ -32,12 +32,15 @@
 		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
+		hud:changeJob(jobId, delta)         Kingdom panel "Jobs" (FL-0065): asks Kingdom.SetJobQuota for
+		                                    the job's count + delta; one request per job at a time
 		hud:setViewport(width, height)      the CoreUISafeInsets area size (headless; live measures it)
 		hud:render()   hud.state   hud.view (UI/KingdomHud)   hud.panel (UI/KingdomPanel)   hud.guis
 ]]
 
 local BuildModel = require("../UI/BuildModel")
 local Buildings = require("../UI/Buildings")
+local JobModel = require("../UI/JobModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local HudModel = require("../UI/HudModel")
@@ -76,7 +79,13 @@ function Def.new(env: any, registry: any)
 		state = {
 			menu = nil :: string?,
 			placing = false,
-			panel = { tab = "overview", upgradeId = nil, pending = nil, done = nil },
+			panel = {
+				tab = "overview",
+				upgradeId = nil,
+				pending = nil,
+				done = nil,
+				jobs = { pending = {}, requested = {} }, -- FL-0065: in flight / asked (JobModel state)
+			},
 			confirm = nil :: any,
 		},
 		_viewport = nil :: Vector2?,
@@ -190,6 +199,11 @@ function KingdomHudController:start()
 	self:_follow("Treasury.Changed", "Treasury.Get", function(totals, deltas)
 		store:applyTreasury(totals, deltas)
 	end)
+	-- My kingdom's population (G13.2, approved by FORGE-00; FORGE-01 declares it): the job panel
+	-- and the army panel read it from the store.
+	self:_follow("Kingdom.Population", "Kingdom.GetPopulation", function(payload)
+		store:applyPopulation(payload)
+	end)
 	self:_follow("Build.Buildings", nil, function(list)
 		store:applyBuildings(list, false)
 	end)
@@ -294,6 +308,9 @@ function KingdomHudController:_onStore(what: string, deltas: any)
 end
 
 function KingdomHudController:notify(spec: { title: string, body: string?, kind: string? })
+	if self._destroyed then
+		return -- a reply that arrives after destroy has no screen to speak on (FORGE-05, #48 review)
+	end
 	if self._notifications and self._notifications.show then
 		local ok = pcall(function()
 			self._notifications:show({
@@ -352,7 +369,8 @@ end
 
 function KingdomHudController:metrics(): any
 	local size = self:_safeArea()
-	return Layout.compute(size.X, size.Y)
+	-- The reputation strip's room only while it shows (ReputationPanelController sets the flag).
+	return Layout.compute(size.X, size.Y, { reputation = self.state.reputation == true })
 end
 
 -- ------------------------------------------------------------------ menus and actions
@@ -449,6 +467,47 @@ function KingdomHudController:requestUpgrade(detail: any, confirmed: boolean?)
 	end)
 end
 
+-- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
+-- the request sets the job's quota to that count + delta and the server fills it from the free
+-- (hauler) pool. Nothing changes here until its push arrives.
+function KingdomHudController:changeJob(jobId: string, delta: number)
+	local jobs = self.state.panel.jobs
+	local population = self.store:population()
+	if population == nil or not JobModel.isJob(jobId) or jobs.pending[jobId] ~= nil then
+		return
+	end
+	local current = population.byJob[jobId] or 0
+	local free = population.byJob.hauler or 0
+	local target = current + (if delta > 0 then 1 else -1)
+	if target < 0 or target > JobModel.MAX_QUOTA or (delta > 0 and free <= 0) then
+		return
+	end
+	local env = self._env
+	jobs.pending[jobId] = target
+	jobs.requested[jobId] = nil
+	self:render()
+	env.spawn(function()
+		local called, ok, reason = pcall(function()
+			return self.remotes:invoke("Kingdom.SetJobQuota", jobId, target)
+		end)
+		jobs.pending[jobId] = nil
+		if called and ok == true then
+			jobs.requested[jobId] = { target = target, at = env.clock() }
+			-- the "Moving…" note clears itself once its time is up, even without another push
+			self._motion:after(JobModel.REQUEST_HINT_SEC, function()
+				self:render()
+			end)
+		else
+			self:notify({
+				kind = "error",
+				title = "Couldn't change jobs",
+				body = Text.reason(if called then reason else nil),
+			})
+		end
+		self:render()
+	end)
+end
+
 function KingdomHudController:confirm()
 	local pending = self.state.confirm
 	self.state.confirm = nil
@@ -513,6 +572,7 @@ function KingdomHudController:_panelModel(): any
 		standings = HudModel.standings(store),
 		buildings = rows,
 		upgrade = upgrade,
+		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs, self._env.clock()) else nil,
 	}
 end
 
@@ -573,6 +633,9 @@ function KingdomHudController:render()
 			onClose = function()
 				self:setMenu(nil)
 			end,
+			onJob = function(jobId, delta)
+				self:changeJob(jobId, delta)
+			end,
 		})
 	else
 		self.panel:destroy()
@@ -581,7 +644,16 @@ function KingdomHudController:render()
 	-- The confirm dialog belongs to one request: pushes while it is open leave it alone
 	-- (FORGE-05 M1). It shows the costs as they were when the player asked; the server checks
 	-- the treasury again on Build.Upgrade.
-	if self._modal and self._modalFor ~= s.confirm then
+	-- The building changed under the dialog (a co-ruler upgraded it, or it is no longer complete):
+	-- the question no longer holds, so close it; the panel shows the new level and price.
+	if s.confirm then
+		local target = self:_building(s.confirm.buildingId)
+		if target == nil or target.level + 1 ~= s.confirm.level or target.state ~= "complete" then
+			s.confirm = nil
+		end
+	end
+	-- Rebuilt for a new breakpoint too: its width follows the screen (400 px does not fit a phone).
+	if self._modal and (self._modalFor ~= s.confirm or self._modalBreakpoint ~= m.breakpoint) then
 		self._modal:destroy()
 		self._modal = nil
 		self._modalFor = nil
@@ -613,6 +685,7 @@ function KingdomHudController:render()
 		})
 		self._modal.instance.Parent = self.roots.modals
 		self._modalFor = s.confirm
+		self._modalBreakpoint = m.breakpoint
 	end
 
 	local drawerOpen = s.menu ~= nil

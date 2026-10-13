@@ -103,6 +103,21 @@ local function worldState(sim, except: string?)
 	return out
 end
 
+-- The first spot around the keep where the kingdom may place `kind` (rings outwards; the sim decides).
+local function freeSpot(sim, k, kind)
+	local keep = sim.buildings[k.keepId]
+	for radius = 30, 140, 10 do
+		for step = 0, 23 do
+			local a = step / 24 * 2 * math.pi
+			local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
+			if sim:canPlace(k, kind, x, z) then
+				return x, z
+			end
+		end
+	end
+	error(`no free spot for {kind}`)
+end
+
 local function viewOf(state, kingdomId)
 	for _, view in state.kingdoms do
 		if view.id == kingdomId then
@@ -218,7 +233,12 @@ describe("AI Kingdoms first playable", function()
 		expect(part).toBeTruthy()
 		expect(part:GetAttribute("Level")).toBe(0)
 		expect(part.Transparency).toBeNear(0.55, 1e-6) -- float32 property
-		env.mock:advance(70)
+		-- Costs.building("house", 1).buildSeconds builder-seconds; builders also eat and rest
+		local waited = 0
+		while sim.buildings[houseId].level < 1 and waited < 6 * sim:workFor("house", 1) do
+			env.mock:advance(1)
+			waited += 1
+		end
 		expect(sim.buildings[houseId].level).toBe(1)
 		expect(part:GetAttribute("Level")).toBe(1)
 		expect(part.Transparency).toBe(0)
@@ -307,7 +327,8 @@ describe("AI Kingdoms first playable", function()
 		local keep = sim.buildings[k.keepId]
 		local wood = sim:balance(k.id, "wood")
 		expect(host:command(p1, "PlaceBuilding", "house", keep.x + 30, keep.z + 30)).toBe(true)
-		expect(host:command(p2, "PlaceBuilding", "lumbercamp", keep.x - 35, keep.z + 25)).toBe(true)
+		local cx, cz = freeSpot(sim, k, "lumbercamp")
+		expect(host:command(p2, "PlaceBuilding", "lumbercamp", cx, cz)).toBe(true)
 		expect(invoke(env, p2, "Kingdom.SetJobQuota", "woodcutter", 4)).toBe(true) -- shared command rights
 		expect(k.quotas.woodcutter).toBe(4)
 		expect(sim:balance(k.id, "wood")).toBe(wood - 40 - 40)

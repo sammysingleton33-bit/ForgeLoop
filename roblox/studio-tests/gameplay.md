@@ -10,9 +10,10 @@ Which steps are runnable after which PR:
 |---|---|
 | K1, K2, K7 (party, spawn, regalia, phases, rejoin) | FL-0048 merged on `main` |
 | K3, K4 (citizens at work, ruler gathering) | FL-0048; citizens render once FL-0049 lands (placeholder parts until then) |
-| K5 (build, upgrade) | FL-0051 (`Build.Place`, `Build.Upgrade`) |
+| K5 (build, upgrade) | the FL-0051 Build-remotes PR (`Build.CanPlace/Place/Upgrade/Buildings/GetBuildings`) |
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
+| K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
 The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
@@ -69,8 +70,9 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - An accepted gather returns `true, "wood", 2`.
 - Calls faster than the cooldown return `false, "cooldown"`; from 30 studs away `false, "too_far"`.
 
-## K5 — Build and upgrade (VS-1 row 6; needs FL-0051)
-1. Place a House inside your territory with `Build.Place("house", position, 0)`.
+## K5 — Build and upgrade (VS-1 row 6)
+1. Place a House inside your territory with FORGE-03's build menu, or from the client command bar with
+   `ForgeRemotes.Build.Place:InvokeServer("house", position, rot)` (rot 0..3 turns it in 90° steps).
 2. Upgrade the keep once wood and stone allow it (`Build.Upgrade(keepId)`).
 
 **Expected:**
@@ -111,6 +113,20 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - Rigs further than 150 studs from your character disappear and come back when you approach.
 - Long trips (soldiers sent to the watchtower) follow the road and cross the river at the bridge.
 - No `EntityService` errors in Output.
+
+## K9 — Kingdoms built from the Kit, citizens fed by upkeep (FL-0051 visuals, FL-0050 core)
+1. Play Solo and look at your plot from the air (or walk around it).
+2. Place a House with the build menu (FORGE-03) or `Build.Place` when FL-0051's remotes land.
+3. Wait two minutes with the treasury above 50 food, then reset your food to 0
+   (`treasury.grant` / FORGE-03's debug commands) and wait another two minutes.
+
+**Expected:**
+- Each kingdom has a keep, storehouse, farm, lumber camp and quarry built from Kit models (not grey
+  blocks), standing on the plot's anchors and facing the plot's front yard; no building overlaps another.
+- A new site shows Kit stages 1 → 2 → 3, then the finished building.
+- While fed, citizens never walk to the keep to eat; food drops once per upkeep interval instead
+  (FORGE-03's ProductionService). With no food, citizens' hunger rises: `Sim.Inspect` on a citizen
+  shows mood falling.
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:
