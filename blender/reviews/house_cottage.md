@@ -66,3 +66,40 @@ palette / detail density / cohesion / triangle cost.
   braces. Result: all 6 PASS, 3,870–4,976 tris; min silhouette diff 0.180.
 - Looked at `previews/house_cottage.jpg`: thatch reads as pale straw next to the gold tile roof of 04; pennants are
   visible on 01/03/05 in the 80-stud strip. Remaining: the wing banner on 05 is small from the hero angle.
+
+## Round 8 (D-033/D-039: kingdom emblem on the ridge pennant)
+- Problem: the ridge pennant was plain kingdom cloth with no emblem, and only thatch houses (01, 03, 05: red and green) had one.
+  Blue and gold cottages are always tiled, so they showed their kingdom by roof and shutter colour alone (D-033).
+- Changes (`house_cottage.py` only; the shared helpers are unchanged):
+  - The pennant is now a 3.6 × 3.4 square banner (was 4.2 × 1.9) on a 3-sided pole at the ridge end away from the
+    chimney. It flies inward along the ridge and faces the street and the back. The old pennant faced the gable ends,
+    so it was edge-on to the street.
+  - The kit emblem fills the banner (0.24 margin). It is built as cheap prisms that pass through the cloth, so it
+    reads from the front and the back:
+    - crown: `crown_outlines`, gold, with the ivory band and three flat gems;
+    - star: `emblem("star")`;
+    - oak: `oak_outlines(lobe_pts=2)`, an ivory leaf with a bronze midrib and stem on the bright emerald field;
+    - sun: `sun_outlines` on an ivory roundel with a bronze rim, on gold cloth (never gold on gold).
+  - Tile cottages (02, 04, 06) now carry the pennant too. Its pole has a fixed tint, so the rng stream and the rest of
+    the house are unchanged. The pole sinks 0.6 into a tile ridge and 1.5 into a thatch ridge. On houses with an
+    exterior chimney, the pennant goes on the opposite gable.
+  - 03 only: the side window was buried inside the exterior chimney breast, with one shutter edge poking out beside
+    the stack. (Stair-tower houses move the breast to that gable.) The window is removed (−188 tris) to pay for the
+    oak leaf. The rng draws are kept.
+  - Scratch compare against HEAD: every other piece of all 6 variants is bit-identical.
+- Result: all 6 PASS. Tris: 3,928 / 4,912 / 4,936 / 4,214 / **5,000** / 4,836 (budget 5,000). Min silhouette diff
+  0.176 (was 0.180).
+- Looked at:
+  - `previews/house_cottage.jpg`;
+  - the hero renders, cropped to the roof tops;
+  - gameplay-strip crops, colour and grayscale. The strip is now at 82 studs because the newer `build.py` widens the
+    strip to fit; each emblem is about 20 px across;
+  - a back view of the lineup;
+  - 03 from its chimney side.
+- Author verdict: in grayscale at 82 studs, the crown, star and sun are clear by shape. The oak reads as a leaf with
+  a stem, but it is the weakest: the lobes are about 1 px. The emblems also read from behind. From a gable end the
+  banner is edge-on.
+- Remaining:
+  - 05 sits at exactly 5,000/5,000.
+  - 05's wing banner still shows the plain diamond (left out of scope; a crown there needs budget 05 does not have).
+  - The side-window pieces on every variant each get their own random y offset (pre-existing).

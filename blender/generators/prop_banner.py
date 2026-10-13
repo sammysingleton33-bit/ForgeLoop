@@ -58,14 +58,11 @@ def asset_id(i, p):
 
 # ------------------------------------------------------------------ cloth
 
-FROZEN = {"oak": "oak_tilted"}  # banner geometry is reviewed + committed: keep its original leaf
-
-
 def emblem_cols(k, emb):
-    """(main, accent) colours of an emblem on kingdom cloth."""
-    if emb == "flame":
-        return kcol(k, "trim"), kcol(k, "glow")
-    if emb in ("crown", "oak"):
+    """(main, accent) colours of an emblem on kingdom cloth: the gold crown with an ivory band and gems;
+    the star and the oak leaf in ivory with a metal accent (the oak: ivory leaf, bronze midrib and stem,
+    the kit-wide design of `_kingdom_props_common.oak_outlines`)."""
+    if emb == "crown":
         return kcol(k, "trim"), kcol(k, "emblem")
     return kcol(k, "emblem"), kcol(k, "trim")
 
@@ -125,7 +122,7 @@ def hanging_cloth(b, k, W, L, top, bottom, emb, rng, x0=0.0, y0=0.0, amp=0.3, fr
         parts[0].paint(tint=0.5, grad=("range", 0.55, 0.95))  # fixed tint: no extra rng draw
         dy = -0.02
     else:
-        parts = emblem(FROZEN.get(emb, emb), es, *emblem_cols(k, emb), mid=emb_mid)
+        parts = emblem(emb, es, *emblem_cols(k, emb), mid=emb_mid)
         dy = -0.08
     for p in parts:
         p.move(x0, y0 - THICK / 2 + dy, ez)
@@ -186,7 +183,7 @@ def flying_flag(b, k, L, H, top, emb, rng, x0=0.0, notch=2.0, amp=0.45):
     es = H * 0.56
     ex = x0 + 0.25 + L * 0.36
     ez = top - H * 0.5 - droop(0.36)
-    parts = emblem(FROZEN.get(emb, emb), es, *emblem_cols(k, emb))
+    parts = emblem(emb, es, *emblem_cols(k, emb))
     for p in parts:
         p.move(ex, -THICK / 2 - 0.08, ez)
     bend_onto(parts, wave)
@@ -325,9 +322,11 @@ def build_standard(b, p, rng):
     hanging_cloth(b, k, W, L, cz + 0.02, "tails", p["emblem"], rng, y0=yb, amp=0.2, side_trim=False,
                   emb_size=es, emb_z=ez, fringe=False, lean=0.35, emb_mid=None,
                   us=(0.0, 0.07, 0.35, 0.68, 0.87, 1.0))
-    # 3D emblem topper in trim metal on a socket
+    # 3D emblem topper on a trim-metal socket (the oak leaf: ivory with a bronze midrib, like on the cloth;
+    # flat-topped lobes keep the standard inside its 800-tri budget)
     es = 2.8 if big else 3.2
-    parts = emblem(FROZEN.get(p["emblem"], p["emblem"]), es, trim, kcol(k, "emblem"), depth=0.4, mid=None)
+    cols = emblem_cols(k, "oak") if big else (trim, kcol(k, "emblem"))
+    parts = emblem(p["emblem"], es, *cols, depth=0.4, mid=None, lobe_pts=2)
     for pc in parts:
         pc.move(0, 0, H + 0.5 + es / 2)
     b.add(parts, grad=("range", 0.4, 1.0), tag="emblem")

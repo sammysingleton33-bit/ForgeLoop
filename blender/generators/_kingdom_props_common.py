@@ -173,11 +173,46 @@ def _star(points, r_out, r_in, rot=math.pi / 2):
     return out
 
 
-FLAME = [(0.0, -1.0), (0.42, -0.92), (0.66, -0.66), (0.76, -0.3), (0.66, 0.06), (0.8, 0.44), (0.46, 0.18),
-         (0.38, 0.52), (0.18, 1.12), (0.04, 0.62), (-0.2, 0.36), (-0.4, 0.76), (-0.62, 0.32), (-0.76, -0.16),
-         (-0.68, -0.6), (-0.42, -0.9)]
+# The ONE crown of the kit (Emberhold): three points on a band, gold with an ivory band and gems.
+# Every generator draws it from `crown_outlines` (via `emblem("crown")` or its own cheap prisms).
 CROWN = [(-0.95, -0.62), (0.95, -0.62), (0.92, -0.18), (1.04, 0.6), (0.46, 0.02), (0.0, 0.86), (-0.46, 0.02),
          (-1.04, 0.6), (-0.92, -0.18)]
+
+
+def crown_outlines(s):
+    """(crown, band, gems) of the kit-wide crown at scale s (2.08 s wide, 1.48 s tall), centred on the
+    origin: crown = CCW (x, z) outline (three points on a straight base), band = (cx, cz, w, h) of the
+    ivory band across its foot, gems = [(x, z, r)] of the three ivory gems on the points."""
+    crown = [(x * s, z * s) for x, z in CROWN]
+    band = (0.0, -0.4 * s, 1.9 * s, 0.22 * s)
+    gems = [(x * s, z * s + 0.08 * s, 0.17 * s) for x, z in ((1.04, 0.6), (0.0, 0.86), (-1.04, 0.6))]
+    return crown, band, gems
+
+
+# The ONE Thornwood oak leaf of the kit: an IVORY leaf (kingdom `emblem`) with a bronze / orange midrib and
+# stem (kingdom `trim`), as on the castle_gatehouse banners. Every generator draws it from `oak_outlines`
+# (via `emblem("oak")` or its own cheap prisms); never an orange leaf, never a stemless rosette.
+OAK_LOBES = ((-0.46, 0.56), (-0.1, 0.8), (0.26, 0.8), (0.6, 0.6))  # (z, half-width at the lobe tip)
+OAK_SINUS = (0.3, 0.44, 0.44, 0.34)  # half-width of the sinus below each lobe
+
+
+def oak_outlines(s, lobe_pts=3):
+    """(leaf, midrib, stem) of the kit-wide oak leaf at scale s (1.6 s wide, 2.35 s tall with the stem),
+    centred on the origin: leaf = CCW (x, z) outline, mirror-symmetric, 4 rounded lobes a side with deep
+    sinuses and a rounded tip lobe (concave: build it as a prism); midrib / stem = (cx, cz, w, h) boxes.
+    lobe_pts: points per lobe tip (3 = round, the full design; 2 = flat-topped, 32 tris cheaper per
+    prism, for small emblems on tight budgets: same lobes, sinuses and proportions)."""
+    right = [(0.1, -0.84)]
+    for (zc, w), sw in zip(OAK_LOBES, OAK_SINUS):
+        right.append((sw, zc - 0.17))  # sinus below the lobe
+        if lobe_pts >= 3:
+            right += [(w * 0.86, zc - 0.09), (w, zc), (w * 0.86, zc + 0.09)]
+        else:
+            right += [(w * 0.95, zc - 0.07), (w * 0.95, zc + 0.07)]
+    right += [(0.26, 0.79), (0.3, 0.9), (0.15, 1.02)]
+    outline = right + [(0.0, 1.06)] + [(-x, z) for x, z in reversed(right)]
+    leaf = [(x * s, z * s) for x, z in outline]
+    return leaf, (0.0, 0.08 * s, 0.1 * s, 1.7 * s), (0.0, -1.04 * s, 0.16 * s, 0.5 * s)
 
 
 # The ONE Sunspire sun of the kit (banners, shields, signs, tabards): every generator draws it from
@@ -257,27 +292,20 @@ def sun_badge(r, depth, seg=12, mid=None, roundel_mid=False, sun_depth=None):
     return out
 
 
-def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
+def emblem(kind, size, color, accent, depth=0.22, mid=0.5, lobe_pts=3):
     """Kingdom emblem as raised geometry in the XZ plane, centred on the origin, front at
-    -Y, about `size` studs across. kind: crown | star | oak | sun (flame: retired, kept for
-    old callers; oak_tilted: the earlier leaf, kept so committed banner geometry stays frozen). mid=None for
-    emblems that stay flat (cheaper); keep the mid ring when bending onto cloth."""
+    -Y, about `size` studs across. kind: crown | star | oak | sun (the flame is retired, D-039).
+    mid=None for emblems that stay flat (cheaper); keep the mid ring when bending onto cloth.
+    lobe_pts: oak only (see `oak_outlines`)."""
     s = size / 2
     out = []
-    if kind == "flame":
-        pts = [(x * s, z * s) for x, z in FLAME]
-        out.append(fan_solid(pts, depth, color, center=(0.0, -0.3 * s), mid=mid))
-        core = [(0.0, -0.95), (0.4, -0.78), (0.5, -0.4), (0.36, -0.02), (0.1, 0.42), (-0.1, 0.0), (-0.36, -0.2),
-                (-0.46, -0.6)]  # glowing inner tongue
-        out.append(fan_solid([(x * s * 0.8, z * s * 0.8) for x, z in core], depth, accent,
-                             center=(0.0, -0.5 * s), mid=None).move(0, -depth * 0.55, 0))
-    elif kind == "crown":
-        pts = [(x * s, z * s) for x, z in CROWN]
+    if kind == "crown":
+        pts, (bx, bz, bw, bh), gems = crown_outlines(s)
         out.append(fan_solid(pts, depth, color, center=(0.0, -0.55 * s), mid=mid))
-        out.append(box(1.9 * s, depth, 0.22 * s, accent, base=False).move(0, -depth * 0.6, -0.4 * s))
-        for x, z in ((1.04, 0.6), (0.0, 0.86), (-1.04, 0.6)):
-            gem = lathe([(0.0, -0.17 * s), (0.17 * s, 0.0), (0.0, 0.17 * s)], 4, accent)
-            out.append(gem.rotate(math.pi / 2, "X").move(x * s, -depth * 0.5, z * s + 0.08 * s))
+        out.append(box(bw, depth, bh, accent, base=False).move(bx, -depth * 0.6, bz))
+        for gx, gz, gr in gems:
+            gem = lathe([(0.0, -gr), (gr, 0.0), (0.0, gr)], 4, accent)
+            out.append(gem.rotate(math.pi / 2, "X").move(gx, -depth * 0.5, gz))
     elif kind == "star":
         out.append(fan_solid([(x * s, z * s) for x, z in _star(5, 1.0, 0.42)], depth, color, mid=mid))
         out.append(fan_solid([(x * s, z * s) for x, z in _star(5, 0.36, 0.16)], depth, accent, mid=None)
@@ -295,49 +323,12 @@ def emblem(kind, size, color, accent, depth=0.22, mid=0.5):
     elif kind == "oak":
         # full oak leaf (reads at 80 studs, never a feather): wide and mirror-symmetric, 4 rounded
         # lobes per side with deep sinuses, a rounded tip lobe, midrib and a visible stem.
-        # Concave outline -> prism (the builder triangulates the caps).
-        lobes = ((-0.46, 0.56), (-0.1, 0.8), (0.26, 0.8), (0.6, 0.6))  # (z, half-width at lobe tip)
-        sinus = (0.3, 0.44, 0.44, 0.34)
-        right = [(0.1, -0.84)]
-        for (zc, w), sw in zip(lobes, sinus):
-            right.append((sw, zc - 0.17))  # sinus below the lobe
-            right += [(w * 0.86, zc - 0.09), (w, zc), (w * 0.86, zc + 0.09)]
-        right += [(0.26, 0.79), (0.3, 0.9), (0.15, 1.02)]
-        outline = right + [(0.0, 1.06)] + [(-x, z) for x, z in reversed(right)]
+        # Concave outline -> prism (the builder triangulates the caps). Colours: emblem_colors(k, "oak").
+        leaf, (mx, mz, mw, mh), (sx, sz, sw, sh) = oak_outlines(s, lobe_pts)
         from lib.geo import prism
-        out.append(prism([(x * s, z * s) for x, z in outline], depth, color, axis="Y"))
-        out.append(box(0.1 * s, depth, 1.7 * s, accent, base=False).move(0, -depth * 0.55, 0.08 * s))  # midrib
-        out.append(box(0.16 * s, depth, 0.5 * s, accent, base=False).move(0, 0, -1.04 * s))  # stem
-    elif kind == "oak_tilted":
-        # legacy (prop_banner, frozen geometry): elongated leaf, 4 rounded lobes per side STAGGERED (no mirror
-        # symmetry), deep sinuses, a midrib and a visible stem, tilted ~14 deg so it reads as a
-        # leaf, not a rosette. Concave outline -> prism (the builder triangulates the caps).
-        def env(z):
-            return 0.56 * math.sin(math.pi * min(1.0, max(0.0, (z + 0.8) / 1.82))) ** 0.75
-
-        def side(lobes, sgn):
-            pts = []
-            prev = -0.78
-            for zc in lobes:
-                zs = (prev + zc) / 2 if prev > -0.78 else zc - 0.16
-                pts.append((sgn * 0.4 * env(zs) + sgn * 0.04, zs))  # sinus
-                for dz, f in ((-0.08, 0.84), (0.0, 1.0), (0.08, 0.84)):  # rounded lobe
-                    pts.append((sgn * (f * env(zc + dz) + 0.05), zc + dz))
-                prev = zc
-            pts.append((sgn * 0.12, 0.88))
-            return pts
-
-        right = [(0.07, -0.8)] + side((-0.42, -0.04, 0.33, 0.66), 1)
-        left = [(-0.07, -0.8)] + side((-0.26, 0.13, 0.5, 0.8), -1)
-        outline = right + [(0.0, 1.02)] + list(reversed(left))
-        from lib.geo import prism
-        leaf = [prism([(x * s, z * s) for x, z in outline], depth, color, axis="Y")]
-        leaf.append(box(0.09 * s, depth, 1.62 * s, accent, base=False).move(0, -depth * 0.55, 0.06 * s))  # midrib
-        stem = box(0.12 * s, depth, 0.46 * s, color, base=False).rotate(-0.25, "Y")
-        leaf.append(stem.move(0.05 * s, 0, -0.98 * s))
-        for pc in leaf:
-            pc.rotate(-0.24, "Y")
-        out += leaf
+        out.append(prism(leaf, depth, color, axis="Y"))
+        out.append(box(mw, depth, mh, accent, base=False).move(mx, -depth * 0.55, mz))  # midrib
+        out.append(box(sw, depth, sh, accent, base=False).move(sx, 0, sz))  # stem
     else:
         raise ValueError(kind)
     return out
@@ -470,5 +461,6 @@ def border(k):
 
 
 __all__ = ["KINGDOMS", "sweep_loop", "ring_solid", "sheet", "fan_solid", "strip_solid", "emblem", "bend_onto",
+           "CROWN", "crown_outlines", "OAK_LOBES", "OAK_SINUS", "oak_outlines",
            "SUN_RAYS", "SUN_DISC", "SUN_FIELD", "SUN_RIM", "SUN_ROUNDEL", "sun_outlines", "roundel", "sun_badge",
            "wheel", "rope", "lashing", "barrel", "crate", "sack", "stone_ball", "kcol", "field", "border", "emblem_colors"]

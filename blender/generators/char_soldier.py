@@ -2,7 +2,7 @@
 for each of the four kingdoms.
 
 Kingdom identity at 60 studs comes from tabard + shield + pennant/hood colours with the
-kingdom emblem (red flame, blue star, green oak leaf, yellow sun), and is backed up by SHAPE
+kingdom emblem (red crown, blue star, green oak leaf, yellow sun: the kit-wide designs, D-039), and is backed up by SHAPE
 for colour-blind players: helmets echo each kingdom's tower roofs (red conical spire, blue
 square pyramid, green wide-brim low cone, yellow onion dome).
 
@@ -271,7 +271,7 @@ def build_knight(b, p, k):
     pc = Vector((hl.x, hl.y, 0)) + n * 0.38
     poly = {"red": C.kite_poly(1.85, 2.9), "blue": C.heater_poly(2.0, 2.45), "green": C.round_poly(1.18, 12),
             "yellow": C.almond_poly(1.75, 3.0)}[k]
-    pieces, _ = C.shield(k, poly, 1.15 if k != "green" else 1.3, boss=k == "green")
+    pieces, _ = C.shield(k, poly, 1.15 if k != "green" else 1.3)  # no boss: it sat on the oak leaf (a flower)
     lift = {"red": 0.05, "blue": 0.3, "green": 0.45, "yellow": 0.05}[k]
     for pc_ in pieces:
         b.add(pc_.rotate(th, "Z").move(pc.x, pc.y, lift), tag="shield")

@@ -82,3 +82,24 @@ Remaining weaknesses: racks partly read as low fences at 80 studs; 03 uses 95% o
 - Verdict: **PASS**; per-asset overrides: none
 - Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 4
 - Notes: Each variant carries its kingdom's tower language, so grayscale identity holds even at 144 studs: red cone turret (01, 05), blue pyramid tower (02, 06), green hoarded lantern/cupola (03), yellow onion turret (04, ball + spike finial, no crescent). Two massing families (crenellated gatehouse front for 02, 03 and 05; half-timbered hall for 01, 04 and 06), and the same-kingdom pairs differ. The sun on 04 is the kit design (cream roundel), not gold-on-gold. Cohesion 3: the green emblem on 03's flag, banners and door shield is the symmetric ivory lozenge, which reads as a rosette or flower, not the kit oak leaf with a midrib. At 144 studs it is the same light dot as the yellow sun roundel. Use the castle_gatehouse oak leaf. Training dummies, targets and weapon racks give good function reads. Tris 8734-11426/12000.
+
+## Round 4 (fixes from fresh review round 5)
+- 03 (green): the symmetric ivory lozenge (a rosette) on the flag, banners and door/gable shields is replaced by the
+  kit oak leaf: `_village_large_common.emblem("green")` now merges `_kingdom_props_common.emblem("oak")` (ivory leaf,
+  bronze midrib, visible stem), the castle_gatehouse design. The two big wall banners use the full round lobes. The
+  shields and flag use the flat-topped version (`lobe_pts=2`) to keep headroom.
+- Other variants keep their geometry hashes. tavern and workshop do not use these emblems, and verify passes.
+Tris: 03 11426 -> 11698 / 12000. Variation min diff 0.111 (01 vs 03), PASS.
+Seen (`renders/building_barracks/building_barracks_03_hero.png`, zoomed crop, and the gameplay strip at 144 studs in
+grayscale): in the hero, the banners, door shield and flag show an ivory lobed leaf with an orange midrib and stem,
+the same as the castles. At 144 studs every emblem is a few pixels. Kingdom identity there still rests on the
+tower language.
+Remaining: the red crown here (01, 05) is still the village single-colour cream outline, not `crown_outlines`.
+Self-scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail 4, cohesion 4, tris 3.
+
+## Fresh review round 6
+
+- Reviewer: fresh-context subagent (contact sheet `blender/previews/building_barracks.jpg` only; crops, zooms and grayscale checks; 2026-10-13)
+- Verdict: **PASS** (asset overrides: building_barracks_04=NEEDS-WORK)
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 3
+- Notes: 01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).

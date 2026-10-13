@@ -10,6 +10,7 @@ import math
 from lib import kit
 from lib.geo import Matrix, Vector, box, cylinder, icosphere, lathe, loft_rings, merge, prism, tube
 
+from generators._kingdom_props_common import emblem as kit_emblem
 from generators._kingdom_props_common import sun_badge
 
 KINGDOM_CYCLE = ("red", "blue", "green", "yellow")
@@ -117,8 +118,8 @@ def pennant(length=2.2, h=1.1, color="red_cloth", pole=3.0):
 # ------------------------------------------------------------------ emblems / signs
 
 def emblem_poly(kind, s=1.0):
-    """2D outline (x, z) centred on 0, roughly 1.4 x 1.4 at s=1. (No "sun": the kit-wide sun is
-    layered, see `emblem`.)"""
+    """2D outline (x, z) centred on 0, roughly 1.4 x 1.4 at s=1. (No "sun" / "leaf": the kit-wide sun
+    and oak leaf are layered, see `emblem`.)"""
     if kind == "star":
         pts = []
         for i in range(10):
@@ -130,8 +131,7 @@ def emblem_poly(kind, s=1.0):
     elif kind == "crown":
         pts = [(-0.6, -0.45), (0.6, -0.45), (0.65, 0.45), (0.32, 0.08), (0.0, 0.55), (-0.32, 0.08), (-0.65, 0.45)]
     elif kind == "leaf":
-        pts = [(0.0, -0.75), (0.18, -0.4), (0.45, -0.3), (0.32, -0.05), (0.55, 0.12), (0.3, 0.3), (0.38, 0.55),
-               (0.0, 0.75), (-0.38, 0.55), (-0.3, 0.3), (-0.55, 0.12), (-0.32, -0.05), (-0.45, -0.3), (-0.18, -0.4)]
+        raise ValueError("emblem_poly('leaf'): the kit-wide oak leaf is layered, draw it with emblem('leaf', ...)")
     elif kind == "anvil":
         pts = [(-0.55, -0.5), (0.55, -0.5), (0.38, -0.32), (0.2, -0.28), (0.2, 0.02), (0.48, 0.18), (0.95, 0.36),
                (0.5, 0.45), (-0.7, 0.45), (-0.7, 0.18), (-0.2, 0.02), (-0.2, -0.28), (-0.38, -0.32)]
@@ -168,6 +168,12 @@ def emblem(kind, s, depth, color):
         parts = sun_badge(0.72 * s, depth, sun_depth=depth * 0.6)
         parts[0].paint(grad=("range", 0.55, 0.95))  # merge() keeps the first piece's gradient
         return merge(parts)
+    if kind == "leaf":
+        # the kit-wide oak leaf (_kingdom_props_common.emblem("oak")): `color` leaf (ivory), green-kingdom
+        # bronze midrib and stem, 1.02 s wide and 1.5 s tall like the old icon (flat-topped lobes: these
+        # banners and shields are small); merged into ONE piece
+        parts = kit_emblem("oak", 1.27 * s, color, "green_trim", depth=depth, mid=None, lobe_pts=2)
+        return merge(parts).move(0, 0, 0.0575 * 1.27 * s)  # leaf + stem centred on the origin
     return prism(emblem_poly(kind, s), depth, color)
 
 

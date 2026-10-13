@@ -71,3 +71,25 @@ Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4. Tris 560-788 / 800.
 - Verdict: **NEEDS-WORK**; per-asset overrides: prop_banner_red_01=PASS, prop_banner_red_02=PASS, prop_banner_blue_01=PASS, prop_banner_blue_02=PASS, prop_banner_yellow_01=PASS, prop_banner_yellow_02=PASS
 - Scores: silhouette 4, variation 4, readability 3, proportions 4, palette 3, detail_density 4, cohesion 3, triangle_cost 3
 - Notes: FAIL green_01 and green_02: the oak leaf is orange-tan on the emerald field with an ivory midrib, and leaf and field have the same luminance (sampled L 115-119 vs 110-118). In grayscale the leaf disappears, leaving only the ivory midrib, a stick that reads as a feather, arrow or sword. This also breaks the kit: ART_DIRECTION and every building use an ivory oak leaf with an orange midrib (castle_gatehouse is the reference). The green_02 leaf finial has the same problem. Fix: invert to an ivory leaf with an orange or bronze midrib on both the banner and the finial. The other six pass: the crown, star and sun read at 43 studs. The sun is one design (gold disc + 8 rays in a cream 12-sided roundel on the cloth; bare sun as the yellow_01 finial), never gold-on-gold, and distinct from the bare 5-point star. Tris: yellow_02 790/800, yellow_01 780/800 and green_02 788/800 sit at about 99% of budget for a flat prop placed in numbers.
+
+## Round 5 (fixes from fresh review round 3)
+- The `FROZEN` mechanism and the legacy `oak_tilted` leaf are removed. Green 01 and 02 use the shared
+  `emblem("oak")` (`_kingdom_props_common.oak_outlines`), as on the castle_gatehouse banners.
+- Colours: `emblem_cols` now gives the oak an ivory leaf (`green_emblem`) with a bronze midrib and stem
+  (`green_trim`), on the cloth and on the green_02 standard topper. Only the crown keeps gold with ivory accents.
+  The dead `flame` branch is gone.
+- Budget: the green_02 topper uses the flat-topped lobe version (`lobe_pts=2`), so the standard stays at 788/800.
+Tris: green_01 628 -> 644, green_02 788 -> 788 (of 800). Red, blue and yellow keep their geometry hashes. The crown
+helper now reads from `crown_outlines`, and the output is bit-identical.
+Seen (`renders/prop_banner/prop_banner_green_01_hero.png`, `_green_02_hero.png`, and a gameplay crop at 43 studs
+with a grayscale copy): the ivory leaf is far lighter than the emerald field in grayscale. It reads as a lobed leaf
+with a dark midrib and stem, not a stick or feather. The ivory topper reads in colour. In grayscale it is lighter
+than the sky but has low contrast against it (outline visible, weaker than the old orange topper).
+Self-scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail 4, cohesion 4, tris 3.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `blender/previews/prop_banner.jpg` only; crops, zooms and grayscale checks; 2026-10-13)
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 3
+- Notes: All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).
