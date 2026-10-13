@@ -233,6 +233,7 @@ TreasuryService.changed: Signal<(KingdomId, ResourceBag, { [ResourceId]: number 
 - **Upkeep.** ProductionService is the only food consumer. Each minute it:
   1. takes `spendUpTo(kingdom, "food", upkeep, txId, "upkeep")`, where upkeep counts citizens and soldiers from `getPopulation`;
   2. calls `CitizenService:setFedRatio(kingdom, taken / upkeep)`.
+- **Births (D-045).** A birth takes no treasury food while ProductionService runs. It needs `fedRatio` ≥ `Society.food.wellFedAtLeast` and a free bed (PROVISIONAL).
 - In VS-1, any kingdom member may spend. Co-ruler spending permissions are VS-2.
 - Client remotes: `Treasury.Changed`, `Treasury.Get` and `Treasury.GetCosts` (G8 table).
 
@@ -599,6 +600,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 
 ## Changelog
 - v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
+- v0.4-g9d (2026-10-13) FORGE-00: G7 births follow upkeep health instead of spending treasury food (D-045). ProductionService stays the only food consumer.
 - v0.4-g9c (2026-10-13) FORGE-00, rulings on FORGE-04's #98 questions (D-044). These are additive:
   - G3 lists `MatchService.mode`.
   - G9 adds the planned `CitizenAnswered` event and the attribution of `ResourceGathered` and `UnitsRecruited`, and says attribution lives in `Feedback/Signals`.

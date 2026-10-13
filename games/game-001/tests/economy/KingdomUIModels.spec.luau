@@ -11,6 +11,7 @@ local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Crest = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Crest")
 local HudModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/HudModel")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+local KingdomPanel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/KingdomPanel")
 local KingdomStore = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/KingdomStore")
 local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 local Placement = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Placement")
@@ -96,19 +97,49 @@ end)
 
 describe("Text", function()
 	it("turns server reasons into sentences and never shows a raw code", function()
-		expect(Text.reason("out_of_territory")).toBe("Build inside your kingdom")
-		expect(Text.reason("blocked")).toBe("Leave room for upgrades")
-		expect(Text.reason("cannot_afford")).toBe("Not enough resources")
-		expect(Text.reason("requires_keep_level")).toBe("Upgrade your keep first")
+		-- each code's exact sentence, so two sentences swapped between codes fail (FORGE-05 L4 on #86)
+		local expected = {
+			blocked = "Not enough room here",
+			out_of_territory = "Build inside your kingdom",
+			out_of_bounds = "That's off the edge of the map",
+			cannot_afford = "Not enough resources",
+			not_placeable = "That building can't be placed by hand",
+			requires_keep_level = "Upgrade your keep first",
+			limit_reached = "You have the most of these already",
+			unknown_building = "That building can't be built",
+			not_found = "That building no longer exists",
+			not_owner = "That building isn't yours",
+			busy = "Finish building it first",
+			max_level = "Already at the highest level",
+			no_character = "Your ruler isn't in the world yet",
+			too_far = "Walk closer first",
+			cooldown = "Not yet. Try again in a moment",
+			depleted = "Nothing left to gather there",
+			unknown_node = "There's nothing to gather there",
+			invalid_args = "That request wasn't valid",
+			unknown_job = "That job can't be changed",
+			match_not_active = "The match isn't running",
+			not_in_match = "The match isn't running",
+			not_ruler = "Only rulers can do that",
+			kingdom_eliminated = "Your kingdom has fallen",
+		}
+		for code, sentence in expected do
+			expect(Text.reason(code)).toBe(sentence)
+		end
+		-- Build.PlaceSlot's own codes name the plot; its other refusals read as anywhere else
+		local slot = {
+			unknown_slot = "This plot isn't yours",
+			slot_occupied = "This plot is already built on",
+			does_not_fit = "That doesn't fit this plot",
+			not_on_plot = "Walls and gates go on your borders, not on a plot",
+			blocked = "Something is in the way on this plot",
+		}
+		for code, sentence in slot do
+			expect(Text.reason(code, "slot")).toBe(sentence)
+		end
+		expect(Text.reason("cannot_afford", "slot")).toBe("Not enough resources")
 		expect(Text.reason("weird_code")).toBe("That didn't work. Try again.")
 		expect(Text.reason(nil)).toBe("No answer from the server. Try again in a moment.")
-		-- Build.PlaceSlot's own codes name the plot; its other refusals read as anywhere else
-		expect(Text.reason("unknown_slot", "slot")).toBe("This plot isn't yours")
-		expect(Text.reason("slot_occupied", "slot")).toBe("This plot is already built on")
-		expect(Text.reason("does_not_fit", "slot")).toBe("That doesn't fit this plot")
-		expect(Text.reason("not_on_plot", "slot")).toBe("Walls and gates go on your borders, not on a plot")
-		expect(Text.reason("blocked", "slot")).toBe("Something is in the way on this plot")
-		expect(Text.reason("cannot_afford", "slot")).toBe("Not enough resources")
 	end)
 
 	it("FL-0105: every refusal code the server returns has its own sentence", function()
@@ -445,6 +476,13 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 			expect(steps[1].Size.X.Scale + Crest.RAY_INNER).toBeGreaterThan(Crest.DISC / 2) -- out of the disc
 		end
 		expect(count).toBe(8)
+		-- the disc over the rays, ringed in bronze that holds 3:1 on the ivory (FORGE-05 L2 on #86)
+		local disc = emblem:FindFirstChild("Disc")
+		expect(disc).toBeTruthy()
+		expect(disc.ZIndex > emblem:FindFirstChild("Ray_0_1").ZIndex).toBe(true)
+		expect(math.abs(disc.Size.X.Scale - Crest.DISC) < 1e-4).toBe(true)
+		local edge = disc:FindFirstChildOfClass("UIStroke")
+		expect(Crest.contrast(edge.Color, Crest.backdrop(gold)) >= 3).toBe(true)
 		expect(plate.ZIndex < emblem.ZIndex).toBe(true) -- the roundel under the sun
 		-- recolouring a crest adds the roundel once and takes it away again
 		local crest = Crest.new(58, crimson, "emblem_star") -- a text glyph
@@ -468,6 +506,10 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 		expect(HudModel.EMBLEMS.crimson).toBe("emblem_crown")
 		expect(HudModel.EMBLEMS.emerald).toBe("emblem_oak")
 		expect(Theme.raw.icons.emblem_flame).toBeNil() -- the flame is retired everywhere (D-039)
+		-- no crown next to Emberhold's crown crest: the Kingdom panel's Overview tab (FORGE-05 L5 on #86)
+		for _, tab in KingdomPanel.TABS do
+			expect(tab.icon).never.toBe("crown")
+		end
 		for _, case in { { "crimson", "crown" }, { "emerald", "oakleaf" } } do
 			local k
 			for _, identity in KingdomsConfig.identities do
