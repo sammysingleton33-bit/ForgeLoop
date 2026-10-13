@@ -1,0 +1,291 @@
+{
+  "assets": [
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 47.974,
+        "y": 72.8,
+        "z": 41.087
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_blue_01.fbx",
+        "validation": "exports/castle_keep_blue_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "5b380f704e5ada3c",
+      "id": "castle_keep_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "review_file": "reviews/castle_keep.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7701,
+      "sockets": {
+        "balcony": [
+          -0.0,
+          17.8,
+          -13.043
+        ],
+        "door": [
+          -0.0,
+          0.0,
+          -22.143
+        ],
+        "flag": [
+          -0.0,
+          72.8,
+          3.057
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 13306,
+        "lod1": 4656
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 54.6,
+        "y": 64.515,
+        "z": 44.4
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_green_01.fbx",
+        "validation": "exports/castle_keep_green_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "8b7287e62dcf5cdc",
+      "id": "castle_keep_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "review_file": "reviews/castle_keep.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7702,
+      "sockets": {
+        "balcony": [
+          -0.0,
+          17.8,
+          -14.7
+        ],
+        "door": [
+          -0.0,
+          0.0,
+          -23.8
+        ],
+        "flag": [
+          -0.0,
+          64.515,
+          0.4
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 14068,
+        "lod1": 4922
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 44.81,
+        "y": 84.3,
+        "z": 40.494
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_red_01.fbx",
+        "validation": "exports/castle_keep_red_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "1e048857a33fb3ae",
+      "id": "castle_keep_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+        "review_file": "reviews/castle_keep.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7700,
+      "sockets": {
+        "balcony": [
+          -0.029,
+          17.8,
+          -12.747
+        ],
+        "door": [
+          -0.029,
+          0.0,
+          -21.847
+        ],
+        "flag": [
+          -0.029,
+          84.3,
+          3.853
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 13566,
+        "lod1": 4748
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_keep",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 46.838,
+        "y": 68.6,
+        "z": 42.316
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_keep_yellow_01.fbx",
+        "validation": "exports/castle_keep_yellow_01.validation.json"
+      },
+      "generator": "castle_keep",
+      "generator_version": 1,
+      "geometry_hash": "6f18083fce9cdf04",
+      "id": "castle_keep_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow"
+      },
+      "preview": "previews/castle_keep.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/castle_keep.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7703,
+      "sockets": {
+        "balcony": [
+          0.114,
+          17.8,
+          -13.658
+        ],
+        "door": [
+          0.114,
+          0.0,
+          -22.758
+        ],
+        "flag": [
+          0.114,
+          68.6,
+          2.942
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 16000,
+        "lod0": 14088,
+        "lod1": 4930
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "castle_keep",
+  "variation": {
+    "closest_pair": [
+      "castle_keep_blue_01",
+      "castle_keep_yellow_01"
+    ],
+    "mean_pair_diff": 0.1824,
+    "min_pair_diff": 0.1097,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

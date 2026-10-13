@@ -1,0 +1,441 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 25.057,
+        "y": 24.235,
+        "z": 23.833
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_01.fbx",
+        "validation": "exports/building_smithy_01.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "fdc9aee6816a51e2",
+      "id": "building_smithy_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.6,
+        "W": 20.0,
+        "forge": -1,
+        "h1": 12.2,
+        "kingdom": "red",
+        "layout": "pent",
+        "walls": "timber"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7500,
+      "sockets": {
+        "forge": [
+          5.128,
+          4.38,
+          -2.716
+        ],
+        "interact": [
+          1.728,
+          1.08,
+          -9.866
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6736,
+        "lod1": 2356
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 24.142,
+        "y": 22.1,
+        "z": 21.751
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_02.fbx",
+        "validation": "exports/building_smithy_02.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "83c4f7ee5b59ce02",
+      "id": "building_smithy_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 14.5,
+        "W": 19.0,
+        "forge": 1,
+        "h1": 13.4,
+        "kingdom": "blue",
+        "layout": "shed",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7501,
+      "sockets": {
+        "forge": [
+          -4.591,
+          4.38,
+          -1.675
+        ],
+        "interact": [
+          -1.191,
+          1.08,
+          -8.825
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6512,
+        "lod1": 2278
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 23.058,
+        "y": 31.035,
+        "z": 23.295
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_03.fbx",
+        "validation": "exports/building_smithy_03.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "21e9a159f73a5115",
+      "id": "building_smithy_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.4,
+        "W": 18.0,
+        "forge": 1,
+        "h1": 11.8,
+        "h2": 7.6,
+        "kingdom": "green",
+        "layout": "loft",
+        "walls": "timber"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7502,
+      "sockets": {
+        "forge": [
+          -4.049,
+          4.38,
+          -2.447
+        ],
+        "interact": [
+          -0.649,
+          1.08,
+          -9.597
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7352,
+        "lod1": 2572
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 26.278,
+        "y": 24.435,
+        "z": 24.135
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_04.fbx",
+        "validation": "exports/building_smithy_04.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "97d6cf24f49d4143",
+      "id": "building_smithy_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.9,
+        "W": 21.0,
+        "forge": 1,
+        "h1": 12.4,
+        "kingdom": "yellow",
+        "layout": "pent",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/building_smithy.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7503,
+      "sockets": {
+        "forge": [
+          -5.659,
+          4.38,
+          -2.868
+        ],
+        "interact": [
+          -2.259,
+          1.08,
+          -10.018
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7404,
+        "lod1": 2590
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 23.139,
+        "y": 21.7,
+        "z": 21.218
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_05.fbx",
+        "validation": "exports/building_smithy_05.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "6e566be34f3d343a",
+      "id": "building_smithy_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 14.2,
+        "W": 18.0,
+        "forge": -1,
+        "h1": 13.0,
+        "kingdom": "red",
+        "layout": "shed",
+        "walls": "timber"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7504,
+      "sockets": {
+        "forge": [
+          4.169,
+          4.38,
+          -1.409
+        ],
+        "interact": [
+          0.769,
+          1.08,
+          -8.559
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6212,
+        "lod1": 2174
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 25.16,
+        "y": 31.335,
+        "z": 23.723
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_06.fbx",
+        "validation": "exports/building_smithy_06.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "6c5239ab4e2a6031",
+      "id": "building_smithy_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.6,
+        "W": 19.5,
+        "forge": -1,
+        "h1": 11.9,
+        "h2": 7.8,
+        "kingdom": "blue",
+        "layout": "loft",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7505,
+      "sockets": {
+        "forge": [
+          5.18,
+          4.38,
+          -2.662
+        ],
+        "interact": [
+          1.78,
+          1.08,
+          -9.812
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7760,
+        "lod1": 2716
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "building_smithy",
+  "variation": {
+    "closest_pair": [
+      "building_smithy_01",
+      "building_smithy_04"
+    ],
+    "mean_pair_diff": 0.3039,
+    "min_pair_diff": 0.1332,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

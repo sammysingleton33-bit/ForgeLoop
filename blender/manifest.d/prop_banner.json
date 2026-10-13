@@ -1,0 +1,547 @@
+{
+  "assets": [
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.969,
+        "y": 22.778,
+        "z": 3.6
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_blue_01.fbx",
+        "validation": "exports/prop_banner_blue_01.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "078a1cb5a572aef8",
+      "id": "prop_banner_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "star",
+        "kingdom": "blue",
+        "n": 1,
+        "type": "mast"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "review_file": "reviews/prop_banner.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "base": [
+          4.184,
+          0.0,
+          0.0
+        ],
+        "top": [
+          4.184,
+          22.778,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 658,
+        "lod1": 230
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 8.927,
+        "y": 12.226,
+        "z": 1.679
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_blue_02.fbx",
+        "validation": "exports/prop_banner_blue_02.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "371e1bc049bfd40c",
+      "id": "prop_banner_blue_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "star",
+        "kingdom": "blue",
+        "n": 2,
+        "type": "wall"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "review_file": "reviews/prop_banner.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7003,
+      "sockets": {
+        "base": [
+          -0.0,
+          0.05,
+          0.84
+        ],
+        "top": [
+          -0.0,
+          11.076,
+          0.84
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 560,
+        "lod1": 196
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.89,
+        "y": 14.02,
+        "z": 1.693
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_green_01.fbx",
+        "validation": "exports/prop_banner_green_01.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "6e20df099aaaef90",
+      "id": "prop_banner_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "oak",
+        "kingdom": "green",
+        "n": 1,
+        "type": "wall"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "review_file": "reviews/prop_banner.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7004,
+      "sockets": {
+        "base": [
+          -0.0,
+          0.05,
+          0.847
+        ],
+        "top": [
+          -0.0,
+          12.87,
+          0.847
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 628,
+        "lod1": 218
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 8.21,
+        "y": 18.693,
+        "z": 3.189
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_green_02.fbx",
+        "validation": "exports/prop_banner_green_02.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "11521f14bdebd09a",
+      "id": "prop_banner_green_02",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "oak",
+        "kingdom": "green",
+        "n": 2,
+        "type": "standard"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "review_file": "reviews/prop_banner.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7005,
+      "sockets": {
+        "base": [
+          -0.0,
+          0.08,
+          0.02
+        ],
+        "top": [
+          -0.0,
+          18.706,
+          0.02
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 788,
+        "lod1": 274
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.856,
+        "y": 17.422,
+        "z": 3.2
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_red_01.fbx",
+        "validation": "exports/prop_banner_red_01.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "b1fb92952605a3e7",
+      "id": "prop_banner_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "crown",
+        "kingdom": "red",
+        "n": 1,
+        "type": "pole"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "review_file": "reviews/prop_banner.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "base": [
+          -0.0,
+          0.0,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          17.322,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 636,
+        "lod1": 222
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.642,
+        "y": 21.452,
+        "z": 3.6
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_red_02.fbx",
+        "validation": "exports/prop_banner_red_02.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "e9882550e94c5d3f",
+      "id": "prop_banner_red_02",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "crown",
+        "kingdom": "red",
+        "n": 2,
+        "type": "mast"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four emblems (crown, star, oak leaf, sun) are large and legible at 43 studs, gold reads as gold and all variants are under 800 tris. Minor: green fields are muted jade rather than jewel emerald, the four archetypes are recoloured across kingdoms, and the green_02 oak-leaf finial reads as a feather at distance.",
+        "review_file": "reviews/prop_banner.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "base": [
+          3.521,
+          0.0,
+          0.0
+        ],
+        "top": [
+          3.521,
+          21.452,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 648,
+        "lod1": 226
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 6.711,
+        "y": 16.184,
+        "z": 3.259
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_yellow_01.fbx",
+        "validation": "exports/prop_banner_yellow_01.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "3e63b8f23a9f323e",
+      "id": "prop_banner_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "sun",
+        "kingdom": "yellow",
+        "n": 1,
+        "type": "standard"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_banner.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7006,
+      "sockets": {
+        "base": [
+          -0.0,
+          0.069,
+          0.104
+        ],
+        "top": [
+          -0.0,
+          16.184,
+          0.104
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 780,
+        "lod1": 272
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "banner",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 8.468,
+        "y": 19.207,
+        "z": 3.2
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_banner_yellow_02.fbx",
+        "validation": "exports/prop_banner_yellow_02.validation.json"
+      },
+      "generator": "prop_banner",
+      "generator_version": 1,
+      "geometry_hash": "caca0f2ab7df7a00",
+      "id": "prop_banner_yellow_02",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "emblem": "sun",
+        "kingdom": "yellow",
+        "n": 2,
+        "type": "pole"
+      },
+      "preview": "previews/prop_banner.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_banner.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7007,
+      "sockets": {
+        "base": [
+          -0.0,
+          0.0,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          19.607,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 790,
+        "lod1": 276
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 8
+  },
+  "generator": "prop_banner",
+  "variation": {
+    "closest_pair": [
+      "prop_banner_red_01",
+      "prop_banner_yellow_02"
+    ],
+    "mean_pair_diff": 0.5704,
+    "min_pair_diff": 0.1817,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

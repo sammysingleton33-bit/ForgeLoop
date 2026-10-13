@@ -1,0 +1,469 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 47.857,
+        "y": 42.832,
+        "z": 33.46
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_barracks_01.fbx",
+        "validation": "exports/building_barracks_01.validation.json"
+      },
+      "generator": "building_barracks",
+      "generator_version": 2,
+      "geometry_hash": "1bbf266ad8a9880c",
+      "id": "building_barracks_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "bay": "gable",
+        "chimney": -1,
+        "dummies": 2,
+        "kingdom": "red",
+        "turret": "br",
+        "upper": "timber",
+        "yard": -1
+      },
+      "preview": "previews/building_barracks.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "review_file": "reviews/building_barracks.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7300,
+      "sockets": {
+        "door": [
+          0.895,
+          0.0,
+          -9.937
+        ],
+        "rally": [
+          0.895,
+          0.0,
+          -23.137
+        ],
+        "spawn": [
+          0.895,
+          0.0,
+          -12.637
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 10674,
+        "lod1": 3734
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 45.947,
+        "y": 35.38,
+        "z": 31.415
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_barracks_02.fbx",
+        "validation": "exports/building_barracks_02.validation.json"
+      },
+      "generator": "building_barracks",
+      "generator_version": 2,
+      "geometry_hash": "92ada1cdcf1f0a19",
+      "id": "building_barracks_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "bay": "keep",
+        "chimney": 1,
+        "dummies": 2,
+        "kingdom": "blue",
+        "turret": "fl",
+        "upper": "hall",
+        "yard": 1
+      },
+      "preview": "previews/building_barracks.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "review_file": "reviews/building_barracks.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7301,
+      "sockets": {
+        "door": [
+          -1.168,
+          0.0,
+          -8.939
+        ],
+        "rally": [
+          -1.168,
+          0.0,
+          -22.139
+        ],
+        "spawn": [
+          -1.168,
+          0.0,
+          -11.639
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 9362,
+        "lod1": 3276
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 48.475,
+        "y": 40.478,
+        "z": 33.721
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_barracks_03.fbx",
+        "validation": "exports/building_barracks_03.validation.json"
+      },
+      "generator": "building_barracks",
+      "generator_version": 2,
+      "geometry_hash": "f188ecdc0f71a9c6",
+      "id": "building_barracks_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "bay": "keep",
+        "chimney": 1,
+        "dummies": 2,
+        "kingdom": "green",
+        "turret": "bl",
+        "upper": "timber",
+        "yard": 1
+      },
+      "preview": "previews/building_barracks.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "review_file": "reviews/building_barracks.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7302,
+      "sockets": {
+        "door": [
+          -1.021,
+          0.0,
+          -9.982
+        ],
+        "rally": [
+          -1.021,
+          0.0,
+          -23.182
+        ],
+        "spawn": [
+          -1.021,
+          0.0,
+          -12.682
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 11426,
+        "lod1": 3998
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 45.785,
+        "y": 33.101,
+        "z": 31.394
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_barracks_04.fbx",
+        "validation": "exports/building_barracks_04.validation.json"
+      },
+      "generator": "building_barracks",
+      "generator_version": 2,
+      "geometry_hash": "7c1b8762011fd412",
+      "id": "building_barracks_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "bay": "gable",
+        "chimney": -1,
+        "dummies": 2,
+        "kingdom": "yellow",
+        "turret": "fr",
+        "upper": "hall",
+        "yard": -1
+      },
+      "preview": "previews/building_barracks.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/building_barracks.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7303,
+      "sockets": {
+        "door": [
+          1.158,
+          0.0,
+          -8.855
+        ],
+        "rally": [
+          1.158,
+          0.0,
+          -22.055
+        ],
+        "spawn": [
+          1.158,
+          0.0,
+          -11.555
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 9242,
+        "lod1": 3234
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 47.219,
+        "y": 35.862,
+        "z": 33.908
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_barracks_05.fbx",
+        "validation": "exports/building_barracks_05.validation.json"
+      },
+      "generator": "building_barracks",
+      "generator_version": 2,
+      "geometry_hash": "e44e26ef998750c6",
+      "id": "building_barracks_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "bay": "keep",
+        "chimney": 1,
+        "dummies": 1,
+        "kingdom": "red",
+        "turret": "bl",
+        "upper": "hall",
+        "yard": 1
+      },
+      "preview": "previews/building_barracks.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "review_file": "reviews/building_barracks.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7304,
+      "sockets": {
+        "door": [
+          -1.295,
+          0.0,
+          -9.976
+        ],
+        "rally": [
+          -1.295,
+          0.0,
+          -23.176
+        ],
+        "spawn": [
+          -1.295,
+          0.0,
+          -12.676
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 8734,
+        "lod1": 3056
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 48.192,
+        "y": 42.065,
+        "z": 32.554
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_barracks_06.fbx",
+        "validation": "exports/building_barracks_06.validation.json"
+      },
+      "generator": "building_barracks",
+      "generator_version": 2,
+      "geometry_hash": "ab1c5270d79c41af",
+      "id": "building_barracks_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "bay": "gable",
+        "chimney": -1,
+        "dummies": 2,
+        "kingdom": "blue",
+        "turret": "fr",
+        "upper": "timber",
+        "yard": -1
+      },
+      "preview": "previews/building_barracks.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "review_file": "reviews/building_barracks.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7305,
+      "sockets": {
+        "door": [
+          0.768,
+          0.0,
+          -9.528
+        ],
+        "rally": [
+          0.768,
+          0.0,
+          -22.728
+        ],
+        "spawn": [
+          0.768,
+          0.0,
+          -12.228
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 10998,
+        "lod1": 3848
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "building_barracks",
+  "variation": {
+    "closest_pair": [
+      "building_barracks_01",
+      "building_barracks_03"
+    ],
+    "mean_pair_diff": 0.2467,
+    "min_pair_diff": 0.1111,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

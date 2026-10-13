@@ -1,0 +1,667 @@
+{
+  "assets": [
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.425,
+              4.122,
+              -0.088
+            ],
+            "name": "trunk",
+            "size": [
+              3.288,
+              8.244,
+              3.288
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 29.086,
+        "y": 29.675,
+        "z": 20.835
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_01.fbx",
+        "validation": "exports/tree_oak_01.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "6a28a9768dc37ca5",
+      "id": "tree_oak_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "summer",
+        "style": "round"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7005,
+      "sockets": {
+        "canopy_top": [
+          -1.243,
+          29.015,
+          3.216
+        ],
+        "harvest": [
+          -0.555,
+          0.0,
+          -2.517
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3232,
+        "lod1": 1130
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.21,
+              3.778,
+              -1.107
+            ],
+            "name": "trunk",
+            "size": [
+              3.495,
+              7.556,
+              3.495
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 36.937,
+        "y": 26.639,
+        "z": 32.688
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_02.fbx",
+        "validation": "exports/tree_oak_02.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "a1f93b52b55862a8",
+      "id": "tree_oak_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "summer",
+        "style": "spreading"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7036,
+      "sockets": {
+        "canopy_top": [
+          2.852,
+          26.362,
+          -2.788
+        ],
+        "harvest": [
+          0.329,
+          0.0,
+          -3.699
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3840,
+        "lod1": 1344
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.408,
+              4.881,
+              0.224
+            ],
+            "name": "trunk",
+            "size": [
+              3.43,
+              9.762,
+              3.43
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 21.814,
+        "y": 35.947,
+        "z": 17.882
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_03.fbx",
+        "validation": "exports/tree_oak_03.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "3743668290d22b0a",
+      "id": "tree_oak_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "summer",
+        "style": "tall"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7067,
+      "sockets": {
+        "canopy_top": [
+          -2.013,
+          35.615,
+          1.031
+        ],
+        "harvest": [
+          -0.32,
+          0.0,
+          -2.386
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2880,
+        "lod1": 1008
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              6.48,
+              4.692,
+              -0.282
+            ],
+            "name": "trunk",
+            "size": [
+              3.202,
+              9.385,
+              3.202
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 26.049,
+        "y": 27.643,
+        "z": 18.551
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_04.fbx",
+        "validation": "exports/tree_oak_04.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "ec4ab6788b2defb0",
+      "id": "tree_oak_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "summer",
+        "style": "lopsided"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7098,
+      "sockets": {
+        "canopy_top": [
+          3.571,
+          27.424,
+          1.407
+        ],
+        "harvest": [
+          7.008,
+          0.0,
+          -2.455
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2864,
+        "lod1": 1002
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.058,
+              4.822,
+              0.101
+            ],
+            "name": "trunk",
+            "size": [
+              1.95,
+              9.644,
+              1.95
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 15.193,
+        "y": 25.558,
+        "z": 15.038
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_05.fbx",
+        "validation": "exports/tree_oak_05.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "32d1361828b75780",
+      "id": "tree_oak_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "summer",
+        "style": "young"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7129,
+      "sockets": {
+        "canopy_top": [
+          -1.283,
+          25.258,
+          -0.752
+        ],
+        "harvest": [
+          -0.012,
+          0.0,
+          -1.347
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1932,
+        "lod1": 676
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.495,
+              2.993,
+              -0.67
+            ],
+            "name": "trunk",
+            "size": [
+              3.201,
+              5.986,
+              3.201
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 30.72,
+        "y": 31.135,
+        "z": 17.659
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_06.fbx",
+        "validation": "exports/tree_oak_06.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "2b7f02ea994b0b0f",
+      "id": "tree_oak_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "autumn_orange",
+        "style": "forked"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7160,
+      "sockets": {
+        "canopy_top": [
+          4.304,
+          30.717,
+          0.223
+        ],
+        "harvest": [
+          0.509,
+          0.0,
+          -3.035
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3144,
+        "lod1": 1100
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.003,
+              4.495,
+              1.189
+            ],
+            "name": "trunk",
+            "size": [
+              4.301,
+              8.99,
+              4.301
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 33.186,
+        "y": 31.389,
+        "z": 21.112
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_07.fbx",
+        "validation": "exports/tree_oak_07.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "42224ae75f2024e9",
+      "id": "tree_oak_07",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "summer",
+        "style": "old"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7191,
+      "sockets": {
+        "canopy_top": [
+          3.115,
+          31.085,
+          1.223
+        ],
+        "harvest": [
+          -0.064,
+          0.0,
+          -1.935
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3488,
+        "lod1": 1220
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.743,
+              3.127,
+              1.55
+            ],
+            "name": "trunk",
+            "size": [
+              3.311,
+              6.255,
+              3.311
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 28.771,
+        "y": 27.171,
+        "z": 27.278
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_oak_08.fbx",
+        "validation": "exports/tree_oak_08.validation.json"
+      },
+      "generator": "tree_oak",
+      "generator_version": 1,
+      "geometry_hash": "99f369305d86b05c",
+      "id": "tree_oak_08",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "autumn_yellow",
+        "style": "dome"
+      },
+      "preview": "previews/tree_oak.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+        "review_file": "reviews/tree_oak.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7222,
+      "sockets": {
+        "canopy_top": [
+          -1.573,
+          26.46,
+          1.236
+        ],
+        "harvest": [
+          0.819,
+          0.0,
+          -0.814
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3388,
+        "lod1": 1184
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 8
+  },
+  "generator": "tree_oak",
+  "variation": {
+    "closest_pair": [
+      "tree_oak_01",
+      "tree_oak_07"
+    ],
+    "mean_pair_diff": 0.4993,
+    "min_pair_diff": 0.339,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 8.6,
+        "y": 14.066,
+        "z": 7.727
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_01.fbx",
+        "validation": "exports/prop_well_01.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "2b079e4db4d93703",
+      "id": "prop_well_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": false,
+        "curb_h": 3.0,
+        "kingdom": "red",
+        "radius": 3.1,
+        "roof": "tile",
+        "trough": false
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
+        "review_file": "reviews/prop_well.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7000,
+      "sockets": {
+        "interact": [
+          0.125,
+          0.0,
+          -4.9
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1528,
+        "lod1": 534
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 10.038,
+        "y": 13.609,
+        "z": 10.025
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_02.fbx",
+        "validation": "exports/prop_well_02.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "e1890bf219aa367e",
+      "id": "prop_well_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": true,
+        "curb_h": 2.6,
+        "kingdom": "blue",
+        "radius": 3.5,
+        "roof": "pyramid",
+        "trough": false
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
+        "review_file": "reviews/prop_well.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7001,
+      "sockets": {
+        "interact": [
+          -0.0,
+          0.0,
+          -5.303
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1450,
+        "lod1": 506
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 10.975,
+        "y": 12.148,
+        "z": 6.837
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_03.fbx",
+        "validation": "exports/prop_well_03.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "1ebda265418805d9",
+      "id": "prop_well_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": false,
+        "curb_h": 3.2,
+        "kingdom": "green",
+        "radius": 3.0,
+        "roof": "frame",
+        "trough": true
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
+        "review_file": "reviews/prop_well.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7002,
+      "sockets": {
+        "interact": [
+          -0.712,
+          0.076,
+          -4.786
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1706,
+        "lod1": 596
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 8.9,
+        "y": 16.356,
+        "z": 8.799
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_well_04.fbx",
+        "validation": "exports/prop_well_04.validation.json"
+      },
+      "generator": "prop_well",
+      "generator_version": 1,
+      "geometry_hash": "d26608f0d3b5515f",
+      "id": "prop_well_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "apron": false,
+        "curb_h": 2.8,
+        "kingdom": "yellow",
+        "radius": 3.3,
+        "roof": "thatch",
+        "trough": false
+      },
+      "preview": "previews/prop_well.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "geometry changed since the last review",
+        "review_file": "reviews/prop_well.md",
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7003,
+      "sockets": {
+        "interact": [
+          0.175,
+          0.0,
+          -5.1
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1576,
+        "lod1": 550
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "prop_well",
+  "variation": {
+    "closest_pair": [
+      "prop_well_01",
+      "prop_well_04"
+    ],
+    "mean_pair_diff": 0.3912,
+    "min_pair_diff": 0.2664,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

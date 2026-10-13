@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "castle_keep_blue_01": {
+      "geometry_hash": "5b380f704e5ada3c",
+      "verdict": "PASS"
+    },
+    "castle_keep_green_01": {
+      "geometry_hash": "8b7287e62dcf5cdc",
+      "verdict": "PASS"
+    },
+    "castle_keep_red_01": {
+      "geometry_hash": "1e048857a33fb3ae",
+      "verdict": "PASS"
+    },
+    "castle_keep_yellow_01": {
+      "geometry_hash": "b2bd5cb7335899bd",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_keep",
+  "generator_version": 1,
+  "notes": "Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.",
+  "reviewer": "fresh-context subagent",
+  "round": 4,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}
