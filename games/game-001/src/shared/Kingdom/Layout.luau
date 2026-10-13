@@ -22,11 +22,15 @@
 			options.populate   false: kingdoms start without citizens (sim:populate later; slice mode)
 		Layout.bounds(spacing?): Bounds            -- map bounds: the world's, or ones that fit the square layout
 		Layout.boundsFor(spacing): Bounds          -- (square layout)
+		Layout.groundY(x, z): number               -- world surface height where entities stand: the bridge
+		                                           deck on a bridge, else Kit/WorldPlan.groundHeight (hills,
+		                                           river bed). World plots only; not for the square layout.
 ]]
 
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local ObjectivesConfig = require("@game/ReplicatedStorage/Forge/Config/Objectives")
 local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
+local WorldPlan = require("../Kit/WorldPlan")
 
 local Layout = {}
 
@@ -67,6 +71,75 @@ end
 function Layout.boundsFor(spacing: number)
 	local half = spacing + 240
 	return { minX = -half, maxX = half, minZ = -half, maxZ = half }
+end
+
+-- Kit/Props bridge stand-in (bridge_stone), in its local frame (deck along local Z): flat deck top over
+-- |z| <= 12, ramps down to its base at |z| = 30, 14 studs wide. WorldPlan.props seats it at the ground
+-- height 30 studs east of its centre.
+local BRIDGE_DECK_HALF = 12
+local BRIDGE_HALF = 30
+local BRIDGE_HALF_WIDTH = 7
+
+local bridgeSpans = {}
+for _, br in WorldLayout.features.river.bridges do
+	local yaw = math.rad(br.yaw)
+	table.insert(bridgeSpans, {
+		x = br.at.X,
+		z = br.at.Y,
+		sin = math.sin(yaw),
+		cos = math.cos(yaw),
+		base = WorldPlan.groundHeight(WorldLayout, br.at.X + 30, br.at.Y),
+		deck = br.deckY,
+	})
+end
+
+-- WorldPlan.groundHeight tests every hill ball (~110), so the surface is sampled once per corner of a
+-- 2-stud lattice and interpolated: under 0.3 studs off (the most at a hill foot, where the slope
+-- breaks); river banks blend over one cell. The cache only holds corners entities have stood near and
+-- is cleared if it ever grows huge.
+local CELL = 2
+local MAX_CORNERS = 200000
+local corners: { [number]: number } = {}
+local cornerCount = 0
+
+local function corner(ix: number, iz: number): number
+	local key = (ix + 32768) * 65536 + (iz + 32768)
+	local h = corners[key]
+	if h == nil then
+		if cornerCount >= MAX_CORNERS then
+			table.clear(corners)
+			cornerCount = 0
+		end
+		h = WorldPlan.groundHeight(WorldLayout, ix * CELL, iz * CELL)
+		corners[key] = h
+		cornerCount += 1
+	end
+	return h :: number
+end
+
+local function terrainY(x: number, z: number): number
+	local fx, fz = x / CELL, z / CELL
+	local ix, iz = math.floor(fx), math.floor(fz)
+	local tx, tz = fx - ix, fz - iz
+	local h00, h10 = corner(ix, iz), corner(ix + 1, iz)
+	local h01, h11 = corner(ix, iz + 1), corner(ix + 1, iz + 1)
+	return (h00 * (1 - tx) + h10 * tx) * (1 - tz) + (h01 * (1 - tx) + h11 * tx) * tz
+end
+
+function Layout.groundY(x: number, z: number): number
+	local y = terrainY(x, z)
+	for _, span in bridgeSpans do
+		local dx, dz = x - span.x, z - span.z
+		local along = math.abs(dx * span.sin + dz * span.cos) -- the deck's local Z
+		local side = math.abs(dx * span.cos - dz * span.sin) -- its local X
+		if along <= BRIDGE_HALF and side <= BRIDGE_HALF_WIDTH then
+			local rise = if along <= BRIDGE_DECK_HALF
+				then span.deck
+				else span.deck * (BRIDGE_HALF - along) / (BRIDGE_HALF - BRIDGE_DECK_HALF)
+			y = math.max(y, span.base + rise)
+		end
+	end
+	return y
 end
 
 function Layout.bounds(spacing: number?)

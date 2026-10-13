@@ -119,6 +119,12 @@ return table.freeze({
 		emblem_star = { image = "", glyph = "★" },
 		emblem_oak = { image = "", glyph = "🌳" },
 		emblem_sun = { image = "", glyph = "☀" },
+		-- FL-0088 citizen card and conversation (design/ui/icons.js)
+		talk = { image = "", glyph = "💬" },
+		heart = { image = "", glyph = "❤" },
+		mood = { image = "", glyph = "🙂" },
+		scroll = { image = "", glyph = "📜" },
+		laurel = { image = "", glyph = "🏅" },
 		-- FL-0089: reputation categories (living-kingdom §3) and kingdom conditions
 		rep_compassion = { image = "", glyph = "❤" },
 		rep_honor = { image = "", glyph = "⚖" },

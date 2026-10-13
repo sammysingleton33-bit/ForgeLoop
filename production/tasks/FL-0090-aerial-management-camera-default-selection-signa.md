@@ -9,7 +9,7 @@ game: game-001
 created: 2026-10-12
 updated: 2026-10-12
 depends_on: []
-context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
+context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 6
 evidence:
   - "check.sh OVERALL PASS @9e4fb27: framework 485, game-001 155 specs (boot gate incl.), Selene 0/0, StyLua 210, both builds and place checks"

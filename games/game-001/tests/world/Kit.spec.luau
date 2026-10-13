@@ -13,7 +13,7 @@ local KINGDOM_COLORS = {
 	Color3.fromRGB(245, 205, 48), -- gold
 }
 local STAGES = { 1, 2, 3, "complete" }
-local PRIMITIVE_CLASSES = { Part = true, WedgePart = true, CornerWedgePart = true }
+local PRIMITIVE_CLASSES = { Part = true, WedgePart = true, CornerWedgePart = true, Seat = true } -- Seat: keep Throne (G13.6)
 local MAX_BUILDING_PARTS = 260 -- per model; world budget ≤ 25k parts (BRIEF §14)
 
 local function parts(model: Instance): { BasePart }
@@ -140,16 +140,16 @@ describe("Kit.setKingdomColor", function()
 	end)
 end)
 
-describe("Kit.character (≤ 8 parts, D-026)", function()
+describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
 	local JOBS = { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" }
-	it("builds rigs of at most 8 non-colliding parts joined by Motor6Ds named after the moving part", function()
+	it("builds rigs of at most 9 non-colliding parts joined by Motor6Ds named after the moving part", function()
 		for _, kind in { "citizen", "soldier", "governor" } do
 			for _, job in JOBS do
 				local rig = noYield(function()
 					return Kit.character(kind, job, KINGDOM_COLORS[2])
 				end)
 				local ps = parts(rig)
-				expect(#ps).toBeLessThanOrEqual(8)
+				expect(#ps).toBeLessThanOrEqual(9)
 				expect(rig.PrimaryPart).never.toBeNil()
 				expect((rig.PrimaryPart :: BasePart).Anchored).toBe(true)
 				for _, p in ps do
@@ -157,16 +157,23 @@ describe("Kit.character (≤ 8 parts, D-026)", function()
 					expect(p.CanTouch).toBe(false)
 					expect(p.CanQuery).toBe(false)
 				end
-				local motors = 0
+				local motors, welded = 0, 0
 				for _, d in rig:GetDescendants() do
 					if d:IsA("Motor6D") then
 						motors += 1
 						expect(d.Name).toBe((d.Part1 :: BasePart).Name)
+						expect((d.Part1 :: BasePart).Name).never.toBe("Hair")
+					elseif d:IsA("Weld") or d:IsA("WeldConstraint") then
+						-- D-032: headwear (Hair) is welded to the Head, never motored
+						expect(d.Part0).toBe(rig:FindFirstChild("Head"))
+						expect((d.Part1 :: BasePart).Name).toBe("Hair")
+						welded += 1
 					end
 					expect(d:IsA("Humanoid")).toBe(false)
 					expect(d:IsA("Animator")).toBe(false)
 				end
-				expect(motors).toBe(#ps - 1)
+				expect(welded).toBe(if rig:FindFirstChild("Hair") then 1 else 0)
+				expect(motors).toBe(#ps - 1 - welded)
 			end
 		end
 	end)
