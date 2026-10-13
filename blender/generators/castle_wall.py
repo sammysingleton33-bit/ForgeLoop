@@ -109,13 +109,13 @@ def merlon_xs(n):
     return [-HALF + pitch * (i + 0.5) for i in range(n)], pitch
 
 
-def bartizan(b, k, rng, x, z_base, z_top):
+def bartizan(b, k, rng, x, z_base, z_top, big=False):
     """Corbelled sentry turret on the outer parapet, roofed in the kingdom language; built at the
     outer face and pulled in so nothing passes LIM (symmetric bounds)."""
     sd, st, sl = kc(k, "stone_dark"), kc(k, "stone"), kc(k, "stone_light")
     out, roof = [], []
     if k == "blue":
-        h = 1.85
+        h = 2.4 if big else 1.85
         out.append(cc.square_lathe([(0.35, z_base - 2.8), (h, z_base), (h, z_top)], sd))
         zz = z_base + 0.2
         while zz < z_top - 1.0:
@@ -123,20 +123,21 @@ def bartizan(b, k, rng, x, z_base, z_top):
                        .paint(grad=("range", 0.4, 0.9)))
             zz += 2.7
         out.append(cc.square_lathe([(h + 0.35, z_top - 0.1), (h + 0.35, z_top + 0.45)], sl))
-        roof, apex = cc.pyramid(k, h + 0.1, 7.2, overhang=0.55, rows=1, flare=True)
+        roof, apex = cc.pyramid(k, h + 0.1, 9.0 if big else 7.2, overhang=0.55, rows=1, flare=True)
         r_slit = h + 0.12
     else:
-        r = 2.1
+        r = 2.1 if k == "red" else 2.9  # gold: a chunky drum, never a slim ringed shaft
         seg = 10
         out.append(lathe([(0.3, z_base - 3.2), (r * 0.6, z_base - 1.2), (r, z_base), (r, z_top)], seg, st)
                    .paint(grad=("range", 0.3, 0.9)))
-        zz = (z_base + z_top) / 2
-        out.append(cc.annulus(r - 0.2, r + 0.18, zz, zz + 0.45, seg, sl))
+        if k == "red":
+            zz = (z_base + z_top) / 2
+            out.append(cc.annulus(r - 0.2, r + 0.18, zz, zz + 0.45, seg, sl))
         out.append(cc.annulus(r - 0.3, r + 0.4, z_top - 0.1, z_top + 0.45, seg, sl))
         if k == "red":
             roof, apex = cc.spire(k, r, 9.0, seg=8, overhang=0.45, rows=1)
         else:
-            roof, apex = cc.dome(k, r * 0.95, 5.0, onion=True, seg=10, fin="simple", ribs=False)
+            roof, apex = cc.dome(k, r * 0.92, 5.4, onion=True, seg=10, fin="simple", ribs=False)
         r_slit = r + 0.05
     for q in roof:
         out.append(q.move(0, 0, z_top + 0.45).paint(tag="roof"))
@@ -354,7 +355,7 @@ def build(b, p):
             breteche(b, k, 4.0)
         else:
             bx = {"red": 0.0, "blue": -5.5, "yellow": 4.5}[k]
-            bartizan(b, k, rng, bx, WALK - 3.4, z_mtop + (1.8 if k != "blue" else 0.2))
+            bartizan(b, k, rng, bx, WALK - 3.4, z_mtop + {"red": 1.8, "blue": 0.2, "yellow": 0.6}[k])
         bot, top = stair(b, k, rng)
         b.socket("stair_bottom", *bot)
         b.socket("stair_top", *top)
@@ -362,7 +363,9 @@ def build(b, p):
     else:
         ban = [0.0]
         if k in ("red", "yellow"):  # corner turret carries the kingdom roof shape on the curtain too
-            bartizan(b, k, rng, -11.0, WALK - 3.4, z_mtop + 1.8)
+            bartizan(b, k, rng, -11.0, WALK - 3.4, z_mtop + (1.8 if k == "red" else 0.6))
+        elif k == "blue":  # one strong pyramid-capped turret over the merlon row
+            bartizan(b, k, rng, 10.0, WALK - 3.4, z_mtop + 1.0, big=True)
     yb = {"mach": y_par, "caps": YO, "hoarding": YO - 1.6, "talus": YO}[prof]
     zb = {"mach": z_par0 - 0.4, "caps": WALK - 0.6, "hoarding": WALK - 1.6, "talus": WALK - 1.7}[prof]
     for x in ban:

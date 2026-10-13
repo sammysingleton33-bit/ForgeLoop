@@ -366,7 +366,7 @@ def kiosk(b, k, x, y, z, r=1.75):
     b.add(cc.ybox(x - s, x + s, y - s, y + s, z, z + 0.6, kc(k, "stone_light")))
     for sx in (-1, 1):
         for sy in (-1, 1):
-            b.add(box(0.5, 0.5, 3.6, kc(k, "stone_light")).move(x + sx * (r - 0.45), y + sy * (r - 0.45), z + 0.6))
+            b.add(box(0.85, 0.85, 3.6, kc(k, "stone_light")).move(x + sx * (r - 0.55), y + sy * (r - 0.55), z + 0.6))
     b.add(cc.ybox(x - s - 0.15, x + s + 0.15, y - s - 0.15, y + s + 0.15, z + 4.2, z + 4.8, kc(k, "accent")))
     b.add(cc.ybox(x - s - 0.05, x + s + 0.05, y - s - 0.05, y + s + 0.05, z + 4.05, z + 4.25, tr))
     pcs, apex = cc.dome(k, r * 0.92, r * 2.3, onion=True, seg=6, fin="simple", ribs=False, collar=False)
@@ -494,9 +494,9 @@ def build(b, p):
             for sx in (-1, 1):
                 for sy in (-1, 1):
                     kiosk(b, k, sx * (hp - 1.75), sy * (hp - 1.75), walk + 0.05)
-            z = drum(b, k, rng, 3.9, walk, 11.0, windows=2, seg=12, shutters=False)  # tall slim raised drum
-            b.add(cc.annulus(3.2, 4.5, z, z + 0.8, 12, kc(k, "accent")))
-            pcs, apex = cc.dome(k, 4.3, 9.6, onion=True, seg=12)  # true onion: bulb, pinched neck, tip
+            z = drum(b, k, rng, 4.9, walk, 8.4, windows=2, seg=12, shutters=False)  # chunky raised drum
+            b.add(cc.annulus(4.1, 5.5, z, z + 0.8, 12, kc(k, "accent")))
+            pcs, apex = cc.dome(k, 5.1, 10.5, onion=True, seg=12)  # true onion: bulb, pinched neck, tip
             b.add(cc.place(pcs, 0, 0, 0, z + 0.8), tag="roof")
             flag_at = (0, 0, z + 0.8 + apex)
 

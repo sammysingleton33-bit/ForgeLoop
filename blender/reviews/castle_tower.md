@@ -83,4 +83,17 @@ Tris: red 4164/5708, blue 4104/5400, green 4260/4784, yellow 4770/5442 (of 6000)
 diff 0.091; full build BUILD PASS. Sheet: `previews/castle_tower.jpg`.
 Remaining: red_02 sits at 95% of budget because of the added turret cluster.
 
+## Round 6 (advisories from fresh review round 3)
+Advisory: no slim-shaft + small-dome + ring silhouettes in the gold kingdom; shared emblems.
+Changes:
+- yellow_02: the raised drum is chunky (r 4.9, h 8.4) under a true onion (r 5.1), not a slim
+  shaft. Kiosk posts are 0.85 thick.
+- Emblems: castle banners, flags, shields and the gold gatehouse crest now use the shared helpers from
+  `_kingdom_props_common.py` (`emblem`, `field`, `border`, `emblem_colors`). Emerald flies the bright
+  cloth with an ivory border; gold gets a bronze border. The Sunspire sun always sits on an ivory
+  roundel with a bronze rim, never on gold. Crown (red) and star (blue) are kept; the castle's own
+  emblem outlines are deleted.
+Scores unchanged from round 3 of the fresh review.
+Tris: red_01 4228, red_02 5772, blue_01 4172, blue_02 5468, green_01 4388, green_02 4912, yellow_01 4966, yellow_02 5614 (of 6000); min silhouette diff 0.09; full build BUILD PASS.
+
 Final: full (non-quick) build, see `previews/castle_tower.jpg`.

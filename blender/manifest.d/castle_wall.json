@@ -9,7 +9,7 @@
       },
       "dimensions_studs": {
         "x": 32.0,
-        "y": 32.1,
+        "y": 42.25,
         "z": 16.8
       },
       "double_sided": false,
@@ -19,7 +19,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "61b4bd255c4f2094",
+      "geometry_hash": "936e9c6b40b7bec0",
       "id": "castle_wall_blue_01",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -31,21 +31,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7502,
       "sockets": {
@@ -83,8 +71,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 1550,
-        "lod1": 542
+        "lod0": 2030,
+        "lod1": 710
       },
       "validation_pass": true
     },
@@ -107,7 +95,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "68cd0ce63e1f5862",
+      "geometry_hash": "5215ba6b8def5af3",
       "id": "castle_wall_blue_02",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -119,21 +107,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7503,
       "sockets": {
@@ -181,8 +157,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2370,
-        "lod1": 828
+        "lod0": 2438,
+        "lod1": 852
       },
       "validation_pass": true
     },
@@ -205,7 +181,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "98ff62e76ecc624b",
+      "geometry_hash": "bec91a1ec22c99d6",
       "id": "castle_wall_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -217,21 +193,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7504,
       "sockets": {
@@ -269,8 +233,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2612,
-        "lod1": 914
+        "lod0": 2740,
+        "lod1": 958
       },
       "validation_pass": true
     },
@@ -293,7 +257,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "1d347aabe605f045",
+      "geometry_hash": "c0cad51e17156733",
       "id": "castle_wall_green_02",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -305,21 +269,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7505,
       "sockets": {
@@ -367,8 +319,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2660,
-        "lod1": 930
+        "lod0": 2788,
+        "lod1": 974
       },
       "validation_pass": true
     },
@@ -391,7 +343,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "b5cde713b231735d",
+      "geometry_hash": "778a0b9a69915f15",
       "id": "castle_wall_red_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -403,21 +355,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7500,
       "sockets": {
@@ -455,8 +395,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2248,
-        "lod1": 786
+        "lod0": 2312,
+        "lod1": 808
       },
       "validation_pass": true
     },
@@ -479,7 +419,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "311f978f2ce80c2d",
+      "geometry_hash": "ac1899cf6900aee6",
       "id": "castle_wall_red_02",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -491,21 +431,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7501,
       "sockets": {
@@ -553,8 +481,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2632,
-        "lod1": 920
+        "lod0": 2760,
+        "lod1": 966
       },
       "validation_pass": true
     },
@@ -567,7 +495,7 @@
       },
       "dimensions_studs": {
         "x": 32.0,
-        "y": 40.05,
+        "y": 39.25,
         "z": 16.8
       },
       "double_sided": false,
@@ -577,7 +505,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "c6791c7310a67994",
+      "geometry_hash": "55d5fa23afda7b07",
       "id": "castle_wall_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -589,21 +517,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7506,
       "sockets": {
@@ -641,8 +557,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2064,
-        "lod1": 722
+        "lod0": 2240,
+        "lod1": 784
       },
       "validation_pass": true
     },
@@ -655,7 +571,7 @@
       },
       "dimensions_studs": {
         "x": 32.0,
-        "y": 40.05,
+        "y": 39.25,
         "z": 16.8
       },
       "double_sided": false,
@@ -665,7 +581,7 @@
       },
       "generator": "castle_wall",
       "generator_version": 1,
-      "geometry_hash": "b641d043714bab6d",
+      "geometry_hash": "e128505fd8f5c32c",
       "id": "castle_wall_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -677,21 +593,9 @@
       "preview": "previews/castle_wall.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "All 8 variants read by kingdom even at 124 studs (red spires, blue pyramid caps, emerald hoarding roofs, gold onion domes); blue_01 is the weakest silhouette (flat slab with tiny caps) and red_01/02 and yellow_01/02 differ mainly by buttresses and turret position. Emblem fields deviate from spec: gold banners put an ivory sun on a gold field (spec says ivory or bronze field) and green banners show a symmetric rosette with no ivory border rather than a full lobed oak leaf.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_wall.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7507,
       "sockets": {
@@ -739,8 +643,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 3000,
-        "lod0": 2348,
-        "lod1": 820
+        "lod0": 2524,
+        "lod1": 882
       },
       "validation_pass": true
     }
@@ -755,8 +659,8 @@
       "castle_wall_red_02",
       "castle_wall_yellow_02"
     ],
-    "mean_pair_diff": 0.2058,
-    "min_pair_diff": 0.0893,
+    "mean_pair_diff": 0.1967,
+    "min_pair_diff": 0.0991,
     "pass": true,
     "threshold": 0.08
   }

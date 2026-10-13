@@ -148,11 +148,11 @@ def tower_crowns(b, k, rng, form, y, z, front=True):
             pcs, apex = cc.spire(k, Rp - 0.4, 16.0, seg=12, overhang=0.45, rows=2)
             b.add(cc.place(pcs, 0, x, y, z + 5.2), tag="roof")
         else:
-            b.add(cylinder(TR - 0.8, TR - 0.8, 3.6, 10, kc(k, "stone")).move(x, y, z).paint(grad=("range", 0.5, 0.95)))
-            b.add(cc.annulus(TR - 1.3, TR - 0.1, z + 3.6, z + 4.3, 10, kc(k, "accent")).move(x, y, 0))
-            pcs, apex = cc.dome(k, TR - 0.75, (TR - 0.75) * 2.3, onion=True, seg=10, fin="sun", ribs=False,
+            b.add(cylinder(TR - 0.3, TR - 0.3, 2.4, 10, kc(k, "stone")).move(x, y, z).paint(grad=("range", 0.5, 0.95)))
+            b.add(cc.annulus(TR - 0.8, TR + 0.2, z + 2.4, z + 3.0, 10, kc(k, "accent")).move(x, y, 0))
+            pcs, apex = cc.dome(k, TR - 0.35, (TR - 0.35) * 2.1, onion=True, seg=10, fin="sun", ribs=False,
                                 collar=False)
-            b.add(cc.place(pcs, 0, x, y, z + 4.3), tag="roof")
+            b.add(cc.place(pcs, 0, x, y, z + 3.0), tag="roof")
 
 
 def rotate_xy(x, y, th):
@@ -346,16 +346,13 @@ def build(b, p):
                  (-3.4, TOP + 5.4), (-3.4, TOP + 3.6), (-5.0, TOP + 3.6)]
         b.add(prism(crest, 1.4, st, axis="Y").move(0, -DF + 0.5, 0).paint(grad=("range", 0.45, 0.95)))
         b.add(cc.ybox(-5.2, 5.2, -DF - 0.35, -DF + 1.3, TOP + 3.3, TOP + 3.8, kc(k, "trim")))
-        b.add(cc.emblem(k, 1.5, 0.25, "gold")[0].move(0, -DF - 0.3, TOP + 1.6))
+        b.add([q.move(0, -DF - 0.25, TOP + 1.7) for q in cc.kingdom_emblem(k, 3.0, 0.2)])
         b.add(cc.ybox(-TX + TR, TX - TR, -DF - 0.3, -DF + 0.2, TOP - 1.9, TOP - 1.45, kc(k, "accent")))
         b.add(cc.ybox(-TX + TR, TX - TR, -DF - 0.36, -DF + 0.2, TOP - 1.45, TOP - 1.0, kc(k, "trim")))
 
     # --- emblem shield over the arch, banners on the front towers, the flag on the gate block
     sh_z = CROWN + 6.4
-    shield = [(-1.0, 0.6), (1.0, 0.6), (1.0, -0.2), (0.0, -1.3), (-1.0, -0.2)]
-    b.add(prism([(x * 2.1, z * 2.1) for x, z in shield], 0.4, kc(k, "cloth")).move(0, -DF - 0.55, sh_z))
-    b.add(prism([(x * 2.45, z * 2.45) for x, z in shield], 0.3, kc(k, "trim")).move(0, -DF - 0.35, sh_z))
-    b.add(cc.emblem(k, 1.2, 0.2)[0].move(0, -DF - 0.78, sh_z - 0.4))
+    b.add([q.move(0, -DF - 0.05, sh_z) for q in cc.shield_crest(k, 2.1)])
     for sx in (-1, 1):
         if form == "square":
             pcs = [q.move(sx * TX, -DF - TR - 0.05, front_top - 2.0) for q in cc.banner(k, 3.2, 9.0, tail="point")]

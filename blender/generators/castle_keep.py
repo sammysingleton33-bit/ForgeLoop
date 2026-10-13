@@ -187,11 +187,7 @@ def podium_and_door(b, k, rng, W, D, door_w=6.4, door_h=10.6):
     b.add([q.move(0, -D / 2 - 0.15, POD) for q in cc.arched_door(k, door_w, door_h, jw=1.3, m=9, step=False)])
     # emblem shield above the door
     sh_z = POD + door_h + 2.6
-    shield = [(-1.0, 0.6), (1.0, 0.6), (1.0, -0.2), (0.0, -1.3), (-1.0, -0.2)]
-    from lib.geo import prism
-    b.add(prism([(x * 2.2, z * 2.2) for x, z in shield], 0.4, kc(k, "cloth")).move(0, -D / 2 - 0.5, sh_z))
-    b.add(prism([(x * 2.55, z * 2.55) for x, z in shield], 0.3, kc(k, "trim")).move(0, -D / 2 - 0.3, sh_z))
-    b.add(cc.emblem(k, 1.25, 0.2)[0].move(0, -D / 2 - 0.72, sh_z - 0.4))
+    b.add([q.move(0, -D / 2, sh_z) for q in cc.shield_crest(k, 2.2)])
     # balcony over the door (stone slab on corbels, balustrade), door onto it
     bz = POD + 14.6
     b.add(cc.ybox(-5.0, 5.0, -D / 2 - 3.0, -D / 2 + 0.2, bz - 0.6, bz, sl))
@@ -504,10 +500,10 @@ def keep_yellow(b, k, rng):
             r = 4.3
             zt = round_turret(b, k, rng, x, y, r, POD, zm + 9.0, hidden_to=zm)
             b.add(cc.annulus(r - 0.3, r + 0.6, zt, zt + 0.8, 12, kc(k, "accent")).move(x, y, 0))
-            for i in range(8):  # slender posts of the open belvedere
-                th = 2 * math.pi * (i + 0.5) / 8
-                px, py = rotate_xy(0, -(r - 0.2), th)
-                b.add(box(0.5, 0.5, 3.4, kc(k, "stone_light")).move(x + px, y + py, zt + 0.8))
+            for i in range(4):  # four broad piers of the open belvedere (chunky, not slender posts)
+                th = 2 * math.pi * (i + 0.5) / 4
+                px, py = rotate_xy(0, -(r - 0.8), th)
+                b.add(box(1.5, 1.5, 3.4, kc(k, "stone_light")).rotate(th, "Z").move(x + px, y + py, zt + 0.8))
             b.add(cylinder(r - 1.0, r - 1.0, 3.4, 8, "window_dark").move(x, y, zt + 0.8))
             b.add(cc.annulus(r - 0.4, r + 0.5, zt + 4.2, zt + 4.9, 12, kc(k, "stone_light")).move(x, y, 0))
             pcs, apex = cc.dome(k, r * 0.92, r * 2.0, onion=True, seg=10, fin="simple", ribs=False, collar=False)
@@ -531,15 +527,28 @@ def keep_yellow(b, k, rng):
     b.add(cc.annulus(Rd - 0.6, Rd + 0.15, zd1 + 0.5, zd1 + 1.4, 16, "gold_dark").move(0, cy, 0))
     pcs, apex = cc.dome(k, Rd, 18.0, onion=True, seg=16)
     b.add(cc.place(pcs, 0, 0, cy, zd1 + 1.4), tag="roof")
-    # two slender minarets flanking the back
+    # two chunky crenellated back towers (square, squat, gold half-dome caps): the gold kingdom's
+    # identity is big domes on chunky drums, never slim ringed shafts
     for sx in (-1, 1):
-        x, y = sx * 9.0, D / 2 - 2.5
-        b.add(cylinder(1.8, 1.6, zm + 18.0 - POD, 8, kc(k, "stone")).move(x, y, POD).paint(grad=("range", 0.35, 0.95)))
-        for zz, rc in ((zm + 4.0, kc(k, "trim")), (zm + 12.0, kc(k, "accent"))):
-            b.add(cylinder(2.3, 2.3, 0.6, 8, rc).move(x, y, zz))
-        b.add(cylinder(2.5, 2.5, 0.6, 8, kc(k, "stone_light")).move(x, y, zm + 18.0))
-        pcs2, _ = cc.dome(k, 1.9, 4.2, onion=True, seg=8, fin="simple", ribs=False, collar=False)
-        b.add(cc.place(pcs2, 0, x, y, zm + 18.6), tag="roof")
+        x, y = sx * 10.5, D / 2 - 1.5
+        h = 4.2
+        zt = zm + 8.5
+        b.add(cc.ybox(x - h, x + h, y - h, y + h, POD, zt, kc(k, "stone_dark")))
+        for f in (1, 2, 3):  # outward faces (back, sides); the front face is buried in the hall
+            th = f * math.pi / 2
+            z_start = zm if (f == 3 and sx > 0) or (f == 1 and sx < 0) else POD
+            bl = cc.ashlar_plane(k, rng, -h, h, z_start, zt, course=3.2, blen=(3.6, 5.6), end_gap=False)
+            b.add([q.move(0, -h, 0).rotate(th, "Z").move(x, y, 0) for q in bl])
+        b.add(cc.ybox(x - h - 0.5, x + h + 0.5, y - h - 0.5, y + h + 0.5, zt - 0.1, zt + 0.5, kc(k, "stone_light")))
+        for f in range(4):
+            th = f * math.pi / 2
+            for u in (-2.2, 2.2):
+                ox, oy = rotate_xy(u, -h + 0.1, th)
+                b.add(cc.place(cc.merlon("stepped", k, w=2.0, h=2.6, t=0.9), th, x + ox, y + oy, zt + 0.5))
+                b.stats["merlons"] = b.stats.get("merlons", 0) + 1
+        b.add(cc.ybox(x - 2.6, x + 2.6, y - 2.6, y + 2.6, zt + 0.5, zt + 2.1, kc(k, "stone_light")))
+        pcs2, _ = cc.dome(k, 3.0, 3.0, onion=False, seg=10, fin="simple", ribs=False, collar=False)
+        b.add(cc.place(pcs2, 0, x, y, zt + 2.1), tag="roof")
         b.stats["turrets"] = b.stats.get("turrets", 0) + 1
     return door, balc, (0, cy, zd1 + 1.4 + apex)
 

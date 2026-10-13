@@ -19,7 +19,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "64d2595bd8ee5741",
+      "geometry_hash": "7acd5d64107e3e60",
       "id": "castle_tower_blue_01",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -32,21 +32,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7302,
       "sockets": {
@@ -79,8 +67,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4104,
-        "lod1": 1436
+        "lod0": 4172,
+        "lod1": 1460
       },
       "validation_pass": true
     },
@@ -103,7 +91,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "304b919289e3a9c2",
+      "geometry_hash": "e889d06203126994",
       "id": "castle_tower_blue_02",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -116,21 +104,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7303,
       "sockets": {
@@ -163,8 +139,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 5400,
-        "lod1": 1890
+        "lod0": 5468,
+        "lod1": 1912
       },
       "validation_pass": true
     },
@@ -187,7 +163,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "2e68ceb8b781c9a7",
+      "geometry_hash": "98d32b9aadac8212",
       "id": "castle_tower_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -200,21 +176,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7304,
       "sockets": {
@@ -247,8 +211,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4260,
-        "lod1": 1490
+        "lod0": 4388,
+        "lod1": 1534
       },
       "validation_pass": true
     },
@@ -271,7 +235,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "8881daa372d3788c",
+      "geometry_hash": "4524e210e7cbacca",
       "id": "castle_tower_green_02",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -284,21 +248,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7305,
       "sockets": {
@@ -331,8 +283,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4784,
-        "lod1": 1674
+        "lod0": 4912,
+        "lod1": 1718
       },
       "validation_pass": true
     },
@@ -355,7 +307,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "7141a6556477871f",
+      "geometry_hash": "923de8a68aed96a3",
       "id": "castle_tower_red_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -368,21 +320,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7300,
       "sockets": {
@@ -415,8 +355,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4164,
-        "lod1": 1456
+        "lod0": 4228,
+        "lod1": 1478
       },
       "validation_pass": true
     },
@@ -439,7 +379,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "37c886205f24bfda",
+      "geometry_hash": "7888f06cf4bd5a27",
       "id": "castle_tower_red_02",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -452,21 +392,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7301,
       "sockets": {
@@ -499,8 +427,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 5708,
-        "lod1": 1996
+        "lod0": 5772,
+        "lod1": 2020
       },
       "validation_pass": true
     },
@@ -523,7 +451,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "e3946d341b3ddd2d",
+      "geometry_hash": "1c75d28fe9be66eb",
       "id": "castle_tower_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -536,21 +464,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7306,
       "sockets": {
@@ -583,8 +499,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 4770,
-        "lod1": 1668
+        "lod0": 4966,
+        "lod1": 1738
       },
       "validation_pass": true
     },
@@ -597,7 +513,7 @@
       },
       "dimensions_studs": {
         "x": 18.0,
-        "y": 60.4,
+        "y": 58.7,
         "z": 18.0
       },
       "double_sided": false,
@@ -607,7 +523,7 @@
       },
       "generator": "castle_tower",
       "generator_version": 1,
-      "geometry_hash": "39f9b0c65d0423a4",
+      "geometry_hash": "2a38e10ceb2f78eb",
       "id": "castle_tower_yellow_02",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -620,21 +536,9 @@
       "preview": "previews/castle_tower.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Strongest generator in the set: round vs square bodies, spire cluster (red_02), corner pyramids (blue_02) and corner onions (yellow_02) all read instantly at 93 studs; green_01/02 are close (02 only adds a lantern and height). Same emblem-field deviation as the kit (ivory sun on gold field, green rosette without ivory border); finials are solid ball stacks, no crescents, slits are plain.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_tower.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7307,
       "sockets": {
@@ -645,7 +549,7 @@
         ],
         "flag": [
           -0.0,
-          60.4,
+          58.7,
           0.0
         ],
         "top": [
@@ -667,8 +571,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 6000,
-        "lod0": 5442,
-        "lod1": 1904
+        "lod0": 5614,
+        "lod1": 1964
       },
       "validation_pass": true
     }
@@ -683,8 +587,8 @@
       "castle_tower_blue_01",
       "castle_tower_blue_02"
     ],
-    "mean_pair_diff": 0.1649,
-    "min_pair_diff": 0.0914,
+    "mean_pair_diff": 0.1638,
+    "min_pair_diff": 0.09,
     "pass": true,
     "threshold": 0.08
   }

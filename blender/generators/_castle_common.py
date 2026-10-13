@@ -16,6 +16,7 @@ import math
 from lib import kit
 from lib.geo import Matrix, Piece, Vector, arch_poly, bevel, box, cylinder, lathe, loft, prism, recalc_normals
 from lib.palette import kingdom_color
+from generators import _kingdom_props_common as kp
 
 KINGDOMS = ("red", "blue", "green", "yellow")
 MODULE = 32.0  # wall module length (X)
@@ -400,40 +401,44 @@ def arch_ring(width, spring, thick, depth, color, m=7, keystone=True):
 
 # ------------------------------------------------------------------ emblems, banners, flags, finials
 
-def emblem_poly(k, s=1.0):
-    """2D emblem outline (x, z), ~2s across, centred on the origin."""
-    pts = []
-    if k == "red":  # crown
-        pts = [(-1.0, -0.7), (1.0, -0.7), (1.0, 0.05), (1.1, 0.8), (0.52, 0.2), (0.0, 1.0), (-0.52, 0.2),
-               (-1.1, 0.8), (-1.0, 0.05)]
-    elif k == "blue":  # five-point star
-        for i in range(10):
-            a = math.pi / 2 + i * math.pi / 5
-            r = 1.0 if i % 2 == 0 else 0.42
-            pts.append((math.cos(a) * r, math.sin(a) * r))
-    elif k == "green":  # oak leaf
-        right = [(0.08, -1.1), (0.3, -0.72), (0.55, -0.62), (0.42, -0.36), (0.72, -0.18), (0.52, 0.08),
-                 (0.74, 0.34), (0.44, 0.5), (0.52, 0.78), (0.18, 0.86)]
-        pts = right + [(0.0, 1.1)] + [(-x, z) for x, z in reversed(right)]
-    else:  # sun
-        for i in range(16):
-            a = math.pi / 2 + i * math.pi / 8
-            r = 1.0 if i % 2 == 0 else 0.62
-            pts.append((math.cos(a) * r, math.sin(a) * r))
-    return [(x * s, z * s) for x, z in pts]
+EMBLEM_KIND = {"red": "crown", "blue": "star", "green": "oak", "yellow": "sun"}
 
 
-def emblem(k, s=1.0, depth=0.14, color=None):
-    """Emblem plaque on a face at y=0 facing -Y, centred at the origin (XZ)."""
-    return [prism(emblem_poly(k, s), depth, color or kc(k, "emblem")).move(0, -depth / 2, 0)]
+def kingdom_emblem(k, size, depth=0.16):
+    """The shared kingdom emblem (`_kingdom_props_common.emblem`, colours from `emblem_colors`),
+    centred on the origin, front towards -Y, about `size` studs across. The Sunspire sun never sits
+    on its own gold: it always gets an ivory roundel with a bronze rim behind it."""
+    kind = EMBLEM_KIND[k]
+    main, acc = kp.emblem_colors(k, kind)
+    out = []
+    y = 0.0
+    if kind == "sun":
+        for r, col, dy in ((size * 0.64, kc(k, "trim"), 0.06), (size * 0.56, kc(k, "accent"), 0.0)):
+            out.append(cylinder(r, r, 0.12, 12, col).rotate(math.pi / 2, "X").move(0, dy, 0))
+        y = -0.2
+    for q in kp.emblem(kind, size, main, acc, depth=depth, mid=None):
+        out.append(q.move(0, y, 0))
+    return out
+
+
+def shield_crest(k, s=2.2):
+    """Heater shield on a wall face (y = 0, facing -Y), centred on the origin: rim in the kingdom
+    border colour, field in the kingdom field colour, the shared emblem on top."""
+    pts = [(-1.0, 0.6), (1.0, 0.6), (1.0, -0.2), (0.0, -1.3), (-1.0, -0.2)]
+    out = [prism([(x * s * 1.16, z * s * 1.16) for x, z in pts], 0.3, kp.border(k)).move(0, -0.3, 0),
+           prism([(x * s, z * s) for x, z in pts], 0.4, kp.field(k)).move(0, -0.5, 0)]
+    for q in kingdom_emblem(k, s * 1.1, 0.16):
+        out.append(q.move(0, -0.78, -0.12 * s))
+    return out
 
 
 def banner(k, w=3.6, h=8.0, tail="swallow", rod=True):
-    """Hanging banner on a face at y=0 facing -Y; top of the rod at z=0, cloth hangs down to -h."""
+    """Hanging banner on a face at y=0 facing -Y; top of the rod at z=0, cloth hangs down to -h.
+    Cloth = kingdom field colour, bands = kingdom border colour, shared kingdom emblem."""
     out = []
     y = -0.45
-    cloth = kc(k, "cloth")
-    trim = kc(k, "trim")
+    cloth = kp.field(k)
+    trim = kp.border(k)
     hw = w / 2
     if tail == "swallow":
         poly = [(-hw, -h), (0.0, -h + w * 0.42), (hw, -h), (hw, -0.3), (-hw, -0.3)]
@@ -444,12 +449,14 @@ def banner(k, w=3.6, h=8.0, tail="swallow", rod=True):
     out.append(prism(poly, 0.2, cloth).move(0, y, 0).paint(grad=("range", 0.25, 0.85)))
     out.append(box(w + 0.1, 0.3, 0.6, trim).move(0, y - 0.02, -1.0))  # top band
     out.append(box(w * 0.86, 0.26, 0.28, trim).move(0, y - 0.02, -h + w * 0.42 + 0.55))  # lower band
-    em = emblem(k, w * 0.3, 0.16)[0]
-    out.append(em.move(0, y - 0.1, -h * 0.44))
+    for q in kingdom_emblem(k, w * 0.62, 0.16):
+        out.append(q.move(0, y - 0.17, -h * 0.44))
     if rod:
         out.append(box(w + 1.0, 0.32, 0.32, "iron_dark", base=False).move(0, y, -0.25))
         for sx in (-1, 1):
             out.append(box(0.5, 0.5, 0.5, trim, base=False).move(sx * (w + 1.0) / 2, y, -0.25))
+        out.append(box(0.3, 0.6, 0.3, "iron_dark").move(-hw + 0.3, -0.25, -0.4))
+        out.append(box(0.3, 0.6, 0.3, "iron_dark").move(hw - 0.3, -0.25, -0.4))
     return out
 
 
@@ -467,7 +474,7 @@ def flag(k, length=4.4, height=2.6, rng=None, pennant=False, stripe=True, wave=0
         return f
 
     prof = [(-0.08, 0.0), (0.08, 0.0), (0.08, -height), (-0.08, -height)]
-    out = [loft(prof, ys, kc(k, "cloth"), deform=deform_fn(1.0, 0.0)).paint(grad=("range", 0.4, 0.95))]
+    out = [loft(prof, ys, kp.field(k), deform=deform_fn(1.0, 0.0)).paint(grad=("range", 0.4, 0.95))]
     if stripe and not pennant:
         prof2 = [(-0.12, -height * 0.36), (0.12, -height * 0.36), (0.12, -height * 0.64), (-0.12, -height * 0.64)]
         out.append(loft(prof2, ys[1:], kc(k, "emblem"), deform=deform_fn(1.0, 0.0)).paint(grad=0.8))

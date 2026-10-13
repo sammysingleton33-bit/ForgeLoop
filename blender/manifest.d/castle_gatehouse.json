@@ -150,7 +150,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "86a8b5f9d55fb18b",
+      "geometry_hash": "2e4fb119b7ee6894",
       "id": "castle_gatehouse_blue_01",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -161,21 +161,9 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_gatehouse.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7901,
       "sockets": {
@@ -223,8 +211,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 7378,
-        "lod1": 2582
+        "lod0": 7558,
+        "lod1": 2644
       },
       "validation_pass": true
     },
@@ -365,7 +353,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "8c92393cccbfed94",
+      "geometry_hash": "a392fe21a3471e1d",
       "id": "castle_gatehouse_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -376,21 +364,9 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_gatehouse.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7902,
       "sockets": {
@@ -438,8 +414,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 7842,
-        "lod1": 2744
+        "lod0": 8202,
+        "lod1": 2870
       },
       "validation_pass": true
     },
@@ -580,7 +556,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "2833250d9292d5f7",
+      "geometry_hash": "0808516571d38bff",
       "id": "castle_gatehouse_red_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -591,21 +567,9 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_gatehouse.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7900,
       "sockets": {
@@ -653,8 +617,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 7738,
-        "lod1": 2708
+        "lod0": 7906,
+        "lod1": 2766
       },
       "validation_pass": true
     },
@@ -785,7 +749,7 @@
       },
       "dimensions_studs": {
         "x": 32.244,
-        "y": 49.039,
+        "y": 47.929,
         "z": 27.2
       },
       "double_sided": false,
@@ -795,7 +759,7 @@
       },
       "generator": "castle_gatehouse",
       "generator_version": 1,
-      "geometry_hash": "073179f6892e1041",
+      "geometry_hash": "c2d57a4b735e587c",
       "id": "castle_gatehouse_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -806,21 +770,9 @@
       "preview": "previews/castle_gatehouse.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Each kingdom gate reads clearly at 78 studs with legible shields and banners, and the arch scales well to the character proxy; red, green and yellow share the same twin-drum-plus-arch body so identity rests on the roofline. Gold shield and banners are an ivory sun on a gold field (spec: ivory or bronze field) and green shows a rosette rather than an oak leaf with no ivory border.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_gatehouse.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7903,
       "sockets": {
@@ -868,8 +820,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 9000,
-        "lod0": 7858,
-        "lod1": 2750
+        "lod0": 8594,
+        "lod1": 3006
       },
       "validation_pass": true
     }
@@ -881,11 +833,11 @@
   "generator": "castle_gatehouse",
   "variation": {
     "closest_pair": [
-      "castle_gatehouse_red_01",
+      "castle_gatehouse_green_01",
       "castle_gatehouse_yellow_01"
     ],
-    "mean_pair_diff": 0.1634,
-    "min_pair_diff": 0.0919,
+    "mean_pair_diff": 0.1624,
+    "min_pair_diff": 0.0994,
     "pass": true,
     "threshold": 0.08
   }

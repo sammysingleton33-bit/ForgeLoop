@@ -62,4 +62,20 @@ Scores unchanged (5/5/5/4/4/4/5/4).
 Tris: red 13414, blue 13070, green 13644, yellow 12564 (of 16000; max 85%); min silhouette diff
 0.108; full build BUILD PASS. Sheet: `previews/castle_keep.jpg`.
 
+## Round 5 (advisories from fresh review round 3)
+Advisory (fresh review round 3, PASS): yellow_01's slim ringed turrets with tiny domes beside the
+great dome read as minarets, so the keep risked reading as a religious building.
+Changes:
+- The two minarets are replaced by chunky square crenellated back towers (8.4 wide, stepped merlons,
+  squat gold half-dome caps on a light plinth).
+- The corner belvederes stand on four broad piers instead of eight slender posts. Gold identity =
+  big onion domes on chunky drums.
+- Emblems: castle banners, flags, shields and the gold gatehouse crest now use the shared helpers from
+  `_kingdom_props_common.py` (`emblem`, `field`, `border`, `emblem_colors`). Emerald flies the bright
+  cloth with an ivory border; gold gets a bronze border. The Sunspire sun always sits on an ivory
+  roundel with a bronze rim, never on gold. Crown (red) and star (blue) are kept; the castle's own
+  emblem outlines are deleted.
+Scores unchanged from round 3 of the fresh review.
+Tris: red_01 13566, blue_01 13306, green_01 14068, yellow_01 14144 (of 16000); min silhouette diff 0.1086; full build BUILD PASS.
+
 Final: full (non-quick) build, see `previews/castle_keep.jpg`.

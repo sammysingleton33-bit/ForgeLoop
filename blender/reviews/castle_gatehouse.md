@@ -65,4 +65,19 @@ Scores unchanged (4 across the board).
 Tris: red 7738, blue 7378, green 7842, yellow 7858 (of 9000; max 87%); min silhouette diff 0.092;
 full build BUILD PASS. Sheet: `previews/castle_gatehouse.jpg`.
 
+## Round 5 (advisories from fresh review round 3)
+Advisory: no slim gold shafts; shared emblems.
+Changes:
+- Gold front towers: wide squat drum (r 3.7, h 2.4) under a broad onion instead of a slim drum
+  with a ring.
+- The shield over the arch uses `field` / `border` and the shared emblem; the gold crest carries the
+  sun on an ivory roundel.
+- Emblems: castle banners, flags, shields and the gold gatehouse crest now use the shared helpers from
+  `_kingdom_props_common.py` (`emblem`, `field`, `border`, `emblem_colors`). Emerald flies the bright
+  cloth with an ivory border; gold gets a bronze border. The Sunspire sun always sits on an ivory
+  roundel with a bronze rim, never on gold. Crown (red) and star (blue) are kept; the castle's own
+  emblem outlines are deleted.
+Scores unchanged from round 3 of the fresh review.
+Tris: red_01 7906, blue_01 7558, green_01 8202, yellow_01 8594 (of 9000); min silhouette diff 0.0994; full build BUILD PASS.
+
 Final: full (non-quick) build, see `previews/castle_gatehouse.jpg`.

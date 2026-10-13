@@ -19,7 +19,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "1bb89639ac0e0af2",
+      "geometry_hash": "5b380f704e5ada3c",
       "id": "castle_keep_blue_01",
       "kingdom": "blue",
       "material": "M_forge_palette",
@@ -29,21 +29,9 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_keep.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7701,
       "sockets": {
@@ -66,8 +54,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 13070,
-        "lod1": 4574
+        "lod0": 13306,
+        "lod1": 4656
       },
       "validation_pass": true
     },
@@ -90,7 +78,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "11b00511bf67dbbf",
+      "geometry_hash": "8b7287e62dcf5cdc",
       "id": "castle_keep_green_01",
       "kingdom": "green",
       "material": "M_forge_palette",
@@ -100,21 +88,9 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_keep.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7702,
       "sockets": {
@@ -137,8 +113,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 13644,
-        "lod1": 4774
+        "lod0": 14068,
+        "lod1": 4922
       },
       "validation_pass": true
     },
@@ -150,9 +126,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 44.765,
+        "x": 44.81,
         "y": 84.3,
-        "z": 40.436
+        "z": 40.494
       },
       "double_sided": false,
       "files": {
@@ -161,7 +137,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "ac178010a3a71af5",
+      "geometry_hash": "1e048857a33fb3ae",
       "id": "castle_keep_red_01",
       "kingdom": "red",
       "material": "M_forge_palette",
@@ -171,45 +147,33 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_keep.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7700,
       "sockets": {
         "balcony": [
-          0.041,
+          -0.029,
           17.8,
-          -12.718
+          -12.747
         ],
         "door": [
-          0.041,
+          -0.029,
           0.0,
-          -21.818
+          -21.847
         ],
         "flag": [
-          0.041,
+          -0.029,
           84.3,
-          3.882
+          3.853
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 13414,
-        "lod1": 4694
+        "lod0": 13566,
+        "lod1": 4748
       },
       "validation_pass": true
     },
@@ -221,9 +185,9 @@
         "fidelity": "PreciseConvexDecomposition"
       },
       "dimensions_studs": {
-        "x": 47.02,
+        "x": 46.763,
         "y": 68.8,
-        "z": 42.298
+        "z": 42.33
       },
       "double_sided": false,
       "files": {
@@ -232,7 +196,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "9dc5fec1a79bca29",
+      "geometry_hash": "186e3622a73f3d60",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -242,45 +206,33 @@
       "preview": "previews/castle_keep.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Hero-quality silhouettes at 115 studs; the green half-timbered hall with emerald roof is a standout, though all four share the same plan (corner towers, steps, balcony, central door). Advisory: on yellow_01 the slim ringed turret with a tiny dome beside the large drum-mounted central dome reads as a minaret, so the whole risks a mosque read; make it a chunky crenellated tower. Emblem fields deviate as elsewhere in the kit.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/castle_keep.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 3,
-          "proportions": 4,
-          "readability": 5,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7703,
       "sockets": {
         "balcony": [
-          0.241,
+          -0.058,
           17.8,
-          -13.649
+          -13.665
         ],
         "door": [
-          0.241,
+          -0.058,
           0.0,
-          -22.749
+          -22.765
         ],
         "flag": [
-          0.241,
+          -0.058,
           68.8,
-          2.951
+          2.935
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 16000,
-        "lod0": 12564,
-        "lod1": 4396
+        "lod0": 14144,
+        "lod1": 4950
       },
       "validation_pass": true
     }
@@ -295,8 +247,8 @@
       "castle_keep_blue_01",
       "castle_keep_yellow_01"
     ],
-    "mean_pair_diff": 0.1821,
-    "min_pair_diff": 0.1077,
+    "mean_pair_diff": 0.1823,
+    "min_pair_diff": 0.1086,
     "pass": true,
     "threshold": 0.08
   }

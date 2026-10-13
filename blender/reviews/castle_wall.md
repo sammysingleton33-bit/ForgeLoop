@@ -75,4 +75,19 @@ Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, deta
 Tris: red 2248/2632, blue 1550/2370, green 2612/2660, yellow 2064/2348 (of 3000; max 89%); min
 silhouette diff 0.089; full build BUILD PASS. Sheet: `previews/castle_wall.jpg`.
 
+## Round 5 (advisories from fresh review round 3)
+Advisory: gold wall turrets read as slim ringed shafts; blue_01 is the weakest silhouette;
+shared emblems.
+Changes:
+- Gold turrets (yellow_01 corner, yellow_02 bastion) are chunky drums (r 2.9, no mid ring, lower)
+  under a broad onion.
+- blue_01: one strong square turret with a tall slate pyramid over the merlon row at x = +10.
+- Emblems: castle banners, flags, shields and the gold gatehouse crest now use the shared helpers from
+  `_kingdom_props_common.py` (`emblem`, `field`, `border`, `emblem_colors`). Emerald flies the bright
+  cloth with an ivory border; gold gets a bronze border. The Sunspire sun always sits on an ivory
+  roundel with a bronze rim, never on gold. Crown (red) and star (blue) are kept; the castle's own
+  emblem outlines are deleted.
+Scores unchanged from round 3 of the fresh review.
+Tris: red_01 2312, red_02 2760, blue_01 2030, blue_02 2438, green_01 2740, green_02 2788, yellow_01 2240, yellow_02 2524 (of 3000); min silhouette diff 0.0991; full build BUILD PASS.
+
 Final: full (non-quick) build, see `previews/castle_wall.jpg`.

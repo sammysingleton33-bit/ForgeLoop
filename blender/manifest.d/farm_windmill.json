@@ -232,7 +232,7 @@
       },
       "generator": "farm_windmill",
       "generator_version": 2,
-      "geometry_hash": "12d3f94486bdc783",
+      "geometry_hash": "963cf4b51eb4d815",
       "id": "farm_windmill_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -247,21 +247,9 @@
       "preview": "previews/farm_windmill.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "windmill_04 banner is a gold sun on a gold field (emblem on its own colour, a rule breach), and at hero size its dark-edged ring half-reads as a crescent; windmill_02 has a hay-thatch cap with no emerald roof, so green rests on two sails. The sun style (bronze-outlined gold disc) does not match the castle kit ivory starburst, and on windmill_01 the ladder hides the crown banner.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/farm_windmill.md",
-        "reviewer": "fresh-context subagent",
-        "round": 3,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 2,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 5,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7603,
       "sockets": {
@@ -279,8 +267,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 3956,
-        "lod1": 1384
+        "lod0": 4076,
+        "lod1": 1426
       },
       "validation_pass": true
     }
@@ -295,7 +283,7 @@
       "farm_windmill_01",
       "farm_windmill_03"
     ],
-    "mean_pair_diff": 0.4367,
+    "mean_pair_diff": 0.4369,
     "min_pair_diff": 0.275,
     "pass": true,
     "threshold": 0.08
