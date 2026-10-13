@@ -49,7 +49,8 @@
 		  secondsOpen is the server time since the request's bubble appeared, nil when there was none.
 	Thought bubbles: every Society.requestRefreshSeconds, each ruled kingdom keeps up to Society.openRequests
 	open requests: the highest-priority eligible scenario of citizens without one (thought ctx: the best
-	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request that stops holding closes;
+	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request stays open while its showing
+	waits for an answer and closes when answered (#77 N3); one that stops holding otherwise closes;
 	every request still open goes to the members as a `thought` event again on each refresh (G13.3: the
 	client bubble lasts Vfx.thoughtSec, so it stays up while the request is open, and a co-ruler who joins
 	later sees it within one refresh); new ones are sent when they open.
@@ -343,7 +344,8 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 		return nil
 	end
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
-	self:_closeRequest(kingdomId, entityId)
+	-- the request stays open until it is answered (#77 N3): closing the panel without an answer leaves the
+	-- thought up, and asking again shows the same question
 	self._showing[entityId] = {
 		scenarioId = scenario.id,
 		userId = userId,
@@ -629,6 +631,7 @@ function ConversationService:choose(
 			== nil
 	then
 		self._showing[entityId] = nil
+		self:_closeRequest(kingdomId, entityId)
 		return false, nil, "not_eligible"
 	end
 	local sim = self:_sim()
@@ -663,6 +666,7 @@ function ConversationService:choose(
 		return false, nil, "unknown_response"
 	end
 	self._showing[entityId] = nil -- answered: a second Choose for this showing is not_offered
+	self:_closeRequest(kingdomId, entityId) -- and the request it came from is settled
 
 	local names = self:_names(c, userId)
 	local applied: { { kind: string, text: string } } = {}
@@ -809,6 +813,7 @@ end
 
 -- True while the citizen has an open request (its thought bubble): CitizenService's CitizenView.hasRequest.
 function ConversationService:hasRequest(kingdomId: string, entityId: number): boolean
+	self:_sim() -- a new world (round) starts with no requests (#77 N5)
 	return find(self._open[kingdomId] or {}, function(r)
 		return r.entityId == entityId
 	end) ~= nil
@@ -844,6 +849,7 @@ function ConversationService:refresh()
 			local holds = c ~= nil
 				and (
 					r.forced
+					or self._showing[r.entityId] ~= nil -- asked and not yet answered (#77 N3)
 					or find(
 							ContentQuery.eligibleScenarios(self:_citizenCtx(c, base, rep), citizenState(c), now, shown),
 							function(s)
