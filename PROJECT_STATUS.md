@@ -41,9 +41,9 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
   - The flow is in `docs/workflows/git-and-integration.md` → Review lane.
 
 ## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
-Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs per folder for CI headroom).
+Updated 2026-10-13 16:05 UTC, main 20303a4 (CI green).
 
-**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114, #112, #115, #117 and #49. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
+**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114, #112, #115, #117 and #49. #116 and #120 (CI and test harness, ≤ 50 lines) merged under the D-037 exemption. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
 
 **No ★ rows are open.** #115 (with the tower rebuild) merged for B11. Every other known VS-1 defect from B8 and B9 is merged.
 
@@ -60,6 +60,7 @@ Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs 
 | 10 | #102 pacing probe spec | FORGE-05 | QA | Unreviewed | FORGE-07 |
 | 11 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
 | 12 | #108 FL-0097 conversation hold and EndConversation; #84 conversation camera; #85 Kit.portrait | FORGE-01, FORGE-04, FORGE-02 | Cinematic (D-036) | Unreviewed | FORGE-07 |
+| 13 | #119 match-end toast ruling (FORGE-00 on #49); #118 specs actually try nil | FORGE-04, FORGE-01 | Feel, tests | Unreviewed | FORGE-07 |
 | — | #100 ruler gather | FORGE-01 | Off the VS-1 path | On hold until VS-1 is accepted | — |
 | — | Post-merge verdicts: #42, #75, #76, #79 and every D-040 merge | FORGE-07 | — | Owed | B and M findings become fix-forward PRs |
 
@@ -274,14 +275,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+20303a4e 2026-10-13 Integration bookkeeping: #120 merged (MockEnv EngineStubs); main CI green for #117 and #49
+5b9fece3 2026-10-13 [FORGE-05] FL-0046 MockEnv installs EngineStubs (ParticleEmitter:Emit, Sound:Play) once per process; boot spec proves a celebration presents headlessly
+53186d89 2026-10-13 [FORGE-00] FL-0061: #98 design re-review APPROVED (088a784)
+962984f7 2026-10-13 [FORGE-00] B12 delivered (21904e4): Now, queue, blockers, dashboard
 1e84914c 2026-10-13 Integration bookkeeping: #49 merged (D-040 star, FL-0062 feedback layer); FL-0062 REVIEW only G6; STUDIO_PLAYTEST end-of-slice stack check
 04a78cdd 2026-10-13 FL-0062: announcer recruit line to co-rulers only; silent-music spec
 e524249c 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/04-experience-fl0062
 3d3cb82e 2026-10-13 Integration bookkeeping: #117 merged (D-040 star, spec-only #115 L1); main CI green for #115
-52c5f4c7 2026-10-13 Merge remote-tracking branch 'origin/main' into forge/01-gameplay-tower-spec
-f4a7c708 2026-10-13 [FORGE-01] Tower spec: the neutral step really runs (FORGE-05 on #117)
-58a7d7f6 2026-10-13 [FORGE-00] B11 delivered (38526a4): Now, queue, dashboard
-8d2a7ac1 2026-10-13 [FORGE-01] ObjectiveService spec: rebuilt in place, a second kingdom still captures, no leak (FORGE-05 checks on #115)
 ```
 
 <!-- forge:auto:end -->

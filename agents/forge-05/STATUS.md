@@ -5,9 +5,9 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
-| Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #116 merged (`56b4d7c`) |
+| Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
 | Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. B11 (`38526a4`) delivered by FORGE-00. Since then: #117 (`1d4c076`, spec only) and **#49 (`21904e4`, FL-0062 feedback layer, ★)**, the B12 candidate, sha sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused |
-| Last verified check | main `3d3cb82` + #49 on 04a78cd: check.sh OVERALL PASS (framework 517/0, game-001 1212/0; slowest sim 294 s, world 158 s); FL-0062 mutations 30/30; PR CI run 38411607243 3/3; placeholder-sound runtime probe silent (0 played, 13 skipped, 0 warnings) |
+| Last verified check | #120 on main `53186d8`: check.sh OVERALL PASS (framework 517/0, game-001 1213/0), PR CI run 38418573537 3/3. Post-merge self-check of 19 D-040 review sets on main 962984f: no regressions. Main CI green for #117 and #49 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
 | In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
@@ -109,6 +109,7 @@ _Maintained by the worker. Keep it short and current._
 | #115 | FORGE-01 owner change rebuilds the building or captured watchtower in the owner's Kit look (VS-1 row 7; ★ for B11) | `38526a4` |
 | #117 | FORGE-01 #115 L1 spec: rebuilt tower keeps its pivot, a second capture, no leak (★, spec-only) | `1d4c076` |
 | #49 | FORGE-04 FL-0062 VS-1 feedback layer: announcer, kingdom effects, work feedback, phase music (★) | `21904e4` |
+| #120 | FORGE-05 MockEnv installs EngineStubs once per process (Lune has no ParticleEmitter:Emit); Boot spec celebration case | `0d71eff` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
