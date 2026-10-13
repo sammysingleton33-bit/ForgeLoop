@@ -18,7 +18,7 @@ M = [
  ("FL-0053", C2+"RulerCameraController.luau", 'if reduced or settings:get("cameraShake") == false then', 'if false then', "RulerCamera", "never shakes when camera shake is off", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'local alpha = 1 - math.exp(-rate * dt)', 'local alpha = math.min(1, rate * dt)', "RulerCamera", "frame-rate independent", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'camera.CFrame = self._blendFrom:Lerp(goal, Def.ease(self._blendT))', 'camera.CFrame = goal', "RulerCamera", "returning to the overview blends", "game"),
- ("FL-0053", C2+"RulerCameraController.luau", 'self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)', 'self._target.zoom = self._target.zoom + steps * overview.zoomStep', "RulerCamera", "zoom stays within", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, minZoom, overview.maxZoom)', 'self._target.zoom = self._target.zoom + steps * overview.zoomStep', "RulerCamera", "zoom stays within", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'local ratio = scale / self._pinch', 'local ratio = scale', "RulerCamera", "zoom stays within", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'while #self._shakes > limits.maxActive do', 'while false do', "RulerCamera", "caps the duration and the number of shakes", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'return Def.clamp(magnitude, 0, 1) * maxDegrees * left * left', 'return magnitude * maxDegrees * left * left', "RulerCamera", "shakeAmplitude() eases out and clamps", "game"),

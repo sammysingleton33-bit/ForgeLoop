@@ -544,91 +544,174 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		end
 	)
 
-	it(
-		"frames the citizen's face from the rig's facing and follows the turn to the ruler; a turn by the player stops it",
-		function()
-			local opened, closed = Signal.new(), Signal.new()
-			local facing = Vector3.new(1, 0, 0) -- before the server's hold turns them
-			local rig = {
-				GetPivot = function()
-					return CFrame.lookAt(Vector3.zero, facing)
+	local function conversationWorld()
+		local opened, closed = Signal.new(), Signal.new()
+		local rig = { at = Vector3.zero, facing = Vector3.new(1, 0, 0) }
+		function rig:GetPivot()
+			return CFrame.lookAt(self.at, self.at + self.facing)
+		end
+		boot({
+			{
+				name = "ConversationController",
+				dependencies = {},
+				new = function()
+					return { opened = opened, closed = closed }
 				end,
-			}
-			boot({
-				{
-					name = "ConversationController",
-					dependencies = {},
-					new = function()
-						return { opened = opened, closed = closed }
-					end,
-				},
-				{
-					name = "EntityController",
-					dependencies = {},
-					new = function()
-						return {
-							getModel = function(_, id)
-								return if id == 7 then rig else nil
-							end,
-						}
-					end,
-				},
-			})
-			settle()
+			},
+			{
+				name = "EntityController",
+				dependencies = {},
+				new = function()
+					return {
+						getModel = function(_, id)
+							return if id == 7 then rig else nil
+						end,
+					}
+				end,
+			},
+		})
+		settle()
+		return opened, closed, rig
+	end
+
+	it(
+		"faces the citizen toward the ruler's character, as the server turns them; nothing to follow (v0.4-g9e)",
+		function()
+			local opened, _, rig = conversationWorld()
+			local citizen = THRONE + Vector3.new(-25, 0, 15)
+			rig.at = citizen -- facing away (+X) until the server's hold turns them
+			local ruler = controller._ruler:getRoot().CFrame.Position
+			opened:fire(7, citizen)
+			expect(controller._target.yaw).toBe(CameraDef.conversationYaw(ruler - citizen, 0))
+			expect(controller._talking).toBeNil() -- the facing is already the final one: no second glide
+			rig.facing = Vector3.new(0, 0, 1)
+			rig.at = citizen + Vector3.new(6, 0, 0)
+			frames(math.ceil(CameraDef.FOLLOW_SEC / DT) * 3)
+			expect(controller._target.yaw).toBe(CameraDef.conversationYaw(ruler - citizen, 0))
+		end
+	)
+
+	it("without a ruler character: the rig's facing, one turn followed, never a released citizen (#84 M1)", function()
+		local opened, closed, rig = conversationWorld()
+		controller._ruler = nil -- no ruler character on this client
+		local citizen = THRONE + Vector3.new(-25, 0, 15)
+		rig.at = citizen
+		opened:fire(7, citizen)
+		expect(controller._target.yaw).toBe(CameraDef.conversationYaw(Vector3.new(1, 0, 0), 0))
+		rig.facing = Vector3.new(0, 0, 1) -- the server's turn toward the ruler arrives
+		frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+		local turned = CameraDef.conversationYaw(Vector3.new(0, 0, 1), 0)
+		expect(controller._target.yaw).toBe(turned)
+		expect(controller._talking).toBeNil() -- one turn, then the camera holds
+		rig.facing = Vector3.new(-1, 0, 0)
+		frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+		expect(controller._target.yaw).toBe(turned)
+		closed:fire(7)
+		-- released (EndConversation, the 12 s hold of v0.4-g9f, or an alarm): the citizen walks off, panel open
+		rig.at, rig.facing = citizen, Vector3.new(1, 0, 0)
+		opened:fire(7, citizen)
+		local held = controller._target.yaw
+		local focus = controller:getFocus()
+		frames(math.ceil(CameraDef.FOLLOW_WINDOW_SEC / DT) + 1) -- no turn came within the window
+		expect(controller._talking).toBeNil()
+		for step = 1, 4 do -- FORGE-05's probe: four legs, turning each time
+			rig.at = citizen + Vector3.new(1.5 * step, 0, 0)
+			rig.facing = Vector3.new(math.cos(step), 0, math.sin(step))
+			frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+		end
+		expect(controller._target.yaw).toBe(held)
+		expect(controller:getFocus()).toBe(focus)
+		closed:fire(7)
+		-- released early and already 3 studs off inside the window: still not followed
+		rig.at, rig.facing = citizen, Vector3.new(1, 0, 0)
+		opened:fire(7, citizen)
+		rig.at, rig.facing = citizen + Vector3.new(3, 0, 0), Vector3.new(0, 0, -1)
+		frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+		expect(controller._target.yaw).toBe(held)
+		expect(controller._talking).toBeNil()
+		closed:fire(7)
+		-- the player's own turn during the window wins over the citizen's
+		rig.at, rig.facing = citizen, Vector3.new(1, 0, 0)
+		opened:fire(7, citizen)
+		controller:rotateBy(30)
+		local mine = controller._target.yaw
+		rig.facing = Vector3.new(0, 0, 1)
+		frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
+		expect(controller._target.yaw).toBe(mine)
+	end)
+
+	it("a conversation that ends in walk mode leaves no glide to replay in the overview (#84 L1)", function()
+		local opened, closed = conversationWorld()
+		local citizen = THRONE + Vector3.new(-25, 0, 15)
+		opened:fire(7, citizen)
+		frames(math.ceil(C.conversation.durationSec / DT) + 1)
+		controller:setMode("follow")
+		closed:fire(7)
+		expect(controller._glide).never.toBeNil() -- restore() glides, but nothing steps it in walk mode
+		controller:setMode("overview")
+		expect(controller._glide).toBeNil()
+	end)
+
+	it(
+		"zooming in during a conversation never moves the camera out; glide durations are clamped (#84 L2, L3)",
+		function()
+			local opened, closed = conversationWorld()
 			local citizen = THRONE + Vector3.new(-25, 0, 15)
 			opened:fire(7, citizen)
-			expect(controller._target.yaw).toBe(CameraDef.conversationYaw(Vector3.new(1, 0, 0), 0))
-			facing = Vector3.new(0, 0, 1) -- the server turned the citizen toward the ruler
-			frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
-			expect(controller._target.yaw).toBe(CameraDef.conversationYaw(Vector3.new(0, 0, 1), 0))
-			local view = CameraDef.conversationView(
+			expect(controller._target.zoom).toBe(C.conversation.zoom)
+			controller:zoomBy(-1)
+			expect(controller._target.zoom).toBe(C.conversation.zoom) -- 30, not the overview's 40
+			controller:zoomBy(1)
+			expect(controller._target.zoom).toBe(C.conversation.zoom + O.zoomStep)
+			closed:fire(7)
+			controller:zoomBy(-20)
+			expect(controller._target.zoom).toBe(O.minZoom)
+			local default = C.conversation.durationSec
+			expect(CameraDef.glideDuration(0 / 0, default)).toBe(default)
+			expect(CameraDef.glideDuration(math.huge, default)).toBe(default)
+			expect(CameraDef.glideDuration(-1, default)).toBe(default)
+			expect(CameraDef.glideDuration(100, default)).toBe(CameraDef.MAX_GLIDE_SEC)
+			expect(CameraDef.glideDuration(0.3, default)).toBe(0.3)
+			expect(controller:focusOn(citizen, { duration = 0 / 0 })).toBe(true)
+			expect(controller._glide.duration).toBe(default)
+			frames(math.ceil(default / DT) + 1)
+			expect(controller._glide).toBeNil() -- it ends
+		end
+	)
+
+	it(
+		"on a phone the citizen's head sits just under the HUD stack, above a costed conversation's stage (FL-0099)",
+		function()
+			boot()
+			settle()
+			local citizen = THRONE + Vector3.new(30, 0, -20)
+			local function fromTop(point)
+				local p = camera.CFrame:PointToObjectSpace(point)
+				local ndc = (p.Y / -p.Z) / math.tan(math.rad(C.fieldOfView / 2))
+				return (1 - ndc) / 2
+			end
+			controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone
+			controller:focusOn(citizen, { duration = 0 })
+			frames(2)
+			local head = fromTop(citizen + Vector3.new(0, 4, 0))
+			expect(head >= 0.27 and head <= 0.31).toBe(true) -- above a costed stage's top at 29-30 %
+			expect(fromTop(citizen + Vector3.new(0, 5, 0)) >= 0.26).toBe(true) -- below the HUD stack (26 %)
+			expect(fromTop(citizen) <= 0.40).toBe(true) -- whole citizen clear of a short stage at 47 %
+			local phone = controller:getFocus()
+			controller:restore({ duration = 0 })
+			controller._opts.viewportWidth, controller._opts.viewportHeight = 1920, 1080
+			controller:focusOn(citizen, { duration = 0 })
+			local desktop = CameraDef.conversationView(
 				citizen,
 				controller._target.yaw,
 				C.conversation,
 				controller._bounds,
 				O.boundsMargin
 			)
-			expect(controller:getFocus()).toBe(view.focus) -- re-framed for the new side
-			controller:rotateBy(30) -- the player turns the view: no more following
-			local turned = controller._target.yaw
-			facing = Vector3.new(-1, 0, 0)
-			frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
-			expect(controller._target.yaw).toBe(turned)
-			closed:fire(7)
-			expect(controller._talking).toBeNil()
-			opened:fire(8, citizen) -- no rig for this one: the current yaw stays
-			expect(controller._target.yaw).toBe(controller._saved.yaw)
+			expect(controller:getFocus()).toBe(desktop.focus) -- desktop keeps the usual offset
+			expect(near(phone, desktop.focus, 1)).toBe(false)
 		end
 	)
-
-	it("on a phone the citizen sits in the top 40 % of the screen, above the conversation stage (FL-0099)", function()
-		boot()
-		settle()
-		local citizen = THRONE + Vector3.new(30, 0, -20)
-		local function fromTop(point)
-			local p = camera.CFrame:PointToObjectSpace(point)
-			local ndc = (p.Y / -p.Z) / math.tan(math.rad(C.fieldOfView / 2))
-			return (1 - ndc) / 2
-		end
-		controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone
-		controller:focusOn(citizen, { duration = 0 })
-		frames(2)
-		expect(fromTop(citizen) <= 0.40).toBe(true) -- the feet: clear of the stage at about 47 %
-		expect(fromTop(citizen + Vector3.new(0, 5, 0)) >= 0.1).toBe(true) -- the head stays on screen
-		local phone = controller:getFocus()
-		controller:restore({ duration = 0 })
-		controller._opts.viewportWidth, controller._opts.viewportHeight = 1920, 1080
-		controller:focusOn(citizen, { duration = 0 })
-		local desktop = CameraDef.conversationView(
-			citizen,
-			controller._target.yaw,
-			C.conversation,
-			controller._bounds,
-			O.boundsMargin
-		)
-		expect(controller:getFocus()).toBe(desktop.focus) -- desktop keeps the usual offset
-		expect(near(phone, desktop.focus, 1)).toBe(false)
-	end)
 
 	it("boots with no camera, input services or character (headless) and does nothing", function()
 		local bare = MockEnv.new({ seed = 60, isServer = false, localPlayer = { userId = 5803 } })

@@ -39,12 +39,18 @@
 	Conversations (D-036, G13.8): ConversationController.opened(entityId, position) glides the
 	overview toward the citizen (eased over `duration`, the citizen framed above the centre so the
 	portrait rising from the bottom never covers them, clamped to the map); .closed glides back to
-	the saved focus, rotation and zoom. The camera stands in front of the citizen's face: its yaw
-	comes from the rig's facing (EntityController:getModel, Def.conversationYaw; v0.4-g9e: the held
-	citizen turns to face the ruler's character), and it follows that turn when it arrives after the
-	panel opened (checked every FOLLOW_SEC, re-aimed past FOLLOW_DEGREES). Reduced motion cuts
-	instead of gliding. A pan, a "go to" or a turn by the player ends the glide and the following.
-	Walk mode ignores conversations.
+	the saved focus, rotation and zoom. The camera stands in front of the citizen's face
+	(Def.conversationYaw; v0.4-g9e): the server turns the held citizen to face the ruler's character,
+	so the facing is the line from the citizen to the ruler's character, as the server computes it.
+	Without a ruler character it falls back to the rig's facing (EntityController:getModel) and
+	follows one turn at most (checked every FOLLOW_SEC, re-aimed past FOLLOW_DEGREES), only within
+	FOLLOW_WINDOW_SEC of the opening and while the citizen stays within FOLLOW_STUDS of where the
+	conversation opened: a citizen who walks away (released at EndConversation, after the hold's 12 s
+	of v0.4-g9f, or by an alarm) never takes the camera with them, and the framing holds for the
+	whole window. Reduced motion cuts instead of gliding. A pan, a "go to" or a turn by the player
+	ends the glide and the following. Glide durations are clamped
+	(Def.glideDuration). During a conversation the zoom may go down to the conversation's. Walk
+	mode ignores conversations; coming back to the overview drops any glide left from one.
 
 	The camera runs at RenderPriority.Camera + 1. Engine access is guarded: without a camera, input
 	services or Layout it boots and does nothing (the headless boot gate).
@@ -70,6 +76,9 @@ Def.SEAT_ACTION = "ForgeOverviewSeat"
 Def.RENDER_NAME = "ForgeRulerCamera"
 Def.FOLLOW_SEC = 0.2 -- how often an open conversation re-reads the citizen's facing
 Def.FOLLOW_DEGREES = 10 -- a smaller turn keeps the current view
+Def.FOLLOW_STUDS = 2 -- a citizen further than this from where the conversation opened has been released
+Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this (the hold starts at Converse)
+Def.MAX_GLIDE_SEC = 3 -- longest conversation glide (a NaN or infinite duration takes the default)
 Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.PAN_KEYS = table.freeze({
 	[Enum.KeyCode.W] = Vector2.new(0, 1),
@@ -113,9 +122,12 @@ Def.DEFAULTS = table.freeze({
 	conversation = table.freeze({
 		zoom = 30,
 		offset = Vector2.new(0, -6), -- focus shift in screen studs (x right, y forward): the citizen above the centre
-		-- phones: the conversation stage starts about 47 % down the screen (FORGE-03, FL-0099), so the
-		-- citizen goes higher: at zoom 30 and 38° pitch, 10 studs put them at 33-38 % from the top
-		phoneOffset = Vector2.new(0, -10),
+		-- phones (FORGE-03's measured FL-0099 stage tops at 750 x 311: 47 % with short answers, 29-30 %
+		-- with costed or long ones; the HUD stack ends at 26 %): the head goes just under the HUD. At
+		-- zoom 30 and 38° pitch, 12 studs put the head at 28-30 % and the feet at 37 %, so a short
+		-- conversation shows the whole citizen and a long one hides at most the body (the portrait
+		-- shows the face)
+		phoneOffset = Vector2.new(0, -12),
 		durationSec = 0.6,
 	}),
 	overviewInBuild = true,
@@ -259,6 +271,14 @@ function Def.conversationYaw(facing: any, fallback: number): number
 		return fallback
 	end
 	return yawOf(-flat)
+end
+
+-- A glide duration: a finite, non-negative number up to MAX_GLIDE_SEC, else `default`.
+function Def.glideDuration(value: any, default: number): number
+	if type(value) ~= "number" or value ~= value or value < 0 or value == math.huge then
+		return default
+	end
+	return math.min(value, Def.MAX_GLIDE_SEC)
 end
 
 -- Shortest signed difference between two angles (radians).
@@ -474,28 +494,49 @@ function Controller:focusOn(position: Vector3, opts: { duration: number?, facing
 		self._config.overview.boundsMargin,
 		self:_isPhone()
 	)
-	self:_glideTo(view, if type(opts.duration) == "number" then opts.duration else conversation.durationSec)
+	self:_glideTo(view, Def.glideDuration(opts.duration, conversation.durationSec))
 	return true
 end
 
--- The citizen's facing from its rig (EntityController:getModel); nil when there is no rig.
-function Controller:_facingOf(entityId: any): Vector3?
+-- The citizen's rig pivot (EntityController:getModel); nil when there is no rig.
+function Controller:_rigOf(entityId: any): CFrame?
 	local entities = self._registry:find("EntityController")
 	if entities == nil or entities.getModel == nil then
 		return nil
 	end
-	local ok, facing = pcall(function()
+	local ok, pivot = pcall(function()
 		local model = entities:getModel(entityId)
-		return if model then model:GetPivot().LookVector else nil
+		return if model then model:GetPivot() else nil
 	end)
-	return if ok and typeof(facing) == "Vector3" then facing else nil
+	return if ok and typeof(pivot) == "CFrame" then pivot else nil
 end
 
--- The server turns a held citizen to face the ruler a moment after the panel opens (G13.8): the
--- camera follows that turn so it stays in front of their face.
+-- Where the held citizen will face (G13.8 v0.4-g9e): toward the ruler's character, as the server
+-- turns them; "rig" when there is no ruler character and the rig's own facing is used instead.
+function Controller:_conversationFacing(entityId: any, position: Vector3): (Vector3?, string?)
+	local root = self._ruler and self._ruler:getRoot()
+	if root ~= nil then
+		local ok, toRuler = pcall(function()
+			return root.CFrame.Position - position
+		end)
+		if ok and typeof(toRuler) == "Vector3" and Vector3.new(toRuler.X, 0, toRuler.Z).Magnitude > 0.5 then
+			return toRuler, "ruler"
+		end
+	end
+	local pivot = self:_rigOf(entityId)
+	return if pivot then pivot.LookVector else nil, if pivot then "rig" else nil
+end
+
+-- Rig fallback only: the server's turn toward the ruler may arrive after the panel opened, so the
+-- camera follows one such turn, and never a citizen who has been released and walks away.
 function Controller:_followTalker(dt: number)
 	local talking = self._talking
 	if talking == nil then
+		return
+	end
+	talking.age += dt
+	if talking.age > Def.FOLLOW_WINDOW_SEC then
+		self._talking = nil -- the hold's turn has had its time
 		return
 	end
 	talking.wait -= dt
@@ -503,11 +544,20 @@ function Controller:_followTalker(dt: number)
 		return
 	end
 	talking.wait = Def.FOLLOW_SEC
-	local yaw = Def.conversationYaw(self:_facingOf(talking.entityId), talking.yaw)
+	local pivot = self:_rigOf(talking.entityId)
+	if pivot == nil then
+		return
+	end
+	local moved = pivot.Position - talking.position
+	if Vector3.new(moved.X, 0, moved.Z).Magnitude > Def.FOLLOW_STUDS then
+		self._talking = nil -- released: the camera stays where it is
+		return
+	end
+	local yaw = Def.conversationYaw(pivot.LookVector, talking.yaw)
 	if math.abs(angleDelta(talking.yaw, yaw)) < math.rad(Def.FOLLOW_DEGREES) then
 		return
 	end
-	talking.yaw = yaw
+	self._talking = nil -- the one turn: after it, the camera holds
 	local conversation = self._config.conversation or Def.DEFAULTS.conversation
 	local view = Def.conversationView(
 		talking.position,
@@ -529,7 +579,7 @@ function Controller:restore(opts: { duration: number? }?): boolean
 		return false
 	end
 	local conversation = self._config.conversation or Def.DEFAULTS.conversation
-	local duration = if opts and type(opts.duration) == "number" then opts.duration else conversation.durationSec
+	local duration = Def.glideDuration(opts and opts.duration, conversation.durationSec)
 	self:_glideTo(saved, duration)
 	return true
 end
@@ -552,9 +602,13 @@ function Controller:_listenConversations()
 	end
 	local opened = conversations
 		and listen(conversations.opened, function(entityId, position)
-			if self:focusOn(position, { facing = self:_facingOf(entityId) }) then
+			if typeof(position) ~= "Vector3" then
+				return
+			end
+			local facing, source = self:_conversationFacing(entityId, position)
+			if self:focusOn(position, { facing = facing }) and source == "rig" then
 				self._talking =
-					{ entityId = entityId, position = position, yaw = self._target.yaw, wait = Def.FOLLOW_SEC }
+					{ entityId = entityId, position = position, yaw = self._target.yaw, wait = Def.FOLLOW_SEC, age = 0 }
 			end
 		end)
 	local closed = conversations and listen(conversations.closed, function()
@@ -613,7 +667,13 @@ end
 
 function Controller:zoomBy(steps: number)
 	local overview = self._config.overview
-	self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)
+	local minZoom = overview.minZoom
+	if self._saved ~= nil then
+		-- in a conversation (30 studs, below the overview's minimum) zooming in never moves the camera out
+		local conversation = self._config.conversation or Def.DEFAULTS.conversation
+		minZoom = math.min(minZoom, conversation.zoom)
+	end
+	self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, minZoom, overview.maxZoom)
 end
 
 local function finite(value: any): boolean
@@ -806,6 +866,8 @@ function Controller:_apply()
 	self:_setTouchControls(not overview)
 	local camera = self._camera
 	if overview then
+		self._glide = nil -- a glide left from a conversation that ended in walk mode never replays
+		self._talking = nil
 		local root = self._ruler and self._ruler:getRoot()
 		if self._target.focus == nil and root ~= nil then
 			self:focusOn(root.CFrame.Position)
