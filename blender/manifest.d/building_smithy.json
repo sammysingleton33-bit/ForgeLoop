@@ -236,7 +236,7 @@
       },
       "generator": "building_smithy",
       "generator_version": 1,
-      "geometry_hash": "b06204c350b9ea72",
+      "geometry_hash": "97d6cf24f49d4143",
       "id": "building_smithy_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -252,21 +252,9 @@
       "preview": "previews/building_smithy.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Three forms x two colours (near-duplicates); plain box chimney blocks upper windows on 03/06; no smoke/bellows/sign; dark interior.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_smithy.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 3,
-          "palette": 4,
-          "proportions": 3,
-          "readability": 4,
-          "silhouette": 3,
-          "triangle_cost": 3,
-          "variation": 3
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7503,
       "sockets": {
@@ -284,8 +272,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 6984,
-        "lod1": 2444
+        "lod0": 7404,
+        "lod1": 2590
       },
       "validation_pass": true
     },
@@ -445,8 +433,8 @@
       "building_smithy_01",
       "building_smithy_04"
     ],
-    "mean_pair_diff": 0.303,
-    "min_pair_diff": 0.1303,
+    "mean_pair_diff": 0.3039,
+    "min_pair_diff": 0.1332,
     "pass": true,
     "threshold": 0.08
   }

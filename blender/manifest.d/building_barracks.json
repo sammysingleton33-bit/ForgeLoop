@@ -250,7 +250,7 @@
       },
       "generator": "building_barracks",
       "generator_version": 2,
-      "geometry_hash": "1e692f18bc330f48",
+      "geometry_hash": "7c1b8762011fd412",
       "id": "building_barracks_04",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -266,21 +266,9 @@
       "preview": "previews/building_barracks.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Best in set; 02/05 and 01/06 share layouts; flat dirt decal looks pasted on; crown vs flame emblem inconsistency.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/building_barracks.md",
-        "reviewer": "fresh-context subagent (images + rubric only)",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7303,
       "sockets": {
@@ -303,8 +291,8 @@
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 12000,
-        "lod0": 8918,
-        "lod1": 3120
+        "lod0": 9242,
+        "lod1": 3234
       },
       "validation_pass": true
     },
@@ -473,7 +461,7 @@
       "building_barracks_01",
       "building_barracks_03"
     ],
-    "mean_pair_diff": 0.2469,
+    "mean_pair_diff": 0.2467,
     "min_pair_diff": 0.1111,
     "pass": true,
     "threshold": 0.08
