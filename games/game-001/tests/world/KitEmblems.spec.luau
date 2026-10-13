@@ -450,9 +450,19 @@ local function visibleFraction(model: Model, field: BasePart, toCamera: Vector3)
 	local anchor = anchorOf(field)
 	local half = (field:GetAttribute("KitEmblemSize") :: number) / 2
 	local slot = field:GetAttribute("KitEmblemSlot")
+	-- broad phase: only parts whose bounding sphere reaches the prism the plaque sweeps toward the camera can
+	-- block a ray (exact per-ray test below); this keeps the 4 kingdoms x 3 levels x 18 views affordable
+	local o0 = (anchor * CFrame.new(0, 0, -0.2)).Position
+	local reach = half * math.sqrt(2)
 	local others = {}
 	for _, p in parts(model) do
 		if p.Transparency >= 1 or p:GetAttribute("KitEmblemSlot") == slot or p.Name == "EmblemPlaqueBorder" then
+			continue
+		end
+		local v = p.CFrame.Position - o0
+		local r = p.Size.Magnitude / 2
+		local t = v:Dot(toCamera)
+		if t < -r or (v - toCamera * t).Magnitude > r + reach then
 			continue
 		end
 		table.insert(others, p)
