@@ -452,6 +452,7 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 	it("crimson's crown and emerald's oak leaf are drawn like the world banners, and repaint on a recolour", function()
 		expect(HudModel.EMBLEMS.crimson).toBe("emblem_crown")
 		expect(HudModel.EMBLEMS.emerald).toBe("emblem_oak")
+		expect(Theme.raw.icons.emblem_flame).toBeNil() -- the flame is retired everywhere (D-039)
 		for _, case in { { "crimson", "crown" }, { "emerald", "oakleaf" } } do
 			local k
 			for _, identity in KingdomsConfig.identities do

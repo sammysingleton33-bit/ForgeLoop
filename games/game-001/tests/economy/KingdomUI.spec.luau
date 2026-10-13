@@ -13,6 +13,7 @@ local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local KingdomWorld = require("./doubles/KingdomWorld")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Text = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Text")
+local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
 
 -- FORGE-04 doubles (G4.1 InputModeController, G11 OnboardingController, interfaces §8 NotificationController).
 local function inputModeDef(log)
@@ -508,6 +509,10 @@ describe("Kingdom UI edge cases", function()
 		local world = newWorld({ width = 750, height = 311 })
 		local hud = world.hud
 		expect(hud:metrics().breakpoint).toBe("phone")
+		-- the Crown Points badge on the crest shows a gem, never a crown: that is Emberhold's emblem (D-039)
+		local badge = find(hud.guis.hud, "CrownPoints")
+		expect(find(badge, "Gem").Text).toBe(Theme.icon("gem").glyph)
+		expect(texts(badge)).never.toContain(Theme.icon("crown").glyph)
 		tap(find(hud.guis.hud, "Menu_build"))
 		expect(find(hud.guis.menus, "Detail")).toBeNil()
 		tap(find(hud.guis.menus, "Row_farm"))

@@ -53,6 +53,12 @@
 			<circle cx="24" cy="8.5" r="2.8" fill="#D9573F" ${s('stroke-width="1.6"')}/>
 			<circle cx="42" cy="13" r="2.8" fill="#D9573F" ${s('stroke-width="1.6"')}/>
 			<circle cx="16" cy="36" r="1.8" fill="#4E8BD0"/><circle cx="24" cy="36" r="1.8" fill="#D9573F"/><circle cx="32" cy="36" r="1.8" fill="#4E8BD0"/>`,
+		// Crown Points (D-039: never a crown, which is Emberhold's emblem): a cut gem
+		gem: `
+			<path d="M13 9 H35 L44 19 L24 43 L4 19 Z" fill="#EAC46C" ${s()}/>
+			<path d="M4 19 H44 M13 9 L18 19 L24 9 L30 19 L35 9 M18 19 L24 43 L30 19" fill="none" stroke="${O}" stroke-width="1.5" stroke-linejoin="round"/>
+			<path d="M18 19 L24 9 L30 19 Z" fill="#F6DE9C"/>
+			<path d="M18 19 H30 L24 43 Z" fill="#D6A84A"/>`,
 		build: `<g transform="rotate(-40 24 24)">
 			<rect x="21.5" y="16" width="5" height="30" rx="2" fill="#A0683A" ${s()}/>
 			<rect x="11" y="6" width="26" height="11" rx="2.5" fill="#A9B7C8" ${s()}/>
@@ -205,9 +211,6 @@
 			<path d="M36 17 A14 14 0 1 0 38 28" fill="none" stroke="${O}" stroke-width="8" stroke-linecap="round"/>
 			<path d="M36 17 A14 14 0 1 0 38 28" fill="none" stroke="#EAC46C" stroke-width="4" stroke-linecap="round"/>
 			<path d="M28.5 15.5 L39.5 9 L40 21.5 Z" fill="#EAC46C" ${s()}/>`,
-		emblem_flame: `
-			<path d="M24 44 C13 44 8 36 10 27 C11.5 21 16 18 16 11 C21 14 23 18 22.5 23 C25 20 26.5 14 26 6 C33 11 40 19 38.5 30 C37.5 38 32 44 24 44 Z" fill="#E0642F" ${s()}/>
-			<path d="M24 41 C19 41 16.5 37.5 17.5 33 C18.5 29.5 21.5 28 22 24.5 C25 26.5 26 29 25.5 31.5 C27.5 30.5 28.5 28.5 28.5 26 C31.5 29 32.5 33 31.5 36 C30.5 39.5 27.5 41 24 41 Z" fill="#F6C24A"/>`,
 		// Emberhold's crown (ART_DIRECTION §3, as on the world banners; replaced the flame)
 		emblem_crown: `
 			<path d="M8 34 L6 15 L16 24 L24 10 L32 24 L42 15 L40 34 Z" fill="#F7EFDC" ${s()}/>

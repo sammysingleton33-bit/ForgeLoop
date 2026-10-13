@@ -202,17 +202,17 @@ end
 Crest.LEAF_TILT = 35
 local LEAF = {
 	-- { name, x, y, width, height, round }: drawn upright around (0.5, 0.5), then tilted
-	{ "Core", 0.5, 0.44, 0.2, 0.62, true },
-	{ "Tip", 0.5, 0.12, 0.15, 0.15, true },
-	{ "Lobe_L1", 0.41, 0.23, 0.15, 0.15, true },
-	{ "Lobe_R1", 0.59, 0.23, 0.15, 0.15, true },
-	{ "Lobe_L2", 0.38, 0.36, 0.18, 0.18, true },
-	{ "Lobe_R2", 0.62, 0.36, 0.18, 0.18, true },
-	{ "Lobe_L3", 0.37, 0.5, 0.19, 0.19, true },
-	{ "Lobe_R3", 0.63, 0.5, 0.19, 0.19, true },
-	{ "Lobe_L4", 0.4, 0.63, 0.16, 0.16, true },
-	{ "Lobe_R4", 0.6, 0.63, 0.16, 0.16, true },
-	{ "Base", 0.5, 0.72, 0.13, 0.13, true },
+	-- lobes wide and set out from a slim core, so the notches between them stay deep enough to
+	-- read as an oak leaf at 22 px (a narrow leaf reads as a feather; FORGE-02 on #86)
+	{ "Core", 0.5, 0.44, 0.16, 0.62, true },
+	{ "Tip", 0.5, 0.11, 0.17, 0.17, true },
+	{ "Lobe_L1", 0.38, 0.26, 0.19, 0.19, true },
+	{ "Lobe_R1", 0.62, 0.26, 0.19, 0.19, true },
+	{ "Lobe_L2", 0.35, 0.44, 0.23, 0.23, true },
+	{ "Lobe_R2", 0.65, 0.44, 0.23, 0.23, true },
+	{ "Lobe_L3", 0.37, 0.62, 0.2, 0.2, true },
+	{ "Lobe_R3", 0.63, 0.62, 0.2, 0.2, true },
+	{ "Base", 0.5, 0.74, 0.14, 0.14, true },
 	{ "Stem", 0.5, 0.84, 0.05, 0.18, false },
 }
 
