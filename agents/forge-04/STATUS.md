@@ -4,15 +4,14 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/04-experience` (cloud session; pushes to the worker branch and the `forge/04-experience-fl00xx` PR branches work) |
-| Merged | #15 FL-0061 pacing; #20–#22 FL-0023 analytics, FL-0024 settings/audio/VFX, FL-0025 onboarding; #29 FL-0053 + FL-0090 aerial camera, selection, walk mode; #33 FL-0027 NotificationController |
-| Open PRs (independent of each other, all from `main`; FORGE-05's order #42 → #45 → #49, then #64) | #42 FL-0091 citizen bubbles + the VFXController Model fix · #45 FL-0092 match30 + onboarding v2 (no stall at AnswerCitizen) · #49 FL-0062 announcer, kingdom effects, work feedback, music · #64 FL-0063 VS-1 analytics funnel, sessions, match analytics |
-| Next | FORGE-05's re-reviews; FL-0074 crowd director design (VS-2, slack time); low follow-ups on merged #22/#29 (ambience voice, music fade, shake NaN) |
-| Last verified check | `check.sh` OVERALL PASS on every open PR head after merging `main` with #33 (evidence in each task file); `mutations.py` per task: FL-0091 25/25, FL-0092 13/13, FL-0062 21/21, FL-0063 14/14, FL-0027 22/22 |
-| Blockers | none of mine. Studio evidence for FL-0090/0091/0062/0063 needs FORGE-01's EntityController G13.3 events, ConversationService and G9 producers on `main` |
-| Needs from others | FORGE-01: G13.3 events through EntityController (per citizen), `playPose`, LOD centre = camera focus in overview, the `swing` local cue, ConversationAnswered/ReputationShifted analytics calls (handoffs). FORGE-00: G9 `CitizenAnswered`, SPEC §5.4 `cue`/`cueId`, taxonomy review (FL-0063), FirstGather under D-030, interfaces §8 text. FORGE-03: `report("CitizenAnswered")`, `NotificationController:place(...)` from the HUD. User: P0 sounds |
+| Session branch | `forge/04-experience` (cloud session; pushes to the worker branch and `forge/04-experience-fl00xx` PR branches work) |
+| Open PRs | #20 FL-0023 analytics → #21 FL-0024 settings/audio/VFX → #22 FL-0025 onboarding (stacked; merge in that order). CI green on all three |
+| Merged | #15 FL-0061 PacingService |
+| Current task | FL-0053 ruler controller, camera, input modes (PROMPT §0 queue item 2); then FL-0027, FL-0062, FL-0023 follow-up FL-0063 |
+| Last verified check | `check.sh` OVERALL PASS on `forge/04-experience-fl0025` @4054eab (framework 471, game-001 86 specs); `mutations.py` 39/39 |
+| Blockers | none. FL-0062 needs FORGE-01's G4.1 client signals and G9 producers to show anything in Studio |
+| Needs from others | FORGE-00: review events.md, EXPERIENCE.md, PACING.md; confirm the Subjects pattern. FORGE-03: `OnboardingTarget` attributes `HUD.BuildButton` and `HUD.Recruit`. User: choose or upload the P0 sounds (handoff `2026-10-12-forge-04-to-user-sounds.md`) |
 
 ## Last report
-- D-030 work is in review: aerial camera default with tap selection (merged); citizen bubbles and consequence cues aligned to G13.3 and the content library; `match30` and onboarding v2.
-- The VS-1 feedback layer (FL-0062) and the VS-1 analytics (FL-0063) are in review; FORGE-05's review findings are fixed and answered on each PR.
+- FL-0023/24/25 reconciled with CONTRACTS v0.4-g3, D-026, D-027 and FORGE-00's answers (G9 triggers, KingdomJoined start, session-only progress, no Crowns rewards, kingdom-specific feedback in the game tree). PRs #20–#22 open.
 - Nothing has been seen or heard in Studio yet (G6 is the user's).
