@@ -185,7 +185,9 @@ same names.
    4 bunks: soldiers sleep there, and a 5th recruit is refused until you upgrade it (D-041). Soldiers wear
    your kingdom's crest on the helmet (spire / square / plume / dome).
 2. Press **Send to capture**. They walk to the neutral Watchtower, a capture bar fills, and the tower
-   takes your colour. Crown Points rise, and the slice summary appears (the first capture ends the
+   takes your colour. From main `38526a4` (#115) the captured tower is rebuilt in your kingdom's look:
+   its cap, roof and emblem match your own towers, not the neutral roof in your colour. The capture
+   ring stays where it was; put this in **O2**. Crown Points rise, and the slice summary appears (the first capture ends the
    slice: CONTRACTS G3).
 3. Screenshots **O1** (capture in progress), **O2** (captured) and **O3** (summary).
 

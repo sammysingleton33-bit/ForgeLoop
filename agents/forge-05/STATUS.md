@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
-| Open PR | none of mine (#47, #57, #69 merged) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. **B9** (`f562a31`: #99, #104, #107, #105) prepared and sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused; next ★: FORGE-01's #107 fix-forward (M1-M3) and the throne restriction (#89 L2) |
-| Last verified check | main `f562a31` (#105): check.sh 9/9 on the combined #107 + #105 gate (game-001 1168/0); main CI [run 38385776409](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38385776409) green; B9 artifact id 11807315580. CI Roblox gates step 307 s (STEP_TIMEOUT 600 s per step): tracking |
+| Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #116 merged (`56b4d7c`) |
+| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. B9 (`f562a31`) sent; B10 (`1c48149`) delivered by FORGE-00. **#115 merged (`38526a4`)**, ★ for **B11**, which FORGE-00 bundles. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused |
+| Last verified check | main `2207afa` + #115: check.sh OVERALL PASS (game-001 1180/0; slowest sim 271 s, world 139 s); PR CI run 38403368096 3/3 green; review probe passes (9 owner changes) and catches 4/4 mutations. Integration-log CI cells are filled through #116 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
-| In review / queued | #77 re-review running on c5ad31d (B1/M1/M2 fixes pushed) → B8. Not ★ (wait for FORGE-07 unless promoted): #100 (gather, on #94), #101 (#91 follow-ups), #102 (my pacing probe spec). Waiting for FORGE-07 (not on the D-040 list): #86, #88, #85, #93, #94, #90, #96, #97, #49, #64, #82, #84, #92 |
+| In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #102 (mine). #100 on hold. Follow-up for FORGE-01: #115 L1, a pivot assertion in the tower spec |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -106,6 +106,7 @@ _Maintained by the worker. Keep it short and current._
 | #114 | FORGE-01 #107 follow-ups M1-M3, D-040 ★ | `74db60c` |
 | #112 | FORGE-01 throne for its kingdom's rulers only (#89 L2), D-040 ★ | `1c48149` (user build B10, FORGE-00) |
 | #116 | FORGE-05 check.sh: game specs per top-level folder, each under STEP_TIMEOUT | `56b4d7c` |
+| #115 | FORGE-01 owner change rebuilds the building or captured watchtower in the owner's Kit look (VS-1 row 7; ★ for B11) | `38526a4` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
