@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g4, 2026-10-12; G12 is a VS-2 draft; G13 VS-1 rows are effective)
+# game-001 contracts: AI Kingdoms (v0.4-g8, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -68,7 +68,7 @@ MatchService:getEndsAt(): number?                  -- serverTimeNow deadline of 
 MatchService.phaseChanged: Signal<(MatchPhase, { endsAt: number? })>
 KingdomService:getKingdom(id: KingdomId): Kingdom
 KingdomService:getKingdomOf(player): KingdomId?
-KingdomService:assign(player, preferred: KingdomId?): KingdomId
+KingdomService:assign(player, preferred: KingdomId?): KingdomId?   -- nil when no kingdom can take the player (v0.4-g8)
 KingdomService:addCrownPoints(id, amount: number, reason: string)
 KingdomService.membershipChanged: Signal<(player, KingdomId?)>
 ```
@@ -255,8 +255,8 @@ ObjectiveService.captured: Signal<(objectiveId: string, KingdomId)>
 | Remote | Kind | Args → result, or payload |
 |---|---|---|
 | `Kingdom.State` / `Kingdom.GetState` | serverEvent / function | `{ kingdoms: { Kingdom }, mine: KingdomId? }` on change / on request |
-| `Kingdom.Gather` | function | `(nodeId: string(1,32))` → `(ok, ResourceId?, amount?)`; the server checks distance and cooldown |
-| `Kingdom.SetJobQuota` | function | `(job: enum JobId, count: integer(0,50))` → `boolean` (calls `requestWorkers`) |
+| `Kingdom.Gather` | function | `(nodeId: string(1,32))` → `(true, ResourceId, amount)` or `(false, errorCode)`; the server checks distance and cooldown |
+| `Kingdom.SetJobQuota` | function | `(job: "farmer" \| "woodcutter" \| "miner" \| "builder", count: integer(0,50))` → `(ok, errorCode?)` (calls `requestWorkers`). Haulers take the citizens left over and soldiers come from the barracks, so neither has a quota |
 | `Match.State` / `Match.GetState` | serverEvent / function | `(phase, endsAtServerTime?, startedAtServerTime)` |
 | `Match.Ended` | serverEvent | the `MatchEnded` payload (G9) |
 | `Build.Buildings` / `Build.GetBuildings` | serverEvent / function | changed `{ Building }` per tick / all buildings |
@@ -294,6 +294,10 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
   - "spawn" = `KingdomJoined`;
   - "first build placed" credits `Building.placedBy`;
   - building completions and captures credit every current member of the kingdom.
+  - **Funnel order (v0.4-g6).** The analytics funnel credits a step to a player only if that player already holds the previous step.
+    - Example: a co-ruler who never placed a building is not credited "first building complete" or "first capture".
+    - Reason: Roblox counts skipped funnel steps as completed, so kingdom-wide credit would inflate the steps before it.
+    - The G9 events themselves are unchanged, and onboarding and the announcer still react to kingdom-wide events.
 
 ## G10. Kit and world (FORGE-02; D-021 as amended by D-026)
 `src/shared/Kit/Kit.luau` is required as `@game/ReplicatedStorage/Game/Kit/Kit`.
@@ -446,6 +450,14 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
   - `REACH`
 - **Context.** FORGE-01 builds the context table from the vocabulary in `content/SPEC.md`, e.g. `ctx["kingdom.fed_ratio"]`. A variable the server cannot yet provide stays nil, and a clause on a nil variable is false.
 - **Runtime semantics** live in `content/SPEC.md` §6–§8 (lands with FL-0083, PR #53). The server follows them:
+- **ContentQuery API added by FL-0083 follow-ups (PR #67, #-next).** All of these are pure:
+  - `fireDecision(..., listeners?)` returns decayed, clamped, apply-as-given values. Each listener gets its final loyalty.
+  - `fireAction(...)` is the single anti-farming point for `actions.csv`. Reputation goes to the credited rulers: the attributed actor, or every co-ruler for kingdom-wide events. Kingdom conditions and listener loyalty are applied once per firing.
+  - `citizenKey(citizen)` resolves `id`, then `entityId`, then `key`.
+  - `LOYALTY_CLAMP` = speaker 25, family/friends/rivals 10, kingdom 5.
+  - `startLoyalty(chemistry)` = `floor(50 + chemistry/4 + 0.5)`.
+  - `choicePreview(decisionId)` returns `{ cost?, risks? }` exactly as the G13.3 option extras. `choiceRisks` returns filled `{ text, chance }`. The panel shows the chance; content text never repeats it.
+  - Servers use these and do not re-implement decay, clamps or start loyalty.
   - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
   - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
   - Co-rulers:
@@ -466,6 +478,7 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
 - **Chemistry and memories.** Chemistry is rolled once per citizen and may drift at most ±5 from its rolled value (`ContentQuery.driftChemistry`). Memories set by content are **pinned**: the G5 cap of 8 never evicts them.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
+- **Soldier kingdom marker (D-033(3), FORGE-05 colour-vision check).** Soldiers wear a helmet, so their 9th part is a **helmet crest shaped per kingdom**, matching the tower style: crimson spire, azure square, emerald plume, gold dome. That keeps friend and foe distinguishable without colour. `Kit.character(kind, job, kingdomColor, look?, kingdom: KingdomId?)` takes an optional `kingdom` for this. FORGE-01 passes it for soldiers. VS-1 acceptance requires it.
 - **Looks.** Hair is the 9th rig part, welded to the Head (D-032). The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
 - **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
 
@@ -478,8 +491,11 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 - `Sim.Events` gains three kinds, sent to the kingdom's members:
   - `thought` `{ entityId, scenarioId, text, icon: "request" | "concern" | "idea" }`
   - `reaction` `{ entityId, text, tone: "happy" | "angry" | "sad" | "neutral" }`
-  - `strike` `{ occupation, on: boolean }`
-  - `cue` `{ entityId?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
+  - `strike` `{ occupation, on: boolean, entityIds: { EntityId } }`. `entityIds` lists exactly the citizens whose strike state changed (the server strikes only the least loyal share of an occupation). Clients mark only those citizens and never fan out by occupation (v0.4-g6).
+  - `cue` `{ entityId?, entityIds: { EntityId }?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
+    - An occupation-wide or kingdom-wide cue that should show on citizens carries the affected ids in `entityIds`, chosen by the server.
+    - A cue with neither `entityId` nor `entityIds` shows only on the HUD or the keep, never on citizens.
+    - Lists are bounded by the kingdom's population.
 - Options from `Kingdom.Converse` may also carry `cost: ResourceBag?` and `risks: { { text: string, chance: number } }?`, both from `ContentQuery.choicePreview`. Every risk is shown before the player chooses (model decision 7).
 - At most `Society.openRequests` (PROVISIONAL 3) thought bubbles are open per kingdom at a time. The list is refreshed every 20 s.
 
@@ -542,8 +558,30 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - `strike.start <occupation>`
 - `population.reseed <seed>`
 
+### G13.8 Cinematic conversations (D-036; first version after FL-0079 and FL-0088 land)
+- **Server (FORGE-01).**
+  - The `Kingdom.Converse` result gains `look: CitizenLook`, `job`, `position: Vector3` (the citizen's current position) and `kingdom`.
+  - While a conversation is open, the citizen is **held**: `intent = "talking"`, it stops moving and turns to face the ruler's camera direction. The hold lasts at most `Society.conversationHoldSec` (PROVISIONAL 30 s) or ends at `Kingdom.EndConversation(entityId: integer) -> boolean`, a new function remote (own kingdom, rate-limited).
+  - After `Kingdom.Choose`, the hold ends when the reaction finishes, after at most 4 s.
+- **Portrait (FORGE-02).** `Kit.portrait(kind, job, kingdomColor, look, kingdom?) -> Model` returns the same ≤ 9-part rig as `Kit.character`, with the same look. It also carries a `PortraitFocus` attachment (head and shoulders) for a ViewportFrame camera. The portrait and the world rig must look identical.
+- **UI (FORGE-03).** `ConversationController`:
+  - The portrait ViewportFrame rises from the bottom (about 0.35 s).
+  - It shows a speech bubble with the question, then 2–4 choices with cost and risk chips.
+  - It then shows the reaction text and the consequence chips, and closes.
+  - The world stays visible: no full-screen cover, dim at most 20 %.
+  - It fires `ConversationController.opened(entityId, position)` and `.closed(entityId)`.
+- **Camera and presentation (FORGE-04).**
+  - On `opened`, `RulerCameraController:focusOn(position, { duration = 0.6 })` eases to about 25–35 studs from the citizen, framing them off-centre so the portrait does not cover them. On `closed`, `RulerCameraController:restore()` returns to the saved overview.
+  - A reduced-motion setting cuts instantly instead.
+  - Reaction poses and emotes play on the portrait and the world rig, keyed by the reaction tone or emotion.
+- **Content (FORGE-06).** Lines are written for this presentation: short questions and reactions, with optional emotion and gesture metadata (SPEC columns added by FORGE-00).
+- **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
+
 ## Changelog
-- v0.4-g4 (2026-10-12) FORGE-00: G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
+- v0.4-g8 (2026-10-13) FORGE-00, ruling on the three #31 contract nits (backlog audit): the contract follows the shipped code. `assign` returns `KingdomId?`; `Kingdom.Gather` returns `(true, ResourceId, amount)` or `(false, errorCode)`; `Kingdom.SetJobQuota` covers farmer/woodcutter/miner/builder and returns `(ok, errorCode?)`. The v0.4-g7 G13.1 signatures arrive with PR #83.
+- v0.4-g6 (2026-10-13) FORGE-00, rulings on FORGE-05's #42 and #64 reviews: G13.3 `strike` carries `entityIds` and `cue` may carry `entityIds` (additive; no client fan-out by occupation); G9 funnel credits a step only after the player's previous step.
+- v0.4-g5 (2026-10-13) FORGE-00: G13.1 ContentQuery API list (fireAction, citizenKey, LOYALTY_CLAMP, startLoyalty, choicePreview/choiceRisks); G13.8 cinematic conversations (D-036).
+- v0.4-g4 (2026-10-13) FORGE-00: G13.2 soldier kingdom crest (D-033). G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
   - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
   - G13.2 chemistry drift ±5 and pinned memories;
   - G13.3 `cue` event and option cost/risks;

@@ -9,7 +9,8 @@
 		KingdomMenus    20  CoreUISafeInsets   Build drawer (BuildMenuController), Kingdom panel
 		KingdomModals   40  None               large-spend confirmation (scrim covers the notch strips;
 		                                       the panel is centred, clear of them)
-		KingdomNotices  70  CoreUISafeInsets   toast fallback (until FORGE-04's NotificationController)
+		KingdomNotices  70  CoreUISafeInsets   toast fallback (without FORGE-04's NotificationController;
+		                                       with it, its stack is placed in the same spot, in screen px)
 	Each scaled ScreenGui holds a Root frame sized fromScale(1/s, 1/s) with a UIScale of s, so all
 	layout is in logical pixels (UI/Layout).
 
@@ -84,7 +85,7 @@ function Def.new(env: any, registry: any)
 				upgradeId = nil,
 				pending = nil,
 				done = nil,
-				jobs = { pending = {}, quota = {} }, -- FL-0065: in flight / acknowledged (JobModel state)
+				jobs = { pending = {}, quota = {}, at = {} }, -- FL-0065: in flight / acknowledged (JobModel state)
 			},
 			confirm = nil :: any,
 		},
@@ -288,6 +289,9 @@ end
 -- ------------------------------------------------------------------ data
 
 function KingdomHudController:_onStore(what: string, deltas: any)
+	if what == "population" then
+		self:_settleJobs(nil)
+	end
 	if what == "kingdoms" then
 		local kingdom = self.store:mine()
 		local mine = if kingdom then kingdom.id else nil
@@ -295,7 +299,7 @@ function KingdomHudController:_onStore(what: string, deltas: any)
 			self._mine = mine
 			-- Another kingdom's people: drop the old counts and quotas (FORGE-05 M2 on #55).
 			self.store:clearPopulation()
-			self.state.panel.jobs = { pending = {}, quota = {} }
+			self.state.panel.jobs = { pending = {}, quota = {}, at = {} }
 			if mine ~= nil then
 				-- A late join: the treasury of the new kingdom was never pushed to this client.
 				self:_fetch("Treasury.Get", function(totals)
@@ -333,6 +337,27 @@ function KingdomHudController:notify(spec: { title: string, body: string?, kind:
 	if self.toasts then
 		self.toasts:show(spec)
 	end
+end
+
+-- FORGE-04's NotificationController shows the toasts when it is present (notify above), so it goes
+-- where the fallback stack goes: under the pills beside an open phone drawer, else left of the rail
+-- (FORGE-05 M1 on #33: unplaced, its top-right stack covered the rail and the drawer's Close on
+-- phones). Its ScreenGui has no UIScale, so logical px are multiplied by the layout scale. place()
+-- rebuilds its cards: it is called only when the placement changes, not on every push.
+function KingdomHudController:_placeNotifications(right: number, top: number, width: number, scale: number)
+	local notifications = self._notifications
+	if notifications == nil or notifications.place == nil then
+		return
+	end
+	local x, y, w = math.floor(right * scale + 0.5), math.floor(top * scale + 0.5), math.floor(width * scale + 0.5)
+	local key = `{x}|{y}|{w}`
+	if key == self._notificationsAt then
+		return
+	end
+	self._notificationsAt = key
+	pcall(function()
+		notifications:place(UDim2.fromOffset(x, y), Vector2.new(1, 0), w)
+	end)
 end
 
 function KingdomHudController:inspectResource(id: string)
@@ -473,6 +498,26 @@ function KingdomHudController:requestUpgrade(detail: any, confirmed: boolean?)
 	end)
 end
 
+-- Forgets acknowledged quotas the server's payload now shows (FORGE-05 on #65, measured with #61).
+-- Runs when a population push arrives, never against the payload already held when the ack came:
+-- that one may be from before the request. `expired` (an ack ACK_HOLD_SEC old, from changeJob's
+-- timer) yields to the server's quota too, so a co-ruler's later change wins. Without `quotas` in
+-- the payload the ack is the best target known, so it stays.
+function KingdomHudController:_settleJobs(expired: string?)
+	local jobs = self.state.panel.jobs
+	local population = self.store:population()
+	local quotas = if population then population.quotas else nil
+	if quotas == nil then
+		return
+	end
+	for job, target in jobs.quota do
+		if job == expired or quotas[job] == target then
+			jobs.quota[job] = nil
+			jobs.at[job] = nil
+		end
+	end
+end
+
 -- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
 -- the request sets the job's quota to its newest target ± 1 (JobModel.target) and the server fills
 -- it from the free (hauler) pool. The count changes here only when its push arrives.
@@ -511,7 +556,15 @@ function KingdomHudController:changeJob(jobId: string, delta: number)
 		end
 		jobs.pending[jobId] = nil
 		if called and ok == true then
+			local stamp = env.clock()
 			jobs.quota[jobId] = target
+			jobs.at[jobId] = stamp
+			self._motion:after(JobModel.ACK_HOLD_SEC, function()
+				if self.state.panel.jobs == jobs and jobs.at[jobId] == stamp then
+					self:_settleJobs(jobId) -- no push showed it in time: the server's quota wins
+					self:render()
+				end
+			end)
 		else
 			self:notify({
 				kind = "error",
@@ -710,7 +763,9 @@ function KingdomHudController:render()
 	local right = if drawerOpen and m.breakpoint == "phone"
 		then free.width - 10
 		else m.width - m.rail.right - m.rail.button - 12
-	self.toasts:place(UDim2.fromOffset(right, Layout.toastTop(m, drawerOpen)), Vector2.new(1, 0), m.toast.width)
+	local top = Layout.toastTop(m, drawerOpen)
+	self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), m.toast.width)
+	self:_placeNotifications(right, top, m.toast.width, m.scale)
 	self.rendered:fire(m)
 end
 
