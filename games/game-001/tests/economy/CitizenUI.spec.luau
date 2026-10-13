@@ -121,6 +121,20 @@ local function newWorld(opts)
 	o.remotes = if o.inspectOnly then CitizenDoubles.INSPECT_ONLY else CitizenDoubles.REMOTES
 	o.services = { if o.inspectOnly then CitizenDoubles.inspectOnly else CitizenDoubles.service }
 	o.clientDefinitions = { KingdomHudDef, CitizenCardDef, ConversationDef, inputModeDef(o.rbxSignal) }
+	if o.places then
+		-- FORGE-04's NotificationController (#33) as a recording double: show and place
+		table.insert(o.clientDefinitions, {
+			name = "NotificationController",
+			new = function()
+				return {
+					show = function() end,
+					place = function(_, position, anchor, width)
+						table.insert(o.places, { position = position, anchor = anchor, width = width })
+					end,
+				}
+			end,
+		})
+	end
 	if o.onboarding then
 		-- FORGE-04's OnboardingController (#45) as a recording double: report(action)
 		table.insert(o.clientDefinitions, {
@@ -838,6 +852,22 @@ describe("Citizen card and conversation lows (FORGE-05 L4-L8)", function()
 		expect(stack.instance.Position.Y.Offset).toBe(Layout.toastTop(m, false))
 		world.hud:notify({ title = "Third" })
 		expect(stack:count()).toBe(2)
+	end)
+
+	it("L4 with NotificationController (#33): its stack goes to the same band above the sheet, and back", function()
+		world:destroy()
+		local places = {}
+		world = newWorld({ width = 750, height = 311, places = places })
+		local m = world.hud:metrics()
+		talkTo(world, 42)
+		local band = Layout.sheetToast(m)
+		local at = places[#places]
+		expect(at.position).toBe(
+			UDim2.fromOffset(math.floor(band.right * m.scale + 0.5), math.floor(band.y * m.scale + 0.5))
+		)
+		expect(at.width).toBe(math.floor(band.width * m.scale + 0.5))
+		world.conversation:close()
+		expect(places[#places].position.Y.Offset).toBe(math.floor(Layout.toastTop(m, false) * m.scale + 0.5))
 	end)
 
 	it("L5 no Kingdom.Converse on the server (today's main): Talk says so at once", function()

@@ -9,7 +9,8 @@
 		KingdomMenus    20  CoreUISafeInsets   Build drawer (BuildMenuController), Kingdom panel
 		KingdomModals   40  None               large-spend confirmation (scrim covers the notch strips;
 		                                       the panel is centred, clear of them)
-		KingdomNotices  70  CoreUISafeInsets   toast fallback (until FORGE-04's NotificationController)
+		KingdomNotices  70  CoreUISafeInsets   toast fallback (without FORGE-04's NotificationController;
+		                                       with it, its stack is placed in the same spot, in screen px)
 	Each scaled ScreenGui holds a Root frame sized fromScale(1/s, 1/s) with a UIScale of s, so all
 	layout is in logical pixels (UI/Layout).
 
@@ -368,6 +369,27 @@ function KingdomHudController:sheetOpen(metrics: any?): boolean
 	end
 	local m = metrics or self:metrics()
 	return m.breakpoint == "phone"
+end
+
+-- FORGE-04's NotificationController shows the toasts when it is present (notify above), so it goes
+-- where the fallback stack goes: under the pills beside an open phone drawer, else left of the rail
+-- (FORGE-05 M1 on #33: unplaced, its top-right stack covered the rail and the drawer's Close on
+-- phones). Its ScreenGui has no UIScale, so logical px are multiplied by the layout scale. place()
+-- rebuilds its cards: it is called only when the placement changes, not on every push.
+function KingdomHudController:_placeNotifications(right: number, top: number, width: number, scale: number)
+	local notifications = self._notifications
+	if notifications == nil or notifications.place == nil then
+		return
+	end
+	local x, y, w = math.floor(right * scale + 0.5), math.floor(top * scale + 0.5), math.floor(width * scale + 0.5)
+	local key = `{x}|{y}|{w}`
+	if key == self._notificationsAt then
+		return
+	end
+	self._notificationsAt = key
+	pcall(function()
+		notifications:place(UDim2.fromOffset(x, y), Vector2.new(1, 0), w)
+	end)
 end
 
 function KingdomHudController:inspectResource(id: string)
@@ -742,16 +764,20 @@ function KingdomHudController:render()
 
 	local drawerOpen = s.menu ~= nil
 	if self:sheetOpen(m) then
-		-- A phone sheet covers the usual toast corner (FORGE-05 L4): one toast at a time, in the band
-		-- between the pills and the sheet's right edge, above the sheet.
+		-- A phone sheet covers the usual toast corner (FORGE-05 L4): in the band between the pills and
+		-- the sheet's right edge, above the sheet; one at a time in the fallback stack
+		-- (NotificationController's place() has no limit: it keeps its own queue of three).
 		local band = Layout.sheetToast(m)
 		self.toasts:place(UDim2.fromOffset(band.right, band.y), Vector2.new(1, 0), band.width, 1)
+		self:_placeNotifications(band.right, band.y, band.width, m.scale)
 	else
 		local free = Layout.freeArea(m, drawerOpen)
 		local right = if drawerOpen and m.breakpoint == "phone"
 			then free.width - 10
 			else m.width - m.rail.right - m.rail.button - 12
-		self.toasts:place(UDim2.fromOffset(right, Layout.toastTop(m, drawerOpen)), Vector2.new(1, 0), m.toast.width)
+		local top = Layout.toastTop(m, drawerOpen)
+		self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), m.toast.width)
+		self:_placeNotifications(right, top, m.toast.width, m.scale)
 	end
 	self.rendered:fire(m)
 end
