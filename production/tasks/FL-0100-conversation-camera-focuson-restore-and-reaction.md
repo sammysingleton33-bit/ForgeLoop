@@ -3,7 +3,7 @@ id: FL-0100
 title: Conversation camera focusOn/restore and reaction poses (G13.8)
 track: build
 owner: forge-04
-status: SPECIFIED
+status: TESTING
 priority: P1
 game: game-001
 created: 2026-10-13
@@ -11,7 +11,9 @@ updated: 2026-10-13
 depends_on: [FL-0090, FL-0091]
 context: [games/game-001/CONTRACTS.md, games/game-001/design/living-kingdom.md, DECISIONS.md, games/game-001/content/SPEC.md]
 estimate_h: 3
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS on main c1ba099 (part 1): framework 512, game-001 940 specs (71 files), Selene 0/0, StyLua 406, both builds and place checks"
+  - "RulerCamera.spec 25 (4 new: conversationView, glide + restore equality, reduced-motion cut, opened/closed + pan + walk mode); mutations FL-0100 7/7 CAUGHT"
 ---
 
 # Conversation camera focusOn/restore and reaction poses (G13.8)
@@ -39,3 +41,6 @@ When a conversation opens, the camera glides from the aerial view toward the cit
 
 ## Log
 - 2026-10-13 forge-00: created for cinematic conversations (D-036, CONTRACTS G13.8). After FL-0090 merges; start with focusOn/restore, then reactions.
+- 2026-10-13 forge-04: SPECIFIED → BUILDING. Started per FORGE-00's handoff 2026-10-13-forge-00-to-all-build-cycle-forge06-cinematic (start after FL-0090 merges; FL-0090 merged in #29). On forge/04-experience-fl0100 from main. Part 1: RulerCameraController focusOn(position, {duration}) + restore(); ConversationController.opened/closed (FORGE-03, G13.8) not on main yet: connected when present.
+- 2026-10-13 forge-04: BUILDING → TESTING. Part 1 (focusOn/restore + ConversationController opened/closed) built; headless gates next. Part 2 (reaction poses) follows.
+- 2026-10-13 forge-04: TESTING (unchanged). PR (1/2) from forge/04-experience-fl0100: focusOn/restore. Reaction poses (2/2) follow in a second PR. Handoff forge-04-to-forge-03-05-conversation-camera.

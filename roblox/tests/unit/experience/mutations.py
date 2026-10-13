@@ -137,6 +137,13 @@ M = [
  ("FL-0027", C+"NotificationController.luau", 'if spec.sound ~= nil and not hasVisual then', 'if false then', "Notification", "games register celebrations", "fw"),
  ("FL-0027", C+"NotificationController.luau", '				self.queue:setFilter(value)', '				local _ = value', "Notification", "applies the notifications setting live", "fw"),
  ("FL-0027", C+"OnboardingController.luau", 'if wasActive and state.done and not state.skipped then', 'if state.done then', "OnboardingController", "celebrates when the last step completes", "fw"),
+ ("FL-0100", C2+"RulerCameraController.luau", 'if self:_reducedMotion() or duration <= 0 or shown == nil then', 'if duration <= 0 or shown == nil then', "RulerCamera", "reduced motion cuts to the conversation view", "game"),
+ ("FL-0100", C2+"RulerCameraController.luau", '	if self._saved == nil then\n		self._saved = {', '	if true then\n		self._saved = {', "RulerCamera", "glides to the citizen; restore() glides back", "game"),
+ ("FL-0100", C2+"RulerCameraController.luau", 'shown.focus = glide.from.focus:Lerp(glide.to.focus, k)', 'shown.focus = glide.to.focus', "RulerCamera", "glides to the citizen; restore() glides back", "game"),
+ ("FL-0100", C2+"RulerCameraController.luau", '		self._glide = nil -- a pan or a "go to" ends a conversation glide\n', '', "RulerCamera", "a pan ends a glide", "game"),
+ ("FL-0100", C2+"RulerCameraController.luau", 'local focus = Def.clampFocus(position + Def.panVector(conversation.offset, yaw), bounds, margin)', 'local focus = Def.clampFocus(position, bounds, margin)', "RulerCamera", "conversationView() frames the citizen above the centre", "game"),
+ ("FL-0100", C2+"RulerCameraController.luau", 'if typeof(position) ~= "Vector3" or self.mode ~= "overview" or self._target.focus == nil then', 'if typeof(position) ~= "Vector3" or self._target.focus == nil then', "RulerCamera", "walk mode ignores it", "game"),
+ ("FL-0100", C2+"RulerCameraController.luau", '			self:focusOn(position, {})', '			local _ = position', "RulerCamera", "follows ConversationController.opened / closed", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

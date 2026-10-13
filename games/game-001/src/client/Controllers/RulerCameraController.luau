@@ -7,6 +7,9 @@
 		camera.mode, camera.changed:connect(function(mode, previous) ... end)
 		camera:panBy(Vector2) / camera:rotateBy(degrees) / camera:zoomBy(steps)   -- overview rig
 		camera:focusOn(position)            -- e.g. a panel's "go to" button; clamped to the map
+		camera:focusOn(position, { duration = 0.6 }) -> boolean   -- conversations (G13.8, FL-0100): glide
+		                                    -- to `conversation.zoom` studs, the citizen above the centre
+		camera:restore() -> boolean         -- glide back to the view saved by the first focusOn(_, opts)
 		camera:getFocus() -> Vector3?
 		camera:shake(magnitude, duration)   -- VFXController.shakeRequested is wired to this
 
@@ -30,6 +33,11 @@
 	overview, and leaving it restores the previous mode unless the player chose one meanwhile.
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
 	maxActive at once, never with cameraShake off or reduced motion on (SettingsController).
+	Conversations (D-036, G13.8): ConversationController.opened(entityId, position) glides the
+	overview toward the citizen (eased over `duration`, the citizen framed above the centre so the
+	portrait rising from the bottom never covers them, clamped to the map); .closed glides back to
+	the saved focus, rotation and zoom. Reduced motion cuts instead of gliding. A pan or "go to"
+	during a glide ends it. Walk mode ignores conversations.
 
 	The camera runs at RenderPriority.Camera + 1. Engine access is guarded: without a camera, input
 	services or Layout it boots and does nothing (the headless boot gate).
@@ -90,6 +98,12 @@ Def.DEFAULTS = table.freeze({
 		streamTimeoutSec = 2,
 	}),
 	transitionSec = 0.6,
+	-- conversation focus (G13.8): 25-35 studs from the citizen, the kingdom still visible around
+	conversation = table.freeze({
+		zoom = 30,
+		offset = Vector2.new(0, -6), -- focus shift in screen studs (x right, y forward): the citizen above the centre
+		durationSec = 0.6,
+	}),
 	overviewInBuild = true,
 	shake = table.freeze({
 		maxDegrees = 2,
@@ -136,6 +150,13 @@ function Def.aerialCFrame(focus: Vector3, yaw: number, zoom: number, overview: a
 	local forward = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw))
 	local position = focus - forward * (zoom * math.cos(pitch)) + Vector3.new(0, zoom * math.sin(pitch), 0)
 	return CFrame.lookAt(position, focus)
+end
+
+-- The overview view that frames a citizen at `position` for a conversation (G13.8): the focus moves
+-- by `conversation.offset` in screen studs, so the citizen sits above the centre; clamped to the map.
+function Def.conversationView(position: Vector3, yaw: number, conversation: any, bounds: any, margin: number): any
+	local focus = Def.clampFocus(position + Def.panVector(conversation.offset, yaw), bounds, margin)
+	return { focus = focus, yaw = yaw, zoom = conversation.zoom }
 end
 
 -- The map box from Layout (G10.1): every region polygon point and every plot spawn.
@@ -271,6 +292,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_shown = nil,
 		_blendFrom = nil,
 		_blendT = 1,
+		_glide = nil :: any, -- { from, to, t, duration }: an eased move of the shown view (conversations)
+		_saved = nil :: any, -- the view to return to after a conversation
 		_autoFrom = nil,
 		_rendering = false,
 		_streamedAt = nil,
@@ -329,6 +352,7 @@ function Controller:start()
 			end)
 		)
 	end
+	self:_listenConversations()
 	self:_bindView()
 	self:_bindPointer()
 	self:_bindRender()
@@ -388,8 +412,97 @@ function Controller:getFocus(): Vector3?
 	return self._target.focus
 end
 
-function Controller:focusOn(position: Vector3)
-	self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
+function Controller:focusOn(position: Vector3, opts: { duration: number? }?): boolean
+	if opts == nil then
+		self._glide = nil -- a pan or a "go to" ends a conversation glide
+		self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
+		return true
+	end
+	if typeof(position) ~= "Vector3" or self.mode ~= "overview" or self._target.focus == nil then
+		return false
+	end
+	local conversation = self._config.conversation or Def.DEFAULTS.conversation
+	local target = self._target
+	if self._saved == nil then
+		self._saved = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
+	end
+	local view =
+		Def.conversationView(position, target.yaw, conversation, self._bounds, self._config.overview.boundsMargin)
+	self:_glideTo(view, if type(opts.duration) == "number" then opts.duration else conversation.durationSec)
+	return true
+end
+
+-- Back to the view saved by the first focusOn(position, opts). False when there is nothing to restore.
+function Controller:restore(opts: { duration: number? }?): boolean
+	local saved = self._saved
+	self._saved = nil
+	if saved == nil or saved.focus == nil then
+		return false
+	end
+	local conversation = self._config.conversation or Def.DEFAULTS.conversation
+	local duration = if opts and type(opts.duration) == "number" then opts.duration else conversation.durationSec
+	self:_glideTo(saved, duration)
+	return true
+end
+
+-- ConversationController (FORGE-03, G13.8) fires opened(entityId, position) and closed(entityId).
+-- Its signals may be framework Signals (:connect) or RBXScriptSignals (:Connect).
+function Controller:_listenConversations()
+	local conversations = self._registry:find("ConversationController")
+	local function listen(signal: any, handler: (...any) -> ()): boolean
+		if signal == nil then
+			return false
+		end
+		local ok, connection = pcall(function()
+			return if signal.connect then signal:connect(handler) else signal:Connect(handler)
+		end)
+		if ok and connection ~= nil then
+			table.insert(self._connections, connection)
+		end
+		return ok
+	end
+	local opened = conversations
+		and listen(conversations.opened, function(_entityId, position)
+			self:focusOn(position, {})
+		end)
+	local closed = conversations and listen(conversations.closed, function()
+		self:restore()
+	end)
+	if not (opened and closed) then
+		self._env.log(
+			"info",
+			"RulerCameraController: no ConversationController.opened/closed yet (FORGE-03, G13.8); conversation focus waits"
+		)
+	end
+end
+
+function Controller:_reducedMotion(): boolean
+	local settings = self._settings
+	if settings == nil then
+		return false
+	end
+	local ok, reduced = pcall(function()
+		return if settings.reducedMotion then settings:reducedMotion() else settings:get("reducedMotion")
+	end)
+	return ok and reduced == true
+end
+
+-- Sets the target view; the shown view eases there over `duration` (a cut with reduced motion).
+function Controller:_glideTo(view: any, duration: number)
+	local target = self._target
+	target.focus, target.yaw, target.zoom = view.focus, view.yaw, view.zoom
+	local shown = self._shown
+	if self:_reducedMotion() or duration <= 0 or shown == nil then
+		self._glide = nil
+		self._shown = nil -- the next frame starts at the target: a cut
+		return
+	end
+	self._glide = {
+		from = { focus = shown.focus, yaw = shown.yaw, zoom = shown.zoom },
+		to = { focus = view.focus, yaw = view.yaw, zoom = view.zoom },
+		t = 0,
+		duration = duration,
+	}
 end
 
 -- Moves the overview focus by a screen-space amount in studs (x = right, y = forward).
@@ -475,9 +588,19 @@ function Controller:_stepOverview(dt: number, camera: any)
 	end
 
 	local shown = self._shown
+	local glide = self._glide
 	if shown == nil then
 		shown = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
 		self._shown = shown
+	elseif glide ~= nil then
+		glide.t = math.min(glide.duration, glide.t + dt)
+		local k = Def.ease(glide.t / glide.duration)
+		shown.focus = glide.from.focus:Lerp(glide.to.focus, k)
+		shown.yaw = glide.from.yaw + angleDelta(glide.from.yaw, glide.to.yaw) * k
+		shown.zoom = glide.from.zoom + (glide.to.zoom - glide.from.zoom) * k
+		if glide.t >= glide.duration then
+			self._glide = nil
+		end
 	else
 		shown.focus = Def.smooth(shown.focus, target.focus, overview.smoothing, dt)
 		shown.yaw += angleDelta(shown.yaw, target.yaw) * (1 - math.exp(-overview.smoothing * dt))

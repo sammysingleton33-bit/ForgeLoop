@@ -57,6 +57,22 @@ describe("RulerCameraController pure rules (FL-0053, FL-0090)", function()
 		expect(CameraDef.clampFocus(Vector3.new(1, 2, 3), bounds, 10)).toBe(Vector3.new(1, 2, 3))
 	end)
 
+	it(
+		"conversationView() frames the citizen above the centre at the conversation zoom, inside the map (FL-0100)",
+		function()
+			local conversation = C.conversation
+			local bounds = { min = Vector2.new(-100, -50), max = Vector2.new(100, 50) }
+			local citizen = Vector3.new(10, 3, 0)
+			local view = CameraDef.conversationView(citizen, 0, conversation, bounds, 10)
+			expect(view.zoom).toBe(conversation.zoom)
+			expect(conversation.zoom >= 25 and conversation.zoom <= 35).toBe(true)
+			-- yaw 0 looks toward -Z; the focus moves toward the camera (+Z), so the citizen sits further up the screen
+			expect(near(view.focus, Vector3.new(10, 3, -conversation.offset.Y))).toBe(true)
+			local edge = CameraDef.conversationView(Vector3.new(500, 3, 0), 0, conversation, bounds, 10)
+			expect(edge.focus.X).toBe(110) -- clamped to bounds + margin
+		end
+	)
+
 	it("panVector() maps screen right/forward onto the ground at any yaw; worldPerPixel scales with zoom", function()
 		expect(near(CameraDef.panVector(Vector2.new(0, 1), 0), Vector3.new(0, 0, -1))).toBe(true)
 		expect(near(CameraDef.panVector(Vector2.new(1, 0), 0), Vector3.new(1, 0, 0))).toBe(true)
@@ -392,6 +408,86 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(controller._shakes[1].duration).toBe(C.shake.maxDuration)
 		expect(controller:shake(0, 1)).toBe(false)
 		expect(controller:shake("big", 1)).toBe(false)
+	end)
+
+	it(
+		"focusOn(position, { duration }) glides to the citizen; restore() glides back to the saved view (FL-0100)",
+		function()
+			boot()
+			settle()
+			local saved =
+				{ focus = controller:getFocus(), yaw = controller._target.yaw, zoom = controller._target.zoom }
+			local citizen = THRONE + Vector3.new(30, 0, -20)
+			expect(controller:focusOn(citizen, { duration = 0.6 })).toBe(true)
+			local view =
+				CameraDef.conversationView(citizen, saved.yaw, C.conversation, controller._bounds, O.boundsMargin)
+			local goal = CameraDef.aerialCFrame(view.focus, view.yaw, view.zoom, O)
+			frames(6) -- 0.1 s in: on the way, not there
+			expect(near(camera.CFrame.Position, goal.Position, 0.5)).toBe(false)
+			expect(near(controller._shown.focus, view.focus, 0.5)).toBe(false) -- the focus eases too
+			expect(near(controller._shown.focus, saved.focus, 0.5)).toBe(false)
+			frames(math.ceil(0.6 / DT))
+			expect(near(camera.CFrame.Position, goal.Position, 1e-3)).toBe(true)
+			expect(controller:focusOn(citizen + Vector3.new(4, 0, 0), {})).toBe(true) -- a second citizen
+			expect(controller:restore()).toBe(true)
+			frames(math.ceil(0.6 / DT) + 1)
+			expect(controller:getFocus()).toBe(saved.focus) -- the first saved view, not the second citizen
+			expect(controller._target.yaw).toBe(saved.yaw)
+			expect(controller._target.zoom).toBe(saved.zoom)
+			local back = CameraDef.aerialCFrame(saved.focus, saved.yaw, saved.zoom, O)
+			expect(near(camera.CFrame.Position, back.Position, 1e-3)).toBe(true)
+			expect(controller:restore()).toBe(false) -- nothing left to restore
+		end
+	)
+
+	it("reduced motion cuts to the conversation view instead of gliding (FL-0100)", function()
+		boot({ D.settings({ reducedMotion = true }) })
+		settle()
+		local citizen = THRONE + Vector3.new(30, 0, -20)
+		controller:focusOn(citizen, { duration = 0.6 })
+		controller:update(DT)
+		local view = CameraDef.conversationView(
+			citizen,
+			controller._target.yaw,
+			C.conversation,
+			controller._bounds,
+			O.boundsMargin
+		)
+		local goal = CameraDef.aerialCFrame(view.focus, view.yaw, view.zoom, O)
+		expect(near(camera.CFrame.Position, goal.Position, 1e-3)).toBe(true) -- one frame: a cut
+	end)
+
+	it("follows ConversationController.opened / closed; a pan ends a glide; walk mode ignores it (FL-0100)", function()
+		local opened, closed = Signal.new(), Signal.new()
+		boot({
+			{
+				name = "ConversationController",
+				dependencies = {},
+				new = function()
+					return { opened = opened, closed = closed }
+				end,
+			},
+		})
+		settle()
+		local saved = controller:getFocus()
+		local citizen = THRONE + Vector3.new(-25, 0, 15)
+		opened:fire(7, citizen)
+		local view = CameraDef.conversationView(
+			citizen,
+			controller._target.yaw,
+			C.conversation,
+			controller._bounds,
+			O.boundsMargin
+		)
+		expect(controller:getFocus()).toBe(view.focus)
+		expect(controller._glide).never.toBeNil()
+		controller:panBy(Vector2.new(1, 0)) -- the player takes over
+		expect(controller._glide).toBeNil()
+		closed:fire(7)
+		expect(controller:getFocus()).toBe(saved)
+		controller:setMode("follow")
+		expect(controller:focusOn(citizen, {})).toBe(false)
+		expect(env.mock:hasLog("info", "conversation focus waits")).toBe(false)
 	end)
 
 	it("boots with no camera, input services or character (headless) and does nothing", function()
