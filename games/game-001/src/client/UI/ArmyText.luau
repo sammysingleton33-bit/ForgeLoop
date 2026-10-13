@@ -33,8 +33,8 @@ local REASONS: { [string]: string } = {
 	not_barracks = "Soldiers train at a barracks",
 	barracks_not_ready = "Finish building the barracks first",
 	requires_barracks_level = "Upgrade the barracks first",
-	population_cap = "No room for more people. Build houses first",
-	recruit_cap = "Your barracks can't train more soldiers. Upgrade it",
+	-- no free bunk: soldiers sleep in the barracks, never in house beds (D-041; 4/8/12/16 per level)
+	recruit_cap = "No free bunks. Upgrade the barracks or build another",
 	cannot_afford = "Not enough resources",
 	unknown_unit = "Those soldiers can't be trained here",
 	invalid_args = "Those soldiers can't be trained here",

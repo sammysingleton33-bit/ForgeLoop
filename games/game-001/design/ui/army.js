@@ -67,7 +67,7 @@
 	// ------------------------------------------------------------------ sample state (matches the Lune doubles)
 	const RES = ["food", "wood", "stone", "gold"];
 	const NAMES = { food: "Food", wood: "Wood", stone: "Stone", gold: "Gold" };
-	const EMBLEM = { crimson: "emblem_flame", azure: "emblem_star", emerald: "emblem_oak", gold: "emblem_sun" };
+	const EMBLEM = { crimson: "emblem_crown", azure: "emblem_star", emerald: "emblem_oak", gold: "emblem_sun" };
 	const KINGDOMS = {
 		crimson: { id: "crimson", name: "Emberhold", isAI: false },
 		azure: { id: "azure", name: "Frostmere", isAI: false },
@@ -119,7 +119,7 @@
 		const phone = M.bp === "phone";
 		const deltas = o.deltas || {};
 		let html = `<div class="badge" style="left:${h.x}px;top:${h.y}px">
-			${crest(k.id, h.crest, phone ? `<div class="pop cp">${I("crown", 11)}${k.crownPoints}</div>` : "")}
+			${crest(k.id, h.crest, phone ? `<div class="pop cp">${I("gem", 11)}${k.crownPoints}</div>` : "")}
 			${phone ? "" : `<div class="plate"><div class="kname" style="font-size:26px">${k.name}</div>
 				<div class="ksub">Keep <b>Lv 1</b> · 1 region · <b>${k.crownPoints}</b> Crown Points</div></div>`}</div>`;
 		html += `<div class="pills" style="left:${h.pills.x}px;top:${h.pills.y}px">${RES.map((r) => pill(r, phone, deltas[r])).join("")}</div>`;
@@ -312,7 +312,7 @@
 	function summary(d, M, winner, standings) {
 		const phone = M.bp === "phone";
 		const mineWins = winner === MINE;
-		const kick = mineWins ? `<div class="skick win">${I("crown", 14)}Victory</div>` : `<div class="skick">${I("standings", 14)}Match over</div>`;
+		const kick = mineWins ? `<div class="skick win">${I("laurel", 14)}Victory</div>` : `<div class="skick">${I("standings", 14)}Match over</div>`;
 		const head = winner
 			? `<div class="swin">${crest(winner, phone ? 48 : 60)}<div><div class="sname" style="font-size:${phone ? 30 : 36}px">${KINGDOMS[winner].name}</div><div class="ssub ${mineWins ? "mine" : ""}">${mineWins ? "Your kingdom wins" : "wins the match"}</div></div></div>`
 			: `<div class="swin"><div class="crest" style="width:${phone ? 48 : 60}px;height:${phone ? 48 : 60}px;background:linear-gradient(180deg,var(--color-ink600),var(--color-ink900))">${I("standings", phone ? 30 : 38)}</div><div><div class="sname" style="font-size:${phone ? 30 : 36}px">No winner</div><div class="ssub">Nobody won the match</div></div></div>`;
@@ -320,7 +320,7 @@
 			.map((s, i) => {
 				const k = KINGDOMS[s.kingdom];
 				const me = s.kingdom === MINE;
-				return `<div class="srow ${me ? "me" : ""}"><span class="rk">${i + 1}${s.kingdom === winner ? I("crown", 14) : ""}</span>${crest(s.kingdom, 22)}<span class="nm">${k.name}</span>
+				return `<div class="srow ${me ? "me" : ""}"><span class="rk">${i + 1}${s.kingdom === winner ? I("laurel", 14) : ""}</span>${crest(s.kingdom, 22)}<span class="nm">${k.name}</span>
 					${me ? `<span class="tagc you">you</span>` : ""}${k.isAI ? `<span class="tagc ai">AI</span>` : ""}<span class="cp">${s.crownPoints}</span></div>`;
 			})
 			.join("");
