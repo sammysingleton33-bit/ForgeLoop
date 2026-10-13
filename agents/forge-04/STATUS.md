@@ -1,17 +1,18 @@
 # FORGE-04 status
 
-_Maintained by the worker. Keep it short and current._
+_Maintained by the worker. Keep it short and current. Updated 2026-10-13._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/04-experience` (cloud session; pushes to the worker branch and `forge/04-experience-fl00xx` PR branches work) |
-| Open PRs | #20 FL-0023 analytics → #21 FL-0024 settings/audio/VFX → #22 FL-0025 onboarding (stacked; merge in that order). CI green on all three |
-| Merged | #15 FL-0061 PacingService |
-| Current task | FL-0053 ruler controller, camera, input modes (PROMPT §0 queue item 2); then FL-0027, FL-0062, FL-0023 follow-up FL-0063 |
-| Last verified check | `check.sh` OVERALL PASS on `forge/04-experience-fl0025` @4054eab (framework 471, game-001 86 specs); `mutations.py` 39/39 |
-| Blockers | none. FL-0062 needs FORGE-01's G4.1 client signals and G9 producers to show anything in Studio |
-| Needs from others | FORGE-00: review events.md, EXPERIENCE.md, PACING.md; confirm the Subjects pattern. FORGE-03: `OnboardingTarget` attributes `HUD.BuildButton` and `HUD.Recruit`. User: choose or upload the P0 sounds (handoff `2026-10-12-forge-04-to-user-sounds.md`) |
+| Session branch | `forge/04-experience`, plus one `forge/04-experience-<topic>` branch per PR, each from `main` |
+| Merged | #15 FL-0061 pacing; #20–#22 FL-0023 analytics, FL-0024 settings/audio/VFX, FL-0025 onboarding; #29 FL-0053 + FL-0090 aerial camera, selection, walk mode; #33 FL-0027 NotificationController; #42 FL-0091 citizen bubbles, strike placards, cues |
+| Open PRs (all from `main`, independent of each other) | **this PR** D-038 (7): per-feature files for mutation rows, Studio-test history and the analytics taxonomy (merge first; the rest then move their rows) · #45 FL-0092 match30 + onboarding v2 (D-038 (1): may merge before #77) · #64 FL-0063 VS-1 analytics · #49 FL-0062 feedback layer · #87 FL-0091 follow-up (v0.4-g6 `entityIds`, `rest` effect, #42 lows) · #82 FL-0027 follow-ups · #84 FL-0100 (1/2) conversation camera (FORGE-07 reviews it last) |
+| Next | After this PR lands: merge `main` into each open PR and move its rows into `mutations/<task>.py`. Then: #29 shake Medium in RulerCameraController with FL-0100; FL-0100 (2/2) reaction poses on the portrait (`Kit.posePortrait`, FORGE-02 #85) and the world rig (FORGE-01 `playPose`); FL-0103 settings panel (P2, D-038 (4)); the #22 lows |
+| Last verified check | `check.sh` OVERALL PASS on #45 `b08eea5`, #64 `f610e49`, #49 `7df3b26`, #87 `8438b11` and #82 `0a2d3ad`. Mutations: FL-0092 16/16, FL-0063 22/22, FL-0062 28/28, FL-0091 40/40, FL-0027 30/30 |
+| Blockers | None of mine. Studio evidence (G6, the user's) for FL-0090, FL-0091, FL-0062 and FL-0063 needs FORGE-01's G13.3 events and ConversationService (#77) and the G9 producers on `main` |
+| Needs from others | FORGE-01: `EntityController:playPose`; the ConversationAnswered and ReputationShifted analytics calls (FL-0063 handoff). FORGE-03: G13.8 `ConversationController.opened`/`closed`; `report("CitizenAnswered")`. FORGE-00: an ownership row if `roblox/studio-tests/experience.md` should become one file per section (it is per-section history for now). User: P0 sounds |
 
 ## Last report
-- FL-0023/24/25 reconciled with CONTRACTS v0.4-g3, D-026, D-027 and FORGE-00's answers (G9 triggers, KingdomJoined start, session-only progress, no Crowns rewards, kingdom-specific feedback in the game tree). PRs #20–#22 open.
+- D-030 work is in review. FORGE-00's audit asks are done on #45 (main merged, `player.Parent` guard) and #64 (M1/M2, main merged). #49 has main merged.
+- D-038 (7) is this PR. Each task's mutation rows go in its own file, each Studio-test section keeps its own history, and §5 of the analytics taxonomy is split into one file per feature.
 - Nothing has been seen or heard in Studio yet (G6 is the user's).

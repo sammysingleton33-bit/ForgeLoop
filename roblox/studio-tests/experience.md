@@ -4,6 +4,8 @@ _Gate G6. Run by the user in Roblox Studio on the integrated build (`main`, or a
 
 Headless evidence already in place (not a substitute for these steps): Lune specs under `roblox/tests/unit/experience/` run the real Sound/ParticleEmitter instance-building code on Lune instances with engine methods (`Play`, `Emit`) stubbed. They cannot hear audio, see particles, or prove layout on a phone.
 
+Each section ends with its own **History** (D-038 (7)): a change to one feature edits only its section, so PRs for different features never touch the same lines. There is no shared changelog.
+
 **Before you start:** some systems need other workers' code. Each section says what it needs; if that is not on the build yet, write "blocked: needs X" instead of a result.
 - Remotes: RemoteService (FL-0009, on `main`). Persistence: DataService (FL-0008) is **not** needed for VS-1. Settings and onboarding progress last for the session (D-027).
 - AI Kingdoms feedback (sounds/VFX on citizens' work, announcer, music): FL-0062, with steps in `games/game-001/STUDIO_PLAYTEST.md` via FORGE-05. It needs FORGE-01's G9 events and G4.1 client signals.
@@ -17,12 +19,18 @@ Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 4. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
+History:
+- 2026-10-12 FORGE-04: written (FL-0023); aligned with CONTRACTS v0.4-g2 and D-027.
+
 ## E2 — Settings (FL-0024)
 Needs: RemoteService and a settings panel (FORGE-03 components; until it exists write "blocked: no settings UI"). Persistence across sessions also needs DataService (FL-0008, after VS-1).
 1. Play Solo. Output shows `SettingsService: no DataService; settings and progress last for the session (D-027)` while FL-0008 is absent.
 2. In the settings panel set Music to 20% and Reduced Motion on: music drops at once; effects lose their camera shake.
 3. With DataService on the build only: leave, then Play Solo again; the values are still there.
 Pass: step 2 holds; step 3 holds when DataService exists. No `SettingsService` error in Output.
+
+History:
+- 2026-10-12 FORGE-04: written (FL-0024); session-only settings (D-027).
 
 ## E3 — Audio budget and levels (FL-0024)
 Needs: sound assets (at least the P0 list in the user handoff).
@@ -41,6 +49,9 @@ Steps
 3. Listen at the default volumes on laptop speakers **and** a phone (or the phone's headphones): UI sounds sit below music; warnings (alarm bell) are clearly louder than ambience; no sound is harsh at full master volume.
 4. Set Master to 0: everything is silent. Set Music to 0 with Master 100%: only music is silent.
 Pass: all four hold; record the Sounds memory value.
+
+History:
+- 2026-10-12 FORGE-04: written (FL-0024).
 
 ## E4 — VFX budget and look (FL-0024)
 Needs: nothing for the presets themselves (built-in textures); kingdom signals for the in-game triggers.
@@ -61,8 +72,14 @@ Steps (until a debug panel exists, FORGE-05's tools or a temporary LocalScript c
 4. Turn the in-game Reduced Motion setting on (or the Roblox menu's Reduce Motion): a preset with shake (`levelup.column` has none; use a game preset with `shake`) shows fewer particles and **no** camera shake request.
 Pass: screenshots reviewed (G5 note committed by FORGE-04 after the user shares them), FPS on the low-end profile ≥ 30 with the stress case, reduced motion behaves as above.
 
+History:
+- 2026-10-12 FORGE-04: written (FL-0024).
+
 ## E5 — AI Kingdoms feedback (moved)
 The kingdom-specific feedback moved to the game tree with CONTRACTS v0.4-g2 (D-026): sounds and VFX on citizens' work, the announcer, the music by match phase, and citizen reactions. That is FL-0062 (`games/game-001/src/{shared/Feedback,client/Controllers/{Feedback,Music,Announcer}*}`). Its Studio steps go into `games/game-001/STUDIO_PLAYTEST.md` through FORGE-05. The framework parts it uses are checked by E3 and E4.
+
+History:
+- 2026-10-12 FORGE-04: moved to FL-0062 in the game tree (CONTRACTS v0.4-g2, D-026).
 
 ## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 VS-1 flow)
 Needs:
@@ -106,6 +123,9 @@ The same order is asserted headlessly by `games/game-001/tests/experience/Onboar
 
 Pass: all timings recorded and within target; the log order matches; skip and co-ruler behaviour as above.
 
+History:
+- 2026-10-12 FORGE-04: written (FL-0025); rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture), session-only progress (D-027).
+
 ## E7 — Notifications and celebrations (FL-0027)
 Needs:
 - the build with NotificationController (this PR's stack);
@@ -134,6 +154,9 @@ Steps
 6. Same phone, during the tutorial (E6) with HUD notices coming in: the toasts start below the onboarding card, and Skip and the step counter stay visible and tappable.
 
 Pass: steps 1–6 hold. Note anything that feels noisy (too many toasts in a busy minute) for the FL-0062 tuning.
+
+History:
+- 2026-10-12 FORGE-04: written (FL-0027).
 
 ## E8 — Citizen bubbles, reactions and strike placards (FL-0091, game-001)
 Needs:
@@ -167,8 +190,5 @@ Steps
 
 Pass: steps 1–7 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
 
-## Changelog
-- 2026-10-12 FORGE-04: E1–E5 (FL-0023, FL-0024); E6 onboarding walkthrough (FL-0025).
-- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2 and D-027. Session-only settings and progress; E5 moved to FL-0062 (game tree); E6 rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture).
-- 2026-10-12 FORGE-04: E7 notifications and celebrations (FL-0027).
-- 2026-10-12 FORGE-04: E8 citizen bubbles, reactions and strike placards (FL-0091).
+History:
+- 2026-10-12 FORGE-04: written (FL-0091).

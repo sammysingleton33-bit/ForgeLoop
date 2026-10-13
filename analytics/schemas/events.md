@@ -70,30 +70,16 @@ Resolver errors are caught and warned once per minute; analytics never breaks ga
 
 ## 5. Custom events and funnels — AI Kingdoms
 
-### Custom events (`LogCustomEvent(player, name, value, customFields)`)
-| Event | Value | CustomField01 | CustomField02 | CustomField03 | Emitted by | Status |
-|---|---|---|---|---|---|---|
-| SessionStart | daysSinceFirstJoin | visit (`firstDay` \| `return` \| `unknown`) | | | AnalyticsService on `PlayerReady` (core.createdAt from DataService when present) | built |
-| SessionEnd | sessionSec | lastActivity (last tracked bus/custom event = drop-off point) | | | AnalyticsService on `Players.PlayerRemoving` | built |
-| OnboardingCompleted | durationSec | flow | | | OnboardingService | built |
-| OnboardingSkipped | lastStep | lastStepName | flow | | OnboardingService on skip; **no funnel step is logged after it** | built |
-| OnboardingHintEscalated | step | stepName | | | OnboardingService when a step passes its nudge time (stuck points) | built |
-| MatchEnded | durationSec | won (`true`/`false`) | phase | mode (`slice` \| `match`) | G9 `MatchEnded`, per player still here | planned FL-0063 |
-| PhaseLeft | minute | phase | | | player left during a match (disconnect point) | planned FL-0063 |
-| IdleHintShown | idleSec | phase | | | dead-air hint shown (PACING.md §6) | planned FL-0062 |
-| CelebrationShown | 1 | kind | | | NotificationController:celebrate (reported by the server) | planned FL-0027 |
-| SettingChanged | 1 | key | value | | SettingsService (once per key per 10 s) | built |
+One file per feature (D-038 (7)), so PRs for different features never edit the same lines. Every event and funnel in `games/game-001/config/Analytics.luau` is in exactly one of them:
 
-### Funnels
-| Funnel | Roblox method | Kind / session id | Steps | Logged by |
-|---|---|---|---|---|
-| Onboarding | `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | one-time | the 6 steps of `games/game-001/config/Onboarding.luau`: `Spawn` (KingdomJoined), `Gather` (ruler's ResourceGathered), `PlaceBuilding` (BuildingPlaced, placedBy), `BuildingComplete`, `Recruit` (UnitsRecruited), `Capture` (ObjectiveCaptured) | OnboardingService only; nothing after a skip |
-| VS1 | `LogFunnelStepEvent(player, "VS1", nil, step, name, fields)` | once | BRIEF §13: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture (G9 attribution, §4) | declared now; track rules land in FL-0063 |
-| Return | `LogFunnelStepEvent(player, "Return", nil, ...)` | once | 1 FirstSession (first join today, UTC) · 2 ReturnNextDay | AnalyticsService on `PlayerReady` (needs DataService `core.createdAt`; inactive in VS-1, D-027) |
+| File | Feature | Custom events | Funnels |
+|---|---|---|---|
+| `analytics/schemas/game-001/sessions.md` | sessions and return (FL-0023) | SessionStart, SessionEnd | Return |
+| `analytics/schemas/game-001/onboarding.md` | the tutorial (FL-0025, FL-0092) | OnboardingCompleted, OnboardingSkipped, OnboardingHintEscalated | Onboarding |
+| `analytics/schemas/game-001/match.md` | VS-1 progress and matches (FL-0063) | MatchEnded, PhaseLeft | VS1 |
+| `analytics/schemas/game-001/feedback.md` | feedback, celebrations, settings (FL-0024, FL-0027, FL-0062) | IdleHintShown, CelebrationShown, SettingChanged | |
 
-Why both Onboarding and VS1: Onboarding counts tutorial completion, and stops at a skip. VS1 counts real progress for everybody, including players who skipped the tutorial or played it on another server. Their difference shows whether the tutorial helps.
-
-Why `Return` stops at step 2: if we logged a day-7 step, a player who skipped day 1 would be counted as a day-1 returner (skipped steps count as completed). D7/D30 come from the Creator Dashboard retention charts.
+A new feature adds its own file and one row here.
 
 ## 6. Economy (`LogEconomyEvent`) — owned by FORGE-03's EconomyService
 
@@ -143,6 +129,8 @@ Same session events and onboarding events as above, plus `RoundFinished` (value 
 2. Expect, in order: `analytics event SessionStart ... sent=true`, then `analytics funnel Onboarding step=1 stepName=Spawn` when the kingdom is joined, then one line per tutorial step as you complete it (full order in `roblox/studio-tests/experience.md` E6).
 3. Roblox records nothing from Studio; to check real delivery, publish to a private test place and use the View Events tool (near real time) — needs the user's account.
 
-## Changelog
+## History
+Each feature file keeps its own history. Changes to the shared sections above (rules, budget, measurement plan, verification):
 - 2026-10-12 FORGE-04: first version (FL-0023).
-- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; game-001 VS-1 onboarding steps and the declared VS1 funnel (FL-0063); budget recomputed.
+- 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; budget recomputed.
+- 2026-10-13 FORGE-04: §5 split into one file per feature under `analytics/schemas/game-001/` (D-038 (7)).
