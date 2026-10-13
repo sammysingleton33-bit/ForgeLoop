@@ -212,7 +212,7 @@ Rewriting text never touches mechanics: the text lives here, and the mechanics l
 
 | kind | magnitude | param | other rules |
 |---|---|---|---|
-| productivity | work-rate change, −1 to +1 (−0.2 = −20 %) | — | duration_s > 0. On a group (`occupation:<id>`, `soldiers`, `civilians`, `kingdom`) at least **−0.5**: only `speaker`/`family`/`friends` may stop work entirely (−1 = one citizen's walk-out) |
+| productivity | work-rate change, −1 to +1 (−0.2 = −20 %) | — | duration_s > 0. On a group (`occupation:<id>`, `soldiers`, `civilians`, `kingdom`) at least **−0.5**: only `speaker`/`family`/`friends` may stop work entirely (−1 = one citizen's walk-out). **A walk-out (≤ −1) is a state, not a sum (D-042):** the citizen stops working for the duration and shows a strike placard, and no boost cancels it. Boosts and smaller penalties add up only on working citizens |
 | strike | share of the occupation's workers who stop, 0–**0.5** | — | duration_s 1–**120**. Target must be one **civilian** `occupation:<id>` (CONTRACTS G13.3 sends `strike { occupation, on }`); never `kingdom`, `civilians`, `soldiers` or an occupation whose job is soldier (model decision 6). Kingdom-wide strikes come only from the sustained unrest rules (§6.6) |
 | morale / happiness / stability | points, −20 to +20 | — | kingdom-level condition |
 | loyalty | points, −20 to +20 | — | per targeted citizen |
