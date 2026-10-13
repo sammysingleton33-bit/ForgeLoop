@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g5, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g6, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -294,6 +294,10 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
   - "spawn" = `KingdomJoined`;
   - "first build placed" credits `Building.placedBy`;
   - building completions and captures credit every current member of the kingdom.
+  - **Funnel order (v0.4-g6).** The analytics funnel credits a step to a player only if that player already holds the previous step.
+    - Example: a co-ruler who never placed a building is not credited "first building complete" or "first capture".
+    - Reason: Roblox counts skipped funnel steps as completed, so kingdom-wide credit would inflate the steps before it.
+    - The G9 events themselves are unchanged, and onboarding and the announcer still react to kingdom-wide events.
 
 ## G10. Kit and world (FORGE-02; D-021 as amended by D-026)
 `src/shared/Kit/Kit.luau` is required as `@game/ReplicatedStorage/Game/Kit/Kit`.
@@ -487,8 +491,11 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
 - `Sim.Events` gains three kinds, sent to the kingdom's members:
   - `thought` `{ entityId, scenarioId, text, icon: "request" | "concern" | "idea" }`
   - `reaction` `{ entityId, text, tone: "happy" | "angry" | "sad" | "neutral" }`
-  - `strike` `{ occupation, on: boolean }`
-  - `cue` `{ entityId?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
+  - `strike` `{ occupation, on: boolean, entityIds: { EntityId } }`. `entityIds` lists exactly the citizens whose strike state changed (the server strikes only the least loyal share of an occupation). Clients mark only those citizens and never fan out by occupation (v0.4-g6).
+  - `cue` `{ entityId?, entityIds: { EntityId }?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
+    - An occupation-wide or kingdom-wide cue that should show on citizens carries the affected ids in `entityIds`, chosen by the server.
+    - A cue with neither `entityId` nor `entityIds` shows only on the HUD or the keep, never on citizens.
+    - Lists are bounded by the kingdom's population.
 - Options from `Kingdom.Converse` may also carry `cost: ResourceBag?` and `risks: { { text: string, chance: number } }?`, both from `ContentQuery.choicePreview`. Every risk is shown before the player chooses (model decision 7).
 - At most `Society.openRequests` (PROVISIONAL 3) thought bubbles are open per kingdom at a time. The list is refreshed every 20 s.
 
@@ -571,6 +578,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
+- v0.4-g6 (2026-10-13) FORGE-00, rulings on FORGE-05's #42 and #64 reviews: G13.3 `strike` carries `entityIds` and `cue` may carry `entityIds` (additive; no client fan-out by occupation); G9 funnel credits a step only after the player's previous step.
 - v0.4-g5 (2026-10-13) FORGE-00: G13.1 ContentQuery API list (fireAction, citizenKey, LOYALTY_CLAMP, startLoyalty, choicePreview/choiceRisks); G13.8 cinematic conversations (D-036).
 - v0.4-g4 (2026-10-13) FORGE-00: G13.2 soldier kingdom crest (D-033). G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:
   - G13.1 runtime semantics (fireDecision, locked scenarios, co-rulers, actions);
