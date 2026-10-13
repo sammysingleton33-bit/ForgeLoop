@@ -235,14 +235,21 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		expect(onboarding:state(again, "vs1").stepId).toBe("InspectCitizen")
 	end)
 
-	it("without ConversationService, AnswerCitizen is passed over and not counted; the tutorial goes on", function()
+	it("without ConversationService, AnswerCitizen is passed over and not counted; the tutorial completes", function()
 		boot(true, false)
 		join(p1, "crimson")
 		act(p1, "CitizenInspected")
 		place(p1, "crimson", 11)
 		expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
 		bus.UnitsRecruited:fire(p1, "crimson", 3)
-		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "Recruit" })
+		bus.ObjectiveCaptured:fire("tower_1", "crimson")
+		expect(onboarding:state(p1, "vs1").done).toBe(true) -- never stuck at 4/6 (FORGE-00's #45 ruling)
+		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "Recruit", "Capture" })
+		local completed = 0
+		for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
+			completed += if call.args[1] == "OnboardingCompleted" then 1 else 0
+		end
+		expect(completed).toBe(1)
 		expect(env.mock:hasLog("info", "a step's service is missing")).toBe(true)
 	end)
 

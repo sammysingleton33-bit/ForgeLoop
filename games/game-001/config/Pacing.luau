@@ -14,7 +14,8 @@
 	- match30: an evaluation profile, NOT the default (D-030 (6), design/living-kingdom.md §6): the
 	  user prefers about 25 minutes of kingdom play and a 5-minute final phase. Founding 5, Expansion 7,
 	  Conflict 8, Endgame 5, Arena 4.5 min (+ Lobby 20 s, Results 30 s: about 30 min). Arena is the
-	  VS-2 phase (CONTRACTS G12); MatchService uses match30 only when someone selects it.
+	  VS-2 phase (CONTRACTS G12). MatchService cannot select match30 yet (Match.durationsFor knows slice
+	  and match only); FORGE-01 adds it when the match-length decision is made.
 	targets: when a typical new player should reach each VS-1 milestone (seconds after spawn). They
 	are tuning goals for playtests and analytics (FL-0063), not rules the game enforces.
 ]]

@@ -164,7 +164,13 @@ describe("PacingService (CONTRACTS G11)", function()
 			c.modes.match30.Arena = nil
 		end)).toContain("match30 Arena must be a positive finite")
 		expect(problemsOf(function(c)
-			c.modes.match.Arena = -1
-		end)).toContain("modes.match.Arena must be seconds")
+			c.modes.match.Arena = 120
+		end)).toContain("modes.match.Arena: later phases only in match30") -- Match.new would reject it
+		expect(problemsOf(function(c)
+			c.modes.slice.Arena = 0
+		end)).toContain("modes.slice.Arena: later phases only in match30")
+		expect(problemsOf(function(c)
+			c.modes.match30.Arena = -1
+		end)).toContain("modes.match30.Arena must be seconds")
 	end)
 end)

@@ -96,7 +96,7 @@ M = [
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'out[phase] = durations[phase] -- nil unless', 'out[phase] = nil -- nil unless', "PacingService", "match30 is the", "game"),
  ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
  ("FL-0092", G+"config/Onboarding.luau", 'trigger = { client = "CitizenInspected" }', 'trigger = { client = "CitizenAnswered" }', "Onboarding", "a client action completes only the current step", "game"),
- ("FL-0092", C2+"InputModeController.luau", 'if kind == "citizen" then\n		local onboarding', 'if false then\n		local onboarding', "InputMode", "reports CitizenInspected", "game"),
+ ("FL-0092", C2+"InputModeController.luau", '				onboarding:report("CitizenInspected")', '				local _ = onboarding', "InputMode", "reports CitizenInspected", "game"),
  ("FL-0027", X+"NotificationQueue.luau", 'if #self._visible < config.maxVisible then', 'if true then', "Notification", "shows at most 3", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'if shown.priority < item.priority and', 'if shown.priority <= item.priority and', "Notification", "shows at most 3", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'item.expiresAt = math.min(refreshed, (item.shownAt :: number) + config.maxRefreshSec)', 'item.expiresAt = refreshed', "Notification", "not past maxRefreshSec", "fw"),
@@ -126,6 +126,8 @@ M = [
  ("FL-0092", S+"OnboardingService.luau", '	state.unavailable = self._unavailable[flow.id]\n', '', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
  ("FL-0092", G+"config/Onboarding.luau", '					requires = "ConversationService",\n', '', "Onboarding", "AnswerCitizen is passed over and not counted", "game"),
  ("FL-0092", G+"config/Onboarding.luau", '					autoAdvanceSec = 120,\n', '', "Onboarding", "moves on after autoAdvanceSec, uncounted", "game"),
+ ("FL-0092", G+"src/server/Services/PacingService.luau", 'elseif table.find(Def.LATER_PHASES, key) and not Def.LATER_PHASE_MODES[mode] then', 'elseif false then', "PacingService", "validation catches each broken rule", "game"),
+ ("FL-0092", C+"OnboardingController.luau", '	if state.clientAction ~= action then\n		return false -- the server would ignore it', '	if false then\n		return false -- the server would ignore it', "OnboardingController", "UI code reports actions through report()", "fw"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []

@@ -28,6 +28,9 @@ Def.MODES = table.freeze({ "slice", "match", "match30" })
 -- MatchPhase values added later (CONTRACTS G12: Arena between Endgame and Results at VS-2). A mode may
 -- carry them; phaseDurations returns them when present; VS-1's MatchService ignores keys it lacks.
 Def.LATER_PHASES = table.freeze({ "Arena" })
+-- Modes that may carry later phases. Match.new rejects phases it does not know, so slice and match
+-- (the modes MatchService runs in VS-1) never may (FORGE-05 #45 L1).
+Def.LATER_PHASE_MODES = table.freeze({ match30 = true })
 -- match30 (D-030 (6), design/living-kingdom.md §6): a non-default evaluation profile, ≈ 30 minutes.
 Def.MATCH30_MINUTES = table.freeze({ min = 25, max = 35 })
 local TIMED = { "Founding", "Expansion", "Conflict", "Endgame" }
@@ -95,6 +98,11 @@ function Def.validate(config: any): { string }
 		for key, value in durations do
 			if not table.find(Def.PHASES, key) and not table.find(Def.LATER_PHASES, key) then
 				table.insert(problems, `Pacing: modes.{mode}.{tostring(key)} is not a MatchPhase`)
+			elseif table.find(Def.LATER_PHASES, key) and not Def.LATER_PHASE_MODES[mode] then
+				table.insert(
+					problems,
+					`Pacing: modes.{mode}.{tostring(key)}: later phases only in match30 (Match.new rejects them)`
+				)
 			elseif table.find(Def.LATER_PHASES, key) and not seconds(value) then
 				table.insert(problems, `Pacing: modes.{mode}.{tostring(key)} must be seconds >= 0`)
 			end

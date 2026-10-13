@@ -171,10 +171,12 @@ function Controller:select(kind: any, id: any): boolean
 	self.selection = { kind = kind, id = value }
 	self.selected:fire(kind, value)
 	if kind == "citizen" then
-		local onboarding = self._registry:find("OnboardingController")
-		if onboarding ~= nil and onboarding.report ~= nil then
-			pcall(onboarding.report, onboarding, "CitizenInspected")
-		end
+		pcall(function() -- the selection never fails because of the tutorial
+			local onboarding = self._registry:find("OnboardingController")
+			if onboarding ~= nil and onboarding.report ~= nil then
+				onboarding:report("CitizenInspected")
+			end
+		end)
 	end
 	return true
 end
