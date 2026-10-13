@@ -33,6 +33,7 @@
 ]]
 
 local Commands = require("./Commands")
+local Military = require("./Military")
 local Snapshot = require("./Snapshot")
 
 local RulerAI = {}
@@ -349,13 +350,16 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			-- count, and count toward the army) and its full price
 			local training = queuedUnits(sim, kingdom)
 			local target = math.max(2, math.floor(pop * (0.15 + 0.2 * aggression)))
-			local kind = if army % 2 == 0 then "soldier" else "archer"
+			-- alternate soldiers and archers (archers only where Costs lists them)
+			local kind = if army % 2 == 0 or sim.costs.unit("archer") == nil then "soldier" else "archer"
+			local price = sim.costs.unit(kind) :: any
 			local cost = {}
-			for res, amount in sim.catalog.units[kind].cost do
+			for res, amount in price.cost do
 				cost[res] = amount * 2
 			end
 			if
 				count(sim, kingdom, "barracks", false) > 0
+				and army + training + 2 <= Military.recruitCap(sim, kingdom)
 				and army + training < target
 				and pop + training + 2 <= kingdom.popCap
 				and sim:canAfford(kingdom.id, cost)

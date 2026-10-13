@@ -1,6 +1,7 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
+local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local F = require("./KingdomFixtures")
 local Snapshot = require("@game/ReplicatedStorage/Game/Sim/Snapshot")
 
@@ -262,6 +263,15 @@ describe("Kingdom/Simulation: construction", function()
 		F.assertInvariants(sim)
 	end)
 
+	it("takes every level's work from Costs.building(type, level).buildSeconds (CONTRACTS G13.5)", function()
+		local sim = F.kingdom()
+		for kind in sim.catalog.buildings do
+			for level = 1, Costs.maxLevel(kind) do
+				expect(sim:workFor(kind, level)).toBe((Costs.building(kind, level) :: any).buildSeconds)
+			end
+		end
+	end)
+
 	it("rejects upgrades that are busy, maxed, missing, foreign or unaffordable without side effects", function()
 		local sim, k = F.kingdom()
 		local other = sim:addKingdom({ id = "azure", x = 400, z = 0 })
@@ -275,7 +285,7 @@ describe("Kingdom/Simulation: construction", function()
 		expect(sim.treasury:get(k.id)).toEqual(before)
 		local wall = sim:placeBuilding(k, "wall", -35, 0)
 		sim:_completeInstantly(wall)
-		wall.level = 2
+		wall.level = #sim.catalog.buildings.wall.levels -- Costs.maxLevel("wall")
 		expect(select(2, sim:startUpgrade(k, wall.id))).toBe("max_level")
 	end)
 

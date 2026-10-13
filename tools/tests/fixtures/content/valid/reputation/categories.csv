@@ -1,0 +1,7 @@
+category_id,name_text,description_text,affects_text,start
+compassion,Compassion,How much your people believe you care for them.,Raised by feeding the hungry and sparing the weak; lowered by cruelty.,50
+honor,Honor,Whether your word can be trusted.,Raised by keeping promises; lowered by broken promises.,50
+competence,Competence,Whether the kingdom runs well under you.,Raised by meeting real needs; lowered by waste and shortages.,50
+courage,Courage,Whether you stand at the front.,Raised by defending in person; lowered by fleeing.,50
+authority,Authority,Whether your orders are followed.,Raised by firm decisions; lowered by indecision.,50
+fear,Fear,How much your people fear you.,Raised by threats and punishment; it fades slowly.,20

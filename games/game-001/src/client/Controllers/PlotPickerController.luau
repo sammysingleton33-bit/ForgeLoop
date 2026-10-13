@@ -18,7 +18,7 @@
 
 	API (specs and snapshot scenes drive these directly)
 		picker:open(slotId)  picker:select(type)  picker:back()  picker:place(detail)  picker:close()
-		picker.state = { slotId?, selected?, phoneView, pending }   picker.menu (UI/BuildMenu)
+		picker.state = { slotId?, selected?, phoneView }   picker._inFlight[slotId] while its order is out   picker.menu (UI/BuildMenu)
 ]]
 
 local BuildMenu = require("../UI/BuildMenu")
@@ -37,8 +37,9 @@ function Def.new(env: any, registry: any)
 		_env = env,
 		_registry = registry,
 		hud = registry:get("KingdomHudController"),
-		state = { slotId = nil :: string?, selected = nil :: string?, phoneView = "list", pending = false },
+		state = { slotId = nil :: string?, selected = nil :: string?, phoneView = "list" },
 		_connections = {},
+		_inFlight = {}, -- slotId -> true while its Build.PlaceSlot has no reply (FORGE-05 L2)
 	}, PlotPickerController)
 end
 
@@ -82,7 +83,12 @@ function PlotPickerController:start()
 		local ok, err = pcall(function()
 			local connection = hud.remotes:on("Build.Slots", function(list)
 				hud.store:applySlots(list)
+				self:_checkOpenPlot()
 			end)
+			if self._destroyed then
+				connection:Disconnect() -- the remote replicated after destroy (FORGE-05, #41 review)
+				return
+			end
 			table.insert(self._connections, {
 				disconnect = function()
 					connection:Disconnect()
@@ -91,6 +97,9 @@ function PlotPickerController:start()
 		end)
 		if not ok then
 			env.log("warn", "PlotPickerController: cannot listen to Build.Slots", { error = tostring(err) })
+		end
+		if self._destroyed then
+			return
 		end
 		local fetched, list = pcall(function()
 			return hud.remotes:invoke("Build.GetSlots")
@@ -104,6 +113,7 @@ function PlotPickerController:start()
 end
 
 function PlotPickerController:destroy()
+	self._destroyed = true
 	for _, connection in self._connections do
 		if connection then
 			pcall(function()
@@ -128,6 +138,21 @@ function PlotPickerController:_onSelected(kind: any, id: any)
 	end
 end
 
+-- The open plot was built on by someone else (a co-ruler, or the server): the drawer would vanish
+-- with hud.state.menu still "plot" (FORGE-05, #48 review). Close it and say why. My own order closes
+-- it on its reply instead.
+function PlotPickerController:_checkOpenPlot()
+	local s = self.state
+	if self.hud.state.menu ~= PlotPickerController.MENU or s.slotId == nil or self._inFlight[s.slotId] then
+		return
+	end
+	local slot = self.hud.store:slot(s.slotId)
+	if slot == nil or slot.occupiedBy ~= nil then
+		self:close()
+		self.hud:notify({ kind = "info", title = "This plot was just built on", body = "Pick another plot" })
+	end
+end
+
 function PlotPickerController:open(slotId: any)
 	local slot = self.hud.store:slot(slotId)
 	if slot == nil or slot.occupiedBy ~= nil then
@@ -141,7 +166,6 @@ function PlotPickerController:open(slotId: any)
 	s.slotId = slot.id
 	s.selected = nil
 	s.phoneView = "list"
-	s.pending = false
 	if self.hud.state.menu == PlotPickerController.MENU then
 		self.hud:render()
 	else
@@ -169,18 +193,20 @@ end
 
 function PlotPickerController:place(detail: any)
 	local s = self.state
-	if s.pending or detail == nil or detail.cta.state ~= "ready" or s.slotId == nil then
+	-- One order per plot until its reply, whatever was opened or closed meanwhile: `_inFlight` is the
+	-- only record (a second flag per showing masked bugs in either, FORGE-05 #48 review).
+	if detail == nil or detail.cta.state ~= "ready" or s.slotId == nil or self._inFlight[s.slotId] then
 		return
 	end
 	local hud = self.hud
 	local slotId = s.slotId
-	s.pending = true
+	self._inFlight[slotId] = true
 	hud:render()
 	self._env.spawn(function()
 		local called, buildingId, reason = pcall(function()
 			return hud.remotes:invoke("Build.PlaceSlot", slotId, detail.type)
 		end)
-		s.pending = false
+		self._inFlight[slotId] = nil
 		if called and type(buildingId) == "number" then
 			hud:notify({ kind = "success", title = `{detail.name} ordered`, body = "Builders are on their way" })
 			if s.slotId == slotId then
@@ -190,7 +216,7 @@ function PlotPickerController:place(detail: any)
 			hud:notify({
 				kind = "error",
 				title = "Couldn't build here",
-				body = Text.reason(if called then reason else nil),
+				body = Text.reason(if called then reason else nil, "slot"),
 			})
 		end
 		hud:render()
@@ -209,7 +235,11 @@ function PlotPickerController:render(metrics: any)
 		self.menu:destroy()
 		return
 	end
-	local view = BuildModel.plotMenu(hud.store, { slot = slot, selected = s.selected, pending = s.pending })
+	-- Reopening a plot whose order is still on its way shows it busy: no second PlaceSlot.
+	local view = BuildModel.plotMenu(
+		hud.store,
+		{ slot = slot, selected = s.selected, pending = self._inFlight[slot.id] == true }
+	)
 	self.menu:render(view, metrics, {
 		title = "Build here",
 		name = "PlotPicker",

@@ -10,22 +10,41 @@ local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomStore = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/KingdomStore")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local KingdomWorld = require("./doubles/KingdomWorld")
 local PlotPickerDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/PlotPickerController")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local SlotDoubles = require("./doubles/SlotDoubles")
 local SlotFit = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/SlotFit")
 local UpgradePanelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/UpgradePanelController")
+local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
--- FORGE-04's selection signal (G13.6) as a double.
+-- FORGE-04's selection signal (G13.6) as a double, modelled on the real InputModeController:
+-- select(kind, id) remembers and fires; entering build mode clears a selection with
+-- selected("none", "") so open panels close while placing (FORGE-05 L3).
 local function inputModeDef()
 	return {
 		name = "InputModeController",
 		new = function()
-			local c = { mode = "explore", changed = Signal.new(), selected = Signal.new() }
+			local c = {
+				mode = "explore",
+				changed = Signal.new(),
+				selected = Signal.new(),
+				selection = { kind = "none", id = "" },
+			}
+			function c:select(kind, id)
+				self.selection = { kind = kind, id = if id == nil then "" else id }
+				self.selected:fire(kind, self.selection.id)
+			end
 			function c:set(mode)
+				if self.mode == mode then
+					return
+				end
 				self.mode = mode
 				self.changed:fire(mode)
+				if mode == "build" and self.selection.kind ~= "none" then
+					self:select("none", "")
+				end
 			end
 			return c
 		end,
@@ -80,29 +99,49 @@ local function newWorld(opts)
 end
 
 local function pick(world, kind, id)
-	world.input.selected:fire(kind, id)
+	world.input:select(kind, id)
 	world:advance(0.1)
 end
 
 describe("Plot models (FL-0087)", function()
-	it("fits structures to plot sizes from Kit footprints", function()
-		expect(SlotFit.sizeOf("watchtower")).toBe("S")
-		for _, t in { "house", "storehouse", "lumbercamp", "quarry" } do
-			expect(SlotFit.sizeOf(t)).toBe("M")
+	it("fits structures to FORGE-02's real slot sizes, not to a size guess (M2)", function()
+		-- The world Layout's slots (S 24×20, M 36×30, L 46×40): each type's biggest footprint over its
+		-- levels must fit width and depth. Checked against Layout and Kit here, not against the double.
+		local sizes = WorldLayout.slotSizes
+		expect(sizes.S).toBe(Vector2.new(24, 20))
+		expect(sizes.M).toBe(Vector2.new(36, 30))
+		expect(sizes.L).toBe(Vector2.new(46, 40))
+		for _, t in SlotFit.TYPES do
+			for _, size in { "S", "M", "L" } do
+				local fits = true
+				for level = 1, math.max(1, Costs.maxLevel(t)) do
+					local fp = Kit.footprint(t, level)
+					fits = fits and fp.X <= sizes[size].X and fp.Y <= sizes[size].Y
+				end
+				expect(SlotFit.fits({ size = size }, t)).toBe(fits)
+			end
 		end
+		-- What that means with the D-030 footprints (house 22×18 at Lv 2, barracks 34×22, farm 40×32):
+		for _, t in { "house", "lumbercamp", "quarry", "storehouse", "watchtower" } do
+			expect(SlotFit.sizeOf(t)).toBe("S")
+		end
+		expect(SlotFit.sizeOf("barracks")).toBe("M")
 		expect(SlotFit.sizeOf("farm")).toBe("L")
-		expect(SlotFit.sizeOf("barracks")).toBe("L")
-		expect(table.concat(SlotFit.typesFor({ size = "S" }), ",")).toBe("watchtower")
-		expect(table.concat(SlotFit.typesFor({ size = "M" }), ",")).toBe(
+		expect(table.concat(SlotFit.typesFor({ size = "S" }), ",")).toBe(
 			"house,lumbercamp,quarry,storehouse,watchtower"
+		)
+		expect(table.concat(SlotFit.typesFor({ size = "M" }), ",")).toBe(
+			"house,lumbercamp,quarry,storehouse,barracks,watchtower"
 		)
 		expect(#SlotFit.typesFor({ size = "L" })).toBe(#SlotFit.TYPES)
 		-- the server's own list wins when it sends one (proposed additive field)
 		expect(table.concat(SlotFit.typesFor({ size = "S", fits = { "house" } }), ",")).toBe("house")
 		expect(#SlotFit.typesFor({ size = "XL" })).toBe(0)
-		-- the double's server agrees with the client rule for every plot type
+		-- the double's server agrees with the client for every plot type and size
 		for _, t in SlotFit.TYPES do
-			expect(SlotDoubles.SIZE[t]).toBe(SlotFit.sizeOf(t))
+			for _, size in { "S", "M", "L" } do
+				expect(SlotDoubles.fits(size, t)).toBe(SlotFit.fits({ size = size }, t))
+			end
 		end
 	end)
 
@@ -112,7 +151,7 @@ describe("Plot models (FL-0087)", function()
 		store:applyTreasury({ food = 120, wood = 100, stone = 50, gold = 0 })
 		local view = BuildModel.plotMenu(store, { slot = { id = "m1", size = "M" }, selected = "lumbercamp" })
 		expect(view.tabs[1].label).toBe("Medium plot")
-		expect(#view.rows).toBe(5)
+		expect(#view.rows).toBe(6) -- house, lumber camp, quarry, storehouse, barracks, watchtower
 		expect(view.detail.cta.text).toBe("Build Lumber Camp here")
 		expect(view.detail.action).toBe("slot")
 		expect(view.detail.slotId).toBe("m1")
@@ -228,7 +267,8 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		local barracks = world.build:add("crimson", "barracks", 1, "complete", Vector3.new(150, 0, 150))
 		world.build:push(barracks)
 		world:advance(0.1)
-		pick(world, "building", barracks)
+		-- a tap's id comes from the `BuildingId` attribute: number or string both open the panel
+		pick(world, "building", tostring(barracks))
 		local panel = find(hud.guis.menus, "UpgradePanel")
 		local all = texts(panel)
 		expect(all).toContain("Barracks · Lv 1")
@@ -262,6 +302,113 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		expect(texts(find(hud.guis.menus, "PlotPicker"))).toContain("Watchtower")
 		pick(world, "none", "")
 		expect(hud.state.menu).toBeNil()
+		world:destroy()
+	end)
+
+	it("L2: reopening a plot while its order is on the way never sends a second one", function()
+		local world = newWorld({ latency = 0.3 })
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		local ready = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.picker:place(ready)
+		pick(world, "slot", "s1") -- look elsewhere…
+		pick(world, "slot", "m1") -- …and come back before the reply
+		local face = find(find(hud.guis.menus, "Cta"), "Face")
+		expect(face:GetAttribute("cta")).toBe("loading")
+		world.picker:place(ready)
+		world:advance(0.5)
+		expect(#world:callsNamed("PlaceSlot")).toBe(1)
+		expect(texts(hud.guis.notices)).toContain("House ordered")
+		expect(texts(hud.guis.notices)).never.toContain("Couldn't build here")
+		world:destroy()
+	end)
+
+	it("names the plot in a refusal: a plot built on meanwhile is 'already built on'", function()
+		local world = newWorld()
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		local ready = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.slots.slots.m1.occupiedBy = 999 -- another ruler of the kingdom got there first (no push yet)
+		world.picker:place(ready)
+		world:advance(0.2)
+		expect(texts(hud.guis.notices)).toContain("This plot is already built on")
+		-- the reply clears the order: the player may pick again (FORGE-05, #48 review)
+		expect(find(find(hud.guis.menus, "Cta"), "Face"):GetAttribute("cta")).toBe("ready")
+		world:destroy()
+	end)
+
+	it("L3: entering build mode clears the selection and closes the picker and the upgrade panel", function()
+		local world = newWorld()
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		expect(hud.state.menu).toBe("plot")
+		world.input:set("build")
+		world:advance(0.1)
+		expect(hud.state.menu).toBeNil()
+		world.input:set("explore")
+		pick(world, "building", 1)
+		expect(hud.state.menu).toBe("upgrade")
+		world.input:set("build")
+		world:advance(0.1)
+		expect(hud.state.menu).toBeNil()
+		world:destroy()
+	end)
+
+	it("an order on another plot keeps its own wait while the first one's reply arrives", function()
+		local world = newWorld({ latency = 0.3, treasury = { food = 120, wood = 500, stone = 500, gold = 0 } })
+		local hud = world.hud
+		pick(world, "slot", "m1") -- A
+		local a = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.picker:place(a)
+		pick(world, "slot", "l1") -- B, while A is on its way
+		local b = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("l1"), selected = "farm" }).detail
+		world.picker:place(b)
+		world:advance(0.15) -- A replies; B has not
+		expect(world.picker.state.slotId).toBe("l1")
+		expect(find(find(hud.guis.menus, "Cta"), "Face"):GetAttribute("cta")).toBe("loading")
+		world.picker:place(b) -- still waiting: nothing more is sent for B
+		world:advance(0.4)
+		local forB = 0
+		for _, call in world:callsNamed("PlaceSlot") do
+			if call.args[1] == "l1" then
+				forB += 1
+			end
+		end
+		expect(forB).toBe(1)
+		world:destroy()
+	end)
+
+	it("says so when nothing can be built on a plot (an empty server fits list)", function()
+		local world = newWorld()
+		local hud = world.hud
+		hud.store:applySlots({ { id = "m9", size = "M", fits = {} } })
+		pick(world, "slot", "m9")
+		expect(texts(find(hud.guis.menus, "PlotPicker"))).toContain("Nothing can be built on this plot yet.")
+		world:destroy()
+	end)
+
+	it("closes, and says why, when someone else builds on the open plot", function()
+		local world = newWorld()
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		expect(hud.state.menu).toBe("plot")
+		world.slots:occupy("m1", 999) -- a co-ruler's order lands first
+		world:advance(0.1)
+		expect(hud.state.menu).toBeNil()
+		expect(texts(hud.guis.notices)).toContain("This plot was just built on")
+		world:destroy()
+	end)
+
+	it("a reply that arrives after the HUD is destroyed speaks nowhere and breaks nothing", function()
+		local world = newWorld({ latency = 0.3 })
+		local hud = world.hud
+		pick(world, "slot", "m1")
+		local ready = BuildModel.plotMenu(hud.store, { slot = hud.store:slot("m1"), selected = "house" }).detail
+		world.picker:place(ready)
+		world.picker:destroy()
+		hud:destroy()
+		world:advance(0.5)
+		expect(#world.env.mock.threadErrors).toBe(0)
 		world:destroy()
 	end)
 

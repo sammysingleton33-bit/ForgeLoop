@@ -4,8 +4,9 @@
 	levels, citizen jobs, military units, resource nodes, Crown Point rules and simulation tuning.
 	Pure data + validation; no Roblox APIs, so the simulation runs identically in Lune specs and on
 	the server. Ids follow CONTRACTS G2 (building types and job ids are lowercase contract ids).
-	Costs and build times here are the local double of FORGE-03's Costs.luau (G6): the simulation
-	reads them only through its `costs` provider, so Costs.luau replaces them without code changes.
+	Costs, build times and level counts are FORGE-03's Costs.luau (CONTRACTS G6, G13.5: one source per
+	number). The simulation reads costs and times only through its `costs` provider; the building
+	levels here carry gameplay stats only, for exactly levels 1..Costs.maxLevel(type).
 
 	API
 		Catalog.default(): Catalog              -- a fresh deep copy of the built-in catalog
@@ -13,14 +14,16 @@
 		Catalog.RESOURCES: { string }           -- "food", "wood", "stone", "gold" (stable order)
 		Catalog.levelOf(catalog, kind, level): BuildingLevel?
 		Catalog.isResource(name): boolean
-		Catalog.costs(catalog): Costs        -- G6-shaped provider: building(type, level) -> { cost, buildSeconds },
-		                                       unit(type) -> { cost, trainSeconds } (the FORGE-03 double)
+		Catalog.costs(catalog): Costs        -- G6 provider on Costs.luau: building(type, level) ->
+		                                       { cost, buildSeconds }; unit(type) -> { cost, trainSeconds }
+		                                       (a unit Costs.luau does not list yet, VS-2, falls back to
+		                                       config Military's cost/trainTime)
 
 	Conventions
 		- All amounts are integers (resources never become fractional, so balances stay exact).
-		- A building level's stats are totals for that level, not increments (House L2 popCap 7 means
-		  a level-2 house holds 7 people). `cost`/`work` of level 1 is the placement price; of
-		  level n > 1 the price of upgrading from n-1.
+		- A building level's stats are totals for that level, not increments (House L2 popCap 8 means
+		  a level-2 house holds 8 people). Costs.building(type, 1) is the placement price; of level
+		  n > 1 the price of upgrading from n-1.
 		- Distances are studs on the XZ plane; times are simulation seconds.
 	Data lives in games/game-001/config (Buildings, Jobs, Military, Citizens, Kingdoms, Match);
 	Catalog.default() assembles and deep-copies it, Catalog.validate checks it at startup.
@@ -31,8 +34,6 @@ export type Cost = { [string]: number }
 export type AttackStats = { damage: number, range: number, cooldown: number }
 
 export type BuildingLevel = {
-	cost: Cost,
-	work: number, -- builder-seconds to finish this level
 	hp: number,
 	popCap: number?, -- population this building houses
 	storage: number?, -- storage capacity per resource this building provides
@@ -41,6 +42,8 @@ export type BuildingLevel = {
 	yield: number?, -- food per harvest (farm)
 	attack: AttackStats?, -- defensive fire (watchtower, keep)
 	trains: { string }?, -- unit ids this level can train (barracks)
+	recruitCap: number?, -- soldiers (living + training) this barracks supports
+	trainSpeed: number?, -- divides a unit's trainSeconds (barracks; default 1)
 }
 
 export type BuildingDef = {
@@ -133,11 +136,13 @@ export type Costs = {
 }
 
 local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
+local CostsConfig = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local CitizensConfig = require("@game/ReplicatedStorage/Forge/Config/Citizens")
 local JobsConfig = require("@game/ReplicatedStorage/Forge/Config/Jobs")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local MilitaryConfig = require("@game/ReplicatedStorage/Forge/Config/Military")
+local Kit = require("../Kit/Kit")
 local Types = require("../Kingdom/Types")
 
 local JOB_IDS = Types.JOB_IDS
@@ -186,21 +191,37 @@ local function assemble(): Catalog
 	}
 end
 
+-- G6: Kit.footprint is the one source for placement. The simulation places circles, so each building's
+-- footprint radius is half the longer side of its level-1 Kit footprint (config `footprint` is the
+-- fallback for a type the Kit does not know).
+function Catalog.kitFootprints(catalog: Catalog): Catalog
+	for kind, def in catalog.buildings do
+		local ok, size = pcall(Kit.footprint, kind, 1)
+		if ok and typeof(size) == "Vector2" then
+			def.footprint = math.max(size.X, size.Y) / 2
+		end
+	end
+	return catalog
+end
+
 function Catalog.default(): Catalog
-	return deepCopy(assemble())
+	return Catalog.kitFootprints(deepCopy(assemble()))
 end
 
 function Catalog.costs(catalog: Catalog): Costs
 	return {
 		building = function(kind: string, level: number)
-			local def = catalog.buildings[kind]
-			local stats = def and def.levels[level]
-			if stats == nil then
+			local price = CostsConfig.building(kind, level)
+			if price == nil then
 				return nil
 			end
-			return { cost = table.clone(stats.cost), buildSeconds = stats.work }
+			return { cost = price.cost, buildSeconds = price.buildSeconds }
 		end,
 		unit = function(kind: string)
+			local price = CostsConfig.unit(kind)
+			if price then
+				return { cost = price.cost, trainSeconds = price.trainSeconds }
+			end
 			local def = catalog.units[kind]
 			if def == nil then
 				return nil
@@ -301,14 +322,17 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		end
 		for level, stats in def.levels do
 			local lw = `{where}.levels[{level}]`
-			checkCost(errors, lw, stats.cost)
+			if stats.cost ~= nil or stats.work ~= nil then
+				table.insert(errors, `{lw}: cost and build time belong to Costs.luau (CONTRACTS G13.5)`)
+			end
 			if not isNonNegInt(stats.hp) or stats.hp == 0 then
 				table.insert(errors, `{lw}: hp must be a positive integer`)
 			end
-			if type(stats.work) ~= "number" or stats.work < 0 or stats.work ~= stats.work then
-				table.insert(errors, `{lw}: work must be a non-negative number`)
-			elseif def.placeable and stats.work == 0 then
-				table.insert(errors, `{lw}: placeable buildings need work > 0`)
+			if stats.recruitCap ~= nil and not isNonNegInt(stats.recruitCap) then
+				table.insert(errors, `{lw}: recruitCap must be a non-negative integer`)
+			end
+			if stats.trainSpeed ~= nil and not isPositive(stats.trainSpeed) then
+				table.insert(errors, `{lw}: trainSpeed must be positive`)
 			end
 			if stats.trains then
 				for _, unitId in stats.trains do

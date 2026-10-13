@@ -149,24 +149,28 @@ function CurrencyPill:pulse(delta: number)
 	if previous then
 		previous:Destroy()
 	end
+	-- A badge on the pill's top-right corner, with its own background: under the pill it was drawn
+	-- over by whatever row comes next (the rulers on tablet/desktop) and could not be read.
+	local accent = if negative then Theme.color("gules") else Theme.color("vert")
 	local label = Create("TextLabel", {
 		Name = "Delta",
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -6, 1, 1),
-		Size = UDim2.fromOffset(40, 16),
+		BackgroundColor3 = Theme.color("ink950"),
+		BackgroundTransparency = 0.05,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 2, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 18),
 		Text = Format.signed(delta),
-		TextXAlignment = Enum.TextXAlignment.Right,
-		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 12,
 		FontFace = Theme.font("body", Enum.FontWeight.ExtraBold),
 		TextColor3 = if negative then Theme.hex("#FF8A73") else Theme.hex("#A9E57C"),
 		ZIndex = 5,
 		Parent = self.instance,
 	}, {
-		Create(
-			"UIStroke",
-			{ Color = Theme.color("ink950"), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }
-		),
+		Corner = Create("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		Padding = Create("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }),
+		Stroke = Create("UIStroke", { Color = accent, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
 	})
 	self._stroke.Color = if negative then Theme.color("gules") else Theme.color("vert")
 	self._stroke.Transparency = 0
@@ -174,7 +178,16 @@ function CurrencyPill:pulse(delta: number)
 		-- Fade only when tweens run: without them (reduced motion, no TweenService) the end state
 		-- would apply at once and the player would never see the change.
 		if self._motion.enabled then
-			self._motion:to(label, { Position = UDim2.new(1, -6, 1, 10), TextTransparency = 1 }, CurrencyPill.PULSE_SEC)
+			self._motion:to(
+				label,
+				{ Position = UDim2.new(1, 2, 0, -10), TextTransparency = 1, BackgroundTransparency = 1 },
+				CurrencyPill.PULSE_SEC
+			)
+			-- its outline fades with it (FORGE-05, #48 review): a bare ring must not linger
+			local stroke = label:FindFirstChild("Stroke")
+			if stroke then
+				self._motion:to(stroke, { Transparency = 1 }, CurrencyPill.PULSE_SEC)
+			end
 		end
 		self._motion:after(CurrencyPill.PULSE_SEC, function()
 			if self._destroyed or label.Parent == nil then

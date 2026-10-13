@@ -235,8 +235,12 @@ describe("Reputation strip (desktop)", function()
 		expect(texts(panel(world))).toContain("separate from your reputation")
 	end)
 
-	it("invents no category prose without the content library", function()
+	it("shows the content library's prose by default, and invents none without a provider", function()
+		local Content = require("@game/ReplicatedStorage/Game/Content/Reputation")
 		world.rep:open()
+		local withContent = find(panel(world), "CategoryDetail")
+		expect(texts(find(withContent, "About"))).toContain(Content.categories.compassion.description)
+		world.rep:setCategoryText(nil) -- re-renders the open screen
 		local detail = find(panel(world), "CategoryDetail")
 		expect(find(detail, "About")).toBeNil()
 		expect(find(detail, "Affects")).toBeNil()
@@ -362,5 +366,83 @@ describe("Reputation UI edge cases", function()
 		expect(right <= m.drawer.x or bottom <= m.drawer.y).toBe(true)
 		world:destroy()
 		expect(Layout.compute(1024, 690).drawer.y).toBe(m.drawer.y)
+	end)
+end)
+
+describe("Follow-ups from the #44 review (FORGE-05)", function()
+	local previous
+	beforeEach(function()
+		previous = Create.useTestConnector()
+	end)
+	afterEach(function()
+		Create.setConnector(previous)
+	end)
+
+	it("R44-1: an identical push leaves the open screen alone; a real change keeps the scroll", function()
+		local world = newWorld()
+		world.rep:open()
+		world.rep:selectTab("history")
+		local open = panel(world)
+		local list = find(open, "History")
+		list.CanvasPosition = Vector2.new(0, 60)
+		world.server_rep:push(world.player) -- the same payload again
+		world:advance(0.1)
+		expect(panel(world)).toBe(open)
+		world.server_rep:apply("honor", 2, "You kept your word to the miners.")
+		world:advance(0.1)
+		expect(find(panel(world), "History").CanvasPosition).toBe(Vector2.new(0, 60))
+		world:destroy()
+	end)
+
+	it("R44-2: the History tab shows the latest 30 changes at most", function()
+		local world = newWorld()
+		-- A server that sends more than the contract's 30 (the double already trims, so feed the
+		-- client directly): the History tab still draws 30, newest first.
+		local now = world.env.serverTimeNow()
+		local history = {}
+		for i = 1, 40 do
+			table.insert(history, { t = now - 40 + i, category = "competence", delta = 1, text = `Repaired road {i}.` })
+		end
+		world.rep:apply({ values = { competence = 70 }, history = history, kingdom = {} }, true)
+		world:advance(0.1)
+		world.rep:open()
+		world.rep:selectTab("history")
+		local rows = 0
+		for _, d in find(panel(world), "History"):GetChildren() do
+			if string.match(d.Name, "^History_%d+$") then
+				rows += 1
+			end
+		end
+		expect(rows).toBe(30)
+		expect(find(find(panel(world), "History_1"), "Text").Text).toBe("Repaired road 40.")
+		world:destroy()
+	end)
+
+	it("R44-5: after destroy, a push builds no strip again", function()
+		local world = newWorld()
+		world.rep:destroy()
+		local calls = 0
+		world.rep.apply = function() -- the push listener calls self:apply: it must not be listening
+			calls += 1
+		end
+		world.server_rep:apply("fear", 3, "You hanged a thief.")
+		world:advance(0.1)
+		expect(calls).toBe(0)
+		expect(find(world.hud.guis.hud, "ReputationStrip")).toBeNil()
+		world:destroy()
+	end)
+
+	it("reserves the strip's room only while it shows: no empty gap before the server sends any", function()
+		local world = KingdomWorld.new({ clientDefinitions = { KingdomHudDef, ReputationDef } })
+		local hud = world.client:get("KingdomHudController")
+		hud:setViewport(1024, 690)
+		world:advance(0.2)
+		expect(hud:metrics().drawer.y).toBe(Layout.compute(1024, 690, { reputation = false }).drawer.y)
+		expect(hud:metrics().drawer.y).toBeLessThan(Layout.compute(1024, 690).drawer.y)
+		world:destroy()
+		-- with reputation, the drawer starts below the strip
+		local shown = newWorld({ width = 1024, height = 690 })
+		expect(shown.hud:metrics().drawer.y).toBe(Layout.compute(1024, 690).drawer.y)
+		shown:destroy()
 	end)
 end)
