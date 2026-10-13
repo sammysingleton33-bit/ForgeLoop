@@ -63,7 +63,7 @@ function MusicController:start()
 		end)
 	)
 	RemoteLink.request(self._env, "Match.GetState", function(phase)
-		if self.phase == nil then
+		if self.phase == nil and not self._destroyed then -- a late reply after destroy plays nothing
 			self:setPhase(phase)
 		end
 	end)
@@ -94,6 +94,7 @@ function MusicController:start()
 end
 
 function MusicController:destroy()
+	self._destroyed = true
 	self._running = false
 	for _, link in self._links do
 		link:disconnect()

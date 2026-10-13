@@ -607,6 +607,71 @@ describe("client feedback controllers (FL-0062)", function()
 		expect(feedback._attached[1]).toBeNil()
 	end)
 
+	it(
+		"FeedbackController: cheers are culled by distance and share one sound per gap; NaN ids are ignored (#49 lows)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, {
+				name = "FeedbackController",
+				new = function(e, r)
+					return FeedbackDef.create(e, r, {
+						layout = { resourceNodes = {} },
+						origin = function()
+							return Vector3.zero
+						end,
+					})
+				end,
+			})
+			local feedback = Loader.load(env, defs):get("FeedbackController")
+			local function rig(x)
+				local model = roblox.Instance.new("Model")
+				local part = roblox.Instance.new("Part")
+				part.CFrame = CFrame.new(x, 0, 0)
+				part.Parent = model
+				model.PrimaryPart = part
+				return model
+			end
+			for id = 1, 10 do
+				feedback:onEntityEvent(id, "celebrate", {}, rig(id * 5)) -- the whole kingdom cheers at once
+			end
+			feedback:onEntityEvent(99, "celebrate", {}, rig(2000)) -- far away
+			local cheers = 0
+			for _, sound in played do
+				cheers += if sound.id == "kingdom.cheer" then 1 else 0
+			end
+			expect(cheers).toBe(1)
+			expect(#effects).toBe(10) -- every nearby citizen still bursts; the far one does nothing
+			env.mock:advance(FeedbackDef.CHEER_GAP_SEC + 0.01)
+			feedback:onEntityEvent(1, "celebrate", {}, rig(5))
+			expect(#played).toBe(2)
+			feedback:onEntityEvent(0 / 0, "swing", { job = "miner" }, rig(5))
+			feedback:released(0 / 0)
+			expect(env.mock.threadErrors).toEqual({})
+		end
+	)
+
+	it("MusicController: a Match.GetState reply that arrives after destroy plays nothing (#49 low)", function()
+		local defs = doubles({ notifications = false })
+		table.insert(defs, MusicDef)
+		local controller = Loader.load(env, defs):get("MusicController")
+		controller:destroy()
+		local root = env.newInstance("Folder")
+		root.Name = "ForgeRemotes"
+		root.Parent = env.ReplicatedStorage
+		local area = env.newInstance("Folder")
+		area.Name = "Match"
+		area.Parent = root
+		local getState = env.newInstance("RemoteFunction")
+		getState.Name = "GetState"
+		getState.Parent = area
+		getState.OnServerInvoke = function()
+			return "Conflict", nil, 0
+		end
+		env.mock:advance(1)
+		expect(controller.phase).toBeNil()
+		expect(music).toEqual({})
+	end)
+
 	it("FeedbackController: a released rig loses every effect attached to it (pooled rigs)", function()
 		local defs = doubles({ notifications = false })
 		local entities = { event = Signal.new(), released = Signal.new() }

@@ -32,6 +32,7 @@ local Def = { name = "FeedbackController", dependencies = {} }
 
 Def.DEPOSIT_GAP_SEC = 1.5
 Def.SWING_GAP_SEC = 1.5
+Def.CHEER_GAP_SEC = 0.5 -- a keep upgrade makes every citizen cheer at once: one cheer sound per gap
 Def.MAX_STUDS = 150 -- from the camera focus
 Def.ATTACH_KEEP_SEC = 5 -- longer than any burst preset in Feedback/Presets
 Def.RESOURCE = table.freeze({
@@ -83,6 +84,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_connections = {},
 		_attached = {} :: { [number]: { { effect: any, at: number } } },
 		_lastDeposit = -math.huge,
+		_lastCheer = -math.huge,
 		_lastSwing = {} :: { [number]: number },
 		registered = {} :: { string },
 	}, FeedbackController)
@@ -197,6 +199,9 @@ function FeedbackController:gathered(nodeId: any, resource: any, amount: any)
 end
 
 function FeedbackController:onEntityEvent(id: any, cue: string, payload: any, model: any)
+	if type(id) == "number" and id ~= id then
+		return -- NaN: never a table key
+	end
 	local position = if model then pivotOf(model) else nil
 	if cue == "deposit" then
 		local now = self._env.clock()
@@ -209,10 +214,15 @@ function FeedbackController:onEntityEvent(id: any, cue: string, payload: any, mo
 		end
 		self:_attach(id, "kingdom.deposit", model, position)
 	elseif cue == "celebrate" then
-		if self._audio then
+		if not self:_near(position) then
+			return -- far from the view: nobody sees or hears it
+		end
+		local now = self._env.clock()
+		if self._audio and now - self._lastCheer >= Def.CHEER_GAP_SEC then
+			self._lastCheer = now
 			self._audio:play("kingdom.cheer", { position = position })
 		end
-		self:_attach(id, "reward.burst", model, position)
+		self:_attach(id, "reward.burst", model, position) -- each nearby citizen still bursts (VFX budget)
 	elseif cue == "swing" then
 		local job = type(payload) == "table" and payload.job or nil
 		local sound = Def.JOB_SOUND[job]
@@ -258,6 +268,9 @@ end
 
 -- The rig goes back to the pool: stop every effect attached to it.
 function FeedbackController:released(id: any)
+	if type(id) == "number" and id ~= id then
+		return
+	end
 	local list = self._attached[id]
 	self._attached[id] = nil
 	self._lastSwing[id] = nil
