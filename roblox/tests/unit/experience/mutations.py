@@ -113,6 +113,7 @@ M = [
  ("FL-0063", X+"AnalyticsSchema.luau", 'if decl.inOrder ~= nil and (type(decl.inOrder) ~= "boolean" or decl.kind == "onboarding") then', 'if false then', "AnalyticsSchema", "a funnel's inOrder is a boolean", "fw"),
  ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", '		self:_forgetDeparted()\n', '', "MatchAnalytics", "a new match restarts the clock and forgets rulers who left", "game"),
  ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", '		self._startedAt = self._env.clock()', '		self._startedAt = self._startedAt or self._env.clock()', "MatchAnalytics", "a new match restarts the clock", "game"),
+ ("FL-0063", S+"SettingsService.luau", '		value = math.floor(value * 10 + 0.5) / 10', '		value = value', "Settings", "reports SettingChanged at most once per key", "fw"),
  ("FL-0091", F+"Bubbles.luau", 'if current ~= nil and current.kind == "reaction" then', 'if false then', "CitizenBubbles", "a reaction replaces the thought", "game"),
  ("FL-0091", F+"Bubbles.luau", 'local text = cut(data.text, self._config.maxChars)\n	if text == nil then\n		self.stats.ignored += 1\n		return nil\n	end\n	local current', 'local text = cut(data.text, self._config.maxChars) or "…"\n	local current', "CitizenBubbles", "uses only the event's text", "game"),
  ("FL-0091", F+"Bubbles.luau", 'if distance <= config.maxDistance then', 'if true then', "CitizenBubbles", "beyond maxDistance is never picked", "game"),

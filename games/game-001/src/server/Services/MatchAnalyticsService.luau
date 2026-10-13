@@ -34,7 +34,7 @@ MatchAnalyticsService.__index = MatchAnalyticsService
 
 local Def = { name = "MatchAnalyticsService", dependencies = {} }
 
--- Phases in which a ruler is playing (CONTRACTS G1 MatchPhase; Arena is VS-2, G12).
+-- Phases in which a ruler is playing (CONTRACTS G2 MatchPhase; Arena is VS-2, G12).
 Def.PLAYING = table.freeze({ Founding = true, Expansion = true, Conflict = true, Endgame = true, Arena = true })
 Def.EVENTS = table.freeze({ "KingdomJoined", "MatchPhaseChanged", "MatchEnded" })
 

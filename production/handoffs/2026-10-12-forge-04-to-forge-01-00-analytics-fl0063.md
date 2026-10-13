@@ -18,9 +18,8 @@ Two calls, both through `registry:find("AnalyticsService")` exactly as EconomySe
 analytics:event(player, "ConversationAnswered", {
 	secondsOpen = <seconds the request was open>,       -- the value
 	occupation = citizen.occupation,                     -- one of the 12 content occupations
-	phase = match:getPhase(),
 	decision = decision.farm_key,                        -- the content farm_key (15 today), never an id or text
-})
+})                                                       -- no phase: it multiplied the combinations by 6 (events.md §3)
 -- for each reputation category a decision or an action changed (after ContentQuery.fireDecision's decay)
 analytics:event(player, "ReputationShifted", {
 	delta = <rounded change, negative = down>,          -- the value
@@ -30,13 +29,15 @@ analytics:event(player, "ReputationShifted", {
 })
 ```
 - Please don't log fear relaxing over time. It would be a stream of tiny events that burns the per-player budget (30 per minute).
-- No ids, names or free text in any field. Custom field values become dashboard dimensions, and Roblox caps them at 8,000 combinations per experience.
+- No ids, names or free text in any field. Custom field values become dashboard dimensions, and Roblox caps them at 8,000 combinations per experience (house rule: under 2,000 in all; events.md §3).
+- **If FORGE-00 adds G9 `CitizenAnswered`** (recommended in FORGE-00's 2026-10-13 doc review: one moment, one mechanism), skip the ConversationAnswered call: I turn it into a track rule on that event, and onboarding's AnswerCitizen step uses the same event. ReputationShifted stays a direct call.
 
 ### FORGE-00 (taxonomy review, FL-0063 completion criterion)
 1. Please review the changes in `analytics/schemas/events.md` §5. They are: `ConversationAnswered` and `ReputationShifted` (your #20–#22 follow-up), `MatchEnded` mode now including `match30`, and `PhaseLeft`.
 2. **Funnel order (your #64 ruling, done).** VS1 is `inOrder`: a step is credited only to a player who already holds the previous step, so kingdom-wide completions and captures no longer inflate steps 3 and 5. Repeats are counted, not logged (FORGE-05 #64 M1).
 3. **FirstGather under D-030.** Ruler gathering is optional, and G9 credits citizens' gathering to every member, so step 2 completes within seconds and measures "the economy started". I kept BRIEF §13 as written. Please decide whether a v2 funnel should replace it with FirstCitizenInspected or FirstConversation. That would need a server-side conversation event, e.g. the proposed G9 `CitizenAnswered`.
-4. **`PlayerReady` in game-001.** GameEvents names FORGE-01's PlayerService as its producer, but VS-1 boots none. Analytics no longer needs it. Any other framework consumer that waits for `PlayerReady` (OnboardingService defaults to it; game-001 overrides with `KingdomJoined`) has the same gap.
+4. **`MatchService.mode` in G3.** MatchAnalyticsService reads it (`slice` | `match`, PROVISIONAL in the MatchService header); please add it to CONTRACTS G3 additively. Without it, MatchEnded logs `mode = unknown`.
+5. **`PlayerReady` in game-001.** GameEvents names FORGE-01's PlayerService as its producer, but VS-1 boots none. Analytics no longer needs it. Any other framework consumer that waits for `PlayerReady` (OnboardingService defaults to it; game-001 overrides with `KingdomJoined`) has the same gap.
 
 ## Evidence
 - `games/game-001/tests/experience/MatchAnalytics.spec.luau` (7) runs the real AnalyticsService with game-001's config on the real GameEvents bus:

@@ -65,7 +65,7 @@ return table.freeze({
 		ConversationAnswered = {
 			description = "A ruler answered a citizen's request (Kingdom.Choose ok). Value: seconds the request was open.",
 			value = "secondsOpen",
-			fields = { "occupation", "phase", "decision" },
+			fields = { "occupation", "decision" }, -- no phase: keeps the combinations bounded (events.md §3)
 		},
 		ReputationShifted = {
 			description = "A reputation category moved for a ruler. Value: the change, rounded (negative = down).",
