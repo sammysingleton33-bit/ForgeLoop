@@ -5,6 +5,19 @@ local F = require("./KingdomFixtures")
 local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 
+-- (i, value) for every argument, nil ones included: a list literal drops its nil entries from `for in`
+local function each(...)
+	local cases = table.pack(...)
+	local i = 0
+	return function()
+		i += 1
+		if i <= cases.n then
+			return i, cases[i]
+		end
+		return nil
+	end
+end
+
 local A, B, RIVAL = 101, 102, 201 -- A and B both rule crimson; RIVAL rules azure
 
 -- crimson at the origin (rulers A and B), azure at (400, 0) (ruler RIVAL). Events drained.
@@ -114,7 +127,7 @@ describe("Kingdom/Commands: argument validation (invalid_args, no side effects)"
 		local keepId = crimson.keepId
 		expect(keepId).toBeA("number")
 		for _, name in { "UpgradeBuilding", "CancelConstruction" } do
-			for _, id in { tostring(keepId), "b1", 0, -1, 1.5, 0 / 0, math.huge, 1e9 + 1, nil, true, {} } do
+			for _, id in each(tostring(keepId), "b1", 0, -1, 1.5, 0 / 0, math.huge, 1e9 + 1, nil, true, {}) do
 				rejects(sim, crimson, A, "invalid_args", name, id)
 			end
 			rejects(sim, crimson, A, "not_found", name, 1e9)
@@ -124,7 +137,7 @@ describe("Kingdom/Commands: argument validation (invalid_args, no side effects)"
 
 	it("SetJobQuota needs an integer count in 0..200", function()
 		local sim, crimson = setup()
-		for _, count in { -1, 201, 1.5, 0 / 0, math.huge, -math.huge, "3", nil, true } do
+		for _, count in each(-1, 201, 1.5, 0 / 0, math.huge, -math.huge, "3", nil, true) do
 			rejects(sim, crimson, A, "invalid_args", "SetJobQuota", "woodcutter", count)
 		end
 		rejects(sim, crimson, A, "invalid_args", "SetJobQuota", 5, 3)
@@ -139,7 +152,7 @@ describe("Kingdom/Commands: argument validation (invalid_args, no side effects)"
 
 	it("SetPriority needs an integer weight in 0..3", function()
 		local sim, crimson = setup()
-		for _, weight in { -1, 4, 0.5, 0 / 0, math.huge, "1", nil, false } do
+		for _, weight in each(-1, 4, 0.5, 0 / 0, math.huge, "1", nil, false) do
 			rejects(sim, crimson, A, "invalid_args", "SetPriority", "wood", weight)
 		end
 		rejects(sim, crimson, A, "invalid_args", "SetPriority", nil, 1)
@@ -151,7 +164,7 @@ describe("Kingdom/Commands: argument validation (invalid_args, no side effects)"
 
 	it("SetAlarm needs a boolean", function()
 		local sim, crimson = setup()
-		for _, on in { 1, 0, "true", nil, {} } do
+		for _, on in each(1, 0, "true", nil, {}) do
 			rejects(sim, crimson, A, "invalid_args", "SetAlarm", on)
 		end
 	end)
