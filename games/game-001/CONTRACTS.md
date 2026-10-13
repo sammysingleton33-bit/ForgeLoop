@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g9c, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g9d, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -233,6 +233,7 @@ TreasuryService.changed: Signal<(KingdomId, ResourceBag, { [ResourceId]: number 
 - **Upkeep.** ProductionService is the only food consumer. Each minute it:
   1. takes `spendUpTo(kingdom, "food", upkeep, txId, "upkeep")`, where upkeep counts citizens and soldiers from `getPopulation`;
   2. calls `CitizenService:setFedRatio(kingdom, taken / upkeep)`.
+- **Births (D-045).** A birth takes no treasury food while ProductionService runs. It needs `fedRatio` ≥ `Society.food.wellFedAtLeast` and a free bed (PROVISIONAL).
 - In VS-1, any kingdom member may spend. Co-ruler spending permissions are VS-2.
 - Client remotes: `Treasury.Changed`, `Treasury.Get` and `Treasury.GetCosts` (G8 table).
 
@@ -592,6 +593,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
+- v0.4-g9d (2026-10-13) FORGE-00: G7 births follow upkeep health instead of spending treasury food (D-045). ProductionService stays the only food consumer.
 - v0.4-g9c (2026-10-13) FORGE-00, rulings on FORGE-04's #98 questions (D-044). These are additive:
   - G3 lists `MatchService.mode`.
   - G9 adds the planned `CitizenAnswered` event and the attribution of `ResourceGathered` and `UnitsRecruited`, and says attribution lives in `Feedback/Signals`.
