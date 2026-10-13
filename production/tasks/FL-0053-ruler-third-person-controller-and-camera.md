@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
@@ -45,3 +45,4 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-12 forge-04: BUILDING → TESTING. Controllers and specs committed; headless gates on 5f58718.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0053 (independent of #20-#22). Keys and Studio checklist in the PR; handoff forge-04-to-forge-01-03-05-ruler-camera-input.
 - 2026-10-12 forge-04: REVIEW → REVIEW. D-030: amended by FL-0090 in the same PR (#29); walk mode = follow.
+- 2026-10-13 forge-04: REVIEW → REVIEW. Status unchanged (--force). #29 shake Medium (FORGE-00 audit, D-038 follow-ups): each frame's shake is undone before Roblox's camera runs (undoShake at RenderPriority.Camera - 1), so walk mode never drifts; NaN and infinite shakes are refused. Specs + 3 mutation rows; in PR #84 (FL-0100) because both edit RulerCameraController.

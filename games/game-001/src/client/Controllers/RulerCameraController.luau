@@ -32,7 +32,10 @@
 	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode always uses the
 	overview, and leaving it restores the previous mode unless the player chose one meanwhile.
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
-	maxActive at once, never with cameraShake off or reduced motion on (SettingsController).
+	maxActive at once, never with cameraShake off or reduced motion on (SettingsController); a NaN or
+	infinite magnitude or duration is refused. Each frame's shake is undone before Roblox's camera
+	runs (undoShake, bound at RenderPriority.Camera - 1), because Roblox's camera turns from the
+	current look: a shake left in place would add up into a lasting turn in walk mode (#29).
 	Conversations (D-036, G13.8): ConversationController.opened(entityId, position) glides the
 	overview toward the citizen (eased over `duration`, the citizen framed above the centre so the
 	portrait rising from the bottom never covers them, clamped to the map); .closed glides back to
@@ -60,6 +63,7 @@ Def.PAN_ACTION = "ForgeOverviewPan"
 Def.ROTATE_ACTION = "ForgeOverviewRotate"
 Def.SEAT_ACTION = "ForgeOverviewSeat"
 Def.RENDER_NAME = "ForgeRulerCamera"
+Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.PAN_KEYS = table.freeze({
 	[Enum.KeyCode.W] = Vector2.new(0, 1),
 	[Enum.KeyCode.Up] = Vector2.new(0, 1),
@@ -388,7 +392,9 @@ function Controller:destroy()
 	self:_setTouchControls(true)
 	if self._rendering then
 		pcall(function()
-			(self._opts.runService or self._env.RunService):UnbindFromRenderStep(Def.RENDER_NAME)
+			local runService = self._opts.runService or self._env.RunService
+			runService:UnbindFromRenderStep(Def.RENDER_NAME)
+			runService:UnbindFromRenderStep(Def.UNSHAKE_NAME)
 		end)
 		self._rendering = false
 	end
@@ -523,9 +529,13 @@ function Controller:zoomBy(steps: number)
 	self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)
 end
 
+local function finite(value: any): boolean
+	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
 function Controller:shake(magnitude: any, duration: any): boolean
-	if type(magnitude) ~= "number" or type(duration) ~= "number" or magnitude <= 0 or duration <= 0 then
-		return false
+	if not finite(magnitude) or not finite(duration) or magnitude <= 0 or duration <= 0 then
+		return false -- NaN would poison the camera CFrame for good (#29)
 	end
 	local settings = self._settings
 	if settings ~= nil then
@@ -557,7 +567,30 @@ function Controller:update(dt: number)
 	end
 	if #self._shakes > 0 then
 		local pitch, yaw = self:_shakeDegrees(dt)
-		camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(pitch), math.rad(yaw), 0)
+		local offset = CFrame.Angles(math.rad(pitch), math.rad(yaw), 0)
+		camera.CFrame = camera.CFrame * offset
+		self._shaken = { offset = offset, cframe = camera.CFrame }
+	end
+end
+
+-- Before Roblox's camera (live: RenderPriority.Camera - 1): takes last frame's shake back out, so
+-- the next frame starts from the unshaken view. Nothing to do if someone else moved the camera since.
+function Controller:undoShake()
+	local shaken = self._shaken
+	local camera = self._camera
+	self._shaken = nil
+	if shaken == nil or camera == nil then
+		return
+	end
+	local now = camera.CFrame
+	local was = shaken.cframe
+	-- the same CFrame within float precision (a CFrame property is stored in single precision)
+	if
+		(now.Position - was.Position).Magnitude < 1e-3
+		and now.LookVector:Dot(was.LookVector) > 1 - 1e-6
+		and now.UpVector:Dot(was.UpVector) > 1 - 1e-6
+	then
+		camera.CFrame = now * shaken.offset:Inverse()
 	end
 end
 
@@ -1023,6 +1056,9 @@ function Controller:_bindRender()
 		local priority = Enum.RenderPriority.Camera.Value + 1
 		runService:BindToRenderStep(Def.RENDER_NAME, priority, function(dt)
 			self:update(dt)
+		end)
+		runService:BindToRenderStep(Def.UNSHAKE_NAME, Enum.RenderPriority.Camera.Value - 1, function()
+			self:undoShake()
 		end)
 	end)
 	self._rendering = ok

@@ -386,6 +386,45 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(near(camera.CFrame.LookVector, still.LookVector, 1e-9)).toBe(true)
 	end)
 
+	it("undoes each frame's shake before Roblox's camera runs, so walk mode never drifts (#29 Medium)", function()
+		boot({ vfx })
+		controller:setMode("follow")
+		local still = camera.CFrame
+		controller:shake(1, 0.5)
+		-- a frame: our undo step, then Roblox's camera (it turns from the current look; here it holds it),
+		-- then our update adds this frame's shake
+		for _ = 1, 40 do
+			controller:undoShake()
+			camera.CFrame = camera.CFrame -- Roblox's camera keeps the look it reads
+			controller:update(DT)
+		end
+		controller:undoShake()
+		expect(#controller._shakes).toBe(0)
+		-- no lasting turn (within single-precision rounding over 40 frames; without the undo it is degrees)
+		expect(near(camera.CFrame.LookVector, still.LookVector, 1e-4)).toBe(true)
+		-- someone else moved the camera after our shake: the undo leaves their CFrame alone
+		controller:shake(1, 0.5)
+		controller:update(DT)
+		local moved = CFrame.new(5, 5, 5)
+		camera.CFrame = moved
+		controller:undoShake()
+		expect(camera.CFrame).toBe(moved)
+	end)
+
+	it("refuses NaN and infinite shakes, which would poison the camera (#29 Medium)", function()
+		boot({ vfx })
+		local nan = 0 / 0
+		expect(controller:shake(nan, 1)).toBe(false)
+		expect(controller:shake(1, nan)).toBe(false)
+		expect(controller:shake(math.huge, 1)).toBe(false)
+		expect(controller:shake(1, math.huge)).toBe(false)
+		expect(#controller._shakes).toBe(0)
+		registry:get("VFXController").shakeRequested:fire(nan, nan)
+		controller:update(DT)
+		local look = camera.CFrame.LookVector
+		expect(look.X == look.X and look.Y == look.Y and look.Z == look.Z).toBe(true)
+	end)
+
 	it("never shakes when camera shake is off or reduced motion is on (incl. the platform setting)", function()
 		for _, values in { { cameraShake = false }, { reducedMotion = true }, { platformReduced = true } } do
 			env = MockEnv.new({ seed = 59, isServer = false, localPlayer = { userId = 5802 } })
