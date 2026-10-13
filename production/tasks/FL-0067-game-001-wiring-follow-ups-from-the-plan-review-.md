@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 3
@@ -16,6 +16,7 @@ evidence:
   - "mocks: Wire copies buffers and counts buffer.len; estimateBytes counts args 1..n only (fixed n-field bug); MockRemotes holdUnreliable/releaseUnreliable. 4 new MockRemotes specs."
   - "negative tests (each fails, restored green): buffer passed by reference -> 'server write after FireClient' spec FAIL; JSON-measured buffers -> '1000 delivered, 1001 dropped' spec FAIL; project expects CharacterAutoLoads=true vs place false -> place check FAIL 'properties: Players.CharacterAutoLoads is false in the place, project says true'; world mount without the folder -> rojo build exit 1"
   - merged PR #11 as 979f1ba; CI on main run 38302385630 green; artifact forgeloop-game001-979f1ba (id 11771141654)
+  - "#10 74f779f, #11 979f1ba, #30 b6f252f; integration-log.md"
 ---
 
 # game-001 wiring follow-ups from the plan review: streaming, character spawn, world mount, buffer-faithful mocks
@@ -52,3 +53,4 @@ The game-001 place behaves like production Roblox for the things VS-1 depends on
 - 2026-10-12 forge-05: READY → BUILDING. Project engine settings, world mount, buffer-faithful mocks.
 - 2026-10-12 forge-05: BUILDING → REVIEW. All headless items done and gated; G6 pending: the user confirms in Studio that streaming is on and no character auto-loads (playtest check 1).
 - 2026-10-12 forge-05: merged PR #11 (979f1ba). Stays REVIEW until the user's Studio check (playtest check 1, steps 4-5).
+- 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main; the user's Studio run (G6) is the only gate left (STUDIO_PLAYTEST check 1 step 4).

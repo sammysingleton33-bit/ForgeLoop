@@ -7,13 +7,14 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0046, FL-0055, FL-0056]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 6
 evidence:
   - "check.sh OVERALL PASS: framework 328/0, game-001 305/0 (23 files), Selene 0/0, StyLua 170, builds + place checks PASS"
   - 18 mutations of the FL-0048 rules each caught by a named spec (MatchKingdomServices, Match, FirstPlayable)
+  - "#26 3b22fc9, #31 232bb39, #59 6a36062; integration-log.md"
 ---
 
 # Match and Kingdom core: phases, kingdom assignment, teams, crown points
@@ -51,3 +52,4 @@ A server always knows the match phase and which kingdom every player belongs to 
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Teams AutoAssignable=false, PartyId grouping, spawn after WorldService.ready, regalia, Pacing pull, slice mode, Kingdom/Match remotes
 - 2026-10-12 forge-01: READY → BUILDING. sim moved to games/game-001; re-scoped to CONTRACTS v0.4-g3
 - 2026-10-12 forge-01: BUILDING → REVIEW. Match + Kingdom core per CONTRACTS v0.4-g3 in PR [FORGE-01] FL-0048; hour-0 Types stub in PR #26. Studio evidence (K1/K2/K7 in roblox/studio-tests/gameplay.md) pending a user run.
+- 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-ups: FL-0081 (ruler seated on the throne); #70 review M2 (Match.Ended for players who join during Results, MatchHost).

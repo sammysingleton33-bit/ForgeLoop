@@ -7,12 +7,13 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0083]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 5
 evidence:
   - check.sh OVERALL PASS (game-001 764/0); People.spec 7, CitizenService +4, EventCodec look cases; 16/16 mutations caught
+  - "#61 ad71b3e; integration-log.md"
 ---
 
 # "Generated population: names, traits, looks, relationships, chemistry, loyalty (G13.2)"
@@ -48,3 +49,4 @@ Lune specs:
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
 - 2026-10-12 forge-01: READY → BUILDING. CitizenService generates the population (Sim/People on Sim/Population + Content)
 - 2026-10-12 forge-01: BUILDING → REVIEW. Generated population per world seed; inspect returns CitizenView; look in the spawn event; Kingdom.Population/GetPopulation
+- 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-ups from FORGE-05's #61 review (Low): GetEntities over 900 B at 50+ entities (G4), ids vs display names, raw look key; quotaRev for co-ruler quota changes (#71 Low).
