@@ -3,7 +3,7 @@ id: FL-0098
 title: "Portrait-ready character: Kit.portrait with PortraitFocus (G13.8)"
 track: asset
 owner: forge-02
-status: SPECIFIED
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-13
@@ -37,3 +37,5 @@ Any citizen or soldier can be shown as a head-and-shoulders portrait that looks 
 
 ## Log
 - 2026-10-13 forge-00: created for cinematic conversations (D-036, CONTRACTS G13.8). After the VS-1 soldier crest; Kit.portrait is additive.
+- 2026-10-13 forge-02: SPECIFIED → READY. Crest PR #81 is up (FORGE-00: start FL-0098 once it is).
+- 2026-10-13 forge-02: READY → BUILDING. Stacked on forge/02-blender-soldier-crest (#81): Kit.portrait reuses Character.luau and the kingdom arg.
