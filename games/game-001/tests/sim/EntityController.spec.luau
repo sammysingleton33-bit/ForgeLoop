@@ -430,6 +430,46 @@ describe("EntityController: rigs, cues and reset", function()
 		})
 	end)
 
+	it("fires event for the G13.3 thought, reaction, kcue and strike events (FL-0079)", function()
+		local h = start(setup({ full(1, 0, 0), full(2, 5, 0) }))
+		frame(h, 0)
+		local model = h.controller:getModel(1)
+		-- 3: known, no rig yet; 2: despawned while its dead pose still plays (the corpse is kept)
+		events(h, { spawnRecord(3), { type = "cue", id = 2, cue = "die" }, { type = "despawn", id = 2 } })
+		expect(h.controller:getModel(2)).never.toBeNil()
+		table.clear(h.events)
+		events(h, {
+			{ type = "thought", id = 1, scenarioId = "farmer_drought", text = "Le blé ! 🌾", icon = "request" },
+			{ type = "reaction", id = 1, text = "", tone = "angry" },
+			{ type = "reaction", id = 3, text = "Hm.", tone = "neutral" },
+			{ type = "kcue", id = 1, cue = "bow" },
+			{ type = "kcue", id = 3, occupation = "farmer", cue = "salute" },
+			{ type = "kcue", occupation = "farmer", cue = "strike_placard" },
+			{ type = "kcue", cue = "celebrate" },
+			{ type = "strike", occupation = "farmer", on = true },
+			{ type = "strike", occupation = "miner", on = false },
+			{ type = "thought", id = 99, scenarioId = "s", text = "?", icon = "idea" }, -- unknown: dropped
+			{ type = "reaction", id = 2, text = "…", tone = "sad" }, -- despawned: dropped
+			{ type = "kcue", id = 99, cue = "cower" }, -- unknown: dropped
+		})
+		expect(h.events).toEqual({
+			{
+				id = 1,
+				cue = "thought",
+				payload = { scenarioId = "farmer_drought", text = "Le blé ! 🌾", icon = "request" },
+				model = model,
+			},
+			{ id = 1, cue = "reaction", payload = { text = "", tone = "angry" }, model = model },
+			{ id = 3, cue = "reaction", payload = { text = "Hm.", tone = "neutral" } }, -- no rig: model nil
+			{ id = 1, cue = "bow", payload = {}, model = model },
+			{ id = 3, cue = "salute", payload = { occupation = "farmer" } },
+			{ cue = "strike_placard", payload = { occupation = "farmer" } }, -- no entity: id and model nil
+			{ cue = "celebrate", payload = {} },
+			{ cue = "strike", payload = { occupation = "farmer", on = true } },
+			{ cue = "strike", payload = { occupation = "miner", on = false } },
+		})
+	end)
+
 	it("plays the dead pose on die, then releases the rig after a short delay", function()
 		local h = start(setup({ full(1, 0, 0) }))
 		frame(h, 0)

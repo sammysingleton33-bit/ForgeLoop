@@ -7,9 +7,20 @@
 		EntityController.rendered: Signal<(EntityId, Model)>      -- a rig now shows this entity
 		EntityController.released: Signal<(EntityId, Model)>      -- fired before the rig returns to the pool;
 		                                                             getModel(id) still returns it meanwhile
-		EntityController.event: Signal<(EntityId, cue, payload, Model?)>
+		EntityController.event: Signal<(EntityId?, cue, payload, Model?)>
 			cues from Sim.Events for known entities: deposit (payload { resource = ResourceId }), hit, die,
-			celebrate (payload {}); Model is nil while the entity has no rig yet
+			celebrate (payload {}); Model is nil while the entity has no rig yet.
+			G13.3 conversation events (FL-0079; only this kingdom's members receive them), for FORGE-04
+			bubbles and FORGE-03 panels:
+			  thought   (id, "thought", { scenarioId, text, icon = "request" | "concern" | "idea" }, Model?)
+			  reaction  (id, "reaction", { text, tone = "happy" | "angry" | "sad" | "neutral" }, Model?)
+			  kcue      with an entity:  (id, <cue>, { occupation? }, Model?)
+			            kingdom or occupation wide:  (nil, <cue>, { occupation? }, nil)
+			            <cue> is one of EventCodec.KINGDOM_CUES (celebrate, grumble, salute, bow, cower,
+			            strike_placard, work_fast, rest, hammer); "celebrate" also arrives as a G4 cue
+			  strike    (nil, "strike", { occupation, on: boolean }, nil)
+			As for cues, an event with an entity id fires only while that entity is known and not
+			despawned (otherwise it is dropped); text may be empty.
 		EntityController:pick(screenPos: Vector2): EntityId?      -- nearest visible rig within PICK_RADIUS px
 			of screenPos, in Camera:WorldToScreenPoint space (InputObject.Position); nil when none
 		EntityController:getModel(id): Model?                     -- the entity's rig (also while LOD-hidden)
@@ -34,7 +45,8 @@
 		  is still dropped
 		  (a new match restarts serverTime).
 		Events: spawn, despawn, job (swaps the rig: released, then rendered), cue (fires `event`; die
-		blends into the dead pose and releases the rig after DEATH_DELAY), full (spawn + state), reset.
+		blends into the dead pose and releases the rig after DEATH_DELAY), full (spawn + state), reset,
+		and the G13.3 thought, reaction, strike and kcue (fire `event`, see above).
 	Rendering (D-026, D-025)
 		- Samples are buffered per entity by snapshot serverTime. They render INTERP_DELAY (0.2 s)
 		  behind the server time estimated from arrivals (Sim/Interpolation).
@@ -297,6 +309,18 @@ function EntityController:_applyBatch(buf: any, initial: boolean)
 			self:_setJob(e.id, e.job)
 		elseif kind == "cue" then
 			self:_cue(e.id, e.cue, e.resource)
+		elseif kind == "thought" then
+			self:_fireFor(e.id, "thought", { scenarioId = e.scenarioId, text = e.text, icon = e.icon })
+		elseif kind == "reaction" then
+			self:_fireFor(e.id, "reaction", { text = e.text, tone = e.tone })
+		elseif kind == "kcue" then
+			if e.id ~= nil then
+				self:_fireFor(e.id, e.cue, { occupation = e.occupation })
+			else
+				self.event:fire(nil, e.cue, { occupation = e.occupation }, nil)
+			end
+		elseif kind == "strike" then
+			self.event:fire(nil, "strike", { occupation = e.occupation, on = e.on }, nil)
 		elseif kind == "reset" then
 			self:_reset()
 		end
@@ -376,15 +400,20 @@ end
 
 function EntityController:_cue(id: number, cue: string, resource: string?)
 	local entity = self._entities[id]
+	if entity ~= nil and not self._despawned[id] and cue == "die" and entity.diedAt == nil then
+		entity.diedAt = self._env.clock()
+	end
+	self:_fireFor(id, cue, if cue == "deposit" then { resource = resource } else {})
+end
+
+-- Fires `event` for a known entity that is not despawned, with its model (nil while it has no rig).
+function EntityController:_fireFor(id: number, name: string, payload: { [string]: any })
+	local entity = self._entities[id]
 	if entity == nil or self._despawned[id] then
 		return
 	end
-	if cue == "die" and entity.diedAt == nil then
-		entity.diedAt = self._env.clock()
-	end
-	local payload = if cue == "deposit" then { resource = resource } else {}
 	local rig = entity.rig
-	self.event:fire(id, cue, payload, if rig then rig.model else nil)
+	self.event:fire(id, name, payload, if rig then rig.model else nil)
 end
 
 function EntityController:_reset()
