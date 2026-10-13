@@ -135,6 +135,21 @@ describe("Experience/AnalyticsSchema", function()
 		expect(hasProblem(problems, "session.startEvent: unknown event 'Missing'")).toBe(true)
 		expect(hasProblem(problems, "session.returnFunnel: must name a once funnel")).toBe(true)
 	end)
+
+	it("checks session.startOn against the bus and pairs leftEvent with a leftInfo function", function()
+		local config = valid()
+		config.session =
+			{ returnFunnel = "Return", startOn = "KingdomJoined", leftEvent = "Thing", leftInfo = function() end }
+		expect(AnalyticsSchema.validate(config, KNOWN)).toEqual({})
+		config.session = { startOn = "NoSuchEvent", leftEvent = "Thing" }
+		local problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "session.startOn: 'NoSuchEvent' must name a declared GameEvents event")).toBe(true)
+		expect(hasProblem(problems, "session.leftEvent and session.leftInfo go together")).toBe(true)
+		config.session = { leftEvent = "Missing", leftInfo = 3 }
+		problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "session.leftInfo: must be a function")).toBe(true)
+		expect(hasProblem(problems, "session.leftEvent: unknown event 'Missing'")).toBe(true)
+	end)
 end)
 
 describe("Experience/Subjects and AnalyticsRouter", function()

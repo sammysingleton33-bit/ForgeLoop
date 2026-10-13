@@ -91,6 +91,20 @@ M = [
  ("FL-0090", C2+"InputModeController.luau", 'if okId and buildingId ~= nil then', 'if false then', "InputMode", "selects the building through", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),
  ("FL-0090", C2+"RulerController.luau", 'if (okSit and sitting) or (okSeat and seatPart ~= nil) then', 'if true then', "Ruler", "standUp() leaves the throne", "game"),
+ ("FL-0063", S+"AnalyticsService.luau", 'local startOn = (self._config.session or {}).startOn or "PlayerReady"', 'local startOn = "PlayerReady"', "AnalyticsService", "starts on config.session.startOn", "fw"),
+ ("FL-0063", S+"AnalyticsService.luau", '{ sessionSec = seconds, lastActivity = lastActivity }', '{ sessionSec = seconds, lastActivity = state.lastActivity }', "AnalyticsService", "starts on config.session.startOn", "fw"),
+ ("FL-0063", S+"AnalyticsService.luau", '			self:event(player, session.leftEvent, fields)', '			local _ = fields', "AnalyticsService", "starts on config.session.startOn", "fw"),
+ ("FL-0063", S+"AnalyticsService.luau", 'local ok, fields = pcall(session.leftInfo, player, self:_lookup())', 'local ok, fields = true, session.leftInfo(player, self:_lookup())', "AnalyticsService", "a leftInfo that errors or returns nil", "fw"),
+ ("FL-0063", X+"AnalyticsSchema.luau", 'if (session.leftEvent == nil) ~= (session.leftInfo == nil) then', 'if false then', "AnalyticsSchema", "pairs leftEvent with a leftInfo function", "fw"),
+ ("FL-0063", X+"AnalyticsSchema.luau", 'session.startOn ~= nil and (type(session.startOn) ~= "string" or not table.find(knownEvents, session.startOn))', 'false', "AnalyticsSchema", "checks session.startOn against the bus", "fw"),
+ ("FL-0063", S+"AnalyticsService.luau", '		if sent then\n			self:_state(subject.player).lastActivity = eventName', '		if true then\n			self:_state(subject.player).lastActivity = eventName', "MatchAnalytics", "SessionEnd keeps the player's own last step", "game"),
+ ("FL-0063", G+"config/Analytics.luau", '		startOn = "KingdomJoined",\n', '', "MatchAnalytics", "starts the session on KingdomJoined", "game"),
+ ("FL-0063", G+"config/Analytics.luau", '{ on = "ObjectiveCaptured", funnel = "VS1", step = 6 },', '{ on = "ObjectiveCaptured", funnel = "VS1", step = 6, match = { kingdom = "frost" } },', "MatchAnalytics", "runs the BRIEF §13 funnel", "game"),
+ ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", 'own.won = kingdomId == result.winner', 'own.won = true', "MatchAnalytics", "logs MatchEnded per ruler still here", "game"),
+ ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", '	elseif Def.PLAYING[phase] then\n		self.decidedPhase = phase\n', '	elseif Def.PLAYING[phase] then\n		local _ = phase\n', "MatchAnalytics", "logs MatchEnded per ruler still here", "game"),
+ ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", '		if kingdomId ~= nil then', '		if true then', "MatchAnalytics", "logs MatchEnded per ruler still here", "game"),
+ ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", 'if phase == nil or not Def.PLAYING[phase] or self._startedAt == nil then', 'if phase == nil or self._startedAt == nil then', "MatchAnalytics", "logs PhaseLeft (minute, phase) before SessionEnd", "game"),
+ ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", 'return { phase = phase, minute = math.floor((self._env.clock() - self._startedAt) / 60) }', 'return { phase = phase, minute = 0 }', "MatchAnalytics", "logs PhaseLeft (minute, phase) before SessionEnd", "game"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
