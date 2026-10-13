@@ -39,7 +39,7 @@ local CASES: { { any } } = {
 	{ Color3.fromRGB(245, 205, 48), "sun" },
 	{ Color3.fromRGB(190, 190, 190), nil },
 }
-local MAX_LEVEL = { keep = 3, barracks = 4 }
+local MAX_LEVEL = { keep = 3, barracks = 4, mine = 3, blacksmith = 3 } -- levels with a distinct look
 local FIELD_NAMES = { Banner = true, Flag = true, Pennant = true, Crest = true, EmblemPlaque = true, SignBoard = true }
 local MIN_DL = 0.25 -- CIE L* / 100 between an emblem's silhouette and its field
 
@@ -261,7 +261,21 @@ describe("Kingdom emblems on every banner, flag, pennant and shield", function()
 			end
 		end
 		for _, case in CASES do
-			for _, bt in { "keep", "barracks", "watchtower", "gate", "farm", "shrine" } do
+			for _, bt in
+				{
+					"keep",
+					"barracks",
+					"watchtower",
+					"gate",
+					"farm",
+					"mine",
+					"blacksmith",
+					"market",
+					"infirmary",
+					"granary",
+					"shrine",
+				}
+			do
 				local level = MAX_LEVEL[bt] or 2
 				check(`{bt} L{level}`, Buildings.build(bt, level, "complete", case[1]))
 			end

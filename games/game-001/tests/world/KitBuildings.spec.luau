@@ -1,6 +1,6 @@
 --[[
 	Kit architecture v0 (FL-0054, FORGE-02) + G13 (FL-0085): part budgets, house variants, kingdom tinting,
-	placement sanity, the keep Throne (G13.6), visible levels and the VS-2 stand-in types (G13.5).
+	placement sanity, the keep Throne (G13.6), visible levels and the VS-2 types (G13.5, part-built in FL-0086).
 	Budgets live in Kit/Buildings.luau (PART_BUDGET, justified there against BRIEF §14: ≤ 25k parts in the
 	world at VS-2).
 ]]
@@ -60,8 +60,8 @@ local EXPECTED_FOOTPRINTS = {
 	shrine = { Vector2.new(16, 16) },
 }
 local NEW_TYPES = { "mine", "blacksmith", "market", "infirmary", "granary", "shrine" }
--- levels with a distinct look (G13.5); other types build L1–L2
-local MAX_LEVEL = { keep = 3, barracks = 4 }
+-- levels with a distinct look (G13.5, design/living-kingdom.md §4); other types build L1–L2
+local MAX_LEVEL = { keep = 3, barracks = 4, mine = 3, blacksmith = 3 }
 
 local function parts(model: Instance): { BasePart }
 	local out = {}
@@ -396,22 +396,147 @@ describe("Kit visible levels (G13.5)", function()
 	end)
 end)
 
-describe("Kit VS-2 stand-ins (G13.5)", function()
-	it("builds the new types at every level and stage, labelled, with a Door and a work spot", function()
+-- the VS-2 types (FL-0086): attachments per type, the kingdom tower cap's signature part per hue style
+local VS2_DROPOFF = { mine = true, granary = true }
+local CAP_PART = { crimson = "Spire", azure = "CapEave", emerald = "Hoarding", gold = "Dome", neutral = "CapEave" }
+local PRIMITIVE = { Part = true, WedgePart = true, CornerWedgePart = true }
+local PRIMITIVE_SHAPES = { Block = true, Cylinder = true, Ball = true }
+
+local function noYield(fn: () -> any): any
+	local co = coroutine.create(fn)
+	local ok, result = coroutine.resume(co)
+	assert(ok, result)
+	assert(coroutine.status(co) == "dead", "Kit.build yielded")
+	return result
+end
+
+describe("Kit VS-2 types (G13.5, FL-0086)", function()
+	it(
+		"builds every type, level, stage and colour from primitives, in budget, in the footprint, with attachments",
+		function()
+			local bad = {}
+			for _, bt in NEW_TYPES do
+				expect(table.find(Kit.BUILDING_TYPES, bt)).never.toBeNil()
+				for level = 1, levelsFor(bt) do
+					local fp = Kit.footprint(bt, level)
+					for _, stage in { 1, 2, 3, "complete" } do
+						for ci, color in COLORS do
+							local label = `{bt} L{level} {stage} colour {ci}`
+							local m = noYield(function()
+								return Kit.build(bt, level, stage :: any, color)
+							end) :: Model
+							local root = m.PrimaryPart :: BasePart
+							-- attachments: Door + WorkSpot1 always; DropOff on the finished mine and granary
+							for _, name in { "Door", "WorkSpot1" } do
+								if not (root:FindFirstChild(name) and root:FindFirstChild(name):IsA("Attachment")) then
+									table.insert(bad, `{label}: no {name}`)
+								end
+							end
+							if stage == "complete" and VS2_DROPOFF[bt] and root:FindFirstChild("DropOff") == nil then
+								table.insert(bad, `{label}: no DropOff`)
+							end
+							-- primitives only (D-026): no CSG, meshes, decals, text or GUI anywhere in the model
+							for _, d in m:GetDescendants() do
+								if d:IsA("BasePart") then
+									local prim = PRIMITIVE[d.ClassName]
+										and (d.ClassName ~= "Part" or PRIMITIVE_SHAPES[(d :: Part).Shape.Name])
+									if not prim then
+										table.insert(bad, `{label}: non-primitive {d.ClassName} {d.Name}`)
+									elseif not d.Anchored then
+										table.insert(bad, `{label}: {d.Name} not anchored`)
+									end
+								elseif not (d:IsA("Attachment") or d:IsA("Model")) then
+									table.insert(bad, `{label}: unexpected {d.ClassName} {d.Name}`)
+								end
+							end
+							-- strict containment (sides and back; the front apron ≤ 2) and the part budget
+							for _, p in parts(m) do
+								local e, pos = halfExtents(p), p.CFrame.Position
+								if
+									math.abs(pos.X) + e.X > fp.X / 2 + 0.05
+									or pos.Z + e.Z > fp.Y / 2 + 0.05
+									or pos.Z - e.Z < -fp.Y / 2 - 2
+									or pos.Y - e.Y < -0.3
+								then
+									table.insert(bad, `{label}: {p.Name} outside footprint {fp}`)
+								end
+							end
+							local budget = Buildings.PART_BUDGET[if stage == "complete" then bt else "stage"]
+							if #parts(m) > budget then
+								table.insert(bad, `{label}: {#parts(m)} parts > {budget}`)
+							end
+							-- no stand-in markers (FL-0086 replaced the G13.5 stand-ins)
+							if m:GetAttribute("KitStandIn") ~= nil or m:GetAttribute("KitLabel") ~= nil then
+								table.insert(bad, `{label}: still marked as a stand-in`)
+							end
+							expect(m:GetAttribute("KitType")).toBe(bt)
+							expect(m:GetAttribute("KitLevel")).toBe(level)
+						end
+					end
+				end
+			end
+			if #bad > 0 then
+				error(`{#bad} problems, e.g. ` .. table.concat(bad, "; ", 1, math.min(#bad, 8)))
+			end
+		end
+	)
+
+	it("grows every level visibly: ≥ 4 studs and ≥ 20 % taller, ≥ 5 more parts, in every colour", function()
+		local report = {}
 		for _, bt in NEW_TYPES do
-			expect(table.find(Kit.BUILDING_TYPES, bt)).never.toBeNil()
-			for level = 1, 3 do
-				local fp = Kit.footprint(bt, level)
-				expect(fp.X > 0 and fp.Y > 0).toBe(true)
-				for _, stage in { 1, 2, 3, "complete" } do
-					local m = Kit.build(bt, level, stage :: any, COLORS[2])
-					local root = m.PrimaryPart :: BasePart
-					expect(root:FindFirstChild("Door")).never.toBeNil()
-					expect(root:FindFirstChild("WorkSpot1")).never.toBeNil()
-					if stage == "complete" then
-						expect(m:GetAttribute("KitStandIn")).toBe(true)
-						expect(m:GetAttribute("KitLabel")).toBe(bt)
-						expect(#parts(m)).toBeGreaterThan(25)
+			local row = {}
+			for ci, color in COLORS do
+				local prevN, prevH = 0, 0
+				for level = 1, levelsFor(bt) do
+					local m = Buildings.build(bt, level, "complete", color)
+					local n = Kit.partCount(m)
+					local lo, hi = bounds(m)
+					local h = hi.Y - lo.Y
+					if level > 1 and (h < prevH + 4 or h < prevH * 1.2 or n < prevN + 5) then
+						error(
+							string.format(
+								"%s colour %d L%d: %.1f studs / %d parts vs L%d %.1f / %d",
+								bt,
+								ci,
+								level,
+								h,
+								n,
+								level - 1,
+								prevH,
+								prevN
+							)
+						)
+					end
+					if ci == 1 then
+						table.insert(row, string.format("L%d %.0f studs %d parts", level, h, n))
+					end
+					prevN, prevH = n, h
+				end
+			end
+			table.insert(report, `{bt}: {table.concat(row, ", ")}`)
+		end
+		print("VS-2 levels (crimson): " .. table.concat(report, "; "))
+	end)
+
+	it("carries its kingdom: tinted roofs or trims, an emblem field, the kingdom tower cap at the top level", function()
+		for _, bt in NEW_TYPES do
+			local top = levelsFor(bt)
+			for ci, color in COLORS do
+				local style = Kit._hueStyle(color)
+				for level = 1, top do
+					local m = Buildings.build(bt, level, "complete", color)
+					local tinted, fields, cap = 0, 0, false
+					for _, p in parts(m) do
+						tinted += if p:GetAttribute("KitTint") ~= nil then 1 else 0
+						fields += if p:GetAttribute("KitEmblemCF") ~= nil then 1 else 0
+						cap = cap or p.Name == CAP_PART[style]
+					end
+					if tinted < 3 or fields < 1 then
+						error(`{bt} L{level} colour {ci}: {tinted} kingdom-tinted parts, {fields} emblem fields`)
+					end
+					-- every type shows its kingdom's tower cap (hueStyle) at its top level; the granary from L1
+					if (level == top or bt == "granary") and not cap then
+						error(`{bt} L{level} colour {ci}: no {style} tower cap ({CAP_PART[style]})`)
 					end
 				end
 			end

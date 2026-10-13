@@ -20,6 +20,10 @@
 
 	API (G10):
 		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
+		                                                        -- G13.5 VS-2 types (FL-0086): mine and blacksmith L1–3,
+		                                                        -- market, infirmary, granary, shrine L1–2; DropOff on the
+		                                                        -- mine and the granary; WorkSpot1 = the key citizen's
+		                                                        -- place (miner, smith, merchant, healer, provisioner, elder)
 		Kit.footprint(type, level) -> Vector2
 		Kit.character(kind, job, kingdomColor, look?, kingdom?) -> Model
 		                                                        -- ≤ 9 parts (Hair welded to the Head, D-032), Motor6Ds
@@ -63,7 +67,7 @@ export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
 Kit.VERSION = "0.4.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
--- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
+-- G2 BuildingType + the G13.5 VS-2 types (part-built, FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",
 	"house",

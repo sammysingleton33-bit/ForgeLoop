@@ -4,7 +4,9 @@
 
 	Always: asserts the extra catalogue serialises to finite numbers.
 	With FORGE_KIT_DUMP_BUILDINGS=<path.json>: writes the JSON for blender/scripts/render_kit.py
-	(groups house_variants, stages_more, levels_barracks, levels_keep, levels_house_farm, standins). Run:
+	(groups house_variants, stages_more, levels_barracks, levels_keep, levels_house_farm; FL-0086: vs2_levels_a
+	mine + blacksmith L1–3, vs2_levels_b market + infirmary L1–2, vs2_levels_c granary + shrine L1–2, vs2_stages
+	blacksmith and granary stages 1–3 + complete). Run:
 	  FORGE_KIT_DUMP_BUILDINGS=/tmp/kit_arch_extra.json lune run roblox/tests/harness/run.luau \
 	    --project games/game-001/default.project.json --specs games/game-001/tests/world KitBuildingsDump
 ]]
@@ -91,7 +93,7 @@ local function catalogue()
 			add("stages_more", `{bt} stage {stage}`, Kit.build(bt, 1, stage, COLORS.emerald))
 		end
 	end
-	-- G13.5 level sets (aerial readability) and the VS-2 stand-ins
+	-- G13.5 level sets (aerial readability)
 	for level = 1, 4 do
 		add("levels_barracks", `barracks L{level} crimson`, Kit.build("barracks", level, "complete", COLORS.crimson))
 	end
@@ -106,9 +108,25 @@ local function catalogue()
 	for level = 1, 2 do
 		add("levels_house_farm", `farm L{level} azure`, Kit.build("farm", level, "complete", COLORS.azure))
 	end
-	for i, bt in { "mine", "blacksmith", "market", "infirmary", "granary", "shrine" } do
-		local k = ({ "crimson", "azure", "emerald", "gold", "crimson", "azure" })[i]
-		add("standins", `{bt} {k}`, Kit.build(bt, 1, "complete", COLORS[k]))
+	-- FL-0086: the six VS-2 types at every level, one kingdom per tile, the kingdoms mixed across types (every
+	-- type in at least two kingdoms, every tower cap on an upper level), and the stages of two types
+	local vs2 = {
+		{ "vs2_levels_a", "mine", { "crimson", "azure", "emerald" } },
+		{ "vs2_levels_a", "blacksmith", { "gold", "crimson", "azure" } },
+		{ "vs2_levels_b", "market", { "emerald", "gold" } },
+		{ "vs2_levels_b", "infirmary", { "azure", "crimson" } },
+		{ "vs2_levels_c", "granary", { "gold", "emerald" } },
+		{ "vs2_levels_c", "shrine", { "crimson", "azure" } },
+	}
+	for _, g in vs2 do
+		for level, k in g[3] do
+			add(g[1], `{g[2]} L{level} {k}`, Kit.build(g[2], level, "complete", COLORS[k]))
+		end
+	end
+	for _, s in { { "blacksmith", "emerald" }, { "granary", "crimson" } } do
+		for _, stage in { 1, 2, 3, "complete" } do
+			add("vs2_stages", `{s[1]} L1 {stage} {s[2]}`, Kit.build(s[1], 1, stage :: any, COLORS[s[2]]))
+		end
 	end
 	return groups
 end
@@ -127,7 +145,7 @@ describe("Kit architecture preview dump", function()
 				end
 			end
 		end
-		expect(n).toBe(37)
+		expect(n).toBe(53)
 		local out = process.env.FORGE_KIT_DUMP_BUILDINGS
 		if out and out ~= "" then
 			fs.writeFile(out, serde.encode("json", { version = Kit.VERSION, groups = groups }, false))

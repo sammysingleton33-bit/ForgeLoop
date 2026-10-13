@@ -236,3 +236,73 @@ fewer, larger plinth facing stones.
 - Studio: SmoothPlastic emblems on Fabric cloth, Future lighting, and depth precision of the 0.015 stacking at 220 studs.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
+
+## Round 6 — FL-0086: the six VS-2 types part-built (mine, blacksmith, market, infirmary, granary, shrine) — 2026-10-13
+Branch `forge/02-blender-fl0086-buildings`. Evidence: headless specs (`KitBuildings.spec`, `KitEmblems.spec`) and
+Blender (`bpy`) renders of `KitBuildingsDump.spec` (groups `vs2_levels_a/b/c`, `vs2_stages`) through a scratch copy of
+`blender/scripts/render_kit.py` (3/4 hero tiles; a gameplay strip at 80 studs, 20° down, 30° azimuth, Roblox 70° FOV;
+an overview view at 50° and 170 studs). Not Studio screenshots (D-026, D-034).
+
+**Images** (`img/`):
+- `kit_fl0086_levels_mine_blacksmith.jpg`: mine L1 crimson, L2 azure, L3 emerald; blacksmith L1 gold, L2 crimson, L3 azure.
+- `kit_fl0086_levels_market_infirmary.jpg`: market L1 emerald, L2 gold; infirmary L1 azure, L2 crimson.
+- `kit_fl0086_levels_granary_shrine.jpg`: granary L1 gold, L2 emerald; shrine L1 crimson, L2 azure.
+- `kit_fl0086_stages.jpg`: blacksmith (stone site) and granary (timber site), stages 1–3 and complete.
+- `kit_fl0086_caps_shrine.jpg`: shrine L2 in the four kingdoms and neutral (the cap language on one type).
+- `kit_fl0086_aerial.jpg`: the six at their top level laid out like build slots, overview camera 50° / 170 studs, a 1:1
+  crop of a 1920×1080 frame.
+
+**Design** (one footprint per type, unchanged; every level inside it; the kingdom emblem on a flag, banner or the new
+`SignBoard` field on every model; the kingdom tower cap from `hueStyle` on every type's top level):
+- **Mine** L1–3: a cliff-faced crag with sloped flanks, crags and a moss cap; a timbered adit with a kingdom hood and the
+  emblem sign on its cap beam; rails, an ore cart with gold, a spoil heap, pit props, picks. L1 a hand windlass over a
+  trial shaft; L2 a timber headframe with its sheave wheel and pennant and a second cart; L3 a stone pithead with the
+  sheave in a timber gallery under the kingdom cap and flag, an ore chute. The crag rises 9 → 11.5 → 13.5.
+- **Blacksmith** L1–3 (weapons → armour → siege tools): a sooty kingdom-stone smithy with a kingdom tile roof; an open
+  forge shed whose front corner holds the forge breast with a glowing fire mouth facing the street and a tall chimney
+  with a glowing top; bellows, the anvil and quench tub out in front, a workbench, coal, a weapon rack, the sign on the
+  shed beam. L2 a second stone storey (string course, quoins, shutters, banner), an armour stand, shields on the rack.
+  L3 an armoury turret with the kingdom cap and a catapult.
+- **Market** L1–2: a paved square with striped kingdom canopies over stalls (produce, cloth, pottery, grain and spice),
+  a well with a kingdom roof, a hand cart, goods. L1 the merchant's counting booth (serving hatch, kingdom awning, money
+  chest, sign); L2 a market hall: an open arcade with the trading table and chest under a jettied timber storey with
+  shutters and a banner, a bell turret with the kingdom cap, a fourth stall.
+- **Infirmary** L1–2: a timber-framed plaster hall with a kingdom roof and a veranda over cots with linen and kingdom
+  blankets (their feet reach into the light), an herb bed, an herb drying rack, a basin, a linen line, and a signpost
+  with the kingdom sign over a healer's sign (a green leaf on linen). L2 a jettied storey with shutters, a roof lantern
+  with the kingdom cap, a fourth cot.
+- **Granary** L1–2: a square tower granary on staddle stones (2×3, L2 3×3), kingdom pyramid roof over a dark kingdom
+  eave, a ventilator cupola with the kingdom cap, a ladder to its kingdom door, a hoist with a sack, sacks, a hand cart,
+  a banner. L2 a jettied upper storey with kingdom vent shutters and a lean-to for sacks.
+- **Shrine** L1–2: a stepped platform in the kingdom's stone, an altar stone with a kingdom altar cloth and a bronze fire
+  bowl, flowers, a ring of standing stones open to the front, a cairn, braziers. L1 a kingdom standard; L2 three tiers,
+  a taller ring, a pillared pavilion crowned by the kingdom cap and flag, two more braziers. No real-world religious
+  symbol (no cross, crescent, six-pointed star, om or wheel; the azure emblem is the kingdom's five-pointed star).
+- Fire is SmoothPlastic in ember colours: ART_DIRECTION §5 keeps Neon for crystals only.
+
+**Author rounds** (looked at every sheet):
+1. Quick renders. Mine: the hill read as grey boxes. Blacksmith: read as a beige house — forge, anvil and embers hidden in
+   the shed's shadow; the L2 plaster storey read as an inn. Infirmary: the cots were lost under the veranda — "house
+   with a porch". Market, granary, shrine: read. Aerial: everything identifiable by kingdom roof and cap.
+2. Fixes, then full renders. Mine: a cliff-faced core with sloped flank wedges, crags and moss. Blacksmith: the forge
+   moved to the shed's front corner (breast, glowing mouth, chimney), anvil and tub out in the light, sooty stone, an
+   all-stone L2. Infirmary: the veranda shortened so the blankets show, the linen line moved to the front at L1, the
+   healer's leaf sign. Shrine: chunkier standing stones, then an altar cloth (the L1 had only its banner in the
+   kingdom colour). Market, granary: unchanged.
+
+| type | sil | var | read | prop | pal | detail | coh | cost | notes |
+|---|---|---|---|---|---|---|---|---|---|
+| mine L1–3 | 3 | 4 | 4 | 3 | 4 | 4 | 4 | 4 | headframe and pithead read; the crag is still pale faceted blocks, not a natural hill |
+| blacksmith L1–3 | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 3 | the forge breast and chimney carry it; L3 near its cap (131–144 of 150) |
+| market L1–2 | 4 | 4 | 5 | 4 | 4 | 4 | 4 | 3 | striped canopies read from every camera; L2 130–144 of 150 |
+| infirmary L1–2 | 3 | 4 | 4 | 4 | 4 | 4 | 4 | 3 | the L1 silhouette is still house-like; blankets, linen and the leaf sign carry it |
+| granary L1–2 | 4 | 4 | 4 | 4 | 4 | 3 | 4 | 4 | clearly not the storehouse (square tower, pyramid, cupola cap) |
+| shrine L1–2 | 4 | 4 | 4 | 4 | 4 | 3 | 4 | 5 | L2's pavilion cap is the strongest kingdom read of the six; L1 is small (10 studs) |
+| stages | 4 | 3 | 4 | 4 | 3 | 3 | 4 | 5 | the site sits where the main mass will be (stone for blacksmith and shrine) |
+
+**Part cost** (all colours incl. neutral and the off-palette tints; no cap raised): mine 55–104 / 110, blacksmith
+78–144 / 150, market 79–144 / 150, infirmary 105–145 / 150, granary 54–85 / 110, shrine 31–61 / 80, stages ≤ 85 / 110.
+Per kingdom, the six at their top levels measure 651–683 (stand-ins 384–415), ≈ +260; at L1 426–449.
+
+**Unverified:** Studio look (Rock, Cobblestone, Fabric textures; Future lighting); the ember colours without Neon may
+read flat in shadow in Studio; phone screens; the in-game overview camera's real azimuth per slot.
