@@ -15,7 +15,7 @@ evidence:
   - check.sh OVERALL PASS; ConversationService.spec 11, Simulation +2, EventCodec/EntityService/EntityController transport specs; mutations 22/22 (service) + 28/28 (transport)
   - "main 751138b: check.sh PASS on a8a43bc+#77 (game-001 1146/0); ownership PASS 21 files; CI 3/3 on 98954e9; review spec 10/10; 16/16 mutants; slice spec passes"
   - "main 276d933: check.sh PASS on 4bb6622+#107 (game-001 1148/0) and combined 5f337db+#107+#105 (1168/0); CI 3/3 on cebc9e2; 10/10 mutations; FORGE-00's three checks pass"
-  - ConversationService spec 34/0, Simulation spec 43/0; mutations 12/12 caught (one survivor closed with an added spec)
+  - ConversationService spec 32/0, Simulation spec 42/0 (check.sh 1176/0 on main 8357596d); mutations 11/12 caught, the survivor (farm adds to an empty foreign load) closed by an added spec and re-checked caught
 ---
 
 # "ConversationService: thought bubbles, Converse/Choose, decision effects and memories (G13.3)"
