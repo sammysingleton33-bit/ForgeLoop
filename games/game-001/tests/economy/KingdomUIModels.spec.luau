@@ -1,5 +1,7 @@
 -- FL-0059: the pure parts of the kingdom HUD and build menu (layout, text, client store, HUD and
 -- build models, placement maths and the throttled Build.CanPlace checker).
+local fs = require("@lune/fs")
+
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
@@ -14,6 +16,7 @@ local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout"
 local Placement = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Placement")
 local Text = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Text")
 local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
+local Toast = require("@game/ReplicatedStorage/Forge/UI/Components/Toast")
 
 local function kingdoms(mine: string?)
 	return {
@@ -93,11 +96,63 @@ end)
 
 describe("Text", function()
 	it("turns server reasons into sentences and never shows a raw code", function()
-		expect(Text.reason("territory")).toBe("Outside your territory")
-		expect(Text.reason("overlap")).toBe("Too close to another building")
-		expect(Text.reason("cost")).toBe("Not enough resources")
+		expect(Text.reason("out_of_territory")).toBe("Build inside your kingdom")
+		expect(Text.reason("blocked")).toBe("Leave room for upgrades")
+		expect(Text.reason("cannot_afford")).toBe("Not enough resources")
+		expect(Text.reason("requires_keep_level")).toBe("Upgrade your keep first")
 		expect(Text.reason("weird_code")).toBe("That didn't work. Try again.")
 		expect(Text.reason(nil)).toBe("No answer from the server. Try again in a moment.")
+		-- on a plot, the same refusals name the plot
+		expect(Text.reason("blocked", "slot")).toBe("This plot is already built on")
+		expect(Text.reason("out_of_territory", "slot")).toBe("This plot isn't yours")
+	end)
+
+	it("FL-0105: every refusal code the server returns has its own sentence", function()
+		local generic = Text.reason("not_a_code_at_all")
+		local function covered(code: string, where: string)
+			local sentence = Text.reason(code)
+			if sentence == generic or string.find(sentence, code, 1, true) then
+				error(`{where}: "{code}" reads "{sentence}"`)
+			end
+		end
+		-- the server's own list: the Reasons line of FORGE-01's Build/Remotes.luau, read from source so
+		-- a code added there fails here until it is worded
+		local source = fs.readFile(T.root .. "/games/game-001/src/shared/Build/Remotes.luau")
+		local line = string.match(source, "Reasons:%s*([^%]]-)%]%]")
+		assert(line, "Build/Remotes.luau has no Reasons line")
+		local count = 0
+		for code in string.gmatch(line, "[%a_]+") do
+			covered(code, "Build/Remotes")
+			count += 1
+		end
+		expect(count).toBeGreaterThan(10)
+		-- the rest of FORGE-01's table (handoff 2026-10-13-forge-01-to-forge-03-refusal-codes.md)
+		for remote, codes in
+			{
+				["Build.CanPlace / Build.Place"] = { "kingdom_eliminated" },
+				["Build.Upgrade"] = { "not_found", "kingdom_eliminated" },
+				["Kingdom.Gather"] = {
+					"no_character",
+					"too_far",
+					"cooldown",
+					"depleted",
+					"unknown_node",
+					"not_ruler",
+					"kingdom_eliminated",
+				},
+				["Kingdom.SetJobQuota"] = { "invalid_args", "unknown_job", "not_in_match" },
+			}
+		do
+			for _, code in codes do
+				covered(code, remote)
+			end
+		end
+		-- codes the server never sends are not vocabulary (they read as the generic sentence)
+		for _, code in
+			{ "territory", "overlap", "zone", "cost", "insufficient", "phase", "no_kingdom", "rate", "unknown_type" }
+		do
+			expect(Text.reason(code)).toBe(generic)
+		end
 	end)
 
 	it("names every shortfall in resource order", function()
@@ -324,12 +379,12 @@ describe("Placement", function()
 end)
 
 describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on #79)", function()
-	it("the light emblem keeps at least 3:1 against what it sits on, across the tile's gradient", function()
-		local emblem = Theme.color("textPrimary")
+	it("every emblem keeps at least 3:1 against what it sits on, across the tile's gradient", function()
 		for _, k in KingdomsConfig.identities do
 			local color = Color3.fromRGB(k.color[1], k.color[2], k.color[3])
+			local emblem = Crest.emblemColor(color)
 			-- the tile is a gradient from 15 % lighter to 30 % darker (Crest); a light tile's emblem
-			-- sits on the sable plate instead
+			-- sits on the ivory roundel instead
 			local backdrops = if Crest.isLight(color)
 				then { Crest.backdrop(color) }
 				else { color, color:Lerp(Color3.new(1, 1, 1), 0.15), color:Lerp(Color3.new(0, 0, 0), 0.3) }
@@ -340,18 +395,31 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 				end
 			end
 		end
-		expect(Crest.isLight(Color3.fromRGB(235, 185, 16))).toBe(true) -- gold needs the plate
+		expect(Crest.isLight(Color3.fromRGB(235, 185, 16))).toBe(true) -- gold needs the roundel
 	end)
 
-	it("gold gets the plate; a recolour adds or removes it", function()
+	it("gold's sun is drawn as a dark sunburst on an ivory roundel; a recolour adds or removes the roundel", function()
 		local gold = Color3.fromRGB(235, 185, 16)
 		local crimson = Color3.fromRGB(190, 40, 50)
-		local crest = Crest.new(58, crimson, "emblem_sun")
+		local sun = Crest.new(58, gold, "emblem_sun")
+		local plate = sun:FindFirstChild("Plate")
+		expect(plate).toBeTruthy()
+		expect(plate.BackgroundColor3).toBe(Crest.backdrop(gold))
+		local emblem = sun:FindFirstChild("Emblem")
+		expect(emblem:GetAttribute("drawn")).toBe("sunburst")
+		local rays = 0
+		for _, child in emblem:GetChildren() do
+			if string.match(child.Name, "^Ray_") then
+				rays += 1
+				expect(Crest.contrast(child.BackgroundColor3, Crest.backdrop(gold))).toBeGreaterThan(3)
+			end
+		end
+		expect(rays).toBe(4) -- four bars through the centre: eight rays
+		expect(plate.ZIndex < emblem.ZIndex).toBe(true) -- the roundel under the sun
+		-- recolouring a crest adds the roundel once and takes it away again
+		local crest = Crest.new(58, crimson, "emblem_flame")
 		expect(crest:FindFirstChild("Plate")).toBeNil()
 		Crest.recolor(crest, gold)
-		local plate = crest:FindFirstChild("Plate")
-		expect(plate).toBeTruthy()
-		expect(plate.ZIndex < crest:FindFirstChild("Emblem").ZIndex).toBe(true) -- under the emblem
 		Crest.recolor(crest, gold)
 		local plates = 0
 		for _, child in crest:GetChildren() do
@@ -360,8 +428,21 @@ describe("Crest emblems stay legible on every kingdom colour (D-033; FORGE-05 on
 			end
 		end
 		expect(plates).toBe(1)
+		expect(crest:FindFirstChild("Emblem").TextColor3).toBe(Crest.emblemColor(gold))
 		Crest.recolor(crest, crimson)
 		expect(crest:FindFirstChild("Plate")).toBeNil()
-		expect(Crest.new(22, gold, "emblem_sun"):FindFirstChild("Plate")).toBeTruthy()
+		expect(crest:FindFirstChild("Emblem").TextColor3).toBe(Crest.emblemColor(crimson))
+	end)
+end)
+
+describe("Toast kinds with the AI Kingdoms icons (FL-0105)", function()
+	it("an achievement toast shows the laurel by default, distinct from a reward's chest", function()
+		-- the framework theme draws every icon as "•", so the default icon is checked here
+		local laurel = Theme.icon("laurel").glyph
+		expect(laurel).never.toBe(Theme.icon("chest").glyph)
+		expect(Toast.new({ kind = "achievement", title = "First Farm built" }).instance.Icon.Text).toBe(laurel)
+		expect(Toast.new({ kind = "reward", title = "Royal Chest opened" }).instance.Icon.Text).toBe(
+			Theme.icon("chest").glyph
+		)
 	end)
 end)

@@ -110,7 +110,7 @@ function SlotDoubles.service(world)
 					local kingdom = kingdoms:getKingdomOf(player)
 					local slot = self.slots[slotId]
 					if kingdom == nil then
-						return nil, "no_kingdom"
+						return nil, "not_in_match"
 					elseif slot == nil or slot.kingdom ~= kingdom then
 						return nil, "territory"
 					elseif slot.occupiedBy then
@@ -121,7 +121,7 @@ function SlotDoubles.service(world)
 					end
 					local entry = Costs.building(buildingType, 1)
 					if not treasury:spend(kingdom, entry.cost, `slot:{slotId}:{buildingType}`, "construction") then
-						return nil, "cost"
+						return nil, "cannot_afford"
 					end
 					local id = build:add(kingdom, buildingType, 1, "planned", slot.center)
 					build.buildings[id].placedBy = player.UserId
