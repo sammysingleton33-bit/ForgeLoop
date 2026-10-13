@@ -2,21 +2,40 @@
 --[[
 	Sim/Military — recruitment, army orders, unit combat, defensive fire and conquest.
 
-	Installed into a Simulation as a system plus two commands:
+	Installed into a Simulation as a system plus three commands:
 		Military.install(sim)
-		Recruit(unitKind, count)           -> { barracksId, count }   errors: unknown_unit, invalid_args,
-		                                      no_barracks, population_cap, recruit_cap, cannot_afford
-		ArmyOrder(order, a?, b?)           -> { order }               errors: invalid_args, not_at_war,
-		                                      unknown_kingdom
+		Recruit(unitKind, count, barracksId?) -> { barracksId, count }   errors: unknown_unit, invalid_args,
+		                                      no_barracks, population_cap, recruit_cap, cannot_afford; with a
+		                                      barracksId also not_found, not_owner, not_barracks,
+		                                      barracks_not_ready (still being built), requires_barracks_level
+		                                      (that level does not train the unit). Without one: the standing
+		                                      barracks with the shortest queue that trains the unit.
+		ArmyOrder(order, a?, b?)           -> { order }               every unit of the kingdom; errors:
+		                                      invalid_args, not_at_war, unknown_kingdom
 			order "Defend"                  hold the territory around the keep (default for new units)
 			order "Hold"                    stop where they stand, fight what comes in range
 			order "Move", x, z              march to a point
 			order "Attack", kingdomId       march on that kingdom's keep (requires war)
+		UnitOrder(unitIds, kind, x?, z?, targetId?) -> { kind, count, ignored }   CONTRACTS G8 Army.Command
+			unitIds  up to MAX_ORDER_UNITS EntityIds; ids that are not this kingdom's living units are
+			         ignored (counted in `ignored`); empty = every idle unit of the kingdom (Defend, Hold
+			         or Guard and not fighting, or a Move that has arrived)
+			"move", x, z              march to the point (several units spread around it)
+			"attack", targetId        a KingdomId (march on its keep), "building:<id>" or "entity:<id>"
+			                          (chase that enemy wherever it goes; afterwards guard where they stand)
+			"capture", targetId       an objective id: march into its zone, around its tower, and hold there
+			                          (Sim/Objectives counts them), fighting only near the zone
+			"guard", x?, z?           hold and defend the point (default: where each unit stands); they
+			                          fight within GUARD_RADIUS of it and return
+			errors: invalid_args, too_many_units, unknown_order, no_units, unknown_objective,
+			unknown_target, unknown_kingdom, not_at_war (also for one's own target)
 
 	Combat rules (deterministic, no randomness)
 		- Only kingdoms at war fight (Simulation:atWar). Units pick the nearest enemy within aggro
 		  range (weapon range + 30): units first, then citizens outside shelter, then buildings.
 		  Siege units (attacksUnits = false) only target buildings. Targets are sticky while in reach.
+		  Defend, Guard and Capture units only take targets on the ground they hold (territory + 25,
+		  GUARD_RADIUS around the point, the zone + 25); an attack order's focus is chased at any range.
 		- A unit out of weapon range closes in and strikes in the same tick once in range, so a target
 		  that keeps moving away (a fleeing citizen) can still be caught. Hold units never move: they
 		  only strike what is already within weapon range.
@@ -31,16 +50,23 @@
 	Threats: before citizens think, each kingdom's `threats` lists enemy units inside its territory
 	(+30 studs); CitizenBrain uses it to flee and remember danger.
 
+	Rally: a trained unit appears at its barracks' Rally, the Kit barracks attachment at local
+	(0, 0, -depth/2 - 10) (in front, along the building's yaw), spread sideways in rows of RALLY_ROW.
+
 	Events: RecruitQueued { kingdomId, unit, count, barracksId, by } · UnitRecruited { kingdomId, unitId, unit }
-		ArmyOrdered { kingdomId, order, by } · UnitKilled { kingdomId, unitId, unit, byKingdomId }
+		ArmyOrdered { kingdomId, order, by } · UnitsOrdered { kingdomId, kind, count, by }
+		UnitKilled { kingdomId, unitId, unit, byKingdomId }
 		BuildingDestroyed { kingdomId, buildingId, kind, byKingdomId }
 		KingdomEliminated { kingdomId, byKingdomId, loot }
 	API (besides the commands)
 		Military.spawnUnit(sim, kingdom, kind, x, z): Unit      -- also used by specs
+		Military.rallyPoint(barracks, slot): (x, z)             -- slot 0 = the Rally itself, then sideways
+		Military.isIdle(unit): boolean                          -- what an empty UnitOrder selects
 		Military.destroyBuilding(sim, building, byKingdomId?), Military.eliminate(sim, kingdom, byKingdomId?)
-		Military.AGGRO_EXTRA, Military.UNIT_RADIUS
+		Military.AGGRO_EXTRA, Military.UNIT_RADIUS, Military.MAX_ORDER_UNITS, Military.GUARD_RADIUS
 ]]
 
+local Kit = require("../Kit/Kit")
 local Commands = require("./Commands")
 local Nav = require("./Nav")
 
@@ -48,11 +74,24 @@ local Military = {}
 
 Military.AGGRO_EXTRA = 30
 Military.UNIT_RADIUS = 1.5
+Military.MAX_ORDER_UNITS = 50 -- CONTRACTS G8 Army.Command array(integer, 50)
+Military.GUARD_RADIUS = 25
 local STICKY_FACTOR = 1.5
 local DEFEND_RADIUS = 25
 -- moveUnit stops exactly at weapon range; floating-point error can leave that a hair outside it
 local REACH_EPSILON = 1e-6
 local ORDERS = { Defend = true, Hold = true, Move = true, Attack = true }
+local UNIT_ORDERS = { move = true, attack = true, capture = true, guard = true }
+local MOVE_STOP = 2 -- a Move order stops this far from its point
+local SPREAD = 3 -- studs between units sent to one point (sunflower spiral)
+local GOLDEN_ANGLE = 2.399963
+local RALLY_AHEAD = 10 -- Kit barracks Rally: local (0, 0, -depth/2 - 10), depth = footprint Y - 2
+local RALLY_ROW = 7 -- units side by side at the Rally before a second row starts
+local MAX_ENTITY_ID = 65535 -- G2 EntityId (u16 on the wire)
+local CAPTURE_REACH = 0.8 -- capturers stand at most this fraction of the zone radius from its centre
+-- capturers stand clear of the objective's Kit watchtower (half its longer side + 2 studs)
+local TOWER_FOOTPRINT = Kit.footprint("watchtower", 1)
+local TOWER_CLEARANCE = math.max(TOWER_FOOTPRINT.X, TOWER_FOOTPRINT.Y) / 2 + 2
 
 local function dist(ax: number, az: number, bx: number, bz: number): number
 	local dx, dz = ax - bx, az - bz
@@ -115,25 +154,69 @@ local function recruitCap(sim: any, kingdom: any): number
 end
 Military.recruitCap = recruitCap
 
-local function recruit(sim: any, kingdom: any, by: number?, kind: any, count: any): (boolean, string?, any?)
+-- A standing barracks whose level trains `kind`: at least the unit's requiresBarracksLevel and, when the
+-- level lists `trains` (Buildings.luau), named there.
+local function trainsAt(sim: any, b: any, kind: string, def: any): boolean
+	if b.kind ~= "barracks" or b.destroyed or b.level < 1 or b.level < def.requiresBarracksLevel then
+		return false
+	end
+	local trains = sim.catalog.buildings.barracks.levels[b.level].trains
+	return trains == nil or table.find(trains, kind) ~= nil
+end
+
+-- The barracks a Recruit trains at: the one asked for (it must be the kingdom's, standing and able to
+-- train the unit), else the standing one with the shortest queue.
+local function pickBarracks(sim: any, kingdom: any, kind: string, def: any, barracksId: number?): (any?, string?)
+	if barracksId ~= nil then
+		local b, err = sim:_ownedBuilding(kingdom, barracksId)
+		if b == nil then
+			return nil, err
+		end
+		if b.kind ~= "barracks" then
+			return nil, "not_barracks"
+		end
+		if b.level < 1 then
+			return nil, "barracks_not_ready"
+		end
+		if not trainsAt(sim, b, kind, def) then
+			return nil, "requires_barracks_level"
+		end
+		return b, nil
+	end
+	local best = nil
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if trainsAt(sim, b, kind, def) and (best == nil or #b.queue < #best.queue) then
+			best = b
+		end
+	end
+	if best == nil then
+		return nil, "no_barracks"
+	end
+	return best, nil
+end
+
+local function recruit(
+	sim: any,
+	kingdom: any,
+	by: number?,
+	kind: any,
+	count: any,
+	barracksId: any
+): (boolean, string?, any?)
 	if type(kind) ~= "string" or not isInt(count, 1, 10) then
+		return false, "invalid_args"
+	end
+	if barracksId ~= nil and not isInt(barracksId, 1, 1e9) then
 		return false, "invalid_args"
 	end
 	local def = sim.catalog.units[kind]
 	if def == nil then
 		return false, "unknown_unit"
 	end
-	local best = nil
-	for _, bid in kingdom.buildingIds do
-		local b = sim.buildings[bid]
-		if b.kind == "barracks" and not b.destroyed and b.level >= def.requiresBarracksLevel then
-			if best == nil or #b.queue < #best.queue then
-				best = b
-			end
-		end
-	end
+	local best, refused = pickBarracks(sim, kingdom, kind, def, barracksId)
 	if best == nil then
-		return false, "no_barracks"
+		return false, refused
 	end
 	if sim:population(kingdom) + queuedCount(sim, kingdom) + count > kingdom.popCap then
 		return false, "population_cap"
@@ -191,6 +274,205 @@ local function armyOrder(sim: any, kingdom: any, by: number?, order: any, a: any
 	end
 	sim:emit("ArmyOrdered", { kingdomId = kingdom.id, order = order, by = by })
 	return true, nil, { order = order }
+end
+
+-- ---------------------------------------------------------------- unit orders (G8 Army.Command)
+local function objectiveOf(sim: any, id: any): any?
+	for _, o in (sim.objectives and sim.objectives.list) or {} do
+		if o.id == id then
+			return o
+		end
+	end
+	return nil
+end
+
+-- Not busy: at home (Defend), holding or guarding without a fight, or done with a Move.
+function Military.isIdle(u: any): boolean
+	if not u.alive or u.target ~= nil then
+		return false
+	end
+	local order = u.order
+	if order.kind == "Defend" or order.kind == "Hold" or order.kind == "Guard" then
+		return true
+	end
+	return order.kind == "Move" and dist(u.x, u.z, order.x, order.z) <= MOVE_STOP + REACH_EPSILON
+end
+
+-- The i-th (0-based) of several units sent to one point: a sunflower spiral starting `inner` studs out
+-- (0: on the point itself), at most `outer` out.
+local function spread(x: number, z: number, i: number, inner: number, outer: number): (number, number)
+	local r = math.min(inner + SPREAD * math.sqrt(i), outer)
+	if r <= 0 then
+		return x, z
+	end
+	return x + math.cos(i * GOLDEN_ANGLE) * r, z + math.sin(i * GOLDEN_ANGLE) * r
+end
+
+-- A UnitOrder unit list: (ids, nil) or (nil, error). Up to MAX_ORDER_UNITS positive integers.
+local function idList(value: any): ({ number }?, string?)
+	if type(value) ~= "table" then
+		return nil, "invalid_args"
+	end
+	local n = 0
+	for key, id in value do
+		n += 1
+		if n > Military.MAX_ORDER_UNITS then
+			return nil, "too_many_units"
+		end
+		if type(key) ~= "number" or not isInt(id, 1, MAX_ENTITY_ID) then
+			return nil, "invalid_args"
+		end
+	end
+	if n ~= #value then
+		return nil, "invalid_args"
+	end
+	return value, nil
+end
+
+-- The units a UnitOrder moves: the kingdom's living ones among `ids` (others are counted as ignored),
+-- or every idle one when `ids` is empty.
+local function orderedUnits(sim: any, kingdom: any, ids: { number }): ({ any }, number)
+	local units, ignored = {}, 0
+	if #ids == 0 then
+		for _, uid in kingdom.unitIds do
+			local u = sim.units[uid]
+			if u and Military.isIdle(u) then
+				table.insert(units, u)
+			end
+		end
+		return units, 0
+	end
+	local seen: { [number]: boolean } = {}
+	for _, uid in ids do
+		if seen[uid] then
+			continue
+		end
+		seen[uid] = true
+		local u = sim.units[uid]
+		if u and u.alive and u.kingdomId == kingdom.id then
+			table.insert(units, u)
+		else
+			ignored += 1
+		end
+	end
+	return units, ignored
+end
+
+-- An attack target: a KingdomId, "building:<id>" or "entity:<id>". Returns (kingdomId, focus?) or
+-- (nil, nil, error). Only enemies at war qualify.
+local function attackTarget(sim: any, kingdom: any, targetId: any): (string?, { kind: string, id: number }?, string?)
+	if type(targetId) ~= "string" then
+		return nil, nil, "invalid_args"
+	end
+	local target = sim.kingdoms[targetId]
+	if target then
+		if not target.alive or targetId == kingdom.id then
+			return nil, nil, "unknown_kingdom"
+		end
+		if not sim:atWar(kingdom.id, targetId) then
+			return nil, nil, "not_at_war"
+		end
+		return targetId, nil, nil
+	end
+	local prefix, digits = string.match(targetId, "^(%a+):(%d+)$")
+	local id = tonumber(digits)
+	local record, kind = nil, nil
+	if prefix == "building" and id then
+		local b = sim.buildings[id]
+		if b and not b.destroyed then
+			record, kind = b, "building"
+		end
+	elseif prefix == "entity" and id then
+		if sim.units[id] then
+			record, kind = sim.units[id], "unit"
+		elseif sim.citizens[id] then
+			record, kind = sim.citizens[id], "citizen"
+		end
+	end
+	if record == nil or kind == nil then
+		return nil, nil, "unknown_target"
+	end
+	if not sim:atWar(kingdom.id, record.kingdomId) then
+		return nil, nil, "not_at_war"
+	end
+	return nil, { kind = kind, id = record.id }, nil
+end
+
+local function unitOrder(
+	sim: any,
+	kingdom: any,
+	by: number?,
+	unitIds: any,
+	kind: any,
+	x: any,
+	z: any,
+	targetId: any
+): (boolean, string?, any?)
+	local ids, err = idList(unitIds)
+	if ids == nil then
+		return false, err
+	end
+	if type(kind) ~= "string" then
+		return false, "invalid_args"
+	end
+	if not UNIT_ORDERS[kind] then
+		return false, "unknown_order"
+	end
+	local hasPoint = x ~= nil or z ~= nil
+	if hasPoint and (not finite(x) or not finite(z)) then
+		return false, "invalid_args"
+	end
+	if targetId ~= nil and type(targetId) ~= "string" then
+		return false, "invalid_args"
+	end
+	-- the order for the i-th commanded unit (0-based)
+	local orderFor: (u: any, i: number) -> { [string]: any }
+	if kind == "move" then
+		if not hasPoint then
+			return false, "invalid_args"
+		end
+		orderFor = function(_u, i)
+			local px, pz = spread(x, z, i, 0, math.huge)
+			return { kind = "Move", x = px, z = pz }
+		end
+	elseif kind == "guard" then
+		orderFor = function(u, i)
+			if not hasPoint then
+				return { kind = "Guard", x = u.x, z = u.z }
+			end
+			local px, pz = spread(x, z, i, 0, math.huge)
+			return { kind = "Guard", x = px, z = pz }
+		end
+	elseif kind == "capture" then
+		local o = objectiveOf(sim, targetId)
+		if o == nil then
+			return false, if targetId == nil then "invalid_args" else "unknown_objective"
+		end
+		orderFor = function(_u, i)
+			-- around the tower that stands on the point (ObjectiveService), well inside the zone
+			local outer = o.radius * CAPTURE_REACH
+			local px, pz = spread(o.x, o.z, i, math.min(TOWER_CLEARANCE, outer), outer)
+			return { kind = "Capture", objectiveId = o.id, x = px, z = pz }
+		end
+	else
+		local targetKingdom, focus, refused = attackTarget(sim, kingdom, targetId)
+		if refused then
+			return false, refused
+		end
+		orderFor = function(_u, _i)
+			return { kind = "Attack", kingdomId = targetKingdom, focus = focus and table.clone(focus) }
+		end
+	end
+	local units, ignored = orderedUnits(sim, kingdom, ids)
+	if #units == 0 then
+		return false, "no_units"
+	end
+	for i, u in units do
+		u.order = orderFor(u, i - 1)
+		u.target = if u.order.focus then table.clone(u.order.focus) else nil
+	end
+	sim:emit("UnitsOrdered", { kingdomId = kingdom.id, kind = kind, count = #units, by = by })
+	return true, nil, { kind = kind, count = #units, ignored = ignored }
 end
 
 -- ---------------------------------------------------------------- deaths and destruction
@@ -330,14 +612,34 @@ local function targetRadius(target: any, kind: string?): number
 	return if kind == "building" then target.footprint else 0
 end
 
-local function acquire(sim: any, u: any, def: any): (any?, string?)
+type Leash = { x: number, z: number, r: number }
+
+-- A target position lies on the ground a unit holds (no leash: anywhere).
+local function inside(held: Leash?, t: any): boolean
+	return held == nil or dist(t.x, t.z, held.x, held.z) <= held.r
+end
+
+-- The unit's target: the sticky one, else the nearest enemy in aggro range on the ground it holds.
+local function acquire(sim: any, u: any, def: any, held: Leash?): (any?, string?)
 	local aggro = def.range + Military.AGGRO_EXTRA
-	-- sticky: keep the current target while it is valid and still within reach
+	-- an attack order's focus is the target whenever nothing else (a blocking wall) is; siege units
+	-- (attacksUnits = false) can only focus on buildings
+	local focus = u.order.focus
+	if focus and focus.kind ~= "building" and not def.attacksUnits then
+		focus = nil
+	end
+	if u.target == nil and focus then
+		u.target = { kind = focus.kind, id = focus.id }
+	end
+	-- sticky: keep the current target while it is valid and still within reach (the focus at any range);
+	-- a wall in the way is fought wherever it stands, or the unit would never get past it
 	local current, currentKind = resolveTarget(sim, u.target)
 	if current and sim:atWar(u.kingdomId, current.kingdomId) then
 		local reach = aggro * STICKY_FACTOR + targetRadius(current, currentKind)
 		local valid = currentKind ~= "citizen" or not sheltered(sim, current)
-		if valid and dist(u.x, u.z, current.x, current.z) <= reach then
+		local focused = focus ~= nil and focus.kind == currentKind and focus.id == current.id
+		local onGround = (u.target :: any).blocker == true or inside(held, current)
+		if valid and onGround and (focused or dist(u.x, u.z, current.x, current.z) <= reach) then
 			return current, currentKind
 		end
 	end
@@ -352,7 +654,7 @@ local function acquire(sim: any, u: any, def: any): (any?, string?)
 			for _, uid in enemy.unitIds do
 				local e = sim.units[uid]
 				local d = dist(u.x, u.z, e.x, e.z)
-				if d <= aggro and d < bestDistance then
+				if d <= aggro and d < bestDistance and inside(held, e) then
 					best, bestKind, bestDistance = e, "unit", d
 				end
 			end
@@ -367,7 +669,7 @@ local function acquire(sim: any, u: any, def: any): (any?, string?)
 			for _, cid in enemy.citizenIds do
 				local c = sim.citizens[cid]
 				local d = dist(u.x, u.z, c.x, c.z)
-				if d <= aggro and d < bestDistance and not sheltered(sim, c) then
+				if d <= aggro and d < bestDistance and not sheltered(sim, c) and inside(held, c) then
 					best, bestKind, bestDistance = c, "citizen", d
 				end
 			end
@@ -382,7 +684,7 @@ local function acquire(sim: any, u: any, def: any): (any?, string?)
 			for _, bid in enemy.buildingIds do
 				local b = sim.buildings[bid]
 				local d = dist(u.x, u.z, b.x, b.z) - b.footprint
-				if d <= aggro and d < bestDistance then
+				if d <= aggro and d < bestDistance and inside(held, b) then
 					best, bestKind, bestDistance = b, "building", d
 				end
 			end
@@ -451,7 +753,23 @@ local function orderDestination(sim: any, u: any): (number?, number?, number)
 	if order.kind == "Hold" then
 		return nil, nil, 0
 	elseif order.kind == "Move" then
-		return order.x, order.z, 2
+		return order.x, order.z, MOVE_STOP
+	elseif order.kind == "Guard" then
+		return order.x, order.z, 1
+	elseif order.kind == "Capture" then
+		if objectiveOf(sim, order.objectiveId) then
+			return order.x, order.z, 1 -- a spot inside the zone; Sim/Objectives counts the unit there
+		end
+		u.order = { kind = "Guard", x = u.x, z = u.z }
+		return nil, nil, 0
+	elseif order.kind == "Attack" and order.focus then
+		-- the focus is out of sight (a sheltered citizen) or gone: go to it, or guard where they stand
+		local focus, focusKind = resolveTarget(sim, order.focus)
+		if focus and sim:atWar(u.kingdomId, focus.kingdomId) then
+			return focus.x, focus.z, targetRadius(focus, focusKind) + 2
+		end
+		u.order = { kind = "Guard", x = u.x, z = u.z }
+		return nil, nil, 0
 	elseif order.kind == "Attack" then
 		local target = sim.kingdoms[order.kingdomId]
 		if target and target.alive and sim:atWar(u.kingdomId, target.id) then
@@ -469,6 +787,23 @@ local function orderDestination(sim: any, u: any): (number?, number?, number)
 	return kingdom.x + math.cos(angle) * radius, kingdom.z + math.sin(angle) * radius, 1
 end
 
+-- The ground a unit holds: it only takes targets inside it. nil = no limit (Move, Attack, Hold).
+local function leash(sim: any, u: any): Leash?
+	local order = u.order
+	if order.kind == "Defend" then
+		local home = sim.kingdoms[u.kingdomId]
+		return { x = home.x, z = home.z, r = home.territory + DEFEND_RADIUS }
+	elseif order.kind == "Guard" then
+		return { x = order.x, z = order.z, r = Military.GUARD_RADIUS }
+	elseif order.kind == "Capture" then
+		local o = objectiveOf(sim, order.objectiveId)
+		if o then
+			return { x = o.x, z = o.z, r = o.radius + DEFEND_RADIUS }
+		end
+	end
+	return nil
+end
+
 local function stepUnits(sim: any, dt: number)
 	for _, uid in table.clone(sim.unitOrder) do
 		local u = sim.units[uid]
@@ -477,14 +812,9 @@ local function stepUnits(sim: any, dt: number)
 		end
 		local def = sim.catalog.units[u.kind]
 		u.cooldown = math.max(0, u.cooldown - dt)
-		local target, kind = acquire(sim, u, def)
-		local engage = target ~= nil
-		if target and u.order.kind == "Defend" then
-			-- defenders do not chase beyond their territory
-			local home = sim.kingdoms[u.kingdomId]
-			engage = dist(target.x, target.z, home.x, home.z) <= home.territory + DEFEND_RADIUS
-		end
-		if target and kind and engage then
+		-- defenders, guards and capturers only fight on the ground they hold (acquire skips the rest)
+		local target, kind = acquire(sim, u, def, leash(sim, u))
+		if target and kind then
 			local gap = dist(u.x, u.z, target.x, target.z) - targetRadius(target, kind)
 			if gap > def.range + REACH_EPSILON and u.order.kind ~= "Hold" then
 				-- close in, then strike in the same tick if that brought the target into range: checking
@@ -492,7 +822,7 @@ local function stepUnits(sim: any, dt: number)
 				-- citizen) stay out of reach forever
 				local blocker = moveUnit(sim, u, def, target.x, target.z, def.range + targetRadius(target, kind), dt)
 				if blocker then
-					u.target = { kind = "building", id = blocker.id }
+					u.target = { kind = "building", id = blocker.id, blocker = true }
 				else
 					gap = dist(u.x, u.z, target.x, target.z) - targetRadius(target, kind)
 				end
@@ -510,7 +840,7 @@ local function stepUnits(sim: any, dt: number)
 			if x and z then
 				local blocker = moveUnit(sim, u, def, x, z, stopAt, dt)
 				if blocker then
-					u.target = { kind = "building", id = blocker.id }
+					u.target = { kind = "building", id = blocker.id, blocker = true }
 				end
 			end
 		end
@@ -555,6 +885,41 @@ local function stepDefences(sim: any, dt: number)
 	end
 end
 
+-- Where a barracks' `slot`-th waiting recruit stands: slot 0 is the Kit barracks Rally (local
+-- (0, 0, -depth/2 - 10), depth = Kit footprint Y - 2, turned by the building's yaw as Kit models are:
+-- CFrame.Angles(0, yaw, 0), front = -Z); later slots alternate right and left of it, RALLY_ROW to a row,
+-- the second row one step further out.
+function Military.rallyPoint(b: any, slot: number): (number, number)
+	local depth = Kit.footprint(b.kind, math.max(1, b.level)).Y - 2
+	local column = slot % RALLY_ROW
+	local row = (slot // RALLY_ROW) % 2
+	local side = if column % 2 == 1 then 1 else -1
+	local lx = side * math.ceil(column / 2) * SPREAD
+	local lz = -(depth / 2 + RALLY_AHEAD + row * SPREAD)
+	local c, s = math.cos(b.yaw or 0), math.sin(b.yaw or 0)
+	return b.x + c * lx + s * lz, b.z - s * lx + c * lz
+end
+
+-- The first Rally slot no living unit of the kingdom stands on (cycling when all are taken).
+local function freeRallySlot(sim: any, kingdom: any, b: any): number
+	local slots = 2 * RALLY_ROW
+	for slot = 0, slots - 1 do
+		local x, z = Military.rallyPoint(b, slot)
+		local taken = false
+		for _, uid in kingdom.unitIds do
+			local u = sim.units[uid]
+			if u and dist(u.x, u.z, x, z) < Military.UNIT_RADIUS then
+				taken = true
+				break
+			end
+		end
+		if not taken then
+			return slot
+		end
+	end
+	return kingdom.stats.unitsTrained % slots
+end
+
 local function stepTraining(sim: any, dt: number)
 	for _, kid in sim.kingdomOrder do
 		local kingdom = sim.kingdoms[kid]
@@ -568,14 +933,8 @@ local function stepTraining(sim: any, dt: number)
 				entry.remaining -= dt
 				if entry.remaining <= 0 then
 					table.remove(b.queue, 1)
-					local angle = #kingdom.unitIds * 2.399963
-					local u = Military.spawnUnit(
-						sim,
-						kingdom,
-						entry.unit,
-						b.x + math.cos(angle) * (b.footprint + 3),
-						b.z + math.sin(angle) * (b.footprint + 3)
-					)
+					local x, z = Military.rallyPoint(b, freeRallySlot(sim, kingdom, b))
+					local u = Military.spawnUnit(sim, kingdom, entry.unit, x, z)
 					kingdom.stats.unitsTrained += 1
 					sim:emit("UnitRecruited", { kingdomId = kingdom.id, unitId = u.id, unit = u.kind })
 				end
@@ -611,6 +970,7 @@ function Military.install(sim: any)
 	sim._militaryInstalled = true
 	Commands.install(sim, "Recruit", recruit)
 	Commands.install(sim, "ArmyOrder", armyOrder)
+	Commands.install(sim, "UnitOrder", unitOrder)
 	sim:addSystem({
 		beforeCitizens = function(s: any, _dt: number)
 			refreshThreats(s)

@@ -82,12 +82,21 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 
 ## K6 — Capture the watchtower (VS-1 row 7)
 1. Walk your ruler onto the neutral watchtower near the valley centre and stay inside its ring.
-2. With FL-0052: recruit soldiers (`Army.Recruit`) and press Send-to-capture (`Army.Command` with no ids).
+2. With FL-0052 (fresh server): build a house first (the 12 starting citizens fill the keep's 12 beds, so
+   recruiting answers `population_cap`), then a barracks. With the house, barracks and 3 soldiers that is
+   about 190 wood, 60 stone and 90 food (`Costs.luau`), so let the citizens work first. Recruit 3 soldiers at it
+   (`Army.Recruit(barracksId, "soldier", 3)`, or the army panel), wait about 24 s, and press Send-to-capture
+   (`Army.Command({}, "capture", nil, "watchtower")`).
 
 **Expected:**
+- The tower stands neutral (`Workspace.KingdomObjectives.watchtower`, Kit neutral colour) from the start.
+- Recruiting charges `Costs.unit("soldier")` × 3 once (`Treasury.Changed`). Each soldier appears in front of
+  the barracks door (the Kit `Rally`), then walks to the keep.
+- After Send-to-capture, every idle soldier walks the road over the bridge and stands in a ring around the
+  tower, inside the zone. `Army.Objectives` reports the progress at most twice a second.
 - Capture progress rises to 1 in 20 s while uncontested; a second kingdom in the zone freezes it.
-- On capture: the kingdom owns the tower, gains +100 Crown Points and the `heartland` region
-  (`Kingdom.State` shows it in `regions`).
+- On capture: the kingdom owns the tower, the tower's trims and banners turn the kingdom colour, the kingdom
+  gains +100 Crown Points and the `heartland` region (`Kingdom.State` shows it in `regions`).
 - Slice mode: `Match.Ended` fires once with your kingdom as `winner`; the phase becomes `Results` and stays.
 
 ## K7 — Multiplayer integrity
