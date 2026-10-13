@@ -5,7 +5,7 @@
 	Installed into a Simulation as a system plus two commands:
 		Military.install(sim)
 		Recruit(unitKind, count)           -> { barracksId, count }   errors: unknown_unit, invalid_args,
-		                                      no_barracks, population_cap, cannot_afford
+		                                      no_barracks, population_cap, recruit_cap, cannot_afford
 		ArmyOrder(order, a?, b?)           -> { order }               errors: invalid_args, not_at_war,
 		                                      unknown_kingdom
 			order "Defend"                  hold the territory around the keep (default for new units)
@@ -101,6 +101,20 @@ local function queuedCount(sim: any, kingdom: any): number
 	return n
 end
 
+-- soldiers (living + training) the kingdom's standing barracks support: the sum of their recruitCap
+-- (Buildings.luau, G13.5); a barracks level without one supports any number
+local function recruitCap(sim: any, kingdom: any): number
+	local cap = 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "barracks" and not b.destroyed and b.level >= 1 then
+			cap += sim.catalog.buildings.barracks.levels[b.level].recruitCap or math.huge
+		end
+	end
+	return cap
+end
+Military.recruitCap = recruitCap
+
 local function recruit(sim: any, kingdom: any, by: number?, kind: any, count: any): (boolean, string?, any?)
 	if type(kind) ~= "string" or not isInt(count, 1, 10) then
 		return false, "invalid_args"
@@ -124,16 +138,24 @@ local function recruit(sim: any, kingdom: any, by: number?, kind: any, count: an
 	if sim:population(kingdom) + queuedCount(sim, kingdom) + count > kingdom.popCap then
 		return false, "population_cap"
 	end
+	if #kingdom.unitIds + queuedCount(sim, kingdom) + count > recruitCap(sim, kingdom) then
+		return false, "recruit_cap"
+	end
+	local price = sim.costs.unit(kind)
+	if price == nil then
+		return false, "unknown_unit"
+	end
 	local total = {}
-	for res, amount in def.cost do
+	for res, amount in price.cost do
 		total[res] = amount * count
 	end
 	sim.recruitSeq = (sim.recruitSeq or 0) + 1
 	if not sim:spend(kingdom.id, total, `recruit:{best.id}:{sim.recruitSeq}`, `unit:{kind}`) then
 		return false, "cannot_afford"
 	end
+	local speed = sim.catalog.buildings.barracks.levels[best.level].trainSpeed or 1
 	for _ = 1, count do
-		table.insert(best.queue, { unit = kind, remaining = def.trainTime })
+		table.insert(best.queue, { unit = kind, remaining = price.trainSeconds / speed })
 	end
 	sim:emit("RecruitQueued", { kingdomId = kingdom.id, unit = kind, count = count, barracksId = best.id, by = by })
 	return true, nil, { barracksId = best.id, count = count }
