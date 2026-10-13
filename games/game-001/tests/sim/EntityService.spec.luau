@@ -364,6 +364,142 @@ describe("EntityService replication (G4)", function()
 		expect(spawns).toBe(before + 50)
 	end)
 
+	it("never replicates an id over 65535 (one warning) and goes on replicating the rest (#39 L1)", function()
+		local env, entities, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local sim = match.host.match.sim
+		sim._nextEntity = EntityServiceDef.MAX_ID - 1
+		local last = entities:spawn("citizen", "crimson", "farmer", Vector3.new(0, 0, 0)) -- 65535
+		local over = entities:spawn("citizen", "crimson", "farmer", Vector3.new(4, 0, 0)) -- 65536
+		local overSoldier = entities:spawn("soldier", "crimson", "soldier", Vector3.new(8, 0, 0))
+		expect({ last, over }).toEqual({ 65535, 65536 })
+		local spawnedIds = {}
+		entities.spawned:connect(function(id)
+			table.insert(spawnedIds, id)
+		end)
+		env.mock:advance(1)
+		local ids = {}
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" then
+				ids[e.id] = true
+			end
+		end
+		expect(ids[last]).toBe(true)
+		expect(ids[over]).toBeNil()
+		expect(ids[overSoldier]).toBeNil()
+		expect(table.find(spawnedIds, over)).toBeNil()
+		local warnings = 0
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "over 65535", 1, true) then
+				warnings += 1
+			end
+		end
+		expect(warnings).toBe(1) -- once per world, not per tick
+		local before = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		env.mock:advance(1)
+		expect(#sent(env, "Sim.Snapshot", SnapshotCodec.decode) > before).toBe(true) -- still replicating
+		expect(#assert(EventCodec.decode(entities:_fullState())).events > 0).toBe(true) -- GetEntities too
+	end)
+
+	it("an entity off the wire's range keeps replicating everything else (#39 L1)", function()
+		local env, entities = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local far = entities:spawn("citizen", "crimson", "farmer", Vector3.new(SnapshotCodec.MAX_COORD + 100, 0, 0))
+		local near = entities:spawn("citizen", "crimson", "farmer", Vector3.new(4, 0, 0))
+		local before = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		env.mock:advance(1) -- no "replication failed" error (afterEach checks the logs)
+		local recordIds = {}
+		local snapshots = sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		for i = before + 1, #snapshots do
+			for _, r in snapshots[i].decoded.records do
+				recordIds[r.id] = true
+			end
+		end
+		expect(recordIds[near]).toBe(true)
+		expect(recordIds[far]).toBeNil()
+		local spawned = {}
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" then
+				spawned[e.id] = true
+			end
+		end
+		expect(spawned[far]).toBe(true) -- it exists; only its position is held back
+		expect(env.mock:hasLog("warn", "off the wire's range")).toBe(true)
+	end)
+
+	it("a tick that fails to encode commits nothing; the next tick sends it all, signals once (#39 L1)", function()
+		local env, entities = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local spawnedIds = {}
+		entities.spawned:connect(function(id)
+			table.insert(spawnedIds, id)
+		end)
+		-- carrying a resource the wire has no code for (a programming mistake): this tick cannot be encoded
+		local id = entities:spawn("citizen", "crimson", "farmer", Vector3.new(0, 0, 0))
+		local c = entities:_sim().citizens[id]
+		c.carrying = { resource = "diamonds", amount = 1 }
+		local ok, err = pcall(function()
+			entities:replicate()
+		end)
+		expect(ok).toBe(false)
+		expect(tostring(err)).toContain("diamonds")
+		expect(spawnedIds).toEqual({}) -- nothing committed, no signal
+		local function spawnsOf(target)
+			local n = 0
+			for _, e in eventsOf(env) do
+				if e.type == "spawn" and e.id == target then
+					n += 1
+				end
+			end
+			return n
+		end
+		expect(spawnsOf(id)).toBe(0)
+		c.carrying = nil -- fixed
+		entities:replicate()
+		expect(spawnsOf(id)).toBe(1)
+		expect(spawnedIds).toEqual({ id })
+		entities:replicate()
+		expect(spawnsOf(id)).toBe(1)
+		expect(spawnedIds).toEqual({ id })
+	end)
+
+	it("sends at most MAX_RECORDS records a tick; the rest go out on the next ticks (#39 L1)", function()
+		local env, entities, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local max = EntityServiceDef.MAX_RECORDS
+		EntityServiceDef.MAX_RECORDS = 5
+		local ok, err = pcall(function()
+			local seen = {}
+			local total = 0
+			for _, k in match.host.match.sim.kingdoms do
+				total += #k.citizenIds + #k.unitIds
+			end
+			expect(total > 5).toBe(true)
+			local before = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+			for _ = 1, 20 do
+				entities:replicate()
+			end
+			local snapshots = sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+			for i = before + 1, #snapshots do
+				expect(#snapshots[i].decoded.records <= 5).toBe(true)
+				for _, r in snapshots[i].decoded.records do
+					seen[r.id] = true
+				end
+			end
+			local count = 0
+			for _ in seen do
+				count += 1
+			end
+			expect(count > 5).toBe(true) -- the capped rest went out on later ticks
+		end)
+		EntityServiceDef.MAX_RECORDS = max
+		assert(ok, err)
+	end)
+
 	it("sends reset before the new world's spawns when a match starts over", function()
 		local fast = {
 			phaseDurations = function()
