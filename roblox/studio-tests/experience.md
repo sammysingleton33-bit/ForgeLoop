@@ -75,11 +75,49 @@ Pass: screenshots reviewed (G5 note committed by FORGE-04 after the user shares 
 History:
 - 2026-10-12 FORGE-04: written (FL-0024).
 
-## E5 — AI Kingdoms feedback (moved)
-The kingdom-specific feedback moved to the game tree with CONTRACTS v0.4-g2 (D-026): sounds and VFX on citizens' work, the announcer, the music by match phase, and citizen reactions. That is FL-0062 (`games/game-001/src/{shared/Feedback,client/Controllers/{Feedback,Music,Announcer}*}`). Its Studio steps go into `games/game-001/STUDIO_PLAYTEST.md` through FORGE-05. The framework parts it uses are checked by E3 and E4.
+## E5 — AI Kingdoms feedback: announcer, work sounds and effects, music (FL-0062, game-001)
+Needs:
+- the game-001 build with AnnouncerService, AnnouncerController, FeedbackController and MusicController;
+- for real moments: FORGE-01's G9 producers (KingdomJoined, BuildingPlaced/Completed/Upgraded, UnitsRecruited, ObjectiveCaptured, MatchPhaseChanged, MatchEnded);
+- for citizens' work: EntityController (G4.1) with the cues `deposit`, `celebrate` and the proposed client-only `swing`;
+- InteractionController.gathered for the ruler's own gather;
+- sounds chosen or uploaded (user sounds handoff). Until then every sound is skipped on purpose, and the effects and toasts still show.
+
+The Studio debug panel (F8) has two commands for this section:
+- `fx.announce <kind>`: one sample moment. Kinds: buildingCompleted, buildingPlaced, defeat, keepUpgraded, kingdomFounded, objectiveCaptured, phase, rivalCaptured, unitsRecruited, victory.
+- `fx.burst`: six notices at once.
+
+Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Audience (G9 attribution) | placements and recruits: the co-rulers (the player who acted already has FORGE-03's toast); completions, upgrades and captures: the kingdom's members; a keep upgrade and a capture are also reported to rivals (a rival keep without its location); phases and the match end: everyone |
+| Celebrations | kingdom founded, keep upgraded, watchtower captured, victory, defeat |
+| Toasts | one line each; repeats coalesce ("House placed ×3"); silent when the moment has its own sound |
+| Deposits | at most one clink per 1.5 s |
+| Citizens' work sounds | at most one per citizen per 1.5 s, only within 150 studs of the camera focus (the centre of the aerial view, not the camera) |
+| Placements | the placer sees FORGE-03's own notice only; co-rulers get "<building> placed" with the placer's name |
+| Match end | Victory or Defeat only for a ruler who won or lost; a draw shows "A draw", a spectator "<kingdom> wins the match", both without the defeat music |
+| Pooled rigs | a released rig keeps no effect |
+| Music | Founding calm, Expansion build, Conflict/Endgame tension, Results calm; victory/defeat at once |
+
+Steps
+1. Play Solo. In F8, run `fx.announce kingdomFounded`: a gold burst over the ruler and "Emberhold is yours" with the founding horn (when chosen).
+2. Run `fx.burst`: at most 3 toasts, "House placed ×2", the newest on top, the warning ("Frostmere took a watchtower") above info.
+3. Run `fx.announce keepUpgraded`, then `objectiveCaptured`, then `victory`: each is a celebration (sound, effect, toast). The music changes to victory.
+4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. **One** toast for your own placement and **one** for your own recruit (FORGE-03's "House placed" and "3 soldiers recruited"). A co-ruler sees "House placed" and "+3 soldiers" with your name. The completion effect and the capture effect take your kingdom's colour.
+   - Zoom the aerial view all the way out: work sounds and glints at the citizens under the view still play.
+   - Join a match already in Conflict (a second client): the tension music plays at once, not only at the next phase.
+   - The capture that ends the slice brings three things at once for the capturer: the "Watchtower captured" celebration, the "Victory!" celebration with its music, and FORGE-03's slice summary. Note how the stack reads: whether one hides another, whether the order is clear, and whether the summary's winner line and the toasts say the same thing twice (FORGE-05, #49 low; also STUDIO_PLAYTEST §9 step 3).
+5. Watch citizens work from close up (40 studs) and far away (more than 150 studs): close up you hear the chops and hammering, with chips; far away, silence. Deposits at the storehouse clink at most about once a second and a half.
+6. Phase changes (with FORGE-01's MatchService, or its `match.phase` debug command): an announcement for Expansion, "War is declared" with the war horn at Conflict, and the music changes after its minimum dwell.
+
+Pass: all six hold. Note any sound that is too loud or repeats too often (the E3 levels), and any toast text that does not fit on a phone.
 
 History:
 - 2026-10-12 FORGE-04: moved to FL-0062 in the game tree (CONTRACTS v0.4-g2, D-026).
+- 2026-10-12 FORGE-04: back in this file for FL-0062 (game-001 feedback, announcer, music) with the fx.announce and fx.burst debug commands.
+- 2026-10-13 FORGE-04: FL-0062 merged (#49): one toast for your own placement and recruit (co-rulers get the announcer's); the end-of-slice stack check (FORGE-05, #49 low).
 
 ## E6 — Fresh-player onboarding walkthrough (FL-0025 framework, game-001 onboarding v2, FL-0092)
 Needs:
