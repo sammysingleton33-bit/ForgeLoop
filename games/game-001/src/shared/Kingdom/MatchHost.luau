@@ -18,6 +18,7 @@
 		host.preferredKingdom: ((player) -> KingdomId?)?   -- consulted when a player arrives (KingdomService:
 		                                                     party grouping); nil = balanced
 		host:kingdomOf(player): KingdomId?
+		host:buildingModel(buildingId): Model?              -- the Kit model drawing it (worldView), else nil
 		host:kingdomView(kingdomId): Kingdom?               -- CONTRACTS G2 Kingdom (a fresh copy)
 		host:kingdomsState(player?): { kingdoms: { Kingdom }, mine: KingdomId? }   -- Kingdom.State payload
 		host:assignTeam(player)                             -- Player.Team = the player's kingdom team (or none)
@@ -172,6 +173,11 @@ end
 -- ---------------------------------------------------------------- players
 function MatchHost:kingdomOf(player: any): string?
 	return self.match:kingdomOf(player.UserId)
+end
+
+-- The model drawing a building (WorldView; rebuilt when its level or stage changes), else nil.
+function MatchHost:buildingModel(buildingId: number): any?
+	return if self._view then self._view:find("building", buildingId) else nil
 end
 
 function MatchHost:_onPlayerAdded(player: any)

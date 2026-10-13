@@ -89,7 +89,16 @@ end
 
 -- Recording stand-in for the engine calls behind spawning (KingdomService.adapter).
 function useAdapter(env, kingdoms, parties: { [number]: string }?)
-	local log = { loads = {}, pivots = {}, attached = {}, died = {}, respawnDelay = 5 }
+	local log = {
+		loads = {},
+		pivots = {},
+		attached = {},
+		died = {},
+		respawnDelay = 5,
+		sits = {},
+		seatOf = {}, -- character -> seat (Humanoid.SeatPart)
+		occupant = {}, -- seat -> character (Seat.Occupant)
+	}
 	kingdoms.adapter = {
 		partyOf = function(player)
 			return (parties or {})[player.UserId]
@@ -125,6 +134,21 @@ function useAdapter(env, kingdoms, parties: { [number]: string }?)
 		end,
 		respawnDelay = function()
 			return log.respawnDelay
+		end,
+		sit = function(character, seat)
+			local old = log.seatOf[character]
+			if old then
+				log.occupant[old] = nil
+			end
+			log.seatOf[character] = seat
+			log.occupant[seat] = character
+			table.insert(log.sits, { character = character, seat = seat })
+		end,
+		seatOf = function(character)
+			return log.seatOf[character]
+		end,
+		occupant = function(seat)
+			return log.occupant[seat]
 		end,
 	}
 	return log
@@ -681,6 +705,75 @@ describe("KingdomService spawning (G3, D-026)", function()
 		env.mock:advance(1)
 		expect(#log.pivots).toBe(2)
 		expect(log.pivots[2].cframe.Position).toEqual(Layout.WORLD.plots.gold.spawn.Position)
+	end)
+
+	it("seats the ruler on the keep's Throne after spawn and again after a respawn (G13.6)", function()
+		local env, match, _, log = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local host = match.host
+		local keep = host:buildingModel(host.match.sim.kingdoms.crimson.keepId)
+		local throne = keep:FindFirstChild("Throne", true)
+		expect(throne:IsA("Seat")).toBe(true)
+		expect(#log.sits).toBe(1)
+		expect(log.sits[1].character).toBe(p1.Character)
+		expect(log.sits[1].seat).toBe(throne) -- after the pivot to the plot spawn and the regalia
+		expect(#log.pivots).toBe(1)
+		expect(#log.attached > 0).toBe(true)
+		local first = p1.Character
+		log.seatOf[first], log.occupant[throne] = nil, nil -- the dead ruler falls off the seat
+		env.spawn(log.died[first])
+		env.mock:advance(log.respawnDelay + 1)
+		expect(#log.sits).toBe(2)
+		expect(log.sits[2].character).toBe(p1.Character)
+		expect(log.sits[2].character).never.toBe(first)
+		expect(log.sits[2].seat).toBe(throne)
+		env.mock:advance(5) -- still seated: the checks do nothing more
+		expect(#log.sits).toBe(2)
+	end)
+
+	it("a co-ruler stands while the throne is held, and each kingdom has its own throne", function()
+		local env, match, _, log = boot({ parties = { [1] = "party", [2] = "party" } })
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local p2 = env.mock.players:add({ userId = 2 })
+		local p3 = env.mock.players:add({ userId = 3 })
+		env.mock:advance(1)
+		local host = match.host
+		expect(host:kingdomOf(p2)).toBe("crimson")
+		local sitters = {}
+		for _, entry in log.sits do
+			sitters[entry.character] = entry.seat
+		end
+		expect(sitters[p1.Character]).never.toBeNil()
+		expect(sitters[p2.Character]).toBeNil() -- p1 holds crimson's throne
+		local theirs = host:buildingModel(host.match.sim.kingdoms[host:kingdomOf(p3)].keepId)
+		expect(sitters[p3.Character]).toBe(theirs:FindFirstChild("Throne", true))
+		expect(sitters[p3.Character]).never.toBe(sitters[p1.Character])
+	end)
+
+	it("seats a seated ruler again when an upgrade rebuilds the keep; not one who got up", function()
+		local env, match, _, log = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local host = match.host
+		local sim = host.match.sim
+		local keepId = sim.kingdoms.crimson.keepId
+		local before = host:buildingModel(keepId)
+		sim.buildings[keepId].level = 2 -- the upgrade completes: the view rebuilds the keep model
+		env.mock:advance(TICK + KingdomServiceDef.THRONE_CHECK)
+		local after = host:buildingModel(keepId)
+		expect(after == before).toBe(false) -- (the old model is destroyed: compare, never print it)
+		expect(#log.sits).toBe(2)
+		expect(log.sits[2].character).toBe(p1.Character)
+		expect(log.sits[2].seat).toBe(after:FindFirstChild("Throne", true))
+		-- walk mode: the ruler got up; the next rebuild leaves them standing
+		log.seatOf[p1.Character] = nil
+		env.mock:advance(1)
+		sim.buildings[keepId].level = 3
+		env.mock:advance(TICK + KingdomServiceDef.THRONE_CHECK)
+		expect(host:buildingModel(keepId) == after).toBe(false)
+		expect(#log.sits).toBe(2)
 	end)
 
 	it("gives spectators no character", function()

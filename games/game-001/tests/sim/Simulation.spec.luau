@@ -263,6 +263,103 @@ describe("Kingdom/Simulation: construction", function()
 		F.assertInvariants(sim)
 	end)
 
+	it("an upgrade takes its Costs buildSeconds of builder work: two builders finish it sooner than one", function()
+		local Simulation = require("@game/ReplicatedStorage/Game/Sim/Simulation")
+		local function upgradeTime(builders: number): number
+			local sim, k = F.kingdom()
+			k.quotas.builder = builders
+			sim:advance(10) -- extra builders go back to the hauler pool
+			expect(F.jobs(sim, k).builder).toBe(builders)
+			local farm = sim:buildingsOf(k)[2]
+			assert(sim:startUpgrade(k, farm.id, 7))
+			local started = sim.time
+			while farm.level < 2 and sim.time - started < 600 do
+				sim:advance(0.5)
+				expect(#farm.builders <= Simulation.SITE_BUILDERS).toBe(true)
+			end
+			expect(farm.level).toBe(2)
+			F.assertInvariants(sim)
+			return sim.time - started
+		end
+		local tuning = F.catalog().tuning
+		local work = (Costs.building("farm", 2) :: any).buildSeconds
+		local one, two = upgradeTime(1), upgradeTime(2)
+		-- never faster than a full site of full-skill builders; a second builder on site speeds it up
+		expect(one >= work / (Simulation.SITE_BUILDERS * tuning.buildRate)).toBe(true)
+		expect(two < one).toBe(true)
+	end)
+
+	it("a citizen who farms a farm and then builds its upgrade takes a builder slot, not a farm slot", function()
+		local sim, k = F.kingdom()
+		local farm = sim:buildingsOf(k)[2]
+		local farmer = sim.citizens[k.citizenIds[1]]
+		sim:setActivity(farmer, "Farm", farm.id, "test")
+		expect(table.find(farm.workers, farmer.id)).never.toBeNil()
+		assert(sim:startUpgrade(k, farm.id, 7))
+		sim:setActivity(farmer, "Build", farm.id, "test")
+		expect(farmer.claim).toEqual({ kind = "site", id = farm.id })
+		expect(table.find(farm.builders, farmer.id)).never.toBeNil()
+		expect(table.find(farm.workers, farmer.id)).toBeNil()
+	end)
+
+	it("a builder on a full site keeps its build need; an outsider sees no open site", function()
+		local CitizenBrain = require("@game/ReplicatedStorage/Game/Sim/CitizenBrain")
+		local Simulation = require("@game/ReplicatedStorage/Game/Sim/Simulation")
+		local sim, k = F.kingdom()
+		local house = sim:placeBuilding(k, "house", 0, -35)
+		local on = {}
+		for i = 1, Simulation.SITE_BUILDERS do
+			local c = sim.citizens[k.citizenIds[i]]
+			sim:setActivity(c, "Build", house.id, "test")
+			table.insert(on, c)
+		end
+		local outsider = sim.citizens[k.citizenIds[Simulation.SITE_BUILDERS + 1]]
+		expect(sim:hasOpenSite(k)).toBe(false) -- full
+		expect(CitizenBrain.need(sim, k, "build", outsider)).toBe(0)
+		expect(CitizenBrain.need(sim, k, "build", on[1])).toBe(1)
+	end)
+
+	it("a gatherer with a partial load heads home when a site opens, then builds", function()
+		local sim, k = F.kingdom()
+		sim:advance(5) -- everyone has made their first decision (decisions are budgeted per tick)
+		local builder
+		for _, id in k.citizenIds do
+			if sim.citizens[id].job == "builder" then
+				builder = sim.citizens[id]
+				break
+			end
+		end
+		local tree
+		for id, node in sim.nodes do
+			if node.resource == "wood" then
+				tree = id
+				break
+			end
+		end
+		sim:setActivity(builder, "Gather", tree, "test")
+		builder.phase = "Work"
+		builder.x, builder.z = sim.nodes[tree].x, sim.nodes[tree].z
+		builder.carrying = { resource = "wood", amount = 1 }
+		builder.thinkAt = math.huge
+		local house = sim:placeBuilding(k, "house", 0, -35)
+		local before = sim:balance(k.id, "wood")
+		builder.thinkAt = sim.time -- its next look up
+		local looked = sim.time + 1
+		while builder.phase == "Work" and sim.time < looked do
+			sim:advance(sim.catalog.tuning.tickSeconds)
+		end
+		expect(builder.phase).toBe("Return")
+		expect(builder.activity).toBe("Gather") -- it delivers first, carrying what it had
+		expect(builder.carrying.amount < sim.catalog.tuning.carry).toBe(true)
+		local deadline = sim.time + 60
+		while builder.activity ~= "Build" and sim.time < deadline do
+			sim:advance(0.25)
+		end
+		expect(builder.activity).toBe("Build")
+		expect(builder.target).toBe(house.id)
+		expect(sim:balance(k.id, "wood") >= before + 1).toBe(true) -- the partial load was delivered
+	end)
+
 	it("takes every level's work from Costs.building(type, level).buildSeconds (CONTRACTS G13.5)", function()
 		local sim = F.kingdom()
 		for kind in sim.catalog.buildings do

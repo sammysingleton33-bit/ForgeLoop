@@ -14,6 +14,7 @@ Which steps are runnable after which PR:
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
+| K11 (build slots, throne) | FL-0081; the plot picker and build menu on slots are FORGE-03's |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
 The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
@@ -127,6 +128,29 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - While fed, citizens never walk to the keep to eat; food drops once per upkeep interval instead
   (FORGE-03's ProductionService). With no food, citizens' hunger rises: `Sim.Inspect` on a citizen
   shows mood falling.
+
+## K11 — Build on a slot, upgrade, sit on the throne (FL-0081; VS-1 rows 2 and 6; G13.5, G13.6)
+1. Play Solo. Watch your ruler right after spawning, from the aerial camera and up close.
+2. Reset the character (Esc → Reset) and watch the respawn.
+3. Tap a free plot (`BuildSlot` marker) and build a House with FORGE-03's menu, or call
+   `ForgeRemotes.Build.GetSlots:InvokeServer()` and then `Build.PlaceSlot:InvokeServer(slotId, "house")`
+   with an `S` slot's id.
+4. Try the same slot again, and a Barracks on an `S` slot.
+5. Upgrade the keep (`Build.Upgrade(keepId)`) once wood and stone allow it, and stay seated meanwhile.
+6. Press Space to stand up (walk mode), then let the keep upgrade again.
+
+**Expected:**
+- After spawning (and after every respawn) the ruler sits on the keep's throne, wearing crown and cape.
+  A co-ruler in the same kingdom stands at the keep door while the throne is taken.
+- The house stands on the plot, facing its street; the treasury drops by the house price once;
+  `Build.Slots` arrives with that slot `occupiedBy` the new building's id.
+- The taken slot answers `nil, "slot_occupied"`; the barracks answers `nil, "does_not_fit"`; neither costs
+  anything.
+- Builders walk to the site and work it together (two or three at once); the upgrade finishes in about its
+  `Costs` build time divided by the builders on site.
+- When the keep upgrade completes, the seated ruler sits on the new keep's throne within half a second.
+  A ruler who stood up stays standing after the next upgrade.
+- No errors in Output (`KingdomService: throne check failed` would be one).
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:
