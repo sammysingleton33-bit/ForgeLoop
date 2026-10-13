@@ -329,6 +329,32 @@ describe("MilitaryService: remotes (G8)", function()
 		expect(u.order.kind).toBe("Move")
 	end)
 
+	it("refuses a targetPos off the map (out_of_bounds): the soldier stays where it is", function()
+		local env, s, p1, sim, k = setup()
+		local keep = sim.buildings[k.keepId]
+		local u = Military.spawnUnit(sim, k, "soldier", keep.x + 30, keep.z)
+		u.order = { kind = "Hold" }
+		local calls = countCommands(s.match.host)
+		-- (3900, 0, 900) itself is 4002 long: the remote's vector3(4000) drops it before the simulation
+		fire(env, p1, "Army.Command", { u.id }, "move", Vector3.new(3900, 0, 900))
+		expect(calls.n).toBe(0)
+		fire(env, p1, "Army.Command", { u.id }, "move", Vector3.new(3500, 0, 900)) -- passes vector3(4000)
+		expect(calls.n).toBe(1) -- it reached the simulation, which refused it
+		env.mock:advance(5)
+		expect(u.order).toEqual({ kind = "Hold" })
+		expect(u.x).toBe(keep.x + 30)
+		expect(u.z).toBe(keep.z)
+		expect({ s.military:command(p1, { u.id }, { kind = "move", targetPos = Vector3.new(3900, 0, 900) }) }).toEqual({
+			false,
+			"out_of_bounds",
+		})
+		local b = sim.bounds
+		expect(b.maxX < 3900).toBe(true)
+		expect({
+			s.military:command(p1, { u.id }, { kind = "guard", targetPos = Vector3.new(b.maxX - 1, 0, b.maxZ - 1) }),
+		}).toEqual({ true })
+	end)
+
 	it("rate-limits Army.Recruit (burst 4) and Army.Command (burst 6) per player", function()
 		local env, s, p1, sim, k = setup()
 		local barracks = addBuilding(sim, k, "barracks")
@@ -432,6 +458,65 @@ describe("MilitaryService + ObjectiveService: Send-to-capture (VS-1 row 7)", fun
 	end)
 end)
 
+describe("MilitaryService: Send-to-capture without a target (FORGE-03 #63 button)", function()
+	it('Army.Command({}, "capture") sends the idle soldiers to the nearest tower the kingdom does not hold', function()
+		local env, s, p1, sim, k = setup()
+		local keep = sim.buildings[k.keepId]
+		local soldiers = {}
+		for i = 1, 3 do
+			local u = Military.spawnUnit(sim, k, "soldier", keep.x + 30, keep.z + i * 3)
+			table.insert(soldiers, u)
+		end
+		expect(#sim.objectives.list >= 1).toBe(true)
+		local function nearestUnowned(): any
+			local cx, cz = 0, 0
+			for _, u in soldiers do
+				cx += u.x / #soldiers
+				cz += u.z / #soldiers
+			end
+			local best, bestDistance = nil, math.huge
+			for _, o in sim.objectives.list do
+				local d = math.sqrt((o.x - cx) ^ 2 + (o.z - cz) ^ 2)
+				if o.owner ~= k.id and d < bestDistance then
+					best, bestDistance = o, d
+				end
+			end
+			return best
+		end
+		local calls = countCommands(s.match.host)
+		fire(env, p1, "Army.Command", {}, "capture")
+		expect(calls.n).toBe(1)
+		local target = assert(nearestUnowned())
+		for _, u in soldiers do
+			expect(u.order.kind).toBe("Capture")
+			expect(u.order.objectiveId).toBe(target.id)
+		end
+		env.mock:advance(5)
+		for _, u in soldiers do
+			expect(
+				math.sqrt((u.x - target.x) ^ 2 + (u.z - target.z) ^ 2)
+					< math.sqrt((keep.x + 30 - target.x) ^ 2 + (keep.z - target.z) ^ 2)
+			).toBe(true) -- on their way
+		end
+
+		-- every tower already the kingdom's: nothing changes, nothing breaks (afterEach: no error logs).
+		-- (Slice mode ends at the first capture, on the match's next update: no time passes here.)
+		for _, o in sim.objectives.list do
+			o.owner = k.id
+		end
+		for _, u in soldiers do
+			u.order = { kind = "Defend" }
+			u.target = nil
+		end
+		fire(env, p1, "Army.Command", {}, "capture")
+		expect(calls.n).toBe(2)
+		for _, u in soldiers do
+			expect(u.order).toEqual({ kind = "Defend" })
+		end
+		expect({ s.military:command(p1, {}, { kind = "capture" }) }).toEqual({ false, "no_objective" })
+	end)
+end)
+
 describe("ObjectiveService (G8)", function()
 	it("lists objectives in the G8 shape on GetObjectives and in Army.Objectives", function()
 		local env, _, p1, sim = setup()
@@ -484,6 +569,15 @@ describe("ObjectiveService (G8)", function()
 		local last = during[#during][1]
 		expect(last.progress[k.id] > 0).toBe(true)
 		expect(last.owner).toBeNil()
+		for i = start + 1, #during do -- progress goes out rounded to 0.01 (the raw value moves 0.0125 a tick)
+			for _, view in during[i] do
+				for _, value in view.progress do
+					expect(math.abs(value * 100 - math.floor(value * 100 + 0.5)) < 1e-9).toBe(true)
+				end
+			end
+		end
+		local raw = o.progress[k.id]
+		expect(last.progress[k.id]).toBeNear(raw, 0.005 + 0.0125 * 2 + 1e-9) -- the latest, give or take a tick
 
 		local waited = 0
 		while o.owner == nil and waited < 60 do

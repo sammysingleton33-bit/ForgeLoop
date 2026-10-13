@@ -23,12 +23,17 @@
 			"move", x, z              march to the point (several units spread around it)
 			"attack", targetId        a KingdomId (march on its keep), "building:<id>" or "entity:<id>"
 			                          (chase that enemy wherever it goes; afterwards guard where they stand)
-			"capture", targetId       an objective id: march into its zone, around its tower, and hold there
-			                          (Sim/Objectives counts them), fighting only near the zone
+			"capture", targetId?      an objective id, or none: the objective nearest the units' centroid
+			                          that the kingdom does not own (the VS-1 Send-to-capture button). March
+			                          into its zone, around its tower, and hold there (Sim/Objectives counts
+			                          them), fighting only near the zone; once the kingdom owns the objective
+			                          each unit guards its spot in the zone (a Guard order: idle again)
 			"guard", x?, z?           hold and defend the point (default: where each unit stands); they
 			                          fight within GUARD_RADIUS of it and return
-			errors: invalid_args, too_many_units, unknown_order, no_units, unknown_objective,
-			unknown_target, unknown_kingdom, not_at_war (also for one's own target)
+			A point (x, z) must lie inside sim.bounds (the map); units spread around one stay on the map.
+			errors: invalid_args, too_many_units, unknown_order, out_of_bounds, no_units, unknown_objective,
+			no_objective (capture without a target when the kingdom owns every objective), unknown_target,
+			unknown_kingdom, not_at_war (also for one's own target)
 
 	Combat rules (deterministic, no randomness)
 		- Only kingdoms at war fight (Simulation:atWar). Units pick the nearest enemy within aggro
@@ -286,7 +291,39 @@ local function objectiveOf(sim: any, id: any): any?
 	return nil
 end
 
--- Not busy: at home (Defend), holding or guarding without a fight, or done with a Move.
+-- The objective nearest the units' centroid that `kingdomId` does not own (the first listed on a tie).
+local function nearestUnowned(sim: any, kingdomId: string, units: { any }): any?
+	local cx, cz = 0, 0
+	for _, u in units do
+		cx += u.x
+		cz += u.z
+	end
+	cx, cz = cx / #units, cz / #units
+	local best, bestDistance = nil, math.huge
+	for _, o in (sim.objectives and sim.objectives.list) or {} do
+		if o.owner ~= kingdomId then
+			local d = dist(cx, cz, o.x, o.z)
+			if d < bestDistance then
+				best, bestDistance = o, d
+			end
+		end
+	end
+	return best
+end
+
+local function onMap(sim: any, x: number, z: number): boolean
+	local b = sim.bounds
+	return x >= b.minX and x <= b.maxX and z >= b.minZ and z <= b.maxZ
+end
+
+-- (x, z) moved onto the map (sim.bounds) if it lies outside
+local function clampToMap(sim: any, x: number, z: number): (number, number)
+	local b = sim.bounds
+	return math.clamp(x, b.minX, b.maxX), math.clamp(z, b.minZ, b.maxZ)
+end
+
+-- Not busy: at home (Defend), holding or guarding without a fight, or done with a Move. (A Capture
+-- turns into a Guard once the kingdom owns the objective: stepUnits.)
 function Military.isIdle(u: any): boolean
 	if not u.alive or u.target ~= nil then
 		return false
@@ -422,17 +459,21 @@ local function unitOrder(
 	if hasPoint and (not finite(x) or not finite(z)) then
 		return false, "invalid_args"
 	end
+	if hasPoint and not onMap(sim, x, z) then
+		return false, "out_of_bounds"
+	end
 	if targetId ~= nil and type(targetId) ~= "string" then
 		return false, "invalid_args"
 	end
 	-- the order for the i-th commanded unit (0-based)
 	local orderFor: (u: any, i: number) -> { [string]: any }
+	local objective: any? = nil -- capture: the objective to take
 	if kind == "move" then
 		if not hasPoint then
 			return false, "invalid_args"
 		end
 		orderFor = function(_u, i)
-			local px, pz = spread(x, z, i, 0, math.huge)
+			local px, pz = clampToMap(sim, spread(x, z, i, 0, math.huge))
 			return { kind = "Move", x = px, z = pz }
 		end
 	elseif kind == "guard" then
@@ -440,16 +481,19 @@ local function unitOrder(
 			if not hasPoint then
 				return { kind = "Guard", x = u.x, z = u.z }
 			end
-			local px, pz = spread(x, z, i, 0, math.huge)
+			local px, pz = clampToMap(sim, spread(x, z, i, 0, math.huge))
 			return { kind = "Guard", x = px, z = pz }
 		end
 	elseif kind == "capture" then
-		local o = objectiveOf(sim, targetId)
-		if o == nil then
-			return false, if targetId == nil then "invalid_args" else "unknown_objective"
+		if targetId ~= nil then
+			objective = objectiveOf(sim, targetId)
+			if objective == nil then
+				return false, "unknown_objective"
+			end
 		end
 		orderFor = function(_u, i)
 			-- around the tower that stands on the point (ObjectiveService), well inside the zone
+			local o = objective :: any
 			local outer = o.radius * CAPTURE_REACH
 			local px, pz = spread(o.x, o.z, i, math.min(TOWER_CLEARANCE, outer), outer)
 			return { kind = "Capture", objectiveId = o.id, x = px, z = pz }
@@ -466,6 +510,13 @@ local function unitOrder(
 	local units, ignored = orderedUnits(sim, kingdom, ids)
 	if #units == 0 then
 		return false, "no_units"
+	end
+	if kind == "capture" and objective == nil then
+		-- no target (Send-to-capture): the nearest objective the kingdom does not hold; none = no change
+		objective = nearestUnowned(sim, kingdom.id, units)
+		if objective == nil then
+			return false, "no_objective"
+		end
 	end
 	for i, u in units do
 		u.order = orderFor(u, i - 1)
@@ -812,6 +863,15 @@ local function stepUnits(sim: any, dt: number)
 		end
 		local def = sim.catalog.units[u.kind]
 		u.cooldown = math.max(0, u.cooldown - dt)
+		local order = u.order
+		if order.kind == "Capture" then
+			-- the capture is done once the kingdom owns the objective: guard the spot in the zone (idle,
+			-- so a later Send-to-capture can take the unit on to the next objective)
+			local o = objectiveOf(sim, order.objectiveId)
+			if o and o.owner == u.kingdomId then
+				u.order = { kind = "Guard", x = order.x, z = order.z }
+			end
+		end
 		-- defenders, guards and capturers only fight on the ground they hold (acquire skips the rest)
 		local target, kind = acquire(sim, u, def, leash(sim, u))
 		if target and kind then

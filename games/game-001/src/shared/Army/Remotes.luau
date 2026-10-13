@@ -10,17 +10,25 @@
 		Army.Command(unitIds: { integer } (≤ 50), kind: "move" | "attack" | "capture" | "guard",
 		             targetPos: Vector3?, targetId: string(1,32)?)        event, no answer
 		                                 unitIds = {} means every idle soldier of the caller's kingdom (the
-		                                 VS-1 Send-to-capture button: kind "capture", targetId = objective id);
-		                                 targetPos for move and guard; targetId for capture (objective id)
-		                                 and attack (KingdomId, "building:<id>" or "entity:<id>")
+		                                 VS-1 Send-to-capture button is ({}, "capture") with no targetId);
+		                                 targetPos for move and guard, inside the map (sim.bounds);
+		                                 targetId for attack (KingdomId, "building:<id>" or "entity:<id>")
+		                                 and, optionally, capture: an objective id, or none = the objective
+		                                 nearest the soldiers that the kingdom does not own (if it owns them
+		                                 all, nothing changes). An event: refusals are not sent back
 		Army.GetObjectives() -> ObjectiveService:list()
 	Server -> client
 		Army.Objectives({ { id, kind = "capture", position: Vector3, radius, owner: KingdomId?,
 		                    progress: { [KingdomId]: number } } })   every objective, to every player,
-		                                 when an owner or progress changes, at most 2 per second
-	Reasons: invalid_args, unknown_unit, not_found, not_owner, not_barracks, barracks_not_ready,
-	requires_barracks_level, population_cap, recruit_cap, cannot_afford, match_not_active, not_in_match,
-	kingdom_eliminated. Implemented by MilitaryService and ObjectiveService.
+		                                 when an owner or progress changes, at most 2 per second;
+		                                 progress 0..1 rounded to 0.01
+	Army.Recruit reasons: not_in_match, match_not_active, kingdom_eliminated, not_found, not_owner,
+	not_barracks, barracks_not_ready, population_cap, recruit_cap, cannot_afford (and, unreachable for
+	"soldier" through this remote's validation: requires_barracks_level, invalid_args, unknown_unit). Army.Command
+	refusals (Sim/Military UnitOrder: no_units, no_objective, out_of_bounds, unknown_objective,
+	unknown_target, unknown_kingdom, not_at_war, ...) stay on the server.
+	Handoff: production/handoffs/2026-10-13-forge-01-to-forge-03-army-refusal-codes.md.
+	Implemented by MilitaryService and ObjectiveService.
 ]]
 
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")

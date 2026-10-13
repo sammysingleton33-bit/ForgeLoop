@@ -22,7 +22,8 @@
 	Owner. On capture it is recoloured in place with Kit.setKingdomColor (the owner's colour); a new
 	match turns it neutral again.
 	Remotes (Army/Remotes.luau): Army.GetObjectives -> list(); Army.Objectives(list) to every player when
-	an owner or a progress (in whole percent) changes, at most BROADCAST_HZ times per second.
+	an owner or a progress (in whole percent) changes, at most BROADCAST_HZ times per second. list()
+	rounds every progress to 0.01 (whole percent), so a payload changes exactly when its signature does.
 	Events: G9 ObjectiveCaptured (objectiveId, KingdomId) is fired once per capture by the host's event
 	fan-out (Kingdom/MatchHost); `captured` mirrors it for server services.
 ]]
@@ -78,16 +79,25 @@ function ObjectiveService:_frame(o: any): CFrame
 	return frame :: CFrame
 end
 
+-- A progress (0..1) in whole percent: what clients see of it.
+local function percent(value: number): number
+	return math.floor(value * 100 + 0.5)
+end
+
 function ObjectiveService:list(): { { [string]: any } }
 	local out = {}
 	for _, o in Objectives.list(self:_sim()) do
+		local progress = {}
+		for kid, value in o.progress do
+			progress[kid] = percent(value) / 100 -- rounded to 0.01 for the wire
+		end
 		table.insert(out, {
 			id = o.id,
 			kind = "capture",
 			position = self:_frame(o).Position,
 			radius = o.radius,
 			owner = o.owner,
-			progress = o.progress,
+			progress = progress,
 		})
 	end
 	return out
@@ -142,8 +152,8 @@ function ObjectiveService:_signature(list: { { [string]: any } }): string
 		local progress = {}
 		for _, kid in order do
 			local value = view.progress[kid]
-			if value and value > 0 then
-				table.insert(progress, `{kid}={math.floor(value * 100)}`)
+			if value and percent(value) > 0 then
+				table.insert(progress, `{kid}={percent(value)}`)
 			end
 		end
 		table.insert(parts, `{view.id}:{view.owner or ""}:{table.concat(progress, ",")}`)

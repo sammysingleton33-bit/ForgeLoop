@@ -822,7 +822,11 @@ describe("Kingdom/Military: unit orders (UnitOrder, G8 Army.Command)", function(
 			{ "invalid_args", { u.id }, "move", nan, 0 },
 			{ "invalid_args", { u.id }, "move", 0, math.huge },
 			{ "invalid_args", { u.id }, "guard", 0 },
-			{ "invalid_args", { u.id }, "capture" },
+			{ "out_of_bounds", { u.id }, "move", 3900, 900 }, -- the map is ±1024 here
+			{ "out_of_bounds", { u.id }, "move", 0, -1025 },
+			{ "out_of_bounds", { u.id }, "guard", 1024.5, 0 },
+			{ "out_of_bounds", { u.id }, "capture", -2000, 0, "tower" },
+			{ "no_objective", { u.id }, "capture" }, -- no target and no objective it does not own
 			{ "unknown_objective", { u.id }, "capture", nil, nil, "tower" },
 			{ "invalid_args", { u.id }, "attack" },
 			{ "unknown_target", { u.id }, "attack", nil, nil, "k9" },
@@ -970,7 +974,135 @@ describe("Kingdom/Military: unit orders (UnitOrder, G8 Army.Command)", function(
 		sim:advance(10)
 		for _, u in units do
 			expect(near(u, tower.x, tower.z)).toBeLessThanOrEqual(tower.radius) -- still holding it
+		end
+	end)
+
+	it("capture: once the kingdom owns the objective the order ends, each unit guards its spot (idle)", function()
+		local sim, k1 = world()
+		Objectives.install(sim, {
+			{ id = "tower", x = 0, z = -200, captureSeconds = 10 },
+			{ id = "mill", x = 200, z = -200, captureSeconds = 10 },
+		})
+		local tower = sim.objectives.list[1]
+		local units = {}
+		for i = 1, 3 do
+			table.insert(units, unit(sim, k1, "soldier", i * 3, -40, { kind = "Defend" }))
+		end
+		assert(order(RULER, sim, {}, "capture", nil, nil, "tower"))
+		local spots = {}
+		for _, u in units do
+			table.insert(spots, { x = u.order.x, z = u.order.z })
+		end
+		sim:advance(8) -- marching
+		for _, u in units do
 			expect(Military.isIdle(u)).toBe(false)
+		end
+		while tower.owner == nil and sim.time < 60 do
+			sim:advance(0.25)
+		end
+		expect(tower.owner).toBe("crimson")
+		sim:advance(0.25)
+		for i, u in units do
+			expect(u.order).toEqual({ kind = "Guard", x = spots[i].x, z = spots[i].z })
+			expect(Military.isIdle(u)).toBe(true)
+			expect(near(u, tower.x, tower.z)).toBeLessThanOrEqual(tower.radius) -- still standing on it
+		end
+		-- so Send-to-capture takes them on to the next objective
+		local ok, err, result = order(RULER, sim, {}, "capture")
+		expect(err).toBeNil()
+		expect(ok).toBe(true)
+		expect(result.count).toBe(3)
+		for _, u in units do
+			expect(u.order.kind).toBe("Capture")
+			expect(u.order.objectiveId).toBe("mill")
+		end
+	end)
+
+	it(
+		"capture without a target (Send-to-capture): the nearest objective it does not own, from the units' centroid",
+		function()
+			local sim, k1, k2 = world()
+			Objectives.install(sim, {
+				{ id = "west", x = -220, z = 0 }, -- 20 from the western unit, 120 from the centroid
+				{ id = "south", x = -100, z = 60 }, -- 60 from the centroid
+				{ id = "held", x = -100, z = 10 }, -- nearest of all, but already the kingdom's
+				{ id = "far", x = -100, z = -200 },
+			})
+			sim.objectives.list[3].owner = "crimson"
+			local west = unit(sim, k1, "soldier", -200, 0, { kind = "Defend" })
+			local east = unit(sim, k1, "soldier", 0, 0, { kind = "Defend" })
+			local busy = unit(sim, k1, "soldier", -100, 0, { kind = "Move", x = -100, z = 300 }) -- not idle
+			local rival = unit(sim, k2, "soldier", 300, 10, { kind = "Defend" })
+			F.events(sim)
+			local ok, err, result = order(RULER, sim, {}, "capture")
+			expect(err).toBeNil()
+			expect(ok).toBe(true)
+			expect(result).toEqual({ kind = "capture", count = 2, ignored = 0 })
+			for _, u in { west, east } do
+				expect(u.order.kind).toBe("Capture")
+				expect(u.order.objectiveId).toBe("south")
+				expect(math.sqrt((u.order.x + 100) ^ 2 + (u.order.z - 60) ^ 2)).toBeLessThanOrEqual(18 * 0.8 + 1e-6)
+			end
+			expect(busy.order.kind).toBe("Move")
+			expect(rival.order.kind).toBe("Defend")
+			expect(#F.events(sim, "UnitsOrdered")).toBe(1)
+			-- listed units work the same way; an objective another kingdom owns counts as not ours
+			sim.objectives.list[2].owner = "azure"
+			assert(order(RULER, sim, { busy.id }, "capture")) -- centroid (-100, 0): south is 60 away
+			expect(busy.order.objectiveId).toBe("south")
+			sim.objectives.list[2].owner = "crimson"
+			assert(order(RULER, sim, { busy.id }, "capture"))
+			expect(busy.order.objectiveId).toBe("west") -- 120 away; far is 200
+		end
+	)
+
+	it("capture without a target when the kingdom owns every objective changes nothing (no_objective)", function()
+		local sim, k1 = world()
+		Objectives.install(sim, { { id = "tower", x = 0, z = -200 }, { id = "mill", x = 200, z = -200 } })
+		for _, o in sim.objectives.list do
+			o.owner = "crimson"
+		end
+		local a = unit(sim, k1, "soldier", 10, 30, { kind = "Defend" })
+		local b = unit(sim, k1, "soldier", 12, 30, { kind = "Guard", x = 12, z = 30 })
+		F.events(sim)
+		expect({ order(RULER, sim, {}, "capture") }).toEqual({ false, "no_objective" })
+		expect({ order(RULER, sim, { a.id }, "capture") }).toEqual({ false, "no_objective" })
+		expect(a.order).toEqual({ kind = "Defend" })
+		expect(b.order).toEqual({ kind = "Guard", x = 12, z = 30 })
+		expect(F.events(sim)).toEqual({})
+		-- an explicit target the kingdom owns is still allowed (reinforcing it): they guard there
+		assert(order(RULER, sim, { a.id }, "capture", nil, nil, "mill"))
+		expect(a.order.objectiveId).toBe("mill")
+		sim:advance(0.25)
+		expect(a.order.kind).toBe("Guard")
+	end)
+
+	it("a point off the map is refused (out_of_bounds) and nobody moves; units sent to the edge stay on it", function()
+		local sim, k1 = world()
+		local units, ids = {}, {}
+		for i = 1, 6 do
+			local u = unit(sim, k1, "soldier", 1000, 1000 - i * 4, { kind = "Hold" })
+			table.insert(units, u)
+			table.insert(ids, u.id)
+		end
+		F.events(sim)
+		expect({ order(RULER, sim, ids, "move", 3900, 900) }).toEqual({ false, "out_of_bounds" })
+		expect({ order(RULER, sim, {}, "guard", 0, 3900) }).toEqual({ false, "out_of_bounds" })
+		expect(F.events(sim)).toEqual({})
+		sim:advance(5)
+		for i, u in units do
+			expect(u.order).toEqual({ kind = "Hold" })
+			expect(u.x).toBe(1000) -- nobody marched towards (3900, 900)
+			expect(u.z).toBe(1000 - i * 4)
+		end
+		-- the corner itself is on the map; the spread around it is kept on it too
+		assert(order(RULER, sim, ids, "move", sim.bounds.maxX, sim.bounds.maxZ))
+		for _, u in units do
+			expect(u.order.x <= sim.bounds.maxX and u.order.z <= sim.bounds.maxZ).toBe(true)
+		end
+		sim:advance(10)
+		for _, u in units do
+			expect(u.x <= sim.bounds.maxX + 1e-6 and u.z <= sim.bounds.maxZ + 1e-6).toBe(true)
 		end
 	end)
 
