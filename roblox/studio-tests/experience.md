@@ -262,7 +262,7 @@ Rules under test (headless: `games/game-001/tests/experience/RulerCamera.spec.lu
 | Rule | Value |
 |---|---|
 | Glide | about 0.6 s in and back; reduced motion cuts; durations clamped (≤ 3 s) |
-| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 10 on a phone, so 33–38 % from the top) |
+| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 12 on a phone: head at 28–30 % from the top, just under the HUD) |
 | Facing | in front of the citizen's face: the line from the citizen to your ruler, which the server turns them along (v0.4-g9e) |
 | Following | none once the citizen is released; without a ruler character, one turn within 1.5 s and 2 studs at most |
 | Restore | the saved overview focus, rotation and zoom |
@@ -273,7 +273,7 @@ Steps
 3. Settings → Reduced motion on: steps 1 and 2 cut instead of gliding.
 4. Pan during the glide in: the glide stops and the pan works.
 5. A citizen near the map edge: the view stays inside the map.
-6. Phone emulator: the citizen is above the conversation stage, not under it.
+6. Phone emulator: the citizen's head is just under the HUD stack. With short answers the whole citizen shows above the stage; with costed answers, at most the body is behind the question bubble.
 7. Answer, and keep the panel open after the reaction (the stage reads for several seconds). When the citizen is released and walks off, the camera stays still; it doesn't swing round to follow them.
 8. Open a conversation, switch to walk mode, close the panel, and come back to the aerial view a while later. The view is your normal overview, with no jump back to the old conversation.
 9. During a conversation, zoom in (wheel or pinch): the camera doesn't move out. Zoom out: it does.

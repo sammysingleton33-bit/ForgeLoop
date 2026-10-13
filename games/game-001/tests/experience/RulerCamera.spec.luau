@@ -679,34 +679,39 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		end
 	)
 
-	it("on a phone the citizen sits in the top 40 % of the screen, above the conversation stage (FL-0099)", function()
-		boot()
-		settle()
-		local citizen = THRONE + Vector3.new(30, 0, -20)
-		local function fromTop(point)
-			local p = camera.CFrame:PointToObjectSpace(point)
-			local ndc = (p.Y / -p.Z) / math.tan(math.rad(C.fieldOfView / 2))
-			return (1 - ndc) / 2
+	it(
+		"on a phone the citizen's head sits just under the HUD stack, above a costed conversation's stage (FL-0099)",
+		function()
+			boot()
+			settle()
+			local citizen = THRONE + Vector3.new(30, 0, -20)
+			local function fromTop(point)
+				local p = camera.CFrame:PointToObjectSpace(point)
+				local ndc = (p.Y / -p.Z) / math.tan(math.rad(C.fieldOfView / 2))
+				return (1 - ndc) / 2
+			end
+			controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone
+			controller:focusOn(citizen, { duration = 0 })
+			frames(2)
+			local head = fromTop(citizen + Vector3.new(0, 4, 0))
+			expect(head >= 0.27 and head <= 0.31).toBe(true) -- above a costed stage's top at 29-30 %
+			expect(fromTop(citizen + Vector3.new(0, 5, 0)) >= 0.26).toBe(true) -- below the HUD stack (26 %)
+			expect(fromTop(citizen) <= 0.40).toBe(true) -- whole citizen clear of a short stage at 47 %
+			local phone = controller:getFocus()
+			controller:restore({ duration = 0 })
+			controller._opts.viewportWidth, controller._opts.viewportHeight = 1920, 1080
+			controller:focusOn(citizen, { duration = 0 })
+			local desktop = CameraDef.conversationView(
+				citizen,
+				controller._target.yaw,
+				C.conversation,
+				controller._bounds,
+				O.boundsMargin
+			)
+			expect(controller:getFocus()).toBe(desktop.focus) -- desktop keeps the usual offset
+			expect(near(phone, desktop.focus, 1)).toBe(false)
 		end
-		controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone
-		controller:focusOn(citizen, { duration = 0 })
-		frames(2)
-		expect(fromTop(citizen) <= 0.40).toBe(true) -- the feet: clear of the stage at about 47 %
-		expect(fromTop(citizen + Vector3.new(0, 5, 0)) >= 0.1).toBe(true) -- the head stays on screen
-		local phone = controller:getFocus()
-		controller:restore({ duration = 0 })
-		controller._opts.viewportWidth, controller._opts.viewportHeight = 1920, 1080
-		controller:focusOn(citizen, { duration = 0 })
-		local desktop = CameraDef.conversationView(
-			citizen,
-			controller._target.yaw,
-			C.conversation,
-			controller._bounds,
-			O.boundsMargin
-		)
-		expect(controller:getFocus()).toBe(desktop.focus) -- desktop keeps the usual offset
-		expect(near(phone, desktop.focus, 1)).toBe(false)
-	end)
+	)
 
 	it("boots with no camera, input services or character (headless) and does nothing", function()
 		local bare = MockEnv.new({ seed = 60, isServer = false, localPlayer = { userId = 5803 } })

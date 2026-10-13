@@ -120,9 +120,12 @@ Def.DEFAULTS = table.freeze({
 	conversation = table.freeze({
 		zoom = 30,
 		offset = Vector2.new(0, -6), -- focus shift in screen studs (x right, y forward): the citizen above the centre
-		-- phones: the conversation stage starts about 47 % down the screen (FORGE-03, FL-0099), so the
-		-- citizen goes higher: at zoom 30 and 38° pitch, 10 studs put them at 33-38 % from the top
-		phoneOffset = Vector2.new(0, -10),
+		-- phones (FORGE-03's measured FL-0099 stage tops at 750 x 311: 47 % with short answers, 29-30 %
+		-- with costed or long ones; the HUD stack ends at 26 %): the head goes just under the HUD. At
+		-- zoom 30 and 38° pitch, 12 studs put the head at 28-30 % and the feet at 37 %, so a short
+		-- conversation shows the whole citizen and a long one hides at most the body (the portrait
+		-- shows the face)
+		phoneOffset = Vector2.new(0, -12),
 		durationSec = 0.6,
 	}),
 	overviewInBuild = true,
