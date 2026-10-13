@@ -222,7 +222,7 @@
       },
       "dimensions_studs": {
         "x": 46.838,
-        "y": 67.4,
+        "y": 68.6,
         "z": 42.316
       },
       "double_sided": false,
@@ -232,7 +232,7 @@
       },
       "generator": "castle_keep",
       "generator_version": 1,
-      "geometry_hash": "f677fb8beed92233",
+      "geometry_hash": "6f18083fce9cdf04",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
       "material": "M_forge_palette",
@@ -260,7 +260,7 @@
         ],
         "flag": [
           0.114,
-          67.4,
+          68.6,
           2.942
         ]
       },
@@ -283,8 +283,8 @@
       "castle_keep_blue_01",
       "castle_keep_yellow_01"
     ],
-    "mean_pair_diff": 0.1818,
-    "min_pair_diff": 0.1105,
+    "mean_pair_diff": 0.1824,
+    "min_pair_diff": 0.1097,
     "pass": true,
     "threshold": 0.08
   }

@@ -86,3 +86,20 @@ Final: full (non-quick) build, see `previews/castle_keep.jpg`.
 - Verdict: **PASS**
 - Scores: silhouette 4, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
 - Notes: Four distinct crowns at 115 studs: red needle-spire cluster, blue pyramid roofs with dormers, green half-timber manor with hipped roof (reads more manor/town hall than keep), yellow onion domes on chunky open drums. Grayscale: all four separable; red vs blue is the closest pair (cones vs pyramids). Door banners carry crown/star/oak/sun. Yellow sun = cream roundel with gold sunburst: not a C, not gold-on-gold, but at 115 studs the rays merge into a ringed dot/rosette. Yellow keep reads as a fantasy kremlin, not a mosque (no slender minarets), though the 1 big + 4 small dome pattern is church-like; consider squatter corner domes. The disc finial under the central-dome flag should get the same fix as tower/gatehouse (disc reads as a crescent in grayscale). Flags are colour-only stripes (identical in grayscale). 13.3-14.1k of 16k (83-88%), little headroom. Sheet: gameplay strip keeps overlap each other.
+
+## Round 6 (fixes from fresh review round 4)
+Reviewer advisory: the disc finial under the central-dome flag read as a crescent in grayscale (same issue as
+tower/gatehouse).
+
+Changes (only yellow_01; red/blue/green geometry hashes unchanged)
+- The central onion dome uses `dome(fin="orb_pole")`: a solid `gold_dark` orb on a 1.2-stud gold stem, with
+  the flagpole rising out of it (shared `_castle_common.orb_finial`, see castle_tower Round 7). The corner and back
+  domes keep their "simple" spike finials.
+- Two author rounds, shared with the tower: round 1 had the orb on the tip, round 2 added the stem so the flag keeps
+  its height.
+
+Tris: yellow_01 14120 -> 14088 / 16000. Variation min 0.1097 (blue vs yellow; was 0.1082). Full build: BUILD PASS.
+Images: `previews/castle_keep.jpg`, `renders/castle_keep/castle_keep_gameplay.png`; crops
+`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_keep_gp_finials.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_keep_gp_finials_g.png` (grayscale, 115 studs), `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_yellow_heroes_tops_g.png`.
+Author verdict: no crescent. At 115 studs the orb is a small dark knob under the flag. Not addressed (out of scope):
+the "1 big + 4 small domes" church-likeness and colour-only flag stripes.

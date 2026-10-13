@@ -88,3 +88,20 @@ Final: full (non-quick) build, see `previews/castle_gatehouse.jpg`.
 - Verdict: **PASS**; per-asset overrides: castle_gatehouse_yellow_01=NEEDS-WORK
 - Scores: silhouette 5, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
 - Notes: Four distinct crowns: red twin needle cones, blue central spire + pyramids, green wooden hoardings, yellow twin onion domes. Shield + two banners per gate; all emblems read at 78 studs and in grayscale. Yellow sun on cream roundel clearly reads as a sunburst at gameplay distance, never gold-on-gold. FAIL yellow_01: the bare gold disc finials crowning both main onion domes read as crescents in grayscale (only the dark rim separates them from the sky), giving crescent-on-dome, which is a mosque signifier. Fix: ball + spike finial or small rayed sun star. Minor: red_01 has no flag while the others do. 7.6-8.5k of 9k (84-95%).
+
+## Round 6 (fixes from fresh review round 4)
+Reviewer issue (yellow_01 NEEDS-WORK): the bare gold disc finials crowning both main onion domes read as crescents in
+grayscale.
+
+Changes (only yellow_01; red/blue/green geometry hashes unchanged)
+- The two main domes use `dome(fin="orb")`: the new shared `_castle_common.orb_finial`, which is a gold collar,
+  neck, a solid 8-sided `gold_dark` orb and a gold spike (see castle_tower Round 7). The rear-turret "simple"
+  finials are unchanged.
+- One author round. Gameplay grayscale shows a solid dark ball with a spike, and the hero view reads as an orb +
+  spike (Kremlin-style), with no disc and no ring.
+
+Tris: yellow_01 8530 -> 8470 / 9000. Variation min 0.0991 (unchanged). Full build: BUILD PASS.
+Images: `previews/castle_gatehouse.jpg`, `renders/castle_gatehouse/castle_gatehouse_gameplay.png`; crops
+`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_gate_gp_finials.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_gate_gp_finials_g.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_gate_finial_nn_g.png` (12x nearest,
+grayscale; compare the reviewer's `scratchpad/review/gate_finial_nn1_g.png`), `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_yellow_heroes_tops_g.png`.
+Author verdict: no crescent reading remains.

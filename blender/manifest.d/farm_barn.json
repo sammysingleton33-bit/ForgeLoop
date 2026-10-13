@@ -7,9 +7,9 @@
         "boxes": [
           {
             "center": [
-              9.039,
-              6.169,
-              1.752
+              9.525,
+              6.171,
+              1.624
             ],
             "name": "wall_left",
             "size": [
@@ -20,9 +20,9 @@
           },
           {
             "center": [
-              -10.01,
-              6.169,
-              1.752
+              -9.525,
+              6.171,
+              1.624
             ],
             "name": "wall_right",
             "size": [
@@ -33,9 +33,9 @@
           },
           {
             "center": [
-              -0.485,
-              6.169,
-              14.764
+              -0.0,
+              6.171,
+              14.637
             ],
             "name": "wall_back",
             "size": [
@@ -46,9 +46,9 @@
           },
           {
             "center": [
-              6.427,
-              6.169,
-              -11.261
+              6.912,
+              6.171,
+              -11.389
             ],
             "name": "front_l",
             "size": [
@@ -59,9 +59,9 @@
           },
           {
             "center": [
-              -7.398,
-              6.169,
-              -11.261
+              -6.912,
+              6.171,
+              -11.389
             ],
             "name": "front_r",
             "size": [
@@ -72,9 +72,9 @@
           },
           {
             "center": [
-              -0.485,
-              11.469,
-              -11.261
+              -0.0,
+              11.471,
+              -11.389
             ],
             "name": "front_header",
             "size": [
@@ -85,9 +85,9 @@
           },
           {
             "center": [
-              -0.485,
-              0.237,
-              1.752
+              -0.0,
+              0.239,
+              1.624
             ],
             "name": "floor",
             "size": [
@@ -98,9 +98,9 @@
           },
           {
             "center": [
-              -8.285,
-              1.387,
-              -14.661
+              -7.8,
+              1.389,
+              -14.789
             ],
             "name": "bales",
             "size": [
@@ -113,9 +113,9 @@
         "fidelity": "None"
       },
       "dimensions_studs": {
-        "x": 22.779,
-        "y": 30.407,
-        "z": 32.929
+        "x": 24.334,
+        "y": 34.484,
+        "z": 33.206
       },
       "double_sided": false,
       "files": {
@@ -124,56 +124,45 @@
       },
       "generator": "farm_barn",
       "generator_version": 2,
-      "geometry_hash": "b65ec9ab24d04a5a",
+      "geometry_hash": "4fee346ee0c3da99",
       "id": "farm_barn_01",
       "kingdom": "red",
       "material": "M_forge_palette",
       "params": {
+        "banner": "left",
         "cupola": true,
-        "doors": "open",
+        "doors": "open_r",
         "extra": null,
         "kingdom": "red",
         "loft": "closed",
-        "roof": "gambrel",
+        "roof": "half_hip",
         "walls": "wood"
       },
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/farm_barn.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7700,
       "sockets": {
         "deposit": [
-          -6.885,
-          0.037,
-          -14.561
+          -6.4,
+          0.039,
+          -14.689
         ],
         "door": [
-          -0.485,
-          0.037,
-          -14.561
+          -0.0,
+          0.039,
+          -14.689
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 5220,
-        "lod1": 1826
+        "lod0": 5012,
+        "lod1": 1754
       },
       "validation_pass": true
     },
@@ -374,22 +363,22 @@
         "boxes": [
           {
             "center": [
-              -10.479,
-              10.486,
-              9.077
+              -10.957,
+              6.029,
+              -6.375
             ],
-            "name": "silo",
+            "name": "granary",
             "size": [
-              7.2,
-              20.877,
-              7.2
+              6.7,
+              11.983,
+              7.5
             ]
           },
           {
             "center": [
-              11.848,
-              5.986,
-              1.698
+              13.07,
+              5.976,
+              1.704
             ],
             "name": "wall_left",
             "size": [
@@ -400,9 +389,9 @@
           },
           {
             "center": [
-              -6.979,
-              5.986,
-              1.698
+              -5.757,
+              5.976,
+              1.704
             ],
             "name": "wall_right",
             "size": [
@@ -413,9 +402,9 @@
           },
           {
             "center": [
-              2.435,
-              5.986,
-              14.577
+              3.657,
+              5.976,
+              14.583
             ],
             "name": "wall_back",
             "size": [
@@ -426,9 +415,9 @@
           },
           {
             "center": [
-              9.291,
-              5.986,
-              -11.181
+              10.513,
+              5.976,
+              -11.175
             ],
             "name": "front_l",
             "size": [
@@ -439,9 +428,9 @@
           },
           {
             "center": [
-              -4.422,
-              5.986,
-              -11.181
+              -3.2,
+              5.976,
+              -11.175
             ],
             "name": "front_r",
             "size": [
@@ -452,9 +441,9 @@
           },
           {
             "center": [
-              2.435,
-              11.286,
-              -11.181
+              3.657,
+              11.276,
+              -11.175
             ],
             "name": "front_header",
             "size": [
@@ -465,9 +454,9 @@
           },
           {
             "center": [
-              2.435,
-              0.247,
-              1.698
+              3.657,
+              0.237,
+              1.704
             ],
             "name": "floor",
             "size": [
@@ -478,9 +467,9 @@
           },
           {
             "center": [
-              -5.365,
-              1.397,
-              -14.581
+              -4.143,
+              1.387,
+              -14.575
             ],
             "name": "bales",
             "size": [
@@ -493,9 +482,9 @@
         "fidelity": "None"
       },
       "dimensions_studs": {
-        "x": 28.781,
-        "y": 27.024,
-        "z": 32.754
+        "x": 31.225,
+        "y": 26.231,
+        "z": 32.765
       },
       "double_sided": false,
       "files": {
@@ -504,14 +493,14 @@
       },
       "generator": "farm_barn",
       "generator_version": 2,
-      "geometry_hash": "fad3a674a2a13d3f",
+      "geometry_hash": "f2f1133b558ed1d0",
       "id": "farm_barn_03",
       "kingdom": "yellow",
       "material": "M_forge_palette",
       "params": {
         "cupola": false,
         "doors": "half",
-        "extra": "silo",
+        "extra": "granary",
         "kingdom": "yellow",
         "loft": "open",
         "roof": "tile",
@@ -520,40 +509,28 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/farm_barn.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7702,
       "sockets": {
         "deposit": [
-          -3.965,
-          0.047,
-          -14.481
+          -2.743,
+          0.037,
+          -14.475
         ],
         "door": [
-          2.435,
-          0.047,
-          -14.481
+          3.657,
+          0.037,
+          -14.475
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 6016,
-        "lod1": 2104
+        "lod0": 6340,
+        "lod1": 2218
       },
       "validation_pass": true
     },
@@ -566,7 +543,7 @@
             "center": [
               -12.586,
               3.139,
-              1.72
+              1.723
             ],
             "name": "aisle_wall",
             "size": [
@@ -579,7 +556,7 @@
             "center": [
               12.465,
               6.237,
-              1.72
+              1.723
             ],
             "name": "wall_left",
             "size": [
@@ -592,7 +569,7 @@
             "center": [
               -7.386,
               6.237,
-              1.72
+              1.723
             ],
             "name": "wall_right",
             "size": [
@@ -605,7 +582,7 @@
             "center": [
               2.54,
               6.237,
-              15.262
+              15.265
             ],
             "name": "wall_back",
             "size": [
@@ -618,7 +595,7 @@
             "center": [
               9.653,
               6.237,
-              -11.821
+              -11.819
             ],
             "name": "front_l",
             "size": [
@@ -631,7 +608,7 @@
             "center": [
               -4.573,
               6.237,
-              -11.821
+              -11.819
             ],
             "name": "front_r",
             "size": [
@@ -644,7 +621,7 @@
             "center": [
               2.54,
               11.537,
-              -11.821
+              -11.819
             ],
             "name": "front_header",
             "size": [
@@ -657,7 +634,7 @@
             "center": [
               2.54,
               0.3,
-              1.72
+              1.723
             ],
             "name": "floor",
             "size": [
@@ -670,7 +647,7 @@
             "center": [
               -5.26,
               1.45,
-              -15.221
+              -15.219
             ],
             "name": "bales",
             "size": [
@@ -684,8 +661,8 @@
       },
       "dimensions_studs": {
         "x": 29.907,
-        "y": 32.811,
-        "z": 34.125
+        "y": 32.711,
+        "z": 34.131
       },
       "double_sided": false,
       "files": {
@@ -694,13 +671,13 @@
       },
       "generator": "farm_barn",
       "generator_version": 2,
-      "geometry_hash": "55aa7eeb7a937644",
+      "geometry_hash": "56eee46604e329bb",
       "id": "farm_barn_04",
       "kingdom": "green",
       "material": "M_forge_palette",
       "params": {
         "cupola": true,
-        "doors": "open",
+        "doors": "open_l",
         "extra": "aisle",
         "kingdom": "green",
         "loft": "open",
@@ -710,40 +687,28 @@
       "preview": "previews/farm_barn.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/farm_barn.md",
-        "reviewer": "fresh-context subagent",
-        "round": 4,
-        "scores": {
-          "cohesion": 3,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 3,
-          "silhouette": 4,
-          "triangle_cost": 4,
-          "variation": 4
-        },
-        "verdict": "NEEDS-WORK"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7703,
       "sockets": {
         "deposit": [
           -3.86,
           0.1,
-          -15.121
+          -15.119
         ],
         "door": [
           2.54,
           0.1,
-          -15.121
+          -15.119
         ]
       },
       "texture": "exports/textures/forge_palette_v1.png",
       "triangles": {
         "budget_lod0": 8000,
-        "lod0": 6036,
-        "lod1": 2112
+        "lod0": 6292,
+        "lod1": 2202
       },
       "validation_pass": true
     }
@@ -758,8 +723,8 @@
       "farm_barn_03",
       "farm_barn_04"
     ],
-    "mean_pair_diff": 0.2052,
-    "min_pair_diff": 0.1551,
+    "mean_pair_diff": 0.1777,
+    "min_pair_diff": 0.1204,
     "pass": true,
     "threshold": 0.08
   }

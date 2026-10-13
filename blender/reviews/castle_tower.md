@@ -104,3 +104,26 @@ Final: full (non-quick) build, see `previews/castle_tower.jpg`.
 - Verdict: **PASS**; per-asset overrides: castle_tower_yellow_01=NEEDS-WORK, castle_tower_yellow_02=NEEDS-WORK
 - Scores: silhouette 5, variation 4, readability 4, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
 - Notes: Strongest kingdom silhouettes in the kit: red round + tall cone(s), blue square + pyramid(s), green round + timber hoarding, yellow onion. All separable in grayscale; banner emblems legible at 93 studs (sun = rayed cream roundel, reads as a sun/rosette, never a C). Yellow towers have chunky drums, not minarets. FAIL yellow_01 and yellow_02: the gold disc finial at the base of the flagpole on the onion dome is iso-luminant with the sky, so in grayscale only its dark rim shows and it reads as a crescent on an onion dome. Fix: replace the disc with a ball + spike (as castle_wall yellow uses) or a rayed sun star. Weakest pair: green_01 vs green_02 (both round hoarded drums; 02 only adds a lantern), make 02 square or two-stage. red_02 is 5772/6000 (96%) of budget.
+
+## Round 7 (fixes from fresh review round 4)
+Reviewer issue (yellow_01, yellow_02 NEEDS-WORK): the gold disc finial at the foot of the flagpole was iso-luminant
+with the sky, so in grayscale only its dark rim showed and it read as a crescent on an onion dome.
+
+Changes (only the yellow variants; red/blue/green geometry hashes unchanged)
+- `_castle_common.sun_finial` (collar + knob + vertical gold disc + spike) is gone. New `orb_finial`: gold collar,
+  neck, an 8-sided **orb in `gold_dark`** (darker than gold and sky, so the whole ball reads as a solid shape in
+  grayscale) and a gold spike. `dome(fin=...)` now takes only "orb" (ball + spike), "orb_pole" (orb with a socket;
+  the flagpole rises out of it and plays the spike) or "simple" (unchanged turret knob); anything else raises, so a
+  disc cannot come back by default.
+- Both yellow towers use `fin="orb_pole"`.
+- Author round 1: orb straight on the dome tip. Grayscale: solid ball + staff, no crescent; but the flag dropped
+  ~1.4 studs and the min silhouette diff fell 0.090 -> 0.0835 (green_02 vs yellow_01, threshold 0.08).
+- Author round 2: `ORB_POLE_NECK` = 1.2-stud stem under the orb, which restores the old flag height. Min diff is
+  back to 0.090 (blue_01 vs blue_02, as before).
+
+Tris: yellow_01 4950 -> 4918, yellow_02 5598 -> 5566 / 6000 (the orb costs less than the disc). Full build: BUILD PASS.
+Images: `previews/castle_tower.jpg`, `renders/castle_tower/castle_tower_gameplay.png`; crops
+`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_tower_gp_finials.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_tower_gp_finials_g.png` (grayscale, gameplay distance),
+`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_yellow_heroes_tops.png` / `_g.png` (hero tops); round 1 `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_tower_gp_finials_g.png`;
+before `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/before_tower_gp_finials_g.png`.
+Author verdict: no crescent reading in colour or grayscale at gameplay or hero distance. The orb + staff reads as a royal orb.

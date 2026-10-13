@@ -81,3 +81,40 @@ Final full build: 5220-6036 tris / 8000, variation min 0.154, BUILD PASS.
 - Verdict: **NEEDS-WORK**; per-asset overrides: farm_barn_02=PASS
 - Scores: silhouette 4, variation 4, readability 3, proportions 4, palette 4, detail_density 4, cohesion 3, triangle_cost 4
 - Notes: Distinct roofs (red gambrel, blue thatch gable + woodshed, yellow plastered gable + domed silo, green gable + cupola + bake oven), good doors and props. FAIL readability: kingdom identity is colour-only for 3 of 4. barn_01 (red) and barn_04 (green) carry no emblem in either view. barn_03 (yellow) has its sun banner only on the silo side, which is hidden at the gameplay camera. In grayscale only barn_02 (blue, star banner by the door) can be assigned to a kingdom. Fix: put a kingdom banner or shield beside the main doors on every barn (crown/oak/sun), matching barn_02. Cohesion 3: the gambrel roof, rooster weathervane and cylindrical domed silo read as American farm rather than medieval; consider a gable/hipped roof for 01 and a wattle granary or haystack in place of the silo for 03. 5.2-6.0k of 8k.
+
+## Round 5 (fixes from fresh review round 4)
+Reviewer issues: readability 3 (kingdom shown by colour only on 01/03/04; barn_03's sun banner was on the hidden silo
+side) and cohesion 3 (gambrel roof, rooster weathervane and domed cylindrical silo read as an American farm).
+
+Changes (barn_02 geometry hash unchanged: fedb9b8f00a1b234)
+- **Kingdom banner beside the main doors on every barn**, facing the gameplay camera: the same
+  `_farm_common.kingdom_banner(k, 6.2, 2.6)` + iron brackets barn_02 already had (crown / star / sun on its ivory
+  roundel / oak), at barn_02's spot (right pier) on 02, 03 and 04 and mirrored to the left pier on 01 (plan key
+  `banner: "left"`). barn_03's silo banner is gone with the silo. `_farm_common` was not touched.
+- Door states, so that no leaf covers or hides a banner: 01 `open_r` (left leaf shut beside its banner, right leaf
+  swung back flat), 04 `open_l` (mirror), 03 `half` (unchanged), 02 `closed` (unchanged).
+- 01: the gambrel is replaced with a **half-hipped (jerkinhead) red tile roof** (new `half_hip_roof`: 55 deg sides
+  in 6 stepped courses, 60 deg hips clipped at 70 % of the rise, ridge and hip caps, hip fascias, barge boards).
+  The gable wall is a trapezoid up to the clip line, and the loft hoist beam drops 0.4 to clear the hip eave.
+- 03: the domed silo is replaced with a **raised timber granary on six mushroom staddle stones** next to the barn
+  front (+X), visible from the gameplay camera: whitewashed timber frame with braces, a gold tile gable roof, a
+  goldenrod plank door with iron strap hinges, a gable hatch, detached stone steps (the classic rat gap) and two
+  burlap sacks.
+- 01/04: the rooster + compass arms on the ridge louvre become a **swallowtail pennant vane** in the kingdom cloth
+  with an iron knob.
+- Author round 1 (`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_barn_gp_g.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_barn04_gp.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_barn03_granary.png`,
+  `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r1_barn01_hip.png`): the right leaf propped at 92 deg hid barn_04's banner from the gameplay camera, and would
+  do the same to barn_01 from the left. The granary's diagonal door brace read as a letter "Z", its sacks read as
+  white jugs, the staddles were too short to read, and the barge boards poked up as "ears" at the hip corners.
+- Author round 2: the one-leaf-shut door states above, a plank door with strap hinges, `cloth_brown` sacks,
+  staddles 2.1 -> 2.7, the granary moved to the front half, and barge boards ending under the hip eave.
+
+Tris (budget 8000): 01 5220 -> 5012, 02 5276 (same), 03 6016 -> 6340, 04 6036 -> 6292.
+Variation min 0.1204 (03 vs 04; threshold 0.08). Full build: BUILD PASS.
+Images: `previews/farm_barn.jpg`, `renders/farm_barn/farm_barn_0N_hero.png`, `farm_barn_gameplay.png`; crops
+`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_barn_gp_g.png` and `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_banners_gp_g.png` (grayscale gameplay: crown / star / sun roundel / oak all read),
+`/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_barn03_gp.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_barn03_granary.png`, `/tmp/claude-0/-home-user/168e0311-22ac-55e3-a72d-3403925c3328/scratchpad/fix5/r2_barn01_hip.png`.
+Author verdict: each barn's kingdom reads in grayscale at 75 studs. Cohesion now reads as a medieval farmstead (half
+hip, granary on staddles, pennant vane). Known nit: tiny tile-corner tabs at the hip eave corners of barn_01 show in
+the hero close-up but not at gameplay distance. The ridge louvre on 01/04 is kept; it is plausible for medieval but
+still the most "farm-generic" element.
