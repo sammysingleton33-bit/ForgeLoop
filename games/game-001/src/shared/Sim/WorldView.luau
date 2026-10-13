@@ -30,6 +30,7 @@
 		view:find(kind, id): Instance?    -- kind "node" | "building" | "entity"
 		view:count(): number           -- live entity parts (specs)
 		view:destroy()
+		WorldView.placeModel(model, cframe)   -- moves a Kit model's pivot onto cframe without PivotTo (Lune too)
 	Positions: simulation X/Z map to world X/Z; Y is groundY plus half the part height.
 ]]
 
@@ -127,6 +128,7 @@ local function placeModel(model: any, cf: CFrame)
 		end
 	end
 end
+WorldView.placeModel = placeModel
 
 -- The Kit stage for a building: 1..3 while it is first being built, else "complete".
 function WorldView.stageOf(sim: any, b: any): number | string
