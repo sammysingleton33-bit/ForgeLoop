@@ -22,7 +22,7 @@ _Onboarding v2 (D-030, FL-0092)._ The player rules from the throne in the aerial
 
 | Time | Player experiences | System |
 |---|---|---|
-| 0:00 | The view opens high above their own keep, with the ruler seated on the throne (regalia in kingdom colours). Founding horn; card "Welcome, ruler. Your kingdom awaits." Calm music | step `Spawn` on `KingdomJoined` (auto); RulerCameraController `overview`; MusicController `Founding → calm` (planned FL-0062, #49) |
+| 0:00 | The view opens high above their own keep, with the ruler seated on the throne (regalia in kingdom colours). Founding horn; card "Welcome, ruler. Your kingdom awaits." Calm music | step `Spawn` on `KingdomJoined` (auto); RulerCameraController `overview`; MusicController `Founding → calm` (FL-0062, #49) |
 | 0:02–0:20 | "Tap a citizen to see what they think". A tap opens the citizen card: name, job, mood, loyalty | step `InspectCitizen` (client action `CitizenInspected`, sent by InputModeController's selection) |
 | ~0:20 | **First meaningful interaction** (design estimate ≤ 30 s, checked by `Onboarding.validate` on the sum of `expectSec`; real timing from the OnboardingStep logs in playtests) | |
 | 0:20–1:10 | "Build on a free plot", with the nearest free plot marker highlighted. Tap it, pick a House or a Farm and confirm: a thunk and dust, then builders walk over | step `BuildOnPlot` (G9 `BuildingPlaced`, `placedBy`; BuildSlot tag, `Build.PlaceSlot` FL-0081) |
@@ -49,24 +49,24 @@ FORGE-04 hooks only these signals (CONTRACTS G4.1, G8, G9, G13.8):
 
 It never touches `Sim.*`. Everything plays through the framework AudioController, VFXController and NotificationController (CONTRACTS G11: no game-tree duplicates).
 
-**Transport.** Client UI never reads G9 directly (G9: clients learn through G8 remotes). Server-side G9 moments reach clients through one relay, planned (#49): AnnouncerService fires the `Feedback.Moment` serverEvent (remote area `Feedback`, declared in `games/game-001/src/shared/Feedback/Remotes.luau`, FL-0062 #49) to the players the moment is about, with a primitive payload (kind, kingdom, buildingType?, count?, position?). The server decides each moment's audience (own kingdom, rivals, everyone) in `Feedback/Moments.luau`, including the phase moments; the client compares the payload's kingdom with `Kingdom.State.mine` only to pick the mine or rival presentation. Music reads `Match.State` / `Match.GetState`, never G9.
+**Transport.** Client UI never reads G9 directly (G9: clients learn through G8 remotes). Server-side G9 moments reach clients through one relay (FL-0062, #49): AnnouncerService fires the `Feedback.Moment` serverEvent (remote area `Feedback`, declared in `games/game-001/src/shared/Feedback/Remotes.luau`, FL-0062 #49) to the players the moment is about, with a primitive payload (kind, kingdom, buildingType?, count?, position?). The server decides each moment's audience (own kingdom, rivals, everyone) in `Feedback/Moments.luau`, including the phase moments; the client compares the payload's kingdom with `Kingdom.State.mine` only to pick the mine or rival presentation. Music reads `Match.State` / `Match.GetState`, never G9.
 
-**Distances** are measured from the camera focus point (RulerCameraController:getFocus() in the overview; the camera in walk mode), never from the camera position or the seated ruler. CitizenBubbleController does this; FeedbackController, planned (#49), too. (EntityController's LOD still measures from the ruler: #39 M1, kept in the user build notes, D-038 (6).)
+**Distances** are measured from the camera focus point (RulerCameraController:getFocus() in the overview; the camera in walk mode), never from the camera position or the seated ruler. CitizenBubbleController and FeedbackController (#49) both do this. (EntityController's LOD still measures from the ruler: #39 M1, kept in the user build notes, D-038 (6).)
 
 | Signal | Transport | Mine | Against me / rival | Notes | System |
 |---|---|---|---|---|---|
-| `KingdomJoined` (me) | Feedback.Moment | founding horn, claim sparkle, "Your kingdom is founded" | — | once per session | planned FL-0062 (#49) |
-| `InteractionController.gathered` | local | chop / mine / harvest sound, chips, "+N Wood" float | — | one sound per 1.5 s per resource (coalescing) | planned FL-0062 (#49) |
-| `EntityController.event` work loop (chop, mine, hammer) | local | positional work sounds near the focus, cheap particles | quieter by distance (roll-off) | culled beyond 150 studs from the camera focus | planned FL-0062 (#49) |
-| `EntityController.event` `deposit` | local | small clink + coin glint at the storehouse | — | coalesced; a busy storehouse never chatters | planned FL-0062 (#49) |
-| `EntityController.event` `celebrate` | local | cheer, a speech bubble over a few citizens | — | keep level 2 (G5) | planned FL-0062 (#49) |
-| `BuildingPlaced` | Feedback.Moment | co-rulers: thunk + dust, toast with the placer's name; the placer: FORGE-03's "House placed" toast only | dust only | `placedBy` me → onboarding | planned FL-0062 (#49) |
-| `BuildingCompleted` | Feedback.Moment | flourish + sparkle, toast "House complete" (×N within 2 s) | sparkle only, within 250 studs of the focus | | planned FL-0062 (#49) |
-| `BuildingUpgraded` (keep) | Feedback.Moment | royal fanfare, golden column, small camera shake request | toast naming the kingdom, e.g. "Frostmere's keep reached level 2" | the biggest moment before a capture | planned FL-0062 (#49) |
-| `UnitsRecruited` | Feedback.Moment | co-rulers: horn + dust stomp, "+3 soldiers" with the recruiter's name; the recruiter: FORGE-03's "3 soldiers recruited" toast only | — | one toast per action: the player who acted never gets the announcer's line too | planned FL-0062 (#49) |
-| `ObjectiveCaptured` | Feedback.Moment | capture sting, recolour sparkle with the kingdom's banner emblem, celebration, announcer | low horn, warning toast naming the kingdom | the slice ends here (G3) | planned FL-0062 (#49) |
-| `MatchPhaseChanged` | Match.State | announcer line + music state | same | e.g. at Conflict, "War is declared" only when PvP is on (PACING §4) | planned FL-0062 (#49) |
-| `MatchEnded` | Feedback.Moment, Match.State | victory / defeat music and presentation | | VS-1: the slice summary | planned FL-0062 (#49) |
+| `KingdomJoined` (me) | Feedback.Moment | founding horn, gold burst, "Emberhold is yours" | — | once per session | built FL-0062 (#49) |
+| `InteractionController.gathered` | local | chop / mine / harvest sound, chips, "+N Wood" float | — | one sound per 1.5 s per resource (coalescing) | built FL-0062 (#49) |
+| `EntityController.event` work loop (chop, mine, hammer) | local | positional work sounds near the focus, cheap particles | quieter by distance (roll-off) | culled beyond 150 studs from the camera focus | built FL-0062 (#49); the client-only `swing` cue waits on FORGE-01 |
+| `EntityController.event` `deposit` | local | small clink + coin glint at the storehouse | — | coalesced; a busy storehouse never chatters | built FL-0062 (#49) |
+| `EntityController.event` `celebrate` | local | cheer (one per 0.5 s) and a burst at each citizen near the view; the cheer pose (FL-0091, with FORGE-01's `playPose`) | — | keep level 2 (G5) | built FL-0062 (#49); a speech bubble is not built |
+| `BuildingPlaced` | Feedback.Moment | co-rulers: thunk + dust, toast with the placer's name; the placer: FORGE-03's "House placed" toast only | dust only | `placedBy` me → onboarding | built FL-0062 (#49); the rival's dust is not built (rivals get no placement moment) |
+| `BuildingCompleted` | Feedback.Moment | flourish + sparkle, toast "House complete" (×N within 2 s) | sparkle only, within 250 studs of the focus | | built FL-0062 (#49); the rival sparkle is not built (E-M3, spec pending) |
+| `BuildingUpgraded` (keep) | Feedback.Moment | royal fanfare, golden column, small camera shake request | toast naming the kingdom, e.g. "Frostmere's keep reached level 2" | the biggest moment before a capture | built FL-0062 (#49); the camera shake is not built (no preset requests one) |
+| `UnitsRecruited` | Feedback.Moment | co-rulers: horn + dust stomp, "+3 soldiers" with the recruiter's name; the recruiter: FORGE-03's "3 soldiers recruited" toast only | — | one toast per action: the player who acted never gets the announcer's line too | built FL-0062 (#49); the horn only: the dust stomp needs a rally position, which G9 `UnitsRecruited` doesn't carry |
+| `ObjectiveCaptured` | Feedback.Moment | capture sting, recolour sparkle with the kingdom's banner emblem, celebration, announcer | low horn, warning toast naming the kingdom | the slice ends here (G3) | built FL-0062 (#49), in the kingdom's colour; the emblem on the effect is not built |
+| `MatchPhaseChanged` | Match.State | announcer line + music state | same | e.g. at Conflict, "War is declared" only when PvP is on (PACING §4) | built FL-0062 (#49) |
+| `MatchEnded` | Feedback.Moment, Match.State | victory / defeat music and presentation | | VS-1: the slice summary | built FL-0062 (#49) |
 | Crown Arena (G12.5 `ArenaStarted` / `DuelEnded`) | VS-2 | arena intro, crowd director, chants and stingers, crowning payoff (crown-arena.md §7) | | format, winner rule and support strength are PROVISIONAL (§16.9) | VS-2 |
 | `EntityController.released` | local | clean-up of any effect attached to that rig | | pooled rigs | built (CitizenBubbleController; FeedbackController in #49) |
 
@@ -102,7 +102,7 @@ The living-kingdom consequences of `design/living-kingdom.md` §5 (placards, gru
   - 8 voices plus 1 music track; the oldest voice of strictly lower priority is stolen;
   - at most 2 ambience beds (birds, river, wind);
   - cooldowns and per-sound instance caps.
-- **Music** (MusicController maps MatchPhase from `Match.State` → state; planned FL-0062, #49):
+- **Music** (MusicController maps MatchPhase from `Match.State` → state; FL-0062, #49):
   - Founding → calm, Expansion → build, Conflict / Endgame → tension;
   - battle while our soldiers fight or our lands are raided, ringing out 8 s after the fight;
   - an arena state for the Crown Arena (VS-2);
