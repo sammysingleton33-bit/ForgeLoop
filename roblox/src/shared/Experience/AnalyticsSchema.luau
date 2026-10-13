@@ -16,7 +16,10 @@
 			                             steps: { string }? (required unless kind = "onboarding"),
 			                             fields: { string }?, sessionTtlSec: number? } },
 			track = { Rule },   -- bus event -> funnel step or custom event (AnalyticsRouter)
-			session = { startEvent: string?, endEvent: string?, returnFunnel: string? }?,
+			session = { startEvent: string?, endEvent: string?, returnFunnel: string?,
+			            startOn: string?,      -- bus event whose first argument is the player (default PlayerReady)
+			            leftEvent: string?, leftInfo: ((player, ctx) -> { [string]: any }?)? }?,
+			            -- at session end, before endEvent: leftInfo's fields as leftEvent (nil = nothing)
 			subjects = { [eventName]: resolver }?,  -- game resolvers for its own events (Experience/Subjects)
 			limits = { perPlayerPerMinute: number?, safety: number?, customReserve: number? }?,
 		}
@@ -284,14 +287,24 @@ local function checkRules(config: any, knownEvents: { string }, problems: { stri
 	end
 end
 
-local function checkSession(config: any, problems: { string })
+local function checkSession(config: any, knownEvents: { string }, problems: { string })
 	local session = config.session
 	if session == nil then
 		return
 	end
 	local events = if type(config.events) == "table" then config.events else {}
 	local funnels = if type(config.funnels) == "table" then config.funnels else {}
-	for _, key in { "startEvent", "endEvent" } do
+	if
+		session.startOn ~= nil and (type(session.startOn) ~= "string" or not table.find(knownEvents, session.startOn))
+	then
+		table.insert(problems, `session.startOn: '{tostring(session.startOn)}' must name a declared GameEvents event`)
+	end
+	if (session.leftEvent == nil) ~= (session.leftInfo == nil) then
+		table.insert(problems, "session.leftEvent and session.leftInfo go together")
+	elseif session.leftInfo ~= nil and type(session.leftInfo) ~= "function" then
+		table.insert(problems, "session.leftInfo: must be a function (player, ctx) -> fields?")
+	end
+	for _, key in { "startEvent", "endEvent", "leftEvent" } do
 		if session[key] ~= nil and events[session[key]] == nil then
 			table.insert(problems, `session.{key}: unknown event '{tostring(session[key])}'`)
 		end
@@ -312,7 +325,7 @@ function AnalyticsSchema.validate(config: any, knownEvents: { string }): { strin
 	checkEvents(config, problems)
 	checkFunnels(config, problems)
 	checkRules(config, knownEvents, problems)
-	checkSession(config, problems)
+	checkSession(config, knownEvents, problems)
 	return problems
 end
 

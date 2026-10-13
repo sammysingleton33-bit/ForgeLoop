@@ -13,8 +13,9 @@ Headless evidence already in place (not a substitute for these steps): Lune spec
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. When FORGE-01's PlayerReady exists: `analytics event SessionStart ... sent=true`.
-4. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
+3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
+4. Play: one `analytics funnel VS1` line the first time each of gather, place, complete, recruit and capture happens, never twice.
+5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 ## E2 — Settings (FL-0024)
