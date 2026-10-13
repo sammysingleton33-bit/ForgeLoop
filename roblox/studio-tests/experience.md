@@ -94,6 +94,7 @@ Steps
 4. With FORGE-01's producers: place a House, wait for it to finish, recruit 3 soldiers and capture. Each step gives a sound, an effect at the building or rally and a toast. **One** toast for your own placement and **one** for your own recruit (FORGE-03's "House placed" and "3 soldiers recruited"). A co-ruler sees "House placed" and "+3 soldiers" with your name. The completion effect and the capture effect take your kingdom's colour.
    - Zoom the aerial view all the way out: work sounds and glints at the citizens under the view still play.
    - Join a match already in Conflict (a second client): the tension music plays at once, not only at the next phase.
+   - The capture that ends the slice brings three things at once for the capturer: the "Watchtower captured" celebration, the "Victory!" celebration with its music, and FORGE-03's slice summary. Note how the stack reads: whether one hides another, whether the order is clear, and whether the summary's winner line and the toasts say the same thing twice (FORGE-05, #49 low).
 5. Watch citizens work from close up (40 studs) and far away (more than 150 studs): close up you hear the chops and hammering, with chips; far away, silence. Deposits at the storehouse clink at most about once a second and a half.
 6. Phase changes (with FORGE-01's MatchService, or its `match.phase` debug command): an announcement for Expansion, "War is declared" with the war horn at Conflict, and the music changes after its minimum dwell.
 
