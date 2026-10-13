@@ -607,7 +607,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		frames(math.ceil(CameraDef.FOLLOW_SEC / DT) + 1)
 		expect(controller._target.yaw).toBe(turned)
 		closed:fire(7)
-		-- released after the reaction (>= 4 s after Choose): the citizen walks off while the panel stays open
+		-- released (EndConversation, the 12 s hold of v0.4-g9f, or an alarm): the citizen walks off, panel open
 		rig.at, rig.facing = citizen, Vector3.new(1, 0, 0)
 		opened:fire(7, citizen)
 		local held = controller._target.yaw

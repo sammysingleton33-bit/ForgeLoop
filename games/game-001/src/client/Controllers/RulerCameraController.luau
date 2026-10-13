@@ -45,8 +45,10 @@
 	Without a ruler character it falls back to the rig's facing (EntityController:getModel) and
 	follows one turn at most (checked every FOLLOW_SEC, re-aimed past FOLLOW_DEGREES), only within
 	FOLLOW_WINDOW_SEC of the opening and while the citizen stays within FOLLOW_STUDS of where the
-	conversation opened: a citizen released after the reaction walks away without the camera. Reduced motion cuts instead of gliding. A pan,
-	a "go to" or a turn by the player ends the glide and the following. Glide durations are clamped
+	conversation opened: a citizen who walks away (released at EndConversation, after the hold's 12 s
+	of v0.4-g9f, or by an alarm) never takes the camera with them, and the framing holds for the
+	whole window. Reduced motion cuts instead of gliding. A pan, a "go to" or a turn by the player
+	ends the glide and the following. Glide durations are clamped
 	(Def.glideDuration). During a conversation the zoom may go down to the conversation's. Walk
 	mode ignores conversations; coming back to the overview drops any glide left from one.
 
@@ -75,7 +77,7 @@ Def.RENDER_NAME = "ForgeRulerCamera"
 Def.FOLLOW_SEC = 0.2 -- how often an open conversation re-reads the citizen's facing
 Def.FOLLOW_DEGREES = 10 -- a smaller turn keeps the current view
 Def.FOLLOW_STUDS = 2 -- a citizen further than this from where the conversation opened has been released
-Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this; release comes >= 4 s after Choose
+Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this (the hold starts at Converse)
 Def.MAX_GLIDE_SEC = 3 -- longest conversation glide (a NaN or infinite duration takes the default)
 Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.PAN_KEYS = table.freeze({
