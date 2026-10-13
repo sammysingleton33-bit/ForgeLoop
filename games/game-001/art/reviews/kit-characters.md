@@ -125,6 +125,23 @@ the plain helm (8 parts). Renders: `KitCharacterDump` groups `characters_crests`
   close in tone to the steel helm, so it reads by its outline only. Unverified: the aerial strip at about 77 studs
   (too small to judge in the preview), and Studio (STUDIO_PLAYTEST step 5).
 
+## FL-0098 portraits (CONTRACTS G13.8, D-036; `art/reviews/img/kit_portraits.jpg`)
+`Kit.portrait(kind, job, kingdomColor, look?, kingdom?)` calls `Character.character`, anchors every part, keeps the
+motors and the HairWeld, and adds the camera attachment `Root.PortraitFocus` (attributes PortraitFov 30 and
+PortraitDistance). Sheet: 8 portraits rendered from that camera (vertical FOV 30, square) on a flat card colour,
+each beside the same world rig. The mix is 3 citizens (short hair, hood, straw hat), a governor and one soldier
+per kingdom. Rendered from the `portraits` and `portraits_world` groups of `KitCharacterDump` with a scratch
+render script.
+- Round P1: the first framing had 0.2 headroom, and the hair, crown and azure plate touched the top edge. The
+  headroom is now 0.45, and the spec requires the highest point below 92 % of the half-frame.
+- Verdict: every portrait matches its rig in colours, headwear, crest and tool, and is head and shoulders. The
+  face and the hat, crown or crest are uncropped, the shoulder line and arm tops are visible, and the outer
+  arm edges are cut in a square frame.
+- Tall crests pull the camera back, so the face share of the frame height is 0.41–0.42 for citizens, the
+  governor and plain soldiers, and 0.27 (spire), 0.29 (plume), 0.33 (dome) and 0.38 (square) for crested soldiers.
+- Unverified: the face decal is not in the Blender preview, and the ViewportFrame look in Studio (lighting,
+  `Ambient`/`LightDirection`) is not checked.
+
 ## Remaining weaknesses
 - One-part tools cannot show handle + head: axe/pick/hammer read as heads at the fist (the arm is the handle in a
   swing); hoe, spear and staff are bare shafts. Imported tool meshes (Kit.prop ids, VS-2) would fix this.
@@ -138,4 +155,4 @@ the plain helm (8 parts). Renders: `KitCharacterDump` groups `characters_crests`
 Committed review images (soldier crests, for FORGE-05's CVD re-run with `production/quality-gates/cvd/cvd.py`):
 `art/reviews/img/kit_characters_crests.jpg` (front sheet), `kit_characters_crests_side.jpg` (side sheet),
 `kit_characters_crests_gameplay.jpg` and `kit_characters_crests_side_gameplay.jpg` (≈40-stud gameplay view, colour;
-grayscale is a straight luminance conversion of these).
+grayscale is a straight luminance conversion of these). Portraits: `kit_portraits.jpg` (FL-0098).
