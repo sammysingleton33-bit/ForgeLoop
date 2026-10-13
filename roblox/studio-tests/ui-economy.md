@@ -43,6 +43,10 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    disappears, a toast says "Farm placed — Builders are on their way", a red "−50" floats under
    Wood, and a "Farm · waiting" chip appears at the bottom; it fills as builders work.
 4. Place again and press **Q**: build mode ends, nothing is spent.
+5. Around the footprint a fainter outline shows the room the building keeps for its upgrades
+   (largest level plus 2 studs). Move it towards a building or a tree: the ghost turns red with
+   "Leave room for upgrades" as the faint outline reaches them, not only when the slab does
+   (#62: the server checks the largest level plus the gap). Rotate: the outline turns too.
 
 ## U5 — place a building, phone (P2; P3 for camera/taps)
 1. **Test → Device emulator** → an iPhone in **landscape** (e.g. iPhone 14, 844 × 390).

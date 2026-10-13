@@ -8,8 +8,11 @@ local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Cont
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
+local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local KingdomWorld = require("./doubles/KingdomWorld")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Text = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Text")
 
 -- FORGE-04 doubles (G4.1 InputModeController, G11 OnboardingController, interfaces §8 NotificationController).
 local function inputModeDef(log)
@@ -212,6 +215,20 @@ describe("Kingdom HUD (desktop)", function()
 		expect(build.placing.status).toBe("ok")
 		expect(build.ghost.base.Color).toBe(Color3.fromRGB(91, 174, 95))
 		expect((build.ghost.base.Size - Vector3.new(34, 0.6, 28)).Magnitude).toBeLessThan(1e-3) -- Kit.footprint("farm", 1)
+		-- the room the server keeps free (FORGE-05 M-2 on #62): largest level + the gap on every side,
+		-- centred on the same spot, in the verdict's colour
+		local largest = Fit.largestFootprint("farm")
+		local gap = BuildingsConfig.placementGap
+		expect(gap).toBeGreaterThan(0)
+		local room = build.ghost.room
+		expect(room.Size.X).toBeNear(largest.X + 2 * gap, 1e-3)
+		expect(room.Size.Z).toBeNear(largest.Y + 2 * gap, 1e-3)
+		expect(room.Size.X).toBeGreaterThan(build.ghost.base.Size.X)
+		local offset = room.CFrame.Position - build.ghost.base.CFrame.Position
+		expect(math.abs(offset.X) + math.abs(offset.Z)).toBeLessThan(1e-6)
+		expect(room.Transparency).toBeLessThan(1)
+		expect(build.ghost.roomOutline.Visible).toBe(true)
+		expect(room.Color).toBe(build.ghost.base.Color)
 		local bar = find(hud.guis.hud, "PlacementBar")
 		expect(find(bar, "Status"):GetAttribute("status")).toBe("ok")
 
@@ -257,6 +274,15 @@ describe("Kingdom HUD (desktop)", function()
 		build:aimAt(Vector3.new(0, 0, 10))
 		world:advance(0.2)
 		expect(build.placing.reason).toBe("Too close to another building")
+		-- the real server's reason for the reserved room (Simulation:canPlace "blocked", #62)
+		expect(Text.reason("blocked")).toBe("Leave room for upgrades")
+		-- rotated a quarter turn, the room turns with the building
+		build:rotate()
+		build:aimAt(Vector3.new(60, 0, 62))
+		world:advance(0.2)
+		expect(math.abs(build.ghost.room.CFrame.LookVector.X)).toBeNear(1, 1e-6)
+		build:cancel()
+		expect(build.ghost).toBeNil()
 	end)
 
 	it("ignores a late verdict for a spot the ghost already left", function()
