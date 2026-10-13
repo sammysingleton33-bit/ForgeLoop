@@ -142,6 +142,7 @@ function EntityService:_fullState(): buffer
 			kind = who.kind,
 			job = who.job,
 			kingdom = who.kingdom,
+			look = who.look,
 			x = r.x,
 			y = r.y,
 			z = r.z,
@@ -242,7 +243,10 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 	for _, id in ids do
 		local now, before = identity[id], self._known[id]
 		if before == nil then
-			table.insert(events, { type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom })
+			table.insert(
+				events,
+				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
+			)
 			self.spawned:fire(id)
 		elseif before.job ~= now.job then
 			table.insert(events, { type = "job", id = id, job = now.job })
