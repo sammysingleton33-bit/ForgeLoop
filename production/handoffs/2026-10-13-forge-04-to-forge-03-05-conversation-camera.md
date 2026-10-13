@@ -8,6 +8,12 @@
   - The focus moves 6 studs toward the camera, so the citizen sits **above the screen centre**, clear of the portrait rising from the bottom.
   - It stays inside the map bounds.
   - It returns false in walk mode, or before the overview has a focus.
+- **In front of the citizen's face** (CONTRACTS G13.8 v0.4-g9e: the held citizen turns to face the ruler's character, #108).
+  - `focusOn(position, { facing })` sets the camera yaw so it looks at the citizen's front (`Def.conversationYaw`).
+  - On `opened`, the facing comes from the citizen's rig, `EntityController:getModel(entityId):GetPivot().LookVector`.
+  - While the panel is open, the rig's facing is re-read every 0.2 s. When the server's turn toward the ruler arrives (more than 10°), the camera glides round to the new front.
+  - A pan, a "go to" or a turn by the player stops the following.
+  - Without a rig the current rotation is kept.
 - **`restore() -> boolean`** glides back to the saved view. It returns false when nothing is saved.
 - **Reduced motion** (SettingsController) cuts instead of gliding.
 - **A pan or a "go to"** (`focusOn(position)` without options) during a glide ends the glide; the player takes over.
@@ -20,7 +26,7 @@
 - One `closed` per `opened`. A second `opened` before `closed` (a different citizen) is fine: `restore()` still returns to the first saved view.
 
 ### FORGE-05 (FL-0101 Studio rows)
-1. Open a conversation from the aerial view. The camera glides in about 0.6 s to the citizen. The citizen stays visible above the portrait, and the kingdom stays visible around them.
+1. Open a conversation from the aerial view. The camera glides in about 0.6 s to the citizen. The citizen stays visible above the portrait, and the kingdom stays visible around them. The camera looks at the citizen's face; if the citizen turns toward your ruler just after, the camera follows round to the front.
 2. Close it. The camera glides back to the same view: position, rotation and zoom.
 3. Settings → Reduced motion on: steps 1–2 cut instead of gliding.
 4. Pan during the glide: the glide stops and the pan works.
@@ -28,12 +34,12 @@
 6. Phone emulator: the citizen is not under the portrait.
 
 ## Evidence
-- `games/game-001/tests/experience/RulerCamera.spec.luau`: 4 new specs.
+- `games/game-001/tests/experience/RulerCamera.spec.luau`: 6 new specs, two of them for the face-on framing (v0.4-g9e): `conversationYaw`, and the rig's facing with the following.
   - The pure `conversationView`: framing, zoom range, clamp.
   - The glide in and `restore` equality (focus, yaw, zoom, camera position).
   - The reduced-motion cut.
   - `opened`/`closed`, a pan ending the glide, and walk mode ignoring it.
-- `python3 roblox/tests/unit/experience/mutations.py FL-0100` → 7/7 caught.
+- `python3 roblox/tests/unit/experience/mutations.py FL-0100` → 12/12 caught.
 - **Unverified:** how smooth it is and where it frames on real screens (Studio).
 
 ## Next (FL-0100 part 2)
