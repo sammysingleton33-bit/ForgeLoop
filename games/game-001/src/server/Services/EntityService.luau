@@ -33,6 +33,7 @@ local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SnapshotCodec = require("@game/ReplicatedStorage/Game/Sim/SnapshotCodec")
@@ -251,6 +252,18 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 		elseif before.job ~= now.job then
 			table.insert(events, { type = "job", id = id, job = now.job })
 			self.jobChanged:fire(id, now.job)
+		end
+	end
+	-- a citizen whose look changed (the Studio reseed, FL-0104) is sent as a spawn again, so every
+	-- connected client swaps its rig (#91 M1); a new client gets the new look in its first spawn anyway
+	for _, id in ids do
+		local now, before = identity[id], self._known[id]
+		-- (the same profile.look table every tick unless a reseed replaced it: compared by key only then)
+		if before ~= nil and before.look ~= now.look and Kit.lookKey(before.look) ~= Kit.lookKey(now.look) then
+			table.insert(
+				events,
+				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
+			)
 		end
 	end
 	local gone = {}
