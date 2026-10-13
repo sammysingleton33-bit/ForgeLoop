@@ -4,7 +4,9 @@
 	FL-0062). Data only: CitizenBubbleController and Feedback/Bubbles read it.
 
 	bubbles   tuning of citizen thought / reaction bubbles and strike placards (Feedback/Bubbles)
-	cues      consequence cue -> what the citizen does: { pose: string?, sound: string?, vfx: string? }
+	cues      consequence cue -> what the citizen does: { pose: string?, sound: string?, vfx: string?,
+	          seconds: number? }. `seconds` is required when `vfx` is continuous (rate emitters and no
+	          durationSec): CitizenBubbleController stops the effect after it, or when the rig is released.
 	          Keys are the CONTRACTS G13.3 `cue` vocabulary (celebrate, grumble, salute, bow, cower,
 	          strike_placard, work_fast, rest, hammer). `pose` is asked of EntityController:playPose
 	          (FORGE-01, proposed); `sound` and `vfx` play at the citizen. The spec checks every sound is in
@@ -29,7 +31,7 @@ return table.freeze({
 		cower = table.freeze({ pose = "cower" }),
 		strike_placard = table.freeze({ pose = "grumble", sound = "kingdom.capture.lost", vfx = "hit.generic" }),
 		work_fast = table.freeze({ pose = "work_fast", vfx = "reward.burst" }),
-		rest = table.freeze({ pose = "rest", vfx = "ambience.motes" }),
+		rest = table.freeze({ pose = "rest", vfx = "ambience.motes", seconds = 6 }),
 		hammer = table.freeze({ pose = "hammer", sound = "kingdom.hammer", vfx = "hit.generic" }),
 	}),
 })

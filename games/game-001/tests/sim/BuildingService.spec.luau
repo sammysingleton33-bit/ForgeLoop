@@ -392,6 +392,47 @@ describe("BuildingService build slots (G13.5, FL-0081)", function()
 		expect(buildings:slots("violet")).toEqual({})
 	end)
 
+	it("a building placed with Build.Place over a slot occupies it; the other slots stay free (#89 M1)", function()
+		local env, buildings, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		-- a house turned any way stays inside an L slot (46 x 40), so no neighbouring slot is touched
+		local slot = firstSlot("crimson", "L")
+		local id, reason = invoke(env, p1, "Build.Place", "house", Vector3.new(slot.center.X, 0, slot.center.Z), 0)
+		expect(reason).toBeNil()
+		expect(sim.buildings[id].slotId).toBeNil() -- placed on the rail, not on the slot
+		for _, entry in invoke(env, p1, "Build.GetSlots") do
+			expect(entry.occupiedBy).toBe(if entry.id == slot.id then id else nil)
+		end
+		expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "farm") }).toEqual({ nil, "slot_occupied" })
+		-- gone: the slot is free again
+		assert(sim:cancelConstruction(sim.kingdoms.crimson, id, 1))
+		for _, entry in buildings:slots("crimson") do
+			expect(entry.occupiedBy).toBeNil()
+		end
+	end)
+
+	it("refuses wall and gate on any plot with not_on_plot, charging nothing (G13.5 v0.4-g9a)", function()
+		local env, _, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local before = treasury:get("crimson")
+		for _, kind in { "wall", "gate" } do
+			for _, size in { "S", "L" } do
+				expect({ invoke(env, p1, "Build.PlaceSlot", firstSlot("crimson", size).id, kind) }).toEqual({
+					nil,
+					"not_on_plot",
+				})
+				env.mock:advance(0.6) -- PlaceSlot's rate
+			end
+		end
+		expect(treasury:get("crimson")).toEqual(before)
+		for _, building in match.host.match.sim.buildings do
+			expect(building.kind ~= "wall" and building.kind ~= "gate").toBe(true)
+		end
+	end)
+
 	it("Build.Slots goes to the kingdom's members on arrival and when a slot is taken or freed", function()
 		local env, _, match = boot()
 		local p1 = env.mock.players:add({ userId = 1 })

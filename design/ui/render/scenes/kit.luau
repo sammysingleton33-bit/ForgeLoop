@@ -154,24 +154,25 @@ return function(_ctx)
 	)
 	grid:add(ItemCard.new({ empty = true, layoutOrder = 7 }).instance)
 
-	local toasts = row(sheet, 7, "Toast: success · info · warning · error · reward", 56)
+	local toasts = row(sheet, 7, "Toast: success · info · warning · error · reward · achievement", 66)
+	place(Toast.new({ kind = "success", title = "Quarry started", body = "Ready in 0:18", width = 170 }), toasts, 1)
 	place(
-		Toast.new({ kind = "success", title = "Quarry construction started", body = "Ready in 0:18", width = 250 }),
-		toasts,
-		1
-	)
-	place(
-		Toast.new({ kind = "info", title = "Keep reached level 2", body = "Barracks unlocked", width = 220 }),
+		Toast.new({ kind = "info", title = "Keep reached level 2", body = "Barracks unlocked", width = 210 }),
 		toasts,
 		2
 	)
-	place(Toast.new({ kind = "warning", title = "Storage full", body = "Food is at its cap", width = 200 }), toasts, 3)
+	place(Toast.new({ kind = "warning", title = "Storage full", body = "Food is at its cap", width = 180 }), toasts, 3)
 	place(
-		Toast.new({ kind = "error", title = "Couldn't start construction", body = "Need 20 more Wood", width = 250 }),
+		Toast.new({ kind = "error", title = "Couldn't start construction", body = "Need 20 more Wood", width = 230 }),
 		toasts,
 		4
 	)
-	place(Toast.new({ kind = "reward", title = "Royal Chest opened", body = "Lion Banner", width = 190 }), toasts, 5)
+	place(Toast.new({ kind = "reward", title = "Royal Chest opened", body = "Lion Banner", width = 180 }), toasts, 5)
+	place(
+		Toast.new({ kind = "achievement", title = "First Farm built", body = "Founder's Laurel", width = 180 }),
+		toasts,
+		6
+	)
 
 	local panels = row(sheet, 8, "Panel with title and ornament · Modal (confirm a large spend)", 230)
 	local panel = Panel.new({ title = "Buildings", size = UDim2.fromOffset(320, 220) })
