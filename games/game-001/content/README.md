@@ -15,7 +15,7 @@ You can rewrite any question, answer or reaction without touching how the game w
 2. **Edit the YELLOW columns.** These are the text players see, plus two dropdowns that set how it is shown: the bubble icon (`thought_icon`) and the reaction's mood (`reaction_tone`). Hover a header to see its note, its character limit and the placeholders it accepts. Over-long text is refused as you type.
 3. **Leave the GREY columns alone** unless you mean to change gameplay. They hold ids, numbers, conditions and costs. White columns are your own notes and never reach the game. BLUE columns on the responses sheet (`info: question`, `info: effects`) only help you: they show the question being answered and what each answer does, and they are ignored when the workbook comes back.
 4. **Sort and filter as you like** while you review. The import puts every row back in its original order.
-5. **Never add, remove or rename columns or sheets.** Put your comments in the white `notes` columns. Add new rows at the bottom of a sheet.
+5. **Never add, remove or rename columns or sheets.** Put your comments in the white `notes` columns (a note may not start with `=` or `@`). Add new rows at the bottom of a sheet.
 6. **Hand it back.** Save it as `.xlsx` and return the file, or run:
    ```
    python3 tools/content/content.py import-xlsx path/to/AI_Kingdoms_Content.xlsx --text-only --build
@@ -23,7 +23,9 @@ You can rewrite any question, answer or reaction without touching how the game w
    - `--text-only` (recommended for writing work) takes only the yellow and white columns. Mechanics can never change by accident, even if the developers changed the files after your export.
    - Without `--text-only`, grey columns are imported too, but only if nobody changed the CSV files since your export. Otherwise the import refuses those cells, names them, and asks you to export a fresh workbook.
    - If a developer changed a text in the CSV files after your export, your workbook never undoes it (with or without `--text-only`). A cell you did not edit keeps the developer's newer text, and the import lists it as `kept`. A cell you both changed is refused and named: export a fresh workbook and redo that one edit.
-   - Formulas are refused (a cell starting with `=` that the spreadsheet calculates). Type the value itself.
+   - Formulas are refused (a cell starting with `=` that the spreadsheet calculates), and so are error values such as `#REF!` or `#N/A`. Type the value itself.
+   - **After each import, export a fresh workbook before you edit again.** The old workbook still remembers the files as they were before your import, so editing a cell a second time there is refused (`… possibly by an earlier import of this same workbook`).
+   - If a CSV file cannot be read (for example a developer saved it as *CSV (Comma delimited)* instead of *CSV UTF-8*), the import refuses that file and changes nothing: it never overwrites a file it cannot compare with your workbook.
    - The import checks the whole workbook first. If anything is wrong it changes **nothing** and names the sheet and cell, e.g. `responses!D5 [response_text]: text is 71 characters; the limit is 70`.
    - It always prints every change it made, marked `TEXT`, `MECHANICS` or `NOTES`, so you can see that only your text moved. Only the rows you changed are rewritten.
 
@@ -53,7 +55,8 @@ You can rewrite any question, answer or reaction without touching how the game w
   - in action notices: `{ruler}` and `{kingdom}`;
   - trait, occupation, category and name texts: none.
 - **Never type a number that the mechanics decide** (odds, durations, amounts, costs). Write the placeholder instead, so the text stays right when someone tunes the numbers. A risk (a consequence that may or may not happen) must show its odds with `{chance}`.
-- Keep room for long names: a placeholder counts by how it is spelled.
+- Keep room for long names: a placeholder counts by how it is spelled. A thought or a reaction must also fit its 80-character bubble with the longest names filled in (`{name}`, `{family}`, `{friend}`, `{rival}` 16, `{ruler}` 20, `{occupation}` 24, `{kingdom}` 20); the import names the length it can reach.
+- Notes may start with `+` or `-` (`+housing capacity`), but never with `=` or `@`.
 
 ## How a conversation is put together
 - `scenarios`: one row per situation. It says who can raise it (`occupation`), when (`trigger`), how important it is (`priority`) and how often (`cooldown_s`, `once_per_citizen`).

@@ -10,8 +10,9 @@
 	error, because it would silently switch anti-farming off.
 
 	Content is read-only. The generated modules are deeply frozen, and ContentQuery.new(data) deeply
-	freezes the tables it is given, so every shared record ContentQuery returns (scenarios, action rows)
-	errors when written to. Everything else it returns is a fresh table the caller owns.
+	freezes the tables it is given (also inside tables that were frozen only at the top, and once each, so
+	a cycle is safe), so every shared record ContentQuery returns (scenarios, action rows) errors when
+	written to. Everything else it returns is a fresh table the caller owns.
 
 	API (module functions use the generated content; ContentQuery.new(data) binds the same API to
 	other tables of the generated shape, e.g. spec fixtures)
@@ -43,7 +44,8 @@
 			ShownHistory = { [citizenKey]: { [scenarioId]: lastShownTime } }, one per kingdom (SPEC §6.8).
 		ContentQuery.citizenKey(citizen) -> any?        citizen.id, else entityId, else key
 		ContentQuery.markShown(history, citizenKey, scenarioId, now) -> history     records a showing
-			(pass citizenKey(citizen), so eligibleScenarios finds it)
+			(pass citizenKey(citizen), so eligibleScenarios finds it). A nil history, citizenKey or bad
+			`now` is an error.
 		ContentQuery.choicePreview(scenarioId, responseId) -> ChoicePreview?
 			{ decision, cost, risks } of one answer, for the conversation panel: the cost and the
 			chance < 1 consequences the player must see before choosing (model decision 7).
@@ -73,7 +75,9 @@
 			result is APPLIED AS GIVEN: no second decay, no second clamp (ReputationService included).
 			`cost` is informational (already paid). Each listener once, under its closest relation
 			(speaker > family > friends > rivals > kingdom); a listener's change is its `loyalty`, never
-			loyalty plus the explicit column. Unknown decision: nil and nothing recorded.
+			loyalty plus the explicit column. Every listener is checked first (a traits list of known
+			trait ids, a known relation): an error names the listener (`listener #i has an unknown
+			trait ...`) and records nothing. Unknown decision: nil and nothing recorded.
 		ContentQuery.loyaltyDelta(rep: RepVector, traits: { string }, relation: Relation,
 			chemistry: number?, extra: number?) -> number
 			Model decisions 3–4, a building block (no decay, no clamp): (Σ_category Σ_trait weight ×
@@ -97,9 +101,11 @@
 			The single anti-farming point of actions.csv (mirrors fireDecision). One entry per firing
 			of actionFirings(event, ctx), in file order. Each firing takes its multipliers from its
 			farm_key (ruler history: reputation; kingdom history: loyalty and kingdom conditions) and
-			records itself in both histories before the next firing is computed. `rep` = gains of the
-			summed rows × ruler multiplier, `kingdom` = gains × kingdom multiplier (raw sums in
-			`rep_raw`, `kingdom_raw`). `listeners`: every given listener who hears at least one row
+			records itself in both histories before the next firing is computed. `rep` = the sum over
+			its rows of each row's rep with gains × ruler multiplier, `kingdom` = the same with the
+			kingdom multiplier: each row is decayed on its own, then summed, so one row's loss is never
+			decayed with another row's gain (model decision 5; the same rule as the listeners). Raw sums
+			in `rep_raw`, `kingdom_raw`. `listeners`: every given listener who hears at least one row
 			(ActionListener = { citizen, occupation?, speaker?, traits, chemistry?, ctx? }) as
 			{ citizen, relation, loyalty }: the sum over the rows it hears of actionLoyalty before the
 			clamp (gains × kingdom multiplier), clamped once to LOYALTY_CLAMP of its relation ("speaker"
@@ -124,9 +130,11 @@
 			Model decision 5: decay ^ (earlier firings of farmKey with now − t < window), i.e. the
 			n-th firing inside the window gets decay^(n−1). decay is clamped to [0, 1]; window <= 0
 			or decay 1 gives 1. FarmHistory = { [farmKey]: { fireTime } }: one per ruler (reputation)
-			and one per kingdom (loyalty and kingdom conditions), SPEC §6.8.
+			and one per kingdom (loyalty and kingdom conditions), SPEC §6.8. A building block: its
+			history is optional, and nil means no earlier firings (1). fireDecision, fireAction,
+			recordFire and markShown require theirs.
 		ContentQuery.recordFire(history, farmKey, now) -> history
-			Appends a firing; keeps the newest MAX_FARM_HISTORY per key.
+			Appends a firing; keeps the newest MAX_FARM_HISTORY per key. A nil history is an error.
 		ContentQuery.scaleGain(delta, multiplier) -> number     delta > 0 → delta × multiplier
 		ContentQuery.scaleGains(vector, multiplier) -> vector   scaleGain on every entry (a copy)
 		ContentQuery.clampLoyalty(delta, relation) -> number     ±LOYALTY_CLAMP[relation]; NaN → 0
@@ -147,8 +155,10 @@
 		ContentQuery.durationText(seconds) -> string
 		ContentQuery.REACH          { speaker 1, family 0.6, friends 0.4, rivals −0.3, kingdom 0.2 } (frozen)
 		ContentQuery.LOYALTY_CLAMP  { speaker 25, family 10, friends 10, rivals 10, kingdom 5 } (frozen):
-		                            the most one decision or one action firing may move one listener's
-		                            loyalty, after personality, chemistry and decay ("kingdom" = audience)
+		                            the most a decision's own loyalty term (personality, explicit column,
+		                            trait overrides) or one action firing may move one listener's loyalty,
+		                            after chemistry and decay ("kingdom" = audience). Loyalty CONSEQUENCES
+		                            (kind loyalty) are separate effects outside the clamp (SPEC §6.3)
 		ContentQuery.CATEGORIES     the six reputation categories in canonical order (frozen)
 		ContentQuery.OPS            the clause operators the generator emits (frozen set)
 		ContentQuery.GAIN_SIGN      consequence kinds whose magnitude decays when it is a gain (frozen)
@@ -442,8 +452,9 @@ ContentQuery.OPS = table.freeze({
 -- Consequence kinds whose magnitude is a gain for the ruler when magnitude × sign > 0 (decayed by the
 -- kingdom multiplier, model decision 5 as extended in SPEC §6.5). unrest_pressure relief is negative.
 ContentQuery.GAIN_SIGN = table.freeze({ loyalty = 1, morale = 1, happiness = 1, stability = 1, unrest_pressure = -1 })
--- FORGE-00 decision M3: the most one decision (or one action firing) may move one listener's loyalty, applied
--- after the personality term, chemistry and decay. "kingdom" is any audience listener without a closer tie.
+-- FORGE-00 decision M3: the most one decision's own loyalty term (or one action firing) may move one listener's
+-- loyalty, applied after the personality term, chemistry and decay. "kingdom" is any audience listener without a
+-- closer tie. Loyalty consequences are separate effects with their own validated magnitude (SPEC §6.3).
 ContentQuery.LOYALTY_CLAMP = table.freeze({ speaker = 25, family = 10, friends = 10, rivals = 10, kingdom = 5 })
 ContentQuery.CHEMISTRY_MIN = -20
 ContentQuery.CHEMISTRY_MAX = 20
@@ -465,27 +476,29 @@ local function checkNow(fn: string, now: any)
 	end
 end
 
-local function checkHistory(fn: string, name: string, history: any)
+local function checkHistory(fn: string, name: string, history: any, kind: string?)
 	if type(history) ~= "table" then
-		error(`ContentQuery.{fn}: {name} must be a FarmHistory table, got {typeof(history)}`, 3)
+		error(`ContentQuery.{fn}: {name} must be a {kind or "FarmHistory"} table, got {typeof(history)}`, 3)
 	end
 end
 
-local function checkTraits(fn: string, i: number, listener: any)
-	if type(listener) ~= "table" or type(listener.traits) ~= "table" then
-		error(`ContentQuery.{fn}: listener #{i} must be a table with a traits list`, 3)
+-- Content is shared and read-only: freeze every table reachable from `value`, children first (review finding L6).
+-- A frozen table is still walked, because `table.freeze({ ... })` freezes only the top; `seen` visits each table
+-- once, so a cycle cannot overflow the stack.
+local function deepFreeze<T>(value: T, seen: { [any]: boolean }?): T
+	local visited: { [any]: boolean } = seen or {}
+	local t = value :: any
+	if visited[t] then
+		return value
 	end
-end
-
--- Content is shared and read-only: freeze it, children first (review finding L6).
-local function deepFreeze<T>(value: T): T
-	for _, child in value :: any do
-		if type(child) == "table" and not table.isfrozen(child) then
-			deepFreeze(child)
+	visited[t] = true
+	for _, child in t do
+		if type(child) == "table" then
+			deepFreeze(child, visited)
 		end
 	end
-	if not table.isfrozen(value :: any) then
-		table.freeze(value :: any)
+	if not table.isfrozen(t) then
+		table.freeze(t)
 	end
 	return value
 end
@@ -664,6 +677,7 @@ end
 
 function ContentQuery.markShown(history: ShownHistory, citizenId: any, scenarioId: string, now: number): ShownHistory
 	checkNow("markShown", now)
+	checkHistory("markShown", "history", history, "ShownHistory")
 	if citizenId == nil then
 		error("ContentQuery.markShown: citizenId is nil (pass ContentQuery.citizenKey(citizen))", 2)
 	end
@@ -821,6 +835,28 @@ function ContentQuery.new(input: DataInput): Query
 		return out
 	end
 
+	-- Every listener is checked before the first firing is recorded, so a bad listener records nothing and the
+	-- error names the function and the listener. `relations`: whether each listener names a known relation.
+	local function checkListeners(fn: string, listeners: { any }?, relations: boolean)
+		for i, listener in listeners or {} do
+			if type(listener) ~= "table" or type(listener.traits) ~= "table" then
+				error(`ContentQuery.{fn}: listener #{i} must be a table with a traits list`, 3)
+			end
+			if relations and REACH[listener.relation] == nil then
+				error(
+					`ContentQuery.{fn}: listener #{i} has an unknown relation '{tostring(listener.relation)}' `
+						.. "(speaker, family, friends, rivals or kingdom)",
+					3
+				)
+			end
+			for _, traitId in listener.traits do
+				if data.traits[traitId] == nil then
+					error(`ContentQuery.{fn}: listener #{i} has an unknown trait '{tostring(traitId)}'`, 3)
+				end
+			end
+		end
+	end
+
 	-- An explicit loyalty column as a listener without a personality reaction gets it: decayed, then clamped.
 	local function neutralLoyalty(raw: number, relation: Relation, kingdomMultiplier: number): number
 		return ContentQuery.clampLoyalty(ContentQuery.scaleGain(raw, kingdomMultiplier), relation)
@@ -905,9 +941,7 @@ function ContentQuery.new(input: DataInput): Query
 		checkHistory("fireDecision", "rulerHistory", rulerHistory)
 		checkHistory("fireDecision", "kingdomHistory", kingdomHistory)
 		checkNow("fireDecision", now)
-		for i, listener in listeners or {} do
-			checkTraits("fireDecision", i, listener)
-		end
+		checkListeners("fireDecision", listeners, true)
 		local d = data.decisions[decisionId]
 		if d == nil then
 			return nil
@@ -915,7 +949,7 @@ function ContentQuery.new(input: DataInput): Query
 		local key, decay, window = d.farm_key, d.repeat_decay, d.repeat_window_s
 		local m = ContentQuery.repeatMultiplier(rulerHistory, key, now, decay, window)
 		local km = ContentQuery.repeatMultiplier(kingdomHistory, key, now, decay, window)
-		-- compute before recording, so an error (unknown trait or relation) records nothing
+		-- compute before recording, so an unexpected error records nothing
 		local effects = query.decisionEffects(decisionId, m, km)
 		assert(effects, "decision exists")
 		for _, listener in listeners or {} do
@@ -1124,15 +1158,7 @@ function ContentQuery.new(input: DataInput): Query
 		checkHistory("fireAction", "rulerHistory", rulerHistory)
 		checkHistory("fireAction", "kingdomHistory", kingdomHistory)
 		checkNow("fireAction", now)
-		-- validate every listener before the first firing is recorded, so an error records nothing
-		for i, listener in listeners or {} do
-			checkTraits("fireAction", i, listener)
-			for _, traitId in listener.traits do
-				if data.traits[traitId] == nil then
-					error(`ContentQuery.fireAction: listener #{i} has an unknown trait '{tostring(traitId)}'`, 2)
-				end
-			end
-		end
+		checkListeners("fireAction", listeners, false)
 		local out: { ActionEffects } = {}
 		for _, firing in query.actionFirings(event, ctx) do
 			local key, decay, window = firing.farm_key, firing.repeat_decay, firing.repeat_window_s
@@ -1159,6 +1185,21 @@ function ContentQuery.new(input: DataInput): Query
 					})
 				end
 			end
+			-- Decay each row, then sum (model decision 5): a loss in one row is never decayed together with a
+			-- gain in another row of the same category, exactly as rowLoyalty treats the listeners.
+			local rep: RepVector = {}
+			for _, category in CATEGORIES do
+				rep[category] = 0
+			end
+			local kingdom: KingdomDelta = { happiness = 0, stability = 0, morale = 0 }
+			for _, row in firing.rows do
+				for _, category in CATEGORIES do
+					rep[category] += ContentQuery.scaleGain(row.rep[category] or 0, m)
+				end
+				kingdom.happiness += ContentQuery.scaleGain(row.kingdom.happiness, km)
+				kingdom.stability += ContentQuery.scaleGain(row.kingdom.stability, km)
+				kingdom.morale += ContentQuery.scaleGain(row.kingdom.morale, km)
+			end
 			ContentQuery.recordFire(rulerHistory, key, now)
 			if kingdomHistory ~= rulerHistory then
 				ContentQuery.recordFire(kingdomHistory, key, now)
@@ -1172,9 +1213,9 @@ function ContentQuery.new(input: DataInput): Query
 				multiplier = m,
 				kingdom_multiplier = km,
 				rows = firing.rows,
-				rep = ContentQuery.scaleGains(firing.rep, m),
+				rep = rep,
 				rep_raw = firing.rep,
-				kingdom = (ContentQuery.scaleGains(firing.kingdom :: any, km) :: any) :: KingdomDelta,
+				kingdom = kingdom,
 				kingdom_raw = firing.kingdom,
 				listeners = heard,
 			})

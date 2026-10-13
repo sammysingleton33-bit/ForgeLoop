@@ -286,6 +286,26 @@ local ACTIONS = {
 		audience = "speaker",
 		audience_loyalty = 10,
 	}),
+	-- rows 8-9: one action whose rows add a gain and a loss to the same categories (a keep raised while starving)
+	actionRow("keep_up", "BuildingUpgraded:keep", {
+		farm_key = "keep_up",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		rep = repVector({ authority = 2 }),
+		audience = "kingdom",
+		audience_loyalty = 1,
+		kingdom = { happiness = 3, stability = 0, morale = 0 },
+	}),
+	actionRow("keep_up", "BuildingUpgraded:keep", {
+		farm_key = "keep_up",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		condition = { clause("kingdom.fed_ratio", "<", 0.6) },
+		rep = repVector({ authority = -1 }),
+		audience = "civilians",
+		audience_loyalty = -2,
+		kingdom = { happiness = -1, stability = 0, morale = 0 },
+	}),
 }
 local REPUTATION = {
 	categories = {},
@@ -297,6 +317,7 @@ local REPUTATION = {
 		RulerVisited = { 4 },
 		["BuildingCompleted:farm"] = { 5 },
 		Festival = { 6, 7 },
+		["BuildingUpgraded:keep"] = { 8, 9 },
 	},
 }
 
@@ -1191,6 +1212,40 @@ describe("ContentQuery.fireDecision is applied as given (review findings M1, M3)
 			q.fireDecision("kind_act", ruler, nil :: any, 0)
 		end).toThrow("kingdomHistory must be a FarmHistory table")
 	end)
+
+	it("checks every listener's traits and relation first, like fireAction, and records nothing", function()
+		-- verification finding: an audience "none" decision returned 0 for relation kingdom before it looked at
+		-- the traits, so an unknown trait was accepted and the firing recorded
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		expect(function()
+			q.fireDecision("private_act", ruler, kingdom, 0, {
+				{ citizen = 1, relation = "speaker", traits = { "kind" } },
+				{ citizen = 2, relation = "kingdom", traits = { "dragonborn" } },
+			})
+		end).toThrow("ContentQuery.fireDecision: listener #2 has an unknown trait 'dragonborn'")
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, {
+				{ citizen = 1, relation = "speaker", traits = { "kind" } },
+				{ citizen = 2, relation = "friends", traits = { "dragonborn" } },
+			})
+		end).toThrow("ContentQuery.fireDecision: listener #2 has an unknown trait 'dragonborn'")
+		local cousin: any = { { citizen = 1, relation = "cousin", traits = { "kind" } } }
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, cousin)
+		end).toThrow("ContentQuery.fireDecision: listener #1 has an unknown relation 'cousin'")
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, { { citizen = 1, traits = {} } } :: any)
+		end).toThrow("listener #1 has an unknown relation 'nil'")
+		expect(ruler).toEqual({})
+		expect(kingdom).toEqual({})
+		-- a valid kingdom listener of an audience "none" decision still gets 0
+		local e = q.fireDecision("private_act", ruler, kingdom, 0, {
+			{ citizen = 3, relation = "kingdom", traits = { "kind" } },
+		})
+		assert(e, "private_act exists")
+		expect(e.listeners).toEqual({ { citizen = 3, relation = "kingdom", loyalty = 0 } })
+	end)
 end)
 
 describe("ContentQuery.LOYALTY_CLAMP (FORGE-00 decision M3)", function()
@@ -1323,6 +1378,34 @@ describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPE
 		expect(ruler).toEqual(before)
 	end)
 
+	it("decays each row on its own, then sums: a loss is never decayed with a gain of the same category", function()
+		-- verification finding: summing first decayed the starving row's losses together with the gains
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		local starving = { ["kingdom.fed_ratio"] = 0.5 }
+		local hungry = {
+			{ citizen = "farmer", occupation = "farmer", traits = { "plain" }, chemistry = 0 },
+		}
+		local first = q.fireAction("BuildingUpgraded:keep", starving, ruler, kingdom, 0, hungry :: any)[1]
+		expect(first.id).toBe("keep_up")
+		expect(first.rep.authority).toBe(1) -- 2 - 1
+		expect(first.kingdom.happiness).toBe(2) -- 3 - 1
+		expect(first.listeners[1].loyalty).toBe(-1) -- 1 - 2
+		local second = q.fireAction("BuildingUpgraded:keep", starving, ruler, kingdom, 60, hungry :: any)[1]
+		expect(second.multiplier).toBe(0.5)
+		expect(second.kingdom_multiplier).toBe(0.5)
+		expect(second.rep.authority).toBe(0) -- 2 x 0.5 - 1, not (2 - 1) x 0.5
+		expect(second.kingdom.happiness).toBe(0.5) -- 3 x 0.5 - 1, not (3 - 1) x 0.5
+		expect(second.listeners[1].loyalty).toBe(-1.5) -- the listener path uses the same rule
+		-- the raw sums stay raw
+		expect(second.rep_raw.authority).toBe(1)
+		expect(second.kingdom_raw).toEqual({ happiness = 2, stability = 0, morale = 0 })
+		-- a well-fed kingdom: only the gain row fires, and it decays whole
+		local fed = q.fireAction("BuildingUpgraded:keep", { ["kingdom.fed_ratio"] = 0.9 }, ruler, kingdom, 120)[1]
+		expect(fed.kingdom_multiplier).toBe(0.25)
+		expect(fed.kingdom.happiness).toBe(0.75)
+	end)
+
 	it("errors clearly on a bad event, history, now or listener", function()
 		local q = newQuery()
 		expect(function()
@@ -1417,6 +1500,15 @@ describe("ContentQuery citizen keys and argument checks (review findings M2, L9)
 		expect(function()
 			q.markShown({}, nil, "c_farmer_once", 0)
 		end).toThrow("citizenId is nil")
+		-- a missing history is an error where one is required (SPEC §7) ...
+		expect(function()
+			q.markShown(nil :: any, 1, "c_farmer_once", 0)
+		end).toThrow("ContentQuery.markShown: history must be a ShownHistory table, got nil")
+		expect(function()
+			ContentQuery.recordFire(nil :: any, "k", 0)
+		end).toThrow("ContentQuery.recordFire: history must be a FarmHistory table, got nil")
+		-- ... and optional only in the repeatMultiplier building block, where nil means no earlier firings
+		expect(ContentQuery.repeatMultiplier(nil, "k", 0, 0.5, 600)).toBe(1)
 	end)
 end)
 
@@ -1444,6 +1536,39 @@ describe("ContentQuery content is read-only (review finding L6)", function()
 		assert(e, "kind_act exists")
 		expect(table.isfrozen(e.cost)).toBe(false)
 		expect(table.isfrozen(e.consequences[1])).toBe(false)
+	end)
+
+	it("also freezes the records inside a container that was frozen only at the top, and survives cycles", function()
+		-- verification finding: deepFreeze skipped frozen children, so table.freeze({ ... }) input stayed mutable
+		local record = scenario("s", "any", 50)
+		local reputation = table.freeze({
+			categories = {},
+			order = CATEGORIES,
+			actions = { actionRow("visit", "RulerVisited", { audience = "speaker" }) },
+			byEvent = { RulerVisited = { 1 } },
+		})
+		local q = ContentQuery.new({
+			dialogue = table.freeze({ scenarios = { s = record }, order = { "s" } }),
+			reputation = reputation,
+		} :: any)
+		local got = q.eligibleScenarios({}, { id = 1 }, 0, {})
+		expect(#got).toBe(1)
+		expect(table.isfrozen(got[1])).toBe(true)
+		expect(table.isfrozen(got[1].responses[1])).toBe(true)
+		expect(function()
+			(got[1] :: any).priority = 999
+		end).toThrow("readonly")
+		expect(q.data.dialogue.scenarios.s.priority).toBe(50)
+		local row = q.actionFirings("RulerVisited", {})[1].rows[1]
+		expect(table.isfrozen(row)).toBe(true)
+		expect(table.isfrozen(row.rep)).toBe(true)
+		-- a cycle in the input is frozen once, without a stack overflow
+		local a: { [string]: any } = { name = "a" }
+		local b: { [string]: any } = { name = "b", back = a }
+		a.next = b
+		local cyclic = ContentQuery.new({ traits = { a = a } } :: any)
+		expect(table.isfrozen(cyclic.data.traits.a)).toBe(true)
+		expect(table.isfrozen(b)).toBe(true)
 	end)
 
 	it("lets the mechanics placeholders win over a name of the same key (review finding L8)", function()

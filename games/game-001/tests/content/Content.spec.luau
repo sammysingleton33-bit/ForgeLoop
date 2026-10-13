@@ -919,4 +919,41 @@ describe("Reputation", function()
 			expect(ContentQuery.actionLoyalty(a :: any, { "kind" }, 0)).toBeA("number")
 		end
 	end)
+
+	it("decays only the gains of every action row on a repeat; losses stay whole even beside a gain", function()
+		-- e.g. keep_upgraded while starving: +3 happiness and -1 happiness in one firing (model decision 5)
+		local fed = fullSampleCtx()
+		local starving = fullSampleCtx()
+		starving["kingdom.fed_ratio"] = 0.5
+		starving["kingdom.population"] = 20
+		starving["event.shortage"] = true
+		for _, ctx in { fed, starving } do
+			for _, event in sortedKeys(Reputation.byEvent) do
+				local ruler, kingdom = {}, {}
+				ContentQuery.fireAction(event, ctx, ruler, kingdom, 0)
+				for _, f in ContentQuery.fireAction(event, ctx, ruler, kingdom, 1) do
+					local function check(field: string, key: string, got: number, multiplier: number)
+						local gains, losses = 0, 0
+						for _, row in f.rows do
+							local v = (row :: any)[field][key] or 0
+							if v > 0 then
+								gains += v
+							else
+								losses += v
+							end
+						end
+						if math.abs(got - (gains * multiplier + losses)) > 1e-9 then
+							error(`{event} {f.id}: {field}.{key} = {got}, expected {gains} x {multiplier} + {losses}`)
+						end
+					end
+					for _, c in CATEGORIES do
+						check("rep", c, f.rep[c], f.multiplier)
+					end
+					for _, k in { "happiness", "stability", "morale" } do
+						check("kingdom", k, (f.kingdom :: any)[k], f.kingdom_multiplier)
+					end
+				end
+			end
+		end
+	end)
 end)

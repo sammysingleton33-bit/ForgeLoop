@@ -153,6 +153,31 @@ def test_non_utf8_file_names_the_row_and_byte(lib, capsys):
             "valid UTF-8; save the CSV as 'CSV UTF-8'") in out
 
 
+def test_non_utf8_position_treats_a_quote_inside_an_unquoted_cell_as_text(lib, capsys):
+    """Review finding L10: a literal '"' in an unquoted cell (it validates) shifted every later row and column."""
+    path = lib / "dialogue" / "scenarios.csv"
+    data = path.read_bytes()
+    lines = data.split(b"\n")
+    assert lines[2].endswith(b",")  # row 3 has an empty, unquoted notes cell
+    lines[2] += b'a 5" plank'
+    path.write_bytes(b"\n".join(lines))
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out  # the stray quote is a literal character
+    rows = read_rows(path)
+    assert rows[2][-1] == 'a 5" plank'
+    data = path.read_bytes().replace(b"We bled at the wall", b"We bled at the caf\xe9 wall")
+    path.write_bytes(data)
+    offset = data.index(b"\xe9")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1
+    assert f"dialogue/scenarios.csv:4: not UTF-8 text: byte 0xE9 at byte offset {offset} (column 8)" in out
+    # quoting is followed exactly like the parser: an escaped "" stays inside a quoted cell
+    assert content._csv_position('a,"x "" y\nz",b') == (1, 3)  # the line break is inside the quoted cell
+    assert content._csv_position('a,"x" ,b\nc') == (2, 1)
+    assert content._csv_position('a,b"c,d\ne,') == (2, 2)
+    assert content._csv_position('\ufeff"a\nb",c') == (1, 2)
+
+
 @pytest.mark.parametrize("text, ok", [
     ("3", True), ("+3", True), ("-0.5", True), (".5", True), ("5.", True), ("1e3", True), ("3.0", True),
     ("1_0", False), ("\u0661\u0662", False), ("\uff11\uff12", False), ("\u0663.\u0665", False), ("nan", False),
@@ -409,6 +434,50 @@ def test_lint_flags_a_locked_scenario_that_nothing_unlocks(lib, capsys):
 
 def test_notes_may_hold_tabs_and_line_breaks(lib, capsys):
     set_cell(lib, "dialogue/decisions.csv", 2, "notes", "line one\nline\ttwo")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+
+
+@pytest.mark.parametrize("value, ok", [
+    ("+housing capacity", True), ("-gold, +military readiness", True), ("- see decisions.csv (row 4)", True),
+    ("plain = fine", True), ("=1+1", False), ("@SUM(1+1)", False), ("  =cmd|' /C calc'!A0", False),
+    ("+HYPERLINK(\"http://evil.example\")", False), ("-2+3+cmd|' /C calc'!A0", False), ("+=1", False),
+    ("- @x", False),
+])
+def test_notes_may_start_with_plus_or_minus_but_never_hold_a_formula(lib, capsys, value, ok):
+    """Review finding L1: notes and actions.direct are opened in spreadsheets too (CSV injection)."""
+    set_cell(lib, "reputation/actions.csv", 2, "direct", value)
+    set_cell(lib, "dialogue/scenarios.csv", 2, "notes", value)
+    code, out = run(capsys, "validate", "--content", lib)
+    assert (code == 0) == ok, out
+    if not ok:
+        assert "reputation/actions.csv:2:4: [direct] a spreadsheet would run this note as a formula" in out
+        assert "dialogue/scenarios.csv:2:9: [notes] a spreadsheet would run this note as a formula" in out
+
+
+def test_bubble_texts_fit_the_bubble_with_the_longest_names(lib, capsys):
+    """Review finding L7: the raw limit counts '{ruler}' as 7 characters; the bubble gets the display name."""
+    assert content.PLACEHOLDER_MAX == {"name": 16, "family": 16, "friend": 16, "rival": 16, "ruler": 20,
+                                       "occupation": 24, "kingdom": 20}
+    assert content._expanded_length("{ruler}, {name}!") == 20 + 2 + 16 + 1
+    assert content._expanded_length("{unknown} text") == len("{unknown} text")  # validation reports it
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "{ruler}, {name} thanks you. Truly.")
+    set_cell(lib, "dialogue/scenarios.csv", 2, "thought_text", "{ruler}, {name} is hungry.")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 0, out
+    over = "{ruler} and {kingdom}: {name} the {occupation} says no"  # 54 raw, 100 filled in
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", over)
+    set_cell(lib, "dialogue/scenarios.csv", 2, "thought_text", "{ruler}{kingdom}{name}{occupation}{name}")
+    code, out = run(capsys, "validate", "--content", lib)
+    assert code == 1
+    assert ("dialogue/responses.csv:2:5: [reaction_text] with the longest names filled in ({ruler} 20, {kingdom} "
+            "20, {name} 16, {occupation} 24 characters) this text can reach 100 characters, but the bubble shows "
+            "80 and cuts the rest: shorten it") in out
+    assert "dialogue/scenarios.csv:2:7: [thought_text] with the longest names filled in" in out
+    # other texts keep their raw limit only (the question is a panel, not a bubble)
+    set_cell(lib, "dialogue/responses.csv", 2, "reaction_text", "Bless you!")
+    set_cell(lib, "dialogue/scenarios.csv", 2, "thought_text", "Hungry.")
+    set_cell(lib, "dialogue/scenarios.csv", 2, "question_text", "{ruler} " * 10 + "{kingdom}")
     code, out = run(capsys, "validate", "--content", lib)
     assert code == 0, out
 
@@ -875,8 +944,9 @@ def test_import_refuses_text_changed_in_both_the_csv_and_the_workbook(lib, tmp_p
     code, out = run(capsys, "import-xlsx", "--content", lib, book, *(["--text-only"] if text_only else []))
     assert code == 1, out
     assert ("book.xlsx › responses!E2 [reaction_text]: responses › r_hf_share [reaction_text]: refused: it was "
-            "also changed in dialogue/responses.csv after this workbook was exported (CSV now 'Dev fixed this "
-            "line.', workbook 'The writer rewrote it too.'). Export a fresh workbook and redo this edit there") in out
+            "also changed in dialogue/responses.csv after this workbook was exported, possibly by an earlier import "
+            "of this same workbook (CSV now 'Dev fixed this line.', workbook 'The writer rewrote it too.'). Export a "
+            "fresh workbook and redo this edit there") in out
     assert "no CSV was changed" in out
     assert csv_bytes(lib) == after_dev
 
@@ -905,6 +975,120 @@ def test_import_without_cell_stamps_refuses_text_only_where_the_csv_changed(lib,
     code, out = run(capsys, "import-xlsx", "--content", lib, book)  # the CSV is as exported again
     assert code == 0, out
     assert read_rows(lib / "dialogue" / "responses.csv")[2][4] == "A writer's line."
+
+
+@needs_openpyxl
+@pytest.mark.parametrize("damage", ["cp1252", "extra column"])
+def test_import_never_replaces_a_csv_it_cannot_read(lib, tmp_path, capsys, damage):
+    """Verification of review finding M4: a CSV that became unreadable after the export (Excel's 'CSV (Comma
+    delimited)' saves cp1252; or a column was added) was rewritten from the stale workbook, silently undoing the
+    developer's edits. Now the import refuses it and leaves the bytes alone."""
+    book = tmp_path / "book.xlsx"
+    assert run(capsys, "export-xlsx", "--content", lib, book)[0] == 0
+    path = lib / "dialogue" / "scenarios.csv"
+    rows = read_rows(path)
+    rows[2][rows[0].index("question_text")] = "Dev: the café is closed, {ruler}."
+    rows[2][rows[0].index("priority")] = "99"
+    if damage == "extra column":
+        rows[0].append("reviewer")
+        for r in rows[1:]:
+            r.append("dev")
+    write_rows(path, rows)
+    if damage == "cp1252":
+        path.write_bytes(path.read_text(encoding="utf-8").encode("cp1252"))
+    before = csv_bytes(lib)
+    for flags in ((), ("--text-only",)):
+        code, out = run(capsys, "import-xlsx", "--content", lib, book, *flags)
+        assert code == 1, out
+        assert "no CSV was changed" in out
+        assert csv_bytes(lib) == before
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    reason = "not UTF-8 text: byte 0xE9" if damage == "cp1252" else "unknown column 'reviewer'"
+    assert "book.xlsx › scenarios: dialogue/scenarios.csv cannot be read (" in out and reason in out, out
+    assert "it never replaces the file blindly" in out
+
+
+@needs_openpyxl
+def test_import_recreates_a_missing_csv_from_the_workbook(lib, tmp_path, capsys):
+    book = tmp_path / "book.xlsx"
+    assert run(capsys, "export-xlsx", "--content", lib, book)[0] == 0
+    before = csv_bytes(lib)
+    (lib / "dialogue" / "scenarios.csv").unlink()
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 0, out
+    assert "dialogue/scenarios.csv" in out
+    assert read_rows(lib / "dialogue" / "scenarios.csv") == list(csv.reader(io.StringIO(
+        before["dialogue/scenarios.csv"].decode("utf-8"), newline="")))
+
+
+@needs_openpyxl
+def test_import_refuses_spreadsheet_error_values(lib, tmp_path, capsys):
+    """Verification of review finding L1: a pasted error value ('#REF!', data type 'e') was imported as text."""
+    from openpyxl import load_workbook
+
+    before = csv_bytes(lib)
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    cell = _sheet_cell(wb, "responses", 3, "reaction_text")
+    cell.value = "#REF!"
+    cell.data_type = "e"
+    wb.save(book)
+    assert load_workbook(book)["responses"]["E3"].data_type == "e"
+    for flags in ((), ("--text-only",)):
+        code, out = run(capsys, "import-xlsx", "--content", lib, book, *flags)
+        assert code == 1, out
+        assert "book.xlsx: responses!E3: this cell shows a spreadsheet error ('#REF!'); type the value itself" in out
+        assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+def test_import_refuses_a_formula_typed_as_text_in_a_notes_cell(lib, tmp_path, capsys):
+    """Verification of review finding L1: notes and actions.direct took '=cmd|...' as plain strings."""
+    from openpyxl import load_workbook
+
+    before = csv_bytes(lib)
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    for sheet, column, value in (("decisions", "notes", "=cmd|' /C calc'!A0"),
+                                 ("actions", "direct", "@SUM(1+1)*cmd|' /C calc'!A0")):
+        cell = _sheet_cell(wb, sheet, 2, column)
+        cell.value = value
+        cell.data_type = "s"
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book)
+    assert code == 1, out
+    assert "book.xlsx › decisions!Z2 [notes]: a spreadsheet would run this note as a formula" in out
+    assert "book.xlsx › actions!D2 [direct]: a spreadsheet would run this note as a formula" in out
+    assert csv_bytes(lib) == before
+
+
+@needs_openpyxl
+def test_editing_one_cell_twice_in_one_workbook_needs_a_fresh_export(lib, tmp_path, capsys):
+    """Verification of review finding M4: after an import the workbook's stamps describe the CSV before that
+    import, so a second edit of the same cell is refused (README step 6: export a fresh workbook)."""
+    from openpyxl import load_workbook
+
+    book = tmp_path / "book.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, book)
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "Writer first try."
+    wb.save(book)
+    assert run(capsys, "import-xlsx", "--content", lib, book, "--text-only")[0] == 0
+    wb = load_workbook(book)
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "Writer second try."
+    wb.save(book)
+    code, out = run(capsys, "import-xlsx", "--content", lib, book, "--text-only")
+    assert code == 1, out
+    assert "possibly by an earlier import of this same workbook" in out
+    fresh = tmp_path / "fresh.xlsx"
+    run(capsys, "export-xlsx", "--content", lib, fresh)
+    wb = load_workbook(fresh)
+    _sheet_cell(wb, "responses", 3, "reaction_text").value = "Writer second try."
+    wb.save(fresh)
+    assert run(capsys, "import-xlsx", "--content", lib, fresh, "--text-only")[0] == 0
+    assert read_rows(lib / "dialogue" / "responses.csv")[2][4] == "Writer second try."
 
 
 def test_export_names_the_cell_with_an_invisible_character(lib, tmp_path, capsys):

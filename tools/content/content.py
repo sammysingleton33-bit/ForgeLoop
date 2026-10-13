@@ -14,8 +14,9 @@ Commands (all take --content DIR; build/check also take --out DIR)
                            the CSV versions it was made from
   import-xlsx PATH [--build] [--text-only]
                            read the workbook back into the CSVs: validates first, lists every change (TEXT /
-                           MECHANICS / NOTES), refuses formulas and mechanics from a workbook older than the CSVs,
-                           never reverts a CSV text edited after the export, restores the original row order;
+                           MECHANICS / NOTES), refuses formulas, error values and mechanics from a workbook older
+                           than the CSVs, never reverts a CSV text edited after the export, never replaces a CSV it
+                           cannot read, restores the original row order;
                            --text-only takes only the text. Unchanged rows keep their bytes
   fmt                      rewrite every CSV in canonical form
 
@@ -30,6 +31,7 @@ import io
 import math
 import re
 import sys
+import unicodedata
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -111,7 +113,9 @@ KINGDOM_LOYALTY_FLOOR = -5  # per decision: kingdom audience_loyalty + loyalty c
 KINGDOM_STABILITY_FLOOR = -5  # per decision: stability column + stability consequences
 # Runtime clamp of one decision's applied loyalty change per listener (ContentQuery.LOYALTY_CLAMP, decision M3).
 LOYALTY_CLAMP = {"speaker": 25, "family": 10, "friends": 10, "rivals": 10, "kingdom": 5}
-# Characters that are invisible, reorder text or break a workbook (openpyxl refuses C0 controls).
+# Characters that are invisible, reorder text or break a workbook (openpyxl refuses C0 controls). Every other
+# Unicode format character (category Cf: invisible operators, tag characters, ...) is refused too, named by its
+# Unicode name (review finding L2).
 _INVISIBLE_NAMES = {0x2028: "line separator", 0x2029: "paragraph separator", 0x200B: "zero-width space",
                     0x200C: "zero-width non-joiner", 0x200D: "zero-width joiner", 0x2060: "word joiner",
                     0xFEFF: "zero-width no-break space", 0x7F: "delete", 0x09: "tab", 0x0A: "line break",
@@ -123,11 +127,17 @@ _INVISIBLE_NAMES = {0x2028: "line separator", 0x2029: "paragraph separator", 0x2
                     0x202C: "pop directional formatting", 0x202D: "left-to-right override",
                     0x202E: "right-to-left override", 0x2066: "left-to-right isolate",
                     0x2067: "right-to-left isolate", 0x2068: "first strong isolate",
-                    0x2069: "pop directional isolate"}
+                    0x2069: "pop directional isolate", 0x061C: "arabic letter mark",
+                    # Hangul fillers are letters (category Lo) that show as blank space
+                    0x115F: "hangul choseong filler", 0x1160: "hangul jungseong filler", 0x3164: "hangul filler",
+                    0xFFA0: "halfwidth hangul filler"}
 # Player-facing text may not start with these: a spreadsheet would run the cell as a formula when the CSV is
-# opened (CSV injection, review finding L1). Notes are not checked: they never reach the game, and they often
-# start with '+' or '-' ("+housing capacity").
+# opened (CSV injection, review finding L1).
 FORMULA_STARTS = ("=", "+", "-", "@")
+# Notes (and actions.direct) never reach the game, but developers open these CSVs in a spreadsheet too. They may
+# start with '+' or '-' ("+housing capacity", "-gold, +military readiness"), but never with '=' or '@', and a note
+# that starts with '+' or '-' may not hold a function call or a DDE link ("-2+3+cmd|...", "+HYPERLINK(...)").
+FORMULA_CALL = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*[(|]")
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 TAG_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -282,6 +292,18 @@ SPECS: tuple[TableSpec, ...] = (
     ), "actions"),
 )
 SPEC_BY_KEY = {s.key: s for s in SPECS}
+# The thought and speech bubbles cut text longer than FORGE-04's Bubbles maxChars (80) with an ellipsis (FORGE-00
+# decision L7). The raw limit counts a placeholder as spelled, so these columns must also fit the bubble with every
+# placeholder at its longest (review finding L7).
+BUBBLE_MAX_CHARS = 80
+BUBBLE_COLUMNS = {("scenarios", "thought_text"), ("responses", "reaction_text")}
+_GIVEN_NAME_MAX = SPEC_BY_KEY["names"].col("name").limit  # names.csv: given names fill {name}, {family}, ...
+PLACEHOLDER_MAX = {
+    "name": _GIVEN_NAME_MAX, "family": _GIVEN_NAME_MAX, "friend": _GIVEN_NAME_MAX, "rival": _GIVEN_NAME_MAX,
+    "ruler": 20,  # a Roblox display name has at most 20 characters
+    "occupation": SPEC_BY_KEY["occupations"].col("name_text").limit,
+    "kingdom": 20,  # config Kingdoms.luau display names (longest today 'Emerald Kingdom', 15); assumed <= 20
+}
 KEY_COLUMN = {
     "scenarios": "scenario_id", "responses": "response_id", "decisions": "decision_id",
     "consequences": "consequence_id", "traits": "trait_id", "occupations": "occupation_id",
@@ -538,19 +560,31 @@ def load_csv_table(spec: TableSpec, content_dir: Path, report: Report) -> Table 
 
 
 def _csv_position(prefix: str) -> tuple[int, int]:
-    """(spreadsheet row, 1-based column) where `prefix` ends: record breaks and commas outside quotes count."""
-    row, col, quoted = 1, 1, False
-    i, n = 0, len(prefix)
+    """(spreadsheet row, 1-based column) where `prefix` ends: record breaks and commas outside quotes count.
+    Quoting follows parse_csv: a cell is quoted only when '"' is its first character, '""' inside it is an escaped
+    quote, and a '"' inside an unquoted cell is a literal character (review finding L10)."""
+    row, col, quoted, cell_start = 1, 1, False, True
+    i, n = (1 if prefix.startswith("\ufeff") else 0), len(prefix)
     while i < n:
         c = prefix[i]
-        if c == '"':
-            quoted = not quoted
-        elif not quoted and c == ",":
+        if quoted:
+            if c == '"':
+                if i + 1 < n and prefix[i + 1] == '"':
+                    i += 1  # an escaped quote stays inside the cell
+                else:
+                    quoted = False
+        elif c == '"' and cell_start:
+            quoted = True
+            cell_start = False
+        elif c == ",":
             col += 1
-        elif not quoted and c in "\r\n":
+            cell_start = True
+        elif c in "\r\n":
             if c == "\r" and i + 1 < n and prefix[i + 1] == "\n":
                 i += 1
-            row, col = row + 1, 1
+            row, col, cell_start = row + 1, 1, True
+        else:
+            cell_start = False
         i += 1
     return row, col
 
@@ -901,6 +935,15 @@ class Validator:
         for problem in _placeholder_problems(v, placeholders):
             self.err(table, row, col, problem)
             ok = False
+        if ok and (table.spec.key, col) in BUBBLE_COLUMNS:
+            longest = _expanded_length(v)
+            if longest > BUBBLE_MAX_CHARS:
+                used = ", ".join(f"{{{name}}} {PLACEHOLDER_MAX[name]}"
+                                 for name in dict.fromkeys(m.group(1) for m in _PLACEHOLDER.finditer(v)))
+                self.err(table, row, col, f"with the longest names filled in ({used} characters) this text can "
+                                          f"reach {longest} characters, but the bubble shows {BUBBLE_MAX_CHARS} "
+                                          "and cuts the rest: shorten it")
+                ok = False
         if _invisible_problem(v, "text"):
             ok = False  # reported once by v_cells
         return v if ok else None
@@ -967,9 +1010,14 @@ class Validator:
             for row in t.rows:
                 for col in t.header:
                     c = t.spec.col(col)
-                    problem = _invisible_problem(row.values.get(col, ""), c.kind if c else "mech")
+                    value = row.values.get(col, "")
+                    problem = _invisible_problem(value, c.kind if c else "mech")
                     if problem:
                         self.err(t, row, col, problem)
+                    if c is not None and c.kind == "notes" and _notes_formula(value):
+                        self.err(t, row, col, "a spreadsheet would run this note as a formula (CSV injection): a "
+                                              "note may not start with '=' or '@', and one that starts with '+' "
+                                              "or '-' may not hold a function call or a '|' link; reword it")
 
     def run(self) -> Model:
         self.unlock_targets: set[str] = set()
@@ -1219,11 +1267,11 @@ class Validator:
                 param = param_raw or cid
                 if not TAG_RE.match(param):
                     self.err(tt, row, "param", f"'{param}' is not a valid memory tag")
-            elif kind == "cue":
-                if cue is None and self.raw(row, "cue_id") == "":
-                    self.err(tt, row, "cue_id", "kind 'cue' needs a cue_id")
             elif kind is not None and param_raw:
                 self.err(tt, row, "param", f"kind '{kind}' takes no param (leave it empty)")
+                param = None
+            if kind == "cue" and cue is None and self.raw(row, "cue_id") == "":
+                self.err(tt, row, "cue_id", "kind 'cue' needs a cue_id")
             if kind in ("productivity", "strike", "resource_over_time") and duration == 0:
                 self.err(tt, row, "duration_s", f"kind '{kind}' needs duration_s > 0")
             if kind == "strike" and target is not None:
@@ -1564,19 +1612,35 @@ def _placeholder_problems(text: str, allowed: tuple[str, ...] = ()) -> list[str]
 
 
 def _invisible_problem(value: str, kind: str) -> str | None:
-    """First invisible/control character in a cell, or None. Notes may hold tabs and line breaks; text reports
-    line breaks itself (p_text)."""
+    """First invisible/control/format character in a cell, or None. Notes may hold tabs and line breaks; text
+    reports line breaks itself (p_text)."""
     for i, ch in enumerate(value):
         o = ord(ch)
         if ch in "\n\r" and kind in ("notes", "text"):
             continue
         if ch == "\t" and kind == "notes":
             continue
-        if o < 0x20 or o == 0x7F or 0x80 <= o <= 0x9F or o in _INVISIBLE_NAMES:
-            name = _INVISIBLE_NAMES.get(o, "control character")
+        if (o < 0x20 or o == 0x7F or 0x80 <= o <= 0x9F or o in _INVISIBLE_NAMES
+                or unicodedata.category(ch) == "Cf"):
+            name = _INVISIBLE_NAMES.get(o) or unicodedata.name(ch, "").lower() or "control character"
             return (f"invisible character U+{o:04X} ({name}) at position {i + 1}; delete it (it usually comes "
                     "from copy-paste)")
     return None
+
+
+def _notes_formula(value: str) -> bool:
+    """Whether a spreadsheet opening the CSV would run this notes cell as a dangerous formula (review finding L1)."""
+    v = value.lstrip()
+    if v[:1] in ("=", "@"):
+        return True
+    if v[:1] in ("+", "-"):
+        return v.lstrip("+- \t")[:1] in ("=", "@") or FORMULA_CALL.search(v) is not None
+    return False
+
+
+def _expanded_length(text: str) -> int:
+    """The length of a TEXT once the game fills its placeholders, each at its longest (PLACEHOLDER_MAX)."""
+    return len(_PLACEHOLDER.sub(lambda m: "x" * PLACEHOLDER_MAX.get(m.group(1), len(m.group(0))), text))
 
 
 def validate_tables(tables: dict[str, Table], report: Report) -> Model:
@@ -2128,6 +2192,10 @@ def _column_comment(spec: TableSpec, col: Column) -> str:
         limit = f" Max {col.limit} characters." if col.limit else ""
         allowed = _column_placeholders(spec.key, col.name)
         ph = f" Placeholders: {_placeholder_list(allowed)}." if allowed else " No placeholders here."
+        if (spec.key, col.name) in BUBBLE_COLUMNS:
+            longest = ", ".join(f"{{{p}}} {n}" for p, n in PLACEHOLDER_MAX.items())
+            ph += (f" In the bubble it must also fit {BUBBLE_MAX_CHARS} characters with the longest names filled in "
+                   f"({longest}).")
         return (f"EDIT — player-facing text: {col.help}.{limit}{ph} Do not type numbers that the mechanics decide.")
     if col.kind == "style":
         return f"EDIT — presentation, pick from the dropdown: {col.help}."
@@ -2405,7 +2473,8 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         ("1. Change text only in YELLOW columns (marked EDIT in the header comment). Stay within the character limit.", ""),
         ("   Text may not start with = + - or @ (a spreadsheet would run it as a formula). Never type formulas.", ""),
         ("2. GREY columns are mechanics (ids, numbers, conditions). Changing them changes gameplay — see SPEC.md first.", ""),
-        ("3. WHITE columns are notes for designers; they never reach the game. BLUE columns are read-only help.", ""),
+        ("3. WHITE columns are notes for designers; they never reach the game (a note may not start with = or @). "
+         "BLUE columns are read-only help.", ""),
         ("4. Never rename sheets or header cells, never add or remove columns or sheets. Add rows at the bottom.", ""),
         ("5. Sorting and filtering are fine: the import puts rows back in their original order.", ""),
         ("6. Ids link sheets together: responses.decision_id must exist in decisions, and so on. Use the dropdowns.", ""),
@@ -2422,6 +2491,8 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         ("Without it, grey columns are imported too, but only if nobody changed the CSV files since this export.", ""),
         ("Text a developer changed in the CSV after this export is never undone: cells you did not edit keep the newer "
          "text; a cell you both changed is refused (export a fresh workbook).", ""),
+        ("After each import, export a fresh workbook before you edit again: this one still describes the files as "
+         "they were before your import, so editing an imported cell here a second time is refused.", ""),
         ("The import checks everything first and changes nothing if it finds an error; errors name the sheet and cell.", ""),
         ("It always lists every change it made, split into TEXT, MECHANICS and NOTES.", ""),
         ("", ""),
@@ -2535,6 +2606,12 @@ def read_workbook(path: Path, report: Report) -> tuple[dict[str, Table], Stamps]
                     report.add("error", None, None, None, f"{where}: this cell is a formula ({_short(formula, 40)}); "
                                                           "formulas are never imported: type the value itself, as "
                                                           "text", source=source)
+                    cells.append("")
+                    continue
+                if cell.data_type == "e":
+                    report.add("error", None, None, None, f"{where}: this cell shows a spreadsheet error "
+                                                          f"({_short(str(cell.value), 40)}); type the value itself",
+                               source=source)
                     cells.append("")
                     continue
                 try:
@@ -2700,7 +2777,8 @@ def _guard_editable(spec: TableSpec, cur: Table, wbt: Table, stamps: Stamps, fil
                 kept.append(Change(_change_kind(spec, col), spec.key, label, col, theirs, now, w_row.num, False))
                 continue
             if stamp is not None:
-                why = f"it was also changed in {spec.path} after this workbook was exported"
+                why = (f"it was also changed in {spec.path} after this workbook was exported, possibly by an "
+                       "earlier import of this same workbook")
             elif stamps.cells is None:
                 why = (f"{spec.path} changed after the export, and this workbook has no per-cell export stamp (made "
                        "by an older tool), so the import cannot tell whether this would undo a newer edit")
@@ -2754,10 +2832,23 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
     merged: dict[str, Table] = {}
     for key, wbt in sheets.items():
         spec = SPEC_BY_KEY[key]
-        cur = load_csv_table(spec, content_dir, Report())
+        csv_path = content_dir / spec.path
+        loaded = Report()
+        cur = load_csv_table(spec, content_dir, loaded)
         if cur is None or not cur.usable or not wbt.usable:
             if text_only:
                 report.add("error", wbt, None, None, f"--text-only needs a readable {spec.path} to merge into")
+                continue
+            # Review finding M4: a CSV the import cannot read (not UTF-8, a broken header) cannot be compared with
+            # the workbook, so replacing it could undo edits made after the export. Only a missing file, or one
+            # that is byte-identical to the export, may be replaced from the workbook.
+            as_exported = stamps.files is not None and stamps.files.get(spec.path) == _sha256(csv_path)
+            if csv_path.is_file() and not as_exported:
+                first = loaded.errors[0].render() if loaded.errors else "it cannot be read"
+                report.add("error", wbt, None, None,
+                           f"{spec.path} cannot be read ({first}), so the import cannot tell which of its cells "
+                           "changed after this workbook was exported, and it never replaces the file blindly: fix "
+                           "the file (save it as 'CSV UTF-8' with its original header), then import again")
                 continue
             merged[key] = wbt  # nothing to compare with: validation below has the last word
             continue
