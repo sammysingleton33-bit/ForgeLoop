@@ -160,8 +160,13 @@ render script.
 - Verdict: every portrait matches its rig in colours, headwear, crest and tool, and is head and shoulders. The
   face and the hat, crown or crest are uncropped, the shoulder line and arm tops are visible, and the outer
   arm edges are cut in a square frame.
-- Tall crests pull the camera back, so the face share of the frame height is 0.41–0.42 for citizens, the
-  governor and plain soldiers, and 0.27 (spire), 0.29 (plume), 0.33 (dome) and 0.38 (square) for crested soldiers.
+- Tall crests pull the camera back, so the face share of the frame height is 0.39–0.41 for citizens, the
+  governor and plain soldiers, and 0.25 (spire), 0.31 (plume), 0.31 (dome) and 0.36 (square) for crested soldiers.
+  These were measured with the 0.45 headroom and the crest follow-up geometry. The spire is just above the
+  spec's 0.25 floor.
+- Re-rendered after the crest CVD follow-up (wider spire, plume at 70°): the wider spire still fits with headroom
+  and its base corners are not cropped. The 70° plume is uncropped but reads as a short stub from the front,
+  because the tail hides behind the helm.
 - Unverified: the face decal is not in the Blender preview, and the ViewportFrame look in Studio (lighting,
   `Ambient`/`LightDirection`) is not checked.
 
