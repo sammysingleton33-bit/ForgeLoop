@@ -13,15 +13,12 @@
 		ReputationText.CONDITIONS -> { { id, name, icon } }          happiness, stability, morale
 		ReputationText.isCategory(id) -> boolean
 		ReputationText.fromContent(module) -> Provider?    a provider over a Content/Reputation module
-		ReputationText.provider -> Provider?               the default (from CONTENT; nil until FL-0083)
+		ReputationText.provider -> Provider?               the default: FORGE-00's content library (FL-0083)
 		Provider = (id) -> { name: string?, description: string?, affects: string? }?
 
-	FL-0083 switch — once `games/game-001/src/shared/Content/Reputation.luau` is on main, change the
-	one line below (`local CONTENT: any = nil`) to
-		local CONTENT: any = require("@game/ReplicatedStorage/Game/Content/Reputation")
-	Until then the require would fail the place check (a missing module) and non-literal requires
-	are not allowed, so it stays nil. ReputationPanelController:setCategoryText(provider) overrides
-	the default (specs inject sample text that way).
+	Category prose comes from FORGE-00's content library (`Content/Reputation`, FL-0083, merged in
+	#53). ReputationPanelController:setCategoryText(provider) overrides the default (specs inject
+	sample text, or nil for "no prose", that way).
 	Why the phone strip shows icons and not letters: three categories start with C.
 ]]
 
@@ -30,7 +27,7 @@ export type CategoryInfo = { id: string, name: string, icon: string, color: stri
 export type Text = { name: string?, description: string?, affects: string? }
 export type Provider = (id: string) -> Text?
 
-local CONTENT: any = nil -- FL-0083: require("@game/ReplicatedStorage/Game/Content/Reputation")
+local CONTENT: any = require("@game/ReplicatedStorage/Game/Content/Reputation")
 
 local ReputationText = {}
 

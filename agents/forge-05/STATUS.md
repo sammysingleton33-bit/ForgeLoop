@@ -4,12 +4,14 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/05-integration` (PR branches `forge/05-integration-fl00xx`); cloud session 2026-10-12 |
-| Open PR | FL-0093 G13.7 debug presets + STUDIO_PLAYTEST rows 1–9 (`forge/05-integration-fl0093`) |
-| Current task | D-030: merge in dependency order and send the user a build after every visible change (FL-0093). Hours to VS-1 depend on FORGE-01 (sim, population, conversations, reputation, plots); integration adds about 0.5 h per merge wave |
-| Last verified check | CI on main green [run 38310484338](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38310484338) at `b6f252f`; user build B1 `forgeloop-game001-b6f252f` (id 11774113089) |
+| Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
+| Open PR | none of mine (#47 G13.5 spec and #57 CI openpyxl merged) |
+| Current task | D-030 / FL-0093: merge in dependency order; user builds B1–B4 delivered, B5 being prepared from `71a0257` (#60 throne/levels/looks, #62 no trees in buildings + rectangle placement, #58/#65 UI fixes, #33 notifications). Waiting on the user's first Studio report |
+| Last verified check | main `bcd0d23` CI green [run 38321307926](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38321307926); user build B4 `forgeloop-game001-bcd0d23` (id 11779067478) |
 | Blockers | none |
-| Needs from others | User: open build B1 (Test → Run) and send the WorldService ready line + screenshots; repo visibility (D-015). FORGE-01: #31 merge-main + F1 (ground slab) push; debug hooks (handoff 2026-10-12 debug-hooks). FORGE-03: #25 conflict fix, then M1 (menus rebuild on every push). FORGE-04: #29 conflict fix. FORGE-02: world part budget, CanQuery on zone parts, pcall around the build. |
+| In review / queued | #61 (FORGE-01 population; reviewed, held for FORGE-03's JobModel target-order fix) · #45 (reviewed; held: tutorial stalls at AnswerCitizen until FORGE-03 reports it) · #42, #49 (reviewed; need FORGE-04 main merge) · #63 (needs FORGE-03 main merge) |
+| Merge gates I hold | FORGE-01 `Kingdom.Converse` server only after the client shows option cost and risks (#52 M1, G13.3); #61 only with FORGE-03's JobModel fix (stale `quotas` loses quick taps) |
+| Needs from others | User: run B4 and send the Output/FPS/screenshots ask-list (via FORGE-00). FORGE-01: #46 M1 trees through starting buildings, #50 M1/M2/M4/M5, population remotes, FL-0081 PlaceSlot server. FORGE-03: #58 re-sync, FL-0088 gate PR. FORGE-04: R42-1/R42-6, #49 M1/M2 |
 
 ## Merged so far (integration log: `production/quality-gates/integration-log.md`)
 | PR | What | main sha |
@@ -37,6 +39,35 @@ _Maintained by the worker. Keep it short and current._
 | #27, #28 | FORGE-02 Kit v0.2.0; world v0 (WorldService) | `caa376d`, `242c081` |
 | #30 | Lighting.Technology = Future | `b6f252f` (user build B1) |
 | #32 | ownership row for the G13.7 presets | `2afa5d5` |
+| #35 | G13.7 debug presets, STUDIO_PLAYTEST rows 1–9 | `51ebfb3` |
+| #36 | boot gate: error-level logs fail, 75 virtual seconds | `da90aba` |
+| #25 | FORGE-03 Kingdom HUD and build menu | `bdf1689` |
+| #38 (re-target of #37) | FORGE-02 build slots (G13.5) | `dc0b09f` |
+| #31 | FORGE-01 Match + Kingdom core | `232bb39` |
+| #29 | FORGE-04 ruler controls + aerial camera | `32ef652` |
+| #40 | merge checklist: base = main, ls-remote after | `1ba711b` |
+| #43 | FORGE-02 world hardening | `986c773` (user build B2) |
+| #34 | FORGE-03 plot picker and upgrade panel | `f33e434` |
+| #39 | FORGE-01 entity replication | `b37cf9f` |
+| #41 | FORGE-03 menus keep their instances (M1) | `94db2a2` |
+| #51 | FORGE-01 F1: no ground slab | `a0377a1` (user build B3) |
+| #44 | FORGE-03 reputation strip and screen | `81b3b13` |
+| #54 | FORGE-01 citizen height | `a65d99b` |
+| #52 | FORGE-03 citizen card and conversation UI | `3e0bbfc` |
+| #53 | FORGE-00 content library | `4d880a4` |
+| #46 | FORGE-01 living-kingdom groundwork | `efa81fe` |
+| #48 | FORGE-03 plot-picker follow-ups | `8685b4a` |
+| #57 | CI tools job installs openpyxl | `4a67058` |
+| #55 | FORGE-03 Jobs tab | `cb03ff8` |
+| #50 | FORGE-01 Build remotes | `a683d66` |
+| #56 | FORGE-01 G13.5 alignment, Build/Fit | `bcd0d23` (user build B4) |
+| #47 | G13.5 Costs vs Buildings integration spec | `9520a57` |
+| #59 | FORGE-01 F2/F3 spawn robustness | `6a36062` |
+| #58 | FORGE-03 #41/#44/#48 follow-ups (strip gap, state label, modal) | `84c7798` |
+| #60 | FORGE-02 throne, building levels, citizen looks | `25b11cb` |
+| #65 | FORGE-03 Jobs tab M1/M2 + #58 follow-ups | `0072e9d` |
+| #33 | FORGE-04 NotificationController | `575fa3e` |
+| #62 | FORGE-01 Kit-rectangle placement, nodes clear of buildings/slots | `71a0257` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

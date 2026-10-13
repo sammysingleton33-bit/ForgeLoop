@@ -231,6 +231,7 @@ function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, 
 	local selected = pick(rows, input.selected)
 	local label = `{SlotFit.NAMES[slot.size] or slot.size} plot`
 	return {
+		empty = if #rows == 0 then "Nothing can be built on this plot yet." else nil,
 		loading = not store:hasTreasury() or store:mine() == nil,
 		category = "plot",
 		tabs = { { id = "plot", label = label, icon = "build" } },

@@ -155,13 +155,13 @@ Rules under test (headless specs: `roblox/tests/unit/experience/Notification.spe
 
 | Rule | Value |
 |---|---|
-| Visible at once | 3, in the top right, newest on top; ScreenGui DisplayOrder 70 with CoreUISafeInsets |
+| Visible at once | 3, in the top right (or where the HUD places them), newest on top; ScreenGui DisplayOrder 70 with CoreUISafeInsets; below the onboarding card while it shows |
 | Priority | error = warning > achievement > reward > success = info; a higher one replaces the oldest lower one when full |
 | Waiting | at most 8; the rest are dropped, lowest priority and oldest first |
 | Repeats | the same notice adds "×N" and refreshes its time (at most 12 s after it first showed); no repeated sound |
 | Durations | info/success 3.5 s, reward 4 s, warning/error/achievement 5 s (clamped 1–10 s) |
 | Setting `notifications = important` | only warnings, errors, achievements and celebrations |
-| Celebrations | own sound + effect + silent toast; the same moment within 1 s plays once |
+| Celebrations | own sound + effect + silent toast; the same moment within 1 s plays once; a different moment of that kind within 1 s shows its toast without a second fanfare |
 
 Steps
 1. Play Solo, filter Output for `NotificationController`: expect no error line.
@@ -169,8 +169,9 @@ Steps
 3. Settings → Notifications → Important. Place a building: no "placed" toast. A warning or error notice from the HUD, if one comes up, still shows. Set it back to All.
 4. Finish the tutorial (E6): a "Tutorial complete" toast with the onboarding.complete sound (when chosen, user sounds handoff) and the gold burst over the ruler. Skipping the tutorial in a new session shows no celebration.
 5. Device emulator, a small phone: the stack stays inside the safe area, does not cover the top bar or the thumbstick, and its text is readable; each card is at most about half the screen wide.
+6. Same phone, during the tutorial (E6) with HUD notices coming in: the toasts start below the onboarding card, and Skip and the step counter stay visible and tappable.
 
-Pass: steps 1–5 hold. Note anything that feels noisy (too many toasts in a busy minute) for the FL-0062 tuning.
+Pass: steps 1–6 hold. Note anything that feels noisy (too many toasts in a busy minute) for the FL-0062 tuning.
 
 ## E8 — Citizen bubbles, reactions and strike placards (FL-0091, game-001)
 Needs:

@@ -11,6 +11,8 @@
 		    FORGE-04 never reacts to RewardRolled itself, so a reward is never celebrated twice.
 		NotificationController:registerCelebration(kind, spec) -> { string }   -- games add moments (FL-0062)
 		NotificationController:dismiss(id)
+		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)   -- the HUD's layout
+		NotificationController:reserveTop(owner: string, px: number?)   -- keep the stack below a card; nil frees
 		NotificationController.shown: Signal (item)     .celebrated: Signal (kind, payload)
 		NotificationController.queue                     -- Experience/NotificationQueue (rules and stats)
 
@@ -20,15 +22,24 @@
 	Celebrations: CELEBRATIONS below, plus whatever a game registers. A spec is
 		{ sound: string?, vfx: string?, toast: { kind, title, body? }?, cooldownSec: number? }
 	where title and body may contain {field} placeholders filled from the payload's string and number
-	fields (any other value leaves the placeholder empty). Sounds play through AudioController and
-	effects through VFXController (both found with registry:find, so either may be absent). The same
-	kind within cooldownSec (default 1 s) is coalesced into the first one, so two systems reporting
-	one moment never give a double fanfare. Every celebration has a visual: a spec with a sound and
-	neither a toast nor a vfx is rejected (accessibility rule, as in CueDirector).
+	fields (any other value leaves the placeholder empty; a payload that is not a table counts as none).
+	Sounds play through AudioController and effects through VFXController (both found with
+	registry:find, so either may be absent). Within cooldownSec (default 1 s) of a kind's fanfare:
+	the same moment again (same toast text) is dropped, so two systems reporting one moment never give
+	a double fanfare; a different moment of that kind shows its toast, silent, without a second
+	fanfare. Every celebration has a visual: a spec with a sound and neither a toast nor a vfx is
+	rejected (accessibility rule, as in CueDirector).
+
+	Text is shown as given. Titles, bodies and payload fields must be pre-authored or already filtered
+	by the server (TextService) before they carry player-written text; kingdom and display names are
+	fine (FL-0062 passes them).
 
 	View: FORGE-03's UI kit (`UI/Components/Toast`, FL-0020). ScreenGui "ForgeNotifications",
 	DisplayOrder 70 (the notifications band, interfaces §9), ScreenInsets CoreUISafeInsets, a stack in
-	the top right at most 300 px or 46 % of the screen wide, newest on top. Each card is a Toast (kind
+	the top right at most 300 px or 46 % of the screen wide, newest on top, until a game places it
+	(`place`, the same shape as FORGE-03's `ToastStack:place`, e.g. the HUD's `Layout.toastTop`).
+	A card that sits under the stack's band (the onboarding card on phones) calls `reserveTop` while it
+	shows, and the stack starts below it, so toasts never cover its buttons. Each card is a Toast (kind
 	accent and icon, title, body, the ×N badge); a change of title, body or count rebuilds the card,
 	since Toast has no update API. A transparent "Dismiss" button over the card makes a tap dismiss
 	it. A toast never blocks input elsewhere.
@@ -46,6 +57,7 @@ local Def = { name = "NotificationController", dependencies = { "SettingsControl
 Def.DISPLAY_ORDER = 70
 Def.TICK_SEC = 0.1
 Def.WIDTH = 300
+Def.POSITION = UDim2.new(1, -12, 0, 12) -- top right, until a game places the stack
 Def.KIND_SOUND = table.freeze({
 	info = "notify.info",
 	success = "notify.info",
@@ -159,6 +171,8 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_connections = {},
 		_running = false,
 		_root = nil :: any,
+		_placement = { position = Def.POSITION, anchor = Vector2.new(1, 0), width = Def.WIDTH },
+		_reserved = {} :: { [string]: number },
 		queue = NotificationQueue.new({ now = env.clock, config = opts.config }),
 		shown = Signal.new(),
 		celebrated = Signal.new(),
@@ -253,19 +267,58 @@ function NotificationController:celebrate(kind: string, payload: any): boolean
 		)
 		return false
 	end
+	local data = if type(payload) == "table" then payload else nil
+	local title = if spec.toast then fill(spec.toast.title, data) or fill(data and data.title, data) else nil
+	local key = if title then `celebrate:{kind}:{title}` else nil
 	local now = self._env.clock()
 	local last = self._lastCelebration[kind]
-	if last ~= nil and now - last < (spec.cooldownSec or 1) then
-		return false
+	local cooling = last ~= nil and now - last.at < (spec.cooldownSec or 1)
+	if cooling and (key == nil or last.keys[key]) then
+		return false -- the same moment reported twice: one fanfare, one toast
 	end
-	self._lastCelebration[kind] = now
-	local position = if type(payload) == "table" and typeof(payload.position) == "Vector3"
-		then payload.position
-		else nil
+	if cooling then
+		last.keys[key :: string] = true -- another moment of this kind: its toast, no second fanfare
+	else
+		self._lastCelebration[kind] = { at = now, keys = if key then { [key] = true } else {} }
+		self:_fanfare(spec, data)
+	end
+	if title then
+		-- the celebration has its own sound: the toast stays silent
+		self:show({
+			title = title,
+			body = fill(spec.toast.body, data),
+			kind = spec.toast.kind or "achievement",
+			key = key,
+			important = true,
+			silent = true,
+		})
+	end
+	self.celebrated:fire(kind, data)
+	return true
+end
 
+function NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)
+	self._placement = {
+		position = position,
+		anchor = anchor or Vector2.new(1, 0),
+		width = if type(width) == "number" and width > 0 then width else Def.WIDTH,
+	}
+	self:_layout()
+	self:_rebuild() -- cards take the new width
+end
+
+function NotificationController:reserveTop(owner: string, px: number?)
+	self._reserved[owner] = if type(px) == "number" and px == px then px else nil
+	self:_layout()
+end
+
+-- ------------------------------------------------------------------ internals
+
+function NotificationController:_fanfare(spec: any, data: any)
+	local position = if data and typeof(data.position) == "Vector3" then data.position else nil
 	local audio = self._registry:find("AudioController")
 	if audio and spec.sound then
-		local id = fillId(spec.sound, payload)
+		local id = fillId(spec.sound, data)
 		local voice = if id then audio:play(id) else nil
 		if voice == nil and spec.fallbackSound then
 			audio:play(spec.fallbackSound)
@@ -275,25 +328,7 @@ function NotificationController:celebrate(kind: string, payload: any): boolean
 	if vfx and spec.vfx then
 		vfx:play(spec.vfx, { position = position or self:_rulerPosition() })
 	end
-	if spec.toast then
-		local title = fill(spec.toast.title, payload) or fill(payload and payload.title, payload)
-		if title then
-			-- the celebration already played its own sound: the toast stays silent
-			self:show({
-				title = title,
-				body = fill(spec.toast.body, payload),
-				kind = spec.toast.kind or "achievement",
-				key = `celebrate:{kind}:{title}`,
-				important = true,
-				silent = true,
-			})
-		end
-	end
-	self.celebrated:fire(kind, payload)
-	return true
 end
-
--- ------------------------------------------------------------------ internals
 
 function NotificationController:_rulerPosition(): Vector3?
 	local ok, position = pcall(function()
@@ -363,20 +398,44 @@ function NotificationController:_rootView(): any
 	local stack = env.newInstance("Frame")
 	stack.Name = "Stack"
 	stack.BackgroundTransparency = 1
-	stack.AnchorPoint = Vector2.new(1, 0)
-	stack.Position = UDim2.new(1, -12, 0, 12)
-	stack.Size = UDim2.new(0.46, 0, 1, -24)
 	stack.Parent = gui
 	local limit = env.newInstance("UISizeConstraint")
-	limit.MaxSize = Vector2.new(Def.WIDTH, math.huge)
 	limit.Parent = stack
 	local list = env.newInstance("UIListLayout")
 	list.SortOrder = Enum.SortOrder.LayoutOrder
 	list.Padding = UDim.new(0, 8)
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	list.Parent = stack
-	self._root = { gui = gui, stack = stack }
+	self._root = { gui = gui, stack = stack, limit = limit }
+	self:_layout()
 	return self._root
+end
+
+-- Applies the placement and the reserved top to the stack (nothing to do before it exists).
+function NotificationController:_layout()
+	local root = self._root
+	if root == nil then
+		return
+	end
+	local placement = self._placement
+	local position = placement.position
+	local top = position.Y.Offset
+	for _, px in self._reserved do
+		top = math.max(top, px)
+	end
+	root.stack.AnchorPoint = placement.anchor
+	root.stack.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, top)
+	root.stack.Size = UDim2.new(0.46, 0, 1, -(top + 12))
+	root.limit.MaxSize = Vector2.new(placement.width, math.huge)
+end
+
+-- Rebuilds every visible card (after a width change).
+function NotificationController:_rebuild()
+	for id, view in self._views do
+		view.toast:destroy()
+		self._views[id] = nil
+	end
+	self:_sync()
 end
 
 local function signature(item: any): string
@@ -390,7 +449,7 @@ function NotificationController:_buildToast(item: any, parent: any, layoutOrder:
 		body = item.body,
 		icon = item.icon,
 		count = item.count,
-		width = Def.WIDTH,
+		width = self._placement.width,
 		layoutOrder = layoutOrder,
 	})
 	local frame = toast.instance
