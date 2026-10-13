@@ -12,6 +12,7 @@ local ArmyText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArmyT
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomWorld = require("./doubles/KingdomWorld")
+local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 local ObjectiveDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ObjectivePanelController")
 local PopulationDoubles = require("./doubles/PopulationDoubles")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
@@ -393,6 +394,19 @@ describe("Objective tracker (FL-0060)", function()
 		world:advance(0.1)
 		expect(row.Visible).toBe(false)
 		expect(find(t, "Objective_hill").Visible).toBe(true)
+	end)
+
+	it("sits under the top-left stack and moves down when the reputation strip appears (#58 strip room)", function()
+		world = newWorld({ width = 1024, height = 690 })
+		local without = Layout.compute(1024, 690, { reputation = false }).hud.objectives
+		expect(tracker(world).Position.Y.Offset).toBe(without.y)
+		-- the strip shows for the first time (ReputationPanelController sets the flag)
+		world.hud.state.reputation = true
+		world.hud:render()
+		local with = Layout.compute(1024, 690, { reputation = true }).hud.objectives
+		expect(with.y).toBeGreaterThan(without.y)
+		expect(tracker(world).Position.Y.Offset).toBe(with.y)
+		expect(find(tracker(world), "Objective_watchtower")).toBeTruthy()
 	end)
 
 	it("a tap expands the list; phone toasts with an open drawer start below the tracker", function()
