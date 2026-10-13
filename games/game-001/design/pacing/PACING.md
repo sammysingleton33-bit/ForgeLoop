@@ -44,7 +44,7 @@ The user prefers about 25 minutes of kingdom play, then a 5-minute final phase, 
 
 - Total: 1,820 s (30 min 20 s). `PacingService` checks that Founding..Arena lasts 25–35 minutes.
 - `phaseDurations("match30")` also returns `Arena`; `match` and `slice` have none until VS-2.
-- MatchService (FORGE-01) keeps `match` as the default. Someone has to choose `match30` deliberately, for example through a debug preset.
+- The default stays `slice` in VS-1 and `match` for the full match; `match30` runs only when deliberately selected. Selecting it needs a FORGE-01 change to `Match.durationsFor` and MatchService, plus an optional FORGE-05 debug preset; both are pending. Until MatchPhase gains Arena (G12.1), a `match30` run ends after Endgame (25 min) without the final phase.
 
 ## 3. VS-1 slice, minute by minute (*targets*, from spawn)
 Assumptions:

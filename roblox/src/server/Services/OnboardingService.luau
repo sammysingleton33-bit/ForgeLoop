@@ -18,11 +18,14 @@
 		a step's `requires`    a service missing from this server (registry:find at start) passes that step
 		                       over (via "unavailable"), e.g. AnswerCitizen before ConversationService exists
 	On each completed step: persist (SettingsService:update "onboarding"), AnalyticsService:funnel
-	("Onboarding", index, id) for the funnel flow (not for a step passed over as unavailable, nor for an
-	interactive step that timed out: the funnel counts what players did), GameEvents.OnboardingStep(player, flow, index, id),
+	("Onboarding", index, id) for the funnel flow, GameEvents.OnboardingStep(player, flow, index, id),
 	the step reward through EconomyService:grant (txId "onboarding:<flow>:<step>:<userId>", idempotent),
 	and a new state for the client. On the last step: OnboardingCompleted (value = seconds) and the
 	flow's completeReward.
+	A step passed over (via "unavailable") or an interactive step that timed out is still logged as its
+	funnel step: Roblox counts a skipped intermediate step as completed anyway, so leaving it out would
+	change nothing. It is also logged as OnboardingStepPassed (value = step; stepName, via), so the
+	dashboard can tell players who did the step from players who were moved past it.
 
 		OnboardingService:state(player, flowId?) -> snapshot?      -- Onboarding.snapshot
 		OnboardingService:skip(player, flowId) -> boolean
@@ -257,10 +260,16 @@ function OnboardingService:_apply(player: any, flow: any, state: any, transition
 	end
 	for _, transition in transitions do
 		local step = flow.steps[transition.index]
-		local didIt = transition.via ~= "unavailable"
-			and not (transition.via == "timeout" and step and step.interactive)
-		if flow.funnel and not state.skipped and didIt then
+		local passed = transition.via == "unavailable" or (transition.via == "timeout" and step and step.interactive)
+		if flow.funnel and not state.skipped then
 			self._analytics:funnel(player, FUNNEL, transition.index, transition.id)
+			if passed then
+				self._analytics:event(player, "OnboardingStepPassed", {
+					step = transition.index,
+					stepName = transition.id,
+					via = transition.via,
+				})
+			end
 		end
 		if Bus.declared(self._bus, "OnboardingStep") then
 			self._bus.OnboardingStep:fire(player, flow.id, transition.index, transition.id)

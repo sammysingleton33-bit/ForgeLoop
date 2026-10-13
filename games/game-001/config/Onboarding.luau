@@ -17,6 +17,13 @@
 	- Hints are one line and point at WorldService's tags (BuildSlot, G13.5; ObjectiveZone, G10;
 	  the nearest one is marked) or at HUD controls by their OnboardingTarget attribute (FORGE-03).
 	  Requests are marked by the citizens' own "!" bubbles (FL-0091), so that step needs no arrow.
+	- A step whose system is not on this server yet is passed over (`requires`, via "unavailable"):
+	  AnswerCitizen needs ConversationService (FL-0079), Recruit MilitaryService and Capture
+	  ObjectiveService (FL-0052). So the tutorial never waits for a system that is not there; the
+	  funnel still counts the step (Roblox counts skipped steps as done) and OnboardingStepPassed
+	  records that the player was moved past it.
+	- Recruit's nudge waits out the planned Barracks and stockpile wait (nudgeAfterSec >= expectSec),
+	  so OnboardingHintEscalated there means stuck, not "still saving up" (FORGE-00 PACING review M5).
 	- Session-only progress when DataService is absent (D-027). No rewards: VS-1 has no meta currency.
 	Timing (expectSec, typical new player): first interaction ~20 s (<= 30), first build placed ~70 s
 	(<= 90), first answer ~160 s, recruit ~310 s (<= 330), capture ~430 s (<= 450; PACING.md targets).
@@ -98,9 +105,10 @@ return table.freeze({
 						body = "Soldiers cost food and wood from the treasury.",
 						target = { kind = "ui", name = "HUD.Recruit" },
 					},
+					requires = "MilitaryService",
 					expectSec = 150,
 					interactive = true,
-					nudgeAfterSec = 60,
+					nudgeAfterSec = 180,
 				},
 				{
 					id = "Capture",
@@ -110,6 +118,7 @@ return table.freeze({
 						body = "Press Send to capture and hold the ring until the bar fills.",
 						target = { kind = "world", tag = "ObjectiveZone" },
 					},
+					requires = "ObjectiveService",
 					expectSec = 120,
 					interactive = true,
 					nudgeAfterSec = 45,

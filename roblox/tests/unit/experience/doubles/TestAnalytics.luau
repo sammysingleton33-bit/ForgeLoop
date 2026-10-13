@@ -28,6 +28,7 @@ function TestAnalytics.build(hooks: { membersOf: ((string) -> { any })?, matchId
 			OnboardingCompleted = { description = "done", value = "durationSec", fields = { "flow" } },
 			OnboardingSkipped = { description = "skip", value = "lastStep", fields = { "lastStepName", "flow" } },
 			OnboardingHintEscalated = { description = "stuck", value = "step", fields = { "stepName" } },
+			OnboardingStepPassed = { description = "passed", value = "step", fields = { "stepName", "via" } },
 			MatchEnded = { description = "end", value = "durationSec", fields = { "won", "placement", "mode" } },
 			BuildingCompleted = { description = "built", value = "level", fields = { "buildingType" } },
 			AchievementUnlocked = { description = "ach", fields = { "achievementId" } },

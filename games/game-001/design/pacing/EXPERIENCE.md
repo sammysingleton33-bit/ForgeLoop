@@ -24,7 +24,7 @@ _Onboarding v2 (D-030, FL-0092)._ The player rules from the throne in the aerial
 |---|---|---|
 | 0:00 | The view opens high above their own keep, with the ruler seated on the throne (regalia in kingdom colours). Founding horn; card "Welcome, ruler. Your kingdom awaits." Calm music | step `Spawn` on `KingdomJoined` (auto); RulerCameraController `overview`; MusicController `Founding → calm` |
 | 0:02–0:20 | "Tap a citizen to see what they think". A tap opens the citizen card: name, job, mood, loyalty | step `InspectCitizen` (client action `CitizenInspected`, sent by InputModeController's selection) |
-| ~0:20 | **First meaningful interaction** (≤ 30 s, enforced by `Onboarding.validate`) | |
+| ~0:20 | **First meaningful interaction** (design estimate ≤ 30 s, checked by `Onboarding.validate` on the sum of `expectSec`; real timing from the OnboardingStep logs in playtests) | |
 | 0:20–1:10 | "Build on a free plot", with the nearest plot marker highlighted. Pick a House or a Farm and confirm: a thunk and dust, then builders walk over | step `BuildOnPlot` (G9 `BuildingPlaced`, `placedBy`; BuildSlot tag) |
 | 1:10–2:40 | A citizen shows a "!" request bubble. Tap them and choose an answer: the reaction line, the citizen's pose, and the visible consequence (resources, loyalty, a work boost or a strike) | step `AnswerCitizen` (client action `CitizenAnswered` from FORGE-03's panel until the proposed G9 `CitizenAnswered`); FL-0091 bubbles |
 | 2:40–5:10 | Builds a Barracks, then recruits 3 soldiers: horn and armour rattle at the Rally | step `Recruit` (G9 `UnitsRecruited`) |
@@ -34,7 +34,8 @@ Teaching rules (built into `Experience/Onboarding`, specs prove each one):
 - One line per card: title ≤ 60 characters, body ≤ 140.
 - Every step is an action, or the visible result of one.
 - **Skip** is always visible. The card never blocks input, pauses the match or teleports the player.
-- A step already done is remembered and completes the moment it comes up. Example: a co-ruler finished the building first.
+- A step already done is remembered and completes the moment it comes up. Example: a co-ruler captured first.
+- A step whose system is not on the server yet (`requires`) is passed over, and an interactive step can time out (`autoAdvanceSec`). Both are logged as `OnboardingStepPassed`, because the funnel counts them anyway (Roblox counts skipped steps as done).
 - Client actions complete only the current step. Rewards can only come from server-verified steps.
 - A stuck step escalates after its nudge time (gold outline, `OnboardingHintEscalated`) but never forces anything.
 - VS-1 keeps progress for the session only (D-027). A new server starts the tutorial again.
@@ -113,7 +114,7 @@ Proposals for FORGE-00 and the user, **not built**:
 - **Co-op play:** co-ruler roles.
 
 ## 8. Analytics (FL-0023 adapter, FL-0063 funnel)
-- Onboarding funnel (6 steps above);
+- Onboarding funnel: Spawn → InspectCitizen → BuildOnPlot → AnswerCitizen → Recruit → Capture (v2), plus `OnboardingStepPassed` for steps the player was moved past;
 - VS1 funnel (BRIEF §13);
 - session start and end with the last activity;
 - match length and outcome;

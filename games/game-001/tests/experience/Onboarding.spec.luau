@@ -86,8 +86,10 @@ end)
 describe("game-001 VS-1 onboarding with the framework services (no DataService, D-027)", function()
 	local env, bus, kingdoms, registry, onboarding, p1, p2, remotes
 
-	-- conversations ~= false adds a ConversationService stub (FORGE-01's FL-0079 is not on main yet)
-	local function boot(withKingdoms, conversations)
+	-- Stubs for the services the v2 steps require (FORGE-01's FL-0079 and FL-0052 are not on main yet);
+	-- `missing` lists the ones this server lacks.
+	local REQUIRED = { "ConversationService", "MilitaryService", "ObjectiveService" }
+	local function boot(withKingdoms, missing)
 		local defs = {
 			{
 				name = "RemoteService",
@@ -118,13 +120,15 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 				end,
 			})
 		end
-		if conversations ~= false then
-			table.insert(defs, {
-				name = "ConversationService",
-				new = function()
-					return {}
-				end,
-			})
+		for _, name in REQUIRED do
+			if not table.find(missing or {}, name) then
+				table.insert(defs, {
+					name = name,
+					new = function()
+						return {}
+					end,
+				})
+			end
 		end
 		registry = Loader.load(env, defs)
 		onboarding = registry:get("OnboardingService")
@@ -143,6 +147,18 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 	local function join(player, kingdom)
 		kingdoms.join(player, kingdom)
 		bus.KingdomJoined:fire(player, kingdom)
+	end
+
+	-- OnboardingStepPassed custom events: { "<step>:<stepName>:<via>" }
+	local function passed(player)
+		local out = {}
+		for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
+			if call.args[1] == "OnboardingStepPassed" and call.userId == player.UserId then
+				local fields = call.args[3]
+				table.insert(out, `{call.args[2]}:{fields.CustomField01}:{fields.CustomField02}`)
+			end
+		end
+		return out
 	end
 
 	beforeEach(function()
@@ -235,8 +251,8 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		expect(onboarding:state(again, "vs1").stepId).toBe("InspectCitizen")
 	end)
 
-	it("without ConversationService, AnswerCitizen is passed over and not counted; the tutorial completes", function()
-		boot(true, false)
+	it("without ConversationService, AnswerCitizen is passed over, logged as passed; the tutorial completes", function()
+		boot(true, { "ConversationService" })
 		join(p1, "crimson")
 		act(p1, "CitizenInspected")
 		place(p1, "crimson", 11)
@@ -244,7 +260,9 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		bus.UnitsRecruited:fire(p1, "crimson", 3)
 		bus.ObjectiveCaptured:fire("tower_1", "crimson")
 		expect(onboarding:state(p1, "vs1").done).toBe(true) -- never stuck at 4/6 (FORGE-00's #45 ruling)
-		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "Recruit", "Capture" })
+		-- Roblox would count a skipped step 4 as done anyway, so it is logged, and marked as passed
+		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen", "Recruit", "Capture" })
+		expect(passed(p1)).toEqual({ "4:AnswerCitizen:unavailable" })
 		local completed = 0
 		for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
 			completed += if call.args[1] == "OnboardingCompleted" then 1 else 0
@@ -254,7 +272,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 	end)
 
 	it(
-		"with ConversationService but no answer reported, AnswerCitizen moves on after autoAdvanceSec, uncounted",
+		"with ConversationService but no answer reported, AnswerCitizen moves on after autoAdvanceSec, logged as passed",
 		function()
 			boot(true)
 			join(p1, "crimson")
@@ -267,9 +285,34 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 			expect(onboarding:state(p1, "vs1").escalated).toBe(true) -- nudged first
 			env.mock:advance(answer.autoAdvanceSec - answer.nudgeAfterSec + 1)
 			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit") -- never stalls
-			expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot" }) -- the funnel counts what players did
+			expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen" })
+			expect(passed(p1)).toEqual({ "4:AnswerCitizen:timeout" })
 		end
 	)
+
+	it("without FORGE-01's military (main today), Recruit and Capture are passed over: no wait at Recruit", function()
+		boot(true, { "MilitaryService", "ObjectiveService" })
+		join(p1, "crimson")
+		act(p1, "CitizenInspected")
+		place(p1, "crimson", 13)
+		act(p1, "CitizenAnswered")
+		expect(onboarding:state(p1, "vs1").done).toBe(true)
+		expect(passed(p1)).toEqual({ "5:Recruit:unavailable", "6:Capture:unavailable" })
+		local recruit = OnboardingConfig.flows[1].steps[5]
+		expect(recruit.nudgeAfterSec >= recruit.expectSec).toBe(true) -- escalation means stuck (PACING M5)
+	end)
+
+	it("a real answer is never logged as passed", function()
+		boot(true)
+		join(p1, "crimson")
+		act(p1, "CitizenInspected")
+		place(p1, "crimson", 14)
+		act(p1, "CitizenAnswered")
+		bus.UnitsRecruited:fire(p1, "crimson", 3)
+		bus.ObjectiveCaptured:fire("tower_1", "crimson")
+		expect(onboarding:state(p1, "vs1").done).toBe(true)
+		expect(passed(p1)).toEqual({})
+	end)
 
 	it("without KingdomService, the player's own steps still work and kingdom-wide ones credit nobody", function()
 		boot(false)
