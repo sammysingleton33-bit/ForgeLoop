@@ -157,6 +157,17 @@ local DECISIONS = {
 		audience_loyalty = 0,
 	}),
 	broken_ref = decision("broken_ref", { consequences = { "cheer", "missing_one" } }),
+	-- a kind listener reacts with 2*10 + 1*10 = 30 before reach: far above every LOYALTY_CLAMP
+	big_act = decision("big_act", {
+		farm_key = "big",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		rep = repVector({ compassion = 10, honor = 10 }),
+		speaker = { loyalty = 10, chemistry = 0 },
+		family_loyalty = 6,
+		audience = "kingdom",
+		audience_loyalty = 4,
+	}),
 	gain_act = decision("gain_act", {
 		rep = repVector({ compassion = 2, fear = -1 }),
 		speaker = { loyalty = 2, chemistry = 2 },
@@ -257,6 +268,44 @@ local ACTIONS = {
 		{ rep = repVector({ compassion = 1 }), audience = "speaker", audience_loyalty = 3 }
 	),
 	actionRow("farmers_cheer", "BuildingCompleted:farm", { audience = "occupation:farmer", audience_loyalty = 1 }),
+	-- rows 6-7: one action, a kingdom row and a speaker row (kind listener: 12 and 20 before the clamp)
+	actionRow("festival", "Festival", {
+		farm_key = "festival",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		rep = repVector({ compassion = 5 }),
+		audience = "kingdom",
+		audience_loyalty = 10,
+		kingdom = { happiness = 4, stability = -1, morale = 0 },
+	}),
+	actionRow("festival", "Festival", {
+		farm_key = "festival",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		rep = repVector({ compassion = 5, fear = -2 }),
+		audience = "speaker",
+		audience_loyalty = 10,
+	}),
+	-- rows 8-9: one action whose rows add a gain and a loss to the same categories (a keep raised while starving)
+	actionRow("keep_up", "BuildingUpgraded:keep", {
+		farm_key = "keep_up",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		rep = repVector({ authority = 2 }),
+		audience = "kingdom",
+		audience_loyalty = 1,
+		kingdom = { happiness = 3, stability = 0, morale = 0 },
+	}),
+	actionRow("keep_up", "BuildingUpgraded:keep", {
+		farm_key = "keep_up",
+		repeat_decay = 0.5,
+		repeat_window_s = 600,
+		condition = { clause("kingdom.fed_ratio", "<", 0.6) },
+		rep = repVector({ authority = -1 }),
+		audience = "civilians",
+		audience_loyalty = -2,
+		kingdom = { happiness = -1, stability = 0, morale = 0 },
+	}),
 }
 local REPUTATION = {
 	categories = {},
@@ -267,6 +316,8 @@ local REPUTATION = {
 		BuildingCompleted = { 3 },
 		RulerVisited = { 4 },
 		["BuildingCompleted:farm"] = { 5 },
+		Festival = { 6, 7 },
+		["BuildingUpgraded:keep"] = { 8, 9 },
 	},
 }
 
@@ -615,9 +666,14 @@ describe("ContentQuery.decisionEffects", function()
 		expect(e.rep.authority).toBe(-1)
 		expect(e.rep.fear).toBe(0)
 		expect(e.rep_raw).toEqual(repVector({ compassion = 3, authority = -1 }))
-		-- loyalty columns stay raw: decisionLoyalty applies the multiplier per listener
-		expect(e.speaker.loyalty).toBe(6)
-		expect(e.audience_loyalty).toBe(2)
+		-- the explicit loyalty columns are decayed too (kingdomMultiplier defaults to the multiplier);
+		-- losses stay whole and the raw columns are kept in loyalty_raw (review finding M1)
+		expect(e.speaker.loyalty).toBe(1.5)
+		expect(e.family_loyalty).toBe(1)
+		expect(e.friends_loyalty).toBe(0.5)
+		expect(e.rivals_loyalty).toBe(-1)
+		expect(e.audience_loyalty).toBe(0.5)
+		expect(e.loyalty_raw).toEqual({ speaker = 6, family = 4, friends = 2, rivals = -1, audience = 2 })
 		local h = q.decisionEffects("harsh_act", 0)
 		assert(h, "harsh_act exists")
 		expect(h.rep).toEqual(repVector({}))
@@ -669,7 +725,8 @@ describe("ContentQuery anti-farming of kingdom gains (SPEC §6.5)", function()
 		expect(e.kingdom_multiplier).toBe(0.5)
 		expect(e.rep).toEqual(repVector({ compassion = 2, fear = -1 })) -- the ruler's own multiplier is 1
 		expect(e.kingdom).toEqual({ happiness = 1.5, stability = -2, morale = 2 })
-		expect(e.speaker).toEqual({ loyalty = 2, chemistry = 1 })
+		expect(e.speaker).toEqual({ loyalty = 1, chemistry = 1 })
+		expect(e.loyalty_raw.speaker).toBe(2)
 		local magnitude = {}
 		for _, c in e.consequences do
 			magnitude[c.id] = c.magnitude
@@ -1064,13 +1121,464 @@ describe("ContentQuery chemistry helpers (model decisions 2 and 4)", function()
 		expect(v.a).toBe(4)
 	end)
 
-	it("startLoyalty is 50 + chemistry/4 with chemistry clamped", function()
+	it("startLoyalty is the integer floor(50 + chemistry/4 + 0.5) with chemistry clamped (L12)", function()
 		expect(ContentQuery.startLoyalty(0)).toBe(50)
 		expect(ContentQuery.startLoyalty(nil)).toBe(50)
 		expect(ContentQuery.startLoyalty(20)).toBe(55)
 		expect(ContentQuery.startLoyalty(-20)).toBe(45)
 		expect(ContentQuery.startLoyalty(-12)).toBe(47)
 		expect(ContentQuery.startLoyalty(99)).toBe(55)
+		expect(ContentQuery.startLoyalty(0 / 0)).toBe(50)
+		-- halves round up, like FORGE-01's generator (#46): 50.5 -> 51, 49.5 -> 50
+		expect(ContentQuery.startLoyalty(2)).toBe(51)
+		expect(ContentQuery.startLoyalty(-2)).toBe(50)
+		expect(ContentQuery.startLoyalty(1)).toBe(50)
+		expect(ContentQuery.startLoyalty(3)).toBe(51)
+		expect(ContentQuery.startLoyalty(-14)).toBe(47)
+		for chemistry = -20, 20 do
+			local start = ContentQuery.startLoyalty(chemistry)
+			if start ~= math.floor(start) or start ~= math.floor(50 + chemistry / 4 + 0.5) then
+				error(
+					`startLoyalty({chemistry}) = {start}, expected the integer {math.floor(50 + chemistry / 4 + 0.5)}`
+				)
+			end
+		end
+	end)
+end)
+
+describe("ContentQuery.fireDecision is applied as given (review findings M1, M3)", function()
+	it("decays the explicit loyalty columns, so farming one answer cannot add up the raw column", function()
+		-- FORGE-05 repro: five firings inside the window. Applied as given, the raw column summed to 5 x 6.
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		local speakerTotal, familyTotal, rivalsTotal = 0, 0, 0
+		for i = 1, 5 do
+			local e = q.fireDecision("kind_act", ruler, kingdom, i * 8)
+			assert(e, "kind_act exists")
+			speakerTotal += e.speaker.loyalty
+			familyTotal += e.family_loyalty
+			rivalsTotal += e.rivals_loyalty
+			expect(e.loyalty_raw.speaker).toBe(6)
+		end
+		-- 6 x (1 + 1/2 + 1/4 + 1/8 + 1/16) = 11.625, not 30; a loss (rivals -1) is never decayed
+		expect(speakerTotal).toBeNear(11.625)
+		expect(familyTotal).toBeNear(7.75)
+		expect(rivalsTotal).toBe(-5)
+	end)
+
+	it("returns each given listener's final loyalty: personality, overrides, chemistry, decay, clamp", function()
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		local listeners = {
+			{ citizen = 7, relation = "speaker", traits = { "kind" }, chemistry = 0 },
+			{ citizen = 8, relation = "family", traits = { "cruel" }, chemistry = 20 },
+			{ citizen = 9, relation = "kingdom", traits = { "lazy" } },
+		}
+		local first = q.fireDecision("kind_act", ruler, kingdom, 0, listeners :: any)
+		assert(first, "kind_act exists")
+		expect(first.listeners).toEqual({
+			{ citizen = 7, relation = "speaker", loyalty = 12 },
+			{ citizen = 8, relation = "family", loyalty = q.decisionLoyalty("kind_act", { "cruel" }, "family", 20) },
+			{ citizen = 9, relation = "kingdom", loyalty = q.decisionLoyalty("kind_act", { "lazy" }, "kingdom") },
+		})
+		local second = q.fireDecision("kind_act", ruler, kingdom, 10, listeners :: any)
+		assert(second, "kind_act exists")
+		expect(second.kingdom_multiplier).toBe(0.5)
+		expect(second.listeners[1].loyalty).toBe(6) -- 12 x 0.5: the gain decays
+		for i, l in second.listeners do
+			local spec = listeners[i]
+			local want = q.decisionLoyalty("kind_act", spec.traits, spec.relation :: any, spec.chemistry, 0.5)
+			expect(l.loyalty).toBe(want)
+		end
+		-- without listeners the list is empty, never nil
+		expect(q.fireDecision("private_act", {}, {}, 0).listeners).toEqual({})
+	end)
+
+	it("records nothing when a listener is invalid, and needs histories and traits", function()
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, { { citizen = 1, relation = "speaker", traits = { "x" } } })
+		end).toThrow("unknown trait 'x'")
+		expect(ruler).toEqual({})
+		expect(kingdom).toEqual({})
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, { { citizen = 1, relation = "speaker" } } :: any)
+		end).toThrow("listener #1 must be a table with a traits list")
+		expect(function()
+			q.fireDecision("kind_act", nil :: any, kingdom, 0)
+		end).toThrow("rulerHistory must be a FarmHistory table")
+		expect(function()
+			q.fireDecision("kind_act", ruler, nil :: any, 0)
+		end).toThrow("kingdomHistory must be a FarmHistory table")
+	end)
+
+	it("checks every listener's traits and relation first, like fireAction, and records nothing", function()
+		-- verification finding: an audience "none" decision returned 0 for relation kingdom before it looked at
+		-- the traits, so an unknown trait was accepted and the firing recorded
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		expect(function()
+			q.fireDecision("private_act", ruler, kingdom, 0, {
+				{ citizen = 1, relation = "speaker", traits = { "kind" } },
+				{ citizen = 2, relation = "kingdom", traits = { "dragonborn" } },
+			})
+		end).toThrow("ContentQuery.fireDecision: listener #2 has an unknown trait 'dragonborn'")
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, {
+				{ citizen = 1, relation = "speaker", traits = { "kind" } },
+				{ citizen = 2, relation = "friends", traits = { "dragonborn" } },
+			})
+		end).toThrow("ContentQuery.fireDecision: listener #2 has an unknown trait 'dragonborn'")
+		local cousin: any = { { citizen = 1, relation = "cousin", traits = { "kind" } } }
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, cousin)
+		end).toThrow("ContentQuery.fireDecision: listener #1 has an unknown relation 'cousin'")
+		expect(function()
+			q.fireDecision("kind_act", ruler, kingdom, 0, { { citizen = 1, traits = {} } } :: any)
+		end).toThrow("listener #1 has an unknown relation 'nil'")
+		expect(ruler).toEqual({})
+		expect(kingdom).toEqual({})
+		-- a valid kingdom listener of an audience "none" decision still gets 0
+		local e = q.fireDecision("private_act", ruler, kingdom, 0, {
+			{ citizen = 3, relation = "kingdom", traits = { "kind" } },
+		})
+		assert(e, "private_act exists")
+		expect(e.listeners).toEqual({ { citizen = 3, relation = "kingdom", loyalty = 0 } })
+	end)
+end)
+
+describe("ContentQuery.LOYALTY_CLAMP (FORGE-00 decision M3)", function()
+	it("exports the per-decision clamp per relation as a frozen table", function()
+		expect(ContentQuery.LOYALTY_CLAMP).toEqual({ speaker = 25, family = 10, friends = 10, rivals = 10, kingdom = 5 })
+		expect(table.isfrozen(ContentQuery.LOYALTY_CLAMP)).toBe(true)
+		expect(ContentQuery.clampLoyalty(40, "speaker")).toBe(25)
+		expect(ContentQuery.clampLoyalty(-40, "rivals")).toBe(-10)
+		expect(ContentQuery.clampLoyalty(3, "kingdom")).toBe(3)
+		expect(ContentQuery.clampLoyalty(0 / 0, "family")).toBe(0)
+		expect(function()
+			ContentQuery.clampLoyalty(1, "cousin" :: any)
+		end).toThrow("unknown relation 'cousin'")
+	end)
+
+	it("clamps a decision's applied change per relation, after personality, chemistry and decay", function()
+		local q = newQuery()
+		-- big_act for a kind listener: personality 30 x reach, plus the column
+		expect(q.loyaltyDelta(DECISIONS.big_act.rep, { "kind" }, "speaker", 0, 10)).toBe(40) -- unclamped block
+		expect(q.decisionLoyalty("big_act", { "kind" }, "speaker", 0)).toBe(25) -- 40
+		expect(q.decisionLoyalty("big_act", { "kind" }, "speaker", 20)).toBe(25) -- 60
+		expect(q.decisionLoyalty("big_act", { "kind" }, "family", 0)).toBe(10) -- 18 + 6
+		expect(q.decisionLoyalty("big_act", { "kind" }, "friends", 0)).toBe(10) -- 12
+		expect(q.decisionLoyalty("big_act", { "kind" }, "rivals", 0)).toBeNear(-9) -- inside the clamp
+		expect(q.decisionLoyalty("big_act", { "kind", "brave" }, "rivals", 0)).toBe(-10) -- -12
+		expect(q.decisionLoyalty("big_act", { "kind" }, "kingdom", 0)).toBe(5) -- 6 + 4
+		-- losses are clamped too: a cruel listener, -20 + 10 = -10 at speaker reach, chemistry -20 -> -15
+		expect(q.decisionLoyalty("big_act", { "cruel" }, "speaker", -20)).toBe(-15)
+		expect(q.decisionLoyalty("big_act", { "cruel", "cruel", "cruel" }, "speaker", -20)).toBe(-25)
+		-- the clamp comes after the decay: 40 x 0.5 = 20 stays 20 (clamping first would give 12.5)
+		expect(q.decisionLoyalty("big_act", { "kind" }, "speaker", 0, 0.5)).toBe(20)
+		-- the bundle's explicit columns obey the same clamp (audience 4 is inside 5)
+		local e = q.decisionEffects("big_act")
+		assert(e, "big_act exists")
+		expect(e.speaker.loyalty).toBe(10)
+		expect(e.audience_loyalty).toBe(4)
+	end)
+end)
+
+describe("ContentQuery.fireAction (single anti-farming point of actions.csv, SPEC §6.9)", function()
+	local function kindListener(citizen: any, speaker: boolean?)
+		return { citizen = citizen, occupation = "farmer", speaker = speaker, traits = { "kind" }, chemistry = 0 }
+	end
+
+	it("decays reputation per ruler and kingdom gains per kingdom, records both, never decays losses", function()
+		local q = newQuery()
+		local rulerA, rulerB, kingdom = {}, {}, {}
+		local first = q.fireAction("Festival", {}, rulerA, kingdom, 0)
+		expect(#first).toBe(1)
+		local f = first[1]
+		expect(f.id).toBe("festival")
+		expect(f.event).toBe("Festival")
+		expect(f.multiplier).toBe(1)
+		expect(f.kingdom_multiplier).toBe(1)
+		expect(f.rep).toEqual(repVector({ compassion = 10, fear = -2 }))
+		expect(f.rep_raw).toEqual(repVector({ compassion = 10, fear = -2 }))
+		expect(f.kingdom).toEqual({ happiness = 4, stability = -1, morale = 0 })
+		expect(rulerA).toEqual({ festival = { 0 } })
+		expect(kingdom).toEqual({ festival = { 0 } })
+		expect(f.rows[1]).toBe(ACTIONS[6]) -- the shared, frozen content rows
+		expect(table.isfrozen(f.rows[1])).toBe(true)
+		-- a co-ruler: full reputation for them, but the kingdom heard it before
+		local g = q.fireAction("Festival", {}, rulerB, kingdom, 10)[1]
+		expect(g.multiplier).toBe(1)
+		expect(g.kingdom_multiplier).toBe(0.5)
+		expect(g.rep.compassion).toBe(10)
+		expect(g.kingdom).toEqual({ happiness = 2, stability = -1, morale = 0 })
+		local h = q.fireAction("Festival", {}, rulerA, kingdom, 20)[1]
+		expect(h.multiplier).toBe(0.5)
+		expect(h.kingdom_multiplier).toBe(0.25)
+		expect(h.rep).toEqual(repVector({ compassion = 5, fear = -2 })) -- the fear loss stays whole
+		expect(h.rep_raw).toEqual(repVector({ compassion = 10, fear = -2 }))
+		expect(kingdom).toEqual({ festival = { 0, 10, 20 } })
+		-- the raw sums of the content are untouched
+		expect(q.actionFirings("Festival", {})[1].rep.compassion).toBe(10)
+	end)
+
+	it("gives every listener who hears a row its summed, decayed and clamped loyalty", function()
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		local listeners = {
+			kindListener("speaker", true),
+			kindListener("crowd"),
+			{ citizen = "plain", occupation = "farmer", traits = { "plain" } },
+		}
+		local f = q.fireAction("Festival", {}, ruler, kingdom, 0, listeners :: any)[1]
+		-- crowd: kingdom row 2*5*0.2 + 10 = 12 -> 5; speaker: 12 + (2*5 + 4... see below) clamped to 25
+		-- speaker row for kind: compassion 2*5 + fear -2*-2 = 14, + 10 = 24; with the kingdom row 36 -> 25
+		expect(f.listeners).toEqual({
+			{ citizen = "speaker", relation = "speaker", loyalty = 25 },
+			{ citizen = "crowd", relation = "kingdom", loyalty = 5 },
+			{ citizen = "plain", relation = "kingdom", loyalty = 5 }, -- the column alone: 10 -> 5
+		})
+		local second = q.fireAction("Festival", {}, ruler, kingdom, 10, listeners :: any)[1]
+		-- kingdom multiplier 0.5: speaker 12 x 0.5 + 24 x 0.5 = 18; crowd 6 -> 5
+		expect(second.listeners[1].loyalty).toBe(18)
+		expect(second.listeners[2].loyalty).toBe(5)
+		-- per row, actionLoyalty applies the same clamp
+		expect(q.actionLoyalty(ACTIONS[6] :: any, { "kind" }, 0)).toBe(5)
+		expect(q.actionLoyalty(ACTIONS[7] :: any, { "kind" }, 0)).toBe(24)
+	end)
+
+	it("only lists listeners in the row's audience and condition, and decays only gains", function()
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		local hungry = { ["citizen.hunger"] = 0.5 }
+		local listeners = {
+			{ citizen = 1, occupation = "farmer", traits = { "kind" }, chemistry = 0, ctx = hungry },
+			{ citizen = 2, occupation = "farmer", traits = { "kind" }, chemistry = 0, ctx = {} },
+			{ citizen = 3, occupation = "soldier", traits = { "plain" } },
+		}
+		local starving = { ["kingdom.fed_ratio"] = 0.5 }
+		local firings = q.fireAction("BuildingCompleted:barracks", starving, ruler, kingdom, 0, listeners :: any)
+		expect(#firings).toBe(2)
+		local barracks = firings[1]
+		expect(barracks.id).toBe("fund_barracks")
+		-- civilians row: kind farmer -3.4 (loss); soldiers row: +3 for the soldier
+		expect(#barracks.listeners).toBe(2)
+		expect(barracks.listeners[1].citizen).toBe(1)
+		expect(barracks.listeners[1].loyalty).toBeNear(-3.4)
+		expect(barracks.listeners[2]).toEqual({ citizen = 3, relation = "kingdom", loyalty = 3 })
+		local again = q.fireAction("BuildingCompleted:barracks", starving, ruler, kingdom, 10, listeners :: any)
+		expect(again[1].kingdom_multiplier).toBe(0.5)
+		expect(again[1].listeners[1].loyalty).toBeNear(-3.4) -- a loss is never decayed
+		expect(again[1].listeners[2].loyalty).toBe(1.5)
+		expect(again[1].kingdom).toEqual({ happiness = -2, stability = 0, morale = 1.5 })
+		-- no matching rows: nothing fires and nothing is recorded
+		local before = table.clone(ruler)
+		expect(q.fireAction("Nothing", {}, ruler, kingdom, 30, listeners :: any)).toEqual({})
+		expect(ruler).toEqual(before)
+	end)
+
+	it("decays each row on its own, then sums: a loss is never decayed with a gain of the same category", function()
+		-- verification finding: summing first decayed the starving row's losses together with the gains
+		local q = newQuery()
+		local ruler, kingdom = {}, {}
+		local starving = { ["kingdom.fed_ratio"] = 0.5 }
+		local hungry = {
+			{ citizen = "farmer", occupation = "farmer", traits = { "plain" }, chemistry = 0 },
+		}
+		local first = q.fireAction("BuildingUpgraded:keep", starving, ruler, kingdom, 0, hungry :: any)[1]
+		expect(first.id).toBe("keep_up")
+		expect(first.rep.authority).toBe(1) -- 2 - 1
+		expect(first.kingdom.happiness).toBe(2) -- 3 - 1
+		expect(first.listeners[1].loyalty).toBe(-1) -- 1 - 2
+		local second = q.fireAction("BuildingUpgraded:keep", starving, ruler, kingdom, 60, hungry :: any)[1]
+		expect(second.multiplier).toBe(0.5)
+		expect(second.kingdom_multiplier).toBe(0.5)
+		expect(second.rep.authority).toBe(0) -- 2 x 0.5 - 1, not (2 - 1) x 0.5
+		expect(second.kingdom.happiness).toBe(0.5) -- 3 x 0.5 - 1, not (3 - 1) x 0.5
+		expect(second.listeners[1].loyalty).toBe(-1.5) -- the listener path uses the same rule
+		-- the raw sums stay raw
+		expect(second.rep_raw.authority).toBe(1)
+		expect(second.kingdom_raw).toEqual({ happiness = 2, stability = 0, morale = 0 })
+		-- a well-fed kingdom: only the gain row fires, and it decays whole
+		local fed = q.fireAction("BuildingUpgraded:keep", { ["kingdom.fed_ratio"] = 0.9 }, ruler, kingdom, 120)[1]
+		expect(fed.kingdom_multiplier).toBe(0.25)
+		expect(fed.kingdom.happiness).toBe(0.75)
+	end)
+
+	it("errors clearly on a bad event, history, now or listener", function()
+		local q = newQuery()
+		expect(function()
+			q.fireAction(nil :: any, {}, {}, {}, 0)
+		end).toThrow("event must be a string")
+		expect(function()
+			q.fireAction("Festival", {}, nil :: any, {}, 0)
+		end).toThrow("rulerHistory must be a FarmHistory table")
+		expect(function()
+			q.fireAction("Festival", {}, {}, {}, nil :: any)
+		end).toThrow("now must be a finite number")
+		expect(function()
+			q.fireAction("Festival", {}, {}, {}, 0, { { citizen = 1 } } :: any)
+		end).toThrow("listener #1 must be a table with a traits list")
+		-- an unknown trait is found before anything is recorded (two firings would otherwise record one)
+		local ruler, kingdom = {}, {}
+		expect(function()
+			q.fireAction("BuildingCompleted:barracks", {}, ruler, kingdom, 0, {
+				{ citizen = 1, occupation = "farmer", traits = { "kind" } },
+				{ citizen = 2, occupation = "farmer", traits = { "dragonborn" } },
+			})
+		end).toThrow("listener #2 has an unknown trait 'dragonborn'")
+		expect(ruler).toEqual({})
+		expect(kingdom).toEqual({})
+		expect(ContentQuery.fireAction).toBeA("function")
+	end)
+end)
+
+describe("ContentQuery citizen keys and argument checks (review findings M2, L9)", function()
+	local farmerCtx = { occupation = "farmer", phase = "Founding", ["citizen.has_family"] = true }
+
+	it("keys the shown-history by id, else entityId, else key", function()
+		local q = newQuery()
+		local history = { [42] = { c_farmer_once = 0 }, ["k-9"] = { c_farmer_once = 0 } }
+		local function offered(citizen: any): boolean
+			return table.find(ids(q.eligibleScenarios(farmerCtx, citizen, 10, history)), "c_farmer_once") ~= nil
+		end
+		expect(offered({ entityId = 42, occupation = "farmer" })).toBe(false) -- CitizenView
+		expect(offered({ key = "k-9", occupation = "farmer" })).toBe(false) -- Population.Citizen
+		expect(offered({ entityId = 43, occupation = "farmer" })).toBe(true)
+		expect(offered({ id = 1, entityId = 42, occupation = "farmer" })).toBe(true) -- id wins
+		expect(ContentQuery.citizenKey({ id = 1, entityId = 2, key = 3 })).toBe(1)
+		expect(ContentQuery.citizenKey({ entityId = 2, key = 3 })).toBe(2)
+		expect(ContentQuery.citizenKey({ key = 3 })).toBe(3)
+		expect(ContentQuery.citizenKey({})).toBeNil()
+	end)
+
+	it("refuses a history for a citizen without any key instead of ignoring the cooldowns", function()
+		local q = newQuery()
+		expect(function()
+			q.eligibleScenarios(farmerCtx, { occupation = "farmer" }, 0, { [7] = {} })
+		end).toThrow("the citizen has no id, entityId or key")
+		-- without a history there is nothing to look up
+		expect(#q.eligibleScenarios(farmerCtx, { occupation = "farmer" }, 0, nil)).toBeGreaterThan(0)
+	end)
+
+	it("errors clearly on a nil citizen and on a nil, NaN or infinite now", function()
+		local q = newQuery()
+		expect(function()
+			q.eligibleScenarios(farmerCtx, nil :: any, 0, {})
+		end).toThrow("citizen must be a CitizenState table, got nil")
+		local bads: { any } = { 0 / 0, math.huge, -math.huge, "10" }
+		for i = 0, #bads do
+			local bad = bads[i] -- index 0 is nil
+			local label = tostring(bad)
+			local ok, err = pcall(q.eligibleScenarios, farmerCtx, { id = 1, occupation = "farmer" }, bad, {})
+			if ok or not string.find(tostring(err), "now must be a finite number", 1, true) then
+				error(`eligibleScenarios with now = {label} should error, got {tostring(err)}`)
+			end
+			for name, call in
+				{
+					fireDecision = function()
+						q.fireDecision("kind_act", {}, {}, bad)
+					end,
+					markShown = function()
+						q.markShown({}, 1, "c_farmer_once", bad)
+					end,
+					repeatMultiplier = function()
+						ContentQuery.repeatMultiplier({}, "k", bad, 0.5, 600)
+					end,
+					recordFire = function()
+						ContentQuery.recordFire({}, "k", bad)
+					end,
+				}
+			do
+				local okCall, errCall = pcall(call)
+				if okCall or not string.find(tostring(errCall), "now must be a finite number", 1, true) then
+					error(`{name} with now = {label} should error, got {tostring(errCall)}`)
+				end
+			end
+		end
+		expect(function()
+			q.markShown({}, nil, "c_farmer_once", 0)
+		end).toThrow("citizenId is nil")
+		-- a missing history is an error where one is required (SPEC §7) ...
+		expect(function()
+			q.markShown(nil :: any, 1, "c_farmer_once", 0)
+		end).toThrow("ContentQuery.markShown: history must be a ShownHistory table, got nil")
+		expect(function()
+			ContentQuery.recordFire(nil :: any, "k", 0)
+		end).toThrow("ContentQuery.recordFire: history must be a FarmHistory table, got nil")
+		-- ... and optional only in the repeatMultiplier building block, where nil means no earlier firings
+		expect(ContentQuery.repeatMultiplier(nil, "k", 0, 0.5, 600)).toBe(1)
+	end)
+end)
+
+describe("ContentQuery content is read-only (review finding L6)", function()
+	it("freezes the data it is given, deeply, and returns only frozen shared records", function()
+		local q = newQuery()
+		expect(table.isfrozen(q.data)).toBe(true)
+		expect(table.isfrozen(SCENARIOS)).toBe(true)
+		expect(table.isfrozen(SCENARIOS.a_farmer_high.trigger[1])).toBe(true)
+		expect(table.isfrozen(DECISIONS.kind_act.cost)).toBe(true)
+		expect(table.isfrozen(ACTIONS[2].audience_condition[1])).toBe(true)
+		local got = q.eligibleScenarios({ occupation = "farmer", phase = "Founding" }, { id = 1 }, 0, {})
+		expect(#got).toBeGreaterThan(0)
+		for _, record in got do
+			expect(table.isfrozen(record)).toBe(true)
+			expect(table.isfrozen(record.responses[1])).toBe(true)
+		end
+		expect(function()
+			(got[1] :: any).priority = 1
+		end).toThrow("readonly")
+		-- a second query over the same (already frozen) tables works
+		expect(ContentQuery.new(FIXTURE :: any).data.decisions).toBe(DECISIONS)
+		-- what the caller owns stays writable
+		local e = q.decisionEffects("kind_act")
+		assert(e, "kind_act exists")
+		expect(table.isfrozen(e.cost)).toBe(false)
+		expect(table.isfrozen(e.consequences[1])).toBe(false)
+	end)
+
+	it("also freezes the records inside a container that was frozen only at the top, and survives cycles", function()
+		-- verification finding: deepFreeze skipped frozen children, so table.freeze({ ... }) input stayed mutable
+		local record = scenario("s", "any", 50)
+		local reputation = table.freeze({
+			categories = {},
+			order = CATEGORIES,
+			actions = { actionRow("visit", "RulerVisited", { audience = "speaker" }) },
+			byEvent = { RulerVisited = { 1 } },
+		})
+		local q = ContentQuery.new({
+			dialogue = table.freeze({ scenarios = { s = record }, order = { "s" } }),
+			reputation = reputation,
+		} :: any)
+		local got = q.eligibleScenarios({}, { id = 1 }, 0, {})
+		expect(#got).toBe(1)
+		expect(table.isfrozen(got[1])).toBe(true)
+		expect(table.isfrozen(got[1].responses[1])).toBe(true)
+		expect(function()
+			(got[1] :: any).priority = 999
+		end).toThrow("readonly")
+		expect(q.data.dialogue.scenarios.s.priority).toBe(50)
+		local row = q.actionFirings("RulerVisited", {})[1].rows[1]
+		expect(table.isfrozen(row)).toBe(true)
+		expect(table.isfrozen(row.rep)).toBe(true)
+		-- a cycle in the input is frozen once, without a stack overflow
+		local a: { [string]: any } = { name = "a" }
+		local b: { [string]: any } = { name = "b", back = a }
+		a.next = b
+		local cyclic = ContentQuery.new({ traits = { a = a } } :: any)
+		expect(table.isfrozen(cyclic.data.traits.a)).toBe(true)
+		expect(table.isfrozen(b)).toBe(true)
+	end)
+
+	it("lets the mechanics placeholders win over a name of the same key (review finding L8)", function()
+		local risk = consequence("risk", "productivity", "speaker", 0.5, {
+			magnitude = -0.15,
+			duration_s = 45,
+			notice = "Risk ({chance}): {name} for {duration}.",
+		}) :: any
+		local filled = ContentQuery.consequenceNotice(risk, { name = "Agnes", chance = "1%", duration = "a blink" })
+		expect(filled).toBe("Risk (50%): Agnes for 45 s.")
 	end)
 end)
 

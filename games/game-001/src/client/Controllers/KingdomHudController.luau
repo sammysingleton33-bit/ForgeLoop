@@ -89,7 +89,7 @@ function Def.new(env: any, registry: any)
 				upgradeId = nil,
 				pending = nil,
 				done = nil,
-				jobs = { pending = {}, requested = {} }, -- FL-0065: in flight / asked (JobModel state)
+				jobs = { pending = {}, quota = {} }, -- FL-0065: in flight / acknowledged (JobModel state)
 			},
 			confirm = nil :: any,
 		},
@@ -299,10 +299,16 @@ function KingdomHudController:_onStore(what: string, deltas: any)
 		local mine = if kingdom then kingdom.id else nil
 		if mine ~= self._mine then
 			self._mine = mine
+			-- Another kingdom's people: drop the old counts and quotas (FORGE-05 M2 on #55).
+			self.store:clearPopulation()
+			self.state.panel.jobs = { pending = {}, quota = {} }
 			if mine ~= nil then
 				-- A late join: the treasury of the new kingdom was never pushed to this client.
 				self:_fetch("Treasury.Get", function(totals)
 					self.store:applyTreasury(totals)
+				end)
+				self:_fetch("Kingdom.GetPopulation", function(payload)
+					self.store:applyPopulation(payload)
 				end)
 			end
 		end
@@ -503,35 +509,44 @@ function KingdomHudController:requestUpgrade(detail: any, confirmed: boolean?)
 end
 
 -- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
--- the request sets the job's quota to that count + delta and the server fills it from the free
--- (hauler) pool. Nothing changes here until its push arrives.
+-- the request sets the job's quota to its newest target ± 1 (JobModel.target) and the server fills
+-- it from the free (hauler) pool. The count changes here only when its push arrives.
 function KingdomHudController:changeJob(jobId: string, delta: number)
 	local jobs = self.state.panel.jobs
 	local population = self.store:population()
 	if population == nil or not JobModel.isJob(jobId) or jobs.pending[jobId] ~= nil then
 		return
 	end
-	local current = population.byJob[jobId] or 0
-	local free = population.byJob.hauler or 0
-	local target = current + (if delta > 0 then 1 else -1)
-	if target < 0 or target > JobModel.MAX_QUOTA or (delta > 0 and free <= 0) then
-		return
+	-- Step from the job's newest target, not the count (FORGE-05 M1 on #55), and keep adds within
+	-- the free citizens not yet promised to another job.
+	local base = JobModel.target(population, jobs, jobId)
+	local target
+	if delta > 0 then
+		target = base + 1
+		if target > JobModel.MAX_QUOTA or JobModel.freeLeft(population, jobs) <= 0 then
+			return
+		end
+	else
+		-- above the remote's 50 (a server-set quota), − brings it to 50 (L7)
+		target = math.min(base - 1, JobModel.MAX_QUOTA)
+		if target < 0 then
+			return
+		end
 	end
 	local env = self._env
+	local kingdom = self._mine
 	jobs.pending[jobId] = target
-	jobs.requested[jobId] = nil
 	self:render()
 	env.spawn(function()
 		local called, ok, reason = pcall(function()
 			return self.remotes:invoke("Kingdom.SetJobQuota", jobId, target)
 		end)
+		if self.state.panel.jobs ~= jobs or self._mine ~= kingdom then
+			return -- the kingdom changed meanwhile: this answer belongs to the old one
+		end
 		jobs.pending[jobId] = nil
 		if called and ok == true then
-			jobs.requested[jobId] = { target = target, at = env.clock() }
-			-- the "Moving…" note clears itself once its time is up, even without another push
-			self._motion:after(JobModel.REQUEST_HINT_SEC, function()
-				self:render()
-			end)
+			jobs.quota[jobId] = target
 		else
 			self:notify({
 				kind = "error",
@@ -607,7 +622,7 @@ function KingdomHudController:_panelModel(): any
 		standings = HudModel.standings(store),
 		buildings = rows,
 		upgrade = upgrade,
-		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs, self._env.clock()) else nil,
+		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs) else nil,
 	}
 end
 
@@ -684,7 +699,9 @@ function KingdomHudController:render()
 	if s.confirm then
 		local target = self:_building(s.confirm.buildingId)
 		if target == nil or target.level + 1 ~= s.confirm.level or target.state ~= "complete" then
+			local name = s.confirm.name
 			s.confirm = nil
+			self:notify({ kind = "info", title = `{name} changed`, body = "Check its new level and price" })
 		end
 	end
 	-- Rebuilt for a new breakpoint too: its width follows the screen (400 px does not fit a phone).
