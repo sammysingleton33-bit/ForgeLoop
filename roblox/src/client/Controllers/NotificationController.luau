@@ -11,7 +11,9 @@
 		    FORGE-04 never reacts to RewardRolled itself, so a reward is never celebrated twice.
 		NotificationController:registerCelebration(kind, spec) -> { string }   -- games add moments (FL-0062)
 		NotificationController:dismiss(id)
-		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)   -- the HUD's layout
+		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)   -- the HUD's layout,
+		    in screen px: this ScreenGui has no UIScale, so a caller laying out in logical px multiplies by
+		    its layout scale first (KingdomHudController does, FORGE-03 #74)
 		NotificationController:reserveTop(owner: string, px: number?)   -- keep the stack below a card; nil frees
 		NotificationController.shown: Signal (item)     .celebrated: Signal (kind, payload)
 		NotificationController.queue                     -- Experience/NotificationQueue (rules and stats)
@@ -39,7 +41,10 @@
 	the top right at most 300 px or 46 % of the screen wide, newest on top, until a game places it
 	(`place`, the same shape as FORGE-03's `ToastStack:place`, e.g. the HUD's `Layout.toastTop`).
 	A card that sits under the stack's band (the onboarding card on phones) calls `reserveTop` while it
-	shows, and the stack starts below it, so toasts never cover its buttons. Each card is a Toast (kind
+	shows, and the stack starts below it, so toasts never cover its buttons. When the room left below
+	the stack's top holds fewer than 3 cards (a short phone with the onboarding card), fewer show at
+	once (NotificationQueue:setMaxVisible); the others wait and show in full later. After destroy()
+	nothing is shown or celebrated and no GUI is created again. Each card is a Toast (kind
 	accent and icon, title, body, the ×N badge); a change of title, body or count rebuilds the card,
 	since Toast has no update API. A transparent "Dismiss" button over the card makes a tap dismiss
 	it. A toast never blocks input elsewhere.
@@ -57,6 +62,14 @@ local Def = { name = "NotificationController", dependencies = { "SettingsControl
 Def.DISPLAY_ORDER = 70
 Def.TICK_SEC = 0.1
 Def.WIDTH = 300
+Def.CARD_ESTIMATE = 64 -- px of one Toast with a one-line body: how many fit below the stack's top
+-- Toast has no achievement accent yet (FORGE-03): its icon by kind until it does
+Def.KIND_ICON = table.freeze({ achievement = "laurel" })
+
+-- The icon a card shows: the toast's own, else the kind's (nil = Toast's default for the kind).
+function Def.iconFor(item: any): string?
+	return item.icon or Def.KIND_ICON[item.kind]
+end
 Def.POSITION = UDim2.new(1, -12, 0, 12) -- top right, until a game places the stack
 Def.KIND_SOUND = table.freeze({
 	info = "notify.info",
@@ -173,6 +186,8 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_root = nil :: any,
 		_placement = { position = Def.POSITION, anchor = Vector2.new(1, 0), width = Def.WIDTH },
 		_reserved = {} :: { [string]: number },
+		_screenHeight = opts.screenHeight, -- specs: () -> px; else the ScreenGui's AbsoluteSize
+		_destroyed = false,
 		queue = NotificationQueue.new({ now = env.clock, config = opts.config }),
 		shown = Signal.new(),
 		celebrated = Signal.new(),
@@ -206,11 +221,16 @@ function NotificationController:start()
 end
 
 function NotificationController:destroy()
+	self._destroyed = true
 	self._running = false
 	for _, connection in self._connections do
 		connection:disconnect()
 	end
 	table.clear(self._connections)
+	if self._sizeConnection then
+		self._sizeConnection:Disconnect()
+		self._sizeConnection = nil
+	end
 	if self._root then
 		self._root.gui:Destroy()
 		self._root = nil
@@ -222,6 +242,9 @@ function NotificationController:destroy()
 end
 
 function NotificationController:show(spec: any): (any, string)
+	if self._destroyed then
+		return nil, "dropped"
+	end
 	if type(spec) ~= "table" then
 		return nil, "invalid"
 	end
@@ -258,6 +281,9 @@ function NotificationController:registerCelebration(kind: string, spec: any): { 
 end
 
 function NotificationController:celebrate(kind: string, payload: any): boolean
+	if self._destroyed then
+		return false
+	end
 	local spec = self._celebrations[kind]
 	if spec == nil then
 		self._env.log(
@@ -382,6 +408,9 @@ function NotificationController:_rootView(): any
 	if self._root then
 		return self._root
 	end
+	if self._destroyed then
+		return nil
+	end
 	local parent = self:_gui()
 	if parent == nil then
 		return nil
@@ -407,6 +436,11 @@ function NotificationController:_rootView(): any
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	list.Parent = stack
 	self._root = { gui = gui, stack = stack, limit = limit }
+	pcall(function() -- a rotation or resize changes how many cards fit (Lune instances have no events)
+		self._sizeConnection = gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+			self:_layout()
+		end)
+	end)
 	self:_layout()
 	return self._root
 end
@@ -427,6 +461,29 @@ function NotificationController:_layout()
 	root.stack.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, top)
 	root.stack.Size = UDim2.new(0.46, 0, 1, -(top + 12))
 	root.limit.MaxSize = Vector2.new(placement.width, math.huge)
+	local hidden = self:_fit(top)
+	if #hidden > 0 then
+		self:_sync()
+	end
+end
+
+-- How many cards fit between the stack's top and the safe-area bottom; the queue shows no more.
+-- Unknown height (headless, before layout) keeps the cap as it is.
+function NotificationController:_fit(top: number): { any }
+	local height: any = nil
+	if self._screenHeight then
+		height = self._screenHeight()
+	else
+		local ok, size = pcall(function()
+			return self._root.gui.AbsoluteSize.Y
+		end)
+		height = if ok then size else nil
+	end
+	if type(height) ~= "number" or height <= 0 then
+		return {}
+	end
+	local fit = math.floor((height - top - 12 + 8) / (Def.CARD_ESTIMATE + 8))
+	return self.queue:setMaxVisible(math.max(1, fit))
 end
 
 -- Rebuilds every visible card (after a width change).
@@ -447,7 +504,7 @@ function NotificationController:_buildToast(item: any, parent: any, layoutOrder:
 		kind = item.kind,
 		title = item.title,
 		body = item.body,
-		icon = item.icon,
+		icon = Def.iconFor(item),
 		count = item.count,
 		width = self._placement.width,
 		layoutOrder = layoutOrder,

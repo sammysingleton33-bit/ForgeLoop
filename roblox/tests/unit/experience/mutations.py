@@ -112,6 +112,13 @@ M = [
  ("FL-0027", C+"NotificationController.luau", 'if spec.sound ~= nil and not hasVisual then', 'if false then', "Notification", "games register celebrations", "fw"),
  ("FL-0027", C+"NotificationController.luau", '				self.queue:setFilter(value)', '				local _ = value', "Notification", "applies the notifications setting live", "fw"),
  ("FL-0027", C+"OnboardingController.luau", 'if wasActive and state.done and not state.skipped then', 'if state.done then', "OnboardingController", "celebrates when the last step completes", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", '	while #self._visible > cap do', '	while false do', "Notification", "fewer cards fit", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", 'cap = math.clamp(cap, 1, self._maxVisible)', 'cap = math.max(cap, 0)', "Notification", "fewer cards fit", "fw"),
+ ("FL-0027", X+"NotificationQueue.luau", '		item.expiresAt = nil\n', '', "Notification", "fewer cards fit", "fw"),
+ ("FL-0027", C+"NotificationController.luau", '	if self._destroyed then\n		return nil, "dropped"', '	if false then\n		return nil, "dropped"', "Notification", "after destroy(), show and celebrate do nothing", "fw"),
+ ("FL-0027", C+"NotificationController.luau", '	if self._destroyed then\n		return nil\n	end', '	if false then\n		return nil\n	end', "Notification", "after destroy(), show and celebrate do nothing", "fw"),
+ ("FL-0027", C+"NotificationController.luau", '	return item.icon or Def.KIND_ICON[item.kind]', '	return item.icon', "Notification", "achievement toasts carry the laurel icon", "fw"),
+ ("FL-0027", C+"NotificationController.luau", '	local hidden = self:_fit(top)', '	local hidden = {}', "Notification", "a short screen under the onboarding card", "fw"),
 ]
 only = sys.argv[1] if len(sys.argv) > 1 else None
 rows = []
