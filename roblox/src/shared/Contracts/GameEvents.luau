@@ -31,6 +31,7 @@
 	| ObjectiveCaptured  | ObjectiveService               | (objectiveId: string, kingdomId: string) |
 	| KingdomEliminated  | MatchService                   | (kingdomId: string, by: string?) |
 	| MatchEnded         | MatchService                   | ({ winner: string?, standings: { { kingdom: string, crownPoints: number } }, durationSec: number }) |
+	| CitizenAnswered    | ConversationService            | (player, kingdomId: string, citizenId: number, decisionId: string, secondsOpen: number?) — once per accepted Kingdom.Choose (D-044 (3)) |
 	Payload types (interfaces §4) are exported here too: GameEvents.RoundState, GameEvents.RoundResult,
 	GameEvents.RewardResult (defined once in Contracts/Types, re-exported).
 
@@ -78,6 +79,7 @@ export type GameEvents = {
 	ObjectiveCaptured: SignalT,
 	KingdomEliminated: SignalT,
 	MatchEnded: SignalT,
+	CitizenAnswered: SignalT,
 	EVENT_NAMES: { string },
 	disconnectAll: () -> (),
 }
@@ -105,6 +107,7 @@ local EVENT_NAMES = table.freeze({
 	"ObjectiveCaptured",
 	"KingdomEliminated",
 	"MatchEnded",
+	"CitizenAnswered",
 })
 
 local events: { [string]: any } = {}
