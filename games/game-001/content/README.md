@@ -47,14 +47,16 @@ You can rewrite any question, answer or reaction without touching how the game w
 
 **Text rules.**
 - Text must be one line, with no spaces at the start or end.
+- Text may not be blank: a cell that holds only spaces (including wide spaces such as the em space) or invisible characters (also a lone variation selector such as U+FE0F, the invisible half of some emoji) is refused. Leave an optional cell truly empty instead. A wide space between words is fine.
 - Text may not start with `=`, `+`, `-` or `@`: a spreadsheet would treat it as a formula. Start with a letter, a digit or a quote mark; for a dialogue dash use `—`.
-- No invisible characters. Shift+Enter in Word, zero-width spaces, soft hyphens, right-to-left marks and similar copy-paste leftovers are refused, with their position.
+- No invisible characters. Shift+Enter in Word, zero-width spaces, soft hyphens, right-to-left marks, blank "filler" characters (Hangul fillers, the Braille blank) and similar copy-paste leftovers are refused, with their position.
 - **Placeholders** are filled in by the game. Use only the ones a column accepts (the header note lists them):
   - in scenarios and responses: `{name}` (the citizen), `{ruler}` (you), `{kingdom}`, `{occupation}` (the citizen's job), and `{family}`, `{friend}`, `{rival}` (a relative's, friend's or rival's name). The last three only work when the scenario's `trigger` requires that relation (`citizen.has_family`, `citizen.has_friend`, `citizen.has_rival`); otherwise the import refuses them, because the name could be missing in the game;
-  - in consequence notices: `{name}`, `{ruler}`, `{kingdom}`, `{occupation}`, and the numbers `{chance}` (e.g. 50%), `{magnitude}` (e.g. +5), `{magnitude_pct}` (e.g. 15%) and `{duration}` (e.g. 2 minutes);
+  - in consequence notices: `{name}`, `{ruler}`, `{kingdom}`, `{occupation}`, and the numbers `{magnitude}` (e.g. +5), `{magnitude_pct}` (e.g. 15%) and `{duration}` (e.g. 2 minutes);
   - in action notices: `{ruler}` and `{kingdom}`;
   - trait, occupation, category and name texts: none.
-- **Never type a number that the mechanics decide** (odds, durations, amounts, costs). Write the placeholder instead, so the text stays right when someone tunes the numbers. A risk (a consequence that may or may not happen) must show its odds with `{chance}`.
+- **Never type a number that the mechanics decide** (odds, durations, amounts, costs). Write the placeholder instead, so the text stays right when someone tunes the numbers.
+- **Risks: describe only what may happen.** A risk (a consequence that may or may not happen) must have a notice, and the conversation panel shows its odds right next to that notice. So never write the odds yourself and never write `{chance}`: write `{name} may walk off the job for {duration}.`, not `Risk ({chance}): {name} may walk off the job.`
 - Keep room for long names: a placeholder counts by how it is spelled. A thought or a reaction must also fit its 80-character bubble with the longest names filled in (`{name}`, `{family}`, `{friend}`, `{rival}` 16, `{ruler}` 20, `{occupation}` 24, `{kingdom}` 20); the import names the length it can reach.
 - Notes may start with `+` or `-` (`+housing capacity`), but never with `=` or `@`.
 
