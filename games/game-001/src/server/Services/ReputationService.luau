@@ -37,13 +37,13 @@
 		fed ratio below Society.food.shortageBelow (once per dip) → FoodShortage
 	Every firing comes from ContentQuery.fireAction (the single anti-farming point, #67) and is applied as
 	given: its rows whose kingdom condition holds, decayed per row by the farm histories, then
-		- each credited ruler: reputation += guardRules(rep), rep decayed by that ruler's own history;
+		- each credited ruler (firing.rulers): reputation += guardRules(rep), decayed by its own history;
 		- the kingdom, once: conditions += kingdom (decayed by the kingdom history), capped per application
 		  (Kingdom/Reputation.applyConditions);
 		- each citizen who hears a row: loyalty += its listener loyalty (the rows it hears summed, clamped
 		  once to LOYALTY_CLAMP of its relation), then kept within 0..100.
-		Farm histories: one per ruler (reputation), one per kingdom (conditions, loyalty) (SPEC §6.5, §6.8).
-		The kingdom history records each firing once, however many rulers are credited.
+		Farm histories: one per ruler (reputation), one per kingdom (conditions, loyalty) (SPEC §6.5, §6.8);
+		one fireAction call per event (G13.1 v0.4-g7), so each history records a firing once.
 	Additive: service.content = the ContentQuery query it reads (specs may pass ContentQuery.new(...)).
 	Every second while the match runs: conditions drift toward their food/housing targets; a ruler's fear
 	above its start fades by Society.fear.relaxPerMinute (one history entry a minute). A new world (round)
@@ -174,14 +174,6 @@ function ReputationService:_rulerHistory(userId: number): any
 	return farm
 end
 
-local function copyHistory(history: any): any
-	local out = {}
-	for key, times in history do
-		out[key] = table.clone(times)
-	end
-	return out
-end
-
 function ReputationService:fireAction(event: string, kingdomId: string, opts: { [string]: any }?)
 	local options = opts or {}
 	local sim = self:_sim()
@@ -211,14 +203,15 @@ function ReputationService:fireAction(event: string, kingdomId: string, opts: { 
 			ctx = Context.citizen(sim, c, ctx),
 		})
 	end
-	-- The kingdom's effects once, through the first credited ruler's history (a scratch one with no
-	-- ruler); each further ruler takes only its reputation, against the kingdom history as it was before.
-	local first = rulers[1]
-	local kingdomBefore = if #rulers > 1 then copyHistory(kingdomFarm) else nil
-	local rulerFarm = if first then self:_rulerHistory(first) else {}
-	for _, firing in self.content.fireAction(event, ctx, rulerFarm, kingdomFarm, now, listeners) do
-		if first then
-			self:apply(first, firing.id, Reputation.guardRules(event, firing.rep), noticeOf(firing))
+	-- one call per event (CONTRACTS G13.1 v0.4-g7): each credited ruler's reputation decays by its own
+	-- history; the kingdom's conditions and the listeners' loyalty apply once, by the kingdom history
+	local histories = {}
+	for _, userId in rulers do
+		histories[userId] = self:_rulerHistory(userId)
+	end
+	for _, firing in self.content.fireAction(event, ctx, histories, rulers, kingdomFarm, now, listeners) do
+		for _, credit in firing.rulers do
+			self:apply(credit.ruler, firing.id, Reputation.guardRules(event, credit.rep), noticeOf(firing))
 		end
 		Reputation.applyConditions(k.conditions, firing.kingdom)
 		for _, heard in firing.listeners do -- decayed and clamped once per listener: applied as given
@@ -226,13 +219,6 @@ function ReputationService:fireAction(event: string, kingdomId: string, opts: { 
 			if heard.loyalty ~= 0 then
 				c.loyalty = math.clamp((c.loyalty or 50) + heard.loyalty, 0, 100)
 			end
-		end
-	end
-	for i = 2, #rulers do
-		local userId = rulers[i]
-		local history = copyHistory(kingdomBefore)
-		for _, firing in self.content.fireAction(event, ctx, self:_rulerHistory(userId), history, now, nil) do
-			self:apply(userId, firing.id, Reputation.guardRules(event, firing.rep), noticeOf(firing))
 		end
 	end
 end

@@ -23,7 +23,7 @@ haulers_work_up,productivity,occupation:hauler,0.15,,180,0,1,work_fast,"Two cart
 haulers_bicker,productivity,occupation:hauler,-0.1,,120,0,1,grumble,The quarrel drags on: haulers {magnitude_pct} slower for {duration}.,DRAFT
 family_extra_shift,productivity,family,0.2,,120,0,1,work_fast,{name}'s family works off the bread: {magnitude_pct} faster for {duration}.,DRAFT
 speaker_refuses_work,productivity,speaker,-1,,60,0,1,strike_placard,{name} lays down their tools for {duration}.,DRAFT: one citizen's walk-out (productivity -1). Occupation strikes come from the sustained unrest rules (model decision 6).
-speaker_walkout_risk,productivity,speaker,-1,,45,10,0.5,strike_placard,Risk ({chance}): {name} may lay down tools for {duration}.,"DRAFT: visible risk, shown on the choice (model decision 7)."
+speaker_walkout_risk,productivity,speaker,-1,,45,10,0.5,strike_placard,{name} may walk off the job for {duration}.,"DRAFT: visible risk, shown on the choice (model decision 7)."
 farmers_unrest,unrest_pressure,occupation:farmer,5,,240,0,1,grumble,Farmers grumble. Unrest {magnitude} for {duration}.,DRAFT
 farmers_unrest_high,unrest_pressure,occupation:farmer,10,,300,0,1,grumble,Word of your threat spreads. Farmer unrest {magnitude} for {duration}.,DRAFT
 builders_unrest,unrest_pressure,occupation:builder,8,,300,0,1,grumble,Tired builders mutter. Unrest {magnitude} for {duration}.,DRAFT
@@ -37,8 +37,8 @@ soldiers_drilled,morale,soldiers,3,,180,60,1,salute,"After your dawn drill, sold
 soldiers_fed_well,morale,soldiers,4,,240,0,1,celebrate,Full bellies: soldiers' morale {magnitude} for {duration}.,DRAFT
 soldiers_morale_down,morale,soldiers,-4,,240,0,1,grumble,Soldiers' morale {magnitude} for {duration}.,DRAFT
 soldiers_cowed,morale,soldiers,-3,,240,0,1,cower,The recruits sulk. Soldiers' morale {magnitude} for {duration}.,DRAFT
-quarry_rockfall_risk,happiness,kingdom,-4,,180,60,0.2,cower,Risk ({chance}): a rockfall may hurt a miner. Happiness {magnitude} for {duration}.,"DRAFT: visible risk, shown on the choice (model decision 7)."
-quarry_rockfall_risk_high,happiness,kingdom,-6,,240,60,0.4,cower,Risk ({chance}): the cracked face may fall on the miners. Happiness {magnitude} for {duration}.,DRAFT: the bigger risk once the crack has grown.
+quarry_rockfall_risk,happiness,kingdom,-4,,180,60,0.2,cower,A rockfall may hurt a miner. Happiness {magnitude} for {duration}.,"DRAFT: visible risk, shown on the choice (model decision 7)."
+quarry_rockfall_risk_high,happiness,kingdom,-6,,240,60,0.4,cower,The cracked face may fall on the miners. Happiness {magnitude} for {duration}.,DRAFT: the bigger risk once the crack has grown.
 kingdom_festive,happiness,kingdom,5,,300,0,1,celebrate,Feast at the keep! Happiness {magnitude} for {duration}.,DRAFT
 kingdom_small_cheer,happiness,kingdom,2,,180,0,1,celebrate,A warm supper: happiness {magnitude} for {duration}.,DRAFT
 kingdom_order,stability,kingdom,2,,300,0,1,bow,Equal rations for all: stability {magnitude} for {duration}.,DRAFT

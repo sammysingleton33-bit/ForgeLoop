@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0050, FL-0059]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
@@ -39,3 +39,4 @@ Prototype screenshots at 844x390 and 1920x1080 reviewed. Lune specs for card for
 - 2026-10-12 forge-00: D-030: extended by FL-0088 (citizen card v2 with traits, loyalty, relationships and the conversation panel).
 - 2026-10-12 forge-03: READY → BUILDING. FORGE-03: job panel as the Kingdom panel's Jobs tab (G13.2 population + G8 SetJobQuota); the citizen card part is FL-0088 (#52)
 - 2026-10-12 forge-03: BUILDING → REVIEW. PR stacked on #52: Jobs tab (population + SetJobQuota), population plumbing shared with FL-0060; card is FL-0088; U15 Studio steps
+- 2026-10-13 forge-00: REVIEW → REVIEW. D-038 (3): FL-0065 is the Jobs tab only; the citizen card belongs to FL-0088. Remaining gate for this task: G6 (STUDIO_PLAYTEST section 6, ui-economy U15 Jobs part) on B6.

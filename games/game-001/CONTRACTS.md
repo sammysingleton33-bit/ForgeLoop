@@ -452,11 +452,18 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
 - **Runtime semantics** live in `content/SPEC.md` §6–§8 (lands with FL-0083, PR #53). The server follows them:
 - **ContentQuery API added by FL-0083 follow-ups (PR #67, #-next).** All of these are pure:
   - `fireDecision(..., listeners?)` returns decayed, clamped, apply-as-given values. Each listener gets its final loyalty.
-  - `fireAction(...)` is the single anti-farming point for `actions.csv`. Reputation goes to the credited rulers: the attributed actor, or every co-ruler for kingdom-wide events. Kingdom conditions and listener loyalty are applied once per firing.
+  - `fireAction(event, ctx, rulerHistories, creditedRulers, kingdomHistory, now, listeners?)` is the single anti-farming point for `actions.csv`. **One call per event, never one per ruler.**
+    - `rulerHistories` maps userId to that ruler's farm history. `creditedRulers` lists the rulers who get the reputation: the attributed actor, or every co-ruler for kingdom-wide events.
+    - Each firing returns `rulers = { { ruler, multiplier, rep } }`, each ruler decayed by their own history. Kingdom conditions and listener loyalty are computed and recorded once per firing.
+    - A missing history, a ruler listed twice, or a citizen repeated across listeners is an error, and nothing is recorded (v0.4-g7).
   - `citizenKey(citizen)` resolves `id`, then `entityId`, then `key`.
   - `LOYALTY_CLAMP` = speaker 25, family/friends/rivals 10, kingdom 5.
   - `startLoyalty(chemistry)` = `floor(50 + chemistry/4 + 0.5)`.
-  - `choicePreview(decisionId)` returns `{ cost?, risks? }` exactly as the G13.3 option extras. `choiceRisks` returns filled `{ text, chance }`. The panel shows the chance; content text never repeats it.
+  - `choicePreview(scenarioId, responseId, fillNames)` returns `{ cost?, risks? }` exactly as the G13.3 option extras.
+    - `fillNames` is **required**: the conversation's `{ name, ruler, kingdom, occupation }`, plus `family`, `friend` and `rival` when the scenario uses them. A nil `fillNames` is an error.
+    - `cost` is omitted when the answer is free. To pay, use `decisionEffects(response.decision).cost`, which is always a table, never the preview.
+  - `choiceRisks(decisionId, fillNames)` returns `{ { text, chance } }` for consequences with chance < 1. The text is fully filled. The panel shows the chance; content text never repeats it (`{chance}` is refused in risk notices).
+  - `repeatMultiplier` returns 0 once 32 firings are in the window (`MAX_FARM_HISTORY`).
   - Servers use these and do not re-implement decay, clamps or start loyalty.
   - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
   - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
@@ -579,6 +586,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 
 ## Changelog
 - v0.4-g8 (2026-10-13) FORGE-00, ruling on the three #31 contract nits (backlog audit): the contract follows the shipped code. `assign` returns `KingdomId?`; `Kingdom.Gather` returns `(true, ResourceId, amount)` or `(false, errorCode)`; `Kingdom.SetJobQuota` covers farmer/woodcutter/miner/builder and returns `(ok, errorCode?)`. The v0.4-g7 G13.1 signatures arrive with PR #83.
+- v0.4-g7 (2026-10-13) FORGE-00, content follow-ups round 2 (FORGE-05 #67 review). G13.1 now gives exact signatures: `fireAction` takes one call per event with `rulerHistories` and `creditedRulers`; `choicePreview` requires `fillNames`; `choiceRisks(decisionId, fillNames)`; cost is paid from `decisionEffects`; the farm cap gives multiplier 0. Breaking for open PRs #68 and #77; a migration note is in their handoff.
 - v0.4-g6 (2026-10-13) FORGE-00, rulings on FORGE-05's #42 and #64 reviews: G13.3 `strike` carries `entityIds` and `cue` may carry `entityIds` (additive; no client fan-out by occupation); G9 funnel credits a step only after the player's previous step.
 - v0.4-g5 (2026-10-13) FORGE-00: G13.1 ContentQuery API list (fireAction, citizenKey, LOYALTY_CLAMP, startLoyalty, choicePreview/choiceRisks); G13.8 cinematic conversations (D-036).
 - v0.4-g4 (2026-10-13) FORGE-00: G13.2 soldier kingdom crest (D-033). G13.4 history and memory `t` is server time. G10 rigs may have 9 parts (a Hair part welded to the Head, no motor; D-032). Content review follow-ups:

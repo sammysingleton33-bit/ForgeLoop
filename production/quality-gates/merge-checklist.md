@@ -32,6 +32,8 @@ python tools/check_ownership.py --base origin/main --title "<PR title>" --branch
 - [ ] New specs/gates: the PR shows each can fail (negative test), or reproduce one.
 
 ## 4. Review
+- [ ] **FORGE-07 verdict (D-037).** FORGE-07's latest COMMENT review opens with `FORGE-07 verdict: READY TO MERGE`, and it was written for the **current head sha**. A verdict on an older head does not count; re-request it after every push (e.g. #68's verdict was written for its old head 1878986). `CHANGES REQUESTED`, `BLOCKED ON #N` or `NEEDS DECISION` stop the merge. B findings must be fixed. M findings must be fixed unless FORGE-05 accepts them as a tracked follow-up (write it in the review and the integration log). L findings never block.
+      Exemptions, where FORGE-05's own review is enough: bookkeeping (status, logs, ownership rows), or a change of **50 lines or fewer** that touches no remote, contract, economy or gameplay rule. Record the exemption in the integration-log line.
 - [ ] Contracts (`roblox/src/shared/Contracts/`, `docs/architecture/interfaces.md`, `games/game-001/CONTRACTS.md`): additive is fine; breaking needs an approved `DECISIONS.md` entry.
 - [ ] Server authority for anything valuable; remote arguments validated and rate-limited; idempotent grants (G4).
 - [ ] Mocks used by new specs behave like Roblox (docs cited); no `game`, `task.wait`, `os.time` in services (use `env`).
@@ -42,7 +44,7 @@ python tools/check_ownership.py --base origin/main --title "<PR title>" --branch
 - [ ] After the merge, `git ls-remote origin refs/heads/main` shows the new merge commit (the merge API also reports success for a merge into another base).
 
 ## 6. Bookkeeping (direct push to `main`, D-014)
-- [ ] Tasks → ACCEPTED, or REVIEW when only G6 (Studio) is pending; evidence = merge sha + check summary + CI link.
+- [ ] Task status at merge (D-038 (5)): write a Log line with `forge.py set-status`. Use ACCEPTED when every gate is met. Use **"REVIEW, only G6 pending"** when only the user's Studio run is left (or name the remaining non-Studio item). Use BUILDING when merged code still has work left. A merge alone never accepts a task, and an unticked completion box means nothing. Evidence = merge sha + check summary + CI link.
 - [ ] Line in `production/quality-gates/integration-log.md` (date · main sha · PR · tasks · checks · CI on main · artifact).
 - [ ] CI on the merge commit green; artifact `forgeloop-main-<short sha>` listed with the BuildInfo sha from the CI log.
 - [ ] PR comment with the new main sha; tell dependent workers (PR comment or handoff).

@@ -74,8 +74,13 @@ REACTION_TONES = ("happy", "angry", "sad", "neutral")  # CONTRACTS G13.3 reactio
 CUE_IDS = ("celebrate", "grumble", "salute", "bow", "cower", "strike_placard", "work_fast", "rest", "hammer")
 # TEXT placeholders (SPEC §3). Which ones a column may use depends on whether it has a speaking citizen.
 CITIZEN_PLACEHOLDERS = ("name", "ruler", "kingdom", "occupation", "family", "friend", "rival")
-MECHANICS_PLACEHOLDERS = ("chance", "magnitude", "magnitude_pct", "duration")  # consequences.notice_text only
+MECHANICS_PLACEHOLDERS = ("chance", "magnitude", "magnitude_pct", "duration")  # known; ContentQuery fills them
 PLACEHOLDERS = CITIZEN_PLACEHOLDERS + MECHANICS_PLACEHOLDERS
+# consequences.notice_text. Never {chance}: the conversation panel shows a risk's chance next to its text, so the
+# text describes only the outcome (FORGE-00 ruling on the FORGE-05 review of PR #67, item 2).
+CONSEQUENCE_NOTICE_PLACEHOLDERS = ("name", "ruler", "kingdom", "occupation", "magnitude", "magnitude_pct", "duration")
+CHANCE_HINT = ("do not write {chance}: the conversation panel already shows a risk's chance next to its text "
+               "(model decision 7); describe only the outcome, e.g. '{name} may walk off the job for {duration}.'")
 RELATION_FLAGS = {"family": "citizen.has_family", "friend": "citizen.has_friend", "rival": "citizen.has_rival"}
 SYSTEM_MEMORIES = ("rulerVisited", "raided")
 SUGGESTED_NEEDS = ("food", "shelter", "rest", "safety", "tools", "health", "pay", "faith", "company", "respect")
@@ -130,7 +135,18 @@ _INVISIBLE_NAMES = {0x2028: "line separator", 0x2029: "paragraph separator", 0x2
                     0x2069: "pop directional isolate", 0x061C: "arabic letter mark",
                     # Hangul fillers are letters (category Lo) that show as blank space
                     0x115F: "hangul choseong filler", 0x1160: "hangul jungseong filler", 0x3164: "hangul filler",
-                    0xFFA0: "halfwidth hangul filler"}
+                    0xFFA0: "halfwidth hangul filler",
+                    # more characters that render as nothing or as blank space (ruling on PR #67 review, item 10)
+                    0x2800: "braille pattern blank", 0x034F: "combining grapheme joiner",
+                    0x1D159: "musical symbol null notehead"}
+# Unicode Default_Ignorable_Code_Point (DerivedCoreProperties.txt): characters a renderer shows as nothing when it
+# does not support them. They count as blank in the whole-text test only (_blank_text, ruling on the PR #67 review,
+# item 10): the variation selectors U+FE00-U+FE0F are legitimate after an emoji, so they are not refused everywhere.
+# Most of the others (Cf, the Hangul fillers, U+034F) are refused in every cell by _is_invisible already.
+_DEFAULT_IGNORABLE = ((0x00AD, 0x00AD), (0x034F, 0x034F), (0x061C, 0x061C), (0x115F, 0x1160), (0x17B4, 0x17B5),
+                      (0x180B, 0x180F), (0x200B, 0x200F), (0x202A, 0x202E), (0x2060, 0x206F), (0x3164, 0x3164),
+                      (0xFE00, 0xFE0F), (0xFEFF, 0xFEFF), (0xFFA0, 0xFFA0), (0xFFF0, 0xFFF8),
+                      (0x1BCA0, 0x1BCA3), (0x1D173, 0x1D17A), (0xE0000, 0xE0FFF))
 # Player-facing text may not start with these: a spreadsheet would run the cell as a formula when the CSV is
 # opened (CSV injection, review finding L1).
 FORMULA_STARTS = ("=", "+", "-", "@")
@@ -232,7 +248,8 @@ SPECS: tuple[TableSpec, ...] = (
         Column("param", "mech", "resource / scenario id / memory tag, per kind", required=False),
         Column("duration_s", "mech", "seconds it lasts (0 = instant)"),
         Column("delay_s", "mech", "seconds before it starts"),
-        Column("chance", "mech", "(0,1], default 1; below 1 is shown to the player as a risk"),
+        Column("chance", "mech", "(0,1], default 1; below 1 is shown to the player as a risk (the game shows the "
+                                 "chance; notice_text describes the outcome)"),
         Column("cue_id", "mech", "feedback cue id (FORGE-04)"),
         Column("notice_text", "text", "notice shown to the player", 100),
         Column("notes", "notes", "designer notes (not in game)"),
@@ -910,13 +927,21 @@ class Validator:
         return v
 
     def p_text(self, table: Table, row: Row, col: str, required: bool = True,
-               placeholders: tuple[str, ...] = ()) -> str | None:
-        """Player-facing text. `placeholders` lists the ones this column may use (SPEC §3); () = none."""
+               placeholders: tuple[str, ...] = (), hints: dict[str, str] | None = None) -> str | None:
+        """Player-facing text. `placeholders` lists the ones this column may use (SPEC §3); () = none. `hints`
+        replaces the generic message for a placeholder this column refuses for a reason of its own."""
         spec = table.spec.col(col)
         v = row.get(col)
-        if v.strip() == "":
+        if v == "":
             if required:
                 self.err(table, row, col, "text is required")
+            return None
+        blank = _blank_text(v)
+        if blank is not None:
+            # spaces, U+2000-U+200A, invisible fillers ...: the game would show an empty line (ruling item 10)
+            self.err(table, row, col, f"text is blank: it holds only spaces or invisible characters ({blank}), "
+                                      "which the game would show as an empty line; write the text"
+                                      + ("" if required else " or leave the cell empty"))
             return None
         ok = True
         if v != v.strip():
@@ -932,7 +957,7 @@ class Validator:
             self.err(table, row, col, f"text may not start with '{v[0]}': a spreadsheet would run it as a formula "
                                       "(CSV injection); reword it so it starts with a letter, a digit or a quote mark")
             ok = False
-        for problem in _placeholder_problems(v, placeholders):
+        for problem in _placeholder_problems(v, placeholders, hints):
             self.err(table, row, col, problem)
             ok = False
         if ok and (table.spec.key, col) in BUBBLE_COLUMNS:
@@ -1252,7 +1277,7 @@ class Validator:
             chance = self.p_num(tt, row, "chance", 0, 1, 1, lo_open=True)
             cue = self.p_id(tt, row, "cue_id", required=False)
             notice = self.p_text(tt, row, "notice_text", required=False,
-                                 placeholders=("name", "ruler", "kingdom", "occupation") + MECHANICS_PLACEHOLDERS)
+                                 placeholders=CONSEQUENCE_NOTICE_PLACEHOLDERS, hints={"chance": CHANCE_HINT})
             param_raw = self.raw(row, "param")
             param: str | None = param_raw or None
             if kind == "resource_over_time":
@@ -1281,14 +1306,12 @@ class Validator:
                 self.err(tt, row, "magnitude", f"{_fmt(magnitude)} would stop a whole group: productivity on "
                                                f"'{target}' may fall at most to {_fmt(GROUP_PRODUCTIVITY_FLOOR)} "
                                                "(model decision 6; a full walk-out is only for speaker/family/friends)")
-            if chance is not None and chance < 1:
-                if self.raw(row, "notice_text") == "":
-                    self.err(tt, row, "notice_text", f"chance {_fmt(chance)} is below 1, so the player must see the "
-                                                     "risk before choosing (model decision 7): write a notice_text "
-                                                     "with {chance}")
-                elif "{chance}" not in row.get("notice_text"):
-                    self.err(tt, row, "notice_text", "a risk must show its real odds: write {chance} in the text "
-                                                     "(the game fills in e.g. 50%) instead of a typed number")
+            if chance is not None and chance < 1 and row.get("notice_text") == "":
+                # model decision 7: the panel shows { text, chance } before the player chooses; the text is ours
+                self.err(tt, row, "notice_text", f"chance {_fmt(chance)} is below 1, so the player must see the "
+                                                 "risk before choosing (model decision 7): write a notice_text that "
+                                                 "describes the outcome (the conversation panel shows the chance "
+                                                 "next to it)")
             rec = {
                 "id": cid, "kind": kind, "target": target, "magnitude": magnitude, "duration_s": duration,
                 "delay_s": delay, "chance": chance, "param": param, "cue_id": cue, "notice": notice,
@@ -1595,13 +1618,15 @@ def _placeholder_list(allowed: tuple[str, ...]) -> str:
     return ", ".join("{" + p + "}" for p in allowed)
 
 
-def _placeholder_problems(text: str, allowed: tuple[str, ...] = ()) -> list[str]:
+def _placeholder_problems(text: str, allowed: tuple[str, ...] = (), hints: dict[str, str] | None = None) -> list[str]:
     problems = []
     for m in _PLACEHOLDER.finditer(text):
         name = m.group(1)
         if name not in PLACEHOLDERS:
             problems.append(f"unknown placeholder '{{{name}}}'{_suggest(name, allowed or PLACEHOLDERS)} "
                             f"(allowed here: {_placeholder_list(allowed)})")
+        elif name not in allowed and hints and name in hints:
+            problems.append(hints[name])
         elif name not in allowed:
             problems.append(f"placeholder '{{{name}}}' cannot be used in this column "
                             f"(allowed here: {_placeholder_list(allowed)})")
@@ -1611,21 +1636,49 @@ def _placeholder_problems(text: str, allowed: tuple[str, ...] = ()) -> list[str]
     return problems
 
 
+def _is_invisible(ch: str) -> bool:
+    """A control, format (Cf) or blank-rendering character (_INVISIBLE_NAMES): refused in every cell."""
+    o = ord(ch)
+    return (o < 0x20 or o == 0x7F or 0x80 <= o <= 0x9F or o in _INVISIBLE_NAMES
+            or unicodedata.category(ch) == "Cf")
+
+
+def _is_default_ignorable(ch: str) -> bool:
+    """Unicode Default_Ignorable_Code_Point (_DEFAULT_IGNORABLE): shows as nothing."""
+    o = ord(ch)
+    return any(lo <= o <= hi for lo, hi in _DEFAULT_IGNORABLE)
+
+
+def _char_name(ch: str) -> str:
+    o = ord(ch)
+    name = _INVISIBLE_NAMES.get(o) or unicodedata.name(ch, "").lower()
+    if name:
+        return name
+    return "unassigned character" if unicodedata.category(ch) == "Cn" else "control character"
+
+
 def _invisible_problem(value: str, kind: str) -> str | None:
     """First invisible/control/format character in a cell, or None. Notes may hold tabs and line breaks; text
     reports line breaks itself (p_text)."""
     for i, ch in enumerate(value):
-        o = ord(ch)
         if ch in "\n\r" and kind in ("notes", "text"):
             continue
         if ch == "\t" and kind == "notes":
             continue
-        if (o < 0x20 or o == 0x7F or 0x80 <= o <= 0x9F or o in _INVISIBLE_NAMES
-                or unicodedata.category(ch) == "Cf"):
-            name = _INVISIBLE_NAMES.get(o) or unicodedata.name(ch, "").lower() or "control character"
-            return (f"invisible character U+{o:04X} ({name}) at position {i + 1}; delete it (it usually comes "
-                    "from copy-paste)")
+        if _is_invisible(ch):
+            return (f"invisible character U+{ord(ch):04X} ({_char_name(ch)}) at position {i + 1}; delete it (it "
+                    "usually comes from copy-paste)")
     return None
+
+
+def _blank_text(value: str) -> str | None:
+    """For a non-empty TEXT that holds nothing visible (only whitespace such as U+2000-U+200A or U+3000, invisible
+    characters, and default-ignorable ones such as the variation selectors U+FE00-U+FE0F and U+E0100-U+E01EF), the
+    first character as 'U+2003 em space'; None otherwise (ruling item 10). A space between words, or U+FE0F after
+    an emoji, is fine: only a text with nothing else is blank."""
+    if value == "" or not all(ch.isspace() or _is_invisible(ch) or _is_default_ignorable(ch) for ch in value):
+        return None
+    return f"U+{ord(value[0]):04X} {_char_name(value[0])}"
 
 
 def _notes_formula(value: str) -> bool:
@@ -1805,9 +1858,9 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
             report.warn(t, row.num, "cue_id", f"cue '{c['cue_id']}' is not in the cue vocabulary "
                                               f"({', '.join(CUE_IDS)}; SPEC §5.4): FORGE-04 must add it")
         if c["notice"] and re.search(r"\d", c["notice"]):
-            report.warn(t, row.num, "notice_text", "the notice types a number: write {chance}, {magnitude}, "
-                                                   "{magnitude_pct} or {duration} so it stays right when the "
-                                                   "mechanics change")
+            report.warn(t, row.num, "notice_text", "the notice types a number: write {magnitude}, {magnitude_pct} "
+                                                   "or {duration} so it stays right when the mechanics change (a "
+                                                   "risk's chance is never written: the panel shows it)")
     for sid, s in model.scenarios.items():
         t, row = rows[("scenarios", sid)]
         if s["once_per_citizen"] is False and s["cooldown_s"] == 0:
@@ -2196,6 +2249,9 @@ def _column_comment(spec: TableSpec, col: Column) -> str:
             longest = ", ".join(f"{{{p}}} {n}" for p, n in PLACEHOLDER_MAX.items())
             ph += (f" In the bubble it must also fit {BUBBLE_MAX_CHARS} characters with the longest names filled in "
                    f"({longest}).")
+        if (spec.key, col.name) == ("consequences", "notice_text"):
+            ph += (" For a risk (chance below 1) the game shows a risk's chance next to this text: describe only "
+                   "the outcome and never write the odds.")
         return (f"EDIT — player-facing text: {col.help}.{limit}{ph} Do not type numbers that the mechanics decide.")
     if col.kind == "style":
         return f"EDIT — presentation, pick from the dropdown: {col.help}."
@@ -2209,7 +2265,7 @@ def _column_placeholders(table: str, col: str) -> tuple[str, ...]:
     if table in ("scenarios", "responses"):
         return CITIZEN_PLACEHOLDERS
     if table == "consequences" and col == "notice_text":
-        return ("name", "ruler", "kingdom", "occupation") + MECHANICS_PLACEHOLDERS
+        return CONSEQUENCE_NOTICE_PLACEHOLDERS
     if table == "actions" and col == "notice_text":
         return ("ruler", "kingdom", "name", "occupation")  # name/occupation only when the audience is speaker
     return ()
@@ -2481,7 +2537,9 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
         ("7. Placeholders the game fills in: {name} {ruler} {kingdom} {occupation}; {family} {friend} {rival} only "
          "when the scenario's trigger requires that relation. Hover a header to see which ones a column accepts.", ""),
         ("8. Never type numbers the mechanics decide (odds, durations, amounts). In consequence notices write "
-         "{chance}, {magnitude}, {magnitude_pct} or {duration}.", ""),
+         "{magnitude}, {magnitude_pct} or {duration}. Never write a risk's odds: the game shows the chance next to "
+         "the notice, so the notice describes only what may happen.", ""),
+        ("   A text may not be blank: only spaces or invisible characters are refused.", ""),
         ("9. Keep cells as Text. Write true/false in lower case and lists like food:-20;gold:5.", ""),
         ("", ""),
         ("HAND IT BACK", "head"),
