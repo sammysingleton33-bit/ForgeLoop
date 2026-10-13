@@ -5,9 +5,9 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-fl00xx` |
-| Open PRs | #66 FL-0088 gate + B1 confirm step + #66 lows (`256ad31`, main merged) · #63 FL-0060 review fixes (`43a2bdc`), held for FORGE-01's #70 (FORGE-00/05) · #76 ghost room outline · #79 D-033 colours (approved by FORGE-00). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #65, #71, #74. Closed: #13, #19. |
+| Open PRs | #66 FL-0088 gate + B1 confirm step (`256ad31`, main merged, CI running) · #86 crest plate for light tinctures (D-033 follow-up) · #63 FL-0060 (`184796f`: review fixes, #74 merge, #70 codes), held for FORGE-01's #70. Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #65, #71, #74, #76, #79. Closed: #13, #19. |
 | Current task | Review rounds on #66 (Converse gate), #76, #79; #63 after #70. Next: FL-0099 cinematic conversation UI (D-036, G13.8) once FL-0088 merges and FL-0097/FL-0098 exist (reuse ConversationController); SlotFit → Fit.typesFor; doubles → FORGE-01's real services as they land |
-| Last verified check | #66 `256ad31` check.sh PASS (game-001 967/0), 13 mutations killed · #63 `43a2bdc` PASS (922/0), 13 killed · #76 PASS (865/0) · #79 PASS (891/0) |
+| Last verified check | #66 `256ad31` check.sh PASS (967/0) · #63 `184796f` PASS (971/0) · #86 PASS (938/0), 4 mutations killed |
 | Blockers | none; Studio checks (G6) need the user and FORGE-01's real Kingdom/Match/Build/Slot services |
 | Needs from others | FORGE-01: Converse/Choose server (risk `text` = filled sentence, Choose re-checks cost), #70 (army), Fit.typesFor (#56). FORGE-04: `limit` on NotificationController:place() (asked). FORGE-00: choiceRisks content PR. FORGE-05: Studio steps U4.5, U5.5, U13, U15. |
 
