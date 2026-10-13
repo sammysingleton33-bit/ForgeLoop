@@ -681,6 +681,8 @@ local function printTable(label: string, runs: { any }, ms: { any })
 	end
 	-- firstGatherSec is a ruler gather (Kingdom.Gather needs a character, absent in MockEnv; onboarding v2
 	-- has no gather step): not measured. The citizens' first deposit is shown for context only.
+	-- FORGE-04's #98 renames the target to firstDepositSec: read either name, so the merge order is free.
+	local gatherTarget = TARGETS.firstDepositSec or TARGETS.firstGatherSec
 	local deposits = {}
 	for _, run in runs do
 		local earliest = math.huge
@@ -692,7 +694,7 @@ local function printTable(label: string, runs: { any }, ms: { any })
 		table.insert(deposits, earliest)
 	end
 	print(
-		`PACING {label} | firstGather (ruler) | not measured headless | target {TARGETS.firstGatherSec} | citizens' first deposit median {fmt(
+		`PACING {label} | firstGather (ruler) | not measured headless | target {gatherTarget} | citizens' first deposit median {fmt(
 			median(deposits)
 		)}`
 	)
