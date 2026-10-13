@@ -53,6 +53,9 @@
 		sim:cancelConstruction(kingdom, buildingId, byUserId?): (boolean, string?)
 		Overlap (Sim/Footprint): placement shapes keep tuning.placementGap from each other and from
 		resource node circles; bounds and territory still test the footprint circle.
+	Citizens (G5)
+		sim:rulerVisit(citizen, userId?): boolean   -- rulerVisited memory + mood lift, once per visitCooldown
+		sim:setJob(citizen, job)               -- one citizen to `job`, quotas kept in step (no rebalance back)
 	Views
 		sim:buildingView(id) / sim:viewOf(record): CONTRACTS G2 Building (cframe, footprint, state, ...)
 	Queries (used by CitizenBrain / CitizenActions / Snapshot)
@@ -88,6 +91,7 @@ local CitizenActions = require("./CitizenActions")
 local CitizenBrain = require("./CitizenBrain")
 local Footprint = require("./Footprint")
 local TreasuryDouble = require("./TreasuryDouble")
+local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 
 type Catalog = Catalog.Catalog
 
@@ -834,6 +838,38 @@ function Simulation:setActivity(citizen: any, activity: string, target: string?,
 	citizen.done = false
 end
 
+-- A ruler's visit (CONTRACTS G5): a rulerVisited memory and a mood lift of tuning.visitMood for
+-- visitMoodSeconds, at most once per citizen per visitCooldown. True when it counted.
+function Simulation:rulerVisit(citizen: any, userId: number?): boolean
+	local tuning = self.catalog.tuning
+	if citizen.visitedAt and self.time - citizen.visitedAt < tuning.visitCooldown then
+		return false
+	end
+	citizen.visitedAt = self.time
+	self:remember(citizen, { kind = "rulerVisited", ref = userId })
+	citizen.moodLift = { amount = tuning.visitMood, untilTime = self.time + tuning.visitMoodSeconds }
+	return true
+end
+
+-- Moves one citizen to `job` and keeps the kingdom's quotas in step, so the rebalancer leaves it there
+-- (CitizenService:setJob, G5). The hauler pool has no quota.
+function Simulation:setJob(citizen: any, job: string)
+	local kingdom = self.kingdoms[citizen.kingdomId]
+	local from = citizen.job
+	if from == job then
+		return
+	end
+	if from ~= "hauler" then
+		kingdom.quotas[from] = math.max(0, (kingdom.quotas[from] or 0) - 1)
+	end
+	if job ~= "hauler" then
+		kingdom.quotas[job] = (kingdom.quotas[job] or 0) + 1
+	end
+	citizen.job = job
+	citizen.done = citizen.carrying == nil -- rethink now unless mid-delivery
+	self:emit("CitizenReassigned", { kingdomId = kingdom.id, citizenId = citizen.id, from = from, to = job })
+end
+
 function Simulation:remember(citizen: any, entry: { [string]: any })
 	entry.t = self.time
 	-- replace an entry of the same kind+ref so memory stays compact
@@ -1380,20 +1416,27 @@ function Simulation:_stepPopulation(kingdom: any)
 	if #kingdom.citizenIds >= kingdom.popCap then
 		return
 	end
-	-- keep a day of meals in reserve before growing
-	local reserve = #kingdom.citizenIds * tuning.mealFood
-	if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
-		return
-	end
-	if
-		not self:spend(
-			kingdom.id,
-			{ food = tuning.birthFood },
-			`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
-			"population"
-		)
-	then
-		return
+	if self.fedByUpkeep then
+		-- D-045: the upkeep is the only food consumer (G7); a well-fed kingdom grows, it pays no food for it
+		if (kingdom.fedRatio or 1) < SocietyConfig.food.wellFedAtLeast then
+			return
+		end
+	else
+		-- the meal double (no upkeep): keep a day of meals in reserve, then pay for the birth
+		local reserve = #kingdom.citizenIds * tuning.mealFood
+		if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
+			return
+		end
+		if
+			not self:spend(
+				kingdom.id,
+				{ food = tuning.birthFood },
+				`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
+				"population"
+			)
+		then
+			return
+		end
 	end
 	local keep = self.buildings[kingdom.keepId]
 	local angle = self.rng:NextNumber() * math.pi * 2
