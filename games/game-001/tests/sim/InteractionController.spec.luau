@@ -9,7 +9,8 @@
 	End to end: FORGE-02's real WorldService places and tags the world nodes; MatchService, KingdomService,
 	RemoteService and FORGE-04's OnboardingService run as in Main.server; the controller's prompt for
 	crimson_wood1 invokes the real Kingdom.Gather as the ruler (MockRemotes), so the treasury, the G9
-	ResourceGathered (source "ruler") and the onboarding Gather step are the server's own.
+	ResourceGathered (source "ruler") are the server's own. (FORGE-04's onboarding v2 has no Gather
+	step any more; the idle hint still points at trees and rocks.)
 	Not covered here (Studio, roblox/studio-tests/gameplay.md K12): the prompt's look, its reach as the
 	engine measures it, key/touch input, streaming.
 ]]
@@ -391,7 +392,7 @@ local function taggedById(env): { [string]: any }
 	return out
 end
 
-describe("World resource nodes end to end (FL-0051 ruler gathering, onboarding step Gather)", function()
+describe("World resource nodes end to end (FL-0051 ruler gathering)", function()
 	it("every node WorldService tags gets a prompt, and every NodeId is a simulation node at that spot", function()
 		local env = MockEnv.new({ seed = 6 })
 		local registry = Loader.load(env, { worldServiceDef() })
@@ -430,133 +431,127 @@ describe("World resource nodes end to end (FL-0051 ruler gathering, onboarding s
 		end
 	end)
 
-	it(
-		"a ruler next to crimson_wood1 gathers it: treasury +2, ResourceGathered (ruler), onboarding moves on",
-		function()
-			local savedMode = MatchConfig.mode
-			MatchConfig.mode = "slice"
-			local env = MockEnv.new({
-				seed = 5,
-				sharedModules = {
-					Remotes = {
-						Kingdom = KingdomRemotes,
-						Match = MatchRemotes,
-						Treasury = TreasuryRemotes,
-						Experience = ExperienceRemotes,
-					},
+	it("a ruler next to crimson_wood1 gathers it: treasury +2, ResourceGathered (ruler)", function()
+		local savedMode = MatchConfig.mode
+		MatchConfig.mode = "slice"
+		local env = MockEnv.new({
+			seed = 5,
+			sharedModules = {
+				Remotes = {
+					Kingdom = KingdomRemotes,
+					Match = MatchRemotes,
+					Treasury = TreasuryRemotes,
+					Experience = ExperienceRemotes,
 				},
-			})
-			local registry = Loader.load(env, {
-				RemoteServiceDef,
-				worldServiceDef(),
-				MatchServiceDef,
-				KingdomServiceDef,
-				AnalyticsServiceDef,
-				SettingsServiceDef,
-				OnboardingServiceDef,
-			})
-			table.insert(cleanup, function()
-				registry:destroy()
-				MatchConfig.mode = savedMode
-				for _, entry in env.mock.logs do
-					if entry.level == "error" then
-						error(`server logged an error: {entry.message}`)
-					end
-				end
-				expect(env.mock.threadErrors).toEqual({})
-			end)
-			-- KingdomService loads characters through its adapter; Lune has none, so a minimal stand-in
-			local kingdoms = registry:get("KingdomService")
-			kingdoms.adapter = {
-				partyOf = function()
-					return nil
-				end,
-				load = function(player)
-					local character = env.newInstance("Model")
-					character.Name = player.Name
-					local root = env.newInstance("Part")
-					root.Name = "HumanoidRootPart"
-					root.Parent = character
-					character.Parent = env.Workspace
-					player.Character = character
-					return character
-				end,
-				pivot = function(character, cframe)
-					character.HumanoidRootPart.CFrame = cframe
-				end,
-				attach = function(character, accessory)
-					accessory.Parent = character
-				end,
-				onDied = function()
-					return { Disconnect = function() end }
-				end,
-				respawnDelay = function()
-					return 5
-				end,
-			}
-			local events = {}
-			GameEvents.ResourceGathered:connect(function(player, kingdomId, resource, amount, source)
-				table.insert(events, { player and player.UserId or false, kingdomId, resource, amount, source })
-			end)
-			local p1 = env.mock.players:add({ userId = 1 })
-			env.mock:advance(30) -- the world builds, then the ruler spawns at the plot
-			local onboarding = registry:get("OnboardingService")
-			expect(kingdoms:getKingdomOf(p1)).toBe("crimson")
-			expect(p1.Character).toBeTruthy()
-			expect(onboarding:state(p1, "vs1").stepId).toBe("Gather")
-
-			-- the client: the prompt on WorldService's crimson_wood1 model, the real remote as the ruler
-			local controller = Def.new(env, {
-				find = function()
-					return nil
-				end,
-			})
-			local rec = recorder(env)
-			controller.adapter = rec.adapter
-			controller.remotes = {
-				invoke = function(_, name, ...)
-					return invokeAs(env, p1, name, ...)
-				end,
-			}
-			local gathered = {}
-			controller.gathered:connect(function(nodeId, resource, amount)
-				table.insert(gathered, { nodeId, resource, amount })
-			end)
-			controller:start()
-			table.insert(cleanup, function()
-				controller:destroy()
-			end)
-			local model = taggedById(env).crimson_wood1
-			local prompt = rec.prompts[model]
-			expect(prompt).toBeTruthy()
-
-			-- from the keep door: too far, the server refuses
-			prompt.triggered()
-			expect(controller.lastRefusal).toBe("too_far")
-			expect(gathered).toEqual({})
-
-			-- walk up to the tree (the server reads the HumanoidRootPart)
-			local sim = registry:get("MatchService").host.match.sim
-			local node = sim.nodes.crimson_wood1
-			p1.Character.HumanoidRootPart.CFrame = CFrame.new(node.x + 5, 3, node.z)
-			env.mock:advance(AFTER_COOLDOWN)
-			local before = sim:balance("crimson", "wood")
-			local amountBefore = node.amount
-			prompt.triggered()
-			expect(gathered).toEqual({ { "crimson_wood1", "wood", RulerGather.CONFIG.amounts.wood } })
-			expect(controller.lastRefusal).toBeNil()
-			expect(sim:balance("crimson", "wood") - before).toBe(RulerGather.CONFIG.amounts.wood)
-			expect(amountBefore - node.amount).toBe(RulerGather.CONFIG.amounts.wood)
-
-			env.mock:advance(MatchConfig.tickSeconds * 2) -- the host fans the sim event out on its tick
-			local mine = {}
-			for _, e in events do
-				if e[5] == "ruler" then
-					table.insert(mine, e)
+			},
+		})
+		local registry = Loader.load(env, {
+			RemoteServiceDef,
+			worldServiceDef(),
+			MatchServiceDef,
+			KingdomServiceDef,
+			AnalyticsServiceDef,
+			SettingsServiceDef,
+			OnboardingServiceDef,
+		})
+		table.insert(cleanup, function()
+			registry:destroy()
+			MatchConfig.mode = savedMode
+			for _, entry in env.mock.logs do
+				if entry.level == "error" then
+					error(`server logged an error: {entry.message}`)
 				end
 			end
-			expect(mine).toEqual({ { 1, "crimson", "wood", RulerGather.CONFIG.amounts.wood, "ruler" } })
-			expect(onboarding:state(p1, "vs1").stepId).toBe("PlaceBuilding")
+			expect(env.mock.threadErrors).toEqual({})
+		end)
+		-- KingdomService loads characters through its adapter; Lune has none, so a minimal stand-in
+		local kingdoms = registry:get("KingdomService")
+		kingdoms.adapter = {
+			partyOf = function()
+				return nil
+			end,
+			load = function(player)
+				local character = env.newInstance("Model")
+				character.Name = player.Name
+				local root = env.newInstance("Part")
+				root.Name = "HumanoidRootPart"
+				root.Parent = character
+				character.Parent = env.Workspace
+				player.Character = character
+				return character
+			end,
+			pivot = function(character, cframe)
+				character.HumanoidRootPart.CFrame = cframe
+			end,
+			attach = function(character, accessory)
+				accessory.Parent = character
+			end,
+			onDied = function()
+				return { Disconnect = function() end }
+			end,
+			respawnDelay = function()
+				return 5
+			end,
+		}
+		local events = {}
+		GameEvents.ResourceGathered:connect(function(player, kingdomId, resource, amount, source)
+			table.insert(events, { player and player.UserId or false, kingdomId, resource, amount, source })
+		end)
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(30) -- the world builds, then the ruler spawns at the plot
+		expect(kingdoms:getKingdomOf(p1)).toBe("crimson")
+		expect(p1.Character).toBeTruthy()
+
+		-- the client: the prompt on WorldService's crimson_wood1 model, the real remote as the ruler
+		local controller = Def.new(env, {
+			find = function()
+				return nil
+			end,
+		})
+		local rec = recorder(env)
+		controller.adapter = rec.adapter
+		controller.remotes = {
+			invoke = function(_, name, ...)
+				return invokeAs(env, p1, name, ...)
+			end,
+		}
+		local gathered = {}
+		controller.gathered:connect(function(nodeId, resource, amount)
+			table.insert(gathered, { nodeId, resource, amount })
+		end)
+		controller:start()
+		table.insert(cleanup, function()
+			controller:destroy()
+		end)
+		local model = taggedById(env).crimson_wood1
+		local prompt = rec.prompts[model]
+		expect(prompt).toBeTruthy()
+
+		-- from the keep door: too far, the server refuses
+		prompt.triggered()
+		expect(controller.lastRefusal).toBe("too_far")
+		expect(gathered).toEqual({})
+
+		-- walk up to the tree (the server reads the HumanoidRootPart)
+		local sim = registry:get("MatchService").host.match.sim
+		local node = sim.nodes.crimson_wood1
+		p1.Character.HumanoidRootPart.CFrame = CFrame.new(node.x + 5, 3, node.z)
+		env.mock:advance(AFTER_COOLDOWN)
+		local before = sim:balance("crimson", "wood")
+		local amountBefore = node.amount
+		prompt.triggered()
+		expect(gathered).toEqual({ { "crimson_wood1", "wood", RulerGather.CONFIG.amounts.wood } })
+		expect(controller.lastRefusal).toBeNil()
+		expect(sim:balance("crimson", "wood") - before).toBe(RulerGather.CONFIG.amounts.wood)
+		expect(amountBefore - node.amount).toBe(RulerGather.CONFIG.amounts.wood)
+
+		env.mock:advance(MatchConfig.tickSeconds * 2) -- the host fans the sim event out on its tick
+		local mine = {}
+		for _, e in events do
+			if e[5] == "ruler" then
+				table.insert(mine, e)
+			end
 		end
-	)
+		expect(mine).toEqual({ { 1, "crimson", "wood", RulerGather.CONFIG.amounts.wood, "ruler" } })
+	end)
 end)

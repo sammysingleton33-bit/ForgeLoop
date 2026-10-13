@@ -20,8 +20,7 @@
 		- At most once per Def.COOLDOWN (RulerGather.CONFIG.cooldown) and one request in flight.
 		- Invokes Kingdom.Gather(nodeId) through RemoteClient. The server checks the ruler, the range from
 		  its own view of the character, its cooldown and the node (Sim/RulerGather), deposits into the
-		  treasury and fires the G9 ResourceGathered (source "ruler"), which the onboarding Gather step
-		  waits for.
+		  treasury and fires the G9 ResourceGathered (source "ruler") for feedback and analytics.
 		- (true, resource, amount): gathered:fire(nodeId, resource, amount); lastRefusal = nil.
 		- (false, code): nothing visible; lastRefusal = code ("dropped" when the server dropped the
 		  call, "error" when the call failed).

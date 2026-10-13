@@ -141,11 +141,11 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   (FORGE-03's ProductionService). With no food, citizens' hunger rises: `Sim.Inspect` on a citizen
   shows mood falling.
 
-## K12 — Ruler gathering on plot nodes (FL-0051; onboarding step Gather)
-Needs a user run: headless specs cover the remote, the sim and the onboarding step
+## K12 — Ruler gathering on plot nodes (FL-0051)
+Needs a user run: headless specs cover the remote and the sim
 (`games/game-001/tests/sim/InteractionController.spec.luau`), not the prompt itself, its reach as the
 engine measures it, keys, touch or streaming.
-1. Play Solo. Wait for the onboarding card "Gather from a tree or rock".
+1. Play Solo and wait until your ruler has spawned at the keep.
 2. Press **V** (gamepad Y, touch "View") to stand up and walk (follow camera).
 3. Walk to one of the four trees behind your lumber camp (the plot's wood nodes, models under
    `Workspace` tagged `ResourceNode`, e.g. `crimson_wood1`). Note the wood total on the HUD.
@@ -160,8 +160,7 @@ engine measures it, keys, touch or streaming.
   tree or bush and about 9–10 studs of a rock or ore, and disappears beyond that. It never shows while
   you are seated in the overview.
 - Each accepted press raises the treasury by the amount (wood 2, food 2, stone 1, gold 1) at once
-  (citizens deposit too, so compare right before and after the press), and the onboarding advances to
-  "Build a House or a Farm" after the first one.
+  (citizens deposit too, so compare right before and after the press).
 - The press right after an accepted one does nothing visible (client cooldown 0.8 s); no error in Output.
 - In build mode no Gather prompt shows; after leaving build mode the prompts come back.
 - No grey placeholder block stands inside any tree, rock or bush (the world nodes are drawn once, by
