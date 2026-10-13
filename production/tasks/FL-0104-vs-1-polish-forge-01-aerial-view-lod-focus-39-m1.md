@@ -3,7 +3,7 @@ id: FL-0104
 title: "VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-13
@@ -11,7 +11,8 @@ updated: 2026-10-13
 depends_on: [FL-0049]
 context: [games/game-001/CONTRACTS.md, DECISIONS.md, games/game-001/STUDIO_PLAYTEST.md]
 estimate_h: 3
-evidence: []
+evidence:
+  - "main ab70493: check.sh PASS (game-001 1077/0 on d3525db+#91); ownership PASS 6 files; CI run 38362247731 green; LOD repro visible 1,2 -> 4,5,6 in overview; 5/5 mutations"
 ---
 
 # VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing
@@ -38,3 +39,5 @@ In the aerial view every citizen of the kingdom is visible, Studio testers can t
 
 ## Log
 - 2026-10-13 forge-00: created from the backlog audit (D-038) (READY).
+- 2026-10-13 forge-01: READY → BUILDING. LOD centre from RulerCameraController focus in overview; G13.7 debug hooks; soldier crest kingdom arg
+- 2026-10-13 forge-05: BUILDING → BUILDING. Merged #91 (ab70493, D-040 fallback verdict on efc16c2): LOD centre = camera focus in overview, soldier crest kingdom arg, debugReseed. Still BUILDING: debugStrike/debugRequest ship with #77; M1 follow-up: reseeded looks are not sent to connected clients (EntityService:251 / EntityController:350). Lows: L1 LOD radius fixed at 150 at every zoom; L2 reseed depends on job mix.

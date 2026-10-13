@@ -363,6 +363,12 @@ describe("CitizenModel.effect and outcome", function()
 		expect(CitizenText.reason("not_eligible")).toBe("They've moved on from that. Ask again later.")
 		expect(CitizenText.reason("cost")).toBe("The treasury can't pay for that answer.")
 		expect(CitizenText.reason("weird_code")).toBe(CitizenText.GENERIC)
+		-- every Kingdom.Choose code FORGE-01's server returns has its own sentence (FORGE-05 L4 on #77;
+		-- handoff 2026-10-13-forge-01-to-forge-03-refusal-codes.md)
+		for _, code in { "not_in_match", "unknown_citizen", "not_offered", "unknown_response", "not_eligible", "cost" } do
+			expect(CitizenText.reason(code)).never.toBe(CitizenText.GENERIC)
+			expect(CitizenText.reason(code)).never.toContain(code)
+		end
 		expect(CitizenText.reason(nil)).toBe(CitizenText.GENERIC)
 	end)
 end)

@@ -21,9 +21,14 @@
 	API (G10):
 		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
 		Kit.footprint(type, level) -> Vector2
-		Kit.character(kind, job, kingdomColor, look?) -> Model  -- ≤ 9 parts (Hair welded to the Head, D-032), Motor6Ds
+		Kit.character(kind, job, kingdomColor, look?, kingdom?) -> Model
+		                                                        -- ≤ 9 parts (Hair welded to the Head, D-032), Motor6Ds
 		                                                        -- named after the moving part (Sim/Pose.JOINTS);
-		                                                        -- look: CitizenLook (G13.2), omitted = DEFAULT_LOOK
+		                                                        -- look: CitizenLook (G13.2), omitted = DEFAULT_LOOK;
+		                                                        -- kingdom: KingdomId (G13.2, D-033(3)): soldiers wear
+		                                                        -- its helmet crest (spire, square, plume, dome) as the
+		                                                        -- welded Hair, KitHeadwear "crest_<shape>"; omitted or
+		                                                        -- unknown = the plain helm; others ignore it
 		Kit.regalia(kingdomColor) -> { Accessory }              -- crown + cape
 		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered, else stand-in
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
@@ -37,7 +42,8 @@
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
 		Kit.BUILDING_TYPES, Kit.partCount(model).
 	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.LOOK_RANGES,
-		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look).
+		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look, kingdom?) (soldiers: pass
+		the kingdom, the key gains ".<kingdom>"), Kit.SOLDIER_CRESTS (KingdomId → crest name).
 ]]
 
 local Buildings = require("./Buildings")
@@ -81,6 +87,9 @@ Kit.LOOK_PALETTES = Character.LOOK_PALETTES
 Kit.DEFAULT_LOOK = Character.DEFAULT_LOOK
 Kit.normalizeLook = Character.normalizeLook
 Kit.lookKey = Character.lookKey
+-- soldier helmet crest per KingdomId (G13.2, D-033(3)): crimson "crest_spire", azure "crest_square",
+-- emerald "crest_plume", gold "crest_dome" (the Hair part's KitHeadwear)
+Kit.SOLDIER_CRESTS = Character.CRESTS
 
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build

@@ -39,6 +39,11 @@ return table.freeze({
 			value = "step",
 			fields = { "stepName" },
 		},
+		OnboardingStepPassed = {
+			description = "A tutorial step the player was moved past, not did: its service is missing (unavailable) or it timed out. Value: step number. The funnel still counts it (Roblox counts skipped steps as done).",
+			value = "step",
+			fields = { "stepName", "via" },
+		},
 		MatchEnded = {
 			description = "Match or slice ended (G9 MatchEnded), per member still here. Value: match seconds.",
 			value = "durationSec",

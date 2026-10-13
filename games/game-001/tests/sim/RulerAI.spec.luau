@@ -171,6 +171,20 @@ describe("Kingdom/RulerAI: decisions", function()
 		expect(sim:countOf(k1, "house")).toBe(0)
 	end)
 
+	it("does not build a House for soldiers: they sleep in barracks bunks, not beds (D-041)", function()
+		local sim, k1 = F.kingdom({ tuning = { birthInterval = 1e6, startCitizens = { farmer = 3, builder = 2 } } })
+		Military.install(sim)
+		RulerAI.install(sim, { interval = NEVER })
+		for i = 1, 7 do -- 5 citizens + 7 soldiers = 12 people in a kingdom with 12 beds
+			Military.spawnUnit(sim, k1, "soldier", k1.x + i * 2, k1.z + 20)
+		end
+		expect(sim:population(k1)).toBe(k1.popCap)
+		for _ = 1, 5 do
+			RulerAI.think(sim, k1)
+		end
+		expect(sim:countOf(k1, "house")).toBe(0)
+	end)
+
 	it("rings the alarm while enemies are inside and nobody defends, and stops it when they are gone", function()
 		local sim, k1, k2 = pair()
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
@@ -195,7 +209,7 @@ describe("Kingdom/RulerAI: decisions", function()
 		expect(k1.alarm).toBe(false)
 	end)
 
-	it("recruits only what Recruit accepts: a finished barracks, room for the batch, the full price", function()
+	it("recruits only what Recruit accepts: a finished barracks, bunks for the batch, the full price", function()
 		local sim, k1 = pair()
 		sim.time = 3 * sim.catalog.tuning.dayLength -- day 4: military
 		sim.rulerAI.aggression.crimson = 1 -- army target: floor(35% of 12 people) = 4
@@ -204,7 +218,7 @@ describe("Kingdom/RulerAI: decisions", function()
 		F.stock(sim, k1):add("food", 200)
 		-- house and farm sites in hand, so think() goes on to the military section
 		local barracks = assert(sim:placeBuilding(k1, "barracks", 0, -40))
-		local house = assert(sim:placeBuilding(k1, "house", -40, 0))
+		assert(sim:placeBuilding(k1, "house", -40, 0))
 		assert(sim:placeBuilding(k1, "farm", 0, 45))
 		local function recruits(): number
 			local calls = recordCommands(function()
@@ -215,15 +229,14 @@ describe("Kingdom/RulerAI: decisions", function()
 		end
 		expect(recruits()).toBe(0) -- the barracks is still a construction site
 		sim:_completeInstantly(barracks)
-		expect(sim:population(k1)).toBe(k1.popCap)
-		expect(recruits()).toBe(0) -- no room for a batch of two
-		sim:_completeInstantly(house)
-		sim:_recompute(k1)
-		expect(k1.popCap).toBe(16)
+		-- every bed is taken and the house is still a site: soldiers sleep in the 4 bunks (D-041)
+		expect(#k1.citizenIds).toBe(k1.popCap)
 		expect(recruits()).toBe(1)
-		expect(recruits()).toBe(1) -- 2 queued < 4, and 12 + 2 + 2 fits in 16
+		expect(recruits()).toBe(1) -- 2 queued < 4, and 2 + 2 fits in the 4 bunks
 		expect(#barracks.queue).toBe(4)
-		expect(recruits()).toBe(0) -- queued soldiers count toward the army target (and the cap)
+		expect(recruits()).toBe(0) -- queued soldiers count toward the army target (and the bunks)
+		table.remove(barracks.queue)
+		expect(recruits()).toBe(0) -- 3 < 4, but one free bunk cannot take a batch of two
 		table.clear(barracks.queue)
 		local food = sim:balance(k1.id, "food")
 		F.stock(sim, k1):take("food", food)

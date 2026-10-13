@@ -109,6 +109,45 @@ block; now 6.4 tall at the 3.2 Root). Tiles in `blender/renders/kit/characters*_
 | regalia | 4 | — | 4 | 4 | 4 | 4 | 4 | — | crown reads from above (velvet cap); gold cape on gold kingdom is low contrast |
 | LOD | 3 | — | 4 | 4 | 4 | 1 | 4 | 5 | one tinted block; colour is the only read beyond 150 studs |
 
+## Soldier kingdom crests (CONTRACTS G13.2, D-033(3))
+`Kit.character(kind, job, kingdomColor, look?, kingdom?)`: a soldier given its KingdomId wears one primitive welded
+to the helm as `Hair` (9 parts), in the kingdom colour, KitHeadwear `crest_<shape>`. Without a kingdom it keeps
+the plain helm (8 parts). Renders: `KitCharacterDump` groups `characters_crests` (front) and `characters_crests_side`
+(yaw 90), plus `characters_aerial`; gameplay strips about 40 studs away at 1280×720, also checked as grayscale (PIL "L").
+- Lab (8 variants): spire 0.8×1.75 read as a party hat, so it became 0.95×2.1. A swept wedge-fin plume read
+  as a mirrored spire from the side in grayscale, and a thick cylinder read as a cannon, so the plume is a
+  0.7×2.5 cylinder tilted back 55°. The dome is raised (a 1.3 ball 0.4 above the helm) so it bulges like an onion.
+- First final (superseded by the CVD follow-up below), outline above the helm (height × width × depth): spire 2.05 × 1.34 × 1.34 (CornerWedge turned 45°,
+  point over the front corner); square 0.46 × 1.95 × 1.95 (flat Block plate); plume 1.62 × 0.70 × 2.45 (Cylinder,
+  1.2 past the helm back); dome 1.05 × 1.30 × 1.30 (Ball).
+- Grayscale verdict, 40 studs: front view reads point / flat cap / upright stick / round knob, and the side view
+  reads fin / plate / diagonal tail / knob. All four tell apart. The dome is the smallest, and the gold dome is
+  close in tone to the steel helm, so it reads by its outline only. Unverified: the aerial strip at about 77 studs
+  (too small to judge in the preview), and Studio (STUDIO_PLAYTEST step 5).
+
+## Soldier crests, CVD follow-up (FORGE-05 run 2 on #81)
+Under protan and deutan vision, crimson and emerald soldiers are the same olive, so the spire vs plume pair rests
+on outline alone, and at 40 studs each crest is only about 16–20 px tall.
+- Change: the spire base goes from 0.95 to 1.3 (a 1.84 diagonal, overhanging the helm corners by about 0.2,
+  like the crimson towers' spires). It stays pointed and the tallest. The plume tilt goes from 55° to 70°: a
+  near-horizontal tail ending 1.4 past the helm back.
+- Outline (height × width × depth): the spire goes from 2.05 × 1.34 × 1.34 to 2.05 × 1.84 × 1.84. The plume goes
+  from 1.62 × 0.70 × 2.45 to 1.08 × 0.70 × 2.59. The square and dome are unchanged.
+- Spire vs plume: the front margin rises from 0.64 to 1.14, and the side margin goes from 1.11 to 0.97. The new
+  tightest pair is plume vs dome from the front: the same height (1.08 vs 1.05), told apart by width (0.70 vs
+  1.30).
+- Renders: `kit_characters_crests*.jpg` (front and side, about 40 studs) and the new
+  `kit_characters_crests_aerial.jpg` (camera at 50° elevation, 50 studs, front). All were checked in colour and
+  in grayscale.
+- Verdict:
+  - Front: a broad pointed triangle vs a narrow round-tipped stub.
+  - Side: a broad fin vs a near-horizontal tail; the clearest view.
+  - Aerial 50°: before, the spire foreshortened to a tiny point. Now it reads as a broad peaked lump vs the
+    plume's thin stick, which still projects upright on screen because it points away from the camera. They
+    differ by width; the spire's point is mostly lost at that angle.
+  - Plume vs dome from the front: a narrow stub vs a round ball, distinct at 40 studs.
+  - Unverified: Studio, and the protan/deutan re-run on these new images (FORGE-05).
+
 ## Remaining weaknesses
 - One-part tools cannot show handle + head: axe/pick/hammer read as heads at the fist (the arm is the handle in a
   swing); hoe, spear and staff are bare shafts. Imported tool meshes (Kit.prop ids, VS-2) would fix this.
@@ -118,3 +157,9 @@ block; now 6.4 tall at the 3.2 Root). Tiles in `blender/renders/kit/characters*_
 - Long hair and the hood share a ball shape (they differ by colour and size).
 - Regalia fit was checked on stand-in R15/R6 attachment positions; real bundles vary (BodyBackAttachment height),
   so the cape top can sit up to ~0.3 above or below the shoulders.
+
+Committed review images (soldier crests, for FORGE-05's CVD re-run with `production/quality-gates/cvd/cvd.py`):
+`art/reviews/img/kit_characters_crests.jpg` (front sheet), `kit_characters_crests_side.jpg` (side sheet),
+`kit_characters_crests_gameplay.jpg` and `kit_characters_crests_side_gameplay.jpg` (≈40-stud gameplay view, colour;
+grayscale is a straight luminance conversion of these), `kit_characters_crests_aerial.jpg` (50° elevation, 50 studs).
+All five were re-rendered after the CVD follow-up.

@@ -332,4 +332,16 @@ describe("VFXController", function()
 		expect(part:FindFirstChild("ForgeBubble")).toBeNil()
 		expect(vfx:bubble(nil, "x", 1)).toBeNil()
 	end)
+
+	it("text keeps the default engine distance unless the caller sets maxDistance (0 = no limit)", function()
+		local function guiOf(instance)
+			return if instance:IsA("BillboardGui") then instance else instance:FindFirstChildOfClass("BillboardGui")
+		end
+		expect(guiOf(vfx:float("+1 Wood", Vector3.zero)).MaxDistance).toBe(VFXDef.TEXT_MAX_DISTANCE)
+		expect(guiOf(vfx:float("+1 Wood", Vector3.zero, { maxDistance = 0 })).MaxDistance).toBe(0)
+		local part = env.newInstance("Part")
+		part.Parent = env.Workspace
+		expect(guiOf(vfx:bubble(part, "Aye!", 2, { maxDistance = 400 })).MaxDistance).toBe(400)
+		expect(guiOf(vfx:bubble(part, "Aye!", 2, { maxDistance = -1 })).MaxDistance).toBe(VFXDef.TEXT_MAX_DISTANCE)
+	end)
 end)

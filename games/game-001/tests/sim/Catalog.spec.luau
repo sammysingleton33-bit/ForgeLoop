@@ -168,11 +168,11 @@ describe("Kingdom/Catalog", function()
 
 	it("rejects bad barracks stats and unplaceable start buildings", function()
 		local errors = errorsOf(function(c)
-			c.buildings.barracks.levels[1].recruitCap = 2.5
+			c.buildings.barracks.levels[1].bunks = 2.5
 			c.buildings.barracks.levels[2].trainSpeed = 0
 			c.tuning.startBuildings = { { kind = "keep", angle = 0, distance = 10 } }
 		end)
-		expect(anyContains(errors, "barracks.levels[1]: recruitCap must be a non-negative integer")).toBe(true)
+		expect(anyContains(errors, "barracks.levels[1]: bunks must be a non-negative integer")).toBe(true)
 		expect(anyContains(errors, "barracks.levels[2]: trainSpeed must be positive")).toBe(true)
 		expect(anyContains(errors, "unknown or unplaceable building 'keep'")).toBe(true)
 	end)
