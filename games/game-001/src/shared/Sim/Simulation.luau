@@ -56,7 +56,7 @@
 	Views
 		sim:buildingView(id) / sim:viewOf(record): CONTRACTS G2 Building (cframe, footprint, state, ...)
 	Queries (used by CitizenBrain / CitizenActions / Snapshot)
-		sim:hasOpenSite(kingdom), sim:needTarget(kingdom, resource), sim:threatNear(kingdom, x, z, r)
+		sim:hasOpenSite(kingdom, citizen?), sim:needTarget(kingdom, resource), sim:threatNear(kingdom, x, z, r)
 		sim:findWorkTarget(kingdom, kind, citizen): (target?, distance), sim:nearestDropoff(kingdom, x, z)
 		sim:citizensOf(kingdom) / sim:buildingsOf(kingdom): arrays in creation order
 		sim:population(kingdom), sim:atWar(kingdomIdA, kingdomIdB)
@@ -653,7 +653,15 @@ function Simulation:buildingsOf(kingdom: any): { any }
 end
 
 -- ---------------------------------------------------------------- queries for the brain
-function Simulation:hasOpenSite(kingdom: any): boolean
+-- A site with a free builder slot; for `citizen`, also the site it already builds on (full or not).
+function Simulation:hasOpenSite(kingdom: any, citizen: any?): boolean
+	local claim = if citizen then citizen.claim else nil
+	if claim and claim.kind == "site" then
+		local site = self.buildings[claim.id]
+		if site and site.pendingLevel ~= nil and not site.destroyed then
+			return true
+		end
+	end
 	for _, bid in kingdom.buildingIds do
 		local b = self.buildings[bid]
 		if b.pendingLevel ~= nil and not b.destroyed and #b.builders < self:_siteBuilders(b) then
@@ -779,7 +787,8 @@ function Simulation:releaseClaim(citizen: any)
 end
 
 function Simulation:_claim(citizen: any, kind: string, id: string)
-	if citizen.claim and citizen.claim.id == id then
+	-- the same building can be a farm to work and a site to build (an upgrade): the kind matters
+	if citizen.claim and citizen.claim.id == id and citizen.claim.kind == kind then
 		return
 	end
 	self:releaseClaim(citizen)
@@ -1407,6 +1416,15 @@ function Simulation:_stepCitizen(c: any, dt: number)
 		end
 		local decision = CitizenBrain.decide(self, c)
 		self:setActivity(c, decision.activity, decision.target, decision.reason)
+		c.thinkAt = self.time + tuning.thinkInterval
+	elseif self.time >= c.thinkAt and c.activity == "Gather" and c.phase == "Work" and self._decisionBudget > 0 then
+		-- a gatherer mid-load still looks up: a site to build sends it home with what it carries (a slow
+		-- gatherer, e.g. a builder chopping wood, would otherwise keep a site waiting for a full load);
+		-- it decides again once the load is delivered
+		self._decisionBudget -= 1
+		if CitizenBrain.decide(self, c).activity == "Build" then
+			c.phase = "Return"
+		end
 		c.thinkAt = self.time + tuning.thinkInterval
 	end
 	CitizenActions.step(self, c, dt)
