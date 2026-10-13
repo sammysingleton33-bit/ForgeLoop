@@ -145,6 +145,7 @@ local function contentWith(rows)
 			audience_condition = row.audience_condition or {},
 			audience_loyalty = row.audience_loyalty or 0,
 			kingdom = row.kingdom or { happiness = 0, stability = 0, morale = 0 },
+			notice = row.notice,
 		}
 		byEvent[row.event] = byEvent[row.event] or {}
 		table.insert(byEvent[row.event], i)
@@ -440,6 +441,42 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		assert(host.match:debugSetPhase("Endgame")) -- Conflict's low was 0.6: nothing
 		env.mock:advance(1.5)
 		expect(reputation:get(1).values.compassion).toBe(paid)
+	end)
+
+	it("history text is the row's notice, else a plain line from the change, never an action id", function()
+		local env, reputation = boot()
+		seat(env, 1)
+		local rep = table.clone(ZERO_REP)
+		rep.authority, rep.fear = 2, -1
+		reputation.content = contentWith({
+			{ id = "soldiers_recruited", event = "TestQuiet", rep = rep }, -- no notice text in the content
+			{
+				id = "decayed",
+				event = "TestDecayed",
+				rep = { compassion = 3 },
+				repeat_decay = 0.5,
+				repeat_window_s = 600,
+			},
+			{ id = "told", event = "TestTold", rep = { honor = 1 }, notice = "You kept your word." },
+		})
+		reputation:fireAction("TestQuiet", "crimson")
+		local history = reputation:get(1).history
+		expect(#history).toBe(2) -- one entry per category moved
+		for _, entry in history do
+			expect(entry.source).toBe("soldiers_recruited") -- the id stays the source, for analytics
+			expect(entry.text).toBe("Authority +2, Fear -1")
+			expect(string.find(entry.text, "_", 1, true)).toBeNil()
+		end
+		reputation:fireAction("TestDecayed", "crimson")
+		local first = reputation:get(1).history
+		expect(first[#first].text).toBe("Compassion +3")
+		reputation:fireAction("TestDecayed", "crimson") -- decayed by the ruler's own history: 3 x 0.5
+		local last = reputation:get(1).history
+		expect(last[#last].delta).toBe(1.5)
+		expect(last[#last].text).toBe("Compassion +1.5")
+		reputation:fireAction("TestTold", "crimson")
+		local told = reputation:get(1).history
+		expect(told[#told].text).toBe("You kept your word.")
 	end)
 
 	it("keeps citizens' loyalty within 0..100 whatever a firing adds (#68 L3)", function()

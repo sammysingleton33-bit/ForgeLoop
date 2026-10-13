@@ -164,13 +164,30 @@ function ReputationService:getConditions(kingdomId: string): { [string]: number 
 	return if k then table.clone(k.conditions) else nil
 end
 
-local function noticeOf(firing: any): string
+-- A delta as the History tab shows it: whole numbers as "+2" / "-1", a decayed one to one decimal ("+0.6").
+local function signed(d: number): string
+	local r = math.floor(math.abs(d) * 10 + 0.5) / 10
+	local text = if r == math.floor(r) then string.format("%d", r) else string.format("%.1f", r)
+	return (if d < 0 then "-" else "+") .. text
+end
+
+-- The history text for a firing: its rows' notice (content), else a plain line from what it changed for
+-- this ruler ("Authority +1, Fear +1"). Never an action id: players read this (FORGE-05, FL-0089 check).
+local function noticeOf(firing: any, rep: { [string]: any }): string
 	for _, row in firing.rows do
 		if row.notice and row.notice ~= "" then
 			return row.notice
 		end
 	end
-	return firing.id
+	local parts = {}
+	for _, category in Reputation.CATEGORIES do
+		local d = rep[category]
+		if type(d) == "number" and math.floor(math.abs(d) * 10 + 0.5) > 0 then
+			local def = ReputationContent.categories[category]
+			table.insert(parts, `{if def and def.name then def.name else category} {signed(d)}`)
+		end
+	end
+	return if #parts > 0 then table.concat(parts, ", ") else "Your reputation changed"
 end
 
 function ReputationService:_rulerHistory(userId: number): any
@@ -216,7 +233,8 @@ function ReputationService:fireAction(event: string, kingdomId: string, opts: { 
 	end
 	for _, firing in self.content.fireAction(event, ctx, histories, rulers, kingdomFarm, now, listeners) do
 		for _, credit in firing.rulers do
-			self:apply(credit.ruler, firing.id, Reputation.guardRules(event, credit.rep), noticeOf(firing))
+			local guarded = Reputation.guardRules(event, credit.rep)
+			self:apply(credit.ruler, firing.id, guarded, noticeOf(firing, guarded))
 		end
 		Reputation.applyConditions(k.conditions, firing.kingdom)
 		for _, heard in firing.listeners do -- decayed and clamped once per listener: applied as given
