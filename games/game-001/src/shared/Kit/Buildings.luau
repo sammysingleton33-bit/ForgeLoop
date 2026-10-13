@@ -22,18 +22,24 @@
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
-		keep        300   198–292  (L1 198–218, L2 230–258, L3 261–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
-		house       170   99–161   (8 variants, L1–L2)
-		farm        190   151–183
-		storehouse  150   89–94
-		lumbercamp  130   48–52
-		quarry      130   53–57
-		barracks    260   119–252  (L1–L4)
-		watchtower  130   100–122
-		wall         60   37–40    (per 32-stud segment)
-		gate        150   97–106
-		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (38–108, G13.5 stand-ins)
-		stages      110   29–79    (any type, stage 1..3)
+		keep        300   182–292  (L1 182–236, L2 204–260, L3 234–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
+		house       170   99–162   (8 variants, L1–L2)
+		farm        190   151–188
+		storehouse  150   87–96
+		lumbercamp  130   46–59
+		quarry      130   51–64
+		barracks    260   119–248  (L1–L4)
+		watchtower  130   105–125
+		wall         60   35–42    (per 32-stud segment)
+		gate        150   92–113
+		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (27–110, G13.5 stand-ins)
+		stages      110   29–85    (any type, stage 1..3)
+	Emblems (D-039, colour-vision finding 3) cost crown 3 / star 5 / oak 5 / sun 4 parts per banner, flag, pennant
+	or shield (the keep's two aerial plaques: field + border + emblem, the sun with 9). They were paid for by
+	dropping the banner trim bands, the throne-back emblem (the seated ruler hides it), the keep's L2+ turret
+	banners (the roof plaque replaces them), the standard finials and the hall's low side/back arrow slits, coarser
+	keep plinth facing (10-stud stones) and the barracks L4 jetty banners (the gatehouse carries its own). Keep L2
+	in the emerald colours sits exactly at its 260 cap: any new keep detail needs a cut first.
 	Every part stays inside Kit.footprint (sides and back strictly; the front may carry entrance steps up
 	to 2 studs, short of the Door attachment) — footprints are pinned by the spec and never grow.
 ]]
@@ -73,6 +79,7 @@ local bracket = Pieces.bracket
 local dormer = Pieces.dormer
 local banner = Pieces.banner
 local crest = Pieces.crest
+local emblemPlaque = Pieces.emblemPlaque
 local throne = Pieces.throne
 local chimney = Pieces.chimney
 local gableChimney = Pieces.gableChimney
@@ -538,6 +545,7 @@ end
 -- Keep: a broad hall (wide facade) with round corner turrets, a donjon behind, a front bay with the grand
 -- door and, in front of it, an open terrace with the throne dais (G13.6) framed by kingdom standards.
 -- Levels grow height and roof count: L1 5 caps; L2 + bartizans on the bay (7); L3 + side towers (9).
+local KEEP_PLAQUE_LIFT = 2.4 -- the roof plaque's face clears the 2.6 merlons' sight lines from the overview camera
 BUILDERS.keep = function(ctx, level, color, style, fp)
 	local S = stoneFor(style)
 	local lv = math.clamp(level, 1, 3)
@@ -551,7 +559,7 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 	local hd = (fp.X - tr - 8.9) / 2
 	local zc = fp.X / 2 - reach - hd
 	local fz = zc - hd -- hall front face
-	stonePlinth(ctx, 2 * hw + 2.6, 2 * hd + 2.6, pl, 0, zc, S, 7, 8)
+	stonePlinth(ctx, 2 * hw + 2.6, 2 * hd + 2.6, pl, 0, zc, S, 7, 10) -- 10-stud facing stones (emblem budget)
 	block(ctx, "Hall", Vector3.new(2 * hw, h, 2 * hd), CFrame.new(0, pl + h / 2, zc), S.base, M.Cobblestone)
 	local courseY = pl + h * 0.55
 	local topY = pl + h
@@ -599,7 +607,7 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 	-- donjon behind the facade with the big cap and the kingdom flag
 	local cw = ({ 10.5, 12.5, 14 })[lv]
 	local ch = ({ 12, 15, 18 })[lv]
-	local cz = zc + hd - cw / 2 - 2
+	local cz = zc + hd - cw / 2 - (if lv == 1 then 1 else 2) -- L1: 1 back, so the roof plaque fits 6.7
 	block(ctx, "Donjon", Vector3.new(cw, ch + 1, cw), CFrame.new(0, topY - 1 + (ch + 1) / 2, cz), S.base, M.Cobblestone)
 	block(
 		ctx,
@@ -618,6 +626,20 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 		)
 	end
 	towerCap(ctx, style, cw, topY + ch + 0.1, color, 0, cz, ({ 7, 8, 9 })[lv])
+	-- aerial heraldry (colour-vision finding 3): the overview camera (40–220 studs, 38–65° down, G13.6) sees
+	-- the keep's roof and caps, not its hanging banners. A large up-facing plaque on the roof in front of the
+	-- donjon reads from the front and sides; a plaque on the donjon's back (windowless) face reads from behind,
+	-- where the donjon hides the roof plaque. Kingdom field, ivory border, full-detail emblem.
+	local roofY = topY + 0.5 -- the corbel's top is the roof deck
+	local pr = ({ 6.7, 9, 10.5 })[lv]
+	local zr = cz - cw / 2 - 0.4 - (pr + 0.7) / 2 -- back edge 0.4 before the donjon; L1 front at the merlons
+	local lift = KEEP_PLAQUE_LIFT
+	emblemPlaque(ctx, CFrame.new(0, roofY + 0.25 + lift, zr) * CFrame.Angles(PI / 2, 0, 0), pr, color, lift)
+	local pb = ({ 6, 7.5, 8.5 })[lv]
+	-- 2.2 under the donjon top: clear of the corbel and the cap's eave (the emerald hoarding beam overhangs
+	-- 1.2) for the 45° rear views, and still above what the hall's back merlons hide
+	local yb = topY + ch - 2.2 - (pb + 0.7) / 2
+	emblemPlaque(ctx, CFrame.new(0, yb, cz + cw / 2 + 0.25) * CFrame.Angles(0, PI, 0), pb, color)
 	-- front bay: projecting entrance block with the grand door and a crest
 	local bw = ({ 10, 11, 12 })[lv]
 	local bp = 1.4
@@ -683,7 +705,6 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 		)
 		local px, pz = sx * (tw / 2 - 0.45), tz1 + 0.5
 		column(ctx, "StandardPole", 0.22, 8.4, Vector3.new(px, pl + 1.2, pz), C.woodDark, M.Wood)
-		ball(ctx, "StandardFinial", 0.7, Vector3.new(px, pl + 9.7, pz), C.gold, M.Metal)
 		banner(ctx, px, pl + 9, pz + 0.3, 0, color, 4.2, style, 2)
 	end
 	local steps = { { tw - 2.4, pl * 2 / 3, 1.1 }, { tw - 1.2, pl / 3, 1.1 } }
@@ -711,7 +732,7 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 			{ arched = true, w = 2.4, h = 4.6, frame = S.light, frameMaterial = M.Slate, bare = true }
 		)
 	end
-	-- side and back windows
+	-- side and back windows (the low arrow slits went to the emblem budget; the turrets keep theirs)
 	local hf = wallFrames(2 * hw, 2 * hd, 0, 0, zc)
 	for _, side in { "left", "right", "back" } do
 		windowAt(
@@ -719,18 +740,6 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 			hf[side] * CFrame.new(if side == "back" then 0 else -2, courseY + 1.2, 0),
 			{ arched = true, w = 2.4, h = 4.6, frame = S.light, frameMaterial = M.Slate, bare = true }
 		)
-		windowAt(
-			ctx,
-			hf[side] * CFrame.new(if side == "back" then 0 else -2, pl + 5, 0),
-			{ slit = true, frame = S.light }
-		)
-	end
-	if lv >= 2 then
-		-- banners on the front turrets
-		for _, sx in { -1, 1 } do
-			local tx, tz = sx * hw, zc - hd
-			banner(ctx, tx + sx * 0.5 * tr, pl + tH - 3.5, tz - tr * 0.86, sx * -30, color, 6, style, 2.4)
-		end
 	end
 	attach(ctx, "Door", Vector3.new(0, 0, -(fp.X - 8) / 2 - 5.5))
 	workSpots(ctx, { Vector3.new(-8, 0, -(fp.X - 8) / 2 - 6), Vector3.new(8, 0, -(fp.X - 8) / 2 - 6) })
@@ -1391,9 +1400,11 @@ BUILDERS.barracks = function(ctx, level, color, style, fp)
 				step = pl,
 			})
 		end
-		local bxs = if lv >= 4 then { -gw / 2 - 2.6, gw / 2 + 2.6 } else { -5.4, 5.4 }
-		for _, bx in bxs do
-			banner(ctx, bx, y2 - 0.45, fzw - 0.05, 0, color, 4.6, style, 2.2)
+		-- banners from the jetty beam (L4: the gatehouse carries its own banners, crest and flag instead)
+		if lv < 4 then
+			for _, bx in { -5.4, 5.4 } do
+				banner(ctx, bx, y2 - 0.45, fzw - 0.05, 0, color, 4.6, style, 2.2)
+			end
 		end
 		for _, sx in { -1, 1 } do
 			windowAt(ctx, f1.front * CFrame.new(sx * (w / 2 - 2.2), 2.4, 0), { slit = true, frame = S.light })

@@ -3,11 +3,11 @@ id: FL-0084
 title: Ruler policy hook for headless leadership-strategy simulation
 track: build
 owner: forge-01
-status: SPECIFIED
+status: READY
 priority: P2
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0080]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 2
@@ -31,3 +31,4 @@ A Lune spec runs one short match with a scripted policy, and the same seed gives
 
 ## Log
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (SPECIFIED).
+- 2026-10-13 forge-00: SPECIFIED → READY. FORGE-00 reconciliation 2026-10-13 (stale-status sweep): dependencies are met (FL-0079/FL-0080/FL-0085 merged, only G6 left), so the task is READY.
