@@ -12,7 +12,10 @@
 		                                     playing phase before Results is the phase the match was decided in
 		MatchEnded({ winner?, standings, durationSec })
 		    -> AnalyticsService:event(player, "MatchEnded", { durationSec, won, phase, mode }) for every ruler
-		       still in the server (spectators are not counted)
+		       still in the server (spectators are not counted); won is "draw" when there is no single
+		       winner (a draw or a shared win), never a loss
+		Players.PlayerAdded       -> forgets an earlier kingdom of a returning player, so a ruler who comes
+		                             back as a spectator is not counted as a ruler
 
 		MatchAnalyticsService:leftInfo(player) -> { phase, minute }?
 		    config Analytics.session.leftInfo calls it when a session ends; AnalyticsService then logs
@@ -70,6 +73,11 @@ function MatchAnalyticsService:start()
 		end,
 	})
 	self._connections = connections
+	pcall(function()
+		self._joinConnection = self._env.Players.PlayerAdded:Connect(function(player)
+			self._kingdomOf[player.UserId] = nil -- a ruler again only after a new KingdomJoined
+		end)
+	end)
 	if #missing > 0 then
 		self._env.log("info", "match analytics: waiting for bus events", { events = table.concat(missing, ",") })
 	end
@@ -77,6 +85,10 @@ end
 
 function MatchAnalyticsService:destroy()
 	Bus.disconnect(self._connections)
+	if self._joinConnection then
+		self._joinConnection:Disconnect()
+		self._joinConnection = nil
+	end
 end
 
 function MatchAnalyticsService:leftInfo(player: any): { [string]: any }?
@@ -140,7 +152,7 @@ function MatchAnalyticsService:_matchEnded(result: any)
 		local kingdomId = self._kingdomOf[player.UserId]
 		if kingdomId ~= nil then
 			local own = table.clone(fields)
-			own.won = kingdomId == result.winner
+			own.won = if type(result.winner) ~= "string" then "draw" else kingdomId == result.winner
 			analytics:event(player, "MatchEnded", own)
 		end
 	end

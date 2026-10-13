@@ -491,6 +491,7 @@ describe("AnalyticsService sessions", function()
 			end,
 		}
 		local player = env.mock.players:add({ userId = 406 })
+		local never = env.mock.players:add({ userId = 409 }) -- never starts a session
 		boot(env, { config = config, bus = bus })
 		bus.PlayerReady:fire(player)
 		expect(#roblox:callsTo("LogCustomEvent")).toBe(0) -- PlayerReady no longer starts it
@@ -508,7 +509,8 @@ describe("AnalyticsService sessions", function()
 		expect(calls[#calls - 1].args[3]).toEqual({ CustomField01 = "Conflict" })
 		expect(calls[#calls].args[1]).toBe("SessionEnd")
 		expect(calls[#calls].args[3]).toEqual({ CustomField01 = "ShopViewed" }) -- not "Left"
-		expect(asked).toEqual({ { userId = 406, hasRegistry = true } })
+		env.mock.players:remove(never)
+		expect(asked).toEqual({ { userId = 406, hasRegistry = true } }) -- no session, no leftInfo
 	end)
 
 	it("a leftInfo that errors or returns nil logs only SessionEnd", function()

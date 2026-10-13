@@ -102,16 +102,22 @@ describe("VS-1 analytics (FL-0063)", function()
 		GameEvents.BuildingCompleted:fire({ id = 1, type = "house", level = 1, kingdom = "crimson" }, nil)
 		GameEvents.UnitsRecruited:fire(crimson1, "crimson", 3)
 		GameEvents.ObjectiveCaptured:fire("watchtower", "crimson")
+		GameEvents.UnitsRecruited:fire(crimson2, "crimson", 2)
+		GameEvents.ObjectiveCaptured:fire("bridge", "crimson")
 		local steps = vs1()
-		expect(steps[631]).toEqual({ "Spawn", "FirstGather", "FirstBuildingComplete", "FirstRecruit", "FirstCapture" })
+		-- inOrder (FORGE-00's #64 ruling): crimson1 never placed, so the kingdom's completion, their own
+		-- recruit and the captures do not move them past FirstGather (Roblox counts skipped steps as done)
+		expect(steps[631]).toEqual({ "Spawn", "FirstGather" })
 		expect(steps[632]).toEqual({
 			"Spawn",
 			"FirstGather",
 			"FirstBuildPlaced",
 			"FirstBuildingComplete",
+			"FirstRecruit",
 			"FirstCapture",
 		})
 		expect(steps[633]).toEqual({ "Spawn" }) -- a rival gets none of crimson's credit
+		expect(registry:get("AnalyticsService").stats.dropped.outOfOrder).toBeGreaterThan(0)
 	end)
 
 	it("logs each funnel step once per player, however often the event repeats", function()
@@ -122,6 +128,13 @@ describe("VS-1 analytics (FL-0063)", function()
 		end
 		GameEvents.ResourceGathered:fire(crimson1, "crimson", "wood", 1, "ruler")
 		expect(vs1()[631]).toEqual({ "Spawn", "FirstGather" })
+		-- repeats are counted, never logged (FORGE-05 #64 M1: they flooded Output at about 430 lines a minute)
+		local lines = 0
+		for _, entry in env.mock.logs do
+			lines += if string.find(entry.message, "analytics funnel VS1", 1, true) then 1 else 0
+		end
+		expect(lines).toBe(2)
+		expect(registry:get("AnalyticsService").stats.dropped.duplicate).toBe(20)
 	end)
 
 	it("starts the session on KingdomJoined (VS-1 has no PlayerReady), once per server visit", function()
@@ -138,14 +151,17 @@ describe("VS-1 analytics (FL-0063)", function()
 		boot({ kingdomService() })
 		join(crimson1, "crimson")
 		GameEvents.ResourceGathered:fire(nil, "crimson", "food", 2, "citizen")
-		GameEvents.UnitsRecruited:fire(crimson1, "crimson", 2)
+		GameEvents.BuildingPlaced:fire(
+			{ id = 3, type = "farm", level = 1, kingdom = "crimson", placedBy = crimson1.UserId },
+			crimson1
+		)
 		for _ = 1, 5 do
 			GameEvents.ResourceGathered:fire(nil, "crimson", "food", 2, "citizen")
 		end
 		env.mock.players:remove(crimson1)
 		local ends = custom("SessionEnd")
 		expect(#ends).toBe(1)
-		expect(ends[1].args[3]).toEqual({ CustomField01 = "UnitsRecruited" })
+		expect(ends[1].args[3]).toEqual({ CustomField01 = "BuildingPlaced" })
 	end)
 
 	it("logs MatchEnded per ruler still here: won, the phase it was decided in, the mode", function()
@@ -209,6 +225,46 @@ describe("VS-1 analytics (FL-0063)", function()
 			expect(crimsonEnd.args[3]).toEqual({ CustomField01 = "KingdomJoined" }) -- not "PhaseLeft"
 		end
 	)
+
+	it(
+		"a draw is logged as won = draw, never a loss; a ruler who rejoins as a spectator is not counted (#64 lows)",
+		function()
+			boot({ kingdomService(), matchService("match") })
+			join(crimson1, "crimson")
+			join(frost, "frost")
+			GameEvents.MatchPhaseChanged:fire("Founding")
+			env.mock.players:remove(frost)
+			local back = env.mock.players:add({ userId = 633 }) -- back in the server, no kingdom this time
+			env.mock:advance(0.1) -- PlayerAdded handlers run in their own thread
+			GameEvents.MatchPhaseChanged:fire("Results")
+			GameEvents.MatchEnded:fire({ standings = {}, durationSec = 900 }) -- no single winner
+			local byUser = {}
+			for _, call in custom("MatchEnded") do
+				byUser[call.userId] = call.args[3]
+			end
+			expect(byUser[631].CustomField01).toBe("draw")
+			expect(byUser[back.UserId]).toBeNil()
+			GameEvents.MatchPhaseChanged:fire("Founding")
+			expect(registry:get("MatchAnalyticsService"):leftInfo(back)).toBeNil() -- a spectator has no PhaseLeft
+		end
+	)
+
+	it("a new match restarts the clock and forgets rulers who left (#64 lows)", function()
+		boot({ kingdomService() })
+		join(crimson1, "crimson")
+		join(frost, "frost")
+		local service = registry:get("MatchAnalyticsService")
+		GameEvents.MatchPhaseChanged:fire("Founding")
+		env.wait(300)
+		env.mock.players:remove(frost)
+		GameEvents.MatchPhaseChanged:fire("Results")
+		GameEvents.MatchPhaseChanged:fire("Lobby")
+		GameEvents.MatchPhaseChanged:fire("Founding") -- the next match
+		expect(service._kingdomOf[633]).toBeNil() -- frost left: forgotten
+		expect(service._kingdomOf[631]).toBe("crimson")
+		env.wait(61)
+		expect(service:leftInfo(crimson1)).toEqual({ phase = "Founding", minute = 1 }) -- from the new Founding
+	end)
 
 	it("boots without KingdomService and MatchService (headless): nothing kingdom-scoped, no errors", function()
 		boot(nil)

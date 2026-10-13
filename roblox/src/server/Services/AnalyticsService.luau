@@ -19,7 +19,10 @@
 	  are dropped with a one-time warning; custom field values are sent as strings.
 	- Funnels: the onboarding funnel uses LogOnboardingFunnelStepEvent; recurring funnels need a
 	  sessionId (Roblox ignores repeated steps without one); repeated steps of one session are not
-	  re-sent (they would count against the rate limit for nothing).
+	  re-sent (they would count against the rate limit for nothing) and are only counted
+	  (stats.dropped.duplicate), never logged. A funnel declared `inOrder` credits a step only to a
+	  player who already has the previous one (stats.dropped.outOfOrder): Roblox counts skipped steps
+	  as completed, so kingdom-wide credit would otherwise inflate the earlier steps.
 	- Every call (sent or dropped) is written to env.log as "analytics <kind> <name> ..." so Studio
 	  walkthroughs can check the funnel order (Roblox records nothing from Studio).
 	- Economy events: only EconomyService calls economy() (§7); nothing here derives them from
@@ -420,9 +423,18 @@ function AnalyticsService:funnel(player: any, funnel: string, step: number, step
 	end
 	logFields.sessionId = sessionId
 	local state = self:_state(player)
-	local dedupeKey = `{funnel}|{if decl.kind == "recurring" then sessionId else ""}|{step}`
+	local sessionPart = if decl.kind == "recurring" then sessionId else ""
+	local dedupeKey = `{funnel}|{sessionPart}|{step}`
 	if state.sentSteps[dedupeKey] then
-		return self:_drop("funnel", funnel, "duplicate", logFields)
+		-- counted, not logged: kingdom-wide events repeat all match long (FORGE-05 #64 M1)
+		self:_count("duplicate")
+		return false
+	end
+	if decl.inOrder and step > 1 and not state.sentSteps[`{funnel}|{sessionPart}|{step - 1}`] then
+		-- Roblox counts skipped steps as completed, so an out-of-order step would inflate the
+		-- conversions before it (FORGE-00's #64 ruling): credited only after the previous step
+		self:_count("outOfOrder")
+		return false
 	end
 	local custom =
 		self:_customFields(decl.fields, if type(opts) == "table" then opts.fields else nil, nil, `funnel {funnel}`)

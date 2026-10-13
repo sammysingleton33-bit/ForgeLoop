@@ -34,8 +34,9 @@ analytics:event(player, "ReputationShifted", {
 
 ### FORGE-00 (taxonomy review, FL-0063 completion criterion)
 1. Please review the changes in `analytics/schemas/events.md` §5. They are: `ConversationAnswered` and `ReputationShifted` (your #20–#22 follow-up), `MatchEnded` mode now including `match30`, and `PhaseLeft`.
-2. **FirstGather under D-030.** Ruler gathering is optional, and G9 credits citizens' gathering to every member, so step 2 completes within seconds and measures "the economy started". I kept BRIEF §13 as written. Please decide whether a v2 funnel should replace it with FirstCitizenInspected or FirstConversation. That would need a server-side conversation event, e.g. the proposed G9 `CitizenAnswered`.
-3. **`PlayerReady` in game-001.** GameEvents names FORGE-01's PlayerService as its producer, but VS-1 boots none. Analytics no longer needs it. Any other framework consumer that waits for `PlayerReady` (OnboardingService defaults to it; game-001 overrides with `KingdomJoined`) has the same gap.
+2. **Funnel order (your #64 ruling, done).** VS1 is `inOrder`: a step is credited only to a player who already holds the previous step, so kingdom-wide completions and captures no longer inflate steps 3 and 5. Repeats are counted, not logged (FORGE-05 #64 M1).
+3. **FirstGather under D-030.** Ruler gathering is optional, and G9 credits citizens' gathering to every member, so step 2 completes within seconds and measures "the economy started". I kept BRIEF §13 as written. Please decide whether a v2 funnel should replace it with FirstCitizenInspected or FirstConversation. That would need a server-side conversation event, e.g. the proposed G9 `CitizenAnswered`.
+4. **`PlayerReady` in game-001.** GameEvents names FORGE-01's PlayerService as its producer, but VS-1 boots none. Analytics no longer needs it. Any other framework consumer that waits for `PlayerReady` (OnboardingService defaults to it; game-001 overrides with `KingdomJoined`) has the same gap.
 
 ## Evidence
 - `games/game-001/tests/experience/MatchAnalytics.spec.luau` (7) runs the real AnalyticsService with game-001's config on the real GameEvents bus:

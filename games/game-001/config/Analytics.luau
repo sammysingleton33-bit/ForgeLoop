@@ -28,12 +28,12 @@ end
 return table.freeze({
 	events = {
 		SessionStart = {
-			description = "Joined the server (PlayerReady). Value: UTC days since first join.",
+			description = "Joined the server (session.startOn: KingdomJoined in game-001). Value: UTC days since first join.",
 			value = "daysSinceFirstJoin",
 			fields = { "visit" },
 		},
 		SessionEnd = {
-			description = "Left. Value: session seconds; lastActivity = last tracked event (drop-off point).",
+			description = "Left. Value: session seconds; lastActivity = the last bus event logged for the player (drop-off point).",
 			value = "sessionSec",
 			fields = { "lastActivity" },
 		},
@@ -53,7 +53,7 @@ return table.freeze({
 			fields = { "stepName" },
 		},
 		MatchEnded = {
-			description = "Match or slice ended (G9 MatchEnded), per ruler still here. Value: match seconds. phase = the last playing phase (where it was decided).",
+			description = "Match or slice ended (G9 MatchEnded), per ruler still here. Value: match seconds. won = true / false / draw (no single winner); phase = the last playing phase (where it was decided).",
 			value = "durationSec",
 			fields = { "won", "phase", "mode" },
 		},
@@ -94,6 +94,7 @@ return table.freeze({
 		VS1 = {
 			description = "BRIEF §13: spawn -> first gather -> first build placed -> first building complete -> first recruit -> first capture.",
 			kind = "once",
+			inOrder = true, -- FORGE-00's #64 ruling: kingdom-wide credit never skips a player ahead
 			steps = {
 				"Spawn",
 				"FirstGather",

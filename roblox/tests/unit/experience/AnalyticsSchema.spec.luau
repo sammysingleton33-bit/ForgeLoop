@@ -150,6 +150,17 @@ describe("Experience/AnalyticsSchema", function()
 		expect(hasProblem(problems, "session.leftInfo: must be a function")).toBe(true)
 		expect(hasProblem(problems, "session.leftEvent: unknown event 'Missing'")).toBe(true)
 	end)
+
+	it("a funnel's inOrder is a boolean and never on the onboarding funnel", function()
+		local config = valid()
+		config.funnels.Return.inOrder = true
+		expect(AnalyticsSchema.validate(config, KNOWN)).toEqual({})
+		config.funnels.Return.inOrder = "yes"
+		config.funnels.Onboarding.inOrder = true
+		local problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "funnels.Return: inOrder must be a boolean")).toBe(true)
+		expect(hasProblem(problems, "funnels.Onboarding: inOrder must be a boolean")).toBe(true)
+	end)
 end)
 
 describe("Experience/Subjects and AnalyticsRouter", function()

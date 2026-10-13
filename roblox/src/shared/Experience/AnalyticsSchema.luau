@@ -14,6 +14,7 @@
 			events = { [EventName] = { description: string, value: string?, fields: { string }? } },
 			funnels = { [FunnelName] = { description: string, kind: "onboarding" | "once" | "recurring",
 			                             steps: { string }? (required unless kind = "onboarding"),
+			                             inOrder: boolean? (credit a step only after the previous one),
 			                             fields: { string }?, sessionTtlSec: number? } },
 			track = { Rule },   -- bus event -> funnel step or custom event (AnalyticsRouter)
 			session = { startEvent: string?, endEvent: string?, returnFunnel: string?,
@@ -190,6 +191,9 @@ local function checkFunnels(config: any, problems: { string })
 			end
 		end
 		checkFieldList(decl.fields, where, problems)
+		if decl.inOrder ~= nil and (type(decl.inOrder) ~= "boolean" or decl.kind == "onboarding") then
+			table.insert(problems, `{where}: inOrder must be a boolean, and not on the onboarding funnel`)
+		end
 		if decl.sessionTtlSec ~= nil and (type(decl.sessionTtlSec) ~= "number" or decl.sessionTtlSec <= 0) then
 			table.insert(problems, `{where}: sessionTtlSec must be a positive number`)
 		end
