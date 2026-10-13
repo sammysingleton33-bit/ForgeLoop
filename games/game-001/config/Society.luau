@@ -22,7 +22,13 @@
 			crowdingPenalty[c]  points taken off the target when housing is fully crowded
 			housingComfort      housing ratio (population / capacity) at or below which nobody is crowded
 			housingCrowded      housing ratio at which the full crowding penalty applies (linear in between)
-	User rules (living-kingdom §3; enforced by Kingdom/Reputation.resolveEvent on top of the content rows)
+	Reputation upkeep (ReputationService, G13.4) — PROVISIONAL
+		fear.relaxPerMinute     fear points a ruler loses per minute while above its start (SPEC §6.10: fear is
+		                        not one-way); nothing raises fear back by itself
+		food.shortageBelow      fed ratio below which a kingdom has a FoodShortage (SPEC §8: 0.5)
+		food.wellFedAtLeast     lowest fed ratio over a phase for PhaseEndedWellFed (SPEC §8: 0.9)
+		pushEvery               seconds between Kingdom.Reputation checks per ruler (sent only on change)
+	User rules (living-kingdom §3; enforced by Kingdom/Reputation.guardRules on top of the content rows)
 		rules.fightEvents       events of fighting enemies. They never LOWER the categories in rules.fightNoLoss
 		                        ("fighting enemies is not a compassion loss"; Honor: "winning battles does not lower it").
 		                        Atrocities have their own events (EnemyFarmsBurned, TruceBroken) and are not listed.
@@ -54,6 +60,10 @@ return {
 		housingComfort = 1,
 		housingCrowded = 1.5,
 	},
+
+	fear = { relaxPerMinute = 2 }, -- PROVISIONAL: 10 fear above start fades in 5 minutes
+	food = { shortageBelow = 0.5, wellFedAtLeast = 0.9 },
+	pushEvery = 1,
 
 	rules = {
 		fightEvents = { "EnemyAttacked", "KingdomEliminated", "ObjectiveCaptured", "RaidDefended", "WarDeclared" },

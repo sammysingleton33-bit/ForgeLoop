@@ -411,7 +411,7 @@ describe("Kingdom/Simulation: daily life", function()
 		expect(F.stock(sim, k):flows().expense.birth.food).toBe(20)
 	end)
 
-	it("keeps a bed free for every recruit still training (no births over the cap)", function()
+	it("beds are for citizens only: recruits in training or trained never block a birth (D-041)", function()
 		local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 		local sim, k = F.kingdom({ tuning = { birthInterval = 5, birthFood = 5 } })
 		Military.install(sim)
@@ -425,13 +425,18 @@ describe("Kingdom/Simulation: daily life", function()
 		sim:_recompute(k)
 		expect(k.popCap).toBe(16)
 		local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
-		expect(Commands.executeFor(sim, k, nil, "Recruit", "soldier", 4)).toBe(true) -- 12 + 4 queued = 16
+		expect(Commands.executeFor(sim, k, nil, "Recruit", "soldier", 4)).toBe(true) -- the 4 bunks
 		for _ = 1, 40 do
 			sim:advance(1)
-			expect(sim:population(k) + sim:queuedUnits(k) <= k.popCap).toBe(true)
+			expect(#k.citizenIds <= k.popCap).toBe(true)
+			expect(#k.unitIds + sim:queuedUnits(k) <= sim:bunks(k)).toBe(true)
 		end
 		expect(#k.unitIds).toBe(4)
-		expect(#F.events(sim, "CitizenBorn")).toBe(0)
+		expect(#F.events(sim, "CitizenBorn")).toBe(4) -- the house's four beds, soldiers or not
+		expect(#k.citizenIds).toBe(16)
+		local population = sim:getPopulation(k)
+		expect(population.total).toBe(20)
+		expect(population.cap).toBe(20) -- 16 beds + 4 bunks
 	end)
 
 	it("follows the rulers' job quotas, moving citizens through the Laborer pool", function()

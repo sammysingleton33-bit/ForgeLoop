@@ -6,7 +6,9 @@
 
 	ToastStack.new(parent: GuiObject, motion) -> stack
 	stack:show({ title, body?, kind?, durationSec? (default 3.5) })   newest on top, at most 3
-	stack:place(position: UDim2, anchor: Vector2, width: number)       follows the layout
+	stack:place(position: UDim2, anchor: Vector2, width: number, limit: number?)
+		follows the layout; `limit` (default MAX) caps how many show at once where space is short
+		(older ones are removed at once)
 	stack:count() -> number
 ]]
 
@@ -20,7 +22,8 @@ ToastStack.__index = ToastStack
 ToastStack.MAX = 3
 
 function ToastStack.new(parent: Instance, motion: any)
-	local self = setmetatable({ _motion = motion, _items = {}, _width = 300, _order = 0 }, ToastStack)
+	local self =
+		setmetatable({ _motion = motion, _items = {}, _width = 300, _order = 0, _limit = ToastStack.MAX }, ToastStack)
 	self.instance = Create("Frame", {
 		Name = "Toasts",
 		BackgroundTransparency = 1,
@@ -34,11 +37,19 @@ function ToastStack.new(parent: Instance, motion: any)
 	return self
 end
 
-function ToastStack:place(position: UDim2, anchor: Vector2, width: number)
+function ToastStack:_trim()
+	while #self._items > self._limit do
+		table.remove(self._items):destroy()
+	end
+end
+
+function ToastStack:place(position: UDim2, anchor: Vector2, width: number, limit: number?)
 	self.instance.Position = position
 	self.instance.AnchorPoint = anchor
 	self.instance.Size = UDim2.fromOffset(width, 0)
 	self._width = width
+	self._limit = math.clamp(limit or ToastStack.MAX, 1, ToastStack.MAX)
+	self:_trim()
 end
 
 function ToastStack:show(spec: { title: string, body: string?, kind: string?, durationSec: number? })
@@ -52,9 +63,7 @@ function ToastStack:show(spec: { title: string, body: string?, kind: string?, du
 	})
 	toast.instance.Parent = self.instance
 	table.insert(self._items, 1, toast)
-	while #self._items > ToastStack.MAX do
-		table.remove(self._items):destroy()
-	end
+	self:_trim()
 	self._motion:after(spec.durationSec or 3.5, function()
 		local index = table.find(self._items, toast) -- nil once the stack was destroyed
 		if index then

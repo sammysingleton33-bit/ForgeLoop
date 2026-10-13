@@ -590,7 +590,30 @@ function Simulation:population(kingdom: any): number
 	return #kingdom.citizenIds + #kingdom.unitIds
 end
 
--- Units paid for and still training in this kingdom's barracks (they will need a bed too).
+-- Bunks (D-041): soldiers (living + training) sleep in the kingdom's standing barracks, never in house or
+-- keep beds: the sum of their levels' `bunks` (Buildings.luau); a level without one sleeps any number.
+function Simulation:bunks(kingdom: any): number
+	local n = 0
+	for _, bid in kingdom.buildingIds do
+		local b = self.buildings[bid]
+		if b.kind == "barracks" and not b.destroyed and b.level >= 1 then
+			n += self.catalog.buildings.barracks.levels[b.level].bunks or math.huge
+		end
+	end
+	return n
+end
+
+-- Sleeping places for the whole population (beds + bunks, D-041): the G5 getPopulation cap. A barracks
+-- level without a bunk count (unlimited) shows as exactly full.
+function Simulation:sleepCap(kingdom: any): number
+	local bunks = self:bunks(kingdom)
+	if bunks == math.huge then
+		bunks = #kingdom.unitIds + self:queuedUnits(kingdom)
+	end
+	return kingdom.popCap + bunks
+end
+
+-- Units paid for and still training in this kingdom's barracks (they will need a bunk too).
 function Simulation:queuedUnits(kingdom: any): number
 	local n = 0
 	for _, bid in kingdom.buildingIds do
@@ -602,14 +625,15 @@ function Simulation:queuedUnits(kingdom: any): number
 	return n
 end
 
--- CitizenService:getPopulation (G5): { total, byJob, cap }; soldiers count as job "soldier".
+-- CitizenService:getPopulation (G5): { total, byJob, cap }; soldiers count as job "soldier" and the cap is
+-- beds plus bunks (D-041).
 function Simulation:getPopulation(kingdom: any): { total: number, byJob: { [string]: number }, cap: number }
 	local byJob: { [string]: number } = { soldier = #kingdom.unitIds }
 	for _, cid in kingdom.citizenIds do
 		local job = self.citizens[cid].job
 		byJob[job] = (byJob[job] or 0) + 1
 	end
-	return { total = self:population(kingdom), byJob = byJob, cap = kingdom.popCap }
+	return { total = self:population(kingdom), byJob = byJob, cap = self:sleepCap(kingdom) }
 end
 
 function Simulation:citizensOf(kingdom: any): { any }
@@ -1167,6 +1191,17 @@ end
 
 function Simulation:_removeBuilding(b: any)
 	local kingdom = self.kingdoms[b.kingdomId]
+	-- a barracks lost with recruits queued or in training refunds each one in full (D-041); the txIds
+	-- differ from cancelConstruction's refund:<id>:<level>:<resource>
+	for i, entry in b.queue or {} do
+		local price = self.costs.unit(entry.unit)
+		for resource, amount in if price then price.cost else {} do
+			self:deposit(kingdom.id, resource, amount, `recruit_refund:{b.id}:{i}:{resource}`, "refund")
+		end
+	end
+	if b.queue then
+		table.clear(b.queue)
+	end
 	self:_releaseAll(b.builders)
 	self:_releaseAll(b.workers)
 	b.destroyed = true
@@ -1287,8 +1322,8 @@ function Simulation:_stepPopulation(kingdom: any)
 	end
 	kingdom.nextBirthAt = self.time + self.catalog.tuning.birthInterval
 	local tuning = self.catalog.tuning
-	-- recruits still training already hold a bed (found by the spec batch: births overfilled the cap)
-	if self:population(kingdom) + self:queuedUnits(kingdom) >= kingdom.popCap then
+	-- beds are for citizens only: soldiers sleep in the barracks (D-041)
+	if #kingdom.citizenIds >= kingdom.popCap then
 		return
 	end
 	-- keep a day of meals in reserve before growing

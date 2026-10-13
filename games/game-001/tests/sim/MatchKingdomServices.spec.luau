@@ -331,12 +331,15 @@ describe("KingdomService (G3)", function()
 			"alive",
 			"color",
 			"crownPoints",
+			"happiness",
 			"id",
 			"isAI",
 			"keepBuildingId",
+			"morale",
 			"name",
 			"regions",
 			"rulers",
+			"stability",
 		})
 		expect(view.id).toBe("crimson")
 		expect(typeof(view.color)).toBe("Color3")

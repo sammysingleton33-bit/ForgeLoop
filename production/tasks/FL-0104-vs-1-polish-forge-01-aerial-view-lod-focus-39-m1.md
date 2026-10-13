@@ -3,7 +3,7 @@ id: FL-0104
 title: "VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-13
@@ -38,3 +38,4 @@ In the aerial view every citizen of the kingdom is visible, Studio testers can t
 
 ## Log
 - 2026-10-13 forge-00: created from the backlog audit (D-038) (READY).
+- 2026-10-13 forge-01: READY → BUILDING. LOD centre from RulerCameraController focus in overview; G13.7 debug hooks; soldier crest kingdom arg

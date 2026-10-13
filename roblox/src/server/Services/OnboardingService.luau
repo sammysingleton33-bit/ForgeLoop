@@ -14,11 +14,18 @@
 		Experience.OnboardingAction(flowId, action)   client-observed actions; only the current step
 		Experience.OnboardingSkip(flowId)             skip: OnboardingSkipped, then no funnel step ever again
 		every second           nudge escalation (OnboardingHintEscalated) and auto-advance of info steps
+		                       (and of client steps that set autoAdvanceSec, so nothing stalls)
+		a step's `requires`    a service missing from this server (registry:find at start) passes that step
+		                       over (via "unavailable"), e.g. AnswerCitizen before ConversationService exists
 	On each completed step: persist (SettingsService:update "onboarding"), AnalyticsService:funnel
 	("Onboarding", index, id) for the funnel flow, GameEvents.OnboardingStep(player, flow, index, id),
 	the step reward through EconomyService:grant (txId "onboarding:<flow>:<step>:<userId>", idempotent),
 	and a new state for the client. On the last step: OnboardingCompleted (value = seconds) and the
 	flow's completeReward.
+	A step passed over (via "unavailable") or an interactive step that timed out is still logged as its
+	funnel step: Roblox counts a skipped intermediate step as completed anyway, so leaving it out would
+	change nothing. It is also logged as OnboardingStepPassed (value = step; stepName, via), so the
+	dashboard can tell players who did the step from players who were moved past it.
 
 		OnboardingService:state(player, flowId?) -> snapshot?      -- Onboarding.snapshot
 		OnboardingService:skip(player, flowId) -> boolean
@@ -57,6 +64,7 @@ function Def.create(env: any, registry: any, options: { config: any?, bus: any? 
 		_config = config,
 		_bus = bus,
 		_flows = {},
+		_unavailable = {} :: { [string]: { [string]: boolean } }, -- flowId -> steps passed over here
 		_players = {},
 		_connections = {},
 		_running = false,
@@ -100,6 +108,17 @@ function OnboardingService:start()
 		end)
 	else
 		env.log("warn", "OnboardingService: RemoteService not loaded; client actions and skip inactive", {})
+	end
+	for _, flow in self._config.flows do
+		self._unavailable[flow.id] = Onboarding.unavailable(flow, function(name)
+			return self._registry:find(name) ~= nil
+		end)
+		for stepId in self._unavailable[flow.id] do
+			env.log("info", "onboarding: a step's service is missing; the step is passed over", {
+				flow = flow.id,
+				step = stepId,
+			})
+		end
 	end
 	local busEvents = {}
 	for _, flow in self._config.flows do
@@ -160,8 +179,8 @@ end
 
 -- Starts (or resumes) one flow for a player: restore stored progress, run auto steps, tell the client.
 function OnboardingService:_begin(player: any, flow: any)
-	if not isPlayer(player) then
-		return
+	if not isPlayer(player) or player.Parent == nil then
+		return -- a start event for a player who already left would leave a state no PlayerRemoving clears (#22)
 	end
 	local states = self._players[player.UserId]
 	if states == nil then
@@ -176,6 +195,7 @@ function OnboardingService:_begin(player: any, flow: any)
 	local now = self._env.now()
 	local state = Onboarding.restore(flow, stored[flow.id], now)
 	states[flow.id] = state
+	state.unavailable = self._unavailable[flow.id]
 	local transitions = Onboarding.begin(flow, state, now)
 	if #transitions > 0 then
 		self:_apply(player, flow, state, transitions) -- persists and pushes
@@ -239,8 +259,17 @@ function OnboardingService:_apply(player: any, flow: any, state: any, transition
 		return
 	end
 	for _, transition in transitions do
+		local step = flow.steps[transition.index]
+		local passed = transition.via == "unavailable" or (transition.via == "timeout" and step and step.interactive)
 		if flow.funnel and not state.skipped then
 			self._analytics:funnel(player, FUNNEL, transition.index, transition.id)
+			if passed then
+				self._analytics:event(player, "OnboardingStepPassed", {
+					step = transition.index,
+					stepName = transition.id,
+					via = transition.via,
+				})
+			end
 		end
 		if Bus.declared(self._bus, "OnboardingStep") then
 			self._bus.OnboardingStep:fire(player, flow.id, transition.index, transition.id)
