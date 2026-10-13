@@ -28,18 +28,13 @@
 	fed and rested = high); intent is the current activity and why, e.g. "Gathering (best job)";
 	obedience is derived (Population.obedience) from the ruler reputation `reputationOf(kingdomId)`
 	(ReputationService when present, else the Content start values) and the citizen's traits;
-<<<<<<< HEAD
 	hasRequest is true while the citizen has an open request (ConversationService:hasRequest, its thought
 	bubble; false without that service).
-	Studio debug hook (G13.7 strike.start, FORGE-05's DebugPresetService):
-		CitizenService:debugStrike(kingdom, occupation, on) -> (ok, message)   every citizen of the occupation
-		    strikes for DEBUG_STRIKE_SECONDS (or stops); ConversationService:announceStrike sends the events
-=======
-	hasRequest is false until conversations (FL-0079).
 	Studio debug hooks (G13.7, called by FORGE-05's DebugPresetService; each `(kingdom, ...) -> (ok, message)`):
 		debugReseed(kingdom, seed)              new identities for the kingdom's living citizens (People.reseed)
-		(debugStrike and debugRequest come with the conversations, FL-0079)
->>>>>>> origin/main
+		debugStrike(kingdom, occupation, on)    every citizen of the occupation strikes for DEBUG_STRIKE_SECONDS
+		                                        (or stops); ConversationService:announceStrike sends the events
+		(debugRequest, the citizen.request hook, is ConversationService's)
 ]]
 
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
