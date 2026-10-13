@@ -13,6 +13,7 @@ local Panel = require(UI .. "Components/Panel")
 local ProgressBar = require(UI .. "Components/ProgressBar")
 local Tabs = require(UI .. "Components/Tabs")
 local Toast = require(UI .. "Components/Toast")
+local Theme = require(UI .. "Theme")
 local MockEnv = require("../../mocks/MockEnv")
 local Motion = require(UI .. "Motion")
 local ToastStack = require(UI .. "ToastStack")
@@ -318,6 +319,15 @@ describe("UI kit components", function()
 		expect(toast.instance:GetAttribute("kind")).toBe("error")
 		local stacked = Toast.new({ kind = "achievement", title = "First building", count = 3 })
 		expect(stacked.instance.Count.Text).toBe("×3")
+		-- FL-0105: every kind NotificationQueue sends has its own accent; achievement is not a second reward gold
+		for _, kind in { "info", "success", "warning", "error", "reward", "achievement" } do
+			expect(Toast.ACCENT[kind]).never.toBeNil()
+			expect(Toast.ICON[kind]).never.toBeNil()
+		end
+		expect(Toast.ACCENT.achievement).never.toBe(Toast.ACCENT.reward)
+		expect(Toast.ICON.achievement).toBe("laurel")
+		expect(stacked.instance.Accent.BackgroundColor3).toEqual(Theme.color(Toast.ACCENT.achievement))
+		expect(stacked.instance.Icon.Text).toBe(Theme.icon("laurel").glyph)
 		expect(Toast.new({ title = "once", count = 1 }).instance:FindFirstChild("Count")).toBeNil()
 		local closed = 0
 		local skip = Panel.new({

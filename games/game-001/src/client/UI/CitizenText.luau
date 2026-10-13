@@ -28,7 +28,7 @@ local REASONS: { [string]: string } = {
 	-- answered, or another ruler's)
 	not_offered = "That conversation is over. Talk to them again.",
 	unknown_citizen = "They're no longer here.",
-	not_in_match = "The match isn't running",
+	not_in_match = "The match isn't running.",
 	not_eligible = "They've moved on from that. Ask again later.",
 	stale = "They've moved on from that. Ask again later.",
 	expired = "That moment has passed.",

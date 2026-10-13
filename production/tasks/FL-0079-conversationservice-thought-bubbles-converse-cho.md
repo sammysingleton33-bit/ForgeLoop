@@ -13,6 +13,7 @@ context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, 
 estimate_h: 6
 evidence:
   - check.sh OVERALL PASS; ConversationService.spec 11, Simulation +2, EventCodec/EntityService/EntityController transport specs; mutations 22/22 (service) + 28/28 (transport)
+  - "main 751138b: check.sh PASS on a8a43bc+#77 (game-001 1146/0); ownership PASS 21 files; CI 3/3 on 98954e9; review spec 10/10; 16/16 mutants; slice spec passes"
 ---
 
 # "ConversationService: thought bubbles, Converse/Choose, decision effects and memories (G13.3)"
@@ -53,3 +54,4 @@ Studio: answer a hungry farmer and see food, loyalty and reputation move, plus t
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
 - 2026-10-13 forge-01: READY → BUILDING. ConversationService + G13.3 event transport (sub-worker)
 - 2026-10-13 forge-01: BUILDING → REVIEW. Converse/Choose, thought bubbles, fireDecision effects (cost, reputation, loyalty by relation with caps, chemistry, conditions, memory, consequences incl. productivity/strike/unlock/delays), reaction/thought/strike/kcue events to members
+- 2026-10-13 forge-05: REVIEW → REVIEW. Merged #77 (751138b, FORGE-05 D-040 fallback verdict on 98954e9): B1 (thoughts re-sent while open), M1/D-042 (walk-out = sim:strike), M2 (hasRequest), L1-L3, L5, N1 fixed. REVIEW with tracked follow-ups N2 (walk-out while carrying), N3 (Talk-then-close hides the request; visible in B8), N4 (K10 steps), N5 (hasRequest _sim) in FORGE-01's next PR; then G6 (STUDIO_PLAYTEST row 9, K10). FORGE-07 post-merge review owed.

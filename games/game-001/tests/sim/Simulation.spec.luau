@@ -3,6 +3,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local F = require("./KingdomFixtures")
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Snapshot = require("@game/ReplicatedStorage/Game/Sim/Snapshot")
 
 local function dist(a, b)
@@ -194,6 +195,56 @@ describe("Kingdom/Simulation: production", function()
 		end)
 		expect(woodcutter).toBe(1) -- it never walked back to the keep 100 studs away
 		expect(sim:balance(k.id, "wood")).toBeGreaterThan(60)
+	end)
+
+	it("a camp's level speeds up gathering what it accepts; the best camp counts (FL-0081)", function()
+		local sim, k = F.kingdom({ nodes = false, tuning = { startCitizens = {}, birthInterval = 1e6 } })
+		local levels = sim.catalog.buildings.lumbercamp.levels
+		expect({ levels[1].gatherBonus, levels[2].gatherBonus, levels[3].gatherBonus }).toEqual({ 0, 0.2, 0.4 })
+		local camp = sim:placeBuilding(k, "lumbercamp", 88, 0)
+		expect(k.gatherBonus.wood).toBeNil() -- a construction site speeds up nothing
+		-- (the real completion path recomputes the kingdom; _completeInstantly needs it by hand)
+		sim:_completeInstantly(camp)
+		sim:_recompute(k)
+		expect(k.gatherBonus.wood).toBe(0)
+		camp.level = 3
+		sim:_recompute(k)
+		expect(k.gatherBonus).toEqual({ wood = 0.4 })
+		local second = sim:_createBuilding(k, "lumbercamp", -88, 0) -- scenario setup: no cost
+		sim:_completeInstantly(second)
+		second.level = 2 -- a level 2 camp beside it: the best one counts (0.4), no stacking (0.6)
+		sim:_recompute(k)
+		expect(k.gatherBonus.wood).toBe(0.4)
+		local quarry = sim:_createBuilding(k, "quarry", 0, 88)
+		sim:_completeInstantly(quarry)
+		quarry.level = 2
+		sim:_recompute(k)
+		expect(k.gatherBonus).toEqual({ wood = 0.4, stone = 0.2, gold = 0.2 })
+		Military.destroyBuilding(sim, camp, nil)
+		expect(k.gatherBonus.wood).toBe(0.2) -- the level 2 camp is the best left
+	end)
+
+	it("a level 3 lumber camp makes the same woodcutter deliver about 40 % more wood", function()
+		local function run(level: number): number
+			local sim, k = F.kingdom({
+				nodes = false,
+				tuning = { startCitizens = { woodcutter = 1 }, hungerPerDay = 0.001, birthInterval = 1e6 },
+			})
+			for i = -2, 2 do -- enough wood that the trees never run out in the run
+				sim:addNode("tree", 100, i * 8)
+			end
+			local camp = sim:placeBuilding(k, "lumbercamp", 88, 0)
+			sim:_completeInstantly(camp)
+			camp.level = level
+			sim:_recompute(k)
+			local start = sim:balance(k.id, "wood")
+			sim:advance(180)
+			return sim:balance(k.id, "wood") - start
+		end
+		local base, boosted = run(1), run(3)
+		expect(base > 0).toBe(true)
+		expect(boosted / base).toBeGreaterThan(1.25) -- walking time is unchanged, so a little under 1.4
+		expect(boosted / base).toBeLessThan(1.45)
 	end)
 
 	it("regrows a depleted tree after its regrow time, and depleted trees still block placement", function()
@@ -509,7 +560,6 @@ describe("Kingdom/Simulation: daily life", function()
 	end)
 
 	it("beds are for citizens only: recruits in training or trained never block a birth (D-041)", function()
-		local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 		local sim, k = F.kingdom({ tuning = { birthInterval = 5, birthFood = 5 } })
 		Military.install(sim)
 		F.stock(sim, k):add("food", 500)

@@ -13,6 +13,8 @@ local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local People = require("@game/ReplicatedStorage/Game/Sim/People")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
 local SimRemotes = require("@game/ReplicatedStorage/Game/Sim/Remotes")
@@ -312,6 +314,67 @@ describe("EntityService replication (G4)", function()
 		entities:despawn(soldier, "test")
 		env.mock:advance(0.2)
 		expect(entities:get(soldier)).toBeNil()
+	end)
+
+	it("sends a citizen whose look changed (the Studio reseed) as a spawn again, nobody else (#91 M1)", function()
+		local env, entities = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = entities:_sim()
+		if sim.profiler == nil then -- CitizenService installs People in the game; this boot has none
+			People.install(sim, 7, People.CONTENT)
+		end
+		env.mock:advance(0.5)
+		local function spawnsSince(mark: number): { [number]: any }
+			local out = {}
+			for i, e in eventsOf(env) do
+				if i > mark and e.type == "spawn" then
+					out[e.id] = e
+				end
+			end
+			return out
+		end
+		local k = sim.kingdoms.crimson
+		local a, b = sim.citizens[k.citizenIds[1]], sim.citizens[k.citizenIds[2]]
+		local mark = #eventsOf(env)
+		local new = table.clone(Kit.normalizeLook(a.profile.look))
+		new.skin = new.skin % #Kit.LOOK_PALETTES.skin + 1
+		a.profile.look = new
+		b.profile.look = table.clone(b.profile.look) -- a new table with the same look: no spawn
+		env.mock:advance(0.5)
+		local spawns = spawnsSince(mark)
+		expect(spawns[b.id]).toBeNil()
+		local again = assert(spawns[a.id], "no spawn for the citizen whose look changed")
+		expect(Kit.lookKey(again.look)).toBe(Kit.lookKey(new))
+		expect({ again.kind, again.job, again.kingdom }).toEqual({ "citizen", a.job, "crimson" })
+		local count = 0
+		for _ in spawns do
+			count += 1
+		end
+		expect(count).toBe(1)
+
+		-- the real reseed: a spawn for exactly the citizens whose look key changed
+		local before = {}
+		for _, id in k.citizenIds do
+			before[id] = Kit.lookKey(sim.citizens[id].profile.look)
+		end
+		mark = #eventsOf(env)
+		People.reseed(sim, "crimson", 1234, People.CONTENT)
+		local changed = {}
+		for _, id in k.citizenIds do
+			if Kit.lookKey(sim.citizens[id].profile.look) ~= before[id] then
+				changed[id] = true
+			end
+		end
+		expect(next(changed)).never.toBeNil()
+		env.mock:advance(0.5)
+		local resent = {}
+		for id in spawnsSince(mark) do
+			resent[id] = true
+		end
+		expect(resent).toEqual(changed)
+		env.mock:advance(1)
+		expect(next(spawnsSince(#eventsOf(env)))).toBeNil() -- once, not every tick
 	end)
 
 	it("keeps every packet ≤ 900 B with 300 entities and reports perf every 30 s", function()
