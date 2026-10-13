@@ -10,7 +10,7 @@ Which steps are runnable after which PR:
 |---|---|
 | K1, K2, K7 (party, spawn, regalia, phases, rejoin) | FL-0048 merged on `main` |
 | K3, K4 (citizens at work, ruler gathering) | FL-0048; citizens render once FL-0049 lands (placeholder parts until then) |
-| K5 (build, upgrade) | FL-0051 (`Build.Place`, `Build.Upgrade`) |
+| K5 (build, upgrade) | the FL-0051 Build-remotes PR (`Build.CanPlace/Place/Upgrade/Buildings/GetBuildings`) |
 | K6 (recruit, capture) | FL-0052 (`Army.Recruit`, `Army.Command`); a ruler-only capture works with FL-0048 |
 | K8 and performance capture | FL-0049 (entity replication and client rigs; `Kingdom perf` log line) |
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
@@ -70,8 +70,9 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - An accepted gather returns `true, "wood", 2`.
 - Calls faster than the cooldown return `false, "cooldown"`; from 30 studs away `false, "too_far"`.
 
-## K5 — Build and upgrade (VS-1 row 6; needs FL-0051)
-1. Place a House inside your territory with `Build.Place("house", position, 0)`.
+## K5 — Build and upgrade (VS-1 row 6)
+1. Place a House inside your territory with FORGE-03's build menu, or from the client command bar with
+   `ForgeRemotes.Build.Place:InvokeServer("house", position, rot)` (rot 0..3 turns it in 90° steps).
 2. Upgrade the keep once wood and stone allow it (`Build.Upgrade(keepId)`).
 
 **Expected:**

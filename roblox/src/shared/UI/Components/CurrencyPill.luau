@@ -183,6 +183,11 @@ function CurrencyPill:pulse(delta: number)
 				{ Position = UDim2.new(1, 2, 0, -10), TextTransparency = 1, BackgroundTransparency = 1 },
 				CurrencyPill.PULSE_SEC
 			)
+			-- its outline fades with it (FORGE-05, #48 review): a bare ring must not linger
+			local stroke = label:FindFirstChild("Stroke")
+			if stroke then
+				self._motion:to(stroke, { Transparency = 1 }, CurrencyPill.PULSE_SEC)
+			end
 		end
 		self._motion:after(CurrencyPill.PULSE_SEC, function()
 			if self._destroyed or label.Parent == nil then

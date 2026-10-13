@@ -4,6 +4,10 @@
 	are sized "S", "M" or "L"). The server stays the judge (`Build.PlaceSlot` refuses a misfit with
 	its reason); this only decides what the picker lists.
 
+	INTERIM COPY (FORGE-00, G13.5): the rule belongs to FORGE-01's shared `src/shared/Build/Fit.luau`
+	(`Fit.fits`, `Fit.typesFor`, PR #56), which server and picker both call. When it lands, the picker
+	calls `Fit.typesFor` and this module goes; until then it implements the same physical rule.
+
 	Rule (FORGE-05 review M2 on PR #34): a type fits a slot when its biggest footprint over all its
 	levels (`Kit.footprint`, `Costs.maxLevel`) fits the slot's width and depth from FORGE-02's world
 	Layout (`slotSizes`: S 24×20, M 36×30, L 46×40 studs; X across the slot's front, Y its depth —

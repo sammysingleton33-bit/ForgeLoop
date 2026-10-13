@@ -235,8 +235,12 @@ describe("Reputation strip (desktop)", function()
 		expect(texts(panel(world))).toContain("separate from your reputation")
 	end)
 
-	it("invents no category prose without the content library", function()
+	it("shows the content library's prose by default, and invents none without a provider", function()
+		local Content = require("@game/ReplicatedStorage/Game/Content/Reputation")
 		world.rep:open()
+		local withContent = find(panel(world), "CategoryDetail")
+		expect(texts(find(withContent, "About"))).toContain(Content.categories.compassion.description)
+		world.rep:setCategoryText(nil) -- re-renders the open screen
 		local detail = find(panel(world), "CategoryDetail")
 		expect(find(detail, "About")).toBeNil()
 		expect(find(detail, "Affects")).toBeNil()
@@ -427,6 +431,30 @@ describe("Follow-ups from the #44 review (FORGE-05)", function()
 		expect(find(world.hud.guis.hud, "ReputationStrip")).toBeNil()
 		world:destroy()
 	end)
+
+	it(
+		"each tab keys on what it shows: a condition push keeps History, a history line keeps Kingdom (#58 f3)",
+		function()
+			local world = newWorld()
+			world.rep:open()
+			world.rep:selectTab("history")
+			local open = panel(world)
+			local list = find(open, "History")
+			world.server_rep:setCondition("stability", 31) -- not shown on the History tab
+			world:advance(0.1)
+			expect(panel(world)).toBe(open)
+			expect(find(panel(world), "History")).toBe(list)
+			world.rep:selectTab("kingdom")
+			local kingdom = panel(world)
+			world.server_rep:apply("honor", 2, "You kept your word to the miners.") -- History only
+			world:advance(0.1)
+			expect(panel(world)).toBe(kingdom)
+			world.server_rep:setCondition("stability", 12) -- the Kingdom tab shows this one
+			world:advance(0.1)
+			expect(texts(panel(world))).toContain("12")
+			world:destroy()
+		end
+	)
 
 	it("reserves the strip's room only while it shows: no empty gap before the server sends any", function()
 		local world = KingdomWorld.new({ clientDefinitions = { KingdomHudDef, ReputationDef } })
