@@ -837,8 +837,67 @@ describe("ConversationService: FORGE-05 verdict on #77 (M1, M2, L1, L2, L3, L5)"
 			end
 			expect(assert(citizens:inspect(id)).hasRequest).toBe(listed)
 		end
-		assert(conversations:converse(p1, farmer.id)) -- talking to them takes the request
-		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(false)
+		assert(conversations:converse(p1, farmer.id)) -- talking keeps the request until it is answered (N3)
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(true)
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(assert(citizens:inspect(farmer.id)).hasRequest).toBe(false) -- answered: settled
+	end)
+
+	it("N3: Talk, then close without answering: the request and its thought stay; asking again shows it", function()
+		local env, conversations, match, registry, sent = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer = hungryFarmer(match, registry)
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local view = assert(conversations:converse(p1, farmer.id)) -- the panel opens, then closes unanswered
+		table.clear(sent)
+		for _ = 1, 3 do -- three refreshes (the scenario is on its shown cooldown now)
+			conversations:refresh()
+		end
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local thoughts = 0
+		for _, entry in sent do
+			if entry.event.type == "thought" and entry.event.id == farmer.id then
+				thoughts += 1
+			end
+		end
+		expect(thoughts).toBe(3) -- the bubble is still re-sent every refresh
+		local again = assert(conversations:converse(p1, farmer.id))
+		expect(again.scenarioId).toBe(view.scenarioId)
+		-- answered: the request closes and the next refresh does not bring it back
+		assert(choose(conversations, p1, farmer, view.scenarioId, "farmer_hungry_grain_open_store"))
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+		conversations:refresh()
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+	end)
+
+	it("N2: a walk-out downs tools at once, even with a load in hand", function()
+		local env, conversations, match, registry = boot()
+		seat(env, 1)
+		local _, sim = hungryFarmer(match, registry)
+		local k = sim.kingdoms.crimson
+		-- a citizen in the middle of gathering, carrying part of a load
+		local worker
+		for _ = 1, 600 do
+			env.mock:advance(0.25)
+			for _, id in k.citizenIds do
+				local c = sim.citizens[id]
+				if c.activity == "Gather" and c.phase == "Work" and c.carrying and c.carrying.amount > 0 then
+					worker = c
+					break
+				end
+			end
+			if worker then
+				break
+			end
+		end
+		assert(worker, "no citizen was gathering")
+		local carried = worker.carrying.amount
+		conversations:_applyConsequence("crimson", worker, ContentQuery.data.consequences.speaker_refuses_work)
+		env.mock:advance(1)
+		expect(sim:isStriking(worker)).toBe(true)
+		expect(worker.activity).toBe("Idle") -- re-planned at once: on strike
+		expect(worker.carrying == nil or worker.carrying.amount <= carried).toBe(true) -- gathered nothing more
 	end)
 
 	it("L1: a timed condition, unrest or desertion consequence comes off again after its duration", function()

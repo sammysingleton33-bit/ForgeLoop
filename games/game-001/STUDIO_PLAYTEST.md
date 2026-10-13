@@ -216,9 +216,11 @@ after B7; B7 says "…Upgrade it").
      follow-up. A walk-out is not ended by a boost (D-042).
 4. Press `vs1.strike`: every farmer shows "On strike" and stops work for about 2 minutes, then goes back.
    `vs1.hungry` makes food-related requests more likely.
-   Known, not a fail (#77 N3, N2; FORGE-01 fixes next): if you press Talk and close the panel without
-   answering, that request does not come back this match; a citizen who walks out while carrying a load
-   finishes that delivery first.
+   From main `276d933` (#107): press Talk and close without answering, then tap Talk again: the **same**
+   question comes back and the bubble stays up (in B8 the request was gone for the match); a citizen who
+   walks out stops at once, even while carrying a load. Known, not a fail (FORGE-01 next): with two
+   rulers, if one leaves a conversation open, the other's Talk on that citizen may answer "Nothing on
+   their mind right now" or show a different question.
 5. Screenshots **D1** (bubble), **D2** (conversation), **D3** (the visible result).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
@@ -227,9 +229,10 @@ after B7; B7 says "…Upgrade it").
 Start a fresh Play and follow the hints: inspect a citizen → build (House or Farm) → answer a citizen →
 recruit → capture. In B7 the "answer a citizen" hint is passed over (no conversation server); from the
 build after B7 it waits for your answer (it moves on by itself after 2 minutes).
-**Pass:** each hint appears at the right moment and can be skipped. Known, not a fail: the build hint
-highlights the **Build** button rather than a plot marker, and the recruit hint highlights nothing
-(FORGE-04 follow-ups: retarget to `BuildSlot` now that FL-0081 is on main, and to `HUD.ArmyButton`).
+**Pass:** each hint appears at the right moment and can be skipped. From main `d887beb` (#99) the build
+hint points at the nearest free plot marker and the recruit hint at the **Army** rail button. In B7 and
+B8 the build hint highlights the **Build** button and the recruit hint highlights nothing (known, not a
+fail). In walk mode, standing up from the throne keeps the ruler standing (#99).
 
 ## M1 / M2 — two players (Test → Clients and Servers → Local Server, 2 players → Start)
 (Later multiplayer checks M3–M8: `production/quality-gates/multiplayer-test-plan.md`.)
@@ -251,6 +254,9 @@ In the **Server** window: **View → Script Performance**; note the Activity % o
 4. Pass: every kingdom is identifiable without colour (emblem, silhouette or name) in both views.
 5. VS-1 acceptance (CONTRACTS G13.2, D-033 (3)): soldiers of different kingdoms are told apart by their helmet crest in the kingdom's tower style (spire, square, plume, dome), not only by torso colour; check two kingdoms' soldiers side by side in the grayscale/protanopia view.
 6. Tritanopia: azure and emerald are told apart by tower silhouette and emblem in the four-kingdom screenshot.
+7. From main `f562a31` (#105): from the aerial camera, each keep shows its kingdom's emblem on a roof plaque
+   (crown, star, oak leaf, sun) and on its banners, flags and plot signs; check they read in the grayscale
+   view too. A captured watchtower takes the capturer's emblem.
 
 ## Report (paste into the FORGE-05 chat)
 ```

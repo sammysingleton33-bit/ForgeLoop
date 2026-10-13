@@ -98,6 +98,11 @@ _Maintained by the worker. Keep it short and current._
 | #103 | FORGE-03 #86 follow-ups (Studio text, gem, banner tab), D-040 ★ | `f2d430a` |
 | #106 | FORGE-01 #89 follow-ups (slot reservation, not_on_plot, camp levels), D-040 ★ | `aecd245` |
 | #77 | FORGE-01 FL-0079 ConversationService (conversation lane), D-040 | `751138b` (user build B8) |
+| #99 | FORGE-04 onboarding hints on BuildSlot / Army button, walk-mode unseat, D-040 ★ | `d887beb` |
+| #104 | FORGE-01 #68 follow-ups (upgrade credit), D-040 ★ | `3f3ac6d` |
+| #109 | FORGE-05 G9 CitizenAnswered declaration (FORGE-00 approved) | `b0509b0` |
+| #107 | FORGE-01 #77 follow-ups N2-N5 (M1-M3 tracked), D-040 ★ | `276d933` |
+| #105 | FORGE-02 kingdom emblems from the overview camera, D-040 ★ | `f562a31` (user build B9) |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

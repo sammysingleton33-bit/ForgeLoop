@@ -210,7 +210,10 @@ function Controller:standUp(): boolean
 	end)
 	if (okSit and sitting) or (okSeat and seatPart ~= nil) then
 		pcall(function()
-			humanoid.Jump = true
+			humanoid.Sit = false -- FORGE-01 (FL-0081): the server then stops re-seating this ruler
+		end)
+		pcall(function()
+			humanoid.Jump = true -- and a jump, in case Sit = false alone leaves the seat weld
 		end)
 		return true
 	end
