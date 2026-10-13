@@ -32,12 +32,15 @@
 		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
+		hud:changeJob(jobId, delta)         Kingdom panel "Jobs" (FL-0065): asks Kingdom.SetJobQuota for
+		                                    the job's count + delta; one request per job at a time
 		hud:setViewport(width, height)      the CoreUISafeInsets area size (headless; live measures it)
 		hud:render()   hud.state   hud.view (UI/KingdomHud)   hud.panel (UI/KingdomPanel)   hud.guis
 ]]
 
 local BuildModel = require("../UI/BuildModel")
 local Buildings = require("../UI/Buildings")
+local JobModel = require("../UI/JobModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local HudModel = require("../UI/HudModel")
@@ -76,7 +79,13 @@ function Def.new(env: any, registry: any)
 		state = {
 			menu = nil :: string?,
 			placing = false,
-			panel = { tab = "overview", upgradeId = nil, pending = nil, done = nil },
+			panel = {
+				tab = "overview",
+				upgradeId = nil,
+				pending = nil,
+				done = nil,
+				jobs = { pending = {}, quota = {} }, -- FL-0065: in flight / acknowledged (JobModel state)
+			},
 			confirm = nil :: any,
 		},
 		_viewport = nil :: Vector2?,
@@ -190,6 +199,11 @@ function KingdomHudController:start()
 	self:_follow("Treasury.Changed", "Treasury.Get", function(totals, deltas)
 		store:applyTreasury(totals, deltas)
 	end)
+	-- My kingdom's population (G13.2, approved by FORGE-00; FORGE-01 declares it): the job panel
+	-- and the army panel read it from the store.
+	self:_follow("Kingdom.Population", "Kingdom.GetPopulation", function(payload)
+		store:applyPopulation(payload)
+	end)
 	self:_follow("Build.Buildings", nil, function(list)
 		store:applyBuildings(list, false)
 	end)
@@ -279,10 +293,16 @@ function KingdomHudController:_onStore(what: string, deltas: any)
 		local mine = if kingdom then kingdom.id else nil
 		if mine ~= self._mine then
 			self._mine = mine
+			-- Another kingdom's people: drop the old counts and quotas (FORGE-05 M2 on #55).
+			self.store:clearPopulation()
+			self.state.panel.jobs = { pending = {}, quota = {} }
 			if mine ~= nil then
 				-- A late join: the treasury of the new kingdom was never pushed to this client.
 				self:_fetch("Treasury.Get", function(totals)
 					self.store:applyTreasury(totals)
+				end)
+				self:_fetch("Kingdom.GetPopulation", function(payload)
+					self.store:applyPopulation(payload)
 				end)
 			end
 		end
@@ -294,6 +314,9 @@ function KingdomHudController:_onStore(what: string, deltas: any)
 end
 
 function KingdomHudController:notify(spec: { title: string, body: string?, kind: string? })
+	if self._destroyed then
+		return -- a reply that arrives after destroy has no screen to speak on (FORGE-05, #48 review)
+	end
 	if self._notifications and self._notifications.show then
 		local ok = pcall(function()
 			self._notifications:show({
@@ -352,7 +375,8 @@ end
 
 function KingdomHudController:metrics(): any
 	local size = self:_safeArea()
-	return Layout.compute(size.X, size.Y)
+	-- The reputation strip's room only while it shows (ReputationPanelController sets the flag).
+	return Layout.compute(size.X, size.Y, { reputation = self.state.reputation == true })
 end
 
 -- ------------------------------------------------------------------ menus and actions
@@ -449,6 +473,56 @@ function KingdomHudController:requestUpgrade(detail: any, confirmed: boolean?)
 	end)
 end
 
+-- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
+-- the request sets the job's quota to its newest target ± 1 (JobModel.target) and the server fills
+-- it from the free (hauler) pool. The count changes here only when its push arrives.
+function KingdomHudController:changeJob(jobId: string, delta: number)
+	local jobs = self.state.panel.jobs
+	local population = self.store:population()
+	if population == nil or not JobModel.isJob(jobId) or jobs.pending[jobId] ~= nil then
+		return
+	end
+	-- Step from the job's newest target, not the count (FORGE-05 M1 on #55), and keep adds within
+	-- the free citizens not yet promised to another job.
+	local base = JobModel.target(population, jobs, jobId)
+	local target
+	if delta > 0 then
+		target = base + 1
+		if target > JobModel.MAX_QUOTA or JobModel.freeLeft(population, jobs) <= 0 then
+			return
+		end
+	else
+		-- above the remote's 50 (a server-set quota), − brings it to 50 (L7)
+		target = math.min(base - 1, JobModel.MAX_QUOTA)
+		if target < 0 then
+			return
+		end
+	end
+	local env = self._env
+	local kingdom = self._mine
+	jobs.pending[jobId] = target
+	self:render()
+	env.spawn(function()
+		local called, ok, reason = pcall(function()
+			return self.remotes:invoke("Kingdom.SetJobQuota", jobId, target)
+		end)
+		if self.state.panel.jobs ~= jobs or self._mine ~= kingdom then
+			return -- the kingdom changed meanwhile: this answer belongs to the old one
+		end
+		jobs.pending[jobId] = nil
+		if called and ok == true then
+			jobs.quota[jobId] = target
+		else
+			self:notify({
+				kind = "error",
+				title = "Couldn't change jobs",
+				body = Text.reason(if called then reason else nil),
+			})
+		end
+		self:render()
+	end)
+end
+
 function KingdomHudController:confirm()
 	local pending = self.state.confirm
 	self.state.confirm = nil
@@ -513,6 +587,7 @@ function KingdomHudController:_panelModel(): any
 		standings = HudModel.standings(store),
 		buildings = rows,
 		upgrade = upgrade,
+		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs) else nil,
 	}
 end
 
@@ -573,6 +648,9 @@ function KingdomHudController:render()
 			onClose = function()
 				self:setMenu(nil)
 			end,
+			onJob = function(jobId, delta)
+				self:changeJob(jobId, delta)
+			end,
 		})
 	else
 		self.panel:destroy()
@@ -581,7 +659,18 @@ function KingdomHudController:render()
 	-- The confirm dialog belongs to one request: pushes while it is open leave it alone
 	-- (FORGE-05 M1). It shows the costs as they were when the player asked; the server checks
 	-- the treasury again on Build.Upgrade.
-	if self._modal and self._modalFor ~= s.confirm then
+	-- The building changed under the dialog (a co-ruler upgraded it, or it is no longer complete):
+	-- the question no longer holds, so close it; the panel shows the new level and price.
+	if s.confirm then
+		local target = self:_building(s.confirm.buildingId)
+		if target == nil or target.level + 1 ~= s.confirm.level or target.state ~= "complete" then
+			local name = s.confirm.name
+			s.confirm = nil
+			self:notify({ kind = "info", title = `{name} changed`, body = "Check its new level and price" })
+		end
+	end
+	-- Rebuilt for a new breakpoint too: its width follows the screen (400 px does not fit a phone).
+	if self._modal and (self._modalFor ~= s.confirm or self._modalBreakpoint ~= m.breakpoint) then
 		self._modal:destroy()
 		self._modal = nil
 		self._modalFor = nil
@@ -613,6 +702,7 @@ function KingdomHudController:render()
 		})
 		self._modal.instance.Parent = self.roots.modals
 		self._modalFor = s.confirm
+		self._modalBreakpoint = m.breakpoint
 	end
 
 	local drawerOpen = s.menu ~= nil

@@ -38,6 +38,7 @@ local ReputationModel = {}
 
 ReputationModel.MAX = 100
 ReputationModel.RECENT = 3 -- changes listed under a category in its detail
+ReputationModel.HISTORY_LIMIT = 30 -- rows on the History tab (the contract shows the latest 30; R44-2)
 
 export type Entry = { t: number, category: string, delta: number, text: string, source: string?, order: number }
 export type Data = {

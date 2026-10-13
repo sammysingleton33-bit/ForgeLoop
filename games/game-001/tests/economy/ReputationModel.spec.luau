@@ -186,7 +186,7 @@ describe("ReputationModel rows", function()
 end)
 
 describe("ReputationText", function()
-	it("lists the six G13.2 categories and invents no prose until the content library lands", function()
+	it("lists the six G13.2 categories; their prose comes from the content library", function()
 		expect(#ReputationText.IDS).toBe(6)
 		for _, id in ReputationText.IDS do
 			local info = ReputationText.CATEGORIES[id]
@@ -195,9 +195,15 @@ describe("ReputationText", function()
 		end
 		expect(ReputationText.isCategory("fear")).toBe(true)
 		expect(ReputationText.isCategory("greed")).toBe(false)
-		-- FL-0083 not merged: no default provider. When it lands this becomes a provider over
-		-- Content/Reputation (see the switch in UI/ReputationText).
-		expect(ReputationText.provider).toBeNil()
+		-- FL-0083 (merged in #53): the default provider reads Content/Reputation for every category.
+		local Content = require("@game/ReplicatedStorage/Game/Content/Reputation")
+		expect(ReputationText.provider).toBeTruthy()
+		for _, id in ReputationText.IDS do
+			local text = ReputationText.provider(id)
+			expect(text).toBeTruthy()
+			expect(text.description).toBe(Content.categories[id].description)
+			expect(text.affects).toBe(Content.categories[id].affects)
+		end
 	end)
 
 	it("reads Content/Reputation.categories[id] = { name, description, affects } loosely", function()

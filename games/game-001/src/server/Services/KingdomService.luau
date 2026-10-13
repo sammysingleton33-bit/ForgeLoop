@@ -21,6 +21,9 @@
 	death (after Players.RespawnTime) and whenever the player's kingdom changes (Lobby switch, new match).
 	Spectators get no character. Engine calls go through `adapter` (KingdomService.robloxAdapter); specs
 	replace it because Lune has no characters.
+	Failures: a load that errors or returns no character is retried with backoff (1, 2, 4, ... 30 s) while
+	the player is still seated, with a warning per attempt. If WorldService exists but has not fired
+	ready after WORLD_READY_TIMEOUT seconds, the service warns and spawns anyway.
 	membershipChanged fires once per net change, after the simulation tick that made it (<= tickSeconds):
 	(player, kingdomId) on a join or a Lobby switch, (player, nil) on leaving, even when the Player has
 	already left the server. GameEvents.KingdomJoined(player, kingdomId) fires with every non-nil change
@@ -39,6 +42,10 @@ local KingdomService = {}
 KingdomService.__index = KingdomService
 
 local Def = { name = "KingdomService", dependencies = { "MatchService" } }
+
+local WORLD_READY_TIMEOUT = 30 -- seconds to wait for WorldService.ready before spawning anyway
+local LOAD_RETRY_MAX = 30 -- longest wait between character load attempts (seconds)
+Def.WORLD_READY_TIMEOUT = WORLD_READY_TIMEOUT
 
 -- The running service, for the Studio debug commands (registered once per process, like MatchService).
 local active: any = nil
@@ -159,17 +166,30 @@ function KingdomService:start()
 		table.insert(
 			self._connections,
 			world.ready:connect(function()
-				if self._worldReady then
-					return
-				end
-				self._worldReady = true
-				for _, player in self._env.Players:GetPlayers() do
-					if self:getKingdomOf(player) then
-						self:_spawn(player)
-					end
-				end
+				self:_onWorldReady()
 			end)
 		)
+		self._env.spawn(function()
+			self._env.wait(WORLD_READY_TIMEOUT)
+			if not self._worldReady and not self._destroyed then
+				self._env.log("warn", "KingdomService: WorldService not ready; spawning players anyway", {
+					seconds = WORLD_READY_TIMEOUT,
+				})
+				self:_onWorldReady()
+			end
+		end)
+	end
+end
+
+function KingdomService:_onWorldReady()
+	if self._worldReady then
+		return
+	end
+	self._worldReady = true
+	for _, player in self._env.Players:GetPlayers() do
+		if self:getKingdomOf(player) then
+			self:_spawn(player)
+		end
 	end
 end
 
@@ -225,6 +245,42 @@ function KingdomService:_forgetCharacter(userId: number)
 	end
 end
 
+-- Whether a spawn is still wanted: same generation, the player still here and still in that kingdom.
+function KingdomService:_spawnCurrent(player: any, generation: number, kingdomId: string): boolean
+	return not self._destroyed
+		and self._spawnGen[player.UserId] == generation
+		and player.Parent ~= nil
+		and self:getKingdomOf(player) == kingdomId
+end
+
+-- The player's character, retrying with backoff while the spawn is current; nil once it is not
+-- (left, switched, or a newer spawn took over).
+function KingdomService:_load(player: any, generation: number, kingdomId: string): any?
+	local delay = 1
+	local attempt = 0
+	while true do
+		attempt += 1
+		local ok, result = pcall(self.adapter.load, player)
+		if ok and result ~= nil then
+			return result
+		end
+		if not self:_spawnCurrent(player, generation, kingdomId) then
+			return nil -- e.g. the player left while loading: nothing to report
+		end
+		self._env.log("warn", "KingdomService: character load failed; retrying", {
+			userId = player.UserId,
+			attempt = attempt,
+			retryIn = delay,
+			error = if ok then "no character" else tostring(result),
+		})
+		self._env.wait(delay)
+		delay = math.min(delay * 2, LOAD_RETRY_MAX)
+		if not self:_spawnCurrent(player, generation, kingdomId) then
+			return nil
+		end
+	end
+end
+
 -- Loads the character at the kingdom's plot spawn wearing regalia (G3). Runs in its own thread, because
 -- loading a character yields; a newer spawn or a departure makes an older one stop.
 function KingdomService:_spawn(player: any)
@@ -239,7 +295,7 @@ function KingdomService:_spawn(player: any)
 		if kingdomId == nil then
 			return
 		end
-		local character = self.adapter.load(player)
+		local character = self:_load(player, generation, kingdomId)
 		if character == nil or self._spawnGen[userId] ~= generation or self:getKingdomOf(player) ~= kingdomId then
 			return
 		end
@@ -306,6 +362,7 @@ function KingdomService:addCrownPoints(id: string, amount: number, reason: strin
 end
 
 function KingdomService:destroy()
+	self._destroyed = true
 	if active == self then
 		active = nil
 	end

@@ -12,6 +12,10 @@
 		store:applyBuildings(list, full)          Build.GetBuildings (full = true) / Build.Buildings (changes)
 		store:applyCosts(catalogue)               Treasury.GetCosts (config Costs is the fallback)
 		store:applySlots(list)                    Build.Slots / Build.GetSlots: my kingdom's plots (G13.5)
+		store:applyPopulation(payload)            Kingdom.Population / Kingdom.GetPopulation: my kingdom's
+		                                          CitizenService:getPopulation { total, byJob, cap, quotas? }
+		                                          (G13.2; soldiers count as byJob.soldier; quotas proposed)
+		store:clearPopulation()                   another kingdom: forget the old counts
 	Reading:
 		store:mine() -> Kingdom?                  store:kingdoms() -> { Kingdom } (server order)
 		store:myBuildings() -> { Building }       mine, by id, destroyed ones dropped
@@ -21,8 +25,10 @@
 		store:buildingCost(type, level) -> { cost, buildSeconds }?
 		store:slot(id) -> { id, size, occupiedBy?, fits? }?   store:slots() -> { slot } (by id)
 		store:building(id) -> Building?           any kingdom's building (foreign ones too)
+		store:population() -> { total, byJob, cap?, quotas? }?   nil until the server sends it
 		store.match = { phase, endsAt?, startedAt? }?
-		store.changed: Signal<(what: "kingdoms" | "match" | "treasury" | "buildings" | "costs" | "slots", ...)>
+		store.changed: Signal<(what: "kingdoms" | "match" | "treasury" | "buildings" | "costs" | "slots"
+			| "population", ...)>
 			"treasury" also passes the deltas, so the HUD can float them under the pills.
 	Payloads are checked loosely (wrong types are ignored with no error): a bad push must never
 	break the HUD.
@@ -146,6 +152,62 @@ function KingdomStore:slot(id: any): any
 	return if type(id) == "string" then self._slots[id] else nil
 end
 
+-- A count the HUD may show: a finite whole number >= 0 (no NaN, no inf, no negatives; L3).
+local function count(value: any): number?
+	if type(value) ~= "number" or value ~= value or value < 0 or value == math.huge then
+		return nil
+	end
+	return math.floor(value)
+end
+
+local function counts(map: any): { [string]: number }?
+	if type(map) ~= "table" then
+		return nil
+	end
+	local out = {}
+	for key, value in map do
+		local n = count(value)
+		if type(key) == "string" and n then
+			out[key] = n
+		end
+	end
+	return out
+end
+
+function KingdomStore:applyPopulation(payload: any)
+	local byJob = if type(payload) == "table" then counts(payload.byJob) else nil
+	if byJob == nil then
+		return
+	end
+	self._population = {
+		total = count(payload.total) or 0,
+		cap = count(payload.cap),
+		byJob = byJob,
+		quotas = counts(payload.quotas),
+	}
+	self.changed:fire("population")
+end
+
+function KingdomStore:clearPopulation()
+	if self._population ~= nil then
+		self._population = nil
+		self.changed:fire("population")
+	end
+end
+
+function KingdomStore:population(): any
+	local p = self._population
+	if p == nil then
+		return nil
+	end
+	return {
+		total = p.total,
+		cap = p.cap,
+		byJob = table.clone(p.byJob),
+		quotas = if p.quotas then table.clone(p.quotas) else nil,
+	}
+end
+
 function KingdomStore:slots(): { any }
 	local out = {}
 	for _, slot in self._slots do
@@ -157,8 +219,11 @@ function KingdomStore:slots(): { any }
 	return out
 end
 
+-- Ids from a tap arrive from an instance attribute (FORGE-04's InputModeController reads
+-- `BuildingId`), which may be a number or its string.
 function KingdomStore:building(id: any): any
-	return if type(id) == "number" then self._buildings[id] else nil
+	local n = if type(id) == "string" then tonumber(id) else id
+	return if type(n) == "number" then self._buildings[n] else nil
 end
 
 function KingdomStore:mine(): any

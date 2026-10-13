@@ -58,6 +58,7 @@ function IconButton:update(partial: { [string]: any })
 	inst.LayoutOrder = p.layoutOrder or 0
 	inst.Active = not p.locked and not p.disabled
 	inst:SetAttribute("selected", p.selected == true)
+	inst:SetAttribute("disabled", p.disabled == true)
 	self._corner.CornerRadius = UDim.new(0, if plain then 10 else 14)
 	if p.selected then
 		self._gradient.Color = ColorSequence.new(Theme.hex("#F3D27C"), Theme.color("gold600"))
@@ -70,6 +71,10 @@ function IconButton:update(partial: { [string]: any })
 		self._stroke.Color = Theme.color("gold700")
 	end
 	inst.BackgroundTransparency = if p.disabled then 0.55 else 0
+	-- Disabled must read as disabled: under the gradient the background alone barely changed.
+	if p.disabled then
+		self._stroke.Color = Theme.color("ink500")
+	end
 	for _, child in inst:GetChildren() do
 		if child.Name == "Body" or child.Name == "Badge" then
 			child:Destroy()
@@ -84,13 +89,25 @@ function IconButton:update(partial: { [string]: any })
 	local iconSize = if plain then math.floor(size * 0.55) else math.floor(size * 0.55)
 	local icon = Icon.new(if p.locked then "lock" else p.icon, iconSize)
 	icon.LayoutOrder = 1
+	if p.disabled then
+		for _, part in { icon, table.unpack(icon:GetDescendants()) } do
+			if part:IsA("ImageLabel") then
+				part.ImageTransparency = 0.6
+			elseif part:IsA("TextLabel") then
+				part.TextTransparency = 0.6
+			end
+		end
+	end
 	icon.Parent = body
 	if p.label and not plain then
 		Style.text({
 			text = p.label,
 			weight = Enum.FontWeight.Bold,
 			size = 10,
-			color = if p.selected then Theme.color("inkText") else Theme.color("parchment200"),
+			color = if p.selected
+				then Theme.color("inkText")
+				elseif p.disabled then Theme.color("textMuted") -- dimmed with the icon (FORGE-05 L5 on #55)
+				else Theme.color("parchment200"),
 			xAlign = "Center",
 			extra = { Size = UDim2.new(1, 0, 0, 12), LayoutOrder = 2, Name = "Label" },
 		}).Parent =

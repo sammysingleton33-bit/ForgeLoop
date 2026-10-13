@@ -17,16 +17,17 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 |---|---|---|
 | Crimson kingdom | 196, 40, 28 | roofs, banners, shutters, tabards |
 | Azure kingdom | 13, 105, 172 | 〃 |
-| Emerald kingdom | 40, 127, 71 | 〃 |
-| Gold kingdom | 245, 205, 48 | 〃 |
+| Emerald kingdom | 35, 128, 95 (jewel emerald, bluer than foliage) | 〃 |
+| Gold kingdom | 235, 185, 16 (saturated gold, never hay-tan or orange) | 〃 |
 | Neutral (`Kit.NEUTRAL_COLOR`) | 208, 200, 184 | uncaptured watchtower, neutral banners |
 | Plaster | 239, 227, 200 | house walls |
 | Timber | 75, 48, 32 | framing, beams, eaves |
 | Stone / light / dark | 150,145,136 / 184,178,168 / 111,106,99 | plinths, keeps, walls |
-| Thatch | 207, 166, 81 | peasant roofs |
+| Thatch | 191, 163, 108 (muted, so it never reads as the gold kingdom) | peasant roofs |
 | Grass / leafy / ground / sand (terrain) | `world/Lighting.luau` `terrainColors` | terrain |
 
 - The kingdom colours above are FORGE-02's recommendation; FORGE-01's `Kingdoms.luau` is the source.
+- Rules shared with the Blender bible (§3 there): walls are never painted in the kingdom colour; straw, hay and wheat stay desaturated tan; kingdom green stays clearly bluer than grass and leaves. Emerald banners and flags use a lighter, high-saturation tint of the kingdom colour with an ivory border, because from the aerial camera the emerald plot sits on green terrain.
 - Kit derives every shade from the colour it is given and marks those parts with `KitTint`, so `Kit.setKingdomColor` recolours in place.
 - Every Kit colour lives in `Kit/Parts.luau` `C`, with the same values as `blender/lib/palette.py`.
 

@@ -258,9 +258,12 @@
 		const tabs = [
 			{ label: "Overview", icon: "crown", sel: tab === "overview" },
 			{ label: "Buildings", icon: "keep", sel: tab === "buildings" },
+			{ label: "Jobs", icon: "citizens", sel: tab === "jobs" },
 		];
 		let body;
-		if (tab === "overview") {
+		if (tab === "jobs") {
+			body = jobsBody(M, o_jobs);
+		} else if (tab === "overview") {
 			const keep = state.buildings.find((b) => b.type === "keep");
 			const standings = [...state.kingdoms].sort((a, b) => b.crownPoints - a.crownPoints);
 			body = `<div class="list" style="flex:1;width:auto">
@@ -282,6 +285,41 @@
 				.join("")}</div>`;
 		}
 		return drawer(M, "Kingdom", tabs, body);
+	}
+	// ------------------------------------------------------------------ FL-0065: job panel (Kingdom panel tab)
+	// Kingdom.Population { total, byJob, cap } (G13.2) and Kingdom.SetJobQuota(job, count) (G8). Haulers are
+	// the free pool: + takes one of them, − gives one back. Soldiers are trained at the barracks (FL-0060).
+	const JOBS = [
+		{ id: "farmer", name: "Farmers", sub: "Grow food", icon: "food" },
+		{ id: "woodcutter", name: "Woodcutters", sub: "Cut wood", icon: "wood" },
+		{ id: "miner", name: "Miners", sub: "Stone and gold", icon: "stone" },
+		{ id: "builder", name: "Builders", sub: "Raise buildings", icon: "build" },
+	];
+	let o_jobs = { byJob: { farmer: 3, woodcutter: 3, miner: 2, builder: 2, hauler: 2, soldier: 0 }, cap: 12 };
+	function jobsBody(M, P) {
+		const phone = M.bp === "phone";
+		const b = P.byJob;
+		const total = Object.values(b).reduce((a, n) => a + n, 0);
+		const free = b.hauler || 0;
+		const btn = 44;
+		const rows = JOBS.map((j) => {
+			const n = b[j.id] || 0;
+			const pending = P.pending === j.id;
+			const add = !pending && free > 0;
+			const rem = !pending && n > 0;
+			return `<div class="brow jrow"><div class="tile economy" style="width:${phone ? 34 : 40}px;height:${phone ? 34 : 40}px">${I(j.icon, phone ? 26 : 30)}</div>
+				<div class="bmid"><div class="rname">${j.name}</div><div class="bsub">${pending ? `<b style="color:var(--color-gold300)">Asking… ${n} → ${P.target}</b>` : j.sub}</div></div>
+				<div class="jctl"><div class="iconbtn ${rem ? "" : "off"}" style="width:${btn}px;height:${btn}px">${I("minus", 20)}</div>
+				<div class="jn">${n}</div>
+				<div class="iconbtn ${add ? "" : "off"}" style="width:${btn}px;height:${btn}px">${I("plus", 20)}</div></div></div>`;
+		}).join("");
+		const pool = `<div class="brow jrow muted"><div class="tile civic" style="width:${phone ? 34 : 40}px;height:${phone ? 34 : 40}px">${I("citizens", phone ? 26 : 30)}</div>
+			<div class="bmid"><div class="rname">Free citizens</div><div class="bsub">${free > 0 ? "Carry goods · + hires one" : "None free: lower a job"}</div></div><div class="jn solo">${free}</div></div>`;
+		const army = `<div class="brow jrow muted"><div class="tile military" style="width:${phone ? 34 : 40}px;height:${phone ? 34 : 40}px">${I("army", phone ? 26 : 30)}</div>
+			<div class="bmid"><div class="rname">Soldiers</div><div class="bsub">Train them at the barracks</div></div><div class="jn solo">${b.soldier || 0}</div></div>`;
+		const summary = `<div class="jsum">${I("citizens", 16)}<b>${total}</b> citizens · homes for <b>${P.cap}</b> · <b>${free}</b> free</div>`;
+		// the free pool first: it is what + draws from (Luau UI/KingdomPanel does the same)
+		return `<div class="list" style="flex:1;width:auto">${summary}${pool}${rows}${army}</div>`;
 	}
 	function upgradePanel(M, done) {
 		const e = { id: "keep", name: "Keep", cat: "civic", cost: { wood: 150, stone: 150 }, sec: 60, desc: "A stronger keep. Your citizens nearby cheer when it is done." };
@@ -414,6 +452,14 @@
 		},
 		kingdom: (M) => ({ core: hud(M) + rail(M, "kingdom") + kingdomPanel(M, "overview") }),
 		"kingdom-buildings": (M) => ({ core: hud(M) + rail(M, "kingdom") + kingdomPanel(M, "buildings") }),
+		"kingdom-jobs": (M) => {
+			o_jobs = { byJob: { farmer: 3, woodcutter: 3, miner: 2, builder: 2, hauler: 2, soldier: 0 }, cap: 12, pending: "woodcutter", target: 4 };
+			return { core: hud(M) + rail(M, "kingdom") + kingdomPanel(M, "jobs") };
+		},
+		"kingdom-jobs-full": (M) => {
+			o_jobs = { byJob: { farmer: 4, woodcutter: 2, miner: 2, builder: 2, hauler: 0, soldier: 2 }, cap: 12 };
+			return { core: hud(M) + rail(M, "kingdom") + kingdomPanel(M, "jobs") };
+		},
 		upgrade: (M) => {
 			state.treasury = { food: 132, wood: 180, stone: 160, gold: 0 };
 			return { core: hud(M) + rail(M, "kingdom") + upgradePanel(M) };
