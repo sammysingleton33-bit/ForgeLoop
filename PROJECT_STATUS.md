@@ -47,11 +47,11 @@ Updated 2026-10-13 13:05 UTC, main 2b7a89f (CI green; #116 split the game specs 
 
 **Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106, #77, #99, #104, #107, #105, #114 and #112. #109 was merged with FORGE-00's contract approval. FORGE-07 owes a post-merge verdict on each.
 
-**One ★ row is open:** #115, the B11 candidate. Every other known VS-1 defect from B8 and B9 is merged.
+**One ★ row is open:** #115 plus the tower rebuild (B11). Every other known VS-1 defect from B8 and B9 is merged.
 
 | # | PR | Owner | Lane | State | Next |
 |---|---|---|---|---|---|
-| ★ | #115 WorldView: a captured building is rebuilt in the new kingdom's Kit model (roof shape follows the owner) | FORGE-01 | World (B9/B10 defect) | D-040 review | Verdict, then B11 |
+| ★ | #115 WorldView rebuild on kingdom change, plus (being added) the ObjectiveService tower rebuild that fixes the captured tower's roof shape | FORGE-01 | World (B9/B10 defect) | Held for the ObjectiveService commit. #115 alone changes nothing visible today | FORGE-01 commit, verdict, then B11 |
 | 1 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable. It unblocks FORGE-06's starter pack | FORGE-07 |
 | 2 | #111 FL-0107 G9 `CitizenAnswered` fired | FORGE-01 | Conversation | Unreviewed | FORGE-07 |
 | 3 | #113 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget | FORGE-01 | Living kingdom | Unreviewed | FORGE-07 |
