@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g9h, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g9i, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -283,6 +283,7 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `KingdomJoined` | FORGE-01 | (player, KingdomId) |
 | `MatchPhaseChanged` | FORGE-01 | (MatchPhase) |
 | `BuildingPlaced` / `BuildingCompleted` / `BuildingUpgraded` / `BuildingDestroyed` | FORGE-01 | (Building, player?) |
+| `BuildingMoved` (v0.4-g9i, G13.9) | FORGE-01 | (Building, player?, from: { position: Vector3, rot: number }, slotId: string?). Never re-fires `BuildingPlaced`. |
 | `ResourceGathered` | FORGE-01 | (player?, KingdomId, ResourceId, amount, source: "ruler" \| "citizen") |
 | `UnitsRecruited` | FORGE-01 | (player, KingdomId, count) |
 | `ObjectiveCaptured` | FORGE-01 | (objectiveId, KingdomId) |
@@ -596,7 +597,27 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Content (FORGE-06).** Lines are written for this presentation: short questions and reactions, with optional emotion and gesture metadata (SPEC columns added by FORGE-00).
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
+### G13.9 Base editing (FORGE-01 logic and remotes; FORGE-03 edit-mode UI; FORGE-04 input mode and camera) — B16 (v0.4-g9i; D-049)
+- **Remotes (area Build, additive).**
+  - `Build.CanMove(buildingId: integer(1,1e6), position: vector3, rot: integer(0,3))` → `(boolean, reason?)`; burst 10, 10/s (ghost tint).
+  - `Build.Move(buildingId, position, rot)` → `(ok, reason?)`; burst 4, 2/s. `rot` is absolute, as for `Build.Place`.
+  - `Build.MoveToSlot(buildingId, slotId: string(1,32), turn: integer(0,3)?)` → `(ok, reason?)`; burst 4, 2/s. Position = the slot centre; facing = the slot's rot + `turn` quarter turns (as `Build.PlaceSlot` g9h); `Fit.fits(type, size, turn)`.
+- **Atomic and in place.** A move is one server command: it validates, then changes position, facing, placement shape and slot, or changes nothing. The building keeps its id, type, level, construction or upgrade progress, paid cost, hit points, `placedBy`, recruit queue and workers. A move never charges, refunds, completes or re-places anything, and never re-fires `BuildingPlaced`. There is no server-side "lifted" state; dragging is client-only.
+- **Validation.** Exactly the `Build.Place` geometry: bounds, own territory, and the placement shape against every *other* standing building, resource nodes and objective zones, with the placement gap. Limits, keep level and cost are not checked: a move doesn't add a building.
+- **Who and when.** Any ruler of the kingdom may move its buildings, except the keep, in any active phase. No move while the alarm rings or enemy units are inside the kingdom's land. Each building waits `Buildings.moveCooldown` (2 s) between moves. A move to the same spot and facing succeeds and does nothing.
+- **Consequences.** Citizens working, building or resting at the building go back to walking to its new place, with their claims kept. Homes, beds, bunks, storage and the treasury don't change. A barracks keeps its queue, and new soldiers appear at its new Rally.
+- **Slots.** `Build.Move` frees the building's slot; `Build.MoveToSlot` takes the new one, inside the same command. A building may turn on its own slot. Walls and gates never go on a slot (`not_on_plot`); single sections move with `Build.Move`. Slots themselves don't move (D-049).
+- **Reasons.** Those of `Build.Place`/`Build.PlaceSlot`, plus `not_found`, `not_movable` (the keep), `under_attack`, `alarm` and `cooldown`.
+- **Replication.** `Build.Buildings` re-sends a building whose position or facing changed. The client re-pivots its Kit model without a rebuild.
+- **Shared placement rule (Place, PlaceSlot, Move).** No placement shape within an objective's radius plus the placement gap (`blocked`).
+- **Events.** G9 `BuildingMoved` (FORGE-01): `(Building, player?, from: { position: Vector3, rot: number }, slotId: string?)`.
+- **Input and camera (FORGE-04, additive to G4.1/G13.6).**
+  - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings, plus free slots as MoveToSlot targets.
+  - `RulerCameraController` keeps the overview in edit mode and adds `setEditDrag(active)` (drag-pan off, edge-pan on while dragging).
+- **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
+
 ## Changelog
+- v0.4-g9i (2026-10-15) FORGE-00: G13.9 base editing (`Build.CanMove`/`Move`/`MoveToSlot`, atomic in-place moves, G9 `BuildingMoved`, the "edit" input mode) and the objective-zone placement rule. Additive. Source: the user's first Studio feedback; rules from a code investigation (D-049).
 - v0.4-g9h (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` takes an optional `turn` (quarter turns relative to the slot's facing; the turned footprint must fit, `Fit.fits(type, size, turn?)`). Additive. The user's first Studio feedback: placing on a plot could not be rotated (free placement already rotates with R).
 - v0.4-g9g (2026-10-13) FORGE-00: G10 rigs may have up to 11 parts: 2 more rigid detail parts (headwear brim/crown, tool handle/head), welded to Head or Tool with no Motor6D, so poses and `Sim/Pose.JOINTS` are unchanged (D-048, the user's first Studio feedback: citizens and tools too plain).
 - v0.4-g9f (2026-10-13) FORGE-00: G13.8 after `Kingdom.Choose`, the hold lasts until `EndConversation`, capped at 12 s (was: at most 4 s). The citizen no longer walks off while the reaction is on screen (FORGE-05 B14 gate finding).
