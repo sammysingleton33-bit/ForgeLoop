@@ -463,3 +463,25 @@ green to ripe gold along the field with a small per-row alternation. 7 × 3 × 2
 Spec: `KitProps.spec` pins `WHEAT_PARTS = 44` (citing the amendment), 42 `WheatRidge` wedges (no blocks), seven rows of six, a lit and a darker slope per segment, the lean alternating by
 row, abutting segments, the ragged crest (height steps over 0.8), the gradient, soil luminance 60–90 and every ridge standing out from the soil; 41 mutations of `Props.luau` (11 of
 them aimed at this field), all caught. The cabbage field is unchanged (65 parts); this commit replaces the round-2 tufts. Image: `env_polish_wheat_ridges.jpg` (#141's slabs | the ridged rows at 75 and 55 studs gameplay and 170 studs aerial).
+
+### Fresh-context image-only D-019 re-score of the wheat only (2026-10-15)
+
+Reviewer: a fresh Claude Code session (`session_01FirMCZJDvCsRaHpDbRMt5f`, claude-sonnet-5-5), given only `env_polish_wheat_ridges.jpg`, told not to read anything else and to score the right column
+strictly; recorded as given. Blender preview, **not a Studio play test**.
+
+| item | sil | var | read | prop | pal | detail | cohes | cost | verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| wheat field, ridged rows (44 parts) | 3 | 4 | 3 | 3 | 4 | 2 | 4 | 4 | **NEEDS-WORK** |
+
+Previous scores for comparison: #141 slabs 2/2/2/3/4/2/3/4; round-2 tufts 2/3/3/3/3/3/3/3.
+
+Reviewer's answers: from the aerial camera it reads as a raised bed of flat tan and olive planks or boards in three colour blocks ("wooden decking", "sod tiles" or "hay bales"), nothing suggests stalks or
+grain heads, and the top edge is straight; at 75 and 55 studs it reads as stacked flat boards at stepped heights, "like stair slabs or a loading dock", and the flat tops and sharp regular edges look
+manufactured. Versus the slabs it is better in colour, in the stepped heights breaking the monotone and in the olive end hinting at crop stages, and **worse in that the stepped slabs look more like architecture**; the left's uniform
+rows at least suggested planted furrows. The colour zones read as three separate blocks with hard cuts at the same x on every row (patchwork or paint bands, not a gradient). Defects: the flat tops are the
+main problem; no floating or clipping. Fixes it asked for: a jagged or tufted crest, a continuous gradient with per-row offsets, height variation within a row, small distinct taller stalks.
+
+**Verdict (FORGE-02):** two attempts within 44 parts (gapped and abutting ridged rows) did not reach the bar: still boards from the aerial camera. Rendered, looked at, and consistent with the reviewer.
+Combined with the round-2 tufts (tiles in a checker), every layout tried with wedges and blocks at 44 parts reads as a built object rather than a crop. The reviewer's own fixes (jagged crest, per-row
+gradient offsets, small stalks) are all more parts or finer parts than 44 buys on a 38 × 28 field. Recommendation: do not merge this branch as a visual win; keep #141's slabs until the Blender batch
+brings a one-mesh crop row (FL-0057), or rule a larger budget and a mesh-free design (about 70-90 thin wedge blades) with FORGE-00.
