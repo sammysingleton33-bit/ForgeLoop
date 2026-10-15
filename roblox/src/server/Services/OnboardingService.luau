@@ -14,7 +14,8 @@
 		Experience.OnboardingAction(flowId, action)   client-observed actions; only the current step
 		Experience.OnboardingSkip(flowId)             skip: OnboardingSkipped, then no funnel step ever again
 		every second           nudge escalation (OnboardingHintEscalated) and auto-advance of info steps
-		                       (and of client steps that set autoAdvanceSec, so nothing stalls)
+		                       (and of client or unrewarded bus steps that set autoAdvanceSec, so nothing
+		                       stalls; a step that times out or is passed over never pays a reward)
 		a step's `requires`    a service missing from this server (registry:find at start) passes that step
 		                       over (via "unavailable"), e.g. AnswerCitizen before ConversationService exists
 	On each completed step: persist (SettingsService:update "onboarding"), AnalyticsService:funnel

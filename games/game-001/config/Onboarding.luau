@@ -10,10 +10,11 @@
 	- Server-verified steps wait for G9 events, attributed by Feedback/Signals (CONTRACTS G9): the
 	  build the player placed (placedBy), recruits, and the capture for every member of the kingdom.
 	  A step done early (a co-ruler captured first) completes the moment it comes up.
-	- Client-reported steps (clientActions) complete only the current step and grant nothing:
+	- Client-reported steps (clientActions) complete only the current step and grant nothing; G11
+	  (D-044 (4)) allows them only for UI moments with no server event:
 	    CitizenInspected  InputModeController reports it when a citizen is selected (G13.6, FL-0090)
-	    CitizenAnswered   FORGE-03's conversation panel reports it after Kingdom.Choose succeeds,
-	                      until the proposed G9 CitizenAnswered event exists (handoff to FORGE-00)
+	- AnswerCitizen follows the server: G9 CitizenAnswered (ConversationService, FL-0107), credited to
+	  the answering ruler by Feedback/Signals (FL-0108). A client can no longer report it.
 	- Hints are one line and point at WorldService's tags (BuildSlot, G13.5; ObjectiveZone, G10;
 	  the nearest one is marked) or at HUD controls by their OnboardingTarget attribute (FORGE-03).
 	  Requests are marked by the citizens' own "!" bubbles (FL-0091), so that step needs no arrow.
@@ -33,7 +34,7 @@ local Signals = require("@game/ReplicatedStorage/Game/Feedback/Signals")
 
 return table.freeze({
 	subjects = Signals.subjects,
-	clientActions = { "GoalAcknowledged", "CitizenInspected", "CitizenAnswered" },
+	clientActions = { "GoalAcknowledged", "CitizenInspected" },
 	limits = { firstInteractionSec = 30 },
 	-- After the tutorial: shown by OnboardingController:showIdleHint(phase) when FL-0062 detects dead
 	-- air (PACING.md §6). Keyed by MatchPhase (CONTRACTS G2); text only names VS-1 actions.
@@ -84,7 +85,7 @@ return table.freeze({
 				},
 				{
 					id = "AnswerCitizen",
-					trigger = { client = "CitizenAnswered" },
+					trigger = { bus = "CitizenAnswered" }, -- G9, the answering ruler (FL-0108)
 					-- conversations are FORGE-01's ConversationService (FL-0079): without it the step is
 					-- passed over; with it, the tutorial still moves on after autoAdvanceSec (no stall)
 					requires = "ConversationService",

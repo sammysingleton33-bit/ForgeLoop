@@ -129,14 +129,14 @@ Needs:
 - FORGE-03:
   - the citizen card;
   - the plot menu (`Build.PlaceSlot`, FL-0081, on `main`);
-  - the conversation panel, which reports `CitizenAnswered` after a successful `Kingdom.Choose`;
+  - the conversation panel (`Kingdom.Choose`). The AnswerCitizen step follows FORGE-01's G9 `CitizenAnswered` from ConversationService (FL-0107), credited to the answering ruler (FL-0108); the panel reports nothing for it;
   - the Army rail button (`HUD.ArmyButton`, FL-0060).
 - DataService is not needed (session-only progress, D-027).
 
 No step waits for a system the build doesn't have:
 - **Without FORGE-01's ConversationService on the build,** step 4 (AnswerCitizen) is passed over at once. Output shows `onboarding: a step's service is missing` at boot, and the card goes from the Build step straight to Recruit.
 - **Without FORGE-01's MilitaryService and ObjectiveService (FL-0052),** Recruit and Capture are passed over too, and the tutorial completes after the Build step (and step 4).
-- **With ConversationService but without the panel's `CitizenAnswered` report,** the card nudges at 45 s and moves on at 120 s.
+- **With ConversationService but no citizen request in time,** the card nudges at 45 s and moves on at 120 s (`via=timeout`).
 
 Each passed or timed-out step is still logged as its funnel step (Roblox counts skipped steps as done) and also as `analytics event OnboardingStepPassed` with `via=unavailable` or `via=timeout`. Write which case you saw.
 
@@ -154,7 +154,7 @@ info onboarding step ... flow=vs1 step=1 stepId=Spawn via=auto
 info analytics funnel Onboarding ... step=1 stepName=Spawn sent=true
 info onboarding step ... step=2 stepId=InspectCitizen via=client
 info analytics funnel Onboarding ... step=2 stepName=InspectCitizen sent=true
-... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=client), 5 Recruit (via=bus),
+... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=bus), 5 Recruit (via=bus),
     6 Capture (via=bus, or via=satisfied when a co-ruler captured first)
 info analytics event OnboardingCompleted ... CustomField01=vs1 sent=true
 ```
@@ -179,6 +179,7 @@ History:
 - 2026-10-12 FORGE-04: written (FL-0025); rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture), session-only progress (D-027).
 - 2026-10-12 FORGE-04: rewritten for onboarding v2 (D-030, FL-0092): inspect → build → answer → recruit → capture; passed-over steps (`requires`), the Build-button hint until FL-0081.
 - 2026-10-13 FORGE-04: FL-0081 follow-ups (#99): the build hint points at the plot markers again, and the Recruit hint at the Army rail button (`HUD.ArmyButton`).
+- 2026-10-13 FORGE-04: AnswerCitizen follows G9 `CitizenAnswered` (FL-0108, D-044 (3)); the panel's client report no longer counts.
 
 ## E7 — Notifications and celebrations (FL-0027)
 Needs:
