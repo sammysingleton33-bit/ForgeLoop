@@ -3,13 +3,14 @@ id: FL-0115
 title: Citizen bubbles readable and tappable from the aerial camera (B15 #3; FL-0091 follow-up)
 track: build
 owner: forge-04
-status: BUILDING
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0091, FL-0090]
-evidence: []
+evidence:
+  - CitizenBubbles.spec 39/39; mutations.py FL-0115 12/12 + FL-0091 43/43 CAUGHT; headless aerial renders zoom 120/220 phone+desktop (roblox/tests/unit/experience/scenes/shots); Studio unverified (E8 9-11)
 ---
 
 # Citizen bubbles readable and tappable from the aerial camera (B15 #3; FL-0091 follow-up)
@@ -37,3 +38,4 @@ Automated: specs and mutations; aerial renders at default and maximum zoom looke
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-04: BUILDING → REVIEW. PR #133 (★ B15): always-on-top glyph badges + 17 px cards; Bubbles:layout gives words to at most 3 (2 phone, 1 past 150 studs) and only where a card hides no other bubble (every request badge reserved first); new-request pop (not under reduced motion); tap selects the citizen via InputModeController (G13.6), GUIs under PlayerGui, no input while placing; Studio E8 steps 9-11 + operator probe. B16 (this task's B16 line, FORGE-00 order: #133 -> hover -> FL-0121 -> these): off-screen request indicators, and a key to cycle requests focusing the camera via RulerCameraController:focusOn (FORGE-03's 'citizens waiting' control calls the same cycle).

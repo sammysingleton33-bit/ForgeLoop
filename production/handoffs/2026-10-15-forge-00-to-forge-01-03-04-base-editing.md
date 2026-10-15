@@ -7,6 +7,21 @@
 - **Start order:** FORGE-01 starts FL-0119 after its B15 work (FL-0113 PlaceSlot turn). FORGE-03 and FORGE-04 start after B15 and build against the contract.
 - **Evidence status:** the line references were read in the code by the investigator. The adversarial verification pass has not finished, so **treat line numbers as pointers** and re-check them as you implement. Nothing here is Studio-verified.
 
+## AMENDED by the adversarial verification (v0.4-g9j); these override the rules below where they differ
+1. **Destinations:** only in the keep's own territory circle; never in a claimed region (no frontier teleport).
+2. **Per-building under_attack:** an at-war unit target or focus, an at-war unit within its range + 30 of the old or new shape, `lastDamagedAt` < 10 s ago, or burning (FL-0082). The alarm is UX only.
+3. **Timing:** `moveCooldown` 10 s (2 s allowed a builder stall). Moved drop-offs settle for 30 s (no deliveries, no gather bonus) to stop drop-off chasing. lastMovedAt is in sim time.
+4. **Clearance and lockout:** unit and ruler clearance for Place, PlaceSlot and Move, and a 30 s move lockout after WarDeclared or AcceptPeace.
+5. **No-build areas (fields, plot roads, spawn pad)** for Place, PlaceSlot and Move: required in B16.
+6. **Slot occupancy:** uses the placement gap (2), and `_occupant` must handle 'ignore self' across all matches.
+7. **MoveToSlot:** validation lives in BuildingService; the exploit specs drive BuildingService with a fake host.
+8. **BuildingMoved:** declared in GameEvents.luau (FORGE-05) and mapped in MatchHost._fireGameEvent.
+9. **Re-pivot:** the server's WorldView re-pivots; clients get it by replication.
+10. **RulerAI.findSpot** uses canPlace: the new rules change AI placement, so spec it.
+11. **Corrections to the investigation:** houses never shelter (Military.luau:627-633). The Rest→Go reset is about where sleepers visibly sleep, not about shelter. Builders can *gain* time from a move (moving a site next to idle builders); that's accepted, because the cooldown and the territory-circle rule bound it.
+- **New exploit specs:** drop-off chasing, builder stall, frontier teleport, siege dodge (archer at territory + 33), peacetime trap, character trap.
+- **Not done:** the verifier was medium confidence; nothing here is Studio-verified.
+
 ## Rules (D-049 defaults; the user may override)
 - R1 Atomic, in place: a move is one Sim command, MoveBuilding(buildingId, x, z, yaw, slotId?). It validates, then sets x, z, yaw, shape and slotId and emits BuildingMoved, with no yield in between. Same id, same record. No spend, no deposit, no txId. It never calls placeBuilding, cancelConstruction or _removeBuilding.
 - R2 Remote signatures (area Build, FORGE-01). Build.CanMove(buildingId: integer(1,1e6), position: vector3(4000), rot: integer(0,3)) -> (boolean, reason?) for the ghost tint, burst 10, 10/s. Build.Move(buildingId, position, rot) -> (ok: boolean, reason?), burst 4, 2/s; rot is absolute, yaw = rot*pi/2 as for Build.Place. Build.MoveToSlot(buildingId, slotId: string(1,32), turn: optional integer(0,3)) -> (ok: boolean, reason?), burst 4, 2/s; position = the slot centre, yaw = slot.rot + turn*pi/2 (as PlaceSlot g9h). No CFrame on the wire.

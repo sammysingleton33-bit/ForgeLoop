@@ -22,6 +22,7 @@ Trees read as natural oak, pine and birch with layered canopies, tapered trunks 
 - The user: "Trees look extremely blocky…", "Rocks and environmental assets feel too primitive".
 - FORGE-02 branch `forge/02-blender-env-polish` (started 2026-10-13, no commits yet).
 - Mesh trees need the user to import in Studio. That is an optional pilot the user decides on; this task is part-built and doesn't depend on it.
+- **Overlap:** FL-0057 (FORGE-02, the Blender mesh import pack for trees and rocks, READY; BUILDING on #90) covers the *mesh* route. This task is the part-built polish that ships without the user's mesh import. When meshes land by id, FL-0057 swaps them in. Don't do the same asset twice.
 
 ## Requirements
 - Per-prop part counts at or below today's (D-047).

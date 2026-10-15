@@ -21,6 +21,7 @@ No generated tree, rock or gold vein stands inside a crop field or a plot build 
 - User feedback record: `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049 (B15/B16 cycle).
 - Root cause (FORGE-01, PR #131): the clutter was the sim's generated resource nodes (53 of 114 trees inside the 12 crop fields; 4 rocks in build zones). `Kingdom/Layout.clearSpot` only avoided buildings and slots. WorldPlan decor props already kept out.
 - Work exists: PR #131 (`forge/01-gameplay-cleanup`). This task records it; it is not new work.
+- **Overlap:** this is a follow-up fix inside FL-0051's node placement (FORGE-01, BUILDING). It is tracked separately only because it's its own B15 PR (#131); FL-0051's remaining scope is unchanged.
 
 ## Requirements
 - Nodes keep out of every crop field and plot build zone, with slot clearance.
