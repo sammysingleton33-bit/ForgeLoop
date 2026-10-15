@@ -1,0 +1,517 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop_small",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.0,
+              1.706,
+              0.302
+            ],
+            "name": "fence",
+            "size": [
+              16.8,
+              3.35,
+              1.0
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.92,
+        "y": 3.376,
+        "z": 1.524
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_fence_01.fbx",
+        "validation": "exports/farm_fence_01.validation.json"
+      },
+      "generator": "farm_fence",
+      "generator_version": 1,
+      "geometry_hash": "c9358650b2b4b920",
+      "id": "farm_fence_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "style": "rail"
+      },
+      "preview": "previews/farm_fence.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+        "review_file": "reviews/farm_fence.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7400,
+      "sockets": {
+        "end_left": [
+          8.0,
+          0.026,
+          0.302
+        ],
+        "end_right": [
+          -8.0,
+          0.026,
+          0.302
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 512,
+        "lod1": 178
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.0,
+              1.703,
+              0.389
+            ],
+            "name": "fence",
+            "size": [
+              16.8,
+              3.35,
+              1.0
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.92,
+        "y": 3.373,
+        "z": 1.697
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_fence_02.fbx",
+        "validation": "exports/farm_fence_02.validation.json"
+      },
+      "generator": "farm_fence",
+      "generator_version": 1,
+      "geometry_hash": "8aad23a1f8b1bcfd",
+      "id": "farm_fence_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "style": "picket"
+      },
+      "preview": "previews/farm_fence.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+        "review_file": "reviews/farm_fence.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7401,
+      "sockets": {
+        "end_left": [
+          8.0,
+          0.023,
+          0.389
+        ],
+        "end_right": [
+          -8.0,
+          0.023,
+          0.389
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 540,
+        "lod1": 188
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.0,
+              1.686,
+              0.0
+            ],
+            "name": "fence",
+            "size": [
+              16.8,
+              3.35,
+              1.0
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.92,
+        "y": 3.356,
+        "z": 0.92
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_fence_03.fbx",
+        "validation": "exports/farm_fence_03.validation.json"
+      },
+      "generator": "farm_fence",
+      "generator_version": 1,
+      "geometry_hash": "9577ea437d681d0e",
+      "id": "farm_fence_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "style": "wattle"
+      },
+      "preview": "previews/farm_fence.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+        "review_file": "reviews/farm_fence.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7402,
+      "sockets": {
+        "end_left": [
+          8.0,
+          0.006,
+          0.0
+        ],
+        "end_right": [
+          -8.0,
+          0.006,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 730,
+        "lod1": 254
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              6.15,
+              1.912,
+              -0.869
+            ],
+            "name": "wing_l",
+            "size": [
+              4.6,
+              3.35,
+              1.0
+            ]
+          },
+          {
+            "center": [
+              -6.15,
+              1.912,
+              -0.869
+            ],
+            "name": "wing_r",
+            "size": [
+              4.6,
+              3.35,
+              1.0
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.92,
+        "y": 4.582,
+        "z": 6.266
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_fence_04.fbx",
+        "validation": "exports/farm_fence_04.validation.json"
+      },
+      "generator": "farm_fence",
+      "generator_version": 1,
+      "geometry_hash": "4c776d22f470dbf4",
+      "id": "farm_fence_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "style": "gate"
+      },
+      "preview": "previews/farm_fence.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+        "review_file": "reviews/farm_fence.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7403,
+      "sockets": {
+        "end_left": [
+          8.0,
+          0.232,
+          -0.869
+        ],
+        "end_right": [
+          -8.0,
+          0.232,
+          -0.869
+        ],
+        "gate": [
+          -0.0,
+          0.232,
+          -2.369
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 620,
+        "lod1": 216
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.0,
+              1.767,
+              0.396
+            ],
+            "name": "wall",
+            "size": [
+              16.8,
+              3.35,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.92,
+        "y": 3.587,
+        "z": 2.413
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_fence_05.fbx",
+        "validation": "exports/farm_fence_05.validation.json"
+      },
+      "generator": "farm_fence",
+      "generator_version": 1,
+      "geometry_hash": "6a4e1f7380940604",
+      "id": "farm_fence_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "style": "stonewall"
+      },
+      "preview": "previews/farm_fence.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+        "review_file": "reviews/farm_fence.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7404,
+      "sockets": {
+        "end_left": [
+          8.0,
+          0.087,
+          0.396
+        ],
+        "end_right": [
+          -8.0,
+          0.087,
+          0.396
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 700,
+        "lod1": 244
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop_small",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.0,
+              1.685,
+              0.21
+            ],
+            "name": "fence",
+            "size": [
+              16.8,
+              3.35,
+              1.2
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.92,
+        "y": 3.355,
+        "z": 1.34
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_fence_06.fbx",
+        "validation": "exports/farm_fence_06.validation.json"
+      },
+      "generator": "farm_fence",
+      "generator_version": 1,
+      "geometry_hash": "38d786207b8b0219",
+      "id": "farm_fence_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "style": "xbrace"
+      },
+      "preview": "previews/farm_fence.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+        "review_file": "reviews/farm_fence.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7405,
+      "sockets": {
+        "end_left": [
+          8.0,
+          0.005,
+          0.21
+        ],
+        "end_right": [
+          -8.0,
+          0.005,
+          0.21
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 800,
+        "lod0": 600,
+        "lod1": 210
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "farm_fence",
+  "variation": {
+    "closest_pair": [
+      "farm_fence_01",
+      "farm_fence_02"
+    ],
+    "mean_pair_diff": 0.3435,
+    "min_pair_diff": 0.1189,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

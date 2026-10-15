@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "bush_berry_05": {
+      "geometry_hash": "e4a220a578f2b1f1",
+      "verdict": "PASS"
+    },
+    "bush_berry_06": {
+      "geometry_hash": "08d2f1f807398759",
+      "verdict": "PASS"
+    },
+    "bush_flowering_03": {
+      "geometry_hash": "94a71383841358e3",
+      "verdict": "PASS"
+    },
+    "bush_flowering_04": {
+      "geometry_hash": "97407c842d2ec9fc",
+      "verdict": "PASS"
+    },
+    "bush_hedge_07": {
+      "geometry_hash": "5ac350564d24d6d9",
+      "verdict": "PASS"
+    },
+    "bush_hedge_08": {
+      "geometry_hash": "3e7fab13e6e4a060",
+      "verdict": "PASS"
+    },
+    "bush_round_01": {
+      "geometry_hash": "ad1d2cb921f48aaf",
+      "verdict": "PASS"
+    },
+    "bush_round_02": {
+      "geometry_hash": "7142bffb8e511d09",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "bush",
+  "generator_version": 1,
+  "notes": "Round, flowering, berry and hedge types all read at 40 studs, and the flower and berry accents add good variety. Weak spots: hedge_07 is a near-plain green box costing 1100 tris, round_01 and 02 have no surface interest, and flowering_03 is 1488 of 1500 tris.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,354 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 8.052,
+        "y": 6.607,
+        "z": 14.191
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_cart_covered_01.fbx",
+        "validation": "exports/prop_cart_covered_01.validation.json"
+      },
+      "generator": "prop_cart",
+      "generator_version": 1,
+      "geometry_hash": "61b211da49a0bc4a",
+      "id": "prop_cart_covered_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "type": "covered"
+      },
+      "preview": "previews/prop_cart.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five distinct cart types read clearly at 40 studs; haycart_01 load reads as a smooth dough dome with white fang-like fringe rather than hay, and kingdom accents on handcart/wagon/logcart are near-invisible at distance. covered_01 (1776) and wagon_01 (1716) sit right at the 1800 cap.",
+        "review_file": "reviews/prop_cart.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7004,
+      "sockets": {
+        "interact": [
+          0.351,
+          -0.093,
+          -7.055
+        ],
+        "load": [
+          0.351,
+          2.907,
+          2.945
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1776,
+        "lod1": 620
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 6.15,
+        "y": 4.423,
+        "z": 8.465
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_cart_handcart_01.fbx",
+        "validation": "exports/prop_cart_handcart_01.validation.json"
+      },
+      "generator": "prop_cart",
+      "generator_version": 1,
+      "geometry_hash": "ee8a80cadfb99cb9",
+      "id": "prop_cart_handcart_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "type": "handcart"
+      },
+      "preview": "previews/prop_cart.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five distinct cart types read clearly at 40 studs; haycart_01 load reads as a smooth dough dome with white fang-like fringe rather than hay, and kingdom accents on handcart/wagon/logcart are near-invisible at distance. covered_01 (1776) and wagon_01 (1716) sit right at the 1800 cap.",
+        "review_file": "reviews/prop_cart.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "interact": [
+          -0.0,
+          0.021,
+          -4.417
+        ],
+        "load": [
+          -0.0,
+          2.921,
+          1.783
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1310,
+        "lod1": 458
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.05,
+        "y": 7.656,
+        "z": 11.993
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_cart_haycart_01.fbx",
+        "validation": "exports/prop_cart_haycart_01.validation.json"
+      },
+      "generator": "prop_cart",
+      "generator_version": 1,
+      "geometry_hash": "b0e238ece4e0952e",
+      "id": "prop_cart_haycart_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "type": "haycart"
+      },
+      "preview": "previews/prop_cart.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five distinct cart types read clearly at 40 studs; haycart_01 load reads as a smooth dough dome with white fang-like fringe rather than hay, and kingdom accents on handcart/wagon/logcart are near-invisible at distance. covered_01 (1776) and wagon_01 (1716) sit right at the 1800 cap.",
+        "review_file": "reviews/prop_cart.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "interact": [
+          -0.0,
+          0.021,
+          -6.156
+        ],
+        "load": [
+          -0.0,
+          2.971,
+          2.344
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1208,
+        "lod1": 422
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 6.75,
+        "y": 7.05,
+        "z": 12.684
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_cart_logcart_01.fbx",
+        "validation": "exports/prop_cart_logcart_01.validation.json"
+      },
+      "generator": "prop_cart",
+      "generator_version": 1,
+      "geometry_hash": "1b9e147159979d1d",
+      "id": "prop_cart_logcart_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "type": "logcart"
+      },
+      "preview": "previews/prop_cart.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five distinct cart types read clearly at 40 studs; haycart_01 load reads as a smooth dough dome with white fang-like fringe rather than hay, and kingdom accents on handcart/wagon/logcart are near-invisible at distance. covered_01 (1776) and wagon_01 (1716) sit right at the 1800 cap.",
+        "review_file": "reviews/prop_cart.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7003,
+      "sockets": {
+        "interact": [
+          -0.0,
+          -0.089,
+          -6.501
+        ],
+        "load": [
+          -0.0,
+          2.961,
+          1.999
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1240,
+        "lod1": 434
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "prop",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.15,
+        "y": 5.922,
+        "z": 13.591
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/prop_cart_wagon_01.fbx",
+        "validation": "exports/prop_cart_wagon_01.validation.json"
+      },
+      "generator": "prop_cart",
+      "generator_version": 1,
+      "geometry_hash": "f4297d734b74af41",
+      "id": "prop_cart_wagon_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "type": "wagon"
+      },
+      "preview": "previews/prop_cart.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Five distinct cart types read clearly at 40 studs; haycart_01 load reads as a smooth dough dome with white fang-like fringe rather than hay, and kingdom accents on handcart/wagon/logcart are near-invisible at distance. covered_01 (1776) and wagon_01 (1716) sit right at the 1800 cap.",
+        "review_file": "reviews/prop_cart.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "interact": [
+          -0.0,
+          -0.093,
+          -6.755
+        ],
+        "load": [
+          -0.0,
+          2.907,
+          2.945
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1716,
+        "lod1": 600
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 5
+  },
+  "generator": "prop_cart",
+  "variation": {
+    "closest_pair": [
+      "prop_cart_haycart_01",
+      "prop_cart_logcart_01"
+    ],
+    "mean_pair_diff": 0.4403,
+    "min_pair_diff": 0.2873,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

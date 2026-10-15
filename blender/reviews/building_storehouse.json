@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_storehouse_01": {
+      "geometry_hash": "c5c1ebe10b632aed",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_storehouse_02": {
+      "geometry_hash": "f37f8fbdd5d6fa32",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_storehouse_03": {
+      "geometry_hash": "3b15a0a3b03a527d",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_storehouse_04": {
+      "geometry_hash": "44291241e9204268",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_storehouse_05": {
+      "geometry_hash": "11f6036c5dd89345",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_storehouse_06": {
+      "geometry_hash": "a1d2602021154cf4",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "building_storehouse",
+  "generator_version": 1,
+  "notes": "Two archetypes cloned 3x; red 01 thatch reads yellow; sawtooth ridge reads as icing; detached apple basket; heavy tris for sheds.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 3,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

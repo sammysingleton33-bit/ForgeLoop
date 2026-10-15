@@ -3,14 +3,15 @@ id: FL-0013
 title: "Blender pipeline core: render rig, export, LOD, collision, validation, manifest"
 track: asset
 owner: forge-02
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 estimate_h: 8
-evidence: []
+evidence:
+  - "bash blender/scripts/check.sh -> blender check: PASS (images <= 250 KB, manifest schema + cross-checks ok, pytest 19 passed, VERIFY PASS: every committed generator rebuilt from its seed with matching geometry hashes); headless bpy wheel only"
 ---
 
 # Blender pipeline core: render rig, export, LOD, collision, validation, manifest
@@ -40,3 +41,5 @@ check.sh rebuilds a small set and validates; render images opened and reviewed
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-13 forge-02: READY → BUILDING. Pipeline built on forge/02-blender since 2026-10-12; landing on main via this PR (D-038 audit).
+- 2026-10-13 forge-02: BUILDING → REVIEW. Pipeline core + 38 generators, fragments, reviews and merged manifest land on main (PR-A). Desktop-Blender path (assets.md A0) unverified until the user runs it.

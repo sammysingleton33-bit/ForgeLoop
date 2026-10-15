@@ -1,0 +1,892 @@
+{
+  "assets": [
+    {
+      "budget_class": "castle_gate",
+      "category": "castle",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_left",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              15.5,
+              -7.0
+            ],
+            "name": "tower_front_left",
+            "size": [
+              8.0,
+              31.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              15.5,
+              7.0
+            ],
+            "name": "tower_rear_left",
+            "size": [
+              8.0,
+              31.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_right",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              15.5,
+              -7.0
+            ],
+            "name": "tower_front_right",
+            "size": [
+              8.0,
+              31.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              15.5,
+              7.0
+            ],
+            "name": "tower_rear_right",
+            "size": [
+              8.0,
+              31.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              24.375,
+              0.0
+            ],
+            "name": "lintel",
+            "size": [
+              14.5,
+              13.25,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              -6.35
+            ],
+            "name": "parapet_front",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              6.35
+            ],
+            "name": "parapet_back",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              35.5,
+              -1.6
+            ],
+            "name": "gate_tower",
+            "size": [
+              11.2,
+              9.6,
+              9.2
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 32.75,
+        "y": 63.25,
+        "z": 27.2
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_gatehouse_blue_01.fbx",
+        "validation": "exports/castle_gatehouse_blue_01.validation.json"
+      },
+      "generator": "castle_gatehouse",
+      "generator_version": 1,
+      "geometry_hash": "2e4fb119b7ee6894",
+      "id": "castle_gatehouse_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "towers": "square"
+      },
+      "preview": "previews/castle_gatehouse.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
+        "review_file": "reviews/castle_gatehouse.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7901,
+      "sockets": {
+        "banner": [
+          -0.0,
+          24.15,
+          -8.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "flag": [
+          -0.0,
+          63.25,
+          -1.6
+        ],
+        "gate_center": [
+          -0.0,
+          0.2,
+          0.0
+        ],
+        "spawn_inside": [
+          -0.0,
+          0.0,
+          16.6
+        ],
+        "spawn_outside": [
+          -0.0,
+          0.0,
+          -16.6
+        ],
+        "top": [
+          -0.0,
+          31.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 9000,
+        "lod0": 7558,
+        "lod1": 2644
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_gate",
+      "category": "castle",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_left",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              14.5,
+              -7.0
+            ],
+            "name": "tower_front_left",
+            "size": [
+              8.0,
+              29.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              15.0,
+              7.0
+            ],
+            "name": "tower_rear_left",
+            "size": [
+              8.0,
+              30.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_right",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              14.5,
+              -7.0
+            ],
+            "name": "tower_front_right",
+            "size": [
+              8.0,
+              29.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              15.0,
+              7.0
+            ],
+            "name": "tower_rear_right",
+            "size": [
+              8.0,
+              30.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              24.375,
+              0.0
+            ],
+            "name": "lintel",
+            "size": [
+              14.5,
+              13.25,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              -6.35
+            ],
+            "name": "parapet_front",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              6.35
+            ],
+            "name": "parapet_back",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 34.0,
+        "y": 40.7,
+        "z": 27.2
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_gatehouse_green_01.fbx",
+        "validation": "exports/castle_gatehouse_green_01.validation.json"
+      },
+      "generator": "castle_gatehouse",
+      "generator_version": 1,
+      "geometry_hash": "a392fe21a3471e1d",
+      "id": "castle_gatehouse_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "towers": "round"
+      },
+      "preview": "previews/castle_gatehouse.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
+        "review_file": "reviews/castle_gatehouse.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7902,
+      "sockets": {
+        "banner": [
+          -0.0,
+          24.15,
+          -8.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "flag": [
+          -0.0,
+          40.7,
+          2.0
+        ],
+        "gate_center": [
+          -0.0,
+          0.2,
+          0.0
+        ],
+        "spawn_inside": [
+          -0.0,
+          0.0,
+          16.6
+        ],
+        "spawn_outside": [
+          -0.0,
+          0.0,
+          -16.6
+        ],
+        "top": [
+          -0.0,
+          31.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 9000,
+        "lod0": 8202,
+        "lod1": 2870
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_gate",
+      "category": "castle",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_left",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              16.75,
+              -7.0
+            ],
+            "name": "tower_front_left",
+            "size": [
+              8.0,
+              33.5,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              15.5,
+              7.0
+            ],
+            "name": "tower_rear_left",
+            "size": [
+              8.0,
+              31.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_right",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              16.75,
+              -7.0
+            ],
+            "name": "tower_front_right",
+            "size": [
+              8.0,
+              33.5,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              15.5,
+              7.0
+            ],
+            "name": "tower_rear_right",
+            "size": [
+              8.0,
+              31.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              24.375,
+              0.0
+            ],
+            "name": "lintel",
+            "size": [
+              14.5,
+              13.25,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              -6.35
+            ],
+            "name": "parapet_front",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              6.35
+            ],
+            "name": "parapet_back",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 32.535,
+        "y": 57.4,
+        "z": 27.2
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_gatehouse_red_01.fbx",
+        "validation": "exports/castle_gatehouse_red_01.validation.json"
+      },
+      "generator": "castle_gatehouse",
+      "generator_version": 1,
+      "geometry_hash": "0808516571d38bff",
+      "id": "castle_gatehouse_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "towers": "round"
+      },
+      "preview": "previews/castle_gatehouse.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
+        "review_file": "reviews/castle_gatehouse.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7900,
+      "sockets": {
+        "banner": [
+          -0.0,
+          24.15,
+          -8.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "flag": [
+          -0.0,
+          40.7,
+          2.0
+        ],
+        "gate_center": [
+          -0.0,
+          0.2,
+          0.0
+        ],
+        "spawn_inside": [
+          -0.0,
+          0.0,
+          16.6
+        ],
+        "spawn_outside": [
+          -0.0,
+          0.0,
+          -16.6
+        ],
+        "top": [
+          -0.0,
+          31.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 9000,
+        "lod0": 7906,
+        "lod1": 2766
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_gate",
+      "category": "castle",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_left",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              16.5,
+              -7.0
+            ],
+            "name": "tower_front_left",
+            "size": [
+              8.0,
+              33.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              11.1,
+              15.25,
+              7.0
+            ],
+            "name": "tower_rear_left",
+            "size": [
+              8.0,
+              30.5,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.625,
+              15.5,
+              0.0
+            ],
+            "name": "mass_right",
+            "size": [
+              8.75,
+              31.0,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              16.5,
+              -7.0
+            ],
+            "name": "tower_front_right",
+            "size": [
+              8.0,
+              33.0,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -11.1,
+              15.25,
+              7.0
+            ],
+            "name": "tower_rear_right",
+            "size": [
+              8.0,
+              30.5,
+              8.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              24.375,
+              0.0
+            ],
+            "name": "lintel",
+            "size": [
+              14.5,
+              13.25,
+              14.0
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              -6.35
+            ],
+            "name": "parapet_front",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              32.5,
+              6.35
+            ],
+            "name": "parapet_back",
+            "size": [
+              14.2,
+              3.0,
+              1.3
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 32.244,
+        "y": 47.365,
+        "z": 27.2
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_gatehouse_yellow_01.fbx",
+        "validation": "exports/castle_gatehouse_yellow_01.validation.json"
+      },
+      "generator": "castle_gatehouse",
+      "generator_version": 1,
+      "geometry_hash": "f97e731382456187",
+      "id": "castle_gatehouse_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "towers": "round"
+      },
+      "preview": "previews/castle_gatehouse.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
+        "review_file": "reviews/castle_gatehouse.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7903,
+      "sockets": {
+        "banner": [
+          -0.0,
+          24.15,
+          -8.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "flag": [
+          -0.0,
+          40.7,
+          2.0
+        ],
+        "gate_center": [
+          -0.0,
+          0.2,
+          0.0
+        ],
+        "spawn_inside": [
+          -0.0,
+          0.0,
+          16.6
+        ],
+        "spawn_outside": [
+          -0.0,
+          0.0,
+          -16.6
+        ],
+        "top": [
+          -0.0,
+          31.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 9000,
+        "lod0": 8470,
+        "lod1": 2964
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "castle_gatehouse",
+  "variation": {
+    "closest_pair": [
+      "castle_gatehouse_green_01",
+      "castle_gatehouse_yellow_01"
+    ],
+    "mean_pair_diff": 0.1622,
+    "min_pair_diff": 0.0991,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

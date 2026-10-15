@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "castle_tower_blue_01": {
+      "geometry_hash": "7acd5d64107e3e60",
+      "verdict": "PASS"
+    },
+    "castle_tower_blue_02": {
+      "geometry_hash": "e889d06203126994",
+      "verdict": "PASS"
+    },
+    "castle_tower_green_01": {
+      "geometry_hash": "98d32b9aadac8212",
+      "verdict": "PASS"
+    },
+    "castle_tower_green_02": {
+      "geometry_hash": "4524e210e7cbacca",
+      "verdict": "PASS"
+    },
+    "castle_tower_red_01": {
+      "geometry_hash": "923de8a68aed96a3",
+      "verdict": "PASS"
+    },
+    "castle_tower_red_02": {
+      "geometry_hash": "7888f06cf4bd5a27",
+      "verdict": "PASS"
+    },
+    "castle_tower_yellow_01": {
+      "geometry_hash": "e04ab1ffee8fb06d",
+      "verdict": "PASS"
+    },
+    "castle_tower_yellow_02": {
+      "geometry_hash": "cf239f5efc12ef10",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_tower",
+  "generator_version": 1,
+  "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+  "reviewer": "fresh-context subagent",
+  "round": 5,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 5,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}
