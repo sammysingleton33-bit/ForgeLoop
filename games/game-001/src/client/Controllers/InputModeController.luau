@@ -14,6 +14,8 @@
 		local release = input:onBack(function() panel:close() return true end)   -- while it shows
 		release()                       -- when it closes (FORGE-03's panels)
 		input:back() -> boolean         -- what the keys do: true when a handler took the press
+		input.hovered:connect(function(kind, id) ... end)    -- the citizen under the mouse (FL-0115)
+		input.hover                     -- { kind = "citizen" | "none", id } under the mouse now
 
 	Selection (G13.6; nobody else raycasts for selection)
 		- In explore mode a tap or click (pointer moved < tapPixels and released within tapSec;
@@ -40,6 +42,12 @@
 		- Input a GUI already handled is never "back": Backspace in a TextBox closes nothing, and on
 		  a gamepad the first B leaves GUI selection (Roblox's default) and the next one is "back".
 		- Listened to through UserInputService, never bound, so the keys are not sunk.
+
+	Hover (FL-0115; FeedbackHighlightController outlines it)
+		- A mouse move in explore mode resolves the citizen under the pointer with the same
+		  EntityController:pick a tap uses, and fires hovered("citizen", id) or hovered("none", "") on a
+		  change only. Phones have no hover. Over a GUI, in another mode or on leaving explore mode the
+		  hover is "none".
 
 	Arbitration (specs: games/game-001/tests/experience/InputMode.spec.luau)
 		- One mode at a time, and each mode has one owner for taps and clicks:
@@ -151,6 +159,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		tapPixels = (options.config or Def.DEFAULTS).tapPixels,
 		selection = { kind = "none", id = "" },
 		changed = Signal.new(),
+		hover = { kind = "none", id = "" },
+		hovered = Signal.new(),
 		selected = Signal.new(),
 		_backHandlers = {} :: { any },
 	}, Controller)
@@ -177,6 +187,7 @@ function Controller:destroy()
 	end
 	table.clear(self._connections)
 	self.changed:disconnectAll()
+	self.hovered:disconnectAll()
 	self.selected:disconnectAll()
 	table.clear(self._backHandlers)
 end
@@ -228,6 +239,26 @@ function Controller:back(): boolean
 		end
 	end
 	return false
+end
+
+-- The citizen under the mouse: fires hovered(kind, id) on a change only. nil (the pointer is over a
+-- GUI) or any mode but explore gives "none". Returns the hover's kind.
+function Controller:hoverAt(screenPos: Vector2?): string
+	local kind, id = "none", ""
+	if screenPos ~= nil and self:accepts("explore") then
+		local entities = self._registry:find("EntityController")
+		if entities ~= nil and entities.pick ~= nil then
+			local ok, entityId = pcall(entities.pick, entities, screenPos)
+			if ok and entityId ~= nil then
+				kind, id = "citizen", entityId
+			end
+		end
+	end
+	if kind ~= self.hover.kind or id ~= self.hover.id then
+		self.hover = { kind = kind, id = id }
+		self.hovered:fire(kind, id)
+	end
+	return kind
 end
 
 -- Resolves a tap at a screen position and selects the result (explore mode only).
@@ -334,6 +365,16 @@ function Controller:_bindPointer()
 	if okEnded then
 		table.insert(self._connections, ended)
 	end
+	local okChanged, moved = pcall(function()
+		return userInput.InputChanged:Connect(function(input, processed)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				self:hoverAt(if processed then nil else Vector2.new(input.Position.X, input.Position.Y))
+			end
+		end)
+	end)
+	if okChanged then
+		table.insert(self._connections, moved)
+	end
 end
 
 function Controller:set(mode: any): boolean
@@ -363,6 +404,9 @@ function Controller:set(mode: any): boolean
 			self:_bindLeave(nextMode == "build")
 			if nextMode == "build" and self.selection.kind ~= "none" then
 				self:select("none", "") -- panels close while placing
+			end
+			if nextMode ~= "explore" then
+				self:hoverAt(nil)
 			end
 			self._firing = true
 			self.changed:fire(nextMode, previous)

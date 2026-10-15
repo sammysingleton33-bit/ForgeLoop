@@ -16,6 +16,13 @@
 	it too), and refusals use the server's codes (#89: unknown_slot, slot_occupied, does_not_fit), so a
 	client that offers a misfit gets "does_not_fit" back. Costs from config Costs; refusals use the
 	reason vocabulary of production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md.
+
+	Turning (CONTRACTS G13.5 v0.4-g9h, FORGE-01 #132): `Build.PlaceSlot(slotId, type, turn?)` as the real
+	server declares it; the turn is recorded (calls[i].args[3]) and a turn whose turned footprint does not
+	fit is refused (does_not_fit) by the real `Fit.fits(type, size, turn)`. TURN_REMOTES is the same
+	declaration (kept for older callers). With `KingdomWorld.new({ services = { SlotDoubles.turnService } })`
+	the double also has "crimson_slot5", a medium plot with a real world/Layout id, so the picker's ghost
+	has a place in the world. SlotDoubles.fitsTurned(type, size, turn) is the real rule (Fit.fits).
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
@@ -34,18 +41,30 @@ SlotDoubles.REMOTES = {
 		{
 			name = "Build.PlaceSlot",
 			kind = "function",
-			args = { V.string(1, 32), V.enum(TYPES) },
+			args = { V.string(1, 32), V.enum(TYPES), V.optional(V.integer(0, 3)) },
 			rate = { burst = 3, perSecond = 1 },
 		},
 	},
 }
+
+SlotDoubles.TURN_REMOTES = SlotDoubles.REMOTES
+
+-- The v0.4-g9h fit rule, as the server applies it: FORGE-01's Build/Fit.
+function SlotDoubles.fitsTurned(buildingType: string, size: string, turn: number?): boolean
+	return Fit.fits(buildingType, size, turn)
+end
 
 -- Whether a type fits a slot size, as the server sees it: the shared rule (G13.5), as PlaceSlot calls it.
 function SlotDoubles.fits(size: string, buildingType: string): boolean
 	return Fit.fits(buildingType, size)
 end
 
-function SlotDoubles.service(world)
+function SlotDoubles.turnService(world)
+	return SlotDoubles.service(world, { turns = true })
+end
+
+function SlotDoubles.service(world, opts: { turns: boolean? }?)
+	local turns = opts ~= nil and opts.turns == true
 	return {
 		name = "SlotService",
 		dependencies = { "RemoteService", "TreasuryService", "KingdomService", "BuildingService" },
@@ -62,6 +81,10 @@ function SlotDoubles.service(world)
 					m2 = { id = "m2", kingdom = "crimson", size = "M", center = Vector3.new(-100, 0, 100) },
 				},
 			}
+			if turns then
+				svc.slots.crimson_slot5 =
+					{ id = "crimson_slot5", kingdom = "crimson", size = "M", center = Vector3.new(-160, 0, 160) }
+			end
 			function svc:list(kingdom)
 				local out = {}
 				for _, slot in self.slots do
@@ -91,8 +114,8 @@ function SlotDoubles.service(world)
 					local kingdom = kingdoms:getKingdomOf(player)
 					return if kingdom then self:list(kingdom) else {}
 				end)
-				remotes:handle("Build.PlaceSlot", function(player, slotId, buildingType)
-					table.insert(world.calls, { name = "PlaceSlot", args = { slotId, buildingType } })
+				remotes:handle("Build.PlaceSlot", function(player, slotId, buildingType, turn)
+					table.insert(world.calls, { name = "PlaceSlot", args = { slotId, buildingType, turn } })
 					if world.latency > 0 then
 						world.env.wait(world.latency) -- the round trip (KingdomWorld option `latency`)
 					end
@@ -105,7 +128,7 @@ function SlotDoubles.service(world)
 					elseif slot.occupiedBy then
 						return nil, "slot_occupied"
 					end
-					if not SlotDoubles.fits(slot.size, buildingType) then
+					if not SlotDoubles.fitsTurned(buildingType, slot.size, turn) then
 						return nil, "does_not_fit"
 					end
 					local entry = Costs.building(buildingType, 1)
