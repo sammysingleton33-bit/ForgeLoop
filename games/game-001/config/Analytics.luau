@@ -13,8 +13,10 @@
 	- sessions start on KingdomJoined (VS-1 has no profiles, so nothing fires PlayerReady, D-027);
 	- MatchAnalyticsService logs MatchEnded and answers `session.leftInfo` for PhaseLeft;
 	- each FirstMatch step after Spawn also logs MilestoneReached (seconds since the session started, `milestones`);
-	- ConversationAnswered and ReputationShifted (D-030) are declared for FORGE-01's ConversationService
-	  and ReputationService, which call AnalyticsService:event (interfaces §8) once they ship.
+	- ConversationAnswered (D-030) is logged from G9 CitizenAnswered by a track rule (D-044 (3), FL-0108):
+	  ConversationService never calls AnalyticsService; the occupation comes from Feedback/Signals;
+	- ReputationShifted (D-030) is declared for FORGE-01's ReputationService, which calls
+	  AnalyticsService:event (interfaces §8).
 ]]
 
 local Signals = require("@game/ReplicatedStorage/Game/Feedback/Signals")
@@ -129,7 +131,7 @@ return table.freeze({
 			steps = { "FirstSession", "ReturnNextDay" },
 		},
 	},
-	-- VS1 funnel from the G9 events (who is credited: Feedback/Signals, CONTRACTS G9)
+	-- the FirstMatch funnel and ConversationAnswered from the G9 events (who is credited: Feedback/Signals, CONTRACTS G9)
 	track = {
 		{ on = "KingdomJoined", funnel = "FirstMatch", step = 1 },
 		{ on = "ResourceGathered", funnel = "FirstMatch", step = 2 },
@@ -137,6 +139,12 @@ return table.freeze({
 		{ on = "BuildingCompleted", funnel = "FirstMatch", step = 4 },
 		{ on = "UnitsRecruited", funnel = "FirstMatch", step = 5 },
 		{ on = "ObjectiveCaptured", funnel = "FirstMatch", step = 6 },
+		-- D-030 custom event from the G9 event (D-044 (3), FL-0108); secondsOpen is its value
+		{
+			on = "CitizenAnswered",
+			event = "ConversationAnswered",
+			fields = { "secondsOpen", "occupation", "decision" },
+		},
 	},
 	subjects = Signals.subjects,
 	-- timed FirstMatch milestones (FORGE-00 review M7): funnel steps carry no time

@@ -117,6 +117,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 2. Watch the citizens from both clients for 60 s.
 3. Open the debug panel (F8) and run `sim.spawn 50` once.
 4. Repeat with Studio's Network Simulator at 200 ms latency and 5 % packet loss.
+5. (FL-0109) Late join: with `sim.spawn 50` already run, start a second client (Test → Clients and Servers) and
+   watch it fill in.
 
 **Expected:**
 - Citizens are part-built rigs (`Workspace.KingdomEntities`, no Humanoids) in kingdom colours. They walk,
@@ -125,6 +127,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   hesitate briefly but never jumps back.
 - Rigs further than 150 studs from your character disappear and come back when you approach.
 - Long trips (soldiers sent to the watchtower) follow the road and cross the river at the bridge.
+- The late joiner (step 5) sees all 62+ entities within a few seconds, not only the first 49: `Sim.GetEntities`
+  answers in pages of 49 and the client asks for the next page until there is none.
 - No `EntityService` errors in Output.
 
 ## K9 — Kingdoms built from the Kit, citizens fed by upkeep (FL-0051 visuals, FL-0050 core)
@@ -217,6 +221,20 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   respawns, they sit on their throne at once, and player 2 ends up in front of the dais. A co-ruler of
   player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
+
+## Server hardening regression rows (FL-0122, D-050)
+1. Talk to a citizen (K10), then keep re-opening the same thought bubble every 20 s for two minutes.
+2. Stand at the keep, then use a teleport tool (Studio command bar, `character:PivotTo(...)`) to jump into the
+   watchtower zone and wait there for 20 s.
+3. Harvest a tree of your own kingdom with `Kingdom.Gather` as fast as the prompt allows for a minute, then try a
+   tree on a rival's plot.
+
+**Expected:**
+- 1. The citizen walks off after about 90 s of conversation at most, however often you ask again; the question
+  is still there and can still be answered.
+- 2. The tower is not captured 20 s after the jump; it is captured only after the time a runner would need
+  (distance / 40 studs per second) plus the capture time. A respawn at the plot is not delayed.
+- 3. About 9 wood a minute (4 or 5 harvests), then `cooldown`; the rival's tree answers `not_your_node`.
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:
