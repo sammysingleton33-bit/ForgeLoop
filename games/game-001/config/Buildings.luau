@@ -184,5 +184,6 @@ return {
 	},
 	placementGap = 2, -- studs kept free between footprints
 	wallGap = 0, -- studs kept free between two line pieces (wall / gate): they join end to end
+	moveCooldown = 2, -- seconds a building waits between moves (Build.Move / MoveToSlot, CONTRACTS G13.9)
 	cancelRefund = 0.5, -- share of a site's paid cost returned on cancel
 }

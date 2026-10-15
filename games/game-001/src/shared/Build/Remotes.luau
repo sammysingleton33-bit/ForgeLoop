@@ -16,6 +16,16 @@
 		                                 (Build/Fit.fits(type, size, turn); Fit.turns lists the turns that fit),
 		                                 else does_not_fit; then the Build.Place rules
 		Build.GetSlots() -> { { id, size, occupiedBy: number? } }      the asker's kingdom's slots (G13.5)
+		Build.CanMove(buildingId: integer(1,1e6), position: Vector3, rot: integer(0,3)) -> (boolean, reason?)
+		                                 G13.9 ghost tint: would Build.Move succeed now (nothing changes)
+		Build.Move(buildingId, position, rot) -> (ok, reason?)   one of the player's kingdom's buildings (not the
+		                                 keep) to free ground, facing rot x 90 degrees (absolute, as Build.Place):
+		                                 atomic and in place (same id, level, hp, progress, queue, workers), free;
+		                                 frees its slot. A move to the same spot and facing is a no-op (true)
+		Build.MoveToSlot(buildingId, slotId: string(1,32), turn: integer(0,3)?) -> (ok, reason?)   onto a free
+		                                 build slot that fits, turned `turn` quarter turns from its facing (as
+		                                 Build.PlaceSlot), taking the slot in the same command; may re-seat on its
+		                                 own slot. Walls and gates never go on a slot (not_on_plot)
 	Server -> client
 		Build.Buildings({ Building })    the buildings that changed (placed, progress, level, damage,
 		                                 destroyed = state "destroyed"), to every player, at most 2 per second
@@ -28,11 +38,16 @@
 	PlaceSlot also unknown_slot (not one of the player's kingdom's slots), not_on_plot (wall and gate never
 	stand on a plot, G13.5 v0.4-g9a), slot_occupied (a building placed on the slot, or any of the kingdom's
 	standing buildings over it), does_not_fit.
+	CanMove / Move / MoveToSlot also not_found, not_movable (the keep), alarm (the alarm bell rings),
+	under_attack (enemy units in the kingdom's land), cooldown (Buildings.moveCooldown since its last move);
+	they never check limits, keep level or cost (a move adds no building). Build.Buildings re-sends a moved
+	building, and Build.Slots follows its slot.
 ]]
 
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
 local Types = require("../Kingdom/Types")
 
+local BUILDING_ID = Validate.integer(1, 1000000)
 local PLACEMENT = { Validate.enum(Types.BUILDING_TYPES), Validate.vector3(4000), Validate.integer(0, 3) }
 
 return {
@@ -54,6 +69,24 @@ return {
 			Validate.enum(Types.BUILDING_TYPES),
 			Validate.optional(Validate.integer(0, 3)),
 		},
+		rate = { burst = 4, perSecond = 2 },
+	},
+	{
+		name = "Build.CanMove",
+		kind = "function",
+		args = { BUILDING_ID, Validate.vector3(4000), Validate.integer(0, 3) },
+		rate = { burst = 10, perSecond = 10 },
+	},
+	{
+		name = "Build.Move",
+		kind = "function",
+		args = { BUILDING_ID, Validate.vector3(4000), Validate.integer(0, 3) },
+		rate = { burst = 4, perSecond = 2 },
+	},
+	{
+		name = "Build.MoveToSlot",
+		kind = "function",
+		args = { BUILDING_ID, Validate.string(1, 32), Validate.optional(Validate.integer(0, 3)) },
 		rate = { burst = 4, perSecond = 2 },
 	},
 	{ name = "Build.GetSlots", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } },

@@ -116,6 +116,7 @@ export type Tuning = {
 	arriveRadius: number,
 	placementGap: number,
 	wallGap: number, -- the placement gap between two line pieces (wall, gate); placementGap when not set
+	moveCooldown: number, -- seconds a building waits between moves (G13.9)
 	cancelRefund: number, -- fraction of a site's cost refunded on cancel
 	startResources: Cost,
 	startCitizens: { [string]: number }, -- job -> count
@@ -182,6 +183,7 @@ local function assemble(): Catalog
 	tuning.carry = JobsConfig.carry
 	tuning.placementGap = BuildingsConfig.placementGap
 	tuning.wallGap = (BuildingsConfig :: any).wallGap or BuildingsConfig.placementGap
+	tuning.moveCooldown = (BuildingsConfig :: any).moveCooldown or 2
 	tuning.cancelRefund = BuildingsConfig.cancelRefund
 	tuning.startResources = KingdomsConfig.startResources
 	tuning.startCitizens = KingdomsConfig.startCitizens

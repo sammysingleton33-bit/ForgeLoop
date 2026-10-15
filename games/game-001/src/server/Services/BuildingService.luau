@@ -81,13 +81,14 @@ end
 
 -- The building occupying a slot: the one placed on it (building.slotId), else any standing building of
 -- the kingdom whose shape overlaps the slot rectangle, e.g. one placed there with Build.Place (#89 M1).
-function BuildingService:_occupant(kingdomId: string, slotId: string): number?
+-- `ignoreId` is a building that is moving: it does not count as the occupant of the slot it asks for.
+function BuildingService:_occupant(kingdomId: string, slotId: string, ignoreId: number?): number?
 	local sim = self:_sim()
 	local k = sim.kingdoms[kingdomId]
 	local ids = if k then k.buildingIds else {} -- a destroyed or cancelled building leaves buildingIds
 	for _, bid in ids do
 		local b = sim.buildings[bid]
-		if b and b.slotId == slotId then
+		if b and b.slotId == slotId and b.id ~= ignoreId then
 			return b.id
 		end
 	end
@@ -99,7 +100,7 @@ function BuildingService:_occupant(kingdomId: string, slotId: string): number?
 	end
 	for _, bid in if rect then ids else {} do
 		local b = sim.buildings[bid]
-		if b and b.shape and Footprint.overlaps(rect, b.shape, 0) then
+		if b and b.id ~= ignoreId and b.shape and Footprint.overlaps(rect, b.shape, 0) then
 			return b.id
 		end
 	end
@@ -203,6 +204,15 @@ function BuildingService:start()
 	self._remotes:handle("Build.PlaceSlot", function(player: any, slotId: string, kind: string, turn: number?)
 		return self:placeSlot(player, slotId, kind, turn)
 	end)
+	self._remotes:handle("Build.CanMove", function(player: any, buildingId: number, position: Vector3, rot: number)
+		return self:canMove(player, buildingId, BuildingService.toCFrame(position, rot))
+	end)
+	self._remotes:handle("Build.Move", function(player: any, buildingId: number, position: Vector3, rot: number)
+		return self:move(player, buildingId, BuildingService.toCFrame(position, rot))
+	end)
+	self._remotes:handle("Build.MoveToSlot", function(player: any, buildingId: number, slotId: string, turn: number?)
+		return self:moveToSlot(player, buildingId, slotId, turn)
+	end)
 	self._remotes:handle("Build.GetSlots", function(player: any)
 		local kingdomId = host:kingdomOf(player)
 		return if kingdomId then self:slots(kingdomId) else nil
@@ -247,6 +257,75 @@ function BuildingService:place(player: any, kind: string, cframe: CFrame): (numb
 	return result.buildingId, nil
 end
 
+-- ---------------------------------------------------------------- base editing (CONTRACTS G13.9)
+-- The ghost tint: whether Build.Move would succeed now (the same checks, nothing changes).
+function BuildingService:canMove(player: any, buildingId: number, cframe: CFrame): (boolean, string?)
+	local sim = self:_sim()
+	local kingdomId = self._match.host:kingdomOf(player)
+	local k = if kingdomId then sim.kingdoms[kingdomId] else nil
+	if k == nil then
+		return false, "not_in_match"
+	end
+	local p = cframe.Position
+	return sim:canMoveBuilding(k, buildingId, p.X, p.Z, yawOf(cframe))
+end
+
+-- Moves one of the player's kingdom's buildings to free ground, facing rot x 90 degrees (absolute). One Sim
+-- command: it validates, then changes position, facing, shape and slot, or changes nothing. Free.
+function BuildingService:move(player: any, buildingId: number, cframe: CFrame): (boolean, string?)
+	local p = cframe.Position
+	local ok, err = self._match.host:command(player, "MoveBuilding", buildingId, p.X, p.Z, yawOf(cframe), nil)
+	return ok, err
+end
+
+-- Moves a building onto a free build slot that fits it, turned `turn` quarter turns from the slot's facing
+-- (CONTRACTS v0.4-g9h); the slot is taken in the same command. A building may re-seat on its own slot.
+function BuildingService:moveToSlot(player: any, buildingId: number, slotId: string, turn: number?): (boolean, string?)
+	local host = self._match.host
+	local sim = self:_sim()
+	local kingdomId = host:kingdomOf(player)
+	local k = if kingdomId then sim.kingdoms[kingdomId] else nil
+	if kingdomId == nil or k == nil then
+		return false, "not_in_match"
+	end
+	if not sim.active then
+		return false, "match_not_active"
+	end
+	if not k.alive then
+		return false, "kingdom_eliminated"
+	end
+	local b, err = sim:_ownedBuilding(k, buildingId)
+	if b == nil then
+		return false, err
+	end
+	if b.kind == "keep" then
+		return false, "not_movable"
+	end
+	local slot
+	for _, def in self:_slotDefs(kingdomId) do
+		if def.id == slotId then
+			slot = def
+		end
+	end
+	if slot == nil then
+		return false, "unknown_slot"
+	end
+	if Def.NOT_ON_PLOT[b.kind] then
+		return false, "not_on_plot" -- walls and gates move with Build.Move
+	end
+	if self:_occupant(kingdomId, slotId, b.id) then
+		return false, "slot_occupied"
+	end
+	local quarter = math.floor(turn or 0) % 4
+	if not Fit.fits(b.kind, slot.size, quarter) then
+		return false, "does_not_fit"
+	end
+	local center = slot.center
+	local ok, why =
+		host:command(player, "MoveBuilding", b.id, center.X, center.Z, slot.rot + quarter * math.pi / 2, slotId)
+	return ok, why
+end
+
 function BuildingService:upgrade(player: any, buildingId: number): (boolean, string?)
 	local ok, err = self._match.host:command(player, "UpgradeBuilding", buildingId)
 	return ok, err
@@ -287,8 +366,14 @@ function BuildingService:broadcast()
 		local b = sim.buildings[id]
 		local view = sim:viewOf(b)
 		present[id] = true
+		-- position and facing are part of it: a moved building is re-sent with its new cframe (G13.9)
 		local signature =
-			`{view.type}|{view.level}|{view.state}|{math.floor(view.progress * 100)}|{math.floor(view.hp)}|{view.maxHp}`
+			`{view.type}|{view.level}|{view.state}|{math.floor(view.progress * 100)}|{math.floor(view.hp)}|{view.maxHp}|{string.format(
+				"%.2f|%.2f|%.3f",
+				b.x,
+				b.z,
+				b.yaw
+			)}`
 		if self._sent[id] ~= signature then
 			self._sent[id] = signature
 			self._views[id] = view

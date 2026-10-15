@@ -292,9 +292,10 @@ describe("Kingdom/Commands: shared ownership", function()
 end)
 
 describe("Kingdom/Commands: install and namesFor", function()
-	it("lists the six built-in commands", function()
+	it("lists the seven built-in commands", function()
 		expect(table.clone(Commands.NAMES)).toEqual({
 			"PlaceBuilding",
+			"MoveBuilding",
 			"UpgradeBuilding",
 			"CancelConstruction",
 			"SetJobQuota",
@@ -347,6 +348,7 @@ describe("Kingdom/Commands: install and namesFor", function()
 		expect(Commands.namesFor(sim)).toEqual({
 			"ArmyOrder",
 			"CancelConstruction",
+			"MoveBuilding",
 			"PlaceBuilding",
 			"Recruit",
 			"SetAlarm",
@@ -356,7 +358,7 @@ describe("Kingdom/Commands: install and namesFor", function()
 			"UpgradeBuilding",
 			"Wave",
 		})
-		expect(#Commands.namesFor(other)).toBe(6)
-		expect(#Commands.NAMES).toBe(6) -- namesFor returns a copy
+		expect(#Commands.namesFor(other)).toBe(7)
+		expect(#Commands.NAMES).toBe(7) -- namesFor returns a copy
 	end)
 end)
