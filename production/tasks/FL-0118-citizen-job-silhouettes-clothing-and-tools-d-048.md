@@ -3,13 +3,14 @@ id: FL-0118
 title: Citizen job silhouettes, clothing and tools readable from the air (D-048 11-part rigs)
 track: asset
 owner: forge-02
-status: READY
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0085]
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 1319/0) at fd498fb; KitCharacter.spec 35 tests, 26 Character.luau mutants killed; renders citizen_polish_*.jpg looked at (40 studs and aerial 170 studs, colour and grayscale)
 ---
 
 # Citizen job silhouettes, clothing and tools readable from the air (D-048 11-part rigs)
@@ -39,3 +40,5 @@ Visual: D-019 aerial and close-up renders, fresh-context reviewer PASS. Automate
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-02: READY → BUILDING. Phase 1 (9-part) built on forge/02-blender-citizen-polish; phase 2 (11 parts, D-048) follows in its own PR.
+- 2026-10-15 forge-02: BUILDING → REVIEW. Phase 1 PR: per-job headwear, accent and tools within 9 parts; D-019 fresh review and the 11-part phase 2 still to do. Only G6 (Studio) for the visible result.
