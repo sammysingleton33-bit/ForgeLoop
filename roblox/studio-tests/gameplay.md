@@ -117,6 +117,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 2. Watch the citizens from both clients for 60 s.
 3. Open the debug panel (F8) and run `sim.spawn 50` once.
 4. Repeat with Studio's Network Simulator at 200 ms latency and 5 % packet loss.
+5. (FL-0109) Late join: with `sim.spawn 50` already run, start a second client (Test → Clients and Servers) and
+   watch it fill in.
 
 **Expected:**
 - Citizens are part-built rigs (`Workspace.KingdomEntities`, no Humanoids) in kingdom colours. They walk,
@@ -125,6 +127,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   hesitate briefly but never jumps back.
 - Rigs further than 150 studs from your character disappear and come back when you approach.
 - Long trips (soldiers sent to the watchtower) follow the road and cross the river at the bridge.
+- The late joiner (step 5) sees all 62+ entities within a few seconds, not only the first 49: `Sim.GetEntities`
+  answers in pages of 49 and the client asks for the next page until there is none.
 - No `EntityService` errors in Output.
 
 ## K9 — Kingdoms built from the Kit, citizens fed by upkeep (FL-0051 visuals, FL-0050 core)

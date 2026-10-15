@@ -15,7 +15,13 @@
 		              Then, per kingdom with queued G13.3 events (sendKingdomEvent), one more buffer
 		              with the same serverTime, fired only to that kingdom's current members
 		              (match:kingdomOf(userId)); never to other kingdoms or spectators.
-		Sim.GetEntities  every live entity as EventCodec "full" records (spawn + current state).
+		Sim.GetEntities(afterId?) -> (buffer, nextAfterId?)
+		              every live entity as EventCodec "full" records (spawn + current state), in pages
+		              of at most Def.PAGE_MAX records by ascending id so each buffer stays within G4's
+		              900 B (FL-0109, #61 low): the page holds the entities with id > afterId (0 or nil:
+		              from the start); nextAfterId is the last id on the page when more follow, else nil.
+		              The client asks again with it until nil. Pages are read live, so an entity spawned
+		              or despawned meanwhile is covered by Sim.Events (G4 client rules).
 	serverTime on both = seconds since Founding began (Match.State startedAtServerTime).
 
 	API (G4)
@@ -50,6 +56,12 @@ local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SnapshotCodec = require("@game/ReplicatedStorage/Game/Sim/SnapshotCodec")
+
+-- Only a validated CitizenLook goes on the wire (FL-0109, #61 low): exactly the four G13.2 fields, each a
+-- palette index (Kit.normalizeLook), whatever the profile holds; nil (no look) stays nil.
+local function wireLook(look: any): any
+	return if look == nil then nil else Kit.normalizeLook(look)
+end
 
 local EntityService = {}
 EntityService.__index = EntityService
@@ -98,6 +110,7 @@ local function registerDebugCommands()
 end
 
 Def.SNAPSHOT_HZ = 10
+Def.PAGE_MAX = 49 -- Sim.GetEntities records per page: 6 B header + 49 x 18 B "full" records = 888 B <= 900 B
 Def.REFRESH_EVERY = 10 -- snapshot ticks between round-robin refreshes of a still entity (~1 s)
 Def.LOG_EVERY = 30
 Def.WINDOW = 300 -- samples kept for the p99 figures
@@ -136,8 +149,8 @@ function Def.new(env: any, registry: any)
 	self._running = false
 	self._deferred = nil :: { any }? -- signals of the tick being encoded, fired once it has encoded
 	self._warned = {} :: { [string]: boolean } -- warnings given this world (ids, offMap)
-	self._remotes:handle("Sim.GetEntities", function(_player: any)
-		return self:_fullState()
+	self._remotes:handle("Sim.GetEntities", function(_player: any, afterId: number?)
+		return self:_fullState(afterId)
 	end)
 	return self
 end
@@ -197,10 +210,20 @@ function EntityService:_emit(signal: any, ...: any)
 	end
 end
 
-function EntityService:_fullState(): buffer
+-- One Sim.GetEntities page: the live entities with id > afterId, ascending, at most PAGE_MAX of them,
+-- and the id to ask after for the next page (nil on the last one).
+function EntityService:_fullState(afterId: number?): (buffer, number?)
 	local frame = self:_replicable()
-	local events = {}
+	local after = afterId or 0
+	local records = {} -- ascending ids: Replication sorts the frame
 	for _, r in frame.records do
+		if r.id > after then
+			table.insert(records, r)
+		end
+	end
+	local events = {}
+	for i = 1, math.min(#records, Def.PAGE_MAX) do
+		local r = records[i]
 		local who = frame.identity[r.id]
 		table.insert(events, {
 			type = "full",
@@ -208,7 +231,7 @@ function EntityService:_fullState(): buffer
 			kind = who.kind,
 			job = who.job,
 			kingdom = who.kingdom,
-			look = who.look,
+			look = wireLook(who.look),
 			x = r.x,
 			y = r.y,
 			z = r.z,
@@ -217,7 +240,8 @@ function EntityService:_fullState(): buffer
 			carrying = r.carrying,
 		})
 	end
-	return EventCodec.encode(self:_serverTime(), events)
+	local nextAfter = if #records > Def.PAGE_MAX then records[Def.PAGE_MAX].id else nil
+	return EventCodec.encode(self:_serverTime(), events), nextAfter
 end
 
 function EntityService:start()
@@ -383,10 +407,14 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 	for _, id in ids do
 		local now, before = identity[id], self._known[id]
 		if before == nil then
-			table.insert(
-				events,
-				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
-			)
+			table.insert(events, {
+				type = "spawn",
+				id = id,
+				kind = now.kind,
+				job = now.job,
+				kingdom = now.kingdom,
+				look = wireLook(now.look),
+			})
 			self:_emit(self.spawned, id)
 		elseif before.job ~= now.job then
 			table.insert(events, { type = "job", id = id, job = now.job })
@@ -399,10 +427,14 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 		local now, before = identity[id], self._known[id]
 		-- (the same profile.look table every tick unless a reseed replaced it: compared by key only then)
 		if before ~= nil and before.look ~= now.look and Kit.lookKey(before.look) ~= Kit.lookKey(now.look) then
-			table.insert(
-				events,
-				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
-			)
+			table.insert(events, {
+				type = "spawn",
+				id = id,
+				kind = now.kind,
+				job = now.job,
+				kingdom = now.kingdom,
+				look = wireLook(now.look),
+			})
 		end
 	end
 	local gone = {}
