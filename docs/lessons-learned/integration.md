@@ -103,6 +103,12 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   suite, under GC pressure). Key test registries strongly and reset them per test. · FORGE-03 #25:
   `Create.useTestConnector` weak keys made `KingdomUI.spec` fail 2 of 3 full runs; strong keys gave
   6/6 · `observed-once`
+- 2026-10-15 · A gate piped into `tail` can't stop a push: in `check_ownership.py … | tail -1 && git push`, the
+  `&&` sees `tail`'s exit code (0), so the push runs even when the gate prints FAIL. Capture the gate's own
+  status (`gate > log; rc=$?; tail -1 log; [ $rc -eq 0 ] && git push`) or use `set -o pipefail`. Also: the
+  `task-status` exception allows front matter and Log appends only, so ticking a completion box in
+  another owner's task file fails G8. · Bookkeeping 4d1dd69 pushed with ownership FAIL (an FL-0101
+  checkbox); forward-fixed in e3a1af8 · `observed-once`
 
 ## Mock change log (FL-0028)
 - 2026-10-12 FL-0003 (FORGE-00 skeleton): first versions of MockEnv, MockDataStoreService,

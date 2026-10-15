@@ -254,7 +254,9 @@ after B7; B7 says "…Upgrade it").
    - Every way out (Done, Close/X before answering, gamepad B or Backspace once #130 is in) brings the camera back to where
      it was, in the same view (aerial or behind the ruler). Closing before answering keeps the bubble, and
      Talk again shows the **same** question.
-   - Screenshots **D4** (stage with portrait and choices), **D5** (reaction and chips), **D6** (camera after closing).
+   - Phone: **Test → Device** (emulator) → a phone, landscape: the stage fits the screen, the choices are
+     tappable and nothing is cut off. Screenshot **D7**.
+   - Screenshots **D4** (stage with portrait and choices), **D5** (reaction and chips), **D6** (camera after closing), **D7** (phone).
 
 **Pass:** a real request, 2–4 choices, a reaction and at least three visible consequences.
 
@@ -298,6 +300,6 @@ VS-1 playtest — date, build (B<n> / artifact / local), BuildInfo sha: <sha>
 6 Citizen card: ...   7 Economy: ...   8 Build: ...   9 Recruit+capture: ...   10 HUD+reputation: ...
 11 Conversation: ...   12 Onboarding: ...   M1: ...   M2: ...   (SKIPPED (waiting) where marked)
 WorldService ready ms: <ms>   FPS flying: <fps>   Perf: Main activity <x>%, FPS <y>
-Screenshots: W1 W2 W3 R1 R2 K1 C1 C2 B1 B2 O1 O2 O3 H1 H2 D1 D2 D3 D4 D5 D6 (attached)
+Screenshots: W1 W2 W3 R1 R2 K1 C1 C2 B1 B2 O1 O2 O3 H1 H2 D1 D2 D3 D4 D5 D6 D7 (attached)
 <Output lines and any FAIL text from the debug panel>
 ```

@@ -20,6 +20,8 @@
 - **Real input first.** For the conversation flow, use `user_mouse_input` and `user_keyboard_input` like a player would. `execute_luau` is only for presets, reading state and measuring.
 
 ## Setup
+**Build:** B14 = main `3691475` (BuildInfo sha `369147563493…`).
+
 1. **Get the build.** Use the `AIKingdoms-B14-<sha>.rbxl` FORGE-00 sends, or the CI artifact `forgeloop-game001-<sha>`: GitHub → ForgeLoop → Actions → the CI run on that `main` sha → Artifacts. Studio → **File → Open from File…**.
 2. **Check the sha.** `get_studio_state` shows Edit mode. Then `execute_luau` (Edit): `return require(game.ReplicatedStorage.Forge.BuildInfo).sha`. Note the sha. (If BuildInfo is a ModuleScript elsewhere, use `search_game_tree` with the keyword `BuildInfo`.)
 3. **Start play.** `start_stop_play` → start. Wait 10 s.
@@ -41,7 +43,7 @@
 ## B. Cinematic conversation — the B14 feature
 | ID | Check | Pass |
 |---|---|---|
-| B1 | Run preset `vs1.request`; wait up to 10 s; `search_game_tree` for `ForgeCitizenBubble`; `screen_capture` at the default aerial zoom | a citizen shows a request bubble; screenshot `B14-B1.png`. Also note **how easy the bubble is to see at this zoom** (baseline for D-048 item 5). |
+| B1 | (If `vs1.request` answers "no citizen … can raise any", let the kingdom gather for 2–3 minutes first. Every request needs stock, e.g. 120 wood; see STUDIO_PLAYTEST §11.) Run preset `vs1.request`; wait up to 10 s; `search_game_tree` for `ForgeCitizenBubble`; `screen_capture` at the default aerial zoom | a citizen shows a request bubble; screenshot `B14-B1.png`. Also note **how easy the bubble is to see at this zoom** (baseline for D-048 item 5). |
 | B2 | Record the camera, `execute_luau` (Client): `local c = workspace.CurrentCamera return tostring(c.CFrame), c.FieldOfView`. Then click that citizen with `user_mouse_input`, aiming at the citizen model or bubble, and press **Talk** on the card | the camera glides to the citizen's face. The screen dims behind the stage, a 3D portrait of **that** citizen rises (same skin, hair and outfit as the rig), and a speech bubble shows the question. You see 2–4 choices, each with its cost and any risk with its chance. `B14-B2.png` |
 | B3 | Read the question and choices | real content: no ids such as `decision_…`, no `TODO`, no empty buttons. Copy the question text and choice labels. |
 | B4 | Do nothing for 20 s, then `screen_capture` | the citizen stays where they stopped, **facing your ruler**, and doesn't walk off. `B14-B4.png` |

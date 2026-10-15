@@ -40,7 +40,10 @@
 		hud:setSheet(menu, on?)             this menu is a wide sheet on phones (the conversation):
 		hud:sheetOpen(metrics?) -> boolean  while one is open on a phone, toasts sit above it (one
 		                                    at a time) and the reputation strip is under it
-		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
+		hud:metrics() -> Layout Metrics     hud.roots.{backdrop, hud, menus, modals, notices}
+		                                    backdrop: the whole device (ScreenInsets None, not clipped
+		                                    to the safe area), just under the menus: the cinematic
+		                                    conversation's dim band (FL-0099) reaches past a notch
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
 		hud:changeJob(jobId, delta)         Kingdom panel "Jobs" (FL-0065): asks Kingdom.SetJobQuota for
@@ -158,6 +161,8 @@ end
 
 function KingdomHudController:mount(parent: Instance)
 	local g = self.guis
+	g.backdrop = screenGui("KingdomBackdrop", 19, Enum.ScreenInsets.None)
+	g.backdrop.ClipToDeviceSafeArea = false
 	g.hud = screenGui("KingdomHUD", 10, Enum.ScreenInsets.CoreUISafeInsets)
 	g.topbar = screenGui("KingdomTopbar", 11, Enum.ScreenInsets.TopbarSafeInsets)
 	g.menus = screenGui("KingdomMenus", 20, Enum.ScreenInsets.CoreUISafeInsets)
@@ -166,7 +171,7 @@ function KingdomHudController:mount(parent: Instance)
 	g.modals.Enabled = true
 	g.notices.Enabled = true
 	self._scales = {}
-	for _, key in { "hud", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "menus", "modals", "notices" } do
 		self.roots[key], self._scales[key] = scaledRoot(g[key])
 	end
 	self._probe = Create("Frame", {
@@ -181,7 +186,7 @@ function KingdomHudController:mount(parent: Instance)
 	end
 	self.panel = KingdomPanel.new(self.roots.menus)
 	self.toasts = ToastStack.new(self.roots.notices, self._motion)
-	for _, key in { "hud", "topbar", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "topbar", "menus", "modals", "notices" } do
 		g[key].Parent = parent
 	end
 	self._mounted = true
@@ -754,7 +759,7 @@ function KingdomHudController:render()
 		return
 	end
 	local m = self:metrics()
-	for _, key in { "hud", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "menus", "modals", "notices" } do
 		self._scales[key].Scale = m.scale
 		self.roots[key].Size = UDim2.fromScale(1 / m.scale, 1 / m.scale)
 	end
@@ -765,6 +770,7 @@ function KingdomHudController:render()
 	self.guis.hud.Enabled = active
 	self.guis.topbar.Enabled = active
 	self.guis.menus.Enabled = active
+	self.guis.backdrop.Enabled = active
 	if not active and s.menu ~= nil then
 		s.menu = nil
 		self.menuChanged:fire(nil)

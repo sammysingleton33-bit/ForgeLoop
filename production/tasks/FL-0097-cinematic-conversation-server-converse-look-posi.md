@@ -7,12 +7,13 @@ status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: [FL-0079]
 context: [games/game-001/CONTRACTS.md, games/game-001/design/living-kingdom.md, DECISIONS.md, games/game-001/content/SPEC.md]
 estimate_h: 3
 evidence:
   - check.sh OVERALL PASS; ConversationService 31/0 specs incl. hold start, timeout, EndConversation, Choose release, wrong-kingdom and co-ruler refusals; mutations 12/12 caught; Studio unverified (FL-0101)
+  - "B14 gates: check.sh PASS (game-001 1304/0), validate 111/0, E2E probe 9/9; main 3691475"
 ---
 
 # Cinematic conversation server: Converse look/position, conversation hold, EndConversation (G13.8)
@@ -46,3 +47,4 @@ When the ruler opens a conversation, the server tells the client who the citizen
 - 2026-10-13 forge-01: READY → BUILDING. Hold, EndConversation, Choose release, co-ruler refusal, G13.8 payload
 - 2026-10-13 forge-01: BUILDING → TESTING. ConversationService specs 31; mutations 12/12
 - 2026-10-13 forge-01: TESTING → REVIEW. G13.8 server: Converse adds look/job/position/kingdom; citizen held (Talk, facing the ruler, Society.conversationHoldSec 30); Kingdom.EndConversation; released 4 s after Choose; co-ruler gets nil; emergency releases
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #108 (787f24e, g9f head cef7c48) in the B14 set; own g9f mutants 4/4; only G6 (B14 checklist B4/B6, D1/D2) left; follow-up: debugRequest named scenario ignores occupation
