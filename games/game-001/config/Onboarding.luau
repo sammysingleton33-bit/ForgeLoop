@@ -75,7 +75,9 @@ return table.freeze({
 					trigger = { bus = "BuildingPlaced", match = { placedBy = true } },
 					hint = {
 						title = "Build on a free plot",
-						body = "Tap a plot marker, choose a House or a Farm, then confirm.",
+						body = "Tap the marked plot, choose a House, then confirm.",
+						-- the marked plot is the one nearest the ruler, a small one: a House fits, a Farm does not
+						-- (OnboardingTargets.spec); any building still completes the step
 						target = { kind = "world", tag = "BuildSlot" }, -- Build.PlaceSlot is served (FL-0081)
 					},
 					expectSec = 50,

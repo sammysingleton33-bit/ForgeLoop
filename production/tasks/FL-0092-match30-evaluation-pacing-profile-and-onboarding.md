@@ -7,7 +7,7 @@ status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 3
@@ -57,3 +57,4 @@ Pacing spec covers the `match30` totals. Onboarding specs cover the step trigger
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW at merge of #45 (FORGE-05, D-038 (5); --force because the status stays REVIEW): merged under the D-040 fallback verdict. Remaining: AnswerCitizen/Recruit/Capture steps go live with #77/#70; match30 not played (FORGE-01 chooses the mode); then G6 (experience.md E6).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FL-0081 on main (FORGE-05 B7 follow-ups): BuildOnPlot hint back to the BuildSlot plot markers (Build.PlaceSlot served); Recruit hint targets HUD.ArmyButton (nothing set HUD.Recruit); E6 steps follow. PR from forge/04-experience-fl0081.
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #99 (d887beb, FORGE-05 D-040 fallback verdict on e240077; star by FORGE-00 for B9): #45 M1 closed: BuildOnPlot hint on the BuildSlot markers, Recruit hint on HUD.ArmyButton. REVIEW, only G6 pending (STUDIO_PLAYTEST row 12).
+- 2026-10-15 forge-04: REVIEW → REVIEW. Hint targets (FORGE-00's #140 ask): OnboardingTargets.spec - world hints name a checked tag (BuildSlot, ObjectiveZone), never a position; the marker nearest each kingdom's spawn is its own small slot, which offers a House (Fit.typesFor) and the server takes it at every turn that fits. A Farm does not fit there, so BuildOnPlot now says 'Tap the marked plot, choose a House, then confirm.' (EXPERIENCE §2, E6 step 4). Passes on main and on main + #140 (no-build areas live). FL-0092 mutations 24/24. The no-build-area check of the markers and the objective joins after #140 merges.

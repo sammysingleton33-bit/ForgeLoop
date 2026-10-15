@@ -26,4 +26,6 @@ M = [
  ("FL-0092", S+"OnboardingService.luau", 'if not isPlayer(player) or player.Parent == nil then', 'if not isPlayer(player) then', "Onboarding", "a start event for a player who already left keeps no state", "fw"),
  ("FL-0092", G+"config/Onboarding.luau", 'target = { kind = "world", tag = "BuildSlot" }, -- Build.PlaceSlot', 'target = { kind = "ui", name = "HUD.BuildButton" }, -- Build.PlaceSlot', "Onboarding", "client-reported steps grant nothing and are whitelisted", "game"),
  ("FL-0092", G+"config/Onboarding.luau", 'name = "HUD.ArmyButton" }', 'name = "HUD.Recruit" }', "Onboarding", "client-reported steps grant nothing and are whitelisted", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", 'target = { kind = "world", tag = "BuildSlot" }', 'target = { kind = "world", tag = "BuildSlot", position = Vector3.zero }', "OnboardingTargets", "world hints name a checked tag and never a fixed position", "game"),
+ ("FL-0092", G+"config/Onboarding.luau", 'target = { kind = "world", tag = "ObjectiveZone" }', 'target = { kind = "world", tag = "PlotRoad" }', "OnboardingTargets", "world hints name a checked tag and never a fixed position", "game"),
 ]
