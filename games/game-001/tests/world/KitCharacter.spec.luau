@@ -386,7 +386,7 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 	end)
 
 	it("puts joint pivots at the hips, neck and shoulders, with axis-aligned joint frames", function()
-		each(function(_, _, rig)
+		each(function(kind, job, rig)
 			for _, m in rig:GetDescendants() do
 				if m:IsA("Motor6D") then
 					local j = jointWorld(m)
@@ -407,7 +407,12 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 				local shoulder = jointWorld(motorOf(rig, `{side}Arm`)).Position
 				expect(shoulder.Y).toBeGreaterThan(torsoTop.Y - 0.6)
 				expect(shoulder.Y).toBeLessThan(torsoTop.Y)
-				expect(math.abs(shoulder.X)).toBeNear(torso.Size.X / 2, 1e-3)
+				-- the arm pivots sit outside the torso's side (the cheer swings the arm about its own centre line, B18);
+				-- the soldier's wider helm needs a little more
+				local out = if kind ~= "governor" and (kind == "soldier" or job == "soldier")
+					then Character.SHOULDER_OUT_SOLDIER
+					else Character.SHOULDER_OUT
+				expect(math.abs(shoulder.X)).toBeNear(torso.Size.X / 2 + out, 1e-3)
 			end
 			local neck = jointWorld(motorOf(rig, "Head")).Position
 			expect(neck.Y).toBeNear(torsoTop.Y, 1e-3)
@@ -1067,6 +1072,119 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 			expect(minGap).toBeGreaterThanOrEqual(0.1)
 		end
 	end)
+
+	-- signed distance from a world point to a part's box: > 0 outside, <= 0 inside (depth to the nearest face)
+	local function boxSigned(p: BasePart, cf: CFrame, w: Vector3): number
+		local l = cf:PointToObjectSpace(w)
+		local h = p.Size / 2
+		local q = Vector3.new(math.abs(l.X) - h.X, math.abs(l.Y) - h.Y, math.abs(l.Z) - h.Z)
+		local outside = Vector3.new(math.max(q.X, 0), math.max(q.Y, 0), math.max(q.Z, 0)).Magnitude
+		if outside > 0 then
+			return outside
+		end
+		return math.max(q.X, q.Y, q.Z)
+	end
+
+	-- points on the head's surface (a ball: a lat-long grid; the soldier's helm is a box: a grid on its faces)
+	local function headSurface(head: BasePart, cf: CFrame): { Vector3 }
+		local out = {}
+		if head:IsA("Part") and head.Shape == Enum.PartType.Ball then
+			local r = head.Size.X / 2
+			for i = 0, 11 do
+				local phi = math.pi * (i + 0.5) / 12
+				for j = 0, 23 do
+					local th = 2 * math.pi * j / 24
+					table.insert(
+						out,
+						cf
+							* Vector3.new(
+								r * math.sin(phi) * math.cos(th),
+								r * math.cos(phi),
+								r * math.sin(phi) * math.sin(th)
+							)
+					)
+				end
+			end
+		else
+			local h = head.Size / 2
+			for ix = -4, 4 do
+				for iy = -4, 4 do
+					for iz = -4, 4 do
+						if math.abs(ix) == 4 or math.abs(iy) == 4 or math.abs(iz) == 4 then
+							table.insert(out, cf * Vector3.new(ix / 4 * h.X, iy / 4 * h.Y, iz / 4 * h.Z))
+						end
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	it(
+		"keeps both arms clear of the head in every pose, the arms-up cheer included (the pivots sit outside the torso)",
+		function()
+			local rigs = {
+				{ "citizen", "farmer" },
+				{ "citizen", "woodcutter" },
+				{ "citizen", "miner" },
+				{ "citizen", "builder" },
+				{ "citizen", "hauler" },
+				{ "citizen", "idle" },
+				{ "soldier", "soldier" },
+				{ "governor", "idle" },
+			}
+			for _, r in rigs do
+				local rig = Kit.character(r[1], r[2], AZURE)
+				local head = child(rig, "Head")
+				local arms = { child(rig, "LeftArm"), child(rig, "RightArm") }
+				for _, action in { "celebrate", "idle", "walk", "work", "carry", "fight", "flee" } do
+					local minGap = math.huge
+					for _, speed in { 0, 6, 12 } do
+						for i = 0, 11 do
+							local w = posed(rig, Pose.sample(action, r[2], i / 12, speed))
+							local points = headSurface(head, w[head])
+							for _, arm in arms do
+								for _, p in points do
+									minGap = math.min(minGap, boxSigned(arm, w[arm], p))
+								end
+							end
+						end
+					end
+					-- before the pivots moved out the raised arm sank 0.10-0.32 studs into the head in the cheer
+					expect(`{r[1]}/{r[2]} {action} {minGap >= (if action == "celebrate" then 0.3 else 0.2)}`).toBe(
+						`{r[1]}/{r[2]} {action} true`
+					)
+				end
+			end
+		end
+	)
+
+	it(
+		"moves only the arm pivots: the arms hang exactly where they did at rest, flush against the torso's sides",
+		function()
+			-- FORGE-01's pose analysis (#166): about 0.4 studs for a citizen, 0.5-0.6 for the soldier's wider helm
+			expect(Character.SHOULDER_OUT).toBeGreaterThanOrEqual(0.4)
+			expect(Character.SHOULDER_OUT_SOLDIER).toBeGreaterThanOrEqual(0.5)
+			expect(Character.SHOULDER_OUT_SOLDIER).toBeLessThanOrEqual(0.6)
+			each(function(kind, job, rig)
+				local torso = child(rig, "Torso")
+				for _, side in { "Left", "Right" } do
+					local arm = child(rig, `{side}Arm`)
+					-- the arm's inner top edge is the torso's side (a 0.02 stud seam), whatever the pivot
+					local pivot = jointWorld(motorOf(rig, `{side}Arm`)).Position
+					local sign = if side == "Left" then -1 else 1
+					local top = arm.CFrame * Vector3.new(-sign * arm.Size.X / 2, arm.Size.Y / 2, 0)
+					expect(math.abs(top.X) - torso.Size.X / 2).toBeLessThan(0.1)
+					expect(math.abs(top.X) - torso.Size.X / 2).toBeGreaterThan(-0.05)
+					-- and the pivot is outside it, by the kind's amount
+					local out = if kind ~= "governor" and (kind == "soldier" or job == "soldier")
+						then Character.SHOULDER_OUT_SOLDIER
+						else Character.SHOULDER_OUT
+					expect(math.abs(pivot.X) - torso.Size.X / 2).toBeNear(out, 1e-3)
+				end
+			end)
+		end
+	)
 end)
 
 describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", function()
