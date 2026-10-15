@@ -3,7 +3,7 @@ id: FL-0117
 title: "Environment polish: organic trees, rocks, resource nodes and crop rows within the part budget (B15 art where ready)"
 track: asset
 owner: forge-02
-status: TESTING
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-15
@@ -13,6 +13,7 @@ evidence:
   - "bash roblox/scripts/check.sh: OVERALL PASS (game-001 1335 passed)"
   - games/game-001/tests/world/KitProps.spec.luau
   - games/game-001/art/reviews/kit-architecture.md (Environment props polish)
+  - check.sh OVERALL PASS (game-001 1354/0) after merging main; KitProps.spec 26 tests, 28 mutations caught; renders env_polish_*.jpg looked at; fresh D-019 review appended to kit-architecture.md (NEEDS-WORK)
 ---
 
 # Environment polish: organic trees, rocks, resource nodes and crop rows within the part budget (B15 art where ready)
@@ -45,3 +46,4 @@ Visual: D-019 contact sheets plus in-world renders at the aerial and throne dist
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
 - 2026-10-15 forge-02: READY → BUILDING. Started: Props.luau art pass (trees, bushes/flowers, boulders, nodes, crop field/fence/haystack) in worktree env-polish.
 - 2026-10-15 forge-02: BUILDING → TESTING. Props polished, uncommitted on forge/02-blender-env-polish. Headless: check.sh OVERALL PASS, KitProps.spec 26 tests, 28/28 mutations caught. Renders in games/game-001/art/reviews/img/env_polish_*.jpg (round logged in kit-architecture.md). Not yet: fresh-reviewer D-019, Studio look (G6), PR.
+- 2026-10-15 forge-02: TESTING → REVIEW. Fresh-context D-019 round 1: visible improvement but NOT a pass (trees 4/3/4, rocks/nodes, wheat 2, cabbage OK). Opened as a B15 star PR for the visible improvement; round 2 (oak variety, boulders, ore forms, flowers, wheat stalks) follows.
