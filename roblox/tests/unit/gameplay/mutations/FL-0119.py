@@ -36,7 +36,8 @@ M = [
  # --- drop-offs settle
  ("FL-0119", SIM, 'b.settleUntil = self.time + self.catalog.tuning.moveSettle', 'b.settleUntil = nil', "BuildingMove", "a moved lumber camp settles"),
  ("FL-0119", SIM, 'def.dropoff and accepts and not settling then', 'def.dropoff and accepts then', "BuildingMoveExploits", "drop-off chasing"),
- ("FL-0119", SIM, 'if stats.gatherBonus and not settling then', 'if stats.gatherBonus then', "BuildingMove", "a moved lumber camp settles"),
+ ("FL-0119", SIM, 'if stats.gatherBonus and not b.burning and not settling then', 'if stats.gatherBonus and not b.burning then', "BuildingMove", "a moved lumber camp settles"),
+ ("FL-0119", SIM, 'accepts and not settling then', 'accepts then', "BuildingMove", "a moved lumber camp settles"),
  ("FL-0119", SIM, 'b.settleUntil == nil or self.time >= b.settleUntil then', 'b.settleUntil == nil or false then', "BuildingMove", "a moved lumber camp settles"),
  # --- war lockout and damage stamp
  ("FL-0119", G + "src/shared/Sim/Diplomacy.luau", '		lockMoves(s, kingdom, target)\n', '', "BuildingMoveExploits", "peacetime trap"),

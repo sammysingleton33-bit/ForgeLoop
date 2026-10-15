@@ -7,8 +7,8 @@ SIM = G + "src/shared/Sim/Simulation.luau"
 CONS = G + "src/server/Services/ConsequenceService.luau"
 M = [
  # --- burning halts production
- ("FL-0082", SIM, 'for _, resource in if stats.gatherBonus and not b.burning then', 'for _, resource in if stats.gatherBonus then', "BurningBuildings", "takes no deliveries and gives no gather bonus"),
- ("FL-0082", SIM, 'if not b.destroyed and not b.burning and b.level >= 1 and def.dropoff and accepts then', 'if not b.destroyed and b.level >= 1 and def.dropoff and accepts then', "BurningBuildings", "takes no deliveries and gives no gather bonus"),
+ ("FL-0082", SIM, 'for _, resource in if stats.gatherBonus and not b.burning and not settling then', 'for _, resource in if stats.gatherBonus and not settling then', "BurningBuildings", "takes no deliveries and gives no gather bonus"),
+ ("FL-0082", SIM, 'if not b.destroyed and not b.burning and b.level >= 1 and def.dropoff and accepts and not settling then', 'if not b.destroyed and b.level >= 1 and def.dropoff and accepts and not settling then', "BurningBuildings", "takes no deliveries and gives no gather bonus"),
  ("FL-0082", SIM, 'if b.pendingLevel ~= nil and not b.destroyed and not b.burning and self:_freeSlot(b, "site", citizen) then', 'if b.pendingLevel ~= nil and not b.destroyed and self:_freeSlot(b, "site", citizen) then', "BurningBuildings", "offers no farm or build work"),
  ("FL-0082", SIM, '				and not b.burning\n', '', "BurningBuildings", "offers no farm or build work"),
  ("FL-0082", SIM, 'if c.target == b.id and (c.activity == "Farm" or c.activity == "Build") then', 'if false then', "BurningBuildings", "stop at once and choose again"),
