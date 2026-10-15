@@ -12,6 +12,7 @@ depends_on: [FL-0119, FL-0114]
 evidence:
   - games/game-001/tests/economy/Move.spec.luau 9/0; mutations 21/21; renders in games/game-001/design/ui/REVIEW-placement.md
   - "PR #148: Move.spec 9/0, mutations 21/21, check.sh PASS game-001 1372/0"
+  - check.sh OVERALL PASS after merging main 100e340 (game-001 1441/0, lune 528/0); Move.spec 11/11; mutations FL-0120.py 28/28 CAUGHT; ownership PASS
 ---
 
 # Base editing phase 1, UI: Move button, edit-mode ghost, slot snap with Turn (B16)
@@ -43,3 +44,4 @@ Automated: specs and mutations; renders at three screen sizes. Studio: the B16 c
 - 2026-10-15 forge-03: READY → BUILDING. Move in the building panel, move ghost (CanMove tint, Turn), plot snap with MoveToSlot, dimmed original, cooldown, wording
 - 2026-10-15 forge-03: BUILDING → TESTING. Specs, mutations and renders done; Studio after #140
 - 2026-10-15 forge-03: TESTING → REVIEW. PR #148 (stacked on #139); dormant until FORGE-01's #140 serves Build.Move
+- 2026-10-15 forge-03: REVIEW → REVIEW. Evidence refresh, still REVIEW: FORGE-07 #148 review fixed (B1 taps keep the move, M1 own-plot turn, L3 no-op move, L5 Click moves, L4 mutation rows committed)
