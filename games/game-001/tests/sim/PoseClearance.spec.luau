@@ -310,6 +310,100 @@ local function check(rig: { string }, action: string)
 	end
 end
 
+-- Both arms against the Head over one action's cycle (the idle citizen and the hauler have no tool, so their rigs
+-- are not in RIGS, but their arms are raised in the cheer as well).
+local ARM_RIGS = {
+	{ "citizen", "idle" },
+	{ "citizen", "hauler" },
+	{ "citizen", "farmer" },
+	{ "citizen", "woodcutter" },
+	{ "citizen", "miner" },
+	{ "citizen", "builder" },
+	{ "soldier", "soldier" },
+	{ "governor", "governor" },
+}
+
+-- `override`, when given, rewrites the sampled joints at each step (s = the cycle's sine): used to rebuild the cheer
+-- as it was before the arms were pulled out, as the yardstick of the ratchet below
+local function armsWorst(
+	kind: string,
+	job: string,
+	action: string,
+	override: ((joints: { [string]: CFrame }, s: number) -> ())?
+): number
+	local rig = Kit.character(kind, job, CRIMSON, nil, if kind == "soldier" then "crimson" else nil) :: Model
+	local head = rig:FindFirstChild("Head") :: BasePart
+	local arms = { rig:FindFirstChild("LeftArm") :: BasePart, rig:FindFirstChild("RightArm") :: BasePart }
+	local low = math.huge
+	local joints: { [string]: CFrame } = {}
+	for i = 0, STEPS - 1 do
+		Pose.sample(
+			action,
+			job,
+			i / STEPS,
+			if action == "walk" or action == "carry" or action == "flee" then 12 else 0,
+			joints
+		)
+		if override then
+			override(joints, math.sin(2 * math.pi * i / STEPS))
+		end
+		local world = posed(rig, joints)
+		for _, arm in arms do
+			low = math.min(low, clearance(arm, world[arm], head, world[head]))
+		end
+	end
+	return low
+end
+
+-- The cheer before the arms were pulled out: both free arms at 140 +- 10 degrees (the tool arm of a tool job stays
+-- as sampled). On main's Kit its raised arm sank up to 0.24 studs into the head (FORGE-05, B18 finding).
+local function oldCheer(job: string): (joints: { [string]: CFrame }, s: number) -> ()
+	return function(joints, s)
+		local raise = 140 + 10 * s
+		joints.LeftArm = CFrame.Angles(0, 0, math.rad(-raise))
+		if job == "idle" or job == "hauler" then
+			joints.RightArm = CFrame.Angles(0, 0, math.rad(raise))
+		end
+	end
+end
+
+-- Why this is a ratchet and not a floor of MIN_CLEARANCE: the Kit's shoulders sit so close to the head that any
+-- raised arm (from about 65 degrees up) sinks into it. A cheer at 128 +- 8 degrees halves what 140 +- 10 did on
+-- main's Kit (idle -0.24 -> -0.12, soldier -0.35 -> -0.32), but clearing the head by 0.1 needs the Kit's shoulders
+-- 0.4 studs further out (0.6 for the soldier's wider helm), measured by sliding the arm joints in a probe. That is
+-- FORGE-02's. Until it is done the cheer must stay better than the old one on whatever Kit this runs on; when the
+-- shoulders move, turn the case into `low >= MIN_CLEARANCE`.
+
+describe("Sim/Pose × Kit.character: the arms against the head", function()
+	it("every arm keeps clear of the head in every action but the cheer", function()
+		for _, rig in ARM_RIGS do
+			for _, action in ACTIONS do
+				if action ~= "celebrate" then
+					local low = armsWorst(rig[1], rig[2], action)
+					if low < MIN_CLEARANCE then
+						error(`{rig[1]}/{rig[2]} {action}: arm only {string.format("%.2f", low)} studs from the head`)
+					end
+				end
+			end
+		end
+	end)
+
+	it("the cheer's raised arm sinks less into the head than the old 140-degree cheer did", function()
+		for _, rig in ARM_RIGS do
+			local now = armsWorst(rig[1], rig[2], "celebrate", nil)
+			local before = armsWorst(rig[1], rig[2], "celebrate", oldCheer(rig[2]))
+			if now <= before then
+				error(
+					`{rig[1]}/{rig[2]} celebrate: arm {string.format("%.3f", now)} studs from the head, no better than the old cheer's {string.format(
+						"%.3f",
+						before
+					)}`
+				)
+			end
+		end
+	end)
+end)
+
 local function part(shape: Enum.PartType, size: Vector3): Part
 	local p = Instance.new("Part")
 	p.Shape = shape

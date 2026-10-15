@@ -22,7 +22,7 @@
 		Pose.blend(from, to, alpha, out?)       -- per-joint CFrame:Lerp (e.g. falling into "dead")
 		Pose.workStyle(job): "chop" | "mine" | "hammer" | "harvest" | "generic"
 		Pose.JOINTS, Pose.LIMITS (max rotation per joint, degrees), Pose.WALK_REF_SPEED, Pose.STRIDE
-	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up);
+	Bounds: every rotation stays within Pose.LIMITS. Arms reach 136° (limit 150°) only in "celebrate" (arms up);
 	every other joint and action stays within 90°. Torso lift stays within ±2 studs.
 	Celebrate: both arms up for rigs with nothing in the right fist (idle citizens) or a sack on the back
 	(hauler). Every other job holds the tool arm out from the body (55° + the pump) and tips the tool back and
@@ -191,8 +191,14 @@ local TOOL_CHEER_RAISE = 55
 local TOOL_TIP_BACK = 40
 local TOOL_TIP_OUT = 20
 
+-- The free arm's raise from hanging (degrees) and its pump. 128 +- 8 reaches 136; at 140 +- 10 the raised arm sank up
+-- to 0.24 studs into the head (FORGE-05, B18; tests/sim/PoseClearance.spec arms x Head). Any raise still clips: the
+-- Kit's shoulders sit too close to the head (see the spec), so this only halves it.
+local CHEER_RAISE = 128
+local CHEER_PUMP = 8
+
 local function celebrate(out: Joints, job: string, s: number, c: number)
-	local raise = 140 + 10 * s
+	local raise = CHEER_RAISE + CHEER_PUMP * s
 	out.Torso = torso(0, 0, 0.3 * (1 - c) / 2)
 	out.Head = rx(10)
 	out.LeftArm = rz(-raise)
