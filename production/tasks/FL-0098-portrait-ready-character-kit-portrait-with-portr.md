@@ -3,7 +3,7 @@ id: FL-0098
 title: "Portrait-ready character: Kit.portrait with PortraitFocus (G13.8)"
 track: asset
 owner: forge-02
-status: SPECIFIED
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-13
@@ -11,7 +11,8 @@ updated: 2026-10-13
 depends_on: [FL-0085]
 context: [games/game-001/CONTRACTS.md, games/game-001/design/living-kingdom.md, DECISIONS.md, games/game-001/content/SPEC.md]
 estimate_h: 2
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 946/0) after merging the crest branch; KitPortrait.spec 5 specs over 74 rigs, 10 mutations caught; contact sheet art/reviews/img/kit_portraits.jpg looked at (8 portraits beside their rigs)
 ---
 
 # Portrait-ready character: Kit.portrait with PortraitFocus (G13.8)
@@ -37,3 +38,6 @@ Any citizen or soldier can be shown as a head-and-shoulders portrait that looks 
 
 ## Log
 - 2026-10-13 forge-00: created for cinematic conversations (D-036, CONTRACTS G13.8). After the VS-1 soldier crest; Kit.portrait is additive.
+- 2026-10-13 forge-02: SPECIFIED → READY. Crest PR #81 is up (FORGE-00: start FL-0098 once it is).
+- 2026-10-13 forge-02: READY → BUILDING. Stacked on forge/02-blender-soldier-crest (#81): Kit.portrait reuses Character.luau and the kingdom arg.
+- 2026-10-13 forge-02: BUILDING → REVIEW. Kit.portrait + PortraitFocus + portraitCamera + posePortrait; PR stacked on #81.
