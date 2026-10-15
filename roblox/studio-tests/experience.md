@@ -17,7 +17,8 @@ Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
 3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
 4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel VS1 ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
-5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
+5. With FORGE-01's conversations: answer a citizen's "!" request. One `analytics event ConversationAnswered value=<seconds the request was open> CustomField01=<occupation> CustomField02=<decision> sent=true`, for you only (a co-ruler gets none). It comes from G9 `CitizenAnswered` (FL-0108); asking again without a new request logs nothing.
+6. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 History:
