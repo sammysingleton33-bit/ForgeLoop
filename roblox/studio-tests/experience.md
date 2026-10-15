@@ -411,17 +411,17 @@ Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
 | Rule | Expected |
 |---|---|
 | Entering | **Move** puts input in edit mode. The view is the aerial one (from walk mode it switches to it), and the building you tapped no longer has the gold selection outline |
-| Taps during a move | A tap aims the ghost: on the ground it carries the ghost there, and on one of your free plots the ghost snaps into it. A tap never opens a panel, never ends the move and never moves the camera, even on one of your buildings. Citizens and rivals' buildings or plots are ignored |
+| Taps during a move | Touch: a tap aims the ghost. On the ground it carries the ghost there; on one of your free plots the ghost snaps into it; the bar's **Move here** confirms. Mouse: the ghost follows the pointer, and a left click is **Move here** when the ghost is green (FORGE-03's PlacementInput, the same as placing). A tap or click never opens a panel or moves the camera, even on one of your buildings, and it ends the move only by confirming it. Citizens and rivals' buildings or plots are ignored |
 | No hover | Citizens get no hover outline, and their bubbles take no taps |
-| Camera during a move | Pan (mouse drag, WASD, one-finger drag) and zoom (wheel, pinch) work as usual, so the ghost can be carried to a spot off screen. Q and E don't turn the view, because Q cancels the move and R / Shift+R turn the building. The right mouse button, a two-finger twist and the right stick still turn the view |
+| Camera during a move | The ghost can be carried to a spot off screen. Mouse: pan with WASD or the arrow keys and zoom with the wheel; don't pan with a left drag, because a left press confirms the move. Touch: a one-finger drag pans and pinch zooms; the press only aims, it never confirms. Q and E don't turn the view, because Q cancels the move and R / Shift+R turn the building. The right mouse button, a two-finger twist and the right stick still turn the view |
 | Leaving | Move here (accepted), Cancel, Q, X or gamepad B end the move and edit mode, with nothing moved unless it was accepted. The previous view comes back (walk mode if you were walking), unless you chose a view during the move. Esc opens only Roblox's menu |
 | Parked: drag gesture (FL-0123) | Not in B17; skip and write "parked, FL-0123". These rows apply once the press-and-drag gesture exists: dragging a building never pans the view, and holding the pointer within about 48 px of a screen edge pans that way, faster nearer the edge (`setEditDrag`, edge-pan) |
 
 Steps
 1. Play Solo. Press V to walk. Tap one of your houses, then **Move** in its panel. The view switches to the aerial view, the house has no gold outline, and the ghost appears where the house stands.
-2. Hover a citizen and click one: no outline and no card. Click the ground next to another of your buildings, then click that building: the ghost goes there, no panel opens, the move stays open, and the view doesn't jump to the building.
+2. Hover a citizen: no outline. Move the pointer next to another of your buildings: the ghost follows. Click that building itself (the ghost is red over it, so the click can't move anything): no panel opens, the move stays open, and the view doesn't jump to the building.
 3. Phone emulator: start a move. Tap the ground, then tap one of your free plots. The ghost moves, then snaps into the plot. No "Build here" drawer opens, and the view stays still.
-4. During a move: drag the view, use WASD, and zoom with the wheel. The move stays open. Press E: the view doesn't turn. Right-drag: the view turns.
+4. During a move: pan with WASD and zoom with the wheel. The move stays open. Press E: the view doesn't turn. Right-drag: the view turns, and the move stays open. Phone emulator: a one-finger drag pans, the ghost goes to where the finger first touched, and the move stays open until **Move here**. (A left press confirms on a mouse, so a left drag is not a pan during a move; FORGE-07's #157 M1.)
 5. Confirm with **Move here** on a free spot. After the toast, you are back in walk mode (from step 1) and tapping a citizen opens their card again. Repeat from the aerial view: the aerial view stays.
 6. Start a move, then press X (or gamepad B): the move ends, nothing moved, the house is no longer dimmed, and taps select again. Repeat with Q (FORGE-03's cancel): same. Start a move and press Esc: only Roblox's menu opens.
 7. Drag-gesture rows: write "parked, FL-0123".
@@ -431,3 +431,4 @@ Pass: steps 1–6 hold.
 History:
 - 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).
 - 2026-10-15 FORGE-04: rewritten to the Move flow that B17 ships (D-052 (1)). The drag and edge-pan rows are parked (FL-0123). A selection in edit mode no longer pans the camera (FORGE-07's #148 B1 side effect).
+- 2026-10-15 FORGE-04: on a mouse a left press confirms the move (PlacementInput), so pan with WASD during a move, and step 2 clicks the building, not the ground (FORGE-07's #157 M1).
