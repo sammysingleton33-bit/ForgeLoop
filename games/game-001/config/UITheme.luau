@@ -123,6 +123,7 @@ return table.freeze({
 		wall = { image = "", glyph = "🧱" },
 		gate = { image = "", glyph = "🚪" },
 		rotate = { image = "", glyph = "⟲" }, -- anticlockwise: Turn turns a quarter counter-clockwise seen from above
+		move = { image = "", glyph = "✥" }, -- base editing (FL-0120): pick a building up and set it down elsewhere
 		emblem_crown = { image = "", glyph = "♛" }, -- Emberhold (drawn by UI/Crest unless an image is uploaded)
 		emblem_star = { image = "", glyph = "★" },
 		emblem_oak = { image = "", glyph = "🌳" },

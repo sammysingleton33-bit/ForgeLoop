@@ -26,7 +26,7 @@ _Onboarding v2 (D-030, FL-0092)._ The player rules from the throne in the aerial
 | 0:02–0:20 | "Tap a citizen to see what they think". A tap opens the citizen card: name, job, mood, loyalty | step `InspectCitizen` (client action `CitizenInspected`, sent by InputModeController's selection) |
 | ~0:20 | **First meaningful interaction** (design estimate ≤ 30 s, checked by `Onboarding.validate` on the sum of `expectSec`; real timing from the OnboardingStep logs in playtests) | |
 | 0:20–1:10 | "Build on a free plot", with the plot marker nearest the ruler highlighted. That plot is a small one, so the hint names the House (a Farm needs a larger plot; any building still completes the step). Tap it, pick a House and confirm: a thunk and dust, then builders walk over | step `BuildOnPlot` (G9 `BuildingPlaced`, `placedBy`; BuildSlot tag, `Build.PlaceSlot` FL-0081; `OnboardingTargets.spec`) |
-| 1:10–2:40 | A citizen shows a "!" request bubble. Tap them and choose an answer: the reaction line, the citizen's pose, and the visible consequence (resources, loyalty, a work boost or a strike) | step `AnswerCitizen` (client action `CitizenAnswered` from FORGE-03's panel until G9 `CitizenAnswered`, planned (D-044 (3); FL-0107, FL-0108)); FL-0091 bubbles |
+| 1:10–2:40 | A citizen shows a "!" request bubble. Tap them and choose an answer: the reaction line, the citizen's pose, and the visible consequence (resources, loyalty, a work boost or a strike) | step `AnswerCitizen` (G9 `CitizenAnswered` from ConversationService, credited to the answering ruler; no client report counts (D-044 (3); FL-0107, FL-0108)); FL-0091 bubbles |
 | 2:40–5:10 | Builds a Barracks, then recruits 3 soldiers from the Army rail button: horn and armour rattle at the Rally | step `Recruit` (G9 `UnitsRecruited`; hint target `HUD.ArmyButton`) |
 | 5:10–7:10 | "Send your soldiers to the watchtower"; a capture bar fills; capture sting, tower recolours, border flags, celebration, slice summary | step `Capture` (G9 `ObjectiveCaptured`); `OnboardingCompleted`; announcer |
 
@@ -143,13 +143,13 @@ Proposals for FORGE-00 and the user, **not built**:
 
 ## 8. Analytics (FL-0023 adapter, FL-0063 funnel)
 - Onboarding funnel: Spawn → InspectCitizen → BuildOnPlot → AnswerCitizen → Recruit → Capture (v2), plus `OnboardingStepPassed` for steps the player was moved past;
-- VS1 funnel (BRIEF §13);
+- FirstMatch funnel (BRIEF §13);
 - session start and end with the last activity;
 - match length and outcome;
 - disconnect phase;
 - idle hints.
 
-Attribution: G9 via Feedback/Signals; funnel order (v0.4-g6) via the VS1 `inOrder` rule (FL-0063). Details: `analytics/schemas/events.md`.
+Attribution: G9 via Feedback/Signals; funnel order (v0.4-g6) via the FirstMatch `inOrder` rule (FL-0063). Details: `analytics/schemas/events.md`.
 
 ## 9. Open questions (the user's, BRIEF §16; none is decided here)
 - §16.3: mid-match joiners. Do they get the tutorial if Founding is long past? *Proposal:* yes; they are credited per G9 attribution and the order rule, from the moment they join.

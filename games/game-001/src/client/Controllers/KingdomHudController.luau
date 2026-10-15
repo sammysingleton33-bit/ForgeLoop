@@ -28,6 +28,10 @@
 		hud.rendered: Signal<(metrics)>     fired after every full render
 		hud.menuChanged: Signal<(menu?)>    "build" | "kingdom" | nil
 		hud:setMenu(id?)                    opens a menu (closes the other); the same id again closes it
+		hud:setBackStep(menu, step?)        the back key (gamepad B, Backspace; InputModeController:onBack,
+		                                    #130) while that menu is open: step() -> true when it stepped
+		                                    back inside the panel, else the drawer closes
+		hud:backPressed() -> boolean        what one back press does (true when a drawer took it)
 		hud:setPlacing(on)                  hides the construction chips while the placement bar shows
 		hud:addRailItem({ id, icon, label, target?, order? })   a rail button for another controller's
 		                                    menu (ArmyPanelController: "army"); it calls hud:setMenu(id)
@@ -106,6 +110,8 @@ function Def.new(env: any, registry: any)
 		_railItems = {} :: { any },
 		_stackBottom = nil :: number?,
 		_sheets = {} :: { [string]: boolean },
+		_backSteps = {} :: { [string]: () -> boolean },
+		_releaseBack = nil :: (() -> ())?,
 		_mounted = false,
 		_running = false,
 		_mine = nil :: string?,
@@ -204,6 +210,14 @@ function KingdomHudController:start()
 	local env = self._env
 	local registry = self._registry
 	self._notifications = registry:find("NotificationController")
+	-- the kingdom panel's building detail goes back to the Buildings tab first
+	self:setBackStep("kingdom", function()
+		if self.state.panel.upgradeId == nil then
+			return false
+		end
+		self:back()
+		return true
+	end)
 	self._onboarding = registry:find("OnboardingController")
 	self.remotes = RemoteClient.new(env)
 	self._remoteConnections = {}
@@ -291,6 +305,10 @@ end
 function KingdomHudController:destroy()
 	self._running = false
 	self._destroyed = true
+	if self._releaseBack ~= nil then
+		pcall(self._releaseBack)
+		self._releaseBack = nil
+	end
 	if self._storeConnection then
 		self._storeConnection:disconnect()
 	end
@@ -461,12 +479,53 @@ function KingdomHudController:setMenu(id: string?)
 		id = nil
 	end
 	self.state.menu = id
+	self:_syncBack()
 	if id == "kingdom" then
 		self.state.panel.tab = "overview"
 		self.state.panel.upgradeId = nil
 	end
 	self.menuChanged:fire(id)
 	self:render()
+end
+
+-- The back key (FORGE-04's InputModeController:onBack, #130: gamepad B, Backspace). One handler is
+-- registered while any drawer is open and released when it closes. A press first asks the open
+-- menu's step (registered by its controller: a phone detail goes back to its list, a conversation's
+-- confirm back to its question); a step that returns true took it. Otherwise the drawer closes, the
+-- same as its Close button. One press, one step.
+function KingdomHudController:setBackStep(menu: string, step: (() -> boolean)?)
+	self._backSteps[menu] = step
+end
+
+function KingdomHudController:backPressed(): boolean
+	local menu = self.state.menu
+	if menu == nil then
+		return false
+	end
+	local step = self._backSteps[menu]
+	if step ~= nil then
+		local ok, took = pcall(step)
+		if ok and took == true then
+			return true
+		end
+	end
+	self:setMenu(nil)
+	return true
+end
+
+function KingdomHudController:_syncBack()
+	if self.state.menu ~= nil and self._releaseBack == nil and not self._destroyed then
+		local input = self._registry:find("InputModeController")
+		if input ~= nil and input.onBack ~= nil then
+			self._releaseBack = input:onBack(function()
+				return self:backPressed()
+			end)
+		end
+	elseif self.state.menu == nil and self._releaseBack ~= nil then
+		local release = self._releaseBack
+		self._releaseBack = nil
+		pcall(release)
+	end
 end
 
 -- Undoes addRailItem (a controller that is destroyed takes its rail button with it).

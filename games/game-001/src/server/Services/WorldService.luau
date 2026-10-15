@@ -12,7 +12,9 @@
 	     (invisible parts tagged BuildZone + ZoneId, Kingdom), the objective zone (ObjectiveZone +
 	     ObjectiveId, Radius), plot markers (KingdomPlot + Kingdom) and build slot markers
 	     (Kit.slotMarker; its Root part is tagged BuildSlot + SlotId, Size, Kingdom; G13.5);
-	  4. places props and forests from WorldPlan.props (deterministic), PROPS_PER_FRAME per frame;
+	  4. places props and forests from WorldPlan.props (deterministic), PROPS_PER_FRAME per frame, cleared off the
+	     plots' fields, buildings, slots and roads and thinned by the dressing density knob (world/Layout
+	     features.density, D-047; 1.0 = the untrimmed valley);
 	  5. fires `ready` and logs the build time in ms.
 	It never calls Kit.build: BuildingService and ObjectiveService build buildings (G6, G10).
 	Tags are for visuals and client hints only; the sim reads Layout.
@@ -23,6 +25,7 @@
 		WorldService:getRoot(): Folder?     -- Workspace.World once built
 		WorldService.stats: { ms, terrainOps, props, parts }
 	Test hooks: set `service.terrain` (Kit/Terrain recorder), `service.layout`, `service.dressed`,
+	`service.density` (overrides the layout's dressing knob, e.g. WorldPlan.FULL_DENSITY),
 	`service.voxelsPerFrame` or `service.partsPerFrame` before start().
 	Robustness: start() is idempotent; the build runs under pcall, so `ready` always fires (an error is
 	logged at error level and kept in stats.error); destroy() stops the build at the next frame and removes
@@ -60,6 +63,7 @@ function Def.new(env, _registry)
 		lighting = LightingPreset,
 		stats = { ms = 0, terrainOps = 0, props = 0, parts = 0 },
 		dressed = table.clone(WorldService.DRESSED),
+		density = nil :: { [string]: number }?, -- nil: the layout's knob (features.density)
 		voxelsPerFrame = WorldService.VOXELS_PER_FRAME,
 		partsPerFrame = WorldService.PARTS_PER_FRAME,
 		_started = false,
@@ -248,7 +252,7 @@ function WorldService:_build()
 	local propsFolder = self:_folder("Props", root)
 
 	-- terrain, chunked by voxel budget
-	local ops = WorldPlan.terrainOps(layout)
+	local ops = WorldPlan.terrainOps(layout, self.density)
 	local budget = 0
 	for _, op in ops do
 		local v = WorldPlan.voxels(op)
@@ -344,7 +348,7 @@ function WorldService:_build()
 	self:_wait()
 
 	-- props and forests, deterministic, at most partsPerFrame parts per frame
-	local placements = WorldPlan.props(layout, self.dressed)
+	local placements = WorldPlan.props(layout, self.dressed, self.density)
 	for _, placement in placements do
 		local model = Kit.prop(placement.assetId)
 		placeModel(model, placement.cframe)

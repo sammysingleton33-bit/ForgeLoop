@@ -2,13 +2,14 @@
 
 _Part of the AI Kingdoms analytics taxonomy: `analytics/schemas/events.md` §5 (rules, budget and naming live there). D-038 (7): one file per feature, so PRs for different features never edit the same lines._
 
-How rulers answer their citizens, and how their reputation moves. FORGE-01's services produce both events through `AnalyticsService:event` (interfaces §8); the names and fields are declared in `games/game-001/config/Analytics.luau`.
+How rulers answer their citizens, and how their reputation moves. `ConversationAnswered` comes from G9 `CitizenAnswered` through a track rule (D-044 (3), FL-0108); FORGE-01's ReputationService produces `ReputationShifted` through `AnalyticsService:event` (interfaces §8); the names and fields are declared in `games/game-001/config/Analytics.luau`.
 
 ## Custom events (`LogCustomEvent(player, name, value, customFields)`)
 | Event | Value | CustomField01 | CustomField02 | CustomField03 | Emitted by | Status |
 |---|---|---|---|---|---|---|
-| ConversationAnswered | secondsOpen (how long the request waited) | occupation | decision (the content `farm_key`, e.g. `handout_food`, `firm_ruling`, `threat`) | | FORGE-01's ConversationService when `Kingdom.Choose` succeeds, via `AnalyticsService:event` (interfaces §8). No ids or free text | declared (FL-0063); producer pending FORGE-01 |
+| ConversationAnswered | secondsOpen (how long the request waited) | occupation | decision (the content `farm_key`, e.g. `handout_food`, `firm_ruling`, `threat`) | | AnalyticsService's track rule on G9 `CitizenAnswered` (fired by FORGE-01's ConversationService once per accepted `Kingdom.Choose`, FL-0107), for the answering ruler only; occupation from `CitizenService:inspect` (G13.2) via `Feedback/Signals`. No ids or free text | built (FL-0108) |
 | ReputationShifted | delta (rounded; negative = down) | category (the six of G13.4) | source (`conversation` \| `action`) | phase | FORGE-01's ReputationService, once per category that changed per decision or action. Fear relaxing over time is **not** logged (it would be a stream) | declared (FL-0063); producer pending FORGE-01 |
 
 ## History
 - 2026-10-13 FORGE-04: declared (FL-0063, #64); producers pending FORGE-01 (handoff).
+- 2026-10-15 FORGE-04: ConversationAnswered built from G9 CitizenAnswered (FL-0108, D-044 (3)); ReputationShifted still pending FORGE-01.

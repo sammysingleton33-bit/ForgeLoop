@@ -22,7 +22,8 @@
 		- Zoom: mouse wheel, pinch, or zoomBy(); overview.minZoom..maxZoom studs (≈ 40–220, G13.6)
 		  from the focus. The pitch follows the zoom: flatter close up, steeper far out.
 		- Rotate: Q / E, right-mouse drag, a two-finger twist, or the right stick. Q / E are not bound
-		  in build or edit mode, because FORGE-03's placement and move rotate with Q / R.
+		  in build or edit mode: there FORGE-03's placement and move take Q (cancel) and R / Shift+R
+		  (turn the building), so the view turns with the right mouse button, a twist or the stick.
 		- Bounded to the map: the focus stays inside the Layout regions' box (G10.1) plus a margin.
 		- Streaming: when the focus moves far, the camera asks the server to stream around it
 		  (Player:RequestStreamAroundAsync, throttled; Player.ReplicationFocus is server-only).
@@ -34,8 +35,10 @@
 	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode and base editing
 	("edit", G13.9) always use the overview, and leaving them restores the previous mode unless the
 	player chose one meanwhile.
-	Base editing (G13.9, FL-0121): selecting one of your buildings in edit mode pans to it (focusOn,
-	no glide). setEditDrag(true) while FORGE-03's edit UI drags a building: a mouse drag or one-finger
+	Base editing (G13.9, FL-0121): in B17's Move flow (D-052 (1)) edit mode lasts while a building is
+	being moved, and a tap there aims the ghost, so selections in edit mode never move the camera
+	(FORGE-07's #148 B1 side effect). setEditDrag (parked with the drag gesture, FL-0123: no caller
+	yet) is for FORGE-03's edit UI while it drags a building: a mouse drag or one-finger
 	drag no longer pans; instead, a pointer within EDGE_PIXELS of the screen edge pans toward that
 	edge (faster nearer the edge, at most panSpeed). setEditDrag(false), or leaving edit mode, ends it.
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
@@ -164,25 +167,6 @@ function Def.edgeDirection(pointer: Vector2, viewport: Vector2, band: number): V
 		return 0
 	end
 	return Vector2.new(axis(pointer.X, viewport.X), -axis(pointer.Y, viewport.Y))
-end
-
--- A building's model under Workspace.ForgeKingdoms (WorldView: <kingdom>/Buildings, BuildingId).
-function Def.findBuilding(workspace: any, buildingId: any): any
-	local root = workspace and workspace:FindFirstChild("ForgeKingdoms")
-	if root == nil then
-		return nil
-	end
-	for _, kingdom in root:GetChildren() do
-		local buildings = kingdom:FindFirstChild("Buildings")
-		if buildings then
-			for _, model in buildings:GetChildren() do
-				if model:GetAttribute("BuildingId") == buildingId then
-					return model
-				end
-			end
-		end
-	end
-	return nil
 end
 
 local Controller = {}
@@ -449,14 +433,6 @@ function Controller:start()
 				self:_onInputMode(mode, previous)
 			end)
 		)
-		if self._input.selected ~= nil then
-			track(
-				self._connections,
-				self._input.selected:connect(function(kind, id)
-					self:_onSelected(kind, id)
-				end)
-			)
-		end
 	end
 	if vfx ~= nil and vfx.shakeRequested ~= nil then
 		track(
@@ -727,25 +703,6 @@ function Controller:setEditDrag(active: any): boolean
 		self._panLast = nil
 	end
 	return on
-end
-
--- Edit mode: selecting one of your buildings pans to it (G13.9; InputModeController only selects
--- your own in edit mode).
-function Controller:_onSelected(kind: string, id: any)
-	if kind ~= "building" or self._input == nil or self._input.mode ~= "edit" or self.mode ~= "overview" then
-		return
-	end
-	local ok, position = pcall(function()
-		local model = Def.findBuilding(self._env.Workspace, id)
-		if model == nil then
-			return nil
-		end
-		local primary = model.PrimaryPart
-		return if primary then primary.CFrame.Position else model:GetPivot().Position
-	end)
-	if ok and typeof(position) == "Vector3" then
-		self:focusOn(position)
-	end
 end
 
 function Controller:rotateBy(degrees: number)

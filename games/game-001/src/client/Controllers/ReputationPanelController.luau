@@ -68,6 +68,16 @@ function Def.new(env: any, registry: any)
 end
 
 function ReputationPanelController:start()
+	-- the back key (KingdomHudController:setBackStep): a phone detail goes back to its list first
+	if self.hud.setBackStep ~= nil then
+		self.hud:setBackStep(ReputationPanelController.MENU, function()
+			if self.state.phoneView ~= "detail" or self.hud:metrics().breakpoint ~= "phone" then
+				return false
+			end
+			self:back()
+			return true
+		end)
+	end
 	local env = self._env
 	local hud = self.hud
 	self._connections = {

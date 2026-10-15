@@ -15,23 +15,29 @@ Each section ends with its own **History** (D-038 (7)): a change to one feature 
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
-4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel VS1 ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
-5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
+3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel FirstMatch step=1 stepName=Spawn`.
+4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel FirstMatch ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
+5. With FORGE-01's conversations: answer a citizen's "!" request. One `analytics event ConversationAnswered value=<seconds the request was open> CustomField01=<occupation> CustomField02=<decision> sent=true`, for you only (a co-ruler gets none). It comes from G9 `CitizenAnswered` (FL-0108); asking again without a new request logs nothing.
+6. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0023); aligned with CONTRACTS v0.4-g2 and D-027.
 
-## E2 — Settings (FL-0024)
-Needs: RemoteService and a settings panel (FORGE-03 components; until it exists write "blocked: no settings UI"). Persistence across sessions also needs DataService (FL-0008, after VS-1).
+## E2 — Settings (FL-0024, panel FL-0103)
+Needs: RemoteService. The panel is FORGE-04's SettingsPanelController (FL-0103): in game-001 it opens from the HUD rail button "Settings" into the menu drawer. Persistence across sessions also needs DataService (FL-0008, after VS-1).
 1. Play Solo. Output shows `SettingsService: no DataService; settings and progress last for the session (D-027)` while FL-0008 is absent.
-2. In the settings panel set Music to 20% and Reduced Motion on: music drops at once; effects lose their camera shake.
-3. With DataService on the build only: leave, then Play Solo again; the values are still there.
-Pass: step 2 holds; step 3 holds when DataService exists. No `SettingsService` error in Output.
+2. Tap the rail button "Settings": the panel opens in the drawer with three sections (Sound, Motion and effects, Gameplay). Tap it again, or open Build or Kingdom: it closes.
+3. Set Music to 20% with the − button (four taps from 60%): music drops at each tap. The bar and the percentage follow; at 0% the − button greys out.
+4. Turn Reduced motion on: effects lose their camera shake, and a conversation's camera cuts instead of gliding (FL-0100). With the device's Reduce Motion on and the toggle off, the row says "On in your device settings".
+5. Effects quality → Reduced: build a House and watch the completion sparkle; it has visibly fewer particles than at Full, with the same motion.
+6. Device emulator, a phone (844×390): every row reads on one line and every button can be tapped; scroll to reach Gameplay.
+7. With DataService on the build only: leave, then Play Solo again; the values are still there.
+Pass: steps 2–6 hold; step 7 holds when DataService exists. No `SettingsService` or `SettingsPanelController` error in Output. Screenshot the panel on PC and on the phone emulator (FL-0103's visual evidence; the headless render is `roblox/tests/unit/experience/scenes/settings.luau`).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0024); session-only settings (D-027).
+- 2026-10-13 FORGE-04: the panel exists (FL-0103): rail button, sections, effects quality, phone layout.
 
 ## E3 — Audio budget and levels (FL-0024)
 Needs: sound assets (at least the P0 list in the user handoff).
@@ -399,46 +405,61 @@ History:
 
 ## E11 — Back key (FL-0053, game-001)
 
-Needs: FORGE-03's conversation stage and drawer menus registered with `InputModeController:onBack` (#126 L6). Until they are on the build, write "blocked: needs FORGE-03's back subscription".
+Needs: FORGE-03's #162 on the build (FL-0059 follow-up). In it, `KingdomHudController` holds one `InputModeController:onBack` handler while any drawer is open, the conversation stage included. Until #162 is on the build, write "blocked: needs #162". FORGE-03's U19 (`ui-economy.md`) checks each panel's own steps; E11 checks the keys and the order.
 
 | Rule | Expected |
 |---|---|
 | Keys | gamepad B and keyboard Backspace (a Mac's delete key); Esc only opens Roblox's menu |
-| Topmost wins | one press closes only the panel opened last (a drawer opened over the stage closes first) |
+| One step per press | an open detail goes back first: the Kingdom panel's building detail to its tab; on a phone, the Build, Reputation and plot details to their lists; the conversation's confirm to its question. Otherwise the drawer closes. Closing the conversation ends it as X does, and the camera comes back. A handler registered over the drawer (topmost) goes first |
 | Build mode | B and X leave build mode; that press never also counts as back |
 | GUI first | Backspace while typing in a text box closes nothing; with a gamepad on a GUI button, the first B leaves the selection and the next B is back |
 
 Steps
-1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it.
+1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes, and the camera glides back to where it was. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it. Talk again and pick a costly answer that asks to confirm: Backspace goes back to the question, and the next Backspace closes the stage.
 2. With a gamepad (or the emulator's gamepad), open a conversation and press B: the stage closes. Open it again, move the selection onto an answer button, and press B: the selection leaves the button and the stage stays open. Press B again: it closes.
 3. Open the build menu and start placing. Press B: placement ends (explore mode) and nothing else closes. Press B again: back now acts as usual.
 4. Type in any text box (chat, a name field), including Backspace: no panel closes.
-5. Open a drawer menu, then a conversation over it (or the reverse). Each press closes one panel, the last opened first. On a Mac, the delete key works like Backspace.
+5. Open the Kingdom panel, then a building's detail. Backspace: back to the tab. Backspace again: the drawer closes. On the phone emulator, with a gamepad or a keyboard, do the same with a Build, a Reputation and a plot detail: each goes back to its list first. On a Mac, the delete key works like Backspace.
+6. During a building move (E12; needs #140 and #148), press B: the move ends with nothing moved (B leaves edit mode; the move registers no back handler).
 
-Pass: steps 1–5 hold.
+Pass: steps 1–6 hold.
 
 History:
 - 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
 - 2026-10-15 FORGE-04: topmost wins (`onBack`, FORGE-07's #130 L1); step 5, Mac delete key.
+- 2026-10-15 FORGE-04: follows FORGE-03's wiring (#162): one handler for every drawer and one step per press. The confirm step and the detail steps are added, the stacked-panels case goes (one drawer at a time), and step 6 covers a move.
 
-## E12 — Base editing: input and camera (FL-0121, game-001)
+## E12 — Base editing: input and camera in the Move flow (FL-0121, game-001)
 
-Needs: FORGE-01's move remotes (FL-0119: `Build.CanMove`, `Build.Move`, `Build.MoveToSlot`) and FORGE-03's edit UI (FL-0120), which sets `InputModeController:set("edit")` and calls `RulerCameraController:setEditDrag(true/false)` around a drag. Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
+B17 ships the Move flow (D-052 (1)): tap your building, then **Move** in its panel; a ghost follows the pointer; then confirm with **Move here**. E12 checks the input and the camera around a move. FORGE-03's U18 (`ui-economy.md`) checks the move itself: the panel, the ghost and its tint, the words, the plot snap and the refusals.
+
+Needs on the build:
+- FORGE-01's move remotes (FL-0119, #140).
+- FORGE-03's Move flow (FL-0120, #148), including its fix for FORGE-07's B1: tapping your own plot or building during a move must not open a panel or end the move.
+
+Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
 
 | Rule | Expected |
 |---|---|
-| Taps while editing | only your own buildings and your own kingdom's plots are selected; citizens, a rival's buildings and plots, and the ground select nothing |
-| Camera | edit mode uses the aerial view (walk mode comes back after, unless you chose a view meanwhile); selecting one of your buildings pans to it |
-| Dragging a building | the drag never pans the view; holding the pointer near a screen edge (about 48 px) pans that way, faster nearer the edge |
-| Leaving | X or gamepad B leaves edit mode; hover outlines and citizen bubbles take no input while editing |
+| Entering | **Move** puts input in edit mode. The view is the aerial one (from walk mode it switches to it), and the building you tapped no longer has the gold selection outline |
+| Taps during a move | Touch: a tap aims the ghost. On the ground it carries the ghost there; on one of your free plots the ghost snaps into it; the bar's **Move here** confirms. Mouse: the ghost follows the pointer, and a left click is **Move here** when the ghost is green (FORGE-03's PlacementInput, the same as placing). A tap or click never opens a panel or moves the camera, even on one of your buildings, and it ends the move only by confirming it. Citizens and rivals' buildings or plots are ignored |
+| No hover | Citizens get no hover outline, and their bubbles take no taps |
+| Camera during a move | The ghost can be carried to a spot off screen. Mouse: pan with WASD or the arrow keys and zoom with the wheel; don't pan with a left drag, because a left press confirms the move. Touch: a one-finger drag pans and pinch zooms; the press only aims, it never confirms. Q and E don't turn the view, because Q cancels the move and R / Shift+R turn the building. The right mouse button, a two-finger twist and the right stick still turn the view |
+| Leaving | Move here (accepted), Cancel, Q, X or gamepad B end the move and edit mode, with nothing moved unless it was accepted. The previous view comes back (walk mode if you were walking), unless you chose a view during the move. Esc opens only Roblox's menu |
+| Parked: drag gesture (FL-0123) | Not in B17; skip and write "parked, FL-0123". These rows apply once the press-and-drag gesture exists: dragging a building never pans the view, and holding the pointer within about 48 px of a screen edge pans that way, faster nearer the edge (`setEditDrag`, edge-pan) |
 
 Steps
-1. Enter edit mode (FORGE-03's Edit button). Tap a citizen, a rival's building, the ground: nothing is selected. Tap one of your buildings: it is selected and the view pans to it. Tap a free plot of yours: it is selected as a target.
-2. Drag a building across the screen: the view stays still. Hold it near the right edge: the view pans right; near the top: forward. Drop it: the panning stops.
-3. Phone emulator: the same with one finger; a one-finger drag of the building never pans.
-4. Press X (or gamepad B): edit mode ends; from walk mode, the walk view comes back.
+1. Play Solo. Press V to walk. Tap one of your houses, then **Move** in its panel. The view switches to the aerial view, the house has no gold outline, and the ghost appears where the house stands.
+2. Hover a citizen: no outline. Move the pointer next to another of your buildings: the ghost follows. Click that building itself (the ghost is red over it, so the click can't move anything): no panel opens, the move stays open, and the view doesn't jump to the building.
+3. Phone emulator: start a move. Tap the ground, then tap one of your free plots. The ghost moves, then snaps into the plot. No "Build here" drawer opens, and the view stays still.
+4. During a move: pan with WASD and zoom with the wheel. The move stays open. Press E: the view doesn't turn. Right-drag: the view turns, and the move stays open. Phone emulator: a one-finger drag pans, the ghost goes to where the finger first touched, and the move stays open until **Move here**. (A left press confirms on a mouse, so a left drag is not a pan during a move; FORGE-07's #157 M1.)
+5. Confirm with **Move here** on a free spot. After the toast, you are back in walk mode (from step 1) and tapping a citizen opens their card again. Repeat from the aerial view: the aerial view stays.
+6. Start a move, then press X (or gamepad B): the move ends, nothing moved, the house is no longer dimmed, and taps select again. Repeat with Q (FORGE-03's cancel): same. Start a move and press Esc: only Roblox's menu opens.
+7. Drag-gesture rows: write "parked, FL-0123".
 
-Pass: steps 1–4 hold.
+Pass: steps 1–6 hold.
 
 History:
 - 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).
+- 2026-10-15 FORGE-04: rewritten to the Move flow that B17 ships (D-052 (1)). The drag and edge-pan rows are parked (FL-0123). A selection in edit mode no longer pans the camera (FORGE-07's #148 B1 side effect).
+- 2026-10-15 FORGE-04: on a mouse a left press confirms the move (PlacementInput), so pan with WASD during a move, and step 2 clicks the building, not the ground (FORGE-07's #157 M1).

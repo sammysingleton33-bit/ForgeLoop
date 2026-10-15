@@ -237,6 +237,48 @@ fewer, larger plinth facing stones.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
 
+## Round: world dressing trim and plot clearance (FL-0116, D-047 amendment; D-019 renders; four author rounds)
+
+**What changed** (`WorldPlan`, `world/Layout`, `WorldService`; buildings, nodes, tags and gameplay untouched):
+- **Density knob** `world/Layout` `features.density = { forest = 0.75, props = 0.5 }` (share kept). `WorldPlan.FULL_DENSITY`
+  (1 / 1) and `service.density` override it. 1.0 rebuilds the untrimmed valley exactly (pinned in `WorldService.spec`).
+- **Plot showcase, never thinned:** within 60 studs of a plot's crop fields, starting buildings and build slots, plus the
+  farm's view (190 studs behind the keep, 100 to either side: where the aerial and plot-back-edge cameras look from).
+  Scatter props (lone trees, bushes, rocks, flowers) also keep the plot framing, road bands and the heartland.
+- **Forests thin radially, stand by stand:** a stand with more than 25 % of its trees in the showcase, or on average within
+  15 studs of what the cameras look at, stays whole; the others lose up to 40 %, outermost trees first, all around, so
+  what stays is centred. Each thinned stand's ground disc (terrain `forest_floor`, `WorldPlan.forestFloors`) is the smaller of
+  the circle around the kept trees' centroid and around the stand centre, plus the same 5 % pad (one op per stand;
+  untouched stands keep today's disc exactly).
+- **Plot clearance** (`PlotClearance.spec`, a guard): no tree, bush, rock, flower or prop within 4 studs of a field, a starting
+  building's largest footprint, a slot, a build zone or a road, measured with each prop's live `Kit.prop` bounds. Blocked
+  trees, bushes and flowers move to the nearest legal spot within 12 studs instead of going; boulders against a trunk or bush
+  go. Hand-placed dressing that sits inside a building, slot or field (the crate stack beside the storehouse) moves too.
+  The gate banners are exempt: they flank the road by design and stay exactly where the generator puts them.
+
+**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 on main d78d9cb -> 8,328 at density 1.0 on current main (env-polish props
+and relocated decor included) -> 6,569 (trim). Forests 3,853 -> 3,184 (222 -> 184 trees, -17 %; only the four far stands
+thin), lone trees 848 -> 527, bushes 905 -> 475, rocks 685 -> 346; flowers (279) and kingdom dressing untouched.
+
+**Images** (`img/`, Cycles 32 samples, Roblox 70 deg FOV; both sides rendered on the same current props: before = the generator's
+untrimmed plan, `FORGE_WORLD_UNTRIMMED=1`, after = this branch):
+- `world_trim_aerial_plot_*`: crimson plot, 50 deg, 170 studs. `world_trim_throne_*`: eye height at the keep door, looking out.
+- `world_trim_aerial_valley_*`: valley centre, 50 deg, 170 studs. `world_trim_top_*`: whole valley from above.
+- `world_trim_farm_aerial_*`, `world_trim_farm_ground_*`: gold's starting farm from the air and from the plot's back edge.
+
+**Verdict, looked at by FORGE-02** (round 3):
+- Farm views: the foreground is back (the oak that stood against the cabbage field is moved clear, the pines behind the fields stay);
+  the right half of the farm aerial was empty grass in the untrimmed plan too.
+- Plot and throne views: the gate banners are exactly where "before" has them (spec-pinned to the generator's positions).
+- Top view: the four far stands are lighter and their dark discs follow them; the stands near the plots and the mid-valley
+  stands are unchanged.
+- Known and by design: the plot-facing rim trees of one thinned stand (at the right edge of the plot aerial) are gone. Keeping them
+  would hold that stand's disc at full size, which was the worse defect. The dark patch at the right edge is the shadow of the tree
+  at the frame edge, in both versions.
+
+**Unverified:** Studio (real mesh bounds against `WorldPlan.CLEAR.radius`, StreamingEnabled, phone frame rate); a phone test decides
+whether the knob goes back up. The render uses the world dump, which has no sim-generated nodes.
+
 ## Environment props polish (FL-0117; the user's first live Studio playtest) — FORGE-02
 
 Feedback: "Trees are too blocky and primitive. Rocks and environment props feel too simple. Starting kingdom farm
@@ -453,3 +495,36 @@ this branch (`5bc05cb`), so the wheat field is #141's 17-part slabs again and `P
 branch `forge/02-blender-env-wheat` (head `3138825`) for a later FL-0117 wheat PR with another approach (FORGE-05's suggestion: rows of thin tapered blades along furrows, as
 in the cabbage bed; the reviewer's thin close-packed stalk clusters). The 44-part allowance (D-047 amendment) stays available; that PR needs FL-0116's measured headroom first. The wheat images above
 stay as the record of what was tried.
+
+## FL-0124 — world resource nodes out of the farms (D-052 (4); the user's first-playtest complaint)
+
+The sim's own nodes were cleared by FORGE-01 (#131, #152). The grey rocks and berry bushes still standing on the starting farms were the 20 per-plot **world**
+resource nodes (`world/Layout.luau` `addNode`, drawn by WorldService as Kit models): `<k>_stone1/2` on crop field 3 of each plot, `<k>_gold1` on build slot 10,
+`<k>_food1/2` inside the east build zone, plus `<k>_wood2` whose canopy covered the lumber camp (18 studs from it).
+
+**Rule (tests/world/NodeKeepOut.spec.luau):** every world node's *drawn* extent — the horizontal reach of what `Kit.prop(assetId)` really draws around its pivot
+(stone 9.6, ore 7.0, bush 3.6, trees 8.5-12.6), measured live, not the sim footprint or a guessed radius — stays at least 8 studs off every crop field, build zone and
+build slot of every plot, and at least 5 studs off every starting building's footprint (the real `Kit.footprint` at the largest level, turned with the building). The first
+version of this fix used 4 studs and a 12-stud building circle; a fresh image-only review saw rocks butting into the quarry wall and a tree cluster crowding a build rectangle, so the buffers
+were raised and the buildings became real footprints. The areas come from the world layout turned with the plot as FORGE-01's LayoutZones spec reads
+them; TODO: read them from FORGE-01's `Kingdom/Layout.keepOutAreas()` once it is on main (no second copy of the geometry). The plots stay rotated copies of each other
+(per-kingdom fairness, #94): the spec compares each kingdom's nodes to crimson's in the keep frame. The WorldPlan decor (deterministic, no seed) is checked against the crop fields by
+drawn extent as well. The sim's generated nodes are seed-dependent and are FORGE-01's LayoutZones spec (seeds 1..20); the world layout has nothing to loop seeds over.
+
+**Moved, not deleted** (keep-frame offsets, x/z; the same in all four plots): stone1 (70,66) → (40,28); stone2 (40,72) → (80,60); gold1 (90,40) → (70,34);
+food1 (74,−44) → (40,−24); food2 (70,−32) → (74,14); wood2 (−66,58) → (−66,74) (its canopy covered the lumber camp); wood4 (−38,58) → (−42,58) (too close to the first crop field).
+The stone and ore form an arc around the quarry building (north-west, north-east, east), the berries flank the farm building; every node is also >= 0.6 x its reach + 3 studs off every nav edge (no rock
+on a walking path) and clear of its neighbours. Found with a Lune solver over the live geometry (grid step 2, nearest legal spot to the node's natural anchor, greedy), starting from FORGE-01's
+checked candidates. The node ids, resources, amounts and nav links are unchanged.
+
+**Evidence:** NodeKeepOut.spec 8 tests; Layout.luau mutations killed (round 1: stone2 back in field 3, berries back in the zone, gold back on slot 10, wood2 back over the camp, stone1 nudged
+onto field 3's corner, one kingdom's berry offset different, a node deleted; round 2 at the stricter gaps: stone beside the quarry wall, berries at the farm wall, wood4 at its old spot, gold on the quarry corner);
+a stone nudged 10 studs toward the field survived correctly in round 1: it was still legal at 4 studs. Renders (Blender, not Studio): `fl0124_farmside_{crimson,azure,emerald,gold}_{before,after}.jpg`
+(55 degrees from behind the farm, 210 studs): before, every plot has a rock pile on or touching its right-hand wheat field; after, the three fields and every build rectangle are clean with a visible buffer.
+
+**Fresh image-only review (reviewer saw only the eight renders; strict):** round 1 (4-stud buffers) — crop beds clear but "buffer thin": rocks butting the quarry wall, the lumber-camp trees under half a tree-width
+from a build rectangle → buffers raised to 8 / 5 studs and the buildings became real footprints. Round 2 (this head) — nothing stands on or touches a crop bed or build rectangle from the world nodes in any of the
+four kingdoms, nothing butts into the quarry or the farm building, no new defect, the four plots are identical copies. Remaining, honestly: (a) two **terrain-scatter** trees (WorldPlan decor, not nodes) touch a plot corner in these renders
+(crimson at the right build rectangle's corner, gold at the cabbage bed's corner): the decor clearance of FL-0116 (PR #159, which this branch does not contain) moves them; the two PRs together are the whole fix;
+(b) the lumber-camp trees stand about one tree-width from the left build rectangle (the forest edge behind the camp, by design; the spec guarantees ≥ 8 studs); (c) the lumber camp "overlapping" that rectangle in
+the render is perspective: the starting buildings' footprints at both levels overlap no slot and no field (probe). Verdict by the reviewer: farms clean **no** (a, b); by the spec and the author's reading of the renders: the world nodes are out. Studio unverified.

@@ -405,7 +405,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(CameraDef.edgeDirection(Vector2.new(640, 720), Vector2.new(1280, 720), 48)).toEqual(Vector2.new(0, -1))
 	end)
 
-	it("in edit mode, selecting your building pans to it (G13.9); outside edit mode it doesn't", function()
+	it("a selection never moves the camera, in edit mode too (B17 Move flow: a tap aims the ghost; #148 B1)", function()
 		boot()
 		local kingdoms = roblox.Instance.new("Folder")
 		kingdoms.Name = "ForgeKingdoms"
@@ -427,14 +427,14 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		local before = controller:getFocus() :: Vector3
 		input:select("building", 9) -- explore mode: the panel's own "go to" decides
 		expect(near(controller:getFocus() :: Vector3, before, 1e-6)).toBe(true)
+		-- edit mode lasts while a building is moved (D-052 (1)); a tap on one of your buildings there is
+		-- the player aiming the ghost next to it, so the view must not jump to it
 		input:set("edit")
 		input:select("building", 9)
-		local focus = controller:getFocus() :: Vector3
-		expect(math.abs(focus.X - base.CFrame.Position.X) < 1e-3 and math.abs(focus.Z - base.CFrame.Position.Z) < 1e-3).toBe(
-			true
-		)
-		input:select("building", 404) -- not in the world: nothing happens
-		expect(near(controller:getFocus() :: Vector3, focus, 1e-6)).toBe(true)
+		input:select("slot", "crimson_slot1")
+		frames(30)
+		expect(near(controller:getFocus() :: Vector3, before, 1e-6)).toBe(true)
+		expect(controller.mode).toBe("overview")
 	end)
 
 	it("VFXController shake requests rotate the camera and fade out after their duration", function()

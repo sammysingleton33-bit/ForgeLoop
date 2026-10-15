@@ -224,6 +224,13 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		expect(log).toEqual({})
 		tap(100, 200)
 		expect(log).toEqual({ "citizen:7" })
+		-- the same rule for other callers (FORGE-03's confirm-on-release, FL-0123)
+		local pixels, sec = InputModeDef.DEFAULTS.tapPixels, InputModeDef.DEFAULTS.tapSec
+		local at = Vector2.new(100, 200)
+		expect(input:isTap(at, at + Vector2.new(pixels - 1, 0), sec)).toBe(true)
+		expect(input:isTap(at, at + Vector2.new(0, pixels), 0.1)).toBe(false) -- a drag
+		expect(input:isTap(at, at, sec + 0.01)).toBe(false) -- a long press
+		expect(input:isTap(at, nil :: any, 0.1)).toBe(false)
 	end)
 
 	it("build mode clears the selection and taps do not select while placing", function()

@@ -19,7 +19,7 @@
 	| BuildingCompleted / BuildingUpgraded / BuildingDestroyed | (building, player?) | members of building.kingdom | buildingType, level, kingdom           |
 	| ResourceGathered   | (player?, kingdomId, resourceId, amount, source) | ruler: the player; citizen: members | resource, amount, source, kingdom       |
 	| UnitsRecruited     | (player, kingdomId, count)                     | the player                        | count, kingdom                               |
-	| CitizenAnswered    | (player, kingdomId, citizenId, decisionId, secondsOpen?) | the answering player    | kingdom, decision, secondsOpen (no ids)      |
+	| CitizenAnswered    | (player, kingdomId, citizenId, decisionId, secondsOpen?) | the answering player    | kingdom, decision, secondsOpen, occupation (no ids) |
 	| ObjectiveCaptured  | (objectiveId, kingdomId)                       | members of kingdomId              | objectiveId, kingdom                         |
 	| KingdomEliminated  | (kingdomId, by?)                               | members of kingdomId / of by      | role = "eliminated" / "victor", kingdom, by  |
 	| MatchEnded         | ({ winner?, standings, durationSec })          | every player                      | won, durationSec, winner                     |
@@ -36,6 +36,22 @@ local function kingdomService(ctx: any): any
 	end
 	local ok, service = pcall(registry.find, registry, "KingdomService")
 	return if ok then service else nil
+end
+
+-- The citizen's occupation, read through CitizenService:inspect (G13.2); nil when the service or the
+-- citizen is gone (an answer whose consequence removed the citizen still counts, without it).
+local function occupationOf(ctx: any, citizenId: any): string?
+	local registry = ctx and ctx.registry
+	if registry == nil then
+		return nil
+	end
+	local found, citizens = pcall(registry.find, registry, "CitizenService")
+	if not found or citizens == nil or citizens.inspect == nil then
+		return nil
+	end
+	local ok, view = pcall(citizens.inspect, citizens, citizenId)
+	local occupation = if ok and type(view) == "table" then view.occupation else nil
+	return if type(occupation) == "string" then occupation else nil
 end
 
 -- Players currently in the kingdom (G3 rulers are userIds; players that left are skipped).
@@ -123,8 +139,9 @@ Signals.subjects = table.freeze({
 	UnitsRecruited = function(args: { any }): { Subject }
 		return { { player = args[1], info = { kingdom = args[2], count = args[3] } } }
 	end,
-	-- G9 (D-044 (3), FL-0107): the ruler whose answer was accepted; the citizen's id stays out of info
-	CitizenAnswered = function(args: { any }): { Subject }
+	-- G9 (D-044 (3), FL-0107): the ruler whose answer was accepted; the citizen's id stays out of info,
+	-- only its occupation goes in (ConversationAnswered's field, FL-0108)
+	CitizenAnswered = function(args: { any }, ctx: any): { Subject }
 		local player = args[1]
 		if player == nil then
 			return {}
@@ -133,6 +150,7 @@ Signals.subjects = table.freeze({
 			kingdom = args[2],
 			decision = if type(args[4]) == "string" then args[4] else nil,
 			secondsOpen = if type(args[5]) == "number" and args[5] == args[5] then args[5] else nil,
+			occupation = occupationOf(ctx, args[3]),
 		}
 		return { { player = player, info = info } }
 	end,

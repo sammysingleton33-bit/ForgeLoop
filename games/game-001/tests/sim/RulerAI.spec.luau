@@ -463,6 +463,43 @@ describe("Kingdom/RulerAI: findSpot", function()
 	end)
 end)
 
+describe("Kingdom/RulerAI: findSpot on the world layout (G13.9 v0.4-g9j)", function()
+	-- the no-build areas, and soldiers and rulers standing about, are placement rules like any other: the AI
+	-- finds its spots with canPlace, so it keeps off them without knowing about them
+	it("keeps off crop fields, plot roads and spawn pads, and off people standing about", function()
+		local Catalog = require("@game/ReplicatedStorage/Game/Sim/Catalog")
+		local Footprint = require("@game/ReplicatedStorage/Game/Sim/Footprint")
+		local sim = Simulation.new({ random = Random.new(9), catalog = Catalog.default(), bounds = Layout.bounds() })
+		Layout.generate(sim, { kingdoms = 2, populate = false })
+		Military.install(sim)
+		RulerAI.install(sim, { interval = NEVER })
+		local k1, k2 = sim.kingdoms.crimson, sim.kingdoms.azure
+		sim:deposit("crimson", "wood", 90000, "spec:ai:wood", "spec")
+		expect(#sim.noBuild > 0).toBe(true)
+		-- a ruler of azure and a soldier of azure standing in crimson's land
+		local rx, rz = RulerAI.findSpot(sim, k1, "house")
+		sim:setRulerPosition(777, rx, rz)
+		local ux, uz = RulerAI.findSpot(sim, k1, "house")
+		Military.spawnUnit(sim, k2, "soldier", ux, uz)
+		local placed = 0
+		for _ = 1, 60 do
+			local x, z = RulerAI.findSpot(sim, k1, "house")
+			if x == nil then
+				break
+			end
+			local b = assert(sim:placeBuilding(k1, "house", x, z))
+			placed += 1
+			for _, area in sim.noBuild do
+				expect(Footprint.overlaps(b.shape, area, 0)).toBe(false)
+			end
+			expect(Footprint.overlapsCircle(b.shape, rx, rz, sim.catalog.tuning.rulerClearance, 0)).toBe(false)
+			expect(Footprint.overlapsCircle(b.shape, ux, uz, 1.5, 0)).toBe(false)
+		end
+		expect(placed).toBeGreaterThan(10) -- the plot still has room for a town
+		F.assertInvariants(sim)
+	end)
+end)
+
 -- One AI-only match world, run once and shared by the tests below (10 simulated minutes).
 local EVENT_OF = {
 	PlaceBuilding = "BuildingPlaced",

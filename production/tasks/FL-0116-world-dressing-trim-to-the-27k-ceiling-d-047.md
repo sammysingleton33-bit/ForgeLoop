@@ -3,13 +3,14 @@ id: FL-0116
 title: World dressing trim to the D-047 part ceiling (density knob, D-019 renders)
 track: asset
 owner: forge-02
-status: BUILDING
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0055]
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS at d008916 (game-001 1462/0, lune 528, selene 0, stylua 494); validate 124/0; ownership PASS; 5+12+14 mutants killed; before/after renders world_trim_*.jpg; fresh image-only D-019: rounds 2-3 NEEDS-WORK (banners, now untouched), round 4 not re-reviewed"
 ---
 
 # World dressing trim to the D-047 part ceiling (density knob, D-019 renders)
@@ -36,3 +37,4 @@ Automated: the part-count spec ≤ 27k; the dressing clearance spec. Visual: D-0
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-02: BUILDING → REVIEW. PR opened: density knob (features.density), plot clearance guard (decor off fields/roads/buildings/slots by drawn extent, moved not deleted, gate banners untouched), protected plot/farm showcase, radial thinning with forest discs sized to the kept trees; WorldService at ready 8,328 -> 6,569 parts; D-047 ceiling rebuilt in a scratch merge with FL-0086: 25,861 / 27,000 (headroom 1,139).
