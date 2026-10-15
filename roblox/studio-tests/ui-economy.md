@@ -13,6 +13,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 | P3 | FORGE-04's InputModeController merged (G4.1; G13.6 `selected` for U10–U11) | U5 build-mode camera/taps, U10–U11 |
 | P4 | Icons uploaded and their ids in `games/game-001/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U9 only; otherwise emoji fallbacks show |
 | P5 | FORGE-01's army and objectives (FL-0052: `Army.Recruit`, `Army.Command`, `Army.Objectives` / `Army.GetObjectives`), `Match.Ended` and `Kingdom.Population` merged (CONTRACTS G8, G13.2) | U14 |
+| P6 | The cinematic conversation set merged together (D-046, FL-0101): FORGE-01's #108 (Converse look/position, `Kingdom.EndConversation`), FORGE-04's #84 (camera) and FORGE-02's #85 (`Kit.portrait`) with FORGE-03's FL-0099 | U16 |
 
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
@@ -135,6 +136,27 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
    and open Build before the question arrives: Build stays open (no conversation pops up later).
 7. Phone: the conversation sheet covers the reputation strip completely (no sliver above it); a
    notice during the conversation appears above the sheet, right of the pills, not over the answers.
+
+## U16 — cinematic conversation (P2 + P6, FL-0099; FORGE-05 runs it under FL-0101)
+1. Tap a citizen with a "!" and **Talk**: their portrait rises from the bottom left in about a third
+   of a second, with their name and job on it; the question is in a parchment bubble beside it and
+   the 2–4 answers below. **The portrait looks like the citizen in the world**: same skin, hair,
+   clothes and tool (compare with the world rig the camera now frames).
+2. **The world stays visible**: only a light darkening at the bottom (never more than a fifth), no
+   full-screen cover. The camera glides to the citizen (FORGE-04) and the citizen stays visible
+   above the stage, not under the portrait or the answers (also on the phone emulator).
+3. Answers show their costs (resource chips; red and "Need …" when the treasury is short) and each
+   risk as a chip with its chance ("⚠ 20 %"). An answer with a cost or a risk opens the confirm step
+   with every risk written out in full; Back returns. Phone 844 × 390: four answers in two rows of
+   two, nothing overlapping, the close button never covering an answer.
+4. Choose an answer: the citizen's reaction in the bubble, "WHAT CHANGED" chips, and **Done** with a
+   bar running down; after about 6–12 s the stage closes by itself (Done closes it sooner). The camera
+   returns to where it was. The pills and the reputation strip show the change.
+5. Open a conversation and close it **without answering** (the X, tapping the ground, or Build): the
+   citizen starts walking again at once (the server's hold ends, `Kingdom.EndConversation`); Talk
+   again shows the same question.
+6. Settings → Reduced motion on: the portrait appears at once (no rise) and the camera cuts.
+7. Output: no red errors from ConversationController; one info line at most from the camera.
 
 ## U14 — army, objectives and the slice summary (P2 + P5; FORGE-04 selection for step 6; FL-0060)
 Phone first (844 × 390 landscape), then tablet and desktop. Screenshots: the army drawer and the

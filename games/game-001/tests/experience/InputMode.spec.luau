@@ -230,8 +230,9 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 
 	it("back fires on gamepad B and Backspace, never on Esc or on a press a GUI handled (#126 L6)", function()
 		local backs = 0
-		input.back:connect(function()
+		input:onBack(function()
 			backs += 1
+			return true
 		end)
 		local function press(key, processed)
 			userInput.InputBegan:Fire({ UserInputType = Enum.UserInputType.Keyboard, KeyCode = key }, processed)
@@ -249,8 +250,9 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 
 	it("back never fires in build mode, nor for the press that left it (settle window)", function()
 		local backs = 0
-		input.back:connect(function()
+		input:onBack(function()
 			backs += 1
+			return true
 		end)
 		local function pressB()
 			userInput.InputBegan:Fire(
@@ -269,6 +271,45 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		pressB()
 		expect(backs).toBe(1)
 	end)
+
+	it(
+		"back: topmost wins, one press closes one panel; released handlers are gone; errors are skipped (#130 L1)",
+		function()
+			local closed = {}
+			local function panel(name, takes)
+				return input:onBack(function()
+					table.insert(closed, name)
+					return takes
+				end)
+			end
+			local releaseDrawer = panel("drawer", true)
+			local releaseStage = panel("stage", true)
+			expect(input:back()).toBe(true)
+			expect(closed).toEqual({ "stage" }) -- only the topmost
+			releaseStage() -- the stage closed itself
+			releaseStage() -- twice is harmless
+			expect(input:back()).toBe(true)
+			expect(closed).toEqual({ "stage", "drawer" })
+			releaseDrawer()
+			expect(input:back()).toBe(false) -- nothing open
+			-- a handler that does not take the press passes it down; one that errors is skipped, logged once
+			panel("card", true)
+			panel("hint", false)
+			input:onBack(function()
+				error("boom")
+			end)
+			expect(input:back()).toBe(true)
+			expect(input:back()).toBe(true)
+			expect(closed).toEqual({ "stage", "drawer", "hint", "card", "hint", "card" })
+			local warnings = 0
+			for _, entry in env.mock.logs do
+				if entry.level == "warn" and string.find(entry.message, "a back handler failed", 1, true) then
+					warnings += 1
+				end
+			end
+			expect(warnings).toBe(1)
+		end
+	)
 
 	it("selecting a citizen reports CitizenInspected to the onboarding (FL-0092)", function()
 		local reports = {}

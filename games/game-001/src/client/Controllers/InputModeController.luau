@@ -11,7 +11,9 @@
 		input.selected:connect(function(kind, id) ... end)   -- G13.6; FORGE-03's panels listen
 		input.selection                 -- { kind, id } of the last selection
 		input:select(kind, id)          -- programmatic selection (a list row, "go to")
-		input.back:connect(function() ... end)   -- "back": close your topmost panel (FORGE-03)
+		local release = input:onBack(function() panel:close() return true end)   -- while it shows
+		release()                       -- when it closes (FORGE-03's panels)
+		input:back() -> boolean         -- what the keys do: true when a handler took the press
 
 	Selection (G13.6; nobody else raycasts for selection)
 		- In explore mode a tap or click (pointer moved < tapPixels and released within tapSec;
@@ -27,14 +29,17 @@
 		- Input that a GUI already handled (gameProcessedEvent) never selects.
 
 	Back (FORGE-05's #126 L6; FORGE-03's conversation stage and drawers close on it)
-		- back() fires on gamepad B or keyboard Backspace. Esc is Roblox's own menu key, so it is
-		  never used.
+		- Gamepad B or keyboard Backspace (a Mac's delete key) is "back". Esc is Roblox's own menu
+		  key, so it is never used.
+		- Topmost wins (FORGE-07's #130 L1): a panel registers onBack(handler) while it shows and
+		  releases it when it closes. A press asks the most recently registered handler first; a
+		  handler returning true took it, otherwise the next one down is asked. So one press closes
+		  one panel, never every panel at once. A handler that errors is skipped (logged once).
 		- Only while accepts("explore"): in build mode B and X still leave build mode, and the press
-		  that left it does not also fire back (the settle window).
-		- Input a GUI already handled never fires it: Backspace in a TextBox closes nothing, and on a
-		  gamepad the first B leaves GUI selection (Roblox's default) and the next one fires back.
-		- Listened to through UserInputService, never bound, so the keys are not sunk. back fires
-		  whether or not a panel is open; the listeners decide what closes.
+		  that left it is not also "back" (the settle window).
+		- Input a GUI already handled is never "back": Backspace in a TextBox closes nothing, and on
+		  a gamepad the first B leaves GUI selection (Roblox's default) and the next one is "back".
+		- Listened to through UserInputService, never bound, so the keys are not sunk.
 
 	Arbitration (specs: games/game-001/tests/experience/InputMode.spec.luau)
 		- One mode at a time, and each mode has one owner for taps and clicks:
@@ -147,7 +152,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		selection = { kind = "none", id = "" },
 		changed = Signal.new(),
 		selected = Signal.new(),
-		back = Signal.new(),
+		_backHandlers = {} :: { any },
 	}, Controller)
 end
 
@@ -173,7 +178,7 @@ function Controller:destroy()
 	table.clear(self._connections)
 	self.changed:disconnectAll()
 	self.selected:disconnectAll()
-	self.back:disconnectAll()
+	table.clear(self._backHandlers)
 end
 
 -- Programmatic selection (also what a resolved tap calls). Unknown kinds are refused.
@@ -193,6 +198,36 @@ function Controller:select(kind: any, id: any): boolean
 		end)
 	end
 	return true
+end
+
+-- Registers a "back" handler (topmost wins: see Back). Returns the function that removes it.
+function Controller:onBack(handler: () -> boolean?): () -> ()
+	local entry = { handler = handler }
+	table.insert(self._backHandlers, entry)
+	return function()
+		local index = table.find(self._backHandlers, entry)
+		if index then
+			table.remove(self._backHandlers, index)
+		end
+	end
+end
+
+-- A "back" press: the most recently registered handler first; true when one of them took it.
+function Controller:back(): boolean
+	for index = #self._backHandlers, 1, -1 do
+		local entry = self._backHandlers[index]
+		if entry ~= nil then
+			local ok, took = pcall(entry.handler)
+			if not ok and not entry.warned then
+				entry.warned = true
+				self._env.log("warn", `InputModeController: a back handler failed: {took}`)
+			end
+			if ok and took == true then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 -- Resolves a tap at a screen position and selects the result (explore mode only).
@@ -270,7 +305,7 @@ function Controller:_bindPointer()
 			end
 			if input.KeyCode ~= nil and table.find(Def.BACK_KEYS, input.KeyCode) then
 				if self:accepts("explore") then
-					self.back:fire()
+					self:back()
 				end
 				return
 			end
