@@ -1,0 +1,7 @@
+# Lessons learned — gameplay (FORGE-01)
+
+Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `standard`). Verified entries only.
+
+- 2026-10-13 · After resolving a merge, run `git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- games roblox tools docs production agents` before the merge commit, and never `git add -A` a merge until `git diff --name-only --diff-filter=U` is empty. Conflict markers inside a Luau block comment compile, so Selene, StyLua, every spec and CI all pass. · #77 merge c5ad31d4 committed markers in the CitizenService header; FORGE-05's review found them (N1), and 98954e97 fixed them · `observed-once`
+- 2026-10-13 · Run each mutation against the spec file that should catch it, and drop a check whose mutant survives only because another line already covers it (an equivalent mutant). Otherwise the code carries a guard that no spec can ever prove. · `skill = 0 while striking` (redundant with `done = true` re-planning first) and `not b.destroyed` (destroyed buildings already leave `buildingIds`) were both removed after surviving · `repeated`
+- 2026-10-13 · A spec that compares "with the feature" against "without it" must make sure the feature is the bottleneck. One tree (80 wood) ran out in both runs, so a +40 % gather bonus showed a ratio of exactly 1. · Simulation.spec "a level 3 lumber camp …": 1.00 with one tree, 1.25–1.45 with five · `observed-once`

@@ -352,6 +352,7 @@ function KingdomWorld.new(opts: { [string]: any }?)
 		seed = 1,
 		localPlayer = { userId = o.userId or 1, name = o.playerName or "Sam" },
 		sharedModules = shared,
+		services = o.envServices, -- e.g. a TweenService double (FL-0099: the portrait's rise)
 	})
 	local self = setmetatable({ env = env, calls = {}, latency = o.latency or 0 }, KingdomWorld)
 	local player = env.Players.LocalPlayer

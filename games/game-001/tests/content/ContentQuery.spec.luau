@@ -2013,7 +2013,7 @@ describe("ContentQuery.reactionFor (SPEC §5.10)", function()
 
 	it("treats a missing or non-finite loyalty as the base reaction", function()
 		local q = presentationQuery()
-		for _, loyalty in { nil, 0 / 0, math.huge, -math.huge } :: { any } do
+		for _, loyalty in { 0 / 0, math.huge, -math.huge } :: { any } do -- the nil case is the call below (a nil in a table literal is skipped)
 			expect((q.reactionFor("r_hf_share", loyalty) :: any).band).toBe("base")
 		end
 		expect((q.reactionFor("r_hf_share") :: any).band).toBe("base")

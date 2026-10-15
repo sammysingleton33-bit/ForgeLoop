@@ -11,7 +11,7 @@ v1.3 applies the verification of the v1.2 follow-ups: `fireAction` decays each r
 
 v1.4 applies the FORGE-00 rulings on the FORGE-05 review of PR #67: risk notices describe only the outcome and never write `{chance}`, because the conversation panel shows the chance (§3, §5.4); `choicePreview` returns exactly the G13.3 option extras and `choiceRisks` gives `{ text, chance }` with the text filled (§6.7); `fireAction` credits reputation to the credited rulers and applies kingdom conditions and listeners once (§6.8, §6.9); a full anti-farming window gives 0 (§6.5); each citizen is one listener (§6.5, §6.9); a listener's net change is decayed as one value (§6.5); more blank characters and blank texts are refused (§2); `raid_defended` and `phase_fed_*` tuning (§8). Follow-ups to that review: ConversationService pays `decisionEffects(...).cost`, and `choicePreview` requires `fillNames` (§6.5, §6.7); the full-window bound is stated only for a full window (§6.5); default-ignorable characters such as a lone variation selector are blank text (§2).
 
-v1.5 adds **optional presentation metadata** for the cinematic conversations (D-035 (4), D-036), in FORGE-06's measured vocabulary (§5.10): scenario `urgency`, `delivery_mode`, `thought_bubble_s` and `question_*` tags; reaction tags and `reaction_bubble_s`; high- and low-loyalty reaction variants (`reaction_high_*`, `reaction_low_*`); and the optional table `dialogue/question_variants.csv`, which gives some citizens another question by trait or condition. Every new column may be absent or blank and the file may be absent, so existing CSVs stay valid unchanged, and the generated modules of a library without the new data are byte-identical. Ignoring the tags changes no gameplay. A reaction's emotion must fit its tone. ContentQuery gains `reactionFor`, `questionFor`, `presentation`, `GESTURE_CUE` and `LOYALTY_BANDS` (§5.10, §7) **(contract: FORGE-00 adds them to CONTRACTS G13.1 separately)**. The workbook offers the new columns as yellow EDIT columns and adds a `question_variants` sheet (§10). Two lint hints (§9).
+v1.5 adds **optional presentation metadata** for the cinematic conversations (D-035 (4), D-036), in FORGE-06's measured vocabulary (§5.10): scenario `urgency`, `delivery_mode`, `thought_bubble_s` and `question_*` tags; reaction tags and `reaction_bubble_s`; high- and low-loyalty reaction variants (`reaction_high_*`, `reaction_low_*`); and the optional table `dialogue/question_variants.csv`, which gives some citizens another question by trait or condition. Every new column may be absent or blank and the file may be absent, so existing CSVs stay valid unchanged, and the generated modules of a library without the new data are byte-identical. Ignoring the tags changes no gameplay. A reaction's emotion must fit its tone. ContentQuery gains `reactionFor`, `questionFor`, `presentation`, `GESTURE_CUE` and `LOYALTY_BANDS` (§5.10, §7) **(contract: CONTRACTS G13.1, v0.4-g10)**. The workbook offers the new columns as yellow EDIT columns and adds a `question_variants` sheet (§10). Two lint hints (§9).
 
 ## 1. Files and pipeline
 
@@ -142,10 +142,10 @@ Legend: **K** key/id (mechanics) · **M** mechanics · **T** TEXT (edit freely) 
 | cooldown_s | M | int | ≥ 0; per citizen, since this scenario was last shown to them |
 | once_per_citizen | M | bool | default `false` |
 | urgency | C | `low` `normal` `high` `critical` | optional column; presentation only (§5.10) |
-| delivery_mode | C | `ambient` `direct` | optional column; presentation only (§5.10) |
+| delivery_mode | C | `ambient` `direct` | optional column; presentation only (§5.10). **Reserved:** no remote carries it yet (the G13.3 `thought` event is unchanged) |
 | thought_icon | C | `request` `concern` `idea` | optional column; default `request` (CONTRACTS G13.3 `thought.icon`) |
 | thought_text | T | ≤ 48 | thought bubble; also ≤ 80 with the longest names filled in (§3) |
-| thought_bubble_s | C | number 2.5–9, one decimal | optional column; seconds the thought bubble stays (§5.10) |
+| thought_bubble_s | C | number 2.5–9, one decimal | optional column; seconds the thought bubble stays (§5.10). **Reserved:** no remote carries it yet (the G13.3 `thought` event is unchanged) |
 | question_text | T | ≤ 160 | the citizen's line when selected |
 | question_emotion, question_expression, question_gesture, question_delivery | C | §5.10 vocabulary | optional columns; how the question is said (§5.10) |
 | notes | N | | |
@@ -362,7 +362,7 @@ A bad selector (`'traits:greedy' is not a selector (did you mean 'trait'?)`), an
 - `presentation(scenarioId) -> { urgency?, delivery_mode?, thought_bubble_s? }`; nil for an unknown scenario.
 - `GESTURE_CUE` (above) and `LOYALTY_BANDS = { high = 70, low = 30 }` (PROVISIONAL).
 - Texts are returned raw: the caller fills their placeholders as for the base question and reaction.
-- **(contract: FORGE-00)** CONTRACTS G13.1 gains `reactionFor`, `questionFor`, `presentation`, `GESTURE_CUE` and `LOYALTY_BANDS`; FORGE-00 updates CONTRACTS separately. The functions are additive: nothing existing changes behaviour.
+- **(contract: FORGE-00)** CONTRACTS G13.1 (v0.4-g10) gains `reactionFor`, `questionFor`, `presentation`, `GESTURE_CUE` and `LOYALTY_BANDS`. The functions are additive: nothing existing changes behaviour.
 
 ## 6. Effect model (what the runtime does with the data; ContentQuery implements 3–5, 7 and 9)
 1. **Reputation.** Every ruler has six values, 0–100, starting from `categories.start`. Every change is a history entry `{ t, category, delta, source, text }` (the field names of CONTRACTS G13.4). `source` is the decision_id or action_id, and `text` is the action notice_text or the scenario/response text.
