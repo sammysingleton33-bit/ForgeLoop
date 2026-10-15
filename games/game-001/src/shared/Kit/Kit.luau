@@ -54,7 +54,8 @@
 		setKingdomColor also works on a container holding several Kit models (slots pair per model).
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
 		Kit.BUILDING_TYPES, Kit.partCount(model).
-	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.LOOK_RANGES,
+	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.CHARACTER_MAX_PARTS,
+		Kit.JOB_HEADWEAR, Kit.JOB_TOOLS, Kit.LOOK_RANGES,
 		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look, kingdom?) (soldiers: pass
 		the kingdom, the key gains ".<kingdom>"), Kit.SOLDIER_CRESTS (KingdomId → crest name).
 ]]
@@ -93,6 +94,12 @@ Kit.BUILDING_TYPES = {
 	"shrine",
 }
 Kit.CHARACTER_ROOT_HEIGHT = Character.ROOT_HEIGHT -- 3.2: Root centre above the feet, rig and LOD alike
+Kit.CHARACTER_MAX_PARTS = Character.MAX_PARTS -- rig part cap the Kit specs enforce (9 now; D-048 allows 11 later)
+-- Job silhouettes (art pass): job -> KitHeadwear name of its hat / KitTool name of its tool (farmer, woodcutter,
+-- miner, builder wear a hat; hauler and idle keep the look's hair). Parts carrying the job's outfit colour
+-- (trousers, plus the torso or sleeves the outfit leaves neutral) have KitAccent = job.
+Kit.JOB_HEADWEAR = Character.JOB_HEADWEAR
+Kit.JOB_TOOLS = Character.JOB_TOOLS
 -- Citizen looks (G13.2): 1-based index counts FORGE-01's population generator samples from, the palettes
 -- behind them (skin and hairColor are Color3 lists; hair and outfit list style names), the default look,
 -- and the pool key (equal keys → identical rigs). Out-of-range values wrap; Kit never errors on a look.

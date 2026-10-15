@@ -3,23 +3,38 @@
 	Kit/Character — Kit.character rigs with per-citizen looks (CONTRACTS G4 rendering, G10, G13.2; D-026, D-032),
 	the one-part far LOD stand-in, and ruler regalia (crown + cape accessories).
 
-	Rig: at most 9 BaseParts, no Humanoid/Animator, every part CanCollide/CanTouch/CanQuery false and Massless.
-	Motor6Ds are named after the moving part and match Sim/Pose.JOINTS:
+	Rig: at most Character.MAX_PARTS (9) BaseParts, no Humanoid/Animator, every part CanCollide/CanTouch/CanQuery
+	false and Massless. Motor6Ds are named after the moving part and match Sim/Pose.JOINTS:
 		Root   anchored, invisible, centre ROOT_HEIGHT (3.2) above the feet; PivotOffset puts the pivot at the feet
 		└ Torso      Motor6D "Torso" at the hips (2.2): walk bob, work lean, the death fall
 		  ├ Head     Motor6D at the neck
 		  │ └ Hair   welded headwear: a Weld from the Head, never a Motor6D, no pose work. Citizens: hair, beard,
-		  │          hood or hat (bald citizens have none); governors: the gold crown; soldiers given a kingdom:
-		  │          the kingdom helmet crest (below). Attribute KitHeadwear.
+		  │          hood, or (working jobs) the job's hat; bald idle/hauler citizens have none; governors: the gold
+		  │          crown; soldiers given a kingdom: the kingdom helmet crest (below). Attribute KitHeadwear.
 		  ├ LeftArm / RightArm   Motor6Ds at the shoulders (arms hang splayed 7°)
 		  │            RightArm └ Tool   Motor6D inside the right fist (hoe, axe, pick, hammer, spear, staff)
 		  ├ LeftLeg / RightLeg   Motor6Ds at the hips
 		  └ Tool     the hauler's sack only: Motor6D "Tool" from the Torso at the right shoulder blade
 	Every joint frame is axis-aligned with the model (+X right, +Y up, -Z front), as Pose expects: Transform rotates
-	about it. Part counts: 7 (bald idle citizen) to 9 (headwear + tool); soldiers 8 (the helm is their Head),
-	9 with a kingdom crest; governors 9; Motor6Ds = parts − 1 − welded headwear.
+	about it. Part counts: 7 (bald idle citizen) to 9 (headwear + tool); working citizens (farmer, woodcutter,
+	miner, builder) always 9 (hat + tool); soldiers 8 (the helm is their Head), 9 with a kingdom crest; governors 9;
+	Motor6Ds = parts − 1 − welded headwear. Character.MAX_PARTS is the one cap the specs enforce; the 11-part
+	variant of D-048 (two more rigid detail parts) is a later phase.
 
-	Soldier kingdom crest (CONTRACTS G13.2, D-033(3)): Kit.character(kind, job, kingdomColor, look?, kingdom?)
+	Job silhouettes (citizen art pass after the first Studio playtest). Each working job reads without colour:
+		farmer      wide straw hat (flat disc 3.4), long hoe board, lean body        KitHeadwear "strawhat"
+		woodcutter  charcoal knit cap slouched back into a tall tail, big bearded axe blade, stocky   "knitcap"
+		miner       squat ochre iron hat, double-sided pick bar (T), stocky          "hardhat"
+		builder     white linen peaked cap (low wedge, sits on the head), big wooden mallet, broad   "buildercap"
+		hauler      no job hat (hair shows), huge burlap sack on the back, broad
+		idle        hair only, nothing carried, lean
+	The job also owns an outfit accent: the trousers (colour, KitAccent = job) and the outfit's fixed neutral
+	panel (the torso or the sleeves, whichever the outfit does not tint or leave bare) take the job's colour, so
+	look.outfit still moves the kingdom tint, the bare arms and the cut, while the job accent stays. The hat
+	takes the Hair slot, so the look's hair style picks a variant of it (roll tilt and shade, KitHeadwear
+	unchanged) and the hair colour is hidden under it; idle and hauler citizens keep all hair styles.
+
+Soldier kingdom crest (CONTRACTS G13.2, D-033(3)): Kit.character(kind, job, kingdomColor, look?, kingdom?)
 	takes an optional KingdomId. A soldier given one wears a crest on the helm in the kingdom's tower style, so
 	friend and foe read apart without colour: crimson a tall pointed spire (CornerWedgePart turned 45°, point at
 	the front), azure a wide flat square plate overhanging the helm (Block), emerald a plume swept up and back
@@ -65,17 +80,22 @@ local HEAD_Y = NECK_Y + HEAD_D / 2 - 0.06 -- head centre (4.64)
 
 Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
 Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT
-Character.HEIGHT = 5.5
+Character.HEIGHT = 5.5 -- the body (head top); a hat, crest or tool may rise above it
+Character.MAX_PARTS = 9 -- D-032 rig cap, the one number the specs enforce (D-048 raises it to 11 in a later phase)
 
 -- ------------------------------------------------------------------ colours
 
 local STEEL = Color3.fromRGB(176, 182, 192)
 local STEEL_DARK = Color3.fromRGB(84, 90, 100)
 local BLADE = Color3.fromRGB(138, 146, 158)
-local BURLAP = Color3.fromRGB(176, 138, 88)
+local BURLAP = Color3.fromRGB(146, 108, 70) -- sack: a darker sackcloth (L .46)
 local LINEN = Color3.fromRGB(226, 214, 186)
 local LEATHER = Color3.fromRGB(120, 78, 46)
-local STRAW = Color3.fromRGB(222, 186, 98)
+local STRAW = Color3.fromRGB(216, 176, 84) -- farmer's hat: straw (L .70)
+local KNIT = Color3.fromRGB(52, 58, 70) -- woodcutter's cap: charcoal wool (neutral, so it never reads as a kingdom)
+local HARDHAT = Color3.fromRGB(190, 118, 30) -- miner's iron hat: burnt ochre (L .50)
+local COIF = Color3.fromRGB(238, 232, 216) -- builder's cap: white linen
+local ASH = Color3.fromRGB(214, 190, 146) -- spear shaft: pale ash, visible against grass and soldiers' steel
 local ERMINE = Color3.fromRGB(242, 238, 228)
 local FACE_TEXTURE = "rbxasset://textures/face.png" -- Roblox's built-in classic face (engine content, no upload)
 
@@ -164,28 +184,76 @@ local HAIR_STYLES: { HairStyle } = {
 			offset = CFrame.new(0, 0.08, 0.3),
 		},
 	},
-	{ -- 6 wide straw hat
-		name = "strawhat",
+	{ -- 6 curls: a big round mass set high (the straw hat is the farmer's job headwear now, not a hair style)
+		name = "curls",
 		spec = {
-			name = "strawhat",
+			name = "curls",
 			class = "Part",
-			shape = Enum.PartType.Cylinder,
-			size = Vector3.new(0.4, 2.3, 2.3),
-			color = STRAW,
-			material = Enum.Material.Fabric,
-			offset = CFrame.new(0, 0.63, 0) * UPRIGHT,
+			shape = Enum.PartType.Ball,
+			size = Vector3.new(2.05, 2.05, 2.05),
+			color = "hair",
+			material = Enum.Material.SmoothPlastic,
+			offset = CFrame.new(0, 0.22, 0.1),
 		},
 	},
 }
 
-local GOVERNOR_CROWN: PartSpec = { -- gold circlet low on the head: a gold ring from above
+-- Job headwear (Hair slot, welded to the Head): one bold silhouette per working job, none a ball (balls are
+-- hair) and none a hair colour. Heads: top 5.44, face clear below y = +0.33 (head-centre frame). A hat sits ON
+-- the head (clearance rules in the Kit spec): the head enters it by at most 0.4 above its lower face, and no
+-- skin shows through its top or sides (every head point above the hat's lower face is inside the hat).
+local JOB_HATS: { [string]: PartSpec } = {
+	farmer = { -- wide flat straw disc: the widest thing on any citizen, a big pale circle from above
+		name = "strawhat",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(0.42, 3.4, 3.4),
+		color = STRAW,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, 0.62, 0) * UPRIGHT,
+	},
+	woodcutter = { -- knit cap slouched back: a wedge, low over the brow and rising to a tall tail behind the head
+		-- (the slope stays above the skull, so no skin shows through): the only hat taller behind than in front
+		name = "knitcap",
+		class = "WedgePart",
+		size = Vector3.new(1.9, 1.6, 2.0),
+		color = KNIT,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, 1.24, 0.1), -- base 0.44 above the head centre, apex 2.04
+	},
+	miner = { -- squat iron hat with a rim wider than the head, ochre and glossy: a pot on the head
+		name = "hardhat",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(0.8, 2.2, 2.2),
+		color = HARDHAT,
+		material = Enum.Material.Metal,
+		offset = CFrame.new(0, 0.84, 0) * UPRIGHT,
+	},
+	builder = { -- white linen peaked cap: a low wedge, thin lip over the brow, higher crown behind. It sits ON the head
+		-- (base 0.45 above the head centre) and its slope stays above the skull, so the head no longer pokes
+		-- through a flat-bottomed block
+		name = "buildercap",
+		class = "WedgePart",
+		size = Vector3.new(1.7, 0.95, 1.9),
+		color = COIF,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, 0.925, 0.05),
+	},
+}
+-- The hat takes the look's hair slot, so look.hair picks a variant of it: a roll tilt (3) and a shade (2).
+local HAT_ROLLS = { 0, math.rad(9), math.rad(-9) }
+local HAT_SHADES = { 1, 0.88 } -- shaded hats of different jobs never overlap in luminance (spec)
+
+local GOVERNOR_CROWN: PartSpec = { -- gold circlet on the head, a gold disc from above; it covers the head's top
+	-- (the head used to poke through its top face): bottom 0.41 above the head centre, top 0.91
 	name = "crown",
 	class = "Part",
 	shape = Enum.PartType.Cylinder,
-	size = Vector3.new(0.38, 1.52, 1.52),
+	size = Vector3.new(0.5, 1.52, 1.52),
 	color = C.gold,
 	material = Enum.Material.Metal,
-	offset = CFrame.new(0, 0.57, 0) * UPRIGHT,
+	offset = CFrame.new(0, 0.66, 0) * UPRIGHT,
 }
 
 local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel square from above)
@@ -297,14 +365,68 @@ Character.DEFAULT_LOOK = table.freeze({ skin = 1, hair = 1, hairColor = 1, outfi
 
 -- ------------------------------------------------------------------ jobs and tools
 
-local JOBS: { [string]: { tool: string?, width: number } } = {
-	idle = { width = 2.0 },
-	farmer = { tool = "hoe", width = 2.0 },
-	woodcutter = { tool = "axe", width = 2.2 }, -- stocky jobs read heavier in a crowd
-	miner = { tool = "pick", width = 2.1 },
-	builder = { tool = "hammer", width = 2.2 },
-	hauler = { tool = "sack", width = 2.15 },
+-- Per job: body width (stocky jobs read heavier, lean ones lighter), tool, hat, and the outfit accent (see the
+-- header): `panel` replaces the outfit's fixed neutral torso/sleeve colour, `legs` its trousers.
+type JobStyle = {
+	width: number,
+	tool: string?,
+	hat: PartSpec?,
+	panel: Color3?,
+	legs: Color3?,
 }
+local JOBS: { [string]: JobStyle } = {
+	idle = { width = 1.9 },
+	farmer = { -- light: cream shirt or apron, olive trousers, straw hat
+		width = 1.95,
+		tool = "hoe",
+		hat = JOB_HATS.farmer,
+		panel = Color3.fromRGB(232, 222, 190),
+		legs = Color3.fromRGB(98, 104, 58),
+	},
+	woodcutter = { -- dark: umber leather, black-brown trousers, charcoal cap, bright steel axe
+		width = 2.3,
+		tool = "axe",
+		hat = JOB_HATS.woodcutter,
+		panel = Color3.fromRGB(96, 66, 46),
+		legs = Color3.fromRGB(58, 42, 32),
+	},
+	miner = { -- cool grey: soot panel, coal trousers, ochre hat
+		width = 2.2,
+		tool = "pick",
+		hat = JOB_HATS.miner,
+		panel = Color3.fromRGB(122, 126, 136),
+		legs = Color3.fromRGB(70, 68, 72),
+	},
+	builder = { -- tan canvas, dusty navy trousers, white cap
+		width = 2.3,
+		tool = "hammer",
+		hat = JOB_HATS.builder,
+		panel = Color3.fromRGB(196, 158, 104),
+		legs = Color3.fromRGB(52, 62, 94),
+	},
+	hauler = { -- sackcloth panel and russet trousers; keeps the look's hair (the sack is the signature)
+		width = 2.3,
+		tool = "sack",
+		panel = Color3.fromRGB(156, 118, 80),
+		legs = Color3.fromRGB(112, 68, 42),
+	},
+}
+Character.JOB_HEADWEAR = table.freeze((function()
+	local out: { [string]: string } = {}
+	for job, hat in JOB_HATS do
+		out[job] = hat.name
+	end
+	return out
+end)())
+Character.JOB_TOOLS = table.freeze((function()
+	local out: { [string]: string } = {}
+	for job, style in JOBS do
+		if style.tool then
+			out[job] = style.tool
+		end
+	end
+	return out
+end)())
 
 local GRIP = CFrame.new(0, 0, -0.55) -- in front of the fist, so a held shaft clears the arm
 -- Swing tools (axe, pick, hammer) are oversized heads gripped at the fist: in a swing the arm reads as the
@@ -312,58 +434,61 @@ local GRIP = CFrame.new(0, 0, -0.55) -- in front of the fist, so a held shaft cl
 local OUT = CFrame.Angles(0, math.rad(-40), 0)
 
 local TOOLS: { [string]: PartSpec } = {
-	hoe = {
+	hoe = { -- a long broad board (the hoe/spade read: a shaft with a blade, one part): 5.4 long, 1.0 wide
 		name = "hoe",
 		class = "Part",
-		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(5.0, 0.34, 0.34),
+		shape = Enum.PartType.Block,
+		size = Vector3.new(1.0, 5.4, 0.3),
 		color = C.woodLight,
 		material = Enum.Material.Wood,
-		offset = GRIP * CFrame.Angles(0, 0, math.rad(-10)) * CFrame.new(0, 0.55, 0) * UPRIGHT,
+		offset = GRIP * OUT * CFrame.Angles(0, 0, math.rad(-10)) * CFrame.new(0, 0.7, 0.1),
 	},
-	axe = { -- bearded axe blade: top edge level with the fist, cutting edge forward
+	axe = { -- big bearded blade: flat top level with the fist, straight cutting edge in front, the beard hanging
+		-- 2.4 below the haft; bright steel
 		name = "axe",
 		class = "WedgePart",
-		size = Vector3.new(0.42, 1.7, 1.7),
+		size = Vector3.new(0.5, 2.4, 2.3),
 		color = BLADE,
 		material = Enum.Material.Metal,
-		offset = OUT * CFrame.new(0, -0.7, -0.6) * CFrame.Angles(math.pi, 0, 0),
+		offset = OUT * CFrame.new(0, -0.95, -0.9) * CFrame.Angles(math.pi, 0, 0),
 	},
-	pick = { -- a tapering iron spike
+	pick = { -- double-sided pick head: a long dark bar across the top of the arm (a T), 4.4 from tip to tip
 		name = "pick",
-		class = "WedgePart",
-		size = Vector3.new(0.48, 0.65, 3.0),
+		class = "Part",
+		shape = Enum.PartType.Block,
+		size = Vector3.new(0.7, 0.7, 4.4),
 		color = STEEL_DARK,
 		material = Enum.Material.Metal,
-		offset = OUT * CFrame.Angles(math.rad(-20), 0, 0) * CFrame.new(0, -0.3, -1.1),
+		offset = OUT * CFrame.new(0, -0.1, 0) * CFrame.Angles(math.rad(-12), 0, 0),
 	},
-	hammer = { -- big wooden mallet head
+	hammer = { -- big wooden mallet: a fat square head across the fist
 		name = "hammer",
 		class = "Part",
-		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(1.8, 1.15, 1.15),
+		shape = Enum.PartType.Block,
+		size = Vector3.new(1.4, 1.35, 2.6),
 		color = C.wood,
 		material = Enum.Material.Wood,
-		offset = OUT * CFrame.new(0, -0.45, -0.3) * CFrame.Angles(0, math.rad(90), 0),
+		offset = OUT * CFrame.new(0, -0.45, -0.2),
 	},
-	sack = { -- burlap sack slung on the back, over the right shoulder
+	sack = { -- big burlap sack on the back, seated against the shoulder blades and clear of the head and both arms
+		-- (centre on the spine, 3.05 up, 1.95 behind it; joint at 0.96, 3.8, 0.575)
 		name = "sack",
 		class = "Part",
 		shape = Enum.PartType.Ball,
-		size = Vector3.new(2.1, 2.1, 2.1),
+		size = Vector3.new(2.7, 2.7, 2.7),
 		color = BURLAP,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(0.3, -0.15, 0.6),
+		offset = CFrame.new(-0.96, -0.75, 1.375),
 		onBack = true,
 	},
-	spear = {
+	spear = { -- 9 long and 0.4 thick in pale ash, so the line reads against grass and steel
 		name = "spear",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(8.0, 0.34, 0.34),
-		color = C.woodDark,
+		size = Vector3.new(9.0, 0.4, 0.4),
+		color = ASH,
 		material = Enum.Material.Wood,
-		offset = GRIP * CFrame.new(0, 1.9, 0) * UPRIGHT,
+		offset = GRIP * CFrame.new(0, 2.2, 0) * UPRIGHT,
 	},
 	staff = {
 		name = "staff",
@@ -491,6 +616,36 @@ local function specPart(
 	return rigPart(model, name, spec.class, spec.shape, spec.size, cf, color, spec.material, tint)
 end
 
+-- The job's accent on an outfit: the fixed neutral torso/sleeve colour (not a kingdom tint, not bare skin)
+-- becomes the job's panel colour, and the trousers its legs colour. The kingdom tint and bare arms stay.
+local function jobOutfit(outfit: Outfit, job: JobStyle): Outfit
+	return {
+		name = outfit.name,
+		torso = if typeof(outfit.torso) == "Color3" then job.panel :: Color3 else outfit.torso,
+		sleeves = if typeof(outfit.sleeves) == "Color3" then job.panel :: Color3 else outfit.sleeves,
+		legs = job.legs :: Color3,
+		legMaterial = outfit.legMaterial,
+	}
+end
+
+-- look.hair (1..6) picks one of 6 variants of a job hat: roll 0 / +9° / −9° about the head's front axis, in
+-- the full shade or 0.88 of it. The shape, size and KitHeadwear name never change.
+local function hatVariant(spec: PartSpec, hairIndex: number): PartSpec
+	local roll = HAT_ROLLS[(hairIndex - 1) % #HAT_ROLLS + 1]
+	local tone = HAT_SHADES[((hairIndex - 1) // #HAT_ROLLS) % #HAT_SHADES + 1]
+	local at = spec.offset.Position
+	local color = spec.color :: Color3
+	return {
+		name = spec.name,
+		class = spec.class,
+		shape = spec.shape,
+		size = spec.size,
+		color = Color3.new(color.R * tone, color.G * tone, color.B * tone),
+		material = spec.material,
+		offset = CFrame.new(at) * CFrame.Angles(0, 0, roll) * (CFrame.new(-at) * spec.offset),
+	}
+end
+
 -- ------------------------------------------------------------------ characters (≤ 9 parts)
 
 -- kingdom (G13.2): a KingdomId; only soldiers use it (their helmet crest). nil/unknown = the plain helm.
@@ -510,12 +665,21 @@ function Character.character(
 	local jobSpec = JOBS[job] or JOBS.idle
 	local crest = if style == "soldier" then crestOf(kingdom) else nil
 	local outfit: Outfit, headwear: PartSpec?, width: number, tool: string?
+	local accentJob: string? = nil -- the job whose accent colours the outfit (working citizens only)
+	local panelTorso, panelSleeves = false, false -- where the job's panel colour landed
 	if style == "soldier" then
 		outfit, headwear, width, tool = SOLDIER_OUTFIT, crest, 2.15, "spear"
 	elseif style == "governor" then
 		outfit, headwear, width, tool = GOVERNOR_OUTFIT, GOVERNOR_CROWN, 2.2, "staff"
 	else
 		outfit, headwear, width, tool = OUTFITS[l.outfit], HAIR_STYLES[l.hair].spec, jobSpec.width, jobSpec.tool
+		if jobSpec.legs then
+			panelTorso, panelSleeves = typeof(outfit.torso) == "Color3", typeof(outfit.sleeves) == "Color3"
+			outfit, accentJob = jobOutfit(outfit, jobSpec), job
+		end
+		if jobSpec.hat then -- the job hat takes the Hair slot; look.hair picks its variant
+			headwear = hatVariant(jobSpec.hat, l.hair)
+		end
 	end
 
 	local model = Instance.new("Model")
@@ -625,6 +789,15 @@ function Character.character(
 	)
 	motor(torso, larm, lShoulder)
 	motor(torso, rarm, rShoulder)
+	if accentJob then -- KitAccent = job on every part that carries the job's accent colour
+		if panelTorso then
+			torso:SetAttribute("KitAccent", accentJob)
+		end
+		if panelSleeves then
+			larm:SetAttribute("KitAccent", accentJob)
+			rarm:SetAttribute("KitAccent", accentJob)
+		end
+	end
 
 	local legColor, legTint = paint(outfit.legs, kingdomColor, skin, hairColor)
 	local legMaterial = outfit.legMaterial or Enum.Material.Fabric
@@ -640,6 +813,9 @@ function Character.character(
 			legMaterial,
 			legTint
 		)
+		if accentJob then
+			leg:SetAttribute("KitAccent", accentJob)
+		end
 		motor(torso, leg, CFrame.new(side * 0.5, HIP_Y, 0))
 	end
 

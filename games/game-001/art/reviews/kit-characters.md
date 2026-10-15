@@ -170,9 +170,79 @@ render script.
 - Unverified: the face decal is not in the Blender preview, and the ViewportFrame look in Studio (lighting,
   `Ambient`/`LightDirection`) is not checked.
 
+## Citizen job silhouettes (art pass after the user's first live Studio playtest; Phase 1, 9 parts)
+Feedback: "AI worker / citizen models are too plain. Tools and silhouettes need more character and readability."
+Goal: every job reads at a glance at gameplay distance (40-80 studs) and from the overview camera (50° down, 170 studs,
+about 3 px per stud on a 720 px frame, where a citizen is a 6-10 px blob and only hat and tool keep a shape), in colour
+and in grayscale. Two author rounds (A: first build and renders; B: fixes from the close-ups), D-019 quick/full renders
+through the same Lune dump → Blender preview as the crest work (no Roblox material textures, no face decal).
+Images (`art/reviews/img/`): `citizen_polish_jobs.jpg` (all jobs, ~40 studs, before/after, colour + grayscale),
+`citizen_polish_crowd.jpg` (30 citizens round a farm, aerial 50° at 170 studs, before/after), `citizen_polish_groups.jpg`
+(4 per job, aerial, colour + grayscale), `citizen_polish_tools.jpg` (tool close-ups), `citizen_polish_heads.jpg`
+(headwear close-ups), `citizen_polish_sheet.jpg` (the 8-job hero sheet and gameplay strip, after).
+
+| Job | Hat (Hair slot, `KitHeadwear`) | Tool (`KitTool`) | Accent (`KitAccent` = job) | Torso |
+|---|---|---|---|---|
+| farmer | wide flat straw disc 3.4 × 0.42, L .70 (`strawhat`; was a 2.3 hair-style hat) | board 1.0 × 5.4 × 0.3 (was a 0.34 stick) | olive trousers, cream panel | 1.95 lean (was 2.0) |
+| woodcutter | charcoal wedge cap, low over the brow, tall tail behind, L .23 (`knitcap`) | bearded steel wedge 0.5 × 2.4 × 2.3 (was 1.7) | black-brown trousers, umber panel | 2.3 stocky (was 2.2) |
+| miner | squat burnt-ochre iron pot 2.2 × 0.8, Metal, L .50 (`hardhat`) | dark bar 0.7 × 0.7 × 4.4 across the arm, a T (was a 3.0 one-sided spike) | coal trousers, soot-grey panel | 2.2 (was 2.1) |
+| builder | white linen block cap 1.95 × 0.85, L .91 (`buildercap`) | wooden mallet block 1.4 × 1.35 × 2.6 (was a 1.15 × 1.8 drum) | dusty navy trousers, tan canvas panel | 2.3 (was 2.2) |
+| hauler | none: the look's hair stays | sackcloth ball 2.7, set higher on the back (was 2.1) | russet trousers, sackcloth panel | 2.3 (was 2.15) |
+| idle | the look's hair | nothing | none | 1.9 lean (was 2.0) |
+| soldier | steel helm + kingdom crest (unchanged) | spear 9.0 × 0.4 pale ash (was 8.0 × 0.34 dark wood) | tabard (unchanged) | 2.15 |
+
+- **Outfit accent.** The trousers take the job colour in every outfit; the outfit's fixed neutral torso or sleeve colour
+  (not the kingdom tint, not bare skin) takes the job's panel colour. `look.outfit` still moves the kingdom tint
+  (torso or sleeves, always one of them), the bare arms and the cut; the accent stays. Parts carry `KitAccent = <job>`.
+- **Hat and hair share one slot** (D-032), so a working citizen's `look.hair` picks one of 6 variants of the job hat (roll
+  0 / +9° / -9° times shade 1 / 0.88; `KitHeadwear` never changes) and the hair colour is hidden under it. Idle and
+  hauler citizens keep all six hair styles. Style 6 is now `curls` (a big round mass), because a straw hat on an idle
+  citizen is a decoy farmer. Beards and long hair on working jobs are a Phase 2 item.
+- **No job hat is a ball** (balls are hair) and the four hats' value ranges (including shaded variants) never overlap:
+  woodcutter .20-.23, miner .44-.50, farmer .61-.70, builder .80-.91 (luminance 0.2126 R + 0.7152 G + 0.0722 B).
+- **Part counts, default look (short hair), before → after:** citizen idle 8 → 8, farmer 9 → 9, woodcutter 9 → 9,
+  miner 9 → 9, builder 9 → 9, hauler 9 → 9; soldier 8 → 8 (9 → 9 with a crest); governor 9 → 9. Bald looks: idle 7 → 7,
+  hauler 8 → 8, farmer, woodcutter, miner and builder 8 → 9 (they always wear the hat now). Cap `Character.MAX_PARTS` = 9.
+- **Aerial threshold, from measurement.** Smallest job hat: builder cap 1.95 studs across (farmer 3.40, woodcutter
+  2.00, miner 2.20); before this pass the hat slot held a 1.66 ball. Smallest tool at its longest: axe blade 2.40 (hoe
+  5.49, pick 3.86, hammer 2.89, sack 2.70); before: axe 1.7, hammer/sack about 2.1. Signature box (hat ∪ tool,
+  diagonal) of the working jobs: 6.78 (builder) to 8.11 (woodcutter). Spec floors: hat ≥ 1.9, tool ≥ 2.3, box ≥ 6.5 studs
+  (about 6 px, 7 px and 20 px at the overview camera).
+- **Round A findings (first build).** The corner-wedge knit cap read as a wizard hat and the skull poked through its
+  low front slopes as two skin-coloured holes; the pick bar was thin and low contrast against grass; the straw hat and
+  the burlap sack were the same tan from above (farmers and haulers blurred at 170 studs).
+- **Round B changes.** Cap → a wedge 1.9 × 1.7 × 2.0 whose slope stays above the skull (no skin shows) and whose
+  tall tail hangs behind; pick bar 0.5 → 0.7 thick and 4.2 → 4.4 long; sack darker (L .46 vs the straw's .70);
+  straw and hard-hat values moved apart; hauler panel and trousers darker.
+- **Portrait (`Kit.portrait`, FL-0098, now on main).** The farmer's 3.4 straw disc was wider than the portrait frame
+  (projected x 1.04 against 0.95); `Portrait.frame` now keeps the headwear's whole width in view (parallax 1.15), so the
+  farmer's face is a little smaller there. `KitPortrait.spec` passes (5/5); the portrait still comes from
+  `Character.character`, so hat, tool and accent come along.
+
+| model | sil | var | read | prop | pal | detail | coh | cost | notes |
+|---|---|---|---|---|---|---|---|---|---|
+| citizens (job read, gameplay) | 4 | 4 | 4 | 4 | 4 | 3 | 4 | 5 | was 3 / 3 / 3 in the Final table; hat + tool + trousers tell all five jobs at 40 studs |
+| citizens (job read, aerial 170) | 4 | 4 | 4 | - | 4 | - | 4 | - | discs, white squares, ochre dots, dark slabs and sacks form groups; woodcutter is the weakest (dark on dark ground and shadow) |
+| citizens (looks) | 4 | 4 | 4 | 4 | 4 | 3 | 4 | 5 | skin, outfit and hat variants vary; hair colour only shows on idle and hauler |
+| soldier / governor | 4 | 3 / - | 4 | 4 | 4 | 3 | 4 | 5 | spear taller and paler; no regression |
+
+- **Verdict, honest.** At 40 studs all eight read: farmer (disc and board), woodcutter (dark cap and big blade), miner
+  (ochre pot and bar), builder (white cap and mallet), hauler (sack), idle (nothing), soldier (long pale spear, crest),
+  governor (staff, circlet). In grayscale the farmer, builder and the dark woodcutter separate by hat value; the miner
+  is mid grey and relies on the bar. From the aerial camera farmers, builders, miners and haulers read as groups in the
+  crowd render. **Still weak:** the woodcutter's cap reads as a dark slab or visor more than a knit cap, and a dark blob
+  against shadow at 170 studs; the hoe is a board, not a shaft with a blade; the pick is a flat bar (no points); the
+  sack has no visible tie; the soldier's spear has no head. All need a second part.
+- **Unverified.** Studio (materials, the face decal under a brim, the hat against the real camera), the swing poses with
+  the larger tool heads (only the headless Pose walk and death smoke test ran), protan/deutan on the new images (FORGE-05).
+- **Phase 2 (a raised cap, D-048 up to 11 parts, not built):** hoe, axe, pick and hammer as handle plus head;
+  straw crown over the brim, a lamp on the hard hat, a hauler's strap and sack tie, a spear head. Each detail part would
+  carry `KitDetail = true` (client may drop it beyond the LOD distance), no new Motor6D, derived from kind and job.
+
 ## Remaining weaknesses
 - One-part tools cannot show handle + head: axe/pick/hammer read as heads at the fist (the arm is the handle in a
-  swing); hoe, spear and staff are bare shafts. Imported tool meshes (Kit.prop ids, VS-2) would fix this.
+  swing); hoe is a board, spear and staff are bare shafts (the job-silhouette round made them bigger, not two-part).
+  Phase 2 (D-048, 11 parts) or imported tool meshes (Kit.prop ids, VS-2) would fix this.
 - The face decal (`rbxasset://textures/face.png`) is not in the Blender preview; its look on a Ball head needs the
   Studio check. Remove the six lines in `Character.character` if it projects badly.
 - The hauler's sack hides behind the head in a straight front view (reads from the side, back and above).
@@ -185,3 +255,99 @@ Committed review images (soldier crests, for FORGE-05's CVD re-run with `product
 `kit_characters_crests_gameplay.jpg` and `kit_characters_crests_side_gameplay.jpg` (≈40-stud gameplay view, colour;
 grayscale is a straight luminance conversion of these), `kit_characters_crests_aerial.jpg` (50° elevation, 50 studs).
 All five were re-rendered after the CVD follow-up. Portraits: `kit_portraits.jpg` (FL-0098).
+
+## Fresh-context D-019 scoring — FL-0118 phase 1 citizens
+
+Reviewer: fresh-context visual reviewer (did not build these rigs), 2026-10-15. Evidence: the six Blender renders `img/citizen_polish_{jobs,crowd,groups,tools,heads,sheet}.jpg` (an approximation of Studio, no material textures, **not a Studio play test**; the grey blocky figure in the strips is a scale-reference dummy). I opened each image, then cropped and up-scaled 2-3x, greyscaled the "after" rows, and did a rough pixel count of kingdom-red in the crowd shot. Scored before reading any author log or the Kit source. Part counts (8-9 per rig) are read off the caption of `citizen_polish_sheet.jpg`.
+
+Rubric (1-5): PASS needs silhouette >= 4, variation >= 4, readability at gameplay distance (40 studs) >= 4, and proportions, palette, detail density, cohesion and part cost each >= 3. Variation = how different individuals of the same job look in the 4-per-job aerial group; a unique role (governor) is not penalised for it.
+
+| rig | sil | var | read | prop | pal | detail | cohes | cost | verdict | note |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Rig set (all 8)** | 4 | 3 | 4 | 4 | 4 | 3 | 4 | 5 | NEEDS-WORK | Visible improvement in job identification: before, the five working jobs were the same red tunic, brown trousers and cream sleeves, told apart only by a thin tool; now four jobs have a headwear shape and a trouser or sleeve colour of their own, and each group reads as a block of one hat colour at 170 studs. Still plain: all eight torsos are identical red boxes, no faces, no belts or aprons, and the **tools mostly do not read as tools** (see below). |
+| farmer | 4 | 3 | 4 | 4 | 4 | 3 | 4 | 5 | NEEDS-WORK | Best of the set. Wide straw disc hat is a strong silhouette at 40 studs and from above; olive trousers help. Near-pass: the four farmers are identical clones (var 3) and the "tool" is a bare orange stick with no scythe blade or fork tines, so it reads as a pole or fence post. |
+| woodcutter | 4 | 3 | 3 | 3 | 4 | 3 | 3 | 5 | NEEDS-WORK | Dark navy slanted-block hat is a distinct silhouette and the darkest in the set (separates well in greyscale) but it reads as a chimney or bucket, not woodcutter gear, and is oversized for the head. The axe is a flat grey triangle with no handle, hanging low at the side, so it reads as a banner or shard. |
+| miner | 3 | 3 | 3 | 4 | 4 | 3 | 4 | 5 | NEEDS-WORK | Orange flat-disc hard hat is a clear colour cue and reads as a hat. Silhouette is close to the farmer's disc, only smaller and orange (they differ by hue and a pole). The pickaxe is a dark horizontal bar with no pick head, so it reads as a plank or stick. Grey sleeves help. |
+| builder | 3 | 3 | 3 | 3 | 4 | 3 | 3 | 5 | NEEDS-WORK | White box on the head is highly visible at every distance and the group is the brightest block in greyscale, but a flat white cuboid reads as a paper hat or chef's hat, not a hard hat. The held brown crate is the same shape and colour language as the hauler's load, so builder vs hauler relies on the hat alone; there is no hammer, saw or trowel. |
+| hauler | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 5 | PASS (marginal) | Round brown sack on the back reads as "carrying a load" at 40 studs and from above, and is the only prop-based job that works; the four haulers vary in sack tone and head. Caveat: with no strap or tie, in front and side views the sack can read as a hair bun or hood (see `citizen_polish_heads.jpg`), and the whole figure is brown on brown. |
+| idle | 3 | 4 | 4 | 4 | 4 | 2 | 4 | 5 | NEEDS-WORK | Unchanged from "before" and the plainest: sphere hair on a red box, cream sleeves, brown trousers. Reads correctly as "no job" and the four vary in hair and skin tone, but this is the model the user called too plain. Needs one cheap personal detail (hair-style variants, a cap or kerchief, a belt). |
+| soldier | 5 | 3 | 4 | 3 | 4 | 3 | 3 | 5 | NEEDS-WORK | Strongest silhouette: tall pale spear, grey helmet with a red plume. Essentially unchanged (spear went from dark to pale). The spear has no head (a bare pole), the grey cube plus small red cone reads as a garden-gnome hat, and the 9-stud pole dwarfs a 4x2 body. Not in the 4-per-job aerial group, so variation and aerial reading are unverified. |
+| governor | 3 | 4 | 3 | 4 | 4 | 3 | 4 | 5 | NEEDS-WORK | Unchanged from "before". Gold circlet is a thin band (reads as a headband at 40 studs, a few pixels from above) and the gold staff is thin; for the key character it is the least prominent silhouette in the set. Variation is N/A (unique role) and not penalised. Not in the aerial group, so aerial reading is unverified. |
+
+### Answers to the specific checks
+
+- **Each job recognisable at 40 studs?** Farmer (straw hat), hauler (sack) and soldier (spear + plume) yes. Woodcutter, miner and builder are recognisable as "three different workers" but their hats and tools do not say what the job is. Idle and governor are distinguishable by absence and by crown, respectively.
+- **Group reads from the aerial camera?** Yes, clearly better than before: in the 4-per-job strip each group is a block of one colour (straw discs / navy slabs / orange discs / white boxes / sack balls) where before all six groups were the same red. In the 30-citizen crowd, the jobs can be picked out by hat colour. Soldier and governor were not in the group strip.
+- **Jobs separate in greyscale?** Mostly. Woodcutter (darkest), builder (brightest) and farmer (light disc) separate well at 40 studs; farmer vs builder differ by disc vs box shape; woodcutter vs idle vs miner groups are all dark at 170 studs and separate mainly by shape.
+- **Tools read as tools?** Mostly no. Sack, crate and the governor's staff read as carried objects. Farmer stick, woodcutter wedge, miner bar and soldier pole are heads-less shafts or blades without a handle: the tool silhouettes are only modestly bigger than before, and the user explicitly asked for tools with more character and readability.
+- **Kingdom colour still visible from above?** Yes. Every citizen still shows a red tunic or shoulders in the 50-degree 170-stud crowd. A rough pixel count of kingdom-red in the crowd shot fell about 14% (1981 to 1704 px), because straw and white hats cover shoulders; red is no longer the only strong colour from above (hat colours now compete), which matters if rival kingdoms are told apart by tunic.
+
+### Fixable problems (NEEDS-WORK rows)
+
+1. **Tools (all working jobs, the user's explicit complaint).** Give each tool a head: farmer = scythe blade (curved wedge) or a fork with three tines on the stick; woodcutter = axe with a visible handle and a bright steel head, held up beside the body, not hanging low; miner = pick head crossing the shaft (a T or crescent); builder = hammer (handle plus block head) in place of or in addition to the crate; soldier = spearhead (small pale wedge or diamond) on the pole. Keep them lighter than the clothes so they separate in greyscale.
+2. **Woodcutter hat:** replace the oversized navy block with a smaller cap, hood or beanie; keep the dark value.
+3. **Builder hat:** make it read as a hard hat or a cloth cap (rounded or with a brim in a warm light colour), not a flat white box; give the builder a different carried item from the hauler's (hammer, plank or ladder).
+4. **Miner vs farmer:** keep the miner's hat smaller than the farmer's disc and add a lamp (a small bright block on the front) so the two discs differ in silhouette, not only hue.
+5. **Variation (farmer, woodcutter, miner, builder, soldier):** the four of each job are clones apart from slight sleeve and trouser shades. Vary hat colour or tilt, shirt shade and hair per individual so a crowd of 30 farmers does not look cloned.
+6. **Idle and bodies (the "too plain" part is not addressed):** all torsos are the same red box and all heads have no face. Add at least a belt or sash stripe and a collar to the shared torso, a couple of hair or headwear variants for idle citizens, and check in Studio whether a face decal restores eyes (unverified here; the renders have none).
+7. **Governor:** make the crown taller or wider and the cape or robe a distinct shape so the governor reads at 170 studs; a thin band and a thin staff are lost from above.
+8. **Soldier:** swap the grey cube plus cone for a proper helmet (dome, or a box with a crest ridge) and add the spearhead; check the pole length against the body.
+9. **Hauler:** add a rope or strap to the sack, and a flat tied top, so it cannot read as hair or a hood; give the hauler trousers a different tone from the sack.
+10. **Head defect:** in `citizen_polish_heads.jpg`, the border between the hair sphere and the face sphere is a jagged, ragged intersection line (hair cap and face overlap). Invisible at 40 studs but visible in the portrait; check in Studio and inset the hair or use a wedge or cap shape.
+11. **Review-sheet issue (not a model defect):** the grey reference dummy overlaps the builder and hauler in `citizen_polish_jobs.jpg`; offset it for the next sheet.
+
+### Verdict
+
+- Visible improvement on "before": **yes for job identification, grouping and crowd read** (the hats and trouser colours are a real, visible gain, strongest on the farmer); **no for the tools**, which still do not read as tools; **none for idle, soldier and governor**, which are essentially unchanged.
+- Passes: the rig set as a whole does **not** pass (variation 3, detail density 3; tools unresolved). Hauler is a marginal pass. Everything is headless and render-based: no Studio evidence.
+- Still reads as placeholder: the tools (stick, grey wedge, dark bar, crate, bare pole), the flat torsos with no faces, the builder's white-box hat, the woodcutter's block hat, the governor's thin crown and the unchanged idle model.
+
+## FL-0118 clip fix on #138 (FORGE-05 visible-defect findings; D-051)
+
+FORGE-05 found two clipping defects on the phase 1 renders: the builder's head poked through its cap, and the hauler's sack
+overlapped the head. Minimal change, still 9 parts; nothing else in the phase 1 design moved.
+- **Builder.** The 1.95 x 0.85 x 1.95 block wrapped the head 0.455 deep and its flat underside cut across the face. It is now
+  a low wedge cap 1.7 x 0.95 x 1.9 (thin lip over the brow, higher crown behind), base 0.45 above the head centre, so it sits
+  ON the head (the head enters it 0.35) and its slope stays above the skull (no skin through it). It is still white linen
+  (L .91); it is a different primitive from the woodcutter's tall dark wedge (height 0.95 against 1.6, spec).
+- **Hauler.** The sack (centre 1.26 right, 4.0 up, 1.28 behind the spine) overlapped the head sphere by 0.25 and the right
+  arm; it is now centred on the spine, 3.05 up and 1.95 behind (still 2.7 across). Gap to the head 0.37 at rest and at least
+  0.30 in every pose of idle, walk, work, carry, fight and flee; gap to both arms at least 0.23.
+- **Other clips found by the same check.** The governor's gold circlet (0.38 tall, top at +0.76) let the head's top
+  (+0.80) poke through its top face; it is now 0.5 tall at +0.66 (covers the head, a gold disc from above). The woodcutter's
+  cap and the miner's pot wrapped the head 0.46 deep; both sit 0.1 higher (cap apex unchanged at 2.04, slope 1.6 tall).
+- **Not a model defect.** The jagged hair/face line seen in `citizen_polish_heads.jpg` comes from the preview's 24-segment
+  spheres; the clipfix renders use 64 x 32 spheres and the line is smooth. Studio spheres are smooth.
+- **Still clipping, not fixable in the Kit.** In the `celebrate` pose (arms raised 140°) the hand tool sweeps through the head
+  (box vs head sphere: farmer -0.34, builder -0.35, hauler's arms are clear, woodcutter -0.07, miner -0.14). The cause is
+  `Sim/Pose.celebrate` (FORGE-04): it gives no Tool rotation. Suggested fix there: tool jobs celebrate with `Tool` swung
+  out (the joint allows 45°) or with one arm raised.
+- **Spec.** `KitCharacter.spec` "clearance" (4 tests): every head surface point above a hat's lower face is inside the hat
+  (so no skin shows through any job hat, whatever the look, nor through the governor's crown); the head enters a hat by
+  0.15-0.4; the sack clears the head sphere (0.2 at rest, 0.1 in poses) and both arms (0.03) in idle, walk, work, carry, fight
+  and flee at speeds 0, 6 and 12; the four hand tools clear the head sphere by 0.1 in the same poses. 10 mutants (old builder
+  block, short peak, old sack position, sack on the arm, sack against the head, old crown, old cap and pot heights, hoe
+  into the head, floating farmer disc) all fail the spec.
+- **Renders** (`img/citizen_polish_clipfix_*.jpg`, looked at): `_heads_a.jpg` (farmer, woodcutter, miner, builder) and
+  `_heads_b.jpg` (hauler, idle, soldier, governor), each from the front, the side and the back; `_builder_hauler.jpg`
+  (builder and hauler enlarged, 3 angles); `_poses.jpg` (hauler walk, flee, work, carry; builder, woodcutter, farmer and
+  miner work, side view); `_crowd.jpg` (30 citizens, 50° at 170 studs, #138 as pushed against after). Result: no head
+  clips a hat or the sack in any tile; the builder reads as a peaked cap, the sack still sits behind the head in the front
+  view (a big brown ball beside the shoulder), so a bun reading remains possible there.
+- **Celebrate renders** (`img/citizen_polish_clipfix_celebrate_{tools,others,gameplay,crowd}.jpg`, looked at, Blender previews only): the
+  #138 rigs (code unchanged, 1e5283c) posed in `Pose.celebrate` as it is on main (1d336eb: #154 plus #158, tool arm 55 degrees, tool
+  tipped 40 back and 20 out), rendered in a scratch worktree of #138 plus `git merge origin/main`, not pushed. `_tools` (farmer, woodcutter,
+  miner, builder) and `_others` (soldier, governor, hauler, idle): front, side at the peak (phase 0.25), side at the low (0.75) and back,
+  upper body; `_gameplay` all eight at about 40 studs; `_crowd` 30 cheering citizens, 50 degrees at 170 studs. Result: the tool is held out
+  beside the shoulder in every tile and no tool passes through a head, hat or the sack; farmer hoe and soldier spear cross the hat or the
+  helm only in projection (front view), and the cheer still reads (both arms up, tool out to the side). Studio unverified.
+
+### Still NEEDS-WORK after this fix (fresh-context D-019 round 1, deferred; not regressions)
+- **Tools are placeholders (Phase 2, D-048):** hoe is a board, axe a head with no handle, pick a bar, mallet a block, spear a
+  bare pole; they need handle + head (2 detail parts).
+- **Woodcutter cap** is oversized and reads as a chimney or bucket; **builder** hat reads as a paper hat, not a hard hat, and
+  the mallet block resembles the hauler's load; **miner** pot is close to the farmer's disc (needs a lamp and a smaller pot).
+- **Variation:** the four of a job are near clones (hat colour, shirt shade); **idle** is the plainest model; torsos are
+  identical red boxes (no belt, sash or collar); **governor** crown and staff are thin from the air, no cape (a welded cape
+  needs a Torso part, outside D-048); **soldier** helm reads as a gnome hat and the spear has no head.
+- **Kingdom red from above** fell about 14% because straw and white hats cover the shoulders.
