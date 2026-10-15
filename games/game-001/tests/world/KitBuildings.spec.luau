@@ -396,10 +396,9 @@ describe("Kit visible levels (G13.5)", function()
 	end)
 end)
 
--- The farm sheet failed D-019 twice: first "wheat still a flat tan slab", then "stacked planks or hay bales in a
--- pen", one tan value for field, thatch, fence and haystack, an L1 outline that was the house cottage plus a pen,
--- and an L2 barn half hidden behind the cottage. These tests pin the rework: upright tufts over open furrows,
--- separated values, a front-visible L1 haystack and an L2 barn clear of the cottage.
+-- The farm sheet failed D-019 three times (a flat tan slab; stacked planks; spikes and flames). The final crop is
+-- the reviewer's recipe: low, flat, uniform golden rows with a lighter cap over brown furrows, under the fence top.
+-- These tests pin it, the grayscale value bands, the kingdom read on L1, the L2 growth, and the barn alignment.
 describe("Kit farm crop and levels (G13.5, D-019)", function()
 	local function named(m: Model, name: string): { BasePart }
 		local out = {}
@@ -420,13 +419,9 @@ describe("Kit farm crop and levels (G13.5, D-019)", function()
 		end
 		return t
 	end
-	-- CIE L* of a colour (sRGB → relative luminance → L*), the grayscale value a reviewer sees
-	local function lstar(c: Color3): number
-		local function lin(v: number): number
-			return if v <= 0.04045 then v / 12.92 else ((v + 0.055) / 1.055) ^ 2.4
-		end
-		local y = 0.2126 * lin(c.R) + 0.7152 * lin(c.G) + 0.0722 * lin(c.B)
-		return if y > 0.008856 then 116 * y ^ (1 / 3) - 16 else 903.3 * y
+	-- Rec. 709 luma of the gamma-encoded colour on 0–255: the grayscale value the reviewer samples
+	local function luma(c: Color3): number
+		return 255 * (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B)
 	end
 	-- the cottage stands on the right (+X), the barn on the left: split same-named roof parts by side
 	local function side(list: { BasePart }, sgn: number): { BasePart }
@@ -438,110 +433,166 @@ describe("Kit farm crop and levels (G13.5, D-019)", function()
 		end
 		return out
 	end
+	local function cropArea(m: Model): number
+		local a = 0
+		for _, p in named(m, "WheatTop") do
+			a += p.Size.X * p.Size.Z
+		end
+		return a
+	end
 
-	it("plants rows along Z over open furrows, each carrying upright zigzag tufts of uneven height", function()
+	it("plants low, flat, uniform golden rows along Z over open furrows, each with a lighter cap", function()
 		for level = 1, 2 do
 			for _, color in COLORS do
 				local m = Buildings.build("farm", level, "complete", color)
-				local rows, tufts = named(m, "Wheat"), named(m, "WheatTuft")
+				local rows, caps = named(m, "Wheat"), named(m, "WheatTop")
 				table.sort(rows, function(a, b)
 					return a.CFrame.Position.X < b.CFrame.Position.X
 				end)
 				expect(#rows).toBeGreaterThanOrEqual(if level == 1 then 7 else 9)
+				expect(#caps).toBe(#rows)
+				local fenceTop = maxTop(named(m, "FencePost"))
 				local lo, hi = math.huge, -math.huge
 				for i, r in rows do
+					expect(r.ClassName).toBe("Part")
+					expect((r :: Part).Shape).toBe(Enum.PartType.Block)
 					expect(r.Size.Z).toBeGreaterThan(4 * r.Size.X)
-					local rowTufts = {}
-					for _, t in tufts do
-						local d = t.CFrame.Position - r.CFrame.Position
-						if math.abs(d.X) < r.Size.X / 2 and math.abs(d.Z) < r.Size.Z / 2 then
-							table.insert(rowTufts, t)
-						end
-					end
 					if i > 1 then
 						local prev = rows[i - 1]
-						local spacing = r.CFrame.Position.X - prev.CFrame.Position.X
-						local gap = spacing - (r.Size.X + prev.Size.X) / 2
+						local gap = (r.CFrame.Position.X - r.Size.X / 2) - (prev.CFrame.Position.X + prev.Size.X / 2)
 						if gap < 0.9 then
-							error(`farm L{level}: bed furrow between rows {i - 1} and {i} is {gap} (< 0.9)`)
-						end
-						-- the tufts leave a dark soil strip too
-						for _, t in rowTufts do
-							if spacing - t.Size.X < 0.9 then
-								error(`farm L{level} row {i}: tuft {t.Size.X} wide closes the furrow ({spacing} pitch)`)
-							end
+							error(`farm L{level}: furrow between rows {i - 1} and {i} is {gap} (< 0.9)`)
 						end
 					end
-					if #rowTufts < 2 then
-						error(`farm L{level} row {i}: {#rowTufts} tufts (want ≥ 2)`)
-					end
-					table.sort(rowTufts, function(a, b)
-						return a.CFrame.Position.Z < b.CFrame.Position.Z
-					end)
-					local bedTop = r.CFrame.Position.Y + r.Size.Y / 2
-					for k, t in rowTufts do
-						-- an upright spike (taller than wide, leaning ≤ ~8°) rising well above its stalk bed
-						expect(t.ClassName).toBe("CornerWedgePart")
-						expect(t.Size.Y).toBeGreaterThan(t.Size.X)
-						expect(t.CFrame.UpVector.Y).toBeGreaterThan(0.99)
-						expect(top(t)).toBeGreaterThan(bedTop + 1.5)
-						-- apexes alternate front/back along the row: a zigzag crop top, never one slab
-						if k > 1 and t.CFrame.LookVector.Z * rowTufts[k - 1].CFrame.LookVector.Z > 0 then
-							error(`farm L{level} row {i}: tufts {k - 1} and {k} lean the same way`)
+					local cap: BasePart? = nil
+					for _, c in caps do
+						local d = c.CFrame.Position - r.CFrame.Position
+						if math.abs(d.X) < r.Size.X / 2 and math.abs(d.Z) < r.Size.Z / 2 then
+							cap = c
 						end
-						lo, hi = math.min(lo, top(t)), math.max(hi, top(t))
 					end
+					if not cap then
+						error(`farm L{level} row {i}: no WheatTop cap`)
+					end
+					local c = cap :: BasePart
+					-- a thin cap inset on the row's top (a soft bevel), lighter than the row
+					expect(c.Size.X).toBeLessThan(r.Size.X - 0.1)
+					expect(c.Size.Z).toBeLessThan(r.Size.Z - 0.1)
+					expect(c.CFrame.Position.Y - c.Size.Y / 2).toBeLessThan(top(r))
+					expect(top(c)).toBeGreaterThan(top(r))
+					expect(luma(c.Color) - luma(r.Color)).toBeGreaterThan(25)
+					lo, hi = math.min(lo, top(c)), math.max(hi, top(c))
 				end
-				if hi - lo < 0.5 then
-					error(`farm L{level}: tuft tops range {hi - lo} (want ≥ 0.5)`)
+				-- uniform height, about 2–2.5 studs, below the fence top
+				expect(hi - lo).toBeLessThan(0.05)
+				expect(lo).toBeGreaterThanOrEqual(2)
+				expect(hi).toBeLessThanOrEqual(2.6)
+				expect(hi).toBeLessThan(fenceTop)
+				-- no pointed crop parts
+				for _, p in parts(m) do
+					if string.sub(p.Name, 1, 5) == "Wheat" and p.ClassName ~= "Part" then
+						error(`farm L{level}: crop part {p.Name} is a {p.ClassName}`)
+					end
 				end
 			end
 		end
 	end)
 
-	it("separates the values: dark soil < shingle roof < saturated gold tufts", function()
+	it(
+		"keeps the grayscale bands apart: brown soil 60–90, hay ≥ 25 below the crop tops, a dark kingdom roof",
+		function()
+			for level = 1, 2 do
+				for _, color in COLORS do
+					local m = Buildings.build("farm", level, "complete", color)
+					local soil = luma(named(m, "Field")[1].Color)
+					expect(soil >= 60 and soil <= 90).toBe(true)
+					local capL = math.huge
+					for _, c in named(m, "WheatTop") do
+						capL = math.min(capL, luma(c.Color))
+					end
+					expect(capL).toBeGreaterThanOrEqual(200)
+					for _, name in { "Haystack", "HaystackTop", "Rick", "RickTop" } do
+						for _, p in named(m, name) do
+							expect(capL - luma(p.Color)).toBeGreaterThanOrEqual(25)
+						end
+					end
+					-- the cottage roof carries the kingdom colour (tinted, recoloured with the kingdom) and stays dark
+					local roof = side(named(m, "RoofTiles"), 1)
+					expect(#roof).toBeGreaterThan(0)
+					for _, p in roof do
+						expect(p:GetAttribute("KitTint")).never.toBeNil()
+						expect(capL - luma(p.Color)).toBeGreaterThan(60)
+					end
+				end
+			end
+		end
+	)
+
+	it("flies the kingdom flag upright on a tall pole at the front-left corner", function()
 		for level = 1, 2 do
-			local m = Buildings.build("farm", level, "complete", COLORS[2])
-			local soil = named(m, "Field")[1]
-			local roof = side(named(m, "RoofTiles"), 1)
-			expect(#roof).toBeGreaterThan(0)
-			local roofL = 0
-			for _, p in roof do
-				roofL = math.max(roofL, lstar(p.Color))
-			end
-			for _, t in named(m, "WheatTuft") do
-				local c = t.Color
-				local mx, mn = math.max(c.R, c.G, c.B), math.min(c.R, c.G, c.B)
-				expect((mx - mn) / mx).toBeGreaterThan(0.75) -- saturated gold, not tan
-				expect(lstar(c) - lstar(soil.Color)).toBeGreaterThan(40)
-				expect(lstar(c) - roofL).toBeGreaterThan(25)
-			end
+			local m = Buildings.build("farm", level, "complete", COLORS[3])
+			local fp = Kit.footprint("farm", level)
+			local pole, flag = named(m, "FlagPole")[1], named(m, "Flag")[1]
+			expect(pole.Size.X).toBeGreaterThanOrEqual(10) -- a column: its length runs along local X
+			expect(pole.CFrame.Position.X).toBeLessThan(-fp.X / 2 + 2)
+			expect(pole.CFrame.Position.Z).toBeLessThan(-fp.Y / 2 + 1)
+			expect(flag.CFrame.UpVector.Y).toBeGreaterThan(0.99)
+			expect(flag.CFrame.Position.Y).toBeGreaterThan(8)
 		end
 	end)
 
-	it("gives L1 a front-visible haystack and L2 more, taller rows and a barn clear of the cottage", function()
+	it("gives L1 a front-visible haystack and L2 more rows, more crop and a barn clear of the cottage", function()
 		for _, color in COLORS do
 			local l1 = Buildings.build("farm", 1, "complete", color)
 			local l2 = Buildings.build("farm", 2, "complete", color)
-			-- L1: the haystack stands in the front half, left of the cottage (not hidden behind it)
 			local hay = named(l1, "Haystack")[1]
 			local cottage1 = named(l1, "Walls")[1]
 			expect(hay).never.toBeNil()
 			expect(hay.CFrame.Position.Z).toBeLessThan(0)
 			expect(hay.CFrame.Position.X).toBeLessThan(cottage1.CFrame.Position.X - cottage1.Size.X / 2 - 5)
 			expect(#named(l2, "Wheat")).toBeGreaterThan(#named(l1, "Wheat"))
-			expect(maxTop(named(l2, "WheatTuft"))).toBeGreaterThan(maxTop(named(l1, "WheatTuft")) + 0.8)
+			expect(cropArea(l2)).toBeGreaterThanOrEqual(cropArea(l1))
 			expect(l1:FindFirstChild("BarnWalls")).toBeNil()
 			local barn = l2:FindFirstChild("BarnWalls") :: BasePart
 			expect(barn).never.toBeNil()
-			-- the barn ridge clears the cottage ridge, the barn stands ≥ 10 studs to the side of the cottage and
-			-- no deeper than 2 studs behind its back wall, so oblique front views see both
 			expect(maxTop(side(named(l2, "RidgeCap"), -1))).toBeGreaterThan(maxTop(side(named(l2, "RidgeCap"), 1)) + 1)
 			local cottage = named(l2, "Walls")[1]
 			local cMinX = cottage.CFrame.Position.X - cottage.Size.X / 2
-			local cBack = cottage.CFrame.Position.Z + cottage.Size.Z / 2
 			expect(cMinX - (barn.CFrame.Position.X + barn.Size.X / 2)).toBeGreaterThanOrEqual(10)
-			expect(barn.CFrame.Position.Z - barn.Size.Z / 2).toBeLessThanOrEqual(cBack + 2)
+		end
+	end)
+
+	it("keeps the barn, its base slab and its roof square to the plot grid in every colour", function()
+		local function square(v: Vector3): boolean
+			return (math.abs(v.X) < 1e-4 or math.abs(v.Z) < 1e-4)
+		end
+		for _, color in COLORS do
+			local m = Buildings.build("farm", 2, "complete", color)
+			local walls, base = named(m, "BarnWalls")[1], named(m, "BarnBase")[1]
+			for _, name in { "BarnWalls", "BarnBase", "BarnDoor", "BarnLintel", "HayloftDoor", "HoistBeam" } do
+				for _, p in named(m, name) do
+					local cf = p.CFrame
+					if
+						math.abs(cf.RightVector.X) < 0.9999
+						or cf.UpVector.Y < 0.9999
+						or math.abs(cf.LookVector.Z) < 0.9999
+					then
+						error(`farm L2: {p.Name} is not square to the plot`)
+					end
+				end
+			end
+			local d = walls.CFrame.Position - base.CFrame.Position
+			expect(math.abs(d.X) + math.abs(d.Z)).toBeLessThan(0.01)
+			-- the barn roof: every axis of every part yawed by a multiple of 90 degrees
+			for _, p in parts(m) do
+				local roofPart = p.Name == "RoofTiles" or p.Name == "RidgeCap" or p.Name == "BargeBoard"
+				if roofPart and p.CFrame.Position.X < 0 then
+					local cf = p.CFrame
+					if not (square(cf.RightVector) and square(cf.UpVector) and square(cf.LookVector)) then
+						error(`farm L2: barn {p.Name} is yawed off the plot grid`)
+					end
+				end
+			end
 		end
 	end)
 end)
