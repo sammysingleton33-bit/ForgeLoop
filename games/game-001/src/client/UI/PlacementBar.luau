@@ -10,7 +10,10 @@
 	bar:render(model, metrics, ui)
 		model = { name, icon, category, costs: { { currency, amount, short } },
 		          status: "pending" | "ok" | "bad", reason: string?, busy: boolean,
-		          facing: number? (degrees on screen, Placement.screenAngle; default 0) }
+		          facing: number? (degrees on screen, Placement.screenAngle; default 0),
+		          confirm: string? (the Place button's word; "Move here" when moving, FL-0120),
+		          okText: string? (the verdict line when the spot is good; default "✓ Good spot"),
+		          clickVerb: string? (the desktop hint's "Click places"; "moves" when moving, FL-0120) }
 		ui = { onRotate, onCancel, onPlace }
 	bar:destroy()
 	The ghost moves cell by cell and every move re-renders: the bar keeps its instances and patches
@@ -44,7 +47,7 @@ end
 
 local function statusOf(model: any): (string, Color3)
 	if model.status == "ok" then
-		return "✓ Good spot", GOOD
+		return model.okText or "✓ Good spot", GOOD
 	elseif model.status == "bad" then
 		return "✕ " .. (model.reason or "Can't build here"), SHORT
 	end
@@ -61,6 +64,8 @@ local function key(model: any, metrics: any): string
 		place = metrics.place,
 		free = Layout.freeArea(metrics, false),
 		name = model.name,
+		confirm = model.confirm,
+		clickVerb = model.clickVerb,
 		icon = model.icon,
 		category = model.category,
 		costs = costs,
@@ -192,9 +197,10 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 			onActivated = call("onCancel"),
 		})
 	cancel.instance.Name = "Cancel"
-	local placeWidth = if phone then 92 else 104
+	-- "Move here" (FL-0120) needs a wider confirm than "Place"
+	local placeWidth = if model.confirm then (if phone then 118 else 132) elseif phone then 92 else 104
 	local place = Button.new({
-		text = "Place",
+		text = model.confirm or "Place",
 		icon = "check",
 		variant = "primary",
 		state = "disabled",
@@ -267,7 +273,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	})
 	if not phone then
 		Style.text({
-			text = "Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click places · Q cancels",
+			text = `Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click {model.clickVerb or "places"} · Q cancels`,
 			weight = Enum.FontWeight.Bold,
 			size = 11,
 			color = Theme.color("parchment100"),

@@ -38,7 +38,7 @@ Consequences for this design:
 - Variants go in custom fields, not in names (`BuildingCompleted` + `buildingType = "Farm"`, never `FarmCompleted`).
 - Field values are low-cardinality categories: types, outcomes, phases, roles, small numbers (placement 1–8, streak days). **Never** user ids, names, free text, timestamps or GUIDs (Roblox groups combinations past 8,000 as "Other").
 - Custom fields never carry personal data. `env.log` analytics lines include the UserId for Studio debugging; they are not forwarded off-platform.
-- Only server code calls AnalyticsService. An event caused by a client request (e.g. SettingChanged) is logged only after the server has validated and applied it, under the per-player bucket. No event is logged on a client's report alone that something was shown or done. The one exception is onboarding's client-reported steps (InspectCitizen, AnswerCitizen; they grant nothing, G11 wording pending FORGE-00).
+- Only server code calls AnalyticsService. An event caused by a client request (e.g. SettingChanged) is logged only after the server has validated and applied it, under the per-player bucket. No event is logged on a client's report alone that something was shown or done. The one exception is onboarding's client-reported step InspectCitizen (a selection only the client sees; it grants nothing, G11 wording pending FORGE-00). AnswerCitizen follows G9 `CitizenAnswered` from the server (FL-0108).
 
 ## 3. Budget (AI Kingdoms, `games/game-001/config/Analytics.luau`)
 
@@ -147,7 +147,7 @@ So session duration is covered twice (dashboard + `SessionEnd.value`); our own e
 | Stuck points in the tutorial | `OnboardingHintEscalated` by step |
 | Early player actions, resource and construction milestones | VS1 funnel steps 2–4 (FL-0063) |
 | Match participation / completion, pacing | VS1 step 6; `MatchEnded` (won, decided phase, duration, mode, so `match` and `match30` compare); `PhaseLeft` |
-| Living kingdom (D-030): which answers rulers give, and how reputation moves | `ConversationAnswered` (decision by occupation and phase, time to answer); `ReputationShifted` (category, source) |
+| Living kingdom (D-030): which answers rulers give, and how reputation moves | `ConversationAnswered` (decision by occupation, time to answer; no phase, #64); `ReputationShifted` (category, source) |
 | Drop-off points | `SessionEnd.lastActivity`; VS1 step-to-step conversion; `PhaseLeft` |
 | Session duration | Dashboard; `SessionEnd.value` |
 | Dead air | `IdleHintShown` per match (PACING.md §6) |
@@ -170,3 +170,4 @@ Each feature file keeps its own history. Changes to the shared sections above (r
 - 2026-10-12 FORGE-04 (FL-0063): VS1 track rules built; sessions start on `KingdomJoined` in game-001 (`session.startOn`); `MatchEnded` and `PhaseLeft` built (MatchAnalyticsService, `session.leftInfo`); SessionEnd's drop-off is the last *logged* bus event; `ConversationAnswered` and `ReputationShifted` declared for FORGE-01 (D-030); budget recomputed.
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; game-001 VS-1 onboarding steps and the declared VS1 funnel (FL-0063); budget recomputed.
 - 2026-10-13 FORGE-04: §5 split into one file per feature under `analytics/schemas/game-001/` (D-038 (7)).
+- 2026-10-15 FORGE-04 (FL-0108): `ConversationAnswered` is logged from G9 `CitizenAnswered` by a track rule (D-044 (3)); ConversationService never calls AnalyticsService.

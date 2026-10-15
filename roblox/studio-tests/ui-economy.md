@@ -220,6 +220,9 @@ tracker on the phone, the summary on the phone and on desktop.
 3. Rotate the camera (Q/E or right-drag), then move the mouse a little: the dial follows the camera
    (it shows where the door faces on screen now). Place it: the building stands the way the arrow
    pointed (its door on the strip's side).
+3b. Turn the camera about 45° off a street (an oblique view) and turn the ghost through all four turns:
+   each time the dial's arrowhead (two strokes and a shaft) points the way the ghost's arrow points on
+   screen, never the opposite way (the dial is drawn with frames since #148; renderer deviation 25).
 4. Gamepad (if available): **R1** turns, **L1** turns back; **Y** still switches the camera view and the ghost does not turn on it.
 5. Phone (emulator): the bar keeps Turn as a 70 × 44 button with the icon and the dial (no word); a tap
    turns the ghost. The name, cost and verdict stay readable.
@@ -231,6 +234,32 @@ tracker on the phone, the summary on the phone and on desktop.
    not fit the 36 × 30 plot turned a quarter).
 8. Phone: the plot detail shows a "Faces …" chip beside the build time and a Turn button left of
    "Build … here"; the price stays visible without scrolling.
+
+## U18 — move a building (FL-0120; needs FORGE-01's base editing server, FL-0119 #140)
+Before #140 the building panel shows no Move: expected.
+1. Tap one of your houses: beside "Upgrade" (or the disabled upgrade reason) is **Move**. Tap your keep or
+   another kingdom's building: no Move.
+2. Tap **Move**: the panel closes, the house turns see-through (dimmed, still drawn), a ghost stands where it
+   is with the door strip and facing arrow, and the bar reads "Move House", no cost, "Move here".
+3. Move the mouse (phone: tap the ground): the ghost follows, green on free ground; red over a tree, a road,
+   a crop field or outside your land, with the reason ("Not enough room there", "Move it inside your keep's
+   land"). R / Turn / R1 turn it; Shift+R / L1 turn back.
+4. Move here on green ground: a toast "House moved"; the house now stands there, the dim is gone, its
+   workers walk over. Open its panel at once: Move reads "Moved" (disabled) and comes back after about 10 s.
+5. Pick it up again and aim at a free plot that fits: the ghost snaps into the plot's outline and the bar
+   reads "✓ Faces the street"; Turn steps through only the turns that fit (a barracks on a medium plot:
+   street or away). Move here: it stands on the plot, turned so; the plot it left (if any) reads free.
+6. Aim at a plot that is built on, or move a wall over a plot: no snap.
+7. Q / Cancel / another menu while moving: the ghost goes, the house is no longer dimmed, nothing moved.
+8. Refusals (needs a rival for 8b): 8a move a house twice within 10 s from the second tap: "It just moved.
+   Wait a few seconds"; 8b while the alarm rings / under attack: "Not while the alarm bell rings" / "Not
+   while it's under attack".
+9. Edit-mode taps (FORGE-04's FL-0121 edit mode, #142): while moving, tap another of your houses, a free
+   plot of yours and the house itself: the move stays (ghost and dim stay, no panel or plot drawer opens).
+   Cancel, then tap the same house: its panel opens as usual.
+10. Pick up a house that stands turned on its plot (U17 step 6, "Faces right"): the snap starts at "Faces
+   right", not "Faces the street". **Move here** without moving it: the move ends quietly (no toast, no
+   "Moved" cooldown in its panel). Turn once and Move here: it turns on its plot and the toast shows.
 
 ## U19 — the back key (FORGE-04's #130: gamepad B, Backspace; a Mac's delete)
 1. Desktop: open **Kingdom**, press Backspace: the drawer closes. Open Build, then Kingdom (one drawer

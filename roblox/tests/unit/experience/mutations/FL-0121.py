@@ -14,5 +14,4 @@ M = [
  ("FL-0121", C2+"RulerCameraController.luau", 'if drag == nil or self.mode ~= "overview" or self._editDrag then', 'if drag == nil or self.mode ~= "overview" then', 'RulerCamera', 'edit mode (G13.9) keeps the overview', "game"),
  ("FL-0121", C2+"RulerCameraController.luau", 'direction += Def.edgeDirection(self._pointer, self:_viewport(), Def.EDGE_PIXELS)', 'direction += Vector2.zero', 'RulerCamera', 'edit mode (G13.9) keeps the overview', "game"),
  ("FL-0121", C2+"RulerCameraController.luau", '\tif mode ~= "edit" then\n\t\tself:setEditDrag(false)\n\tend\n', '', 'RulerCamera', 'edit mode (G13.9) keeps the overview', "game"),
- ("FL-0121", C2+"RulerCameraController.luau", 'if kind ~= "building" or self._input == nil or self._input.mode ~= "edit" or self.mode ~= "overview" then', 'if kind ~= "building" or self._input == nil or self.mode ~= "overview" then', 'RulerCamera', 'selecting your building pans to it', "game"),
 ]

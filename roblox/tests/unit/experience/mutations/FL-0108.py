@@ -13,4 +13,8 @@ M = [
  ("FL-0108", F+"Signals.luau", 'decision = if type(args[4]) == "string" then args[4] else nil', 'decision = args[4]', 'Onboarding', 'CitizenAnswered without secondsOpen', 'game'),
  ("FL-0108", F+"Signals.luau", 'secondsOpen = if type(args[5]) == "number" and args[5] == args[5] then args[5] else nil', 'secondsOpen = if type(args[5]) == "number" then args[5] else nil', 'Onboarding', 'CitizenAnswered without secondsOpen', 'game'),
  ("FL-0108", G+"config/Onboarding.luau", 'clientActions = { "GoalAcknowledged", "CitizenInspected" },', 'clientActions = { "GoalAcknowledged", "CitizenInspected", "CitizenAnswered" },', 'Onboarding', 'client-reported steps grant nothing', 'game'),
+ ("FL-0108", F+"Signals.luau", 'occupation = occupationOf(ctx, args[3]),', 'occupation = nil,', "MatchAnalytics", "logs ConversationAnswered from G9 CitizenAnswered", "game"),
+ ("FL-0108", F+"Signals.luau", 'if ok and type(view) == "table" then view.occupation else nil', 'if ok and type(view) == "table" then view.job else nil', "MatchAnalytics", "logs ConversationAnswered from G9 CitizenAnswered", "game"),
+ ("FL-0108", G+"config/Analytics.luau", 'fields = { "secondsOpen", "occupation", "decision" }', 'fields = { "occupation", "decision" }', "MatchAnalytics", "logs ConversationAnswered from G9 CitizenAnswered", "game"),
+ ("FL-0108", G+"config/Analytics.luau", 'on = "CitizenAnswered",\n\t\t\tevent = "ConversationAnswered",', 'on = "KingdomJoined",\n\t\t\tevent = "ConversationAnswered",', "ConversationAnalytics", "an accepted answer logs one ConversationAnswered", "game"),
 ]

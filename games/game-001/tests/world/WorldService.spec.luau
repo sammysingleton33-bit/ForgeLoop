@@ -330,8 +330,379 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		expect(svc:isReady()).toBe(true)
 		-- descendants include attachments and folders, so allow a little slack over the part budget
 		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
-		expect(svc.stats.parts).toBeLessThan(9000)
+		-- D-047 / FL-0116: 6,569 with the trimmed dressing (8,328 untrimmed; plot showcase, in-view stands and relocated decor stay); restoring the density knob after a
+		-- phone test means raising this with it, since the 27k all-built ceiling depends on it
+		expect(svc.stats.parts).toBeLessThan(6700)
 		svc:destroy()
+	end)
+end)
+
+-- Order-sensitive fingerprint of placements: asset ids and all 12 CFrame components to 1e-3.
+local function fingerprint(placements: { any }): number
+	local m, acc = 2147483647, 7
+	for _, p in placements do
+		for i = 1, #p.assetId do
+			acc = (acc * 31 + string.byte(p.assetId, i)) % m
+		end
+		for _, c in { p.cframe:GetComponents() } do
+			acc = (acc * 31 + math.floor(c * 1000 + 0.5)) % m
+		end
+	end
+	return acc
+end
+
+local function samePlacement(a: any, b: any): boolean
+	if a.assetId ~= b.assetId or a.feature ~= b.feature then
+		return false
+	end
+	local ca, cb = { a.cframe:GetComponents() }, { b.cframe:GetComponents() }
+	for i = 1, 12 do
+		if ca[i] ~= cb[i] then
+			return false
+		end
+	end
+	return true
+end
+
+local function placementKey(p: any): string
+	local q = p.cframe.Position
+	return string.format("%s@%.3f,%.3f,%.3f", p.assetId, q.X, q.Y, q.Z)
+end
+
+describe("Dressing density knob (D-047)", function()
+	local ALL = { crimson = true, azure = true, emerald = true, gold = true }
+	local TRIMMABLE = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
+
+	it(
+		"rebuilds the untrimmed valley exactly at density 1.0 (the plan pinned from main d78d9cb, minus the clearance)",
+		function()
+			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
+			local plan = WorldPlan.plan(Layout, { crimson = true })
+			expect(#plan).toBe(618)
+			expect(fingerprint(plan)).toBe(1099084135) -- main d78d9cb's props, before the plot clearance and the trim
+			local cleared = WorldPlan.clear(Layout, plan)
+			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
+			expect(#one).toBe(615)
+			expect(fingerprint(one)).toBe(553271438)
+			expect(#cleared).toBe(#one)
+			for i, p in one do
+				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
+			end
+			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
+			expect(#all).toBe(642)
+			expect(fingerprint(all)).toBe(749948861)
+			local env, svc = boot()
+			svc.density = WorldPlan.FULL_DENSITY
+			svc:start()
+			env.mock:advance(30)
+			expect(svc.stats.error).toBeNil()
+			expect(svc.stats.props).toBe(615)
+			expect(svc.stats.parts).toBe(8328)
+			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
+			local forests = Layout.features.forests
+			local floorOps = 0
+			for _, call in svc.terrain.calls do
+				if string.sub(call.method, 1, 4) == "Fill" and call.op.feature == "forest_floor" then
+					floorOps += 1
+					local forest = forests[floorOps]
+					expect(call.op.radius).toBeNear(forest.radius * 1.05, 1e-6)
+					expect(call.op.cframe.Position.X).toBeNear(forest.center.X, 1e-6)
+					expect(call.op.cframe.Position.Z).toBeNear(forest.center.Y, 1e-6)
+				end
+			end
+			expect(floorOps).toBe(#forests)
+			svc:destroy()
+		end
+	)
+
+	it("only removes dressing: the trimmed plan is an ordered subset of the full one", function()
+		for _, dressed in { { crimson = true }, ALL } do
+			local full = WorldPlan.props(Layout, dressed, WorldPlan.FULL_DENSITY)
+			local trimmed = WorldPlan.props(Layout, dressed)
+			expect(#trimmed).toBeLessThan(#full)
+			local j, bad = 1, {}
+			for _, p in full do
+				local q = trimmed[j]
+				if q and samePlacement(p, q) then
+					j += 1
+				elseif not TRIMMABLE[p.feature] then
+					table.insert(bad, `{p.assetId} ({p.feature}) removed`)
+				end
+			end
+			expect(table.concat(bad, "; ")).toBe("")
+			expect(j).toBe(#trimmed + 1) -- every kept placement found, unmoved and in order
+		end
+	end)
+
+	it(
+		"never thins bridges, crops or kingdom dressing, even far from every camera, and thins the rest there",
+		function()
+			local far = CFrame.new(-480, 0, 60) -- clear of every plot frame, road band and the heartland
+			expect(WorldPlan.unseen(Layout, -480, 60)).toBeGreaterThan(0)
+			local plan = {}
+			for _, feature in { "bridge", "crops", "dressing", "forest", "lone_tree", "bush", "rocks", "flowers" } do
+				table.insert(plan, { assetId = "x_01", cframe = far, feature = feature })
+			end
+			local out = WorldPlan.trim(Layout, plan, { forest = 0, props = 0 }) -- everything the knob may thin goes
+			local kept = {}
+			for _, p in out do
+				kept[p.feature] = true
+			end
+			expect(#out).toBe(3)
+			expect(kept.bridge and kept.crops and kept.dressing).toBe(true)
+		end
+	)
+
+	it("keeps plot framing, approach roads and the heartland, and thins the map edges first", function()
+		local full = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
+		local kept = {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			kept[placementKey(p)] = true
+		end
+		local f = Layout.features
+		local centres = {}
+		for _, k in { "crimson", "azure", "emerald", "gold" } do
+			table.insert(centres, (Layout.plots[k].anchors.keep * CFrame.new(0, 0, -40)).Position)
+		end
+		-- the overview camera's focus box: the regions' box plus its 40-stud margin
+		local minX, minZ, maxX, maxZ = math.huge, math.huge, -math.huge, -math.huge
+		for _, region in Layout.regions do
+			for _, v in region.polygon do
+				minX, minZ = math.min(minX, v.X - 40), math.min(minZ, v.Y - 40)
+				maxX, maxZ = math.max(maxX, v.X + 40), math.max(maxZ, v.Y + 40)
+			end
+		end
+		local bad = {}
+		local edge, inside = { n = 0, cut = 0 }, { n = 0, cut = 0 }
+		for _, p in full do
+			if TRIMMABLE[p.feature] then
+				local pos = p.cframe.Position
+				local gone = not kept[placementKey(p)]
+				local near = false
+				for _, c in centres do
+					near = near or Vector2.new(pos.X - c.X, pos.Z - c.Z).Magnitude < 150
+				end
+				for r = 1, 4 do -- the four approach roads (plot gate to hub)
+					near = near or WorldPlan.distToPolyline(pos.X, pos.Z, f.roads[r].points) < 30
+				end
+				for _, o in Layout.objectives do
+					local q = o.cframe.Position
+					near = near or Vector2.new(pos.X - q.X, pos.Z - q.Z).Magnitude < 120
+				end
+				if gone and near then
+					table.insert(bad, `{p.assetId} ({p.feature}) at ({math.floor(pos.X)}, {math.floor(pos.Z)})`)
+				end
+				local out = pos.X < minX or pos.X > maxX or pos.Z < minZ or pos.Z > maxZ
+				local bucket = if out then edge else inside
+				bucket.n += 1
+				bucket.cut += if gone then 1 else 0
+			end
+		end
+		expect(table.concat(bad, "; ")).toBe("")
+		expect(edge.n).toBeGreaterThan(0)
+		expect(edge.cut / edge.n).toBeGreaterThan(2 * inside.cut / inside.n)
+	end)
+
+	it("thins each stand from the outside in, so the stand keeps its middle", function()
+		local forests = Layout.features.forests
+		local full = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
+		local kept = {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			kept[placementKey(p)] = true
+		end
+		local checked = 0
+		for _, forest in forests do
+			local keptSum, keptN, lostSum, lostN = 0, 0, 0, 0
+			for _, p in full do
+				local r = (Vector2.new(p.cframe.Position.X, p.cframe.Position.Z) - forest.center).Magnitude
+				if p.feature == "forest" and r <= forest.radius then
+					if kept[placementKey(p)] then
+						keptSum, keptN = keptSum + r, keptN + 1
+					else
+						lostSum, lostN = lostSum + r, lostN + 1
+					end
+				end
+			end
+			if lostN >= 3 then
+				checked += 1
+				expect(lostSum / lostN).toBeGreaterThan(keptSum / keptN) -- what goes was further out than what stays
+			end
+		end
+		expect(checked).toBeGreaterThanOrEqual(4)
+	end)
+
+	it("sizes each thinned stand's ground disc to the trees that stay (forest floors)", function()
+		local floors, today = WorldPlan.forestFloors(Layout), WorldPlan.forestFloors(Layout, WorldPlan.FULL_DENSITY)
+		local trees, full = {}, {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			if p.feature == "forest" then
+				table.insert(trees, Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
+			end
+		end
+		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
+			if p.feature == "forest" then
+				table.insert(full, Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
+			end
+		end
+		local shrunk = 0
+		for s, forest in Layout.features.forests do
+			expect(today[s].r).toBeNear(forest.radius * 1.05, 1e-6) -- density 1.0 is today's disc
+			local centre = Vector2.new(floors[s].x, floors[s].z)
+			local inside, far, before = 0, 0, 0
+			for _, t in trees do
+				if (t - forest.center).Magnitude <= forest.radius then
+					inside += 1
+					far = math.max(far, (t - centre).Magnitude)
+				end
+			end
+			for _, t in full do
+				before += if (t - forest.center).Magnitude <= forest.radius then 1 else 0
+			end
+			expect(floors[s].r).toBeLessThanOrEqual(today[s].r + 1e-6)
+			expect((centre - forest.center).Magnitude).toBeLessThanOrEqual(forest.radius * 0.2) -- the disc stays centred
+			expect(far).toBeLessThanOrEqual(floors[s].r) -- every tree that stays stands on the disc
+			if inside < before then
+				shrunk += 1
+				-- it ends 5 % of the stand radius beyond its outermost tree, not further, and is smaller than today's
+				expect(floors[s].r - far).toBeNear(forest.radius * 0.05, 0.5)
+				expect(floors[s].r).toBeLessThan(today[s].r)
+			else
+				expect(floors[s].r).toBeNear(today[s].r, 1e-6)
+			end
+		end
+		expect(shrunk).toBeGreaterThanOrEqual(4)
+	end)
+
+	it("fills the terrain with the thinned floors (WorldService)", function()
+		local floors = WorldPlan.forestFloors(Layout)
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		local n = 0
+		for _, call in svc.terrain.calls do
+			if string.sub(call.method, 1, 4) == "Fill" and call.op.feature == "forest_floor" then
+				n += 1
+				expect(call.op.radius).toBeNear(floors[n].r, 1e-6)
+				expect(call.op.cframe.Position.X).toBeNear(floors[n].x, 1e-6)
+			end
+		end
+		expect(n).toBe(#Layout.features.forests)
+		svc:destroy()
+	end)
+
+	it(
+		"never thins the plot showcase: everything within 60 studs of a field, building or slot, or in the farm's view",
+		function()
+			local full = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
+			local kept = {}
+			for _, p in WorldPlan.props(Layout, ALL) do
+				kept[placementKey(p)] = true
+			end
+			local checked, bad = 0, {}
+			for _, p in full do
+				if TRIMMABLE[p.feature] and WorldPlan.showcase(Layout, p.cframe.Position.X, p.cframe.Position.Z) then
+					checked += 1
+					if not kept[placementKey(p)] then
+						table.insert(
+							bad,
+							`{p.assetId} at ({math.floor(p.cframe.Position.X)}, {math.floor(p.cframe.Position.Z)})`
+						)
+					end
+				end
+			end
+			expect(checked).toBeGreaterThan(50)
+			expect(table.concat(bad, "; ")).toBe("")
+			-- the farm's pines that the starting-farm views showed (gold: keep-frame (-1, 162) and (-96, 143))
+			local keep = Layout.plots.gold.anchors.keep
+			for _, at in { Vector3.new(-1, 0, 162), Vector3.new(-96, 0, 143) } do
+				local world = keep:PointToWorldSpace(at)
+				expect(WorldPlan.showcase(Layout, world.X, world.Z)).toBe(true)
+			end
+		end
+	)
+
+	it("keeps a forest stand whole when the plot showcase or the cameras reach it, and thins the others", function()
+		local forests = Layout.features.forests
+		local full, trimmed = {}, {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
+			if p.feature == "forest" then
+				table.insert(full, p)
+			end
+		end
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			if p.feature == "forest" then
+				table.insert(trimmed, p)
+			end
+		end
+		local function inStand(list: { any }, forest: any): { any }
+			local out = {}
+			for _, p in list do
+				if
+					(Vector2.new(p.cframe.Position.X, p.cframe.Position.Z) - forest.center).Magnitude <= forest.radius
+				then
+					table.insert(out, p)
+				end
+			end
+			return out
+		end
+		local whole, thinned = 0, 0
+		for _, forest in forests do
+			local before, after = inStand(full, forest), inStand(trimmed, forest)
+			local shown, unseen = 0, 0
+			for _, p in before do
+				shown += if WorldPlan.showcase(Layout, p.cframe.Position.X, p.cframe.Position.Z) then 1 else 0
+				unseen += WorldPlan.unseen(Layout, p.cframe.Position.X, p.cframe.Position.Z)
+			end
+			if shown > #before * 0.25 or unseen < #before * 15 then
+				whole += 1
+				expect(#after).toBe(#before)
+			else
+				thinned += 1
+				expect(#after).toBeLessThan(#before)
+			end
+		end
+		expect(whole).toBeGreaterThanOrEqual(4)
+		expect(thinned).toBeGreaterThanOrEqual(3)
+	end)
+
+	it("thins each kind to its knob and no forest stand by more than 1.6 times the forest cut", function()
+		local d = WorldPlan.density(Layout)
+		local full = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
+		local kept = {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			kept[placementKey(p)] = true
+		end
+		local n, k = {}, {}
+		local standN, standK = {}, {}
+		for _, p in full do
+			if TRIMMABLE[p.feature] then
+				local here = if kept[placementKey(p)] then 1 else 0
+				n[p.feature] = (n[p.feature] or 0) + 1
+				k[p.feature] = (k[p.feature] or 0) + here
+				if p.feature == "forest" then
+					local pos = p.cframe.Position
+					for s, forest in Layout.features.forests do
+						if (Vector2.new(pos.X, pos.Z) - forest.center).Magnitude <= forest.radius then
+							standN[s] = (standN[s] or 0) + 1
+							standK[s] = (standK[s] or 0) + here
+						end
+					end
+				end
+			end
+		end
+		-- stands near the plots or in view stay whole, so the forest keeps at least the knob's share
+		expect(k.forest / n.forest).toBeGreaterThanOrEqual(d.forest - 0.01)
+		expect(k.forest / n.forest).toBeLessThan(1)
+		for _, kind in { "lone_tree", "bush", "rocks", "flowers" } do
+			expect(k[kind] / n[kind]).toBeGreaterThanOrEqual(d.props - 0.01) -- more where the framing protects
+		end
+		local stands = 0
+		for s, total in standN do
+			local loss = (total - standK[s]) / total
+			expect(loss).toBeLessThanOrEqual(math.min(1, (1 - d.forest) * 1.6) + 0.5 / total)
+			stands += 1
+		end
+		expect(stands).toBe(#Layout.features.forests)
 	end)
 end)
 
