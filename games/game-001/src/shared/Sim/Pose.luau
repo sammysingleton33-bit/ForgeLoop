@@ -24,6 +24,9 @@
 		Pose.JOINTS, Pose.LIMITS (max rotation per joint, degrees), Pose.WALK_REF_SPEED, Pose.STRIDE
 	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up);
 	every other joint and action stays within 90°. Torso lift stays within ±2 studs.
+	Celebrate: both arms up for rigs with nothing in the right fist (idle citizens) or a sack on the back
+	(hauler). Every other job holds the tool arm out to the side (80° + the pump) and tips the tool back to the Tool
+	joint's limit, so no tool goes through the head: tests/sim/PoseClearance.spec measures it on Kit rigs.
 ]]
 
 local Pose = {}
@@ -178,14 +181,25 @@ local function fight(out: Joints, s: number)
 	out.Tool = IDENTITY
 end
 
-local function celebrate(out: Joints, s: number, c: number)
+-- Jobs that cheer with both arms straight up: no tool in the right fist (idle), or a sack on the back (hauler).
+local CHEERS_EMPTY_HANDED: { [string]: boolean } = { idle = true, hauler = true }
+local TOOL_CHEER_RAISE = 80 -- the tool arm held out to the side (degrees, plus the same 10 * s pump); the free arm stays at 140
+
+local function celebrate(out: Joints, job: string, s: number, c: number)
 	local raise = 140 + 10 * s
 	out.Torso = torso(0, 0, 0.3 * (1 - c) / 2)
 	out.Head = rx(10)
 	out.LeftArm = rz(-raise)
-	out.RightArm = rz(raise)
+	if CHEERS_EMPTY_HANDED[job] then
+		out.RightArm = rz(raise)
+		out.Tool = IDENTITY
+	else
+		-- a hoe, axe, pick, hammer or spear held up beside the head would go through it (B17: Sim/PoseClearance
+		-- measures it): the tool arm stays lower and the tool tips back as far as its joint allows
+		out.RightArm = rz(TOOL_CHEER_RAISE + 10 * s)
+		out.Tool = rx(-Pose.LIMITS.Tool)
+	end
 	legs(out, 0, 0)
-	out.Tool = IDENTITY
 end
 
 local function dead(out: Joints)
@@ -215,7 +229,7 @@ function Pose.sample(action: string, job: string, phase: number, speed: number, 
 	elseif action == "fight" then
 		fight(o, s)
 	elseif action == "celebrate" then
-		celebrate(o, s, c)
+		celebrate(o, job, s, c)
 	elseif action == "dead" then
 		dead(o)
 	else
