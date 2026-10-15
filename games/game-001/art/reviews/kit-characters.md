@@ -357,15 +357,15 @@ grayscale), `citizen_polish1b_idle.jpg` (12 idle looks).
   high (top 6.09, was 6.68). Its rim runs above the eyes and meets the head at 53° (spec: at least 35°, rim at least 0.33
   above the head centre on the face side).
 - **Miner pot smaller and darker than the farmer disc.** Pot 2.2 x 0.8 ochre (L .50) became 1.9 x 0.7 dark burnt ochre
-  (L .39); the farmer's disc went 3.4 to 3.1 and its straw to L .62. Spec: pot width at most 0.65 of the disc, pot value at
+  (L .44, palette .38-.44); the farmer's disc went 3.4 to 3.1 and its straw to L .62. Spec: pot width at most 0.65 of the disc, pot value at
   least 0.1 darker.
 - **Builder hat.** Cream cloth cap (240, 214, 160, was white) on the same low peaked wedge. It still does not read as a hard hat:
   a one-part dome cannot leave its rim above the eyes except as a tall egg (the rim sits at +0.1 for a flat dome), so the dome
   with a brim is a Phase 2 detail-part item. Honest status: improved from white paper to warm cloth cap, not a hard hat.
 - **Per-individual variation, from the look alone** (no wire field): the hair colour, hidden under a working citizen's hat,
-  dyes the clothes: trousers and neutral panel (8 dyes, +-14%) and the shirt's kingdom tint factor (8 shifts, +-0.1, KitTint
+  dyes the clothes: trousers and neutral panel (a palette of three hues per job times 8 dyes of +-10%) and the shirt's kingdom tint factor (8 shifts, -0.16 to +0.12, KitTint
   stays exact so `setKingdomColor` still matches; the default look is unchanged). Spec: 8 shirt tones and 8 trouser dyes per
-  job, different jobs' trousers stay at least 10 apart under every dye pair.
+  job, different jobs' trousers stay at least 10 apart under every dye pair, the three palette picks differ in hue (not only brightness).
 - **Idle variety.** Idle citizens carry nothing, so the free 9th part is an `Accessory` welded to the Head on about two looks
   in three: a headband (kingdom red or indigo) or a scarf (cream or rust). Spec: share between 55 and 80%, never on any other
   job or kind, headband above the eyes, scarf below the chin line, flags as the other parts, 9 parts at most.
@@ -386,3 +386,17 @@ grayscale), `citizen_polish1b_idle.jpg` (12 idle looks).
   oversized, pot wide or light, sack beside the head or in the legs, headband on the eyes, scarf over the face, no red sleeves,
   dye or shirt tone ignored, accessory on everyone or welded to the torso, thin crown, thin staff, tall spire, shifted default
   look) all fail the spec. `check.sh` OVERALL PASS (game-001 specs 1431 passed).
+
+### Phase 1b: fresh-context D-019 re-score, round 1 (image-only reviewer), and round 2
+Round 1 (first build, images `citizen_polish1b_*` at d32fecf): **rig set NEEDS-WORK**, sil 4 / var 3 / read 3 / prop 3 / pal 4 /
+detail 3 / cohes 4. Per rig (sil / var / read): farmer 4/2/4, woodcutter 3/2/3, miner 3/2/3, builder 4/2/4, hauler 3/3/3, idle
+3/4/4, soldier 5/4/5 (PASS), governor 4/4/4 (PASS). Findings, worst first: no within-job variation in the 4-per-job aerial group
+(all clones); the axe and pick are flat slabs that merge in grayscale; the hauler's front view is almost the idle citizen; the
+builder carries a crate and its wedge looks like folded paper; farmer, miner and governor hats are all flat discs; tool-to-arm
+joins are ragged; the idle hair is a split sphere; detail density is low. Kingdom red: 380 to 441 px (confirmed).
+Round 2 (this commit): variation made visible. Each working job has a palette of three hat colours (look.hair: six hats = three
+colours x three tilts, one value band per job so grayscale separation holds), three panel and three trouser hues (hair colour),
+a wider shirt-tone shift, and the miner pot a little lighter so it separates from the woodcutter in grayscale. Kingdom-red
+pixels in the crowd crop: 443 (main 420, #138 380). Not addressed here because each needs a second part (Phase 2, D-048): tools
+with handle and head, the hauler's strap and sack tie, the builder's hard hat (dome + visor) and hammer, the miner's lamp, the
+spearhead. Hair is still a hemisphere (a cap shape is a separate change).

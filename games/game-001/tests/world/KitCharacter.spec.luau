@@ -1186,6 +1186,47 @@ describe("Kit.character individuals, idle accessories, governor and low crest (a
 		end
 	)
 
+	it("gives each working job three hat colours and varied panels (per individual)", function()
+		for _, job in WORKING do
+			local hats = {}
+			for hair = 1, R.hair do
+				local rig = Kit.character("citizen", job, CRIMSON, lookOf(hair, 1, 1, 1))
+				hats[child(rig, "Hair").Color:ToHex()] = true
+			end
+			local n = 0
+			for _ in hats do
+				n += 1
+			end
+			expect(n).toBe(3) -- three palette colours, each worn by two of the six hair styles
+			local panels = {}
+			for hairColor = 1, R.hairColor do
+				-- outfit 4 (apron) has a neutral torso, which takes the dyed job panel
+				local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, hairColor, 4, 1))
+				expect(child(rig, "Torso"):GetAttribute("KitAccent")).toBe(job)
+				panels[child(rig, "Torso").Color:ToHex()] = true
+			end
+			local m = 0
+			for _ in panels do
+				m += 1
+			end
+			expect(m).toBeGreaterThanOrEqual(6)
+			-- the three palette picks differ in hue, not only in brightness (the dye): (R - B) / (R + G + B)
+			local function chroma(c: Color3): number
+				return (c.R - c.B) / (c.R + c.G + c.B)
+			end
+			local lo, hi, llo, lhi = math.huge, -math.huge, math.huge, -math.huge
+			for hairColor = 1, 3 do
+				local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, hairColor, 4, 1))
+				lo, hi =
+					math.min(lo, chroma(child(rig, "Torso").Color)), math.max(hi, chroma(child(rig, "Torso").Color))
+				local leg = chroma(child(rig, "LeftLeg").Color)
+				llo, lhi = math.min(llo, leg), math.max(lhi, leg)
+			end
+			expect(hi - lo).toBeGreaterThanOrEqual(0.03)
+			expect(lhi - llo).toBeGreaterThanOrEqual(0.03)
+		end
+	end)
+
 	it(
 		"gives working citizens kingdom-red sleeves (red shoulders from above) or the job panel, by hair colour",
 		function()

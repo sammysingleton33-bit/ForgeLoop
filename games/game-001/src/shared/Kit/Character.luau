@@ -93,10 +93,10 @@ local BLADE = Color3.fromRGB(138, 146, 158)
 local BURLAP = Color3.fromRGB(146, 108, 70) -- sack: a darker sackcloth (L .46)
 local LINEN = Color3.fromRGB(226, 214, 186)
 local LEATHER = Color3.fromRGB(120, 78, 46)
-local STRAW = Color3.fromRGB(200, 156, 64) -- farmer's hat: straw (L .62)
+local STRAW = Color3.fromRGB(200, 156, 64) -- farmer's hat: straw (L .62; palette L .58-.67)
 local KNIT = Color3.fromRGB(52, 58, 70) -- woodcutter's cap: charcoal wool (neutral, so it never reads as a kingdom)
-local HARDHAT = Color3.fromRGB(150, 92, 30) -- miner's iron pot: dark burnt ochre (L .39)
-local COIF = Color3.fromRGB(240, 214, 160) -- builder's cloth cap: warm cream (L .85)
+local HARDHAT = Color3.fromRGB(168, 104, 34) -- miner's iron pot: dark burnt ochre (L .44; palette L .38-.44)
+local COIF = Color3.fromRGB(240, 214, 160) -- builder's cloth cap: warm cream (L .85; palette L .83-.87)
 local ASH = Color3.fromRGB(214, 190, 146) -- spear shaft: pale ash, visible against grass and soldiers' steel
 local ERMINE = Color3.fromRGB(242, 238, 228)
 local FACE_TEXTURE = "rbxasset://textures/face.png" -- Roblox's built-in classic face (engine content, no upload)
@@ -130,6 +130,7 @@ type PartSpec = {
 	material: Enum.Material,
 	offset: CFrame, -- relative to the joint frame (head centre for headwear, hand for tools)
 	onBack: boolean?, -- tool jointed to the Root (sack) instead of the right hand
+	palette: { Color3 }?, -- job hats: three colour variants of one value band (look.hair picks one; `color` is the first)
 }
 
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90)) -- cylinder axis (X) → +Y
@@ -211,6 +212,7 @@ local JOB_HATS: { [string]: PartSpec } = {
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(0.42, 3.1, 3.1),
 		color = STRAW,
+		palette = { STRAW, Color3.fromRGB(214, 170, 60), Color3.fromRGB(178, 146, 92) },
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 0.62, 0) * UPRIGHT,
 	},
@@ -222,6 +224,7 @@ local JOB_HATS: { [string]: PartSpec } = {
 		shape = Enum.PartType.Ball,
 		size = Vector3.new(1.5, 1.5, 1.5),
 		color = KNIT,
+		palette = { KNIT, Color3.fromRGB(40, 52, 84), Color3.fromRGB(44, 64, 50) },
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 0.7, 0.05),
 	},
@@ -231,6 +234,7 @@ local JOB_HATS: { [string]: PartSpec } = {
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(0.7, 1.9, 1.9),
 		color = HARDHAT,
+		palette = { HARDHAT, Color3.fromRGB(160, 84, 40), Color3.fromRGB(140, 106, 40) },
 		material = Enum.Material.Metal,
 		offset = CFrame.new(0, 0.79, 0) * UPRIGHT, -- base 0.44; 1.9 across against the farmer's 3.1
 	},
@@ -241,13 +245,22 @@ local JOB_HATS: { [string]: PartSpec } = {
 		class = "WedgePart",
 		size = Vector3.new(1.7, 0.95, 1.9),
 		color = COIF,
+		palette = { COIF, Color3.fromRGB(246, 224, 140), Color3.fromRGB(244, 208, 170) },
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 0.925, 0.05),
 	},
 }
 -- The hat takes the look's hair slot, so look.hair picks a variant of it: a roll tilt (3) and a shade (2).
-local HAT_ROLLS = { 0, math.rad(9), math.rad(-9) }
-local HAT_SHADES = { 1, 0.88 } -- shaded hats of different jobs never overlap in luminance (spec)
+-- look.hair (1..6) -> a colour of the job's palette (3) and a roll tilt about the head (3): six distinct hats, each
+-- colour and each tilt used twice. The palettes stay inside one value band per job, so jobs still separate in grayscale.
+local HAT_VARIANTS = {
+	{ colour = 1, roll = 0 },
+	{ colour = 2, roll = math.rad(9) },
+	{ colour = 3, roll = math.rad(-9) },
+	{ colour = 1, roll = math.rad(9) },
+	{ colour = 2, roll = math.rad(-9) },
+	{ colour = 3, roll = 0 },
+}
 
 local GOVERNOR_CROWN: PartSpec = { -- gold circlet on the head, a gold disc from above; it covers the head's top
 	-- (the head used to poke through its top face): 1.9 across (a wide gold disc from the air), bottom 0.42 above the
@@ -378,6 +391,8 @@ type JobStyle = {
 	hat: PartSpec?,
 	panel: Color3?,
 	legs: Color3?,
+	panels: { Color3 }?, -- three panel colours of one value band (hair colour picks one; `panel` is the first)
+	legsSet: { Color3 }?, -- likewise for the trousers
 }
 local JOBS: { [string]: JobStyle } = {
 	idle = { width = 1.9 },
@@ -387,33 +402,43 @@ local JOBS: { [string]: JobStyle } = {
 		hat = JOB_HATS.farmer,
 		panel = Color3.fromRGB(232, 222, 190),
 		legs = Color3.fromRGB(98, 104, 58),
+		panels = { Color3.fromRGB(232, 222, 190), Color3.fromRGB(214, 224, 196), Color3.fromRGB(236, 214, 176) },
+		legsSet = { Color3.fromRGB(98, 104, 58), Color3.fromRGB(86, 108, 66), Color3.fromRGB(84, 100, 84) },
 	},
-	woodcutter = { -- dark: umber leather, black-brown trousers, charcoal cap, bright steel axe
+	woodcutter = { -- dark: umber leather, black-brown trousers, charcoal beanie, bright steel axe
 		width = 2.3,
 		tool = "axe",
 		hat = JOB_HATS.woodcutter,
 		panel = Color3.fromRGB(96, 66, 46),
 		legs = Color3.fromRGB(58, 42, 32),
+		panels = { Color3.fromRGB(96, 66, 46), Color3.fromRGB(84, 70, 66), Color3.fromRGB(110, 66, 44) },
+		legsSet = { Color3.fromRGB(58, 42, 32), Color3.fromRGB(50, 46, 48), Color3.fromRGB(70, 40, 36) },
 	},
-	miner = { -- cool grey: soot panel, coal trousers, ochre hat
+	miner = { -- cool grey: soot panel, coal trousers, dark ochre pot
 		width = 2.2,
 		tool = "pick",
 		hat = JOB_HATS.miner,
 		panel = Color3.fromRGB(122, 126, 136),
 		legs = Color3.fromRGB(70, 68, 72),
+		panels = { Color3.fromRGB(122, 126, 136), Color3.fromRGB(132, 124, 116), Color3.fromRGB(110, 122, 140) },
+		legsSet = { Color3.fromRGB(70, 68, 72), Color3.fromRGB(62, 70, 84), Color3.fromRGB(74, 76, 64) },
 	},
-	builder = { -- tan canvas, dusty navy trousers, white cap
+	builder = { -- tan canvas, dusty navy trousers, cream cap
 		width = 2.3,
 		tool = "hammer",
 		hat = JOB_HATS.builder,
 		panel = Color3.fromRGB(196, 158, 104),
 		legs = Color3.fromRGB(52, 62, 94),
+		panels = { Color3.fromRGB(196, 158, 104), Color3.fromRGB(186, 170, 120), Color3.fromRGB(206, 160, 90) },
+		legsSet = { Color3.fromRGB(52, 62, 94), Color3.fromRGB(60, 58, 100), Color3.fromRGB(84, 84, 100) },
 	},
 	hauler = { -- sackcloth panel and russet trousers; keeps the look's hair (the sack is the signature)
 		width = 2.3,
 		tool = "sack",
 		panel = Color3.fromRGB(156, 118, 80),
 		legs = Color3.fromRGB(112, 68, 42),
+		panels = { Color3.fromRGB(156, 118, 80), Color3.fromRGB(146, 122, 92), Color3.fromRGB(164, 112, 76) },
+		legsSet = { Color3.fromRGB(112, 68, 42), Color3.fromRGB(96, 72, 52), Color3.fromRGB(122, 76, 50) },
 	},
 }
 Character.JOB_HEADWEAR = table.freeze((function()
@@ -622,20 +647,19 @@ local function specPart(
 	return rigPart(model, name, spec.class, spec.shape, spec.size, cf, color, spec.material, tint)
 end
 
--- look.hair (1..6) picks one of 6 variants of a job hat: roll 0 / +9° / −9° about the head's front axis, in
--- the full shade or 0.88 of it. The shape, size and KitHeadwear name never change.
+-- look.hair (1..6) picks one of 6 variants of a job hat: a colour of its palette and a roll tilt (HAT_VARIANTS).
+-- The shape, size and KitHeadwear name never change.
 local function hatVariant(spec: PartSpec, hairIndex: number): PartSpec
-	local roll = HAT_ROLLS[(hairIndex - 1) % #HAT_ROLLS + 1]
-	local tone = HAT_SHADES[((hairIndex - 1) // #HAT_ROLLS) % #HAT_SHADES + 1]
-	local color = spec.color :: Color3
+	local v = HAT_VARIANTS[(hairIndex - 1) % #HAT_VARIANTS + 1]
+	local palette = spec.palette :: { Color3 }
 	return {
 		name = spec.name,
 		class = spec.class,
 		shape = spec.shape,
 		size = spec.size,
-		color = Color3.new(color.R * tone, color.G * tone, color.B * tone),
+		color = palette[v.colour],
 		material = spec.material,
-		offset = CFrame.Angles(0, 0, roll) * spec.offset, -- a jaunty tilt about the head, not about the hat's own centre
+		offset = CFrame.Angles(0, 0, v.roll) * spec.offset, -- a jaunty tilt about the head, not about the hat's own centre
 	}
 end
 
@@ -646,8 +670,8 @@ end
 --  * working jobs: an odd hair colour keeps the job panel on neutral sleeves, an even one tints those sleeves with
 --    the kingdom colour (red shoulders from above; the hat covers the head and much of the chest).
 -- The default look (hair colour 1, skin 1) changes nothing.
-local TINT_SHIFT = { 0, -0.06, 0.06, -0.1, 0.1, -0.03, 0.03, -0.08 }
-local DYE = { 1, 0.92, 1.08, 0.86, 1.14, 0.96, 1.04, 0.9 }
+local TINT_SHIFT = { 0, -0.1, 0.08, -0.16, 0.12, -0.05, 0.05, -0.12 }
+local DYE = { 1, 0.94, 1.06, 0.9, 1.1, 0.97, 1.03, 0.92 }
 local SLEEVE_TINT = 0.78
 
 local function shiftTint(p: Paint, shift: number): Paint
@@ -672,8 +696,10 @@ end
 -- The job's accent on an outfit (see the header): the fixed neutral torso/sleeve colour (not a kingdom tint, not
 -- bare skin) becomes the dyed panel colour and the trousers the dyed legs colour. `sleevesTinted`: neutral sleeves
 -- take the kingdom tint instead of the panel.
-local function jobOutfit(outfit: Outfit, job: JobStyle, dye: number, sleevesTinted: boolean): Outfit
-	local panel = dyed(job.panel :: Color3, dye)
+local function jobOutfit(outfit: Outfit, job: JobStyle, l: CitizenLook, sleevesTinted: boolean): Outfit
+	local panels, legsSet = job.panels :: { Color3 }, job.legsSet :: { Color3 }
+	local dye = DYE[l.hairColor]
+	local panel = dyed(panels[(l.hairColor - 1) % #panels + 1], dye)
 	return {
 		name = outfit.name,
 		torso = if typeof(outfit.torso) == "Color3" then panel else outfit.torso,
@@ -681,7 +707,7 @@ local function jobOutfit(outfit: Outfit, job: JobStyle, dye: number, sleevesTint
 			then outfit.sleeves
 			elseif sleevesTinted then SLEEVE_TINT
 			else panel,
-		legs = dyed(job.legs :: Color3, dye),
+		legs = dyed(legsSet[(l.hairColor - 1) % #legsSet + 1], dye),
 		legMaterial = outfit.legMaterial,
 	}
 end
@@ -738,7 +764,7 @@ function Character.character(
 			local sleevesTinted = l.hairColor % 2 == 0
 			panelTorso = typeof(outfit.torso) == "Color3"
 			panelSleeves = typeof(outfit.sleeves) == "Color3" and not sleevesTinted
-			outfit, accentJob = jobOutfit(outfit, jobSpec, DYE[l.hairColor], sleevesTinted), job
+			outfit, accentJob = jobOutfit(outfit, jobSpec, l, sleevesTinted), job
 		end
 		if jobSpec.hat then -- the job hat takes the Hair slot; look.hair picks its variant
 			headwear = hatVariant(jobSpec.hat, l.hair)
