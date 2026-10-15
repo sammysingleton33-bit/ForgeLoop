@@ -510,5 +510,9 @@ tipped 40 back and 20 out), merged into this branch; its `tests/sim/PoseClearanc
   `_poses.jpg` (new): miner work, celebrate and flee, builder work, celebrate and fight, farmer work and celebrate, front and side: the
   tool is held beside the head, the cap and the pot sit clear of it, a cheer still reads. In side projection the pick bar and the mallet overlap the
   hat and the head on screen, in space they are 0.15 or more away. From the 3/4 tool view and at 40 studs the miner's pick reads as a
-  small hammer-like T; it reads as a pick in the side, work and celebrate views. `_crowd.jpg` and `_aerial.jpg` were not re-rendered (the pick is a
-  few pixels there) and still show the earlier, lower pick bar.
+  small hammer-like T; it reads as a pick in the side, work and celebrate views. `_crowd.jpg` (30 citizens round a farm, 50 degrees at 170 studs) and
+  `_aerial.jpg` (4 per job at 170 studs) are re-rendered after the fix, same looks, positions and cameras as the phase 1b halves beside them;
+  kingdom-red pixels in the crowd crop 466 (461 before the fix, 443 phase 1b). Looked at, including a 2x zoom: no visible clip. From the air the
+  miner's pick reads as a long thin dark bar beside the orange pot (not an unmistakable pickaxe; one bar stands up past the head), distinct from the
+  builder's brown mallet block next to a cream hard hat and the woodcutter's grey axe head under a red pompom; the farmer is a straw disc with a
+  red crown and a small grey blade at its edge. Studio unverified.
