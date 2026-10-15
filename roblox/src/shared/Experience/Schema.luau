@@ -14,7 +14,8 @@
 			daily        = { streak = 0, lastClaimDay = -1, claimedTotal = 0, graceUsedDay = -1 }
 		}
 		OnboardingProgress = { version: number, completed: number, skipped: boolean,
-		                       startedAt: number?, finishedAt: number? }
+		                       startedAt: number?, finishedAt: number?, satisfied: { [stepId]: true },
+		                       earned: boolean? }   -- earned: a step was done by its real action (D-052 (3))
 
 	Versioning: VERSION is the namespace version. To change the shape, add MIGRATIONS[k] (data at
 	version k -> data at k + 1) and bump VERSION. DataService calls migrate(data, k) for

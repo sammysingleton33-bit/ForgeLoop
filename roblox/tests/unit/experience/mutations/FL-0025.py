@@ -21,4 +21,9 @@ M = [
  ("FL-0025", X+"Subjects.luau", 'local covered = Subjects.DEFAULTS[name] ~= nil or', 'local covered = true or', "AnalyticsSchema", "names the events neither the defaults nor the game", "fw"),
  ("FL-0025", S+"OnboardingService.luau", '	if #problems == 0 then\n		for _, name in Subjects.missing(Onboarding.events(config), subjects) do', '	if false then\n		for _, name in Subjects.missing(Onboarding.events(config), subjects) do', "Onboarding", "a config listening to an event that no resolver covers is invalid", "fw"),
  ("FL-0025", X+"Onboarding.luau", '		add(flow.startOn or "PlayerReady")\n', '', "Onboarding", "a config listening to an event that no resolver covers is invalid", "fw"),
+ ("FL-0025", X+"Onboarding.luau", '\tif PAID_VIA[via] then\n\t\tstate.earned = true\n\tend\n', '', "Onboarding", "a flow pays its completeReward only if", "fw"),
+ ("FL-0025", X+"Onboarding.luau", 'if state.finishedAt == nil or state.earned ~= true then', 'if state.finishedAt == nil then', "Onboarding", "a flow pays its completeReward only if", "fw"),
+ ("FL-0025", X+"Onboarding.luau", '\t\tearned = state.earned == true,\n', '', "Onboarding", "a flow pays its completeReward only if", "fw"),
+ ("FL-0025", X+"Onboarding.luau", '\t\t\tearned = stored.earned == true,\n', '\t\t\tearned = false,\n', "Onboarding", "a flow pays its completeReward only if", "fw"),
+ ("FL-0025", S+"OnboardingService.luau", 'local reward = Onboarding.completionReward(flow, state)', 'local reward = flow.completeReward', "Onboarding", "every server step passed over pays no completeReward", "fw"),
 ]

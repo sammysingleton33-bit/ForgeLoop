@@ -22,6 +22,9 @@
 			            leftEvent: string?, leftInfo: ((player, ctx) -> { [string]: any }?)? }?,
 			            -- at session end, before endEvent: leftInfo's fields as leftEvent (nil = nothing)
 			subjects = { [eventName]: resolver }?,  -- game resolvers for its own events (Experience/Subjects)
+			milestones = { funnel: string, event: string, info: ((player, ctx) -> { [string]: any }?)? }?,
+			            -- after each sent step n >= 2 of a once funnel: event with value = seconds since the
+			            -- session started and field milestone = the step name, plus info's fields (FORGE-00 M7)
 			limits = { perPlayerPerMinute: number?, safety: number?, customReserve: number? }?,
 		}
 		Rule = { on: string, funnel: string?, step: number?, event: string?, session: ("start" | "continue" | "match")?,
@@ -321,6 +324,33 @@ local function checkSession(config: any, knownEvents: { string }, problems: { st
 	end
 end
 
+local function checkMilestones(config: any, problems: { string })
+	local spec = config.milestones
+	if spec == nil then
+		return
+	end
+	if type(spec) ~= "table" then
+		table.insert(problems, "milestones: must be a table { funnel, event, info? }")
+		return
+	end
+	local funnel = if type(config.funnels) == "table" then config.funnels[spec.funnel] else nil
+	if funnel == nil or funnel.kind ~= "once" or not isList(funnel.steps) or #funnel.steps < 2 then
+		table.insert(
+			problems,
+			`milestones.funnel: '{tostring(spec.funnel)}' must name a once funnel with at least 2 steps`
+		)
+	end
+	local event = if type(config.events) == "table" then config.events[spec.event] else nil
+	if event == nil then
+		table.insert(problems, `milestones.event: unknown event '{tostring(spec.event)}'`)
+	elseif type(event.value) ~= "string" or not isList(event.fields) or not table.find(event.fields, "milestone") then
+		table.insert(problems, `milestones.event: {spec.event} needs a value and a 'milestone' field`)
+	end
+	if spec.info ~= nil and type(spec.info) ~= "function" then
+		table.insert(problems, "milestones.info: must be a function (player, ctx) -> fields?")
+	end
+end
+
 function AnalyticsSchema.validate(config: any, knownEvents: { string }): { string }
 	local problems: { string } = {}
 	if type(config) ~= "table" then
@@ -330,6 +360,7 @@ function AnalyticsSchema.validate(config: any, knownEvents: { string }): { strin
 	checkFunnels(config, problems)
 	checkRules(config, knownEvents, problems)
 	checkSession(config, knownEvents, problems)
+	checkMilestones(config, problems)
 	return problems
 end
 

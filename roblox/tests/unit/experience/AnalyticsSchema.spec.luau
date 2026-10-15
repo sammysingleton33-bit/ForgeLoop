@@ -161,6 +161,24 @@ describe("Experience/AnalyticsSchema", function()
 		expect(hasProblem(problems, "funnels.Return: inOrder must be a boolean")).toBe(true)
 		expect(hasProblem(problems, "funnels.Onboarding: inOrder must be a boolean")).toBe(true)
 	end)
+
+	it("checks milestones: a once funnel of 2+ steps, an event with a value and a milestone field (M7)", function()
+		local config = valid()
+		config.events.Milestone = { description = "d", value = "sinceStartSec", fields = { "milestone", "mode" } }
+		config.milestones = { funnel = "Return", event = "Milestone", info = function() end }
+		expect(AnalyticsSchema.validate(config, KNOWN)).toEqual({})
+		config.milestones = { funnel = "Shop", event = "Thing", info = 3 }
+		local problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "milestones.funnel: 'Shop' must name a once funnel")).toBe(true)
+		expect(hasProblem(problems, "milestones.event: Thing needs a value and a 'milestone' field")).toBe(true)
+		expect(hasProblem(problems, "milestones.info: must be a function")).toBe(true)
+		config.milestones = { funnel = "Onboarding", event = "Missing" }
+		problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "milestones.funnel: 'Onboarding' must name a once funnel")).toBe(true)
+		expect(hasProblem(problems, "milestones.event: unknown event 'Missing'")).toBe(true)
+		config.milestones = "VS1"
+		expect(hasProblem(AnalyticsSchema.validate(config, KNOWN), "milestones: must be a table")).toBe(true)
+	end)
 end)
 
 describe("Experience/Subjects.missing (FORGE-00 review M8)", function()
