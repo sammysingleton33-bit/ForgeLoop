@@ -205,6 +205,7 @@ describe("AI Kingdoms first playable", function()
 		positions[101] = { x = tree.x + 200, z = tree.z }
 		expect({ invoke(env, p1, "Kingdom.Gather", tree.id) }).toEqual({ false, "too_far" })
 		positions[101] = { x = tree.x + 4, z = tree.z }
+		env.mock:advance(6) -- the sim follows the character at Match.rulerMaxSpeed, so the 196-stud jump takes 5 s
 		expect({ invoke(env, p1, "Kingdom.Gather", tree.id) }).toEqual({ true, "wood", 2 })
 		expect({ invoke(env, p1, "Kingdom.Gather", tree.id) }).toEqual({ false, "cooldown" })
 		expect(sim:balance(kid, "wood") >= woodBefore + 2).toBe(true)

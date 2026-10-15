@@ -3,13 +3,14 @@ id: FL-0122
 title: Server hardening from FORGE-07's audit — Converse hold cap, ruler presence plausibility, ruler gathering ownership and rate
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0097, FL-0051]
-evidence: []
+evidence:
+  - "bash roblox/scripts/check.sh at b756f0eb: OVERALL PASS (Lune 517/0; game-001 specs 1356 passed, 0 failed, 86 files); 18/18 mutation rows caught (FL-0122.py, run with the FL-0119 runner); forge.py validate + check_ownership PASS. Headless only: unverified in Studio."
 ---
 
 # Server hardening from FORGE-07's audit — Converse hold cap, ruler presence plausibility, ruler gathering ownership and rate
@@ -36,3 +37,5 @@ Automated: specs and mutation rows for each rule (a hold renewal attempt, a tele
 
 ## Log
 - 2026-10-15 FORGE-00: created from FORGE-07's first audit (D-050).
+- 2026-10-15 forge-01: READY → BUILDING. Started: Converse hold allowance per showing, MatchHost ruler position clamp (rulerMaxSpeed) + snapRuler on spawn, RulerGather own/neutral land + per-kingdom per-minute allowance; specs + 18 mutation rows.
+- 2026-10-15 forge-01: BUILDING → REVIEW. Built to D-050 (3) and (6): hold cap 90 s per showing (refund on close), ruler position follows the report at <= 40 studs/s (snapRuler after server pivots), Kingdom.Gather own/neutral land only (new reason not_your_node) and wood 9 / stone 6 / gold 6 / food 4 per minute per kingdom (over it answers cooldown). PR from forge/01-gameplay-fl0122. Headless only; Studio rows in gameplay.md.

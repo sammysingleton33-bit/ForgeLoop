@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: [FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
@@ -19,6 +19,8 @@ evidence:
   - check.sh OVERALL PASS @9e4fb27 (with FL-0090); FL-0053 mutation rows 18/18 CAUGHT after the rework
   - Ruler.spec standUp case; mutations.py FL-0053 19/19
   - "main d887beb: Ruler.spec asserts Sit == false after standUp; check.sh PASS"
+  - InputMode.spec 17/17; mutations.py FL-0053 23/23 CAUGHT; Studio E11 unverified
+  - InputMode.spec 18/18; mutations.py FL-0053 30/30 CAUGHT; Studio E11 unverified
 ---
 
 # Ruler third-person controller, camera and input modes
@@ -50,3 +52,5 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FL-0081 seats the ruler on the throne: RulerController:standUp now sets Humanoid.Sit = false (FORGE-01's #89 handoff), then jumps, so walk mode unseats and the server stops re-seating. Studio unverified (Seat engine behaviour).
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #99 (d887beb): standUp sets Humanoid.Sit = false then jumps, so the server stops re-seating the ruler (FL-0081). REVIEW, only G6 pending (walk mode from the throne, K11).
 - 2026-10-13 forge-04: REVIEW → REVIEW. Status unchanged (--force). #29 shake Medium (FORGE-00 audit, D-038 follow-ups): each frame's shake is undone before Roblox's camera runs (undoShake at RenderPriority.Camera - 1), so walk mode never drifts; NaN and infinite shakes are refused. Specs + 3 mutation rows; in PR #84 (FL-0100) because both edit RulerCameraController.
+- 2026-10-13 forge-04: REVIEW → REVIEW. Back key for FORGE-05's #126 L6 (FORGE-03's proposal): InputModeController.back fires on gamepad B / Backspace in explore mode (not Esc, not GUI-handled, not the press that left build mode); Studio E11; handoff forge-04-to-forge-03-back-key
+- 2026-10-15 forge-04: REVIEW → REVIEW. #130 FORGE-07 review: merged main (B14 rows, E9/E10, log lines first); L1 topmost wins: the back Signal becomes InputModeController:onBack(handler) -> release (most recently registered first, true = took the press, errors skipped and logged once) and :back(); E11 step 5 (stacked panels, Mac delete key); handoff updated for FORGE-03
