@@ -220,7 +220,7 @@ tracker on the phone, the summary on the phone and on desktop.
 3. Rotate the camera (Q/E or right-drag), then move the mouse a little: the dial follows the camera
    (it shows where the door faces on screen now). Place it: the building stands the way the arrow
    pointed (its door on the strip's side).
-4. Gamepad (if available): **Y** turns.
+4. Gamepad (if available): **R1** turns, **L1** turns back; **Y** still switches the camera view and the ghost does not turn on it.
 5. Phone (emulator): the bar keeps Turn as a 70 × 44 button with the icon and the dial (no word); a tap
    turns the ghost. The name, cost and verdict stay readable.
 6. Plot turn (FORGE-01's v0.4-g9h server, #132): tap a free medium plot, pick Storehouse. Under the
