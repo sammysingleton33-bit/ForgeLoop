@@ -16,6 +16,7 @@ evidence:
   - "mutations caught: EntityService 6/6, client 23/23, tick + staggering 2/2, Nav for units 1/1"
   - "codec spec: every packet <= 900 B at 50 and 300 entities; EntityService spec: <= 900 B with 300 live entities"
   - "#39 b37cf9f, #54 a65d99b; integration-log.md"
+  - "main 6ac5515 + #93: check.sh PASS (framework 517/0, game-001 1231/0); PR CI run 38459385628 green; FORGE-05 probe: a kingdom thought across a failed tick delivered once"
 ---
 
 # Entity simulation core, snapshot codec, replication and client rendering
@@ -59,3 +60,4 @@ Server-simulated entities appear and move smoothly on every client at scale (D-0
 - 2026-10-12 forge-01: READY → BUILDING. codec v2, EventCodec, EntityService, EntityController (sub-worker), 16 Hz tick, staggered decisions, Layout.nav routing
 - 2026-10-12 forge-01: BUILDING → REVIEW. In PR [FORGE-01] FL-0049 (stacked on #31). Studio K8 and the perf capture (PERF.md) are pending a user run.
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0104 (#39 M1: citizens more than 150 studs from the ruler hidden in the aerial view).
+- 2026-10-13 forge-05: REVIEW → REVIEW. #39 lows follow-up merged as #93 (7694638), D-040 fallback verdict (star by FORGE-00, D-046); FORGE-05 M1 (a failed tick dropped its kingdom events) fixed in e819fd8. REVIEW, only G6 pending (Studio: citizens replicate smoothly at scale). FORGE-07 post-merge review owed.

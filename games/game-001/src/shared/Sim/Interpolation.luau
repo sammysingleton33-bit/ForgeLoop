@@ -20,9 +20,12 @@
 		Interpolation.evaluate(track, renderTime?, out?): State?          -- nil while empty; nil renderTime
 		                                                                    = the newest sample
 		Interpolation.newest(track): number?                              -- newest sample time
+		Interpolation.rebase(track, t)                                    -- keeps only the newest sample, at
+		                                                                    time t (a clock snap: new timeline)
 		Interpolation.lerpYaw(a, b, alpha): number                        -- radians in [0, 2π)
 		Interpolation.newClock(): Clock
-			clock:observe(serverTime, localTime)
+			clock:observe(serverTime, localTime): boolean             -- true when an established offset
+			                                                          snapped (the old timeline is over)
 			clock:serverNow(localTime): number?                       -- nil before the first observation
 			clock:renderTime(localTime, delay): number?               -- monotonic unless the clock snapped
 			clock:reset()
@@ -56,6 +59,18 @@ end
 function Interpolation.newest(track: Track): number?
 	local n = #track.samples
 	return if n > 0 then track.samples[n].t else nil
+end
+
+-- After a clock snap the old samples sit on the old timeline: keep the newest one as the start of the
+-- new timeline, so the entity holds its place instead of interpolating towards old-timeline points.
+function Interpolation.rebase(track: Track, t: number)
+	local samples = track.samples
+	local newest = samples[#samples]
+	table.clear(samples)
+	if newest then
+		newest.t = t
+		samples[1] = newest
+	end
 end
 
 function Interpolation.push(track: Track, t: number, position: Vector3, yaw: number, action: string, carrying: string?)
@@ -124,7 +139,7 @@ end
 export type Clock = {
 	offset: number?,
 	last: number?,
-	observe: (self: Clock, serverTime: number, localTime: number) -> (),
+	observe: (self: Clock, serverTime: number, localTime: number) -> boolean,
 	serverNow: (self: Clock, localTime: number) -> number?,
 	renderTime: (self: Clock, localTime: number, delay: number) -> number?,
 	reset: (self: Clock) -> (),
@@ -137,20 +152,22 @@ function Interpolation.newClock(): Clock
 	return (setmetatable({ offset = nil, last = nil }, ClockClass) :: any) :: Clock
 end
 
-function ClockClass.observe(self: Clock, serverTime: number, localTime: number)
+function ClockClass.observe(self: Clock, serverTime: number, localTime: number): boolean
 	local sample = serverTime - localTime
 	if sample ~= sample or math.abs(sample) == math.huge then
-		return
+		return false
 	end
 	local offset = self.offset
 	if offset == nil or math.abs(sample - offset) > Interpolation.SNAP then
 		self.offset = sample
 		self.last = nil -- a snap may move the render time backwards (new match)
+		return offset ~= nil
 	elseif sample > offset then
 		self.offset = offset + (sample - offset) * Interpolation.RISE
 	else
 		self.offset = offset + (sample - offset) * Interpolation.FALL
 	end
+	return false
 end
 
 function ClockClass.serverNow(self: Clock, localTime: number): number?

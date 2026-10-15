@@ -18,6 +18,7 @@ evidence:
   - "negative (each exit 1, tree restored clean): framework module requiring @game/ReplicatedStorage/Game -> place check policy FAIL (D-022); missing cross-tree dependency -> Boot.spec FAIL; start() error -> Boot.spec FAIL; Economy Remotes in both trees -> place check areas FAIL + Boot.spec FAIL; same service name in both trees -> Boot.spec FAIL; runner bad option -> exit 2"
   - merged PR #6 as cbe3881; PR CI run 38300402808 green (9/9 steps); CI on main run 38300509272 green with artifacts forgeloop-main-cbe3881 and forgeloop-game001-cbe3881, both places BuildInfo stamped cbe38818d5fe (CI log)
   - "#5 fb5c086, #6 cbe3881, #36 da90aba; integration-log.md"
+  - main CI run 38396625897 (#116) and 38419615095 (#120) green
 ---
 
 # game-001 project wiring: Rojo project, Game-tree discovery, harness, require policy, CI
@@ -46,3 +47,4 @@ check.sh green for both projects; negative test: a framework module requiring Ga
 - 2026-10-12 forge-05: BUILDING → REVIEW. Wiring done and gated headlessly; Studio confirmation (S1 on forgeloop-game001 build) pending. world/ mount waits for FORGE-02's first world file (Rojo fails on a missing path).
 - 2026-10-12 forge-05: merged PR #6 (cbe3881). Stays REVIEW until the user's S1 on forgeloop-game001-cbe3881 (G6).
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main; the user's Studio run (G6) is the only gate left (STUDIO_PLAYTEST check 1).
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 log: #116 (56b4d7c) check.sh runs game specs one top-level folder at a time, each under STEP_TIMEOUT (CI headroom: sim 242 s, world 102 s); #120 (0d71eff) MockEnv installs EngineStubs once per process, so client specs that fire a celebration run headlessly. REVIEW, only G6 pending (the user's S1 on a current build).

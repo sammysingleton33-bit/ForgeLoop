@@ -18,6 +18,7 @@ evidence:
   - python3 tools/check_ownership.py --base origin/main --head HEAD --owner forge-03 -> PASS
   - "#63 5764630; check.sh 1020/0; integration-log.md"
   - "main d3525db: e2e slice with #63 client: recruit 3 via drawer, Send to capture, summary 'Victory / Lasted 2:37', 0 errors; CI run 38361561318 green"
+  - "integration-log #103 row: check.sh PASS on the merge result, main CI green"
 ---
 
 # Army and objective panels, end-of-slice summary
@@ -44,3 +45,4 @@ Prototypes reviewed; Studio screenshots
 - 2026-10-12 forge-03: BUILDING → REVIEW. Army drawer (rail button + Army tab on my barracks' upgrade panel; Army.Recruit 1..10, Army.Command({}, capture) + 3 s cooldown), objective tracker (Army.Objectives/GetObjectives, in-place bars), slice summary (Match.Ended). FORGE-01 doubles in tests/economy/doubles/ArmyDoubles (FL-0052 not built); assumptions in production/handoffs/2026-10-12-forge-03-to-forge-01-army-ui.md. Headless only: Studio U14 pending.
 - 2026-10-13 forge-05: REVIEW → BUILDING. Merged #63 (FORGE-05, D-038 (5)): the Army drawer, tracker and summary are on main but hidden until FORGE-01's Army server (#70, FL-0052) lands; merged code with work left = BUILDING. Then REVIEW with G6 (STUDIO_PLAYTEST check 9).
 - 2026-10-13 forge-05: BUILDING → REVIEW. Army server #70 merged (d3525db), so the drawer, tracker and summary are live. Only G6 pending: STUDIO_PLAYTEST check 9 (row 7) from B7. Known: ArmyText recruit_cap advice 'Build houses first' is wrong after D-041 (should say upgrade the barracks).
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 log: the #86 review follow-ups are closed by #103 (f2d430a): M1 Studio text and L2-L9. REVIEW, only G6 pending (STUDIO_PLAYTEST check 9, row 7, from B7; captured-tower look from B11).

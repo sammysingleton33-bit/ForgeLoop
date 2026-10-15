@@ -151,6 +151,7 @@ return deepFreeze({
 			audience_condition = {},
 			audience_loyalty = 1,
 			kingdom = { happiness = 0, stability = 0, morale = 0 },
+			notice = "Walls rise where the raiders broke through.",
 		},
 		{
 			id = "fund_barracks",
@@ -209,6 +210,7 @@ return deepFreeze({
 			audience_condition = {},
 			audience_loyalty = 1,
 			kingdom = { happiness = 0, stability = 0, morale = 1 },
+			notice = "Fresh recruits swear their oaths to the crown.",
 		},
 		{
 			id = "soldiers_recruited",
