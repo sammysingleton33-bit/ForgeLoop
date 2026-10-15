@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g10, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g10a, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -160,7 +160,7 @@ EntityController.event: Signal<(EntityId, cue: string, payload: any, Model?)>
 EntityController:pick(screenPos: Vector2): EntityId?
 EntityController:getModel(id: EntityId): Model?
 InteractionController.gathered: Signal<(nodeId: string, ResourceId, amount: number)>   -- FORGE-01
-InputModeController:set(mode: "explore" | "build"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090); "command" is VS-2
+InputModeController:set(mode: "explore" | "build" | "edit"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090; "edit" FL-0121, G13.9); "command" is VS-2
 InputModeController.selected: Signal<(kind: "citizen" | "building" | "slot" | "none", id: number | string)>   -- G13.6
 RulerCameraController:setMode(mode: "overview" | "follow")                    -- FORGE-04; "overview" = aerial management view (VS-1 default, D-030), "follow" = walk mode
 ```
@@ -634,11 +634,12 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   Slot occupancy uses the same placement gap, so a slot never reads free while placing on it is refused.
 - **Events.** G9 `BuildingMoved` (FORGE-01; declared in `GameEvents.luau` by FORGE-05, the custodian): `(Building, player?, from: { position: Vector3, rot: number }, slotId: string?)`.
 - **Input and camera (FORGE-04, additive to G4.1/G13.6).**
-  - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings, plus free slots as MoveToSlot targets.
+  - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings and own plots. The input layer can't know occupancy. Whether a plot is a valid MoveToSlot target (free, or the building's own) is decided by FORGE-03's snap and, finally, by the server (`slot_occupied`). Selecting a building in edit mode doesn't move the camera; while moving, a tap aims the ghost (v0.4-g10a, #157).
   - `RulerCameraController` keeps the overview in edit mode and adds `setEditDrag(active)` (drag-pan off, edge-pan on while dragging).
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g10a (2026-10-15) FORGE-00: G4.1 `InputModeController:set` includes `"edit"`. G13.9 edit-mode taps select own buildings and own plots; validity is decided by the snap and the server; no camera jump on select (FORGE-07 #142 L2/L3, #157).
 - v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. G13.8: optional presentation tags on the `Kingdom.Converse` and `Kingdom.Choose` results (FORGE-03 proposal, FL-0110/FL-0111). (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
 - v0.4-g9j (2026-10-15) FORGE-00: G13.9 hardened after an adversarial code review of the base-editing rules:
   - destinations only in the keep's own territory circle;
