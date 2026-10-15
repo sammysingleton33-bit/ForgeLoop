@@ -260,6 +260,7 @@ function Simulation:addKingdom(def: { [string]: any })
 		citizenIds = {} :: { number },
 		unitIds = {} :: { number },
 		quotas = table.clone(tuning.startCitizens),
+		quotaRev = 0, -- +1 on every accepted quota change (SetJobQuota, setJob): co-rulers' panels follow it
 		priorities = { food = 1, wood = 1, stone = 1, gold = 1 },
 		alarm = false,
 		alive = true,
@@ -901,6 +902,7 @@ function Simulation:setJob(citizen: any, job: string)
 	if job ~= "hauler" then
 		kingdom.quotas[job] = (kingdom.quotas[job] or 0) + 1
 	end
+	kingdom.quotaRev = (kingdom.quotaRev or 0) + 1
 	citizen.job = job
 	citizen.done = citizen.carrying == nil -- rethink now unless mid-delivery
 	self:emit("CitizenReassigned", { kingdomId = kingdom.id, citizenId = citizen.id, from = from, to = job })

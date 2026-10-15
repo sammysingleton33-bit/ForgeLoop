@@ -14,7 +14,7 @@ M = [
  ("FL-0090", C2+"RulerCameraController.luau", 'self:panBy(direction * (overview.panSpeed * target.zoom * dt))', 'self:panBy(direction * (overview.panSpeed * dt))', "RulerCamera", "WASD pans relative to the view", "game"),
  ("FL-0090", C2+"InputModeController.luau", '\n\t\tlocal ok, entityId = pcall(entities.pick, entities, screenPos)', '\n\t\tlocal ok, entityId = false, nil', "InputMode", "a tap on a citizen selects it", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return (upAt - downAt).Magnitude < config.tapPixels and heldSec <= config.tapSec', 'return true', "InputMode", "a drag (pan) or a long press is not a tap", "game"),
- ("FL-0090", C2+"InputModeController.luau", 'if nextMode == "build" and self.selection.kind ~= "none" then', 'if false then', "InputMode", "build mode clears the selection", "game"),
+ ("FL-0090", C2+"InputModeController.luau", 'if nextMode ~= "explore" and self.selection.kind ~= "none" then', 'if false then', "InputMode", "build mode clears the selection", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'for _ = 1, 8 do', 'for _ = 1, 20 do', "InputMode", "resolveHit() stops after 8 levels", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'if okId and buildingId ~= nil then', 'if false then', "InputMode", "selects the building through", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return "slot", if okSlot and slotId ~= nil then slotId else current.Name', 'return "slot", current.Name', "InputMode", "selects the slot through the BuildSlot tag", "game"),

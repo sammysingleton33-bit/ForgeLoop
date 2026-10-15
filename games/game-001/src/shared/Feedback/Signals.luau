@@ -19,6 +19,7 @@
 	| BuildingCompleted / BuildingUpgraded / BuildingDestroyed | (building, player?) | members of building.kingdom | buildingType, level, kingdom           |
 	| ResourceGathered   | (player?, kingdomId, resourceId, amount, source) | ruler: the player; citizen: members | resource, amount, source, kingdom       |
 	| UnitsRecruited     | (player, kingdomId, count)                     | the player                        | count, kingdom                               |
+	| CitizenAnswered    | (player, kingdomId, citizenId, decisionId, secondsOpen?) | the answering player    | kingdom, decision, secondsOpen (no ids)      |
 	| ObjectiveCaptured  | (objectiveId, kingdomId)                       | members of kingdomId              | objectiveId, kingdom                         |
 	| KingdomEliminated  | (kingdomId, by?)                               | members of kingdomId / of by      | role = "eliminated" / "victor", kingdom, by  |
 	| MatchEnded         | ({ winner?, standings, durationSec })          | every player                      | won, durationSec, winner                     |
@@ -121,6 +122,19 @@ Signals.subjects = table.freeze({
 	end,
 	UnitsRecruited = function(args: { any }): { Subject }
 		return { { player = args[1], info = { kingdom = args[2], count = args[3] } } }
+	end,
+	-- G9 (D-044 (3), FL-0107): the ruler whose answer was accepted; the citizen's id stays out of info
+	CitizenAnswered = function(args: { any }): { Subject }
+		local player = args[1]
+		if player == nil then
+			return {}
+		end
+		local info = {
+			kingdom = args[2],
+			decision = if type(args[4]) == "string" then args[4] else nil,
+			secondsOpen = if type(args[5]) == "number" and args[5] == args[5] then args[5] else nil,
+		}
+		return { { player = player, info = info } }
 	end,
 	ObjectiveCaptured = function(args: { any }, ctx: any): { Subject }
 		return each(Signals.members(ctx, args[2]), { objectiveId = args[1], kingdom = args[2] })

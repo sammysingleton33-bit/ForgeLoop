@@ -125,6 +125,8 @@ register("SetJobQuota", function(sim, kingdom, _by, job, count)
 		return false, "unknown_job"
 	end
 	kingdom.quotas[job] = count
+	-- every accepted change counts, even to the same number: a co-ruler's panel sees it was answered (#71)
+	kingdom.quotaRev = (kingdom.quotaRev or 0) + 1
 	return true, nil, { job = job, count = count }
 end)
 

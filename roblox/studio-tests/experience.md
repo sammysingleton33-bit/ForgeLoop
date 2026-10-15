@@ -129,14 +129,14 @@ Needs:
 - FORGE-03:
   - the citizen card;
   - the plot menu (`Build.PlaceSlot`, FL-0081, on `main`);
-  - the conversation panel, which reports `CitizenAnswered` after a successful `Kingdom.Choose`;
+  - the conversation panel (`Kingdom.Choose`). The AnswerCitizen step follows FORGE-01's G9 `CitizenAnswered` from ConversationService (FL-0107), credited to the answering ruler (FL-0108); the panel reports nothing for it;
   - the Army rail button (`HUD.ArmyButton`, FL-0060).
 - DataService is not needed (session-only progress, D-027).
 
 No step waits for a system the build doesn't have:
 - **Without FORGE-01's ConversationService on the build,** step 4 (AnswerCitizen) is passed over at once. Output shows `onboarding: a step's service is missing` at boot, and the card goes from the Build step straight to Recruit.
 - **Without FORGE-01's MilitaryService and ObjectiveService (FL-0052),** Recruit and Capture are passed over too, and the tutorial completes after the Build step (and step 4).
-- **With ConversationService but without the panel's `CitizenAnswered` report,** the card nudges at 45 s and moves on at 120 s.
+- **With ConversationService but no citizen request in time,** the card nudges at 45 s and moves on at 120 s (`via=timeout`).
 
 Each passed or timed-out step is still logged as its funnel step (Roblox counts skipped steps as done) and also as `analytics event OnboardingStepPassed` with `via=unavailable` or `via=timeout`. Write which case you saw.
 
@@ -144,7 +144,7 @@ Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions)
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
 2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
 3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
-4. Tap a plot marker, choose a House or Farm and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
+4. Tap the highlighted plot marker (a small plot: the menu offers a House, not a Farm), choose a House and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
 5. Build a Barracks, then recruit 3 soldiers from the Army rail button (highlighted by the Recruit card), and press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
 6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
 
@@ -154,7 +154,7 @@ info onboarding step ... flow=vs1 step=1 stepId=Spawn via=auto
 info analytics funnel Onboarding ... step=1 stepName=Spawn sent=true
 info onboarding step ... step=2 stepId=InspectCitizen via=client
 info analytics funnel Onboarding ... step=2 stepName=InspectCitizen sent=true
-... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=client), 5 Recruit (via=bus),
+... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=bus), 5 Recruit (via=bus),
     6 Capture (via=bus, or via=satisfied when a co-ruler captured first)
 info analytics event OnboardingCompleted ... CustomField01=vs1 sent=true
 ```
@@ -179,6 +179,7 @@ History:
 - 2026-10-12 FORGE-04: written (FL-0025); rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture), session-only progress (D-027).
 - 2026-10-12 FORGE-04: rewritten for onboarding v2 (D-030, FL-0092): inspect → build → answer → recruit → capture; passed-over steps (`requires`), the Build-button hint until FL-0081.
 - 2026-10-13 FORGE-04: FL-0081 follow-ups (#99): the build hint points at the plot markers again, and the Recruit hint at the Army rail button (`HUD.ArmyButton`).
+- 2026-10-13 FORGE-04: AnswerCitizen follows G9 `CitizenAnswered` (FL-0108, D-044 (3)); the panel's client report no longer counts.
 
 ## E7 — Notifications and celebrations (FL-0027)
 Needs:
@@ -253,6 +254,12 @@ Steps
 10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
 11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
 12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
+13. Off-screen requests (B16): run `vs1.request` a few times, then pan the aerial view away from those citizens until their badges leave the screen. A gold "!" badge appears at the screen edge for each, with a gold tip pointing towards the citizen, never under the top bar, a phone's notch, the HUD rail, the crest and pills, or the bottom bar; requests that lie the same way share one badge with a count. Tap one: the camera glides there and the citizen's card opens. Pan away again and press the cycle key (table): it goes to the oldest open request, then the next, and wraps; the previous key goes back. While placing a building, in walk mode and while the conversation stage shows, there are no edge badges and the keys do nothing.
+
+| Action | Windows | Mac | Gamepad |
+|---|---|---|---|
+| Next open request | F | F | DPad right |
+| Previous open request | Shift+F | Shift+F | DPad left |
 
 Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
 ```lua
@@ -269,12 +276,28 @@ return #out .. " bubbles\n" .. table.concat(out, "\n")
 ```
 Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
 
-Pass: steps 1–12 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
+Probe for step 13 (Client context, read-only): the edge badges now.
+```lua
+local out = {}
+local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("ForgeRequestIndicators")
+for _, b in (gui and gui:GetChildren() or {}) do
+	if b:IsA("TextButton") and b.Visible then
+		local count = b:FindFirstChild("Count")
+		table.insert(out, string.format("id=%s at=(%d,%d) angle=%d count=%s", tostring(b:GetAttribute("EntityId")),
+			b.AbsolutePosition.X, b.AbsolutePosition.Y, b.Pointer.Rotation, count.Visible and count.Text or "1"))
+	end
+end
+return (gui and "area " .. tostring(gui.AbsoluteSize) or "no indicator GUI") .. "\n" .. table.concat(out, "\n")
+```
+Expected: one line per off-screen request group, every badge inside `area`; none in build mode, walk mode or a conversation.
+
+Pass: steps 1–13 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
 - 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
+- 2026-10-15 FORGE-04: FL-0115 (B16) off-screen request badges and the cycle key (step 13, its probe; Windows/Mac/gamepad keys, D-049 (4)).
 - 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
@@ -397,3 +420,25 @@ Pass: steps 1–5 hold.
 History:
 - 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
 - 2026-10-15 FORGE-04: topmost wins (`onBack`, FORGE-07's #130 L1); step 5, Mac delete key.
+
+## E12 — Base editing: input and camera (FL-0121, game-001)
+
+Needs: FORGE-01's move remotes (FL-0119: `Build.CanMove`, `Build.Move`, `Build.MoveToSlot`) and FORGE-03's edit UI (FL-0120), which sets `InputModeController:set("edit")` and calls `RulerCameraController:setEditDrag(true/false)` around a drag. Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
+
+| Rule | Expected |
+|---|---|
+| Taps while editing | only your own buildings and your own kingdom's plots are selected; citizens, a rival's buildings and plots, and the ground select nothing |
+| Camera | edit mode uses the aerial view (walk mode comes back after, unless you chose a view meanwhile); selecting one of your buildings pans to it |
+| Dragging a building | the drag never pans the view; holding the pointer near a screen edge (about 48 px) pans that way, faster nearer the edge |
+| Leaving | X or gamepad B leaves edit mode; hover outlines and citizen bubbles take no input while editing |
+
+Steps
+1. Enter edit mode (FORGE-03's Edit button). Tap a citizen, a rival's building, the ground: nothing is selected. Tap one of your buildings: it is selected and the view pans to it. Tap a free plot of yours: it is selected as a target.
+2. Drag a building across the screen: the view stays still. Hold it near the right edge: the view pans right; near the top: forward. Drop it: the panning stops.
+3. Phone emulator: the same with one finger; a one-finger drag of the building never pans.
+4. Press X (or gamepad B): edit mode ends; from walk mode, the walk view comes back.
+
+Pass: steps 1–4 hold.
+
+History:
+- 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).

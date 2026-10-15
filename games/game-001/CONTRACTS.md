@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g10, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g10b, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -135,7 +135,7 @@ export type EntityState = { id: EntityId, kind: EntityKind, kingdom: KingdomId, 
   - discrete cues: `deposit`, `hit`, `die`, `celebrate`.
 
   Looping work animations (chop, mine, hammer, carry) derive from action + job. There are no per-swing events. `hpPct` is sent here when it changes (VS-2).
-- `Sim.GetEntities` (function): the client calls it after connecting its handlers. It returns one buffer with every live entity: spawn record + current state.
+- `Sim.GetEntities` (function) `(afterId?) -> (buffer, nextAfterId?)`: the client calls it after connecting its handlers. Each call returns one page of at most 49 "full" records (spawn record + current state, ≤ 900 B; our G4 budget, not an engine limit) with `id > afterId`, in ascending id order. `nextAfterId` is nil on the last page; the client calls again with it until it is nil. `afterId` is nil or an integer 0..65535 (v0.4-g10b, #127).
 
 **Client rules (EntityController).**
 - Drop snapshots older than the newest applied `seq`.
@@ -160,7 +160,7 @@ EntityController.event: Signal<(EntityId, cue: string, payload: any, Model?)>
 EntityController:pick(screenPos: Vector2): EntityId?
 EntityController:getModel(id: EntityId): Model?
 InteractionController.gathered: Signal<(nodeId: string, ResourceId, amount: number)>   -- FORGE-01
-InputModeController:set(mode: "explore" | "build"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090); "command" is VS-2
+InputModeController:set(mode: "explore" | "build" | "edit"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090; "edit" FL-0121, G13.9); "command" is VS-2
 InputModeController.selected: Signal<(kind: "citizen" | "building" | "slot" | "none", id: number | string)>   -- G13.6
 RulerCameraController:setMode(mode: "overview" | "follow")                    -- FORGE-04; "overview" = aerial management view (VS-1 default, D-030), "follow" = walk mode
 ```
@@ -288,7 +288,7 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `UnitsRecruited` | FORGE-01 | (player, KingdomId, count) |
 | `ObjectiveCaptured` | FORGE-01 | (objectiveId, KingdomId) |
 | `KingdomEliminated` | FORGE-01 | (KingdomId, by: KingdomId?) |
-| `CitizenAnswered` (declared in `Contracts/GameEvents` by #109; fired from FL-0107; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose` |
+| `CitizenAnswered` (declared in `Contracts/GameEvents` by #109; fired from FL-0107; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose`. **Attribution:** the answering ruler only. The citizen id stays out of analytics and onboarding info (D-050 (5), #124). |
 | `MatchEnded` | FORGE-01 | ({ winner: KingdomId?, standings: { { kingdom: KingdomId, crownPoints: number } }, durationSec: number }) |
 
 - Producers fire each event exactly once, per framework rules.
@@ -494,14 +494,15 @@ export type Category = "compassion" | "honor" | "competence" | "courage" | "auth
 export type CitizenLook = { skin: number, hair: number, hairColor: number, outfit: number }   -- palette indices, Kit-defined ranges
 export type CitizenView = { entityId: EntityId, name: string, occupation: string, job: JobId, traits: { string },
 	mood: number, loyalty: number, obedience: number, intent: string, lastMemory: string?, memories: { string },
-	family: { string }, friends: { string }, rivals: { string }, hasRequest: boolean, look: CitizenLook }
+	family: { string }, friends: { string }, rivals: { string }, familyIds: { EntityId }, friendIds: { EntityId }, rivalIds: { EntityId },
+	hasRequest: boolean, look: CitizenLook }  -- *Ids aligned index for index with the name lists; look is always a valid CitizenLook (Kit.normalizeLook) (v0.4-g10b, #127)
 ```
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
 - **Chemistry and memories.** Chemistry is rolled once per citizen and may drift at most ±5 from its rolled value (`ContentQuery.driftChemistry`). Memories set by content are **pinned**: the G5 cap of 8 never evicts them.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
 - **Soldier kingdom marker (D-033(3), FORGE-05 colour-vision check).** Soldiers wear a helmet, so their 9th part is a **helmet crest shaped per kingdom**, matching the tower style: crimson spire, azure square, emerald plume, gold dome. That keeps friend and foe distinguishable without colour. `Kit.character(kind, job, kingdomColor, look?, kingdom: KingdomId?)` takes an optional `kingdom` for this. FORGE-01 passes it for soldiers. VS-1 acceptance requires it.
 - **Looks.** Hair is the 9th rig part, welded to the Head (D-032). The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
-- **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
+- **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5), including `quotaRev: number`, which rises with every accepted quota change (v0.4-g10b, #127).
 
 ### G13.3 Conversations (FORGE-01 server; FORGE-03 panel; FORGE-04 bubbles) — VS-1
 | Remote | Kind | Args → result, or payload |
@@ -634,11 +635,13 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   Slot occupancy uses the same placement gap, so a slot never reads free while placing on it is refused.
 - **Events.** G9 `BuildingMoved` (FORGE-01; declared in `GameEvents.luau` by FORGE-05, the custodian): `(Building, player?, from: { position: Vector3, rot: number }, slotId: string?)`.
 - **Input and camera (FORGE-04, additive to G4.1/G13.6).**
-  - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings, plus free slots as MoveToSlot targets.
+  - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings and own plots. The input layer can't know occupancy. Whether a plot is a valid MoveToSlot target (free, or the building's own) is decided by FORGE-03's snap and, finally, by the server (`slot_occupied`). Selecting a building in edit mode doesn't move the camera; while moving, a tap aims the ghost (v0.4-g10a, #157).
   - `RulerCameraController` keeps the overview in edit mode and adds `setEditDrag(active)` (drag-pan off, edge-pan on while dragging).
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g10b (2026-10-15) FORGE-00: G4 `Sim.GetEntities` is paged (≤ 49 full records per page, `nextAfterId`); G13.2 `CitizenView` gains `familyIds`/`friendIds`/`rivalIds` and a normalized look; G5 population gains `quotaRev` (FL-0109, #127). G9 `CitizenAnswered` attribution: the answering ruler only (#124, D-050 (5)).
+- v0.4-g10a (2026-10-15) FORGE-00: G4.1 `InputModeController:set` includes `"edit"`. G13.9 edit-mode taps select own buildings and own plots; validity is decided by the snap and the server; no camera jump on select (FORGE-07 #142 L2/L3, #157).
 - v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. G13.8: optional presentation tags on the `Kingdom.Converse` and `Kingdom.Choose` results (FORGE-03 proposal, FL-0110/FL-0111). (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
 - v0.4-g9j (2026-10-15) FORGE-00: G13.9 hardened after an adversarial code review of the base-editing rules:
   - destinations only in the keep's own territory circle;

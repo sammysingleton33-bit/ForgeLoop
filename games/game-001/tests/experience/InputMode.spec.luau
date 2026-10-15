@@ -82,6 +82,17 @@ describe("InputModeController (G4.1, FL-0053)", function()
 		expect(actions.bound[InputModeDef.ACTION]).toBeNil()
 	end)
 
+	it("edit mode (G13.9) is a mode: X / gamepad B leave it, and entering it clears the selection", function()
+		input:select("building", 3)
+		expect(input:set("edit")).toBe(true)
+		expect(input.mode).toBe("edit")
+		expect(input.selection.kind).toBe("none")
+		assert(actions.bound[InputModeDef.ACTION], "the leave keys are bound while editing")
+		actions:press(InputModeDef.ACTION, Enum.UserInputState.Begin)
+		expect(input.mode).toBe("explore")
+		expect(actions.bound[InputModeDef.ACTION]).toBeNil()
+	end)
+
 	it("works without ContextActionService (headless boot): set() still switches, keys are skipped", function()
 		local bare = MockEnv.new({ seed = 54, isServer = false, localPlayer = { userId = 5302 } })
 		local reg = D.boot(bare, { camera = false })
@@ -344,6 +355,45 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 			expect(input.selection.kind).toBe("none") -- hovering never selects
 		end
 	)
+
+	it("edit mode (G13.9): a tap selects only your own buildings and plots, never citizens or a rival's", function()
+		local log = seen()
+		local mine = "crimson"
+		input._kingdomOverride = function()
+			return mine
+		end
+		picks[100] = 7 -- a citizen under the tap: ignored while editing
+		input:set("edit")
+		env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		local function building(id, kingdom)
+			local model = env.newInstance("Model")
+			model:SetAttribute("BuildingId", id)
+			model:SetAttribute("KingdomId", kingdom)
+			model.Parent = world
+			local part = env.newInstance("Part")
+			part.Parent = model
+			return part
+		end
+		local function plot(id, kingdom)
+			local marker = tag(env.newInstance("Part"), "BuildSlot")
+			marker:SetAttribute("SlotId", id)
+			marker:SetAttribute("Kingdom", kingdom)
+			marker.Parent = world
+			return marker
+		end
+		hit = building(5, "crimson")
+		tap(100, 200)
+		hit = building(6, "azure")
+		tap(300, 200)
+		hit = plot("crimson_s2", "crimson")
+		tap(300, 200)
+		hit = plot("azure_s1", "azure")
+		tap(300, 200)
+		mine = nil -- no team yet: nothing is yours
+		hit = building(8, "crimson")
+		tap(300, 200)
+		expect(log).toEqual({ "building:5", "none:", "slot:crimson_s2", "none:", "none:" })
+	end)
 
 	it("hover: leaving explore mode clears it at once, with no mouse move (FL-0115, FORGE-05 #137)", function()
 		local log, seenByChanged = {}, nil
