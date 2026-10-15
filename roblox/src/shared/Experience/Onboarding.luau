@@ -53,6 +53,9 @@
 		Onboarding.current(flow, state) -> (index?, Step?)
 		Onboarding.snapshot(flow, state) -> table                           -- what the client renders
 		Onboarding.persisted(state) -> table                                -- what is stored
+		Onboarding.completionReward(flow, state) -> Reward?                 -- flow.completeReward once the
+		    -- flow is finished, only if at least one step was done by its real action (bus or satisfied;
+		    -- D-050 (5), D-052 (3)): a flow finished by auto steps, client reports, timeouts and passes pays nothing
 		Onboarding.unavailable(flow, has: (service) -> boolean) -> { [stepId]: true }  -- the caller sets state.unavailable
 		Onboarding.events(config) -> { string }   -- bus events the flows listen to (startOn, bus triggers), sorted
 		Transition = { index: number, id: string, via: "auto" | "bus" | "client" | "timeout" | "satisfied" | "unavailable", reward: Reward? }
@@ -242,9 +245,10 @@ function Onboarding.restore(flow: any, stored: any, now: number): { [string]: an
 			startedAt = stored.startedAt,
 			finishedAt = stored.finishedAt,
 			satisfied = if type(stored.satisfied) == "table" then table.clone(stored.satisfied) else {},
+			earned = stored.earned == true,
 		}
 	else
-		state = { version = flow.version, completed = 0, skipped = false, satisfied = {} }
+		state = { version = flow.version, completed = 0, skipped = false, satisfied = {}, earned = false }
 	end
 	state.stepStartedAt = now
 	state.escalated = false
@@ -264,7 +268,8 @@ function Onboarding.current(flow: any, state: any): (number?, any)
 end
 
 -- Only the real action pays a step's reward: a bus trigger now or one remembered earlier. A step that
--- timed out or was passed over (its service missing) never does (FORGE-00 ruling on #124).
+-- timed out or was passed over (its service missing) never does (FORGE-00 ruling on #124). The same
+-- real action is what earns the flow's completeReward (state.earned; D-052 (3)).
 local PAID_VIA = table.freeze({ bus = true, satisfied = true })
 
 local function complete(flow: any, state: any, via: string, now: number, out: { Transition })
@@ -277,6 +282,9 @@ local function complete(flow: any, state: any, via: string, now: number, out: { 
 	state.startedAt = state.startedAt or now
 	if state.completed >= #flow.steps then
 		state.finishedAt = now
+	end
+	if PAID_VIA[via] then
+		state.earned = true
 	end
 	table.insert(out, { index = index, id = step.id, via = via, reward = if PAID_VIA[via] then step.reward else nil })
 end
@@ -438,7 +446,15 @@ function Onboarding.persisted(state: any): { [string]: any }
 		startedAt = state.startedAt,
 		finishedAt = state.finishedAt,
 		satisfied = table.clone(state.satisfied),
+		earned = state.earned == true,
 	}
+end
+
+function Onboarding.completionReward(flow: any, state: any): any
+	if state.finishedAt == nil or state.earned ~= true then -- a skipped flow has no finishedAt
+		return nil
+	end
+	return flow.completeReward
 end
 
 return table.freeze(Onboarding)
