@@ -4,11 +4,11 @@
 CONTRACTS G13.9's input and camera half: `InputModeController` mode `"edit"` and `RulerCameraController:setEditDrag(active)`. FORGE-03's edit UI (FL-0120) drives them; FORGE-01's move remotes (FL-0119) do the moving. Nothing here calls a remote.
 
 ## Done (with commits)
-- Branch `forge/04-experience-fl0121` (stacked on #137, hover): `games/game-001/src/client/Controllers/InputModeController.luau` (mode "edit", `Def.resolveEdit`), `RulerCameraController.luau` (`Def.OVERVIEW_MODES`, `setEditDrag`, `Def.edgeDirection`, `Def.findBuilding`).
+- Branch `forge/04-experience-fl0121` (from main; #137 hover is merged): `games/game-001/src/client/Controllers/InputModeController.luau` (mode "edit", `Def.resolveEdit`), `RulerCameraController.luau` (`Def.OVERVIEW_MODES`, `setEditDrag`, `Def.edgeDirection`, `Def.findBuilding`).
 
 ## Evidence
 - `InputMode.spec` 18/18, `RulerCamera.spec` 35/35 (edit mode, own-only taps, leave keys, overview kept, drag-pan off, edge-pan, focus on select).
-- `mutations.py FL-0121` 11/11 CAUGHT.
+- `mutations.py FL-0121` 11/11 CAUGHT; FL-0053 22/22 and FL-0090 16/16 after retargeting the rows edit mode moved.
 - Studio: **unverified** (`roblox/studio-tests/experience.md` E12, blocked until FL-0119 and FL-0120).
 
 ## Interfaces touched
