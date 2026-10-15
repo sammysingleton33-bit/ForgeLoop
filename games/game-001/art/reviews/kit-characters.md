@@ -351,3 +351,23 @@ overlapped the head. Minimal change, still 9 parts; nothing else in the phase 1 
   identical red boxes (no belt, sash or collar); **governor** crown and staff are thin from the air, no cape (a welded cape
   needs a Torso part, outside D-048); **soldier** helm reads as a gnome hat and the spear has no head.
 - **Kingdom red from above** fell about 14% because straw and white hats cover the shoulders.
+
+## FL-0118 B18: arm pivots outside the torso (D-019 renders, before and after)
+
+What moved (FORGE-00, branch `forge/02-blender-shoulders`, 41ef850): only the two arm Motor6D pivots, out to the arm's centre line (0.41 outside
+the torso's side; 0.55 on the soldier). The arm parts sit exactly where they did at rest; `Pose.JOINTS`, the joint names and the wire are unchanged.
+FORGE-01's probe (not re-measured here): free arm against the head in the arms-up cheer -0.10 to -0.32 before, +0.45 to +0.69 after, other
+actions unchanged. Before is main `f86ad7f` (a scratch worktree), after is 41ef850, both with `Sim/Pose` from main (#154 plus #158). Blender previews,
+not a Studio play test. Images in `img/`: `citizen_shoulders_rest40.jpg` (8 rigs at rest, about 40 studs, colour and grayscale),
+`citizen_shoulders_rest170.jpg` (4 per job at 170 studs, 50 degrees), `citizen_shoulders_celebrate.jpg` (farmer, builder, soldier, governor and idle at the
+peak of the cheer, front and side, before and after), `citizen_shoulders_crowd.jpg` (30 cheering citizens, 50 degrees at 170 studs).
+- **Rest:** nothing changed. The before and after renders at 40 and at 170 studs are pixel-identical (mean absolute difference 0.0), and in the
+  dump of every rest pose no part moved. The only parts that moved anywhere outside the cheer in my dumps are the hauler's two arms in its carry
+  pose, by 0.066 studs (not visible at the size I looked at).
+- **Cheer (looked at, farmer, builder, soldier, governor, idle):** before, the free arm goes through the head or lies over the face (the idle citizen's two arms cover the cheeks); after,
+  the arm rises beside the head with a visible gap, so the cheer is two raised arms in a V and the face stays clear. In the cheer dump 192 of 774 parts
+  moved: both arms of every rig (40 each) and the tools in the right hands (30), which follow their arm. The arms stand about 0.4 studs wider apart, so
+  the cheer silhouette is a little wider and clearer, not different; the held tools sit about as before. The soldier's raised arm now stands a hand's width off the torso (pivot 0.55), which reads slightly detached from the
+  shoulder in the front close-up.
+- **Crowd:** the cheering crowd crop shows the raised arms beside the heads instead of overlapping them; kingdom-red pixels in the crop 294 before,
+  349 after (more sleeve and shoulder visible from above). No visible clip. Studio unverified.
