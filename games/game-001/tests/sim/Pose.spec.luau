@@ -205,7 +205,7 @@ describe("Sim/Pose", function()
 					expect(angleOf(cheer.RightArm)).toBeGreaterThan(40) -- but is held out from the body, not hanging
 					expect(angleOf(cheer.Tool)).toBeGreaterThan(35) -- tipped back and out
 					expect(cheer.Tool.UpVector.Z < -0.5).toBe(true) -- back: the top leans away from the front
-					expect(math.abs(cheer.Tool.RightVector.Y) > 0.2).toBe(true) -- and out: turned about the front axis too
+					expect(cheer.Tool.RightVector.Y < -0.2).toBe(true) -- and out, away from the head: the tool's right edge dips (+Y would turn it toward the head)
 					expect(angleOf(cheer.Tool) <= Pose.LIMITS.Tool + 1e-3).toBe(true) -- within its joint's limit
 					expect(cheer.Tool.UpVector.Z < 0).toBe(true) -- back: the tool's top leans away from the front (-Z)
 				end
