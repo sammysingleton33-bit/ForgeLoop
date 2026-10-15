@@ -364,3 +364,92 @@ Bushes and flowers
 | bushes and flowers | 3 | 3 | 3 | 3 | 4 | 3 | 4 | 4 | silhouette, variation, readability: one three-ball recipe; flowers 2 at distance |
 
 Round 2 (branch `forge/02-blender-env-polish-r2`, stacked on #141): wheat first within 17 parts, then boulders from angled wedges and slabs with a flat moss tuft, then oak and birch variety by silhouette; 2 author rounds, then a fresh-context re-score.
+
+## Environment props polish, round 2 (FL-0117; branch `forge/02-blender-env-polish-r2`, stacked on #141) — FORGE-02
+
+Scope from FORGE-00 after the round-1 fresh review: wheat, boulders (chunky, a flat moss tuft, silhouette distinct from the ore
+crystal, S3 / M4 / L5 at most), then oak / birch variety by silhouette. Part counts stay at or below the #141 numbers per id, except
+wheat, which D-047's 2026-10-15 amendment raises to 44.
+Renders as in round 1 (Blender preview, no Roblox material textures, **not a Studio play test**): gameplay 62–80 studs
+and aerial 170 studs / 50°, 1280 × 720, Cycles 24 samples. Images in `img/`: `env_polish_r2_trees_gameplay.jpg` and
+`env_polish_r2_trees_aerial.jpg` (#141 | round 2), `env_polish_r2_oaks_pines_birches.jpg` (line-ups), `env_polish_r2_boulders.jpg` (main | the shipped boulders, which are #141's),
+`env_polish_r2_boulders_rejected.jpg` (main | #141 | the rejected chunky pass), `env_polish_r2_wheat.jpg` (#141's slabs | the tuft field) and
+`env_polish_r2_wheat_attempts.jpg` (the 17-part attempts and the over-budget references).
+
+**1. Wheat: 44 parts per field under the D-047 amendment (own commit `926edd5`, droppable).** At 17 parts nothing worked: two attempts and six
+designs (combed rows, stepped patches, ridges, ridges plus stooks, stooks on stubble, sparse block tufts) all read as planks, crates or tents
+(`env_polish_r2_wheat_attempts.jpg`, which also shows the over-budget tuft references). FORGE-00 then ruled that a wheat field may use **up to 44 parts
+(6 × 7 tapered tufts, +27 per field, +216 in the world), conditional on FL-0116's rebuilt-world measurement leaving at least 600 parts under 27k**
+(otherwise the dressing density knob pays). Implemented: the 38 × 28 soil bed plus **42 `WedgePart` tufts**, one part each, six rows of seven,
+alternate rows shifted half a tuft, every tuft leaning the same way (a field combed by the wind) by a different amount, 1.6–2.2 studs high,
+3.4–4.2 wide; colour runs from olive green (124,148,52) at the west end to ripe gold (246,214,108) at the east with noise per tuft, so the field reads as
+growing grain from both cameras and every tuft stands out from the soil (luminance ≥ soil + 50). About 1 stud of soil shows between the rows. Fence and
+haystack are unchanged. `Props.WHEAT_PARTS` = 44 and `KitProps.spec` pins it (`WHEAT_PARTS`, citing the amendment). Honest limit: close up the tufts still read as
+leaning tiles, a mat of straw rather than stalks; a real crop row is a one-mesh Blender asset. Two earlier tuft layouts (random flips, narrow upright)
+read as scattered plates or a checkerboard and were dropped. Images: `env_polish_r2_wheat.jpg` (#141's slabs | the tuft field, gameplay and aerial).
+
+**2. Boulders: two passes, neither clearly better than #141; reverted to #141's boulders (unchanged).** Pass 1 rebuilt every rock
+from tipped wedges (S: two facing wedges, M: three, L: foot, cap and leaning wedge with a flush moss patch). At gameplay distance
+the S and M rocks read as sharp angular shards, close to the ore crystals, and the L as a ramped tent: worse than #141's chunky
+rocks. Pass 2 went broad and chunky as asked (a block or two tipped 10-25 degrees plus a smaller wedge, nothing thinner than 25 % of its
+longest side, height at most 0.6 of width, L with a flat moss patch on a flat top). Rendered against main and #141 at gameplay and aerial
+distance (`env_polish_r2_boulders.jpg`, main | #141 | pass 2), it is a darker, flatter version of the same stacked blocks: the moss
+patch reads a little better than the ball, but the silhouette is no better and at 170 studs the moss is invisible. Not clearly better, so
+`lump` and `boulder` are back to #141's code, byte for byte, and the spec to #141's boulder tests. The ball moss on L stays (the flat patch
+was only judged on a block foot); a real fix for boulders needs faceted meshes (the Blender batch), not more primitives.
+
+**3. Oak and birch variety by silhouette; pine skirt.** Oak variants pick an archetype by id: dome, tall ovoid, wide flat spreading,
+lopsided (a heavy side, a gap, a bare limb carrying one small lobe), twin (two crowns on a forked trunk) and repeats; every oak is still
+10 lobes + 2 limbs + 3 trunk parts = 16 parts. Lobe colour follows height within each archetype. The root flare is now the trunk's own bark colour and a
+smaller step (the collar read as a stump). Birch: five clumps stacked up and wound through the trunk top (no balloons on a pole) and one
+thin branch stub carrying a fifth clump out to the side: trunk + bark mark + stub + 5 clumps = 9 parts, as before. Pine: six whorls of
+4, 4, 3, 3, 2, 2 boughs (18, as before): the lowest two are four-bough skirts with bough width set from the whorl's circumference so
+neighbours meet, instead of three loose plates.
+
+**Part counts (Root included), #141 → round 2:** oak 16 → 16 (all 8), pine 22 → 22, birch 9 → 9, boulders S 3 / M 4 / L 5 / cliff 4 → unchanged (reverted to
+#141's); **wheat 17 → 44 per field** under the D-047 amendment (6 × 7 tufts; the cabbage field stays 65). **Specs:** `KitProps.spec` 28 tests (round 2 adds
+oak silhouettes spread over aspect ratio and sideways offset, birch crown wound into the trunk with a side stub, the pine skirt, and the wheat as 42 tilted wedge
+tufts in six rows with a green-to-gold gradient and the 44-part constant `WHEAT_PARTS`); 39 mutations of `Props.luau`, all caught.
+
+**Unverified:** Studio (SmoothPlastic / Grass / Slate textures, Future lighting), phone screens, the in-world look with FL-0116's density and FL-0112's
+placement, and whether FL-0116's measured headroom (at least 600 parts under 27k) actually holds; if not the wheat commit is the one to drop or the
+density knob pays.
+
+### Fresh-context image-only D-019 re-score of round 2 (2026-10-15)
+
+Reviewer: a fresh Claude Code session (`session_01PtRhY6SNSMufurC4qvRb26`, claude-sonnet-5-5) started on this branch with only the five images named
+below, told not to read any source, markdown, log or history, and to score the right-hand (round 2) panels strictly; its reply is recorded here
+as given, not edited. Images: `env_polish_r2_trees_gameplay.jpg`, `env_polish_r2_trees_aerial.jpg`, `env_polish_r2_oaks_pines_birches.jpg`,
+`env_polish_r2_boulders.jpg`, `env_polish_r2_wheat.jpg`. Blender previews, **not a Studio play test**. Rubric 1-5; PASS needs silhouette, variation,
+readability >= 4 and proportions, palette, detail, cohesion, cost >= 3.
+
+| family | sil | var | read | prop | pal | detail | cohes | cost | verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| trees (oak / pine / birch) | 4 | 4 | 4 | 3 | 4 | 4 | 4 | 3 | **PASS** (reviewer: borderline; weakest species birch, then pine) |
+| boulders S / M / L (the #141 boulders, reverted) | 2 | 3 | 3 | 3 | 4 | 3 | 3 | 4 | NEEDS-WORK |
+| wheat field (44-part tufts) | 2 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | NEEDS-WORK |
+
+Round 1 for comparison (#141's own review): trees 4/3/4/3/4/3/3/4, boulders 2/3/3/3/4/2/3/4, wheat 2/2/2/3/4/2/3/4.
+
+Reviewer's answers (summarised): the eight oaks show genuinely different silhouettes (a wide dome, a tall one, a wide one, a clearly leaning lopsided one, a
+twin-lobed one) on one sphere-cluster recipe; variants 1 and 6 (both dome) are the most alike. Pine skirts read as layered conifer boughs (a little crunchy
+and very dark at gameplay distance). Birch crowns are better than round 1 but still look like balloons on a thin pole (the side stub is barely visible, the
+black bands read as tape). The boulders mostly do not read as rocks but as stacked slabs or crates, the moss ball looks like a ball on a table, and the three variants of
+a size are nearly identical. The wheat no longer reads as planks but is not a grain crop either: crate-like blocks or hay bales from gameplay, pavers or tiles on dirt from the
+aerial camera; no stalks, heads or ragged top edge. Defects named: a tiny cube beside one M boulder looks detached (it is the M pebble, resting on the ground), and some birch
+crowns at the cluster edge look slightly detached from their poles; no clipping.
+
+Reviewer's top fixes: **trees** thicken the birch trunk about 1.5x and lower and merge its crown, replace the black bands with thinner irregular marks, lighten the pine
+skirt a few shades and reduce plate overlap, differentiate oaks 1 and 6; **boulders** faceted tapered shapes with a narrower top, a flat irregular moss patch, three genuinely different profiles
+per size, no stray pebble; **wheat** thinner, taller, closer-packed stalk clusters with a ragged top and a smooth gradient, less squareness.
+
+**Status after round 2:** trees pass the image-only rubric (borderline) and are a modest, real step over #141; boulders stay at #141's NEEDS-WORK level (two primitive passes did not help;
+this needs a mesh or a different primitive vocabulary); the wheat at 44 parts is better than slabs (var, read, detail up from 2 to 3) but still not a pass, and part cost is the limit:
+the reviewer's own fix (thin, close-packed stalk clusters) needs more parts, not fewer.
+
+**Wheat tufts withdrawn from PR #151 (FORGE-05, D-051 (a)).** FORGE-05 opened `env_polish_r2_wheat.jpg` and judged the 6 x 7 tufts not *clearly* better than #141's
+slabs (tiles or crates in a checker at gameplay and aerial distance; the slabs at least read as rows) for about 27 more parts per field. Commit `926edd5` is reverted on
+this branch (`5bc05cb`), so the wheat field is #141's 17-part slabs again and `Props.WHEAT_PARTS` / the wheat specs are back to #141's. The tuft work is kept as-is on
+branch `forge/02-blender-env-wheat` (head `3138825`) for a later FL-0117 wheat PR with another approach (FORGE-05's suggestion: rows of thin tapered blades along furrows, as
+in the cabbage bed; the reviewer's thin close-packed stalk clusters). The 44-part allowance (D-047 amendment) stays available; that PR needs FL-0116's measured headroom first. The wheat images above
+stay as the record of what was tried.
