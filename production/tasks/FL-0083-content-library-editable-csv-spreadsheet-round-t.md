@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 6
@@ -16,6 +16,7 @@ evidence:
   - "content-followups-2: pytest 384 passed; check.sh OVERALL PASS (game-001 953/0); content validate 0 errors; adversarial verify found 3 issues (1 major), all repaired and re-verified"
   - "#83 f3d84b5; check.sh 953/0; integration-log.md"
   - "content-presentation: pytest 452 passed; check.sh OVERALL PASS (game-001 973+); generated modules byte-identical for current content; adversarial verify 4 minor findings repaired with failing-first tests and 7/7 mutants killed"
+  - "merge result: content validate 0 errors, 7 generated modules up to date, pytest 453, check.sh PASS (game-001 1362/0)"
 ---
 
 # "Content library: editable CSV, spreadsheet round-trip, generated Content modules, ContentQuery, DRAFT starter content"
@@ -49,3 +50,4 @@ The user controls the dialogue and the citizen and reputation data in a spreadsh
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW at merge of #83 (FORGE-05, D-038 (5); --force because the status stays REVIEW): round-2 follow-ups merged under the D-040 fallback verdict. Remaining non-Studio item: the user's review of the DRAFT content text (FL-0095); FORGE-07 post-merge review owed.
 - 2026-10-13 forge-00: REVIEW → REVIEW. SPEC v1.5 optional presentation metadata (D-035 (4)): enums from FORGE-06's V4.1 vocabulary, loyalty-band reactions, question variants, ContentQuery reactionFor/questionFor/presentation; CONTRACTS v0.4-g10 (was misnamed g9 here). PR forge/00-content-presentation.
 - 2026-10-15 forge-00: FORGE-07 review of #96: the CONTRACTS conflict was resolved (g10 over g9j/g9i/g9h/g9g); L1 dropped the dead nil in the loop; L2 fixed the stale references; L3 marked `delivery_mode` and `thought_bubble_s` as reserved (no remote carries them). Q1–Q5 handed to FL-0110/FL-0111.
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #96 (3add643): SPEC v1.5 / CONTRACTS v0.4-g10, additive

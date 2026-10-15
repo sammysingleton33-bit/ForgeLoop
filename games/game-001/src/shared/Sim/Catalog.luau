@@ -115,6 +115,7 @@ export type Tuning = {
 	fleeRadius: number,
 	arriveRadius: number,
 	placementGap: number,
+	wallGap: number, -- the placement gap between two line pieces (wall, gate); placementGap when not set
 	cancelRefund: number, -- fraction of a site's cost refunded on cancel
 	startResources: Cost,
 	startCitizens: { [string]: number }, -- job -> count
@@ -180,6 +181,7 @@ local function assemble(): Catalog
 	tuning.buildRate = JobsConfig.buildRate
 	tuning.carry = JobsConfig.carry
 	tuning.placementGap = BuildingsConfig.placementGap
+	tuning.wallGap = (BuildingsConfig :: any).wallGap or BuildingsConfig.placementGap
 	tuning.cancelRefund = BuildingsConfig.cancelRefund
 	tuning.startResources = KingdomsConfig.startResources
 	tuning.startCitizens = KingdomsConfig.startCitizens
