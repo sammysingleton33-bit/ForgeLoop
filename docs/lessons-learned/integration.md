@@ -143,3 +143,13 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   method"), so EngineStubs stays the only registrar and MockEnv calls its idempotent `install`. Source:
   creator-docs `ParticleEmitter.yaml` (Emit(count)). Proof: Boot.spec "a booted client presents a
   celebration and a kingdom effect" fails without the install.
+- 2026-10-15 B17 (#159 + #160, FORGE-05) `observed-once`: two PRs from the same author that each pass alone can
+  fail together when one pins a fingerprint of generated output (WorldService.spec's full-density plan hash) and
+  the other changes an input to that generator (world resource-node positions; WorldPlan keeps decor clear of
+  nodes). Only the combined test merge caught it (game-001 1 failure; each PR alone green). Gate stacked or
+  sibling PRs together before merging the first, and ask the author to re-pin with a note of what moved (here:
+  12 flower placements, nothing else).
+- 2026-10-15 B17 (FORGE-05) `observed-once`: a full gate (check.sh + four mutation runners + probes) takes longer
+  than the 30-minute default background limit; the run was stopped mid-mutation and left
+  `games/game-001/config/Society.luau` mutated in the test worktree. Give long gates an explicit timeout
+  (≥ 60 min), check `git status` in the worktree after any killed run, and restore before re-running.
