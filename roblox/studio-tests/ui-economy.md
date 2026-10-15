@@ -280,7 +280,8 @@ Before #140 the building panel shows no Move: expected.
    one (wrapping). The count drops when a request is answered.
 3. While placing or moving a building, and while talking to a citizen, the button hides; it comes back
    afterwards.
-4. Walking view (V), tap Waiting: a notice "Switch to the aerial view to go to them", nothing else moves.
+4. Walking view (V): with FORGE-04's #170 on main the button hides and comes back in the aerial view;
+   without it, a tap shows a notice "Switch to the aerial view to go to them" and nothing else moves.
 5. Phone: the button is the icon with the bubble (no word), 48 px, under the other rail buttons.
 
 ## U9 — icons (P4)
