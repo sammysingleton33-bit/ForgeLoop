@@ -5,14 +5,16 @@
 		PacingService:phaseDurations(mode: "slice" | "match")
 			-> { Lobby: number, Founding: number, Expansion: number, Conflict: number, Endgame: number, Results: number }
 			Seconds per MatchPhase from config Pacing.luau; math.huge = untimed. Returns a fresh table.
-		PacingService:targets() -> { firstGatherSec, firstBuildPlacedSec, ... }   -- VS-1 milestone goals (copy)
+		PacingService:targets() -> { firstInspectSec, firstBuildPlacedSec, ... }  -- VS-1 milestone goals (copy)
+		PacingService:idleSec(phase) -> number?   -- dead-air threshold for a MatchPhase (PACING.md §6); nil = none
 		Def.validate(config) -> { string }                                        -- problems; empty = valid
 		Def.DEFAULTS                                                              -- used when the config is invalid
 
 	Pull only: MatchService finds PacingService with registry:find in its start() and asks for the
 	durations (CONTRACTS G3). PacingService never calls MatchService and has no dependencies, so it
 	can never block the match: an invalid config is logged as an error and the built-in DEFAULTS
-	(the BRIEF §3 numbers and the G3 slice rules) are served instead.
+	(the pre-D-029 match split, held until FL-0096 (see PACING.md §2), and the G3 slice rules) are
+	served instead.
 	Design and targets: games/game-001/design/pacing/PACING.md.
 ]]
 
@@ -34,8 +36,17 @@ Def.LATER_PHASE_MODES = table.freeze({ match30 = true })
 -- match30 (D-030 (6), design/living-kingdom.md §6): a non-default evaluation profile, ≈ 30 minutes.
 Def.MATCH30_MINUTES = table.freeze({ min = 25, max = 35 })
 local TIMED = { "Founding", "Expansion", "Conflict", "Endgame" }
-local TARGET_ORDER =
-	{ "firstGatherSec", "firstBuildPlacedSec", "firstBuildingCompleteSec", "firstRecruitSec", "firstCaptureSec" }
+-- The ruler's VS-1 v2 milestones in onboarding order (D-030; PACING.md §3). firstDepositSec is a sim
+-- health check outside this order (citizens deposit; the ruler need not gather).
+local TARGET_ORDER = {
+	"firstInspectSec",
+	"firstBuildPlacedSec",
+	"firstBuildingCompleteSec",
+	"firstAnswerSec",
+	"firstRecruitSec",
+	"firstCaptureSec",
+}
+Def.IDLE_PHASES = table.freeze({ "Founding", "Expansion", "Conflict", "Endgame" })
 
 Def.DEFAULTS = table.freeze({
 	modes = table.freeze({
@@ -66,12 +77,15 @@ Def.DEFAULTS = table.freeze({
 		}),
 	}),
 	targets = table.freeze({
-		firstGatherSec = 45,
+		firstDepositSec = 45,
+		firstInspectSec = 30,
 		firstBuildPlacedSec = 90,
 		firstBuildingCompleteSec = 150,
+		firstAnswerSec = 180,
 		firstRecruitSec = 330,
 		firstCaptureSec = 450,
 	}),
+	idleSec = table.freeze({ Founding = 25, Expansion = 45, Conflict = 60, Endgame = 90 }),
 	limits = table.freeze({ matchMinMinutes = 30, matchMaxMinutes = 45 }),
 })
 
@@ -168,10 +182,30 @@ function Def.validate(config: any): { string }
 		local previous = 0
 		for _, key in TARGET_ORDER do
 			local value = config.targets[key]
-			if type(value) ~= "number" or value <= previous then
+			if not seconds(value) or value == math.huge or value <= previous then -- NaN too (FORGE-07 #98 L1)
 				table.insert(problems, `Pacing: targets.{key} must be a number after the previous milestone`)
 			else
 				previous = value
+			end
+		end
+		local deposit = config.targets.firstDepositSec
+		if deposit ~= nil and (not seconds(deposit) or deposit <= 0 or deposit == math.huge) then
+			table.insert(problems, "Pacing: targets.firstDepositSec must be a positive number")
+		end
+	end
+	if config.idleSec ~= nil then
+		if type(config.idleSec) ~= "table" then
+			table.insert(problems, "Pacing: idleSec must be a table keyed by MatchPhase")
+		else
+			for key, value in config.idleSec do
+				if not table.find(Def.IDLE_PHASES, key) then
+					table.insert(
+						problems,
+						`Pacing: idleSec.{tostring(key)} is not a playing MatchPhase (Founding..Endgame)`
+					)
+				elseif not seconds(value) or value <= 0 or value == math.huge then
+					table.insert(problems, `Pacing: idleSec.{key} must be a positive number of seconds`)
+				end
 			end
 		end
 	end
@@ -212,6 +246,11 @@ end
 
 function PacingService:targets(): { [string]: number }
 	return table.clone(self._config.targets or Def.DEFAULTS.targets)
+end
+
+function PacingService:idleSec(phase: string): number?
+	local idle = self._config.idleSec or Def.DEFAULTS.idleSec
+	return idle[phase]
 end
 
 return Def

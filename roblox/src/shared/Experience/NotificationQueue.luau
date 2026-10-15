@@ -88,6 +88,7 @@ function NotificationQueue.new(opts: { now: () -> number, config: { [string]: an
 	return setmetatable({
 		_now = opts.now,
 		_config = config,
+		_maxVisible = config.maxVisible, -- the configured cap; setMaxVisible only lowers it
 		_visible = {} :: { Item },
 		_pending = {} :: { Item },
 		_nextId = 0,
@@ -114,6 +115,31 @@ local function ranksBelow(a: Item, b: Item): boolean
 		return a.priority < b.priority
 	end
 	return a.arrived < b.arrived
+end
+
+-- Lowers (or restores, up to the configured cap) how many toasts show at once, e.g. when the screen
+-- has room for fewer cards. Toasts that no longer fit go back to waiting (lowest priority, then
+-- oldest, first) and show again in full when there is room. Returns the toasts that were hidden.
+function NotificationQueue:setMaxVisible(count: number): { Item }
+	local cap = if type(count) == "number" and count == count then math.floor(count) else self._maxVisible
+	cap = math.clamp(cap, 1, self._maxVisible)
+	self._config.maxVisible = cap
+	local hidden = {}
+	while #self._visible > cap do
+		local lowestIndex = 1
+		for index, item in self._visible do
+			if ranksBelow(item, self._visible[lowestIndex]) then
+				lowestIndex = index
+			end
+		end
+		local item = table.remove(self._visible, lowestIndex)
+		item.shownAt = nil
+		item.expiresAt = nil
+		if self:_insertPending(item) then
+			table.insert(hidden, item)
+		end
+	end
+	return hidden
 end
 
 function NotificationQueue:_show(item: Item, now: number)
