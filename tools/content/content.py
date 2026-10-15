@@ -3,7 +3,8 @@
 
 The CSV files under games/game-001/content are the canonical source (schema: content/SPEC.md,
 editor guide: content/README.md). This tool turns them into generated Luau modules under
-games/game-001/src/shared/Content, so the game never parses text at runtime.
+games/game-001/src/shared/Content, so the game never parses text at runtime. Optional parts (SPEC §5.10): the
+presentation columns may be absent or blank, and dialogue/question_variants.csv may be absent.
 
 Commands (all take --content DIR; build/check also take --out DIR)
   validate                 check every CSV; prints 'N scenarios, ... — 0 errors' or file:row:column errors (exit 1)
@@ -17,7 +18,8 @@ Commands (all take --content DIR; build/check also take --out DIR)
                            MECHANICS / NOTES), refuses formulas, error values and mechanics from a workbook older
                            than the CSVs, never reverts a CSV text edited after the export, never replaces a CSV it
                            cannot read, restores the original row order;
-                           --text-only takes only the text. Unchanged rows keep their bytes
+                           --text-only takes only the text (presentation tags included). Unchanged rows keep
+                           their bytes, and an offered column left empty is never added to a CSV
   fmt                      rewrite every CSV in canonical form
 
 Standard library + openpyxl (only for the two workbook commands).
@@ -70,6 +72,34 @@ ACTION_AUDIENCES = ("soldiers", "civilians", "kingdom", "speaker")  # plus occup
 NAME_KINDS = ("given_f", "given_m", "given_n", "family")
 THOUGHT_ICONS = ("request", "concern", "idea")  # CONTRACTS G13.3 thought.icon
 REACTION_TONES = ("happy", "angry", "sad", "neutral")  # CONTRACTS G13.3 reaction.tone
+# Presentation metadata (SPEC §5.10; D-035 (4), D-036 cinematic conversations), FORGE-06's measured vocabulary.
+# Every presentation column is optional, and ignoring the tags changes no gameplay.
+EMOTIONS = ("determination", "frustration", "gratitude", "relief", "joy", "excitement", "worry", "suspicion", "anger",
+            "fear", "contempt", "sadness", "neutral", "hope", "amusement", "curiosity", "defiance", "pride",
+            "embarrassment", "grief")
+EXPRESSIONS = ("smile", "frown", "smirk", "beam", "neutral", "grin", "raised_brow", "scowl", "eye_roll", "wide_eyed",
+               "downcast", "teary", "sheepish")
+GESTURES = ("nod", "shrug", "hand_on_heart", "cross_arms", "none", "point", "fist_pump", "head_down", "throw_up_hands",
+            "wring_hands", "salute", "scratch_head", "lean_in", "hold_up", "glance_around", "hands_on_hips", "rub_neck",
+            "bow", "wave", "step_back", "raise_hand")
+DELIVERIES = ("warm", "blunt", "deadpan", "cheerful", "excited", "grumbling", "sarcastic", "solemn", "urgent", "proud",
+              "hushed", "nervous", "formal", "pleading", "playful")
+URGENCIES = ("low", "normal", "high", "critical")
+DELIVERY_MODES = ("ambient", "direct")
+# The emotions that fit each reaction tone: a reaction's emotion must be one of its tone's (validate error).
+TONE_EMOTIONS = {
+    "happy": ("joy", "gratitude", "pride", "relief", "hope", "amusement", "excitement", "determination"),
+    "neutral": ("neutral", "determination", "curiosity", "suspicion", "amusement", "worry", "hope", "frustration",
+                "relief"),
+    "angry": ("frustration", "anger", "contempt", "defiance", "suspicion"),
+    "sad": ("sadness", "grief", "worry", "fear", "embarrassment"),
+}
+# A gesture that has a feedback cue plays it (ContentQuery.GESTURE_CUE; the other gestures have none).
+GESTURE_CUE = {"bow": "bow", "salute": "salute", "step_back": "cower", "fist_pump": "celebrate",
+               "cross_arms": "grumble"}
+REACTION_BANDS = ("high", "low")  # loyalty variants of a reaction (responses.reaction_<band>_*)
+LOYALTY_BANDS = {"high": 70, "low": 30}  # ContentQuery.LOYALTY_BANDS (PROVISIONAL): loyalty >= high / <= low
+BUBBLE_S_RANGE = (2.5, 9)  # seconds a bubble stays on screen (*_bubble_s), one decimal
 # Feedback cue ids for consequences.cue_id (FORGE-04 vocabulary, SPEC §5.4). 'celebrate' is the G4 cue.
 CUE_IDS = ("celebrate", "grumble", "salute", "bow", "cower", "strike_placard", "work_fast", "rest", "hammer")
 # TEXT placeholders (SPEC §3). Which ones a column may use depends on whether it has a speaking citizen.
@@ -180,6 +210,7 @@ class TableSpec:
     path: str  # relative to the content directory
     columns: tuple[Column, ...]
     noun: str  # for the summary line
+    optional: bool = False  # the file may be absent (= no rows)
 
     def col(self, name: str) -> Column | None:
         for c in self.columns:
@@ -192,6 +223,37 @@ def _rep_cols(prefix: str, what: str) -> tuple[Column, ...]:
     return tuple(Column(f"{prefix}{c}", "mech", f"{what} {c}") for c in CATEGORIES)
 
 
+def _tag_cols(prefix: str, what: str, bubble: bool = False) -> tuple[Column, ...]:
+    """Optional presentation tags of one line (SPEC §5.10): emotion, expression, gesture, delivery [, bubble_s]."""
+    cols = (
+        Column(f"{prefix}_emotion", "style", f"{what}: emotion (optional; must fit the tone, SPEC §5.10)",
+               required=False, choices="emotions"),
+        Column(f"{prefix}_expression", "style", f"{what}: facial expression (optional)", required=False,
+               choices="expressions"),
+        Column(f"{prefix}_gesture", "style", f"{what}: gesture (optional; bow, salute, step_back, fist_pump and "
+                                             "cross_arms also play a feedback cue)", required=False,
+               choices="gestures"),
+        Column(f"{prefix}_delivery", "style", f"{what}: how it is said (optional)", required=False,
+               choices="deliveries"),
+    )
+    if bubble:
+        cols += (Column(f"{prefix}_bubble_s", "style", f"{what}: seconds the bubble stays, 2.5-9 with one decimal "
+                                                       "(optional)", required=False),)
+    return cols
+
+
+def _band_cols(band: str) -> tuple[Column, ...]:
+    """A loyalty variant of the reaction (SPEC §5.10): shown instead of reaction_text at high / low loyalty."""
+    when = f"loyalty >= {LOYALTY_BANDS['high']}" if band == "high" else f"loyalty <= {LOYALTY_BANDS['low']}"
+    return (
+        Column(f"reaction_{band}_text", "text", f"the reaction when the citizen's {when} (optional; empty = "
+                                                "reaction_text)", 80, required=False),
+        Column(f"reaction_{band}_tone", "style", f"tone of reaction_{band}_text: happy | angry | sad | neutral "
+                                                 "(required with that text)", required=False, choices="reaction_tones"),
+        *_tag_cols(f"reaction_{band}", f"{band}-loyalty reaction", bubble=True),
+    )
+
+
 SPECS: tuple[TableSpec, ...] = (
     TableSpec("scenarios", "dialogue/scenarios.csv", (
         Column("scenario_id", "key", "unique id of the situation"),
@@ -200,10 +262,18 @@ SPECS: tuple[TableSpec, ...] = (
         Column("priority", "mech", "1-100; higher is offered first"),
         Column("cooldown_s", "mech", "seconds before the same citizen raises it again"),
         Column("once_per_citizen", "mech", "true/false", choices="bools"),
+        Column("urgency", "style", "how pressing it is: low | normal | high | critical (optional, presentation)",
+               required=False, choices="urgencies"),
+        Column("delivery_mode", "style", "how it reaches the ruler: ambient (a thought bubble to notice) | direct "
+                                         "(the citizen seeks the ruler out) (optional, presentation)", required=False,
+               choices="delivery_modes"),
         Column("thought_icon", "style", "bubble icon: request | concern | idea (default request)", required=False,
                choices="thought_icons"),
         Column("thought_text", "text", "thought bubble above the citizen", 48),
+        Column("thought_bubble_s", "style", "seconds the thought bubble stays, 2.5-9 with one decimal (optional)",
+               required=False),
         Column("question_text", "text", "what the citizen says when selected", 160),
+        *_tag_cols("question", "the question"),
         Column("notes", "notes", "designer notes (not in game)"),
     ), "scenarios"),
     TableSpec("responses", "dialogue/responses.csv", (
@@ -214,9 +284,21 @@ SPECS: tuple[TableSpec, ...] = (
         Column("reaction_text", "text", "the citizen's reaction (speech bubble)", 80),
         Column("reaction_tone", "style", "how the reaction is shown: happy | angry | sad | neutral (default neutral)",
                required=False, choices="reaction_tones"),
+        *_tag_cols("reaction", "the reaction", bubble=True),
+        *_band_cols("high"),
+        *_band_cols("low"),
         Column("decision_id", "mech", "the mechanics this answer applies (decisions sheet)", choices="decision_ids"),
         Column("notes", "notes", "designer notes (not in game)", required=False),
     ), "responses"),
+    TableSpec("question_variants", "dialogue/question_variants.csv", (
+        Column("scenario_id", "key", "scenario whose question this variant replaces", choices="scenario_ids"),
+        Column("variant_id", "key", "unique id of the variant"),
+        Column("order", "mech", "whole number >= 1; the first variant (lowest order) whose selector matches is asked"),
+        Column("selector", "mech", "who gets it: trait:<trait_id> or cond:<condition> (SPEC §4)"),
+        Column("question_text", "text", "the question this citizen asks instead", 160),
+        *_tag_cols("question", "the question"),
+        Column("notes", "notes", "designer notes (not in game)", required=False),
+    ), "question variants", optional=True),
     TableSpec("decisions", "dialogue/decisions.csv", (
         Column("decision_id", "key", "unique id of the decision"),
         Column("farm_key", "mech", "anti-farming group (default: decision_id)"),
@@ -313,7 +395,8 @@ SPEC_BY_KEY = {s.key: s for s in SPECS}
 # decision L7). The raw limit counts a placeholder as spelled, so these columns must also fit the bubble with every
 # placeholder at its longest (review finding L7).
 BUBBLE_MAX_CHARS = 80
-BUBBLE_COLUMNS = {("scenarios", "thought_text"), ("responses", "reaction_text")}
+BUBBLE_COLUMNS = {("scenarios", "thought_text"), ("responses", "reaction_text"),
+                  *(("responses", f"reaction_{band}_text") for band in REACTION_BANDS)}
 _GIVEN_NAME_MAX = SPEC_BY_KEY["names"].col("name").limit  # names.csv: given names fill {name}, {family}, ...
 PLACEHOLDER_MAX = {
     "name": _GIVEN_NAME_MAX, "family": _GIVEN_NAME_MAX, "friend": _GIVEN_NAME_MAX, "rival": _GIVEN_NAME_MAX,
@@ -324,7 +407,7 @@ PLACEHOLDER_MAX = {
 KEY_COLUMN = {
     "scenarios": "scenario_id", "responses": "response_id", "decisions": "decision_id",
     "consequences": "consequence_id", "traits": "trait_id", "occupations": "occupation_id",
-    "categories": "category_id",
+    "categories": "category_id", "question_variants": "variant_id",
 }
 
 
@@ -443,6 +526,7 @@ class Table:
     rows: list[Row]
     sheet: str | None = None  # set when the table came from a workbook
     usable: bool = True  # False when the header is broken (rows are not validated)
+    layout: list[str] | None = None  # the sheet's columns as laid out (cell names), when `header` drops some
 
 
 @dataclass
@@ -457,8 +541,9 @@ class Diag:
     def render(self) -> str:
         t = self.table
         colnum = None
-        if t is not None and self.column is not None and self.column in t.header:
-            colnum = t.header.index(self.column) + 1
+        cols = (t.layout or t.header) if t is not None else []
+        if self.column is not None and self.column in cols:
+            colnum = cols.index(self.column) + 1
         tag = f" [{self.column}]" if self.column else ""
         if t is not None and t.sheet is not None:
             where = f"{self.source} › {t.sheet}"
@@ -559,7 +644,8 @@ def load_csv_table(spec: TableSpec, content_dir: Path, report: Report) -> Table 
     path = content_dir / spec.path
     source = display_path(path)
     if not path.is_file():
-        report.add("error", None, None, None, f"missing file (expected {spec.path})", source=source)
+        if not (spec.optional and not path.exists()):  # an optional table may be absent (= no rows)
+            report.add("error", None, None, None, f"missing file (expected {spec.path})", source=source)
         return None
     data = path.read_bytes()
     try:
@@ -823,6 +909,7 @@ class Model:
     scenarios: dict[str, dict] = field(default_factory=dict)
     scenario_order: list[str] = field(default_factory=list)
     responses: dict[str, list[dict]] = field(default_factory=dict)
+    variants: dict[str, list[dict]] = field(default_factory=dict)  # question variants per scenario, by order
     decisions: dict[str, dict] = field(default_factory=dict)
     consequences: dict[str, dict] = field(default_factory=dict)
     traits: dict[str, dict] = field(default_factory=dict)
@@ -974,17 +1061,69 @@ class Validator:
         return v if ok else None
 
     def relation_guard(self, table: Table, row: Row, cols: tuple[str, ...], trigger: list[dict] | None,
-                       sid: str) -> None:
-        """{family} / {friend} / {rival} only when the scenario's trigger guarantees that relation (SPEC §3)."""
+                       sid: str, also: list[dict] | None = None) -> None:
+        """{family} / {friend} / {rival} only when the scenario's trigger guarantees that relation (SPEC §3).
+        `also`: the clauses of a question variant's cond: selector, which guarantee it too (SPEC §5.10); None when
+        the line has no cond: selector (a trait: variant), so the hint never suggests one."""
         if trigger is None:
             return
-        have = {c["var"] for c in trigger if c["op"] == "=" and c["value"] is True}
+        have = {c["var"] for c in trigger + (also or []) if c["op"] == "=" and c["value"] is True}
+        where = f"the trigger of scenario '{sid}'"
+        if also is not None:
+            where += " or to this variant's cond: selector"
         for col in cols:
             for m in _PLACEHOLDER.finditer(row.get(col)):
                 flag = RELATION_FLAGS.get(m.group(1))
                 if flag and flag not in have:
-                    self.err(table, row, col, f"'{{{m.group(1)}}}' needs a {m.group(1)}: add '{flag}' to the "
-                                              f"trigger of scenario '{sid}', or the name could be missing in game")
+                    self.err(table, row, col, f"'{{{m.group(1)}}}' needs a {m.group(1)}: add '{flag}' to "
+                                              f"{where}, or the name could be missing in game")
+
+    def p_bubble(self, table: Table, row: Row, col: str) -> int | float | None:
+        """Seconds a bubble stays (SPEC §5.10): optional, 2.5..9, at most one decimal."""
+        if self.raw(row, col) == "":
+            return None
+        v = self.p_num(table, row, col, *BUBBLE_S_RANGE)
+        if v is not None and abs(v * 10 - round(v * 10)) > 1e-9:
+            self.err(table, row, col, f"'{self.raw(row, col)}' has more than one decimal: bubble times are in tenths "
+                                      "of a second, e.g. 3.5")
+            return None
+        return v
+
+    def tags(self, table: Table, row: Row, prefix: str, tone: str | None = None, tone_from: str = "",
+             bubble: bool = False) -> dict:
+        """The optional presentation tags of one line (SPEC §5.10). With a tone, the emotion must fit it."""
+        out: dict[str, Any] = {}
+        for name, choices in (("emotion", EMOTIONS), ("expression", EXPRESSIONS), ("gesture", GESTURES),
+                              ("delivery", DELIVERIES)):
+            out[name] = self.p_enum(table, row, f"{prefix}_{name}", choices, default="") or None
+        if bubble:
+            out["bubble_s"] = self.p_bubble(table, row, f"{prefix}_bubble_s")
+        emotion = out["emotion"]
+        if emotion is not None and tone in TONE_EMOTIONS and emotion not in TONE_EMOTIONS[tone]:
+            self.err(table, row, f"{prefix}_emotion",
+                     f"emotion '{emotion}' does not fit tone '{tone}'{tone_from}: {_article(tone)} {tone} line takes "
+                     f"{', '.join(TONE_EMOTIONS[tone])}; pick one of those or change the tone")
+        return out
+
+    def band(self, table: Table, row: Row, band: str) -> dict | None:
+        """A loyalty variant of the reaction (SPEC §5.10): reaction_<band>_text with its own tone and tags."""
+        p = f"reaction_{band}"
+        text_col, tone_col = f"{p}_text", f"{p}_tone"
+        if row.get(text_col) == "":
+            tag_cols = (tone_col, f"{p}_emotion", f"{p}_expression", f"{p}_gesture", f"{p}_delivery", f"{p}_bubble_s")
+            for col in tag_cols:
+                if self.raw(row, col) != "":
+                    self.err(table, row, col, f"{col} is set but {text_col} is empty: the {band}-loyalty tags describe "
+                                              "that text, so write the text or clear this cell")
+            return None
+        text = self.p_text(table, row, text_col, required=False, placeholders=CITIZEN_PLACEHOLDERS)
+        tone = None
+        if self.raw(row, tone_col) == "":
+            self.err(table, row, tone_col, f"required with {text_col}: how the {band}-loyalty reaction is shown "
+                                           f"({', '.join(REACTION_TONES)})")
+        else:
+            tone = self.p_enum(table, row, tone_col, REACTION_TONES)
+        return {"text": text, "tone": tone, **self.tags(table, row, p, tone, bubble=True)}
 
     def p_list(self, table: Table, row: Row, col: str) -> list[str]:
         v = self.raw(row, col)
@@ -1064,6 +1203,7 @@ class Validator:
         self.v_decisions()
         self.v_scenarios()
         self.v_responses()
+        self.v_question_variants()
         self.v_actions()
         self.m.counts = {
             "scenarios": len(self.rows_of("scenarios")), "responses": len(self.rows_of("responses")),
@@ -1072,6 +1212,9 @@ class Validator:
             "occupations": len(self.rows_of("occupations")), "categories": len(self.rows_of("categories")),
             "actions": len(self.rows_of("actions")),
         }
+        for spec in SPECS:  # an optional table is counted only when its file exists
+            if spec.optional and spec.key in self.t:
+                self.m.counts[spec.key] = len(self.rows_of(spec.key))
         return self.m
 
     def table(self, key: str) -> Table | None:
@@ -1473,6 +1616,11 @@ class Validator:
                 "icon": self.p_enum(tt, row, "thought_icon", THOUGHT_ICONS, default="request"),
                 "thought": self.p_text(tt, row, "thought_text", placeholders=CITIZEN_PLACEHOLDERS),
                 "question": self.p_text(tt, row, "question_text", placeholders=CITIZEN_PLACEHOLDERS),
+                # presentation (SPEC §5.10): optional, omitted when empty, never gameplay
+                "urgency": self.p_enum(tt, row, "urgency", URGENCIES, default="") or None,
+                "delivery_mode": self.p_enum(tt, row, "delivery_mode", DELIVERY_MODES, default="") or None,
+                "thought_bubble_s": self.p_bubble(tt, row, "thought_bubble_s"),
+                **{f"question_{k}": v for k, v in self.tags(tt, row, "question").items()},
             }
             self.relation_guard(tt, row, ("thought_text", "question_text"), trigger, sid)
             self.m.scenarios[sid] = rec
@@ -1493,17 +1641,26 @@ class Validator:
                 self.err(tt, row, "decision_id", "required")
             elif self.ref(tt, row, "decision_id", "decisions", did):
                 self.m.referenced_decisions.add(did)
+            tone = self.p_enum(tt, row, "reaction_tone", REACTION_TONES, default="neutral")
+            tone_from = ""
+            if self.raw(row, "reaction_tone") == "":
+                tone_from = " (reaction_tone is empty, so the tone is neutral)"
+            bands = {band: self.band(tt, row, band) for band in REACTION_BANDS}
             rec = {
                 "id": rid,
                 "order": self.p_int(tt, row, "order", 1, 4, None),
                 "text": self.p_text(tt, row, "response_text", placeholders=CITIZEN_PLACEHOLDERS),
                 "reaction": self.p_text(tt, row, "reaction_text", placeholders=CITIZEN_PLACEHOLDERS),
-                "tone": self.p_enum(tt, row, "reaction_tone", REACTION_TONES, default="neutral"),
+                "tone": tone,
+                **self.tags(tt, row, "reaction", tone, tone_from, bubble=True),
                 "decision": did or None,
+                "bands": {k: v for k, v in bands.items() if v is not None} or None,
             }
             scenario = self.m.scenarios.get(sid)
             if scenario is not None:
-                self.relation_guard(tt, row, ("response_text", "reaction_text"), scenario["trigger"], sid)
+                self.relation_guard(tt, row, ("response_text", "reaction_text",
+                                              *(f"reaction_{band}_text" for band in REACTION_BANDS)),
+                                    scenario["trigger"], sid)
             by_scenario.setdefault(sid, []).append((row, rec))
         for sid, items in by_scenario.items():
             seen: dict[int, int] = {}
@@ -1523,6 +1680,79 @@ class Validator:
                     srow = self.m.rows[("scenarios", sid)][1]
                     self.r.error(st, srow.num, "scenario_id", f"scenario '{sid}' has {n} responses; it needs 2-4 "
                                                               "(responses.csv)")
+
+    def selector(self, table: Table, row: Row) -> tuple[str | None, list[dict] | None]:
+        """question_variants.selector: trait:<trait_id> or cond:<condition> (SPEC §5.10) -> (trait, clauses)."""
+        v = self.raw(row, "selector")
+        if v == "":
+            self.err(table, row, "selector", "required: trait:<trait_id> or cond:<condition>")
+            return None, None
+        kind, sep, rest = v.partition(":")
+        kind, rest = kind.strip(), rest.strip()
+        if not sep or kind not in ("trait", "cond"):
+            self.err(table, row, "selector", f"'{v}' is not a selector{_suggest(kind, ('trait', 'cond'))}: write "
+                                             "trait:<trait_id> (the citizen has that trait) or cond:<condition> "
+                                             "(the condition language of triggers, SPEC §4), e.g. trait:brave or "
+                                             "cond:citizen.loyalty >= 70")
+            return None, None
+        if kind == "trait":
+            if rest == "":
+                self.err(table, row, "selector", "trait: needs a trait id, e.g. trait:brave")
+            elif not ID_RE.match(rest):
+                self.err(table, row, "selector", f"'{rest}' is not a valid trait id")
+            elif self.ref(table, row, "selector", "traits", rest):
+                return rest, None
+            return None, None
+        if rest == "":
+            self.err(table, row, "selector", "cond: needs a condition, e.g. cond:citizen.loyalty >= 70")
+            return None, None
+        try:
+            clauses, memories = parse_condition(rest, self.vocab, "citizen")
+        except CondError as e:
+            self.err(table, row, "selector", str(e))
+            return None, None
+        for tag in memories:
+            self.m.memory_uses.append((table, row.num, "selector", tag))
+        return None, clauses
+
+    def v_question_variants(self) -> None:
+        """dialogue/question_variants.csv (SPEC §5.10): optional; another question for some citizens."""
+        t = self.table("question_variants")
+        if t is None:
+            return
+        by_scenario: dict[str, list[tuple[Row, dict]]] = {}
+        for tt, row, vid in self.keyed_rows("question_variants"):
+            sid = self.raw(row, "scenario_id")
+            if sid == "":
+                self.err(tt, row, "scenario_id", "required")
+                continue
+            if not self.ref(tt, row, "scenario_id", "scenarios", sid):
+                continue
+            trait, cond = self.selector(tt, row)
+            rec = {
+                "id": vid,
+                "order": self.p_int(tt, row, "order", 1, None, None),
+                "trait": trait,
+                "cond": cond,
+                "text": self.p_text(tt, row, "question_text", placeholders=CITIZEN_PLACEHOLDERS),
+                **self.tags(tt, row, "question"),
+            }
+            scenario = self.m.scenarios.get(sid)
+            if scenario is not None:
+                self.relation_guard(tt, row, ("question_text",), scenario["trigger"], sid, also=cond)
+            by_scenario.setdefault(sid, []).append((row, rec))
+        for sid, items in by_scenario.items():
+            seen: dict[int, tuple[int, str]] = {}
+            for row, rec in items:
+                o = rec["order"]
+                if o is None:
+                    continue
+                if o in seen:
+                    self.err(t, row, "order", f"order {o} is already used by variant '{seen[o][1]}' of scenario "
+                                              f"'{sid}' (row {seen[o][0]})")
+                    continue
+                seen[o] = (row.num, rec["id"])
+            self.m.variants[sid] = [rec for _, rec in sorted(items, key=lambda x: (x[1]["order"] or 0, x[0].num))]
 
     def v_actions(self) -> None:
         t = self.table("actions")
@@ -1657,6 +1887,11 @@ def _char_name(ch: str) -> str:
     return "unassigned character" if unicodedata.category(ch) == "Cn" else "control character"
 
 
+def _article(word: str) -> str:
+    """'an' before a vowel ('an angry line'), else 'a' ('a happy line')."""
+    return "an" if word[:1] != "" and word[:1].lower() in "aeiou" else "a"
+
+
 def _invisible_problem(value: str, kind: str) -> str | None:
     """First invisible/control/format character in a cell, or None. Notes may hold tabs and line breaks; text
     reports line breaks itself (p_text)."""
@@ -1702,7 +1937,7 @@ def validate_tables(tables: dict[str, Table], report: Report) -> Model:
 
 def summary_line(model: Model, errors: int) -> str:
     c = model.counts
-    parts = [f"{c.get(s.key, 0)} {s.noun}" for s in SPECS]
+    parts = [f"{c.get(s.key, 0)} {s.noun}" for s in SPECS if not s.optional or s.key in c]
     return f"{', '.join(parts)} — {errors} error{'s' if errors != 1 else ''}"
 
 
@@ -1868,6 +2103,21 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
         if s["locked"] and sid not in used_unlocks:
             report.warn(t, row.num, "scenario_id", f"scenario '{sid}' is locked, but no decision uses a consequence "
                                                    "that unlocks it: it can never be offered")
+        if s.get("delivery_mode") == "direct" and s.get("urgency") == "low":
+            report.warn(t, row.num, "urgency", f"scenario '{sid}' is delivered direct (the citizen seeks the ruler "
+                                               "out) but its urgency is low: give it a pressing reason (normal or "
+                                               "higher), or deliver it ambient")
+    for sid, responses in model.responses.items():  # presentation hints (SPEC §5.10)
+        for r in responses:
+            t, row = rows[("responses", r["id"])]
+            bands = r.get("bands") or {}
+            for label, line, col in (("reaction", r, "reaction_emotion"),
+                                     *((f"{b}-loyalty reaction", bands.get(b), f"reaction_{b}_emotion")
+                                       for b in REACTION_BANDS)):
+                if line and line.get("emotion") is None and any(
+                        line.get(k) is not None for k in ("expression", "gesture", "delivery", "bubble_s")):
+                    report.warn(t, row.num, col, f"the {label} of '{r['id']}' has presentation tags but no emotion: "
+                                                 "set the emotion too (the portrait and the world rig key on it)")
     farm_warned: set[str] = set()
     events: dict[str, list[int]] = {}
     event_rows: dict[str, tuple[Table, Row]] = {}
@@ -2045,10 +2295,15 @@ def generate(model: Model, content_label: str) -> dict[str, str]:
         s = dict(model.scenarios[sid])
         s["trigger"] = Arr(s["trigger"] or [])
         s["responses"] = Arr(dict(r) for r in model.responses.get(sid, []))
+        # question variants (SPEC §5.10), sorted by order; omitted when the scenario has none
+        s["variants"] = Arr({**v, "cond": Arr(v["cond"]) if v["cond"] is not None else None}
+                            for v in model.variants.get(sid, [])) or None
         scenarios[sid] = s
+    dialogue_sources = ["dialogue/scenarios.csv", "dialogue/responses.csv"]
+    if "question_variants" in model.counts:  # the optional file exists
+        dialogue_sources.append(SPEC_BY_KEY["question_variants"].path)
     files["Dialogue.luau"] = luau_module(
-        {"scenarios": scenarios, "order": Arr(model.scenario_order)},
-        ["dialogue/scenarios.csv", "dialogue/responses.csv"], content_label)
+        {"scenarios": scenarios, "order": Arr(model.scenario_order)}, dialogue_sources, content_label)
 
     decisions = {}
     for did in sorted(model.decisions):
@@ -2213,8 +2468,12 @@ STAMP_HEADERS = ("stamp_file", "stamp_sha256")  # export stamp in the hidden lis
 # the value at export. import-xlsx uses it to never revert a CSV cell edited after the export (finding M4).
 CELL_STAMP_HEADERS = ("stamp_cell", "stamp_cell_sha256")
 # Read-only helper columns: export-xlsx fills them in, import-xlsx ignores them.
-INFO_COLUMNS = {"responses": ("info: question", "info: effects")}
+INFO_COLUMNS = {"responses": ("info: question", "info: effects"), "question_variants": ("info: question",)}
 EDITABLE_KINDS = ("text", "style", "notes")  # what import-xlsx --text-only takes from the workbook
+# Optional TEXT and presentation columns (thought_icon, the SPEC §5.10 tags, ...) are offered in every sheet, also when
+# the CSV does not have them yet, so writers can fill them in. An import adds such a column to a CSV only when the
+# workbook holds a value in it for that file.
+OFFERED_KINDS = ("text", "style")
 # Tables without a unique key are matched by position; these columns must agree for --text-only.
 POSITION_IDENTITY = {"names": ("kind",), "actions": ("action_id", "event", "audience")}
 CHANGE_LINES = 200  # import-xlsx prints at most this many change lines
@@ -2226,6 +2485,55 @@ def _require_openpyxl():
     except ImportError:
         print("this command needs openpyxl: python3 -m pip install openpyxl")
         raise SystemExit(2)
+
+
+def _offered(spec: TableSpec, header: list[str]) -> list[str]:
+    """The optional TEXT and presentation columns of `spec` that `header` lacks, in schema order."""
+    return [c.name for c in spec.columns if not c.required and c.kind in OFFERED_KINDS and c.name not in header]
+
+
+def _sheet_header(spec: TableSpec, t: Table | None) -> list[str]:
+    """The columns of a sheet: the CSV's own, then the offered optional ones. An absent optional table gets all."""
+    if t is not None and t.header:
+        base = list(t.header)
+    elif spec.optional and t is None:
+        base = [c.name for c in spec.columns]
+    else:
+        base = [c.name for c in spec.columns if c.required]
+    return base + _offered(spec, base)
+
+
+def _drop_unused_columns(spec: TableSpec, wbt: Table, csv_header: list[str] | None) -> None:
+    """Forget the offered columns the CSV does not have (csv_header None: no CSV) and the workbook leaves empty, so
+    an import never adds an empty column to a CSV. `wbt.layout` keeps the sheet's columns for cell names."""
+    have = set(csv_header or [])
+    drop = [h for h in wbt.header if h not in have and (c := spec.col(h)) is not None and not c.required
+            and c.kind in OFFERED_KINDS and all(r.values.get(h, "") == "" for r in wbt.rows)]
+    if not drop:
+        return
+    wbt.layout = wbt.layout or list(wbt.header)
+    wbt.header = [h for h in wbt.header if h not in drop]
+    for r in wbt.rows:
+        for h in drop:
+            r.values.pop(h, None)
+
+
+def _column_order(spec: TableSpec, old_header: list[str] | None, header: list[str]) -> list[str]:
+    """The CSV column order to write: the old file's order for the columns it keeps; a new column goes right after
+    the nearest column before it in the schema (schema order for a new file)."""
+    names = [c.name for c in spec.columns]
+    if old_header is None:
+        return [n for n in names if n in header]
+    out = [h for h in old_header if h in header]
+    for name in names:
+        if name in header and name not in out:
+            k = names.index(name)
+            pos = 0
+            for j, h in enumerate(out):
+                if h in names and names.index(h) < k:
+                    pos = j + 1
+            out.insert(pos, name)
+    return out
 
 
 def _raw_tables(content_dir: Path) -> tuple[dict[str, Table], Report]:
@@ -2254,7 +2562,9 @@ def _column_comment(spec: TableSpec, col: Column) -> str:
                    "the outcome and never write the odds.")
         return (f"EDIT — player-facing text: {col.help}.{limit}{ph} Do not type numbers that the mechanics decide.")
     if col.kind == "style":
-        return f"EDIT — presentation, pick from the dropdown: {col.help}."
+        how = "pick from the dropdown" if col.choices else "a number"
+        return (f"EDIT — presentation, {how}: {col.help}. Leave it empty for the default presentation; it never "
+                "changes gameplay.") if not col.required else f"EDIT — presentation, {how}: {col.help}."
     if col.kind == "notes":
         return f"NOTES — {col.help}. Free text, never shown in game."
     return f"MECHANICS — {col.help}. Changes gameplay; see content/SPEC.md before editing."
@@ -2262,7 +2572,7 @@ def _column_comment(spec: TableSpec, col: Column) -> str:
 
 def _column_placeholders(table: str, col: str) -> tuple[str, ...]:
     """The placeholders a TEXT column accepts (SPEC §3); mirrors the Validator."""
-    if table in ("scenarios", "responses"):
+    if table in ("scenarios", "responses", "question_variants"):
         return CITIZEN_PLACEHOLDERS
     if table == "consequences" and col == "notice_text":
         return CONSEQUENCE_NOTICE_PLACEHOLDERS
@@ -2304,7 +2614,10 @@ def _info_columns(tables: dict[str, Table]) -> dict[str, Callable[[Row], list[st
         return [questions.get(row.get("scenario_id").strip(), ""),
                 effects.get(did, f"(unknown decision '{did}')" if did else "")]
 
-    return {"responses": responses}
+    def variants(row: Row) -> list[str]:
+        return [questions.get(row.get("scenario_id").strip(), "")]
+
+    return {"responses": responses, "question_variants": variants}
 
 
 def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
@@ -2316,7 +2629,8 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
     from openpyxl.worksheet.datavalidation import DataValidation
 
     tables, report = _raw_tables(content_dir)
-    if report.errors and len(tables) < len(SPECS):
+    unreadable = [s for s in SPECS if s.key not in tables and not (s.optional and not (content_dir / s.path).exists())]
+    if report.errors and unreadable:
         return 1, report
     wb = Workbook()
     readme = wb.active
@@ -2334,13 +2648,16 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
         "bools": ["true", "false"],
         "thought_icons": list(THOUGHT_ICONS),
         "reaction_tones": list(REACTION_TONES),
+        "emotions": list(EMOTIONS),
+        "expressions": list(EXPRESSIONS),
+        "gestures": list(GESTURES),
+        "deliveries": list(DELIVERIES),
+        "urgencies": list(URGENCIES),
+        "delivery_modes": list(DELIVERY_MODES),
     }
     live = {"decision_ids": ("decisions", "decision_id"), "scenario_ids": ("scenarios", "scenario_id"),
             "trait_ids": ("traits", "trait_id")}
-    headers: dict[str, list[str]] = {}
-    for spec in SPECS:
-        t = tables.get(spec.key)
-        headers[spec.key] = t.header if t is not None and t.header else [c.name for c in spec.columns if c.required]
+    headers = {spec.key: _sheet_header(spec, tables.get(spec.key)) for spec in SPECS}
     list_ws = wb.create_sheet(LIST_SHEET)
     list_ref: dict[str, str] = {}
     for i, (name, values) in enumerate(lists.items(), 1):
@@ -2376,7 +2693,7 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
         t = tables.get(spec.key)
         header = headers[spec.key]
         rows = t.rows if t is not None else []
-        info = INFO_COLUMNS.get(spec.key, ()) if t is not None else ()
+        info = INFO_COLUMNS.get(spec.key, ()) if t is not None or spec.optional else ()
         for ci, name in enumerate(header, 1):
             col = spec.col(name)
             kind = col.kind if col else "mech"
@@ -2446,7 +2763,8 @@ def export_xlsx(content_dir: Path, path: Path) -> tuple[int, Report]:
             rng = f"{_col_letter(ci)}2:{_col_letter(ci)}{MAX_ROWS}"
             if col.choices and col.choices in list_ref:
                 strict = col.choices in ("consequence_kinds", "jobs", "key_roles", "name_kinds", "bools",
-                                         "decision_audiences", "thought_icons", "reaction_tones")
+                                         "decision_audiences", "thought_icons", "reaction_tones", "emotions",
+                                         "expressions", "gestures", "deliveries", "urgencies", "delivery_modes")
                 dv = DataValidation(type="list", formula1=list_ref[col.choices], allow_blank=True,
                                     errorStyle="stop" if strict else "warning",
                                     error=f"Pick a value from the list ({name}).", errorTitle=name,
@@ -2541,6 +2859,11 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
          "the notice, so the notice describes only what may happen.", ""),
         ("   A text may not be blank: only spaces or invisible characters are refused.", ""),
         ("9. Keep cells as Text. Write true/false in lower case and lists like food:-20;gold:5.", ""),
+        ("10. Presentation tags (emotion, expression, gesture, delivery, urgency, delivery_mode, *_bubble_s) are "
+         "optional yellow columns: leave them empty for the default look. They never change gameplay. A reaction's "
+         "emotion must fit its tone.", ""),
+        ("11. reaction_high_* / reaction_low_* (responses) are optional loyalty variants of the reaction; "
+         "question_variants gives some citizens another question (trait:<id> or cond:<condition>).", ""),
         ("", ""),
         ("HAND IT BACK", "head"),
         ("Save as .xlsx (same name is fine) and give the file back, or run:", ""),
@@ -2575,12 +2898,16 @@ def _write_readme(ws, headers: dict[str, list[str]]) -> None:
     r += 1
     kind_label = {"text": "EDIT (text)", "style": "EDIT (choice)", "mech": "mechanics", "key": "id (mechanics)",
                   "notes": "notes"}
+
+    def label(col: Column) -> str:
+        return "EDIT (number)" if col.kind == "style" and not col.choices else kind_label[col.kind]
+
     for spec in SPECS:
         for name in headers[spec.key]:
             col = spec.col(name)
             if col is None:
                 continue
-            values = (spec.key, col.name, kind_label[col.kind], col.limit, col.help)
+            values = (spec.key, col.name, label(col), col.limit, col.help)
             for ci, v in enumerate(values, 1):
                 cell = ws.cell(row=r, column=ci, value=v)
                 if col.kind in ("text", "style"):
@@ -2688,6 +3015,7 @@ def read_workbook(path: Path, report: Report) -> tuple[dict[str, Table], Stamps]
         if drop:
             records = [(n, [v for i, v in enumerate(cells) if i not in drop]) for n, cells in records]
         table = table_from_records(spec, source, records, report, sheet=ws.title)
+        table.layout = list(table.header)
         tables[spec.key] = table
     return tables, stamps
 
@@ -2703,9 +3031,12 @@ class Change:
     new: str | None  # None: the row was removed
     row: int | None = None  # workbook row, for error locations
     applied: bool = True
+    summary: str | None = None  # replaces 'old → new' (a header change names the columns added and removed)
 
     def describe(self) -> str:
         where = f"{self.sheet} › {self.label}" + (f" [{self.column}]" if self.column else "")
+        if self.summary is not None:
+            return f"{where}: {self.summary}"
         if self.old is None:
             return f"{where}: new row"
         if self.new is None:
@@ -2796,7 +3127,16 @@ def _match_rows(spec: TableSpec, cur_rows: list[Row], wb_rows: list[Row]):
 def _diff_table(spec: TableSpec, cur: Table, wb: Table) -> list[Change]:
     changes: list[Change] = []
     if set(cur.header) != set(wb.header):
-        changes.append(Change("MECHANICS", spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header)))
+        # Adding offered TEXT / presentation columns is a text change (SPEC §10). Removing a column stays a
+        # mechanics change, so a stale workbook can never drop cells that changed in the CSV after the export.
+        added = [h for h in wb.header if h not in cur.header]
+        removed = [h for h in cur.header if h not in wb.header]
+        offered = all((c := spec.col(h)) is not None and c.kind in OFFERED_KINDS and not c.required for h in added)
+        kind = "TEXT" if offered and not removed else "MECHANICS"
+        summary = "; ".join(part for part in (f"columns added: {', '.join(added)}" if added else "",
+                                              f"columns removed: {', '.join(removed)}" if removed else "") if part)
+        changes.append(Change(kind, spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header),
+                              summary=summary))
     cols = list(dict.fromkeys([*cur.header, *wb.header]))
     pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
     for c_row, w_row, label in pairs:
@@ -2848,16 +3188,20 @@ def _guard_editable(spec: TableSpec, cur: Table, wbt: Table, stamps: Stamps, fil
     return kept
 
 
-def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[Row] | None, str | None]:
-    """The current CSV rows with only the TEXT, choice and notes cells taken from the workbook."""
+def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[str], list[Row] | None, str | None]:
+    """(header, rows, problem): the current CSV rows with only the TEXT, choice and notes cells taken from the
+    workbook; an offered column is added to the header only when a row it imports fills it in. A value only in a
+    row --text-only ignores (a new row, a renamed id) adds nothing, or every CSV line would gain an empty cell."""
     pairs, added, removed = _match_rows(spec, cur.rows, wb.rows)
     if not KEY_COLUMN.get(spec.key):
         ident = POSITION_IDENTITY.get(spec.key, ())
         moved = any(c.values.get(k, "").strip() != w.values.get(k, "").strip() for c, w, _ in pairs for k in ident)
         if added or removed or moved:
-            return None, (f"rows were added, removed or moved in sheet '{spec.key}', so --text-only cannot match "
-                          "them to the CSV: undo that, or import without --text-only")
+            return [], None, (f"rows were added, removed or moved in sheet '{spec.key}', so --text-only cannot match "
+                              "them to the CSV: undo that, or import without --text-only")
     take = {c.name for c in spec.columns if c.kind in EDITABLE_KINDS} & set(wb.header)
+    header = list(cur.header) + [h for h in wb.header if h in take and h not in cur.header
+                                 and any(w.values.get(h, "") != "" for _, w, _ in pairs)]
     by_cur = {id(c): w for c, w, _ in pairs}
     out = []
     for c in cur.rows:
@@ -2865,9 +3209,32 @@ def _text_only_rows(spec: TableSpec, cur: Table, wb: Table) -> tuple[list[Row] |
         if w is None:
             out.append(c)
             continue
-        values = {col: (w.values.get(col, "") if col in take else c.values.get(col, "")) for col in cur.header}
+        values = {col: (w.values.get(col, "") if col in take else c.values.get(col, "")) for col in header}
         out.append(Row(w.num, values))
-    return out, None
+    return header, out, None
+
+
+def _text_only_header(spec: TableSpec, cur: Table, wb: Table, header: list[str], diff: list[Change]) -> list[Change]:
+    """`diff` with its header change as --text-only applies it: the columns it really adds (TEXT) apart from the
+    column changes it ignores (MECHANICS: removed columns, and added ones it never takes). An offered column whose
+    only values are in rows it ignores is not mentioned: those rows are listed as ignored themselves."""
+    out = [c for c in diff if c.summary is None]  # only a header change has a summary
+    if len(out) == len(diff):
+        return diff
+    taken = [h for h in header if h not in cur.header]
+    left = [h for h in wb.header if h not in cur.header and h not in taken
+            and ((c := spec.col(h)) is None or c.kind not in EDITABLE_KINDS)]
+    removed = [h for h in cur.header if h not in wb.header]
+    head: list[Change] = []
+    if taken:
+        head.append(Change("TEXT", spec.key, "(header)", None, ", ".join(cur.header), ", ".join(header),
+                           summary=f"columns added: {', '.join(taken)}"))
+    if left or removed:
+        summary = "; ".join(part for part in (f"columns added: {', '.join(left)}" if left else "",
+                                              f"columns removed: {', '.join(removed)}" if removed else "") if part)
+        head.append(Change("MECHANICS", spec.key, "(header)", None, ", ".join(cur.header), ", ".join(wb.header),
+                           summary=summary))
+    return head + out
 
 
 @dataclass
@@ -2893,6 +3260,20 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
         csv_path = content_dir / spec.path
         loaded = Report()
         cur = load_csv_table(spec, content_dir, loaded)
+        if wbt.usable:
+            _drop_unused_columns(spec, wbt, cur.header if cur is not None else None)
+        if cur is None and spec.optional and not csv_path.exists() and wbt.usable:
+            # An optional table without a file (question_variants.csv): only rows the workbook adds create it. New
+            # rows are mechanics (ids, order, selector), so --text-only lists them as not imported.
+            new = [Change("MECHANICS", key, _row_key(spec, w) or f"row {w.num}", None, None, "", w.num)
+                   for w in wbt.rows]
+            changes += new
+            if text_only:
+                for c in new:
+                    c.applied = False
+            elif wbt.rows:
+                merged[key] = wbt
+            continue
         if cur is None or not cur.usable or not wbt.usable:
             if text_only:
                 report.add("error", wbt, None, None, f"--text-only needs a readable {spec.path} to merge into")
@@ -2913,17 +3294,21 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
         wbt.rows = _restore_order(spec, cur, wbt.rows)
         file_unchanged = stamps.files is not None and stamps.files.get(spec.path) == _sha256(content_dir / spec.path)
         kept += _guard_editable(spec, cur, wbt, stamps, file_unchanged, report)
+        _drop_unused_columns(spec, wbt, cur.header)  # again: a cell kept as in the CSV may have emptied a column
         diff = _diff_table(spec, cur, wbt)
-        changes += diff
         if text_only:
-            rows, problem = _text_only_rows(spec, cur, wbt)
+            header, rows, problem = _text_only_rows(spec, cur, wbt)
             if rows is None:
+                changes += diff
                 report.add("error", wbt, None, None, problem or "cannot merge")
                 continue
+            diff = _text_only_header(spec, cur, wbt, header, diff)
             for c in diff:
                 c.applied = c.kind != "MECHANICS"
-            merged[key] = Table(spec, wbt.source, list(cur.header), rows, sheet=wbt.sheet)
+            changes += diff
+            merged[key] = Table(spec, wbt.source, header, rows, sheet=wbt.sheet, layout=wbt.layout)
             continue
+        changes += diff
         stale = None
         if stamps.files is None:
             stale = "this workbook has no export stamp (made by an older tool or by hand)"
@@ -2957,10 +3342,7 @@ def import_xlsx(path: Path, content_dir: Path, text_only: bool = False) -> Impor
                 old = None  # an unreadable file is replaced as a whole
             if old is not None and old.records:
                 old_header = [h.strip() for h in old.records[0].fields]
-        if old_header is not None and set(old_header) == set(table.header):
-            order = old_header
-        else:
-            order = [c.name for c in spec.columns if c.name in table.header]
+        order = _column_order(spec, old_header, table.header)
         rows = [order] + [[r.values.get(c, "") for c in order] for r in table.rows]
         text = render_csv(rows, old)
         if not csv_path.is_file() or csv_path.read_bytes() != text.encode("utf-8"):

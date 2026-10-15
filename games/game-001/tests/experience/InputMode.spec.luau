@@ -228,6 +228,63 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		expect(log).toEqual({ "citizen:9", "none:", "citizen:9" })
 	end)
 
+	it(
+		"hover: a mouse move over a citizen fires hovered on a change only; a GUI or build mode clears it (FL-0115)",
+		function()
+			local log = {}
+			input.hovered:connect(function(kind, id)
+				table.insert(log, `{kind}:{tostring(id)}`)
+			end)
+			picks[100] = 42
+			local function move(x, processed, inputType)
+				userInput.InputChanged:Fire({
+					UserInputType = inputType or Enum.UserInputType.MouseMovement,
+					Position = Vector3.new(x, 200, 0),
+				}, processed == true)
+			end
+			move(100)
+			move(100)
+			expect(log).toEqual({ "citizen:42" })
+			expect(input.hover).toEqual({ kind = "citizen", id = 42 })
+			move(300) -- off the citizen
+			move(100)
+			move(100, true) -- over a GUI
+			expect(log).toEqual({ "citizen:42", "none:", "citizen:42", "none:" })
+			move(100)
+			input:set("build") -- placing: no hover
+			move(100)
+			expect(log).toEqual({ "citizen:42", "none:", "citizen:42", "none:", "citizen:42", "none:" })
+			input:set("explore")
+			env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+			move(100, false, Enum.UserInputType.Touch) -- touch never hovers, even over a citizen
+			expect(#log).toBe(6)
+			expect(input.selection.kind).toBe("none") -- hovering never selects
+		end
+	)
+
+	it("hover: leaving explore mode clears it at once, with no mouse move (FL-0115, FORGE-05 #137)", function()
+		local log, seenByChanged = {}, nil
+		input.hovered:connect(function(kind, id)
+			table.insert(log, `{kind}:{tostring(id)}`)
+		end)
+		input.changed:connect(function()
+			seenByChanged = input.hover.kind
+		end)
+		picks[100] = 42
+		userInput.InputChanged:Fire({
+			UserInputType = Enum.UserInputType.MouseMovement,
+			Position = Vector3.new(100, 200, 0),
+		}, false)
+		expect(input.hover).toEqual({ kind = "citizen", id = 42 })
+		input:set("build") -- the pointer stays still over the citizen
+		expect(input.hover).toEqual({ kind = "none", id = "" })
+		expect(log).toEqual({ "citizen:42", "none:" })
+		expect(seenByChanged).toBe("none") -- cleared before changed fires
+		input:set("explore") -- back, still without a move: no stale hover comes back
+		expect(input.hover.kind).toBe("none")
+		expect(log).toEqual({ "citizen:42", "none:" })
+	end)
+
 	it("selecting a citizen reports CitizenInspected to the onboarding (FL-0092)", function()
 		local reports = {}
 		local reg = D.boot(MockEnv.new({ seed = 62, isServer = false, localPlayer = { userId = 6102 } }), {

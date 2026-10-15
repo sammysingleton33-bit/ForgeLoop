@@ -6,10 +6,10 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | D-046 B13 chain: #92 ✔ `13acf26`, #113 ✔ `cac9522`, #97 ✔ `681f38c`, #111 ✔ `003e180`; #93 CHANGES REQUESTED (M1: failed tick drops kingdom events, 2-line fix asked of FORGE-01); #119 waits for FORGE-04's main merge. B13 after #93 (or without it after ~30 min). Acceptance bookkeeping done (FL-0028 ACCEPTED, FL-0089 E2E with a tracked content defect) |
-| Last verified check | #120 on main `53186d8`: check.sh OVERALL PASS (framework 517/0, game-001 1213/0), PR CI run 38418573537 3/3. Post-merge self-check of 19 D-040 review sets on main 962984f: no regressions. Main CI green for #117 and #49 |
+| Current task | **B15 merged (2026-10-15 18:20): main `b2e3164`**, sent to FORGE-00 to build and deliver. It holds the user's three items: #131 cleanup, #132 + #135 rotation, #133 bubbles; plus #137 outlines and #134 docs. Next: FORGE-00's #96; FORGE-07's READY list (#128, #94, #82, #64, #98, #102); FORGE-01 #136 wallGap; B15 follow-ups (FORGE-03 pad turn R1/L1 and the PlacementInput spec; FORGE-04 hover-clear spec); FORGE-02 art when it lands; B16 Studio rows (base editing) |
+| Last verified check | B15 `b2e3164`: economy 315/0, experience 180/0, integration 15/0, place check PASS; each B15 merge result check.sh PASS (game-001 1309 → 1335/0); rotation E2E probe 2/2; cleanup probe 1012 → 0 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
-| In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
+| In review / queued | No ★ PRs open after B14. Not ★ (wait for FORGE-07 or a FORGE-00 ★): #130, #129, #128, #127, #125, #124, #123, #118, #110, #102 (mine), #100, #98, #96, #94, #90, #82, #64 |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -114,6 +114,20 @@ _Maintained by the worker. Keep it short and current._
 | #113 | FORGE-01 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget (★, D-046) | `cac9522` |
 | #97 | FORGE-01 FL-0106 Match.Ended for late joiners during Results (★, D-046) | `681f38c` |
 | #111 | FORGE-01 FL-0107 G9 CitizenAnswered (★, D-046) | `003e180` |
+| #122 | FORGE-00 reputation notices for soldiers_recruited / wall_built (★, B13) | `196b1df` |
+| #119 | FORGE-04 FL-0062 follow-up: the summary owns the result line (★, D-046) | `d65fb2e` |
+| #93 | FORGE-01 FL-0049 replication hardening (★, D-046; M1 fixed) | `7694638` |
+| #85 | FORGE-02 FL-0098 `Kit.portrait` (B14) | `76396d1` |
+| #108 | FORGE-01 FL-0097 conversation server, g9f hold (B14) | `787f24e` |
+| #84 | FORGE-04 FL-0100 (1/2) conversation camera (B14) | `5eba538` |
+| #121 | FORGE-04 FL-0100 (2/2) reaction poses (B14) | `2bffebf` |
+| #126 | FORGE-03 FL-0099 cinematic conversation UI (B14 = this sha) | `3691475` |
+| #131 | FORGE-01 FL-0112 farm and plot clearance (B15) | `81f9637` |
+| #134 | FORGE-04 B14 Studio probes (docs) | `c651ff4` |
+| #133 | FORGE-04 FL-0115 bubble readability (B15) | `d5587b7` |
+| #132 | FORGE-01 FL-0113 PlaceSlot turn (B15) | `f36b1f0` |
+| #137 | FORGE-04 FL-0115 hover and selection outlines (B15) | `e7ab2f5` |
+| #135 | FORGE-03 FL-0114 rotation UI (B15 = this sha) | `b2e3164` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

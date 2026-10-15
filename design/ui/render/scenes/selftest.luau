@@ -316,8 +316,8 @@ local function cardFlex(): Instance
 	end
 	wrap.Parent = body
 	-- a class the renderer does not emulate: plain box + dashed outline + class name
-	new("ViewportFrame", {
-		Name = "Viewport",
+	new("VideoFrame", {
+		Name = "Video",
 		BackgroundColor3 = INK_DARK,
 		BorderSizePixel = 0,
 		Position = UDim2.fromOffset(0, 110),

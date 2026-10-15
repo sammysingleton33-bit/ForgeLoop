@@ -166,6 +166,30 @@ def dump_frontmatter(meta: dict, body: str) -> str:
     return "\n".join(lines) + "\n\n" + body.lstrip("\n")
 
 
+def dump_frontmatter_preserving(original: str, meta: dict, body: str) -> str:
+    """dump_frontmatter, but a scalar key whose value didn't change keeps its original line verbatim
+    (e.g. a title with ':' and '"' is not re-quoted; check_ownership's task-status exception needs that)."""
+    out = dump_frontmatter(meta, body)
+    try:
+        old_meta, _ = parse_frontmatter(original)
+    except ForgeError:
+        return out
+    old_lines = {}
+    for line in original[4 : original.find("\n---", 4)].splitlines():
+        m = re.match(r"^([a-z_][a-z0-9_]*):", line)
+        if m:
+            old_lines[m.group(1)] = line
+    head, sep, rest = out.partition("\n---\n")
+    kept = []
+    for line in head.splitlines():
+        m = re.match(r"^([a-z_][a-z0-9_]*):", line)
+        k = m.group(1) if m else None
+        if k and k in old_lines and not isinstance(meta.get(k), list) and old_meta.get(k) == meta.get(k):
+            line = old_lines[k]
+        kept.append(line)
+    return "\n".join(kept) + sep + rest
+
+
 # --------------------------------------------------------------------------- tasks
 @dataclass
 class Task:
@@ -342,7 +366,8 @@ def cmd_set_status(args) -> int:
     errs = validate_tasks([t if x.id == t.id else x for x in tasks])
     if errs:
         raise ForgeError("refusing to write an invalid task:\n  " + "\n  ".join(errs))
-    t.path.write_text(dump_frontmatter(t.meta, t.body), encoding="utf-8")
+    original = t.path.read_text(encoding="utf-8")
+    t.path.write_text(dump_frontmatter_preserving(original, t.meta, t.body), encoding="utf-8")
     print(f"{t.id}: {old} -> {new}")
     return 0
 

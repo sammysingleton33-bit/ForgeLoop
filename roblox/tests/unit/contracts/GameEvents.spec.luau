@@ -25,6 +25,7 @@ local CONTRACT_EVENTS = {
 	"BuildingCompleted",
 	"BuildingUpgraded",
 	"BuildingDestroyed",
+	"BuildingMoved",
 	"ResourceGathered",
 	"UnitsRecruited",
 	"ObjectiveCaptured",
