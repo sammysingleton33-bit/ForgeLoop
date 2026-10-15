@@ -95,8 +95,8 @@ function Consequences.instigator(citizens: { any }, loyaltyBelow: number): any?
 	return best
 end
 
-function Consequences.ids(citizens: { any }): { string }
-	local out = {}
+function Consequences.ids(citizens: { any }): { number }
+	local out: { number } = {}
 	for i, c in citizens do
 		out[i] = c.id
 	end

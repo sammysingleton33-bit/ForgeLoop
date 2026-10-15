@@ -28,6 +28,21 @@ local function built(sim, k, kind: string, x: number, z: number)
 	return b
 end
 
+-- a spot around the keep, away from `b`, where `b` can be moved to now (nothing burning)
+local function spotFor(sim, k, b)
+	local keep = sim.buildings[k.keepId]
+	for radius = 40, 110, 10 do
+		for step = 0, 23 do
+			local a = step / 24 * 2 * math.pi
+			local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
+			if (x - b.x) ^ 2 + (z - b.z) ^ 2 > 25 ^ 2 and sim:canMoveBuilding(k, b.id, x, z, 0) then
+				return x, z
+			end
+		end
+	end
+	error("no spot to move the camp to")
+end
+
 describe("Simulation:setBurning: a burning building halts", function()
 	it("offers no farm or build work while it burns, and again when the fire is out", function()
 		local sim, k = world()
@@ -76,6 +91,45 @@ describe("Simulation:setBurning: a burning building halts", function()
 		expect(k.gatherBonus.wood).toBe(0.2)
 		expect(sim:nearestDropoff(k, 40, 5, "wood")).toBe(camp)
 	end)
+
+	it("cannot be moved while it burns (G13.9 under_attack), and can be once the fire is out", function()
+		local sim, k = world()
+		local camp = built(sim, k, "lumbercamp", 40, 0)
+		local x, z = spotFor(sim, k, camp)
+		sim:setBurning(camp, true)
+		local moved, reason = sim:canMoveBuilding(k, camp.id, x, z, 0)
+		expect(moved).toBe(false)
+		expect(reason).toBe("under_attack")
+		local done, why = sim:moveBuilding(k, camp.id, x, z, 0, 1)
+		expect(done).toBe(false)
+		expect(why).toBe("under_attack")
+		expect(camp.x).toBe(40) -- nothing moved
+		expect(camp.z).toBe(0)
+		sim:setBurning(camp, false)
+		expect(sim:canMoveBuilding(k, camp.id, x, z, 0)).toBe(true)
+	end)
+
+	it(
+		"a moved camp that then burns gives nothing until it has settled and the fire is out (both guards hold)",
+		function()
+			local sim, k = world()
+			local camp = built(sim, k, "lumbercamp", 40, 0)
+			camp.level = 2
+			sim:_recompute(k)
+			expect(k.gatherBonus.wood).toBe(0.2)
+			local x, z = spotFor(sim, k, camp)
+			assert(sim:moveBuilding(k, camp.id, x, z, 0, 1)) -- settles for Buildings.moveSettle seconds
+			expect(k.gatherBonus.wood or 0).toBe(0)
+			expect(sim:nearestDropoff(k, x, z + 5, "wood")).never.toBe(camp)
+			sim:setBurning(camp, true)
+			sim:advance(40) -- past the settle time, still on fire
+			expect(k.gatherBonus.wood or 0).toBe(0)
+			expect(sim:nearestDropoff(k, x, z + 5, "wood")).never.toBe(camp)
+			sim:setBurning(camp, false) -- the fire is out and the camp has settled
+			expect(k.gatherBonus.wood).toBe(0.2)
+			expect(sim:nearestDropoff(k, x, z + 5, "wood")).toBe(camp)
+		end
+	)
 
 	it("is idempotent, and a destroyed building is just dropped", function()
 		local sim, k = world()

@@ -6,12 +6,16 @@
 	the body scrolls, so it is never pushed off a phone screen.
 
 	DetailView.new({ detail = BuildModel Detail, compact = boolean, back = string?,
-	                 onCta = (detail) -> (), onBack = () -> (), onTurn = (() -> ())? }) -> handle
+	                 onCta = (detail) -> (), onBack = () -> (), onTurn = (() -> ())?,
+	                 onSide = ((detail) -> ())? }) -> handle
 	A plot detail with `turn` (CONTRACTS v0.4-g9h) gets a "FacingRow" under the build time: the
 	facing dial "Facing" (detail.turn.facing, degrees on screen), the label ("Faces the street"…) and
 	a "Turn" button, disabled with "Only this way fits" when a single turn fits the plot. Phones, whose
 	drawer is too short for another row: the label is a "FacingLabel" chip beside the build time and
 	"Turn" (rotate icon and dial, 76 × 44) sits left of the CTA. Either carries the attribute `turn`.
+	A detail with `side = { text, icon?, state: "ready" | "disabled" }` (the upgrade panel's Move, FL-0120)
+	gets a secondary button "Side" left of the CTA (DetailView.SIDE wide, 44 px tall); a tap calls
+	props.onSide(detail) while it is ready. Its face carries the attribute `side` (its state).
 	handle.instance: Frame (fills its parent)   handle.cta: Button handle   handle:destroy()
 	handle:update(detail, { onCta?, onBack?, onTurn? })   patches what a push changes — what you have
 		of each cost, the CTA's state and text, the facing — on the same instances (FORGE-05 M1: a rebuild under the
@@ -37,6 +41,7 @@ local SHORT = Color3.fromRGB(255, 138, 115)
 local GOOD = Color3.fromRGB(169, 229, 124)
 
 DetailView.COMPACT_TURN = 76 -- phones: the Turn button's width, left of the CTA
+DetailView.SIDE = 112 -- the side action's width (Move), left of the CTA
 
 local function stat(icon: string, text: string, order: number): Frame
 	local i = Icon.new(icon, 16)
@@ -102,6 +107,7 @@ function DetailView.key(d: any, compact: boolean, back: string?): string
 		buildSeconds = d.buildSeconds,
 		benefits = d.benefits,
 		turnable = if d.turn then d.turn.canTurn else nil,
+		side = if d.side then d.side.text ~= nil else nil,
 		costs = costs,
 		compact = compact,
 		back = back,
@@ -155,6 +161,7 @@ function DetailView.new(props: { [string]: any })
 		_onCta = props.onCta,
 		_onBack = props.onBack,
 		_onTurn = props.onTurn,
+		_onSide = props.onSide,
 	}, DetailView)
 	local order = 0
 	local function nextOrder(): number
@@ -332,6 +339,30 @@ function DetailView.new(props: { [string]: any })
 		self.cta.instance.Position = UDim2.new(0, DetailView.COMPACT_TURN + 8, 1, 0)
 		self.cta.instance.Size = UDim2.new(1, -(DetailView.COMPACT_TURN + 8), 0, 44)
 	end
+	local side = nil
+	if d.side then
+		self.side = Button.new({
+			text = d.side.text,
+			icon = d.side.icon or false,
+			variant = "secondary",
+			width = DetailView.SIDE,
+			state = if d.side.state == "ready" then "default" else "disabled",
+			onActivated = function()
+				local current = self._detail
+				if current.side and current.side.state == "ready" and self._onSide then
+					self._onSide(current)
+				end
+			end,
+		})
+		side = self.side.instance
+		side.Name = "Side"
+		side.AnchorPoint = Vector2.new(0, 1)
+		side.Position = UDim2.fromScale(0, 1)
+		self.side.face:SetAttribute("side", d.side.state)
+		self._sideKey = Signature.of(d.side)
+		self.cta.instance.Position = UDim2.new(0, DetailView.SIDE + 8, 1, 0)
+		self.cta.instance.Size = UDim2.new(1, -(DetailView.SIDE + 8), 0, 44)
+	end
 
 	local backHeight = if props.back then 24 else 0
 	local children: { [any]: any } = {
@@ -347,6 +378,7 @@ function DetailView.new(props: { [string]: any })
 		Body = body,
 		Cta = self.cta.instance,
 		Turn = compactTurn,
+		Side = side,
 	}
 	header.Position = UDim2.fromOffset(0, backHeight)
 	body.Position = UDim2.fromOffset(0, backHeight + tileSize + 8)
@@ -486,12 +518,33 @@ function DetailView:_paintTurn(turn: any)
 	FacingDial.set(self._dial, turn.facing or 0)
 end
 
-function DetailView:update(d: any, handlers: { onCta: ((any) -> ())?, onBack: (() -> ())?, onTurn: (() -> ())? }?)
+function DetailView:update(
+	d: any,
+	handlers: {
+		onCta: ((any) -> ())?,
+		onBack: (() -> ())?,
+		onTurn: (() -> ())?,
+		onSide: ((any) -> ())?,
+	}?
+)
 	self._detail = d
 	if handlers then
 		self._onCta = handlers.onCta
 		self._onBack = handlers.onBack
 		self._onTurn = handlers.onTurn
+		self._onSide = handlers.onSide
+	end
+	if d.side and self.side then
+		local sideKey = Signature.of(d.side)
+		if sideKey ~= self._sideKey then
+			self._sideKey = sideKey
+			self.side:update({
+				text = d.side.text,
+				icon = d.side.icon or false,
+				state = if d.side.state == "ready" then "default" else "disabled",
+			})
+			self.side.face:SetAttribute("side", d.side.state)
+		end
 	end
 	if d.turn then
 		self:_paintTurn(d.turn)

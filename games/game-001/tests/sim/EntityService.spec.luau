@@ -180,6 +180,108 @@ describe("EntityService replication (G4)", function()
 		end
 	end)
 
+	it("Sim.GetEntities pages: each live entity once, ascending ids, every page <= 900 B (FL-0109)", function()
+		local env, entities = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(2)
+		local sim = entities:_sim()
+		local keep = sim.buildings[sim.kingdoms.crimson.keepId]
+		for i = 1, 110 do
+			-- every tenth one a soldier: soldiers come after the citizens in the frame, so ids are not in
+			-- order there and the pages must sort them
+			local kind, job = if i % 10 == 0 then "soldier" else "citizen", if i % 10 == 0 then "soldier" else "farmer"
+			entities:spawn(kind, "crimson", job, Vector3.new(keep.x + 20 + i % 10, 0, keep.z + 20 + i // 10))
+		end
+		local live = #sim.citizenOrder + #sim.unitOrder
+		expect(live > 2 * EntityServiceDef.PAGE_MAX).toBe(true) -- three pages at least
+		local seen, count, last, pages = {}, 0, 0, 0
+		local after = nil
+		repeat
+			local buf, nextAfter = invoke(env, p1, "Sim.GetEntities", after)
+			pages += 1
+			expect(buffer.len(buf) <= 900).toBe(true)
+			local batch = assert(EventCodec.decode(buf))
+			expect(#batch.events <= EntityServiceDef.PAGE_MAX).toBe(true)
+			for _, e in batch.events do
+				expect(e.type).toBe("full")
+				expect(e.id > last).toBe(true) -- ascending, across pages too
+				last = e.id
+				expect(seen[e.id]).toBeNil()
+				seen[e.id] = true
+				count += 1
+			end
+			if nextAfter ~= nil then
+				expect(nextAfter).toBe(last) -- the next page starts after this page's last id
+			end
+			after = nextAfter
+		until after == nil or pages > 20
+		expect(count).toBe(live)
+		expect(pages).toBe(math.ceil(live / EntityServiceDef.PAGE_MAX))
+		-- past the last id: an empty page and no next one
+		local tail, none = invoke(env, p1, "Sim.GetEntities", 65535)
+		expect(#assert(EventCodec.decode(tail)).events).toBe(0)
+		expect(none).toBeNil()
+		-- a cursor the server cannot use is dropped (RemoteService validation): no answer
+		for _, bad in { -1, 1.5, "1", 70000, {}, 0 / 0, math.huge, -math.huge } do
+			expect(invoke(env, p1, "Sim.GetEntities", bad)).toBeNil()
+		end
+	end)
+
+	it(
+		"Sim.GetEntities: with exactly two full pages of entities the second page has no next cursor (#127 L1)",
+		function()
+			local env, entities = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(2)
+			local sim = entities:_sim()
+			local keep = sim.buildings[sim.kingdoms.crimson.keepId]
+			local live = #sim.citizenOrder + #sim.unitOrder
+			expect(live <= 2 * EntityServiceDef.PAGE_MAX).toBe(true)
+			for i = 1, 2 * EntityServiceDef.PAGE_MAX - live do
+				entities:spawn(
+					"citizen",
+					"crimson",
+					"farmer",
+					Vector3.new(keep.x + 20 + i % 10, 0, keep.z + 20 + i // 10)
+				)
+			end
+			expect(#sim.citizenOrder + #sim.unitOrder).toBe(2 * EntityServiceDef.PAGE_MAX)
+			local first, firstNext = invoke(env, p1, "Sim.GetEntities")
+			expect(#assert(EventCodec.decode(first)).events).toBe(EntityServiceDef.PAGE_MAX)
+			expect(firstNext).never.toBeNil()
+			local second, secondNext = invoke(env, p1, "Sim.GetEntities", firstNext)
+			expect(#assert(EventCodec.decode(second)).events).toBe(EntityServiceDef.PAGE_MAX)
+			expect(secondNext).toBeNil() -- not an extra, empty page
+		end
+	)
+
+	it("puts only the validated look on the wire, whatever the profile holds (FL-0109)", function()
+		local env, entities = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(2)
+		local sim = entities:_sim()
+		local keep = sim.buildings[sim.kingdoms.crimson.keepId]
+		local id = entities:spawn("citizen", "crimson", "farmer", Vector3.new(keep.x + 25, 0, keep.z + 25))
+		local raw = { skin = 300, hair = 0, hairColor = 2.5, outfit = 4, key = "raw" } -- encodes as nothing valid
+		sim.citizens[id].profile = { look = raw }
+		env.mock:advance(0.5)
+		local spawned
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" and e.id == id then
+				spawned = e
+			end
+		end
+		assert(spawned, "the spawn went out (an unencodable look would have dropped the whole batch)")
+		expect(spawned.look).toEqual(Kit.normalizeLook(raw))
+		local full
+		for _, e in assert(EventCodec.decode(invoke(env, p1, "Sim.GetEntities"))).events do
+			if e.id == id then
+				full = e
+			end
+		end
+		expect(assert(full).look).toEqual(Kit.normalizeLook(raw))
+	end)
+
 	it("sends moving entities every snapshot and refreshes still ones about once per second", function()
 		local env, entities = boot()
 		env.mock.players:add({ userId = 1 })

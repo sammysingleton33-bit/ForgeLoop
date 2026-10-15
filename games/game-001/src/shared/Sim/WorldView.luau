@@ -75,6 +75,7 @@ function WorldView.new(env: any, options: { [string]: any }?)
 	self._entities = if opts.entities == nil then true else opts.entities
 	self._kitBuildings = opts.buildings == "kit"
 	self._kitKey = {} :: { [string]: string } -- building key -> "<type>|<level>|<stage>|<kingdom>" of its model
+	self._kitPose = {} :: { [string]: string } -- building key -> "<x>|<z>|<yaw>" its model stands at
 	self._parts = {} :: { [string]: any }
 	local root = env.newInstance("Folder")
 	root.Name = "ForgeKingdoms"
@@ -143,6 +144,7 @@ function WorldView:_kitBuilding(sim: any, b: any, parent: any, kingdomColor: Col
 	local level = math.max(1, b.level)
 	local stage = WorldView.stageOf(sim, b)
 	local signature = `{b.kind}|{level}|{stage}|{b.kingdomId}`
+	local pose = string.format("%.3f|%.3f|%.4f", b.x, b.z, b.yaw or 0)
 	local model = self._parts[key]
 	if model == nil or self._kitKey[key] ~= signature then
 		if model then
@@ -151,11 +153,16 @@ function WorldView:_kitBuilding(sim: any, b: any, parent: any, kingdomColor: Col
 		model = Kit.build(b.kind, level, stage, kingdomColor)
 		model.Name = key
 		placeModel(model, CFrame.new(b.x, self._groundY, b.z) * CFrame.Angles(0, b.yaw or 0, 0))
+		self._kitPose[key] = pose
 		model:SetAttribute("BuildingId", b.id)
 		model:SetAttribute("EntityId", b.id)
 		model.Parent = parent
 		self._parts[key] = model
 		self._kitKey[key] = signature
+	elseif self._kitPose[key] ~= pose then
+		-- a moved building (G13.9): the same model, re-pivoted to its new place and facing; no rebuild
+		placeModel(model, CFrame.new(b.x, self._groundY, b.z) * CFrame.Angles(0, b.yaw or 0, 0))
+		self._kitPose[key] = pose
 	end
 	model:SetAttribute("KingdomId", b.kingdomId)
 	model:SetAttribute("Kind", b.kind)
@@ -316,6 +323,7 @@ function WorldView:sync(sim: any)
 			part:Destroy()
 			self._parts[id] = nil
 			self._kitKey[id] = nil
+			self._kitPose[id] = nil
 		end
 	end
 end

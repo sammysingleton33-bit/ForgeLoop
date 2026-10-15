@@ -16,6 +16,7 @@ local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SimRemotes = require("@game/ReplicatedStorage/Game/Sim/Remotes")
 local TreasuryRemotes = require("@game/ReplicatedStorage/Game/Treasury/Remotes")
@@ -1079,6 +1080,11 @@ describe("ConversationService: cinematic conversations (G13.8, FL-0097)", functi
 		p1.Character = character
 		local view = assert(conversations:converse(p1, farmer.id))
 		expect(view.look).toEqual(farmer.profile.look)
+		-- only a validated look goes on the wire (#127 M1): a profile holding an out-of-range look is normalized
+		farmer.profile.look = { skin = 300, hair = 0, hairColor = 2.5, outfit = 4 }
+		local again = assert(conversations:converse(p1, farmer.id))
+		expect(again.look).toEqual(Kit.normalizeLook(farmer.profile.look))
+		expect(again.look).never.toEqual(farmer.profile.look)
 		expect(view.job).toBe(farmer.job)
 		expect(view.kingdom).toBe("crimson")
 		expect(typeof(view.position)).toBe("Vector3")

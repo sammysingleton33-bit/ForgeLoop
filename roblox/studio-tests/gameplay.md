@@ -118,6 +118,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 2. Watch the citizens from both clients for 60 s.
 3. Open the debug panel (F8) and run `sim.spawn 50` once.
 4. Repeat with Studio's Network Simulator at 200 ms latency and 5 % packet loss.
+5. (FL-0109) Late join: with `sim.spawn 50` already run, start a second client (Test → Clients and Servers) and
+   watch it fill in.
 
 **Expected:**
 - Citizens are part-built rigs (`Workspace.KingdomEntities`, no Humanoids) in kingdom colours. They walk,
@@ -126,6 +128,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   hesitate briefly but never jumps back.
 - Rigs further than 150 studs from your character disappear and come back when you approach.
 - Long trips (soldiers sent to the watchtower) follow the road and cross the river at the bridge.
+- The late joiner (step 5) sees all 62+ entities within a few seconds, not only the first 49: `Sim.GetEntities`
+  answers in pages of 49 and the client asks for the next page until there is none.
 - No `EntityService` errors in Output.
 
 ## K9 — Kingdoms built from the Kit, citizens fed by upkeep (FL-0051 visuals, FL-0050 core)
@@ -232,6 +236,31 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - 2. The tower is not captured 20 s after the jump; it is captured only after the time a runner would need
   (distance / 40 studs per second) plus the capture time. A respawn at the plot is not delayed.
 - 3. About 9 wood a minute (4 or 5 harvests), then `cooldown`; the rival's tree answers `not_your_node`.
+
+## Base editing: moving buildings (FL-0119, CONTRACTS G13.9; server side, the UI is FL-0120/0121)
+Until the edit-mode UI lands, drive it from the client command bar while playing as a ruler of crimson.
+Replace `<id>` with a building id from `Build.GetBuildings`:
+1. `Build.Move:InvokeServer(<houseId>, <free ground position>, 0)`; then once more with rot 1 on the same spot
+   after 10 s; then `Build.MoveToSlot:InvokeServer(<houseId>, "crimson_slot2")` and back to `crimson_slot1`.
+2. Repeat for: a farm with workers on it, a barracks with a recruit queue, a house a citizen sleeps in, a
+   building site that is half built, a lumber camp (level 2 if you can).
+3. Try the refusals: the keep (`not_movable`), outside the keep's circle or onto a tree, another building, the
+   avenue, a crop field, the spawn point, a captured tower's zone (`blocked` / `out_of_territory`); with your
+   own character standing in the target spot (`blocked`); twice within 10 s (`cooldown`); with the alarm bell
+   ringing (`alarm`).
+
+**Expected:**
+- The building is drawn at its new place and facing on the server and on every client within about a second;
+  it is the same model (a half-built site keeps its stage), with no flash of the old place.
+- Treasury, citizens' homes and the building's level, hit points and progress are unchanged; no "built"
+  notification, no crown points. `GameEvents.BuildingMoved` fires once per move (Output with a connection
+  of your own).
+- Workers at the moved building walk to the new place before they work again; a half-built site finishes in
+  the same total work; the barracks queue is kept and new soldiers appear at the new Rally.
+- A moved lumber camp or quarry gets no deliveries and gives no gather bonus for 30 s: woodcutters walk to
+  the keep; after 30 s they use the camp again.
+- Moving onto a slot takes it (`Build.GetSlots` shows `occupiedBy`) and frees the old one.
+- No errors in Output.
 
 ## K12 — Riot and fire, food shortage, a sustained strike (FL-0082; living-kingdom §5)
 1. Play Solo. Open the debug panel and press the `vs1.riot` preset (five minutes of unrest in your

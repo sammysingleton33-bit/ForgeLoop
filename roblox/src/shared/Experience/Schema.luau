@@ -49,6 +49,8 @@ Schema.SETTINGS = table.freeze({
 	showHints = table.freeze({ kind = "boolean", default = true }),
 	citizenBarks = table.freeze({ kind = "boolean", default = true }),
 	notifications = table.freeze({ kind = "enum", default = "all", options = table.freeze({ "all", "important" }) }),
+	-- FL-0103: "reduced" halves every effect's particles (VFXController), for slower devices
+	effectsQuality = table.freeze({ kind = "enum", default = "full", options = table.freeze({ "full", "reduced" }) }),
 } :: { [string]: SettingSpec })
 
 local keys = {}

@@ -284,6 +284,24 @@ describe("VFXController", function()
 		expect(effect.live).toBe(19)
 	end)
 
+	it("effectsQuality 'reduced' halves every effect's particles but keeps its motion (FL-0103)", function()
+		local shakes = 0
+		vfx.shakeRequested:connect(function()
+			shakes += 1
+		end)
+		settings:set("effectsQuality", "reduced")
+		local burst = vfx:play("reward.burst", { position = Vector3.zero })
+		expect(EngineStubs.emitted(burst.parts[2][1])).toEqual({ 14 }) -- 28 at full quality
+		local effect = vfx:play("test.impact", { position = Vector3.zero })
+		expect(EngineStubs.emitted(effect.parts[2][1])).toEqual({ 9 })
+		expect(effect.live).toBe(19)
+		expect(shakes).toBe(1) -- quality is not motion: the shake stays
+		platformReduce.ReducedMotionEnabled = true -- with reduced motion too: a quarter
+		local both = vfx:play("test.impact", { position = Vector3.zero })
+		expect(EngineStubs.emitted(both.parts[2][1])).toEqual({ 4 })
+		expect(shakes).toBe(1)
+	end)
+
 	it("the camera shake setting turns shakes off", function()
 		local shakes = 0
 		vfx.shakeRequested:connect(function()
