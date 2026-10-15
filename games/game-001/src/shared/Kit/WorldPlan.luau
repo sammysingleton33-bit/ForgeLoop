@@ -33,8 +33,8 @@
 	farm field, a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured
 	with each prop's footprint and canopy radius (CLEAR.radius). Blocked trees, bushes and flowers move to the
 	nearest legal spot within CLEAR.natureNudge studs instead of going; boulders against a trunk or bush go.
-	Hand-placed kingdom dressing moves too (CLEAR.nudge, CLEAR.wallGap off walls) and gate banners move as
-	mirrored pairs about the road centreline.
+	Hand-placed kingdom dressing that sits inside a building, slot or field moves too (CLEAR.nudge,
+	CLEAR.wallGap off walls); the gate banners are exempt and stay exactly where the plan puts them.
 
 	Determinism: a Park–Miller PRNG (exact in doubles), never Random, so Lune specs, the preview and
 	Roblox produce identical worlds.
@@ -687,69 +687,9 @@ local function spaceRocks(plan: { Placement }): { Placement }
 	return out
 end
 
--- Nearest point of any road centreline to (x, z): the point, the unit tangent there and the unit normal.
-local function nearestRoad(layout: any, x: number, z: number): (Vector2, Vector2, Vector2)
-	local best, bestC, bestT = math.huge, Vector2.zero, Vector2.new(0, 1)
-	for _, road in layout.features.roads do
-		local pts = road.points
-		for i = 1, #pts - 1 do
-			local a, b = pts[i], pts[i + 1]
-			local ab = b - a
-			local len2 = ab.X * ab.X + ab.Y * ab.Y
-			local u = if len2 > 0 then math.clamp(((x - a.X) * ab.X + (z - a.Y) * ab.Y) / len2, 0, 1) else 0
-			local c = a + ab * u
-			local d = (Vector2.new(x, z) - c).Magnitude
-			if d < best and len2 > 0 then
-				best, bestC, bestT = d, c, ab.Unit
-			end
-		end
-	end
-	return bestC, bestT, Vector2.new(-bestT.Y, bestT.X)
-end
-
 local function moved(layout: any, p: Placement, x: number, z: number): Placement
 	local cf = CFrame.new(x, WorldPlan.groundHeight(layout, x, z), z) * (p.cframe - p.cframe.Position)
 	return { assetId = p.assetId, cframe = cf, feature = p.feature }
-end
-
--- A gate-banner pair (two banners flanking the road): both stay where they are when both are legal and mirror each
--- other about the road centreline (within 0.5 stud); otherwise the pair is re-placed mirrored about that line at
--- the same spread (half the distance between them, grown by up to 4 studs), keeping each banner's side and facing;
--- where the road bends against a building the pair slides outward along the road (up to 24 studs, smallest first)
--- until both are legal. Returns nil when no legal mirrored spot exists (the pair then goes together).
-local function mirrorPair(layout: any, rects: { any }, a: Placement, b: Placement): (Placement?, Placement?, boolean)
-	local pa, pb = a.cframe.Position, b.cframe.Position
-	local c, t, n = nearestRoad(layout, (pa.X + pb.X) / 2, (pa.Z + pb.Z) / 2)
-	local function frame(p: Vector3): (number, number)
-		local d = Vector2.new(p.X, p.Z) - c
-		return d.X * t.X + d.Y * t.Y, d.X * n.X + d.Y * n.Y
-	end
-	local ta, na = frame(pa)
-	local tb, nb = frame(pb)
-	local ra, rb = WorldPlan.footprintRadius(a.assetId), WorldPlan.footprintRadius(b.assetId)
-	local symmetric = math.abs(na + nb) <= 0.5 and math.abs(ta - tb) <= 0.5
-	if
-		symmetric
-		and not blocked(layout, rects, false, ra, pa.X, pa.Z)
-		and not blocked(layout, rects, false, rb, pb.X, pb.Z)
-	then
-		return a, b, false
-	end
-	local spread, mid, side = math.abs(na - nb) / 2, (ta + tb) / 2, if na >= nb then 1 else -1
-	for shift = 0, 24, 2 do -- slide the pair outward along the road, smallest slide first
-		local s = spread
-		while s <= spread + 4 do
-			local ca = c + t * (mid + shift) + n * (side * s)
-			local cb = c + t * (mid + shift) - n * (side * s)
-			if
-				not blocked(layout, rects, false, ra, ca.X, ca.Y) and not blocked(layout, rects, false, rb, cb.X, cb.Y)
-			then
-				return moved(layout, a, ca.X, ca.Y), moved(layout, b, cb.X, cb.Y), true
-			end
-			s += 0.25
-		end
-	end
-	return nil, nil, true
 end
 
 -- The nearest legal spot within CLEAR.natureNudge studs for a tree, bush or flower that the clearance blocked: off
@@ -792,45 +732,27 @@ local function relocatedNatural(
 	return nil
 end
 
+-- The kingdom gate banners (prop_banner_<colour>_NN) stand beside the road on purpose.
+local function isBanner(p: Placement): boolean
+	return p.feature == "dressing" and string.sub(p.assetId, 1, 11) == "prop_banner"
+end
+
 -- Clear dressing off reserved ground. Anything blocked moves before it goes. Natural decor within CLEAR.margin of a
 -- field, a starting building, a slot, a build zone or a road moves to the nearest legal spot within
 -- CLEAR.natureNudge studs (rocks, and decor with no such spot, are removed); a boulder against a trunk or a bush
 -- goes. Hand-placed kingdom dressing (yard props, gate banners; meant to stand in the build zones) that overlaps a
 -- building, a slot or a road, or sits within the margin of a field or CLEAR.wallGap of a wall, moves to the nearest
--- legal spot within CLEAR.nudge studs (same facing); gate banners move as mirrored pairs (mirrorPair). Nothing is
--- added, and what stays is exactly the plan.
+-- legal spot within CLEAR.nudge studs (same facing). The gate banners are left exactly where the plan puts them.
+-- Nothing is added, and what stays is exactly the plan.
 function WorldPlan.clear(layout: any, plan: { Placement }): { Placement }
 	local rects = WorldPlan.reservedRects(layout)
 	local staticClear = staticClearance(layout)
-	-- gate banners come in pairs, in plan order
-	local banners: { number } = {}
-	for i, p in plan do
-		if p.feature == "dressing" and string.sub(p.assetId, 1, 11) == "prop_banner" then
-			table.insert(banners, i)
-		end
-	end
-	local pairOf: { [number]: { partner: number, first: boolean } } = {}
-	for k = 1, #banners - 1, 2 do
-		pairOf[banners[k]] = { partner = banners[k + 1], first = true }
-		pairOf[banners[k + 1]] = { partner = banners[k], first = false }
-	end
-	local pairResult: { [number]: Placement | false } = {}
-	for i, link in pairOf do
-		if link.first then
-			local a, b, changed = mirrorPair(layout, rects, plan[i], plan[link.partner])
-			pairResult[i] = a or false
-			pairResult[link.partner] = b or false
-			if not changed then
-				pairResult[i], pairResult[link.partner] = plan[i], plan[link.partner]
-			end
-		end
-	end
 	local out: { Placement } = {}
-	for i, p in plan do
+	for _, p in plan do
 		local natural = NATURAL[p.feature] == true
 		local placed: Placement? = p
-		if pairResult[i] ~= nil then
-			placed = pairResult[i] or nil
+		if isBanner(p) then
+			placed = p -- gate banners flank the road by design: exactly where the plan puts them
 		elseif natural or p.feature == "dressing" then
 			local pos = p.cframe.Position
 			local r = WorldPlan.footprintRadius(p.assetId)

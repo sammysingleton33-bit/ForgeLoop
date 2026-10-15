@@ -95,7 +95,9 @@ local function violations(items: { any }): { string }
 	local rects = reserved()
 	local bad = {}
 	for _, item in items do
-		if item.feature ~= "bridge" and item.feature ~= "crops" then
+		-- the gate banners flank the road by design and are left exactly where the generator puts them
+		local banner = item.feature == "dressing" and string.sub(item.assetId, 1, 11) == "prop_banner"
+		if item.feature ~= "bridge" and item.feature ~= "crops" and not banner then
 			local r = liveRadius(item.assetId)
 			local natural = NATURAL[item.feature] == true
 			for _, rect in rects do
@@ -273,7 +275,7 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		end
 	)
 
-	it("keeps every kingdom's four gate banners and its crate stack, each clear of roads and buildings", function()
+	it("keeps every kingdom's four gate banners and its crate stack", function()
 		local banners, goods = 0, 0
 		for _, p in WorldPlan.props(Layout, ALL) do
 			banners += if string.sub(p.assetId, 1, 11) == "prop_banner" then 1 else 0
@@ -366,55 +368,37 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		end
 	)
 
-	it(
-		"keeps each gate-banner pair mirrored about the road centreline, off the roads and 1.5 studs off every wall",
-		function()
-			local banners = {}
-			for _, p in WorldPlan.props(Layout, ALL) do
-				if string.sub(p.assetId, 1, 11) == "prop_banner" then
-					table.insert(banners, p)
+	it("leaves every gate banner exactly where the generator puts it (none moved, none removed)", function()
+		local function banners(list: { any }): { any }
+			local out = {}
+			for _, p in list do
+				if p.feature == "dressing" and string.sub(p.assetId, 1, 11) == "prop_banner" then
+					table.insert(out, p)
 				end
 			end
-			expect(#banners).toBe(16) -- four kingdoms, two pairs each, listed pair by pair
-			local rects = reserved()
-			for k = 1, #banners, 2 do
-				local a, b = banners[k].cframe.Position, banners[k + 1].cframe.Position
-				-- the road centreline nearest the pair's midpoint: point, tangent, normal
-				local mx, mz = (a.X + b.X) / 2, (a.Z + b.Z) / 2
-				local best, c, t = math.huge, Vector2.zero, Vector2.new(0, 1)
-				for _, road in Layout.features.roads do
-					for i = 1, #road.points - 1 do
-						local p0, p1 = road.points[i], road.points[i + 1]
-						local ab = p1 - p0
-						local u = math.clamp(((mx - p0.X) * ab.X + (mz - p0.Y) * ab.Y) / (ab.X ^ 2 + ab.Y ^ 2), 0, 1)
-						local q = p0 + ab * u
-						local d = (Vector2.new(mx, mz) - q).Magnitude
-						if d < best then
-							best, c, t = d, q, ab.Unit
-						end
-					end
-				end
-				local n = Vector2.new(-t.Y, t.X)
-				local function offsets(p: Vector3): (number, number)
-					local d = Vector2.new(p.X, p.Z) - c
-					return d.X * t.X + d.Y * t.Y, d.X * n.X + d.Y * n.Y
-				end
-				local ta, na = offsets(a)
-				local tb, nb = offsets(b)
-				expect(math.abs(na + nb)).toBeLessThanOrEqual(0.5) -- mirror images about the centreline ...
-				expect(math.abs(ta - tb)).toBeLessThanOrEqual(0.5) -- ... on the same row
-				expect(math.abs(na - nb) / 2).toBeGreaterThan(Layout.features.roads[1].width / 2) -- and clear of the road
-				for _, banner in { banners[k], banners[k + 1] } do
-					local pos, r = banner.cframe.Position, liveRadius(banner.assetId)
-					for _, rect in rects do
-						if not rect.zone and not rect.field then
-							expect(rectDistance(rect, pos.X, pos.Z) - r).toBeGreaterThanOrEqual(1.5 - 1e-6) -- wall clearance
-						end
-					end
-				end
+			return out
+		end
+		local planned = banners(WorldPlan.plan(Layout, ALL))
+		expect(#planned).toBe(16) -- four kingdoms, four banners each
+		for _, density in { WorldPlan.FULL_DENSITY, Layout.features.density } do
+			local kept = banners(WorldPlan.props(Layout, ALL, density))
+			expect(#kept).toBe(16)
+			for i, p in planned do
+				expect(kept[i].assetId).toBe(p.assetId)
+				expect((kept[i].cframe.Position - p.cframe.Position).Magnitude).toBeLessThan(1e-9)
+				expect((kept[i].cframe.LookVector - p.cframe.LookVector).Magnitude).toBeLessThan(1e-9)
 			end
 		end
-	)
+		-- and crimson's four are where main has them: keep-frame x = +-9 at z = -96 and z = -128
+		local keep = Layout.plots.crimson.anchors.keep
+		local want =
+			{ Vector3.new(-9, 0, -96), Vector3.new(9, 0, -96), Vector3.new(-9, 0, -128), Vector3.new(9, 0, -128) }
+		for i, at in want do
+			local l = keep:PointToObjectSpace(planned[i].cframe.Position)
+			expect(l.X).toBeNear(at.X, 0.01)
+			expect(l.Z).toBeNear(at.Z, 0.01)
+		end
+	end)
 
 	it("sizes CLEAR.radius to the live Kit.prop bounds of every planned asset", function()
 		local bad = {}

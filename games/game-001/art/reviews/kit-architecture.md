@@ -237,7 +237,7 @@ fewer, larger plinth facing stones.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
 
-## Round: world dressing trim and plot clearance (FL-0116, D-047 amendment; D-019 renders; three author rounds)
+## Round: world dressing trim and plot clearance (FL-0116, D-047 amendment; D-019 renders; four author rounds)
 
 **What changed** (`WorldPlan`, `world/Layout`, `WorldService`; buildings, nodes, tags and gameplay untouched):
 - **Density knob** `world/Layout` `features.density = { forest = 0.75, props = 0.5 }` (share kept). `WorldPlan.FULL_DENSITY`
@@ -253,8 +253,8 @@ fewer, larger plinth facing stones.
 - **Plot clearance** (`PlotClearance.spec`, a guard): no tree, bush, rock, flower or prop within 4 studs of a field, a starting
   building's largest footprint, a slot, a build zone or a road, measured with each prop's live `Kit.prop` bounds. Blocked
   trees, bushes and flowers move to the nearest legal spot within 12 studs instead of going; boulders against a trunk or bush
-  go. Hand-placed dressing moves too, and each gate-banner pair is re-placed mirrored about the road centreline (it
-  slides outward along the road where the avenue bends against a house), off the road and at least 1.5 studs off every wall.
+  go. Hand-placed dressing that sits inside a building, slot or field (the crate stack beside the storehouse) moves too.
+  The gate banners are exempt: they flank the road by design and stay exactly where the generator puts them.
 
 **Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 on main d78d9cb -> 8,328 at density 1.0 on current main (env-polish props
 and relocated decor included) -> 6,569 (trim). Forests 3,853 -> 3,184 (222 -> 184 trees, -17 %; only the four far stands
@@ -269,8 +269,7 @@ untrimmed plan, `FORGE_WORLD_UNTRIMMED=1`, after = this branch):
 **Verdict, looked at by FORGE-02** (round 3):
 - Farm views: the foreground is back (the oak that stood against the cabbage field is moved clear, the pines behind the fields stay);
   the right half of the farm aerial was empty grass in the untrimmed plan too.
-- Plot and throne views: the banner pairs flank the avenue mirrored. In the throne view the near-left banner still reads as touching
-  the middle house, which is perspective: it stands about 20 studs further down the bend, 4.4 studs from the house wall.
+- Plot and throne views: the gate banners are exactly where "before" has them (spec-pinned to the generator's positions).
 - Top view: the four far stands are lighter and their dark discs follow them; the stands near the plots and the mid-valley
   stands are unchanged.
 - Known and by design: the plot-facing rim trees of one thinned stand (at the right edge of the plot aerial) are gone. Keeping them

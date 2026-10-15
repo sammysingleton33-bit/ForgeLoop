@@ -383,14 +383,14 @@ describe("Dressing density knob (D-047)", function()
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
 			expect(#one).toBe(615)
-			expect(fingerprint(one)).toBe(1670600011)
+			expect(fingerprint(one)).toBe(553271438)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
 			expect(#all).toBe(642)
-			expect(fingerprint(all)).toBe(177088627)
+			expect(fingerprint(all)).toBe(749948861)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
