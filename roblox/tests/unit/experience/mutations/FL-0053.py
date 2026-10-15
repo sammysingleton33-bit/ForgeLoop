@@ -34,4 +34,5 @@ M = [
  ("FL-0053", C2+"InputModeController.luau", 'if ok and took == true then', 'if ok then', "InputMode", 'back: topmost wins', "game"),
  ("FL-0053", C2+"InputModeController.luau", '\t\t\ttable.remove(self._backHandlers, index)\n', '\n', "InputMode", 'back: topmost wins', "game"),
  ("FL-0053", C2+"InputModeController.luau", 'if not ok and not entry.warned then', 'if not ok then', "InputMode", 'back: topmost wins', "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'return Def.isTap(downAt, upAt, heldSec, self._config)', 'return (upAt - downAt).Magnitude <= self._config.tapPixels', "InputMode", "a drag (pan) or a long press is not a tap", "game"),
 ]

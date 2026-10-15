@@ -404,27 +404,29 @@ History:
 
 ## E11 — Back key (FL-0053, game-001)
 
-Needs: FORGE-03's conversation stage and drawer menus registered with `InputModeController:onBack` (#126 L6). Until they are on the build, write "blocked: needs FORGE-03's back subscription".
+Needs: FORGE-03's #162 on the build (FL-0059 follow-up). In it, `KingdomHudController` holds one `InputModeController:onBack` handler while any drawer is open, the conversation stage included. Until #162 is on the build, write "blocked: needs #162". FORGE-03's U19 (`ui-economy.md`) checks each panel's own steps; E11 checks the keys and the order.
 
 | Rule | Expected |
 |---|---|
 | Keys | gamepad B and keyboard Backspace (a Mac's delete key); Esc only opens Roblox's menu |
-| Topmost wins | one press closes only the panel opened last (a drawer opened over the stage closes first) |
+| One step per press | an open detail goes back first: the Kingdom panel's building detail to its tab; on a phone, the Build, Reputation and plot details to their lists; the conversation's confirm to its question. Otherwise the drawer closes. Closing the conversation ends it as X does, and the camera comes back. A handler registered over the drawer (topmost) goes first |
 | Build mode | B and X leave build mode; that press never also counts as back |
 | GUI first | Backspace while typing in a text box closes nothing; with a gamepad on a GUI button, the first B leaves the selection and the next B is back |
 
 Steps
-1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it.
+1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes, and the camera glides back to where it was. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it. Talk again and pick a costly answer that asks to confirm: Backspace goes back to the question, and the next Backspace closes the stage.
 2. With a gamepad (or the emulator's gamepad), open a conversation and press B: the stage closes. Open it again, move the selection onto an answer button, and press B: the selection leaves the button and the stage stays open. Press B again: it closes.
 3. Open the build menu and start placing. Press B: placement ends (explore mode) and nothing else closes. Press B again: back now acts as usual.
 4. Type in any text box (chat, a name field), including Backspace: no panel closes.
-5. Open a drawer menu, then a conversation over it (or the reverse). Each press closes one panel, the last opened first. On a Mac, the delete key works like Backspace.
+5. Open the Kingdom panel, then a building's detail. Backspace: back to the tab. Backspace again: the drawer closes. On the phone emulator, with a gamepad or a keyboard, do the same with a Build, a Reputation and a plot detail: each goes back to its list first. On a Mac, the delete key works like Backspace.
+6. During a building move (E12; needs #140 and #148), press B: the move ends with nothing moved (B leaves edit mode; the move registers no back handler).
 
-Pass: steps 1–5 hold.
+Pass: steps 1–6 hold.
 
 History:
 - 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
 - 2026-10-15 FORGE-04: topmost wins (`onBack`, FORGE-07's #130 L1); step 5, Mac delete key.
+- 2026-10-15 FORGE-04: follows FORGE-03's wiring (#162): one handler for every drawer and one step per press. The confirm step and the detail steps are added, the stacked-panels case goes (one drawer at a time), and step 6 covers a move.
 
 ## E12 — Base editing: input and camera (FL-0121, game-001)
 

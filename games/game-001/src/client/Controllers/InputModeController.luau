@@ -8,6 +8,9 @@
 		input.mode                      -- "explore" | "build" | "edit" (G13.9 base editing; "command" is VS-2)
 		input.changed:connect(function(mode, previous) ... end)
 		input:accepts("explore")        -- optional: true when a tap or click now belongs to that mode
+		input:isTap(downAt, upAt, heldSec) -> boolean   -- the same tap-or-drag rule selection uses
+		                                -- (moved < tapPixels, held <= tapSec), e.g. for FORGE-03's
+		                                -- confirm-on-release while placing (FL-0123)
 		input.selected:connect(function(kind, id) ... end)   -- G13.6; FORGE-03's panels listen
 		input.selection                 -- { kind, id } of the last selection
 		input:select(kind, id)          -- programmatic selection (a list row, "go to")
@@ -463,6 +466,15 @@ function Controller:set(mode: any): boolean
 		nextMode = table.remove(self._queue, 1)
 	end
 	return true
+end
+
+-- True when a press at `downAt` released at `upAt` after `heldSec` is a tap, not a drag or a long press
+-- (this controller's own tapPixels / tapSec; RulerCameraController starts a drag-pan at tapPixels).
+function Controller:isTap(downAt: Vector2, upAt: Vector2, heldSec: number): boolean
+	if typeof(downAt) ~= "Vector2" or typeof(upAt) ~= "Vector2" or type(heldSec) ~= "number" then
+		return false
+	end
+	return Def.isTap(downAt, upAt, heldSec, self._config)
 end
 
 -- True when a tap or click arriving now belongs to `mode`'s owner.

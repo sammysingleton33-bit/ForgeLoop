@@ -22,6 +22,7 @@ evidence:
   - InputMode.spec 17/17; mutations.py FL-0053 23/23 CAUGHT; Studio E11 unverified
   - InputMode.spec 18/18; mutations.py FL-0053 30/30 CAUGHT; Studio E11 unverified
   - experience 196/0; FL-0053 30/30
+  - "InputMode.spec 22/22 (isTap: under tapPixels and within tapSec true; a drag, a long press, a bad argument false); mutations FL-0053 31/31 CAUGHT; check.sh OVERALL PASS (framework 544/0, game-001 1478/0); Studio E11 unverified (needs #162)"
 ---
 
 # Ruler third-person controller, camera and input modes
@@ -56,3 +57,4 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-13 forge-04: REVIEW → REVIEW. Back key for FORGE-05's #126 L6 (FORGE-03's proposal): InputModeController.back fires on gamepad B / Backspace in explore mode (not Esc, not GUI-handled, not the press that left build mode); Studio E11; handoff forge-04-to-forge-03-back-key
 - 2026-10-15 forge-04: REVIEW → REVIEW. #130 FORGE-07 review: merged main (B14 rows, E9/E10, log lines first); L1 topmost wins: the back Signal becomes InputModeController:onBack(handler) -> release (most recently registered first, true = took the press, errors skipped and logged once) and :back(); E11 step 5 (stacked panels, Mac delete key); handoff updated for FORGE-03
 - 2026-10-15 forge-05: REVIEW → REVIEW. Merged #130 (e639c79): InputModeController.back (gamepad B / Backspace); FORGE-03 subscribes with topmost-wins (FORGE-07 L1)
+- 2026-10-15 forge-04: REVIEW → REVIEW. Follow-ups for FORGE-03: InputModeController:isTap(downAt, upAt, heldSec), the selection rule (tapPixels, tapSec) for their confirm-on-release while placing and moving (FL-0123, from FORGE-07's #157 M1). E11 follows FORGE-03's back-key wiring (#162): one handler for every drawer, one step per press (detail -> tab or list, confirm -> question, else close), a step for B during a move.
