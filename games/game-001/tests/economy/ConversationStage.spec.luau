@@ -12,6 +12,7 @@ local CitizenModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/C
 local CitizenText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/CitizenText")
 local ConversationDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ConversationController")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local InputModeDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/InputModeController")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomWorld = require("./doubles/KingdomWorld")
 local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
@@ -143,7 +144,7 @@ local function newWorld(opts)
 		KingdomHudDef,
 		CitizenCardDef,
 		ConversationDef,
-		inputModeDef(),
+		if o.realInput then InputModeDef else inputModeDef(),
 		cameraDef(o.events),
 		settingsDef(o.settings),
 	}
@@ -542,6 +543,29 @@ describe("FL-0099 cinematic conversation (G13.8)", function()
 		expect(find(stage, "Question").Text).toBe(SCENARIOS.three.question)
 		expect(#named(world.events, "opened")).toBe(2)
 		expect(world.citizens.held[41]).toBe(true)
+	end)
+
+	it("the back key (#130, Studio E11): a confirm goes back to the question, then the stage closes", function()
+		world = newWorld({ realInput = true })
+		world:advance(0.5) -- past the input mode's settle time
+		local input = world.input
+		expect(input:back()).toBe(false) -- nothing open
+		talkTo(world, 41)
+		tap(find(stageOf(world), "Option_work"))
+		world:advance(0.05)
+		expect(stageOf(world):GetAttribute("phase")).toBe("confirming")
+		expect(input:back()).toBe(true)
+		world:advance(0.05)
+		expect(stageOf(world):GetAttribute("phase")).toBe("asking")
+		expect(world.hud.state.menu).toBe("conversation")
+		expect(#world.citizens:callsNamed("Choose")).toBe(0)
+		expect(input:back()).toBe(true)
+		world:advance(0.1)
+		expect(world.hud.state.menu).toBeNil()
+		expect(stageOf(world)).toBeNil()
+		expect(ends(world)).toEqual({ 41 }) -- the hold ends, as with X
+		expect(#named(world.events, "closed")).toBe(1)
+		expect(input:back()).toBe(false) -- released with the stage
 	end)
 
 	it("a selection, another menu or the citizen leaving each end the conversation once", function()

@@ -86,6 +86,16 @@ local function listen(signal: any, fn: (...any) -> ()): any
 end
 
 function PlotPickerController:start()
+	-- the back key (KingdomHudController:setBackStep): a phone detail goes back to its list first
+	if self.hud.setBackStep ~= nil then
+		self.hud:setBackStep(PlotPickerController.MENU, function()
+			if self.state.phoneView ~= "detail" or self.hud:metrics().breakpoint ~= "phone" then
+				return false
+			end
+			self:back()
+			return true
+		end)
+	end
 	local env = self._env
 	local hud = self.hud
 	local input = self._registry:find("InputModeController")

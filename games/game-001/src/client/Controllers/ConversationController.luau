@@ -147,6 +147,17 @@ local function disconnect(connection: any)
 end
 
 function ConversationController:start()
+	-- the back key (KingdomHudController:setBackStep): a pending confirm goes back to the question first,
+	-- else the drawer closes (menuChanged ends the conversation: EndConversation, the camera comes back)
+	if self.hud.setBackStep ~= nil then
+		self.hud:setBackStep(ConversationController.MENU, function()
+			if self.state == nil or self.state.phase ~= "confirming" then
+				return false
+			end
+			self:back()
+			return true
+		end)
+	end
 	local hud = self.hud
 	self._card = self._registry:find("CitizenCardController")
 	if self._card and self._card.onTalk then
