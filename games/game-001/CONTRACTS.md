@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g10b, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g10c, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -289,6 +289,7 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `ObjectiveCaptured` | FORGE-01 | (objectiveId, KingdomId) |
 | `KingdomEliminated` | FORGE-01 | (KingdomId, by: KingdomId?) |
 | `CitizenAnswered` (declared in `Contracts/GameEvents` by #109; fired from FL-0107; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose`. **Attribution:** the answering ruler only. The citizen id stays out of analytics and onboarding info (D-050 (5), #124). |
+| `ConsequenceChanged` (v0.4-g10c; declared in `Contracts/GameEvents` by FORGE-05, fired by FORGE-01; D-052 (5), #125) | FORGE-01 (ConsequenceService) | (kingdomId: KingdomId, rule: "strike" \| "shortage" \| "riot" \| "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number }). Exactly once per start and once per end, with the same values as `ConsequenceService.changed`; `count` is the number of citizens, or 1 for a building. Listener: FORGE-04's notices, one per start and end to that kingdom's rulers (texts are FORGE-04's). Server bus only. |
 | `MatchEnded` | FORGE-01 | ({ winner: KingdomId?, standings: { { kingdom: KingdomId, crownPoints: number } }, durationSec: number }) |
 
 - Producers fire each event exactly once, per framework rules.
@@ -514,6 +515,7 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
   - `thought` `{ entityId, scenarioId, text, icon: "request" | "concern" | "idea" }`
   - `reaction` `{ entityId, text, tone: "happy" | "angry" | "sad" | "neutral" }`
   - `strike` `{ occupation, on: boolean, entityIds: { EntityId } }`. `entityIds` lists exactly the citizens whose strike state changed (the server strikes only the least loyal share of an occupation). Clients mark only those citizens and never fan out by occupation (v0.4-g6).
+    - **Riot (v0.4-g10c, D-050 (1d), #125).** A `strike` whose `occupation` is `riot` (`EventCodec.RIOT`; no real occupation has that id) marks a riot: `entityIds` are the citizens who started or stopped rioting. Rioters are not on strike. Clients show their own riot placard and never pass it to strike handlers. While a riot burns a building, its model carries the attribute `Burning = true`, which is absent otherwise.
   - `cue` `{ entityId?, entityIds: { EntityId }?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
     - An occupation-wide or kingdom-wide cue that should show on citizens carries the affected ids in `entityIds`, chosen by the server.
     - A cue with neither `entityId` nor `entityIds` shows only on the HUD or the keep, never on citizens.
@@ -640,6 +642,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g10c (2026-10-15) FORGE-00: G13.3 a `strike` with occupation `riot` marks a riot (rioters are not strikers); burning building models carry `Burning`. G9 gains `ConsequenceChanged` (start and end of strike, shortage, riot, rebellion). Additive. Owed at #125's merge (D-052 (5)).
 - v0.4-g10b (2026-10-15) FORGE-00: G4 `Sim.GetEntities` is paged (≤ 49 full records per page, `nextAfterId`); G13.2 `CitizenView` gains `familyIds`/`friendIds`/`rivalIds` and a normalized look; G5 population gains `quotaRev` (FL-0109, #127). G9 `CitizenAnswered` attribution: the answering ruler only (#124, D-050 (5)).
 - v0.4-g10a (2026-10-15) FORGE-00: G4.1 `InputModeController:set` includes `"edit"`. G13.9 edit-mode taps select own buildings and own plots; validity is decided by the snap and the server; no camera jump on select (FORGE-07 #142 L2/L3, #157).
 - v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. G13.8: optional presentation tags on the `Kingdom.Converse` and `Kingdom.Choose` results (FORGE-03 proposal, FL-0110/FL-0111). (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
