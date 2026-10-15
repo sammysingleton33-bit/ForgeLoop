@@ -13,6 +13,9 @@
 	SLOT_MARGIN from the slot, so any type that fits the slot can be built there). A blocked spot tries
 	a step inwards, outwards and towards the back of the plot, then a step further, a few times and without
 	random draws; a node with no clear spot is left out. Same seed, same nodes.
+	Farm zones and build areas stay free too (the user's playtest: trees and rocks stood in the crop fields):
+	a generated node keeps the same distance from every crop field (world features.fields, the farm zones)
+	and every plot build zone (plot.buildZones: the front yard and the two flanks) as from a slot.
 	Passing `spacing` instead keeps the older square generator (specs that need compact maps).
 
 	API
@@ -53,18 +56,29 @@ local NODE_KIND = { wood = "tree", stone = "rock", gold = "goldvein", food = "be
 
 Layout.SLOT_MARGIN = 2
 -- a blocked generated node tries NUDGES steps: i * NUDGE studs in, then out, then i * TURN radians to the back
-local NUDGE, TURN, NUDGES = 6, 0.1, 8
+local NUDGE, TURN, NUDGES = 6, 0.1, 12
 
--- every build slot of every plot, as placement rectangles
+-- Every area a generated node keeps out of, as placement rectangles: each plot's build slots, its build
+-- zones (front yard and flanks, in the keep's frame) and the world's crop fields (the farm zones).
 local SLOTS = {}
 for _, identity in KingdomsConfig.identities do
-	for _, slot in WorldLayout.plots[identity.id].buildSlots do
+	local plot = WorldLayout.plots[identity.id]
+	for _, slot in plot.buildSlots do
 		local size = WorldLayout.slotSizes[slot.size]
 		table.insert(SLOTS, Footprint.rect(size, slot.center.X, slot.center.Z, slot.rot))
 	end
+	local look = plot.anchors.keep.LookVector
+	local keepYaw = math.atan2(-look.X, -look.Z) -- Layout.yawOf, which is defined further down
+	for _, zone in plot.buildZones do
+		table.insert(SLOTS, Footprint.rect(zone.size, zone.center.X, zone.center.Z, keepYaw))
+	end
+end
+for _, field in WorldLayout.features.fields do
+	table.insert(SLOTS, Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw))
 end
 
--- world layout: a `kind` node at (x, z) clears the standing buildings, every build slot and the other nodes
+-- world layout: a `kind` node at (x, z) clears the standing buildings, every build slot, build zone and crop
+-- field, and the other nodes
 local function clearSpot(sim: any, kind: string, x: number, z: number): boolean
 	if not sim:nodeClear(kind, x, z) then
 		return false

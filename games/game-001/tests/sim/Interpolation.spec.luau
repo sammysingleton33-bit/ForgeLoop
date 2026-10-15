@@ -126,12 +126,27 @@ describe("Sim/Interpolation clock", function()
 
 	it("snaps to a jump over SNAP seconds (a new match restarts serverTime) and resets", function()
 		local clock = Interpolation.newClock()
-		clock:observe(600, 100)
+		expect(clock:observe(600, 100)).toBe(false) -- the first offset is no snap
 		expect(clock:renderTime(100, 0.2) :: number).toBeNear(599.8, 1e-9)
-		clock:observe(0.5, 101)
+		expect(clock:observe(600.5, 100.4)).toBe(false) -- jitter follows, never snaps
+		expect(clock:observe(0.5, 101)).toBe(true) -- the old timeline is over
 		expect(clock:renderTime(101, 0.2) :: number).toBeNear(0.3, 1e-9)
 		clock:reset()
 		expect(clock:serverNow(101)).toBeNil()
+	end)
+
+	it("rebase keeps only the newest sample, moved onto the new timeline (#39 L5)", function()
+		local rebased = Interpolation.newTrack()
+		Interpolation.push(rebased, 600, Vector3.new(0, 0, 0), 0, "walk")
+		Interpolation.push(rebased, 600.1, Vector3.new(10, 0, 0), 0, "walk")
+		Interpolation.rebase(rebased, 0.2)
+		expect(#rebased.samples).toBe(1)
+		expect({ rebased.samples[1].t, rebased.samples[1].position.X }).toEqual({ 0.2, 10 })
+		Interpolation.push(rebased, 0.3, Vector3.new(20, 0, 0), 0, "walk")
+		expect((assert(Interpolation.evaluate(rebased, 5)) :: any).position.X).toBe(20) -- holds the newest
+		local empty = Interpolation.newTrack()
+		Interpolation.rebase(empty, 1)
+		expect(#empty.samples).toBe(0)
 	end)
 end)
 
