@@ -933,5 +933,586 @@
    "text is blank",
    "(U+E0100 variation selector-17)"
   ]
+ },
+ {
+  "name": "presentation: unknown reaction emotion",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_emotion",
+  "value": "happy",
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_emotion] 'happy' is not allowed",
+   "(allowed: determination, frustration,"
+  ]
+ },
+ {
+  "name": "presentation: unknown question expression",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "question_expression",
+  "value": "smiley",
+  "expect": [
+   "dialogue/scenarios.csv:2:10: [question_expression] 'smiley' is not allowed (did you mean 'smile'?)"
+  ]
+ },
+ {
+  "name": "presentation: unknown reaction gesture",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "reaction_gesture",
+  "value": "thumbs_up",
+  "expect": [
+   "dialogue/responses.csv:3:7: [reaction_gesture] 'thumbs_up' is not allowed"
+  ]
+ },
+ {
+  "name": "presentation: delivery 'defiant' is not in the vocabulary",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "question_delivery",
+  "value": "defiant",
+  "expect": [
+   "dialogue/scenarios.csv:2:10: [question_delivery] 'defiant' is not allowed",
+   "pleading, playful)"
+  ]
+ },
+ {
+  "name": "presentation: unknown urgency",
+  "file": "dialogue/scenarios.csv",
+  "row": 3,
+  "column": "urgency",
+  "value": "urgent",
+  "expect": [
+   "dialogue/scenarios.csv:3:10: [urgency] 'urgent' is not allowed",
+   "(allowed: low, normal, high, critical)"
+  ]
+ },
+ {
+  "name": "presentation: unknown delivery mode",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "delivery_mode",
+  "value": "walk_up",
+  "expect": [
+   "dialogue/scenarios.csv:2:10: [delivery_mode] 'walk_up' is not allowed (allowed: ambient, direct)"
+  ]
+ },
+ {
+  "name": "presentation: emotion does not fit the reaction tone",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_emotion",
+  "value": "anger",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_tone",
+    "value": "happy"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_emotion] emotion 'anger' does not fit tone 'happy': a happy line takes joy, gratitude, pride, relief, hope, amusement, excitement, determination"
+  ]
+ },
+ {
+  "name": "presentation: emotion does not fit an angry tone",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_emotion",
+  "value": "joy",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_tone",
+    "value": "angry"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_emotion] emotion 'joy' does not fit tone 'angry': an angry line takes frustration, anger, contempt, defiance, suspicion; pick one of those or change the tone"
+  ]
+ },
+ {
+  "name": "presentation: emotion against the default neutral tone",
+  "file": "dialogue/responses.csv",
+  "row": 4,
+  "column": "reaction_emotion",
+  "value": "joy",
+  "expect": [
+   "dialogue/responses.csv:4:7: [reaction_emotion] emotion 'joy' does not fit tone 'neutral' (reaction_tone is empty, so the tone is neutral)"
+  ]
+ },
+ {
+  "name": "presentation: band emotion does not fit the band tone",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_emotion",
+  "value": "grief",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_high_text",
+    "value": "You never fail us!"
+   },
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_high_tone",
+    "value": "happy"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_high_emotion] emotion 'grief' does not fit tone 'happy'"
+  ]
+ },
+ {
+  "name": "presentation: thought bubble above 9 s",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "thought_bubble_s",
+  "value": "9.5",
+  "expect": [
+   "dialogue/scenarios.csv:2:10: [thought_bubble_s] 9.5 is out of range (2.5..9)"
+  ]
+ },
+ {
+  "name": "presentation: reaction bubble below 2.5 s",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_bubble_s",
+  "value": "2",
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_bubble_s] 2 is out of range (2.5..9)"
+  ]
+ },
+ {
+  "name": "presentation: bubble with two decimals",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_bubble_s",
+  "value": "3.25",
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_bubble_s] '3.25' has more than one decimal"
+  ]
+ },
+ {
+  "name": "presentation: bubble that is not a number",
+  "file": "dialogue/scenarios.csv",
+  "row": 2,
+  "column": "thought_bubble_s",
+  "value": "4s",
+  "expect": [
+   "dialogue/scenarios.csv:2:10: [thought_bubble_s] '4s' is not a number"
+  ]
+ },
+ {
+  "name": "presentation: band tone without the band text",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "reaction_low_tone",
+  "value": "sad",
+  "expect": [
+   "dialogue/responses.csv:3:7: [reaction_low_tone] reaction_low_tone is set but reaction_low_text is empty"
+  ]
+ },
+ {
+  "name": "presentation: band bubble without the band text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_bubble_s",
+  "value": "4",
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_high_bubble_s] reaction_high_bubble_s is set but reaction_high_text is empty"
+  ]
+ },
+ {
+  "name": "presentation: band text without its tone",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_text",
+  "value": "You never fail us!",
+  "expect": [
+   "dialogue/responses.csv:2: [reaction_high_tone] required with reaction_high_text: how the high-loyalty reaction is shown (happy, angry, sad, neutral)"
+  ]
+ },
+ {
+  "name": "presentation: band text over the bubble with the longest names",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_low_text",
+  "value": "{ruler} and {kingdom}: {name} the {occupation} says no",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_low_tone",
+    "value": "sad"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_low_text] with the longest names filled in",
+   "this text can reach 100 characters, but the bubble shows 80"
+  ]
+ },
+ {
+  "name": "presentation: band text over its 80-character limit",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_text",
+  "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_high_tone",
+    "value": "happy"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_high_text] text is 81 characters; the limit is 80"
+  ]
+ },
+ {
+  "name": "presentation: band text names a relative the trigger does not guarantee",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_text",
+  "value": "Tell {family} I said so.",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_high_tone",
+    "value": "happy"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_high_text] '{family}' needs a family: add 'citizen.has_family' to the trigger of scenario 's_hungry_farmer'"
+  ]
+ },
+ {
+  "name": "presentation: mechanics placeholder in a band text",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_text",
+  "value": "Hi {chance}",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_high_tone",
+    "value": "happy"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_high_text] placeholder '{chance}' cannot be used in this column"
+  ]
+ },
+ {
+  "name": "presentation: mechanics placeholder in a low band text",
+  "file": "dialogue/responses.csv",
+  "row": 3,
+  "column": "reaction_low_text",
+  "value": "Odds {duration}.",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 3,
+    "column": "reaction_low_tone",
+    "value": "sad"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:3:7: [reaction_low_text] placeholder '{duration}' cannot be used in this column"
+  ]
+ },
+ {
+  "name": "presentation: band text with an unknown placeholder",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_low_text",
+  "value": "Fine, {nmae}.",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_low_tone",
+    "value": "sad"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_low_text] unknown placeholder '{nmae}' (did you mean 'name'?)"
+  ]
+ },
+ {
+  "name": "presentation: band text a spreadsheet would run",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_low_text",
+  "value": "=1+1",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_low_tone",
+    "value": "sad"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_low_text] text may not start with '='"
+  ]
+ },
+ {
+  "name": "presentation: unknown band tone",
+  "file": "dialogue/responses.csv",
+  "row": 2,
+  "column": "reaction_high_tone",
+  "value": "glad",
+  "patch": [
+   {
+    "file": "dialogue/responses.csv",
+    "row": 2,
+    "column": "reaction_high_text",
+    "value": "You never fail us!"
+   }
+  ],
+  "expect": [
+   "dialogue/responses.csv:2:7: [reaction_high_tone] 'glad' is not allowed"
+  ]
+ },
+ {
+  "name": "variants: selector with an unknown kind",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "selector",
+  "value": "traits:greedy",
+  "expect": [
+   "dialogue/question_variants.csv:2:4: [selector] 'traits:greedy' is not a selector (did you mean 'trait'?)",
+   "write trait:<trait_id>"
+  ]
+ },
+ {
+  "name": "variants: selector without a kind",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "selector",
+  "value": "citizen.loyalty >= 70",
+  "expect": [
+   "dialogue/question_variants.csv:2:4: [selector] 'citizen.loyalty >= 70' is not a selector"
+  ]
+ },
+ {
+  "name": "variants: selector names an unknown trait",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "selector",
+  "value": "trait:greed",
+  "expect": [
+   "dialogue/question_variants.csv:3:4: [selector] unknown trait 'greed' (did you mean 'greedy'?)"
+  ]
+ },
+ {
+  "name": "variants: selector trait that is not an id",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "selector",
+  "value": "trait:Greedy One",
+  "expect": [
+   "dialogue/question_variants.csv:3:4: [selector] 'Greedy One' is not a valid trait id"
+  ]
+ },
+ {
+  "name": "variants: empty trait selector",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "selector",
+  "value": "trait:",
+  "expect": [
+   "dialogue/question_variants.csv:3:4: [selector] trait: needs a trait id"
+  ]
+ },
+ {
+  "name": "variants: cond selector with an unknown variable",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "selector",
+  "value": "cond:citizen.loyality >= 70",
+  "expect": [
+   "dialogue/question_variants.csv:2:4: [selector] clause 1 'citizen.loyality >= 70': unknown variable 'citizen.loyality' (did you mean 'citizen.loyalty'?)"
+  ]
+ },
+ {
+  "name": "variants: malformed cond selector",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "selector",
+  "value": "cond:citizen.loyalty >=",
+  "expect": [
+   "dialogue/question_variants.csv:2:4: [selector]",
+   "malformed"
+  ]
+ },
+ {
+  "name": "variants: cond selector outside the variable range",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "selector",
+  "value": "cond:citizen.loyalty >= 170",
+  "expect": [
+   "dialogue/question_variants.csv:2:4: [selector]",
+   "170 is outside the range of 'citizen.loyalty' (0..100)"
+  ]
+ },
+ {
+  "name": "variants: empty cond selector",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "selector",
+  "value": "cond:",
+  "expect": [
+   "dialogue/question_variants.csv:2:4: [selector] cond: needs a condition"
+  ]
+ },
+ {
+  "name": "variants: missing selector",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "selector",
+  "value": "",
+  "expect": [
+   "dialogue/question_variants.csv:4:4: [selector] required: trait:<trait_id> or cond:<condition>"
+  ]
+ },
+ {
+  "name": "variants: unknown scenario",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "scenario_id",
+  "value": "s_soldier_pai",
+  "expect": [
+   "dialogue/question_variants.csv:4:1: [scenario_id] unknown scenario 's_soldier_pai' (did you mean 's_soldier_pay'?)"
+  ]
+ },
+ {
+  "name": "variants: duplicate variant id",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "variant_id",
+  "value": "v_hf_loyal",
+  "expect": [
+   "dialogue/question_variants.csv:3:2: [variant_id] duplicate id 'v_hf_loyal' (first used on row 2)"
+  ]
+ },
+ {
+  "name": "variants: invalid variant id",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "variant_id",
+  "value": "V-greedy",
+  "expect": [
+   "dialogue/question_variants.csv:3:2: [variant_id] 'V-greedy' is not a valid id"
+  ]
+ },
+ {
+  "name": "variants: duplicate order in one scenario",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "order",
+  "value": "2",
+  "expect": [
+   "dialogue/question_variants.csv:3:3: [order] order 2 is already used by variant 'v_hf_loyal' of scenario 's_hungry_farmer' (row 2)"
+  ]
+ },
+ {
+  "name": "variants: order below 1",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "order",
+  "value": "0",
+  "expect": [
+   "dialogue/question_variants.csv:4:3: [order] 0 is out of range (1..)"
+  ]
+ },
+ {
+  "name": "variants: order that is not a whole number",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "order",
+  "value": "1.5",
+  "expect": [
+   "dialogue/question_variants.csv:4:3: [order] '1.5' must be a whole number"
+  ]
+ },
+ {
+  "name": "variants: question over 160 characters",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "question_text",
+  "value": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+  "expect": [
+   "dialogue/question_variants.csv:4:5: [question_text] text is 161 characters; the limit is 160"
+  ]
+ },
+ {
+  "name": "variants: blank question",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "question_text",
+  "value": "\u2003",
+  "expect": [
+   "dialogue/question_variants.csv:4:5: [question_text] text is blank"
+  ]
+ },
+ {
+  "name": "variants: trait variant names a relative the trigger does not guarantee",
+  "file": "dialogue/question_variants.csv",
+  "row": 3,
+  "column": "question_text",
+  "value": "{family} and I are hungry, {ruler}.",
+  "expect": [
+   "dialogue/question_variants.csv:3:5: [question_text] '{family}' needs a family: add 'citizen.has_family' to the trigger of scenario 's_hungry_farmer', or the name could be missing in game"
+  ]
+ },
+ {
+  "name": "variants: cond variant names a relative neither the trigger nor the selector guarantees",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "question_text",
+  "value": "{family} and I are hungry, {ruler}.",
+  "expect": [
+   "dialogue/question_variants.csv:2:5: [question_text] '{family}' needs a family: add 'citizen.has_family' to the trigger of scenario 's_hungry_farmer' or to this variant's cond: selector, or the name could be missing in game"
+  ]
+ },
+ {
+  "name": "variants: mechanics placeholder in a variant question",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "question_text",
+  "value": "Odds {magnitude}?",
+  "expect": [
+   "dialogue/question_variants.csv:4:5: [question_text] placeholder '{magnitude}' cannot be used in this column"
+  ]
+ },
+ {
+  "name": "variants: unknown question emotion",
+  "file": "dialogue/question_variants.csv",
+  "row": 2,
+  "column": "question_emotion",
+  "value": "hopeful",
+  "expect": [
+   "dialogue/question_variants.csv:2:6: [question_emotion] 'hopeful' is not allowed (did you mean 'hope'?)"
+  ]
+ },
+ {
+  "name": "variants: unknown question gesture",
+  "file": "dialogue/question_variants.csv",
+  "row": 4,
+  "column": "question_gesture",
+  "value": "fist_bump",
+  "expect": [
+   "dialogue/question_variants.csv:4:8: [question_gesture] 'fist_bump' is not allowed (did you mean 'fist_pump'?)"
+  ]
  }
 ]

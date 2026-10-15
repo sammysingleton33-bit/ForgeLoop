@@ -14,6 +14,7 @@ local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Con
 local KingdomWorld = require("./doubles/KingdomWorld")
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Placement = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Placement")
+local PlacementInput = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/PlacementInput")
 local PlotPickerDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/PlotPickerController")
 local SlotDoubles = require("./doubles/SlotDoubles")
 local Turns = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Turns")
@@ -121,6 +122,84 @@ describe("Rotation maths", function()
 	end)
 end)
 
+-- A UserInputService stand-in: InputBegan / InputChanged handlers and the keys held down.
+local function fakeInput()
+	local uis = { held = {}, began = {}, changed = {} }
+	local function signal(list)
+		return {
+			Connect = function(_, fn)
+				table.insert(list, fn)
+				return {
+					Disconnect = function()
+						table.remove(list, table.find(list, fn) :: number)
+					end,
+				}
+			end,
+		}
+	end
+	uis.InputBegan = signal(uis.began)
+	uis.InputChanged = signal(uis.changed)
+	function uis:IsKeyDown(key)
+		return self.held[key] == true
+	end
+	function uis:press(kind, key, processed)
+		for _, fn in table.clone(self.began) do
+			fn({ UserInputType = kind, KeyCode = key, Position = Vector3.zero }, processed == true)
+		end
+	end
+	return uis
+end
+
+describe("Placement keys (PlacementInput)", function()
+	it("R turns, Shift+R turns back, pad R1 / L1 turn, Q cancels; pad Y is left to the camera", function()
+		local uis = fakeInput()
+		local env = { UserInputService = uis, Workspace = {}, log = function() end }
+		local calls = {}
+		local active = true
+		local disconnect = PlacementInput.connect(env, {
+			active = function()
+				return active
+			end,
+			aim = function() end,
+			rotate = function(step)
+				table.insert(calls, step)
+			end,
+			confirm = function()
+				table.insert(calls, "confirm")
+			end,
+			cancel = function()
+				table.insert(calls, "cancel")
+			end,
+		}, function()
+			return {}
+		end)
+		local K, Kb, Pad = Enum.KeyCode, Enum.UserInputType.Keyboard, Enum.UserInputType.Gamepad1
+		uis:press(Kb, K.R)
+		uis.held[K.LeftShift] = true
+		uis:press(Kb, K.R)
+		uis.held[K.LeftShift] = nil
+		uis.held[K.RightShift] = true
+		uis:press(Kb, K.R)
+		uis.held[K.RightShift] = nil
+		uis:press(Pad, K.ButtonR1)
+		uis:press(Pad, K.ButtonL1)
+		uis:press(Pad, K.ButtonY) -- RulerCameraController's View toggle (FORGE-07 M1 on #135): not a turn
+		uis:press(Kb, K.Q)
+		expect(calls).toEqual({ 1, -1, -1, 1, -1, "cancel" })
+		-- input a GUI or a ContextActionService binding already took never turns, nor anything outside placing
+		uis:press(Kb, K.R, true)
+		active = false
+		uis:press(Kb, K.R)
+		uis:press(Pad, K.ButtonR1)
+		expect(#calls).toBe(6)
+		disconnect()
+		active = true
+		uis:press(Kb, K.R)
+		expect(#calls).toBe(6)
+		expect(#uis.began).toBe(0)
+	end)
+end)
+
 describe("Ghost facing marks", function()
 	it("puts the door on the front edge and the arrow out in front, turning with the building", function()
 		local env = MockEnv.new({})
@@ -213,6 +292,7 @@ describe("Turning a building while placing it", function()
 		local checks = world:callsNamed("CanPlace")
 		expect(checks[#checks].args[3]).toBe(3)
 		expect(texts(bar)).toContain("Shift+R")
+		expect(texts(bar)).toContain("R1/L1")
 	end)
 
 	it("keeps Turn and its dial on a phone, without the word, inside the bar", function()

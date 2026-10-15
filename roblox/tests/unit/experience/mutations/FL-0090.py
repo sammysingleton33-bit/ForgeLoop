@@ -12,7 +12,7 @@ M = [
  ("FL-0090", C2+"RulerCameraController.luau", 'self:_setTouchControls(not overview)', 'self:_setTouchControls(true)', "RulerCamera", "starts in the overview over the throne", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", '			self._ruler:standUp()', '			local _ = self._ruler', "RulerCamera", "follow (walk mode) stands the ruler up", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'self:panBy(direction * (overview.panSpeed * target.zoom * dt))', 'self:panBy(direction * (overview.panSpeed * dt))', "RulerCamera", "WASD pans relative to the view", "game"),
- ("FL-0090", C2+"InputModeController.luau", 'local ok, entityId = pcall(entities.pick, entities, screenPos)', 'local ok, entityId = false, nil', "InputMode", "a tap on a citizen selects it", "game"),
+ ("FL-0090", C2+"InputModeController.luau", '\n\t\tlocal ok, entityId = pcall(entities.pick, entities, screenPos)', '\n\t\tlocal ok, entityId = false, nil', "InputMode", "a tap on a citizen selects it", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'return (upAt - downAt).Magnitude < config.tapPixels and heldSec <= config.tapSec', 'return true', "InputMode", "a drag (pan) or a long press is not a tap", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'if nextMode == "build" and self.selection.kind ~= "none" then', 'if false then', "InputMode", "build mode clears the selection", "game"),
  ("FL-0090", C2+"InputModeController.luau", 'for _ = 1, 8 do', 'for _ = 1, 20 do', "InputMode", "resolveHit() stops after 8 levels", "game"),

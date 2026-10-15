@@ -12,7 +12,7 @@ You can rewrite any question, answer or reaction without touching how the game w
    python3 tools/content/content.py export-xlsx
    ```
    It writes `games/game-001/content/AI_Kingdoms_Content.xlsx`. Open it in Excel or LibreOffice. Google Sheets works too: upload the file, edit it, then *File → Download → .xlsx*. Some dropdowns may not survive Google Sheets.
-2. **Edit the YELLOW columns.** These are the text players see, plus two dropdowns that set how it is shown: the bubble icon (`thought_icon`) and the reaction's mood (`reaction_tone`). Hover a header to see its note, its character limit and the placeholders it accepts. Over-long text is refused as you type.
+2. **Edit the YELLOW columns.** These are the text players see, plus dropdowns that set how it is shown: the bubble icon (`thought_icon`), the reaction's mood (`reaction_tone`) and the optional presentation tags (see *Presentation tags (optional)* below). Hover a header to see its note, its character limit and the placeholders it accepts. Over-long text is refused as you type.
 3. **Leave the GREY columns alone** unless you mean to change gameplay. They hold ids, numbers, conditions and costs. White columns are your own notes and never reach the game. BLUE columns on the responses sheet (`info: question`, `info: effects`) only help you: they show the question being answered and what each answer does, and they are ignored when the workbook comes back.
 4. **Sort and filter as you like** while you review. The import puts every row back in its original order.
 5. **Never add, remove or rename columns or sheets.** Put your comments in the white `notes` columns (a note may not start with `=` or `@`). Add new rows at the bottom of a sheet.
@@ -38,6 +38,8 @@ You can rewrite any question, answer or reaction without touching how the game w
 | responses | response_text | one of the ruler's 2–4 answers | 70 |
 | responses | reaction_text | the citizen's reaction to that answer (a speech bubble) | 80 |
 | responses | reaction_tone | how the reaction looks: happy, angry, sad or neutral | dropdown |
+| responses | reaction_high_text / reaction_low_text | optional: the reaction of a very loyal / disloyal citizen | 80 |
+| question_variants | question_text | optional: another question for some citizens | 160 |
 | consequences | notice_text | short notice when a consequence happens | 100 |
 | actions | notice_text | history-log line explaining a reputation change | 100 |
 | traits | name_text / description_text | personality trait name / one-line description | 24 / 100 |
@@ -59,6 +61,18 @@ You can rewrite any question, answer or reaction without touching how the game w
 - **Risks: describe only what may happen.** A risk (a consequence that may or may not happen) must have a notice, and the conversation panel shows its odds right next to that notice. So never write the odds yourself and never write `{chance}`: write `{name} may walk off the job for {duration}.`, not `Risk ({chance}): {name} may walk off the job.`
 - Keep room for long names: a placeholder counts by how it is spelled. A thought or a reaction must also fit its 80-character bubble with the longest names filled in (`{name}`, `{family}`, `{friend}`, `{rival}` 16, `{ruler}` 20, `{occupation}` 24, `{kingdom}` 20); the import names the length it can reach.
 - Notes may start with `+` or `-` (`+housing capacity`), but never with `=` or `@`.
+
+## Presentation tags (optional)
+The cinematic conversation shows the citizen's portrait, so a line can say *how* it is said. All of these columns are optional: leave a cell empty for the default look, and nothing about gameplay changes either way. In the workbook they are yellow columns at the right end of the scenarios and responses sheets; a CSV only gains such a column once you fill one in on a row the import takes (`--text-only` skips new rows, so a tag on a new row adds nothing until a full import brings in the row).
+
+- **How a line is said** (scenario questions, reactions, question variants): `emotion`, `expression`, `gesture`, `delivery`, picked from dropdowns. The full lists are in [`SPEC.md`](SPEC.md) §5.10, for example emotion `gratitude`, expression `raised_brow`, gesture `hand_on_heart`, delivery `deadpan`.
+- **A reaction's emotion must fit its tone.** A `happy` reaction can be joy, gratitude, pride, relief, hope, amusement, excitement or determination; an `angry` one frustration, anger, contempt, defiance or suspicion; a `sad` one sadness, grief, worry, fear or embarrassment; a `neutral` one neutral, determination, curiosity, suspicion, amusement, worry, hope, frustration or relief. An empty `reaction_tone` counts as neutral, so set the tone first.
+- **Gestures with a cue.** `bow`, `salute`, `step_back` (cowers), `fist_pump` (celebrates) and `cross_arms` (grumbles) also play that feedback animation.
+- **Scenario feel:** `urgency` (low, normal, high, critical) and `delivery_mode`: `ambient` (a thought bubble the ruler may notice) or `direct` (the citizen comes to the ruler). A direct scenario with low urgency gets a lint hint.
+- **Bubble time:** `thought_bubble_s` and `reaction_bubble_s` are seconds from 2.5 to 9 with at most one decimal, e.g. `4.5`.
+- **Reactions by loyalty:** `reaction_high_text` is said instead of the normal reaction by a citizen with loyalty 70 or more, `reaction_low_text` by one with 30 or less (both thresholds provisional). Each needs its own tone (`reaction_high_tone`, `reaction_low_tone`) and follows the same rules as `reaction_text`. Tags for a band without its text are refused.
+- **Question variants** (`question_variants` sheet, file `dialogue/question_variants.csv`): another question for some citizens of a scenario. `selector` says who: `trait:brave` (the citizen is brave) or `cond:citizen.loyalty >= 70` (any trigger condition). When several match, the lowest `order` wins; a citizen no variant matches hears the scenario's own question. `selector`, `order` and the ids are grey mechanics: a new variant row needs an import without `--text-only` (a developer can do it).
+- Props are not a column: describe them in `notes`.
 
 ## How a conversation is put together
 - `scenarios`: one row per situation. It says who can raise it (`occupation`), when (`trigger`), how important it is (`priority`) and how often (`cooldown_s`, `once_per_citizen`).
