@@ -5,10 +5,12 @@
 	methods directly and this adapter is listed in the Studio steps).
 
 	PlacementInput.connect(env, handlers, exclude: () -> { Instance }) -> disconnect: () -> ()
-		handlers = { active: () -> boolean, aim: (Vector3) -> (), rotate: () -> (),
+		handlers = { active: () -> boolean, aim: (Vector3) -> (), rotate: (step: 1 | -1) -> (),
 		             confirm: () -> (), cancel: () -> () }
-		Desktop   mouse move aims the ghost; left click places; R rotates; Q cancels (Esc belongs to
-		          the Roblox menu)
+		Desktop   mouse move aims the ghost; left click places; R turns, Shift+R turns back; Q cancels
+		          (Esc belongs to the Roblox menu)
+		Gamepad   R1 turns, L1 turns back. Y stays RulerCameraController's View toggle and B leaves build
+		          mode (InputModeController, FORGE-04); neither shoulder button is bound elsewhere.
 		Touch     a tap on the ground moves the ghost there; the Place button confirms (a stray tap
 		          never spends resources)
 		Input the GUI already handled (gameProcessedEvent) is ignored, so taps on the HUD and the
@@ -91,9 +93,14 @@ function PlacementInput.connect(env: any, handlers: { [string]: any }, exclude: 
 				elseif kind == Enum.UserInputType.MouseButton1 then
 					aimAt(input.Position.X, input.Position.Y)
 					handlers.confirm()
+				elseif input.KeyCode == Enum.KeyCode.ButtonR1 then
+					handlers.rotate(1)
+				elseif input.KeyCode == Enum.KeyCode.ButtonL1 then
+					handlers.rotate(-1)
 				elseif kind == Enum.UserInputType.Keyboard then
 					if input.KeyCode == Enum.KeyCode.R then
-						handlers.rotate()
+						local shift = uis:IsKeyDown(Enum.KeyCode.LeftShift) or uis:IsKeyDown(Enum.KeyCode.RightShift)
+						handlers.rotate(if shift then -1 else 1)
 					elseif input.KeyCode == Enum.KeyCode.Q then
 						handlers.cancel()
 					end

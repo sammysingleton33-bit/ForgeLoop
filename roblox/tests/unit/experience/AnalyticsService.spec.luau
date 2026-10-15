@@ -476,6 +476,72 @@ describe("AnalyticsService sessions", function()
 		expect(last.args[3]).toEqual({ CustomField01 = "BuildingCompleted" })
 	end)
 
+	it("starts on config.session.startOn, logs leftInfo's event before SessionEnd, and keeps the drop-off", function()
+		local config = TestAnalytics.build()
+		config.events.Left = { description = "left mid-match", value = "minute", fields = { "phase" } }
+		local asked = {}
+		config.session = {
+			startEvent = "SessionStart",
+			endEvent = "SessionEnd",
+			startOn = "ShopViewed", -- any declared bus event whose first argument is the player
+			leftEvent = "Left",
+			leftInfo = function(player, ctx)
+				table.insert(asked, { userId = player.UserId, hasRegistry = ctx.registry ~= nil })
+				return { phase = "Conflict", minute = 7 }
+			end,
+		}
+		local player = env.mock.players:add({ userId = 406 })
+		local never = env.mock.players:add({ userId = 409 }) -- never starts a session
+		boot(env, { config = config, bus = bus })
+		bus.PlayerReady:fire(player)
+		expect(#roblox:callsTo("LogCustomEvent")).toBe(0) -- PlayerReady no longer starts it
+		bus.ShopViewed:fire(player, "main", nil)
+		bus.ShopViewed:fire(player, "main", nil)
+		local starts = 0
+		for _, call in roblox:callsTo("LogCustomEvent") do
+			starts += if call.args[1] == "SessionStart" then 1 else 0
+		end
+		expect(starts).toBe(1)
+		env.mock.players:remove(player)
+		local calls = roblox:callsTo("LogCustomEvent")
+		expect(calls[#calls - 1].args[1]).toBe("Left")
+		expect(calls[#calls - 1].args[2]).toBe(7)
+		expect(calls[#calls - 1].args[3]).toEqual({ CustomField01 = "Conflict" })
+		expect(calls[#calls].args[1]).toBe("SessionEnd")
+		expect(calls[#calls].args[3]).toEqual({ CustomField01 = "ShopViewed" }) -- not "Left"
+		env.mock.players:remove(never)
+		expect(asked).toEqual({ { userId = 406, hasRegistry = true } }) -- no session, no leftInfo
+	end)
+
+	it("a leftInfo that errors or returns nil logs only SessionEnd", function()
+		local config = TestAnalytics.build()
+		config.events.Left = { description = "left mid-match", value = "minute", fields = { "phase" } }
+		config.session = {
+			startEvent = "SessionStart",
+			endEvent = "SessionEnd",
+			leftEvent = "Left",
+			leftInfo = function(player)
+				if player.UserId == 407 then
+					error("boom")
+				end
+				return nil
+			end,
+		}
+		local a = env.mock.players:add({ userId = 407 })
+		local b = env.mock.players:add({ userId = 408 })
+		boot(env, { config = config, bus = bus })
+		bus.PlayerReady:fire(a)
+		bus.PlayerReady:fire(b)
+		env.mock.players:remove(a)
+		env.mock.players:remove(b)
+		local names = {}
+		for _, call in roblox:callsTo("LogCustomEvent") do
+			table.insert(names, call.args[1])
+		end
+		expect(names).toEqual({ "SessionStart", "SessionStart", "SessionEnd", "SessionEnd" })
+		expect(env.mock:hasLog("warn", "session.leftInfo failed")).toBe(true)
+	end)
+
 	it("first-day players log Return step 1 (FirstSession)", function()
 		local player = env.mock.players:add({ userId = 403 })
 		loadCore(player, 1700000000 - 60)

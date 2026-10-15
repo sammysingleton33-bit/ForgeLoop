@@ -4,25 +4,24 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B14**, main `3691475`, delivered 2026-10-15 17:25 UTC. **This is the build to test.** Not yet run in Studio. Checklist: `production/handoffs/2026-10-13-forge-00-to-forge-05-b14-studio-checklist.md` (for the user's local Studio MCP session).
-  - **New since B13:** the cinematic conversation.
-    - The camera glides to the citizen's face, and a 3D portrait rises (#85, #84, #126).
-    - The citizen turns to face the ruler and is held while you choose, then while you read, until Done (at most 12 s; #108, g9f).
-    - The portrait plays reaction poses (#121).
-    - Every close path restores the camera.
-    - Replication survives bad ticks (#93).
-    - Headless: game-001 1304/0, end-to-end probe 9/9 (FORGE-05).
+- **Latest build: B16**, main `e447364`, delivered 2026-10-15 19:15 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff with its B15 and B16 sections.
+  - **New since B15:**
+    - Interim environment art (D-051): layered pines, mossy angular boulders, coloured ore nodes, a furrowed cabbage field (#141).
+    - Gamepad R1/L1 turn while placing (#139).
+    - Wall and gate pieces join (#136).
   - **Not yet:**
-    - Reaction poses on the world rig (needs `playPose`).
-    - The user's first Studio feedback (record ec44e944): farm clutter, rotation on plots, bubble readability and art. That's the B15 target.
-    - Sounds (P0 picks).
-    - Dialogue is DRAFT.
-- **Next build: B15** (cut as soon as cleanup, rotation and bubbles are in; art where ready):
-  - FORGE-02 farm and slot clearance + world trim (D-047);
-  - FORGE-01 `Build.PlaceSlot` turn (g9h) with FORGE-03's picker Turn and ghost facing;
-  - FORGE-04 bubble readability;
-  - FORGE-02 env and citizen polish (D-048: 11-part rigs).
-  - Base editing (move buildings) and wall drag: B16, with the rules task coming.
+    - Oak, birch and wheat are still placeholder (FL-0117 open).
+    - Citizen job art (#138) waits for B17 with the Pose cheer fix.
+    - Farm-node visual-extent clearance (FORGE-01).
+    - Phone bubble overlap.
+    - FL-0122 (#145).
+    - Base editing (B17).
+- **Next build: B17:**
+  - base editing (#140 FL-0119, #142 FL-0121, FL-0120 UI; G13.9 g9j);
+  - citizen job art (#138) with the Pose fix;
+  - FL-0122 hardening (#145);
+  - farm-node visual-extent clearance;
+  - FL-0116 world trim.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit

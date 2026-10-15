@@ -218,6 +218,20 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
 
+## Server hardening regression rows (FL-0122, D-050)
+1. Talk to a citizen (K10), then keep re-opening the same thought bubble every 20 s for two minutes.
+2. Stand at the keep, then use a teleport tool (Studio command bar, `character:PivotTo(...)`) to jump into the
+   watchtower zone and wait there for 20 s.
+3. Harvest a tree of your own kingdom with `Kingdom.Gather` as fast as the prompt allows for a minute, then try a
+   tree on a rival's plot.
+
+**Expected:**
+- 1. The citizen walks off after about 90 s of conversation at most, however often you ask again; the question
+  is still there and can still be answered.
+- 2. The tower is not captured 20 s after the jump; it is captured only after the time a runner would need
+  (distance / 40 studs per second) plus the capture time. A respawn at the plot is not delayed.
+- 3. About 9 wood a minute (4 or 5 harvests), then `cooldown`; the rival's tree answers `not_your_node`.
+
 ## Base editing: moving buildings (FL-0119, CONTRACTS G13.9; server side, the UI is FL-0120/0121)
 Until the edit-mode UI lands, drive it from the client command bar while playing as a ruler of crimson.
 Replace `<id>` with a building id from `Build.GetBuildings`:

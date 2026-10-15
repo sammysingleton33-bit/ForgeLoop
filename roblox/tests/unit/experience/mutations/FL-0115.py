@@ -21,6 +21,7 @@ M = [
  ("FL-0115", C2+"InputModeController.luau", 'if input.UserInputType == Enum.UserInputType.MouseMovement then', 'if true then', 'InputMode', 'hover: a mouse move over a citizen', "game"),
  ("FL-0115", C2+"InputModeController.luau", 'self:hoverAt(if processed then nil else Vector2.new(input.Position.X, input.Position.Y))', 'self:hoverAt(Vector2.new(input.Position.X, input.Position.Y))', 'InputMode', 'hover: a mouse move over a citizen', "game"),
  ("FL-0115", C2+"InputModeController.luau", 'if nextMode ~= "explore" then', 'if false then', 'FeedbackHighlight', 'placing a building clears the hover outline', "game"),
+ ("FL-0115", C2+"InputModeController.luau", '\t\t\t\tself:hoverAt(nil)\n', '', 'InputMode', 'hover: leaving explore mode clears it at once', "game"),
  ("FL-0115", C2+"FeedbackHighlightController.luau", 'return if kind == "citizen" and type(id) == "number" and id == id then id else nil', 'return id', 'FeedbackHighlight', 'the selected citizen keeps a gold outline', "game"),
  ("FL-0115", C2+"FeedbackHighlightController.luau", 'self._gone[id] = true -- getModel still returns the pooled rig until it is rendered again', 'local _ = id', 'FeedbackHighlight', 'a released rig loses its outline', "game"),
  ("FL-0115", C2+"FeedbackHighlightController.luau", 'local hover = if self.hoverId ~= self.selectedId then self.hoverId else nil', 'local hover = self.hoverId', 'FeedbackHighlight', 'the selected citizen keeps a gold outline', "game"),

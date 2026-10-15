@@ -97,3 +97,27 @@ Screenshots: <file names>
 ## Next actions for the receiver
 - **FORGE-05:** fold the B14 rows into `STUDIO_PLAYTEST.md` §11 and record the run in `studio-runs.md` when the report arrives.
 - **FORGE-00:** triage FAILs into tasks (★ for B15).
+
+## B15 additions (main `b2e3164`, BuildInfo `b2e316414255…`): the user's first-playtest fixes
+Run sections A–E on B15 too (B15 contains B14). Then:
+
+| ID | Check | Pass |
+|---|---|---|
+| G1 | Your starting farms from the aerial view and from the ground (`screen_capture` both) | no tree, rock or gold vein inside a crop field, the front yard or a plot's flanks. Compare with F1 if you have it. |
+| G2 | A request bubble at the default zoom and fully zoomed out (`vs1.request`; gather first if refused) | easy to spot; drawn over roofs and trees; a coloured badge (! request, ? concern, … idea); a new request pops twice |
+| G3 | Click the bubble | that citizen's card opens. Then press B (build) and click a bubble: it places instead of opening the card (known). |
+| G4 | Hover a citizen, then click it | a light outline on hover, a gold outline when selected |
+| G5 | Tap a free plot marker → House → Turn once → place | the picker said "Faces right"; the house stands turned that way, its door matching the ghost's arrow |
+| G6 | Build rail → House → press R, then Shift+R | the ghost turns 90° each way and the Rotate button shows the facing; it is placed as shown |
+| G7 | Gamepad only, if you have one: Y while placing | **known:** it flips the camera view instead of turning (FORGE-03 follow-up). Note what happens. |
+
+**Report:** add G1–G7 to the report block above.
+
+## B16 additions (main `e447364`, BuildInfo `e44736414c4f…`)
+| ID | Check | Pass |
+|---|---|---|
+| H1 | Trees, rocks and a farm, at the default zoom and close up; compare with B15 / F2 | pines layered, boulders angular with moss. **Known:** oaks and birches are still sphere clusters, and wheat is flat planks (interim art). |
+| H2 | Ore and quarry nodes from the air | gold, iron and crystal tell apart by colour |
+| H3 | Place two wall pieces end to end | they join with no gap |
+| H4 | Gamepad (or Studio's emulator) while placing | R1/L1 turn the ghost; Y flips the view |
+
