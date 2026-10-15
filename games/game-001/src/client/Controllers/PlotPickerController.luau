@@ -34,9 +34,9 @@ local BuildMenu = require("../UI/BuildMenu")
 local BuildModel = require("../UI/BuildModel")
 local Ghost = require("../UI/Ghost")
 local Placement = require("../UI/Placement")
+local Slots = require("../UI/Slots")
 local Text = require("../UI/Text")
 local Turns = require("../UI/Turns")
-local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local PlotPickerController = {}
 PlotPickerController.__index = PlotPickerController
@@ -45,21 +45,9 @@ local Def = { name = "PlotPickerController", dependencies = { "KingdomHudControl
 
 PlotPickerController.MENU = "plot"
 
--- Where a build slot stands in the world (world/Layout, FORGE-02's shape): its centre, its yaw
--- (radians, CFrame.Angles(0, yaw, 0); the street is in front) and its size in studs.
+-- Where a build slot stands in the world (UI/Slots: world/Layout, FORGE-02's shape).
 function PlotPickerController.slotFrame(slotId: any): { center: Vector3, yaw: number, size: Vector2 }?
-	for _, plot in WorldLayout.plots or {} do
-		for _, slot in plot.buildSlots or {} do
-			if slot.id == slotId then
-				local size = WorldLayout.slotSizes[slot.size]
-				if typeof(slot.center) ~= "Vector3" or type(slot.rot) ~= "number" or typeof(size) ~= "Vector2" then
-					return nil
-				end
-				return { center = slot.center, yaw = slot.rot, size = size }
-			end
-		end
-	end
-	return nil
+	return Slots.frame(slotId)
 end
 
 function Def.new(env: any, registry: any)

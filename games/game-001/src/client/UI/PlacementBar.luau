@@ -10,7 +10,9 @@
 	bar:render(model, metrics, ui)
 		model = { name, icon, category, costs: { { currency, amount, short } },
 		          status: "pending" | "ok" | "bad", reason: string?, busy: boolean,
-		          facing: number? (degrees on screen, Placement.screenAngle; default 0) }
+		          facing: number? (degrees on screen, Placement.screenAngle; default 0),
+		          confirm: string? (the Place button's word; "Move here" when moving, FL-0120),
+		          okText: string? (the verdict line when the spot is good; default "✓ Good spot") }
 		ui = { onRotate, onCancel, onPlace }
 	bar:destroy()
 	The ghost moves cell by cell and every move re-renders: the bar keeps its instances and patches
@@ -44,7 +46,7 @@ end
 
 local function statusOf(model: any): (string, Color3)
 	if model.status == "ok" then
-		return "✓ Good spot", GOOD
+		return model.okText or "✓ Good spot", GOOD
 	elseif model.status == "bad" then
 		return "✕ " .. (model.reason or "Can't build here"), SHORT
 	end
@@ -61,6 +63,7 @@ local function key(model: any, metrics: any): string
 		place = metrics.place,
 		free = Layout.freeArea(metrics, false),
 		name = model.name,
+		confirm = model.confirm,
 		icon = model.icon,
 		category = model.category,
 		costs = costs,
@@ -194,7 +197,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	cancel.instance.Name = "Cancel"
 	local placeWidth = if phone then 92 else 104
 	local place = Button.new({
-		text = "Place",
+		text = model.confirm or "Place",
 		icon = "check",
 		variant = "primary",
 		state = "disabled",

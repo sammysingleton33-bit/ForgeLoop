@@ -7,7 +7,8 @@
 
 	UpgradePanel.new(parent) -> panel
 	panel:render(detail: BuildModel Detail, metrics, ui: { onUpgrade(detail), onClose(),
-		tabs: { { id, label, icon } }?, onTab(id)? })
+		tabs: { { id, label, icon } }?, onTab(id)?, onSide(detail)? })
+		detail.side (FL-0120 Move) is the secondary button beside the CTA (UI/DetailView).
 		`tabs` are extra tabs after the building's own (FL-0060: "Army" on my barracks); tapping one
 		calls onTab(id). The panel itself always shows the building tab.
 	panel:destroy()
@@ -37,6 +38,11 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		onCta = function(d)
 			if self._ui.onUpgrade then
 				self._ui.onUpgrade(d)
+			end
+		end,
+		onSide = function(d)
+			if self._ui.onSide then
+				self._ui.onSide(d)
 			end
 		end,
 	}
@@ -123,7 +129,8 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		padding = if phone then 10 else 12,
 	})
 	self.panel.instance.Name = "UpgradePanel"
-	self.detail = DetailView.new({ detail = detail, compact = phone, onCta = handlers.onCta })
+	self.detail =
+		DetailView.new({ detail = detail, compact = phone, onCta = handlers.onCta, onSide = handlers.onSide })
 	self.detail.instance.Parent = self.panel.content
 	self.panel.instance.Parent = self._parent
 	local body = self.detail.instance:FindFirstChild("Body")

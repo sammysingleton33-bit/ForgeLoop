@@ -12,12 +12,17 @@
 		  and the chip "Barracks Lv 2" once the server pushes the building.
 		- Another kingdom's building opens a read-only card ("Not your building").
 	Any other selection (citizen, a free plot, none) closes the panel.
+	Move (FL-0120, CONTRACTS G13.9): my own building, not the keep, not destroyed, while the server
+	serves `Build.Move` (hud:hasRemote) gets a Move button beside the CTA; it closes the panel and
+	starts BuildMenuController:startMove. For Buildings.moveCooldown seconds (else 10) after my own
+	accepted move of it, Move is disabled and reads "Moved"; the server sends no time left, so this
+	counts from the client's own answer.
 	Extra tabs (FL-0060): another controller adds a tab with `panel:addTab({ id, label, icon,
 	applies(building, store) -> boolean, onSelect(buildingId) })`; it shows after the building's tab
 	when `applies` says so (ArmyPanelController: "Army" on my barracks, which opens the army drawer).
 
 	Depends on KingdomHudController. Optional: InputModeController (FORGE-04).
-	API: panel:open(buildingId)  panel:close()  panel:addTab(tab)  panel:removeTab(id)
+	API: panel:open(buildingId)  panel:close()  panel:addTab(tab)  panel:removeTab(id)  panel:move(buildingId)
 	     panel.state = { buildingId? }
 		panel.view (UI/UpgradePanel)
 ]]
@@ -25,6 +30,7 @@
 local BuildModel = require("../UI/BuildModel")
 local BuildingLevels = require("../UI/BuildingLevels")
 local Buildings = require("../UI/Buildings")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local UpgradePanel = require("../UI/UpgradePanel")
 
 local UpgradePanelController = {}
@@ -33,6 +39,7 @@ UpgradePanelController.__index = UpgradePanelController
 local Def = { name = "UpgradePanelController", dependencies = { "KingdomHudController" } }
 
 UpgradePanelController.MENU = "upgrade"
+UpgradePanelController.MOVE_COOLDOWN = 10 -- seconds, when config Buildings has no moveCooldown
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -226,10 +233,60 @@ function UpgradePanelController:detail(): any
 		return foreignDetail(store, building)
 	end
 	local panel = hud.state.panel
-	return BuildModel.upgradeDetail(store, building, {
+	local detail = BuildModel.upgradeDetail(store, building, {
 		pending = panel.pending == building.id,
 		done = panel.done == building.id,
 	})
+	if detail then
+		detail.side = self:_moveAction(building)
+	end
+	return detail
+end
+
+-- The Move button (FL-0120), or nil where a move can never apply.
+function UpgradePanelController:_moveAction(building: any): any
+	local hud = self.hud
+	if building.type == "keep" or building.state == "destroyed" or not hud:hasRemote("Build.Move") then
+		return nil
+	end
+	local build = self._registry:find("BuildMenuController")
+	if build == nil or build.startMove == nil then
+		return nil
+	end
+	local cooldown = (BuildingsConfig :: any).moveCooldown
+	cooldown = if type(cooldown) == "number" then cooldown else UpgradePanelController.MOVE_COOLDOWN
+	local movedAt = build.movedAt and build.movedAt[building.id]
+	local left = if movedAt then cooldown - (self._env.clock() - movedAt) else 0
+	if left > 0 then
+		self:_renderAfter(left)
+		return { text = "Moved", icon = "move", state = "disabled" }
+	end
+	return { text = "Move", icon = "move", state = "ready" }
+end
+
+-- One render when the Move cooldown is over, so the button wakes up by itself.
+function UpgradePanelController:_renderAfter(seconds: number)
+	local due = self._env.clock() + seconds
+	if self._wake and self._wake <= due + 0.05 and self._wake >= due - 0.05 then
+		return
+	end
+	self._wake = due
+	self._env.spawn(function()
+		self._env.wait(seconds + 0.05)
+		if self._wake == due then
+			self._wake = nil
+			if self.hud.state.menu == UpgradePanelController.MENU then
+				self.hud:render()
+			end
+		end
+	end)
+end
+
+function UpgradePanelController:move(buildingId: any)
+	local build = self._registry:find("BuildMenuController")
+	if build and build.startMove then
+		build:startMove(buildingId) -- closes this panel (another menu: setMenu(nil))
+	end
 end
 
 function UpgradePanelController:render(metrics: any)
@@ -251,6 +308,9 @@ function UpgradePanelController:render(metrics: any)
 		end,
 		onUpgrade = function(d)
 			hud:requestUpgrade(d)
+		end,
+		onSide = function(d)
+			self:move(d.buildingId)
 		end,
 		onClose = function()
 			self:close()

@@ -68,6 +68,21 @@ local SLOT_REASONS: { [string]: string } = {
 	blocked = "Something is in the way on this plot",
 }
 
+-- Build.CanMove / Build.Move / Build.MoveToSlot (CONTRACTS G13.9 v0.4-g9j; FORGE-01's handoff
+-- 2026-10-15-forge-01-to-forge-03-04-05-base-editing-server.md): the move's own codes, and the shared
+-- ones where a move reads differently. The rest read as in REASONS (and on a plot as in SLOT_REASONS).
+local MOVE_REASONS: { [string]: string } = {
+	not_found = "That building is gone",
+	not_movable = "The keep can't be moved",
+	alarm = "Not while the alarm bell rings",
+	-- one code for: targeted, enemies near, damaged in the last 10 s, burning, war just declared or ended
+	under_attack = "Not while it's under attack",
+	-- 10 s of sim time per building; the server sends no time left
+	cooldown = "It just moved. Wait a few seconds",
+	blocked = "Not enough room there",
+	out_of_territory = "Move it inside your keep's land",
+}
+
 function Text.reason(reason: any, context: string?): string
 	if reason == nil then
 		-- nil: the call was dropped or rate-limited (both answer nil), so never claim the server is down (L8)
@@ -76,6 +91,12 @@ function Text.reason(reason: any, context: string?): string
 	local key = tostring(reason)
 	if context == "slot" and SLOT_REASONS[key] then
 		return SLOT_REASONS[key]
+	end
+	if context == "move" and MOVE_REASONS[key] then
+		return MOVE_REASONS[key]
+	end
+	if context == "moveSlot" then
+		return SLOT_REASONS[key] or MOVE_REASONS[key] or REASONS[key] or "That didn't work. Try again."
 	end
 	return REASONS[key] or "That didn't work. Try again."
 end
