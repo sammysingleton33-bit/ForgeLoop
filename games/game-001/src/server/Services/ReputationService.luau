@@ -234,7 +234,17 @@ function ReputationService:fireAction(event: string, kingdomId: string, opts: { 
 	for _, firing in self.content.fireAction(event, ctx, histories, rulers, kingdomFarm, now, listeners) do
 		for _, credit in firing.rulers do
 			local guarded = Reputation.guardRules(event, credit.rep)
-			self:apply(credit.ruler, firing.id, guarded, noticeOf(firing, guarded))
+			-- the text says what actually moved: Reputation.apply clamps each category to 0..100, so the delta
+			-- the ledger stores can be smaller than the one asked for (FORGE-07 #129 M1)
+			local current = self:values(credit.ruler)
+			local moved = {}
+			for category, d in guarded do
+				if type(d) == "number" and d == d and math.abs(d) ~= math.huge then
+					local old = current[category] or 0
+					moved[category] = math.clamp(old + d, Reputation.MIN, Reputation.MAX) - old
+				end
+			end
+			self:apply(credit.ruler, firing.id, guarded, noticeOf(firing, moved))
 		end
 		Reputation.applyConditions(k.conditions, firing.kingdom)
 		for _, heard in firing.listeners do -- decayed and clamped once per listener: applied as given
