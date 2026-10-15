@@ -21,9 +21,10 @@
 	"Waiting" (FL-0115, the user's first playtest: requests were hard to notice and act on): a rail
 	button with the number of citizens who have an open request ("!"), from FORGE-04's
 	CitizenBubbleIndicatorController:count(), polled every WAITING_SEC. Hidden while nobody waits,
-	while placing and during a conversation. A tap goes to the next one (cycleRequests(1): the camera
-	centres on them and the card opens); where the indicator can't (the walking view) a notice says to
-	switch to the aerial view. Without the indicator controller there is no button.
+	while placing, during a conversation and wherever the indicator's active() (FORGE-04 #170) is false
+	(the walking view). A tap goes to the next one (cycleRequests(1): the camera centres on them and the
+	card opens); an indicator without active() that can't go (the walking view) gets a notice to switch
+	to the aerial view. Without the indicator controller there is no button.
 
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional: InputModeController,
 	CitizenBubbleIndicatorController.
@@ -184,6 +185,13 @@ function CitizenCardController:waitingCount(): number?
 	local hud = self.hud
 	if indicator == nil or hud.state.placing or hud.state.menu == "conversation" then
 		return nil
+	end
+	-- FORGE-04's active() (#170): false where a tap could not go to them (the walking view too)
+	if indicator.active ~= nil then
+		local okActive, active = pcall(indicator.active, indicator)
+		if not okActive or active ~= true then
+			return nil
+		end
 	end
 	local ok, count = pcall(indicator.count, indicator)
 	if not ok or type(count) ~= "number" or count <= 0 then

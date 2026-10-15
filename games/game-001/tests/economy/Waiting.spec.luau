@@ -178,11 +178,20 @@ describe("Waiting on the rail (FL-0115)", function()
 		expect(button(world).Visible).toBe(true)
 	end)
 
-	it("in the walking view a tap says to switch to the aerial view and goes nowhere", function()
+	it("in the walking view the button hides (active(), #170), or a tap says to switch views", function()
 		world = newWorld()
 		world.state.requests = { request(5, 1) }
 		world:advance(0.6)
 		world.state.camera.mode = "walk"
+		world:advance(0.6)
+		local indicator = world.client:get("CitizenBubbleIndicatorController")
+		if indicator.active ~= nil then -- FORGE-04's #170 is on main: hidden where a tap can't go
+			expect(button(world).Visible).toBe(false)
+			world.state.camera.mode = "overview"
+			world:advance(0.6)
+			expect(button(world).Visible).toBe(true)
+			return
+		end
 		Create.fire(button(world), "Activated")
 		world:advance(0.1)
 		expect(#world.state.selected).toBe(0)
@@ -206,6 +215,41 @@ describe("Waiting on the rail (FL-0115)", function()
 		world:advance(0.1)
 		expect(button(world).Visible).toBe(true)
 		expect(badge(world)).toBe("2")
+	end)
+
+	it("an indicator with active() (FORGE-04 #170): hidden while it is false, back when true", function()
+		local active = true
+		local def = {
+			name = "CitizenBubbleIndicatorController",
+			new = function()
+				return {
+					count = function()
+						return 2
+					end,
+					cycleRequests = function()
+						return 1
+					end,
+					active = function()
+						return active
+					end,
+				}
+			end,
+		}
+		world = KingdomWorld.new({ clientDefinitions = { KingdomHudDef, CitizenCardDef, def } })
+		world.hud = world.client:get("KingdomHudController")
+		world.card = world.client:get("CitizenCardController")
+		world.hud:setViewport(1920, 1022)
+		world:advance(0.6)
+		expect(button(world).Visible).toBe(true)
+		expect(badge(world)).toBe("2")
+		active = false
+		world:advance(0.6)
+		expect(button(world).Visible).toBe(false)
+		expect(world.card:goToWaiting()).toBeNil()
+		active = true
+		world:advance(0.6)
+		expect(button(world).Visible).toBe(true)
+		expect(world.card:goToWaiting()).toBe(1)
 	end)
 
 	it("keeps its count across a rail rebuild (another screen size); no indicator, no button", function()

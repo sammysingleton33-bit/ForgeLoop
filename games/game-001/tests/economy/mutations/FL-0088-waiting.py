@@ -45,6 +45,8 @@ M = [
      "\t\tlocal ob = self._registry:find(\"OnboardingController\")\n"
      "\t\tif ob and outcome.phase == \"answered\" then ob:report(\"CitizenAnswered\") end\n",
      "reports nothing: the server's G9 CitizenAnswered"),
+    ("active() ignored", CARD, "\t\tif not okActive or active ~= true then\n\t\t\treturn nil",
+     "\t\tif false then\n\t\t\treturn nil", "an indicator with active()"),
     ("#162 L1: inactive HUD keeps the handler", H,
      "\t\tself:_syncBack() -- the back key's handler goes with the drawer (FORGE-07 L1 on #162)\n", "",
      "the HUD going inactive"),
