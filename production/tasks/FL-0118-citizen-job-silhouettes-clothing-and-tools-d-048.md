@@ -21,6 +21,7 @@ From the aerial camera each job reads by silhouette: farmer, woodcutter, miner, 
 - User feedback record: `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049 (B15/B16 cycle).
 - D-048 / CONTRACTS G10 v0.4-g9g: up to 11 parts (2 rigid detail parts, no Motor6D). No new look fields on the wire; the detail derives from occupation and kind the client already has.
 - FORGE-02 branch `forge/02-blender-citizen-polish` (no commits yet).
+- **Overlap:** FL-0056 (base rigs and job tools, merged; its task status is stale) is the base. This task is the readability pass on top of it, not a re-do.
 
 ## Requirements
 - 9-part improvements first, then the 11-part variant in its own PR.
