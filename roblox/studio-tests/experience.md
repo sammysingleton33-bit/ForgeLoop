@@ -144,7 +144,7 @@ Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions)
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
 2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
 3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
-4. Tap a plot marker, choose a House or Farm and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
+4. Tap the highlighted plot marker (a small plot: the menu offers a House, not a Farm), choose a House and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
 5. Build a Barracks, then recruit 3 soldiers from the Army rail button (highlighted by the Recruit card), and press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
 6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
 
