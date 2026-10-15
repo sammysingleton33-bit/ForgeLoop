@@ -8,7 +8,8 @@
 	  - every kingdom still has its whole forest, quarry and gold vein, within a woodcutter's reach;
 	  - the plots are still rotated copies of each other for the zone keep-out: the nodes of two kingdoms
 	    differ only by their rotation (fairness, #62 M-1 stays true).
-	The world's decor props (WorldPlan) were already kept out of both and are checked here too.
+	The world's decor props (WorldPlan) were already kept out of both and are checked here too, and so are
+	FORGE-02's per-plot resource nodes (Kit models: FL-0124, #160): none stands within 9 studs of any of them.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -164,20 +165,12 @@ describe("Kingdom/Layout: farm zones and build areas are free of generated nodes
 		end
 	end)
 
-	-- FORGE-02's per-plot resource nodes (world/Layout.lua resourceNodes: Kit models drawn by WorldService, not
-	-- sim nodes) stand on crop fields, build zones and slots: the boulders on fields 3/6/9/12, the berry
-	-- bushes in the east yards, the gold veins beside slot 10. They are FORGE-02's data (handoff
-	-- 2026-10-15-forge-01-to-forge-02-00-world-resource-nodes); this only stops a NEW node from joining them.
-	-- Delete an id from KNOWN when FORGE-02 has moved it (a fixed node passes either way).
-	local KNOWN = {}
-	for _, kid in { "crimson", "azure", "emerald", "gold" } do
-		for _, name in { "stone1", "stone2", "food1", "food2", "gold1" } do
-			KNOWN[`{kid}_{name}`] = true
-		end
-	end
+	-- FORGE-02's per-plot resource nodes (world/Layout.luau resourceNodes: Kit models drawn by WorldService, not
+	-- sim nodes) once stood on crop fields, build zones and slots (the boulders on fields 3/6/9/12, the berry bushes in
+	-- the east yards, the gold veins beside slot 10). FL-0124 (#160) moved them out; this keeps them out.
 	local NODE_REACH = 9 -- Kit/WorldPlan keeps its decor 9 studs from a resource node: its own estimate of a node's size
 
-	it("no further world resource node (Kit model) joins those already standing on a field, zone or slot", function()
+	it("no world resource node (Kit model) stands within 9 studs of a field, zone or slot", function()
 		local list = areas()
 		for _, kid in KingdomsConfig.identities do
 			local plot = WORLD.plots[kid.id]
@@ -190,9 +183,6 @@ describe("Kingdom/Layout: farm zones and build areas are free of generated nodes
 			end
 		end
 		for _, node in WORLD.resourceNodes do
-			if string.sub(node.id, 1, 6) == "heart_" or KNOWN[node.id] then
-				continue
-			end
 			local p = node.cframe.Position
 			for _, area in list do
 				if Footprint.overlapsCircle(area.shape, p.X, p.Z, NODE_REACH, 0) then
