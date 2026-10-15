@@ -26,7 +26,8 @@
 	Remotes (Experience/Remotes.luau, via RemoteService when loaded): Experience.SetSetting (client ->
 	server) and Experience.Settings (a snapshot to the client when the player joins or the profile
 	loads, and after each change). Analytics: SettingChanged (key, value) at most once per key per
-	player every ANALYTICS_GAP seconds, so slider drags do not spend the analytics budget.
+	player every ANALYTICS_GAP seconds, so slider drags do not spend the analytics budget; numeric
+	values are rounded to tenths, so the custom-field combinations stay small.
 ]]
 
 local Schema = require("@game/ReplicatedStorage/Forge/Experience/Schema")
@@ -231,6 +232,9 @@ function SettingsService:_report(player: any, key: string, value: any)
 		return
 	end
 	perPlayer[key] = now
+	if type(value) == "number" then
+		value = math.floor(value * 10 + 0.5) / 10 -- tenths: 11 values per volume, not 101 (events.md §3)
+	end
 	self._analytics:event(player, "SettingChanged", { key = key, value = value })
 end
 

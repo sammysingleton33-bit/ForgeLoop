@@ -7,7 +7,10 @@
 	storehouse, farm, lumbercamp, quarry) at their anchors, facing as the anchors do; the neutral objectives at `objectives[i]` (gameplay numbers from
 	config Objectives), and the contested centre nodes from the world's `heart_*` resource nodes. Each
 	kingdom still gets a generated forest, quarry and gold vein around its keep until FL-0050/FL-0051
-	move the economy onto `Layout.resourceNodes` and the starting buildings onto the plot anchors.
+	move the economy onto `Layout.resourceNodes` and the starting buildings onto the plot anchors. On the
+	world layout they are generated in the keep's own frame (behind it and on its flanks) from one random
+	sequence that every kingdom replays, so the plots, which are rotated copies, get the same nodes at the
+	same distances (#62 M-1, fairness).
 	On the world layout a generated node keeps clear of every building already standing (sim:nodeClear:
 	the keep and starting buildings) and of every build slot (its circle stays placementGap +
 	SLOT_MARGIN from the slot, so any type that fits the slot can be built there). A blocked spot tries
@@ -240,7 +243,9 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 	assert(type(count) == "number" and count >= 1 and count <= 4, "Layout.generate: kingdoms must be 1..4")
 	local spacing = opts.spacing
 	local trees = opts.trees or KingdomsConfig.trees
-	local rng = sim.rng
+	-- world layout: every kingdom draws the same sequence, so its forest, quarry and gold vein sit the same
+	-- way in its own plot (#62 M-1); the square layout keeps drawing from the simulation's rng
+	local worldSeed = if spacing then nil else sim.rng:NextInteger(1, 2147483646)
 
 	local kingdoms = {}
 	for i = 1, count do
@@ -273,8 +278,10 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 			})
 		)
 
-		-- forest behind the keep (away from the centre), spread on an arc
-		local away = math.atan2(kz, kx)
+		-- forest behind the keep, spread on an arc: away from the centre (square layout), or the back of the
+		-- keep in its own frame (world layout: -LookVector = (sin yaw, cos yaw))
+		local rng = if worldSeed then Random.new(worldSeed) else sim.rng
+		local away = if spacing then math.atan2(kz, kx) else math.atan2(math.cos(keepYaw), math.sin(keepYaw))
 		local back = if spacing then nil else away
 		for t = 1, trees do
 			local angle = away + (t / trees - 0.5) * 1.6 + (rng:NextNumber() - 0.5) * 0.15
