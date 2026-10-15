@@ -273,6 +273,16 @@ Before #140 the building panel shows no Move: expected.
 5. Typing in any text box, Backspace deletes text and closes nothing. While placing, B leaves build mode
    (FORGE-04's rule) and closes nothing else.
 
+## U20 — citizens waiting (FL-0115; needs FORGE-04's request badges, #149)
+1. Aerial view, a few citizens with a gold "!" (an open request): under Kingdom on the rail a **Waiting**
+   button (💬) with the number of them on an amber bubble. Nobody waiting: no button.
+2. Tap Waiting: the camera centres on the oldest one and their card opens with Talk; tap again: the next
+   one (wrapping). The count drops when a request is answered.
+3. While placing or moving a building, and while talking to a citizen, the button hides; it comes back
+   afterwards.
+4. Walking view (V), tap Waiting: a notice "Switch to the aerial view to go to them", nothing else moves.
+5. Phone: the button is the icon with the bubble (no word), 48 px, under the other rail buttons.
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 
