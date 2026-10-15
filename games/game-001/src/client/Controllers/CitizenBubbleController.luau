@@ -57,6 +57,9 @@
 	hidden: the conversation panel shows the same words.
 
 		CitizenBubbleController:refresh()   -- re-pick and redraw (Heartbeat calls it every POLL_SEC)
+		CitizenBubbleController:requests() -> { { entityId, position, since } }
+		                                    -- open requests with a rig (also LOD-hidden ones, at their last
+		                                    -- pivot), except the citizen being talked to (B16 indicators)
 		CitizenBubbleController.bubbles     -- the Feedback/Bubbles model (specs)
 		CitizenBubbleController.stats       -- { untargeted } events with no citizen to mark (specs)
 ]]
@@ -371,6 +374,21 @@ function Controller:refresh()
 			self:_draw(id, bubble, forms[id] == "words", interactive)
 		end
 	end
+end
+
+-- Open requests ("!" thoughts) with a rig, for CitizenBubbleIndicatorController (B16): far or LOD-hidden
+-- citizens count too, at their rig's last pivot. The citizen in the conversation is left out.
+function Controller:requests(): { { entityId: number, position: Vector3, since: number } }
+	local talking = self:_talkingTo()
+	local out = {}
+	for _, request in self.bubbles:requests() do
+		local model = self._models[request.entityId]
+		local position = if model ~= nil and request.entityId ~= talking then pivotOf(model) else nil
+		if position ~= nil then
+			table.insert(out, { entityId = request.entityId, position = position, since = request.since })
+		end
+	end
+	return out
 end
 
 -- A tap or click on a bubble: select its citizen, as a tap on the citizen would (G13.6).
