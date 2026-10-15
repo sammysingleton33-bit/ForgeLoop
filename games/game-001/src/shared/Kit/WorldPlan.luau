@@ -6,16 +6,34 @@
 
 	API
 		WorldPlan.terrainOps(layout) -> { Op }          -- in execution order
-		WorldPlan.props(layout, dressed: { [string]: boolean }?) -> { Placement }
+		WorldPlan.props(layout, dressed: { [string]: boolean }?, density: { forest: number?, props: number? }?)
+			-> { Placement }                           -- trim(clear(plan(...)), density)
+		WorldPlan.plan(layout, dressed?) -> { Placement }  -- the generated dressing, before clearance
+		WorldPlan.clear(layout, plan) -> { Placement }     -- drops dressing on the plots' reserved ground (CLEAR)
+		WorldPlan.reservedRects(layout), WorldPlan.rectDistance(rect, x, z), WorldPlan.footprintRadius(assetId)
+		WorldPlan.trim(layout, plan, density?) -> { Placement }   -- the density pass props() ends with
+		WorldPlan.density(layout, override?) -> { forest, props } -- effective knob values, clamped to 0..1
+		WorldPlan.unseen(layout, x, z) -> number                  -- trim score (studs; 0 = never trimmed)
 		WorldPlan.groundHeight(layout, x, z) -> number  -- analytic surface height (studs)
 		WorldPlan.voxels(op) -> number                   -- 4-stud voxels an op touches (frame budget)
 	Op = { kind: "Block" | "Ball" | "Cylinder", material: string, cframe: CFrame, size: Vector3?,
 	       radius: number?, height: number?, feature: string }
 	Placement = { assetId: string, cframe: CFrame, feature: string }
+	Dressing density (D-047, FL-0116): the knob is world/Layout `features.density` ({ forest, props }, the share
+	of each kind kept; WorldPlan.FULL_DENSITY = 1 / 1 rebuilds the valley exactly as plan() + clear() make it).
+	trim() removes, per kind, the least-seen share: farthest from the plot frames, approach roads and heartland
+	(WorldPlan.TRIM) first, so map edges and the ground between kingdoms go before anything near a camera. Plot
+	frames, road bands and the heartland are never thinned; bridges, crops and kingdom dressing never are either.
+	Plot clearance (user playtest 2026-10-13): no tree, bush, rock or flower within CLEAR.margin (4) studs of a
+	farm field, a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured
+	with each prop's footprint and canopy radius (CLEAR.radius); no kingdom dressing on them (nor within the
+	margin of a field).
 
 	Determinism: a Park–Miller PRNG (exact in doubles), never Random, so Lune specs, the preview and
 	Roblox produce identical worlds.
 ]]
+
+local Buildings = require("./Buildings") -- Kit.footprint (Kit itself requires Props, which requires this module)
 
 local WorldPlan = {}
 
@@ -310,7 +328,8 @@ local function assetId(prefix: string, n: number): string
 	return string.format("%s_%02d", prefix, n)
 end
 
-function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placement }
+-- The valley's dressing as generated (bridges, crops, forests, scatter, kingdom dressing), before clear().
+function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placement }
 	local f = layout.features
 	local out: { Placement } = {}
 	local occupied: { { x: number, z: number, r: number } } = {}
@@ -478,6 +497,258 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?): { Placem
 					else assetId("prop_goods", i)
 				place(id, p.X, p.Z, 3, "dressing") -- hand-placed clear of slots, nav and roads (spec)
 			end
+		end
+	end
+	return out
+end
+
+-- ---------------------------------------------------------------- plot clearance (user playtest, 2026-10-13)
+
+-- Farm fields, starting buildings, build slots and roads stay clear of dressing. `margin`: studs of open ground
+-- between natural dressing (trees, bushes, rocks, flowers) and those areas. `radius`: horizontal footprint radius
+-- (studs from the pivot, canopies included) per asset family: the Kit.prop bounds rounded up, with ~1 stud of
+-- slack for trees, bushes and rocks (a canopy or rock outline varies per variant) and 0.1 for hand-placed props.
+-- The PlotClearance spec checks every planned asset against its live Kit.prop bounds, so a prop that grows fails.
+WorldPlan.CLEAR = table.freeze({
+	margin = 4,
+	radius = table.freeze({
+		tree_oak = 12.5,
+		tree_pine = 13,
+		tree_birch = 8,
+		bush = 5,
+		plant_flowers = 3,
+		rock_boulder_s = 5,
+		rock_boulder_m = 8.5,
+		rock_boulder_l = 14.5,
+		prop_banner = 2.4, -- hand-placed kingdom dressing: live bounds + 0.1 only, so just real overlaps go
+		prop_well = 5.3,
+		prop_cart = 7.3,
+		prop_goods = 4.8,
+		farm_haystack = 3.9,
+	}),
+	fallbackRadius = 15, -- an asset family missing from `radius`
+})
+local NATURAL = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
+
+-- Footprint radius of an asset id: the longest id prefix (dropping "_<part>" from the end) in CLEAR.radius.
+function WorldPlan.footprintRadius(id: string): number
+	local key = id
+	while key ~= "" do
+		local r = WorldPlan.CLEAR.radius[key]
+		if r then
+			return r
+		end
+		key = string.match(key, "^(.*)_[^_]*$") or ""
+	end
+	return WorldPlan.CLEAR.fallbackRadius
+end
+
+-- The plots' reserved ground (G10.1 Layout): farm fields, each starting building's largest Kit footprint (levels
+-- upgrade in place; Kit.footprint clamps the level) at its anchor, the build slots and the build zones (plot-local
+-- rectangles turned with the keep, as the sim's Kingdom/Layout reads them), as rectangles { cf, half, kind } (half = half size on X and Z).
+function WorldPlan.reservedRects(layout: any): { { cf: CFrame, half: Vector2, kind: string } }
+	local out = {}
+	for _, field in layout.features.fields do
+		local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
+		table.insert(out, { cf = cf, half = field.size / 2, kind = "field" })
+	end
+	for _, kingdom in KINGDOM_ORDER do
+		local plot = layout.plots[kingdom]
+		for buildingType, anchor in plot.anchors do
+			table.insert(
+				out,
+				{ cf = anchor, half = Buildings.footprint(buildingType, math.huge) / 2, kind = "building" }
+			)
+		end
+		for _, slot in plot.buildSlots or {} do
+			local size = (layout.slotSizes or {})[slot.size] or Vector2.new(46, 40)
+			local cf = CFrame.new(slot.center) * CFrame.Angles(0, slot.rot, 0)
+			table.insert(out, { cf = cf, half = size / 2, kind = "slot" })
+		end
+		for _, zone in plot.buildZones do
+			local cf = CFrame.new(zone.center) * CFrame.Angles(0, yawOf(plot.anchors.keep), 0)
+			table.insert(out, { cf = cf, half = zone.size / 2, kind = "zone" })
+		end
+	end
+	return out
+end
+
+-- Studs from (x, z) to a reserved rectangle (0 inside).
+function WorldPlan.rectDistance(rect: { cf: CFrame, half: Vector2 }, x: number, z: number): number
+	local p = rect.cf:PointToObjectSpace(Vector3.new(x, rect.cf.Position.Y, z))
+	local dx, dz = math.max(0, math.abs(p.X) - rect.half.X), math.max(0, math.abs(p.Z) - rect.half.Y)
+	return math.sqrt(dx * dx + dz * dz)
+end
+
+-- Remove dressing that would stand on reserved ground: natural dressing within CLEAR.margin of a field, a
+-- starting building, a slot, a build zone or a road; kingdom dressing (hand-placed in the yard and along the
+-- avenue, meant to stand in the build zones) within the margin of a field or overlapping a building, a slot or a road. Removal only, so the rest is exactly the plan.
+function WorldPlan.clear(layout: any, plan: { Placement }): { Placement }
+	local rects = WorldPlan.reservedRects(layout)
+	local margin = WorldPlan.CLEAR.margin
+	local out: { Placement } = {}
+	for _, p in plan do
+		local natural = NATURAL[p.feature]
+		local keep = true
+		if natural or p.feature == "dressing" then
+			local pos = p.cframe.Position
+			local r = WorldPlan.footprintRadius(p.assetId)
+			for _, rect in rects do
+				-- the yard well, banners and goods are meant to stand in the build zones; everything keeps off the rest
+				if natural or rect.kind ~= "zone" then
+					local m = if natural or rect.kind == "field" then margin else 0
+					if WorldPlan.rectDistance(rect, pos.X, pos.Z) < r + m then
+						keep = false
+						break
+					end
+				end
+			end
+			for _, road in layout.features.roads do
+				local m = if natural then margin else 0
+				if keep and distToPolyline(pos.X, pos.Z, road.points) < road.width / 2 + r + m then
+					keep = false
+				end
+			end
+		end
+		if keep then
+			table.insert(out, p)
+		end
+	end
+	return out
+end
+
+-- The dressing WorldService places: the plan, cleared off the plots' reserved ground, then thinned to the
+-- density knob (D-047, below).
+function WorldPlan.props(layout: any, dressed: { [string]: boolean }?, density: { [string]: number }?): { Placement }
+	return WorldPlan.trim(layout, WorldPlan.clear(layout, WorldPlan.plan(layout, dressed)), density)
+end
+
+-- ---------------------------------------------------------------- dressing density (D-047)
+
+-- The plan above is the untrimmed valley. The trim only removes placements from it, never moves or adds one,
+-- and draws from its own PRNG, so density 1.0 returns that plan unchanged and every trimmed world is a subset.
+WorldPlan.FULL_DENSITY = table.freeze({ forest = 1, props = 1 })
+-- the kinds the knob thins (each on its own) and the knob that thins them; bridges, crops and kingdom dressing
+-- are never trimmed
+local TRIM_KINDS = { "forest", "lone_tree", "bush", "rocks", "flowers" }
+local TRIM_KNOB = { forest = "forest", lone_tree = "props", bush = "props", rocks = "props", flowers = "props" }
+WorldPlan.TRIM = table.freeze({
+	frameRadius = 200, -- plot framing: studs around the plot's view line; never thinned
+	frameReach = 220, -- the view line runs from the plot centre (keep frame z -40) this far out of the keep's front,
+	-- where the throne and the default overview camera (behind the keep, looking out) see most
+	roadBand = 45, -- approach roads: studs either side of a road line; never thinned
+	heartRadius = 170, -- heartland: studs around each objective (the valley centre camera); never thinned
+	jitter = 90, -- studs of deterministic noise on the score, so thinning fades in instead of cutting a line
+	standSpread = 1.6, -- a forest stand loses at most this times the forest cut (0.75 -> 40 %), so none goes bald
+})
+
+-- The effective knob: `override` over the layout's features.density over full density, each clamped to 0..1.
+function WorldPlan.density(layout: any, override: { [string]: number }?): { forest: number, props: number }
+	local base = layout.features.density or WorldPlan.FULL_DENSITY
+	local o = override or {}
+	return {
+		forest = math.clamp(o.forest or base.forest or 1, 0, 1),
+		props = math.clamp(o.props or base.props or 1, 0, 1),
+	}
+end
+
+-- How far (studs) a ground point lies from what the throne and overview cameras look at: 0 inside a plot frame,
+-- on an approach road band or in the heartland, and largest at the map edges and between the kingdoms.
+function WorldPlan.unseen(layout: any, x: number, z: number): number
+	local t = WorldPlan.TRIM
+	local attention = math.huge
+	for _, kingdom in KINGDOM_ORDER do
+		local keep = layout.plots[kingdom].anchors.keep
+		local a, b = (keep * CFrame.new(0, 0, -40)).Position, (keep * CFrame.new(0, 0, -40 - t.frameReach)).Position
+		attention =
+			math.min(attention, distToPolyline(x, z, { Vector2.new(a.X, a.Z), Vector2.new(b.X, b.Z) }) - t.frameRadius)
+	end
+	for _, road in layout.features.roads do
+		attention = math.min(attention, distToPolyline(x, z, road.points) - t.roadBand)
+	end
+	for _, o in layout.objectives do
+		local p = o.cframe.Position
+		attention = math.min(attention, math.sqrt((x - p.X) ^ 2 + (z - p.Z) ^ 2) - t.heartRadius)
+	end
+	return math.max(0, attention)
+end
+
+-- Index of the forest stand a tree stands in (stands do not overlap), or 0.
+local function standOf(layout: any, x: number, z: number): number
+	for s, forest in layout.features.forests do
+		if (x - forest.center.X) ^ 2 + (z - forest.center.Y) ^ 2 <= forest.radius * forest.radius then
+			return s
+		end
+	end
+	return 0
+end
+
+-- Thin the dressing in `plan` to `density` (default: the layout's knob). Per kind, round((1 - d) * n) placements
+-- go, the least seen first (highest unseen distance + jitter). Placements in a plot frame, on a road band or in the
+-- heartland (unseen 0) are never removed, so a kind keeps more than d when the others run out; no forest stand
+-- loses more than standSpread times the forest cut.
+function WorldPlan.trim(layout: any, plan: { Placement }, density: { [string]: number }?): { Placement }
+	local d = WorldPlan.density(layout, density)
+	if d.forest >= 1 and d.props >= 1 then
+		return plan
+	end
+	local t = WorldPlan.TRIM
+	local noise = prng(4747) -- its own stream: the plan's PRNG is never touched
+	local byKind: { [string]: { number } } = {}
+	local jitter: { [number]: number } = {}
+	for i, p in plan do
+		if TRIM_KNOB[p.feature] then
+			byKind[p.feature] = byKind[p.feature] or {}
+			table.insert(byKind[p.feature], i)
+			jitter[i] = noise.next() * t.jitter
+		end
+	end
+	local dropped: { [number]: boolean } = {}
+	for _, kind in TRIM_KINDS do
+		local list = byKind[kind] or {}
+		local cut = 1 - d[TRIM_KNOB[kind]]
+		local candidates: { { i: number, score: number } } = {}
+		local stand: { [number]: number } = {} -- forest trees only
+		local cap: { [number]: number } = {}
+		for _, i in list do
+			local pos = plan[i].cframe.Position
+			local unseen = WorldPlan.unseen(layout, pos.X, pos.Z)
+			if unseen > 0 then
+				table.insert(candidates, { i = i, score = unseen + jitter[i] })
+			end
+			if kind == "forest" then
+				stand[i] = standOf(layout, pos.X, pos.Z)
+				cap[stand[i]] = (cap[stand[i]] or 0) + 1
+			end
+		end
+		for s, n in cap do
+			cap[s] = math.floor(n * math.min(1, cut * t.standSpread) + 0.5)
+		end
+		table.sort(candidates, function(a, b)
+			if a.score ~= b.score then
+				return a.score > b.score
+			end
+			return a.i < b.i
+		end)
+		local left = math.floor(cut * #list + 0.5)
+		for _, c in candidates do
+			if left <= 0 then
+				break
+			end
+			local s = stand[c.i]
+			if s == nil or cap[s] > 0 then
+				dropped[c.i] = true
+				left -= 1
+				if s ~= nil then
+					cap[s] -= 1
+				end
+			end
+		end
+	end
+	local out: { Placement } = {}
+	for i, p in plan do
+		if not dropped[i] then
+			table.insert(out, p)
 		end
 	end
 	return out

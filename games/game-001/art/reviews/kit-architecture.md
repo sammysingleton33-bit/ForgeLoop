@@ -236,3 +236,39 @@ fewer, larger plinth facing stones.
 - Studio: SmoothPlastic emblems on Fabric cloth, Future lighting, and depth precision of the 0.015 stacking at 220 studs.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
+
+## Round: world dressing trim and plot clearance (FL-0116, D-047 amendment; D-019 renders)
+
+**What changed** (`WorldPlan`, `world/Layout`, `WorldService`; buildings, nodes, tags and gameplay untouched):
+- **Density knob** `world/Layout` `features.density = { forest = 0.75, props = 0.5 }` (share kept). `WorldPlan.FULL_DENSITY`
+  (1 / 1) and `service.density` override it. 1.0 rebuilds the untrimmed valley exactly (pinned by `WorldService.spec`).
+- **Trim, least seen first:** per kind, the highest "unseen" score goes first: distance from each plot's view line
+  (keep door out to the valley), the approach roads and the heartland, plus 90 studs of deterministic jitter. Plot
+  framing, road bands and the heartland are never thinned; no forest stand loses more than 1.6 x the forest cut.
+- **Plot clearance guard** (`PlotClearance.spec`): no tree, bush, rock, flower or prop within 4 studs of a crop field,
+  a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured with each prop's
+  live `Kit.prop` bounds. 18 placements intruded before (3 on or beside a field), 0 after.
+
+**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 -> 8,245 (clearance, 15 placements) -> 6,105 (trim).
+Trimmed: forests 3,879 -> 2,849 (221 -> 166 trees, -25 %), lone trees 798 -> 457, bushes 890 -> 465, rocks 684 -> 340,
+flowers 243 (all inside plot framing, untouched). The two forests in front of the plots stay whole.
+
+**Images** (`img/`, Cycles 32 samples, Roblox 70 deg FOV; before = main, after = this branch):
+- `world_trim_aerial_plot_*`: crimson plot, 50 deg, 170 studs (the throne's default view).
+- `world_trim_aerial_valley_*`: valley centre, 50 deg, 170 studs, watchtower in frame.
+- `world_trim_throne_*`: eye height at the keep door, looking out over the plot and the approach road.
+- `world_trim_top_*`: whole valley from above.
+- `world_trim_farm_aerial_*`, `world_trim_farm_ground_*`: gold's starting farm, from the air (150 studs) and from the plot's back edge.
+
+**Verdict, looked at by FORGE-02** (one round; no regression found, fix noted below):
+- Plot views (aerial plot, throne, farm): indistinguishable apart from a few missing props. The framing forests beside
+  the plot keep their trees.
+- Top view: the outer forests and the scatter between the kingdoms are visibly lighter; the valley still reads populated,
+  and the four plots, both mid-valley forests and the mountain ring are unchanged.
+- Valley centre: bare before and after (a handful of bushes and rocks around the tower); the trim did not make it worse.
+- Visible side effects of the clearance: one gate banner per kingdom is gone (its pole stood 4.8 studs inside the road
+  where the avenue bends, so the pair is lopsided), the crate stack inside the storehouse footprint is gone, and a
+  birch beside the road in the heartland. Moving that banner is a later hand-placement fix, not a removal.
+
+**Unverified:** Studio (real mesh bounds against `WorldPlan.CLEAR.radius`, StreamingEnabled, phone frame rate); a phone
+test decides whether the knob goes back up. The render uses the world dump, which has no sim-generated nodes.

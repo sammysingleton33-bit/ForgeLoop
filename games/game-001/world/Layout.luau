@@ -15,6 +15,7 @@
 	Each plot is a small town: the keep at the back, an avenue from the keep door through the yard to the
 	gate, a cross street through the yard with the slots on it, the starting buildings on the flanks.
 	Visual features (`features`) are FORGE-02's own shape, read only by WorldService.
+	The dressing density knob (D-047) lives here: `features.density` (forest, props), see below.
 ]]
 
 local CENTRE = Vector3.new(40, 0, 0)
@@ -451,6 +452,11 @@ local features = {
 		{ center = Vector2.new(560, -500), radius = 80, count = 16, species = { "tree_pine", "tree_birch" } },
 	},
 	fields = plotFields, -- { center: Vector2, size: Vector2, yaw: number, crop: string }
+	-- Dressing density knob (D-047, FL-0116): the share of each dressing kind WorldPlan.props keeps, the least
+	-- seen first to go (map edges, the ground between kingdoms; plot framing and approach roads stay dense).
+	-- forest: trees in the forest stands; props: lone trees, bushes, rocks and flowers, each kind on its own.
+	-- 1.0 for both rebuilds the untrimmed valley (WorldService spec pins it); restore here after a phone test.
+	density = { forest = 0.75, props = 0.5 },
 }
 
 return {
