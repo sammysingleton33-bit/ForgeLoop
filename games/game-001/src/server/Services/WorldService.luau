@@ -252,7 +252,7 @@ function WorldService:_build()
 	local propsFolder = self:_folder("Props", root)
 
 	-- terrain, chunked by voxel budget
-	local ops = WorldPlan.terrainOps(layout)
+	local ops = WorldPlan.terrainOps(layout, self.density)
 	local budget = 0
 	for _, op in ops do
 		local v = WorldPlan.voxels(op)

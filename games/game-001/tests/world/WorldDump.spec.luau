@@ -83,8 +83,9 @@ local function surfaceMaterial(x: number, z: number, h: number): string
 	if h > 52 then
 		return "Rock"
 	end
-	for _, forest in f.forests do
-		if (x - forest.center.X) ^ 2 + (z - forest.center.Y) ^ 2 < (forest.radius * 1.05) ^ 2 then
+	local floors = WorldPlan.forestFloors(Layout) -- the same leafy floors WorldService fills (follow the trim)
+	for _, floor in floors do
+		if (x - floor.x) ^ 2 + (z - floor.z) ^ 2 < floor.r ^ 2 then
 			return "LeafyGrass"
 		end
 	end

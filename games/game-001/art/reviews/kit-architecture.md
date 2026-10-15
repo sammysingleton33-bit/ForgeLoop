@@ -245,13 +245,17 @@ fewer, larger plinth facing stones.
 - **Trim, least seen first:** per kind, the highest "unseen" score goes first: distance from each plot's view line
   (keep door out to the valley), the approach roads and the heartland, plus 90 studs of deterministic jitter. Plot
   framing, road bands and the heartland are never thinned; no forest stand loses more than 1.6 x the forest cut.
+  Within a stand the outermost trees go first, so it keeps its middle, and the stand's leafy ground disc (terrain
+  `forest_floor`, `WorldPlan.forestFloors`) is re-sized to a circle around the trees that stay (52-89 % of today's
+  area for the thinned stands; untouched stands keep today's disc exactly).
 - **Plot clearance guard** (`PlotClearance.spec`): no tree, bush, rock, flower or prop within 4 studs of a crop field,
   a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured with each prop's
   live `Kit.prop` bounds. 18 placements intruded before (3 on or beside a field), 0 after.
 
-**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 -> 8,245 (clearance, 15 placements) -> 6,105 (trim).
-Trimmed: forests 3,879 -> 2,849 (221 -> 166 trees, -25 %), lone trees 798 -> 457, bushes 890 -> 465, rocks 684 -> 340,
-flowers 243 (all inside plot framing, untouched). The two forests in front of the plots stay whole.
+**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 -> 8,256 (clearance: 15 placements removed, 8 hand-placed
+props moved) -> 6,142 (trim). Trimmed: forests 3,879 -> 2,871 (221 -> 166 trees, -25 %), lone trees 798 -> 457,
+bushes 890 -> 465, rocks 676 -> 336, flowers 243 (all inside plot framing, untouched). The two forests in front of
+the plots stay whole.
 
 **Images** (`img/`, Cycles 32 samples, Roblox 70 deg FOV; before = main, after = this branch):
 - `world_trim_aerial_plot_*`: crimson plot, 50 deg, 170 studs (the throne's default view).
@@ -266,9 +270,11 @@ flowers 243 (all inside plot framing, untouched). The two forests in front of th
 - Top view: the outer forests and the scatter between the kingdoms are visibly lighter; the valley still reads populated,
   and the four plots, both mid-valley forests and the mountain ring are unchanged.
 - Valley centre: bare before and after (a handful of bushes and rocks around the tower); the trim did not make it worse.
-- Visible side effects of the clearance: one gate banner per kingdom is gone (its pole stood 4.8 studs inside the road
-  where the avenue bends, so the pair is lopsided), the crate stack inside the storehouse footprint is gone, and a
-  birch beside the road in the heartland. Moving that banner is a later hand-placement fix, not a removal.
+- Round 2 (fresh-context review found two defects, both fixed): hand-placed kingdom dressing is now moved to the
+  nearest legal spot instead of deleted (the gate banner whose pole stood in the road bends moves 5.5-7.5 studs
+  clear, so the pair flanks the avenue again; the crate stack beside the storehouse moves 1.25 studs), and the dark
+  ground discs follow the thinned stands (top view). Also fixed: a boulder against a tree trunk (valley view).
+  A birch beside the heartland road is still gone (road clearance, canopy + 4 studs).
 
 **Unverified:** Studio (real mesh bounds against `WorldPlan.CLEAR.radius`, StreamingEnabled, phone frame rate); a phone
 test decides whether the knob goes back up. The render uses the world dump, which has no sim-generated nodes.

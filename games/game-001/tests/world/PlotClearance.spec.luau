@@ -226,20 +226,102 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect(ids.prop_banner_red_01).toBe(true)
 	end)
 
-	it("removes only dressing: the cleared plan is the generated plan minus those placements, in order", function()
+	it("removes natural dressing only: hand-placed kingdom dressing is moved clear, never deleted", function()
 		local plan = WorldPlan.plan(Layout, ALL)
 		local cleared = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY) -- clearance only, no trim
 		expect(#cleared).toBeLessThan(#plan)
-		local j = 1
+		local j, nudged, farthest = 1, 0, 0
 		for _, p in plan do
 			local q = cleared[j]
-			if q and q.assetId == p.assetId and q.feature == p.feature and q.cframe == p.cframe then
+			local moved = if q
+					and q.assetId == p.assetId
+					and q.feature == p.feature
+				then (q.cframe.Position - p.cframe.Position).Magnitude
+				else math.huge
+			if moved < 1e-6 then
+				j += 1 -- kept in place
+			elseif p.feature == "dressing" and moved <= 8 + 1e-6 then
+				expect((q.cframe.LookVector - p.cframe.LookVector).Magnitude).toBeLessThan(1e-6) -- same facing
 				j += 1
+				nudged += 1
+				farthest = math.max(farthest, moved)
 			else
-				expect(NATURAL[p.feature] == true or p.feature == "dressing").toBe(true) -- never a bridge or crops
+				expect(NATURAL[p.feature] == true).toBe(true) -- removed: never a bridge, crops or kingdom dressing
 			end
 		end
 		expect(j).toBe(#cleared + 1)
+		expect(nudged).toBeGreaterThan(0)
+		-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, the well, 2 goods, a haystack, a cart
+		local function dressing(list: { any }): number
+			local n = 0
+			for _, p in list do
+				n += if p.feature == "dressing" then 1 else 0
+			end
+			return n
+		end
+		expect(dressing(cleared)).toBe(dressing(plan))
+	end)
+
+	it("keeps every kingdom's four gate banners and its crate stack, each clear of roads and buildings", function()
+		local banners, goods = 0, 0
+		for _, p in WorldPlan.props(Layout, ALL) do
+			banners += if string.sub(p.assetId, 1, 11) == "prop_banner" then 1 else 0
+			goods += if p.assetId == "prop_goods_01" then 1 else 0
+		end
+		expect(banners).toBe(16)
+		expect(goods).toBe(4)
+	end)
+
+	it("keeps boulders off tree trunks and bushes (decor against decor)", function()
+		local TRUNK, BUSH = 3, 2 -- studs: a trunk, and a bush's centre
+		local function bad(placements: { any }): string
+			local trees, bushes, lines = {}, {}, {}
+			for _, p in placements do
+				if p.feature == "forest" or p.feature == "lone_tree" then
+					table.insert(trees, p)
+				elseif p.feature == "bush" then
+					table.insert(bushes, p)
+				end
+			end
+			for _, rock in placements do
+				if rock.feature == "rocks" then
+					local r, pos = liveRadius(rock.assetId), rock.cframe.Position
+					for _, t in trees do
+						if
+							Vector2.new(pos.X - t.cframe.Position.X, pos.Z - t.cframe.Position.Z).Magnitude
+							< r + TRUNK
+						then
+							table.insert(
+								lines,
+								`{rock.assetId} at ({math.floor(pos.X)}, {math.floor(pos.Z)}) on {t.assetId}`
+							)
+						end
+					end
+					for _, b in bushes do
+						if
+							Vector2.new(pos.X - b.cframe.Position.X, pos.Z - b.cframe.Position.Z).Magnitude
+							< r + BUSH
+						then
+							table.insert(
+								lines,
+								`{rock.assetId} at ({math.floor(pos.X)}, {math.floor(pos.Z)}) on {b.assetId}`
+							)
+						end
+					end
+				end
+			end
+			return table.concat(lines, "; ")
+		end
+		expect(bad(WorldPlan.props(Layout, ALL))).toBe("")
+		expect(bad(WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY))).toBe("")
+		-- the checker sees a boulder against a trunk, and clear() removes it
+		local tree = { assetId = "tree_oak_01", cframe = CFrame.new(-480, 0, 60), feature = "lone_tree" }
+		-- 10 studs off the trunk: beyond a medium boulder's own reach (7.3 live, 8.5 documented), within a trunk's 3 more
+		local rock = { assetId = "rock_boulder_m_01", cframe = CFrame.new(-480 + 10, 0, 60), feature = "rocks" }
+		expect(bad({ tree, rock })).never.toBe("")
+		local kept = WorldPlan.clear(Layout, { tree, rock })
+		expect(#kept).toBe(1)
+		expect(kept[1].feature).toBe("lone_tree")
 	end)
 
 	it("sizes CLEAR.radius to the live Kit.prop bounds of every planned asset", function()

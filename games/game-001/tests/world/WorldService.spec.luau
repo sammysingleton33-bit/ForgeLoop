@@ -330,7 +330,7 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		expect(svc:isReady()).toBe(true)
 		-- descendants include attachments and folders, so allow a little slack over the part budget
 		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
-		-- D-047 / FL-0116: about 6,100 with the trimmed dressing (8,245 untrimmed); restoring the density knob after a
+		-- D-047 / FL-0116: about 6,140 with the trimmed dressing (8,256 untrimmed); restoring the density knob after a
 		-- phone test means raising this with it, since the 27k all-built ceiling depends on it
 		expect(svc.stats.parts).toBeLessThan(6400)
 		svc:destroy()
@@ -383,21 +383,34 @@ describe("Dressing density knob (D-047)", function()
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
 			expect(#one).toBe(603)
-			expect(fingerprint(one)).toBe(2016544125)
+			expect(fingerprint(one)).toBe(216597717)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(624)
-			expect(fingerprint(all)).toBe(1343259299)
+			expect(#all).toBe(630)
+			expect(fingerprint(all)).toBe(329609882)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
 			expect(svc.stats.props).toBe(603)
-			expect(svc.stats.parts).toBe(8245)
+			expect(svc.stats.parts).toBe(8256)
+			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
+			local forests = Layout.features.forests
+			local floorOps = 0
+			for _, call in svc.terrain.calls do
+				if string.sub(call.method, 1, 4) == "Fill" and call.op.feature == "forest_floor" then
+					floorOps += 1
+					local forest = forests[floorOps]
+					expect(call.op.radius).toBeNear(forest.radius * 1.05, 1e-6)
+					expect(call.op.cframe.Position.X).toBeNear(forest.center.X, 1e-6)
+					expect(call.op.cframe.Position.Z).toBeNear(forest.center.Y, 1e-6)
+				end
+			end
+			expect(floorOps).toBe(#forests)
 			svc:destroy()
 		end
 	)
@@ -488,6 +501,92 @@ describe("Dressing density knob (D-047)", function()
 		expect(table.concat(bad, "; ")).toBe("")
 		expect(edge.n).toBeGreaterThan(0)
 		expect(edge.cut / edge.n).toBeGreaterThan(2 * inside.cut / inside.n)
+	end)
+
+	it("thins each stand from the outside in, so the stand keeps its middle", function()
+		local forests = Layout.features.forests
+		local full = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
+		local kept = {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			kept[placementKey(p)] = true
+		end
+		local checked = 0
+		for _, forest in forests do
+			local keptSum, keptN, lostSum, lostN = 0, 0, 0, 0
+			for _, p in full do
+				local r = (Vector2.new(p.cframe.Position.X, p.cframe.Position.Z) - forest.center).Magnitude
+				if p.feature == "forest" and r <= forest.radius then
+					if kept[placementKey(p)] then
+						keptSum, keptN = keptSum + r, keptN + 1
+					else
+						lostSum, lostN = lostSum + r, lostN + 1
+					end
+				end
+			end
+			if lostN >= 3 then
+				checked += 1
+				expect(lostSum / lostN).toBeGreaterThan(keptSum / keptN) -- what goes was further out than what stays
+			end
+		end
+		expect(checked).toBeGreaterThan(4)
+	end)
+
+	it("sizes each thinned stand's ground disc to the trees that stay (forest floors)", function()
+		local floors, today = WorldPlan.forestFloors(Layout), WorldPlan.forestFloors(Layout, WorldPlan.FULL_DENSITY)
+		local trees, full = {}, {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			if p.feature == "forest" then
+				table.insert(trees, Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
+			end
+		end
+		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
+			if p.feature == "forest" then
+				table.insert(full, Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
+			end
+		end
+		local shrunk = 0
+		for s, forest in Layout.features.forests do
+			expect(today[s].r).toBeNear(forest.radius * 1.05, 1e-6) -- density 1.0 is today's disc
+			local centre = Vector2.new(floors[s].x, floors[s].z)
+			local inside, far, before = 0, 0, 0
+			for _, t in trees do
+				if (t - forest.center).Magnitude <= forest.radius then
+					inside += 1
+					far = math.max(far, (t - centre).Magnitude)
+				end
+			end
+			for _, t in full do
+				before += if (t - forest.center).Magnitude <= forest.radius then 1 else 0
+			end
+			expect(floors[s].r).toBeLessThanOrEqual(today[s].r + 1e-6)
+			expect(far).toBeLessThanOrEqual(floors[s].r) -- every tree that stays stands on the disc
+			if inside < before then
+				shrunk += 1
+				-- it ends 5 % of the stand radius beyond its outermost tree, not further, and is smaller than today's
+				expect(floors[s].r - far).toBeNear(forest.radius * 0.05, 0.5)
+				expect(floors[s].r).toBeLessThan(today[s].r)
+			else
+				expect(floors[s].r).toBeNear(today[s].r, 1e-6)
+			end
+		end
+		expect(shrunk).toBeGreaterThan(4)
+	end)
+
+	it("fills the terrain with the thinned floors (WorldService)", function()
+		local floors = WorldPlan.forestFloors(Layout)
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		local n = 0
+		for _, call in svc.terrain.calls do
+			if string.sub(call.method, 1, 4) == "Fill" and call.op.feature == "forest_floor" then
+				n += 1
+				expect(call.op.radius).toBeNear(floors[n].r, 1e-6)
+				expect(call.op.cframe.Position.X).toBeNear(floors[n].x, 1e-6)
+			end
+		end
+		expect(n).toBe(#Layout.features.forests)
+		svc:destroy()
 	end)
 
 	it("thins each kind to its knob and no forest stand by more than 1.6 times the forest cut", function()
