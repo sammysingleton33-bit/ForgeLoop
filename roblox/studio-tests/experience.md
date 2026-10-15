@@ -253,6 +253,12 @@ Steps
 10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
 11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
 12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
+13. Off-screen requests (B16): run `vs1.request` a few times, then pan the aerial view away from those citizens until their badges leave the screen. A gold "!" badge appears at the screen edge for each, with a gold tip pointing towards the citizen, never under the top bar or a phone's notch; requests that lie the same way share one badge with a count. Tap one: the camera glides there and the citizen's card opens. Pan away again and press the cycle key (table): it goes to the oldest open request, then the next, and wraps; the previous key goes back. While placing a building, in walk mode and while the conversation stage shows, there are no edge badges and the keys do nothing.
+
+| Action | Windows | Mac | Gamepad |
+|---|---|---|---|
+| Next open request | F | F | DPad right |
+| Previous open request | Shift+F | Shift+F | DPad left |
 
 Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
 ```lua
@@ -269,12 +275,28 @@ return #out .. " bubbles\n" .. table.concat(out, "\n")
 ```
 Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
 
-Pass: steps 1–12 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
+Probe for step 13 (Client context, read-only): the edge badges now.
+```lua
+local out = {}
+local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("ForgeRequestIndicators")
+for _, b in (gui and gui:GetChildren() or {}) do
+	if b:IsA("TextButton") and b.Visible then
+		local count = b:FindFirstChild("Count")
+		table.insert(out, string.format("id=%s at=(%d,%d) angle=%d count=%s", tostring(b:GetAttribute("EntityId")),
+			b.AbsolutePosition.X, b.AbsolutePosition.Y, b.Pointer.Rotation, count.Visible and count.Text or "1"))
+	end
+end
+return (gui and "area " .. tostring(gui.AbsoluteSize) or "no indicator GUI") .. "\n" .. table.concat(out, "\n")
+```
+Expected: one line per off-screen request group, every badge inside `area`; none in build mode, walk mode or a conversation.
+
+Pass: steps 1–13 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
 - 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
+- 2026-10-15 FORGE-04: FL-0115 (B16) off-screen request badges and the cycle key (step 13, its probe; Windows/Mac/gamepad keys, D-049 (4)).
 - 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
