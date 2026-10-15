@@ -42,6 +42,9 @@ Additive to the contract you already have (v0.4-g9j); no breaking change.
 ## What stays with a moved building
 Id, kind, level, hit points, construction/upgrade progress and paid cost, `placedBy`, recruit queue, workers' claims. Nothing is charged, refunded, completed or re-placed. Builders, farm workers and sleepers at it walk to its new place. A free move frees its slot id; `MoveToSlot` takes the new slot in the same command.
 
+## For FORGE-02 (via FORGE-00)
+`Layout.keepOutAreas()` returns every slot, build zone and crop field a generated node keeps out of (what `clearSpot` uses), for the dressing-clearance spec to read instead of a copy. `Layout.reservedAreas()` is a different list: the no-build areas of CONTRACTS g9j (crop fields, plot roads, spawn pads).
+
 ## Rules that changed for Build.Place (FORGE-03/04/05 please read)
 - The yard crossroads and the avenue straight ahead of the keep door are now `blocked`. `FirstPlayable.spec` placed its house at keep + (30, 30): that overlaps crimson's spawn pad and the first avenue segment (checked), so it now asks the sim for a free spot (that spec is mine).
 - **Please check hard-coded placement positions** in your tutorials, onboarding and QA scripts (`config/Onboarding.luau` steps, any "place a house here" hint): if one points at the avenue, a crop field or the spawn pad, it will answer `blocked`.

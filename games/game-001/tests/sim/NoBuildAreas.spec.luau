@@ -49,6 +49,27 @@ describe("Layout.reservedAreas: no-build areas (G13.9 v0.4-g9j)", function()
 		expect(#Layout.reservedAreas() > 0).toBe(true)
 	end)
 
+	it("keepOutAreas lists every slot, build zone and crop field a generated node keeps out of", function()
+		local slots, zones = 0, 0
+		for _, identity in KingdomsConfig.identities do
+			local plot = WORLD.plots[identity.id]
+			slots += #plot.buildSlots
+			zones += #plot.buildZones
+		end
+		local areas = Layout.keepOutAreas()
+		expect(#areas).toBe(slots + zones + #WORLD.features.fields)
+		expect(#areas > 60).toBe(true)
+		table.clear(areas) -- a copy
+		expect(#Layout.keepOutAreas() > 60).toBe(true)
+		-- a slot centre is in it; the crop fields are in both lists
+		local slot = WORLD.plots.crimson.buildSlots[1]
+		local found = false
+		for _, area in Layout.keepOutAreas() do
+			found = found or Footprint.overlapsCircle(area, slot.center.X, slot.center.Z, 0.01, 0)
+		end
+		expect(found).toBe(true)
+	end)
+
 	it("covers the spawn point, the avenue and the cross street of every plot, and not the yard or the keep", function()
 		for _, identity in KingdomsConfig.identities do
 			local kid = identity.id

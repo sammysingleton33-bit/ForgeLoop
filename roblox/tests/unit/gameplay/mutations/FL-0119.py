@@ -58,6 +58,7 @@ M = [
  # --- the no-build areas
  ("FL-0119", LAY, 'for _, field in WorldLayout.features.fields do\n	table.insert(RESERVED,', 'for _, field in {} do\n	table.insert(RESERVED,', "NoBuildAreas", "lists 12 crop fields"),
  ("FL-0119", LAY, '		sim.noBuild = Layout.reservedAreas()', '		sim.noBuild = {}', "NoBuildAreas", "gives them to the simulation"),
+ ("FL-0119", LAY, '	return table.clone(SLOTS)\nend', '	return {}\nend', "NoBuildAreas", "keepOutAreas lists every slot"),
  ("FL-0119", LAY, 'local SPAWN_PAD, PLOT_ROAD_REACH = 16, 130', 'local SPAWN_PAD, PLOT_ROAD_REACH = 16, 10', "NoBuildAreas", "covers the spawn point, the avenue"),
  ("FL-0119", LAY, 'local SPAWN_PAD, PLOT_ROAD_REACH = 16, 130', 'local SPAWN_PAD, PLOT_ROAD_REACH = 1, 130', "NoBuildAreas", "covers the spawn point, the avenue"),
 ]

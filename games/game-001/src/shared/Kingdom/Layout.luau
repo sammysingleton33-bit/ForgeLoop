@@ -30,6 +30,7 @@
 			options.populate   false: kingdoms start without citizens (sim:populate later; slice mode)
 		Layout.bounds(spacing?): Bounds            -- map bounds: the world's, or ones that fit the square layout
 		Layout.boundsFor(spacing): Bounds          -- (square layout)
+		Layout.keepOutAreas(): { Shape }           -- slots, build zones and crop fields: where generated nodes keep out
 		Layout.reservedAreas(): { Shape }          -- no-build areas: crop fields, plot roads, spawn pads (G13.9 v0.4-g9j);
 		                                           generate() sets them as sim.noBuild on the world layout
 		Layout.SLOT_MARGIN: number                 -- extra studs between a generated node's clearance and a slot
@@ -270,6 +271,13 @@ function Layout.groundY(x: number, z: number): number
 		end
 	end
 	return y
+end
+
+-- Every area a generated node keeps out of (clearSpot's list): each plot's build slots and build zones and the
+-- world's crop fields, as placement shapes (read-only). FORGE-02's dressing-clearance spec reads this one list
+-- instead of keeping a copy.
+function Layout.keepOutAreas(): { Footprint.Shape }
+	return table.clone(SLOTS)
 end
 
 -- The no-build areas above as placement shapes (read-only). Layout.generate hands them to the simulation on
