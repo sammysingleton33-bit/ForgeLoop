@@ -33,7 +33,7 @@ The user gets a build where selecting a citizen plays the full cinematic convers
 - Studio (user): the new rows, with screenshots or a recording.
 
 ## Completion criteria
-- [x] Rows added
+- [ ] Rows added
 - [ ] B-build delivered
 - [ ] User Studio result recorded
 
