@@ -415,3 +415,34 @@ tufts in six rows with a green-to-gold gradient and the 44-part constant `WHEAT_
 placement, and whether FL-0116's measured headroom (at least 600 parts under 27k) actually holds; if not the wheat commit is the one to drop or the
 density knob pays.
 
+### Fresh-context image-only D-019 re-score of round 2 (2026-10-15)
+
+Reviewer: a fresh Claude Code session (`session_01PtRhY6SNSMufurC4qvRb26`, claude-sonnet-5-5) started on this branch with only the five images named
+below, told not to read any source, markdown, log or history, and to score the right-hand (round 2) panels strictly; its reply is recorded here
+as given, not edited. Images: `env_polish_r2_trees_gameplay.jpg`, `env_polish_r2_trees_aerial.jpg`, `env_polish_r2_oaks_pines_birches.jpg`,
+`env_polish_r2_boulders.jpg`, `env_polish_r2_wheat.jpg`. Blender previews, **not a Studio play test**. Rubric 1-5; PASS needs silhouette, variation,
+readability >= 4 and proportions, palette, detail, cohesion, cost >= 3.
+
+| family | sil | var | read | prop | pal | detail | cohes | cost | verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| trees (oak / pine / birch) | 4 | 4 | 4 | 3 | 4 | 4 | 4 | 3 | **PASS** (reviewer: borderline; weakest species birch, then pine) |
+| boulders S / M / L (the #141 boulders, reverted) | 2 | 3 | 3 | 3 | 4 | 3 | 3 | 4 | NEEDS-WORK |
+| wheat field (44-part tufts) | 2 | 3 | 3 | 3 | 3 | 3 | 3 | 3 | NEEDS-WORK |
+
+Round 1 for comparison (#141's own review): trees 4/3/4/3/4/3/3/4, boulders 2/3/3/3/4/2/3/4, wheat 2/2/2/3/4/2/3/4.
+
+Reviewer's answers (summarised): the eight oaks show genuinely different silhouettes (a wide dome, a tall one, a wide one, a clearly leaning lopsided one, a
+twin-lobed one) on one sphere-cluster recipe; variants 1 and 6 (both dome) are the most alike. Pine skirts read as layered conifer boughs (a little crunchy
+and very dark at gameplay distance). Birch crowns are better than round 1 but still look like balloons on a thin pole (the side stub is barely visible, the
+black bands read as tape). The boulders mostly do not read as rocks but as stacked slabs or crates, the moss ball looks like a ball on a table, and the three variants of
+a size are nearly identical. The wheat no longer reads as planks but is not a grain crop either: crate-like blocks or hay bales from gameplay, pavers or tiles on dirt from the
+aerial camera; no stalks, heads or ragged top edge. Defects named: a tiny cube beside one M boulder looks detached (it is the M pebble, resting on the ground), and some birch
+crowns at the cluster edge look slightly detached from their poles; no clipping.
+
+Reviewer's top fixes: **trees** thicken the birch trunk about 1.5x and lower and merge its crown, replace the black bands with thinner irregular marks, lighten the pine
+skirt a few shades and reduce plate overlap, differentiate oaks 1 and 6; **boulders** faceted tapered shapes with a narrower top, a flat irregular moss patch, three genuinely different profiles
+per size, no stray pebble; **wheat** thinner, taller, closer-packed stalk clusters with a ragged top and a smooth gradient, less squareness.
+
+**Status after round 2:** trees pass the image-only rubric (borderline) and are a modest, real step over #141; boulders stay at #141's NEEDS-WORK level (two primitive passes did not help;
+this needs a mesh or a different primitive vocabulary); the wheat at 44 parts is better than slabs (var, read, detail up from 2 to 3) but still not a pass, and part cost is the limit:
+the reviewer's own fix (thin, close-packed stalk clusters) needs more parts, not fewer.
