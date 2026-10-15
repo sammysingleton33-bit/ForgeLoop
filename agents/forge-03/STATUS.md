@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-<task>` |
-| Open PRs | #88 FL-0087 plot picker on `Build/Fit.typesFor` (`b76003a`, main merged; FORGE-05 reviews next under D-040) · FL-0105 follow-ups (FORGE-05's #86 review: M1 Studio-doc sentence, L2-L9). Merged today: #63, #66, #86, #95. Merged before: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #65, #71, #74, #76, #79. Closed: #13, #19. |
-| Current task | FL-0105 follow-ups. Next: FL-0099 cinematic conversation UI (G13.8) once FL-0097/FL-0098 exist; Talk as the primary action lights up when FORGE-01's #77 sends `hasRequest` (client done) |
-| Last verified check | FL-0105 follow-ups check.sh exit 0 (see the PR) · #88 `b76003a` exit 0 (516/0, game-001 1102/0) · #86 merged on FORGE-05's test merge (516/0, 1101/0) |
+| Open PRs | #135 FL-0114 rotation B1 + B2 (★ B15) · #128 settings icon · #110 FL-0058 economy doc (waiting on FORGE-07). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #63, #65, #66, #71, #74, #76, #79, #86, #88, #95, #103, #126 (FL-0099, B14). Closed: #13, #19. |
+| Current task | FL-0114 (P0, REVIEW): rotation UI (Turn + facing dial, ghost door strip and arrow, Shift+R / pad Y; plot Turn on CONTRACTS v0.4-g9h, live once FORGE-01's turn PR lands). Next: FL-0120 base-editing UI (B16, G13.9); subscribe `InputModeController.back` (#130); drop the client `CitizenAnswered` report after #124; FL-0111 after #96 |
+| Last verified check | FL-0114 branch: game-001 specs 1244/0 in check.sh, selene/stylua clean after fixes, Rotation.spec 13/0, mutations 18/18; main merged after B14 (3a7c29c+) |
 | Blockers | none; Studio checks (G6) need the user |
-| Needs from others | FORGE-01: `not_on_plot` on the Reasons line once served (the client words it already). User: upload `gem.png` and `emblem_crown.png` (handoff 2026-10-13-forge-03-to-user-icons-d039). FORGE-02: check the shorter oak midrib by eye. FORGE-07: post-merge reviews (D-040). |
+| Needs from others | FORGE-01: `Build.PlaceSlot` optional turn + `Fit.fits(…, turn)` in one PR (switches plot Turn on); move remotes for FL-0120. FORGE-04: bubbles (#133) and hover signal. FORGE-05: gate #135, Studio U17. User: upload `settings.png`, `gem.png`, `emblem_crown.png`. FORGE-07: verdicts (D-040). |
 
 ## Estimate to VS-1 (FORGE-03 rows, unverified, hours of FORGE-03 work)
 | Item | Hours | Notes |
@@ -24,15 +24,17 @@ _Maintained by the worker. Keep it short and current._
 | **Remaining** | **7–8** | review rounds (0.5–1), FL-0087 switch (1), real-service swap (3), playtest fixes (3). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
 
 ## Last report
-- **Done:** merged #63 (army drawer, objective tracker, summary), #66 (conversation confirm step),
-  #86 (FL-0105: every server refusal code in words, including plots #89 and bunks D-041; crests drawn
-  as on the world banners, D-039; gem Crown Points; achievement toast), #95 (tracker waits for the Army
-  remotes; Choose refusals in words). FORGE-05's end-to-end runs against FORGE-01's real Army (#70) and
-  conversation (#77) servers worked.
-- **Verified:** check.sh exit 0 on each branch; mutations listed per PR; renders looked at.
-- **Unverified:** Studio (G6); the drawn emblems and the 💎/★/🏅 glyphs on each platform.
-- **Next:** #88 review; FL-0105 follow-ups PR; FL-0099 once FL-0097/FL-0098 exist.
+- **Done:** FL-0099 cinematic conversations (G13.8). The citizen's portrait (`Kit.portrait`) rises
+  from the bottom, with their question in a bubble and the answers beside it. Consequence chips show
+  after an answer, and the stage closes by itself. The world stays visible (dim ≤ 18 %). opened/closed
+  go to the camera, and `Kingdom.EndConversation` is called on every close. The FL-0088 panel is the
+  fallback. The renderer now draws ViewportFrames.
+- **Verified:** 32 specs, 30 mutations killed. On a local merge with #108/#84/#85: 1263/0, plus a real
+  payload → real portrait check. Renders were looked at on three sizes (REVIEW-stage.md).
+- **Unverified:** Studio (U16, FL-0101).
+- **Next:** FL-0101 fixes; `Costs.luau` tuning only after the user plays.
 
 ## Doubles in use
-- game-001 specs use local doubles for FORGE-01 services (`KingdomWorld`, `SlotDoubles`) and FORGE-04
+- game-001 specs use local doubles for FORGE-01 services (`KingdomWorld`, `SlotDoubles`, `ArmyDoubles`,
+  `CitizenDoubles` with #108's cinematic fields) and FORGE-02 (`PortraitDoubles` for #85), and FORGE-04
   controllers (`InputModeController.selected`); listed in each PR.

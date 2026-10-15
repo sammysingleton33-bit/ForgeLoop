@@ -130,6 +130,41 @@ describe("Kingdom/Layout: generated nodes on the world layout (M1)", function()
 		end
 	end)
 
+	it("is fair: every kingdom gets the same resources at the same distances in its own plot (#62 M-1)", function()
+		local DROP = { tree = "wood", rock = "stone", goldvein = "gold" }
+		for seed = 1, SEEDS do
+			local sim = generate(seed)
+			-- per kingdom and kind: node counts, and the sorted distances from each node to the nearest drop-off
+			local profile = {}
+			for _, nid in sim.nodeOrder do
+				local n = sim.nodes[nid]
+				if string.sub(n.id, 1, 6) ~= "heart_" then
+					local owner = ownerOf(sim, n)
+					local k = sim.kingdoms[owner]
+					local drop = assert(sim:nearestDropoff(k, n.x, n.z, DROP[n.kind]))
+					profile[owner] = profile[owner] or { tree = {}, rock = {}, goldvein = {} }
+					table.insert(profile[owner][n.kind], math.sqrt((n.x - drop.x) ^ 2 + (n.z - drop.z) ^ 2))
+				end
+			end
+			local reference = profile[sim.kingdomOrder[1]]
+			for _, kid in sim.kingdomOrder do
+				for kind, distances in profile[kid] do
+					local want = reference[kind]
+					expect(#distances).toBe(#want)
+					table.sort(distances)
+					table.sort(want)
+					local sum, wantSum = 0, 0
+					for i, d in distances do
+						sum += d
+						wantSum += want[i]
+						expect(math.abs(d - want[i]) <= 0.05 * want[i] + 1).toBe(true)
+					end
+					expect(math.abs(sum - wantSum) <= 0.05 * wantSum).toBe(true)
+				end
+			end
+		end
+	end)
+
 	it("gives the same nodes for the same seed and keeps generated nodes from overlapping", function()
 		for _, seed in { 1, 7 } do
 			local a, b = generate(seed), generate(seed)

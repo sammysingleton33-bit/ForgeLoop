@@ -18,4 +18,7 @@ M = [
  ("FL-0025", C+"OnboardingController.luau", 'if text == nil or self._settings:get("showHints") == false then', 'if text == nil then', "OnboardingController", "shows idle hints only after the tutorial", "fw"),
  ("FL-0025", X+"Onboarding.luau", 'if type(phase) ~= "string" or type(text) ~= "string" or #text == 0 or #text > 140 then', 'if false then', "Onboarding", "rejects idle hints", "fw"),
  ("FL-0025", G+"src/shared/Feedback/Signals.luau", 'return each(Signals.members(ctx, args[2]), { objectiveId = args[1], kingdom = args[2] })', 'return each(ctx.all(), { objectiveId = args[1], kingdom = args[2] })', "Onboarding", "never credits a rival kingdom", "game"),
+ ("FL-0025", X+"Subjects.luau", 'local covered = Subjects.DEFAULTS[name] ~= nil or', 'local covered = true or', "AnalyticsSchema", "names the events neither the defaults nor the game", "fw"),
+ ("FL-0025", S+"OnboardingService.luau", '	if #problems == 0 then\n		for _, name in Subjects.missing(Onboarding.events(config), subjects) do', '	if false then\n		for _, name in Subjects.missing(Onboarding.events(config), subjects) do', "Onboarding", "a config listening to an event that no resolver covers is invalid", "fw"),
+ ("FL-0025", X+"Onboarding.luau", '		add(flow.startOn or "PlayerReady")\n', '', "Onboarding", "a config listening to an event that no resolver covers is invalid", "fw"),
 ]

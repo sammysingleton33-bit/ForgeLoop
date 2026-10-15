@@ -15,8 +15,9 @@ Each section ends with its own **History** (D-038 (7)): a change to one feature 
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. When FORGE-01's PlayerReady exists: `analytics event SessionStart ... sent=true`.
-4. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
+3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
+4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel VS1 ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
+5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 History:
@@ -232,6 +233,10 @@ Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec
 | Targets (v0.4-g6) | a strike or cue marks exactly the citizens the server names (`entityIds`), never every citizen of the occupation; a cue with no ids shows on no citizen |
 | Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose; a continuous effect (`rest`) stops after its `seconds` (6), at the citizen's next cue, or when the rig is released |
 | Conversation | the citizen's own bubble hides while their conversation panel is open |
+| Aerial readability (B15, the user's first live Studio feedback) | always on top: roofs and trees never hide a bubble; a request is a round badge ("!" gold, "?" blue, "…" green, 46 px) and, with room, a card with 17 px words (2 lines at most, then "…"); bubbles keep their size at every zoom |
+| Words | at most 3 bubbles show words (2 on a phone, 1 zoomed out past 150 studs), and only where the card covers no other bubble: a request is never hidden. Other requests show the badge alone; a reaction without room is not drawn (its pose, sound and effect still play) |
+| New request | its badge pops twice (about 1 s); never with Reduce Motion on |
+| Tap / click | a tap on a bubble selects that citizen (the card opens, as for a tap on the citizen); while placing a building, bubbles take no input |
 
 Steps
 1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
@@ -244,8 +249,127 @@ Steps
 7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists. A `rest` cue shows motes on that citizen for about 6 s, then they stop.
 8. Open a conversation with a citizen who has a request: their bubble hides while the panel is open and comes back when it closes. Switch to walk mode: bubbles on citizens next to the ruler show, wherever the overview was last centred.
 
-Pass: steps 1–8 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
+9. Aerial readability: Play, stay in the aerial view at the start zoom, run `vs1.request` three or four times. Every request shows a badge you can spot at a glance, none hidden by a roof, tree or another bubble; the nearest ones show their words. A new request's badge pops once. Zoom all the way out: the badges stay the same size and at most one bubble keeps its words. Device emulator, a phone: badges, at most two with words.
+10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
+11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
+12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
+
+Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
+```lua
+local out = {}
+for _, g in game.Players.LocalPlayer.PlayerGui:GetChildren() do
+	if g.Name == "ForgeCitizenBubble" and g:IsA("BillboardGui") and g.Adornee then
+		local text = g:FindFirstChild("Text", true)
+		table.insert(out, string.format("%s %s %dx%d top=%s active=%s words=%s %q", tostring(g:GetAttribute("EntityId")),
+			tostring(g:GetAttribute("BubbleKind")), g.Size.X.Offset, g.Size.Y.Offset, tostring(g.AlwaysOnTop),
+			tostring(g.Active), tostring(text and text.Visible), text and text.Text or ""))
+	end
+end
+return #out .. " bubbles\n" .. table.concat(out, "\n")
+```
+Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
+
+Pass: steps 1–12 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+- 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
+- 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
+
+## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
+Needs:
+- FORGE-02's `Kit.posePortrait` (FL-0098, #85) and FORGE-03's cinematic panel (FL-0099, #126: `opened`/`closed`, `conversation.stage.portrait.model`);
+- for the world rig: FORGE-01's `EntityController:playPose(entityId, name)` sampling `Feedback/ReactionPoses` (proposed in the FL-0100 handoff);
+- ConversationService (FL-0079) and a citizen with a request.
+
+Until those are on the build, write "blocked: needs posePortrait / FL-0099 / playPose".
+
+Rules under test (headless: `games/game-001/tests/experience/ReactionPoses.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Poses | cheer (happy), grumble (angry), slump (sad), salute (neutral); bow and cower for those consequence cues |
+| Length | 1.4–2.0 s each, easing in over 0.25 s and out over 0.35 s; well inside the server's hold after Choose (until EndConversation, at most 12 s, v0.4-g9f) |
+| Bounds | every joint within Sim/Pose limits (arms ≤ 150°, head ≤ 30°), torso lift ≤ 2 studs |
+| Reduced motion | the key pose is held still until the panel closes; no movement |
+| Portrait and rig | the same pose data drives both (`Feedback/ReactionPoses`) |
+
+Steps
+1. Open a conversation and give an answer whose reaction is happy, then one that is angry (or sad). The portrait plays the matching gesture for about 2 s and returns to rest; the citizen in the world plays the same gesture.
+2. Answer a request whose consequence cue is `bow` or `cower`: the citizen in the world bows or cowers.
+3. Settings → Reduced Motion on: the portrait holds the key pose without moving and rests when the panel closes.
+4. A farmer or woodcutter holding a tool: note how the tool reads during cheer and cower (it follows the arm; a headless silhouette render showed the rake across the body).
+
+Operator probe (one `execute_luau`, Client context, read-only; **unverified**), within about 2 s of an answer: the portrait's joints turned more than 5° from rest. Expected: two or more (both shoulders in a cheer), "at rest" about 2 s later; with Reduce Motion, held until the stage closes.
+```lua
+local out = {}
+for _, d in game.Players.LocalPlayer.PlayerGui:GetDescendants() do
+	if d:IsA("Motor6D") and d.Part0 and d.Part1 and d:FindFirstAncestorWhichIsA("ViewportFrame") then
+		local _, angle = ((d.Part0.CFrame * d.C0 * d.C1:Inverse()):Inverse() * d.Part1.CFrame):ToAxisAngle()
+		if math.deg(angle) > 5 then table.insert(out, d.Name .. "=" .. math.floor(math.deg(angle))) end
+	end
+end
+return #out > 0 and table.concat(out, " ") or "at rest (or no portrait showing)"
+```
+
+Pass: steps 1–3 hold. Screenshot each gesture on the portrait (FL-0100's visual evidence; the headless render is a box silhouette, not Studio).
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0100 (2/2)).
+- 2026-10-15 FORGE-04: operator probe (B14 checklist); hold until EndConversation, at most 12 s (v0.4-g9f).
+
+## E10 — Conversation camera (FL-0100 (1/2), game-001)
+Needs:
+- FORGE-03's cinematic panel (FL-0099, #126), firing `ConversationController.opened(entityId, position)` and `.closed(entityId)`;
+- FORGE-01's ConversationService with the hold (FL-0097, #108);
+- a citizen with a request.
+
+Until those are on the build, write "blocked: needs FL-0099 / #108".
+
+Rules under test (headless: `games/game-001/tests/experience/RulerCamera.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Glide | about 0.6 s in and back; reduced motion cuts; durations clamped (≤ 3 s) |
+| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 12 on a phone: head at 28–30 % from the top, just under the HUD) |
+| Facing | in front of the citizen's face: the line from the citizen to your ruler, which the server turns them along (v0.4-g9e) |
+| Following | none once the citizen is released; without a ruler character, one turn within 1.5 s and 2 studs at most |
+| Restore | the saved overview focus, rotation and zoom |
+
+Steps
+1. From the aerial view, open a conversation. The camera glides in about 0.6 s to the citizen, who stays visible above the portrait with the kingdom around them. You see the citizen's face, not their back.
+2. Close it. The camera glides back to the same view: position, rotation and zoom.
+3. Settings → Reduced motion on: steps 1 and 2 cut instead of gliding.
+4. Pan during the glide in: the glide stops and the pan works.
+5. A citizen near the map edge: the view stays inside the map.
+6. Phone emulator: the citizen's head is just under the HUD stack. With short answers the whole citizen shows above the stage; with costed answers, at most the body is behind the question bubble.
+7. Answer, and keep the panel open after the reaction (the stage reads for several seconds). When the citizen is released and walks off, the camera stays still; it doesn't swing round to follow them.
+8. Open a conversation, switch to walk mode, close the panel, and come back to the aerial view a while later. The view is your normal overview, with no jump back to the old conversation.
+9. During a conversation, zoom in (wheel or pinch): the camera doesn't move out. Zoom out: it does.
+
+Operator probes (one `execute_luau` each, Client context, read-only; **unverified**). E10a, stage open: the rig nearest the view's line, its distance, pitch, head top on screen, and flat angles: its facing against your ruler (`facesRuler`, g9e) and the camera (`facesCam`), and the camera off the citizen-to-ruler line (`camOffLine`); -1 = no ruler character. Expected: `dist` about 30; phone `headTopY` 26–31 %; with a ruler, `facesRuler` and `camOffLine` small, so `facesCam` small (large `facesCam` with small `facesRuler` = the camera is off, not the citizen); without one, `facesCam` small after the followed turn.
+```lua
+local cam, best, bestOff = workspace.CurrentCamera, nil, nil
+for _, m in workspace.KingdomEntities:GetChildren() do
+	local rel = m:IsA("Model") and m:GetPivot().Position - cam.CFrame.Position
+	local along = rel and rel:Dot(cam.CFrame.LookVector) or 0
+	local off = along > 0 and (rel - cam.CFrame.LookVector * along).Magnitude
+	if off and (not bestOff or off < bestOff) then best, bestOff = m, off end
+end
+if not best then return "no rig in front of the camera" end
+local function flat(a, b) a, b = a * Vector3.new(1, 0, 1), b * Vector3.new(1, 0, 1) return (a.Magnitude < 1e-3 or b.Magnitude < 1e-3) and -1 or math.deg(math.acos(math.clamp(a.Unit:Dot(b.Unit), -1, 1))) end
+local cf, size = best:GetBoundingBox()
+local head = cam:WorldToViewportPoint(cf.Position + Vector3.new(0, size.Y / 2, 0))
+local char = game.Players.LocalPlayer.Character
+local root, look, toCam = char and char:FindFirstChild("HumanoidRootPart"), best:GetPivot().LookVector, cam.CFrame.Position - cf.Position
+local toRuler = root and root.Position - cf.Position
+return string.format("id=%s dist=%.1f pitch=%.0f headTopY=%.0f%% facesRuler=%.0f facesCam=%.0f camOffLine=%.0f", tostring(best:GetAttribute("EntityId")), toCam.Magnitude, math.deg(math.asin(-cam.CFrame.LookVector.Y)), head.Y / cam.ViewportSize.Y * 100, toRuler and flat(look, toRuler) or -1, flat(look, toCam), toRuler and flat(toCam, toRuler) or -1)
+```
+E10b, before opening and after closing; the lines should match: `local cf = workspace.CurrentCamera.CFrame local _, yaw = cf:ToOrientation() return string.format("pos=(%.1f, %.1f, %.1f) yaw=%.1f", cf.X, cf.Y, cf.Z, math.deg(yaw))`
+
+Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Studio evidence).
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
+- 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).

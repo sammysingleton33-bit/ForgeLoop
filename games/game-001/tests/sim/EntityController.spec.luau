@@ -271,6 +271,27 @@ describe("EntityController: snapshots (G4 client rules)", function()
 		expect(pivotOf(model).X).toBeNear(100, 0.05)
 	end)
 
+	it("starts every track over when serverTime jumps without a reset (#39 L5)", function()
+		local h = start(setup({ full(1, 0, 0) }))
+		frame(h, 0)
+		for i = 1, 5 do -- the old timeline: x 2 .. 10 at serverTime 5.1 .. 5.5
+			h.env.mock:advance(0.1)
+			snapshot(h, { record(1, 2 * i, 0) })
+		end
+		frame(h, 0.5)
+		-- the server restarts its clock (a match restart): serverTime 0.2, then 0.3
+		h.seq += 1
+		h.remotes:fire("Sim.Snapshot", h.player, SnapshotCodec.encode({ record(1, 20, 0) }, h.seq, 0.2))
+		h.env.mock:advance(0.1)
+		h.seq += 1
+		h.remotes:fire("Sim.Snapshot", h.player, SnapshotCodec.encode({ record(1, 30, 0) }, h.seq, 0.3))
+		for _ = 1, 30 do
+			frame(h, 0.1)
+		end
+		-- held at the new timeline's newest point, never interpolating back towards old-timeline samples
+		expect(pivotOf(h.controller:getModel(1)).X).toBeNear(30, 1e-3)
+	end)
+
 	it("drops a snapshot whose seq is not newer than the newest applied, across the u16 wrap", function()
 		local h = start(setup({ full(1, 0, 0) }))
 		h.env.mock:advance(0.1)

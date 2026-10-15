@@ -1,5 +1,6 @@
 """Tests for tools/forge.py. Run: python -m pytest -q tools/tests"""
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -170,3 +171,15 @@ def test_real_repository_tasks_are_valid():
     """The committed task queue must always validate."""
     real = forge.load_tasks(Path(__file__).resolve().parents[2] / "production" / "tasks")
     assert forge.validate_tasks(real) == []
+
+
+def test_set_status_keeps_quoted_title_verbatim(repo):
+    """A title with ':' and '"' must survive set-status unchanged (FORGE-04 report, FL-0121)."""
+    path = write_task(repo, status="READY")
+    text = path.read_text(encoding="utf-8")
+    title_line = 'title: Base editing: "edit" input mode'
+    text = re.sub(r"^title:.*$", title_line, text, count=1, flags=re.M)
+    path.write_text(text, encoding="utf-8")
+    assert forge.main(["set-status", "FL-0001", "BUILDING", "--note", "start"]) == 0
+    after = path.read_text(encoding="utf-8")
+    assert title_line in after.splitlines()
