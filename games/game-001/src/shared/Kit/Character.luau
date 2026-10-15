@@ -471,7 +471,8 @@ local TOOLS: { [string]: PartSpec } = {
 		size = Vector3.new(1.0, 5.4, 0.3),
 		color = C.woodLight,
 		material = Enum.Material.Wood,
-		offset = GRIP * OUT * CFrame.Angles(0, 0, math.rad(-10)) * CFrame.new(0, 0.7, 0.1),
+		-- leans out 14° (was 10°): the board clears the straw brim in every pose (FORGE-01's Sim/PoseClearance, exact shapes)
+		offset = GRIP * OUT * CFrame.Angles(0, 0, math.rad(-14)) * CFrame.new(0, 0.7, 0.1),
 	},
 	axe = { -- big bearded blade: flat top level with the fist, straight cutting edge in front, the beard hanging
 		-- 2.4 below the haft; bright steel
