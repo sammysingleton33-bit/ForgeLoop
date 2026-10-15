@@ -33,6 +33,7 @@
 	| KingdomEliminated  | MatchService                   | (kingdomId: string, by: string?) |
 	| MatchEnded         | MatchService                   | ({ winner: string?, standings: { { kingdom: string, crownPoints: number } }, durationSec: number }) |
 	| CitizenAnswered    | ConversationService            | (player, kingdomId: string, citizenId: number, decisionId: string, secondsOpen: number?) — once per accepted Kingdom.Choose (D-044 (3)) |
+	| ConsequenceChanged | ConsequenceService (G13.3)     | (kingdomId: string, rule: "strike" | "shortage" | "riot" | "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number }) — once per start and once per end (v0.4-g10c) |
 	Payload types (interfaces §4) are exported here too: GameEvents.RoundState, GameEvents.RoundResult,
 	GameEvents.RewardResult (defined once in Contracts/Types, re-exported).
 
@@ -82,6 +83,7 @@ export type GameEvents = {
 	KingdomEliminated: SignalT,
 	MatchEnded: SignalT,
 	CitizenAnswered: SignalT,
+	ConsequenceChanged: SignalT,
 	EVENT_NAMES: { string },
 	disconnectAll: () -> (),
 }
@@ -111,6 +113,7 @@ local EVENT_NAMES = table.freeze({
 	"KingdomEliminated",
 	"MatchEnded",
 	"CitizenAnswered",
+	"ConsequenceChanged",
 })
 
 local events: { [string]: any } = {}

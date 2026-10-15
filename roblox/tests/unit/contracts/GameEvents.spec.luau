@@ -32,6 +32,7 @@ local CONTRACT_EVENTS = {
 	"KingdomEliminated",
 	"MatchEnded",
 	"CitizenAnswered",
+	"ConsequenceChanged",
 }
 
 describe("Contracts/GameEvents", function()
