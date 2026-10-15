@@ -347,3 +347,20 @@ Bushes and flowers
 - Visible improvement on "before": **yes** for trees, resource nodes and the cabbage field; **marginal** for boulders, the bushes and the wheat field; **flowers are arguably a step back** at distance.
 - Passes: none of the four families (trees: variation 3; rocks and nodes: boulder silhouette 2; crop fields: wheat silhouette, variation and readability 2; bushes and flowers: silhouette 3, variation 3, flower readability 2). Nothing here is a Studio result.
 - Still reads as placeholder: boulders (stacked boxes), wheat field (planks), birch crown (balloons on a pole), pine lower boughs (loose flat plates), oak crowns (one recipe, ball pile), bush recipe (three balls), gold nuggets (cubes).
+
+### Visible-defect scan and open list for round 2 (FORGE-02, 2026-10-15, before #141 merges under D-051)
+
+- **Scan:** every prop id (72: trees, bushes, flowers, boulders, nodes, fields, fence, haystack, cart, well, goods) checked headless for parts that float (bounding box touches neither the ground nor any other part, 0.05 margin), parts buried under the ground, and ground clipping deeper than 1.4 studs. **One finding, fixed:** the quarry's pick hung 0.13 above the ground touching nothing; it now leans on the cut-block stack. `KitProps.spec` guards it ("leaves no part floating ... and none buried"; mutation: the old pick position fails it). Bounding boxes are loose for wedges and balls, so this catches gaps, not every thin sliver; it is not a Studio check.
+- **Not mine:** prop-vs-prop overlap in the world is placement (WorldPlan scatter, FL-0112 / FL-0116). Crown radii are unchanged from main (oak <= 12.2, pine <= 8.2, birch <= 7.0 against the 13-stud centre spacing).
+- **Still NEEDS-WORK after round 1** (rubric 1-5; PASS = silhouette, variation, readability >= 4 and proportions, palette, detail, cohesion, cost >= 3; no family passes):
+
+| family | sil | var | read | prop | pal | detail | cohes | cost | below threshold |
+|---|---|---|---|---|---|---|---|---|---|
+| trees (oak / pine / birch) | 4 | 3 | 4 | 3 | 4 | 3 | 3 | 4 | variation: oaks cloned, birch crown balloons on a pole, pine lower boughs loose plates, oak base collar |
+| boulders S / M / L | 2 | 3 | 3 | 3 | 4 | 2 | 3 | 4 | silhouette, variation, readability, detail: still parallel-faced boxes, moss ball |
+| resource nodes | 3 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | silhouette, variation, readability: ores separate by hue only, gold nuggets are cubes |
+| wheat field | 2 | 2 | 2 | 3 | 4 | 2 | 3 | 4 | silhouette, variation, readability, detail: six flat slabs read as planks |
+| cabbage field | 3 | 3 | 4 | 3 | 4 | 3 | 4 | 3 | silhouette, variation: regular dot grid; 65 parts |
+| bushes and flowers | 3 | 3 | 3 | 3 | 4 | 3 | 4 | 4 | silhouette, variation, readability: one three-ball recipe; flowers 2 at distance |
+
+Round 2 (branch `forge/02-blender-env-polish-r2`, stacked on #141): wheat first within 17 parts, then boulders from angled wedges and slabs with a flat moss tuft, then oak and birch variety by silhouette; 2 author rounds, then a fresh-context re-score.

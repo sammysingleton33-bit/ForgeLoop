@@ -456,7 +456,7 @@ local function quarryNode(ctx, rng)
 		shade(C.stoneLight, 0.94),
 		"CutBlock"
 	)
-	local pick = CFrame.new(-3.4, 1.7, -5.6) * CFrame.Angles(0, 0.4, math.rad(28))
+	local pick = CFrame.new(-4.2, 1.55, -5.1) * CFrame.Angles(0, 0.4, math.rad(28))
 	block(ctx, "Pick", Vector3.new(0.3, 3.4, 0.3), pick, C.wood, Enum.Material.Wood)
 end
 

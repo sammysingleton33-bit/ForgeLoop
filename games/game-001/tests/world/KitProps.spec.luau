@@ -108,6 +108,51 @@ local function bounds(model: Instance): (Vector3, Vector3)
 	return lo, hi
 end
 
+-- do two parts' bounding boxes touch (SAT over the 15 axes, margin 0.05 studs each side)?
+local function touching(a: BasePart, b: BasePart): boolean
+	local ha, hb = a.Size / 2 + Vector3.new(0.05, 0.05, 0.05), b.Size / 2 + Vector3.new(0.05, 0.05, 0.05)
+	local axa = { a.CFrame.RightVector, a.CFrame.UpVector, a.CFrame.LookVector }
+	local axb = { b.CFrame.RightVector, b.CFrame.UpVector, b.CFrame.LookVector }
+	local d = b.CFrame.Position - a.CFrame.Position
+	local function separated(axis: Vector3): boolean
+		if axis.Magnitude < 1e-6 then
+			return false
+		end
+		axis = axis.Unit
+		local ra = math.abs(axa[1]:Dot(axis)) * ha.X
+			+ math.abs(axa[2]:Dot(axis)) * ha.Y
+			+ math.abs(axa[3]:Dot(axis)) * ha.Z
+		local rb = math.abs(axb[1]:Dot(axis)) * hb.X
+			+ math.abs(axb[2]:Dot(axis)) * hb.Y
+			+ math.abs(axb[3]:Dot(axis)) * hb.Z
+		return math.abs(d:Dot(axis)) > ra + rb
+	end
+	for i = 1, 3 do
+		if separated(axa[i]) or separated(axb[i]) then
+			return false
+		end
+		for j = 1, 3 do
+			if separated(axa[i]:Cross(axb[j])) then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+local function lowestHighest(p: BasePart): (number, number)
+	local lo, hi = math.huge, -math.huge
+	for _, sx in { -1, 1 } do
+		for _, sy in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				local y = (p.CFrame * CFrame.new(sx * p.Size.X / 2, sy * p.Size.Y / 2, sz * p.Size.Z / 2)).Position.Y
+				lo, hi = math.min(lo, y), math.max(hi, y)
+			end
+		end
+	end
+	return lo, hi
+end
+
 local function signature(model: Instance): string
 	local out = {}
 	for _, p in parts(model) do
@@ -185,6 +230,27 @@ describe("environment props: part hygiene", function()
 			for _, p in parts(Kit.prop(id)) do
 				if p.Material == Enum.Material.Neon and not crystal then
 					error(`{id}: Neon part {p.Name}`)
+				end
+			end
+		end
+	end)
+
+	it("leaves no part floating (every part touches the ground or another part) and none buried", function()
+		for _, id in ALL do
+			local all = parts(Kit.prop(id))
+			for i, p in all do
+				local lo, hi = lowestHighest(p)
+				if hi < 0.15 then
+					error(`{id}: {p.Name} #{i} is buried (top {hi})`)
+				end
+				local held = lo <= 0.1
+				for j, q in all do
+					if not held and i ~= j and touching(p, q) then
+						held = true
+					end
+				end
+				if not held then
+					error(`{id}: {p.Name} #{i} floats (lowest point {lo}, touches no other part)`)
 				end
 			end
 		end
