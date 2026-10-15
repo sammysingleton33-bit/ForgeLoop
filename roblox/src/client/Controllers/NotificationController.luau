@@ -364,6 +364,7 @@ function NotificationController:_rulerPosition(): Vector3?
 end
 
 function NotificationController:_announce(item: any, silent: boolean)
+	item.announced = true -- a toast that waits for room and shows again is not announced again
 	if not silent then
 		local audio = self._registry:find("AudioController")
 		if audio then
@@ -382,9 +383,10 @@ function NotificationController:_tick()
 	self:_sync()
 	for _, item in shown do
 		local audio = self._registry:find("AudioController")
-		if audio and not item.silent then
+		if audio and not item.silent and not item.announced then
 			audio:play(Def.KIND_SOUND[item.kind] or "notify.info")
 		end
+		item.announced = true -- shown again after a short screen freed room: no second sound (#82 L1)
 		self.shown:fire(item)
 	end
 end

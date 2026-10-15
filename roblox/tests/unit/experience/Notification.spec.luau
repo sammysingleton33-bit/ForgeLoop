@@ -433,6 +433,7 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 			controller:reserveTop("onboarding", nil)
 			env.mock:advance(0.2) -- the next tick shows it again
 			expect(#toasts()).toBe(3)
+			expect(#played).toBe(3) -- shown again, not announced again (FORGE-07 #82 L1)
 		end
 	)
 

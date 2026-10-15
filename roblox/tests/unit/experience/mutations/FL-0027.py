@@ -35,4 +35,5 @@ M = [
  ("FL-0027", C+"NotificationController.luau", '	local hidden = self:_fit(top)', '	local hidden = {}', "Notification", "a short screen under the onboarding card", "fw"),
  ("FL-0027", C+"NotificationController.luau", '		fit = if fit then math.min(fit, limit) else limit', '		fit = fit', "Notification", "place()'s limit caps the cards", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'return self.queue:setMaxVisible(fit or math.huge)', 'return if fit then self.queue:setMaxVisible(fit) else {}', "Notification", "place()'s limit caps the cards", "fw"),
+ ("FL-0027", C+"NotificationController.luau", 'if audio and not item.silent and not item.announced then', 'if audio and not item.silent then', 'Notification', 'a short screen under the onboarding card', "fw"),
 ]
