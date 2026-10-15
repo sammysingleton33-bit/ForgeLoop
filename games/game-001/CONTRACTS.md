@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g9f, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g9h, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -315,7 +315,7 @@ Kit.build(type: BuildingType, level: number, stage: number | "complete", kingdom
 	-- PrimaryPart; attachments Door, WorkSpot1..n, DropOff (storehouse), Rally (barracks)
 Kit.footprint(type: BuildingType, level: number): Vector2           -- the one source for canPlace and the build ghost
 Kit.character(kind: EntityKind, job: JobId, kingdomColor: Color3): Model
-	-- ≤ 9 parts (anchored root, torso, head, 2 arms, 2 legs, tool, + Hair welded to Head, no motor; D-032); Motor6Ds named after the moving part;
+	-- ≤ 11 parts (anchored root, torso, head, 2 arms, 2 legs, tool, + Hair welded to Head, no motor; D-032; + at most 2 rigid detail parts for headwear or tool, welded to Head or Tool, no motor, D-048); Motor6Ds named after the moving part;
 	-- CanCollide, CanTouch and CanQuery false; pooled client rig template
 Kit.regalia(kingdomColor: Color3): { Accessory }                     -- ruler crown + cape (R15 and R6 attachments)
 Kit.prop(assetId: string): Model                                     -- imported mesh from Forge.Assets if present, else a part-built stand-in
@@ -534,6 +534,10 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Build slots (G10.1, additive).** `Layout.plots[k].buildSlots = { { id: string, center: Vector3, size: "S" | "M" | "L", rot: number } }`, at least 8 per kingdom. WorldService tags each slot's ground marker `BuildSlot` with attribute `SlotId`.
 - **Remotes.**
   - `Build.PlaceSlot`: `(slotId: string(1,32), type: enum BuildingType)` → `(buildingId?, reason?)`.
+    - **Turn (v0.4-g9h, additive; the user's first Studio feedback).** A third, optional argument, `turn: integer(0,3)?`, gives quarter turns relative to the slot's facing. Omitted or 0 keeps today's behaviour, facing the street. The building's `rot` = `(slot.rot + turn) % 4`, replicated and rebuilt exactly as for `Build.Place`.
+      - The turned footprint must fit. `Fit.fits(type, size, turn?)` swaps the footprint's axes for odd turns, so a half turn always fits and a quarter turn fits only when the swapped footprint fits; otherwise the reason is `does_not_fit`.
+      - The plot picker offers only the turns that fit, and its ghost shows the facing.
+      - Owners: FORGE-01 (server and `Fit`), FORGE-03 (picker Turn control).
     - Plots take only the building types that sit on a plot. `wall` and `gate` are line structures (VS-2, placed on territory lines). The server refuses them on a plot with reason `not_on_plot`, even though they fit physically. Fit stays purely physical; this is placement policy, and the server enforces it, not only the picker (v0.4-g9a, #89 L3).
   - `Build.Slots` / `Build.GetSlots`: own kingdom's slots `{ id, size, occupiedBy: number? }`.
   - `Build.Place` stays as it is.
@@ -593,6 +597,8 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
 ## Changelog
+- v0.4-g9h (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` takes an optional `turn` (quarter turns relative to the slot's facing; the turned footprint must fit, `Fit.fits(type, size, turn?)`). Additive. The user's first Studio feedback: placing on a plot could not be rotated (free placement already rotates with R).
+- v0.4-g9g (2026-10-13) FORGE-00: G10 rigs may have up to 11 parts: 2 more rigid detail parts (headwear brim/crown, tool handle/head), welded to Head or Tool with no Motor6D, so poses and `Sim/Pose.JOINTS` are unchanged (D-048, the user's first Studio feedback: citizens and tools too plain).
 - v0.4-g9f (2026-10-13) FORGE-00: G13.8 after `Kingdom.Choose`, the hold lasts until `EndConversation`, capped at 12 s (was: at most 4 s). The citizen no longer walks off while the reaction is on screen (FORGE-05 B14 gate finding).
 - v0.4-g9e (2026-10-13) FORGE-00: G13.8 held citizen faces the ruler's character, not the camera direction (the server cannot know the camera), and the intent text is "Talking (with the ruler)"; the conversation camera frames the citizen's face. This follows #108 as built.
 - v0.4-g9d (2026-10-13) FORGE-00: G7 births follow upkeep health instead of spending treasury food (D-045). ProductionService stays the only food consumer.
