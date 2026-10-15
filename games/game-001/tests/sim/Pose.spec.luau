@@ -202,7 +202,7 @@ describe("Sim/Pose", function()
 				for _, job in { "farmer", "woodcutter", "miner", "builder", "soldier", "juggler" } do
 					local cheer = Pose.sample("celebrate", job, phase, 0)
 					expect(angleOf(cheer.RightArm) < angleOf(cheer.LeftArm) - 15).toBe(true) -- the tool arm stays lower
-					expect(angleOf(cheer.RightArm)).toBeGreaterThan(105) -- but is still a raised arm
+					expect(angleOf(cheer.RightArm)).toBeGreaterThan(60) -- but is out to the side, not hanging
 					expect(angleOf(cheer.Tool)).toBeNear(Pose.LIMITS.Tool, 1e-3) -- tipped back to the joint's limit
 					expect(cheer.Tool.UpVector.Z < 0).toBe(true) -- back: the tool's top leans away from the front (-Z)
 				end

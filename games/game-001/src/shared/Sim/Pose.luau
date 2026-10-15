@@ -25,7 +25,7 @@
 	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up);
 	every other joint and action stays within 90°. Torso lift stays within ±2 studs.
 	Celebrate: both arms up for rigs with nothing in the right fist (idle citizens) or a sack on the back
-	(hauler). Every other job keeps the tool arm lower (120° + the pump) and tips the tool back to the Tool
+	(hauler). Every other job holds the tool arm out to the side (80° + the pump) and tips the tool back to the Tool
 	joint's limit, so no tool goes through the head: tests/sim/PoseClearance.spec measures it on Kit rigs.
 ]]
 
@@ -183,7 +183,7 @@ end
 
 -- Jobs that cheer with both arms straight up: no tool in the right fist (idle), or a sack on the back (hauler).
 local CHEERS_EMPTY_HANDED: { [string]: boolean } = { idle = true, hauler = true }
-local TOOL_CHEER_RAISE = 120 -- the tool arm's raise (degrees, plus the same 10 * s pump); the free arm stays at 140
+local TOOL_CHEER_RAISE = 80 -- the tool arm held out to the side (degrees, plus the same 10 * s pump); the free arm stays at 140
 
 local function celebrate(out: Joints, job: string, s: number, c: number)
 	local raise = 140 + 10 * s
