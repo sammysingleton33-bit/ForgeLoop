@@ -12,6 +12,10 @@
 	number of levels (Costs.maxLevel). This file has stats for exactly levels 1..Costs.maxLevel(type)
 	and never a cost or a time; the simulation reads those through its costs provider (Sim/Catalog).
 	PROVISIONAL stats (design/living-kingdom.md §4). Read by Sim/Catalog, validated at startup.
+
+	Gaps: placementGap is the free ground two placement shapes keep from each other; wallGap (default
+	placementGap) is the gap between two line pieces, a wall or a gate next to a wall or a gate, so a chain
+	of walls can touch end to end instead of leaving a hole (FORGE-03's wall chain placement).
 ]]
 
 return {
@@ -179,5 +183,6 @@ return {
 		},
 	},
 	placementGap = 2, -- studs kept free between footprints
+	wallGap = 0, -- studs kept free between two line pieces (wall / gate): they join end to end
 	cancelRefund = 0.5, -- share of a site's paid cost returned on cancel
 }

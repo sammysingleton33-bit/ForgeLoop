@@ -7,7 +7,7 @@ status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: [FL-0023, FL-0062]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 3
@@ -17,6 +17,7 @@ evidence:
   - mutations.py FL-0063 rows 14/14 CAUGHT
   - "unverified: Studio trail (roblox/studio-tests/experience.md E1, events.md §10); real delivery needs a published test place (user)"
   - check.sh OVERALL PASS after the doc-review fixes (game-001 945/0); mutations.py FL-0063 23/23
+  - "combined test merge with #128/#94/#82/#64/#98/#102 on 39c456c: check.sh PASS (framework 528/0, game-001 1359/0); re-checked on 3add643; FL-0063 23/23"
 ---
 
 # VS-1 analytics funnel and match analytics
@@ -42,3 +43,4 @@ Specs with MockAnalyticsService; events.md updated
 - 2026-10-13 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0063. Taxonomy review by FORGE-00 (completion criterion); FORGE-01 producer calls in handoff forge-04-to-forge-01-00-analytics-fl0063.
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-05 #64 review + FORGE-00 ruling: M1 repeated funnel steps counted, never logged; M2 VS1 is inOrder (a step only after the previous one). Lows: a draw / shared win is won = draw; a ruler who rejoins as a spectator is not counted; spec gaps (spectator and joinedAt guards, departed rulers forgotten, match clock reset); stale config text. MatchAnalytics.spec 9; FL-0063 mutations 22/22. Main a75de0f merged.
 - 2026-10-13 forge-04: REVIEW → REVIEW. Status unchanged (--force). FORGE-00 doc review (2026-10-13-forge-00-to-forge-04-doc-reviews) residue on #64: §4 funnel-order bullet (B1), Return row at session start (M1), FirstGather/FirstRecruit meanings + the inOrder race (M2), KingdomEliminated note (M4), per-event combination budget with a house total < 2,000; ConversationAnswered drops phase, SettingChanged values in tenths (M5, new M); server-only rule (M3 wording); L2/L4/L5/L7 wording; MatchService.mode G3 ask and the G9 CitizenAnswered option in the handoff. Still open for the doc PR: M3 producers for IdleHintShown/CelebrationShown, M7 milestone timing, L1/L3/L6/L8.
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #64 (299bbec): analytics funnel, sessions and match analytics
