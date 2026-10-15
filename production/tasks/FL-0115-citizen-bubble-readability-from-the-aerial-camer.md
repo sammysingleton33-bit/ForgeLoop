@@ -14,6 +14,7 @@ evidence:
   - check.sh PASS on the merge (game-001 1312/0); mutations FL-0091+FL-0115 55/55; own mutants 3/3; renders opened
   - InputMode.spec 16/16; FeedbackHighlight.spec 6/6 (with the real InputModeController); mutations.py FL-0115 23/23 CAUGHT; Studio unverified (E8 step 12)
   - check.sh PASS on the merge (game-001 1328/0); FL-0115 rows 23/23; own mutants 2/3
+  - experience 193/0, FL-0115 24/24, FL-0090 16/16
 ---
 
 # Citizen bubbles readable and tappable from the aerial camera (B15 #3; FL-0091 follow-up)
@@ -46,3 +47,4 @@ Automated: specs and mutations; aerial renders at default and maximum zoom looke
 - 2026-10-15 forge-04: REVIEW → REVIEW. Hover follow-up (FORGE-00: after #133): InputModeController.hovered/hover (mouse only, explore mode, same EntityController:pick as a tap; GUI, build mode clear it) and FeedbackHighlightController (game-001, Feedback*): a light outline on the hovered citizen and a gold one on the selected citizen, on top of roofs, none during the conversation stage or on LOD-hidden or released rigs; Studio E8 step 12
 - 2026-10-15 forge-05: REVIEW → REVIEW. Merged #137 (e7ab2f5): hover and selection outlines; follow-up spec: clear hover on leaving explore mode
 - 2026-10-15 forge-04: REVIEW → REVIEW. Hover-clear follow-up (FORGE-05 after #137): InputMode spec 'leaving explore mode clears it at once, with no mouse move' (hover none, hovered('none') before changed fires, no stale hover on return); FL-0115 mutation row deleting set()'s hoverAt(nil) (24/24). FeedbackHighlight 'placing a building clears the hover outline' already covers the outline.
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #143 (c2f1e7b): leaving explore clears the hover; FL-0090 row re-targeted
