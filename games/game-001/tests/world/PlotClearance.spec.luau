@@ -434,4 +434,50 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect(table.concat(violations(items), "; ")).toBe("")
 		svc:destroy()
 	end)
+
+	it(
+		"never thins the plot showcase: whatever the density, every placement within 60 studs of a plot survives",
+		function()
+			-- the radius is spelled out here, not read from WorldPlan.TRIM.showcase, so a knob turned down to 0 fails this
+			local SHOWCASE = 60
+			local cleared = WorldPlan.clear(Layout, WorldPlan.plan(Layout, ALL))
+			local rects = WorldPlan.reservedRects(Layout)
+			local function inShowcase(p: any): boolean
+				local q = p.cframe.Position
+				for _, rect in rects do
+					if rect.kind ~= "zone" and WorldPlan.rectDistance(rect, q.X, q.Z) <= SHOWCASE then
+						return true
+					end
+				end
+				return false
+			end
+			local THINNED = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
+			local function key(p: any): string
+				local q = p.cframe.Position
+				return `{p.assetId}@{string.format("%.3f,%.3f", q.X, q.Z)}`
+			end
+			for _, density in { "default", { forest = 0.25, props = 0.1 }, { forest = 0, props = 0 } } do
+				local kept = {}
+				for _, p in WorldPlan.trim(Layout, cleared, if density == "default" then nil else density) do
+					kept[key(p)] = true
+				end
+				local guarded, lost = 0, {}
+				for _, p in cleared do
+					if THINNED[p.feature] and inShowcase(p) then
+						guarded += 1
+						if not kept[key(p)] then
+							table.insert(
+								lost,
+								`{p.assetId} ({p.feature}) at {math.floor(p.cframe.Position.X)}, {math.floor(
+									p.cframe.Position.Z
+								)}`
+							)
+						end
+					end
+				end
+				expect(guarded).toBeGreaterThan(50) -- the rule is about something
+				expect(table.concat(lost, "; ")).toBe("")
+			end
+		end
+	)
 end)
