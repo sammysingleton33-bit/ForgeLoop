@@ -84,18 +84,23 @@ which is how BRIEF §4 row 6 is checked in Studio.
   upkeep if farms stall, but only ~2 minutes once 3 soldiers are bought). Staying at a fed ratio of
   0.9 or more is also what lets the kingdom grow (D-045), so a food shortfall now costs growth as
   well as hunger.
-- Ruler gathering (optional, D-030; FL-0051): the target is that a ruler who gathers feels it but the
-  citizens stay the main source (the AI-citizen hook), so **no more than about 10–15 of a resource per
-  minute of continuous gathering**. The shipped `Sim/RulerGather.CONFIG` (2 food or wood, 1 stone or
-  gold per harvest, 0.8 s cooldown) allows about 150 wood/min, several times the citizens' whole
-  output: see Open questions.
+- Ruler gathering (optional, D-030; FL-0051; D-050 (3)): a ruler gathers only nodes in their own
+  kingdom's territory or neutral land, and sustained ruler gathering is capped at **25 % of the
+  slice's income budget**, so the citizens stay the main source (the AI-citizen hook). The caps, per
+  minute of continuous gathering (FORGE-01 enforces them from config):
+  | Resource | Slice budget (above) | Ruler cap (25 %) |
+  |---|---|---|
+  | Wood | ≈ 37 / min | **≤ 9 / min** |
+  | Stone | ≈ 25 / min | **≤ 6 / min** |
+  | Food | ≈ 15 / min (3 farmers × 5) | **≤ 4 / min** |
+  | Gold | none in the slice | **≤ 6 / min** (as stone, so gold never outpaces it) |
+  At the shipped per-harvest amounts (2 food or wood, 1 stone or gold) one cooldown can't meet all
+  four: wood needs ≥ 14 s between harvests (≈ 8.6 / min), stone and gold ≥ 10 s, food ≥ 30 s. A
+  per-resource allowance per minute is simpler. The shipped
+  `Sim/RulerGather.CONFIG` (0.8 s cooldown, about 150 wood/min) is far above these until FORGE-01
+  applies them.
 
 ## Open questions
-- Ruler gathering rate (FORGE-07 on #110): the shipped `RulerGather.CONFIG` (FORGE-01's) gives about
-  150 wood/min to a ruler who keeps gathering, against the ≈ 37 wood/min this slice budgets from
-  3 woodcutters. Either the config slows (for example a 5–6 s cooldown, or 1 per harvest with a
-  longer cooldown) or this budget assumes ruler income; FORGE-00 and FORGE-01 to decide. Until
-  then the rates above leave ruler gathering out.
 - Gold has no source or sink in VS-1 except keep level 3: fine for the slice; VS-2 needs a gold use.
 - Storage caps, trade and production chains (VS-2) are not modelled.
 - Whether soldiers count in `getPopulation().total` (assumed yes, G5) — ProductionService charges
