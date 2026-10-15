@@ -783,6 +783,7 @@ local function hit(sim: any, u: any, def: any, target: any, kind: string)
 		end
 	else
 		target.hp -= math.floor(def.damage * def.siege + 0.5)
+		target.damagedAt = sim.time -- a building hit lately can't be moved out of reach (G13.9)
 		if target.hp <= 0 then
 			destroyBuilding(sim, target, u.kingdomId)
 		end

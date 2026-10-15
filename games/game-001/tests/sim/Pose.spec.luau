@@ -190,6 +190,29 @@ describe("Sim/Pose", function()
 		expect(angleOf(fight.RightArm)).toBeNear(90, 1e-3)
 	end)
 
+	it(
+		"celebrates with both arms up when nothing is held, with the tool arm lower and the tool tipped back when one is",
+		function()
+			for _, phase in PHASES do
+				for _, job in { "idle", "hauler" } do
+					local cheer = Pose.sample("celebrate", job, phase, 0)
+					expect(angleOf(cheer.RightArm)).toBeNear(angleOf(cheer.LeftArm), 1e-3) -- both arms up
+					expect(near(cheer.Tool, CFrame.new(), 0)).toBe(true)
+				end
+				for _, job in { "farmer", "woodcutter", "miner", "builder", "soldier", "juggler" } do
+					local cheer = Pose.sample("celebrate", job, phase, 0)
+					expect(angleOf(cheer.RightArm) < angleOf(cheer.LeftArm) - 15).toBe(true) -- the tool arm stays lower
+					expect(angleOf(cheer.RightArm)).toBeGreaterThan(40) -- but is held out from the body, not hanging
+					expect(angleOf(cheer.Tool)).toBeGreaterThan(35) -- tipped back and out
+					expect(cheer.Tool.UpVector.Z < -0.5).toBe(true) -- back: the top leans away from the front
+					expect(cheer.Tool.RightVector.Y < -0.2).toBe(true) -- and out, away from the head: the tool's right edge dips (+Y would turn it toward the head)
+					expect(angleOf(cheer.Tool) <= Pose.LIMITS.Tool + 1e-3).toBe(true) -- within its joint's limit
+					expect(cheer.Tool.UpVector.Z < 0).toBe(true) -- back: the tool's top leans away from the front (-Z)
+				end
+			end
+		end
+	)
+
 	it("falls back to idle for an unknown action", function()
 		for _, phase in PHASES do
 			local unknown = Pose.sample("juggle", "farmer", phase, 5)

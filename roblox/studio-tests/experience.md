@@ -15,23 +15,29 @@ Each section ends with its own **History** (D-038 (7)): a change to one feature 
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
-4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel VS1 ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
-5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
+3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel FirstMatch step=1 stepName=Spawn`.
+4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel FirstMatch ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
+5. With FORGE-01's conversations: answer a citizen's "!" request. One `analytics event ConversationAnswered value=<seconds the request was open> CustomField01=<occupation> CustomField02=<decision> sent=true`, for you only (a co-ruler gets none). It comes from G9 `CitizenAnswered` (FL-0108); asking again without a new request logs nothing.
+6. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0023); aligned with CONTRACTS v0.4-g2 and D-027.
 
-## E2 — Settings (FL-0024)
-Needs: RemoteService and a settings panel (FORGE-03 components; until it exists write "blocked: no settings UI"). Persistence across sessions also needs DataService (FL-0008, after VS-1).
+## E2 — Settings (FL-0024, panel FL-0103)
+Needs: RemoteService. The panel is FORGE-04's SettingsPanelController (FL-0103): in game-001 it opens from the HUD rail button "Settings" into the menu drawer. Persistence across sessions also needs DataService (FL-0008, after VS-1).
 1. Play Solo. Output shows `SettingsService: no DataService; settings and progress last for the session (D-027)` while FL-0008 is absent.
-2. In the settings panel set Music to 20% and Reduced Motion on: music drops at once; effects lose their camera shake.
-3. With DataService on the build only: leave, then Play Solo again; the values are still there.
-Pass: step 2 holds; step 3 holds when DataService exists. No `SettingsService` error in Output.
+2. Tap the rail button "Settings": the panel opens in the drawer with three sections (Sound, Motion and effects, Gameplay). Tap it again, or open Build or Kingdom: it closes.
+3. Set Music to 20% with the − button (four taps from 60%): music drops at each tap. The bar and the percentage follow; at 0% the − button greys out.
+4. Turn Reduced motion on: effects lose their camera shake, and a conversation's camera cuts instead of gliding (FL-0100). With the device's Reduce Motion on and the toggle off, the row says "On in your device settings".
+5. Effects quality → Reduced: build a House and watch the completion sparkle; it has visibly fewer particles than at Full, with the same motion.
+6. Device emulator, a phone (844×390): every row reads on one line and every button can be tapped; scroll to reach Gameplay.
+7. With DataService on the build only: leave, then Play Solo again; the values are still there.
+Pass: steps 2–6 hold; step 7 holds when DataService exists. No `SettingsService` or `SettingsPanelController` error in Output. Screenshot the panel on PC and on the phone emulator (FL-0103's visual evidence; the headless render is `roblox/tests/unit/experience/scenes/settings.luau`).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0024); session-only settings (D-027).
+- 2026-10-13 FORGE-04: the panel exists (FL-0103): rail button, sections, effects quality, phone layout.
 
 ## E3 — Audio budget and levels (FL-0024)
 Needs: sound assets (at least the P0 list in the user handoff).
@@ -129,14 +135,14 @@ Needs:
 - FORGE-03:
   - the citizen card;
   - the plot menu (`Build.PlaceSlot`, FL-0081, on `main`);
-  - the conversation panel, which reports `CitizenAnswered` after a successful `Kingdom.Choose`;
+  - the conversation panel (`Kingdom.Choose`). The AnswerCitizen step follows FORGE-01's G9 `CitizenAnswered` from ConversationService (FL-0107), credited to the answering ruler (FL-0108); the panel reports nothing for it;
   - the Army rail button (`HUD.ArmyButton`, FL-0060).
 - DataService is not needed (session-only progress, D-027).
 
 No step waits for a system the build doesn't have:
 - **Without FORGE-01's ConversationService on the build,** step 4 (AnswerCitizen) is passed over at once. Output shows `onboarding: a step's service is missing` at boot, and the card goes from the Build step straight to Recruit.
 - **Without FORGE-01's MilitaryService and ObjectiveService (FL-0052),** Recruit and Capture are passed over too, and the tutorial completes after the Build step (and step 4).
-- **With ConversationService but without the panel's `CitizenAnswered` report,** the card nudges at 45 s and moves on at 120 s.
+- **With ConversationService but no citizen request in time,** the card nudges at 45 s and moves on at 120 s (`via=timeout`).
 
 Each passed or timed-out step is still logged as its funnel step (Roblox counts skipped steps as done) and also as `analytics event OnboardingStepPassed` with `via=unavailable` or `via=timeout`. Write which case you saw.
 
@@ -144,7 +150,7 @@ Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions)
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
 2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
 3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
-4. Tap a plot marker, choose a House or Farm and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
+4. Tap the highlighted plot marker (a small plot: the menu offers a House, not a Farm), choose a House and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
 5. Build a Barracks, then recruit 3 soldiers from the Army rail button (highlighted by the Recruit card), and press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
 6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
 
@@ -154,7 +160,7 @@ info onboarding step ... flow=vs1 step=1 stepId=Spawn via=auto
 info analytics funnel Onboarding ... step=1 stepName=Spawn sent=true
 info onboarding step ... step=2 stepId=InspectCitizen via=client
 info analytics funnel Onboarding ... step=2 stepName=InspectCitizen sent=true
-... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=client), 5 Recruit (via=bus),
+... step=3 BuildOnPlot (via=bus), 4 AnswerCitizen (via=bus), 5 Recruit (via=bus),
     6 Capture (via=bus, or via=satisfied when a co-ruler captured first)
 info analytics event OnboardingCompleted ... CustomField01=vs1 sent=true
 ```
@@ -179,6 +185,7 @@ History:
 - 2026-10-12 FORGE-04: written (FL-0025); rewritten for the VS-1 flow (KingdomJoined → gather → build → recruit → capture), session-only progress (D-027).
 - 2026-10-12 FORGE-04: rewritten for onboarding v2 (D-030, FL-0092): inspect → build → answer → recruit → capture; passed-over steps (`requires`), the Build-button hint until FL-0081.
 - 2026-10-13 FORGE-04: FL-0081 follow-ups (#99): the build hint points at the plot markers again, and the Recruit hint at the Army rail button (`HUD.ArmyButton`).
+- 2026-10-13 FORGE-04: AnswerCitizen follows G9 `CitizenAnswered` (FL-0108, D-044 (3)); the panel's client report no longer counts.
 
 ## E7 — Notifications and celebrations (FL-0027)
 Needs:
@@ -253,6 +260,12 @@ Steps
 10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
 11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
 12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
+13. Off-screen requests (B16): run `vs1.request` a few times, then pan the aerial view away from those citizens until their badges leave the screen. A gold "!" badge appears at the screen edge for each, with a gold tip pointing towards the citizen, never under the top bar, a phone's notch, the HUD rail, the crest and pills, or the bottom bar; requests that lie the same way share one badge with a count. Tap one: the camera glides there and the citizen's card opens. Pan away again and press the cycle key (table): it goes to the oldest open request, then the next, and wraps; the previous key goes back. While placing a building, in walk mode and while the conversation stage shows, there are no edge badges and the keys do nothing.
+
+| Action | Windows | Mac | Gamepad |
+|---|---|---|---|
+| Next open request | F | F | DPad right |
+| Previous open request | Shift+F | Shift+F | DPad left |
 
 Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
 ```lua
@@ -269,12 +282,28 @@ return #out .. " bubbles\n" .. table.concat(out, "\n")
 ```
 Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
 
-Pass: steps 1–12 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
+Probe for step 13 (Client context, read-only): the edge badges now.
+```lua
+local out = {}
+local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("ForgeRequestIndicators")
+for _, b in (gui and gui:GetChildren() or {}) do
+	if b:IsA("TextButton") and b.Visible then
+		local count = b:FindFirstChild("Count")
+		table.insert(out, string.format("id=%s at=(%d,%d) angle=%d count=%s", tostring(b:GetAttribute("EntityId")),
+			b.AbsolutePosition.X, b.AbsolutePosition.Y, b.Pointer.Rotation, count.Visible and count.Text or "1"))
+	end
+end
+return (gui and "area " .. tostring(gui.AbsoluteSize) or "no indicator GUI") .. "\n" .. table.concat(out, "\n")
+```
+Expected: one line per off-screen request group, every badge inside `area`; none in build mode, walk mode or a conversation.
+
+Pass: steps 1–13 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
 - 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
+- 2026-10-15 FORGE-04: FL-0115 (B16) off-screen request badges and the cycle key (step 13, its probe; Windows/Mac/gamepad keys, D-049 (4)).
 - 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
@@ -397,3 +426,38 @@ Pass: steps 1–5 hold.
 History:
 - 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
 - 2026-10-15 FORGE-04: topmost wins (`onBack`, FORGE-07's #130 L1); step 5, Mac delete key.
+
+## E12 — Base editing: input and camera in the Move flow (FL-0121, game-001)
+
+B17 ships the Move flow (D-052 (1)): tap your building, then **Move** in its panel; a ghost follows the pointer; then confirm with **Move here**. E12 checks the input and the camera around a move. FORGE-03's U18 (`ui-economy.md`) checks the move itself: the panel, the ghost and its tint, the words, the plot snap and the refusals.
+
+Needs on the build:
+- FORGE-01's move remotes (FL-0119, #140).
+- FORGE-03's Move flow (FL-0120, #148), including its fix for FORGE-07's B1: tapping your own plot or building during a move must not open a panel or end the move.
+
+Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
+
+| Rule | Expected |
+|---|---|
+| Entering | **Move** puts input in edit mode. The view is the aerial one (from walk mode it switches to it), and the building you tapped no longer has the gold selection outline |
+| Taps during a move | Touch: a tap aims the ghost. On the ground it carries the ghost there; on one of your free plots the ghost snaps into it; the bar's **Move here** confirms. Mouse: the ghost follows the pointer, and a left click is **Move here** when the ghost is green (FORGE-03's PlacementInput, the same as placing). A tap or click never opens a panel or moves the camera, even on one of your buildings, and it ends the move only by confirming it. Citizens and rivals' buildings or plots are ignored |
+| No hover | Citizens get no hover outline, and their bubbles take no taps |
+| Camera during a move | The ghost can be carried to a spot off screen. Mouse: pan with WASD or the arrow keys and zoom with the wheel; don't pan with a left drag, because a left press confirms the move. Touch: a one-finger drag pans and pinch zooms; the press only aims, it never confirms. Q and E don't turn the view, because Q cancels the move and R / Shift+R turn the building. The right mouse button, a two-finger twist and the right stick still turn the view |
+| Leaving | Move here (accepted), Cancel, Q, X or gamepad B end the move and edit mode, with nothing moved unless it was accepted. The previous view comes back (walk mode if you were walking), unless you chose a view during the move. Esc opens only Roblox's menu |
+| Parked: drag gesture (FL-0123) | Not in B17; skip and write "parked, FL-0123". These rows apply once the press-and-drag gesture exists: dragging a building never pans the view, and holding the pointer within about 48 px of a screen edge pans that way, faster nearer the edge (`setEditDrag`, edge-pan) |
+
+Steps
+1. Play Solo. Press V to walk. Tap one of your houses, then **Move** in its panel. The view switches to the aerial view, the house has no gold outline, and the ghost appears where the house stands.
+2. Hover a citizen: no outline. Move the pointer next to another of your buildings: the ghost follows. Click that building itself (the ghost is red over it, so the click can't move anything): no panel opens, the move stays open, and the view doesn't jump to the building.
+3. Phone emulator: start a move. Tap the ground, then tap one of your free plots. The ghost moves, then snaps into the plot. No "Build here" drawer opens, and the view stays still.
+4. During a move: pan with WASD and zoom with the wheel. The move stays open. Press E: the view doesn't turn. Right-drag: the view turns, and the move stays open. Phone emulator: a one-finger drag pans, the ghost goes to where the finger first touched, and the move stays open until **Move here**. (A left press confirms on a mouse, so a left drag is not a pan during a move; FORGE-07's #157 M1.)
+5. Confirm with **Move here** on a free spot. After the toast, you are back in walk mode (from step 1) and tapping a citizen opens their card again. Repeat from the aerial view: the aerial view stays.
+6. Start a move, then press X (or gamepad B): the move ends, nothing moved, the house is no longer dimmed, and taps select again. Repeat with Q (FORGE-03's cancel): same. Start a move and press Esc: only Roblox's menu opens.
+7. Drag-gesture rows: write "parked, FL-0123".
+
+Pass: steps 1–6 hold.
+
+History:
+- 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).
+- 2026-10-15 FORGE-04: rewritten to the Move flow that B17 ships (D-052 (1)). The drag and edge-pan rows are parked (FL-0123). A selection in edit mode no longer pans the camera (FORGE-07's #148 B1 side effect).
+- 2026-10-15 FORGE-04: on a mouse a left press confirms the move (PlacementInput), so pan with WASD during a move, and step 2 clicks the building, not the ground (FORGE-07's #157 M1).

@@ -52,11 +52,26 @@ describe("VS-1 analytics (FL-0063)", function()
 		}
 	end
 
-	-- VS1 steps logged per user id: { [userId] = { stepName, ... } }
+	-- G13.2 CitizenService double: inspect(entityId).occupation
+	local function citizenService(occupations)
+		return {
+			name = "CitizenService",
+			new = function()
+				return {
+					inspect = function(_, entityId)
+						local occupation = occupations[entityId]
+						return if occupation then { entityId = entityId, occupation = occupation } else nil
+					end,
+				}
+			end,
+		}
+	end
+
+	-- FirstMatch steps logged per user id: { [userId] = { stepName, ... } }
 	local function vs1()
 		local out = {}
 		for _, call in roblox:callsTo("LogFunnelStepEvent") do
-			if call.args[1] == "VS1" then
+			if call.args[1] == "FirstMatch" then
 				out[call.userId] = out[call.userId] or {}
 				table.insert(out[call.userId], call.args[4])
 			end
@@ -120,6 +135,27 @@ describe("VS-1 analytics (FL-0063)", function()
 		expect(registry:get("AnalyticsService").stats.dropped.outOfOrder).toBeGreaterThan(0)
 	end)
 
+	it("times each FirstMatch step after Spawn: MilestoneReached, seconds since the session started (M7)", function()
+		boot({ kingdomService(), matchService("match30") })
+		join(crimson1, "crimson")
+		env.wait(30)
+		GameEvents.ResourceGathered:fire(crimson1, "crimson", "wood", 5, "ruler")
+		env.wait(45)
+		GameEvents.BuildingPlaced:fire(
+			{ id = 1, type = "house", level = 1, kingdom = "crimson", placedBy = crimson1.UserId },
+			crimson1
+		)
+		GameEvents.ResourceGathered:fire(crimson1, "crimson", "wood", 5, "ruler") -- a repeat: no second time
+		local timed = {}
+		for _, call in custom("MilestoneReached") do
+			table.insert(timed, { userId = call.userId, value = call.args[2], fields = call.args[3] })
+		end
+		expect(timed).toEqual({
+			{ userId = 631, value = 30, fields = { CustomField01 = "FirstGather", CustomField02 = "match30" } },
+			{ userId = 631, value = 75, fields = { CustomField01 = "FirstBuildPlaced", CustomField02 = "match30" } },
+		})
+	end)
+
 	it("logs each funnel step once per player, however often the event repeats", function()
 		boot({ kingdomService() })
 		join(crimson1, "crimson")
@@ -131,7 +167,7 @@ describe("VS-1 analytics (FL-0063)", function()
 		-- repeats are counted, never logged (FORGE-05 #64 M1: they flooded Output at about 430 lines a minute)
 		local lines = 0
 		for _, entry in env.mock.logs do
-			lines += if string.find(entry.message, "analytics funnel VS1", 1, true) then 1 else 0
+			lines += if string.find(entry.message, "analytics funnel FirstMatch", 1, true) then 1 else 0
 		end
 		expect(lines).toBe(2)
 		expect(registry:get("AnalyticsService").stats.dropped.duplicate).toBe(20)
@@ -264,6 +300,28 @@ describe("VS-1 analytics (FL-0063)", function()
 		expect(service._kingdomOf[631]).toBe("crimson")
 		env.wait(61)
 		expect(service:leftInfo(crimson1)).toEqual({ phase = "Founding", minute = 1 }) -- from the new Founding
+	end)
+
+	it("logs ConversationAnswered from G9 CitizenAnswered: secondsOpen, occupation, decision (FL-0108)", function()
+		boot({ kingdomService(), citizenService({ [7] = "farmer" }) })
+		join(crimson1, "crimson")
+		join(crimson2, "crimson")
+		GameEvents.CitizenAnswered:fire(crimson2, "crimson", 7, "handout_food", 12.5)
+		local answered = custom("ConversationAnswered")
+		expect(#answered).toBe(1)
+		expect(answered[1].userId).toBe(632) -- the ruler who answered, never the co-ruler
+		expect(answered[1].args[2]).toBe(12.5)
+		expect(answered[1].args[3]).toEqual({ CustomField01 = "farmer", CustomField02 = "handout_food" })
+		-- the answer removed its citizen, and there was no bubble: still logged, without those two
+		GameEvents.CitizenAnswered:fire(crimson1, "crimson", 99, "firm_ruling", nil)
+		answered = custom("ConversationAnswered")
+		expect(#answered).toBe(2)
+		expect(answered[2].userId).toBe(631)
+		expect(answered[2].args[2]).toBe(1) -- no secondsOpen: Roblox's default value
+		expect(answered[2].args[3]).toEqual({ CustomField02 = "firm_ruling" })
+		GameEvents.CitizenAnswered:fire(nil, "crimson", 7, "threat", 3) -- no player: nothing
+		expect(#custom("ConversationAnswered")).toBe(2)
+		expect(env.mock.threadErrors).toEqual({})
 	end)
 
 	it("boots without KingdomService and MatchService (headless): nothing kingdom-scoped, no errors", function()

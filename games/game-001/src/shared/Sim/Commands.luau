@@ -21,6 +21,7 @@
 		PlaceBuilding(kind, x, z, yaw?)      { buildingId }        -- yaw: facing in radians (default: towards the keep)
 		UpgradeBuilding(buildingId)          { buildingId, level }
 		CancelConstruction(buildingId)       { buildingId }
+		MoveBuilding(buildingId, x, z, yaw, slotId?)   { buildingId }  -- G13.9: in place, free; slotId set or cleared
 		SetJobQuota(job, count)              { job, count }           -- 0..200; hauler is the pool (no quota)
 		SetPriority(resource, weight)        { resource, weight }     -- integer 0..3
 		SetAlarm(on)                         { on }                   -- citizens shelter in the keep
@@ -29,7 +30,8 @@
 	Error codes: match_not_active, not_ruler, kingdom_eliminated, unknown_command, invalid_args,
 	unknown_building, not_placeable, requires_keep_level, limit_reached, out_of_bounds,
 	out_of_territory, blocked, cannot_afford, not_found, not_owner, busy, max_level,
-	nothing_to_cancel, unknown_job, unknown_resource (+ those of registered commands).
+	nothing_to_cancel, unknown_job, unknown_resource, not_movable, alarm, under_attack, cooldown
+	(+ those of registered commands).
 	Building ids are positive integers (CONTRACTS G2); building kinds and jobs are contract ids.
 ]]
 
@@ -95,6 +97,24 @@ register("PlaceBuilding", function(sim, kingdom, by, kind, x, z, yaw)
 	return true, nil, { buildingId = building.id }
 end)
 
+-- CONTRACTS G13.9: one atomic, in-place move; slotId is set (or cleared) in the same command
+register("MoveBuilding", function(sim, kingdom, by, buildingId, x, z, yaw, slotId)
+	if
+		not isBuildingId(buildingId)
+		or not finite(x)
+		or not finite(z)
+		or not finite(yaw)
+		or (slotId ~= nil and not isId(slotId))
+	then
+		return false, "invalid_args"
+	end
+	local ok, err = sim:moveBuilding(kingdom, buildingId, x, z, yaw, by, slotId)
+	if not ok then
+		return false, err
+	end
+	return true, nil, { buildingId = buildingId }
+end)
+
 register("UpgradeBuilding", function(sim, kingdom, by, buildingId)
 	if not isBuildingId(buildingId) then
 		return false, "invalid_args"
@@ -125,6 +145,8 @@ register("SetJobQuota", function(sim, kingdom, _by, job, count)
 		return false, "unknown_job"
 	end
 	kingdom.quotas[job] = count
+	-- every accepted change counts, even to the same number: a co-ruler's panel sees it was answered (#71)
+	kingdom.quotaRev = (kingdom.quotaRev or 0) + 1
 	return true, nil, { job = job, count = count }
 end)
 

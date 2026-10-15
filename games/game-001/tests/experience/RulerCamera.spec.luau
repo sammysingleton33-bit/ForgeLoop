@@ -369,6 +369,74 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(controller.mode).toBe("overview")
 	end)
 
+	it("edit mode (G13.9) keeps the overview; setEditDrag stops drag-pan and pans at the screen edge", function()
+		boot()
+		controller._opts.viewportWidth = 1280
+		controller:setMode("follow")
+		input:set("edit")
+		expect(controller.mode).toBe("overview")
+		input:set("explore")
+		expect(controller.mode).toBe("follow")
+		controller:setMode("overview")
+		expect(controller:setEditDrag(true)).toBe(false) -- only while editing
+		input:set("edit")
+		env.mock:advance(0.2)
+		expect(controller:setEditDrag(true)).toBe(true)
+		settle()
+		local start = controller:getFocus() :: Vector3
+		mouse("InputBegan", Enum.UserInputType.MouseButton1, 400, 300)
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 600, 360) -- dragging a building
+		frames(5)
+		expect(near(controller:getFocus() :: Vector3, start, 1e-6)).toBe(true) -- the drag never pans
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 1279, 360) -- at the right edge
+		frames(30)
+		local moved = (controller:getFocus() :: Vector3) - start
+		expect(moved.Magnitude > 1).toBe(true)
+		expect(near(moved.Unit, CameraDef.panVector(Vector2.new(1, 0), controller._target.yaw), 1e-3)).toBe(true)
+		controller:setEditDrag(false)
+		local stopped = controller:getFocus() :: Vector3
+		frames(30)
+		expect(near(controller:getFocus() :: Vector3, stopped, 1e-6)).toBe(true) -- no edge-pan once dropped
+		controller:setEditDrag(true)
+		input:set("explore") -- leaving edit mode ends it too
+		expect(controller._editDrag).toBe(false)
+		expect(CameraDef.edgeDirection(Vector2.new(640, 360), Vector2.new(1280, 720), 48)).toEqual(Vector2.zero)
+		expect(CameraDef.edgeDirection(Vector2.new(0, 0), Vector2.new(1280, 720), 48)).toEqual(Vector2.new(-1, 1))
+		expect(CameraDef.edgeDirection(Vector2.new(640, 720), Vector2.new(1280, 720), 48)).toEqual(Vector2.new(0, -1))
+	end)
+
+	it("a selection never moves the camera, in edit mode too (B17 Move flow: a tap aims the ghost; #148 B1)", function()
+		boot()
+		local kingdoms = roblox.Instance.new("Folder")
+		kingdoms.Name = "ForgeKingdoms"
+		local crimson = roblox.Instance.new("Folder")
+		crimson.Name = "crimson"
+		crimson.Parent = kingdoms
+		local buildings = roblox.Instance.new("Folder")
+		buildings.Name = "Buildings"
+		buildings.Parent = crimson
+		local house = roblox.Instance.new("Model")
+		house:SetAttribute("BuildingId", 9)
+		local base = roblox.Instance.new("Part")
+		base.CFrame = CFrame.new(THRONE.X + 60, 0, THRONE.Z - 30)
+		base.Parent = house
+		house.PrimaryPart = base
+		house.Parent = buildings
+		kingdoms.Parent = env.Workspace
+		settle()
+		local before = controller:getFocus() :: Vector3
+		input:select("building", 9) -- explore mode: the panel's own "go to" decides
+		expect(near(controller:getFocus() :: Vector3, before, 1e-6)).toBe(true)
+		-- edit mode lasts while a building is moved (D-052 (1)); a tap on one of your buildings there is
+		-- the player aiming the ghost next to it, so the view must not jump to it
+		input:set("edit")
+		input:select("building", 9)
+		input:select("slot", "crimson_slot1")
+		frames(30)
+		expect(near(controller:getFocus() :: Vector3, before, 1e-6)).toBe(true)
+		expect(controller.mode).toBe("overview")
+	end)
+
 	it("VFXController shake requests rotate the camera and fade out after their duration", function()
 		boot({ vfx })
 		controller:setMode("follow") -- Roblox's camera owns the CFrame; shake is added on top
