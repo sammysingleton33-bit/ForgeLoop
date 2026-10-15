@@ -33,6 +33,9 @@
 		CitizenBubbleIndicatorController:count() -> number   -- open requests now (FORGE-03's 'citizens
 		                                                      -- waiting' control can show it and call
 		                                                      -- cycleRequests)
+		CitizenBubbleIndicatorController:active() -> boolean -- true when cycleRequests / focusRequest act
+		                                                      -- now: explore mode, the aerial view, no
+		                                                      -- conversation (that control hides otherwise)
 		CitizenBubbleIndicatorController:refresh()           -- re-place the badges (every POLL_SEC)
 ]]
 
@@ -195,6 +198,11 @@ function Controller:count(): number
 		return 0
 	end
 	return #self:_requests()
+end
+
+-- The same rule the badges and keys follow (FORGE-03's "citizens waiting" control, #168).
+function Controller:active(): boolean
+	return self._bubbles ~= nil and self:_active()
 end
 
 -- Go to a request: the camera centres on the citizen and selects them (FORGE-03's card opens).

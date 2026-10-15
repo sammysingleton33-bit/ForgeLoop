@@ -58,4 +58,6 @@ M = [
  ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'Def.TIP = 15', 'Def.TIP = 6', 'RequestIndicators', 'shows a badge at the edge for each off-screen request', "game"),
  ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'Def.INSET = 40 --', 'Def.INSET = 30 --', 'RequestIndicators', 'shows a badge at the edge for each off-screen request', "game"),
  ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'if type(connection) == "table" and connection.disconnect ~= nil then', 'if false then', 'RequestIndicators', 'destroy() disconnects everything', "game"),
+ ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'return self._bubbles ~= nil and self:_active()', 'return self._bubbles ~= nil', 'RequestIndicators', 'hides while walking', "game"),
+ ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'return self._bubbles ~= nil and self:_active()', 'return self:_active()', 'RequestIndicators', 'runs inert without CitizenBubbleController', "game"),
 ]
