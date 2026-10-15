@@ -2,7 +2,9 @@
 	Kingdom/Layout: farm zones and build areas stay clear of generated trees and rocks (user playtest 2026-10-13:
 	"farms in the starting kingdom contain trees and rocks"). For seeds 1..20 on the world layout:
 	  - no generated node touches a crop field (the farm zones: world features.fields) or a plot build zone
-	    (front yard and flanks), with the same clearance a build slot gets;
+	    (front yard and flanks), with the same clearance a build slot gets, measured from what is drawn (the
+	    larger of its footprint and its box's half-diagonal, Sim/NodeStyle: a boulder's corners reach past its
+	    footprint circle), and no corner of a drawn node stands on one;
 	  - every kingdom still has its whole forest, quarry and gold vein, within a woodcutter's reach;
 	  - the plots are still rotated copies of each other for the zone keep-out: the nodes of two kingdoms
 	    differ only by their rotation (fairness, #62 M-1 stays true).
@@ -15,6 +17,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 local Footprint = require("@game/ReplicatedStorage/Game/Sim/Footprint")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
+local NodeStyle = require("@game/ReplicatedStorage/Game/Sim/NodeStyle")
 local Simulation = require("@game/ReplicatedStorage/Game/Sim/Simulation")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 
@@ -69,8 +72,10 @@ describe("Kingdom/Layout: farm zones and build areas are free of generated nodes
 				local gap = sim.catalog.tuning.placementGap + Layout.SLOT_MARGIN
 				for _, nid in sim.nodeOrder do
 					local n = sim.nodes[nid]
+					-- what a node reaches is the larger of its footprint circle and its drawn box
+					local reach = math.max(n.footprint, NodeStyle.radius(n.kind))
 					for _, area in list do
-						if Footprint.overlapsCircle(area.shape, n.x, n.z, n.footprint, gap) then
+						if Footprint.overlapsCircle(area.shape, n.x, n.z, reach, gap) then
 							error(`seed {seed}: {n.kind} at ({math.floor(n.x)}, {math.floor(n.z)}) reaches {area.name}`)
 						end
 					end
@@ -78,6 +83,38 @@ describe("Kingdom/Layout: farm zones and build areas are free of generated nodes
 			end
 		end
 	)
+
+	it("no corner of a drawn node stands on a crop field or build zone, seeds 1..20", function()
+		local list = areas()
+		for seed = 1, SEEDS do
+			local sim = generate(seed)
+			for _, nid in sim.nodeOrder do
+				local n = sim.nodes[nid]
+				local size = NodeStyle.STYLE[n.kind].size
+				for _, sx in { -1, 1 } do
+					for _, sz in { -1, 1 } do
+						local cx, cz = n.x + sx * size[1] / 2, n.z + sz * size[3] / 2
+						for _, area in list do
+							if Footprint.overlapsCircle(area.shape, cx, cz, 0.01, 0) then
+								error(`seed {seed}: a {n.kind} corner stands in {area.name}`)
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	it("the drawn extent is the box's half-diagonal and reaches past a boulder's footprint circle", function()
+		local sim = generate(1)
+		expect(math.abs(NodeStyle.radius("tree") - math.sqrt(8)) < 1e-9).toBe(true)
+		expect(math.abs(NodeStyle.radius("rock") - math.sqrt(32)) < 1e-9).toBe(true)
+		expect(math.abs(NodeStyle.radius("goldvein") - math.sqrt(24.5)) < 1e-9).toBe(true)
+		expect(NodeStyle.radius("berries")).toBe(0) -- no look, no extent
+		-- the drawn corners of a rock and a gold vein reach past their footprint circles: the reason for the rule
+		expect(NodeStyle.radius("rock") > sim.catalog.nodes.rock.footprint).toBe(true)
+		expect(NodeStyle.radius("goldvein") > sim.catalog.nodes.goldvein.footprint).toBe(true)
+	end)
 
 	it("leaves each kingdom its whole forest, quarry and gold vein, within reach of its keep, seeds 1..20", function()
 		for seed = 1, SEEDS do
@@ -123,6 +160,44 @@ describe("Kingdom/Layout: farm zones and build areas are free of generated nodes
 			local first = per[sim.kingdomOrder[1]]
 			for _, kid in sim.kingdomOrder do
 				expect(`{seed} {kid} {per[kid]}`).toBe(`{seed} {kid} {first}`)
+			end
+		end
+	end)
+
+	-- FORGE-02's per-plot resource nodes (world/Layout.lua resourceNodes: Kit models drawn by WorldService, not
+	-- sim nodes) stand on crop fields, build zones and slots: the boulders on fields 3/6/9/12, the berry
+	-- bushes in the east yards, the gold veins beside slot 10. They are FORGE-02's data (handoff
+	-- 2026-10-15-forge-01-to-forge-02-00-world-resource-nodes); this only stops a NEW node from joining them.
+	-- Delete an id from KNOWN when FORGE-02 has moved it (a fixed node passes either way).
+	local KNOWN = {}
+	for _, kid in { "crimson", "azure", "emerald", "gold" } do
+		for _, name in { "stone1", "stone2", "food1", "food2", "gold1" } do
+			KNOWN[`{kid}_{name}`] = true
+		end
+	end
+	local NODE_REACH = 9 -- Kit/WorldPlan keeps its decor 9 studs from a resource node: its own estimate of a node's size
+
+	it("no further world resource node (Kit model) joins those already standing on a field, zone or slot", function()
+		local list = areas()
+		for _, kid in KingdomsConfig.identities do
+			local plot = WORLD.plots[kid.id]
+			for _, slot in plot.buildSlots do
+				local size = WORLD.slotSizes[slot.size]
+				table.insert(list, {
+					name = `{kid.id} slot {slot.id}`,
+					shape = Footprint.rect(size, slot.center.X, slot.center.Z, slot.rot),
+				})
+			end
+		end
+		for _, node in WORLD.resourceNodes do
+			if string.sub(node.id, 1, 6) == "heart_" or KNOWN[node.id] then
+				continue
+			end
+			local p = node.cframe.Position
+			for _, area in list do
+				if Footprint.overlapsCircle(area.shape, p.X, p.Z, NODE_REACH, 0) then
+					error(`world node {node.id} ({node.resource}) stands within {NODE_REACH} studs of {area.name}`)
+				end
 			end
 		end
 	end)
