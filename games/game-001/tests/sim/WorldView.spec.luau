@@ -148,6 +148,33 @@ describe("Sim/WorldView Kit buildings", function()
 		expect(#after:GetDescendants()).toBe(#fresh:GetDescendants()) -- what a fresh azure farm is made of
 		fresh:Destroy()
 	end)
+
+	it("marks a building a riot burns with Burning = true, and clears it when the fire ends (FL-0082)", function()
+		local env, match, view = world()
+		local sim = match.sim
+		local farm
+		for _, id in sim.kingdoms.crimson.buildingIds do
+			if sim.buildings[id].kind == "farm" then
+				farm = sim.buildings[id]
+			end
+		end
+		assert(farm, "crimson starts with a farm")
+		expect(view:find("building", farm.id):GetAttribute("Burning")).toBeNil()
+		farm.burning = true
+		view:sync(sim)
+		expect(view:find("building", farm.id):GetAttribute("Burning")).toBe(true)
+		farm.burning = nil
+		view:sync(sim)
+		expect(view:find("building", farm.id):GetAttribute("Burning")).toBeNil()
+		-- the placeholder parts view carries it too
+		local parts = WorldView.new(env, { entities = false, createGround = false })
+		farm.burning = true
+		parts:sync(sim)
+		expect(parts:find("building", farm.id):GetAttribute("Burning")).toBe(true)
+		farm.burning = nil
+		parts:sync(sim)
+		expect(parts:find("building", farm.id):GetAttribute("Burning")).toBeNil()
+	end)
 end)
 
 describe("Sim/WorldView moved buildings (G13.9)", function()

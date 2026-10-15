@@ -87,6 +87,9 @@ function CitizenBrain.decide(world: any, citizen: any): Decision
 	if world:isNight() then
 		return { activity = "Sleep", target = citizen.home or kingdom.keepId, score = 5, reason = "night" }
 	end
+	if world:isRioting(citizen) then
+		return { activity = "Idle", target = nil, score = 5, reason = "rioting" }
+	end
 	if world:isStriking(citizen) then
 		return { activity = "Idle", target = nil, score = 5, reason = "on strike" }
 	end

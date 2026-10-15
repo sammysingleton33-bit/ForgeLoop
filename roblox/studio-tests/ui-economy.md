@@ -261,6 +261,18 @@ Before #140 the building panel shows no Move: expected.
    right", not "Faces the street". **Move here** without moving it: the move ends quietly (no toast, no
    "Moved" cooldown in its panel). Turn once and Move here: it turns on its plot and the toast shows.
 
+## U19 — the back key (FORGE-04's #130: gamepad B, Backspace; a Mac's delete)
+1. Desktop: open **Kingdom**, press Backspace: the drawer closes. Open Build, then Kingdom (one drawer
+   replaces the other), Backspace once: closed; a second Backspace does nothing.
+2. Kingdom → a building's detail, Backspace: back to the Buildings tab; again: the drawer closes.
+3. Talk to a citizen (the cinematic stage, E11): pick an answer with a cost or risk (the confirm step),
+   Backspace: back to the question, nothing chosen; Backspace again: the stage closes, the camera comes
+   back and the citizen walks on (as with X).
+4. Phone emulator with a gamepad (or a keyboard): Build → a building (the detail pane), B: back to the
+   list; B again: the drawer closes. The same for Reputation (a category) and a plot's building detail.
+5. Typing in any text box, Backspace deletes text and closes nothing. While placing, B leaves build mode
+   (FORGE-04's rule) and closes nothing else.
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 

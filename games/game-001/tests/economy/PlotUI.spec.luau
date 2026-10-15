@@ -462,6 +462,20 @@ describe("Plot picker and upgrade panel end to end (FL-0087)", function()
 		world:destroy()
 	end)
 
+	it("the back key (#130) on a phone: the detail goes back to the list, then the drawer closes", function()
+		local world = newWorld({ width = 750, height = 311 })
+		local hud = world.hud
+		pick(world, "slot", "l1")
+		tap(find(hud.guis.menus, "Row_farm"))
+		expect(find(hud.guis.menus, "Detail")).toBeTruthy()
+		expect(hud:backPressed()).toBe(true)
+		expect(find(hud.guis.menus, "Detail")).toBeNil()
+		expect(hud.state.menu).toBe("plot")
+		expect(hud:backPressed()).toBe(true)
+		expect(hud.state.menu).toBeNil()
+		world:destroy()
+	end)
+
 	it("phone: the plot list first, then the detail with a way back", function()
 		local world = newWorld({ width = 750, height = 311 })
 		local hud = world.hud

@@ -352,10 +352,78 @@ overlapped the head. Minimal change, still 9 parts; nothing else in the phase 1 
   needs a Torso part, outside D-048); **soldier** helm reads as a gnome hat and the spear has no head.
 - **Kingdom red from above** fell about 14% because straw and white hats cover the shoulders.
 
+## FL-0118 phase 1b: the fresh review's 9-part fixes (interim art, D-051)
+
+Phase 1 plus the clip fix (#138) passed the D-051 gates; this stacked branch takes the fresh-context D-019 round 1's lowest
+criteria that fit in 9 parts. Still 9 parts per rig; Phase 2 (D-048, tools with handle and head) is the next branch.
+Images (`art/reviews/img/`): `citizen_polish1b_jobs.jpg` (all 8 jobs at about 40 studs, before = #138 as pushed, colour and
+grayscale), `citizen_polish1b_heads.jpg` (each job from the front, side and back), `citizen_polish1b_crowd.jpg` (30 citizens
+round a farm, 50° at 170 studs, before and after), `citizen_polish1b_groups.jpg` (4 per job at the aerial camera, colour and
+grayscale), `citizen_polish1b_idle.jpg` (12 idle looks).
+- **Woodcutter cap smaller.** The 1.9 x 1.6 x 2.0 wedge slab (read as a chimney) became a 1.5 charcoal knit beanie, a ball sitting
+  high (top 6.09, was 6.68). Its rim runs above the eyes and meets the head at 53° (spec: at least 35°, rim at least 0.33
+  above the head centre on the face side).
+- **Miner pot smaller and darker than the farmer disc.** Pot 2.2 x 0.8 ochre (L .50) became 1.9 x 0.7 dark burnt ochre
+  (L .44, palette .38-.44); the farmer's disc went 3.4 to 3.1 and its straw to L .62. Spec: pot width at most 0.65 of the disc, pot value at
+  least 0.1 darker.
+- **Builder hat.** Cream cloth cap (240, 214, 160, was white) on the same low peaked wedge. It still does not read as a hard hat:
+  a one-part dome cannot leave its rim above the eyes except as a tall egg (the rim sits at +0.1 for a flat dome), so the dome
+  with a brim is a Phase 2 detail-part item. Honest status: improved from white paper to warm cloth cap, not a hard hat.
+- **Per-individual variation, from the look alone** (no wire field): the hair colour, hidden under a working citizen's hat,
+  dyes the clothes: trousers and neutral panel (a palette of three hues per job times 8 dyes of +-10%) and the shirt's kingdom tint factor (8 shifts, -0.16 to +0.12, KitTint
+  stays exact so `setKingdomColor` still matches; the default look is unchanged). Spec: 8 shirt tones and 8 trouser dyes per
+  job, different jobs' trousers stay at least 10 apart under every dye pair, the three palette picks differ in hue (not only brightness).
+- **Idle variety.** Idle citizens carry nothing, so the free 9th part is an `Accessory` welded to the Head on about two looks
+  in three: a headband (kingdom red or indigo) or a scarf (cream or rust). Spec: share between 55 and 80%, never on any other
+  job or kind, headband above the eyes, scarf below the chin line, flags as the other parts, 9 parts at most.
+- **Governor.** Crown 1.52 x 0.5 became a 1.9 x 0.6 gold disc, staff 5.6 x 0.34 became 6.4 x 0.5, body 2.2 to 2.4. (A cape would
+  need a Torso-welded part: outside D-048.)
+- **Soldier crest less gnome-like.** The crimson spire went from 1.3 x 2.1 to 1.0 x 1.6 (1.55 above the helm, no taller than the
+  helm 1.6; base diagonal 1.41). The great helm is still a steel box, so a cone on a cube remains; a rounder helm is a separate
+  change (it moves the D-033 crest silhouettes) and is not done here.
+- **Kingdom red from above.** Besides the smaller farmer disc: an even hair colour makes a working citizen's neutral sleeves
+  kingdom-red (an odd one keeps the job panel), so the shoulders show red from the air on half the looks. Kingdom-red pixels in
+  the 30-citizen crowd crop (same looks, positions and camera; my threshold): main 420, #138 380, this branch 441. Spec: the
+  tinted top area is at least 1.0 larger with red sleeves.
+- **Hauler sack.** Centre 0.1 right, 2.8 up, 2.1 behind the spine (was 3.05 up, 1.95 behind): its top is 4.15, just above the
+  shoulders (3.9), so from the front it is a bag behind the body. Spec adds: top at most 4.3, bottom at least 1.3, walking legs
+  never enter it (0.02), plus the earlier head and arm gaps. A strap or tie needs a part: Phase 2.
+- **Spec and mutants.** `KitCharacter.spec` has 44 tests (39 before): hat clearance now handles a ball beanie (rim rule), and six
+  new tests cover individuals, red sleeves, idle accessories, the governor and the low crest. 17 mutants (beanie over the eyes or
+  oversized, pot wide or light, sack beside the head or in the legs, headband on the eyes, scarf over the face, no red sleeves,
+  dye or shirt tone ignored, accessory on everyone or welded to the torso, thin crown, thin staff, tall spire, shifted default
+  look) all fail the spec. `check.sh` OVERALL PASS (game-001 specs 1431 passed).
+
+### Phase 1b: fresh-context D-019 re-score, round 1 (image-only reviewer), and round 2
+Round 1 (first build, images `citizen_polish1b_*` at d32fecf): **rig set NEEDS-WORK**, sil 4 / var 3 / read 3 / prop 3 / pal 4 /
+detail 3 / cohes 4. Per rig (sil / var / read): farmer 4/2/4, woodcutter 3/2/3, miner 3/2/3, builder 4/2/4, hauler 3/3/3, idle
+3/4/4, soldier 5/4/5 (PASS), governor 4/4/4 (PASS). Findings, worst first: no within-job variation in the 4-per-job aerial group
+(all clones); the axe and pick are flat slabs that merge in grayscale; the hauler's front view is almost the idle citizen; the
+builder carries a crate and its wedge looks like folded paper; farmer, miner and governor hats are all flat discs; tool-to-arm
+joins are ragged; the idle hair is a split sphere; detail density is low. Kingdom red: 380 to 441 px (confirmed).
+Round 2 (this commit): variation made visible. Each working job has a palette of three hat colours (look.hair: six hats = three
+colours x three tilts, one value band per job so grayscale separation holds), three panel and three trouser hues (hair colour),
+a wider shirt-tone shift, and the miner pot a little lighter so it separates from the woodcutter in grayscale. Kingdom-red
+pixels in the crowd crop: 443 (main 420, #138 380). Not addressed here because each needs a second part (Phase 2, D-048): tools
+with handle and head, the hauler's strap and sack tie, the builder's hard hat (dome + visor) and hammer, the miner's lamp, the
+spearhead. Hair is still a hemisphere (a cap shape is a separate change).
+
+#### Round 2 fresh re-score (image-only reviewer, commit 356dfc2): rig set NEEDS-WORK
+The reviewer did not zoom the aerial crops. Scores sil / var / read / prop / pal / detail / cohes: farmer 5/2/5/4/4/3/3,
+woodcutter 3/3/3/4/3/3/3, miner 3/3/3/4/4/3/2, builder 4/3/4/3/3/3/3, hauler 3/3/2/3/3/2/3, idle 3/3/4/4/4/3/3, soldier
+4/4/4/3/3/3/3 (PASS, borderline), governor 4/4/4/4/4/3/4 (PASS); rig set 3/3/3/4/4/3/3. Two of eight pass; visibly better than
+BEFORE "but only slightly". Remaining, lowest first: hauler read 2 (the sack hides behind the arm in the front view, the figure
+looks like idle: needs the strap, Phase 2); farmer variation 2 (the four farmers still look alike in the aerial group: hat colour
+and tilt are subtle at 3 px per stud); miner cohesion 2 and a ragged tool-arm join; tools overall are slabs (no handle and head:
+Phase 2); woodcutter, miner and idle share a dark value in grayscale; builder carries a crate and the wedge cap reads as paper;
+idle hair is two overlapping spheres; the soldier's cone reads as a party hat and the helm is a box. The criterion still below
+threshold after two author rounds on 9 parts, as the coordinator's rule asks, is **variation (2-3, needs 4) and tool readability**;
+stopped here. Phase 2 (the next stacked branch) takes the tools, the hauler's strap, the builder's hard hat and the miner's lamp.
+
 ## FL-0118 B18: arm pivots outside the torso (D-019 renders, before and after)
 
 What moved (FORGE-00, branch `forge/02-blender-shoulders`, 41ef850): only the two arm Motor6D pivots, out to the arm's centre line (0.41 outside
-the torso's side; 0.55 on the soldier). The arm parts sit exactly where they did at rest; `Pose.JOINTS`, the joint names and the wire are unchanged.
+the torso's side, on every rig). The arm parts sit exactly where they did at rest; `Pose.JOINTS`, the joint names and the wire are unchanged.
 FORGE-01's probe (not re-measured here): free arm against the head in the arms-up cheer -0.10 to -0.32 before, +0.45 to +0.69 after, other
 actions unchanged. Before is main `f86ad7f` (a scratch worktree), after is 41ef850, both with `Sim/Pose` from main (#154 plus #158). Blender previews,
 not a Studio play test. Images in `img/`: `citizen_shoulders_rest40.jpg` (8 rigs at rest, about 40 studs, colour and grayscale),
@@ -367,7 +435,6 @@ peak of the cheer, front and side, before and after), `citizen_shoulders_crowd.j
 - **Cheer (looked at, farmer, builder, soldier, governor, idle):** before, the free arm goes through the head or lies over the face (the idle citizen's two arms cover the cheeks); after,
   the arm rises beside the head with a visible gap, so the cheer is two raised arms in a V and the face stays clear. In the cheer dump 192 of 774 parts
   moved: both arms of every rig (40 each) and the tools in the right hands (30), which follow their arm. The arms stand about 0.4 studs wider apart, so
-  the cheer silhouette is a little wider and clearer, not different; the held tools sit about as before. The soldier's raised arm now stands a hand's width off the torso (pivot 0.55), which reads slightly detached from the
-  shoulder in the front close-up.
+  the cheer silhouette is a little wider and clearer, not different; the held tools sit about as before. The soldier's raised arm stood a hand's width off the torso at pivot 0.55 (reads detached; FORGE-05, D-051 (b)), so the soldier now pivots on its arm centre line like the citizens (0.41): arm-vs-helm in the cheer -0.322 before, +0.356 now (+0.448 at 0.55); the renders of this section were re-made at 0.41.
 - **Crowd:** the cheering crowd crop shows the raised arms beside the heads instead of overlapping them; kingdom-red pixels in the crop 294 before,
   349 after (more sleeve and shoulder visible from above). No visible clip. Studio unverified.
