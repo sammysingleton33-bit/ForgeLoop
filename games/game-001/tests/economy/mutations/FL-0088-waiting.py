@@ -1,4 +1,5 @@
-"""'Waiting' on the rail (FL-0088 card, FL-0115 requests) and FORGE-07's #162 L1: mutation rows. Each row
+"""'Waiting' on the rail (FL-0088 card, FL-0115 requests), FORGE-07's #162 L1 and the removed client
+CitizenAnswered report (server-side since #124/#146): mutation rows. Each row
 breaks one rule and expects a named spec to fail.
 
 Run from the repository root (needs lune on PATH):
@@ -38,6 +39,12 @@ M = [
     ("button without an indicator", CARD,
      "if indicator == nil or indicator.count == nil or indicator.cycleRequests == nil then\n\t\treturn",
      "if false then\n\t\treturn", "no indicator, no button"),
+    ("client still reports CitizenAnswered", C + "ConversationController.luau",
+     "\t\tlocal outcome = CitizenModel.outcome(called, ok, result, reason)\n",
+     "\t\tlocal outcome = CitizenModel.outcome(called, ok, result, reason)\n"
+     "\t\tlocal ob = self._registry:find(\"OnboardingController\")\n"
+     "\t\tif ob and outcome.phase == \"answered\" then ob:report(\"CitizenAnswered\") end\n",
+     "reports nothing: the server's G9 CitizenAnswered"),
     ("#162 L1: inactive HUD keeps the handler", H,
      "\t\tself:_syncBack() -- the back key's handler goes with the drawer (FORGE-07 L1 on #162)\n", "",
      "the HUD going inactive"),
