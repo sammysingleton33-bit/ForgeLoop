@@ -22,7 +22,9 @@
 	("Onboarding", index, id) for the funnel flow, GameEvents.OnboardingStep(player, flow, index, id),
 	the step reward through EconomyService:grant (txId "onboarding:<flow>:<step>:<userId>", idempotent),
 	and a new state for the client. On the last step: OnboardingCompleted (value = seconds) and the
-	flow's completeReward.
+	flow's completeReward, only if at least one step was done by its real action (a bus trigger, now or
+	remembered; Onboarding.completionReward, D-052 (3)). A flow finished entirely by auto steps, client
+	reports, timeouts and passes pays nothing and logs "onboarding: completion reward withheld".
 	A step passed over (via "unavailable") or an interactive step that timed out is still logged as its
 	funnel step: Roblox counts a skipped intermediate step as completed anyway, so leaving it out would
 	change nothing. It is also logged as OnboardingStepPassed (value = step; stepName, via), so the
@@ -294,7 +296,14 @@ function OnboardingService:_apply(player: any, flow: any, state: any, transition
 		state.reportedFinish = true
 		local duration = math.max(0, math.floor((state.finishedAt or 0) - (state.startedAt or state.finishedAt or 0)))
 		self._analytics:event(player, "OnboardingCompleted", { durationSec = duration, flow = flow.id })
-		self:_grant(player, flow, "Complete", flow.completeReward)
+		local reward = Onboarding.completionReward(flow, state)
+		if reward == nil and flow.completeReward ~= nil then
+			self._env.log("info", "onboarding: completion reward withheld (no step done by its real action)", {
+				userId = player.UserId,
+				flow = flow.id,
+			})
+		end
+		self:_grant(player, flow, "Complete", reward)
 	end
 	self:_persist(player, flow, state)
 	self:_push(player, flow, state)
