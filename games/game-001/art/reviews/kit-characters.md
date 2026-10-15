@@ -334,6 +334,13 @@ overlapped the head. Minimal change, still 9 parts; nothing else in the phase 1 
   miner work, side view); `_crowd.jpg` (30 citizens, 50° at 170 studs, #138 as pushed against after). Result: no head
   clips a hat or the sack in any tile; the builder reads as a peaked cap, the sack still sits behind the head in the front
   view (a big brown ball beside the shoulder), so a bun reading remains possible there.
+- **Celebrate renders** (`img/citizen_polish_clipfix_celebrate_{tools,others,gameplay,crowd}.jpg`, looked at, Blender previews only): the
+  #138 rigs (code unchanged, 1e5283c) posed in `Pose.celebrate` as it is on main (1d336eb: #154 plus #158, tool arm 55 degrees, tool
+  tipped 40 back and 20 out), rendered in a scratch worktree of #138 plus `git merge origin/main`, not pushed. `_tools` (farmer, woodcutter,
+  miner, builder) and `_others` (soldier, governor, hauler, idle): front, side at the peak (phase 0.25), side at the low (0.75) and back,
+  upper body; `_gameplay` all eight at about 40 studs; `_crowd` 30 cheering citizens, 50 degrees at 170 studs. Result: the tool is held out
+  beside the shoulder in every tile and no tool passes through a head, hat or the sack; farmer hoe and soldier spear cross the hat or the
+  helm only in projection (front view), and the cheer still reads (both arms up, tool out to the side). Studio unverified.
 
 ### Still NEEDS-WORK after this fix (fresh-context D-019 round 1, deferred; not regressions)
 - **Tools are placeholders (Phase 2, D-048):** hoe is a board, axe a head with no handle, pick a bar, mallet a block, spear a
