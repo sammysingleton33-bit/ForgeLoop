@@ -374,6 +374,30 @@ History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
 
+## E11 — Back key (FL-0053, game-001)
+
+Needs: FORGE-03's conversation stage and drawer menus registered with `InputModeController:onBack` (#126 L6). Until they are on the build, write "blocked: needs FORGE-03's back subscription".
+
+| Rule | Expected |
+|---|---|
+| Keys | gamepad B and keyboard Backspace (a Mac's delete key); Esc only opens Roblox's menu |
+| Topmost wins | one press closes only the panel opened last (a drawer opened over the stage closes first) |
+| Build mode | B and X leave build mode; that press never also counts as back |
+| GUI first | Backspace while typing in a text box closes nothing; with a gamepad on a GUI button, the first B leaves the selection and the next B is back |
+
+Steps
+1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it.
+2. With a gamepad (or the emulator's gamepad), open a conversation and press B: the stage closes. Open it again, move the selection onto an answer button, and press B: the selection leaves the button and the stage stays open. Press B again: it closes.
+3. Open the build menu and start placing. Press B: placement ends (explore mode) and nothing else closes. Press B again: back now acts as usual.
+4. Type in any text box (chat, a name field), including Backspace: no panel closes.
+5. Open a drawer menu, then a conversation over it (or the reverse). Each press closes one panel, the last opened first. On a Mac, the delete key works like Backspace.
+
+Pass: steps 1–5 hold.
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
+- 2026-10-15 FORGE-04: topmost wins (`onBack`, FORGE-07's #130 L1); step 5, Mac delete key.
+
 ## E12 — Base editing: input and camera (FL-0121, game-001)
 
 Needs: FORGE-01's move remotes (FL-0119: `Build.CanMove`, `Build.Move`, `Build.MoveToSlot`) and FORGE-03's edit UI (FL-0120), which sets `InputModeController:set("edit")` and calls `RulerCameraController:setEditDrag(true/false)` around a drag. Until both are on the build, write "blocked: needs FL-0119 / FL-0120".

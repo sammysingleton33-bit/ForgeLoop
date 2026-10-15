@@ -1107,6 +1107,82 @@ describe("ConversationService: cinematic conversations (G13.8, FL-0097)", functi
 		expect(farmer.activity).never.toBe("Talk") -- back to its own plans
 	end)
 
+	it(
+		"asking again can't hold a citizen for ever: one showing grants Society.conversationHoldMaxSec in all",
+		function()
+			-- FORGE-07's repro (D-050 (6a)): a ruler re-asks every 20 s for 150 s of sim time
+			local env, conversations, match, registry = boot()
+			local p1 = seat(env, 1)[1]
+			local farmer, sim = hungryFarmer(match, registry)
+			-- a forced request: the question stays on the citizen's mind whatever the state does in 150 s
+			assert(conversations:debugRequest("crimson", farmer.id, "farmer_hungry_grain"))
+			local first = assert(conversations:converse(p1, farmer.id))
+			local started = sim.time
+			local heldAt = {}
+			for _ = 1, 7 do
+				env.mock:advance(20)
+				local again = assert(conversations:converse(p1, farmer.id)) -- always the same question, never nil
+				expect(again.scenarioId).toBe(first.scenarioId)
+				heldAt[math.floor(sim.time - started + 0.5)] = sim:isHeld(farmer)
+			end
+			expect(heldAt[20]).toBe(true)
+			expect(heldAt[60]).toBe(true)
+			expect(heldAt[80]).toBe(true) -- still inside the 90 s
+			expect(heldAt[100]).toBe(false) -- the allowance is spent: asking again no longer holds
+			expect(heldAt[140]).toBe(false)
+			expect(Society.conversationHoldMaxSec).toBe(90)
+			expect(farmer.activity).never.toBe("Talk")
+		end
+	)
+
+	it(
+		"closing the panel gives the unused hold back, so looking and closing again and again is not penalised",
+		function()
+			local env, conversations, match, registry = boot()
+			local p1 = seat(env, 1)[1]
+			local farmer, sim = hungryFarmer(match, registry)
+			for _ = 1, 12 do
+				assert(conversations:converse(p1, farmer.id))
+				env.mock:advance(2)
+				expect(conversations:endConversation(p1, farmer.id)).toBe(true)
+			end
+			assert(conversations:converse(p1, farmer.id))
+			expect(sim:isHeld(farmer)).toBe(true) -- 12 x 30 s asked for, about 24 s used
+			local showing = conversations._showing[farmer.id]
+			expect(showing.holdGranted < Society.conversationHoldMaxSec).toBe(true)
+			expect(showing.holdGranted >= Society.conversationHoldSec - 1e-6).toBe(true)
+		end
+	)
+
+	it("a spent showing can still be answered; the answer does not hold the citizen again", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:debugRequest("crimson", farmer.id, "farmer_hungry_grain"))
+		assert(conversations:converse(p1, farmer.id))
+		for _ = 1, 6 do
+			env.mock:advance(20)
+			assert(conversations:converse(p1, farmer.id))
+		end
+		expect(sim:isHeld(farmer)).toBe(false) -- spent
+		-- (g9f frames the reaction by extending the hold that is running; with no hold there is nothing to extend)
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(sim:isHeld(farmer)).toBe(false)
+		expect(conversations._showing[farmer.id]).toBeNil() -- answered: the showing is over
+	end)
+
+	it("a co-ruler can't extend or take over a hold that is running", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 2) -- 1 and 2 rule crimson together
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		local until1 = farmer.hold.untilTime
+		env.mock:advance(5)
+		expect(conversations:converse(players[2], farmer.id)).toBeNil() -- held by the first ruler
+		expect(farmer.hold.untilTime).toBe(until1)
+		expect(sim:isHeld(farmer)).toBe(true)
+	end)
+
 	it("Kingdom.EndConversation releases the citizen, is idempotent and keeps the question open", function()
 		local env, conversations, match, registry = boot()
 		local p1 = seat(env, 1)[1]

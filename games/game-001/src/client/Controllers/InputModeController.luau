@@ -11,6 +11,9 @@
 		input.selected:connect(function(kind, id) ... end)   -- G13.6; FORGE-03's panels listen
 		input.selection                 -- { kind, id } of the last selection
 		input:select(kind, id)          -- programmatic selection (a list row, "go to")
+		local release = input:onBack(function() panel:close() return true end)   -- while it shows
+		release()                       -- when it closes (FORGE-03's panels)
+		input:back() -> boolean         -- what the keys do: true when a handler took the press
 		input.hovered:connect(function(kind, id) ... end)    -- the citizen under the mouse (FL-0115)
 		input.hover                     -- { kind = "citizen" | "none", id } under the mouse now
 
@@ -26,6 +29,19 @@
 		- Selecting a citizen reports the client action "CitizenInspected" to OnboardingController
 		  (when present), the onboarding v2 step "inspect a citizen" (FL-0092).
 		- Input that a GUI already handled (gameProcessedEvent) never selects.
+
+	Back (FORGE-05's #126 L6; FORGE-03's conversation stage and drawers close on it)
+		- Gamepad B or keyboard Backspace (a Mac's delete key) is "back". Esc is Roblox's own menu
+		  key, so it is never used.
+		- Topmost wins (FORGE-07's #130 L1): a panel registers onBack(handler) while it shows and
+		  releases it when it closes. A press asks the most recently registered handler first; a
+		  handler returning true took it, otherwise the next one down is asked. So one press closes
+		  one panel, never every panel at once. A handler that errors is skipped (logged once).
+		- Only while accepts("explore"): in build mode B and X still leave build mode, and the press
+		  that left it is not also "back" (the settle window).
+		- Input a GUI already handled is never "back": Backspace in a TextBox closes nothing, and on
+		  a gamepad the first B leaves GUI selection (Roblox's default) and the next one is "back".
+		- Listened to through UserInputService, never bound, so the keys are not sunk.
 
 	Edit (G13.9 base editing, FL-0121; FORGE-03's edit UI sets it)
 		- A tap selects only your own buildings (the model's KingdomId is your team's KingdomId) and
@@ -69,6 +85,7 @@ Def.MODES = table.freeze({ "explore", "build", "edit" })
 Def.LATER = table.freeze({ command = "VS-2" })
 Def.ACTION = "ForgeLeaveBuildMode"
 Def.KINDS = table.freeze({ "citizen", "building", "slot", "none" })
+Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace })
 Def.DEFAULTS = table.freeze({
 	settleSec = 0.15,
 	tapPixels = 8,
@@ -173,6 +190,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		hover = { kind = "none", id = "" },
 		hovered = Signal.new(),
 		selected = Signal.new(),
+		_backHandlers = {} :: { any },
 	}, Controller)
 end
 
@@ -199,6 +217,7 @@ function Controller:destroy()
 	self.changed:disconnectAll()
 	self.hovered:disconnectAll()
 	self.selected:disconnectAll()
+	table.clear(self._backHandlers)
 end
 
 -- Programmatic selection (also what a resolved tap calls). Unknown kinds are refused.
@@ -218,6 +237,36 @@ function Controller:select(kind: any, id: any): boolean
 		end)
 	end
 	return true
+end
+
+-- Registers a "back" handler (topmost wins: see Back). Returns the function that removes it.
+function Controller:onBack(handler: () -> boolean?): () -> ()
+	local entry = { handler = handler }
+	table.insert(self._backHandlers, entry)
+	return function()
+		local index = table.find(self._backHandlers, entry)
+		if index then
+			table.remove(self._backHandlers, index)
+		end
+	end
+end
+
+-- A "back" press: the most recently registered handler first; true when one of them took it.
+function Controller:back(): boolean
+	for index = #self._backHandlers, 1, -1 do
+		local entry = self._backHandlers[index]
+		if entry ~= nil then
+			local ok, took = pcall(entry.handler)
+			if not ok and not entry.warned then
+				entry.warned = true
+				self._env.log("warn", `InputModeController: a back handler failed: {took}`)
+			end
+			if ok and took == true then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 -- The citizen under the mouse: fires hovered(kind, id) on a change only. nil (the pointer is over a
@@ -322,7 +371,7 @@ function Controller:_bindPointer()
 		userInput = if ok then found else nil
 	end
 	if userInput == nil then
-		env.log("info", "InputModeController: no UserInputService; tap selection is skipped")
+		env.log("info", "InputModeController: no UserInputService; tap selection and back are skipped")
 		return
 	end
 	local function isPointer(input: any): boolean
@@ -330,7 +379,16 @@ function Controller:_bindPointer()
 	end
 	local okBegan, began = pcall(function()
 		return userInput.InputBegan:Connect(function(input, processed)
-			if processed or not isPointer(input) then
+			if processed then
+				return
+			end
+			if input.KeyCode ~= nil and table.find(Def.BACK_KEYS, input.KeyCode) then
+				if self:accepts("explore") then
+					self:back()
+				end
+				return
+			end
+			if not isPointer(input) then
 				return
 			end
 			self._press = { at = Vector2.new(input.Position.X, input.Position.Y), t = env.clock() }
