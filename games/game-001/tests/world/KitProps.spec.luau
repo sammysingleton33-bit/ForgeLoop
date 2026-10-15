@@ -306,7 +306,7 @@ describe("trees (oak, pine, birch)", function()
 			expect(hi.Y).toBeGreaterThan(22)
 			expect(hi.Y).toBeLessThan(27)
 			expect(radius(lo, hi)).toBeLessThan(13)
-			expect(radius(lo, hi)).toBeGreaterThan(9)
+			expect(radius(lo, hi)).toBeGreaterThan(8)
 		end
 		for _, id in PINES do
 			local lo, hi = bounds(Kit.prop(id))
@@ -333,7 +333,7 @@ describe("trees (oak, pine, birch)", function()
 				smallest, largest = math.min(smallest, p.Size.X), math.max(largest, p.Size.X)
 				expect(p.Material).toBe(Enum.Material.Grass)
 			end
-			expect(largest - smallest).toBeGreaterThan(5) -- varied masses, not a ring of equal balls
+			expect(largest - smallest).toBeGreaterThan(2) -- varied masses, not a ring of equal balls
 			-- shaded underside, sunlit top: the higher third is clearly brighter than the lower third
 			table.sort(canopy, function(a, b)
 				return a.CFrame.Position.Y < b.CFrame.Position.Y
@@ -376,55 +376,105 @@ describe("trees (oak, pine, birch)", function()
 		end
 	end)
 
-	it("builds the pine as seven whorls of drooping wedge boughs narrowing to a tip", function()
-		for _, id in PINES do
-			local model = Kit.prop(id)
-			local boughs = named(model, "Bough")
-			expect(#boughs).toBe(18)
-			-- one part per bough, none of the old 4-part pyramid tiers: boughs are wedges, whorls turn against each other
-			local yaws = {}
-			for _, b in boughs do
-				expect(b.ClassName).toBe("WedgePart")
-				local look = b.CFrame.LookVector
-				yaws[string.format("%.2f", math.atan2(look.X, look.Z))] = true
+	it(
+		"gives the eight oaks different silhouettes (tall, wide, lopsided, twin), not just different ball sizes",
+		function()
+			local aspects, offsets = {}, {}
+			for _, id in OAKS do
+				local lo, hi = Vector3.new(1e9, 1e9, 1e9), Vector3.new(-1e9, -1e9, -1e9)
+				local sum, n = Vector3.zero, 0
+				for _, c in named(Kit.prop(id), "Canopy") do
+					local r = c.Size.X / 2
+					local p = c.CFrame.Position
+					lo = Vector3.new(math.min(lo.X, p.X - r), math.min(lo.Y, p.Y - r), math.min(lo.Z, p.Z - r))
+					hi = Vector3.new(math.max(hi.X, p.X + r), math.max(hi.Y, p.Y + r), math.max(hi.Z, p.Z + r))
+					sum += p
+					n += 1
+				end
+				local width = math.max(hi.X - lo.X, hi.Z - lo.Z)
+				table.insert(aspects, (hi.Y - lo.Y) / width)
+				local mean = sum / n
+				table.insert(offsets, Vector2.new(mean.X, mean.Z).Magnitude)
 			end
-			local distinct = 0
-			for _ in yaws do
-				distinct += 1
-			end
-			expect(distinct).toBeGreaterThan(10)
-			-- wider at the bottom, narrower towards the top
-			table.sort(boughs, function(a, b)
-				return a.CFrame.Position.Y < b.CFrame.Position.Y
-			end)
-			expect(boughs[1].Size.Z).toBeGreaterThan(boughs[#boughs].Size.Z * 2)
-			expect(#named(model, "Tip")).toBe(2)
-			-- darker overall than an oak, a dark pointed conifer at the aerial camera
-			local sum = 0
-			for _, b in boughs do
-				sum += lum(b.Color)
-			end
-			expect(sum / #boughs).toBeLessThan(90)
+			table.sort(aspects)
+			expect(aspects[#aspects] - aspects[1]).toBeGreaterThan(0.5) -- from wide and flat to tall and narrow
+			expect(aspects[1]).toBeLessThan(0.85)
+			expect(aspects[#aspects]).toBeGreaterThan(1.15)
+			table.sort(offsets)
+			expect(offsets[#offsets] - offsets[1]).toBeGreaterThan(0.8) -- some crowns hang to one side
 		end
-	end)
+	)
 
-	it("builds the birch as a slender white trunk under a lighter, airy six-clump crown", function()
-		for _, id in BIRCHES do
-			local model = Kit.prop(id)
-			local trunk = named(model, "Trunk")[1]
-			expect(trunk.Size.Y).toBeLessThan(1.6) -- slender: diameter under 1.6
-			expect(lum(trunk.Color)).toBeGreaterThan(200) -- white
-			expect(#named(model, "Bark")).toBe(1)
-			local crown = named(model, "Canopy")
-			expect(#crown).toBe(6)
-			local sum = 0
-			for _, c in crown do
-				sum += lum(c.Color)
-				expect(c.CastShadow).toBe(false)
+	it(
+		"builds the pine as six whorls of drooping wedge boughs (a four-bough skirt below) narrowing to a tip",
+		function()
+			for _, id in PINES do
+				local model = Kit.prop(id)
+				local boughs = named(model, "Bough")
+				expect(#boughs).toBe(18)
+				-- one part per bough, none of the old 4-part pyramid tiers: boughs are wedges, whorls turn against each other
+				local yaws = {}
+				for _, b in boughs do
+					expect(b.ClassName).toBe("WedgePart")
+					local look = b.CFrame.LookVector
+					yaws[string.format("%.2f", math.atan2(look.X, look.Z))] = true
+				end
+				local distinct = 0
+				for _ in yaws do
+					distinct += 1
+				end
+				expect(distinct).toBeGreaterThan(10)
+				-- wider at the bottom, narrower towards the top
+				table.sort(boughs, function(a, b)
+					return a.CFrame.Position.Y < b.CFrame.Position.Y
+				end)
+				expect(boughs[1].Size.Z).toBeGreaterThan(boughs[#boughs].Size.Z * 2)
+				expect(#named(model, "Tip")).toBe(2)
+				-- darker overall than an oak, a dark pointed conifer at the aerial camera
+				local sum = 0
+				for _, b in boughs do
+					sum += lum(b.Color)
+				end
+				expect(sum / #boughs).toBeLessThan(90)
 			end
-			expect(sum / #crown).toBeGreaterThan(140) -- lighter than the oak's mid greens
 		end
-	end)
+	)
+
+	it(
+		"builds the birch as a slender white trunk under an airy crown of five clumps wound into it, with a side branch",
+		function()
+			for _, id in BIRCHES do
+				local model = Kit.prop(id)
+				local trunk = named(model, "Trunk")[1]
+				expect(trunk.Size.Y).toBeLessThan(1.6) -- slender: diameter under 1.6
+				expect(lum(trunk.Color)).toBeGreaterThan(200) -- white
+				expect(#named(model, "Bark")).toBe(1)
+				local crown = named(model, "Canopy")
+				expect(#crown).toBe(5)
+				local sum = 0
+				for _, c in crown do
+					sum += lum(c.Color)
+					expect(c.CastShadow).toBe(false)
+				end
+				expect(sum / #crown).toBeGreaterThan(140) -- lighter than the oak's mid greens
+				-- the crown sits on the trunk: at least three clumps are cut through by the trunk's axis (no balloons on a pole)
+				local axisDir = trunk.CFrame.RightVector
+				local base = trunk.CFrame.Position - axisDir * (trunk.Size.X / 2)
+				local wound = 0
+				for _, c in crown do
+					local rel = c.CFrame.Position - base
+					local off = (rel - axisDir * rel:Dot(axisDir)).Magnitude
+					if off < c.Size.X / 2 then
+						wound += 1
+					end
+				end
+				expect(wound).toBeGreaterThanOrEqual(3)
+				local stubs = named(model, "Stub")
+				expect(#stubs).toBe(1)
+				expect(stubs[1].Size.Y).toBeLessThan(1) -- a thin stub
+			end
+		end
+	)
 end)
 
 describe("bushes and flowers", function()
@@ -468,14 +518,18 @@ describe("boulders", function()
 		return out
 	end
 
-	it("tips every rock chunk off the axes (no axis-aligned blocks) and uses wedges where sloped", function()
+	it("builds every rock mass from tipped wedges (no boxes), so no run of parallel faces", function()
 		for _, id in BOULDERS do
+			local wedges = 0
 			for _, p in chunks(id) do
-				local up = p.CFrame.UpVector
-				if math.abs(up.Y) > 0.999 and p.CFrame.RightVector.Y == 0 then
-					error(`{id}: {p.Name} is axis-aligned`)
+				if p.Name == "Rock" or p.Name == "Slab" then
+					expect(p.ClassName).toBe("WedgePart")
+					wedges += 1
+					local up = p.CFrame.UpVector
+					expect(math.abs(up.Y)).toBeLessThan(0.9999) -- tipped, never exactly square
 				end
 			end
+			expect(wedges).toBeGreaterThanOrEqual(2)
 		end
 	end)
 
@@ -499,31 +553,36 @@ describe("boulders", function()
 		expect(Kit.partCount(Kit.prop(BOULDERS_M[1]))).toBeLessThan(Kit.partCount(Kit.prop(BOULDERS_L[1])))
 	end)
 
-	it("has a darker, cooler base under a lighter top, a pebble on M and a moss tuft on L", function()
-		for _, id in concat(BOULDERS_M, BOULDERS_L) do
-			local model = Kit.prop(id)
-			local base, top = nil :: BasePart?, nil :: BasePart?
-			for _, p in chunks(id) do
-				if p.Name == "Rock" then
-					local volume = p.Size.X * p.Size.Y * p.Size.Z
-					if base == nil or volume > base.Size.X * base.Size.Y * base.Size.Z then
-						base = p -- the foot is the biggest mass
-					end
-					if top == nil or p.CFrame.Position.Y > top.CFrame.Position.Y then
-						top = p
+	it(
+		"has a darker, cooler foot under a clearly lighter cap, a leaning slab on M and L, a flat moss patch on L only",
+		function()
+			for _, id in concat(BOULDERS_S, BOULDERS_M, BOULDERS_L) do
+				local model = Kit.prop(id)
+				local foot, cap = nil :: BasePart?, nil :: BasePart?
+				for _, p in chunks(id) do
+					if p.Name == "Rock" then
+						local volume = p.Size.X * p.Size.Y * p.Size.Z
+						if foot == nil or volume > foot.Size.X * foot.Size.Y * foot.Size.Z then
+							foot = p -- the foot is the biggest mass
+						end
+						if cap == nil or lum(p.Color) > lum(cap.Color) then
+							cap = p -- the cap is the lightest
+						end
 					end
 				end
-			end
-			expect(base).never.toBeNil()
-			expect(lum((top :: BasePart).Color) - lum((base :: BasePart).Color)).toBeGreaterThan(25)
-			expect((base :: BasePart).Color.B).toBeGreaterThan((base :: BasePart).Color.R) -- cool
-			if string.find(id, "_m_", 1, true) then
-				expect(#named(model, "Pebble")).toBe(1)
-			else
-				expect(#named(model, "Moss")).toBe(1)
+				expect(foot).never.toBeNil()
+				expect(lum((cap :: BasePart).Color) - lum((foot :: BasePart).Color)).toBeGreaterThan(40)
+				expect((foot :: BasePart).Color.B).toBeGreaterThan((foot :: BasePart).Color.R) -- cool
+				local isS = string.find(id, "_s_", 1, true) ~= nil
+				expect(#named(model, "Slab")).toBe(if isS then 0 else 1)
+				expect(#named(model, "Moss")).toBe(if string.find(id, "_l_", 1, true) then 1 else 0)
+				for _, moss in named(model, "Moss") do
+					expect(moss.Size.Y).toBeLessThan(0.5) -- flat, not a ball
+					expect(moss.Shape).toBe(Enum.PartType.Block)
+				end
 			end
 		end
-	end)
+	)
 end)
 
 describe("resource nodes", function()

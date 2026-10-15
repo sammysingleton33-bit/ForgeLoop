@@ -364,3 +364,63 @@ Bushes and flowers
 | bushes and flowers | 3 | 3 | 3 | 3 | 4 | 3 | 4 | 4 | silhouette, variation, readability: one three-ball recipe; flowers 2 at distance |
 
 Round 2 (branch `forge/02-blender-env-polish-r2`, stacked on #141): wheat first within 17 parts, then boulders from angled wedges and slabs with a flat moss tuft, then oak and birch variety by silhouette; 2 author rounds, then a fresh-context re-score.
+
+## Environment props polish, round 2 (FL-0117; branch `forge/02-blender-env-polish-r2`, stacked on #141) — FORGE-02
+
+Scope from FORGE-00 after the round-1 fresh review: wheat first (within 17 parts), then boulders (angled wedges and
+slabs, a flat moss tuft, silhouette distinct from the ore crystal, S3 / M4 / L5 at most), then oak / birch variety by
+silhouette. Part counts must stay at or below the #141 numbers per id (D-047; FL-0116 trims dressing in parallel).
+Renders as in round 1 (Blender preview, no Roblox material textures, **not a Studio play test**): gameplay 62–80 studs
+and aerial 170 studs / 50°, 1280 × 720, Cycles 24 samples. Images in `img/`: `env_polish_r2_trees_gameplay.jpg`,
+`env_polish_r2_trees_aerial.jpg`, `env_polish_r2_oaks_pines_birches.jpg`, `env_polish_r2_boulders.jpg` (each #141 | round 2) and
+`env_polish_r2_wheat_attempts.jpg` (the wheat attempts and the over-budget reference).
+
+**1. Wheat: BLOCKED by the part budget, not changed.** Two attempts, six designs, all at 17 parts or fewer, each rendered and
+looked at (`env_polish_r2_wheat_attempts.jpg`):
+- attempt 1: combed rows (olive body plus a swept golden wedge head, alternating heights) reads as sloped planks; stepped
+  patches (five rows of three blocks of different heights and colours) read as a patchwork of crates; ridge rows (two wedges back to
+  back, 12 parts) read as roofing from the gameplay camera, though from the aerial camera the lit and shaded sides do read as crop rows;
+- attempt 2: four ridge rows plus three stooks (a harvested strip) and a straw-coloured stubble bed with seven stooks read as tents
+  on a plain; fifteen tilted block tufts (3 rows of 5, 16 parts) read as crates in rows, not stalks.
+Every long part reads as a plank and every sparse part as a crate or tent: with 16 real parts there are about two parts per
+row, and a crop needs a part per tuft. Reference, **not in budget** (the same field, 38 × 28 on the soil bed, one tapered tilted
+wedge per tuft, colours varied from olive to gold): 5 rows × 6 = 32 parts reads as a mottled crop patch (**+15** over the 17 now), 6 rows × 7 = 44
+(**+27**) as a crop, 6 rows × 11 = 68 (**+51**) clearly as a grain crop. With two wheat fields per kingdom (8 in the world) that is
++120 / +216 / +408 world parts. Block tufts at the same counts read as crates, and corner-wedge tufts as spikes (the FL-0085 finding).
+Decision needed from FORGE-00: approve about +27 per wheat field (44 parts), or keep six slabs until the Blender batch brings
+a one-mesh crop row.
+
+**2. Boulders from angled wedges and slabs (S 3 / M 4 / L 5, cliff 4: counts unchanged).** Every rock mass is a tipped
+`WedgePart` (a sloped face and two triangular ends, no run of parallel faces); a spec forbids boxes. S: a dark foot wedge and a light
+cap wedge facing each other, meeting in a faceted ridge (2 parts). M: that pair and a tall narrow wedge leaning on it (3). L: a big
+foot wedge, a light cap wedge, a leaning slab wedge and a **flat moss patch lying flush on the foot's sloped face** (4; the
+moss is a 0.28-thick block, no longer a ball on top). Cool dark foot (106,110,118) under a warm light cap (172,170,162), as before.
+No pebbles now. The ore host rocks still use the round-1 lumps (the same code path as before; not re-done this round).
+The boulders no longer read as stacked boxes; the cost is that the S and M rocks read as angular shards and the L as a ramped tent,
+so their silhouettes are sharper than a real boulder's.
+
+**3. Oak and birch variety by silhouette; pine skirt.** Oak variants pick an archetype by id: dome, tall ovoid, wide flat spreading,
+lopsided (a heavy side, a gap, a bare limb carrying one small lobe), twin (two crowns on a forked trunk) and repeats; every oak is still
+10 lobes + 2 limbs + 3 trunk parts = 16 parts. Lobe colour follows height within each archetype. The root flare is now the trunk's own bark colour and a
+smaller step (the collar read as a stump). Birch: five clumps stacked up and wound through the trunk top (no balloons on a pole) and one
+thin branch stub carrying a fifth clump out to the side: trunk + bark mark + stub + 5 clumps = 9 parts, as before. Pine: six whorls of
+4, 4, 3, 3, 2, 2 boughs (18, as before): the lowest two are four-bough skirts with bough width set from the whorl's circumference so
+neighbours meet, instead of three loose plates.
+
+**Part counts (Root included), #141 → round 2:** oak 16 → 16 (all 8), pine 22 → 22, birch 9 → 9, boulders S 3 / M 4 / L 5 / cliff 4 → unchanged;
+nothing else touched. **Specs:** `KitProps.spec` 28 tests (new: wedge-only boulders with a tipped, flat moss patch, a slab on M and L, a lighter cap by
+≥ 40 luminance, oak silhouettes spread over aspect ratio and sideways offset, birch crown wound into the trunk with a stub, the pine skirt); 35 mutations
+of `Props.luau`, all caught.
+
+**Author rubric scores (FORGE-02's own estimate from the renders; the fresh-context re-score, which sees images only, decides).**
+1–5; PASS = silhouette, variation, readability ≥ 4 and proportions, palette, detail, cohesion, cost ≥ 3.
+
+| item | sil | var | read | prop | pal | detail | cohes | cost | estimate |
+|---|---|---|---|---|---|---|---|---|---|
+| trees (oak / pine / birch) | 4 | 4 | 4 | 3 | 4 | 3 | 3 | 4 | may pass: five oak silhouettes, pine skirt, birch wound into the trunk; still ball clusters up close |
+| boulders S / M / L | 3 | 4 | 3 | 3 | 4 | 3 | 3 | 4 | likely NEEDS-WORK: angular and varied, but sharp shards and ramps; silhouette and readability 3 |
+| wheat field | 2 | 2 | 2 | 3 | 4 | 2 | 3 | 4 | unchanged: BLOCKED by the 17-part budget (see 1) |
+| resource nodes, cabbage field, bushes and flowers | | | | | | | | | not touched this round; round-1 scores stand |
+
+**Unverified:** Studio (SmoothPlastic / Grass / Slate textures, Future lighting; the wedge faces and the flush moss are only judged in the Blender
+preview), phone screens, in-world look with FL-0116's density and FL-0112's placement.

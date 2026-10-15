@@ -115,51 +115,120 @@ local function limb(a: Vector3, b: Vector3, alongX: boolean): (CFrame, number)
 	return CFrame.fromMatrix(mid, x, dir, x:Cross(dir)), len
 end
 
-local function oak(ctx, rng)
-	local th = rng.range(10.0, 12.0)
+-- Oak archetypes by variant id: the eight oaks differ in silhouette, not only in ball sizes.
+local OAK_ARCH = { "dome", "tall", "wide", "lopsided", "twin", "dome", "tall", "wide" }
+local OAK_TH = {
+	dome = { 10.0, 12.0 },
+	tall = { 8.2, 9.8 },
+	wide = { 11.2, 12.8 },
+	lopsided = { 10.0, 11.6 },
+	twin = { 10.2, 11.8 },
+}
+
+type Lobe = { r: number, a: number, dy: number, d: number, limb: boolean }
+
+-- Ten canopy lobes (polar round the canopy centre) per archetype, exactly two flagged for a limb to reach them.
+local function oakLobes(arch: string, rng, a0: number): { Lobe }
+	local L: { Lobe } = {}
+	local R = rng.range
+	local function add(r: number, a: number, dy: number, d: number, holdsLimb: boolean?)
+		table.insert(L, { r = r, a = a, dy = dy, d = d, limb = holdsLimb == true })
+	end
+	if arch == "tall" then
+		-- a tall narrow ovoid: four low lobes, three middle, three crowns
+		for k = 0, 3 do
+			add(R(3.8, 4.8), a0 + k * math.pi / 2 + R(-0.3, 0.3), R(-4.4, -2.8), R(7.2, 8.8), k == 0 or k == 2)
+		end
+		for k = 0, 2 do
+			add(R(2.2, 3.2), a0 + 0.6 + k * 2.1, R(0.8, 2.8), R(6.8, 8.2))
+		end
+		for k = 0, 2 do
+			add(R(0.6, 1.8), a0 + 1.1 + k * 2.1, R(5.6, 7.4), R(5.4, 7.0))
+		end
+	elseif arch == "wide" then
+		-- a wide flat spreading crown: a low core, a ring of six broad lobes, three flat crowns
+		add(0, 0, 0, R(10.0, 11.0))
+		for k = 0, 5 do
+			add(R(6.0, 7.0), a0 + k * math.pi / 3 + R(-0.25, 0.25), R(-1.6, 0.8), R(8.6, 10.0), k == 0 or k == 3)
+		end
+		for k = 0, 2 do
+			add(R(1.0, 3.4), a0 + k * 2.1, R(3.0, 3.8), R(6.0, 7.6))
+		end
+	elseif arch == "lopsided" then
+		-- heavy on one side; on the other a gap with a bare limb carrying one small lobe
+		add(2.8, a0, 0.8, R(10.4, 11.4), true)
+		for k = 0, 2 do
+			add(R(5.6, 7.2), a0 + (k - 1) * 0.85, R(-2.2, 1.4), R(8.0, 9.6))
+		end
+		for k = 0, 3 do
+			add(R(3.6, 5.2), a0 + (k - 1.5) * 0.75, R(-4.6, -3.4), R(5.8, 7.0))
+		end
+		add(R(5.6, 6.4), a0 + math.pi + R(-0.2, 0.2), R(-1.8, -0.6), R(5.6, 6.6), true)
+		add(R(1.0, 2.6), a0 + 0.4, R(4.6, 5.4), R(6.0, 7.2))
+	elseif arch == "twin" then
+		-- two crowns on a forked trunk: each a core, two shoulders and a crown, joined by two small lobes
+		for side = 0, 1 do
+			local a = a0 + side * math.pi
+			local up = if side == 0 then 1.0 else -0.4
+			add(R(5.0, 5.6), a, up + 0.4, R(8.4, 9.2), true)
+			add(R(8.2, 9.0), a + R(-0.5, 0.5), up - 1.2, R(6.2, 7.0))
+			add(R(7.2, 8.0), a + R(0.8, 1.2), up + 1.4, R(6.0, 6.8))
+			add(R(4.6, 5.4), a + R(-0.3, 0.3), up + 4.2, R(5.2, 6.0))
+		end
+		add(0.6, a0 + 1.4, 3.6, R(5.4, 6.2))
+		add(1.2, a0 + 4.0, -2.2, R(5.0, 5.8))
+	else
+		-- dome: a broad core, two hanging skirt lobes, four shoulders, three sunlit crowns
+		add(0, 0, 0, R(11.6, 12.6))
+		for k = 0, 1 do
+			add(R(4.8, 6.0), a0 + k * math.pi + R(-0.5, 0.5), -R(3.4, 4.2), R(6.5, 7.6), true)
+		end
+		for k = 0, 3 do
+			add(R(4.8, 6.8), a0 + 0.8 + k * (math.pi / 2) + R(-0.4, 0.4), R(-2.0, 1.6), R(8.2, 10.4))
+		end
+		for _ = 1, 3 do
+			add(R(0.8, 3.8), R(0, 2 * math.pi), R(3.8, 4.8), R(6.4, 8.4))
+		end
+	end
+	return L
+end
+
+local function oak(ctx, rng, variant: number)
+	local arch = OAK_ARCH[(variant - 1) % #OAK_ARCH + 1]
+	local thRange = OAK_TH[arch]
+	local th = rng.range(thRange[1], thRange[2])
 	local la = rng.range(0, 2 * math.pi)
 	local lean = math.rad(rng.range(3.5, 8))
 	local dir = Vector3.new(math.sin(lean) * math.cos(la), math.cos(lean), math.sin(lean) * math.sin(la))
-	-- trunk: root flare, a straight foot, then a slightly leaning stem that ends inside the canopy
-	column(ctx, "TrunkFlare", 2.4, 1.1, Vector3.zero, shade(C.bark, 0.9), Enum.Material.Wood)
-	column(ctx, "Trunk", 1.6, 3.6, Vector3.new(0, 0.9, 0), C.bark, Enum.Material.Wood)
+	-- trunk: a broad root flare in the bark colour, a straight foot, then a slightly leaning stem into the canopy
+	column(ctx, "TrunkFlare", 2.05, 0.9, Vector3.zero, C.bark, Enum.Material.Wood)
+	column(ctx, "Trunk", 1.6, 3.6, Vector3.new(0, 0.7, 0), C.bark, Enum.Material.Wood)
 	local p0 = Vector3.new(0, 4.3, 0)
 	local tip = p0 + dir * (th - 1.0)
 	local stemCF, stemLen = limb(p0 - dir * 0.3, tip, true)
 	log(ctx, "Trunk", 1.25, stemLen, stemCF, C.bark)
 
-	-- canopy: one broad core, two hanging skirt lobes (dark), four shoulders, three sunlit crowns (light)
 	local cc = tip + Vector3.new(dir.X * 1.5, 2.6, dir.Z * 1.5)
-	local a0 = rng.range(0, 2 * math.pi)
-	local function lobe(r: number, a: number, dy: number, d: number, bias: number)
-		local pos = Vector3.new(cc.X + math.cos(a) * r, cc.Y + dy, cc.Z + math.sin(a) * r)
-		local t = (dy + 4.2) / 10.2 + bias + rng.range(-0.06, 0.06)
-		local part = ball(ctx, "Canopy", d, pos, rampColor(OAK_RAMP, t), Enum.Material.Grass)
-		part.CastShadow = d > 7.7
-		return pos
+	local lobes = oakLobes(arch, rng, rng.range(0, 2 * math.pi))
+	local lo, hi = math.huge, -math.huge
+	for _, l in lobes do
+		lo, hi = math.min(lo, l.dy), math.max(hi, l.dy)
 	end
-	lobe(0, 0, 0, rng.range(11.6, 12.6), 0.3)
-	local skirt = {}
-	for k = 0, 1 do
-		local a = a0 + k * math.pi + rng.range(-0.5, 0.5)
-		table.insert(skirt, lobe(rng.range(4.8, 6.0), a, -rng.range(3.4, 4.2), rng.range(6.5, 7.6), 0))
+	local targets = {}
+	for _, l in lobes do
+		local pos = Vector3.new(cc.X + math.cos(l.a) * l.r, cc.Y + l.dy, cc.Z + math.sin(l.a) * l.r)
+		local t = 0.2 + 0.78 * (l.dy - lo) / math.max(hi - lo, 1) + rng.range(-0.05, 0.05)
+		local part = ball(ctx, "Canopy", l.d, pos, rampColor(OAK_RAMP, t), Enum.Material.Grass)
+		part.CastShadow = l.d > 7.7
+		if l.limb then
+			table.insert(targets, pos)
+		end
 	end
-	for k = 0, 3 do
-		lobe(
-			rng.range(4.8, 6.8),
-			a0 + 0.8 + k * (math.pi / 2) + rng.range(-0.4, 0.4),
-			rng.range(-2.0, 1.6),
-			rng.range(8.2, 10.4),
-			0.2
-		)
-	end
-	for _ = 1, 3 do
-		lobe(rng.range(0.8, 3.8), rng.range(0, 2 * math.pi), rng.range(3.8, 4.8), rng.range(6.4, 8.4), 0.12)
-	end
-	-- two thick limbs reach out under the skirt lobes; the canopy hides their far ends
-	for k, target in skirt do
-		local from = p0 + (tip - p0) * (0.2 + 0.14 * k)
-		local to = from + (target - from) * 0.8
+	-- two thick limbs reach out to the flagged lobes; the canopy hides their far ends (a forked archetype shows them)
+	local forked = arch == "twin" or arch == "lopsided"
+	for k, target in targets do
+		local from = p0 + (tip - p0) * (if forked then 0.55 + 0.1 * k else 0.2 + 0.14 * k)
+		local to = from + (target - from) * (if forked then 0.9 else 0.8)
 		local cf, len = limb(from, to, true)
 		log(ctx, "Branch", 0.8, len, cf, shade(C.bark, 0.95))
 	end
@@ -174,16 +243,16 @@ local function pine(ctx, rng)
 	end
 	local cf, len = limb(Vector3.zero, axis(h * 0.62), true)
 	log(ctx, "Trunk", 1.0, len, cf, C.bark)
-	-- seven whorls of drooping boughs, each turned against the last, narrowing to the tip: wedges whose
+	-- six whorls of drooping boughs (the lowest two of four, a full skirt), each turned against the last, narrowing to the tip: wedges whose
 	-- tall face meets the trunk and whose slope falls away outward
-	local counts = { 3, 3, 3, 3, 2, 2, 2 }
+	local counts = { 4, 4, 3, 3, 2, 2 }
 	local top = h - 6.4
 	for i, n in counts do
 		local t = (i - 1) / (#counts - 1)
 		local reach = 5.6 * (1 - t) ^ 0.9 + 2.4
 		local thick = 3.8 - 0.5 * t
 		local y = 3.6 + t * (top - 3.6)
-		local turn = i * math.rad(if n == 3 then 47 else 90) + rng.range(-0.12, 0.12)
+		local turn = i * math.rad(if n == 3 then 47 elseif n == 4 then 45 else 90) + rng.range(-0.12, 0.12)
 		for b = 0, n - 1 do
 			local a = turn + b * (2 * math.pi / n)
 			local c = axis(y)
@@ -193,7 +262,7 @@ local function pine(ctx, rng)
 			wedge(
 				ctx,
 				"Bough",
-				Vector3.new(reach * 0.78, thick, reach),
+				Vector3.new(math.min(reach * 1.0, 2 * math.pi * reach * 0.6 / n * 1.05), thick, reach),
 				bough,
 				shade(rampColor(PINE_RAMP, t ^ 0.8), 0.92 + 0.08 * (b % 2)),
 				Enum.Material.Grass
@@ -216,23 +285,39 @@ local function birch(ctx, rng)
 	local la = rng.range(0, 2 * math.pi)
 	local lean = math.rad(rng.range(2, 5))
 	local dir = Vector3.new(math.sin(lean) * math.cos(la), math.cos(lean), math.sin(lean) * math.sin(la))
-	local cf, len = limb(Vector3.zero, dir * h, true)
+	local cf, len = limb(Vector3.zero, dir * (h + 0.5), true)
 	log(ctx, "Trunk", 0.65, len, cf, EXTRA.birch, Enum.Material.SmoothPlastic)
-	-- one dark bark mark low on the trunk (the birch giveaway), then an airy crown of six clumps
+	-- one dark bark mark low on the trunk (the birch giveaway)
 	local markCF = limb(dir * (h * 0.3 - 0.2), dir * (h * 0.3 + 0.2), true)
 	log(ctx, "Bark", 0.7, 0.4, markCF, EXTRA.birchMark, Enum.Material.SmoothPlastic)
+	-- a crown of five overlapping clumps stacked up the trunk top, wound into the trunk so nothing floats...
 	local a0 = rng.range(0, 2 * math.pi)
-	for i = 1, 6 do
-		local f = (i - 1) / 5
-		local a = a0 + i * 2.4 + rng.range(-0.3, 0.3)
-		local r = rng.range(2.2, 4.0) * (1 - 0.4 * f)
-		local y = h - 6.6 + f * 7.4 + rng.range(-0.5, 0.5)
-		local d = rng.range(4.8, 6.6) * (1 - 0.25 * f)
+	for i = 1, 4 do
+		local f = (i - 1) / 3
+		local a = a0 + i * 2.2 + rng.range(-0.3, 0.3)
+		local r = rng.range(0.9, 2.4) * (1 - 0.3 * f)
+		local y = h - 5.4 + f * 5.6 + rng.range(-0.4, 0.4)
+		local d = rng.range(5.0, 6.4) * (1 - 0.2 * f)
 		local pos = dir * y + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
 		local part =
 			ball(ctx, "Canopy", d, pos, rampColor(BIRCH_RAMP, f * 0.8 + rng.range(0, 0.25)), Enum.Material.Grass)
 		part.CastShadow = false
 	end
+	-- ... and one side branch stub carrying a fifth clump out to the side, so the crown has a fork and a gap
+	local sa = a0 + math.pi + rng.range(-0.5, 0.5)
+	local from = dir * (h * 0.56)
+	local to = from + Vector3.new(math.cos(sa) * 3.4, 3.0, math.sin(sa) * 3.4)
+	local stubCF, stubLen = limb(from, to, true)
+	log(ctx, "Stub", 0.3, stubLen, stubCF, EXTRA.birch, Enum.Material.SmoothPlastic)
+	local side = ball(
+		ctx,
+		"Canopy",
+		rng.range(4.2, 5.0),
+		to + Vector3.new(math.cos(sa) * 0.8, 0.9, math.sin(sa) * 0.8),
+		rampColor(BIRCH_RAMP, 0.3),
+		Enum.Material.Grass
+	)
+	side.CastShadow = false
 end
 
 local function bush(ctx, rng, variant: number)
@@ -321,9 +406,10 @@ local function chunk(
 	return make(ctx, name or "Rock", size, cf, color, Enum.Material.Slate)
 end
 
--- A faceted lump: a block tipped hard on two axes (a cube balanced on an edge reads as an angular boulder, not a
--- box). With no `y` it sits on the ground, sunk 0.45; with `y` it is centred there. Returns the part and the
--- height of its highest point so the next lump can be bedded into it.
+-- An angled rock mass: a block or wedge tipped on two axes. A wedge keeps its flat base on the ground and puts a
+-- sloped face and two triangular ends on show, so a boulder built of wedges has no run of parallel faces. With
+-- no `y` the mass sits on the ground, sunk 0.45; with `y` it is centred there. Returns the part, the height of its
+-- highest point and its half-height, so the next mass can be bedded into it.
 local function lump(
 	ctx,
 	size: Vector3,
@@ -334,73 +420,110 @@ local function lump(
 	tz: number,
 	color: Color3,
 	name: string?,
-	y: number?
+	y: number?,
+	kind: string?
 ): (BasePart, number, number)
 	local rot = CFrame.Angles(0, yaw, 0) * CFrame.Angles(tx, 0, tz)
 	local c = { rot:GetComponents() }
 	local ey = 0.5 * (math.abs(c[7]) * size.X + math.abs(c[8]) * size.Y + math.abs(c[9]) * size.Z)
 	local cy = y or (ey - 0.45)
-	return block(ctx, name or "Rock", size, CFrame.new(x, cy, z) * rot, color, Enum.Material.Slate), cy + ey, ey
+	local make = if kind == "wedge" then wedge else block
+	return make(ctx, name or "Rock", size, CFrame.new(x, cy, z) * rot, color, Enum.Material.Slate), cy + ey, ey
 end
 
--- Boulders differ in structure, not just scale: S is two tipped lumps (2 parts), M a dark lump under a lighter
--- one plus a pebble (3), L a foot, a mid mass, a leaning lump and a moss tuft (4); cliffs (3) are the L stack
--- taller. Budget: S + M + L = 12 parts incl. Root, same as the old 3 x 4.
+-- Boulders from angled wedges and slabs, different in structure and not only in scale. S: two wedges facing each
+-- other, a dark foot and a light cap, which meet in a faceted ridge (2 parts). M: that pair plus a tall narrow
+-- wedge leaning on it (3). L: a low slab with a flat ledge carrying a moss patch, a big wedge and a light leaning
+-- cap wedge (4). Cliffs (3) are the L pair without slab or moss, taller. S + M + L = 12 parts incl. Root.
 local function boulder(ctx, rng, kind: string)
 	local yaw = rng.range(0, 2 * math.pi)
 	local k = rng.range(0.92, 1.1)
 	local function tilt(m: number): number
-		return m * rng.range(0.75, 1.15) * (if rng.next() < 0.5 then -1 else 1)
+		return m * rng.range(0.7, 1.2) * (if rng.next() < 0.5 then -1 else 1)
+	end
+	-- a point `d` studs along (right, back) in the boulder's own frame
+	local function at(right: number, back: number): (number, number)
+		return math.cos(yaw) * right + math.sin(yaw) * back, -math.sin(yaw) * right + math.cos(yaw) * back
 	end
 	if kind == "s" then
-		lump(ctx, Vector3.new(4.0 * k, 2.3, 3.5 * k), -0.4, 0, yaw, tilt(0.25), tilt(0.22), ROCK.mid)
-		lump(ctx, Vector3.new(2.8 * k, 2.0, 2.4 * k), 1.8, 1.0, yaw + 1.0, tilt(0.3), tilt(0.3), ROCK.top)
-	elseif kind == "m" then
-		local _, top = lump(ctx, Vector3.new(6.2 * k, 2.4, 5.2 * k), 0, 0, yaw, tilt(0.2), tilt(0.2), ROCK.base)
 		lump(
 			ctx,
-			Vector3.new(4.4 * k, 2.4, 3.6 * k),
-			0.5,
-			-0.3,
-			yaw + 0.8,
-			tilt(0.3),
-			tilt(0.28),
+			Vector3.new(4.8 * k, 2.4, 3.8 * k),
+			-0.2,
+			0.3,
+			yaw,
+			tilt(0.1),
+			tilt(0.08),
+			ROCK.base,
+			nil,
+			nil,
+			"wedge"
+		)
+		local x, z = at(0.5, 1.4)
+		lump(
+			ctx,
+			Vector3.new(3.6 * k, 2.8, 3.0 * k),
+			x,
+			z,
+			yaw + math.pi + 0.35,
+			tilt(0.14),
+			tilt(0.14),
 			ROCK.top,
 			nil,
-			top - 0.8
+			nil,
+			"wedge"
 		)
-		local a = yaw + rng.range(2.2, 4.0)
-		lump(ctx, Vector3.new(1.9, 1.2, 1.7), math.cos(a) * 4.6, math.sin(a) * 4.6, a, 0.4, 0.3, ROCK.mid, "Pebble")
+	elseif kind == "m" then
+		lump(ctx, Vector3.new(6.2 * k, 3.0, 5.0 * k), 0, 0, yaw, tilt(0.1), tilt(0.08), ROCK.base, nil, nil, "wedge")
+		local x, z = at(0.6, 1.9)
+		lump(
+			ctx,
+			Vector3.new(4.6 * k, 3.8, 3.6 * k),
+			x,
+			z,
+			yaw + math.pi + 0.3,
+			tilt(0.14),
+			tilt(0.14),
+			ROCK.top,
+			nil,
+			nil,
+			"wedge"
+		)
+		local sx, sz = at(-3.6, -0.6)
+		lump(ctx, Vector3.new(1.8, 4.2, 2.6), sx, sz, yaw + 1.2, tilt(0.35), tilt(0.2), ROCK.mid, "Slab", nil, "wedge")
 	else
 		local g = if kind == "cliff" then 1.4 else 1.25 -- L is big; cliffs the biggest and tallest
-		local _, top = lump(ctx, Vector3.new(10.0 * k, 3.0, 8.4 * k) * g, 0, 0, yaw, tilt(0.14), tilt(0.12), ROCK.base)
-		local _, top2 = lump(
-			ctx,
-			Vector3.new(6.0 * k, 3.0, 5.0 * k) * g,
-			-0.8 * g,
-			0.5 * g,
-			yaw + 0.6,
-			tilt(0.3),
-			tilt(0.26),
-			ROCK.mid,
-			nil,
-			top - 1.2
-		)
-		if kind ~= "cliff" then
-			local a = yaw + 2.6
-			lump(
-				ctx,
-				Vector3.new(4.4 * k, 2.8, 3.8 * k) * g,
-				math.cos(a) * 5.8 * g,
-				math.sin(a) * 5.8 * g,
-				a,
-				tilt(0.34),
-				tilt(0.34),
-				ROCK.top
-			)
+		local function v(x: number, y: number, z: number): Vector3
+			return Vector3.new(x, y, z) * g
 		end
-		ball(ctx, "Moss", 2.2 * g, Vector3.new(-0.8 * g, top2 - 0.9, 0.5 * g), ROCK.moss, Enum.Material.Grass).CastShadow =
-			false
+		local foot = v(10.0 * k, 4.6, 8.0 * k)
+		local fp = lump(ctx, foot, 0, 0, yaw, tilt(0.07), tilt(0.06), ROCK.base, nil, nil, "wedge")
+		local x2, z2 = at(0.4 * g, 1.7 * g)
+		lump(
+			ctx,
+			v(6.8 * k, 6.4, 5.4 * k),
+			x2,
+			z2,
+			yaw + math.pi + 0.35,
+			tilt(0.1),
+			tilt(0.1),
+			ROCK.top,
+			nil,
+			nil,
+			"wedge"
+		)
+		local x3, z3 = at(-4.6 * g, -1.0 * g)
+		lump(ctx, v(2.6, 5.6, 3.4), x3, z3, yaw + 1.1, tilt(0.3), tilt(0.2), ROCK.mid, "Slab", nil, "wedge")
+		if kind ~= "cliff" then
+			-- a flat patch of moss lying flush on the foot's sloped face (the slope runs down towards its local -Z)
+			local pitch = -math.atan(foot.Y / foot.Z)
+			local zc = -0.2 * foot.Z
+			local on = fp.CFrame
+				* CFrame.new(1.2 * g, zc * foot.Y / foot.Z, zc)
+				* CFrame.Angles(pitch, 0, 0)
+				* CFrame.new(0, 0.14, 0)
+			block(ctx, "Moss", Vector3.new(3.4, 0.28, 2.6) * g, on, ROCK.moss, Enum.Material.Grass).CastShadow = false
+		end
 	end
 end
 
@@ -711,7 +834,7 @@ local function standIn(assetId: string): Model
 	elseif has("tree_birch") then
 		birch(ctx, rng)
 	elseif has("tree_") then
-		oak(ctx, rng)
+		oak(ctx, rng, variant)
 	elseif has("bush") then
 		bush(ctx, rng, variant)
 	elseif has("plant_") then
