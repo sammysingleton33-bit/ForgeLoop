@@ -344,3 +344,45 @@ overlapped the head. Minimal change, still 9 parts; nothing else in the phase 1 
   identical red boxes (no belt, sash or collar); **governor** crown and staff are thin from the air, no cape (a welded cape
   needs a Torso part, outside D-048); **soldier** helm reads as a gnome hat and the spear has no head.
 - **Kingdom red from above** fell about 14% because straw and white hats cover the shoulders.
+
+## FL-0118 phase 1b: the fresh review's 9-part fixes (interim art, D-051)
+
+Phase 1 plus the clip fix (#138) passed the D-051 gates; this stacked branch takes the fresh-context D-019 round 1's lowest
+criteria that fit in 9 parts. Still 9 parts per rig; Phase 2 (D-048, tools with handle and head) is the next branch.
+Images (`art/reviews/img/`): `citizen_polish1b_jobs.jpg` (all 8 jobs at about 40 studs, before = #138 as pushed, colour and
+grayscale), `citizen_polish1b_heads.jpg` (each job from the front, side and back), `citizen_polish1b_crowd.jpg` (30 citizens
+round a farm, 50° at 170 studs, before and after), `citizen_polish1b_groups.jpg` (4 per job at the aerial camera, colour and
+grayscale), `citizen_polish1b_idle.jpg` (12 idle looks).
+- **Woodcutter cap smaller.** The 1.9 x 1.6 x 2.0 wedge slab (read as a chimney) became a 1.5 charcoal knit beanie, a ball sitting
+  high (top 6.09, was 6.68). Its rim runs above the eyes and meets the head at 53° (spec: at least 35°, rim at least 0.33
+  above the head centre on the face side).
+- **Miner pot smaller and darker than the farmer disc.** Pot 2.2 x 0.8 ochre (L .50) became 1.9 x 0.7 dark burnt ochre
+  (L .39); the farmer's disc went 3.4 to 3.1 and its straw to L .62. Spec: pot width at most 0.65 of the disc, pot value at
+  least 0.1 darker.
+- **Builder hat.** Cream cloth cap (240, 214, 160, was white) on the same low peaked wedge. It still does not read as a hard hat:
+  a one-part dome cannot leave its rim above the eyes except as a tall egg (the rim sits at +0.1 for a flat dome), so the dome
+  with a brim is a Phase 2 detail-part item. Honest status: improved from white paper to warm cloth cap, not a hard hat.
+- **Per-individual variation, from the look alone** (no wire field): the hair colour, hidden under a working citizen's hat,
+  dyes the clothes: trousers and neutral panel (8 dyes, +-14%) and the shirt's kingdom tint factor (8 shifts, +-0.1, KitTint
+  stays exact so `setKingdomColor` still matches; the default look is unchanged). Spec: 8 shirt tones and 8 trouser dyes per
+  job, different jobs' trousers stay at least 10 apart under every dye pair.
+- **Idle variety.** Idle citizens carry nothing, so the free 9th part is an `Accessory` welded to the Head on about two looks
+  in three: a headband (kingdom red or indigo) or a scarf (cream or rust). Spec: share between 55 and 80%, never on any other
+  job or kind, headband above the eyes, scarf below the chin line, flags as the other parts, 9 parts at most.
+- **Governor.** Crown 1.52 x 0.5 became a 1.9 x 0.6 gold disc, staff 5.6 x 0.34 became 6.4 x 0.5, body 2.2 to 2.4. (A cape would
+  need a Torso-welded part: outside D-048.)
+- **Soldier crest less gnome-like.** The crimson spire went from 1.3 x 2.1 to 1.0 x 1.6 (1.55 above the helm, no taller than the
+  helm 1.6; base diagonal 1.41). The great helm is still a steel box, so a cone on a cube remains; a rounder helm is a separate
+  change (it moves the D-033 crest silhouettes) and is not done here.
+- **Kingdom red from above.** Besides the smaller farmer disc: an even hair colour makes a working citizen's neutral sleeves
+  kingdom-red (an odd one keeps the job panel), so the shoulders show red from the air on half the looks. Kingdom-red pixels in
+  the 30-citizen crowd crop (same looks, positions and camera; my threshold): main 420, #138 380, this branch 441. Spec: the
+  tinted top area is at least 1.0 larger with red sleeves.
+- **Hauler sack.** Centre 0.1 right, 2.8 up, 2.1 behind the spine (was 3.05 up, 1.95 behind): its top is 4.15, just above the
+  shoulders (3.9), so from the front it is a bag behind the body. Spec adds: top at most 4.3, bottom at least 1.3, walking legs
+  never enter it (0.02), plus the earlier head and arm gaps. A strap or tie needs a part: Phase 2.
+- **Spec and mutants.** `KitCharacter.spec` has 44 tests (39 before): hat clearance now handles a ball beanie (rim rule), and six
+  new tests cover individuals, red sleeves, idle accessories, the governor and the low crest. 17 mutants (beanie over the eyes or
+  oversized, pot wide or light, sack beside the head or in the legs, headband on the eyes, scarf over the face, no red sleeves,
+  dye or shirt tone ignored, accessory on everyone or welded to the torso, thin crown, thin staff, tall spire, shifted default
+  look) all fail the spec. `check.sh` OVERALL PASS (game-001 specs 1431 passed).

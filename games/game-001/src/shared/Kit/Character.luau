@@ -22,17 +22,19 @@
 	variant of D-048 (two more rigid detail parts) is a later phase.
 
 	Job silhouettes (citizen art pass after the first Studio playtest). Each working job reads without colour:
-		farmer      wide straw hat (flat disc 3.4), long hoe board, lean body        KitHeadwear "strawhat"
-		woodcutter  charcoal knit cap slouched back into a tall tail, big bearded axe blade, stocky   "knitcap"
-		miner       squat ochre iron hat, double-sided pick bar (T), stocky          "hardhat"
-		builder     white linen peaked cap (low wedge, sits on the head), big wooden mallet, broad   "buildercap"
-		hauler      no job hat (hair shows), huge burlap sack on the back, broad
-		idle        hair only, nothing carried, lean
+		farmer      wide straw hat (flat disc 3.1), long hoe board, lean body        KitHeadwear "strawhat"
+		woodcutter  small charcoal knit beanie (a ball sitting high), big bearded axe blade, stocky   "knitcap"
+		miner       small dark iron pot (1.9), double-sided pick bar (T), stocky     "hardhat"
+		builder     warm cream cloth cap (low wedge, sits on the head), big wooden mallet, broad   "buildercap"
+		hauler      no job hat (hair shows), big burlap sack low on the back, broad
+		idle        hair, nothing carried, lean; the free 9th part is a headband or scarf (Accessory, KitAccessory)
 	The job also owns an outfit accent: the trousers (colour, KitAccent = job) and the outfit's fixed neutral
 	panel (the torso or the sleeves, whichever the outfit does not tint or leave bare) take the job's colour, so
 	look.outfit still moves the kingdom tint, the bare arms and the cut, while the job accent stays. The hat
 	takes the Hair slot, so the look's hair style picks a variant of it (roll tilt and shade, KitHeadwear
-	unchanged) and the hair colour is hidden under it; idle and hauler citizens keep all hair styles.
+	unchanged) and the hair colour is hidden under it; idle and hauler citizens keep all hair styles. The hidden hair
+	colour dyes the clothes instead (see `individual`): shirt tone, trousers and panel, and whether neutral sleeves
+	take the job panel (odd) or the kingdom tint (even).
 
 Soldier kingdom crest (CONTRACTS G13.2, D-033(3)): Kit.character(kind, job, kingdomColor, look?, kingdom?)
 	takes an optional KingdomId. A soldier given one wears a crest on the helm in the kingdom's tower style, so
@@ -91,10 +93,10 @@ local BLADE = Color3.fromRGB(138, 146, 158)
 local BURLAP = Color3.fromRGB(146, 108, 70) -- sack: a darker sackcloth (L .46)
 local LINEN = Color3.fromRGB(226, 214, 186)
 local LEATHER = Color3.fromRGB(120, 78, 46)
-local STRAW = Color3.fromRGB(216, 176, 84) -- farmer's hat: straw (L .70)
+local STRAW = Color3.fromRGB(200, 156, 64) -- farmer's hat: straw (L .62)
 local KNIT = Color3.fromRGB(52, 58, 70) -- woodcutter's cap: charcoal wool (neutral, so it never reads as a kingdom)
-local HARDHAT = Color3.fromRGB(190, 118, 30) -- miner's iron hat: burnt ochre (L .50)
-local COIF = Color3.fromRGB(238, 232, 216) -- builder's cap: white linen
+local HARDHAT = Color3.fromRGB(150, 92, 30) -- miner's iron pot: dark burnt ochre (L .39)
+local COIF = Color3.fromRGB(240, 214, 160) -- builder's cloth cap: warm cream (L .85)
 local ASH = Color3.fromRGB(214, 190, 146) -- spear shaft: pale ash, visible against grass and soldiers' steel
 local ERMINE = Color3.fromRGB(242, 238, 228)
 local FACE_TEXTURE = "rbxasset://textures/face.png" -- Roblox's built-in classic face (engine content, no upload)
@@ -198,8 +200,8 @@ local HAIR_STYLES: { HairStyle } = {
 	},
 }
 
--- Job headwear (Hair slot, welded to the Head): one bold silhouette per working job, none a ball (balls are
--- hair) and none a hair colour. Heads: top 5.44, face clear below y = +0.33 (head-centre frame). A hat sits ON
+-- Job headwear (Hair slot, welded to the Head): one bold silhouette per working job, none in a hair colour (the
+-- woodcutter's beanie is the only ball, in charcoal; hair balls are brown, black, blond, ginger, grey or flaxen). Heads: top 5.44, face clear below y = +0.33 (head-centre frame). A hat sits ON
 -- the head (clearance rules in the Kit spec): the head enters it by at most 0.4 above its lower face, and no
 -- skin shows through its top or sides (every head point above the hat's lower face is inside the hat).
 local JOB_HATS: { [string]: PartSpec } = {
@@ -207,30 +209,32 @@ local JOB_HATS: { [string]: PartSpec } = {
 		name = "strawhat",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(0.42, 3.4, 3.4),
+		size = Vector3.new(0.42, 3.1, 3.1),
 		color = STRAW,
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 0.62, 0) * UPRIGHT,
 	},
-	woodcutter = { -- knit cap slouched back: a wedge, low over the brow and rising to a tall tail behind the head
-		-- (the slope stays above the skull, so no skin shows through): the only hat taller behind than in front
+	woodcutter = { -- knit beanie: a small dark ball sitting high on the head (the old wedge slab was oversized and read
+		-- as a chimney). Its rim runs above the eyes (the covered cap starts 0.4 above the head centre) and meets the
+		-- head at a clean angle (53°, spec); it is charcoal against hair's browns and blacks
 		name = "knitcap",
-		class = "WedgePart",
-		size = Vector3.new(1.9, 1.6, 2.0),
+		class = "Part",
+		shape = Enum.PartType.Ball,
+		size = Vector3.new(1.5, 1.5, 1.5),
 		color = KNIT,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(0, 1.24, 0.1), -- base 0.44 above the head centre, apex 2.04
+		offset = CFrame.new(0, 0.7, 0.05),
 	},
 	miner = { -- squat iron hat with a rim wider than the head, ochre and glossy: a pot on the head
 		name = "hardhat",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(0.8, 2.2, 2.2),
+		size = Vector3.new(0.7, 1.9, 1.9),
 		color = HARDHAT,
 		material = Enum.Material.Metal,
-		offset = CFrame.new(0, 0.84, 0) * UPRIGHT,
+		offset = CFrame.new(0, 0.79, 0) * UPRIGHT, -- base 0.44; 1.9 across against the farmer's 3.1
 	},
-	builder = { -- white linen peaked cap: a low wedge, thin lip over the brow, higher crown behind. It sits ON the head
+	builder = { -- warm cream cloth cap: a low wedge, thin lip over the brow, higher crown behind. It sits ON the head
 		-- (base 0.45 above the head centre) and its slope stays above the skull, so the head no longer pokes
 		-- through a flat-bottomed block
 		name = "buildercap",
@@ -246,14 +250,15 @@ local HAT_ROLLS = { 0, math.rad(9), math.rad(-9) }
 local HAT_SHADES = { 1, 0.88 } -- shaded hats of different jobs never overlap in luminance (spec)
 
 local GOVERNOR_CROWN: PartSpec = { -- gold circlet on the head, a gold disc from above; it covers the head's top
-	-- (the head used to poke through its top face): bottom 0.41 above the head centre, top 0.91
+	-- (the head used to poke through its top face): 1.9 across (a wide gold disc from the air), bottom 0.42 above the
+	-- head centre, top 1.02
 	name = "crown",
 	class = "Part",
 	shape = Enum.PartType.Cylinder,
-	size = Vector3.new(0.5, 1.52, 1.52),
+	size = Vector3.new(0.6, 1.9, 1.9),
 	color = C.gold,
 	material = Enum.Material.Metal,
-	offset = CFrame.new(0, 0.66, 0) * UPRIGHT,
+	offset = CFrame.new(0, 0.72, 0) * UPRIGHT,
 }
 
 local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel square from above)
@@ -271,7 +276,7 @@ local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel sq
 -- kit-characters.md): the spire is tallest and pointed, the square low and wider than the helm, the plume a
 -- narrow tail swept back past the helm, the dome a round knob wider than its seat.
 local HELM_TOP = GREAT_HELM.size.Y / 2
-local SPIRE = Vector3.new(1.3, 2.1, 1.3) -- base 1.84 across the diagonal: a broad roof, not a stick
+local SPIRE = Vector3.new(1.0, 1.6, 1.0) -- base 1.41 across the diagonal, 1.55 above the helm: a low crest, not a gnome's hat
 local PLUME_LEN, PLUME_D, PLUME_TILT = 2.5, 0.7, math.rad(70) -- a near-horizontal tail
 local CRESTS: { [string]: PartSpec } = {
 	crimson = { -- tall spire (2.05 above the helm): a CornerWedge turned 45°, its point over the front corner;
@@ -471,14 +476,15 @@ local TOOLS: { [string]: PartSpec } = {
 		offset = OUT * CFrame.new(0, -0.45, -0.2),
 	},
 	sack = { -- big burlap sack on the back, seated against the shoulder blades and clear of the head and both arms
-		-- (centre on the spine, 3.05 up, 1.95 behind it; joint at 0.96, 3.8, 0.575)
+		-- (centre 0.1 right of the spine, 2.8 up, 2.1 behind it: its top sits just above the shoulders, so from the
+		-- front it is a bag behind the body, not a bun beside the head; joint at 0.96, 3.8, 0.575)
 		name = "sack",
 		class = "Part",
 		shape = Enum.PartType.Ball,
 		size = Vector3.new(2.7, 2.7, 2.7),
 		color = BURLAP,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(-0.96, -0.75, 1.375),
+		offset = CFrame.new(-0.86, -1.0, 1.525),
 		onBack = true,
 	},
 	spear = { -- 9 long and 0.4 thick in pale ash, so the line reads against grass and steel
@@ -494,10 +500,10 @@ local TOOLS: { [string]: PartSpec } = {
 		name = "staff",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(5.6, 0.34, 0.34),
+		size = Vector3.new(6.4, 0.5, 0.5), -- thicker and longer: the key character's tool still shows from the air
 		color = C.gold,
 		material = Enum.Material.Metal,
-		offset = GRIP * CFrame.new(0, 0.7, 0) * UPRIGHT,
+		offset = GRIP * CFrame.new(0, 1.1, 0) * UPRIGHT,
 	},
 }
 
@@ -616,24 +622,11 @@ local function specPart(
 	return rigPart(model, name, spec.class, spec.shape, spec.size, cf, color, spec.material, tint)
 end
 
--- The job's accent on an outfit: the fixed neutral torso/sleeve colour (not a kingdom tint, not bare skin)
--- becomes the job's panel colour, and the trousers its legs colour. The kingdom tint and bare arms stay.
-local function jobOutfit(outfit: Outfit, job: JobStyle): Outfit
-	return {
-		name = outfit.name,
-		torso = if typeof(outfit.torso) == "Color3" then job.panel :: Color3 else outfit.torso,
-		sleeves = if typeof(outfit.sleeves) == "Color3" then job.panel :: Color3 else outfit.sleeves,
-		legs = job.legs :: Color3,
-		legMaterial = outfit.legMaterial,
-	}
-end
-
 -- look.hair (1..6) picks one of 6 variants of a job hat: roll 0 / +9° / −9° about the head's front axis, in
 -- the full shade or 0.88 of it. The shape, size and KitHeadwear name never change.
 local function hatVariant(spec: PartSpec, hairIndex: number): PartSpec
 	local roll = HAT_ROLLS[(hairIndex - 1) % #HAT_ROLLS + 1]
 	local tone = HAT_SHADES[((hairIndex - 1) // #HAT_ROLLS) % #HAT_SHADES + 1]
-	local at = spec.offset.Position
 	local color = spec.color :: Color3
 	return {
 		name = spec.name,
@@ -642,8 +635,75 @@ local function hatVariant(spec: PartSpec, hairIndex: number): PartSpec
 		size = spec.size,
 		color = Color3.new(color.R * tone, color.G * tone, color.B * tone),
 		material = spec.material,
-		offset = CFrame.new(at) * CFrame.Angles(0, 0, roll) * (CFrame.new(-at) * spec.offset),
+		offset = CFrame.Angles(0, 0, roll) * spec.offset, -- a jaunty tilt about the head, not about the hat's own centre
 	}
+end
+
+-- Per-individual variation, from the look alone (nothing new on the wire, G13.2): the hair colour is hidden under a
+-- working citizen's hat, so it is free to dye the clothes.
+--  * shirt tone: the kingdom tint factor moves a little (KitTint stays exact, so recolouring still matches);
+--  * working jobs: the job's trousers and neutral panel are dyed lighter or darker;
+--  * working jobs: an odd hair colour keeps the job panel on neutral sleeves, an even one tints those sleeves with
+--    the kingdom colour (red shoulders from above; the hat covers the head and much of the chest).
+-- The default look (hair colour 1, skin 1) changes nothing.
+local TINT_SHIFT = { 0, -0.06, 0.06, -0.1, 0.1, -0.03, 0.03, -0.08 }
+local DYE = { 1, 0.92, 1.08, 0.86, 1.14, 0.96, 1.04, 0.9 }
+local SLEEVE_TINT = 0.78
+
+local function shiftTint(p: Paint, shift: number): Paint
+	return if type(p) == "number" then math.clamp(p + shift, 0.5, 1) else p
+end
+
+local function dyed(c: Color3, f: number): Color3
+	return Color3.new(math.clamp(c.R * f, 0, 1), math.clamp(c.G * f, 0, 1), math.clamp(c.B * f, 0, 1))
+end
+
+local function individual(outfit: Outfit, l: CitizenLook): Outfit
+	local shift = TINT_SHIFT[(l.hairColor + l.skin - 2) % #TINT_SHIFT + 1]
+	return {
+		name = outfit.name,
+		torso = shiftTint(outfit.torso, shift),
+		sleeves = shiftTint(outfit.sleeves, shift),
+		legs = shiftTint(outfit.legs, shift),
+		legMaterial = outfit.legMaterial,
+	}
+end
+
+-- The job's accent on an outfit (see the header): the fixed neutral torso/sleeve colour (not a kingdom tint, not
+-- bare skin) becomes the dyed panel colour and the trousers the dyed legs colour. `sleevesTinted`: neutral sleeves
+-- take the kingdom tint instead of the panel.
+local function jobOutfit(outfit: Outfit, job: JobStyle, dye: number, sleevesTinted: boolean): Outfit
+	local panel = dyed(job.panel :: Color3, dye)
+	return {
+		name = outfit.name,
+		torso = if typeof(outfit.torso) == "Color3" then panel else outfit.torso,
+		sleeves = if typeof(outfit.sleeves) ~= "Color3"
+			then outfit.sleeves
+			elseif sleevesTinted then SLEEVE_TINT
+			else panel,
+		legs = dyed(job.legs :: Color3, dye),
+		legMaterial = outfit.legMaterial,
+	}
+end
+
+-- Idle citizens carry nothing, so the 9th part is free for one accessory welded to the Head (a headband or a
+-- scarf in one of a few colours; about two looks in three wear one). Part "Accessory", attribute KitAccessory.
+type Accessory = { kind: string, size: Vector3, offset: CFrame, color: Paint }
+local HEADBAND_SIZE, HEADBAND_AT = Vector3.new(0.22, 1.6, 1.6), CFrame.new(0, 0.4, 0) * UPRIGHT
+local SCARF_SIZE, SCARF_AT = Vector3.new(0.35, 1.5, 1.5), CFrame.new(0, -0.64, 0) * UPRIGHT
+local INDIGO = Color3.fromRGB(60, 72, 120)
+local RUST = Color3.fromRGB(170, 84, 52)
+local ACCESSORIES: { Accessory | boolean } = {
+	false, -- 1 none (the default look)
+	{ kind = "headband", size = HEADBAND_SIZE, offset = HEADBAND_AT, color = 0.72 }, -- 2 kingdom headband
+	{ kind = "scarf", size = SCARF_SIZE, offset = SCARF_AT, color = LINEN }, -- 3 cream scarf
+	false, -- 4 none
+	{ kind = "headband", size = HEADBAND_SIZE, offset = HEADBAND_AT, color = INDIGO }, -- 5 indigo headband
+	{ kind = "scarf", size = SCARF_SIZE, offset = SCARF_AT, color = RUST }, -- 6 rust scarf
+}
+local function accessoryOf(l: CitizenLook): Accessory?
+	local a = ACCESSORIES[(l.outfit + 2 * l.hair + 3 * l.skin) % #ACCESSORIES + 1]
+	return if type(a) == "table" then a else nil
 end
 
 -- ------------------------------------------------------------------ characters (≤ 9 parts)
@@ -670,12 +730,15 @@ function Character.character(
 	if style == "soldier" then
 		outfit, headwear, width, tool = SOLDIER_OUTFIT, crest, 2.15, "spear"
 	elseif style == "governor" then
-		outfit, headwear, width, tool = GOVERNOR_OUTFIT, GOVERNOR_CROWN, 2.2, "staff"
+		outfit, headwear, width, tool = GOVERNOR_OUTFIT, GOVERNOR_CROWN, 2.4, "staff"
 	else
-		outfit, headwear, width, tool = OUTFITS[l.outfit], HAIR_STYLES[l.hair].spec, jobSpec.width, jobSpec.tool
+		outfit, headwear, width, tool =
+			individual(OUTFITS[l.outfit], l), HAIR_STYLES[l.hair].spec, jobSpec.width, jobSpec.tool
 		if jobSpec.legs then
-			panelTorso, panelSleeves = typeof(outfit.torso) == "Color3", typeof(outfit.sleeves) == "Color3"
-			outfit, accentJob = jobOutfit(outfit, jobSpec), job
+			local sleevesTinted = l.hairColor % 2 == 0
+			panelTorso = typeof(outfit.torso) == "Color3"
+			panelSleeves = typeof(outfit.sleeves) == "Color3" and not sleevesTinted
+			outfit, accentJob = jobOutfit(outfit, jobSpec, DYE[l.hairColor], sleevesTinted), job
 		end
 		if jobSpec.hat then -- the job hat takes the Hair slot; look.hair picks its variant
 			headwear = hatVariant(jobSpec.hat, l.hair)
@@ -756,6 +819,30 @@ function Character.character(
 		weld.C0 = headFrame:Inverse() * hair.CFrame
 		weld.C1 = CFrame.new()
 		weld.Parent = hair
+	end
+	local accessory = if style == "citizen" and jobSpec.tool == nil then accessoryOf(l) else nil
+	if accessory then
+		local headFrame = head.CFrame
+		local color, tint = paint(accessory.color, kingdomColor, skin, hairColor)
+		local part = rigPart(
+			model,
+			"Accessory",
+			"Part",
+			Enum.PartType.Cylinder,
+			accessory.size,
+			headFrame * accessory.offset,
+			color,
+			Enum.Material.Fabric,
+			tint
+		)
+		part:SetAttribute("KitAccessory", accessory.kind)
+		local weld = Instance.new("Weld")
+		weld.Name = "AccessoryWeld"
+		weld.Part0 = head
+		weld.Part1 = part
+		weld.C0 = headFrame:Inverse() * part.CFrame
+		weld.C1 = CFrame.new()
+		weld.Parent = part
 	end
 
 	-- arms hang splayed a few degrees (friendlier silhouette, tools clear the legs)
