@@ -15,8 +15,9 @@ Each section ends with its own **History** (D-038 (7)): a change to one feature 
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. When FORGE-01's PlayerReady exists: `analytics event SessionStart ... sent=true`.
-4. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
+3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
+4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel VS1 ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
+5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 History:
@@ -252,6 +253,7 @@ Steps
 9. Aerial readability: Play, stay in the aerial view at the start zoom, run `vs1.request` three or four times. Every request shows a badge you can spot at a glance, none hidden by a roof, tree or another bubble; the nearest ones show their words. A new request's badge pops once. Zoom all the way out: the badges stay the same size and at most one bubble keeps its words. Device emulator, a phone: badges, at most two with words.
 10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
 11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
+12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
 
 Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
 ```lua
@@ -268,11 +270,12 @@ return #out .. " bubbles\n" .. table.concat(out, "\n")
 ```
 Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
 
-Pass: steps 1–11 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
+Pass: steps 1–12 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+- 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
 - 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)

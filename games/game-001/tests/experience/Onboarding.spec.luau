@@ -72,6 +72,16 @@ describe("game-001 VS-1 onboarding config", function()
 		expect(FLOW.version).toBe(2)
 	end)
 
+	it("VS-1 grants no rewards: no step reward, no completeReward, no firstRewardSec (BRIEF §7)", function()
+		for _, flow in OnboardingConfig.flows do
+			expect(flow.completeReward).toBeNil()
+			for _, step in flow.steps do
+				expect(step.reward).toBeNil()
+			end
+		end
+		expect((OnboardingConfig.limits or {}).firstRewardSec).toBeNil()
+	end)
+
 	it("client-reported steps grant nothing and are whitelisted; server steps use G9 events", function()
 		for _, step in FLOW.steps do
 			if step.trigger.client then

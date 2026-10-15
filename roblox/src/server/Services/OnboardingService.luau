@@ -73,8 +73,14 @@ function Def.create(env: any, registry: any, options: { config: any?, bus: any? 
 	}, OnboardingService)
 	local known = AnalyticsRouter.knownEvents(bus)
 	local problems = Onboarding.validate(config, known)
-	for _, problem in Subjects.validate(if type(config) == "table" then config.subjects else nil, known) do
+	local subjects = if type(config) == "table" then config.subjects else nil
+	for _, problem in Subjects.validate(subjects, known) do
 		table.insert(problems, problem)
+	end
+	if #problems == 0 then
+		for _, name in Subjects.missing(Onboarding.events(config), subjects) do
+			table.insert(problems, `subjects: no resolver for '{name}', so the steps waiting for it never complete`)
+		end
 	end
 	if #problems > 0 then
 		self._enabled = false
