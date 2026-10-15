@@ -42,12 +42,40 @@
 		rules.fightNoLoss       categories a fight event cannot lower
 		rules.peaceEvents       events of keeping or making peace. They never RAISE reputation by themselves
 		                        ("peacekeeping is a strategy, not a virtue that scores by itself").
-	Strikes (FL-0079, not used yet; living-kingdom §5 "exploited workers") — PROVISIONAL
+	Strikes (ConsequenceService, FL-0082; living-kingdom §5 "exploited workers") — PROVISIONAL
 		strike.loyaltyBelow / obedienceBelow   a citizen counts as aggrieved below both
 		strike.shareOfOccupation               share of an occupation that must be aggrieved
-		strike.memoryTag                       the exploit memory an aggrieved citizen must carry
+		strike.memoryTags                      the grievance memories (pinned memory tags, content decisions.csv
+		                                       memory_tag): an aggrieved citizen carries at least one. PROVISIONAL
+		                                       list: refused or half pay and broken promises; "exploited" is kept
+		                                       for a dedicated content tag (FORGE-06, handoff FL-0082)
 		strike.sustainSeconds                  how long the condition must hold before the strike starts
-		strike.endLoyaltyAbove                 the strike ends once the occupation's mean loyalty rises above this
+		strike.endLoyaltyAbove                 the strike ends once the strikers' mean loyalty rises above this
+	Sustained consequences (ConsequenceService, FL-0082; living-kingdom §5) — PROVISIONAL. Every rule needs its
+	condition to hold without a break for its sustainSeconds, so no single decision can set one off; each clears
+	when its end condition is met (a margin above the trigger, so it does not flicker).
+		consequences.tick                      seconds between rule checks
+		consequences.shortage                  food neglected: fed ratio below fedBelow for sustainSeconds →
+		                                       conditions move by `conditions` every `every` seconds, unrest pressure
+		                                       rises by unrestPressure while it lasts, grumbleShare of the hungriest
+		                                       citizens grumble; ends at fed ratio >= endFedAbove
+		consequences.riot                      prolonged instability: stability minus unrest pressure below
+		                                       stabilityBelow for sustainSeconds, plus an instigator (the least loyal
+		                                       citizen, loyalty below instigatorLoyaltyBelow) → a fire on the nearest
+		                                       finished building other than the keep (fireDamagePerSecond, never below
+		                                       fireFloor of its hit points) and the instigator plus up to rioterShare of
+		                                       citizens below rioterLoyaltyBelow stop work; ends at stability >=
+		                                       endStabilityAbove or after maxSeconds, then cooldownSeconds before another.
+		                                       A burning building halts (no farming, building, deliveries or gather
+		                                       bonus) and, once the fire is out, heals back to its pre-fire hit points at
+		                                       regenPerSecond of its maximum a second (D-050 (1b), (1c)); the rioters
+		                                       have their own state and placard (D-050 (1d)).
+		consequences.rebellion                 VS-2/3, enabled = false in the slice. Stability below stabilityBelow, at
+		                                       least disloyalShareAtLeast of citizens disloyal (loyalty below
+		                                       disloyalBelow and obedience below obedienceBelow) and an instigator, for
+		                                       sustainSeconds → the disloyal citizens leave the kingdom
+		consequences.morale                    army morale for battles (VS-2 combat): below retreatBelow units
+		                                       retreat earlier, below surrenderBelow they surrender or defect
 ]]
 
 return {
@@ -83,12 +111,55 @@ return {
 		peaceEvents = { "PeaceMade" },
 	},
 
-	strike = { -- PROVISIONAL (FL-0079)
+	strike = { -- PROVISIONAL (FL-0079, FL-0082)
 		loyaltyBelow = 30,
 		obedienceBelow = 30,
 		shareOfOccupation = 0.5,
-		memoryTag = "exploited",
+		memoryTags = {
+			"exploited",
+			"pay_refused",
+			"paid_half",
+			"harvest_promise_broken",
+			"forge_half_broken",
+			"feast_broken",
+		},
 		sustainSeconds = 60,
 		endLoyaltyAbove = 40,
+	},
+
+	consequences = { -- PROVISIONAL (FL-0082; living-kingdom §5)
+		tick = 1,
+		shortage = {
+			fedBelow = 0.5,
+			sustainSeconds = 60,
+			endFedAbove = 0.6,
+			every = 10,
+			conditions = { happiness = -2, stability = -1 },
+			unrestPressure = 5,
+			grumbleShare = 0.3,
+		},
+		riot = {
+			stabilityBelow = 20,
+			sustainSeconds = 120,
+			endStabilityAbove = 30,
+			instigatorLoyaltyBelow = 25,
+			rioterLoyaltyBelow = 35,
+			rioterShare = 0.2,
+			fireDamagePerSecond = 4,
+			fireFloor = 0.25,
+			regenPerSecond = 0.002, -- after the fire the building heals back to its pre-fire hit points at this share of its maximum a second (D-050 (1c))
+			maxSeconds = 90,
+			cooldownSeconds = 180,
+		},
+		rebellion = {
+			enabled = false, -- gated off in the VS-1 slice (VS-2/3)
+			stabilityBelow = 10,
+			sustainSeconds = 180,
+			disloyalShareAtLeast = 0.3,
+			disloyalBelow = 30,
+			obedienceBelow = 30,
+			cooldownSeconds = 600,
+		},
+		morale = { retreatBelow = 30, surrenderBelow = 15 },
 	},
 }
