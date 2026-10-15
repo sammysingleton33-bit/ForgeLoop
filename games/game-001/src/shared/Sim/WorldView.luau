@@ -5,12 +5,14 @@
 	Until FORGE-02's kingdom assets exist, every entity is one anchored Part so the world is visible
 	and testable: keeps, houses, farms, ... sized by footprint and level; construction sites are
 	translucent and grow with progress; citizens and soldiers are small blocks that move each tick;
-	trees, rocks and gold veins shrink to stumps when depleted. Parts replicate to clients normally.
-	Asset ids replace these parts later without touching the simulation (look up by EntityId).
+	trees, rocks, gold veins and berry bushes shrink to stumps when depleted. Parts replicate to clients
+	normally. Asset ids replace these parts later without touching the simulation (look up by EntityId).
+	World nodes (node.fromWorld: the world Layout's resource nodes, Kingdom/Layout) get no part:
+	WorldService already places their Kit models, tagged ResourceNode. Only generated nodes are drawn.
 
 		Workspace.ForgeKingdoms
 			Ground                      flat ground sized to the map bounds (createGround = true)
-			Nodes/node:<nodeId>                  attributes: EntityId, Kind, Resource, Amount
+			Nodes/node:<nodeId>                  generated nodes only; attributes: EntityId, Kind, Resource, Amount
 			<kingdomId>/Buildings/building:<id>  attributes: EntityId, KingdomId, Kind, Level, PendingLevel, Progress, Hp, MaxHp
 			<kingdomId>/Citizens/entity:<id>     attributes: EntityId, KingdomId, Job, Activity, CitizenName
 			<kingdomId>/Units/entity:<id>        attributes: EntityId, KingdomId, Kind, Hp, MaxHp
@@ -55,6 +57,7 @@ local NODE_STYLE: { [string]: { size: { number }, color: { number }, material: s
 	tree = { size = { 4, 14, 4 }, color = { 50, 110, 45 }, material = "Grass" },
 	rock = { size = { 8, 6, 8 }, color = { 120, 120, 125 }, material = "Slate" },
 	goldvein = { size = { 7, 5, 7 }, color = { 230, 190, 60 }, material = "Foil" },
+	berries = { size = { 5, 3, 5 }, color = { 70, 120, 50 }, material = "Grass" },
 }
 local JOB_COLOR: { [string]: { number } } = {
 	farmer = { 200, 180, 90 },
@@ -223,6 +226,9 @@ function WorldView:sync(sim: any)
 
 	for _, nid in sim.nodeOrder do
 		local node = sim.nodes[nid]
+		if node.fromWorld then
+			continue -- WorldService draws it (tagged ResourceNode)
+		end
 		local style = NODE_STYLE[node.kind]
 		local size = style.size
 		local depleted = node.amount <= 0

@@ -16,6 +16,7 @@ Which steps are runnable after which PR:
 | K9 (Kit buildings, upkeep-fed citizens) | the living-kingdom groundwork PR (stacked on FL-0049) |
 | K10 (conversations, thought bubbles, walk-out placard) | FL-0079 (`Kingdom.Converse/Choose`, PR #77); FORGE-03's panel and FORGE-04's bubbles |
 | K11 (build slots, throne) | FL-0081; the plot picker and build menu on slots are FORGE-03's |
+| K12 (ruler gathering on plot nodes, Gather prompt) | the FL-0051 gather PR (`InteractionController`, world plot nodes in the sim) |
 
 Remote names are the CONTRACTS G8 names (`<Area>.<Action>`, under `ReplicatedStorage.ForgeRemotes.<Area>`).
 The build runs the **VS-1 slice mode** (config `Match.mode = "slice"`, PROVISIONAL, CONTRACTS G3): Founding
@@ -64,7 +65,8 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 
 ## K4 — Ruler gathering (VS-1 row 5)
 1. Walk to a tree and call `Kingdom.Gather(nodeId)` from the client command bar with the node's
-   `EntityId` attribute (the interaction prompt of FL-0051 replaces this).
+   `NodeId` attribute (a world node, tagged `ResourceNode`) or the `EntityId` of a generated node's part.
+   K12 covers the same through the Gather prompt.
 2. Repeat it faster than once per 0.8 s.
 3. Repeat it from 30 studs away.
 
@@ -217,6 +219,33 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   respawns, they sit on their throne at once, and player 2 ends up in front of the dais. A co-ruler of
   player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
+
+## K12 — Ruler gathering on plot nodes (FL-0051)
+Needs a user run: headless specs cover the remote and the sim
+(`games/game-001/tests/sim/InteractionController.spec.luau`), not the prompt itself, its reach as the
+engine measures it, keys, touch or streaming.
+1. Play Solo and wait until your ruler has spawned at the keep.
+2. Press **V** (gamepad Y, touch "View") to stand up and walk (follow camera).
+3. Walk to one of the four trees behind your lumber camp (the plot's wood nodes, models under
+   `Workspace` tagged `ResourceNode`, e.g. `crimson_wood1`). Note the wood total on the HUD.
+4. When the prompt shows, press **E** (or click / tap the prompt). Press it again at once, then again
+   after a second.
+5. Walk to a berry bush by the farm and a rock by the quarry and gather each once.
+6. Open build mode (Build menu → House) next to a tree, then leave it (X / gamepad B).
+7. Test → Start with 2 players and repeat steps 2–4 on both clients, each at their own plot's trees.
+
+**Expected:**
+- A prompt "Gather" with the resource name (Wood, Stone, Gold, Food) appears within about 8–9 studs of a
+  tree or bush and about 9–10 studs of a rock or ore, and disappears beyond that. It never shows while
+  you are seated in the overview.
+- Each accepted press raises the treasury by the amount (wood 2, food 2, stone 1, gold 1) at once
+  (citizens deposit too, so compare right before and after the press).
+- The press right after an accepted one does nothing visible (client cooldown 0.8 s); no error in Output.
+- In build mode no Gather prompt shows; after leaving build mode the prompts come back.
+- No grey placeholder block stands inside any tree, rock or bush (the world nodes are drawn once, by
+  WorldService); generated forest nodes still show as placeholder parts.
+- With 2 players, each client's prompt works the same and each gather lands in that player's own kingdom
+  treasury only.
 
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:

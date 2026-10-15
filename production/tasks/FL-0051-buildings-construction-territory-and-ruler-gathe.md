@@ -11,7 +11,8 @@ updated: 2026-10-13
 depends_on: [FL-0049, FL-0054, FL-0058, FL-0055]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 9
-evidence: []
+evidence:
+  - check.sh OVERALL PASS (game-001 1114/0); InteractionController 13 specs incl. e2e with real WorldService/Kingdom.Gather; mutations 12/12 caught; Studio K12 unverified
 ---
 
 # Buildings, construction, territory and ruler gathering
@@ -44,3 +45,4 @@ Players place buildings that builders raise through visible stages; rulers can h
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): starting buildings, door links, footprint, region markers, InteractionController, position+rot placement remotes
 - 2026-10-13 forge-00: READY → BUILDING. Status reconciled by the FORGE-00 backlog audit 2026-10-13: partly built in merged PRs #46, #50, #56, #62, #72. Remaining (audit): ruler gather client (InteractionController; onboarding needs it), Door->nav, claim markers, Construction/Territory service facades (G5), #62 M-1. Slot reservation is FL-0081.
+- 2026-10-13 forge-01: BUILDING → BUILDING. Still BUILDING (Door->nav, claim markers, G5 facades remain). Ruler gather client: world plot nodes are sim nodes (fromWorld), InteractionController Gather ProximityPrompts on ResourceNode models, gathered signal; stacked on #94

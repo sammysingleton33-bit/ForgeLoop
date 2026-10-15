@@ -5,15 +5,26 @@
 	By default the four kingdoms sit on FORGE-02's world Layout (CONTRACTS G10.1, world/Layout.luau):
 	each keep at `plots[k].anchors.keep` and the starting buildings (config Kingdoms.startAnchors:
 	storehouse, farm, lumbercamp, quarry) at their anchors, facing as the anchors do; the neutral objectives at `objectives[i]` (gameplay numbers from
-	config Objectives), and the contested centre nodes from the world's `heart_*` resource nodes. Each
-	kingdom still gets a generated forest, quarry and gold vein around its keep until FL-0050/FL-0051
-	move the economy onto `Layout.resourceNodes` and the starting buildings onto the plot anchors.
+	config Objectives).
+	World nodes: every entry of the world's `resourceNodes` (each plot's 4 wood, 2 stone, 1 gold and
+	2 food, and the contested `heart_*` nodes) is a simulation node at its world id and position, kind
+	NODE_KIND[resource] (wood tree, stone rock, gold goldvein, food berries), amounts and regrowth from
+	the catalog (config Jobs.nodes). They are the models WorldService tags `ResourceNode` (NodeId = the
+	id), so a ruler can gather any tagged node (Kingdom.Gather, FL-0051) and citizens work them too
+	(berries only by hand: no job gathers food from nodes). They are added before anything is generated
+	and carry `fromWorld = true`: Sim/WorldView draws no part for them (WorldService draws the model).
+	Generated nodes: each kingdom also gets a forest, quarry and gold vein around its keep. On the
+	world layout they are generated in the keep's own frame (behind it and on its flanks) from one random
+	sequence that every kingdom replays, so the plots, which are rotated copies, get the same nodes at the
+	same distances (#62 M-1, fairness).
 	On the world layout a generated node keeps clear of every building already standing (sim:nodeClear:
-	the keep and starting buildings) and of every build slot (its circle stays placementGap +
-	SLOT_MARGIN from the slot, so any type that fits the slot can be built there). A blocked spot tries
+	the keep and starting buildings), of every build slot (its circle stays placementGap +
+	SLOT_MARGIN from the slot, so any type that fits the slot can be built there) and of every node
+	already there (the world nodes first). A blocked spot tries
 	a step inwards, outwards and towards the back of the plot, then a step further, a few times and without
 	random draws; a node with no clear spot is left out. Same seed, same nodes.
-	Passing `spacing` instead keeps the older square generator (specs that need compact maps).
+	Passing `spacing` instead keeps the older square generator (specs that need compact maps); it has no
+	world nodes.
 
 	API
 		Layout.KINGDOMS: { { id, name, color, teamColor } }  -- the four kingdoms, CONTRACTS G2 ids
@@ -28,6 +39,7 @@
 		Layout.bounds(spacing?): Bounds            -- map bounds: the world's, or ones that fit the square layout
 		Layout.boundsFor(spacing): Bounds          -- (square layout)
 		Layout.SLOT_MARGIN: number                 -- extra studs between a generated node's clearance and a slot
+		Layout.NODE_KIND: { [ResourceId]: string } -- world resource -> simulation node kind
 		Layout.groundY(x, z): number               -- world surface height where entities stand: the bridge
 		                                           deck on a bridge, else Kit/WorldPlan.groundHeight (hills,
 		                                           river bed). World plots only; not for the square layout.
@@ -49,7 +61,8 @@ Layout.WORLD = WorldLayout
 local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
 
 -- world resource -> simulation node kind
-local NODE_KIND = { wood = "tree", stone = "rock", gold = "goldvein", food = "berries" }
+local NODE_KIND = table.freeze({ wood = "tree", stone = "rock", gold = "goldvein", food = "berries" })
+Layout.NODE_KIND = NODE_KIND
 
 Layout.SLOT_MARGIN = 2
 -- a blocked generated node tries NUDGES steps: i * NUDGE studs in, then out, then i * TURN radians to the back
@@ -226,7 +239,21 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 	assert(type(count) == "number" and count >= 1 and count <= 4, "Layout.generate: kingdoms must be 1..4")
 	local spacing = opts.spacing
 	local trees = opts.trees or KingdomsConfig.trees
-	local rng = sim.rng
+	-- world layout: every kingdom draws the same sequence, so its forest, quarry and gold vein sit the same
+	-- way in its own plot (#62 M-1); the square layout keeps drawing from the simulation's rng
+	local worldSeed = if spacing then nil else sim.rng:NextInteger(1, 2147483646)
+
+	if not spacing then
+		-- the world's resource nodes (every plot's and the heart's), at their world ids, before anything is
+		-- generated so generated nodes keep clear of them
+		for _, node in WorldLayout.resourceNodes do
+			local kind = NODE_KIND[node.resource]
+			if kind then
+				local p = node.cframe.Position
+				sim:addNode(kind, p.X, p.Z, node.id).fromWorld = true
+			end
+		end
+	end
 
 	local kingdoms = {}
 	for i = 1, count do
@@ -259,8 +286,10 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 			})
 		)
 
-		-- forest behind the keep (away from the centre), spread on an arc
-		local away = math.atan2(kz, kx)
+		-- forest behind the keep, spread on an arc: away from the centre (square layout), or the back of the
+		-- keep in its own frame (world layout: -LookVector = (sin yaw, cos yaw))
+		local rng = if worldSeed then Random.new(worldSeed) else sim.rng
+		local away = if spacing then math.atan2(kz, kx) else math.atan2(math.cos(keepYaw), math.sin(keepYaw))
 		local back = if spacing then nil else away
 		for t = 1, trees do
 			local angle = away + (t / trees - 0.5) * 1.6 + (rng:NextNumber() - 0.5) * 0.15
@@ -282,14 +311,6 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 		sim:addNode("goldvein", -18, 12)
 		sim:addNode("rock", 30, 25)
 		sim:addNode("rock", -30, 25)
-	else
-		-- contested centre from the world (heart_* nodes, at their world ids)
-		for _, node in WorldLayout.resourceNodes do
-			local kind = NODE_KIND[node.resource]
-			if kind and string.sub(node.id, 1, 6) == "heart_" then
-				sim:addNode(kind, node.cframe.Position.X, node.cframe.Position.Z, node.id)
-			end
-		end
 	end
 	return { kingdoms = kingdoms }
 end
