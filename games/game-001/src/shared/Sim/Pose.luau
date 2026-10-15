@@ -191,9 +191,10 @@ local TOOL_CHEER_RAISE = 55
 local TOOL_TIP_BACK = 40
 local TOOL_TIP_OUT = 20
 
--- The free arm's raise from hanging (degrees) and its pump. 128 +- 8 reaches 136; at 140 +- 10 the raised arm sank up
--- to 0.24 studs into the head (FORGE-05, B18; tests/sim/PoseClearance.spec arms x Head). Any raise still clips: the
--- Kit's shoulders sit too close to the head (see the spec), so this only halves it.
+-- The free arm's raise from hanging (degrees) and its pump: 128 +- 8 reaches 136. On the Kit before B18 any raised arm
+-- sank into the head (up to 0.24 studs at 140 +- 10, FORGE-05); with the shoulders moved out (FORGE-02) the cheer clears
+-- it by 0.4 or more (tests/sim/PoseClearance.spec arms x Head), and a steeper raise would clear it too, so the angle
+-- is a question of looks for a render, not of clearance.
 local CHEER_RAISE = 128
 local CHEER_PUMP = 8
 
