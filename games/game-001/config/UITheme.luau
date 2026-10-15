@@ -89,6 +89,8 @@ return table.freeze({
 		citizens = { image = "", glyph = "👥" },
 		crown = { image = "", glyph = "👑" },
 		gem = { image = "", glyph = "💎" }, -- Crown Points: never a crown, which is Emberhold's emblem (D-039)
+		-- FORGE-04's settings panel on the HUD rail (FL-0103, #123): sliders, not a cog (⚙ is Competence)
+		settings = { image = "", glyph = "🎚" },
 		build = { image = "", glyph = "🔨" },
 		kingdom = { image = "", glyph = "🏰" },
 		army = { image = "", glyph = "⚔" },
