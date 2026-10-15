@@ -3,7 +3,7 @@ id: FL-0099
 title: "Cinematic conversation UI: rising portrait, speech bubble, answers, consequence chips (G13.8)"
 track: build
 owner: forge-03
-status: SPECIFIED
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-13
@@ -11,7 +11,8 @@ updated: 2026-10-13
 depends_on: [FL-0088, FL-0097, FL-0098]
 context: [games/game-001/CONTRACTS.md, games/game-001/design/living-kingdom.md, DECISIONS.md, games/game-001/content/SPEC.md]
 estimate_h: 4
-evidence: []
+evidence:
+  - "ConversationStage.spec 32/0; 30 mutations killed; local merge with #108/#84/#85: game-001 1263/0 + real Converse -> Kit.portrait contract check; renders reviewed (REVIEW-stage.md)"
 ---
 
 # Cinematic conversation UI: rising portrait, speech bubble, answers, consequence chips (G13.8)
@@ -39,3 +40,7 @@ Opening a conversation feels like turning to face one of your people: their port
 
 ## Log
 - 2026-10-13 forge-00: created for cinematic conversations (D-036, CONTRACTS G13.8). First version after FL-0088 merges and FL-0097/FL-0098 interfaces exist; refine afterwards.
+- 2026-10-13 forge-03: SPECIFIED → READY. Dependencies have interfaces (#108, #84, #85 open; D-046 integrates them with FL-0099 under FL-0101)
+- 2026-10-13 forge-03: READY → BUILDING. Started (FORGE-00, D-046): cinematic conversation UI on G13.8 with doubles for #108 (Converse look/position, EndConversation), #84 (camera opened/closed) and #85 (Kit.portrait); the existing panel stays as the fallback
+- 2026-10-13 forge-03: BUILDING → TESTING. Stage, controller wiring, doubles and specs built; renders reviewed on a local merge with #108/#84/#85
+- 2026-10-13 forge-03: TESTING → REVIEW. PR stacked on nothing; merges with #108, #84, #85 under FL-0101 (D-046). Studio U16 is FORGE-05's run
