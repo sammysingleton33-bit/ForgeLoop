@@ -5,7 +5,7 @@ From the user's first Studio playtest (`production/handoffs/2026-10-13-forge-00-
 
 - **B1, free placement (Build rail), works on main's server today:**
   - the bar's Turn button: the rotate icon, "Turn" on tablet and desktop, and a dial showing where the door will face from the current camera;
-  - R turns, **Shift+R** turns back; on a gamepad **R1** turns and **L1** turns back (Y is the camera's View toggle, FORGE-07 M1 on #135);
+  - R turns, **Shift+R** turns back, **gamepad Y** turns;
   - the ghost has a cream door strip on its front edge and a cream facing arrow pointing out of it, sized to read from the aerial camera.
 - **B2, plot Turn, built against CONTRACTS v0.4-g9h, live since FORGE-01's #132 (main f36b1f0):**
   - the plot detail gets a Facing row (dial, "Faces the street / right / away / left", Turn); phones get a chip and a Turn button beside the CTA;
