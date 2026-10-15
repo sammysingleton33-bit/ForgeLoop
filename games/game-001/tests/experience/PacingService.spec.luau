@@ -177,6 +177,16 @@ describe("PacingService (CONTRACTS G11)", function()
 		expect(problemsOf(function(c)
 			c.idleSec.Conflict = 0
 		end)).toContain("idleSec.Conflict must be a positive number")
+		-- NaN passes `<= 0` and `== math.huge` (FORGE-07 #98 L1)
+		expect(problemsOf(function(c)
+			c.idleSec.Founding = 0 / 0
+		end)).toContain("idleSec.Founding must be a positive number")
+		expect(problemsOf(function(c)
+			c.targets.firstRecruitSec = 0 / 0
+		end)).toContain("targets.firstRecruitSec must be a number after the previous milestone")
+		expect(problemsOf(function(c)
+			c.targets.firstDepositSec = 0 / 0
+		end)).toContain("targets.firstDepositSec must be a positive number")
 		expect(problemsOf(function(c)
 			c.modes.slice = nil
 		end)).toContain("modes.slice missing")

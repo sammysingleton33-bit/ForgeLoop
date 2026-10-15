@@ -85,7 +85,7 @@ Measured against this timeline (probe medians; seconds after spawn; targets 90 /
 
 **The tutorial's pace, not the economy, sets the guided path:** the economy would allow the recruit at about 81 s. Whether the targets or the step times should move is a tuning call after the user's play (FORGE-00 holds tuning).
 
-**VS1 step 2 (FirstGather)** is the first ResourceGathered credited to the player: their own gather, or any citizen deposit into their kingdom (credited to every member, Feedback/Signals). It marks that the economy has started; it is not a ruler-action pacing target. `targets.firstDepositSec` (45 s from Founding) is the matching sim health check. Under the funnel-order rule (G9 v0.4-g6), a ruler who places a building before their first deposit credit loses that FirstBuildPlaced (dropped, not deferred) and is credited at their next placement.
+**VS1 step 2 (FirstGather)** is the first ResourceGathered credited to the player: their own gather, or any citizen deposit into their kingdom (credited to every member, Feedback/Signals). It marks that the economy has started; it is not a ruler-action pacing target. `targets.firstDepositSec` (45 s from Founding) is the matching sim health check. *Planned with #64 (VS1 `inOrder`), not on `main` until it merges:* under the funnel-order rule (G9 v0.4-g6), a ruler who places a building before their first deposit credit loses that FirstBuildPlaced (dropped, not deferred) and is credited at their next placement.
 
 The guided path above follows BRIEF §4 "First minutes guided": inspect a citizen → build on a plot → answer a citizen → recruit → capture. Its target length is **6–8 minutes** for a new player.
 
@@ -126,7 +126,7 @@ These are targets for pacing, not balance decisions. FORGE-03 owns the numbers a
 - Hint texts come from config `Onboarding.luau` `idleHints` (FL-0062 decides when to show them; examples: "Tap a citizen with a request, or build on a free plot", "Upgrade your keep", "Recruit soldiers at the Barracks").
 
 ## 7. How we measure it (FL-0063, `analytics/schemas/events.md`)
-- VS1 funnel: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture, step-to-step conversion (G9 order rule, v0.4-g6).
+- VS1 funnel: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture, step-to-step conversion (G9 order rule, v0.4-g6; planned with #64, not on `main` until it merges).
 - **Milestone times** (§3 targets) come from Studio `env.log` timestamps in playtests (the `onboarding step` and `analytics funnel` lines). LogFunnelStepEvent carries no time, so live data cannot check them yet; a milestone-timing event is proposed in FORGE-00's review (events M7) and decided with the analytics doc update.
 - Match length (`MatchEnded.durationSec`), and the phase reached when players leave (`PhaseLeft`).
 - Idle hints shown per match (target < 3 for an engaged player; `IdleHintShown`, server-side when FL-0062 lands).

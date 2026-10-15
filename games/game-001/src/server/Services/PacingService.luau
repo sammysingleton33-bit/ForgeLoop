@@ -182,14 +182,14 @@ function Def.validate(config: any): { string }
 		local previous = 0
 		for _, key in TARGET_ORDER do
 			local value = config.targets[key]
-			if type(value) ~= "number" or value <= previous then
+			if not seconds(value) or value == math.huge or value <= previous then -- NaN too (FORGE-07 #98 L1)
 				table.insert(problems, `Pacing: targets.{key} must be a number after the previous milestone`)
 			else
 				previous = value
 			end
 		end
 		local deposit = config.targets.firstDepositSec
-		if deposit ~= nil and (type(deposit) ~= "number" or deposit <= 0) then
+		if deposit ~= nil and (not seconds(deposit) or deposit <= 0 or deposit == math.huge) then
 			table.insert(problems, "Pacing: targets.firstDepositSec must be a positive number")
 		end
 	end
@@ -203,7 +203,7 @@ function Def.validate(config: any): { string }
 						problems,
 						`Pacing: idleSec.{tostring(key)} is not a playing MatchPhase (Founding..Endgame)`
 					)
-				elseif type(value) ~= "number" or value <= 0 or value == math.huge then
+				elseif not seconds(value) or value <= 0 or value == math.huge then
 					table.insert(problems, `Pacing: idleSec.{key} must be a positive number of seconds`)
 				end
 			end
