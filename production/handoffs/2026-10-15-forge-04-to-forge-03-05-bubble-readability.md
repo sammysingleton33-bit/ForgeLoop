@@ -1,4 +1,4 @@
-# Handoff: FORGE-04 → FORGE-03, FORGE-05 · FL-0091 (B15 bubble readability) · 2026-10-15
+# Handoff: FORGE-04 → FORGE-03, FORGE-05 · FL-0115 (B15 bubble readability; FL-0091 follow-up) · 2026-10-15
 
 ## What I need / what I'm giving you
 The world citizen bubbles are readable and tappable from the aerial view (the user's first live Studio feedback; FORGE-00's B15 target). A tap on a bubble selects its citizen through `InputModeController:select("citizen", id)` (G13.6), so FORGE-03's card opens exactly as for a tap on the citizen. Nothing changes in FORGE-03's files.
@@ -13,7 +13,7 @@ The world citizen bubbles are readable and tappable from the aerial view (the us
 
 ## Evidence
 - `CitizenBubbles.spec` 39/39 (layout, text limit, pulse, tap through the real InputModeController, build mode, pooled GUIs).
-- `mutations.py FL-0091` 55/55 CAUGHT (12 new rows, 2 retargeted).
+- `mutations.py FL-0115` 12/12 CAUGHT (new rows); `mutations.py FL-0091` 43/43 CAUGHT (2 retargeted).
 - Headless renders (not Studio): `roblox/tests/unit/experience/scenes/shots/bubbles-{start,max}-{phone,desktop}.png`, a kingdom projected through the real overview camera at zoom 120 (start) and 220 (max), with the real layout rules.
 - Studio: **unverified** (`roblox/studio-tests/experience.md` E8 steps 9–11 and the operator probe).
 

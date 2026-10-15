@@ -9,6 +9,8 @@
 	Conversations (G13.3)
 		openRequests            thought bubbles open per kingdom at a time (PROVISIONAL 3, G13.3)
 		requestRefreshSeconds   how often the open-request list is refreshed
+		conversationHoldSec     the longest a citizen stands still, facing the ruler, while a conversation
+		                        is open (G13.8, PROVISIONAL 30)
 		conversation.eventSeconds   how long an event flag (event.building_completed, event.shortage, ...)
 		                        stays true for scenario triggers after the event
 	Reputation (G13.4, Kingdom/Reputation)
@@ -48,6 +50,7 @@
 return {
 	openRequests = 3, -- PROVISIONAL (G13.3)
 	requestRefreshSeconds = 20,
+	conversationHoldSec = 30, -- PROVISIONAL (G13.8)
 	conversation = {
 		eventSeconds = 180, -- PROVISIONAL
 	},

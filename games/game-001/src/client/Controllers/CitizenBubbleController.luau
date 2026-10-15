@@ -28,7 +28,7 @@
 	EntityController:playPose(entityId, pose) when it has one (proposed to FORGE-01).
 
 	View: a pool of BillboardGuis (at most bubbles.maxOnScreen), adorned to the citizen's rig. Read from
-	the aerial camera (the user's first Studio playtest: bubbles were hard to see and to tap):
+	the aerial camera (FL-0115; the user's first Studio playtest: bubbles were hard to see and to tap):
 		- always on top, so roofs and trees never hide a request; the bubble's bottom edge sits HEIGHT
 		  studs above the rig's pivot (SizeOffset), clear of the head;
 		- a round glyph badge ("!", "?", "…", each with its own colour, never colour alone) and 17 px

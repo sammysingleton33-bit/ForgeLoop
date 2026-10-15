@@ -29,6 +29,15 @@
 		                                                        -- its helmet crest (spire, square, plume, dome) as the
 		                                                        -- welded Hair, KitHeadwear "crest_<shape>"; omitted or
 		                                                        -- unknown = the plain helm; others ignore it
+		Kit.portrait(kind, job, kingdomColor, look?, kingdom?) -> Model
+		                                                        -- G13.8 (D-036): Kit.character's rig for the same
+		                                                        -- arguments, every part Anchored, motors and weld kept,
+		                                                        -- + Attachment Root.PortraitFocus = the camera pose
+		                                                        -- (head and shoulders, square ViewportFrame) with
+		                                                        -- attributes PortraitFov (30, vertical) and
+		                                                        -- PortraitDistance; model attribute KitPortrait
+		Kit.portraitCamera(portrait) -> (CFrame, number)        -- camera CFrame and FieldOfView from PortraitFocus
+		Kit.posePortrait(portrait, joints)                      -- places anchored parts for Sim/Pose joint transforms
 		Kit.regalia(kingdomColor) -> { Accessory }              -- crown + cape
 		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered, else stand-in
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
@@ -54,6 +63,7 @@ local Buildings = require("./Buildings")
 local Character = require("./Character")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
+local Portrait = require("./Portrait")
 local Props = require("./Props")
 
 local Kit = {}
@@ -99,6 +109,11 @@ Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
 Kit.character = Character.character
 Kit.regalia = Character.regalia
+-- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by Character.character, then anchored
+Kit.portrait = Portrait.portrait
+Kit.portraitCamera = Portrait.camera
+Kit.posePortrait = Portrait.pose
+Kit.PORTRAIT_FOV = Portrait.FOV
 Kit.characterLod = Character.lod -- one-part stand-in beyond 150 studs (G4), same Root height as the rig
 Kit.prop = Props.prop
 Kit.setAssetSource = Props.setAssetSource

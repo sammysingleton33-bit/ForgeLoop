@@ -183,7 +183,7 @@
 	// ------------------------------------------------------------------ tree preparation
 	const TEXT = new Set(["TextLabel", "TextButton", "TextBox"]);
 	const IMAGE = new Set(["ImageLabel", "ImageButton"]);
-	const KNOWN_GUI = new Set(["Frame", "ScrollingFrame", "CanvasGroup", ...TEXT, ...IMAGE]);
+	const KNOWN_GUI = new Set(["Frame", "ScrollingFrame", "CanvasGroup", "ViewportFrame", ...TEXT, ...IMAGE]);
 	let counter = 0;
 
 	function prep(raw, parent, viaFolder) {
@@ -200,6 +200,7 @@
 			scale: 1,
 			viaFolder: !!viaFolder,
 			memo: new Map(),
+			viewport: raw.viewport || null,
 		};
 		for (const c of arr(raw.children)) addChild(n, c, false);
 		if (TEXT.has(n.cls)) n.text = textInfo(n);
@@ -764,6 +765,9 @@
 		// image
 		if (IMAGE.has(n.cls)) paintImage(n, g, w, h, radius);
 
+		// ViewportFrame: its parts, rasterised (FL-0099 portraits)
+		if (n.cls === "ViewportFrame") paintViewport(n, g, w, h, radius, me.s);
+
 		// border strokes (outside the box by default, like Roblox; follow the corner radius)
 		for (const s of borderStrokes) {
 			const sp = s.p;
@@ -833,6 +837,171 @@
 			g.appendChild(label(n.name, "left:1px;top:1px;background:rgba(160,0,160,.75)"));
 		}
 		return g;
+	}
+
+	// ------------------------------------------------------------------ ViewportFrame
+	// A small z-buffered rasteriser for the parts snapshot.luau records under a ViewportFrame: Block,
+	// Wedge, CornerWedge, Ball and Cylinder (axis = local X), flat-shaded as a ViewportFrame lights them
+	// (Ambient + LightColor × max(0, n · −LightDirection)); 3× supersampled. A Decal "Face" on a Ball is
+	// drawn as a stand-in face (two eyes and a smile: the real texture is a Roblox asset). Materials,
+	// specular light, shadows and textures are not emulated.
+	const V = {
+		sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+		dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+		cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+		norm: (a) => {
+			const l = Math.hypot(a[0], a[1], a[2]) || 1;
+			return [a[0] / l, a[1] / l, a[2] / l];
+		},
+	};
+	// CFrame components { x, y, z, r00..r22 }: world = R · local + p (columns = Right, Up, -Look).
+	function xform(cf, v) {
+		return [
+			cf[0] + cf[3] * v[0] + cf[4] * v[1] + cf[5] * v[2],
+			cf[1] + cf[6] * v[0] + cf[7] * v[1] + cf[8] * v[2],
+			cf[2] + cf[9] * v[0] + cf[10] * v[1] + cf[11] * v[2],
+		];
+	}
+	// Triangles (local space, counter-clockwise seen from outside) of one part.
+	function partTriangles(shape, size) {
+		const [hx, hy, hz] = [size[0] / 2, size[1] / 2, size[2] / 2];
+		const tris = [];
+		const quad = (a, b, c, d) => tris.push([a, b, c], [a, c, d]);
+		if (shape === "Ball") {
+			const r = Math.min(hx, hy, hz);
+			const U = 18, W = 12;
+			const pt = (i, j) => {
+				const th = (i / U) * Math.PI * 2, ph = (j / W) * Math.PI;
+				return [r * Math.sin(ph) * Math.cos(th), r * Math.cos(ph), r * Math.sin(ph) * Math.sin(th)];
+			};
+			for (let i = 0; i < U; i++) for (let j = 0; j < W; j++) quad(pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1));
+			return tris;
+		}
+		if (shape === "Cylinder") {
+			const r = Math.min(hy, hz);
+			const N = 20;
+			const at = (i, x) => [x, r * Math.cos((i / N) * Math.PI * 2), r * Math.sin((i / N) * Math.PI * 2)];
+			for (let i = 0; i < N; i++) {
+				quad(at(i, -hx), at(i + 1, -hx), at(i + 1, hx), at(i, hx));
+				tris.push([[hx, 0, 0], at(i, hx), at(i + 1, hx)], [[-hx, 0, 0], at(i + 1, -hx), at(i, -hx)]);
+			}
+			return tris;
+		}
+		const c = (x, y, z) => [x * hx, y * hy, z * hz];
+		if (shape === "Wedge") {
+			// bottom, back (+Z), slope from the top back edge to the bottom front edge, two sides
+			quad(c(-1, -1, -1), c(1, -1, -1), c(1, -1, 1), c(-1, -1, 1));
+			quad(c(-1, -1, 1), c(1, -1, 1), c(1, 1, 1), c(-1, 1, 1));
+			quad(c(-1, -1, -1), c(-1, 1, 1), c(1, 1, 1), c(1, -1, -1));
+			tris.push([c(1, -1, -1), c(1, 1, 1), c(1, -1, 1)], [c(-1, -1, -1), c(-1, -1, 1), c(-1, 1, 1)]);
+			return tris;
+		}
+		if (shape === "CornerWedge") {
+			const top = c(1, 1, -1);
+			quad(c(-1, -1, -1), c(1, -1, -1), c(1, -1, 1), c(-1, -1, 1));
+			tris.push([c(1, -1, -1), top, c(1, -1, 1)], [c(1, -1, 1), top, c(-1, -1, 1)], [c(-1, -1, 1), top, c(-1, -1, -1)], [c(-1, -1, -1), top, c(1, -1, -1)]);
+			return tris;
+		}
+		// Block
+		quad(c(-1, -1, -1), c(-1, 1, -1), c(1, 1, -1), c(1, -1, -1)); // front (-Z)
+		quad(c(1, -1, 1), c(1, 1, 1), c(-1, 1, 1), c(-1, -1, 1)); // back
+		quad(c(-1, 1, -1), c(-1, 1, 1), c(1, 1, 1), c(1, 1, -1)); // top
+		quad(c(-1, -1, 1), c(-1, -1, -1), c(1, -1, -1), c(1, -1, 1)); // bottom
+		quad(c(1, -1, -1), c(1, 1, -1), c(1, 1, 1), c(1, -1, 1)); // right
+		quad(c(-1, -1, 1), c(-1, 1, 1), c(-1, 1, -1), c(-1, -1, -1)); // left
+		return tris;
+	}
+	function paintViewport(n, g, w, h, radius, scale) {
+		const vp = n.viewport;
+		if (!vp || !vp.camera) {
+			warn(`${n.path}: ViewportFrame without a camera draws nothing`);
+			return;
+		}
+		const SS = 3 * (scale || 1);
+		const W = Math.max(1, Math.round(w * SS)), H = Math.max(1, Math.round(h * SS));
+		const canvas = document.createElement("canvas");
+		canvas.width = W;
+		canvas.height = H;
+		canvas.style.cssText = `position:absolute;left:0;top:0;width:${px(w)};height:${px(h)};border-radius:${px(radius)};`;
+		const ctx = canvas.getContext("2d");
+		const img = ctx.createImageData(W, H);
+		const zbuf = new Float32Array(W * H).fill(Infinity);
+		const cam = vp.camera.cframe;
+		const eye = [cam[0], cam[1], cam[2]];
+		const right = [cam[3], cam[6], cam[9]], up = [cam[4], cam[7], cam[10]], back = [cam[5], cam[8], cam[11]];
+		const f = 1 / Math.tan(((num(vp.camera.fov, 70) * Math.PI) / 180) / 2); // vertical FOV
+		const toCam = (pw) => {
+			const d = V.sub(pw, eye);
+			return [V.dot(d, right), V.dot(d, up), -V.dot(d, back)]; // z = distance in front
+		};
+		const project = (c) => [W / 2 + ((c[0] * f) / c[2]) * (H / 2), H / 2 - ((c[1] * f) / c[2]) * (H / 2), c[2]];
+		const amb = rgb(vp.ambient || "#c8c8c8"), lc = rgb(vp.lightColor || "#8c8c8c");
+		const L = V.norm(arr(vp.lightDirection).length === 3 ? vp.lightDirection : [-1, -1, -1]);
+		const toLight = [-L[0], -L[1], -L[2]];
+		const faces = [];
+		for (const part of arr(vp.parts)) {
+			if (num(part.transparency, 0) >= 1) continue;
+			const base = rgb(part.color || "#a3a2a5");
+			for (const t of partTriangles(part.shape, part.size)) {
+				const wv = t.map((v) => xform(part.cframe, v));
+				const nrm = V.norm(V.cross(V.sub(wv[1], wv[0]), V.sub(wv[2], wv[0])));
+				const lit = Math.max(0, V.dot(nrm, toLight));
+				const col = [0, 1, 2].map((k) => Math.min(255, base[k] * ((amb[k] + lc[k] * lit) / 255)));
+				faces.push({ v: wv.map(toCam), col, a: 1 - num(part.transparency, 0) });
+			}
+			for (const d of arr(part.decals)) if (d.name === "Face" && part.shape === "Ball") faces.push({ face: part });
+		}
+		const NEAR = 0.05;
+		for (const fc of faces) {
+			if (fc.face) continue;
+			if (fc.v.some((c) => c[2] < NEAR)) continue;
+			const [a, b, c] = fc.v.map(project);
+			const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+			if (area === 0) continue;
+			const minX = Math.max(0, Math.floor(Math.min(a[0], b[0], c[0]))), maxX = Math.min(W - 1, Math.ceil(Math.max(a[0], b[0], c[0])));
+			const minY = Math.max(0, Math.floor(Math.min(a[1], b[1], c[1]))), maxY = Math.min(H - 1, Math.ceil(Math.max(a[1], b[1], c[1])));
+			for (let y = minY; y <= maxY; y++) {
+				for (let x = minX; x <= maxX; x++) {
+					const px0 = x + 0.5, py0 = y + 0.5;
+					const w0 = ((b[0] - px0) * (c[1] - py0) - (b[1] - py0) * (c[0] - px0)) / area;
+					const w1 = ((c[0] - px0) * (a[1] - py0) - (c[1] - py0) * (a[0] - px0)) / area;
+					const w2 = 1 - w0 - w1;
+					if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+					const z = 1 / (w0 / a[2] + w1 / b[2] + w2 / c[2]);
+					const i = y * W + x;
+					if (z >= zbuf[i]) continue;
+					zbuf[i] = z;
+					const o = i * 4;
+					img.data[o] = fc.col[0];
+					img.data[o + 1] = fc.col[1];
+					img.data[o + 2] = fc.col[2];
+					img.data[o + 3] = Math.round(255 * fc.a);
+				}
+			}
+		}
+		ctx.putImageData(img, 0, 0);
+		// Stand-in faces: eyes and a smile on the Ball's front (-Z), where they are not hidden.
+		for (const fc of faces) {
+			if (!fc.face) continue;
+			const part = fc.face;
+			const r = Math.min(...part.size) / 2;
+			const mark = (lx, ly, rad) => {
+				const local = [lx * r, ly * r, -Math.sqrt(Math.max(0, 1 - lx * lx - ly * ly)) * r];
+				const c = toCam(xform(part.cframe, local));
+				if (c[2] < NEAR) return;
+				const pr = project(c);
+				const xi = Math.round(pr[0]), yi = Math.round(pr[1]);
+				if (xi < 0 || yi < 0 || xi >= W || yi >= H || pr[2] > zbuf[yi * W + xi] + r * 0.2) return;
+				ctx.beginPath();
+				ctx.arc(pr[0], pr[1], ((rad * r * f) / c[2]) * (H / 2), 0, Math.PI * 2);
+				ctx.fill();
+			};
+			ctx.fillStyle = "rgba(38,28,24,0.9)";
+			mark(-0.3, 0.18, 0.085);
+			mark(0.3, 0.18, 0.085);
+			for (let k = -4; k <= 4; k++) mark(k * 0.06, -0.28 + k * k * 0.006, 0.035); // a smile: dots on a curve
+		}
+		g.appendChild(canvas);
 	}
 
 	function paintScrollbars(n, g, w, h, c) {

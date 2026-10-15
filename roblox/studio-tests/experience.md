@@ -272,4 +272,67 @@ Pass: steps 1–11 hold. Record a short video of a request, an answer, the react
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
-- 2026-10-15 FORGE-04: B15 aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
+- 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
+
+## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
+Needs:
+- FORGE-02's `Kit.posePortrait` (FL-0098, #85) and FORGE-03's cinematic panel (FL-0099, #126: `opened`/`closed`, `conversation.stage.portrait.model`);
+- for the world rig: FORGE-01's `EntityController:playPose(entityId, name)` sampling `Feedback/ReactionPoses` (proposed in the FL-0100 handoff);
+- ConversationService (FL-0079) and a citizen with a request.
+
+Until those are on the build, write "blocked: needs posePortrait / FL-0099 / playPose".
+
+Rules under test (headless: `games/game-001/tests/experience/ReactionPoses.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Poses | cheer (happy), grumble (angry), slump (sad), salute (neutral); bow and cower for those consequence cues |
+| Length | 1.4–2.0 s each, easing in over 0.25 s and out over 0.35 s; never longer than the server's 4 s hold |
+| Bounds | every joint within Sim/Pose limits (arms ≤ 150°, head ≤ 30°), torso lift ≤ 2 studs |
+| Reduced motion | the key pose is held still until the panel closes; no movement |
+| Portrait and rig | the same pose data drives both (`Feedback/ReactionPoses`) |
+
+Steps
+1. Open a conversation and give an answer whose reaction is happy, then one that is angry (or sad). The portrait plays the matching gesture for about 2 s and returns to rest; the citizen in the world plays the same gesture.
+2. Answer a request whose consequence cue is `bow` or `cower`: the citizen in the world bows or cowers.
+3. Settings → Reduced Motion on: the portrait holds the key pose without moving and rests when the panel closes.
+4. A farmer or woodcutter holding a tool: note how the tool reads during cheer and cower (it follows the arm; a headless silhouette render showed the rake across the body).
+
+Pass: steps 1–3 hold. Screenshot each gesture on the portrait (FL-0100's visual evidence; the headless render is a box silhouette, not Studio).
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0100 (2/2)).
+
+## E10 — Conversation camera (FL-0100 (1/2), game-001)
+Needs:
+- FORGE-03's cinematic panel (FL-0099, #126), firing `ConversationController.opened(entityId, position)` and `.closed(entityId)`;
+- FORGE-01's ConversationService with the hold (FL-0097, #108);
+- a citizen with a request.
+
+Until those are on the build, write "blocked: needs FL-0099 / #108".
+
+Rules under test (headless: `games/game-001/tests/experience/RulerCamera.spec.luau`):
+
+| Rule | Value |
+|---|---|
+| Glide | about 0.6 s in and back; reduced motion cuts; durations clamped (≤ 3 s) |
+| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 12 on a phone: head at 28–30 % from the top, just under the HUD) |
+| Facing | in front of the citizen's face: the line from the citizen to your ruler, which the server turns them along (v0.4-g9e) |
+| Following | none once the citizen is released; without a ruler character, one turn within 1.5 s and 2 studs at most |
+| Restore | the saved overview focus, rotation and zoom |
+
+Steps
+1. From the aerial view, open a conversation. The camera glides in about 0.6 s to the citizen, who stays visible above the portrait with the kingdom around them. You see the citizen's face, not their back.
+2. Close it. The camera glides back to the same view: position, rotation and zoom.
+3. Settings → Reduced motion on: steps 1 and 2 cut instead of gliding.
+4. Pan during the glide in: the glide stops and the pan works.
+5. A citizen near the map edge: the view stays inside the map.
+6. Phone emulator: the citizen's head is just under the HUD stack. With short answers the whole citizen shows above the stage; with costed answers, at most the body is behind the question bubble.
+7. Answer, and keep the panel open after the reaction (the stage reads for several seconds). When the citizen is released and walks off, the camera stays still; it doesn't swing round to follow them.
+8. Open a conversation, switch to walk mode, close the panel, and come back to the aerial view a while later. The view is your normal overview, with no jump back to the old conversation.
+9. During a conversation, zoom in (wheel or pinch): the camera doesn't move out. Zoom out: it does.
+
+Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Studio evidence).
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).

@@ -18,9 +18,12 @@ M = [
  ("FL-0053", C2+"RulerCameraController.luau", 'if reduced or settings:get("cameraShake") == false then', 'if false then', "RulerCamera", "never shakes when camera shake is off", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'local alpha = 1 - math.exp(-rate * dt)', 'local alpha = math.min(1, rate * dt)', "RulerCamera", "frame-rate independent", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'camera.CFrame = self._blendFrom:Lerp(goal, Def.ease(self._blendT))', 'camera.CFrame = goal', "RulerCamera", "returning to the overview blends", "game"),
- ("FL-0053", C2+"RulerCameraController.luau", 'self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)', 'self._target.zoom = self._target.zoom + steps * overview.zoomStep', "RulerCamera", "zoom stays within", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, minZoom, overview.maxZoom)', 'self._target.zoom = self._target.zoom + steps * overview.zoomStep', "RulerCamera", "zoom stays within", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'local ratio = scale / self._pinch', 'local ratio = scale', "RulerCamera", "zoom stays within", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'while #self._shakes > limits.maxActive do', 'while false do', "RulerCamera", "caps the duration and the number of shakes", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'return Def.clamp(magnitude, 0, 1) * maxDegrees * left * left', 'return magnitude * maxDegrees * left * left', "RulerCamera", "shakeAmplitude() eases out and clamps", "game"),
  ("FL-0053", C2+"RulerController.luau", '			humanoid.Sit = false -- FORGE-01', '			local _ = false -- FORGE-01', "Ruler", "standUp() leaves the throne", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", '		camera.CFrame = now * shaken.offset:Inverse()', '		camera.CFrame = now', "RulerCamera", "undoes each frame's shake before Roblox's camera runs", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", '	if\n		(now.Position - was.Position).Magnitude < 1e-3\n		and now.LookVector:Dot(was.LookVector) > 1 - 1e-6\n		and now.UpVector:Dot(was.UpVector) > 1 - 1e-6\n	then', '	if true then', "RulerCamera", "undoes each frame's shake before Roblox's camera runs", "game"),
+ ("FL-0053", C2+"RulerCameraController.luau", 'if not finite(magnitude) or not finite(duration) or magnitude <= 0', 'if type(magnitude) ~= "number" or type(duration) ~= "number" or magnitude <= 0', "RulerCamera", "refuses NaN and infinite shakes", "game"),
 ]
