@@ -185,16 +185,19 @@ describe("Kit.character (≤ Kit.CHARACTER_MAX_PARTS (9) parts, D-026 as amended
 						motors += 1
 						expect(d.Name).toBe((d.Part1 :: BasePart).Name)
 						expect((d.Part1 :: BasePart).Name).never.toBe("Hair")
+						expect((d.Part1 :: BasePart).Name).never.toBe("Accessory")
 					elseif d:IsA("Weld") or d:IsA("WeldConstraint") then
 						-- D-032: headwear (Hair) is welded to the Head, never motored
 						expect(d.Part0).toBe(rig:FindFirstChild("Head"))
-						expect((d.Part1 :: BasePart).Name).toBe("Hair")
+						expect(table.find({ "Hair", "Accessory" }, (d.Part1 :: BasePart).Name)).never.toBeNil()
 						welded += 1
 					end
 					expect(d:IsA("Humanoid")).toBe(false)
 					expect(d:IsA("Animator")).toBe(false)
 				end
-				expect(welded).toBe(if rig:FindFirstChild("Hair") then 1 else 0)
+				expect(welded).toBe(
+					(if rig:FindFirstChild("Hair") then 1 else 0) + (if rig:FindFirstChild("Accessory") then 1 else 0)
+				)
 				expect(motors).toBe(#ps - 1 - welded)
 			end
 		end
