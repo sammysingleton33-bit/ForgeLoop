@@ -1077,7 +1077,7 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 	local HEAD_R = 0.8
 	local SEAT_MAX = 0.4 -- the head enters a hat's lower face by at most this
 	local EPS = 0.012
-	local ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee" } -- celebrate: see the last test
+	local ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee", "celebrate" } -- celebrate too since FORGE-01's #158 (Sim/Pose on main)
 
 	-- points on the head sphere (a lat-long grid, 24 x 12) in world space
 	local function headSamples(head: BasePart): { Vector3 }
@@ -1221,43 +1221,295 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 		expect(boxDistance(torso, torso.CFrame, pos(sack)) - r).toBeGreaterThanOrEqual(-0.1)
 	end)
 
-	it(
-		"keeps the hand tools and their heads clear of the head in every pose except the celebration (box vs sphere)",
-		function()
-			local cases = {
-				{ "citizen", "farmer", nil },
-				{ "citizen", "woodcutter", nil },
-				{ "citizen", "miner", nil },
-				{ "citizen", "builder", nil },
-				{ "soldier", "soldier", "crimson" },
-				{ "governor", "idle", "crimson" },
-			}
-			for _, c in cases do
-				local rig = Kit.character(c[1], c[2], AZURE, nil, c[3])
-				local head, tool = child(rig, "Head"), child(rig, "Tool")
-				local onTool = { tool } -- the handle and every detail part welded to it (the hoe blade, the axe head, ...)
-				for _, d in detailsOf(rig) do
-					if (d:FindFirstChild("DetailWeld") :: Weld).Part0 == tool then
-						table.insert(onTool, d)
-					end
+	it("keeps the hand tools and their heads clear of the head in every pose (box vs sphere)", function()
+		local cases = {
+			{ "citizen", "farmer", nil },
+			{ "citizen", "woodcutter", nil },
+			{ "citizen", "miner", nil },
+			{ "citizen", "builder", nil },
+			{ "soldier", "soldier", "crimson" },
+			{ "governor", "idle", "crimson" },
+		}
+		for _, c in cases do
+			local rig = Kit.character(c[1], c[2], AZURE, nil, c[3])
+			local head, tool = child(rig, "Head"), child(rig, "Tool")
+			local onTool = { tool } -- the handle and every detail part welded to it (the hoe blade, the axe head, ...)
+			for _, d in detailsOf(rig) do
+				if (d:FindFirstChild("DetailWeld") :: Weld).Part0 == tool then
+					table.insert(onTool, d)
 				end
-				local minGap = math.huge
-				for _, action in ACTIONS do
-					for _, speed in { 0, 6, 12 } do
-						for i = 0, 7 do
-							local w = posed(rig, Pose.sample(action, c[2], i / 8, speed))
-							for _, p in onTool do
-								minGap = math.min(minGap, boxDistance(p, w[p], w[head].Position) - HEAD_R)
-							end
+			end
+			local minGap = math.huge
+			for _, action in ACTIONS do
+				for _, speed in { 0, 6, 12 } do
+					for i = 0, 7 do
+						local w = posed(rig, Pose.sample(action, c[2], i / 8, speed))
+						for _, p in onTool do
+							minGap = math.min(minGap, boxDistance(p, w[p], w[head].Position) - HEAD_R)
 						end
 					end
 				end
-				if minGap < 0.1 then
-					error(`{c[2]}: a tool part comes within {minGap} of the head sphere (needs 0.1)`)
+			end
+			if minGap < 0.1 then
+				error(`{c[2]}: a tool part comes within {minGap} of the head sphere (needs 0.1)`)
+			end
+		end
+	end)
+
+	-- ===== exact clearance between the tool assembly and the head assembly, every Pose action (FL-0118 phase 2) =====
+	-- The tool assembly is the Tool and every part welded to it (the hoe blade, the pick bar, the mallet, the spearhead,
+	-- the sack's strap and tie ...); the head assembly is the Head and every part welded to it (hair or hat, lamp, visor,
+	-- pompom, crown, velvet cap, accessory). The clearance of two posed parts: boxes (Block, Wedge as its bounding box)
+	-- by the separating axis over all 15 axes; a Ball against a box or a Ball exactly; anything with a Cylinder by
+	-- sample points on each part against the exact signed distance to the other. Positive = free space, negative = how
+	-- far one sinks into the other.
+	-- a box against a sphere: the distance from the centre to the box's surface less the radius (negative inside)
+	local function boxSphereDistance(cf: CFrame, size: Vector3, center: Vector3, radius: number): number
+		local l = cf:Inverse() * center
+		local half = { size.X / 2, size.Y / 2, size.Z / 2 }
+		local coords = { l.X, l.Y, l.Z }
+		local outside, depth = 0, math.huge
+		for i = 1, 3 do
+			local over = math.abs(coords[i]) - half[i]
+			if over > 0 then
+				outside += over * over
+			end
+			depth = math.min(depth, -over)
+		end
+		if outside > 0 then
+			return math.sqrt(outside) - radius
+		end
+		return -(radius + depth)
+	end
+
+	local function shapeOf(p: BasePart): string
+		if p:IsA("Part") and (p :: Part).Shape == Enum.PartType.Ball then
+			return "ball"
+		elseif p:IsA("Part") and (p :: Part).Shape == Enum.PartType.Cylinder then
+			return "cylinder"
+		end
+		return "box"
+	end
+
+	local function boxBox(cfA: CFrame, sizeA: Vector3, cfB: CFrame, sizeB: Vector3): number
+		local axesA = { cfA.RightVector, cfA.UpVector, cfA.LookVector }
+		local axesB = { cfB.RightVector, cfB.UpVector, cfB.LookVector }
+		local halfA = { sizeA.X / 2, sizeA.Y / 2, sizeA.Z / 2 }
+		local halfB = { sizeB.X / 2, sizeB.Y / 2, sizeB.Z / 2 }
+		local d = cfB.Position - cfA.Position
+		local candidates = {}
+		for _, a in axesA do
+			table.insert(candidates, a)
+		end
+		for _, b in axesB do
+			table.insert(candidates, b)
+		end
+		for _, a in axesA do
+			for _, b in axesB do
+				local c = a:Cross(b)
+				if c.Magnitude > 1e-6 then
+					table.insert(candidates, c.Unit)
+				end
+			end
+		end
+		local best = -math.huge
+		for _, axis in candidates do
+			local ra, rb = 0, 0
+			for i = 1, 3 do
+				ra += halfA[i] * math.abs(axesA[i]:Dot(axis))
+				rb += halfB[i] * math.abs(axesB[i]:Dot(axis))
+			end
+			best = math.max(best, math.abs(d:Dot(axis)) - ra - rb)
+		end
+		return best
+	end
+
+	-- signed distance from `point` to the surface of a posed part (negative inside); a Cylinder runs along its local X
+	local function signedDistance(p: BasePart, cf: CFrame, point: Vector3): number
+		local q = cf:Inverse() * point
+		local h = p.Size / 2
+		local shape = shapeOf(p)
+		if shape == "ball" then
+			return q.Magnitude - h.X
+		elseif shape == "cylinder" then
+			local radial = math.sqrt(q.Y * q.Y + q.Z * q.Z) - math.min(h.Y, h.Z)
+			local axial = math.abs(q.X) - h.X
+			return math.min(math.max(radial, axial), 0) + math.sqrt(math.max(radial, 0) ^ 2 + math.max(axial, 0) ^ 2)
+		end
+		local dx, dy, dz = math.abs(q.X) - h.X, math.abs(q.Y) - h.Y, math.abs(q.Z) - h.Z
+		return math.min(math.max(dx, dy, dz), 0)
+			+ math.sqrt(math.max(dx, 0) ^ 2 + math.max(dy, 0) ^ 2 + math.max(dz, 0) ^ 2)
+	end
+
+	-- the centre, the corners, the edge middles and face centres of a box, two end circles and a middle circle of a
+	-- cylinder (12 points each), the axis points of a ball
+	local function samplePoints(p: BasePart, cf: CFrame): { Vector3 }
+		local h = p.Size / 2
+		local out: { Vector3 } = { cf.Position }
+		local shape = shapeOf(p)
+		local function add(x: number, y: number, z: number)
+			table.insert(out, cf * Vector3.new(x, y, z))
+		end
+		if shape == "cylinder" then
+			local r = math.min(h.Y, h.Z)
+			for _, x in { -h.X, 0, h.X } do
+				for step = 0, 11 do
+					local a = step / 12 * 2 * math.pi
+					add(x, math.cos(a) * r, math.sin(a) * r)
+				end
+			end
+		elseif shape == "ball" then
+			for _, sign in { -1, 1 } do
+				add(sign * h.X, 0, 0)
+				add(0, sign * h.X, 0)
+				add(0, 0, sign * h.X)
+			end
+		else
+			for _, sx in { -1, 0, 1 } do
+				for _, sy in { -1, 0, 1 } do
+					for _, sz in { -1, 0, 1 } do
+						if sx ~= 0 or sy ~= 0 or sz ~= 0 then
+							add(sx * h.X, sy * h.Y, sz * h.Z)
+						end
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	local function exactClearance(a: BasePart, cfA: CFrame, b: BasePart, cfB: CFrame): number
+		local sa, sb = shapeOf(a), shapeOf(b)
+		if sa == "cylinder" or sb == "cylinder" then
+			local best = math.huge
+			for _, point in samplePoints(a, cfA) do
+				best = math.min(best, signedDistance(b, cfB, point))
+			end
+			for _, point in samplePoints(b, cfB) do
+				best = math.min(best, signedDistance(a, cfA, point))
+			end
+			return best
+		elseif sa == "ball" and sb == "ball" then
+			return (cfA.Position - cfB.Position).Magnitude - a.Size.X / 2 - b.Size.X / 2
+		elseif sa == "ball" then
+			return boxSphereDistance(cfB, b.Size, cfA.Position, a.Size.X / 2)
+		elseif sb == "ball" then
+			return boxSphereDistance(cfA, a.Size, cfB.Position, b.Size.X / 2)
+		end
+		return boxBox(cfA, a.Size, cfB, b.Size)
+	end
+
+	-- `root` and every part welded to it (a Weld in either direction; never across a Motor6D)
+	local function assemblyOf(rig: Model, root: BasePart): { BasePart }
+		local out: { BasePart } = { root }
+		local seen: { [BasePart]: boolean } = { [root] = true }
+		local i = 1
+		while i <= #out do
+			local part = out[i]
+			i += 1
+			for _, d in rig:GetDescendants() do
+				if d:IsA("Weld") then
+					local a, b = d.Part0 :: BasePart, d.Part1 :: BasePart
+					local other = if a == part then b elseif b == part then a else nil
+					if other and not seen[other] then
+						seen[other] = true
+						table.insert(out, other)
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	-- The smallest clearance over every pair (tool part, head part) in every Pose action (idle, walk, work, carry,
+	-- fight, flee, celebrate; walk, carry and flee at speeds 0, 6 and 12; 24 phases per cycle) of one rig, as
+	-- { exact clearance, bounding-box clearance, "tool part | head part, action" of the exact minimum }.
+	-- The bounding-box clearance takes every part as its oriented box (a Ball as its cube, a Cylinder as its box).
+	local TOOL_ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee", "celebrate" }
+	local function toolHeadClearance(rig: Model, job: string): (number, number, string)
+		local head, tool = child(rig, "Head"), child(rig, "Tool")
+		local toolParts, headParts = assemblyOf(rig, tool), assemblyOf(rig, head)
+		local lowExact, lowBox, where = math.huge, math.huge, ""
+		for _, action in TOOL_ACTIONS do
+			local speeds = if action == "walk" or action == "carry" or action == "flee" then { 0, 6, 12 } else { 0 }
+			for _, speed in speeds do
+				for i = 0, 23 do
+					local w = posed(rig, Pose.sample(action, job, i / 24, speed))
+					for _, t in toolParts do
+						for _, h in headParts do
+							local c = exactClearance(t, w[t], h, w[h])
+							if c < lowExact then
+								lowExact, where = c, `{t.Name} | {h.Name}, {action}`
+							end
+							lowBox = math.min(lowBox, boxBox(w[t], t.Size, w[h], h.Size))
+						end
+					end
+				end
+			end
+		end
+		return lowExact, lowBox, where
+	end
+
+	local TOOL_RIGS = {
+		{ "citizen", "farmer", nil },
+		{ "citizen", "woodcutter", nil },
+		{ "citizen", "miner", nil },
+		{ "citizen", "builder", nil },
+		{ "citizen", "hauler", nil },
+		{ "soldier", "soldier", "crimson" },
+		{ "governor", "idle", "crimson" },
+	}
+	local TOOL_HEAD_EXACT = 0.1 -- studs of free space between every tool part and every head part, exact shapes
+	local TOOL_HEAD_BOX = 0.03 -- and between their bounding boxes (the hauler's ball sack excepted)
+
+	it(
+		"keeps every part welded to the tool clear of the head and everything welded to it in every Pose action",
+		function()
+			for _, c in TOOL_RIGS do
+				-- the three hat rolls (look.hair 1..3: 0 and +-9 degrees tilt the hat, its lamp, visor or crown about the head)
+				for hair = 1, 3 do
+					local look = if c[1] == "citizen" then { skin = 1, hair = hair, hairColor = 1, outfit = 1 } else nil
+					local rig = Kit.character(c[1], c[2], AZURE, look :: any, c[3])
+					local job = if c[1] == "governor" then "governor" else c[2]
+					local exact, box, where = toolHeadClearance(rig, job)
+					if exact < TOOL_HEAD_EXACT then
+						error(
+							`{c[1]}/{c[2]} hair {hair}: {string.format("%.3f", exact)} studs at {where} (needs {TOOL_HEAD_EXACT})`
+						)
+					end
+					if c[2] ~= "hauler" and box < TOOL_HEAD_BOX then
+						error(
+							`{c[1]}/{c[2]} hair {hair}: bounding boxes only {string.format("%.3f", box)} studs apart (needs {TOOL_HEAD_BOX})`
+						)
+					end
 				end
 			end
 		end
 	)
+
+	it("measures clearance as it says: gap, overlap, and the exact shapes", function()
+		local function part(shape: Enum.PartType, size: Vector3): Part
+			local p = Instance.new("Part")
+			p.Shape, p.Size = shape, size
+			return p
+		end
+		local block, ball, cyl = Enum.PartType.Block, Enum.PartType.Ball, Enum.PartType.Cylinder
+		local a, b = part(block, Vector3.new(2, 2, 2)), part(block, Vector3.new(2, 2, 2))
+		expect(exactClearance(a, CFrame.new(0, 0, 0), b, CFrame.new(3, 0, 0))).toBeNear(1, 1e-6)
+		expect(exactClearance(a, CFrame.new(0, 0, 0), b, CFrame.new(1.5, 0, 0))).toBeNear(-0.5, 1e-6)
+		local s = part(ball, Vector3.new(2, 2, 2))
+		expect(exactClearance(s, CFrame.new(0, 0, 0), a, CFrame.new(3, 0, 0))).toBeNear(1, 1e-6) -- a ball: radius 1
+		expect(exactClearance(s, CFrame.new(0, 0, 0), a, CFrame.new(1.5, 1.5, 0))).toBeNear(
+			math.sqrt(0.5 ^ 2 * 2) - 1,
+			1e-6
+		)
+		local cylinder = part(cyl, Vector3.new(1, 2, 2)) -- a disc along X, radius 1
+		expect(exactClearance(cylinder, CFrame.new(0, 0, 0), a, CFrame.new(0, 3, 0))).toBeNear(1, 1e-6)
+		expect(exactClearance(cylinder, CFrame.new(0, 0, 0), a, CFrame.new(0, 1.5, 0))).toBeNear(-0.5, 0.05)
+		-- a box corner the cylinder's own box would hit but the cylinder does not
+		expect(exactClearance(cylinder, CFrame.new(0, 0, 0), a, CFrame.new(0, 2.2, 2.2))).toBeGreaterThan(0.5)
+		expect(boxBox(CFrame.new(0, 0, 0), cylinder.Size, CFrame.new(0, 2.2, 2.2), a.Size)).toBeLessThan(0.3)
+	end)
 end)
 
 describe("Kit.character individuals, idle accessories, governor and low crest (art pass 1b)", function()

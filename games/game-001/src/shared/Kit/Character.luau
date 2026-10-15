@@ -535,7 +535,10 @@ local GRIP = CFrame.new(0, 0, -0.55) -- in front of the fist, so a held shaft cl
 -- its head is a detail part welded to it (`details`, offsets in the joint frame, KitDetail = true). The heads sit at
 -- head height beside the body, so a tool reads as a tool from the air. Handle colours and head shapes differ per job.
 local LEAN = CFrame.Angles(0, 0, math.rad(-6)) -- the top leans outwards (+X), away from the body
-local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-12)) -- the mallet leans further: its head swings past the face at work
+-- the hoe leans out 14 degrees: its handle clears the straw brim of every hat roll in every pose (0.04 or more with the
+-- brim's bounding box, 0.15 or more with the exact disc)
+local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
+local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-15)) -- the mallet leans further: its head swings past the face at work (cheek clearance 0.15)
 local TOOLS: { [string]: PartSpec } = {
 	hoe = { -- 5.2 long pale-wood handle, a steel blade angled down at its top
 		name = "hoe",
@@ -544,7 +547,7 @@ local TOOLS: { [string]: PartSpec } = {
 		size = Vector3.new(5.2, 0.38, 0.38),
 		color = C.woodLight,
 		material = Enum.Material.Wood,
-		offset = GRIP * CFrame.Angles(0, 0, math.rad(-8)) * CFrame.new(0, 0.8, 0) * UPRIGHT,
+		offset = GRIP * HOE_LEAN * CFrame.new(0, 0.8, 0) * UPRIGHT,
 		details = {
 			{
 				name = "hoeblade",
@@ -552,10 +555,7 @@ local TOOLS: { [string]: PartSpec } = {
 				size = Vector3.new(1.1, 0.34, 1.3),
 				color = BLADE,
 				material = Enum.Material.Metal,
-				offset = GRIP
-					* CFrame.Angles(0, 0, math.rad(-8))
-					* CFrame.new(0, 3.35, -0.6)
-					* CFrame.Angles(math.rad(-22), 0, 0),
+				offset = GRIP * HOE_LEAN * CFrame.new(0, 3.35, -0.6) * CFrame.Angles(math.rad(-22), 0, 0),
 			},
 		},
 	},
@@ -578,14 +578,15 @@ local TOOLS: { [string]: PartSpec } = {
 			},
 		},
 	},
-	pick = { -- 3.7 long dark handle, a double-sided iron bar across its top (a T), turned 40° so it shows from front and side
+	pick = { -- 4.55 long dark handle, a double-sided iron bar across its top (a T), turned 40° so it shows from front and side;
+		-- the bar sits high (its centre 3.4 above the grip) so it swings over the pot, never through it (0.28 clear)
 		name = "pick",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(3.7, 0.4, 0.4),
+		size = Vector3.new(4.55, 0.4, 0.4),
 		color = C.woodDark,
 		material = Enum.Material.Wood,
-		offset = GRIP * LEAN * CFrame.new(0, 0.8, 0) * UPRIGHT,
+		offset = GRIP * LEAN * CFrame.new(0, 1.225, 0) * UPRIGHT,
 		details = {
 			{
 				name = "pickhead",
@@ -594,7 +595,7 @@ local TOOLS: { [string]: PartSpec } = {
 				size = Vector3.new(0.45, 0.5, 3.6),
 				color = STEEL_DARK,
 				material = Enum.Material.Metal,
-				offset = GRIP * LEAN * CFrame.new(0, 2.55, 0) * CFrame.Angles(0, math.rad(40), 0),
+				offset = GRIP * LEAN * CFrame.new(0, 3.4, 0) * CFrame.Angles(0, math.rad(40), 0),
 			},
 		},
 	},

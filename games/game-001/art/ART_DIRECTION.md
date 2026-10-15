@@ -78,7 +78,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
   |---|---|---|---|---|
   | farmer | wide flat straw disc, 3.1, with a kingdom-red crown (`strawhat`) | 5.2 handle with a steel blade at its top (hoe) | olive / cream | 1.95 lean |
   | woodcutter | small charcoal knit beanie, a 1.5 ball sitting high, with a kingdom-red pompom (`knitcap`) | 3.9 haft with a bearded steel head (axe) | black-brown / umber | 2.3 stocky |
-  | miner | small dark-ochre iron pot, 1.9, with a lamp (`hardhat`) | 3.7 handle with a 3.6 double-sided iron bar (pick) | coal / soot grey | 2.2 |
+  | miner | small dark-ochre iron pot, 1.9, with a lamp (`hardhat`) | 4.55 handle with a 3.6 double-sided iron bar (pick) | coal / soot grey | 2.2 |
   | builder | cream hard hat: a squat drum that sits on the head with a visor (`buildercap`) | 3.0 handle with a fat wooden mallet head (hammer) | dusty navy / tan canvas | 2.3 |
   | hauler | none: the look's hair | sackcloth sack 2.7, low on the back, with a tied neck and a kingdom-red strap across the chest | russet / sackcloth | 2.3 |
   | idle | the look's hair, plus a headband or scarf on about two looks in three (`Accessory`, the free 9th part) | nothing | the outfit's own | 1.9 lean |

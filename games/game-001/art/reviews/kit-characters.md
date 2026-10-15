@@ -423,10 +423,10 @@ and `KitDetailKind` = the part's name. Nothing new on the wire: they derive from
 (each rig from the front, side and back), `_crowd.jpg` (30 citizens, 50 degrees at 170 studs), `_aerial.jpg` (4 per job, colour and grayscale).
 | Job | Tool (handle, Tool part) | Tool head (detail) | Head detail |
 |---|---|---|---|
-| farmer | 5.2 pale-wood handle | steel hoe blade, angled down | kingdom-red crown over the straw brim |
+| farmer | 5.2 pale-wood handle, leaning out 14 degrees (was 8) | steel hoe blade, angled down | kingdom-red crown over the straw brim |
 | woodcutter | 3.9 haft | bearded steel axe head | kingdom-red pompom on the beanie |
-| miner | 3.7 dark handle | 3.6 double-sided iron bar (T) | lamp on the pot |
-| builder | 3.0 pale handle | fat wooden mallet head | visor: the cream drum becomes a hard hat |
+| miner | 4.55 dark handle (was 3.7) | 3.6 double-sided iron bar (T) at the handle's top, 3.4 above the grip (was 2.55) | lamp on the pot |
+| builder | 3.0 pale handle, leaning out 15 degrees (was 12) | fat wooden mallet head | visor: the cream drum becomes a hard hat |
 | hauler | the sack (Tool) | kingdom-red strap across the chest, the sack's tied neck | none |
 | soldier | 9.0 ash shaft | pale steel spearhead, kingdom pennant | none (crest as before) |
 | governor | 6.4 gold staff | gold orb | kingdom-red velvet cap over the crown disc |
@@ -436,7 +436,7 @@ without a kingdom), governor 11, idle 7 to 9 (was 9, 9, 9, 8-9, 9, 7-9).
   and bar are gone); the builder's paper-like cap is a hard hat (drum + visor) and his hammer differs from the hauler's load; the miner has a
   lamp; the hauler has a strap and a tied sack, so the front view differs from idle; kingdom red shows on top of every working rig (crown,
   pompom, pennant, strap, velvet cap): kingdom-red pixels in the 30-citizen crowd crop 443 (phase 1b) to 461 (main 420).
-- **Rules and specs.** `KitCharacter.spec` 49 tests (45 before): parts at most 11 with at most 2 detail parts and a base rig of at most 9; every
+- **Rules and specs.** `KitCharacter.spec` 51 tests (49 at the first push, 45 before): parts at most 11 with at most 2 detail parts and a base rig of at most 9; every
   detail flagged, named, welded rigidly to the Head or the Tool, never a Motor6D, flags like the other parts; `Pose.JOINTS` and every Motor6D
   name unchanged and no joint to a detail; the exact two details per job (kind, weld target); head details above the eyes and following the
   hat's tilt; tool heads and handles clear the head sphere by 0.1 in idle, walk, work, carry, fight and flee. `KitPortrait.spec` and
@@ -478,3 +478,37 @@ crowd crop, main 420); the soldier's red crest still reads as a separate cone on
   and an idle silhouette feature are either another art pass or a different approach (tool meshes via Kit.prop ids / VS-2, per-look
   proportions). They are reported and left for FORGE-00 to schedule or accept under D-051 (no worse than main per asset, clearly better as a
   set, no visible defects, code gates pass); no further loop on this branch.
+
+### FL-0118 phase 2: tool and head clearance in every Pose action (FORGE-05 / FORGE-01 findings)
+
+Pose constants are not relaxed (FORGE-04/01's); the fix is in the Kit. Pose is main's (`1d336eb`: #154 plus #158, tool arm 55 degrees, tool
+tipped 40 back and 20 out), merged into this branch; its `tests/sim/PoseClearance.spec` (FORGE-01's exact-shape probe) passes on the new rigs
+(8 of 8; it failed before on miner walk: -0.07 against the hat).
+- **Measured with a scratch probe** (`KitCharacter.spec` now carries the same measure): every part welded to the Tool (handle, hoe blade, pick bar,
+  mallet, spearhead, strap, tie, orb ...) against the Head and every part welded to the Head (hat, lamp, visor, pompom, crown, velvet cap),
+  all seven Pose actions (idle, walk, work, carry, fight, flee, celebrate; walk, carry and flee at speeds 0, 6, 12; 24 phases a cycle), the
+  three hat rolls (look.hair 1 to 3: 0, +9, -9 degrees). Exact shapes (Block and Wedge as boxes by the separating axis, Ball and Cylinder
+  exactly), plus a second pass on bounding boxes (a Ball as its cube).
+- **Before the fix** (same measure): miner pick bar against the pot -0.19 (work), -0.14 (fight), -0.07 (walk) exact and -0.38 on the pot's bounding
+  box; against the head cube -0.05 (flee); builder mallet against the cap 0.045 to 0.058 (work); farmer hoe handle against the straw brim 0.04
+  (flee, hat rolled) and -0.17 on the disc's box. Celebrate was not a problem on main's Pose: the closest tool-to-hat pair there was 0.34
+  (bounding boxes), so FORGE-05's celebrate sinks (mallet into the head 0.111, miner pick into the lamp -0.086) did not reproduce with #158's cheer
+  merged; they were presumably measured against #154's cheer.
+- **Kit changes** (still 11 parts, `Pose.JOINTS` and the wire unchanged): the pick's handle is 4.55 long and the bar sits 0.85 higher on it, so it swings
+  over the pot instead of through it; the mallet leans out 15 degrees (was 12) and the hoe 14 (was 8). Bar size, bar yaw (40), mallet, blade,
+  lamp and visor are unchanged.
+- **After** (min over rigs, looks, actions and speeds; exact / bounding boxes): miner pick bar against the pot 0.277 / 0.053, against the head
+  0.954 / 0.370, against the lamp 0.372 / 0.372; builder mallet against the cap 0.150 / 0.142, against the head 0.197 / 0.195, against the visor
+  0.376 / 0.376; farmer hoe against the hat 0.267 / 0.042; woodcutter 0.703 / 0.598; soldier 0.556 / 0.448; governor 0.502 / 0.338; hauler (ball
+  sack, exact only) 0.138. In celebrate alone: mallet against the head 0.904, the visor 0.511, the cap 0.647; pick bar against the head 1.563, the lamp
+  0.798, the pot 0.905.
+- **Spec:** `KitCharacter.spec` (51 tests) asserts exact clearance of at least 0.1 and, for the held tools (the hauler's ball sack excepted),
+  bounding-box clearance of at least 0.03 for every tool part against every head part in all seven actions; the sack-and-tool tests now
+  include celebrate. 10 mutants (the old pick, the old mallet lean, the old hoe lean, the grip moved in, a wider pot, the sack raised, the pick bar
+  lowered, a huge orb, the lamp and the visor moved into reach) are all killed, three of them (old pick, mallet, hoe) only by the new test.
+- **Renders** (looked at, Blender previews, Studio unverified): `citizen_polish2_jobs.jpg` and `_tools.jpg` and `_heads.jpg` re-rendered after the fix;
+  `_poses.jpg` (new): miner work, celebrate and flee, builder work, celebrate and fight, farmer work and celebrate, front and side: the
+  tool is held beside the head, the cap and the pot sit clear of it, a cheer still reads. In side projection the pick bar and the mallet overlap the
+  hat and the head on screen, in space they are 0.15 or more away. From the 3/4 tool view and at 40 studs the miner's pick reads as a
+  small hammer-like T; it reads as a pick in the side, work and celebrate views. `_crowd.jpg` and `_aerial.jpg` were not re-rendered (the pick is a
+  few pixels there) and still show the earlier, lower pick bar.
