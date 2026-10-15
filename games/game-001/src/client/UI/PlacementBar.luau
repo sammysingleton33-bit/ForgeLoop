@@ -12,7 +12,8 @@
 		          status: "pending" | "ok" | "bad", reason: string?, busy: boolean,
 		          facing: number? (degrees on screen, Placement.screenAngle; default 0),
 		          confirm: string? (the Place button's word; "Move here" when moving, FL-0120),
-		          okText: string? (the verdict line when the spot is good; default "✓ Good spot") }
+		          okText: string? (the verdict line when the spot is good; default "✓ Good spot"),
+		          clickVerb: string? (the desktop hint's "Click places"; "moves" when moving, FL-0120) }
 		ui = { onRotate, onCancel, onPlace }
 	bar:destroy()
 	The ghost moves cell by cell and every move re-renders: the bar keeps its instances and patches
@@ -64,6 +65,7 @@ local function key(model: any, metrics: any): string
 		free = Layout.freeArea(metrics, false),
 		name = model.name,
 		confirm = model.confirm,
+		clickVerb = model.clickVerb,
 		icon = model.icon,
 		category = model.category,
 		costs = costs,
@@ -271,7 +273,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	})
 	if not phone then
 		Style.text({
-			text = "Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click places · Q cancels",
+			text = `Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click {model.clickVerb or "places"} · Q cancels`,
 			weight = Enum.FontWeight.Bold,
 			size = 11,
 			color = Theme.color("parchment100"),

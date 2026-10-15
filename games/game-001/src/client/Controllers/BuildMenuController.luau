@@ -26,6 +26,9 @@
 		drawn, dimmed (LocalTransparencyModifier on its own parts, found by its BuildingId attribute; the
 		model carries ForgeMoving = true meanwhile), until the move ends either way. A refusal keeps the move open with the reason (Text.reason,
 		"move"). Input mode "edit" (FORGE-04, FL-0121) when InputModeController accepts it, else "build".
+		On its own plot the snap starts at the turn it stands at; Move here where it already stands ends
+		the move with no remote, toast or cooldown. build:moving() is true meanwhile: the upgrade panel
+		and the plot picker then leave taps on my buildings and plots to the move (FORGE-07 B1 on #148).
 		build.movedAt[buildingId] = env.clock() of my last accepted move (the panel's cooldown).
 
 	Depends on KingdomHudController (store, remotes, menus, layout, notifications).
@@ -340,11 +343,26 @@ function BuildMenuController:startMove(buildingId: any): boolean
 		self:cancel()
 	end
 	local cframe = if typeof(building.cframe) == "CFrame" then building.cframe else nil
-	local rot = 0
+	local rot, yaw = 0, nil
 	if cframe then
 		local look = cframe.LookVector
-		rot = math.floor(math.atan2(-look.X, -look.Z) / (math.pi / 2) + 0.5) % 4
+		yaw = math.atan2(-look.X, -look.Z)
+		rot = math.floor(yaw / (math.pi / 2) + 0.5) % 4
 	end
+	-- Where it stands now, so a move back to the same spot ends quietly (FORGE-07 L3 on #148), and, on its
+	-- own plot, the turn it stands at there, so the plot snap starts as it is (FORGE-07 M1 on #148).
+	local fromSlot, fromTurn = nil, 0
+	for _, slot in store:slots() do
+		local frame = if slot.occupiedBy == building.id then Slots.frame(slot.id) else nil
+		if frame then
+			fromSlot = slot.id
+			if yaw then
+				fromTurn = math.floor((yaw - frame.yaw) / (math.pi / 2) + 0.5) % 4
+			end
+			break
+		end
+	end
+	local fromKey = if cframe then Placement.key(building.type, Placement.snap(cframe.Position), rot) else nil
 	self.placing = {
 		type = building.type,
 		name = info.name,
@@ -357,7 +375,15 @@ function BuildMenuController:startMove(buildingId: any): boolean
 		footprint = BuildModel.footprint(building.type, math.max(building.level, 1))
 			or BuildMenuController.FALLBACK_FOOTPRINT,
 		room = BuildModel.room(building.type),
-		move = { id = building.id, slot = nil :: any, turn = 0, aim = nil :: Vector3? },
+		move = {
+			id = building.id,
+			slot = nil :: any,
+			turn = fromTurn,
+			aim = nil :: Vector3?,
+			fromSlot = fromSlot,
+			fromTurn = fromTurn,
+			fromKey = fromKey,
+		},
 	}
 	self.ghost = Ghost.new(self._env)
 	if self.hud.state.menu ~= nil then
@@ -378,6 +404,11 @@ function BuildMenuController:startMove(buildingId: any): boolean
 		end)
 	end
 	return true
+end
+
+-- A building is picked up (FL-0120). Selection handlers leave edit-mode taps to the move (FORGE-07 B1).
+function BuildMenuController:moving(): boolean
+	return self.placing ~= nil and self.placing.move ~= nil
 end
 
 -- One of my kingdom's plots under `position` that this building can stand on: free or its own, a
@@ -473,11 +504,16 @@ function BuildMenuController:confirm()
 	if p == nil or p.busy or p.status ~= "ok" or p.position == nil then
 		return
 	end
-	p.busy = true
-	self.hud:render()
 	local hud = self.hud
 	local move = p.move
 	local slot = move and move.slot
+	-- Put back where it stood: nothing to ask the server, no toast, no cooldown (FORGE-07 L3 on #148).
+	if move and (if slot then slot.id == move.fromSlot and move.turn == move.fromTurn else p.key == move.fromKey) then
+		self:cancel()
+		return
+	end
+	p.busy = true
+	self.hud:render()
 	self._env.spawn(function()
 		local called, result, reason = pcall(function()
 			if move and slot then
@@ -579,6 +615,7 @@ function BuildMenuController:render(metrics: any)
 			{
 				name = if p.move then `Move {p.name}` else p.name,
 				confirm = if p.move then "Move here" else nil,
+				clickVerb = if p.move then "moves" else nil,
 				okText = if slot then `✓ {Turns.label(p.move.turn)}` else nil, -- the plot outline shows the snap
 				icon = if info then info.icon else "build",
 				category = if info then info.category else "economy",

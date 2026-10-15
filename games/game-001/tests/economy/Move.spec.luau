@@ -328,6 +328,86 @@ describe("Move in the building panel (FL-0120)", function()
 		expect(world:callsNamed("CanMove")[#world:callsNamed("CanMove")].args[2]).toBe(Vector3.new(150, 0, 150))
 	end)
 
+	it("keeps the move through taps on my own building and plot in edit mode (FORGE-07 B1 on #148)", function()
+		for _, edit in { true, false } do
+			world = newWorld({ edit = edit })
+			local id = house(world, Vector3.new(40, 0, 40))
+			local other = idOf(world, "storehouse")
+			expect(world.build:startMove(id)).toBe(true)
+			world:advance(0.5) -- past the mode's settle time
+			local input = world.client:get("InputModeController")
+			expect(input.mode).toBe(if edit then "edit" else "build")
+			-- what FL-0121's edit mode fires for a tap on my own targets (and on anything else)
+			for _, selection in
+				{ { "building", other }, { "building", id }, { "slot", "crimson_slot5" }, { "none", "" } }
+			do
+				input.selected:fire(selection[1], selection[2])
+				world:advance(0.1)
+				expect(world.build.placing).toBeTruthy()
+				expect(world.build.placing.move.id).toBe(id)
+				expect(world.hud.state.menu).toBeNil()
+			end
+			world.build:cancel()
+			-- back in explore mode the same taps open the panels again
+			input.selected:fire("building", other)
+			world:advance(0.1)
+			expect(world.hud.state.menu).toBe("upgrade")
+			input.selected:fire("slot", "crimson_slot5")
+			world:advance(0.1)
+			expect(world.hud.state.menu).toBe("plot")
+			world:destroy()
+			world = nil
+		end
+	end)
+
+	it(
+		"starts at the turn it stands at on its own plot, and putting it back changes nothing (FORGE-07 M1, L3)",
+		function()
+			world = newWorld()
+			local id = house(world, Vector3.new(40, 0, 40))
+			local frame = Slots.frame("crimson_slot5")
+			local service = world.server:get("BuildingService")
+			service.buildings[id].cframe = MoveDoubles.cframe(frame.center, frame.yaw + math.pi / 2)
+			service:push(id)
+			world.server:get("SlotService"):occupy("crimson_slot5", id)
+			world:advance(0.2)
+			expect(world.build:startMove(id)).toBe(true)
+			world:advance(0.2)
+			local p = world.build.placing
+			expect(p.move.slot.id).toBe("crimson_slot5") -- its own plot, under it
+			expect(p.move.turn).toBe(1)
+			expect(texts(find(world.hud.guis.hud, "PlacementBar"))).toContain("Faces right")
+			expect(texts(find(world.hud.guis.hud, "PlacementBar"))).toContain("Click moves")
+			-- Move here where it stands: no remote, no toast, no cooldown
+			tap(find(find(world.hud.guis.hud, "PlacementBar"), "Place"))
+			world:advance(0.2)
+			expect(world.build.placing).toBeNil()
+			expect(#world:callsNamed("MoveToSlot")).toBe(0)
+			expect(texts(world.hud.guis.notices)).never.toContain("House moved")
+			expect(world.build.movedAt[id]).toBeNil()
+			-- a turn on the same plot is a move
+			world.build:startMove(id)
+			world:advance(0.2)
+			world.build:rotate(1)
+			world:advance(0.1)
+			tap(find(find(world.hud.guis.hud, "PlacementBar"), "Place"))
+			world:advance(0.2)
+			expect(world:callsNamed("MoveToSlot")[1].args).toEqual({ id, "crimson_slot5", 2 })
+			-- off a plot: set down on the cell it stands on, at the same rot, is no move either
+			world:advance(10.5)
+			local free = house(world, Vector3.new(100, 0, 100), 3)
+			world.build:startMove(free)
+			world:advance(0.2)
+			expect(world.build.placing.move.slot).toBeNil()
+			expect(world.build.placing.status).toBe("ok")
+			tap(find(find(world.hud.guis.hud, "PlacementBar"), "Place"))
+			world:advance(0.2)
+			expect(world.build.placing).toBeNil()
+			expect(#world:callsNamed("Move")).toBe(0)
+			expect(world.build.movedAt[free]).toBeNil()
+		end
+	)
+
 	it("never snaps where the building can't stand: another building's plot, a type that doesn't fit, walls", function()
 		world = newWorld()
 		local id = house(world, Vector3.new(40, 0, 40))

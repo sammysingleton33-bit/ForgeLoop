@@ -220,6 +220,9 @@ tracker on the phone, the summary on the phone and on desktop.
 3. Rotate the camera (Q/E or right-drag), then move the mouse a little: the dial follows the camera
    (it shows where the door faces on screen now). Place it: the building stands the way the arrow
    pointed (its door on the strip's side).
+3b. Turn the camera about 45° off a street (an oblique view) and turn the ghost through all four turns:
+   each time the dial's arrowhead (two strokes and a shaft) points the way the ghost's arrow points on
+   screen, never the opposite way (the dial is drawn with frames since #148; renderer deviation 25).
 4. Gamepad (if available): **R1** turns, **L1** turns back; **Y** still switches the camera view and the ghost does not turn on it.
 5. Phone (emulator): the bar keeps Turn as a 70 × 44 button with the icon and the dial (no word); a tap
    turns the ghost. The name, cost and verdict stay readable.
@@ -251,6 +254,12 @@ Before #140 the building panel shows no Move: expected.
 8. Refusals (needs a rival for 8b): 8a move a house twice within 10 s from the second tap: "It just moved.
    Wait a few seconds"; 8b while the alarm rings / under attack: "Not while the alarm bell rings" / "Not
    while it's under attack".
+9. Edit-mode taps (FORGE-04's FL-0121 edit mode, #142): while moving, tap another of your houses, a free
+   plot of yours and the house itself: the move stays (ghost and dim stay, no panel or plot drawer opens).
+   Cancel, then tap the same house: its panel opens as usual.
+10. Pick up a house that stands turned on its plot (U17 step 6, "Faces right"): the snap starts at "Faces
+   right", not "Faces the street". **Move here** without moving it: the move ends quietly (no toast, no
+   "Moved" cooldown in its panel). Turn once and Move here: it turns on its plot and the toast shows.
 
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).

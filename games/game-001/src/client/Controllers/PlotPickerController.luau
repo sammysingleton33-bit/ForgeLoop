@@ -150,7 +150,17 @@ function PlotPickerController:destroy()
 	self:_hideGhost()
 end
 
+-- While a building is picked up (FL-0120; edit mode, FL-0121, or build mode before it) a tap on my own
+-- plot or building belongs to the move: opening a menu would cancel it (FORGE-07 B1 on #148).
+function PlotPickerController:_editing(): boolean
+	local build = self._registry:find("BuildMenuController")
+	return build ~= nil and build.moving ~= nil and build:moving()
+end
+
 function PlotPickerController:_onSelected(kind: any, id: any)
+	if self:_editing() then
+		return
+	end
 	if kind == "slot" then
 		self:open(id)
 	elseif self.hud.state.menu == PlotPickerController.MENU then
