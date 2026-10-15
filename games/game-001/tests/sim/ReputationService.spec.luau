@@ -145,6 +145,7 @@ local function contentWith(rows)
 			audience_condition = row.audience_condition or {},
 			audience_loyalty = row.audience_loyalty or 0,
 			kingdom = row.kingdom or { happiness = 0, stability = 0, morale = 0 },
+			notice = row.notice,
 		}
 		byEvent[row.event] = byEvent[row.event] or {}
 		table.insert(byEvent[row.event], i)
@@ -441,6 +442,86 @@ describe("ReputationService: actions (SPEC §6.9)", function()
 		env.mock:advance(1.5)
 		expect(reputation:get(1).values.compassion).toBe(paid)
 	end)
+
+	it("history text is the row's notice, else a plain line from the change, never an action id", function()
+		local env, reputation = boot()
+		seat(env, 1)
+		local rep = table.clone(ZERO_REP)
+		rep.authority, rep.fear = 2, -1
+		reputation.content = contentWith({
+			{ id = "soldiers_recruited", event = "TestQuiet", rep = rep }, -- no notice text in the content
+			{
+				id = "decayed",
+				event = "TestDecayed",
+				rep = { compassion = 3 },
+				repeat_decay = 0.5,
+				repeat_window_s = 600,
+			},
+			{ id = "told", event = "TestTold", rep = { honor = 1 }, notice = "You kept your word." },
+		})
+		reputation:fireAction("TestQuiet", "crimson")
+		local history = reputation:get(1).history
+		expect(#history).toBe(2) -- one entry per category moved
+		for _, entry in history do
+			expect(entry.source).toBe("soldiers_recruited") -- the id stays the source, for analytics
+			expect(entry.text).toBe("Authority +2, Fear -1")
+			expect(string.find(entry.text, "_", 1, true)).toBeNil()
+		end
+		reputation:fireAction("TestDecayed", "crimson")
+		local first = reputation:get(1).history
+		expect(first[#first].text).toBe("Compassion +3")
+		reputation:fireAction("TestDecayed", "crimson") -- decayed by the ruler's own history: 3 x 0.5
+		local last = reputation:get(1).history
+		expect(last[#last].delta).toBe(1.5)
+		expect(last[#last].text).toBe("Compassion +1.5")
+		reputation:fireAction("TestTold", "crimson")
+		local told = reputation:get(1).history
+		expect(told[#told].text).toBe("You kept your word.")
+	end)
+
+	it(
+		"history text says what really moved: a category at its cap is not claimed, a sliver reads plainly (#129 M1)",
+		function()
+			local env, reputation = boot()
+			seat(env, 1)
+			local rep = table.clone(ZERO_REP)
+			rep.authority, rep.fear = 2, -1
+			reputation.content = contentWith({
+				{ id = "soldiers_recruited", event = "TestQuiet", rep = rep }, -- no notice text in the content
+				{ id = "sliver", event = "TestSliver", rep = { honor = 0.04 } },
+			})
+			reputation:apply(1, "setup", { authority = 49 }, "setup") -- authority 50 -> 99: one point of room
+			reputation:fireAction("TestQuiet", "crimson")
+			local history = reputation:get(1).history
+			local entries = {}
+			for _, entry in history do
+				if entry.source == "soldiers_recruited" then
+					entries[entry.category] = entry
+				end
+			end
+			expect(entries.authority.delta).toBe(1) -- clamped at 100
+			expect(entries.fear.delta).toBe(-1)
+			for _, entry in entries do
+				expect(entry.text).toBe("Authority +1, Fear -1") -- the sentence matches the chips
+			end
+			-- authority is now at its cap: only the fear entry is written, and it does not claim authority
+			reputation:fireAction("TestQuiet", "crimson")
+			local again = {}
+			for _, entry in reputation:get(1).history do
+				if entry.source == "soldiers_recruited" then
+					table.insert(again, entry)
+				end
+			end
+			expect(#again).toBe(3)
+			expect(again[3].category).toBe("fear")
+			expect(again[3].text).toBe("Fear -1")
+			-- a change too small to print as a number still gets a plain line
+			reputation:fireAction("TestSliver", "crimson")
+			local sliver = reputation:get(1).history
+			expect(sliver[#sliver].text).toBe("Your reputation changed")
+			expect(sliver[#sliver].delta).toBeNear(0.04, 1e-9)
+		end
+	)
 
 	it("keeps citizens' loyalty within 0..100 whatever a firing adds (#68 L3)", function()
 		local env, reputation, match = boot()

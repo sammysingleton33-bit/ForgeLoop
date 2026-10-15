@@ -88,15 +88,19 @@ describe("Experience/Onboarding config rules", function()
 		end)).toContain("startOn 'KingdomJoind' is not a declared bus event")
 	end)
 
-	it("rejects unknown bus events, unlisted client actions and auto-advancing bus steps", function()
+	it("rejects unknown bus events, unlisted client actions and auto-advancing rewarded bus steps", function()
 		local text = problemsOf(function(c)
 			c.flows[1].steps[5].trigger = { bus = "CitizenTaskChangd" }
 			c.flows[1].steps[2].trigger = { client = "Teleported" }
-			c.flows[1].steps[6].autoAdvanceSec = 5
+			c.flows[1].steps[7].autoAdvanceSec = 5 -- FirstHarvest pays 25 Coins
 		end)
 		expect(text).toContain("unknown bus event 'CitizenTaskChangd'")
 		expect(text).toContain("client action 'Teleported' is not in clientActions")
-		expect(text).toContain("bus steps never auto-advance")
+		expect(text).toContain("a rewarded bus step never auto-advances")
+		-- an unrewarded bus step may move on, so a step waiting on another system never stalls (FL-0108)
+		expect(problemsOf(function(c)
+			c.flows[1].steps[6].autoAdvanceSec = 5 -- PlaceFarm: no reward
+		end)).toBe("")
 	end)
 
 	it("rejects long hints, bad ids, duplicate steps and two funnel flows", function()
@@ -152,6 +156,64 @@ describe("Experience/Onboarding step graph", function()
 		expect(transitions[2].via).toBe("unavailable")
 		expect(Onboarding.persisted(state).unavailable).toBeNil() -- a later server may have the service
 	end)
+
+	it(
+		"only the real action pays a reward: a rewarded step passed over pays nothing (FORGE-00 ruling on #124)",
+		function()
+			local paid = {
+				id = "Paid",
+				trigger = { bus = "RoundEnded" },
+				hint = { title = "Finish a round" },
+				expectSec = 5,
+				requires = "MissingService",
+				reward = { currency = "Coins", amount = 5 },
+			}
+			local flow = {
+				id = "pay",
+				version = 1,
+				steps = { { id = "Start", trigger = { auto = true }, hint = { title = "Hi" }, expectSec = 1 }, paid },
+			}
+			local state = Onboarding.restore(flow, nil, 0)
+			state.unavailable = { Paid = true }
+			local transitions = Onboarding.begin(flow, state, 0)
+			expect(transitions[2].via).toBe("unavailable")
+			expect(transitions[2].reward).toBeNil()
+			-- the same step done for real pays
+			local real = Onboarding.restore(flow, nil, 0)
+			Onboarding.begin(flow, real, 0)
+			local done = Onboarding.handle(flow, real, { bus = "RoundEnded" }, 1)
+			expect(done[1].via).toBe("bus")
+			expect(done[1].reward).toEqual({ currency = "Coins", amount = 5 })
+		end
+	)
+
+	it(
+		"a rewarded step done early (via satisfied) still pays when its turn comes (FORGE-07 #124 M1, D-050 (5))",
+		function()
+			local flow = {
+				id = "pay",
+				version = 1,
+				steps = {
+					{ id = "Start", trigger = { auto = true }, hint = { title = "Hi" }, expectSec = 1 },
+					{ id = "Wait", trigger = { client = "Poke" }, hint = { title = "Poke" }, expectSec = 1 },
+					{
+						id = "Paid",
+						trigger = { bus = "RoundEnded" },
+						hint = { title = "Finish" },
+						expectSec = 5,
+						reward = { currency = "Coins", amount = 5 },
+					},
+				},
+			}
+			local state = Onboarding.restore(flow, nil, 0)
+			Onboarding.begin(flow, state, 0)
+			expect(#Onboarding.handle(flow, state, { bus = "RoundEnded" }, 1)).toBe(0) -- early: remembered
+			local done = Onboarding.handle(flow, state, { client = "Poke" }, 2)
+			expect(done[2].id).toBe("Paid")
+			expect(done[2].via).toBe("satisfied")
+			expect(done[2].reward).toEqual({ currency = "Coins", amount = 5 }) -- a real action, so it pays
+		end
+	)
 
 	it("begins by completing the automatic first step", function()
 		local state = Onboarding.restore(FLOW, nil, 0)
