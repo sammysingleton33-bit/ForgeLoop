@@ -26,7 +26,7 @@
 	| MatchPhaseChanged  | MatchService                   | (phase: string) |
 	| BuildingPlaced     | BuildingService                | (building: table, player?) — also BuildingCompleted, |
 	|   BuildingUpgraded, BuildingDestroyed                 | same payload |
-	| BuildingMoved      | BuildingService (G13.9)        | (building: table, player?, from: { position: Vector3, rot: number }, slotId: string?) — once per accepted move; never re-fires BuildingPlaced (v0.4-g9i) |
+	| BuildingMoved      | BuildingService (G13.9)        | (building: table, player?, from: { position: Vector3, rot: number (the old yaw, radians; not Build.Place's quarter turns) }, slotId: string?) — once per accepted move; never re-fires BuildingPlaced (v0.4-g9i) |
 	| ResourceGathered   | Citizen/InteractionService     | (player?, kingdomId: string, resourceId: string, amount: number, source: "ruler" | "citizen") |
 	| UnitsRecruited     | MilitaryService                | (player, kingdomId: string, count: number) |
 	| ObjectiveCaptured  | ObjectiveService               | (objectiveId: string, kingdomId: string) |

@@ -64,6 +64,30 @@
 			the PR #67 review, item 2). A placeholder fillNames does not cover, or a risk without notice
 			text, is an error (a risk is never shown half-filled or hidden). nil for an unknown decision.
 
+	Presentation (SPEC §5.10; D-035 (4), D-036 cinematic conversations). Optional tags: ignoring them changes no
+	gameplay, and every tag that is not in the content is nil (never a default). Texts are raw content text: fill
+	their placeholders like the base question and reaction (fill / the conversation's names).
+		ContentQuery.reactionFor(responseId, loyalty: number?) -> Reaction?
+			Reaction = { text, tone, emotion?, expression?, gesture?, delivery?, bubble_s?, band }: the
+			citizen's reaction to one answer. band "high" when loyalty >= LOYALTY_BANDS.high and the response
+			has a high-loyalty text, "low" when loyalty <= LOYALTY_BANDS.low and it has a low-loyalty text,
+			else "base" (reaction, tone — "neutral" when absent — and the reaction tags). A nil, NaN or
+			infinite loyalty gives "base". nil for an unknown response. A fresh table.
+		ContentQuery.questionFor(scenarioId, citizen: CitizenState, ctx: Ctx?) -> Question?
+			Question = { text, emotion?, expression?, gesture?, delivery?, variantId? }: the question this
+			citizen is asked. The scenario's question variants are tried by `order` (lowest first); the
+			first whose selector matches wins: `trait` = citizen.traits (a list of trait ids) contains it,
+			`cond` = evaluate(cond, ctx) with the trigger rules (SPEC §4). No match: the scenario's
+			question with its question_* tags, and no variantId. nil for an unknown scenario; a citizen
+			that is not a table is an error (like eligibleScenarios). A fresh table.
+		ContentQuery.presentation(scenarioId) -> Presentation?
+			Presentation = { urgency?, delivery_mode?, thought_bubble_s? } of a scenario (a fresh table, empty
+			when it has none); nil for an unknown scenario.
+		ContentQuery.GESTURE_CUE   gesture -> feedback cue id (SPEC §5.4): bow → bow, salute → salute,
+		                           step_back → cower, fist_pump → celebrate, cross_arms → grumble; other
+		                           gestures have none (frozen)
+		ContentQuery.LOYALTY_BANDS { high = 70, low = 30 } PROVISIONAL loyalty thresholds of reactionFor (frozen)
+
 	Decisions (dialogue)
 		ContentQuery.decisionEffects(decisionId, multiplier: number?, kingdomMultiplier: number?) -> Effects?
 			A fresh copy of the decision's effect bundle (nil for an unknown id), for previews.
@@ -213,13 +237,42 @@ export type RepVector = { [string]: number }
 export type Relation = "speaker" | "family" | "friends" | "rivals" | "kingdom"
 export type KingdomDelta = { happiness: number, stability: number, morale: number }
 
+-- A loyalty variant of a reaction (SPEC §5.10): shown instead of the reaction at high or low loyalty.
+export type ReactionBand = {
+	text: string,
+	tone: string,
+	emotion: string?,
+	expression: string?,
+	gesture: string?,
+	delivery: string?,
+	bubble_s: number?,
+}
 export type Response = {
 	id: string,
 	order: number,
 	text: string,
 	reaction: string,
 	tone: string?,
+	-- optional presentation tags of the reaction (SPEC §5.10)
+	emotion: string?,
+	expression: string?,
+	gesture: string?,
+	delivery: string?,
+	bubble_s: number?,
 	decision: string,
+	bands: { high: ReactionBand?, low: ReactionBand? }?,
+}
+-- Another question for some citizens (SPEC §5.10): `trait` or `cond` selects them; generated sorted by order.
+export type QuestionVariant = {
+	id: string,
+	order: number,
+	trait: string?,
+	cond: { Clause }?,
+	text: string,
+	emotion: string?,
+	expression: string?,
+	gesture: string?,
+	delivery: string?,
 }
 export type Scenario = {
 	id: string,
@@ -232,7 +285,16 @@ export type Scenario = {
 	icon: string?,
 	thought: string,
 	question: string,
+	-- optional presentation (SPEC §5.10)
+	urgency: string?,
+	delivery_mode: string?,
+	thought_bubble_s: number?,
+	question_emotion: string?,
+	question_expression: string?,
+	question_gesture: string?,
+	question_delivery: string?,
 	responses: { Response },
+	variants: { QuestionVariant }?,
 }
 export type DialogueData = { scenarios: { [string]: Scenario }, order: { string } }
 
@@ -345,6 +407,7 @@ export type CitizenState = {
 	key: any?,
 	occupation: string?,
 	unlocked: { [string]: boolean }?,
+	traits: { string }?, -- trait ids; questionFor matches trait: variants against them
 }
 export type Listener = { occupation: string?, speaker: boolean? }
 export type ShownHistory = { [any]: { [string]: number } }
@@ -410,10 +473,34 @@ export type RulerRep = { ruler: any, multiplier: number, rep: RepVector }
 export type Risk = { text: string, chance: number }
 -- Exactly the CONTRACTS G13.3 option extras: nil when free / without risks.
 export type ChoicePreview = { cost: { [string]: number }?, risks: { Risk }? }
+-- Presentation (SPEC §5.10): what the conversation shows. Absent tags are nil.
+export type Band = "high" | "low" | "base"
+export type Reaction = {
+	text: string,
+	tone: string,
+	emotion: string?,
+	expression: string?,
+	gesture: string?,
+	delivery: string?,
+	bubble_s: number?,
+	band: Band,
+}
+export type Question = {
+	text: string,
+	emotion: string?,
+	expression: string?,
+	gesture: string?,
+	delivery: string?,
+	variantId: string?,
+}
+export type Presentation = { urgency: string?, delivery_mode: string?, thought_bubble_s: number? }
 
 export type Query = {
 	data: Data,
 	eligibleScenarios: (ctx: Ctx?, citizen: CitizenState, now: number, history: ShownHistory?) -> { Scenario },
+	reactionFor: (responseId: string, loyalty: number?) -> Reaction?,
+	questionFor: (scenarioId: string, citizen: CitizenState, ctx: Ctx?) -> Question?,
+	presentation: (scenarioId: string) -> Presentation?,
 	choicePreview: (scenarioId: string, responseId: string, fillNames: { [string]: string }) -> ChoicePreview?,
 	choiceRisks: (decisionId: string, fillNames: { [string]: string }) -> { Risk }?,
 	decisionEffects: (decisionId: string, multiplier: number?, kingdomMultiplier: number?) -> Effects?,
@@ -497,11 +584,22 @@ ContentQuery.CHEMISTRY_MIN = -20
 ContentQuery.CHEMISTRY_MAX = 20
 ContentQuery.CHEMISTRY_DRIFT_MAX = 5
 ContentQuery.MAX_FARM_HISTORY = 32
+-- SPEC §5.10: a gesture that also plays a feedback cue (cue vocabulary, SPEC §5.4); every other gesture has none.
+ContentQuery.GESTURE_CUE = table.freeze({
+	bow = "bow",
+	salute = "salute",
+	step_back = "cower",
+	fist_pump = "celebrate",
+	cross_arms = "grumble",
+})
+-- SPEC §5.10 (PROVISIONAL): reactionFor shows the high-loyalty reaction at loyalty >= high, the low one at <= low.
+ContentQuery.LOYALTY_BANDS = table.freeze({ high = 70, low = 30 })
 
 local CATEGORIES = ContentQuery.CATEGORIES
 local REACH: { [string]: number } = ContentQuery.REACH
 local LOYALTY_CLAMP: { [string]: number } = ContentQuery.LOYALTY_CLAMP
 local GAIN_SIGN: { [string]: number } = ContentQuery.GAIN_SIGN
+local LOYALTY_BANDS: { high: number, low: number } = ContentQuery.LOYALTY_BANDS
 local COUNT_PREFIX = "kingdom.count."
 
 -- ---------------------------------------------------------------- argument checks
@@ -811,6 +909,32 @@ function ContentQuery.new(input: DataInput): Query
 	for i, id in data.dialogue.order do
 		fileIndex[id] = i
 	end
+	-- Presentation lookups (SPEC §5.10): responses by id (ids are unique across scenarios; file order first) and
+	-- each scenario's question variants by order (the generator already sorts them; hand-made data may not).
+	local responseIndex: { [string]: Response } = {}
+	local function indexResponses(s: Scenario?)
+		for _, r in if s then s.responses else {} do
+			if responseIndex[r.id] == nil then
+				responseIndex[r.id] = r
+			end
+		end
+	end
+	for _, id in data.dialogue.order do
+		indexResponses(scenarios[id])
+	end
+	for _, s in scenarios do
+		indexResponses(s)
+	end
+	local variantsOf: { [string]: { QuestionVariant } } = {}
+	for id, s in scenarios do
+		if s.variants ~= nil and #s.variants > 0 then
+			local sorted = table.clone(s.variants)
+			table.sort(sorted, function(a: QuestionVariant, b: QuestionVariant): boolean
+				return a.order < b.order
+			end)
+			variantsOf[id] = sorted
+		end
+	end
 
 	local query = {}
 	query.data = data
@@ -876,6 +1000,95 @@ function ContentQuery.new(input: DataInput): Query
 			return fileIndex[a.id] < fileIndex[b.id]
 		end)
 		return out
+	end
+
+	function query.reactionFor(responseId: string, loyalty: number?): Reaction?
+		local r = responseIndex[responseId]
+		if r == nil then
+			return nil
+		end
+		local bands = r.bands
+		local finite = type(loyalty) == "number" and loyalty == loyalty and math.abs(loyalty) ~= math.huge
+		if bands ~= nil and finite then
+			local value = loyalty :: number
+			local band: Band?, line: ReactionBand? = nil, nil
+			if bands.high ~= nil and value >= LOYALTY_BANDS.high then
+				band, line = "high", bands.high
+			elseif bands.low ~= nil and value <= LOYALTY_BANDS.low then
+				band, line = "low", bands.low
+			end
+			if band ~= nil and line ~= nil then
+				return {
+					text = line.text,
+					tone = line.tone,
+					emotion = line.emotion,
+					expression = line.expression,
+					gesture = line.gesture,
+					delivery = line.delivery,
+					bubble_s = line.bubble_s,
+					band = band,
+				}
+			end
+		end
+		return {
+			text = r.reaction,
+			tone = r.tone or "neutral",
+			emotion = r.emotion,
+			expression = r.expression,
+			gesture = r.gesture,
+			delivery = r.delivery,
+			bubble_s = r.bubble_s,
+			band = "base",
+		}
+	end
+
+	function query.questionFor(scenarioId: string, citizen: CitizenState, ctx: Ctx?): Question?
+		if type(citizen) ~= "table" then
+			error(`ContentQuery.questionFor: citizen must be a CitizenState table, got {typeof(citizen)}`, 2)
+		end
+		local s = scenarios[scenarioId]
+		if s == nil then
+			return nil
+		end
+		local has: { [string]: boolean } = {}
+		if type(citizen.traits) == "table" then
+			for _, traitId in citizen.traits do
+				has[traitId] = true
+			end
+		end
+		for _, v in variantsOf[scenarioId] or {} do
+			local matches = false
+			if v.trait ~= nil then
+				matches = has[v.trait] == true
+			elseif v.cond ~= nil then
+				matches = ContentQuery.evaluate(v.cond, ctx)
+			end
+			if matches then
+				return {
+					text = v.text,
+					emotion = v.emotion,
+					expression = v.expression,
+					gesture = v.gesture,
+					delivery = v.delivery,
+					variantId = v.id,
+				}
+			end
+		end
+		return {
+			text = s.question,
+			emotion = s.question_emotion,
+			expression = s.question_expression,
+			gesture = s.question_gesture,
+			delivery = s.question_delivery,
+		}
+	end
+
+	function query.presentation(scenarioId: string): Presentation?
+		local s = scenarios[scenarioId]
+		if s == nil then
+			return nil
+		end
+		return { urgency = s.urgency, delivery_mode = s.delivery_mode, thought_bubble_s = s.thought_bubble_s }
 	end
 
 	-- Every listener is checked before the first firing is recorded, so a bad listener records nothing and the
@@ -1402,6 +1615,9 @@ local default = ContentQuery.new({
 
 ContentQuery.data = default.data
 ContentQuery.eligibleScenarios = default.eligibleScenarios
+ContentQuery.reactionFor = default.reactionFor
+ContentQuery.questionFor = default.questionFor
+ContentQuery.presentation = default.presentation
 ContentQuery.choicePreview = default.choicePreview
 ContentQuery.choiceRisks = default.choiceRisks
 ContentQuery.decisionEffects = default.decisionEffects

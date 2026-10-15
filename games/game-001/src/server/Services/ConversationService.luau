@@ -310,15 +310,32 @@ function ConversationService:_payload(c: any, scenario: any, userId: number): { 
 end
 
 -- Holds the citizen for this ruler's conversation (G13.8): still, facing the ruler's character when it
--- has one, for at most Society.conversationHoldSec. Returns the payload for chaining.
-function ConversationService:_hold(player: any, c: any, payload: { [string]: any }): { [string]: any }
+-- has one, for Society.conversationHoldSec from now. Asking again extends the hold, but one showing can never
+-- grant more than Society.conversationHoldMaxSec in all (D-050 (6a), FL-0122): the extension counts only the time
+-- it adds, closing the panel (endConversation) gives the unused time back, and once the showing's allowance is
+-- spent the ruler still gets the question but the citizen keeps working. Returns the payload for chaining.
+function ConversationService:_hold(
+	player: any,
+	c: any,
+	payload: { [string]: any },
+	showing: { [string]: any }
+): { [string]: any }
+	local sim = self:_sim()
+	local left = SocietyConfig.conversationHoldMaxSec - (showing.holdGranted or 0)
+	local held = sim:isHeld(c)
+	local base = if held then c.hold.untilTime else sim.time -- the hold already running ends here
+	local extra = math.max(0, math.min(sim.time + SocietyConfig.conversationHoldSec - base, left))
+	if extra <= 0 then
+		return payload -- still held until `base`, or the allowance is spent: no new time
+	end
 	local ok, at = pcall(function()
 		local character = player.Character
 		local root = character and character.PrimaryPart
 		return root and root.Position
 	end)
 	local face = if ok and typeof(at) == "Vector3" then at else nil
-	self:_sim():holdCitizen(c, SocietyConfig.conversationHoldSec, face and face.X, face and face.Z, player.UserId)
+	sim:holdCitizen(c, base + extra - sim.time, face and face.X, face and face.Z, player.UserId)
+	showing.holdGranted = (showing.holdGranted or 0) + extra
 	return payload
 end
 
@@ -347,7 +364,7 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 			local ok, payload = pcall(self._payload, self, c, still, userId)
 			if ok then
 				showing.userId = userId
-				return self:_hold(player, c, payload)
+				return self:_hold(player, c, payload, showing)
 			end
 		end
 		self._showing[entityId] = nil
@@ -383,16 +400,18 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
 	-- the request stays open until it is answered (#77 N3): closing the panel without an answer leaves the
 	-- thought up, and asking again shows the same question
-	self._showing[entityId] = {
+	local entry = {
 		scenarioId = scenario.id,
 		userId = userId,
 		kingdomId = kingdomId,
 		forced = forced or nil,
 		shownBefore = shownBefore,
 		requestedAt = open and open.openedAt, -- nil when the citizen had no request bubble
+		holdGranted = 0, -- seconds of hold this showing has taken (capped by Society.conversationHoldMaxSec)
 	}
+	self._showing[entityId] = entry
 	self._reputation:rulerVisited(userId, entityId)
-	return self:_hold(player, c, payload)
+	return self:_hold(player, c, payload, entry)
 end
 
 -- Kingdom.EndConversation (G13.8): the ruler closed the panel; the citizen goes back to work. Own kingdom's
@@ -407,6 +426,11 @@ function ConversationService:endConversation(player: any, entityId: number): boo
 	local sim = self:_sim()
 	if sim:isHeld(c) and c.hold.by ~= player.UserId then
 		return false
+	end
+	local showing = self._showing[entityId]
+	if showing and showing.holdGranted and sim:isHeld(c) then
+		-- closing early gives the unused part of the hold back to the showing's allowance
+		showing.holdGranted = math.max(0, showing.holdGranted - math.max(0, c.hold.untilTime - sim.time))
 	end
 	sim:releaseCitizen(c)
 	return true

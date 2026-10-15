@@ -4,11 +4,20 @@
 
 		Placement.GRID = 2                               studs; ghost positions snap to it
 		Placement.snap(position, grid?) -> Vector3       X and Z to the grid, Y unchanged
-		Placement.nextRotation(rot) -> number            0 → 1 → 2 → 3 → 0 (90° steps, G8 `rot`)
+		Placement.nextRotation(rot, step?) -> number     0 → 1 → 2 → 3 → 0 (90° steps, G8 `rot`); step -1
+		                                                 turns back (0 → 3). Seen from above, +1 turns the
+		                                                 building a quarter counter-clockwise.
 		Placement.size(footprint, rot) -> Vector2        the footprint as placed (X/Z swap on 90° and 270°)
 		Placement.cframe(position, rot) -> CFrame        what the server builds from the remote args (G8):
 		                                                 CFrame.new(position) * CFrame.Angles(0, rot * π / 2, 0)
 		Placement.key(type, position, rot) -> string     identifies one ghost spot
+		Placement.screenAngle(yaw, camera: CFrame?) -> number
+		                                                 where a building turned by `yaw` (radians,
+		                                                 CFrame.Angles(0, yaw, 0); its front is -Z) faces on
+		                                                 screen, in degrees clockwise from "up" (away from
+		                                                 the camera): 0 up, 90 right, 180 down (towards the
+		                                                 camera), 270 left. Without a camera: the default
+		                                                 camera, looking along -Z. The facing dial uses it.
 
 	Placement.Checker.new(options) -> checker            throttled `Build.CanPlace` for the ghost tint
 		options = { invoke: (type, position, rot) -> (ok, reason?),   e.g. remotes:invoke("Build.CanPlace", ...)
@@ -33,8 +42,8 @@ function Placement.snap(position: Vector3, grid: number?): Vector3
 	return Vector3.new(math.floor(position.X / g + 0.5) * g, position.Y, math.floor(position.Z / g + 0.5) * g)
 end
 
-function Placement.nextRotation(rot: number): number
-	return (rot + 1) % 4
+function Placement.nextRotation(rot: number, step: number?): number
+	return (rot + (step or 1)) % 4
 end
 
 function Placement.size(footprint: Vector2, rot: number): Vector2
@@ -50,6 +59,26 @@ end
 
 function Placement.key(buildingType: string, position: Vector3, rot: number): string
 	return string.format("%s|%.2f|%.2f|%.2f|%d", buildingType, position.X, position.Y, position.Z, rot)
+end
+
+-- The camera's forward and right on the ground plane (a straight-down camera uses its up vector).
+local function groundAxes(camera: CFrame?): (Vector3, Vector3)
+	if camera == nil then
+		return Vector3.new(0, 0, -1), Vector3.new(1, 0, 0)
+	end
+	local forward = Vector3.new(camera.LookVector.X, 0, camera.LookVector.Z)
+	if forward.Magnitude < 1e-4 then
+		forward = Vector3.new(camera.UpVector.X, 0, camera.UpVector.Z)
+	end
+	forward = forward.Unit
+	return forward, Vector3.new(-forward.Z, 0, forward.X) -- forward turned a quarter clockwise from above
+end
+
+function Placement.screenAngle(yaw: number, camera: CFrame?): number
+	local front = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw)) -- CFrame.Angles(0, yaw, 0).LookVector
+	local forward, right = groundAxes(camera)
+	local degrees = math.deg(math.atan2(front:Dot(right), front:Dot(forward)))
+	return math.floor((degrees % 360) * 100 + 0.5) / 100 % 360
 end
 
 local Checker = {}

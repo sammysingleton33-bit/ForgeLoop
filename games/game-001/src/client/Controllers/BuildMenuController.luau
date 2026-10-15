@@ -8,7 +8,8 @@
 		   (FORGE-04, G4.1) and a ghost of the `Kit.footprint` size in the world (UI/Ghost).
 		3. Every new ghost spot is checked with `Build.CanPlace(type, position, rot)`, throttled
 		   (UI/Placement.Checker, under the remote's 10/s): green = valid, red = the server's reason.
-		4. Rotate turns it in 90° steps; Place calls `Build.Place(type, position, rot)`. The server
+		4. Turn (R or gamepad R1; Shift+R or L1 turns back) turns it in 90° steps: the ghost's facing arrow and
+		   the Turn button's dial show which way the front will face from the current camera. Place calls `Build.Place(type, position, rot)`. The server
 		   charges the treasury (Treasury.Changed → the pills float the spend) and the new building
 		   arrives through Build.Buildings (a construction chip). A toast confirms; a refusal keeps
 		   build mode open with the reason.
@@ -20,7 +21,7 @@
 
 	API (specs and the snapshot scenes drive these directly)
 		build:selectCategory(id)  build:selectBuilding(type)  build:back()
-		build:startPlacement(type)  build:aimAt(position: Vector3)  build:rotate()
+		build:startPlacement(type)  build:aimAt(position: Vector3)  build:rotate(step?: 1 | -1)
 		build:confirm()  build:cancel()
 		build.state = { category, selected, phoneView }   build.placing = { type, rot, position?,
 		    status ("pending" | "ok" | "bad"), reason?, busy, footprint, room? }?
@@ -104,8 +105,8 @@ function BuildMenuController:start()
 		aim = function(position)
 			self:aimAt(position)
 		end,
-		rotate = function()
-			self:rotate()
+		rotate = function(step)
+			self:rotate(step)
 		end,
 		confirm = function()
 			self:confirm()
@@ -239,12 +240,12 @@ function BuildMenuController:aimAt(position: Vector3)
 	self.hud:render()
 end
 
-function BuildMenuController:rotate()
+function BuildMenuController:rotate(step: number?)
 	local p = self.placing
 	if p == nil or p.busy then
 		return
 	end
-	p.rot = Placement.nextRotation(p.rot)
+	p.rot = Placement.nextRotation(p.rot, if step == -1 then -1 else 1)
 	local position = p.position
 	p.key = nil
 	if position then
@@ -252,6 +253,14 @@ function BuildMenuController:rotate()
 	else
 		self.hud:render()
 	end
+end
+
+-- Where the building's front faces on screen now (degrees, 0 = away from the camera).
+function BuildMenuController:facing(rot: number): number
+	local ok, camera = pcall(function()
+		return self._env.Workspace.CurrentCamera.CFrame
+	end)
+	return Placement.screenAngle(rot * math.pi / 2, if ok and typeof(camera) == "CFrame" then camera else nil)
 end
 
 function BuildMenuController:_onVerdict(key: string, ok: boolean, reason: string?)
@@ -361,11 +370,12 @@ function BuildMenuController:render(metrics: any)
 				status = p.status,
 				reason = p.reason,
 				busy = p.busy,
+				facing = self:facing(p.rot),
 			},
 			metrics,
 			{
 				onRotate = function()
-					self:rotate()
+					self:rotate(1)
 				end,
 				onCancel = function()
 					self:cancel()

@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-<task>` |
-| Open PRs | #110 FL-0058 economy doc (D-045, 6–8 min slice), waiting on FORGE-07 · FL-0099 cinematic conversation UI (`forge/03-ui-economy-fl0099`, stacked on nothing; merges with #108, #84, #85 under FL-0101, D-046). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #63, #65, #66, #71, #74, #76, #79, #86, #88, #95, #103. Closed: #13, #19. |
-| Current task | FL-0099 (P1, REVIEW): cinematic conversation UI (G13.8). Next: FL-0101 fixes after FORGE-05's Studio run; Talk as the primary action lights up when FORGE-01's #77 sends `hasRequest` (client done) |
-| Last verified check | FL-0099 branch: check.sh exit 0 (see the PR); on a local merge with #108, #84 and #85: game-001 1263/0 and a real Converse → Kit.portrait contract check |
+| Open PRs | #135 FL-0114 rotation B1 + B2 (★ B15) · #128 settings icon · #110 FL-0058 economy doc (waiting on FORGE-07). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #63, #65, #66, #71, #74, #76, #79, #86, #88, #95, #103, #126 (FL-0099, B14). Closed: #13, #19. |
+| Current task | FL-0114 (P0, REVIEW): rotation UI (Turn + facing dial, ghost door strip and arrow, Shift+R / pad Y; plot Turn on CONTRACTS v0.4-g9h, live once FORGE-01's turn PR lands). Next: FL-0120 base-editing UI (B16, G13.9); subscribe `InputModeController.back` (#130); drop the client `CitizenAnswered` report after #124; FL-0111 after #96 |
+| Last verified check | FL-0114 branch: game-001 specs 1244/0 in check.sh, selene/stylua clean after fixes, Rotation.spec 13/0, mutations 18/18; main merged after B14 (3a7c29c+) |
 | Blockers | none; Studio checks (G6) need the user |
-| Needs from others | FORGE-05: integrate the G13.8 set and run U16 (FL-0101). FORGE-04: phone framing above the stage (handoff 2026-10-13 FL-0099). FORGE-01: `not_on_plot` on the Reasons line; `hasRequest`. User: upload `gem.png` and `emblem_crown.png`. FORGE-07: verdicts (D-040). |
+| Needs from others | FORGE-01: `Build.PlaceSlot` optional turn + `Fit.fits(…, turn)` in one PR (switches plot Turn on); move remotes for FL-0120. FORGE-04: bubbles (#133) and hover signal. FORGE-05: gate #135, Studio U17. User: upload `settings.png`, `gem.png`, `emblem_crown.png`. FORGE-07: verdicts (D-040). |
 
 ## Estimate to VS-1 (FORGE-03 rows, unverified, hours of FORGE-03 work)
 | Item | Hours | Notes |

@@ -13,6 +13,9 @@
 		bubbles:textLimit(zoom, phone) -> number           -- how many bubbles show words at this view
 		bubbles:layout(picked, limit, anchors?, sizes?) -> { [entityId]: "words" | "badge" }
 		                                                -- how each picked bubble is drawn (absent: not drawn)
+		bubbles:requests() -> { { entityId, since } }   -- open requests ("!" thoughts), for B16's edge
+		                                                -- indicators and the cycle key; `since` is when the
+		                                                -- request first showed (a repeat keeps it)
 
 	Rules (specs: games/game-001/tests/experience/CitizenBubbles.spec.luau)
 		- One bubble per citizen. A reaction replaces that citizen's thought (the request was answered);
@@ -77,6 +80,7 @@ export type Bubble = {
 	tone: string?,
 	scenarioId: string?,
 	shownAt: number,
+	since: number?, -- thoughts: when this request first showed (a repeated thought keeps it)
 	expiresAt: number?,
 }
 
@@ -150,13 +154,19 @@ function Bubbles:thought(entityId: any, data: any): Bubble?
 		return nil
 	end
 	local now = self._now()
+	local scenarioId = if type(data.scenarioId) == "string" then data.scenarioId else nil
+	local repeated = current ~= nil
+		and current.kind == "thought"
+		and current.scenarioId == scenarioId
+		and current.text == text
 	local bubble: Bubble = {
 		entityId = entityId,
 		kind = "thought",
 		text = text,
 		glyph = Bubbles.ICON[data.icon] or Bubbles.ICON.request,
-		scenarioId = if type(data.scenarioId) == "string" then data.scenarioId else nil,
+		scenarioId = scenarioId,
 		shownAt = now,
+		since = if repeated and current then current.since or current.shownAt else now,
 		expiresAt = now + self._config.thoughtSec,
 	}
 	self._bubbles[entityId] = bubble
@@ -201,6 +211,19 @@ function Bubbles:release(entityId: number)
 	end
 	self._bubbles[entityId] = nil
 	self._striking[entityId] = nil
+end
+
+-- Open requests: "!" thoughts that have not expired, in no particular order (Feedback/Requests orders).
+function Bubbles:requests(): { { entityId: number, since: number } }
+	local now = self._now()
+	local out = {}
+	for entityId, bubble in self._bubbles do
+		local live = bubble.expiresAt == nil or bubble.expiresAt > now
+		if bubble.kind == "thought" and bubble.glyph == Bubbles.ICON.request and live then
+			table.insert(out, { entityId = entityId, since = bubble.since or bubble.shownAt })
+		end
+	end
+	return out
 end
 
 -- Removes expired thoughts and reactions; returns their ids.

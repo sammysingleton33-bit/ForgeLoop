@@ -6,8 +6,8 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | **B14 merged (2026-10-15): main `3691475`** (#85 → #108 → #84 → #121 → #126), sent to FORGE-00 to build and deliver. Next: **B15** (★ D-040, FORGE-00 plan): (1) FORGE-02 farm/plot clearance (own PR) then the world trim; (2) rotation: FORGE-03 Build-rail B1 + plot Turn on `Build.PlaceSlot(…, turn?)` (CONTRACTS g9h, FORGE-01 server); (3) bubbles: FORGE-04 `CitizenBubbleController` (always-on-top, tap selects); (4) FORGE-02 env/citizen polish where ready. Cut B15 when 1–3 are in; don't wait for polish. The team was stopped about 36 h by the weekly limit (Oct 13 20:35 → Oct 15) |
-| Last verified check | B14 set on `ec44e94` (merged main tree `830abd7` identical): check.sh PASS (framework 517/0, game-001 1304/0), FL-0100/0053/0062 mutation rows all caught, own g9f mutants 4/4, B14 end-to-end probe 9/9, ownership PASS ×5, validate 111/0 |
+| Current task | **B16 merged (2026-10-15 19:15): main `e447364`**, sent to FORGE-00. It holds interim environment art (#141, D-051), pad turn R1/L1 (#139) and walls joining (#136); #138 citizens moved to B17 (celebrate clip). **B17 = base editing on its own** (FORGE-00): #140 FL-0119 (needs rebase), #142 FL-0121, FL-0120 UI, #138 + Pose fix. Queue: #145 FL-0122 hardening, #144, #146, #130, #129, #127, #125, #124, #123, #118, #110, #100 (held), #90 |
+| Last verified check | B16 `e447364`: integration 15/0, economy 316/0, world 142/0, place check PASS; gates: #136+#139 check.sh 1411/0, READY set 1359/0, art 1378/0, #96 1362/0 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
 | In review / queued | No ★ PRs open after B14. Not ★ (wait for FORGE-07 or a FORGE-00 ★): #130, #129, #128, #127, #125, #124, #123, #118, #110, #102 (mine), #100, #98, #96, #94, #90, #82, #64 |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
@@ -122,6 +122,18 @@ _Maintained by the worker. Keep it short and current._
 | #84 | FORGE-04 FL-0100 (1/2) conversation camera (B14) | `5eba538` |
 | #121 | FORGE-04 FL-0100 (2/2) reaction poses (B14) | `2bffebf` |
 | #126 | FORGE-03 FL-0099 cinematic conversation UI (B14 = this sha) | `3691475` |
+| #131 | FORGE-01 FL-0112 farm and plot clearance (B15) | `81f9637` |
+| #134 | FORGE-04 B14 Studio probes (docs) | `c651ff4` |
+| #133 | FORGE-04 FL-0115 bubble readability (B15) | `d5587b7` |
+| #132 | FORGE-01 FL-0113 PlaceSlot turn (B15) | `f36b1f0` |
+| #137 | FORGE-04 FL-0115 hover and selection outlines (B15) | `e7ab2f5` |
+| #135 | FORGE-03 FL-0114 rotation UI (B15 = this sha) | `b2e3164` |
+| #96 | FORGE-00 FL-0083 SPEC v1.5 / CONTRACTS g10 | `3add643` |
+| #128 #94 #82 #64 #98 #102 | FORGE-07 READY set (combined gate) | `f11817c` … `9d02bc2` |
+| #141 | FORGE-02 FL-0117 interim environment art (B16) | `d9bb32a` |
+| #143 | FORGE-04 hover-clear spec | `c2f1e7b` |
+| #136 | FORGE-01 wallGap (B16) | `dffa488` |
+| #139 | FORGE-03 pad turn R1/L1 (B16 = this sha) | `e447364` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

@@ -15,8 +15,9 @@ Each section ends with its own **History** (D-038 (7)): a change to one feature 
 Needs: nothing beyond the build (AnalyticsService has no hard dependencies).
 1. Play Solo. In Output, filter `analytics`.
 2. Expect once at start: `analytics: Studio session — calls are logged here but Roblox records nothing from Studio`.
-3. When FORGE-01's PlayerReady exists: `analytics event SessionStart ... sent=true`.
-4. Stop the session: `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`.
+3. When your kingdom is joined (game-001 starts sessions on `KingdomJoined`, FL-0063): `analytics event SessionStart ... sent=true`, then `analytics funnel VS1 step=1 stepName=Spawn`.
+4. Play in order (gather, place, wait for the building, recruit, capture). One `analytics funnel VS1 ... sent=true` line appears the first time each happens. Repeats print nothing. A step done out of order (for example a capture before your first recruit) prints nothing either, and is credited only after the earlier steps.
+5. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `analytics event SessionEnd value=<seconds> CustomField01=<last activity>`. The last activity is your own last logged step, not `ResourceGathered` from the citizens.
 Pass: no analytics line at `error` level; no script error mentioning AnalyticsService.
 
 History:
@@ -256,6 +257,13 @@ Steps
 9. Aerial readability: Play, stay in the aerial view at the start zoom, run `vs1.request` three or four times. Every request shows a badge you can spot at a glance, none hidden by a roof, tree or another bubble; the nearest ones show their words. A new request's badge pops once. Zoom all the way out: the badges stay the same size and at most one bubble keeps its words. Device emulator, a phone: badges, at most two with words.
 10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
 11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
+12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
+13. Off-screen requests (B16): run `vs1.request` a few times, then pan the aerial view away from those citizens until their badges leave the screen. A gold "!" badge appears at the screen edge for each, with a gold tip pointing towards the citizen, never under the top bar, a phone's notch, the HUD rail, the crest and pills, or the bottom bar; requests that lie the same way share one badge with a count. Tap one: the camera glides there and the citizen's card opens. Pan away again and press the cycle key (table): it goes to the oldest open request, then the next, and wraps; the previous key goes back. While placing a building, in walk mode and while the conversation stage shows, there are no edge badges and the keys do nothing.
+
+| Action | Windows | Mac | Gamepad |
+|---|---|---|---|
+| Next open request | F | F | DPad right |
+| Previous open request | Shift+F | Shift+F | DPad left |
 
 Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
 ```lua
@@ -272,11 +280,28 @@ return #out .. " bubbles\n" .. table.concat(out, "\n")
 ```
 Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
 
-Pass: steps 1–11 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
+Probe for step 13 (Client context, read-only): the edge badges now.
+```lua
+local out = {}
+local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("ForgeRequestIndicators")
+for _, b in (gui and gui:GetChildren() or {}) do
+	if b:IsA("TextButton") and b.Visible then
+		local count = b:FindFirstChild("Count")
+		table.insert(out, string.format("id=%s at=(%d,%d) angle=%d count=%s", tostring(b:GetAttribute("EntityId")),
+			b.AbsolutePosition.X, b.AbsolutePosition.Y, b.Pointer.Rotation, count.Visible and count.Text or "1"))
+	end
+end
+return (gui and "area " .. tostring(gui.AbsoluteSize) or "no indicator GUI") .. "\n" .. table.concat(out, "\n")
+```
+Expected: one line per off-screen request group, every badge inside `area`; none in build mode, walk mode or a conversation.
+
+Pass: steps 1–13 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+- 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
+- 2026-10-15 FORGE-04: FL-0115 (B16) off-screen request badges and the cycle key (step 13, its probe; Windows/Mac/gamepad keys, D-049 (4)).
 - 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
@@ -375,3 +400,49 @@ Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Stud
 History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
+
+## E11 — Back key (FL-0053, game-001)
+
+Needs: FORGE-03's conversation stage and drawer menus registered with `InputModeController:onBack` (#126 L6). Until they are on the build, write "blocked: needs FORGE-03's back subscription".
+
+| Rule | Expected |
+|---|---|
+| Keys | gamepad B and keyboard Backspace (a Mac's delete key); Esc only opens Roblox's menu |
+| Topmost wins | one press closes only the panel opened last (a drawer opened over the stage closes first) |
+| Build mode | B and X leave build mode; that press never also counts as back |
+| GUI first | Backspace while typing in a text box closes nothing; with a gamepad on a GUI button, the first B leaves the selection and the next B is back |
+
+Steps
+1. Play Solo. Open a conversation with a citizen. Press Backspace: the stage closes. Open it again and press Esc: Roblox's menu opens, and the stage stays open behind it.
+2. With a gamepad (or the emulator's gamepad), open a conversation and press B: the stage closes. Open it again, move the selection onto an answer button, and press B: the selection leaves the button and the stage stays open. Press B again: it closes.
+3. Open the build menu and start placing. Press B: placement ends (explore mode) and nothing else closes. Press B again: back now acts as usual.
+4. Type in any text box (chat, a name field), including Backspace: no panel closes.
+5. Open a drawer menu, then a conversation over it (or the reverse). Each press closes one panel, the last opened first. On a Mac, the delete key works like Backspace.
+
+Pass: steps 1–5 hold.
+
+History:
+- 2026-10-13 FORGE-04: written (FL-0053 follow-up, FORGE-05's #126 L6).
+- 2026-10-15 FORGE-04: topmost wins (`onBack`, FORGE-07's #130 L1); step 5, Mac delete key.
+
+## E12 — Base editing: input and camera (FL-0121, game-001)
+
+Needs: FORGE-01's move remotes (FL-0119: `Build.CanMove`, `Build.Move`, `Build.MoveToSlot`) and FORGE-03's edit UI (FL-0120), which sets `InputModeController:set("edit")` and calls `RulerCameraController:setEditDrag(true/false)` around a drag. Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
+
+| Rule | Expected |
+|---|---|
+| Taps while editing | only your own buildings and your own kingdom's plots are selected; citizens, a rival's buildings and plots, and the ground select nothing |
+| Camera | edit mode uses the aerial view (walk mode comes back after, unless you chose a view meanwhile); selecting one of your buildings pans to it |
+| Dragging a building | the drag never pans the view; holding the pointer near a screen edge (about 48 px) pans that way, faster nearer the edge |
+| Leaving | X or gamepad B leaves edit mode; hover outlines and citizen bubbles take no input while editing |
+
+Steps
+1. Enter edit mode (FORGE-03's Edit button). Tap a citizen, a rival's building, the ground: nothing is selected. Tap one of your buildings: it is selected and the view pans to it. Tap a free plot of yours: it is selected as a target.
+2. Drag a building across the screen: the view stays still. Hold it near the right edge: the view pans right; near the top: forward. Drop it: the panning stops.
+3. Phone emulator: the same with one finger; a one-finger drag of the building never pans.
+4. Press X (or gamepad B): edit mode ends; from walk mode, the walk view comes back.
+
+Pass: steps 1–4 hold.
+
+History:
+- 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).

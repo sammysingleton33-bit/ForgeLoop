@@ -12,6 +12,8 @@
 
 	PROVISIONAL — user decision pending (BRIEF §16.4): victory = last keep standing ends the match early,
 	otherwise most Crown Points at the end of Endgame, equal points share the win.
+	rulerMaxSpeed: the fastest a ruler's character counts as moving in the simulation (MatchHost position clamp).
+
 	PROVISIONAL — user decision pending (BRIEF §16.2): PvP between kingdoms. Off by default (the VS-1
 	minimum). When enabled: war declarations from Conflict on, peace by mutual consent, no betrayal.
 ]]
@@ -36,4 +38,8 @@ return {
 	victory = { conquest = true, crownPointsAtEnd = true }, -- PROVISIONAL (BRIEF §16.4)
 	pvp = { enabled = false, peaceCooldown = 120, proposalSeconds = 60 }, -- PROVISIONAL (BRIEF §16.2)
 	crown = { buildingLevel = 5, conquest = 300, unitKill = 2 },
+	-- The server never trusts a ruler's reported position further than it could have walked (D-050 (6b), FL-0122):
+	-- what the sim sees of a character moves toward the reported position at most this fast. The client's sprint is
+	-- 24 studs/s; the rest is room for lag bursts and slopes. A teleport still arrives, but at this speed.
+	rulerMaxSpeed = 40, -- studs per second
 }

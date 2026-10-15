@@ -79,6 +79,106 @@ local TEXT_LIMITS = { thought = 48, question = 160, response = 70, reaction = 80
 local THOUGHT_ICONS = { request = true, concern = true, idea = true } -- CONTRACTS G13.3
 local REACTION_TONES = { happy = true, angry = true, sad = true, neutral = true } -- CONTRACTS G13.3
 local RELATION_FLAGS = { family = "citizen.has_family", friend = "citizen.has_friend", rival = "citizen.has_rival" }
+-- Presentation vocabulary (content/SPEC.md §5.10; FORGE-06's measured vocabulary, D-035 (4)). tools/tests/test_content.py
+-- checks that these lists equal tools/content/content.py, so the two cannot drift apart.
+local EMOTIONS = {
+	"determination",
+	"frustration",
+	"gratitude",
+	"relief",
+	"joy",
+	"excitement",
+	"worry",
+	"suspicion",
+	"anger",
+	"fear",
+	"contempt",
+	"sadness",
+	"neutral",
+	"hope",
+	"amusement",
+	"curiosity",
+	"defiance",
+	"pride",
+	"embarrassment",
+	"grief",
+}
+local EXPRESSIONS = {
+	"smile",
+	"frown",
+	"smirk",
+	"beam",
+	"neutral",
+	"grin",
+	"raised_brow",
+	"scowl",
+	"eye_roll",
+	"wide_eyed",
+	"downcast",
+	"teary",
+	"sheepish",
+}
+local GESTURES = {
+	"nod",
+	"shrug",
+	"hand_on_heart",
+	"cross_arms",
+	"none",
+	"point",
+	"fist_pump",
+	"head_down",
+	"throw_up_hands",
+	"wring_hands",
+	"salute",
+	"scratch_head",
+	"lean_in",
+	"hold_up",
+	"glance_around",
+	"hands_on_hips",
+	"rub_neck",
+	"bow",
+	"wave",
+	"step_back",
+	"raise_hand",
+}
+local DELIVERIES = {
+	"warm",
+	"blunt",
+	"deadpan",
+	"cheerful",
+	"excited",
+	"grumbling",
+	"sarcastic",
+	"solemn",
+	"urgent",
+	"proud",
+	"hushed",
+	"nervous",
+	"formal",
+	"pleading",
+	"playful",
+}
+local URGENCIES = { "low", "normal", "high", "critical" }
+local DELIVERY_MODES = { "ambient", "direct" }
+-- the emotions that fit each reaction tone (a reaction's emotion must be one of its tone's)
+local TONE_EMOTIONS = {
+	happy = { "joy", "gratitude", "pride", "relief", "hope", "amusement", "excitement", "determination" },
+	neutral = {
+		"neutral",
+		"determination",
+		"curiosity",
+		"suspicion",
+		"amusement",
+		"worry",
+		"hope",
+		"frustration",
+		"relief",
+	},
+	angry = { "frustration", "anger", "contempt", "defiance", "suspicion" },
+	sad = { "sadness", "grief", "worry", "fear", "embarrassment" },
+}
+local CUE_IDS = { "celebrate", "grumble", "salute", "bow", "cower", "strike_placard", "work_fast", "rest", "hammer" }
+local BUBBLE_S_MIN, BUBBLE_S_MAX = 2.5, 9
 -- model decision 6 guards (content/SPEC.md §5.4 and §6.6)
 local MAX_DURATION_S = 600
 local STRIKE_MAX_SHARE = 0.5
@@ -106,6 +206,14 @@ local function count(t: { [any]: any }): number
 		n += 1
 	end
 	return n
+end
+
+local function setOf(list: { string }): { [string]: boolean }
+	local out = {}
+	for _, v in list do
+		out[v] = true
+	end
+	return out
 end
 
 local function textLength(s: string): number
@@ -454,6 +562,160 @@ describe("Dialogue", function()
 					error(`response {r.id}: text or reaction over its length limit`)
 				end
 				expect(ContentQuery.decisionEffects(r.decision)).toBeTruthy()
+			end
+		end
+	end)
+end)
+
+describe("presentation (SPEC §5.10)", function()
+	local EMOTION, EXPRESSION, GESTURE, DELIVERY =
+		setOf(EMOTIONS), setOf(EXPRESSIONS), setOf(GESTURES), setOf(DELIVERIES)
+	local FITS = {}
+	for tone, emotions in TONE_EMOTIONS do
+		FITS[tone] = setOf(emotions)
+	end
+
+	-- One line's optional tags: each from the vocabulary, the emotion fitting the tone, the bubble time in range.
+	local function checkTags(where: string, line: { [string]: any }, prefix: string, tone: string?)
+		local function tag(name: string, allowed: { [string]: boolean })
+			local value = line[prefix .. name]
+			if value ~= nil and not allowed[value] then
+				error(`{where}: {prefix}{name} '{tostring(value)}' is not in the SPEC §5.10 vocabulary`)
+			end
+		end
+		tag("emotion", EMOTION)
+		tag("expression", EXPRESSION)
+		tag("gesture", GESTURE)
+		tag("delivery", DELIVERY)
+		local emotion = line[prefix .. "emotion"]
+		if emotion ~= nil and tone ~= nil and not FITS[tone][emotion] then
+			error(`{where}: emotion '{emotion}' does not fit tone '{tone}'`)
+		end
+		local bubble = line.bubble_s
+		if prefix == "" and bubble ~= nil then
+			if type(bubble) ~= "number" or bubble < BUBBLE_S_MIN or bubble > BUBBLE_S_MAX then
+				error(`{where}: bubble_s {tostring(bubble)} outside {BUBBLE_S_MIN}..{BUBBLE_S_MAX}`)
+			end
+			if math.abs(bubble * 10 - math.round(bubble * 10)) > 1e-9 then
+				error(`{where}: bubble_s {bubble} has more than one decimal`)
+			end
+		end
+	end
+
+	it("defines the measured vocabulary, every emotion fitting some tone and every cue gesture a known cue", function()
+		expect(#EMOTIONS).toBe(20)
+		expect(#EXPRESSIONS).toBe(13)
+		expect(#GESTURES).toBe(21)
+		expect(#DELIVERIES).toBe(15)
+		expect(DELIVERY.defiant).toBeNil()
+		local fitting = {}
+		for _, emotions in TONE_EMOTIONS do
+			for _, e in emotions do
+				expect(EMOTION[e]).toBe(true)
+				fitting[e] = true
+			end
+		end
+		expect(count(fitting)).toBe(#EMOTIONS)
+		local cues = setOf(CUE_IDS)
+		for gesture, cue in ContentQuery.GESTURE_CUE do
+			expect(GESTURE[gesture]).toBe(true)
+			expect(cues[cue]).toBe(true)
+		end
+	end)
+
+	-- Every optional tag of a generated Dialogue module (real or fixture) is well-formed; traits = known trait ids.
+	local function checkDialogue(dialogue: any, traits: { [string]: any })
+		local URGENCY, MODE = setOf(URGENCIES), setOf(DELIVERY_MODES)
+		for _, id in dialogue.order do
+			local s = dialogue.scenarios[id] :: any
+			local where = `scenario {id}`
+			if s.urgency ~= nil and not URGENCY[s.urgency] then
+				error(`{where}: urgency '{tostring(s.urgency)}' is not low, normal, high or critical`)
+			end
+			if s.delivery_mode ~= nil and not MODE[s.delivery_mode] then
+				error(`{where}: delivery_mode '{tostring(s.delivery_mode)}' is not ambient or direct`)
+			end
+			checkTags(where, { bubble_s = s.thought_bubble_s }, "", nil)
+			checkTags(where, s, "question_", nil)
+			for _, r in s.responses do
+				checkTags(`response {r.id}`, r, "", r.tone)
+				for band, line in r.bands or {} do
+					if band ~= "high" and band ~= "low" then
+						error(`response {r.id}: unknown loyalty band '{tostring(band)}'`)
+					end
+					if type(line.text) ~= "string" or not REACTION_TONES[line.tone] then
+						error(`response {r.id}: the {band} band needs a text and a contracted tone`)
+					end
+					if textLength(line.text) > TEXT_LIMITS.reaction then
+						error(`response {r.id}: the {band} reaction is over its length limit`)
+					end
+					checkTags(`response {r.id} ({band})`, line, "", line.tone)
+				end
+			end
+			local previous = 0
+			for _, v in s.variants or {} do
+				if type(v.order) ~= "number" or v.order <= previous then
+					error(`{where}: variants not strictly sorted by order at {tostring(v.id)}`)
+				end
+				previous = v.order
+				if (v.trait == nil) == (v.cond == nil) then
+					error(`{where}: variant {v.id} needs exactly one selector (trait or cond)`)
+				end
+				if v.trait ~= nil and traits[v.trait] == nil then
+					error(`{where}: variant {v.id} names unknown trait {v.trait}`)
+				end
+				if textLength(v.text) > TEXT_LIMITS.question then
+					error(`{where}: variant {v.id} is over the question's length limit`)
+				end
+				checkTags(`variant {v.id}`, v, "", nil)
+			end
+		end
+	end
+
+	it("gives scenarios, reactions and question variants only well-formed optional tags", function()
+		checkDialogue(Dialogue, Traits)
+	end)
+
+	it("accepts the generator's full presentation shape (fixture) and catches a tag outside the vocabulary", function()
+		-- PresentationDialogue.luau: the generated Dialogue.luau with every presentation column in use
+		local fixture = require("./PresentationDialogue") :: any
+		local fixtureTraits = { kind = true, cruel = true, brave = true, timid = true, greedy = true, devout = true }
+		checkDialogue(fixture, fixtureTraits)
+		local s = fixture.scenarios.s_hungry_farmer
+		expect(s.urgency).toBe("high")
+		expect(s.responses[1].bands.high.emotion).toBe("joy")
+		expect(#s.variants).toBe(2)
+		-- a copy with an emotion that does not fit its tone is caught (the checker is not vacuous)
+		local bad = table.clone(s.responses[1])
+		bad.emotion = "anger"
+		local broken = table.clone(s)
+		broken.responses = { bad }
+		expect(function()
+			checkDialogue({ order = { "s_hungry_farmer" }, scenarios = { s_hungry_farmer = broken } }, fixtureTraits)
+		end).toThrow("emotion 'anger' does not fit tone 'happy'")
+	end)
+
+	it("lets ContentQuery present every scenario and reaction of the library", function()
+		for _, id in Dialogue.order do
+			local s = Dialogue.scenarios[id] :: any
+			expect(ContentQuery.presentation(id)).toBeA("table")
+			-- a citizen no variant selects (no traits, empty ctx) gets the scenario's own question
+			local plain = ContentQuery.questionFor(id, { traits = {} }, {}) :: any
+			if s.variants == nil then
+				expect(plain.text).toBe(s.question)
+				expect(plain.variantId).toBeNil()
+			end
+			for _, r in s.responses do
+				local base = ContentQuery.reactionFor(r.id, 50) :: any
+				expect(base.band).toBe("base")
+				expect(base.text).toBe(r.reaction)
+				expect(base.tone).toBe(r.tone)
+				for _, loyalty in { 0, 100 } do
+					local shown = ContentQuery.reactionFor(r.id, loyalty) :: any
+					local band = if loyalty >= ContentQuery.LOYALTY_BANDS.high then "high" else "low"
+					local line = if r.bands then r.bands[band] else nil
+					expect(shown.text).toBe(if line then line.text else r.reaction)
+				end
 			end
 		end
 	end)

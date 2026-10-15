@@ -210,6 +210,28 @@ tracker on the phone, the summary on the phone and on desktop.
 8. Two-kingdom test (if the match allows switching): after you move to another kingdom the numbers
    read "–" for a moment, then that kingdom's counts; − sends that kingdom's count − 1.
 
+## U17 — turning a building (P2; the user's first Studio feedback 2026-10-13)
+1. Desktop, aerial camera: **Build** → Farm → **Place Farm**. The bar's **Turn** button shows the rotate
+   icon, the word "Turn" and a round dial with an arrow; above the bar: "… R turns (Shift+R back) …".
+   On the ghost: a cream strip on one edge (the door side) and a cream arrow pointing out of it.
+2. Press **R**: the ghost turns a quarter counter-clockwise (seen from above), the arrow with it, and
+   the dial's arrow points the same way as the ghost's arrow on screen. **Shift+R** turns it back.
+   Click **Turn** on the bar: the same as R.
+3. Rotate the camera (Q/E or right-drag), then move the mouse a little: the dial follows the camera
+   (it shows where the door faces on screen now). Place it: the building stands the way the arrow
+   pointed (its door on the strip's side).
+4. Gamepad (if available): **R1** turns, **L1** turns back; **Y** still switches the camera view and the ghost does not turn on it.
+5. Phone (emulator): the bar keeps Turn as a 70 × 44 button with the icon and the dial (no word); a tap
+   turns the ghost. The name, cost and verdict stay readable.
+6. Plot turn (FORGE-01's v0.4-g9h server, #132): tap a free medium plot, pick Storehouse. Under the
+   build time: the dial, "Faces the street" and **Turn**; on the plot a ghost with the door strip and
+   arrow, inside the plot's outline. Turn → "Faces right" (the ghost turns inside the outline), again
+   → "Faces away", again → "Faces left". Build it: it stands that way.
+7. Same plot, **Barracks**: Turn only switches between "Faces the street" and "Faces away" (34 × 22 does
+   not fit the 36 × 30 plot turned a quarter).
+8. Phone: the plot detail shows a "Faces …" chip beside the build time and a Turn button left of
+   "Build … here"; the price stays visible without scrolling.
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 

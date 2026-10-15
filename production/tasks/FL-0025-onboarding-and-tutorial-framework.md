@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0023]
 estimate_h: 6
 evidence:
@@ -16,6 +16,7 @@ evidence:
   - "funnel step per completed step and no step after skip: games/game-001/tests/experience/Onboarding.spec.luau (8) and roblox/tests/unit/experience/Onboarding.spec.luau"
   - "unverified: Studio walkthrough E6 not run; needs FORGE-01 KingdomJoined/G9 producers, WorldService tags and FORGE-03 HUD targets on the build"
   - "check.sh OVERALL PASS @7ee0f3c: framework 472, game-001 87 specs; mutations FL-0025 14/14 CAUGHT"
+  - Onboarding.spec, AnalyticsSchema.spec, game AnalyticsConfig.spec pass; mutations.py FL-0025 17/17
 ---
 
 # Onboarding and tutorial framework
@@ -44,3 +45,4 @@ Lune specs for step progression, skip, persistence, triggers; fresh-player Studi
 - 2026-10-12 forge-04: BUILDING → TESTING. Reconciled: startOn KingdomJoined, G9 triggers via Subjects + game-001 Signals, session-only progress (D-027); headless gates on 4054eab.
 - 2026-10-12 forge-04: TESTING → REVIEW. PR from forge/04-experience-fl0025, stacked on FL-0024. Studio walkthrough: roblox/studio-tests/experience.md E6.
 - 2026-10-12 forge-04: REVIEW → REVIEW. Follow-up in PR #22: idle hints from config (framework holds no game text, D-026), generic ReachedTarget detector, neutral fixtures.
+- 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-00 doc review M8: Subjects.missing + Onboarding.events; OnboardingService refuses a config listening to an event no resolver covers (logged as an error) instead of a step that never completes; game-001 spec covers Onboarding.luau and Analytics.luau. M9: interfaces §8 text proposed in handoff forge-04-to-forge-00-03-doc-review-fixes. AnalyticsService's boot check follows after #64.
