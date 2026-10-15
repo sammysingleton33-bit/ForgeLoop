@@ -363,6 +363,7 @@ function KingdomService:_spawn(player: any)
 		end
 		local plot = Layout.WORLD.plots[kingdomId]
 		self.adapter.pivot(character, plot.spawn)
+		self._match.host:snapRuler(userId) -- the server moved the character: the position clamp starts over here
 		local view = self:getKingdom(kingdomId)
 		for _, accessory in Kit.regalia(view.color) do
 			self.adapter.attach(character, accessory)
