@@ -263,7 +263,7 @@ Rules under test (headless: `games/game-001/tests/experience/ReactionPoses.spec.
 | Rule | Value |
 |---|---|
 | Poses | cheer (happy), grumble (angry), slump (sad), salute (neutral); bow and cower for those consequence cues |
-| Length | 1.4–2.0 s each, easing in over 0.25 s and out over 0.35 s; never longer than the server's 4 s hold |
+| Length | 1.4–2.0 s each, easing in over 0.25 s and out over 0.35 s; well inside the server's hold after Choose (until EndConversation, at most 12 s, v0.4-g9f) |
 | Bounds | every joint within Sim/Pose limits (arms ≤ 150°, head ≤ 30°), torso lift ≤ 2 studs |
 | Reduced motion | the key pose is held still until the panel closes; no movement |
 | Portrait and rig | the same pose data drives both (`Feedback/ReactionPoses`) |
@@ -274,10 +274,23 @@ Steps
 3. Settings → Reduced Motion on: the portrait holds the key pose without moving and rests when the panel closes.
 4. A farmer or woodcutter holding a tool: note how the tool reads during cheer and cower (it follows the arm; a headless silhouette render showed the rake across the body).
 
+Operator probe (one `execute_luau`, Client context, read-only; **unverified**), within about 2 s of an answer: the portrait's joints turned more than 5° from rest. Expected: two or more (both shoulders in a cheer), "at rest" about 2 s later; with Reduce Motion, held until the stage closes.
+```lua
+local out = {}
+for _, d in game.Players.LocalPlayer.PlayerGui:GetDescendants() do
+	if d:IsA("Motor6D") and d.Part0 and d.Part1 and d:FindFirstAncestorWhichIsA("ViewportFrame") then
+		local _, angle = ((d.Part0.CFrame * d.C0 * d.C1:Inverse()):Inverse() * d.Part1.CFrame):ToAxisAngle()
+		if math.deg(angle) > 5 then table.insert(out, d.Name .. "=" .. math.floor(math.deg(angle))) end
+	end
+end
+return #out > 0 and table.concat(out, " ") or "at rest (or no portrait showing)"
+```
+
 Pass: steps 1–3 hold. Screenshot each gesture on the portrait (FL-0100's visual evidence; the headless render is a box silhouette, not Studio).
 
 History:
 - 2026-10-13 FORGE-04: written (FL-0100 (2/2)).
+- 2026-10-15 FORGE-04: operator probe (B14 checklist); hold until EndConversation, at most 12 s (v0.4-g9f).
 
 ## E10 — Conversation camera (FL-0100 (1/2), game-001)
 Needs:
@@ -308,7 +321,28 @@ Steps
 8. Open a conversation, switch to walk mode, close the panel, and come back to the aerial view a while later. The view is your normal overview, with no jump back to the old conversation.
 9. During a conversation, zoom in (wheel or pinch): the camera doesn't move out. Zoom out: it does.
 
+Operator probes (one `execute_luau` each, Client context, read-only; **unverified**). E10a, stage open: the rig nearest the view's line, its distance, pitch, head top on screen, and flat angles: its facing against your ruler (`facesRuler`, g9e) and the camera (`facesCam`), and the camera off the citizen-to-ruler line (`camOffLine`); -1 = no ruler character. Expected: `dist` about 30; phone `headTopY` 26–31 %; with a ruler, `facesRuler` and `camOffLine` small, so `facesCam` small (large `facesCam` with small `facesRuler` = the camera is off, not the citizen); without one, `facesCam` small after the followed turn.
+```lua
+local cam, best, bestOff = workspace.CurrentCamera, nil, nil
+for _, m in workspace.KingdomEntities:GetChildren() do
+	local rel = m:IsA("Model") and m:GetPivot().Position - cam.CFrame.Position
+	local along = rel and rel:Dot(cam.CFrame.LookVector) or 0
+	local off = along > 0 and (rel - cam.CFrame.LookVector * along).Magnitude
+	if off and (not bestOff or off < bestOff) then best, bestOff = m, off end
+end
+if not best then return "no rig in front of the camera" end
+local function flat(a, b) a, b = a * Vector3.new(1, 0, 1), b * Vector3.new(1, 0, 1) return (a.Magnitude < 1e-3 or b.Magnitude < 1e-3) and -1 or math.deg(math.acos(math.clamp(a.Unit:Dot(b.Unit), -1, 1))) end
+local cf, size = best:GetBoundingBox()
+local head = cam:WorldToViewportPoint(cf.Position + Vector3.new(0, size.Y / 2, 0))
+local char = game.Players.LocalPlayer.Character
+local root, look, toCam = char and char:FindFirstChild("HumanoidRootPart"), best:GetPivot().LookVector, cam.CFrame.Position - cf.Position
+local toRuler = root and root.Position - cf.Position
+return string.format("id=%s dist=%.1f pitch=%.0f headTopY=%.0f%% facesRuler=%.0f facesCam=%.0f camOffLine=%.0f", tostring(best:GetAttribute("EntityId")), toCam.Magnitude, math.deg(math.asin(-cam.CFrame.LookVector.Y)), head.Y / cam.ViewportSize.Y * 100, toRuler and flat(look, toRuler) or -1, flat(look, toCam), toRuler and flat(toCam, toRuler) or -1)
+```
+E10b, before opening and after closing; the lines should match: `local cf = workspace.CurrentCamera.CFrame local _, yaw = cf:ToOrientation() return string.format("pos=(%.1f, %.1f, %.1f) yaw=%.1f", cf.X, cf.Y, cf.Z, math.deg(yaw))`
+
 Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Studio evidence).
 
 History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
+- 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).

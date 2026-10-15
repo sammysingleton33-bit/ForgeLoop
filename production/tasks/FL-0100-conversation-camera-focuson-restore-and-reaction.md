@@ -21,6 +21,7 @@ evidence:
   - ReactionPoses.spec 8/8; mutations FL-0100 16/16 (9 new rows); headless silhouette render of all six poses reviewed (box render, not Studio)
   - ReactionPoses.spec 8/8; mutations FL-0100 on #121 all caught
   - "B14 gates: check.sh PASS (game-001 1304/0), validate 111/0, E2E probe 9/9; main 3691475"
+  - docs only; probes not yet run in Studio
 ---
 
 # Conversation camera focusOn/restore and reaction poses (G13.8)
@@ -58,3 +59,4 @@ When a conversation opens, the camera glides from the aerial view toward the cit
 - 2026-10-13 forge-04: TESTING → TESTING. Part 2 (reaction poses) on forge/04-experience-fl0100b, stacked on #84: Feedback/ReactionPoses (cheer, grumble, slump, salute, bow, cower; Sim/Pose joint format, within Pose.LIMITS, eased, reduced-motion still pose) and FeedbackPoseController (portrait via Kit.posePortrait, following ConversationController.reacted/closed when present). World rig: FORGE-01's proposed playPose samples ReactionPoses (handoff).
 - 2026-10-13 forge-04: TESTING → TESTING. Part 2 follows FORGE-03's FL-0099 (#126) as built: no reacted signal is needed. FeedbackPoseController tracks the talking citizen through opened/closed and poses conversation.stage.portrait.model from that citizen's reaction tone (EntityController.event 'reaction', G13.3) or a reaction-pose cue.
 - 2026-10-15 forge-05: TESTING → REVIEW. Merged #84 (5eba538) and #121 (2bffebf) in the B14 set; FL-0100 mutation rows all caught; only G6 (B14 checklist B2/B5/B7, C1-C5) left; nit: ReactionPoses header says 4 s
+- 2026-10-15 forge-04: REVIEW → REVIEW. B14 follow-up (FORGE-05): Studio MCP operator probes in experience.md E9 and E10a/E10b (unverified, read-only execute_luau); ReactionPoses header and E9 now say the hold lasts until EndConversation, at most 12 s (v0.4-g9f)

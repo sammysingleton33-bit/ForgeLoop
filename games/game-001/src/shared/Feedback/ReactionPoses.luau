@@ -15,8 +15,9 @@
 		ReactionPoses.NAMES                         every reaction pose, sorted
 		ReactionPoses.has(name) -> boolean
 		ReactionPoses.forTone(tone) -> string       Bubbles.POSE (an unknown tone → neutral's pose)
-		ReactionPoses.DURATION[name] -> seconds     the whole gesture, easing in and out included (≤ 4 s:
-		                                            the server holds a citizen at most 4 s after Choose)
+		ReactionPoses.DURATION[name] -> seconds     the whole gesture, easing in and out included (≤ 4 s,
+		                                            well inside the hold after Choose: until EndConversation,
+		                                            at most 12 s, CONTRACTS v0.4-g9f)
 		ReactionPoses.sample(name, t, out?) -> Joints?
 		    t = seconds since the gesture started. Rest (every joint identity) at t ≤ 0 and t ≥
 		    DURATION; eases in over EASE_IN and out over EASE_OUT. nil for an unknown name.
