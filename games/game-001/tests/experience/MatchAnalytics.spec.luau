@@ -120,6 +120,27 @@ describe("VS-1 analytics (FL-0063)", function()
 		expect(registry:get("AnalyticsService").stats.dropped.outOfOrder).toBeGreaterThan(0)
 	end)
 
+	it("times each VS1 step after Spawn: MilestoneReached, seconds since the session started (M7)", function()
+		boot({ kingdomService(), matchService("match30") })
+		join(crimson1, "crimson")
+		env.wait(30)
+		GameEvents.ResourceGathered:fire(crimson1, "crimson", "wood", 5, "ruler")
+		env.wait(45)
+		GameEvents.BuildingPlaced:fire(
+			{ id = 1, type = "house", level = 1, kingdom = "crimson", placedBy = crimson1.UserId },
+			crimson1
+		)
+		GameEvents.ResourceGathered:fire(crimson1, "crimson", "wood", 5, "ruler") -- a repeat: no second time
+		local timed = {}
+		for _, call in custom("MilestoneReached") do
+			table.insert(timed, { userId = call.userId, value = call.args[2], fields = call.args[3] })
+		end
+		expect(timed).toEqual({
+			{ userId = 631, value = 30, fields = { CustomField01 = "FirstGather", CustomField02 = "match30" } },
+			{ userId = 631, value = 75, fields = { CustomField01 = "FirstBuildPlaced", CustomField02 = "match30" } },
+		})
+	end)
+
 	it("logs each funnel step once per player, however often the event repeats", function()
 		boot({ kingdomService() })
 		join(crimson1, "crimson")

@@ -1,6 +1,6 @@
 # Analytics event taxonomy (FL-0023)
 
-_Owner: FORGE-04. Status: **in FORGE-00 taxonomy review** (reviews: `production/handoffs/2026-10-13-forge-00-to-forge-04-doc-reviews.md`; FL-0063 handoff `production/handoffs/2026-10-12-forge-04-to-forge-01-00-analytics-fl0063.md`). Last updated 2026-10-13._
+_Owner: FORGE-04. Status: **in FORGE-00 taxonomy review** (reviews: `production/handoffs/2026-10-13-forge-00-to-forge-04-doc-reviews.md`; FL-0063 handoff `production/handoffs/2026-10-12-forge-04-to-forge-01-00-analytics-fl0063.md`). Last updated 2026-10-15._
 
 Config files are the source of truth: `games/game-001/config/Analytics.luau` (AI Kingdoms) and `games/sandbox/config/Analytics.luau`. The adapter is `roblox/src/server/Services/AnalyticsService.luau` (interfaces §8), validated by `roblox/src/shared/Experience/AnalyticsSchema.luau`. If this page and a config disagree, the config wins and this page is the bug.
 
@@ -39,23 +39,24 @@ Consequences for this design:
 - Field values are low-cardinality categories: types, outcomes, phases, roles, small numbers (placement 1–8, streak days). **Never** user ids, names, free text, timestamps or GUIDs (Roblox groups combinations past 8,000 as "Other").
 - Custom fields never carry personal data. `env.log` analytics lines include the UserId for Studio debugging; they are not forwarded off-platform.
 - Only server code calls AnalyticsService. An event caused by a client request (e.g. SettingChanged) is logged only after the server has validated and applied it, under the per-player bucket. No event is logged on a client's report alone that something was shown or done. The one exception is onboarding's client-reported steps (InspectCitizen, AnswerCitizen; they grant nothing, G11 wording pending FORGE-00).
+- **Funnels are frozen once published** (FORGE-00 review L6): step numbers and meanings never change after the first publish, because Roblox keeps a player's saved step and a renumbered step would mix data for good. A new onboarding flow gets a new one-time funnel (`LogFunnelStepEvent` "OnboardingV2") instead of renumbering. A funnel's name is durable too: `VS1` is a working name, and FORGE-00 picks the published one before the first publish (recommended `FirstMatch`, BRIEF §13 steps kept).
 
 ## 3. Budget (AI Kingdoms, `games/game-001/config/Analytics.luau`)
 
 | Limit | Roblox cap (quote, source) | House budget | AI Kingdoms uses |
 |---|---|---|---|
-| Custom event names | 100 — "eventNames \| 100" (ET); "up to 100 custom events" (CE) | 60 | **13** |
+| Custom event names | 100 — "eventNames \| 100" (ET); "up to 100 custom events" (CE) | 60 | **14** |
 | Funnels | 10 — "Number of funnels \| 10" (ET); "Limited to 10 unique funnels per experience." (AS) | 8 | **3** (Onboarding, VS1, Return) |
 | Steps per funnel | 100 — "Limited to steps 1-100." (AS) | 30 | **≤ 6** |
 | Custom fields per event | 3 — "Number of custom fields \| 3" (ET) | 3 | **≤ 3** |
 | Custom field value combinations | 8,000 — "Limited to 8,000 unique combinations of values across the three custom fields per experience." (AS); ET says values past 8,000 are grouped as "Other". The cap is per experience, across **all** events | **total < 2,000** (house rule) | about 440 in all (below) |
-| Currency types (economy) | **5** — "Limited to 5 unique currency types per experience." (AS, EE "up to five"); ET says 10. We keep 5. | 3 | none in VS-1 (no meta currency); kingdom resources are **not** economy events |
-| Transaction types | 20 — "Limited to 20 unique types per experience." (AS) | 12 | the 6 enum names below + ≤ 6 custom |
-| Item SKUs | 100 — "Limited to 100 unique SKUs per experience." (AS) | 80 | FORGE-03 |
-| Requests per minute (all AnalyticsService calls) | "120 + (20 * CCU)" (ET) | 80% of that | adapter enforces it (below) |
+| Currency types (economy) | **5** — "Limited to 5 unique currency types per experience." (AS, EE "up to five"); ET says 10. We keep 5. | 3 (guidance, not enforced) | none in VS-1 (no meta currency); kingdom resources are **not** economy events |
+| Transaction types | 20 — "Limited to 20 unique types per experience." (AS) | 12 (guidance, not enforced) | the 6 enum names below + ≤ 6 custom |
+| Item SKUs | 100 — "Limited to 100 unique SKUs per experience." (AS) | 80 (guidance, not enforced) | FORGE-03 |
+| Requests per minute (all AnalyticsService calls) | "120 + (20 * CCU)" (ET), experience-wide (scope **unverified** until a published test place) | 80% of each server's players' share | the adapter's per-server bucket (below) |
 
 Rate cap as built (`AnalyticsService:_admit`):
-- One server bucket of `floor(0.8 × (120 + 20 × players))` requests per minute, refilled continuously. The allowance grows at once when players join.
+- One server bucket of `max(20, floor(0.8 × 20 × players))` requests per minute, refilled continuously; the allowance grows at once when players join. It counts only the server's own players' share of the experience-wide cap (FORGE-00 review L8): with the base 120 per server, two 4-player servers or four full ones bursting together could pass `120 + 20 × CCU`; with the share they never can.
 - Custom events may only use the bucket down to **25%**, so funnels and economy events keep that reserve.
 - Each player has a **30 per minute** bucket, so one player (or a client spamming a remote that leads to analytics) cannot drain the server's budget.
 - Dropped calls are counted in `stats.dropped.rate` / `.playerRate`, logged, and warned at most once per minute.
@@ -78,11 +79,12 @@ Custom field value combinations per event (the house rule counts their sum; phas
 | MatchEnded | won (3) × phase (5 playing + unknown) × mode (4) | 72 |
 | PhaseLeft | phase (5) | 5 |
 | IdleHintShown | phase (4) | 4 |
-| CelebrationShown | kind (about 5) | ~5 |
+| CelebrationShown | kind (5: kingdomFounded, keepUpgraded, objectiveCaptured, victory, defeat) | 5 |
+| MilestoneReached | milestone (5 VS1 steps after Spawn) × mode (4) | 20 |
 | SettingChanged | key × value: 5 volumes × 11 (tenths) + 4 booleans × 2 + 1 enum × 2 | 65 |
 | ConversationAnswered | occupation (12) × decision (15 content `farm_key`s today) | 180 (grows with the content: 1,200 at 100 `farm_key`s) |
 | ReputationShifted | category (6) × source (2) × phase (6) | 72 |
-| **Total** | | **about 440** |
+| **Total** | | **about 460** |
 
 A new event, field or content value that would push the total past 2,000 needs a bucket (as SettingChanged's tenths) or FORGE-00's approval.
 
@@ -113,7 +115,9 @@ One file per feature (D-038 (7)), so PRs for different features never edit the s
 
 A new feature adds its own file and one row here.
 
-## 6. Economy (`LogEconomyEvent`) — owned by FORGE-03's EconomyService
+## 6. Economy (`LogEconomyEvent`) — framework mapping (sandbox and later games)
+
+**game-001 logs no economy events** until the user decides BRIEF §16.1 and §16.5 (FORGE-00 review L1). This section maps situations to Roblox's transaction types for games that have a meta currency; it is not a plan for AI Kingdoms. The caller is FORGE-03's EconomyService.
 
 `EconomyService` is the only caller of `AnalyticsService:economy(player, flow, currency, amount, balance, txType, item?)` (interfaces §7/§8); nothing derives economy events from `CurrencyChanged`. The adapter sends `Enum.AnalyticsEconomyFlowType.Source/Sink`, requires `amount > 0` and `balance >= 0` (AS: amount "should always be positive", endingBalance "should always be greater than or equal to 0"), and warns once for each custom transaction type.
 
@@ -128,7 +132,7 @@ A new feature adds its own file and one row here.
 | Currency spent inside gameplay (e.g. entry fee) | sink | `Gameplay` |
 | Daily reward / streak | source | `TimedReward` |
 | Tutorial completion reward | source | `Onboarding` |
-| Spend tied to an immediate benefit (speed up construction, revive, reroll a quest) | sink | `ContextualPurchase` |
+| Spend tied to an immediate benefit (extra lives, Roblox's own example (EE)) | sink | `ContextualPurchase` |
 
 EE lists `IAP`, `TimedReward` and `Onboarding` as source-only and `ContextualPurchase` as sink-only. In-match resources (Food, Wood, Stone, Gold) reset every match, so they are **not** economy events: they would burn the 5-currency cap and the rate budget. Match-level resource totals belong in a `MatchEnded`-style custom event if needed.
 
@@ -146,12 +150,13 @@ So session duration is covered twice (dashboard + `SessionEnd.value`); our own e
 | Tutorial skip and where | `OnboardingSkipped` value/field = last completed step |
 | Stuck points in the tutorial | `OnboardingHintEscalated` by step |
 | Early player actions, resource and construction milestones | VS1 funnel steps 2–4 (FL-0063) |
+| Milestone timing vs the pacing targets (`config/Pacing.luau`) | `MilestoneReached`: median value by milestone, per mode (FORGE-00 review M7) |
 | Match participation / completion, pacing | VS1 step 6; `MatchEnded` (won, decided phase, duration, mode, so `match` and `match30` compare); `PhaseLeft` |
 | Living kingdom (D-030): which answers rulers give, and how reputation moves | `ConversationAnswered` (decision by occupation and phase, time to answer); `ReputationShifted` (category, source) |
 | Drop-off points | `SessionEnd.lastActivity`; VS1 step-to-step conversion; `PhaseLeft` |
 | Session duration | Dashboard; `SessionEnd.value` |
-| Dead air | `IdleHintShown` per match (PACING.md §6) |
-| Reward interactions | `CelebrationShown` (FL-0027); quests and daily rewards are FL-0026 (after VS-1) |
+| Dead air | `IdleHintShown` per match (PACING.md §6); planned: no server dead-air detector exists yet |
+| Reward interactions | `CelebrationShown` (AnnouncerService, at the G9 event); quests and daily rewards are FL-0026 (after VS-1; pending BRIEF §16.1/§16.5) |
 | Day-2 return | Return funnel (once persistence exists); dashboard D1 |
 
 ## 9. Sandbox (`games/sandbox/config/Analytics.luau`)
@@ -160,12 +165,14 @@ Same session events and onboarding events as above, plus `RoundFinished` (value 
 ## 10. How to verify (Studio, gate G6 — run by the user)
 1. Play Solo on the integrated build; open the Output window and filter for `analytics`.
 2. When the kingdom is joined, expect `analytics event SessionStart`, then `analytics funnel VS1 step=1 stepName=Spawn`; the `analytics funnel Onboarding step=1 stepName=Spawn` line may come before or after them. In Studio, either `sent=true` or `sent=false reason=error` is acceptable (unverified which, because Roblox sends nothing from Studio): judge the order and the fields only. After that comes one line per tutorial step as you complete it (full order in `roblox/studio-tests/experience.md` E6), and one `analytics funnel VS1` line the first time each of gather, place, complete, recruit and capture happens.
-3. When the match ends: `analytics event MatchEnded value=<seconds>` with won, the decided phase and the mode. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `SessionEnd`.
-4. Roblox records nothing from Studio; to check real delivery, publish to a private test place and use the View Events tool (near real time) — needs the user's account.
+3. After each later VS1 step: `analytics event MilestoneReached value=<seconds since the kingdom was joined> CustomField01=<step name> CustomField02=<mode>`. A celebrating moment (founding, keep upgrade, capture, victory, defeat) logs `analytics event CelebrationShown CustomField01=<kind>` on the server.
+4. When the match ends: `analytics event MatchEnded value=<seconds>` with won, the decided phase and the mode. Stop the session mid-match: `analytics event PhaseLeft value=<minute> CustomField01=<phase>`, then `SessionEnd`.
+5. Roblox records nothing from Studio; to check real delivery, publish to a private test place and use the View Events tool (near real time) — needs the user's account.
 
 ## History
 Each feature file keeps its own history. Changes to the shared sections above (rules, budget, measurement plan, verification):
 - 2026-10-12 FORGE-04: first version (FL-0023).
+- 2026-10-15 FORGE-04 (FORGE-00 review, after #64): M3 server producers (CelebrationShown from AnnouncerService; IdleHintShown planned); M7 `MilestoneReached`; L1 §6 is a framework mapping, no game-001 economy events; L3 house economy budgets are guidance; L6 funnels frozen once published, durable name pending FORGE-00; L8 per-server bucket = its players' share; boot check that every track rule has a resolver (M8).
 - 2026-10-13 FORGE-04 (FL-0063, FORGE-00 doc review): aligned with CONTRACTS v0.4-g8 (G9 order rule v0.4-g6, §4); step meanings for FirstGather and FirstRecruit; Return starts at session start; KingdomEliminated noted; per-event combination budget with a house total under 2,000 (ConversationAnswered drops `phase`; SettingChanged values in tenths); server-only rule (§2); daily limit reset (§1).
 - 2026-10-12 FORGE-04 (FL-0063): VS1 track rules built; sessions start on `KingdomJoined` in game-001 (`session.startOn`); `MatchEnded` and `PhaseLeft` built (MatchAnalyticsService, `session.leftInfo`); SessionEnd's drop-off is the last *logged* bus event; `ConversationAnswered` and `ReputationShifted` declared for FORGE-01 (D-030); budget recomputed.
 - 2026-10-12 FORGE-04: aligned with CONTRACTS v0.4-g2. Proposed kingdom signals removed (G9 replaces them); `Experience/Subjects` resolver hook; game-001 VS-1 onboarding steps and the declared VS1 funnel (FL-0063); budget recomputed.

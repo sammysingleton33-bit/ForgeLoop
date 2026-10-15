@@ -12,11 +12,20 @@
 	  CONTRACTS G9 attribution rules in Feedback/Signals (`subjects`);
 	- sessions start on KingdomJoined (VS-1 has no profiles, so nothing fires PlayerReady, D-027);
 	- MatchAnalyticsService logs MatchEnded and answers `session.leftInfo` for PhaseLeft;
+	- each VS1 step after Spawn also logs MilestoneReached (seconds since the session started, `milestones`);
 	- ConversationAnswered and ReputationShifted (D-030) are declared for FORGE-01's ConversationService
 	  and ReputationService, which call AnalyticsService:event (interfaces §8) once they ship.
 ]]
 
 local Signals = require("@game/ReplicatedStorage/Game/Feedback/Signals")
+
+-- MilestoneReached's extra field: the match mode (G3 MatchService.mode; "unknown" without it).
+local function milestoneInfo(_player: any, ctx: any): { [string]: any }?
+	local registry = ctx and ctx.registry
+	local match = registry and registry:find("MatchService")
+	local mode = match and match.mode
+	return { mode = if type(mode) == "string" then mode else "unknown" }
+end
 
 -- PhaseLeft's fields at session end (AnalyticsService calls this before SessionEnd).
 local function leftInfo(player: any, ctx: any): { [string]: any }?
@@ -77,6 +86,11 @@ return table.freeze({
 			value = "delta",
 			fields = { "category", "source", "phase" },
 		},
+		MilestoneReached = {
+			description = "A VS1 step after Spawn was reached (FORGE-00 review M7). Value: whole seconds since the session started (KingdomJoined); compare its median per milestone with config/Pacing.luau.",
+			value = "sinceStartSec",
+			fields = { "milestone", "mode" }, -- 5 steps x 4 modes = 20 combinations
+		},
 		IdleHintShown = {
 			description = "No meaningful action for the phase's idle threshold; a hint was shown. Value: idle seconds.",
 			value = "idleSec",
@@ -125,6 +139,8 @@ return table.freeze({
 		{ on = "ObjectiveCaptured", funnel = "VS1", step = 6 },
 	},
 	subjects = Signals.subjects,
+	-- timed VS1 milestones (FORGE-00 review M7): funnel steps carry no time
+	milestones = { funnel = "VS1", event = "MilestoneReached", info = milestoneInfo },
 	session = {
 		startEvent = "SessionStart",
 		endEvent = "SessionEnd",
