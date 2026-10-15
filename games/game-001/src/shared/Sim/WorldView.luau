@@ -36,6 +36,7 @@
 ]]
 
 local Kit = require("../Kit/Kit")
+local NodeStyle = require("./NodeStyle")
 
 local WorldView = {}
 WorldView.__index = WorldView
@@ -51,11 +52,7 @@ local BUILDING_STYLE: { [string]: { height: number, color: { number }?, material
 	watchtower = { height = 24, material = "Cobblestone" },
 	wall = { height = 10, color = { 130, 130, 125 }, material = "Cobblestone" },
 }
-local NODE_STYLE: { [string]: { size: { number }, color: { number }, material: string } } = {
-	tree = { size = { 4, 14, 4 }, color = { 50, 110, 45 }, material = "Grass" },
-	rock = { size = { 8, 6, 8 }, color = { 120, 120, 125 }, material = "Slate" },
-	goldvein = { size = { 7, 5, 7 }, color = { 230, 190, 60 }, material = "Foil" },
-}
+local NODE_STYLE = NodeStyle.STYLE
 local JOB_COLOR: { [string]: { number } } = {
 	farmer = { 200, 180, 90 },
 	woodcutter = { 110, 75, 40 },
