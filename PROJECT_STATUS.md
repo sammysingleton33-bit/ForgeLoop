@@ -4,26 +4,24 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B15**, main `b2e3164`, delivered 2026-10-15 18:30 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff, plus its B15 section, `production/handoffs/2026-10-13-forge-00-to-forge-05-b14-studio-checklist.md`.
-  - **New since B14 (the user's first-playtest fixes):**
-    - Starting farms and plot yards are clean (#131; 20-seed probe: 1012 → 0 node overlaps with fields).
-    - Rotation on plot markers: a Turn button showing the facing, and R / Shift+R on the Build rail (#132, #135).
-    - Bubbles are always on top, with a fixed on-screen size, coloured glyph badges, a pop for new requests, and a tap that opens the citizen (#133).
-    - Hover and selection outlines (#137).
+- **Latest build: B16**, main `e447364`, delivered 2026-10-15 19:15 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff with its B15 and B16 sections.
+  - **New since B15:**
+    - Interim environment art (D-051): layered pines, mossy angular boulders, coloured ore nodes, a furrowed cabbage field (#141).
+    - Gamepad R1/L1 turn while placing (#139).
+    - Wall and gate pieces join (#136).
   - **Not yet:**
-    - The pad Y turn (FORGE-03 follow-up).
-    - Phone bubbles can overlap (B16 cycle).
-    - A hover outline can linger.
-    - Art: FORGE-02's trim, environment and citizen work is not in.
-    - Moving buildings and wall drag (B16).
-    - FL-0122 hardening.
-    - From B14: world-rig poses, sounds, DRAFT dialogue.
-- **Next build: B16:**
-  - base editing phase 1 (CONTRACTS G13.9 g9j; FL-0119/0120/0121);
-  - FORGE-02 art (FL-0116/0117/0118);
-  - FL-0122 hardening;
-  - the bubble cycle and off-screen indicators;
-  - wall gap (#136).
+    - Oak, birch and wheat are still placeholder (FL-0117 open).
+    - Citizen job art (#138) waits for B17 with the Pose cheer fix.
+    - Farm-node visual-extent clearance (FORGE-01).
+    - Phone bubble overlap.
+    - FL-0122 (#145).
+    - Base editing (B17).
+- **Next build: B17:**
+  - base editing (#140 FL-0119, #142 FL-0121, FL-0120 UI; G13.9 g9j);
+  - citizen job art (#138) with the Pose fix;
+  - FL-0122 hardening (#145);
+  - farm-node visual-extent clearance;
+  - FL-0116 world trim.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
