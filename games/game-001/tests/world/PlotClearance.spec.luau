@@ -214,7 +214,12 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		local bad = violations(itemsOf({ tree }))
 		expect(#bad).toBe(1)
 		expect(string.find(bad[1], "crimson_west", 1, true)).never.toBeNil()
-		expect(#WorldPlan.clear(Layout, { tree })).toBe(0)
+		-- a tree is moved clear rather than deleted: it ends up somewhere legal within 12 studs
+		local cleared = WorldPlan.clear(Layout, { tree })
+		expect(#cleared).toBe(1)
+		expect((cleared[1].cframe.Position - tree.cframe.Position).Magnitude).toBeGreaterThan(0.5)
+		expect((cleared[1].cframe.Position - tree.cframe.Position).Magnitude).toBeLessThanOrEqual(12 + 1e-6)
+		expect(table.concat(violations(itemsOf(cleared)), "; ")).toBe("")
 		-- the yard well and the gate banners are meant to stand in the build zones: they stay
 		local ids = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }) do
@@ -226,41 +231,47 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect(ids.prop_banner_red_01).toBe(true)
 	end)
 
-	it("removes natural dressing only: hand-placed kingdom dressing is moved clear, never deleted", function()
-		local plan = WorldPlan.plan(Layout, ALL)
-		local cleared = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY) -- clearance only, no trim
-		expect(#cleared).toBeLessThan(#plan)
-		local j, nudged, farthest = 1, 0, 0
-		for _, p in plan do
-			local q = cleared[j]
-			local moved = if q
-					and q.assetId == p.assetId
-					and q.feature == p.feature
-				then (q.cframe.Position - p.cframe.Position).Magnitude
-				else math.huge
-			if moved < 1e-6 then
-				j += 1 -- kept in place
-			elseif p.feature == "dressing" and moved <= 8 + 1e-6 then
-				expect((q.cframe.LookVector - p.cframe.LookVector).Magnitude).toBeLessThan(1e-6) -- same facing
-				j += 1
-				nudged += 1
-				farthest = math.max(farthest, moved)
-			else
-				expect(NATURAL[p.feature] == true).toBe(true) -- removed: never a bridge, crops or kingdom dressing
+	it(
+		"removes natural dressing only when it has nowhere legal to go: hand-placed dressing is moved, never deleted",
+		function()
+			local plan = WorldPlan.plan(Layout, ALL)
+			local cleared = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY) -- clearance only, no trim
+			expect(#cleared).toBeLessThan(#plan)
+			local j, nudged, farthest = 1, 0, 0
+			for _, p in plan do
+				local q = cleared[j]
+				local moved = if q
+						and q.assetId == p.assetId
+						and q.feature == p.feature
+					then (q.cframe.Position - p.cframe.Position).Magnitude
+					else math.huge
+				if moved < 1e-6 then
+					j += 1 -- kept in place
+				elseif
+					moved <= (if p.feature == "dressing" then 40 else 12) + 1e-6
+					and (p.feature == "dressing" or NATURAL[p.feature])
+				then
+					expect((q.cframe.LookVector - p.cframe.LookVector).Magnitude).toBeLessThan(1e-6) -- same facing
+					j += 1
+					nudged += 1
+					farthest = math.max(farthest, moved)
+				else
+					expect(NATURAL[p.feature] == true).toBe(true) -- removed: never a bridge, crops or kingdom dressing
+				end
 			end
-		end
-		expect(j).toBe(#cleared + 1)
-		expect(nudged).toBeGreaterThan(0)
-		-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, the well, 2 goods, a haystack, a cart
-		local function dressing(list: { any }): number
-			local n = 0
-			for _, p in list do
-				n += if p.feature == "dressing" then 1 else 0
+			expect(j).toBe(#cleared + 1)
+			expect(nudged).toBeGreaterThan(0)
+			-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, the well, 2 goods, a haystack, a cart
+			local function dressing(list: { any }): number
+				local n = 0
+				for _, p in list do
+					n += if p.feature == "dressing" then 1 else 0
+				end
+				return n
 			end
-			return n
+			expect(dressing(cleared)).toBe(dressing(plan))
 		end
-		expect(dressing(cleared)).toBe(dressing(plan))
-	end)
+	)
 
 	it("keeps every kingdom's four gate banners and its crate stack, each clear of roads and buildings", function()
 		local banners, goods = 0, 0
@@ -333,6 +344,77 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect(#kept).toBe(1)
 		expect(kept[1].feature).toBe("bush")
 	end)
+
+	it(
+		"moves blocked trees and bushes clear instead of deleting them (the starting farms keep their foreground)",
+		function()
+			local lost = 0
+			local survivors = {}
+			for _, p in WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY) do
+				survivors[p.assetId] = (survivors[p.assetId] or 0) + 1
+			end
+			local planned = {}
+			for _, p in WorldPlan.plan(Layout, ALL) do
+				if p.feature == "forest" or p.feature == "lone_tree" or p.feature == "bush" then
+					planned[p.assetId] = (planned[p.assetId] or 0) + 1
+				end
+			end
+			for id, n in planned do
+				lost += math.max(0, n - (survivors[id] or 0))
+			end
+			expect(lost).toBe(0)
+		end
+	)
+
+	it(
+		"keeps each gate-banner pair mirrored about the road centreline, off the roads and 1.5 studs off every wall",
+		function()
+			local banners = {}
+			for _, p in WorldPlan.props(Layout, ALL) do
+				if string.sub(p.assetId, 1, 11) == "prop_banner" then
+					table.insert(banners, p)
+				end
+			end
+			expect(#banners).toBe(16) -- four kingdoms, two pairs each, listed pair by pair
+			local rects = reserved()
+			for k = 1, #banners, 2 do
+				local a, b = banners[k].cframe.Position, banners[k + 1].cframe.Position
+				-- the road centreline nearest the pair's midpoint: point, tangent, normal
+				local mx, mz = (a.X + b.X) / 2, (a.Z + b.Z) / 2
+				local best, c, t = math.huge, Vector2.zero, Vector2.new(0, 1)
+				for _, road in Layout.features.roads do
+					for i = 1, #road.points - 1 do
+						local p0, p1 = road.points[i], road.points[i + 1]
+						local ab = p1 - p0
+						local u = math.clamp(((mx - p0.X) * ab.X + (mz - p0.Y) * ab.Y) / (ab.X ^ 2 + ab.Y ^ 2), 0, 1)
+						local q = p0 + ab * u
+						local d = (Vector2.new(mx, mz) - q).Magnitude
+						if d < best then
+							best, c, t = d, q, ab.Unit
+						end
+					end
+				end
+				local n = Vector2.new(-t.Y, t.X)
+				local function offsets(p: Vector3): (number, number)
+					local d = Vector2.new(p.X, p.Z) - c
+					return d.X * t.X + d.Y * t.Y, d.X * n.X + d.Y * n.Y
+				end
+				local ta, na = offsets(a)
+				local tb, nb = offsets(b)
+				expect(math.abs(na + nb)).toBeLessThanOrEqual(0.5) -- mirror images about the centreline ...
+				expect(math.abs(ta - tb)).toBeLessThanOrEqual(0.5) -- ... on the same row
+				expect(math.abs(na - nb) / 2).toBeGreaterThan(Layout.features.roads[1].width / 2) -- and clear of the road
+				for _, banner in { banners[k], banners[k + 1] } do
+					local pos, r = banner.cframe.Position, liveRadius(banner.assetId)
+					for _, rect in rects do
+						if not rect.zone and not rect.field then
+							expect(rectDistance(rect, pos.X, pos.Z) - r).toBeGreaterThanOrEqual(1.5 - 1e-6) -- wall clearance
+						end
+					end
+				end
+			end
+		end
+	)
 
 	it("sizes CLEAR.radius to the live Kit.prop bounds of every planned asset", function()
 		local bad = {}

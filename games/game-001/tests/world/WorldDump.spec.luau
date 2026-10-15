@@ -59,6 +59,9 @@ local function partsOf(model: Instance)
 	return out
 end
 
+-- FORGE_WORLD_UNTRIMMED=1 dumps the generator's own plan (no clearance, no trim): the "before" of the D-047 trim
+local UNTRIMMED = process.env.FORGE_WORLD_UNTRIMMED == "1"
+
 local function surfaceMaterial(x: number, z: number, h: number): string
 	local f = Layout.features
 	local dr = WorldPlan.distToPolyline(x, z, f.river.points)
@@ -83,7 +86,8 @@ local function surfaceMaterial(x: number, z: number, h: number): string
 	if h > 52 then
 		return "Rock"
 	end
-	local floors = WorldPlan.forestFloors(Layout) -- the same leafy floors WorldService fills (follow the trim)
+	-- the same leafy floors WorldService fills (they follow the trim; FORGE_WORLD_UNTRIMMED=1: today's discs)
+	local floors = WorldPlan.forestFloors(Layout, if UNTRIMMED then WorldPlan.FULL_DENSITY else nil)
 	for _, floor in floors do
 		if (x - floor.x) ^ 2 + (z - floor.z) ^ 2 < floor.r ^ 2 then
 			return "LeafyGrass"
@@ -108,7 +112,10 @@ local function dump()
 	end
 	local assets = {}
 	local placements = {}
-	for _, p in WorldPlan.props(Layout, { crimson = true }) do
+	local planned = if UNTRIMMED
+		then WorldPlan.plan(Layout, { crimson = true })
+		else WorldPlan.props(Layout, { crimson = true })
+	for _, p in planned do
 		if not assets[p.assetId] then
 			assets[p.assetId] = partsOf(Kit.prop(p.assetId))
 		end

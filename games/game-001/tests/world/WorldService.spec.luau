@@ -330,9 +330,9 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		expect(svc:isReady()).toBe(true)
 		-- descendants include attachments and folders, so allow a little slack over the part budget
 		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
-		-- D-047 / FL-0116: about 6,060 with the trimmed dressing (8,164 untrimmed); restoring the density knob after a
+		-- D-047 / FL-0116: 6,569 with the trimmed dressing (8,328 untrimmed; plot showcase, in-view stands and relocated decor stay); restoring the density knob after a
 		-- phone test means raising this with it, since the 27k all-built ceiling depends on it
-		expect(svc.stats.parts).toBeLessThan(6400)
+		expect(svc.stats.parts).toBeLessThan(6700)
 		svc:destroy()
 	end)
 end)
@@ -382,22 +382,22 @@ describe("Dressing density knob (D-047)", function()
 			expect(fingerprint(plan)).toBe(1099084135) -- main d78d9cb's props, before the plot clearance and the trim
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(601)
-			expect(fingerprint(one)).toBe(1048165543)
+			expect(#one).toBe(615)
+			expect(fingerprint(one)).toBe(1670600011)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(628)
-			expect(fingerprint(all)).toBe(1586914474)
+			expect(#all).toBe(642)
+			expect(fingerprint(all)).toBe(177088627)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(601)
-			expect(svc.stats.parts).toBe(8164)
+			expect(svc.stats.props).toBe(615)
+			expect(svc.stats.parts).toBe(8328)
 			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
 			local forests = Layout.features.forests
 			local floorOps = 0
@@ -528,7 +528,7 @@ describe("Dressing density knob (D-047)", function()
 				expect(lostSum / lostN).toBeGreaterThan(keptSum / keptN) -- what goes was further out than what stays
 			end
 		end
-		expect(checked).toBeGreaterThan(4)
+		expect(checked).toBeGreaterThanOrEqual(4)
 	end)
 
 	it("sizes each thinned stand's ground disc to the trees that stay (forest floors)", function()
@@ -559,6 +559,7 @@ describe("Dressing density knob (D-047)", function()
 				before += if (t - forest.center).Magnitude <= forest.radius then 1 else 0
 			end
 			expect(floors[s].r).toBeLessThanOrEqual(today[s].r + 1e-6)
+			expect((centre - forest.center).Magnitude).toBeLessThanOrEqual(forest.radius * 0.2) -- the disc stays centred
 			expect(far).toBeLessThanOrEqual(floors[s].r) -- every tree that stays stands on the disc
 			if inside < before then
 				shrunk += 1
@@ -569,7 +570,7 @@ describe("Dressing density knob (D-047)", function()
 				expect(floors[s].r).toBeNear(today[s].r, 1e-6)
 			end
 		end
-		expect(shrunk).toBeGreaterThan(4)
+		expect(shrunk).toBeGreaterThanOrEqual(4)
 	end)
 
 	it("fills the terrain with the thinned floors (WorldService)", function()
@@ -587,6 +588,81 @@ describe("Dressing density knob (D-047)", function()
 		end
 		expect(n).toBe(#Layout.features.forests)
 		svc:destroy()
+	end)
+
+	it(
+		"never thins the plot showcase: everything within 60 studs of a field, building or slot, or in the farm's view",
+		function()
+			local full = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
+			local kept = {}
+			for _, p in WorldPlan.props(Layout, ALL) do
+				kept[placementKey(p)] = true
+			end
+			local checked, bad = 0, {}
+			for _, p in full do
+				if TRIMMABLE[p.feature] and WorldPlan.showcase(Layout, p.cframe.Position.X, p.cframe.Position.Z) then
+					checked += 1
+					if not kept[placementKey(p)] then
+						table.insert(
+							bad,
+							`{p.assetId} at ({math.floor(p.cframe.Position.X)}, {math.floor(p.cframe.Position.Z)})`
+						)
+					end
+				end
+			end
+			expect(checked).toBeGreaterThan(50)
+			expect(table.concat(bad, "; ")).toBe("")
+			-- the farm's pines that the starting-farm views showed (gold: keep-frame (-1, 162) and (-96, 143))
+			local keep = Layout.plots.gold.anchors.keep
+			for _, at in { Vector3.new(-1, 0, 162), Vector3.new(-96, 0, 143) } do
+				local world = keep:PointToWorldSpace(at)
+				expect(WorldPlan.showcase(Layout, world.X, world.Z)).toBe(true)
+			end
+		end
+	)
+
+	it("keeps a forest stand whole when the plot showcase or the cameras reach it, and thins the others", function()
+		local forests = Layout.features.forests
+		local full, trimmed = {}, {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
+			if p.feature == "forest" then
+				table.insert(full, p)
+			end
+		end
+		for _, p in WorldPlan.props(Layout, { crimson = true }) do
+			if p.feature == "forest" then
+				table.insert(trimmed, p)
+			end
+		end
+		local function inStand(list: { any }, forest: any): { any }
+			local out = {}
+			for _, p in list do
+				if
+					(Vector2.new(p.cframe.Position.X, p.cframe.Position.Z) - forest.center).Magnitude <= forest.radius
+				then
+					table.insert(out, p)
+				end
+			end
+			return out
+		end
+		local whole, thinned = 0, 0
+		for _, forest in forests do
+			local before, after = inStand(full, forest), inStand(trimmed, forest)
+			local shown, unseen = 0, 0
+			for _, p in before do
+				shown += if WorldPlan.showcase(Layout, p.cframe.Position.X, p.cframe.Position.Z) then 1 else 0
+				unseen += WorldPlan.unseen(Layout, p.cframe.Position.X, p.cframe.Position.Z)
+			end
+			if shown > #before * 0.25 or unseen < #before * 15 then
+				whole += 1
+				expect(#after).toBe(#before)
+			else
+				thinned += 1
+				expect(#after).toBeLessThan(#before)
+			end
+		end
+		expect(whole).toBeGreaterThanOrEqual(4)
+		expect(thinned).toBeGreaterThanOrEqual(3)
 	end)
 
 	it("thins each kind to its knob and no forest stand by more than 1.6 times the forest cut", function()
@@ -614,7 +690,9 @@ describe("Dressing density knob (D-047)", function()
 				end
 			end
 		end
-		expect(k.forest / n.forest).toBeNear(d.forest, 0.01)
+		-- stands near the plots or in view stay whole, so the forest keeps at least the knob's share
+		expect(k.forest / n.forest).toBeGreaterThanOrEqual(d.forest - 0.01)
+		expect(k.forest / n.forest).toBeLessThan(1)
 		for _, kind in { "lone_tree", "bush", "rocks", "flowers" } do
 			expect(k[kind] / n[kind]).toBeGreaterThanOrEqual(d.props - 0.01) -- more where the framing protects
 		end

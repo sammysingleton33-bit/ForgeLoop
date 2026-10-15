@@ -15,6 +15,7 @@
 		WorldPlan.trim(layout, plan, density?) -> { Placement }   -- the density pass props() ends with
 		WorldPlan.density(layout, override?) -> { forest, props } -- effective knob values, clamped to 0..1
 		WorldPlan.unseen(layout, x, z) -> number                  -- trim score (studs; 0 = never trimmed)
+		WorldPlan.showcase(layout, x, z) -> boolean               -- the plot showcase: never thinned
 		WorldPlan.groundHeight(layout, x, z) -> number  -- analytic surface height (studs)
 		WorldPlan.voxels(op) -> number                   -- 4-stud voxels an op touches (frame budget)
 	Op = { kind: "Block" | "Ball" | "Cylinder", material: string, cframe: CFrame, size: Vector3?,
@@ -23,12 +24,17 @@
 	Dressing density (D-047, FL-0116): the knob is world/Layout `features.density` ({ forest, props }, the share
 	of each kind kept; WorldPlan.FULL_DENSITY = 1 / 1 rebuilds the valley exactly as plan() + clear() make it).
 	trim() removes, per kind, the least-seen share: farthest from the plot frames, approach roads and heartland
-	(WorldPlan.TRIM) first, so map edges and the ground between kingdoms go before anything near a camera. Plot
-	frames, road bands and the heartland are never thinned; bridges, crops and kingdom dressing never are either.
+	(WorldPlan.TRIM) first. Never thinned: the plot showcase (within TRIM.showcase studs of a plot's fields,
+	buildings and slots, and the farm's view behind the keep; WorldPlan.showcase); plot frames, road bands and the
+	heartland for lone trees, bushes, rocks and flowers; bridges, crops and kingdom dressing always. Forests are
+	thinned stand by stand, radially (the outermost trees first, all around), and only the stands that neither
+	reach the showcase nor sit in view; each thinned stand's ground disc follows it (forestFloors).
 	Plot clearance (user playtest 2026-10-13): no tree, bush, rock or flower within CLEAR.margin (4) studs of a
 	farm field, a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured
-	with each prop's footprint and canopy radius (CLEAR.radius); no kingdom dressing on them (nor within the
-	margin of a field).
+	with each prop's footprint and canopy radius (CLEAR.radius). Blocked trees, bushes and flowers move to the
+	nearest legal spot within CLEAR.natureNudge studs instead of going; boulders against a trunk or bush go.
+	Hand-placed kingdom dressing moves too (CLEAR.nudge, CLEAR.wallGap off walls) and gate banners move as
+	mirrored pairs about the road centreline.
 
 	Determinism: a Park–Miller PRNG (exact in doubles), never Random, so Lune specs, the preview and
 	Roblox produce identical worlds.
@@ -331,14 +337,11 @@ local function assetId(prefix: string, n: number): string
 	return string.format("%s_%02d", prefix, n)
 end
 
--- The valley's dressing as generated (bridges, crops, forests, scatter, kingdom dressing), before clear().
-function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placement }
+-- Where the generator may stand a prop of scatter radius r: inside the bounds, off the river, the roads and the
+-- keep-out discs (plot cores, build zones, build slots, objective, resource nodes, bridges). plan() and the
+-- clearance's relocation of blocked decor share it.
+local function staticClearance(layout: any): (number, number, number) -> boolean
 	local f = layout.features
-	local out: { Placement } = {}
-	local occupied: { { x: number, z: number, r: number } } = {}
-	local rng = prng(4242)
-
-	-- keep-out discs: plot cores (buildings), build zones, build slots, objective, resource nodes, bridges
 	local keepOut: { { x: number, z: number, r: number } } = {}
 	for _, plot in layout.plots do
 		for _, anchor in plot.anchors do
@@ -364,8 +367,7 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 	for _, br in f.river.bridges do
 		table.insert(keepOut, { x = br.at.X, z = br.at.Y, r = 26 })
 	end
-
-	local function clear(x: number, z: number, r: number): boolean
+	return function(x: number, z: number, r: number): boolean
 		if x < f.bounds.min.X + 8 or x > f.bounds.max.X - 8 or z < f.bounds.min.Y + 8 or z > f.bounds.max.Y - 8 then
 			return false
 		end
@@ -381,6 +383,23 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 			if (x - k.x) ^ 2 + (z - k.z) ^ 2 < (k.r + r) ^ 2 then
 				return false
 			end
+		end
+		return true
+	end
+end
+
+-- The valley's dressing as generated (bridges, crops, forests, scatter, kingdom dressing), before clear().
+function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placement }
+	local f = layout.features
+	local out: { Placement } = {}
+	local occupied: { { x: number, z: number, r: number } } = {}
+	local rng = prng(4242)
+
+	local staticClear = staticClearance(layout)
+
+	local function clear(x: number, z: number, r: number): boolean
+		if not staticClear(x, z, r) then
+			return false
 		end
 		for _, o in occupied do
 			if (x - o.x) ^ 2 + (z - o.z) ^ 2 < (o.r + r) ^ 2 then
@@ -531,10 +550,14 @@ WorldPlan.CLEAR = table.freeze({
 	}),
 	fallbackRadius = 15, -- an asset family missing from `radius`
 	nudge = 8, -- hand-placed dressing on reserved ground moves to the nearest legal spot within this many studs
+	wallGap = 1.5, -- ... and keeps this much open ground between its outline and a building or slot wall
+	natureNudge = 12, -- blocked trees, bushes and flowers move to the nearest legal spot within this many studs
 	trunk = 3, -- a boulder keeps its outline this far from a tree trunk (the plan spaces props by scatter radii)
 	bushGap = 2, -- ... and from a bush's centre
 })
 local NATURAL = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
+-- the plan's own spacing radii per feature (WorldPlan.plan's scatter calls): two placements keep their sum apart
+local SCATTER: { [string]: number } = { forest = 6.5, lone_tree = 6, bush = 2.5, rocks = 4, flowers = 2 }
 
 -- Footprint radius of an asset id: the longest id prefix (dropping "_<part>" from the end) in CLEAR.radius.
 function WorldPlan.footprintRadius(id: string): number
@@ -592,7 +615,7 @@ local function blocked(layout: any, rects: { any }, natural: boolean, r: number,
 	local margin = WorldPlan.CLEAR.margin
 	for _, rect in rects do
 		if natural or rect.kind ~= "zone" then
-			local m = if natural or rect.kind == "field" then margin else 0
+			local m = if natural or rect.kind == "field" then margin else WorldPlan.CLEAR.wallGap
 			if WorldPlan.rectDistance(rect, x, z) < r + m then
 				return true
 			end
@@ -664,27 +687,161 @@ local function spaceRocks(plan: { Placement }): { Placement }
 	return out
 end
 
--- Clear dressing off reserved ground. Natural dressing within CLEAR.margin of a field, a starting building, a slot,
--- a build zone or a road goes, and so does a boulder against a trunk or bush. Hand-placed kingdom dressing (yard
--- props and gate banners, meant to stand in the build zones) that overlaps a building, a slot or a road, or sits
--- within the margin of a field, moves to the nearest legal spot within CLEAR.nudge studs (same facing) and goes
--- only if there is none. Nothing is added, so the rest is exactly the plan.
+-- Nearest point of any road centreline to (x, z): the point, the unit tangent there and the unit normal.
+local function nearestRoad(layout: any, x: number, z: number): (Vector2, Vector2, Vector2)
+	local best, bestC, bestT = math.huge, Vector2.zero, Vector2.new(0, 1)
+	for _, road in layout.features.roads do
+		local pts = road.points
+		for i = 1, #pts - 1 do
+			local a, b = pts[i], pts[i + 1]
+			local ab = b - a
+			local len2 = ab.X * ab.X + ab.Y * ab.Y
+			local u = if len2 > 0 then math.clamp(((x - a.X) * ab.X + (z - a.Y) * ab.Y) / len2, 0, 1) else 0
+			local c = a + ab * u
+			local d = (Vector2.new(x, z) - c).Magnitude
+			if d < best and len2 > 0 then
+				best, bestC, bestT = d, c, ab.Unit
+			end
+		end
+	end
+	return bestC, bestT, Vector2.new(-bestT.Y, bestT.X)
+end
+
+local function moved(layout: any, p: Placement, x: number, z: number): Placement
+	local cf = CFrame.new(x, WorldPlan.groundHeight(layout, x, z), z) * (p.cframe - p.cframe.Position)
+	return { assetId = p.assetId, cframe = cf, feature = p.feature }
+end
+
+-- A gate-banner pair (two banners flanking the road): both stay where they are when both are legal and mirror each
+-- other about the road centreline (within 0.5 stud); otherwise the pair is re-placed mirrored about that line at
+-- the same spread (half the distance between them, grown by up to 4 studs), keeping each banner's side and facing;
+-- where the road bends against a building the pair slides outward along the road (up to 24 studs, smallest first)
+-- until both are legal. Returns nil when no legal mirrored spot exists (the pair then goes together).
+local function mirrorPair(layout: any, rects: { any }, a: Placement, b: Placement): (Placement?, Placement?, boolean)
+	local pa, pb = a.cframe.Position, b.cframe.Position
+	local c, t, n = nearestRoad(layout, (pa.X + pb.X) / 2, (pa.Z + pb.Z) / 2)
+	local function frame(p: Vector3): (number, number)
+		local d = Vector2.new(p.X, p.Z) - c
+		return d.X * t.X + d.Y * t.Y, d.X * n.X + d.Y * n.Y
+	end
+	local ta, na = frame(pa)
+	local tb, nb = frame(pb)
+	local ra, rb = WorldPlan.footprintRadius(a.assetId), WorldPlan.footprintRadius(b.assetId)
+	local symmetric = math.abs(na + nb) <= 0.5 and math.abs(ta - tb) <= 0.5
+	if
+		symmetric
+		and not blocked(layout, rects, false, ra, pa.X, pa.Z)
+		and not blocked(layout, rects, false, rb, pb.X, pb.Z)
+	then
+		return a, b, false
+	end
+	local spread, mid, side = math.abs(na - nb) / 2, (ta + tb) / 2, if na >= nb then 1 else -1
+	for shift = 0, 24, 2 do -- slide the pair outward along the road, smallest slide first
+		local s = spread
+		while s <= spread + 4 do
+			local ca = c + t * (mid + shift) + n * (side * s)
+			local cb = c + t * (mid + shift) - n * (side * s)
+			if
+				not blocked(layout, rects, false, ra, ca.X, ca.Y) and not blocked(layout, rects, false, rb, cb.X, cb.Y)
+			then
+				return moved(layout, a, ca.X, ca.Y), moved(layout, b, cb.X, cb.Y), true
+			end
+			s += 0.25
+		end
+	end
+	return nil, nil, true
+end
+
+-- The nearest legal spot within CLEAR.natureNudge studs for a tree, bush or flower that the clearance blocked: off
+-- every reserved area and road with its footprint, and where the generator itself would stand it (bounds, river,
+-- keep-out discs, the spacing radii of the other placements). Rings every stud, 24 directions, first legal wins.
+local function relocatedNatural(
+	layout: any,
+	rects: { any },
+	staticClear: (number, number, number) -> boolean,
+	plan: { Placement },
+	p: Placement
+): Placement?
+	local scatter, r, pos = SCATTER[p.feature], WorldPlan.footprintRadius(p.assetId), p.cframe.Position
+	local function legal(x: number, z: number): boolean
+		if blocked(layout, rects, true, r, x, z) or not staticClear(x, z, scatter) then
+			return false
+		end
+		for _, q in plan do
+			local sq = SCATTER[q.feature]
+			if sq and q ~= p then
+				local qp = q.cframe.Position
+				if (qp.X - x) ^ 2 + (qp.Z - z) ^ 2 < (sq + scatter) ^ 2 then
+					return false
+				end
+			end
+		end
+		return true
+	end
+	local d = 1
+	while d <= WorldPlan.CLEAR.natureNudge do
+		for k = 0, 23 do
+			local a = k * math.pi / 12
+			local x, z = pos.X + math.cos(a) * d, pos.Z + math.sin(a) * d
+			if legal(x, z) then
+				return moved(layout, p, x, z)
+			end
+		end
+		d += 1
+	end
+	return nil
+end
+
+-- Clear dressing off reserved ground. Anything blocked moves before it goes. Natural decor within CLEAR.margin of a
+-- field, a starting building, a slot, a build zone or a road moves to the nearest legal spot within
+-- CLEAR.natureNudge studs (rocks, and decor with no such spot, are removed); a boulder against a trunk or a bush
+-- goes. Hand-placed kingdom dressing (yard props, gate banners; meant to stand in the build zones) that overlaps a
+-- building, a slot or a road, or sits within the margin of a field or CLEAR.wallGap of a wall, moves to the nearest
+-- legal spot within CLEAR.nudge studs (same facing); gate banners move as mirrored pairs (mirrorPair). Nothing is
+-- added, and what stays is exactly the plan.
 function WorldPlan.clear(layout: any, plan: { Placement }): { Placement }
 	local rects = WorldPlan.reservedRects(layout)
+	local staticClear = staticClearance(layout)
+	-- gate banners come in pairs, in plan order
+	local banners: { number } = {}
+	for i, p in plan do
+		if p.feature == "dressing" and string.sub(p.assetId, 1, 11) == "prop_banner" then
+			table.insert(banners, i)
+		end
+	end
+	local pairOf: { [number]: { partner: number, first: boolean } } = {}
+	for k = 1, #banners - 1, 2 do
+		pairOf[banners[k]] = { partner = banners[k + 1], first = true }
+		pairOf[banners[k + 1]] = { partner = banners[k], first = false }
+	end
+	local pairResult: { [number]: Placement | false } = {}
+	for i, link in pairOf do
+		if link.first then
+			local a, b, changed = mirrorPair(layout, rects, plan[i], plan[link.partner])
+			pairResult[i] = a or false
+			pairResult[link.partner] = b or false
+			if not changed then
+				pairResult[i], pairResult[link.partner] = plan[i], plan[link.partner]
+			end
+		end
+	end
 	local out: { Placement } = {}
-	for _, p in plan do
+	for i, p in plan do
 		local natural = NATURAL[p.feature] == true
 		local placed: Placement? = p
-		if natural or p.feature == "dressing" then
+		if pairResult[i] ~= nil then
+			placed = pairResult[i] or nil
+		elseif natural or p.feature == "dressing" then
 			local pos = p.cframe.Position
 			local r = WorldPlan.footprintRadius(p.assetId)
 			if blocked(layout, rects, natural, r, pos.X, pos.Z) then
 				placed = nil
-				if not natural then
+				if natural and p.feature ~= "rocks" then
+					placed = relocatedNatural(layout, rects, staticClear, plan, p)
+				elseif not natural then
 					local nx, nz = nudged(layout, rects, r, pos.X, pos.Z)
 					if nx and nz then
-						local cf = CFrame.new(nx, WorldPlan.groundHeight(layout, nx, nz), nz) * (p.cframe - pos)
-						placed = { assetId = p.assetId, cframe = cf, feature = p.feature }
+						placed = moved(layout, p, nx, nz)
 					end
 				end
 			end
@@ -719,6 +876,13 @@ WorldPlan.TRIM = table.freeze({
 	heartRadius = 170, -- heartland: studs around each objective (the valley centre camera); never thinned
 	jitter = 90, -- studs of deterministic noise on the score, so thinning fades in instead of cutting a line
 	standSpread = 1.6, -- a forest stand loses at most this times the forest cut (0.75 -> 40 %), so none goes bald
+	showcase = 60, -- plot showcase: studs around a plot's fields, buildings and slots that are never thinned ...
+	farmReach = 190, -- ... plus the farm's view: this far behind the keep (keep frame +Z, where the aerial and
+	farmRadius = 100, -- the plot's-back-edge cameras look from), this wide on either side
+	standShowcase = 0.25, -- a forest stand with more than this share of its trees in the showcase stays whole:
+	-- thinning only its far side would leave it lopsided
+	standSeen = 15, -- ... and so does a stand whose trees are on average closer than this (studs) to what the
+	-- cameras look at: the mid-valley stands by the heartland and the plot views
 })
 
 -- The effective knob: `override` over the layout's features.density over full density, each clamped to 0..1.
@@ -731,9 +895,39 @@ function WorldPlan.density(layout: any, override: { [string]: number }?): { fore
 	}
 end
 
+-- The plot showcase: what a player sees first and longest. Within TRIM.showcase studs of a plot's crop fields,
+-- starting buildings or build slots, or in the farm's view (TRIM.farmReach behind the keep, TRIM.farmRadius to
+-- either side). Nothing here is thinned; the clearance still applies.
+local rectCache: { [any]: { any } } = setmetatable({}, { __mode = "k" }) :: any
+
+function WorldPlan.showcase(layout: any, x: number, z: number): boolean
+	local t = WorldPlan.TRIM
+	local rects = rectCache[layout]
+	if not rects then
+		rects = WorldPlan.reservedRects(layout)
+		rectCache[layout] = rects
+	end
+	for _, rect in rects do
+		if rect.kind ~= "zone" and WorldPlan.rectDistance(rect, x, z) <= t.showcase then
+			return true
+		end
+	end
+	for _, kingdom in KINGDOM_ORDER do
+		local l = layout.plots[kingdom].anchors.keep:PointToObjectSpace(Vector3.new(x, 0, z))
+		local behind = math.clamp(l.Z, 0, t.farmReach)
+		if (l.X * l.X + (l.Z - behind) ^ 2) <= t.farmRadius * t.farmRadius then
+			return true
+		end
+	end
+	return false
+end
+
 -- How far (studs) a ground point lies from what the throne and overview cameras look at: 0 inside a plot frame,
 -- on an approach road band or in the heartland, and largest at the map edges and between the kingdoms.
 function WorldPlan.unseen(layout: any, x: number, z: number): number
+	if WorldPlan.showcase(layout, x, z) then
+		return 0
+	end
 	local t = WorldPlan.TRIM
 	local attention = math.huge
 	for _, kingdom in KINGDOM_ORDER do
@@ -786,64 +980,76 @@ function WorldPlan.trim(layout: any, plan: { Placement }, density: { [string]: n
 	for _, kind in TRIM_KINDS do
 		local list = byKind[kind] or {}
 		local cut = 1 - d[TRIM_KNOB[kind]]
-		local candidates: { { i: number, score: number } } = {}
-		local stand: { [number]: number } = {} -- forest trees only
-		local cap: { [number]: number } = {}
-		for _, i in list do
-			local pos = plan[i].cframe.Position
-			local unseen = WorldPlan.unseen(layout, pos.X, pos.Z)
-			if unseen > 0 then
-				table.insert(candidates, { i = i, score = unseen + jitter[i] })
-			end
-			if kind == "forest" then
-				stand[i] = standOf(layout, pos.X, pos.Z)
-				cap[stand[i]] = (cap[stand[i]] or 0) + 1
-			end
-		end
-		for s, n in cap do
-			cap[s] = math.floor(n * math.min(1, cut * t.standSpread) + 0.5)
-		end
-		table.sort(candidates, function(a, b)
-			if a.score ~= b.score then
-				return a.score > b.score
-			end
-			return a.i < b.i
-		end)
 		local left = math.floor(cut * #list + 0.5)
-		local lost: { [number]: number } = {} -- forest: trees lost per stand
-		for _, c in candidates do
-			if left <= 0 then
-				break
+		if kind == "forest" then
+			-- Stands are thinned as a whole, radially: the stands the cameras see least give up the most (at most
+			-- standSpread x the cut), and inside a stand the outermost trees outside the plot showcase go first, all
+			-- around, so what stays is centred on the stand and its ground disc can follow it.
+			local stands: { [number]: { trees: { number }, sum: number, shown: number } } = {}
+			for _, i in list do
+				local pos = plan[i].cframe.Position
+				local s = standOf(layout, pos.X, pos.Z)
+				stands[s] = stands[s] or { trees = {}, sum = 0, shown = 0 }
+				table.insert(stands[s].trees, i)
+				stands[s].sum += WorldPlan.unseen(layout, pos.X, pos.Z)
+				stands[s].shown += if WorldPlan.showcase(layout, pos.X, pos.Z) then 1 else 0
 			end
-			local s = stand[c.i]
-			if s == nil or s == 0 then
-				dropped[c.i] = true
-				left -= 1
-			elseif cap[s] > 0 then
-				cap[s] -= 1
-				lost[s] = (lost[s] or 0) + 1
-				left -= 1
-			end
-		end
-		-- a stand keeps its middle: it gives up its outermost removable trees, so the stand stays dense and the
-		-- ground disc under it (WorldPlan.forestFloors) can shrink to match
-		for s, n in lost do
-			local centre = layout.features.forests[s].center
-			local rim: { { i: number, r: number } } = {}
-			for _, c in candidates do
-				if stand[c.i] == s then
-					local pos = plan[c.i].cframe.Position
-					table.insert(rim, { i = c.i, r = math.sqrt((pos.X - centre.X) ^ 2 + (pos.Z - centre.Y) ^ 2) })
+			local order: { number } = {}
+			for s, stand in stands do
+				if stand.shown <= #stand.trees * t.standShowcase and stand.sum >= #stand.trees * t.standSeen then
+					table.insert(order, s)
 				end
 			end
-			table.sort(rim, function(a, b)
-				if a.r ~= b.r then
-					return a.r > b.r
+			table.sort(order, function(a, b)
+				local sa, sb = stands[a].sum / #stands[a].trees, stands[b].sum / #stands[b].trees
+				if sa ~= sb then
+					return sa > sb
+				end
+				return a < b
+			end)
+			for _, s in order do
+				local stand = stands[s]
+				local centre = if s > 0 then layout.features.forests[s].center else Vector2.zero
+				local rim: { { i: number, r: number } } = {}
+				for _, i in stand.trees do
+					local pos = plan[i].cframe.Position
+					if not WorldPlan.showcase(layout, pos.X, pos.Z) then
+						table.insert(rim, { i = i, r = (Vector2.new(pos.X, pos.Z) - centre).Magnitude })
+					end
+				end
+				table.sort(rim, function(a, b)
+					if a.r ~= b.r then
+						return a.r > b.r
+					end
+					return a.i < b.i
+				end)
+				local cap = math.floor(#stand.trees * math.min(1, cut * t.standSpread) + 0.5)
+				for k = 1, math.min(cap, left, #rim) do
+					dropped[rim[k].i] = true
+				end
+				left -= math.min(cap, left, #rim)
+			end
+		else
+			local candidates: { { i: number, score: number } } = {}
+			for _, i in list do
+				local pos = plan[i].cframe.Position
+				local unseen = WorldPlan.unseen(layout, pos.X, pos.Z)
+				if unseen > 0 then
+					table.insert(candidates, { i = i, score = unseen + jitter[i] })
+				end
+			end
+			table.sort(candidates, function(a, b)
+				if a.score ~= b.score then
+					return a.score > b.score
 				end
 				return a.i < b.i
 			end)
-			for k = 1, math.min(n, #rim) do
-				dropped[rim[k].i] = true
+			for _, c in candidates do
+				if left <= 0 then
+					break
+				end
+				dropped[c.i] = true
+				left -= 1
 			end
 		end
 	end
@@ -857,41 +1063,11 @@ function WorldPlan.trim(layout: any, plan: { Placement }, density: { [string]: n
 end
 
 -- Ground circle of each forest stand's leafy floor (the "forest_floor" terrain op): today's disc (the stand's
--- centre, 1.05 x its radius) or, for a stand the trim thinned, a circle around the kept trees (Ritter's bounding
--- circle, grown by the same 5 % pad), so the dark ground follows the stand instead of staying full size under a few
--- trees. Stands the trim left alone keep today's disc exactly.
+-- centre, 1.05 x its radius) or, for a stand the trim thinned, a circle centred on the kept trees' centroid reaching
+-- the farthest of them plus the same 5 % pad, so the dark ground follows the stand instead of staying full size under
+-- a few trees. Stands the trim left alone keep today's disc exactly.
 export type Floor = { x: number, z: number, r: number }
 local floorCache: { [any]: { [string]: { Floor } } } = setmetatable({}, { __mode = "k" }) :: any
-
-local function enclosingCircle(points: { Vector2 }): (Vector2, number)
-	local function farthest(from: Vector2): Vector2
-		local best, bestD = from, -1
-		for _, q in points do
-			local d = (q - from).Magnitude
-			if d > bestD then
-				best, bestD = q, d
-			end
-		end
-		return best
-	end
-	local a = farthest(points[1])
-	local b = farthest(a)
-	local centre, radius = (a + b) / 2, (a - b).Magnitude / 2
-	for _ = 1, 2 do
-		for _, q in points do
-			local d = (q - centre).Magnitude
-			if d > radius then
-				local grown = (radius + d) / 2
-				centre += (q - centre) / d * (grown - radius)
-				radius = grown
-			end
-		end
-	end
-	for _, q in points do -- the loop above can leave a point just outside: cover them all
-		radius = math.max(radius, (q - centre).Magnitude)
-	end
-	return centre, radius
-end
 
 function WorldPlan.forestFloors(layout: any, density: { [string]: number }?): { Floor }
 	local d = WorldPlan.density(layout, density)
@@ -930,10 +1106,25 @@ function WorldPlan.forestFloors(layout: any, density: { [string]: number }?): { 
 		for s, forest in forests do
 			local trees = kept[s] or {}
 			if #trees > 0 and #trees < (total[s] or 0) then
-				local centre, radius = enclosingCircle(trees)
-				local r = math.max(8, radius + forest.radius * 0.05)
-				if r < floors[s].r then
-					floors[s] = { x = centre.X, z = centre.Y, r = r }
+				local sum = Vector2.zero
+				for _, tree in trees do
+					sum += tree
+				end
+				-- the circle around the kept trees' centroid, or the stand's own centre when that reaches them with
+				-- less ground (radial thinning keeps the centroid near the centre; a small sample can wander)
+				local best = nil
+				for _, centre in { sum / #trees, forest.center } do
+					local far = 0
+					for _, tree in trees do
+						far = math.max(far, (tree - centre).Magnitude)
+					end
+					local r = math.max(8, far + forest.radius * 0.05)
+					if not best or r < best.r then
+						best = { x = centre.X, z = centre.Y, r = r }
+					end
+				end
+				if best.r < floors[s].r then
+					floors[s] = best
 				end
 			end
 		end

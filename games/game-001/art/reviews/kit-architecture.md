@@ -237,48 +237,48 @@ fewer, larger plinth facing stones.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
 
-## Round: world dressing trim and plot clearance (FL-0116, D-047 amendment; D-019 renders)
+## Round: world dressing trim and plot clearance (FL-0116, D-047 amendment; D-019 renders; three author rounds)
 
 **What changed** (`WorldPlan`, `world/Layout`, `WorldService`; buildings, nodes, tags and gameplay untouched):
 - **Density knob** `world/Layout` `features.density = { forest = 0.75, props = 0.5 }` (share kept). `WorldPlan.FULL_DENSITY`
-  (1 / 1) and `service.density` override it. 1.0 rebuilds the untrimmed valley exactly (pinned by `WorldService.spec`).
-- **Trim, least seen first:** per kind, the highest "unseen" score goes first: distance from each plot's view line
-  (keep door out to the valley), the approach roads and the heartland, plus 90 studs of deterministic jitter. Plot
-  framing, road bands and the heartland are never thinned; no forest stand loses more than 1.6 x the forest cut.
-  Within a stand the outermost trees go first, so it keeps its middle, and the stand's leafy ground disc (terrain
-  `forest_floor`, `WorldPlan.forestFloors`) is re-sized to a circle around the trees that stay (52-89 % of today's
-  area for the thinned stands; untouched stands keep today's disc exactly).
-- **Plot clearance guard** (`PlotClearance.spec`): no tree, bush, rock, flower or prop within 4 studs of a crop field,
-  a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured with each prop's
-  live `Kit.prop` bounds. 18 placements intruded before (3 on or beside a field), 0 after.
+  (1 / 1) and `service.density` override it. 1.0 rebuilds the untrimmed valley exactly (pinned in `WorldService.spec`).
+- **Plot showcase, never thinned:** within 60 studs of a plot's crop fields, starting buildings and build slots, plus the
+  farm's view (190 studs behind the keep, 100 to either side: where the aerial and plot-back-edge cameras look from).
+  Scatter props (lone trees, bushes, rocks, flowers) also keep the plot framing, road bands and the heartland.
+- **Forests thin radially, stand by stand:** a stand with more than 25 % of its trees in the showcase, or on average within
+  15 studs of what the cameras look at, stays whole; the others lose up to 40 %, outermost trees first, all around, so
+  what stays is centred. Each thinned stand's ground disc (terrain `forest_floor`, `WorldPlan.forestFloors`) is the smaller of
+  the circle around the kept trees' centroid and around the stand centre, plus the same 5 % pad (one op per stand;
+  untouched stands keep today's disc exactly).
+- **Plot clearance** (`PlotClearance.spec`, a guard): no tree, bush, rock, flower or prop within 4 studs of a field, a starting
+  building's largest footprint, a slot, a build zone or a road, measured with each prop's live `Kit.prop` bounds. Blocked
+  trees, bushes and flowers move to the nearest legal spot within 12 studs instead of going; boulders against a trunk or bush
+  go. Hand-placed dressing moves too, and each gate-banner pair is re-placed mirrored about the road centreline (it
+  slides outward along the road where the avenue bends against a house), off the road and at least 1.5 studs off every wall.
 
-**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 on main d78d9cb -> 8,164 at density 1.0 on current main (clearance:
-15 placements removed, 8 hand-placed props moved; env-polish's props are in this number) -> 6,057 (trim). Trimmed:
-forests 3,831 -> 2,833 (221 -> 166 trees, -25 %), lone trees 766 -> 429, bushes 890 -> 460, rocks 685 -> 343, flowers
-234 (all inside plot framing, untouched). The two forests in front of the plots stay whole. The images were rendered
-before env-polish's props landed (they differ only in tree, rock and bush shapes).
+**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 on main d78d9cb -> 8,328 at density 1.0 on current main (env-polish props
+and relocated decor included) -> 6,569 (trim). Forests 3,853 -> 3,184 (222 -> 184 trees, -17 %; only the four far stands
+thin), lone trees 848 -> 527, bushes 905 -> 475, rocks 685 -> 346; flowers (279) and kingdom dressing untouched.
 
-**Images** (`img/`, Cycles 32 samples, Roblox 70 deg FOV; before = main, after = this branch):
-- `world_trim_aerial_plot_*`: crimson plot, 50 deg, 170 studs (the throne's default view).
-- `world_trim_aerial_valley_*`: valley centre, 50 deg, 170 studs, watchtower in frame.
-- `world_trim_throne_*`: eye height at the keep door, looking out over the plot and the approach road.
-- `world_trim_top_*`: whole valley from above.
-- `world_trim_farm_aerial_*`, `world_trim_farm_ground_*`: gold's starting farm, from the air (150 studs) and from the plot's back edge.
+**Images** (`img/`, Cycles 32 samples, Roblox 70 deg FOV; both sides rendered on the same current props: before = the generator's
+untrimmed plan, `FORGE_WORLD_UNTRIMMED=1`, after = this branch):
+- `world_trim_aerial_plot_*`: crimson plot, 50 deg, 170 studs. `world_trim_throne_*`: eye height at the keep door, looking out.
+- `world_trim_aerial_valley_*`: valley centre, 50 deg, 170 studs. `world_trim_top_*`: whole valley from above.
+- `world_trim_farm_aerial_*`, `world_trim_farm_ground_*`: gold's starting farm from the air and from the plot's back edge.
 
-**Verdict, looked at by FORGE-02** (one round; no regression found, fix noted below):
-- Plot views (aerial plot, throne, farm): indistinguishable apart from a few missing props. The framing forests beside
-  the plot keep their trees.
-- Top view: the outer forests and the scatter between the kingdoms are visibly lighter; the valley still reads populated,
-  and the four plots, both mid-valley forests and the mountain ring are unchanged.
-- Valley centre: bare before and after (a handful of bushes and rocks around the tower); the trim did not make it worse.
-- Round 2 (fresh-context review found two defects, both fixed): hand-placed kingdom dressing is now moved to the
-  nearest legal spot instead of deleted (the gate banner whose pole stood in the road bends moves 5.5-7.5 studs
-  clear, so the pair flanks the avenue again; the crate stack beside the storehouse moves 1.25 studs), and the dark
-  ground discs follow the thinned stands (top view). Also fixed: a boulder against a tree trunk (valley view).
-  A birch beside the heartland road is still gone (road clearance, canopy + 4 studs).
+**Verdict, looked at by FORGE-02** (round 3):
+- Farm views: the foreground is back (the oak that stood against the cabbage field is moved clear, the pines behind the fields stay);
+  the right half of the farm aerial was empty grass in the untrimmed plan too.
+- Plot and throne views: the banner pairs flank the avenue mirrored. In the throne view the near-left banner still reads as touching
+  the middle house, which is perspective: it stands about 20 studs further down the bend, 4.4 studs from the house wall.
+- Top view: the four far stands are lighter and their dark discs follow them; the stands near the plots and the mid-valley
+  stands are unchanged.
+- Known and by design: the plot-facing rim trees of one thinned stand (at the right edge of the plot aerial) are gone. Keeping them
+  would hold that stand's disc at full size, which was the worse defect. The dark patch at the right edge is the shadow of the tree
+  at the frame edge, in both versions.
 
-**Unverified:** Studio (real mesh bounds against `WorldPlan.CLEAR.radius`, StreamingEnabled, phone frame rate); a phone
-test decides whether the knob goes back up. The render uses the world dump, which has no sim-generated nodes.
+**Unverified:** Studio (real mesh bounds against `WorldPlan.CLEAR.radius`, StreamingEnabled, phone frame rate); a phone test decides
+whether the knob goes back up. The render uses the world dump, which has no sim-generated nodes.
 
 ## Environment props polish (FL-0117; the user's first live Studio playtest) — FORGE-02
 

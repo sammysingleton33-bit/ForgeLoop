@@ -453,9 +453,11 @@ local features = {
 	},
 	fields = plotFields, -- { center: Vector2, size: Vector2, yaw: number, crop: string }
 	-- Dressing density knob (D-047, FL-0116): the share of each dressing kind WorldPlan.props keeps, the least
-	-- seen first to go (map edges, the ground between kingdoms; plot framing and approach roads stay dense).
-	-- forest: trees in the forest stands; props: lone trees, bushes, rocks and flowers, each kind on its own.
-	-- 1.0 for both rebuilds the untrimmed valley (WorldService spec pins it); restore here after a phone test.
+	-- seen first to go (map edges, the ground between kingdoms). Never thinned: the plot showcase (fields,
+	-- buildings, slots and the farm's view), plot framing and approach roads for scatter props, and any forest stand
+	-- near the plots or in view. forest: trees in the forest stands; props: lone trees, bushes, rocks and flowers,
+	-- each kind on its own. 1.0 for both rebuilds the untrimmed valley (WorldService spec pins it); restore here
+	-- after a phone test.
 	density = { forest = 0.75, props = 0.5 },
 }
 
