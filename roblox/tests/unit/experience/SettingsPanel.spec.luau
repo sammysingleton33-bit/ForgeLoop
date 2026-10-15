@@ -271,3 +271,53 @@ describe("SettingsPanelController (FL-0103)", function()
 		end
 	)
 end)
+
+describe("Experience/SettingsPanel layout (FORGE-07 #123 M1, M2)", function()
+	local SettingsPanel = require("@game/ReplicatedStorage/Forge/Experience/SettingsPanel")
+	local roblox = require("@lune/roblox")
+
+	local function render(compact, width)
+		Create.useTestConnector()
+		local root = roblox.Instance.new("Frame")
+		local panel = SettingsPanel.new(root)
+		panel:render(
+			SettingsModel.sections({}, { platformReducedMotion = true }),
+			{ x = 0, y = 0, width = width, height = 600, compact = compact },
+			{}
+		)
+		return root
+	end
+
+	it("every control is a touch target of at least 44 px", function()
+		for _, compact in { false, true } do
+			local root = render(compact, if compact then 260 else 520)
+			local controls = 0
+			for _, item in root:GetDescendants() do
+				if item.Name == "Down" or item.Name == "Up" or item.Name == "Toggle" then
+					controls += 1
+					expect(item.Size.Y.Offset >= 44).toBe(true)
+					if item.Name ~= "Toggle" then
+						expect(item.Size.X.Offset >= 44).toBe(true)
+					end
+				end
+			end
+			expect(controls > 10).toBe(true)
+		end
+	end)
+
+	it("phones stack the label over its control, so a 260 px drawer never cuts a label short", function()
+		local root = render(true, 260)
+		local row = find(root, "masterVolume")
+		local label, control = find(row, "Label"), find(row, "Control")
+		expect(label.Size).toEqual(UDim2.new(1, 0, 0, SettingsPanel.LABEL_HEIGHT)) -- the whole width
+		expect(control.AnchorPoint).toEqual(Vector2.new(1, 1)) -- under the label, right-aligned
+		expect(row.Size.Y.Offset).toBe(SettingsPanel.rowHeight(true, false))
+		local noted = find(root, "reducedMotion") -- "On in your device settings"
+		expect(noted.Size.Y.Offset).toBe(SettingsPanel.rowHeight(true, true))
+		-- wide drawers keep one row: label left, control right
+		local wide = find(render(false, 520), "masterVolume")
+		expect(wide.Size.Y.Offset).toBe(SettingsPanel.ROW_HEIGHT)
+		expect(find(wide, "Control").AnchorPoint).toEqual(Vector2.new(1, 0.5))
+		Create.setConnector(nil)
+	end)
+end)

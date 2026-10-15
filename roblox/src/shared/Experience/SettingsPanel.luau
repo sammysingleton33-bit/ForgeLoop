@@ -30,9 +30,11 @@ local Theme = require("../UI/Theme")
 local SettingsPanel = {}
 SettingsPanel.__index = SettingsPanel
 
-SettingsPanel.ROW_HEIGHT = 44
+SettingsPanel.ROW_HEIGHT = 52 -- 44 px controls with room between rows
 SettingsPanel.CONTROL_WIDTH = 164 -- − bar + on desktop and phones alike
-SettingsPanel.STEPPER = 36
+SettingsPanel.STEPPER = 44 -- touch targets ≥ 44 px (interfaces §9; FORGE-07's #123 M1)
+SettingsPanel.LABEL_HEIGHT = 20 -- phones: the label sits above its control (FORGE-07's #123 M2)
+SettingsPanel.NOTE_HEIGHT = 16
 SettingsPanel.SCROLL_GUTTER = 12 -- right padding: the 4 px scroll bar never sits on a control
 
 function SettingsPanel.new(parent: Instance)
@@ -100,7 +102,7 @@ function SettingsPanel:_buttonControl(row: { [string]: any }, holder: Instance):
 	local button = Button.new({
 		text = row.text,
 		variant = variant(row),
-		size = "small",
+		size = "regular", -- 44 px tall: a touch target
 		width = SettingsPanel.CONTROL_WIDTH,
 		onActivated = function()
 			self:_call(row.key, action)
@@ -115,58 +117,71 @@ function SettingsPanel:_buttonControl(row: { [string]: any }, holder: Instance):
 	}
 end
 
+-- Wide drawers: the label left, the control right, in one 44 px row. Phones (compact): the label
+-- (and its note) on top and the control under it, right-aligned, so a 260 px drawer never cuts
+-- "Master volume" short (FORGE-07's #123 M2).
+function SettingsPanel.rowHeight(compact: boolean, hasNote: boolean): number
+	if not compact then
+		return SettingsPanel.ROW_HEIGHT
+	end
+	local top = SettingsPanel.LABEL_HEIGHT + (if hasNote then SettingsPanel.NOTE_HEIGHT else 0)
+	return top + 4 + SettingsPanel.ROW_HEIGHT
+end
+
 function SettingsPanel:_row(row: { [string]: any }, order: number, compact: boolean): Instance
 	local frame = Create("Frame", {
 		Name = row.key,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, SettingsPanel.ROW_HEIGHT),
 		LayoutOrder = order,
 	})
 	local label = Style.text({
 		text = row.label,
 		size = Theme.textSize(if compact then "small" else "body"),
-		extra = {
-			Name = "Label",
-			Size = UDim2.new(
-				1,
-				-(SettingsPanel.CONTROL_WIDTH + 8),
-				0,
-				if row.note then 24 else SettingsPanel.ROW_HEIGHT
-			),
-		},
+		extra = { Name = "Label" },
 	})
 	label.Parent = frame
 	local note = Style.text({
 		text = row.note or "",
 		size = Theme.textSize("caption"),
 		color = Theme.color("textMuted"),
-		extra = {
-			Name = "Note",
-			Position = UDim2.fromOffset(0, 22),
-			Size = UDim2.new(1, -(SettingsPanel.CONTROL_WIDTH + 8), 0, 18),
-			Visible = row.note ~= nil,
-		},
+		extra = { Name = "Note" },
 	})
 	note.Parent = frame
 	local holder = Create("Frame", {
 		Name = "Control",
 		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.fromScale(1, 0.5),
-		Size = UDim2.new(0, SettingsPanel.CONTROL_WIDTH, 1, 0),
+		Size = UDim2.fromOffset(SettingsPanel.CONTROL_WIDTH, SettingsPanel.ROW_HEIGHT),
 	})
 	Style.list("x", 8, Enum.HorizontalAlignment.Right, Enum.VerticalAlignment.Center).Parent = holder
 	holder.Parent = frame
 	local controls = if row.kind == "volume"
 		then self:_volumeControls(row, holder)
 		else self:_buttonControl(row, holder)
+	local function place(r: { [string]: any })
+		local hasNote = r.note ~= nil
+		note.Text = r.note or ""
+		note.Visible = hasNote
+		frame.Size = UDim2.new(1, 0, 0, SettingsPanel.rowHeight(compact, hasNote))
+		if compact then
+			label.Size = UDim2.new(1, 0, 0, SettingsPanel.LABEL_HEIGHT)
+			note.Position = UDim2.fromOffset(0, SettingsPanel.LABEL_HEIGHT)
+			note.Size = UDim2.new(1, 0, 0, SettingsPanel.NOTE_HEIGHT)
+			holder.AnchorPoint = Vector2.new(1, 1)
+			holder.Position = UDim2.fromScale(1, 1)
+		else
+			local width = -(SettingsPanel.CONTROL_WIDTH + 8)
+			label.Size = UDim2.new(1, width, 0, if hasNote then 24 else SettingsPanel.ROW_HEIGHT)
+			note.Position = UDim2.fromOffset(0, 22)
+			note.Size = UDim2.new(1, width, 0, 18)
+			holder.AnchorPoint = Vector2.new(1, 0.5)
+			holder.Position = UDim2.fromScale(1, 0.5)
+		end
+	end
+	place(row)
 	self.rows[row.key] = {
 		update = function(r: { [string]: any })
 			controls.update(r)
-			label.Size =
-				UDim2.new(1, -(SettingsPanel.CONTROL_WIDTH + 8), 0, if r.note then 24 else SettingsPanel.ROW_HEIGHT)
-			note.Text = r.note or ""
-			note.Visible = r.note ~= nil
+			place(r)
 		end,
 	}
 	return frame

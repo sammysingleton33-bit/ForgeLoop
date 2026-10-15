@@ -15,4 +15,10 @@ M = [
  ("FL-0103", C+"SettingsPanelController.luau", 'return self._settings:set(key, nextValue) == true', 'return true', "SettingsPanel", "a tap changes the setting and patches the row", "fw"),
  ("FL-0103", C+"SettingsPanelController.luau", 'connect(self._settings.changed, function()\n\t\t\t\tif self.isOpen then', 'connect(self._settings.changed, function()\n\t\t\t\tif false then', "SettingsPanel", "a change from elsewhere redraws the open panel", "fw"),
  ("FL-0103", C+"VFXController.luau", 'scale *= Def.REDUCED_QUALITY', 'scale *= 1', "Vfx", "effectsQuality 'reduced' halves every effect", "fw"),
+ ("FL-0103", X+"SettingsPanel.luau", 'SettingsPanel.STEPPER = 44', 'SettingsPanel.STEPPER = 36', 'SettingsPanel', 'every control is a touch target', "fw"),
+ ("FL-0103", X+"SettingsPanel.luau", 'size = "regular", -- 44 px tall: a touch target', 'size = "small",', 'SettingsPanel', 'every control is a touch target', "fw"),
+ ("FL-0103", X+"SettingsPanel.luau", '\t\tif compact then\n\t\t\tlabel.Size = UDim2.new(1, 0, 0, SettingsPanel.LABEL_HEIGHT)', '\t\tif false then\n\t\t\tlabel.Size = UDim2.new(1, 0, 0, SettingsPanel.LABEL_HEIGHT)', 'SettingsPanel', 'phones stack the label', "fw"),
+ ("FL-0103", C+"SettingsController.luau", 'ok = false -- an older echo: the local change stands', 'ok = ok', 'SettingsController', 'an older echo never reverts', "fw"),
+ ("FL-0103", C+"SettingsController.luau", 'local left = pending.sendAt - env.clock()', 'local left = 0', 'SettingsController', 'taps in a row send once', "fw"),
+ ("FL-0103", C+"SettingsController.luau", 'local waiting = not pending.sent or now < pending.untilAt', 'local waiting = true', 'SettingsController', 'snaps back to the server', "fw"),
 ]
