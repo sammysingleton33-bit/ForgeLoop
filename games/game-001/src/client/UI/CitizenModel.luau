@@ -32,7 +32,8 @@
 			idempotent per showing on the server)
 		CitizenModel.effect(e) -> Effect?                { kind, text, icon, tint, tone }
 		CitizenModel.outcome(called, ok, result, reason) -> Outcome
-			{ phase = "answered", reaction?, effects }  ok == true (at most EFFECT_LIMIT effects)
+			{ phase = "answered", reaction?, tone?, effects }  ok == true (at most EFFECT_LIMIT effects;
+			                                            tone: G13.8 v0.4-g10, e.g. "happy")
 			{ phase = "refused", message, code? }        ok == false (or any other non-nil value)
 			{ phase = "failed", message }               the call errored or the server dropped it (nil)
 		CitizenModel.moodBand(mood) -> string
@@ -460,9 +461,10 @@ function CitizenModel.outcome(called: boolean, ok: any, result: any, reason: any
 	end
 	if ok == true then
 		local effects = {}
-		local reaction = nil
+		local reaction, tone = nil, nil
 		if type(result) == "table" then
 			reaction = text(result.reaction)
+			tone = text(result.tone)
 			if type(result.effects) == "table" then
 				for _, e in ipairs(result.effects) do
 					local effect = CitizenModel.effect(e)
@@ -472,7 +474,7 @@ function CitizenModel.outcome(called: boolean, ok: any, result: any, reason: any
 				end
 			end
 		end
-		return { phase = "answered", reaction = reaction, effects = effects }
+		return { phase = "answered", reaction = reaction, tone = tone, effects = effects }
 	end
 	return { phase = "refused", message = CitizenText.reason(reason), code = reason }
 end
