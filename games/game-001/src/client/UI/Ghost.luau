@@ -1,8 +1,10 @@
 --!strict
 --[[
 	UI/Ghost — the see-through footprint shown in the world while placing a building: a flat slab
-	the size of `Kit.footprint` (rotated with the placement), an outline, and a marker on the front
-	edge (Kit models face -Z) so rotation is readable. Around it a fainter "Room" outline: the ground
+	the size of `Kit.footprint` (rotated with the placement), an outline, a cream "Door" strip on the
+	front edge (Kit models face -Z) and a cream facing arrow pointing out of it ("Arrow" shaft and
+	"ArrowLeft"/"ArrowRight" chevron), sized with the footprint so the facing reads from the aerial
+	camera (the user's first Studio feedback: rotation was not visible). Around it a fainter "Room" outline: the ground
 	the server keeps free for the building's upgrades plus the placement gap (BuildModel.room), so a
 	red verdict next to a neighbour or a tree is visible (FORGE-05 M-2 on #62). Tinted by the
 	server's verdict.
@@ -15,6 +17,9 @@
 		ghost:tint(state)                            "pending" | "ok" | "bad"
 		ghost:hide()      ghost:destroy()
 		ghost.folder -> Folder                       exclude it from placement raycasts
+		ghost.door, ghost.arrow, ghost.arrowLeft, ghost.arrowRight -> BasePart
+		Ghost.arrowLength(size: Vector2) -> number   the arrow's length; its tail sits ARROW_GAP in front of
+		                                             the front edge
 	Parts are anchored with CanCollide, CanTouch and CanQuery off, and cast no shadow.
 ]]
 
@@ -28,6 +33,12 @@ Ghost.COLORS = table.freeze({
 })
 Ghost.HEIGHT = 0.6
 Ghost.ROOM_HEIGHT = 0.2
+Ghost.MARK = Color3.fromRGB(247, 239, 220) -- door strip and arrow: cream on any verdict tint and on grass
+Ghost.ARROW_GAP = 0.6 -- studs between the front edge and the arrow's tail
+
+function Ghost.arrowLength(size: Vector2): number
+	return math.clamp(math.min(size.X, size.Y) * 0.5, 6, 14)
+end
 
 local function part(env: any, name: string, parent: Instance): BasePart
 	local p = env.newInstance("Part")
@@ -49,9 +60,13 @@ function Ghost.new(env: any, parent: Instance?)
 	folder.Name = "BuildGhost"
 	local base = part(env, "Footprint", folder)
 	base.Transparency = 0.45
-	local front = part(env, "Front", folder)
-	front.Transparency = 0.15
-	front.Size = Vector3.new(2, 0.4, 2)
+	local door = part(env, "Door", folder)
+	local arrow = part(env, "Arrow", folder)
+	local arrowLeft = part(env, "ArrowLeft", folder)
+	local arrowRight = part(env, "ArrowRight", folder)
+	for _, mark in { door, arrow, arrowLeft, arrowRight } do
+		mark.Color = Ghost.MARK
+	end
 	local outline = env.newInstance("SelectionBox")
 	outline.Name = "Outline"
 	outline.Adornee = base
@@ -71,7 +86,10 @@ function Ghost.new(env: any, parent: Instance?)
 	local self = setmetatable({
 		folder = folder,
 		base = base,
-		front = front,
+		door = door,
+		arrow = arrow,
+		arrowLeft = arrowLeft,
+		arrowRight = arrowRight,
 		outline = outline,
 		room = room,
 		roomOutline = roomOutline,
@@ -82,14 +100,36 @@ function Ghost.new(env: any, parent: Instance?)
 	return self
 end
 
+function Ghost:_marks(): { BasePart }
+	return { self.door, self.arrow, self.arrowLeft, self.arrowRight }
+end
+
 function Ghost:show(size: Vector2, cframe: CFrame, room: Vector2?)
-	local base, front = self.base, self.front
+	local base = self.base
 	base.Size = Vector3.new(size.X, Ghost.HEIGHT, size.Y)
 	base.CFrame = cframe * CFrame.new(0, Ghost.HEIGHT / 2, 0)
-	-- The marker sits on the front edge in the building's own frame, so it turns with it.
-	front.CFrame = cframe * CFrame.new(0, Ghost.HEIGHT + 0.2, -size.Y / 2 - 1.2) * CFrame.Angles(0, math.pi / 4, 0)
 	base.Transparency = 0.45
-	front.Transparency = 0.15
+	-- Everything below is in the building's own frame (front = -Z), so it turns with the cframe.
+	local front = -size.Y / 2
+	local length = Ghost.arrowLength(size)
+	local thick = math.clamp(length * 0.22, 1.5, 3)
+	local y = Ghost.HEIGHT + 0.2
+	self.door.Size = Vector3.new(math.min(size.X * 0.4, 8), 0.3, 1)
+	self.door.CFrame = cframe * CFrame.new(0, Ghost.HEIGHT + 0.15, front + 0.5)
+	local shaft = length * 0.7
+	self.arrow.Size = Vector3.new(thick, 0.4, shaft)
+	self.arrow.CFrame = cframe * CFrame.new(0, y, front - Ghost.ARROW_GAP - shaft / 2)
+	-- the chevron: two bars meeting at the tip, each running back at 45° to one side
+	local tip = front - Ghost.ARROW_GAP - length
+	local bar = length * 0.55
+	local back = bar / 2 * math.sqrt(0.5)
+	for side, mark in { [-1] = self.arrowLeft, [1] = self.arrowRight } do
+		mark.Size = Vector3.new(thick, 0.4, bar)
+		mark.CFrame = cframe * CFrame.new(side * back, y, tip + back) * CFrame.Angles(0, side * math.pi / 4, 0)
+	end
+	for _, mark in self:_marks() do
+		mark.Transparency = 0.05
+	end
 	self.outline.Visible = true
 	if room then
 		-- under the slab, so the building's own footprint reads first
@@ -108,7 +148,6 @@ function Ghost:tint(state: string)
 	local color = Ghost.COLORS[state] or Ghost.COLORS.pending
 	self.state = state
 	self.base.Color = color
-	self.front.Color = color
 	self.outline.Color3 = color
 	self.room.Color = color
 	self.roomOutline.Color3 = color
@@ -116,7 +155,9 @@ end
 
 function Ghost:hide()
 	self.base.Transparency = 1
-	self.front.Transparency = 1
+	for _, mark in self:_marks() do
+		mark.Transparency = 1
+	end
 	self.outline.Visible = false
 	self.room.Transparency = 1
 	self.roomOutline.Visible = false
