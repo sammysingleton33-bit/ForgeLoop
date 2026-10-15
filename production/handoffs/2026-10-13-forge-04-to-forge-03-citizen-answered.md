@@ -18,7 +18,7 @@ Branch `forge/04-experience-fl0108`, from main `55ba707`.
   - a co-ruler's answer doesn't complete my step;
   - my answer does, and is not logged as passed.
 - `lune run roblox/tests/harness/run.luau Onboarding` → framework 26/26 and OnboardingController 10/10. A rewarded bus step still can't auto-advance; an unrewarded one can.
-- `python3 roblox/tests/unit/experience/mutations.py FL-0108` → 3/3 caught.
+- `python3 roblox/tests/unit/experience/mutations.py FL-0108` → 9/9 caught (after FORGE-07's #124 review: the early-action reward, the CitizenAnswered resolver fields and the client whitelist).
 - **Unverified:** Studio, `roblox/studio-tests/experience.md` E6 step 4 (the card moves on after a real answer).
 
 ## Interfaces touched

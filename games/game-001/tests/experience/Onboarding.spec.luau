@@ -10,6 +10,7 @@ local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/Analyt
 local Onboarding = require("@game/ReplicatedStorage/Forge/Experience/Onboarding")
 local ExperienceRemotes = require("@game/ReplicatedStorage/Forge/Experience/Remotes")
 local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
+local Signals = require("@game/ReplicatedStorage/Game/Feedback/Signals")
 local PacingDef = require("@game/ServerScriptService/Game/Services/PacingService")
 local AnalyticsDef = require("@game/ServerScriptService/Forge/Services/AnalyticsService")
 local SettingsDef = require("@game/ServerScriptService/Forge/Services/SettingsService")
@@ -79,6 +80,9 @@ describe("game-001 VS-1 onboarding config", function()
 			end
 		end
 		expect(FLOW.steps[3].trigger.bus).toBe("BuildingPlaced")
+		-- FORGE-07 #124 L2: the answer is server-only (G9), and the client whitelist is exactly these two
+		expect(FLOW.steps[4].trigger).toEqual({ bus = "CitizenAnswered" })
+		expect(OnboardingConfig.clientActions).toEqual({ "GoalAcknowledged", "CitizenInspected" })
 		expect(FLOW.steps[3].hint.target).toEqual({ kind = "world", tag = "BuildSlot" }) -- G13.5 plot markers (FL-0081)
 		-- the Army rail button is the only Recruit control with an OnboardingTarget (ArmyPanelController)
 		expect(FLOW.steps[5].hint.target).toEqual({ kind = "ui", name = "HUD.ArmyButton" })
@@ -239,13 +243,51 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 	it("a client action completes only the current step", function()
 		boot(true)
 		join(p1, "crimson")
-		act(p1, "CitizenAnswered") -- out of order: ignored
+		act(p1, "BuildingPlaced") -- not a whitelisted client action: ignored
 		expect(onboarding:state(p1, "vs1").stepId).toBe("InspectCitizen")
 		act(p1, "CitizenInspected")
 		expect(onboarding:state(p1, "vs1").stepId).toBe("BuildOnPlot")
 		act(p1, "CitizenInspected") -- repeats do nothing
 		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen" })
 	end)
+
+	it("answering before building (the likely Studio order) counts when the build comes (FORGE-07 #124 L3)", function()
+		boot(true)
+		join(p1, "crimson")
+		act(p1, "CitizenInspected")
+		answer(p1) -- before any building: remembered
+		expect(onboarding:state(p1, "vs1").stepId).toBe("BuildOnPlot")
+		place(p1, "crimson", 31)
+		expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
+		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen" })
+		expect(passed(p1)).toEqual({}) -- done for real, not passed over
+	end)
+
+	it(
+		"CitizenAnswered without secondsOpen (no request bubble) still completes; a nil player credits nobody (#124 L1)",
+		function()
+			boot(true)
+			join(p1, "crimson")
+			act(p1, "CitizenInspected")
+			place(p1, "crimson", 41)
+			bus.CitizenAnswered:fire(nil, "crimson", 42, "handout_food") -- no player: nobody
+			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
+			bus.CitizenAnswered:fire(p1, "crimson", 42, 7) -- 4 args, a non-string decision
+			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
+			expect(env.mock.threadErrors).toEqual({})
+			-- the resolver itself (Feedback/Signals): bad fields are dropped, the player stays
+			local resolve = Signals.subjects.CitizenAnswered
+			expect(resolve({ nil, "crimson", 42, "x", 3 })).toEqual({})
+			local subject = resolve({ p1, "crimson", 42, 7, 0 / 0 })[1]
+			expect(subject.player).toBe(p1)
+			expect(subject.info).toEqual({ kingdom = "crimson" }) -- no decision, no NaN secondsOpen
+			expect(resolve({ p1, "crimson", 42, "handout_food", 30 })[1].info).toEqual({
+				kingdom = "crimson",
+				decision = "handout_food",
+				secondsOpen = 30,
+			})
+		end
+	)
 
 	it("never credits a rival kingdom's capture or build", function()
 		boot(true)

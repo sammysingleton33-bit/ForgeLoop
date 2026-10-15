@@ -187,6 +187,34 @@ describe("Experience/Onboarding step graph", function()
 		end
 	)
 
+	it(
+		"a rewarded step done early (via satisfied) still pays when its turn comes (FORGE-07 #124 M1, D-050 (5))",
+		function()
+			local flow = {
+				id = "pay",
+				version = 1,
+				steps = {
+					{ id = "Start", trigger = { auto = true }, hint = { title = "Hi" }, expectSec = 1 },
+					{ id = "Wait", trigger = { client = "Poke" }, hint = { title = "Poke" }, expectSec = 1 },
+					{
+						id = "Paid",
+						trigger = { bus = "RoundEnded" },
+						hint = { title = "Finish" },
+						expectSec = 5,
+						reward = { currency = "Coins", amount = 5 },
+					},
+				},
+			}
+			local state = Onboarding.restore(flow, nil, 0)
+			Onboarding.begin(flow, state, 0)
+			expect(#Onboarding.handle(flow, state, { bus = "RoundEnded" }, 1)).toBe(0) -- early: remembered
+			local done = Onboarding.handle(flow, state, { client = "Poke" }, 2)
+			expect(done[2].id).toBe("Paid")
+			expect(done[2].via).toBe("satisfied")
+			expect(done[2].reward).toEqual({ currency = "Coins", amount = 5 }) -- a real action, so it pays
+		end
+	)
+
 	it("begins by completing the automatic first step", function()
 		local state = Onboarding.restore(FLOW, nil, 0)
 		local transitions = Onboarding.begin(FLOW, state, 0)
