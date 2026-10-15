@@ -20,6 +20,7 @@ evidence:
   - "FORGE-05 #33 follow-ups: Notification.spec 20 (+ different moment within the cooldown, non-table payload, NaN duration, invalid UTF-8, place/reserveTop) and OnboardingController.spec (card reserves the stack top); FL-0027 mutations 21/21 CAUGHT"
   - check.sh OVERALL PASS (framework 521/0, game-001 1181/0); Notification.spec 25/25; mutations FL-0027 30/30
   - Notification.spec 26/26; mutations.py FL-0027 32/32 CAUGHT
+  - "combined test merge with #128/#94/#82/#64/#98/#102 on 39c456c: check.sh PASS (framework 528/0, game-001 1359/0); re-checked on 3add643; FL-0027 32/32"
 ---
 
 # Notifications and celebration moments
@@ -50,3 +51,4 @@ Prototype/screenshot review; Lune specs for queue logic
 - 2026-10-13 forge-04: REVIEW (unchanged). FORGE-03's request: place() takes an optional limit (cards in that placement, e.g. 1 above the phone conversation sheet). FL-0027 mutations 30/30.
 - 2026-10-13 forge-04: REVIEW → REVIEW. Main 3d3cb82 merged. NotificationController.KIND_ICON and iconFor are gone: FORGE-03's Toast has the achievement icon (laurel) and accent itself since FL-0105 (#86), so a card passes only a toast's own icon.
 - 2026-10-15 forge-04: REVIEW → REVIEW. FORGE-07 #82 review: L1 a toast demoted by a short screen and shown again is not announced again (item.announced; spec + mutation row); L2 the AbsoluteSize connection has no Lune event to drive it (Studio E7); L4 checked: KingdomHudController passes place()'s limit (1) for the phone band (main KingdomHudController.luau:517); main merged
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #82 (5eedcc9): FL-0027 follow-ups incl. FORGE-07 L1

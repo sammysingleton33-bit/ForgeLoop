@@ -39,7 +39,7 @@ describe("game-001 Analytics.luau", function()
 	end)
 
 	it("declares the BRIEF §13 VS-1 funnel in order", function()
-		expect(Analytics.funnels.VS1.steps).toEqual({
+		expect(Analytics.funnels.FirstMatch.steps).toEqual({
 			"Spawn",
 			"FirstGather",
 			"FirstBuildPlaced",

@@ -52,11 +52,11 @@ describe("VS-1 analytics (FL-0063)", function()
 		}
 	end
 
-	-- VS1 steps logged per user id: { [userId] = { stepName, ... } }
+	-- FirstMatch steps logged per user id: { [userId] = { stepName, ... } }
 	local function vs1()
 		local out = {}
 		for _, call in roblox:callsTo("LogFunnelStepEvent") do
-			if call.args[1] == "VS1" then
+			if call.args[1] == "FirstMatch" then
 				out[call.userId] = out[call.userId] or {}
 				table.insert(out[call.userId], call.args[4])
 			end
@@ -120,7 +120,7 @@ describe("VS-1 analytics (FL-0063)", function()
 		expect(registry:get("AnalyticsService").stats.dropped.outOfOrder).toBeGreaterThan(0)
 	end)
 
-	it("times each VS1 step after Spawn: MilestoneReached, seconds since the session started (M7)", function()
+	it("times each FirstMatch step after Spawn: MilestoneReached, seconds since the session started (M7)", function()
 		boot({ kingdomService(), matchService("match30") })
 		join(crimson1, "crimson")
 		env.wait(30)
@@ -152,7 +152,7 @@ describe("VS-1 analytics (FL-0063)", function()
 		-- repeats are counted, never logged (FORGE-05 #64 M1: they flooded Output at about 430 lines a minute)
 		local lines = 0
 		for _, entry in env.mock.logs do
-			lines += if string.find(entry.message, "analytics funnel VS1", 1, true) then 1 else 0
+			lines += if string.find(entry.message, "analytics funnel FirstMatch", 1, true) then 1 else 0
 		end
 		expect(lines).toBe(2)
 		expect(registry:get("AnalyticsService").stats.dropped.duplicate).toBe(20)

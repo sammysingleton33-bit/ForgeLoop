@@ -12,7 +12,7 @@ M = [
  ("FL-0063", X+"AnalyticsSchema.luau", 'session.startOn ~= nil and (type(session.startOn) ~= "string" or not table.find(knownEvents, session.startOn))', 'false', "AnalyticsSchema", "checks session.startOn against the bus", "fw"),
  ("FL-0063", S+"AnalyticsService.luau", '		if sent then\n			self:_state(subject.player).lastActivity = eventName', '		if true then\n			self:_state(subject.player).lastActivity = eventName', "MatchAnalytics", "SessionEnd keeps the player's own last step", "game"),
  ("FL-0063", G+"config/Analytics.luau", '		startOn = "KingdomJoined",\n', '', "MatchAnalytics", "starts the session on KingdomJoined", "game"),
- ("FL-0063", G+"config/Analytics.luau", '{ on = "ObjectiveCaptured", funnel = "VS1", step = 6 },', '{ on = "ObjectiveCaptured", funnel = "VS1", step = 6, match = { kingdom = "frost" } },', "MatchAnalytics", "runs the BRIEF §13 funnel", "game"),
+ ("FL-0063", G+"config/Analytics.luau", '{ on = "ObjectiveCaptured", funnel = "FirstMatch", step = 6 },', '{ on = "ObjectiveCaptured", funnel = "FirstMatch", step = 6, match = { kingdom = "frost" } },', "MatchAnalytics", "runs the BRIEF §13 funnel", "game"),
  ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", 'then "draw" else kingdomId == result.winner', 'then "draw" else true', "MatchAnalytics", "logs MatchEnded per ruler still here", "game"),
  ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", '	elseif Def.PLAYING[phase] then\n		self.decidedPhase = phase\n', '	elseif Def.PLAYING[phase] then\n		local _ = phase\n', "MatchAnalytics", "logs MatchEnded per ruler still here", "game"),
  ("FL-0063", G+"src/server/Services/MatchAnalyticsService.luau", '		if kingdomId ~= nil then', '		if true then', "MatchAnalytics", "logs MatchEnded per ruler still here", "game"),
@@ -41,6 +41,6 @@ M = [
  ("FL-0063", G+"src/server/Services/AnnouncerService.luau", '\t\t\tself:_celebrated(delivery.player, delivery.moment)\n', '', 'KingdomFeedback', 'logs CelebrationShown on the server', 'game'),
  ("FL-0063", G+"src/server/Services/AnnouncerService.luau", 'if ok and type(celebrate) == "string" then', 'if ok then', 'KingdomFeedback', 'logs CelebrationShown on the server', 'game'),
  ("FL-0063", G+"src/server/Services/AnnouncerService.luau", 'pcall(analytics.event, analytics, player, "CelebrationShown", { kind = celebrate })', 'analytics:event(player, "CelebrationShown", { kind = celebrate })', 'KingdomFeedback', 'an analytics error never stops an announcement', 'game'),
- ("FL-0063", G+"config/Analytics.luau", 'milestones = { funnel = "VS1", event = "MilestoneReached", info = milestoneInfo },', 'milestones = nil,', 'MatchAnalytics', 'times each VS1 step after Spawn', 'game'),
- ("FL-0063", G+"config/Analytics.luau", 'return { mode = if type(mode) == "string" then mode else "unknown" }', 'return { mode = "unknown" }', 'MatchAnalytics', 'times each VS1 step after Spawn', 'game'),
+ ("FL-0063", G+"config/Analytics.luau", 'milestones = { funnel = "FirstMatch", event = "MilestoneReached", info = milestoneInfo },', 'milestones = nil,', 'MatchAnalytics', 'times each FirstMatch step after Spawn', 'game'),
+ ("FL-0063", G+"config/Analytics.luau", 'return { mode = if type(mode) == "string" then mode else "unknown" }', 'return { mode = "unknown" }', 'MatchAnalytics', 'times each FirstMatch step after Spawn', 'game'),
 ]

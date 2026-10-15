@@ -8,11 +8,11 @@
 	Custom fields are listed in CustomField01, 02, 03 order. Values are sent as strings and stay
 	low-cardinality (types, outcomes, phases; never ids or names).
 	FL-0063:
-	- the VS-1 funnel (`VS1`, BRIEF §13) runs from the G9 events through the track rules below, with the
+	- the VS-1 funnel (`FirstMatch`, BRIEF §13) runs from the G9 events through the track rules below, with the
 	  CONTRACTS G9 attribution rules in Feedback/Signals (`subjects`);
 	- sessions start on KingdomJoined (VS-1 has no profiles, so nothing fires PlayerReady, D-027);
 	- MatchAnalyticsService logs MatchEnded and answers `session.leftInfo` for PhaseLeft;
-	- each VS1 step after Spawn also logs MilestoneReached (seconds since the session started, `milestones`);
+	- each FirstMatch step after Spawn also logs MilestoneReached (seconds since the session started, `milestones`);
 	- ConversationAnswered and ReputationShifted (D-030) are declared for FORGE-01's ConversationService
 	  and ReputationService, which call AnalyticsService:event (interfaces §8) once they ship.
 ]]
@@ -87,7 +87,7 @@ return table.freeze({
 			fields = { "category", "source", "phase" },
 		},
 		MilestoneReached = {
-			description = "A VS1 step after Spawn was reached (FORGE-00 review M7). Value: whole seconds since the session started (KingdomJoined); compare its median per milestone with config/Pacing.luau.",
+			description = "A FirstMatch step after Spawn was reached (FORGE-00 review M7). Value: whole seconds since the session started (KingdomJoined); compare its median per milestone with config/Pacing.luau.",
 			value = "sinceStartSec",
 			fields = { "milestone", "mode" }, -- 5 steps x 4 modes = 20 combinations
 		},
@@ -110,7 +110,7 @@ return table.freeze({
 			description = "VS-1 guided first minutes (games/game-001/config/Onboarding.luau steps).",
 			kind = "onboarding",
 		},
-		VS1 = {
+		FirstMatch = {
 			description = "BRIEF §13: spawn -> first gather -> first build placed -> first building complete -> first recruit -> first capture.",
 			kind = "once",
 			inOrder = true, -- FORGE-00's #64 ruling: kingdom-wide credit never skips a player ahead
@@ -131,16 +131,16 @@ return table.freeze({
 	},
 	-- VS1 funnel from the G9 events (who is credited: Feedback/Signals, CONTRACTS G9)
 	track = {
-		{ on = "KingdomJoined", funnel = "VS1", step = 1 },
-		{ on = "ResourceGathered", funnel = "VS1", step = 2 },
-		{ on = "BuildingPlaced", funnel = "VS1", step = 3, match = { placedBy = true } },
-		{ on = "BuildingCompleted", funnel = "VS1", step = 4 },
-		{ on = "UnitsRecruited", funnel = "VS1", step = 5 },
-		{ on = "ObjectiveCaptured", funnel = "VS1", step = 6 },
+		{ on = "KingdomJoined", funnel = "FirstMatch", step = 1 },
+		{ on = "ResourceGathered", funnel = "FirstMatch", step = 2 },
+		{ on = "BuildingPlaced", funnel = "FirstMatch", step = 3, match = { placedBy = true } },
+		{ on = "BuildingCompleted", funnel = "FirstMatch", step = 4 },
+		{ on = "UnitsRecruited", funnel = "FirstMatch", step = 5 },
+		{ on = "ObjectiveCaptured", funnel = "FirstMatch", step = 6 },
 	},
 	subjects = Signals.subjects,
-	-- timed VS1 milestones (FORGE-00 review M7): funnel steps carry no time
-	milestones = { funnel = "VS1", event = "MilestoneReached", info = milestoneInfo },
+	-- timed FirstMatch milestones (FORGE-00 review M7): funnel steps carry no time
+	milestones = { funnel = "FirstMatch", event = "MilestoneReached", info = milestoneInfo },
 	session = {
 		startEvent = "SessionStart",
 		endEvent = "SessionEnd",
