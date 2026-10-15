@@ -8,9 +8,13 @@
 		Build.Place(type, position, rot) -> (buildingId?, reason?)    charges through the treasury; placedBy
 		Build.Upgrade(buildingId) -> (boolean, reason?)
 		Build.GetBuildings() -> { Building }                           every standing building (G2 views)
-		Build.PlaceSlot(slotId: string(1,32), type) -> (buildingId?, reason?)   G13.5: builds on one of the
-		                                 player's kingdom's build slots, facing its street (the slot's rot);
-		                                 the type must fit the slot (Build/Fit); then the Build.Place rules
+		Build.PlaceSlot(slotId: string(1,32), type, turn: integer(0,3)?) -> (buildingId?, reason?)   G13.5:
+		                                 builds on one of the player's kingdom's build slots, facing its street
+		                                 (the slot's rot), turned `turn` quarter turns from that: yaw = slot rot +
+		                                 turn x 90 degrees, in the Build.Place `rot` convention (nil = 0, today's
+		                                 behaviour; CONTRACTS v0.4-g9h). The type must fit the slot at that turn
+		                                 (Build/Fit.fits(type, size, turn); Fit.turns lists the turns that fit),
+		                                 else does_not_fit; then the Build.Place rules
 		Build.GetSlots() -> { { id, size, occupiedBy: number? } }      the asker's kingdom's slots (G13.5)
 	Server -> client
 		Build.Buildings({ Building })    the buildings that changed (placed, progress, level, damage,
@@ -45,7 +49,11 @@ return {
 	{
 		name = "Build.PlaceSlot",
 		kind = "function",
-		args = { Validate.string(1, 32), Validate.enum(Types.BUILDING_TYPES) },
+		args = {
+			Validate.string(1, 32),
+			Validate.enum(Types.BUILDING_TYPES),
+			Validate.optional(Validate.integer(0, 3)),
+		},
 		rate = { burst = 4, perSecond = 2 },
 	},
 	{ name = "Build.GetSlots", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } },

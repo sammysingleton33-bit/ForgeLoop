@@ -1,6 +1,6 @@
 ---
 id: FL-0112
-title: Starting kingdom cleanup: generated trees and rocks keep out of crop fields and build zones (B15 #1)
+title: "Starting kingdom cleanup: generated trees and rocks keep out of crop fields and build zones (B15 #1)"
 track: build
 owner: forge-01
 status: REVIEW
@@ -9,7 +9,8 @@ game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0051]
-evidence: []
+evidence:
+  - "check.sh PASS on the merge (game-001 1309/0); own mutants 4/4; probe seeds 1-20: footprints touching fields 1012 -> 0, zones 80 -> 0"
 ---
 
 # Starting kingdom cleanup: generated trees and rocks keep out of crop fields and build zones (B15 #1)
@@ -37,3 +38,4 @@ Automated: LayoutZones spec, mutations 3/3, check.sh. Studio: B15 checklist (scr
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #131 (81f9637), B15 item 1; only G6 (B15 Studio row: a starting farm with no tree or rock in a field, front yard or flank) left

@@ -232,6 +232,10 @@ Rules under test (headless: `games/game-001/tests/experience/CitizenBubbles.spec
 | Targets (v0.4-g6) | a strike or cue marks exactly the citizens the server names (`entityIds`), never every citizen of the occupation; a cue with no ids shows on no citizen |
 | Consequence cues | the G13.3 vocabulary in config `Vfx.luau`; a cue with a sound always has an effect; an unknown cue uses the reaction tone's pose; a continuous effect (`rest`) stops after its `seconds` (6), at the citizen's next cue, or when the rig is released |
 | Conversation | the citizen's own bubble hides while their conversation panel is open |
+| Aerial readability (B15, the user's first live Studio feedback) | always on top: roofs and trees never hide a bubble; a request is a round badge ("!" gold, "?" blue, "…" green, 46 px) and, with room, a card with 17 px words (2 lines at most, then "…"); bubbles keep their size at every zoom |
+| Words | at most 3 bubbles show words (2 on a phone, 1 zoomed out past 150 studs), and only where the card covers no other bubble: a request is never hidden. Other requests show the badge alone; a reaction without room is not drawn (its pose, sound and effect still play) |
+| New request | its badge pops twice (about 1 s); never with Reduce Motion on |
+| Tap / click | a tap on a bubble selects that citizen (the card opens, as for a tap on the citizen); while placing a building, bubbles take no input |
 
 Steps
 1. Play Solo on the aerial view. Run `citizen.request <entityId> <scenarioId>`: a bubble with "!" and the scenario's thought text appears over that citizen and follows them as they walk.
@@ -244,11 +248,33 @@ Steps
 7. Answer a request whose consequence has a cue, for example `hammer` or `strike_placard`. The cue's effect plays on that citizen, with its sound if it has one. The citizen also poses if `playPose` exists. A `rest` cue shows motes on that citizen for about 6 s, then they stop.
 8. Open a conversation with a citizen who has a request: their bubble hides while the panel is open and comes back when it closes. Switch to walk mode: bubbles on citizens next to the ruler show, wherever the overview was last centred.
 
-Pass: steps 1–8 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence).
+9. Aerial readability: Play, stay in the aerial view at the start zoom, run `vs1.request` three or four times. Every request shows a badge you can spot at a glance, none hidden by a roof, tree or another bubble; the nearest ones show their words. A new request's badge pops once. Zoom all the way out: the badges stay the same size and at most one bubble keeps its words. Device emulator, a phone: badges, at most two with words.
+10. Tap a request badge (and a card): the citizen is selected and FORGE-03's card opens, exactly as when tapping the citizen. Start placing a building and click where a bubble is: the placement gets the click, not the bubble.
+11. Settings → Reduce Motion on, then `vs1.request`: the new badge does not pop.
+12. With a mouse, in the aerial view: move over a citizen. A light outline shows on them, also through a roof, and goes when the mouse leaves them or moves over a HUD button. Click them: the outline turns gold and stays while they are selected; tap empty ground and it goes. While placing a building, and while the conversation stage shows, there is no outline.
+
+Probe for the Studio MCP operator (one `execute_luau`, Client context, read-only): what the bubbles show right now.
+```lua
+local out = {}
+for _, g in game.Players.LocalPlayer.PlayerGui:GetChildren() do
+	if g.Name == "ForgeCitizenBubble" and g:IsA("BillboardGui") and g.Adornee then
+		local text = g:FindFirstChild("Text", true)
+		table.insert(out, string.format("%s %s %dx%d top=%s active=%s words=%s %q", tostring(g:GetAttribute("EntityId")),
+			tostring(g:GetAttribute("BubbleKind")), g.Size.X.Offset, g.Size.Y.Offset, tostring(g.AlwaysOnTop),
+			tostring(g.Active), tostring(text and text.Visible), text and text.Text or ""))
+	end
+end
+return #out .. " bubbles\n" .. table.concat(out, "\n")
+```
+Expected: every bubble `top=true`; `active=true` in the aerial view (false while placing); requests `46x46 words=false` or `260x66 words=true`, at most 3 with words (2 on a phone, 1 zoomed out).
+
+Pass: steps 1–12 hold. Record a short video of a request, an answer, the reaction and a strike (FL-0091's Studio evidence), and a screenshot at the start zoom and fully zoomed out with several requests (B15).
 
 History:
 - 2026-10-12 FORGE-04: written (FL-0091).
 - 2026-10-13 FORGE-04: FL-0091 follow-up (#87): v0.4-g6 targets (only the citizens named), the `rest` effect ends, the speaker's bubble hides during a conversation, a placard survives a job change; step 3 expects a whole-occupation strike.
+- 2026-10-15 FORGE-04: FL-0115 hover and selection outlines on citizens (step 12).
+- 2026-10-15 FORGE-04: FL-0115 (B15) aerial readability (the user's first live Studio feedback): badges and cards always on top, words only where they hide nothing, new-request pop, tap selects the citizen; steps 9–11 and the operator probe.
 
 ## E9 — Reaction poses on the portrait and the world rig (FL-0100 (2/2), game-001)
 Needs:
