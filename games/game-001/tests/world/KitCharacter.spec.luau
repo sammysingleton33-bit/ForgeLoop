@@ -673,11 +673,11 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 		return if p:IsA("Part") then `Part/{p.Shape.Name}` else p.ClassName
 	end
 	-- Aerial readability, measured on the shipped rigs (rest pose, axis-aligned boxes): the smallest job hat is the
-	-- builder's cap, 1.95 studs across; the smallest tool is the axe blade, 2.40 at its longest. Before this pass
+	-- builder's peaked cap, 1.9 studs across (a wedge 1.7 x 1.9); the smallest tool is the axe blade, 2.40 at its longest. Before this pass
 	-- the hat slot held a 1.66 hair ball and the tools were 1.7 (axe), 2.1 (sack, hammer) and 3.0 (pick). The
 	-- overview camera (50° down, 170 studs, Roblox 70° FOV on a 720 px frame) shows about 3 px per stud, so
 	-- 1.9 studs of hat is about 6 px, 2.3 studs of tool about 7 px and a 6.5 stud signature box about 20 px.
-	local N_HAT, N_TOOL, N_BOX = 1.9, 2.3, 6.5
+	local N_HAT, N_TOOL, N_BOX = 1.85, 2.3, 6.5
 	local function span(p: BasePart): (Vector3, Vector3)
 		return bounds(p)
 	end
@@ -724,23 +724,28 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				lo, hi = math.min(lo, l), math.max(hi, l)
 			end
 			local hat = child(Kit.character("citizen", job, AZURE, lookOf(1)), "Hair")
-			rows[job] = { kind = primitive(hat), width = horizontal(hat), lo = lo, hi = hi }
+			local hMin, hMax = bounds(hat)
+			rows[job] = { kind = primitive(hat), width = horizontal(hat), height = hMax.Y - hMin.Y, lo = lo, hi = hi }
 		end
 		for i, a in WORKING do
 			for j = i + 1, #WORKING do
 				local b = WORKING[j]
 				local A, B = rows[a], rows[b]
-				expect(A.kind ~= B.kind or math.abs(A.width - B.width) >= 0.8).toBe(true)
+				-- (the two wedge caps differ in height: a tall dark tail against a low pale peak)
+				expect(A.kind ~= B.kind or math.abs(A.width - B.width) >= 0.8 or math.abs(A.height - B.height) >= 0.5).toBe(
+					true
+				)
 				-- shaded variants of one hat never reach the value range of another's (grayscale groups)
 				expect(A.lo > B.hi + 0.08 or B.lo > A.hi + 0.08).toBe(true)
 			end
 		end
-		-- the shapes: a wide flat disc, a slouched wedge cap, a squat drum, a square block
+		-- the shapes: a wide flat disc, a slouched tall wedge cap, a squat drum, a low peaked wedge cap
 		expect(rows.farmer.kind).toBe("Part/Cylinder")
 		expect(rows.farmer.width).toBeGreaterThan(3)
 		expect(rows.woodcutter.kind).toBe("WedgePart")
 		expect(rows.miner.kind).toBe("Part/Cylinder")
-		expect(rows.builder.kind).toBe("Part/Block")
+		expect(rows.builder.kind).toBe("WedgePart")
+		expect(rows.woodcutter.height).toBeGreaterThan(rows.builder.height + 0.5)
 	end)
 
 	it("keeps the hat on the head: the face stays clear and nothing grows past the spear", function()
@@ -924,6 +929,142 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 					expect((aMax:Max(bMax) - aMin:Min(bMin)).Magnitude).toBeGreaterThanOrEqual(N_BOX)
 				end
 			end
+		end
+	end)
+end)
+
+describe("Kit.character clearance: hats sit on the head, the sack and tools clear it (no visible clipping)", function()
+	local HEAD_R = 0.8
+	local SEAT_MAX = 0.4 -- the head enters a hat's lower face by at most this
+	local EPS = 0.012
+	local ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee" } -- celebrate: see the last test
+
+	-- points on the head sphere (a lat-long grid, 24 x 12) in world space
+	local function headSamples(head: BasePart): { Vector3 }
+		local out = {}
+		local c, r = head.CFrame.Position, head.Size.X / 2
+		for i = 0, 11 do
+			local phi = math.pi * (i + 0.5) / 12
+			for j = 0, 23 do
+				local theta = 2 * math.pi * j / 24
+				table.insert(
+					out,
+					c + r * Vector3.new(math.sin(phi) * math.cos(theta), math.cos(phi), math.sin(phi) * math.sin(theta))
+				)
+			end
+		end
+		return out
+	end
+
+	-- is the world point inside the part's solid (Block, Wedge, Cylinder or Ball)?
+	local function insideSolid(p: BasePart, w: Vector3): boolean
+		local l = p.CFrame:PointToObjectSpace(w)
+		local h = p.Size / 2
+		if p:IsA("WedgePart") then
+			return math.abs(l.X) <= h.X + EPS
+				and l.Y >= -h.Y - EPS
+				and l.Y <= h.Y + EPS
+				and math.abs(l.Z) <= h.Z + EPS
+				and (l.Y + h.Y) <= p.Size.Y * (l.Z + h.Z) / p.Size.Z + EPS
+		elseif p:IsA("Part") and p.Shape == Enum.PartType.Cylinder then
+			return math.abs(l.X) <= h.X + EPS and math.sqrt(l.Y * l.Y + l.Z * l.Z) <= h.Y + EPS
+		elseif p:IsA("Part") and p.Shape == Enum.PartType.Ball then
+			return l.Magnitude <= h.X + EPS
+		end
+		return math.abs(l.X) <= h.X + EPS and math.abs(l.Y) <= h.Y + EPS and math.abs(l.Z) <= h.Z + EPS
+	end
+
+	-- distance of a world point above the part's lower face (the cylinder's axis is its X)
+	local function aboveBottom(p: BasePart, w: Vector3): number
+		local up, half = p.CFrame.UpVector, p.Size.Y / 2
+		if p:IsA("Part") and p.Shape == Enum.PartType.Cylinder then
+			up, half = p.CFrame.RightVector, p.Size.X / 2
+		end
+		return (w - p.CFrame.Position):Dot(up) + half
+	end
+
+	-- distance from a point to a part's box (0 inside)
+	local function boxDistance(p: BasePart, cf: CFrame, w: Vector3): number
+		local l = cf:PointToObjectSpace(w)
+		local h = p.Size / 2
+		return Vector3.new(
+			math.max(math.abs(l.X) - h.X, 0),
+			math.max(math.abs(l.Y) - h.Y, 0),
+			math.max(math.abs(l.Z) - h.Z, 0)
+		).Magnitude
+	end
+
+	local function checkHat(label: string, rig: Model)
+		local head, hat = child(rig, "Head"), child(rig, "Hair")
+		local seat = -math.huge
+		for _, w in headSamples(head) do
+			local d = aboveBottom(hat, w)
+			seat = math.max(seat, d)
+			if d > EPS and not insideSolid(hat, w) then
+				error(`{label}: the head pokes through the hat at {w} ({d} above its lower face)`)
+			end
+		end
+		expect(seat).toBeLessThanOrEqual(SEAT_MAX + EPS) -- sits ON the head, not wrapped round it
+		expect(seat).toBeGreaterThanOrEqual(0.15) -- and rests on it (the head enters it a little), not floating
+	end
+
+	it("seats every job hat on the head: nothing of the head shows through the hat, whatever the look", function()
+		for _, job in WORKING do
+			for hair = 1, R.hair do
+				checkHat(
+					`{job} hair {hair}`,
+					Kit.character("citizen", job, AZURE, { skin = 1, hair = hair, hairColor = 1, outfit = 1 } :: any)
+				)
+			end
+		end
+	end)
+
+	it("covers the governor's head with the crown (the head used to poke through the circlet's top)", function()
+		for _, kingdom in { "crimson", "gold" } do
+			checkHat(`governor {kingdom}`, Kit.character("governor", "idle", CRIMSON, nil, kingdom))
+		end
+	end)
+
+	it("keeps the hauler's sack clear of the head and both arms at rest and in every pose", function()
+		local rig = Kit.character("citizen", "hauler", AZURE)
+		local head, sack = child(rig, "Head"), child(rig, "Tool")
+		local r = sack.Size.X / 2
+		local arms = { child(rig, "LeftArm"), child(rig, "RightArm") }
+		local restGap = (pos(sack) - pos(head)).Magnitude - r - HEAD_R
+		expect(restGap).toBeGreaterThanOrEqual(0.2) -- a visible gap, not touching, at rest
+		local minHead, minArm = math.huge, math.huge
+		for _, action in ACTIONS do
+			for _, speed in { 0, 6, 12 } do
+				for i = 0, 7 do
+					local w = posed(rig, Pose.sample(action, "hauler", i / 8, speed))
+					minHead = math.min(minHead, (w[sack].Position - w[head].Position).Magnitude - r - HEAD_R)
+					for _, arm in arms do
+						minArm = math.min(minArm, boxDistance(arm, w[arm], w[sack].Position) - r)
+					end
+				end
+			end
+		end
+		expect(minHead).toBeGreaterThanOrEqual(0.1) -- through walking, working, carrying, fighting, fleeing
+		expect(minArm).toBeGreaterThanOrEqual(0.03) -- the swinging arms never enter the sack
+		-- the sack sits behind the back, not through the torso
+		local torso = child(rig, "Torso")
+		expect(boxDistance(torso, torso.CFrame, pos(sack)) - r).toBeGreaterThanOrEqual(-0.1)
+	end)
+
+	it("keeps the hand tools clear of the head in every pose except the celebration (box vs head sphere)", function()
+		for _, job in { "farmer", "woodcutter", "miner", "builder" } do
+			local rig = Kit.character("citizen", job, AZURE)
+			local head, tool = child(rig, "Head"), child(rig, "Tool")
+			local minGap = math.huge
+			for _, action in ACTIONS do
+				for _, speed in { 0, 6, 12 } do
+					for i = 0, 7 do
+						local w = posed(rig, Pose.sample(action, job, i / 8, speed))
+						minGap = math.min(minGap, boxDistance(tool, w[tool], w[head].Position) - HEAD_R)
+					end
+				end
+			end
+			expect(minGap).toBeGreaterThanOrEqual(0.1)
 		end
 	end)
 end)

@@ -25,7 +25,7 @@
 		farmer      wide straw hat (flat disc 3.4), long hoe board, lean body        KitHeadwear "strawhat"
 		woodcutter  charcoal knit cap slouched back into a tall tail, big bearded axe blade, stocky   "knitcap"
 		miner       squat ochre iron hat, double-sided pick bar (T), stocky          "hardhat"
-		builder     white linen block cap, big wooden mallet, broad                  "buildercap"
+		builder     white linen peaked cap (low wedge, sits on the head), big wooden mallet, broad   "buildercap"
 		hauler      no job hat (hair shows), huge burlap sack on the back, broad
 		idle        hair only, nothing carried, lean
 	The job also owns an outfit accent: the trousers (colour, KitAccent = job) and the outfit's fixed neutral
@@ -199,7 +199,9 @@ local HAIR_STYLES: { HairStyle } = {
 }
 
 -- Job headwear (Hair slot, welded to the Head): one bold silhouette per working job, none a ball (balls are
--- hair) and none a hair colour. Heads: top 5.44, face clear below y = +0.33 (head-centre frame).
+-- hair) and none a hair colour. Heads: top 5.44, face clear below y = +0.33 (head-centre frame). A hat sits ON
+-- the head (clearance rules in the Kit spec): the head enters it by at most 0.4 above its lower face, and no
+-- skin shows through its top or sides (every head point above the hat's lower face is inside the hat).
 local JOB_HATS: { [string]: PartSpec } = {
 	farmer = { -- wide flat straw disc: the widest thing on any citizen, a big pale circle from above
 		name = "strawhat",
@@ -214,10 +216,10 @@ local JOB_HATS: { [string]: PartSpec } = {
 		-- (the slope stays above the skull, so no skin shows through): the only hat taller behind than in front
 		name = "knitcap",
 		class = "WedgePart",
-		size = Vector3.new(1.9, 1.7, 2.0),
+		size = Vector3.new(1.9, 1.6, 2.0),
 		color = KNIT,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(0, 1.19, 0.1),
+		offset = CFrame.new(0, 1.24, 0.1), -- base 0.44 above the head centre, apex 2.04
 	},
 	miner = { -- squat iron hat with a rim wider than the head, ochre and glossy: a pot on the head
 		name = "hardhat",
@@ -226,30 +228,32 @@ local JOB_HATS: { [string]: PartSpec } = {
 		size = Vector3.new(0.8, 2.2, 2.2),
 		color = HARDHAT,
 		material = Enum.Material.Metal,
-		offset = CFrame.new(0, 0.74, 0) * UPRIGHT,
+		offset = CFrame.new(0, 0.84, 0) * UPRIGHT,
 	},
-	builder = { -- white linen block cap: the only flat-sided, square-cornered headwear
+	builder = { -- white linen peaked cap: a low wedge, thin lip over the brow, higher crown behind. It sits ON the head
+		-- (base 0.45 above the head centre) and its slope stays above the skull, so the head no longer pokes
+		-- through a flat-bottomed block
 		name = "buildercap",
-		class = "Part",
-		shape = Enum.PartType.Block,
-		size = Vector3.new(1.95, 0.85, 1.95),
+		class = "WedgePart",
+		size = Vector3.new(1.7, 0.95, 1.9),
 		color = COIF,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(0, 0.77, 0),
+		offset = CFrame.new(0, 0.925, 0.05),
 	},
 }
 -- The hat takes the look's hair slot, so look.hair picks a variant of it: a roll tilt (3) and a shade (2).
 local HAT_ROLLS = { 0, math.rad(9), math.rad(-9) }
 local HAT_SHADES = { 1, 0.88 } -- shaded hats of different jobs never overlap in luminance (spec)
 
-local GOVERNOR_CROWN: PartSpec = { -- gold circlet low on the head: a gold ring from above
+local GOVERNOR_CROWN: PartSpec = { -- gold circlet on the head, a gold disc from above; it covers the head's top
+	-- (the head used to poke through its top face): bottom 0.41 above the head centre, top 0.91
 	name = "crown",
 	class = "Part",
 	shape = Enum.PartType.Cylinder,
-	size = Vector3.new(0.38, 1.52, 1.52),
+	size = Vector3.new(0.5, 1.52, 1.52),
 	color = C.gold,
 	material = Enum.Material.Metal,
-	offset = CFrame.new(0, 0.57, 0) * UPRIGHT,
+	offset = CFrame.new(0, 0.66, 0) * UPRIGHT,
 }
 
 local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel square from above)
@@ -466,14 +470,15 @@ local TOOLS: { [string]: PartSpec } = {
 		material = Enum.Material.Wood,
 		offset = OUT * CFrame.new(0, -0.45, -0.2),
 	},
-	sack = { -- big burlap sack slung high on the back, rising past the shoulders
+	sack = { -- big burlap sack on the back, seated against the shoulder blades and clear of the head and both arms
+		-- (centre on the spine, 3.05 up, 1.95 behind it; joint at 0.96, 3.8, 0.575)
 		name = "sack",
 		class = "Part",
 		shape = Enum.PartType.Ball,
 		size = Vector3.new(2.7, 2.7, 2.7),
 		color = BURLAP,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(0.3, 0.2, 0.7),
+		offset = CFrame.new(-0.96, -0.75, 1.375),
 		onBack = true,
 	},
 	spear = { -- 9 long and 0.4 thick in pale ash, so the line reads against grass and steel

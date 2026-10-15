@@ -301,3 +301,46 @@ Rubric (1-5): PASS needs silhouette >= 4, variation >= 4, readability at gamepla
 - Visible improvement on "before": **yes for job identification, grouping and crowd read** (the hats and trouser colours are a real, visible gain, strongest on the farmer); **no for the tools**, which still do not read as tools; **none for idle, soldier and governor**, which are essentially unchanged.
 - Passes: the rig set as a whole does **not** pass (variation 3, detail density 3; tools unresolved). Hauler is a marginal pass. Everything is headless and render-based: no Studio evidence.
 - Still reads as placeholder: the tools (stick, grey wedge, dark bar, crate, bare pole), the flat torsos with no faces, the builder's white-box hat, the woodcutter's block hat, the governor's thin crown and the unchanged idle model.
+
+## FL-0118 clip fix on #138 (FORGE-05 visible-defect findings; D-051)
+
+FORGE-05 found two clipping defects on the phase 1 renders: the builder's head poked through its cap, and the hauler's sack
+overlapped the head. Minimal change, still 9 parts; nothing else in the phase 1 design moved.
+- **Builder.** The 1.95 x 0.85 x 1.95 block wrapped the head 0.455 deep and its flat underside cut across the face. It is now
+  a low wedge cap 1.7 x 0.95 x 1.9 (thin lip over the brow, higher crown behind), base 0.45 above the head centre, so it sits
+  ON the head (the head enters it 0.35) and its slope stays above the skull (no skin through it). It is still white linen
+  (L .91); it is a different primitive from the woodcutter's tall dark wedge (height 0.95 against 1.6, spec).
+- **Hauler.** The sack (centre 1.26 right, 4.0 up, 1.28 behind the spine) overlapped the head sphere by 0.25 and the right
+  arm; it is now centred on the spine, 3.05 up and 1.95 behind (still 2.7 across). Gap to the head 0.37 at rest and at least
+  0.30 in every pose of idle, walk, work, carry, fight and flee; gap to both arms at least 0.23.
+- **Other clips found by the same check.** The governor's gold circlet (0.38 tall, top at +0.76) let the head's top
+  (+0.80) poke through its top face; it is now 0.5 tall at +0.66 (covers the head, a gold disc from above). The woodcutter's
+  cap and the miner's pot wrapped the head 0.46 deep; both sit 0.1 higher (cap apex unchanged at 2.04, slope 1.6 tall).
+- **Not a model defect.** The jagged hair/face line seen in `citizen_polish_heads.jpg` comes from the preview's 24-segment
+  spheres; the clipfix renders use 64 x 32 spheres and the line is smooth. Studio spheres are smooth.
+- **Still clipping, not fixable in the Kit.** In the `celebrate` pose (arms raised 140°) the hand tool sweeps through the head
+  (box vs head sphere: farmer -0.34, builder -0.35, hauler's arms are clear, woodcutter -0.07, miner -0.14). The cause is
+  `Sim/Pose.celebrate` (FORGE-04): it gives no Tool rotation. Suggested fix there: tool jobs celebrate with `Tool` swung
+  out (the joint allows 45°) or with one arm raised.
+- **Spec.** `KitCharacter.spec` "clearance" (4 tests): every head surface point above a hat's lower face is inside the hat
+  (so no skin shows through any job hat, whatever the look, nor through the governor's crown); the head enters a hat by
+  0.15-0.4; the sack clears the head sphere (0.2 at rest, 0.1 in poses) and both arms (0.03) in idle, walk, work, carry, fight
+  and flee at speeds 0, 6 and 12; the four hand tools clear the head sphere by 0.1 in the same poses. 10 mutants (old builder
+  block, short peak, old sack position, sack on the arm, sack against the head, old crown, old cap and pot heights, hoe
+  into the head, floating farmer disc) all fail the spec.
+- **Renders** (`img/citizen_polish_clipfix_*.jpg`, looked at): `_heads_a.jpg` (farmer, woodcutter, miner, builder) and
+  `_heads_b.jpg` (hauler, idle, soldier, governor), each from the front, the side and the back; `_builder_hauler.jpg`
+  (builder and hauler enlarged, 3 angles); `_poses.jpg` (hauler walk, flee, work, carry; builder, woodcutter, farmer and
+  miner work, side view); `_crowd.jpg` (30 citizens, 50° at 170 studs, #138 as pushed against after). Result: no head
+  clips a hat or the sack in any tile; the builder reads as a peaked cap, the sack still sits behind the head in the front
+  view (a big brown ball beside the shoulder), so a bun reading remains possible there.
+
+### Still NEEDS-WORK after this fix (fresh-context D-019 round 1, deferred; not regressions)
+- **Tools are placeholders (Phase 2, D-048):** hoe is a board, axe a head with no handle, pick a bar, mallet a block, spear a
+  bare pole; they need handle + head (2 detail parts).
+- **Woodcutter cap** is oversized and reads as a chimney or bucket; **builder** hat reads as a paper hat, not a hard hat, and
+  the mallet block resembles the hauler's load; **miner** pot is close to the farmer's disc (needs a lamp and a smaller pot).
+- **Variation:** the four of a job are near clones (hat colour, shirt shade); **idle** is the plainest model; torsos are
+  identical red boxes (no belt, sash or collar); **governor** crown and staff are thin from the air, no cape (a welded cape
+  needs a Torso part, outside D-048); **soldier** helm reads as a gnome hat and the spear has no head.
+- **Kingdom red from above** fell about 14% because straw and white hats cover the shoulders.
