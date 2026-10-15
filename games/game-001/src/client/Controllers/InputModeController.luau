@@ -5,7 +5,7 @@
 
 		local input = registry:find("InputModeController")
 		input:set("build")              -- FORGE-03's build menu, when placement starts
-		input.mode                      -- "explore" | "build"   ("command" is VS-2)
+		input.mode                      -- "explore" | "build" | "edit" (G13.9 base editing; "command" is VS-2)
 		input.changed:connect(function(mode, previous) ... end)
 		input:accepts("explore")        -- optional: true when a tap or click now belongs to that mode
 		input.selected:connect(function(kind, id) ... end)   -- G13.6; FORGE-03's panels listen
@@ -43,6 +43,13 @@
 		  a gamepad the first B leaves GUI selection (Roblox's default) and the next one is "back".
 		- Listened to through UserInputService, never bound, so the keys are not sunk.
 
+	Edit (G13.9 base editing, FL-0121; FORGE-03's edit UI sets it)
+		- A tap selects only your own buildings (the model's KingdomId is your team's KingdomId) and
+		  your own kingdom's plots (BuildSlot, as MoveToSlot targets); citizens and everything else
+		  give "none". Whether a plot is free is the edit UI's (Build.Slots) and the server's
+		  (slot_occupied) call. Entering edit mode clears the selection, as build mode does; X or
+		  gamepad B leaves it. Hover and citizen bubbles take no input while editing.
+
 	Hover (FL-0115; FeedbackHighlightController outlines it)
 		- A mouse move in explore mode resolves the citizen under the pointer with the same
 		  EntityController:pick a tap uses, and fires hovered("citizen", id) or hovered("none", "") on a
@@ -67,14 +74,14 @@
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
-export type Mode = "explore" | "build"
+export type Mode = "explore" | "build" | "edit"
 
 local Def = {
 	name = "InputModeController",
 	dependencies = {},
 }
 
-Def.MODES = table.freeze({ "explore", "build" })
+Def.MODES = table.freeze({ "explore", "build", "edit" })
 Def.LATER = table.freeze({ command = "VS-2" })
 Def.ACTION = "ForgeLeaveBuildMode"
 Def.KINDS = table.freeze({ "citizen", "building", "slot", "none" })
@@ -92,8 +99,8 @@ function Def.isTap(downAt: Vector2, upAt: Vector2, heldSec: number, config: any)
 end
 
 -- What a raycast hit selects: walks up from the hit instance (at most 8 levels).
--- hasTag(instance, tag) is CollectionService:HasTag. Returns (kind, id).
-function Def.resolveHit(hit: any, hasTag: (any, string) -> boolean): (string, any)
+-- hasTag(instance, tag) is CollectionService:HasTag. Returns (kind, id, the instance that matched).
+function Def.resolveHit(hit: any, hasTag: (any, string) -> boolean): (string, any, any)
 	local current = hit
 	for _ = 1, 8 do
 		if current == nil then
@@ -103,19 +110,39 @@ function Def.resolveHit(hit: any, hasTag: (any, string) -> boolean): (string, an
 			return current:GetAttribute("BuildingId")
 		end)
 		if okId and buildingId ~= nil then
-			return "building", buildingId
+			return "building", buildingId, current
 		end
 		local okTag, tagged = pcall(hasTag, current, "BuildSlot")
 		if okTag and tagged then
 			local okSlot, slotId = pcall(function()
 				return current:GetAttribute("SlotId")
 			end)
-			return "slot", if okSlot and slotId ~= nil then slotId else current.Name
+			return "slot", if okSlot and slotId ~= nil then slotId else current.Name, current
 		end
 		local okParent, parent = pcall(function()
 			return current.Parent
 		end)
 		current = if okParent then parent else nil
+	end
+	return "none", "", nil
+end
+
+-- Base editing (G13.9): what a hit selects in edit mode, for the kingdom `mine` (nil = none of it).
+-- Only that kingdom's buildings (KingdomId) and plots (Kingdom, else KingdomId); else "none".
+function Def.resolveEdit(hit: any, hasTag: (any, string) -> boolean, mine: any): (string, any)
+	local kind, id, instance = Def.resolveHit(hit, hasTag)
+	if kind == "none" or mine == nil or instance == nil then
+		return "none", ""
+	end
+	local ok, owner = pcall(function()
+		if kind == "building" then
+			return instance:GetAttribute("KingdomId")
+		end
+		local value = instance:GetAttribute("Kingdom")
+		return if value ~= nil then value else instance:GetAttribute("KingdomId")
+	end)
+	if ok and owner ~= nil and owner == mine then
+		return kind, id
 	end
 	return "none", ""
 end
@@ -147,6 +174,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_userInputOverride = options.userInput,
 		_raycastOverride = options.raycast,
 		_hasTagOverride = options.hasTag,
+		_kingdomOverride = options.kingdom, -- () -> kingdom id (specs)
 		_actions = nil,
 		_connections = {},
 		_press = nil,
@@ -261,14 +289,38 @@ function Controller:hoverAt(screenPos: Vector2?): string
 	return kind
 end
 
--- Resolves a tap at a screen position and selects the result (explore mode only).
+-- Resolves a tap at a screen position and selects the result (explore and edit modes).
 function Controller:tapAt(screenPos: Vector2): (string?, any)
-	if not self:accepts("explore") then
+	local kind, id
+	if self:accepts("explore") then
+		kind, id = self:_resolve(screenPos)
+	elseif self:accepts("edit") then
+		local hit = self:_raycast(screenPos)
+		kind, id = Def.resolveEdit(hit, self:_hasTag(), self:_kingdom())
+	else
 		return nil, nil
 	end
-	local kind, id = self:_resolve(screenPos)
 	self:select(kind, id)
 	return kind, id
+end
+
+function Controller:_hasTag(): (any, string) -> boolean
+	local env = self._env
+	return self._hasTagOverride or function(instance, tag)
+		return env.CollectionService:HasTag(instance, tag)
+	end
+end
+
+-- The local player's kingdom (their Team's KingdomId, MatchHost; opts.kingdom in specs).
+function Controller:_kingdom(): any
+	if self._kingdomOverride ~= nil then
+		return self._kingdomOverride()
+	end
+	local ok, kingdom = pcall(function()
+		local team = self._env.Players.LocalPlayer.Team
+		return team and team:GetAttribute("KingdomId")
+	end)
+	return if ok then kingdom else nil
 end
 
 function Controller:_resolve(screenPos: Vector2): (string, any)
@@ -283,12 +335,8 @@ function Controller:_resolve(screenPos: Vector2): (string, any)
 	if hit == nil then
 		return "none", ""
 	end
-	local env = self._env
-	local hasTag = self._hasTagOverride
-		or function(instance, tag)
-			return env.CollectionService:HasTag(instance, tag)
-		end
-	return Def.resolveHit(hit, hasTag)
+	local kind, id = Def.resolveHit(hit, self:_hasTag())
+	return kind, id
 end
 
 function Controller:_raycast(screenPos: Vector2): any
@@ -401,8 +449,8 @@ function Controller:set(mode: any): boolean
 			local previous = self.mode
 			self.mode = nextMode
 			self._changedAt = self._env.clock()
-			self:_bindLeave(nextMode == "build")
-			if nextMode == "build" and self.selection.kind ~= "none" then
+			self:_bindLeave(nextMode ~= "explore") -- X / B leave build and edit mode
+			if nextMode ~= "explore" and self.selection.kind ~= "none" then
 				self:select("none", "") -- panels close while placing
 			end
 			if nextMode ~= "explore" then
