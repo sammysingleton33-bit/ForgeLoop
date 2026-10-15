@@ -1,9 +1,9 @@
 ---
 id: FL-0119
-title: Base editing phase 1, server: Build.CanMove / Move / MoveToSlot, atomic in-place moves (CONTRACTS G13.9, B16)
+title: "Base editing phase 1, server: Build.CanMove / Move / MoveToSlot, atomic in-place moves (CONTRACTS G13.9, B16)"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-15
@@ -43,3 +43,4 @@ Automated: tests/sim/BuildingMove.spec.luau (the 13 cases in the handoff), Build
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-01: READY → BUILDING. Started: Sim canMove/moveBuilding + Commands.MoveBuilding, Build.CanMove/Move/MoveToSlot, broadcast signature + WorldView re-pivot, BuildingMoved, objective-zone placement rule (R13), moveCooldown; specs BuildingMove (13 cases) + exploits fuzz + mutation rows. Stacked on #132 (Fit.fits turn).
