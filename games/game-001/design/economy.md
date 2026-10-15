@@ -62,30 +62,40 @@ level 2, build a barracks and recruit 3 soldiers.
 
 ## Rates the slice needs (targets for FORGE-01 and FORGE-04)
 Goal: a first-time player finishes the whole slice, from spawn to the capture, in **6–8 minutes**
-(D-044 (1), `design/pacing/PACING.md` §3). The capture walk takes about 2 minutes, so rows 6–7 must
-fit in roughly the first **5.5 minutes**. Keep level 2 is optional in the slice (D-044 (1)). The
+(D-044 (1), `design/pacing/PACING.md` §3). After the third recruit is paid for, the fixed tail is about
+80 s: 24 s training, about 35 s march and about 20 s capture (FORGE-05's pacing probe,
+`production/quality-gates/pacing-probe.md`; `config/Objectives.luau` `captureSeconds = 20`). So rows 6–7
+must fit in roughly the first **6.5 minutes**. Keep level 2 is optional in the slice (D-044 (1)). The
 wood and stone targets below are for a player who also upgrades the keep before sending soldiers,
 which is how BRIEF §4 row 6 is checked in Studio.
-- Wood: 240 in ~5.5 min → **≈ 44 wood/min** from 3 woodcutters (+ ruler gathering) → about
-  **13–15 wood/min per woodcutter**. PACING §3 assumes ≈ 15.
-- Stone: 160 in ~5.5 min → **≈ 29 stone/min** from 2 miners → about **14 stone/min per miner**.
-  PACING §3 assumes ≈ 8, which leaves keep level 2 about 70 stone short at 5:30. The slice can still
+- Wood: 240 in ~6.5 min → **≈ 37 wood/min** from 3 woodcutters → about **12–13 wood/min per
+  woodcutter**. PACING §3 assumes ≈ 15.
+- Stone: 160 in ~6.5 min → **≈ 25 stone/min** from 2 miners → about **12–13 stone/min per miner**.
+  PACING §3 assumes ≈ 8, which leaves keep level 2 about 55 stone short at 6:30. The slice can still
   end, because keep level 2 is optional, but the row 6 keep check then comes later.
 - Without keep level 2 the slice needs only 90 more wood and 10 more stone (house, barracks,
   3 soldiers). PACING's assumed rates earn that in about 2 minutes of gathering.
 - Measured: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`) found
   that an idle kingdom earns about 76–86 wood, 52 stone and 86 food per minute over its first
-  5 minutes, which is above every target here. The 70-stone shortfall holds only at PACING's assumed
+  5 minutes, which is above every target here. The 55-stone shortfall holds only at PACING's assumed
   rates. This is headless evidence, not a play test; tuning waits for the user's play (D-043).
 - Food: 12 starting citizens eat 12 food/min; 3 soldiers add 3. 3 farmers must bring **≥ 5 food/min
   each** so the kingdom stays fed with a small surplus (the 120 starting food covers ~10 minutes of
   upkeep if farms stall, but only ~2 minutes once 3 soldiers are bought). Staying at a fed ratio of
   0.9 or more is also what lets the kingdom grow (D-045), so a food shortfall now costs growth as
   well as hunger.
-- Ruler gathering: 5–10 per harvest with a short cooldown, so a player who gathers feels it but the
-  citizens remain the main source (the AI-citizen hook).
+- Ruler gathering (optional, D-030; FL-0051): the target is that a ruler who gathers feels it but the
+  citizens stay the main source (the AI-citizen hook), so **no more than about 10–15 of a resource per
+  minute of continuous gathering**. The shipped `Sim/RulerGather.CONFIG` (2 food or wood, 1 stone or
+  gold per harvest, 0.8 s cooldown) allows about 150 wood/min, several times the citizens' whole
+  output: see Open questions.
 
 ## Open questions
+- Ruler gathering rate (FORGE-07 on #110): the shipped `RulerGather.CONFIG` (FORGE-01's) gives about
+  150 wood/min to a ruler who keeps gathering, against the ≈ 37 wood/min this slice budgets from
+  3 woodcutters. Either the config slows (for example a 5–6 s cooldown, or 1 per harvest with a
+  longer cooldown) or this budget assumes ruler income; FORGE-00 and FORGE-01 to decide. Until
+  then the rates above leave ruler gathering out.
 - Gold has no source or sink in VS-1 except keep level 3: fine for the slice; VS-2 needs a gold use.
 - Storage caps, trade and production chains (VS-2) are not modelled.
 - Whether soldiers count in `getPopulation().total` (assumed yes, G5) — ProductionService charges

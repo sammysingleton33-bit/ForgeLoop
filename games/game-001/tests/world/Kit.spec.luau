@@ -60,7 +60,11 @@ describe("Kit.build (G10)", function()
 						for _, d in model:GetDescendants() do
 							expect(d:IsA("PartOperation")).toBe(false)
 						end
-						expect(#parts(model)).toBeLessThanOrEqual(MAX_BUILDING_PARTS)
+						if #parts(model) > MAX_BUILDING_PARTS then
+							error(
+								`{bt} L{level} stage {stage} colour {color}: {#parts(model)} parts > {MAX_BUILDING_PARTS}`
+							)
+						end
 					end
 				end
 			end

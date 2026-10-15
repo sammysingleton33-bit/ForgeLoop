@@ -145,8 +145,15 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 1. Play Solo. Set food low enough that the kingdom is underfed (fed ratio below 0.8; e.g. spend food with
    FORGE-03's treasury debug command) and wait about a minute so farmers get hungry.
 2. Within 20 s a thought bubble appears over one or more citizens (FORGE-04 bubbles; at most 3).
-3. Select a farmer with a bubble and open the conversation (FORGE-03 panel → `Kingdom.Converse`).
-4. Choose "open the grain store" (costs 25 food), then talk to the same farmer again.
+3. Watch one bubble for over a minute without answering. With 2 players (Test → Start, same party),
+   check that the second ruler sees the same bubbles within 20 s of joining.
+4. Select a farmer with a bubble, open the conversation (FORGE-03 panel → `Kingdom.Converse`) and close
+   it without answering; wait 30 s.
+5. Open it again and choose "open the grain store" (costs 25 food), then talk to the same farmer again.
+6. On a builder's "overworked" request, answer "push on" until its 50 % walk-out happens.
+7. (#107 M1–M3) With 2 rulers in one kingdom: ruler 1 opens a bubble's conversation and closes it
+   unanswered; ruler 2 taps the same citizen and answers. Then feed the kingdom (fed ratio 1) while a
+   farmer's question is open but unanswered, and wait 20 s. Then let ruler 1 open all bubbles and leave.
 
 **Expected:**
 - The farmer has a generated name and occupation; the question names a family member (no `{...}` left).
@@ -154,7 +161,20 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - After choosing: food −25 once; the reputation screen (FORGE-03) shows Compassion up with the answer as
   its history text; the farmer's loyalty rises; farmers work faster for 2 minutes (they harvest more
   often); a reaction bubble and cheer/work-fast cues play.
-- Talking again right away offers nothing (the scenario's cooldown); answering twice is impossible.
+- A bubble stays up for as long as its request is open (it is re-sent every 20 s; one bubble lasts 45 s),
+  and a co-ruler who joins later sees it too.
+- Closing the panel without answering leaves the bubble up; opening it again shows the same question.
+- Step 7: ruler 2 sees ruler 1's question (same text and options) and their answer is charged once; ruler 1's
+  panel, if still open, is then refused (`not_offered`, FORGE-03's wording) and charges nothing. Once the
+  kingdom is fed, the farmer's bubble goes within 20 s, and its open panel answers with a refusal. When
+  ruler 1 leaves, new bubbles appear for ruler 2 within 20 s (ruler 1's unanswered questions don't hold the
+  3 slots).
+- Carriers on strike keep their load and deliver it when they are back at work: a woodcutter never turns
+  stone into wood, and a farmer never delivers wood as food.
+- Talking again right after answering offers nothing (the scenario's cooldown); answering twice is
+  impossible.
+- The push-on walk-out puts an "On strike" placard on that builder only, even though the other builders
+  work faster; the builder stops at once, even with wood in hand.
 - A walk-out answer (breaking the grain-sacks promise, "The kingdom needs that grain more than you do."
   → `speaker_refuses_work`) shows an "On strike" placard on that citizen only (FORGE-04 bubbles), never
   on the rest of the occupation; it goes away when the walk-out ends (60 s).
@@ -173,6 +193,9 @@ starts on the first join and is untimed; the first watchtower capture ends the s
    that slot.
 8. Upgrade the lumber camp to level 2 (`Build.Upgrade(lumbercampId)`) and note the wood on the HUD for a
    minute before and after.
+9. (#89 L2) **Test → Clients and Servers → Local Server, 2 players** in different kingdoms. Player 1 stands
+   up (Space). Player 2 walks (V) to player 1's keep and sits on the empty throne. Then player 2 sits on
+   their own throne. Then player 1 resets while player 2 sits on player 1's throne again.
 
 **Expected:**
 - After spawning (and after every respawn) the ruler sits on the keep's throne, wearing crown and cape.
@@ -189,6 +212,10 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   `Costs` build time divided by the builders on site.
 - When the keep upgrade completes, the seated ruler sits on the new keep's throne within half a second.
   A ruler who stood up stays standing after the next upgrade.
+- Step 9: player 2 is put down in front of player 1's dais within half a second (Output:
+  `KingdomService: unseated a non-ruler from a throne`) and stays on their own throne. When player 1
+  respawns, they sit on their throne at once, and player 2 ends up in front of the dais. A co-ruler of
+  player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
 
 ## Performance capture (FL-0049, gate G7)

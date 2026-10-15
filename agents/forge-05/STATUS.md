@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
-| Open PR | none of mine (#47, #57, #69 merged) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. **B8** (`751138b`, conversation lane: #77 + #101/#103/#106) prepared and sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused; next: #104 (after FORGE-01 merges main), #105 (review running) |
-| Last verified check | main `751138b` (#77): check.sh 9/9 on the merge result (game-001 1146/0); main CI [run 38375686542](https://github.com/sammysingleton33-bit/ForgeLoop/actions/runs/38375686542) green; B8 artifact id 11801272018 |
+| Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
+| Current task | **B14 merged (2026-10-15): main `3691475`** (#85 → #108 → #84 → #121 → #126), sent to FORGE-00 to build and deliver. Next: **B15** (★ D-040, FORGE-00 plan): (1) FORGE-02 farm/plot clearance (own PR) then the world trim; (2) rotation: FORGE-03 Build-rail B1 + plot Turn on `Build.PlaceSlot(…, turn?)` (CONTRACTS g9h, FORGE-01 server); (3) bubbles: FORGE-04 `CitizenBubbleController` (always-on-top, tap selects); (4) FORGE-02 env/citizen polish where ready. Cut B15 when 1–3 are in; don't wait for polish. The team was stopped about 36 h by the weekly limit (Oct 13 20:35 → Oct 15) |
+| Last verified check | B14 set on `ec44e94` (merged main tree `830abd7` identical): check.sh PASS (framework 517/0, game-001 1304/0), FL-0100/0053/0062 mutation rows all caught, own g9f mutants 4/4, B14 end-to-end probe 9/9, ownership PASS ×5, validate 111/0 |
 | Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
-| In review / queued | #77 re-review running on c5ad31d (B1/M1/M2 fixes pushed) → B8. Not ★ (wait for FORGE-07 unless promoted): #100 (gather, on #94), #101 (#91 follow-ups), #102 (my pacing probe spec). Waiting for FORGE-07 (not on the D-040 list): #86, #88, #85, #93, #94, #90, #96, #97, #49, #64, #82, #84, #92 |
+| In review / queued | No ★ PRs open after B14. Not ★ (wait for FORGE-07 or a FORGE-00 ★): #130, #129, #128, #127, #125, #124, #123, #118, #110, #102 (mine), #100, #98, #96, #94, #90, #82, #64 |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -100,6 +100,28 @@ _Maintained by the worker. Keep it short and current._
 | #77 | FORGE-01 FL-0079 ConversationService (conversation lane), D-040 | `751138b` (user build B8) |
 | #99 | FORGE-04 onboarding hints on BuildSlot / Army button, walk-mode unseat, D-040 ★ | `d887beb` |
 | #104 | FORGE-01 #68 follow-ups (upgrade credit), D-040 ★ | `3f3ac6d` |
+| #109 | FORGE-05 G9 CitizenAnswered declaration (FORGE-00 approved) | `b0509b0` |
+| #107 | FORGE-01 #77 follow-ups N2-N5 (M1-M3 tracked), D-040 ★ | `276d933` |
+| #105 | FORGE-02 kingdom emblems from the overview camera, D-040 ★ | `f562a31` (user build B9) |
+| #114 | FORGE-01 #107 follow-ups M1-M3, D-040 ★ | `74db60c` |
+| #112 | FORGE-01 throne for its kingdom's rulers only (#89 L2), D-040 ★ | `1c48149` (user build B10, FORGE-00) |
+| #116 | FORGE-05 check.sh: game specs per top-level folder, each under STEP_TIMEOUT | `56b4d7c` |
+| #115 | FORGE-01 owner change rebuilds the building or captured watchtower in the owner's Kit look (VS-1 row 7; ★ for B11) | `38526a4` |
+| #117 | FORGE-01 #115 L1 spec: rebuilt tower keeps its pivot, a second capture, no leak (★, spec-only) | `1d4c076` |
+| #49 | FORGE-04 FL-0062 VS-1 feedback layer: announcer, kingdom effects, work feedback, phase music (★) | `21904e4` |
+| #120 | FORGE-05 MockEnv installs EngineStubs once per process (Lune has no ParticleEmitter:Emit); Boot spec celebration case | `0d71eff` |
+| #92 | FORGE-04 D-038 (7) per-feature mutation rows, Studio-test history, analytics taxonomy (★, D-046) | `13acf26` |
+| #113 | FORGE-01 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget (★, D-046) | `cac9522` |
+| #97 | FORGE-01 FL-0106 Match.Ended for late joiners during Results (★, D-046) | `681f38c` |
+| #111 | FORGE-01 FL-0107 G9 CitizenAnswered (★, D-046) | `003e180` |
+| #122 | FORGE-00 reputation notices for soldiers_recruited / wall_built (★, B13) | `196b1df` |
+| #119 | FORGE-04 FL-0062 follow-up: the summary owns the result line (★, D-046) | `d65fb2e` |
+| #93 | FORGE-01 FL-0049 replication hardening (★, D-046; M1 fixed) | `7694638` |
+| #85 | FORGE-02 FL-0098 `Kit.portrait` (B14) | `76396d1` |
+| #108 | FORGE-01 FL-0097 conversation server, g9f hold (B14) | `787f24e` |
+| #84 | FORGE-04 FL-0100 (1/2) conversation camera (B14) | `5eba538` |
+| #121 | FORGE-04 FL-0100 (2/2) reaction poses (B14) | `2bffebf` |
+| #126 | FORGE-03 FL-0099 cinematic conversation UI (B14 = this sha) | `3691475` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

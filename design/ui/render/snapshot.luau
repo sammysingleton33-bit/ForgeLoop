@@ -25,6 +25,9 @@
 	MockEnv clock so tweens/timers reach a steady state.
 
 	Output: { tool, version, scene, scenePath, device, areas, guis, errors, warnings, modules }.
+	A ViewportFrame also records `viewport` = { camera = { cframe, fov }?, ambient, lightColor,
+	lightDirection, parts = { { name, shape, size, cframe, color, transparency, material, decals } } }
+	(CFrames as their 12 components) for engine.js's rasteriser.
 	Every GuiObject / UI modifier records ClassName, Name and its properties as plain JSON
 	(UDim2 {xs,xo,ys,yo}; UDim {s,o}; Vector2 {x,y}; Color3 "#rrggbb"; EnumItem name; Font
 	{family,weight,style}; ColorSequence [{t,c}]; NumberSequence [{t,v,e}]; Rect
@@ -304,6 +307,7 @@ local CLASS_PROPS: { [string]: { string } } = {
 	ImageButton = concat(GUIOBJECT, IMAGE),
 	ScrollingFrame = concat(GUIOBJECT, SCROLL),
 	CanvasGroup = concat(GUIOBJECT, { "GroupTransparency", "GroupColor3" }),
+	ViewportFrame = concat(GUIOBJECT, { "ImageColor3", "ImageTransparency" }),
 	UICorner = { "CornerRadius" },
 	UIStroke = {
 		"Color",
@@ -433,6 +437,75 @@ end
 local warnings: { string } = {}
 local counts = { instances = 0 }
 
+-- ViewportFrame contents (FL-0099 portraits): the camera and every BasePart under the frame, in world
+-- space, for engine.js's small rasteriser. Lune 0.11 cannot read ViewportFrame.CurrentCamera back
+-- (it looks the name up on Workspace), so the frame's first Camera child stands in for it.
+local function cframeOf(cf: CFrame): { number }
+	local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
+	return { x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 }
+end
+
+local function readOr(instance: Instance, prop: string, default: any): any
+	local ok, value = pcall(function()
+		return (instance :: any)[prop]
+	end)
+	return if ok and value ~= nil then value else default
+end
+
+local function viewportOf(frame: Instance): { [string]: any }
+	local camera = nil
+	local ok, current = pcall(function()
+		return (frame :: any).CurrentCamera
+	end)
+	if ok and typeof(current) == "Instance" then
+		camera = current
+	end
+	if camera == nil then
+		camera = frame:FindFirstChildWhichIsA("Camera")
+		if camera ~= nil then
+			table.insert(warnings, `{frame:GetFullName()}: CurrentCamera unreadable in Lune; using its Camera child`)
+		end
+	end
+	local parts = {}
+	for _, d in frame:GetDescendants() do
+		if d:IsA("BasePart") then
+			local shape = "Block"
+			if d.ClassName == "WedgePart" then
+				shape = "Wedge"
+			elseif d.ClassName == "CornerWedgePart" then
+				shape = "CornerWedge"
+			elseif d.ClassName == "Part" then
+				shape = readOr(d, "Shape", roblox.Enum.PartType.Block).Name
+			end
+			local decals = {}
+			for _, c in d:GetChildren() do
+				if c:IsA("Decal") then
+					table.insert(decals, { name = c.Name, face = readOr(c, "Face", roblox.Enum.NormalId.Front).Name })
+				end
+			end
+			local size = d.Size
+			table.insert(parts, {
+				name = d.Name,
+				shape = shape,
+				size = { size.X, size.Y, size.Z },
+				cframe = cframeOf(d.CFrame),
+				color = encode(d.Color),
+				transparency = readOr(d, "Transparency", 0),
+				material = readOr(d, "Material", roblox.Enum.Material.Plastic).Name,
+				decals = decals,
+			})
+		end
+	end
+	local dir = readOr(frame, "LightDirection", roblox.Vector3.new(-1, -1, -1))
+	return {
+		camera = if camera then { cframe = cframeOf(camera.CFrame), fov = readOr(camera, "FieldOfView", 70) } else nil,
+		ambient = encode(readOr(frame, "Ambient", roblox.Color3.fromRGB(200, 200, 200))),
+		lightColor = encode(readOr(frame, "LightColor", roblox.Color3.fromRGB(140, 140, 140))),
+		lightDirection = { dir.X, dir.Y, dir.Z },
+		parts = parts,
+	}
+end
+
 local function serialize(instance: Instance): { [string]: any }
 	counts.instances += 1
 	local className = instance.ClassName
@@ -470,6 +543,9 @@ local function serialize(instance: Instance): { [string]: any }
 		end
 	end
 	node.props = props
+	if className == "ViewportFrame" then
+		node.viewport = viewportOf(instance)
+	end
 	if #unread > 0 then
 		node.unread = unread
 	end

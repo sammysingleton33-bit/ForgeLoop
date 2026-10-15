@@ -11,6 +11,12 @@
 	colour's hue (red → spires, blue → pyramids, green → timber hoardings, yellow/gold → domes;
 	unsaturated → neutral). Every kingdom-coloured part carries the attribute KitTint (shade
 	factor), so Kit.setKingdomColor recolours trims and banners in place.
+	Emblems (D-033, D-039; colour-vision finding 3): the same hue map picks the kingdom emblem
+	(crimson crown, azure star, emerald oak leaf, gold sun; neutral none), so emblem and silhouette
+	always agree. Every banner, flag, pennant, shield, prop banner and slot sign carries it, and the
+	keep carries two large aerial plaques (roof, facing up; donjon back). Emblem parts carry
+	KitEmblem = "crown" | "star" | "oak" | "sun" and KitEmblemSlot; the part they sit on (the field)
+	carries KitEmblemSlot, KitEmblemCF (anchor relative to the field), KitEmblemSize, KitEmblemDetail.
 
 	API (G10):
 		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
@@ -23,11 +29,29 @@
 		                                                        -- its helmet crest (spire, square, plume, dome) as the
 		                                                        -- welded Hair, KitHeadwear "crest_<shape>"; omitted or
 		                                                        -- unknown = the plain helm; others ignore it
+		Kit.portrait(kind, job, kingdomColor, look?, kingdom?) -> Model
+		                                                        -- G13.8 (D-036): Kit.character's rig for the same
+		                                                        -- arguments, every part Anchored, motors and weld kept,
+		                                                        -- + Attachment Root.PortraitFocus = the camera pose
+		                                                        -- (head and shoulders, square ViewportFrame) with
+		                                                        -- attributes PortraitFov (30, vertical) and
+		                                                        -- PortraitDistance; model attribute KitPortrait
+		Kit.portraitCamera(portrait) -> (CFrame, number)        -- camera CFrame and FieldOfView from PortraitFocus
+		Kit.posePortrait(portrait, joints)                      -- places anchored parts for Sim/Pose joint transforms
 		Kit.regalia(kingdomColor) -> { Accessory }              -- crown + cape
 		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered, else stand-in
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
 		Kit.slotMarker(size: Vector2, kingdomColor) -> Model   -- G13.5 build slot marker (Root is the query target)
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
+	Additive (emblems): Kit.EMBLEM_KINDS ({ [hue style]: kind }), Kit.emblemKind(color) -> kind?
+	Recolour: Kit.setKingdomColor recolours every KitTint part and re-forms every emblem to the new
+		colour's kind (a neutral colour removes them; a kingdom colour adds them on a neutral model). It
+		never touches other part identities. Shape cues picked at build time — tower caps, stone and trim
+		metal — stay as built: to give a building another kingdom's silhouette, rebuild it with Kit.build.
+		Rebuild keeps (and any building) on a kingdom change rather than recolouring: emblems cost a different
+		number of parts per kingdom, so a recoloured model can exceed its part budget (an emerald keep L2
+		recoloured to gold has 262 parts against 260); Kit.build always fits.
+		setKingdomColor also works on a container holding several Kit models (slots pair per model).
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
 		Kit.BUILDING_TYPES, Kit.partCount(model).
 	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.LOOK_RANGES,
@@ -38,6 +62,8 @@
 local Buildings = require("./Buildings")
 local Character = require("./Character")
 local Parts = require("./Parts")
+local Pieces = require("./Pieces")
+local Portrait = require("./Portrait")
 local Props = require("./Props")
 
 local Kit = {}
@@ -46,7 +72,7 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.3.0"
+Kit.VERSION = "0.4.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",
@@ -83,18 +109,78 @@ Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
 Kit.character = Character.character
 Kit.regalia = Character.regalia
+-- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by Character.character, then anchored
+Kit.portrait = Portrait.portrait
+Kit.portraitCamera = Portrait.camera
+Kit.posePortrait = Portrait.pose
+Kit.PORTRAIT_FOV = Portrait.FOV
 Kit.characterLod = Character.lod -- one-part stand-in beyond 150 studs (G4), same Root height as the rig
 Kit.prop = Props.prop
 Kit.setAssetSource = Props.setAssetSource
 Kit.regionMarkers = Props.regionMarkers
 Kit.slotMarker = Props.slotMarker -- G13.5 build slot ground marker (WorldService)
 Kit._hueStyle = Parts.hueStyle
+Kit.EMBLEM_KINDS = table.freeze(table.clone(Parts.EMBLEM_KINDS)) -- hue style -> emblem kind (D-039)
+Kit.emblemKind = Parts.emblemKind -- (color) -> "crown" | "star" | "oak" | "sun" | nil (neutral)
 
 local shade = Parts.shade
 
 -- ------------------------------------------------------------------ recolouring
 
+-- Re-forms every emblem slot whose kind differs from the new colour's: the old parts go, the new kind is
+-- built on the same anchor (the field part's KitEmblemCF, so it follows wherever the model was moved).
+-- Slots are numbered per Kit model, so fields and marks are paired by (owning Kit model, slot): a container
+-- holding several Kit models re-forms each one's emblems.
+local function reformEmblems(model: Model, color: Color3)
+	local kind = Parts.emblemKind(color)
+	local fields: { [Instance]: { [number]: BasePart } } = {}
+	local marks: { [Instance]: { [number]: { BasePart } } } = {}
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			local slot = d:GetAttribute("KitEmblemSlot")
+			if type(slot) == "number" then
+				local owner: Instance = d:FindFirstAncestorOfClass("Model") or model
+				if d:GetAttribute("KitEmblem") ~= nil then
+					marks[owner] = marks[owner] or {}
+					marks[owner][slot] = marks[owner][slot] or {}
+					table.insert(marks[owner][slot], d)
+				elseif d:GetAttribute("KitEmblemCF") ~= nil then
+					fields[owner] = fields[owner] or {}
+					fields[owner][slot] = d
+				end
+			end
+		end
+	end
+	for owner, slots in fields do
+		for slot, field in slots do
+			local old = marks[owner] and marks[owner][slot]
+			if (if old then old[1]:GetAttribute("KitEmblem") else nil) ~= kind then
+				for _, p in old or {} do
+					p:Destroy()
+				end
+				local rel, size = field:GetAttribute("KitEmblemCF"), field:GetAttribute("KitEmblemSize")
+				if kind and typeof(rel) == "CFrame" and type(size) == "number" then
+					local tint = field:GetAttribute("KitTint")
+					local detail = field:GetAttribute("KitEmblemDetail")
+					local ctx = { model = field.Parent :: any, root = field, count = 0 }
+					Pieces.buildEmblem(
+						ctx,
+						field.CFrame * rel,
+						size,
+						kind,
+						color,
+						if type(tint) == "number" then tint else 1,
+						if type(detail) == "string" then detail else "compact",
+						slot
+					)
+				end
+			end
+		end
+	end
+end
+
 function Kit.setKingdomColor(model: Model, color: Color3)
+	reformEmblems(model, color)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			local f = d:GetAttribute("KitTint")

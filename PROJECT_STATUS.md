@@ -4,24 +4,25 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B8**, main `751138b` (CI artifact 11801272018), delivered 2026-10-13 09:35 UTC. Not yet run in Studio.
-  - **New:**
-    - Citizens talk to you (row 9): "!" requests, 2–4 choices with cost and risk, and visible results (resources, loyalty, reputation with history, boosts, strikes, walk-out placards).
-    - The tutorial's "answer a citizen" step is live.
-    - Citizens stay visible at full zoom-out.
-    - Plot refusals are in words, and walls and gates stay off plots.
-    - Camp levels speed up gathering (PROVISIONAL).
-    - The Crown Points badge is a gold gem.
+- **Latest build: B14**, main `3691475`, delivered 2026-10-15 17:25 UTC. **This is the build to test.** Not yet run in Studio. Checklist: `production/handoffs/2026-10-13-forge-00-to-forge-05-b14-studio-checklist.md` (for the user's local Studio MCP session).
+  - **New since B13:** the cinematic conversation.
+    - The camera glides to the citizen's face, and a 3D portrait rises (#85, #84, #126).
+    - The citizen turns to face the ruler and is held while you choose, then while you read, until Done (at most 12 s; #108, g9f).
+    - The portrait plays reaction poses (#121).
+    - Every close path restores the camera.
+    - Replication survives bad ticks (#93).
+    - Headless: game-001 1304/0, end-to-end probe 9/9 (FORGE-05).
   - **Not yet:**
-    - Talk, then close, loses the request (#77 N3).
-    - Hints target the wrong controls (#99).
-    - A keep upgrade credits every co-ruler (#104).
-    - No emblems on world banners (#105).
-    - No sound (#49).
+    - Reaction poses on the world rig (needs `playPose`).
+    - The user's first Studio feedback (record ec44e944): farm clutter, rotation on plots, bubble readability and art. That's the B15 target.
+    - Sounds (P0 picks).
     - Dialogue is DRAFT.
-    - The other kingdoms are empty by design (D-043).
-  - The notes and Studio asks are in `production/quality-gates/studio-runs.md` (B8 row).
-- **Next build: B9.** It comes with FORGE-01's N3 fix, #104, #105 and #99, as they land.
+- **Next build: B15** (cut as soon as cleanup, rotation and bubbles are in; art where ready):
+  - FORGE-02 farm and slot clearance + world trim (D-047);
+  - FORGE-01 `Build.PlaceSlot` turn (g9h) with FORGE-03's picker Turn and ghost facing;
+  - FORGE-04 bubble readability;
+  - FORGE-02 env and citizen polish (D-048: 11-part rigs).
+  - Base editing (move buildings) and wall drag: B16, with the rules task coming.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
@@ -39,74 +40,78 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
   - The Studio gate G6 is the user's.
   - The flow is in `docs/workflows/git-and-integration.md` → Review lane.
 
-## Review queue (FORGE-07 works top-down; under D-040, FORGE-05 gives fallback verdicts on rows marked ★ while FORGE-07 is paused)
-Updated 2026-10-13 09:35 UTC, main eec7278. 17 PRs are open.
+## Review queue (cycle D-046, 2026-10-13 evening; ★ = FORGE-05 D-040 fallback verdict while FORGE-07 is paused)
+Updated 18:45 UTC, main 8673907. 19 PRs are open. Apart from FORGE-00's design-only verdicts on #98, #110 and #90, **none of them has a code-review verdict on its current head**. FORGE-07 is set up (D-037) but has been paused since 05:11, waiting for the user's OK in its own session.
 
-**Merged under D-040 so far:** #83, #66, #63, #45, #68, #95, #81, #70, #91, #89, #87, #86, #88, #101, #103, #106 and #77. FORGE-07 owes a post-merge verdict on each.
+**B13 ★ set, in merge order:**
 
-| # | PR | Owner | Lane | State | Next |
-|---|---|---|---|---|---|
-| 1 ★ | FORGE-01's next PR: #77 N3 (Talk, then close, hides the request), plus N2, N4, N5 | FORGE-01 | Conversation (B8 defect) | Not opened yet | Verdict, then B9 |
-| 2 ★ | #104 #68 follow-ups: keep upgrade credited to its starter (M1) | FORGE-01 | Build | Needs a main merge (it overlaps #77's files) | FORGE-01 merges main, then verdict |
-| 3 ★ | #99 FL-0081 follow-ups: plot-marker build hint, Army recruit hint, walk-mode unseat | FORGE-04 | Onboarding (B8 defect) | Unreviewed. #98's docs depend on it | Verdict |
-| 4 ★ | #105 kingdom emblems from the aerial camera (D-033 finding 3) | FORGE-02 | World | Colour-vision run 4 passes on renders; D-040 review running | Verdict |
-| 5 | #96 SPEC v1.5 presentation tags (FORGE-00) | FORGE-00 | Content | Green and mergeable. It unblocks FORGE-06's starter pack | FORGE-07 |
-| 6 | #98 PACING and EXPERIENCE fixes, `idleSec`, `Subjects.missing` | FORGE-04 | Design and docs | FORGE-00 design verdict: APPROVED WITH CHANGES (N1–N3). The code is unreviewed | After #99, then FORGE-07 |
-| 7 | #92 D-038 (7) per-feature files | FORGE-04 | Process | Unreviewed | FORGE-07 |
-| 8 | #49 feedback layer and music | FORGE-04 | Feel (sound) | M1 fixed; needs re-review | FORGE-07 |
-| 9 | #64 analytics funnel | FORGE-04 | Data | M1 and M2 owed; D-044 rulings apply | FORGE-04, then FORGE-07 |
-| 10 | #82 notification follow-ups | FORGE-04 | Feel | Unreviewed | FORGE-07 |
-| 11 | #97 late-joiner `Match.Ended`; #93 replication hardening; #94 fair nodes | FORGE-01 | Robustness | Unreviewed | FORGE-07 |
-| 12 | #102 pacing probe spec | FORGE-05 | QA | Unreviewed. It reads either target name, so it can merge before or after #98 | FORGE-07 |
-| 13 | #90 Blender pipeline (PR-A) | FORGE-02 | Assets | FORGE-00 calibration PASS posted | FORGE-07 |
-| 14 | #84 conversation camera; #85 Kit.portrait; FL-0097 opens next | FORGE-04, FORGE-02, FORGE-01 | Cinematic (D-036) | The VS-1 conversation lane is merged, so this lane can move | FORGE-07 |
-| — | #100 ruler gather | FORGE-01 | Off the VS-1 path | On hold until VS-1 is accepted | — |
-| — | Post-merge verdicts: #42, #75, #76, #79 and every D-040 merge | FORGE-07 | — | Owed | B and M findings become fix-forward PRs |
+| # | PR | Owner | Why | State |
+|---|---|---|---|---|
+| 1 ★ | #92 per-feature files (no runtime code) | FORGE-04 | #64, #82, #84, #98 and #119 conflict with it by design | Clean, never reviewed |
+| 2 ★ | #119 match-end toast ruling | FORGE-04 | Row 7 polish | Clean |
+| 3 ★ | #113 FL-0050 remainder: ruler visit memory and mood, D-045 births, keep-L2 celebration, 100-citizen budget | FORGE-01 | Living citizens (rows 4/4b/6) | Clean |
+| 4 ★ | #97 Match.Ended for late joiners (FL-0106) | FORGE-01 | Row 7 | Clean |
+| 5 ★ | #111 G9 CitizenAnswered (FL-0107) | FORGE-01 | Unblocks FL-0108 onboarding | Clean |
+| 6 ★ | #93 replication hardening (FL-0049 lows) | FORGE-01 | Stability of row 4 | Clean |
+| 7 ★ | #122 reputation history text for recruits and post-raid walls (FL-0089 defect) | FORGE-00 | Row 8 visible defect | Clean; ≤ 50 lines, text only |
 
-## Audit 2026-10-13 05:00 UTC snapshot (54 tasks, 12 open PRs; each classification adversarially re-checked; the queue above supersedes it)
-- **Open PRs:**
-  - 6 never reviewed: #45, #77, #81, #82, #83, #84.
-  - 4 reviewed, but not on their current content: #49, #63, #66, #68.
-  - 2 with open review findings: #64, #70.
-  - 0 ready to merge right now. The new rule needs a FORGE-07 verdict on current content.
-- **Need code changes from their authors:**
-  - 4 for findings or contract migrations: #70, #64, #68, #77.
-  - 3 more only to merge `main` to clear conflicts: #45, #49, #63.
-- **Merged but not accepted: 27 tasks.**
-  - 6 wait only on the user's Studio run: FL-0003, 0007, 0009, 0046, 0067, 0090.
-  - 18 also need a record or a small follow-up first. Those follow-ups are now tracked in FL-0103 to FL-0105 and the review queue.
-  - 3 FORGE-00 research and prompt tasks need only an acceptance record: FL-0004, 0005, 0006.
-- **21 statuses were stale.** FORGE-00 fixed the ones no open PR touches (FL-0040, 0050, 0051, 0065). The rest are fixed by their PRs or their owners (D-038 (5)).
-- **Systemic causes:**
-  - The review lane started late.
-  - Acceptance records were never written at merge.
-  - FORGE-04's shared append-only files make its PRs conflict (D-038 (7)).
-  - FORGE-01 carries most of the critical path.
-  - Nothing has been run in Studio yet.
+**B14 ★ set: cinematic conversations, integrated together under FL-0101 (D-046 (2); ★ since FL-0099 is up and FORGE-07 is still paused).** Merge order:
+1. #85 Kit.portrait (FORGE-02).
+2. #108 server hold and `Kingdom.EndConversation` (FORGE-01). It needs a main merge, and its new client remote needs a G4 review.
+3. #84 camera (FORGE-04; frames the face, CONTRACTS v0.4-g9e).
+4. #121 reaction poses (FORGE-04).
+5. #126 FL-0099 UI (FORGE-03).
+
+One combined gate for all five. If any PR fails review, the whole set waits.
+
+**FORGE-07 queue** (once the user gives the OK):
+1. #96 SPEC v1.5 (unblocks FORGE-06).
+2. The cinematic set.
+3. #98: FORGE-00 design APPROVED; it needs a main merge.
+4. #110: FORGE-00 design APPROVED.
+5. #64: needs a main merge after #92.
+6. #82.
+7. #94.
+8. #102.
+9. #90: owes log lines.
+10. #118.
+11. Post-merge verdicts on all 25 D-040 merges.
+
+#100 is on hold until VS-1 is accepted.
+
+## Audit 2026-10-13 18:30 UTC (REVIEW tasks, open PRs and the stale-status sweep; every row re-checked by an independent verifier)
+- **38 REVIEW tasks:**
+  - **25 wait only on the user's Studio run (G6).** All their code is merged, and every other gate is recorded.
+  - **7 wait for a code review:** FL-0023, 0025, 0027, 0053, 0058, 0061, 0106.
+  - **4 are merged but owe a record:**
+    - FL-0024, 0031 and 0089: FORGE-05.
+    - FL-0085: FORGE-02 previews and D-019 scoring.
+  - **1 had an open item:** FL-0062 (rival sparkle, now deferred by D-046 (3)).
+  - **1 waits on the user:** FL-0083 (DRAFT dialogue approval).
+- **Stale statuses:** 15 task files did not match reality.
+  - **Fixed on main (8673907):** FL-0082, 0084, 0086 → READY; six FORGE-03/04 tasks → SPECIFIED.
+  - **Corrected on their PR branches:** FL-0050, 0097, 0107, 0013, 0054–0057, 0098, 0063, 0100. Those files land when the PRs merge (D-038 (5)).
+- **Merged under D-040 since this morning:** 25 PRs. No regressions: FORGE-05's 19-set re-run on main 962984f was clean.
 
 ## Top integration blockers (VS-1)
-1. **No Studio evidence on any build (B1–B8).** Every merged task waits on G6, and frame rate (G7) is unknown. B8 is the first build with all nine VS-1 rows present in some form.
-2. **FORGE-07 is paused.** Ten non-★ PRs (rows 5–14) wait on it, among them #96, which unblocks FORGE-06, and #49, which brings sound. Post-merge verdicts are also owed on 17 D-040 merges.
-3. **Known B8 defects** go into B9: Talk-then-close (N3), wrong hint targets (#99), keep-upgrade credit (#104) and emblems (#105).
-4. **No sound.** #49 waits on FORGE-07, and the P0 sound picks wait on the user.
-5. **Dialogue is DRAFT.** FORGE-06's starter pack waits on #96 and on the user's approval for temporary testing (FL-0095).
+1. **No Studio run on any build (B1–B12).** 25 merged tasks wait only on G6, and FPS (G7) is unknown. Run B12 now, or B13 when it lands.
+2. **FORGE-07 is paused.** 13 open PRs and 25 post-merge reviews wait on it, among them #96 (it unblocks FORGE-06) and the cinematic set. One message from the user in the Forge07 session unblocks it.
+3. **Merge conflicts with main:** #85 (FORGE-02) and #64 and #98 (FORGE-04) need a main merge. #92 must merge before the rest of FORGE-04's PRs.
+4. **Cinematic conversations need FL-0099**, FORGE-03's UI (started this cycle), before FORGE-05 can integrate the set.
+5. **No audible sound** until the user picks the P0 sounds. Dialogue is DRAFT until FL-0095.
 
 ## Decisions needed from the user
-1. **Run B8 in Studio on your Mac.** It supersedes B6 and B7. The asks are in the B8 row of `production/quality-gates/studio-runs.md`: Output lines, a conversation's panel and result, `vs1.strike`, zoom-out, the plot-taken check, a full tutorial run, the four-kingdom screenshot, and FPS.
-2. **Give FORGE-07 its OK.** Type it in the Forge07 session: "FORGE-07 may post COMMENT reviews and push agents/forge-07/STATUS.md and production/reviews/ to main." A relayed OK is not accepted.
-3. **Pick the P0 sounds** (handoff `2026-10-12-forge-04-to-user-sounds.md`) and **upload the icons** `gem.png` and `emblem_crown.png`. Drawn fallbacks are in the game until then.
-4. **Approve FORGE-06's starter pack for temporary testing:** 10 conversations, every row DRAFT (D-035 (2)).
-5. **Still open:**
-   - match length, 25 + 5 or the current schedule (FL-0096);
-   - Crown Arena format, victory rules and support strength (FL-0077);
-   - approval of the DRAFT dialogue (FL-0095);
-   - BRIEF §16 items (monetization, PvP intensity, governor difficulty, title).
+1. **Run B13 in Studio** (Windows: F5 Play; the Mac keys are in STUDIO_PLAYTEST §0). The asks are in `production/quality-gates/studio-runs.md`. A Mac section is coming in STUDIO_PLAYTEST.
+2. **Give FORGE-07 its OK** in the Forge07 session: "FORGE-07 may post COMMENT reviews and push agents/forge-07/STATUS.md and production/reviews/ to main."
+3. **VS-2 start:** may FORGE-01 begin the combat framework (FL-0012, §16.2) in parallel, before VS-1 is accepted? (D-046 (4))
+4. **Pick the P0 sounds** and upload `gem.png` and `emblem_crown.png`. Approve FORGE-06's DRAFT starter pack for temporary testing.
+5. **Still open:** match length (FL-0096), Crown Arena (FL-0077), dialogue approval (FL-0095), and the BRIEF §16 items.
 
 <!-- forge:auto:start -->
 
 _Generated by `python tools/forge.py dashboard` from `production/tasks/`. Do not edit by hand._
 
-**Tasks:** 108 — SPECIFIED 27 · READY 24 · BUILDING 7 · REVIEW 36 · ACCEPTED 7 · REJECTED 7
+**Tasks:** 121 — SPECIFIED 29 · READY 23 · BUILDING 8 · TESTING 1 · REVIEW 44 · ACCEPTED 9 · REJECTED 7
 
 ### Needs the user (decisions, approvals, local-machine steps)
 
@@ -140,24 +145,28 @@ _None._
 | [FL-0009](production/tasks/FL-0009-remoteservice-declarative-per-area-remotes-with-.md) | RemoteService: declarative per-area remotes with validation and rate limits | REVIEW | P0 | build |
 | [FL-0048](production/tasks/FL-0048-match-and-kingdom-core-phases-kingdom-assignment.md) | Match and Kingdom core: phases, kingdom assignment, teams, crown points | REVIEW | P0 | build |
 | [FL-0049](production/tasks/FL-0049-entity-simulation-core-snapshot-codec-replicatio.md) | Entity simulation core, snapshot codec, replication and client rendering | REVIEW | P0 | build |
-| [FL-0050](production/tasks/FL-0050-citizen-ai-and-jobs-farmer-woodcutter-miner-haul.md) | Citizen AI and jobs: farmer, woodcutter, miner, hauler with treasury deposits | BUILDING | P0 | build |
+| [FL-0050](production/tasks/FL-0050-citizen-ai-and-jobs-farmer-woodcutter-miner-haul.md) | Citizen AI and jobs: farmer, woodcutter, miner, hauler with treasury deposits | REVIEW | P0 | build |
 | [FL-0051](production/tasks/FL-0051-buildings-construction-territory-and-ruler-gathe.md) | Buildings, construction, territory and ruler gathering | BUILDING | P0 | build |
 | [FL-0052](production/tasks/FL-0052-military-recruit-command-and-capture-objective.md) | Military: recruit, command and capture objective | REVIEW | P0 | build |
 | [FL-0078](production/tasks/FL-0078-generated-population-names-traits-looks-relation.md) | Generated population: names, traits, looks, relationships, chemistry, loyalty (G13.2) | REVIEW | P0 | build |
 | [FL-0079](production/tasks/FL-0079-conversationservice-thought-bubbles-converse-cho.md) | ConversationService: thought bubbles, Converse/Choose, decision effects and memories (G13.3) | REVIEW | P0 | build |
-| [FL-0080](production/tasks/FL-0080-reputationservice-six-categories-history-anti-fa.md) | ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4) | BUILDING | P0 | build |
+| [FL-0080](production/tasks/FL-0080-reputationservice-six-categories-history-anti-fa.md) | ReputationService (six categories, history, anti-farming) and kingdom conditions (G13.4) | REVIEW | P0 | build |
 | [FL-0081](production/tasks/FL-0081-plot-construction-upgrade-times-and-ruler-seated.md) | Plot construction, upgrade times and ruler seated on the throne (G13.5, G13.6) | REVIEW | P0 | build |
 | [FL-0104](production/tasks/FL-0104-vs-1-polish-forge-01-aerial-view-lod-focus-39-m1.md) | VS-1 polish (FORGE-01): aerial-view LOD focus (#39 M1), G13.7 debug hooks, soldier kingdom crest plumbing | REVIEW | P0 | build |
+| [FL-0112](production/tasks/FL-0112-starting-kingdom-cleanup-nodes-out-of-crop-field.md) | Starting kingdom cleanup: generated trees and rocks keep out of crop fields and build zones (B15 #1) | REVIEW | P0 | build |
+| [FL-0113](production/tasks/FL-0113-build-placeslot-turn-server-and-fit-g9h.md) | Build.PlaceSlot turn: rotate buildings on plots, server and Fit (CONTRACTS v0.4-g9h, B15 #2) | BUILDING | P0 | build |
 | [FL-0008](production/tasks/FL-0008-dataservice-with-session-locking-and-namespaced-.md) | DataService with session locking and namespaced profiles + PlayerService | READY | P1 | build |
 | [FL-0012](production/tasks/FL-0012-server-authoritative-combat-and-damage-framework.md) | Server-authoritative combat and damage framework | SPECIFIED | P1 | build |
 | [FL-0069](production/tasks/FL-0069-leadership-ledger-citizen-loyalty-and-key-citize.md) | Leadership ledger, citizen loyalty and key citizens (Crown Arena support inputs) | SPECIFIED | P1 | build |
 | [FL-0070](production/tasks/FL-0070-supportmodel-supportservice-trigger-offers-and-f.md) | SupportModel, SupportService, trigger offers and fairness caps | SPECIFIED | P1 | build |
 | [FL-0071](production/tasks/FL-0071-crown-arena-phase-and-duel-core-arenaservice-due.md) | Crown Arena phase and duel core (ArenaService, DuelModel, DuelService, AI champion) | SPECIFIED | P1 | build |
-| [FL-0082](production/tasks/FL-0082-consequence-rules-strikes-shortages-riots-rebell.md) | Consequence rules: strikes, shortages, riots, rebellion gating, army morale effects | SPECIFIED | P1 | build |
-| [FL-0097](production/tasks/FL-0097-cinematic-conversation-server-converse-look-posi.md) | Cinematic conversation server: Converse look/position, conversation hold, EndConversation (G13.8) | SPECIFIED | P1 | build |
+| [FL-0082](production/tasks/FL-0082-consequence-rules-strikes-shortages-riots-rebell.md) | Consequence rules: strikes, shortages, riots, rebellion gating, army morale effects | READY | P1 | build |
+| [FL-0097](production/tasks/FL-0097-cinematic-conversation-server-converse-look-posi.md) | Cinematic conversation server: Converse look/position, conversation hold, EndConversation (G13.8) | REVIEW | P1 | build |
 | [FL-0106](production/tasks/FL-0106-match-ended-for-players-who-arrive-during-result.md) | Match.Ended for players who arrive during Results (#70 M2) | REVIEW | P1 | build |
-| [FL-0107](production/tasks/FL-0107-g9-citizenanswered-event-from-conversationservic.md) | G9 CitizenAnswered event from ConversationService (D-044 (3)) | SPECIFIED | P1 | build |
-| [FL-0084](production/tasks/FL-0084-ruler-policy-hook-for-headless-leadership-strate.md) | Ruler policy hook for headless leadership-strategy simulation | SPECIFIED | P2 | build |
+| [FL-0119](production/tasks/FL-0119-base-editing-phase-1-server-build-move.md) | Base editing phase 1, server: Build.CanMove / Move / MoveToSlot, atomic in-place moves (CONTRACTS G13.9, B16) | READY | P1 | build |
+| [FL-0084](production/tasks/FL-0084-ruler-policy-hook-for-headless-leadership-strate.md) | Ruler policy hook for headless leadership-strategy simulation | READY | P2 | build |
+| [FL-0109](production/tasks/FL-0109-fl-0078-61-review-lows-getentities-size-display-.md) | FL-0078 #61 review lows: GetEntities size, display names, look key, quota revision | SPECIFIED | P2 | build |
+| [FL-0110](production/tasks/FL-0110-converse-choose-carry-spec-v1-5-presentation-tag.md) | Converse/Choose carry SPEC v1.5 presentation tags (G13.8 v0.4-g10) | SPECIFIED | P2 | build |
 | [FL-0010](production/tasks/FL-0010-roundservice-with-spawn-spectate-and-results.md) | RoundService with spawn, spectate and results | SPECIFIED | P3 | build |
 | [FL-0011](production/tasks/FL-0011-hazardservice-framework-with-a-real-flood-hazard.md) | HazardService framework with a real flood hazard | SPECIFIED | P3 | build |
 
@@ -171,8 +180,11 @@ _None._
 | [FL-0056](production/tasks/FL-0056-characters-citizens-by-job-soldier-ruler-crown-a.md) | Characters: citizens by job, soldier, ruler crown and cape | READY | P0 | asset |
 | [FL-0085](production/tasks/FL-0085-throne-seat-build-slots-citizen-look-variation-v.md) | Throne seat, build slots, citizen look variation, visible building levels (G13) | REVIEW | P0 | asset |
 | [FL-0057](production/tasks/FL-0057-blender-medieval-organic-batch-1-and-import-pack.md) | Blender medieval organic batch 1 and import pack | READY | P1 | asset |
-| [FL-0086](production/tasks/FL-0086-new-building-types-part-built-mine-blacksmith-ma.md) | New building types part-built: mine, blacksmith, market, infirmary, granary, shrine | SPECIFIED | P1 | asset |
-| [FL-0098](production/tasks/FL-0098-portrait-ready-character-kit-portrait-with-portr.md) | Portrait-ready character: Kit.portrait with PortraitFocus (G13.8) | SPECIFIED | P1 | asset |
+| [FL-0086](production/tasks/FL-0086-new-building-types-part-built-mine-blacksmith-ma.md) | New building types part-built: mine, blacksmith, market, infirmary, granary, shrine | READY | P1 | asset |
+| [FL-0098](production/tasks/FL-0098-portrait-ready-character-kit-portrait-with-portr.md) | Portrait-ready character: Kit.portrait with PortraitFocus (G13.8) | REVIEW | P1 | asset |
+| [FL-0116](production/tasks/FL-0116-world-dressing-trim-to-the-27k-ceiling-d-047.md) | World dressing trim to the D-047 part ceiling (density knob, D-019 renders) | BUILDING | P1 | asset |
+| [FL-0117](production/tasks/FL-0117-environment-polish-organic-trees-rocks-nodes.md) | Environment polish: organic trees, rocks, resource nodes and crop rows within the part budget (B15 art where ready) | READY | P1 | asset |
+| [FL-0118](production/tasks/FL-0118-citizen-job-silhouettes-clothing-and-tools-d-048.md) | Citizen job silhouettes, clothing and tools readable from the air (D-048 11-part rigs) | READY | P1 | asset |
 | [FL-0017](production/tasks/FL-0017-ci-job-that-builds-asset-exports-as-a-downloadab.md) | CI job that builds asset exports as a downloadable artifact | SPECIFIED | P2 | asset |
 | [FL-0066](production/tasks/FL-0066-animation-upload-batch-for-vs-2-keyframesequence.md) | Animation upload batch for VS-2 (KeyframeSequence files, user publishes) | SPECIFIED | P2 | asset |
 | [FL-0072](production/tasks/FL-0072-crown-arena-venue-crowd-figures-armour-and-weapo.md) | Crown Arena venue, crowd figures, armour and weapon sets (Kit) | READY | P2 | asset |
@@ -190,13 +202,16 @@ _None._
 | [FL-0088](production/tasks/FL-0088-conversation-panel-and-citizen-card-v2-g13-2-g13.md) | Conversation panel and citizen card v2 (G13.2, G13.3) | REVIEW | P0 | build |
 | [FL-0089](production/tasks/FL-0089-reputation-screen-hud-reputation-strip-and-kingd.md) | Reputation screen, HUD reputation strip and kingdom conditions (G13.4) | REVIEW | P0 | build |
 | [FL-0105](production/tasks/FL-0105-vs-1-polish-forge-03-map-every-server-refusal-co.md) | VS-1 polish (FORGE-03): map every server refusal code, dark emblem on light tinctures, Toast achievement accent | REVIEW | P0 | build |
-| [FL-0099](production/tasks/FL-0099-cinematic-conversation-ui-rising-portrait-speech.md) | Cinematic conversation UI: rising portrait, speech bubble, answers, consequence chips (G13.8) | SPECIFIED | P1 | build |
+| [FL-0114](production/tasks/FL-0114-rotation-ui-ghost-facing-and-plot-picker-turn.md) | Rotation UI: ghost facing arrow, discoverable Rotate, plot picker Turn (B15 #2) | BUILDING | P0 | build |
+| [FL-0099](production/tasks/FL-0099-cinematic-conversation-ui-rising-portrait-speech.md) | Cinematic conversation UI: rising portrait, speech bubble, answers, consequence chips (G13.8) | REVIEW | P1 | build |
+| [FL-0120](production/tasks/FL-0120-base-editing-phase-1-edit-mode-ui.md) | Base editing phase 1, UI: Move button, edit-mode ghost, slot snap with Turn (B16) | SPECIFIED | P1 | build |
 | [FL-0018](production/tasks/FL-0018-economy-core-items-inventory-wallet-reward-table.md) | Economy core: items, inventory, wallet, reward tables with odds and pity | READY | P2 | build |
-| [FL-0019](production/tasks/FL-0019-purchaseservice-idempotent-processreceipt-game-p.md) | PurchaseService: idempotent ProcessReceipt, game passes, PolicyService gating | READY | P2 | build |
-| [FL-0021](production/tasks/FL-0021-screens-hud-currencies-shop-inventory-reward-rev.md) | Screens: HUD currencies, Shop, Inventory, Reward reveal with odds panel | READY | P2 | build |
+| [FL-0019](production/tasks/FL-0019-purchaseservice-idempotent-processreceipt-game-p.md) | PurchaseService: idempotent ProcessReceipt, game passes, PolicyService gating | SPECIFIED | P2 | build |
+| [FL-0021](production/tasks/FL-0021-screens-hud-currencies-shop-inventory-reward-rev.md) | Screens: HUD currencies, Shop, Inventory, Reward reveal with odds panel | SPECIFIED | P2 | build |
 | [FL-0022](production/tasks/FL-0022-economy-balance-simulator.md) | Economy balance simulator | SPECIFIED | P2 | build |
-| [FL-0045](production/tasks/FL-0045-economy-server-services-economyservice-inventory.md) | Economy server services: EconomyService, InventoryService, RewardService, ShopService | READY | P2 | build |
-| [FL-0073](production/tasks/FL-0073-support-meter-perk-previews-petitions-loadout-an.md) | Support meter, perk previews, petitions, loadout and perk picker, arena intro and HUD, leadership recap | READY | P2 | build |
+| [FL-0045](production/tasks/FL-0045-economy-server-services-economyservice-inventory.md) | Economy server services: EconomyService, InventoryService, RewardService, ShopService | SPECIFIED | P2 | build |
+| [FL-0073](production/tasks/FL-0073-support-meter-perk-previews-petitions-loadout-an.md) | Support meter, perk previews, petitions, loadout and perk picker, arena intro and HUD, leadership recap | SPECIFIED | P2 | build |
+| [FL-0111](production/tasks/FL-0111-cinematic-conversation-ui-styles-from-presentati.md) | Cinematic conversation UI styles from presentation tags (G13.8 v0.4-g10) | SPECIFIED | P2 | build |
 
 ### FORGE-04 Experience — open
 
@@ -207,15 +222,17 @@ _None._
 | [FL-0027](production/tasks/FL-0027-notifications-and-celebration-moments.md) | Notifications and celebration moments | REVIEW | P0 | build |
 | [FL-0053](production/tasks/FL-0053-ruler-third-person-controller-and-camera.md) | Ruler third-person controller, camera and input modes | REVIEW | P0 | build |
 | [FL-0061](production/tasks/FL-0061-match-pacing-design-and-pacingservice.md) | Match pacing design and PacingService | REVIEW | P0 | design |
-| [FL-0062](production/tasks/FL-0062-vs-1-onboarding-and-feedback-layer-hints-sounds-.md) | VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer | READY | P0 | build |
+| [FL-0062](production/tasks/FL-0062-vs-1-onboarding-and-feedback-layer-hints-sounds-.md) | VS-1 onboarding and feedback layer: hints, sounds, VFX, announcer | REVIEW | P0 | build |
 | [FL-0090](production/tasks/FL-0090-aerial-management-camera-default-selection-signa.md) | Aerial management camera (overview, default), selection signal, walk mode kept (G13.6) | REVIEW | P0 | build |
 | [FL-0091](production/tasks/FL-0091-citizen-thought-and-speech-bubbles-reactions-str.md) | Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3) | REVIEW | P0 | build |
+| [FL-0115](production/tasks/FL-0115-citizen-bubble-readability-from-the-aerial-camer.md) | Citizen bubbles readable and tappable from the aerial camera (B15 #3; FL-0091 follow-up) | BUILDING | P0 | build |
 | [FL-0023](production/tasks/FL-0023-analyticsservice-adapter-event-taxonomy-and-funn.md) | AnalyticsService adapter, event taxonomy and funnels | REVIEW | P1 | build |
 | [FL-0063](production/tasks/FL-0063-vs-1-analytics-funnel-and-match-analytics.md) | VS-1 analytics funnel and match analytics | READY | P1 | build |
 | [FL-0092](production/tasks/FL-0092-match30-evaluation-pacing-profile-and-onboarding.md) | match30 evaluation pacing profile and onboarding v2 | REVIEW | P1 | design |
-| [FL-0100](production/tasks/FL-0100-conversation-camera-focuson-restore-and-reaction.md) | Conversation camera focusOn/restore and reaction poses (G13.8) | SPECIFIED | P1 | build |
-| [FL-0074](production/tasks/FL-0074-crowd-director-chants-and-boos-perk-moments-aren.md) | Crowd director, chants and boos, perk moments, arena camera and music, emotional payoff | READY | P2 | build |
-| [FL-0075](production/tasks/FL-0075-duel-input-mode-pc-touch-gamepad-bound-to-duelco.md) | Duel input mode (PC, touch, gamepad) bound to DuelController | READY | P2 | build |
+| [FL-0100](production/tasks/FL-0100-conversation-camera-focuson-restore-and-reaction.md) | Conversation camera focusOn/restore and reaction poses (G13.8) | REVIEW | P1 | build |
+| [FL-0121](production/tasks/FL-0121-base-editing-phase-1-edit-input-mode-and-camera.md) | Base editing phase 1, input and camera: "edit" input mode and edit-drag camera (B16) | SPECIFIED | P1 | build |
+| [FL-0074](production/tasks/FL-0074-crowd-director-chants-and-boos-perk-moments-aren.md) | Crowd director, chants and boos, perk moments, arena camera and music, emotional payoff | SPECIFIED | P2 | build |
+| [FL-0075](production/tasks/FL-0075-duel-input-mode-pc-touch-gamepad-bound-to-duelco.md) | Duel input mode (PC, touch, gamepad) bound to DuelController | SPECIFIED | P2 | build |
 | [FL-0103](production/tasks/FL-0103-settings-panel-audio-reduced-motion-graphics-for.md) | Settings panel: audio, reduced motion, graphics (FORGE-03 components; D-038 (4)) | READY | P2 | build |
 | [FL-0108](production/tasks/FL-0108-onboarding-answercitizen-and-conversationanswere.md) | Onboarding AnswerCitizen and ConversationAnswered on G9 CitizenAnswered (D-044 (3)) | SPECIFIED | P2 | build |
 | [FL-0026](production/tasks/FL-0026-retention-systems-daily-rewards-streaks-quests-a.md) | Retention systems: daily rewards/streaks, quests and achievements | SPECIFIED | P3 | build |
@@ -224,7 +241,6 @@ _None._
 
 | id | title | status | priority | track |
 |---|---|---|---|---|
-| [FL-0028](production/tasks/FL-0028-own-the-skeleton-ci-green-on-github-harness-and-.md) | Own the skeleton: CI green on GitHub, harness and mocks upkeep | BUILDING | P0 | qa |
 | [FL-0029](production/tasks/FL-0029-pr-review-and-merge-pipeline-with-identifiable-i.md) | PR review and merge pipeline with identifiable integration builds | REVIEW | P0 | qa |
 | [FL-0031](production/tasks/FL-0031-studio-test-plan-and-user-smoke-test-pack.md) | Studio test plan and user smoke-test pack | REVIEW | P0 | qa |
 | [FL-0046](production/tasks/FL-0046-game-001-project-wiring-rojo-project-game-tree-d.md) | game-001 project wiring: Rojo project, Game-tree discovery, harness, require policy, CI | REVIEW | P0 | infra |
@@ -232,7 +248,7 @@ _None._
 | [FL-0067](production/tasks/FL-0067-game-001-wiring-follow-ups-from-the-plan-review-.md) | game-001 wiring follow-ups from the plan review: streaming, character spawn, world mount, buffer-faithful mocks | REVIEW | P0 | infra |
 | [FL-0068](production/tasks/FL-0068-studio-debug-panel-playtest-presets-and-playtest.md) | Studio debug panel, playtest presets and Playtest A | BUILDING | P0 | qa |
 | [FL-0093](production/tasks/FL-0093-vs-1-v2-integration-build-cadence-to-the-user-pl.md) | VS-1 v2 integration: build cadence to the user, playtest rows 1-9, G13.7 debug presets | BUILDING | P0 | qa |
-| [FL-0101](production/tasks/FL-0101-integrate-cinematic-conversations-v1-studio-play.md) | Integrate cinematic conversations v1; Studio playtest rows and build (G13.8) | SPECIFIED | P1 | qa |
+| [FL-0101](production/tasks/FL-0101-integrate-cinematic-conversations-v1-studio-play.md) | Integrate cinematic conversations v1; Studio playtest rows and build (G13.8) | TESTING | P1 | qa |
 | [FL-0032](production/tasks/FL-0032-performance-budgets-mobile-checklist-and-release.md) | Performance budgets, mobile checklist and release checklist | SPECIFIED | P2 | qa |
 | [FL-0033](production/tasks/FL-0033-open-cloud-luau-execution-test-runner-feasibilit.md) | Open Cloud Luau Execution test runner feasibility | SPECIFIED | P2 | qa |
 | [FL-0076](production/tasks/FL-0076-crown-arena-fairness-harness-caps-spec-and-arena.md) | Crown Arena fairness harness, caps spec and arena integration | BUILDING | P2 | qa |
@@ -264,8 +280,10 @@ _None._
 | [FL-0004](production/tasks/FL-0004-platform-constraints-and-ai-provider-research.md) | Platform constraints and AI provider research | ACCEPTED | 2026-10-13 |
 | [FL-0005](production/tasks/FL-0005-roblox-market-research-and-game-1-shortlist.md) | Roblox market research and Game #1 shortlist | ACCEPTED | 2026-10-13 |
 | [FL-0006](production/tasks/FL-0006-worker-startup-prompts-for-forge-01-05.md) | Worker startup prompts for FORGE-01..05 | ACCEPTED | 2026-10-13 |
+| [FL-0028](production/tasks/FL-0028-own-the-skeleton-ci-green-on-github-harness-and-.md) | Own the skeleton: CI green on GitHub, harness and mocks upkeep | ACCEPTED | 2026-10-13 |
 | [FL-0035](production/tasks/FL-0035-select-game-1-from-the-shortlist.md) | Select Game #1 from the shortlist | ACCEPTED | 2026-10-12 |
 | [FL-0038](production/tasks/FL-0038-decide-the-repository-home-for-forgeloop.md) | Decide the repository home for FORGELOOP | ACCEPTED | 2026-10-12 |
+| [FL-0107](production/tasks/FL-0107-g9-citizenanswered-event-from-conversationservic.md) | G9 CitizenAnswered event from ConversationService (D-044 (3)) | ACCEPTED | 2026-10-13 |
 
 ### Estimate vs actual (accepted tasks with both recorded)
 
@@ -274,14 +292,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-eec72786 2026-10-13 B8 (751138b): conversation lane; build notes and Studio asks; main CI green for #101, #103, #106, #77
-7b43384d 2026-10-13 Integration bookkeeping: #77 merged (conversation lane, D-040 fallback verdict); FL-0079/0104/0088/0091 REVIEW; STUDIO_PLAYTEST rows 9 and onboarding runnable from the build after B7
-751138bf 2026-10-13 Merge PR #77: [FORGE-01] FL-0079 ConversationService: Kingdom.Converse / Kingdom.Choose, thoughts and requests, consequences and walk-outs (D-042), G13.7 debug hooks
-98954e97 2026-10-13 [FORGE-01] FL-0079 #77 N1: remove the conflict markers left in the CitizenService header by the main merge
-a8a43bcd 2026-10-13 FL-0081 status at merge of #106 (REVIEW, only G6)
-ea86b653 2026-10-13 Integration bookkeeping: #101, #103, #106 merged ahead of #77 (FORGE-00 09:03; D-040 star verdicts); FL-0081/0087/0105 REVIEW only G6; STUDIO_PLAYTEST rows 2, 4, 6 for the build after B7
-aecd245c 2026-10-13 Merge PR #106: [FORGE-01] FL-0081 #89 follow-ups: slots taken by any building over them (M1), not_on_plot for wall/gate (v0.4-g9a), camp levels speed up gathering (M3), respawn never blocked by the throne (L1)
-f2d430ab 2026-10-13 Merge PR #103: [FORGE-03] FL-0105 follow-ups: #86 review M1 + L2-L9 (Studio text, specs, no crown tab, drawn gem, midrib, rail "blocked")
+3b341028 2026-10-15 lessons-learned (integration): a gate piped into tail can't stop a push; task-status exception covers front matter and Log only
+e3a1af80 2026-10-15 FL-0101: undo the criteria tick (task-status exception allows front matter and Log only; the rows are recorded in the Log)
+4d1dd69e 2026-10-15 Integration bookkeeping: B14 merged (#85, #108, #84, #121, #126; main 3691475); FL-0097..0100 REVIEW only G6, FL-0101 TESTING; studio-runs B14 row; STUDIO_PLAYTEST phone row
+ac91e486 2026-10-15 [FORGE-00] B14 delivered (3691475): Now section, checklist build sha and vs1.request stock note; dashboard
+36914756 2026-10-15 Merge PR #126: [FORGE-03] FL-0099 cinematic conversation UI (G13.8): rising portrait, speech bubble, answers, consequence chips
+2bffebfb 2026-10-15 Merge PR #121: [FORGE-04] FL-0100 (2/2) reaction poses: one pose set for the conversation portrait and the world rig (G13.8)
+5eba5384 2026-10-15 Merge PR #84: [FORGE-04] FL-0100 (1/2) conversation camera: focusOn glide and restore (G13.8)
+787f24e6 2026-10-15 Merge PR #108: [FORGE-01] FL-0097 cinematic conversation server (G13.8): Converse look/job/position/kingdom, conversation hold, Kingdom.EndConversation, release after Choose
 ```
 
 <!-- forge:auto:end -->

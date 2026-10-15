@@ -80,11 +80,12 @@ local function finite(n: any): boolean
 end
 
 local function coordinate(value: number, field: string, id: number): number
-	assert(finite(value), `SnapshotCodec: entity {id} {field} is not a finite number`)
-	assert(
-		math.abs(value) <= SnapshotCodec.MAX_COORD,
-		`SnapshotCodec: entity {id} {field} = {value} is outside ±{SnapshotCodec.MAX_COORD} studs`
-	)
+	if not finite(value) then
+		error(`SnapshotCodec: entity {id} {field} is not a finite number`, 0)
+	end
+	if math.abs(value) > SnapshotCodec.MAX_COORD then
+		error(`SnapshotCodec: entity {id} {field} = {value} is outside ±{SnapshotCodec.MAX_COORD} studs`, 0)
+	end
 	return math.round(value * SnapshotCodec.SCALE)
 end
 
@@ -106,13 +107,17 @@ function SnapshotCodec.encode(
 	chunkCount: number?
 ): buffer
 	local n = #records
-	assert(n <= SnapshotCodec.MAX_RECORDS, `SnapshotCodec.encode: {n} records > {SnapshotCodec.MAX_RECORDS}`)
+	if n > SnapshotCodec.MAX_RECORDS then
+		error(`SnapshotCodec.encode: {n} records > {SnapshotCodec.MAX_RECORDS}`, 0)
+	end
 	assert(finite(serverTime) and serverTime >= 0, "SnapshotCodec.encode: serverTime must be finite and >= 0")
 	assert(finite(seq), "SnapshotCodec.encode: seq must be a number")
 	local index, count = chunkIndex or 0, chunkCount or 1
 	assert(index >= 0 and index < count and count >= 1 and count <= 16, "SnapshotCodec.encode: bad chunk")
 	local size = SnapshotCodec.HEADER_BYTES + n * SnapshotCodec.RECORD_BYTES
-	assert(size <= SnapshotCodec.MAX_BYTES, `SnapshotCodec.encode: {size} B > {SnapshotCodec.MAX_BYTES} B`)
+	if size > SnapshotCodec.MAX_BYTES then
+		error(`SnapshotCodec.encode: {size} B > {SnapshotCodec.MAX_BYTES} B`, 0)
+	end
 	local buf = buffer.create(size)
 	buffer.writef32(buf, 0, serverTime)
 	buffer.writeu16(buf, 4, seq % 65536)
@@ -121,18 +126,23 @@ function SnapshotCodec.encode(
 	local offset = SnapshotCodec.HEADER_BYTES
 	for _, r in records do
 		local id = r.id
-		assert(
-			type(id) == "number" and id >= 1 and id <= 65535 and id % 1 == 0,
-			`SnapshotCodec: id {tostring(id)} outside 1..65535`
-		)
+		if not (type(id) == "number" and id >= 1 and id <= 65535 and id % 1 == 0) then
+			error(`SnapshotCodec: id {tostring(id)} outside 1..65535`, 0)
+		end
 		local action = ACTION_CODE[r.action]
-		assert(action ~= nil, `SnapshotCodec: entity {id} has unknown action '{tostring(r.action)}'`)
+		if action == nil then
+			error(`SnapshotCodec: entity {id} has unknown action '{tostring(r.action)}'`, 0)
+		end
 		local carry = 0
 		if r.carrying ~= nil then
 			carry = CARRY_CODE[r.carrying] :: number
-			assert(carry ~= nil, `SnapshotCodec: entity {id} carries unknown resource '{tostring(r.carrying)}'`)
+			if carry == nil then
+				error(`SnapshotCodec: entity {id} carries unknown resource '{tostring(r.carrying)}'`, 0)
+			end
 		end
-		assert(finite(r.yaw), `SnapshotCodec: entity {id} yaw is not a finite number`)
+		if not finite(r.yaw) then
+			error(`SnapshotCodec: entity {id} yaw is not a finite number`, 0)
+		end
 		buffer.writeu16(buf, offset, id)
 		buffer.writei16(buf, offset + 2, coordinate(r.x, "x", id))
 		buffer.writei16(buf, offset + 4, coordinate(r.y, "y", id))
@@ -147,7 +157,9 @@ end
 function SnapshotCodec.encodeChunks(records: { Record }, seq: number, serverTime: number): { buffer }
 	local total = #records
 	local count = math.max(1, math.ceil(total / SnapshotCodec.MAX_RECORDS))
-	assert(count <= SnapshotCodec.MAX_CHUNKS, `SnapshotCodec.encodeChunks: {total} entities need {count} chunks > 16`)
+	if count > SnapshotCodec.MAX_CHUNKS then
+		error(`SnapshotCodec.encodeChunks: {total} entities need {count} chunks > 16`, 0)
+	end
 	local out = {}
 	for index = 0, count - 1 do
 		local first = index * SnapshotCodec.MAX_RECORDS + 1

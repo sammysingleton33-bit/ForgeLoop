@@ -53,6 +53,15 @@
 		sim:cancelConstruction(kingdom, buildingId, byUserId?): (boolean, string?)
 		Overlap (Sim/Footprint): placement shapes keep tuning.placementGap from each other and from
 		resource node circles; bounds and territory still test the footprint circle.
+	Conversations (G13.8)
+		sim:holdCitizen(citizen, seconds, faceX?, faceZ?, by?)   -- the citizen stops (activity "Talk", claims
+		                                       released) and faces (faceX, faceZ) for at most `seconds`; an
+		                                       emergency (alarm, threat near) ends it early
+		sim:releaseCitizen(citizen)            -- ends the hold; the citizen decides again on its next tick
+		sim:isHeld(citizen): boolean
+	Citizens (G5)
+		sim:rulerVisit(citizen, userId?): boolean   -- rulerVisited memory + mood lift, once per visitCooldown
+		sim:setJob(citizen, job)               -- one citizen to `job`, quotas kept in step (no rebalance back)
 	Views
 		sim:buildingView(id) / sim:viewOf(record): CONTRACTS G2 Building (cframe, footprint, state, ...)
 	Queries (used by CitizenBrain / CitizenActions / Snapshot)
@@ -88,6 +97,7 @@ local CitizenActions = require("./CitizenActions")
 local CitizenBrain = require("./CitizenBrain")
 local Footprint = require("./Footprint")
 local TreasuryDouble = require("./TreasuryDouble")
+local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 
 type Catalog = Catalog.Catalog
 
@@ -834,6 +844,64 @@ function Simulation:setActivity(citizen: any, activity: string, target: string?,
 	citizen.done = false
 end
 
+-- ---------------------------------------------------------------- conversations (G13.8)
+-- A ruler's conversation holds the citizen still, facing (faceX, faceZ), for at most `seconds`.
+function Simulation:holdCitizen(citizen: any, seconds: number, faceX: number?, faceZ: number?, by: number?)
+	self:setActivity(citizen, "Talk", nil, "with the ruler")
+	citizen.phase = "Talk"
+	local yaw = nil
+	if faceX and faceZ then
+		local dx, dz = faceX - citizen.x, faceZ - citizen.z
+		if dx * dx + dz * dz > 1e-6 then
+			yaw = math.atan2(-dx, -dz) -- the Replication facing convention
+		end
+	end
+	citizen.hold = { untilTime = self.time + seconds, yaw = yaw, by = by }
+end
+
+function Simulation:releaseCitizen(citizen: any)
+	if citizen.hold then
+		citizen.hold = nil
+		citizen.done = true -- decides again on its next tick
+	end
+end
+
+function Simulation:isHeld(citizen: any): boolean
+	return citizen.hold ~= nil and self.time < citizen.hold.untilTime
+end
+
+-- A ruler's visit (CONTRACTS G5): a rulerVisited memory and a mood lift of tuning.visitMood for
+-- visitMoodSeconds, at most once per citizen per visitCooldown. True when it counted.
+function Simulation:rulerVisit(citizen: any, userId: number?): boolean
+	local tuning = self.catalog.tuning
+	if citizen.visitedAt and self.time - citizen.visitedAt < tuning.visitCooldown then
+		return false
+	end
+	citizen.visitedAt = self.time
+	self:remember(citizen, { kind = "rulerVisited", ref = userId })
+	citizen.moodLift = { amount = tuning.visitMood, untilTime = self.time + tuning.visitMoodSeconds }
+	return true
+end
+
+-- Moves one citizen to `job` and keeps the kingdom's quotas in step, so the rebalancer leaves it there
+-- (CitizenService:setJob, G5). The hauler pool has no quota.
+function Simulation:setJob(citizen: any, job: string)
+	local kingdom = self.kingdoms[citizen.kingdomId]
+	local from = citizen.job
+	if from == job then
+		return
+	end
+	if from ~= "hauler" then
+		kingdom.quotas[from] = math.max(0, (kingdom.quotas[from] or 0) - 1)
+	end
+	if job ~= "hauler" then
+		kingdom.quotas[job] = (kingdom.quotas[job] or 0) + 1
+	end
+	citizen.job = job
+	citizen.done = citizen.carrying == nil -- rethink now unless mid-delivery
+	self:emit("CitizenReassigned", { kingdomId = kingdom.id, citizenId = citizen.id, from = from, to = job })
+end
+
 function Simulation:remember(citizen: any, entry: { [string]: any })
 	entry.t = self.time
 	-- replace an entry of the same kind+ref so memory stays compact
@@ -973,6 +1041,7 @@ end
 -- Stops the citizen working for `seconds` (a strike); they idle instead.
 function Simulation:strike(citizen: any, seconds: number)
 	citizen.strikeUntil = math.max(citizen.strikeUntil or 0, self.time + seconds)
+	citizen.done = true -- downs tools at once, even with a load in hand (#77 N2): it re-plans next tick
 end
 
 -- On strike, or walked out (productivity down to 0: SPEC §5.4 "−1 = one citizen's walk-out").
@@ -1379,20 +1448,27 @@ function Simulation:_stepPopulation(kingdom: any)
 	if #kingdom.citizenIds >= kingdom.popCap then
 		return
 	end
-	-- keep a day of meals in reserve before growing
-	local reserve = #kingdom.citizenIds * tuning.mealFood
-	if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
-		return
-	end
-	if
-		not self:spend(
-			kingdom.id,
-			{ food = tuning.birthFood },
-			`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
-			"population"
-		)
-	then
-		return
+	if self.fedByUpkeep then
+		-- D-045: the upkeep is the only food consumer (G7); a well-fed kingdom grows, it pays no food for it
+		if (kingdom.fedRatio or 1) < SocietyConfig.food.wellFedAtLeast then
+			return
+		end
+	else
+		-- the meal double (no upkeep): keep a day of meals in reserve, then pay for the birth
+		local reserve = #kingdom.citizenIds * tuning.mealFood
+		if self:balance(kingdom.id, "food") < tuning.birthFood + reserve then
+			return
+		end
+		if
+			not self:spend(
+				kingdom.id,
+				{ food = tuning.birthFood },
+				`birth:{kingdom.id}:{kingdom.stats.born + 1}`,
+				"population"
+			)
+		then
+			return
+		end
 	end
 	local keep = self.buildings[kingdom.keepId]
 	local angle = self.rng:NextNumber() * math.pi * 2
@@ -1437,6 +1513,12 @@ function Simulation:_stepCitizen(c: any, dt: number)
 
 	-- interrupts: emergencies preempt anything; night preempts work once cargo is delivered
 	local emergency = kingdom.alarm or self:threatNear(kingdom, c.x, c.z, tuning.fleeRadius)
+	if c.hold then
+		if self.time < c.hold.untilTime and not emergency then
+			return -- talking to the ruler (G13.8): no thinking, no moving
+		end
+		self:releaseCitizen(c) -- the time is up, or safety first
+	end
 	local urgent = emergency and c.activity ~= "Flee"
 	if emergency and c.activity ~= "Flee" then
 		if not kingdom.alarm then

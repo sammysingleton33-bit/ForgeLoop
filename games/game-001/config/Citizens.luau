@@ -18,10 +18,19 @@ return {
 	mealsChargeTreasury = true,
 	starveDeathHunger = 3,
 	birthInterval = 30,
+	-- a birth's food from the treasury: the meal double only. With the upkeep (CitizenService), a birth
+	-- costs no food and needs fedRatio >= Society.food.wellFedAtLeast and a free bed (D-045, PROVISIONAL)
 	birthFood = 25,
 	memorySize = 8,
 	memorySeconds = 45,
 	fleeRadius = 40,
+	-- VS-1 reactions (CONTRACTS G5), PROVISIONAL: a ruler's visit lifts mood by visitMood for
+	-- visitMoodSeconds, at most once per citizen per visitCooldown; citizens within celebrateRadius of the
+	-- keep celebrate when it reaches level 2
+	visitMood = 15,
+	visitMoodSeconds = 180,
+	visitCooldown = 180,
+	celebrateRadius = 60,
 	arriveRadius = 1.5,
 	needTargets = { food = 150, wood = 200, stone = 150, gold = 80 },
 }
