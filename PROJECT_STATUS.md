@@ -4,25 +4,26 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B14**, main `3691475`, delivered 2026-10-15 17:25 UTC. **This is the build to test.** Not yet run in Studio. Checklist: `production/handoffs/2026-10-13-forge-00-to-forge-05-b14-studio-checklist.md` (for the user's local Studio MCP session).
-  - **New since B13:** the cinematic conversation.
-    - The camera glides to the citizen's face, and a 3D portrait rises (#85, #84, #126).
-    - The citizen turns to face the ruler and is held while you choose, then while you read, until Done (at most 12 s; #108, g9f).
-    - The portrait plays reaction poses (#121).
-    - Every close path restores the camera.
-    - Replication survives bad ticks (#93).
-    - Headless: game-001 1304/0, end-to-end probe 9/9 (FORGE-05).
+- **Latest build: B15**, main `b2e3164`, delivered 2026-10-15 18:30 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff, plus its B15 section, `production/handoffs/2026-10-13-forge-00-to-forge-05-b14-studio-checklist.md`.
+  - **New since B14 (the user's first-playtest fixes):**
+    - Starting farms and plot yards are clean (#131; 20-seed probe: 1012 → 0 node overlaps with fields).
+    - Rotation on plot markers: a Turn button showing the facing, and R / Shift+R on the Build rail (#132, #135).
+    - Bubbles are always on top, with a fixed on-screen size, coloured glyph badges, a pop for new requests, and a tap that opens the citizen (#133).
+    - Hover and selection outlines (#137).
   - **Not yet:**
-    - Reaction poses on the world rig (needs `playPose`).
-    - The user's first Studio feedback (record ec44e944): farm clutter, rotation on plots, bubble readability and art. That's the B15 target.
-    - Sounds (P0 picks).
-    - Dialogue is DRAFT.
-- **Next build: B15** (cut as soon as cleanup, rotation and bubbles are in; art where ready):
-  - FORGE-02 farm and slot clearance + world trim (D-047);
-  - FORGE-01 `Build.PlaceSlot` turn (g9h) with FORGE-03's picker Turn and ghost facing;
-  - FORGE-04 bubble readability;
-  - FORGE-02 env and citizen polish (D-048: 11-part rigs).
-  - Base editing (move buildings) and wall drag: B16, with the rules task coming.
+    - The pad Y turn (FORGE-03 follow-up).
+    - Phone bubbles can overlap (B16 cycle).
+    - A hover outline can linger.
+    - Art: FORGE-02's trim, environment and citizen work is not in.
+    - Moving buildings and wall drag (B16).
+    - FL-0122 hardening.
+    - From B14: world-rig poses, sounds, DRAFT dialogue.
+- **Next build: B16:**
+  - base editing phase 1 (CONTRACTS G13.9 g9j; FL-0119/0120/0121);
+  - FORGE-02 art (FL-0116/0117/0118);
+  - FL-0122 hardening;
+  - the bubble cycle and off-screen indicators;
+  - wall gap (#136).
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
