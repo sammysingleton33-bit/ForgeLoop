@@ -446,3 +446,10 @@ per size, no stray pebble; **wheat** thinner, taller, closer-packed stalk cluste
 **Status after round 2:** trees pass the image-only rubric (borderline) and are a modest, real step over #141; boulders stay at #141's NEEDS-WORK level (two primitive passes did not help;
 this needs a mesh or a different primitive vocabulary); the wheat at 44 parts is better than slabs (var, read, detail up from 2 to 3) but still not a pass, and part cost is the limit:
 the reviewer's own fix (thin, close-packed stalk clusters) needs more parts, not fewer.
+
+**Wheat tufts withdrawn from PR #151 (FORGE-05, D-051 (a)).** FORGE-05 opened `env_polish_r2_wheat.jpg` and judged the 6 x 7 tufts not *clearly* better than #141's
+slabs (tiles or crates in a checker at gameplay and aerial distance; the slabs at least read as rows) for about 27 more parts per field. Commit `926edd5` is reverted on
+this branch (`5bc05cb`), so the wheat field is #141's 17-part slabs again and `Props.WHEAT_PARTS` / the wheat specs are back to #141's. The tuft work is kept as-is on
+branch `forge/02-blender-env-wheat` (head `3138825`) for a later FL-0117 wheat PR with another approach (FORGE-05's suggestion: rows of thin tapered blades along furrows, as
+in the cabbage bed; the reviewer's thin close-packed stalk clusters). The 44-part allowance (D-047 amendment) stays available; that PR needs FL-0116's measured headroom first. The wheat images above
+stay as the record of what was tried.
