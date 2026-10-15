@@ -52,7 +52,8 @@
 		and the G13.3 thought, reaction, strike and kcue (fire `event`, see above).
 	Rendering (D-026, D-025)
 		- Samples are buffered per entity by snapshot serverTime. They render INTERP_DELAY (0.2 s)
-		  behind the server time estimated from arrivals (Sim/Interpolation).
+		  behind the server time estimated from arrivals (Sim/Interpolation). When that estimate snaps
+		  (serverTime jumped), each track keeps only its newest sample, moved onto the new timeline.
 		- Position is the rig pivot (base centre). Yaw turns about +Y, CFrame.Angles(0, yaw, 0); the
 		  rig faces -Z at yaw 0.
 		- Rigs come from Kit.character(kind, job, colour of the kingdom in config Kingdoms, look?) with
@@ -299,7 +300,13 @@ function EntityController:_onSnapshot(buf: any)
 	end
 	self._newestSeq = frame.seq
 	self.stats.snapshots += 1
-	self._clock:observe(frame.serverTime, self._env.clock())
+	if self._clock:observe(frame.serverTime, self._env.clock()) then
+		-- serverTime jumped (a match restart without a reset, #39 L5): every track starts the new timeline
+		-- from where its entity stands
+		for _, entity in self._entities do
+			Interpolation.rebase(entity.track, frame.serverTime)
+		end
+	end
 	for _, r in frame.records do
 		local entity = self._entities[r.id]
 		if self._despawned[r.id] then

@@ -16,7 +16,9 @@
 		Kingdom.Converse(entityId: integer) -> { entityId, scenarioId, speaker: { name, occupation }, question,
 		                                     options: { { id, text, cost?, risks? } } }?   (G13.3) own kingdom's
 		                                     citizens, rulers only; nil when the citizen has nothing to say
-		                                     or the match is not in an active phase (Lobby, Results)
+		                                     or the match is not in an active phase (Lobby, Results); G13.8:
+		                                     also look, job, position, kingdom, and the citizen is held
+		Kingdom.EndConversation(entityId: integer) -> boolean   (G13.8) ends the conversation hold
 		Kingdom.Choose(entityId, scenarioId: string(1,48), responseId: string(1,48))
 		                                  -> (ok, { reaction, effects: { { kind, text } } }?, reason?)   (G13.3)
 		                                     reasons: not_in_match, unknown_citizen, phase, not_offered,
@@ -65,6 +67,12 @@ return {
 	{ name = "Kingdom.GetReputation", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } },
 	{
 		name = "Kingdom.Converse",
+		kind = "function",
+		args = { Validate.integer(1, 65535) },
+		rate = { burst = 4, perSecond = 2 },
+	},
+	{
+		name = "Kingdom.EndConversation",
 		kind = "function",
 		args = { Validate.integer(1, 65535) },
 		rate = { burst = 4, perSecond = 2 },

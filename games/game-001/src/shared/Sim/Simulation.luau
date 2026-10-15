@@ -53,6 +53,12 @@
 		sim:cancelConstruction(kingdom, buildingId, byUserId?): (boolean, string?)
 		Overlap (Sim/Footprint): placement shapes keep tuning.placementGap from each other and from
 		resource node circles; bounds and territory still test the footprint circle.
+	Conversations (G13.8)
+		sim:holdCitizen(citizen, seconds, faceX?, faceZ?, by?)   -- the citizen stops (activity "Talk", claims
+		                                       released) and faces (faceX, faceZ) for at most `seconds`; an
+		                                       emergency (alarm, threat near) ends it early
+		sim:releaseCitizen(citizen)            -- ends the hold; the citizen decides again on its next tick
+		sim:isHeld(citizen): boolean
 	Citizens (G5)
 		sim:rulerVisit(citizen, userId?): boolean   -- rulerVisited memory + mood lift, once per visitCooldown
 		sim:setJob(citizen, job)               -- one citizen to `job`, quotas kept in step (no rebalance back)
@@ -839,6 +845,32 @@ function Simulation:setActivity(citizen: any, activity: string, target: string?,
 	citizen.done = false
 end
 
+-- ---------------------------------------------------------------- conversations (G13.8)
+-- A ruler's conversation holds the citizen still, facing (faceX, faceZ), for at most `seconds`.
+function Simulation:holdCitizen(citizen: any, seconds: number, faceX: number?, faceZ: number?, by: number?)
+	self:setActivity(citizen, "Talk", nil, "with the ruler")
+	citizen.phase = "Talk"
+	local yaw = nil
+	if faceX and faceZ then
+		local dx, dz = faceX - citizen.x, faceZ - citizen.z
+		if dx * dx + dz * dz > 1e-6 then
+			yaw = math.atan2(-dx, -dz) -- the Replication facing convention
+		end
+	end
+	citizen.hold = { untilTime = self.time + seconds, yaw = yaw, by = by }
+end
+
+function Simulation:releaseCitizen(citizen: any)
+	if citizen.hold then
+		citizen.hold = nil
+		citizen.done = true -- decides again on its next tick
+	end
+end
+
+function Simulation:isHeld(citizen: any): boolean
+	return citizen.hold ~= nil and self.time < citizen.hold.untilTime
+end
+
 -- A ruler's visit (CONTRACTS G5): a rulerVisited memory and a mood lift of tuning.visitMood for
 -- visitMoodSeconds, at most once per citizen per visitCooldown. True when it counted.
 function Simulation:rulerVisit(citizen: any, userId: number?): boolean
@@ -1483,6 +1515,12 @@ function Simulation:_stepCitizen(c: any, dt: number)
 
 	-- interrupts: emergencies preempt anything; night preempts work once cargo is delivered
 	local emergency = kingdom.alarm or self:threatNear(kingdom, c.x, c.z, tuning.fleeRadius)
+	if c.hold then
+		if self.time < c.hold.untilTime and not emergency then
+			return -- talking to the ruler (G13.8): no thinking, no moving
+		end
+		self:releaseCitizen(c) -- the time is up, or safety first
+	end
 	local urgent = emergency and c.activity ~= "Flee"
 	if emergency and c.activity ~= "Flee" then
 		if not kingdom.alarm then

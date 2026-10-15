@@ -10,6 +10,7 @@ local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
+local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
@@ -346,6 +347,13 @@ describe("CitizenService: generated population (G13.2, FL-0078)", function()
 		-- refused requests change nothing
 		invoke(env, p1, "Kingdom.SetJobQuota", "hauler", 3)
 		invoke(env, p1, "Kingdom.SetJobQuota", "farmer", -1)
+		-- ... and the remote's validation is not what stops them: the command itself refuses and keeps the revision
+		local rev = sim.kingdoms.crimson.quotaRev
+		for _, args in { { "hauler", 3 }, { "farmer", -1 }, { "farmer", 1.5 }, { "nonesuch", 2 }, { "farmer", 0 / 0 } } do
+			local ok = Commands.executeFor(sim, sim.kingdoms.crimson, 1, "SetJobQuota", table.unpack(args))
+			expect(`{args[1]} {tostring(args[2])}: {ok}`).toBe(`{args[1]} {tostring(args[2])}: false`)
+		end
+		expect(sim.kingdoms.crimson.quotaRev).toBe(rev)
 		env.mock:advance(1.5)
 		expect(#sent()).toBe(pushed + 2)
 		expect(citizens:getPopulation("crimson").quotaRev).toBe(2)

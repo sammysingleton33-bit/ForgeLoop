@@ -67,6 +67,7 @@ local ACTIVITY_TEXT = {
 	Sleep = "Sleeping",
 	Flee = "Fleeing",
 	Idle = "Idle",
+	Talk = "Talking", -- held in a ruler's conversation (G13.8)
 }
 
 local POPULATION_EVERY = 1 -- seconds between Kingdom.Population checks
