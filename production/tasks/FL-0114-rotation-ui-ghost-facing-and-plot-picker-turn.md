@@ -1,15 +1,17 @@
 ---
 id: FL-0114
-title: Rotation UI: ghost facing arrow, discoverable Rotate, plot picker Turn (B15 #2)
+title: "Rotation UI: ghost facing arrow, discoverable Rotate, plot picker Turn (B15 #2)"
 track: build
 owner: forge-03
-status: BUILDING
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0113, FL-0087, FL-0059]
-evidence: []
+evidence:
+  - games/game-001/tests/economy/Rotation.spec.luau 13/0; mutations 18/18; check.sh game-001 1244/0 + selene/stylua clean; renders games/game-001/design/ui/REVIEW-placement.md
+  - PR #135
 ---
 
 # Rotation UI: ghost facing arrow, discoverable Rotate, plot picker Turn (B15 #2)
@@ -35,3 +37,5 @@ Automated: specs and mutations; renders at three screen sizes looked at. Studio:
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-03: BUILDING → TESTING. Rotation B1 + B2 built in #135: Turn button with facing dial, ghost door strip + facing arrow, Shift+R / gamepad Y; plot Turn on CONTRACTS v0.4-g9h (switches on when Build/Remotes declares PlaceSlot's turn)
+- 2026-10-15 forge-03: TESTING → REVIEW. PR #135 for FORGE-05's gate; Studio U17 unverified
