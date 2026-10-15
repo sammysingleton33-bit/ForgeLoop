@@ -386,7 +386,7 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 	end)
 
 	it("puts joint pivots at the hips, neck and shoulders, with axis-aligned joint frames", function()
-		each(function(kind, job, rig)
+		each(function(_, _, rig)
 			for _, m in rig:GetDescendants() do
 				if m:IsA("Motor6D") then
 					local j = jointWorld(m)
@@ -407,12 +407,8 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 				local shoulder = jointWorld(motorOf(rig, `{side}Arm`)).Position
 				expect(shoulder.Y).toBeGreaterThan(torsoTop.Y - 0.6)
 				expect(shoulder.Y).toBeLessThan(torsoTop.Y)
-				-- the arm pivots sit outside the torso's side (the cheer swings the arm about its own centre line, B18);
-				-- the soldier's wider helm needs a little more
-				local out = if kind ~= "governor" and (kind == "soldier" or job == "soldier")
-					then Character.SHOULDER_OUT_SOLDIER
-					else Character.SHOULDER_OUT
-				expect(math.abs(shoulder.X)).toBeNear(torso.Size.X / 2 + out, 1e-3)
+				-- the arm pivots sit outside the torso's side, on the arm's centre line (the cheer swings the arm about it, B18)
+				expect(math.abs(shoulder.X)).toBeNear(torso.Size.X / 2 + Character.SHOULDER_OUT, 1e-3)
 			end
 			local neck = jointWorld(motorOf(rig, "Head")).Position
 			expect(neck.Y).toBeNear(torsoTop.Y, 1e-3)
@@ -1162,11 +1158,10 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 	it(
 		"moves only the arm pivots: the arms hang exactly where they did at rest, flush against the torso's sides",
 		function()
-			-- FORGE-01's pose analysis (#166): about 0.4 studs for a citizen, 0.5-0.6 for the soldier's wider helm
+			-- FORGE-01's pose analysis (#166): about 0.4 studs; any more floats the raised arm off the shoulder (D-051 (b))
 			expect(Character.SHOULDER_OUT).toBeGreaterThanOrEqual(0.4)
-			expect(Character.SHOULDER_OUT_SOLDIER).toBeGreaterThanOrEqual(0.5)
-			expect(Character.SHOULDER_OUT_SOLDIER).toBeLessThanOrEqual(0.6)
-			each(function(kind, job, rig)
+			expect(Character.SHOULDER_OUT).toBeLessThanOrEqual(0.45)
+			each(function(_, _, rig)
 				local torso = child(rig, "Torso")
 				for _, side in { "Left", "Right" } do
 					local arm = child(rig, `{side}Arm`)
@@ -1176,11 +1171,10 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 					local top = arm.CFrame * Vector3.new(-sign * arm.Size.X / 2, arm.Size.Y / 2, 0)
 					expect(math.abs(top.X) - torso.Size.X / 2).toBeLessThan(0.1)
 					expect(math.abs(top.X) - torso.Size.X / 2).toBeGreaterThan(-0.05)
-					-- and the pivot is outside it, by the kind's amount
-					local out = if kind ~= "governor" and (kind == "soldier" or job == "soldier")
-						then Character.SHOULDER_OUT_SOLDIER
-						else Character.SHOULDER_OUT
-					expect(math.abs(pivot.X) - torso.Size.X / 2).toBeNear(out, 1e-3)
+					-- and the pivot is outside it, on the arm's centre line: the raised arm stays attached to the torso
+					expect(math.abs(pivot.X) - torso.Size.X / 2).toBeNear(Character.SHOULDER_OUT, 1e-3)
+					local topCentre = arm.CFrame * Vector3.new(0, arm.Size.Y / 2, 0)
+					expect(math.abs(math.abs(pivot.X) - math.abs(topCentre.X))).toBeLessThan(0.1)
 				end
 			end)
 		end

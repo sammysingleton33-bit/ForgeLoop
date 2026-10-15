@@ -75,9 +75,9 @@ local ARM = Vector3.new(0.78, 1.7, 0.82)
 local SHOULDER_Y = NECK_Y - 0.4
 -- The arm Motor6Ds pivot this far outside the torso's side (the arm parts stay exactly where they hang at rest): an arm raised
 -- in the cheer swings about its own centre line instead of its inner edge, so it clears the 1.6-stud head (FORGE-01's pose
--- analysis: the old pivot sat about 0.4 too far in). The soldier's wider helm needs a little more.
+-- analysis: the old pivot sat about 0.4 too far in). The pivot is the arm's centre line, so a raised arm stays attached to the
+-- torso (a larger offset, tried for the soldier's wider helm, floated the raised arm off the shoulder: FORGE-05, D-051 (b)).
 local SHOULDER_OUT = 0.41 -- the arm's centre line (ARM.X / 2 + 0.02)
-local SHOULDER_OUT_SOLDIER = 0.55
 local ARM_SPLAY = math.rad(7)
 local HAND_UP = 0.2 -- the hand joint sits inside the fist, this far above the arm's end
 local HEAD_D = 1.6
@@ -86,8 +86,7 @@ local HEAD_Y = NECK_Y + HEAD_D / 2 - 0.06 -- head centre (4.64)
 Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
 Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT
 Character.HEIGHT = 5.5 -- the body (head top); a hat, crest or tool may rise above it
-Character.SHOULDER_OUT = SHOULDER_OUT -- how far outside the torso's side the arm Motor6D pivots sit (citizens, governors)
-Character.SHOULDER_OUT_SOLDIER = SHOULDER_OUT_SOLDIER -- ... and the soldier's (a wider helm)
+Character.SHOULDER_OUT = SHOULDER_OUT -- how far outside the torso's side the arm Motor6D pivots sit (every rig)
 Character.MAX_PARTS = 9 -- D-032 rig cap, the one number the specs enforce (D-048 raises it to 11 in a later phase)
 
 -- ------------------------------------------------------------------ colours
@@ -794,9 +793,8 @@ function Character.character(
 		armMaterial,
 		armTint
 	)
-	local pivotOut = if style == "soldier" then SHOULDER_OUT_SOLDIER else SHOULDER_OUT
-	motor(torso, larm, CFrame.new(-(width / 2 + pivotOut), SHOULDER_Y, 0))
-	motor(torso, rarm, CFrame.new(width / 2 + pivotOut, SHOULDER_Y, 0))
+	motor(torso, larm, CFrame.new(-(width / 2 + SHOULDER_OUT), SHOULDER_Y, 0))
+	motor(torso, rarm, CFrame.new(width / 2 + SHOULDER_OUT, SHOULDER_Y, 0))
 	if accentJob then -- KitAccent = job on every part that carries the job's accent colour
 		if panelTorso then
 			torso:SetAttribute("KitAccent", accentJob)
