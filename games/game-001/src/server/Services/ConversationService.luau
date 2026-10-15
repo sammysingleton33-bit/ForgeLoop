@@ -95,6 +95,7 @@ local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery"
 local Occupations = require("@game/ReplicatedStorage/Game/Content/Occupations")
 local ConversationTags = require("@game/ReplicatedStorage/Game/Kingdom/ConversationTags")
 local Reputation = require("@game/ReplicatedStorage/Game/Kingdom/Reputation")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Context = require("@game/ReplicatedStorage/Game/Sim/Context")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
@@ -336,7 +337,7 @@ function ConversationService:_payload(
 		-- G13.8 v0.4-g10: how the question is said (optional; nil adds no field)
 		presentation = ConversationTags.question(question, (ContentQuery.presentation(scenario.id) or {}).urgency),
 		-- G13.8 (additive): who the citizen is, how they look and where they stand right now
-		look = if c.profile then c.profile.look else nil,
+		look = if c.profile then Kit.normalizeLook(c.profile.look) else nil, -- only a validated look goes on the wire
 		job = c.job,
 		position = Vector3.new(c.x, y, c.z),
 		kingdom = c.kingdomId,

@@ -292,6 +292,10 @@ Studio check.
     not. CornerWedge's peak is assumed at (+X, +Y, −Z) (unverified).
 24. Lune cannot read `ViewportFrame.CurrentCamera` back (it looks the name up on Workspace): the
     frame's first Camera child stands in, with a note.
+25. A **text glyph** in a rotated GuiObject is drawn the wrong way at angles that are not a multiple of
+    90° (observed: "▲" at 45°, 135°, 220.86°, 315° points about 180° off; 0/90/180/270 are right).
+    Frames rotate correctly at every angle. Cause not found (time-boxed, FL-0120); Roblox itself rotates
+    text correctly. Draw anything whose angle matters with frames (UI/FacingDial does).
 
 ## Files
 

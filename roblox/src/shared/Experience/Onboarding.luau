@@ -23,8 +23,9 @@
 			interactive: boolean?,            -- the player does something meaningful (move, tap, build)
 			nudgeAfterSec: number?,           -- hint escalates (arrow pulses, OnboardingHintEscalated)
 			autoAdvanceSec: number?,          -- informational steps move on by themselves (via = "timeout");
-			                                  -- a client step may set it too, so a step that depends on
-			                                  -- another system never stalls the tutorial
+			                                  -- a client or unrewarded bus step may set it too, so a step
+			                                  -- that depends on another system never stalls the tutorial
+			                                  -- (a rewarded step never does: the reward needs the action)
 			requires: string?,                -- a server service the step needs (e.g. "ConversationService");
 			                                  -- while it is missing the step is passed over (via = "unavailable")
 			reward: Reward?,                  -- only on bus-triggered steps (server-verified)
@@ -184,8 +185,13 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 			if step.reward and firstReward == nil then
 				firstReward = elapsed
 			end
-			if step.autoAdvanceSec ~= nil and step.trigger and step.trigger.bus then
-				table.insert(problems, `{at}: bus steps never auto-advance (they wait for the real action)`)
+			-- a reward needs the real action; an unrewarded bus step may move on, like a client step,
+			-- so a step that waits on another system never stalls the tutorial (FL-0108)
+			if step.autoAdvanceSec ~= nil and step.trigger and step.trigger.bus and step.reward ~= nil then
+				table.insert(
+					problems,
+					`{at}: a rewarded bus step never auto-advances (the reward needs the real action)`
+				)
 			end
 		end
 		if flow.funnel then
@@ -257,6 +263,10 @@ function Onboarding.current(flow: any, state: any): (number?, any)
 	return index, flow.steps[index]
 end
 
+-- Only the real action pays a step's reward: a bus trigger now or one remembered earlier. A step that
+-- timed out or was passed over (its service missing) never does (FORGE-00 ruling on #124).
+local PAID_VIA = table.freeze({ bus = true, satisfied = true })
+
 local function complete(flow: any, state: any, via: string, now: number, out: { Transition })
 	local index = state.completed + 1
 	local step = flow.steps[index]
@@ -268,7 +278,7 @@ local function complete(flow: any, state: any, via: string, now: number, out: { 
 	if state.completed >= #flow.steps then
 		state.finishedAt = now
 	end
-	table.insert(out, { index = index, id = step.id, via = via, reward = step.reward })
+	table.insert(out, { index = index, id = step.id, via = via, reward = if PAID_VIA[via] then step.reward else nil })
 end
 
 -- Completes the current step and every following step that is already satisfied or automatic.

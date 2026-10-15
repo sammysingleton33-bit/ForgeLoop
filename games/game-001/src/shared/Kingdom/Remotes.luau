@@ -13,7 +13,7 @@
 		                                     cooldown when it is used up) (D-050 (3), FL-0122)
 		Kingdom.SetJobQuota(job: JobId, count: integer(0,50)) -> (boolean, errorCode?)   G5 requestWorkers;
 		                                     hauler is the pool, so it is not a quota job
-		Kingdom.GetPopulation() -> { total, byJob, cap, quotas }?   getPopulation of the asker's kingdom (G13.2)
+		Kingdom.GetPopulation() -> { total, byJob, cap, quotas, quotaRev }?   getPopulation of the asker's kingdom (G13.2)
 		Kingdom.GetReputation() -> { values, history (latest 30), kingdom: { happiness, stability, morale } }?
 		                                     the asker's own reputation (G13.4); nil for a spectator
 		Kingdom.Converse(entityId: integer) -> { entityId, scenarioId, speaker: { name, occupation }, question,
@@ -35,7 +35,8 @@
 		                                     unknown_response, not_eligible, cost (ConversationService)
 	Server -> client
 		Kingdom.State({ kingdoms, mine })    on change (to every player) and to each arriving player
-		Kingdom.Population({ total, byJob, cap, quotas })   to a kingdom's members on change (G13.2)
+		Kingdom.Population({ total, byJob, cap, quotas, quotaRev })   to a kingdom's members on change (G13.2;
+		                                       quotaRev +1 per accepted quota change, FL-0109)
 		Kingdom.Reputation(same payload as GetReputation)   to the ruler when it changes (G13.4)
 	Implemented by Kingdom/MatchHost; GetPopulation/Population by CitizenService; GetReputation/Reputation
 	by ReputationService; Converse/Choose by ConversationService. Match phases are the "Match" area (Match/Remotes.luau).

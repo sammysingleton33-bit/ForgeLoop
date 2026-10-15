@@ -25,8 +25,9 @@
 	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up);
 	every other joint and action stays within 90°. Torso lift stays within ±2 studs.
 	Celebrate: both arms up for rigs with nothing in the right fist (idle citizens) or a sack on the back
-	(hauler). Every other job holds the tool arm out to the side (80° + the pump) and tips the tool back to the Tool
-	joint's limit, so no tool goes through the head: tests/sim/PoseClearance.spec measures it on Kit rigs.
+	(hauler). Every other job holds the tool arm out from the body (55° + the pump) and tips the tool back and
+	out within the Tool joint's limit, so no tool goes through the head: tests/sim/PoseClearance.spec measures it
+	on Kit rigs (the tool and every part welded to it, against the head and its headwear).
 ]]
 
 local Pose = {}
@@ -183,7 +184,12 @@ end
 
 -- Jobs that cheer with both arms straight up: no tool in the right fist (idle), or a sack on the back (hauler).
 local CHEERS_EMPTY_HANDED: { [string]: boolean } = { idle = true, hauler = true }
-local TOOL_CHEER_RAISE = 80 -- the tool arm held out to the side (degrees, plus the same 10 * s pump); the free arm stays at 140
+-- The tool arm of a cheer: held out from the body at this raise (degrees, plus the same 10 * s pump; the free arm
+-- stays at 140), with the tool tipped back and out by these angles. Together they stay within Pose.LIMITS.Tool
+-- (44.6 of 45). Measured by tests/sim/PoseClearance.spec on every part welded to the tool and to the head.
+local TOOL_CHEER_RAISE = 55
+local TOOL_TIP_BACK = 40
+local TOOL_TIP_OUT = 20
 
 local function celebrate(out: Joints, job: string, s: number, c: number)
 	local raise = 140 + 10 * s
@@ -195,9 +201,9 @@ local function celebrate(out: Joints, job: string, s: number, c: number)
 		out.Tool = IDENTITY
 	else
 		-- a hoe, axe, pick, hammer or spear held up beside the head would go through it (B17: Sim/PoseClearance
-		-- measures it): the tool arm stays lower and the tool tips back as far as its joint allows
+		-- measures it): the tool arm stays low and the tool tips back and away from the head
 		out.RightArm = rz(TOOL_CHEER_RAISE + 10 * s)
-		out.Tool = rx(-Pose.LIMITS.Tool)
+		out.Tool = rx(-TOOL_TIP_BACK) * rz(-TOOL_TIP_OUT)
 	end
 	legs(out, 0, 0)
 end

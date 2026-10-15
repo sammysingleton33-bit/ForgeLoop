@@ -10,6 +10,8 @@
 		- Peace needs both sides: one proposes, the other accepts within proposalSeconds (60 s).
 		- After peace, the same pair cannot go back to war for peaceCooldown seconds (120 s).
 	Any ruler of a kingdom may use these commands (shared ownership; events record who did it).
+		- DeclareWar and AcceptPeace set kingdom.moveLockedUntil on both sides (Buildings.moveLockout seconds
+		  of sim time): the kingdoms' buildings can't be moved meanwhile (Simulation:_checkMove).
 
 	API
 		Diplomacy.install(sim, options?)  -- options: { graceSeconds?, proposalSeconds?, peaceCooldown? }
@@ -39,6 +41,13 @@ local function otherKingdom(sim: any, kingdom: any, id: any): (any?, string?)
 		return nil, "unknown_kingdom"
 	end
 	return other, nil
+end
+
+-- A war declaration or a peace freezes base editing for both kingdoms for config Buildings.moveLockout seconds
+-- (CONTRACTS G13.9 v0.4-g9j): no sliding walls and towers around at the moment a war starts or ends.
+local function lockMoves(sim: any, a: any, b: any)
+	local until_ = sim.time + sim.catalog.tuning.moveLockout
+	a.moveLockedUntil, b.moveLockedUntil = until_, until_
 end
 
 function Diplomacy.relation(sim: any, a: string, b: string): string
@@ -81,6 +90,7 @@ function Diplomacy.install(sim: any, options: { [string]: number }?)
 		s.relations[key] = "War"
 		state.proposals[kingdom.id .. ">" .. target.id] = nil
 		state.proposals[target.id .. ">" .. kingdom.id] = nil
+		lockMoves(s, kingdom, target)
 		s:emit("WarDeclared", { kingdomId = kingdom.id, targetId = target.id, by = by })
 		return true, nil, { targetId = target.id }
 	end)
@@ -123,6 +133,7 @@ function Diplomacy.install(sim: any, options: { [string]: number }?)
 				u.target = nil
 			end
 		end
+		lockMoves(s, kingdom, from)
 		s:emit("PeaceMade", { kingdomId = kingdom.id, targetId = from.id, by = by })
 		return true, nil, { targetId = from.id }
 	end)
