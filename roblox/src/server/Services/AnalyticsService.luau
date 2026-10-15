@@ -19,7 +19,10 @@
 	  are dropped with a one-time warning; custom field values are sent as strings.
 	- Funnels: the onboarding funnel uses LogOnboardingFunnelStepEvent; recurring funnels need a
 	  sessionId (Roblox ignores repeated steps without one); repeated steps of one session are not
-	  re-sent (they would count against the rate limit for nothing).
+	  re-sent (they would count against the rate limit for nothing) and are only counted
+	  (stats.dropped.duplicate), never logged. A funnel declared `inOrder` credits a step only to a
+	  player who already has the previous one (stats.dropped.outOfOrder): Roblox counts skipped steps
+	  as completed, so kingdom-wide credit would otherwise inflate the earlier steps.
 	- Every call (sent or dropped) is written to env.log as "analytics <kind> <name> ..." so Studio
 	  walkthroughs can check the funnel order (Roblox records nothing from Studio).
 	- Economy events: only EconomyService calls economy() (§7); nothing here derives them from
@@ -27,9 +30,13 @@
 
 	Bus wiring (start): config.track rules are applied to GameEvents. Who an event is about comes
 	from Experience/Subjects: framework events have defaults, and a game passes resolvers for its own
-	events in config.subjects (e.g. game-001's G9 attribution rules). PlayerReady/PlayerRemoving drive
-	SessionStart/SessionEnd and the Return funnel (config.session). DataService (optional,
-	registry:find) supplies core.createdAt for days since first join.
+	events in config.subjects (e.g. game-001's G9 attribution rules). PlayerReady (or the game's
+	config.session.startOn, e.g. game-001's KingdomJoined: VS-1 has no profiles) and PlayerRemoving
+	drive SessionStart/SessionEnd and the Return funnel (config.session); a second start event in one
+	session is ignored. At session end, config.session.leftInfo(player, ctx) may return fields for one
+	more event (leftEvent, e.g. the match phase a player left in), logged before endEvent so the order
+	never depends on which PlayerRemoving handler runs first. DataService (optional, registry:find)
+	supplies core.createdAt for days since first join.
 ]]
 
 local AnalyticsConfig = require("@game/ReplicatedStorage/Forge/Config/Analytics")
@@ -148,11 +155,12 @@ function AnalyticsService:start()
 			self:_onBus(eventName, table.pack(...))
 		end
 	end
-	local readyHandler = handlers.PlayerReady
-	handlers.PlayerReady = function(player, ...)
+	local startOn = (self._config.session or {}).startOn or "PlayerReady"
+	local startHandler = handlers[startOn]
+	handlers[startOn] = function(player, ...)
 		self:_sessionStart(player)
-		if readyHandler then
-			readyHandler(player, ...)
+		if startHandler then
+			startHandler(player, ...)
 		end
 	end
 	local connections, missing = Bus.connectAll(self._bus, handlers)
@@ -415,9 +423,18 @@ function AnalyticsService:funnel(player: any, funnel: string, step: number, step
 	end
 	logFields.sessionId = sessionId
 	local state = self:_state(player)
-	local dedupeKey = `{funnel}|{if decl.kind == "recurring" then sessionId else ""}|{step}`
+	local sessionPart = if decl.kind == "recurring" then sessionId else ""
+	local dedupeKey = `{funnel}|{sessionPart}|{step}`
 	if state.sentSteps[dedupeKey] then
-		return self:_drop("funnel", funnel, "duplicate", logFields)
+		-- counted, not logged: kingdom-wide events repeat all match long (FORGE-05 #64 M1)
+		self:_count("duplicate")
+		return false
+	end
+	if decl.inOrder and step > 1 and not state.sentSteps[`{funnel}|{sessionPart}|{step - 1}`] then
+		-- Roblox counts skipped steps as completed, so an out-of-order step would inflate the
+		-- conversions before it (FORGE-00's #64 ruling): credited only after the previous step
+		self:_count("outOfOrder")
+		return false
 	end
 	local custom =
 		self:_customFields(decl.fields, if type(opts) == "table" then opts.fields else nil, nil, `funnel {funnel}`)
@@ -553,11 +570,11 @@ function AnalyticsService:_sessionIdFor(player: any, rule: any, info: { [string]
 	return nil
 end
 
-function AnalyticsService:_applyRule(rule: any, player: any, info: { [string]: any })
+-- Returns whether a call was handed to Roblox (false for a dropped or repeated step).
+function AnalyticsService:_applyRule(rule: any, player: any, info: { [string]: any }): boolean
 	if rule.event then
 		local fields = AnalyticsRouter.eventFields(rule, info)
-		self:event(player, rule.event, fields)
-		return
+		return self:event(player, rule.event, fields)
 	end
 	local decl = self._config.funnels[rule.funnel]
 	local sessionId = nil
@@ -565,10 +582,10 @@ function AnalyticsService:_applyRule(rule: any, player: any, info: { [string]: a
 		sessionId = self:_sessionIdFor(player, rule, info)
 		if sessionId == nil then
 			self:_drop("funnel", rule.funnel, "noSession", { userId = player.UserId, step = rule.step })
-			return
+			return false
 		end
 	end
-	self:funnel(player, rule.funnel, rule.step, decl.steps[rule.step], { sessionId = sessionId })
+	return self:funnel(player, rule.funnel, rule.step, decl.steps[rule.step], { sessionId = sessionId })
 end
 
 function AnalyticsService:_onBus(eventName: string, args: { any })
@@ -585,11 +602,16 @@ function AnalyticsService:_onBus(eventName: string, args: { any })
 		)
 	end
 	for _, subject in subjects do
-		self:_state(subject.player).lastActivity = eventName
+		local sent = false
 		for _, rule in rules do
 			if AnalyticsRouter.matches(rule, subject.info) then
-				self:_applyRule(rule, subject.player, subject.info)
+				sent = self:_applyRule(rule, subject.player, subject.info) or sent
 			end
+		end
+		-- only what was logged moves the drop-off point: a kingdom-wide event credited to every member
+		-- again and again (citizens gathering) must not hide the player's own last step
+		if sent then
+			self:_state(subject.player).lastActivity = eventName
 		end
 	end
 end
@@ -640,9 +662,18 @@ function AnalyticsService:_sessionEnd(player: any)
 		return
 	end
 	local session = self._config.session or {}
+	local lastActivity = state.lastActivity -- before leftEvent, which is not the player's own step
+	if self._enabled and session.leftEvent and session.leftInfo and state.joinedAt then
+		local ok, fields = pcall(session.leftInfo, player, self:_lookup())
+		if not ok then
+			self:_warnThrottled("leftInfo", "analytics: session.leftInfo failed", { error = tostring(fields) })
+		elseif type(fields) == "table" then
+			self:event(player, session.leftEvent, fields)
+		end
+	end
 	if self._enabled and session.endEvent and state.joinedAt then
 		local seconds = math.floor(self._env.clock() - state.joinedAt)
-		self:event(player, session.endEvent, { sessionSec = seconds, lastActivity = state.lastActivity })
+		self:event(player, session.endEvent, { sessionSec = seconds, lastActivity = lastActivity })
 	end
 	self._players[player.UserId] = nil
 end
