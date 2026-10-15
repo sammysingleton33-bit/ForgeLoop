@@ -52,7 +52,8 @@
 		sim:startUpgrade(kingdom, buildingId, byUserId?): (boolean, string?)
 		sim:cancelConstruction(kingdom, buildingId, byUserId?): (boolean, string?)
 		Overlap (Sim/Footprint): placement shapes keep tuning.placementGap from each other and from
-		resource node circles; bounds and territory still test the footprint circle.
+		resource node circles, except two line pieces (wall, gate), which keep tuning.wallGap (0: they join
+		end to end); bounds and territory still test the footprint circle.
 	Conversations (G13.8)
 		sim:holdCitizen(citizen, seconds, faceX?, faceZ?, by?)   -- the citizen stops (activity "Talk", claims
 		                                       released) and faces (faceX, faceZ) for at most `seconds`; an
@@ -105,6 +106,9 @@ export type Bounds = { minX: number, maxX: number, minZ: number, maxZ: number }
 export type Event = { [string]: any }
 
 local Simulation = {}
+
+-- wall and gate pieces form lines: next to each other they keep tuning.wallGap instead of placementGap
+local LINE_PIECES: { [string]: boolean } = { wall = true, gate = true }
 Simulation.__index = Simulation
 
 Simulation.SITE_BUILDERS = 3
@@ -1241,11 +1245,15 @@ function Simulation:canPlace(kingdom: any, kind: string, x: number, z: number, y
 		return false, "out_of_territory"
 	end
 	local gap = self.catalog.tuning.placementGap
+	local lineGap = self.catalog.tuning.wallGap -- wall / gate pieces may join end to end
 	local shape = self:shapeOf(kind, x, z, self:_facing(kingdom, kind, x, z, yaw))
 	for _, bid in self.buildingOrder do
 		local b = self.buildings[bid]
-		if not b.destroyed and Footprint.overlaps(shape, b.shape, gap) then
-			return false, "blocked"
+		if not b.destroyed then
+			local between = if LINE_PIECES[kind] and LINE_PIECES[b.kind] then lineGap else gap
+			if Footprint.overlaps(shape, b.shape, between) then
+				return false, "blocked"
+			end
 		end
 	end
 	for _, nid in self.nodeOrder do

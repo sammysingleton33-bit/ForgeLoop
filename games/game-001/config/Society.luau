@@ -11,6 +11,9 @@
 		requestRefreshSeconds   how often the open-request list is refreshed
 		conversationHoldSec     the longest a citizen stands still, facing the ruler, while a conversation
 		                        is open (G13.8, PROVISIONAL 30)
+		conversationHoldMaxSec  the most hold one showing (one question on a citizen's mind) can ever grant, however
+		                        often the ruler asks again: closing the panel gives the unused time back, an
+		                        expired or spent hold does not (D-050 (6a), FL-0122; PROVISIONAL 90)
 		conversation.eventSeconds   how long an event flag (event.building_completed, event.shortage, ...)
 		                        stays true for scenario triggers after the event
 	Reputation (G13.4, Kingdom/Reputation)
@@ -79,6 +82,7 @@ return {
 	openRequests = 3, -- PROVISIONAL (G13.3)
 	requestRefreshSeconds = 20,
 	conversationHoldSec = 30, -- PROVISIONAL (G13.8)
+	conversationHoldMaxSec = 90, -- PROVISIONAL (D-050 (6a))
 	conversation = {
 		eventSeconds = 180, -- PROVISIONAL
 	},

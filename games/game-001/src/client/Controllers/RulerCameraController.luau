@@ -12,6 +12,8 @@
 		camera:restore() -> boolean         -- glide back to the view saved by the first focusOn(_, opts)
 		camera:getFocus() -> Vector3?
 		camera:shake(magnitude, duration)   -- VFXController.shakeRequested is wired to this
+		camera:setEditDrag(active)          -- base editing (G13.9, FL-0121): while a building is dragged,
+		                                    -- the drag never pans; the screen edge does (edge-pan)
 
 	overview (default, D-030): the aerial management view. The ruler sits on the throne (FORGE-01
 	seats them) while the player looks after the kingdom from above.
@@ -20,7 +22,7 @@
 		- Zoom: mouse wheel, pinch, or zoomBy(); overview.minZoom..maxZoom studs (≈ 40–220, G13.6)
 		  from the focus. The pitch follows the zoom: flatter close up, steeper far out.
 		- Rotate: Q / E, right-mouse drag, a two-finger twist, or the right stick. Q / E are not bound
-		  in build mode, because FORGE-03's placement rotates with Q / R.
+		  in build or edit mode, because FORGE-03's placement and move rotate with Q / R.
 		- Bounded to the map: the focus stays inside the Layout regions' box (G10.1) plus a margin.
 		- Streaming: when the focus moves far, the camera asks the server to stream around it
 		  (Player:RequestStreamAroundAsync, throttled; Player.ReplicationFocus is server-only).
@@ -29,8 +31,13 @@
 	follow (walk mode, kept from FL-0053): Roblox's third-person camera with zoom follow.minZoom..
 	maxZoom (never first person), a shoulder offset and the field of view. Entering it makes the
 	ruler stand up (RulerController:standUp) and shows the touch controls again.
-	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode always uses the
-	overview, and leaving it restores the previous mode unless the player chose one meanwhile.
+	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode and base editing
+	("edit", G13.9) always use the overview, and leaving them restores the previous mode unless the
+	player chose one meanwhile.
+	Base editing (G13.9, FL-0121): selecting one of your buildings in edit mode pans to it (focusOn,
+	no glide). setEditDrag(true) while FORGE-03's edit UI drags a building: a mouse drag or one-finger
+	drag no longer pans; instead, a pointer within EDGE_PIXELS of the screen edge pans toward that
+	edge (faster nearer the edge, at most panSpeed). setEditDrag(false), or leaving edit mode, ends it.
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
 	maxActive at once, never with cameraShake off or reduced motion on (SettingsController); a NaN or
 	infinite magnitude or duration is refused. Each frame's shake is undone before Roblox's camera
@@ -137,6 +144,46 @@ Def.DEFAULTS = table.freeze({
 		maxActive = 4,
 	}),
 })
+
+-- Input modes that keep the aerial overview (G13.6 build, G13.9 edit).
+Def.OVERVIEW_MODES = table.freeze({ build = true, edit = true })
+Def.EDGE_PIXELS = 48 -- edge-pan band while dragging a building (G13.9)
+
+-- Edge-pan direction for a pointer on screen: x = right, y = forward (screen up), each -1..1,
+-- growing as the pointer nears the edge; zero outside the band.
+function Def.edgeDirection(pointer: Vector2, viewport: Vector2, band: number): Vector2
+	if viewport.X <= 0 or viewport.Y <= 0 or band <= 0 then
+		return Vector2.zero
+	end
+	local function axis(at: number, size: number): number
+		if at < band then
+			return -math.clamp((band - at) / band, 0, 1)
+		elseif at > size - band then
+			return math.clamp((at - (size - band)) / band, 0, 1)
+		end
+		return 0
+	end
+	return Vector2.new(axis(pointer.X, viewport.X), -axis(pointer.Y, viewport.Y))
+end
+
+-- A building's model under Workspace.ForgeKingdoms (WorldView: <kingdom>/Buildings, BuildingId).
+function Def.findBuilding(workspace: any, buildingId: any): any
+	local root = workspace and workspace:FindFirstChild("ForgeKingdoms")
+	if root == nil then
+		return nil
+	end
+	for _, kingdom in root:GetChildren() do
+		local buildings = kingdom:FindFirstChild("Buildings")
+		if buildings then
+			for _, model in buildings:GetChildren() do
+				if model:GetAttribute("BuildingId") == buildingId then
+					return model
+				end
+			end
+		end
+	end
+	return nil
+end
 
 local Controller = {}
 Controller.__index = Controller
@@ -324,7 +371,8 @@ end
 
 -- ------------------------------------------------------------------ lifecycle
 
--- opts (specs): { config, camera, player, actions, userInput, guiService, runService, layout, viewportHeight }
+-- opts (specs): { config, camera, player, actions, userInput, guiService, runService, layout, viewportHeight,
+--   viewportWidth }
 function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 	local options = opts or {}
 	local config = options.config or Def.DEFAULTS
@@ -341,6 +389,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_stick = Vector2.zero,
 		_stickTurn = 0,
 		_drag = nil,
+		_editDrag = false,
+		_pointer = nil :: Vector2?,
 		_panLast = nil,
 		_pinch = 1,
 		_twist = 0,
@@ -399,6 +449,14 @@ function Controller:start()
 				self:_onInputMode(mode, previous)
 			end)
 		)
+		if self._input.selected ~= nil then
+			track(
+				self._connections,
+				self._input.selected:connect(function(kind, id)
+					self:_onSelected(kind, id)
+				end)
+			)
+		end
 	end
 	if vfx ~= nil and vfx.shakeRequested ~= nil then
 		track(
@@ -456,8 +514,8 @@ end
 -- ------------------------------------------------------------------ public API
 
 function Controller:setMode(mode: any): boolean
-	if self._input ~= nil and self._input.mode == "build" then
-		self._autoFrom = nil -- the player chose a view while building: keep it after build mode
+	if self._input ~= nil and Def.OVERVIEW_MODES[self._input.mode] then
+		self._autoFrom = nil -- the player chose a view while building or editing: keep it afterwards
 	end
 	return self:_setMode(mode)
 end
@@ -660,6 +718,36 @@ function Controller:panBy(studs: Vector2)
 	self:focusOn(focus + Def.panVector(studs, self._target.yaw))
 end
 
+-- Base editing (G13.9): while a building is dragged, drags never pan and the screen edge does.
+function Controller:setEditDrag(active: any): boolean
+	local on = active == true and self._input ~= nil and self._input.mode == "edit"
+	self._editDrag = on
+	if on then
+		self._drag = nil -- a pan already under way stops
+		self._panLast = nil
+	end
+	return on
+end
+
+-- Edit mode: selecting one of your buildings pans to it (G13.9; InputModeController only selects
+-- your own in edit mode).
+function Controller:_onSelected(kind: string, id: any)
+	if kind ~= "building" or self._input == nil or self._input.mode ~= "edit" or self.mode ~= "overview" then
+		return
+	end
+	local ok, position = pcall(function()
+		local model = Def.findBuilding(self._env.Workspace, id)
+		if model == nil then
+			return nil
+		end
+		local primary = model.PrimaryPart
+		return if primary then primary.CFrame.Position else model:GetPivot().Position
+	end)
+	if ok and typeof(position) == "Vector3" then
+		self:focusOn(position)
+	end
+end
+
 function Controller:rotateBy(degrees: number)
 	self._talking = nil -- the player turns the view: stop following the citizen
 	self._target.yaw += math.rad(degrees)
@@ -756,6 +844,9 @@ function Controller:_stepOverview(dt: number, camera: any)
 		direction += vector
 	end
 	direction += self._stick
+	if self._editDrag and self._pointer ~= nil then
+		direction += Def.edgeDirection(self._pointer, self:_viewport(), Def.EDGE_PIXELS)
+	end
 	if direction.Magnitude > 0 then
 		direction = if direction.Magnitude > 1 then direction.Unit else direction
 		self:panBy(direction * (overview.panSpeed * target.zoom * dt))
@@ -926,20 +1017,23 @@ function Controller:_onCharacter(character: any)
 end
 
 function Controller:_onInputMode(mode: string, previous: string)
-	if mode ~= "build" then
+	if not Def.OVERVIEW_MODES[mode] then
 		self:_bindRotateKeys(self.mode == "overview")
 	else
-		self:_bindRotateKeys(false) -- Q / R belong to FORGE-03's placement in build mode
+		self:_bindRotateKeys(false) -- Q / R belong to FORGE-03's placement and move
+	end
+	if mode ~= "edit" then
+		self:setEditDrag(false)
 	end
 	if not self._config.overviewInBuild then
 		return
 	end
-	if mode == "build" then
+	if Def.OVERVIEW_MODES[mode] then
 		if self.mode ~= "overview" then
 			self._autoFrom = self.mode
 			self:_setMode("overview")
 		end
-	elseif previous == "build" and self._autoFrom ~= nil then
+	elseif Def.OVERVIEW_MODES[previous] and self._autoFrom ~= nil then
 		local restore = self._autoFrom
 		self._autoFrom = nil
 		self:_setMode(restore)
@@ -1012,7 +1106,7 @@ function Controller:_bindOverviewKeys(on: boolean)
 			return Enum.ContextActionResult.Sink
 		end, false, high, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 	end)
-	self:_bindRotateKeys(self._input == nil or self._input.mode ~= "build")
+	self:_bindRotateKeys(self._input == nil or not Def.OVERVIEW_MODES[self._input.mode])
 end
 
 function Controller:_bindRotateKeys(on: boolean)
@@ -1050,6 +1144,17 @@ function Controller:_isPhone(): boolean
 		width = if ok and type(size) == "number" and size > 0 then size else 1280
 	end
 	return ScreenLayout.breakpoint(width, self:_viewportHeight()) == "phone"
+end
+
+function Controller:_viewport(): Vector2
+	local width = self._opts.viewportWidth
+	if width == nil then
+		local ok, size = pcall(function()
+			return self._camera.ViewportSize.X
+		end)
+		width = if ok and type(size) == "number" then size else 0
+	end
+	return Vector2.new(width, self:_viewportHeight())
 end
 
 function Controller:_viewportHeight(): number
@@ -1111,8 +1216,11 @@ function Controller:_bindPointer()
 				if not processed and self.mode == "overview" then
 					self:zoomBy(-input.Position.Z)
 				end
-			elseif kind == Enum.UserInputType.MouseMovement then
-				self:_mouseMoved(input.Position)
+			elseif kind == Enum.UserInputType.MouseMovement or kind == Enum.UserInputType.Touch then
+				self._pointer = Vector2.new(input.Position.X, input.Position.Y) -- edge-pan (G13.9)
+				if kind == Enum.UserInputType.MouseMovement then
+					self:_mouseMoved(input.Position)
+				end
 			elseif input.KeyCode == Enum.KeyCode.Thumbstick1 then
 				local stick = Vector2.new(input.Position.X, input.Position.Y)
 				self._stick = if stick.Magnitude >= overview.stickDeadzone and self.mode == "overview"
@@ -1146,7 +1254,7 @@ end
 
 function Controller:_mouseMoved(position: Vector3)
 	local drag = self._drag
-	if drag == nil or self.mode ~= "overview" then
+	if drag == nil or self.mode ~= "overview" or self._editDrag then
 		return
 	end
 	local delta = Vector2.new(position.X - drag.last.X, position.Y - drag.last.Y)
@@ -1171,7 +1279,7 @@ function Controller:_touchPan(touches: any, translation: Vector2, state: any, pr
 	if state == Enum.UserInputState.Begin or self._panLast == nil then
 		self._panLast = translation
 	end
-	if processed or self.mode ~= "overview" or type(touches) ~= "table" or #touches ~= 1 then
+	if processed or self.mode ~= "overview" or self._editDrag or type(touches) ~= "table" or #touches ~= 1 then
 		self._panLast = translation
 		return
 	end

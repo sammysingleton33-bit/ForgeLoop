@@ -82,6 +82,17 @@ describe("InputModeController (G4.1, FL-0053)", function()
 		expect(actions.bound[InputModeDef.ACTION]).toBeNil()
 	end)
 
+	it("edit mode (G13.9) is a mode: X / gamepad B leave it, and entering it clears the selection", function()
+		input:select("building", 3)
+		expect(input:set("edit")).toBe(true)
+		expect(input.mode).toBe("edit")
+		expect(input.selection.kind).toBe("none")
+		assert(actions.bound[InputModeDef.ACTION], "the leave keys are bound while editing")
+		actions:press(InputModeDef.ACTION, Enum.UserInputState.Begin)
+		expect(input.mode).toBe("explore")
+		expect(actions.bound[InputModeDef.ACTION]).toBeNil()
+	end)
+
 	it("works without ContextActionService (headless boot): set() still switches, keys are skipped", function()
 		local bare = MockEnv.new({ seed = 54, isServer = false, localPlayer = { userId = 5302 } })
 		local reg = D.boot(bare, { camera = false })
@@ -228,6 +239,89 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 		expect(log).toEqual({ "citizen:9", "none:", "citizen:9" })
 	end)
 
+	it("back fires on gamepad B and Backspace, never on Esc or on a press a GUI handled (#126 L6)", function()
+		local backs = 0
+		input:onBack(function()
+			backs += 1
+			return true
+		end)
+		local function press(key, processed)
+			userInput.InputBegan:Fire({ UserInputType = Enum.UserInputType.Keyboard, KeyCode = key }, processed)
+		end
+		press(Enum.KeyCode.ButtonB, false)
+		press(Enum.KeyCode.Backspace, false)
+		expect(backs).toBe(2)
+		press(Enum.KeyCode.Escape, false) -- Roblox's menu key
+		press(Enum.KeyCode.Backspace, true) -- typing in a TextBox
+		press(Enum.KeyCode.ButtonB, true) -- leaving gamepad GUI selection
+		press(Enum.KeyCode.X, false)
+		expect(backs).toBe(2)
+		expect(input.selection.kind).toBe("none") -- a key is never a tap
+	end)
+
+	it("back never fires in build mode, nor for the press that left it (settle window)", function()
+		local backs = 0
+		input:onBack(function()
+			backs += 1
+			return true
+		end)
+		local function pressB()
+			userInput.InputBegan:Fire(
+				{ UserInputType = Enum.UserInputType.Gamepad1, KeyCode = Enum.KeyCode.ButtonB },
+				false
+			)
+		end
+		input:set("build")
+		env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		pressB()
+		expect(backs).toBe(0)
+		input:set("explore") -- what the bound B does in build mode
+		pressB()
+		expect(backs).toBe(0)
+		env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		pressB()
+		expect(backs).toBe(1)
+	end)
+
+	it(
+		"back: topmost wins, one press closes one panel; released handlers are gone; errors are skipped (#130 L1)",
+		function()
+			local closed = {}
+			local function panel(name, takes)
+				return input:onBack(function()
+					table.insert(closed, name)
+					return takes
+				end)
+			end
+			local releaseDrawer = panel("drawer", true)
+			local releaseStage = panel("stage", true)
+			expect(input:back()).toBe(true)
+			expect(closed).toEqual({ "stage" }) -- only the topmost
+			releaseStage() -- the stage closed itself
+			releaseStage() -- twice is harmless
+			expect(input:back()).toBe(true)
+			expect(closed).toEqual({ "stage", "drawer" })
+			releaseDrawer()
+			expect(input:back()).toBe(false) -- nothing open
+			-- a handler that does not take the press passes it down; one that errors is skipped, logged once
+			panel("card", true)
+			panel("hint", false)
+			input:onBack(function()
+				error("boom")
+			end)
+			expect(input:back()).toBe(true)
+			expect(input:back()).toBe(true)
+			expect(closed).toEqual({ "stage", "drawer", "hint", "card", "hint", "card" })
+			local warnings = 0
+			for _, entry in env.mock.logs do
+				if entry.level == "warn" and string.find(entry.message, "a back handler failed", 1, true) then
+					warnings += 1
+				end
+			end
+			expect(warnings).toBe(1)
+		end
+	)
+
 	it(
 		"hover: a mouse move over a citizen fires hovered on a change only; a GUI or build mode clears it (FL-0115)",
 		function()
@@ -261,6 +355,45 @@ describe("InputModeController selection (G13.6, FL-0090)", function()
 			expect(input.selection.kind).toBe("none") -- hovering never selects
 		end
 	)
+
+	it("edit mode (G13.9): a tap selects only your own buildings and plots, never citizens or a rival's", function()
+		local log = seen()
+		local mine = "crimson"
+		input._kingdomOverride = function()
+			return mine
+		end
+		picks[100] = 7 -- a citizen under the tap: ignored while editing
+		input:set("edit")
+		env.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		local function building(id, kingdom)
+			local model = env.newInstance("Model")
+			model:SetAttribute("BuildingId", id)
+			model:SetAttribute("KingdomId", kingdom)
+			model.Parent = world
+			local part = env.newInstance("Part")
+			part.Parent = model
+			return part
+		end
+		local function plot(id, kingdom)
+			local marker = tag(env.newInstance("Part"), "BuildSlot")
+			marker:SetAttribute("SlotId", id)
+			marker:SetAttribute("Kingdom", kingdom)
+			marker.Parent = world
+			return marker
+		end
+		hit = building(5, "crimson")
+		tap(100, 200)
+		hit = building(6, "azure")
+		tap(300, 200)
+		hit = plot("crimson_s2", "crimson")
+		tap(300, 200)
+		hit = plot("azure_s1", "azure")
+		tap(300, 200)
+		mine = nil -- no team yet: nothing is yours
+		hit = building(8, "crimson")
+		tap(300, 200)
+		expect(log).toEqual({ "building:5", "none:", "slot:crimson_s2", "none:", "none:" })
+	end)
 
 	it("hover: leaving explore mode clears it at once, with no mouse move (FL-0115, FORGE-05 #137)", function()
 		local log, seenByChanged = {}, nil

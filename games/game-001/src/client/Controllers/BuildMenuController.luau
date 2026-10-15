@@ -8,7 +8,7 @@
 		   (FORGE-04, G4.1) and a ghost of the `Kit.footprint` size in the world (UI/Ghost).
 		3. Every new ghost spot is checked with `Build.CanPlace(type, position, rot)`, throttled
 		   (UI/Placement.Checker, under the remote's 10/s): green = valid, red = the server's reason.
-		4. Turn (R, gamepad Y; Shift+R turns back) turns it in 90° steps: the ghost's facing arrow and
+		4. Turn (R or gamepad R1; Shift+R or L1 turns back) turns it in 90° steps: the ghost's facing arrow and
 		   the Turn button's dial show which way the front will face from the current camera. Place calls `Build.Place(type, position, rot)`. The server
 		   charges the treasury (Treasury.Changed → the pills float the spend) and the new building
 		   arrives through Build.Buildings (a construction chip). A toast confirms; a refusal keeps
