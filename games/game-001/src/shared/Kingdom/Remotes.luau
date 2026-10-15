@@ -7,7 +7,10 @@
 		Kingdom.GetState() -> { kingdoms: { Kingdom (G2) }, mine: KingdomId? }   snapshot on request
 		Kingdom.Gather(nodeId: string(1,32)) -> (true, ResourceId, amount) | (false, errorCode)
 		                                     the ruler harvests a node; the server uses the character
-		                                     position it sees and enforces range and cooldown
+		                                     position it sees and enforces range and cooldown. Own or neutral
+		                                     land only (not_your_node on a rival's); at most a per-minute
+		                                     allowance of each resource for the whole kingdom (answers
+		                                     cooldown when it is used up) (D-050 (3), FL-0122)
 		Kingdom.SetJobQuota(job: JobId, count: integer(0,50)) -> (boolean, errorCode?)   G5 requestWorkers;
 		                                     hauler is the pool, so it is not a quota job
 		Kingdom.GetPopulation() -> { total, byJob, cap, quotas }?   getPopulation of the asker's kingdom (G13.2)

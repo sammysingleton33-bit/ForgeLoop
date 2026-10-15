@@ -267,7 +267,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	})
 	if not phone then
 		Style.text({
-			text = "Move the mouse to aim · R turns (Shift+R back) · Click places · Q cancels",
+			text = "Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click places · Q cancels",
 			weight = Enum.FontWeight.Bold,
 			size = 11,
 			color = Theme.color("parchment100"),

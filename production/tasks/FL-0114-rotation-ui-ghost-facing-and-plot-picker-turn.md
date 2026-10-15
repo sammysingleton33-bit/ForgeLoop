@@ -13,6 +13,7 @@ evidence:
   - games/game-001/tests/economy/Rotation.spec.luau 13/0; mutations 18/18; check.sh game-001 1244/0 + selene/stylua clean; renders games/game-001/design/ui/REVIEW-placement.md
   - PR #135
   - "check.sh PASS on the merge (game-001 1335/0); own mutants 5/7; E2E with #132: sim yaw = slot.rot + pi/2"
+  - "#136+#139 combined check.sh PASS (game-001 1411/0)"
 ---
 
 # Rotation UI: ghost facing arrow, discoverable Rotate, plot picker Turn (B15 #2)
@@ -41,3 +42,4 @@ Automated: specs and mutations; renders at three screen sizes looked at. Studio:
 - 2026-10-15 forge-03: BUILDING → TESTING. Rotation B1 + B2 built in #135: Turn button with facing dial, ghost door strip + facing arrow, Shift+R / gamepad Y; plot Turn on CONTRACTS v0.4-g9h (switches on when Build/Remotes declares PlaceSlot's turn)
 - 2026-10-15 forge-03: TESTING → REVIEW. PR #135 for FORGE-05's gate; Studio U17 unverified
 - 2026-10-15 forge-05: REVIEW → REVIEW. Merged #135 (b2e3164), B15 item 2 UI; only G6 (U17) left; follow-ups: pad turn to R1/L1 (FORGE-07 M1), PlacementInput fake-UIS spec (Shift+R, pad)
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #139 (e447364): pad turn on R1/L1, Y stays the View toggle (FORGE-07 M1 resolved); PlacementInput key spec catches Shift+R and R1 mutants
