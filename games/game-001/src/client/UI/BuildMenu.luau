@@ -8,7 +8,7 @@
 	menu:render(view: BuildModel View, metrics: Layout Metrics, ui: {
 		phoneView: "list" | "detail", title: string? (default "Build"), name: string? (panel Name, default
 		"BuildMenu"), onCategory(id), onSelect(type), onBack(),
-		onPlace(detail), onClose() })
+		onPlace(detail), onClose(), onTurn()? (a plot detail's Turn, CONTRACTS v0.4-g9h) })
 	menu:destroy()
 	Rows are named "Row_<type>" and carry the attribute `buildingType`; the CTA face carries `cta`.
 
@@ -294,6 +294,11 @@ function BuildMenu:_detail(view: any, phone: boolean)
 				self._ui.onBack()
 			end
 		end,
+		onTurn = function()
+			if self._ui.onTurn then
+				self._ui.onTurn()
+			end
+		end,
 	}
 	if view.detail == nil then
 		if self._holder then
@@ -330,6 +335,7 @@ function BuildMenu:_detail(view: any, phone: boolean)
 		back = back,
 		onCta = handlers.onCta,
 		onBack = handlers.onBack,
+		onTurn = handlers.onTurn,
 	})
 	self.detail.instance.Parent = holder
 	holder.Parent = self.panel.content

@@ -2,7 +2,8 @@
 	Shared setup for the FL-0087 snapshot scenes: the spec world (tests/economy/doubles/KingdomWorld
 	with SlotDoubles) running the real KingdomHudController, PlotPickerController and
 	UpgradePanelController, sized to the device's CoreUISafeInsets area; `act(world, hud, picker,
-	upgrade)` drives the UI with the same calls a selection makes.
+	upgrade)` drives the UI with the same calls a selection makes. `opts.turns` serves the CONTRACTS
+	v0.4-g9h turn (SlotDoubles.TURN_REMOTES; the scene installs the UI/Turns seam).
 ]]
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
@@ -15,8 +16,9 @@ return function(ctx, opts, act)
 	Create.useTestConnector()
 	local world = KingdomWorld.new({
 		clientDefinitions = { KingdomHudDef, PlotPickerDef, UpgradePanelDef },
-		remotes = SlotDoubles.REMOTES,
-		services = { SlotDoubles.service },
+		-- opts.turns: the v0.4-g9h PlaceSlot turn (until FORGE-01's server lands; UI/Turns seam)
+		remotes = if opts.turns then SlotDoubles.TURN_REMOTES else SlotDoubles.REMOTES,
+		services = { if opts.turns then SlotDoubles.turnService else SlotDoubles.service },
 		treasury = opts.treasury,
 	})
 	local hud = world.client:get("KingdomHudController")
