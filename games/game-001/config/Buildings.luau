@@ -184,5 +184,12 @@ return {
 	},
 	placementGap = 2, -- studs kept free between footprints
 	wallGap = 0, -- studs kept free between two line pieces (wall / gate): they join end to end
+	-- base editing (CONTRACTS G13.9 v0.4-g9j); every time is sim time
+	moveCooldown = 10, -- seconds a building waits between moves (Build.Move / MoveToSlot)
+	moveSettle = 30, -- seconds a moved storehouse, lumber camp or quarry takes no deliveries and gives no gather bonus
+	moveLockout = 30, -- seconds a kingdom can't move anything after a war declaration or peace that involves it
+	moveDamageWindow = 10, -- a building damaged this recently can't move
+	moveThreatReach = 30, -- studs beyond an at-war unit's attack range that still count as under attack
+	rulerClearance = 3, -- studs around a ruler's character that no placement shape may cover
 	cancelRefund = 0.5, -- share of a site's paid cost returned on cancel
 }
