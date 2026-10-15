@@ -178,7 +178,7 @@ describe("Kit.portrait (CONTRACTS G13.8, D-036)", function()
 			local char, portrait = build(c)
 			local a, b = byName(char), byName(portrait)
 			expect(count(b)).toBe(count(a))
-			expect(count(b)).toBeLessThanOrEqual(9)
+			expect(count(b)).toBeLessThanOrEqual(Kit.CHARACTER_MAX_PARTS) -- 9 + 2 detail parts (D-048)
 			local headA, headB = a.Head, b.Head
 			for name, pa in a do
 				local pb = b[name]
@@ -212,12 +212,12 @@ describe("Kit.portrait (CONTRACTS G13.8, D-036)", function()
 			local joints = {}
 			for _, d in char:GetDescendants() do
 				if d:IsA("Motor6D") or d:IsA("Weld") then
-					joints[`{d.ClassName}:{d.Name}`] = d
+					joints[`{d.ClassName}:{d.Name}:{(d.Part1 :: BasePart).Name}`] = d -- (DetailWeld repeats: key by part)
 				end
 			end
 			for _, d in portrait:GetDescendants() do
 				if d:IsA("Motor6D") or d:IsA("Weld") then
-					local j = joints[`{d.ClassName}:{d.Name}`]
+					local j = joints[`{d.ClassName}:{d.Name}:{(d.Part1 :: BasePart).Name}`]
 					expect(j).never.toBeNil()
 					expect((d.Part0 :: BasePart).Name).toBe((j.Part0 :: BasePart).Name)
 					expect((d.Part1 :: BasePart).Name).toBe((j.Part1 :: BasePart).Name)
@@ -278,9 +278,11 @@ describe("Kit.portrait (CONTRACTS G13.8, D-036)", function()
 			expect(math.abs(centre.X - root.CFrame.Position.X)).toBeLessThan(1e-3)
 			-- head and headwear (crest, hat, crown) entirely in view
 			local top = -math.huge
-			for _, name in { "Head", "Hair" } do
+			for _, name in { "Head", "Hair", "Detail1", "Detail2" } do
 				local p = parts[name]
-				if p then
+				-- (detail parts welded to the Tool, e.g. a hoe blade, are not worn on the head)
+				local weld = if p then p:FindFirstChild("DetailWeld") else nil
+				if p and (weld == nil or (weld :: Weld).Part0 == parts.Head) then
 					for _, w in corners(p) do
 						local x, y, depth = project(cam, fov, w)
 						expect(depth).toBeGreaterThan(0)

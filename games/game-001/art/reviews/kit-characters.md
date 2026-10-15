@@ -412,3 +412,37 @@ Phase 2); woodcutter, miner and idle share a dark value in grayscale; builder ca
 idle hair is two overlapping spheres; the soldier's cone reads as a party hat and the helm is a box. The criterion still below
 threshold after two author rounds on 9 parts, as the coordinator's rule asks, is **variation (2-3, needs 4) and tool readability**;
 stopped here. Phase 2 (the next stacked branch) takes the tools, the hauler's strap, the builder's hard hat and the miner's lamp.
+
+## FL-0118 phase 2: D-048 11-part rigs, tools with handle and head (interim art, D-051)
+
+Stacked on phase 1b (PR 153). The rig cap is `Character.MAX_PARTS` = 11 = `BASE_PARTS` 9 (D-032) + `MAX_DETAIL` 2 (D-048). Detail parts are rigid
+parts welded by a `Weld` "DetailWeld" to the Head or the Tool (never a Motor6D: `Sim/Pose.JOINTS` and the root height are unchanged), named
+Detail1 and Detail2, `KitDetail = true` (so the client may drop them beyond the rig's LOD distance; the base rig is complete without them)
+and `KitDetailKind` = the part's name. Nothing new on the wire: they derive from kind and job. Images (`art/reviews/img/`):
+`citizen_polish2_jobs.jpg` (8 jobs at about 40 studs, before = phase 1b, colour and grayscale), `_tools.jpg` (close-ups), `_heads.jpg`
+(each rig from the front, side and back), `_crowd.jpg` (30 citizens, 50 degrees at 170 studs), `_aerial.jpg` (4 per job, colour and grayscale).
+| Job | Tool (handle, Tool part) | Tool head (detail) | Head detail |
+|---|---|---|---|
+| farmer | 5.2 pale-wood handle | steel hoe blade, angled down | kingdom-red crown over the straw brim |
+| woodcutter | 3.9 haft | bearded steel axe head | kingdom-red pompom on the beanie |
+| miner | 3.7 dark handle | 3.6 double-sided iron bar (T) | lamp on the pot |
+| builder | 3.0 pale handle | fat wooden mallet head | visor: the cream drum becomes a hard hat |
+| hauler | the sack (Tool) | kingdom-red strap across the chest, the sack's tied neck | none |
+| soldier | 9.0 ash shaft | pale steel spearhead, kingdom pennant | none (crest as before) |
+| governor | 6.4 gold staff | gold orb | kingdom-red velvet cap over the crown disc |
+Idle citizens keep their free 9th part as the Accessory and have no detail parts. Part counts: working citizens 11, hauler 11, soldier 11 (10
+without a kingdom), governor 11, idle 7 to 9 (was 9, 9, 9, 8-9, 9, 7-9).
+- **Fixes from the fresh review of #138/153:** tools now have a handle and a head, held at head height beside the body (the old board, slab
+  and bar are gone); the builder's paper-like cap is a hard hat (drum + visor) and his hammer differs from the hauler's load; the miner has a
+  lamp; the hauler has a strap and a tied sack, so the front view differs from idle; kingdom red shows on top of every working rig (crown,
+  pompom, pennant, strap, velvet cap): kingdom-red pixels in the 30-citizen crowd crop 443 (phase 1b) to 461 (main 420).
+- **Rules and specs.** `KitCharacter.spec` 49 tests (45 before): parts at most 11 with at most 2 detail parts and a base rig of at most 9; every
+  detail flagged, named, welded rigidly to the Head or the Tool, never a Motor6D, flags like the other parts; `Pose.JOINTS` and every Motor6D
+  name unchanged and no joint to a detail; the exact two details per job (kind, weld target); head details above the eyes and following the
+  hat's tilt; tool heads and handles clear the head sphere by 0.1 in idle, walk, work, carry, fight and flee. `KitPortrait.spec` and
+  `Kit.spec` follow (the portrait frames head-welded details too, so the governor's velvet cap is not cropped). 17 mutants of `Character.luau`
+  and one of `Portrait.luau` (not flagged, third detail, welded to the torso, short handles, missing heads, dark spearhead, untinted strap
+  and pennant, blade through the head, no visor, cap back to 9, no velvet cap, lamp over the face, details ignoring the hat tilt, mallet
+  through the head, equal handle colours, portrait ignoring details) all fail the spec.
+- **Known upstream issue, unchanged:** `Sim/Pose.celebrate` (FORGE-04) gives no Tool rotation, so hand tools sweep through the head with raised
+  arms; the spec excludes celebrate for hand tools.
