@@ -22,7 +22,8 @@
 	activePresets effects; a new effect that does not fit evicts strictly lower-priority continuous
 	effects, otherwise it is skipped. Reduced motion (SettingsController:reducedMotion) applies each
 	preset's rule: "skip", "reduce" (half the particles, no shake) or "keep". Floats do not rise with
-	reduced motion; they only fade.
+	reduced motion; they only fade. The `effectsQuality` setting "reduced" (FL-0103) multiplies every
+	effect's particles by REDUCED_QUALITY on top of that, for slower devices; motion is unchanged.
 ]]
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
@@ -37,6 +38,7 @@ Def.FLOAT_SEC = 1.2
 Def.FLOATS = 12
 Def.BUBBLES = 8
 Def.TEXT_MAX_DISTANCE = 150
+Def.REDUCED_QUALITY = 0.5 -- particle scale with effectsQuality = "reduced"
 
 export type Effect = { id: string, preset: any, live: number, priority: number, continuous: boolean, parts: { any } }
 
@@ -214,6 +216,9 @@ function VFXController:play(presetId: string, opts: { [string]: any }?): Effect?
 		return self:_skip("reducedMotion")
 	end
 	local scale = if reduced and preset.reducedMotion == "reduce" then 0.5 else 1
+	if self._settings:get("effectsQuality") == "reduced" then
+		scale *= Def.REDUCED_QUALITY -- FL-0103: fewer particles on every effect, motion unchanged
+	end
 	local live = VfxPresets.liveParticles(preset) * scale
 	if not self:_makeRoom(live, preset.priority) then
 		return self:_skip("budget")
