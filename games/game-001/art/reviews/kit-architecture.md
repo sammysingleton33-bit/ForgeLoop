@@ -252,10 +252,11 @@ fewer, larger plinth facing stones.
   a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured with each prop's
   live `Kit.prop` bounds. 18 placements intruded before (3 on or beside a field), 0 after.
 
-**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 -> 8,256 (clearance: 15 placements removed, 8 hand-placed
-props moved) -> 6,142 (trim). Trimmed: forests 3,879 -> 2,871 (221 -> 166 trees, -25 %), lone trees 798 -> 457,
-bushes 890 -> 465, rocks 676 -> 336, flowers 243 (all inside plot framing, untouched). The two forests in front of
-the plots stay whole.
+**Parts** (WorldService at ready, `MockEnv` seed 1): 8,412 on main d78d9cb -> 8,164 at density 1.0 on current main (clearance:
+15 placements removed, 8 hand-placed props moved; env-polish's props are in this number) -> 6,057 (trim). Trimmed:
+forests 3,831 -> 2,833 (221 -> 166 trees, -25 %), lone trees 766 -> 429, bushes 890 -> 460, rocks 685 -> 343, flowers
+234 (all inside plot framing, untouched). The two forests in front of the plots stay whole. The images were rendered
+before env-polish's props landed (they differ only in tree, rock and bush shapes).
 
 **Images** (`img/`, Cycles 32 samples, Roblox 70 deg FOV; before = main, after = this branch):
 - `world_trim_aerial_plot_*`: crimson plot, 50 deg, 170 studs (the throne's default view).

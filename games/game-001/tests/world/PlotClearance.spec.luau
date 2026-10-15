@@ -316,12 +316,22 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect(bad(WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY))).toBe("")
 		-- the checker sees a boulder against a trunk, and clear() removes it
 		local tree = { assetId = "tree_oak_01", cframe = CFrame.new(-480, 0, 60), feature = "lone_tree" }
-		-- 10 studs off the trunk: beyond a medium boulder's own reach (7.3 live, 8.5 documented), within a trunk's 3 more
-		local rock = { assetId = "rock_boulder_m_01", cframe = CFrame.new(-480 + 10, 0, 60), feature = "rocks" }
+		-- between a medium boulder's own reach (documented radius) and its reach plus the trunk gap (live radius + 3):
+		-- only the trunk gap can tell, so a clear() that forgot the gap keeps the rock
+		local gap = (WorldPlan.footprintRadius("rock_boulder_m_01") + liveRadius("rock_boulder_m_01") + TRUNK) / 2
+		local rock = { assetId = "rock_boulder_m_01", cframe = CFrame.new(-480 + gap, 0, 60), feature = "rocks" }
 		expect(bad({ tree, rock })).never.toBe("")
 		local kept = WorldPlan.clear(Layout, { tree, rock })
 		expect(#kept).toBe(1)
 		expect(kept[1].feature).toBe("lone_tree")
+		-- the same against a bush's centre
+		local bushAt = (WorldPlan.footprintRadius("rock_boulder_m_01") + liveRadius("rock_boulder_m_01") + BUSH) / 2
+		local bush = { assetId = "bush_01", cframe = CFrame.new(-480, 0, 100), feature = "bush" }
+		local beside = { assetId = "rock_boulder_m_01", cframe = CFrame.new(-480 + bushAt, 0, 100), feature = "rocks" }
+		expect(bad({ bush, beside })).never.toBe("")
+		kept = WorldPlan.clear(Layout, { bush, beside })
+		expect(#kept).toBe(1)
+		expect(kept[1].feature).toBe("bush")
 	end)
 
 	it("sizes CLEAR.radius to the live Kit.prop bounds of every planned asset", function()

@@ -330,7 +330,7 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		expect(svc:isReady()).toBe(true)
 		-- descendants include attachments and folders, so allow a little slack over the part budget
 		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
-		-- D-047 / FL-0116: about 6,140 with the trimmed dressing (8,256 untrimmed); restoring the density knob after a
+		-- D-047 / FL-0116: about 6,060 with the trimmed dressing (8,164 untrimmed); restoring the density knob after a
 		-- phone test means raising this with it, since the 27k all-built ceiling depends on it
 		expect(svc.stats.parts).toBeLessThan(6400)
 		svc:destroy()
@@ -382,22 +382,22 @@ describe("Dressing density knob (D-047)", function()
 			expect(fingerprint(plan)).toBe(1099084135) -- main d78d9cb's props, before the plot clearance and the trim
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(603)
-			expect(fingerprint(one)).toBe(216597717)
+			expect(#one).toBe(601)
+			expect(fingerprint(one)).toBe(1048165543)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(630)
-			expect(fingerprint(all)).toBe(329609882)
+			expect(#all).toBe(628)
+			expect(fingerprint(all)).toBe(1586914474)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(603)
-			expect(svc.stats.parts).toBe(8256)
+			expect(svc.stats.props).toBe(601)
+			expect(svc.stats.parts).toBe(8164)
 			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
 			local forests = Layout.features.forests
 			local floorOps = 0
