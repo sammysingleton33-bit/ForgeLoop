@@ -372,3 +372,25 @@ Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Stud
 History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
+
+## E12 — Base editing: input and camera (FL-0121, game-001)
+
+Needs: FORGE-01's move remotes (FL-0119: `Build.CanMove`, `Build.Move`, `Build.MoveToSlot`) and FORGE-03's edit UI (FL-0120), which sets `InputModeController:set("edit")` and calls `RulerCameraController:setEditDrag(true/false)` around a drag. Until both are on the build, write "blocked: needs FL-0119 / FL-0120".
+
+| Rule | Expected |
+|---|---|
+| Taps while editing | only your own buildings and your own kingdom's plots are selected; citizens, a rival's buildings and plots, and the ground select nothing |
+| Camera | edit mode uses the aerial view (walk mode comes back after, unless you chose a view meanwhile); selecting one of your buildings pans to it |
+| Dragging a building | the drag never pans the view; holding the pointer near a screen edge (about 48 px) pans that way, faster nearer the edge |
+| Leaving | X or gamepad B leaves edit mode; hover outlines and citizen bubbles take no input while editing |
+
+Steps
+1. Enter edit mode (FORGE-03's Edit button). Tap a citizen, a rival's building, the ground: nothing is selected. Tap one of your buildings: it is selected and the view pans to it. Tap a free plot of yours: it is selected as a target.
+2. Drag a building across the screen: the view stays still. Hold it near the right edge: the view pans right; near the top: forward. Drop it: the panning stops.
+3. Phone emulator: the same with one finger; a one-finger drag of the building never pans.
+4. Press X (or gamepad B): edit mode ends; from walk mode, the walk view comes back.
+
+Pass: steps 1–4 hold.
+
+History:
+- 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).
