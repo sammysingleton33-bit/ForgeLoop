@@ -9,6 +9,9 @@
 	Dependencies: RemoteService (framework). Optional, found in start(): KingdomService (G3) for
 	members, kingdom names and each player's kingdom. Without it only the joiner and every-player
 	moments go out (phases, match end), and kingdom-scoped events reach nobody (logged once).
+	AnalyticsService (interfaces §8), optional: a sent moment that celebrates (Moments.present) logs
+	CelebrationShown (kind) for that player, here on the server at the G9 event and never on a client's
+	report (FORGE-00's review M3). Studio samples (fx.announce) log nothing.
 
 	Studio only (Debug/DebugCommands, FL-0068): `fx.announce <kind>` sends a sample moment to the
 	presser; `fx.burst` sends six notices at once (roblox/studio-tests/experience.md E7).
@@ -82,6 +85,7 @@ end
 function AnnouncerService:start()
 	current = self
 	self._kingdoms = self._registry:find("KingdomService")
+	self._analytics = self._registry:find("AnalyticsService")
 	local handlers = {}
 	for _, name in Def.EVENTS do
 		handlers[name] = function(...)
@@ -118,9 +122,24 @@ function AnnouncerService:announce(eventName: string, args: { any }): number
 	for _, delivery in deliveries do
 		if self:_send(delivery.player, delivery.moment) then
 			count += 1
+			self:_celebrated(delivery.player, delivery.moment)
 		end
 	end
 	return count
+end
+
+-- CelebrationShown for a sent moment that celebrates (analytics never breaks an announcement).
+function AnnouncerService:_celebrated(player: any, moment: any)
+	local analytics = self._analytics
+	if analytics == nil or analytics.event == nil then
+		return
+	end
+	local ok, celebrate = pcall(function()
+		return Moments.present(moment).celebrate
+	end)
+	if ok and type(celebrate) == "string" then
+		pcall(analytics.event, analytics, player, "CelebrationShown", { kind = celebrate })
+	end
 end
 
 function AnnouncerService:_send(player: any, moment: any): boolean

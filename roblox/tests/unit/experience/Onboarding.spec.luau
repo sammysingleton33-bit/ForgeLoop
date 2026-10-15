@@ -294,6 +294,55 @@ describe("Experience/Onboarding step graph", function()
 		expect(#Onboarding.begin(FLOW, restored, 8)).toBe(0)
 	end)
 
+	it(
+		"a flow pays its completeReward only if a step was done by its real action, across a rejoin (D-052 (3))",
+		function()
+			local function step(id, trigger, extra)
+				local out = { id = id, trigger = trigger, hint = { title = id }, expectSec = 5 }
+				for key, value in extra or {} do
+					out[key] = value
+				end
+				return out
+			end
+			local flow = {
+				id = "finish",
+				version = 1,
+				completeReward = { currency = "Coins", amount = 50 },
+				steps = {
+					step("Start", { auto = true }),
+					step("Round", { bus = "RoundEnded" }, { requires = "RoundService" }),
+					step("Poke", { client = "Poke" }),
+					step("Late", { bus = "LateEvent" }, { requires = "MissingService" }),
+				},
+			}
+			-- finished by an auto step, a client report and two passes: nothing earned, nothing paid
+			local passed = Onboarding.restore(flow, nil, 0)
+			passed.unavailable = { Round = true, Late = true }
+			Onboarding.begin(flow, passed, 0)
+			Onboarding.handle(flow, passed, { client = "Poke" }, 1)
+			expect(passed.finishedAt).never.toBeNil()
+			expect(passed.earned).toBe(false)
+			expect(Onboarding.completionReward(flow, passed)).toBeNil()
+			-- one real action (the round), then a rejoin on another server, then passes: it pays
+			local real = Onboarding.restore(flow, nil, 0)
+			real.unavailable = { Late = true }
+			Onboarding.begin(flow, real, 0)
+			expect(Onboarding.handle(flow, real, { bus = "RoundEnded" }, 1)[1].via).toBe("bus")
+			expect(Onboarding.completionReward(flow, real)).toBeNil() -- not finished yet
+			local stored = Onboarding.persisted(real)
+			expect(stored.earned).toBe(true)
+			local again = Onboarding.restore(flow, stored, 2)
+			again.unavailable = { Late = true }
+			Onboarding.handle(flow, again, { client = "Poke" }, 3)
+			expect(again.finishedAt).never.toBeNil()
+			expect(Onboarding.completionReward(flow, again)).toEqual({ currency = "Coins", amount = 50 })
+			-- a skipped flow never pays, earned or not
+			local skipped = Onboarding.restore(flow, stored, 2)
+			Onboarding.skip(flow, skipped, 3)
+			expect(Onboarding.completionReward(flow, skipped)).toBeNil()
+		end
+	)
+
 	it("restores unfinished progress of the same version, restarts it after a version change", function()
 		local stored = { version = 1, completed = 4, skipped = false, startedAt = 10, satisfied = { PlaceFarm = true } }
 		local same = Onboarding.restore(FLOW, stored, 50)
@@ -311,7 +360,7 @@ end)
 describe("OnboardingService", function()
 	local env, bus, data, remotes, economy, registry, service, player
 
-	local function boot(withEnv, withData, withRemotes)
+	local function boot(withEnv, withData, withRemotes, config)
 		economy = { grants = {} }
 		function economy.grant(_, p, currency, amount, txId, source)
 			if economy.grants[txId] then
@@ -350,7 +399,7 @@ describe("OnboardingService", function()
 				name = "OnboardingService",
 				dependencies = { "SettingsService", "AnalyticsService" },
 				new = function(e, r)
-					return OnboardingDef.create(e, r, { config = CONFIG, bus = bus })
+					return OnboardingDef.create(e, r, { config = config or CONFIG, bus = bus })
 				end,
 			},
 		})
@@ -455,6 +504,35 @@ describe("OnboardingService", function()
 			end
 		end
 		expect(trail).toEqual({ 1, 2, 3, 4, 5, 6, 7, 8, 9 })
+	end)
+
+	it("a flow finished with every server step passed over pays no completeReward (D-052 (3))", function()
+		-- the same first session on a server without the services its bus steps need: the player only
+		-- reports client steps, so the flow finishes without one real action
+		local config = deepCopy(CONFIG)
+		for _, step in config.flows[1].steps do
+			if step.trigger.bus ~= nil then
+				step.requires = "MissingService"
+			end
+		end
+		GameEvents.disconnectAll()
+		env = MockEnv.new({ seed = 22 })
+		bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
+		data = FakeDataService.new()
+		remotes = FakeRemoteService.new({ declarations = ExperienceRemotes })
+		registry = boot(env, data, remotes, config)
+		service = registry:get("OnboardingService")
+		player = env.mock.players:add({ userId = 901 })
+		data:load(player, nil)
+		bus.PlayerReady:fire(player)
+		act("RulerMoved")
+		act("ReachedTarget")
+		act("ResourceInspected")
+		act("GoalAcknowledged")
+		expect(service:state(player).done).toBe(true)
+		expect(economy.grants["onboarding:first_session:FirstHarvest:901"]).toBeNil() -- passed over
+		expect(economy.grants["onboarding:first_session:Complete:901"]).toBeNil()
+		expect(env.mock:hasLog("info", "completion reward withheld")).toBe(true)
 	end)
 
 	it("skipping logs OnboardingSkipped with the last step and no funnel step afterwards", function()

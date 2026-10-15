@@ -211,8 +211,28 @@ describe("AnalyticsService adapter (§8)", function()
 		end)
 	end)
 
-	describe("rate cap (120 + 20 x CCU per minute, event-types.md)", function()
+	describe("rate cap (120 + 20 x CCU per minute, event-types.md; per server: its players' share)", function()
+		it("sizes the server bucket from its players' share, so servers together stay under the cap (L8)", function()
+			local function capacityWith(count)
+				local e = MockEnv.new({ seed = 30 + count })
+				for i = 1, count do
+					e.mock.players:add({ userId = 900 + i })
+				end
+				local s = boot(e, { config = TestAnalytics.build(), bus = FakeBus.new() })
+				return s._capacity
+			end
+			expect(capacityWith(0)).toBe(20) -- the floor: one player's share
+			expect(capacityWith(1)).toBe(20)
+			expect(capacityWith(2)).toBe(32) -- floor(0.8 x 20 x 2)
+			expect(capacityWith(16)).toBe(256)
+			-- FORGE-00's example: 4 full 16-player servers need 4 x 256 = 1024 <= 120 + 20 x 64 = 1400
+			expect(4 * capacityWith(16) <= 120 + 20 * 64).toBe(true)
+		end)
+
 		it("caps one player at perPlayerPerMinute and refills over time", function()
+			for i = 2, 4 do -- 4 players: the server allows 64 a minute, custom events 48
+				env.mock.players:add({ userId = 100 + i })
+			end
 			local sent = 0
 			for _ = 1, 40 do
 				if service:event(player, "AchievementUnlocked", { achievementId = "a" }) then
@@ -230,7 +250,7 @@ describe("AnalyticsService adapter (§8)", function()
 			for i = 2, 10 do
 				table.insert(players, env.mock.players:add({ userId = 100 + i }))
 			end
-			-- 10 players: floor((120 + 200) * 0.8) = 256 per minute; custom events stop at 256 * 0.75 = 192
+			-- 10 players: floor(200 * 0.8) = 160 per minute; custom events stop at 160 * 0.75 = 120
 			local sent = 0
 			for _, p in players do
 				for _ = 1, 25 do
@@ -239,8 +259,8 @@ describe("AnalyticsService adapter (§8)", function()
 					end
 				end
 			end
-			expect(sent).toBe(192)
-			expect(service.stats.dropped.rate).toBe(58)
+			expect(sent).toBe(120)
+			expect(service.stats.dropped.rate).toBe(130)
 			expect(service:funnel(players[10], "FirstMatch", 1, "MatchJoined")).toBe(true)
 			expect(env.mock:hasLog("warn", "rate cap reached")).toBe(true)
 		end)
@@ -540,6 +560,102 @@ describe("AnalyticsService sessions", function()
 		end
 		expect(names).toEqual({ "SessionStart", "SessionStart", "SessionEnd", "SessionEnd" })
 		expect(env.mock:hasLog("warn", "session.leftInfo failed")).toBe(true)
+	end)
+
+	it("milestones: each later step of the funnel logs seconds since the session started (FORGE-00 M7)", function()
+		local config = TestAnalytics.build()
+		config.events.Milestone =
+			{ description = "timed step", value = "sinceStartSec", fields = { "milestone", "mode" } }
+		config.session = { startEvent = "SessionStart", endEvent = "SessionEnd", startOn = "ShopViewed" }
+		local asked = 0
+		config.milestones = {
+			funnel = "FirstMatch",
+			event = "Milestone",
+			info = function(_, ctx)
+				asked += 1
+				-- info never overrides the value or the step name
+				return { mode = if ctx.registry ~= nil then "match30" else "none", milestone = "spoofed" }
+			end,
+		}
+		local player = env.mock.players:add({ userId = 407 })
+		local service = boot(env, { config = config, bus = bus })
+		expect(service:funnel(player, "FirstMatch", 2, "FirstConstruction")).toBe(true) -- no session yet: no time
+		bus.ShopViewed:fire(player, "main", nil) -- the session starts
+		env.wait(42.6)
+		expect(service:funnel(player, "FirstMatch", 1, "MatchJoined")).toBe(true) -- step 1 is the start: no time
+		expect(service:funnel(player, "FirstMatch", 3, "FirstBuilding")).toBe(true)
+		expect(service:funnel(player, "FirstMatch", 3, "FirstBuilding")).toBe(false) -- a repeat is not sent
+		env.wait(30)
+		expect(service:funnel(player, "FirstMatch", 4, "FirstUpgrade")).toBe(true)
+		expect(service:funnel(player, "FirstReward", 2, "FirstCurrency")).toBe(true) -- another funnel: no time
+		local timed = {}
+		for _, call in roblox:callsTo("LogCustomEvent") do
+			if call.args[1] == "Milestone" then
+				table.insert(timed, { value = call.args[2], fields = call.args[3] })
+			end
+		end
+		expect(timed).toEqual({
+			{ value = 42, fields = { CustomField01 = "FirstBuilding", CustomField02 = "match30" } },
+			{ value = 72, fields = { CustomField01 = "FirstUpgrade", CustomField02 = "match30" } },
+		})
+		expect(asked).toBe(2)
+		env.mock.players:remove(player)
+		local calls = roblox:callsTo("LogCustomEvent")
+		expect(calls[#calls].args[1]).toBe("SessionEnd")
+		expect(calls[#calls].args[3]).toEqual({ CustomField01 = "ShopViewed" }) -- the drop-off is not "Milestone"
+	end)
+
+	it("a track rule on an event no resolver covers disables analytics at boot (FORGE-00 M8)", function()
+		local config = TestAnalytics.build()
+		table.insert(config.track, { on = "KingdomJoined", funnel = "FirstMatch", step = 1 })
+		config.subjects = config.subjects or {}
+		config.subjects.KingdomJoined = nil
+		local service = boot(env, { config = config, bus = bus })
+		expect(env.mock:hasLog("error", "analytics config invalid; analytics disabled")).toBe(true)
+		local problems = ""
+		for _, entry in env.mock.logs do
+			if entry.level == "error" and entry.fields and entry.fields.problems then
+				problems = entry.fields.problems
+			end
+		end
+		expect(string.find(problems, "subjects: no resolver for 'KingdomJoined'", 1, true) ~= nil).toBe(true)
+		local player = env.mock.players:add({ userId = 410 })
+		expect(service:event(player, "SettingChanged", { key = "music", value = 1 })).toBe(false)
+		-- the same config with a resolver boots
+		local fixed = TestAnalytics.build()
+		table.insert(fixed.track, { on = "KingdomJoined", funnel = "FirstMatch", step = 1 })
+		fixed.subjects = fixed.subjects or {}
+		fixed.subjects.KingdomJoined = function(args)
+			return { { player = args[1], info = { kingdom = args[2] } } }
+		end
+		local ok = boot(env, { config = fixed, bus = bus })
+		expect(ok:event(player, "SettingChanged", { key = "music", value = 1 })).toBe(true)
+	end)
+
+	it("milestones: an info function that errors still logs the time, warned once", function()
+		local config = TestAnalytics.build()
+		config.events.Milestone = { description = "timed step", value = "sinceStartSec", fields = { "milestone" } }
+		config.session = { startEvent = "SessionStart", endEvent = "SessionEnd", startOn = "ShopViewed" }
+		config.milestones = {
+			funnel = "FirstMatch",
+			event = "Milestone",
+			info = function()
+				error("boom")
+			end,
+		}
+		local player = env.mock.players:add({ userId = 408 })
+		local service = boot(env, { config = config, bus = bus })
+		bus.ShopViewed:fire(player, "main", nil)
+		env.wait(5)
+		service:funnel(player, "FirstMatch", 2, "FirstConstruction")
+		local timed = {}
+		for _, call in roblox:callsTo("LogCustomEvent") do
+			if call.args[1] == "Milestone" then
+				table.insert(timed, { value = call.args[2], fields = call.args[3] })
+			end
+		end
+		expect(timed).toEqual({ { value = 5, fields = { CustomField01 = "FirstConstruction" } } })
+		expect(env.mock:hasLog("warn", "milestones.info failed")).toBe(true)
 	end)
 
 	it("first-day players log Return step 1 (FirstSession)", function()

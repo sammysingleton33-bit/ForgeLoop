@@ -379,18 +379,18 @@ describe("Dressing density knob (D-047)", function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
 			expect(#plan).toBe(618)
-			expect(fingerprint(plan)).toBe(1099084135) -- main d78d9cb's props, before the plot clearance and the trim
+			expect(fingerprint(plan)).toBe(1478630863) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
 			expect(#one).toBe(615)
-			expect(fingerprint(one)).toBe(553271438)
+			expect(fingerprint(one)).toBe(591817497)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
 			expect(#all).toBe(642)
-			expect(fingerprint(all)).toBe(749948861)
+			expect(fingerprint(all)).toBe(538786833)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()

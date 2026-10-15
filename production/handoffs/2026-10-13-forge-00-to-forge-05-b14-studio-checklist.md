@@ -121,3 +121,17 @@ Run sections A–E on B15 too (B15 contains B14). Then:
 | H3 | Place two wall pieces end to end | they join with no gap |
 | H4 | Gamepad (or Studio's emulator) while placing | R1/L1 turn the ghost; Y flips the view |
 
+## B17 additions (main `41a70e8`, BuildInfo `41a70e8baadb…`): base editing and clean farms
+On a mouse, a left press confirms a move, so pan with WASD while moving. FORGE-05's U18 and E12 rows in STUDIO_PLAYTEST hold the detailed steps.
+
+| ID | Check | Pass |
+|---|---|---|
+| I1 | Tap one of your completed buildings → **Move** → move the mouse, then click a free spot | the ghost follows; the building moves there with the same level; no resources are charged or refunded |
+| I2 | Move again: press R (or R1) to turn, then tap a free plot marker | it snaps to the plot, facing as shown |
+| I3 | Start a House, and while it is under construction, Move it | construction progress is kept, and the builders walk to the new spot and continue |
+| I4 | Move a Farm that has workers | the workers follow it and keep farming |
+| I5 | Barracks with a recruit in training → Move | the queue continues; the new soldier appears at the new spot |
+| I6 | Refusals: try to Move the keep; move the same building twice within 10 s; try to place on a crop field, plot road or spawn area | each is refused with a clear message |
+| I7 | Re-check G1: every starting farm from the air and from the ground | no tree, rock, bush or node inside a field, front yard or plot flank |
+| I8 | A moved building next to your ruler | your character is never trapped or stuck inside it |
+

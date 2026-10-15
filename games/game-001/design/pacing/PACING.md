@@ -65,13 +65,13 @@ Assumptions (code on `main`; income **measured headless**, not played):
 
 | Time | Player does | Feedback (FL-0062, FL-0091) | Onboarding step | Analytics (FL-0063) |
 |---|---|---|---|---|
-| 0:00 | The view opens above the keep with the ruler seated; citizens already working | founding horn, kingdom toast | 1 Spawn (`KingdomJoined`, auto) | VS1 1 Spawn |
+| 0:00 | The view opens above the keep with the ruler seated; citizens already working | founding horn, kingdom toast | 1 Spawn (`KingdomJoined`, auto) | FirstMatch 1 Spawn |
 | 0:02–0:20 | taps a citizen; the citizen card opens | selection sound | 2 InspectCitizen (client-reported; first interaction ≤ 30 s = Onboarding `limits.firstInteractionSec`) | `targets.firstInspectSec` 30 (timing only; no funnel step) |
-| 0:20–1:10 | taps the marked plot (the free marker nearest the ruler, a small plot) and builds a House (40 wood, affordable from the start: 100 wood; a Farm needs a bigger plot, `OnboardingTargets.spec`). Builders raise it (20–25 builder-s) | place thunk, dust puff, hammering, completion fanfare | 3 BuildOnPlot (`BuildingPlaced` with the placer match; plot-marker hint, `Build.PlaceSlot` FL-0081) | VS1 3 FirstBuildPlaced (*≤ 90 s*); VS1 4 FirstBuildingComplete (*≤ 150 s*; a funnel step, not an onboarding step in v2) |
+| 0:20–1:10 | taps the marked plot (the free marker nearest the ruler, a small plot) and builds a House (40 wood, affordable from the start: 100 wood; a Farm needs a bigger plot, `OnboardingTargets.spec`). Builders raise it (20–25 builder-s) | place thunk, dust puff, hammering, completion fanfare | 3 BuildOnPlot (`BuildingPlaced` with the placer match; plot-marker hint, `Build.PlaceSlot` FL-0081) | FirstMatch 3 FirstBuildPlaced (*≤ 90 s*); FirstMatch 4 FirstBuildingComplete (*≤ 150 s*; a funnel step, not an onboarding step in v2) |
 | 1:10–2:40 | answers a citizen's "!" request (`Kingdom.Choose` ok) | reaction bubble and pose, the visible consequence | 4 AnswerCitizen (G9 `CitizenAnswered` from the server, the answering ruler, FL-0108; passed over without ConversationService, moves on after 120 s) | `targets.firstAnswerSec` 180 (timing only) |
 | 2:40–3:10 | places the Barracks (the treasury had its 120 wood and 60 stone long before: wood reaches 120 at about 44 s). It builds in seconds (8 builder-s) | hammering | (Recruit card: "Build a Barracks, then recruit 3 soldiers") | — |
-| 3:10–5:10 | recruits 3 soldiers from the Army rail button (90 food + 30 wood; trained one at a time, 3 × 8 s) | horn, soldiers at the Rally | 5 Recruit (`UnitsRecruited`; hint on `HUD.ArmyButton`) | VS1 5 FirstRecruit (*≤ 330 s*) |
-| 5:10–6:40 | presses Send-to-capture; soldiers march about 35 s to the neutral Watchtower; the capture bar fills in about 20 s | capture sting, tower recolours, border flags, celebration | 6 Capture (`ObjectiveCaptured`) | VS1 6 FirstCapture (*≤ 450 s*) |
+| 3:10–5:10 | recruits 3 soldiers from the Army rail button (90 food + 30 wood; trained one at a time, 3 × 8 s) | horn, soldiers at the Rally | 5 Recruit (`UnitsRecruited`; hint on `HUD.ArmyButton`) | FirstMatch 5 FirstRecruit (*≤ 330 s*) |
+| 5:10–6:40 | presses Send-to-capture; soldiers march about 35 s to the neutral Watchtower; the capture bar fills in about 20 s | capture sting, tower recolours, border flags, celebration | 6 Capture (`ObjectiveCaptured`) | FirstMatch 6 FirstCapture (*≤ 450 s*) |
 | ~7:00 | slice summary (FORGE-03) | — | done | `MatchEnded` |
 
 Measured against this timeline (probe medians; seconds after spawn; targets 90 / 150 / 330 / 450):
@@ -85,7 +85,7 @@ Measured against this timeline (probe medians; seconds after spawn; targets 90 /
 
 **The tutorial's pace, not the economy, sets the guided path:** the economy would allow the recruit at about 81 s. Whether the targets or the step times should move is a tuning call after the user's play (FORGE-00 holds tuning).
 
-**VS1 step 2 (FirstGather)** is the first ResourceGathered credited to the player: their own gather, or any citizen deposit into their kingdom (credited to every member, Feedback/Signals). It marks that the economy has started; it is not a ruler-action pacing target. `targets.firstDepositSec` (45 s from Founding) is the matching sim health check. *Planned with #64 (VS1 `inOrder`), not on `main` until it merges:* under the funnel-order rule (G9 v0.4-g6), a ruler who places a building before their first deposit credit loses that FirstBuildPlaced (dropped, not deferred) and is credited at their next placement.
+**FirstMatch step 2 (FirstGather)** is the first ResourceGathered credited to the player: their own gather, or any citizen deposit into their kingdom (credited to every member, Feedback/Signals). It marks that the economy has started; it is not a ruler-action pacing target. `targets.firstDepositSec` (45 s from Founding) is the matching sim health check. Under the funnel-order rule (G9 v0.4-g6), a ruler who places a building before their first deposit credit loses that FirstBuildPlaced (dropped, not deferred) and is credited at their next placement.
 
 The guided path above follows BRIEF §4 "First minutes guided": inspect a citizen → build on a plot → answer a citizen → recruit → capture. Its target length is **6–8 minutes** for a new player.
 
@@ -126,8 +126,8 @@ These are targets for pacing, not balance decisions. FORGE-03 owns the numbers a
 - Hint texts come from config `Onboarding.luau` `idleHints` (FL-0062 decides when to show them; examples: "Tap a citizen with a request, or build on a free plot", "Upgrade your keep", "Recruit soldiers at the Barracks").
 
 ## 7. How we measure it (FL-0063, `analytics/schemas/events.md`)
-- VS1 funnel: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture, step-to-step conversion (G9 order rule, v0.4-g6; planned with #64, not on `main` until it merges).
-- **Milestone times** (§3 targets) come from Studio `env.log` timestamps in playtests (the `onboarding step` and `analytics funnel` lines). LogFunnelStepEvent carries no time, so live data cannot check them yet; a milestone-timing event is proposed in FORGE-00's review (events M7) and decided with the analytics doc update.
+- FirstMatch funnel: Spawn → FirstGather → FirstBuildPlaced → FirstBuildingComplete → FirstRecruit → FirstCapture, step-to-step conversion (G9 order rule, v0.4-g6).
+- **Milestone times** (§3 targets): live data from `MilestoneReached` (seconds since the ruler joined, per FirstMatch step and mode; compare the medians with `config/Pacing.luau`), and in Studio playtests from the `env.log` timestamps (`onboarding step`, `analytics funnel`, `analytics event MilestoneReached`). LogFunnelStepEvent itself carries no time.
 - Match length (`MatchEnded.durationSec`), and the phase reached when players leave (`PhaseLeft`).
 - Idle hints shown per match (target < 3 for an engaged player; `IdleHintShown`, server-side when FL-0062 lands).
 

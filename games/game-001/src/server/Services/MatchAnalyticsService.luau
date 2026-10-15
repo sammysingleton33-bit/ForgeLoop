@@ -1,7 +1,7 @@
 --!strict
 --[[
 	MatchAnalyticsService (game-001, FORGE-04, FL-0063; CONTRACTS G9, BRIEF §13): match length, outcomes
-	and disconnects for the VS-1 analytics (analytics/schemas/events.md §5). The VS1 funnel itself is
+	and disconnects for the VS-1 analytics (analytics/schemas/events.md §5). The FirstMatch funnel itself is
 	declarative (config Analytics.luau track rules + Feedback/Signals); this service covers what needs
 	match state.
 

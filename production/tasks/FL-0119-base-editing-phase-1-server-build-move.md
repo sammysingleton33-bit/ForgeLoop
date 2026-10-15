@@ -1,15 +1,16 @@
 ---
 id: FL-0119
-title: Base editing phase 1, server: Build.CanMove / Move / MoveToSlot, atomic in-place moves (CONTRACTS G13.9, B16)
+title: "Base editing phase 1, server: Build.CanMove / Move / MoveToSlot, atomic in-place moves (CONTRACTS G13.9, B16)"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-15
 updated: 2026-10-15
 depends_on: [FL-0113, FL-0051]
-evidence: []
+evidence:
+  - "bash roblox/scripts/check.sh at d8c0e80c: OVERALL PASS (Lune 517/0; game-001 specs 1390 passed, 0 failed, 88 files); roblox/tests/unit/gameplay/mutations.py FL-0119: 44/44 CAUGHT; forge.py validate 122 tasks 0 errors; check_ownership PASS. Headless only: unverified in Studio."
 ---
 
 # Base editing phase 1, server: Build.CanMove / Move / MoveToSlot, atomic in-place moves (CONTRACTS G13.9, B16)
@@ -43,3 +44,5 @@ Automated: tests/sim/BuildingMove.spec.luau (the 13 cases in the handoff), Build
 
 ## Log
 - 2026-10-15 FORGE-00: created from the user's first live Studio feedback (record `production/handoffs/2026-10-13-forge-00-to-all-first-studio-feedback.md`; D-049).
+- 2026-10-15 forge-01: READY → BUILDING. Started: Sim canMove/moveBuilding + Commands.MoveBuilding, Build.CanMove/Move/MoveToSlot, broadcast signature + WorldView re-pivot, BuildingMoved, objective-zone placement rule (R13), moveCooldown; specs BuildingMove (13 cases) + exploits fuzz + mutation rows. Stacked on #132 (Fit.fits turn).
+- 2026-10-15 forge-01: BUILDING → REVIEW. Server side built to CONTRACTS G13.9 v0.4-g9j: in-place MoveBuilding, Build.CanMove/Move/MoveToSlot, keep-circle destinations, per-building under_attack, war/peace lockout, 10 s cooldown, 30 s drop-off settling, no-build areas, soldier/ruler clearance, WorldView re-pivot, BuildingMoved relay. PR from forge/01-gameplay-basemove (stacked on the wallGap PR). Studio + the UI (FL-0120/0121) are not done.
