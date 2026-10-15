@@ -162,7 +162,7 @@ describe("Kit.setKingdomColor", function()
 	end)
 end)
 
-describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
+describe("Kit.character (≤ Kit.CHARACTER_MAX_PARTS (9) parts, D-026 as amended by D-032)", function()
 	local JOBS = { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" }
 	it("builds rigs of at most 9 non-colliding parts joined by Motor6Ds named after the moving part", function()
 		for _, kind in { "citizen", "soldier", "governor" } do
@@ -171,7 +171,7 @@ describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
 					return Kit.character(kind, job, KINGDOM_COLORS[2])
 				end)
 				local ps = parts(rig)
-				expect(#ps).toBeLessThanOrEqual(9)
+				expect(#ps).toBeLessThanOrEqual(Kit.CHARACTER_MAX_PARTS)
 				expect(rig.PrimaryPart).never.toBeNil()
 				expect((rig.PrimaryPart :: BasePart).Anchored).toBe(true)
 				for _, p in ps do
@@ -204,7 +204,7 @@ describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
 		local rig = Kit.character("citizen", "farmer", KINGDOM_COLORS[1])
 		local top, bottom = -math.huge, math.huge
 		for _, p in parts(rig) do
-			if p.Name ~= "Tool" then
+			if p.Name ~= "Tool" and p.Name ~= "Hair" then -- the body: a hat or crest may rise above the head
 				top = math.max(top, p.CFrame.Position.Y + p.Size.Y / 2)
 				bottom = math.min(bottom, p.CFrame.Position.Y - p.Size.Y / 2)
 			end

@@ -72,6 +72,18 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 
   The same caps appear on keep turrets, barracks turrets, the gatehouse, soldiers' helmets in the Blender set, and the watchtower once it is captured.
   Part-built Kit soldiers given their kingdom (CONTRACTS G13.2, D-033(3)) wear a one-part helmet crest in the same style, so they read apart without colour: crimson a tall spire, azure a flat square plate overhanging the helm, emerald a plume swept back, gold a dome knob.
+- **Job silhouettes (citizens, after the first Studio playtest).** Jobs read without colour, at gameplay distance and from the overview camera, where a citizen is a 6–10 px blob and only the hat and the tool still carry a shape. Each working job gets one hat in a different primitive, one tool in a different primitive and value, a trouser and panel accent, and a body width:
+
+  | Job | Hat (KitHeadwear) | Tool | Accent (trousers / panel) | Torso width |
+  |---|---|---|---|---|
+  | farmer | wide flat straw disc, 3.4 (`strawhat`) | long broad board, 5.4 × 1.0 (hoe) | olive / cream | 1.95 lean |
+  | woodcutter | charcoal knit cap slouched back into a tall tail (`knitcap`) | big bearded steel blade, 2.4 (axe) | black-brown / umber | 2.3 stocky |
+  | miner | squat ochre iron pot, 2.2 (`hardhat`) | dark double-sided bar, 4.4 (pick) | coal / soot grey | 2.2 |
+  | builder | white linen block cap (`buildercap`) | fat wooden mallet, 2.6 (hammer) | dusty navy / tan canvas | 2.3 |
+  | hauler | none: the look's hair | sackcloth sack 2.7 on the back | russet / sackcloth | 2.3 |
+  | idle | the look's hair | nothing | the outfit's own | 1.9 lean |
+
+  Rules: no job hat is a ball (balls are hair), the four hats' value ranges never overlap in grayscale, the kingdom tint stays on the torso or the sleeves, and idle or hauler citizens never wear a job hat (hair style 6 is `curls`, not a straw hat). The hat takes the Hair slot, so a working citizen's `look.hair` picks a variant of the hat (roll tilt and shade) and the hair colour is hidden under it. A hat is level on the head with the face clear (below +0.33 from the head centre); nothing rises past the soldier's spear. Phase 2 (D-048, two more detail parts) adds a straw crown over the brim, a lamp on the hard hat, real hoe, axe, pick and hammer heads on shafts, and the sack's tie and strap.
 - **Chunky and slightly exaggerated:** thick roofs with 1.2-stud overhangs, oversized doors (4.4 × 7.6, walkable), chamfered or stepped edges, banners hanging below the eaves.
 - **Human scale:** 5.5-stud characters, storeys of about 10–11 studs, sills 3.4 above the floor, fences and parapets 3–3.4 high.
 - **Front faces −Z** (the Model's LookVector). The pivot is at the base centre (PrimaryPart `Root` plus `PivotOffset`).
@@ -96,7 +108,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 ## 6. Budgets (BRIEF §14)
 - **World:** at most 25k parts at VS-2. WorldService logs the part count it builds.
 - **Per building:** budgets are documented in `Kit/Buildings.luau` and enforced by `tests/world/`.
-- **Rigs:** at most 8 parts.
+- **Rigs:** at most `Character.MAX_PARTS` parts (9: Root, Torso, Head, 2 arms, 2 legs, Tool, welded headwear; D-032). D-048 allows 11 in a later phase.
 - **Props:** stand-ins of 3–25 parts. They are replaced by single imported MeshParts once the Blender batch is uploaded (FL-0057), which share the same asset ids.
 
 ## 7. How looks are judged

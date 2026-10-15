@@ -18,8 +18,8 @@
 	square ViewportFrame at the vertical field of view in the attachment attribute PortraitFov (Portrait.FOV =
 	30, for Camera.FieldOfView); a wider frame shows more of the arms, a taller one crops their outer edges.
 	PortraitDistance (attachment attribute) is the distance from the camera to the framed centre: move the
-	camera along its LookVector to zoom. Tall headwear (the crimson spire) pulls the camera back, so the face
-	is smaller there. The focus hangs off the Root, so a posed head moves inside a steady frame.
+	camera along its LookVector to zoom. Tall or wide headwear (the crimson spire, the woodcutter's cap, the
+	farmer's 3.4 straw disc) pulls the camera back, so the face is smaller there. The focus hangs off the Root, so a posed head moves inside a steady frame.
 		local cf, fov = Kit.portraitCamera(portrait) -- reads the Root's current CFrame (after any PivotTo)
 		camera.CFrame, camera.FieldOfView = cf, fov
 
@@ -43,6 +43,7 @@ local HEADROOM = 0.45 -- above the highest point of the head or headwear (no hat
 local SHOULDER_PAD = 0.1 -- beyond the middle of the upper arms
 local MARGIN = 1.08
 local NEAR = 1.0 -- the face is about this much nearer the camera than the rig's centre plane
+local HAT_NEAR = 1.15 -- a wide hat's near edge is closer to the camera than the shoulders: allow for its parallax
 
 -- Highest point of a part's box (exact for the rig's upright and X-tilted primitives, conservative otherwise).
 local function topOf(p: BasePart): number
@@ -51,6 +52,12 @@ local function topOf(p: BasePart): number
 		+ math.abs(cf.RightVector.Y) * h.X
 		+ math.abs(cf.UpVector.Y) * h.Y
 		+ math.abs(cf.LookVector.Y) * h.Z
+end
+
+-- Half the width (X) of a part's box (exact for any rotation, like topOf).
+local function halfWidthOf(p: BasePart): number
+	local cf, h = p.CFrame, p.Size / 2
+	return math.abs(cf.RightVector.X) * h.X + math.abs(cf.UpVector.X) * h.Y + math.abs(cf.LookVector.X) * h.Z
 end
 
 -- Camera pose (world) and its distance to the framed centre, for a rig in its rest pose.
@@ -63,6 +70,12 @@ local function frame(model: Model): (CFrame, number)
 	local shoulders = torso.CFrame.Position.Y + torso.Size.Y / 2
 	local top = math.max(topOf(head), if hair then topOf(hair) else -math.huge) + HEADROOM
 	local halfWidth = torso.Size.X / 2 + arm.Size.X / 2 + SHOULDER_PAD
+	if hair then -- the farmer's 3.4 straw disc is wider than the shoulders: keep the whole brim in view
+		halfWidth = math.max(
+			halfWidth,
+			math.abs(hair.CFrame.Position.X - root.CFrame.Position.X) + halfWidthOf(hair) * HAT_NEAR
+		)
+	end
 	local half = math.max((top - (shoulders - CHEST)) / 2, halfWidth) * MARGIN
 	-- any spare height goes to the chest, never above the head
 	local centre = Vector3.new(root.CFrame.Position.X, top - half, root.CFrame.Position.Z)
