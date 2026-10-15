@@ -76,14 +76,16 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 
   | Job | Hat (KitHeadwear) | Tool | Accent (trousers / panel) | Torso width |
   |---|---|---|---|---|
-  | farmer | wide flat straw disc, 3.4 (`strawhat`) | long broad board, 5.4 × 1.0 (hoe) | olive / cream | 1.95 lean |
-  | woodcutter | charcoal knit cap slouched back into a tall tail (`knitcap`) | big bearded steel blade, 2.4 (axe) | black-brown / umber | 2.3 stocky |
-  | miner | squat ochre iron pot, 2.2 (`hardhat`) | dark double-sided bar, 4.4 (pick) | coal / soot grey | 2.2 |
-  | builder | white linen peaked cap, a low wedge that sits on the head (`buildercap`) | fat wooden mallet, 2.6 (hammer) | dusty navy / tan canvas | 2.3 |
-  | hauler | none: the look's hair | sackcloth sack 2.7 on the back | russet / sackcloth | 2.3 |
-  | idle | the look's hair | nothing | the outfit's own | 1.9 lean |
+  | farmer | wide flat straw disc, 3.1 (`strawhat`) | long broad board, 5.4 × 1.0 (hoe) | olive / cream | 1.95 lean |
+  | woodcutter | small charcoal knit beanie, a 1.5 ball sitting high (`knitcap`) | big bearded steel blade, 2.4 (axe) | black-brown / umber | 2.3 stocky |
+  | miner | small dark-ochre iron pot, 1.9 (`hardhat`) | dark double-sided bar, 4.4 (pick) | coal / soot grey | 2.2 |
+  | builder | warm cream cloth cap, a low wedge that sits on the head (`buildercap`) | fat wooden mallet, 2.6 (hammer) | dusty navy / tan canvas | 2.3 |
+  | hauler | none: the look's hair | sackcloth sack 2.7, low on the back (top just above the shoulders) | russet / sackcloth | 2.3 |
+  | idle | the look's hair, plus a headband or scarf on about two looks in three (`Accessory`, the free 9th part) | nothing | the outfit's own | 1.9 lean |
 
-  Rules: no job hat is a ball (balls are hair), the four hats' value ranges never overlap in grayscale, the kingdom tint stays on the torso or the sleeves, and idle or hauler citizens never wear a job hat (hair style 6 is `curls`, not a straw hat). The hat takes the Hair slot, so a working citizen's `look.hair` picks a variant of the hat (roll tilt and shade) and the hair colour is hidden under it. A hat sits ON the head (the head enters its lower face by 0.15-0.4, nothing of the head shows through it) with the face clear (below +0.33 from the head centre); the sack sits behind the back, clear of the head and both arms in every pose; nothing rises past the soldier's spear (Kit spec `clearance`). Phase 2 (D-048, two more detail parts) adds a straw crown over the brim, a lamp on the hard hat, real hoe, axe, pick and hammer heads on shafts, and the sack's tie and strap.
+  The governor wears a wide gold crown disc (1.9) and carries a 6.4 × 0.5 gold staff, in a 2.4 body; the soldier's spire crest is low (1.55 above the helm, no taller than the helm).
+
+  Rules: the woodcutter's charcoal beanie is the only ball hat and never a hair colour (balls are hair), the four hats' value ranges never overlap in grayscale, the kingdom tint stays on the torso or the sleeves, and idle or hauler citizens never wear a job hat (hair style 6 is `curls`, not a straw hat). The hat takes the Hair slot, so a working citizen's `look.hair` picks a variant of the hat (roll tilt and shade) and the hair colour is hidden under it; it dyes the clothes instead (shirt tone, trousers and panel; an odd hair colour keeps the job panel on neutral sleeves, an even one makes them kingdom-red, for red shoulders from above). A hat sits ON the head (the head enters its lower face by 0.15-0.4, nothing of the head shows through it) with the face clear (below +0.33 from the head centre); the sack sits behind the back, clear of the head and both arms in every pose; nothing rises past the soldier's spear (Kit spec `clearance`). Phase 2 (D-048, two more detail parts) adds a straw crown over the brim, a lamp on the hard hat, real hoe, axe, pick and hammer heads on shafts, and the sack's tie and strap.
 - **Chunky and slightly exaggerated:** thick roofs with 1.2-stud overhangs, oversized doors (4.4 × 7.6, walkable), chamfered or stepped edges, banners hanging below the eaves.
 - **Human scale:** 5.5-stud characters, storeys of about 10–11 studs, sills 3.4 above the floor, fences and parapets 3–3.4 high.
 - **Front faces −Z** (the Model's LookVector). The pivot is at the base centre (PrimaryPart `Root` plus `PivotOffset`).
