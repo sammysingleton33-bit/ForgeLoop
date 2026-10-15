@@ -236,3 +236,66 @@ fewer, larger plinth facing stones.
 - Studio: SmoothPlastic emblems on Fabric cloth, Future lighting, and depth precision of the 0.015 stacking at 220 studs.
 - Phone screens (fewer pixels per stud).
 - The aerial camera's real azimuth relative to each keep (Layout yaw).
+
+## Environment props polish (FL-0117; the user's first live Studio playtest) — FORGE-02
+
+Feedback: "Trees are too blocky and primitive. Rocks and environment props feel too simple. Starting kingdom farm
+areas visually conflict with rocks and trees." Scope here: the prop art in `Kit/Props.luau` (`oak`, `pine`, `birch`,
+`bush`, `flowers`, boulders, `quarryNode`, `oreNode`, `woodNode`, `cropField`, `fence`, `haystack`). Placement and
+density belong to the world-trim / FL-0112 work and are untouched. Hard rule: part-neutral or cheaper per prop (the
+world sits at its D-047 ceiling).
+
+Renders: `kit_*` pipeline as above, via the aerial-emblem scratch dump (every model placed in world space) and
+`render_aerial.py`. Gameplay camera 62–80 studs / 20–26° down; aerial 170 studs / 50° down; 1280 × 720, Cycles 24
+samples, grass ground, no Roblox material textures (Studio decides the final look). Before = main 0160bd3.
+Images (`img/`): `env_polish_trees_gameplay.jpg` (30-tree cluster at the world's 13-stud centre spacing, before | after),
+`env_polish_trees_aerial.jpg`, `env_polish_rocks_nodes.jpg` (S/M/L boulders, wood / crystal / gold / iron / quarry),
+`env_polish_farm.jpg` (wheat + cabbage field, fence, haystacks, cart, well, farm building; gameplay + aerial),
+`env_polish_bushes.jpg` (bushes, flowers, cart, well, goods).
+
+**What changed (part counts incl. Root, before → after):**
+
+| family | parts | shape change |
+|---|---|---|
+| oak (8) | 18,18,16×6 → 16×8 | ten overlapping canopy balls of 6.4–12.6 studs (core, two hanging skirt lobes, four shoulders, three crowns) coloured by height on a five-stop ramp (shaded underside → sunlit top); root flare + straight foot + a stem leaning 3.5–8°; two thick limbs (1.6 dia, was 0.9) reaching under the skirts; canopy hides the joins |
+| pine (6) | 22 → 22 | the 5 pyramid tiers (4 corner wedges each) became 7 whorls of 3 or 2 drooping wedge boughs (18), each turned against the last, narrowing to a two-wedge pointed tip, the whole tree leaning slightly |
+| birch (6) | 9 → 9 | slender leaning white trunk, one bark mark, six larger clumps in an airy crown with a light ramp; no shadow cast by the crown |
+| bush (8) | 5/10 → 5/10 | one broad sunlit dome with three darker lobes tucked round the foot; berries/blooms 1.0 (was 0.7) sit on the dome surface |
+| flowers (6) | 9 → 9 | a leafy mound (2 balls) with six 1.0 blooms standing on it |
+| boulder S / M / L | 4 / 4 / 4 → 3 / 4 / 5 (cliff 4) | family 36 → 36. Tipped, flatter lumps (a block tipped on two axes reads as an angular rock; corner wedges read as shards and were dropped): S two lumps; M a dark foot under a light cap + pebble; L foot, mid mass, leaning lump + moss tuft. Cool dark foot (106,110,118) under a warm light top (172,170,162) |
+| quarry node | 8 → 8 | three stepped strata (dark / pale / mid) with flat cut faces, rubble wedge, two stacked cut blocks, pick |
+| ore node (6) | 10 → 10 | angular host rock (3 lumps + pebble), five 2.4-stud nuggets proud of the faces: gold (242,194,48) on 3–4, rust on 1–2, Neon crystals on 5–6 (the only Neon) |
+| wood node | 14 → 14 | five stacked logs with pale cut-wood end rings, chopped stump with a pale top, axe stuck in it (unused by the Layout, which uses trees as wood nodes) |
+| wheat field | 17 → 17 | exactly 38 × 28 (`Props.FIELD_SIZE`): soil bed, six uniform 1.7-stud flat-topped rows (+ 0.22 lighter top slab), 1.8-stud brown furrows, three sheaves on the soil border |
+| cabbage field | 66 → 65 | same 38 × 28 bed, seven soil ridges, eight cabbages per ridge |
+| fence | 7 / 8 → 7 / 8 | 2.7 high (was 3.4), pale rails; rows (top 2.4) stay below it |
+| haystack | 4 → 4 | hay drum under a dome (was two stacked balls = a snowman) + pitchfork |
+
+Soil colour: bed (96,70,44) luminance 74, ridges (112,82,52) luminance 86 — brown, not black (the FL-0085 reviewer's 60–90).
+The bed is 0.5 high because the terrain field's top is 0.2 above ground: lower and it z-fights the terrain.
+
+**Bounds (Layout and placement use them):** oak height 24.5–26.2 (was 25.2 for all), radius ≤ 12.2 (11.5); pine
+27.9–32.6 (28.0), radius ≤ 8.2 (9.3); birch 21.5–23.8 (21.2–26.1), radius ≤ 7.0 (6.8); boulders S 3.3 / M 5.6 / L 9.1
+high (2.7 / 5.0 / 9.0); stone node radius 9.0, ore 7.2, wood 6.4 (the layout keeps radius 9 clear); crop fields 38 × 28
+(was 38 × 28.6), maxY 2.4 wheat / 3.1 cabbage (was 3.6 / 2.0).
+
+**One find on the way:** `standIn` seeds the generator with the asset id's hash, and neighbouring ids give
+neighbouring seeds whose first draw is nearly identical, so every oak had the same trunk height. `standIn` now burns
+four draws first (spec: `KitProps` "same asset id, same model; different variants differ").
+
+**Honest verdict (looked at the images, FORGE-02):**
+- **Pine: clearly better.** Layered, drooping, leaning, pointed; no longer a stacked pyramid. Reads as a dark conifer at both cameras.
+- **Oak: better, not transformed.** Fuller and more irregular, with a dark underside and light crowns, flared leaning trunk. It is still a cluster of balls; from the gameplay camera it reads as a broad rounded tree, but it is darker and heavier than before, and the gradient is modest because the preview has even light.
+- **Birch: marginal.** More clumps, slimmer, lighter crown, but the clumps still read as a bunch of balls.
+- **Boulders: better.** Angular, two-tone, three distinct shapes, moss on L; still flat, low-poly slabs.
+- **Quarry / gold / iron / wood: clearly more readable.** The old gold ore was an unreadable speck on a grey box; the nuggets read as gold at 80 studs. The quarry reads as stepped cut stone.
+- **Fields: clearly better.** Brown beds, tidy uniform rows, no spikes; consistent with the farm building's own rows. Wheat rows still read as golden slabs rather than grain from close up.
+- **Bushes / flowers: better.** Rounder, fuller; accents readable at gameplay distance, tiny at the aerial camera.
+- **Still placeholder quality (needs imported Blender meshes):** every tree canopy (a ball cluster, no leaf texture, no real bark), rocks (no faceted or fractured surface), wood logs (no real rings or bark), crops (no stalks or ears).
+
+**Unverified:** Studio (SmoothPlastic and Grass material textures, Future lighting and shadows; the crowns'
+`CastShadow = false` saves cost but was only checked headless); phone screens; the in-world look with the world-trim
+density and FL-0112 placement; `Metal` ore nuggets render darker here than Roblox's Metal will.
+
+**Specs:** `KitProps.spec` (26 tests: part-count ceilings per id, hygiene, determinism and variation, bounds, tree / rock
+/ node / field shape and colour rules); 28 mutations of `Props.luau`, all caught.
