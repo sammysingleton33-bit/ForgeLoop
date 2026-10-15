@@ -98,6 +98,15 @@
 			<circle cx="24" cy="30" r="3.2" fill="#3A2A1A"/><rect x="22.6" y="31" width="2.8" height="7" rx="1" fill="#3A2A1A"/>`,
 		check: `<circle cx="24" cy="24" r="18" fill="#5BAE5F" ${s()}/><path d="M15 24.5 L21.5 31 L33.5 17.5" fill="none" stroke="#F7EFDC" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>`,
 		cross: `<circle cx="24" cy="24" r="18" fill="#D9573F" ${s()}/><path d="M17 17 L31 31 M31 17 L17 31" stroke="#F7EFDC" stroke-width="4.4" stroke-linecap="round"/>`,
+		// Settings (FL-0103, FORGE-04's panel on the HUD rail): three sliders. Not a cog: the cog is
+		// Competence on the reputation strip (rep_competence), and the two must not be confused.
+		settings: `
+			<path d="M13 9 V39 M24 9 V39 M35 9 V39" stroke="${O}" stroke-width="5.2" stroke-linecap="round"/>
+			<path d="M13 9 V39 M24 9 V39 M35 9 V39" stroke="#97A7BB" stroke-width="2.4" stroke-linecap="round"/>
+			<rect x="7" y="27" width="12" height="7.5" rx="2.4" fill="#EAC46C" ${s()}/>
+			<rect x="18" y="13" width="12" height="7.5" rx="2.4" fill="#EAC46C" ${s()}/>
+			<rect x="29" y="21" width="12" height="7.5" rx="2.4" fill="#EAC46C" ${s()}/>
+			<path d="M9.5 29.5 H16.5 M20.5 15.5 H27.5 M31.5 23.5 H38.5" stroke="#F6DE9C" stroke-width="1.6" stroke-linecap="round"/>`,
 		close: `<path d="M13 13 L35 35 M35 13 L13 35" stroke="${O}" stroke-width="8" stroke-linecap="round"/><path d="M13 13 L35 35 M35 13 L13 35" stroke="#EAC46C" stroke-width="4" stroke-linecap="round"/>`,
 		plus: `<path d="M24 11 V37 M11 24 H37" stroke="${O}" stroke-width="8.5" stroke-linecap="round"/><path d="M24 11 V37 M11 24 H37" stroke="#F7EFDC" stroke-width="4.5" stroke-linecap="round"/>`,
 		minus: `<path d="M11 24 H37" stroke="${O}" stroke-width="8.5" stroke-linecap="round"/><path d="M11 24 H37" stroke="#F7EFDC" stroke-width="4.5" stroke-linecap="round"/>`,

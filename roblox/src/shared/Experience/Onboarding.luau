@@ -53,6 +53,7 @@
 		Onboarding.snapshot(flow, state) -> table                           -- what the client renders
 		Onboarding.persisted(state) -> table                                -- what is stored
 		Onboarding.unavailable(flow, has: (service) -> boolean) -> { [stepId]: true }  -- the caller sets state.unavailable
+		Onboarding.events(config) -> { string }   -- bus events the flows listen to (startOn, bus triggers), sorted
 		Transition = { index: number, id: string, via: "auto" | "bus" | "client" | "timeout" | "satisfied" | "unavailable", reward: Reward? }
 ]]
 
@@ -287,6 +288,26 @@ local function cascade(flow: any, state: any, now: number, out: { Transition })
 			return
 		end
 	end
+end
+
+-- Every bus event the flows listen to: each flow's startOn (default PlayerReady) and its bus triggers.
+-- OnboardingService checks that each one has a Subjects resolver (FORGE-00 review M8).
+function Onboarding.events(config: any): { string }
+	local seen, out = {}, {}
+	local function add(name: any)
+		if type(name) == "string" and not seen[name] then
+			seen[name] = true
+			table.insert(out, name)
+		end
+	end
+	for _, flow in (if type(config) == "table" and type(config.flows) == "table" then config.flows else {}) do
+		add(flow.startOn or "PlayerReady")
+		for _, step in (if type(flow.steps) == "table" then flow.steps else {}) do
+			add(type(step.trigger) == "table" and step.trigger.bus or nil)
+		end
+	end
+	table.sort(out)
+	return out
 end
 
 -- Steps whose required service is missing (has(name) false). Not persisted: a later server may have it.

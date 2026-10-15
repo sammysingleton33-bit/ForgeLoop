@@ -206,6 +206,10 @@ describe("SettingsService", function()
 		settings:set(player, "musicVolume", 0.3)
 		expect(#analytics.calls).toBe(3)
 		expect(analytics.calls[1].fields).toEqual({ key = "musicVolume", value = 0.1 })
+		env.wait(11)
+		settings:set(player, "sfxVolume", 0.37)
+		expect(analytics.calls[#analytics.calls].fields).toEqual({ key = "sfxVolume", value = 0.4 }) -- tenths
+		expect(settings:get(player, "sfxVolume")).toBe(0.37) -- the setting itself keeps its value
 	end)
 
 	it("update(section) changes only that section; 'settings' and unknown sections are refused", function()
