@@ -73,6 +73,7 @@
 		ConversationService:step(dt)           -- consequences over time (the loop calls it)
 		ConversationService:openRequests(kingdomId): { { entityId, scenarioId } }
 		ConversationService:hasRequest(kingdomId, entityId): boolean   -- CitizenView.hasRequest (G13.2)
+		ConversationService:announceRiot(kingdomId, citizens, on)     -- the rioters' own placard on or off (D-050 (1d))
 		ConversationService:announceStrike(kingdomId, citizens, on)   -- strike events for a strike started
 		                                       elsewhere (CitizenService:debugStrike); off follows when it ends
 	Studio debug hook (G13.7 citizen.request, FORGE-05's DebugPresetService):
@@ -590,6 +591,21 @@ function ConversationService:_watchStrike(kingdomId: string, citizens: { any }, 
 	})
 end
 
+-- One `strike` event marked EventCodec.RIOT listing exactly the rioters whose state changed: the client turns it
+-- into a "riot" event with its own placard (D-050 (1d)). Each change goes out once per citizen.
+function ConversationService:_sendRiot(kingdomId: string, citizens: { any }, on: boolean)
+	local ids = {}
+	for _, c in citizens do
+		if (c.riotShown == true) ~= on then
+			c.riotShown = on
+			table.insert(ids, c.id)
+		end
+	end
+	if #ids > 0 then
+		self:_send(kingdomId, { type = "strike", occupation = EventCodec.RIOT, on = on, entityIds = ids })
+	end
+end
+
 -- One `strike` event per occupation among `citizens`, listing exactly them (G13.3 v0.4-g6).
 function ConversationService:_sendStrike(kingdomId: string, citizens: { any }, on: boolean)
 	local byOccupation: { [string]: { number } } = {}
@@ -789,6 +805,11 @@ function ConversationService:announceStrike(kingdomId: string, citizens: { any }
 	if on then
 		self:_watchStrike(kingdomId, citizens, self:_sim().time + 1)
 	end
+end
+
+-- The riot's own state (D-050 (1d)): the rioters' placard goes on or off; ConsequenceService calls both.
+function ConversationService:announceRiot(kingdomId: string, citizens: { any }, on: boolean)
+	self:_sendRiot(kingdomId, citizens, on)
 end
 
 -- ---------------------------------------------------------------- Studio debug hook (G13.7)

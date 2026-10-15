@@ -605,6 +605,32 @@ describe("EntityController: rigs, cues and reset", function()
 		})
 	end)
 
+	it(
+		"turns a strike event marked EventCodec.RIOT into the riot event: rioters are not on strike (D-050 (1d))",
+		function()
+			local h = start(setup({ full(1, 0, 0), full(2, 5, 0) }))
+			frame(h, 0)
+			local model = h.controller:getModel(1)
+			table.clear(h.events)
+			events(h, {
+				{ type = "strike", occupation = EventCodec.RIOT, on = true, entityIds = { 1, 2, 99 } }, -- 99 unknown
+				{ type = "strike", occupation = "farmer", on = true, entityIds = { 2 } }, -- a real strike next to it
+				{ type = "strike", occupation = EventCodec.RIOT, on = false, entityIds = { 1 } },
+			})
+			expect(h.events).toEqual({
+				{ id = 1, cue = "riot", payload = { on = true }, model = model },
+				{ id = 2, cue = "riot", payload = { on = true }, model = h.controller:getModel(2) },
+				{
+					id = 2,
+					cue = "strike",
+					payload = { occupation = "farmer", on = true },
+					model = h.controller:getModel(2),
+				},
+				{ id = 1, cue = "riot", payload = { on = false }, model = model },
+			})
+		end
+	)
+
 	it("plays the dead pose on die, then releases the rig after a short delay", function()
 		local h = start(setup({ full(1, 0, 0) }))
 		frame(h, 0)

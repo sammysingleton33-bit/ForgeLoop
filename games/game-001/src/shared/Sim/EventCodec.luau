@@ -79,6 +79,10 @@ EventCodec.KINGDOM_CUES = table.freeze({
 	"rest",
 	"hammer",
 })
+-- A `strike` event whose occupation is this names the citizens of a riot (G13.3, D-050 (1d)): the client turns it
+-- into its own "riot" event (EntityController), so rioters wear their own placard, not "On strike". No real
+-- occupation has this id (a spec pins it).
+EventCodec.RIOT = "riot"
 EventCodec.TEXT_MAX = 1024 -- bytes of a thought or reaction text
 EventCodec.ID_MAX = 48 -- bytes of a scenarioId or occupation (Kingdom.Choose takes string(1,48))
 EventCodec.ID_LIST_MAX = 1024 -- ids in one strike or cue (G13.3: bounded by a kingdom's population)

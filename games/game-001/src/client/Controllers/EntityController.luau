@@ -21,6 +21,9 @@
 			            arrives as a G4 cue
 			  strike    (id, "strike", { occupation, on: boolean }, Model?) once per id in its entityIds:
 			            exactly the citizens whose strike changed; never fanned out by occupation (v0.4-g6)
+			  riot      (id, "riot", { on: boolean }, Model?) once per id: rioters are a state of their own
+			            with their own placard (D-050 (1d)), not "on strike"; carried on the wire as a
+			            strike event whose occupation is EventCodec.RIOT
 			As for cues, an event with an entity id fires only while that entity is known and not
 			despawned (otherwise it is dropped); text may be empty.
 		EntityController:pick(screenPos: Vector2): EntityId?      -- nearest visible rig within PICK_RADIUS px
@@ -349,8 +352,15 @@ function EntityController:_applyBatch(buf: any, initial: boolean)
 				self.event:fire(nil, e.cue, { occupation = e.occupation }, nil) -- HUD or keep only
 			end
 		elseif kind == "strike" then
-			for _, id in e.entityIds do -- exactly the citizens whose strike changed (G13.3 v0.4-g6)
-				self:_fireFor(id, "strike", { occupation = e.occupation, on = e.on })
+			-- exactly the citizens whose strike changed (G13.3 v0.4-g6); the reserved occupation EventCodec.RIOT
+			-- marks a riot, which is its own state with its own placard (D-050 (1d))
+			local isRiot = e.occupation == EventCodec.RIOT
+			for _, id in e.entityIds do
+				if isRiot then
+					self:_fireFor(id, "riot", { on = e.on })
+				else
+					self:_fireFor(id, "strike", { occupation = e.occupation, on = e.on })
+				end
 			end
 		elseif kind == "reset" then
 			self:_reset()

@@ -234,9 +234,14 @@ starts on the first join and is untimed; the first watchtower capture ends the s
 - Step 1: nothing happens for about two minutes (`riot.sustainSeconds`, 120 s). Then one finished building
   near the least loyal citizen, never the keep, gets `Burning = true` and loses `Hp` (4 a second). It
   never drops below a quarter of `MaxHp`. The instigator and up to a fifth of the disloyal citizens stop
-  work and show the `grumble` cue, and the HUD or keep shows one `cower` cue.
+  work and show the `grumble` cue, and the HUD or keep shows one `cower` cue. They are **not** shown as "On
+  strike" (they are rioters; their own placard is FORGE-04's to draw, so until then they show none).
+- While the building burns it produces nothing: if it is the farm, its farmers walk off to other work; if
+  it is a lumber camp or quarry, carriers take their loads to the keep instead. Nobody builds at it.
 - The riot ends after at most 90 s: `Burning` disappears and the rioters go back to work within about
   two seconds. No new riot starts for three minutes after that.
+- After the fire, `Hp` climbs back slowly (0.2 % of `MaxHp` a second) to what it was before the fire, and no
+  further. A building that was "Damaged" (below half) stops being so within a few minutes.
 - Step 3: after a minute below half fed, the hungriest third of citizens grumble once. Happiness and
   stability then fall a little every 10 s, until the food comes back above 60 %.
 - Step 4: if at least half of that occupation is aggrieved for a whole minute, they show "On strike" and

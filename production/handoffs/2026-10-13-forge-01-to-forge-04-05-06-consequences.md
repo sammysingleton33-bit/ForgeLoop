@@ -68,3 +68,34 @@ Additive only, no contract file changed:
 - `games/game-001/src/server/Services/ConsequenceService.luau`: the rules, header first.
 - `games/game-001/config/Society.luau`: `strike` and `consequences`, all PROVISIONAL.
 - `games/game-001/tests/sim/ConsequenceService.spec.luau`: what each rule needs, and when it clears.
+
+## Update 2026-10-15: D-050 (1) rulings built (FORGE-07's M1 on #125)
+Built in the same PR, headless only (counts in the PR); **unverified in Studio** (K12 updated).
+- **(1d) Rioters are not "on strike".** The line that announced rioters through the strike channel is gone.
+  Rioters are a state of their own: `Simulation:riot(citizen, seconds)` / `isRioting` (the brain's reason is
+  "rioting"; `isStriking` is false for them). On the wire they ride the existing G13.3 `strike` event with the
+  reserved occupation `EventCodec.RIOT` (`"riot"`, no real occupation has that id): `{ type = "strike",
+  occupation = "riot", on, entityIds }`, once per change per citizen. `EntityController` turns it into its own
+  client event `(id, "riot", { on }, Model?)`, so **no older strike handler sees it**.
+  **FORGE-04:** draw a riot placard on `riot` (text of your choice, e.g. "Rioting"), on until `on = false`. Until
+  then a riot shows only the cues and the burning building. **FORGE-00:** please add to CONTRACTS G13.3 (v0.4-g6
+  strike text): "a `strike` whose occupation is `riot` marks a riot".
+- **(1b) A burning building halts.** `Simulation:setBurning(building, on, regenPerSecond?)` (ConsequenceService
+  calls it): while on, nobody farms or builds there (`findWorkTarget`), the citizens working there stop at once
+  and choose again, it takes no deliveries (`nearestDropoff`) and gives no gather bonus (`_recompute`).
+- **(1c) No permanent damage, interim.** When the fire goes out the building heals itself back to the hit points it
+  had when it caught fire, at `Society.consequences.riot.regenPerSecond` (0.002 = 0.2 % of its maximum a second),
+  never past that and never while burning. Repair by builders as a free work order (physical construction) is the
+  better fit with D-050 and is **not built**: it needs a new builder activity (Simulation findWorkTarget,
+  CitizenActions, the brain's scoring). FORGE-00: open a task if you want it before VS-2.
+- **(1a) The G9 consequence notice, exact row (for FORGE-00 to add to CONTRACTS G9 and FORGE-05 to declare in
+  `Contracts/GameEvents.luau`):**
+
+  | Event | Fired by | Payload | Listener |
+  |---|---|---|---|
+  | `ConsequenceChanged` | ConsequenceService | `(kingdomId: string, rule: "strike" \| "shortage" \| "riot" \| "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number })` | FORGE-04's notification service (server): one notice to that kingdom's rulers per start and per end |
+
+  Fired exactly once per start and once per end, from `ConsequenceService.changed` (the same values; `count` is
+  the number of citizens or 1 for a building). Server bus only. I will fire it in a one-line follow-up once the
+  name is declared (an undeclared name on the bus throws, so I do not guard it). Notice texts are FORGE-04's.
+- **Not changed:** `strike`, `shortage` and `rebellion` announce exactly as before.

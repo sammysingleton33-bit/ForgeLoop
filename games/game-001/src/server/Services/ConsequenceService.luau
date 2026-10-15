@@ -18,9 +18,13 @@
 		riot       stability minus unrest pressure below riot.stabilityBelow, and an instigator (the least loyal
 		           citizen below instigatorLoyaltyBelow) → fire on the nearest finished building other than the
 		           keep (hit points down by fireDamagePerSecond, never below fireFloor of its maximum; the building
-		           carries `burning`, which WorldView shows as the Burning attribute) and the instigator plus up to
-		           rioterShare of the disloyal stop work. Ends at stability >= endStabilityAbove or after
-		           maxSeconds, then waits cooldownSeconds before another riot can start.
+		           carries `burning`, which WorldView shows as the Burning attribute; a burning building HALTS: nobody
+		           farms or builds at it, it takes no deliveries and gives no gather bonus) and the instigator plus up
+		           to rioterShare of the disloyal stop work as rioters, a state of their own with their own placard
+		           (a G13.3 `strike` event whose occupation is EventCodec.RIOT, not "On strike"). Ends at stability
+		           >= endStabilityAbove or after maxSeconds; the fire goes out, the building heals back to its
+		           pre-fire hit points at riot.regenPerSecond (D-050 (1c)), then it waits cooldownSeconds before
+		           another riot can start.
 		rebellion  VS-2/3, consequences.rebellion.enabled = false in the slice: never checked. When enabled:
 		           stability below stabilityBelow, at least disloyalShareAtLeast disloyal, and an instigator → the
 		           disloyal citizens leave the kingdom (CitizenDied cause "rebelled"), then a cooldown.
@@ -160,12 +164,24 @@ end
 
 -- Off work for the next two checks; refreshed every check while the consequence lasts, so it ends by
 -- itself shortly after the consequence does.
-function ConsequenceService:_holdOffWork(citizens: { any })
+function ConsequenceService:_holdOffWork(citizens: { any }, riot: boolean?)
 	local sim = self:_sim()
 	for _, c in citizens do
 		if sim.citizens[c.id] == c then
-			sim:strike(c, self.config.consequences.tick * 2)
+			if riot then
+				sim:riot(c, self.config.consequences.tick * 2) -- rioting, not striking (D-050 (1d))
+			else
+				sim:strike(c, self.config.consequences.tick * 2)
+			end
 		end
+	end
+end
+
+-- The rioters' placard goes on (or off): their own state, never "On strike" (D-050 (1d)).
+function ConsequenceService:_announceRiot(kid: string, citizens: { any }, on: boolean)
+	local conversations = self._registry:find("ConversationService")
+	if conversations and conversations.announceRiot then
+		conversations:announceRiot(kid, citizens, on)
 	end
 end
 
@@ -315,7 +331,8 @@ end
 
 function ConsequenceService:_endRiot(kid: string, state: any, now: number)
 	local riot = state.riot
-	riot.building.burning = nil
+	self:_sim():setBurning(riot.building, false, self.config.consequences.riot.regenPerSecond)
+	self:_announceRiot(kid, riot.rioters, false)
 	state.riot = nil
 	state.riotCooldownUntil = now + self.config.consequences.riot.cooldownSeconds
 	Consequences.forget(state.tracker, "riot")
@@ -335,7 +352,7 @@ function ConsequenceService:_riot(kid: string, k: any, state: any, now: number)
 		end
 		local floor = math.ceil((b.maxHp or b.hp) * cfg.fireFloor)
 		b.hp = math.max(math.min(b.hp, floor), b.hp - cfg.fireDamagePerSecond * tick)
-		self:_holdOffWork(riot.rioters)
+		self:_holdOffWork(riot.rioters, true)
 		return
 	end
 	local holds = now >= state.riotCooldownUntil and stability < cfg.stabilityBelow
@@ -356,10 +373,10 @@ function ConsequenceService:_riot(kid: string, k: any, state: any, now: number)
 	end
 	local rioters = Consequences.leastLoyal(disloyal, math.floor(#citizens * cfg.rioterShare))
 	table.insert(rioters, 1, instigator)
-	building.burning = true
+	self:_sim():setBurning(building, true)
 	state.riot = { building = building, instigator = instigator, rioters = rioters, endsAt = now + cfg.maxSeconds }
-	self:_holdOffWork(rioters)
-	self:_announceStrike(kid, rioters)
+	self:_holdOffWork(rioters, true)
+	self:_announceRiot(kid, rioters, true)
 	self:_cue(kid, "grumble", rioters)
 	self:_cue(kid, "cower") -- the HUD/keep alarm
 	self.changed:fire(kid, "riot", true, {

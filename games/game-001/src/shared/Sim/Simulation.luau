@@ -158,6 +158,7 @@ function Simulation.new(options: { [string]: any })
 	self.rulerPositions = {} :: { [number]: { x: number, z: number } }
 	self.regions = {} :: { [string]: any }
 	self.regionOrder = {} :: { string }
+	self._repairing = {} :: { [number]: number } -- building id -> the hit points its passive repair stops at
 	self._nextEntity = 0
 	self._nextBuilding = 0
 	self.bounds = options.bounds or { minX = -1024, maxX = 1024, minZ = -1024, maxZ = 1024 }
@@ -543,8 +544,8 @@ function Simulation:_recompute(kingdom: any)
 		if b.kind == "keep" then
 			territory = stats.territory or 0
 		end
-		-- the best standing camp's level speeds up gathering what it accepts (FL-0081)
-		for _, resource in if stats.gatherBonus then def.accepts or {} else {} do
+		-- the best standing camp's level speeds up gathering what it accepts (FL-0081); a camp on fire gives none
+		for _, resource in if stats.gatherBonus and not b.burning then def.accepts or {} else {} do
 			bonus[resource] = math.max(bonus[resource] or 0, stats.gatherBonus)
 		end
 	end
@@ -729,7 +730,7 @@ function Simulation:findWorkTarget(kingdom: any, kind: string, citizen: any): (a
 	if kind == "build" then
 		for _, bid in kingdom.buildingIds do
 			local b = self.buildings[bid]
-			if b.pendingLevel ~= nil and not b.destroyed and self:_freeSlot(b, "site", citizen) then
+			if b.pendingLevel ~= nil and not b.destroyed and not b.burning and self:_freeSlot(b, "site", citizen) then
 				local d = dist(citizen.x, citizen.z, b.x, b.z)
 				if d < bestDistance then
 					best, bestDistance = b, d
@@ -739,7 +740,13 @@ function Simulation:findWorkTarget(kingdom: any, kind: string, citizen: any): (a
 	elseif kind == "farm" then
 		for _, bid in kingdom.buildingIds do
 			local b = self.buildings[bid]
-			if b.kind == "farm" and b.level >= 1 and not b.destroyed and self:_freeSlot(b, "farm", citizen) then
+			if
+				b.kind == "farm"
+				and b.level >= 1
+				and not b.destroyed
+				and not b.burning
+				and self:_freeSlot(b, "farm", citizen)
+			then
 				local d = dist(citizen.x, citizen.z, b.x, b.z)
 				if d < bestDistance then
 					best, bestDistance = b, d
@@ -768,7 +775,8 @@ function Simulation:nearestDropoff(kingdom: any, x: number, z: number, resource:
 		local b = self.buildings[bid]
 		local def = self.catalog.buildings[b.kind]
 		local accepts = resource == nil or def.accepts == nil or table.find(def.accepts, resource) ~= nil
-		if not b.destroyed and b.level >= 1 and def.dropoff and accepts then
+		-- a building on fire takes no deliveries (D-050 (1b))
+		if not b.destroyed and not b.burning and b.level >= 1 and def.dropoff and accepts then
 			local d = dist(x, z, b.x, b.z)
 			if d < bestDistance then
 				best, bestDistance = b, d
@@ -1042,6 +1050,65 @@ end
 function Simulation:strike(citizen: any, seconds: number)
 	citizen.strikeUntil = math.max(citizen.strikeUntil or 0, self.time + seconds)
 	citizen.done = true -- downs tools at once, even with a load in hand (#77 N2): it re-plans next tick
+end
+
+-- Stops the citizen working because they are rioting (the G13.3 riot state, D-050 (1d)): they idle like a
+-- striker, but they are a different state to the player (their own placard) and to the sim (isStriking is false).
+function Simulation:riot(citizen: any, seconds: number)
+	citizen.riotUntil = math.max(citizen.riotUntil or 0, self.time + seconds)
+	citizen.done = true
+end
+
+function Simulation:isRioting(citizen: any): boolean
+	return citizen.riotUntil ~= nil and self.time < citizen.riotUntil
+end
+
+-- A building catches fire or the fire goes out (D-050 (1b), (1c)). On fire it stops producing: nobody farms or
+-- builds at it, it takes no deliveries and gives no gather bonus; the citizens working there stop at once and
+-- choose again. When the fire goes out the building heals slowly on its own back to the hit points it had
+-- when it caught fire (`regenPerSecond` of its maximum; no permanent damage); builders may take over the
+-- repair later as a work order.
+function Simulation:setBurning(b: any, on: boolean, regenPerSecond: number?)
+	if (b.burning == true) == on then
+		return
+	end
+	local kingdom = self.kingdoms[b.kingdomId]
+	if on then
+		b.burning = true
+		b.hpBeforeFire = b.hpBeforeFire or b.hp
+		self._repairing[b.id] = nil
+		for _, cid in kingdom.citizenIds do
+			local c = self.citizens[cid]
+			if c.target == b.id and (c.activity == "Farm" or c.activity == "Build") then
+				c.done = true -- downs tools at once; the building no longer offers work
+			end
+		end
+	else
+		b.burning = nil
+		local goal = math.min(b.maxHp, b.hpBeforeFire or b.hp)
+		b.hpBeforeFire = nil
+		if b.hp < goal and (regenPerSecond or 0) > 0 then
+			b.regenPerSecond = regenPerSecond
+			self._repairing[b.id] = goal
+		end
+	end
+	self:_recompute(kingdom)
+end
+
+-- Passive repair of buildings the fire left damaged, one step of `dt` seconds.
+function Simulation:_stepRepairs(dt: number)
+	for id, goal in self._repairing do
+		local b = self.buildings[id]
+		if b == nil or b.destroyed or b.burning then
+			self._repairing[id] = nil
+		else
+			b.hp = math.min(goal, b.hp + b.maxHp * (b.regenPerSecond or 0) * dt)
+			if b.hp >= goal then
+				b.regenPerSecond = nil
+				self._repairing[id] = nil
+			end
+		end
+	end
 end
 
 -- On strike, or walked out (productivity down to 0: SPEC §5.4 "−1 = one citizen's walk-out").
@@ -1562,6 +1629,9 @@ function Simulation:step()
 	local nightBefore = self:isNight()
 	self.time += dt
 	self.tick += 1
+	if next(self._repairing) ~= nil then
+		self:_stepRepairs(dt)
+	end
 	if self:day() ~= dayBefore then
 		self:emit("DayStarted", { day = self:day() })
 	elseif self:isNight() and not nightBefore then

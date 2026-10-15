@@ -12,6 +12,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
+local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
 local Reputation = require("@game/ReplicatedStorage/Game/Kingdom/Reputation")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
@@ -500,12 +501,16 @@ describe("ConsequenceService: riots", function()
 			expect(rioters[1]).toBe(instigator.id)
 			local expectFollowers = math.min(1, math.floor(#citizens * Society.consequences.riot.rioterShare))
 			expect(#rioters).toBe(1 + expectFollowers)
-			expect(w.sim:isStriking(instigator)).toBe(true)
+			-- rioters are rioting, not striking: their own state (D-050 (1d))
+			expect(w.sim:isRioting(instigator)).toBe(true)
+			expect(w.sim:isStriking(instigator)).toBe(false)
 			if expectFollowers == 1 then
 				expect(rioters[2]).toBe(follower.id)
-				expect(w.sim:isStriking(follower)).toBe(true)
+				expect(w.sim:isRioting(follower)).toBe(true)
+				expect(w.sim:isStriking(follower)).toBe(false)
 			end
-			expect(w.sim:isStriking(citizens[1])).toBe(false) -- content citizens keep working
+			expect(w.sim:isRioting(citizens[1])).toBe(false) -- content citizens keep working
+			expect(w.sim:isStriking(citizens[1])).toBe(false)
 			local hp = target.hp
 			w.env.mock:advance(10)
 			expect(target.hp < hp).toBe(true)
@@ -577,7 +582,7 @@ describe("ConsequenceService: riots", function()
 		expect(#ended).toBe(1)
 		expect(ended[1].info.buildingId).toBe(b.id)
 		expect(b.burning).toBeNil()
-		expect(b.hp).toBe(floor)
+		expect(b.hp >= floor).toBe(true) -- the fire is out: the building starts to heal (D-050 (1c))
 		-- still unstable: no new riot until the cooldown, then the full wait again
 		local nextRiot = ended[1].t + RIOT.cooldownSeconds + RIOT.sustainSeconds
 		w.env.mock:advance(nextRiot - w.sim.time - 3)
@@ -606,11 +611,96 @@ describe("ConsequenceService: riots", function()
 		expect(b.burning).toBeNil()
 		expect(w.service:active("crimson").riot).toBeNil()
 		w.env.mock:advance(Society.consequences.tick * 2 + 0.5)
+		expect(w.sim:isRioting(instigator)).toBe(false)
 		expect(w.sim:isStriking(instigator)).toBe(false)
 		local hp = b.hp
 		w.env.mock:advance(20)
 		expect(b.hp >= hp).toBe(true) -- no more fire damage
 	end)
+
+	it("rioters wear their own placard: a strike event marked riot names exactly them, on and off, once", function()
+		local w = boot({ "ReputationService", "TreasuryService", "ProductionService", "ConversationService" })
+		content(w)
+		finishedBuilding(w, "house", 40, 0)
+		local citizens = citizensOf(w)
+		citizens[1].loyalty = 0
+		citizens[2].loyalty = RIOT.rioterLoyaltyBelow - 1
+		w.k.conditions.stability = 0
+		w.env.mock:advance(RIOT.sustainSeconds + 1)
+		local started = changesOf(w, "riot", true)
+		expect(#started).toBe(1)
+		local rioters = started[1].info.entityIds
+		local function riotEvents(on: boolean): { any }
+			local out = {}
+			for _, event in sentOf(w, "strike") do
+				if event.occupation == EventCodec.RIOT and event.on == on then
+					table.insert(out, event)
+				end
+			end
+			return out
+		end
+		local onEvents = riotEvents(true)
+		expect(#onEvents).toBe(1)
+		local named = table.clone(onEvents[1].entityIds)
+		table.sort(named)
+		local want = table.clone(rioters)
+		table.sort(want)
+		expect(named).toEqual(want)
+		-- nobody is told they are "on strike" because of the riot
+		for _, event in sentOf(w, "strike") do
+			if event.occupation ~= EventCodec.RIOT and event.on then
+				for _, id in event.entityIds do
+					expect(table.find(rioters, id)).toBeNil()
+				end
+			end
+		end
+		expect(#riotEvents(false)).toBe(0)
+		w.k.conditions.stability = RIOT.endStabilityAbove
+		w.env.mock:advance(3)
+		local offEvents = riotEvents(false)
+		expect(#offEvents).toBe(1)
+		local gone = table.clone(offEvents[1].entityIds)
+		table.sort(gone)
+		expect(gone).toEqual(want)
+		w.env.mock:advance(10)
+		expect(#riotEvents(false)).toBe(1) -- once
+		expect(#riotEvents(true)).toBe(1)
+	end)
+
+	it(
+		"the burning building halts while the riot lasts and heals itself afterwards, never permanently damaged",
+		function()
+			local w = boot()
+			content(w)
+			local farm = finishedBuilding(w, "farm", -60, 0)
+			finishedBuilding(w, "house", 40, 0)
+			citizensOf(w)[1].loyalty = 0
+			w.k.conditions.stability = 0
+			w.env.mock:advance(RIOT.sustainSeconds + 1)
+			local started = changesOf(w, "riot", true)
+			expect(#started).toBe(1)
+			local b = w.sim.buildings[started[1].info.buildingId]
+			expect(b.burning).toBe(true)
+			local before = b.hpBeforeFire
+			expect(before).toBe(b.maxHp) -- it caught fire undamaged
+			w.env.mock:advance(20)
+			expect(b.hp < before).toBe(true)
+			-- the fire ends: from here the hit points climb back at regenPerSecond of the maximum, up to before
+			w.k.conditions.stability = RIOT.endStabilityAbove
+			w.env.mock:advance(3)
+			expect(#changesOf(w, "riot", false)).toBe(1)
+			expect(b.burning).toBeNil()
+			local low = b.hp
+			w.env.mock:advance(10)
+			expect(b.hp > low).toBe(true)
+			expect(b.hp - low <= b.maxHp * RIOT.regenPerSecond * 11 + 1e-6).toBe(true) -- slow
+			local needed = (before - b.hp) / (b.maxHp * RIOT.regenPerSecond)
+			w.env.mock:advance(needed + 5)
+			expect(b.hp).toBe(before)
+			expect(b.regenPerSecond).toBeNil()
+			expect(farm.burning).toBeNil()
+		end
+	)
 end)
 
 describe("ConsequenceService: rebellion (gated) and morale", function()

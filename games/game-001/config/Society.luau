@@ -62,7 +62,11 @@
 		                                       finished building other than the keep (fireDamagePerSecond, never below
 		                                       fireFloor of its hit points) and the instigator plus up to rioterShare of
 		                                       citizens below rioterLoyaltyBelow stop work; ends at stability >=
-		                                       endStabilityAbove or after maxSeconds, then cooldownSeconds before another
+		                                       endStabilityAbove or after maxSeconds, then cooldownSeconds before another.
+		                                       A burning building halts (no farming, building, deliveries or gather
+		                                       bonus) and, once the fire is out, heals back to its pre-fire hit points at
+		                                       regenPerSecond of its maximum a second (D-050 (1b), (1c)); the rioters
+		                                       have their own state and placard (D-050 (1d)).
 		consequences.rebellion                 VS-2/3, enabled = false in the slice. Stability below stabilityBelow, at
 		                                       least disloyalShareAtLeast of citizens disloyal (loyalty below
 		                                       disloyalBelow and obedience below obedienceBelow) and an instigator, for
@@ -139,6 +143,7 @@ return {
 			rioterShare = 0.2,
 			fireDamagePerSecond = 4,
 			fireFloor = 0.25,
+			regenPerSecond = 0.002, -- after the fire the building heals back to its pre-fire hit points at this share of its maximum a second (D-050 (1c))
 			maxSeconds = 90,
 			cooldownSeconds = 180,
 		},
