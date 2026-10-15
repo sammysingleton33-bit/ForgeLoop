@@ -20,10 +20,17 @@
 		                                     options: { { id, text, cost?, risks? } } }?   (G13.3) own kingdom's
 		                                     citizens, rulers only; nil when the citizen has nothing to say
 		                                     or the match is not in an active phase (Lobby, Results); G13.8:
-		                                     also look, job, position, kingdom, and the citizen is held
+		                                     also look, job, position, kingdom, and the citizen is held;
+		                                     v0.4-g10: question is the showing's pinned variant (ContentQuery
+		                                     questionFor, filled), and presentation = { emotion?, expression?,
+		                                     gesture?, delivery?, urgency?, variantId? } only when the content
+		                                     has a tag (Kingdom/ConversationTags: allowlisted values only)
 		Kingdom.EndConversation(entityId: integer) -> boolean   (G13.8) ends the conversation hold
 		Kingdom.Choose(entityId, scenarioId: string(1,48), responseId: string(1,48))
-		                                  -> (ok, { reaction, effects: { { kind, text } } }?, reason?)   (G13.3)
+		                                  -> (ok, { reaction, effects: { { kind, text } }, tone, band, emotion?, expression?,
+		                                     gesture?, delivery?, bubble_s? }?, reason?)   (G13.3; the rest
+		                                     v0.4-g10: reaction is ContentQuery reactionFor's text for the citizen's
+		                                     loyalty when asked, band "base" | "high" | "low", tags allowlisted)
 		                                     reasons: not_in_match, unknown_citizen, phase, not_offered,
 		                                     unknown_response, not_eligible, cost (ConversationService)
 	Server -> client
