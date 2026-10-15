@@ -129,8 +129,7 @@ function UpgradePanel:render(detail: any, metrics: any, ui: { [string]: any })
 		padding = if phone then 10 else 12,
 	})
 	self.panel.instance.Name = "UpgradePanel"
-	self.detail =
-		DetailView.new({ detail = detail, compact = phone, onCta = handlers.onCta, onSide = handlers.onSide })
+	self.detail = DetailView.new({ detail = detail, compact = phone, onCta = handlers.onCta, onSide = handlers.onSide })
 	self.detail.instance.Parent = self.panel.content
 	self.panel.instance.Parent = self._parent
 	local body = self.detail.instance:FindFirstChild("Body")

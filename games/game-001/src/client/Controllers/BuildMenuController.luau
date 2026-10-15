@@ -579,7 +579,7 @@ function BuildMenuController:render(metrics: any)
 			{
 				name = if p.move then `Move {p.name}` else p.name,
 				confirm = if p.move then "Move here" else nil,
-				okText = if slot then `✓ On this plot · {Turns.label(p.move.turn)}` else nil,
+				okText = if slot then `✓ {Turns.label(p.move.turn)}` else nil, -- the plot outline shows the snap
 				icon = if info then info.icon else "build",
 				category = if info then info.category else "economy",
 				costs = costs,

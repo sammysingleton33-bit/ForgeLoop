@@ -520,7 +520,12 @@ end
 
 function DetailView:update(
 	d: any,
-	handlers: { onCta: ((any) -> ())?, onBack: (() -> ())?, onTurn: (() -> ())?, onSide: ((any) -> ())? }?
+	handlers: {
+		onCta: ((any) -> ())?,
+		onBack: (() -> ())?,
+		onTurn: (() -> ())?,
+		onSide: ((any) -> ())?,
+	}?
 )
 	self._detail = d
 	if handlers then

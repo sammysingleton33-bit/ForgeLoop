@@ -232,6 +232,26 @@ tracker on the phone, the summary on the phone and on desktop.
 8. Phone: the plot detail shows a "Faces …" chip beside the build time and a Turn button left of
    "Build … here"; the price stays visible without scrolling.
 
+## U18 — move a building (FL-0120; needs FORGE-01's base editing server, FL-0119 #140)
+Before #140 the building panel shows no Move: expected.
+1. Tap one of your houses: beside "Upgrade" (or the disabled upgrade reason) is **Move**. Tap your keep or
+   another kingdom's building: no Move.
+2. Tap **Move**: the panel closes, the house turns see-through (dimmed, still drawn), a ghost stands where it
+   is with the door strip and facing arrow, and the bar reads "Move House", no cost, "Move here".
+3. Move the mouse (phone: tap the ground): the ghost follows, green on free ground; red over a tree, a road,
+   a crop field or outside your land, with the reason ("Not enough room there", "Move it inside your keep's
+   land"). R / Turn / R1 turn it; Shift+R / L1 turn back.
+4. Move here on green ground: a toast "House moved"; the house now stands there, the dim is gone, its
+   workers walk over. Open its panel at once: Move reads "Moved" (disabled) and comes back after about 10 s.
+5. Pick it up again and aim at a free plot that fits: the ghost snaps into the plot's outline and the bar
+   reads "✓ Faces the street"; Turn steps through only the turns that fit (a barracks on a medium plot:
+   street or away). Move here: it stands on the plot, turned so; the plot it left (if any) reads free.
+6. Aim at a plot that is built on, or move a wall over a plot: no snap.
+7. Q / Cancel / another menu while moving: the ghost goes, the house is no longer dimmed, nothing moved.
+8. Refusals (needs a rival for 8b): 8a move a house twice within 10 s from the second tap: "It just moved.
+   Wait a few seconds"; 8b while the alarm rings / under attack: "Not while the alarm bell rings" / "Not
+   while it's under attack".
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 

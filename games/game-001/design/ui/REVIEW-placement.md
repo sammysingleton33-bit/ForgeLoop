@@ -12,3 +12,18 @@ Renders from `design/ui/render` (headless; not Studio). Each opened and judged b
 Known limits: the dial is camera-relative and the plot label is street-relative, so after the player
 rotates the camera they can differ in wording ("Faces right" with the dial pointing up); both are
 true. The dial refreshes on the next render (any aim, turn or push), not on a camera move alone.
+
+## Moving a building (FL-0120)
+
+| Render | What it shows | Judgement |
+|---|---|---|
+| `building-move-{phone,desktop}.png` | My barracks' panel with **Move** (✥) beside "Upgrade to Lv 2" | Move reads as the secondary action; Upgrade keeps its width on desktop; on a phone both fit the bottom row and the price stays above it. |
+| `placing-move-{phone,desktop}.png` | Moving a house: "Move House", no costs, "✓ Good spot", "Move here" | The bar says what is happening and that it is free; the wider confirm fits "Move here" (118 / 132 px). |
+| `placing-move-plot-{phone,desktop}.png` | The house snapped onto a free medium plot from the aerial camera, turned a quarter: the plot outline stays put, the facing arrow and the bar's dial agree (down-left), "✓ Faces right" | The snap reads clearly: footprint inside the plot outline, arrow out of the front. |
+
+The facing dial is now drawn with frames (shaft and two head strokes) instead of the "▲" glyph: the
+renderer drew a rotated glyph 180° off at oblique angles (README deviation 25), which made the earlier
+`plot-pick-turn-*` renders point the wrong way (re-shot here; they now agree with the ghost). Roblox
+rotates glyphs correctly, but frames also avoid font and centring risks. The `placing-*`,
+`placing-bad-*`, `placing-room-phone` and `placing-ghost-*` renders still show the old glyph dial at
+0°/90°/270° (right there); they are re-shot when this lands with #139 (the D-031 2 MB budget).

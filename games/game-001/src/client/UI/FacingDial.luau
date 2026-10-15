@@ -49,12 +49,14 @@ function FacingDial.new(size: number, layoutOrder: number?): Frame
 		-- the head strokes hang from the tip, 40° either side of the shaft
 		HeadLeft = bar("HeadLeft", head, function(f)
 			f.AnchorPoint = Vector2.new(0.5, 0)
-			f.Position = at(half - math.sin(math.rad(40)) * head / 2, top + math.cos(math.rad(40)) * head / 2 - head / 2)
+			f.Position =
+				at(half - math.sin(math.rad(40)) * head / 2, top + math.cos(math.rad(40)) * head / 2 - head / 2)
 			f.Rotation = 40
 		end),
 		HeadRight = bar("HeadRight", head, function(f)
 			f.AnchorPoint = Vector2.new(0.5, 0)
-			f.Position = at(half + math.sin(math.rad(40)) * head / 2, top + math.cos(math.rad(40)) * head / 2 - head / 2)
+			f.Position =
+				at(half + math.sin(math.rad(40)) * head / 2, top + math.cos(math.rad(40)) * head / 2 - head / 2)
 			f.Rotation = -40
 		end),
 	})

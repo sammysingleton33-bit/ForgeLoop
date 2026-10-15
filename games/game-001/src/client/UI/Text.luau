@@ -36,6 +36,11 @@ local REASONS: { [string]: string } = {
 	requires_keep_level = "Upgrade your keep first",
 	limit_reached = "You have the most of these already",
 	unknown_building = "That building can't be built",
+	-- Build.CanMove / Build.Move / Build.MoveToSlot (FL-0119, CONTRACTS G13.9 v0.4-g9j; a move reads them
+	-- through MOVE_REASONS below, these are for the Reasons line of Build/Remotes.luau)
+	not_movable = "The keep can't be moved",
+	alarm = "Not while the alarm bell rings",
+	under_attack = "Not while it's under attack",
 	-- Build.Upgrade
 	not_found = "That building no longer exists",
 	not_owner = "That building isn't yours",

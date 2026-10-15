@@ -1,7 +1,7 @@
 --[[
 	FL-0120 scene "placing-move-plot": moving a house onto a free medium plot from the aerial camera.
 	The ghost snaps to the plot (the plot's outline stays put), turned a quarter ("Faces right"); the bar
-	says "✓ On this plot · Faces right" and confirms with Build.MoveToSlot. The real ghost folder is moved
+	says "✓ Faces right" and confirms with Build.MoveToSlot. The real ghost folder is moved
 	into a full-screen ViewportFrame, as in "placing-ghost" (the ViewportFrame renderer, FL-0099).
 ]]
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")

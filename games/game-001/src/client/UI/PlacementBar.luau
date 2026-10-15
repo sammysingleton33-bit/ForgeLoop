@@ -195,7 +195,8 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 			onActivated = call("onCancel"),
 		})
 	cancel.instance.Name = "Cancel"
-	local placeWidth = if phone then 92 else 104
+	-- "Move here" (FL-0120) needs a wider confirm than "Place"
+	local placeWidth = if model.confirm then (if phone then 118 else 132) elseif phone then 92 else 104
 	local place = Button.new({
 		text = model.confirm or "Place",
 		icon = "check",

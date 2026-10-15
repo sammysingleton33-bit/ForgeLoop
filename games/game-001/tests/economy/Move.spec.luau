@@ -292,7 +292,7 @@ describe("Move in the building panel (FL-0120)", function()
 		expect(p.status).toBe("ok")
 		expect(#world:callsNamed("CanMove")).toBe(checksBefore) -- the plot needs no CanMove
 		local bar = find(world.hud.guis.hud, "PlacementBar")
-		expect(texts(bar)).toContain("On this plot · Faces the street")
+		expect(texts(bar)).toContain("✓ Faces the street")
 		local ghost = world.build.ghost
 		expect((ghost.base.CFrame.Position * Vector3.new(1, 0, 1) - frame.center * Vector3.new(1, 0, 1)).Magnitude).toBeLessThan(
 			1e-4
@@ -306,6 +306,7 @@ describe("Move in the building panel (FL-0120)", function()
 			1e-4
 		)
 		world.build:rotate(-1)
+		expect(p.move.turn).toBe(0)
 		world.build:rotate(-1)
 		world:advance(0.1)
 		expect(p.move.turn).toBe(3)
@@ -368,6 +369,31 @@ describe("Move in the building panel (FL-0120)", function()
 		world.build:aimAt(frame.center)
 		world:advance(0.2)
 		expect(world.build.placing.move.slot).toBeNil()
+	end)
+
+	it("keeps the turn only where it fits: a quarter turn on a medium plot falls back on a small one", function()
+		world = newWorld()
+		local id = house(world, Vector3.new(40, 0, 40))
+		-- a small plot with a real world/Layout id next to the medium one
+		local slots = world.server:get("SlotService")
+		slots.slots.crimson_slot1 =
+			{ id = "crimson_slot1", kingdom = "crimson", size = "S", center = Vector3.new(-170, 0, 170) }
+		slots:publish("crimson")
+		world:advance(0.2)
+		world.build:startMove(id)
+		world:advance(0.2)
+		world.build:aimAt(Slots.frame("crimson_slot5").center)
+		world.build:rotate(1)
+		expect(world.build.placing.move.turn).toBe(1) -- a house turned a quarter fits 36 × 30
+		world.build:aimAt(Slots.frame("crimson_slot1").center)
+		world:advance(0.1)
+		local p = world.build.placing
+		expect(p.move.slot.id).toBe("crimson_slot1")
+		expect(p.move.slot.allowed).toEqual({ 0, 2 }) -- 22 × 18 turned is 18 × 22: deeper than 20
+		expect(p.move.turn).toBe(0)
+		tap(find(find(world.hud.guis.hud, "PlacementBar"), "Place"))
+		world:advance(0.2)
+		expect(world:callsNamed("MoveToSlot")[1].args).toEqual({ id, "crimson_slot1", 0 })
 	end)
 
 	it("words every code the move remotes answer, none as the generic fallback", function()

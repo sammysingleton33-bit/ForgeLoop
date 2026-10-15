@@ -36,7 +36,12 @@ MoveDoubles.DECLARATIONS = {
 		args = { ID, V.vector3(4000), V.integer(0, 3) },
 		rate = { burst = 10, perSecond = 10 },
 	},
-	{ name = "Build.Move", kind = "function", args = { ID, V.vector3(4000), V.integer(0, 3) }, rate = { burst = 4, perSecond = 2 } },
+	{
+		name = "Build.Move",
+		kind = "function",
+		args = { ID, V.vector3(4000), V.integer(0, 3) },
+		rate = { burst = 4, perSecond = 2 },
+	},
 	{
 		name = "Build.MoveToSlot",
 		kind = "function",
@@ -156,7 +161,8 @@ function MoveDoubles.service(world)
 					end
 					local same = build.positions[buildingId] == position
 						and b.cframe ~= nil
-						and (b.cframe.LookVector - CFrame.Angles(0, rot * math.pi / 2, 0).LookVector).Magnitude < 1e-4
+						and (b.cframe.LookVector - CFrame.Angles(0, rot * math.pi / 2, 0).LookVector).Magnitude
+							< 1e-4
 					if same then
 						return true -- the same spot and facing: nothing changes, no cooldown
 					end
