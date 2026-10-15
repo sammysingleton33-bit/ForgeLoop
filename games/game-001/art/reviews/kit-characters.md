@@ -446,3 +446,35 @@ without a kingdom), governor 11, idle 7 to 9 (was 9, 9, 9, 8-9, 9, 7-9).
   through the head, equal handle colours, portrait ignoring details) all fail the spec.
 - **Known upstream issue, unchanged:** `Sim/Pose.celebrate` (FORGE-04) gives no Tool rotation, so hand tools sweep through the head with raised
   arms; the spec excludes celebrate for hand tools.
+
+### D-019 re-score, phase 2 (fresh context, image-only, one round)
+
+Reviewer: a fresh session that saw only `citizen_polish2_{jobs,tools,heads,crowd,aerial}.jpg` (no code, no earlier scores). Scale 1-5; thresholds
+silhouette, variation and readability at least 4, proportions, palette, detail and cohesion at least 3. Blender previews, not a Studio play test.
+| Rig | sil | var | read | prop | pal | detail | cohes | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| farmer | 5 | 3 | 5 | 4 | 4 | 4 | 3 | NEEDS-WORK (variation) |
+| woodcutter | 4 | 3 | 4 | 4 | 4 | 4 | 3 | NEEDS-WORK (variation) |
+| miner | 3 | 3 | 3 | 4 | 3 | 3 | 3 | NEEDS-WORK (silhouette, variation, readability) |
+| builder | 4 | 3 | 4 | 4 | 4 | 4 | 3 | NEEDS-WORK (variation) |
+| hauler | 3 | 3 | 3 | 3 | 3 | 3 | 3 | NEEDS-WORK (silhouette, variation, readability) |
+| idle | 3 | 4 | 4 | 4 | 3 | 2 | 4 | NEEDS-WORK (silhouette; detail 2 is below 3) |
+| soldier | 5 | n/a | 5 | 3 | 4 | 4 | 3 | PASS |
+| governor | 5 | n/a | 5 | 4 | 4 | 4 | 4 | PASS |
+| rig set | 4 | 3 | 4 | 4 | 3 | 3 | 3 | NEEDS-WORK |
+Reviewer's words, shortened: visibly better than before for farmer, woodcutter, builder, soldier and governor; miner and hauler improved only
+marginally; idle is basically unchanged (it is the no-tool baseline, with only the 1b accessory); tools read as tools up close and from the
+side, and the hoe, spear and staff also at 40 studs from the front; the miner pick is thin and hides behind the torso from the front; the
+hauler sack reads from the side or back and not from the front, and the sash is lost in grayscale; four individuals of one job barely differ
+in the aerial groups; woodcutter and miner merge in grayscale; kingdom red is still clearly visible from above (443 to 461 red pixels in the
+crowd crop, main 420); the soldier's red crest still reads as a separate cone on a box helm.
+- **Reviewer limits, so not over-read:** it did not zoom the aerial crops, and it could not tell from the images whether the side-view
+  overlaps (hoe blade against the straw brim, pick across the face and hat, mallet and axe head against head and shoulder) are real
+  intersections or only the projection. The geometric clearance specs (tool heads and handles clear the head sphere by 0.1 in idle, walk,
+  work, carry, fight, flee; celebrate excluded, `Sim/Pose`) pass, so the overlaps are projection, but this is headless evidence only.
+- **Outcome, honest:** NEEDS-WORK as a set. Variation (3) is the core miss for the four tool jobs; miner and hauler are below 4 on silhouette
+  and readability; idle detail is 2. This is the first fresh re-score of phase 2 and the 2-round rule has not been spent, but the remaining
+  items are not 11-part tool fixes: per-individual variation beyond hat tone, a taller or brighter miner head, a front-readable hauler load
+  and an idle silhouette feature are either another art pass or a different approach (tool meshes via Kit.prop ids / VS-2, per-look
+  proportions). They are reported and left for FORGE-00 to schedule or accept under D-051 (no worse than main per asset, clearly better as a
+  set, no visible defects, code gates pass); no further loop on this branch.
