@@ -231,15 +231,13 @@ describe("Kit house variants", function()
 		expect(roofs[4]).toBe("thatch")
 	end)
 
-	it("flies a kingdom pennant on every thatch roof", function()
+	it("flies a kingdom pennant on every roof, tile and thatch (B12: house identity was colour-only)", function()
 		for v = 1, 8 do
 			for level = 1, 2 do
 				local m = Kit.build("house", level, "complete", COLORS[2], v)
-				if m:FindFirstChild("Thatch") then
-					local pennant = m:FindFirstChild("Pennant")
-					expect(pennant).never.toBeNil()
-					expect((pennant :: BasePart):GetAttribute("KitTint")).toBe(1)
-				end
+				local pennant = m:FindFirstChild("Pennant")
+				expect(pennant).never.toBeNil()
+				expect((pennant :: BasePart):GetAttribute("KitTint")).toBe(1)
 			end
 		end
 	end)
@@ -304,7 +302,9 @@ describe("Kit keep throne (G13.6)", function()
 		end
 	end)
 
-	it("keeps every throne part clear of the entrance bay and the door behind it", function()
+	it("keeps every throne part at least 0.1 clear of the entrance bay and the door behind it", function()
+		-- B12 review: the throne's knobs touched the arch; now nothing of the throne group (dossal, canopy,
+		-- edge) comes within 0.1 of the bay, the leaf, the jambs or the voussoirs along some axis
 		local door = {
 			EntranceBay = true,
 			Door = true,
@@ -326,15 +326,15 @@ describe("Kit keep throne (G13.6)", function()
 					end
 				end
 				expect(#throneParts).toBeGreaterThan(10)
-				expect(#doorParts).toBeGreaterThan(8)
+				expect(#doorParts).toBeGreaterThan(6)
 				for _, a in throneParts do
 					local ea, ca = halfExtents(a), a.CFrame.Position
 					for _, b in doorParts do
 						local eb, cb = halfExtents(b), b.CFrame.Position
 						local dc = ca - cb
-						local gap = Vector3.new(math.abs(dc.X), math.abs(dc.Y), math.abs(dc.Z)) - (ea + eb) -- < 0 everywhere = overlap
-						if gap.X < -0.001 and gap.Y < -0.001 and gap.Z < -0.001 then
-							error(`keep L{level}: throne part {a.Name} intersects {b.Name}`)
+						local gap = Vector3.new(math.abs(dc.X), math.abs(dc.Y), math.abs(dc.Z)) - (ea + eb)
+						if math.max(gap.X, gap.Y, gap.Z) < 0.1 then
+							error(`keep L{level}: throne part {a.Name} within 0.1 of {b.Name}`)
 						end
 					end
 				end
@@ -342,26 +342,87 @@ describe("Kit keep throne (G13.6)", function()
 		end
 	end)
 
-	it("marks the throne from behind with a high kingdom baldachin (≤ 6 parts, over the bay merlons)", function()
+	-- B12 (FORGE-00 D-019 review): the canopy sits low over the seat (it read as an entrance awning 24 studs up),
+	-- on two posts beside the dais, and the throne stands against a framed cloth of estate instead of the dark
+	-- door; the marker for the overview camera from behind is the royal standard pair (KitEmblems.spec)
+	it("covers the throne with a low baldachin and hangs a framed dossal behind it", function()
 		for level = 1, 3 do
-			local m = Kit.build("keep", level, "complete", COLORS[2])
-			local n, canopyLow, tinted = 0, math.huge, true
-			local bayTop = 0
-			for _, p in parts(m) do
-				if string.sub(p.Name, 1, 9) == "Baldachin" then
-					n += 1
-					if p.Name == "BaldachinCanopy" then
-						canopyLow = math.min(canopyLow, p.CFrame.Position.Y - halfExtents(p).Y)
-						tinted = tinted and p:GetAttribute("KitTint") ~= nil
-					end
-				elseif p.Name == "EntranceBay" then
-					bayTop = p.CFrame.Position.Y + p.Size.Y / 2
+			for _, color in COLORS do
+				local m = Kit.build("keep", level, "complete", color)
+				local seat = m:FindFirstChild("Throne", true) :: BasePart
+				local seatTop = seat.CFrame.Position.Y + seat.Size.Y / 2
+				local sp = seat.CFrame.Position
+				local byName: { [string]: { BasePart } } = {}
+				for _, p in parts(m) do
+					byName[p.Name] = byName[p.Name] or {}
+					table.insert(byName[p.Name], p)
 				end
+				local function one(name: string): BasePart
+					local list = byName[name]
+					if list == nil or #list ~= 1 then
+						error(`keep L{level}: want one {name}, found {if list then #list else 0}`)
+					end
+					return list[1]
+				end
+				-- baldachin: 2 posts, 2 tinted canopy wedges, a finial (5 parts)
+				expect(#(byName.BaldachinPost or {})).toBe(2)
+				expect(#(byName.BaldachinCanopy or {})).toBe(2)
+				expect(#(byName.BaldachinFinial or {})).toBe(1)
+				local lo, ridge = math.huge, -math.huge
+				local xMin, xMax, zMin, zMax = math.huge, -math.huge, math.huge, -math.huge
+				for _, p in byName.BaldachinCanopy do
+					expect(p:GetAttribute("KitTint")).never.toBeNil()
+					local e, c = halfExtents(p), p.CFrame.Position
+					lo, ridge = math.min(lo, c.Y - e.Y), math.max(ridge, c.Y + e.Y)
+					xMin, xMax = math.min(xMin, c.X - e.X), math.max(xMax, c.X + e.X)
+					zMin, zMax = math.min(zMin, c.Z - e.Z), math.max(zMax, c.Z + e.Z)
+				end
+				-- low: 8–9 studs over the seat (the open-sky rule's minimum), and it covers the whole seat
+				expect(lo - seatTop).toBeGreaterThanOrEqual(8)
+				expect(lo - seatTop).toBeLessThanOrEqual(9)
+				local se = halfExtents(seat)
+				local covers = xMin <= sp.X - se.X
+					and xMax >= sp.X + se.X
+					and zMin <= sp.Z - se.Z
+					and zMax >= sp.Z + se.Z
+				if not covers then
+					error(`keep L{level}: the canopy does not cover the seat`)
+				end
+				-- the posts stand clear of the dais (an angled view saw a post cut across the seat)
+				for _, post in byName.BaldachinPost do
+					local pp, r = post.CFrame.Position, post.Size.Y / 2
+					for _, step in byName.DaisStep do
+						local e, c = halfExtents(step), step.CFrame.Position
+						local dx = math.max(math.abs(pp.X - c.X) - e.X, 0)
+						local dz = math.max(math.abs(pp.Z - c.Z) - e.Z, 0)
+						if math.sqrt(dx * dx + dz * dz) < r then
+							error(`keep L{level}: a baldachin post stands on the dais`)
+						end
+					end
+				end
+				-- the dossal: kingdom cloth between the throne back and the bay, wider than the back, in an
+				-- ivory border; the back has an ivory edge and carries the emblem slot
+				local back, edge = one("ThroneBack"), one("ThroneEdge")
+				local dossal, border, bay = one("Dossal"), one("DossalBorder"), one("EntranceBay")
+				expect(dossal:GetAttribute("KitTint")).never.toBeNil()
+				expect(back:GetAttribute("KitEmblemCF")).never.toBeNil()
+				local bayFace = bay.CFrame.Position.Z - bay.Size.Z / 2
+				local backRear = back.CFrame.Position.Z + back.Size.Z / 2
+				local dz = dossal.CFrame.Position.Z
+				expect(dz > backRear and dz < bayFace).toBe(true)
+				expect(dossal.Size.X).toBeGreaterThan(back.Size.X)
+				expect(border.Size.X).toBeGreaterThan(dossal.Size.X)
+				expect(edge.Size.X).toBeGreaterThan(back.Size.X)
+				for _, p in { border, edge } do
+					expect(p.Color.R > 0.85 and p.Color.G > 0.85 and p.Color.B > 0.75).toBe(true) -- ivory
+				end
+				-- the wall shield hangs above the canopy: its lowest point (the tip) no lower than the ridge
+				local shieldLow = math.huge
+				for _, p in { one("Crest"), one("CrestTip") } do
+					shieldLow = math.min(shieldLow, p.CFrame.Position.Y - halfExtents(p).Y)
+				end
+				expect(shieldLow).toBeGreaterThanOrEqual(ridge - 0.05)
 			end
-			expect(n >= 4 and n <= 6).toBe(true)
-			expect(tinted).toBe(true)
-			-- the bay merlons are 2.4 tall on a corbel that tops the bay by 0.55
-			expect(canopyLow).toBeGreaterThan(bayTop + 2.95)
 		end
 	end)
 
@@ -391,6 +452,19 @@ describe("Kit visible levels (G13.5)", function()
 					end
 					prevN, prevVol, prevH = n, vol, size.Y
 				end
+			end
+		end
+	end)
+
+	it("raises every house variant by at least 4 studs from L1 to L2 (B12: v1 read the same at 90 studs)", function()
+		for v = 1, 8 do
+			local h = {}
+			for level = 1, 2 do
+				local lo, hi = bounds(Buildings.build("house", level, "complete", COLORS[4], v))
+				h[level] = hi.Y - lo.Y
+			end
+			if h[2] < h[1] + 4 then
+				error(`house v{v}: L2 is {h[2] - h[1]} studs taller than L1 (want ≥ 4)`)
 			end
 		end
 	end)

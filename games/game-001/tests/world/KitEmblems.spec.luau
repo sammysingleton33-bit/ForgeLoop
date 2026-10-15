@@ -8,6 +8,9 @@
 	  emblem box, and differ from the field by ΔL* ≥ 25 (ivory crown, star and oak; the sun deep gold on gold).
 	- The keep carries two large aerial plaques for the overview camera (G13.6): one on the roof facing up,
 	  one on the donjon's back; nothing covers either.
+	- B12: every house variant flies an emblem pennant at both levels; the throne back carries the emblem; the
+	  aerial plaques' oak is the full 8-part lobed leaf; and the throne's marker (the royal standard pair and the
+	  baldachin) stays in view of the overview camera from behind the keep.
 	- Kit.setKingdomColor re-forms emblems to the new colour's kind on the same anchors (also after the model
 	  moved), removes them for neutral, adds them to a neutral model, and leaves every other part in place.
 ]]
@@ -40,7 +43,15 @@ local CASES: { { any } } = {
 	{ Color3.fromRGB(190, 190, 190), nil },
 }
 local MAX_LEVEL = { keep = 3, barracks = 4 }
-local FIELD_NAMES = { Banner = true, Flag = true, Pennant = true, Crest = true, EmblemPlaque = true, SignBoard = true }
+local FIELD_NAMES = {
+	Banner = true,
+	Flag = true,
+	Pennant = true,
+	Crest = true,
+	EmblemPlaque = true,
+	SignBoard = true,
+	ThroneBack = true,
+}
 local MIN_DL = 0.25 -- CIE L* / 100 between an emblem's silhouette and its field
 
 local function parts(model: Instance): { BasePart }
@@ -221,6 +232,26 @@ describe("Kingdom emblems on every banner, flag, pennant and shield", function()
 		end
 	end)
 
+	it("flies an emblem pennant on every house variant at both levels (B12: identity was colour-only)", function()
+		for level = 1, 2 do
+			for v = 1, 8 do
+				for _, case in CASES do
+					local m = Buildings.build("house", level, "complete", case[1], v)
+					local pennants = 0
+					for _, slot in slotsOf(m) do
+						if (slot.field :: BasePart).Name == "Pennant" then
+							pennants += 1
+						end
+					end
+					if pennants ~= 1 then
+						error(`house L{level} v{v}: {pennants} emblem pennants (want 1)`)
+					end
+					checkKinds(`house L{level} v{v}`, m, case[2])
+				end
+			end
+		end
+	end)
+
 	it("puts the right emblem on prop banners, slot signs and region-marker flags", function()
 		for _, case in CASES do
 			for name, model in props(case[1]) do
@@ -317,12 +348,31 @@ describe("Kingdom emblems on every banner, flag, pennant and shield", function()
 		local want = {
 			crown = "Part 1, WedgePart 2",
 			star = "WedgePart 5",
-			oak = "Part 5", -- 3 lobes (cylinders), diamond base, midrib accent
+			oak = "Part 5", -- 2 stacked lobes (cylinders), diamond base, ivory stem, midrib accent
 			sun = "Part 4", -- compact: 2 ray squares, ring accent, disc
 		}
 		for id, kind in KINDS do
 			local m = Kit.prop(`prop_banner_{BANNER_ASSET[id]}_01`)
 			for _, slot in slotsOf(m) do
+				if kind == "oak" then
+					-- B12: an ivory stem below the leaf (a dark one vanished on the dark field)
+					local anchor = anchorOf(slot.field :: BasePart)
+					local stemLow, lobeLow = math.huge, math.huge
+					for _, p in slot.marks do
+						-- the leaf axis is each part's own +Y (every part shares the leaf's tilt)
+						local up = anchor:VectorToObjectSpace(p.CFrame.UpVector)
+						local q = anchor:PointToObjectSpace(p.CFrame.Position)
+						local axis = Vector2.new(up.X, up.Y).Unit
+						local along = q.X * axis.X + q.Y * axis.Y
+						if p.Name == "EmblemStem" then
+							expect(p:GetAttribute("KitEmblemAccent")).toBeNil()
+							stemLow = math.min(stemLow, along - p.Size.Y / 2)
+						elseif p.Name == "Emblem" or p.Name == "EmblemLobe" then
+							lobeLow = math.min(lobeLow, along - math.max(p.Size.Y, p.Size.Z) / 2)
+						end
+					end
+					expect(stemLow < lobeLow - 0.05).toBe(true)
+				end
 				local n = {}
 				for _, p in slot.marks do
 					n[p.ClassName] = (n[p.ClassName] or 0) + 1
@@ -350,6 +400,24 @@ describe("Kingdom emblems on every banner, flag, pennant and shield", function()
 			end
 		end
 		expect(fullSuns).toBe(2)
+		-- and the full oak (B12): a slim core, the tip and two lobe pairs, the ivory stem and the midrib accent
+		local emerald = Buildings.build("keep", 1, "complete", CANON.emerald)
+		local fullOaks = 0
+		for _, slot in slotsOf(emerald) do
+			if (slot.field :: BasePart).Name == "EmblemPlaque" then
+				local discs, accents = 0, 0
+				for _, p in slot.marks do
+					expect(p.ClassName).toBe("Part")
+					discs += if (p :: Part).Shape == Enum.PartType.Cylinder then 1 else 0
+					accents += if p:GetAttribute("KitEmblemAccent") == true then 1 else 0
+				end
+				expect(#slot.marks).toBe(8)
+				expect(discs).toBe(5)
+				expect(accents).toBe(1)
+				fullOaks += 1
+			end
+		end
+		expect(fullOaks).toBe(2)
 	end)
 
 	it("draws the compact sun's 8 points: two equal squares at 45°, tips beyond the ring, disc inside it", function()
@@ -401,7 +469,8 @@ local PITCHES = { 50, 57.5, 65 }
 
 -- Half-spaces n·q ≤ c of each primitive in normalized part space (q = local position / Size, so the box is
 -- ±0.5); geometry as in blender/lib/kitparts.py (WedgePart: slope descending to -Z; CornerWedgePart: apex
--- over the local (+X, -Z) corner). Cylinders are tested as their box (conservative); balls exactly.
+-- over the local (+X, -Z) corner). Balls and cylinders are tested exactly (B12: as boxes, the crimson spire
+-- tiers' corners hid what the renders show; Roblox cylinders run along the local X axis, radius min(Y, Z) / 2).
 local BOX =
 	{ { 1, 0, 0, 0.5 }, { -1, 0, 0, 0.5 }, { 0, 1, 0, 0.5 }, { 0, -1, 0, 0.5 }, { 0, 0, 1, 0.5 }, { 0, 0, -1, 0.5 } }
 local WEDGE = table.clone(BOX)
@@ -420,8 +489,37 @@ local function rayHits(p: BasePart, o: Vector3, d: Vector3): boolean
 		local disc = b * b - (oc:Dot(oc) - r * r)
 		return disc >= 0 and -b + math.sqrt(disc) > 0
 	end
-	local planes = if p.ClassName == "WedgePart" then WEDGE elseif p.ClassName == "CornerWedgePart" then CORNER else BOX
 	local lo, ld = cf:PointToObjectSpace(o), cf:VectorToObjectSpace(d)
+	if p.ClassName == "Part" and (p :: Part).Shape == Enum.PartType.Cylinder then
+		-- the slab |x| ≤ X/2 intersected with the infinite cylinder y² + z² ≤ r²
+		local r, hx = math.min(size.Y, size.Z) / 2, size.X / 2
+		local t0, t1 = 0, 400
+		if math.abs(ld.X) < 1e-12 then
+			if math.abs(lo.X) > hx then
+				return false
+			end
+		else
+			local a, b = (-hx - lo.X) / ld.X, (hx - lo.X) / ld.X
+			t0, t1 = math.max(t0, math.min(a, b)), math.min(t1, math.max(a, b))
+		end
+		local qa = ld.Y * ld.Y + ld.Z * ld.Z
+		local qb = lo.Y * ld.Y + lo.Z * ld.Z
+		local qc = lo.Y * lo.Y + lo.Z * lo.Z - r * r
+		if qa < 1e-12 then
+			if qc > 0 then
+				return false
+			end
+		else
+			local disc = qb * qb - qa * qc
+			if disc < 0 then
+				return false
+			end
+			local sq = math.sqrt(disc)
+			t0, t1 = math.max(t0, (-qb - sq) / qa), math.min(t1, (-qb + sq) / qa)
+		end
+		return t0 <= t1
+	end
+	local planes = if p.ClassName == "WedgePart" then WEDGE elseif p.ClassName == "CornerWedgePart" then CORNER else BOX
 	local qo = Vector3.new(lo.X / size.X, lo.Y / size.Y, lo.Z / size.Z)
 	local qd = Vector3.new(ld.X / size.X, ld.Y / size.Y, ld.Z / size.Z)
 	local t0, t1 = 0, 400
@@ -522,9 +620,10 @@ describe("Keep aerial heraldry (overview camera, G13.6)", function()
 
 	-- Gate: ≥ 80 % of the emblem from the plaque's own side (roof: the front and both front diagonals; donjon
 	-- back: behind and both rear diagonals) at every overview pitch, with the widest caps (emerald hoardings)
-	-- and the tallest (crimson spires). Measured: 100 % head-on; ≥ 84 % on the diagonals (crimson spires clip a
-	-- corner at 50°). Pure side views are reported: a vertical plaque is edge-on there, and the L1 hall's
-	-- turrets hide about a third of the roof plaque at 50° (≥ 84 % from 57.5°).
+	-- and the tallest (crimson spires). Measured (B12, cylinders exact): 100 % head-on; ≥ 85 % on the roof
+	-- plaque's diagonals (crimson spires clip a corner at 50°), ≥ 97 % on the donjon plaque's. Pure side views
+	-- are reported: a vertical plaque is edge-on there, and the L1 hall's turrets hide up to a third of the roof
+	-- plaque at 50°.
 	it("keeps each plaque's emblem in view of the overview camera at 120–220 studs (50–65° down)", function()
 		local report = {}
 		local runs = {}
@@ -576,6 +675,187 @@ describe("Keep aerial heraldry (overview camera, G13.6)", function()
 				end
 			end
 		end
+	end)
+end)
+
+-- Throne marker from the overview camera (B12). The camera focuses on the ruler seated on the throne
+-- (RulerCameraController's first focus) and turns to any side; from behind, the hall and the donjon's cap hide
+-- the throne and its low baldachin, so the keep flies a royal standard pair at the terrace's front corners.
+-- The marker is every part tagged KitThroneMarker: the baldachin canopy and finial, and each standard's flag,
+-- border and finial. Unlike the plaque probe above, rays go to the camera's position (perspective): the
+-- controller's zoom/pitch pairs, 120 studs at 50°, 170 at 57.5°, 220 at 65° (Def.pitchFor).
+local ZOOMS = { { 120, 50 }, { 170, 57.5 }, { 220, 65 } }
+local SAMPLE_STEP = 0.6 -- studs between surface samples
+-- screen pixels per stud at distance d: Roblox's 70° vertical field of view on a 1080-pixel-high screen
+local function pixelsPerStud(d: number): number
+	return 1080 / (2 * d * math.tan(math.rad(35)))
+end
+
+type Sample = { p: Vector3, n: Vector3, a: number }
+
+-- Surface samples (point, outward normal, area) on a part's faces: a box's six faces, a wedge's five (its two
+-- triangles, back, bottom and slope), a cylinder as its box, a ball on a Fibonacci sphere.
+local function surfaceSamples(p: BasePart): { Sample }
+	local out: { Sample } = {}
+	local cf, s = p.CFrame, p.Size
+	if p.ClassName == "Part" and (p :: Part).Shape == Enum.PartType.Ball then
+		local r, n = math.min(s.X, s.Y, s.Z) / 2, 40
+		for i = 0, n - 1 do
+			local y = 1 - (i + 0.5) / n * 2
+			local rr, th = math.sqrt(1 - y * y), i * 2.399963
+			local dir = Vector3.new(math.cos(th) * rr, y, math.sin(th) * rr)
+			table.insert(out, { p = cf.Position + dir * r, n = dir, a = 4 * math.pi * r * r / n })
+		end
+		return out
+	end
+	local wedge = p.ClassName == "WedgePart"
+	local function face(n: Vector3, u: Vector3, v: Vector3, slope: boolean)
+		local lu = if slope then s.X else math.abs(u:Dot(s))
+		local lv = if slope then math.sqrt(s.Y * s.Y + s.Z * s.Z) else math.abs(v:Dot(s))
+		local nu, nv = math.max(1, math.ceil(lu / SAMPLE_STEP)), math.max(1, math.ceil(lv / SAMPLE_STEP))
+		local wn = cf:VectorToWorldSpace(Vector3.new(n.X / s.X, n.Y / s.Y, n.Z / s.Z)).Unit
+		for i = 0, nu - 1 do
+			for j = 0, nv - 1 do
+				local a, b = (i + 0.5) / nu - 0.5, (j + 0.5) / nv - 0.5
+				-- q in normalized part space; the slope runs from (y, z) = (-0.5, -0.5) to (0.5, 0.5)
+				local q = if slope then Vector3.new(a, b, b) else n * 0.5 + u * a + v * b
+				if wedge and not slope and q.Y > q.Z + 1e-6 then
+					continue -- outside the wedge (its +Y and -Z faces are edges, its sides triangles)
+				end
+				table.insert(out, {
+					p = cf:PointToWorldSpace(Vector3.new(q.X * s.X, q.Y * s.Y, q.Z * s.Z)),
+					n = wn,
+					a = lu * lv / (nu * nv),
+				})
+			end
+		end
+	end
+	local X, Y, Z = Vector3.xAxis, Vector3.yAxis, Vector3.zAxis
+	for _, f in { { X, Y, Z }, { -X, Y, Z }, { Y, X, Z }, { -Y, X, Z }, { Z, X, Y }, { -Z, X, Y } } do
+		face(f[1], f[2], f[3], false)
+	end
+	if wedge then
+		face(Vector3.new(0, 1, -1), X, Y, true)
+	end
+	return out
+end
+
+-- Screen pixels (1080p) of the throne marker the camera at `camera` sees, and the marker's tagged part count.
+-- A sample counts when it faces the camera and no other part of the model hides it (other marker parts too, so
+-- the gabled canopy's inside faces never count). Broad phase as in visibleFraction, per marker part: the rays
+-- of one part's samples stay inside the cylinder of its bounding radius around the axis to the camera.
+local function markerPixels(model: Model, camera: Vector3): (number, number)
+	local all, marks = {}, {}
+	for _, p in parts(model) do
+		if p.Transparency < 1 then
+			table.insert(all, p)
+		end
+		if p:GetAttribute("KitThroneMarker") == true and p:GetAttribute("KitEmblem") == nil then
+			table.insert(marks, p)
+		end
+	end
+	local px = 0
+	for _, mp in marks do
+		local c, reach = mp.CFrame.Position, mp.Size.Magnitude / 2
+		local axis = (camera - c).Unit
+		local others = {} -- every part (other marker parts too) that can block a ray from this one
+		for _, p in all do
+			local v = p.CFrame.Position - c
+			local r = p.Size.Magnitude / 2
+			local t = v:Dot(axis)
+			if p == mp or t < -r or (v - axis * t).Magnitude > r + reach then
+				continue
+			end
+			table.insert(others, p)
+		end
+		for _, smp in surfaceSamples(mp) do
+			local o = smp.p + smp.n * 0.03
+			local d = (camera - o).Unit
+			local facing = smp.n:Dot(d)
+			if facing <= 0.05 then
+				continue
+			end
+			local hidden = false
+			for _, p in others do
+				if rayHits(p, o, d) then
+					hidden = true
+					break
+				end
+			end
+			if not hidden then
+				local k = pixelsPerStud((camera - o).Magnitude)
+				px += smp.a * facing * k * k
+			end
+		end
+	end
+	return px, #marks
+end
+
+local function throneCamera(model: Model, azimuth: number, zoom: { number }): Vector3
+	local seat = model:FindFirstChild("Throne", true) :: BasePart
+	local focus = seat.CFrame.Position + Vector3.new(0, seat.Size.Y / 2 + 2, 0) -- the seated ruler
+	return focus + toCamera(azimuth, zoom[2]) * zoom[1]
+end
+
+-- Gate: ≥ 150 px of marker at 1080p from every rear-arc view (behind and the two rear diagonals, at every zoom),
+-- for every kingdom at keep L1–L3. 150 px is two 12 × 6 px flags, each about the 10 px at which FORGE-05's run 4
+-- still read the star and the sun at 220 studs. Measured (B12): 257 px at the worst view (keep L3, 220 studs,
+-- 65°, where both standards are in full view but small); at 120 studs the standards alone show 700+ px. The
+-- high baldachin it replaced showed 0 px from straight behind at 120 studs for all four kingdoms.
+local MARKER_MIN_PX = 150
+describe("Throne marker from the overview camera (B12)", function()
+	it("tests cylinders exactly: a ray past a tier's box corner misses, one through the tier hits", function()
+		local tier = Instance.new("Part")
+		tier.Shape = Enum.PartType.Cylinder
+		tier.Size = Vector3.new(2, 8, 8) -- upright (axis along world Y), radius 4
+		tier.CFrame = CFrame.Angles(0, 0, math.rad(90))
+		local up = Vector3.new(0, 1, 0)
+		-- (3.6, 3.6) lies inside the 8 x 8 box but 5.09 from the axis: outside the radius-4 cylinder
+		expect(rayHits(tier, Vector3.new(3.6, -5, 3.6), up)).toBe(false)
+		expect(rayHits(tier, Vector3.new(2.5, -5, 2.5), up)).toBe(true)
+		expect(rayHits(tier, Vector3.new(-20, 0.5, 0), Vector3.new(1, 0, 0))).toBe(true)
+		expect(rayHits(tier, Vector3.new(-20, 1.5, 0), Vector3.new(1, 0, 0))).toBe(false) -- above the slab
+	end)
+
+	it("keeps the throne's standards and baldachin in view from behind the keep (rear arc, every zoom)", function()
+		local worst, report = math.huge, {}
+		for _, id in { "crimson", "azure", "emerald", "gold" } do
+			for level = 1, 3 do
+				local m = Buildings.build("keep", level, "complete", CANON[id])
+				local low = math.huge
+				for _, az in { 135, 180, 225 } do
+					for _, zoom in ZOOMS do
+						local px, n = markerPixels(m, throneCamera(m, az, zoom))
+						expect(n).toBeGreaterThanOrEqual(5) -- canopy x2, finial, a flag on each standard
+						if px < MARKER_MIN_PX then
+							error(
+								`keep L{level} {id}: throne marker {math.floor(px)} px at azimuth {az}, {zoom[1]} studs`
+							)
+						end
+						low = math.min(low, px)
+					end
+				end
+				worst = math.min(worst, low)
+				table.insert(report, `L{level} {id} {math.floor(low)}`)
+			end
+		end
+		print("throne marker, fewest pixels from behind (1080p): " .. table.concat(report, ", "))
+		expect(worst).toBeGreaterThanOrEqual(MARKER_MIN_PX)
+	end)
+
+	it("has a marker probe that sees occlusion: the donjon hides the baldachin from straight behind", function()
+		-- with the standards' tags removed, only the canopy is left: hidden behind the hall and the donjon at 120
+		-- studs, while the same probe sees it from the front
+		local m = Buildings.build("keep", 1, "complete", CANON.crimson)
+		for _, p in parts(m) do
+			if p:GetAttribute("KitThroneMarker") == true and string.sub(p.Name, 1, 9) ~= "Baldachin" then
+				p:SetAttribute("KitThroneMarker", nil)
+			end
+		end
+		local behind = markerPixels(m, throneCamera(m, 180, ZOOMS[1]))
+		local front = markerPixels(m, throneCamera(m, 0, ZOOMS[1]))
+		expect(behind).toBeLessThan(MARKER_MIN_PX / 3)
+		expect(front).toBeGreaterThan(MARKER_MIN_PX * 3)
 	end)
 end)
 

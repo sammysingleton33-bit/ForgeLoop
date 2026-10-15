@@ -70,6 +70,7 @@ export type DoorOpts = {
 	stoneLight: Color3?,
 	voussoirs: number?,
 	step: number?, -- stoop height below the door sill (0 = none)
+	straps: boolean?, -- iron straps on the leaf (default true; the keep's door hides behind the throne's dossal)
 }
 
 local Pieces = {}
@@ -246,7 +247,9 @@ end
 --   crown 3: two tall wedges (outer edges upright, slopes meeting at the base centre) + a diamond whose lower
 --            half fills the band; three points, notches at 2/3 of the height
 --   star  5: five 36-54-90 wedges in a pinwheel; their union is exactly the regular five-pointed star
---   oak   5: three round lobes + a diamond base (the leaf tapers to the stem) + a darker midrib and stem,
+--   oak   5: compact: two stacked round lobes tapering through a diamond into a short ivory stem, and a short
+--            darker midrib (from the stem to mid-leaf)
+--         8: full (aerial plaques): a slim core, the tip and two lobe pairs, stem and midrib (the UI's lobed leaf);
 --            the leaf in bend (tilted 35°) so it never reads as a tree
 --   sun   4: compact: two squares (8 pointed rays) + a field-colour ring + the disc
 --         9: full (aerial plaques): the disc + 8 separate wedge rays
@@ -341,37 +344,76 @@ local function buildEmblem(
 	elseif kind == "oak" then
 		-- the leaf lies in bend (seen from the front: stem lower left, tip upper right; local +X shows on the
 		-- viewer's left, so the turn is +35°). Upright, the aerial view's foreshortening made it a lollipop tree.
+		-- A thin ivory stem below the leaf (a dark stem vanished on the dark field: "a blob with a line", colour-vision
+		-- run 4) and a short dark midrib from the stem up the lower leaf, as on the UI's Crest.oakLeaf.
 		local leaf = cf * CFrame.Angles(0, 0, rad(35))
-		local oy = 0.025
-		add(disc(ctx, "Emblem", leaf * CFrame.new(0, (0.26 + oy) * s, z()), 0.3 * s, EMBLEM_T, EMBLEM_IVORY))
-		for _, sx in { -1, 1 } do
+		local full = detail == "full"
+		-- { x, y, diameter } discs in leaf units (y along the leaf). Compact (flags, banners, pennants, shields: 5–25
+		-- px): two stacked lobes tapering through a diamond into the stem, which reads as a leaf at 12 px (three
+		-- round lobes read as a cloud or a clover). Full (the aerial plaques, 21–59 px): a slim core with the tip
+		-- and two lobe pairs set out from it, so the oak's notches read from 26 px.
+		local oy = if full then 0.02 else 0.045
+		if full then
+			add(
+				block(
+					ctx,
+					"EmblemCore",
+					Vector3.new(0.15 * s, 0.62 * s, EMBLEM_T),
+					leaf * CFrame.new(0, (0.04 + oy) * s, z()),
+					EMBLEM_IVORY
+				)
+			)
+		end
+		local lobes = if full
+			then {
+				{ 0, 0.36, 0.18 },
+				{ -0.11, 0.23, 0.19 },
+				{ 0.11, 0.23, 0.19 },
+				{ -0.14, 0.04, 0.23 },
+				{ 0.14, 0.04, 0.23 },
+			}
+			else { { 0, 0.22, 0.32 }, { 0, -0.02, 0.36 } }
+		for i, l in lobes do
 			add(
 				disc(
 					ctx,
-					"EmblemLobe",
-					leaf * CFrame.new(sx * 0.13 * s, (0.06 + oy) * s, z()),
-					0.28 * s,
+					if i == 1 then "Emblem" else "EmblemLobe",
+					leaf * CFrame.new(l[1] * s, (l[2] + oy) * s, z()),
+					l[3] * s,
 					EMBLEM_T,
 					EMBLEM_IVORY
 				)
 			)
 		end
-		local d = 0.22 * s
+		if not full then
+			local d = 0.22 * s
+			add(
+				block(
+					ctx,
+					"EmblemBase",
+					Vector3.new(d, d, EMBLEM_T),
+					leaf * CFrame.new(0, (-0.2 + oy) * s, z()) * CFrame.Angles(0, 0, PI / 4),
+					EMBLEM_IVORY
+				)
+			)
+		end
+		local stemL, stemY = if full then 0.26 else 0.18, if full then -0.36 else -0.38
 		add(
 			block(
 				ctx,
-				"EmblemBase",
-				Vector3.new(d, d, EMBLEM_T),
-				leaf * CFrame.new(0, (-0.12 + oy) * s, z()) * CFrame.Angles(0, 0, PI / 4),
+				"EmblemStem",
+				Vector3.new(math.max(0.055 * s, 0.1), stemL * s, EMBLEM_T),
+				leaf * CFrame.new(0, (stemY + oy) * s, z()),
 				EMBLEM_IVORY
 			)
 		)
+		local ribL, ribY = if full then 0.32 else 0.3, if full then -0.12 else -0.12
 		add(
 			block(
 				ctx,
 				"EmblemRib",
-				Vector3.new(math.max(0.055 * s, 0.12), 0.74 * s, EMBLEM_T),
-				leaf * CFrame.new(0, (-0.09 + oy) * s, z()),
+				Vector3.new(math.max(0.03 * s, 0.08), ribL * s, EMBLEM_T),
+				leaf * CFrame.new(0, (ribY + oy) * s, z()),
 				shade(color, RIB_TINT),
 				M.SmoothPlastic,
 				RIB_TINT
@@ -934,53 +976,103 @@ end
 
 -- Kingdom flag on a pole, with the kingdom emblem on its -Z face. style "emerald" (FORGE-00 calibration: the
 -- emerald plot sits on green terrain) flies a lighter, high-saturation tint with a cream border; without
--- style the Flag is the exact kingdom colour (region markers, Kit.spec).
-local function flagpole(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3, style: string?)
-	column(ctx, "FlagPole", 0.2, h, Vector3.new(x, y, z), C.woodDark, M.Wood)
+-- style the Flag is the exact kingdom colour (region markers, Kit.spec). dir (default +1) is the side the flag
+-- flies to along X; scale (default 1) sizes the flag, its emblem and the finial (the keep's royal standards).
+local function flagpole(
+	ctx: Ctx,
+	x: number,
+	y: number,
+	z: number,
+	h: number,
+	color: Color3,
+	style: string?,
+	dir: number?,
+	scale: number?
+): { BasePart }
+	local d, k = dir or 1, scale or 1
+	local first = #ctx.model:GetChildren()
+	column(ctx, "FlagPole", 0.2 * math.max(k, 1), h, Vector3.new(x, y, z), C.woodDark, M.Wood)
 	local f = if style == "emerald" then EMERALD_LIGHT else 1
+	local fy = y + h - 1.2 * k
 	local flag = block(
 		ctx,
 		"Flag",
-		Vector3.new(3.4, 2.0, 0.15),
-		CFrame.new(x + 1.8, y + h - 1.2, z),
+		Vector3.new(3.4 * k, 2.0 * k, 0.15),
+		CFrame.new(x + d * 1.8 * k, fy, z),
 		shade(color, f),
 		M.Fabric,
 		f
 	)
 	if style == "emerald" then
-		block(ctx, "FlagBorder", Vector3.new(3.75, 2.35, 0.1), CFrame.new(x + 1.85, y + h - 1.2, z), IVORY, M.Fabric)
+		block(
+			ctx,
+			"FlagBorder",
+			Vector3.new(3.4 * k + 0.35, 2.0 * k + 0.35, 0.1),
+			CFrame.new(x + d * (1.8 * k + 0.05), fy, z),
+			IVORY,
+			M.Fabric
+		)
 	end
-	emblem(ctx, flag, CFrame.new(x + 1.85, y + h - 1.2, z - 0.075), 1.6, color)
-	ball(ctx, "FlagFinial", 0.55, Vector3.new(x, y + h + 0.2, z), C.gold, M.Metal)
+	emblem(ctx, flag, CFrame.new(x + d * (1.8 * k + 0.05), fy, z - 0.075), 1.6 * k, color)
+	ball(ctx, "FlagFinial", 0.55 * k, Vector3.new(x, y + h + 0.2 * k, z), C.gold, M.Metal)
+	-- returns the parts it built except the emblem's (Kit.setKingdomColor replaces those)
+	local built = {}
+	local kids = ctx.model:GetChildren()
+	for i = first + 1, #kids do
+		if kids[i]:GetAttribute("KitEmblem") == nil then
+			table.insert(built, kids[i] :: BasePart)
+		end
+	end
+	return built
 end
 
--- Small pennant on a pole (ridge pennants): pole, pointed kingdom-colour flag with the emblem, gold knob.
-local function pennant(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3, style: string?)
-	column(ctx, "PennantPole", 0.13, h, Vector3.new(x, y, z), C.woodDark, M.Wood)
+-- Small pennant on a pole (ridge pennants): pole, pointed kingdom-colour flag with the emblem, gold knob. dir
+-- (default +1) is the side it flies to along X; scale (default 1) sizes the cloth, its emblem and the knob.
+local function pennant(
+	ctx: Ctx,
+	x: number,
+	y: number,
+	z: number,
+	h: number,
+	color: Color3,
+	style: string?,
+	dir: number?,
+	scale: number?
+)
+	local d, k = dir or 1, scale or 1
+	column(ctx, "PennantPole", 0.13 * math.max(k, 1), h, Vector3.new(x, y, z), C.woodDark, M.Wood)
 	local f = if style == "emerald" then EMERALD_LIGHT else 1
+	local py = y + h - 0.85 * k
 	local cloth = block(
 		ctx,
 		"Pennant",
-		Vector3.new(2.2, 1.3, 0.12),
-		CFrame.new(x + 1.15, y + h - 0.85, z),
+		Vector3.new(2.2 * k, 1.3 * k, 0.12),
+		CFrame.new(x + d * 1.15 * k, py, z),
 		shade(color, f),
 		M.Fabric,
 		f
 	)
-	emblem(ctx, cloth, CFrame.new(x + 1.05, y + h - 0.85, z - 0.06), 1.1, color)
+	emblem(ctx, cloth, CFrame.new(x + d * 1.05 * k, py, z - 0.06), 1.1 * k, color)
 	block(
 		ctx,
 		"PennantTip",
-		Vector3.new(0.92, 0.92, 0.1),
-		CFrame.new(x + 2.25, y + h - 0.85, z) * CFrame.Angles(0, 0, rad(45)),
+		Vector3.new(0.92 * k, 0.92 * k, 0.1),
+		CFrame.new(x + d * 2.25 * k, py, z) * CFrame.Angles(0, 0, rad(45)),
 		shade(color, f),
 		M.Fabric,
 		f
 	)
 	if style == "emerald" then
-		block(ctx, "PennantBorder", Vector3.new(2.5, 1.6, 0.08), CFrame.new(x + 1.2, y + h - 0.85, z), IVORY, M.Fabric)
+		block(
+			ctx,
+			"PennantBorder",
+			Vector3.new(2.2 * k + 0.3, 1.3 * k + 0.3, 0.08),
+			CFrame.new(x + d * (1.15 * k + 0.05), py, z),
+			IVORY,
+			M.Fabric
+		)
 	end
-	ball(ctx, "PennantKnob", 0.4, Vector3.new(x, y + h + 0.1, z), C.gold, M.Metal)
+	ball(ctx, "PennantKnob", 0.4 * k, Vector3.new(x, y + h + 0.1 * k, z), C.gold, M.Metal)
 end
 
 -- Stepped spire (crimson): flared eave ring + tapering cylinder tiers, alternating shade.
@@ -1232,8 +1324,17 @@ local function doorAt(ctx: Ctx, cf: CFrame, o: DoorOpts?)
 	end
 	block(ctx, "Door", Vector3.new(W, hr, 0.36), cf * CFrame.new(0, hr / 2, -0.08), leafColor, M.WoodPlanks, leafTint)
 	disc(ctx, "DoorArch", cf * CFrame.new(0, hr, -0.06), W, 0.3, leafColor, M.WoodPlanks, leafTint)
-	for _, fy in { 0.24, 0.7 } do
-		block(ctx, "DoorStrap", Vector3.new(W * 0.84, 0.3, 0.12), cf * CFrame.new(0, hr * fy, -0.31), C.iron, M.Metal)
+	if opts.straps ~= false then
+		for _, fy in { 0.24, 0.7 } do
+			block(
+				ctx,
+				"DoorStrap",
+				Vector3.new(W * 0.84, 0.3, 0.12),
+				cf * CFrame.new(0, hr * fy, -0.31),
+				C.iron,
+				M.Metal
+			)
+		end
 	end
 	local st, stl = opts.stone or C.stone, opts.stoneLight or C.stoneLight
 	for _, sx in { -1, 1 } do
@@ -1436,20 +1537,20 @@ local function emblemPlaque(ctx: Ctx, cf: CFrame, size: number, color: Color3, r
 	return field
 end
 
--- Throne on a three-step dais (G13.6). cf = the dais' back-centre on the floor, local -Z = the way the
--- throne faces. Seat "Throne" (Anchored, CanCollide) with a tall kingdom-colour back and gold trim. The back
--- stands 0.35 in front of cf (clear of a door leaf and its straps behind it). canopyY (height above cf)
--- adds a baldachin: two tall posts, a kingdom-cloth gabled canopy and a gold finial (5 parts),
--- high above the seat so the throne spot reads from behind and from high aerial angles while the seat stays
--- open to oblique views. Every part carries the attribute KitThrone. Returns the Seat and the dais top.
-local function throne(
-	ctx: Ctx,
-	cf: CFrame,
-	color: Color3,
-	style: string,
-	stone: Stone?,
-	canopyY: number?
-): (BasePart, number)
+-- Throne on a three-step dais (G13.6) under a baldachin, against a cloth of estate (B12, FORGE-00 D-019 review).
+-- cf = the dais' back-centre on the floor, local -Z = the way the throne faces; the keep puts cf 1.6 before the
+-- bay face, so nothing of the throne group reaches the door, its jambs or its voussoirs.
+--   - Seat "Throne" (Anchored, CanCollide) on a wooden base, gold arms, a tall kingdom-colour back with an ivory
+--     edge (it reads without colour) and the kingdom emblem above the seated ruler's head.
+--   - Dossal: a kingdom cloth (lighter tint) with an ivory border hung behind the throne, so the throne stands
+--     against a framed cloth instead of the dark door opening.
+--   - Baldachin: two posts on the dais' front corners and a gabled kingdom canopy with a gold finial,
+--     THRONE_CANOPY_CLEAR studs over the seat (the seat's open-sky rule) and deep enough to cover it.
+-- Every part carries the attribute KitThrone; the canopy and its finial also carry KitThroneMarker (the keep's
+-- royal standards carry it too: the marker the overview camera must find from every side). Returns the Seat and
+-- the dais top.
+local THRONE_CANOPY_CLEAR = 8.05 -- canopy underside above the seat's top face (KitBuildings: ≥ 8)
+local function throne(ctx: Ctx, cf: CFrame, color: Color3, style: string, stone: Stone?): (BasePart, number)
 	local S = stone or STONE.neutral
 	local first = #ctx.model:GetChildren()
 	local steps = { { 5.8, 4.4 }, { 5.0, 3.6 }, { 4.4, 3.0 } } -- narrower than a 6-wide door's jambs
@@ -1465,15 +1566,6 @@ local function throne(
 	end
 	local top = #steps * 0.6
 	local sz = -1.6
-	block(
-		ctx,
-		"DaisCarpet",
-		Vector3.new(4, 0.1, 3.2),
-		cf * CFrame.new(0, top + 0.05, sz),
-		shade(color, 0.7),
-		M.Fabric,
-		0.7
-	)
 	block(ctx, "ThroneBase", Vector3.new(3.6, 1, 3.1), cf * CFrame.new(0, top + 0.53, sz), C.woodDark, M.Wood)
 	local seat = Instance.new("Seat")
 	seat.Shape = Enum.PartType.Block
@@ -1483,52 +1575,73 @@ local function throne(
 	finish(seat, ctx, "Throne", shade(color, 0.85), M.Fabric, 0.85)
 	for _, sx in { -1, 1 } do
 		block(ctx, "ThroneArm", Vector3.new(0.5, 1, 2.8), cf * CFrame.new(sx * 1.85, top + 2.4, sz), C.gold, M.Metal)
-		ball(ctx, "ThroneFinial", 0.85, (cf * CFrame.new(sx * 1.8, top + 7.35, sz + 0.8)).Position, C.gold, M.Metal)
 	end
-	-- back: rear face 0.45 in front of cf (the keep puts cf 0.4 before the bay face: clear of door and voussoirs)
-	block(ctx, "ThroneBack", Vector3.new(3.6, 5.5, 0.7), cf * CFrame.new(0, top + 3.85, sz + 0.8), color, M.Fabric, 1)
-	block(ctx, "ThroneTrim", Vector3.new(4.1, 0.5, 0.9), cf * CFrame.new(0, top + 6.85, sz + 0.7), C.gold, M.Metal)
-	-- no emblem on the back: the seated ruler covers it (the kingdom reads from the standards and the crest)
-	if canopyY then
-		local f = if style == "emerald" then EMERALD_LIGHT else 1
-		local pz, cw, rise = -4.0, 8.2, 1.7
-		for _, sx in { -1, 1 } do
-			column(
-				ctx,
-				"BaldachinPost",
-				0.22,
-				canopyY + 0.2,
-				(cf * CFrame.new(sx * 3.6, 0, pz)).Position,
-				C.woodDark,
-				M.Wood
-			)
-		end
-		local zf, zb = pz - 0.45, 0.35 -- canopy from just past the posts back over the bay's merlons
-		local half = (zb - zf) / 2
-		local zc = (zf + zb) / 2
+	-- back (top + 1.1 .. top + 7.3) with an ivory edge 0.4 proud of its sides and top, the emblem above the head
+	local back = block(
+		ctx,
+		"ThroneBack",
+		Vector3.new(3.6, 6.2, 0.7),
+		cf * CFrame.new(0, top + 4.2, sz + 0.8),
+		color,
+		M.Fabric,
+		1
+	)
+	block(ctx, "ThroneEdge", Vector3.new(4.4, 6.5, 0.5), cf * CFrame.new(0, top + 4.45, sz + 1.0), IVORY, M.Fabric)
+	emblem(ctx, back, cf * CFrame.new(0, top + 6.25, sz + 0.45), 1.7, color)
+	-- baldachin: posts on the bottom step's front corners, canopy from just before them back over the dossal
+	local f = if style == "emerald" then EMERALD_LIGHT else 1
+	local cy = top + 2 + THRONE_CANOPY_CLEAR -- canopy underside
+	-- posts stand on the terrace just outside the dais' front corners (inside them, an angled view saw a post cut
+	-- across the seat)
+	local pz, px, cw, rise = -4.25, 3.25, 7.3, 1.6
+	for _, sx in { -1, 1 } do
+		column(ctx, "BaldachinPost", 0.3, cy + 0.2, (cf * CFrame.new(sx * px, 0, pz)).Position, C.woodDark, M.Wood)
+	end
+	local zf, zb = pz - 0.4, 0.75
+	local half = (zb - zf) / 2
+	local zc = (zf + zb) / 2
+	for _, side in { -1, 1 } do
 		wedge(
 			ctx,
 			"BaldachinCanopy",
 			Vector3.new(cw, rise, half),
-			cf * CFrame.new(0, canopyY + rise / 2, zc - half / 2),
+			cf * CFrame.new(0, cy + rise / 2, zc + side * half / 2) * CFrame.Angles(0, if side > 0 then PI else 0, 0),
 			shade(color, f),
 			M.Fabric,
 			f
 		)
-		wedge(
-			ctx,
-			"BaldachinCanopy",
-			Vector3.new(cw, rise, half),
-			cf * CFrame.new(0, canopyY + rise / 2, zc + half / 2) * CFrame.Angles(0, PI, 0),
-			shade(color, f),
-			M.Fabric,
-			f
-		)
-		ball(ctx, "BaldachinFinial", 1.1, (cf * CFrame.new(0, canopyY + rise + 0.35, zc)).Position, C.gold, M.Metal)
 	end
+	ball(ctx, "BaldachinFinial", 1.1, (cf * CFrame.new(0, cy + rise + 0.35, zc)).Position, C.gold, M.Metal)
+	-- dossal: hangs behind the dais (z 0.35..0.55) under the canopy, its ivory border just behind it
+	local dt = if style == "emerald" then EMERALD_LIGHT else 1.25
+	local dh = cy - 0.3 - 0.35
+	block(
+		ctx,
+		"Dossal",
+		Vector3.new(5, dh, 0.2),
+		cf * CFrame.new(0, 0.35 + dh / 2, 0.45),
+		shade(color, dt),
+		M.Fabric,
+		dt
+	)
+	block(
+		ctx,
+		"DossalBorder",
+		Vector3.new(5.9, dh + 0.4, 0.12),
+		cf * CFrame.new(0, 0.2 + (dh + 0.4) / 2, 0.6),
+		IVORY,
+		M.Fabric
+	)
 	local children = ctx.model:GetChildren()
 	for i = first + 1, #children do
-		children[i]:SetAttribute("KitThrone", true)
+		local p = children[i]
+		if p:GetAttribute("KitEmblem") ~= nil then
+			continue -- the back's emblem belongs to its slot (Kit.setKingdomColor replaces it)
+		end
+		p:SetAttribute("KitThrone", true)
+		if p.Name == "BaldachinCanopy" or p.Name == "BaldachinFinial" then
+			p:SetAttribute("KitThroneMarker", true)
+		end
 	end
 	return seat, top
 end
@@ -1780,6 +1893,7 @@ Pieces.emblemPlaque = emblemPlaque
 Pieces.banner = banner
 Pieces.crest = crest
 Pieces.throne = throne
+Pieces.THRONE_CANOPY_CLEAR = THRONE_CANOPY_CLEAR
 Pieces.flagpole = flagpole
 Pieces.pennant = pennant
 Pieces.chimney = chimney

@@ -62,7 +62,8 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.4.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
+Kit.VERSION = "0.4.1" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques;
+-- 0.4.1 (B12): throne baldachin, dossal and royal standards; a pennant on every house; the lobed oak
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",

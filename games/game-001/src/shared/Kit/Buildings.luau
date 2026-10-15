@@ -22,8 +22,8 @@
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
-		keep        300   182–292  (L1 182–236, L2 204–260, L3 234–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
-		house       170   99–162   (8 variants, L1–L2)
+		keep        300   172–291  (L1 172–235, L2 194–259, L3 224–291; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
+		house       170   99–168   (8 variants, L1–L2)
 		farm        190   151–188
 		storehouse  150   87–96
 		lumbercamp  130   46–59
@@ -36,10 +36,14 @@
 		stages      110   29–85    (any type, stage 1..3)
 	Emblems (D-039, colour-vision finding 3) cost crown 3 / star 5 / oak 5 / sun 4 parts per banner, flag, pennant
 	or shield (the keep's two aerial plaques: field + border + emblem, the sun with 9). They were paid for by
-	dropping the banner trim bands, the throne-back emblem (the seated ruler hides it), the keep's L2+ turret
-	banners (the roof plaque replaces them), the standard finials and the hall's low side/back arrow slits, coarser
-	keep plinth facing (10-stud stones) and the barracks L4 jetty banners (the gatehouse carries its own). Keep L2
-	in the emerald colours sits exactly at its 260 cap: any new keep detail needs a cut first.
+	dropping the banner trim bands, the keep's L2+ turret banners (the roof plaque replaces them), the standard
+	finials and the hall's low side/back arrow slits, coarser keep plinth facing (10-stud stones) and the barracks
+	L4 jetty banners (the gatehouse carries its own).
+	B12 (FORGE-00 D-019 review): the keep's throne group (dossal, ivory edge, back emblem, low baldachin), its
+	royal standards and the plaques' 8-part oak were paid for by the hidden door straps, two voussoirs, the
+	throne's knobs, top trim and carpet, the hall's corbel brackets and the standards' crossbar banners. Keep L2 in
+	the emerald colours sits at 259 of its 260 cap: any new keep detail needs a cut first. House v1 L2's
+	woodshed holds one row of logs (its pennant).
 	Every part stays inside Kit.footprint (sides and back strictly; the front may carry entrance steps up
 	to 2 studs, short of the Door attachment) — footprints are pinned by the spec and never grow.
 ]]
@@ -97,8 +101,8 @@ type Ctx = Parts.Ctx
 local function flagpole(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3)
 	Pieces.flagpole(ctx, x, y, z, h, color, hueStyle(color))
 end
-local function pennant(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3)
-	Pieces.pennant(ctx, x, y, z, h, color, hueStyle(color))
+local function pennant(ctx: Ctx, x: number, y: number, z: number, h: number, color: Color3, dir: number?, k: number?)
+	Pieces.pennant(ctx, x, y, z, h, color, hueStyle(color), dir, k)
 end
 type Opening = Pieces.Opening
 
@@ -207,6 +211,11 @@ type HouseSpec = {
 	seed: number,
 }
 
+-- Every house flies a ridge pennant with the kingdom emblem, 1.5x the building pennant so the emblem reads at
+-- gameplay distance (≈ 17 px at 76 studs, 1080p).
+local HOUSE_PENNANT_H = 5.2
+local HOUSE_PENNANT_SCALE = 1.5
+
 -- Archetypes: 1 stone-and-timber townhouse (tile, jetty), 2 thatched cottage (porch), 3 stone cottage
 -- (tile, dormer), 4 tall thatched house (lean-to woodshed). Variants 5..8 mirror 1..4.
 local function houseSpec(level: number, variant: number): HouseSpec
@@ -220,7 +229,8 @@ local function houseSpec(level: number, variant: number): HouseSpec
 			d = if big then 12 else 11,
 			plinth = 1.2,
 			floors = if big
-				then { { h = 10.2, kind = "stone" }, { h = 8.4, kind = "timber" } }
+				-- L2 stands 4.9 studs taller than L1 (B12: dormer and width alone read as the same house at 90 studs)
+				then { { h = 11.6, kind = "stone" }, { h = 10, kind = "timber" } }
 				else { { h = 9.6, kind = "stone" }, { h = 7.6, kind = "timber" } },
 			jetty = 0.8,
 			roof = "tile",
@@ -521,14 +531,13 @@ local function buildHouse(ctx: Ctx, level: number, color: Color3, _style: string
 			ctx,
 			CFrame.new((x0 + x1) / 2, 0, 0) * CFrame.Angles(0, PI / 2, 0),
 			d - 2.6,
-			2,
+			if ld < 2 then 1 else 2, -- v1's 1.8-deep shed holds one row (a part for its pennant)
 			if ld < 3 then 0.5 else 0.6
 		)
 	end
-	-- thatch houses fly a kingdom pennant on the ridge (thatch alone never says which kingdom)
-	if s.roof == "thatch" then
-		pennant(ctx, -csx * (w / 2 - 0.6), info.ridgeY - 0.5, 0, 4.2, color)
-	end
+	-- every house flies a kingdom pennant with the emblem on the ridge end away from the chimney, flying in over
+	-- the ridge (B12, FORGE-00 calibration: roof and shutter colour alone made house identity colour-only)
+	pennant(ctx, -csx * (w / 2 - 0.6), info.ridgeY - 0.5, 0, HOUSE_PENNANT_H, color, csx, HOUSE_PENNANT_SCALE)
 	houseProps(ctx, s, doorX)
 end
 
@@ -543,9 +552,16 @@ end
 -- ------------------------------------------------------------------ keep
 
 -- Keep: a broad hall (wide facade) with round corner turrets, a donjon behind, a front bay with the grand
--- door and, in front of it, an open terrace with the throne dais (G13.6) framed by kingdom standards.
+-- door and, in front of it, an open terrace with the throne dais (G13.6) under a baldachin, against a cloth of
+-- estate, framed by two tall royal standards.
 -- Levels grow height and roof count: L1 5 caps; L2 + bartizans on the bay (7); L3 + side towers (9).
 local KEEP_PLAQUE_LIFT = 2.4 -- the roof plaque's face clears the 2.6 merlons' sight lines from the overview camera
+-- royal standards (B12): the overview camera focuses on the seated ruler and can turn to any side; from behind,
+-- the donjon's cap hides everything near the keep's centre line, so two tall kingdom flags at the terrace's front
+-- corners, flying inward toward the throne, rise this far above the hall top and mark the throne from behind
+-- (KitEmblems.spec gates it)
+local KEEP_STANDARD_UP = 12
+local KEEP_STANDARD_SCALE = 1.6
 BUILDERS.keep = function(ctx, level, color, style, fp)
 	local S = stoneFor(style)
 	local lv = math.clamp(level, 1, 3)
@@ -572,10 +588,6 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 		M.Slate
 	)
 	block(ctx, "Corbel", Vector3.new(2 * hw + 1.6, 1.3, 2 * hd + 1.6), CFrame.new(0, topY - 0.15, zc), S.light, M.Slate)
-	local span = hw - tr - 0.9
-	for i = -1, 1 do
-		bracket(ctx, CFrame.new(i * span * 0.75, topY - 0.8, fz), 0.8, 1.4, S.light, M.Slate)
-	end
 	crenellate(
 		ctx,
 		2 * hw + 1.6,
@@ -671,8 +683,14 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 			M.Slate
 		)
 	end
-	doorAt(ctx, CFrame.new(0, pl, tz0), { w = 6, h = 10.4, voussoirs = 7, stone = S.base, stoneLight = S.light })
-	crest(ctx, CFrame.new(0, courseY + 2.6, tz0 - 0.25), 3.4, color, style)
+	-- the throne's dossal hangs in front of the door: no straps, five voussoirs (the parts paid for B12's throne)
+	doorAt(
+		ctx,
+		CFrame.new(0, pl, tz0),
+		{ w = 6, h = 10.4, voussoirs = 5, stone = S.base, stoneLight = S.light, straps = false }
+	)
+	-- the shield hangs above the throne's canopy (its tip at the canopy ridge), under the bay corbel
+	crest(ctx, CFrame.new(0, pl + 16, tz0 - 0.25), 3.4, color, style)
 	if lv >= 2 then
 		-- bartizans (little corbelled turrets) on the bay's front corners
 		for _, sx in { -1, 1 } do
@@ -684,7 +702,7 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 	end
 	-- terrace with the throne dais, standards at its front corners, stairs down to the ground
 	local tw = bw + 7
-	local td = 5
+	local td = 6.2 -- the dais, 1.6 before the bay, ends 0.2 short of the terrace front
 	local tz1 = tz0 - td
 	block(
 		ctx,
@@ -704,10 +722,15 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 			M.Slate
 		)
 		local px, pz = sx * (tw / 2 - 0.45), tz1 + 0.5
-		column(ctx, "StandardPole", 0.22, 8.4, Vector3.new(px, pl + 1.2, pz), C.woodDark, M.Wood)
-		banner(ctx, px, pl + 9, pz + 0.3, 0, color, 4.2, style, 2)
+		-- royal standard on the terrace wall's front end: a tall pole, the flag flying in toward the throne
+		local poleH = topY + KEEP_STANDARD_UP - pl - 1.2
+		for _, p in Pieces.flagpole(ctx, px, pl + 1.2, pz, poleH, color, style, -sx, KEEP_STANDARD_SCALE) do
+			if p.Name ~= "FlagPole" then
+				p:SetAttribute("KitThroneMarker", true)
+			end
+		end
 	end
-	local steps = { { tw - 2.4, pl * 2 / 3, 1.1 }, { tw - 1.2, pl / 3, 1.1 } }
+	local steps = { { tw - 2.4, pl * 2 / 3, 0.95 }, { tw - 1.2, pl / 3, 0.95 } } -- the last stair ends fp/2 + 1.9 out
 	local z0 = tz1
 	for _, st in steps do
 		block(
@@ -720,8 +743,8 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 		)
 		z0 -= st[3]
 	end
-	-- 0.4 in front of the bay face: the dais and the throne back stay clear of the door, straps and voussoirs
-	throne(ctx, CFrame.new(0, pl, tz0 - 0.4), color, style, S, math.max(bayTop + 3.2, topY + 3.4) - pl)
+	-- 1.6 in front of the bay face: the dossal behind the throne hangs clear of the door, its jambs and voussoirs
+	throne(ctx, CFrame.new(0, pl, tz0 - 1.6), color, style, S)
 	-- banners on the hall face between the bay and the turrets, arched windows above them
 	for _, sx in { -1, 1 } do
 		local bx = sx * (bw / 2 + (hw - tr - bw / 2) / 2)
@@ -741,8 +764,8 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 			{ arched = true, w = 2.4, h = 4.6, frame = S.light, frameMaterial = M.Slate, bare = true }
 		)
 	end
-	attach(ctx, "Door", Vector3.new(0, 0, -(fp.X - 8) / 2 - 5.5))
-	workSpots(ctx, { Vector3.new(-8, 0, -(fp.X - 8) / 2 - 6), Vector3.new(8, 0, -(fp.X - 8) / 2 - 6) })
+	attach(ctx, "Door", Vector3.new(0, 0, -fp.X / 2 - 2.4)) -- 0.5 in front of the last stair
+	workSpots(ctx, { Vector3.new(-8, 0, -fp.X / 2 - 2.9), Vector3.new(8, 0, -fp.X / 2 - 2.9) })
 end
 
 -- ------------------------------------------------------------------ storehouse / granary
