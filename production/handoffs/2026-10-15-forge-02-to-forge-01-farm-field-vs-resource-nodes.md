@@ -1,5 +1,8 @@
 # Handoff: FORGE-02 → FORGE-01 (cc FORGE-00, FORGE-05) · FL-0116 farm fields vs resource nodes · 2026-10-15
 
+> **Superseded 2026-10-15:** FORGE-00 assigned this to FORGE-02 as FL-0124 (D-052 (4)); the nodes are moved there (see
+> `2026-10-15-forge-02-to-forge-01-fl0124-world-nodes-moved.md`). Kept for the measurements below.
+
 ## What I need / what I'm giving you
 The FL-0116 clearance pass keeps *decor* (trees, bushes, flowers, rocks, yard props) off fields, roads, buildings
 and slots. Measuring it showed the grey rocks and big canopies still touching the starting farms are the
