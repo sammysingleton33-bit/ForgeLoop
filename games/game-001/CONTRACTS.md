@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g9i, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g9j, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -603,20 +603,38 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   - `Build.Move(buildingId, position, rot)` → `(ok, reason?)`; burst 4, 2/s. `rot` is absolute, as for `Build.Place`.
   - `Build.MoveToSlot(buildingId, slotId: string(1,32), turn: integer(0,3)?)` → `(ok, reason?)`; burst 4, 2/s. Position = the slot centre; facing = the slot's rot + `turn` quarter turns (as `Build.PlaceSlot` g9h); `Fit.fits(type, size, turn)`.
 - **Atomic and in place.** A move is one server command: it validates, then changes position, facing, placement shape and slot, or changes nothing. The building keeps its id, type, level, construction or upgrade progress, paid cost, hit points, `placedBy`, recruit queue and workers. A move never charges, refunds, completes or re-places anything, and never re-fires `BuildingPlaced`. There is no server-side "lifted" state; dragging is client-only.
-- **Validation.** Exactly the `Build.Place` geometry: bounds, own territory, and the placement shape against every *other* standing building, resource nodes and objective zones, with the placement gap. Limits, keep level and cost are not checked: a move doesn't add a building.
-- **Who and when.** Any ruler of the kingdom may move its buildings, except the keep, in any active phase. No move while the alarm rings or enemy units are inside the kingdom's land. Each building waits `Buildings.moveCooldown` (2 s) between moves. A move to the same spot and facing succeeds and does nothing.
+- **Validation.** The `Build.Place` geometry (bounds, the placement shape against every *other* standing building, resource nodes, objective zones, the no-build areas and the unit and ruler clearance below, with the placement gap), but the destination must lie inside the **keep's own territory circle**, never in a claimed region (v0.4-g9j). Limits, keep level and cost are not checked: a move doesn't add a building.
+- **Who and when.** Any ruler of the kingdom may move its buildings, except the keep, in any active phase.
+  - **Under attack, per building (v0.4-g9j):** refused when an at-war unit targets or focuses the building, an at-war unit is within its range + 30 of the old or new shape, the building took damage in the last 10 s, or it is burning. The kingdom alarm also refuses moves, as a UX rule only.
+  - A kingdom can't move anything for 30 s after a war declaration or peace that involves it.
+  - Each building waits `Buildings.moveCooldown` (**10 s**) between moves.
+  - A moved storehouse, lumber camp or quarry **settles for 30 s**: it takes no deliveries and gives no gather bonus.
+  - The cooldown and settling use sim time.
+  - A move to the same spot and facing succeeds and does nothing.
 - **Consequences.** Citizens working, building or resting at the building go back to walking to its new place, with their claims kept. Homes, beds, bunks, storage and the treasury don't change. A barracks keeps its queue, and new soldiers appear at its new Rally.
 - **Slots.** `Build.Move` frees the building's slot; `Build.MoveToSlot` takes the new one, inside the same command. A building may turn on its own slot. Walls and gates never go on a slot (`not_on_plot`); single sections move with `Build.Move`. Slots themselves don't move (D-049).
 - **Reasons.** Those of `Build.Place`/`Build.PlaceSlot`, plus `not_found`, `not_movable` (the keep), `under_attack`, `alarm` and `cooldown`.
-- **Replication.** `Build.Buildings` re-sends a building whose position or facing changed. The client re-pivots its Kit model without a rebuild.
-- **Shared placement rule (Place, PlaceSlot, Move).** No placement shape within an objective's radius plus the placement gap (`blocked`).
-- **Events.** G9 `BuildingMoved` (FORGE-01): `(Building, player?, from: { position: Vector3, rot: number }, slotId: string?)`.
+- **Replication.** `Build.Buildings` re-sends a building whose position or facing changed. The **server's** WorldView re-pivots the Kit model without a rebuild, and clients get it through part replication (v0.4-g9j correction).
+- **Shared placement rules (Place, PlaceSlot, Move; v0.4-g9j).** Each of these refuses with `blocked`:
+  - a shape within an objective's radius plus the placement gap;
+  - a shape on a crop field, plot road (avenue and cross street) or the spawn pad (Kingdom Layout `reservedAreas()` plus world/Layout data);
+  - a shape containing a living unit of any kingdom or a ruler's character position plus 3 studs.
+  Slot occupancy uses the same placement gap, so a slot never reads free while placing on it is refused.
+- **Events.** G9 `BuildingMoved` (FORGE-01; declared in `GameEvents.luau` by FORGE-05, the custodian): `(Building, player?, from: { position: Vector3, rot: number }, slotId: string?)`.
 - **Input and camera (FORGE-04, additive to G4.1/G13.6).**
   - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings, plus free slots as MoveToSlot targets.
   - `RulerCameraController` keeps the overview in edit mode and adds `setEditDrag(active)` (drag-pan off, edge-pan on while dragging).
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g9j (2026-10-15) FORGE-00: G13.9 hardened after an adversarial code review of the base-editing rules:
+  - destinations only in the keep's own territory circle;
+  - per-building under-attack, damage and burning refusals, and a 30 s lockout after war or peace;
+  - a 10 s cooldown, and 30 s settling for moved drop-offs;
+  - shared no-build areas (fields, plot roads, spawn pad) and unit and ruler clearance for Place, PlaceSlot and Move;
+  - slot occupancy uses the placement gap;
+  - the server re-pivots the model.
+  Closes drop-off chasing, builder stall, frontier teleport, siege dodge, peacetime trap and character trap.
 - v0.4-g9i (2026-10-15) FORGE-00: G13.9 base editing (`Build.CanMove`/`Move`/`MoveToSlot`, atomic in-place moves, G9 `BuildingMoved`, the "edit" input mode) and the objective-zone placement rule. Additive. Source: the user's first Studio feedback; rules from a code investigation (D-049).
 - v0.4-g9h (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` takes an optional `turn` (quarter turns relative to the slot's facing; the turned footprint must fit, `Fit.fits(type, size, turn?)`). Additive. The user's first Studio feedback: placing on a plot could not be rotated (free placement already rotates with R).
 - v0.4-g9g (2026-10-13) FORGE-00: G10 rigs may have up to 11 parts: 2 more rigid detail parts (headwear brim/crown, tool handle/head), welded to Head or Tool with no Motor6D, so poses and `Sim/Pose.JOINTS` are unchanged (D-048, the user's first Studio feedback: citizens and tools too plain).
