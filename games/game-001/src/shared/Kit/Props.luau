@@ -711,14 +711,22 @@ local function bridge(ctx)
 end
 
 -- Crop plot: its visual footprint is exactly FIELD_SIZE (38 x 28, inside the 40 x 30 terrain field): a brown soil
--- bed with the rows on it, so the soil shows as a border and as furrows between the rows. Wheat rows are
--- uniform, low (1.7 over the bed plus a 0.22 lighter top slab, flat-topped) and one block each; cabbages sit on soil
--- ridges. Soil luminance is about 74-86, brown, never black.
+-- bed with the rows on it, so the soil shows as a border and as furrows between the rows. Wheat is 42 tapered
+-- tilted wedge tufts in six rows; cabbages sit on soil ridges. Soil luminance is about 74-86, brown, never black.
 local FIELD_W, FIELD_D = 38, 28
 Props.FIELD_SIZE = Vector2.new(FIELD_W, FIELD_D)
 local SOIL = Color3.fromRGB(96, 70, 44)
 local SOIL_RIDGE = Color3.fromRGB(112, 82, 52)
 local BED_H = 0.5 -- the terrain field's top is 0.2 above ground: the bed clears it so nothing z-fights
+-- D-047 amendment (2026-10-15, FL-0117 wheat): a wheat field may use up to 44 parts, one tapered wedge per tuft
+local WHEAT_ROWS, WHEAT_PER_ROW = 6, 7
+Props.WHEAT_PARTS = 1 + 1 + WHEAT_ROWS * WHEAT_PER_ROW -- Root + soil bed + tufts = 44
+local WHEAT_RAMP = {
+	Color3.fromRGB(124, 148, 52),
+	Color3.fromRGB(198, 176, 60),
+	Color3.fromRGB(232, 172, 50),
+	Color3.fromRGB(246, 214, 108),
+}
 
 local function cropField(ctx, rng, crop: string)
 	block(ctx, "SoilBed", Vector3.new(FIELD_W, BED_H, FIELD_D), CFrame.new(0, BED_H / 2, 0), SOIL, Enum.Material.Ground)
@@ -741,36 +749,29 @@ local function cropField(ctx, rng, crop: string)
 		end
 		return
 	end
-	local rowH = 1.7
-	for r = 0, 5 do
-		local z = (r - 2.5) * 4.4
-		block(
-			ctx,
-			"Wheat",
-			Vector3.new(34, rowH, 2.6),
-			CFrame.new(0, BED_H + rowH / 2, z),
-			C.wheat,
-			Enum.Material.Grass
-		)
-		block(
-			ctx,
-			"WheatTop",
-			Vector3.new(33.4, 0.22, 2.0),
-			CFrame.new(0, BED_H + rowH + 0.11, z),
-			shade(EXTRA.hay, 1.1),
-			Enum.Material.Grass
-		)
-	end
-	-- three sheaves on the soil border
-	for i, x in { -13, 1, 14 } do
-		ball(
-			ctx,
-			"Sheaf",
-			1.9,
-			Vector3.new(x + rng.range(-1, 1), BED_H + 0.8, 13.05),
-			if i == 2 then EXTRA.hayDark else EXTRA.hay,
-			Enum.Material.Grass
-		)
+	-- wheat: six rows of seven tufts, each one tapered, tilted wedge (a plain slab reads as a plank). Colour runs from
+	-- olive green at the west end to ripe gold at the east, with noise per tuft; the soil shows between the rows.
+	for r = 0, WHEAT_ROWS - 1 do
+		local z = (r - (WHEAT_ROWS - 1) / 2) * 4.4
+		for k = 0, WHEAT_PER_ROW - 1 do
+			-- alternate rows are shifted half a tuft so the field reads as a mat of grain, not a grid
+			local x = (k - (WHEAT_PER_ROW - 1) / 2) * 4.7 + (if r % 2 == 0 then -1.0 else 1.0) + rng.range(-0.5, 0.5)
+			local size = Vector3.new(rng.range(3.4, 4.2), rng.range(1.6, 2.2), rng.range(2.1, 2.5))
+			-- every tuft leans the same way (a field combed by the wind), each a little differently
+			local rot = CFrame.Angles(0, rng.range(-0.12, 0.12), 0)
+				* CFrame.Angles(rng.range(-0.24, -0.06), 0, rng.range(-0.1, 0.1))
+			local c = { rot:GetComponents() }
+			local ey = 0.5 * (math.abs(c[7]) * size.X + math.abs(c[8]) * size.Y + math.abs(c[9]) * size.Z)
+			local ripe = 0.12 + 0.76 * (x + 17) / 34 + rng.range(-0.24, 0.24)
+			wedge(
+				ctx,
+				"Tuft",
+				size,
+				CFrame.new(x, BED_H + ey - 0.05, z + rng.range(-0.3, 0.3)) * rot,
+				rampColor(WHEAT_RAMP, ripe),
+				Enum.Material.Grass
+			)
+		end
 	end
 end
 
