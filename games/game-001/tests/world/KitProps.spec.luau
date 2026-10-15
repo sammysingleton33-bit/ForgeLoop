@@ -677,14 +677,14 @@ describe("farm fields, fence and haystack", function()
 	end)
 
 	it(
-		"builds the wheat as six rows of seven tapered, tilted wedge tufts, one part each, on a brown soil bed",
+		"builds the wheat as seven ridged rows of three abutting segments, each a lit and a shaded wedge, in 44 parts",
 		function()
 			expect(Props.WHEAT_PARTS).toBe(WHEAT_PARTS)
 			for _, id in WHEAT do
 				local model = Kit.prop(id)
-				expect(Kit.partCount(model)).toBe(WHEAT_PARTS) -- the whole 44: a thinner field reads as planks or crates
-				local tufts = named(model, "Tuft")
-				expect(#tufts).toBe(42)
+				expect(Kit.partCount(model)).toBe(WHEAT_PARTS) -- Root + soil bed + 42 wedges
+				local ridges = named(model, "WheatRidge")
+				expect(#ridges).toBe(42)
 				local bed = named(model, "SoilBed")[1]
 				local soil = lum(bed.Color)
 				expect(soil).toBeGreaterThan(60) -- brown soil, luminance 60-90, never black
@@ -692,81 +692,109 @@ describe("farm fields, fence and haystack", function()
 				expect(bed.Color.R).toBeGreaterThan(bed.Color.G)
 				expect(bed.Color.G).toBeGreaterThan(bed.Color.B)
 				local bedLo, bedHi = bounds(model)
-				local minL, maxL, ripeWest, ripeEast, nWest, nEast, olive, gold = math.huge, 0, 0, 0, 0, 0, 0, 0
-				for _, t in tufts do
-					expect(t.ClassName).toBe("WedgePart") -- tapered, not a block
-					expect(t.Size.Y).toBeGreaterThan(1.2) -- low: about two studs of crop
-					expect(t.Size.Y).toBeLessThan(2.3)
-					expect(t.Size.X).toBeGreaterThan(3) -- wide enough that a row reads as a row
-					local up = math.abs(t.CFrame.UpVector.Y)
-					expect(up).toBeLessThan(0.9999) -- tilted, never square to the bed
-					expect(up).toBeGreaterThan(0.9)
-					local l = lum(t.Color)
-					minL, maxL = math.min(minL, l), math.max(maxL, l)
-					expect(l).toBeGreaterThan(soil + 50) -- every tuft stands out from the soil
-					local ripe = t.Color.R - t.Color.B
-					if t.CFrame.Position.X < -6 then
-						ripeWest, nWest = ripeWest + ripe, nWest + 1
-					elseif t.CFrame.Position.X > 6 then
-						ripeEast, nEast = ripeEast + ripe, nEast + 1
-					end
-					if t.Color.R - t.Color.G < 0.12 then -- greenish straw (the unripe end)
-						olive += 1
-					end
-					if t.Color.R * 255 > 225 then
-						gold += 1
-					end
-					local lo, hi = lowestHighest(t)
-					expect(lo).toBeGreaterThan(bed.CFrame.Position.Y) -- sits on the bed, not under it
-					expect(hi).toBeLessThan(3.6)
-				end
-				expect(maxL - minL).toBeGreaterThan(40) -- tint and height vary tuft to tuft
-				expect(ripeEast / nEast - ripeWest / nWest).toBeGreaterThan(0.08) -- olive green in the west, ripe gold in the east
-				expect(olive).toBeGreaterThanOrEqual(3)
-				expect(gold).toBeGreaterThanOrEqual(5)
-				-- six rows by z, soil showing in the furrows between them, and a soil border all round
+				-- rows by z (centre lines 3.9 apart), six wedges each; no block anywhere: nothing has a flat top
 				local rows: { { BasePart } } = {}
-				for _, t in tufts do
-					local r = math.floor((t.CFrame.Position.Z + 13.2) / 4.4)
+				for _, w in ridges do
+					expect(w.ClassName).toBe("WedgePart")
+					local r = math.floor((w.CFrame.Position.Z + 13.65) / 3.9)
 					rows[r] = rows[r] or {}
-					table.insert(rows[r], t)
+					table.insert(rows[r], w)
+					local lo, hi = lowestHighest(w)
+					expect(lo).toBeGreaterThan(bed.CFrame.Position.Y - 0.1) -- sits on the bed
+					expect(hi).toBeLessThan(3.2) -- low: about two studs of crop over the bed
 				end
 				local keys = {}
 				for r, list in rows do
 					table.insert(keys, r)
-					expect(#list).toBe(7)
+					expect(#list).toBe(6)
 				end
-				expect(#keys).toBe(6)
+				expect(#keys).toBe(7)
 				table.sort(keys)
 				local function zRange(list: { BasePart }): (number, number)
 					local lo, hi = math.huge, -math.huge
-					for _, t in list do
+					for _, w in list do
 						for _, sx in { -1, 1 } do
 							for _, sz in { -1, 1 } do
-								local z = (t.CFrame * CFrame.new(sx * t.Size.X / 2, 0, sz * t.Size.Z / 2)).Position.Z
+								local z = (w.CFrame * CFrame.new(sx * w.Size.X / 2, 0, sz * w.Size.Z / 2)).Position.Z
 								lo, hi = math.min(lo, z), math.max(hi, z)
 							end
 						end
 					end
 					return lo, hi
 				end
-				local gapSum = 0
-				for i = 2, #keys do
-					local _, prevHi = zRange(rows[keys[i - 1]])
-					local lo = zRange(rows[keys[i]])
-					gapSum += lo - prevHi
+				local heights, minH, maxH = {}, math.huge, 0
+				local ripeWest, ripeEast, nWest, nEast = 0, 0, 0, 0
+				for idx, r in keys do
+					local list = rows[r]
+					-- soil in the furrow between this row and the last
+					if idx > 1 then
+						local _, prevHi = zRange(rows[keys[idx - 1]])
+						local lo = zRange(list)
+						expect(lo - prevHi).toBeGreaterThan(0.4)
+					end
+					-- each segment is a lit wedge and a darker shaded wedge of the same length; alternate rows lean opposite ways
+					-- (the crest sits off-centre: the lit slope is the deeper one on even rows, the shaded one on odd rows)
+					table.sort(list, function(a, b)
+						return a.CFrame.Position.X < b.CFrame.Position.X
+					end)
+					local segments = {}
+					for _, w in list do
+						local key = math.floor((w.CFrame.Position.X + 17.4) / 11.6) -- 0, 1 or 2: the segment
+						segments[key] = segments[key] or {}
+						table.insert(segments[key], w)
+					end
+					local n = 0
+					for _, pair in segments do
+						n += 1
+						expect(#pair).toBe(2)
+						local a, b = pair[1], pair[2]
+						local litW, shadeW = a, b
+						if lum(b.Color) > lum(a.Color) then
+							litW, shadeW = b, a
+						end
+						expect(lum(litW.Color) - lum(shadeW.Color)).toBeGreaterThan(20) -- a lit slope and a shaded slope
+						expect(lum(shadeW.Color)).toBeGreaterThan(soil + 25)
+						local deeper = if litW.Size.Z > shadeW.Size.Z then 1 else -1
+						expect(deeper).toBe(if (idx - 1) % 2 == 0 then 1 else -1)
+						heights[string.format("%.1f", litW.Size.Y)] = true
+						minH, maxH = math.min(minH, litW.Size.Y), math.max(maxH, litW.Size.Y)
+						local ripe = litW.Color.R - litW.Color.B
+						if litW.CFrame.Position.X < -6 then
+							ripeWest, nWest = ripeWest + ripe, nWest + 1
+						elseif litW.CFrame.Position.X > 6 then
+							ripeEast, nEast = ripeEast + ripe, nEast + 1
+						end
+					end
+					expect(n).toBe(3)
+					-- the three segments abut: no soil between them, so a row reads as a row and not as three boards
+					local ordered = {}
+					for _, pair in segments do
+						table.insert(ordered, pair[1])
+					end
+					table.sort(ordered, function(a, b)
+						return a.CFrame.Position.X < b.CFrame.Position.X
+					end)
+					for k = 2, #ordered do
+						local gap = ordered[k].CFrame.Position.X - ordered[k - 1].CFrame.Position.X - ordered[k].Size.X
+						expect(gap).toBeLessThan(0.3)
+					end
 				end
-				expect(gapSum / 5).toBeGreaterThan(0.8) -- on average a stud of soil between rows
+				expect(maxH - minH).toBeGreaterThan(0.8) -- ragged crest: segments step in height
+				expect(minH).toBeGreaterThan(1.2)
+				expect(maxH).toBeLessThan(2.8)
+				expect(ripeEast / nEast - ripeWest / nWest).toBeGreaterThan(0.08) -- one end greener, the other riper gold
+				expect(bedLo.Z).toBeLessThan(-13.9)
+				expect(bedHi.Z).toBeGreaterThan(13.9)
 				local firstLo = zRange(rows[keys[1]])
 				local _, lastHi = zRange(rows[keys[#keys]])
-				expect(firstLo).toBeGreaterThan(bedLo.Z + 0.4)
+				expect(firstLo).toBeGreaterThan(bedLo.Z + 0.4) -- a soil border all round
 				expect(lastHi).toBeLessThan(bedHi.Z - 0.4)
 			end
 		end
 	)
 
 	it(
-		"keeps the wheat low (no tuft over 3.6 studs, the average under 3.0, near the 2.8 fence) and the fence low and tidy",
+		"keeps the wheat low (no ridge over 3.2 studs, the average under 3.0, near the 2.8 fence) and the fence low and tidy",
 		function()
 			for i, id in FENCES do
 				local model = Kit.prop(id)
@@ -780,9 +808,9 @@ describe("farm fields, fence and haystack", function()
 				end
 				for _, wheat in WHEAT do
 					local sum, n = 0, 0
-					for _, t in named(Kit.prop(wheat), "Tuft") do
-						local _, hi = lowestHighest(t)
-						expect(hi).toBeLessThan(3.6)
+					for _, w in named(Kit.prop(wheat), "WheatRidge") do
+						local _, hi = lowestHighest(w)
+						expect(hi).toBeLessThan(3.2)
 						sum, n = sum + hi, n + 1
 					end
 					expect(sum / n).toBeLessThan(3.0)

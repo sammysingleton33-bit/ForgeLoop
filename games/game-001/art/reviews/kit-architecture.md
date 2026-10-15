@@ -446,3 +446,20 @@ per size, no stray pebble; **wheat** thinner, taller, closer-packed stalk cluste
 **Status after round 2:** trees pass the image-only rubric (borderline) and are a modest, real step over #141; boulders stay at #141's NEEDS-WORK level (two primitive passes did not help;
 this needs a mesh or a different primitive vocabulary); the wheat at 44 parts is better than slabs (var, read, detail up from 2 to 3) but still not a pass, and part cost is the limit:
 the reviewer's own fix (thin, close-packed stalk clusters) needs more parts, not fewer.
+
+## Wheat, round 3 (branch `forge/02-blender-env-wheat`; FORGE-02)
+
+Why: FORGE-05 and FORGE-00 judged the round-2 6 × 7 tilted-wedge tufts not clearly better than #141's slabs (tiles or crates in a checker). Bar from FORGE-00: it must read as grain from the
+aerial camera (about 250 px wide at 170 studs, so stripe texture and colour matter, not shapes), within 44 parts per field (D-047 amendment; FL-0116 measured 1,651 parts of headroom, so
+the condition holds), no visible square or rectangular top faces, two attempts at most. Bed 38 × 28, fence and haystack unchanged.
+
+Both attempts use the same idea, **ridged rows with dark furrows**: seven rows 3.9 studs apart (soil 0.9 wide between them), each row three segments, each segment a **gable of two
+wedges** (a lit slope in the colour of the grain and a shaded slope 26 % darker), so there is no flat top anywhere; the crest sits off-centre (the lit slope is the deeper one on even rows,
+the shaded one on odd rows) so alternate rows lean opposite ways, the combed look; heights step from segment to segment (1.4–2.6 over the bed), and the colour runs
+green to ripe gold along the field with a small per-row alternation. 7 × 3 × 2 = 42 wedges + bed + Root = 44.
+- **Attempt 1:** segments 10.2–11.0 long with about a stud of soil between them. At the aerial camera that read as a brick pattern of boards (the gaps were the loudest feature).
+- **Attempt 2 (shipped here):** segments abut (length 11.9 on a 11.6 pitch), so a row is one ridged row with steps in height and tint. The aerial view is now seven pale rows with dark
+  furrow lines and three colour zones; at gameplay distance the rows step like stacked ridges.
+Spec: `KitProps.spec` pins `WHEAT_PARTS = 44` (citing the amendment), 42 `WheatRidge` wedges (no blocks), seven rows of six, a lit and a darker slope per segment, the lean alternating by
+row, abutting segments, the ragged crest (height steps over 0.8), the gradient, soil luminance 60–90 and every ridge standing out from the soil; 41 mutations of `Props.luau` (11 of
+them aimed at this field), all caught. The cabbage field is unchanged (65 parts); this commit replaces the round-2 tufts. Image: `env_polish_wheat_ridges.jpg` (#141's slabs | the ridged rows at 75 and 55 studs gameplay and 170 studs aerial).
