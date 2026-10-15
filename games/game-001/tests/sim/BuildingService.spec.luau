@@ -299,6 +299,69 @@ describe("BuildingService (G6, G8)", function()
 	end)
 end)
 
+describe("BuildingService: walls turn like every free-placed building (CONTRACTS v0.4-g9h)", function()
+	it("a wall faces rot quarter turns and its placement shape turns with it, so a turn changes what fits", function()
+		local env, _, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		for _, res in { "wood", "stone", "gold", "food" } do
+			sim.treasury:deposit("crimson", res, 4000, `spec:wall:{res}`, "spec")
+		end
+		local size = assert(Fit.largestFootprint("wall"), "walls have a Kit footprint")
+		expect(size.X > size.Y + 2).toBe(true) -- a wall is a long thin piece: its turn matters
+		local spot = freeSpot(sim, k, "wall", 0, 1, 2, 3)
+		local gap = sim.catalog.tuning.placementGap
+		-- 1) every rot builds and faces rot x 90 degrees; the shape's axis turns with the facing
+		for rot = 0, 3 do
+			env.mock:advance(3) -- refill Place's burst
+			local at = spot + Vector3.new(0, 0, rot * 60) -- far enough apart not to meet each other
+			if not sim:canPlace(k, "wall", at.X, at.Z, rot * math.pi / 2) then
+				at = freeSpot(sim, k, "wall", rot)
+			end
+			local id, reason = invoke(env, p1, "Build.Place", "wall", at, rot)
+			expect(`{rot}:{reason}`).toBe(`{rot}:nil`)
+			local b = sim.buildings[id]
+			local want = rot * math.pi / 2
+			expect(b.yaw % (2 * math.pi)).toBeNear(want % (2 * math.pi), 1e-6)
+			expect(b.shape.ux).toBeNear(math.cos(want), 1e-6)
+			expect(b.shape.uz).toBeNear(-math.sin(want), 1e-6)
+			expect(b.shape.hx).toBeNear(size.X / 2, 1e-6) -- width stays the local X axis
+		end
+		-- 2) a turn changes what fits: next to a wall's long side, a parallel wall fits and a crosswise one does not.
+		-- Pick a base where, before the first wall stands, all three are free (so only the first wall can matter).
+		local keep = sim.buildings[k.keepId]
+		local base, beside
+		for radius = 40, 140, 10 do
+			for step = 0, 23 do
+				local a = step / 24 * 2 * math.pi
+				local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
+				local b2 = Vector3.new(x, 0, z + size.Y + gap + 0.5) -- beside it, not past its end
+				if
+					base == nil
+					and sim:canPlace(k, "wall", x, z, 0)
+					and sim:canPlace(k, "wall", b2.X, b2.Z, 0)
+					and sim:canPlace(k, "wall", b2.X, b2.Z, math.pi / 2)
+					and sim:canPlace(k, "wall", b2.X, b2.Z, -math.pi / 2)
+				then
+					base, beside = Vector3.new(x, 0, z), b2
+				end
+			end
+		end
+		assert(base and beside, "a spot for the wall pair")
+		env.mock:advance(3)
+		local first, why = invoke(env, p1, "Build.Place", "wall", base, 0)
+		expect(why).toBeNil()
+		expect(type(first)).toBe("number")
+		env.mock:advance(3)
+		expect({ invoke(env, p1, "Build.CanPlace", "wall", beside, 0) }).toEqual({ true }) -- parallel: fits
+		expect({ invoke(env, p1, "Build.CanPlace", "wall", beside, 1) }).toEqual({ false, "blocked" }) -- crosswise
+		expect({ invoke(env, p1, "Build.CanPlace", "wall", beside, 3) }).toEqual({ false, "blocked" })
+		expect(treasury:get("crimson").wood > 0).toBe(true)
+	end)
+end)
+
 describe("BuildingService build slots (G13.5, FL-0081)", function()
 	local function slotsSent(env, player)
 		local out = {}
@@ -391,6 +454,95 @@ describe("BuildingService build slots (G13.5, FL-0081)", function()
 		expect({ buildings:placeSlot({ UserId = 999 }, slot.id, "house") }).toEqual({ nil, "not_in_match" })
 		expect(buildings:slots("violet")).toEqual({})
 	end)
+
+	-- two angles are the same facing (radians, modulo a full turn)
+	local function sameFacing(a: number, b: number): boolean
+		local d = (a - b) % (2 * math.pi)
+		return math.min(d, 2 * math.pi - d) < 1e-6
+	end
+
+	it(
+		"PlaceSlot turns the building `turn` quarter turns from the slot's street facing, charging once (CONTRACTS v0.4-g9h)",
+		function()
+			local env, _, match, treasury = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(0.5)
+			local sim = match.host.match.sim
+			for _, res in { "wood", "stone", "gold", "food" } do
+				sim.treasury:deposit("crimson", res, 2000, `spec:turn:{res}`, "spec") -- cancelled sites refund in part
+			end
+			local slot = firstSlot("crimson", "L")
+			expect(Fit.turns("house", "S")).toEqual({ 0, 2 }) -- a house in an S slot turns half a turn only
+			expect(Fit.turns("house", "L")).toEqual({ 0, 1, 2, 3 }) -- in an L slot every way
+			local before = treasury:get("crimson")
+			local id, reason = invoke(env, p1, "Build.PlaceSlot", slot.id, "house", 1)
+			expect(reason).toBeNil()
+			local b = sim.buildings[id]
+			expect(sameFacing(b.yaw, slot.rot + math.pi / 2)).toBe(true)
+			expect(b.slotId).toBe(slot.id)
+			expect(b.x).toBeNear(slot.center.X, 1e-6) -- still centred on the slot
+			expect(b.z).toBeNear(slot.center.Z, 1e-6)
+			local after = treasury:get("crimson")
+			for res, amount in assert(Costs.building("house", 1)).cost do
+				expect(after[res]).toBe(before[res] - amount) -- the same price as unturned
+			end
+			-- every turn is its own facing, and the placement shape turns with it
+			for rot = 0, 3 do
+				local spare = firstSlot("crimson", "L")
+				assert(sim:cancelConstruction(sim.kingdoms.crimson, id, 1))
+				env.mock:advance(3)
+				local again, why = invoke(env, p1, "Build.PlaceSlot", spare.id, "house", rot)
+				expect(`{rot}:{why}`).toBe(`{rot}:nil`)
+				expect(type(again)).toBe("number")
+				local placed = sim.buildings[again]
+				expect(sameFacing(placed.yaw, spare.rot + rot * math.pi / 2)).toBe(true)
+				local want = spare.rot + rot * math.pi / 2
+				expect(placed.shape.ux).toBeNear(math.cos(want), 1e-6) -- Footprint.rect's local X axis
+				expect(placed.shape.uz).toBeNear(-math.sin(want), 1e-6)
+				id = again
+			end
+		end
+	)
+
+	it(
+		"PlaceSlot refuses a turn the type does not fit with does_not_fit, free; bad turns never arrive (CONTRACTS v0.4-g9h)",
+		function()
+			local env, _, match, treasury = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(0.5)
+			local sim = match.host.match.sim
+			for _, res in { "wood", "stone", "gold", "food" } do
+				sim.treasury:deposit("crimson", res, 2000, `spec:refuse:{res}`, "spec")
+			end
+			local slot = firstSlot("crimson", "M")
+			expect(Fit.turns("barracks", "M")).toEqual({ 0, 2 }) -- 34 x 22 turned would be 22 x 34 in 36 x 30
+			local before = treasury:get("crimson")
+			expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", 1) }).toEqual({ nil, "does_not_fit" })
+			env.mock:advance(3)
+			expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", 3) }).toEqual({ nil, "does_not_fit" })
+			env.mock:advance(3)
+			local function notSpent()
+				for res, amount in treasury:get("crimson") do
+					expect(amount >= before[res]).toBe(true) -- citizens keep gathering meanwhile: it only grows
+				end
+			end
+			notSpent() -- refusals cost nothing
+			-- values outside 0..3 are dropped by the remote's validation, never reaching the service
+			for _, bad in { 4, -1, 1.5, "1", math.huge, {} } do
+				env.mock:advance(3)
+				expect(invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", bad)).toBeNil()
+			end
+			notSpent()
+			for _, entry in invoke(env, p1, "Build.GetSlots") do
+				expect(entry.occupiedBy).toBeNil()
+			end
+			-- the half turn fits: facing the other way, still in the slot
+			env.mock:advance(3)
+			local id, reason = invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", 2)
+			expect(reason).toBeNil()
+			expect(sameFacing(sim.buildings[id].yaw, slot.rot + math.pi)).toBe(true)
+		end
+	)
 
 	it("a building placed with Build.Place over a slot occupies it; the other slots stay free (#89 M1)", function()
 		local env, buildings, match = boot()
