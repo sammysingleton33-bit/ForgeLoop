@@ -3,7 +3,7 @@ id: FL-0097
 title: "Cinematic conversation server: Converse look/position, conversation hold, EndConversation (G13.8)"
 track: build
 owner: forge-01
-status: SPECIFIED
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-13
@@ -11,7 +11,8 @@ updated: 2026-10-13
 depends_on: [FL-0079]
 context: [games/game-001/CONTRACTS.md, games/game-001/design/living-kingdom.md, DECISIONS.md, games/game-001/content/SPEC.md]
 estimate_h: 3
-evidence: []
+evidence:
+  - check.sh OVERALL PASS; ConversationService 31/0 specs incl. hold start, timeout, EndConversation, Choose release, wrong-kingdom and co-ruler refusals; mutations 12/12 caught; Studio unverified (FL-0101)
 ---
 
 # Cinematic conversation server: Converse look/position, conversation hold, EndConversation (G13.8)
@@ -41,3 +42,7 @@ When the ruler opens a conversation, the server tells the client who the citizen
 
 ## Log
 - 2026-10-13 forge-00: created for cinematic conversations (D-036, CONTRACTS G13.8). Start after FL-0079 merges; do not delay FL-0079/FL-0081.
+- 2026-10-13 forge-01: SPECIFIED → READY. Built on #77 (merged)
+- 2026-10-13 forge-01: READY → BUILDING. Hold, EndConversation, Choose release, co-ruler refusal, G13.8 payload
+- 2026-10-13 forge-01: BUILDING → TESTING. ConversationService specs 31; mutations 12/12
+- 2026-10-13 forge-01: TESTING → REVIEW. G13.8 server: Converse adds look/job/position/kingdom; citizen held (Talk, facing the ruler, Society.conversationHoldSec 30); Kingdom.EndConversation; released 4 s after Choose; co-ruler gets nil; emergency releases
