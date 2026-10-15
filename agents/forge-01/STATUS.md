@@ -4,13 +4,13 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/01-gameplay`; PR branches `forge/01-gameplay-<topic>` |
-| Open PR | #68 FL-0080 reputation (base main) · #77 FL-0079 conversations (stacked on #68) · #70 FL-0052 army · FL-0081 slots + throne (this branch) |
-| Merged | #4, #5, #8, #26, #31 FL-0048, #39 FL-0049, #46 living-kingdom groundwork, #50 FL-0051 Build remotes, #51 F1, #54 citizen height, #56 G13.5, #59 F2/F3, #61 FL-0078 population, #62 placement rectangles, #72 destroyed broadcast |
-| Current task | FL-0081 in REVIEW; next #39 replication follow-ups |
-| Last verified check | `check.sh` OVERALL PASS on every open branch (game-001 944–967/0); mutations caught per PR |
-| Blockers | none. Studio evidence for everything needs user runs (gameplay.md K1–K9) |
-| Needs from others | FORGE-00: G8 wording for Army attack `targetId`; consequence notices start "Risk ({chance}):" also once fired (content wording). FORGE-03: slots UI on `Build.PlaceSlot` (handoff 2026-10-13-forge-01-to-forge-03-04-slots-throne). FORGE-04: walk mode unseats (same handoff) |
+| Session branch | PR branches `forge/01-gameplay-<topic>` (one worktree each) |
+| Open PR | #108 FL-0097 cinematic conversation server (G13.8) · #107 #77 lows (N3 request kept until answered, N2, N4, N5) · #104 FL-0080 follow-ups (upgrade credited to its upgrader) · #93 FL-0049 replication hygiene · #94 FL-0051 fair nodes · #97 Match.Ended for late joiners (FL-0106) · #100 ruler gather (on hold until VS-1 accepted) |
+| Merged (2026-10-13) | #68 FL-0080 · #70 FL-0052 + D-041 bunks · #77 FL-0079 conversations · #89 FL-0081 slots + throne · #91 / #101 FL-0104 · #106 FL-0081 follow-ups |
+| Current task | FL-0107 CitizenAnswered (built; waits for FORGE-05 to declare the event in Contracts/GameEvents) |
+| Last verified check | `check.sh` OVERALL PASS on every open branch (game-001 1148–1152/0); mutation sets fully caught per PR |
+| Blockers | FL-0107: the GameEvents row is FORGE-05's (custodian). Studio evidence needs user runs (gameplay.md K1–K12, STUDIO_PLAYTEST) |
+| Needs from others | FORGE-05: GameEvents `CitizenAnswered` row + contract-spec line. FORGE-03: call `Kingdom.EndConversation` on panel close; `recruit_cap` text ("no free bunk"). FORGE-04: camera focus on Converse `position` |
 
 ## Hours to VS-1 (honest estimate)
 About 3–5 working hours of FORGE-01 code, plus review/merge time: #39 replication follow-ups 2 h, review fixes on #68/#70/#77/FL-0081, then playtest fixes. Studio verification is the user's.

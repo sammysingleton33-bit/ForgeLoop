@@ -1,13 +1,15 @@
 --[[
 	Kit character preview dump (FL-0056, D-019 review). KitDump.spec covers citizens per job and soldiers in
 	the four kingdom colours; this one adds what that sheet leaves out: one row of every look (idle,
-	governor), the soldier kingdom crests (G13.2, D-033(3)) from the front and the side, the one-part far
-	LOD, and the regalia fitted on stand-in R15 and R6 avatars.
+	governor), the soldier kingdom crests (G13.2, D-033(3)) from the front and the side, Kit.portrait rigs
+	with their PortraitFocus camera next to the same world rigs (G13.8), the one-part far LOD, and the regalia
+	fitted on stand-in R15 and R6 avatars.
 
 	Always: asserts the dump serialises to finite numbers.
 	With FORGE_KIT_CHAR_DUMP=<path.json>: also writes the JSON for blender/scripts/render_kit.py
 	(groups characters_lineup, characters_looks, characters_aerial, characters_turn, characters_crests,
-	characters_crests_side, characters_lod, regalia_fit). Run:
+	characters_crests_side, portraits (each entry also has camera = { cframe, fov }), portraits_world,
+	characters_lod, regalia_fit). Run:
 	  FORGE_KIT_CHAR_DUMP=/tmp/kit_chars_ext.json lune run roblox/tests/harness/run.luau \
 	    --project games/game-001/default.project.json --specs games/game-001/tests/world KitCharacterDump
 ]]
@@ -221,6 +223,48 @@ local function catalogue()
 		end
 		add("characters_crests_side", `soldier {k.id} side`, m)
 	end
+	-- G13.8 portraits: 3 citizens, a governor and a soldier per kingdom, in the config kingdom colours
+	local KC = {
+		crimson = Color3.fromRGB(190, 40, 50),
+		azure = Color3.fromRGB(40, 110, 210),
+		emerald = Color3.fromRGB(35, 128, 95),
+		gold = Color3.fromRGB(235, 185, 16),
+	}
+	local sitters: { { any } } = {
+		{ "citizen", "farmer", "crimson", nil, nil, "farmer short crimson" },
+		{
+			"citizen",
+			"hauler",
+			"azure",
+			{ skin = 5, hair = 5, hairColor = 2, outfit = 2 },
+			nil,
+			"hauler hood s5 azure",
+		},
+		{
+			"citizen",
+			"builder",
+			"emerald",
+			{ skin = 3, hair = 6, hairColor = 4, outfit = 6 },
+			nil,
+			"builder strawhat s3 emerald",
+		},
+		{ "governor", "idle", "gold", { skin = 4, hair = 1, hairColor = 1, outfit = 1 }, nil, "governor s4 gold" },
+	}
+	for _, k in KINGDOMS do
+		table.insert(sitters, { "soldier", "soldier", k.id, nil, k.id, `soldier {k.id} {Kit.SOLDIER_CRESTS[k.id]}` })
+	end
+	for _, s in sitters do
+		local portrait = Kit.portrait(s[1], s[2], KC[s[3]], s[4], s[5])
+		add("portraits", s[6], portrait)
+		local cam, fov = Kit.portraitCamera(portrait)
+		local cf = { cam:GetComponents() }
+		for i, v in cf do
+			cf[i] = round(v)
+		end
+		local entry = groups.portraits[#groups.portraits]
+		entry.camera = { cframe = cf, fov = fov }
+		add("portraits_world", s[6], Kit.character(s[1], s[2], KC[s[3]], s[4], s[5]))
+	end
 	for _, k in KINGDOMS do
 		add("characters_lod", `citizen lod {k.id}`, Character.lod("citizen", k.color))
 		add("characters_lod", `soldier lod {k.id}`, Character.lod("soldier", k.color))
@@ -258,7 +302,7 @@ describe("Kit character preview dump", function()
 				end
 			end
 		end
-		expect(nModels).toBe(71)
+		expect(nModels).toBe(87)
 		local out = process.env.FORGE_KIT_CHAR_DUMP
 		if out and out ~= "" then
 			fs.writeFile(out, serde.encode("json", { version = Kit.VERSION, groups = groups }, false))

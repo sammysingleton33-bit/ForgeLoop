@@ -28,6 +28,9 @@
 	                        keeps its instance, FORGE-05 M1 and L5); refits the height and the
 	                        scroll cue; nothing once the choice is on its way (L3)
 	panel:destroy()
+	ConversationPanel.paintCard(button, option, state, balances) -> (open, need)   one answer card
+	ConversationPanel.parts   speech, kicker, numberBadge, effects, echo, refusal and the colours,
+	                          shared with the cinematic stage (UI/ConversationStage)
 	Names: panel "Conversation"; "Question" and "Reaction" (wrapped TextLabels in "Speech" boxes);
 	"Options" with buttons "Option_<id>" (attributes `option`, `state` = idle | picked | off,
 	`affordable`) holding "Body" with the "Label", "Cost" (chips "Cost_<resource>" with "Amount",
@@ -279,7 +282,9 @@ function ConversationPanel:_option(o: any, state: any, width: UDim, onPick: (str
 	return button
 end
 
-function ConversationPanel:_paintOption(button: TextButton, o: any, state: any, balances: any)
+-- Paints an answer card into `button` (the panel's answers and the cinematic stage's confirm step,
+-- UI/ConversationStage); returns whether it can be picked now and its "Need ..." ("" when none).
+function ConversationPanel.paintCard(button: TextButton, o: any, state: any, balances: any): (boolean, string)
 	local C = CitizenModel.CONVO
 	local price = CitizenModel.price(o, balances)
 	local affordable = price.need == nil
@@ -367,8 +372,13 @@ function ConversationPanel:_paintOption(button: TextButton, o: any, state: any, 
 	button.Active = open
 	button:SetAttribute("state", status)
 	button:SetAttribute("affordable", affordable)
+	return open, price.need or ""
+end
+
+function ConversationPanel:_paintOption(button: TextButton, o: any, state: any, balances: any)
+	local open, need = ConversationPanel.paintCard(button, o, state, balances)
 	self._open[o.id] = open
-	self._needs[o.id] = price.need or ""
+	self._needs[o.id] = need
 end
 
 function ConversationPanel:_options(state: any, phone: boolean, onPick: (string) -> (), balances: any): Frame
@@ -715,6 +725,22 @@ function ConversationPanel:patch(balances: any)
 		self._kicker.Text = kickerText(state, self._rect, self._phone, balances)
 	end
 end
+
+-- Parts the cinematic stage (UI/ConversationStage) shares with the panel, so both look alike.
+ConversationPanel.parts = table.freeze({
+	speech = speech,
+	kicker = kicker,
+	numberBadge = numberBadge,
+	effects = effects,
+	echo = echo,
+	refusal = refusal,
+	UP = UP,
+	DOWN = DOWN,
+	WARN_BG = WARN_BG,
+	WARN_TEXT = WARN_TEXT,
+	PICKED_TOP = PICKED_TOP,
+	PICKED_BOTTOM = PICKED_BOTTOM,
+})
 
 function ConversationPanel:destroy()
 	if self.panel then

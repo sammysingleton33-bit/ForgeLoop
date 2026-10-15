@@ -43,7 +43,7 @@ corners, thin gold UIStroke outside the edge, gold bold title at the top-left.
 4. **Flex / grow / wrap** — three gold tabs "Eco Civ Mil" filling the width equally (HorizontalFlex
    Fill); a "−" chip, a cyan bar filling the remaining width (UIFlexItem Grow), a "+" chip at the
    right; orange chips 1–4 on the first line and 5–7 on the second (Wraps); a dark strip labelled
-   "ViewportFrame" with a dashed pink outline (unknown class).
+   "VideoFrame" with a dashed pink outline (unknown class).
 5. **Grid** — green cells 1 2 3 / 4 5 6 / 7, each 30 % of the width and 24 tall, block centred (7
    at the left of the block); a white "in a Folder" chip along the card's bottom edge (GuiObject in
    a Folder: drawn, not part of the grid).
@@ -85,7 +85,7 @@ corners, thin gold UIStroke outside the edge, gold bold title at the top-left.
 Exactly these three per device (anything else is new and worth a look):
 
 - `Folder 'Core.Root.Cards.Card5.Body.Extras': its GuiObjects are drawn as children of 'Body' and left out of any layout`
-- `ViewportFrame 'Core.Root.Cards.Card4.Body.Viewport' is not emulated: drawn as a plain box`
+- `VideoFrame 'Core.Root.Cards.Card4.Body.Video' is not emulated: drawn as a plain box`
 - `IgnoreInset: IgnoreGuiInset=true with ScreenInsets=CoreUISafeInsets -> DeviceSafeInsets (the engine couples the two properties)`
 
 Numbers can be checked in `design/ui/render/out/selftest-<device>.layout.json` (device px), e.g.
