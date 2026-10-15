@@ -22,6 +22,11 @@ return table.freeze({
 		thoughtSec = 45, -- a request stays this long unless answered (requests refresh every 20 s, G13.3)
 		reactionSec = 4,
 		maxChars = 80,
+		withText = 3, -- thoughts that show their words; farther ones show the glyph badge alone
+		withTextPhone = 2, -- the same on a phone screen
+		withTextFar = 1, -- the same with the camera more than farZoom studs from the view's centre
+		farZoom = 150, -- overview zoom runs 40-220 studs and starts at 120
+		gapPixels = 4, -- the space kept between a card and other bubbles on screen
 	}),
 	cues = table.freeze({
 		celebrate = table.freeze({ pose = "cheer" }),

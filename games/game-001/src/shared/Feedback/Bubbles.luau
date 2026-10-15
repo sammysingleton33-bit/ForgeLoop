@@ -10,6 +10,9 @@
 		bubbles:release(entityId)                       -- the rig went back to the pool (G4.1 released)
 		bubbles:tick() -> { entityId }                  -- expired ids
 		bubbles:pick(positions, origin) -> { entityId } -- what to draw this frame, nearest first
+		bubbles:textLimit(zoom, phone) -> number           -- how many bubbles show words at this view
+		bubbles:layout(picked, limit, anchors?, sizes?) -> { [entityId]: "words" | "badge" }
+		                                                -- how each picked bubble is drawn (absent: not drawn)
 
 	Rules (specs: games/game-001/tests/experience/CitizenBubbles.spec.luau)
 		- One bubble per citizen. A reaction replaces that citizen's thought (the request was answered);
@@ -23,6 +26,19 @@
 		  placard until strike off.
 		- pick(): only citizens within `maxDistance` of the origin (the camera), at most `maxOnScreen`,
 		  by priority (reaction > thought > placard) and then distance.
+		- layout(): from the aerial camera the kingdom is small on screen, and full bubbles bury each
+		  other (the user's first Studio playtest). At most `limit` bubbles show their words, and only
+		  where their card covers no other bubble (`anchors`: the screen point under each bubble's
+		  bottom edge; without anchors there is no overlap test). Placards (their meaning is their
+		  words) and every thought's glyph badge are placed first, so a card never hides a request.
+		  Then, nearest first:
+		    1. thoughts: words when within the limit and their card is free, else the badge alone
+		       (still tappable: requests are what the ruler acts on);
+		    2. reactions: words when within the limit and free, else not drawn (the pose, sound and
+		       effect still play).
+		- textLimit(): `withText` bubbles, `withTextPhone` on a phone screen, `withTextFar` when the
+		  camera is more than `farZoom` studs from the view's centre. Bubbles keep their size: words
+		  stay readable at every zoom; fewer of them show.
 	Pose for a reaction tone (for EntityController, when it offers poses): Bubbles.POSE[tone].
 ]]
 
@@ -40,6 +56,17 @@ Bubbles.DEFAULTS = table.freeze({
 	thoughtSec = 45,
 	reactionSec = 4,
 	maxChars = 80,
+	withText = 3,
+	withTextPhone = 2,
+	withTextFar = 1,
+	farZoom = 150,
+	gapPixels = 4, -- the space kept between a card and other bubbles
+})
+-- On-screen sizes in pixels (CitizenBubbleController.SIZE draws them); layout() takes them as Vector2s.
+Bubbles.SIZES = table.freeze({
+	card = Vector2.new(260, 66),
+	badge = Vector2.new(46, 46),
+	placard = Vector2.new(150, 44),
 })
 
 export type Bubble = {
@@ -218,6 +245,89 @@ function Bubbles:pick(positions: { [number]: Vector3 }, origin: Vector3): { numb
 	local out = {}
 	for index = 1, math.min(#candidates, config.maxOnScreen) do
 		table.insert(out, candidates[index].id)
+	end
+	return out
+end
+
+-- How many thoughts show their words at this view (see Rules).
+function Bubbles:textLimit(zoom: number?, phone: boolean?): number
+	local config = self._config
+	local limit = config.withText
+	if phone then
+		limit = math.min(limit, config.withTextPhone)
+	end
+	if type(zoom) == "number" and zoom > config.farZoom then
+		limit = math.min(limit, config.withTextFar)
+	end
+	return limit
+end
+
+-- How each picked bubble is drawn (see Rules): { [entityId] = "words" | "badge" }; absent = not drawn.
+-- anchors[id]: the screen point (Vector2) under the bubble's bottom edge, centred; sizes: Bubbles.SIZES.
+function Bubbles:layout(
+	picked: { number },
+	limit: number?,
+	anchors: { [number]: Vector2 }?,
+	sizes: { [string]: Vector2 }?
+): { [number]: string }
+	local most = if type(limit) == "number" then limit else self._config.withText
+	local gap = self._config.gapPixels
+	local size = sizes or Bubbles.SIZES
+	local placed = {} -- { rect, owner }: what a card may not cover
+	local function rectOf(entityId: number, box: Vector2): { number }?
+		local at = anchors and anchors[entityId]
+		if at == nil then
+			return nil
+		end
+		return { at.X - box.X / 2, at.Y - box.Y, at.X + box.X / 2, at.Y }
+	end
+	local function free(rect: { number }?, owner: number): boolean
+		if rect == nil then
+			return true
+		end
+		for _, other in placed do
+			local r = other.rect
+			if
+				other.owner ~= owner
+				and rect[1] < r[3] + gap
+				and r[1] < rect[3] + gap
+				and rect[2] < r[4] + gap
+				and r[2] < rect[4] + gap
+			then
+				return false
+			end
+		end
+		return true
+	end
+	local function place(rect: { number }?, owner: number)
+		if rect ~= nil then
+			table.insert(placed, { rect = rect, owner = owner })
+		end
+	end
+	local out = {}
+	for _, entityId in picked do -- placards and every request's badge first: nothing may hide them
+		local bubble = self:get(entityId)
+		if bubble ~= nil and bubble.kind == "strike" then
+			out[entityId] = "words"
+			place(rectOf(entityId, size.placard), entityId)
+		elseif bubble ~= nil and bubble.kind == "thought" then
+			out[entityId] = "badge"
+			place(rectOf(entityId, size.badge), entityId)
+		end
+	end
+	local words = 0
+	for _, kind in { "thought", "reaction" } do
+		for _, entityId in picked do
+			local bubble = self:get(entityId)
+			if bubble ~= nil and bubble.kind == kind and words < most then
+				local card = rectOf(entityId, size.card)
+				if free(card, entityId) then
+					words += 1
+					out[entityId] = "words"
+					place(card, entityId)
+				end
+			end
+		end
 	end
 	return out
 end
