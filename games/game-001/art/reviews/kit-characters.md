@@ -422,19 +422,27 @@ stopped here. Phase 2 (the next stacked branch) takes the tools, the hauler's st
 
 ## FL-0118 B18: arm pivots outside the torso (D-019 renders, before and after)
 
-What moved (FORGE-00, branch `forge/02-blender-shoulders`, 41ef850): only the two arm Motor6D pivots, out to the arm's centre line (0.41 outside
-the torso's side, on every rig). The arm parts sit exactly where they did at rest; `Pose.JOINTS`, the joint names and the wire are unchanged.
-FORGE-01's probe (not re-measured here): free arm against the head in the arms-up cheer -0.10 to -0.32 before, +0.45 to +0.69 after, other
-actions unchanged. Before is main `f86ad7f` (a scratch worktree), after is 41ef850, both with `Sim/Pose` from main (#154 plus #158). Blender previews,
-not a Studio play test. Images in `img/`: `citizen_shoulders_rest40.jpg` (8 rigs at rest, about 40 studs, colour and grayscale),
-`citizen_shoulders_rest170.jpg` (4 per job at 170 studs, 50 degrees), `citizen_shoulders_celebrate.jpg` (farmer, builder, soldier, governor and idle at the
-peak of the cheer, front and side, before and after), `citizen_shoulders_crowd.jpg` (30 cheering citizens, 50 degrees at 170 studs).
-- **Rest:** nothing changed. The before and after renders at 40 and at 170 studs are pixel-identical (mean absolute difference 0.0), and in the
-  dump of every rest pose no part moved. The only parts that moved anywhere outside the cheer in my dumps are the hauler's two arms in its carry
-  pose, by 0.066 studs (not visible at the size I looked at).
-- **Cheer (looked at, farmer, builder, soldier, governor, idle):** before, the free arm goes through the head or lies over the face (the idle citizen's two arms cover the cheeks); after,
-  the arm rises beside the head with a visible gap, so the cheer is two raised arms in a V and the face stays clear. In the cheer dump 192 of 774 parts
-  moved: both arms of every rig (40 each) and the tools in the right hands (30), which follow their arm. The arms stand about 0.4 studs wider apart, so
-  the cheer silhouette is a little wider and clearer, not different; the held tools sit about as before. The soldier's raised arm stood a hand's width off the torso at pivot 0.55 (reads detached; FORGE-05, D-051 (b)), so the soldier now pivots on its arm centre line like the citizens (0.41): arm-vs-helm in the cheer -0.322 before, +0.356 now (+0.448 at 0.55); the renders of this section were re-made at 0.41.
-- **Crowd:** the cheering crowd crop shows the raised arms beside the heads instead of overlapping them; kingdom-red pixels in the crop 294 before,
-  349 after (more sleeve and shoulder visible from above). No visible clip. Studio unverified.
+What moved (FORGE-00, branch `forge/02-blender-shoulders`, code head b990506): only the two arm Motor6D pivots, out to the arm's centre line (0.41
+outside the torso's side, one shared value for every rig, the soldier included). The arm parts sit exactly where they did at rest; `Pose.JOINTS`, the
+joint names and the wire are unchanged. FORGE-00 and FORGE-01's numbers (not re-measured here): free arm against the head in the arms-up cheer
+-0.10 to -0.32 before, +0.45 to +0.69 after (the soldier's arm against its helm -0.322 before, +0.356 at 0.41; at the first try of 0.55 it was +0.448
+but the raised arm floated off the shoulder, FORGE-05, D-051 (b)), other actions unchanged. Blender previews, not a Studio play test, `Sim/Pose` from
+main (#154 plus #158) in every render. Images in `img/`:
+- `citizen_shoulders_rest40.jpg` (8 rigs at rest, about 40 studs, colour and grayscale) and `citizen_shoulders_rest170.jpg` (4 per job at 170 studs, 50
+  degrees): main `f86ad7f` against 41ef850, the first try (#138's rigs). The rest pose does not depend on the pivot, so they still stand for b990506.
+- `citizen_shoulders_celebrate.jpg` (farmer, builder, soldier, governor and idle at the peak of the cheer, front and side) and
+  `citizen_shoulders_crowd.jpg` (30 cheering citizens, 50 degrees at 170 studs): re-rendered at 0.41 for every rig. Before is main `17420a0`, the main side of
+  the merge into b990506, after is b990506. They differ only in the arm pivots (the same rigs, #153's included), which is why the before is not
+  `f86ad7f` here.
+- **Rest:** nothing changed. The before and after renders at 40 and at 170 studs are pixel-identical (mean absolute difference 0.0), and in the dump of
+  every rest pose no part moved. The only parts that moved anywhere outside the cheer in my dumps are the hauler's two arms in its carry pose, by 0.066
+  studs (not visible at the size I looked at; measured at 41ef850).
+- **Cheer (looked at: farmer, builder, soldier, governor, idle):** before, the free arm goes through the head or lies over the face (the idle citizen's two
+  arms cover the cheeks); after, the arm rises beside the head with a visible gap, so the cheer is two raised arms in a V and the face stays clear. In the
+  8-rig cheer dump 110 of 355 parts moved: both arms of every rig (40 each, 5 views times 8 rigs) and the tools in the right hands (30), which follow their
+  arm. The arms stand about 0.4 studs wider apart, so the cheer silhouette is a little wider and clearer, not different; the held tools sit about as before.
+- **Soldier, front and side:** the raised arm is attached to the shoulder (its lower end meets the torso's top corner, as on the citizens), with a visible
+  gap to the helm in both views, and no new clip with the helm or the spear. The spear shaft still crosses the helm's crest in the front view, as before
+  the change: it is in front of it in space (FORGE-01's `PoseClearance` passes on the Kit), so that is projection.
+- **Crowd:** the cheering crowd crop shows the raised arms beside the heads instead of overlapping them; kingdom-red pixels in the crop 283 before, 341
+  after (more sleeve and shoulder visible from above). No visible clip. Studio unverified.
