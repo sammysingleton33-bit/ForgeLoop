@@ -114,7 +114,9 @@ function BuildingService:slots(kingdomId: string): { { id: string, size: string,
 	return out
 end
 
-function BuildingService:placeSlot(player: any, slotId: string, kind: string): (number?, string?)
+-- turn = quarter turns from the slot's street facing (0..3, nil = 0; CONTRACTS v0.4-g9h): the building stands in
+-- the slot turned that much (yaw = slot.rot + turn x 90 degrees), and must still fit it (Fit.fits(kind, size, turn)).
+function BuildingService:placeSlot(player: any, slotId: string, kind: string, turn: number?): (number?, string?)
 	local host = self._match.host
 	local kingdomId = host:kingdomOf(player)
 	if kingdomId == nil then
@@ -135,11 +137,13 @@ function BuildingService:placeSlot(player: any, slotId: string, kind: string): (
 	if self:_occupant(kingdomId, slotId) then
 		return nil, "slot_occupied"
 	end
-	if not Fit.fits(kind, slot.size) then
+	local quarter = math.floor(turn or 0) % 4
+	if not Fit.fits(kind, slot.size, quarter) then
 		return nil, "does_not_fit"
 	end
 	local center = slot.center
-	local ok, err, result = host:command(player, "PlaceBuilding", kind, center.X, center.Z, slot.rot)
+	local ok, err, result =
+		host:command(player, "PlaceBuilding", kind, center.X, center.Z, slot.rot + quarter * math.pi / 2)
 	if not ok then
 		return nil, err
 	end
@@ -196,8 +200,8 @@ function BuildingService:start()
 	self._remotes:handle("Build.GetBuildings", function()
 		return self:_sim():buildingViews()
 	end)
-	self._remotes:handle("Build.PlaceSlot", function(player: any, slotId: string, kind: string)
-		return self:placeSlot(player, slotId, kind)
+	self._remotes:handle("Build.PlaceSlot", function(player: any, slotId: string, kind: string, turn: number?)
+		return self:placeSlot(player, slotId, kind, turn)
 	end)
 	self._remotes:handle("Build.GetSlots", function(player: any)
 		local kingdomId = host:kingdomOf(player)
