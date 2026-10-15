@@ -16,6 +16,7 @@ evidence:
   - check.sh PASS on the merge (game-001 1328/0); FL-0115 rows 23/23; own mutants 2/3
   - experience 193/0, FL-0115 24/24, FL-0090 16/16
   - RequestIndicators.spec 13/13; FL-0115 mutations 46/46; renders requests-edge-{phone,667x375,desktop}.png looked at (safe area, arrow tips, count)
+  - RequestIndicators.spec 15/15; FL-0115 mutations 50/50; renders with the HUD zones outlined looked at
 ---
 
 # Citizen bubbles readable and tappable from the aerial camera (B15 #3; FL-0091 follow-up)
@@ -50,3 +51,4 @@ Automated: specs and mutations; aerial renders at default and maximum zoom looke
 - 2026-10-15 forge-04: REVIEW → REVIEW. Hover-clear follow-up (FORGE-05 after #137): InputMode spec 'leaving explore mode clears it at once, with no mouse move' (hover none, hovered('none') before changed fires, no stale hover on return); FL-0115 mutation row deleting set()'s hoverAt(nil) (24/24). FeedbackHighlight 'placing a building clears the hover outline' already covers the outline.
 - 2026-10-15 forge-05: REVIEW → REVIEW. Merged #143 (c2f1e7b): leaving explore clears the hover; FL-0090 row re-targeted
 - 2026-10-15 forge-04: REVIEW → REVIEW. B16 (FORGE-00 queue after #142): off-screen request badges and the cycle key. CitizenBubbleIndicatorController (game-001): a gold '!' badge at the screen edge for each open request off screen (Feedback/Requests placement in the GUI's safe area; close ones share a badge with a count; at most 4; 44 px), a tap focuses the camera and selects the citizen; F / DPadRight next, Shift+F / DPadLeft previous (oldest first, wrapping); only in explore mode with the aerial camera, never during a conversation. cycleRequests()/count() for FORGE-03's 'citizens waiting' control. Bubbles:requests (a repeated request keeps its age), CitizenBubbleController:requests(). Studio E8 step 13 + probe.
+- 2026-10-15 forge-04: REVIEW → REVIEW. B16 badges keep clear of FORGE-03's HUD (their numbers on #149): per-side insets from UI/Layout.compute on the same safe area (right of the rail, below the crest row, above the bottom bar) and a slide out of the top-left stack; FORGE-03 confirmed no key clash (F / DPad are free in explore mode).

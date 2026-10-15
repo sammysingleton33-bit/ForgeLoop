@@ -7,8 +7,8 @@ Open citizen requests that the aerial view does not show now get gold "!" badges
 - Branch `forge/04-experience-requests` (from main): `games/game-001/src/client/Controllers/CitizenBubbleIndicatorController.luau` (new), `games/game-001/src/shared/Feedback/Requests.luau` (new, pure placement), `Feedback/Bubbles:requests()`, `CitizenBubbleController:requests()`.
 
 ## Evidence
-- `RequestIndicators.spec` 13/13 (placement, grouping, order, tap, keys, mode and conversation gating, headless boot, the real CitizenBubbleController end to end).
-- `mutations.py FL-0115` 46/46 CAUGHT.
+- `RequestIndicators.spec` 15/15 (HUD clearance on phone, tablet and desktop sizes, placement, grouping, order, tap, keys, mode and conversation gating, headless boot, the real CitizenBubbleController end to end).
+- `mutations.py FL-0115` 50/50 CAUGHT.
 - Renders `roblox/tests/unit/experience/scenes/shots/requests-edge-{phone,667x375,desktop}.png` looked at: badges stay inside the safe area, arrow tips point at the citizens, two requests in the same direction share one badge with "2". Headless, not Studio.
 - Studio: **unverified** (`roblox/studio-tests/experience.md` E8 step 13 and its probe).
 
@@ -22,7 +22,13 @@ Additive, game-001 client only:
 
 ## Open issues and risks
 - **Key conflicts.** If your edit UI (FL-0120) or another HUD shortcut wants F or the DPad in explore mode, tell me and I'll move the cycle. Today nothing in game-001 binds them.
-- **Badge overlap.** Badges sit 40 px in from the GUI area's edges. Your HUD rail or corner buttons could overlap a badge on a phone. The badges are under your panels (DisplayOrder 5), so they never block them. If one sits under the rail, I can add the rail's width to the inset on that side; send me the rail's size.
+- **Badge overlap: resolved with your numbers.** Badges keep clear of your HUD using `UI/Layout.compute` on the same safe area (`CitizenBubbleIndicatorController.insets`):
+  - right of the rail: phone 86 px, desktop about 121 px;
+  - below the crest row;
+  - above the placement bar and chips;
+  - out of the top-left stack (crest, pills, reputation), sliding along the edge.
+
+  The open drawer and the objective tracker are not avoided, but the badges sit under your panels (DisplayOrder 5), so they never block them.
 - **Off-screen citizens' positions.** For LOD-hidden citizens, this uses the rig's last pivot, so a citizen walking far away may be a little off until it is rendered again.
 
 ## Next actions for the receiver

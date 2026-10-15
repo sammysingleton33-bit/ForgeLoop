@@ -72,6 +72,22 @@ describe("Feedback/Requests (FL-0115 B16)", function()
 		expect(Requests.nextAfter({}, 4)).toBeNil()
 	end)
 
+	it("edge(): per-side insets keep badges off the HUD; one in the top-left stack slides out of it", function()
+		local insets = { left = 40, right = 90, top = 70, bottom = 80 }
+		local right = Requests.edge(Vector3.new(5000, 285, 10), VIEW, insets) -- the centre is (375, 295)
+		expect(right.position.X).toBe(800 - 90)
+		local up = Requests.edge(Vector3.new(375, -900, 10), VIEW, insets)
+		expect(up.position.Y).toBe(70)
+		local corner = Vector2.new(400, 200)
+		local topLeft = Requests.edge(Vector3.new(200, -4000, 10), VIEW, insets, corner) -- leaves the top at x ~366
+		expect(topLeft.position).toEqual(Vector2.new(400, 70)) -- slid right along the top, out of the stack
+		local leftHigh = Requests.edge(Vector3.new(-4000, -1000, 10), VIEW, insets, corner) -- the left at y ~196
+		expect(leftHigh.position.X).toBe(40)
+		expect(leftHigh.position.Y).toBe(200) -- slid down along the left edge
+		local leftLow = Requests.edge(Vector3.new(-4000, 400, 10), VIEW, insets, corner)
+		expect(leftLow.position.Y > 200).toBe(true) -- below the stack: untouched
+	end)
+
 	it("group(): close badges share one led by the first (oldest); at most max", function()
 		local groups = Requests.group({
 			{ entityId = 1, position = Vector2.new(766, 300), angle = 0 },
@@ -221,14 +237,37 @@ describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 		controller:refresh()
 		local shown = badges()
 		expect(shown[7]).toBeNil()
-		expect(shown[8].Position).toEqual(UDim2.fromOffset(800 - INSET, 300))
-		expect(near(shown[8]:FindFirstChild("Pointer").Rotation, 0)).toBe(true)
-		expect(shown[9].Position).toEqual(UDim2.fromOffset(400, INSET))
-		expect(near(shown[9]:FindFirstChild("Pointer").Rotation, -90)).toBe(true)
+		local insets, corner = IndicatorDef.insets(VIEW)
+		local function expected(position)
+			local q = Requests.edge(Vector3.new(position.X, position.Z, 1), VIEW, insets, corner).position
+			return UDim2.fromOffset(math.floor(q.X + 0.5), math.floor(q.Y + 0.5))
+		end
+		expect(shown[8].Position).toEqual(expected(Vector3.new(1600, 0, 300)))
+		expect(shown[8]:FindFirstChild("Pointer").Rotation > -5 and shown[8]:FindFirstChild("Pointer").Rotation < 5).toBe(
+			true
+		)
+		expect(shown[9].Position).toEqual(expected(Vector3.new(400, 0, -900)))
+		expect(near(shown[9]:FindFirstChild("Pointer").Rotation, -90)).toBe(false) -- pointed from the inset centre
+		expect(shown[9]:FindFirstChild("Pointer").Rotation < -80).toBe(true)
 		expect(shown[8].Size).toEqual(UDim2.fromOffset(IndicatorDef.SIZE, IndicatorDef.SIZE)) -- 44 px
 		expect(shown[8]:FindFirstChild("Disc").Text).toBe("!") -- the glyph, never colour alone
 		expect(shown[8]:FindFirstChild("Count").Visible).toBe(false)
 		expect(controller:count()).toBe(3)
+	end)
+
+	it("keeps clear of FORGE-03's HUD: the right-edge rail, the top row and the bottom bar (UI/Layout)", function()
+		local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
+		for _, size in { Vector2.new(844, 371), VIEW, Vector2.new(1920, 1022) } do
+			local m = Layout.compute(size.X, size.Y)
+			local insets, corner = IndicatorDef.insets(size)
+			local radius = IndicatorDef.SIZE / 2
+			-- the badge's right side stays left of the rail's buttons
+			expect(size.X - insets.right + radius <= size.X - (m.rail.right + m.rail.button) * m.scale).toBe(true)
+			-- the badge's top stays below the crest row; its bottom above the placement bar and the chips
+			expect(insets.top - radius >= (m.hud.y + m.hud.crest) * m.scale).toBe(true)
+			expect(size.Y - insets.bottom + radius <= size.Y - (m.place.bottom + m.place.height) * m.scale).toBe(true)
+			expect(corner.Y - radius >= m.hud.bottom * m.scale).toBe(true) -- below the top-left stack
+		end
 	end)
 
 	it("requests close together share one badge with a count; at most MAX badges", function()

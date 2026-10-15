@@ -5,8 +5,10 @@
 	requests are out of view: one far east, one far north, and two together south-west, which share
 	one badge with a count. One request near the keep is on screen and gets no badge. The badges come from
 	the real CitizenBubbleIndicatorController (Feedback/Requests placement, its own badge build)
-	projected through the real RulerCameraController aerial CFrame. A headless approximation, not the
-	Studio check (E8 step 13): no terrain, trees or lighting, and no on-screen bubbles drawn here.
+	projected through the real RulerCameraController aerial CFrame. FORGE-03's HUD zones (rail, top-left
+	stack, bottom bar) are outlined from UI/Layout to judge the clearance; they are the layout's boxes,
+	not the HUD itself. A headless approximation, not the Studio check (E8 step 13): no terrain, trees or
+	lighting, and no on-screen bubbles drawn here.
 		PROJECT=games/game-001/default.project.json DEVICES="phone 667x375 desktop" RENDER_FLAGS="--shots=<dir>" \
 			bash design/ui/render/shoot-luau.sh roblox/tests/unit/experience/scenes/requests-edge.luau
 ]]
@@ -15,6 +17,7 @@ local roblox = require("@lune/roblox")
 local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 local IndicatorDef =
 	require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenBubbleIndicatorController")
+local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 
 local Instance = roblox.Instance
 
@@ -139,6 +142,49 @@ return function(ctx: any)
 	controller:start()
 	controller:refresh()
 	local indicators = playerGui:FindFirstChild("ForgeRequestIndicators")
+	-- FORGE-03's HUD zones (UI/Layout on the same safe area), outlined, so the clearance can be judged:
+	-- the right-edge rail (three buttons), the top-left stack and the bottom placement bar
+	local hud = make("ScreenGui", { Name = "HudZones" })
+	local m = Layout.compute(ctx.core.width, ctx.core.height)
+	local s = m.scale
+	local function zone(name: string, x: number, y: number, zw: number, zh: number)
+		local frame = make("Frame", {
+			Name = name,
+			Position = UDim2.fromOffset(math.round(x), math.round(y)),
+			Size = UDim2.fromOffset(math.round(zw), math.round(zh)),
+			BackgroundColor3 = Color3.fromRGB(30, 30, 40),
+			BackgroundTransparency = 0.45,
+			Parent = hud,
+		})
+		make("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Parent = frame })
+		make("TextLabel", {
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			Text = name,
+			Font = Enum.Font.GothamBold,
+			TextSize = 11,
+			TextColor3 = Color3.fromRGB(255, 255, 255),
+			Parent = frame,
+		})
+	end
+	local railW, railH = m.rail.button * s, (3 * m.rail.button + 2 * m.rail.gap) * s
+	zone("HUD rail", ctx.core.width - (m.rail.right * s) - railW, (ctx.core.height - railH) / 2, railW, railH)
+	local strip = m.hud.reputation
+	zone(
+		"HUD stack",
+		m.hud.x * s,
+		m.hud.y * s,
+		(math.max(strip.x + strip.width, m.hud.pills.x) - m.hud.x) * s,
+		(m.hud.bottom - m.hud.y) * s
+	)
+	local placeW = math.min(480, ctx.core.width - 120)
+	zone(
+		"bottom bar",
+		(ctx.core.width - placeW) / 2,
+		ctx.core.height - (m.place.bottom + m.place.height) * s,
+		placeW,
+		m.place.height * s
+	)
 	make("TextLabel", {
 		Name = "Caption",
 		BackgroundTransparency = 0.3,
@@ -152,5 +198,5 @@ return function(ctx: any)
 		Text = "off-screen requests · F / DPad → next",
 		Parent = scene,
 	})
-	return { guis = { scene, indicators } }
+	return { guis = { scene, hud, indicators } }
 end

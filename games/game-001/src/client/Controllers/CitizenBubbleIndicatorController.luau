@@ -13,7 +13,10 @@
 		  core-UI safe insets: never under the top bar or a notch), INSET px in, from
 		  Camera:WorldToScreenPoint (the same screen space as GuiObject.AbsolutePosition and taps).
 		  Badges closer than GAP px share one (the oldest request leads; a count shows how many), at most
-		  MAX on screen. 44 px, so a thumb can hit one.
+		  MAX on screen. 44 px, so a thumb can hit one. They keep clear of FORGE-03's HUD (UI/Layout on
+		  the same safe area, Def.insets): the right-edge rail, the top row (crest, pills, phase timer),
+		  the bottom bar (placement bar and construction chips), and the top-left stack (crest, pills,
+		  reputation), out of which a badge slides along its edge.
 		- A tap on a badge goes to that request: RulerCameraController:focusOn(position) and
 		  InputModeController:select("citizen", id), so FORGE-03's card opens with Talk, as a tap on the
 		  citizen would.
@@ -35,6 +38,7 @@
 
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local Requests = require("@game/ReplicatedStorage/Game/Feedback/Requests")
+local ScreenLayout = require("../UI/Layout")
 
 local Def = {
 	name = "CitizenBubbleIndicatorController",
@@ -43,7 +47,8 @@ local Def = {
 
 Def.POLL_SEC = 0.25
 Def.SIZE = 44 -- px: the badge (a touch target)
-Def.INSET = 40 -- px from each edge of the GUI's area to the badge's centre (the arrow's tip stays in)
+Def.INSET = 40 -- px from an edge of the GUI's area to the badge's centre (the arrow's tip stays in)
+Def.CLEAR = 8 -- px kept between a badge and FORGE-03's HUD (Def.insets)
 Def.GAP = 52 -- px: badges closer than this share one
 Def.MAX = 4 -- badges on screen at most
 Def.HEIGHT = 3.2 -- studs above the rig's pivot: where its bubble sits (CitizenBubbleController.HEIGHT)
@@ -85,6 +90,29 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_last = nil :: number?,
 		shown = {} :: { [number]: { [string]: any } }, -- badge index -> { entityId, count, position, angle }
 	}, Controller)
+end
+
+-- Per-side insets (badge centre to the area's edge, px) and the top-left corner to avoid, from FORGE-03's
+-- HUD layout on an area of `size` (UI/Layout.compute; its logical px times its scale). Plain INSET when
+-- the layout cannot be computed.
+function Def.insets(size: Vector2): (Requests.Insets, Vector2?)
+	local ok, m = pcall(ScreenLayout.compute, size.X, size.Y)
+	if not ok or type(m) ~= "table" then
+		return { left = Def.INSET, right = Def.INSET, top = Def.INSET, bottom = Def.INSET }, nil
+	end
+	local s, radius, clear = m.scale, Def.SIZE / 2, Def.CLEAR
+	local insets = {
+		left = Def.INSET,
+		right = math.max(Def.INSET, (m.rail.right + m.rail.button + clear) * s + radius),
+		top = math.max(Def.INSET, (m.hud.y + m.hud.crest + clear) * s + radius),
+		bottom = math.max(Def.INSET, (m.place.bottom + m.place.height + clear) * s + radius),
+	}
+	local strip = m.hud.reputation
+	local corner = Vector2.new(
+		(math.max(strip.x + strip.width, m.hud.pills.x) + clear) * s + radius,
+		(m.hud.bottom + clear) * s + radius
+	)
+	return insets, corner
 end
 
 function Def.new(env: any, registry: any): any
@@ -205,10 +233,11 @@ function Controller:refresh()
 	if self._bubbles ~= nil and self:_active() then
 		local origin, viewport = self:_area()
 		if origin ~= nil and viewport ~= nil then
+			local insets, corner = Def.insets(viewport)
 			for _, request in self:_requests() do
 				local point = self:_projectPoint(request.position + Vector3.new(0, Def.HEIGHT, 0), origin)
 				if point ~= nil then
-					local edge = Requests.edge(point, viewport, Def.INSET)
+					local edge = Requests.edge(point, viewport, insets, corner)
 					if not edge.onScreen and edge.position ~= nil and edge.angle ~= nil then
 						table.insert(
 							placed,
