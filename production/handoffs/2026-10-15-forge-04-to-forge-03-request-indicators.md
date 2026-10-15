@@ -7,8 +7,8 @@ Open citizen requests that the aerial view does not show now get gold "!" badges
 - Branch `forge/04-experience-requests` (from main): `games/game-001/src/client/Controllers/CitizenBubbleIndicatorController.luau` (new), `games/game-001/src/shared/Feedback/Requests.luau` (new, pure placement), `Feedback/Bubbles:requests()`, `CitizenBubbleController:requests()`.
 
 ## Evidence
-- `RequestIndicators.spec` 15/15 (HUD clearance on phone, tablet and desktop sizes, placement, grouping, order, tap, keys, mode and conversation gating, headless boot, the real CitizenBubbleController end to end).
-- `mutations.py FL-0115` 50/50 CAUGHT.
+- `RequestIndicators.spec` 16/16 (HUD clearance on phone, tablet and desktop sizes with the arrow tip included, placement, grouping, order, tap, keys, mode and conversation gating, destroy, headless boot, the real CitizenBubbleController end to end).
+- `mutations.py FL-0115` 54/54 CAUGHT.
 - Renders `roblox/tests/unit/experience/scenes/shots/requests-edge-{phone,667x375,desktop}.png` looked at: badges stay inside the safe area, arrow tips point at the citizens, two requests in the same direction share one badge with "2". Headless, not Studio.
 - Studio: **unverified** (`roblox/studio-tests/experience.md` E8 step 13 and its probe).
 
@@ -23,7 +23,7 @@ Additive, game-001 client only:
 ## Open issues and risks
 - **Key conflicts.** If your edit UI (FL-0120) or another HUD shortcut wants F or the DPad in explore mode, tell me and I'll move the cycle. Today nothing in game-001 binds them.
 - **Badge overlap: resolved with your numbers.** Badges keep clear of your HUD using `UI/Layout.compute` on the same safe area (`CitizenBubbleIndicatorController.insets`):
-  - right of the rail: phone 86 px, desktop about 121 px;
+  - right of the rail: phone 101 px, desktop about 136 px (badge centre to the edge; the arrow tip, `TIP` 15 px past the disc, stays 8 px clear too);
   - below the crest row;
   - above the placement bar and chips;
   - out of the top-left stack (crest, pills, reputation), sliding along the edge.

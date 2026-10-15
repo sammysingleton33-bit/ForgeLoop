@@ -49,6 +49,9 @@ Def.POLL_SEC = 0.25
 Def.SIZE = 44 -- px: the badge (a touch target)
 Def.INSET = 40 -- px from an edge of the GUI's area to the badge's centre (the arrow's tip stays in)
 Def.CLEAR = 8 -- px kept between a badge and FORGE-03's HUD (Def.insets)
+-- px the arrow reaches past the disc's rim: a 17 px square turned 45° (half its diagonal, 12) with a 2 px
+-- stroke (about 3 more at the corner). Def.insets keeps the tip clear of the HUD too.
+Def.TIP = 15
 Def.GAP = 52 -- px: badges closer than this share one
 Def.MAX = 4 -- badges on screen at most
 Def.HEIGHT = 3.2 -- studs above the rig's pivot: where its bubble sits (CitizenBubbleController.HEIGHT)
@@ -100,17 +103,17 @@ function Def.insets(size: Vector2): (Requests.Insets, Vector2?)
 	if not ok or type(m) ~= "table" then
 		return { left = Def.INSET, right = Def.INSET, top = Def.INSET, bottom = Def.INSET }, nil
 	end
-	local s, radius, clear = m.scale, Def.SIZE / 2, Def.CLEAR
+	local s, reach, clear = m.scale, Def.SIZE / 2 + Def.TIP, Def.CLEAR
 	local insets = {
 		left = Def.INSET,
-		right = math.max(Def.INSET, (m.rail.right + m.rail.button + clear) * s + radius),
-		top = math.max(Def.INSET, (m.hud.y + m.hud.crest + clear) * s + radius),
-		bottom = math.max(Def.INSET, (m.place.bottom + m.place.height + clear) * s + radius),
+		right = math.max(Def.INSET, (m.rail.right + m.rail.button + clear) * s + reach),
+		top = math.max(Def.INSET, (m.hud.y + m.hud.crest + clear) * s + reach),
+		bottom = math.max(Def.INSET, (m.place.bottom + m.place.height + clear) * s + reach),
 	}
 	local strip = m.hud.reputation
 	local corner = Vector2.new(
-		(math.max(strip.x + strip.width, m.hud.pills.x) + clear) * s + radius,
-		(m.hud.bottom + clear) * s + radius
+		(math.max(strip.x + strip.width, m.hud.pills.x) + clear) * s + reach,
+		(m.hud.bottom + clear) * s + reach
 	)
 	return insets, corner
 end
@@ -162,7 +165,12 @@ function Controller:destroy()
 	self._running = false
 	for _, connection in self._connections do
 		pcall(function()
-			connection:Disconnect()
+			-- Forge Signal connections (input mode, conversation) have disconnect; Roblox's have Disconnect
+			if type(connection) == "table" and connection.disconnect ~= nil then
+				connection:disconnect()
+			else
+				connection:Disconnect()
+			end
 		end)
 	end
 	table.clear(self._connections)

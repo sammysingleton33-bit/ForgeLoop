@@ -250,6 +250,13 @@ describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 		expect(near(shown[9]:FindFirstChild("Pointer").Rotation, -90)).toBe(false) -- pointed from the inset centre
 		expect(shown[9]:FindFirstChild("Pointer").Rotation < -80).toBe(true)
 		expect(shown[8].Size).toEqual(UDim2.fromOffset(IndicatorDef.SIZE, IndicatorDef.SIZE)) -- 44 px
+		-- TIP covers the drawn arrow (a square turned 45° on the rim, plus its stroke at the corner), and the
+		-- plain INSET keeps that tip inside the area
+		local arrow = shown[8]:FindFirstChild("Pointer"):FindFirstChild("Arrow")
+		local stroke = arrow:FindFirstChildOfClass("UIStroke")
+		expect(arrow.Rotation).toBe(45)
+		expect(arrow.Size.X.Offset / math.sqrt(2) + stroke.Thickness * math.sqrt(2) <= IndicatorDef.TIP).toBe(true)
+		expect(IndicatorDef.SIZE / 2 + IndicatorDef.TIP <= IndicatorDef.INSET).toBe(true)
 		expect(shown[8]:FindFirstChild("Disc").Text).toBe("!") -- the glyph, never colour alone
 		expect(shown[8]:FindFirstChild("Count").Visible).toBe(false)
 		expect(controller:count()).toBe(3)
@@ -260,7 +267,8 @@ describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 		for _, size in { Vector2.new(844, 371), VIEW, Vector2.new(1920, 1022) } do
 			local m = Layout.compute(size.X, size.Y)
 			local insets, corner = IndicatorDef.insets(size)
-			local radius = IndicatorDef.SIZE / 2
+			-- the badge plus its arrow's tip (TIP: the arrow points at the edge it sits on)
+			local radius = IndicatorDef.SIZE / 2 + IndicatorDef.TIP
 			-- the badge's right side stays left of the rail's buttons
 			expect(size.X - insets.right + radius <= size.X - (m.rail.right + m.rail.button) * m.scale).toBe(true)
 			-- the badge's top stays below the crest row; its bottom above the placement bar and the chips
@@ -340,6 +348,18 @@ describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 		camera.mode = "overview"
 		controller:refresh()
 		expect(badges()[8]).never.toBeNil()
+	end)
+
+	it("destroy() disconnects everything: Roblox input and the Forge signals (input mode, conversation)", function()
+		local held = table.clone(controller._connections)
+		expect(#held >= 4).toBe(true) -- InputBegan, input changed, conversation opened and closed
+		controller:destroy()
+		for index, connection in held do
+			local connected = if connection.connected ~= nil then connection.connected else connection.Connected
+			expect(`{index}: connected {connected}`).toBe(`{index}: connected false`)
+		end
+		expect(userInput.InputBegan:connectionCount()).toBe(0)
+		expect(playerGui:FindFirstChild("ForgeRequestIndicators")).toBeNil()
 	end)
 
 	it("runs inert without CitizenBubbleController (headless boot)", function()
