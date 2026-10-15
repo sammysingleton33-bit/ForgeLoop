@@ -38,7 +38,7 @@ Consequences for this design:
 - Variants go in custom fields, not in names (`BuildingCompleted` + `buildingType = "Farm"`, never `FarmCompleted`).
 - Field values are low-cardinality categories: types, outcomes, phases, roles, small numbers (placement 1–8, streak days). **Never** user ids, names, free text, timestamps or GUIDs (Roblox groups combinations past 8,000 as "Other").
 - Custom fields never carry personal data. `env.log` analytics lines include the UserId for Studio debugging; they are not forwarded off-platform.
-- Only server code calls AnalyticsService. An event caused by a client request (e.g. SettingChanged) is logged only after the server has validated and applied it, under the per-player bucket. No event is logged on a client's report alone that something was shown or done. The one exception is onboarding's client-reported steps (InspectCitizen, AnswerCitizen; they grant nothing, G11 wording pending FORGE-00).
+- Only server code calls AnalyticsService. An event caused by a client request (e.g. SettingChanged) is logged only after the server has validated and applied it, under the per-player bucket. No event is logged on a client's report alone that something was shown or done. The one exception is onboarding's client-reported step InspectCitizen (a selection only the client sees; it grants nothing, G11 wording pending FORGE-00). AnswerCitizen follows G9 `CitizenAnswered` from the server (FL-0108).
 
 ## 3. Budget (AI Kingdoms, `games/game-001/config/Analytics.luau`)
 
