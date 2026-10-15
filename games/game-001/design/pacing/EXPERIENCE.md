@@ -143,13 +143,13 @@ Proposals for FORGE-00 and the user, **not built**:
 
 ## 8. Analytics (FL-0023 adapter, FL-0063 funnel)
 - Onboarding funnel: Spawn → InspectCitizen → BuildOnPlot → AnswerCitizen → Recruit → Capture (v2), plus `OnboardingStepPassed` for steps the player was moved past;
-- VS1 funnel (BRIEF §13);
+- FirstMatch funnel (BRIEF §13);
 - session start and end with the last activity;
 - match length and outcome;
 - disconnect phase;
 - idle hints.
 
-Attribution: G9 via Feedback/Signals; funnel order (v0.4-g6) via the VS1 `inOrder` rule (FL-0063). Details: `analytics/schemas/events.md`.
+Attribution: G9 via Feedback/Signals; funnel order (v0.4-g6) via the FirstMatch `inOrder` rule (FL-0063). Details: `analytics/schemas/events.md`.
 
 ## 9. Open questions (the user's, BRIEF §16; none is decided here)
 - §16.3: mid-match joiners. Do they get the tutorial if Founding is long past? *Proposal:* yes; they are credited per G9 attribution and the order rule, from the moment they join.

@@ -264,7 +264,7 @@ end)
 describe("AnnouncerService (FL-0062)", function()
 	local env, bus, remotes, registry, p1, p2, p3
 
-	local function boot(withKingdoms)
+	local function boot(withKingdoms, analytics)
 		local defs = {
 			{
 				name = "RemoteService",
@@ -280,6 +280,14 @@ describe("AnnouncerService (FL-0062)", function()
 				end,
 			},
 		}
+		if analytics then
+			table.insert(defs, {
+				name = "AnalyticsService",
+				new = function()
+					return analytics
+				end,
+			})
+		end
 		if withKingdoms then
 			table.insert(defs, {
 				name = "KingdomService",
@@ -341,6 +349,35 @@ describe("AnnouncerService (FL-0062)", function()
 		expect(kindsFor(p1)).toEqual({ "phase" })
 		expect(kindsFor(p3)).toEqual({ "phase" })
 		expect(env.mock:hasLog("info", "no KingdomService yet")).toBe(true)
+	end)
+
+	it("logs CelebrationShown on the server for each player a celebrating moment reached (M3)", function()
+		local logged = {}
+		boot(true, {
+			event = function(_, player, name, fields)
+				table.insert(logged, `{player.UserId}:{name}:{fields.kind}`)
+				return true
+			end,
+		})
+		bus.ObjectiveCaptured:fire("tower_1", "azure") -- azure celebrates, crimson gets a rival notice
+		bus.BuildingPlaced:fire(
+			{ id = 1, kingdom = "crimson", type = "farm", level = 1, cframe = CFrame.new(), placedBy = 3101 },
+			p1
+		) -- a toast, not a celebration
+		expect(logged).toEqual({ "3103:CelebrationShown:objectiveCaptured" })
+		DebugCommands.run(p1, "fx.announce", "keepUpgraded") -- a Studio sample: nothing logged
+		expect(#logged).toBe(1)
+	end)
+
+	it("an analytics error never stops an announcement", function()
+		boot(true, {
+			event = function()
+				error("analytics down")
+			end,
+		})
+		bus.ObjectiveCaptured:fire("tower_1", "azure")
+		expect(kindsFor(p3)).toEqual({ "objectiveCaptured" })
+		expect(env.mock.threadErrors).toEqual({})
 	end)
 
 	it("registers fx.announce and fx.burst once (Studio debug panel)", function()
