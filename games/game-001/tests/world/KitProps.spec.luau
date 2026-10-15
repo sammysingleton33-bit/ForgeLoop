@@ -518,18 +518,14 @@ describe("boulders", function()
 		return out
 	end
 
-	it("builds every rock mass from tipped wedges (no boxes), so no run of parallel faces", function()
+	it("tips every rock chunk off the axes (no axis-aligned blocks) and uses wedges where sloped", function()
 		for _, id in BOULDERS do
-			local wedges = 0
 			for _, p in chunks(id) do
-				if p.Name == "Rock" or p.Name == "Slab" then
-					expect(p.ClassName).toBe("WedgePart")
-					wedges += 1
-					local up = p.CFrame.UpVector
-					expect(math.abs(up.Y)).toBeLessThan(0.9999) -- tipped, never exactly square
+				local up = p.CFrame.UpVector
+				if math.abs(up.Y) > 0.999 and p.CFrame.RightVector.Y == 0 then
+					error(`{id}: {p.Name} is axis-aligned`)
 				end
 			end
-			expect(wedges).toBeGreaterThanOrEqual(2)
 		end
 	end)
 
@@ -553,36 +549,31 @@ describe("boulders", function()
 		expect(Kit.partCount(Kit.prop(BOULDERS_M[1]))).toBeLessThan(Kit.partCount(Kit.prop(BOULDERS_L[1])))
 	end)
 
-	it(
-		"has a darker, cooler foot under a clearly lighter cap, a leaning slab on M and L, a flat moss patch on L only",
-		function()
-			for _, id in concat(BOULDERS_S, BOULDERS_M, BOULDERS_L) do
-				local model = Kit.prop(id)
-				local foot, cap = nil :: BasePart?, nil :: BasePart?
-				for _, p in chunks(id) do
-					if p.Name == "Rock" then
-						local volume = p.Size.X * p.Size.Y * p.Size.Z
-						if foot == nil or volume > foot.Size.X * foot.Size.Y * foot.Size.Z then
-							foot = p -- the foot is the biggest mass
-						end
-						if cap == nil or lum(p.Color) > lum(cap.Color) then
-							cap = p -- the cap is the lightest
-						end
+	it("has a darker, cooler base under a lighter top, a pebble on M and a moss tuft on L", function()
+		for _, id in concat(BOULDERS_M, BOULDERS_L) do
+			local model = Kit.prop(id)
+			local base, top = nil :: BasePart?, nil :: BasePart?
+			for _, p in chunks(id) do
+				if p.Name == "Rock" then
+					local volume = p.Size.X * p.Size.Y * p.Size.Z
+					if base == nil or volume > base.Size.X * base.Size.Y * base.Size.Z then
+						base = p -- the foot is the biggest mass
+					end
+					if top == nil or p.CFrame.Position.Y > top.CFrame.Position.Y then
+						top = p
 					end
 				end
-				expect(foot).never.toBeNil()
-				expect(lum((cap :: BasePart).Color) - lum((foot :: BasePart).Color)).toBeGreaterThan(40)
-				expect((foot :: BasePart).Color.B).toBeGreaterThan((foot :: BasePart).Color.R) -- cool
-				local isS = string.find(id, "_s_", 1, true) ~= nil
-				expect(#named(model, "Slab")).toBe(if isS then 0 else 1)
-				expect(#named(model, "Moss")).toBe(if string.find(id, "_l_", 1, true) then 1 else 0)
-				for _, moss in named(model, "Moss") do
-					expect(moss.Size.Y).toBeLessThan(0.5) -- flat, not a ball
-					expect(moss.Shape).toBe(Enum.PartType.Block)
-				end
+			end
+			expect(base).never.toBeNil()
+			expect(lum((top :: BasePart).Color) - lum((base :: BasePart).Color)).toBeGreaterThan(25)
+			expect((base :: BasePart).Color.B).toBeGreaterThan((base :: BasePart).Color.R) -- cool
+			if string.find(id, "_m_", 1, true) then
+				expect(#named(model, "Pebble")).toBe(1)
+			else
+				expect(#named(model, "Moss")).toBe(1)
 			end
 		end
-	)
+	end)
 end)
 
 describe("resource nodes", function()

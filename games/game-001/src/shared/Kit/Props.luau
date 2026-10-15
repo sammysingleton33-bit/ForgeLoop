@@ -406,10 +406,9 @@ local function chunk(
 	return make(ctx, name or "Rock", size, cf, color, Enum.Material.Slate)
 end
 
--- An angled rock mass: a block or wedge tipped on two axes. A wedge keeps its flat base on the ground and puts a
--- sloped face and two triangular ends on show, so a boulder built of wedges has no run of parallel faces. With
--- no `y` the mass sits on the ground, sunk 0.45; with `y` it is centred there. Returns the part, the height of its
--- highest point and its half-height, so the next mass can be bedded into it.
+-- A faceted lump: a block tipped hard on two axes (a cube balanced on an edge reads as an angular boulder, not a
+-- box). With no `y` it sits on the ground, sunk 0.45; with `y` it is centred there. Returns the part and the
+-- height of its highest point so the next lump can be bedded into it.
 local function lump(
 	ctx,
 	size: Vector3,
@@ -420,110 +419,73 @@ local function lump(
 	tz: number,
 	color: Color3,
 	name: string?,
-	y: number?,
-	kind: string?
+	y: number?
 ): (BasePart, number, number)
 	local rot = CFrame.Angles(0, yaw, 0) * CFrame.Angles(tx, 0, tz)
 	local c = { rot:GetComponents() }
 	local ey = 0.5 * (math.abs(c[7]) * size.X + math.abs(c[8]) * size.Y + math.abs(c[9]) * size.Z)
 	local cy = y or (ey - 0.45)
-	local make = if kind == "wedge" then wedge else block
-	return make(ctx, name or "Rock", size, CFrame.new(x, cy, z) * rot, color, Enum.Material.Slate), cy + ey, ey
+	return block(ctx, name or "Rock", size, CFrame.new(x, cy, z) * rot, color, Enum.Material.Slate), cy + ey, ey
 end
 
--- Boulders from angled wedges and slabs, different in structure and not only in scale. S: two wedges facing each
--- other, a dark foot and a light cap, which meet in a faceted ridge (2 parts). M: that pair plus a tall narrow
--- wedge leaning on it (3). L: a low slab with a flat ledge carrying a moss patch, a big wedge and a light leaning
--- cap wedge (4). Cliffs (3) are the L pair without slab or moss, taller. S + M + L = 12 parts incl. Root.
+-- Boulders differ in structure, not just scale: S is two tipped lumps (2 parts), M a dark lump under a lighter
+-- one plus a pebble (3), L a foot, a mid mass, a leaning lump and a moss tuft (4); cliffs (3) are the L stack
+-- taller. Budget: S + M + L = 12 parts incl. Root, same as the old 3 x 4.
 local function boulder(ctx, rng, kind: string)
 	local yaw = rng.range(0, 2 * math.pi)
 	local k = rng.range(0.92, 1.1)
 	local function tilt(m: number): number
-		return m * rng.range(0.7, 1.2) * (if rng.next() < 0.5 then -1 else 1)
-	end
-	-- a point `d` studs along (right, back) in the boulder's own frame
-	local function at(right: number, back: number): (number, number)
-		return math.cos(yaw) * right + math.sin(yaw) * back, -math.sin(yaw) * right + math.cos(yaw) * back
+		return m * rng.range(0.75, 1.15) * (if rng.next() < 0.5 then -1 else 1)
 	end
 	if kind == "s" then
-		lump(
-			ctx,
-			Vector3.new(4.8 * k, 2.4, 3.8 * k),
-			-0.2,
-			0.3,
-			yaw,
-			tilt(0.1),
-			tilt(0.08),
-			ROCK.base,
-			nil,
-			nil,
-			"wedge"
-		)
-		local x, z = at(0.5, 1.4)
-		lump(
-			ctx,
-			Vector3.new(3.6 * k, 2.8, 3.0 * k),
-			x,
-			z,
-			yaw + math.pi + 0.35,
-			tilt(0.14),
-			tilt(0.14),
-			ROCK.top,
-			nil,
-			nil,
-			"wedge"
-		)
+		lump(ctx, Vector3.new(4.0 * k, 2.3, 3.5 * k), -0.4, 0, yaw, tilt(0.25), tilt(0.22), ROCK.mid)
+		lump(ctx, Vector3.new(2.8 * k, 2.0, 2.4 * k), 1.8, 1.0, yaw + 1.0, tilt(0.3), tilt(0.3), ROCK.top)
 	elseif kind == "m" then
-		lump(ctx, Vector3.new(6.2 * k, 3.0, 5.0 * k), 0, 0, yaw, tilt(0.1), tilt(0.08), ROCK.base, nil, nil, "wedge")
-		local x, z = at(0.6, 1.9)
+		local _, top = lump(ctx, Vector3.new(6.2 * k, 2.4, 5.2 * k), 0, 0, yaw, tilt(0.2), tilt(0.2), ROCK.base)
 		lump(
 			ctx,
-			Vector3.new(4.6 * k, 3.8, 3.6 * k),
-			x,
-			z,
-			yaw + math.pi + 0.3,
-			tilt(0.14),
-			tilt(0.14),
+			Vector3.new(4.4 * k, 2.4, 3.6 * k),
+			0.5,
+			-0.3,
+			yaw + 0.8,
+			tilt(0.3),
+			tilt(0.28),
 			ROCK.top,
 			nil,
-			nil,
-			"wedge"
+			top - 0.8
 		)
-		local sx, sz = at(-3.6, -0.6)
-		lump(ctx, Vector3.new(1.8, 4.2, 2.6), sx, sz, yaw + 1.2, tilt(0.35), tilt(0.2), ROCK.mid, "Slab", nil, "wedge")
+		local a = yaw + rng.range(2.2, 4.0)
+		lump(ctx, Vector3.new(1.9, 1.2, 1.7), math.cos(a) * 4.6, math.sin(a) * 4.6, a, 0.4, 0.3, ROCK.mid, "Pebble")
 	else
 		local g = if kind == "cliff" then 1.4 else 1.25 -- L is big; cliffs the biggest and tallest
-		local function v(x: number, y: number, z: number): Vector3
-			return Vector3.new(x, y, z) * g
-		end
-		local foot = v(10.0 * k, 4.6, 8.0 * k)
-		local fp = lump(ctx, foot, 0, 0, yaw, tilt(0.07), tilt(0.06), ROCK.base, nil, nil, "wedge")
-		local x2, z2 = at(0.4 * g, 1.7 * g)
-		lump(
+		local _, top = lump(ctx, Vector3.new(10.0 * k, 3.0, 8.4 * k) * g, 0, 0, yaw, tilt(0.14), tilt(0.12), ROCK.base)
+		local _, top2 = lump(
 			ctx,
-			v(6.8 * k, 6.4, 5.4 * k),
-			x2,
-			z2,
-			yaw + math.pi + 0.35,
-			tilt(0.1),
-			tilt(0.1),
-			ROCK.top,
+			Vector3.new(6.0 * k, 3.0, 5.0 * k) * g,
+			-0.8 * g,
+			0.5 * g,
+			yaw + 0.6,
+			tilt(0.3),
+			tilt(0.26),
+			ROCK.mid,
 			nil,
-			nil,
-			"wedge"
+			top - 1.2
 		)
-		local x3, z3 = at(-4.6 * g, -1.0 * g)
-		lump(ctx, v(2.6, 5.6, 3.4), x3, z3, yaw + 1.1, tilt(0.3), tilt(0.2), ROCK.mid, "Slab", nil, "wedge")
 		if kind ~= "cliff" then
-			-- a flat patch of moss lying flush on the foot's sloped face (the slope runs down towards its local -Z)
-			local pitch = -math.atan(foot.Y / foot.Z)
-			local zc = -0.2 * foot.Z
-			local on = fp.CFrame
-				* CFrame.new(1.2 * g, zc * foot.Y / foot.Z, zc)
-				* CFrame.Angles(pitch, 0, 0)
-				* CFrame.new(0, 0.14, 0)
-			block(ctx, "Moss", Vector3.new(3.4, 0.28, 2.6) * g, on, ROCK.moss, Enum.Material.Grass).CastShadow = false
+			local a = yaw + 2.6
+			lump(
+				ctx,
+				Vector3.new(4.4 * k, 2.8, 3.8 * k) * g,
+				math.cos(a) * 5.8 * g,
+				math.sin(a) * 5.8 * g,
+				a,
+				tilt(0.34),
+				tilt(0.34),
+				ROCK.top
+			)
 		end
+		ball(ctx, "Moss", 2.2 * g, Vector3.new(-0.8 * g, top2 - 0.9, 0.5 * g), ROCK.moss, Enum.Material.Grass).CastShadow =
+			false
 	end
 end
 

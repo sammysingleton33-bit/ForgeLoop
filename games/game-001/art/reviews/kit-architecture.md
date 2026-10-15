@@ -372,7 +372,7 @@ slabs, a flat moss tuft, silhouette distinct from the ore crystal, S3 / M4 / L5 
 silhouette. Part counts must stay at or below the #141 numbers per id (D-047; FL-0116 trims dressing in parallel).
 Renders as in round 1 (Blender preview, no Roblox material textures, **not a Studio play test**): gameplay 62–80 studs
 and aerial 170 studs / 50°, 1280 × 720, Cycles 24 samples. Images in `img/`: `env_polish_r2_trees_gameplay.jpg`,
-`env_polish_r2_trees_aerial.jpg`, `env_polish_r2_oaks_pines_birches.jpg`, `env_polish_r2_boulders.jpg` (each #141 | round 2) and
+`env_polish_r2_trees_aerial.jpg`, `env_polish_r2_oaks_pines_birches.jpg`, `env_polish_r2_boulders.jpg` (main | #141 | the rejected chunky pass) and
 `env_polish_r2_wheat_attempts.jpg` (the wheat attempts and the over-budget reference).
 
 **1. Wheat: BLOCKED by the part budget, not changed.** Two attempts, six designs, all at 17 parts or fewer, each rendered and
@@ -390,14 +390,15 @@ wedge per tuft, colours varied from olive to gold): 5 rows × 6 = 32 parts reads
 Decision needed from FORGE-00: approve about +27 per wheat field (44 parts), or keep six slabs until the Blender batch brings
 a one-mesh crop row.
 
-**2. Boulders from angled wedges and slabs (S 3 / M 4 / L 5, cliff 4: counts unchanged).** Every rock mass is a tipped
-`WedgePart` (a sloped face and two triangular ends, no run of parallel faces); a spec forbids boxes. S: a dark foot wedge and a light
-cap wedge facing each other, meeting in a faceted ridge (2 parts). M: that pair and a tall narrow wedge leaning on it (3). L: a big
-foot wedge, a light cap wedge, a leaning slab wedge and a **flat moss patch lying flush on the foot's sloped face** (4; the
-moss is a 0.28-thick block, no longer a ball on top). Cool dark foot (106,110,118) under a warm light cap (172,170,162), as before.
-No pebbles now. The ore host rocks still use the round-1 lumps (the same code path as before; not re-done this round).
-The boulders no longer read as stacked boxes; the cost is that the S and M rocks read as angular shards and the L as a ramped tent,
-so their silhouettes are sharper than a real boulder's.
+**2. Boulders: two passes, neither clearly better than #141; reverted to #141's boulders (unchanged).** Pass 1 rebuilt every rock
+from tipped wedges (S: two facing wedges, M: three, L: foot, cap and leaning wedge with a flush moss patch). At gameplay distance
+the S and M rocks read as sharp angular shards, close to the ore crystals, and the L as a ramped tent: worse than #141's chunky
+rocks. Pass 2 went broad and chunky as asked (a block or two tipped 10-25 degrees plus a smaller wedge, nothing thinner than 25 % of its
+longest side, height at most 0.6 of width, L with a flat moss patch on a flat top). Rendered against main and #141 at gameplay and aerial
+distance (`env_polish_r2_boulders.jpg`, main | #141 | pass 2), it is a darker, flatter version of the same stacked blocks: the moss
+patch reads a little better than the ball, but the silhouette is no better and at 170 studs the moss is invisible. Not clearly better, so
+`lump` and `boulder` are back to #141's code, byte for byte, and the spec to #141's boulder tests. The ball moss on L stays (the flat patch
+was only judged on a block foot); a real fix for boulders needs faceted meshes (the Blender batch), not more primitives.
 
 **3. Oak and birch variety by silhouette; pine skirt.** Oak variants pick an archetype by id: dome, tall ovoid, wide flat spreading,
 lopsided (a heavy side, a gap, a bare limb carrying one small lobe), twin (two crowns on a forked trunk) and repeats; every oak is still
