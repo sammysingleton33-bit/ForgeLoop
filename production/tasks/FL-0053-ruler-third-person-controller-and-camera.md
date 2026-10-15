@@ -21,6 +21,7 @@ evidence:
   - "main d887beb: Ruler.spec asserts Sit == false after standUp; check.sh PASS"
   - InputMode.spec 17/17; mutations.py FL-0053 23/23 CAUGHT; Studio E11 unverified
   - InputMode.spec 18/18; mutations.py FL-0053 30/30 CAUGHT; Studio E11 unverified
+  - experience 196/0; FL-0053 30/30
 ---
 
 # Ruler third-person controller, camera and input modes
@@ -54,3 +55,4 @@ The ruler feels good to control on PC and phone (VS-1 row 2).
 - 2026-10-13 forge-04: REVIEW → REVIEW. Status unchanged (--force). #29 shake Medium (FORGE-00 audit, D-038 follow-ups): each frame's shake is undone before Roblox's camera runs (undoShake at RenderPriority.Camera - 1), so walk mode never drifts; NaN and infinite shakes are refused. Specs + 3 mutation rows; in PR #84 (FL-0100) because both edit RulerCameraController.
 - 2026-10-13 forge-04: REVIEW → REVIEW. Back key for FORGE-05's #126 L6 (FORGE-03's proposal): InputModeController.back fires on gamepad B / Backspace in explore mode (not Esc, not GUI-handled, not the press that left build mode); Studio E11; handoff forge-04-to-forge-03-back-key
 - 2026-10-15 forge-04: REVIEW → REVIEW. #130 FORGE-07 review: merged main (B14 rows, E9/E10, log lines first); L1 topmost wins: the back Signal becomes InputModeController:onBack(handler) -> release (most recently registered first, true = took the press, errors skipped and logged once) and :back(); E11 step 5 (stacked panels, Mac delete key); handoff updated for FORGE-03
+- 2026-10-15 forge-05: REVIEW → REVIEW. Merged #130 (e639c79): InputModeController.back (gamepad B / Backspace); FORGE-03 subscribes with topmost-wins (FORGE-07 L1)
