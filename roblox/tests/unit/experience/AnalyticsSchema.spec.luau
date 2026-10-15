@@ -163,6 +163,21 @@ describe("Experience/AnalyticsSchema", function()
 	end)
 end)
 
+describe("Experience/Subjects.missing (FORGE-00 review M8)", function()
+	it("names the events neither the defaults nor the game's resolvers cover, once each", function()
+		local resolvers = {
+			KingdomJoined = function()
+				return {}
+			end,
+		}
+		expect(Subjects.missing({ "PlayerReady", "KingdomJoined", "CitizenAnswered", "CitizenAnswered" }, resolvers)).toEqual({
+			"CitizenAnswered",
+		})
+		expect(Subjects.missing({ "KingdomJoined" }, nil)).toEqual({ "KingdomJoined" }) -- not a framework event
+		expect(Subjects.missing({ "RoundEnded", "OnboardingStep" }, nil)).toEqual({}) -- framework defaults
+	end)
+end)
+
 describe("Experience/Subjects and AnalyticsRouter", function()
 	local function ctxWith(players)
 		return {
