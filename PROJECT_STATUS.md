@@ -4,24 +4,27 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B16**, main `e447364`, delivered 2026-10-15 19:15 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff with its B15 and B16 sections.
-  - **New since B15:**
-    - Interim environment art (D-051): layered pines, mossy angular boulders, coloured ore nodes, a furrowed cabbage field (#141).
-    - Gamepad R1/L1 turn while placing (#139).
-    - Wall and gate pieces join (#136).
+- **Latest build: B17**, main `41a70e8`, delivered 2026-10-15 22:25 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff with its B15, B16 and B17 sections.
+  - **New since B16:**
+    - Base editing: Move → ghost → Turn → confirm, on free ground or a free plot (#140, #148, #142, #157; G13.9 g9j).
+    - Clean starting farms (#152, #159, #160).
+    - Off-screen request badges, with F / D-pad to cycle (#149).
+    - The cheer pose keeps tools clear (#154, #158, #161).
+    - Settings panel (#123).
+    - FL-0122 hardening (#145).
+    - Paged entity load (#127).
+    - Analytics FirstMatch (#147).
   - **Not yet:**
-    - Oak, birch and wheat are still placeholder (FL-0117 open).
-    - Citizen job art (#138) waits for B17 with the Pose cheer fix.
-    - Farm-node visual-extent clearance (FORGE-01).
-    - Phone bubble overlap.
-    - FL-0122 (#145).
-    - Base editing (B17).
-- **Next build: B17:**
-  - base editing (#140 FL-0119, #142 FL-0121, FL-0120 UI; G13.9 g9j);
-  - citizen job art (#138) with the Pose fix;
-  - FL-0122 hardening (#145);
-  - farm-node visual-extent clearance;
-  - FL-0116 world trim.
+    - Citizen job art (#138/#153 → B18; #155 waits on the miner pick fix).
+    - Wheat and boulders parked (mesh pilot).
+    - Drag-to-move (FL-0123).
+    - A co-ruler's build hint may point at a built plot.
+    - Sounds, DRAFT dialogue, FPS unknown.
+- **Next build: B18:**
+  - citizen job art (#138/#153, later #155);
+  - riots and consequences (#125);
+  - presentation tags (#156 FL-0110, FL-0111);
+  - FORGE-02 B12 visuals and FL-0086 building types.
 - **Workers:**
   - FORGE-01 gameplay
   - FORGE-02 assets and Kit
