@@ -400,3 +400,15 @@ a wider shirt-tone shift, and the miner pot a little lighter so it separates fro
 pixels in the crowd crop: 443 (main 420, #138 380). Not addressed here because each needs a second part (Phase 2, D-048): tools
 with handle and head, the hauler's strap and sack tie, the builder's hard hat (dome + visor) and hammer, the miner's lamp, the
 spearhead. Hair is still a hemisphere (a cap shape is a separate change).
+
+#### Round 2 fresh re-score (image-only reviewer, commit 356dfc2): rig set NEEDS-WORK
+The reviewer did not zoom the aerial crops. Scores sil / var / read / prop / pal / detail / cohes: farmer 5/2/5/4/4/3/3,
+woodcutter 3/3/3/4/3/3/3, miner 3/3/3/4/4/3/2, builder 4/3/4/3/3/3/3, hauler 3/3/2/3/3/2/3, idle 3/3/4/4/4/3/3, soldier
+4/4/4/3/3/3/3 (PASS, borderline), governor 4/4/4/4/4/3/4 (PASS); rig set 3/3/3/4/4/3/3. Two of eight pass; visibly better than
+BEFORE "but only slightly". Remaining, lowest first: hauler read 2 (the sack hides behind the arm in the front view, the figure
+looks like idle: needs the strap, Phase 2); farmer variation 2 (the four farmers still look alike in the aerial group: hat colour
+and tilt are subtle at 3 px per stud); miner cohesion 2 and a ragged tool-arm join; tools overall are slabs (no handle and head:
+Phase 2); woodcutter, miner and idle share a dark value in grayscale; builder carries a crate and the wedge cap reads as paper;
+idle hair is two overlapping spheres; the soldier's cone reads as a party hat and the helm is a box. The criterion still below
+threshold after two author rounds on 9 parts, as the coordinator's rule asks, is **variation (2-3, needs 4) and tool readability**;
+stopped here. Phase 2 (the next stacked branch) takes the tools, the hauler's strap, the builder's hard hat and the miner's lamp.
