@@ -26,4 +26,12 @@ M = [
  ("FL-0053", C2+"RulerCameraController.luau", '		camera.CFrame = now * shaken.offset:Inverse()', '		camera.CFrame = now', "RulerCamera", "undoes each frame's shake before Roblox's camera runs", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", '	if\n		(now.Position - was.Position).Magnitude < 1e-3\n		and now.LookVector:Dot(was.LookVector) > 1 - 1e-6\n		and now.UpVector:Dot(was.UpVector) > 1 - 1e-6\n	then', '	if true then', "RulerCamera", "undoes each frame's shake before Roblox's camera runs", "game"),
  ("FL-0053", C2+"RulerCameraController.luau", 'if not finite(magnitude) or not finite(duration) or magnitude <= 0', 'if type(magnitude) ~= "number" or type(duration) ~= "number" or magnitude <= 0', "RulerCamera", "refuses NaN and infinite shakes", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if self:accepts("explore") then\n\t\t\t\t\tself:back()', 'if true then\n\t\t\t\t\tself:back()', "InputMode", "back never fires in build mode", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if processed then\n\t\t\t\treturn\n\t\t\tend\n\t\t\tif input.KeyCode', 'if input.KeyCode', "InputMode", "back fires on gamepad B and Backspace", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace })', 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB })', "InputMode", "back fires on gamepad B and Backspace", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace })', 'Def.BACK_KEYS = table.freeze({ Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace, Enum.KeyCode.Escape })', "InputMode", "back fires on gamepad B and Backspace", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'for index = #self._backHandlers, 1, -1 do', 'for index = 1, #self._backHandlers do', "InputMode", 'back: topmost wins', "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if ok and took == true then', 'if ok then', "InputMode", 'back: topmost wins', "game"),
+ ("FL-0053", C2+"InputModeController.luau", '\t\t\ttable.remove(self._backHandlers, index)\n', '\n', "InputMode", 'back: topmost wins', "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'if not ok and not entry.warned then', 'if not ok then', "InputMode", 'back: topmost wins', "game"),
 ]
