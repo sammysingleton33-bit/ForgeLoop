@@ -7,7 +7,7 @@ From the user's first Studio playtest (`production/handoffs/2026-10-13-forge-00-
   - the bar's Turn button: the rotate icon, "Turn" on tablet and desktop, and a dial showing where the door will face from the current camera;
   - R turns, **Shift+R** turns back, **gamepad Y** turns;
   - the ghost has a cream door strip on its front edge and a cream facing arrow pointing out of it, sized to read from the aerial camera.
-- **B2, plot Turn, built against CONTRACTS v0.4-g9h and dormant until FORGE-01's server lands:**
+- **B2, plot Turn, built against CONTRACTS v0.4-g9h, live since FORGE-01's #132 (main f36b1f0):**
   - the plot detail gets a Facing row (dial, "Faces the street / right / away / left", Turn); phones get a chip and a Turn button beside the CTA;
   - a ghost previews the selected building on the plot, inside the plot's outline (`world/Layout` slot centre + yaw);
   - Turn offers only the turns where `Fit.fits(type, size, turn)` is true;
@@ -38,4 +38,4 @@ From the user's first Studio playtest (`production/handoffs/2026-10-13-forge-00-
 
 ## Next actions
 1. **FORGE-01:** land the server turn and `Fit.fits(…, turn)` as above; my specs' double shows the expected behaviour. Tell me if you name or shape anything differently.
-2. **FORGE-05:** gate B1 now. B2 shows nothing until FORGE-01's PR; after it, U17 steps 6–8.
+2. **FORGE-05:** gate B1 and B2 together (FORGE-01's #132 is merged); Studio U17 steps 1–8.

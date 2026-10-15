@@ -94,16 +94,23 @@ describe("Rotation maths", function()
 		expect(Placement.screenAngle(0, top)).toBe(270)
 	end)
 
-	it("offers only the turns the contract says fit, and nothing while the server takes no turn", function()
-		-- main's Build/Remotes declares PlaceSlot with two arguments: no turn yet (FORGE-01 lands it)
+	it("turns plots on in this build: the shared Build/Remotes declares PlaceSlot's turn (FORGE-01 #132)", function()
+		-- no seam: the real detection and FORGE-01's real Fit (FORGE-05's gate: a broken detection
+		-- would leave the plot Turn silently dormant)
 		Turns.useSeam(nil)
-		expect(Turns.supported()).toBe(false)
-		expect(Turns.allowed("storehouse", "M")).toEqual({ 0 })
-		Turns.useSeam({ supported = true, fits = SlotDoubles.fitsTurned })
-		expect(Turns.allowed("storehouse", "M")).toEqual({ 0, 1, 2, 3 }) -- 22×18 fits 36×30 both ways
+		expect(Turns.supported()).toBe(true)
+		expect(Turns.allowed("house", "M")).toEqual({ 0, 1, 2, 3 }) -- 22×18 fits 36×30 both ways
+		expect(Turns.allowed("storehouse", "M")).toEqual({ 0, 1, 2, 3 })
 		expect(Turns.allowed("barracks", "M")).toEqual({ 0, 2 }) -- 34×22 turned is 22×34: deeper than 30
 		expect(Turns.allowed("house", "S")).toEqual({ 0, 2 }) -- 22×18 turned is 18×22: deeper than 20
 		expect(Turns.allowed("farm", "L")).toEqual({ 0, 1, 2, 3 }) -- 40×32 in 46×40
+	end)
+
+	it("offers only the turns that fit, and nothing on a server that takes no turn", function()
+		Turns.useSeam({ supported = false })
+		expect(Turns.supported()).toBe(false)
+		expect(Turns.allowed("storehouse", "M")).toEqual({ 0 })
+		Turns.useSeam(nil)
 		expect(Turns.next({ 0, 2 }, 0)).toBe(2)
 		expect(Turns.next({ 0, 2 }, 2)).toBe(0)
 		expect(Turns.next({ 0, 1, 2, 3 }, 3)).toBe(0)
@@ -111,7 +118,6 @@ describe("Rotation maths", function()
 		expect(Turns.label(1)).toBe("Faces right")
 		expect(Turns.label(2)).toBe("Faces away")
 		expect(Turns.label(3)).toBe("Faces left")
-		Turns.useSeam(nil)
 	end)
 end)
 
@@ -239,7 +245,8 @@ describe("Turning a building on its plot (v0.4-g9h)", function()
 		Create.setConnector(previous)
 	end)
 
-	it("shows no Turn and keeps PlaceSlot's two arguments while the server takes no turn", function()
+	it("shows no Turn and keeps PlaceSlot's two arguments on a server that takes no turn", function()
+		Turns.useSeam({ supported = false })
 		world = newWorld()
 		world.picker:open("m1")
 		world.picker:select("lumbercamp")
@@ -257,7 +264,7 @@ describe("Turning a building on its plot (v0.4-g9h)", function()
 	end)
 
 	it("turns a storehouse through every quarter, previews it on the plot and builds it turned", function()
-		Turns.useSeam({ supported = true, fits = SlotDoubles.fitsTurned })
+		-- no seam: this build's real detection, Fit and PlaceSlot declaration
 		world = newWorld({ turns = true })
 		local picker, hud = world.picker, world.hud
 		picker:open("crimson_slot5")
@@ -323,7 +330,6 @@ describe("Turning a building on its plot (v0.4-g9h)", function()
 	end)
 
 	it("offers only the turns that fit: a barracks on a medium plot faces the street or away", function()
-		Turns.useSeam({ supported = true, fits = SlotDoubles.fitsTurned })
 		world = newWorld({ turns = true })
 		local picker, hud = world.picker, world.hud
 		picker:open("crimson_slot5")
@@ -387,7 +393,6 @@ describe("Turning a building on its plot (v0.4-g9h)", function()
 	end)
 
 	it("puts Turn beside the build button on a phone, with the facing as a chip", function()
-		Turns.useSeam({ supported = true, fits = SlotDoubles.fitsTurned })
 		world = newWorld({ turns = true, width = 750, height = 311 })
 		local picker, hud = world.picker, world.hud
 		picker:open("crimson_slot5")
@@ -410,7 +415,6 @@ describe("Turning a building on its plot (v0.4-g9h)", function()
 	end)
 
 	it("keeps the turn the order went out with while it is on its way", function()
-		Turns.useSeam({ supported = true, fits = SlotDoubles.fitsTurned })
 		world = newWorld({ turns = true, latency = 0.3 })
 		local picker, hud = world.picker, world.hud
 		picker:open("crimson_slot5")
@@ -427,7 +431,6 @@ describe("Turning a building on its plot (v0.4-g9h)", function()
 	end)
 
 	it("removes the plot ghost when the picker closes", function()
-		Turns.useSeam({ supported = true, fits = SlotDoubles.fitsTurned })
 		world = newWorld({ turns = true })
 		world.picker:open("crimson_slot5")
 		world:advance(0.1)

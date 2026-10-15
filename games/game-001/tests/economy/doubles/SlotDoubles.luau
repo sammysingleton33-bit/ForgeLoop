@@ -17,19 +17,17 @@
 	client that offers a misfit gets "does_not_fit" back. Costs from config Costs; refusals use the
 	reason vocabulary of production/handoffs/2026-10-12-forge-03-to-forge-01-build-ui.md.
 
-	Turning (CONTRACTS G13.5 v0.4-g9h), until FORGE-01's server lands:
-		KingdomWorld.new({ remotes = SlotDoubles.TURN_REMOTES, services = { SlotDoubles.turnService } })
-	declares `Build.PlaceSlot(slotId, type, turn?)`, records the turn (calls[i].args[3]) and refuses a
-	turn whose turned footprint does not fit (does_not_fit) with SlotDoubles.fitsTurned, the contract's
-	rule: odd turns swap the footprint's axes. It also adds "crimson_slot5", a medium plot with a real
-	world/Layout id, so the picker's ghost has a place in the world. SlotDoubles.fitsTurned stands in
-	for FORGE-01's `Fit.fits(type, size, turn)` through UI/Turns.useSeam.
+	Turning (CONTRACTS G13.5 v0.4-g9h, FORGE-01 #132): `Build.PlaceSlot(slotId, type, turn?)` as the real
+	server declares it; the turn is recorded (calls[i].args[3]) and a turn whose turned footprint does not
+	fit is refused (does_not_fit) by the real `Fit.fits(type, size, turn)`. TURN_REMOTES is the same
+	declaration (kept for older callers). With `KingdomWorld.new({ services = { SlotDoubles.turnService } })`
+	the double also has "crimson_slot5", a medium plot with a real world/Layout id, so the picker's ghost
+	has a place in the world. SlotDoubles.fitsTurned(type, size, turn) is the real rule (Fit.fits).
 ]]
 
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local V = require("@game/ReplicatedStorage/Forge/Core/Validate")
-local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local SlotDoubles = {}
 
@@ -43,36 +41,17 @@ SlotDoubles.REMOTES = {
 		{
 			name = "Build.PlaceSlot",
 			kind = "function",
-			args = { V.string(1, 32), V.enum(TYPES) },
-			rate = { burst = 3, perSecond = 1 },
-		},
-	},
-}
-
-SlotDoubles.TURN_REMOTES = {
-	Build = {
-		SlotDoubles.REMOTES.Build[1],
-		SlotDoubles.REMOTES.Build[2],
-		{
-			name = "Build.PlaceSlot",
-			kind = "function",
 			args = { V.string(1, 32), V.enum(TYPES), V.optional(V.integer(0, 3)) },
 			rate = { burst = 3, perSecond = 1 },
 		},
 	},
 }
 
--- The v0.4-g9h fit rule: the footprint at its largest level, axes swapped for an odd turn.
+SlotDoubles.TURN_REMOTES = SlotDoubles.REMOTES
+
+-- The v0.4-g9h fit rule, as the server applies it: FORGE-01's Build/Fit.
 function SlotDoubles.fitsTurned(buildingType: string, size: string, turn: number?): boolean
-	local slot = WorldLayout.slotSizes[size]
-	local footprint = Fit.largestFootprint(buildingType)
-	if typeof(slot) ~= "Vector2" or footprint == nil or not Fit.fits(buildingType, size) then
-		return false
-	end
-	if (turn or 0) % 2 == 1 then
-		return footprint.Y <= slot.X and footprint.X <= slot.Y
-	end
-	return true
+	return Fit.fits(buildingType, size, turn)
 end
 
 -- Whether a type fits a slot size, as the server sees it: the shared rule (G13.5), as PlaceSlot calls it.
@@ -149,10 +128,7 @@ function SlotDoubles.service(world, opts: { turns: boolean? }?)
 					elseif slot.occupiedBy then
 						return nil, "slot_occupied"
 					end
-					if not SlotDoubles.fits(slot.size, buildingType) then
-						return nil, "does_not_fit"
-					end
-					if turns and not SlotDoubles.fitsTurned(buildingType, slot.size, turn) then
+					if not SlotDoubles.fitsTurned(buildingType, slot.size, turn) then
 						return nil, "does_not_fit"
 					end
 					local entry = Costs.building(buildingType, 1)

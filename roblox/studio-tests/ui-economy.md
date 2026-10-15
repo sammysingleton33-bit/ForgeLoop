@@ -223,8 +223,7 @@ tracker on the phone, the summary on the phone and on desktop.
 4. Gamepad (if available): **Y** turns.
 5. Phone (emulator): the bar keeps Turn as a 70 × 44 button with the icon and the dial (no word); a tap
    turns the ghost. The name, cost and verdict stay readable.
-6. Plot turn — **after FORGE-01's v0.4-g9h server** (`Build.PlaceSlot(slotId, type, turn?)`; before it
-   the plot detail shows no Turn, exactly as today): tap a free medium plot, pick Storehouse. Under the
+6. Plot turn (FORGE-01's v0.4-g9h server, #132): tap a free medium plot, pick Storehouse. Under the
    build time: the dial, "Faces the street" and **Turn**; on the plot a ghost with the door strip and
    arrow, inside the plot's outline. Turn → "Faces right" (the ghost turns inside the outline), again
    → "Faces away", again → "Faces left". Build it: it stands that way.
