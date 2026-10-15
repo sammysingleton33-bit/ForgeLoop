@@ -6,10 +6,10 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | **B16 merged (2026-10-15 19:15): main `e447364`**, sent to FORGE-00. It holds interim environment art (#141, D-051), pad turn R1/L1 (#139) and walls joining (#136); #138 citizens moved to B17 (celebrate clip). **B17 = base editing on its own** (FORGE-00): #140 FL-0119 (needs rebase), #142 FL-0121, FL-0120 UI, #138 + Pose fix. Queue: #145 FL-0122 hardening, #144, #146, #130, #129, #127, #125, #124, #123, #118, #110, #100 (held), #90 |
-| Last verified check | B16 `e447364`: integration 15/0, economy 316/0, world 142/0, place check PASS; gates: #136+#139 check.sh 1411/0, READY set 1359/0, art 1378/0, #96 1362/0 |
-| Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
-| In review / queued | No ★ PRs open after B14. Not ★ (wait for FORGE-07 or a FORGE-00 ★): #130, #129, #128, #127, #125, #124, #123, #118, #110, #102 (mine), #100, #98, #96, #94, #90, #82, #64 |
+| Current task | **B17 cut (2026-10-15 22:20): main `41a70e8`**, delivered by FORGE-00 (checklist I1–I8; artifact `forgeloop-game001-41a70e8`). Headline: base editing (#140/#148/#142/#157) and clean farms (#152/#159/#160); also request badges (#149), cheer pose (#154/#158/#161), settings (#123), batch A/B. **B18 queue:** #138 citizens (FORGE-02 celebrate renders, then D-051 look) → #153 → #155 (Kit fix + welded-part clearance spec); #162 (FORGE-03 main merge) → #164; #125 (FORGE-01 main merge, 4 Simulation hunks); #156 (FL-0110 rows on main's runner now) |
+| Last verified check | B17 `41a70e8`: check.sh PASS (framework 551/0, game-001 1583/0, Selene 0/0, StyLua 516, place check PASS); B14/B15 probes 11/11. Set gate (main `93e41e6` + #157 + #148 + #140) 1571/0 with FL-0119 45, FL-0120 28, FL-0121 10, FL-0122 19 caught; #160 1580/0, 6/6 world mutants |
+| Blockers | none. Lesson: long gates (check + four mutation runners) exceed the 30-min background default: pass a longer `timeout`, and restore any mutated file in the test worktree if a run is killed |
+| In review / queued | B18: #138, #153, #155 (FORGE-02); #162 → #164 (FORGE-03/04); #125, #156 (FORGE-01); #118, #110, #100 (held), #90 |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -134,6 +134,29 @@ _Maintained by the worker. Keep it short and current._
 | #143 | FORGE-04 hover-clear spec | `c2f1e7b` |
 | #136 | FORGE-01 wallGap (B16) | `dffa488` |
 | #139 | FORGE-03 pad turn R1/L1 (B16 = this sha) | `e447364` |
+| #145 | FORGE-01 FL-0122 server hardening (D-050) | `c3c6b8a` |
+| #130 | FORGE-04 InputModeController.back | `e639c79` |
+| #151 | FORGE-02 FL-0117 round 2 trees (interim art) | `968a24a` |
+| #142 | FORGE-04 FL-0121 edit mode input and camera | `520988e` |
+| #150 | FORGE-01 STATUS refresh | `e57b198` |
+| #152 | FORGE-01 FL-0112 farm clearance by drawn extent | `9983ed4` |
+| #154 | FORGE-01 cheer pose clears the head | `7918184` |
+| #149 | FORGE-04 FL-0115 request badges | `33f1e4e` |
+| #127 | FORGE-01 FL-0109 paged GetEntities | `41d6b46` |
+| #129 | FORGE-01 History text | `5653a97` |
+| #124 | FORGE-04 FL-0108 (1/2) | `a6a514e` |
+| #144 | FORGE-04 FL-0092 hint targets (House) | `f8c85ac` |
+| #158 | FORGE-01 cheer pose for tool assemblies | `8f27511` |
+| #123 | FORGE-04 FL-0103 settings panel | `98698c4` |
+| #146 | FORGE-04 FL-0108 (2/2) | `7f22ab4` |
+| #159 | FORGE-02 FL-0116 world trim (interim art) | `93e41e6` |
+| #157 | FORGE-04 E12 Move flow, no edit-mode pan | `3b159e2` |
+| #148 | FORGE-03 FL-0120 base editing UI | `08f1d63` |
+| #140 | FORGE-01 FL-0119 base editing server | `43895b9` |
+| #147 | FORGE-04 FL-0063 analytics review items | `9b0de55` |
+| #163 | FORGE-04 FL-0025 completeReward rule | `99ef428` |
+| #161 | FORGE-01 Pose.spec tip sign | `d982a33` |
+| #160 | FORGE-02 FL-0124 world nodes out of farms (B17 cut) | `41a70e8` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
