@@ -24,6 +24,6 @@ true. The dial refreshes on the next render (any aim, turn or push), not on a ca
 The facing dial is now drawn with frames (shaft and two head strokes) instead of the "▲" glyph: the
 renderer drew a rotated glyph 180° off at oblique angles (README deviation 25), which made the earlier
 `plot-pick-turn-*` renders point the wrong way (re-shot here; they now agree with the ghost). Roblox
-rotates glyphs correctly, but frames also avoid font and centring risks. The `placing-*`,
-`placing-bad-*`, `placing-room-phone` and `placing-ghost-*` renders still show the old glyph dial at
-0°/90°/270° (right there); they are re-shot when this lands with #139 (the D-031 2 MB budget).
+rotates glyphs correctly, but frames also avoid font and centring risks. After #139 merged, the
+`placing-*`, `placing-bad-*`, `placing-room-phone` and `placing-ghost-*` renders were re-shot with the
+frame arrow too (looked at: the arrow is crisp and points the same way as the ghost's).
