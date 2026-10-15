@@ -4,9 +4,10 @@
 	character. These specs keep it that way and check that what gets marked is somewhere the player can do
 	what the hint says: the plot marker nearest a fresh ruler (who stands on the spawn pad) is the ruler's own,
 	its plot menu offers the House the hint's body names (Fit.typesFor, the menu's rule), the starting
-	stockpile pays for it, and the simulation's placement rule (sim:canPlace) accepts it there.
+	stockpile pays for it, and the simulation's placement rule (sim:canPlace) accepts it there, no-build areas
+	included (crop fields, plot roads, spawn pads: Layout.reservedAreas, G13.9 v0.4-g9j, FORGE-01's #140).
 	BuildingService:placeSlot adds its own checks on top (NOT_ON_PLOT, slot_occupied, Fit.fits); PlotUI.spec
-	covers the menu itself.
+	covers the menu itself. The capture hint's ObjectiveZone sits clear of those no-build areas too.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -15,14 +16,15 @@ local describe, it, expect = T.describe, T.it, T.expect
 local Catalog = require("@game/ReplicatedStorage/Game/Sim/Catalog")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
+local Footprint = require("@game/ReplicatedStorage/Game/Sim/Footprint")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
 local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
 local Simulation = require("@game/ReplicatedStorage/Game/Sim/Simulation")
 
 local WORLD = Layout.WORLD
--- the world tags a hint may target; a new one needs its own check first. BuildSlot is checked below.
--- ObjectiveZone's check (the zone clear of the no-build areas, Layout.reservedAreas) waits on #140.
+-- the world tags a hint may target, each with a check below (BuildSlot: the BuildOnPlot test; ObjectiveZone:
+-- the capture test); a new one needs its own check first
 local CHECKED = { BuildSlot = true, ObjectiveZone = true }
 -- what BuildOnPlot's body names ("choose a House"; config/Onboarding.luau): the second test checks the
 -- body says it, and that the building fits the marked plot
@@ -112,6 +114,12 @@ describe("Onboarding hint targets (FL-0092 v2, #140 ask)", function()
 			local sim =
 				Simulation.new({ random = Random.new(5), catalog = Catalog.default(), bounds = Layout.bounds() })
 			Layout.generate(sim)
+			-- canPlace below checks the no-build areas only if the world layout handed them to the sim
+			local reserved = #Layout.reservedAreas()
+			expect(`no-build areas {reserved}, in the sim {#(sim.noBuild or {})}`).toBe(
+				`no-build areas {reserved}, in the sim {reserved}`
+			)
+			expect(reserved > 0).toBe(true)
 			for _, identity in KingdomsConfig.identities do
 				local slot, owner = nearestSlot(WORLD.plots[identity.id].spawn.Position)
 				assert(slot, `{identity.id}: a plot marker`)
@@ -146,4 +154,20 @@ describe("Onboarding hint targets (FL-0092 v2, #140 ask)", function()
 			end
 		end
 	)
+
+	it("capture: every ObjectiveZone the hint can mark sits clear of the no-build areas (#140 ask)", function()
+		-- WorldService tags one ObjectiveZone per world objective (Layout.OBJECTIVES: position and radius)
+		expect(#Layout.OBJECTIVES > 0).toBe(true)
+		local areas = Layout.reservedAreas()
+		for _, objective in Layout.OBJECTIVES do
+			assert(objective.x and objective.z and objective.radius, `{objective.id}: a world position and radius`)
+			local hits = 0
+			for _, area in areas do
+				if Footprint.overlapsCircle(area, objective.x, objective.z, objective.radius, 0) then
+					hits += 1
+				end
+			end
+			expect(`{objective.id}: overlaps {hits} no-build areas`).toBe(`{objective.id}: overlaps 0 no-build areas`)
+		end
+	end)
 end)
