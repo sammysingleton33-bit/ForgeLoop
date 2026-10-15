@@ -117,6 +117,11 @@ export type Tuning = {
 	placementGap: number,
 	wallGap: number, -- the placement gap between two line pieces (wall, gate); placementGap when not set
 	moveCooldown: number, -- seconds a building waits between moves (G13.9)
+	moveSettle: number, -- seconds a moved drop-off takes no deliveries and gives no gather bonus
+	moveLockout: number, -- seconds a kingdom can't move anything after a war declaration or peace
+	moveDamageWindow: number, -- a building damaged this recently can't move
+	moveThreatReach: number, -- studs beyond an at-war unit's attack range that count as under attack
+	rulerClearance: number, -- studs around a ruler's character no placement shape may cover
 	cancelRefund: number, -- fraction of a site's cost refunded on cancel
 	startResources: Cost,
 	startCitizens: { [string]: number }, -- job -> count
@@ -183,7 +188,12 @@ local function assemble(): Catalog
 	tuning.carry = JobsConfig.carry
 	tuning.placementGap = BuildingsConfig.placementGap
 	tuning.wallGap = (BuildingsConfig :: any).wallGap or BuildingsConfig.placementGap
-	tuning.moveCooldown = (BuildingsConfig :: any).moveCooldown or 2
+	tuning.moveCooldown = (BuildingsConfig :: any).moveCooldown or 10
+	tuning.moveSettle = (BuildingsConfig :: any).moveSettle or 30
+	tuning.moveLockout = (BuildingsConfig :: any).moveLockout or 30
+	tuning.moveDamageWindow = (BuildingsConfig :: any).moveDamageWindow or 10
+	tuning.moveThreatReach = (BuildingsConfig :: any).moveThreatReach or 30
+	tuning.rulerClearance = (BuildingsConfig :: any).rulerClearance or 3
 	tuning.cancelRefund = BuildingsConfig.cancelRefund
 	tuning.startResources = KingdomsConfig.startResources
 	tuning.startCitizens = KingdomsConfig.startCitizens

@@ -121,6 +121,8 @@ local Simulation = {}
 
 -- wall and gate pieces form lines: next to each other they keep tuning.wallGap instead of placementGap
 local LINE_PIECES: { [string]: boolean } = { wall = true, gate = true }
+-- A soldier's body for placement clearance (Military.UNIT_RADIUS)
+local UNIT_BODY = 1.5
 Simulation.__index = Simulation
 
 Simulation.SITE_BUILDERS = 3
@@ -174,6 +176,8 @@ function Simulation.new(options: { [string]: any })
 	self.rulerPositions = {} :: { [number]: { x: number, z: number } }
 	self.regions = {} :: { [string]: any }
 	self.regionOrder = {} :: { string }
+	self.noBuild = {} :: { Footprint.Shape } -- areas no placement shape may overlap (Kingdom/Layout.reservedAreas)
+	self._settling = {} :: { [number]: boolean } -- moved drop-offs still settling (b.settleUntil)
 	self._nextEntity = 0
 	self._nextBuilding = 0
 	self.bounds = options.bounds or { minX = -1024, maxX = 1024, minZ = -1024, maxZ = 1024 }
@@ -559,8 +563,10 @@ function Simulation:_recompute(kingdom: any)
 		if b.kind == "keep" then
 			territory = stats.territory or 0
 		end
-		-- the best standing camp's level speeds up gathering what it accepts (FL-0081)
-		for _, resource in if stats.gatherBonus then def.accepts or {} else {} do
+		-- the best standing camp's level speeds up gathering what it accepts (FL-0081); a camp that was just
+		-- moved gives no bonus while it settles (G13.9)
+		local settling = b.settleUntil ~= nil and self.time < b.settleUntil
+		for _, resource in if stats.gatherBonus and not settling then def.accepts or {} else {} do
 			bonus[resource] = math.max(bonus[resource] or 0, stats.gatherBonus)
 		end
 	end
@@ -784,7 +790,9 @@ function Simulation:nearestDropoff(kingdom: any, x: number, z: number, resource:
 		local b = self.buildings[bid]
 		local def = self.catalog.buildings[b.kind]
 		local accepts = resource == nil or def.accepts == nil or table.find(def.accepts, resource) ~= nil
-		if not b.destroyed and b.level >= 1 and def.dropoff and accepts then
+		-- a drop-off that was just moved takes no deliveries while it settles (G13.9)
+		local settling = b.settleUntil ~= nil and self.time < b.settleUntil
+		if not b.destroyed and b.level >= 1 and def.dropoff and accepts and not settling then
 			local d = dist(x, z, b.x, b.z)
 			if d < bestDistance then
 				best, bestDistance = b, d
@@ -1106,10 +1114,14 @@ function Simulation:releaseRegion(regionId: string)
 	self:emit("RegionReleased", { kingdomId = region.kingdomId, regionId = regionId })
 end
 
--- A footprint circle at (x, z) lies inside the kingdom's land: its keep circle or a claimed region.
-function Simulation:insideTerritory(kingdom: any, x: number, z: number, footprint: number): boolean
+-- A footprint circle at (x, z) lies inside the kingdom's land: its keep circle or a claimed region
+-- (`keepOnly`: the keep circle alone, which is where a building may be moved to).
+function Simulation:insideTerritory(kingdom: any, x: number, z: number, footprint: number, keepOnly: boolean?): boolean
 	if kingdom.alive and dist(x, z, kingdom.x, kingdom.z) + footprint <= kingdom.territory then
 		return true
+	end
+	if keepOnly then
+		return false
 	end
 	for _, regionId in self.regionOrder do
 		local region = self.regions[regionId]
@@ -1163,16 +1175,19 @@ function Simulation:keepLevel(kingdom: any): number
 end
 
 -- Where a `kind` building may stand (Place, PlaceSlot and Move share it): inside the bounds and the kingdom's
--- territory, its placement shape clear of every standing building except `ignoreId` (a building being moved
--- does not block itself), of every resource node still present and of every objective zone, each with the
--- placement gap (line pieces, walls and gates, join with wallGap). `yaw` is the facing the building will have.
+-- territory (a move: the keep's own circle, never a claimed region), its placement shape clear of every standing
+-- building except `ignoreId` (a building being moved does not block itself), of every resource node still
+-- present and of every objective zone, each with the placement gap (line pieces, walls and gates, join with
+-- wallGap), of the no-build areas (sim.noBuild: crop fields, plot roads, spawn pads) and of every soldier and
+-- every ruler's character (G13.9 v0.4-g9j). `yaw` is the facing the building will have.
 function Simulation:_geometry(
 	kingdom: any,
 	kind: string,
 	x: number,
 	z: number,
 	yaw: number,
-	ignoreId: number?
+	ignoreId: number?,
+	keepOnly: boolean?
 ): (boolean, string?)
 	local def = self.catalog.buildings[kind]
 	local bounds = self.bounds
@@ -1182,7 +1197,7 @@ function Simulation:_geometry(
 	if z - def.footprint < bounds.minZ or z + def.footprint > bounds.maxZ then
 		return false, "out_of_bounds"
 	end
-	if not self:insideTerritory(kingdom, x, z, def.footprint) then
+	if not self:insideTerritory(kingdom, x, z, def.footprint, keepOnly) then
 		return false, "out_of_territory"
 	end
 	local gap = self.catalog.tuning.placementGap
@@ -1208,6 +1223,24 @@ function Simulation:_geometry(
 	-- an objective's zone is never built on (G13.9 v0.4-g9i): not within its radius plus the placement gap
 	for _, o in (self.objectives and self.objectives.list) or {} do
 		if Footprint.overlapsCircle(shape, o.x, o.z, o.radius, gap) then
+			return false, "blocked"
+		end
+	end
+	for _, area in self.noBuild do
+		if Footprint.overlaps(shape, area, 0) then
+			return false, "blocked"
+		end
+	end
+	-- nobody is built over: no soldier of any kingdom and no ruler's character inside the shape
+	for _, uid in self.unitOrder do
+		local u = self.units[uid]
+		if Footprint.overlapsCircle(shape, u.x, u.z, UNIT_BODY, 0) then
+			return false, "blocked"
+		end
+	end
+	local clearance = self.catalog.tuning.rulerClearance
+	for _, pos in self.rulerPositions do
+		if Footprint.overlapsCircle(shape, pos.x, pos.z, clearance, 0) then
 			return false, "blocked"
 		end
 	end
@@ -1278,19 +1311,73 @@ function Simulation:_checkMove(
 		return b, nil, true
 	end
 	if kingdom.alarm then
-		return nil, "alarm"
+		return nil, "alarm" -- a UX rule: the bell is ringing
 	end
-	if #(kingdom.threats or {}) > 0 then
+	local tuning = self.catalog.tuning
+	if kingdom.moveLockedUntil ~= nil and self.time < kingdom.moveLockedUntil then
+		return nil, "under_attack" -- a war was just declared or ended: nothing moves for moveLockout seconds
+	end
+	local shape = self:shapeOf(b.kind, x, z, yaw)
+	if self:_underAttack(b, shape) then
 		return nil, "under_attack"
 	end
-	if b.movedAt ~= nil and self.time - b.movedAt < self.catalog.tuning.moveCooldown then
+	if b.movedAt ~= nil and self.time - b.movedAt < tuning.moveCooldown then
 		return nil, "cooldown"
 	end
-	local fits, why = self:_geometry(kingdom, b.kind, x, z, yaw, b.id)
+	local fits, why = self:_geometry(kingdom, b.kind, x, z, yaw, b.id, true)
 	if not fits then
 		return nil, why
 	end
 	return b, nil, false
+end
+
+-- Whether building `b` is under attack, for the move rules (G13.9 v0.4-g9j): burning, damaged within
+-- moveDamageWindow seconds, targeted or focused by an at-war unit, or an at-war unit within its attack range
+-- plus moveThreatReach of the building's shape where it stands or where it would stand (`newShape`).
+function Simulation:_underAttack(b: any, newShape: Footprint.Shape): boolean
+	local tuning = self.catalog.tuning
+	if b.burning then
+		return true
+	end
+	if b.damagedAt ~= nil and self.time - b.damagedAt < tuning.moveDamageWindow then
+		return true
+	end
+	for _, uid in self.unitOrder do
+		local u = self.units[uid]
+		if self:atWar(b.kingdomId, u.kingdomId) then
+			local target, focus = u.target, u.order and u.order.focus
+			if
+				(target and target.kind == "building" and target.id == b.id)
+				or (focus and focus.kind == "building" and focus.id == b.id)
+			then
+				return true
+			end
+			local reach = self.catalog.units[u.kind].range + tuning.moveThreatReach
+			if
+				Footprint.overlapsCircle(b.shape, u.x, u.z, reach, 0)
+				or Footprint.overlapsCircle(newShape, u.x, u.z, reach, 0)
+			then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- Ends the settling of moved drop-offs whose time is up: they take deliveries and give their bonus again
+function Simulation:_endSettling()
+	for bid in table.clone(self._settling) do
+		local b = self.buildings[bid]
+		if b == nil or b.destroyed or b.settleUntil == nil or self.time >= b.settleUntil then
+			self._settling[bid] = nil
+			if b ~= nil then
+				b.settleUntil = nil
+				if not b.destroyed then
+					self:_recompute(self.kingdoms[b.kingdomId])
+				end
+			end
+		end
+	end
 end
 
 function Simulation:canMoveBuilding(
@@ -1326,6 +1413,13 @@ function Simulation:moveBuilding(
 	b.shape = self:shapeOf(b.kind, x, z, yaw)
 	b.slotId = slotId
 	b.movedAt = self.time
+	if self.catalog.buildings[b.kind].dropoff then
+		-- a moved storehouse, lumber camp or quarry takes no deliveries and gives no gather bonus for a while,
+		-- so a drop-off can't be dragged along behind the carriers
+		b.settleUntil = self.time + self.catalog.tuning.moveSettle
+		self._settling[b.id] = true
+		self:_recompute(kingdom)
+	end
 	for _, cid in kingdom.citizenIds do
 		local c = self.citizens[cid]
 		if c.target == b.id and WORKS_AT_BUILDING[c.activity] then
@@ -1712,6 +1806,9 @@ function Simulation:step()
 	local nightBefore = self:isNight()
 	self.time += dt
 	self.tick += 1
+	if next(self._settling) ~= nil then
+		self:_endSettling()
+	end
 	if self:day() ~= dayBefore then
 		self:emit("DayStarted", { day = self:day() })
 	elseif self:isNight() and not nightBefore then

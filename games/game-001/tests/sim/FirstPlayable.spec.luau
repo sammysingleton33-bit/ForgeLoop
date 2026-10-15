@@ -218,7 +218,8 @@ describe("AI Kingdoms first playable", function()
 		ok, err = host:command(p1, "PlaceBuilding", "house", 0, 0)
 		expect(err).toBe("out_of_territory") -- the map centre is no one's land
 		expect(sim.treasury:get(kid)).toEqual(before)
-		local hx, hz = keep.x + 30, keep.z + 30
+		-- the first spot the sim allows: straight ahead of the keep door is the avenue, a no-build area (G13.9)
+		local hx, hz = freeSpot(sim, k, "house")
 		ok, err, result = host:command(p1, "PlaceBuilding", "house", hx, hz)
 		expect(err).toBeNil()
 		expect(ok).toBe(true)
@@ -324,9 +325,9 @@ describe("AI Kingdoms first playable", function()
 		local sim = host.match.sim
 		local k = sim.kingdoms.crimson
 		expect(#k.citizenIds).toBe(12) -- the second ruler brings no extra citizens
-		local keep = sim.buildings[k.keepId]
 		local wood = sim:balance(k.id, "wood")
-		expect(host:command(p1, "PlaceBuilding", "house", keep.x + 30, keep.z + 30)).toBe(true)
+		local hx, hz = freeSpot(sim, k, "house")
+		expect(host:command(p1, "PlaceBuilding", "house", hx, hz)).toBe(true)
 		local cx, cz = freeSpot(sim, k, "lumbercamp")
 		expect(host:command(p2, "PlaceBuilding", "lumbercamp", cx, cz)).toBe(true)
 		expect(invoke(env, p2, "Kingdom.SetJobQuota", "woodcutter", 4)).toBe(true) -- shared command rights
@@ -445,8 +446,8 @@ describe("AI Kingdoms first playable", function()
 		local p1 = env.mock.players:add({ userId = 9 })
 		env.mock:advance(4)
 		local sim = host.match.sim
-		local keep = sim.buildings[sim.kingdoms.crimson.keepId]
-		assert(host:command(p1, "PlaceBuilding", "house", keep.x + 30, keep.z + 30))
+		local hx, hz = freeSpot(sim, sim.kingdoms.crimson, "house")
+		assert(host:command(p1, "PlaceBuilding", "house", hx, hz))
 		env.mock:advance(60)
 		expect(#placed).toBe(1)
 		expect(placed[1].player).toBe(p1)

@@ -218,6 +218,31 @@ starts on the first join and is untimed; the first watchtower capture ends the s
   player 1's kingdom may sit on that throne while player 1 is up.
 - No errors in Output (`KingdomService: throne check failed` would be one).
 
+## Base editing: moving buildings (FL-0119, CONTRACTS G13.9; server side, the UI is FL-0120/0121)
+Until the edit-mode UI lands, drive it from the client command bar while playing as a ruler of crimson.
+Replace `<id>` with a building id from `Build.GetBuildings`:
+1. `Build.Move:InvokeServer(<houseId>, <free ground position>, 0)`; then once more with rot 1 on the same spot
+   after 10 s; then `Build.MoveToSlot:InvokeServer(<houseId>, "crimson_slot2")` and back to `crimson_slot1`.
+2. Repeat for: a farm with workers on it, a barracks with a recruit queue, a house a citizen sleeps in, a
+   building site that is half built, a lumber camp (level 2 if you can).
+3. Try the refusals: the keep (`not_movable`), outside the keep's circle or onto a tree, another building, the
+   avenue, a crop field, the spawn point, a captured tower's zone (`blocked` / `out_of_territory`); with your
+   own character standing in the target spot (`blocked`); twice within 10 s (`cooldown`); with the alarm bell
+   ringing (`alarm`).
+
+**Expected:**
+- The building is drawn at its new place and facing on the server and on every client within about a second;
+  it is the same model (a half-built site keeps its stage), with no flash of the old place.
+- Treasury, citizens' homes and the building's level, hit points and progress are unchanged; no "built"
+  notification, no crown points. `GameEvents.BuildingMoved` fires once per move (Output with a connection
+  of your own).
+- Workers at the moved building walk to the new place before they work again; a half-built site finishes in
+  the same total work; the barracks queue is kept and new soldiers appear at the new Rally.
+- A moved lumber camp or quarry gets no deliveries and gives no gather bonus for 30 s: woodcutters walk to
+  the keep; after 30 s they use the camp again.
+- Moving onto a slot takes it (`Build.GetSlots` shows `occupiedBy`) and frees the old one.
+- No errors in Output.
+
 ## Performance capture (FL-0049, gate G7)
 With the 4 × 12 citizens plus `sim.spawn 50` running for 5 minutes, record:
 - the server Output line `Kingdom perf`, logged every 30 s: entities, bytesPerSecond (per player),

@@ -42,8 +42,9 @@
 		startedAtServerTime: server time Founding began (sim time 0); in the Lobby, when the Lobby opened.
 	GameEvents (CONTRACTS G9, framework bus), each exactly once:
 		MatchPhaseChanged(phase) · KingdomEliminated(kingdomId, by?) · MatchEnded({ winner?, standings,
-		durationSec }) · BuildingPlaced / BuildingCompleted / BuildingUpgraded / BuildingDestroyed
-		(Building (G2), player?) · ResourceGathered(player?, kingdomId, resource, amount, source) ·
+		durationSec }) · BuildingPlaced / BuildingMoved / BuildingCompleted / BuildingUpgraded / BuildingDestroyed
+		(Building (G2), player?; BuildingMoved adds from = { position, rot (the old yaw, radians) } and slotId?) ·
+		ResourceGathered(player?, kingdomId, resource, amount, source) ·
 		UnitsRecruited(player?, kingdomId, count) · ObjectiveCaptured(objectiveId, kingdomId).
 		KingdomJoined is fired by KingdomService.
 	Ruler positions: each tick the host mirrors every ruler's character position into the simulation
@@ -360,6 +361,14 @@ function MatchHost:_fireGameEvent(event: any)
 		GameEvents.MatchEnded:fire(MatchHost.endedPayload(event))
 	elseif name == "BuildingPlaced" then
 		GameEvents.BuildingPlaced:fire(sim:buildingView(event.buildingId), self:_player(event.by))
+	elseif name == "BuildingMoved" then
+		-- G13.9: once per accepted move, never BuildingPlaced again; `from.rot` is the old yaw in radians
+		GameEvents.BuildingMoved:fire(
+			sim:buildingView(event.buildingId),
+			self:_player(event.by),
+			{ position = Vector3.new(event.from.x, 0, event.from.z), rot = event.from.yaw },
+			event.slotId
+		)
 	elseif name == "BuildingCompleted" then
 		local view = sim:buildingView(event.buildingId)
 		if event.level > 1 then

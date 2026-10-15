@@ -134,7 +134,8 @@ describe("Kingdom/Layout: farm zones and build areas are free of generated nodes
 			if f == "forest" or f == "lone_tree" or f == "rocks" or f == "bush" then
 				local pos = prop.cframe.Position
 				for _, area in list do
-					if Footprint.overlapsCircle(area.shape, pos.X, pos.Z, 0, 0) then
+					-- radius 0 never overlaps (touching is not overlapping): a hair of radius makes it a point test
+					if Footprint.overlapsCircle(area.shape, pos.X, pos.Z, 0.01, 0) then
 						error(`{prop.assetId} ({f}) stands inside {area.name}`)
 					end
 				end

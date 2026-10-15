@@ -80,7 +80,8 @@ function BuildingService:_slotDefs(kingdomId: string): { any }
 end
 
 -- The building occupying a slot: the one placed on it (building.slotId), else any standing building of
--- the kingdom whose shape overlaps the slot rectangle, e.g. one placed there with Build.Place (#89 M1).
+-- the kingdom whose shape overlaps the slot rectangle or comes within the placement gap of it, e.g. one placed
+-- there with Build.Place (#89 M1): a slot never reads free while placing on it would be refused (G13.9 v0.4-g9j).
 -- `ignoreId` is a building that is moving: it does not count as the occupant of the slot it asks for.
 function BuildingService:_occupant(kingdomId: string, slotId: string, ignoreId: number?): number?
 	local sim = self:_sim()
@@ -100,7 +101,12 @@ function BuildingService:_occupant(kingdomId: string, slotId: string, ignoreId: 
 	end
 	for _, bid in if rect then ids else {} do
 		local b = sim.buildings[bid]
-		if b and b.id ~= ignoreId and b.shape and Footprint.overlaps(rect, b.shape, 0) then
+		if
+			b
+			and b.id ~= ignoreId
+			and b.shape
+			and Footprint.overlaps(rect, b.shape, sim.catalog.tuning.placementGap)
+		then
 			return b.id
 		end
 	end
