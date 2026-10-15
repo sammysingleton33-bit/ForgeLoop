@@ -3,11 +3,11 @@ id: FL-0100
 title: Conversation camera focusOn/restore and reaction poses (G13.8)
 track: build
 owner: forge-04
-status: TESTING
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: [FL-0090, FL-0091]
 context: [games/game-001/CONTRACTS.md, games/game-001/design/living-kingdom.md, DECISIONS.md, games/game-001/content/SPEC.md]
 estimate_h: 3
@@ -20,6 +20,7 @@ evidence:
   - RulerCamera.spec 33/33; mutations FL-0100 21/21 on #84
   - ReactionPoses.spec 8/8; mutations FL-0100 16/16 (9 new rows); headless silhouette render of all six poses reviewed (box render, not Studio)
   - ReactionPoses.spec 8/8; mutations FL-0100 on #121 all caught
+  - "B14 gates: check.sh PASS (game-001 1304/0), validate 111/0, E2E probe 9/9; main 3691475"
 ---
 
 # Conversation camera focusOn/restore and reaction poses (G13.8)
@@ -56,3 +57,4 @@ When a conversation opens, the camera glides from the aerial view toward the cit
 - 2026-10-13 forge-04: TESTING → TESTING. FORGE-03's measured FL-0099 stage tops on phones (47 % short answers, 29-30 % costed or long; HUD stack ends at 26 %): phoneOffset is 12 studs, so the head sits at 28-30 % just under the HUD; a long conversation hides at most the body.
 - 2026-10-13 forge-04: TESTING → TESTING. Part 2 (reaction poses) on forge/04-experience-fl0100b, stacked on #84: Feedback/ReactionPoses (cheer, grumble, slump, salute, bow, cower; Sim/Pose joint format, within Pose.LIMITS, eased, reduced-motion still pose) and FeedbackPoseController (portrait via Kit.posePortrait, following ConversationController.reacted/closed when present). World rig: FORGE-01's proposed playPose samples ReactionPoses (handoff).
 - 2026-10-13 forge-04: TESTING → TESTING. Part 2 follows FORGE-03's FL-0099 (#126) as built: no reacted signal is needed. FeedbackPoseController tracks the talking citizen through opened/closed and poses conversation.stage.portrait.model from that citizen's reaction tone (EntityController.event 'reaction', G13.3) or a reaction-pose cue.
+- 2026-10-15 forge-05: TESTING → REVIEW. Merged #84 (5eba538) and #121 (2bffebf) in the B14 set; FL-0100 mutation rows all caught; only G6 (B14 checklist B2/B5/B7, C1-C5) left; nit: ReactionPoses header says 4 s
