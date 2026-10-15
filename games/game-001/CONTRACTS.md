@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g9j, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g10, 2026-10-15; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -472,6 +472,12 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
     - `cost` is omitted when the answer is free. To pay, use `decisionEffects(response.decision).cost`, which is always a table, never the preview.
   - `choiceRisks(decisionId, fillNames)` returns `{ { text, chance } }` for consequences with chance < 1. The text is fully filled. The panel shows the chance; content text never repeats it (`{chance}` is refused in risk notices).
   - `repeatMultiplier` returns 0 once 32 firings are in the window (`MAX_FARM_HISTORY`).
+  - **Presentation (v0.4-g10, SPEC v1.5; all optional, ignoring them changes no gameplay):**
+    - `reactionFor(responseId, loyalty?)` returns `{ text, tone, emotion?, expression?, gesture?, delivery?, bubble_s?, band }`. It picks the `high` band when loyalty ≥ `LOYALTY_BANDS.high` (70, PROVISIONAL) and that band has text, `low` when loyalty ≤ `LOYALTY_BANDS.low` (30), and otherwise `base`. **Servers send this text as the G13.3 reaction.**
+    - `questionFor(scenarioId, citizen, ctx)` returns `{ text, emotion?, expression?, gesture?, delivery?, variantId? }`: the first matching question variant (`trait:` or `cond:` selector), or else the base question.
+    - `presentation(scenarioId)` returns `{ urgency?, delivery_mode?, thought_bubble_s? }`.
+    - `GESTURE_CUE` maps a gesture to a G13.3 cue (bow, salute, cower, celebrate, grumble).
+    - Clients may show emotion and expression on the G13.8 portrait (FORGE-03/FORGE-04). Nothing waits on them.
   - Servers use these and do not re-implement decay, clamps or start loyalty.
   - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
   - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
@@ -583,6 +589,12 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
   - The `Kingdom.Converse` result gains `look: CitizenLook`, `job`, `position: Vector3` (the citizen's current position) and `kingdom`.
   - While a conversation is open, the citizen is **held**: its intent reads "Talking (with the ruler)", it stops moving, and it turns to face **the ruler's character** (server-side; the server cannot know the client camera). The conversation camera (FORGE-04, `focusOn`) places itself in front of the citizen's face (v0.4-g9e, ruling on #108). The hold lasts at most `Society.conversationHoldSec` (PROVISIONAL 30 s) or ends at `Kingdom.EndConversation(entityId: integer) -> boolean`, a new function remote (own kingdom, rate-limited).
   - After `Kingdom.Choose`, the hold lasts until the client closes the stage (`Kingdom.EndConversation`), **at most 12 s** (= the UI's longest reading time), so the citizen stays framed while the reaction is read. An emergency (alarm, attack) or the ruler leaving still releases it at once (v0.4-g9f, ruling on the B14 gate).
+  - **Presentation tags (optional, v0.4-g10; SPEC v1.5).**
+    - The `Kingdom.Converse` result may carry `presentation = { emotion?, expression?, gesture?, delivery?, urgency?, variantId? }`. It comes from `ContentQuery.questionFor` / `presentation`, and the question text is the variant's, filled.
+    - A successful `Kingdom.Choose` result may carry `tone`, `emotion?`, `expression?`, `gesture?`, `delivery?`, `bubble_s?` and `band?` ("base" | "high" | "low") next to `reaction`, from `ContentQuery.reactionFor(responseId, loyalty)`. The reaction text is the band's.
+    - Every field is optional. A client that ignores them shows plain text, and gameplay never depends on them.
+    - The server sends only the enum values that SPEC v1.5 validates; no free text beyond what is filled from content.
+    - Producer: FORGE-01 (FL-0110). Consumer: FORGE-03 (FL-0111), and FORGE-04's poses through `GESTURE_CUE`.
 - **Portrait (FORGE-02).** `Kit.portrait(kind, job, kingdomColor, look, kingdom?) -> Model` returns the same ≤ 9-part rig as `Kit.character`, with the same look. It also carries a `PortraitFocus` attachment (head and shoulders) for a ViewportFrame camera. The portrait and the world rig must look identical.
 - **UI (FORGE-03).** `ConversationController`:
   - The portrait ViewportFrame rises from the bottom (about 0.35 s).
@@ -627,6 +639,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. G13.8: optional presentation tags on the `Kingdom.Converse` and `Kingdom.Choose` results (FORGE-03 proposal, FL-0110/FL-0111). (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
 - v0.4-g9j (2026-10-15) FORGE-00: G13.9 hardened after an adversarial code review of the base-editing rules:
   - destinations only in the keep's own territory circle;
   - per-building under-attack, damage and burning refusals, and a 30 s lockout after war or peace;
