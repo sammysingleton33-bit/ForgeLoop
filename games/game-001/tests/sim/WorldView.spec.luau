@@ -152,13 +152,15 @@ end)
 
 describe("Sim/WorldView moved buildings (G13.9)", function()
 	-- a spot around the keep where the storehouse can be moved to now, and a facing for it
-	local function spotFor(sim, k, b)
+	local function spotFor(sim, k, b, yaw: number?)
 		local keep = sim.buildings[k.keepId]
 		for radius = 40, 110, 10 do
 			for step = 0, 23 do
 				local a = step / 24 * 2 * math.pi
 				local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
-				if (x - b.x) ^ 2 + (z - b.z) ^ 2 > 20 ^ 2 and sim:canMoveBuilding(k, b.id, x, z, math.pi / 2) then
+				if
+					(x - b.x) ^ 2 + (z - b.z) ^ 2 > 20 ^ 2 and sim:canMoveBuilding(k, b.id, x, z, yaw or math.pi / 2)
+				then
 					return x, z
 				end
 			end
@@ -220,7 +222,7 @@ describe("Sim/WorldView moved buildings (G13.9)", function()
 		local _, match, view = world()
 		local sim = match.sim
 		local k, b = startingBuilding(sim, "lumbercamp")
-		local x, z = spotFor(sim, k, b)
+		local x, z = spotFor(sim, k, b, 0) -- the spot is checked for the facing it is moved with
 		assert(sim:moveBuilding(k, b.id, x, z, 0, 1))
 		view:sync(sim)
 		b.level = 2 -- a new Kit signature: the model is built again
