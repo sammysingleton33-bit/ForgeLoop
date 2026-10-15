@@ -8,6 +8,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local F = require("./KingdomFixtures")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
 local Population = require("@game/ReplicatedStorage/Game/Sim/Population")
@@ -42,6 +43,17 @@ local function summary(sim, k)
 end
 
 describe("Sim/People (G13.2)", function()
+	it("agrees with the Kit on what a look is: the ranges and the default look have one value (#127 L3)", function()
+		for field, range in Population.LOOK_RANGES do
+			expect(range.min).toBe(1)
+			expect(`{field} {range.max}`).toBe(`{field} {Kit.LOOK_RANGES[field]}`)
+		end
+		for field, value in Kit.DEFAULT_LOOK do
+			expect(People.DEFAULT_LOOK[field]).toBe(value)
+		end
+		expect(Kit.normalizeLook(People.DEFAULT_LOOK)).toEqual(People.DEFAULT_LOOK)
+	end)
+
 	it("gives every starting citizen a generated identity; the same seed gives the same people", function()
 		local sim, crimson = world(77)
 		expect(#crimson.citizenIds).toBe(12) -- VS-1 size

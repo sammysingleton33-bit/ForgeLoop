@@ -18,7 +18,9 @@
 	random draws; a node with no clear spot is left out. Same seed, same nodes.
 	Farm zones and build areas stay free too (the user's playtest: trees and rocks stood in the crop fields):
 	a generated node keeps the same distance from every crop field (world features.fields, the farm zones)
-	and every plot build zone (plot.buildZones: the front yard and the two flanks) as from a slot.
+	and every plot build zone (plot.buildZones: the front yard and the two flanks) as from a slot, counted
+	from the larger of its footprint and what is drawn (Sim/NodeStyle.radius: the half-diagonal of its box).
+	The world's own per-plot resource nodes (world Layout resourceNodes, Kit models) are FORGE-02's data.
 	Passing `spacing` instead keeps the older square generator (specs that need compact maps).
 
 	API
@@ -44,6 +46,7 @@ local ObjectivesConfig = require("@game/ReplicatedStorage/Forge/Config/Objective
 local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 local WorldPlan = require("../Kit/WorldPlan")
 local Footprint = require("../Sim/Footprint")
+local NodeStyle = require("../Sim/NodeStyle")
 
 local Layout = {}
 
@@ -86,7 +89,8 @@ local function clearSpot(sim: any, kind: string, x: number, z: number): boolean
 	if not sim:nodeClear(kind, x, z) then
 		return false
 	end
-	local radius = sim.catalog.nodes[kind].footprint
+	-- the drawn box can reach past the footprint circle (a rock's corners): clear whichever is larger
+	local radius = math.max(sim.catalog.nodes[kind].footprint, NodeStyle.radius(kind))
 	local gap = sim.catalog.tuning.placementGap + Layout.SLOT_MARGIN
 	for _, slot in SLOTS do
 		if Footprint.overlapsCircle(slot, x, z, radius, gap) then

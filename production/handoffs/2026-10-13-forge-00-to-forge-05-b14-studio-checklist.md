@@ -113,3 +113,11 @@ Run sections A–E on B15 too (B15 contains B14). Then:
 
 **Report:** add G1–G7 to the report block above.
 
+## B16 additions (main `e447364`, BuildInfo `e44736414c4f…`)
+| ID | Check | Pass |
+|---|---|---|
+| H1 | Trees, rocks and a farm, at the default zoom and close up; compare with B15 / F2 | pines layered, boulders angular with moss. **Known:** oaks and birches are still sphere clusters, and wheat is flat planks (interim art). |
+| H2 | Ore and quarry nodes from the air | gold, iron and crystal tell apart by colour |
+| H3 | Place two wall pieces end to end | they join with no gap |
+| H4 | Gamepad (or Studio's emulator) while placing | R1/L1 turn the ghost; Y flips the view |
+

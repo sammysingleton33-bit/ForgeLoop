@@ -14,8 +14,10 @@
 		                        reaction, strike, kcue) in their own buffer (EntityService:sendKingdomEvent)
 	Client -> server
 		Sim.Inspect(entityId: integer) -> CitizenService:inspect result, own kingdom only (G8); nil otherwise
-		Sim.GetEntities() -> buffer   an EventCodec buffer of "full" records for every live entity; the
-		                        client calls it after connecting its Sim.Snapshot / Sim.Events handlers
+		Sim.GetEntities(afterId?) -> (buffer, nextAfterId?)   an EventCodec buffer of "full" records, one
+		                        page (<= 900 B) of the live entities with id > afterId by ascending id;
+		                        nextAfterId is nil on the last page. The client calls it after connecting
+		                        its Sim.Snapshot / Sim.Events handlers, then again with nextAfterId (FL-0109)
 	Only EntityController decodes Sim.* (G4.1). Implemented by EntityService.
 ]]
 
@@ -24,7 +26,13 @@ local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
 return {
 	{ name = "Sim.Snapshot", kind = "unreliableServerEvent" },
 	{ name = "Sim.Events", kind = "serverEvent" },
-	{ name = "Sim.GetEntities", kind = "function", rate = { burst = 3, perSecond = 1 } },
+	{
+		name = "Sim.GetEntities",
+		kind = "function",
+		args = { Validate.optional(Validate.integer(0, 65535)) },
+		-- a page per call: 24 at once covers 1,176 entities, the refill keeps a reconnect loop cheap
+		rate = { burst = 24, perSecond = 6 },
+	},
 	{
 		name = "Sim.Inspect",
 		kind = "function",
