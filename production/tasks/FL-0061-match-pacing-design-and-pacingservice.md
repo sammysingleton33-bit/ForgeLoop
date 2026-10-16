@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-15
+updated: 2026-10-16
 depends_on: []
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
@@ -19,6 +19,7 @@ evidence:
   - PACING §3 income and milestone times from production/quality-gates/pacing-probe.md (headless, not played); check.sh OVERALL PASS on forge/04-experience-docs after main fe217cc
   - PacingService.spec 12/12; mutations.py FL-0061 10/10 CAUGHT
   - "combined test merge with #128/#94/#82/#64/#98/#102 on 39c456c: check.sh PASS (framework 528/0, game-001 1359/0); re-checked on 3add643; FL-0061 10/10, FL-0025 17/17; balance 4/0"
+  - "doc only: PACING.md 4 lines; PacingService and Onboarding specs PASS; forge.py validate; check_ownership PASS"
 ---
 
 # Match pacing design and PacingService
@@ -51,3 +52,4 @@ Review against FORGE-03 numbers; Lune specs for config validation
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-00 #98 re-review (approved with changes): N1 keep L2 optional per D-044 (1), slice 6-8 min (FORGE-03 asked to align economy.md); N2 hint targets marked (#99); N3 planned work tagged (#49)/(#84); optional Ls (3-6x income, 0-300 s average, 485 s inferred, pvp.enabled, §5 keep L2 row). PACING §3 now uses FORGE-05's headless probe income, not the FL-0058 rates.
 - 2026-10-15 forge-04: REVIEW → REVIEW. FORGE-07 #98 review: L1 Pacing validation rejects NaN (idleSec, milestone targets, firstDepositSec) through seconds(); L3 PACING.md tags the VS1 funnel-order rule as planned with #64; main merged
 - 2026-10-15 forge-05: REVIEW → REVIEW. Merged #98 (cf88948): pacing targets v2 + idleSec, FORGE-07 L1/L3
+- 2026-10-16 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). PACING.md §3 income line, §3 keep note and §5 row 2 now use the slice targets FORGE-03 set in design/economy.md (#110): 12–13 wood per woodcutter (≈ 37/min), 12–13 stone per miner (≈ 25/min), ≥ 5 food per farmer (≈ 15/min), ~77/min in all; the headless probe's income is about 2× them for wood and stone and 5.7× for food. economy.md and PACING now agree on the 6–8 minute slice.
