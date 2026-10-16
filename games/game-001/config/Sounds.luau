@@ -240,6 +240,16 @@ return {
 		cooldown = 2,
 	}),
 	sound({
+		id = "kingdom.fire",
+		category = "sfx",
+		volume = 0.5,
+		loop = true,
+		source = STORE .. "'fire crackling loop' (burning wood, no music)",
+		description = "A riot set a building on fire: a crackle loop at the building until the fire is out.",
+		rollOff = far,
+		maxInstances = 2,
+	}),
+	sound({
 		id = "kingdom.horn.war",
 		category = "sfx",
 		volume = 0.7,

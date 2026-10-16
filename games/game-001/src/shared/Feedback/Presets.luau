@@ -136,6 +136,40 @@ return table.freeze({
 	chips("kingdom.harvest.wood", BARK),
 	chips("kingdom.harvest.stone", STONE),
 	chips("kingdom.harvest.food", WHEAT),
+	-- A riot's burning building (FORGE-01's Burning attribute, D-050 (1b)), until the fire is out: large
+	-- flames and a tall smoke column above the roof, so it reads from the aerial camera (FL-0091).
+	{
+		id = "kingdom.building.fire",
+		category = "consequence",
+		priority = 3,
+		reducedMotion = "reduce",
+		emitters = {
+			{
+				texture = T.fire,
+				colors = { rgb(255, 170, 60), rgb(220, 60, 20) },
+				rate = 40,
+				lifetime = { 0.6, 1.2 },
+				speed = { 5, 9 },
+				size = { 5, 1 },
+				transparency = { 0.1, 1 },
+				spread = 20,
+				lightEmission = 1,
+				acceleration = Vector3.new(0, 4, 0),
+			},
+			{
+				texture = T.smoke,
+				colors = { rgb(70, 64, 58), rgb(150, 145, 140) },
+				rate = 10,
+				lifetime = { 3, 4.5 },
+				speed = { 6, 10 },
+				size = { 6, 16 },
+				transparency = { 0.2, 1 },
+				spread = 15,
+				lightEmission = 0,
+				acceleration = Vector3.new(0, 3, 0),
+			},
+		},
+	},
 	{
 		id = "kingdom.deposit",
 		category = "economy",
