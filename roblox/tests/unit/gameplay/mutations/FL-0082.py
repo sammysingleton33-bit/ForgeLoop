@@ -25,4 +25,13 @@ M = [
  ("FL-0082", CONS, '	self:_announceRiot(kid, riot.rioters, false)\n', '', "ConsequenceService", "rioters wear their own placard"),
  ("FL-0082", CONS, '	self:_holdOffWork(rioters, true)', '	self:_holdOffWork(rioters)', "ConsequenceService", "prolonged instability with an instigator"),
  ("FL-0082", G + "src/client/Controllers/EntityController.luau", 'local isRiot = e.occupation == EventCodec.RIOT', 'local isRiot = false', "EntityController", "turns a strike event marked EventCodec.RIOT"),
+ # --- G9 ConsequenceChanged (v0.4-g10c): once per start and end, the signal's values plus a count
+ ("FL-0082", CONS, '	GameEvents.ConsequenceChanged:fire(kid, rule, on, table.clone(info))\n', '', "ConsequenceService", "an occupation aggrieved for strike.sustainSeconds strikes"),
+ ("FL-0082", CONS, '	GameEvents.ConsequenceChanged:fire(kid, rule, on, table.clone(info))\n', '	GameEvents.ConsequenceChanged:fire(kid, rule, on, table.clone(info))\n	GameEvents.ConsequenceChanged:fire(kid, rule, on, table.clone(info))\n', "ConsequenceService", "an occupation aggrieved for strike.sustainSeconds strikes"),
+ ("FL-0082", CONS, 'info.count = if info.entityIds then #info.entityIds elseif info.buildingId then 1 else 0', 'info.count = 0', "ConsequenceService", "an occupation aggrieved for strike.sustainSeconds strikes"),
+ ("FL-0082", CONS, 'info.count = if info.entityIds then #info.entityIds elseif info.buildingId then 1 else 0', 'info.count = if info.entityIds then #info.entityIds elseif info.buildingId then 2 else 0', "ConsequenceService", "the fire never burns below fireFloor"),
+ ("FL-0082", CONS, '{ occupation = occupation, count = #still }', '{ occupation = occupation, count = 0 }', "ConsequenceService", "ends when the strikers' mean loyalty rises"),
+ ("FL-0082", CONS, '{ count = shortage.count }', '{ count = 0 }', "ConsequenceService", "holds between fedBelow and endFedAbove"),
+ ("FL-0082", CONS, '		state.shortage.count = #hungry', '		state.shortage.count = 0', "ConsequenceService", "holds between fedBelow and endFedAbove"),
+ ("FL-0082", CONS, '	self.changed:fire(kid, rule, on, info)\n', '', "ConsequenceService", "an occupation aggrieved for strike.sustainSeconds strikes"),
 ]
