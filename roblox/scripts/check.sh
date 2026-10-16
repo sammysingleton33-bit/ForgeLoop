@@ -30,6 +30,9 @@ trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
 EXPECTED_STEPS=$((6 + 3 * ${#GAME_PROJECTS[@]})) # 6 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
+# spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
+# "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600).
+SHARDS=("game-001/sim:2")
 
 NAMES=()
 RESULTS=()
@@ -166,22 +169,39 @@ for entry in "${GAME_PROJECTS[@]}"; do
 	IFS=: read -r game_id game_project game_specs <<<"$entry"
 	game_place="roblox/build/$game_id.rbxl"
 	if command -v lune >/dev/null 2>&1; then
-		# One Lune run per top-level spec folder, each under STEP_TIMEOUT (sim/ alone is ~5 min), summed into
+		# One Lune run per top-level spec folder (or per shard, SHARDS), each under STEP_TIMEOUT, summed into
 		# one row in the usual "N passed, …" form. Spec files directly in the spec root run as one more chunk.
 		chunks=()
 		while IFS= read -r dir; do chunks+=("$dir"); done < <(find "$game_specs" -mindepth 1 -maxdepth 1 -type d | sort)
 		if compgen -G "$game_specs/*.spec.luau" >/dev/null || [[ ${#chunks[@]} == 0 ]]; then
 			chunks=("$game_specs") # specs at the root (or no folders): the whole tree in one run, as before
 		fi
-		passed=0 failed=0 broken=0 files=0 skipped=0 ok=1 why="" times=()
+		# a folder listed in SHARDS runs as n steps: "<dir>|<i>/<n>"
+		runs=()
 		for chunk in "${chunks[@]}"; do
+			folder="${chunk#"$game_specs"}"
+			folder="${folder#/}"
+			n=1
+			for shard in "${SHARDS[@]}"; do
+				[[ ${shard%%:*} == "$game_id/$folder" ]] && n="${shard##*:}"
+			done
+			if [[ $n -gt 1 ]]; then
+				for ((k = 1; k <= n; k++)); do runs+=("$chunk|$k/$n"); done
+			else
+				runs+=("$chunk|")
+			fi
+		done
+		passed=0 failed=0 broken=0 files=0 skipped=0 ok=1 why="" times=()
+		for run in "${runs[@]}"; do
+			chunk="${run%%|*}"
+			shard="${run#*|}"
 			label="${chunk#"$game_specs"}"
 			label="${label#/}"
-			label="${label:-all}"
-			log="$LOG_DIR/$game_id-lune-${label//\//_}.log"
+			label="${label:-all}${shard:+#$shard}" # e.g. "sim#1/2": no space, the slowest list sorts on field 2
+			log="$LOG_DIR/$game_id-lune-${label//[\/#]/_}.log"
 			started=$SECONDS
 			run_step "$game_id specs ($label)" "$log" with_timeout lune run roblox/tests/harness/run.luau \
-				--project "$game_project" --specs "$chunk"
+				--project "$game_project" --specs "$chunk" ${shard:+--shard "$shard"}
 			code=$?
 			times+=("$label $((SECONDS - started))s")
 			line="$(grep -E '^Lune tests:' "$log" | tail -1)"
