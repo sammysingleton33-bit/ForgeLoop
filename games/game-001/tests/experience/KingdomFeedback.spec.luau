@@ -225,7 +225,13 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 			)
 			expect(Moments.present(over).toast.title).toBe("The riot is over")
 			expect(Moments.present(over).toast.body).toBe("The storehouse slowly mends.")
-			expect(Moments.present(over).toast.key).toBe(shown.toast.key) -- the end replaces the start
+			-- the end is its own toast: a shared key would coalesce it into the start's title ("Riot at …! ×2")
+			expect(Moments.present(over).toast.key == shown.toast.key).toBe(false)
+			local alone = momentFor(
+				Moments.fromEvent("ConsequenceChanged", { "crimson", "riot", true, { buildingId = 7, count = 1 } }, ctx),
+				a1
+			)
+			expect(Moments.present(alone).toast.body).toBe("A rioter set it alight. Nobody works there while it burns.")
 		end
 	)
 
@@ -242,6 +248,14 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 			expect(title({ "crimson", "strike", false, { occupation = "farmer", count = 3 } }).title).toBe(
 				"The farmers are back at work"
 			)
+			expect(title({ "crimson", "strike", true, { occupation = "farmer", count = 1 } }).body).toBe(
+				"1 stopped work over a grievance. Win back their loyalty."
+			)
+			for rule, phases in Lines.CONSEQUENCE do
+				if phases.start and phases.stop then
+					assert(phases.start.key ~= phases.stop.key, `{rule}: the end needs its own toast key`)
+				end
+			end
 			expect(title({ "crimson", "strike", true, { count = 2 } }).title).toBe("The workers are on strike")
 			expect(title({ "crimson", "strike", true, { occupation = "riot", count = 2 } }).title).toBe(
 				"The workers are on strike"
@@ -689,6 +703,8 @@ describe("client feedback controllers (FL-0062)", function()
 		local sound = Sounds.registry:get(FeedbackDef.FIRE.sound)
 		assert(sound, "fire sound")
 		expect(sound.loop).toBe(true)
+		expect(sound.status).toBe("needed") -- silent until someone picks an asset (sounds handoff)
+		expect(sound.asset).toBeNil()
 	end)
 
 	it("AnnouncerController: celebrations celebrate; other moments toast, silently when they have a sound", function()

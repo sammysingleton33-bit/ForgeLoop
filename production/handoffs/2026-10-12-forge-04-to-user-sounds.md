@@ -75,3 +75,10 @@ P0: the tutorial and the first minutes. P1: the rest of the VS-1 slice. P2: afte
 ## Next actions for you
 1. Choose or upload the P0 sounds and send me the ids.
 2. Then P1. P2 can wait until after the first playtest.
+
+## Added 2026-10-16 (FL-0091, #175)
+One P1 sound was added after the list above was written, so the list now has **42 sounds** (14 P1). Pick it with the other P1 sounds:
+
+| Priority | Sound id | Category | Default volume | Search the Creator Store for | What it should sound like |
+|---|---|---|---|---|---|
+| P1 | `kingdom.fire` | sfx (loops) | 0.5 | 'fire crackling loop' (burning wood, no music) | A riot set a building on fire: a crackle loop at the building until the fire is out. |

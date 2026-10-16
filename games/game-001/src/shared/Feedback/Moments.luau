@@ -332,7 +332,7 @@ function Moments.present(moment: any): { [string]: any }
 			toast = {
 				kind = line.kind or "info",
 				title = title,
-				body = fillAll(line.body, moment),
+				body = fillAll(if moment.count == 1 and line.bodyOne then line.bodyOne else line.body, moment),
 				key = fill(line.key, moment),
 			},
 			sound = line.sound,

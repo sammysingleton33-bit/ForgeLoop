@@ -115,6 +115,9 @@ Lines.PHASE = table.freeze({
 
 -- The kingdom's consequences (FORGE-01's ConsequenceService, G9 ConsequenceChanged v0.4-g10c), to that
 -- kingdom's rulers: one notice per start and per end. A rebellion has only a start (VS-2; off in VS-1).
+-- A start and its end have different keys: the queue coalesces a repeated key into the shown toast and keeps
+-- its title (NotificationQueue), so an end sharing the start's key would read "<start> ×2".
+-- bodyOne, when present, replaces body for a count of 1.
 Lines.JOBS = table.freeze({
 	farmer = "farmers",
 	woodcutter = "woodcutters",
@@ -128,12 +131,12 @@ Lines.CONSEQUENCE = table.freeze({
 			kind = "warning",
 			title = "The {jobs} are on strike",
 			body = "{count} stopped work over a grievance. Win back their loyalty.",
-			key = "consequence:strike:{jobs}",
+			key = "consequence:strike:{jobs}:on",
 		}),
 		stop = table.freeze({
 			kind = "success",
 			title = "The {jobs} are back at work",
-			key = "consequence:strike:{jobs}",
+			key = "consequence:strike:{jobs}:off",
 		}),
 	}),
 	shortage = table.freeze({
@@ -141,9 +144,13 @@ Lines.CONSEQUENCE = table.freeze({
 			kind = "warning",
 			title = "Food is running out",
 			body = "Your people go hungry. Put more of them on the farms.",
-			key = "consequence:shortage",
+			key = "consequence:shortage:on",
 		}),
-		stop = table.freeze({ kind = "success", title = "Your people have food again", key = "consequence:shortage" }),
+		stop = table.freeze({
+			kind = "success",
+			title = "Your people have food again",
+			key = "consequence:shortage:off",
+		}),
 	}),
 	riot = table.freeze({
 		start = table.freeze({
@@ -151,14 +158,15 @@ Lines.CONSEQUENCE = table.freeze({
 			title = "Riot at the {place}!",
 			plain = "A riot breaks out!",
 			body = "{count} rioters set it alight. Nobody works there while it burns.",
-			key = "consequence:riot",
+			bodyOne = "A rioter set it alight. Nobody works there while it burns.", -- count 1: the instigator alone
+			key = "consequence:riot:on",
 			sound = "kingdom.horn.war",
 		}),
 		stop = table.freeze({
 			kind = "success",
 			title = "The riot is over",
 			body = "The {place} slowly mends.",
-			key = "consequence:riot",
+			key = "consequence:riot:off",
 		}),
 	}),
 	rebellion = table.freeze({
