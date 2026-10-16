@@ -18,7 +18,16 @@
 	Talk / Ask: shown when a handler is registered (ConversationController does in its start()).
 	Talk (primary) when the citizen has a request (`hasRequest`), Ask (secondary) otherwise.
 
-	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional: InputModeController.
+	"Waiting" (FL-0115, the user's first playtest: requests were hard to notice and act on): a rail
+	button with the number of citizens who have an open request ("!"), from FORGE-04's
+	CitizenBubbleIndicatorController:count(), polled every WAITING_SEC. Hidden while nobody waits,
+	while placing, during a conversation and wherever the indicator's active() (FORGE-04 #170) is false
+	(the walking view). A tap goes to the next one (cycleRequests(1): the camera centres on them and the
+	card opens); an indicator without active() that can't go (the walking view) gets a notice to switch
+	to the aerial view. Without the indicator controller there is no button.
+
+	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional: InputModeController,
+	CitizenBubbleIndicatorController.
 	Never decodes Sim.* events (only EntityController does, G4); Sim.Inspect is a function call.
 
 	API (specs, scenes and ConversationController)
@@ -44,6 +53,14 @@ local Def = { name = "CitizenCardController", dependencies = { "KingdomHudContro
 
 CitizenCardController.MENU = "citizen"
 CitizenCardController.REFRESH_SEC = 4
+CitizenCardController.WAITING_SEC = 0.5
+CitizenCardController.WAITING_RAIL = table.freeze({
+	id = "waiting",
+	icon = "talk",
+	label = "Waiting",
+	order = 50, -- after the built-in menus and the Army button
+	hideEmpty = true,
+})
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -61,6 +78,8 @@ function Def.new(env: any, registry: any)
 		_talk = nil :: ((number) -> ())?,
 		_connections = {},
 		_running = false,
+		_indicator = nil :: any, -- FORGE-04's CitizenBubbleIndicatorController, when loaded
+		_waitingShown = nil :: number?, -- the count on the rail now
 	}, CitizenCardController)
 end
 
@@ -123,6 +142,7 @@ function CitizenCardController:start()
 		end)
 	)
 	self._running = true
+	self:_startWaiting()
 	env.spawn(function()
 		while self._running do
 			env.wait(CitizenCardController.REFRESH_SEC)
@@ -131,6 +151,75 @@ function CitizenCardController:start()
 			end
 		end
 	end)
+end
+
+-- ------------------------------------------------------------------ Waiting (FL-0115)
+
+function CitizenCardController:_startWaiting()
+	local indicator = self._registry:find("CitizenBubbleIndicatorController")
+	if indicator == nil or indicator.count == nil or indicator.cycleRequests == nil then
+		return
+	end
+	self._indicator = indicator
+	local rail = table.clone(CitizenCardController.WAITING_RAIL)
+	rail.label = CitizenText.WAITING
+	rail.onActivated = function()
+		self:goToWaiting()
+	end
+	self.hud:addRailItem(rail)
+	self:refreshWaiting()
+	local env = self._env
+	env.spawn(function()
+		while self._running do
+			env.wait(CitizenCardController.WAITING_SEC)
+			if self._running then
+				self:refreshWaiting()
+			end
+		end
+	end)
+end
+
+-- The count on the rail: nil (hidden) while nobody waits, while placing and during a conversation.
+function CitizenCardController:waitingCount(): number?
+	local indicator = self._indicator
+	local hud = self.hud
+	if indicator == nil or hud.state.placing or hud.state.menu == "conversation" then
+		return nil
+	end
+	-- FORGE-04's active() (#170): false where a tap could not go to them (the walking view too)
+	if indicator.active ~= nil then
+		local okActive, active = pcall(indicator.active, indicator)
+		if not okActive or active ~= true then
+			return nil
+		end
+	end
+	local ok, count = pcall(indicator.count, indicator)
+	if not ok or type(count) ~= "number" or count <= 0 then
+		return nil
+	end
+	return count
+end
+
+function CitizenCardController:refreshWaiting()
+	local count = self:waitingCount()
+	if count ~= self._waitingShown then
+		self._waitingShown = count
+		self.hud:setRailBadge(CitizenCardController.WAITING_RAIL.id, count)
+	end
+end
+
+-- The rail tap: the next citizen with a request (the indicator focuses the camera and selects them).
+function CitizenCardController:goToWaiting(): any
+	local indicator = self._indicator
+	if indicator == nil or self:waitingCount() == nil then
+		return nil
+	end
+	local ok, id = pcall(indicator.cycleRequests, indicator, 1)
+	if ok and id ~= nil then
+		return id
+	end
+	self.hud:notify({ kind = "info", title = CitizenText.WAITING_AERIAL })
+	return nil
 end
 
 function CitizenCardController:destroy()
@@ -145,6 +234,10 @@ function CitizenCardController:destroy()
 	end
 	-- Leave no menu pointing at a card that no longer exists (FORGE-05 L6).
 	local hud = self.hud
+	if self._indicator ~= nil and hud.removeRailItem ~= nil then
+		pcall(hud.removeRailItem, hud, CitizenCardController.WAITING_RAIL.id)
+		self._indicator = nil
+	end
 	if hud.state.menu == CitizenCardController.MENU then
 		pcall(function()
 			hud:setMenu(nil)

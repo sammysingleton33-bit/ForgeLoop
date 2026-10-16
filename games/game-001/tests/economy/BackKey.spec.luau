@@ -86,6 +86,17 @@ describe("Back key in the drawers (#130)", function()
 		expect(hud.state.menu).toBeNil()
 	end)
 
+	it("the HUD going inactive (no kingdom of mine) closes the drawer and releases the handler (#162 L1)", function()
+		world = newWorld()
+		local hud = world.hud
+		hud:setMenu("kingdom")
+		expect(handlers(world)).toBe(1)
+		hud.store._mine = nil -- my kingdom is gone from the store: no banner, the HUD hides
+		hud:render()
+		expect(hud.state.menu).toBeNil()
+		expect(handlers(world)).toBe(0)
+	end)
+
 	it("topmost wins: a handler registered over the drawer goes first, the drawer's after its release", function()
 		world = newWorld()
 		local hud, input = world.hud, world.input

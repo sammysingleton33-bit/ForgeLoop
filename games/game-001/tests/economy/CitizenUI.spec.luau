@@ -816,7 +816,7 @@ describe("Kingdom.Choose in flight is guarded per showing (FORGE-05 M3)", functi
 	end)
 end)
 
-describe("Onboarding step AnswerCitizen (FORGE-04 #45)", function()
+describe("Onboarding step AnswerCitizen (FORGE-04 #45, server-side since #124/#146)", function()
 	local previous
 	beforeEach(function()
 		previous = useStrongConnector()
@@ -825,37 +825,14 @@ describe("Onboarding step AnswerCitizen (FORGE-04 #45)", function()
 		restoreConnector(previous)
 	end)
 
-	it("reports CitizenAnswered once per accepted Choose, never for a refusal or a dropped call", function()
+	it("reports nothing: the server's G9 CitizenAnswered drives the step (FORGE-04 #124/#146)", function()
 		local reported = {}
 		local world = newWorld({ onboarding = reported })
-		world.citizens.refuse = "not_eligible"
 		talkTo(world, 41)
-		answer(world, "help")
-		world:advance(0.2)
-		expect(#reported).toBe(0) -- refused
-		world.conversation:close()
-		world.citizens.drop = true
-		talkTo(world, 41)
-		answer(world, "help")
-		world:advance(0.2)
-		expect(#reported).toBe(0) -- dropped: the answers open again
 		answer(world, "help")
 		world:advance(0.2)
 		expect(convoPanel(world):GetAttribute("phase")).toBe("answered")
-		expect(#reported).toBe(1)
-		expect(reported[1]).toBe("CitizenAnswered")
-		world:destroy()
-	end)
-
-	it("a reply that lands after the panel closed still counts", function()
-		local reported = {}
-		local world = newWorld({ onboarding = reported })
-		world.citizens.chooseLatency = 0.5
-		talkTo(world, 41)
-		answer(world, "help")
-		world.conversation:close()
-		world:advance(0.6)
-		expect(table.concat(reported, ",")).toBe("CitizenAnswered")
+		expect(#reported).toBe(0)
 		world:destroy()
 	end)
 end)

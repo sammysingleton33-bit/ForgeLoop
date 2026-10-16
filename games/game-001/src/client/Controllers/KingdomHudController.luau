@@ -108,6 +108,7 @@ function Def.new(env: any, registry: any)
 		},
 		_viewport = nil :: Vector2?,
 		_railItems = {} :: { any },
+		_railBadges = {} :: { [string]: number },
 		_stackBottom = nil :: number?,
 		_sheets = {} :: { [string]: boolean },
 		_backSteps = {} :: { [string]: () -> boolean },
@@ -189,6 +190,9 @@ function KingdomHudController:mount(parent: Instance)
 	self.view = KingdomHud.new(self.roots.hud, g.topbar, self._motion)
 	for _, item in self._railItems do
 		self.view:addMenu(item)
+	end
+	for id, count in self._railBadges do
+		self.view:setRailBadge(id, count)
 	end
 	self.panel = KingdomPanel.new(self.roots.menus)
 	self.toasts = ToastStack.new(self.roots.notices, self._motion)
@@ -548,12 +552,33 @@ function KingdomHudController:addRailItem(item: {
 	label: string,
 	target: string?,
 	order: number?,
+	hideEmpty: boolean?,
+	onActivated: (() -> ())?,
 })
 	table.insert(self._railItems, item)
 	if self.view then
 		self.view:addMenu(item)
 		self:render()
 	end
+end
+
+-- A count bubble on a rail button (UI/KingdomHud:setRailBadge); patched in place, no render.
+function KingdomHudController:setRailBadge(id: string, count: number?)
+	self._railBadges[id] = count
+	if self.view then
+		self.view:setRailBadge(id, count)
+	end
+end
+
+-- A rail tap: an item with its own action (onActivated) runs it; any other opens or closes its menu.
+function KingdomHudController:railTapped(id: string)
+	for _, item in self._railItems do
+		if item.id == id and item.onActivated ~= nil then
+			item.onActivated()
+			return
+		end
+	end
+	self:setMenu(id)
 end
 
 -- Only the toasts move (no full render): the tracker calls this from its own render.
@@ -832,6 +857,7 @@ function KingdomHudController:render()
 	self.guis.backdrop.Enabled = active
 	if not active and s.menu ~= nil then
 		s.menu = nil
+		self:_syncBack() -- the back key's handler goes with the drawer (FORGE-07 L1 on #162)
 		self.menuChanged:fire(nil)
 	end
 	if active then
@@ -846,7 +872,7 @@ function KingdomHudController:render()
 			menu = s.menu,
 			hideQueue = s.placing,
 			onMenu = function(id)
-				self:setMenu(id)
+				self:railTapped(id)
 			end,
 			onPill = function(id)
 				self:inspectResource(id)
