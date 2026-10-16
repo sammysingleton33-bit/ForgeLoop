@@ -30,8 +30,6 @@ M = [
      "if indicator == nil or hud.state.menu", "hidden while placing"),
     ("shown in a conversation", CARD, 'or hud.state.menu == "conversation" then', "then",
      "hidden while placing"),
-    ("silent in the walking view", CARD, "\tself.hud:notify({ kind = \"info\", title = CitizenText.WAITING_AERIAL })\n",
-     "", "in the walking view"),
     ("lost on a rail rebuild", V, "\t\tself.rail[menu.id] = button\n\t\tself:_applyBadge(menu.id)",
      "\t\tself.rail[menu.id] = button", "keeps its count across a rail rebuild"),
     ("lost before mount", H, "\tfor id, count in self._railBadges do\n\t\tself.view:setRailBadge(id, count)",

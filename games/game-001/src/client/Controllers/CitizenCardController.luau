@@ -23,8 +23,7 @@
 	CitizenBubbleIndicatorController:count(), polled every WAITING_SEC. Hidden while nobody waits,
 	while placing, during a conversation and wherever the indicator's active() (FORGE-04 #170) is false
 	(the walking view). A tap goes to the next one (cycleRequests(1): the camera centres on them and the
-	card opens); an indicator without active() that can't go (the walking view) gets a notice to switch
-	to the aerial view. Without the indicator controller there is no button.
+	card opens). Without the indicator controller there is no button.
 
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional: InputModeController,
 	CitizenBubbleIndicatorController.
@@ -215,11 +214,7 @@ function CitizenCardController:goToWaiting(): any
 		return nil
 	end
 	local ok, id = pcall(indicator.cycleRequests, indicator, 1)
-	if ok and id ~= nil then
-		return id
-	end
-	self.hud:notify({ kind = "info", title = CitizenText.WAITING_AERIAL })
-	return nil
+	return if ok then id else nil
 end
 
 function CitizenCardController:destroy()
