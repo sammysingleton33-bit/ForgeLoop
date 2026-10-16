@@ -11,6 +11,10 @@
 	   draw / watched (matchEnded without a win or a loss) toast only on a client without the slice
 	   summary, which shows the result line itself (AnnouncerController.SUMMARY_OWNS).
 	PHASE[phase] = { kind, title, body?, sound? }   -- MatchPhaseChanged announcements
+	CONSEQUENCE[rule][start | stop] = { kind, title, plain?, body?, key, sound? }   -- G9 ConsequenceChanged
+	   (FL-0091): a title or body whose {field} the moment lacks is not shown; `plain` is the title then.
+	   {jobs} is JOBS[occupation] ("workers" without one), {place} the building's name in lower case.
+	JOBS[occupation] = plural ("farmers"), CONTRACTS G2 JobIds
 	CELEBRATIONS[kind] = NotificationController:registerCelebration spec (FL-0027)
 	BUILDING[type] = display name (CONTRACTS G2 BuildingType)
 ]]
@@ -107,6 +111,65 @@ Lines.PHASE = table.freeze({
 	}),
 	Endgame = table.freeze({ kind = "warning", title = "The final hours", body = "Hold your towers to the end." }),
 	Results = table.freeze({ kind = "info", title = "The match is over" }),
+})
+
+-- The kingdom's consequences (FORGE-01's ConsequenceService, G9 ConsequenceChanged v0.4-g10c), to that
+-- kingdom's rulers: one notice per start and per end. A rebellion has only a start (VS-2; off in VS-1).
+Lines.JOBS = table.freeze({
+	farmer = "farmers",
+	woodcutter = "woodcutters",
+	miner = "miners",
+	builder = "builders",
+	hauler = "haulers",
+})
+Lines.CONSEQUENCE = table.freeze({
+	strike = table.freeze({
+		start = table.freeze({
+			kind = "warning",
+			title = "The {jobs} are on strike",
+			body = "{count} stopped work over a grievance. Win back their loyalty.",
+			key = "consequence:strike:{jobs}",
+		}),
+		stop = table.freeze({
+			kind = "success",
+			title = "The {jobs} are back at work",
+			key = "consequence:strike:{jobs}",
+		}),
+	}),
+	shortage = table.freeze({
+		start = table.freeze({
+			kind = "warning",
+			title = "Food is running out",
+			body = "Your people go hungry. Put more of them on the farms.",
+			key = "consequence:shortage",
+		}),
+		stop = table.freeze({ kind = "success", title = "Your people have food again", key = "consequence:shortage" }),
+	}),
+	riot = table.freeze({
+		start = table.freeze({
+			kind = "warning",
+			title = "Riot at the {place}!",
+			plain = "A riot breaks out!",
+			body = "{count} rioters set it alight. Nobody works there while it burns.",
+			key = "consequence:riot",
+			sound = "kingdom.horn.war",
+		}),
+		stop = table.freeze({
+			kind = "success",
+			title = "The riot is over",
+			body = "The {place} slowly mends.",
+			key = "consequence:riot",
+		}),
+	}),
+	rebellion = table.freeze({
+		start = table.freeze({
+			kind = "warning",
+			title = "Your people rise in rebellion!",
+			body = "Win back their loyalty before it spreads.",
+			key = "consequence:rebellion",
+			sound = "kingdom.horn.war",
+		}),
+	}),
 })
 
 Lines.CELEBRATIONS = table.freeze({

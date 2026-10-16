@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-16
 depends_on: [FL-0079]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 5
@@ -23,6 +23,8 @@ evidence:
   - check.sh OVERALL PASS after FORGE-05's #87 fixes; CitizenBubbles 31/0; mutations.py FL-0091 43/43
   - "main 42b6709: check.sh PASS on b8f96b6+#87 (game-001 1096/0); ownership PASS 9 files; PR CI 3/3 green on 225808c; mutations 3/3 caught (release clears strike, old isId, hash-part ids)"
   - "#77 review: bubble up at +60/+120 s while open, placard on the walk-out citizen only"
+  - "check.sh OVERALL PASS on main 02ba4d9 + this change: framework 551, game-001 1707 (107 files), Selene 0/0, StyLua 527, both builds and place checks; CitizenBubbles 41/41, KingdomFeedback 40/40, Sounds 3/3; mutations.py FL-0091 59/59 CAUGHT (17 new rows)"
+  - "unverified: Studio E13 (the fire and placard visuals have not been seen; notices need FORGE-01's #173 on the build)"
 ---
 
 # Citizen thought and speech bubbles, reactions, strike placards, consequence cues (G13.3)
@@ -58,3 +60,4 @@ Specs for the pool and the distance culling. Studio video of a request bubble, a
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FORGE-05 #87 review (D-040 fallback): M1 a striking citizen keeps its placard through a job change (strike belongs to the citizen, v0.4-g6; R42-3 spec now expects the placard on the new rig; despawn still clears it); M2 E8.3 expects every miner on strike with strike.start/vs1.strike, partial strikes covered headless; L1 timer identity spec; L2 one refresh per event; L3 ids are whole numbers >= 1 from the list part. Main fd1369f+ merged.
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #87 (42b6709, FORGE-05 D-040 fallback verdict on 225808c): #42 M1 (rest effect stops) and #87 M1/M2/L1-L3 fixed; the tracked follow-up is done. REVIEW, only G6 pending: STUDIO_PLAYTEST row 9 / experience.md E8 steps 3, 7, 8, which need the conversation server (#77) to send G13.3 events. FORGE-07 post-merge review owed.
 - 2026-10-13 forge-05: REVIEW → REVIEW. #77 merged (751138b): the server now sends G13.3 thought/strike/cue events, so bubbles and placards render. REVIEW, only G6 pending (row 9, experience.md E8 steps 3, 7, 8).
+- 2026-10-16 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). Consequences read from the air (FORGE-05 B19 ask; FORGE-01's FL-0082 handoff): a 'riot' cue shows an orange 'Rioting' placard that wins over a strike placard and clears on release; a building with Burning = true shows the kingdom.building.fire flames-and-smoke effect above its roof and the looping kingdom.fire crackle (sound needed), both stopped when the fire goes out; G9 ConsequenceChanged becomes one toast per start and end for the kingdom's rulers (Lines.CONSEQUENCE: strike names the job, riot names the building from its world model, shortage, rebellion start only). E13 written.

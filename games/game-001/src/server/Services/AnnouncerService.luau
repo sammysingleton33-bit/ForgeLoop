@@ -40,6 +40,7 @@ Def.EVENTS = table.freeze({
 	"ObjectiveCaptured",
 	"MatchPhaseChanged",
 	"MatchEnded",
+	"ConsequenceChanged", -- FORGE-01's ConsequenceService (G9 v0.4-g10c; fired from #173)
 })
 
 -- Sample moments for `fx.announce` (Studio): one per kind a player can see.
@@ -55,6 +56,9 @@ Def.SAMPLES = table.freeze({
 	victory = { kind = "matchEnded", outcome = "won", won = true, kingdomName = "Emberhold" },
 	defeat = { kind = "matchEnded", outcome = "lost", won = false, kingdomName = "Frostmere" },
 	draw = { kind = "matchEnded", outcome = "draw", won = false },
+	strike = { kind = "consequence", rule = "strike", on = true, occupation = "farmer", count = 4 },
+	riot = { kind = "consequence", rule = "riot", on = true, count = 3, buildingType = "storehouse" },
+	riotOver = { kind = "consequence", rule = "riot", on = false, buildingType = "storehouse" },
 })
 
 -- Debug commands are registered once per server (DebugCommands is module-level); they send through
@@ -213,6 +217,22 @@ function AnnouncerService:_ctx(): any
 			end
 			local ok, id = pcall(kingdoms.getKingdomOf, kingdoms, player)
 			return if ok and type(id) == "string" then id else nil
+		end,
+		-- a building's type from its world model (WorldView: BuildingId and Kind attributes)
+		buildingKind = function(buildingId: any): string?
+			local ok, kind = pcall(function()
+				local root = env.Workspace:FindFirstChild("ForgeKingdoms")
+				for _, folder in (if root then root:GetChildren() else {}) do
+					local buildings = folder:FindFirstChild("Buildings")
+					for _, model in (if buildings then buildings:GetChildren() else {}) do
+						if model:GetAttribute("BuildingId") == buildingId then
+							return model:GetAttribute("Kind")
+						end
+					end
+				end
+				return nil
+			end)
+			return if ok and type(kind) == "string" then kind else nil
 		end,
 	}
 end

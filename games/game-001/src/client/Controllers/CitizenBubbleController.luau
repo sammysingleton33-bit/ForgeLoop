@@ -8,6 +8,9 @@
 		.event(entityId, "thought",  { scenarioId, text, icon }, model)   -> thought bubble ("!", "?", "…")
 		.event(entityId, "reaction", { text, tone }, model)               -> reaction bubble + a pose
 		.event(entityId, "strike",   { occupation, on }, model)           -> "On strike" placard while on
+		.event(entityId, "riot",     { on }, model)                       -> "Rioting" placard while on (G13.3
+		                                                                     v0.4-g10c; EntityController turns a
+		                                                                     strike marked riot into this event)
 		.event(entityId, <cue>, payload, model) for a G13.3 `cue` in Vfx.cues (celebrate, grumble, salute,
 		    bow, cower, strike_placard, work_fast, rest, hammer)          -> pose + sound + effect
 		.event(entityId, "cue", { cue | cueId, tone? }, model)            -> the same; an unknown cue falls
@@ -93,6 +96,8 @@ Def.STYLE = table.freeze({
 	thought = table.freeze({ background = rgb(250, 246, 235), text = Def.INK }),
 	reaction = table.freeze({ background = rgb(255, 255, 255), text = rgb(30, 26, 22) }),
 	strike = table.freeze({ background = rgb(150, 42, 30), text = rgb(255, 245, 230) }),
+	-- fire orange with dark ink: apart from the strike's dark red, and the words say it too
+	riot = table.freeze({ background = rgb(236, 112, 28), text = Def.INK }),
 })
 -- A new request's badge pops from `scale` back to 1, `times` times (UI/Motion; at once without it).
 Def.PULSE = table.freeze({ scale = 1.35, sec = 0.3, gap = 0.45, times = 2 })
@@ -310,6 +315,8 @@ function Controller:_onCitizen(entityId: number, cue: string, payload: { [string
 		end
 	elseif cue == "strike" then
 		self.bubbles:strike(entityId, payload.on == true)
+	elseif cue == "riot" then
+		self.bubbles:riot(entityId, payload.on == true)
 	elseif cue == "cue" then
 		self:_playCue(entityId, payload.cue or payload.cueId, payload.tone) -- content/SPEC.md says cueId
 		return false
@@ -692,7 +699,8 @@ function Def.paint(gui: any, bubble: any, withText: boolean)
 	local button = gui:FindFirstChild("Bubble")
 	local badge = button:FindFirstChild("Badge")
 	local text = button:FindFirstChild("Text")
-	gui.Size = if bubble.kind == "strike" then Def.SIZE.placard elseif badgeOnly then Def.SIZE.badge else Def.SIZE.card
+	local placard = Bubbles.PLACARD[bubble.kind] == true
+	gui.Size = if placard then Def.SIZE.placard elseif badgeOnly then Def.SIZE.badge else Def.SIZE.card
 	button.BackgroundColor3 = style.background
 	button.BackgroundTransparency = if badgeOnly then 1 else 0
 	button:FindFirstChild("Outline").Enabled = not badgeOnly
@@ -713,7 +721,7 @@ function Def.paint(gui: any, bubble: any, withText: boolean)
 	text.TextColor3 = style.text
 	text.Position = UDim2.fromOffset(left, 0)
 	text.Size = UDim2.new(1, -(left + 12), 1, 0)
-	text.TextXAlignment = if bubble.kind == "strike" then Enum.TextXAlignment.Center else Enum.TextXAlignment.Left
+	text.TextXAlignment = if placard then Enum.TextXAlignment.Center else Enum.TextXAlignment.Left
 end
 
 function Controller:_draw(entityId: number, bubble: any, withText: boolean, interactive: boolean)
