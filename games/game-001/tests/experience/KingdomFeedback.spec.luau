@@ -9,6 +9,7 @@ local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local Sounds = require("@game/ReplicatedStorage/Forge/Experience/Sounds")
+local NotificationQueue = require("@game/ReplicatedStorage/Forge/Experience/NotificationQueue")
 local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
 local Moments = require("@game/ReplicatedStorage/Game/Feedback/Moments")
 local Lines = require("@game/ReplicatedStorage/Game/Feedback/Lines")
@@ -227,6 +228,22 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 			expect(Moments.present(over).toast.body).toBe("The storehouse slowly mends.")
 			-- the end is its own toast: a shared key would coalesce it into the start's title ("Riot at …! ×2")
 			expect(Moments.present(over).toast.key == shown.toast.key).toBe(false)
+			-- through the real queue: a quick end is its own toast with its own title, and the start stays as it was
+			local queue = NotificationQueue.new({
+				now = function()
+					return 0
+				end,
+			})
+			queue:push(shown.toast)
+			local ended, how = queue:push(Moments.present(over).toast)
+			expect(how == "coalesced").toBe(false)
+			assert(ended, "the end toast")
+			expect(ended.title).toBe("The riot is over")
+			local titles = {}
+			for _, item in queue:visible() do
+				table.insert(titles, `{item.title}x{item.count}`)
+			end
+			expect(titles).toEqual({ "Riot at the storehouse!x1", "The riot is overx1" })
 			local alone = momentFor(
 				Moments.fromEvent("ConsequenceChanged", { "crimson", "riot", true, { buildingId = 7, count = 1 } }, ctx),
 				a1
