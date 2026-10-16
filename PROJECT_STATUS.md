@@ -294,14 +294,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-ad790b62 2026-10-15 Merge PR #156: [FORGE-01] FL-0110: Converse/Choose carry the SPEC v1.5 presentation tags (G13.8 v0.4-g10)
-61eea1dc 2026-10-15 Merge PR #125: [FORGE-01] FL-0082 consequence rules: strikes, food shortage, riots and fire, gated rebellion, morale
-9df052e9 2026-10-15 integration-log: #153 citizen phase 1b (8eca5f5)
-8eca5f57 2026-10-15 Merge PR #153: [FORGE-02] FL-0118 phase 1b: citizen 9-part fixes from the fresh D-019 (interim art, D-051)
-1e76bd6f 2026-10-15 [FORGE-00] check-in 23:15: dashboard (#138, #162, #164 merged)
-9f4205a6 2026-10-15 integration-log: #162 back key (4bb9039), #164 isTap + E11 (fde793d)
-fde793d9 2026-10-15 Merge PR #164: [FORGE-04] FL-0053 follow-ups: InputModeController:isTap for confirm-on-release; E11 for FORGE-03's back-key wiring (#162)
-4bb9039d 2026-10-15 Merge PR #162: [FORGE-03] FL-0059 back key (#130) in the drawers and the conversation stage: one press, one step
+ff287d08 2026-10-16 integration-log: #173 ConsequenceChanged fire (dd9e356), #174 Waiting fallback removed (4fae7ca)
+4fae7cab 2026-10-15 Merge PR #174: [FORGE-03] FL-0088: Waiting drops the walking-view fallback notice (FORGE-05's #168 survivor)
+dd9e3567 2026-10-15 Merge PR #173: [FORGE-01] ConsequenceService fires G9 ConsequenceChanged (v0.4-g10c)
+ab1cc27e 2026-10-16 Waiting: drop the walking-view notice; FORGE-04's active() (#170) hides the button there
+f10fbebe 2026-10-16 integration-log: batch C #170 #168 #167 #165
+02ba4d9f 2026-10-15 Merge PR #165: [FORGE-04] FL-0092 onboarding hint targets clear of the no-build areas (FORGE-00's #140 ask)
+dbc98a70 2026-10-15 Merge PR #167: [FORGE-01] LayoutZones.spec: FL-0124 moved the world nodes, so the ratchet is strict (no exceptions left)
+1c35515c 2026-10-15 Merge PR #168: [FORGE-03] FL-0088 "Waiting" on the rail: citizens with an open request, a tap goes to the next one (+ #162 L1)
 ```
 
 <!-- forge:auto:end -->
