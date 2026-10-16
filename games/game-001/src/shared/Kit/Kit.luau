@@ -22,7 +22,7 @@
 		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
 		Kit.footprint(type, level) -> Vector2
 		Kit.character(kind, job, kingdomColor, look?, kingdom?) -> Model
-		                                                        -- ≤ 9 parts (Hair welded to the Head, D-032), Motor6Ds
+		                                                        -- ≤ 11 parts: 9 (Hair welded to the Head, D-032) + at most 2 detail parts (D-048, KitDetail), Motor6Ds
 		                                                        -- named after the moving part (Sim/Pose.JOINTS);
 		                                                        -- look: CitizenLook (G13.2), omitted = DEFAULT_LOOK;
 		                                                        -- kingdom: KingdomId (G13.2, D-033(3)): soldiers wear
@@ -94,10 +94,13 @@ Kit.BUILDING_TYPES = {
 	"shrine",
 }
 Kit.CHARACTER_ROOT_HEIGHT = Character.ROOT_HEIGHT -- 3.2: Root centre above the feet, rig and LOD alike
-Kit.CHARACTER_MAX_PARTS = Character.MAX_PARTS -- rig part cap the Kit specs enforce (9 now; D-048 allows 11 later)
+Kit.CHARACTER_MAX_PARTS = Character.MAX_PARTS -- rig part cap the Kit specs enforce (11 = 9 + 2 detail parts, D-048)
 -- Job silhouettes (art pass): job -> KitHeadwear name of its hat / KitTool name of its tool (farmer, woodcutter,
 -- miner, builder wear a hat; hauler and idle keep the look's hair). Parts carrying the job's outfit colour
 -- (trousers, plus the torso or sleeves the outfit leaves neutral) have KitAccent = job.
+Kit.CHARACTER_BASE_PARTS = Character.BASE_PARTS -- 9: the D-032 rig; D-048 detail parts come on top
+Kit.CHARACTER_MAX_DETAIL = Character.MAX_DETAIL -- 2
+Kit.CHARACTER_DETAIL_ATTRIBUTE = Character.DETAIL_ATTRIBUTE -- "KitDetail" = true on every detail part (droppable beyond LOD)
 Kit.JOB_HEADWEAR = Character.JOB_HEADWEAR
 Kit.JOB_TOOLS = Character.JOB_TOOLS
 -- Citizen looks (G13.2): 1-based index counts FORGE-01's population generator samples from, the palettes
