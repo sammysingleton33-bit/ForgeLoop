@@ -244,14 +244,46 @@ local function posed(rig: Model, joints: { [string]: CFrame }): { [BasePart]: CF
 	return world
 end
 
-describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
+-- D-048 detail parts: rigid, welded to the Head or the Tool, flagged KitDetail
+local function isDetail(p: BasePart): boolean
+	return p:GetAttribute("KitDetail") == true
+end
+
+local function detailsOf(rig: Model): { BasePart }
+	local out = {}
+	for _, p in parts(rig) do
+		if isDetail(p) then
+			table.insert(out, p)
+		end
+	end
+	table.sort(out, function(a, b)
+		return a.Name < b.Name
+	end)
+	return out
+end
+
+-- hat + the detail parts welded to the Head (lamp, visor, pompom, crown, velvet cap)
+local function headGroup(rig: Model): { BasePart }
+	local out = { child(rig, "Hair") }
+	for _, d in detailsOf(rig) do
+		local w = d:FindFirstChild("DetailWeld") :: Weld
+		if w.Part0 == child(rig, "Head") then
+			table.insert(out, d)
+		end
+	end
+	return out
+end
+
+describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032, D-048)", function()
 	it(
-		"has ≤ MAX_PARTS (9) non-colliding, massless parts, only the Root anchored, no Humanoid or Animator",
+		"has ≤ MAX_PARTS (11 = 9 + 2 detail parts) non-colliding, massless parts, only the Root anchored, no Humanoid or Animator",
 		function()
-			-- The cap is pinned here on purpose: raising it to 11 (D-048, the later two-detail-part phase) is a deliberate
-			-- change to this line, to Character.MAX_PARTS and to the rig tests' expected part counts together.
-			expect(MAX_PARTS).toBe(9)
+			-- The caps are pinned here on purpose (D-048: 9 base parts + at most 2 rigid detail parts): changing one is a
+			-- deliberate change to this line, to Character.MAX_PARTS and to the rig tests' expected part counts together.
+			expect(MAX_PARTS).toBe(11)
 			expect(Character.MAX_PARTS).toBe(MAX_PARTS)
+			expect(Character.BASE_PARTS).toBe(9)
+			expect(Character.MAX_DETAIL).toBe(2)
 			each(function(kind, job, rig, look, kingdom)
 				local ps = parts(rig)
 				local hasTool = rig:FindFirstChild("Tool") ~= nil
@@ -260,10 +292,17 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 				local hasAccessory = rig:FindFirstChild("Accessory") ~= nil
 				expect(hasAccessory and not (kind == "citizen" and job == "idle")).toBe(false)
 				expect(hasTool).toBe(not (kind == "citizen" and job == "idle"))
+				local nDetail = #detailsOf(rig)
 				expect(#ps).toBe(
-					7 + (if hasTool then 1 else 0) + (if hasHair then 1 else 0) + (if hasAccessory then 1 else 0)
+					7
+						+ (if hasTool then 1 else 0)
+						+ (if hasHair then 1 else 0)
+						+ (if hasAccessory then 1 else 0)
+						+ nDetail
 				)
 				expect(#ps).toBeLessThanOrEqual(MAX_PARTS)
+				expect(nDetail).toBeLessThanOrEqual(Character.MAX_DETAIL)
+				expect(#ps - nDetail).toBeLessThanOrEqual(Character.BASE_PARTS) -- the base rig is still D-032's 9
 				-- soldiers: the helm is the Head (8 parts, 9 with a kingdom crest); governors: crown (9);
 				-- working citizens: their job hat (9); other citizens: per hair style
 				expect(hasHair).toBe(
@@ -286,7 +325,7 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 				for _, d in rig:GetDescendants() do
 					expect(d:IsA("Humanoid") or d:IsA("Animator") or d:IsA("WeldConstraint")).toBe(false)
 					if d:IsA("Weld") and not d:IsA("Motor6D") then
-						expect(d.Name == "HairWeld" or d.Name == "AccessoryWeld").toBe(true)
+						expect(d.Name == "HairWeld" or d.Name == "AccessoryWeld" or d.Name == "DetailWeld").toBe(true)
 					end
 				end
 			end)
@@ -315,7 +354,9 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 				end
 			end
 			for _, p in parts(rig) do
-				expect(seen[p.Name] == true).toBe(p ~= rig.PrimaryPart and p.Name ~= "Hair" and p.Name ~= "Accessory")
+				expect(seen[p.Name] == true).toBe(
+					p ~= rig.PrimaryPart and p.Name ~= "Hair" and p.Name ~= "Accessory" and not isDetail(p)
+				)
 			end
 			expect(motorOf(rig, "Torso").Part0).toBe(rig.PrimaryPart)
 			for _, n in { "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg" } do
@@ -373,7 +414,7 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032)", function()
 			local body = {}
 			local crest = crestOf(rig)
 			for _, p in parts(rig) do
-				if p.Name ~= "Tool" and p.Name ~= "Hair" and p ~= rig.PrimaryPart then
+				if p.Name ~= "Tool" and p.Name ~= "Hair" and not isDetail(p) and p ~= rig.PrimaryPart then
 					table.insert(body, p)
 				end
 			end
@@ -684,7 +725,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 	-- hammer) and 3.0 (pick). The overview camera (50° down, 170 studs, Roblox 70° FOV on a 720 px frame) shows
 	-- about 3 px per stud, so 1.45 studs of hat is about 4 px, 2.3 studs of tool about 7 px and a 6.5 stud
 	-- signature box about 20 px (the hat is small by design; the dark beanie is the hat, the axe the signature).
-	local N_HAT, N_TOOL, N_BOX = 1.45, 2.3, 6.5
+	local N_HAT, N_TOOL, N_BOX = 1.45, 2.3, 6.3 -- box: hat + handle + head details; the smallest job measures 6.46
 	local function span(p: BasePart): (Vector3, Vector3)
 		return bounds(p)
 	end
@@ -730,18 +771,31 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				local l = lum(child(Kit.character("citizen", job, AZURE, lookOf(hair)), "Hair").Color)
 				lo, hi = math.min(lo, l), math.max(hi, l)
 			end
-			local hat = child(Kit.character("citizen", job, AZURE, lookOf(1)), "Hair")
+			local rig1 = Kit.character("citizen", job, AZURE, lookOf(1))
+			local hat = child(rig1, "Hair")
 			local hMin, hMax = bounds(hat)
-			rows[job] = { kind = primitive(hat), width = horizontal(hat), height = hMax.Y - hMin.Y, lo = lo, hi = hi }
+			-- the hat with its head details (lamp, visor, pompom, crown): the outline seen from the side
+			local gMin, gMax = modelBounds(headGroup(rig1))
+			rows[job] = {
+				kind = primitive(hat),
+				width = horizontal(hat),
+				height = hMax.Y - hMin.Y,
+				depth = gMax.Z - gMin.Z,
+				lo = lo,
+				hi = hi,
+			}
 		end
 		for i, a in WORKING do
 			for j = i + 1, #WORKING do
 				local b = WORKING[j]
 				local A, B = rows[a], rows[b]
 				-- (the two wedge caps differ in height: a tall dark tail against a low pale peak)
-				expect(A.kind ~= B.kind or math.abs(A.width - B.width) >= 0.8 or math.abs(A.height - B.height) >= 0.5).toBe(
-					true
-				)
+				expect(
+					A.kind ~= B.kind
+						or math.abs(A.width - B.width) >= 0.8
+						or math.abs(A.height - B.height) >= 0.5
+						or math.abs(A.depth - B.depth) >= 0.3 -- the builder's visor against the miner's lamp
+				).toBe(true)
 				-- shaded variants of one hat never reach the value range of another's (grayscale groups)
 				expect(A.lo > B.hi + 0.08 or B.lo > A.hi + 0.08).toBe(true)
 			end
@@ -751,7 +805,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 		expect(rows.farmer.width).toBeGreaterThan(3)
 		expect(rows.woodcutter.kind).toBe("Part/Ball")
 		expect(rows.miner.kind).toBe("Part/Cylinder")
-		expect(rows.builder.kind).toBe("WedgePart")
+		expect(rows.builder.kind).toBe("Part/Cylinder")
 		-- the woodcutter's beanie is the only ball: small, and never in a hair colour (every variant)
 		expect(rows.woodcutter.width).toBeLessThanOrEqual(1.6)
 		for hair = 1, R.hair do
@@ -912,34 +966,89 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 	end)
 
 	it(
-		"makes each tool big and characterful: a long board, a bearded blade, a pick bar, a mallet, a fat sack",
+		"gives each tool a handle and a head (D-048): hoe blade, axe head, pick bar, mallet, spearhead, strap and tie",
 		function()
-			local function tool(job: string): BasePart
-				return child(Kit.character("citizen", job, AZURE), "Tool")
+			local function tool(job: string): (BasePart, { BasePart })
+				local rig = Kit.character("citizen", job, AZURE)
+				local heads = {}
+				for _, d in detailsOf(rig) do
+					if (d:FindFirstChild("DetailWeld") :: Weld).Part0 == child(rig, "Tool") then
+						table.insert(heads, d)
+					end
+				end
+				return child(rig, "Tool"), heads
 			end
-			local hoe, axe, pick, hammer, sack =
-				tool("farmer"), tool("woodcutter"), tool("miner"), tool("builder"), tool("hauler")
-			expect(primitive(hoe)).toBe("Part/Block")
-			expect(hoe.Size.Y).toBeGreaterThanOrEqual(5.2) -- long
-			expect(hoe.Size.X).toBeGreaterThanOrEqual(0.9) -- a board with a blade's width, not a bare stick
-			expect(primitive(axe)).toBe("WedgePart")
-			expect(math.max(axe.Size.Y, axe.Size.Z)).toBeGreaterThanOrEqual(2.3) -- bearded blade
-			expect(primitive(pick)).toBe("Part/Block")
-			expect(pick.Size.Z).toBeGreaterThanOrEqual(4.2) -- a bar across the top of the arm, tip to tip
-			expect(pick.Size.Z).toBeGreaterThan(5 * pick.Size.Y)
-			expect(primitive(hammer)).toBe("Part/Block")
-			expect(hammer.Size.Z).toBeGreaterThanOrEqual(2.4)
-			expect(math.min(hammer.Size.X, hammer.Size.Y)).toBeGreaterThanOrEqual(1.3) -- fat head
+			-- handles: cylinders of different lengths and woods; the head is the Tool's own detail part
+			local expectations = {
+				farmer = { handle = 5.0, head = "WedgePart", metal = true },
+				woodcutter = { handle = 3.7, head = "WedgePart", metal = true },
+				miner = { handle = 3.5, head = "Part/Block", metal = true },
+				builder = { handle = 2.8, head = "Part/Block", metal = false },
+			}
+			local handleColours = {}
+			for job, want in expectations do
+				local handle, heads = tool(job)
+				expect(primitive(handle)).toBe("Part/Cylinder")
+				expect(handle.Size.X).toBeGreaterThanOrEqual(want.handle) -- the cylinder's length is its X
+				expect(handle.Size.Y).toBeLessThanOrEqual(0.45)
+				expect(#heads).toBe(1)
+				expect(primitive(heads[1])).toBe(want.head)
+				expect(
+					if want.metal
+						then heads[1].Material == Enum.Material.Metal
+						else heads[1].Material == Enum.Material.Wood
+				).toBe(true)
+				-- the head rises to the handle's top end, beside the body: it reads above the shoulders
+				local _, headTop = bounds(heads[1])
+				expect(headTop.Y).toBeGreaterThan(4.4)
+				expect(handleColours[handle.Color:ToHex()]).toBeNil() -- four different handles
+				handleColours[handle.Color:ToHex()] = job
+			end
+			-- sizes of the heads: a hoe blade, a bearded axe head, a long pick bar, a fat mallet
+			local _, hoeHeads = tool("farmer")
+			expect(math.max(hoeHeads[1].Size.X, hoeHeads[1].Size.Z)).toBeGreaterThanOrEqual(1.1)
+			local _, axeHeads = tool("woodcutter")
+			expect(math.max(axeHeads[1].Size.Y, axeHeads[1].Size.Z)).toBeGreaterThanOrEqual(1.7)
+			local _, pickHeads = tool("miner")
+			expect(pickHeads[1].Size.Z).toBeGreaterThanOrEqual(3.4)
+			expect(pickHeads[1].Size.Z).toBeGreaterThan(5 * pickHeads[1].Size.Y) -- double-sided: a long thin bar
+			local _, mallet = tool("builder")
+			expect(math.min(mallet[1].Size.X, mallet[1].Size.Y)).toBeGreaterThanOrEqual(1.1) -- a fat head
+			expect(mallet[1].Size.Z).toBeGreaterThanOrEqual(1.9)
+			-- the head leans outwards with the handle: the tool shows from the front as well as the side
+			for _, job in { "woodcutter", "miner", "builder" } do
+				local handle, heads = tool(job)
+				expect(handle.CFrame.RightVector.Y).never.toBeNil() -- (the handle's axis is its X: it leans out)
+				expect(math.abs(handle.CFrame.RightVector.X)).toBeGreaterThan(0.05)
+				expect(heads[1]).never.toBeNil()
+			end
+			-- the hauler's sack carries a kingdom strap across the chest and a tied neck
+			local hauler = Kit.character("citizen", "hauler", AZURE)
+			local sack, strap, tie = child(hauler, "Tool"), child(hauler, "Detail1"), child(hauler, "Detail2")
 			expect(primitive(sack)).toBe("Part/Ball")
 			expect(sack.Size.X).toBeGreaterThanOrEqual(2.6)
-			-- the swing tools are turned outwards so they show from the front as well as the side
-			for _, p in { axe, pick, hammer } do
-				expect(math.abs(p.CFrame.LookVector.X)).toBeGreaterThan(0.3)
-			end
-			-- the soldier's spear: 9 long, pale, taller than any crest
-			local spear = child(Kit.character("soldier", "soldier", CRIMSON, nil, "crimson"), "Tool")
+			expect(strap:GetAttribute("KitTint")).never.toBeNil()
+			expect(strap.Size.Y).toBeGreaterThanOrEqual(2.4)
+			expect(pos(strap).Z).toBeLessThan(-0.55) -- in front of the chest (the torso's front face is at -0.575)
+			expect(primitive(tie)).toBe("Part/Ball")
+			expect(pos(tie).Y).toBeGreaterThan(pos(sack).Y + 1.0) -- at the sack's top
+			-- the soldier's spear: 9 long, pale, with a steel spearhead and a kingdom pennant
+			local soldier = Kit.character("soldier", "soldier", CRIMSON, nil, "crimson")
+			local spear, head, pennant = child(soldier, "Tool"), child(soldier, "Detail1"), child(soldier, "Detail2")
 			expect(spear.Size.X).toBeGreaterThanOrEqual(8.5)
 			expect(lum(spear.Color)).toBeGreaterThan(0.6)
+			expect(primitive(head)).toBe("CornerWedgePart")
+			expect(lum(head.Color)).toBeGreaterThan(0.6) -- a pale steel head
+			expect(head.Material).toBe(Enum.Material.Metal)
+			local _, spearTop = bounds(spear)
+			local _, headTop = bounds(head)
+			expect(headTop.Y).toBeGreaterThan(spearTop.Y - 0.5) -- on the shaft's tip
+			expect(pennant:GetAttribute("KitTint")).never.toBeNil()
+			-- the governor's staff ends in a gold orb
+			local gov = Kit.character("governor", "idle", CRIMSON)
+			local orb = child(gov, "Detail2")
+			expect(primitive(orb)).toBe("Part/Ball")
+			expect(orb.Material).toBe(Enum.Material.Metal)
 		end
 	)
 
@@ -952,9 +1061,12 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				if WORKING_SET[job] then
 					local hat = child(rig, "Hair")
 					expect(horizontal(hat)).toBeGreaterThanOrEqual(N_HAT)
-					local aMin, aMax = bounds(hat)
-					local bMin, bMax = bounds(tool)
-					expect((aMax:Max(bMax) - aMin:Min(bMin)).Magnitude).toBeGreaterThanOrEqual(N_BOX)
+					local group = { hat, tool }
+					for _, d in detailsOf(rig) do
+						table.insert(group, d)
+					end
+					local gMin, gMax = modelBounds(group)
+					expect((gMax - gMin).Magnitude).toBeGreaterThanOrEqual(N_BOX)
 				end
 			end
 		end
@@ -965,7 +1077,7 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 	local HEAD_R = 0.8
 	local SEAT_MAX = 0.4 -- the head enters a hat's lower face by at most this
 	local EPS = 0.012
-	local ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee" } -- celebrate: see the last test
+	local ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee", "celebrate" } -- celebrate too since FORGE-01's #158 (Sim/Pose on main)
 
 	-- points on the head sphere (a lat-long grid, 24 x 12) in world space
 	local function headSamples(head: BasePart): { Vector3 }
@@ -1109,21 +1221,294 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 		expect(boxDistance(torso, torso.CFrame, pos(sack)) - r).toBeGreaterThanOrEqual(-0.1)
 	end)
 
-	it("keeps the hand tools clear of the head in every pose except the celebration (box vs head sphere)", function()
-		for _, job in { "farmer", "woodcutter", "miner", "builder" } do
-			local rig = Kit.character("citizen", job, AZURE)
+	it("keeps the hand tools and their heads clear of the head in every pose (box vs sphere)", function()
+		local cases = {
+			{ "citizen", "farmer", nil },
+			{ "citizen", "woodcutter", nil },
+			{ "citizen", "miner", nil },
+			{ "citizen", "builder", nil },
+			{ "soldier", "soldier", "crimson" },
+			{ "governor", "idle", "crimson" },
+		}
+		for _, c in cases do
+			local rig = Kit.character(c[1], c[2], AZURE, nil, c[3])
 			local head, tool = child(rig, "Head"), child(rig, "Tool")
+			local onTool = { tool } -- the handle and every detail part welded to it (the hoe blade, the axe head, ...)
+			for _, d in detailsOf(rig) do
+				if (d:FindFirstChild("DetailWeld") :: Weld).Part0 == tool then
+					table.insert(onTool, d)
+				end
+			end
 			local minGap = math.huge
 			for _, action in ACTIONS do
 				for _, speed in { 0, 6, 12 } do
 					for i = 0, 7 do
-						local w = posed(rig, Pose.sample(action, job, i / 8, speed))
-						minGap = math.min(minGap, boxDistance(tool, w[tool], w[head].Position) - HEAD_R)
+						local w = posed(rig, Pose.sample(action, c[2], i / 8, speed))
+						for _, p in onTool do
+							minGap = math.min(minGap, boxDistance(p, w[p], w[head].Position) - HEAD_R)
+						end
 					end
 				end
 			end
-			expect(minGap).toBeGreaterThanOrEqual(0.1)
+			if minGap < 0.1 then
+				error(`{c[2]}: a tool part comes within {minGap} of the head sphere (needs 0.1)`)
+			end
 		end
+	end)
+
+	-- ===== exact clearance between the tool assembly and the head assembly, every Pose action (FL-0118 phase 2) =====
+	-- The tool assembly is the Tool and every part welded to it (the hoe blade, the pick bar, the mallet, the spearhead,
+	-- the sack's strap and tie ...); the head assembly is the Head and every part welded to it (hair or hat, lamp, visor,
+	-- pompom, crown, velvet cap, accessory). The clearance of two posed parts: boxes (Block, Wedge as its bounding box)
+	-- by the separating axis over all 15 axes; a Ball against a box or a Ball exactly; anything with a Cylinder by
+	-- sample points on each part against the exact signed distance to the other. Positive = free space, negative = how
+	-- far one sinks into the other.
+	-- a box against a sphere: the distance from the centre to the box's surface less the radius (negative inside)
+	local function boxSphereDistance(cf: CFrame, size: Vector3, center: Vector3, radius: number): number
+		local l = cf:Inverse() * center
+		local half = { size.X / 2, size.Y / 2, size.Z / 2 }
+		local coords = { l.X, l.Y, l.Z }
+		local outside, depth = 0, math.huge
+		for i = 1, 3 do
+			local over = math.abs(coords[i]) - half[i]
+			if over > 0 then
+				outside += over * over
+			end
+			depth = math.min(depth, -over)
+		end
+		if outside > 0 then
+			return math.sqrt(outside) - radius
+		end
+		return -(radius + depth)
+	end
+
+	local function shapeOf(p: BasePart): string
+		if p:IsA("Part") and (p :: Part).Shape == Enum.PartType.Ball then
+			return "ball"
+		elseif p:IsA("Part") and (p :: Part).Shape == Enum.PartType.Cylinder then
+			return "cylinder"
+		end
+		return "box"
+	end
+
+	local function boxBox(cfA: CFrame, sizeA: Vector3, cfB: CFrame, sizeB: Vector3): number
+		local axesA = { cfA.RightVector, cfA.UpVector, cfA.LookVector }
+		local axesB = { cfB.RightVector, cfB.UpVector, cfB.LookVector }
+		local halfA = { sizeA.X / 2, sizeA.Y / 2, sizeA.Z / 2 }
+		local halfB = { sizeB.X / 2, sizeB.Y / 2, sizeB.Z / 2 }
+		local d = cfB.Position - cfA.Position
+		local candidates = {}
+		for _, a in axesA do
+			table.insert(candidates, a)
+		end
+		for _, b in axesB do
+			table.insert(candidates, b)
+		end
+		for _, a in axesA do
+			for _, b in axesB do
+				local c = a:Cross(b)
+				if c.Magnitude > 1e-6 then
+					table.insert(candidates, c.Unit)
+				end
+			end
+		end
+		local best = -math.huge
+		for _, axis in candidates do
+			local ra, rb = 0, 0
+			for i = 1, 3 do
+				ra += halfA[i] * math.abs(axesA[i]:Dot(axis))
+				rb += halfB[i] * math.abs(axesB[i]:Dot(axis))
+			end
+			best = math.max(best, math.abs(d:Dot(axis)) - ra - rb)
+		end
+		return best
+	end
+
+	-- signed distance from `point` to the surface of a posed part (negative inside); a Cylinder runs along its local X
+	local function signedDistance(p: BasePart, cf: CFrame, point: Vector3): number
+		local q = cf:Inverse() * point
+		local h = p.Size / 2
+		local shape = shapeOf(p)
+		if shape == "ball" then
+			return q.Magnitude - h.X
+		elseif shape == "cylinder" then
+			local radial = math.sqrt(q.Y * q.Y + q.Z * q.Z) - math.min(h.Y, h.Z)
+			local axial = math.abs(q.X) - h.X
+			return math.min(math.max(radial, axial), 0) + math.sqrt(math.max(radial, 0) ^ 2 + math.max(axial, 0) ^ 2)
+		end
+		local dx, dy, dz = math.abs(q.X) - h.X, math.abs(q.Y) - h.Y, math.abs(q.Z) - h.Z
+		return math.min(math.max(dx, dy, dz), 0)
+			+ math.sqrt(math.max(dx, 0) ^ 2 + math.max(dy, 0) ^ 2 + math.max(dz, 0) ^ 2)
+	end
+
+	-- the centre, the corners, the edge middles and face centres of a box, two end circles and a middle circle of a
+	-- cylinder (12 points each), the axis points of a ball
+	local function samplePoints(p: BasePart, cf: CFrame): { Vector3 }
+		local h = p.Size / 2
+		local out: { Vector3 } = { cf.Position }
+		local shape = shapeOf(p)
+		local function add(x: number, y: number, z: number)
+			table.insert(out, cf * Vector3.new(x, y, z))
+		end
+		if shape == "cylinder" then
+			local r = math.min(h.Y, h.Z)
+			for _, x in { -h.X, 0, h.X } do
+				for step = 0, 11 do
+					local a = step / 12 * 2 * math.pi
+					add(x, math.cos(a) * r, math.sin(a) * r)
+				end
+			end
+		elseif shape == "ball" then
+			for _, sign in { -1, 1 } do
+				add(sign * h.X, 0, 0)
+				add(0, sign * h.X, 0)
+				add(0, 0, sign * h.X)
+			end
+		else
+			for _, sx in { -1, 0, 1 } do
+				for _, sy in { -1, 0, 1 } do
+					for _, sz in { -1, 0, 1 } do
+						if sx ~= 0 or sy ~= 0 or sz ~= 0 then
+							add(sx * h.X, sy * h.Y, sz * h.Z)
+						end
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	local function exactClearance(a: BasePart, cfA: CFrame, b: BasePart, cfB: CFrame): number
+		local sa, sb = shapeOf(a), shapeOf(b)
+		if sa == "cylinder" or sb == "cylinder" then
+			local best = math.huge
+			for _, point in samplePoints(a, cfA) do
+				best = math.min(best, signedDistance(b, cfB, point))
+			end
+			for _, point in samplePoints(b, cfB) do
+				best = math.min(best, signedDistance(a, cfA, point))
+			end
+			return best
+		elseif sa == "ball" and sb == "ball" then
+			return (cfA.Position - cfB.Position).Magnitude - a.Size.X / 2 - b.Size.X / 2
+		elseif sa == "ball" then
+			return boxSphereDistance(cfB, b.Size, cfA.Position, a.Size.X / 2)
+		elseif sb == "ball" then
+			return boxSphereDistance(cfA, a.Size, cfB.Position, b.Size.X / 2)
+		end
+		return boxBox(cfA, a.Size, cfB, b.Size)
+	end
+
+	-- `root` and every part welded to it (a Weld in either direction; never across a Motor6D)
+	local function assemblyOf(rig: Model, root: BasePart): { BasePart }
+		local out: { BasePart } = { root }
+		local seen: { [BasePart]: boolean } = { [root] = true }
+		local i = 1
+		while i <= #out do
+			local part = out[i]
+			i += 1
+			for _, d in rig:GetDescendants() do
+				if d:IsA("Weld") then
+					local a, b = d.Part0 :: BasePart, d.Part1 :: BasePart
+					local other = if a == part then b elseif b == part then a else nil
+					if other and not seen[other] then
+						seen[other] = true
+						table.insert(out, other)
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	-- The smallest clearance over every pair (tool part, head part) in every Pose action (idle, walk, work, carry,
+	-- fight, flee, celebrate; walk, carry and flee at speeds 0, 6 and 12; 24 phases per cycle) of one rig, as
+	-- { exact clearance, bounding-box clearance, "tool part | head part, action" of the exact minimum }.
+	-- The bounding-box clearance takes every part as its oriented box (a Ball as its cube, a Cylinder as its box).
+	local TOOL_ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee", "celebrate" }
+	local function toolHeadClearance(rig: Model, job: string): (number, number, string)
+		local head, tool = child(rig, "Head"), child(rig, "Tool")
+		local toolParts, headParts = assemblyOf(rig, tool), assemblyOf(rig, head)
+		local lowExact, lowBox, where = math.huge, math.huge, ""
+		for _, action in TOOL_ACTIONS do
+			local speeds = if action == "walk" or action == "carry" or action == "flee" then { 0, 6, 12 } else { 0 }
+			for _, speed in speeds do
+				for i = 0, 23 do
+					local w = posed(rig, Pose.sample(action, job, i / 24, speed))
+					for _, t in toolParts do
+						for _, h in headParts do
+							local c = exactClearance(t, w[t], h, w[h])
+							if c < lowExact then
+								lowExact, where = c, `{t.Name} | {h.Name}, {action}`
+							end
+							lowBox = math.min(lowBox, boxBox(w[t], t.Size, w[h], h.Size))
+						end
+					end
+				end
+			end
+		end
+		return lowExact, lowBox, where
+	end
+
+	local TOOL_RIGS = {
+		{ "citizen", "farmer", nil },
+		{ "citizen", "woodcutter", nil },
+		{ "citizen", "miner", nil },
+		{ "citizen", "builder", nil },
+		{ "citizen", "hauler", nil },
+		{ "soldier", "soldier", "crimson" },
+		{ "governor", "idle", "crimson" },
+	}
+	local TOOL_HEAD_EXACT = 0.1 -- studs of free space between every tool part and every head part, exact shapes
+	local TOOL_HEAD_BOX = 0.03 -- and between their bounding boxes (the hauler's ball sack excepted)
+
+	it(
+		"keeps every part welded to the tool clear of the head and everything welded to it in every Pose action",
+		function()
+			for _, c in TOOL_RIGS do
+				-- the three hat rolls (look.hair 1..3: 0 and +-9 degrees tilt the hat, its lamp, visor or crown about the head)
+				for hair = 1, 3 do
+					local look = if c[1] == "citizen" then { skin = 1, hair = hair, hairColor = 1, outfit = 1 } else nil
+					local rig = Kit.character(c[1], c[2], AZURE, look :: any, c[3])
+					local job = if c[1] == "governor" then "governor" else c[2]
+					local exact, box, where = toolHeadClearance(rig, job)
+					if exact < TOOL_HEAD_EXACT then
+						error(
+							`{c[1]}/{c[2]} hair {hair}: {string.format("%.3f", exact)} studs at {where} (needs {TOOL_HEAD_EXACT})`
+						)
+					end
+					if c[2] ~= "hauler" and box < TOOL_HEAD_BOX then
+						error(
+							`{c[1]}/{c[2]} hair {hair}: bounding boxes only {string.format("%.3f", box)} studs apart (needs {TOOL_HEAD_BOX})`
+						)
+					end
+				end
+			end
+		end
+	)
+
+	it("measures clearance as it says: gap, overlap, and the exact shapes", function()
+		local function part(shape: Enum.PartType, size: Vector3): Part
+			local p = Instance.new("Part")
+			p.Shape, p.Size = shape, size
+			return p
+		end
+		local block, ball, cyl = Enum.PartType.Block, Enum.PartType.Ball, Enum.PartType.Cylinder
+		local a, b = part(block, Vector3.new(2, 2, 2)), part(block, Vector3.new(2, 2, 2))
+		expect(exactClearance(a, CFrame.new(0, 0, 0), b, CFrame.new(3, 0, 0))).toBeNear(1, 1e-6)
+		expect(exactClearance(a, CFrame.new(0, 0, 0), b, CFrame.new(1.5, 0, 0))).toBeNear(-0.5, 1e-6)
+		local s = part(ball, Vector3.new(2, 2, 2))
+		expect(exactClearance(s, CFrame.new(0, 0, 0), a, CFrame.new(3, 0, 0))).toBeNear(1, 1e-6) -- a ball: radius 1
+		expect(exactClearance(s, CFrame.new(0, 0, 0), a, CFrame.new(1.5, 1.5, 0))).toBeNear(
+			math.sqrt(0.5 ^ 2 * 2) - 1,
+			1e-6
+		)
+		local cylinder = part(cyl, Vector3.new(1, 2, 2)) -- a disc along X, radius 1
+		expect(exactClearance(cylinder, CFrame.new(0, 0, 0), a, CFrame.new(0, 3, 0))).toBeNear(1, 1e-6)
+		expect(exactClearance(cylinder, CFrame.new(0, 0, 0), a, CFrame.new(0, 1.5, 0))).toBeNear(-0.5, 0.05)
+		-- a box corner the cylinder's own box would hit but the cylinder does not
+		expect(exactClearance(cylinder, CFrame.new(0, 0, 0), a, CFrame.new(0, 2.2, 2.2))).toBeGreaterThan(0.5)
+		expect(boxBox(CFrame.new(0, 0, 0), cylinder.Size, CFrame.new(0, 2.2, 2.2), a.Size)).toBeLessThan(0.3)
 	end)
 end)
 
@@ -1346,6 +1731,120 @@ describe("Kit.character individuals, idle accessories, governor and low crest (a
 	end)
 end)
 
+describe("Kit.character detail parts (D-048): 11 parts, rigid, welded, flagged, no new joints", function()
+	-- what each rig wears as detail parts: Detail1, Detail2 as { KitDetailKind, welded to }
+	local WANT = {
+		farmer = { { "strawcrown", "Head" }, { "hoeblade", "Tool" } },
+		woodcutter = { { "pompom", "Head" }, { "axehead", "Tool" } },
+		miner = { { "lamp", "Head" }, { "pickhead", "Tool" } },
+		builder = { { "visor", "Head" }, { "mallet", "Tool" } },
+		hauler = { { "strap", "Tool" }, { "tie", "Tool" } },
+	}
+
+	it("leaves Sim/Pose.JOINTS and the Motor6D set unchanged: a detail part never has a joint", function()
+		expect(Pose.JOINTS).toEqual(POSE_JOINTS)
+		each(function(_, _, rig)
+			for _, d in rig:GetDescendants() do
+				if d:IsA("Motor6D") then
+					expect(table.find(POSE_JOINTS, d.Name)).never.toBeNil()
+					expect(isDetail(d.Part1 :: BasePart)).toBe(false)
+					expect(isDetail(d.Part0 :: BasePart)).toBe(false)
+				end
+			end
+		end)
+	end)
+
+	it("flags every detail part KitDetail, names it Detail<n>, and welds it rigidly to the Head or the Tool", function()
+		local total = 0
+		each(function(_, _, rig)
+			local names = {}
+			for _, p in parts(rig) do
+				local isD = isDetail(p)
+				expect(p:GetAttribute("KitDetail") == true or p:GetAttribute("KitDetail") == nil).toBe(true)
+				expect(string.match(p.Name, "^Detail%d$") ~= nil).toBe(isD)
+				if not isD then
+					continue
+				end
+				total += 1
+				expect(names[p.Name]).toBeNil()
+				names[p.Name] = true
+				expect(type(p:GetAttribute("KitDetailKind"))).toBe("string")
+				local weld = p:FindFirstChild("DetailWeld") :: Weld
+				expect(weld).never.toBeNil()
+				expect(weld.ClassName).toBe("Weld") -- never a Motor6D, never a WeldConstraint
+				expect(weld.Part1).toBe(p)
+				expect(weld.Part0 == child(rig, "Head") or weld.Part0 == child(rig, "Tool")).toBe(true)
+				local cf = (weld.Part0 :: BasePart).CFrame * weld.C0 * weld.C1:Inverse()
+				expect((cf.Position - pos(p)).Magnitude).toBeLessThan(1e-3)
+				for _, prop in { "CanCollide", "CanTouch", "CanQuery", "Anchored" } do
+					expect((p :: any)[prop]).toBe(false)
+				end
+				expect(p.Massless).toBe(true)
+			end
+		end)
+		expect(total).toBeGreaterThan(100)
+	end)
+
+	it("gives each job its two detail parts, derived from kind and job alone (no new look field)", function()
+		for job, want in WANT do
+			-- the same two details for every look
+			for _, look in cornerLooks() do
+				local rig = Kit.character("citizen", job, AZURE, look)
+				local ds = detailsOf(rig)
+				expect(#ds).toBe(2)
+				for i, w in want do
+					expect(ds[i]:GetAttribute("KitDetailKind")).toBe(w[1])
+					expect((ds[i]:FindFirstChild("DetailWeld") :: Weld).Part0).toBe(child(rig, w[2]))
+				end
+			end
+		end
+		-- soldiers (with or without a kingdom, drafted citizens too): spearhead and pennant on the spear
+		for _, role in { { "soldier", "soldier" }, { "citizen", "soldier" }, { "soldier", "farmer" } } do
+			for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
+				local ds = detailsOf(Kit.character(role[1], role[2], CRIMSON, nil, kingdom))
+				expect(#ds).toBe(2)
+				expect(ds[1]:GetAttribute("KitDetailKind")).toBe("spearhead")
+				expect(ds[2]:GetAttribute("KitDetailKind")).toBe("pennant")
+			end
+		end
+		-- governors: a velvet cap on the head and an orb on the staff
+		local gov = detailsOf(Kit.character("governor", "idle", CRIMSON))
+		expect(#gov).toBe(2)
+		expect(gov[1]:GetAttribute("KitDetailKind")).toBe("velvetcap")
+		expect(gov[2]:GetAttribute("KitDetailKind")).toBe("orb")
+		-- idle citizens carry nothing and have no detail parts (their free part is the Accessory)
+		for _, look in cornerLooks() do
+			expect(#detailsOf(Kit.character("citizen", "idle", CRIMSON, look))).toBe(0)
+		end
+	end)
+
+	it("keeps every head detail clear of the face and on the hat, following its tilt", function()
+		for _, job in WORKING do
+			local ref
+			for hair = 1, R.hair do
+				local rig =
+					Kit.character("citizen", job, AZURE, { skin = 1, hair = hair, hairColor = 1, outfit = 1 } :: any)
+				local head, hat = child(rig, "Head"), child(rig, "Hair")
+				local d = detailsOf(rig)[1]
+				local lo = bounds(d)
+				expect(lo.Y).toBeGreaterThanOrEqual(pos(head).Y + 0.3) -- above the eyes
+				-- the detail keeps its place on the hat whatever the hat's tilt
+				local gap = (pos(d) - pos(hat)).Magnitude
+				ref = ref or gap
+				expect(gap).toBeNear(ref, 1e-3)
+			end
+		end
+		-- kingdom-coloured head details (crown, pompom, velvet cap) recolour with the kingdom
+		for _, job in { "farmer", "woodcutter" } do
+			local rig = Kit.character("citizen", job, CRIMSON)
+			local d = detailsOf(rig)[1]
+			expect(d:GetAttribute("KitTint")).never.toBeNil()
+			Kit.setKingdomColor(rig, GOLD)
+			expect(d.Color:ToHex()).toBe(detailsOf(Kit.character("citizen", job, GOLD))[1].Color:ToHex())
+		end
+	end)
+end)
+
 describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", function()
 	local HELM_TOP = 5.5 -- top of today's great helm (the soldier's Head)
 
@@ -1356,7 +1855,7 @@ describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", func
 		return kind, mx.Y - HELM_TOP, mx.X - mn.X, mx.Z - mn.Z
 	end
 
-	it("gives each kingdom's soldier a 9-part rig whose 9th part is the kingdom crest welded to the helm", function()
+	it("gives each kingdom's soldier an 11-part rig whose 9th part is the kingdom crest welded to the helm", function()
 		local crown = child(Kit.character("governor", "idle", CRIMSON), "Hair") -- existing welded headwear
 		local plainMotors = {}
 		for _, d in Kit.character("soldier", "soldier", CRIMSON):GetDescendants() do
@@ -1371,7 +1870,7 @@ describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", func
 				local rig = noYield(function()
 					return Kit.character(role[1], role[2], color, nil, kingdom)
 				end)
-				expect(#parts(rig)).toBe(9)
+				expect(#parts(rig)).toBe(11) -- 9 + the spearhead and the pennant (D-048)
 				local crest = crestOf(rig)
 				assert(crest, `{role[1]} {role[2]} {kingdom} has no crest`)
 				expect(crest.Name).toBe("Hair")
@@ -1456,9 +1955,9 @@ describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", func
 		expect(2 * math.sqrt(r * r - over * over)).toBeLessThan(dome.w - 0.2)
 	end)
 
-	it("keeps today's plain helm (8 parts) with no kingdom or an unknown one", function()
+	it("keeps today's plain helm (10 parts with its spear details) with no kingdom or an unknown one", function()
 		local plain = Kit.character("soldier", "soldier", CRIMSON)
-		expect(#parts(plain)).toBe(8)
+		expect(#parts(plain)).toBe(10) -- 8 + the spearhead and the pennant (D-048)
 		expect(plain:FindFirstChild("Hair")).toBeNil()
 		local head = child(plain, "Head")
 		expect(head.ClassName).toBe("Part")

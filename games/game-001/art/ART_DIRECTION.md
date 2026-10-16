@@ -76,16 +76,16 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 
   | Job | Hat (KitHeadwear) | Tool | Accent (trousers / panel) | Torso width |
   |---|---|---|---|---|
-  | farmer | wide flat straw disc, 3.1 (`strawhat`) | long broad board, 5.4 × 1.0 (hoe) | olive / cream | 1.95 lean |
-  | woodcutter | small charcoal knit beanie, a 1.5 ball sitting high (`knitcap`) | big bearded steel blade, 2.4 (axe) | black-brown / umber | 2.3 stocky |
-  | miner | small dark-ochre iron pot, 1.9 (`hardhat`) | dark double-sided bar, 4.4 (pick) | coal / soot grey | 2.2 |
-  | builder | warm cream cloth cap, a low wedge that sits on the head (`buildercap`) | fat wooden mallet, 2.6 (hammer) | dusty navy / tan canvas | 2.3 |
-  | hauler | none: the look's hair | sackcloth sack 2.7, low on the back (top just above the shoulders) | russet / sackcloth | 2.3 |
+  | farmer | wide flat straw disc, 3.1, with a kingdom-red crown (`strawhat`) | 5.2 handle with a steel blade at its top (hoe) | olive / cream | 1.95 lean |
+  | woodcutter | small charcoal knit beanie, a 1.5 ball sitting high, with a kingdom-red pompom (`knitcap`) | 3.9 haft with a bearded steel head (axe) | black-brown / umber | 2.3 stocky |
+  | miner | small dark-ochre iron pot, 1.9, with a lamp (`hardhat`) | 4.55 handle with a 3.6 double-sided iron bar (pick) | coal / soot grey | 2.2 |
+  | builder | cream hard hat: a squat drum that sits on the head with a visor (`buildercap`) | 3.0 handle with a fat wooden mallet head (hammer) | dusty navy / tan canvas | 2.3 |
+  | hauler | none: the look's hair | sackcloth sack 2.7, low on the back, with a tied neck and a kingdom-red strap across the chest | russet / sackcloth | 2.3 |
   | idle | the look's hair, plus a headband or scarf on about two looks in three (`Accessory`, the free 9th part) | nothing | the outfit's own | 1.9 lean |
 
   The governor wears a wide gold crown disc (1.9) and carries a 6.4 × 0.5 gold staff, in a 2.4 body; the soldier's spire crest is low (1.55 above the helm, no taller than the helm).
 
-  Rules: the woodcutter's charcoal beanie is the only ball hat and never a hair colour (balls are hair), the four hats' value ranges never overlap in grayscale, the kingdom tint stays on the torso or the sleeves, and idle or hauler citizens never wear a job hat (hair style 6 is `curls`, not a straw hat). The hat takes the Hair slot, so a working citizen's `look.hair` picks a variant of the hat (roll tilt and shade) and the hair colour is hidden under it; it dyes the clothes instead (shirt tone, trousers and panel; an odd hair colour keeps the job panel on neutral sleeves, an even one makes them kingdom-red, for red shoulders from above). A hat sits ON the head (the head enters its lower face by 0.15-0.4, nothing of the head shows through it) with the face clear (below +0.33 from the head centre); the sack sits behind the back, clear of the head and both arms in every pose; nothing rises past the soldier's spear (Kit spec `clearance`). Phase 2 (D-048, two more detail parts) adds a straw crown over the brim, a lamp on the hard hat, real hoe, axe, pick and hammer heads on shafts, and the sack's tie and strap.
+  Rules: the woodcutter's charcoal beanie is the only ball hat and never a hair colour (balls are hair), the four hats' value ranges never overlap in grayscale, the kingdom tint stays on the torso or the sleeves, and idle or hauler citizens never wear a job hat (hair style 6 is `curls`, not a straw hat). The hat takes the Hair slot, so a working citizen's `look.hair` picks a variant of the hat (roll tilt and shade) and the hair colour is hidden under it; it dyes the clothes instead (shirt tone, trousers and panel; an odd hair colour keeps the job panel on neutral sleeves, an even one makes them kingdom-red, for red shoulders from above). A hat sits ON the head (the head enters its lower face by 0.15-0.4, nothing of the head shows through it) with the face clear (below +0.33 from the head centre); the sack sits behind the back, clear of the head and both arms in every pose; nothing rises past the soldier's spear (Kit spec `clearance`). **Detail parts (D-048, phase 2):** each hand tool is a cylinder handle with its head as a detail part, and every job carries two rigid detail parts welded to the Head or the Tool (`KitDetail = true`, droppable beyond the rig's LOD distance, never a joint): crown, pompom, lamp, visor, hoe blade, axe head, pick bar, mallet, strap, tie, spearhead, pennant, velvet cap, orb. The soldier wears a kingdom pennant on the spear and the governor a kingdom velvet cap, so kingdom red shows from above on every working rig.
 - **Chunky and slightly exaggerated:** thick roofs with 1.2-stud overhangs, oversized doors (4.4 × 7.6, walkable), chamfered or stepped edges, banners hanging below the eaves.
 - **Human scale:** 5.5-stud characters, storeys of about 10–11 studs, sills 3.4 above the floor, fences and parapets 3–3.4 high.
 - **Front faces −Z** (the Model's LookVector). The pivot is at the base centre (PrimaryPart `Root` plus `PivotOffset`).
@@ -110,7 +110,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 ## 6. Budgets (BRIEF §14)
 - **World:** at most 25k parts at VS-2. WorldService logs the part count it builds.
 - **Per building:** budgets are documented in `Kit/Buildings.luau` and enforced by `tests/world/`.
-- **Rigs:** at most `Character.MAX_PARTS` parts (9: Root, Torso, Head, 2 arms, 2 legs, Tool, welded headwear; D-032). D-048 allows 11 in a later phase.
+- **Rigs:** at most `Character.MAX_PARTS` parts: 11 = the 9 of D-032 (Root, Torso, Head, 2 arms, 2 legs, Tool, welded headwear) plus at most 2 rigid detail parts (D-048).
 - **Props:** stand-ins of 3–25 parts. They are replaced by single imported MeshParts once the Blender batch is uploaded (FL-0057), which share the same asset ids.
 
 ## 7. How looks are judged

@@ -67,14 +67,28 @@ local function frame(model: Model): (CFrame, number)
 	local head = model:FindFirstChild("Head") :: BasePart
 	local arm = model:FindFirstChild("RightArm") :: BasePart
 	local hair = model:FindFirstChild("Hair") :: BasePart?
+	-- everything worn on the head: the hair or hat, and the D-048 detail parts welded to the Head (lamp, visor, pompom,
+	-- the farmer's crown, the governor's velvet cap)
+	local worn: { BasePart } = {}
+	if hair then
+		table.insert(worn, hair)
+	end
+	for _, d in model:GetChildren() do
+		local weld = if d:IsA("BasePart") then d:FindFirstChild("DetailWeld") else nil
+		if d:IsA("BasePart") and weld and (weld :: Weld).Part0 == head then
+			table.insert(worn, d)
+		end
+	end
 	local shoulders = torso.CFrame.Position.Y + torso.Size.Y / 2
-	local top = math.max(topOf(head), if hair then topOf(hair) else -math.huge) + HEADROOM
+	local top = topOf(head)
+	for _, p in worn do
+		top = math.max(top, topOf(p))
+	end
+	top += HEADROOM
 	local halfWidth = torso.Size.X / 2 + arm.Size.X / 2 + SHOULDER_PAD
-	if hair then -- the farmer's 3.4 straw disc is wider than the shoulders: keep the whole brim in view
-		halfWidth = math.max(
-			halfWidth,
-			math.abs(hair.CFrame.Position.X - root.CFrame.Position.X) + halfWidthOf(hair) * HAT_NEAR
-		)
+	for _, p in worn do -- the farmer's 3.1 straw disc is wider than the shoulders: keep the whole brim in view
+		halfWidth =
+			math.max(halfWidth, math.abs(p.CFrame.Position.X - root.CFrame.Position.X) + halfWidthOf(p) * HAT_NEAR)
 	end
 	local half = math.max((top - (shoulders - CHEST)) / 2, halfWidth) * MARGIN
 	-- any spare height goes to the chest, never above the head

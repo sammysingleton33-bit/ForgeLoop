@@ -3,8 +3,8 @@
 	Kit/Character — Kit.character rigs with per-citizen looks (CONTRACTS G4 rendering, G10, G13.2; D-026, D-032),
 	the one-part far LOD stand-in, and ruler regalia (crown + cape accessories).
 
-	Rig: at most Character.MAX_PARTS (9) BaseParts, no Humanoid/Animator, every part CanCollide/CanTouch/CanQuery
-	false and Massless. Motor6Ds are named after the moving part and match Sim/Pose.JOINTS:
+	Rig: at most Character.MAX_PARTS (11 = BASE_PARTS 9 + MAX_DETAIL 2, D-048) BaseParts, no Humanoid/Animator,
+	every part CanCollide/CanTouch/CanQuery false and Massless. Motor6Ds are named after the moving part and match Sim/Pose.JOINTS:
 		Root   anchored, invisible, centre ROOT_HEIGHT (3.2) above the feet; PivotOffset puts the pivot at the feet
 		└ Torso      Motor6D "Torso" at the hips (2.2): walk bob, work lean, the death fall
 		  ├ Head     Motor6D at the neck
@@ -16,16 +16,30 @@
 		  ├ LeftLeg / RightLeg   Motor6Ds at the hips
 		  └ Tool     the hauler's sack only: Motor6D "Tool" from the Torso at the right shoulder blade
 	Every joint frame is axis-aligned with the model (+X right, +Y up, -Z front), as Pose expects: Transform rotates
-	about it. Part counts: 7 (bald idle citizen) to 9 (headwear + tool); working citizens (farmer, woodcutter,
-	miner, builder) always 9 (hat + tool); soldiers 8 (the helm is their Head), 9 with a kingdom crest; governors 9;
-	Motor6Ds = parts − 1 − welded headwear. Character.MAX_PARTS is the one cap the specs enforce; the 11-part
-	variant of D-048 (two more rigid detail parts) is a later phase.
+	about it. Base part counts (D-032): 7 (bald idle citizen) to 9 (headwear + tool); working citizens (farmer,
+	woodcutter, miner, builder) always 9 (hat + tool); soldiers 8 (the helm is their Head), 9 with a kingdom crest;
+	governors 9. D-048 detail parts come on top: working citizens, the hauler, soldiers and governors carry exactly 2
+	(11 parts at most; soldiers without a kingdom 10), idle citizens none. Motor6Ds = base parts − 1 − welded
+	headwear/accessory (a detail part never has one). Character.MAX_PARTS is the one cap the specs enforce.
+
+	Detail parts (D-048, FL-0118 phase 2). Rigid parts welded to the Head or the Tool by a Weld "DetailWeld" (never a
+	Motor6D, so Sim/Pose.JOINTS and the root height are unchanged), named Detail1, Detail2, with the attribute
+	KitDetail = true (Character.DETAIL_ATTRIBUTE; the client may drop them beyond the rig's LOD distance: the base rig
+	is complete without them) and KitDetailKind = the part's name. Nothing new on the wire: they derive from the kind
+	and the job the client already has. Each hand Tool is now only the HANDLE (a cylinder); its head is a detail:
+		farmer      Detail1 strawcrown (kingdom-red crown over the straw brim, Head)   Detail2 hoeblade (steel wedge, Tool)
+		woodcutter  Detail1 pompom (kingdom-red, on the beanie, Head)                  Detail2 axehead (bearded steel, Tool)
+		miner       Detail1 lamp (bright block on the pot, Head)                       Detail2 pickhead (dark iron bar, Tool)
+		builder     Detail1 visor (with the cream drum: a hard hat, Head)              Detail2 mallet (wood head, Tool)
+		hauler      Detail1 strap (kingdom-red, across the chest)                      Detail2 tie (the sack's neck); both Tool
+		soldier     Detail1 spearhead (pale steel)                                     Detail2 pennant (kingdom-red); both Tool
+		governor    Detail1 velvetcap (kingdom-red, over the crown disc, Head)         Detail2 orb (gold, on the staff, Tool)
 
 	Job silhouettes (citizen art pass after the first Studio playtest). Each working job reads without colour:
-		farmer      wide straw hat (flat disc 3.1), long hoe board, lean body        KitHeadwear "strawhat"
-		woodcutter  small charcoal knit beanie (a ball sitting high), big bearded axe blade, stocky   "knitcap"
-		miner       small dark iron pot (1.9), double-sided pick bar (T), stocky     "hardhat"
-		builder     warm cream cloth cap (low wedge, sits on the head), big wooden mallet, broad   "buildercap"
+		farmer      wide straw hat (flat disc 3.1), long hoe with a steel blade, lean body   KitHeadwear "strawhat"
+		woodcutter  small charcoal knit beanie (a ball sitting high), axe with a bearded steel head, stocky   "knitcap"
+		miner       small dark iron pot (1.9) with a lamp, pick with a double-sided iron bar (T), stocky   "hardhat"
+		builder     cream hard hat (a drum with a visor detail, sits on the head), wooden mallet, broad  "buildercap"
 		hauler      no job hat (hair shows), big burlap sack low on the back, broad
 		idle        hair, nothing carried, lean; the free 9th part is a headband or scarf (Accessory, KitAccessory)
 	The job also owns an outfit accent: the trousers (colour, KitAccent = job) and the outfit's fixed neutral
@@ -83,7 +97,10 @@ local HEAD_Y = NECK_Y + HEAD_D / 2 - 0.06 -- head centre (4.64)
 Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
 Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT
 Character.HEIGHT = 5.5 -- the body (head top); a hat, crest or tool may rise above it
-Character.MAX_PARTS = 9 -- D-032 rig cap, the one number the specs enforce (D-048 raises it to 11 in a later phase)
+Character.BASE_PARTS = 9 -- D-032: Root, Torso, Head, 2 arms, 2 legs, Tool, welded headwear
+Character.MAX_DETAIL = 2 -- D-048: at most 2 rigid detail parts (headwear or tool), welded to the Head or the Tool
+Character.MAX_PARTS = Character.BASE_PARTS + Character.MAX_DETAIL -- the one cap the specs enforce (11)
+Character.DETAIL_ATTRIBUTE = "KitDetail" -- true on every detail part, so the client may drop them beyond the LOD distance
 
 -- ------------------------------------------------------------------ colours
 
@@ -98,6 +115,7 @@ local KNIT = Color3.fromRGB(52, 58, 70) -- woodcutter's cap: charcoal wool (neut
 local HARDHAT = Color3.fromRGB(168, 104, 34) -- miner's iron pot: dark burnt ochre (L .44; palette L .38-.44)
 local COIF = Color3.fromRGB(240, 214, 160) -- builder's cloth cap: warm cream (L .85; palette L .83-.87)
 local ASH = Color3.fromRGB(214, 190, 146) -- spear shaft: pale ash, visible against grass and soldiers' steel
+local WOOD_PALE = Color3.fromRGB(198, 152, 104) -- hammer handle
 local ERMINE = Color3.fromRGB(242, 238, 228)
 local FACE_TEXTURE = "rbxasset://textures/face.png" -- Roblox's built-in classic face (engine content, no upload)
 
@@ -130,6 +148,7 @@ type PartSpec = {
 	material: Enum.Material,
 	offset: CFrame, -- relative to the joint frame (head centre for headwear, hand for tools)
 	onBack: boolean?, -- tool jointed to the Root (sack) instead of the right hand
+	details: { PartSpec }?, -- tools: rigid parts welded to the Tool, offsets in the joint frame like `offset`
 	palette: { Color3 }?, -- job hats: three colour variants of one value band (look.hair picks one; `color` is the first)
 }
 
@@ -238,19 +257,18 @@ local JOB_HATS: { [string]: PartSpec } = {
 		material = Enum.Material.Metal,
 		offset = CFrame.new(0, 0.79, 0) * UPRIGHT, -- base 0.44; 1.9 across against the farmer's 3.1
 	},
-	builder = { -- warm cream cloth cap: a low wedge, thin lip over the brow, higher crown behind. It sits ON the head
-		-- (base 0.45 above the head centre) and its slope stays above the skull, so the head no longer pokes
-		-- through a flat-bottomed block
+	builder = { -- cream hard hat crown: a squat drum sitting ON the head (base 0.44 above the head centre); its visor
+		-- is a head detail part (HEAD_DETAILS.builder), so with it the hat reads as a hard hat, not a paper cap
 		name = "buildercap",
-		class = "WedgePart",
-		size = Vector3.new(1.7, 0.95, 1.9),
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(0.75, 1.8, 1.8),
 		color = COIF,
 		palette = { COIF, Color3.fromRGB(246, 224, 140), Color3.fromRGB(244, 208, 170) },
-		material = Enum.Material.Fabric,
-		offset = CFrame.new(0, 0.925, 0.05),
+		material = Enum.Material.SmoothPlastic,
+		offset = CFrame.new(0, 0.815, 0) * UPRIGHT,
 	},
 }
--- The hat takes the look's hair slot, so look.hair picks a variant of it: a roll tilt (3) and a shade (2).
 -- look.hair (1..6) -> a colour of the job's palette (3) and a roll tilt about the head (3): six distinct hats, each
 -- colour and each tilt used twice. The palettes stay inside one value band per job, so jobs still separate in grayscale.
 local HAT_VARIANTS = {
@@ -260,6 +278,49 @@ local HAT_VARIANTS = {
 	{ colour = 1, roll = math.rad(9) },
 	{ colour = 2, roll = math.rad(-9) },
 	{ colour = 3, roll = 0 },
+}
+
+-- Head detail parts (D-048): one rigid part welded to the Head per working job, named Detail<n>, KitDetail = true.
+-- Offsets are from the head centre and follow the hat's roll. They carry the readable extras of each hat: the
+-- farmer's kingdom-coloured crown over the straw brim, the woodcutter's kingdom pompom, the miner's lamp, the
+-- builder's visor. Kingdom colour on top of the head also keeps it visible from the air under a wide hat.
+local LAMP = Color3.fromRGB(255, 226, 140)
+local HEAD_DETAILS: { [string]: PartSpec } = {
+	farmer = {
+		name = "strawcrown",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(0.55, 1.5, 1.5),
+		color = 0.8,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, 1.1, 0) * UPRIGHT,
+	},
+	woodcutter = {
+		name = "pompom",
+		class = "Part",
+		shape = Enum.PartType.Ball,
+		size = Vector3.new(0.75, 0.75, 0.75),
+		color = 0.85,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, 1.5, 0.05),
+	},
+	miner = {
+		name = "lamp",
+		class = "Part",
+		shape = Enum.PartType.Block,
+		size = Vector3.new(0.5, 0.4, 0.35),
+		color = LAMP,
+		material = Enum.Material.SmoothPlastic,
+		offset = CFrame.new(0, 0.8, -1.05),
+	},
+	builder = {
+		name = "visor",
+		class = "WedgePart",
+		size = Vector3.new(1.3, 0.16, 0.9),
+		color = COIF,
+		material = Enum.Material.SmoothPlastic,
+		offset = CFrame.new(0, 0.56, -1.2) * CFrame.Angles(math.rad(-8), 0, 0),
+	},
 }
 
 local GOVERNOR_CROWN: PartSpec = { -- gold circlet on the head, a gold disc from above; it covers the head's top
@@ -273,6 +334,16 @@ local GOVERNOR_CROWN: PartSpec = { -- gold circlet on the head, a gold disc from
 	material = Enum.Material.Metal,
 	offset = CFrame.new(0, 0.72, 0) * UPRIGHT,
 }
+local GOVERNOR_CAP: PartSpec =
+	{ -- velvet cap in the kingdom colour over the crown disc (the regalia's cap): red from above
+		name = "velvetcap",
+		class = "Part",
+		shape = Enum.PartType.Ball,
+		size = Vector3.new(1.4, 1.4, 1.4),
+		color = 0.9,
+		material = Enum.Material.Fabric,
+		offset = CFrame.new(0, 1.1, 0),
+	}
 
 local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel square from above)
 	name = "greathelm",
@@ -459,51 +530,98 @@ Character.JOB_TOOLS = table.freeze((function()
 end)())
 
 local GRIP = CFrame.new(0, 0, -0.55) -- in front of the fist, so a held shaft clears the arm
--- Swing tools (axe, pick, hammer) are oversized heads gripped at the fist: in a swing the arm reads as the
--- handle. They are turned 40° outwards so the head shows from the front as well as from the side.
-local OUT = CFrame.Angles(0, math.rad(-40), 0)
 
+-- Hand tools (D-048): the Tool part is the HANDLE (a cylinder held in front of the fist, leaning out a few degrees);
+-- its head is a detail part welded to it (`details`, offsets in the joint frame, KitDetail = true). The heads sit at
+-- head height beside the body, so a tool reads as a tool from the air. Handle colours and head shapes differ per job.
+local LEAN = CFrame.Angles(0, 0, math.rad(-6)) -- the top leans outwards (+X), away from the body
+-- the hoe leans out 14 degrees: its handle clears the straw brim of every hat roll in every pose (0.04 or more with the
+-- brim's bounding box, 0.15 or more with the exact disc)
+local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
+local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-15)) -- the mallet leans further: its head swings past the face at work (cheek clearance 0.15)
 local TOOLS: { [string]: PartSpec } = {
-	hoe = { -- a long broad board (the hoe/spade read: a shaft with a blade, one part): 5.4 long, 1.0 wide
+	hoe = { -- 5.2 long pale-wood handle, a steel blade angled down at its top
 		name = "hoe",
 		class = "Part",
-		shape = Enum.PartType.Block,
-		size = Vector3.new(1.0, 5.4, 0.3),
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(5.2, 0.38, 0.38),
 		color = C.woodLight,
 		material = Enum.Material.Wood,
-		-- leans out 14° (was 10°): the board clears the straw brim in every pose (FORGE-01's Sim/PoseClearance, exact shapes)
-		offset = GRIP * OUT * CFrame.Angles(0, 0, math.rad(-14)) * CFrame.new(0, 0.7, 0.1),
+		offset = GRIP * HOE_LEAN * CFrame.new(0, 0.8, 0) * UPRIGHT,
+		details = {
+			{
+				name = "hoeblade",
+				class = "WedgePart",
+				size = Vector3.new(1.1, 0.34, 1.3),
+				color = BLADE,
+				material = Enum.Material.Metal,
+				offset = GRIP * HOE_LEAN * CFrame.new(0, 3.35, -0.6) * CFrame.Angles(math.rad(-22), 0, 0),
+			},
+		},
 	},
-	axe = { -- big bearded blade: flat top level with the fist, straight cutting edge in front, the beard hanging
-		-- 2.4 below the haft; bright steel
+	axe = { -- 3.9 long wooden haft, a big bearded steel head (flat top level with the haft's end, cutting edge in front)
 		name = "axe",
-		class = "WedgePart",
-		size = Vector3.new(0.5, 2.4, 2.3),
-		color = BLADE,
-		material = Enum.Material.Metal,
-		offset = OUT * CFrame.new(0, -0.95, -0.9) * CFrame.Angles(math.pi, 0, 0),
-	},
-	pick = { -- double-sided pick head: a long dark bar across the top of the arm (a T), 4.4 from tip to tip
-		name = "pick",
 		class = "Part",
-		shape = Enum.PartType.Block,
-		size = Vector3.new(0.7, 0.7, 4.4),
-		color = STEEL_DARK,
-		material = Enum.Material.Metal,
-		offset = OUT * CFrame.new(0, -0.1, 0) * CFrame.Angles(math.rad(-12), 0, 0),
-	},
-	hammer = { -- big wooden mallet: a fat square head across the fist
-		name = "hammer",
-		class = "Part",
-		shape = Enum.PartType.Block,
-		size = Vector3.new(1.4, 1.35, 2.6),
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(3.9, 0.42, 0.42),
 		color = C.wood,
 		material = Enum.Material.Wood,
-		offset = OUT * CFrame.new(0, -0.45, -0.2),
+		offset = GRIP * LEAN * CFrame.new(0, 0.9, 0) * UPRIGHT,
+		details = {
+			{
+				name = "axehead",
+				class = "WedgePart",
+				size = Vector3.new(0.5, 1.7, 1.9),
+				color = BLADE,
+				material = Enum.Material.Metal,
+				offset = GRIP * LEAN * CFrame.new(0, 2.0, -0.8) * CFrame.Angles(math.pi, 0, 0),
+			},
+		},
+	},
+	pick = { -- 4.55 long dark handle, a double-sided iron bar across its top (a T), turned 40° so it shows from front and side;
+		-- the bar sits high (its centre 3.4 above the grip) so it swings over the pot, never through it (0.28 clear)
+		name = "pick",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(4.55, 0.4, 0.4),
+		color = C.woodDark,
+		material = Enum.Material.Wood,
+		offset = GRIP * LEAN * CFrame.new(0, 1.225, 0) * UPRIGHT,
+		details = {
+			{
+				name = "pickhead",
+				class = "Part",
+				shape = Enum.PartType.Block,
+				size = Vector3.new(0.45, 0.5, 3.6),
+				color = STEEL_DARK,
+				material = Enum.Material.Metal,
+				offset = GRIP * LEAN * CFrame.new(0, 3.4, 0) * CFrame.Angles(0, math.rad(40), 0),
+			},
+		},
+	},
+	hammer = { -- 3.0 long pale handle, a fat wooden mallet head across its top
+		name = "hammer",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(3.0, 0.42, 0.42),
+		color = WOOD_PALE,
+		material = Enum.Material.Wood,
+		offset = GRIP * LEAN_HAMMER * CFrame.new(0, 0.5, 0) * UPRIGHT,
+		details = {
+			{
+				name = "mallet",
+				class = "Part",
+				shape = Enum.PartType.Block,
+				size = Vector3.new(1.2, 1.15, 2.0),
+				color = C.wood,
+				material = Enum.Material.Wood,
+				offset = GRIP * LEAN_HAMMER * CFrame.new(0, 2.0, 0) * CFrame.Angles(0, math.rad(40), 0),
+			},
+		},
 	},
 	sack = { -- big burlap sack on the back, seated against the shoulder blades and clear of the head and both arms
-		-- (centre 0.1 right of the spine, 2.8 up, 2.1 behind it: its top sits just above the shoulders, so from the
-		-- front it is a bag behind the body, not a bun beside the head; joint at 0.96, 3.8, 0.575)
+		-- (centre 0.1 right of the spine, 2.8 up, 2.1 behind it; joint at 0.96, 3.8, 0.575). Its details: a
+		-- kingdom-coloured strap across the chest (so it reads from the front) and the tied neck of the sack
 		name = "sack",
 		class = "Part",
 		shape = Enum.PartType.Ball,
@@ -512,8 +630,28 @@ local TOOLS: { [string]: PartSpec } = {
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(-0.86, -1.0, 1.525),
 		onBack = true,
+		details = {
+			{
+				name = "strap",
+				class = "Part",
+				shape = Enum.PartType.Block,
+				size = Vector3.new(0.34, 2.7, 0.26),
+				color = 0.85,
+				material = Enum.Material.Fabric,
+				offset = CFrame.new(-0.96, -0.72, -1.3) * CFrame.Angles(0, 0, math.rad(-38)),
+			},
+			{
+				name = "tie",
+				class = "Part",
+				shape = Enum.PartType.Ball,
+				size = Vector3.new(0.85, 0.85, 0.85),
+				color = Color3.fromRGB(112, 80, 52),
+				material = Enum.Material.Fabric,
+				offset = CFrame.new(-0.86, 0.4, 1.525),
+			},
+		},
 	},
-	spear = { -- 9 long and 0.4 thick in pale ash, so the line reads against grass and steel
+	spear = { -- 9 long pale ash shaft, a steel spearhead and a kingdom pennant streaming from it
 		name = "spear",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
@@ -521,8 +659,27 @@ local TOOLS: { [string]: PartSpec } = {
 		color = ASH,
 		material = Enum.Material.Wood,
 		offset = GRIP * CFrame.new(0, 2.2, 0) * UPRIGHT,
+		details = {
+			{
+				name = "spearhead",
+				class = "CornerWedgePart",
+				size = Vector3.new(0.75, 1.9, 0.75),
+				color = STEEL,
+				material = Enum.Material.Metal,
+				offset = GRIP * CFrame.new(0, 7.6, 0) * CFrame.Angles(0, math.rad(45), 0),
+			},
+			{
+				name = "pennant",
+				class = "Part",
+				shape = Enum.PartType.Block,
+				size = Vector3.new(1.2, 0.1, 0.8),
+				color = 0.9,
+				material = Enum.Material.Fabric,
+				offset = GRIP * CFrame.new(0.7, 5.5, 0) * CFrame.Angles(0, 0, math.rad(-12)),
+			},
+		},
 	},
-	staff = {
+	staff = { -- thick gold staff with a gold orb on top
 		name = "staff",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
@@ -530,6 +687,17 @@ local TOOLS: { [string]: PartSpec } = {
 		color = C.gold,
 		material = Enum.Material.Metal,
 		offset = GRIP * CFrame.new(0, 1.1, 0) * UPRIGHT,
+		details = {
+			{
+				name = "orb",
+				class = "Part",
+				shape = Enum.PartType.Ball,
+				size = Vector3.new(0.9, 0.9, 0.9),
+				color = C.gold,
+				material = Enum.Material.Metal,
+				offset = GRIP * CFrame.new(0, 4.55, 0),
+			},
+		},
 	},
 }
 
@@ -752,6 +920,7 @@ function Character.character(
 	local jobSpec = JOBS[job] or JOBS.idle
 	local crest = if style == "soldier" then crestOf(kingdom) else nil
 	local outfit: Outfit, headwear: PartSpec?, width: number, tool: string?
+	local hatRoll = 0 -- the working hat's tilt about the head: its head details follow it
 	local accentJob: string? = nil -- the job whose accent colours the outfit (working citizens only)
 	local panelTorso, panelSleeves = false, false -- where the job's panel colour landed
 	if style == "soldier" then
@@ -769,6 +938,7 @@ function Character.character(
 		end
 		if jobSpec.hat then -- the job hat takes the Hair slot; look.hair picks its variant
 			headwear = hatVariant(jobSpec.hat, l.hair)
+			hatRoll = HAT_VARIANTS[(l.hair - 1) % #HAT_VARIANTS + 1].roll
 		end
 	end
 
@@ -872,6 +1042,31 @@ function Character.character(
 		weld.Parent = part
 	end
 
+	-- D-048 detail parts: rigid, welded to the Head or the Tool (never a Motor6D), flagged KitDetail so the client may
+	-- drop them beyond the rig's LOD distance. At most Character.MAX_DETAIL per rig; named Detail1, Detail2.
+	local details = 0
+	local function addDetail(spec: PartSpec, parent: BasePart, frame: CFrame)
+		details += 1
+		assert(details <= Character.MAX_DETAIL, "too many detail parts")
+		local part = specPart(model, `Detail{details}`, spec, frame * spec.offset, kingdomColor, skin, hairColor)
+		part:SetAttribute(Character.DETAIL_ATTRIBUTE, true)
+		part:SetAttribute("KitDetailKind", spec.name) -- "hoeblade", "axehead", "lamp", "strap", ...
+		local weld = Instance.new("Weld")
+		weld.Name = "DetailWeld"
+		weld.Part0 = parent
+		weld.Part1 = part
+		weld.C0 = parent.CFrame:Inverse() * part.CFrame
+		weld.C1 = CFrame.new()
+		weld.Parent = part
+	end
+	local headDetail = if style == "governor"
+		then GOVERNOR_CAP
+		elseif style == "citizen" and jobSpec.hat then HEAD_DETAILS[job]
+		else nil
+	if headDetail then
+		addDetail(headDetail, head, head.CFrame * CFrame.Angles(0, 0, hatRoll))
+	end
+
 	-- arms hang splayed a few degrees (friendlier silhouette, tools clear the legs)
 	local armColor, armTint = paint(outfit.sleeves, kingdomColor, skin, hairColor)
 	local armMaterial = if outfit.sleeves == "skin" then Enum.Material.SmoothPlastic else Enum.Material.Fabric
@@ -942,6 +1137,9 @@ function Character.character(
 		local part = specPart(model, "Tool", spec, joint * spec.offset, kingdomColor, skin, hairColor)
 		part:SetAttribute("KitTool", spec.name)
 		motor(if spec.onBack then torso else rarm, part, joint)
+		for _, detail in spec.details or {} do
+			addDetail(detail, part, joint)
+		end
 	end
 	return model
 end
