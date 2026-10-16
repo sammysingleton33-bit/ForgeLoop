@@ -40,11 +40,15 @@
 			-- Studio only (command consequence.unrest <seconds>, preset vs1.riot; G13.7)
 		ConsequenceService.changed: Signal<(kingdomId, rule, on: boolean, info)>   -- every start and end
 			rule = "strike" | "shortage" | "riot" | "rebellion"; info carries the occupation, entity ids or
-			building. Server-side: FORGE-04's notices need a G9 event (handoff 2026-10-13 FL-0082).
+			building, and `count`: the citizens involved (the entity ids, or the strikers still out when a
+			strike ends, or the hungry a shortage began with), 1 for a building.
+		G9 GameEvents.ConsequenceChanged(kingdomId, rule, on, info) fires with the same values, exactly once
+			per start and once per end (CONTRACTS v0.4-g10c; server bus only; FORGE-04's notices listen).
 	Dependencies: MatchService. Optional (registry:find): CitizenService (obedience via reputationOf),
 	ConversationService (strike events), EntityService (cues).
 ]]
 
+local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
@@ -256,7 +260,7 @@ function ConsequenceService:_strikes(kid: string, k: any, state: any, now: numbe
 			state.strikes[occupation] = strikers -- held off work by the loop below, this same check
 			self:_announceStrike(kid, strikers)
 			self:_cue(kid, "strike_placard", strikers)
-			self.changed:fire(kid, "strike", true, { occupation = occupation, entityIds = Consequences.ids(strikers) })
+			self:_changed(kid, "strike", true, { occupation = occupation, entityIds = Consequences.ids(strikers) })
 		end
 	end
 	local sim = self:_sim()
@@ -272,12 +276,22 @@ function ConsequenceService:_strikes(kid: string, k: any, state: any, now: numbe
 			-- won back (the strikers' own mean loyalty) or nobody left: the holds run out within two checks
 			state.strikes[occupation] = nil
 			Consequences.forget(state.tracker, `strike:{occupation}`)
-			self.changed:fire(kid, "strike", false, { occupation = occupation })
+			self:_changed(kid, "strike", false, { occupation = occupation, count = #still })
 		else
 			state.strikes[occupation] = still
 			self:_holdOffWork(still)
 		end
 	end
+end
+
+-- Every start and end of a rule: the module's own signal, and the G9 event (CONTRACTS v0.4-g10c) with the same values.
+-- `count` is the citizens involved, or 1 for a building; the caller gives it when the ids are not in `info`.
+function ConsequenceService:_changed(kid: string, rule: string, on: boolean, info: { [string]: any })
+	if info.count == nil then
+		info.count = if info.entityIds then #info.entityIds elseif info.buildingId then 1 else 0
+	end
+	self.changed:fire(kid, rule, on, info)
+	GameEvents.ConsequenceChanged:fire(kid, rule, on, table.clone(info))
 end
 
 function ConsequenceService:_shortage(kid: string, k: any, state: any, now: number)
@@ -289,7 +303,7 @@ function ConsequenceService:_shortage(kid: string, k: any, state: any, now: numb
 			k.unrestPressure = (k.unrestPressure or 0) - shortage.pressure
 			state.shortage = nil
 			Consequences.forget(state.tracker, "shortage")
-			self.changed:fire(kid, "shortage", false, {})
+			self:_changed(kid, "shortage", false, { count = shortage.count })
 		elseif now >= shortage.nextAt then
 			shortage.nextAt = now + cfg.every
 			Reputation.applyConditions(k.conditions, cfg.conditions)
@@ -297,7 +311,7 @@ function ConsequenceService:_shortage(kid: string, k: any, state: any, now: numb
 		return
 	end
 	if Consequences.sustained(state.tracker, "shortage", fed < cfg.fedBelow, now, cfg.sustainSeconds) then
-		state.shortage = { nextAt = now + cfg.every, pressure = cfg.unrestPressure }
+		state.shortage = { nextAt = now + cfg.every, pressure = cfg.unrestPressure, count = 0 }
 		k.unrestPressure = (k.unrestPressure or 0) + cfg.unrestPressure
 		Reputation.applyConditions(k.conditions, cfg.conditions)
 		local citizens = self:_citizens(k)
@@ -308,9 +322,10 @@ function ConsequenceService:_shortage(kid: string, k: any, state: any, now: numb
 			return a.id < b.id
 		end)
 		local hungry = table.move(citizens, 1, math.ceil(#citizens * cfg.grumbleShare), 1, {})
+		state.shortage.count = #hungry -- the end of the shortage reports the same number (G9 ConsequenceChanged)
 		self:_cue(kid, "grumble", hungry)
 		self:_cue(kid, "grumble") -- the HUD/keep notice
-		self.changed:fire(kid, "shortage", true, { entityIds = Consequences.ids(hungry) })
+		self:_changed(kid, "shortage", true, { entityIds = Consequences.ids(hungry) })
 	end
 end
 
@@ -336,7 +351,7 @@ function ConsequenceService:_endRiot(kid: string, state: any, now: number)
 	state.riot = nil
 	state.riotCooldownUntil = now + self.config.consequences.riot.cooldownSeconds
 	Consequences.forget(state.tracker, "riot")
-	self.changed:fire(kid, "riot", false, { buildingId = riot.building.id })
+	self:_changed(kid, "riot", false, { buildingId = riot.building.id })
 end
 
 function ConsequenceService:_riot(kid: string, k: any, state: any, now: number)
@@ -379,7 +394,7 @@ function ConsequenceService:_riot(kid: string, k: any, state: any, now: number)
 	self:_announceRiot(kid, rioters, true)
 	self:_cue(kid, "grumble", rioters)
 	self:_cue(kid, "cower") -- the HUD/keep alarm
-	self.changed:fire(kid, "riot", true, {
+	self:_changed(kid, "riot", true, {
 		buildingId = building.id,
 		instigator = instigator.id,
 		entityIds = Consequences.ids(rioters),
@@ -417,7 +432,7 @@ function ConsequenceService:_rebellion(kid: string, k: any, state: any, now: num
 	state.rebellionCooldownUntil = now + cfg.cooldownSeconds
 	Consequences.forget(state.tracker, "rebellion")
 	self:_cue(kid, "cower")
-	self.changed:fire(kid, "rebellion", true, { entityIds = ids })
+	self:_changed(kid, "rebellion", true, { entityIds = ids })
 end
 
 -- ---------------------------------------------------------------- API

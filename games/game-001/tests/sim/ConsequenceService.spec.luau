@@ -56,16 +56,39 @@ local REBELLION = FAST.consequences.rebellion
 local booted = {}
 
 afterEach(function()
+	-- G9 ConsequenceChanged (CONTRACTS v0.4-g10c) mirrors the service's own signal in every scenario: the same
+	-- starts and ends, in the same order, once each, with the same values (and a `count`). A mismatch is held until
+	-- every world is torn down, so one bad scenario cannot leave the next ones with its leftovers.
+	local problem: string? = nil
 	for _, b in booted do
+		local w = b.world
+		if w and problem == nil then
+			local ok, err = pcall(function()
+				expect(#w.events).toBe(#w.changes)
+				for i, change in w.changes do
+					expect(w.events[i].kid).toBe(change.kid)
+					expect(w.events[i].rule).toBe(change.rule)
+					expect(w.events[i].on).toBe(change.on)
+					expect(w.events[i].info).toEqual(change.info)
+					expect(type(change.info.count)).toBe("number")
+				end
+			end)
+			if not ok then
+				problem = `ConsequenceChanged does not mirror ConsequenceService.changed: {tostring(err)}`
+			end
+		end
 		b.registry:destroy()
 		for _, entry in b.env.mock.logs do
-			if entry.level == "error" then
-				error(`server logged an error: {entry.message} {entry.fields and entry.fields.error or ""}`)
+			if entry.level == "error" and problem == nil then
+				problem = `server logged an error: {entry.message} {entry.fields and entry.fields.error or ""}`
 			end
 		end
 	end
 	table.clear(booted)
 	GameEvents.disconnectAll()
+	if problem then
+		error(problem)
+	end
 end)
 
 -- The match with one ruler seated in crimson, the rules on `config` (default FAST). `extra` adds services
@@ -118,6 +141,11 @@ local function boot(extra: { string }?, config: any?)
 	w.citizens.reputationOf = function()
 		return w.rep
 	end
+	booted[#booted].world = w
+	w.events = {}
+	GameEvents.ConsequenceChanged:connect(function(kid, rule, on, info)
+		table.insert(w.events, { kid = kid, rule = rule, on = on, info = deepCopy(info) })
+	end)
 	w.service.changed:connect(function(kid, rule, on, info)
 		-- where the instigator stood when the riot started (citizens keep walking afterwards)
 		local instigator = if info.instigator then w.sim.citizens[info.instigator] else nil
@@ -262,6 +290,12 @@ describe("ConsequenceService: strikes (G13.3 strike events)", function()
 		expect(started[1].kid).toBe("crimson")
 		expect(started[1].info.occupation).toBe(occupation)
 		expect(sorted(started[1].info.entityIds)).toEqual(idsOf(strikers))
+		-- G9 ConsequenceChanged: one event for the start, the strikers counted
+		expect(#w.events).toBe(1)
+		expect(w.events[1].rule).toBe("strike")
+		expect(w.events[1].on).toBe(true)
+		expect(w.events[1].info.occupation).toBe(occupation)
+		expect(w.events[1].info.count).toBe(need)
 		for _, c in strikers do
 			expect(w.sim:isStriking(c)).toBe(true)
 		end
@@ -321,6 +355,10 @@ describe("ConsequenceService: strikes (G13.3 strike events)", function()
 		local ended = changesOf(w, "strike", false)
 		expect(#ended).toBe(1)
 		expect(ended[1].info.occupation).toBe(occupation)
+		expect(ended[1].info.count).toBe(need) -- the strikers still out when it ended
+		expect(#w.events).toBe(2) -- G9: one event for the start, one for the end
+		expect(w.events[2].on).toBe(false)
+		expect(w.events[2].info.count).toBe(need)
 		expect(w.service:active("crimson").strike[occupation]).toBeNil()
 		w.env.mock:advance(Society.consequences.tick * 2 + 0.5)
 		for i = 1, need do
@@ -440,6 +478,11 @@ describe("ConsequenceService: food shortage", function()
 		expect(#grumbles).toBe(2)
 		expect(#grumbles[1].entityIds).toBe(math.ceil(#w.k.citizenIds * SHORTAGE.grumbleShare))
 		expect(grumbles[2].entityIds).toBeNil()
+		local shortage = changesOf(w, "shortage", true)
+		expect(shortage[1].info.count).toBe(#grumbles[1].entityIds) -- the hungry the shortage began with
+		expect(#w.events).toBe(1)
+		expect(w.events[1].rule).toBe("shortage")
+		expect(w.events[1].info.count).toBe(#grumbles[1].entityIds)
 	end)
 
 	it("holds between fedBelow and endFedAbove; ends at endFedAbove and the pressure goes", function()
@@ -454,6 +497,10 @@ describe("ConsequenceService: food shortage", function()
 		w.citizens:setFedRatio("crimson", SHORTAGE.endFedAbove)
 		w.env.mock:advance(1.5)
 		expect(#changesOf(w, "shortage", false)).toBe(1)
+		expect(changesOf(w, "shortage", false)[1].info.count).toBe(changesOf(w, "shortage", true)[1].info.count)
+		expect(#w.events).toBe(2) -- G9: the start and the end, once each
+		expect(w.events[2].on).toBe(false)
+		expect(w.events[2].info.count).toBe(w.events[1].info.count)
 		expect(w.k.unrestPressure).toBe(3)
 		expect(w.service:active("crimson").shortage).toBe(false)
 		local happiness = w.k.conditions.happiness
@@ -572,6 +619,7 @@ describe("ConsequenceService: riots", function()
 		expect(#started).toBe(1)
 		local b = w.sim.buildings[started[1].info.buildingId]
 		expect(b.burning).toBe(true)
+		expect(started[1].info.count).toBe(#started[1].info.entityIds) -- the rioters
 		local floor = math.ceil(b.maxHp * RIOT.fireFloor)
 		b.hp = floor + 3
 		w.env.mock:advance(10)
@@ -581,6 +629,12 @@ describe("ConsequenceService: riots", function()
 		local ended = changesOf(w, "riot", false)
 		expect(#ended).toBe(1)
 		expect(ended[1].info.buildingId).toBe(b.id)
+		expect(ended[1].info.count).toBe(1) -- a building
+		expect(#w.events).toBe(2) -- G9: the start and the end
+		expect(w.events[1].on).toBe(true)
+		expect(w.events[1].info.instigator ~= nil).toBe(true)
+		expect(w.events[2].info.buildingId).toBe(b.id)
+		expect(w.events[2].info.count).toBe(1)
 		expect(b.burning).toBeNil()
 		expect(b.hp >= floor).toBe(true) -- the fire is out: the building starts to heal (D-050 (1c))
 		-- still unstable: no new riot until the cooldown, then the full wait again
@@ -739,6 +793,10 @@ describe("ConsequenceService: rebellion (gated) and morale", function()
 		local fired = changesOf(w, "rebellion", true)
 		expect(#fired).toBe(1)
 		expect(#fired[1].info.entityIds).toBe(need)
+		expect(fired[1].info.count).toBe(need)
+		expect(#w.events).toBe(1) -- G9: a rebellion is one event (it has no end)
+		expect(w.events[1].rule).toBe("rebellion")
+		expect(w.events[1].info.count).toBe(need)
 		for i = 1, need do
 			expect(w.sim.citizens[citizens[i].id]).toBeNil()
 			table.insert(died, citizens[i].id)
