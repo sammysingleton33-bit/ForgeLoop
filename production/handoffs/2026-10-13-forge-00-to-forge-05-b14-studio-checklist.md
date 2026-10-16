@@ -135,3 +135,12 @@ On a mouse, a left press confirms a move, so pan with WASD while moving. FORGE-0
 | I7 | Re-check G1: every starting farm from the air and from the ground | no tree, rock, bush or node inside a field, front yard or plot flank |
 | I8 | A moved building next to your ruler | your character is never trapped or stuck inside it |
 
+
+## B18 additions (main `f3298dd`, BuildInfo `f3298dd50b42…`): citizens' new look and kingdom consequences
+| ID | Check | Pass |
+|---|---|---|
+| J1 | 3–4 citizens with different jobs, from the default aerial zoom and close up | jobs tell apart by silhouette and tool. **Known (interim art, D-051):** the pick reads as a hammer; variation is limited. |
+| J2 | Make citizens cheer (answer a request generously, or watch a celebration) and screenshot close up | no arm or tool passes into a head. **Known:** the cheer is now wider, arms out. |
+| J3 | Open a drawer, then the conversation stage, and press the back key (Esc, or B on a gamepad) | each press steps back exactly one level |
+| J4 | Preset `vs1.riot`, then watch for about 4 minutes (STUDIO_PLAYTEST / `roblox/studio-tests/gameplay.md` K12) | after about 2 minutes one building (never the keep) gets `Burning = true` and loses Hp, never below a quarter; rioters stop work with the grumble cue, **not** "On strike"; the burning building produces nothing; the riot ends within 90 s. **Known:** no notice text and no riot placard yet (FORGE-04). |
+| J5 | Spend the kingdom's food so citizens go hungry, then watch for about 2 minutes (K12 step 3) | the hungriest citizens grumble; no red errors |

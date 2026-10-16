@@ -4,20 +4,17 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B17**, main `41a70e8`, delivered 2026-10-15 22:25 UTC. **This is the build to test.** Not yet run in Studio. Checklist: the B14 handoff with its B15, B16 and B17 sections.
-  - **New since B16:**
-    - Base editing: Move → ghost → Turn → confirm, on free ground or a free plot (#140, #148, #142, #157; G13.9 g9j).
-    - Clean starting farms (#152, #159, #160).
-    - Off-screen request badges, with F / D-pad to cycle (#149).
-    - The cheer pose keeps tools clear (#154, #158, #161).
-    - Settings panel (#123).
-    - FL-0122 hardening (#145).
-    - Paged entity load (#127).
-    - Analytics FirstMatch (#147).
+- **Latest build: B18**, main `f3298dd`, delivered 2026-10-16 00:23 UTC. **This is the build to test.** B14 to B18 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B18 sections.
+  - **New since B17:**
+    - Citizens' new look, interim art (D-051): job silhouettes (#138), per-citizen variation (#153), 11-part tools (#155), shoulder pivots so the cheer clears the head (#169).
+    - Kingdom consequences: strikes, food shortage, riots with fire, gated rebellion, morale (#125; G13.3/G9 v0.4-g10c).
+    - Back key: one press, one step (#162, #164).
+    - Conversation presentation tags, server side only (#156).
+    - Sim specs in two shards (#171).
   - **Not yet:**
-    - Citizen job art (#138/#153 → B18; #155 waits on the miner pick fix).
-    - Wheat and boulders parked (mesh pilot).
-    - Drag-to-move (FL-0123).
+    - FL-0118 art is still D-019 NEEDS-WORK: the pick reads as a hammer; variation and the hauler/idle look need work.
+    - Consequence notices and the riot placard (FORGE-04); FORGE-01's `ConsequenceChanged` fire.
+    - Wheat and boulders parked (mesh pilot); drag-to-move (FL-0123).
     - A co-ruler's build hint may point at a built plot.
     - Sounds, DRAFT dialogue, FPS unknown.
 - **Next build: B18:**
