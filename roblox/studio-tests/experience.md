@@ -468,7 +468,7 @@ History:
 
 Needs:
 - FORGE-01's riot (FL-0082, on main) and its `vs1.riot` preset (`roblox/studio-tests/gameplay.md` K12).
-- The notices also need FORGE-01's #173, which fires G9 `ConsequenceChanged`. Until #173 is on the build, write "notices blocked: needs #173" and still run steps 1 and 2.
+- The notices come from G9 `ConsequenceChanged`, which FORGE-01's ConsequenceService fires (#173, on main since dd9e356).
 
 | Rule | Expected |
 |---|---|
@@ -480,8 +480,8 @@ Needs:
 Steps
 1. Play Solo; stay in the aerial view at its start zoom. In the debug panel (F8) run the preset `vs1.riot`. Within about 2 minutes one building catches fire (K12). The flames and smoke stand clearly above its roof. Screenshot **E13-1**.
 2. The rioters show orange "Rioting" placards, not "On strike". Zoom all the way out: the placards stay readable, and the fire is still visible. Screenshot **E13-2**.
-3. (Needs #173.) When the riot starts, a toast reads "Riot at the <building>!" with the rioters' count, and a horn plays when sounds exist. When it ends (within 90 s), "The riot is over" replaces it, and the fire and the placards go.
-4. (Needs #173.) Two players (Test → Local Server, 2 players) in different kingdoms: only the burning kingdom's ruler gets the riot toasts.
+3. When the riot starts, a toast reads "Riot at the <building>!" with the rioters' count, and a horn plays when sounds exist. When it ends (within 90 s), "The riot is over" replaces it, and the fire and the placards go.
+4. Two players (Test → Local Server, 2 players) in different kingdoms: only the burning kingdom's ruler gets the riot toasts.
 5. Phone emulator (667×375): the placards and the toast fit, with nothing cut off.
 
 Pass: steps 1–3 hold (4 and 5 when run). Copy every red line from Output.

@@ -40,7 +40,7 @@ Def.EVENTS = table.freeze({
 	"ObjectiveCaptured",
 	"MatchPhaseChanged",
 	"MatchEnded",
-	"ConsequenceChanged", -- FORGE-01's ConsequenceService (G9 v0.4-g10c; fired from #173)
+	"ConsequenceChanged", -- FORGE-01's ConsequenceService (G9 v0.4-g10c)
 })
 
 -- Sample moments for `fx.announce` (Studio): one per kind a player can see.
