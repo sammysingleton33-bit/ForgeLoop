@@ -474,7 +474,7 @@ Needs:
 |---|---|
 | Riot placard | Each rioter shows a "Rioting" placard, fire orange with dark words, above its head. It is not the dark red "On strike" placard. It shows at every aerial zoom and goes when that citizen stops rioting |
 | Fire | The burning building shows flames and a tall smoke column above its roof, plainly visible from the start zoom of the aerial view. They go when the fire is out. Never on the keep |
-| Crackle | A crackle loop at the building. It is silent until `kingdom.fire` has an asset (P1 in the sounds handoff; status "needed"); write "silent (no asset)" |
+| Crackle | A crackle loop at the building. It is silent until `kingdom.fire` has an asset (P1, handoff `2026-10-16-forge-04-to-user-fire-sound.md`; status "needed"); write "silent (no asset)" |
 | Notices | Each ruler of the kingdom gets one toast at the start and one at the end; a rival ruler gets none. Riot: "Riot at the storehouse!" (the burning building's name), "N rioters set it alight. Nobody works there while it burns.", then "The riot is over". Strike: "The farmers are on strike" (the job), then "The farmers are back at work". Food: "Food is running out", then "Your people have food again" |
 
 Steps
