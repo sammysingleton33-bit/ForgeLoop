@@ -6,7 +6,6 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
 local CitizenCardDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenCardController")
-local CitizenText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/CitizenText")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local IndicatorDef =
 	require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenBubbleIndicatorController")
@@ -178,30 +177,19 @@ describe("Waiting on the rail (FL-0115)", function()
 		expect(button(world).Visible).toBe(true)
 	end)
 
-	it("in the walking view the button hides (active(), #170), or a tap says to switch views", function()
+	it("in the walking view the button hides (FORGE-04's active(), #170) and comes back in the aerial view", function()
 		world = newWorld()
 		world.state.requests = { request(5, 1) }
 		world:advance(0.6)
+		expect(button(world).Visible).toBe(true)
 		world.state.camera.mode = "walk"
 		world:advance(0.6)
-		local indicator = world.client:get("CitizenBubbleIndicatorController")
-		if indicator.active ~= nil then -- FORGE-04's #170 is on main: hidden where a tap can't go
-			expect(button(world).Visible).toBe(false)
-			world.state.camera.mode = "overview"
-			world:advance(0.6)
-			expect(button(world).Visible).toBe(true)
-			return
-		end
-		Create.fire(button(world), "Activated")
-		world:advance(0.1)
+		expect(button(world).Visible).toBe(false)
+		expect(world.card:goToWaiting()).toBeNil()
 		expect(#world.state.selected).toBe(0)
-		local notices = {}
-		for _, d in world.hud.guis.notices:GetDescendants() do
-			if d:IsA("TextLabel") then
-				table.insert(notices, d.Text)
-			end
-		end
-		expect(table.concat(notices, " | ")).toContain(CitizenText.WAITING_AERIAL)
+		world.state.camera.mode = "overview"
+		world:advance(0.6)
+		expect(button(world).Visible).toBe(true)
 	end)
 
 	it("a count known before the HUD mounts shows once it does (no change needed to repaint it)", function()

@@ -58,7 +58,6 @@ CitizenText.CONFIRM = "Choose"
 CitizenText.BACK = "Back"
 -- The rail's "Waiting" button (FL-0115): citizens with an open request; a tap goes to the next one.
 CitizenText.WAITING = "Waiting"
-CitizenText.WAITING_AERIAL = "Switch to the aerial view to go to them"
 
 function CitizenText.reason(code: any): string
 	if code == nil then
