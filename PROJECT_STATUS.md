@@ -4,17 +4,14 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Latest build: B18**, main `f3298dd`, delivered 2026-10-16 00:23 UTC. **This is the build to test.** B14 to B18 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B18 sections.
-  - **New since B17:**
-    - Citizens' new look, interim art (D-051): job silhouettes (#138), per-citizen variation (#153), 11-part tools (#155), shoulder pivots so the cheer clears the head (#169).
-    - Kingdom consequences: strikes, food shortage, riots with fire, gated rebellion, morale (#125; G13.3/G9 v0.4-g10c).
-    - Back key: one press, one step (#162, #164).
-    - Conversation presentation tags, server side only (#156).
-    - Sim specs in two shards (#171).
+- **Latest build: B19**, main `2923bd1`, delivered 2026-10-16 02:52 UTC (artifact 12021438224). **This is the build to test.** B14 to B19 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B19 sections.
+  - **New since B18:**
+    - Consequences readable from the air: an orange "Rioting" placard, flames and smoke on a burning building (never the keep), and one start and one end toast for the kingdom's rulers (#175, #173).
+    - Waiting button on the rail: a count of citizens with an open request; a tap goes to the next one (#168, #170, #174).
+    - Specs and docs: hint targets clear of no-build areas (#165), strict world-node ratchet (#167), economy.md (#110).
   - **Not yet:**
-    - FL-0118 art is still D-019 NEEDS-WORK: the pick reads as a hammer; variation and the hauler/idle look need work.
-    - Consequence notices and the riot placard (FORGE-04); FORGE-01's `ConsequenceChanged` fire.
-    - Wheat and boulders parked (mesh pilot); drag-to-move (FL-0123).
+    - Fire, placard and toast visuals unverified in Studio (E13); the fire crackle is silent (no asset; the user's sound pick list, now 42).
+    - Citizen art still interim (FL-0118, D-051); interim world art; wheat and boulders parked (mesh pilot); drag-to-move (FL-0123).
     - A co-ruler's build hint may point at a built plot.
     - Sounds, DRAFT dialogue, FPS unknown.
 - **Next build: B18:**
@@ -294,14 +291,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-ff287d08 2026-10-16 integration-log: #173 ConsequenceChanged fire (dd9e356), #174 Waiting fallback removed (4fae7ca)
-4fae7cab 2026-10-15 Merge PR #174: [FORGE-03] FL-0088: Waiting drops the walking-view fallback notice (FORGE-05's #168 survivor)
-dd9e3567 2026-10-15 Merge PR #173: [FORGE-01] ConsequenceService fires G9 ConsequenceChanged (v0.4-g10c)
-ab1cc27e 2026-10-16 Waiting: drop the walking-view notice; FORGE-04's active() (#170) hides the button there
-f10fbebe 2026-10-16 integration-log: batch C #170 #168 #167 #165
-02ba4d9f 2026-10-15 Merge PR #165: [FORGE-04] FL-0092 onboarding hint targets clear of the no-build areas (FORGE-00's #140 ask)
-dbc98a70 2026-10-15 Merge PR #167: [FORGE-01] LayoutZones.spec: FL-0124 moved the world nodes, so the ratchet is strict (no exceptions left)
-1c35515c 2026-10-15 Merge PR #168: [FORGE-03] FL-0088 "Waiting" on the rail: citizens with an open request, a tap goes to the next one (+ #162 L1)
+17ecd18b 2026-10-16 B19: artifact forgeloop-game001-2923bd1 (12021438224, main CI green); main CI cells #110, #175
+113be417 2026-10-16 B19 cut: studio-runs row + asks (2923bd1; artifact pending main CI), integration-log #175, FORGE-05 STATUS
+2923bd13 2026-10-15 Merge PR #175: [FORGE-04] FL-0091 consequences read from the air: riot placard, fire on burning buildings, ConsequenceChanged notices
+0accdaa8 2026-10-15 FORGE-07 STATUS: #175 re-reviewed (READY TO MERGE on ced7a55, once roblox/tools green); #110 merged
+ced7a557 2026-10-16 [FORGE-04] #175: a start and its end stay two toasts in the real NotificationQueue (FORGE-05 ask)
+3f711472 2026-10-16 [FORGE-04] #175: the fire sound goes in a new handoff, not the merged list
+4e95a305 2026-10-16 [FORGE-04] #175 review: separate end toasts, one rioter, fire sound on the pick list
+58042936 2026-10-16 integration-log/STATUS: D-050 (3) ruler caps are already on main (RulerGather.perMinute)
 ```
 
 <!-- forge:auto:end -->

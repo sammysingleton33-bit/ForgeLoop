@@ -144,3 +144,15 @@ On a mouse, a left press confirms a move, so pan with WASD while moving. FORGE-0
 | J3 | Open a drawer, then the conversation stage, and press the back key (Esc, or B on a gamepad) | each press steps back exactly one level |
 | J4 | Preset `vs1.riot`, then watch for about 4 minutes (STUDIO_PLAYTEST / `roblox/studio-tests/gameplay.md` K12) | after about 2 minutes one building (never the keep) gets `Burning = true` and loses Hp, never below a quarter; rioters stop work with the grumble cue, **not** "On strike"; the burning building produces nothing; the riot ends within 90 s. **Known:** no notice text and no riot placard yet (FORGE-04). |
 | J5 | Spend the kingdom's food so citizens go hungry, then watch for about 2 minutes (K12 step 3) | the hungriest citizens grumble; no red errors |
+
+## B19 additions (main `2923bd1`, BuildInfo `2923bd13de1d…`): consequences on screen and the Waiting button
+FORGE-05's B19 asks in `production/quality-gates/studio-runs.md` and FORGE-04's E13 hold the detailed steps.
+
+| ID | Check | Pass |
+|---|---|---|
+| K1 | Preset `vs1.riot`; when a building catches fire, `screen_capture` at the start zoom and fully zoomed out | flames and a smoke column on the burning building (never the keep); rioters wear an orange "Rioting" placard, readable at both zooms |
+| K2 | Watch the riot start and end | two separate toasts (start and end), no "×2"; "A rioter set it alight" when there is one. **Known:** no crackle sound (no asset). |
+| K3 | If a strike or food shortage happens (J5 helps), watch the toasts | one toast at the start and one at the end |
+| K4 | With a request open, tap the 💬 Waiting button on the rail | it shows the count; a tap centres on the next citizen and opens their card; it hides while placing, moving, talking and in the walking view |
+| K5 | Studio device emulator at a phone size (667×375) | placards, toasts and the Waiting button fit and don't overlap |
+| K6 | `get_console_output` at the end | no red errors |
