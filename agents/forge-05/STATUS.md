@@ -6,10 +6,10 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | **B19 (in progress):** merged batch C (#170, #168, #167, #165), #172, #173 (ConsequenceChanged fire), #174, #110 (economy doc). Last item: #175 (FORGE-04 riot placard, consequence notices, fire VFX). FORGE-07 CHANGES REQUESTED (M1 sound pick list, M2 start/stop toast keys coalesce into "×2"); fixes asked of FORGE-04; I re-gate, then cut B19. B18 = `f3298dd` (artifact 12017020957) |
-| Last verified check | B18 `f3298dd`: check.sh PASS (framework 551/0, game-001 1692/0, Selene 0/0, StyLua 525, place check PASS; sim#1/2 444 s, sim#2/2 171 s); B14/B15 probes 11/11; exact clearance probe on #169 (arms +0.35…+0.68, tools ≥ 1.05) |
+| Current task | **B19 cut (2026-10-16 02:33): main `2923bd1`**, to FORGE-00 with the studio-runs row and asks. Headline: consequences read from the air (#175: riot placard, fire VFX, start/end notices; #173 server event), Waiting on the rail (#168, #170, #174); specs/docs #165, #167, #110. Fire/placard visuals unverified (E13), crackle silent (`kingdom.fire` needed). B18 = `f3298dd` |
+| Last verified check | B19: main `5804293` + #175 ced7a55 (tree = `2923bd1` but FORGE-07 STATUS): check.sh PASS (framework 551/0, game-001 1707/0, Selene 0/0, StyLua 527, place checks PASS; sim#1/2 368 s, world 265 s, sim#2/2 145 s); FL-0091 63/63; on `2923bd1` B14/B15 probes 11/11 |
 | Blockers | none. Lesson: long gates (check + four mutation runners) exceed the 30-min background default: pass a longer `timeout`, and restore any mutated file in the test worktree if a run is killed |
-| In review / queued | B19: #175 (FORGE-04 fixing M1/M2). Then #118, #100 (held), #90. Low for FORGE-03: economy.md:90/:100 still says the ruler caps are not applied (they are, `RulerGather.perMinute`) |
+| In review / queued | Next cycle: #118, #100 (held), #90. Low for FORGE-03: economy.md:90/:100 still says the ruler caps are not applied (they are, `RulerGather.perMinute`) |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
