@@ -75,6 +75,32 @@ describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 		expect(bubbles:get(3)).toBeNil()
 	end)
 
+	it(
+		"a riot placard reads 'Rioting', wins over a strike placard and lasts until riot off (G13.3 v0.4-g10c)",
+		function()
+			bubbles:riot(4, true)
+			clock += 1000
+			bubbles:tick()
+			expect(bubbles:get(4).kind).toBe("riot")
+			expect(bubbles:get(4).text).toBe(Bubbles.RIOT_TEXT)
+			bubbles:strike(4, true) -- never sent for a rioter, but a riot still reads as a riot
+			expect(bubbles:get(4).kind).toBe("riot")
+			bubbles:riot(4, false)
+			expect(bubbles:get(4).kind).toBe("strike")
+			bubbles:strike(4, false)
+			bubbles:riot(5, true)
+			bubbles:release(5)
+			expect(bubbles:get(5)).toBeNil()
+			local before = bubbles.stats.ignored
+			bubbles:riot(0 / 0, true)
+			expect(bubbles.stats.ignored).toBe(before + 1)
+			-- placed like a strike placard: as words, before any card, even with no words budget
+			bubbles:riot(6, true)
+			local picked = bubbles:pick({ [6] = Vector3.new(5, 0, 0) }, Vector3.zero)
+			expect(bubbles:layout(picked, 0)[6]).toBe("words")
+		end
+	)
+
 	it("pick(): within maxDistance, at most maxOnScreen, reactions first, then nearest", function()
 		local positions = {}
 		for id = 1, 12 do
@@ -187,6 +213,9 @@ describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 		bubbles:strike(5, true)
 		bubbles:release(5)
 		expect(bubbles:get(5)).toBeNil()
+		bubbles:riot(6, true)
+		bubbles:release(6)
+		expect(bubbles:get(6)).toBeNil()
 	end)
 
 	it("a NaN entity id is ignored, never a table key", function()
@@ -499,6 +528,18 @@ describe("CitizenBubbleController (FL-0091)", function()
 		expect(bubbleOf(smith):FindFirstChild("Text", true).Text).toBe(Bubbles.STRIKE_TEXT)
 		entities.event:fire(4, "strike", { occupation = "miner", on = false }, smith)
 		expect(bubbleOf(smith)).toBeNil()
+	end)
+
+	it("a 'riot' event shows a 'Rioting' placard in its own colour until riot off (G13.3 v0.4-g10c)", function()
+		local rioter = citizen(5, 30)
+		entities.event:fire(5, "riot", { on = true }, rioter)
+		local gui = bubbleOf(rioter)
+		expect(gui:FindFirstChild("Text", true).Text).toBe(Bubbles.RIOT_TEXT)
+		expect(gui.Size).toEqual(BubbleDef.SIZE.placard)
+		expect(gui:FindFirstChild("Bubble").BackgroundColor3).toEqual(BubbleDef.STYLE.riot.background)
+		expect(BubbleDef.STYLE.riot.background == BubbleDef.STYLE.strike.background).toBe(false)
+		entities.event:fire(5, "riot", { on = false }, rioter)
+		expect(bubbleOf(rioter)).toBeNil()
 	end)
 
 	it("plays a G13.3 cue's pose, sound and effect at the citizen, sent directly or as `cue`", function()

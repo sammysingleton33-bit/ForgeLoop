@@ -9,6 +9,7 @@ local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local Sounds = require("@game/ReplicatedStorage/Forge/Experience/Sounds")
+local NotificationQueue = require("@game/ReplicatedStorage/Forge/Experience/NotificationQueue")
 local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
 local Moments = require("@game/ReplicatedStorage/Game/Feedback/Moments")
 local Lines = require("@game/ReplicatedStorage/Game/Feedback/Lines")
@@ -74,6 +75,16 @@ local function only(deliveries, player)
 		end
 	end
 	return out
+end
+
+-- the first moment one player gets
+local function momentFor(deliveries, player)
+	for _, delivery in deliveries do
+		if delivery.player == player then
+			return delivery.moment
+		end
+	end
+	return nil
 end
 
 describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", function()
@@ -178,6 +189,125 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 		expect(watched.toast.title).toBe("Emberhold wins the match")
 	end)
 
+	it(
+		"ConsequenceChanged: the kingdom's rulers get one notice per start and per end (FL-0091, G9 v0.4-g10c)",
+		function()
+			ctx.buildingKind = function(id)
+				return if id == 7 then "storehouse" else nil
+			end
+			local riot = Moments.fromEvent(
+				"ConsequenceChanged",
+				{ "crimson", "riot", true, { buildingId = 7, count = 4, instigator = 11, entityIds = { 11, 12 } } },
+				ctx
+			)
+			expect(#riot).toBe(2) -- Ann and Ben rule crimson; Cat (azure) hears nothing
+			expect(#only(riot, b1)).toBe(0)
+			local moment = momentFor(riot, a1)
+			expect(moment).toEqual({
+				kind = "consequence",
+				kingdom = "crimson",
+				rule = "riot",
+				on = true,
+				count = 4,
+				buildingType = "storehouse",
+			}) -- no instigator or entity ids on the wire
+			local shown = Moments.present(moment)
+			expect(shown.toast.title).toBe("Riot at the storehouse!")
+			expect(shown.toast.body).toBe("4 rioters set it alight. Nobody works there while it burns.")
+			expect(shown.toast.kind).toBe("warning")
+			expect(shown.sound).toBe("kingdom.horn.war")
+			-- no building known: the plain title, never "Riot at the !"
+			local plain =
+				momentFor(Moments.fromEvent("ConsequenceChanged", { "crimson", "riot", true, { count = 2 } }, ctx), a1)
+			expect(Moments.present(plain).toast.title).toBe("A riot breaks out!")
+			local over = momentFor(
+				Moments.fromEvent("ConsequenceChanged", { "crimson", "riot", false, { buildingId = 7 } }, ctx),
+				a1
+			)
+			expect(Moments.present(over).toast.title).toBe("The riot is over")
+			expect(Moments.present(over).toast.body).toBe("The storehouse slowly mends.")
+			-- the end is its own toast: a shared key would coalesce it into the start's title ("Riot at …! ×2")
+			expect(Moments.present(over).toast.key == shown.toast.key).toBe(false)
+			-- through the real queue: a quick end is its own toast with its own title, and the start stays as it was
+			local queue = NotificationQueue.new({
+				now = function()
+					return 0
+				end,
+			})
+			queue:push(shown.toast)
+			local ended, how = queue:push(Moments.present(over).toast)
+			expect(how == "coalesced").toBe(false)
+			assert(ended, "the end toast")
+			expect(ended.title).toBe("The riot is over")
+			local titles = {}
+			for _, item in queue:visible() do
+				table.insert(titles, `{item.title}x{item.count}`)
+			end
+			expect(titles).toEqual({ "Riot at the storehouse!x1", "The riot is overx1" })
+			local alone = momentFor(
+				Moments.fromEvent("ConsequenceChanged", { "crimson", "riot", true, { buildingId = 7, count = 1 } }, ctx),
+				a1
+			)
+			expect(Moments.present(alone).toast.body).toBe("A rioter set it alight. Nobody works there while it burns.")
+		end
+	)
+
+	it(
+		"ConsequenceChanged: strikes name the job, shortages the food; a rebellion has no end; bad payloads drop",
+		function()
+			local function title(args)
+				local delivered = momentFor(Moments.fromEvent("ConsequenceChanged", args, ctx), a1)
+				return if delivered then Moments.present(delivered).toast else nil
+			end
+			local strike = title({ "crimson", "strike", true, { occupation = "farmer", count = 3 } })
+			expect(strike.title).toBe("The farmers are on strike")
+			expect(strike.body).toBe("3 stopped work over a grievance. Win back their loyalty.")
+			expect(title({ "crimson", "strike", false, { occupation = "farmer", count = 3 } }).title).toBe(
+				"The farmers are back at work"
+			)
+			expect(title({ "crimson", "strike", true, { occupation = "farmer", count = 1 } }).body).toBe(
+				"1 stopped work over a grievance. Win back their loyalty."
+			)
+			for rule, phases in Lines.CONSEQUENCE do
+				if phases.start and phases.stop then
+					assert(phases.start.key ~= phases.stop.key, `{rule}: the end needs its own toast key`)
+				end
+			end
+			expect(title({ "crimson", "strike", true, { count = 2 } }).title).toBe("The workers are on strike")
+			expect(title({ "crimson", "strike", true, { occupation = "riot", count = 2 } }).title).toBe(
+				"The workers are on strike"
+			) -- "riot" marks rioters, never a job
+			local rioters = momentFor(
+				Moments.fromEvent(
+					"ConsequenceChanged",
+					{ "crimson", "riot", true, { occupation = "riot", count = 2 } },
+					ctx
+				),
+				a1
+			)
+			expect(rioters.occupation).toBeNil()
+			expect(title({ "crimson", "strike", true, { occupation = "farmer", count = 0 / 0 } }).body).toBeNil()
+			expect(title({ "crimson", "shortage", true, { count = 9 } }).title).toBe("Food is running out")
+			expect(title({ "crimson", "shortage", false, { count = 9 } }).title).toBe("Your people have food again")
+			expect(title({ "crimson", "rebellion", true, { instigator = 11, count = 5 } }).title).toBe(
+				"Your people rise in rebellion!"
+			)
+			expect(Moments.fromEvent("ConsequenceChanged", { "crimson", "rebellion", false, {} }, ctx)).toEqual({})
+			expect(Moments.fromEvent("ConsequenceChanged", { "crimson", "plague", true, {} }, ctx)).toEqual({})
+			expect(Moments.fromEvent("ConsequenceChanged", { "crimson", "riot", "yes", {} }, ctx)).toEqual({})
+			expect(Moments.fromEvent("ConsequenceChanged", { nil, "riot", true, {} }, ctx)).toEqual({})
+			expect(#Moments.fromEvent("ConsequenceChanged", { "crimson", "shortage", true }, ctx)).toBe(2) -- no info
+			for rule, phases in Lines.CONSEQUENCE do
+				for phase, line in phases do
+					assert(
+						utf8.len(line.title) <= 60 and (line.plain == nil or utf8.len(line.plain) <= 60),
+						`{rule}.{phase}`
+					)
+				end
+			end
+		end
+	)
+
 	it("gathering is never announced, and bad payloads produce nothing", function()
 		expect(Moments.fromEvent("ResourceGathered", { a1, "crimson", "wood", 3, "ruler" }, ctx)).toEqual({})
 		expect(Moments.fromEvent("BuildingPlaced", { "not a building" }, ctx)).toEqual({})
@@ -192,6 +322,7 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 			{ "UnitsRecruited", { a1, "crimson", 3 } },
 			{ "ObjectiveCaptured", { "tower_1", "crimson" } },
 			{ "MatchEnded", { { winner = "crimson", standings = {}, durationSec = 1 } } },
+			{ "ConsequenceChanged", { "crimson", "riot", true, { buildingId = 1, count = 2, entityIds = { 4 } } } },
 		}
 		for _, event in events do
 			for _, delivery in Moments.fromEvent(event[1], event[2], ctx) do
@@ -220,6 +351,9 @@ describe("Feedback/Lines presentation (FL-0062)", function()
 				actor = "Ann",
 				kingdomName = "Frostmere",
 				won = true,
+				rule = "strike",
+				on = true,
+				occupation = "miner",
 			}
 			local presentation = Moments.present(moment)
 			assert(presentation.toast or presentation.celebrate, `{kind} presents nothing`)
@@ -253,6 +387,11 @@ describe("Feedback/Lines presentation (FL-0062)", function()
 		for kind, spec in Lines.CELEBRATIONS do
 			check(kind, spec)
 			assert(spec.toast or spec.vfx, `celebration {kind} has no visual`)
+		end
+		for rule, phases in Lines.CONSEQUENCE do
+			for phase, line in phases do
+				check(`{rule}.{phase}`, line)
+			end
 		end
 	end)
 
@@ -342,6 +481,30 @@ describe("AnnouncerService (FL-0062)", function()
 		expect(registry:get("AnnouncerService").sent.buildingPlaced).toBe(1)
 	end)
 
+	it("ConsequenceChanged reaches that kingdom's rulers, naming the burning building from its model", function()
+		boot(true)
+		local root = roblox.Instance.new("Folder")
+		root.Name = "ForgeKingdoms"
+		local crimson = roblox.Instance.new("Folder")
+		crimson.Name = "crimson"
+		crimson.Parent = root
+		local buildings = roblox.Instance.new("Folder")
+		buildings.Name = "Buildings"
+		buildings.Parent = crimson
+		local store = roblox.Instance.new("Model")
+		store:SetAttribute("BuildingId", 21)
+		store:SetAttribute("Kind", "storehouse")
+		store.Parent = buildings
+		root.Parent = env.Workspace
+		bus.ConsequenceChanged:fire("crimson", "riot", true, { buildingId = 21, instigator = 5, count = 3 })
+		expect(kindsFor(p1)).toEqual({ "consequence" })
+		expect(kindsFor(p2)).toEqual({ "consequence" })
+		expect(kindsFor(p3)).toEqual({}) -- azure's ruler
+		local sent = remotes:sentTo("Feedback.Moment", p1)[1].args[1]
+		expect(sent.buildingType).toBe("storehouse")
+		expect(Moments.present(sent).toast.title).toBe("Riot at the storehouse!")
+	end)
+
 	it("without KingdomService: phases still reach everyone, kingdom moments reach nobody", function()
 		boot(false)
 		bus.MatchPhaseChanged:fire("Conflict")
@@ -397,7 +560,8 @@ describe("AnnouncerService (FL-0062)", function()
 end)
 
 describe("client feedback controllers (FL-0062)", function()
-	local env, notices, celebrations, registered, played, effects, stopped, floats, music, ambience
+	local env, notices, celebrations, registered, played, effects, stopped, floats, music, ambience, silenced
+	local vfxOff = false -- the VFX budget skips every effect while true
 
 	local function doubles(opts)
 		opts = opts or {}
@@ -407,7 +571,12 @@ describe("client feedback controllers (FL-0062)", function()
 				new = function()
 					return {
 						play = function(_, id, o)
-							table.insert(played, { id = id, position = o and o.position })
+							local voice = { id = id, position = o and o.position }
+							table.insert(played, voice)
+							return voice
+						end,
+						stop = function(_, voice)
+							table.insert(silenced, voice)
 						end,
 						setMusic = function(_, state)
 							table.insert(music, state)
@@ -423,6 +592,9 @@ describe("client feedback controllers (FL-0062)", function()
 				new = function()
 					return {
 						play = function(_, id, o)
+							if vfxOff then
+								return nil
+							end
 							local effect = { id = id, position = o and o.position, tint = o and o.tint }
 							table.insert(effects, effect)
 							return effect
@@ -470,8 +642,86 @@ describe("client feedback controllers (FL-0062)", function()
 
 	beforeEach(function()
 		env = MockEnv.new({ seed = 63, isServer = false, localPlayer = { userId = 3201 } })
-		notices, celebrations, registered, played, effects, stopped, floats, music, ambience =
-			{}, {}, {}, {}, {}, {}, {}, {}, {}
+		notices, celebrations, registered, played, effects, stopped, floats, music, ambience, silenced =
+			{}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+		vfxOff = false
+	end)
+
+	it(
+		"FeedbackController: a burning building gets fire, smoke and a crackle until the fire is out (FL-0091)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, FeedbackDef)
+			local feedback = Loader.load(env, defs):get("FeedbackController")
+			local root = roblox.Instance.new("Folder")
+			root.Name = "ForgeKingdoms"
+			local crimson = roblox.Instance.new("Folder")
+			crimson.Name = "crimson"
+			crimson.Parent = root
+			local buildings = roblox.Instance.new("Folder")
+			buildings.Name = "Buildings"
+			buildings.Parent = crimson
+			local function building(id, x)
+				local model = roblox.Instance.new("Model")
+				model:SetAttribute("BuildingId", id)
+				local base = roblox.Instance.new("Part")
+				base.CFrame = CFrame.new(x, 0, 0)
+				base.Parent = model
+				model.PrimaryPart = base
+				model.Parent = buildings
+				return model
+			end
+			local storehouse, house = building(12, 40), building(13, 80)
+			root.Parent = env.Workspace
+			feedback:refreshFires()
+			expect(#effects).toBe(0) -- nothing burns
+			storehouse:SetAttribute("Burning", true)
+			env.mock:advance(FeedbackDef.BURN_POLL_SEC + 0.05) -- the poll started by start()
+			expect(#effects).toBe(1)
+			expect(effects[1].id).toBe(FeedbackDef.FIRE.vfx)
+			expect(effects[1].position ~= nil and effects[1].position.X).toBe(40)
+			expect(played[#played].id).toBe(FeedbackDef.FIRE.sound)
+			feedback:refreshFires()
+			expect(#effects).toBe(1) -- one fire per building, not one per read
+			-- a skipped effect is tried again; the crackle is not doubled
+			vfxOff = true
+			house:SetAttribute("Burning", true)
+			feedback:refreshFires()
+			expect(feedback:fires()[13].effect).toBeNil()
+			vfxOff = false
+			local sounds = #played
+			feedback:refreshFires()
+			expect(feedback:fires()[13].effect).never.toBeNil()
+			expect(#played).toBe(sounds)
+			-- out: the attribute goes, or the model does
+			storehouse:SetAttribute("Burning", nil)
+			feedback:refreshFires()
+			expect(stopped[1]).toBe(effects[1])
+			expect(silenced[1].id).toBe(FeedbackDef.FIRE.sound)
+			expect(feedback:fires()[12]).toBeNil()
+			house:Destroy()
+			feedback:refreshFires()
+			expect(feedback:fires()[13]).toBeNil()
+			expect(#stopped).toBe(2)
+			expect(env.mock.threadErrors).toEqual({})
+		end
+	)
+
+	it("FeedbackController: the fire preset fits the budget and the crackle is a looping sound", function()
+		local preset
+		for _, p in Presets do
+			if p.id == FeedbackDef.FIRE.vfx then
+				preset = p
+			end
+		end
+		assert(preset, "fire preset")
+		expect(VfxPresets.validate({ preset })).toEqual({})
+		expect(preset.durationSec).toBeNil() -- continuous until stopped
+		local sound = Sounds.registry:get(FeedbackDef.FIRE.sound)
+		assert(sound, "fire sound")
+		expect(sound.loop).toBe(true)
+		expect(sound.status).toBe("needed") -- silent until someone picks an asset (sounds handoff)
+		expect(sound.asset).toBeNil()
 	end)
 
 	it("AnnouncerController: celebrations celebrate; other moments toast, silently when they have a sound", function()

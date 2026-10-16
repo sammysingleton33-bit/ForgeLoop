@@ -463,3 +463,28 @@ History:
 - 2026-10-15 FORGE-04: written (FL-0121, CONTRACTS G13.9 v0.4-g9j).
 - 2026-10-15 FORGE-04: rewritten to the Move flow that B17 ships (D-052 (1)). The drag and edge-pan rows are parked (FL-0123). A selection in edit mode no longer pans the camera (FORGE-07's #148 B1 side effect).
 - 2026-10-15 FORGE-04: on a mouse a left press confirms the move (PlacementInput), so pan with WASD during a move, and step 2 clicks the building, not the ground (FORGE-07's #157 M1).
+
+## E13 — Consequences read from the air: riot placard, fire, notices (FL-0091, game-001)
+
+Needs:
+- FORGE-01's riot (FL-0082, on main) and its `vs1.riot` preset (`roblox/studio-tests/gameplay.md` K12).
+- The notices come from G9 `ConsequenceChanged`, which FORGE-01's ConsequenceService fires (#173, on main since dd9e356).
+
+| Rule | Expected |
+|---|---|
+| Riot placard | Each rioter shows a "Rioting" placard, fire orange with dark words, above its head. It is not the dark red "On strike" placard. It shows at every aerial zoom and goes when that citizen stops rioting |
+| Fire | The burning building shows flames and a tall smoke column above its roof, plainly visible from the start zoom of the aerial view. They go when the fire is out. Never on the keep |
+| Crackle | A crackle loop at the building. It is silent until `kingdom.fire` has an asset (P1, handoff `2026-10-16-forge-04-to-user-fire-sound.md`; status "needed"); write "silent (no asset)" |
+| Notices | Each ruler of the kingdom gets one toast at the start and one at the end; a rival ruler gets none. Riot: "Riot at the storehouse!" (the burning building's name), "N rioters set it alight. Nobody works there while it burns.", then "The riot is over". Strike: "The farmers are on strike" (the job), then "The farmers are back at work". Food: "Food is running out", then "Your people have food again" |
+
+Steps
+1. Play Solo; stay in the aerial view at its start zoom. In the debug panel (F8) run the preset `vs1.riot`. Within about 2 minutes one building catches fire (K12). The flames and smoke stand clearly above its roof. Screenshot **E13-1**.
+2. The rioters show orange "Rioting" placards, not "On strike". Zoom all the way out: the placards stay readable, and the fire is still visible. Screenshot **E13-2**.
+3. When the riot starts, a toast reads "Riot at the <building>!" with the rioters' count, and a horn plays when sounds exist. When it ends (within 90 s), "The riot is over" replaces it, and the fire and the placards go.
+4. Two players (Test → Local Server, 2 players) in different kingdoms: only the burning kingdom's ruler gets the riot toasts.
+5. Phone emulator (667×375): the placards and the toast fit, with nothing cut off.
+
+Pass: steps 1–3 hold (4 and 5 when run). Copy every red line from Output.
+
+History:
+- 2026-10-16 FORGE-04: written (FL-0091; FORGE-01's FL-0082 handoff, G9 `ConsequenceChanged` v0.4-g10c/d).

@@ -7,6 +7,8 @@
 		bubbles:thought(entityId, { text, icon = "request" | "concern" | "idea", scenarioId })
 		bubbles:reaction(entityId, { text, tone = "happy" | "angry" | "sad" | "neutral" })
 		bubbles:strike(entityId, on)                    -- a placard while the citizen strikes
+		bubbles:riot(entityId, on)                      -- a placard while the citizen riots (G13.3 v0.4-g10c:
+		                                                -- a strike with occupation "riot"; rioters are not strikers)
 		bubbles:release(entityId)                       -- the rig went back to the pool (G4.1 released)
 		bubbles:tick() -> { entityId }                  -- expired ids
 		bubbles:pick(positions, origin) -> { entityId } -- what to draw this frame, nearest first
@@ -24,9 +26,10 @@
 		- Text comes from the event only (no invented text): an event without text is ignored; text
 		  is cut to `maxChars` with an ellipsis.
 		- Every bubble names its meaning in words or a glyph, never by colour alone (G13.3 "subtitled"):
-		  thought icons are "!" (request), "?" (concern), "…" (idea); placards read "On strike".
+		  thought icons are "!" (request), "?" (concern), "…" (idea); placards read "On strike" or
+		  "Rioting" (a riot placard wins over a strike placard: a rioter is not a striker).
 		- Lifetimes: thought `thoughtSec` (refreshed by a repeated thought), reaction `reactionSec`,
-		  placard until strike off.
+		  placard until strike (riot) off.
 		- pick(): only citizens within `maxDistance` of the origin (the camera), at most `maxOnScreen`,
 		  by priority (reaction > thought > placard) and then distance.
 		- layout(): from the aerial camera the kingdom is small on screen, and full bubbles bury each
@@ -51,8 +54,11 @@ Bubbles.__index = Bubbles
 Bubbles.ICON = table.freeze({ request = "!", concern = "?", idea = "…" })
 Bubbles.TONES = table.freeze({ "happy", "angry", "sad", "neutral" })
 Bubbles.POSE = table.freeze({ happy = "cheer", angry = "grumble", sad = "slump", neutral = "salute" })
-Bubbles.PRIORITY = table.freeze({ reaction = 3, thought = 2, strike = 1 })
+Bubbles.PRIORITY = table.freeze({ reaction = 3, thought = 2, strike = 1, riot = 1 })
 Bubbles.STRIKE_TEXT = "On strike"
+Bubbles.RIOT_TEXT = "Rioting"
+-- the lasting placards: drawn as words, placed before any card (layout)
+Bubbles.PLACARD = table.freeze({ strike = true, riot = true })
 Bubbles.DEFAULTS = table.freeze({
 	maxOnScreen = 8,
 	maxDistance = 160,
@@ -74,7 +80,7 @@ Bubbles.SIZES = table.freeze({
 
 export type Bubble = {
 	entityId: number,
-	kind: "thought" | "reaction" | "strike",
+	kind: "thought" | "reaction" | "strike" | "riot",
 	text: string,
 	glyph: string?,
 	tone: string?,
@@ -115,15 +121,25 @@ function Bubbles.new(opts: { now: () -> number, config: { [string]: any }? })
 		_config = config,
 		_bubbles = {} :: { [number]: Bubble },
 		_striking = {} :: { [number]: boolean },
+		_rioting = {} :: { [number]: boolean },
 		stats = { ignored = 0 },
 	}, Bubbles)
 end
 
--- The bubble that shows for a citizen now (a thought or reaction; else the placard if striking).
+-- The bubble that shows for a citizen now (a thought or reaction; else the placard if rioting or striking).
 function Bubbles:get(entityId: number): Bubble?
 	local bubble = self._bubbles[entityId]
 	if bubble ~= nil then
 		return bubble
+	end
+	if self._rioting[entityId] then
+		return {
+			entityId = entityId,
+			kind = "riot",
+			text = Bubbles.RIOT_TEXT,
+			glyph = nil,
+			shownAt = 0,
+		}
 	end
 	if self._striking[entityId] then
 		return {
@@ -205,12 +221,21 @@ function Bubbles:strike(entityId: any, on: boolean)
 	self._striking[entityId] = if on then true else nil
 end
 
+function Bubbles:riot(entityId: any, on: boolean)
+	if not isId(entityId) then
+		self.stats.ignored += 1
+		return
+	end
+	self._rioting[entityId] = if on then true else nil
+end
+
 function Bubbles:release(entityId: number)
 	if not isId(entityId) then
 		return
 	end
 	self._bubbles[entityId] = nil
 	self._striking[entityId] = nil
+	self._rioting[entityId] = nil
 end
 
 -- Open requests: "!" thoughts that have not expired, in no particular order (Feedback/Requests orders).
@@ -330,7 +355,7 @@ function Bubbles:layout(
 	local out = {}
 	for _, entityId in picked do -- placards and every request's badge first: nothing may hide them
 		local bubble = self:get(entityId)
-		if bubble ~= nil and bubble.kind == "strike" then
+		if bubble ~= nil and Bubbles.PLACARD[bubble.kind] then
 			out[entityId] = "words"
 			place(rectOf(entityId, size.placard), entityId)
 		elseif bubble ~= nil and bubble.kind == "thought" then
