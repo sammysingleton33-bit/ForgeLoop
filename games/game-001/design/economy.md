@@ -96,9 +96,11 @@ which is how BRIEF §4 row 6 is checked in Studio.
   | Gold | none in the slice | **≤ 6 / min** (as stone, so gold never outpaces it) |
   At the shipped per-harvest amounts (2 food or wood, 1 stone or gold) one cooldown can't meet all
   four: wood needs ≥ 14 s between harvests (≈ 8.6 / min), stone and gold ≥ 10 s, food ≥ 30 s. A
-  per-resource allowance per minute is simpler. The shipped
-  `Sim/RulerGather.CONFIG` (0.8 s cooldown, about 150 wood/min) is far above these until FORGE-01
-  applies them.
+  per-resource allowance per minute is simpler, and is what ships: FL-0122 (#145) enforces these caps
+  in `Sim/RulerGather.CONFIG.perMinute` (`{ food = 4, wood = 9, stone = 6, gold = 6 }`, `window = 60`),
+  a rolling 60 s allowance per kingdom and resource (co-rulers share it; a refused harvest answers
+  `cooldown` and takes nothing from the node), plus the own-or-neutral check (`not_your_node`). At
+  2 wood a harvest the wood cap gives 8 / min in practice. Headless evidence only (RulerGather spec).
 
 ## Open questions
 - Gold has no source or sink in VS-1 except keep level 3: fine for the slice; VS-2 needs a gold use.
