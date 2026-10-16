@@ -6,10 +6,10 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | **B17 cut (2026-10-15 22:20): main `41a70e8`**, delivered by FORGE-00 (checklist I1–I8; artifact `forgeloop-game001-41a70e8`). Headline: base editing (#140/#148/#142/#157) and clean farms (#152/#159/#160); also request badges (#149), cheer pose (#154/#158/#161), settings (#123), batch A/B. **B18 queue:** #138 citizens (FORGE-02 celebrate renders, then D-051 look) → #153 → #155 (Kit fix + welded-part clearance spec); #162 (FORGE-03 main merge) → #164; #125 (FORGE-01 main merge, 4 Simulation hunks); #156 (FL-0110 rows on main's runner now) |
-| Last verified check | B17 `41a70e8`: check.sh PASS (framework 551/0, game-001 1583/0, Selene 0/0, StyLua 516, place check PASS); B14/B15 probes 11/11. Set gate (main `93e41e6` + #157 + #148 + #140) 1571/0 with FL-0119 45, FL-0120 28, FL-0121 10, FL-0122 19 caught; #160 1580/0, 6/6 world mutants |
+| Current task | **B18 cut (2026-10-16 00:21): main `f3298dd`**, delivered by FORGE-00 (checklist J1–J5; artifact `forgeloop-game001-f3298dd`). Headline: citizens' new look (#138, #153, #155, #169), consequences (#125), back key (#162, #164); server-side #156; harness #171 (sim shards). **Next (B19):** batch C gating (#170, #168, #167, #165), then #173 (ConsequenceChanged fire) |
+| Last verified check | B18 `f3298dd`: check.sh PASS (framework 551/0, game-001 1692/0, Selene 0/0, StyLua 525, place check PASS; sim#1/2 444 s, sim#2/2 171 s); B14/B15 probes 11/11; exact clearance probe on #169 (arms +0.35…+0.68, tools ≥ 1.05) |
 | Blockers | none. Lesson: long gates (check + four mutation runners) exceed the 30-min background default: pass a longer `timeout`, and restore any mutated file in the test worktree if a run is killed |
-| In review / queued | B18: #138, #153, #155 (FORGE-02); #162 → #164 (FORGE-03/04); #125, #156 (FORGE-01); #118, #110, #100 (held), #90 |
+| In review / queued | B19: #170, #168, #167, #165 (gating), #173 (FORGE-07 READY); #118, #110, #100 (held), #90 |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -157,6 +157,16 @@ _Maintained by the worker. Keep it short and current._
 | #163 | FORGE-04 FL-0025 completeReward rule | `99ef428` |
 | #161 | FORGE-01 Pose.spec tip sign | `d982a33` |
 | #160 | FORGE-02 FL-0124 world nodes out of farms (B17 cut) | `41a70e8` |
+| #138 | FORGE-02 FL-0118 phase 1 citizens (interim art) | `8682686` |
+| #162 | FORGE-03 FL-0059 back key | `4bb9039` |
+| #164 | FORGE-04 isTap + E11 | `fde793d` |
+| #153 | FORGE-02 FL-0118 phase 1b (interim art) | `8eca5f5` |
+| #125 | FORGE-01 FL-0082 consequences | `61eea1d` |
+| #156 | FORGE-01 FL-0110 presentation tags | `ad790b6` |
+| #155 | FORGE-02 FL-0118 phase 2 tools (interim art) | `5fbc515` |
+| #169 | FORGE-02 Kit shoulder pivots | `f6cb4c1` |
+| #171 | FORGE-05 harness shards (B18 cut) | `f3298dd` |
+| #172 | FORGE-02 STATUS refresh | `bdc8b69` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 
