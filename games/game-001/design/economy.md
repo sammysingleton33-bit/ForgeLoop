@@ -12,6 +12,10 @@ decision yet; the final balance needs the user's playtest (FL-0064).
   soldiers, upkeep. ProductionService is the only food consumer.
 - Upkeep every 60 s: 1 food per citizen, 1 food per soldier (`Costs.upkeep`, `Costs.unit("soldier").upkeepFood`).
   The fed ratio (food taken / food owed) drives hunger (FORGE-01).
+- Births are not a food sink (D-045, G7 v0.4-g9d). While ProductionService runs, a birth takes no
+  treasury food. A kingdom grows when it is well fed (fed ratio ≥ `Society.food.wellFedAtLeast`,
+  0.9) and has a free bed. Without ProductionService (specs and the meal-double path),
+  `Citizens.birthFood` (25) is still charged. PROVISIONAL until the user plays.
 
 ## Starting stockpile (per kingdom, at Founding)
 | Food | Wood | Stone | Gold |
@@ -57,15 +61,44 @@ level 2, build a barracks and recruit 3 soldiers.
 | **Must be earned** | **0** (plus upkeep) | **240** | **160** |
 
 ## Rates the slice needs (targets for FORGE-01 and FORGE-04)
-Goal (proposal for FORGE-04's pacing): a first-time player finishes rows 6–7 in about **10 minutes**.
-- Wood: 240 in ~10 min → **≈ 24 wood/min** from 3 woodcutters (+ ruler gathering) → about
-  **8 wood/min per woodcutter** (e.g. 10 wood per trip every 75 s).
-- Stone: 160 in ~10 min → **≈ 16 stone/min** from 2 miners → about **8 stone/min per miner**.
+Goal: a first-time player finishes the whole slice, from spawn to the capture, in **6–8 minutes**
+(D-044 (1), `design/pacing/PACING.md` §3). After the third recruit is paid for, the fixed tail is about
+80 s: 24 s training, about 35 s march and about 20 s capture (FORGE-05's pacing probe,
+`production/quality-gates/pacing-probe.md`; `config/Objectives.luau` `captureSeconds = 20`). So rows 6–7
+must fit in roughly the first **6.5 minutes**. Keep level 2 is optional in the slice (D-044 (1)). The
+wood and stone targets below are for a player who also upgrades the keep before sending soldiers,
+which is how BRIEF §4 row 6 is checked in Studio.
+- Wood: 240 in ~6.5 min → **≈ 37 wood/min** from 3 woodcutters → about **12–13 wood/min per
+  woodcutter**. PACING §3 assumes ≈ 15.
+- Stone: 160 in ~6.5 min → **≈ 25 stone/min** from 2 miners → about **12–13 stone/min per miner**.
+  PACING §3 assumes ≈ 8, which leaves keep level 2 about 55 stone short at 6:30. The slice can still
+  end, because keep level 2 is optional, but the row 6 keep check then comes later.
+- Without keep level 2 the slice needs only 90 more wood and 10 more stone (house, barracks,
+  3 soldiers). PACING's assumed rates earn that in about 2 minutes of gathering.
+- Measured: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`) found
+  that an idle kingdom earns about 76–86 wood, 52 stone and 86 food per minute over its first
+  5 minutes, which is above every target here. The 55-stone shortfall holds only at PACING's assumed
+  rates. This is headless evidence, not a play test; tuning waits for the user's play (D-043).
 - Food: 12 starting citizens eat 12 food/min; 3 soldiers add 3. 3 farmers must bring **≥ 5 food/min
   each** so the kingdom stays fed with a small surplus (the 120 starting food covers ~10 minutes of
-  upkeep if farms stall).
-- Ruler gathering: 5–10 per harvest with a short cooldown, so a player who gathers feels it but the
-  citizens remain the main source (the AI-citizen hook).
+  upkeep if farms stall, but only ~2 minutes once 3 soldiers are bought). Staying at a fed ratio of
+  0.9 or more is also what lets the kingdom grow (D-045), so a food shortfall now costs growth as
+  well as hunger.
+- Ruler gathering (optional, D-030; FL-0051; D-050 (3)): a ruler gathers only nodes in their own
+  kingdom's territory or neutral land, and sustained ruler gathering is capped at **25 % of the
+  slice's income budget**, so the citizens stay the main source (the AI-citizen hook). The caps, per
+  minute of continuous gathering (FORGE-01 enforces them from config):
+  | Resource | Slice budget (above) | Ruler cap (25 %) |
+  |---|---|---|
+  | Wood | ≈ 37 / min | **≤ 9 / min** |
+  | Stone | ≈ 25 / min | **≤ 6 / min** |
+  | Food | ≈ 15 / min (3 farmers × 5) | **≤ 4 / min** |
+  | Gold | none in the slice | **≤ 6 / min** (as stone, so gold never outpaces it) |
+  At the shipped per-harvest amounts (2 food or wood, 1 stone or gold) one cooldown can't meet all
+  four: wood needs ≥ 14 s between harvests (≈ 8.6 / min), stone and gold ≥ 10 s, food ≥ 30 s. A
+  per-resource allowance per minute is simpler. The shipped
+  `Sim/RulerGather.CONFIG` (0.8 s cooldown, about 150 wood/min) is far above these until FORGE-01
+  applies them.
 
 ## Open questions
 - Gold has no source or sink in VS-1 except keep level 3: fine for the slice; VS-2 needs a gold use.

@@ -16,12 +16,12 @@ _Maintained by the worker. Keep it short and current._
 |---|---|---|
 | FL-0088 conversation + citizen card v2 | done (#52); gate in #66 | costs and risks before choosing |
 | FL-0089 reputation strip + screen | done (#44); 0.5 | text switches to the content library when FL-0083 lands |
-| FL-0060 army/objective panels, slice summary | done (#63) | doubles until FORGE-01's #70 |
-| FL-0105 refusal codes, crest, achievement toast | done (#86) | |
-| FL-0087 plot picker on `Fit.typesFor` | 1 | |
-| Swap doubles for FORGE-01's real services | 3 | contract mismatches show up here |
+| FL-0060 army/objective panels, slice summary | done (#63, #95) | runs against FORGE-01's real Army server (#70) |
+| FL-0105 refusal codes, crest, achievement toast | done (#86, #103) | emblems per D-039 |
+| FL-0087 plot picker on `Fit.typesFor` | done (#88) | |
+| Swap doubles for FORGE-01's real services | done | FORGE-05 ran Army (#70), conversation (#77) and plots (#89) end to end |
 | Fix round after the user's Studio playtest | 3 | depends on what the playtest finds |
-| **Remaining** | **7–8** | review rounds (0.5–1), FL-0087 switch (1), real-service swap (3), playtest fixes (3). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
+| **Remaining** | **3–4** | playtest fixes (3), review rounds (0.5–1). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
 
 ## Last report
 - **Done:** FL-0099 cinematic conversations (G13.8). The citizen's portrait (`Kit.portrait`) rises
