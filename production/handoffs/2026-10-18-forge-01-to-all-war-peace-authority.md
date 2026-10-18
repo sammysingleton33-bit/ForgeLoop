@@ -24,7 +24,7 @@ Human rulers can declare war and make peace through a server-validated remote, w
 **G9**: none in this PR (`WarChanged` / `SiegeChanged` / `RaidChanged` are PR 3).
 
 ## Evidence
-- GATE_PLACEHOLDER
+- `bash roblox/scripts/check.sh` on 213d3bbc + merge of #187: 1809 specs pass, 1 fails (`experience/ConversationAnalytics`, FORGE-04's slice pin #194, not on main yet; same failure as #187). Ownership PASS, `forge.py validate` 136 tasks 0 errors. Mutation rows (D-054 block, 22) all caught after dropping two equivalent mutants.
 - Everything is **headless** (Lune / MockEnv); nothing seen in Studio. The idle rule uses sim time, so it only runs while a match phase is active.
 
 ## Open issues and risks
