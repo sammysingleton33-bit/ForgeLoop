@@ -11,6 +11,10 @@
 		  starts it by hand.
 		- ends on `Match.Spectate(false)` (seated again), at Results or Lobby (Match.State, G8): the
 		  match is over and control returns to the player; setActive(false) ends it by hand.
+		- never starts during Results or Lobby, by any path (FORGE-07's #189 M1): the results screen has
+		  the player's attention. A `Match.Spectate(true)` that arrives then (a late joiner, a fallen
+		  kingdom's state push) is kept pending and starts spectating when a playing phase begins,
+		  unless `Match.Spectate(false)` arrives first.
 	Targets, in this order (re-read on every cycle, so they follow the war):
 		1. battles: FeedbackWarController:hotspots(), the places hit in the last 20 s, newest first
 		2. the keeps of the kingdoms still standing (their `Kind = "keep"` model under
@@ -52,6 +56,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_links = {},
 		_kingdoms = {} :: { any },
 		_mine = nil :: string?,
+		_phase = nil :: string?,
+		_pending = false, -- the server's last Match.Spectate said true
 		_index = 0,
 		active = false,
 		changed = Signal.new(),
@@ -129,18 +135,28 @@ function Controller:onSpectate(spectating: any, info: any)
 		self._mine = info.kingdomId -- our fallen kingdom: never a target
 	end
 	if spectating == true then
+		self._pending = true
 		self:setActive(true)
 	elseif spectating == false then
+		self._pending = false
 		self:setActive(false)
 	end
 end
 
 function Controller:onPhase(phase: any)
-	if type(phase) == "string" and Def.END_PHASES[phase] and self.active then
-		self:setActive(false)
+	if type(phase) ~= "string" then
+		return
 	end
-	if phase == "Lobby" then
-		self._mine = nil -- a new match: the next Kingdom.State says where we rule
+	self._phase = phase
+	if Def.END_PHASES[phase] then
+		if self.active then
+			self:setActive(false)
+		end
+		if phase == "Lobby" then
+			self._mine = nil -- a new match: the next Kingdom.State says where we rule
+		end
+	elseif self._pending and not self.active then
+		self:setActive(true) -- a Match.Spectate(true) that arrived during Results or Lobby
 	end
 end
 
@@ -159,6 +175,9 @@ end
 function Controller:setActive(on: boolean): boolean
 	if on == self.active then
 		return false
+	end
+	if on and self._phase ~= nil and Def.END_PHASES[self._phase] then
+		return false -- never under the results screen or in the lobby
 	end
 	self.active = on
 	self._index = 0

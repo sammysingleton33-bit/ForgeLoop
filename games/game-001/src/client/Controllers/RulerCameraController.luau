@@ -30,7 +30,8 @@
 		- Interest focus (D-055 (5)): the overview reports its ground focus (clamped to the map) through
 		  FORGE-01's `Sim.Focus` remote, at most once per FOCUS.everySec (4 a second), and again after
 		  FOCUS.keepaliveSec even when it holds still, so the server's staleness fallback never kicks in
-		  while the player watches one spot. Walk mode reports nothing (the character is the fallback).
+		  while the player watches one spot. A move under FOCUS.moveStuds (10 studs) waits for the
+		  keepalive. Walk mode reports nothing (the character is the fallback).
 		  Spectators report the same way. Interest only: the server never uses it for authority.
 		- The character's movement and jump keys are sunk (ContextActionService, High priority) and
 		  the touch thumbstick is hidden (GuiService.TouchControlsEnabled), so the ruler stays seated.
@@ -97,7 +98,7 @@ Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this (the hold s
 Def.MAX_GLIDE_SEC = 3 -- longest conversation glide (a NaN or infinite duration takes the default)
 Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.FOCUS_REMOTE = "Sim.Focus" -- FORGE-01's additive Sim remote (D-055 (5)); inert until it exists
-Def.FOCUS = table.freeze({ everySec = 0.25, keepaliveSec = 1, moveStuds = 2 })
+Def.FOCUS = table.freeze({ everySec = 0.25, keepaliveSec = 1, moveStuds = 10 })
 Def.PAN_KEYS = table.freeze({
 	[Enum.KeyCode.W] = Vector2.new(0, 1),
 	[Enum.KeyCode.Up] = Vector2.new(0, 1),

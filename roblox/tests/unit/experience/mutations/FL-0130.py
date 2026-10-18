@@ -75,6 +75,13 @@ M = [
  ("FL-0130", C2+"RulerCameraController.luau", 'if (focus - sent).Magnitude < rule.moveStuds and now - sentAt < rule.keepaliveSec then', 'if (focus - sent).Magnitude < rule.moveStuds then', "RulerCamera", "reports the overview's focus for interest", "game"),
  ("FL-0130", C2+"RulerCameraController.luau", 'if send == nil and not self:_focusRemoteReady() then', 'if false then', "RulerCamera", "without the Sim.Focus remote it sends nothing", "game"),
  ("FL-0130", C2+"RulerCameraController.luau", '	self:_reportFocus(target.focus)\n', '', "RulerCamera", "reports the overview's focus for interest", "game"),
- ("FL-0130", C2+"RulerSpectateController.luau", 'if spectating == true then\n\t\tself:setActive(true)', 'if false then\n\t\tself:setActive(true)', "WarFeedback", "follows FL-0125's Match.Spectate", "game"),
+ ("FL-0130", C2+"RulerSpectateController.luau", 'if spectating == true then\n\t\tself._pending = true\n\t\tself:setActive(true)', 'if false then\n\t\tself._pending = true\n\t\tself:setActive(true)', "WarFeedback", "follows FL-0125's Match.Spectate", "game"),
  ("FL-0130", C2+"RulerSpectateController.luau", 'self._mine = info.kingdomId -- our fallen kingdom', 'local _ = info.kingdomId -- our fallen kingdom', "WarFeedback", "follows FL-0125's Match.Spectate", "game"),
+ # #189 M1: never during Results or Lobby; a Match.Spectate(true) then is kept pending
+ ("FL-0130", C2+"RulerSpectateController.luau", 'if on and self._phase ~= nil and Def.END_PHASES[self._phase] then', 'if false then', "WarFeedback", "never starts during Results or Lobby", "game"),
+ ("FL-0130", C2+"RulerSpectateController.luau", '\tself._phase = phase\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
+ ("FL-0130", C2+"RulerSpectateController.luau", 'elseif self._pending and not self.active then', 'elseif false then', "WarFeedback", "never starts during Results or Lobby", "game"),
+ ("FL-0130", C2+"RulerSpectateController.luau", '\t\tself._pending = true\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
+ ("FL-0130", C2+"RulerSpectateController.luau", '\t\tself._pending = false\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
+ ("FL-0130", C2+"RulerCameraController.luau", 'keepaliveSec = 1, moveStuds = 10 })', 'keepaliveSec = 1, moveStuds = 0 })', "RulerCamera", "reports the overview's focus for interest", "game"),
 ]
