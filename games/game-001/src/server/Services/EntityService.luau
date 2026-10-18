@@ -4,8 +4,8 @@
 	Owner: FORGE-01.
 
 	Citizens and soldiers live in the kingdom simulation (MatchService's host); no Humanoids exist on
-	the server. This service exposes them through the G4 API and streams them to every client
-	(VS-1: no interest tiers):
+	the server. This service exposes them through the G4 API and streams them to the clients (the slice: every client gets everything; the full match: interest tiers,
+	Sim.Focus and Sim/Interest, D-055):
 		Sim.Snapshot  10 Hz, SnapshotCodec v2 buffers (≤ 80 records, ≤ 900 B). Moving entities (walk,
 		              carry, flee, fight) and any entity whose sent state changed go out every
 		              snapshot; the rest are refreshed round-robin about once per second.
@@ -54,6 +54,8 @@ local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
+local Interest = require("@game/ReplicatedStorage/Game/Sim/Interest")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SnapshotCodec = require("@game/ReplicatedStorage/Game/Sim/SnapshotCodec")
 
@@ -149,6 +151,15 @@ function Def.new(env: any, registry: any)
 	self._running = false
 	self._deferred = nil :: { any }? -- signals of the tick being encoded, fired once it has encoded
 	self._warned = {} :: { [string]: boolean } -- warnings given this world (ids, offMap)
+	self._focus = {} :: { [number]: { x: number, z: number, at: number } } -- Sim.Focus per player (interest only)
+	self._remotes:handle("Sim.Focus", function(player: any, focus: Vector3)
+		local limit = SnapshotCodec.MAX_COORD
+		self._focus[player.UserId] = {
+			x = math.clamp(focus.X, -limit, limit),
+			z = math.clamp(focus.Z, -limit, limit),
+			at = self._env.clock(),
+		}
+	end)
 	self._remotes:handle("Sim.GetEntities", function(_player: any, afterId: number?)
 		return self:_fullState(afterId)
 	end)
@@ -491,6 +502,39 @@ function EntityService:_select(records: { any }): { any }
 	return out
 end
 
+-- Interest tiers apply in the full match; the slice keeps broadcasting (VS-1).
+function EntityService:_interestOn(): boolean
+	return MatchConfig.interest.enabled == true and self._match.host.match.mode == "match"
+end
+
+-- Where a player is looking, for the near tier: a fresh Sim.Focus, else their character, else nowhere (all far).
+function EntityService:_viewerOf(player: any): { x: number, z: number }?
+	local focus = self._focus[player.UserId]
+	if focus and self._env.clock() - focus.at <= MatchConfig.interest.focusStaleSeconds then
+		return focus
+	end
+	local x, z = self._match.host._positionOf(player)
+	if x ~= nil and z ~= nil then
+		return { x = x, z = z }
+	end
+	return nil
+end
+
+-- The snapshot chunks one player gets: the tick's selected records filtered by distance (own soldiers always).
+function EntityService:_interestChunks(
+	player: any,
+	records: { any },
+	always: { [string]: { [number]: boolean } }
+): { any }
+	local kingdomId = self._match.host.match:kingdomOf(player.UserId)
+	local selected = Interest.select(records, self:_viewerOf(player), self._frame, {
+		nearRadius = MatchConfig.interest.nearRadius,
+		farEvery = MatchConfig.interest.farEvery,
+		always = if kingdomId then always[kingdomId] else nil,
+	})
+	return SnapshotCodec.encodeChunks(selected, self._seq, self:_serverTime())
+end
+
 function EntityService:_encodeTick(frame: any): { any }
 	local events = self:_diff(frame.identity)
 	self._frame += 1
@@ -504,7 +548,25 @@ function EntityService:_encodeTick(frame: any): { any }
 	for _, item in self:_kingdomBatches(serverTime) do
 		table.insert(outgoing, item)
 	end
-	for _, chunk in SnapshotCodec.encodeChunks(self:_select(frame.records), self._seq, serverTime) do
+	local records = self:_select(frame.records)
+	if self:_interestOn() then
+		local sim = self:_sim()
+		local always = {}
+		for kid, kingdom in sim.kingdoms do
+			local own = {}
+			for _, id in kingdom.unitIds do
+				own[id] = true
+			end
+			always[kid] = own
+		end
+		for _, player in self._env.Players:GetPlayers() do
+			for _, chunk in self:_interestChunks(player, records, always) do
+				table.insert(outgoing, { "Sim.Snapshot", chunk, nil, player })
+			end
+		end
+		return outgoing
+	end
+	for _, chunk in SnapshotCodec.encodeChunks(records, self._seq, serverTime) do
 		table.insert(outgoing, { "Sim.Snapshot", chunk })
 	end
 	return outgoing
@@ -549,7 +611,11 @@ function EntityService:replicate()
 	local match = self._match.host.match
 	for _, item in outgoing do
 		local kingdomId = item[3]
-		if kingdomId == nil then
+		if item[4] ~= nil then
+			if self._remotes:fire(item[1], item[4], item[2]) then -- one player's interest-filtered snapshot
+				self._bytes += buffer.len(item[2])
+			end
+		elseif kingdomId == nil then
 			self._remotes:fireAll(item[1], item[2])
 			self._bytes += buffer.len(item[2]) * #everyone
 		else
