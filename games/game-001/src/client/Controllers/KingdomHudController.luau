@@ -57,6 +57,7 @@
 ]]
 
 local BuildModel = require("../UI/BuildModel")
+local DiplomacyModel = require("../UI/DiplomacyModel")
 local Buildings = require("../UI/Buildings")
 local JobModel = require("../UI/JobModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -80,6 +81,19 @@ KingdomHudController.__index = KingdomHudController
 local Def = { name = "KingdomHudController", dependencies = {} }
 
 KingdomHudController.TICK_SEC = 0.5
+-- War and peace (FL-0129; the remote is FORGE-01's, proposed in the Crownfall handoff): the Kingdom panel's
+-- Rivals tab shows only while the server serves it.
+KingdomHudController.DIPLOMACY = "Kingdom.Diplomacy"
+-- D-054 (2): the senior ruler hears a co-ruler's ask for war (FORGE-01's final contract, 2026-10-18)
+KingdomHudController.WAR_ASK = "Kingdom.WarAsk"
+-- "Raid" on the rail while enemies are in our lands (FORGE-04's FeedbackWarController.alert(), #183):
+-- a tap sends the aerial camera there (goToAlert). Keys have G / D-pad up; on a phone this is the way.
+KingdomHudController.RAID_RAIL = table.freeze({
+	id = "raid",
+	icon = "warning",
+	label = "Raid",
+	order = 45, -- after the built-in menus and Army, before Waiting
+})
 KingdomHudController.DONE_SEC = 1.6
 KingdomHudController.DEFAULT_VIEWPORT = Vector2.new(1280, 662)
 
@@ -103,6 +117,8 @@ function Def.new(env: any, registry: any)
 				pending = nil,
 				done = nil,
 				jobs = { pending = {}, quota = {}, at = {} }, -- FL-0065: in flight / acknowledged (JobModel state)
+				confirmWar = nil :: string?, -- FL-0129: the rival a Declare war waits to be confirmed against
+				diplomacyPending = {} :: { [string]: boolean }, -- rivals with a diplomacy request in flight
 			},
 			confirm = nil :: any,
 		},
@@ -247,6 +263,7 @@ function KingdomHudController:start()
 	self:_follow("Build.Buildings", nil, function(list)
 		store:applyBuildings(list, false)
 	end)
+	self:_followWarAsk()
 	self:_fetch("Build.GetBuildings", function(list)
 		store:applyBuildings(list, true)
 	end)
@@ -334,6 +351,9 @@ end
 function KingdomHudController:_onStore(what: string, deltas: any)
 	if what == "population" then
 		self:_settleJobs(nil)
+	end
+	if what == "diplomacy" or what == "kingdoms" then
+		self:_onDiplomacy()
 	end
 	if what == "kingdoms" then
 		local kingdom = self.store:mine()
@@ -715,6 +735,186 @@ end
 -- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
 -- the request sets the job's quota to its newest target ± 1 (JobModel.target) and the server fills
 -- it from the free (hauler) pool. The count changes here only when its push arrives.
+-- ------------------------------------------------------------------ war and peace (FL-0129)
+
+-- The Rivals view for this moment, or nil when the server has no diplomacy remote.
+function KingdomHudController:_rivals(): any
+	if not self:hasRemote(KingdomHudController.DIPLOMACY) then
+		return nil
+	end
+	local store = self.store
+	local phase = if store.match then store.match.phase else nil
+	return DiplomacyModel.view(store, store:diplomacy(), phase, self._env.serverTimeNow(), {
+		userId = self:_localUserId(),
+		nameOf = function(userId: number): string?
+			return self:_nameOf(userId)
+		end,
+	})
+end
+
+-- Diplomacy changed: the Kingdom rail button counts the peace offers waiting for my answer, and each new
+-- offer is said once ("Azure proposes peace").
+-- The Raid rail button follows FORGE-04's alert(): shown while a raid lasts, gone after (polled each tick;
+-- absent controller or a failing call = no button).
+function KingdomHudController:_syncRaid()
+	local war = self._registry:find("FeedbackWarController")
+	local raid = false
+	if war ~= nil and type(war.alert) == "function" then
+		local ok, alert = pcall(war.alert, war)
+		raid = ok and alert ~= nil
+	end
+	if raid == (self._raidShown == true) then
+		return
+	end
+	self._raidShown = raid
+	if not raid then
+		self:removeRailItem(KingdomHudController.RAID_RAIL.id)
+		return
+	end
+	local item = table.clone(KingdomHudController.RAID_RAIL)
+	item.onActivated = function()
+		local current = self._registry:find("FeedbackWarController")
+		if current ~= nil and type(current.goToAlert) == "function" then
+			pcall(current.goToAlert, current)
+		end
+	end
+	self:addRailItem(item)
+end
+
+-- Listens to Kingdom.WarAsk once the server declares it (now or when the diplomacy state first arrives;
+-- never before, so today's main logs no missing remote).
+function KingdomHudController:_followWarAsk()
+	if self._warAskFollowed or not self:hasRemote(KingdomHudController.WAR_ASK) then
+		return
+	end
+	self._warAskFollowed = true
+	self:_follow(KingdomHudController.WAR_ASK, nil, function(_userId, requesterName, target)
+		self:_onWarAsk(requesterName, target)
+	end)
+end
+
+-- A co-ruler asks me, the senior ruler, to declare war: said once, with where to answer.
+function KingdomHudController:_onWarAsk(requesterName: any, target: any)
+	if self._destroyed then
+		return
+	end
+	local who = if type(requesterName) == "string" and requesterName ~= "" then requesterName else "A ruler"
+	local kingdom = if type(target) == "string" then self.store:kingdom(target) else nil
+	if kingdom == nil then
+		return
+	end
+	local name = if type(kingdom.name) == "string" then kingdom.name else target
+	self:notify({
+		kind = "warning",
+		title = `{who} asks for war on {name}`,
+		body = "Open Kingdom → Rivals to decide",
+	})
+end
+
+function KingdomHudController:_onDiplomacy()
+	self:_followWarAsk()
+	local view = self:_rivals()
+	self:setRailBadge("kingdom", if view and view.incoming > 0 then view.incoming else nil)
+	if view == nil then
+		return
+	end
+	local seen = self._offersSeen or {}
+	local now = {}
+	for _, row in view.rows do
+		for _, action in row.actions do
+			if action.id == "acceptPeace" then
+				now[row.id] = true
+				if not seen[row.id] then
+					self:notify({
+						kind = "info",
+						title = `{row.name} proposes peace`,
+						-- D-054: a co-ruler sees the offer, but the senior ruler answers it
+						body = if view.senior then `{view.senior} decides` else "Open Kingdom → Rivals to answer",
+					})
+				end
+			end
+		end
+	end
+	self._offersSeen = now
+end
+
+-- A Rivals button: Declare war asks first (it changes the match); the others go to the server at once.
+function KingdomHudController:diplomacyAction(kingdomId: string, action: string)
+	if action == "declareWar" then
+		self.state.panel.confirmWar = kingdomId
+		self:render()
+		return
+	end
+	self:_diplomacy(action, kingdomId)
+end
+
+function KingdomHudController:confirmWar(kingdomId: string)
+	self.state.panel.confirmWar = nil
+	self:_diplomacy("declareWar", kingdomId)
+end
+
+function KingdomHudController:cancelWar()
+	self.state.panel.confirmWar = nil
+	self:render()
+end
+
+-- What a successful request did. War is told from the server's answer, never from the client's copy
+-- of who is senior (D-054: seniority can move while the panel is open; FORGE-07 M1 on #180):
+-- "declared" = war is declared, "asked" = the senior ruler was asked; anything else stays neutral.
+local WAR_DONE = table.freeze({
+	declared = function(name: string): string
+		return `War declared on {name}`
+	end,
+	asked = function(name: string): string
+		return `Asked your senior ruler for war on {name}`
+	end,
+})
+
+local DIPLOMACY_DONE = table.freeze({
+	declareWar = function(name: string): string
+		return `War request sent: {name}`
+	end,
+	proposePeace = function(name: string): string
+		return `Peace offered to {name}`
+	end,
+	acceptPeace = function(name: string): string
+		return `Peace with {name}`
+	end,
+})
+
+function KingdomHudController:_diplomacy(action: string, kingdomId: string)
+	local p = self.state.panel
+	if p.diplomacyPending[kingdomId] then
+		return -- one request per rival at a time
+	end
+	local kingdom = self.store:kingdom(kingdomId)
+	local name = if kingdom and type(kingdom.name) == "string" then kingdom.name else kingdomId
+	p.diplomacyPending[kingdomId] = true
+	self:render()
+	self._env.spawn(function()
+		local called, ok, reason = pcall(function()
+			return self.remotes:invoke(KingdomHudController.DIPLOMACY, action, kingdomId)
+		end)
+		p.diplomacyPending[kingdomId] = nil
+		if self._destroyed then
+			return
+		end
+		if called and ok == true then
+			local war = if action == "declareWar" and type(reason) == "string" then WAR_DONE[reason] else nil
+			local done = war or DIPLOMACY_DONE[action]
+			local title = if done then done(name) else name
+			self:notify({ kind = "success", title = title })
+		else
+			self:notify({
+				kind = "warning",
+				title = Text.reason(if called then reason else nil),
+				body = name,
+			})
+		end
+		self:render()
+	end)
+end
+
 function KingdomHudController:changeJob(jobId: string, delta: number)
 	local jobs = self.state.panel.jobs
 	local population = self.store:population()
@@ -817,6 +1017,13 @@ function KingdomHudController:_panelModel(): any
 			canUpgrade = building.state == "complete" and store:buildingCost(building.type, building.level + 1) ~= nil,
 		})
 	end
+	local rivals = self:_rivals()
+	local tabs = table.clone(KingdomPanel.TABS)
+	if rivals then
+		table.insert(tabs, KingdomPanel.RIVALS_TAB)
+	elseif p.tab == "rivals" then
+		p.tab = "overview" -- the server stopped serving diplomacy
+	end
 	local upgrade = nil
 	local target = self:_building(p.upgradeId)
 	if p.tab == "upgrade" and target then
@@ -835,6 +1042,9 @@ function KingdomHudController:_panelModel(): any
 		buildings = rows,
 		upgrade = upgrade,
 		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs) else nil,
+		tabs = if rivals then tabs else nil,
+		rivals = if p.tab == "rivals" then rivals else nil,
+		confirm = p.confirmWar,
 	}
 end
 
@@ -903,6 +1113,15 @@ function KingdomHudController:render()
 			onJob = function(jobId, delta)
 				self:changeJob(jobId, delta)
 			end,
+			onDiplomacy = function(kingdomId, action)
+				self:diplomacyAction(kingdomId, action)
+			end,
+			onConfirmWar = function(kingdomId)
+				self:confirmWar(kingdomId)
+			end,
+			onCancelWar = function()
+				self:cancelWar()
+			end,
 		})
 	else
 		self.panel:destroy()
@@ -966,6 +1185,19 @@ function KingdomHudController:_tick()
 		return
 	end
 	self.view:refreshTimer(HudModel.timer(self.store.match, self._env.serverTimeNow()), self:metrics())
+	-- the Rivals tab's countdowns (offers, truces, grace) tick: patched in place by RivalsList.paint
+	if self.state.menu == "kingdom" and self.state.panel.tab == "rivals" then
+		self:render()
+	end
+	self:_syncRaid()
+	-- an offer of peace runs out without a push: the Kingdom bubble follows the clock (FORGE-07 L2 on #180)
+	if self.store:diplomacy() ~= nil then
+		local view = self:_rivals()
+		local count = if view and view.incoming > 0 then view.incoming else nil
+		if count ~= self._railBadges.kingdom then
+			self:setRailBadge("kingdom", count)
+		end
+	end
 end
 
 return Def

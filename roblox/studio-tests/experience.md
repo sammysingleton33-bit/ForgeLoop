@@ -91,7 +91,7 @@ Needs:
 - sounds chosen or uploaded (user sounds handoff). Until then every sound is skipped on purpose, and the effects and toasts still show.
 
 The Studio debug panel (F8) has two commands for this section:
-- `fx.announce <kind>`: one sample moment. Kinds: buildingCompleted, buildingPlaced, defeat, keepUpgraded, kingdomFounded, objectiveCaptured, phase, rivalCaptured, unitsRecruited, victory.
+- `fx.announce <kind>`: one sample moment. The panel lists every kind (`AnnouncerService` SAMPLES), among them buildingCompleted, buildingPlaced, defeat, keepUpgraded, kingdomFounded, objectiveCaptured, phase, rivalCaptured, unitsRecruited, victory, and the war kinds of E14.
 - `fx.burst`: six notices at once.
 
 Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spec.luau`):
@@ -488,3 +488,65 @@ Pass: steps 1–3 hold (4 and 5 when run). Copy every red line from Output.
 
 History:
 - 2026-10-16 FORGE-04: written (FL-0091; FORGE-01's FL-0082 handoff, G9 `ConsequenceChanged` v0.4-g10c/d).
+
+## E14 — War notices: a kingdom falls, war and peace, siege, raid, the full match's phases (FL-0130 part 1, game-001)
+
+Needs:
+- Steps 1–4 need nothing new: they use the `fx.announce` samples (F8).
+- Step 5 needs the full match on the build (FORGE-01's FL-0125, `Match.mode = "match"`).
+- Step 6 needs FORGE-01 to fire the proposed G9 events `WarChanged`, `SiegeChanged` and `RaidChanged` (handoff `production/handoffs/2026-10-18-forge-04-to-forge-01-war-events.md`). Until then, write "blocked: needs the war events" for step 6.
+- Every sound is silent until the owner picks assets. Write "silent (no asset)"; the toasts and celebrations still show.
+
+| Moment | Expected |
+|---|---|
+| `conflictTimed` | Toast "The age of war begins", body "Kingdoms may now declare war. This phase lasts 15 minutes." |
+| `fallen` | A celebration: "Your keep has fallen", "You can watch the rest of the match." |
+| `conquest` | A gold celebration: "You conquered Frostmere!", "Half its treasury is yours." |
+| `rivalFell` | Warning toast "Frostmere has fallen", "Emberhold took its keep." |
+| `warOnYou` | Warning toast "Frostmere declares war on you!", "Its soldiers may now attack your lands." |
+| `peace` | Toast "Peace with Frostmere". It is a separate toast from the declaration, never "… ×2" |
+| `siege` / `siegeLifted` | "Your keep is under siege!" with "Frostmere soldiers attack your keep.", then "The siege is lifted" as its own toast |
+| `raid` / `raidOver` | "Enemies in your lands!" with "6 Frostmere soldiers crossed your border.", then "Your lands are clear" |
+
+Steps
+1. Play Solo. In F8, run `fx.announce conflictTimed`, then `fallen`, then `conquest`. Each reads as in the table. The two celebrations are full celebrations, not plain toasts. Screenshot **E14-1** (the conquest).
+2. Run `warOnYou`, then `peace` within 5 s. Two toasts stand on screen; neither shows "×2". Then run `rivalFell`.
+3. Run `raid`, then `siege`. The music changes to battle when sounds exist (otherwise check Output for no errors). Run `raidOver`, wait 10 s, run `siegeLifted`: the music returns to the phase music about 8 s later. Screenshot **E14-2** (the raid and siege toasts).
+4. Phone emulator (667×375): run `raid` and `conquest`. Nothing is cut off.
+5. (Needs FL-0125.) Start a full match and play, or speed up the phases. Expansion, Conflict and Endgame each show their toast with the minutes from Pacing (12, 15, 10 in `match` mode). When an AI kingdom is eliminated, every other ruler sees "<Kingdom> has fallen".
+6. (Needs the war events.) Two players (Test → Local Server, 2 players) in different kingdoms. Player 1 declares war on player 2's kingdom. Player 1 gets no toast (the war panel answers them). Player 2 gets "<Kingdom> declares war on you!" with the horn. When player 2's lands are raided, player 2 gets "Enemies in your lands!".
+
+Pass: steps 1–4 hold (5 and 6 when their features are on the build). Copy every red line from Output.
+
+History:
+- 2026-10-18 FORGE-04: written (FL-0130 part 1; D-053, Operation Crownfall).
+
+## E15 — Battles from the air: hit flashes, kneel-and-fade deaths, building shake and collapse, raid ping, spectate camera (FL-0130 part 2, game-001)
+
+Needs:
+- Step 1 needs nothing new: `fx.announce raid` (F8).
+- Steps 2–5 need a real war on the build: FORGE-01's FL-0125, where AI kingdoms fight in Conflict. The `match.phase` jump also moves the war grace (D-054 (5)). Until then, write "blocked: needs FL-0125".
+- The hit flash needs FORGE-01 to send the G4 `hit` cue. The kneel needs FORGE-01's death pose. Handoff: `production/handoffs/2026-10-18-forge-04-to-forge-01-war-events.md`. Without the cue, write "no flash: no hit cue yet".
+- Every sound is silent until the owner picks assets (`war.hit`, `war.collapse`). Write "silent (no asset)".
+
+| Rule | Expected |
+|---|---|
+| Raid beacon | A red column of sparks rises where the raid is, visible from the aerial start zoom, until "Your lands are clear" |
+| Ping | G (keyboard, Windows and Mac) or D-pad up (gamepad) moves the aerial camera to the raid, also from walk mode |
+| Hit flash | A soldier or citizen that is hit flashes white for a moment, with a few bright sparks. No blood, ever |
+| Death | The fallen kneel or lie down, then fade out over about a second. Nobody stays on the field. A rig reused later is fully visible |
+| Building hit | Dust and stone chips at the roof, and the building jolts briefly (no jolt with Reduced motion on). It stands exactly where it was afterwards |
+| Collapse | A destroyed building leaves a large dust cloud and debris where it stood. The camera shakes a little if it is near (not with Reduced motion or Camera shake off). A cancelled construction site never collapses. A new match never collapses the old world |
+| Spectate | When your keep falls, the camera moves to the first battle or a standing keep. `.` (period) or R1 goes to the next target and `,` (comma) or L1 to the previous one. You can still pan and zoom. Results ends it |
+
+Steps
+1. Play Solo, aerial view. Run `fx.announce raid`: the toast, plus a red beacon at the map centre. Press G: the camera goes there. Switch to walk mode (V), press G again: the aerial view comes back, at the beacon. Run `fx.announce raidOver`: the beacon goes. Screenshot **E15-1** (the beacon from the start zoom).
+2. (Needs FL-0125.) Start a full match, jump to Conflict (`match.phase Conflict`), and watch an AI war from the air. Hits flash (when the cue exists), the dead fade out, and buildings under attack jolt and throw dust. Screenshot **E15-2**.
+3. (Needs FL-0125.) Turn Reduced motion on (Settings) and watch an attack again: the dust stays, and no building jolts.
+4. (Needs FL-0125.) Watch a building being destroyed: dust cloud and debris. When a whole kingdom falls, at most six collapse at once, with one crash. Screenshot **E15-3**.
+5. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
+
+Pass: step 1 holds (2–5 when FL-0125 is on the build). Copy every red line from Output.
+
+History:
+- 2026-10-18 FORGE-04: written (FL-0130 part 2).

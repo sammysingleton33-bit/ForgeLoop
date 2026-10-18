@@ -3,11 +3,11 @@ id: FL-0118
 title: Citizen job silhouettes, clothing and tools readable from the air (D-048 11-part rigs)
 track: asset
 owner: forge-02
-status: REVIEW
+status: REJECTED
 priority: P1
 game: game-001
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-18
 depends_on: [FL-0085]
 evidence:
   - check.sh OVERALL PASS (game-001 1319/0) at fd498fb; KitCharacter.spec 35 tests, 26 Character.luau mutants killed; renders citizen_polish_*.jpg looked at (40 studs and aerial 170 studs, colour and grayscale)
@@ -50,3 +50,4 @@ Visual: D-019 aerial and close-up renders, fresh-context reviewer PASS. Automate
 - 2026-10-15 forge-02: phase 2 clearance fix (FORGE-05/FORGE-01 findings, Pose not relaxed; main 1d336eb merged): pick handle 4.55 with the bar 0.85 higher, mallet lean 15, hoe lean 14. New KitCharacter clearance spec: every Tool-welded part against the Head and every Head-welded part, all 7 Pose actions at speeds 0/6/12, 3 hat rolls, exact shapes at least 0.1 (bounding boxes at least 0.03); 10 mutants killed; PoseClearance passes 8/8. Minima: miner pick against the pot 0.277 exact, builder mallet against the cap 0.150. Renders `citizen_polish2_{jobs,tools,heads,poses}.jpg`. Studio unverified. Status stays REVIEW.
 
 - 2026-10-15 forge-02: B18 shoulder pivots (FORGE-00 via FORGE-01's pose analysis #166), branch forge/02-blender-shoulders: the arm Motor6D pivots sit outside the torso (0.41 citizens/governor = the arm's own centre line, 0.55 soldier); the arm parts hang exactly where they did at rest, Pose.JOINTS/names/wire/part counts unchanged. Arm-vs-head clearance (head surface vs arm boxes, 7 actions, speeds 0/6/12): celebrate -0.10..-0.32 -> +0.45..+0.69 on all 8 rigs, every other action unchanged (>= 0.24). KitCharacter spec +2 tests, 4 mutants killed; check.sh PASS (game-001 1599/0). Renders citizen_shoulders_{rest40,rest170,celebrate,crowd}.jpg: rest pose pixel-identical, the cheer arm rises beside the head. Studio unverified.
+- 2026-10-18 forge-00: REVIEW → REJECTED. Superseded by FL-0135 (D-057): primitive-part citizen polish replaced by licensed imported character assets; #138/#153/#155/#169 stay on main as the fallback rig
