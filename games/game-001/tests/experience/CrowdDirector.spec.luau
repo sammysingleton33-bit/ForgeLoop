@@ -168,6 +168,22 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 		expect(#d:onEvent(ev("parry", "b"), 10)).toBe(0) -- nothing after the end
 	end)
 
+	it("a duel with no winner ends the crowd quietly, once (#193 L1)", function()
+		local d = director("adoring", "hostile")
+		expect(kinds(d:finish(nil, 10))).toEqual({ "a:quiet", "b:quiet" })
+		expect(#d:onEvent(ev("parry", "a"), 20)).toBe(0) -- nothing after the end
+		expect(#d:finish("a", 21)).toBe(0)
+		local e = director("loyal", "loyal")
+		local quiet = e:onEvent({ t = 0, kind = "ended" }, 5) -- Arena.Events with no side
+		expect(kinds(quiet)).toEqual({ "a:quiet", "b:quiet" })
+		expect(quiet[1].priority).toBe(true)
+		expect(quiet[1].caption).toBe("(The stand is quiet)")
+		expect(#e:onEvent(ev("hit", "a", { heavy = true }), 9)).toBe(0)
+		local f = director("loyal", "loyal")
+		expect(#f:finish("c", 0)).toBe(0) -- a side that does not exist ends nothing
+		expect(#f:onEvent(ev("parry", "a"), 1)).toBe(2)
+	end)
+
 	it("ignores unknown kinds, sides and data; an unknown tier is divided", function()
 		local d = director("glorious", nil)
 		expect(#d:onEvent(ev("dance", "a"), 0)).toBe(0)

@@ -13,7 +13,8 @@
 		local director = CrowdDirector.new(config, { a = { tier, kingdom }, b = { tier, kingdom } })
 		director:onEvent(event, now) -> { Reaction }           -- an Arena.Events entry (G12.4)
 		director:idle(stand) -> Reaction                       -- between moments
-		director:finish(winner, now) -> { Reaction }           -- both stands' endings; always plays
+		director:finish(winner?, now) -> { Reaction }          -- both stands' endings; always plays;
+		                                                       -- nil = no winner: both stands go quiet
 		director:duck(now, seconds)  /  director:volume(now) -> number   -- under the announcer
 		Reaction = { stand: "a" | "b", kind: string, major: boolean, priority: boolean,
 		             sound: string?, caption: string?, data: { [string]: any }? }
@@ -29,7 +30,8 @@
 		triggerFired side's perk fired (data.trigger, data.citizenName): a priority perk moment in side's
 		             stand ("rally" for crowdRally); it ducks the crowd for duck.perkSec.
 		hype         data.full: side's stand chants when its tier chants (a major).
-		ended        side won: the same as finish(side).
+		ended        side won: the same as finish(side). No side (no winner: a disconnect, the Crown
+		             Points fallback) is finish(nil): both stands go quiet and the crowd stops.
 		A major reaction has both stands react: side's stand by its tier's good (or bad), the other
 		stand by the opposite. Derived majors: near-death (a champion's HP share first falls below
 		moments.nearDeath: bad for them) and comeback (a champion who trailed by moments.comeback or
@@ -215,7 +217,13 @@ function Director:_track(target: Stand, hp: any): (string?, Stand?)
 end
 
 function Director:onEvent(event: any, now: number): { Reaction }
-	if self._ended or type(event) ~= "table" or SIDES[event.side] == nil then
+	if self._ended or type(event) ~= "table" then
+		return {}
+	end
+	if event.kind == "ended" and event.side == nil then
+		return self:finish(nil, now) -- no winner
+	end
+	if SIDES[event.side] == nil then
 		return {}
 	end
 	local side = event.side :: Stand
@@ -276,11 +284,14 @@ end
 
 -- The ending (design §7): win or loss x high or low support, for both stands. Plays once.
 function Director:finish(winner: any, now: number): { Reaction }
-	if self._ended or SIDES[winner] == nil then
+	if self._ended or (winner ~= nil and SIDES[winner] == nil) then
 		return {}
 	end
 	self._ended = true
 	self._lastMajor = now
+	if winner == nil then -- no winner (FORGE-07's #193 L1): a neutral close, then nothing more
+		return { self:_reaction("a", "quiet", true, true), self:_reaction("b", "quiet", true, true) }
+	end
 	local out = {}
 	for _, stand in { "a", "b" } :: { Stand } do
 		local ending = CrowdDirector.ending(stand == winner, self._sides[stand].tier, self._config)

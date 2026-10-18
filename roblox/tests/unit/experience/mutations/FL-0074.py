@@ -35,11 +35,15 @@ M = [
  # endings
  ("FL-0074", D, 'return if high then "flood" else "thinCrowning"', 'return "flood"', "CrowdDirector", "four endings", "game"),
  ("FL-0074", D, 'return if high then "salute" else "empty"', 'return "salute"', "CrowdDirector", "four endings", "game"),
- ("FL-0074", D, 'if self._ended or SIDES[winner] == nil then', 'if SIDES[winner] == nil then', "CrowdDirector", "four endings", "game"),
- ("FL-0074", D, 'if self._ended or type(event) ~= "table" or SIDES[event.side] == nil then', 'if type(event) ~= "table" or SIDES[event.side] == nil then', "CrowdDirector", "four endings", "game"),
+ ("FL-0074", D, 'if self._ended or (winner ~= nil and SIDES[winner] == nil) then', 'if (winner ~= nil and SIDES[winner] == nil) then', "CrowdDirector", "four endings", "game"),
+ ("FL-0074", D, 'if self._ended or type(event) ~= "table" then', 'if type(event) ~= "table" then', "CrowdDirector", "four endings", "game"),
  # input hygiene
  ("FL-0074", D, 'self._duckUntil = math.max(self._duckUntil, now + math.min(seconds, 30))', 'self._duckUntil = math.max(self._duckUntil, now + seconds)', "CrowdDirector", "ignores unknown kinds", "game"),
  # config: sounds and arena timings
  ("FL-0074", G + "config/Sounds.luau", 'id = "crowd.salute",', 'id = "crowd.salutes",', "CrowdDirector", "sounds exist", "game"),
  ("FL-0074", G + "config/Pacing.luau", 'duel = 120,', 'duel = 150,', "CrowdDirector", "arena stage timings in Pacing", "game"),
+ # #193 L1: a duel with no winner ends the crowd quietly
+ ("FL-0074", D, 'if winner == nil then -- no winner', 'if false then -- no winner', "CrowdDirector", "a duel with no winner ends the crowd quietly", "game"),
+ ("FL-0074", D, 'if event.kind == "ended" and event.side == nil then', 'if false then', "CrowdDirector", "a duel with no winner ends the crowd quietly", "game"),
+ ("FL-0074", D, '(winner ~= nil and SIDES[winner] == nil)', '(SIDES[winner] == nil)', "CrowdDirector", "a duel with no winner ends the crowd quietly", "game"),
 ]
