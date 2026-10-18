@@ -60,8 +60,11 @@
 		the kingdom, the key gains ".<kingdom>"), Kit.SOLDIER_CRESTS (KingdomId → crest name).
 ]]
 
+local Arena = require("./Arena")
 local Buildings = require("./Buildings")
 local Character = require("./Character")
+local Gear = require("./Gear")
+local Crowd = require("./Crowd")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local Portrait = require("./Portrait")
@@ -114,6 +117,23 @@ Kit.lookKey = Character.lookKey
 -- soldier helmet crest per KingdomId (G13.2, D-033(3)): crimson "crest_spire", azure "crest_square",
 -- emerald "crest_plume", gold "crest_dome" (the Hair part's KitHeadwear)
 Kit.SOLDIER_CRESTS = Character.CRESTS
+
+-- Crown Arena (FL-0072, G12.6): the venue, its kingdom dress and the numbers Layout.arena mirrors
+Kit.arena = Arena.build -- (kingdomA?, kingdomB?) -> Model: neutral stone, timber and sand + each side's kingdom dress
+Kit.arenaDress = Arena.dress -- (model, kingdomA?, kingdomB?): rebuild both dresses in place
+Kit.ARENA = Arena
+-- Crowd figures (G12.6): <= 4 primitive parts, client-only; role props for the six key citizens
+Kit.crowdFigure = Crowd.build -- (kingdomColor, role: KeyRole?, variant: number?) -> Model, feet-pivoted, front -Z
+Kit.CROWD_ROLES = Crowd.ROLES
+Kit.CROWD_MAX_PARTS = Crowd.MAX_PARTS
+Kit.CROWD_VARIANTS = Crowd.VARIANTS
+Kit.CROWD_HEIGHT = Crowd.HEIGHT
+Kit.crowdPoolKey = Crowd.poolKey
+-- Duel gear (G12.1 Armour / Weapon, G12.6): accessories in attachment space (R15 and R6) and a Tool with a Handle, no scripts
+Kit.armour = Gear.armour -- (armour: "light" | "medium" | "heavy", kingdomColor) -> { Accessory }
+Kit.weapon = Gear.weapon -- (weapon: "swordShield" | "greatsword" | "spear" | "mace", kingdomColor?) -> Tool
+Kit.ARMOURS = Gear.ARMOURS
+Kit.WEAPONS = Gear.WEAPONS
 
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build

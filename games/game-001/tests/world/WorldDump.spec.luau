@@ -170,6 +170,21 @@ local function dump()
 		cframe = cf12(CFrame.new(op.X, ty, op.Z) * (o.cframe - op)),
 		feature = "objective",
 	})
+	-- the Crown Arena (WorldService builds it neutral; the preview dresses it for crimson against azure, as at the Arena phase,
+	-- unless FORGE_WORLD_ARENA=neutral)
+	local arena = Layout.arena
+	if arena then
+		local neutral = process.env.FORGE_WORLD_ARENA == "neutral"
+		assets.crown_arena =
+			partsOf(if neutral then Kit.arena() else Kit.arena(KINGDOM_COLORS.crimson, KINGDOM_COLORS.azure))
+		local ap = arena.cframe.Position
+		local ay = WorldPlan.groundHeight(Layout, ap.X, ap.Z)
+		table.insert(placements, {
+			assetId = "crown_arena",
+			cframe = cf12(CFrame.new(ap.X, ay, ap.Z) * (arena.cframe - ap)),
+			feature = "arena",
+		})
+	end
 	return {
 		heightfield = { x0 = x0, z0 = z0, step = STEP, nx = nx, nz = nz, heights = heights, materials = materials },
 		waterY = -1.4,

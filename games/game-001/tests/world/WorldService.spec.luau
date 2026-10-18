@@ -330,9 +330,12 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		expect(svc:isReady()).toBe(true)
 		-- descendants include attachments and folders, so allow a little slack over the part budget
 		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
-		-- D-047 / FL-0116: 6,569 with the trimmed dressing (8,328 untrimmed; plot showcase, in-view stands and relocated decor stay); restoring the density knob after a
-		-- phone test means raising this with it, since the 27k all-built ceiling depends on it
-		expect(svc.stats.parts).toBeLessThan(6700)
+		-- D-047 / FL-0116: 6,540 dressing parts with the trimmed dressing (8,315 untrimmed; plot showcase, in-view stands and relocated decor stay);
+		-- restoring the density knob after a phone test means raising this with it, since the 27k all-built ceiling depends on it.
+		-- stats.parts also counts the Crown Arena (FL-0072: 331 neutral parts, Arena.PART_BUDGET.cap 900), which has its own cap.
+		expect(svc.stats.parts - svc.stats.arenaParts).toBeLessThan(6700)
+		expect(svc.stats.arenaParts).toBeGreaterThan(0)
+		expect(svc.stats.arenaParts).toBeLessThanOrEqual(Kit.ARENA.PART_BUDGET.cap)
 		svc:destroy()
 	end)
 end)
@@ -379,25 +382,25 @@ describe("Dressing density knob (D-047)", function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
 			expect(#plan).toBe(618)
-			expect(fingerprint(plan)).toBe(1478630863) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
+			expect(fingerprint(plan)).toBe(1250193570) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0072 (the Crown Arena's footprint is reserved ground: the generator keeps decor 4 studs off it, which re-seated 37 of 618 placements: 20 lone trees, 5 bushes, 12 rocks, as the PRNG stream shifts after the first rejected spot; forests, crops and plot dressing are unchanged) and before that for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(615)
-			expect(fingerprint(one)).toBe(591817497)
+			expect(#one).toBe(616)
+			expect(fingerprint(one)).toBe(1799453698)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(642)
-			expect(fingerprint(all)).toBe(538786833)
+			expect(#all).toBe(643)
+			expect(fingerprint(all)).toBe(1244081709)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(615)
-			expect(svc.stats.parts).toBe(8328)
+			expect(svc.stats.props).toBe(616)
+			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8315) -- the dressing; the arena is counted apart
 			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
 			local forests = Layout.features.forests
 			local floorOps = 0

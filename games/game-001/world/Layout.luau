@@ -14,6 +14,7 @@
 	build slots "<kingdom>_slot<n>" (G13.5: 10 per kingdom, 4 S + 4 M + 2 L, sizes in `slotSizes`).
 	Each plot is a small town: the keep at the back, an avenue from the keep door through the yard to the
 	gate, a cross street through the yard with the slots on it, the starting buildings on the flanks.
+	`arena` (G12.6, FL-0072): the Crown Arena's frame, duel radius, the champions' marks and its footprint, inside the heartland.
 	Visual features (`features`) are FORGE-02's own shape, read only by WorldService.
 	The dressing density knob (D-047) lives here: `features.density` (forest, props), see below.
 ]]
@@ -366,6 +367,29 @@ local objectives = {
 	},
 }
 
+-- ---------------------------------------------------------------- Crown Arena (FL-0072, CONTRACTS G12.6, D-053)
+-- The final duel's venue, at the neutral valley centre: inside the heartland region, east of the watchtower on the open ground between
+-- the azure and gold roads and the east hill, with its Gate A turned to the hub and the watchtower. The centre itself is taken (the
+-- four roads, the hub plaza and the watchtower zone converge there), so the site was solved over the live geometry: the largest
+-- free disc in the heartland has a radius of about 62 studs from any road, node or zone; the arena's 75 x 74 plate fits with at least
+-- 20 studs to the watchtower zone, the plaza, every road and every resource node, and flat ground (tests/world/ArenaLayout.spec
+-- re-measures all of it against the live Layout and Kit.arena's real bounds, so moving anything near it fails there).
+-- cframe: the arena's frame on the ground (Kit.arena's pivot is the ring centre; its X axis is the gate axis, Gate A at -X). spawnA and
+-- spawnB are the champions' marks, 3 studs above the ring floor, 26 studs apart, each facing the other (Kit.arena has the same
+-- attachments, SpawnA / SpawnB); duelRadius is the painted ring, from the ring centre. footprint: the plate (X = gate axis, Y = stand
+-- axis) WorldPlan keeps decor off. The numbers below mirror Kit/Arena.luau (RING, SPAWN_X, FLOOR_TOP + SPAWN_HEIGHT, FOOTPRINT); the spec
+-- pins them to each other.
+local ARENA_AT = v(141, -27)
+local ARENA_CF = CFrame.new(ARENA_AT)
+local arena = {
+	cframe = ARENA_CF,
+	duelRadius = 21,
+	spawnA = ARENA_CF * CFrame.new(-13, 4.12, 0) * CFrame.Angles(0, -math.pi / 2, 0),
+	spawnB = ARENA_CF * CFrame.new(13, 4.12, 0) * CFrame.Angles(0, math.pi / 2, 0),
+	footprint = Vector2.new(75, 74),
+	regionId = "heartland",
+}
+
 -- ---------------------------------------------------------------- visual features (WorldService only)
 local features = {
 	groundY = 0,
@@ -477,6 +501,7 @@ return {
 	nav = { nodes = nodes, edges = edges },
 	resourceNodes = resourceNodes,
 	objectives = objectives,
+	arena = arena, -- G12.6: { cframe, duelRadius, spawnA, spawnB } + footprint, regionId (additive)
 	regions = regions,
 	features = features,
 }
