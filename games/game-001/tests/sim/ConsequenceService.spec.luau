@@ -11,6 +11,7 @@ local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
@@ -110,7 +111,10 @@ local function boot(extra: { string }?, config: any?)
 	for _, name in names do
 		table.insert(definitions, service(name))
 	end
+	local savedMode = MatchConfig.mode
+	MatchConfig.mode = "slice" -- the VS-1 slice this spec was written for; the shipped default is the full match (D-053)
 	local registry = Loader.load(env, definitions)
+	MatchConfig.mode = savedMode
 	table.insert(booted, { registry = registry, env = env })
 	registry:get("KingdomService").adapter = {
 		partyOf = function()
