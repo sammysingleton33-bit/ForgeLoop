@@ -3,7 +3,7 @@ id: FL-0131
 title: "B20 full-match integration build, gates and Studio rows; release-candidate checklist started"
 track: qa
 owner: forge-05
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-18
@@ -35,3 +35,4 @@ check.sh PASS on the cut sha, CI artifact, studio-runs row, release checklist fi
 
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
+- 2026-10-18 forge-05: READY → BUILDING. FORGE-05 started Operation Crownfall integration: queue first (#176, #177, #118 on FORGE-07's re-reviews; #90; #100 with FORGE-01), then FL-0125 → B20 cut, tick/part/entity measurement, release-checklist.md from FL-0032
