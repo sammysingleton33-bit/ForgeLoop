@@ -597,6 +597,32 @@ def selftest() -> int:
             continue
         errs, _ = validate(mutate(good))
         check(any(expect in e for e in errs), f"broken kit '{name}' -> " + (errs[0] if errs else "ACCEPTED"))
+    # warnings (they never fail a run, but the Blender worker must see them)
+    def warns(mutate, expect: str) -> bool:
+        errs, warn = validate(mutate(copy.deepcopy(good)))
+        return not errs and any(expect in w for w in warn)
+
+    def fatten(d):
+        d["pieces"]["torso_02"]["tris"] = 950
+        return d
+
+    def fatten_tool(d):
+        d["pieces"]["tool_hoe"]["tris"] = 200
+        return d
+
+    def drop_neutral(d):
+        d["pieces"].pop("crest_neutral")
+        return d
+
+    def drop_job(d):
+        d["assemblies"].pop("miner")
+        return d
+
+    check(warns(fatten, "over the citizen budget of 900"), "a 950-triangle torso is warned about (citizen body budget 900)")
+    check(warns(fatten_tool, "tool triangles over the citizen budget of 150"), "a 200-triangle hoe is warned about (tool budget 150)")
+    check(warns(drop_neutral, "no neutral variant"), "a missing neutral variant is warned about")
+    check(warns(drop_job, "no 'miner'"), "a missing job assembly is warned about")
+    check(BUDGET["citizen"] == {"total": 1000, "body": 900, "tool": 150} and BUDGET["soldier"] == {"total": 1500}, "the budget constants are D-057 amendment (9)'s")
     print(f"selftest: {'FAIL' if failures else 'PASS'} ({len(failures)} failure(s))")
     return 1 if failures else 0
 
