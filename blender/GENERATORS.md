@@ -49,6 +49,19 @@ cloth_light trim trim_dark shutter stone stone_dark stone_light accent wood embl
 A bevelled box costs ~44 tris, a plain box 12. Bevel what is big enough to catch light (walls, roofs, big
 stones, trunks); keep small members (timbers, battens, frames) unbevelled. Lathes: 6–10 segments.
 
+## Kit generators (multi-piece, FL-0135)
+A generator that ships a whole kit instead of one mesh per variant sets `KIT = True` and provides `registry()` returning
+`(Registry, rig module, hand point)`; `build.py` hands over to `lib/ckit_kit.run_generator`, which writes ONE FBX
+(`exports/citizen_kit.fbx`, every piece its own mesh object named by its piece id, vertex colours, one material),
+`games/game-001/art/char_kit/rig.json` (joints, per-piece bbox/tris/tint/slot, assemblies, looks, tints, measured budgets) and a
+single manifest row (`char_kit_01`, `kit` summary, `license`). `char_kit` is the reference: pieces are authored in ROBLOX rig axes
+(`lib/ckit.py`: lofts, tubes, prisms, hulls, panels; colours per face + a baked "sky" shading term), the rig definition lives in
+`generators/_charkit_rig.py`, and `lib/ckit_rigload.py` rebuilds any (job, look, kingdom) citizen from the SHIPPED FBX + rig.json only.
+Checks: `blender/scripts/charkit_clearance.py` (hair, hats, capes and packs vs every Pose action), `tests/test_charkit.py`,
+`build.py --verify` (canonical geometry hash + tri counts), FBX round-trip (import the exported FBX and compare bboxes with rig.json).
+Third-party (CC0) sources are never committed: a pinned fetch script fills a gitignored cache and the manifest row carries
+`license: "CC0-1.0"`, `license_file`, `source_url`, `source_commit`/`source_date` and `source_files` (sha256 per file); see `lib/manifest.py`.
+
 ## Commands
 ```bash
 ~/forge-bpy/bin/python blender/build.py --generator <name> --quick     # fast iteration (small renders)

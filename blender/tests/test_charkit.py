@@ -1,0 +1,153 @@
+"""Character kit tests (FL-0135): geometry library, rig definition, pose port, budgets, shipped rig.json consistency."""
+
+import json
+import math
+import re
+import sys
+from pathlib import Path
+
+import pytest
+
+BLENDER = Path(__file__).resolve().parent.parent
+REPO = BLENDER.parent
+sys.path.insert(0, str(BLENDER))
+
+try:
+    import bpy  # noqa: F401
+
+    HAVE_BPY = True
+except ImportError:
+    HAVE_BPY = False
+
+needs_bpy = pytest.mark.skipif(not HAVE_BPY, reason="bpy not available")
+RIG_JSON = REPO / "games/game-001/art/char_kit/rig.json"
+NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+def _registry():
+    from generators import char_kit
+
+    return char_kit.registry()
+
+
+@needs_bpy
+def test_loft_is_closed_and_outward():
+    from lib.ckit import loft, sphere
+
+    for m in (loft([(0, 1, 1), (1, 0.8, 0.8), (2, 0, 0)], seg=8), sphere(1.0, 0.8, 0.9, seg=8, rings=4)):
+        m.triangulate()
+        edges = {}
+        for f in m.f:
+            for i in range(3):
+                e = tuple(sorted((f[i], f[(i + 1) % 3])))
+                edges[e] = edges.get(e, 0) + 1
+        assert all(c == 2 for c in edges.values())
+        vol = 0.0
+        for f in m.f:
+            a, b, c = (m.v[i] for i in f)
+            vol += (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6
+        assert vol > 0
+
+
+@needs_bpy
+def test_mirror_flips_winding_and_keeps_volume_positive():
+    from lib.ckit import loft
+
+    m = loft([(0, 1, 1, 0.5, 0), (1, 0.5, 0.5, 0.5, 0), (2, 0, 0, 0.5, 0)], seg=6).triangulate()
+    mm = m.copy().mirror_x()
+    assert min(v[0] for v in mm.v) < 0
+    mm.fix_winding()
+    assert mm.tris == m.tris
+
+
+@needs_bpy
+def test_kit_pieces_and_assemblies_are_consistent():
+    R, rig, hand = _registry()
+    names = set(R.pieces)
+    assert len(names) >= 90
+    for n, p in R.pieces.items():
+        assert NAME_RE.match(n), n
+        assert p.joint in rig.JOINTS or p.joint == "Tool", (n, p.joint)
+    for job in rig.ASSEMBLIES:
+        for kd in rig.KINGDOMS:
+            for hc in (1, 5):
+                for hair in range(1, 7):
+                    look = {"skin": 1 + hair % 6, "hair": hair, "hairColor": hc, "outfit": 1 + hair % 6}
+                    for n in rig.names_for(job, look, kd):
+                        assert n in names, (job, n)
+    # at least 4 faces, 8 hair styles (incl. long hair), 2 boots, the eight job hats, tools of every job
+    assert sum(1 for p in R.pieces.values() if p.slot == "head") >= 4
+    assert sum(1 for p in R.pieces.values() if p.slot == "hair") >= 8
+    assert len({n.rsplit("_", 1)[0] for n, p in R.pieces.items() if p.slot == "boot"}) >= 2
+    for n in ("hat_straw", "hat_beanie", "hat_miner", "hat_builder", "hat_hood", "hat_merchant", "hat_coif", "hat_headband", "hat_helm",
+              "tool_hoe", "tool_axe", "tool_pick", "tool_mallet", "tool_hammer", "tool_scale", "tool_staff_healer", "tool_sack",
+              "tool_spear", "tool_sword", "tool_bow", "hat_crown", "cape", "crest_crimson", "crest_azure", "crest_emerald",
+              "crest_gold", "shield_crimson", "shield_gold", "quiver"):
+        assert n in names, n
+
+
+@needs_bpy
+def test_budgets_hold_for_every_assembled_rig():
+    from lib import ckit_kit
+
+    R, rig, hand = _registry()
+    table = ckit_kit.rig_measure(R, rig)
+    for job, t in table.items():
+        assert t["tris_max"] <= t["budget"], (job, t["tris_max"], t["budget"])
+        assert t["pieces_max"] <= ckit_kit.MAX_PIECES, (job, t["pieces_max"])
+        assert t["texture_bytes"] == 0
+    for n, p in R.pieces.items():
+        assert ckit_kit.tri_count(p.m) <= 400 or p.slot in ("head", "torso"), n
+        assert ckit_kit.tri_count(p.m) < 20000
+
+
+@needs_bpy
+def test_kit_build_is_deterministic_in_one_process():
+    from lib import ckit_kit
+
+    R1, _, _ = _registry()
+    R2, _, _ = _registry()
+    assert ckit_kit.canon_hash(R1.pieces) == ckit_kit.canon_hash(R2.pieces)
+
+
+@needs_bpy
+def test_every_piece_is_watertight_triangulated_and_coloured():
+    from lib import ckit_kit
+
+    R, rig, hand = _registry()
+    objs = ckit_kit.build_objects(R)
+    rows, ok = ckit_kit.validate_objects(objs)
+    assert ok, {n: r for n, r in rows.items() if not r["pass"]}
+    open_pieces = [n for n, r in rows.items() if not r["watertight"]]
+    assert not open_pieces, open_pieces
+
+
+@needs_bpy
+def test_pose_port_stays_within_documented_limits():
+    from lib import ckit_pose as P
+
+    for act, speed in P.ACTIONS:
+        for job in ("farmer", "woodcutter", "miner", "builder", "hauler", "idle", "soldier"):
+            for ph in P.PHASES:
+                tf = P.sample(act, job, ph, speed)
+                for j, m in tf.items():
+                    if act == "dead" and j == "Torso":
+                        continue  # the fall rotates the whole body 90 degrees
+                    ang = math.degrees(m.to_quaternion().angle)
+                    assert ang <= P.LIMITS[j] + 0.5 or (act == "celebrate" and ang <= 150.5), (act, job, j, ang)
+
+
+@needs_bpy
+def test_committed_rig_json_matches_a_rebuild():
+    from lib import ckit_kit
+
+    if not RIG_JSON.exists():
+        pytest.skip("rig.json not committed yet")
+    doc = json.loads(RIG_JSON.read_text())
+    R, rig, hand = _registry()
+    assert doc["geometry_hash"] == ckit_kit.canon_hash(R.pieces), "rig.json is stale: rebuild with build.py --generator char_kit"
+    assert set(doc["pieces"]) == set(R.pieces)
+    assert doc["schema_version"] == 1 and doc["unit"] == "stud" and doc["root_height"] == 3.2
+    for j in ("Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg", "Tool", "TorsoTool"):
+        assert j in doc["joints"]
+    assert doc["joints"]["Torso"]["pos"] == [0.0, 2.2, 0.0] and doc["joints"]["Head"]["pos"] == [0.0, 3.9, 0.0]

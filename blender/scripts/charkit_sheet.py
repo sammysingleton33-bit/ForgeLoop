@@ -87,12 +87,12 @@ def main():
         im = Image.open(d / f"{o}_aerial170.png").convert("RGB")
         w, h = im.size
         cx, cy = w // 2, int(h * 0.50)
-        big = im.crop((cx - 200, cy - 112, cx + 200, cy + 113)).resize((900, 506), Image.LANCZOS)
+        big = im.crop((cx - 120, cy - 78, cx + 120, cy + 57)).resize((900, 506), Image.LANCZOS)
         small = im.crop((cx - 200, cy - 112, cx + 200, cy + 113))
         tiles.append((o, big, small))
     sheet = Image.new("RGB", (900 + 400 + 8, len(order) * (506 + 26)), (28, 30, 34))
     for r, (o, big, small) in enumerate(tiles):
-        sheet.paste(label_bar(sheet.width, labels[o] + "   (170 studs, 50 deg down; left: crop enlarged 2.25x, right: actual pixels)"), (0, r * 532))
+        sheet.paste(label_bar(sheet.width, labels[o] + "   (170 studs, 50 deg down; left: crop enlarged 3.75x, right: actual pixels)"), (0, r * 532))
         sheet.paste(big, (0, r * 532 + 26))
         sheet.paste(small, (908, r * 532 + 26))
     n = save_under(sheet, out / "sheet_aerial170.jpg")
