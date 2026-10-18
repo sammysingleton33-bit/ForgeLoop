@@ -252,6 +252,8 @@ describe("Kit.crowdFigure part budget and rules (G12.6: at most 4 parts, client-
 				expect(parts(m)[1]).toBe(body)
 				local pivot = body.CFrame * body.PivotOffset
 				expect(pivot.Position.Magnitude).toBeLessThan(1e-4)
+				expect(pivot.UpVector.Y).toBeNear(1, 1e-4) -- upright, even when the body is a turned cylinder
+				expect(pivot.LookVector.Z).toBeNear(-1, 1e-4)
 				local lo, hi = bounds(m)
 				expect(lo.Y).toBeGreaterThanOrEqual(-1e-4)
 				expect(lo.Y).toBeLessThan(0.05) -- the feet (the body block) are on y = 0, nothing below
@@ -259,7 +261,7 @@ describe("Kit.crowdFigure part budget and rules (G12.6: at most 4 parts, client-
 				expect(hi.Y).toBeGreaterThan(4.4)
 				expect(hi.Y).toBeLessThan(8.0)
 				expect(hi.X - lo.X).toBeLessThan(5.2)
-				expect(hi.Z - lo.Z).toBeLessThan(3.8)
+				expect(hi.Z - lo.Z).toBeLessThan(4.0)
 			end
 		end
 	end)
@@ -376,12 +378,50 @@ describe("Kit.crowdFigure variants (a stand is not a row of clones)", function()
 		expect(size(skins)).toBeGreaterThanOrEqual(5)
 	end)
 
+	it(
+		"mixes two body shapes, a wide spread of heights and of tabard shades (the FL-0072 review: not clones)",
+		function()
+			local round, block, shades = 0, 0, {}
+			local lowest, tallest = math.huge, 0
+			for v = 1, 8 do
+				local m = Kit.crowdFigure(CANON.emerald, nil, v)
+				local body = partNamed(m, "Body")
+				if (body :: Part).Shape == Enum.PartType.Cylinder then
+					round += 1
+				else
+					block += 1
+				end
+				local f = body:GetAttribute("KitTint") :: number
+				shades[string.format("%.2f", f)] = true
+				local _, hi = bounds(m)
+				local head = partNamed(m, "Head")
+				lowest = math.min(lowest, head.CFrame.Position.Y)
+				tallest = math.max(tallest, head.CFrame.Position.Y)
+				expect(hi.Y).toBeGreaterThan(4.2)
+			end
+			expect(round).toBeGreaterThanOrEqual(2)
+			expect(block).toBeGreaterThanOrEqual(4)
+			local n = 0
+			for _ in shades do
+				n += 1
+			end
+			expect(n).toBeGreaterThanOrEqual(6) -- six or more different tabard shades in eight figures
+			expect(tallest / lowest).toBeGreaterThan(1.25) -- the tallest head stands a quarter over the lowest
+			-- the arms are kingdom cloth or skin-tone sleeves, never a pale shard beside the body
+			for v = 1, 8 do
+				local arms = partNamed(Kit.crowdFigure(CANON.azure, nil, v), "Arms")
+				local c = arms.Color
+				expect(c.R + c.G + c.B < 2.1).toBe(true)
+			end
+		end
+	)
+
 	it("throws an arm up in some variants, waves in others and holds them level in the rest", function()
 		local thrown, waving, level = 0, 0, 0
 		for v = 1, 8 do
 			local arms = partNamed(Kit.crowdFigure(CANON.azure, nil, v), "Arms")
 			local tilt = math.abs(math.deg(math.atan2(arms.CFrame.RightVector.Y, arms.CFrame.RightVector.X)))
-			if tilt > 35 then
+			if tilt > 30 then
 				thrown += 1
 			elseif tilt > 10 then
 				waving += 1
@@ -458,10 +498,11 @@ describe("Kit.crowdFigure role props (the six key citizens read by silhouette)",
 			local satchel = partNamed(Kit.crowdFigure(CANON.crimson, "healer", 1), "Satchel")
 			expect(math.abs(satchel.CFrame.Position.X)).toBeGreaterThan(1)
 			expect(satchel.CFrame.Position.Y).toBeLessThan(2.4)
-			-- the scales: a beam wider than the head, over a post, above the shoulders
+			-- the scales: a brass beam much wider than the head, over a post, above the shoulders
 			local merchant = Kit.crowdFigure(CANON.crimson, "merchant", 1)
-			expect(partNamed(merchant, "Beam").Size.X).toBeGreaterThan(3)
+			expect(partNamed(merchant, "Beam").Size.X).toBeGreaterThan(4)
 			expect(partNamed(merchant, "Beam").CFrame.Position.Y).toBeGreaterThan(5.2)
+			expect(partNamed(merchant, "Beam").Color).toBe(partNamed(merchant, "Post").Color)
 		end
 	)
 

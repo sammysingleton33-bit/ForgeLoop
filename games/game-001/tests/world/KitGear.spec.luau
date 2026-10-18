@@ -24,7 +24,11 @@ local WEAPONS = Kit.WEAPONS
 
 -- the accessories of each armour: name -> body attachment
 local PIECES: { [string]: { [string]: string } } = {
-	light = { KitLightCap = "HatAttachment", KitLightJerkin = "BodyFrontAttachment" },
+	light = {
+		KitLightCap = "HatAttachment",
+		KitLightJerkin = "BodyFrontAttachment",
+		KitLightCloak = "BodyBackAttachment",
+	},
 	medium = {
 		KitMediumHelm = "HatAttachment",
 		KitMediumMail = "BodyFrontAttachment",
@@ -531,6 +535,44 @@ describe("Kit.weapon (swordShield | greatsword | spear | mace)", function()
 		expect(hi.Z - lo.Z).toBeLessThan(0.5) -- ... and thin: it faces forward
 		expect(hi.X).toBeLessThan(0.1) -- on the inside of the hand
 	end)
+
+	it(
+		"shapes the review's four weak spots: a broad ridged blade, a pointed leaf head, studs clear of the mace ball",
+		function()
+			local function named(tool: Instance, name: string): BasePart
+				for _, p in parts(tool) do
+					if p.Name == name then
+						return p
+					end
+				end
+				error(`no {name} in {tool.Name}`)
+			end
+			local sword = Kit.weapon("swordShield", CANON.azure)
+			expect(named(sword, "Blade").Size.X).toBeGreaterThan(0.5) -- not a stick against the sky
+			expect(named(sword, "Fuller").Color).never.toBe(named(sword, "Blade").Color) -- a dark ridge down the blade
+			-- the spear head is a leaf: each wedge's tall edge (local +Z) faces the centre line, so the point is at the top
+			local spear = Kit.weapon("spear", CANON.azure)
+			for _, name in { "HeadLeft", "HeadRight" } do
+				local p = named(spear, name)
+				local toCentre = -math.sign(p.CFrame.Position.X)
+				local tall = -p.CFrame.LookVector -- local +Z in the world
+				expect(tall.X * toCentre).toBeGreaterThan(0.99)
+				expect(p.Size.Y).toBeGreaterThan(1.8)
+			end
+			expect(named(spear, "HeadLeft").CFrame.Position.X).toBeLessThan(0)
+			expect(named(spear, "HeadRight").CFrame.Position.X).toBeGreaterThan(0)
+			-- the mace's studs stand clear of its ball on every side (a studded morning star, not a bomb on a stick)
+			local mace = Kit.weapon("mace", CANON.azure)
+			local ball = named(mace, "Head")
+			for i = 1, 4 do
+				local f = named(mace, `Stud{i}`)
+				local offset = (f.CFrame.Position - ball.CFrame.Position).Magnitude
+				expect(offset).toBeGreaterThan(ball.Size.X / 2 + 0.2) -- the stud's centre is outside the ball ...
+				expect(offset - f.Size.Z / 2).toBeLessThan(ball.Size.X / 2) -- ... and its inner end still sinks into it
+				expect(f.Color).never.toBe(ball.Color)
+			end
+		end
+	)
 
 	it("rejects an unknown weapon", function()
 		expect(pcall(function()

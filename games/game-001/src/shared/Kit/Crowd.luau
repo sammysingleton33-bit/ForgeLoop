@@ -12,16 +12,17 @@
 	Generic figure (4 parts): Body (the kingdom-colour tabard, legs and torso in one block), Head (a skin-tone ball), Crest
 	(the kingdom's helmet crest in the kingdom colour: spire / square / plume / dome, as the soldiers' Character.CRESTS, so the
 	stand reads by shape as well as colour: D-033) and Arms (one bar across the shoulders, level or tilted to wave).
-	`variant` (default 1, wraps over 8) varies skin, height, width, arm pose and sleeve shade, so a stand is not a row of clones.
+	`variant` (default 1, wraps over 8) varies skin, height (0.82 - 1.07), width, body shape (a square tabard or a round robe), tabard
+	shade (the kingdom colour 0.84 - 1.2 times), arm pose and sleeve, so a stand is not a row of clones.
 
 	Key citizens (role: KeyRole of G12.1) stand on the rail podium with their role prop; the prop replaces the arms bar and, where it
 	needs two parts, the crest. Each reads by silhouette alone (the spec hashes the front, side and top outlines):
 		blacksmith   Body, Head, Handle (a long haft held at the right), Hammer (a chunky dark head on top): a T beside the head
-		healer       Body, Head, Crest, Satchel (a pale box hung at the left hip)
+		healer       Body, Head, Crest, Satchel (a big pale bag hung at the left hip)
 		captain      Body, Head (steel helm), Plume (a tall kingdom-colour plume rising from the helm), Arms
-		provisioner  Body, Head, Crest, Basket (a wide straw disc carried in front at the belt)
-		elder        Body, Head (white hair), Crest, Staff (a thin pole taller than the figure, at the left)
-		merchant     Body, Head, Post and Beam (the scales held up at the right: a thin wide balance bar over a short post)
+		provisioner  Body, Head, Crest, Basket (a wide straw tray carried in front at the belt)
+		elder        Body, Head (white hair), Crest, Staff (a stout pole taller than the figure, at the left)
+		merchant     Body, Head, Post and Beam (brass scales held up at the right: a wide tilted balance bar over a post)
 	The kingdom-coloured parts carry KitTint, so Kit.setKingdomColor recolours a pooled figure; the crest's SHAPE follows the
 	kingdom the figure was built for, so pool figures per kingdom, role and variant (Crowd.poolKey).
 ]]
@@ -62,19 +63,20 @@ local SKIN: { Color3 } = { -- Character's skin palette, light to dark
 }
 local STEEL = Color3.fromRGB(176, 182, 192)
 local IRON = Color3.fromRGB(58, 62, 70)
-local PEWTER = Color3.fromRGB(190, 196, 206)
 local HAFT = Color3.fromRGB(139, 90, 51)
-local LINEN = Color3.fromRGB(240, 232, 212)
 local WHITE_HAIR = Color3.fromRGB(238, 234, 226)
 local STRAW = Color3.fromRGB(178, 138, 74) -- darker than hay: never the gold kingdom
 local PALE = Color3.fromRGB(236, 226, 200)
+local BRASS = Color3.fromRGB(214, 160, 52) -- the scales: bright metal that no kingdom's cloth is
 
--- per-variant look: skin index, height scale, body width, arm tilt (degrees, sign = which side waves), arm lift, body tint,
--- sleeve (a number = a shade of the kingdom colour, else a fixed cloth colour)
+-- per-variant look: skin index, height scale, body width, body shape (block = a square tabard, round = a robe), arm tilt
+-- (degrees, sign = which side waves), arm lift, body tint (a shade of the kingdom colour), sleeve (a number = a shade of the
+-- kingdom colour, else a fixed cloth colour)
 type Look = {
 	skin: number,
 	height: number,
 	width: number,
+	round: boolean,
 	tilt: number,
 	lift: number,
 	body: number,
@@ -82,14 +84,14 @@ type Look = {
 }
 local TAN = Color3.fromRGB(196, 158, 108)
 local LOOKS: { Look } = {
-	{ skin = 1, height = 1.0, width = 1.55, tilt = 0, lift = 0, body = 1, sleeve = LINEN },
-	{ skin = 3, height = 0.94, width = 1.4, tilt = 24, lift = 0.15, body = 0.88, sleeve = 1.2 },
-	{ skin = 2, height = 1.05, width = 1.7, tilt = -22, lift = 0.15, body = 1, sleeve = TAN },
-	{ skin = 4, height = 0.9, width = 1.45, tilt = 0, lift = 0, body = 0.88, sleeve = 0.72 },
-	{ skin = 1, height = 1.08, width = 1.6, tilt = 40, lift = 0, body = 1, sleeve = LINEN }, -- cheering: an arm thrown up
-	{ skin = 5, height = 0.97, width = 1.35, tilt = 20, lift = 0.1, body = 0.88, sleeve = TAN },
-	{ skin = 3, height = 1.02, width = 1.65, tilt = -26, lift = 0.2, body = 1, sleeve = 1.2 },
-	{ skin = 6, height = 0.92, width = 1.5, tilt = -40, lift = 0, body = 0.88, sleeve = LINEN }, -- cheering
+	{ skin = 1, height = 1.0, width = 1.55, round = false, tilt = 0, lift = 0, body = 1, sleeve = 1.3 },
+	{ skin = 3, height = 0.92, width = 1.4, round = false, tilt = 22, lift = 0.15, body = 0.9, sleeve = 1.25 },
+	{ skin = 2, height = 1.05, width = 1.2, round = true, tilt = -20, lift = 0.15, body = 1.15, sleeve = TAN },
+	{ skin = 4, height = 0.82, width = 1.7, round = false, tilt = 0, lift = 0, body = 0.84, sleeve = 0.7 }, -- short and stout
+	{ skin = 1, height = 1.07, width = 1.4, round = false, tilt = 34, lift = 0, body = 1.08, sleeve = 1.3 }, -- tall, cheering
+	{ skin = 5, height = 0.97, width = 1.2, round = true, tilt = 20, lift = 0.1, body = 0.92, sleeve = TAN },
+	{ skin = 3, height = 1.04, width = 1.65, round = false, tilt = -24, lift = 0.2, body = 1.2, sleeve = 0.72 },
+	{ skin = 6, height = 0.9, width = 1.2, round = true, tilt = -34, lift = 0, body = 1.0, sleeve = 1.3 }, -- cheering
 }
 
 function Crowd.poolKey(color: Color3, role: string?, variant: number?): string
@@ -213,7 +215,8 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 	local v = Crowd.variantOf(variant)
 	local look = LOOKS[v]
 	local k = look.height
-	local bodyH, bodyW, bodyD = Crowd.BODY_HEIGHT * k, look.width, 1.1
+	-- a round robe is a cylinder 1.2 across (the back row's seats sit 1.2 from the stand's back wall); a block is 1.1 deep
+	local bodyH, bodyW, bodyD = Crowd.BODY_HEIGHT * k, look.width, if look.round then look.width else 1.1
 	local headD = 1.65 * k -- a big head: a crowd reads by its heads, hats and shoulders
 	local headY = bodyH + headD / 2 - 0.1
 	local shoulderY = bodyH - 0.5
@@ -234,15 +237,27 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 	local function add(s: Spec)
 		table.insert(list, s)
 	end
-	-- the body is always first (the PrimaryPart): the tabard in the kingdom colour
-	add({
-		name = "Body",
-		size = Vector3.new(bodyW, bodyH, bodyD),
-		cf = CFrame.new(0, bodyH / 2, 0),
-		color = kingdom(look.body),
-		material = M.Fabric,
-		tint = look.body,
-	})
+	-- the body is always first (the PrimaryPart): the tabard in the kingdom colour, a square block or a round robe
+	if look.round then
+		add({
+			name = "Body",
+			shape = Enum.PartType.Cylinder,
+			size = cylinderUp(bodyH, bodyW),
+			cf = CFrame.new(0, bodyH / 2, 0) * UPRIGHT,
+			color = kingdom(look.body),
+			material = M.Fabric,
+			tint = look.body,
+		})
+	else
+		add({
+			name = "Body",
+			size = Vector3.new(bodyW, bodyH, bodyD),
+			cf = CFrame.new(0, bodyH / 2, 0),
+			color = kingdom(look.body),
+			material = M.Fabric,
+			tint = look.body,
+		})
+	end
 	local skin = SKIN[look.skin]
 	local headColor = skin
 	if role == "captain" then
@@ -281,20 +296,20 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 		add(crest())
 		add(arms())
 	elseif role == "blacksmith" then
-		local x = bodyW / 2 + 0.55
-		local len = 3.8
+		local x = bodyW / 2 + 0.6
+		local len = 4.2
 		add({ -- the haft, held at the right: from the hip to over the head
 			name = "Handle",
 			shape = Enum.PartType.Cylinder,
-			size = cylinderUp(len, 0.42),
+			size = cylinderUp(len, 0.55),
 			cf = CFrame.new(x, 1.6 + len / 2, -0.15) * UPRIGHT,
 			color = HAFT,
 			material = M.Wood,
 		})
 		add({ -- the sledge head, a chunk wider than the haft
 			name = "Hammer",
-			size = Vector3.new(1.7, 1.0, 1.0),
-			cf = CFrame.new(x, 1.6 + len + 0.25, -0.15),
+			size = Vector3.new(2.2, 1.3, 1.3),
+			cf = CFrame.new(x, 1.6 + len + 0.35, -0.15),
 			color = IRON,
 			material = M.Metal,
 		})
@@ -302,8 +317,8 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 		add(crest())
 		add({ -- the satchel at the left hip
 			name = "Satchel",
-			size = Vector3.new(1.5, 1.4, 0.95),
-			cf = CFrame.new(-(bodyW / 2 + 0.55), 1.7, -0.15) * CFrame.Angles(0, 0, rad(10)),
+			size = Vector3.new(1.9, 1.8, 1.1),
+			cf = CFrame.new(-(bodyW / 2 + 0.65), 1.8, -0.15) * CFrame.Angles(0, 0, rad(10)),
 			color = PALE,
 			material = M.Fabric,
 		})
@@ -320,40 +335,40 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 		add(arms())
 	elseif role == "provisioner" then
 		add(crest())
-		add({ -- a basket carried in front at the belt: a wide disc
+		add({ -- a basket carried in front at the belt: a wide tray
 			name = "Basket",
 			shape = Enum.PartType.Cylinder,
-			size = cylinderUp(1.0, 2.3),
-			cf = CFrame.new(0, 2.0, -(bodyD / 2 + 0.85)) * UPRIGHT,
+			size = cylinderUp(1.2, 2.9),
+			cf = CFrame.new(0, 2.1, -(bodyD / 2 + 1.05)) * UPRIGHT,
 			color = STRAW,
 			material = M.Wood,
 		})
 	elseif role == "elder" then
 		add(crest())
-		local len = bodyH + headD + 2.6
-		add({ -- a staff taller than the figure, at the left
+		local len = bodyH + headD + 2.2
+		add({ -- a stout staff taller than the figure, at the left
 			name = "Staff",
 			shape = Enum.PartType.Cylinder,
-			size = cylinderUp(len, 0.38),
-			cf = CFrame.new(-(bodyW / 2 + 0.6), len / 2, -0.2) * UPRIGHT,
+			size = cylinderUp(len, 0.55),
+			cf = CFrame.new(-(bodyW / 2 + 0.65), len / 2, -0.2) * UPRIGHT,
 			color = HAFT,
 			material = M.Wood,
 		})
 	elseif role == "merchant" then
-		local x = bodyW / 2 + 0.7
+		local x = bodyW / 2 + 0.75
 		add({ -- the scales' post, held at the right
 			name = "Post",
 			shape = Enum.PartType.Cylinder,
-			size = cylinderUp(3.4, 0.32),
-			cf = CFrame.new(x, 2.4 + 1.7, -0.35) * UPRIGHT,
-			color = PEWTER,
+			size = cylinderUp(3.6, 0.5),
+			cf = CFrame.new(x, 2.4 + 1.8, -0.35) * UPRIGHT,
+			color = BRASS,
 			material = M.Metal,
 		})
-		add({ -- the balance beam: thin and wide, tilted a little
+		add({ -- the balance beam: wide and chunky, tilted a little
 			name = "Beam",
-			size = Vector3.new(3.4, 0.28, 0.4),
-			cf = CFrame.new(x, 6.0, -0.35) * CFrame.Angles(0, 0, rad(9)),
-			color = PEWTER,
+			size = Vector3.new(4.4, 0.5, 0.6),
+			cf = CFrame.new(x, 6.2, -0.35) * CFrame.Angles(0, 0, rad(10)),
+			color = BRASS,
 			material = M.Metal,
 		})
 	else
@@ -368,7 +383,10 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 		end
 	end
 	local body = primary :: BasePart
-	body.PivotOffset = CFrame.new(0, -bodyH / 2, 0) -- pivot on the feet
+	-- pivot on the feet, upright (a round body is a cylinder turned upright, so its own frame is turned too)
+	body.PivotOffset = if look.round
+		then UPRIGHT:Inverse() * CFrame.new(0, -bodyH / 2, 0)
+		else CFrame.new(0, -bodyH / 2, 0)
 	model.PrimaryPart = body
 	return model
 end

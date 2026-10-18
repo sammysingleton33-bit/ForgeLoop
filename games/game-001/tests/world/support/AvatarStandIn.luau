@@ -20,8 +20,8 @@ export type Avatar = {
 local Avatar = {}
 
 local SKIN = Color3.fromRGB(242, 201, 160)
-local CLOTH = Color3.fromRGB(86, 94, 108)
-local TROUSERS = Color3.fromRGB(60, 64, 72)
+local CLOTH = Color3.fromRGB(204, 194, 174) -- a linen shirt: dark plate and brown leather both read against it
+local TROUSERS = Color3.fromRGB(122, 106, 86)
 
 function Avatar.build(rigType: string, at: CFrame?): Avatar
 	local origin = at or CFrame.new()
@@ -56,6 +56,7 @@ function Avatar.build(rigType: string, at: CFrame?): Avatar
 		part("LowerTorso", nil, Vector3.new(2, 0.4, 1), Vector3.new(0, 2.2, 0), TROUSERS)
 		local upper = part("UpperTorso", "torso", Vector3.new(2, 1.6, 1), Vector3.new(0, 3.2, 0))
 		local head = part("Head", "head", Vector3.new(1.2, 1.2, 1.2), Vector3.new(0, 4.6, 0), SKIN)
+		head.Shape = Enum.PartType.Ball -- R15 heads are rounded; a box would poke out of a cap
 		part("LeftArm", "leftArm", Vector3.new(0.95, 2.0, 0.95), Vector3.new(-1.5, 3.1, 0), CLOTH)
 		-- the right arm points forward (an equipped Tool's pose): shoulder at (1.5, 3.9), hand 2 studs ahead
 		local arm = part("RightArm", "rightArm", Vector3.new(0.95, 0.95, 2.0), Vector3.new(1.5, 3.9, -1.0), CLOTH)
