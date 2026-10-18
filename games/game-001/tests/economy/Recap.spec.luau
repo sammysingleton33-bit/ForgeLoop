@@ -198,6 +198,39 @@ describe("Results: Your reign (FL-0129)", function()
 		expect(#recap.decisions).toBe(0)
 	end)
 
+	it("a ruler whose kingdom fell still gets Your reign, with the last values seen before the fall", function()
+		world = newWorld()
+		world.rep:apply("honor", -12, "You broke the truce with Frostmere.")
+		world.pop:set("crimson", "farmer", 13)
+		world:advance(1.2)
+		-- the fall (FL-0125, #187): our kingdom not alive, Kingdom.State.mine nil; the server then
+		-- answers nil for our reputation and population (a spectator has neither)
+		world.kingdoms.kingdoms.crimson.alive = false
+		world.kingdoms.members[world.player.UserId] = nil
+		world.kingdoms.members[2] = nil
+		world.kingdoms:publish()
+		world:advance(1.2)
+		-- and if the panel asks again, the server answers nil (a spectator has no reputation): the recap
+		-- keeps the last values it saw
+		local repPanel = world.client:get("ReputationPanelController")
+		world.env.spawn(function()
+			repPanel:refresh()
+		end)
+		world:advance(1.3)
+		expect(repPanel.data.known).toBe(false)
+		world.match:setPhase("Results", world.env.serverTimeNow() + 30)
+		world.military:endMatch({ winner = "azure", standings = STANDINGS, durationSec = 1800 })
+		world:advance(0.5)
+		local recapButton = find(find(modals(world), "SliceSummary"), "Recap")
+		expect(recapButton).toBeTruthy()
+		tap(recapButton)
+		world:advance(0.1)
+		local recap = find(modals(world), "LeadershipRecap")
+		expect(find(recap, "Value_honor"):GetAttribute("finish")).toBe(38)
+		expect(texts(recap)).toContain("You broke the truce with Frostmere.")
+		expect(texts(recap)).toContain("3 more citizens than at the start")
+	end)
+
 	it("without the recap controller (or before any reputation) there is no Your reign button", function()
 		world = newWorld({ noRecap = true })
 		play(world)
