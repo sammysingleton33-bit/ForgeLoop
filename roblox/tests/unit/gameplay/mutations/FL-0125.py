@@ -12,6 +12,9 @@ SVC = G + "src/server/Services/MatchService.luau"
 AI = G + "src/shared/Sim/RulerAI.luau"
 SIM = G + "src/shared/Sim/Simulation.luau"
 MIL = G + "src/shared/Sim/Military.luau"
+AUTH = G + "src/shared/Sim/Authority.luau"
+DIPL = G + "src/shared/Sim/Diplomacy.luau"
+CMD = G + "src/shared/Sim/Commands.luau"
 M = [
  # --- the shipped defaults are the full match
  ("FL-0125", CFG, 'mode = "match", -- the full match is the default build', 'mode = "slice", -- the full match is the default build', "sim/Match.spec", "is the full match by default"),
@@ -53,4 +56,29 @@ M = [
  ("FL-0125", G + "config/Military.luau", 'maxSoldiers = 15,', 'maxSoldiers = 150,', "sim/Simulation.spec", "stops births at config Citizens.maxPerKingdom"),
  ("FL-0125", MIL, 'if #kingdom.unitIds + queuedCount(sim, kingdom) + count > armyCap(sim) then', 'if false then', "sim/Military.spec", "caps standing soldiers (living + training) at config Military.maxSoldiers"),
  ("FL-0125", AI, 'and army + training + 2 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim))', 'and army + training + 2 <= Military.recruitCap(sim, kingdom)', "sim/RulerAI", "never recruits past the army cap"),
+
+ # --- D-054: senior ruler, asks, newcomer lock (Sim/Authority, Commands, MatchHost)
+ ("FL-0125", AUTH, 'return if name == "DeclareWar" then "ask" else "not_senior"', 'return "not_senior"', "sim/Authority", "a non-senior's DeclareWar is an ask"),
+ ("FL-0125", AUTH, 'if Authority.seniorOf(sim, kingdom) ~= by then', 'if false then', "sim/Authority", "only the senior declares war"),
+ ("FL-0125", AUTH, 'if by == nil then\n\t\treturn nil -- AI governors', 'if false then\n\t\treturn nil -- AI governors', "sim/Authority", "AI governors (by = nil) are exempt"),
+ ("FL-0125", AUTH, 'late = sim.active == true and sim.time > 0,', 'late = false,', "sim/Authority", "a ruler seated after Founding began"),
+ ("FL-0125", AUTH, 'late = sim.active == true and sim.time > 0,', 'late = true,', "sim/Authority", "rulers seated before the first tick are exempt"),
+ ("FL-0125", AUTH, 'elseif name == "MoveBuilding" then', 'elseif false then', "sim/Authority", "a ruler seated after Founding began"),
+ ("FL-0125", AUTH, 'return sim.time - seat.lastActive >= setting(sim, "idleSeniorSeconds")', 'return false', "sim/Authority", "an idle senior yields"),
+ ("FL-0125", AUTH, 'return firstActive or first', 'return first', "sim/Authority", "an idle senior yields"),
+ ("FL-0125", AUTH, '	if seat then\n		seat.lastActive = sim.time\n	end', '	if seat then\n	end', "sim/Authority", "an idle senior yields"),
+ ("FL-0125", AUTH, 'if last ~= nil and sim.time - last < setting(sim, "askCooldownSeconds") then', 'if false then', "sim/Authority", "spaced by the ask cooldown"),
+ ("FL-0125", AUTH, 'if #list >= setting(sim, "maxAsks") then', 'if false then', "sim/Authority", "at most maxAsks asks stay open"),
+ ("FL-0125", AUTH, 'if sim.time >= list[i].expiresAt then', 'if false then', "sim/Authority", "asks expire after askSeconds"),
+ ("FL-0125", AUTH, '			if list[i].from == userId then', '			if false then', "sim/Authority", "a requester who leaves takes their asks"),
+ ("FL-0125", DIPL, '		Authority.clearAsks(s, kingdom.id, target.id)\n', '', "sim/Authority", "the senior's declaration clears them"),
+ ("FL-0125", CMD, '		Authority.touch(sim, by)', '		local _ = by', "sim/Authority", "a command counts as activity"),
+ ("FL-0125", HOST, '	elseif name == "WarAsked" then\n		local senior = self:_player(event.seniorId)', '	elseif name == "WarAsked" then\n		local senior = nil', "sim/MatchKingdomServices", "a co-ruler's declareWar is an ask"),
+ ("FL-0125", HOST, 'if ask.kingdomId == mine then', 'if true then', "sim/MatchKingdomServices", "a co-ruler's declareWar is an ask"),
+ ("FL-0125", HOST, '		local locked = raw.locks[player.UserId]\n		if locked then', '		local locked = next(raw.locks)\n		if locked then', "sim/MatchKingdomServices", "a ruler who arrives after Founding began is locked"),
+ ("FL-0125", HOST, '			table.insert(parts, `W:{r.a}:{r.b}`)', '			table.insert(parts, "W")', "sim/MatchKingdomServices", "state signature"),
+ ("FL-0125", HOST, '			table.insert(parts, `P:{p.from}:{p.to}`)', '			table.insert(parts, "P")', "sim/MatchKingdomServices", "state signature"),
+ ("FL-0125", HOST, '			table.insert(parts, `A:{a.kingdomId}:{a.from}:{a.target}`)', '			table.insert(parts, "A")', "sim/MatchKingdomServices", "state signature"),
+ ("FL-0125", HOST, '		table.insert(parts, "L:" .. table.concat(locks, ","))', '		table.insert(parts, "L:")', "sim/MatchKingdomServices", "state signature"),
+ ("FL-0125", HOST, '		table.insert(parts, "S:" .. table.concat(seniors, ","))', '		table.insert(parts, "S:")', "sim/MatchKingdomServices", "each diplomacy fact is in the state signature"),
 ]

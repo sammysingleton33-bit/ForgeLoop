@@ -26,7 +26,7 @@
 		Ranking: standing kingdoms by Crown Points (equal points share a placement), then fallen
 		kingdoms, those that fell later ranking higher.
 	Players
-		- Up to maxRulersPerKingdom (4) rulers per kingdom, equal command rights (shared ownership).
+		- Up to maxRulersPerKingdom (4) rulers per kingdom, shared ownership: every ruler builds, recruits and talks; war and peace follow the senior ruler (D-054, Sim/Authority).
 		- join(userId, preferred?) honours a preferred kingdom when it stands and has room, then the
 		  player's previous kingdom in this match, then the standing kingdom with the fewest rulers
 		  (ties: kingdom order). Joining only adds a ruler (and, in slice mode, the first ruler's

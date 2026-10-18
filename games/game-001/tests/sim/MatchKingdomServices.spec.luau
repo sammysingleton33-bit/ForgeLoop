@@ -1478,3 +1478,190 @@ describe("Spectators, the Crown Arena hooks and match.mode (FL-0125, D-053)", fu
 		expect(match.host.match.options.aiRulers).toBe(true)
 	end)
 end)
+
+-- FL-0125 PR 2 (D-054): war and peace through Kingdom.Diplomacy, the senior ruler, asks and the newcomer lock.
+describe("Kingdom.Diplomacy, Kingdom.WarAsk and the diplomacy state (D-054)", function()
+	-- five humans seated in the Lobby (crimson: 1 and 5, azure 2, emerald 3, gold 4), then past the war grace
+	local WAR = { Lobby = 2, Founding = 3, Expansion = 3, Conflict = 300, Endgame = 300, Results = 2 }
+	local function bootWar()
+		local env, match, kingdoms = boot({
+			mode = "match",
+			pacing = {
+				phaseDurations = function()
+					return table.clone(WAR)
+				end,
+			},
+		})
+		local players = {}
+		for userId = 1, 5 do
+			players[userId] =
+				env.mock.players:add({ userId = userId, name = `Ruler{userId}`, displayName = `Dis{userId}` })
+		end
+		env.mock:advance(3 + 6 + 2) -- Lobby, then Founding + Expansion: the grace (6 s of sim time) is over
+		expect(match:getPhase()).toBe("Conflict")
+		expect(kingdoms:getKingdomOf(players[5])).toBe("crimson")
+		return env, match, kingdoms, players
+	end
+
+	local function stateOf(env, player)
+		return invoke(env, player, "Kingdom.GetState")
+	end
+
+	it("the senior ruler declares war; the state carries the relation, the seniors and the grace end", function()
+		local env, match, _, p = bootWar()
+		local ok, tag = invoke(env, p[1], "Kingdom.Diplomacy", "declareWar", "azure")
+		expect(ok).toBe(true)
+		expect(tag).toBe("declared")
+		env.mock:advance(TICK * 2)
+		local diplomacy = stateOf(env, p[3]).diplomacy
+		expect(diplomacy.relations).toEqual({ { a = "azure", b = "crimson", relation = "War" } })
+		expect(diplomacy.seniors.crimson).toBe(1)
+		expect(diplomacy.seniors.azure).toBe(2)
+		expect(diplomacy.seniors.emerald).toBe(3)
+		expect(type(diplomacy.graceEndsAt)).toBe("number")
+		expect(diplomacy.lockedUntil).toBeNil() -- seated in the Lobby: no lock
+		expect(match.host.match.sim:atWar("crimson", "azure")).toBe(true)
+	end)
+
+	it("a co-ruler's declareWar is an ask: (true, asked), no war, Kingdom.WarAsk to the senior only", function()
+		local env, match, _, p = bootWar()
+		local ok, tag = invoke(env, p[5], "Kingdom.Diplomacy", "declareWar", "azure")
+		expect(ok).toBe(true)
+		expect(tag).toBe("asked")
+		env.mock:advance(TICK * 2)
+		expect(match.host.match.sim:atWar("crimson", "azure")).toBe(false)
+		local asks = received(env, "Kingdom.WarAsk", p[1])
+		expect(#asks).toBe(1)
+		expect(asks[1][1]).toBe(5)
+		expect(asks[1][2]).toBe("Dis5")
+		expect(asks[1][3]).toBe("azure")
+		expect(#received(env, "Kingdom.WarAsk", p[5])).toBe(0)
+		expect(#received(env, "Kingdom.WarAsk", p[2])).toBe(0)
+		-- the open ask is in the state of crimson's rulers, and only theirs
+		local mine = stateOf(env, p[1]).diplomacy.asks
+		expect(#mine).toBe(1)
+		expect(mine[1].from).toBe(5)
+		expect(mine[1].fromName).toBe("Dis5")
+		expect(mine[1].target).toBe("azure")
+		expect(#stateOf(env, p[2]).diplomacy.asks).toBe(0)
+		-- the senior answers by declaring: the ask is gone
+		expect(select(2, invoke(env, p[1], "Kingdom.Diplomacy", "declareWar", "azure"))).toBe("declared")
+		env.mock:advance(TICK * 2)
+		expect(#stateOf(env, p[1]).diplomacy.asks).toBe(0)
+	end)
+
+	it("acceptPeace is the senior's; proposePeace is any ruler's; sim codes pass through", function()
+		local env, _, _, p = bootWar()
+		invoke(env, p[1], "Kingdom.Diplomacy", "declareWar", "azure")
+		expect(select(1, invoke(env, p[5], "Kingdom.Diplomacy", "proposePeace", "azure"))).toBe(true)
+		invoke(env, p[2], "Kingdom.Diplomacy", "proposePeace", "crimson")
+		env.mock:advance(TICK * 2)
+		local proposals = stateOf(env, p[3]).diplomacy.proposals
+		expect(#proposals).toBe(2)
+		local ok, why = invoke(env, p[5], "Kingdom.Diplomacy", "acceptPeace", "azure")
+		expect(ok).toBe(false)
+		expect(why).toBe("not_senior")
+		expect(select(2, invoke(env, p[1], "Kingdom.Diplomacy", "declareWar", "azure"))).toBe("already_at_war")
+		expect(select(2, invoke(env, p[1], "Kingdom.Diplomacy", "declareWar", "nowhere"))).toBe("unknown_kingdom")
+		expect(select(2, invoke(env, p[3], "Kingdom.Diplomacy", "acceptPeace", "gold"))).toBe("no_proposal")
+		env.mock:advance(3) -- the remote's rate limit (burst 3, 1 per second) refills
+		local acc, accWhy = invoke(env, p[1], "Kingdom.Diplomacy", "acceptPeace", "azure")
+		expect(accWhy).toBeNil()
+		expect(acc).toBe(true)
+		env.mock:advance(TICK * 2)
+		local diplomacy = stateOf(env, p[1]).diplomacy
+		expect(#diplomacy.relations).toBe(0)
+		expect(#diplomacy.cooldowns).toBe(1) -- the peace cooldown is shown
+	end)
+
+	it(
+		"a ruler who arrives after Founding began is locked for declareWar and acceptPeace, and is told when it ends",
+		function()
+			local env, _, kingdoms, p = bootWar()
+			local late = env.mock.players:add({ userId = 6, name = "Late", displayName = "Late" })
+			env.mock:advance(TICK * 2)
+			expect(kingdoms:getKingdomOf(late) ~= nil).toBe(true)
+			local ok, why = invoke(env, late, "Kingdom.Diplomacy", "declareWar", "gold")
+			expect(ok).toBe(false)
+			expect(why).toBe("newcomer_lock")
+			expect(select(2, invoke(env, late, "Kingdom.Diplomacy", "acceptPeace", "gold"))).toBe("newcomer_lock")
+			local lockedUntil = stateOf(env, late).diplomacy.lockedUntil
+			expect(type(lockedUntil)).toBe("number")
+			expect(lockedUntil > env.serverTimeNow()).toBe(true)
+			expect(stateOf(env, p[1]).diplomacy.lockedUntil).toBeNil() -- only the newcomer sees it
+			env.mock:advance(125)
+			expect(stateOf(env, late).diplomacy.lockedUntil).toBeNil()
+		end
+	)
+
+	it("Kingdom.State is sent again when a war, a proposal, an ask or a lock changes (state signature)", function()
+		local env, match, _, p = bootWar()
+		local host = match.host
+		local before = host:_stateSignature()
+		invoke(env, p[5], "Kingdom.Diplomacy", "declareWar", "azure") -- an ask
+		local afterAsk = host:_stateSignature()
+		expect(afterAsk ~= before).toBe(true)
+		invoke(env, p[1], "Kingdom.Diplomacy", "declareWar", "azure")
+		local afterWar = host:_stateSignature()
+		expect(afterWar ~= afterAsk).toBe(true)
+		invoke(env, p[2], "Kingdom.Diplomacy", "proposePeace", "crimson")
+		local afterProposal = host:_stateSignature()
+		expect(afterProposal ~= afterWar).toBe(true)
+		invoke(env, p[1], "Kingdom.Diplomacy", "acceptPeace", "azure")
+		local afterPeace = host:_stateSignature() -- relation gone, a cooldown appears
+		expect(afterPeace ~= afterProposal).toBe(true)
+		env.mock.players:add({ userId = 6 })
+		env.mock:advance(TICK * 2)
+		expect(host:_stateSignature() ~= afterPeace).toBe(true) -- a lock appears
+	end)
+
+	it("each diplomacy fact is in the state signature on its own (pairs, proposals, asks, seniors, locks)", function()
+		local env, match, _, p = bootWar()
+		local host = match.host
+		local sim = host.match.sim
+		local Diplomacy = require("@game/ReplicatedStorage/Game/Sim/Diplomacy")
+		local base = host:_stateSignature()
+		Diplomacy.setRelation(sim, "crimson", "azure", "War")
+		local war1 = host:_stateSignature()
+		Diplomacy.setRelation(sim, "crimson", "azure", "Peace")
+		Diplomacy.setRelation(sim, "crimson", "emerald", "War")
+		expect(host:_stateSignature() ~= war1).toBe(true) -- another pair at war
+		Diplomacy.setRelation(sim, "crimson", "emerald", "Peace")
+		expect(host:_stateSignature()).toBe(base)
+		sim.diplomacy.proposals["crimson>azure"] = sim.time
+		local proposal1 = host:_stateSignature()
+		sim.diplomacy.proposals["crimson>azure"] = nil
+		sim.diplomacy.proposals["azure>crimson"] = sim.time
+		expect(host:_stateSignature() ~= proposal1).toBe(true) -- the other direction
+		sim.diplomacy.proposals["azure>crimson"] = nil
+		expect(host:_stateSignature()).toBe(base)
+		invoke(env, p[5], "Kingdom.Diplomacy", "declareWar", "azure")
+		local ask1 = host:_stateSignature()
+		sim.warAsks.crimson[1].target = "emerald"
+		expect(host:_stateSignature() ~= ask1).toBe(true) -- same requester, another target
+		sim.warAsks.crimson = {}
+		expect(host:_stateSignature()).toBe(base)
+		sim.seats[1].lastActive = sim.time - 1000 -- the senior goes idle: user 5 takes over
+		expect(host:_stateSignature() ~= base).toBe(true)
+		sim.seats[1].lastActive = sim.time
+		expect(host:_stateSignature()).toBe(base)
+		sim.seats[2].late, sim.seats[2].at = true, sim.time
+		expect(host:_stateSignature() ~= base).toBe(true) -- a lock alone
+	end)
+
+	it("with PvP off there is no diplomacy table and the remote refuses", function()
+		local savedPvp = MatchConfig.pvp.enabled
+		MatchConfig.pvp.enabled = false
+		local ok, err = pcall(function()
+			local env = boot({ mode = "slice", pacing = fastPacing() })
+			local p = env.mock.players:add({ userId = 1 })
+			env.mock:advance(3)
+			expect(invoke(env, p, "Kingdom.GetState").diplomacy).toBeNil()
+			expect(invoke(env, p, "Kingdom.Diplomacy", "declareWar", "azure")).toBe(false)
+		end)
+		MatchConfig.pvp.enabled = savedPvp
+		if not ok then
+			error(err, 0)
+		end
+	end)
+end)
