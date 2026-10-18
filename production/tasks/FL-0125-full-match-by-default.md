@@ -3,13 +3,14 @@ id: FL-0125
 title: "Full four-kingdom match by default: match mode, PvP from Conflict, active AI governors, elimination and spectate (D-053 (1)-(3))"
 track: build
 owner: forge-01
-status: BUILDING
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-18
 updated: 2026-10-18
 depends_on: [FL-0048, FL-0052, FL-0082]
-evidence: []
+evidence:
+  - "check.sh: game-001 sim 446/0, FullMatch p99 3.26 ms, peak 286 rigs (headless); mutations FL-0125 34 rows caught; forge validate 0 errors"
 ---
 
 # Full four-kingdom match by default: match mode, PvP from Conflict, active AI governors, elimination and spectate (D-053 (1)-(3))
@@ -43,3 +44,4 @@ Automated: the full-match spec, specs for elimination and spectate, mid-match jo
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
 - 2026-10-18 forge-01: READY → BUILDING. Operation Crownfall mission 1 started on forge/01-gameplay-full-match (main 41422654); reading Match/Pacing/Governor/MatchService first
+- 2026-10-18 forge-01: BUILDING → REVIEW. PR 1 (full match by default: defaults, governors, elimination + Match.Spectate, Crown Arena hooks, match.mode, D-055 caps) opened; D-054 remotes are PR 2. Gate: only two foreign specs fail (ConversationAnalytics pin, ArmyText army_cap).
