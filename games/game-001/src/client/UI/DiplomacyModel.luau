@@ -6,7 +6,7 @@
 	State (KingdomStore:diplomacy(), from the server's `diplomacy` payload; times are server time, the
 	G3 endsAt scale):
 		{ relations = { { a, b, relation = "Peace" | "War" } }, proposals = { { from, to, expiresAt } },
-		  cooldowns = { { a, b, untilAt } }, graceEndsAt?, senior: UserId?, lockedUntil: number? }
+		  cooldowns = { { a, b, untilAt } }, graceEndsAt?, seniors = { [KingdomId]: UserId? }, lockedUntil: number? }
 	A pair that is not listed is at Peace (Sim/Diplomacy: every pair starts at Peace).
 	D-054, for the asking player: only my kingdom's senior ruler declares war or accepts peace (a
 	co-ruler's Declare war is an ask to them, "Ask <senior> to declare war"); a newly seated ruler waits until
@@ -97,9 +97,10 @@ local function declareReason(diplomacy: any, phase: string?, now: number, truce:
 	return lockReason(diplomacy, now)
 end
 
--- The senior ruler's name when that is someone else (D-054 (2)); nil when it is me or unknown.
-local function seniorOther(diplomacy: any, me: any): string?
-	local senior = diplomacy and diplomacy.senior
+-- My kingdom's senior ruler's name when that is someone else (D-054 (2)); nil when it is me or unknown.
+local function seniorOther(diplomacy: any, me: any, kingdomId: string): string?
+	local seniors = diplomacy and diplomacy.seniors
+	local senior = if type(seniors) == "table" then seniors[kingdomId] else nil
 	if type(senior) ~= "number" or me == nil or me.userId == nil or senior == me.userId then
 		return nil
 	end
@@ -111,7 +112,7 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 	if mine == nil then
 		return nil
 	end
-	local senior = seniorOther(diplomacy, me)
+	local senior = seniorOther(diplomacy, me, mine.id)
 	local ranks = {}
 	for _, s in HudModel.standings(store) do
 		ranks[s.id] = s.rank
