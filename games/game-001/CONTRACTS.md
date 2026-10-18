@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g10d, 2026-10-16; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11, 2026-10-18; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -92,6 +92,10 @@ KingdomService.membershipChanged: Signal<(player, KingdomId?)>
 - **Clarifications (FORGE-01 questions, 2026-10-12):**
   - The pre-match countdown runs in `Lobby`, which carries `endsAt` while it runs. `Founding` starts the simulation.
   - **Victory is PROVISIONAL and the user's decision (BRIEF §16.4).** Default in config `Match.luau`: last keep standing ends the match early; otherwise most Crown Points at the end of Endgame wins; ties share the win. It must be config-driven and never described as decided. **From VS-2 (D-029):** the match ends in the Crown Arena (G12); Crown Points decide who qualifies, and last keep standing becomes a coronation.
+  - **Full match by default (v0.4-g11, D-053, #187).** `Match.mode` defaults to `"match"` and `Match.pvp.enabled` to true. Governors rule every kingdom without a human from match start. A kingdom whose keep falls is eliminated: its human rulers become spectators (G8 `Match.Spectate`), and `join` answers `eliminated` for it. Each kingdom is capped at `Citizens.maxPerKingdom` (60) citizens and `Military.maxSoldiers` (15) soldiers, living plus training (D-055). Studio debug: `match.mode slice|match` restarts the match in that mode, so the slice above stays testable.
+    - `MatchService:registerArena(handler?)`: `handler.beginArena(qualifiers: { KingdomId }): boolean` and `handler.cancelArena(reason: string)?`. It is called once when Endgame ends with two or more kingdoms standing. `true` means the duel runs while the match waits in Endgame. `false`, an error or no handler gives the Crown Points result at once. `MatchService:arenaEnded(winner: KingdomId?): boolean` ends the match with reason `arena`. A winner outside the duel, a nil winner, or no report within `Match.arena.maxSeconds` (600) falls back to Crown Points. `MatchPhase` gets its `Arena` value with G12 (FL-0071); until then the duel runs inside `Endgame`.
+    - The `MatchEnded` summary carries `reason: "conquest" | "time" | "objective" | "arena"`. This is a summary field, not part of the G9 payload.
+    - Players turned away with `match_full` wait in `Match.waiting` and are seated after the returning players in the next world.
   - **Diplomacy/PvP is PROVISIONAL and the user's decision (BRIEF §16.2).** Default: war from Conflict onward; peace by mutual consent; no betrayal mechanics. It is behind a config flag and not needed for VS-1.
 
 ## G4. Entities and replication (FORGE-01; D-023 as amended by D-025, D-026)
@@ -261,11 +265,12 @@ ObjectiveService.captured: Signal<(objectiveId: string, KingdomId)>
 | `Kingdom.SetJobQuota` | function | `(job: "farmer" \| "woodcutter" \| "miner" \| "builder", count: integer(0,50))` → `(ok, errorCode?)` (calls `requestWorkers`). Haulers take the citizens left over and soldiers come from the barracks, so neither has a quota |
 | `Match.State` / `Match.GetState` | serverEvent / function | `(phase, endsAtServerTime?, startedAtServerTime)` |
 | `Match.Ended` | serverEvent | the `MatchEnded` payload (G9) |
+| `Match.Spectate` (v0.4-g11) | serverEvent | `(spectating: boolean, info?: { reason: "eliminated" \| "match_full", kingdomId: KingdomId?, by: KingdomId?, standing: { KingdomId } })`. `true` when a ruler's kingdom falls, or for a player arriving or returning with no seat; `false` when seated again in the next match. `Kingdom.State.mine` is nil for a spectator, and a fallen kingdom has `alive = false` |
 | `Build.Buildings` / `Build.GetBuildings` | serverEvent / function | changed `{ Building }` per tick / all buildings |
 | `Build.CanPlace` | function | `(type: enum, position: vector3, rot: integer(0,3))` → `(boolean, string?)`; burst 10, 10/s (ghost tint) |
 | `Build.Place` | function | same args → `(buildingId?, reason?)` |
 | `Build.Upgrade` | function | `(buildingId: integer)` → `(boolean, string?)` |
-| `Army.Recruit` | function | `(barracksId: integer, unitType: enum{"soldier"}, count: integer(1,10))` → `(boolean, string?)` |
+| `Army.Recruit` | function | `(barracksId: integer, unitType: enum{"soldier"}, count: integer(1,10))` → `(boolean, string?)`. Reasons include `army_cap` (v0.4-g11, D-055: 15 standing soldiers per kingdom, living plus training, checked before `recruit_cap`) |
 | `Army.Command` | event | `(unitIds: array(integer, 50), kind: enum, targetPos: optional(vector3), targetId: optional(string(1,32)))` |
 | `Army.Objectives` / `Army.GetObjectives` | serverEvent / function | `ObjectiveService:list()` |
 | `Sim.Snapshot`, `Sim.Events`, `Sim.GetEntities` | see G4 | |
@@ -642,6 +647,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11 (2026-10-18) FORGE-00: G3 full match by default (match mode, PvP, governors, elimination, the D-055 caps, `match.mode` debug), Crown Arena hooks (`registerArena`/`arenaEnded`, `Match.arena.maxSeconds`), `MatchEnded.reason`, the `Match.waiting` seat queue. G8 `Match.Spectate` and `Army.Recruit` `army_cap`. Additive. Rows from FORGE-01's FL-0125 handoff (#187).
 - v0.4-g10d (2026-10-16) FORGE-00: G9 `ConsequenceChanged` wording: a rebellion fires only its start; a rule cut short by elimination or a world reset fires no end (FORGE-07 L1/L2 on #173). Wording only.
 - v0.4-g10c (2026-10-15) FORGE-00: G13.3 a `strike` with occupation `riot` marks a riot (rioters are not strikers); burning building models carry `Burning`. G9 gains `ConsequenceChanged` (start and end of strike, shortage, riot, rebellion). Additive. Owed at #125's merge (D-052 (5)).
 - v0.4-g10b (2026-10-15) FORGE-00: G4 `Sim.GetEntities` is paged (≤ 49 full records per page, `nextAfterId`); G13.2 `CitizenView` gains `familyIds`/`friendIds`/`rivalIds` and a normalized look; G5 population gains `quotaRev` (FL-0109, #127). G9 `CitizenAnswered` attribution: the answering ruler only (#124, D-050 (5)).
