@@ -96,7 +96,7 @@ Def.SAMPLES = table.freeze({
 	},
 	siege = { kind = "siege", kingdom = "crimson", on = true, byName = "Frostmere" },
 	siegeLifted = { kind = "siege", kingdom = "crimson", on = false },
-	raid = { kind = "raid", kingdom = "crimson", on = true, count = 6, byName = "Frostmere" },
+	raid = { kind = "raid", kingdom = "crimson", on = true, count = 6, byName = "Frostmere", position = Vector3.zero }, -- the beacon at the map centre (E15)
 	raidOver = { kind = "raid", kingdom = "crimson", on = false },
 })
 
@@ -264,6 +264,9 @@ function AnnouncerService:_ctx(): any
 			local match, pacing = self._match, self._pacing
 			if match == nil or pacing == nil or type(match.mode) ~= "string" then
 				return nil
+			end
+			if match.durationsSource == "defaults" then
+				return nil -- MatchService rejected Pacing's lengths: never quote minutes the match is not using
 			end
 			local ok, durations = pcall(pacing.phaseDurations, pacing, match.mode)
 			local seconds = if ok and type(durations) == "table" then durations[phase] else nil
