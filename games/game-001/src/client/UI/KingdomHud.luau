@@ -108,7 +108,8 @@ function KingdomHud:_applyBadge(id: string)
 		return
 	end
 	local count = self._railBadges[id]
-	button:update({ badge = count })
+	-- 0, not nil: a nil field is no field, so update() would keep the old bubble (IconButton hides 0)
+	button:update({ badge = count or 0 })
 	for _, menu in self.menus do
 		if menu.id == id and menu.hideEmpty then
 			button.instance.Visible = count ~= nil and count > 0

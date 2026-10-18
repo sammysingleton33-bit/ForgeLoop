@@ -3,7 +3,7 @@ id: FL-0129
 title: "Full-match UI: phase and timer bar, war and peace panel, spectate screen, Results with the leadership recap, wall placement UI"
 track: build
 owner: forge-03
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-18
@@ -37,3 +37,4 @@ Automated UI specs (economy/ui folders). Studio: B20/B21 rows including phone em
 
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
+- 2026-10-18 forge-03: READY → BUILDING. Started (Operation Crownfall, D-053): phase/timer bar first (Match.State on main), then the war & peace panel against a diplomacy contract proposed to FORGE-01 (no client remote or relation state on main yet)

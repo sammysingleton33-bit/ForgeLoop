@@ -1,0 +1,319 @@
+-- FL-0129 war and peace (Operation Crownfall, D-053 (2)): UI/DiplomacyModel's rows, and the Kingdom panel's
+-- Rivals tab on the real KingdomHudController over a diplomacy server double (doubles/DiplomacyDoubles,
+-- the contract proposed to FORGE-01): declare (with a confirm step), propose, accept, refusals in words,
+-- the rail bubble and the notice for an offer, dormant without the remote.
+local T = require("../../../../roblox/tests/harness/Test")
+local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
+
+local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local DiplomacyDoubles = require("./doubles/DiplomacyDoubles")
+local DiplomacyModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/DiplomacyModel")
+local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
+local KingdomWorld = require("./doubles/KingdomWorld")
+local Text = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Text")
+
+local function find(root, name)
+	if root == nil then
+		return nil
+	end
+	for _, d in root:GetDescendants() do
+		if d.Name == name then
+			return d
+		end
+	end
+	return nil
+end
+
+local function texts(root)
+	local out = {}
+	for _, d in if root then root:GetDescendants() else {} do
+		if (d:IsA("TextLabel") or d:IsA("TextButton")) and d.Text ~= "" then
+			table.insert(out, d.Text)
+		end
+	end
+	return table.concat(out, " | ")
+end
+
+local function tap(instance)
+	assert(instance, "tap: nothing to tap")
+	local face = instance:FindFirstChild("Face") or instance
+	expect(Create.fire(face, "Activated")).toBeGreaterThan(0)
+end
+
+-- A store stand-in for the pure model.
+local function store(kingdoms, mine)
+	local byId = {}
+	for _, k in kingdoms do
+		byId[k.id] = k
+	end
+	return {
+		mine = function()
+			return byId[mine]
+		end,
+		kingdoms = function()
+			return kingdoms
+		end,
+	}
+end
+
+local KINGDOMS = {
+	{ id = "crimson", name = "Emberhold", crownPoints = 10, alive = true },
+	{ id = "azure", name = "Frostmere", crownPoints = 30, alive = true },
+	{ id = "emerald", name = "Greenvale", crownPoints = 20, alive = true },
+	{ id = "gold", name = "Sunreach", crownPoints = 0, alive = false },
+}
+
+local function rowOf(view, id)
+	for _, r in view.rows do
+		if r.id == id then
+			return r
+		end
+	end
+	return nil
+end
+
+local function action(row, id)
+	for _, a in row.actions do
+		if a.id == id then
+			return a
+		end
+	end
+	return nil
+end
+
+describe("UI/DiplomacyModel (FL-0129)", function()
+	it("one row per rival by rank: relation, score, the actions the server would allow", function()
+		local view = DiplomacyModel.view(store(KINGDOMS, "crimson"), nil, "Conflict", 1000)
+		expect(#view.rows).toBe(3)
+		expect(view.rows[1].id).toBe("azure") -- by Crown Points
+		local azure = view.rows[1]
+		expect(azure.relation).toBe("peace")
+		expect(azure.rank).toBe(1)
+		local declare = action(azure, "declareWar")
+		expect(declare.enabled).toBe(true)
+		expect(declare.variant).toBe("danger")
+		local gold = rowOf(view, "gold")
+		expect(gold.relation).toBe("fallen")
+		expect(#gold.actions).toBe(0)
+		expect(view.incoming).toBe(0)
+	end)
+
+	it("war is closed before Conflict, during grace and in a truce, each with its reason", function()
+		local early = rowOf(DiplomacyModel.view(store(KINGDOMS, "crimson"), nil, "Expansion", 1000), "azure")
+		expect(action(early, "declareWar").enabled).toBe(false)
+		expect(action(early, "declareWar").reason).toBe("War opens in Conflict")
+		local grace =
+			rowOf(DiplomacyModel.view(store(KINGDOMS, "crimson"), { graceEndsAt = 1090 }, "Conflict", 1000), "azure")
+		expect(action(grace, "declareWar").reason).toBe("No war for 1:30")
+		local truce = rowOf(
+			DiplomacyModel.view(
+				store(KINGDOMS, "crimson"),
+				{ cooldowns = { { a = "azure", b = "crimson", untilAt = 1080 } } },
+				"Conflict",
+				1000
+			),
+			"azure"
+		)
+		expect(truce.relation).toBe("truce")
+		expect(truce.note).toBe("Truce · 1:20 left")
+		expect(action(truce, "declareWar").reason).toBe("Truce for 1:20")
+		-- an expired truce no longer counts
+		local over = rowOf(
+			DiplomacyModel.view(
+				store(KINGDOMS, "crimson"),
+				{ cooldowns = { { a = "azure", b = "crimson", untilAt = 990 } } },
+				"Conflict",
+				1000
+			),
+			"azure"
+		)
+		expect(over.relation).toBe("peace")
+	end)
+
+	it("at war: propose peace; their open offer adds Accept and counts as incoming; mine waits", function()
+		local diplomacy = {
+			relations = {
+				{ a = "azure", b = "crimson", relation = "War" },
+				{ a = "crimson", b = "emerald", relation = "War" },
+			},
+			proposals = {
+				{ from = "azure", to = "crimson", expiresAt = 1042 },
+				{ from = "crimson", to = "emerald", expiresAt = 1030 },
+			},
+		}
+		local view = DiplomacyModel.view(store(KINGDOMS, "crimson"), diplomacy, "Conflict", 1000)
+		local azure = rowOf(view, "azure")
+		expect(azure.relation).toBe("war")
+		expect(azure.note).toBe("Proposes peace · 0:42")
+		expect(azure.actions[1].id).toBe("acceptPeace")
+		expect(azure.actions[1].variant).toBe("primary")
+		expect(action(azure, "proposePeace").variant).toBe("secondary")
+		local emerald = rowOf(view, "emerald")
+		expect(action(emerald, "proposePeace").enabled).toBe(false)
+		expect(action(emerald, "proposePeace").reason).toBe("Offer sent · 0:30")
+		expect(action(emerald, "acceptPeace")).toBeNil()
+		expect(view.incoming).toBe(1)
+		-- expired offers are gone
+		local later = DiplomacyModel.view(store(KINGDOMS, "crimson"), diplomacy, "Conflict", 1050)
+		expect(later.incoming).toBe(0)
+		expect(action(rowOf(later, "emerald"), "proposePeace").enabled).toBe(true)
+	end)
+
+	it("every diplomacy refusal code reads in words, none as the generic fallback", function()
+		local generic = Text.reason("not_a_real_code")
+		for _, code in
+			{ "unknown_kingdom", "grace_period", "already_at_war", "peace_cooldown", "not_at_war", "no_proposal" }
+		do
+			expect(Text.reason(code)).never.toBe(generic)
+		end
+	end)
+end)
+
+describe("The Rivals tab (FL-0129)", function()
+	local world, previous
+	beforeEach(function()
+		previous = Create.useTestConnector()
+	end)
+	afterEach(function()
+		if world then
+			world:destroy()
+			world = nil
+		end
+		Create.setConnector(previous)
+	end)
+
+	local function newWorld(opts)
+		local o = opts or {}
+		local w = KingdomWorld.new({
+			clientDefinitions = { KingdomHudDef },
+			remotes = if o.noRemote then nil else DiplomacyDoubles.remotes(nil),
+			services = if o.noRemote then nil else { DiplomacyDoubles.service },
+		})
+		w.hud = w.client:get("KingdomHudController")
+		w.diplomacy = if o.noRemote then nil else w.server:get("DiplomacyService")
+		w.hud:setViewport(o.width or 1920, o.height or 1022)
+		w.match:setPhase(o.phase or "Conflict", w.env.serverTimeNow() + 600)
+		w:advance(0.6)
+		return w
+	end
+
+	local function openRivals(w)
+		w.hud:setMenu("kingdom")
+		w.hud:panelTab("rivals")
+		w:advance(0.1)
+		return find(w.hud.guis.menus, "Rivals")
+	end
+
+	it("declare war asks first, then the server makes it war; the row turns to war with Propose peace", function()
+		world = newWorld()
+		local list = openRivals(world)
+		expect(list).toBeTruthy()
+		local azure = find(list, "Rival_azure")
+		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("peace")
+		tap(find(azure, "Action_declareWar"))
+		world:advance(0.1)
+		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		expect(texts(azure)).toContain("Declare war on")
+		expect(#world.diplomacy.calls).toBe(0) -- not yet
+		tap(find(azure, "Action_confirm"))
+		world:advance(0.3)
+		expect(world.diplomacy.calls[1].action).toBe("declareWar")
+		expect(world.diplomacy.calls[1].target).toBe("azure")
+		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("war")
+		expect(find(azure, "Action_proposePeace")).toBeTruthy()
+		expect(texts(world.hud.guis.notices)).toContain("War declared on")
+		-- Cancel leaves peace alone
+		local emerald = find(find(world.hud.guis.menus, "Rivals"), "Rival_emerald")
+		tap(find(emerald, "Action_declareWar"))
+		world:advance(0.1)
+		tap(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_emerald"), "Action_cancel"))
+		world:advance(0.1)
+		expect(#world.diplomacy.calls).toBe(1)
+		expect(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_emerald"), "Action_declareWar")).toBeTruthy()
+	end)
+
+	it("an offer of peace: a notice once, the Kingdom rail bubble, Accept makes peace and starts a truce", function()
+		world = newWorld()
+		world.diplomacy:setWar("crimson", "azure")
+		world:advance(0.2)
+		world.diplomacy:propose("azure", "crimson")
+		world:advance(0.3)
+		expect(texts(world.hud.guis.notices)).toContain("proposes peace")
+		local badge = find(find(world.hud.guis.hud, "Menu_kingdom"), "Badge")
+		expect(badge).toBeTruthy()
+		expect(badge.Text).toBe("1")
+		local list = openRivals(world)
+		local azure = find(list, "Rival_azure")
+		expect(texts(azure)).toContain("Proposes peace")
+		tap(find(azure, "Action_acceptPeace"))
+		world:advance(0.3)
+		expect(world.diplomacy.calls[1].action).toBe("acceptPeace")
+		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("truce")
+		expect(find(azure, "Action_declareWar"):GetAttribute("enabled")).toBe(false)
+		expect(find(find(world.hud.guis.hud, "Menu_kingdom"), "Badge")).toBeNil()
+	end)
+
+	it("a refusal is said in words and changes nothing; before Conflict the button explains itself", function()
+		world = newWorld({ phase = "Expansion" })
+		local list = openRivals(world)
+		local azure = find(list, "Rival_azure")
+		expect(find(azure, "Action_declareWar"):GetAttribute("enabled")).toBe(false)
+		expect(texts(azure)).toContain("War opens in Conflict")
+		expect(azure:FindFirstChild("Reason")).toBeTruthy() -- its own line, not squeezed beside the button
+		world.match:setPhase("Conflict", world.env.serverTimeNow() + 600)
+		world:advance(0.6)
+		world.diplomacy.refuse = "grace_period"
+		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		tap(find(azure, "Action_declareWar"))
+		world:advance(0.1)
+		tap(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_azure"), "Action_confirm"))
+		world:advance(0.3)
+		expect(texts(world.hud.guis.notices)).toContain(Text.reason("grace_period"))
+		expect(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_azure"), "Relation"):GetAttribute("relation")).toBe(
+			"peace"
+		)
+	end)
+
+	it("countdowns tick in place (no rebuild); phone 667 × 375 keeps every row and button", function()
+		world = newWorld({ width = 667, height = 375 })
+		expect(world.hud:metrics().breakpoint).toBe("phone")
+		world.diplomacy:setWar("crimson", "azure")
+		world.diplomacy:propose("azure", "crimson")
+		world:advance(0.3)
+		local list = openRivals(world)
+		local note = find(find(list, "Rival_azure"), "Note")
+		local before = note.Text
+		world:advance(2)
+		expect(find(world.hud.guis.menus, "Rivals")).toBe(list) -- same instance: patched, not rebuilt
+		expect(note.Text).never.toBe(before)
+		for _, id in { "azure", "emerald", "gold" } do
+			expect(find(list, "Rival_" .. id)).toBeTruthy()
+		end
+		local azure = find(list, "Rival_azure")
+		-- both offers fit the 260 px drawer: each button fills a half-width slot, not a fixed 120+ px
+		for _, id in { "acceptPeace", "proposePeace" } do
+			local slot = find(azure, "Slot_" .. id)
+			expect(slot).toBeTruthy()
+			expect(slot.Size.X.Scale).toBe(0.5)
+			expect(find(slot, "Action_" .. id)).toBeTruthy()
+		end
+		expect(texts(find(azure, "Head"))).toContain("pts") -- "Crown Points" would truncate beside the chip
+		expect(texts(find(azure, "Head"))).never.toContain("Crown Points")
+		-- four tabs and Close: icons only on the phone header (the selected one keeps its underline)
+		local tab = find(world.hud.guis.menus, "Tab_rivals")
+		expect(tab:GetAttribute("selected")).toBe(true)
+		expect(texts(tab)).never.toContain("Rivals")
+	end)
+
+	it("without the server's diplomacy remote there is no Rivals tab (dormant on today's main)", function()
+		world = newWorld({ noRemote = true })
+		world.hud:setMenu("kingdom")
+		world:advance(0.1)
+		expect(find(world.hud.guis.menus, "Tab_rivals")).toBeNil()
+		world.hud:panelTab("rivals")
+		world:advance(0.1)
+		expect(find(world.hud.guis.menus, "Rivals")).toBeNil()
+	end)
+end)
