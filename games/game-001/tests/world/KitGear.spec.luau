@@ -224,6 +224,34 @@ describe("Kit.armour (light | medium | heavy)", function()
 		end
 	)
 
+	it("leaves no part floating: every part of an accessory touches another of the same accessory", function()
+		for _, armour in ARMOURS do
+			for _, acc in Kit.armour(armour, CANON.gold) do
+				local list = parts(acc)
+				for _, p in list do
+					local e, c = halfExtents(p), p.CFrame.Position
+					local touches = #list == 1
+					for _, q in list do
+						if q ~= p then
+							local f, d = halfExtents(q), q.CFrame.Position
+							if
+								math.abs(c.X - d.X) <= e.X + f.X + 0.05
+								and math.abs(c.Y - d.Y) <= e.Y + f.Y + 0.05
+								and math.abs(c.Z - d.Z) <= e.Z + f.Z + 0.05
+							then
+								touches = true
+								break
+							end
+						end
+					end
+					if not touches then
+						error(`{acc.Name}: {p.Name} floats clear of the rest of the accessory`)
+					end
+				end
+			end
+		end
+	end)
+
 	it("recolours in place with Kit.setKingdomColor", function()
 		for _, armour in ARMOURS do
 			local list = Kit.armour(armour, CANON.crimson)
@@ -324,7 +352,7 @@ describe("Kit.armour (light | medium | heavy)", function()
 		function()
 			local widths = {}
 			for _, armour in ARMOURS do
-				local av, list = wear("R15", armour, CANON.crimson)
+				local _, list = wear("R15", armour, CANON.crimson)
 				local lo, hi = boundsOf(wornParts(list))
 				widths[armour] = hi.X - lo.X
 				expect(lo.Y).toBeGreaterThan(1.0)
@@ -373,6 +401,35 @@ describe("Kit.weapon (swordShield | greatsword | spear | mace)", function()
 			end
 		end
 	end)
+
+	it(
+		"leaves no part floating: every part touches another, so a blade is on its hilt and a spear head on its shaft",
+		function()
+			for _, weapon in WEAPONS do
+				local list = parts(Kit.weapon(weapon, CANON.gold))
+				for _, p in list do
+					local e, c = halfExtents(p), p.CFrame.Position
+					local touches = false
+					for _, q in list do
+						if q ~= p then
+							local f, d = halfExtents(q), q.CFrame.Position
+							if
+								math.abs(c.X - d.X) <= e.X + f.X + 0.05
+								and math.abs(c.Y - d.Y) <= e.Y + f.Y + 0.05
+								and math.abs(c.Z - d.Z) <= e.Z + f.Z + 0.05
+							then
+								touches = true
+								break
+							end
+						end
+					end
+					if not touches then
+						error(`{weapon}: {p.Name} floats clear of every other part`)
+					end
+				end
+			end
+		end
+	)
 
 	it("is deterministic", function()
 		for _, weapon in WEAPONS do

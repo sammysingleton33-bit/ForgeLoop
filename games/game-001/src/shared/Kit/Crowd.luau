@@ -40,8 +40,8 @@ local Crowd = {}
 Crowd.MAX_PARTS = 4
 Crowd.VARIANTS = 8
 Crowd.ROLES = table.freeze({ "blacksmith", "healer", "captain", "provisioner", "elder", "merchant" })
-Crowd.HEIGHT = 5.4 -- nominal standing height (the variants scale 0.9 - 1.08 of it); the crest or a prop may rise above
-Crowd.BODY_HEIGHT = 3.4
+Crowd.HEIGHT = 5.0 -- nominal standing height (the variants scale 0.9 - 1.08 of it); the crest or a prop may rise above
+Crowd.BODY_HEIGHT = 3.2
 
 -- hat shape per hue style (the soldiers' crests, D-033): the neutral colour wears a plain cap
 Crowd.CREST_NAMES = table.freeze({
@@ -214,7 +214,7 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 	local look = LOOKS[v]
 	local k = look.height
 	local bodyH, bodyW, bodyD = Crowd.BODY_HEIGHT * k, look.width, 1.1
-	local headD = 1.4 * k
+	local headD = 1.65 * k -- a big head: a crowd reads by its heads, hats and shoulders
 	local headY = bodyH + headD / 2 - 0.1
 	local shoulderY = bodyH - 0.5
 

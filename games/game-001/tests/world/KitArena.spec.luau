@@ -560,7 +560,7 @@ describe("Kit.arena kingdom dress (D-033 silhouette, D-039 emblem: never colour 
 				for _ in slots do
 					fields += 1
 				end
-				expect(fields).toBeGreaterThanOrEqual(11) -- rug, plaque, flag, 4 + 2 + 2 banners, crest
+				expect(fields).toBe(12) -- the champion's rug, the royal plaque and flag, 4 + 2 + 2 banners, the gate crest
 				expect(marks).toBeGreaterThanOrEqual(fields * 3)
 				-- the colour: tinted parts are exactly shade(colour, tint)
 				local tinted = 0

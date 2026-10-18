@@ -263,6 +263,32 @@ describe("WorldPlan keeps decor out of the arena and its surroundings are never 
 		end
 	end)
 
+	it("clears decor off the arena: a tree, a bush and a boulder near the edge move or go, a far tree stays", function()
+		local rect = WorldPlan.arenaRect(Layout) :: any
+		local function at(local_: Vector3): CFrame
+			local w = ARENA.cframe * local_
+			return CFrame.new(w.X, 0, w.Z)
+		end
+		local hx, hz = rect.half.X, rect.half.Y
+		local tree = { assetId = "tree_oak_01", cframe = at(Vector3.new(hx + 8, 0, 0)), feature = "lone_tree" }
+		local bush = { assetId = "bush_01", cframe = at(Vector3.new(0, 0, hz + 6)), feature = "bush" }
+		local rock = { assetId = "rock_boulder_m_01", cframe = at(Vector3.new(-hx - 5, 0, 10)), feature = "rocks" }
+		local far = { assetId = "tree_oak_02", cframe = at(Vector3.new(hx + 90, 0, 0)), feature = "lone_tree" }
+		local out = WorldPlan.clear(Layout, { tree, bush, rock, far })
+		local kept = {}
+		for _, p in out do
+			kept[p.assetId] = p
+			if p.assetId ~= "tree_oak_02" then
+				local q = p.cframe.Position
+				local need = WorldPlan.footprintRadius(p.assetId) + WorldPlan.CLEAR.margin
+				expect(WorldPlan.rectDistance(rect, q.X, q.Z)).toBeGreaterThanOrEqual(need - 1e-6)
+			end
+		end
+		expect(kept.rock_boulder_m_01).toBeNil() -- boulders are removed, not moved
+		expect(kept.tree_oak_02).never.toBeNil()
+		expect((kept.tree_oak_02.cframe.Position - far.cframe.Position).Magnitude).toBeLessThan(1e-6)
+	end)
+
 	it("is not vacuous: without the arena the generator does put decor on its footprint", function()
 		local none = table.clone(Layout)
 		none.arena = nil
