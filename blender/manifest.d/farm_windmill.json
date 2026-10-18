@@ -22,6 +22,7 @@
       "geometry_hash": "6ecea280c4d5bc20",
       "id": "farm_windmill_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 12,
@@ -93,6 +94,7 @@
       "geometry_hash": "75c939539865d331",
       "id": "farm_windmill_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 40,
@@ -164,6 +166,7 @@
       "geometry_hash": "9f68cd1650c248c9",
       "id": "farm_windmill_03",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 0,
@@ -235,6 +238,7 @@
       "geometry_hash": "c0c11f639e395b7d",
       "id": "farm_windmill_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 28,

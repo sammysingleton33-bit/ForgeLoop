@@ -99,10 +99,41 @@ def fragments():
     return [json.loads(p.read_text()) for p in sorted(FRAG_DIR.glob("*.json"))]
 
 
+ALLOWED_LICENSES = ("CC0-1.0", "project-original")
+REPO = ROOT.parent
+
+
+def provenance_errors(a, repo=REPO):
+    """D-057 (13)/(14), FORGE-07 A1/A4: every committed row names its licence; a third-party (CC0) row also names the
+    source URL, a pinned commit or date, the sha256 of each source file it was derived from, and ships the licence text.
+    Only CC0-1.0 or the explicit project-original marker is accepted."""
+    errs = []
+    aid = a.get("id", "?")
+    lic = a.get("license")
+    if not lic:
+        return [f"{aid}: missing license"]
+    if lic not in ALLOWED_LICENSES:
+        errs.append(f"{aid}: license {lic!r} is not one of {ALLOWED_LICENSES}")
+    if lic == "CC0-1.0":
+        for k in ("source_url", "source_date", "license_file"):
+            if not a.get(k):
+                errs.append(f"{aid}: CC0 row without {k}")
+        files = a.get("source_files") or {}
+        if not files and not a.get("source_sha256"):
+            errs.append(f"{aid}: CC0 row without source_sha256 / source_files")
+        if a.get("license_file") and not (Path(repo) / a["license_file"]).exists():
+            errs.append(f"{aid}: license_file {a['license_file']} is not committed")
+        if not a.get("source_commit") and not a.get("source_date"):
+            errs.append(f"{aid}: CC0 row without a pinned source_commit or source_date")
+    return errs
+
+
 def check(manifest_path=MANIFEST):
     """Schema + cross-checks used by check.sh. Returns a list of error strings."""
     data = json.loads(Path(manifest_path).read_text())
     errs = schema.validate(data, json.loads(SCHEMA.read_text()))
+    for a in data.get("assets", []):
+        errs += provenance_errors(a)
     ids = [a["id"] for a in data.get("assets", [])]
     if len(ids) != len(set(ids)):
         errs.append("duplicate ids in manifest")

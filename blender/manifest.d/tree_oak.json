@@ -36,6 +36,7 @@
       "geometry_hash": "6a28a9768dc37ca5",
       "id": "tree_oak_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -117,6 +118,7 @@
       "geometry_hash": "a1f93b52b55862a8",
       "id": "tree_oak_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -198,6 +200,7 @@
       "geometry_hash": "3743668290d22b0a",
       "id": "tree_oak_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -279,6 +282,7 @@
       "geometry_hash": "ec4ab6788b2defb0",
       "id": "tree_oak_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -360,6 +364,7 @@
       "geometry_hash": "32d1361828b75780",
       "id": "tree_oak_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -441,6 +446,7 @@
       "geometry_hash": "2b7f02ea994b0b0f",
       "id": "tree_oak_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "autumn_orange",
@@ -522,6 +528,7 @@
       "geometry_hash": "42224ae75f2024e9",
       "id": "tree_oak_07",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -603,6 +610,7 @@
       "geometry_hash": "99f369305d86b05c",
       "id": "tree_oak_08",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "autumn_yellow",

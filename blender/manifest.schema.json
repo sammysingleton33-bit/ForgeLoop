@@ -25,7 +25,7 @@
       "type": "object",
       "required": ["id", "generator", "generator_version", "category", "kingdom", "params", "seed", "budget_class",
                    "dimensions_studs", "triangles", "material", "texture", "collision", "double_sided",
-                   "render_fidelity", "files", "preview", "sockets", "validation_pass", "geometry_hash", "review"],
+                   "render_fidelity", "files", "preview", "sockets", "validation_pass", "geometry_hash", "review", "license"],
       "additionalProperties": false,
       "properties": {
         "id": {"type": "string", "pattern": "^[a-z]+(_[a-z0-9]+)+_\\d{2}$"},
@@ -62,9 +62,17 @@
         "render_fidelity": {"type": "string", "enum": ["Automatic", "Precise", "Performance"]},
         "files": {
           "type": "object", "required": ["mesh", "validation"], "additionalProperties": false,
-          "properties": {"mesh": {"type": "string"}, "validation": {"type": "string"}}
+          "properties": {"mesh": {"type": "string"}, "validation": {"type": "string"}, "rig": {"type": "string"}}
         },
         "preview": {"type": "string"},
+        "license": {"type": "string", "enum": ["CC0-1.0", "project-original"]},
+        "license_file": {"type": ["string", "null"]},
+        "source_url": {"type": ["string", "null"]},
+        "source_commit": {"type": ["string", "null"]},
+        "source_date": {"type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "source_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "source_files": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+        "kit": {"type": "object"},
         "sockets": {"type": "object", "additionalProperties": {"$ref": "#/$defs/vec3"}},
         "validation_pass": {"type": "boolean"},
         "geometry_hash": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
