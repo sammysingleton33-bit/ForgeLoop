@@ -528,3 +528,18 @@ four kingdoms, nothing butts into the quarry or the farm building, no new defect
 (crimson at the right build rectangle's corner, gold at the cabbage bed's corner): the decor clearance of FL-0116 (PR #159, which this branch does not contain) moves them; the two PRs together are the whole fix;
 (b) the lumber-camp trees stand about one tree-width from the left build rectangle (the forest edge behind the camp, by design; the spec guarantees ≥ 8 studs); (c) the lumber camp "overlapping" that rectangle in
 the render is perspective: the starting buildings' footprints at both levels overlap no slot and no field (probe). Verdict by the reviewer: farms clean **no** (a, b); by the spec and the author's reading of the renders: the world nodes are out. Studio unverified.
+
+## FL-0127 part 1 — three neutral outposts (Operation Crownfall, D-053)
+
+`world/Layout.luau` gains `outpost_n` (40, −330), `outpost_s` (30, 315) and `outpost_w` (−430, 10) next to the watchtower: capture points of radius
+20, each with a neutral region, a nav node linked into the road network, and a dirt road spur (flagged `spur`). FORGE-01's FL-0126 gives them config rows and
+builds their neutral towers. Placement: north and south on the valley's north and south edges between the two kingdoms of each side, the west one on the
+west bank to balance the river the two western kingdoms must cross for the watchtower; every kingdom has a neutral objective 330–365 studs away. All clear
+of forest stands, hills, the river and plots (`Outposts.spec`). The world trim protects only 70 studs around an outpost and a 20-stud band around a spur
+(`TRIM.outpostRadius`, `TRIM.spurBand`): protecting each like the heartland (170) cost +631 parts; the trimmed world is 6,570 (was 6,569). Details and
+numbers in `production/handoffs/2026-10-18-forge-02-to-forge-01-fl0127-outposts.md`.
+
+Renders (Blender, not Studio; the world dump now places a neutral tower at every objective): `fl0127_world_top.jpg` (the whole valley, the top view is mirrored east-west by the
+preview's axes: the river is on the right) and `fl0127_outpost_{n,s,w}.jpg` (each outpost from the valley-centre side, 45 degrees, 170 studs). I looked at the top view and the
+west outpost: each outpost stands at the end of its spur on open meadow with the mountain ring behind, clear of forest stands. Honest: a lone tower on empty meadow is plain;
+outpost yard dressing (banners, crates, a fence, tied to the kingdom style table) belongs to FL-0127 part 2.
