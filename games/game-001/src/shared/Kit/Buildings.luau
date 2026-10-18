@@ -5,6 +5,9 @@
 	blender/ART_DIRECTION.md (stone plinths, timber framing, tile/thatch roofs, arched doors, shuttered
 	windows, kingdom tower caps, banners). Each builder gets (ctx, level, kingdomColor, style, footprint,
 	variant); style is the kingdom silhouette cue picked from the colour's hue (Parts.hueStyle).
+	FL-0127: Buildings.build also sets ctx.style, so Pieces cut roofs, merlons and banners to the kingdom's
+	KingdomStyle, and re-skins the neutral palette (stone, timber, plaster, thatch, crop) in one KingdomStyle.paint
+	pass at the end. Part counts and footprints are those of the neutral style, whatever the kingdom.
 
 	Buildings.build(type, level, stage, kingdomColor, variant?) — variant (default 1, deterministic) picks
 	one of the house archetypes (roof style, storeys/jetty, chimney side, door side, props); variants 5–8
@@ -56,6 +59,7 @@ local log = Parts.log
 local ball = Parts.ball
 local attach = Parts.attach
 local Pieces = require("./Pieces")
+local KingdomStyle = require("./KingdomStyle")
 local stoneFor = Pieces.stoneFor
 local jit = Pieces.jit
 local cyl = Pieces.cyl
@@ -170,6 +174,14 @@ local WHEAT_LIGHT = Color3.fromRGB(250, 222, 128)
 local WHEAT_STALK = Color3.fromRGB(158, 146, 66)
 local SOIL_DARK = Color3.fromRGB(104, 74, 46)
 local QUARRY_STONE = { Color3.fromRGB(168, 160, 148), Color3.fromRGB(146, 139, 129), Color3.fromRGB(124, 118, 110) }
+-- the three rock tiers of a quarry in a kingdom's stone (neutral: the original greys)
+local function quarryStone(style: string): { Color3 }
+	if style == "neutral" then
+		return QUARRY_STONE
+	end
+	local S = stoneFor(style)
+	return { shade(S.base, 1.1), shade(S.base, 0.96), shade(S.base, 0.82) }
+end
 local CABBAGE = { Color3.fromRGB(96, 160, 64), Color3.fromRGB(126, 176, 78) }
 local SAND = Color3.fromRGB(214, 186, 136)
 local STRAW = Color3.fromRGB(208, 178, 110)
@@ -587,7 +599,7 @@ BUILDERS.keep = function(ctx, level, color, style, fp)
 		{ m = 2.6, h = 2.6, t = 1.1, gap = if lv == 1 then 1.7 else 2.1, skip = tr + 1 }
 	)
 	-- corner turrets with the kingdom cap
-	local tH = h + ({ 7, 9, 10 })[lv]
+	local tH = h + ({ 7, 9, 10 })[lv] + KingdomStyle.get(style).keepTurret
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
 			local x, z = sx * hw, zc + sz * hd
@@ -956,6 +968,7 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 		color = C.thatch,
 		infill = PLASTERS[2],
 		kingPost = true,
+		tight = true, -- the farmhouse thatch already reaches the footprint's edge
 	})
 	chimney(ctx, hx + hw * 0.28, hz + 1, 1 + hh - 1, info.ridgeY + 2 - hh)
 	-- vegetable patch behind the farmhouse: soil bed with two rows of cabbages
@@ -1006,6 +1019,7 @@ BUILDERS.farm = function(ctx, level, color, _style, fp)
 			tint = 0.88,
 			infill = C.woodLight,
 			infillMaterial = M.WoodPlanks,
+			tight = true, -- the barn already reaches the footprint's back edge
 		})
 		local bf = bz - bd / 2
 		for _, sx in { -1, 1 } do
@@ -1201,6 +1215,7 @@ end
 
 BUILDERS.quarry = function(ctx, _level, color, style, fp)
 	local w, d = fp.X - 2, fp.Y - 2
+	local rock = quarryStone(style)
 	-- stepped rock face at the back: three tiers of irregular cut blocks
 	local tiers = { { 3.4, 4.2, 2.6 }, { 6.6, 3.6, 5.6 }, { 9.6, 3.2, 8.2 } }
 	for ti, t in tiers do
@@ -1218,7 +1233,7 @@ BUILDERS.quarry = function(ctx, _level, color, style, fp)
 				"RockFace",
 				Vector3.new(bw - 0.15, th, depth + jit(ti + i * 5, 0.5)),
 				CFrame.new(x + bw / 2 + ti * 0.013, th / 2, zc + jit(i * 11 + ti, 0.3)),
-				shade(QUARRY_STONE[ti], 1 + jit(ti * 5 + i * 3, 0.07)),
+				shade(rock[ti], 1 + jit(ti * 5 + i * 3, 0.07)),
 				M.Rock
 			)
 			x += bw
@@ -2042,7 +2057,7 @@ BUILDERS.shrine = function(ctx, _level, color, style, fp)
 		end
 	end
 	block(ctx, "Entablature", Vector3.new(w + 0.4, 1, w + 0.4), CFrame.new(0, 1.4 + ph + 0.5, 0), S.light, M.Slate)
-	pyramidRoof(ctx, w + 1.6, w * 0.55, 1.4 + ph + 1, color, 0.88)
+	pyramidRoof(ctx, w + 1.6, w * 0.55, 1.4 + ph + 1, color, 0.88 * KingdomStyle.get(style).roof.tint)
 	ball(ctx, "RoofOrb", 1.2, Vector3.new(0, 1.4 + ph + 1 + w * 0.55, 0), C.gold, M.Metal)
 	-- altar stone with an eternal flame in a bronze bowl, flowers around
 	block(ctx, "AltarStone", Vector3.new(2.4, 2.2, 2.4), CFrame.new(0, 2.5, 0), S.base, M.Slate)
@@ -2314,16 +2329,20 @@ function Buildings.build(
 	local stageName = if stage == "complete" then "complete" else tostring(stage)
 	local v = math.max(1, math.floor(variant or 1))
 	local ctx = newModel(`{buildingType}_L{level}_{stageName}`, fp)
+	local style = hueStyle(kingdomColor)
+	ctx.style = style -- the kingdom's architecture (KingdomStyle): roof profile, merlons, banners, plinth stones
 	ctx.model:SetAttribute("KitType", buildingType)
 	ctx.model:SetAttribute("KitLevel", level)
 	ctx.model:SetAttribute("KitStage", stageName)
 	ctx.model:SetAttribute("KitVariant", v)
 	if stage == "complete" then
-		builder(ctx, level, kingdomColor, hueStyle(kingdomColor), fp, v)
+		builder(ctx, level, kingdomColor, style, fp, v)
 	else
 		assert(type(stage) == "number" and stage >= 1 and stage <= 3, 'Kit.build: stage must be 1..3 or "complete"')
 		buildStage(ctx, buildingType, level, stage :: number, kingdomColor, fp)
 	end
+	-- stone, timber, wood, plaster and thatch take the kingdom's materials (the neutral palette is re-skinned)
+	KingdomStyle.paint(ctx.model, style)
 	return ctx.model
 end
 

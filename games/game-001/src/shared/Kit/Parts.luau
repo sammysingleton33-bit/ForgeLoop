@@ -8,7 +8,8 @@
 local Parts = {}
 
 -- slots: emblem slots handed out so far (Pieces.emblem numbers them per model; nil = none yet)
-export type Ctx = { model: Model, root: BasePart, count: number, slots: number? }
+-- style: the kingdom hue style the model is built in (Buildings.build sets it; nil = neutral, KingdomStyle)
+export type Ctx = { model: Model, root: BasePart, count: number, slots: number?, style: string? }
 
 -- Shared palette (same values as blender/lib/palette.py so meshes and parts match).
 local C = {
