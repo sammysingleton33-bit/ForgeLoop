@@ -29,7 +29,7 @@
 	and the job the client already has. Each hand Tool is now only the HANDLE (a cylinder); its head is a detail:
 		farmer      Detail1 strawcrown (kingdom-red crown over the straw brim, Head)   Detail2 hoeblade (steel wedge, Tool)
 		woodcutter  Detail1 pompom (kingdom-red, on the beanie, Head)                  Detail2 axehead (bearded steel, Tool)
-		miner       Detail1 lamp (bright block on the pot, Head)                       Detail2 pickhead (dark iron bar, Tool)
+		miner       Detail1 pickhead (iron tine, Tool)                                 Detail2 pickpoint (the other tine, Tool): a drooped arch
 		builder     Detail1 visor (with the cream drum: a hard hat, Head)              Detail2 mallet (wood head, Tool)
 		hauler      Detail1 strap (kingdom-red, across the chest)                      Detail2 tie (the sack's neck); both Tool
 		soldier     Detail1 spearhead (pale steel)                                     Detail2 pennant (kingdom-red); both Tool
@@ -38,7 +38,7 @@
 	Job silhouettes (citizen art pass after the first Studio playtest). Each working job reads without colour:
 		farmer      wide straw hat (flat disc 3.1), long hoe with a steel blade, lean body   KitHeadwear "strawhat"
 		woodcutter  small charcoal knit beanie (a ball sitting high), axe with a bearded steel head, stocky   "knitcap"
-		miner       small dark iron pot (1.9) with a lamp, pick with a double-sided iron bar (T), stocky   "hardhat"
+		miner       small dark iron pot (1.9), pick with two drooped iron tines on a 5.4 handle (an arch, not a T), stocky   "hardhat"
 		builder     cream hard hat (a drum with a visor detail, sits on the head), wooden mallet, broad  "buildercap"
 		hauler      no job hat (hair shows), big burlap sack low on the back, broad
 		idle        hair, nothing carried, lean; the free 9th part is a headband or scarf (Accessory, KitAccessory)
@@ -288,9 +288,8 @@ local HAT_VARIANTS = {
 
 -- Head detail parts (D-048): one rigid part welded to the Head per working job, named Detail<n>, KitDetail = true.
 -- Offsets are from the head centre and follow the hat's roll. They carry the readable extras of each hat: the
--- farmer's kingdom-coloured crown over the straw brim, the woodcutter's kingdom pompom, the miner's lamp, the
+-- farmer's kingdom-coloured crown over the straw brim, the woodcutter's kingdom pompom, the
 -- builder's visor. Kingdom colour on top of the head also keeps it visible from the air under a wide hat.
-local LAMP = Color3.fromRGB(255, 226, 140)
 local HEAD_DETAILS: { [string]: PartSpec } = {
 	farmer = {
 		name = "strawcrown",
@@ -309,15 +308,6 @@ local HEAD_DETAILS: { [string]: PartSpec } = {
 		color = 0.85,
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 1.5, 0.05),
-	},
-	miner = {
-		name = "lamp",
-		class = "Part",
-		shape = Enum.PartType.Block,
-		size = Vector3.new(0.5, 0.4, 0.35),
-		color = LAMP,
-		material = Enum.Material.SmoothPlastic,
-		offset = CFrame.new(0, 0.8, -1.05),
 	},
 	builder = {
 		name = "visor",
@@ -545,6 +535,10 @@ local LEAN = CFrame.Angles(0, 0, math.rad(-6)) -- the top leans outwards (+X), a
 -- brim's bounding box, 0.15 or more with the exact disc)
 local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
 local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-15)) -- the mallet leans further: its head swings past the face at work (cheek clearance 0.15)
+local IRON = Color3.fromRGB(104, 110, 122) -- pick tines: lighter than the pot so the arch shows against grass and rock
+local PICK_TINE = Vector3.new(0.45, 0.8, 2.5) -- a wedge: thick at the hub, a point at the far end
+local PICK_DROOP = 28 -- degrees each tine droops below the level
+local PICK_HUB = GRIP * LEAN * CFrame.new(0, 4.2, 0) * CFrame.Angles(0, math.rad(30), 0)
 local TOOLS: { [string]: PartSpec } = {
 	hoe = { -- 5.2 long pale-wood handle, a steel blade angled down at its top
 		name = "hoe",
@@ -584,24 +578,38 @@ local TOOLS: { [string]: PartSpec } = {
 			},
 		},
 	},
-	pick = { -- 4.55 long dark handle, a double-sided iron bar across its top (a T), turned 40° so it shows from front and side;
-		-- the bar sits high (its centre 3.4 above the grip) so it swings over the pot, never through it (0.28 clear)
+	pick = { -- 5.4 long dark handle, two iron tines swung down from its top into an arch (a pickaxe, not a T-hammer):
+		-- each tine is a long wedge, thick at the hub and ending in a point, drooped PICK_DROOP degrees; the arch is turned
+		-- 30° so it shows from front and side; its hub sits high (4.2 above the grip, a stud over the pot) so it swings
+		-- over the pot, never through it (the tines' bounding boxes keep 0.03 from the pot in every Pose action)
 		name = "pick",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(4.55, 0.4, 0.4),
+		size = Vector3.new(5.4, 0.4, 0.4),
 		color = C.woodDark,
 		material = Enum.Material.Wood,
-		offset = GRIP * LEAN * CFrame.new(0, 1.225, 0) * UPRIGHT,
+		offset = GRIP * LEAN * CFrame.new(0, 1.65, 0) * UPRIGHT,
 		details = {
 			{
 				name = "pickhead",
-				class = "Part",
-				shape = Enum.PartType.Block,
-				size = Vector3.new(0.45, 0.5, 3.6),
-				color = STEEL_DARK,
+				class = "WedgePart",
+				size = PICK_TINE,
+				color = IRON,
 				material = Enum.Material.Metal,
-				offset = GRIP * LEAN * CFrame.new(0, 3.4, 0) * CFrame.Angles(0, math.rad(40), 0),
+				offset = PICK_HUB
+					* CFrame.Angles(math.rad(PICK_DROOP), 0, 0)
+					* CFrame.new(0, 0, PICK_TINE.Z / 2 + 0.15),
+			},
+			{
+				name = "pickpoint",
+				class = "WedgePart",
+				size = PICK_TINE,
+				color = IRON,
+				material = Enum.Material.Metal,
+				offset = PICK_HUB
+					* CFrame.Angles(math.rad(-PICK_DROOP), 0, 0)
+					* CFrame.new(0, 0, -(PICK_TINE.Z / 2 + 0.15))
+					* CFrame.Angles(0, math.pi, 0),
 			},
 		},
 	},
@@ -1056,7 +1064,7 @@ function Character.character(
 		assert(details <= Character.MAX_DETAIL, "too many detail parts")
 		local part = specPart(model, `Detail{details}`, spec, frame * spec.offset, kingdomColor, skin, hairColor)
 		part:SetAttribute(Character.DETAIL_ATTRIBUTE, true)
-		part:SetAttribute("KitDetailKind", spec.name) -- "hoeblade", "axehead", "lamp", "strap", ...
+		part:SetAttribute("KitDetailKind", spec.name) -- "hoeblade", "axehead", "pickhead", "strap", ...
 		local weld = Instance.new("Weld")
 		weld.Name = "DetailWeld"
 		weld.Part0 = parent
