@@ -4,7 +4,8 @@
 	(roblox/src/shared/Experience/Sounds.luau); fields and rules: Experience/SoundRegistry.luau.
 	BRIEF §11: chopping, mining, building hammer, coin and resource pickups, construction complete
 	fanfare, horn for raids, capture sting, ambience (birds, river, wind), simple medieval music loops.
-	Which signal plays which sound: games/game-001/src/shared/Feedback/Cues.luau (FL-0062).
+	Which signal plays which sound: games/game-001/src/shared/Feedback/Lines.luau (moments) and
+	games/game-001/src/client/Controllers/FeedbackController.luau (work), FL-0062.
 	The selection/upload list for the user: production/handoffs/2026-10-12-forge-04-to-user-sounds.md.
 
 	All entries are "needed": no asset has been chosen or heard yet. Positional sounds (rollOff) play
@@ -237,6 +238,16 @@ return {
 		description = "A rival captured an objective: short descending horn.",
 		maxInstances = 1,
 		cooldown = 2,
+	}),
+	sound({
+		id = "kingdom.fire",
+		category = "sfx",
+		volume = 0.5,
+		loop = true,
+		source = STORE .. "'fire crackling loop' (burning wood, no music)",
+		description = "A riot set a building on fire: a crackle loop at the building until the fire is out.",
+		rollOff = far,
+		maxInstances = 2,
 	}),
 	sound({
 		id = "kingdom.horn.war",

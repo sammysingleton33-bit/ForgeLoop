@@ -3,11 +3,11 @@ id: FL-0070
 title: SupportModel, SupportService, trigger offers and fairness caps
 track: build
 owner: forge-01
-status: SPECIFIED
+status: READY
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-18
 depends_on: [FL-0069]
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 10
@@ -38,3 +38,4 @@ Lune specs: score from synthetic sample histories (last-minute deed cannot jump 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (SPECIFIED).
 - 2026-10-12 forge-00: D-030: at VS-2, re-base support on spectators' loyalty and obedience (living-kingdom §6), so fear-led rulers have a dutiful crowd; the G12.3 caps are unchanged.
+- 2026-10-18 forge-00: SPECIFIED → READY. Operation Crownfall (D-053): arena work starts now; FORGE-01 order FL-0125 → FL-0069 → FL-0070 → FL-0071; defaults from crown-arena.md §11 apply

@@ -9,15 +9,22 @@
 	- slice: the interim VS-1 rules (CONTRACTS G3, pending the user's BRIEF §16.3/§16.4): Lobby 0 s,
 	  Founding starts on the first join and is untimed, the first ObjectiveCaptured ends the slice
 	  (MatchService moves to Results). Later phases are not reached in the slice; Results stays up.
-	- match: the full 30-45 minute match of BRIEF §3 (Founding 0-8, Expansion 8-20, Conflict 20-35,
-	  Endgame 35-45 min). Victory may end Endgame early; victory rules are the user's (§16.4).
+	- match: the pre-D-029 split, held until FL-0096; see PACING.md §2 (Founding 0-8, Expansion 8-20,
+	  Conflict 20-35, Endgame 35-45 min, no Arena: MatchPhase has none before VS-2). BRIEF §3 (D-029)
+	  now times Conflict 20-32, Endgame 32-38 and the Crown Arena 38-44; the split is re-cut when
+	  FL-0096 is decided or G12 freezes, whichever comes first.
 	- match30: an evaluation profile, NOT the default (D-030 (6), design/living-kingdom.md §6): the
 	  user prefers about 25 minutes of kingdom play and a 5-minute final phase. Founding 5, Expansion 7,
 	  Conflict 8, Endgame 5, Arena 4.5 min (+ Lobby 20 s, Results 30 s: about 30 min). Arena is the
 	  VS-2 phase (CONTRACTS G12). MatchService cannot select match30 yet (Match.durationsFor knows slice
 	  and match only); FORGE-01 adds it when the match-length decision is made.
-	targets: when a typical new player should reach each VS-1 milestone (seconds after spawn). They
-	are tuning goals for playtests and analytics (FL-0063), not rules the game enforces.
+	targets: when a typical new player should reach each VS-1 v2 milestone (seconds after spawn; D-030
+	onboarding order, PACING.md §3), ascending. Tuning goals for playtests, not rules the game enforces;
+	measured from env.log timestamps until an analytics milestone event exists (FORGE-00 review M7).
+	firstDepositSec is a sim health check, not a ruler action: the first citizen deposit after Founding
+	(ruler gathering is optional, D-030), so it is not part of the ordered list.
+	idleSec: seconds without a meaningful action (PACING.md §6) before a contextual hint, per MatchPhase
+	(no Arena entry until G12 freezes). For FL-0062's dead-air detector; nothing reads it yet.
 ]]
 
 local UNTIMED = math.huge
@@ -51,11 +58,14 @@ return table.freeze({
 		}),
 	}),
 	targets = table.freeze({
-		firstGatherSec = 45,
+		firstDepositSec = 45,
+		firstInspectSec = 30,
 		firstBuildPlacedSec = 90,
 		firstBuildingCompleteSec = 150,
+		firstAnswerSec = 180,
 		firstRecruitSec = 330,
 		firstCaptureSec = 450,
 	}),
+	idleSec = table.freeze({ Founding = 25, Expansion = 45, Conflict = 60, Endgame = 90 }),
 	limits = table.freeze({ matchMinMinutes = 30, matchMaxMinutes = 45 }),
 })

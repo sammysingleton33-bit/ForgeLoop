@@ -14,8 +14,24 @@
 			ContentQuery.choicePreview(scenario, response, names) as given (G13.1 v0.4-g7: risks filled with
 			this conversation's names, no "Risk" prefix); a scenario the names cannot fill returns nil and
 			logs a warning, never a failed remote.
-		Kingdom.Choose(entityId, scenarioId, responseId) -> (ok, { reaction, effects: { { kind, text } } }?,
-		                                                     reason?)
+			G13.8 (additive): the result also carries look (CitizenLook), job, position (Vector3, where
+			the citizen stands now) and kingdom; opening or re-asking holds the citizen for this ruler: it
+			stops (intent "Talking"), faces the ruler's character and stays so for at most
+			Society.conversationHoldSec. A citizen another ruler is holding returns nil.
+			G13.8 v0.4-g10 (additive): the question is ContentQuery.questionFor's for this citizen (a variant by trait
+			or condition, else the scenario's), picked once per showing and kept on a re-ask; `presentation` =
+			{ emotion?, expression?, gesture?, delivery?, urgency?, variantId? } (Kingdom/ConversationTags: only
+			SPEC §5.10 vocabulary; absent when the content has no tag).
+		Kingdom.EndConversation(entityId) -> boolean   (G13.8) the panel closed: the hold ends (the showing
+			stays open); own kingdom only, idempotent; false for a co-ruler's conversation
+		Kingdom.Choose(entityId, scenarioId, responseId) -> (ok, { reaction, effects: { { kind, text } }, tone,
+		                                                     band, emotion?, expression?, gesture?, delivery?,
+		                                                     bubble_s? }?, reason?)
+			G13.8 v0.4-g10: `reaction` is ContentQuery.reactionFor(responseId, loyalty)'s text, with the citizen's
+			loyalty when asked (before this answer moves it): band "high" / "low" / "base", its tone and tags.
+			After an answer the citizen stays held, facing the ruler, until Kingdom.EndConversation or at most
+			Def.REACTION_HOLD_MAX (12 s, the UI's longest reading time) after Choose; an emergency or the ruler
+			leaving still ends it at once (G13.8 v0.4-g9f).
 			Answers the showing that Converse opened for this ruler, once (idempotent per showing). Refusal
 			reasons (stable): not_in_match, unknown_citizen, phase (the match is not in an active phase: Lobby
 			or Results; Converse returns nil then too), not_offered (no open showing for this ruler and
@@ -44,7 +60,9 @@
 		  was applied comes off again;
 		- `strike` on/off events (G13.3 v0.4-g6) listing exactly the citizens whose strike or walk-out
 		  started, and later ended, one event per occupation;
-		- a `reaction` event to the kingdom's members.
+		- a `reaction` event to the kingdom's members;
+		- G9 CitizenAnswered(player, kingdomId, citizenId, decisionId, secondsOpen?) once, last (D-044 (3)):
+		  secondsOpen is the server time since the request's bubble appeared, nil when there was none.
 	Thought bubbles: every Society.requestRefreshSeconds, each ruled kingdom keeps up to Society.openRequests
 	open requests: the highest-priority eligible scenario of citizens without one (thought ctx: the best
 	reputation among its rulers, any ruler's decisions, SPEC §6.8). A request stays open while its showing
@@ -62,6 +80,7 @@
 		ConversationService:step(dt)           -- consequences over time (the loop calls it)
 		ConversationService:openRequests(kingdomId): { { entityId, scenarioId } }
 		ConversationService:hasRequest(kingdomId, entityId): boolean   -- CitizenView.hasRequest (G13.2)
+		ConversationService:announceRiot(kingdomId, citizens, on)     -- the rioters' own placard on or off (D-050 (1d))
 		ConversationService:announceStrike(kingdomId, citizens, on)   -- strike events for a strike started
 		                                       elsewhere (CitizenService:debugStrike); off follows when it ends
 	Studio debug hook (G13.7 citizen.request, FORGE-05's DebugPresetService):
@@ -72,9 +91,12 @@
 ]]
 
 local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
+local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local Occupations = require("@game/ReplicatedStorage/Game/Content/Occupations")
+local ConversationTags = require("@game/ReplicatedStorage/Game/Kingdom/ConversationTags")
 local Reputation = require("@game/ReplicatedStorage/Game/Kingdom/Reputation")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Context = require("@game/ReplicatedStorage/Game/Sim/Context")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local People = require("@game/ReplicatedStorage/Game/Sim/People")
@@ -89,6 +111,7 @@ local Def = {
 }
 
 local STEP = 1 -- seconds between consequence steps
+Def.REACTION_HOLD_MAX = 12 -- G13.8 v0.4-g9f: after Choose, held until EndConversation, at most this long
 function Def.new(env: any, registry: any)
 	local self = setmetatable({}, ConversationService)
 	self._env = env
@@ -166,8 +189,14 @@ function ConversationService:_citizenCtx(c: any, base: any, rep: { [string]: num
 	return Context.citizen(self:_sim(), c, base, { obedience = Population.obedience(traits, rep, People.CONTENT) })
 end
 
+-- traits: questionFor picks a question variant by trait (SPEC §5.10); eligibility ignores them
 local function citizenState(c: any): any
-	return { id = c.id, occupation = if c.profile then c.profile.occupation else c.job, unlocked = c.unlocked }
+	return {
+		id = c.id,
+		occupation = if c.profile then c.profile.occupation else c.job,
+		unlocked = c.unlocked,
+		traits = if c.profile then c.profile.traits else nil,
+	}
 end
 
 local function find(list: { any }, predicate: (any) -> boolean): any?
@@ -262,7 +291,25 @@ function ConversationService:_ruled(player: any, entityId: any): (string?, any?)
 	return kingdomId, c
 end
 
-function ConversationService:_payload(c: any, scenario: any, userId: number): { [string]: any }
+-- The question this citizen is asked in this showing: ContentQuery.questionFor (a variant by trait or
+-- condition, else the scenario's own), raw (not yet filled) so a re-ask can fill it again. `ctx` is the
+-- citizen's ctx for the variants' conditions.
+function ConversationService:_question(c: any, scenario: any, ctx: any): { [string]: any }
+	local question = ContentQuery.questionFor(scenario.id, citizenState(c), ctx)
+	if question == nil then -- cannot happen for a scenario ContentQuery gave us; stay on the plain question
+		return { text = scenario.question }
+	end
+	return question
+end
+
+-- `question` is the showing's pinned question (Converse picks it once per showing: a re-ask must read the same
+-- words even when a variant's condition has changed since, FORGE-07 FL-0110 Q3).
+function ConversationService:_payload(
+	c: any,
+	scenario: any,
+	userId: number,
+	question: { [string]: any }
+): { [string]: any }
 	local names = self:_names(c, userId)
 	local options = {}
 	local responses = table.clone(scenario.responses)
@@ -280,21 +327,64 @@ function ConversationService:_payload(c: any, scenario: any, userId: number): { 
 		end
 		table.insert(options, option)
 	end
+	local sim = self:_sim()
+	local y = if sim.groundY then sim.groundY(c.x, c.z) else 0
 	return {
 		entityId = c.id,
 		scenarioId = scenario.id,
 		speaker = { name = c.name, occupation = names.occupation },
-		question = ContentQuery.fill(scenario.question, names),
+		question = ContentQuery.fill(question.text, names),
 		options = options,
+		-- G13.8 v0.4-g10: how the question is said (optional; nil adds no field)
+		presentation = ConversationTags.question(question, (ContentQuery.presentation(scenario.id) or {}).urgency),
+		-- G13.8 (additive): who the citizen is, how they look and where they stand right now
+		look = if c.profile then Kit.normalizeLook(c.profile.look) else nil, -- only a validated look goes on the wire
+		job = c.job,
+		position = Vector3.new(c.x, y, c.z),
+		kingdom = c.kingdomId,
 	}
+end
+
+-- Holds the citizen for this ruler's conversation (G13.8): still, facing the ruler's character when it
+-- has one, for Society.conversationHoldSec from now. Asking again extends the hold, but one showing can never
+-- grant more than Society.conversationHoldMaxSec in all (D-050 (6a), FL-0122): the extension counts only the time
+-- it adds, closing the panel (endConversation) gives the unused time back, and once the showing's allowance is
+-- spent the ruler still gets the question but the citizen keeps working. Returns the payload for chaining.
+function ConversationService:_hold(
+	player: any,
+	c: any,
+	payload: { [string]: any },
+	showing: { [string]: any }
+): { [string]: any }
+	local sim = self:_sim()
+	local left = SocietyConfig.conversationHoldMaxSec - (showing.holdGranted or 0)
+	local held = sim:isHeld(c)
+	local base = if held then c.hold.untilTime else sim.time -- the hold already running ends here
+	local extra = math.max(0, math.min(sim.time + SocietyConfig.conversationHoldSec - base, left))
+	if extra <= 0 then
+		return payload -- still held until `base`, or the allowance is spent: no new time
+	end
+	local ok, at = pcall(function()
+		local character = player.Character
+		local root = character and character.PrimaryPart
+		return root and root.Position
+	end)
+	local face = if ok and typeof(at) == "Vector3" then at else nil
+	sim:holdCitizen(c, base + extra - sim.time, face and face.X, face and face.Z, player.UserId)
+	showing.holdGranted = (showing.holdGranted or 0) + extra
+	return payload
 end
 
 function ConversationService:converse(player: any, entityId: number): { [string]: any }?
 	local kingdomId, c = self:_ruled(player, entityId)
-	if kingdomId == nil or c == nil or not self:_sim().active then
+	local sim = self:_sim()
+	if kingdomId == nil or c == nil or not sim.active then
 		return nil -- outside an active phase (Lobby, Results) nobody brings the ruler a matter (#77 L3)
 	end
 	local userId = player.UserId
+	if sim:isHeld(c) and c.hold.by ~= userId then
+		return nil -- a co-ruler is talking to them right now (G13.8)
+	end
 	local base, rep = self:_kingdomCtx(kingdomId, userId)
 	local ctx = self:_citizenCtx(c, base, rep)
 	local showing = self._showing[entityId]
@@ -307,10 +397,10 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 				return s.id == showing.scenarioId
 			end)
 		if still then
-			local ok, payload = pcall(self._payload, self, c, still, userId)
+			local ok, payload = pcall(self._payload, self, c, still, userId, showing.question)
 			if ok then
 				showing.userId = userId
-				return payload
+				return self:_hold(player, c, payload, showing)
 			end
 		end
 		self._showing[entityId] = nil
@@ -331,7 +421,8 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 	if scenario == nil then
 		return nil
 	end
-	local ok, payload = pcall(self._payload, self, c, scenario, userId)
+	local question = self:_question(c, scenario, ctx)
+	local ok, payload = pcall(self._payload, self, c, scenario, userId, question)
 	if not ok then
 		-- content the server cannot show (e.g. a placeholder these names do not cover): nothing on the
 		-- citizen's mind, and a warning for the content team, rather than a failed remote
@@ -342,13 +433,45 @@ function ConversationService:converse(player: any, entityId: number): { [string]
 		})
 		return nil
 	end
+	local shownBefore = (shown[entityId] or {})[scenario.id] -- restored if the question is never answered
 	ContentQuery.markShown(shown, entityId, scenario.id, now)
 	-- the request stays open until it is answered (#77 N3): closing the panel without an answer leaves the
 	-- thought up, and asking again shows the same question
-	self._showing[entityId] =
-		{ scenarioId = scenario.id, userId = userId, kingdomId = kingdomId, forced = forced or nil }
+	local entry = {
+		scenarioId = scenario.id,
+		userId = userId,
+		kingdomId = kingdomId,
+		question = question, -- pinned for the showing (a re-ask reads the same variant)
+		forced = forced or nil,
+		shownBefore = shownBefore,
+		requestedAt = open and open.openedAt, -- nil when the citizen had no request bubble
+		holdGranted = 0, -- seconds of hold this showing has taken (capped by Society.conversationHoldMaxSec)
+	}
+	self._showing[entityId] = entry
 	self._reputation:rulerVisited(userId, entityId)
-	return payload
+	return self:_hold(player, c, payload, entry)
+end
+
+-- Kingdom.EndConversation (G13.8): the ruler closed the panel; the citizen goes back to work. Own kingdom's
+-- citizens only; idempotent (true when no conversation holds them any more); false for another kingdom's
+-- citizen, a spectator, or a citizen a co-ruler is talking to. The showing stays open: asking again shows
+-- the same question.
+function ConversationService:endConversation(player: any, entityId: number): boolean
+	local kingdomId, c = self:_ruled(player, entityId)
+	if kingdomId == nil or c == nil then
+		return false
+	end
+	local sim = self:_sim()
+	if sim:isHeld(c) and c.hold.by ~= player.UserId then
+		return false
+	end
+	local showing = self._showing[entityId]
+	if showing and showing.holdGranted and sim:isHeld(c) then
+		-- closing early gives the unused part of the hold back to the showing's allowance
+		showing.holdGranted = math.max(0, showing.holdGranted - math.max(0, c.hold.untilTime - sim.time))
+	end
+	sim:releaseCitizen(c)
+	return true
 end
 
 -- ---------------------------------------------------------------- Choose
@@ -529,6 +652,21 @@ function ConversationService:_watchStrike(kingdomId: string, citizens: { any }, 
 	})
 end
 
+-- One `strike` event marked EventCodec.RIOT listing exactly the rioters whose state changed: the client turns it
+-- into a "riot" event with its own placard (D-050 (1d)). Each change goes out once per citizen.
+function ConversationService:_sendRiot(kingdomId: string, citizens: { any }, on: boolean)
+	local ids = {}
+	for _, c in citizens do
+		if (c.riotShown == true) ~= on then
+			c.riotShown = on
+			table.insert(ids, c.id)
+		end
+	end
+	if #ids > 0 then
+		self:_send(kingdomId, { type = "strike", occupation = EventCodec.RIOT, on = on, entityIds = ids })
+	end
+end
+
 -- One `strike` event per occupation among `citizens`, listing exactly them (G13.3 v0.4-g6).
 function ConversationService:_sendStrike(kingdomId: string, citizens: { any }, on: boolean)
 	local byOccupation: { [string]: { number } } = {}
@@ -630,6 +768,7 @@ function ConversationService:choose(
 		return false, nil, "not_eligible"
 	end
 	local sim = self:_sim()
+	local loyaltyBefore = c.loyalty or 50 -- the citizen's loyalty when asked, before this answer moves it (reactionFor)
 	local decision = ContentQuery.data.decisions[response.decision]
 	local bundle = ContentQuery.decisionEffects(response.decision)
 	if decision == nil or bundle == nil then
@@ -710,9 +849,20 @@ function ConversationService:choose(
 			end
 		end
 	end
-	local reaction = ContentQuery.fill(response.reaction, names)
-	self:_send(kingdomId, { type = "reaction", id = entityId, text = reaction, tone = response.tone or "neutral" })
-	return true, { reaction = reaction, effects = applied }, nil
+	-- G13.8 v0.4-g10: the reaction is the loyalty band's (base, high or low), with its tags
+	local line = ContentQuery.reactionFor(response.id, loyaltyBefore)
+	local tags = ConversationTags.reaction(line)
+	local reaction = ContentQuery.fill(if line then line.text else response.reaction, names)
+	self:_send(kingdomId, { type = "reaction", id = entityId, text = reaction, tone = tags.tone })
+	if c.hold and c.hold.by == userId then -- framed while the reaction is read: EndConversation, at most 12 s
+		c.hold.untilTime = sim.time + Def.REACTION_HOLD_MAX
+	end
+	-- G9 (D-044 (3)): once per accepted answer, after its effects; the bus is server-only
+	local secondsOpen = if showing.requestedAt then math.max(0, self:_now() - showing.requestedAt) else nil
+	GameEvents.CitizenAnswered:fire(player, kingdomId, entityId, response.decision, secondsOpen)
+	tags.reaction = reaction
+	tags.effects = applied
+	return true, tags, nil
 end
 
 -- Strike events for citizens whose strike started elsewhere (CitizenService:debugStrike): on now, and
@@ -722,6 +872,11 @@ function ConversationService:announceStrike(kingdomId: string, citizens: { any }
 	if on then
 		self:_watchStrike(kingdomId, citizens, self:_sim().time + 1)
 	end
+end
+
+-- The riot's own state (D-050 (1d)): the rioters' placard goes on or off; ConsequenceService calls both.
+function ConversationService:announceRiot(kingdomId: string, citizens: { any }, on: boolean)
+	self:_sendRiot(kingdomId, citizens, on)
 end
 
 -- ---------------------------------------------------------------- Studio debug hook (G13.7)
@@ -781,7 +936,13 @@ function ConversationService:_openRequest(kingdomId: string, open: { any }, c: a
 		text = ContentQuery.fill(scenario.thought, self:_names(c, nil)),
 		icon = scenario.icon or "request",
 	}
-	table.insert(open, { entityId = c.id, scenarioId = scenario.id, forced = forced, thought = thought })
+	table.insert(open, {
+		entityId = c.id,
+		scenarioId = scenario.id,
+		forced = forced,
+		thought = thought,
+		openedAt = self:_now(), -- when the bubble appeared (CitizenAnswered secondsOpen, D-044 (3))
+	})
 	self:_send(kingdomId, thought)
 end
 
@@ -834,6 +995,18 @@ function ConversationService:refresh()
 				showing.kingdomId == kid and (sim.citizens[id] == nil or table.find(k.rulers, showing.userId) == nil)
 			then
 				self._showing[id] = nil
+				-- never answered: the question is not used up for the co-rulers who stay (G13.8)
+				local stamps = shown[id]
+				if stamps then
+					stamps[showing.scenarioId] = showing.shownBefore
+				end
+			end
+		end
+		-- nor is a hold: a ruler who left mid-conversation frees the citizen for a co-ruler at once (G13.8)
+		for _, id in k.citizenIds do
+			local c = sim.citizens[id]
+			if c and c.hold and table.find(k.rulers, c.hold.by) == nil then
+				sim:releaseCitizen(c)
 			end
 		end
 		-- close requests that no longer hold. One asked and not yet answered (#77 N3) stays while its matter
@@ -953,6 +1126,9 @@ function ConversationService:start()
 	)
 	self._remotes:handle("Kingdom.Converse", function(player: any, entityId: number)
 		return self:converse(player, entityId)
+	end)
+	self._remotes:handle("Kingdom.EndConversation", function(player: any, entityId: number)
+		return self:endConversation(player, entityId)
 	end)
 	self._remotes:handle(
 		"Kingdom.Choose",

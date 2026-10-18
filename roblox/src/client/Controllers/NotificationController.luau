@@ -11,7 +11,10 @@
 		    FORGE-04 never reacts to RewardRolled itself, so a reward is never celebrated twice.
 		NotificationController:registerCelebration(kind, spec) -> { string }   -- games add moments (FL-0062)
 		NotificationController:dismiss(id)
-		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)   -- the HUD's layout
+		NotificationController:place(position: UDim2, anchor: Vector2?, width: number?, limit: number?)
+		    -- the HUD's layout (limit: at most that many cards there, e.g. 1 in a narrow band; default 3),
+		    in screen px: this ScreenGui has no UIScale, so a caller laying out in logical px multiplies by
+		    its layout scale first (KingdomHudController does, FORGE-03 #74)
 		NotificationController:reserveTop(owner: string, px: number?)   -- keep the stack below a card; nil frees
 		NotificationController.shown: Signal (item)     .celebrated: Signal (kind, payload)
 		NotificationController.queue                     -- Experience/NotificationQueue (rules and stats)
@@ -23,6 +26,8 @@
 		{ sound: string?, vfx: string?, toast: { kind, title, body? }?, cooldownSec: number? }
 	where title and body may contain {field} placeholders filled from the payload's string and number
 	fields (any other value leaves the placeholder empty; a payload that is not a table counts as none).
+	payload.position (Vector3) places the effect (else over the ruler), and payload.tint (Color3) colours
+	presets that allow it (VfxPresets tint = true), e.g. a kingdom's banner colour.
 	Sounds play through AudioController and effects through VFXController (both found with
 	registry:find, so either may be absent). Within cooldownSec (default 1 s) of a kind's fanfare:
 	the same moment again (same toast text) is dropped, so two systems reporting one moment never give
@@ -39,7 +44,10 @@
 	the top right at most 300 px or 46 % of the screen wide, newest on top, until a game places it
 	(`place`, the same shape as FORGE-03's `ToastStack:place`, e.g. the HUD's `Layout.toastTop`).
 	A card that sits under the stack's band (the onboarding card on phones) calls `reserveTop` while it
-	shows, and the stack starts below it, so toasts never cover its buttons. Each card is a Toast (kind
+	shows, and the stack starts below it, so toasts never cover its buttons. When the room left below
+	the stack's top holds fewer than 3 cards (a short phone with the onboarding card), fewer show at
+	once (NotificationQueue:setMaxVisible); the others wait and show in full later. After destroy()
+	nothing is shown or celebrated and no GUI is created again. Each card is a Toast (kind
 	accent and icon, title, body, the ×N badge); a change of title, body or count rebuilds the card,
 	since Toast has no update API. A transparent "Dismiss" button over the card makes a tap dismiss
 	it. A toast never blocks input elsewhere.
@@ -57,6 +65,7 @@ local Def = { name = "NotificationController", dependencies = { "SettingsControl
 Def.DISPLAY_ORDER = 70
 Def.TICK_SEC = 0.1
 Def.WIDTH = 300
+Def.CARD_ESTIMATE = 64 -- px of one Toast with a one-line body: how many fit below the stack's top
 Def.POSITION = UDim2.new(1, -12, 0, 12) -- top right, until a game places the stack
 Def.KIND_SOUND = table.freeze({
 	info = "notify.info",
@@ -173,6 +182,8 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_root = nil :: any,
 		_placement = { position = Def.POSITION, anchor = Vector2.new(1, 0), width = Def.WIDTH },
 		_reserved = {} :: { [string]: number },
+		_screenHeight = opts.screenHeight, -- specs: () -> px; else the ScreenGui's AbsoluteSize
+		_destroyed = false,
 		queue = NotificationQueue.new({ now = env.clock, config = opts.config }),
 		shown = Signal.new(),
 		celebrated = Signal.new(),
@@ -206,11 +217,16 @@ function NotificationController:start()
 end
 
 function NotificationController:destroy()
+	self._destroyed = true
 	self._running = false
 	for _, connection in self._connections do
 		connection:disconnect()
 	end
 	table.clear(self._connections)
+	if self._sizeConnection then
+		self._sizeConnection:Disconnect()
+		self._sizeConnection = nil
+	end
 	if self._root then
 		self._root.gui:Destroy()
 		self._root = nil
@@ -222,6 +238,9 @@ function NotificationController:destroy()
 end
 
 function NotificationController:show(spec: any): (any, string)
+	if self._destroyed then
+		return nil, "dropped"
+	end
 	if type(spec) ~= "table" then
 		return nil, "invalid"
 	end
@@ -258,6 +277,9 @@ function NotificationController:registerCelebration(kind: string, spec: any): { 
 end
 
 function NotificationController:celebrate(kind: string, payload: any): boolean
+	if self._destroyed then
+		return false
+	end
 	local spec = self._celebrations[kind]
 	if spec == nil then
 		self._env.log(
@@ -297,11 +319,12 @@ function NotificationController:celebrate(kind: string, payload: any): boolean
 	return true
 end
 
-function NotificationController:place(position: UDim2, anchor: Vector2?, width: number?)
+function NotificationController:place(position: UDim2, anchor: Vector2?, width: number?, limit: number?)
 	self._placement = {
 		position = position,
 		anchor = anchor or Vector2.new(1, 0),
 		width = if type(width) == "number" and width > 0 then width else Def.WIDTH,
+		limit = if type(limit) == "number" and limit >= 1 then math.floor(limit) else nil,
 	}
 	self:_layout()
 	self:_rebuild() -- cards take the new width
@@ -326,7 +349,8 @@ function NotificationController:_fanfare(spec: any, data: any)
 	end
 	local vfx = self._registry:find("VFXController")
 	if vfx and spec.vfx then
-		vfx:play(spec.vfx, { position = position or self:_rulerPosition() })
+		local tint = if data and typeof(data.tint) == "Color3" then data.tint else nil
+		vfx:play(spec.vfx, { position = position or self:_rulerPosition(), tint = tint })
 	end
 end
 
@@ -340,6 +364,7 @@ function NotificationController:_rulerPosition(): Vector3?
 end
 
 function NotificationController:_announce(item: any, silent: boolean)
+	item.announced = true -- a toast that waits for room and shows again is not announced again
 	if not silent then
 		local audio = self._registry:find("AudioController")
 		if audio then
@@ -358,9 +383,10 @@ function NotificationController:_tick()
 	self:_sync()
 	for _, item in shown do
 		local audio = self._registry:find("AudioController")
-		if audio and not item.silent then
+		if audio and not item.silent and not item.announced then
 			audio:play(Def.KIND_SOUND[item.kind] or "notify.info")
 		end
+		item.announced = true -- shown again after a short screen freed room: no second sound (#82 L1)
 		self.shown:fire(item)
 	end
 end
@@ -381,6 +407,9 @@ end
 function NotificationController:_rootView(): any
 	if self._root then
 		return self._root
+	end
+	if self._destroyed then
+		return nil
 	end
 	local parent = self:_gui()
 	if parent == nil then
@@ -407,6 +436,11 @@ function NotificationController:_rootView(): any
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	list.Parent = stack
 	self._root = { gui = gui, stack = stack, limit = limit }
+	pcall(function() -- a rotation or resize changes how many cards fit (Lune instances have no events)
+		self._sizeConnection = gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+			self:_layout()
+		end)
+	end)
 	self:_layout()
 	return self._root
 end
@@ -427,6 +461,34 @@ function NotificationController:_layout()
 	root.stack.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, top)
 	root.stack.Size = UDim2.new(0.46, 0, 1, -(top + 12))
 	root.limit.MaxSize = Vector2.new(placement.width, math.huge)
+	local hidden = self:_fit(top)
+	if #hidden > 0 then
+		self:_sync()
+	end
+end
+
+-- How many cards fit between the stack's top and the safe-area bottom; the queue shows no more.
+-- Unknown height (headless, before layout) keeps the cap as it is.
+function NotificationController:_fit(top: number): { any }
+	local height: any = nil
+	if self._screenHeight then
+		height = self._screenHeight()
+	else
+		local ok, size = pcall(function()
+			return self._root.gui.AbsoluteSize.Y
+		end)
+		height = if ok then size else nil
+	end
+	local fit = nil
+	if type(height) == "number" and height > 0 then
+		fit = math.max(1, math.floor((height - top - 12 + 8) / (Def.CARD_ESTIMATE + 8)))
+	end
+	local limit = self._placement.limit -- the game's cap for this placement (FORGE-03: 1 above a sheet)
+	if limit then
+		fit = if fit then math.min(fit, limit) else limit
+	end
+	-- nothing known: back to the configured cap (a cleared limit must not stay)
+	return self.queue:setMaxVisible(fit or math.huge)
 end
 
 -- Rebuilds every visible card (after a width change).
@@ -447,7 +509,7 @@ function NotificationController:_buildToast(item: any, parent: any, layoutOrder:
 		kind = item.kind,
 		title = item.title,
 		body = item.body,
-		icon = item.icon,
+		icon = item.icon, -- nil: Toast's own icon for the kind (achievement: laurel, FL-0105)
 		count = item.count,
 		width = self._placement.width,
 		layoutOrder = layoutOrder,

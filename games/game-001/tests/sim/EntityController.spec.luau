@@ -239,6 +239,92 @@ describe("EntityController: initial state", function()
 		controller:destroy()
 	end)
 
+	it("reads Sim.GetEntities page by page until the server gives no next cursor (FL-0109)", function()
+		local env = MockEnv.new({
+			isServer = false,
+			localPlayer = { userId = 1001 },
+			sharedModules = { Remotes = { Sim = SimRemotes } },
+		})
+		local remotes = RemoteServiceDef.new(env, {})
+		local world = { full(1, 1, 1), full(2, 2, 2), full(4, 4, 4), full(7, 7, 7), full(9, 9, 9) }
+		local asked, failOnce = {}, true
+		remotes:handle("Sim.GetEntities", function(_player, after)
+			table.insert(asked, after or 0)
+			if after == 7 and failOnce then
+				failOnce = false
+				return nil -- one page gets no answer: it is asked for again
+			end
+			local page = {}
+			for _, e in world do
+				if e.id > (after or 0) and #page < 2 then
+					table.insert(page, e)
+				end
+			end
+			local last = page[#page]
+			local more = last ~= nil and last.id < world[#world].id
+			return EventCodec.encode(1, page), if more then last.id else nil
+		end)
+		local controller = Def.new(env, {})
+		controller.adapter = recorder().adapter
+		controller:start()
+		env.mock:advance(Def.RETRY_SECONDS * 2)
+		controller:step(0)
+		for _, e in world do
+			expect(controller:getModel(e.id)).never.toBeNil()
+		end
+		expect(asked).toEqual({ 0, 2, 7, 7 }) -- pages of two: after 0, 2, then 7 (asked twice: no answer once)
+		controller:destroy()
+	end)
+
+	it("stops paging at GET_ENTITIES_PAGES however far a well-behaved cursor runs (#127 L4)", function()
+		local env = MockEnv.new({
+			isServer = false,
+			localPlayer = { userId = 1001 },
+			sharedModules = { Remotes = { Sim = SimRemotes } },
+		})
+		local remotes = RemoteServiceDef.new(env, {})
+		local calls = 0
+		remotes:handle("Sim.GetEntities", function(_player, after)
+			calls += 1
+			local id = (after or 0) + 1
+			return EventCodec.encode(1, { full(id, id, id) }), id -- always one more entity after this one
+		end)
+		-- the remote's rate limit (6 a second) drops calls, and every drop spends one of the controller's tries; with
+		-- enough tries and time the only thing left to stop it is the page cap
+		local tries = Def.GET_ENTITIES_TRIES
+		Def.GET_ENTITIES_TRIES = 1000
+		local controller = Def.new(env, {})
+		controller.adapter = recorder().adapter
+		controller:start()
+		env.mock:advance(60)
+		controller:step(0)
+		Def.GET_ENTITIES_TRIES = tries
+		expect(calls).toBe(Def.GET_ENTITIES_PAGES) -- 64 pages, then it stops
+		controller:destroy()
+	end)
+
+	it("stops paging when the server's cursor does not move on", function()
+		local env = MockEnv.new({
+			isServer = false,
+			localPlayer = { userId = 1001 },
+			sharedModules = { Remotes = { Sim = SimRemotes } },
+		})
+		local remotes = RemoteServiceDef.new(env, {})
+		local calls = 0
+		remotes:handle("Sim.GetEntities", function()
+			calls += 1
+			return EventCodec.encode(1, { full(3, 3, 3) }), 3 -- always "more after 3"
+		end)
+		local controller = Def.new(env, {})
+		controller.adapter = recorder().adapter
+		controller:start()
+		env.mock:advance(5)
+		controller:step(0)
+		expect(calls).toBe(2) -- the first page, then the same cursor again ends it
+		expect(controller:getModel(3)).never.toBeNil()
+		controller:destroy()
+	end)
+
 	it("keeps retrying without errors when the Sim remotes never appear", function()
 		local env = MockEnv.new({ isServer = false, localPlayer = { userId = 1001 } })
 		local controller = Def.new(env, {})
@@ -269,6 +355,27 @@ describe("EntityController: snapshots (G4 client rules)", function()
 		-- the server stops: the rig holds the newest sample, never extrapolates
 		frame(h, 1)
 		expect(pivotOf(model).X).toBeNear(100, 0.05)
+	end)
+
+	it("starts every track over when serverTime jumps without a reset (#39 L5)", function()
+		local h = start(setup({ full(1, 0, 0) }))
+		frame(h, 0)
+		for i = 1, 5 do -- the old timeline: x 2 .. 10 at serverTime 5.1 .. 5.5
+			h.env.mock:advance(0.1)
+			snapshot(h, { record(1, 2 * i, 0) })
+		end
+		frame(h, 0.5)
+		-- the server restarts its clock (a match restart): serverTime 0.2, then 0.3
+		h.seq += 1
+		h.remotes:fire("Sim.Snapshot", h.player, SnapshotCodec.encode({ record(1, 20, 0) }, h.seq, 0.2))
+		h.env.mock:advance(0.1)
+		h.seq += 1
+		h.remotes:fire("Sim.Snapshot", h.player, SnapshotCodec.encode({ record(1, 30, 0) }, h.seq, 0.3))
+		for _ = 1, 30 do
+			frame(h, 0.1)
+		end
+		-- held at the new timeline's newest point, never interpolating back towards old-timeline samples
+		expect(pivotOf(h.controller:getModel(1)).X).toBeNear(30, 1e-3)
 	end)
 
 	it("drops a snapshot whose seq is not newer than the newest applied, across the u16 wrap", function()
@@ -583,6 +690,32 @@ describe("EntityController: rigs, cues and reset", function()
 			{ id = 3, cue = "strike", payload = { occupation = "miner", on = false } },
 		})
 	end)
+
+	it(
+		"turns a strike event marked EventCodec.RIOT into the riot event: rioters are not on strike (D-050 (1d))",
+		function()
+			local h = start(setup({ full(1, 0, 0), full(2, 5, 0) }))
+			frame(h, 0)
+			local model = h.controller:getModel(1)
+			table.clear(h.events)
+			events(h, {
+				{ type = "strike", occupation = EventCodec.RIOT, on = true, entityIds = { 1, 2, 99 } }, -- 99 unknown
+				{ type = "strike", occupation = "farmer", on = true, entityIds = { 2 } }, -- a real strike next to it
+				{ type = "strike", occupation = EventCodec.RIOT, on = false, entityIds = { 1 } },
+			})
+			expect(h.events).toEqual({
+				{ id = 1, cue = "riot", payload = { on = true }, model = model },
+				{ id = 2, cue = "riot", payload = { on = true }, model = h.controller:getModel(2) },
+				{
+					id = 2,
+					cue = "strike",
+					payload = { occupation = "farmer", on = true },
+					model = h.controller:getModel(2),
+				},
+				{ id = 1, cue = "riot", payload = { on = false }, model = model },
+			})
+		end
+	)
 
 	it("plays the dead pose on die, then releases the rig after a short delay", function()
 		local h = start(setup({ full(1, 0, 0) }))

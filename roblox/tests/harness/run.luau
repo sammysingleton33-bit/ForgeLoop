@@ -10,6 +10,8 @@
 		--project <file>   Rojo project the module loader resolves requires over
 		                   (default roblox/default.project.json, the framework sandbox)
 		--specs <dir>      directory searched for specs (default roblox/tests/unit)
+		--shard <i>/<n>    run only every n-th selected spec file, starting at the i-th (1 <= i <= n), so a
+		                   long folder can run as n shorter steps (roblox/scripts/check.sh SHARDS)
 	Discovers every *.spec.luau and *.spec.lua under the spec directory (recursively, sorted), loads
 	each with a fresh ModuleLoader (Roblox require semantics; one module identity per file per spec
 	file; the global Random is that loader's MockRandom), runs it and prints failures with
@@ -40,6 +42,7 @@ end
 local HARNESS_DIR = scriptDir()
 local ROOT = Path.normalize(HARNESS_DIR .. "/../../..")
 local specDirArg, projectArg, filter = nil, nil, nil
+local shardIndex, shardCount = 1, 1
 do
 	local i = 1
 	while i <= #process.args do
@@ -56,8 +59,17 @@ do
 				projectArg = value
 			end
 			i += 2
+		elseif arg == "--shard" then
+			local a, b = string.match(process.args[i + 1] or "", "^(%d+)/(%d+)$")
+			local index, count = tonumber(a), tonumber(b)
+			if index == nil or count == nil or index < 1 or index > count then
+				print(`run.luau: --shard needs <i>/<n> with 1 <= i <= n`)
+				process.exit(2)
+			end
+			shardIndex, shardCount = index :: number, count :: number
+			i += 2
 		elseif string.sub(arg, 1, 2) == "--" then
-			print(`run.luau: unknown option {arg} (--project <file>, --specs <dir>, [filter])`)
+			print(`run.luau: unknown option {arg} (--project <file>, --specs <dir>, --shard <i>/<n>, [filter])`)
 			process.exit(2)
 		else
 			filter = arg
@@ -113,9 +125,16 @@ Test.root = ROOT -- absolute repository root, for specs that read files
 
 local misnamed = {}
 local allSpecs = findSpecs(UNIT_DIR, {}, misnamed)
-local specs = {}
+local selected = {}
 for _, file in allSpecs do
 	if filter == nil or string.find(Path.relative(ROOT, file), filter, 1, true) then
+		table.insert(selected, file)
+	end
+end
+-- --shard i/n: every n-th selected file from the i-th (sorted order), so the n shards cover each file once
+local specs = {}
+for index, file in selected do
+	if (index - 1) % shardCount + 1 == shardIndex then
 		table.insert(specs, file)
 	end
 end
@@ -125,7 +144,10 @@ print(
 		.. `(project {Path.relative(ROOT, PROJECT_FILE)})`
 )
 if filter then
-	print(`  filter "{filter}": {#specs} of {#allSpecs} spec files selected`)
+	print(`  filter "{filter}": {#selected} of {#allSpecs} spec files selected`)
+end
+if shardCount > 1 then
+	print(`  shard {shardIndex}/{shardCount}: {#specs} of {#selected} spec files`)
 end
 
 local passed, failed, brokenFiles = 0, 0, 0

@@ -7,23 +7,36 @@
 		Kingdom.GetState() -> { kingdoms: { Kingdom (G2) }, mine: KingdomId? }   snapshot on request
 		Kingdom.Gather(nodeId: string(1,32)) -> (true, ResourceId, amount) | (false, errorCode)
 		                                     the ruler harvests a node; the server uses the character
-		                                     position it sees and enforces range and cooldown
+		                                     position it sees and enforces range and cooldown. Own or neutral
+		                                     land only (not_your_node on a rival's); at most a per-minute
+		                                     allowance of each resource for the whole kingdom (answers
+		                                     cooldown when it is used up) (D-050 (3), FL-0122)
 		Kingdom.SetJobQuota(job: JobId, count: integer(0,50)) -> (boolean, errorCode?)   G5 requestWorkers;
 		                                     hauler is the pool, so it is not a quota job
-		Kingdom.GetPopulation() -> { total, byJob, cap, quotas }?   getPopulation of the asker's kingdom (G13.2)
+		Kingdom.GetPopulation() -> { total, byJob, cap, quotas, quotaRev }?   getPopulation of the asker's kingdom (G13.2)
 		Kingdom.GetReputation() -> { values, history (latest 30), kingdom: { happiness, stability, morale } }?
 		                                     the asker's own reputation (G13.4); nil for a spectator
 		Kingdom.Converse(entityId: integer) -> { entityId, scenarioId, speaker: { name, occupation }, question,
 		                                     options: { { id, text, cost?, risks? } } }?   (G13.3) own kingdom's
 		                                     citizens, rulers only; nil when the citizen has nothing to say
-		                                     or the match is not in an active phase (Lobby, Results)
+		                                     or the match is not in an active phase (Lobby, Results); G13.8:
+		                                     also look, job, position, kingdom, and the citizen is held;
+		                                     v0.4-g10: question is the showing's pinned variant (ContentQuery
+		                                     questionFor, filled), and presentation = { emotion?, expression?,
+		                                     gesture?, delivery?, urgency?, variantId? } only when the content
+		                                     has a tag (Kingdom/ConversationTags: allowlisted values only)
+		Kingdom.EndConversation(entityId: integer) -> boolean   (G13.8) ends the conversation hold
 		Kingdom.Choose(entityId, scenarioId: string(1,48), responseId: string(1,48))
-		                                  -> (ok, { reaction, effects: { { kind, text } } }?, reason?)   (G13.3)
+		                                  -> (ok, { reaction, effects: { { kind, text } }, tone, band, emotion?, expression?,
+		                                     gesture?, delivery?, bubble_s? }?, reason?)   (G13.3; the rest
+		                                     v0.4-g10: reaction is ContentQuery reactionFor's text for the citizen's
+		                                     loyalty when asked, band "base" | "high" | "low", tags allowlisted)
 		                                     reasons: not_in_match, unknown_citizen, phase, not_offered,
 		                                     unknown_response, not_eligible, cost (ConversationService)
 	Server -> client
 		Kingdom.State({ kingdoms, mine })    on change (to every player) and to each arriving player
-		Kingdom.Population({ total, byJob, cap, quotas })   to a kingdom's members on change (G13.2)
+		Kingdom.Population({ total, byJob, cap, quotas, quotaRev })   to a kingdom's members on change (G13.2;
+		                                       quotaRev +1 per accepted quota change, FL-0109)
 		Kingdom.Reputation(same payload as GetReputation)   to the ruler when it changes (G13.4)
 	Implemented by Kingdom/MatchHost; GetPopulation/Population by CitizenService; GetReputation/Reputation
 	by ReputationService; Converse/Choose by ConversationService. Match phases are the "Match" area (Match/Remotes.luau).
@@ -64,6 +77,12 @@ return {
 	{ name = "Kingdom.GetReputation", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } },
 	{
 		name = "Kingdom.Converse",
+		kind = "function",
+		args = { Validate.integer(1, 65535) },
+		rate = { burst = 4, perSecond = 2 },
+	},
+	{
+		name = "Kingdom.EndConversation",
 		kind = "function",
 		args = { Validate.integer(1, 65535) },
 		rate = { burst = 4, perSecond = 2 },

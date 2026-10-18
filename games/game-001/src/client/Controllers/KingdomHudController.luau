@@ -28,6 +28,10 @@
 		hud.rendered: Signal<(metrics)>     fired after every full render
 		hud.menuChanged: Signal<(menu?)>    "build" | "kingdom" | nil
 		hud:setMenu(id?)                    opens a menu (closes the other); the same id again closes it
+		hud:setBackStep(menu, step?)        the back key (gamepad B, Backspace; InputModeController:onBack,
+		                                    #130) while that menu is open: step() -> true when it stepped
+		                                    back inside the panel, else the drawer closes
+		hud:backPressed() -> boolean        what one back press does (true when a drawer took it)
 		hud:setPlacing(on)                  hides the construction chips while the placement bar shows
 		hud:addRailItem({ id, icon, label, target?, order? })   a rail button for another controller's
 		                                    menu (ArmyPanelController: "army"); it calls hud:setMenu(id)
@@ -40,7 +44,10 @@
 		hud:setSheet(menu, on?)             this menu is a wide sheet on phones (the conversation):
 		hud:sheetOpen(metrics?) -> boolean  while one is open on a phone, toasts sit above it (one
 		                                    at a time) and the reputation strip is under it
-		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
+		hud:metrics() -> Layout Metrics     hud.roots.{backdrop, hud, menus, modals, notices}
+		                                    backdrop: the whole device (ScreenInsets None, not clipped
+		                                    to the safe area), just under the menus: the cinematic
+		                                    conversation's dim band (FL-0099) reaches past a notch
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
 		hud:changeJob(jobId, delta)         Kingdom panel "Jobs" (FL-0065): asks Kingdom.SetJobQuota for
@@ -101,8 +108,11 @@ function Def.new(env: any, registry: any)
 		},
 		_viewport = nil :: Vector2?,
 		_railItems = {} :: { any },
+		_railBadges = {} :: { [string]: number },
 		_stackBottom = nil :: number?,
 		_sheets = {} :: { [string]: boolean },
+		_backSteps = {} :: { [string]: () -> boolean },
+		_releaseBack = nil :: (() -> ())?,
 		_mounted = false,
 		_running = false,
 		_mine = nil :: string?,
@@ -158,6 +168,8 @@ end
 
 function KingdomHudController:mount(parent: Instance)
 	local g = self.guis
+	g.backdrop = screenGui("KingdomBackdrop", 19, Enum.ScreenInsets.None)
+	g.backdrop.ClipToDeviceSafeArea = false
 	g.hud = screenGui("KingdomHUD", 10, Enum.ScreenInsets.CoreUISafeInsets)
 	g.topbar = screenGui("KingdomTopbar", 11, Enum.ScreenInsets.TopbarSafeInsets)
 	g.menus = screenGui("KingdomMenus", 20, Enum.ScreenInsets.CoreUISafeInsets)
@@ -166,7 +178,7 @@ function KingdomHudController:mount(parent: Instance)
 	g.modals.Enabled = true
 	g.notices.Enabled = true
 	self._scales = {}
-	for _, key in { "hud", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "menus", "modals", "notices" } do
 		self.roots[key], self._scales[key] = scaledRoot(g[key])
 	end
 	self._probe = Create("Frame", {
@@ -179,9 +191,12 @@ function KingdomHudController:mount(parent: Instance)
 	for _, item in self._railItems do
 		self.view:addMenu(item)
 	end
+	for id, count in self._railBadges do
+		self.view:setRailBadge(id, count)
+	end
 	self.panel = KingdomPanel.new(self.roots.menus)
 	self.toasts = ToastStack.new(self.roots.notices, self._motion)
-	for _, key in { "hud", "topbar", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "topbar", "menus", "modals", "notices" } do
 		g[key].Parent = parent
 	end
 	self._mounted = true
@@ -199,6 +214,14 @@ function KingdomHudController:start()
 	local env = self._env
 	local registry = self._registry
 	self._notifications = registry:find("NotificationController")
+	-- the kingdom panel's building detail goes back to the Buildings tab first
+	self:setBackStep("kingdom", function()
+		if self.state.panel.upgradeId == nil then
+			return false
+		end
+		self:back()
+		return true
+	end)
 	self._onboarding = registry:find("OnboardingController")
 	self.remotes = RemoteClient.new(env)
 	self._remoteConnections = {}
@@ -286,6 +309,10 @@ end
 function KingdomHudController:destroy()
 	self._running = false
 	self._destroyed = true
+	if self._releaseBack ~= nil then
+		pcall(self._releaseBack)
+		self._releaseBack = nil
+	end
 	if self._storeConnection then
 		self._storeConnection:disconnect()
 	end
@@ -456,12 +483,53 @@ function KingdomHudController:setMenu(id: string?)
 		id = nil
 	end
 	self.state.menu = id
+	self:_syncBack()
 	if id == "kingdom" then
 		self.state.panel.tab = "overview"
 		self.state.panel.upgradeId = nil
 	end
 	self.menuChanged:fire(id)
 	self:render()
+end
+
+-- The back key (FORGE-04's InputModeController:onBack, #130: gamepad B, Backspace). One handler is
+-- registered while any drawer is open and released when it closes. A press first asks the open
+-- menu's step (registered by its controller: a phone detail goes back to its list, a conversation's
+-- confirm back to its question); a step that returns true took it. Otherwise the drawer closes, the
+-- same as its Close button. One press, one step.
+function KingdomHudController:setBackStep(menu: string, step: (() -> boolean)?)
+	self._backSteps[menu] = step
+end
+
+function KingdomHudController:backPressed(): boolean
+	local menu = self.state.menu
+	if menu == nil then
+		return false
+	end
+	local step = self._backSteps[menu]
+	if step ~= nil then
+		local ok, took = pcall(step)
+		if ok and took == true then
+			return true
+		end
+	end
+	self:setMenu(nil)
+	return true
+end
+
+function KingdomHudController:_syncBack()
+	if self.state.menu ~= nil and self._releaseBack == nil and not self._destroyed then
+		local input = self._registry:find("InputModeController")
+		if input ~= nil and input.onBack ~= nil then
+			self._releaseBack = input:onBack(function()
+				return self:backPressed()
+			end)
+		end
+	elseif self.state.menu == nil and self._releaseBack ~= nil then
+		local release = self._releaseBack
+		self._releaseBack = nil
+		pcall(release)
+	end
 end
 
 -- Undoes addRailItem (a controller that is destroyed takes its rail button with it).
@@ -484,12 +552,33 @@ function KingdomHudController:addRailItem(item: {
 	label: string,
 	target: string?,
 	order: number?,
+	hideEmpty: boolean?,
+	onActivated: (() -> ())?,
 })
 	table.insert(self._railItems, item)
 	if self.view then
 		self.view:addMenu(item)
 		self:render()
 	end
+end
+
+-- A count bubble on a rail button (UI/KingdomHud:setRailBadge); patched in place, no render.
+function KingdomHudController:setRailBadge(id: string, count: number?)
+	self._railBadges[id] = count
+	if self.view then
+		self.view:setRailBadge(id, count)
+	end
+end
+
+-- A rail tap: an item with its own action (onActivated) runs it; any other opens or closes its menu.
+function KingdomHudController:railTapped(id: string)
+	for _, item in self._railItems do
+		if item.id == id and item.onActivated ~= nil then
+			item.onActivated()
+			return
+		end
+	end
+	self:setMenu(id)
 end
 
 -- Only the toasts move (no full render): the tracker calls this from its own render.
@@ -754,7 +843,7 @@ function KingdomHudController:render()
 		return
 	end
 	local m = self:metrics()
-	for _, key in { "hud", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "menus", "modals", "notices" } do
 		self._scales[key].Scale = m.scale
 		self.roots[key].Size = UDim2.fromScale(1 / m.scale, 1 / m.scale)
 	end
@@ -765,8 +854,10 @@ function KingdomHudController:render()
 	self.guis.hud.Enabled = active
 	self.guis.topbar.Enabled = active
 	self.guis.menus.Enabled = active
+	self.guis.backdrop.Enabled = active
 	if not active and s.menu ~= nil then
 		s.menu = nil
+		self:_syncBack() -- the back key's handler goes with the drawer (FORGE-07 L1 on #162)
 		self.menuChanged:fire(nil)
 	end
 	if active then
@@ -781,7 +872,7 @@ function KingdomHudController:render()
 			menu = s.menu,
 			hideQueue = s.placing,
 			onMenu = function(id)
-				self:setMenu(id)
+				self:railTapped(id)
 			end,
 			onPill = function(id)
 				self:inspectResource(id)

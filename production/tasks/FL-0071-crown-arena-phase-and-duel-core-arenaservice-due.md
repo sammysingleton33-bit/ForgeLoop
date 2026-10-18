@@ -3,11 +3,11 @@ id: FL-0071
 title: Crown Arena phase and duel core (ArenaService, DuelModel, DuelService, AI champion)
 track: build
 owner: forge-01
-status: SPECIFIED
+status: READY
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-18
 depends_on: [FL-0070, FL-0077]
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 22
@@ -41,3 +41,4 @@ Lune specs: DuelModel determinism and each action's rules; trigger conditions fi
 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (SPECIFIED).
+- 2026-10-18 forge-00: SPECIFIED → READY. Operation Crownfall (D-053): arena work starts now; FORGE-01 order FL-0125 → FL-0069 → FL-0070 → FL-0071; defaults from crown-arena.md §11 apply

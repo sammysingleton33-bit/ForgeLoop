@@ -4,16 +4,16 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/01-gameplay`; PR branches `forge/01-gameplay-<topic>` |
-| Open PR | #68 FL-0080 reputation (base main) · #77 FL-0079 conversations (stacked on #68) · #70 FL-0052 army · FL-0081 slots + throne (this branch) |
-| Merged | #4, #5, #8, #26, #31 FL-0048, #39 FL-0049, #46 living-kingdom groundwork, #50 FL-0051 Build remotes, #51 F1, #54 citizen height, #56 G13.5, #59 F2/F3, #61 FL-0078 population, #62 placement rectangles, #72 destroyed broadcast |
-| Current task | FL-0081 in REVIEW; next #39 replication follow-ups |
-| Last verified check | `check.sh` OVERALL PASS on every open branch (game-001 944–967/0); mutations caught per PR |
-| Blockers | none. Studio evidence for everything needs user runs (gameplay.md K1–K9) |
-| Needs from others | FORGE-00: G8 wording for Army attack `targetId`; consequence notices start "Risk ({chance}):" also once fired (content wording). FORGE-03: slots UI on `Build.PlaceSlot` (handoff 2026-10-13-forge-01-to-forge-03-04-slots-throne). FORGE-04: walk mode unseats (same handoff) |
+| Session branch | PR branches `forge/01-gameplay-<topic>` (one worktree each) |
+| Open PRs (mine) | #140 FL-0119 base editing, server (G13.9 v0.4-g9j) · #145 FL-0122 server hardening (D-050) · #125 FL-0082 consequences + D-050 (1) · #127 FL-0109 paged GetEntities + review follow-ups · #129 History text · #118 specs try nil · #94 fair nodes · #100 ruler gather (on hold) |
+| Merged 2026-10-15 | #108 (g9f hold) · #131 FL-0112 farm cleanup · #132 FL-0113 PlaceSlot turn · #136 Buildings.wallGap |
+| Current task | FL-0119 and FL-0122 in REVIEW (PRs #140, #145); next: FL-0110 (Converse/Choose presentation tags, after #96), `ConsequenceChanged` fire once FORGE-05 declares it, builder repair if FORGE-00 opens a task |
+| Last verified check | `check.sh` OVERALL PASS per branch, game-001: #140 1390/0, #145 1356/0, #125 1453/0, #127 1388/0, #129 1414/0; mutation rows caught per PR (FL-0119 44/44, FL-0122 18/18, FL-0082 D-050 16/16). Headless only |
+| Blockers | Studio evidence needs user runs (gameplay.md K1-K12, "Base editing", "Server hardening regression rows"). Gates: FORGE-05 / FORGE-07 on the open PRs |
+| Needs from others | FORGE-03: UI for base editing (FL-0120), wording for `not_found`, `not_movable`, `alarm`, `under_attack`, `cooldown`, `not_your_node`. FORGE-04: edit input mode (FL-0121), riot placard on the `riot` client event, notices. FORGE-00: CONTRACTS text for the riot marker (a `strike` event with occupation `riot`) and the `ConsequenceChanged` G9 row; confirm the per-kingdom gather allowance. FORGE-05: declare `ConsequenceChanged` |
 
 ## Hours to VS-1 (honest estimate)
-About 3–5 working hours of FORGE-01 code, plus review/merge time: #39 replication follow-ups 2 h, review fixes on #68/#70/#77/FL-0081, then playtest fixes. Studio verification is the user's.
+Code is waiting on gates and Studio, not on more code. Studio verification is the user's.
 
 ## What exists (headless-verified only; nothing run in Studio)
 - `games/game-001/src/shared/{Kingdom,Sim,Match}` and `src/server/Services/{Match,Kingdom}Service.luau`:
@@ -27,13 +27,11 @@ About 3–5 working hours of FORGE-01 code, plus review/merge time: #39 replicat
 - Snapshot codec v1 (G4 v1 layout) — to be replaced by v2 (D-025) in FL-0049.
 
 ## Next
-1. Drive #68, #70, #77 and FL-0081 to merge (review fixes).
-2. #39 follow-ups: LOD centre = overview camera, encode before commit + spawn cap, lazy codec asserts, clear tracks on clock snap.
-3. #62 M-1: forest/quarry/gold vein in the keep-local frame (fairness spec).
+1. Drive #140, #145, #125, #127, #129 through FORGE-05's gate and FORGE-07's review; answer findings with validated pushes.
+2. FL-0110 after #96 merges (reactionFor with pre-choice loyalty, traits in citizenState, pinned question variant, tag allowlist).
+3. Fire `ConsequenceChanged` once declared; builder repair of fire damage if FORGE-00 opens the task.
 
 ## Last report
-Done: #61 review fixes (merged); #68 on ContentQuery.fireAction (#67); #77 on fireDecision listeners and
-CONTRACTS v0.4-g6 strike/cue entityIds; FL-0081 build slots, throne seating and three builder fixes in the sim.
-Verified: check.sh PASS on each branch; mutations caught (#61 10/10, #68 9/9, #77 17/17, FL-0081 12/13 with
-the miss on code now removed).
-Unverified: everything in Studio (K1–K11).
+Done 2026-10-15: user pass "kingdom cleanup and building control": farm clearance (#131), plot rotation server (#132), wall chains (#136),
+base editing server (#140, CONTRACTS g9j), FORGE-07 audit hardening (#145), #125/#127/#129 review answers.
+Verified: see "Last verified check". Unverified: everything in Studio.

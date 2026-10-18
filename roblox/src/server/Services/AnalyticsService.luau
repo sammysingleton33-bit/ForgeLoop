@@ -11,15 +11,24 @@
 	Guarantees
 	- Failure isolation: each Roblox call runs in pcall; errors are counted and warned at most once
 	  per WARN_INTERVAL. An invalid config disables analytics (logged as error) instead of failing the boot.
-	- Rate cap: one server bucket refilled at safety × (120 + 20 × players) per minute (event-types.md),
-	  custom events stop at the customReserve fraction so funnels and economy keep budget, and a
-	  per-player bucket stops one player (or a remote-driven loop) from using the server's budget.
+	- Rate cap: Roblox's 120 + 20 × CCU per minute (event-types.md) is experience-wide (scope unverified
+	  until a published test place), so each server takes only its players' share: one bucket refilled
+	  at max(SERVER_FLOOR, safety × 20 × players) per minute, which keeps every server together under the
+	  cap however many run at once (FORGE-00's review L8). Custom events stop at the customReserve
+	  fraction so funnels and economy keep budget, and a per-player bucket stops one player (or a
+	  remote-driven loop) from using the server's budget.
 	- Declared data only: names, value fields and CustomField01-03 mappings come from
 	  games/<game>/config/Analytics.luau (analytics/schemas/events.md); undeclared events or fields
 	  are dropped with a one-time warning; custom field values are sent as strings.
 	- Funnels: the onboarding funnel uses LogOnboardingFunnelStepEvent; recurring funnels need a
 	  sessionId (Roblox ignores repeated steps without one); repeated steps of one session are not
-	  re-sent (they would count against the rate limit for nothing).
+	  re-sent (they would count against the rate limit for nothing) and are only counted
+	  (stats.dropped.duplicate), never logged. A funnel declared `inOrder` credits a step only to a
+	  player who already has the previous one (stats.dropped.outOfOrder): Roblox counts skipped steps
+	  as completed, so kingdom-wide credit would otherwise inflate the earlier steps.
+	- Milestones (config.milestones, FORGE-00's review M7): each sent step n >= 2 of one once funnel
+	  also logs a custom event whose value is the whole seconds since the player's session started
+	  (funnel steps carry no time), with the step name as its `milestone` field.
 	- Every call (sent or dropped) is written to env.log as "analytics <kind> <name> ..." so Studio
 	  walkthroughs can check the funnel order (Roblox records nothing from Studio).
 	- Economy events: only EconomyService calls economy() (§7); nothing here derives them from
@@ -27,9 +36,14 @@
 
 	Bus wiring (start): config.track rules are applied to GameEvents. Who an event is about comes
 	from Experience/Subjects: framework events have defaults, and a game passes resolvers for its own
-	events in config.subjects (e.g. game-001's G9 attribution rules). PlayerReady/PlayerRemoving drive
-	SessionStart/SessionEnd and the Return funnel (config.session). DataService (optional,
-	registry:find) supplies core.createdAt for days since first join.
+	events in config.subjects (e.g. game-001's G9 attribution rules). A rule on an event with neither
+	is a config problem (Subjects.missing), so analytics is disabled and logged instead of silent. PlayerReady (or the game's
+	config.session.startOn, e.g. game-001's KingdomJoined: VS-1 has no profiles) and PlayerRemoving
+	drive SessionStart/SessionEnd and the Return funnel (config.session); a second start event in one
+	session is ignored. At session end, config.session.leftInfo(player, ctx) may return fields for one
+	more event (leftEvent, e.g. the match phase a player left in), logged before endEvent so the order
+	never depends on which PlayerRemoving handler runs first. DataService (optional, registry:find)
+	supplies core.createdAt for days since first join.
 ]]
 
 local AnalyticsConfig = require("@game/ReplicatedStorage/Forge/Config/Analytics")
@@ -45,6 +59,7 @@ AnalyticsService.__index = AnalyticsService
 local Def = { name = "AnalyticsService", dependencies = {} }
 
 local WARN_INTERVAL = 60
+local SERVER_FLOOR = 20 -- requests per minute a server always has (one player's share, 20)
 local DAY = 86400
 local DEFAULT_LIMITS = { perPlayerPerMinute = 30, safety = 0.8, customReserve = 0.25 }
 local FLOWS = { source = "Source", sink = "Sink" }
@@ -111,6 +126,16 @@ function Def.create(env: any, registry: any, options: Options?)
 	for _, problem in Subjects.validate(if type(config) == "table" then config.subjects else nil, known) do
 		table.insert(problems, problem)
 	end
+	if #problems == 0 then
+		-- a track rule on an event nobody resolves would never log (FORGE-00's review M8)
+		local ons = {}
+		for _, rule in config.track or {} do
+			table.insert(ons, rule.on)
+		end
+		for _, name in Subjects.missing(ons, config.subjects) do
+			table.insert(problems, `subjects: no resolver for '{name}', so its track rules never log`)
+		end
+	end
 	if #problems > 0 then
 		self._enabled = false
 		env.log("error", "analytics config invalid; analytics disabled", { problems = table.concat(problems, "; ") })
@@ -148,11 +173,12 @@ function AnalyticsService:start()
 			self:_onBus(eventName, table.pack(...))
 		end
 	end
-	local readyHandler = handlers.PlayerReady
-	handlers.PlayerReady = function(player, ...)
+	local startOn = (self._config.session or {}).startOn or "PlayerReady"
+	local startHandler = handlers[startOn]
+	handlers[startOn] = function(player, ...)
 		self:_sessionStart(player)
-		if readyHandler then
-			readyHandler(player, ...)
+		if startHandler then
+			startHandler(player, ...)
 		end
 	end
 	local connections, missing = Bus.connectAll(self._bus, handlers)
@@ -225,9 +251,8 @@ function AnalyticsService:_refill()
 	local env = self._env
 	local now = env.clock()
 	local players = if env.Players then #env.Players:GetPlayers() else 0
-	local perMinute = AnalyticsSchema.CAPS.requestsPerMinuteBase
-		+ AnalyticsSchema.CAPS.requestsPerMinutePerPlayer * players
-	local capacity = math.max(1, math.floor(perMinute * self._limits.safety))
+	local share = AnalyticsSchema.CAPS.requestsPerMinutePerPlayer * players
+	local capacity = math.max(SERVER_FLOOR, math.floor(share * self._limits.safety))
 	if capacity > self._capacity then
 		self._tokens += capacity - self._capacity -- the allowance grows with the player count
 	end
@@ -415,9 +440,18 @@ function AnalyticsService:funnel(player: any, funnel: string, step: number, step
 	end
 	logFields.sessionId = sessionId
 	local state = self:_state(player)
-	local dedupeKey = `{funnel}|{if decl.kind == "recurring" then sessionId else ""}|{step}`
+	local sessionPart = if decl.kind == "recurring" then sessionId else ""
+	local dedupeKey = `{funnel}|{sessionPart}|{step}`
 	if state.sentSteps[dedupeKey] then
-		return self:_drop("funnel", funnel, "duplicate", logFields)
+		-- counted, not logged: kingdom-wide events repeat all match long (FORGE-05 #64 M1)
+		self:_count("duplicate")
+		return false
+	end
+	if decl.inOrder and step > 1 and not state.sentSteps[`{funnel}|{sessionPart}|{step - 1}`] then
+		-- Roblox counts skipped steps as completed, so an out-of-order step would inflate the
+		-- conversions before it (FORGE-00's #64 ruling): credited only after the previous step
+		self:_count("outOfOrder")
+		return false
 	end
 	local custom =
 		self:_customFields(decl.fields, if type(opts) == "table" then opts.fields else nil, nil, `funnel {funnel}`)
@@ -432,7 +466,7 @@ function AnalyticsService:funnel(player: any, funnel: string, step: number, step
 	if decl.kind == "onboarding" then
 		return self:_send("funnel", funnel, logFields, "LogOnboardingFunnelStepEvent", player, step, name, custom)
 	end
-	return self:_send(
+	local sent = self:_send(
 		"funnel",
 		funnel,
 		logFields,
@@ -444,6 +478,42 @@ function AnalyticsService:funnel(player: any, funnel: string, step: number, step
 		name,
 		custom
 	)
+	if sent then
+		self:_milestone(player, funnel, step, name)
+	end
+	return sent
+end
+
+-- config.milestones (FORGE-00's review M7): a sent step n >= 2 of the milestone funnel also logs the
+-- milestone event, value = whole seconds since this visit's session started, so the pacing targets can
+-- be compared with live data (funnel steps carry no time). The player's lastActivity is kept.
+function AnalyticsService:_milestone(player: any, funnel: string, step: number, stepName: string)
+	local spec = self._config.milestones
+	if spec == nil or spec.funnel ~= funnel or step < 2 then
+		return
+	end
+	local state = self:_state(player)
+	if state.joinedAt == nil then
+		return -- no session yet: there is nothing to measure from
+	end
+	local decl = self._config.events[spec.event]
+	local fields: { [string]: any } =
+		{ [decl.value] = math.floor(self._env.clock() - state.joinedAt), milestone = stepName }
+	if spec.info ~= nil then
+		local ok, extra = pcall(spec.info, player, self:_lookup())
+		if not ok then
+			self:_warnThrottled("milestoneInfo", "analytics: milestones.info failed", { error = tostring(extra) })
+		elseif type(extra) == "table" then
+			for key, value in extra do
+				if fields[key] == nil then
+					fields[key] = value
+				end
+			end
+		end
+	end
+	local lastActivity = state.lastActivity
+	self:event(player, spec.event, fields)
+	state.lastActivity = lastActivity
 end
 
 local function flowEnum(flow: string): any
@@ -553,11 +623,11 @@ function AnalyticsService:_sessionIdFor(player: any, rule: any, info: { [string]
 	return nil
 end
 
-function AnalyticsService:_applyRule(rule: any, player: any, info: { [string]: any })
+-- Returns whether a call was handed to Roblox (false for a dropped or repeated step).
+function AnalyticsService:_applyRule(rule: any, player: any, info: { [string]: any }): boolean
 	if rule.event then
 		local fields = AnalyticsRouter.eventFields(rule, info)
-		self:event(player, rule.event, fields)
-		return
+		return self:event(player, rule.event, fields)
 	end
 	local decl = self._config.funnels[rule.funnel]
 	local sessionId = nil
@@ -565,10 +635,10 @@ function AnalyticsService:_applyRule(rule: any, player: any, info: { [string]: a
 		sessionId = self:_sessionIdFor(player, rule, info)
 		if sessionId == nil then
 			self:_drop("funnel", rule.funnel, "noSession", { userId = player.UserId, step = rule.step })
-			return
+			return false
 		end
 	end
-	self:funnel(player, rule.funnel, rule.step, decl.steps[rule.step], { sessionId = sessionId })
+	return self:funnel(player, rule.funnel, rule.step, decl.steps[rule.step], { sessionId = sessionId })
 end
 
 function AnalyticsService:_onBus(eventName: string, args: { any })
@@ -585,11 +655,16 @@ function AnalyticsService:_onBus(eventName: string, args: { any })
 		)
 	end
 	for _, subject in subjects do
-		self:_state(subject.player).lastActivity = eventName
+		local sent = false
 		for _, rule in rules do
 			if AnalyticsRouter.matches(rule, subject.info) then
-				self:_applyRule(rule, subject.player, subject.info)
+				sent = self:_applyRule(rule, subject.player, subject.info) or sent
 			end
+		end
+		-- only what was logged moves the drop-off point: a kingdom-wide event credited to every member
+		-- again and again (citizens gathering) must not hide the player's own last step
+		if sent then
+			self:_state(subject.player).lastActivity = eventName
 		end
 	end
 end
@@ -640,9 +715,18 @@ function AnalyticsService:_sessionEnd(player: any)
 		return
 	end
 	local session = self._config.session or {}
+	local lastActivity = state.lastActivity -- before leftEvent, which is not the player's own step
+	if self._enabled and session.leftEvent and session.leftInfo and state.joinedAt then
+		local ok, fields = pcall(session.leftInfo, player, self:_lookup())
+		if not ok then
+			self:_warnThrottled("leftInfo", "analytics: session.leftInfo failed", { error = tostring(fields) })
+		elseif type(fields) == "table" then
+			self:event(player, session.leftEvent, fields)
+		end
+	end
 	if self._enabled and session.endEvent and state.joinedAt then
 		local seconds = math.floor(self._env.clock() - state.joinedAt)
-		self:event(player, session.endEvent, { sessionSec = seconds, lastActivity = state.lastActivity })
+		self:event(player, session.endEvent, { sessionSec = seconds, lastActivity = lastActivity })
 	end
 	self._players[player.UserId] = nil
 end

@@ -13,6 +13,7 @@ local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
+local Footprint = require("@game/ReplicatedStorage/Game/Sim/Footprint")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
 local BuildRemotes = require("@game/ReplicatedStorage/Game/Build/Remotes")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
@@ -299,6 +300,69 @@ describe("BuildingService (G6, G8)", function()
 	end)
 end)
 
+describe("BuildingService: walls turn like every free-placed building (CONTRACTS v0.4-g9h)", function()
+	it("a wall faces rot quarter turns and its placement shape turns with it, so a turn changes what fits", function()
+		local env, _, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		for _, res in { "wood", "stone", "gold", "food" } do
+			sim.treasury:deposit("crimson", res, 4000, `spec:wall:{res}`, "spec")
+		end
+		local size = assert(Fit.largestFootprint("wall"), "walls have a Kit footprint")
+		expect(size.X > size.Y + 2).toBe(true) -- a wall is a long thin piece: its turn matters
+		local spot = freeSpot(sim, k, "wall", 0, 1, 2, 3)
+		local gap = sim.catalog.tuning.placementGap
+		-- 1) every rot builds and faces rot x 90 degrees; the shape's axis turns with the facing
+		for rot = 0, 3 do
+			env.mock:advance(3) -- refill Place's burst
+			local at = spot + Vector3.new(0, 0, rot * 60) -- far enough apart not to meet each other
+			if not sim:canPlace(k, "wall", at.X, at.Z, rot * math.pi / 2) then
+				at = freeSpot(sim, k, "wall", rot)
+			end
+			local id, reason = invoke(env, p1, "Build.Place", "wall", at, rot)
+			expect(`{rot}:{reason}`).toBe(`{rot}:nil`)
+			local b = sim.buildings[id]
+			local want = rot * math.pi / 2
+			expect(b.yaw % (2 * math.pi)).toBeNear(want % (2 * math.pi), 1e-6)
+			expect(b.shape.ux).toBeNear(math.cos(want), 1e-6)
+			expect(b.shape.uz).toBeNear(-math.sin(want), 1e-6)
+			expect(b.shape.hx).toBeNear(size.X / 2, 1e-6) -- width stays the local X axis
+		end
+		-- 2) a turn changes what fits: next to a wall's long side, a parallel wall fits and a crosswise one does not.
+		-- Pick a base where, before the first wall stands, all three are free (so only the first wall can matter).
+		local keep = sim.buildings[k.keepId]
+		local base, beside
+		for radius = 40, 140, 10 do
+			for step = 0, 23 do
+				local a = step / 24 * 2 * math.pi
+				local x, z = keep.x + math.cos(a) * radius, keep.z + math.sin(a) * radius
+				local b2 = Vector3.new(x, 0, z + size.Y + gap + 0.5) -- beside it, not past its end
+				if
+					base == nil
+					and sim:canPlace(k, "wall", x, z, 0)
+					and sim:canPlace(k, "wall", b2.X, b2.Z, 0)
+					and sim:canPlace(k, "wall", b2.X, b2.Z, math.pi / 2)
+					and sim:canPlace(k, "wall", b2.X, b2.Z, -math.pi / 2)
+				then
+					base, beside = Vector3.new(x, 0, z), b2
+				end
+			end
+		end
+		assert(base and beside, "a spot for the wall pair")
+		env.mock:advance(3)
+		local first, why = invoke(env, p1, "Build.Place", "wall", base, 0)
+		expect(why).toBeNil()
+		expect(type(first)).toBe("number")
+		env.mock:advance(3)
+		expect({ invoke(env, p1, "Build.CanPlace", "wall", beside, 0) }).toEqual({ true }) -- parallel: fits
+		expect({ invoke(env, p1, "Build.CanPlace", "wall", beside, 1) }).toEqual({ false, "blocked" }) -- crosswise
+		expect({ invoke(env, p1, "Build.CanPlace", "wall", beside, 3) }).toEqual({ false, "blocked" })
+		expect(treasury:get("crimson").wood > 0).toBe(true)
+	end)
+end)
+
 describe("BuildingService build slots (G13.5, FL-0081)", function()
 	local function slotsSent(env, player)
 		local out = {}
@@ -392,6 +456,95 @@ describe("BuildingService build slots (G13.5, FL-0081)", function()
 		expect(buildings:slots("violet")).toEqual({})
 	end)
 
+	-- two angles are the same facing (radians, modulo a full turn)
+	local function sameFacing(a: number, b: number): boolean
+		local d = (a - b) % (2 * math.pi)
+		return math.min(d, 2 * math.pi - d) < 1e-6
+	end
+
+	it(
+		"PlaceSlot turns the building `turn` quarter turns from the slot's street facing, charging once (CONTRACTS v0.4-g9h)",
+		function()
+			local env, _, match, treasury = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(0.5)
+			local sim = match.host.match.sim
+			for _, res in { "wood", "stone", "gold", "food" } do
+				sim.treasury:deposit("crimson", res, 2000, `spec:turn:{res}`, "spec") -- cancelled sites refund in part
+			end
+			local slot = firstSlot("crimson", "L")
+			expect(Fit.turns("house", "S")).toEqual({ 0, 2 }) -- a house in an S slot turns half a turn only
+			expect(Fit.turns("house", "L")).toEqual({ 0, 1, 2, 3 }) -- in an L slot every way
+			local before = treasury:get("crimson")
+			local id, reason = invoke(env, p1, "Build.PlaceSlot", slot.id, "house", 1)
+			expect(reason).toBeNil()
+			local b = sim.buildings[id]
+			expect(sameFacing(b.yaw, slot.rot + math.pi / 2)).toBe(true)
+			expect(b.slotId).toBe(slot.id)
+			expect(b.x).toBeNear(slot.center.X, 1e-6) -- still centred on the slot
+			expect(b.z).toBeNear(slot.center.Z, 1e-6)
+			local after = treasury:get("crimson")
+			for res, amount in assert(Costs.building("house", 1)).cost do
+				expect(after[res]).toBe(before[res] - amount) -- the same price as unturned
+			end
+			-- every turn is its own facing, and the placement shape turns with it
+			for rot = 0, 3 do
+				local spare = firstSlot("crimson", "L")
+				assert(sim:cancelConstruction(sim.kingdoms.crimson, id, 1))
+				env.mock:advance(3)
+				local again, why = invoke(env, p1, "Build.PlaceSlot", spare.id, "house", rot)
+				expect(`{rot}:{why}`).toBe(`{rot}:nil`)
+				expect(type(again)).toBe("number")
+				local placed = sim.buildings[again]
+				expect(sameFacing(placed.yaw, spare.rot + rot * math.pi / 2)).toBe(true)
+				local want = spare.rot + rot * math.pi / 2
+				expect(placed.shape.ux).toBeNear(math.cos(want), 1e-6) -- Footprint.rect's local X axis
+				expect(placed.shape.uz).toBeNear(-math.sin(want), 1e-6)
+				id = again
+			end
+		end
+	)
+
+	it(
+		"PlaceSlot refuses a turn the type does not fit with does_not_fit, free; bad turns never arrive (CONTRACTS v0.4-g9h)",
+		function()
+			local env, _, match, treasury = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(0.5)
+			local sim = match.host.match.sim
+			for _, res in { "wood", "stone", "gold", "food" } do
+				sim.treasury:deposit("crimson", res, 2000, `spec:refuse:{res}`, "spec")
+			end
+			local slot = firstSlot("crimson", "M")
+			expect(Fit.turns("barracks", "M")).toEqual({ 0, 2 }) -- 34 x 22 turned would be 22 x 34 in 36 x 30
+			local before = treasury:get("crimson")
+			expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", 1) }).toEqual({ nil, "does_not_fit" })
+			env.mock:advance(3)
+			expect({ invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", 3) }).toEqual({ nil, "does_not_fit" })
+			env.mock:advance(3)
+			local function notSpent()
+				for res, amount in treasury:get("crimson") do
+					expect(amount >= before[res]).toBe(true) -- citizens keep gathering meanwhile: it only grows
+				end
+			end
+			notSpent() -- refusals cost nothing
+			-- values outside 0..3 are dropped by the remote's validation, never reaching the service
+			for _, bad in { 4, -1, 1.5, "1", math.huge, {} } do
+				env.mock:advance(3)
+				expect(invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", bad)).toBeNil()
+			end
+			notSpent()
+			for _, entry in invoke(env, p1, "Build.GetSlots") do
+				expect(entry.occupiedBy).toBeNil()
+			end
+			-- the half turn fits: facing the other way, still in the slot
+			env.mock:advance(3)
+			local id, reason = invoke(env, p1, "Build.PlaceSlot", slot.id, "barracks", 2)
+			expect(reason).toBeNil()
+			expect(sameFacing(sim.buildings[id].yaw, slot.rot + math.pi)).toBe(true)
+		end
+	)
+
 	it("a building placed with Build.Place over a slot occupies it; the other slots stay free (#89 M1)", function()
 		local env, buildings, match = boot()
 		local p1 = env.mock.players:add({ userId = 1 })
@@ -460,5 +613,281 @@ describe("BuildingService build slots (G13.5, FL-0081)", function()
 		for _, entry in mine[3] do
 			expect(entry.occupiedBy).toBeNil()
 		end
+	end)
+end)
+
+describe("BuildingService base editing (CONTRACTS G13.9, FL-0119)", function()
+	local function slotDef(kingdomId, size, nth)
+		local seen = 0
+		for _, slot in Layout.WORLD.plots[kingdomId].buildSlots do
+			if slot.size == size then
+				seen += 1
+				if seen == (nth or 1) then
+					return slot
+				end
+			end
+		end
+		error(`no {size} slot {nth}`)
+	end
+
+	local function sameFacing(a: number, b: number): boolean
+		return math.abs((a - b + math.pi) % (2 * math.pi) - math.pi) < 1e-6
+	end
+
+	-- a finished house on free ground, ready to move
+	local function houseFor(env, p1, sim, k)
+		local id = invoke(env, p1, "Build.Place", "house", freeSpot(sim, k, "house", 0, 1, 2, 3), 0)
+		local b = assert(sim.buildings[id], "the house was placed")
+		sim:_completeInstantly(b)
+		sim:_recompute(k)
+		return b
+	end
+
+	local function latestView(env, id)
+		local found
+		for _, batch in broadcasts(env) do
+			for _, view in batch do
+				if view.id == id then
+					found = view
+				end
+			end
+		end
+		return found
+	end
+
+	it("CanMove agrees with Move; Move turns and moves the building in place, free, and says so once", function()
+		local env, _, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local moved = {}
+		GameEvents.BuildingMoved:connect(function(building, player, from, slotId)
+			table.insert(moved, { building = building, player = player, from = from, slotId = slotId })
+		end)
+		env.mock:advance(3)
+		local house = houseFor(env, p1, sim, k)
+		local from = Vector3.new(house.x, 0, house.z)
+		env.mock:advance(1)
+		local to = freeSpot(sim, k, "house", 0, 1, 2, 3)
+		local before = treasury:get("crimson")
+		expect({ invoke(env, p1, "Build.CanMove", house.id, to, 1) }).toEqual({ true })
+		expect(house.x).toBe(from.X) -- asking changes nothing
+		expect(#moved).toBe(0)
+		expect({ invoke(env, p1, "Build.Move", house.id, to, 1) }).toEqual({ true })
+		expect(house.x).toBe(to.X)
+		expect(house.z).toBe(to.Z)
+		expect(sameFacing(house.yaw, math.pi / 2)).toBe(true)
+		expect(treasury:get("crimson")).toEqual(before)
+		env.mock:advance(0.5) -- the host relays the sim's events on its next tick
+		expect(#moved).toBe(1)
+		expect(moved[1].building.id).toBe(house.id)
+		expect(moved[1].player).toBe(p1)
+		expect(moved[1].from.position.X).toBeNear(from.X, 1e-6)
+		expect(moved[1].from.position.Z).toBeNear(from.Z, 1e-6)
+		expect(moved[1].slotId).toBeNil()
+		-- right after, the same building is cooling down: the ghost tint says so too
+		expect({ invoke(env, p1, "Build.CanMove", house.id, from, 0) }).toEqual({ false, "cooldown" })
+		env.mock:advance(0.5)
+		expect({ invoke(env, p1, "Build.Move", house.id, from, 0) }).toEqual({ false, "cooldown" })
+	end)
+
+	it("Build.Buildings re-sends a moved building with its new position and facing", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local house = houseFor(env, p1, sim, k)
+		env.mock:advance(1)
+		local seen = latestView(env, house.id)
+		expect(seen.cframe.Position.X).toBeNear(house.x, 1e-3)
+		local sentBefore = #broadcasts(env)
+		env.mock:advance(2)
+		expect(#broadcasts(env)).toBe(sentBefore) -- nothing changed: nothing sent
+		local to = freeSpot(sim, k, "house", 0, 1, 2, 3)
+		assert(invoke(env, p1, "Build.Move", house.id, to, 3))
+		env.mock:advance(1)
+		local after = latestView(env, house.id)
+		expect(after.cframe.Position.X).toBeNear(to.X, 1e-3)
+		expect(after.cframe.Position.Z).toBeNear(to.Z, 1e-3)
+		local look = after.cframe.LookVector
+		expect(sameFacing(math.atan2(-look.X, -look.Z), -math.pi / 2)).toBe(true) -- rot 3
+		-- only a turn on the spot counts as a change too
+		env.mock:advance(11)
+		assert(invoke(env, p1, "Build.Move", house.id, to, 2))
+		env.mock:advance(1)
+		local turned = latestView(env, house.id).cframe.LookVector
+		expect(sameFacing(math.atan2(-turned.X, -turned.Z), math.pi)).toBe(true)
+	end)
+
+	it("refuses another kingdom's building, the keep and a missing one, with the Place reasons beside them", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		local p2 = env.mock.players:add({ userId = 2 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		assert(match.host:kingdomOf(p2) ~= "crimson", "p2 joined another kingdom")
+		local house = houseFor(env, p1, sim, k)
+		local to = freeSpot(sim, k, "house", 0, 1, 2, 3)
+		expect({ invoke(env, p2, "Build.CanMove", house.id, to, 0) }).toEqual({ false, "not_owner" })
+		expect({ invoke(env, p2, "Build.Move", house.id, to, 0) }).toEqual({ false, "not_owner" })
+		expect({ invoke(env, p1, "Build.Move", k.keepId, to, 0) }).toEqual({ false, "not_movable" })
+		expect({ invoke(env, p1, "Build.Move", 987654, to, 0) }).toEqual({ false, "not_found" })
+		expect({ invoke(env, p1, "Build.Move", house.id, Vector3.new(0, 0, 0), 0) }).toEqual({
+			false,
+			"out_of_territory",
+		})
+		sim.kingdoms.crimson.alarm = true
+		env.mock:advance(1)
+		expect({ invoke(env, p1, "Build.Move", house.id, to, 0) }).toEqual({ false, "alarm" })
+		expect(house.x ~= to.X).toBe(true) -- nothing moved
+	end)
+
+	it("drops bad arguments before they reach the sim, and rate-limits the remotes", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local house = houseFor(env, p1, sim, k)
+		local to = freeSpot(sim, k, "house", 0, 1, 2, 3)
+		for _, name in { "Build.CanMove", "Build.Move" } do
+			expect(invoke(env, p1, name, "1", to, 0)).toBeNil() -- id is an integer
+			expect(invoke(env, p1, name, 0, to, 0)).toBeNil()
+			expect(invoke(env, p1, name, 1.5, to, 0)).toBeNil()
+			expect(invoke(env, p1, name, house.id, CFrame.new(to), 0)).toBeNil() -- no CFrame on the wire
+			expect(invoke(env, p1, name, house.id, Vector3.new(9000, 0, 0), 0)).toBeNil() -- off the world
+			expect(invoke(env, p1, name, house.id, to, 4)).toBeNil() -- rot 0..3
+			expect(invoke(env, p1, name, house.id, to, -1)).toBeNil()
+			expect(invoke(env, p1, name, house.id, to, 0.5)).toBeNil()
+			expect(invoke(env, p1, name, house.id, to)).toBeNil()
+			env.mock:advance(3)
+		end
+		for _, bad in { 4, -1, 1.5, "1", math.huge, {} } do
+			expect(invoke(env, p1, "Build.MoveToSlot", house.id, "crimson_slot1", bad)).toBeNil()
+		end
+		env.mock:advance(3)
+		expect(invoke(env, p1, "Build.MoveToSlot", house.id, string.rep("x", 33))).toBeNil()
+		expect(invoke(env, p1, "Build.MoveToSlot", house.id, 7)).toBeNil()
+		expect(invoke(env, p1, "Build.MoveToSlot", "x", "crimson_slot1")).toBeNil()
+		env.mock:advance(3)
+		expect(house.x).toBe(house.x) -- (nothing above could have moved it)
+		expect(house.slotId).toBeNil()
+		-- Build.Move's burst is 4: a fifth call within the same instant gets no answer. A move to where the
+		-- building already is answers true without any cooldown, so it can be asked again and again
+		local here = Vector3.new(house.x, 0, house.z)
+		local answers = 0
+		for _ = 1, 8 do
+			if
+				invoke(env, p1, "Build.Move", house.id, here, math.floor(house.yaw / (math.pi / 2) + 0.5) % 4) ~= nil
+			then
+				answers += 1
+			end
+		end
+		expect(answers).toBe(4)
+	end)
+
+	it("MoveToSlot seats a building on a free slot of its kingdom, frees the old slot and may turn on it", function()
+		local env, building, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		for _, res in { "wood", "stone", "gold", "food" } do
+			sim.treasury:deposit("crimson", res, 2000, `spec:slot:{res}`, "spec")
+		end
+		local first, second = slotDef("crimson", "S", 1), slotDef("crimson", "S", 2)
+		local id = invoke(env, p1, "Build.PlaceSlot", first.id, "house")
+		assert(id, "a house on the first S slot")
+		local house = sim.buildings[id]
+		sim:_completeInstantly(house)
+		expect(house.slotId).toBe(first.id)
+		local stock = treasury:get("crimson")
+		env.mock:advance(3)
+		expect({ invoke(env, p1, "Build.MoveToSlot", id, second.id) }).toEqual({ true })
+		expect(house.slotId).toBe(second.id) -- taken in the same command
+		expect(house.x).toBeNear(second.center.X, 1e-6)
+		expect(house.z).toBeNear(second.center.Z, 1e-6)
+		expect(sameFacing(house.yaw, second.rot)).toBe(true)
+		for _, entry in building:slots("crimson") do
+			expect(entry.occupiedBy).toBe(if entry.id == second.id then id else nil) -- the old slot is free
+		end
+		expect(treasury:get("crimson")).toEqual(stock)
+		-- it may turn on its own slot (a half turn fits a house in an S slot), after the cooldown
+		env.mock:advance(11)
+		expect({ invoke(env, p1, "Build.MoveToSlot", id, second.id, 2) }).toEqual({ true })
+		expect(sameFacing(house.yaw, second.rot + math.pi)).toBe(true)
+		expect(house.slotId).toBe(second.id)
+		-- a quarter turn doesn't fit an S slot
+		env.mock:advance(11)
+		expect({ invoke(env, p1, "Build.MoveToSlot", id, second.id, 1) }).toEqual({ false, "does_not_fit" })
+	end)
+
+	it("MoveToSlot refuses an occupied slot, a foreign one, a type that doesn't fit and walls", function()
+		local env, _, match = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		for _, res in { "wood", "stone", "gold", "food" } do
+			sim.treasury:deposit("crimson", res, 2000, `spec:slot:{res}`, "spec")
+		end
+		local s1, s2, big = slotDef("crimson", "S", 1), slotDef("crimson", "S", 2), slotDef("crimson", "L", 1)
+		local mine = invoke(env, p1, "Build.PlaceSlot", s1.id, "house")
+		env.mock:advance(2)
+		local other = invoke(env, p1, "Build.PlaceSlot", s2.id, "house")
+		assert(mine and other, "two houses on two slots")
+		sim:_completeInstantly(sim.buildings[mine])
+		env.mock:advance(2)
+		expect({ invoke(env, p1, "Build.MoveToSlot", mine, s2.id) }).toEqual({ false, "slot_occupied" })
+		expect({ invoke(env, p1, "Build.MoveToSlot", mine, "azure_slot1") }).toEqual({ false, "unknown_slot" })
+		expect({ invoke(env, p1, "Build.MoveToSlot", mine, "crimson_slot999") }).toEqual({ false, "unknown_slot" })
+		expect({ invoke(env, p1, "Build.MoveToSlot", k.keepId, big.id) }).toEqual({ false, "not_movable" })
+		local barracks = invoke(env, p1, "Build.PlaceSlot", slotDef("crimson", "M", 1).id, "barracks")
+		assert(barracks, "a barracks on an M slot")
+		env.mock:advance(2)
+		expect({ invoke(env, p1, "Build.MoveToSlot", barracks, slotDef("crimson", "S", 3).id) }).toEqual({
+			false,
+			"does_not_fit",
+		})
+		expect(sim.buildings[mine].slotId).toBe(s1.id) -- every refusal left things as they were
+		local wall = invoke(env, p1, "Build.Place", "wall", freeSpot(sim, k, "wall", 0), 0)
+		assert(wall, "a wall on free ground")
+		env.mock:advance(2)
+		expect({ invoke(env, p1, "Build.MoveToSlot", wall, big.id) }).toEqual({ false, "not_on_plot" })
+		-- a free move off a slot frees it
+		env.mock:advance(11)
+		local to = freeSpot(sim, k, "house", 0, 1, 2, 3)
+		assert(invoke(env, p1, "Build.Move", mine, to, 0))
+		expect(sim.buildings[mine].slotId).toBeNil()
+		local found = false
+		for _, entry in match.host.match.sim.buildings do
+			found = found or entry.slotId == s1.id
+		end
+		expect(found).toBe(false)
+	end)
+
+	it("a slot reads occupied when a building stands within the placement gap of it", function()
+		local env, building, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local slot = slotDef("crimson", "S", 1)
+		local size = Layout.WORLD.slotSizes.S
+		-- a wall one stud off the slot's edge, in line with the slot's front: free ground, but within the gap
+		local gap = sim.catalog.tuning.placementGap
+		local wallDepth = sim:shapeOf("wall", 0, 0, 0).hz
+		local dx = size.X / 2 + 1 + wallDepth
+		local fx = slot.center.X + math.cos(slot.rot) * dx
+		local fz = slot.center.Z - math.sin(slot.rot) * dx
+		local b = sim:_createBuilding(k, "wall", fx, fz, slot.rot + math.pi / 2)
+		sim:_completeInstantly(b)
+		expect(Footprint.overlaps(Footprint.rect(size, slot.center.X, slot.center.Z, slot.rot), b.shape, 0)).toBe(false)
+		expect(Footprint.overlaps(Footprint.rect(size, slot.center.X, slot.center.Z, slot.rot), b.shape, gap)).toBe(
+			true
+		)
+		expect(building:_occupant("crimson", slot.id)).toBe(b.id) -- no longer reads free while placing is refused
 	end)
 end)

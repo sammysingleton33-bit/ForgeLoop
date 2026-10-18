@@ -8,6 +8,8 @@ local AnalyticsSchema = require("@game/ReplicatedStorage/Forge/Experience/Analyt
 local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/AnalyticsRouter")
 local Subjects = require("@game/ReplicatedStorage/Forge/Experience/Subjects")
 local Analytics = require("@game/ReplicatedStorage/Forge/Config/Analytics")
+local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
+local Onboarding = require("@game/ReplicatedStorage/Forge/Experience/Onboarding")
 local AnalyticsDef = require("@game/ServerScriptService/Forge/Services/AnalyticsService")
 
 local KNOWN = AnalyticsRouter.knownEvents(GameEvents)
@@ -18,6 +20,17 @@ describe("game-001 Analytics.luau", function()
 		expect(Subjects.validate(Analytics.subjects, KNOWN)).toEqual({})
 	end)
 
+	it("every event Onboarding.luau and Analytics.luau listen to has a resolver (FORGE-00 review M8)", function()
+		expect(Subjects.missing(Onboarding.events(OnboardingConfig), OnboardingConfig.subjects)).toEqual({})
+		local listened = {}
+		for _, rule in Analytics.track or {} do
+			table.insert(listened, rule.on)
+		end
+		local session = Analytics.session or {}
+		table.insert(listened, session.startOn or "PlayerReady")
+		expect(Subjects.missing(listened, Analytics.subjects)).toEqual({})
+	end)
+
 	it("stays inside the documented caps and the house budget", function()
 		local budget = AnalyticsSchema.budget(Analytics)
 		expect(budget.events).toBeLessThanOrEqual(AnalyticsSchema.HOUSE.customEventNames)
@@ -26,7 +39,7 @@ describe("game-001 Analytics.luau", function()
 	end)
 
 	it("declares the BRIEF §13 VS-1 funnel in order", function()
-		expect(Analytics.funnels.VS1.steps).toEqual({
+		expect(Analytics.funnels.FirstMatch.steps).toEqual({
 			"Spawn",
 			"FirstGather",
 			"FirstBuildPlaced",

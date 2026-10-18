@@ -15,6 +15,7 @@
 	Each plot is a small town: the keep at the back, an avenue from the keep door through the yard to the
 	gate, a cross street through the yard with the slots on it, the starting buildings on the flanks.
 	Visual features (`features`) are FORGE-02's own shape, read only by WorldService.
+	The dressing density knob (D-047) lives here: `features.density` (forest, props), see below.
 ]]
 
 local CENTRE = Vector3.new(40, 0, 0)
@@ -236,7 +237,12 @@ for _, k in KINGDOMS do
 	}
 
 	-- resource nodes around the plot: 4 wood (forest edge behind the lumber camp), 2 stone (by the quarry),
-	-- 1 gold (ore), 2 food (berry bushes near the farm)
+	-- 1 gold (ore), 2 food (berry bushes near the farm). FL-0124 (D-052 (4)): every node stands clear of the crop
+	-- fields, build zones and slots (8 studs), the starting buildings (5 studs from their footprints) and the walking
+	-- paths by what its Kit model DRAWS (tests/world/NodeKeepOut.spec measures the live Kit.prop extent), so no rock or
+	-- bush sits on or crowds a farm. The stone and ore form an arc around the quarry, the berries flank the farm
+	-- building; the offsets are in the keep's frame, so the four plots stay rotated copies of each other (per-kingdom
+	-- fairness, #94).
 	local function addNode(
 		resource: string,
 		assetId: string,
@@ -271,13 +277,17 @@ for _, k in KINGDOMS do
 	end
 	local trees = { "tree_oak_01", "tree_oak_03", "tree_pine_02", "tree_oak_05" }
 	for i, t in trees do
-		addNode("wood", t, Vector3.new(-80 + (i - 1) * 14, 0, 58 + (i % 2) * 10), 120, 90, n.lumbercamp)
+		-- the second tree's canopy used to cover the lumber camp (18 studs from it): it stands 34 studs back now;
+		-- the fourth stands 4 studs further from the first crop field (its canopy was too close to it)
+		local x = -80 + (i - 1) * 14 - (if i == 4 then 4 else 0)
+		local z = if i == 2 then 74 else 58 + (i % 2) * 10
+		addNode("wood", t, Vector3.new(x, 0, z), 120, 90, n.lumbercamp)
 	end
-	addNode("stone", "resource_stone_01", Vector3.new(70, 0, 66), 200, 0, n.quarry)
-	addNode("stone", "resource_stone_02", Vector3.new(40, 0, 72), 200, 0, n.quarry)
-	addNode("gold", "resource_ore_03", Vector3.new(90, 0, 40), 80, 0, n.quarry)
-	addNode("food", "bush_03", Vector3.new(74, 0, -44), 60, 45, n.farm)
-	addNode("food", "bush_03", Vector3.new(70, 0, -32), 60, 45, n.farm)
+	addNode("stone", "resource_stone_01", Vector3.new(40, 0, 28), 200, 0, n.quarry)
+	addNode("stone", "resource_stone_02", Vector3.new(80, 0, 60), 200, 0, n.quarry)
+	addNode("gold", "resource_ore_03", Vector3.new(70, 0, 34), 80, 0, n.quarry)
+	addNode("food", "bush_03", Vector3.new(40, 0, -24), 60, 45, n.farm)
+	addNode("food", "bush_03", Vector3.new(74, 0, 14), 60, 45, n.farm)
 end
 
 -- ---------------------------------------------------------------- valley roads, bridges, heartland
@@ -451,6 +461,13 @@ local features = {
 		{ center = Vector2.new(560, -500), radius = 80, count = 16, species = { "tree_pine", "tree_birch" } },
 	},
 	fields = plotFields, -- { center: Vector2, size: Vector2, yaw: number, crop: string }
+	-- Dressing density knob (D-047, FL-0116): the share of each dressing kind WorldPlan.props keeps, the least
+	-- seen first to go (map edges, the ground between kingdoms). Never thinned: the plot showcase (fields,
+	-- buildings, slots and the farm's view), plot framing and approach roads for scatter props, and any forest stand
+	-- near the plots or in view. forest: trees in the forest stands; props: lone trees, bushes, rocks and flowers,
+	-- each kind on its own. 1.0 for both rebuilds the untrimmed valley (WorldService spec pins it); restore here
+	-- after a phone test.
+	density = { forest = 0.75, props = 0.5 },
 }
 
 return {

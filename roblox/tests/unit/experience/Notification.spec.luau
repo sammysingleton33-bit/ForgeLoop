@@ -4,6 +4,8 @@ local describe, it, expect, beforeEach = T.describe, T.it, T.expect, T.beforeEac
 local MockEnv = require("../../mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local NotificationQueue = require("@game/ReplicatedStorage/Forge/Experience/NotificationQueue")
+local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
+local Toast = require("@game/ReplicatedStorage/Forge/UI/Components/Toast")
 local SettingsDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/SettingsController")
 local NotificationDef = require("@game/StarterPlayer/StarterPlayerScripts/Forge/Controllers/NotificationController")
 
@@ -127,10 +129,41 @@ describe("Experience/NotificationQueue (FL-0027)", function()
 	end)
 end)
 
+describe("NotificationQueue:setMaxVisible (FL-0027 follow-up, #33 L3)", function()
+	it("fewer cards fit: the lowest-priority toast waits and shows again in full; the cap never leaves 1..3", function()
+		local clock = 100
+		local queue = NotificationQueue.new({
+			now = function()
+				return clock
+			end,
+		})
+		queue:push({ title = "a", kind = "warning" })
+		queue:push({ title = "b", kind = "info" })
+		queue:push({ title = "c", kind = "success" })
+		local hidden = queue:setMaxVisible(2)
+		expect(#hidden).toBe(1)
+		expect(hidden[1].title).toBe("b") -- info, older than the success: it leaves first
+		expect(#queue:visible()).toBe(2)
+		expect(queue:pending()[1].title).toBe("b")
+		expect(queue:pending()[1].expiresAt).toBeNil()
+		queue:setMaxVisible(10) -- back to the configured 3 at most
+		local shown = queue:tick()
+		expect(#shown).toBe(1)
+		expect(shown[1].expiresAt).toBe(clock + shown[1].durationSec) -- a full showing
+		expect(#queue:visible()).toBe(3)
+		queue:setMaxVisible(0)
+		expect(#queue:visible()).toBe(1)
+		queue:setMaxVisible(0 / 0)
+		queue:tick()
+		expect(#queue:visible()).toBe(3)
+	end)
+end)
+
 describe("NotificationController (FL-0027, interfaces §8)", function()
-	local env, gui, registry, controller, settings, played, effects
+	local env, gui, registry, controller, settings, played, effects, screenHeight
 
 	local function boot()
+		screenHeight = nil
 		registry = Loader.load(env, {
 			SettingsDef,
 			{
@@ -149,7 +182,10 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 				new = function()
 					return {
 						play = function(_, id, opts)
-							table.insert(effects, { id = id, position = opts and opts.position })
+							table.insert(
+								effects,
+								{ id = id, position = opts and opts.position, tint = opts and opts.tint }
+							)
 						end,
 					}
 				end,
@@ -158,7 +194,12 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 				name = "NotificationController",
 				dependencies = { "SettingsController" },
 				new = function(e, r)
-					return NotificationDef.create(e, r, { playerGui = gui })
+					return NotificationDef.create(e, r, {
+						playerGui = gui,
+						screenHeight = function()
+							return screenHeight
+						end,
+					})
 				end,
 			},
 		})
@@ -271,6 +312,15 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 		expect(shownTitles).toEqual({ "Bridge captured", "Watchtower captured" })
 	end)
 
+	it("payload.tint colours the celebration's effect; anything else is ignored", function()
+		local red = Color3.fromRGB(190, 40, 50)
+		controller:celebrate("achievement", { title = "A", tint = red })
+		env.mock:advance(1.1)
+		controller:celebrate("achievement", { title = "B", tint = "red" })
+		expect(effects[1].tint).toBe(red)
+		expect(effects[2].tint).toBeNil()
+	end)
+
 	it("a payload that is not a table counts as none and never throws", function()
 		expect(controller:celebrate("achievement", 42)).toBe(true)
 		expect(controller:celebrate("levelUp", "five")).toBe(true)
@@ -321,6 +371,86 @@ describe("NotificationController (FL-0027, interfaces §8)", function()
 			expect(NotificationDef.validateCelebration(kind, spec)).toEqual({})
 		end
 	end)
+
+	it("after destroy(), show and celebrate do nothing and no GUI comes back (#33 L1)", function()
+		controller:destroy()
+		expect(select(2, controller:show({ title = "late" }))).toBe("dropped")
+		expect(controller:celebrate("achievement", { title = "late" })).toBe(false)
+		controller:reserveTop("onboarding", 168)
+		controller:place(UDim2.fromOffset(40, 40), Vector2.new(1, 0), 250) -- a rebuild must not recreate it
+		expect(gui:FindFirstChild("ForgeNotifications")).toBeNil()
+		expect(#effects).toBe(0)
+	end)
+
+	it(
+		"a toast's own icon reaches the card; without one, Toast's default for the kind (achievement: laurel)",
+		function()
+			-- FORGE-03's Toast has the achievement icon itself since FL-0105 (#86), so nothing here picks one
+			local seen = {}
+			local original = Toast.new
+			Toast.new = function(props)
+				seen[props.title] = { icon = props.icon }
+				return original(props)
+			end
+			local ok, err = pcall(function()
+				controller:show({ title = "First capture", kind = "achievement" })
+				controller:show({ title = "Crest", kind = "achievement", icon = "crest" })
+			end)
+			Toast.new = original
+			assert(ok, err)
+			expect(seen["Crest"]).never.toBeNil()
+			expect(seen["Crest"].icon).toBe("crest")
+			expect(seen["First capture"]).never.toBeNil()
+			expect(seen["First capture"].icon).toBeNil() -- Toast's own default
+			expect(Toast.ICON.achievement).toBe("laurel")
+			local laurel = Theme.icon("laurel") -- the card really renders it (glyph fallback headless)
+			local achievement
+			for _, toast in toasts() do
+				if toast:FindFirstChild("Title", true).Text == "First capture" then
+					achievement = toast:FindFirstChild("Icon", true)
+				end
+			end
+			expect(achievement).never.toBeNil()
+			if laurel.image ~= "" then
+				expect(achievement.Image).toBe(laurel.image)
+			else
+				expect(achievement.Text).toBe(laurel.glyph)
+			end
+		end
+	)
+
+	it(
+		"a short screen under the onboarding card shows fewer cards, and all three again when it frees (#33 L3)",
+		function()
+			screenHeight = 360 -- a phone in landscape, safe area
+			for i = 1, 3 do
+				controller:show({ title = `t{i}` })
+			end
+			expect(#toasts()).toBe(3)
+			controller:reserveTop("onboarding", 168)
+			expect(#toasts()).toBe(2) -- 360 - 168 leaves room for 2 cards; the third waits
+			expect(controller.queue:pending()[1].title).toBe("t1")
+			controller:reserveTop("onboarding", nil)
+			env.mock:advance(0.2) -- the next tick shows it again
+			expect(#toasts()).toBe(3)
+			expect(#played).toBe(3) -- shown again, not announced again (FORGE-07 #82 L1)
+		end
+	)
+
+	it(
+		"place()'s limit caps the cards in that placement; a later place() without it shows 3 again (FORGE-03)",
+		function()
+			for i = 1, 3 do
+				controller:show({ title = `t{i}` })
+			end
+			controller:place(UDim2.fromOffset(300, 200), Vector2.new(1, 0), 240, 1) -- a narrow band above a sheet
+			expect(#toasts()).toBe(1)
+			expect(toasts()[1]:FindFirstChild("Title", true).Text).toBe("t3") -- the newest stays
+			controller:place(UDim2.fromOffset(300, 60), Vector2.new(1, 0), 240)
+			env.mock:advance(0.2)
+			expect(#toasts()).toBe(3)
+		end
+	)
 
 	it("dismiss() removes a toast at once and lets the next one in", function()
 		local items = {}

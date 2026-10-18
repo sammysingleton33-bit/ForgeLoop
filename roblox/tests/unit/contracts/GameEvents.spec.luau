@@ -25,12 +25,14 @@ local CONTRACT_EVENTS = {
 	"BuildingCompleted",
 	"BuildingUpgraded",
 	"BuildingDestroyed",
+	"BuildingMoved",
 	"ResourceGathered",
 	"UnitsRecruited",
 	"ObjectiveCaptured",
 	"KingdomEliminated",
 	"MatchEnded",
 	"CitizenAnswered",
+	"ConsequenceChanged",
 }
 
 describe("Contracts/GameEvents", function()

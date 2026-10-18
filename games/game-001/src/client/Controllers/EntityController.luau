@@ -21,6 +21,9 @@
 			            arrives as a G4 cue
 			  strike    (id, "strike", { occupation, on: boolean }, Model?) once per id in its entityIds:
 			            exactly the citizens whose strike changed; never fanned out by occupation (v0.4-g6)
+			  riot      (id, "riot", { on: boolean }, Model?) once per id: rioters are a state of their own
+			            with their own placard (D-050 (1d)), not "on strike"; carried on the wire as a
+			            strike event whose occupation is EventCodec.RIOT
 			As for cues, an event with an entity id fires only while that entity is known and not
 			despawned (otherwise it is dropped); text may be empty.
 		EntityController:pick(screenPos: Vector2): EntityId?      -- nearest visible rig within PICK_RADIUS px
@@ -35,8 +38,9 @@
 		POOL_MAX, FOLDER_NAME, Def.robloxAdapter(env)
 
 	Replication (G4 client rules)
-		start() connects Sim.Snapshot and Sim.Events FIRST, then invokes Sim.GetEntities and applies its
-		"full" records (retried while the server answers nil).
+		start() connects Sim.Snapshot and Sim.Events FIRST, then invokes Sim.GetEntities page by page
+		(afterId = the previous page's nextAfterId, FL-0109) and applies each page's "full" records; an
+		unanswered page is asked for again, up to GET_ENTITIES_TRIES in all.
 		- Snapshots whose seq is not newer than the newest applied seq (SnapshotCodec.newer) are dropped;
 		  every chunk of the newest seq is applied.
 		- Unknown ids are ignored (a snapshot can arrive before its spawn).
@@ -51,7 +55,8 @@
 		and the G13.3 thought, reaction, strike and kcue (fire `event`, see above).
 	Rendering (D-026, D-025)
 		- Samples are buffered per entity by snapshot serverTime. They render INTERP_DELAY (0.2 s)
-		  behind the server time estimated from arrivals (Sim/Interpolation).
+		  behind the server time estimated from arrivals (Sim/Interpolation). When that estimate snaps
+		  (serverTime jumped), each track keeps only its newest sample, moved onto the new timeline.
 		- Position is the rig pivot (base centre). Yaw turns about +Y, CFrame.Angles(0, yaw, 0); the
 		  rig faces -Z at yaw 0.
 		- Rigs come from Kit.character(kind, job, colour of the kingdom in config Kingdoms, look?) with
@@ -97,7 +102,8 @@ Def.PICK_RADIUS = 60 -- pixels
 Def.PICK_HEIGHT = 2.75 -- studs above the pivot: the body centre the pick aims at
 Def.POOL_MAX = 64 -- spare rigs kept in all; past it the oldest spare is destroyed
 Def.FOLDER_NAME = "KingdomEntities"
-Def.GET_ENTITIES_TRIES = 10
+Def.GET_ENTITIES_TRIES = 10 -- unanswered calls before giving up
+Def.GET_ENTITIES_PAGES = 64 -- at most this many pages (64 x 49 entities): a runaway cursor stops here
 Def.RETRY_SECONDS = 1.5
 
 export type Adapter = {
@@ -252,23 +258,32 @@ function EntityController:_connect()
 		self:_warnOnce("remotes", "EntityController: Sim remotes unavailable; retrying", { error = tostring(err) })
 		env.wait(Def.RETRY_SECONDS)
 	end
-	for _ = 1, Def.GET_ENTITIES_TRIES do
+	-- page by page (FL-0109: each page <= 900 B); a page that gets no answer is asked for again
+	local after: number? = nil
+	local pages, tries = 0, 0
+	while tries < Def.GET_ENTITIES_TRIES and pages < Def.GET_ENTITIES_PAGES do
 		if self._destroyed then
 			return
 		end
-		local ok, buf = pcall(function()
-			return client:invoke("Sim.GetEntities")
+		local ok, buf, nextAfter = pcall(function()
+			return client:invoke("Sim.GetEntities", after)
 		end)
 		if self._destroyed then
 			return
 		end
 		if ok and buf ~= nil then
 			self:_applyBatch(buf, true)
-			return
+			pages += 1
+			if type(nextAfter) ~= "number" or (after ~= nil and nextAfter <= after) then
+				return -- the last page (a cursor that does not move on ends it too)
+			end
+			after = nextAfter
+		else
+			tries += 1
+			env.wait(Def.RETRY_SECONDS)
 		end
-		env.wait(Def.RETRY_SECONDS)
 	end
-	self:_warnOnce("getEntities", "EntityController: Sim.GetEntities gave no answer")
+	self:_warnOnce("getEntities", "EntityController: Sim.GetEntities gave no answer", { pages = pages })
 end
 
 function EntityController:_onSnapshot(buf: any)
@@ -288,7 +303,13 @@ function EntityController:_onSnapshot(buf: any)
 	end
 	self._newestSeq = frame.seq
 	self.stats.snapshots += 1
-	self._clock:observe(frame.serverTime, self._env.clock())
+	if self._clock:observe(frame.serverTime, self._env.clock()) then
+		-- serverTime jumped (a match restart without a reset, #39 L5): every track starts the new timeline
+		-- from where its entity stands
+		for _, entity in self._entities do
+			Interpolation.rebase(entity.track, frame.serverTime)
+		end
+	end
 	for _, r in frame.records do
 		local entity = self._entities[r.id]
 		if self._despawned[r.id] then
@@ -342,8 +363,15 @@ function EntityController:_applyBatch(buf: any, initial: boolean)
 				self.event:fire(nil, e.cue, { occupation = e.occupation }, nil) -- HUD or keep only
 			end
 		elseif kind == "strike" then
-			for _, id in e.entityIds do -- exactly the citizens whose strike changed (G13.3 v0.4-g6)
-				self:_fireFor(id, "strike", { occupation = e.occupation, on = e.on })
+			-- exactly the citizens whose strike changed (G13.3 v0.4-g6); the reserved occupation EventCodec.RIOT
+			-- marks a riot, which is its own state with its own placard (D-050 (1d))
+			local isRiot = e.occupation == EventCodec.RIOT
+			for _, id in e.entityIds do
+				if isRiot then
+					self:_fireFor(id, "riot", { on = e.on })
+				else
+					self:_fireFor(id, "strike", { occupation = e.occupation, on = e.on })
+				end
 			end
 		elseif kind == "reset" then
 			self:_reset()

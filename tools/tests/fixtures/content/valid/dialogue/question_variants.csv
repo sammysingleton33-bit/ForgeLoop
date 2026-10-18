@@ -1,0 +1,4 @@
+scenario_id,variant_id,order,selector,question_text,question_emotion,question_expression,question_gesture,question_delivery,notes
+s_hungry_farmer,v_hf_loyal,2,cond:citizen.loyalty >= 70,"{ruler}, you have never let us starve. Will the granary feed us again?",hope,smile,hand_on_heart,warm,a loyal farmer asks gently
+s_hungry_farmer,v_hf_greedy,1,trait:greedy,"Bare shelves, {ruler}. Share your stores and I'll remember it... at a fair price.",suspicion,smirk,lean_in,sarcastic,
+s_soldier_pay,v_sp_brave,1,trait:brave,"We held the wall, {ruler}. Brave men still eat. Where is our pay?",defiance,scowl,cross_arms,blunt,

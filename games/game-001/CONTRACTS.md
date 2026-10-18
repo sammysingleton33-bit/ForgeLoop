@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g9d, 2026-10-13; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g10d, 2026-10-16; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -135,7 +135,7 @@ export type EntityState = { id: EntityId, kind: EntityKind, kingdom: KingdomId, 
   - discrete cues: `deposit`, `hit`, `die`, `celebrate`.
 
   Looping work animations (chop, mine, hammer, carry) derive from action + job. There are no per-swing events. `hpPct` is sent here when it changes (VS-2).
-- `Sim.GetEntities` (function): the client calls it after connecting its handlers. It returns one buffer with every live entity: spawn record + current state.
+- `Sim.GetEntities` (function) `(afterId?) -> (buffer, nextAfterId?)`: the client calls it after connecting its handlers. Each call returns one page of at most 49 "full" records (spawn record + current state, ≤ 900 B; our G4 budget, not an engine limit) with `id > afterId`, in ascending id order. `nextAfterId` is nil on the last page; the client calls again with it until it is nil. `afterId` is nil or an integer 0..65535 (v0.4-g10b, #127).
 
 **Client rules (EntityController).**
 - Drop snapshots older than the newest applied `seq`.
@@ -160,7 +160,7 @@ EntityController.event: Signal<(EntityId, cue: string, payload: any, Model?)>
 EntityController:pick(screenPos: Vector2): EntityId?
 EntityController:getModel(id: EntityId): Model?
 InteractionController.gathered: Signal<(nodeId: string, ResourceId, amount: number)>   -- FORGE-01
-InputModeController:set(mode: "explore" | "build"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090); "command" is VS-2
+InputModeController:set(mode: "explore" | "build" | "edit"); .mode; .changed: Signal  -- FORGE-04 (FL-0053/FL-0090; "edit" FL-0121, G13.9); "command" is VS-2
 InputModeController.selected: Signal<(kind: "citizen" | "building" | "slot" | "none", id: number | string)>   -- G13.6
 RulerCameraController:setMode(mode: "overview" | "follow")                    -- FORGE-04; "overview" = aerial management view (VS-1 default, D-030), "follow" = walk mode
 ```
@@ -283,11 +283,13 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `KingdomJoined` | FORGE-01 | (player, KingdomId) |
 | `MatchPhaseChanged` | FORGE-01 | (MatchPhase) |
 | `BuildingPlaced` / `BuildingCompleted` / `BuildingUpgraded` / `BuildingDestroyed` | FORGE-01 | (Building, player?) |
+| `BuildingMoved` (v0.4-g9i, G13.9) | FORGE-01 | (Building, player?, from: { position: Vector3, rot: number }, slotId: string?). Never re-fires `BuildingPlaced`. |
 | `ResourceGathered` | FORGE-01 | (player?, KingdomId, ResourceId, amount, source: "ruler" \| "citizen") |
 | `UnitsRecruited` | FORGE-01 | (player, KingdomId, count) |
 | `ObjectiveCaptured` | FORGE-01 | (objectiveId, KingdomId) |
 | `KingdomEliminated` | FORGE-01 | (KingdomId, by: KingdomId?) |
-| `CitizenAnswered` (declared in `Contracts/GameEvents` by #109; fired from FL-0107; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose` |
+| `CitizenAnswered` (declared in `Contracts/GameEvents` by #109; fired from FL-0107; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose`. **Attribution:** the answering ruler only. The citizen id stays out of analytics and onboarding info (D-050 (5), #124). |
+| `ConsequenceChanged` (v0.4-g10c; declared in `Contracts/GameEvents` by FORGE-05, fired by FORGE-01; D-052 (5), #125) | FORGE-01 (ConsequenceService) | (kingdomId: KingdomId, rule: "strike" \| "shortage" \| "riot" \| "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number }). Exactly once per start and once per end, with the same values as `ConsequenceService.changed`, except that a `rebellion` fires only its start (one-shot with a cooldown, gated off in VS-1). A rule still running when its kingdom is eliminated, or when a new world resets the service, never fires its end, so listeners treat a start without an end as possible and clear their notices on elimination or reset; `count` is the number of citizens, or 1 for a building. Listener: FORGE-04's notices, one per start and end to that kingdom's rulers (texts are FORGE-04's). Server bus only. |
 | `MatchEnded` | FORGE-01 | ({ winner: KingdomId?, standings: { { kingdom: KingdomId, crownPoints: number } }, durationSec: number }) |
 
 - Producers fire each event exactly once, per framework rules.
@@ -315,7 +317,7 @@ Kit.build(type: BuildingType, level: number, stage: number | "complete", kingdom
 	-- PrimaryPart; attachments Door, WorkSpot1..n, DropOff (storehouse), Rally (barracks)
 Kit.footprint(type: BuildingType, level: number): Vector2           -- the one source for canPlace and the build ghost
 Kit.character(kind: EntityKind, job: JobId, kingdomColor: Color3): Model
-	-- ≤ 9 parts (anchored root, torso, head, 2 arms, 2 legs, tool, + Hair welded to Head, no motor; D-032); Motor6Ds named after the moving part;
+	-- ≤ 11 parts (anchored root, torso, head, 2 arms, 2 legs, tool, + Hair welded to Head, no motor; D-032; + at most 2 rigid detail parts for headwear or tool, welded to Head or Tool, no motor, D-048); Motor6Ds named after the moving part;
 	-- CanCollide, CanTouch and CanQuery false; pooled client rig template
 Kit.regalia(kingdomColor: Color3): { Accessory }                     -- ruler crown + cape (R15 and R6 attachments)
 Kit.prop(assetId: string): Model                                     -- imported mesh from Forge.Assets if present, else a part-built stand-in
@@ -471,6 +473,12 @@ Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, p
     - `cost` is omitted when the answer is free. To pay, use `decisionEffects(response.decision).cost`, which is always a table, never the preview.
   - `choiceRisks(decisionId, fillNames)` returns `{ { text, chance } }` for consequences with chance < 1. The text is fully filled. The panel shows the chance; content text never repeats it (`{chance}` is refused in risk notices).
   - `repeatMultiplier` returns 0 once 32 firings are in the window (`MAX_FARM_HISTORY`).
+  - **Presentation (v0.4-g10, SPEC v1.5; all optional, ignoring them changes no gameplay):**
+    - `reactionFor(responseId, loyalty?)` returns `{ text, tone, emotion?, expression?, gesture?, delivery?, bubble_s?, band }`. It picks the `high` band when loyalty ≥ `LOYALTY_BANDS.high` (70, PROVISIONAL) and that band has text, `low` when loyalty ≤ `LOYALTY_BANDS.low` (30), and otherwise `base`. **Servers send this text as the G13.3 reaction.**
+    - `questionFor(scenarioId, citizen, ctx)` returns `{ text, emotion?, expression?, gesture?, delivery?, variantId? }`: the first matching question variant (`trait:` or `cond:` selector), or else the base question.
+    - `presentation(scenarioId)` returns `{ urgency?, delivery_mode?, thought_bubble_s? }`.
+    - `GESTURE_CUE` maps a gesture to a G13.3 cue (bow, salute, cower, celebrate, grumble).
+    - Clients may show emotion and expression on the G13.8 portrait (FORGE-03/FORGE-04). Nothing waits on them.
   - Servers use these and do not re-implement decay, clamps or start loyalty.
   - `ContentQuery.fireDecision` is the single anti-farming point. It decays gains in reputation, loyalty, kingdom conditions and chemistry; losses are never decayed. Apply its result as given.
   - Scenarios marked `locked` are offered only after an `unlock_scenario` consequence. The server sets `CitizenState.unlocked[id]`.
@@ -487,14 +495,15 @@ export type Category = "compassion" | "honor" | "competence" | "courage" | "auth
 export type CitizenLook = { skin: number, hair: number, hairColor: number, outfit: number }   -- palette indices, Kit-defined ranges
 export type CitizenView = { entityId: EntityId, name: string, occupation: string, job: JobId, traits: { string },
 	mood: number, loyalty: number, obedience: number, intent: string, lastMemory: string?, memories: { string },
-	family: { string }, friends: { string }, rivals: { string }, hasRequest: boolean, look: CitizenLook }
+	family: { string }, friends: { string }, rivals: { string }, familyIds: { EntityId }, friendIds: { EntityId }, rivalIds: { EntityId },
+	hasRequest: boolean, look: CitizenLook }  -- *Ids aligned index for index with the name lists; look is always a valid CitizenLook (Kit.normalizeLook) (v0.4-g10b, #127)
 ```
 - **Population per match.** `CitizenService` generates the starting population from the match seed using Content `Names`, `Traits` and `Occupations`. Each citizen gets 2–3 traits (never an opposite pair), chemistry −20..+20, loyalty, a household family, 1–3 friends and 0–1 rival. Same seed → same population (spec). VS-1 size: 12 per populated kingdom.
 - **Chemistry and memories.** Chemistry is rolled once per citizen and may drift at most ±5 from its rolled value (`ContentQuery.driftChemistry`). Memories set by content are **pinned**: the G5 cap of 8 never evicts them.
 - **Inspect.** `CitizenService:inspect(entityId)` returns `CitizenView`. It is a superset of the G5 fields, so `Sim.Inspect` callers keep working.
 - **Soldier kingdom marker (D-033(3), FORGE-05 colour-vision check).** Soldiers wear a helmet, so their 9th part is a **helmet crest shaped per kingdom**, matching the tower style: crimson spire, azure square, emerald plume, gold dome. That keeps friend and foe distinguishable without colour. `Kit.character(kind, job, kingdomColor, look?, kingdom: KingdomId?)` takes an optional `kingdom` for this. FORGE-01 passes it for soldiers. VS-1 acceptance requires it.
 - **Looks.** Hair is the 9th rig part, welded to the Head (D-032). The look travels once per entity in the reliable `spawn` entity event (G4), never in the 10 B snapshot record. `Kit.character(kind, job, kingdomColor, look: CitizenLook?)` gains the optional `look` (FORGE-02; omitted = default look).
-- **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5).
+- **Population remote** (FORGE-03 job panel, FL-0065). `Kingdom.Population` is a serverEvent to members and `Kingdom.GetPopulation` a function. Both carry `CitizenService:getPopulation(myKingdom)` (G5), including `quotaRev: number`, which rises with every accepted quota change (v0.4-g10b, #127).
 
 ### G13.3 Conversations (FORGE-01 server; FORGE-03 panel; FORGE-04 bubbles) — VS-1
 | Remote | Kind | Args → result, or payload |
@@ -506,6 +515,7 @@ export type CitizenView = { entityId: EntityId, name: string, occupation: string
   - `thought` `{ entityId, scenarioId, text, icon: "request" | "concern" | "idea" }`
   - `reaction` `{ entityId, text, tone: "happy" | "angry" | "sad" | "neutral" }`
   - `strike` `{ occupation, on: boolean, entityIds: { EntityId } }`. `entityIds` lists exactly the citizens whose strike state changed (the server strikes only the least loyal share of an occupation). Clients mark only those citizens and never fan out by occupation (v0.4-g6).
+    - **Riot (v0.4-g10c, D-050 (1d), #125).** A `strike` whose `occupation` is `riot` (`EventCodec.RIOT`; no real occupation has that id) marks a riot: `entityIds` are the citizens who started or stopped rioting. Rioters are not on strike. Clients show their own riot placard and never pass it to strike handlers. While a riot burns a building, its model carries the attribute `Burning = true`, which is absent otherwise.
   - `cue` `{ entityId?, entityIds: { EntityId }?, occupation?, cue: string }` for consequence cues. Vocabulary: celebrate, grumble, salute, bow, cower, strike_placard, work_fast, rest, hammer. Unknown cues fall back to the reaction tone.
     - An occupation-wide or kingdom-wide cue that should show on citizens carries the affected ids in `entityIds`, chosen by the server.
     - A cue with neither `entityId` nor `entityIds` shows only on the HUD or the keep, never on citizens.
@@ -534,6 +544,10 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Build slots (G10.1, additive).** `Layout.plots[k].buildSlots = { { id: string, center: Vector3, size: "S" | "M" | "L", rot: number } }`, at least 8 per kingdom. WorldService tags each slot's ground marker `BuildSlot` with attribute `SlotId`.
 - **Remotes.**
   - `Build.PlaceSlot`: `(slotId: string(1,32), type: enum BuildingType)` → `(buildingId?, reason?)`.
+    - **Turn (v0.4-g9h, additive; the user's first Studio feedback).** A third, optional argument, `turn: integer(0,3)?`, gives quarter turns relative to the slot's facing. Omitted or 0 keeps today's behaviour, facing the street. The building's `rot` = `(slot.rot + turn) % 4`, replicated and rebuilt exactly as for `Build.Place`.
+      - The turned footprint must fit. `Fit.fits(type, size, turn?)` swaps the footprint's axes for odd turns, so a half turn always fits and a quarter turn fits only when the swapped footprint fits; otherwise the reason is `does_not_fit`.
+      - The plot picker offers only the turns that fit, and its ghost shows the facing.
+      - Owners: FORGE-01 (server and `Fit`), FORGE-03 (picker Turn control).
     - Plots take only the building types that sit on a plot. `wall` and `gate` are line structures (VS-2, placed on territory lines). The server refuses them on a plot with reason `not_on_plot`, even though they fit physically. Fit stays purely physical; this is placement policy, and the server enforces it, not only the picker (v0.4-g9a, #89 L3).
   - `Build.Slots` / `Build.GetSlots`: own kingdom's slots `{ id, size, occupiedBy: number? }`.
   - `Build.Place` stays as it is.
@@ -576,8 +590,14 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 ### G13.8 Cinematic conversations (D-036; first version after FL-0079 and FL-0088 land)
 - **Server (FORGE-01).**
   - The `Kingdom.Converse` result gains `look: CitizenLook`, `job`, `position: Vector3` (the citizen's current position) and `kingdom`.
-  - While a conversation is open, the citizen is **held**: `intent = "talking"`, it stops moving and turns to face the ruler's camera direction. The hold lasts at most `Society.conversationHoldSec` (PROVISIONAL 30 s) or ends at `Kingdom.EndConversation(entityId: integer) -> boolean`, a new function remote (own kingdom, rate-limited).
-  - After `Kingdom.Choose`, the hold ends when the reaction finishes, after at most 4 s.
+  - While a conversation is open, the citizen is **held**: its intent reads "Talking (with the ruler)", it stops moving, and it turns to face **the ruler's character** (server-side; the server cannot know the client camera). The conversation camera (FORGE-04, `focusOn`) places itself in front of the citizen's face (v0.4-g9e, ruling on #108). The hold lasts at most `Society.conversationHoldSec` (PROVISIONAL 30 s) or ends at `Kingdom.EndConversation(entityId: integer) -> boolean`, a new function remote (own kingdom, rate-limited).
+  - After `Kingdom.Choose`, the hold lasts until the client closes the stage (`Kingdom.EndConversation`), **at most 12 s** (= the UI's longest reading time), so the citizen stays framed while the reaction is read. An emergency (alarm, attack) or the ruler leaving still releases it at once (v0.4-g9f, ruling on the B14 gate).
+  - **Presentation tags (optional, v0.4-g10; SPEC v1.5).**
+    - The `Kingdom.Converse` result may carry `presentation = { emotion?, expression?, gesture?, delivery?, urgency?, variantId? }`. It comes from `ContentQuery.questionFor` / `presentation`, and the question text is the variant's, filled.
+    - A successful `Kingdom.Choose` result may carry `tone`, `emotion?`, `expression?`, `gesture?`, `delivery?`, `bubble_s?` and `band?` ("base" | "high" | "low") next to `reaction`, from `ContentQuery.reactionFor(responseId, loyalty)`. The reaction text is the band's.
+    - Every field is optional. A client that ignores them shows plain text, and gameplay never depends on them.
+    - The server sends only the enum values that SPEC v1.5 validates; no free text beyond what is filled from content.
+    - Producer: FORGE-01 (FL-0110). Consumer: FORGE-03 (FL-0111), and FORGE-04's poses through `GESTURE_CUE`.
 - **Portrait (FORGE-02).** `Kit.portrait(kind, job, kingdomColor, look, kingdom?) -> Model` returns the same ≤ 9-part rig as `Kit.character`, with the same look. It also carries a `PortraitFocus` attachment (head and shoulders) for a ViewportFrame camera. The portrait and the world rig must look identical.
 - **UI (FORGE-03).** `ConversationController`:
   - The portrait ViewportFrame rises from the bottom (about 0.35 s).
@@ -592,7 +612,54 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Content (FORGE-06).** Lines are written for this presentation: short questions and reactions, with optional emotion and gesture metadata (SPEC columns added by FORGE-00).
 - **Integration (FORGE-05).** Studio rows on STUDIO_PLAYTEST: focus and return, portrait matches the world look, a choice applies its effects, closing mid-conversation releases the hold.
 
+### G13.9 Base editing (FORGE-01 logic and remotes; FORGE-03 edit-mode UI; FORGE-04 input mode and camera) — B16 (v0.4-g9i; D-049)
+- **Remotes (area Build, additive).**
+  - `Build.CanMove(buildingId: integer(1,1e6), position: vector3, rot: integer(0,3))` → `(boolean, reason?)`; burst 10, 10/s (ghost tint).
+  - `Build.Move(buildingId, position, rot)` → `(ok, reason?)`; burst 4, 2/s. `rot` is absolute, as for `Build.Place`.
+  - `Build.MoveToSlot(buildingId, slotId: string(1,32), turn: integer(0,3)?)` → `(ok, reason?)`; burst 4, 2/s. Position = the slot centre; facing = the slot's rot + `turn` quarter turns (as `Build.PlaceSlot` g9h); `Fit.fits(type, size, turn)`.
+- **Atomic and in place.** A move is one server command: it validates, then changes position, facing, placement shape and slot, or changes nothing. The building keeps its id, type, level, construction or upgrade progress, paid cost, hit points, `placedBy`, recruit queue and workers. A move never charges, refunds, completes or re-places anything, and never re-fires `BuildingPlaced`. There is no server-side "lifted" state; dragging is client-only.
+- **Validation.** The `Build.Place` geometry (bounds, the placement shape against every *other* standing building, resource nodes, objective zones, the no-build areas and the unit and ruler clearance below, with the placement gap), but the destination must lie inside the **keep's own territory circle**, never in a claimed region (v0.4-g9j). Limits, keep level and cost are not checked: a move doesn't add a building.
+- **Who and when.** Any ruler of the kingdom may move its buildings, except the keep, in any active phase.
+  - **Under attack, per building (v0.4-g9j):** refused when an at-war unit targets or focuses the building, an at-war unit is within its range + 30 of the old or new shape, the building took damage in the last 10 s, or it is burning. The kingdom alarm also refuses moves, as a UX rule only.
+  - A kingdom can't move anything for 30 s after a war declaration or peace that involves it.
+  - Each building waits `Buildings.moveCooldown` (**10 s**) between moves.
+  - A moved storehouse, lumber camp or quarry **settles for 30 s**: it takes no deliveries and gives no gather bonus.
+  - The cooldown and settling use sim time.
+  - A move to the same spot and facing succeeds and does nothing.
+- **Consequences.** Citizens working, building or resting at the building go back to walking to its new place, with their claims kept. Homes, beds, bunks, storage and the treasury don't change. A barracks keeps its queue, and new soldiers appear at its new Rally.
+- **Slots.** `Build.Move` frees the building's slot; `Build.MoveToSlot` takes the new one, inside the same command. A building may turn on its own slot. Walls and gates never go on a slot (`not_on_plot`); single sections move with `Build.Move`. Slots themselves don't move (D-049).
+- **Reasons.** Those of `Build.Place`/`Build.PlaceSlot`, plus `not_found`, `not_movable` (the keep), `under_attack`, `alarm` and `cooldown`.
+- **Replication.** `Build.Buildings` re-sends a building whose position or facing changed. The **server's** WorldView re-pivots the Kit model without a rebuild, and clients get it through part replication (v0.4-g9j correction).
+- **Shared placement rules (Place, PlaceSlot, Move; v0.4-g9j).** Each of these refuses with `blocked`:
+  - a shape within an objective's radius plus the placement gap;
+  - a shape on a crop field, plot road (avenue and cross street) or the spawn pad (Kingdom Layout `reservedAreas()` plus world/Layout data);
+  - a shape containing a living unit of any kingdom or a ruler's character position plus 3 studs.
+  Slot occupancy uses the same placement gap, so a slot never reads free while placing on it is refused.
+- **Events.** G9 `BuildingMoved` (FORGE-01; declared in `GameEvents.luau` by FORGE-05, the custodian): `(Building, player?, from: { position: Vector3, rot: number }, slotId: string?)`.
+- **Input and camera (FORGE-04, additive to G4.1/G13.6).**
+  - `InputModeController` mode `"edit"`: a tap selects only the player's own buildings and own plots. The input layer can't know occupancy. Whether a plot is a valid MoveToSlot target (free, or the building's own) is decided by FORGE-03's snap and, finally, by the server (`slot_occupied`). Selecting a building in edit mode doesn't move the camera; while moving, a tap aims the ghost (v0.4-g10a, #157).
+  - `RulerCameraController` keeps the overview in edit mode and adds `setEditDrag(active)` (drag-pan off, edge-pan on while dragging).
+- **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
+
 ## Changelog
+- v0.4-g10d (2026-10-16) FORGE-00: G9 `ConsequenceChanged` wording: a rebellion fires only its start; a rule cut short by elimination or a world reset fires no end (FORGE-07 L1/L2 on #173). Wording only.
+- v0.4-g10c (2026-10-15) FORGE-00: G13.3 a `strike` with occupation `riot` marks a riot (rioters are not strikers); burning building models carry `Burning`. G9 gains `ConsequenceChanged` (start and end of strike, shortage, riot, rebellion). Additive. Owed at #125's merge (D-052 (5)).
+- v0.4-g10b (2026-10-15) FORGE-00: G4 `Sim.GetEntities` is paged (≤ 49 full records per page, `nextAfterId`); G13.2 `CitizenView` gains `familyIds`/`friendIds`/`rivalIds` and a normalized look; G5 population gains `quotaRev` (FL-0109, #127). G9 `CitizenAnswered` attribution: the answering ruler only (#124, D-050 (5)).
+- v0.4-g10a (2026-10-15) FORGE-00: G4.1 `InputModeController:set` includes `"edit"`. G13.9 edit-mode taps select own buildings and own plots; validity is decided by the snap and the server; no camera jump on select (FORGE-07 #142 L2/L3, #157).
+- v0.4-g10 (2026-10-13) FORGE-00: G13.1 presentation functions from SPEC v1.5: `reactionFor` (loyalty bands), `questionFor` (question variants), `presentation`, `GESTURE_CUE`. Additive. G13.8: optional presentation tags on the `Kingdom.Converse` and `Kingdom.Choose` results (FORGE-03 proposal, FL-0110/FL-0111). (Drafted as g9 in #96; renumbered after g9a/g9b landed on main.)
+- v0.4-g9j (2026-10-15) FORGE-00: G13.9 hardened after an adversarial code review of the base-editing rules:
+  - destinations only in the keep's own territory circle;
+  - per-building under-attack, damage and burning refusals, and a 30 s lockout after war or peace;
+  - a 10 s cooldown, and 30 s settling for moved drop-offs;
+  - shared no-build areas (fields, plot roads, spawn pad) and unit and ruler clearance for Place, PlaceSlot and Move;
+  - slot occupancy uses the placement gap;
+  - the server re-pivots the model.
+  Closes drop-off chasing, builder stall, frontier teleport, siege dodge, peacetime trap and character trap.
+- v0.4-g9i (2026-10-15) FORGE-00: G13.9 base editing (`Build.CanMove`/`Move`/`MoveToSlot`, atomic in-place moves, G9 `BuildingMoved`, the "edit" input mode) and the objective-zone placement rule. Additive. Source: the user's first Studio feedback; rules from a code investigation (D-049).
+- v0.4-g9h (2026-10-13) FORGE-00: G13.5 `Build.PlaceSlot` takes an optional `turn` (quarter turns relative to the slot's facing; the turned footprint must fit, `Fit.fits(type, size, turn?)`). Additive. The user's first Studio feedback: placing on a plot could not be rotated (free placement already rotates with R).
+- v0.4-g9g (2026-10-13) FORGE-00: G10 rigs may have up to 11 parts: 2 more rigid detail parts (headwear brim/crown, tool handle/head), welded to Head or Tool with no Motor6D, so poses and `Sim/Pose.JOINTS` are unchanged (D-048, the user's first Studio feedback: citizens and tools too plain).
+- v0.4-g9f (2026-10-13) FORGE-00: G13.8 after `Kingdom.Choose`, the hold lasts until `EndConversation`, capped at 12 s (was: at most 4 s). The citizen no longer walks off while the reaction is on screen (FORGE-05 B14 gate finding).
+- v0.4-g9e (2026-10-13) FORGE-00: G13.8 held citizen faces the ruler's character, not the camera direction (the server cannot know the camera), and the intent text is "Talking (with the ruler)"; the conversation camera frames the citizen's face. This follows #108 as built.
 - v0.4-g9d (2026-10-13) FORGE-00: G7 births follow upkeep health instead of spending treasury food (D-045). ProductionService stays the only food consumer.
 - v0.4-g9c (2026-10-13) FORGE-00, rulings on FORGE-04's #98 questions (D-044). These are additive:
   - G3 lists `MatchService.mode`.

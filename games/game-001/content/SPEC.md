@@ -1,4 +1,4 @@
-# AI Kingdoms content library — formal schema (v1.4, 2026-10-13)
+# AI Kingdoms content library — formal schema (v1.5, 2026-10-13)
 
 Owner of the format and the importer: `tools/content/content.py`. Editor guide for writers: [`README.md`](README.md).
 Model rules come from FORGE-00 (model decisions 1–7, 2026-10-12). The starter rows are a **DRAFT proposal**, not approved dialogue.
@@ -11,11 +11,14 @@ v1.3 applies the verification of the v1.2 follow-ups: `fireAction` decays each r
 
 v1.4 applies the FORGE-00 rulings on the FORGE-05 review of PR #67: risk notices describe only the outcome and never write `{chance}`, because the conversation panel shows the chance (§3, §5.4); `choicePreview` returns exactly the G13.3 option extras and `choiceRisks` gives `{ text, chance }` with the text filled (§6.7); `fireAction` credits reputation to the credited rulers and applies kingdom conditions and listeners once (§6.8, §6.9); a full anti-farming window gives 0 (§6.5); each citizen is one listener (§6.5, §6.9); a listener's net change is decayed as one value (§6.5); more blank characters and blank texts are refused (§2); `raid_defended` and `phase_fed_*` tuning (§8). Follow-ups to that review: ConversationService pays `decisionEffects(...).cost`, and `choicePreview` requires `fillNames` (§6.5, §6.7); the full-window bound is stated only for a full window (§6.5); default-ignorable characters such as a lone variation selector are blank text (§2).
 
+v1.5 adds **optional presentation metadata** for the cinematic conversations (D-035 (4), D-036), in FORGE-06's measured vocabulary (§5.10): scenario `urgency`, `delivery_mode`, `thought_bubble_s` and `question_*` tags; reaction tags and `reaction_bubble_s`; high- and low-loyalty reaction variants (`reaction_high_*`, `reaction_low_*`); and the optional table `dialogue/question_variants.csv`, which gives some citizens another question by trait or condition. Every new column may be absent or blank and the file may be absent, so existing CSVs stay valid unchanged, and the generated modules of a library without the new data are byte-identical. Ignoring the tags changes no gameplay. A reaction's emotion must fit its tone. ContentQuery gains `reactionFor`, `questionFor`, `presentation`, `GESTURE_CUE` and `LOYALTY_BANDS` (§5.10, §7) **(contract: CONTRACTS G13.1, v0.4-g10)**. The workbook offers the new columns as yellow EDIT columns and adds a `question_variants` sheet (§10). Two lint hints (§9).
+
 ## 1. Files and pipeline
 
 ```
 games/game-001/content/            canonical source (CSV, UTF-8, RFC 4180, header row, one file per table)
   dialogue/scenarios.csv  responses.csv  decisions.csv  consequences.csv
+           question_variants.csv   (optional: may be absent, §5.10)
   citizens/traits.csv  names.csv  occupations.csv
   reputation/categories.csv  actions.csv
         │  python3 tools/content/content.py build      (validate, then generate)
@@ -27,7 +30,7 @@ games/game-001/src/shared/Content/ (ReplicatedStorage.Game.Content)
 
 | Command | Does |
 |---|---|
-| `validate` | Parses every CSV and checks types, ranges, lengths, ids, references, the condition vocabulary and the model decision 6 guards. Prints `N scenarios, M responses, … — 0 errors`, or one line per error, then exits 1. |
+| `validate` | Parses every CSV and checks types, ranges, lengths, ids, references, the condition vocabulary and the model decision 6 guards. Prints `N scenarios, M responses, … — 0 errors` (with `K question variants` after the responses when that optional file exists), or one line per error, then exits 1. |
 | `lint` | Prints design warnings (§9). It never fails. |
 | `build` | Runs validate, then writes the generated modules. Output is deterministic: running it twice gives identical bytes. |
 | `check` | Exits 1 if validation fails or a generated file is missing or differs from what `build` would write (CI). |
@@ -53,10 +56,10 @@ All commands take `--content DIR` (default `games/game-001/content`). `build`, `
 | `resource` | `food`, `wood`, `stone`, `gold` | CONTRACTS G2 (`iron` is VS-2). |
 | `cond` | condition expression (§4) | Parsed at build time into `{ Clause }`. |
 | `TEXT` | player-facing text, one line | It has a length limit. It may not have leading or trailing spaces or line breaks, and it may not **start** with `=`, `+`, `-` or `@`: a spreadsheet opening the CSV would run it as a formula (CSV injection). Start with a letter, a digit or a quote mark instead (a dialogue dash is `—`). Placeholders: §3. |
-| `choice` | a value from a short list | Presentation, edited together with the text (`thought_icon`, `reaction_tone`). |
+| `choice` | a value from a short list | Presentation, edited together with the text (`thought_icon`, `reaction_tone`, and the optional tags of §5.10). |
 | `notes` | free text for designers | Multi-line is allowed. It is never exported to the game. Developers open the CSVs in spreadsheets too, so a note may not start with `=` or `@`, and a note that starts with `+` or `-` may not hold a function call or a `\|` link (`+HYPERLINK(…)`, `-2+3+cmd\|…`): a spreadsheet would run it (CSV injection). `+housing capacity` and `-gold, +military readiness` are fine. `actions.direct` follows the same rule. |
 
-- Unknown columns are errors, and so are missing required columns. Column order inside a file is free, because the importer reads by header name. Fully blank rows are ignored.
+- Unknown columns are errors, and so are missing required columns. An optional column may be absent from the header or left blank: both mean "no value". Column order inside a file is free, because the importer reads by header name. Fully blank rows are ignored.
 - **Invisible characters are errors in every cell**: control characters U+0000–U+001F (a notes cell may hold tabs and line breaks), U+007F–U+009F, the soft hyphen U+00AD, zero-width U+200B–U+200D and U+2060, U+FEFF, the line/paragraph separators U+2028/U+2029, the bidirectional controls U+200E/U+200F and U+061C (marks), U+202A–U+202E (embeddings and overrides) and U+2066–U+2069 (isolates), which reorder how a line is shown, every other Unicode format character (category Cf, e.g. the invisible operators U+2061–U+2064, U+180E and the tag characters U+E0000–U+E007F), and the characters that show as nothing or as blank space: the Hangul fillers U+115F, U+1160, U+3164 and U+FFA0, the Braille pattern blank U+2800, the combining grapheme joiner U+034F and the musical symbol null notehead U+1D159. The message names the character and its position, e.g. `invisible character U+202E (right-to-left override) at position 6`. A workbook cannot hold most of them, so this also keeps `export-xlsx` working.
 - **Blank text.** A TEXT cell that is not empty but holds nothing visible is an error in every TEXT column, required or optional: only spaces (ASCII, no-break, U+2000–U+200A such as the em space, U+3000 …), the invisible characters above and the other Unicode **default-ignorable** characters (the variation selectors U+FE00–U+FE0F and U+E0100–U+E01EF, the Khmer inherent vowels U+17B4/U+17B5, the Mongolian free variation selectors U+180B–U+180D and U+180F, and the reserved U+2065, U+FFF0–U+FFF8 and U+E0000–U+E0FFF), e.g. `text is blank: it holds only spaces or invisible characters (U+2003 em space), which the game would show as an empty line; write the text`. Such a space between words is fine, and so is a variation selector after an emoji (`❤️` is U+2764 U+FE0F), so these default-ignorable characters are refused only as a text's whole content, not in every cell; only a text with nothing else is refused. An optional text is left empty instead.
 - **Encoding.** Every CSV is UTF-8. A file that is not names the first bad byte, its byte offset, and the spreadsheet row and column it falls in, e.g. `dialogue/scenarios.csv:3: not UTF-8 text: byte 0xE9 at byte offset 538 (column 8)`.
@@ -66,17 +69,17 @@ The game fills placeholders in at runtime. Which ones a column may use depends o
 
 | Column | Allowed placeholders |
 |---|---|
-| scenarios `thought_text`, `question_text`; responses `response_text`, `reaction_text` | `{name}` (the citizen's given name), `{ruler}` (the ruler's display name), `{kingdom}`, `{occupation}` (the citizen's occupation name), and `{family}`, `{friend}`, `{rival}` (the given name of a related citizen) |
+| scenarios `thought_text`, `question_text`; responses `response_text`, `reaction_text`, `reaction_high_text`, `reaction_low_text`; question_variants `question_text` | `{name}` (the citizen's given name), `{ruler}` (the ruler's display name), `{kingdom}`, `{occupation}` (the citizen's occupation name), and `{family}`, `{friend}`, `{rival}` (the given name of a related citizen) |
 | consequences `notice_text` | `{name}`, `{ruler}`, `{kingdom}`, `{occupation}` (all of the citizen spoken to), plus the **mechanics placeholders** `{magnitude}`, `{magnitude_pct}`, `{duration}`; never `{chance}` (below) |
 | actions `notice_text` | `{ruler}`, `{kingdom}`; also `{name}` and `{occupation}` when the row's audience is `speaker` |
 | everything else (traits, names, occupations, categories) | none |
 
-- **Relations are guaranteed, not hoped for.** `{family}`, `{friend}` and `{rival}` are errors unless the scenario's trigger requires `citizen.has_family`, `citizen.has_friend` or `citizen.has_rival` (a response uses its scenario's trigger).
+- **Relations are guaranteed, not hoped for.** `{family}`, `{friend}` and `{rival}` are errors unless the scenario's trigger requires `citizen.has_family`, `citizen.has_friend` or `citizen.has_rival` (a response uses its scenario's trigger; a question variant uses its scenario's trigger plus its own `cond:` selector, §5.10).
 - **Mechanics placeholders** keep notices true when the numbers change: `{magnitude}` → `+5` / `-4` (signed), `{magnitude_pct}` → `15%` (absolute, for productivity and strike shares), `{duration}` → `45 s` / `2 minutes`. `ContentQuery.consequenceNotice` and `ContentQuery.choiceRisks` fill them.
 - **Risks never write their odds** (FORGE-00 ruling on the FORGE-05 review of PR #67, item 2). The conversation panel shows a risk's real chance next to its text (CONTRACTS G13.3 `risks: { { text, chance } }`, model decision 7), so a notice never contains `{chance}`: it is an error in every notice (`do not write {chance}: the conversation panel already shows a risk's chance next to its text …`), and typed odds are a lint warning. A consequence with `chance` < 1 still **must** have a notice, and that notice describes only the outcome, e.g. `{name} may walk off the job for {duration}.`, not `Risk ({chance}): …`.
 - An unknown placeholder, one not allowed in that column, or an unbalanced brace is an error.
 - Length limits count the raw text, so a placeholder counts by how it is spelled. Leave room for long names.
-- **Bubble texts** (`thought_text`, `reaction_text`) must also fit FORGE-04's bubble (`Feedback/Bubbles` `maxChars` 80, which cuts longer text with an ellipsis; FORGE-00 decision L7) **with every placeholder at its longest**: `{name}`, `{family}`, `{friend}`, `{rival}` 16 (a given name, §5.6), `{ruler}` 20 (a Roblox display name), `{occupation}` 24 (§5.7), `{kingdom}` 20 (config `Kingdoms.luau` display names, the longest today 15; **FORGE-01 to keep kingdom names ≤ 20**). `validate` names the length the text can reach.
+- **Bubble texts** (`thought_text`, `reaction_text`, `reaction_high_text`, `reaction_low_text`) must also fit FORGE-04's bubble (`Feedback/Bubbles` `maxChars` 80, which cuts longer text with an ellipsis; FORGE-00 decision L7) **with every placeholder at its longest**: `{name}`, `{family}`, `{friend}`, `{rival}` 16 (a given name, §5.6), `{ruler}` 20 (a Roblox display name), `{occupation}` 24 (§5.7), `{kingdom}` 20 (config `Kingdoms.luau` display names, the longest today 15; **FORGE-01 to keep kingdom names ≤ 20**). `validate` names the length the text can reach.
 
 ## 4. Condition language (`trigger`, `condition`, `audience_condition`)
 - AND-only: clauses are separated by `&`. The canonical spelling is ` & `.
@@ -138,9 +141,13 @@ Legend: **K** key/id (mechanics) · **M** mechanics · **T** TEXT (edit freely) 
 | priority | M | int | 1–100 (higher is offered first) |
 | cooldown_s | M | int | ≥ 0; per citizen, since this scenario was last shown to them |
 | once_per_citizen | M | bool | default `false` |
+| urgency | C | `low` `normal` `high` `critical` | optional column; presentation only (§5.10) |
+| delivery_mode | C | `ambient` `direct` | optional column; presentation only (§5.10). **Reserved:** no remote carries it yet (the G13.3 `thought` event is unchanged) |
 | thought_icon | C | `request` `concern` `idea` | optional column; default `request` (CONTRACTS G13.3 `thought.icon`) |
 | thought_text | T | ≤ 48 | thought bubble; also ≤ 80 with the longest names filled in (§3) |
+| thought_bubble_s | C | number 2.5–9, one decimal | optional column; seconds the thought bubble stays (§5.10). **Reserved:** no remote carries it yet (the G13.3 `thought` event is unchanged) |
 | question_text | T | ≤ 160 | the citizen's line when selected |
+| question_emotion, question_expression, question_gesture, question_delivery | C | §5.10 vocabulary | optional columns; how the question is said (§5.10) |
 | notes | N | | |
 
 A scenario named by an `unlock_scenario` consequence is generated with `locked = true` (§5.4).
@@ -154,6 +161,11 @@ A scenario named by an `unlock_scenario` consequence is generated with `locked =
 | response_text | T | ≤ 70 | the ruler's answer |
 | reaction_text | T | ≤ 80 | the citizen's reaction, shown in a speech bubble (FORGE-04's reaction bubble `maxChars` is 80; FORGE-00 decision L7); also ≤ 80 with the longest names filled in (§3) |
 | reaction_tone | C | `happy` `angry` `sad` `neutral` | optional column; default `neutral` (CONTRACTS G13.3 `reaction.tone`) |
+| reaction_emotion, reaction_expression, reaction_gesture, reaction_delivery | C | §5.10 vocabulary | optional columns; the emotion must fit `reaction_tone` (§5.10) |
+| reaction_bubble_s | C | number 2.5–9, one decimal | optional column; seconds the reaction bubble stays |
+| reaction_high_text, reaction_low_text | T | ≤ 80 | optional columns: the reaction at high / low loyalty (§5.10); the rules of `reaction_text` |
+| reaction_high_tone, reaction_low_tone | C | `happy` `angry` `sad` `neutral` | required when that band's text is set, refused without it |
+| reaction_high_emotion … reaction_low_bubble_s | C | §5.10 vocabulary / number 2.5–9 | optional; a band's tags need that band's text, and its emotion must fit that band's tone |
 | decision_id | M | id | must exist in decisions; the underlying mechanics |
 | notes | N | | optional column |
 
@@ -200,7 +212,7 @@ Rewriting text never touches mechanics: the text lives here, and the mechanics l
 
 | kind | magnitude | param | other rules |
 |---|---|---|---|
-| productivity | work-rate change, −1 to +1 (−0.2 = −20 %) | — | duration_s > 0. On a group (`occupation:<id>`, `soldiers`, `civilians`, `kingdom`) at least **−0.5**: only `speaker`/`family`/`friends` may stop work entirely (−1 = one citizen's walk-out) |
+| productivity | work-rate change, −1 to +1 (−0.2 = −20 %) | — | duration_s > 0. On a group (`occupation:<id>`, `soldiers`, `civilians`, `kingdom`) at least **−0.5**: only `speaker`/`family`/`friends` may stop work entirely (−1 = one citizen's walk-out). **A walk-out (≤ −1) is a state, not a sum (D-042):** the citizen stops working for the duration and shows a strike placard, and no boost cancels it. Boosts and smaller penalties add up only on working citizens |
 | strike | share of the occupation's workers who stop, 0–**0.5** | — | duration_s 1–**120**. Target must be one **civilian** `occupation:<id>` (CONTRACTS G13.3 sends `strike { occupation, on }`); never `kingdom`, `civilians`, `soldiers` or an occupation whose job is soldier (model decision 6). Kingdom-wide strikes come only from the sustained unrest rules (§6.6) |
 | morale / happiness / stability | points, −20 to +20 | — | kingdom-level condition |
 | loyalty | points, −20 to +20 | — | per targeted citizen |
@@ -283,6 +295,75 @@ Each row is an independent effect that fires when its event fires and its `condi
 - `fund_barracks, BuildingCompleted:barracks, condition kingdom.count.barracks <= 2 & phase in Conflict,Endgame, courage +1, authority +1` (the measured need)
 - `fund_barracks, BuildingCompleted:barracks, condition kingdom.fed_ratio < 0.6, audience civilians, -3`
 
+### 5.10 Presentation metadata (optional; D-035 (4), D-036)
+How a line is shown in the cinematic conversation (CONTRACTS G13.8): the portrait's emotion, expression and gesture, how the line is said, how long a bubble stays, and how pressing a scenario is. FORGE-06 measured the vocabulary on the draft lines.
+
+- **Everything here is optional.** A column may be absent from the CSV or blank, and `dialogue/question_variants.csv` may be absent (no variants). Existing CSVs stay valid without these columns, and a library without this data generates byte-identical modules.
+- **Presentation only.** Ignoring every tag changes no gameplay: eligibility, priorities, decisions and every effect stay the same. A tag that is not in the content is nil at runtime, never a default (except `tone`, which keeps its `neutral` default).
+- **Props are not modelled.** Writers keep them in `notes`.
+
+**Columns.**
+
+| Table | Columns | Rules |
+|---|---|---|
+| scenarios | `urgency`, `delivery_mode` | enums below |
+| scenarios | `thought_bubble_s` | number 2.5–9, at most one decimal (seconds) |
+| scenarios | `question_emotion`, `question_expression`, `question_gesture`, `question_delivery` | enums below; the question has no tone, so any emotion is allowed. There is no `question_bubble_s`: the question waits for the answer |
+| responses | `reaction_emotion`, `reaction_expression`, `reaction_gesture`, `reaction_delivery`, `reaction_bubble_s` | enums below; the emotion must fit `reaction_tone` (an empty tone is `neutral`, so a happy emotion needs `reaction_tone` happy) |
+| responses | `reaction_<band>_text`, `reaction_<band>_tone`, `reaction_<band>_emotion`, `_expression`, `_gesture`, `_delivery`, `_bubble_s` for band `high` and `low` | the loyalty variants below |
+
+**Vocabulary** (an unknown value is an error naming the allowed ones, with a "did you mean"):
+
+| Tag | Values |
+|---|---|
+| emotion (20) | `determination` `frustration` `gratitude` `relief` `joy` `excitement` `worry` `suspicion` `anger` `fear` `contempt` `sadness` `neutral` `hope` `amusement` `curiosity` `defiance` `pride` `embarrassment` `grief` |
+| expression (13) | `smile` `frown` `smirk` `beam` `neutral` `grin` `raised_brow` `scowl` `eye_roll` `wide_eyed` `downcast` `teary` `sheepish` |
+| gesture (21) | `nod` `shrug` `hand_on_heart` `cross_arms` `none` `point` `fist_pump` `head_down` `throw_up_hands` `wring_hands` `salute` `scratch_head` `lean_in` `hold_up` `glance_around` `hands_on_hips` `rub_neck` `bow` `wave` `step_back` `raise_hand` |
+| delivery (15) | `warm` `blunt` `deadpan` `cheerful` `excited` `grumbling` `sarcastic` `solemn` `urgent` `proud` `hushed` `nervous` `formal` `pleading` `playful` (there is no `defiant`: use emotion `defiance`) |
+| urgency (4) | `low` `normal` `high` `critical` |
+| delivery_mode (2) | `ambient` (the scenario reaches the ruler as a thought bubble to notice) · `direct` (the citizen seeks the ruler out) |
+
+**Emotion fits tone** (validate error otherwise: `emotion 'anger' does not fit tone 'happy': a happy line takes …`):
+
+| Tone | Emotions that fit |
+|---|---|
+| `happy` | `joy` `gratitude` `pride` `relief` `hope` `amusement` `excitement` `determination` |
+| `neutral` | `neutral` `determination` `curiosity` `suspicion` `amusement` `worry` `hope` `frustration` `relief` |
+| `angry` | `frustration` `anger` `contempt` `defiance` `suspicion` |
+| `sad` | `sadness` `grief` `worry` `fear` `embarrassment` |
+
+**Gesture cues.** A gesture that has a feedback cue (§5.4 vocabulary) also plays it: `bow` → `bow`, `salute` → `salute`, `step_back` → `cower`, `fist_pump` → `celebrate`, `cross_arms` → `grumble`; every other gesture has none. The mapping is data: `ContentQuery.GESTURE_CUE`.
+
+**Bubble seconds.** `thought_bubble_s`, `reaction_bubble_s` and `reaction_<band>_bubble_s` are numbers from 2.5 to 9 with at most one decimal (`3.5`, not `3.25`). Empty = the presentation default (FORGE-04).
+
+**Loyalty variants of a reaction.** `reaction_high_text` is shown instead of `reaction_text` when the citizen's loyalty is at least `ContentQuery.LOYALTY_BANDS.high` (70, **PROVISIONAL**), `reaction_low_text` when it is at most `LOYALTY_BANDS.low` (30, **PROVISIONAL**).
+- A band's text follows every `reaction_text` rule: TEXT, ≤ 80 characters and ≤ 80 with the longest names filled in, the same placeholders, and `{family}`/`{friend}`/`{rival}` only when the scenario's trigger guarantees the relation (§3).
+- `reaction_<band>_tone` is required when the band's text is set.
+- The band's tags are optional, and its emotion must fit **that band's** tone.
+- A band's tone or tags without its text are an error (`reaction_low_tone is set but reaction_low_text is empty …`).
+
+**`dialogue/question_variants.csv`** (optional file): another question for some citizens of a scenario.
+
+| Column | | Type | Rules |
+|---|---|---|---|
+| scenario_id | K | id | must exist in scenarios |
+| variant_id | K | id | unique (id rules, §2) |
+| order | M | int ≥ 1 | unique within the scenario; the lowest matching order wins |
+| selector | M | `trait:<trait_id>` or `cond:<condition>` | `trait:` = the citizen has that trait (it must exist in traits.csv); `cond:` = a condition in the language and vocabulary of triggers (§4, citizen scope), e.g. `cond:citizen.loyalty >= 70` |
+| question_text | T | ≤ 160 | the rules of `scenarios.question_text`; `{family}`/`{friend}`/`{rival}` need the relation in the scenario's trigger or in this variant's `cond:` |
+| question_emotion, question_expression, question_gesture, question_delivery | C | vocabulary above | optional |
+| notes | N | | optional column |
+
+A bad selector (`'traits:greedy' is not a selector (did you mean 'trait'?)`), an unknown scenario or trait, an empty `cond:`, a duplicate variant id or a repeated order within a scenario is an error. Memories read by a `cond:` selector count as reads for lint (§9).
+
+**Runtime** (`ContentQuery`, pure; full API in its header):
+- `reactionFor(responseId, loyalty?) -> { text, tone, emotion?, expression?, gesture?, delivery?, bubble_s?, band }`: `band` is `"high"` when loyalty ≥ `LOYALTY_BANDS.high` and the response has a high text, `"low"` when loyalty ≤ `LOYALTY_BANDS.low` and it has a low text, else `"base"` (the reaction, its tone and tags). A nil, NaN or infinite loyalty gives `"base"`; an unknown response gives nil.
+- `questionFor(scenarioId, citizen, ctx) -> { text, emotion?, expression?, gesture?, delivery?, variantId? }`: the first variant by `order` whose selector matches (`trait:<id>`: `citizen.traits` contains the id; `cond:`: `evaluate(cond, ctx)`, the same rules as triggers, §4), else the scenario's `question_text` with its `question_*` tags and no `variantId`. An unknown scenario gives nil; a citizen that is not a table is an error.
+- `presentation(scenarioId) -> { urgency?, delivery_mode?, thought_bubble_s? }`; nil for an unknown scenario.
+- `GESTURE_CUE` (above) and `LOYALTY_BANDS = { high = 70, low = 30 }` (PROVISIONAL).
+- Texts are returned raw: the caller fills their placeholders as for the base question and reaction.
+- **(contract: FORGE-00)** CONTRACTS G13.1 (v0.4-g10) gains `reactionFor`, `questionFor`, `presentation`, `GESTURE_CUE` and `LOYALTY_BANDS`. The functions are additive: nothing existing changes behaviour.
+
 ## 6. Effect model (what the runtime does with the data; ContentQuery implements 3–5, 7 and 9)
 1. **Reputation.** Every ruler has six values, 0–100, starting from `categories.start`. Every change is a history entry `{ t, category, delta, source, text }` (the field names of CONTRACTS G13.4). `source` is the decision_id or action_id, and `text` is the action notice_text or the scenario/response text.
 2. **Loyalty and obedience.**
@@ -344,8 +425,16 @@ Every file starts with:
 -- Dialogue.luau
 { scenarios = { [scenario_id] = { id, occupation, trigger = { Clause }, priority, cooldown_s, once_per_citizen,
       locked, icon, thought, question,
-      responses = { { id, order, text, reaction, tone, decision } } } },   -- responses sorted by order
+      urgency?, delivery_mode?, thought_bubble_s?,                            -- §5.10, only when present
+      question_emotion?, question_expression?, question_gesture?, question_delivery?,
+      responses = { { id, order, text, reaction, tone,
+          emotion?, expression?, gesture?, delivery?, bubble_s?,             -- the reaction's tags (§5.10)
+          decision,
+          bands = { high = Band?, low = Band? }? } },                         -- responses sorted by order
+      variants = { { id, order, trait? | cond = { Clause }?, text,           -- question_variants.csv, sorted
+          emotion?, expression?, gesture?, delivery? } }? } },                --   by order; nil when none
   order = { scenario_id } }                                                   -- file order
+-- Band = { text, tone, emotion?, expression?, gesture?, delivery?, bubble_s? }
 -- Decisions.luau
 { [decision_id] = { id, farm_key, repeat_decay, repeat_window_s, cost = { [resource] = n }, resources = { [resource] = n },
     rep = { compassion, honor, competence, courage, authority, fear },          -- all six, zeros included
@@ -368,9 +457,11 @@ Every file starts with:
 ```
 **Reading trait weights.** A trait's value weight for a category is `Traits[traitId].weights[category]` (e.g. `Traits.kind.weights.compassion`); the CSV columns `weight_<category>` are not flat fields of the record. `ContentQuery.loyaltyDelta` reads them this way; any consumer that scores a decision for a citizen must too.
 
+The presentation fields of §5.10 are emitted only when present, so a library without them generates the same bytes as v1.4; `Dialogue.luau` names `dialogue/question_variants.csv` in its `Source:` line only when that file exists.
+
 `target` keeps the source spelling, e.g. `"occupation:farmer"`. `param` is a string, or `nil` when empty. For `memory` it is always set: it falls back to consequence_id. `icon` and `tone` are always set (defaults `request`, `neutral`); `locked` is always a boolean.
 
-**ContentQuery** (hand-written, pure; full API in its header): `evaluate`, `eligibleScenarios` (respects `locked` via `CitizenState.unlocked`), `citizenKey`, `markShown`, `choicePreview`, `choiceRisks`, `decisionEffects`, `fireDecision`, `fireAction`, `loyaltyDelta`, `decisionLoyalty`, `actionFirings`, `inActionAudience`, `actionLoyalty`, `repeatMultiplier`, `recordFire`, `scaleGain`, `scaleGains`, `clampLoyalty`, `applyChemistry`, `startLoyalty`, `driftChemistry`, `noticeValues`, `fill`, `consequenceNotice` (the mechanics values are filled last, so a name can never replace them), `durationText`, `REACH`, `LOYALTY_CLAMP`, `CATEGORIES`, `OPS`, `GAIN_SIGN`. A nil citizen or a nil/NaN/infinite `now` is an error with a clear message, never a silent "no decay"; so is a missing history where one is required: both histories of `fireDecision` and `fireAction`, and the history of `recordFire` and `markShown`. The two lookups take an optional history: `eligibleScenarios` (nil = nothing shown yet) and the `repeatMultiplier` building block (nil = no earlier firings, multiplier 1).
+**ContentQuery** (hand-written, pure; full API in its header): `evaluate`, `eligibleScenarios` (respects `locked` via `CitizenState.unlocked`), `reactionFor`, `questionFor`, `presentation` (§5.10), `citizenKey`, `markShown`, `choicePreview`, `choiceRisks`, `decisionEffects`, `fireDecision`, `fireAction`, `loyaltyDelta`, `decisionLoyalty`, `actionFirings`, `inActionAudience`, `actionLoyalty`, `repeatMultiplier`, `recordFire`, `scaleGain`, `scaleGains`, `clampLoyalty`, `applyChemistry`, `startLoyalty`, `driftChemistry`, `noticeValues`, `fill`, `consequenceNotice` (the mechanics values are filled last, so a name can never replace them), `durationText`, `REACH`, `LOYALTY_CLAMP`, `LOYALTY_BANDS`, `GESTURE_CUE`, `CATEGORIES`, `OPS`, `GAIN_SIGN`. A nil citizen or a nil/NaN/infinite `now` is an error with a clear message, never a silent "no decay"; so is a missing history where one is required: both histories of `fireDecision` and `fireAction`, and the history of `recordFire` and `markShown`. The two lookups take an optional history: `eligibleScenarios` (nil = nothing shown yet) and the `repeatMultiplier` building block (nil = no earlier firings, multiplier 1).
 
 ## 8. Action events
 **Bus events (CONTRACTS G9, on `Contracts/GameEvents`).** `KingdomJoined` `MatchPhaseChanged` `BuildingPlaced` `BuildingCompleted` `BuildingUpgraded` `BuildingDestroyed` `ResourceGathered` `UnitsRecruited` `ObjectiveCaptured` `KingdomEliminated` `MatchEnded`. A keep upgrade is `BuildingUpgraded:keep` (there is no separate KeepUpgraded event, so it is never counted twice).
@@ -402,6 +493,8 @@ Arena results are not reputation events: the Crown Arena ends the match, so noth
 - Two responses in one scenario share a decision.
 - A scenario is repeatable with `cooldown_s` 0.
 - A locked scenario that no used consequence unlocks.
+- A `direct` scenario with urgency `low` (a citizen who seeks the ruler out should have a pressing reason, or the scenario is `ambient`; §5.10).
+- A reaction (base, high or low band) with presentation tags but no emotion: the portrait and the world rig key on the emotion (§5.10).
 
 **Decisions**
 - A free decision (no cost) has a reputation sum, fear aside, above 6.
@@ -417,20 +510,22 @@ Arena results are not reputation events: the Crown Arena ends the match, so noth
 - An event name that is neither a CONTRACTS G9 bus event nor a G13.4 reputation event (once per name; today only `RaidSuffered`, §8).
 
 **Library**
-- A `citizen.memory.<tag>` is used but no decision or memory consequence sets it (system memories `rulerVisited` and `raided` are known).
+- A `citizen.memory.<tag>` is used (in a trigger, a condition or a `cond:` selector) but no decision or memory consequence sets it (system memories `rulerVisited` and `raided` are known).
 - A memory is set but no trigger reads it (fine as flavour for the citizen card; a promise needs a follow-up that reads it).
 - A key_role is used by more than one occupation.
 
 Former lint "chance < 1 without notice_text" is now a validate error (§5.4).
 
 ## 10. Workbook (`export-xlsx` / `import-xlsx`)
-- There is one sheet per CSV, named like the file without `.csv`, plus `README` and a hidden `lists` sheet (dropdown lists and the export stamp).
+- There is one sheet per CSV, named like the file without `.csv`, plus `README` and a hidden `lists` sheet (dropdown lists and the export stamp). The `question_variants` sheet is there even when `dialogue/question_variants.csv` does not exist yet (header only).
+- **Offered columns.** Every optional TEXT and presentation column a CSV lacks (`thought_icon`, `reaction_tone`, the §5.10 tags and the loyalty-variant texts) is offered in its sheet after the CSV's own columns, so existing cells keep their letters. An import adds such a column to the CSV only when a row it imports holds a value in it, right after the nearest column before it in the schema; an offered column left empty never reaches the CSV, so the round trip stays byte-identical. A value the import does not take adds nothing either: one only in a row `--text-only` ignores (a new row, or a row whose id changed), or one kept as in the CSV (a stale workbook, below).
 - The header row is frozen, along with the first column.
 - Header colours and cell fills: TEXT and choice columns are light yellow and their header comment says **EDIT** (with the length limit and the placeholders that column accepts); mechanics columns are grey with a **MECHANICS** comment; notes columns are white; read-only help columns are blue.
-- **Read-only help columns.** The responses sheet ends with `info: question` (the scenario's question) and `info: effects` (cost, reputation, loyalty and consequences of the decision). Import ignores them.
+- **Read-only help columns.** The responses sheet ends with `info: question` (the scenario's question) and `info: effects` (cost, reputation, loyalty and consequences of the decision); the question_variants sheet ends with `info: question` (the scenario's own question). Import ignores them.
 - Dropdowns cover:
   - occupation, decision_id (live from the decisions sheet) and scenario_id;
-  - consequence kind and target, audience, job_id, key_role, names kind, opposite, once_per_citizen, thought_icon and reaction_tone.
+  - consequence kind and target, audience, job_id, key_role, names kind, opposite, once_per_citizen, thought_icon and reaction_tone;
+  - the §5.10 tags: emotion, expression, gesture, delivery, urgency, delivery_mode and the band tones (strict lists). The bubble seconds are numbers without a dropdown, and `selector` is a grey MECHANICS column.
 - Text-length validations reject over-long text.
 - Every cell is stored as text (`@`), so Excel keeps `+3`, `true` and ids unchanged.
 - **Export stamp.** The hidden `lists` sheet records the SHA-256 of every CSV at export time (`stamp_file`, `stamp_sha256`), and a short hash of every editable cell (text, choice and notes) keyed `table|row|column` (`stamp_cell`, `stamp_cell_sha256`; the row is the id, or `row N` in names and actions).
@@ -446,6 +541,7 @@ Former lint "chance < 1 without notice_text" is now a validate error (§5.4).
     - the workbook cell is as exported (the cell stamp matches the workbook): only the CSV changed, so the newer CSV value is **kept** and listed as `kept`;
     - both changed, or the workbook has no cell stamp and the file changed: the cell is **refused**, named with both values (`… refused: it was also changed in dialogue/responses.csv after this workbook was exported, possibly by an earlier import of this same workbook …`), and nothing is written. Export a fresh workbook and redo that edit.
     - An earlier import of the same workbook counts as a CSV change: its stamps still describe the CSV before that import, so editing an imported cell a second time in the old workbook is refused. **Export a fresh workbook after every import** before editing again.
-  - **`--text-only`** takes only TEXT, choice and notes cells, matched by id (by position for names and actions, where moved rows are refused); every mechanics difference is listed as ignored.
+  - **`--text-only`** takes only TEXT, choice and notes cells, matched by id (by position for names and actions, where moved rows are refused); every mechanics difference is listed as ignored. The §5.10 tags and bubble seconds are presentation, not mechanics, so `--text-only` takes them, and it adds an offered column that a row it imports fills in (the report lists those columns as a TEXT header change, apart from the column changes it ignores, e.g. a removed column). New `question_variants` rows are mechanics (id, order, selector): `--text-only` lists them as ignored, and a full import creates `dialogue/question_variants.csv` from them.
+  - Adding offered TEXT or presentation columns is listed as a TEXT change (`responses › (header): columns added: reaction_emotion`), so a stale workbook may still add one; the cells themselves follow the rules above. Removing a column is a MECHANICS change, refused from a stale workbook like any other.
   - It always prints every change as `TEXT`, `MECHANICS` or `NOTES` lines, plus the `kept` cells.
   - It validates the whole library before writing anything, and rewrites only the rows that changed.

@@ -37,16 +37,22 @@
 		Match.GetState() -> (phase, endsAtServerTime?, startedAtServerTime)
 		Match.State(phase, endsAtServerTime?, startedAtServerTime) to everyone on every phase or countdown
 		                                              change, and to each arriving player
-		Match.Ended({ winner?, standings, durationSec }) to everyone when the match (or the slice) ends
+		Match.Ended({ winner?, standings, durationSec }) to everyone when the match (or the slice) ends, and
+		                                              to each player who arrives while Results is on
 		startedAtServerTime: server time Founding began (sim time 0); in the Lobby, when the Lobby opened.
 	GameEvents (CONTRACTS G9, framework bus), each exactly once:
 		MatchPhaseChanged(phase) · KingdomEliminated(kingdomId, by?) · MatchEnded({ winner?, standings,
-		durationSec }) · BuildingPlaced / BuildingCompleted / BuildingUpgraded / BuildingDestroyed
-		(Building (G2), player?) · ResourceGathered(player?, kingdomId, resource, amount, source) ·
+		durationSec }) · BuildingPlaced / BuildingMoved / BuildingCompleted / BuildingUpgraded / BuildingDestroyed
+		(Building (G2), player?; BuildingMoved adds from = { position, rot (the old yaw, radians) } and slotId?) ·
+		ResourceGathered(player?, kingdomId, resource, amount, source) ·
 		UnitsRecruited(player?, kingdomId, count) · ObjectiveCaptured(objectiveId, kingdomId).
 		KingdomJoined is fired by KingdomService.
 	Ruler positions: each tick the host mirrors every ruler's character position into the simulation
-	(capture zones count rulers) and uses the same server-side position to range-check Gather.
+	(capture zones count rulers) and uses the same server-side position to range-check Gather. The character
+	is simulated by its owner's client, so the position the simulation sees is clamped (FL-0122, D-050 (6b)):
+	it moves toward the reported one at most Match.rulerMaxSpeed studs per second, a first sample or a sample
+	after host:snapRuler(userId) (the server itself moved the character: spawn, respawn) is taken as it is.
+		host:snapRuler(userId)                              -- the next position sample is accepted unclamped
 	Teams: one Team per kingdom (config Kingdoms teamColor, AutoAssignable false). Characters are spawned
 	by KingdomService (CharacterAutoLoads is false, G3). Players who cannot join (all kingdoms full) stay
 	spectators.
@@ -54,6 +60,7 @@
 	(FL-0049) take over.
 ]]
 
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
@@ -88,6 +95,10 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 	self._running = false
 	self._simMs = {} :: { number }
 	self._positionOf = opts.positionOf or MatchHost.characterPosition
+	self._clock = 0 -- host time (the sum of the steps), the clamp's time base
+	self._accepted = {} :: { [number]: { x: number, z: number, t: number } } -- the last position the sim was given
+	self._snap = {} :: { [number]: boolean } -- take the next sample as it is (server-side teleports)
+	self._rulerMaxSpeed = opts.rulerMaxSpeed or MatchConfig.rulerMaxSpeed
 	self._startedAtServerTime = env.serverTimeNow()
 	self.preferredKingdom = nil :: ((player: any) -> string?)?
 	self.events = Signal.new()
@@ -104,7 +115,7 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 		if kingdomId == nil then
 			return false, "not_in_match"
 		end
-		local x, z = self._positionOf(player)
+		local x, z = self:_rulerPosition(player)
 		if x == nil or z == nil then
 			return false, "no_character"
 		end
@@ -194,6 +205,9 @@ function MatchHost:_onPlayerAdded(player: any)
 	local info = self:phaseInfo()
 	self._remotes:fire("Match.State", player, info.phase, info.endsAtServerTime, info.startedAtServerTime)
 	self._remotes:fire("Kingdom.State", player, self:kingdomsState(player))
+	if self._ended then -- set by MatchEnded, cleared when Results ends
+		self._remotes:fire("Match.Ended", player, MatchHost.endedPayload(self._ended)) -- what a late joiner missed
+	end
 end
 
 function MatchHost:_onPlayerRemoving(player: any)
@@ -356,6 +370,14 @@ function MatchHost:_fireGameEvent(event: any)
 		GameEvents.MatchEnded:fire(MatchHost.endedPayload(event))
 	elseif name == "BuildingPlaced" then
 		GameEvents.BuildingPlaced:fire(sim:buildingView(event.buildingId), self:_player(event.by))
+	elseif name == "BuildingMoved" then
+		-- G13.9: once per accepted move, never BuildingPlaced again; `from.rot` is the old yaw in radians
+		GameEvents.BuildingMoved:fire(
+			sim:buildingView(event.buildingId),
+			self:_player(event.by),
+			{ position = Vector3.new(event.from.x, 0, event.from.z), rot = event.from.yaw },
+			event.slotId
+		)
 	elseif name == "BuildingCompleted" then
 		local view = sim:buildingView(event.buildingId)
 		if event.level > 1 then
@@ -398,12 +420,16 @@ function MatchHost:_handleEvent(event: any)
 	elseif name == "CountdownChanged" then
 		self:_broadcastPhase()
 	elseif name == "MatchEnded" then
+		self._ended = MatchHost.endedPayload(event) -- for players who arrive during Results
 		self._remotes:fireAll("Match.Ended", MatchHost.endedPayload(event))
 	elseif name == "MatchPhaseChanged" then
 		if event.phase == "Founding" or event.phase == "Lobby" then
 			self._startedAtServerTime = self._env.serverTimeNow()
 		end
 		self:_broadcastPhase()
+		if event.phase ~= "Results" then
+			self._ended = nil
+		end
 		if event.previous == "Results" then
 			-- a fresh world was created for the next match: rebuild the view and re-team everyone
 			self:_destroyWorld()
@@ -417,15 +443,55 @@ function MatchHost:_handleEvent(event: any)
 end
 
 -- ---------------------------------------------------------------- tick
+-- The position of a ruler's character as the simulation may trust it (FL-0122, D-050 (6b)). The owning client
+-- simulates the character, so a report is only believed as far as the character could have walked since the last
+-- one: the answer moves from the last accepted position toward the reported one at most `rulerMaxSpeed` studs per
+-- second of host time. A teleport to a capture zone therefore arrives after the walk, not at once. The first
+-- sample, and the first after snapRuler (the server moved the character), are taken as they are. A missing
+-- character does not forget the last position (dropping the character must not reset the clamp).
+function MatchHost:_rulerPosition(player: any): (number?, number?)
+	local userId = player.UserId
+	local x, z = self._positionOf(player)
+	if x == nil or z == nil then
+		return nil, nil
+	end
+	local last = self._accepted[userId]
+	if last ~= nil and not self._snap[userId] then
+		local dx, dz = x - last.x, z - last.z
+		local distance = math.sqrt(dx * dx + dz * dz)
+		local reach = self._rulerMaxSpeed * math.max(0, self._clock - last.t)
+		if distance > reach then
+			local k = reach / distance
+			x, z = last.x + dx * k, last.z + dz * k
+		end
+	end
+	self._snap[userId] = nil
+	self._accepted[userId] = { x = x, z = z, t = self._clock }
+	return x, z
+end
+
+-- The server moved this ruler's character itself (spawn, respawn): accept where it stands now.
+function MatchHost:snapRuler(userId: number)
+	self._snap[userId] = true
+end
+
 function MatchHost:_mirrorRulers()
 	local sim = self.match.sim
 	for userId in sim.rulerOf do
 		local player = self._env.Players:GetPlayerByUserId(userId)
 		local x, z = nil, nil
 		if player then
-			x, z = self._positionOf(player)
+			x, z = self:_rulerPosition(player)
+		else
+			self._accepted[userId] = nil
 		end
 		sim:setRulerPosition(userId, x, z)
+	end
+	for userId in self._accepted do
+		if sim.rulerOf[userId] == nil then
+			self._accepted[userId] = nil -- no longer a ruler (left the match)
+			self._snap[userId] = nil
+		end
 	end
 end
 
@@ -453,6 +519,7 @@ function MatchHost:simMsP99(): number
 end
 
 function MatchHost:step(dt: number)
+	self._clock += dt
 	self:_mirrorRulers()
 	local started = self._env.clock()
 	self.match:update(dt)

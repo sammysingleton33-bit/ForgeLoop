@@ -11,10 +11,13 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
+local ConversationDef = require("@game/ServerScriptService/Game/Services/ConversationService")
 local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SimRemotes = require("@game/ReplicatedStorage/Game/Sim/Remotes")
 local TreasuryRemotes = require("@game/ReplicatedStorage/Game/Treasury/Remotes")
 
@@ -1043,6 +1046,337 @@ describe("ConversationService: events on the wire (EntityService, G13.3)", funct
 	end)
 end)
 
+describe("ConversationService: cinematic conversations (G13.8, FL-0097)", function()
+	local function remoteCall(env, player, name, ...)
+		local area, action = string.match(name, "^(%w+)%.(%w+)$")
+		local remote = env.ReplicatedStorage.ForgeRemotes:FindFirstChild(area):FindFirstChild(action)
+		local args = table.pack(...)
+		local results
+		env.mock.remotes:asClient(player, function()
+			results = table.pack(remote:InvokeServer(table.unpack(args, 1, args.n)))
+		end)
+		return table.unpack(results, 1, results.n)
+	end
+
+	local function yawOf(sim, c): number?
+		for _, record in Replication.new():frame(sim).records do
+			if record.id == c.id then
+				return record.yaw
+			end
+		end
+		return nil
+	end
+
+	it("Converse carries look, job, position and kingdom, and holds the citizen still, facing the ruler", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		-- the ruler's character stands 20 studs east of the farmer
+		local character = env.newInstance("Model")
+		local root = env.newInstance("Part")
+		root.Position = Vector3.new(farmer.x + 20, 0, farmer.z)
+		root.Parent = character
+		character.PrimaryPart = root
+		p1.Character = character
+		local view = assert(conversations:converse(p1, farmer.id))
+		expect(view.look).toEqual(farmer.profile.look)
+		-- only a validated look goes on the wire (#127 M1): a profile holding an out-of-range look is normalized
+		farmer.profile.look = { skin = 300, hair = 0, hairColor = 2.5, outfit = 4 }
+		local again = assert(conversations:converse(p1, farmer.id))
+		expect(again.look).toEqual(Kit.normalizeLook(farmer.profile.look))
+		expect(again.look).never.toEqual(farmer.profile.look)
+		expect(view.job).toBe(farmer.job)
+		expect(view.kingdom).toBe("crimson")
+		expect(typeof(view.position)).toBe("Vector3")
+		expect(view.position.X).toBeNear(farmer.x, 1e-3)
+		expect(view.position.Z).toBeNear(farmer.z, 1e-3)
+		expect(sim:isHeld(farmer)).toBe(true)
+		expect(farmer.activity).toBe("Talk")
+		expect(assert(registry:get("CitizenService"):inspect(farmer.id)).intent).toBe("Talking (with the ruler)")
+		local x, z = farmer.x, farmer.z
+		env.mock:advance(10)
+		expect({ farmer.x, farmer.z }).toEqual({ x, z }) -- it does not move while the panel is open
+		expect(yawOf(sim, farmer)).toBeNear(math.atan2(-20, 0), 1e-6) -- facing the ruler (east)
+		expect(Replication.actionOf(sim, farmer)).toBe("idle")
+	end)
+
+	it("the hold ends by itself after Society.conversationHoldSec", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(p1, farmer.id))
+		env.mock:advance(Society.conversationHoldSec - 2)
+		expect(sim:isHeld(farmer)).toBe(true)
+		env.mock:advance(3)
+		expect(sim:isHeld(farmer)).toBe(false)
+		expect(farmer.hold).toBeNil()
+		expect(farmer.activity).never.toBe("Talk") -- back to its own plans
+	end)
+
+	it(
+		"asking again can't hold a citizen for ever: one showing grants Society.conversationHoldMaxSec in all",
+		function()
+			-- FORGE-07's repro (D-050 (6a)): a ruler re-asks every 20 s for 150 s of sim time
+			local env, conversations, match, registry = boot()
+			local p1 = seat(env, 1)[1]
+			local farmer, sim = hungryFarmer(match, registry)
+			-- a forced request: the question stays on the citizen's mind whatever the state does in 150 s
+			assert(conversations:debugRequest("crimson", farmer.id, "farmer_hungry_grain"))
+			local first = assert(conversations:converse(p1, farmer.id))
+			local started = sim.time
+			local heldAt = {}
+			for _ = 1, 7 do
+				env.mock:advance(20)
+				local again = assert(conversations:converse(p1, farmer.id)) -- always the same question, never nil
+				expect(again.scenarioId).toBe(first.scenarioId)
+				heldAt[math.floor(sim.time - started + 0.5)] = sim:isHeld(farmer)
+			end
+			expect(heldAt[20]).toBe(true)
+			expect(heldAt[60]).toBe(true)
+			expect(heldAt[80]).toBe(true) -- still inside the 90 s
+			expect(heldAt[100]).toBe(false) -- the allowance is spent: asking again no longer holds
+			expect(heldAt[140]).toBe(false)
+			expect(Society.conversationHoldMaxSec).toBe(90)
+			expect(farmer.activity).never.toBe("Talk")
+		end
+	)
+
+	it(
+		"closing the panel gives the unused hold back, so looking and closing again and again is not penalised",
+		function()
+			local env, conversations, match, registry = boot()
+			local p1 = seat(env, 1)[1]
+			local farmer, sim = hungryFarmer(match, registry)
+			for _ = 1, 12 do
+				assert(conversations:converse(p1, farmer.id))
+				env.mock:advance(2)
+				expect(conversations:endConversation(p1, farmer.id)).toBe(true)
+			end
+			assert(conversations:converse(p1, farmer.id))
+			expect(sim:isHeld(farmer)).toBe(true) -- 12 x 30 s asked for, about 24 s used
+			local showing = conversations._showing[farmer.id]
+			expect(showing.holdGranted < Society.conversationHoldMaxSec).toBe(true)
+			expect(showing.holdGranted >= Society.conversationHoldSec - 1e-6).toBe(true)
+		end
+	)
+
+	it("a spent showing can still be answered; the answer does not hold the citizen again", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:debugRequest("crimson", farmer.id, "farmer_hungry_grain"))
+		assert(conversations:converse(p1, farmer.id))
+		for _ = 1, 6 do
+			env.mock:advance(20)
+			assert(conversations:converse(p1, farmer.id))
+		end
+		expect(sim:isHeld(farmer)).toBe(false) -- spent
+		-- (g9f frames the reaction by extending the hold that is running; with no hold there is nothing to extend)
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(sim:isHeld(farmer)).toBe(false)
+		expect(conversations._showing[farmer.id]).toBeNil() -- answered: the showing is over
+	end)
+
+	it("a co-ruler can't extend or take over a hold that is running", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 2) -- 1 and 2 rule crimson together
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		local until1 = farmer.hold.untilTime
+		env.mock:advance(5)
+		expect(conversations:converse(players[2], farmer.id)).toBeNil() -- held by the first ruler
+		expect(farmer.hold.untilTime).toBe(until1)
+		expect(sim:isHeld(farmer)).toBe(true)
+	end)
+
+	it("Kingdom.EndConversation releases the citizen, is idempotent and keeps the question open", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local view = assert(conversations:converse(p1, farmer.id))
+		expect(remoteCall(env, p1, "Kingdom.EndConversation", farmer.id)).toBe(true)
+		expect(sim:isHeld(farmer)).toBe(false)
+		expect(remoteCall(env, p1, "Kingdom.EndConversation", farmer.id)).toBe(true) -- nothing left to end
+		env.mock:advance(1)
+		expect(farmer.activity).never.toBe("Talk")
+		local again = assert(conversations:converse(p1, farmer.id)) -- the same question, held again
+		expect(again.scenarioId).toBe(view.scenarioId)
+		expect(sim:isHeld(farmer)).toBe(true)
+		-- malformed calls never reach the service
+		expect(remoteCall(env, p1, "Kingdom.EndConversation", "x")).toBeNil()
+		expect(remoteCall(env, p1, "Kingdom.EndConversation", 1.5)).toBeNil()
+	end)
+
+	it("after Choose the citizen stays held while the reaction is read, until EndConversation (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(p1, farmer.id))
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		local x, z = farmer.x, farmer.z
+		env.mock:advance(8) -- longer than the old 4 s: still framed, still facing the ruler
+		expect(sim:isHeld(farmer)).toBe(true)
+		expect({ farmer.x, farmer.z }).toEqual({ x, z })
+		expect(conversations:endConversation(p1, farmer.id)).toBe(true) -- the client closed the stage
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("after Choose the hold ends by itself at most REACTION_HOLD_MAX (12 s) later (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(p1, farmer.id))
+		-- answered late in the hold: the cap counts from the answer, so the reaction can still be read
+		env.mock:advance(Society.conversationHoldSec - 2)
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(ConversationDef.REACTION_HOLD_MAX).toBe(12)
+		env.mock:advance(ConversationDef.REACTION_HOLD_MAX - 0.5)
+		expect(sim:isHeld(farmer)).toBe(true)
+		env.mock:advance(1)
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("after Choose an emergency still releases the citizen at once (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 2) -- 1 and 2 rule crimson together
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		assert(choose(conversations, players[1], farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		sim.kingdoms.crimson.alarm = true
+		env.mock:advance(0.5)
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("after Choose the ruler leaving releases the citizen at the next refresh, not after 12 s (g9f)", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 2) -- 1 and 2 rule crimson together
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		assert(choose(conversations, players[1], farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(sim:isHeld(farmer)).toBe(true)
+		env.mock.players:remove(players[1]) -- leaves while the reaction is still up
+		env.mock:advance(1)
+		conversations:refresh()
+		expect(sim:isHeld(farmer)).toBe(false)
+	end)
+
+	it("another kingdom's ruler cannot end it; a co-ruler gets nothing while one ruler talks", function()
+		local env, conversations, match, registry = boot()
+		local players = seat(env, 3) -- 1 and 2 rule crimson together, 3 rules elsewhere
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(players[1], farmer.id))
+		-- (the shown scenario is on cooldown for the kingdom now; a forced request gives the co-ruler
+		-- something to be offered, so only the hold can refuse them)
+		assert(conversations:debugRequest("crimson", farmer.id, "farmer_hungry_grain"))
+		expect(conversations:converse(players[2], farmer.id)).toBeNil() -- held by ruler 1
+		expect(conversations:endConversation(players[2], farmer.id)).toBe(false)
+		expect(conversations:endConversation(players[3], farmer.id)).toBe(false)
+		expect(conversations:endConversation({ UserId = 999 }, farmer.id)).toBe(false) -- a spectator
+		expect(sim:isHeld(farmer)).toBe(true)
+		expect(sim.citizens[farmer.id].hold.by).toBe(1)
+		assert(conversations:endConversation(players[1], farmer.id))
+		local theirs = conversations:converse(players[2], farmer.id) -- free again: the co-ruler may talk
+		expect(theirs).never.toBeNil()
+		expect(sim.citizens[farmer.id].hold.by).toBe(2)
+	end)
+
+	it("an emergency (the alarm) ends the hold at once", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		assert(conversations:converse(p1, farmer.id))
+		sim.kingdoms.crimson.alarm = true
+		env.mock:advance(0.5)
+		expect(sim:isHeld(farmer)).toBe(false)
+		expect(farmer.activity).toBe("Flee")
+	end)
+end)
+
+describe("ConversationService: G9 CitizenAnswered (FL-0107, D-044 (3))", function()
+	local function listen()
+		local fired = {}
+		GameEvents.CitizenAnswered:connect(function(player, kingdomId, citizenId, decisionId, secondsOpen)
+			table.insert(fired, {
+				player = player,
+				kingdomId = kingdomId,
+				citizenId = citizenId,
+				decisionId = decisionId,
+				secondsOpen = secondsOpen,
+			})
+		end)
+		return fired
+	end
+
+	it("fires once per accepted answer, after its effects, with how long the request was open", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local fired = listen()
+		conversations:refresh() -- the farmer's request bubble appears now
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		env.mock:advance(5)
+		local food = sim:balance("crimson", "food")
+		local reputation = registry:get("ReputationService")
+		local compassion = reputation:get(1).values.compassion
+		local effectsApplied = false
+		GameEvents.CitizenAnswered:connect(function()
+			-- the cost is paid, the reputation moved and the consequence (farmers_work_up) runs already
+			effectsApplied = sim:balance("crimson", "food") == food - 25
+				and reputation:get(1).values.compassion == compassion + 3
+				and math.abs(sim:productivityOf(farmer) - 1.15) < 1e-9
+		end)
+		assert(conversations:converse(p1, farmer.id))
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(#fired).toBe(1)
+		local e = fired[1]
+		expect(e.player).toBe(p1)
+		expect(e.kingdomId).toBe("crimson")
+		expect(e.citizenId).toBe(farmer.id)
+		expect(e.decisionId).toBe("grain_open_store")
+		expect(e.secondsOpen).toBeNear(5, 0.6)
+		expect(effectsApplied).toBe(true)
+		-- a repeat of the same showing is refused and fires nothing
+		expect((choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(false)
+		expect(#fired).toBe(1)
+	end)
+
+	it("never fires for a refused, unaffordable or expired choice; secondsOpen is nil without a bubble", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local fired = listen()
+		-- no refresh: the conversation opens without a request bubble
+		assert(conversations:converse(p1, farmer.id))
+		expect(select(3, choose(conversations, p1, farmer, "farmer_hungry_grain", "nope"))).toBe("unknown_response")
+		local food = sim:balance("crimson", "food")
+		sim:spend("crimson", { food = food }, "spec:drain", "spec")
+		expect(select(3, choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(
+			"cost"
+		)
+		expect(#fired).toBe(0)
+		sim:deposit("crimson", "food", food, "spec:refill", "spec")
+		assert(choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))
+		expect(#fired).toBe(1)
+		expect(fired[1].secondsOpen).toBeNil()
+		-- expired: the situation changed before the answer (not_eligible)
+		local other = sim.citizens[sim.kingdoms.crimson.citizenIds[1]]
+		if other.id == farmer.id then
+			other = sim.citizens[sim.kingdoms.crimson.citizenIds[2]]
+		end
+		assert(conversations:debugRequest("crimson", other.id, "farmer_hungry_grain"))
+		local view = assert(conversations:converse(p1, other.id))
+		conversations._showing[other.id].forced = nil -- as if it had been offered normally
+		registry:get("CitizenService"):setFedRatio("crimson", 1)
+		other.hunger = 0
+		expect(select(3, choose(conversations, p1, other, view.scenarioId, "farmer_hungry_grain_open_store"))).toBe(
+			"not_eligible"
+		)
+		expect(#fired).toBe(1)
+		expect(select(3, conversations:choose({ UserId = 999 }, farmer.id, "x", "y"))).toBe("not_in_match")
+		expect(#fired).toBe(1)
+	end)
+end)
+
 describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function()
 	-- crimson's rulers among `n` seated players (no parties: the balancer spreads them)
 	local function crimsonRulers(env, match, n)
@@ -1062,7 +1396,9 @@ describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function(
 		local p1, p2 = rulers[1], rulers[2]
 		local farmer = hungryFarmer(match, registry)
 		conversations:refresh()
-		local first = assert(conversations:converse(p1, farmer.id)) -- ruler 1 opens it, then walks away
+		local first = assert(conversations:converse(p1, farmer.id)) -- ruler 1 opens it
+		expect(conversations:converse(p2, farmer.id)).toBeNil() -- held while ruler 1's panel is open (G13.8)
+		assert(conversations:endConversation(p1, farmer.id)) -- then closes it unanswered
 		local again = assert(conversations:converse(p2, farmer.id))
 		expect(again.scenarioId).toBe(first.scenarioId)
 		expect(again.question).toBe(first.question)
@@ -1101,6 +1437,61 @@ describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function(
 		expect(select(3, choose(conversations, p1, farmer, "farmer_hungry_grain", "farmer_hungry_grain_open_store"))).toBe(
 			"not_offered"
 		)
+	end)
+
+	it("G13.8 + M2: a ruler who leaves mid-conversation frees the citizen at the next refresh", function()
+		local env, conversations, match, registry = boot()
+		local rulers = crimsonRulers(env, match, 5)
+		assert(#rulers >= 2, "two crimson rulers")
+		local p1, p2 = rulers[1], rulers[2]
+		local farmer, sim = hungryFarmer(match, registry)
+		conversations:refresh()
+		local first = assert(conversations:converse(p1, farmer.id)) -- the panel is open: held for ruler 1
+		expect(sim:isHeld(farmer)).toBe(true)
+		expect(conversations:converse(p2, farmer.id)).toBeNil()
+		env.mock.players:remove(p1) -- ruler 1 leaves without closing it
+		env.mock:advance(1)
+		conversations:refresh()
+		expect(sim:isHeld(farmer)).toBe(false) -- not after the hold's own 30 s timeout: now
+		-- the question was never answered, so it is not used up: the request stays and ruler 2 gets it
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(true)
+		local again = assert(conversations:converse(p2, farmer.id))
+		expect(again.scenarioId).toBe(first.scenarioId)
+		expect(farmer.hold.by).toBe(p2.UserId)
+		assert(choose(conversations, p2, farmer, first.scenarioId, "farmer_hungry_grain_open_store"))
+	end)
+
+	it("leaving and rejoining farms nothing: same scenario, the stamp never earlier, one more visit at most", function()
+		local env, conversations, match, registry = boot()
+		local rulers = crimsonRulers(env, match, 5)
+		assert(#rulers >= 2, "two crimson rulers")
+		local p1 = rulers[1]
+		local farmer = hungryFarmer(match, registry)
+		local reputation = registry:get("ReputationService")
+		local visits = 0
+		local real = reputation.rulerVisited
+		reputation.rulerVisited = function(self, ...)
+			visits += 1
+			return real(self, ...)
+		end
+		conversations:refresh()
+		local before = (conversations._shown.crimson or {})[farmer.id]
+		local stampBefore = before and before.farmer_hungry_grain
+		local first = assert(conversations:converse(p1, farmer.id))
+		local asked = conversations._shown.crimson[farmer.id][first.scenarioId]
+		env.mock.players:remove(p1) -- leaves with the question open
+		env.mock:advance(1)
+		conversations:refresh()
+		local whileAway = conversations._shown.crimson[farmer.id][first.scenarioId]
+		expect(whileAway).toBe(stampBefore) -- back to its value before the ask, never earlier
+		local back = env.mock.players:add({ userId = p1.UserId, displayName = "Ruler1" }) -- rejoins
+		env.mock:advance(1)
+		expect(match.host.match:kingdomOf(back.UserId)).toBe("crimson")
+		local again = assert(conversations:converse(back, farmer.id))
+		reputation.rulerVisited = real
+		expect(again.scenarioId).toBe(first.scenarioId) -- no re-roll
+		expect(conversations._shown.crimson[farmer.id][first.scenarioId] >= asked).toBe(true)
+		expect(visits <= 2).toBe(true) -- the first ask, and at most one more
 	end)
 
 	it("M2: requests a departed ruler asked about stop holding the kingdom's slots", function()

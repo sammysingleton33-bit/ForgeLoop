@@ -89,6 +89,8 @@ return table.freeze({
 		citizens = { image = "", glyph = "👥" },
 		crown = { image = "", glyph = "👑" },
 		gem = { image = "", glyph = "💎" }, -- Crown Points: never a crown, which is Emberhold's emblem (D-039)
+		-- FORGE-04's settings panel on the HUD rail (FL-0103, #123): sliders, not a cog (⚙ is Competence)
+		settings = { image = "", glyph = "🎚" },
 		build = { image = "", glyph = "🔨" },
 		kingdom = { image = "", glyph = "🏰" },
 		army = { image = "", glyph = "⚔" },
@@ -120,7 +122,8 @@ return table.freeze({
 		keep = { image = "", glyph = "♜" },
 		wall = { image = "", glyph = "🧱" },
 		gate = { image = "", glyph = "🚪" },
-		rotate = { image = "", glyph = "⟳" },
+		rotate = { image = "", glyph = "⟲" }, -- anticlockwise: Turn turns a quarter counter-clockwise seen from above
+		move = { image = "", glyph = "✥" }, -- base editing (FL-0120): pick a building up and set it down elsewhere
 		emblem_crown = { image = "", glyph = "♛" }, -- Emberhold (drawn by UI/Crest unless an image is uploaded)
 		emblem_star = { image = "", glyph = "★" },
 		emblem_oak = { image = "", glyph = "🌳" },

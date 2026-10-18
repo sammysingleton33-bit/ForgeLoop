@@ -162,7 +162,7 @@ describe("Kit.setKingdomColor", function()
 	end)
 end)
 
-describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
+describe("Kit.character (≤ Kit.CHARACTER_MAX_PARTS (9) parts, D-026 as amended by D-032)", function()
 	local JOBS = { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" }
 	it("builds rigs of at most 9 non-colliding parts joined by Motor6Ds named after the moving part", function()
 		for _, kind in { "citizen", "soldier", "governor" } do
@@ -171,7 +171,7 @@ describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
 					return Kit.character(kind, job, KINGDOM_COLORS[2])
 				end)
 				local ps = parts(rig)
-				expect(#ps).toBeLessThanOrEqual(9)
+				expect(#ps).toBeLessThanOrEqual(Kit.CHARACTER_MAX_PARTS)
 				expect(rig.PrimaryPart).never.toBeNil()
 				expect((rig.PrimaryPart :: BasePart).Anchored).toBe(true)
 				for _, p in ps do
@@ -185,16 +185,31 @@ describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
 						motors += 1
 						expect(d.Name).toBe((d.Part1 :: BasePart).Name)
 						expect((d.Part1 :: BasePart).Name).never.toBe("Hair")
+						expect((d.Part1 :: BasePart).Name).never.toBe("Accessory")
+						expect((d.Part1 :: BasePart):GetAttribute("KitDetail")).toBeNil()
 					elseif d:IsA("Weld") or d:IsA("WeldConstraint") then
 						-- D-032: headwear (Hair) is welded to the Head, never motored
-						expect(d.Part0).toBe(rig:FindFirstChild("Head"))
-						expect((d.Part1 :: BasePart).Name).toBe("Hair")
+						-- headwear and accessories weld to the Head; D-048 detail parts to the Head or the Tool
+						local name = (d.Part1 :: BasePart).Name
+						if name == "Detail1" or name == "Detail2" then
+							expect(d.Part0 == rig:FindFirstChild("Head") or d.Part0 == rig:FindFirstChild("Tool")).toBe(
+								true
+							)
+						else
+							expect(d.Part0).toBe(rig:FindFirstChild("Head"))
+							expect(table.find({ "Hair", "Accessory" }, name)).never.toBeNil()
+						end
 						welded += 1
 					end
 					expect(d:IsA("Humanoid")).toBe(false)
 					expect(d:IsA("Animator")).toBe(false)
 				end
-				expect(welded).toBe(if rig:FindFirstChild("Hair") then 1 else 0)
+				expect(welded).toBe(
+					(if rig:FindFirstChild("Hair") then 1 else 0)
+						+ (if rig:FindFirstChild("Accessory") then 1 else 0)
+						+ (if rig:FindFirstChild("Detail1") then 1 else 0)
+						+ (if rig:FindFirstChild("Detail2") then 1 else 0)
+				)
 				expect(motors).toBe(#ps - 1 - welded)
 			end
 		end
@@ -204,7 +219,7 @@ describe("Kit.character (≤ 9 parts, D-026 as amended by D-032)", function()
 		local rig = Kit.character("citizen", "farmer", KINGDOM_COLORS[1])
 		local top, bottom = -math.huge, math.huge
 		for _, p in parts(rig) do
-			if p.Name ~= "Tool" then
+			if p.Name ~= "Tool" and p.Name ~= "Hair" and p:GetAttribute("KitDetail") == nil then -- the body: a hat, crest or detail may rise above the head
 				top = math.max(top, p.CFrame.Position.Y + p.Size.Y / 2)
 				bottom = math.min(bottom, p.CFrame.Position.Y - p.Size.Y / 2)
 			end

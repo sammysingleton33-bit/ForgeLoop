@@ -16,6 +16,7 @@ evidence:
   - "check.sh OVERALL PASS on forge/03-ui-economy-fl0058: Lune 308 / 0, game-001 specs 26 / 0 (TreasuryService.spec 14: atomic spend, never negative, partial spendUpTo + replay, idempotent deposit replay, two rulers at once, members-only replication, Founding reset, upkeep maths and fed ratio), game-001 build + place PASS, Boot.spec boots both services"
   - "Mutations each fail one spec: event on replay; spendUpTo forgets replays; treasury to everyone; no Founding reset; always fully fed; upkeep ignores soldiers"
   - "#9 245b6c1, #12 d1910dd, #23 63e374d; integration-log.md"
+  - doc only; check.sh + validate + ownership on forge/03-ui-economy-docs
 ---
 
 # Kingdom treasury, costs catalogue and upkeep (Treasury, Costs, Production)
@@ -46,3 +47,4 @@ Every kingdom has an exact, shared, exploit-proof stockpile used by the HUD, con
 - 2026-10-12 forge-03: READY → BUILDING. Hour-0 contract stubs: config Resources.luau and Costs.luau (G6/G7 signatures incl. Costs.unit, starting stockpile, upkeep; placeholder numbers from FORGE-01's double). TreasuryService/ProductionService next.
 - 2026-10-12 forge-03: BUILDING → REVIEW. TreasuryService (get, canAfford, atomic spend, spendUpTo with replay, idempotent deposit, changed signal, members-only Treasury.Changed, Treasury.Get/GetCosts, reset at Founding), ProductionService (single food consumer, upkeep per interval, setFedRatio), Treasury remotes, VS-1 balance sheet games/game-001/design/economy.md. Ledger = framework Economy/Wallet + Bundle (from FL-0018).
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW, only G6 pending, plus a tracked follow-up (FORGE-05 acceptance record, D-038 (5); --force because the status stays REVIEW): merged code passed check.sh on the merge result and CI on main. Follow-up: FL-0105 (every server refusal code mapped to player text, incl. cannot_afford).
+- 2026-10-13 forge-03: REVIEW → REVIEW. Log only, status unchanged: design/economy.md records D-045 (births need fedRatio >= 0.9 and a free bed, no treasury food while ProductionService runs) and the 6-8 min slice (D-044 (1)); rate targets re-derived for ~5.5 min to keep L2

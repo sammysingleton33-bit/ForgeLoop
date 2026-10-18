@@ -135,6 +135,65 @@ describe("Experience/AnalyticsSchema", function()
 		expect(hasProblem(problems, "session.startEvent: unknown event 'Missing'")).toBe(true)
 		expect(hasProblem(problems, "session.returnFunnel: must name a once funnel")).toBe(true)
 	end)
+
+	it("checks session.startOn against the bus and pairs leftEvent with a leftInfo function", function()
+		local config = valid()
+		config.session =
+			{ returnFunnel = "Return", startOn = "KingdomJoined", leftEvent = "Thing", leftInfo = function() end }
+		expect(AnalyticsSchema.validate(config, KNOWN)).toEqual({})
+		config.session = { startOn = "NoSuchEvent", leftEvent = "Thing" }
+		local problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "session.startOn: 'NoSuchEvent' must name a declared GameEvents event")).toBe(true)
+		expect(hasProblem(problems, "session.leftEvent and session.leftInfo go together")).toBe(true)
+		config.session = { leftEvent = "Missing", leftInfo = 3 }
+		problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "session.leftInfo: must be a function")).toBe(true)
+		expect(hasProblem(problems, "session.leftEvent: unknown event 'Missing'")).toBe(true)
+	end)
+
+	it("a funnel's inOrder is a boolean and never on the onboarding funnel", function()
+		local config = valid()
+		config.funnels.Return.inOrder = true
+		expect(AnalyticsSchema.validate(config, KNOWN)).toEqual({})
+		config.funnels.Return.inOrder = "yes"
+		config.funnels.Onboarding.inOrder = true
+		local problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "funnels.Return: inOrder must be a boolean")).toBe(true)
+		expect(hasProblem(problems, "funnels.Onboarding: inOrder must be a boolean")).toBe(true)
+	end)
+
+	it("checks milestones: a once funnel of 2+ steps, an event with a value and a milestone field (M7)", function()
+		local config = valid()
+		config.events.Milestone = { description = "d", value = "sinceStartSec", fields = { "milestone", "mode" } }
+		config.milestones = { funnel = "Return", event = "Milestone", info = function() end }
+		expect(AnalyticsSchema.validate(config, KNOWN)).toEqual({})
+		config.milestones = { funnel = "Shop", event = "Thing", info = 3 }
+		local problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "milestones.funnel: 'Shop' must name a once funnel")).toBe(true)
+		expect(hasProblem(problems, "milestones.event: Thing needs a value and a 'milestone' field")).toBe(true)
+		expect(hasProblem(problems, "milestones.info: must be a function")).toBe(true)
+		config.milestones = { funnel = "Onboarding", event = "Missing" }
+		problems = AnalyticsSchema.validate(config, KNOWN)
+		expect(hasProblem(problems, "milestones.funnel: 'Onboarding' must name a once funnel")).toBe(true)
+		expect(hasProblem(problems, "milestones.event: unknown event 'Missing'")).toBe(true)
+		config.milestones = "VS1"
+		expect(hasProblem(AnalyticsSchema.validate(config, KNOWN), "milestones: must be a table")).toBe(true)
+	end)
+end)
+
+describe("Experience/Subjects.missing (FORGE-00 review M8)", function()
+	it("names the events neither the defaults nor the game's resolvers cover, once each", function()
+		local resolvers = {
+			KingdomJoined = function()
+				return {}
+			end,
+		}
+		expect(Subjects.missing({ "PlayerReady", "KingdomJoined", "CitizenAnswered", "CitizenAnswered" }, resolvers)).toEqual({
+			"CitizenAnswered",
+		})
+		expect(Subjects.missing({ "KingdomJoined" }, nil)).toEqual({ "KingdomJoined" }) -- not a framework event
+		expect(Subjects.missing({ "RoundEnded", "OnboardingStep" }, nil)).toEqual({}) -- framework defaults
+	end)
 end)
 
 describe("Experience/Subjects and AnalyticsRouter", function()

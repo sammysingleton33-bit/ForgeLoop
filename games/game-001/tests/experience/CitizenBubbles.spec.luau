@@ -11,6 +11,8 @@ local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local Bubbles = require("@game/ReplicatedStorage/Game/Feedback/Bubbles")
 local Consequences = require("@game/ReplicatedStorage/Game/Content/Consequences")
 local BubbleDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenBubbleController")
+local InputModeDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/InputModeController")
+local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 
 describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 	local clock, bubbles
@@ -73,6 +75,32 @@ describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 		expect(bubbles:get(3)).toBeNil()
 	end)
 
+	it(
+		"a riot placard reads 'Rioting', wins over a strike placard and lasts until riot off (G13.3 v0.4-g10c)",
+		function()
+			bubbles:riot(4, true)
+			clock += 1000
+			bubbles:tick()
+			expect(bubbles:get(4).kind).toBe("riot")
+			expect(bubbles:get(4).text).toBe(Bubbles.RIOT_TEXT)
+			bubbles:strike(4, true) -- never sent for a rioter, but a riot still reads as a riot
+			expect(bubbles:get(4).kind).toBe("riot")
+			bubbles:riot(4, false)
+			expect(bubbles:get(4).kind).toBe("strike")
+			bubbles:strike(4, false)
+			bubbles:riot(5, true)
+			bubbles:release(5)
+			expect(bubbles:get(5)).toBeNil()
+			local before = bubbles.stats.ignored
+			bubbles:riot(0 / 0, true)
+			expect(bubbles.stats.ignored).toBe(before + 1)
+			-- placed like a strike placard: as words, before any card, even with no words budget
+			bubbles:riot(6, true)
+			local picked = bubbles:pick({ [6] = Vector3.new(5, 0, 0) }, Vector3.zero)
+			expect(bubbles:layout(picked, 0)[6]).toBe("words")
+		end
+	)
+
 	it("pick(): within maxDistance, at most maxOnScreen, reactions first, then nearest", function()
 		local positions = {}
 		for id = 1, 12 do
@@ -100,11 +128,94 @@ describe("Feedback/Bubbles rules (FL-0091, G13.3)", function()
 		expect(picked).toEqual({ 1 })
 	end)
 
+	it(
+		"layout(): placards always show words; the nearest thoughts up to the limit; reactions only with room",
+		function()
+			for id = 1, 5 do
+				bubbles:thought(id, { text = `t{id}`, icon = "request" })
+			end
+			bubbles:reaction(6, { text = "Thanks!", tone = "happy" })
+			bubbles:strike(7, true)
+			local positions = {}
+			for id = 1, 7 do
+				positions[id] = Vector3.new(id * 10, 0, 0)
+			end
+			local picked = bubbles:pick(positions, Vector3.zero)
+			expect(picked).toEqual({ 6, 1, 2, 3, 4, 5, 7 })
+			expect(bubbles:layout(picked, 3)).toEqual({
+				[7] = "words",
+				[1] = "words",
+				[2] = "words",
+				[3] = "words",
+				[4] = "badge",
+				[5] = "badge", -- the reaction (6) gets no words: the limit went to the requests, so it is not drawn
+			})
+			expect(bubbles:layout(picked, 6)[6]).toBe("words") -- with room, the reaction shows
+			expect(Bubbles.DEFAULTS.withText).toBe(3)
+			expect(Vfx.bubbles.withText).toBe(Bubbles.DEFAULTS.withText)
+			expect(Vfx.bubbles.gapPixels).toBe(Bubbles.DEFAULTS.gapPixels)
+		end
+	)
+
+	it("layout(): a card never covers another bubble; requests too close for words both show badges", function()
+		for id = 1, 3 do
+			bubbles:thought(id, { text = `t{id}`, icon = "request" })
+		end
+		bubbles:reaction(4, { text = "Thanks!", tone = "happy" })
+		bubbles:strike(5, true)
+		local card = Bubbles.SIZES.card
+		local anchors = {
+			[1] = Vector2.new(500, 300),
+			[2] = Vector2.new(500 + card.X / 2, 310), -- 1's card would hide 2's badge, and 2's card 1's badge
+			[3] = Vector2.new(1000, 300), -- clear of everything
+			[4] = Vector2.new(520, 320), -- the reaction's card would cover 1's badge
+			[5] = Vector2.new(260, 900), -- the placard, far away
+		}
+		local picked = { 4, 1, 2, 3, 5 }
+		expect(bubbles:layout(picked, 3, anchors)).toEqual({
+			[5] = "words",
+			[1] = "badge",
+			[2] = "badge",
+			[3] = "words",
+		})
+		-- 2 moved clear: both get their words; the reaction would cover 1's card, so it is not drawn
+		anchors[2] = Vector2.new(500, 600)
+		expect(bubbles:layout(picked, 3, anchors)).toEqual({
+			[5] = "words",
+			[1] = "words",
+			[2] = "words",
+			[3] = "words",
+		})
+		-- a placard is placed first: a request card over it falls back to the badge; the placard stays
+		anchors[5] = Vector2.new(500, 300 + Bubbles.SIZES.placard.Y)
+		local forms = bubbles:layout(picked, 3, anchors)
+		expect(forms[1]).toBe("badge")
+		expect(forms[5]).toBe("words")
+	end)
+
+	it("textLimit(): fewer words on a phone and with the camera zoomed far out", function()
+		expect(bubbles:textLimit(120, false)).toBe(Bubbles.DEFAULTS.withText) -- the start zoom
+		expect(bubbles:textLimit(120, true)).toBe(Bubbles.DEFAULTS.withTextPhone)
+		expect(bubbles:textLimit(Bubbles.DEFAULTS.farZoom + 1, false)).toBe(Bubbles.DEFAULTS.withTextFar)
+		expect(bubbles:textLimit(Bubbles.DEFAULTS.farZoom, false)).toBe(Bubbles.DEFAULTS.withText)
+		expect(bubbles:textLimit(nil, nil)).toBe(Bubbles.DEFAULTS.withText)
+		for id = 1, 3 do
+			bubbles:thought(id, { text = `t{id}` })
+		end
+		expect(bubbles:layout({ 1, 2, 3 }, 1)).toEqual({ [1] = "words", [2] = "badge", [3] = "badge" })
+		for _, key in { "withTextPhone", "withTextFar", "farZoom", "gapPixels" } do
+			expect(Vfx.bubbles[key]).toBe(Bubbles.DEFAULTS[key])
+		end
+	end)
+
 	it("release() clears the bubble and the placard of a pooled rig", function()
 		bubbles:thought(5, { text = "t" })
 		bubbles:strike(5, true)
 		bubbles:release(5)
 		expect(bubbles:get(5)).toBeNil()
+		bubbles:riot(6, true)
+		bubbles:release(6)
+		expect(bubbles:get(6)).toBeNil()
 	end)
 
 	it("a NaN entity id is ignored, never a table key", function()
@@ -319,7 +430,7 @@ describe("CitizenBubbleController (FL-0091)", function()
 		assert(gui, "a bubble is drawn")
 		expect(gui:FindFirstChild("Text", true).Text).toBe("We are hungry.")
 		expect(gui:FindFirstChild("Glyph", true).Text).toBe("!")
-		expect(gui.Active).toBe(false) -- taps pass through to the selection (G13.6)
+		expect(gui.Active).toBe(false) -- no PlayerGui here: Roblox gives a BillboardGui input only under PlayerGui
 		entities.event:fire(1, "reaction", { text = "Thank you, my lord!", tone = "happy" }, farmer)
 		expect(bubbleOf(farmer):FindFirstChild("Text", true).Text).toBe("Thank you, my lord!")
 		expect(poses).toEqual({ "1:cheer" })
@@ -417,6 +528,18 @@ describe("CitizenBubbleController (FL-0091)", function()
 		expect(bubbleOf(smith):FindFirstChild("Text", true).Text).toBe(Bubbles.STRIKE_TEXT)
 		entities.event:fire(4, "strike", { occupation = "miner", on = false }, smith)
 		expect(bubbleOf(smith)).toBeNil()
+	end)
+
+	it("a 'riot' event shows a 'Rioting' placard in its own colour until riot off (G13.3 v0.4-g10c)", function()
+		local rioter = citizen(5, 30)
+		entities.event:fire(5, "riot", { on = true }, rioter)
+		local gui = bubbleOf(rioter)
+		expect(gui:FindFirstChild("Text", true).Text).toBe(Bubbles.RIOT_TEXT)
+		expect(gui.Size).toEqual(BubbleDef.SIZE.placard)
+		expect(gui:FindFirstChild("Bubble").BackgroundColor3).toEqual(BubbleDef.STYLE.riot.background)
+		expect(BubbleDef.STYLE.riot.background == BubbleDef.STYLE.strike.background).toBe(false)
+		entities.event:fire(5, "riot", { on = false }, rioter)
+		expect(bubbleOf(rioter)).toBeNil()
 	end)
 
 	it("plays a G13.3 cue's pose, sound and effect at the citizen, sent directly or as `cue`", function()
@@ -526,8 +649,8 @@ describe("CitizenBubbleController (FL-0091)", function()
 			entities.event:fire(id, "thought", { text = `t{id}` }, citizen(id, id * 10))
 		end
 		local near = citizen(50, 5)
-		entities.event:fire(50, "reaction", { text = "Hooray!", tone = "happy" }, near) -- takes the farthest slot
-		assert(bubbleOf(near), "the reaction is drawn")
+		entities.event:fire(50, "thought", { text = "Me first!" }, near) -- takes the farthest one's slot
+		assert(bubbleOf(near), "the nearer request is drawn")
 		local drawn = 0
 		for _ in controller._drawn do
 			drawn += 1
@@ -660,6 +783,172 @@ describe("CitizenBubbleController (FL-0091)", function()
 			expect(bubbleOf(nearOrigin)).toBeNil() -- 500 studs from the focus
 		end
 	)
+
+	it(
+		"reads from the aerial camera: on top, above the head, badge and 17 px words; farther thoughts badge only",
+		function()
+			local models = {}
+			for id = 1, 5 do
+				models[id] = citizen(id, id * 10)
+				entities.event:fire(id, "thought", { text = `Request {id}`, icon = "request" }, models[id])
+			end
+			local smith = citizen(6, 70)
+			entities.event:fire(6, "strike", { on = true }, smith)
+			for id = 1, 5 do
+				local gui = bubbleOf(models[id])
+				assert(gui, `bubble {id}`)
+				expect(gui.AlwaysOnTop).toBe(true) -- roofs and trees never hide it
+				expect(gui.SizeOffset).toEqual(Vector2.new(0, 0.5)) -- bottom edge above the head
+				local glyph = gui:FindFirstChild("Glyph", true)
+				expect(glyph.Text).toBe("!")
+				expect(glyph.Parent.BackgroundColor3).toEqual(BubbleDef.BADGE["!"])
+				local text = gui:FindFirstChild("Text", true)
+				if id <= Vfx.bubbles.withText then
+					expect(gui.Size).toEqual(BubbleDef.SIZE.card)
+					expect(text.Visible).toBe(true)
+					expect(text.TextSize).toBe(BubbleDef.TEXT_SIZE)
+					expect(text.TextTruncate).toBe(Enum.TextTruncate.AtEnd)
+					expect(text.Text).toBe(`Request {id}`)
+				else
+					expect(gui.Size).toEqual(BubbleDef.SIZE.badge) -- the badge alone, still tappable
+					expect(text.Visible).toBe(false)
+				end
+			end
+			local placard = bubbleOf(smith)
+			expect(placard.Size).toEqual(BubbleDef.SIZE.placard)
+			expect(placard:FindFirstChild("Text", true).Visible).toBe(true) -- a placard's meaning is its words
+			expect(placard:FindFirstChild("Badge", true).Visible).toBe(false)
+			-- the nearest request answered: the next one gets its words back
+			entities.event:fire(1, "reaction", { text = "Thank you!", tone = "happy" }, models[1])
+			env.mock:advance(Vfx.bubbles.reactionSec + 0.5)
+			expect(bubbleOf(models[4]).Size).toEqual(BubbleDef.SIZE.card)
+		end
+	)
+
+	it("a new request's badge pops once; again only for the next request; never under reduced motion", function()
+		local farmer = citizen(1, 20)
+		entities.event:fire(1, "thought", { scenarioId = "hungry", text = "We are hungry.", icon = "request" }, farmer)
+		local gui = bubbleOf(farmer)
+		local first = gui:GetAttribute("PulsedAt")
+		assert(first, "the new request pops")
+		expect(gui:FindFirstChild("Pulse", true).Scale).toBe(1) -- no TweenService here: the end state at once
+		env.mock:advance(5)
+		entities.event:fire(1, "thought", { scenarioId = "hungry", text = "We are hungry.", icon = "request" }, farmer)
+		controller:refresh()
+		expect(gui:GetAttribute("PulsedAt")).toBe(first) -- the same request refreshed: no second pop
+		entities.event:fire(1, "reaction", { text = "Thank you!", tone = "happy" }, farmer)
+		env.mock:advance(Vfx.bubbles.reactionSec + 0.5)
+		entities.event:fire(1, "thought", { scenarioId = "cold", text = "It is cold.", icon = "concern" }, farmer)
+		expect(bubbleOf(farmer):GetAttribute("PulsedAt") > first).toBe(true) -- a new request pops again
+		-- reduced motion: no pop at all
+		settingsValues.reduced = true
+		local smith = citizen(2, 30)
+		controller._settings.reducedMotion = function()
+			return settingsValues.reduced == true
+		end
+		entities.event:fire(2, "thought", { scenarioId = "tools", text = "My hammer broke.", icon = "request" }, smith)
+		expect(bubbleOf(smith):GetAttribute("PulsedAt")).toBeNil()
+	end)
+
+	it("zoomed far out, only the nearest request keeps its words; the others stay badges", function()
+		local view = roblox.Instance.new("Camera")
+		view.CFrame = CFrame.new(0, Vfx.bubbles.farZoom + 20, 0) -- the overview's focus is the origin here
+		view.Parent = env.Workspace
+		env.Workspace.CurrentCamera = view
+		local models = {}
+		for id = 1, 3 do
+			models[id] = citizen(id, id * 10)
+			entities.event:fire(id, "thought", { text = `t{id}`, icon = "request" }, models[id])
+		end
+		expect(bubbleOf(models[1]).Size).toEqual(BubbleDef.SIZE.card)
+		expect(bubbleOf(models[2]).Size).toEqual(BubbleDef.SIZE.badge)
+		expect(bubbleOf(models[3]).Size).toEqual(BubbleDef.SIZE.badge)
+		view.CFrame = CFrame.new(0, 100, 0) -- zoom back in
+		controller:refresh()
+		for id = 1, 3 do
+			expect(bubbleOf(models[id]).Size).toEqual(BubbleDef.SIZE.card)
+		end
+	end)
+
+	it("on screen, requests too close for words show badges; a request with room shows its words", function()
+		local client = bootWith({})
+		client.controller._origin = function()
+			return Vector3.zero
+		end
+		client.controller._project = function(position) -- a flat top-down view: 4 px per stud
+			return Vector2.new(500 + position.X * 4, 400 + position.Z * 4)
+		end
+		local near = rigFor(client.signals, 1, 10)
+		local beside = rigFor(client.signals, 2, 14) -- 16 px to the right: either card would hide the other's badge
+		local apart = rigFor(client.signals, 3, 90) -- 320 px away: room for words
+		expect(bubbleOf(near).Size).toEqual(BubbleDef.SIZE.badge)
+		expect(bubbleOf(beside).Size).toEqual(BubbleDef.SIZE.badge)
+		expect(bubbleOf(apart).Size).toEqual(BubbleDef.SIZE.card)
+		-- 2's request answered: its reaction has no room (it would cover 1's card), so it is not drawn,
+		-- and 1 gets its words back
+		client.signals.event:fire(2, "reaction", { text = "Thank you!", tone = "happy" }, beside)
+		expect(bubbleOf(beside)).toBeNil()
+		expect(bubbleOf(near).Size).toEqual(BubbleDef.SIZE.card)
+	end)
+
+	it("a tap on a bubble selects its citizen through the real InputModeController; not while placing", function()
+		Create.useTestConnector()
+		local own = MockEnv.new({ seed = 95, isServer = false, localPlayer = { userId = 9105 } })
+		local signals = { rendered = Signal.new(), released = Signal.new(), event = Signal.new() }
+		local playerGui = roblox.Instance.new("Folder")
+		local reg = Loader.load(own, {
+			{
+				name = "EntityController",
+				new = function()
+					return signals
+				end,
+			},
+			InputModeDef,
+			{
+				name = "CitizenBubbleController",
+				new = function(e, r)
+					return BubbleDef.create(e, r, {
+						origin = function()
+							return Vector3.zero
+						end,
+						playerGui = playerGui,
+					})
+				end,
+			},
+		})
+		local input = reg:get("InputModeController")
+		local bubbleController = reg:get("CitizenBubbleController")
+		local selected = {}
+		input.selected:connect(function(kind, id)
+			table.insert(selected, `{kind}:{tostring(id)}`)
+		end)
+		local a = rigFor(signals, 3, 10)
+		local gui = playerGui:FindFirstChild("ForgeCitizenBubble")
+		assert(gui, "under PlayerGui, where a BillboardGui takes input")
+		expect(gui.Parent).toBe(playerGui)
+		expect(gui.Adornee).toBe(a.PrimaryPart)
+		expect(gui.Active).toBe(true)
+		expect(Create.fire(gui:FindFirstChild("Bubble"), "Activated")).toBe(1)
+		expect(selected).toEqual({ "citizen:3" })
+		-- placing a building: bubbles take no input, and a tap selects nothing
+		input:set("build")
+		expect(gui.Active).toBe(false)
+		expect(bubbleController:tap(3)).toBe(false)
+		input:set("explore")
+		own.mock:advance(InputModeDef.DEFAULTS.settleSec + 0.01)
+		bubbleController:refresh()
+		expect(gui.Active).toBe(true)
+		-- a pooled GUI selects the citizen it now belongs to
+		signals.released:fire(3, a)
+		bubbleController:refresh()
+		rigFor(signals, 4, 12)
+		expect(playerGui:FindFirstChild("ForgeCitizenBubble")).toBe(gui)
+		Create.fire(gui:FindFirstChild("Bubble"), "Activated")
+		expect(selected).toEqual({ "citizen:3", "none:", "citizen:4" })
+		expect(bubbleController:tap(0 / 0)).toBe(false)
+		expect(own.mock.threadErrors).toEqual({})
+		Create.setConnector(nil)
+	end)
 
 	it("ignores FL-0062's work cues and runs without EntityController (headless boot)", function()
 		local farmer = citizen(1, 20)

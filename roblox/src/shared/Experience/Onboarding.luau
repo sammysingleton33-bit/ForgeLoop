@@ -23,8 +23,9 @@
 			interactive: boolean?,            -- the player does something meaningful (move, tap, build)
 			nudgeAfterSec: number?,           -- hint escalates (arrow pulses, OnboardingHintEscalated)
 			autoAdvanceSec: number?,          -- informational steps move on by themselves (via = "timeout");
-			                                  -- a client step may set it too, so a step that depends on
-			                                  -- another system never stalls the tutorial
+			                                  -- a client or unrewarded bus step may set it too, so a step
+			                                  -- that depends on another system never stalls the tutorial
+			                                  -- (a rewarded step never does: the reward needs the action)
 			requires: string?,                -- a server service the step needs (e.g. "ConversationService");
 			                                  -- while it is missing the step is passed over (via = "unavailable")
 			reward: Reward?,                  -- only on bus-triggered steps (server-verified)
@@ -52,7 +53,11 @@
 		Onboarding.current(flow, state) -> (index?, Step?)
 		Onboarding.snapshot(flow, state) -> table                           -- what the client renders
 		Onboarding.persisted(state) -> table                                -- what is stored
+		Onboarding.completionReward(flow, state) -> Reward?                 -- flow.completeReward once the
+		    -- flow is finished, only if at least one step was done by its real action (bus or satisfied;
+		    -- D-050 (5), D-052 (3)): a flow finished by auto steps, client reports, timeouts and passes pays nothing
 		Onboarding.unavailable(flow, has: (service) -> boolean) -> { [stepId]: true }  -- the caller sets state.unavailable
+		Onboarding.events(config) -> { string }   -- bus events the flows listen to (startOn, bus triggers), sorted
 		Transition = { index: number, id: string, via: "auto" | "bus" | "client" | "timeout" | "satisfied" | "unavailable", reward: Reward? }
 ]]
 
@@ -183,8 +188,13 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 			if step.reward and firstReward == nil then
 				firstReward = elapsed
 			end
-			if step.autoAdvanceSec ~= nil and step.trigger and step.trigger.bus then
-				table.insert(problems, `{at}: bus steps never auto-advance (they wait for the real action)`)
+			-- a reward needs the real action; an unrewarded bus step may move on, like a client step,
+			-- so a step that waits on another system never stalls the tutorial (FL-0108)
+			if step.autoAdvanceSec ~= nil and step.trigger and step.trigger.bus and step.reward ~= nil then
+				table.insert(
+					problems,
+					`{at}: a rewarded bus step never auto-advances (the reward needs the real action)`
+				)
 			end
 		end
 		if flow.funnel then
@@ -235,9 +245,10 @@ function Onboarding.restore(flow: any, stored: any, now: number): { [string]: an
 			startedAt = stored.startedAt,
 			finishedAt = stored.finishedAt,
 			satisfied = if type(stored.satisfied) == "table" then table.clone(stored.satisfied) else {},
+			earned = stored.earned == true,
 		}
 	else
-		state = { version = flow.version, completed = 0, skipped = false, satisfied = {} }
+		state = { version = flow.version, completed = 0, skipped = false, satisfied = {}, earned = false }
 	end
 	state.stepStartedAt = now
 	state.escalated = false
@@ -256,6 +267,11 @@ function Onboarding.current(flow: any, state: any): (number?, any)
 	return index, flow.steps[index]
 end
 
+-- Only the real action pays a step's reward: a bus trigger now or one remembered earlier. A step that
+-- timed out or was passed over (its service missing) never does (FORGE-00 ruling on #124). The same
+-- real action is what earns the flow's completeReward (state.earned; D-052 (3)).
+local PAID_VIA = table.freeze({ bus = true, satisfied = true })
+
 local function complete(flow: any, state: any, via: string, now: number, out: { Transition })
 	local index = state.completed + 1
 	local step = flow.steps[index]
@@ -267,7 +283,10 @@ local function complete(flow: any, state: any, via: string, now: number, out: { 
 	if state.completed >= #flow.steps then
 		state.finishedAt = now
 	end
-	table.insert(out, { index = index, id = step.id, via = via, reward = step.reward })
+	if PAID_VIA[via] then
+		state.earned = true
+	end
+	table.insert(out, { index = index, id = step.id, via = via, reward = if PAID_VIA[via] then step.reward else nil })
 end
 
 -- Completes the current step and every following step that is already satisfied or automatic.
@@ -287,6 +306,26 @@ local function cascade(flow: any, state: any, now: number, out: { Transition })
 			return
 		end
 	end
+end
+
+-- Every bus event the flows listen to: each flow's startOn (default PlayerReady) and its bus triggers.
+-- OnboardingService checks that each one has a Subjects resolver (FORGE-00 review M8).
+function Onboarding.events(config: any): { string }
+	local seen, out = {}, {}
+	local function add(name: any)
+		if type(name) == "string" and not seen[name] then
+			seen[name] = true
+			table.insert(out, name)
+		end
+	end
+	for _, flow in (if type(config) == "table" and type(config.flows) == "table" then config.flows else {}) do
+		add(flow.startOn or "PlayerReady")
+		for _, step in (if type(flow.steps) == "table" then flow.steps else {}) do
+			add(type(step.trigger) == "table" and step.trigger.bus or nil)
+		end
+	end
+	table.sort(out)
+	return out
 end
 
 -- Steps whose required service is missing (has(name) false). Not persisted: a later server may have it.
@@ -407,7 +446,15 @@ function Onboarding.persisted(state: any): { [string]: any }
 		startedAt = state.startedAt,
 		finishedAt = state.finishedAt,
 		satisfied = table.clone(state.satisfied),
+		earned = state.earned == true,
 	}
+end
+
+function Onboarding.completionReward(flow: any, state: any): any
+	if state.finishedAt == nil or state.earned ~= true then -- a skipped flow has no finishedAt
+		return nil
+	end
+	return flow.completeReward
 end
 
 return table.freeze(Onboarding)

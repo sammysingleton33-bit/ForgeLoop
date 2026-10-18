@@ -56,6 +56,8 @@ CitizenText.COST_UNKNOWN = "Its cost can't be shown"
 CitizenText.CONFIRM_KICKER = "CHOOSE THIS ANSWER?"
 CitizenText.CONFIRM = "Choose"
 CitizenText.BACK = "Back"
+-- The rail's "Waiting" button (FL-0115): citizens with an open request; a tap goes to the next one.
+CitizenText.WAITING = "Waiting"
 
 function CitizenText.reason(code: any): string
 	if code == nil then

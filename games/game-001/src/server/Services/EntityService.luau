@@ -15,7 +15,13 @@
 		              Then, per kingdom with queued G13.3 events (sendKingdomEvent), one more buffer
 		              with the same serverTime, fired only to that kingdom's current members
 		              (match:kingdomOf(userId)); never to other kingdoms or spectators.
-		Sim.GetEntities  every live entity as EventCodec "full" records (spawn + current state).
+		Sim.GetEntities(afterId?) -> (buffer, nextAfterId?)
+		              every live entity as EventCodec "full" records (spawn + current state), in pages
+		              of at most Def.PAGE_MAX records by ascending id so each buffer stays within G4's
+		              900 B (FL-0109, #61 low): the page holds the entities with id > afterId (0 or nil:
+		              from the start); nextAfterId is the last id on the page when more follow, else nil.
+		              The client asks again with it until nil. Pages are read live, so an entity spawned
+		              or despawned meanwhile is covered by Sim.Events (G4 client rules).
 	serverTime on both = seconds since Founding began (Match.State startedAtServerTime).
 
 	API (G4)
@@ -35,6 +41,11 @@
 	Studio debug (FL-0068): command sim.spawn(count) spawns test citizens around the presser's keep.
 	Performance (G7/FL-0049): every 30 s logs "Kingdom perf" with entities, bytes/s per player,
 	sim ms p99 per host tick and encode ms p99 per snapshot tick.
+	Robustness (#39 L1): ids above MAX_ID (the wire's u16) are not replicated, and positions off the wire's
+	range (±SnapshotCodec.MAX_COORD, or not finite) are not sent (one warning each per world); a tick sends
+	at most MAX_RECORDS records (over the cap each tick starts further along; the rest go later); a tick
+	is encoded before anything is committed, so a tick that fails to encode changes nothing (no state, no
+	signals) and the next one sends it all again.
 ]]
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
@@ -46,10 +57,19 @@ local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SnapshotCodec = require("@game/ReplicatedStorage/Game/Sim/SnapshotCodec")
 
+-- Only a validated CitizenLook goes on the wire (FL-0109, #61 low): exactly the four G13.2 fields, each a
+-- palette index (Kit.normalizeLook), whatever the profile holds; nil (no look) stays nil.
+local function wireLook(look: any): any
+	return if look == nil then nil else Kit.normalizeLook(look)
+end
+
 local EntityService = {}
 EntityService.__index = EntityService
 
 local Def = { name = "EntityService", dependencies = { "MatchService", "RemoteService" } }
+
+Def.MAX_ID = 65535 -- ids travel as u16 (G4)
+Def.MAX_RECORDS = SnapshotCodec.MAX_RECORDS * SnapshotCodec.MAX_CHUNKS -- one tick's snapshot chunks
 
 -- The running service, for the Studio debug commands (registered once per process, like MatchService).
 local active: any = nil
@@ -90,6 +110,7 @@ local function registerDebugCommands()
 end
 
 Def.SNAPSHOT_HZ = 10
+Def.PAGE_MAX = 49 -- Sim.GetEntities records per page: 6 B header + 49 x 18 B "full" records = 888 B <= 900 B
 Def.REFRESH_EVERY = 10 -- snapshot ticks between round-robin refreshes of a still entity (~1 s)
 Def.LOG_EVERY = 30
 Def.WINDOW = 300 -- samples kept for the p99 figures
@@ -126,8 +147,10 @@ function Def.new(env: any, registry: any)
 	self._encodeMs = {} :: { number }
 	self._windowStart = env.clock()
 	self._running = false
-	self._remotes:handle("Sim.GetEntities", function(_player: any)
-		return self:_fullState()
+	self._deferred = nil :: { any }? -- signals of the tick being encoded, fired once it has encoded
+	self._warned = {} :: { [string]: boolean } -- warnings given this world (ids, offMap)
+	self._remotes:handle("Sim.GetEntities", function(_player: any, afterId: number?)
+		return self:_fullState(afterId)
 	end)
 	return self
 end
@@ -141,10 +164,66 @@ function EntityService:_serverTime(): number
 	return math.max(0, self._env.serverTimeNow() - started)
 end
 
-function EntityService:_fullState(): buffer
+local function onWire(v: number): boolean
+	return v == v and math.abs(v) <= SnapshotCodec.MAX_COORD
+end
+
+-- The tracker's frame without what the wire cannot carry: ids over MAX_ID (not replicated at all) and
+-- positions off the wire's range (the entity keeps its last sent position). One warning each per world.
+function EntityService:_replicable(): any
 	local frame = self._tracker:frame(self:_sim())
-	local events = {}
+	local over = 0
+	for id in frame.identity do
+		if id > Def.MAX_ID then
+			frame.identity[id] = nil
+			over += 1
+		end
+	end
+	local records, offMap = {}, 0
 	for _, r in frame.records do
+		if r.id > Def.MAX_ID then
+			continue
+		elseif onWire(r.x) and onWire(r.y) and onWire(r.z) then
+			table.insert(records, r)
+		else
+			offMap += 1
+		end
+	end
+	frame.records = records
+	if over > 0 and not self._warned.ids then
+		self._warned.ids = true
+		self._env.log("warn", "EntityService: entities with ids over 65535 are not replicated", { count = over })
+	end
+	if offMap > 0 and not self._warned.offMap then
+		self._warned.offMap = true
+		self._env.log("warn", "EntityService: entity positions off the wire's range are not sent", { count = offMap })
+	end
+	return frame
+end
+
+-- A signal fired by the tick being encoded waits until the tick is sent; outside a tick it fires now.
+function EntityService:_emit(signal: any, ...: any)
+	if self._deferred then
+		table.insert(self._deferred, table.pack(signal, ...))
+	else
+		signal:fire(...)
+	end
+end
+
+-- One Sim.GetEntities page: the live entities with id > afterId, ascending, at most PAGE_MAX of them,
+-- and the id to ask after for the next page (nil on the last one).
+function EntityService:_fullState(afterId: number?): (buffer, number?)
+	local frame = self:_replicable()
+	local after = afterId or 0
+	local records = {} -- ascending ids: Replication sorts the frame
+	for _, r in frame.records do
+		if r.id > after then
+			table.insert(records, r)
+		end
+	end
+	local events = {}
+	for i = 1, math.min(#records, Def.PAGE_MAX) do
+		local r = records[i]
 		local who = frame.identity[r.id]
 		table.insert(events, {
 			type = "full",
@@ -152,7 +231,7 @@ function EntityService:_fullState(): buffer
 			kind = who.kind,
 			job = who.job,
 			kingdom = who.kingdom,
-			look = who.look,
+			look = wireLook(who.look),
 			x = r.x,
 			y = r.y,
 			z = r.z,
@@ -161,7 +240,8 @@ function EntityService:_fullState(): buffer
 			carrying = r.carrying,
 		})
 	end
-	return EventCodec.encode(self:_serverTime(), events)
+	local nextAfter = if #records > Def.PAGE_MAX then records[Def.PAGE_MAX].id else nil
+	return EventCodec.encode(self:_serverTime(), events), nextAfter
 end
 
 function EntityService:start()
@@ -172,6 +252,8 @@ function EntityService:start()
 				self._pending,
 				{ type = "cue", id = event.citizenId, cue = "deposit", resource = event.resource }
 			)
+		elseif name == "BuildingCompleted" and event.kind == "keep" and event.level == 2 then
+			self:_celebrate(event.kingdomId, event.buildingId)
 		elseif name == "CitizenDied" then
 			self:_queueDeath(event.citizenId, event.cause)
 		elseif name == "UnitKilled" then
@@ -197,6 +279,25 @@ function EntityService:start()
 	end)
 end
 
+-- The keep reached level 2 (CONTRACTS G5 VS-1 reaction): every citizen of the kingdom within
+-- tuning.celebrateRadius of it plays the celebrate cue, once.
+function EntityService:_celebrate(kingdomId: string, keepId: number)
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdomId]
+	local keep = sim.buildings[keepId]
+	if k == nil or keep == nil then
+		return
+	end
+	local radius = sim.catalog.tuning.celebrateRadius
+	for _, cid in k.citizenIds do
+		local c = sim.citizens[cid]
+		local dx, dz = c.x - keep.x, c.z - keep.z
+		if dx * dx + dz * dz <= radius * radius then
+			table.insert(self._pending, { type = "cue", id = cid, cue = "celebrate" })
+		end
+	end
+end
+
 -- A fresh world: ids start over, so clients drop everything before the new spawns, and events
 -- queued for the old world's entities are dropped.
 function EntityService:_resetWorld()
@@ -210,6 +311,7 @@ function EntityService:_resetWorld()
 	self._tracker = Replication.new()
 	self._pending = { { type = "reset" } }
 	self._kingdomPending = {}
+	self._warned = {} -- a new world may warn again (#39 L2)
 end
 
 local KINGDOM_EVENT_TYPES = { thought = true, reaction = true, strike = true, kcue = true }
@@ -276,7 +378,7 @@ function EntityService:_despawnEvent(id: number): { [string]: any }
 	self._sentState[id] = nil
 	self._vanishing[id] = nil
 	self._dieQueued[id] = nil
-	self.despawned:fire(id, self._despawnReason[id] or "removed")
+	self:_emit(self.despawned, id, self._despawnReason[id] or "removed")
 	self._despawnReason[id] = nil
 	return { type = "despawn", id = id }
 end
@@ -305,14 +407,18 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 	for _, id in ids do
 		local now, before = identity[id], self._known[id]
 		if before == nil then
-			table.insert(
-				events,
-				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
-			)
-			self.spawned:fire(id)
+			table.insert(events, {
+				type = "spawn",
+				id = id,
+				kind = now.kind,
+				job = now.job,
+				kingdom = now.kingdom,
+				look = wireLook(now.look),
+			})
+			self:_emit(self.spawned, id)
 		elseif before.job ~= now.job then
 			table.insert(events, { type = "job", id = id, job = now.job })
-			self.jobChanged:fire(id, now.job)
+			self:_emit(self.jobChanged, id, now.job)
 		end
 	end
 	-- a citizen whose look changed (the Studio reseed, FL-0104) is sent as a spawn again, so every
@@ -321,10 +427,14 @@ function EntityService:_diff(identity: { [number]: any }): { any }
 		local now, before = identity[id], self._known[id]
 		-- (the same profile.look table every tick unless a reseed replaced it: compared by key only then)
 		if before ~= nil and before.look ~= now.look and Kit.lookKey(before.look) ~= Kit.lookKey(now.look) then
-			table.insert(
-				events,
-				{ type = "spawn", id = id, kind = now.kind, job = now.job, kingdom = now.kingdom, look = now.look }
-			)
+			table.insert(events, {
+				type = "spawn",
+				id = id,
+				kind = now.kind,
+				job = now.job,
+				kingdom = now.kingdom,
+				look = wireLook(now.look),
+			})
 		end
 	end
 	local gone = {}
@@ -359,7 +469,14 @@ end
 -- Which records go out this tick: moving or changed entities, plus a round-robin refresh.
 function EntityService:_select(records: { any }): { any }
 	local out = {}
-	for _, r in records do
+	local n = #records
+	-- over the cap, each tick starts further along, so no entity waits behind the same ones every tick
+	local first = if n > Def.MAX_RECORDS then (self._frame * Def.MAX_RECORDS) % n else 0
+	for step = 1, n do
+		local r = records[(first + step - 1) % n + 1]
+		if #out >= Def.MAX_RECORDS then
+			break -- the rest keep their old sent state, so they go out on a later tick
+		end
 		local key =
 			`{SnapshotCodec.quantize(r.x)},{SnapshotCodec.quantize(r.z)},{math.round(r.yaw * 40)},{r.action},{r.carrying}`
 		if
@@ -374,10 +491,7 @@ function EntityService:_select(records: { any }): { any }
 	return out
 end
 
--- One snapshot tick to every player. Specs may call it directly.
-function EntityService:replicate()
-	local started = self._env.clock()
-	local frame = self._tracker:frame(self:_sim())
+function EntityService:_encodeTick(frame: any): { any }
 	local events = self:_diff(frame.identity)
 	self._frame += 1
 	self._seq = (self._seq + 1) % 65536
@@ -392,6 +506,40 @@ function EntityService:replicate()
 	end
 	for _, chunk in SnapshotCodec.encodeChunks(self:_select(frame.records), self._seq, serverTime) do
 		table.insert(outgoing, { "Sim.Snapshot", chunk })
+	end
+	return outgoing
+end
+
+-- One snapshot tick to every player. Specs may call it directly. It is encoded first; only a tick that
+-- encodes commits its state and fires its signals (#39 L1).
+function EntityService:replicate()
+	local started = self._env.clock()
+	local frame = self:_replicable()
+	local saved = {
+		pending = self._pending,
+		known = self._known,
+		frame = self._frame,
+		seq = self._seq,
+		sentState = table.clone(self._sentState),
+		vanishing = table.clone(self._vanishing),
+		dieQueued = table.clone(self._dieQueued),
+		despawnReason = table.clone(self._despawnReason),
+		kingdomPending = self._kingdomPending, -- _kingdomBatches swaps it out during the encode (#93 M1)
+	}
+	self._deferred = {}
+	local ok, result = pcall(self._encodeTick, self, frame)
+	local deferred = self._deferred :: { any }
+	self._deferred = nil
+	if not ok then
+		self._pending, self._known, self._frame, self._seq = saved.pending, saved.known, saved.frame, saved.seq
+		self._sentState, self._vanishing = saved.sentState, saved.vanishing
+		self._dieQueued, self._despawnReason = saved.dieQueued, saved.despawnReason
+		self._kingdomPending = saved.kingdomPending -- a failed tick keeps its thoughts, reactions, strikes, cues
+		error(result, 0)
+	end
+	local outgoing = result :: { any }
+	for _, call in deferred do
+		call[1]:fire(table.unpack(call, 2, call.n))
 	end
 	table.insert(self._encodeMs, (self._env.clock() - started) * 1000)
 	if #self._encodeMs > Def.WINDOW then

@@ -7,8 +7,13 @@
 		camera.mode, camera.changed:connect(function(mode, previous) ... end)
 		camera:panBy(Vector2) / camera:rotateBy(degrees) / camera:zoomBy(steps)   -- overview rig
 		camera:focusOn(position)            -- e.g. a panel's "go to" button; clamped to the map
+		camera:focusOn(position, { duration = 0.6 }) -> boolean   -- conversations (G13.8, FL-0100): glide
+		                                    -- to `conversation.zoom` studs, the citizen above the centre
+		camera:restore() -> boolean         -- glide back to the view saved by the first focusOn(_, opts)
 		camera:getFocus() -> Vector3?
 		camera:shake(magnitude, duration)   -- VFXController.shakeRequested is wired to this
+		camera:setEditDrag(active)          -- base editing (G13.9, FL-0121): while a building is dragged,
+		                                    -- the drag never pans; the screen edge does (edge-pan)
 
 	overview (default, D-030): the aerial management view. The ruler sits on the throne (FORGE-01
 	seats them) while the player looks after the kingdom from above.
@@ -17,7 +22,8 @@
 		- Zoom: mouse wheel, pinch, or zoomBy(); overview.minZoom..maxZoom studs (≈ 40–220, G13.6)
 		  from the focus. The pitch follows the zoom: flatter close up, steeper far out.
 		- Rotate: Q / E, right-mouse drag, a two-finger twist, or the right stick. Q / E are not bound
-		  in build mode, because FORGE-03's placement rotates with Q / R.
+		  in build or edit mode: there FORGE-03's placement and move take Q (cancel) and R / Shift+R
+		  (turn the building), so the view turns with the right mouse button, a twist or the stick.
 		- Bounded to the map: the focus stays inside the Layout regions' box (G10.1) plus a margin.
 		- Streaming: when the focus moves far, the camera asks the server to stream around it
 		  (Player:RequestStreamAroundAsync, throttled; Player.ReplicationFocus is server-only).
@@ -26,10 +32,35 @@
 	follow (walk mode, kept from FL-0053): Roblox's third-person camera with zoom follow.minZoom..
 	maxZoom (never first person), a shoulder offset and the field of view. Entering it makes the
 	ruler stand up (RulerController:standUp) and shows the touch controls again.
-	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode always uses the
-	overview, and leaving it restores the previous mode unless the player chose one meanwhile.
+	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode and base editing
+	("edit", G13.9) always use the overview, and leaving them restores the previous mode unless the
+	player chose one meanwhile.
+	Base editing (G13.9, FL-0121): in B17's Move flow (D-052 (1)) edit mode lasts while a building is
+	being moved, and a tap there aims the ghost, so selections in edit mode never move the camera
+	(FORGE-07's #148 B1 side effect). setEditDrag (parked with the drag gesture, FL-0123: no caller
+	yet) is for FORGE-03's edit UI while it drags a building: a mouse drag or one-finger
+	drag no longer pans; instead, a pointer within EDGE_PIXELS of the screen edge pans toward that
+	edge (faster nearer the edge, at most panSpeed). setEditDrag(false), or leaving edit mode, ends it.
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
-	maxActive at once, never with cameraShake off or reduced motion on (SettingsController).
+	maxActive at once, never with cameraShake off or reduced motion on (SettingsController); a NaN or
+	infinite magnitude or duration is refused. Each frame's shake is undone before Roblox's camera
+	runs (undoShake, bound at RenderPriority.Camera - 1), because Roblox's camera turns from the
+	current look: a shake left in place would add up into a lasting turn in walk mode (#29).
+	Conversations (D-036, G13.8): ConversationController.opened(entityId, position) glides the
+	overview toward the citizen (eased over `duration`, the citizen framed above the centre so the
+	portrait rising from the bottom never covers them, clamped to the map); .closed glides back to
+	the saved focus, rotation and zoom. The camera stands in front of the citizen's face
+	(Def.conversationYaw; v0.4-g9e): the server turns the held citizen to face the ruler's character,
+	so the facing is the line from the citizen to the ruler's character, as the server computes it.
+	Without a ruler character it falls back to the rig's facing (EntityController:getModel) and
+	follows one turn at most (checked every FOLLOW_SEC, re-aimed past FOLLOW_DEGREES), only within
+	FOLLOW_WINDOW_SEC of the opening and while the citizen stays within FOLLOW_STUDS of where the
+	conversation opened: a citizen who walks away (released at EndConversation, after the hold's 12 s
+	of v0.4-g9f, or by an alarm) never takes the camera with them, and the framing holds for the
+	whole window. Reduced motion cuts instead of gliding. A pan, a "go to" or a turn by the player
+	ends the glide and the following. Glide durations are clamped
+	(Def.glideDuration). During a conversation the zoom may go down to the conversation's. Walk
+	mode ignores conversations; coming back to the overview drops any glide left from one.
 
 	The camera runs at RenderPriority.Camera + 1. Engine access is guarded: without a camera, input
 	services or Layout it boots and does nothing (the headless boot gate).
@@ -38,6 +69,7 @@
 ]]
 
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local ScreenLayout = require("../UI/Layout") -- FORGE-03's breakpoints (read only)
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
 local Def = {
@@ -52,6 +84,12 @@ Def.PAN_ACTION = "ForgeOverviewPan"
 Def.ROTATE_ACTION = "ForgeOverviewRotate"
 Def.SEAT_ACTION = "ForgeOverviewSeat"
 Def.RENDER_NAME = "ForgeRulerCamera"
+Def.FOLLOW_SEC = 0.2 -- how often an open conversation re-reads the citizen's facing
+Def.FOLLOW_DEGREES = 10 -- a smaller turn keeps the current view
+Def.FOLLOW_STUDS = 2 -- a citizen further than this from where the conversation opened has been released
+Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this (the hold starts at Converse)
+Def.MAX_GLIDE_SEC = 3 -- longest conversation glide (a NaN or infinite duration takes the default)
+Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.PAN_KEYS = table.freeze({
 	[Enum.KeyCode.W] = Vector2.new(0, 1),
 	[Enum.KeyCode.Up] = Vector2.new(0, 1),
@@ -90,6 +128,18 @@ Def.DEFAULTS = table.freeze({
 		streamTimeoutSec = 2,
 	}),
 	transitionSec = 0.6,
+	-- conversation focus (G13.8): 25-35 studs from the citizen, the kingdom still visible around
+	conversation = table.freeze({
+		zoom = 30,
+		offset = Vector2.new(0, -6), -- focus shift in screen studs (x right, y forward): the citizen above the centre
+		-- phones (FORGE-03's measured FL-0099 stage tops at 750 x 311: 47 % with short answers, 29-30 %
+		-- with costed or long ones; the HUD stack ends at 26 %): the head goes just under the HUD. At
+		-- zoom 30 and 38° pitch, 12 studs put the head at 28-30 % and the feet at 37 %, so a short
+		-- conversation shows the whole citizen and a long one hides at most the body (the portrait
+		-- shows the face)
+		phoneOffset = Vector2.new(0, -12),
+		durationSec = 0.6,
+	}),
 	overviewInBuild = true,
 	shake = table.freeze({
 		maxDegrees = 2,
@@ -97,6 +147,27 @@ Def.DEFAULTS = table.freeze({
 		maxActive = 4,
 	}),
 })
+
+-- Input modes that keep the aerial overview (G13.6 build, G13.9 edit).
+Def.OVERVIEW_MODES = table.freeze({ build = true, edit = true })
+Def.EDGE_PIXELS = 48 -- edge-pan band while dragging a building (G13.9)
+
+-- Edge-pan direction for a pointer on screen: x = right, y = forward (screen up), each -1..1,
+-- growing as the pointer nears the edge; zero outside the band.
+function Def.edgeDirection(pointer: Vector2, viewport: Vector2, band: number): Vector2
+	if viewport.X <= 0 or viewport.Y <= 0 or band <= 0 then
+		return Vector2.zero
+	end
+	local function axis(at: number, size: number): number
+		if at < band then
+			return -math.clamp((band - at) / band, 0, 1)
+		elseif at > size - band then
+			return math.clamp((at - (size - band)) / band, 0, 1)
+		end
+		return 0
+	end
+	return Vector2.new(axis(pointer.X, viewport.X), -axis(pointer.Y, viewport.Y))
+end
 
 local Controller = {}
 Controller.__index = Controller
@@ -136,6 +207,22 @@ function Def.aerialCFrame(focus: Vector3, yaw: number, zoom: number, overview: a
 	local forward = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw))
 	local position = focus - forward * (zoom * math.cos(pitch)) + Vector3.new(0, zoom * math.sin(pitch), 0)
 	return CFrame.lookAt(position, focus)
+end
+
+-- The overview view that frames a citizen at `position` for a conversation (G13.8): the focus moves
+-- by `conversation.offset` in screen studs (`phoneOffset` on a phone), so the citizen sits above the
+-- centre; clamped to the map.
+function Def.conversationView(
+	position: Vector3,
+	yaw: number,
+	conversation: any,
+	bounds: any,
+	margin: number,
+	phone: boolean?
+): any
+	local offset = if phone and conversation.phoneOffset then conversation.phoneOffset else conversation.offset
+	local focus = Def.clampFocus(position + Def.panVector(offset, yaw), bounds, margin)
+	return { focus = focus, yaw = yaw, zoom = conversation.zoom }
 end
 
 -- The map box from Layout (G10.1): every region polygon point and every plot spawn.
@@ -204,6 +291,27 @@ local function yawOf(look: Vector3): number
 	return math.atan2(-flat.X, -flat.Z)
 end
 
+-- The yaw that looks at a citizen's face, so the camera stands in front of them (G13.8 v0.4-g9e).
+-- No usable facing (nil, flat or NaN): `fallback`, the current yaw.
+function Def.conversationYaw(facing: any, fallback: number): number
+	if typeof(facing) ~= "Vector3" then
+		return fallback
+	end
+	local flat = Vector3.new(facing.X, 0, facing.Z)
+	if flat.Magnitude ~= flat.Magnitude or flat.Magnitude < 0.1 then
+		return fallback
+	end
+	return yawOf(-flat)
+end
+
+-- A glide duration: a finite, non-negative number up to MAX_GLIDE_SEC, else `default`.
+function Def.glideDuration(value: any, default: number): number
+	if type(value) ~= "number" or value ~= value or value < 0 or value == math.huge then
+		return default
+	end
+	return math.min(value, Def.MAX_GLIDE_SEC)
+end
+
 -- Shortest signed difference between two angles (radians).
 local function angleDelta(from: number, to: number): number
 	return (to - from + math.pi) % (2 * math.pi) - math.pi
@@ -247,7 +355,8 @@ end
 
 -- ------------------------------------------------------------------ lifecycle
 
--- opts (specs): { config, camera, player, actions, userInput, guiService, runService, layout, viewportHeight }
+-- opts (specs): { config, camera, player, actions, userInput, guiService, runService, layout, viewportHeight,
+--   viewportWidth }
 function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 	local options = opts or {}
 	local config = options.config or Def.DEFAULTS
@@ -264,6 +373,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_stick = Vector2.zero,
 		_stickTurn = 0,
 		_drag = nil,
+		_editDrag = false,
+		_pointer = nil :: Vector2?,
 		_panLast = nil,
 		_pinch = 1,
 		_twist = 0,
@@ -271,6 +382,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_shown = nil,
 		_blendFrom = nil,
 		_blendT = 1,
+		_glide = nil :: any, -- { from, to, t, duration }: an eased move of the shown view (conversations)
+		_saved = nil :: any, -- the view to return to after a conversation
 		_autoFrom = nil,
 		_rendering = false,
 		_streamedAt = nil,
@@ -329,6 +442,7 @@ function Controller:start()
 			end)
 		)
 	end
+	self:_listenConversations()
 	self:_bindView()
 	self:_bindPointer()
 	self:_bindRender()
@@ -364,7 +478,9 @@ function Controller:destroy()
 	self:_setTouchControls(true)
 	if self._rendering then
 		pcall(function()
-			(self._opts.runService or self._env.RunService):UnbindFromRenderStep(Def.RENDER_NAME)
+			local runService = self._opts.runService or self._env.RunService
+			runService:UnbindFromRenderStep(Def.RENDER_NAME)
+			runService:UnbindFromRenderStep(Def.UNSHAKE_NAME)
 		end)
 		self._rendering = false
 	end
@@ -374,8 +490,8 @@ end
 -- ------------------------------------------------------------------ public API
 
 function Controller:setMode(mode: any): boolean
-	if self._input ~= nil and self._input.mode == "build" then
-		self._autoFrom = nil -- the player chose a view while building: keep it after build mode
+	if self._input ~= nil and Def.OVERVIEW_MODES[self._input.mode] then
+		self._autoFrom = nil -- the player chose a view while building or editing: keep it afterwards
 	end
 	return self:_setMode(mode)
 end
@@ -388,8 +504,185 @@ function Controller:getFocus(): Vector3?
 	return self._target.focus
 end
 
-function Controller:focusOn(position: Vector3)
-	self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
+function Controller:focusOn(position: Vector3, opts: { duration: number?, facing: Vector3? }?): boolean
+	if opts == nil then
+		self._glide = nil -- a pan or a "go to" ends a conversation glide
+		self._talking = nil -- and stops following the citizen's turn
+		self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
+		return true
+	end
+	if typeof(position) ~= "Vector3" or self.mode ~= "overview" or self._target.focus == nil then
+		return false
+	end
+	local conversation = self._config.conversation or Def.DEFAULTS.conversation
+	local target = self._target
+	if self._saved == nil then
+		self._saved = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
+	end
+	local yaw = Def.conversationYaw(opts.facing, target.yaw)
+	local view = Def.conversationView(
+		position,
+		yaw,
+		conversation,
+		self._bounds,
+		self._config.overview.boundsMargin,
+		self:_isPhone()
+	)
+	self:_glideTo(view, Def.glideDuration(opts.duration, conversation.durationSec))
+	return true
+end
+
+-- The citizen's rig pivot (EntityController:getModel); nil when there is no rig.
+function Controller:_rigOf(entityId: any): CFrame?
+	local entities = self._registry:find("EntityController")
+	if entities == nil or entities.getModel == nil then
+		return nil
+	end
+	local ok, pivot = pcall(function()
+		local model = entities:getModel(entityId)
+		return if model then model:GetPivot() else nil
+	end)
+	return if ok and typeof(pivot) == "CFrame" then pivot else nil
+end
+
+-- Where the held citizen will face (G13.8 v0.4-g9e): toward the ruler's character, as the server
+-- turns them; "rig" when there is no ruler character and the rig's own facing is used instead.
+function Controller:_conversationFacing(entityId: any, position: Vector3): (Vector3?, string?)
+	local root = self._ruler and self._ruler:getRoot()
+	if root ~= nil then
+		local ok, toRuler = pcall(function()
+			return root.CFrame.Position - position
+		end)
+		if ok and typeof(toRuler) == "Vector3" and Vector3.new(toRuler.X, 0, toRuler.Z).Magnitude > 0.5 then
+			return toRuler, "ruler"
+		end
+	end
+	local pivot = self:_rigOf(entityId)
+	return if pivot then pivot.LookVector else nil, if pivot then "rig" else nil
+end
+
+-- Rig fallback only: the server's turn toward the ruler may arrive after the panel opened, so the
+-- camera follows one such turn, and never a citizen who has been released and walks away.
+function Controller:_followTalker(dt: number)
+	local talking = self._talking
+	if talking == nil then
+		return
+	end
+	talking.age += dt
+	if talking.age > Def.FOLLOW_WINDOW_SEC then
+		self._talking = nil -- the hold's turn has had its time
+		return
+	end
+	talking.wait -= dt
+	if talking.wait > 0 then
+		return
+	end
+	talking.wait = Def.FOLLOW_SEC
+	local pivot = self:_rigOf(talking.entityId)
+	if pivot == nil then
+		return
+	end
+	local moved = pivot.Position - talking.position
+	if Vector3.new(moved.X, 0, moved.Z).Magnitude > Def.FOLLOW_STUDS then
+		self._talking = nil -- released: the camera stays where it is
+		return
+	end
+	local yaw = Def.conversationYaw(pivot.LookVector, talking.yaw)
+	if math.abs(angleDelta(talking.yaw, yaw)) < math.rad(Def.FOLLOW_DEGREES) then
+		return
+	end
+	self._talking = nil -- the one turn: after it, the camera holds
+	local conversation = self._config.conversation or Def.DEFAULTS.conversation
+	local view = Def.conversationView(
+		talking.position,
+		yaw,
+		conversation,
+		self._bounds,
+		self._config.overview.boundsMargin,
+		self:_isPhone()
+	)
+	self:_glideTo(view, conversation.durationSec)
+end
+
+-- Back to the view saved by the first focusOn(position, opts). False when there is nothing to restore.
+function Controller:restore(opts: { duration: number? }?): boolean
+	local saved = self._saved
+	self._saved = nil
+	self._talking = nil
+	if saved == nil or saved.focus == nil then
+		return false
+	end
+	local conversation = self._config.conversation or Def.DEFAULTS.conversation
+	local duration = Def.glideDuration(opts and opts.duration, conversation.durationSec)
+	self:_glideTo(saved, duration)
+	return true
+end
+
+-- ConversationController (FORGE-03, G13.8) fires opened(entityId, position) and closed(entityId).
+-- Its signals may be framework Signals (:connect) or RBXScriptSignals (:Connect).
+function Controller:_listenConversations()
+	local conversations = self._registry:find("ConversationController")
+	local function listen(signal: any, handler: (...any) -> ()): boolean
+		if signal == nil then
+			return false
+		end
+		local ok, connection = pcall(function()
+			return if signal.connect then signal:connect(handler) else signal:Connect(handler)
+		end)
+		if ok and connection ~= nil then
+			table.insert(self._connections, connection)
+		end
+		return ok
+	end
+	local opened = conversations
+		and listen(conversations.opened, function(entityId, position)
+			if typeof(position) ~= "Vector3" then
+				return
+			end
+			local facing, source = self:_conversationFacing(entityId, position)
+			if self:focusOn(position, { facing = facing }) and source == "rig" then
+				self._talking =
+					{ entityId = entityId, position = position, yaw = self._target.yaw, wait = Def.FOLLOW_SEC, age = 0 }
+			end
+		end)
+	local closed = conversations and listen(conversations.closed, function()
+		self:restore()
+	end)
+	if not (opened and closed) then
+		self._env.log(
+			"info",
+			"RulerCameraController: no ConversationController.opened/closed yet (FORGE-03, G13.8); conversation focus waits"
+		)
+	end
+end
+
+function Controller:_reducedMotion(): boolean
+	local settings = self._settings
+	if settings == nil then
+		return false
+	end
+	local ok, reduced = pcall(function()
+		return if settings.reducedMotion then settings:reducedMotion() else settings:get("reducedMotion")
+	end)
+	return ok and reduced == true
+end
+
+-- Sets the target view; the shown view eases there over `duration` (a cut with reduced motion).
+function Controller:_glideTo(view: any, duration: number)
+	local target = self._target
+	target.focus, target.yaw, target.zoom = view.focus, view.yaw, view.zoom
+	local shown = self._shown
+	if self:_reducedMotion() or duration <= 0 or shown == nil then
+		self._glide = nil
+		self._shown = nil -- the next frame starts at the target: a cut
+		return
+	end
+	self._glide = {
+		from = { focus = shown.focus, yaw = shown.yaw, zoom = shown.zoom },
+		to = { focus = view.focus, yaw = view.yaw, zoom = view.zoom },
+		t = 0,
+		duration = duration,
+	}
 end
 
 -- Moves the overview focus by a screen-space amount in studs (x = right, y = forward).
@@ -401,18 +694,40 @@ function Controller:panBy(studs: Vector2)
 	self:focusOn(focus + Def.panVector(studs, self._target.yaw))
 end
 
+-- Base editing (G13.9): while a building is dragged, drags never pan and the screen edge does.
+function Controller:setEditDrag(active: any): boolean
+	local on = active == true and self._input ~= nil and self._input.mode == "edit"
+	self._editDrag = on
+	if on then
+		self._drag = nil -- a pan already under way stops
+		self._panLast = nil
+	end
+	return on
+end
+
 function Controller:rotateBy(degrees: number)
+	self._talking = nil -- the player turns the view: stop following the citizen
 	self._target.yaw += math.rad(degrees)
 end
 
 function Controller:zoomBy(steps: number)
 	local overview = self._config.overview
-	self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, overview.minZoom, overview.maxZoom)
+	local minZoom = overview.minZoom
+	if self._saved ~= nil then
+		-- in a conversation (30 studs, below the overview's minimum) zooming in never moves the camera out
+		local conversation = self._config.conversation or Def.DEFAULTS.conversation
+		minZoom = math.min(minZoom, conversation.zoom)
+	end
+	self._target.zoom = Def.clamp(self._target.zoom + steps * overview.zoomStep, minZoom, overview.maxZoom)
+end
+
+local function finite(value: any): boolean
+	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
 function Controller:shake(magnitude: any, duration: any): boolean
-	if type(magnitude) ~= "number" or type(duration) ~= "number" or magnitude <= 0 or duration <= 0 then
-		return false
+	if not finite(magnitude) or not finite(duration) or magnitude <= 0 or duration <= 0 then
+		return false -- NaN would poison the camera CFrame for good (#29)
 	end
 	local settings = self._settings
 	if settings ~= nil then
@@ -444,7 +759,30 @@ function Controller:update(dt: number)
 	end
 	if #self._shakes > 0 then
 		local pitch, yaw = self:_shakeDegrees(dt)
-		camera.CFrame = camera.CFrame * CFrame.Angles(math.rad(pitch), math.rad(yaw), 0)
+		local offset = CFrame.Angles(math.rad(pitch), math.rad(yaw), 0)
+		camera.CFrame = camera.CFrame * offset
+		self._shaken = { offset = offset, cframe = camera.CFrame }
+	end
+end
+
+-- Before Roblox's camera (live: RenderPriority.Camera - 1): takes last frame's shake back out, so
+-- the next frame starts from the unshaken view. Nothing to do if someone else moved the camera since.
+function Controller:undoShake()
+	local shaken = self._shaken
+	local camera = self._camera
+	self._shaken = nil
+	if shaken == nil or camera == nil then
+		return
+	end
+	local now = camera.CFrame
+	local was = shaken.cframe
+	-- the same CFrame within float precision (a CFrame property is stored in single precision)
+	if
+		(now.Position - was.Position).Magnitude < 1e-3
+		and now.LookVector:Dot(was.LookVector) > 1 - 1e-6
+		and now.UpVector:Dot(was.UpVector) > 1 - 1e-6
+	then
+		camera.CFrame = now * shaken.offset:Inverse()
 	end
 end
 
@@ -456,12 +794,16 @@ function Controller:_stepOverview(dt: number, camera: any)
 	if target.focus == nil then
 		return
 	end
+	self:_followTalker(dt)
 	-- keys and stick: a screen direction, scaled with the zoom
 	local direction = Vector2.zero
 	for _, vector in self._held do
 		direction += vector
 	end
 	direction += self._stick
+	if self._editDrag and self._pointer ~= nil then
+		direction += Def.edgeDirection(self._pointer, self:_viewport(), Def.EDGE_PIXELS)
+	end
 	if direction.Magnitude > 0 then
 		direction = if direction.Magnitude > 1 then direction.Unit else direction
 		self:panBy(direction * (overview.panSpeed * target.zoom * dt))
@@ -475,9 +817,19 @@ function Controller:_stepOverview(dt: number, camera: any)
 	end
 
 	local shown = self._shown
+	local glide = self._glide
 	if shown == nil then
 		shown = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
 		self._shown = shown
+	elseif glide ~= nil then
+		glide.t = math.min(glide.duration, glide.t + dt)
+		local k = Def.ease(glide.t / glide.duration)
+		shown.focus = glide.from.focus:Lerp(glide.to.focus, k)
+		shown.yaw = glide.from.yaw + angleDelta(glide.from.yaw, glide.to.yaw) * k
+		shown.zoom = glide.from.zoom + (glide.to.zoom - glide.from.zoom) * k
+		if glide.t >= glide.duration then
+			self._glide = nil
+		end
 	else
 		shown.focus = Def.smooth(shown.focus, target.focus, overview.smoothing, dt)
 		shown.yaw += angleDelta(shown.yaw, target.yaw) * (1 - math.exp(-overview.smoothing * dt))
@@ -562,6 +914,8 @@ function Controller:_apply()
 	self:_setTouchControls(not overview)
 	local camera = self._camera
 	if overview then
+		self._glide = nil -- a glide left from a conversation that ended in walk mode never replays
+		self._talking = nil
 		local root = self._ruler and self._ruler:getRoot()
 		if self._target.focus == nil and root ~= nil then
 			self:focusOn(root.CFrame.Position)
@@ -620,20 +974,23 @@ function Controller:_onCharacter(character: any)
 end
 
 function Controller:_onInputMode(mode: string, previous: string)
-	if mode ~= "build" then
+	if not Def.OVERVIEW_MODES[mode] then
 		self:_bindRotateKeys(self.mode == "overview")
 	else
-		self:_bindRotateKeys(false) -- Q / R belong to FORGE-03's placement in build mode
+		self:_bindRotateKeys(false) -- Q / R belong to FORGE-03's placement and move
+	end
+	if mode ~= "edit" then
+		self:setEditDrag(false)
 	end
 	if not self._config.overviewInBuild then
 		return
 	end
-	if mode == "build" then
+	if Def.OVERVIEW_MODES[mode] then
 		if self.mode ~= "overview" then
 			self._autoFrom = self.mode
 			self:_setMode("overview")
 		end
-	elseif previous == "build" and self._autoFrom ~= nil then
+	elseif Def.OVERVIEW_MODES[previous] and self._autoFrom ~= nil then
 		local restore = self._autoFrom
 		self._autoFrom = nil
 		self:_setMode(restore)
@@ -706,7 +1063,7 @@ function Controller:_bindOverviewKeys(on: boolean)
 			return Enum.ContextActionResult.Sink
 		end, false, high, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 	end)
-	self:_bindRotateKeys(self._input == nil or self._input.mode ~= "build")
+	self:_bindRotateKeys(self._input == nil or not Def.OVERVIEW_MODES[self._input.mode])
 end
 
 function Controller:_bindRotateKeys(on: boolean)
@@ -732,6 +1089,29 @@ function Controller:_bindRotateKeys(on: boolean)
 			return Enum.ContextActionResult.Sink
 		end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Q, Enum.KeyCode.E)
 	end)
+end
+
+-- FORGE-03's phone breakpoint (UI/Layout) for the viewport; specs set opts.viewportWidth/Height.
+function Controller:_isPhone(): boolean
+	local width = self._opts.viewportWidth
+	if width == nil then
+		local ok, size = pcall(function()
+			return self._camera.ViewportSize.X
+		end)
+		width = if ok and type(size) == "number" and size > 0 then size else 1280
+	end
+	return ScreenLayout.breakpoint(width, self:_viewportHeight()) == "phone"
+end
+
+function Controller:_viewport(): Vector2
+	local width = self._opts.viewportWidth
+	if width == nil then
+		local ok, size = pcall(function()
+			return self._camera.ViewportSize.X
+		end)
+		width = if ok and type(size) == "number" then size else 0
+	end
+	return Vector2.new(width, self:_viewportHeight())
 end
 
 function Controller:_viewportHeight(): number
@@ -793,8 +1173,11 @@ function Controller:_bindPointer()
 				if not processed and self.mode == "overview" then
 					self:zoomBy(-input.Position.Z)
 				end
-			elseif kind == Enum.UserInputType.MouseMovement then
-				self:_mouseMoved(input.Position)
+			elseif kind == Enum.UserInputType.MouseMovement or kind == Enum.UserInputType.Touch then
+				self._pointer = Vector2.new(input.Position.X, input.Position.Y) -- edge-pan (G13.9)
+				if kind == Enum.UserInputType.MouseMovement then
+					self:_mouseMoved(input.Position)
+				end
 			elseif input.KeyCode == Enum.KeyCode.Thumbstick1 then
 				local stick = Vector2.new(input.Position.X, input.Position.Y)
 				self._stick = if stick.Magnitude >= overview.stickDeadzone and self.mode == "overview"
@@ -828,7 +1211,7 @@ end
 
 function Controller:_mouseMoved(position: Vector3)
 	local drag = self._drag
-	if drag == nil or self.mode ~= "overview" then
+	if drag == nil or self.mode ~= "overview" or self._editDrag then
 		return
 	end
 	local delta = Vector2.new(position.X - drag.last.X, position.Y - drag.last.Y)
@@ -853,7 +1236,7 @@ function Controller:_touchPan(touches: any, translation: Vector2, state: any, pr
 	if state == Enum.UserInputState.Begin or self._panLast == nil then
 		self._panLast = translation
 	end
-	if processed or self.mode ~= "overview" or type(touches) ~= "table" or #touches ~= 1 then
+	if processed or self.mode ~= "overview" or self._editDrag or type(touches) ~= "table" or #touches ~= 1 then
 		self._panLast = translation
 		return
 	end
@@ -900,6 +1283,9 @@ function Controller:_bindRender()
 		local priority = Enum.RenderPriority.Camera.Value + 1
 		runService:BindToRenderStep(Def.RENDER_NAME, priority, function(dt)
 			self:update(dt)
+		end)
+		runService:BindToRenderStep(Def.UNSHAKE_NAME, Enum.RenderPriority.Camera.Value - 1, function()
+			self:undoShake()
 		end)
 	end)
 	self._rendering = ok

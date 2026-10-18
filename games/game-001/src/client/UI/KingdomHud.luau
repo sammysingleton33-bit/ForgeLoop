@@ -20,6 +20,9 @@
 	hud:addMenu({ id, icon, label, target?, order? })   another rail button (the next render rebuilds
 	                                         the rail); `order` sorts it after the built-in ones
 	hud:removeMenu(id)                       takes it away again
+	hud:setRailBadge(id, count?)             a count bubble on that rail button; an item added with
+	                                         `hideEmpty` is hidden while the count is 0 or nil (FL-0115:
+	                                         "Waiting", the citizens with an open request)
 	hud.pills[resourceId] -> CurrencyPill handle      hud.rail[id] -> IconButton handle
 	Onboarding hooks (FORGE-04, G11): the pill row has OnboardingTarget = "HUD.Resources" and the
 	Build button OnboardingTarget = "HUD.BuildButton".
@@ -54,12 +57,20 @@ function KingdomHud.new(root: Instance, topbar: Instance, motion: any)
 		_kingdomId = nil :: string?,
 		pills = {},
 		rail = {},
+		_railBadges = {} :: { [string]: number },
 		_chips = {},
 		menus = table.clone(KingdomHud.MENUS) :: { any },
 	}, KingdomHud)
 end
 
-function KingdomHud:addMenu(item: { id: string, icon: string, label: string, target: string?, order: number? })
+function KingdomHud:addMenu(item: {
+	id: string,
+	icon: string,
+	label: string,
+	target: string?,
+	order: number?,
+	hideEmpty: boolean?,
+})
 	for _, menu in self.menus do
 		if menu.id == item.id then
 			return
@@ -83,6 +94,26 @@ function KingdomHud:addMenu(item: { id: string, icon: string, label: string, tar
 		self.menus[i] = entry.menu
 	end
 	self._breakpoint = nil -- rebuild the rail on the next render
+end
+
+-- A count bubble on a rail button, kept across rail rebuilds (a breakpoint change rebuilds the rail).
+function KingdomHud:setRailBadge(id: string, count: number?)
+	self._railBadges[id] = count
+	self:_applyBadge(id)
+end
+
+function KingdomHud:_applyBadge(id: string)
+	local button = self.rail[id]
+	if button == nil then
+		return
+	end
+	local count = self._railBadges[id]
+	button:update({ badge = count })
+	for _, menu in self.menus do
+		if menu.id == id and menu.hideEmpty then
+			button.instance.Visible = count ~= nil and count > 0
+		end
+	end
 end
 
 function KingdomHud:removeMenu(id: string)
@@ -297,6 +328,7 @@ function KingdomHud:_build(metrics: any, banner: any)
 		end
 		button.instance.Parent = rail
 		self.rail[menu.id] = button
+		self:_applyBadge(menu.id)
 	end
 
 	self._queue = Create("Frame", {
