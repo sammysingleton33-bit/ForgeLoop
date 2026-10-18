@@ -291,6 +291,28 @@ describe("HudModel", function()
 		expect(HudModel.timer(nil, 0)).toBeNil()
 	end)
 
+	it(
+		"a timed full-match phase gets its place on the track and the next phase, with what it opens (FL-0129)",
+		function()
+			local expansion = HudModel.timer({ phase = "Expansion", endsAt = 1090, startedAt = 0 }, 1000)
+			expect(expansion.step).toBe(2)
+			expect(expansion.steps).toBe(#HudModel.PHASES)
+			expect(expansion.next).toBe("Conflict")
+			expect(expansion.nextNote).toBe("war opens") -- D-053 (2)
+			local endgame = HudModel.timer({ phase = "Endgame", endsAt = 1090 }, 1000)
+			expect(endgame.next).toBe("Results")
+			expect(endgame.nextNote).toBeNil()
+			local results = HudModel.timer({ phase = "Results", endsAt = 1030 }, 1000)
+			expect(results.step).toBe(#HudModel.PHASES)
+			expect(results.next).toBeNil()
+			-- no track: the Lobby countdown, an unknown phase (a future Arena), the slice's untimed Founding
+			expect(HudModel.timer({ phase = "Lobby", endsAt = 1010 }, 1000).step).toBeNil()
+			expect(HudModel.timer({ phase = "Arena", endsAt = 1010 }, 1000).step).toBeNil()
+			expect(HudModel.timer({ phase = "Founding", startedAt = 1000 }, 1192).step).toBeNil()
+			expect(HudModel.timer({ phase = "Founding", startedAt = 1000 }, 1192).next).toBeNil()
+		end
+	)
+
 	it("lists only my buildings that are being built", function()
 		local queue = HudModel.queue(store())
 		expect(#queue).toBe(2)

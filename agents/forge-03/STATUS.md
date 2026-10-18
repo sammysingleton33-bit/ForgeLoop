@@ -4,12 +4,12 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-<task>` |
-| Open PRs | #135 FL-0114 rotation B1 + B2 (★ B15) · #128 settings icon · #110 FL-0058 economy doc (waiting on FORGE-07). Merged: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #63, #65, #66, #71, #74, #76, #79, #86, #88, #95, #103, #126 (FL-0099, B14). Closed: #13, #19. |
-| Current task | FL-0114 (P0, REVIEW): rotation UI (Turn + facing dial, ghost door strip and arrow, Shift+R / pad Y; plot Turn on CONTRACTS v0.4-g9h, live once FORGE-01's turn PR lands). Next: FL-0120 base-editing UI (B16, G13.9); subscribe `InputModeController.back` (#130); drop the client `CitizenAnswered` report after #124; FL-0111 after #96 |
-| Last verified check | FL-0114 branch: game-001 specs 1244/0 in check.sh, selene/stylua clean after fixes, Rotation.spec 13/0, mutations 18/18; main merged after B14 (3a7c29c+) |
-| Blockers | none; Studio checks (G6) need the user |
-| Needs from others | FORGE-01: `Build.PlaceSlot` optional turn + `Fit.fits(…, turn)` in one PR (switches plot Turn on); move remotes for FL-0120. FORGE-04: bubbles (#133) and hover signal. FORGE-05: gate #135, Studio U17. User: upload `settings.png`, `gem.png`, `emblem_crown.png`. FORGE-07: verdicts (D-040). |
+| Session branch | `forge/03-ui-economy` (cloud session); one PR branch per task: `forge/03-ui-economy-<task>`; Crownfall: `forge/03-ui-economy-crownfall` |
+| Open PRs | FL-0129a phase bar + Rivals (crownfall branch, 2026-10-18) · #176 docs. Earlier merged: #148, #162, #168, #174, #110 and the list in git history. |
+| Current task | FL-0129 (P0, BUILDING, Operation Crownfall D-053): (a) phase bar + war & peace (Rivals tab) in PR; (b) spectate + Results/LeadershipRecap after FL-0125; (c) wall tool + Gate after FL-0126. Then FL-0073 support meter (stub until FL-0070), phone 667×375 pass |
+| Last verified check | crownfall branch: economy/Diplomacy 9/0, KingdomUI 41/0, mutations FL-0129.py 20/20, renders looked at (desktop + phone-se); check.sh result in the PR |
+| Blockers | none for (a); Rivals is dormant until FORGE-01 serves `Kingdom.Diplomacy` + the `diplomacy` payload; (b)/(c) wait on FL-0125/FL-0126 |
+| Needs from others | FORGE-01: diplomacy remote + payload (handoff 2026-10-18-forge-03-to-forge-01-diplomacy-remote), Match.Spectate rows (FL-0125), wall rows (FL-0126). FORGE-05: review the FL-0129a PR. User: Studio U21. |
 
 ## Estimate to VS-1 (FORGE-03 rows, unverified, hours of FORGE-03 work)
 | Item | Hours | Notes |

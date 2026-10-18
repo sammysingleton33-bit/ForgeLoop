@@ -31,6 +31,8 @@ A new server runs the real 30-45 minute match, not the VS-1 slice: timed phases 
 
 - **D-054 (added 2026-10-18 from FORGE-07's baseline):** player war and peace remotes (declare war, propose peace, accept peace) with validation and rate limits; only the senior ruler may declare war or accept peace, and any ruler may propose peace; a 120 s newcomer lock on war, accepting peace and moving or demolishing buildings; the debug `match.phase` jump also moves Diplomacy's war grace. Put the G8 rows in your handoff.
 
+- **D-055 (added 2026-10-18):** per-kingdom caps of 60 citizens and 15 standing soldiers (config; `army_cap` refusal); Sim/Interest tiers on in the full match (≤ 20 KB/s per player); root-cause the Endgame p99 spike before B20.
+
 ## Validation
 Automated: the full-match spec, specs for elimination and spectate, mid-match join. Studio: FORGE-05's B20 rows (start a match, watch an AI war in Conflict, see an elimination, reach Results).
 
