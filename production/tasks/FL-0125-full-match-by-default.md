@@ -29,6 +29,8 @@ A new server runs the real 30-45 minute match, not the VS-1 slice: timed phases 
 - Mid-match join: auto-assign to the standing kingdom with the fewest human rulers; a human joining a governor kingdom takes over (the AI steps back, already built).
 - Headless proof: a full-match spec (`tests/sim/FullMatch.spec.luau`) that runs four AI kingdoms through every phase with the injected clock at the real durations and asserts: wars happen in Conflict, at least one battle, the match ends, no errors, the server tick stays inside the BRIEF §14 budget at peak entities (record the measured ms and entity count in the PR).
 
+- **D-054 (added 2026-10-18 from FORGE-07's baseline):** player war and peace remotes (declare war, propose peace, accept peace) with validation and rate limits; only the senior ruler may declare war or accept peace, and any ruler may propose peace; a 120 s newcomer lock on war, accepting peace and moving or demolishing buildings; the debug `match.phase` jump also moves Diplomacy's war grace. Put the G8 rows in your handoff.
+
 ## Validation
 Automated: the full-match spec, specs for elimination and spectate, mid-match join. Studio: FORGE-05's B20 rows (start a match, watch an AI war in Conflict, see an elimination, reach Results).
 
