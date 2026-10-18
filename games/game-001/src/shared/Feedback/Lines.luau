@@ -126,7 +126,7 @@ Lines.PHASE = table.freeze({
 		kind = "warning",
 		title = "The age of war begins",
 		body = "Kingdoms may now declare war on each other.",
-		timed = "For {minutes} minutes, kingdoms may declare war on each other.",
+		timed = "Kingdoms may now declare war. This phase lasts {minutes} minutes.", -- war itself has no end time
 		sound = "kingdom.horn.war",
 	}),
 	Endgame = table.freeze({
