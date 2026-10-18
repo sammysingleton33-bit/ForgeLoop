@@ -159,6 +159,10 @@ local function weldTarget(def: any): string?
 	return str(def.weld_to) or (if EXTRA_SLOTS[def.slot] then str(def.joint) else nil)
 end
 
+local function isVec3(v: any): boolean
+	return isTable(v) and type(v[1]) == "number" and type(v[2]) == "number" and type(v[3]) == "number"
+end
+
 local function vec(v: any): Vector3?
 	if isTable(v) and type(v[1]) == "number" and type(v[2]) == "number" and type(v[3]) == "number" then
 		return Vector3.new(v[1], v[2], v[3])
@@ -241,20 +245,95 @@ local function variantsOf(data: any, prefix: string, suffix: string): { string }
 	return out
 end
 
-local function expand(data: any, template: string, l: CitizenLook, kingdomId: string): (string?, string?)
-	local t = string.gsub(template, "%%kingdom%%", kingdomId)
-	local s, e = string.find(t, "%%look%.%w+%%")
-	if s == nil or e == nil then
-		return t, nil
+type Entry = {
+	key: string,
+	template: string,
+	kingdom: boolean, -- the template has a %kingdom% token
+	axis: string?, -- its %look.axis% token, with the text around it
+	prefix: string,
+	suffix: string,
+	resolved: { [string]: { id: string?, list: { string }?, why: string? } }, -- per kingdom id
+}
+
+-- An assembly's templates parsed once per data table (the data is read-only once it is in use: generated data is frozen).
+local compiledCache: { [any]: { [string]: { entries: { Entry }?, why: string? } } } = setmetatable({}, { __mode = "k" }) :: any
+
+local function sortedKeys(t: { [any]: any }): { string }
+	local out = {}
+	for k in t do
+		if type(k) == "string" then
+			table.insert(out, k)
+		end
 	end
-	local axis = string.sub(t, s + 6, e - 1)
-	local list = variantsOf(data, string.sub(t, 1, s - 1), string.sub(t, e + 1))
-	if #list == 0 then
-		return nil, `no piece fits {template}`
+	table.sort(out)
+	return out
+end
+
+local function compile(data: any, assemblyKey: string, assembly: any): ({ Entry }?, string?)
+	local perData = compiledCache[data]
+	if perData == nil then
+		perData = {}
+		compiledCache[data] = perData
 	end
-	local idx = axisIndex(l, axis, #list)
+	local hit = perData[assemblyKey]
+	if hit then
+		return hit.entries, hit.why
+	end
+	local entries: { Entry } = {}
+	local failure: string? = nil
+	for _, key in sortedKeys(assembly) do
+		local value = assembly[key]
+		local templates: { any } = if isTable(value) then value else { value }
+		for _, template in templates do
+			local t = str(template)
+			if t == nil then
+				failure = `assembly {assemblyKey}.{key}: not a piece id`
+				break
+			end
+			local s, e = string.find(t, "%%look%.%w+%%")
+			table.insert(entries, {
+				key = key,
+				template = t,
+				kingdom = string.find(t, "%%kingdom%%") ~= nil,
+				axis = if s and e then string.sub(t, s + 6, e - 1) else nil,
+				prefix = if s then string.sub(t, 1, s - 1) else t,
+				suffix = if e then string.sub(t, e + 1) else "",
+				resolved = {},
+			})
+		end
+		if failure then
+			break
+		end
+	end
+	perData[assemblyKey] = if failure then { why = failure } else { entries = entries }
+	return if failure then nil else entries, failure
+end
+
+-- The piece id an entry names for this look and kingdom (nil and why when nothing fits).
+local function resolve(data: any, e: Entry, l: CitizenLook, kingdomId: string): (string?, string?)
+	local ck = if e.kingdom then kingdomId else ""
+	local cached = e.resolved[ck]
+	if cached == nil then
+		local function expand(x: string): string
+			return (string.gsub(x, "%%kingdom%%", kingdomId))
+		end
+		if e.axis == nil then
+			cached = { id = expand(e.template) }
+		else
+			local list = variantsOf(data, expand(e.prefix), expand(e.suffix))
+			cached = if #list == 0 then { why = `no piece fits {e.template}` } else { list = list }
+		end
+		e.resolved[ck] = cached
+	end
+	if cached.id then
+		return cached.id, nil
+	elseif cached.why then
+		return nil, cached.why
+	end
+	local list = cached.list :: { string }
+	local idx = axisIndex(l, e.axis :: string, #list)
 	if idx == nil then
-		return nil, `unknown look axis '{axis}' in {template}`
+		return nil, `unknown look axis '{e.axis}' in {e.template}`
 	end
 	return list[idx + 1], nil
 end
@@ -278,17 +357,6 @@ local function assemblyKeys(job: string, style: string): { string }
 		table.insert(keys, "idle")
 	end
 	return keys
-end
-
-local function sortedKeys(t: { [any]: any }): { string }
-	local out = {}
-	for k in t do
-		if type(k) == "string" then
-			table.insert(out, k)
-		end
-	end
-	table.sort(out)
-	return out
 end
 
 local function partName(key: string, item: Item): string
@@ -343,54 +411,51 @@ function CharacterMesh.plan(
 	-- 1. the pieces the assembly names, in a fixed order
 	local items: { Item } = {}
 	local seen: { [string]: boolean } = {}
-	for _, key in sortedKeys(assembly) do
-		local value = assembly[key]
-		local templates: { any } = if isTable(value) then value else { value }
-		for _, template in templates do
-			local t = str(template)
-			if t == nil then
-				return nil, `assembly {assemblyKey}.{key}: not a piece id`
+	local entries, failure = compile(data, assemblyKey, assembly)
+	if entries == nil then
+		return nil, failure
+	end
+	for _, entry in entries do
+		local key = entry.key
+		local id, why = resolve(data, entry, l, kingdomId)
+		if id == nil then
+			return nil, `assembly {assemblyKey}.{key}: {why}`
+		end
+		local def = data.pieces[id]
+		if not isTable(def) then
+			return nil, `assembly {assemblyKey}.{key}: no piece '{id}'`
+		end
+		if def.empty ~= true and not seen[id] then
+			seen[id] = true
+			local joint = str(def.joint)
+			if joint == nil or not isTable(data.joints[joint]) then
+				return nil, `piece {id}: unknown joint {tostring(def.joint)}`
 			end
-			local id, why = expand(data, t, l, kingdomId)
-			if id == nil then
-				return nil, `assembly {assemblyKey}.{key}: {why}`
+			if not isVec3(def.bbox_center) or not isVec3(def.size) then
+				return nil, `piece {id}: bbox_center and size must be three numbers`
 			end
-			local def = data.pieces[id]
-			if not isTable(def) then
-				return nil, `assembly {assemblyKey}.{key}: no piece '{id}'`
+			if TINTS[def.tint] == nil then
+				return nil, `piece {id}: unknown tint {tostring(def.tint)}`
 			end
-			if def.empty ~= true and not seen[id] then
-				seen[id] = true
-				local joint = str(def.joint)
-				if joint == nil or not isTable(data.joints[joint]) then
-					return nil, `piece {id}: unknown joint {tostring(def.joint)}`
+			local sides = { false }
+			if def.mirror == true then
+				if OPPOSITE[joint] == nil then
+					return nil, `piece {id}: mirror needs a Left/Right joint, not {joint}`
 				end
-				if vec(def.bbox_center) == nil or vec(def.size) == nil then
-					return nil, `piece {id}: bbox_center and size must be three numbers`
-				end
-				if TINTS[def.tint] == nil then
-					return nil, `piece {id}: unknown tint {tostring(def.tint)}`
-				end
-				local sides = { false }
-				if def.mirror == true then
-					if OPPOSITE[joint] == nil then
-						return nil, `piece {id}: mirror needs a Left/Right joint, not {joint}`
-					end
-					table.insert(sides, true)
-				end
-				for _, mirrored in sides do
-					local item: Item = {
-						id = id,
-						key = key,
-						def = def,
-						joint = if mirrored then OPPOSITE[joint] else joint,
-						mirrored = mirrored,
-						base = weldTarget(def) == nil,
-						name = "",
-					}
-					item.name = partName(key, item)
-					table.insert(items, item)
-				end
+				table.insert(sides, true)
+			end
+			for _, mirrored in sides do
+				local item: Item = {
+					id = id,
+					key = key,
+					def = def,
+					joint = if mirrored then OPPOSITE[joint] else joint,
+					mirrored = mirrored,
+					base = weldTarget(def) == nil,
+					name = "",
+				}
+				item.name = partName(key, item)
+				table.insert(items, item)
 			end
 		end
 	end
@@ -426,7 +491,7 @@ function CharacterMesh.plan(
 					data.joints[item.joint].parent
 				)}`
 		end
-		if item.base and vec(data.joints[item.joint].pos) == nil then
+		if item.base and not isVec3(data.joints[item.joint].pos) then
 			return nil, `joint {item.joint}: pos must be three numbers`
 		end
 	end
