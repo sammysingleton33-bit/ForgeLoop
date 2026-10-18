@@ -17,7 +17,7 @@ Exit codes: 0 ok, 1 invalid or out of date, 2 usage. Warnings never fail the run
 After converting:  lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json \\
                        --specs games/game-001/tests/world KitCharacterMesh
 The specs build every assembly of the committed data over a fake CitizenKit folder and check joints, flags, budgets
-(<= 16 pieces, <= 2,000 triangles, <= 20,000 per mesh), tints and pose clearance on the real numbers.
+(<= 16 pieces, the triangle budget below, <= 20,000 per mesh), tints and pose clearance on the real numbers.
 
 RIG.JSON v1 (what Kit/CharacterMesh reads; the FL-0135 contract plus the clarifications marked [+])
   schema_version 1; unit "stud"; root_height 3.2 (Character.ROOT_HEIGHT). Rig axes in studs: +X the character's right, +Y up,
@@ -48,7 +48,8 @@ RIG.JSON v1 (what Kit/CharacterMesh reads; the FL-0135 contract plus the clarifi
            jobs build "idle". Slot keys are free labels except [+] "hair" (the piece becomes the part Hair: KitHeadwear)
            and "acc" (Accessory: KitAccessory). The pieces of one assembly: exactly one base piece for each of Torso, Head,
            LeftArm, RightArm, LeftLeg, RightLeg, at most one for Tool/TorsoTool, any number of extras, <= 16 pieces in all
-           (a mirror piece counts twice), <= 2,000 triangles in all.
+           (a mirror piece counts twice), and within the triangle BUDGET (D-057 amendment (9)): citizens 1,000 in all, of
+           which the body <= 900 and the hand tool or sack with its heads <= 150; soldiers and governors 1,500 in all.
            template   a piece id, or [+] an id with ONE variant token (same look -> same model):
                       %look.<axis>%  the pieces whose id is prefix + digits + suffix, in numeric order, one picked by the
                                      axis: skin hair hairColor outfit (a look field, spilling over extra variants) or
@@ -81,7 +82,8 @@ SCHEMA_VERSION = 1
 ROOT_HEIGHT = 3.2
 MAX_MESH_TRIS = 20000
 MAX_PIECES = 16
-MAX_TRIS = 2000
+# THE triangle budget (mirrors CharacterMesh.BUDGET in Kit/CharacterMesh.luau, which the Kit specs enforce exactly)
+BUDGET = {"citizen": {"total": 1000, "body": 900, "tool": 150}, "soldier": {"total": 1500}, "governor": {"total": 1500}}
 TINTS = ("skin", "hair", "kingdom", "cloth", "fixed")
 SLOTS = ("head", "hair", "hat", "torso", "armour", "arm", "sleeve", "leg", "boot", "tool", "back", "cape", "acc")
 EXTRA_SLOTS = ("hair", "hat", "boot", "sleeve", "cape", "acc")
@@ -317,7 +319,7 @@ def validate(data) -> tuple[list[str], list[str]]:
             continue
         base_count = {j: 0 for j in REQUIRED_JOINTS}
         tool_bases = 0
-        n_pieces, tris_bound = 0, 0
+        n_pieces, tris_bound, tool_bound = 0, 0, 0
         all_ids = {i for _, _, ids in slots for i in ids}
         base_joints = set()
         for slot_key, template, ids in slots:
@@ -326,7 +328,10 @@ def validate(data) -> tuple[list[str], list[str]]:
             joint, is_base, mirror = role(ids[0])
             n = 2 if mirror else 1
             n_pieces += n
-            tris_bound += n * max(pieces[i]["tris"] for i in ids)
+            worst = n * max(pieces[i]["tris"] for i in ids)
+            tris_bound += worst
+            if joint in TOOL_JOINTS:
+                tool_bound += worst
             if is_base:
                 targets = (joint, OPPOSITE[joint]) if mirror else (joint,)
                 for j in targets:
@@ -354,8 +359,11 @@ def validate(data) -> tuple[list[str], list[str]]:
                     errors.append(f"{where}.{slot_key}: {i} is welded to {wt}, which this assembly does not have")
         if n_pieces > MAX_PIECES:
             errors.append(f"{where}: {n_pieces} pieces, the budget is {MAX_PIECES} (D-057: draw calls per citizen)")
-        if tris_bound > MAX_TRIS:
-            warnings.append(f"{where}: worst case {tris_bound} triangles over the {MAX_TRIS} budget (heaviest variant of every slot; the Kit specs measure the real looks)")
+        style = "governor" if key == "governor" else "soldier" if key.startswith("soldier") else "citizen"
+        limits = BUDGET[style]
+        for what, got in (("total", tris_bound), ("body", tris_bound - tool_bound), ("tool", tool_bound)):
+            if what in limits and got > limits[what]:
+                warnings.append(f"{where}: worst case {got} {what} triangles over the {style} budget of {limits[what]} (heaviest variant of every slot; the Kit specs measure the real looks)")
     for needed in ("idle", "farmer", "miner", "builder", "hauler", "soldier", "governor"):
         if needed not in assemblies:
             warnings.append(f"assemblies: no '{needed}': it builds the part-built rig")

@@ -216,7 +216,7 @@
    "tags": [],
    "tint": "kingdom",
    "tint_factor": 0.72,
-   "tris": 48,
+   "tris": 24,
    "weld_to": "Head"
   },
   "acc_02": {
@@ -234,7 +234,7 @@
    "slot": "acc",
    "tags": [],
    "tint": "cloth",
-   "tris": 64,
+   "tris": 30,
    "weld_to": "Head"
   },
   "acc_03": {
@@ -263,7 +263,7 @@
    "slot": "arm",
    "tags": [],
    "tint": "skin",
-   "tris": 100,
+   "tris": 45,
    "weld_to": null
   },
   "arm_r": {
@@ -281,7 +281,7 @@
    "slot": "arm",
    "tags": [],
    "tint": "skin",
-   "tris": 100,
+   "tris": 45,
    "weld_to": null
   },
   "armour_azure": {
@@ -301,7 +301,7 @@
     "azure"
    ],
    "tint": "kingdom",
-   "tris": 320,
+   "tris": 220,
    "weld_to": null
   },
   "armour_crimson": {
@@ -321,7 +321,7 @@
     "crimson"
    ],
    "tint": "kingdom",
-   "tris": 320,
+   "tris": 220,
    "weld_to": null
   },
   "armour_emerald": {
@@ -341,7 +341,7 @@
     "emerald"
    ],
    "tint": "kingdom",
-   "tris": 320,
+   "tris": 220,
    "weld_to": null
   },
   "armour_gold": {
@@ -361,7 +361,7 @@
     "gold"
    ],
    "tint": "kingdom",
-   "tris": 320,
+   "tris": 220,
    "weld_to": null
   },
   "armour_neutral": {
@@ -381,7 +381,7 @@
     "neutral"
    ],
    "tint": "kingdom",
-   "tris": 320,
+   "tris": 220,
    "weld_to": null
   },
   "boot_01": {
@@ -400,7 +400,7 @@
    "slot": "boot",
    "tags": [],
    "tint": "fixed",
-   "tris": 70,
+   "tris": 35,
    "weld_to": "LeftLeg"
   },
   "boot_02": {
@@ -419,7 +419,7 @@
    "slot": "boot",
    "tags": [],
    "tint": "fixed",
-   "tris": 90,
+   "tris": 45,
    "weld_to": "LeftLeg"
   },
   "cape_azure": {
@@ -599,7 +599,7 @@
     "gold"
    ],
    "tint": "kingdom",
-   "tris": 120,
+   "tris": 90,
    "weld_to": "Head"
   },
   "crest_neutral": {
@@ -637,7 +637,7 @@
    "slot": "hair",
    "tags": [],
    "tint": "fixed",
-   "tris": 120,
+   "tris": 100,
    "weld_to": "Head"
   },
   "hair_01": {
@@ -657,7 +657,7 @@
     "short"
    ],
    "tint": "hair",
-   "tris": 180,
+   "tris": 90,
    "weld_to": "Head"
   },
   "hair_02": {
@@ -677,7 +677,7 @@
     "curls"
    ],
    "tint": "hair",
-   "tris": 240,
+   "tris": 100,
    "weld_to": "Head"
   },
   "hair_03": {
@@ -697,7 +697,7 @@
     "long"
    ],
    "tint": "hair",
-   "tris": 260,
+   "tris": 100,
    "weld_to": "Head"
   },
   "hair_04": {
@@ -717,7 +717,7 @@
     "beard"
    ],
    "tint": "hair",
-   "tris": 90,
+   "tris": 40,
    "weld_to": "Head"
   },
   "hair_05": {
@@ -748,7 +748,7 @@
     "hood"
    ],
    "tint": "kingdom",
-   "tris": 200,
+   "tris": 90,
    "weld_to": "Head"
   },
   "hair_07": {
@@ -768,7 +768,7 @@
     "bun"
    ],
    "tint": "hair",
-   "tris": 220,
+   "tris": 100,
    "weld_to": "Head"
   },
   "hair_08": {
@@ -788,7 +788,7 @@
     "crop"
    ],
    "tint": "hair",
-   "tris": 120,
+   "tris": 60,
    "weld_to": "Head"
   },
   "hat_builder": {
@@ -806,7 +806,7 @@
    "slot": "hat",
    "tags": [],
    "tint": "fixed",
-   "tris": 110,
+   "tris": 60,
    "weld_to": "Head"
   },
   "hat_builder_visor": {
@@ -826,7 +826,7 @@
     "detail"
    ],
    "tint": "fixed",
-   "tris": 36,
+   "tris": 12,
    "weld_to": "hat_builder"
   },
   "hat_farmer": {
@@ -844,7 +844,7 @@
    "slot": "hat",
    "tags": [],
    "tint": "fixed",
-   "tris": 96,
+   "tris": 50,
    "weld_to": "Head"
   },
   "hat_farmer_crown": {
@@ -862,7 +862,7 @@
    "slot": "hat",
    "tags": [],
    "tint": "kingdom",
-   "tris": 64,
+   "tris": 30,
    "weld_to": "hat_farmer"
   },
   "hat_miner": {
@@ -880,7 +880,7 @@
    "slot": "hat",
    "tags": [],
    "tint": "fixed",
-   "tris": 110,
+   "tris": 60,
    "weld_to": "Head"
   },
   "hat_miner_lamp": {
@@ -900,7 +900,7 @@
     "detail"
    ],
    "tint": "fixed",
-   "tris": 24,
+   "tris": 12,
    "weld_to": "hat_miner"
   },
   "hat_woodcutter": {
@@ -918,7 +918,7 @@
    "slot": "hat",
    "tags": [],
    "tint": "fixed",
-   "tris": 140,
+   "tris": 60,
    "weld_to": "Head"
   },
   "head_01": {
@@ -938,7 +938,7 @@
     "face_1"
    ],
    "tint": "skin",
-   "tris": 320,
+   "tris": 150,
    "weld_to": null
   },
   "head_02": {
@@ -958,7 +958,7 @@
     "face_2"
    ],
    "tint": "skin",
-   "tris": 300,
+   "tris": 140,
    "weld_to": null
   },
   "head_03": {
@@ -978,7 +978,7 @@
     "face_3"
    ],
    "tint": "skin",
-   "tris": 340,
+   "tris": 170,
    "weld_to": null
   },
   "head_04": {
@@ -998,7 +998,7 @@
     "face_4"
    ],
    "tint": "skin",
-   "tris": 310,
+   "tris": 160,
    "weld_to": null
   },
   "head_helm": {
@@ -1018,7 +1018,7 @@
     "soldier"
    ],
    "tint": "fixed",
-   "tris": 160,
+   "tris": 80,
    "weld_to": null
   },
   "leg_mail": {
@@ -1037,7 +1037,7 @@
    "slot": "leg",
    "tags": [],
    "tint": "fixed",
-   "tris": 130,
+   "tris": 60,
    "weld_to": null
   },
   "leg_trousers": {
@@ -1056,7 +1056,7 @@
    "slot": "leg",
    "tags": [],
    "tint": "cloth",
-   "tris": 110,
+   "tris": 55,
    "weld_to": null
   },
   "sleeve_kingdom_l": {
@@ -1074,7 +1074,7 @@
    "slot": "sleeve",
    "tags": [],
    "tint": "kingdom",
-   "tris": 60,
+   "tris": 25,
    "weld_to": "LeftArm"
   },
   "sleeve_kingdom_r": {
@@ -1092,7 +1092,7 @@
    "slot": "sleeve",
    "tags": [],
    "tint": "kingdom",
-   "tris": 60,
+   "tris": 25,
    "weld_to": "RightArm"
   },
   "sleeve_l": {
@@ -1110,7 +1110,7 @@
    "slot": "sleeve",
    "tags": [],
    "tint": "cloth",
-   "tris": 60,
+   "tris": 25,
    "weld_to": "LeftArm"
   },
   "sleeve_r": {
@@ -1128,7 +1128,7 @@
    "slot": "sleeve",
    "tags": [],
    "tint": "cloth",
-   "tris": 60,
+   "tris": 25,
    "weld_to": "RightArm"
   },
   "tool_axe": {
@@ -1166,7 +1166,7 @@
     "detail"
    ],
    "tint": "fixed",
-   "tris": 60,
+   "tris": 50,
    "weld_to": "tool_axe"
   },
   "tool_bow": {
@@ -1184,7 +1184,7 @@
    "slot": "tool",
    "tags": [],
    "tint": "fixed",
-   "tris": 70,
+   "tris": 60,
    "weld_to": null
   },
   "tool_hammer": {
@@ -1213,7 +1213,7 @@
    ],
    "joint": "Tool",
    "size": [
-    1.2,
+    0.8,
     1.15,
     1.6
    ],
@@ -1222,7 +1222,7 @@
     "detail"
    ],
    "tint": "fixed",
-   "tris": 48,
+   "tris": 40,
    "weld_to": "tool_hammer"
   },
   "tool_hoe": {
@@ -1289,7 +1289,7 @@
    ],
    "joint": "Tool",
    "size": [
-    1.6,
+    0.9,
     0.5,
     1.6
    ],
@@ -1298,7 +1298,7 @@
     "detail"
    ],
    "tint": "fixed",
-   "tris": 60,
+   "tris": 50,
    "weld_to": "tool_pick"
   },
   "tool_sack": {
@@ -1316,7 +1316,7 @@
    "slot": "back",
    "tags": [],
    "tint": "fixed",
-   "tris": 180,
+   "tris": 100,
    "weld_to": null
   },
   "tool_sack_strap": {
@@ -1412,7 +1412,7 @@
    "slot": "tool",
    "tags": [],
    "tint": "fixed",
-   "tris": 60,
+   "tris": 40,
    "weld_to": null
   },
   "tool_staff_orb": {
@@ -1432,7 +1432,7 @@
     "detail"
    ],
    "tint": "fixed",
-   "tris": 80,
+   "tris": 60,
    "weld_to": "tool_staff"
   },
   "torso_01": {
@@ -1452,7 +1452,7 @@
     "tunic"
    ],
    "tint": "kingdom",
-   "tris": 220,
+   "tris": 130,
    "weld_to": null
   },
   "torso_02": {
@@ -1472,7 +1472,7 @@
     "apron"
    ],
    "tint": "cloth",
-   "tris": 240,
+   "tris": 140,
    "weld_to": null
   },
   "torso_03": {
@@ -1493,7 +1493,7 @@
    ],
    "tint": "kingdom",
    "tint_factor": 0.9,
-   "tris": 260,
+   "tris": 120,
    "weld_to": null
   },
   "torso_regal": {
@@ -1514,7 +1514,7 @@
    ],
    "tint": "kingdom",
    "tint_factor": 1.0,
-   "tris": 280,
+   "tris": 200,
    "weld_to": null
   }
  },

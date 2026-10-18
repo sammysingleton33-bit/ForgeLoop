@@ -18,7 +18,7 @@
 		CharacterMesh.plan(data, kind, job, kingdomColor, look?, kingdom?) -> (Plan?, string?)   -- pure: which pieces, why not
 		CharacterMesh.build(data, folder, kind, job, kingdomColor, look?, kingdom?) -> (Model?, string?)   -- folder = CitizenKit
 		CharacterMesh.missingPieces(data, folder?) -> { string }   -- piece ids absent or unusable in the CitizenKit folder
-		CharacterMesh.FOLDER_NAME ("CitizenKit"), SIZE_TOLERANCE (0.1), MAX_PIECES (16), MAX_TRIS (2000), MAX_MESH_TRIS (20000)
+		CharacterMesh.FOLDER_NAME ("CitizenKit"), SIZE_TOLERANCE (0.1), MAX_PIECES (16), BUDGET (triangles per style), MAX_MESH_TRIS (20000)
 
 	Rig data (rig.json shape, schema_version 1; CONTRACT in art/char_kit/rig_to_luau.py has the rules the converter checks)
 		joints   { [name] = { parent, pos = {x, y, z} } }  rest-pose pivots in rig axes (+X right, +Y up, -Z front, feet at 0).
@@ -38,8 +38,9 @@
 	Parts: Root (anchored, invisible, PivotOffset at the feet) + one MeshPart per piece. Base pieces are named after their
 	Motor6D ("Torso", "Head", "LeftArm", ...; "Tool"), the "hair" key's piece "Hair" (HairWeld, KitHeadwear), the "acc"
 	key's "Accessory" (AccessoryWeld, KitAccessory); other extras take their piece id (plus the joint for mirrored ones) and
-	a Weld named "PieceWeld". Every part: CanCollide/CanTouch/CanQuery false, Massless, SmoothPlastic, no texture (colour comes
-	from the vertex colours times MeshPart.Color); CollisionFidelity Box. Colour per piece `tint`:
+	a Weld named "PieceWeld". Every part: CanCollide/CanTouch/CanQuery false, Massless, SmoothPlastic (colour = the baked vertex colours
+	or palette texture, if any, times MeshPart.Color; TextureID and a SurfaceAppearance child are kept as imported, never
+	required); CollisionFidelity Box. Colour per piece `tint`:
 		skin   Character.LOOK_PALETTES.skin[look.skin]        hair   ...hairColor[look.hairColor]
 		kingdom shade(kingdomColor, f), attribute KitTint = f (so Kit.setKingdomColor recolours exactly); f = tint_factor
 		       or 0.8 (citizens, shifted per individual like the part-built outfits) / 1 (soldiers, governors); sleeves lighter
@@ -74,7 +75,9 @@ export type Plan = {
 	look: CitizenLook,
 	kingdomId: string,
 	crest: string?,
-	tris: number,
+	tris: number, -- all pieces
+	toolTris: number, -- the hand tool or sack and everything welded to it (joint Tool / TorsoTool)
+	bodyTris: number, -- the rest
 }
 export type Status = {
 	pieces: number,
@@ -91,7 +94,14 @@ export type Status = {
 CharacterMesh.FOLDER_NAME = "CitizenKit"
 CharacterMesh.SIZE_TOLERANCE = 0.1 -- studs per axis between an imported MeshPart.Size and the data (a unit or axis mistake is far bigger)
 CharacterMesh.MAX_PIECES = 16 -- D-057 (5): pieces (draw calls) per assembled rig
-CharacterMesh.MAX_TRIS = 2000 -- triangles per assembled rig
+-- THE triangle budget per assembled rig (D-057 amendment (9)); the specs and the converter read these numbers and nothing else.
+-- Citizens: 1,000 in all, of which the body (everything but the hand tool and its heads) <= 900 and the tool <= 150.
+-- Soldiers and rulers carry armour, a crest and a weapon: up to 1,500 in all.
+CharacterMesh.BUDGET = table.freeze({
+	citizen = table.freeze({ total = 1000, body = 900, tool = 150 }),
+	soldier = table.freeze({ total = 1500 }),
+	governor = table.freeze({ total = 1500 }),
+})
 CharacterMesh.MAX_MESH_TRIS = 20000 -- Roblox's per-mesh cap
 
 local JOINT_ORDER = { "Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg" }
@@ -578,9 +588,13 @@ function CharacterMesh.plan(
 		table.insert(order, item)
 	end
 
-	local tris = 0
+	local bodyTris, toolTris = 0, 0
 	for _, item in order do
-		tris += item.def.tris or 0
+		if TOOL_JOINTS[item.joint] then
+			toolTris += item.def.tris or 0
+		else
+			bodyTris += item.def.tris or 0
+		end
 	end
 	return {
 		items = order,
@@ -589,7 +603,9 @@ function CharacterMesh.plan(
 		look = l,
 		kingdomId = kingdomId,
 		crest = crest,
-		tris = tris,
+		tris = bodyTris + toolTris,
+		toolTris = toolTris,
+		bodyTris = bodyTris,
 	},
 		nil
 end
@@ -729,7 +745,11 @@ function CharacterMesh.build(
 		local def = item.def
 		local part = templates[item.id]:Clone()
 		for _, child in part:GetChildren() do
-			child:Destroy() -- nothing from the import rides along (SurfaceAppearance would override the vertex colours)
+			-- nothing from the import rides along but a SurfaceAppearance (a shared palette texture is allowed, never
+			-- required); scripts, attachments, constraints and the like go
+			if not child:IsA("SurfaceAppearance") then
+				child:Destroy()
+			end
 		end
 		local centre = vec(def.bbox_center) :: Vector3
 		part.Name = item.name
@@ -744,7 +764,6 @@ function CharacterMesh.build(
 		part.Transparency = 0
 		part.Reflectance = 0
 		part.Material = Enum.Material.SmoothPlastic
-		part.TextureID = ""
 		part.CollisionFidelity = Enum.CollisionFidelity.Box
 
 		local tint = def.tint

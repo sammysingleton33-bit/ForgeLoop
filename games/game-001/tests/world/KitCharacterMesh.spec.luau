@@ -330,7 +330,6 @@ for _, ds in datasets do
 							expect(p.ClassName).toBe("MeshPart")
 							expect(p.Transparency).toBe(0)
 							expect(p.Material).toBe(Enum.Material.SmoothPlastic)
-							expect(p.TextureID).toBe("")
 							expect(p.CollisionFidelity).toBe(Enum.CollisionFidelity.Box)
 							expect(p.Locked).toBe(true)
 							expect(p.Reflectance).toBe(0)
@@ -928,112 +927,151 @@ describe(
 	end
 )
 
+describe("mesh rig textures: a palette texture is allowed, never required", function()
+	it("keeps a piece's TextureID and SurfaceAppearance as imported, and strips everything else it carries", function()
+		local data = MeshKit.fixture()
+		local assets = MeshKit.assets(data)
+		local kit = assets.CitizenKit
+		for _, id in { "torso_01", "head_01", "head_02", "head_03", "head_04", "hair_01" } do
+			(kit[id] :: MeshPart).TextureID = "rbxassetid://424242" -- a shared palette atlas
+		end
+		local appearance = Instance.new("SurfaceAppearance")
+		appearance.Parent = kit.torso_01
+		for _, id in { "torso_01", "arm_l" } do
+			local script = Instance.new("Script")
+			script.Parent = kit[id]
+			Instance.new("Attachment").Parent = kit[id]
+		end
+		MeshKit.install(data, assets)
+		local rig = meshRig("citizen", "idle", AZURE, { skin = 1, hair = 1, hairColor = 1, outfit = 1 })
+		expect(rig.Torso.TextureID).toBe("rbxassetid://424242")
+		expect(rig.Torso:FindFirstChildWhichIsA("SurfaceAppearance")).never.toBeNil()
+		expect(rig.Torso:FindFirstChildWhichIsA("Script")).toBeNil()
+		expect(rig.Torso:FindFirstChildWhichIsA("Attachment")).toBeNil()
+		expect(rig.LeftArm:FindFirstChildWhichIsA("Script")).toBeNil()
+		-- the tint rules are the same with or without a texture: Color is still the only interface
+		expect(rig.Torso.Color:ToHex()).never.toBe("ffffff")
+		expect(rig.Torso:GetAttribute("KitTint")).never.toBeNil()
+		-- a textured and a plain piece sit together in one rig, and the plain kit builds as before
+		expect(rig.Head.TextureID).toBe("rbxassetid://424242")
+		MeshKit.install(data, MeshKit.assets(data))
+		expect(meshRig("citizen", "idle", AZURE):GetAttribute("KitMesh")).toBe(true)
+	end)
+end)
+
 -- ------------------------------------------------------------------ budgets (D-057 (5))
 
 for _, ds in datasets do
-	describe(
-		`mesh rig budgets ({ds.name}): <= 16 pieces, <= 2,000 triangles per citizen, <= 20,000 per mesh`,
-		function()
-			local data = ds.data
+	describe(`mesh rig budgets ({ds.name}): <= 16 pieces, the triangle budget, <= 20,000 per mesh`, function()
+		local data = ds.data
 
-			local function eachPlan(fn: (plan: any, label: string) -> ())
-				local r = Kit.LOOK_RANGES
-				local contexts = {}
-				-- (unknown jobs such as blacksmith build the idle assembly, covered by "idle")
-				for _, job in { "idle", "farmer", "woodcutter", "miner", "builder", "hauler" } do
-					table.insert(contexts, { "citizen", job, AZURE, nil })
-				end
-				for _, id in MeshKit.KINGDOM_IDS do
-					table.insert(contexts, { "soldier", "soldier", MeshKit.KINGDOM_COLORS[id], id })
-					table.insert(contexts, { "governor", "governor", MeshKit.KINGDOM_COLORS[id], id })
-				end
-				table.insert(contexts, { "soldier", "soldier", Kit.NEUTRAL_COLOR, nil })
-				table.insert(contexts, { "governor", "governor", Kit.NEUTRAL_COLOR, nil })
-				for skin = 1, r.skin do
-					for hair = 1, r.hair do
-						for hairColor = 1, r.hairColor do
-							for outfit = 1, r.outfit do
-								local look = { skin = skin, hair = hair, hairColor = hairColor, outfit = outfit }
-								for _, c in contexts do
-									local plan, why = CharacterMesh.plan(data, c[1], c[2], c[3], look, c[4])
-									if plan == nil then
-										error(`{c[1]}/{c[2]} {Kit.lookKey(look)}: {why}`)
-									end
-									fn(plan, `{c[1]}/{c[2]} {Kit.lookKey(look)} {c[4] or "-"}`)
+		local function eachPlan(fn: (plan: any, label: string) -> ())
+			local r = Kit.LOOK_RANGES
+			local contexts = {}
+			-- (unknown jobs such as blacksmith build the idle assembly, covered by "idle")
+			for _, job in { "idle", "farmer", "woodcutter", "miner", "builder", "hauler" } do
+				table.insert(contexts, { "citizen", job, AZURE, nil })
+			end
+			for _, id in MeshKit.KINGDOM_IDS do
+				table.insert(contexts, { "soldier", "soldier", MeshKit.KINGDOM_COLORS[id], id })
+				table.insert(contexts, { "governor", "governor", MeshKit.KINGDOM_COLORS[id], id })
+			end
+			table.insert(contexts, { "soldier", "soldier", Kit.NEUTRAL_COLOR, nil })
+			table.insert(contexts, { "governor", "governor", Kit.NEUTRAL_COLOR, nil })
+			for skin = 1, r.skin do
+				for hair = 1, r.hair do
+					for hairColor = 1, r.hairColor do
+						for outfit = 1, r.outfit do
+							local look = { skin = skin, hair = hair, hairColor = hairColor, outfit = outfit }
+							for _, c in contexts do
+								local plan, why = CharacterMesh.plan(data, c[1], c[2], c[3], look, c[4])
+								if plan == nil then
+									error(`{c[1]}/{c[2]} {Kit.lookKey(look)}: {why}`)
 								end
+								fn(plan, `{c[1]}/{c[2]} {Kit.lookKey(look)} {c[4] or "-"}`)
 							end
 						end
 					end
 				end
 			end
-
-			-- one pass over the whole look space (it costs seconds): the worst citizen found, and the first thing wrong
-			local scanned: any = nil
-			local function scan(): any
-				if scanned then
-					return scanned
-				end
-				local out = { plans = 0, pieces = 0, tris = 0, meshTris = 0, problem = nil :: string? }
-				eachPlan(function(plan, label)
-					out.plans += 1
-					if out.problem == nil then
-						if #plan.items > CharacterMesh.MAX_PIECES then
-							out.problem = `{label}: {#plan.items} pieces, the budget is {CharacterMesh.MAX_PIECES}`
-						elseif plan.tris > CharacterMesh.MAX_TRIS then
-							out.problem = `{label}: {plan.tris} triangles, the budget is {CharacterMesh.MAX_TRIS}`
-						end
-					end
-					out.pieces = math.max(out.pieces, #plan.items)
-					out.tris = math.max(out.tris, plan.tris)
-					for _, item in plan.items do
-						if
-							out.problem == nil and (item.def.tris > CharacterMesh.MAX_MESH_TRIS or item.def.tris < 1)
-						then
-							out.problem = `{label}: {item.id} has {item.def.tris} triangles (Roblox's cap is 20,000)`
-						end
-						out.meshTris = math.max(out.meshTris, item.def.tris)
-					end
-				end)
-				scanned = out
-				return out
-			end
-
-			it("resolves every assembly for all 1,728 looks, in every kingdom", function()
-				expect(scan().plans).toBe(1728 * 16) -- 6 citizen jobs, soldiers and governors in 4 kingdoms and neutral
-			end)
-
-			it("keeps every citizen within 16 pieces and 2,000 triangles, every mesh under 20,000", function()
-				local result = scan()
-				if result.problem then
-					error(result.problem)
-				end
-				expect(result.pieces).toBeGreaterThanOrEqual(7)
-				expect(result.tris).toBeGreaterThan(0)
-				expect(result.meshTris).toBeLessThanOrEqual(20000)
-				expect(CharacterMesh.MAX_PIECES).toBe(16) -- D-057 (5), pinned here on purpose
-				expect(CharacterMesh.MAX_TRIS).toBe(2000)
-				expect(CharacterMesh.MAX_MESH_TRIS).toBe(20000)
-			end)
-
-			it("adds up what a built rig holds: a plan's triangles are the pieces' declared triangles", function()
-				MeshKit.install(data, MeshKit.assets(data))
-				for _, c in MeshKit.cases() do
-					local plan = CharacterMesh.plan(data, c.kind, c.job, c.color, c.look, c.kingdom) :: any
-					local rig = meshRig(c.kind, c.job, c.color, c.look, c.kingdom)
-					local tris, n = 0, 0
-					for _, p in MeshKit.parts(rig) do
-						if p ~= rig.PrimaryPart then
-							n += 1
-							tris += data.pieces[p:GetAttribute("KitPiece")].tris
-						end
-					end
-					expect(n).toBe(#plan.items)
-					expect(tris).toBe(plan.tris)
-					expect(plan.assembly).toBe(rig:GetAttribute("KitAssembly"))
-				end
-			end)
 		end
-	)
+
+		-- one pass over the whole look space (it costs seconds): the worst citizen found, and the first thing wrong
+		local scanned: any = nil
+		local function scan(): any
+			if scanned then
+				return scanned
+			end
+			local out = { plans = 0, pieces = 0, tris = 0, meshTris = 0, problem = nil :: string? }
+			eachPlan(function(plan, label)
+				out.plans += 1
+				if out.problem == nil then
+					local limits = CharacterMesh.BUDGET[plan.style]
+					if #plan.items > CharacterMesh.MAX_PIECES then
+						out.problem = `{label}: {#plan.items} pieces, the budget is {CharacterMesh.MAX_PIECES}`
+					elseif plan.tris > limits.total then
+						out.problem = `{label}: {plan.tris} triangles, the {plan.style} budget is {limits.total}`
+					elseif limits.body and plan.bodyTris > limits.body then
+						out.problem =
+							`{label}: {plan.bodyTris} body triangles, the {plan.style} budget is {limits.body}`
+					elseif limits.tool and plan.toolTris > limits.tool then
+						out.problem =
+							`{label}: {plan.toolTris} tool triangles, the {plan.style} budget is {limits.tool}`
+					end
+				end
+				out.pieces = math.max(out.pieces, #plan.items)
+				out.tris = math.max(out.tris, plan.tris)
+				for _, item in plan.items do
+					if out.problem == nil and (item.def.tris > CharacterMesh.MAX_MESH_TRIS or item.def.tris < 1) then
+						out.problem = `{label}: {item.id} has {item.def.tris} triangles (Roblox's cap is 20,000)`
+					end
+					out.meshTris = math.max(out.meshTris, item.def.tris)
+				end
+			end)
+			scanned = out
+			return out
+		end
+
+		it("resolves every assembly for all 1,728 looks, in every kingdom", function()
+			expect(scan().plans).toBe(1728 * 16) -- 6 citizen jobs, soldiers and governors in 4 kingdoms and neutral
+		end)
+
+		it("keeps every rig within 16 pieces and its triangle budget, every mesh under 20,000", function()
+			local result = scan()
+			if result.problem then
+				error(result.problem)
+			end
+			expect(result.pieces).toBeGreaterThanOrEqual(7)
+			expect(result.tris).toBeGreaterThan(0)
+			expect(result.meshTris).toBeLessThanOrEqual(20000)
+			expect(CharacterMesh.MAX_PIECES).toBe(16) -- D-057 (5), pinned here on purpose
+			-- D-057 amendment (9): citizens 1,000 (body 900, tool 150), soldiers and rulers up to 1,500. The ONE place to change.
+			expect(CharacterMesh.BUDGET.citizen).toEqual({ total = 1000, body = 900, tool = 150 })
+			expect(CharacterMesh.BUDGET.soldier).toEqual({ total = 1500 })
+			expect(CharacterMesh.BUDGET.governor).toEqual({ total = 1500 })
+			expect(CharacterMesh.MAX_MESH_TRIS).toBe(20000)
+		end)
+
+		it("adds up what a built rig holds: a plan's triangles are the pieces' declared triangles", function()
+			MeshKit.install(data, MeshKit.assets(data))
+			for _, c in MeshKit.cases() do
+				local plan = CharacterMesh.plan(data, c.kind, c.job, c.color, c.look, c.kingdom) :: any
+				local rig = meshRig(c.kind, c.job, c.color, c.look, c.kingdom)
+				local tris, n = 0, 0
+				for _, p in MeshKit.parts(rig) do
+					if p ~= rig.PrimaryPart then
+						n += 1
+						tris += data.pieces[p:GetAttribute("KitPiece")].tris
+					end
+				end
+				expect(n).toBe(#plan.items)
+				expect(tris).toBe(plan.tris)
+				expect(plan.bodyTris + plan.toolTris).toBe(plan.tris)
+				expect(plan.toolTris > 0).toBe(rig:FindFirstChild("Tool") ~= nil)
+				expect(plan.assembly).toBe(rig:GetAttribute("KitAssembly"))
+			end
+		end)
+	end)
 end
 
 describe("mesh rig budgets bite: plans report what a rig really holds", function()
@@ -1044,7 +1082,9 @@ describe("mesh rig budgets bite: plans report what a rig really holds", function
 		data.pieces.torso_01.tris += 1800
 		local after = CharacterMesh.plan(data, "citizen", "idle", AZURE, look) :: any
 		expect(after.tris).toBe(before.tris + 1800)
-		expect(after.tris).toBeGreaterThan(CharacterMesh.MAX_TRIS)
+		expect(after.tris).toBeGreaterThan(CharacterMesh.BUDGET.citizen.total)
+		expect(after.bodyTris).toBe(before.bodyTris + 1800) -- a torso is body, not tool
+		expect(after.toolTris).toBe(before.toolTris)
 		local crowded = MeshKit.fixture()
 		crowded.assemblies.idle.more =
 			{ "hair_01", "hair_02", "hair_03", "hair_04", "hair_06", "hair_07", "hair_08", "acc_01", "acc_02" }
