@@ -3,15 +3,16 @@ id: FL-0077
 title: Decide Crown Arena open points (format, champion, what the duel decides, support strength)
 track: design
 owner: user
-status: READY
+status: ACCEPTED
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-18
 depends_on: []
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 0.5
-evidence: []
+evidence:
+  - DECISIONS.md D-053 (3)
 ---
 
 # Decide Crown Arena open points (format, champion, what the duel decides, support strength)
@@ -36,3 +37,4 @@ The decision is recorded in DECISIONS.md and CONTRACTS G12 by FORGE-00.
 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (READY).
+- 2026-10-18 forge-00: READY → ACCEPTED. Resolved by D-053 (3): crown-arena.md §11 defaults apply per the owner's 2026-10-18 directive; the owner may revise after a Studio feel test
