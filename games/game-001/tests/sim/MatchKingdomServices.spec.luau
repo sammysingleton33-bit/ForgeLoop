@@ -63,7 +63,7 @@ local useAdapter
 -- Returns env, MatchService, KingdomService and the spawn adapter's log.
 local function boot(options: any?)
 	local opts = options or {}
-	MatchConfig.mode = opts.mode or savedMode
+	MatchConfig.mode = opts.mode or "slice" -- the specs that do not say are the VS-1 slice ones; the config default is "match" (D-053)
 	local env = MockEnv.new({
 		seed = 5,
 		sharedModules = { Remotes = { Kingdom = KingdomRemotes, Match = MatchRemotes, Treasury = TreasuryRemotes } },
@@ -234,29 +234,32 @@ afterEach(function()
 end)
 
 describe("MatchService (G3, G11)", function()
-	it("slice mode (the VS-1 default): Founding starts with the first join and is untimed", function()
-		local env, match = boot()
-		expect(match.mode).toBe("slice")
-		expect(match.durationsSource).toBe("defaults")
-		expect(match:getPhase()).toBe("Lobby")
-		local changes, contract = {}, {}
-		match.phaseChanged:connect(function(phase, info)
-			table.insert(changes, { phase, info.endsAt or false })
-		end)
-		GameEvents.MatchPhaseChanged:connect(function(phase)
-			table.insert(contract, phase)
-		end)
-		env.mock:advance(30)
-		expect(match:getPhase()).toBe("Lobby") -- nobody here
-		env.mock.players:add({ userId = 1 })
-		env.mock:advance(TICK)
-		expect(match:getPhase()).toBe("Founding")
-		expect(match:getEndsAt()).toBeNil()
-		env.mock:advance(600)
-		expect(match:getPhase()).toBe("Founding")
-		expect(changes).toEqual({ { "Founding", false } })
-		expect(contract).toEqual({ "Founding" })
-	end)
+	it(
+		"slice mode (the VS-1 slice, a debug command away since D-053): Founding starts with the first join and is untimed",
+		function()
+			local env, match = boot()
+			expect(match.mode).toBe("slice")
+			expect(match.durationsSource).toBe("defaults")
+			expect(match:getPhase()).toBe("Lobby")
+			local changes, contract = {}, {}
+			match.phaseChanged:connect(function(phase, info)
+				table.insert(changes, { phase, info.endsAt or false })
+			end)
+			GameEvents.MatchPhaseChanged:connect(function(phase)
+				table.insert(contract, phase)
+			end)
+			env.mock:advance(30)
+			expect(match:getPhase()).toBe("Lobby") -- nobody here
+			env.mock.players:add({ userId = 1 })
+			env.mock:advance(TICK)
+			expect(match:getPhase()).toBe("Founding")
+			expect(match:getEndsAt()).toBeNil()
+			env.mock:advance(600)
+			expect(match:getPhase()).toBe("Founding")
+			expect(changes).toEqual({ { "Founding", false } })
+			expect(contract).toEqual({ "Founding" })
+		end
+	)
 
 	it("match mode: counts down in the Lobby, then Founding with a deadline", function()
 		local env, match = boot({ mode = "match" })

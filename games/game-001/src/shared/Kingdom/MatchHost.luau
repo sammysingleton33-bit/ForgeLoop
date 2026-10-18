@@ -39,6 +39,9 @@
 		                                              change, and to each arriving player
 		Match.Ended({ winner?, standings, durationSec }) to everyone when the match (or the slice) ends, and
 		                                              to each player who arrives while Results is on
+		Match.Spectate(spectating, info?) to a ruler whose kingdom has fallen, to a player who arrives as a
+		                                              spectator, and (false) when a spectator is seated again
+		                                              (Match/Remotes.luau; D-053 (3))
 		startedAtServerTime: server time Founding began (sim time 0); in the Lobby, when the Lobby opened.
 	GameEvents (CONTRACTS G9, framework bus), each exactly once:
 		MatchPhaseChanged(phase) · KingdomEliminated(kingdomId, by?) · MatchEnded({ winner?, standings,
@@ -98,6 +101,7 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 	self._clock = 0 -- host time (the sum of the steps), the clamp's time base
 	self._accepted = {} :: { [number]: { x: number, z: number, t: number } } -- the last position the sim was given
 	self._snap = {} :: { [number]: boolean } -- take the next sample as it is (server-side teleports)
+	self._spectating = {} :: { [number]: boolean } -- players told Match.Spectate(true) and not seated since
 	self._rulerMaxSpeed = opts.rulerMaxSpeed or MatchConfig.rulerMaxSpeed
 	self._startedAtServerTime = env.serverTimeNow()
 	self.preferredKingdom = nil :: ((player: any) -> string?)?
@@ -205,6 +209,9 @@ function MatchHost:_onPlayerAdded(player: any)
 	local info = self:phaseInfo()
 	self._remotes:fire("Match.State", player, info.phase, info.endsAtServerTime, info.startedAtServerTime)
 	self._remotes:fire("Kingdom.State", player, self:kingdomsState(player))
+	if not ok then
+		self:_sendSpectate(player, result)
+	end
 	if self._ended then -- set by MatchEnded, cleared when Results ends
 		self._remotes:fire("Match.Ended", player, MatchHost.endedPayload(self._ended)) -- what a late joiner missed
 	end
@@ -212,6 +219,26 @@ end
 
 function MatchHost:_onPlayerRemoving(player: any)
 	self.match:leave(player.UserId)
+	self._spectating[player.UserId] = nil
+end
+
+-- Match.Spectate(true, info) to a player who watches instead of ruling; `reason` is "eliminated" or "match_full".
+function MatchHost:_sendSpectate(player: any, reason: string)
+	local fallen = self.match:spectatorOf(player.UserId)
+	local standing = {}
+	local sim = self.match.sim
+	for _, kid in sim.kingdomOrder do
+		if sim.kingdoms[kid].alive then
+			table.insert(standing, kid)
+		end
+	end
+	self._spectating[player.UserId] = true
+	self._remotes:fire("Match.Spectate", player, true, {
+		reason = reason,
+		kingdomId = if fallen then fallen.kingdomId else nil,
+		by = if fallen then fallen.by else nil,
+		standing = standing,
+	})
 end
 
 -- ---------------------------------------------------------------- kingdom views (G2)
@@ -419,6 +446,14 @@ function MatchHost:_handleEvent(event: any)
 		self._membershipChanged = true
 	elseif name == "CountdownChanged" then
 		self:_broadcastPhase()
+	elseif name == "RulerEliminated" then
+		-- the ruler's kingdom has fallen: no team, no commands; they spectate the rest of the match (D-053 (3))
+		local player = self:_player(event.userId)
+		if player then
+			self:assignTeam(player)
+			self:_sendSpectate(player, "eliminated")
+		end
+		self._membershipChanged = true
 	elseif name == "MatchEnded" then
 		self._ended = MatchHost.endedPayload(event) -- for players who arrive during Results
 		self._remotes:fireAll("Match.Ended", MatchHost.endedPayload(event))
@@ -430,12 +465,16 @@ function MatchHost:_handleEvent(event: any)
 		if event.phase ~= "Results" then
 			self._ended = nil
 		end
-		if event.previous == "Results" then
-			-- a fresh world was created for the next match: rebuild the view and re-team everyone
+		if event.previous == "Results" or event.newWorld then
+			-- a fresh world was created (the next match, or a restart): rebuild the view and re-team everyone
 			self:_destroyWorld()
 			self:_buildWorld()
 			for _, player in self._env.Players:GetPlayers() do
 				self:assignTeam(player)
+				if self._spectating[player.UserId] and self.match:kingdomOf(player.UserId) ~= nil then
+					self._spectating[player.UserId] = nil
+					self._remotes:fire("Match.Spectate", player, false)
+				end
 			end
 			self._membershipChanged = true
 		end

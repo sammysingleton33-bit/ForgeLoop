@@ -3,7 +3,7 @@ id: FL-0125
 title: "Full four-kingdom match by default: match mode, PvP from Conflict, active AI governors, elimination and spectate (D-053 (1)-(3))"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-18
@@ -38,3 +38,4 @@ Automated: the full-match spec, specs for elimination and spectate, mid-match jo
 
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
+- 2026-10-18 forge-01: READY → BUILDING. Operation Crownfall mission 1 started on forge/01-gameplay-full-match (main 41422654); reading Match/Pacing/Governor/MatchService first

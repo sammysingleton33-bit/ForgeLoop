@@ -366,6 +366,18 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			then
 				return "Recruit:" .. kind
 			end
+			-- the bunks cap the army, and war needs one (army >= 6): when they are all that holds it back, build
+			-- more room (a barracks upgrade adds four bunks per level)
+			if
+				army + training < target
+				and army + training + 2 > Military.recruitCap(sim, kingdom)
+				and not hasSite(sim, kingdom, "barracks")
+			then
+				local issued = tryUpgrade(sim, kingdom, "barracks", 4)
+				if issued then
+					return issued
+				end
+			end
 		end
 		if sim:keepLevel(kingdom) >= 2 and count(sim, kingdom, "watchtower", true) < 2 then
 			local issued = place(sim, kingdom, "watchtower")
