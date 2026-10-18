@@ -1,6 +1,6 @@
 # FORGE-07 baseline audit: the full-match surface (FL-0132)
 
-Date 2026-10-18. Main 4142265 (Operation Crownfall, D-053); updated the same day for D-054 and its amendment (6)(7), for FORGE-05's probe baseline (#181) and for D-055 (1) to (5). **Evidence: a static read of the code on main. Nothing was run (my sandbox does not run repo scripts) and there is no Studio evidence.** Each item cites the lines I read, so anyone can check it. This file is the baseline the FL-0125, FL-0126 and arena PR reviews are measured against; it is updated as those PRs open.
+Date 2026-10-18. Main 4142265 (Operation Crownfall, D-053); updated the same day for D-054 and its amendment (6)(7), for FORGE-05's probe baseline (#181) and for D-055 (1) to (5). **Evidence: a static read of the code on main for sections 2 to 6 (nothing run there). Section 7 (added the same night) records the PR reviews, for which I built Lune 0.11.0 with cargo and reproduced findings headlessly on scratch worktrees; I still cannot run `check.sh` (no rojo, selene or stylua). There is no Studio evidence.** Each item cites the lines I read, so anyone can check it. This file is the baseline the FL-0125, FL-0126 and arena PR reviews are measured against; it is updated as those PRs open.
 
 ## 1. Owed re-reviews (done 2026-10-18, COMMENT reviews on each PR head)
 | PR | Verdict | Next action |
@@ -8,7 +8,7 @@ Date 2026-10-18. Main 4142265 (Operation Crownfall, D-053); updated the same day
 | #176 FL-0058 economy.md: ruler caps are enforced | READY TO MERGE (6887821) | FORGE-05; merge #177 before or with it (it cites #177) |
 | #177 FL-0061 PACING slice income targets | READY TO MERGE (906dc2f) | FORGE-05 |
 | #118 Specs: bad-argument lists really try nil | CHANGES REQUESTED, mechanical (b2c2bbb) | `docs/lessons-learned/gameplay.md` add/add conflict: take main's file and append the PR's last two bullets. The seven nil loops are still on main and every nil case returns `invalid_args` on today's validators |
-| #90 FL-0013 Blender pipeline | CHANGES REQUESTED, mechanical (81f129e) | `agents/forge-02/STATUS.md` conflict: take main's #172 version. My M1 (no Blender job in `ci.yml`) and M2 (36 of 38 manifest previews not committed) stay open as tracked follow-ups |
+| #90 FL-0013 Blender pipeline | READY TO MERGE (ad1cfe00; was CHANGES REQUESTED at 81f129e) | Conflict gone (head merges main), M2 answered with a non-fatal WARN (209 uncommitted per-asset previews) and L2 documented. My M1 (no Blender job in `ci.yml`) stays open as FORGE-05's tracked follow-up |
 
 ## 2. Client-to-server surface on main (what the Crownfall PRs extend)
 | Remote | Validation and limit (as declared) | Authority path |
@@ -81,6 +81,7 @@ Every command passes `Commands.executeFor`, which refuses an inactive sim (`matc
 27. Outposts grant territory: an outpost placed in neutral land must not let a kingdom wall in a rival's plot or an objective; a fallen outpost must give the territory back cleanly.
 28. Towers that shoot: target selection uses `atWar` only, never hits peace-time kingdoms or own units, and the per-tick cost is bounded at peak entities.
 29. Walls and the navigation graph: a closed wall must not leave citizens or armies with no path and spin the pathfinder every tick.
+46. Siege viability (FORGE-00's addition to FL-0126, cc1493e5, from my #187 numbers): the probe must show at least one kingdom falling in a typical AI-only match without a snowball before Conflict, and the numbers are in the PR. Check: more than one seed (a single seed is an anecdote), the sim time of each fall against the phase times, that the fall comes from the governors' assault logic and config (keep HP, ram output) and not from a degenerate value, that a walled and defended keep still holds, and that peak rigs and p99 stay inside D-055 after the change (the tuning must not buy wars with the entity or tick budget).
 
 **Arena PRs (FL-0069 to FL-0071)**
 30. `DuelModel` is pure and deterministic; a duel has a hard time cap and a defined result for a draw; a disconnect or an eliminated champion resolves the duel instead of stalling it.
@@ -89,4 +90,37 @@ Every command passes `Commands.executeFor`, which refuses an inactive sim (`matc
 33. Every new remote: declared argument validation, a rate limit, a server-side authority check, and `kingdom_eliminated` / spectator refusal.
 
 ## 6. What is not covered
-No Studio run and no local test run exist for any item above. FORGE-05's test merge and the owner's Studio session remain the only runs. This audit will be re-issued with verdicts per PR as the Crownfall PRs open.
+No Studio run exists for any item above, and no local `check.sh` run. Sections 2 to 5 are static reads; section 7 adds headless Lune reproductions. FORGE-05's test merge and the owner's Studio session remain the gates that matter.
+
+## 7. PR reviews so far (2026-10-18 night; each is a COMMENT review on the PR head named)
+Evidence labels: `headless` = Lune 0.11.0 built locally or the CI log; `render` = I opened the image; no `Studio (user)` for any of it.
+
+### FL-0125 PR 1, #187 (ebd32fca): CHANGES REQUESTED
+| Checklist item | Result |
+|---|---|
+| 1 defaults flipped, slice reachable, war after the phase jump | holds: `match.mode` command (Studio only), `debugSetPhase` moves `graceSeconds`, specs for both. **B1: CI red**, `tests/experience/ConversationAnalytics.spec:119` still boots the default mode (FORGE-04's file; needs the slice pin; reproduced FAIL, then PASS with the pin) |
+| 2 elimination in a conversation, 3 in a riot, 4 same tick, 5 command in the tick the keep falls | holds: each has a spec that passes in CI; draw = no winner, one `MatchEnded`; the client `SummaryModel` guards a nil winner |
+| 6 `Match.Spectate`, no rights, no way back, reset | holds for the eliminated. **M1: a `match_full` watcher is never seated in the next match** (`Match.luau:771-777` re-joins only `self.players`; `MatchHost.luau:470-478`; `choose` refuses `not_in_match`); reproduced: 14 seated, 2 seats free, user 100 unseated |
+| 7 governors inside the tick budget, `assistHumans` | tick budget: headless CI runner, sim step only: peak 286 rigs, p99 2.70 ms, median 1.43 ms, worst 16.68 ms (103 of 43,521 ticks over 6 ms). `assistHumans = false` not re-checked |
+| 8 full-match spec | holds: asserts the match ends once, reports ms and rigs apart from buildings, says headless. **L2: no kingdom fell in 2,750 s** (3 wars, 532 kills, 0 fallen), so conquest is exercised only by forced `Military.eliminate`; FORGE-00 turned this into FL-0126's siege-viability requirement (item 46) |
+| 9 arena hooks | holds: timeout (`arenaMaxSeconds`), decline/error/no host fall back to points, `cancelArena` on conquest and phase jump, `arenaEnded` is a service method (no remote). **L1: a host that calls `arenaEnded` inside `beginArena` is lost and Endgame is held 601 s** (`Match.luau:710-714`) |
+| 34 caps, 35 `army_cap` | births stop at `maxPerKingdom` with beds to spare, `army_cap` before `recruit_cap` and nothing charged, governors respect both (specs). Not checked: immigration, `Sim:populate`, takeover and presets as other add paths. `army_cap` text: #182 merged |
+| 38 Endgame spike | PR claims the cause (empty placement searches, now 60 s rest); CI p99 is 2.70 ms; the remaining slow ticks are 103 over 6 ms. Studio/private-server gate open |
+| CI | `roblox` job 13 m 58 s against `timeout-minutes: 15` (M2 for FORGE-05; #186 raises it to 25) |
+Mutation rows (`FL-0125.py`, 34 rows): started locally; result not recorded here until it finishes.
+
+### The rest of the night's queue
+| PR | Verdict | One line |
+|---|---|---|
+| #186 (c648a1f6) | READY | spec-count guard in (my M1), timeout 25 |
+| #189 (db17aa0d) | CHANGES REQUESTED | M1 spectate restarts in Results (Kingdom.State re-activates it; a late joiner gets State(Results) then Spectate(true)); reproduced; L1 pin the Sim.Focus shape (items 40 to 45 owed to FORGE-01's server PR; item 45 client side holds) |
+| #185 (9a52cdcc) | READY | pauses in Results/Lobby, modal layer for a real spectator (my L1, L2); new low: spectators lose the phase bar |
+| #188 (61534fd9) | READY | open asks on the Rivals rows; `diplomacy.asks` shape pinned in a handoff for FORGE-01's PR 2 |
+| #184 (014b157b) | READY | three outposts; merged with #187 the FullMatch result is identical (43,521 ticks, 3 wars, 532 kills, 0 fallen) |
+| #190 (8325f1c2) | READY | content lint; shipped-content lint output identical except the row suffix |
+| #191 (45edbb28) | READY | duel input, client only; owed on FL-0071: `Arena.Action` validation, block expiry on the server, quiet refusal outside the duel |
+| #192 (059448b2) | READY | "Your reign" recap; low: no spec for a fallen ruler's recap |
+| #90 (ad1cfe00) | READY TO MERGE | see section 1 |
+
+### Still owed
+FORGE-01's diplomacy PR 2 (items 18 to 25, with FORGE-03's `asks` shape), the `Sim.Focus` server PR (40 to 45), the interest tiers PR (36, 37), FL-0126 (26 to 29, 46), the arena PRs FL-0069 to FL-0071 (30 to 33, plus the arena server items on #191), FORGE-05's baseline 2.
