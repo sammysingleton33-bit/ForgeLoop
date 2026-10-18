@@ -294,7 +294,7 @@ Before #140 the building panel shows no Move: expected.
    "N fighting" in red), then the standing keeps. Tap a row: the camera goes there and the row is
    framed in gold. Prev / Next (and FORGE-04's keys . , / R1 L1) move along the list; the frame follows.
    New battles appear in the list within a second or two.
-3. Leave asks "Leave this server?" with Leave / Cancel; Cancel keeps watching; Leave disconnects you
+3. Leave asks "Leave the match?" with Leave / Cancel; Cancel keeps watching; Leave disconnects you
    with "You left the match. Thanks for playing AI Kingdoms!".
 4. A full server (all kingdoms full): the card says "This match is full" / "Watch now. You can rule in
    the next match".

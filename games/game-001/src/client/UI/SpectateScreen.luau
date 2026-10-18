@@ -7,7 +7,7 @@
 		WatchPanel     left, under the top-left stack: "Watching", Prev / Next (the camera's cycle),
 		               one row per camera target ("Target_<i>", attribute `selected`; a tap selects
 		               it), and Leave at the bottom. Without targets: "Nothing to watch yet".
-	Leave asks first: the card's (or panel's) buttons turn into "Leave this server?" Leave / Cancel.
+	Leave asks first: the card's (or panel's) buttons turn into "Leave the match?" Leave / Cancel.
 	Phones (667 × 375): the card and the panel take turns (the card first), so neither covers the
 	other; the panel is 224 wide. Tablet/desktop: both can show; the panel is 300 wide.
 
@@ -130,7 +130,7 @@ local function card(model: any, m: any, state: any, ui: any): Frame
 		label(model.standing, 12, "textMuted", Enum.FontWeight.SemiBold, 4, "Standing").Parent = frame
 	end
 	if state.confirmLeave then
-		label("Leave this server? You can join another match.", 12, "textPrimary", Enum.FontWeight.Bold, 5, "Question").Parent =
+		label("Leave the match? You can join another one.", 12, "textPrimary", Enum.FontWeight.Bold, 5, "Question").Parent =
 			frame
 	end
 	buttonRow(state, ui, 6, true).Parent = frame
@@ -285,7 +285,7 @@ local function panel(model: any, m: any, state: any, ui: any): Frame
 		Parent = frame,
 	}, { List = Style.list("y", 4, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Bottom) })
 	if state.confirmLeave then
-		label("Leave this server?", 12, "textPrimary", Enum.FontWeight.Bold, 1, "Question").Parent = foot
+		label("Leave the match?", 12, "textPrimary", Enum.FontWeight.Bold, 1, "Question").Parent = foot
 	end
 	buttonRow(state, ui, 2, false).Parent = foot
 	return frame

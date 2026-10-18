@@ -194,6 +194,9 @@ function KingdomHudSpectateController:cancelLeave()
 	self:render()
 end
 
+-- Leaving is irreversible, so it only runs after the "Leave the match?" confirm. Roblox has no client
+-- "leave" call: a kick with a goodbye (FORGE-00, 2026-10-18). When a lobby place exists (persistence,
+-- B23) this becomes a TeleportService return to the lobby; this is the one function to change.
 function KingdomHudSpectateController:confirmLeave()
 	local player = self._env.Players.LocalPlayer
 	if player ~= nil then
