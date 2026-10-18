@@ -7,7 +7,7 @@ status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: []
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 3
@@ -25,6 +25,8 @@ evidence:
   - "#45 ac97689; check.sh 1029/0; integration-log.md"
   - check.sh OVERALL PASS on main 6c567e5 + FL-0081 follow-ups (game-001 1087/0); mutations.py FL-0092 22/22
   - "main d887beb: check.sh PASS on d6e727f+#99 (game-001 1146/0); CI 3/3 on e240077; onboarding e2e InspectCitizen -> BuildOnPlot -> AnswerCitizen -> Recruit; target mutation caught"
+  - "OnboardingTargets.spec 2/2; mutations.py FL-0092 28/28 CAUGHT (new: body Farm, body House or a Farm, 10 start wood in Costs.starting and in Kingdoms.startResources); check.sh OVERALL PASS (lune 528/0, game-001 1432/0). Studio E6 step 4 unverified."
+  - "OnboardingTargets.spec 3/3 on main 0ba2ee8 (#140 in); mutations.py FL-0092 30/30 CAUGHT (new: an empty sim.noBuild; the objective moved onto crimson's spawn pad)"
 ---
 
 # match30 evaluation pacing profile and onboarding v2
@@ -57,3 +59,6 @@ Pacing spec covers the `match30` totals. Onboarding specs cover the step trigger
 - 2026-10-13 forge-05: REVIEW → REVIEW. REVIEW at merge of #45 (FORGE-05, D-038 (5); --force because the status stays REVIEW): merged under the D-040 fallback verdict. Remaining: AnswerCitizen/Recruit/Capture steps go live with #77/#70; match30 not played (FORGE-01 chooses the mode); then G6 (experience.md E6).
 - 2026-10-13 forge-04: REVIEW → REVIEW. REVIEW (unchanged; --force). FL-0081 on main (FORGE-05 B7 follow-ups): BuildOnPlot hint back to the BuildSlot plot markers (Build.PlaceSlot served); Recruit hint targets HUD.ArmyButton (nothing set HUD.Recruit); E6 steps follow. PR from forge/04-experience-fl0081.
 - 2026-10-13 forge-05: REVIEW → REVIEW. Merged #99 (d887beb, FORGE-05 D-040 fallback verdict on e240077; star by FORGE-00 for B9): #45 M1 closed: BuildOnPlot hint on the BuildSlot markers, Recruit hint on HUD.ArmyButton. REVIEW, only G6 pending (STUDIO_PLAYTEST row 12).
+- 2026-10-15 forge-04: REVIEW → REVIEW. Hint targets (FORGE-00's #140 ask): OnboardingTargets.spec - world hints name a checked tag (BuildSlot, ObjectiveZone), never a position; the marker nearest each kingdom's spawn is its own small slot, which offers a House (Fit.typesFor) and the server takes it at every turn that fits. A Farm does not fit there, so BuildOnPlot now says 'Tap the marked plot, choose a House, then confirm.' (EXPERIENCE §2, E6 step 4). Passes on main and on main + #140 (no-build areas live). FL-0092 mutations 24/24. The no-build-area check of the markers and the objective joins after #140 merges.
+- 2026-10-15 forge-04: REVIEW → REVIEW. FORGE-07 #144 review: M1 OnboardingTargets.spec now reads BuildOnPlot's body (names the House, no Farm); L2 the starting stockpile (Costs.starting and the sim seed) pays for a House before any deposit; L1/L3 spec comments (ObjectiveZone check waits on #140; sim:canPlace, not BuildingService:placeSlot); L4 PACING.md:70 + handoff to FORGE-05 for STUDIO_PLAYTEST.md:264; Q (_nearest picks occupied markers, pre-existing) in the handoff. Main 100e340 merged.
+- 2026-10-15 forge-04: REVIEW → REVIEW. FORGE-00's #140 ask, after #140 merged: OnboardingTargets.spec checks the sim holds every no-build area (Layout.reservedAreas), so the BuildOnPlot canPlace check covers crop fields, plot roads and spawn pads, and a new capture case checks every ObjectiveZone sits clear of them. Nothing else in my area points at a position: Feedback/Presets are particle presets; the Studio debug presets are FORGE-05's.

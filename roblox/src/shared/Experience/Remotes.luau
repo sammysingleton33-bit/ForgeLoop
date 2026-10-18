@@ -6,7 +6,7 @@
 
 	| Remote                       | Kind        | Payload |
 	| Experience.Settings          | serverEvent | (settings: { [key]: value }) — on profile load and after every change |
-	| Experience.SetSetting        | event       | (key: SETTING_KEYS, value: boolean | number 0..1 | string) — client sends on release, not per slider tick |
+	| Experience.SetSetting        | event       | (key: SETTING_KEYS, value: boolean | number 0..1 | string) — SettingsController coalesces taps: one per key once it has been still for 0.3 s (SEND_DELAY_SEC) |
 	| Experience.OnboardingState   | serverEvent | (state: OnboardingState) — Experience/Onboarding.snapshot() |
 	| Experience.OnboardingAction  | event       | (flowId, action) — client-observed actions ("CameraMoved", "PanelOpened:Resources") |
 	| Experience.OnboardingSkip    | event       | (flowId) |

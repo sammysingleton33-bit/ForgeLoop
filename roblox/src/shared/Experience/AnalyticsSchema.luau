@@ -14,10 +14,17 @@
 			events = { [EventName] = { description: string, value: string?, fields: { string }? } },
 			funnels = { [FunnelName] = { description: string, kind: "onboarding" | "once" | "recurring",
 			                             steps: { string }? (required unless kind = "onboarding"),
+			                             inOrder: boolean? (credit a step only after the previous one),
 			                             fields: { string }?, sessionTtlSec: number? } },
 			track = { Rule },   -- bus event -> funnel step or custom event (AnalyticsRouter)
-			session = { startEvent: string?, endEvent: string?, returnFunnel: string? }?,
+			session = { startEvent: string?, endEvent: string?, returnFunnel: string?,
+			            startOn: string?,      -- bus event whose first argument is the player (default PlayerReady)
+			            leftEvent: string?, leftInfo: ((player, ctx) -> { [string]: any }?)? }?,
+			            -- at session end, before endEvent: leftInfo's fields as leftEvent (nil = nothing)
 			subjects = { [eventName]: resolver }?,  -- game resolvers for its own events (Experience/Subjects)
+			milestones = { funnel: string, event: string, info: ((player, ctx) -> { [string]: any }?)? }?,
+			            -- after each sent step n >= 2 of a once funnel: event with value = seconds since the
+			            -- session started and field milestone = the step name, plus info's fields (FORGE-00 M7)
 			limits = { perPlayerPerMinute: number?, safety: number?, customReserve: number? }?,
 		}
 		Rule = { on: string, funnel: string?, step: number?, event: string?, session: ("start" | "continue" | "match")?,
@@ -187,6 +194,9 @@ local function checkFunnels(config: any, problems: { string })
 			end
 		end
 		checkFieldList(decl.fields, where, problems)
+		if decl.inOrder ~= nil and (type(decl.inOrder) ~= "boolean" or decl.kind == "onboarding") then
+			table.insert(problems, `{where}: inOrder must be a boolean, and not on the onboarding funnel`)
+		end
 		if decl.sessionTtlSec ~= nil and (type(decl.sessionTtlSec) ~= "number" or decl.sessionTtlSec <= 0) then
 			table.insert(problems, `{where}: sessionTtlSec must be a positive number`)
 		end
@@ -284,14 +294,24 @@ local function checkRules(config: any, knownEvents: { string }, problems: { stri
 	end
 end
 
-local function checkSession(config: any, problems: { string })
+local function checkSession(config: any, knownEvents: { string }, problems: { string })
 	local session = config.session
 	if session == nil then
 		return
 	end
 	local events = if type(config.events) == "table" then config.events else {}
 	local funnels = if type(config.funnels) == "table" then config.funnels else {}
-	for _, key in { "startEvent", "endEvent" } do
+	if
+		session.startOn ~= nil and (type(session.startOn) ~= "string" or not table.find(knownEvents, session.startOn))
+	then
+		table.insert(problems, `session.startOn: '{tostring(session.startOn)}' must name a declared GameEvents event`)
+	end
+	if (session.leftEvent == nil) ~= (session.leftInfo == nil) then
+		table.insert(problems, "session.leftEvent and session.leftInfo go together")
+	elseif session.leftInfo ~= nil and type(session.leftInfo) ~= "function" then
+		table.insert(problems, "session.leftInfo: must be a function (player, ctx) -> fields?")
+	end
+	for _, key in { "startEvent", "endEvent", "leftEvent" } do
 		if session[key] ~= nil and events[session[key]] == nil then
 			table.insert(problems, `session.{key}: unknown event '{tostring(session[key])}'`)
 		end
@@ -304,6 +324,33 @@ local function checkSession(config: any, problems: { string })
 	end
 end
 
+local function checkMilestones(config: any, problems: { string })
+	local spec = config.milestones
+	if spec == nil then
+		return
+	end
+	if type(spec) ~= "table" then
+		table.insert(problems, "milestones: must be a table { funnel, event, info? }")
+		return
+	end
+	local funnel = if type(config.funnels) == "table" then config.funnels[spec.funnel] else nil
+	if funnel == nil or funnel.kind ~= "once" or not isList(funnel.steps) or #funnel.steps < 2 then
+		table.insert(
+			problems,
+			`milestones.funnel: '{tostring(spec.funnel)}' must name a once funnel with at least 2 steps`
+		)
+	end
+	local event = if type(config.events) == "table" then config.events[spec.event] else nil
+	if event == nil then
+		table.insert(problems, `milestones.event: unknown event '{tostring(spec.event)}'`)
+	elseif type(event.value) ~= "string" or not isList(event.fields) or not table.find(event.fields, "milestone") then
+		table.insert(problems, `milestones.event: {spec.event} needs a value and a 'milestone' field`)
+	end
+	if spec.info ~= nil and type(spec.info) ~= "function" then
+		table.insert(problems, "milestones.info: must be a function (player, ctx) -> fields?")
+	end
+end
+
 function AnalyticsSchema.validate(config: any, knownEvents: { string }): { string }
 	local problems: { string } = {}
 	if type(config) ~= "table" then
@@ -312,7 +359,8 @@ function AnalyticsSchema.validate(config: any, knownEvents: { string }): { strin
 	checkEvents(config, problems)
 	checkFunnels(config, problems)
 	checkRules(config, knownEvents, problems)
-	checkSession(config, problems)
+	checkSession(config, knownEvents, problems)
+	checkMilestones(config, problems)
 	return problems
 end
 

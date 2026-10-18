@@ -28,6 +28,10 @@
 		hud.rendered: Signal<(metrics)>     fired after every full render
 		hud.menuChanged: Signal<(menu?)>    "build" | "kingdom" | nil
 		hud:setMenu(id?)                    opens a menu (closes the other); the same id again closes it
+		hud:setBackStep(menu, step?)        the back key (gamepad B, Backspace; InputModeController:onBack,
+		                                    #130) while that menu is open: step() -> true when it stepped
+		                                    back inside the panel, else the drawer closes
+		hud:backPressed() -> boolean        what one back press does (true when a drawer took it)
 		hud:setPlacing(on)                  hides the construction chips while the placement bar shows
 		hud:addRailItem({ id, icon, label, target?, order? })   a rail button for another controller's
 		                                    menu (ArmyPanelController: "army"); it calls hud:setMenu(id)
@@ -40,7 +44,10 @@
 		hud:setSheet(menu, on?)             this menu is a wide sheet on phones (the conversation):
 		hud:sheetOpen(metrics?) -> boolean  while one is open on a phone, toasts sit above it (one
 		                                    at a time) and the reputation strip is under it
-		hud:metrics() -> Layout Metrics     hud.roots.{hud, menus, modals, notices}
+		hud:metrics() -> Layout Metrics     hud.roots.{backdrop, hud, menus, modals, notices}
+		                                    backdrop: the whole device (ScreenInsets None, not clipped
+		                                    to the safe area), just under the menus: the cinematic
+		                                    conversation's dim band (FL-0099) reaches past a notch
 		hud:panelTab(id)  hud:openUpgrade(buildingId)  hud:requestUpgrade(detail, confirmed?)
 		hud:confirm()  hud:cancel()  hud:back()  hud:inspectResource(id)
 		hud:changeJob(jobId, delta)         Kingdom panel "Jobs" (FL-0065): asks Kingdom.SetJobQuota for
@@ -50,6 +57,7 @@
 ]]
 
 local BuildModel = require("../UI/BuildModel")
+local DiplomacyModel = require("../UI/DiplomacyModel")
 local Buildings = require("../UI/Buildings")
 local JobModel = require("../UI/JobModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -73,6 +81,9 @@ KingdomHudController.__index = KingdomHudController
 local Def = { name = "KingdomHudController", dependencies = {} }
 
 KingdomHudController.TICK_SEC = 0.5
+-- War and peace (FL-0129; the remote is FORGE-01's, proposed in the Crownfall handoff): the Kingdom panel's
+-- Rivals tab shows only while the server serves it.
+KingdomHudController.DIPLOMACY = "Kingdom.Diplomacy"
 KingdomHudController.DONE_SEC = 1.6
 KingdomHudController.DEFAULT_VIEWPORT = Vector2.new(1280, 662)
 
@@ -96,13 +107,18 @@ function Def.new(env: any, registry: any)
 				pending = nil,
 				done = nil,
 				jobs = { pending = {}, quota = {}, at = {} }, -- FL-0065: in flight / acknowledged (JobModel state)
+				confirmWar = nil :: string?, -- FL-0129: the rival a Declare war waits to be confirmed against
+				diplomacyPending = {} :: { [string]: boolean }, -- rivals with a diplomacy request in flight
 			},
 			confirm = nil :: any,
 		},
 		_viewport = nil :: Vector2?,
 		_railItems = {} :: { any },
+		_railBadges = {} :: { [string]: number },
 		_stackBottom = nil :: number?,
 		_sheets = {} :: { [string]: boolean },
+		_backSteps = {} :: { [string]: () -> boolean },
+		_releaseBack = nil :: (() -> ())?,
 		_mounted = false,
 		_running = false,
 		_mine = nil :: string?,
@@ -158,6 +174,8 @@ end
 
 function KingdomHudController:mount(parent: Instance)
 	local g = self.guis
+	g.backdrop = screenGui("KingdomBackdrop", 19, Enum.ScreenInsets.None)
+	g.backdrop.ClipToDeviceSafeArea = false
 	g.hud = screenGui("KingdomHUD", 10, Enum.ScreenInsets.CoreUISafeInsets)
 	g.topbar = screenGui("KingdomTopbar", 11, Enum.ScreenInsets.TopbarSafeInsets)
 	g.menus = screenGui("KingdomMenus", 20, Enum.ScreenInsets.CoreUISafeInsets)
@@ -166,7 +184,7 @@ function KingdomHudController:mount(parent: Instance)
 	g.modals.Enabled = true
 	g.notices.Enabled = true
 	self._scales = {}
-	for _, key in { "hud", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "menus", "modals", "notices" } do
 		self.roots[key], self._scales[key] = scaledRoot(g[key])
 	end
 	self._probe = Create("Frame", {
@@ -179,9 +197,12 @@ function KingdomHudController:mount(parent: Instance)
 	for _, item in self._railItems do
 		self.view:addMenu(item)
 	end
+	for id, count in self._railBadges do
+		self.view:setRailBadge(id, count)
+	end
 	self.panel = KingdomPanel.new(self.roots.menus)
 	self.toasts = ToastStack.new(self.roots.notices, self._motion)
-	for _, key in { "hud", "topbar", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "topbar", "menus", "modals", "notices" } do
 		g[key].Parent = parent
 	end
 	self._mounted = true
@@ -199,6 +220,14 @@ function KingdomHudController:start()
 	local env = self._env
 	local registry = self._registry
 	self._notifications = registry:find("NotificationController")
+	-- the kingdom panel's building detail goes back to the Buildings tab first
+	self:setBackStep("kingdom", function()
+		if self.state.panel.upgradeId == nil then
+			return false
+		end
+		self:back()
+		return true
+	end)
 	self._onboarding = registry:find("OnboardingController")
 	self.remotes = RemoteClient.new(env)
 	self._remoteConnections = {}
@@ -286,6 +315,10 @@ end
 function KingdomHudController:destroy()
 	self._running = false
 	self._destroyed = true
+	if self._releaseBack ~= nil then
+		pcall(self._releaseBack)
+		self._releaseBack = nil
+	end
 	if self._storeConnection then
 		self._storeConnection:disconnect()
 	end
@@ -307,6 +340,9 @@ end
 function KingdomHudController:_onStore(what: string, deltas: any)
 	if what == "population" then
 		self:_settleJobs(nil)
+	end
+	if what == "diplomacy" or what == "kingdoms" then
+		self:_onDiplomacy()
 	end
 	if what == "kingdoms" then
 		local kingdom = self.store:mine()
@@ -456,12 +492,53 @@ function KingdomHudController:setMenu(id: string?)
 		id = nil
 	end
 	self.state.menu = id
+	self:_syncBack()
 	if id == "kingdom" then
 		self.state.panel.tab = "overview"
 		self.state.panel.upgradeId = nil
 	end
 	self.menuChanged:fire(id)
 	self:render()
+end
+
+-- The back key (FORGE-04's InputModeController:onBack, #130: gamepad B, Backspace). One handler is
+-- registered while any drawer is open and released when it closes. A press first asks the open
+-- menu's step (registered by its controller: a phone detail goes back to its list, a conversation's
+-- confirm back to its question); a step that returns true took it. Otherwise the drawer closes, the
+-- same as its Close button. One press, one step.
+function KingdomHudController:setBackStep(menu: string, step: (() -> boolean)?)
+	self._backSteps[menu] = step
+end
+
+function KingdomHudController:backPressed(): boolean
+	local menu = self.state.menu
+	if menu == nil then
+		return false
+	end
+	local step = self._backSteps[menu]
+	if step ~= nil then
+		local ok, took = pcall(step)
+		if ok and took == true then
+			return true
+		end
+	end
+	self:setMenu(nil)
+	return true
+end
+
+function KingdomHudController:_syncBack()
+	if self.state.menu ~= nil and self._releaseBack == nil and not self._destroyed then
+		local input = self._registry:find("InputModeController")
+		if input ~= nil and input.onBack ~= nil then
+			self._releaseBack = input:onBack(function()
+				return self:backPressed()
+			end)
+		end
+	elseif self.state.menu == nil and self._releaseBack ~= nil then
+		local release = self._releaseBack
+		self._releaseBack = nil
+		pcall(release)
+	end
 end
 
 -- Undoes addRailItem (a controller that is destroyed takes its rail button with it).
@@ -484,12 +561,33 @@ function KingdomHudController:addRailItem(item: {
 	label: string,
 	target: string?,
 	order: number?,
+	hideEmpty: boolean?,
+	onActivated: (() -> ())?,
 })
 	table.insert(self._railItems, item)
 	if self.view then
 		self.view:addMenu(item)
 		self:render()
 	end
+end
+
+-- A count bubble on a rail button (UI/KingdomHud:setRailBadge); patched in place, no render.
+function KingdomHudController:setRailBadge(id: string, count: number?)
+	self._railBadges[id] = count
+	if self.view then
+		self.view:setRailBadge(id, count)
+	end
+end
+
+-- A rail tap: an item with its own action (onActivated) runs it; any other opens or closes its menu.
+function KingdomHudController:railTapped(id: string)
+	for _, item in self._railItems do
+		if item.id == id and item.onActivated ~= nil then
+			item.onActivated()
+			return
+		end
+	end
+	self:setMenu(id)
 end
 
 -- Only the toasts move (no full render): the tracker calls this from its own render.
@@ -626,6 +724,128 @@ end
 -- FL-0065: one more or one fewer worker in a job. The count is the server's (Kingdom.Population);
 -- the request sets the job's quota to its newest target ± 1 (JobModel.target) and the server fills
 -- it from the free (hauler) pool. The count changes here only when its push arrives.
+-- ------------------------------------------------------------------ war and peace (FL-0129)
+
+-- The Rivals view for this moment, or nil when the server has no diplomacy remote.
+function KingdomHudController:_rivals(): any
+	if not self:hasRemote(KingdomHudController.DIPLOMACY) then
+		return nil
+	end
+	local store = self.store
+	local phase = if store.match then store.match.phase else nil
+	return DiplomacyModel.view(store, store:diplomacy(), phase, self._env.serverTimeNow(), {
+		userId = self:_localUserId(),
+		nameOf = function(userId: number): string?
+			return self:_nameOf(userId)
+		end,
+	})
+end
+
+-- Diplomacy changed: the Kingdom rail button counts the peace offers waiting for my answer, and each new
+-- offer is said once ("Azure proposes peace").
+function KingdomHudController:_onDiplomacy()
+	local view = self:_rivals()
+	self:setRailBadge("kingdom", if view and view.incoming > 0 then view.incoming else nil)
+	if view == nil then
+		return
+	end
+	local seen = self._offersSeen or {}
+	local now = {}
+	for _, row in view.rows do
+		for _, action in row.actions do
+			if action.id == "acceptPeace" then
+				now[row.id] = true
+				if not seen[row.id] then
+					self:notify({
+						kind = "info",
+						title = `{row.name} proposes peace`,
+						-- D-054: a co-ruler sees the offer, but the senior ruler answers it
+						body = if view.senior then `{view.senior} decides` else "Open Kingdom → Rivals to answer",
+					})
+				end
+			end
+		end
+	end
+	self._offersSeen = now
+end
+
+-- A Rivals button: Declare war asks first (it changes the match); the others go to the server at once.
+function KingdomHudController:diplomacyAction(kingdomId: string, action: string)
+	if action == "declareWar" then
+		self.state.panel.confirmWar = kingdomId
+		self:render()
+		return
+	end
+	self:_diplomacy(action, kingdomId)
+end
+
+function KingdomHudController:confirmWar(kingdomId: string)
+	self.state.panel.confirmWar = nil
+	self:_diplomacy("declareWar", kingdomId)
+end
+
+function KingdomHudController:cancelWar()
+	self.state.panel.confirmWar = nil
+	self:render()
+end
+
+-- What a successful request did. War is told from the server's answer, never from the client's copy
+-- of who is senior (D-054: seniority can move while the panel is open; FORGE-07 M1 on #180):
+-- "declared" = war is declared, "asked" = the senior ruler was asked; anything else stays neutral.
+local WAR_DONE = table.freeze({
+	declared = function(name: string): string
+		return `War declared on {name}`
+	end,
+	asked = function(name: string): string
+		return `Asked your senior ruler for war on {name}`
+	end,
+})
+
+local DIPLOMACY_DONE = table.freeze({
+	declareWar = function(name: string): string
+		return `War request sent: {name}`
+	end,
+	proposePeace = function(name: string): string
+		return `Peace offered to {name}`
+	end,
+	acceptPeace = function(name: string): string
+		return `Peace with {name}`
+	end,
+})
+
+function KingdomHudController:_diplomacy(action: string, kingdomId: string)
+	local p = self.state.panel
+	if p.diplomacyPending[kingdomId] then
+		return -- one request per rival at a time
+	end
+	local kingdom = self.store:kingdom(kingdomId)
+	local name = if kingdom and type(kingdom.name) == "string" then kingdom.name else kingdomId
+	p.diplomacyPending[kingdomId] = true
+	self:render()
+	self._env.spawn(function()
+		local called, ok, reason = pcall(function()
+			return self.remotes:invoke(KingdomHudController.DIPLOMACY, action, kingdomId)
+		end)
+		p.diplomacyPending[kingdomId] = nil
+		if self._destroyed then
+			return
+		end
+		if called and ok == true then
+			local war = if action == "declareWar" and type(reason) == "string" then WAR_DONE[reason] else nil
+			local done = war or DIPLOMACY_DONE[action]
+			local title = if done then done(name) else name
+			self:notify({ kind = "success", title = title })
+		else
+			self:notify({
+				kind = "warning",
+				title = Text.reason(if called then reason else nil),
+				body = name,
+			})
+		end
+		self:render()
+	end)
+end
+
 function KingdomHudController:changeJob(jobId: string, delta: number)
 	local jobs = self.state.panel.jobs
 	local population = self.store:population()
@@ -728,6 +948,13 @@ function KingdomHudController:_panelModel(): any
 			canUpgrade = building.state == "complete" and store:buildingCost(building.type, building.level + 1) ~= nil,
 		})
 	end
+	local rivals = self:_rivals()
+	local tabs = table.clone(KingdomPanel.TABS)
+	if rivals then
+		table.insert(tabs, KingdomPanel.RIVALS_TAB)
+	elseif p.tab == "rivals" then
+		p.tab = "overview" -- the server stopped serving diplomacy
+	end
 	local upgrade = nil
 	local target = self:_building(p.upgradeId)
 	if p.tab == "upgrade" and target then
@@ -746,6 +973,9 @@ function KingdomHudController:_panelModel(): any
 		buildings = rows,
 		upgrade = upgrade,
 		jobs = if p.tab == "jobs" then JobModel.view(store:population(), p.jobs) else nil,
+		tabs = if rivals then tabs else nil,
+		rivals = if p.tab == "rivals" then rivals else nil,
+		confirm = p.confirmWar,
 	}
 end
 
@@ -754,7 +984,7 @@ function KingdomHudController:render()
 		return
 	end
 	local m = self:metrics()
-	for _, key in { "hud", "menus", "modals", "notices" } do
+	for _, key in { "backdrop", "hud", "menus", "modals", "notices" } do
 		self._scales[key].Scale = m.scale
 		self.roots[key].Size = UDim2.fromScale(1 / m.scale, 1 / m.scale)
 	end
@@ -765,8 +995,10 @@ function KingdomHudController:render()
 	self.guis.hud.Enabled = active
 	self.guis.topbar.Enabled = active
 	self.guis.menus.Enabled = active
+	self.guis.backdrop.Enabled = active
 	if not active and s.menu ~= nil then
 		s.menu = nil
+		self:_syncBack() -- the back key's handler goes with the drawer (FORGE-07 L1 on #162)
 		self.menuChanged:fire(nil)
 	end
 	if active then
@@ -781,7 +1013,7 @@ function KingdomHudController:render()
 			menu = s.menu,
 			hideQueue = s.placing,
 			onMenu = function(id)
-				self:setMenu(id)
+				self:railTapped(id)
 			end,
 			onPill = function(id)
 				self:inspectResource(id)
@@ -808,6 +1040,15 @@ function KingdomHudController:render()
 			end,
 			onJob = function(jobId, delta)
 				self:changeJob(jobId, delta)
+			end,
+			onDiplomacy = function(kingdomId, action)
+				self:diplomacyAction(kingdomId, action)
+			end,
+			onConfirmWar = function(kingdomId)
+				self:confirmWar(kingdomId)
+			end,
+			onCancelWar = function()
+				self:cancelWar()
 			end,
 		})
 	else
@@ -872,6 +1113,18 @@ function KingdomHudController:_tick()
 		return
 	end
 	self.view:refreshTimer(HudModel.timer(self.store.match, self._env.serverTimeNow()), self:metrics())
+	-- the Rivals tab's countdowns (offers, truces, grace) tick: patched in place by RivalsList.paint
+	if self.state.menu == "kingdom" and self.state.panel.tab == "rivals" then
+		self:render()
+	end
+	-- an offer of peace runs out without a push: the Kingdom bubble follows the clock (FORGE-07 L2 on #180)
+	if self.store:diplomacy() ~= nil then
+		local view = self:_rivals()
+		local count = if view and view.incoming > 0 then view.incoming else nil
+		if count ~= self._railBadges.kingdom then
+			self:setRailBadge("kingdom", count)
+		end
+	end
 end
 
 return Def

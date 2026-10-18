@@ -12,6 +12,9 @@
 			kingdomName: (kingdomId) -> string?,  -- Kingdom.name (G2), e.g. "Emberhold"
 			displayName: (player) -> string,
 			byUserId: (userId) -> Player?,
+			buildingKind: ((buildingId) -> string?)?,   -- optional: a building's type (Lines.BUILDING key)
+			phaseMinutes: ((phase) -> number?)?,        -- optional: the phase's length in whole minutes for
+			                                            -- the match's mode (Pacing), nil when untimed
 		}
 		Audience rules (CONTRACTS G9 attribution, kingdom-scoped announcer of G11):
 		| G9 event          | the kingdom's members                      | everyone else                  |
@@ -25,12 +28,26 @@
 		| MatchPhaseChanged | phase, to every player                                                      |
 		| MatchEnded        | matchEnded to every player: outcome won / lost / draw (no winner) / watched  |
 		|                   | (a spectator), won = outcome == "won"                                      |
+		| ConsequenceChanged| consequence (rule, on, occupation?, count?, buildingType?) to the kingdom's  |
+		|                   | rulers, per start and per end (FL-0091); a rebellion's end is never shown    |
+		| KingdomEliminated | kingdomFell (byName?)                      | the conqueror's rulers:        |
+		|                   |                                            | kingdomConquered; the rest:    |
+		|                   |                                            | rivalFell (FL-0130)            |
+		| WarChanged *      | war role "self" (the declarer's rulers but | role "other" to the other      |
+		|                   | the declaring ruler; the acceptor's on     | kingdom's rulers; role "rival" |
+		|                   | peace), per declaration and per peace      | to everyone else               |
+		| SiegeChanged *    | siege (on, byName?), per start and end     | —                              |
+		| RaidChanged *     | raid (on, count?, byName?, position?)      | —                              |
+		* proposed G9 rows (FL-0130 handoff); AnnouncerService waits for them until the bus declares them.
+		  WarChanged (kingdomId, otherId, atWar, by: userId?); SiegeChanged / RaidChanged (kingdomId, on,
+		  info { byKingdomIds, buildingId? | count, position? }). {byName} needs exactly one attacker.
 		The player who placed or recruited is left out: FORGE-03's own toast already answered them
 		("House placed", "3 soldiers recruited"), so the announcer never says it twice.
 		ResourceGathered is not announced: the client's own gather feedback (FeedbackController) is
 		immediate, and citizens' gathering would flood the stack.
 	Moment (sent as Feedback.Moment): { kind, kingdom?, kingdomName?, actor?, buildingType?, level?,
-		count?, objectiveId?, phase?, won?, winner?, position: Vector3? } — primitives and Vector3 only.
+		count?, objectiveId?, phase?, minutes?, won?, winner?, rule?, on?, occupation?, role?, other?,
+		otherName?, byName?, position: Vector3? } — primitives and Vector3 only.
 
 	Client side
 		Moments.present(moment) -> { toast?: { kind, title, body?, key? }, celebrate?: string,
@@ -56,7 +73,16 @@ Moments.KINDS = table.freeze({
 	"rivalCaptured",
 	"phase",
 	"matchEnded",
+	"consequence",
+	"kingdomFell",
+	"kingdomConquered",
+	"rivalFell",
+	"war",
+	"siege",
+	"raid",
 })
+
+Moments.RULES = table.freeze({ strike = true, shortage = true, riot = true, rebellion = true })
 
 type Delivery = { player: any, moment: { [string]: any } }
 
@@ -106,6 +132,66 @@ local function buildingMoment(kind: string, building: any, ctx: any): { [string]
 		buildingType = building.type,
 		level = building.level,
 		position = positionOf(building),
+	}
+end
+
+local function finiteCount(value: any): number?
+	if type(value) ~= "number" or value ~= value or value < 0 or value == math.huge then
+		return nil
+	end
+	return math.floor(value)
+end
+
+local function consequence(args: { any }, ctx: any): { [string]: any }?
+	local kingdom, rule, on, info = args[1], args[2], args[3], args[4]
+	if type(kingdom) ~= "string" or not Moments.RULES[rule] or type(on) ~= "boolean" then
+		return nil
+	end
+	if rule == "rebellion" and not on then
+		return nil -- a rebellion announces only its start (G9 v0.4-g10d)
+	end
+	local details = if type(info) == "table" then info else {}
+	local occupation = details.occupation
+	local buildingType = nil
+	if details.buildingId ~= nil and ctx.buildingKind ~= nil then
+		local ok, kind = pcall(ctx.buildingKind, details.buildingId)
+		buildingType = if ok and type(kind) == "string" then kind else nil
+	end
+	return {
+		kind = "consequence",
+		kingdom = kingdom,
+		rule = rule,
+		on = on,
+		-- "riot" marks rioters on the strike channel (G13.3), never a job
+		occupation = if type(occupation) == "string" and occupation ~= "riot" then occupation else nil,
+		count = finiteCount(details.count),
+		buildingType = buildingType,
+	}
+end
+
+-- The attacking kingdom's name when exactly one kingdom attacks (else nil: "Enemy soldiers ...").
+local function attackerName(info: any, ctx: any): string?
+	local ids = if type(info) == "table" and type(info.byKingdomIds) == "table" then info.byKingdomIds else nil
+	if ids == nil or #ids ~= 1 or type(ids[1]) ~= "string" then
+		return nil
+	end
+	return ctx.kingdomName(ids[1])
+end
+
+-- SiegeChanged / RaidChanged: (kingdomId, on, info) to that kingdom's rulers.
+local function alert(kind: string, args: { any }, ctx: any): { [string]: any }?
+	local kingdom, on, info = args[1], args[2], args[3]
+	if type(kingdom) ~= "string" or type(on) ~= "boolean" then
+		return nil
+	end
+	local details = if type(info) == "table" then info else {}
+	return {
+		kind = kind,
+		kingdom = kingdom,
+		on = on,
+		byName = if on then attackerName(details, ctx) else nil,
+		count = if on and kind == "raid" then finiteCount(details.count) else nil,
+		position = if on and kind == "raid" and typeof(details.position) == "Vector3" then details.position else nil,
 	}
 end
 
@@ -183,7 +269,79 @@ function Moments.fromEvent(eventName: string, args: { any }, ctx: any): { Delive
 	elseif eventName == "MatchPhaseChanged" then
 		local phase = args[1]
 		if type(phase) == "string" then
-			to(out, ctx.all(), { kind = "phase", phase = phase })
+			local minutes = nil
+			if ctx.phaseMinutes ~= nil then
+				local ok, value = pcall(ctx.phaseMinutes, phase)
+				minutes = if ok then finiteCount(value) else nil
+			end
+			to(out, ctx.all(), { kind = "phase", phase = phase, minutes = if minutes ~= 0 then minutes else nil })
+		end
+	elseif eventName == "KingdomEliminated" then
+		local kingdom, by = args[1], args[2]
+		if type(kingdom) ~= "string" then
+			return out
+		end
+		local conqueror = if type(by) == "string" and by ~= kingdom then by else nil
+		local fallen = ctx.members(kingdom)
+		local winners = if conqueror then ctx.members(conqueror) else {}
+		local byName = if conqueror then ctx.kingdomName(conqueror) else nil
+		local kingdomName = ctx.kingdomName(kingdom)
+		to(out, fallen, { kind = "kingdomFell", kingdom = kingdom, kingdomName = kingdomName, byName = byName })
+		to(out, winners, {
+			kind = "kingdomConquered",
+			kingdom = conqueror,
+			kingdomName = byName,
+			other = kingdom,
+			otherName = kingdomName,
+		})
+		local rest = {}
+		for _, player in ctx.all() do
+			if not isMember(fallen, player) and not isMember(winners, player) then
+				table.insert(rest, player)
+			end
+		end
+		to(out, rest, { kind = "rivalFell", kingdom = kingdom, kingdomName = kingdomName, byName = byName })
+	elseif eventName == "WarChanged" then
+		local kingdom, other, atWar, by = args[1], args[2], args[3], args[4]
+		if type(kingdom) ~= "string" or type(other) ~= "string" or kingdom == other or type(atWar) ~= "boolean" then
+			return out
+		end
+		local moment = {
+			kind = "war",
+			on = atWar,
+			kingdom = kingdom,
+			kingdomName = ctx.kingdomName(kingdom),
+			other = other,
+			otherName = ctx.kingdomName(other),
+		}
+		local mine = ctx.members(kingdom)
+		local theirs = ctx.members(other)
+		local actor = if type(by) == "number" then ctx.byUserId(by) else nil
+		local own = table.clone(moment)
+		own.role = "self"
+		-- the ruler who declared war already has FORGE-03's war panel answer; their co-rulers get this one
+		to(out, if atWar then except(mine, actor) else mine, own)
+		local target = table.clone(moment)
+		target.role = "other"
+		to(out, theirs, target)
+		local rest = {}
+		for _, player in ctx.all() do
+			if not isMember(mine, player) and not isMember(theirs, player) then
+				table.insert(rest, player)
+			end
+		end
+		local rival = table.clone(moment)
+		rival.role = "rival"
+		to(out, rest, rival)
+	elseif eventName == "SiegeChanged" or eventName == "RaidChanged" then
+		local moment = alert(if eventName == "SiegeChanged" then "siege" else "raid", args, ctx)
+		if moment ~= nil then
+			to(out, ctx.members(moment.kingdom), moment)
+		end
+	elseif eventName == "ConsequenceChanged" then
+		local moment = consequence(args, ctx)
+		if moment ~= nil then
+			to(out, ctx.members(moment.kingdom), moment)
 		end
 	elseif eventName == "MatchEnded" then
 		local result = args[1]
@@ -221,6 +379,11 @@ local function fill(template: string?, moment: any): string?
 		local value = moment[field]
 		if field == "building" then
 			value = Lines.BUILDING[moment.buildingType] or moment.buildingType
+		elseif field == "place" then
+			local name = Lines.BUILDING[moment.buildingType] or moment.buildingType
+			value = if type(name) == "string" then string.lower(name) else nil
+		elseif field == "jobs" then
+			value = Lines.JOBS[moment.occupation] or "workers"
 		end
 		if type(value) == "string" or type(value) == "number" then
 			return tostring(value)
@@ -230,6 +393,48 @@ local function fill(template: string?, moment: any): string?
 	text = string.gsub(text, "%s+", " ")
 	text = string.match(text, "^%s*(.-)%s*$") or text
 	return if text == "" then nil else text
+end
+
+-- A template whose every {field} the moment has (else nil: a consequence line is never shown half empty).
+local function fillAll(template: string?, moment: any): string?
+	if template == nil then
+		return nil
+	end
+	for field in string.gmatch(template, "{(%w+)}") do
+		local present = if field == "place"
+			then moment.buildingType ~= nil
+			elseif field == "jobs" then true
+			else moment[field] ~= nil
+		if not present then
+			return nil
+		end
+	end
+	return fill(template, moment)
+end
+
+-- A start or end line (CONSEQUENCE, WAR, SIEGE, RAID): every {field} filled or the plain fallback.
+local function phased(line: any, moment: any): { [string]: any }
+	if line == nil then
+		return {}
+	end
+	local title = fillAll(line.title, moment) or line.plain
+	if title == nil then
+		return {}
+	end
+	local body = fillAll(if moment.count == 1 and line.bodyOne then line.bodyOne else line.body, moment)
+	return {
+		toast = {
+			kind = line.kind or "info",
+			title = title,
+			body = body or line.bodyPlain,
+			key = fill(line.key, moment),
+		},
+		sound = line.sound,
+	}
+end
+
+local function phaseOf(moment: any): string
+	return if moment.on == true then "start" else "stop"
 end
 
 -- matchEnded outcome -> its line in Lines.MOMENT
@@ -245,10 +450,22 @@ function Moments.present(moment: any): { [string]: any }
 		if line == nil then
 			return {}
 		end
+		local body = if moment.minutes ~= nil then fillAll(line.timed, moment) or line.body else line.body
 		return {
-			toast = { kind = line.kind or "info", title = line.title, body = line.body, key = `phase:{moment.phase}` },
+			toast = { kind = line.kind or "info", title = line.title, body = body, key = `phase:{moment.phase}` },
 			sound = line.sound,
 		}
+	end
+	if kind == "consequence" then
+		local rule = Lines.CONSEQUENCE[moment.rule]
+		return phased(rule and rule[phaseOf(moment)], moment)
+	end
+	if kind == "war" then
+		local role = Lines.WAR[moment.role]
+		return phased(role and role[phaseOf(moment)], moment)
+	end
+	if kind == "siege" or kind == "raid" then
+		return phased((if kind == "siege" then Lines.SIEGE else Lines.RAID)[phaseOf(moment)], moment)
 	end
 	local line = if kind == "matchEnded"
 		then Lines.MOMENT[Moments.OUTCOME_LINE[moment.outcome or (if moment.won then "won" else "lost")]]
@@ -262,7 +479,7 @@ function Moments.present(moment: any): { [string]: any }
 			then {
 				kind = line.kind or "info",
 				title = title,
-				body = fill(line.body, moment),
+				body = fillAll(line.body, moment) or line.bodyPlain, -- never half a sentence
 				key = if line.key then fill(line.key, moment) else nil,
 			}
 			else nil,

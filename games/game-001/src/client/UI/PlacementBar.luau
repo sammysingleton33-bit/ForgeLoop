@@ -9,18 +9,24 @@
 	PlacementBar.new(parent) -> bar
 	bar:render(model, metrics, ui)
 		model = { name, icon, category, costs: { { currency, amount, short } },
-		          status: "pending" | "ok" | "bad", reason: string?, busy: boolean }
+		          status: "pending" | "ok" | "bad", reason: string?, busy: boolean,
+		          facing: number? (degrees on screen, Placement.screenAngle; default 0),
+		          confirm: string? (the Place button's word; "Move here" when moving, FL-0120),
+		          okText: string? (the verdict line when the spot is good; default "✓ Good spot"),
+		          clickVerb: string? (the desktop hint's "Click places"; "moves" when moving, FL-0120) }
 		ui = { onRotate, onCancel, onPlace }
 	bar:destroy()
 	The ghost moves cell by cell and every move re-renders: the bar keeps its instances and patches
 	the verdict, the Place button and the short costs (FORGE-05 M1: 200 bars for 200 cells). It is
 	rebuilt only for another building or another screen size.
-	Children: "Status" (TextLabel, attribute `status`), buttons "Rotate", "Cancel", "Place"
+	Children: "Status" (TextLabel, attribute `status`), buttons "Rotate" (the Turn button: rotate icon,
+	"Turn" on tablet and desktop, and the "Facing" dial, attribute `facing`), "Cancel", "Place"
 	(Place's face carries the attribute `cta`: "ready" | "disabled" | "loading").
 ]]
 
 local Button = require("@game/ReplicatedStorage/Forge/UI/Components/Button")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local FacingDial = require("./FacingDial")
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
 local IconButton = require("@game/ReplicatedStorage/Forge/UI/Components/IconButton")
@@ -41,7 +47,7 @@ end
 
 local function statusOf(model: any): (string, Color3)
 	if model.status == "ok" then
-		return "✓ Good spot", GOOD
+		return model.okText or "✓ Good spot", GOOD
 	elseif model.status == "bad" then
 		return "✕ " .. (model.reason or "Can't build here"), SHORT
 	end
@@ -58,6 +64,8 @@ local function key(model: any, metrics: any): string
 		place = metrics.place,
 		free = Layout.freeArea(metrics, false),
 		name = model.name,
+		confirm = model.confirm,
+		clickVerb = model.clickVerb,
 		icon = model.icon,
 		category = model.category,
 		costs = costs,
@@ -70,6 +78,7 @@ function PlacementBar:_paint(model: any)
 	self.status.Text = text
 	self.status.TextColor3 = color
 	self.status:SetAttribute("status", model.status)
+	FacingDial.set(self.facing, model.facing or 0)
 	self._ready = model.status == "ok" and not model.busy
 	local cta = if model.busy then "loading" elseif self._ready then "ready" else "disabled"
 	if cta ~= self._cta then
@@ -98,7 +107,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	local phone = metrics.breakpoint == "phone"
 	local height = metrics.place.height
 	local button = if phone then 44 else 48
-	local width = if phone then 460 else 520
+	local width = if phone then 480 else 600
 	local free = Layout.freeArea(metrics, false)
 
 	local costs = Create("Frame", {
@@ -145,8 +154,37 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 			end
 		end
 	end
-	local rotate = IconButton.new({ icon = "rotate", size = button, layoutOrder = 1, onActivated = call("onRotate") })
-	rotate.instance.Name = "Rotate"
+	-- Turn: the rotate icon, the word on tablet and desktop, and the dial showing the facing now.
+	local dialSize = if phone then 24 else 26
+	local rotateIcon = Icon.new("rotate", if phone then 18 else 20)
+	rotateIcon.LayoutOrder = 1
+	local facing = FacingDial.new(dialSize, 3)
+	local rotateWidth = if phone then 70 else 116
+	local rotate = Create("TextButton", {
+		Name = "Rotate",
+		Text = "",
+		AutoButtonColor = false,
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		Size = UDim2.fromOffset(rotateWidth, button),
+		LayoutOrder = 1,
+		[Create.Event.Activated] = call("onRotate"),
+	}, {
+		Corner = Style.corner(10),
+		Stroke = Style.stroke(Theme.color("gold600"), 1.5),
+		Gradient = Style.gradient(Theme.color("ink600"), Theme.color("ink800")),
+		List = Style.list("x", 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center),
+		Icon = rotateIcon,
+		Label = if phone
+			then nil
+			else Style.text({
+				text = "Turn",
+				weight = Enum.FontWeight.Bold,
+				size = 14,
+				color = Theme.color("parchment100"),
+				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 2 },
+			}),
+		Facing = facing,
+	})
 	-- Phones: an X instead of the word, so the building name and its cost keep their room.
 	local cancelWidth = if phone then button else 88
 	local cancel = if phone
@@ -159,9 +197,10 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 			onActivated = call("onCancel"),
 		})
 	cancel.instance.Name = "Cancel"
-	local placeWidth = if phone then 92 else 104
+	-- "Move here" (FL-0120) needs a wider confirm than "Place"
+	local placeWidth = if model.confirm then (if phone then 118 else 132) elseif phone then 92 else 104
 	local place = Button.new({
-		text = "Place",
+		text = model.confirm or "Place",
 		icon = "check",
 		variant = "primary",
 		state = "disabled",
@@ -197,7 +236,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 			Tile = tile,
 			Info = Create("Frame", {
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, -(tileSize + 10 + button + 8 + cancelWidth + 8 + placeWidth + 10), 1, 0),
+				Size = UDim2.new(1, -(tileSize + 10 + rotateWidth + 8 + cancelWidth + 8 + placeWidth + 10), 1, 0),
 				LayoutOrder = 2,
 			}, {
 				List = Style.list("y", 3, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
@@ -226,7 +265,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 				LayoutOrder = 3,
 			}, {
 				List = Style.list("x", 8, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
-				Rotate = rotate.instance,
+				Rotate = rotate,
 				Cancel = cancel.instance,
 				Place = place.instance,
 			}),
@@ -234,7 +273,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	})
 	if not phone then
 		Style.text({
-			text = "Move the mouse to aim · R rotates · Click places · Q cancels",
+			text = `Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click {model.clickVerb or "places"} · Q cancels`,
 			weight = Enum.FontWeight.Bold,
 			size = 11,
 			color = Theme.color("parchment100"),
@@ -250,6 +289,7 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 			bar
 	end
 	self.rotate, self.cancel, self.place, self.status = rotate, cancel, place, status
+	self.facing = facing
 	self._costs, self._cta = costs, nil
 	self:_paint(model)
 	bar.Parent = self._parent

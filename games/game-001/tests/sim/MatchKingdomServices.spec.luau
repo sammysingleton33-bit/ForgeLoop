@@ -688,6 +688,25 @@ describe("KingdomService spawning (G3, D-026)", function()
 		expect(#log.loads).toBe(2)
 	end)
 
+	it("tells the match host when it moves a ruler's character, so the position clamp starts over (FL-0122)", function()
+		local env, matchService, _, log = boot()
+		local snapped = {}
+		local host = matchService.host
+		local original = host.snapRuler
+		host.snapRuler = function(self, userId)
+			table.insert(snapped, { userId = userId, pivots = #log.pivots })
+			return original(self, userId)
+		end
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		expect(#snapped).toBe(1)
+		expect(snapped[1]).toEqual({ userId = 1, pivots = 1 }) -- right after the pivot to the plot spawn
+		env.spawn(log.died[p1.Character])
+		env.mock:advance(log.respawnDelay + 1)
+		expect(#snapped).toBe(2) -- and again after the respawn's pivot
+		expect(snapped[2]).toEqual({ userId = 1, pivots = 2 })
+	end)
+
 	it("respawns at the plot after a death (after RespawnTime) and never after leaving", function()
 		local env, _, _, log = boot()
 		local p1 = env.mock.players:add({ userId = 1 })
@@ -1172,8 +1191,11 @@ describe("Kingdom and Match remotes (G8)", function()
 		env.mock:advance(1)
 		-- stand the ruler on the watchtower (the host reads the character's HumanoidRootPart)
 		local tower = match.host.match.sim.objectives.list[1]
+		local spawn = p1.Character.HumanoidRootPart.CFrame.Position
 		p1.Character.HumanoidRootPart.CFrame = CFrame.new(tower.x, 3, tower.z)
-		env.mock:advance(tower.captureSeconds + 2)
+		-- the sim follows the character at Match.rulerMaxSpeed (FL-0122): the walk from the spawn, then the capture
+		local walk = math.sqrt((tower.x - spawn.X) ^ 2 + (tower.z - spawn.Z) ^ 2) / MatchConfig.rulerMaxSpeed
+		env.mock:advance(walk + tower.captureSeconds + 2)
 		expect(match:getPhase()).toBe("Results")
 		expect(captured).toEqual({ { "watchtower", "crimson" } })
 		expect(#ended).toBe(1)
@@ -1191,5 +1213,56 @@ describe("Kingdom and Match remotes (G8)", function()
 		env.mock:advance(120)
 		expect(match:getPhase()).toBe("Results")
 		expect(#ended).toBe(1)
+		-- a player who arrives during Results gets the summary too (#70 M2); the first one not again
+		local late = env.mock.players:add({ userId = 2 })
+		env.mock:advance(TICK)
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote(env, "Match.Ended")) do
+				if entry.player == player then
+					table.insert(out, entry.args)
+				end
+			end
+			return out
+		end
+		local lateEnded = sentTo(late) -- (the broadcast went out before this player existed)
+		expect(#lateEnded).toBe(1)
+		expect(lateEnded[1][1]).toEqual(ended[1])
+		expect(#sentTo(p1)).toBe(0) -- the first player had the broadcast only
+		expect(#received(env, "Match.Ended", p1)).toBe(1)
+	end)
+
+	it("match mode: the summary goes to arrivals during Results only, never after (#70 M2)", function()
+		local env, match = boot({ mode = "match", pacing = fastPacing() })
+		local function sentTo(player)
+			local out = {}
+			for _, entry in env.mock.remotes:sent(remote(env, "Match.Ended")) do
+				if entry.player == player then
+					table.insert(out, entry.args)
+				end
+			end
+			return out
+		end
+		local early = env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		expect(#sentTo(early)).toBe(0) -- nothing to summarise yet
+		local guard = 0
+		while match:getPhase() ~= "Results" and guard < 400 do
+			env.mock:advance(TICK)
+			guard += 1
+		end
+		expect(match:getPhase()).toBe("Results")
+		local during = env.mock.players:add({ userId = 2 })
+		env.mock:advance(TICK)
+		expect(#sentTo(during)).toBe(1)
+		guard = 0
+		while match:getPhase() == "Results" and guard < 400 do
+			env.mock:advance(TICK)
+			guard += 1
+		end
+		expect(match:getPhase()).toBe("Lobby")
+		local after = env.mock.players:add({ userId = 3 })
+		env.mock:advance(TICK)
+		expect(#sentTo(after)).toBe(0) -- a new match: the old summary is gone
 	end)
 end)

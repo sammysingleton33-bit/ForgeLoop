@@ -36,6 +36,11 @@ local REASONS: { [string]: string } = {
 	requires_keep_level = "Upgrade your keep first",
 	limit_reached = "You have the most of these already",
 	unknown_building = "That building can't be built",
+	-- Build.CanMove / Build.Move / Build.MoveToSlot (FL-0119, CONTRACTS G13.9 v0.4-g9j; a move reads them
+	-- through MOVE_REASONS below, these are for the Reasons line of Build/Remotes.luau)
+	not_movable = "The keep can't be moved",
+	alarm = "Not while the alarm bell rings",
+	under_attack = "Not while it's under attack",
 	-- Build.Upgrade
 	not_found = "That building no longer exists",
 	not_owner = "That building isn't yours",
@@ -54,6 +59,16 @@ local REASONS: { [string]: string } = {
 	not_in_match = "The match isn't running",
 	not_ruler = "Only rulers can do that",
 	kingdom_eliminated = "Your kingdom has fallen",
+	-- war and peace (Sim/Diplomacy's codes, through FORGE-01's diplomacy remote; FL-0129)
+	unknown_kingdom = "That kingdom has fallen",
+	grace_period = "Too early for war. Every kingdom gets time to build up",
+	already_at_war = "You're already at war with them",
+	peace_cooldown = "A truce holds. War can't be declared again yet",
+	not_at_war = "You're not at war with them",
+	no_proposal = "Their offer of peace has run out",
+	-- D-054 (proposed codes for FORGE-01's FL-0125 rows): senior ruler and newcomer lock
+	not_senior = "Only your kingdom's senior ruler can do that",
+	newcomer_lock = "New rulers wait a little before war or peace",
 }
 
 -- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of
@@ -68,6 +83,21 @@ local SLOT_REASONS: { [string]: string } = {
 	blocked = "Something is in the way on this plot",
 }
 
+-- Build.CanMove / Build.Move / Build.MoveToSlot (CONTRACTS G13.9 v0.4-g9j; FORGE-01's handoff
+-- 2026-10-15-forge-01-to-forge-03-04-05-base-editing-server.md): the move's own codes, and the shared
+-- ones where a move reads differently. The rest read as in REASONS (and on a plot as in SLOT_REASONS).
+local MOVE_REASONS: { [string]: string } = {
+	not_found = "That building is gone",
+	not_movable = "The keep can't be moved",
+	alarm = "Not while the alarm bell rings",
+	-- one code for: targeted, enemies near, damaged in the last 10 s, burning, war just declared or ended
+	under_attack = "Not while it's under attack",
+	-- 10 s of sim time per building; the server sends no time left
+	cooldown = "It just moved. Wait a few seconds",
+	blocked = "Not enough room there",
+	out_of_territory = "Move it inside your keep's land",
+}
+
 function Text.reason(reason: any, context: string?): string
 	if reason == nil then
 		-- nil: the call was dropped or rate-limited (both answer nil), so never claim the server is down (L8)
@@ -76,6 +106,12 @@ function Text.reason(reason: any, context: string?): string
 	local key = tostring(reason)
 	if context == "slot" and SLOT_REASONS[key] then
 		return SLOT_REASONS[key]
+	end
+	if context == "move" and MOVE_REASONS[key] then
+		return MOVE_REASONS[key]
+	end
+	if context == "moveSlot" then
+		return SLOT_REASONS[key] or MOVE_REASONS[key] or REASONS[key] or "That didn't work. Try again."
 	end
 	return REASONS[key] or "That didn't work. Try again."
 end

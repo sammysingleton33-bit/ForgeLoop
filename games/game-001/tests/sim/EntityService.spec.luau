@@ -180,6 +180,108 @@ describe("EntityService replication (G4)", function()
 		end
 	end)
 
+	it("Sim.GetEntities pages: each live entity once, ascending ids, every page <= 900 B (FL-0109)", function()
+		local env, entities = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(2)
+		local sim = entities:_sim()
+		local keep = sim.buildings[sim.kingdoms.crimson.keepId]
+		for i = 1, 110 do
+			-- every tenth one a soldier: soldiers come after the citizens in the frame, so ids are not in
+			-- order there and the pages must sort them
+			local kind, job = if i % 10 == 0 then "soldier" else "citizen", if i % 10 == 0 then "soldier" else "farmer"
+			entities:spawn(kind, "crimson", job, Vector3.new(keep.x + 20 + i % 10, 0, keep.z + 20 + i // 10))
+		end
+		local live = #sim.citizenOrder + #sim.unitOrder
+		expect(live > 2 * EntityServiceDef.PAGE_MAX).toBe(true) -- three pages at least
+		local seen, count, last, pages = {}, 0, 0, 0
+		local after = nil
+		repeat
+			local buf, nextAfter = invoke(env, p1, "Sim.GetEntities", after)
+			pages += 1
+			expect(buffer.len(buf) <= 900).toBe(true)
+			local batch = assert(EventCodec.decode(buf))
+			expect(#batch.events <= EntityServiceDef.PAGE_MAX).toBe(true)
+			for _, e in batch.events do
+				expect(e.type).toBe("full")
+				expect(e.id > last).toBe(true) -- ascending, across pages too
+				last = e.id
+				expect(seen[e.id]).toBeNil()
+				seen[e.id] = true
+				count += 1
+			end
+			if nextAfter ~= nil then
+				expect(nextAfter).toBe(last) -- the next page starts after this page's last id
+			end
+			after = nextAfter
+		until after == nil or pages > 20
+		expect(count).toBe(live)
+		expect(pages).toBe(math.ceil(live / EntityServiceDef.PAGE_MAX))
+		-- past the last id: an empty page and no next one
+		local tail, none = invoke(env, p1, "Sim.GetEntities", 65535)
+		expect(#assert(EventCodec.decode(tail)).events).toBe(0)
+		expect(none).toBeNil()
+		-- a cursor the server cannot use is dropped (RemoteService validation): no answer
+		for _, bad in { -1, 1.5, "1", 70000, {}, 0 / 0, math.huge, -math.huge } do
+			expect(invoke(env, p1, "Sim.GetEntities", bad)).toBeNil()
+		end
+	end)
+
+	it(
+		"Sim.GetEntities: with exactly two full pages of entities the second page has no next cursor (#127 L1)",
+		function()
+			local env, entities = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(2)
+			local sim = entities:_sim()
+			local keep = sim.buildings[sim.kingdoms.crimson.keepId]
+			local live = #sim.citizenOrder + #sim.unitOrder
+			expect(live <= 2 * EntityServiceDef.PAGE_MAX).toBe(true)
+			for i = 1, 2 * EntityServiceDef.PAGE_MAX - live do
+				entities:spawn(
+					"citizen",
+					"crimson",
+					"farmer",
+					Vector3.new(keep.x + 20 + i % 10, 0, keep.z + 20 + i // 10)
+				)
+			end
+			expect(#sim.citizenOrder + #sim.unitOrder).toBe(2 * EntityServiceDef.PAGE_MAX)
+			local first, firstNext = invoke(env, p1, "Sim.GetEntities")
+			expect(#assert(EventCodec.decode(first)).events).toBe(EntityServiceDef.PAGE_MAX)
+			expect(firstNext).never.toBeNil()
+			local second, secondNext = invoke(env, p1, "Sim.GetEntities", firstNext)
+			expect(#assert(EventCodec.decode(second)).events).toBe(EntityServiceDef.PAGE_MAX)
+			expect(secondNext).toBeNil() -- not an extra, empty page
+		end
+	)
+
+	it("puts only the validated look on the wire, whatever the profile holds (FL-0109)", function()
+		local env, entities = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(2)
+		local sim = entities:_sim()
+		local keep = sim.buildings[sim.kingdoms.crimson.keepId]
+		local id = entities:spawn("citizen", "crimson", "farmer", Vector3.new(keep.x + 25, 0, keep.z + 25))
+		local raw = { skin = 300, hair = 0, hairColor = 2.5, outfit = 4, key = "raw" } -- encodes as nothing valid
+		sim.citizens[id].profile = { look = raw }
+		env.mock:advance(0.5)
+		local spawned
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" and e.id == id then
+				spawned = e
+			end
+		end
+		assert(spawned, "the spawn went out (an unencodable look would have dropped the whole batch)")
+		expect(spawned.look).toEqual(Kit.normalizeLook(raw))
+		local full
+		for _, e in assert(EventCodec.decode(invoke(env, p1, "Sim.GetEntities"))).events do
+			if e.id == id then
+				full = e
+			end
+		end
+		expect(assert(full).look).toEqual(Kit.normalizeLook(raw))
+	end)
+
 	it("sends moving entities every snapshot and refreshes still ones about once per second", function()
 		local env, entities = boot()
 		env.mock.players:add({ userId = 1 })
@@ -427,6 +529,174 @@ describe("EntityService replication (G4)", function()
 		expect(spawns).toBe(before + 50)
 	end)
 
+	it("never replicates an id over 65535 (one warning) and goes on replicating the rest (#39 L1)", function()
+		local env, entities, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local sim = match.host.match.sim
+		sim._nextEntity = EntityServiceDef.MAX_ID - 1
+		local last = entities:spawn("citizen", "crimson", "farmer", Vector3.new(0, 0, 0)) -- 65535
+		local over = entities:spawn("citizen", "crimson", "farmer", Vector3.new(4, 0, 0)) -- 65536
+		local overSoldier = entities:spawn("soldier", "crimson", "soldier", Vector3.new(8, 0, 0))
+		expect({ last, over }).toEqual({ 65535, 65536 })
+		local spawnedIds = {}
+		entities.spawned:connect(function(id)
+			table.insert(spawnedIds, id)
+		end)
+		env.mock:advance(1)
+		local ids = {}
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" then
+				ids[e.id] = true
+			end
+		end
+		expect(ids[last]).toBe(true)
+		expect(ids[over]).toBeNil()
+		expect(ids[overSoldier]).toBeNil()
+		expect(table.find(spawnedIds, over)).toBeNil()
+		local warnings = 0
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "over 65535", 1, true) then
+				warnings += 1
+			end
+		end
+		expect(warnings).toBe(1) -- once per world, not per tick
+		local before = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		env.mock:advance(1)
+		expect(#sent(env, "Sim.Snapshot", SnapshotCodec.decode) > before).toBe(true) -- still replicating
+		expect(#assert(EventCodec.decode(entities:_fullState())).events > 0).toBe(true) -- GetEntities too
+		-- a new world may warn again: the same over-range citizen warns once more after a reset
+		entities:_resetWorld()
+		env.mock:advance(1)
+		local again = 0
+		for _, entry in env.mock.logs do
+			if entry.level == "warn" and string.find(entry.message, "over 65535", 1, true) then
+				again += 1
+			end
+		end
+		expect(again).toBe(2)
+	end)
+
+	it("an entity off the wire's range keeps replicating everything else (#39 L1)", function()
+		local env, entities = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local far = entities:spawn("citizen", "crimson", "farmer", Vector3.new(SnapshotCodec.MAX_COORD + 100, 0, 0))
+		local near = entities:spawn("citizen", "crimson", "farmer", Vector3.new(4, 0, 0))
+		local before = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		env.mock:advance(1) -- no "replication failed" error (afterEach checks the logs)
+		local recordIds = {}
+		local snapshots = sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+		for i = before + 1, #snapshots do
+			for _, r in snapshots[i].decoded.records do
+				recordIds[r.id] = true
+			end
+		end
+		expect(recordIds[near]).toBe(true)
+		expect(recordIds[far]).toBeNil()
+		local spawned = {}
+		for _, e in eventsOf(env) do
+			if e.type == "spawn" then
+				spawned[e.id] = true
+			end
+		end
+		expect(spawned[far]).toBe(true) -- it exists; only its position is held back
+		expect(env.mock:hasLog("warn", "off the wire's range")).toBe(true)
+	end)
+
+	it("a tick that fails to encode commits nothing; the next tick sends it all, signals once (#39 L1)", function()
+		local env, entities, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local kingdomId = assert(match.host.match:kingdomOf(1))
+		local spawnedIds = {}
+		entities.spawned:connect(function(id)
+			table.insert(spawnedIds, id)
+		end)
+		-- carrying a resource the wire has no code for (a programming mistake): this tick cannot be encoded
+		local id = entities:spawn("citizen", "crimson", "farmer", Vector3.new(0, 0, 0))
+		local c = entities:_sim().citizens[id]
+		c.carrying = { resource = "diamonds", amount = 1 }
+		-- a kingdom event queued before the failed tick is kept for the next one (#93 M1)
+		local speaker = entities:_sim().kingdoms[kingdomId].citizenIds[1]
+		entities:sendKingdomEvent(kingdomId, {
+			type = "thought",
+			id = speaker,
+			icon = "request",
+			scenarioId = "spec_thought",
+			text = "a thought",
+		})
+		local function thoughts()
+			local n = 0
+			for _, e in eventsOf(env) do
+				if e.type == "thought" and e.scenarioId == "spec_thought" then
+					n += 1
+				end
+			end
+			return n
+		end
+		local ok, err = pcall(function()
+			entities:replicate()
+		end)
+		expect(ok).toBe(false)
+		expect(tostring(err)).toContain("diamonds")
+		expect(spawnedIds).toEqual({}) -- nothing committed, no signal
+		local function spawnsOf(target)
+			local n = 0
+			for _, e in eventsOf(env) do
+				if e.type == "spawn" and e.id == target then
+					n += 1
+				end
+			end
+			return n
+		end
+		expect(spawnsOf(id)).toBe(0)
+		expect(thoughts()).toBe(0)
+		c.carrying = nil -- fixed
+		entities:replicate()
+		expect(spawnsOf(id)).toBe(1)
+		expect(spawnedIds).toEqual({ id })
+		expect(thoughts()).toBe(1) -- delivered with the next good tick
+		entities:replicate()
+		expect(spawnsOf(id)).toBe(1)
+		expect(spawnedIds).toEqual({ id })
+		expect(thoughts()).toBe(1) -- exactly once
+	end)
+
+	it("sends at most MAX_RECORDS records a tick; the rest go out on the next ticks (#39 L1)", function()
+		local env, entities, match = boot()
+		env.mock.players:add({ userId = 1 })
+		env.mock:advance(1)
+		local max = EntityServiceDef.MAX_RECORDS
+		EntityServiceDef.MAX_RECORDS = 5
+		local ok, err = pcall(function()
+			local seen = {}
+			local total = 0
+			for _, k in match.host.match.sim.kingdoms do
+				total += #k.citizenIds + #k.unitIds
+			end
+			expect(total > 5).toBe(true)
+			local before = #sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+			for _ = 1, 20 do
+				entities:replicate()
+			end
+			local snapshots = sent(env, "Sim.Snapshot", SnapshotCodec.decode)
+			for i = before + 1, #snapshots do
+				expect(#snapshots[i].decoded.records <= 5).toBe(true)
+				for _, r in snapshots[i].decoded.records do
+					seen[r.id] = true
+				end
+			end
+			local count = 0
+			for _ in seen do
+				count += 1
+			end
+			expect(count > 5).toBe(true) -- the capped rest went out on later ticks
+		end)
+		EntityServiceDef.MAX_RECORDS = max
+		assert(ok, err)
+	end)
+
 	it("sends reset before the new world's spawns when a match starts over", function()
 		local fast = {
 			phaseDurations = function()
@@ -626,5 +896,59 @@ describe("EntityService kingdom events (G13.3, FL-0079)", function()
 			sawReset = sawReset or e.type == "reset"
 		end
 		expect(sawReset).toBe(true)
+	end)
+end)
+
+describe("EntityService VS-1 reactions (CONTRACTS G5, FL-0050)", function()
+	it("a keep reaching level 2 makes its citizens near it celebrate, once; far or foreign ones don't", function()
+		local env, entities, match = boot()
+		local byKingdom = seat(env, match, 5) -- rulers in several kingdoms, so several are populated
+		local sim = entities:_sim()
+		local k = sim.kingdoms.crimson
+		local keep = sim.buildings[k.keepId]
+		local radius = sim.catalog.tuning.celebrateRadius
+		local near = sim.citizens[k.citizenIds[1]]
+		local far = sim.citizens[k.citizenIds[2]]
+		near.x, near.z = keep.x + radius * 0.5, keep.z
+		far.x, far.z = keep.x + radius + 30, keep.z
+		local foreignKingdom
+		for kingdomId in byKingdom do
+			if kingdomId ~= "crimson" and #sim.kingdoms[kingdomId].citizenIds > 0 then
+				foreignKingdom = sim.kingdoms[kingdomId]
+				break
+			end
+		end
+		local foreign = sim.citizens[assert(foreignKingdom).citizenIds[1]]
+		foreign.x, foreign.z = keep.x + 1, keep.z + 1 -- a stranger at the gate
+		local before = #eventsOf(env)
+		keep.pendingLevel = 2
+		keep.progress = 0
+		expect(sim:addWork(keep, 1e9)).toBe(true) -- the upgrade completes inside the simulation
+		env.mock:advance(0.2)
+		local celebrated = {}
+		local all = eventsOf(env)
+		for i = before + 1, #all do
+			local e = all[i]
+			if e.type == "cue" and e.cue == "celebrate" then
+				celebrated[e.id] = (celebrated[e.id] or 0) + 1
+			end
+		end
+		expect(celebrated[near.id]).toBe(1)
+		expect(celebrated[far.id]).toBeNil()
+		expect(celebrated[foreign.id]).toBeNil()
+		for id in celebrated do
+			local c = sim.citizens[id]
+			expect(c.kingdomId).toBe("crimson")
+		end
+		-- level 3 is not the level-2 celebration
+		before = #eventsOf(env)
+		keep.pendingLevel = 3
+		keep.progress = 0
+		sim:addWork(keep, 1e9)
+		env.mock:advance(0.2)
+		all = eventsOf(env)
+		for i = before + 1, #all do
+			expect(all[i].type == "cue" and all[i].cue == "celebrate").toBe(false)
+		end
 	end)
 end)

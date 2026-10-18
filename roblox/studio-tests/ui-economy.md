@@ -13,6 +13,7 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 | P3 | FORGE-04's InputModeController merged (G4.1; G13.6 `selected` for U10–U11) | U5 build-mode camera/taps, U10–U11 |
 | P4 | Icons uploaded and their ids in `games/game-001/config/UITheme.luau` (`production/handoffs/2026-10-12-forge-03-to-user-ui-icons.md`) | U9 only; otherwise emoji fallbacks show |
 | P5 | FORGE-01's army and objectives (FL-0052: `Army.Recruit`, `Army.Command`, `Army.Objectives` / `Army.GetObjectives`), `Match.Ended` and `Kingdom.Population` merged (CONTRACTS G8, G13.2) | U14 |
+| P6 | The cinematic conversation set merged together (D-046, FL-0101): FORGE-01's #108 (Converse look/position, `Kingdom.EndConversation`), FORGE-04's #84 (camera) and FORGE-02's #85 (`Kit.portrait`) with FORGE-03's FL-0099 | U16 |
 
 ## U1 — the place boots with the kingdom UI (P1)
 1. Play (F5). In Output, the client controllers list includes `KingdomHudController` and
@@ -136,6 +137,27 @@ checks (`check.sh`, the Lune specs and the renders in `games/game-001/design/ui/
 7. Phone: the conversation sheet covers the reputation strip completely (no sliver above it); a
    notice during the conversation appears above the sheet, right of the pills, not over the answers.
 
+## U16 — cinematic conversation (P2 + P6, FL-0099; FORGE-05 runs it under FL-0101)
+1. Tap a citizen with a "!" and **Talk**: their portrait rises from the bottom left in about a third
+   of a second, with their name and job on it; the question is in a parchment bubble beside it and
+   the 2–4 answers below. **The portrait looks like the citizen in the world**: same skin, hair,
+   clothes and tool (compare with the world rig the camera now frames).
+2. **The world stays visible**: only a light darkening at the bottom (never more than a fifth), no
+   full-screen cover. The camera glides to the citizen (FORGE-04) and the citizen stays visible
+   above the stage, not under the portrait or the answers (also on the phone emulator).
+3. Answers show their costs (resource chips; red and "Need …" when the treasury is short) and each
+   risk as a chip with its chance ("⚠ 20 %"). An answer with a cost or a risk opens the confirm step
+   with every risk written out in full; Back returns. Phone 844 × 390: four answers in two rows of
+   two, nothing overlapping, the close button never covering an answer.
+4. Choose an answer: the citizen's reaction in the bubble, "WHAT CHANGED" chips, and **Done** with a
+   bar running down; after about 6–12 s the stage closes by itself (Done closes it sooner). The camera
+   returns to where it was. The pills and the reputation strip show the change.
+5. Open a conversation and close it **without answering** (the X, tapping the ground, or Build): the
+   citizen starts walking again at once (the server's hold ends, `Kingdom.EndConversation`); Talk
+   again shows the same question.
+6. Settings → Reduced motion on: the portrait appears at once (no rise) and the camera cuts.
+7. Output: no red errors from ConversationController; one info line at most from the camera.
+
 ## U14 — army, objectives and the slice summary (P2 + P5; FORGE-04 selection for step 6; FL-0060)
 Phone first (844 × 390 landscape), then tablet and desktop. Screenshots: the army drawer and the
 tracker on the phone, the summary on the phone and on desktop.
@@ -187,6 +209,108 @@ tracker on the phone, the summary on the phone and on desktop.
    already greyed out ("None free"); only one citizen moves.
 8. Two-kingdom test (if the match allows switching): after you move to another kingdom the numbers
    read "–" for a moment, then that kingdom's counts; − sends that kingdom's count − 1.
+
+## U17 — turning a building (P2; the user's first Studio feedback 2026-10-13)
+1. Desktop, aerial camera: **Build** → Farm → **Place Farm**. The bar's **Turn** button shows the rotate
+   icon, the word "Turn" and a round dial with an arrow; above the bar: "… R turns (Shift+R back) …".
+   On the ghost: a cream strip on one edge (the door side) and a cream arrow pointing out of it.
+2. Press **R**: the ghost turns a quarter counter-clockwise (seen from above), the arrow with it, and
+   the dial's arrow points the same way as the ghost's arrow on screen. **Shift+R** turns it back.
+   Click **Turn** on the bar: the same as R.
+3. Rotate the camera (Q/E or right-drag), then move the mouse a little: the dial follows the camera
+   (it shows where the door faces on screen now). Place it: the building stands the way the arrow
+   pointed (its door on the strip's side).
+3b. Turn the camera about 45° off a street (an oblique view) and turn the ghost through all four turns:
+   each time the dial's arrowhead (two strokes and a shaft) points the way the ghost's arrow points on
+   screen, never the opposite way (the dial is drawn with frames since #148; renderer deviation 25).
+4. Gamepad (if available): **R1** turns, **L1** turns back; **Y** still switches the camera view and the ghost does not turn on it.
+5. Phone (emulator): the bar keeps Turn as a 70 × 44 button with the icon and the dial (no word); a tap
+   turns the ghost. The name, cost and verdict stay readable.
+6. Plot turn (FORGE-01's v0.4-g9h server, #132): tap a free medium plot, pick Storehouse. Under the
+   build time: the dial, "Faces the street" and **Turn**; on the plot a ghost with the door strip and
+   arrow, inside the plot's outline. Turn → "Faces right" (the ghost turns inside the outline), again
+   → "Faces away", again → "Faces left". Build it: it stands that way.
+7. Same plot, **Barracks**: Turn only switches between "Faces the street" and "Faces away" (34 × 22 does
+   not fit the 36 × 30 plot turned a quarter).
+8. Phone: the plot detail shows a "Faces …" chip beside the build time and a Turn button left of
+   "Build … here"; the price stays visible without scrolling.
+
+## U18 — move a building (FL-0120; needs FORGE-01's base editing server, FL-0119 #140)
+Before #140 the building panel shows no Move: expected.
+1. Tap one of your houses: beside "Upgrade" (or the disabled upgrade reason) is **Move**. Tap your keep or
+   another kingdom's building: no Move.
+2. Tap **Move**: the panel closes, the house turns see-through (dimmed, still drawn), a ghost stands where it
+   is with the door strip and facing arrow, and the bar reads "Move House", no cost, "Move here".
+3. Move the mouse (phone: tap the ground): the ghost follows, green on free ground; red over a tree, a road,
+   a crop field or outside your land, with the reason ("Not enough room there", "Move it inside your keep's
+   land"). R / Turn / R1 turn it; Shift+R / L1 turn back.
+4. Move here on green ground: a toast "House moved"; the house now stands there, the dim is gone, its
+   workers walk over. Open its panel at once: Move reads "Moved" (disabled) and comes back after about 10 s.
+5. Pick it up again and aim at a free plot that fits: the ghost snaps into the plot's outline and the bar
+   reads "✓ Faces the street"; Turn steps through only the turns that fit (a barracks on a medium plot:
+   street or away). Move here: it stands on the plot, turned so; the plot it left (if any) reads free.
+6. Aim at a plot that is built on, or move a wall over a plot: no snap.
+7. Q / Cancel / another menu while moving: the ghost goes, the house is no longer dimmed, nothing moved.
+8. Refusals (needs a rival for 8b): 8a move a house twice within 10 s from the second tap: "It just moved.
+   Wait a few seconds"; 8b while the alarm rings / under attack: "Not while the alarm bell rings" / "Not
+   while it's under attack".
+9. Edit-mode taps (FORGE-04's FL-0121 edit mode, #142): while moving, tap another of your houses, a free
+   plot of yours and the house itself: the move stays (ghost and dim stay, no panel or plot drawer opens).
+   Cancel, then tap the same house: its panel opens as usual.
+10. Pick up a house that stands turned on its plot (U17 step 6, "Faces right"): the snap starts at "Faces
+   right", not "Faces the street". **Move here** without moving it: the move ends quietly (no toast, no
+   "Moved" cooldown in its panel). Turn once and Move here: it turns on its plot and the toast shows.
+
+## U19 — the back key (FORGE-04's #130: gamepad B, Backspace; a Mac's delete)
+1. Desktop: open **Kingdom**, press Backspace: the drawer closes. Open Build, then Kingdom (one drawer
+   replaces the other), Backspace once: closed; a second Backspace does nothing.
+2. Kingdom → a building's detail, Backspace: back to the Buildings tab; again: the drawer closes.
+3. Talk to a citizen (the cinematic stage, E11): pick an answer with a cost or risk (the confirm step),
+   Backspace: back to the question, nothing chosen; Backspace again: the stage closes, the camera comes
+   back and the citizen walks on (as with X).
+4. Phone emulator with a gamepad (or a keyboard): Build → a building (the detail pane), B: back to the
+   list; B again: the drawer closes. The same for Reputation (a category) and a plot's building detail.
+5. Typing in any text box, Backspace deletes text and closes nothing. While placing, B leaves build mode
+   (FORGE-04's rule) and closes nothing else.
+
+## U20 — citizens waiting (FL-0115; needs FORGE-04's request badges, #149)
+1. Aerial view, a few citizens with a gold "!" (an open request): under Kingdom on the rail a **Waiting**
+   button (💬) with the number of them on an amber bubble. Nobody waiting: no button.
+2. Tap Waiting: the camera centres on the oldest one and their card opens with Talk; tap again: the next
+   one (wrapping). The count drops when a request is answered.
+3. While placing or moving a building, and while talking to a citizen, the button hides; it comes back
+   afterwards.
+4. Walking view (V): the button hides; back in the aerial view it comes back (FORGE-04's active(), #170).
+5. Phone: the button is the icon with the bubble (no word), 48 px, under the other rail buttons.
+
+## U21 — phase bar and Rivals (FL-0129, Operation Crownfall; Rivals needs FORGE-01's diplomacy remote)
+1. Full match, a timed phase (Founding → Results): the top timer pill shows the phase, the clock and a
+   track of five segments (done gold, now bright, ahead dim) with "Next: <phase>"; before Conflict it
+   says "Next: Conflict · war opens". The slice's untimed Founding and the Lobby show no track. Phone:
+   phase and clock only.
+2. With the server's `Kingdom.Diplomacy` remote: Kingdom → a fourth tab **Rivals** (crossed swords),
+   one row per rival by rank: crest, name, "#rank · N Crown Points", a chip (At peace / At war / Truce
+   / Fallen). Without the remote (today's main): no Rivals tab.
+3. Before Conflict: Declare war is greyed with "War opens in Conflict" under it. In Conflict: Declare war
+   → "Declare war on <name>?" with Confirm / Cancel; Cancel changes nothing; Confirm: a "War declared
+   on <name>" notice, the chip turns red "At war", the row offers Propose peace.
+4. Propose peace: "Offer sent · m:ss" counts down and the button stays off until it expires. A rival's
+   offer: one notice "<name> proposes peace", a "1" bubble on the Kingdom rail button, the row says
+   "Proposes peace · m:ss" with Accept peace. Accept: "Truce", "Truce · m:ss left", Declare war off
+   with "Truce for m:ss"; the bubble goes.
+5. A refusal (e.g. declaring during the grace period) is a warning in words, never "Something went
+   wrong"; the row does not change.
+6. Two players in one kingdom (D-054): the one seated second sees **Ask <senior> to declare war**
+   (grey) instead of Declare war; Confirm asks "Ask <senior> to declare war on <name>?", says "Asked
+   your senior ruler for war on <name>" and sends a notice to the senior ruler; nothing changes until
+   they declare. Their Accept peace is off with "<senior> decides". A ruler who joined mid-match sees
+   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. When the kingdom falls, or in
+   Results, every button is off ("Your kingdom has fallen" / "The match is over"). An offer that runs
+   out takes the Kingdom bubble with it.
+7. Phone 667 × 375 (Device emulator): Kingdom tabs are icons only (the selected one framed in gold),
+   Close fully visible; rival names whole, score "#1 · 20 pts"; Accept peace and Propose peace side by
+   side, both fully inside the drawer; the confirm question on its own line. Touch and gamepad (A on a
+   focused button) both work.
 
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).

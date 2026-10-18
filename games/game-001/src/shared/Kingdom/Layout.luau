@@ -7,12 +7,20 @@
 	storehouse, farm, lumbercamp, quarry) at their anchors, facing as the anchors do; the neutral objectives at `objectives[i]` (gameplay numbers from
 	config Objectives), and the contested centre nodes from the world's `heart_*` resource nodes. Each
 	kingdom still gets a generated forest, quarry and gold vein around its keep until FL-0050/FL-0051
-	move the economy onto `Layout.resourceNodes` and the starting buildings onto the plot anchors.
+	move the economy onto `Layout.resourceNodes` and the starting buildings onto the plot anchors. On the
+	world layout they are generated in the keep's own frame (behind it and on its flanks) from one random
+	sequence that every kingdom replays, so the plots, which are rotated copies, get the same nodes at the
+	same distances (#62 M-1, fairness).
 	On the world layout a generated node keeps clear of every building already standing (sim:nodeClear:
 	the keep and starting buildings) and of every build slot (its circle stays placementGap +
 	SLOT_MARGIN from the slot, so any type that fits the slot can be built there). A blocked spot tries
 	a step inwards, outwards and towards the back of the plot, then a step further, a few times and without
 	random draws; a node with no clear spot is left out. Same seed, same nodes.
+	Farm zones and build areas stay free too (the user's playtest: trees and rocks stood in the crop fields):
+	a generated node keeps the same distance from every crop field (world features.fields, the farm zones)
+	and every plot build zone (plot.buildZones: the front yard and the two flanks) as from a slot, counted
+	from the larger of its footprint and what is drawn (Sim/NodeStyle.radius: the half-diagonal of its box).
+	The world's own per-plot resource nodes (world Layout resourceNodes, Kit models) are FORGE-02's data.
 	Passing `spacing` instead keeps the older square generator (specs that need compact maps).
 
 	API
@@ -27,6 +35,9 @@
 			options.populate   false: kingdoms start without citizens (sim:populate later; slice mode)
 		Layout.bounds(spacing?): Bounds            -- map bounds: the world's, or ones that fit the square layout
 		Layout.boundsFor(spacing): Bounds          -- (square layout)
+		Layout.keepOutAreas(): { Shape }           -- slots, build zones and crop fields: where generated nodes keep out
+		Layout.reservedAreas(): { Shape }          -- no-build areas: crop fields, plot roads, spawn pads (G13.9 v0.4-g9j);
+		                                           generate() sets them as sim.noBuild on the world layout
 		Layout.SLOT_MARGIN: number                 -- extra studs between a generated node's clearance and a slot
 		Layout.groundY(x, z): number               -- world surface height where entities stand: the bridge
 		                                           deck on a bridge, else Kit/WorldPlan.groundHeight (hills,
@@ -38,6 +49,7 @@ local ObjectivesConfig = require("@game/ReplicatedStorage/Forge/Config/Objective
 local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 local WorldPlan = require("../Kit/WorldPlan")
 local Footprint = require("../Sim/Footprint")
+local NodeStyle = require("../Sim/NodeStyle")
 
 local Layout = {}
 
@@ -53,23 +65,79 @@ local NODE_KIND = { wood = "tree", stone = "rock", gold = "goldvein", food = "be
 
 Layout.SLOT_MARGIN = 2
 -- a blocked generated node tries NUDGES steps: i * NUDGE studs in, then out, then i * TURN radians to the back
-local NUDGE, TURN, NUDGES = 6, 0.1, 8
+local NUDGE, TURN, NUDGES = 6, 0.1, 12
 
--- every build slot of every plot, as placement rectangles
+-- Every area a generated node keeps out of, as placement rectangles: each plot's build slots, its build
+-- zones (front yard and flanks, in the keep's frame) and the world's crop fields (the farm zones).
 local SLOTS = {}
 for _, identity in KingdomsConfig.identities do
-	for _, slot in WorldLayout.plots[identity.id].buildSlots do
+	local plot = WorldLayout.plots[identity.id]
+	for _, slot in plot.buildSlots do
 		local size = WorldLayout.slotSizes[slot.size]
 		table.insert(SLOTS, Footprint.rect(size, slot.center.X, slot.center.Z, slot.rot))
 	end
+	local look = plot.anchors.keep.LookVector
+	local keepYaw = math.atan2(-look.X, -look.Z) -- Layout.yawOf, which is defined further down
+	for _, zone in plot.buildZones do
+		table.insert(SLOTS, Footprint.rect(zone.size, zone.center.X, zone.center.Z, keepYaw))
+	end
+end
+for _, field in WorldLayout.features.fields do
+	table.insert(SLOTS, Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw))
 end
 
--- world layout: a `kind` node at (x, z) clears the standing buildings, every build slot and the other nodes
+-- No-build areas (CONTRACTS G13.9 v0.4-g9j; Place, PlaceSlot and Move refuse a placement shape that overlaps
+-- one, reason blocked): each plot's crop fields, its plot roads (the avenue from the keep door to the gate
+-- and the cross street, a rectangle per road segment, as wide as the drawn road) and the spawn pad (a square
+-- of SPAWN_PAD studs around the ruler spawn point, turned with the plot). A road segment is a plot road when
+-- both its ends lie within PLOT_ROAD_REACH of a keep; the valley roads beyond the gate are not.
+local SPAWN_PAD, PLOT_ROAD_REACH = 16, 130
+local RESERVED = {}
+for _, field in WorldLayout.features.fields do
+	table.insert(RESERVED, Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw))
+end
+for _, identity in KingdomsConfig.identities do
+	local plot = WorldLayout.plots[identity.id]
+	local look = plot.anchors.keep.LookVector
+	local pad = plot.spawn.Position
+	table.insert(
+		RESERVED,
+		Footprint.rect(Vector2.new(SPAWN_PAD, SPAWN_PAD), pad.X, pad.Z, math.atan2(-look.X, -look.Z))
+	)
+end
+for _, road in WorldLayout.features.roads do
+	for i = 1, #road.points - 1 do
+		local a, b = road.points[i], road.points[i + 1]
+		for _, identity in KingdomsConfig.identities do
+			local keep = WorldLayout.plots[identity.id].anchors.keep.Position
+			if
+				(a.X - keep.X) ^ 2 + (a.Y - keep.Z) ^ 2 <= PLOT_ROAD_REACH ^ 2
+				and (b.X - keep.X) ^ 2 + (b.Y - keep.Z) ^ 2 <= PLOT_ROAD_REACH ^ 2
+			then
+				local d = b - a
+				table.insert(
+					RESERVED,
+					Footprint.rect(
+						Vector2.new(road.width, d.Magnitude),
+						(a.X + b.X) / 2,
+						(a.Y + b.Y) / 2,
+						math.atan2(d.X, d.Y)
+					)
+				)
+				break
+			end
+		end
+	end
+end
+
+-- world layout: a `kind` node at (x, z) clears the standing buildings, every build slot, build zone and crop
+-- field, and the other nodes
 local function clearSpot(sim: any, kind: string, x: number, z: number): boolean
 	if not sim:nodeClear(kind, x, z) then
 		return false
 	end
-	local radius = sim.catalog.nodes[kind].footprint
+	-- the drawn box can reach past the footprint circle (a rock's corners): clear whichever is larger
+	local radius = math.max(sim.catalog.nodes[kind].footprint, NodeStyle.radius(kind))
 	local gap = sim.catalog.tuning.placementGap + Layout.SLOT_MARGIN
 	for _, slot in SLOTS do
 		if Footprint.overlapsCircle(slot, x, z, radius, gap) then
@@ -212,6 +280,19 @@ function Layout.groundY(x: number, z: number): number
 	return y
 end
 
+-- Every area a generated node keeps out of (clearSpot's list): each plot's build slots and build zones and the
+-- world's crop fields, as placement shapes (read-only). FORGE-02's dressing-clearance spec reads this one list
+-- instead of keeping a copy.
+function Layout.keepOutAreas(): { Footprint.Shape }
+	return table.clone(SLOTS)
+end
+
+-- The no-build areas above as placement shapes (read-only). Layout.generate hands them to the simulation on
+-- the world layout (sim.noBuild); specs and FORGE-02's checks read them here.
+function Layout.reservedAreas(): { Footprint.Shape }
+	return table.clone(RESERVED)
+end
+
 function Layout.bounds(spacing: number?)
 	if spacing then
 		return Layout.boundsFor(spacing)
@@ -226,7 +307,12 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 	assert(type(count) == "number" and count >= 1 and count <= 4, "Layout.generate: kingdoms must be 1..4")
 	local spacing = opts.spacing
 	local trees = opts.trees or KingdomsConfig.trees
-	local rng = sim.rng
+	if not spacing then
+		sim.noBuild = Layout.reservedAreas() -- the square layout (compact specs) has no roads or fields
+	end
+	-- world layout: every kingdom draws the same sequence, so its forest, quarry and gold vein sit the same
+	-- way in its own plot (#62 M-1); the square layout keeps drawing from the simulation's rng
+	local worldSeed = if spacing then nil else sim.rng:NextInteger(1, 2147483646)
 
 	local kingdoms = {}
 	for i = 1, count do
@@ -259,8 +345,10 @@ function Layout.generate(sim: any, options: { [string]: any }?)
 			})
 		)
 
-		-- forest behind the keep (away from the centre), spread on an arc
-		local away = math.atan2(kz, kx)
+		-- forest behind the keep, spread on an arc: away from the centre (square layout), or the back of the
+		-- keep in its own frame (world layout: -LookVector = (sin yaw, cos yaw))
+		local rng = if worldSeed then Random.new(worldSeed) else sim.rng
+		local away = if spacing then math.atan2(kz, kx) else math.atan2(math.cos(keepYaw), math.sin(keepYaw))
 		local back = if spacing then nil else away
 		for t = 1, trees do
 			local angle = away + (t / trees - 0.5) * 1.6 + (rng:NextNumber() - 0.5) * 0.15

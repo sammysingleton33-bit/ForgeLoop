@@ -20,6 +20,9 @@
 	hud:addMenu({ id, icon, label, target?, order? })   another rail button (the next render rebuilds
 	                                         the rail); `order` sorts it after the built-in ones
 	hud:removeMenu(id)                       takes it away again
+	hud:setRailBadge(id, count?)             a count bubble on that rail button; an item added with
+	                                         `hideEmpty` is hidden while the count is 0 or nil (FL-0115:
+	                                         "Waiting", the citizens with an open request)
 	hud.pills[resourceId] -> CurrencyPill handle      hud.rail[id] -> IconButton handle
 	Onboarding hooks (FORGE-04, G11): the pill row has OnboardingTarget = "HUD.Resources" and the
 	Build button OnboardingTarget = "HUD.BuildButton".
@@ -54,12 +57,20 @@ function KingdomHud.new(root: Instance, topbar: Instance, motion: any)
 		_kingdomId = nil :: string?,
 		pills = {},
 		rail = {},
+		_railBadges = {} :: { [string]: number },
 		_chips = {},
 		menus = table.clone(KingdomHud.MENUS) :: { any },
 	}, KingdomHud)
 end
 
-function KingdomHud:addMenu(item: { id: string, icon: string, label: string, target: string?, order: number? })
+function KingdomHud:addMenu(item: {
+	id: string,
+	icon: string,
+	label: string,
+	target: string?,
+	order: number?,
+	hideEmpty: boolean?,
+})
 	for _, menu in self.menus do
 		if menu.id == item.id then
 			return
@@ -83,6 +94,27 @@ function KingdomHud:addMenu(item: { id: string, icon: string, label: string, tar
 		self.menus[i] = entry.menu
 	end
 	self._breakpoint = nil -- rebuild the rail on the next render
+end
+
+-- A count bubble on a rail button, kept across rail rebuilds (a breakpoint change rebuilds the rail).
+function KingdomHud:setRailBadge(id: string, count: number?)
+	self._railBadges[id] = count
+	self:_applyBadge(id)
+end
+
+function KingdomHud:_applyBadge(id: string)
+	local button = self.rail[id]
+	if button == nil then
+		return
+	end
+	local count = self._railBadges[id]
+	-- 0, not nil: a nil field is no field, so update() would keep the old bubble (IconButton hides 0)
+	button:update({ badge = count or 0 })
+	for _, menu in self.menus do
+		if menu.id == id and menu.hideEmpty then
+			button.instance.Visible = count ~= nil and count > 0
+		end
+	end
 end
 
 function KingdomHud:removeMenu(id: string)
@@ -297,6 +329,7 @@ function KingdomHud:_build(metrics: any, banner: any)
 		end
 		button.instance.Parent = rail
 		self.rail[menu.id] = button
+		self:_applyBadge(menu.id)
 	end
 
 	self._queue = Create("Frame", {
@@ -365,6 +398,32 @@ function KingdomHud:_build(metrics: any, banner: any)
 	local hourglass = Icon.new("timer", 28)
 	hourglass.LayoutOrder = 1
 	hourglass.Parent = self._timer
+	-- The full match's phase track and what comes next (FL-0129): a third column, so the pill grows
+	-- sideways in the top bar's fixed height; built empty, filled by refreshTimer, hidden on phones.
+	Create("Frame", {
+		Name = "Ahead",
+		BackgroundTransparency = 1,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromScale(0, 1),
+		LayoutOrder = 3,
+		Visible = false,
+		Parent = self._timer,
+	}, {
+		List = Style.list("y", 4, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
+		Track = Create("Frame", {
+			BackgroundTransparency = 1,
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = UDim2.fromOffset(0, KingdomHud.TRACK_HEIGHT),
+			LayoutOrder = 1,
+		}, { List = Style.list("x", 3, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center) }),
+		Next = Style.text({
+			text = "",
+			weight = Enum.FontWeight.SemiBold,
+			size = 11,
+			color = Theme.color("textSecondary"),
+			extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 13), LayoutOrder = 2 },
+		}),
+	})
 end
 
 local function memberChip(member: any, color: Color3, order: number): Frame
@@ -466,6 +525,49 @@ function KingdomHud:refreshTimer(timer: any, metrics: any)
 	row.Clock.Text = timer.clock or ""
 	row.Label.Text = if phone then "" else timer.label or ""
 	row.Label.Visible = not phone and timer.label ~= nil
+	self:_refreshAhead(timer, phone)
+end
+
+-- The phase track: one segment per phase, the ones done dim gold, the current one bright, the rest ink.
+KingdomHud.TRACK_SEGMENT = 18
+KingdomHud.TRACK_HEIGHT = 5
+function KingdomHud:_refreshAhead(timer: any, phone: boolean)
+	local ahead = self._timer and self._timer:FindFirstChild("Ahead")
+	if ahead == nil then
+		return
+	end
+	local show = not phone and timer.step ~= nil and timer.steps ~= nil
+	ahead.Visible = show
+	if not show then
+		return
+	end
+	local track = ahead.Track
+	for i = 1, timer.steps do
+		local segment = track:FindFirstChild("Step_" .. i)
+		if segment == nil then
+			segment = Create("Frame", {
+				Name = "Step_" .. i,
+				Size = UDim2.fromOffset(KingdomHud.TRACK_SEGMENT, KingdomHud.TRACK_HEIGHT),
+				BorderSizePixel = 0,
+				LayoutOrder = i,
+				Parent = track,
+			}, { Corner = Style.corner(999) })
+		end
+		local state = if i < timer.step then "done" elseif i == timer.step then "now" else "ahead"
+		segment.BackgroundColor3 = if state == "now"
+			then Theme.color("gold400")
+			elseif state == "done" then Theme.color("gold700")
+			else Theme.color("ink600")
+		segment:SetAttribute("state", state)
+	end
+	for _, child in track:GetChildren() do
+		local n = tonumber(string.match(child.Name, "^Step_(%d+)$"))
+		if n and n > timer.steps then
+			child:Destroy()
+		end
+	end
+	local next = if timer.next then `Next: {timer.next}` else "Last phase"
+	ahead.Next.Text = if timer.nextNote then `{next} · {timer.nextNote}` else next
 end
 
 function KingdomHud:refreshQueue(queue: { any }, metrics: any, drawerOpen: boolean, hidden: boolean?)

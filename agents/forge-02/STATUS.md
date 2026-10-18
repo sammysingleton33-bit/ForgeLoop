@@ -4,23 +4,22 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/02-blender` (Blender pipeline + kit, pushes verified); PR branches `forge/02-blender-*` cut from main |
-| Open PRs | [#90](https://github.com/sammysingleton33-bit/ForgeLoop/pull/90) FL-0013 Blender pipeline on main (PR-A) · [#85](https://github.com/sammysingleton33-bit/ForgeLoop/pull/85) FL-0098 Kit.portrait · [#105](https://github.com/sammysingleton33-bit/ForgeLoop/pull/105) aerial-readable kingdom emblems (CVD finding 3) |
-| Merged | #27, #28, #38, #43, #60, #73, #75, #81 (soldier crest) |
-| Current tasks | FL-0013 (REVIEW, #90), FL-0098 (REVIEW, #85), CVD finding 3 (#105), FL-0085/54/55/56 (REVIEW), FL-0057 (BUILDING). Next: image-only preview PRs after #90; FL-0086 new building types |
-| Last verified check | #105: roblox check.sh OVERALL PASS (game-001 1114/0) after merging main; 15 mutations caught; aerial renders + cvd.py looked at. #90: blender check.sh PASS. #85: check.sh OVERALL PASS (1049/0) |
-| Blockers | none |
-| Needs from others | FORGE-07/05: review #90, #85, #105. FORGE-01: FL-0104 (#91) passes `kingdom` to soldier rigs; rebuild captured buildings with Kit.build (caps). FORGE-00/user: D-026 calibration verdicts (sheets in #90). Studio: four-kingdom colour-vision screenshot |
+| Session branch | `forge/02-blender-status` (this refresh); work branches below |
+| Open PR | #90 (FL-0013 Blender pipeline core, waiting for FORGE-07/05 review). Everything else of this cycle is merged: #138 #153 #155 #169 (citizens, B18), #141 #151 (environment), #159 (world trim), #160 (farm nodes), #85 (portrait) |
+| Current task | none active. Next candidates (FORGE-00 to order): FL-0086 round 2, the parked B12 visuals, the FL-0085 record, a wheat and boulder fix that needs meshes |
+| Last verified check | `bash roblox/scripts/check.sh` OVERALL PASS on #169 at merge (FORGE-05: game-001 1692/0, main f3298dd = B18). Headless only; **no Studio evidence for any of this art** |
+| Blockers | Wheat and boulders: wedge and block layouts read as built objects, not crops or rocks (3 attempts each, D-019 NEEDS-WORK). The fix is one-mesh props from the Blender pipeline, which needs the user's Studio import (the optional mesh pilot, `import_pilot` in the session scratch; nothing uploaded by FORGE-02) |
+| Needs from others | FORGE-07/05: review of #90. FORGE-05 / the user: Studio look at the starting farms (B17 checklist G1) and at the cheer (arms beside the head) and the 8 citizen rigs at 40-80 studs and from the aerial camera. FORGE-01: drop the 20 world-node ids from the `KNOWN` ratchet in `tests/sim/LayoutZones.spec.luau`, flip the cheer ratchet to ≥ 0.1, and `Layout.keepOutAreas()` when it is on main (my `NodeKeepOut.spec` has a one-line TODO to read it) |
 
-## Blender kit state (D-019 review log in `blender/reviews/`)
-- 223 assets: 146 PASS, 70 NEEDS-WORK, 7 UNREVIEWED (house_cottage after the emblem banner).
-- Emblems unified (D-039): crown / star / oak leaf / sun from `_kingdom_props_common`; flame removed; no crescent finials.
-- Parked (GENERATORS.md): farm_field, tree_birch, rock_cliff, resource_stone, resource_ore, prop_well; kingdom emblem polish (soldier archers, smithy_04 / barracks_04 sun, crown consistency) with the next strategy (one kit-wide emblem plaque).
+## Work branches (pushed, not merged; each needs a main merge and a fresh gate before any PR)
+- `forge/02-blender-fl0086-buildings` (266f375): six VS-2 building types, carries the D-047 27k ceiling spec (it now passes with #159: measured 25,861 / 27,000 on a scratch merge). Fresh D-019 was NEEDS-WORK, round-2 fix list in the handoff `production/handoffs/2026-10-13-forge-02-to-forge-01-fl0086-vs2-buildings.md`.
+- `forge/02-blender-b12-visuals` (f95ee2b): throne seen from behind, oak emblem, house pennants.
+- `forge/02-blender-fl0085-record` (c83032a): farm crop attempt 3 and the FL-0085 record.
+- `forge/02-blender-env-wheat` (758c185): ridged-row wheat at 44 parts, D-019 NEEDS-WORK, not for merge (FORGE-00 ruling: keep #141's slabs until a mesh row exists).
 
-## Next
-1. Image-only preview PRs (~3 MB, referenced sheets) after #90; merge main back into `forge/02-blender`.
-2. FL-0086 new building types (mine, blacksmith, market) in the Kit.
-3. Kit-wide Blender emblem plaque (parked strategy); village vignette and import pack (FL-0057).
-
-## Unverified
-Nothing has been seen in Roblox Studio (headless gates and Blender renders only).
+## Last report
+B18 cut (main f3298dd) carries FORGE-02's playtest art pass as **interim art (D-051), nothing passes D-019 yet, all Blender and headless evidence**:
+- Environment (#141, #151): fuller oak/pine/birch, angular boulders, readable stone/ore/wood nodes, flat crop rows. Pine clearly better, oak and birch modest.
+- World (#159, #160): decor trimmed to the 27k part ceiling (measured 25,861) with farm and plot views protected; the 20 world resource nodes moved out of the starting farms by drawn extent, same offsets in all four plots.
+- Citizens (#138, #153, #155, #169): per-job hats, colours and handle-and-head tools in the 11-part rig (D-048), kingdom red from above, arms-up cheer clears the head. Soldier and governor pass D-019; the set is NEEDS-WORK on variation, miner and hauler front read and idle detail.
+Still placeholder quality: wheat crop, boulders, per-individual variation, the miner's pick read from the front, the hauler's load from the front, idle silhouette.

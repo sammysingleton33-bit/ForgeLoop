@@ -88,15 +88,19 @@ describe("Experience/Onboarding config rules", function()
 		end)).toContain("startOn 'KingdomJoind' is not a declared bus event")
 	end)
 
-	it("rejects unknown bus events, unlisted client actions and auto-advancing bus steps", function()
+	it("rejects unknown bus events, unlisted client actions and auto-advancing rewarded bus steps", function()
 		local text = problemsOf(function(c)
 			c.flows[1].steps[5].trigger = { bus = "CitizenTaskChangd" }
 			c.flows[1].steps[2].trigger = { client = "Teleported" }
-			c.flows[1].steps[6].autoAdvanceSec = 5
+			c.flows[1].steps[7].autoAdvanceSec = 5 -- FirstHarvest pays 25 Coins
 		end)
 		expect(text).toContain("unknown bus event 'CitizenTaskChangd'")
 		expect(text).toContain("client action 'Teleported' is not in clientActions")
-		expect(text).toContain("bus steps never auto-advance")
+		expect(text).toContain("a rewarded bus step never auto-advances")
+		-- an unrewarded bus step may move on, so a step waiting on another system never stalls (FL-0108)
+		expect(problemsOf(function(c)
+			c.flows[1].steps[6].autoAdvanceSec = 5 -- PlaceFarm: no reward
+		end)).toBe("")
 	end)
 
 	it("rejects long hints, bad ids, duplicate steps and two funnel flows", function()
@@ -152,6 +156,64 @@ describe("Experience/Onboarding step graph", function()
 		expect(transitions[2].via).toBe("unavailable")
 		expect(Onboarding.persisted(state).unavailable).toBeNil() -- a later server may have the service
 	end)
+
+	it(
+		"only the real action pays a reward: a rewarded step passed over pays nothing (FORGE-00 ruling on #124)",
+		function()
+			local paid = {
+				id = "Paid",
+				trigger = { bus = "RoundEnded" },
+				hint = { title = "Finish a round" },
+				expectSec = 5,
+				requires = "MissingService",
+				reward = { currency = "Coins", amount = 5 },
+			}
+			local flow = {
+				id = "pay",
+				version = 1,
+				steps = { { id = "Start", trigger = { auto = true }, hint = { title = "Hi" }, expectSec = 1 }, paid },
+			}
+			local state = Onboarding.restore(flow, nil, 0)
+			state.unavailable = { Paid = true }
+			local transitions = Onboarding.begin(flow, state, 0)
+			expect(transitions[2].via).toBe("unavailable")
+			expect(transitions[2].reward).toBeNil()
+			-- the same step done for real pays
+			local real = Onboarding.restore(flow, nil, 0)
+			Onboarding.begin(flow, real, 0)
+			local done = Onboarding.handle(flow, real, { bus = "RoundEnded" }, 1)
+			expect(done[1].via).toBe("bus")
+			expect(done[1].reward).toEqual({ currency = "Coins", amount = 5 })
+		end
+	)
+
+	it(
+		"a rewarded step done early (via satisfied) still pays when its turn comes (FORGE-07 #124 M1, D-050 (5))",
+		function()
+			local flow = {
+				id = "pay",
+				version = 1,
+				steps = {
+					{ id = "Start", trigger = { auto = true }, hint = { title = "Hi" }, expectSec = 1 },
+					{ id = "Wait", trigger = { client = "Poke" }, hint = { title = "Poke" }, expectSec = 1 },
+					{
+						id = "Paid",
+						trigger = { bus = "RoundEnded" },
+						hint = { title = "Finish" },
+						expectSec = 5,
+						reward = { currency = "Coins", amount = 5 },
+					},
+				},
+			}
+			local state = Onboarding.restore(flow, nil, 0)
+			Onboarding.begin(flow, state, 0)
+			expect(#Onboarding.handle(flow, state, { bus = "RoundEnded" }, 1)).toBe(0) -- early: remembered
+			local done = Onboarding.handle(flow, state, { client = "Poke" }, 2)
+			expect(done[2].id).toBe("Paid")
+			expect(done[2].via).toBe("satisfied")
+			expect(done[2].reward).toEqual({ currency = "Coins", amount = 5 }) -- a real action, so it pays
+		end
+	)
 
 	it("begins by completing the automatic first step", function()
 		local state = Onboarding.restore(FLOW, nil, 0)
@@ -232,6 +294,55 @@ describe("Experience/Onboarding step graph", function()
 		expect(#Onboarding.begin(FLOW, restored, 8)).toBe(0)
 	end)
 
+	it(
+		"a flow pays its completeReward only if a step was done by its real action, across a rejoin (D-052 (3))",
+		function()
+			local function step(id, trigger, extra)
+				local out = { id = id, trigger = trigger, hint = { title = id }, expectSec = 5 }
+				for key, value in extra or {} do
+					out[key] = value
+				end
+				return out
+			end
+			local flow = {
+				id = "finish",
+				version = 1,
+				completeReward = { currency = "Coins", amount = 50 },
+				steps = {
+					step("Start", { auto = true }),
+					step("Round", { bus = "RoundEnded" }, { requires = "RoundService" }),
+					step("Poke", { client = "Poke" }),
+					step("Late", { bus = "LateEvent" }, { requires = "MissingService" }),
+				},
+			}
+			-- finished by an auto step, a client report and two passes: nothing earned, nothing paid
+			local passed = Onboarding.restore(flow, nil, 0)
+			passed.unavailable = { Round = true, Late = true }
+			Onboarding.begin(flow, passed, 0)
+			Onboarding.handle(flow, passed, { client = "Poke" }, 1)
+			expect(passed.finishedAt).never.toBeNil()
+			expect(passed.earned).toBe(false)
+			expect(Onboarding.completionReward(flow, passed)).toBeNil()
+			-- one real action (the round), then a rejoin on another server, then passes: it pays
+			local real = Onboarding.restore(flow, nil, 0)
+			real.unavailable = { Late = true }
+			Onboarding.begin(flow, real, 0)
+			expect(Onboarding.handle(flow, real, { bus = "RoundEnded" }, 1)[1].via).toBe("bus")
+			expect(Onboarding.completionReward(flow, real)).toBeNil() -- not finished yet
+			local stored = Onboarding.persisted(real)
+			expect(stored.earned).toBe(true)
+			local again = Onboarding.restore(flow, stored, 2)
+			again.unavailable = { Late = true }
+			Onboarding.handle(flow, again, { client = "Poke" }, 3)
+			expect(again.finishedAt).never.toBeNil()
+			expect(Onboarding.completionReward(flow, again)).toEqual({ currency = "Coins", amount = 50 })
+			-- a skipped flow never pays, earned or not
+			local skipped = Onboarding.restore(flow, stored, 2)
+			Onboarding.skip(flow, skipped, 3)
+			expect(Onboarding.completionReward(flow, skipped)).toBeNil()
+		end
+	)
+
 	it("restores unfinished progress of the same version, restarts it after a version change", function()
 		local stored = { version = 1, completed = 4, skipped = false, startedAt = 10, satisfied = { PlaceFarm = true } }
 		local same = Onboarding.restore(FLOW, stored, 50)
@@ -249,7 +360,7 @@ end)
 describe("OnboardingService", function()
 	local env, bus, data, remotes, economy, registry, service, player
 
-	local function boot(withEnv, withData, withRemotes)
+	local function boot(withEnv, withData, withRemotes, config)
 		economy = { grants = {} }
 		function economy.grant(_, p, currency, amount, txId, source)
 			if economy.grants[txId] then
@@ -288,7 +399,7 @@ describe("OnboardingService", function()
 				name = "OnboardingService",
 				dependencies = { "SettingsService", "AnalyticsService" },
 				new = function(e, r)
-					return OnboardingDef.create(e, r, { config = CONFIG, bus = bus })
+					return OnboardingDef.create(e, r, { config = config or CONFIG, bus = bus })
 				end,
 			},
 		})
@@ -395,6 +506,35 @@ describe("OnboardingService", function()
 		expect(trail).toEqual({ 1, 2, 3, 4, 5, 6, 7, 8, 9 })
 	end)
 
+	it("a flow finished with every server step passed over pays no completeReward (D-052 (3))", function()
+		-- the same first session on a server without the services its bus steps need: the player only
+		-- reports client steps, so the flow finishes without one real action
+		local config = deepCopy(CONFIG)
+		for _, step in config.flows[1].steps do
+			if step.trigger.bus ~= nil then
+				step.requires = "MissingService"
+			end
+		end
+		GameEvents.disconnectAll()
+		env = MockEnv.new({ seed = 22 })
+		bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
+		data = FakeDataService.new()
+		remotes = FakeRemoteService.new({ declarations = ExperienceRemotes })
+		registry = boot(env, data, remotes, config)
+		service = registry:get("OnboardingService")
+		player = env.mock.players:add({ userId = 901 })
+		data:load(player, nil)
+		bus.PlayerReady:fire(player)
+		act("RulerMoved")
+		act("ReachedTarget")
+		act("ResourceInspected")
+		act("GoalAcknowledged")
+		expect(service:state(player).done).toBe(true)
+		expect(economy.grants["onboarding:first_session:FirstHarvest:901"]).toBeNil() -- passed over
+		expect(economy.grants["onboarding:first_session:Complete:901"]).toBeNil()
+		expect(env.mock:hasLog("info", "completion reward withheld")).toBe(true)
+	end)
+
 	it("skipping logs OnboardingSkipped with the last step and no funnel step afterwards", function()
 		act("RulerMoved")
 		expect((remotes:call("Experience.OnboardingSkip", player, "first_session"))).toBe(true)
@@ -433,6 +573,25 @@ describe("OnboardingService", function()
 		local steps = env2.AnalyticsService:callsTo("LogOnboardingFunnelStepEvent")
 		expect(#steps).toBe(1)
 		expect(steps[1].args[1]).toBe(7)
+	end)
+
+	it("a config listening to an event that no resolver covers is invalid, not silently stuck (FORGE-00 M8)", function()
+		local noSubjects = table.clone(CONFIG)
+		noSubjects.subjects = nil -- the test flow's CitizenTaskChanged etc. now resolve to nobody
+		local broken = OnboardingDef.create(env, registry, { config = noSubjects, bus = bus })
+		expect(broken._enabled).toBe(false)
+		local named = false
+		for _, entry in env.mock.logs do
+			local fields = entry.fields or {}
+			named = named
+				or (
+					entry.level == "error"
+					and string.find(tostring(fields.problems), "no resolver for 'CitizenTaskChanged'", 1, true)
+						~= nil
+				)
+		end
+		expect(named).toBe(true)
+		expect(Onboarding.events(CONFIG)).toContain("PlayerReady") -- the default startOn counts too
 	end)
 
 	it("ignores client actions that are not whitelisted, not current, or for another flow", function()

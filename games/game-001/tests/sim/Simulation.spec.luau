@@ -6,6 +6,7 @@ local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
 local F = require("./KingdomFixtures")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Snapshot = require("@game/ReplicatedStorage/Game/Sim/Snapshot")
+local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 
 local function dist(a, b)
 	return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
@@ -560,6 +561,50 @@ describe("Kingdom/Simulation: daily life", function()
 		expect(F.stock(sim, k):flows().expense.birth.food).toBe(20)
 	end)
 
+	it("fed by the upkeep, a kingdom grows when well fed with a free bed and pays no food for it (D-045)", function()
+		local sim, k = F.kingdom({ tuning = { birthInterval = 10, birthFood = 5 } })
+		sim.fedByUpkeep = true
+		F.stock(sim, k):add("food", 280)
+		local house = sim:placeBuilding(k, "house", 0, -35)
+		sim:_completeInstantly(house)
+		sim:_recompute(k)
+		expect(k.popCap).toBe(16)
+		local wellFed = SocietyConfig.food.wellFedAtLeast
+		-- underfed (just under the threshold): nobody is born
+		k.fedRatio = wellFed - 0.01
+		local born = k.stats.born
+		sim:advance(60)
+		expect(k.stats.born).toBe(born)
+		expect(#k.citizenIds).toBe(12)
+		-- well fed with free beds: it grows to its beds
+		k.fedRatio = wellFed
+		sim:advance(60)
+		expect(k.stats.born).toBe(born + 4)
+		expect(#F.events(sim, "CitizenBorn")).toBe(4)
+		expect(#k.citizenIds).toBe(16)
+		-- no birth was paid from the treasury (G7: the upkeep is the only food consumer)
+		expect(F.stock(sim, k):flows().expense.birth).toBeNil()
+		-- every bed taken: no more births, however well fed
+		k.fedRatio = 1
+		sim:advance(60)
+		expect(k.stats.born).toBe(born + 4)
+		F.assertInvariants(sim)
+	end)
+
+	it("an underfed kingdom on the upkeep does not grow even with a full treasury (D-045)", function()
+		local sim, k = F.kingdom({ tuning = { birthInterval = 10, birthFood = 5 } })
+		sim.fedByUpkeep = true
+		F.stock(sim, k):add("food", 5000)
+		local house = sim:placeBuilding(k, "house", 0, -35)
+		sim:_completeInstantly(house)
+		sim:_recompute(k)
+		k.fedRatio = 0.5
+		local born = k.stats.born
+		sim:advance(120)
+		expect(k.stats.born).toBe(born)
+		expect(F.stock(sim, k):flows().expense.birth).toBeNil()
+	end)
+
 	it("beds are for citizens only: recruits in training or trained never block a birth (D-041)", function()
 		local sim, k = F.kingdom({ tuning = { birthInterval = 5, birthFood = 5 } })
 		Military.install(sim)
@@ -748,6 +793,45 @@ describe("Kingdom/Simulation: fixed tick and staggered decisions (G4)", function
 		expect(total >= 48 * 2).toBe(true)
 		expect(busiest <= budget).toBe(true)
 		expect(ticks).toBe(seconds * 16)
+	end)
+
+	-- FL-0050 "100-citizen tick budget": the work per tick stays bounded and nobody is starved of decisions.
+	-- Counts, not wall-clock: headless timings are not performance evidence (PERF.md); Studio's
+	-- `Kingdom perf` simMsP99 is the ms figure (D-023 target <= 4 ms per frame).
+	it("100 citizens: re-planning stays a handful per tick and every citizen gets its turn", function()
+		local sim, k = F.kingdom({
+			seed = 9,
+			tuning = { startCitizens = { farmer = 25, woodcutter = 25, miner = 25, hauler = 25 } },
+		})
+		expect(#k.citizenIds).toBe(100)
+		sim:advance(5) -- past the opening
+		local thinkAt, planned = {}, {}
+		for _, id in k.citizenIds do
+			thinkAt[id] = sim.citizens[id].thinkAt
+		end
+		local interval = sim.catalog.tuning.thinkInterval
+		local tick = sim.catalog.tuning.tickSeconds
+		local seconds = interval * 5
+		local busiest = 0
+		for _ = 1, seconds / tick do
+			sim:step()
+			local n = 0
+			for _, id in k.citizenIds do
+				local c = sim.citizens[id]
+				if c and c.thinkAt ~= thinkAt[id] then
+					thinkAt[id] = c.thinkAt
+					planned[id] = true
+					n += 1
+				end
+			end
+			busiest = math.max(busiest, n)
+		end
+		-- 100 citizens every `interval` s: ~3 per tick; twice that is the ceiling, never a crowd
+		expect(busiest <= math.ceil(100 * tick / interval * 2)).toBe(true)
+		for _, id in k.citizenIds do
+			expect(planned[id]).toBe(true) -- no citizen waits five intervals for a decision
+		end
+		F.assertInvariants(sim)
 	end)
 end)
 

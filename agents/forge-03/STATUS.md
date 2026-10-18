@@ -4,35 +4,37 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/03-ui-economy` (cloud session, 2026-10-12); one PR branch per task: `forge/03-ui-economy-<task>` |
-| Open PRs | #88 FL-0087 plot picker on `Build/Fit.typesFor` (`b76003a`, main merged; FORGE-05 reviews next under D-040) · FL-0105 follow-ups (FORGE-05's #86 review: M1 Studio-doc sentence, L2-L9). Merged today: #63, #66, #86, #95. Merged before: #9, #12, #23, #24, #25, #34, #41, #44, #48, #52, #55, #58, #65, #71, #74, #76, #79. Closed: #13, #19. |
-| Current task | FL-0105 follow-ups. Next: FL-0099 cinematic conversation UI (G13.8) once FL-0097/FL-0098 exist; Talk as the primary action lights up when FORGE-01's #77 sends `hasRequest` (client done) |
-| Last verified check | FL-0105 follow-ups check.sh exit 0 (see the PR) · #88 `b76003a` exit 0 (516/0, game-001 1102/0) · #86 merged on FORGE-05's test merge (516/0, 1101/0) |
-| Blockers | none; Studio checks (G6) need the user |
-| Needs from others | FORGE-01: `not_on_plot` on the Reasons line once served (the client words it already). User: upload `gem.png` and `emblem_crown.png` (handoff 2026-10-13-forge-03-to-user-icons-d039). FORGE-02: check the shorter oak midrib by eye. FORGE-07: post-merge reviews (D-040). |
+| Session branch | `forge/03-ui-economy` (cloud session); one PR branch per task: `forge/03-ui-economy-<task>`; Crownfall: `forge/03-ui-economy-crownfall` |
+| Open PRs | FL-0129a phase bar + Rivals (crownfall branch, 2026-10-18) · #176 docs. Earlier merged: #148, #162, #168, #174, #110 and the list in git history. |
+| Current task | FL-0129 (P0, BUILDING, Operation Crownfall D-053): (a) phase bar + war & peace (Rivals tab) in PR; (b) spectate + Results/LeadershipRecap after FL-0125; (c) wall tool + Gate after FL-0126. Then FL-0073 support meter (stub until FL-0070), phone 667×375 pass |
+| Last verified check | crownfall branch: economy/Diplomacy 9/0, KingdomUI 41/0, mutations FL-0129.py 20/20, renders looked at (desktop + phone-se); check.sh result in the PR |
+| Blockers | none for (a); Rivals is dormant until FORGE-01 serves `Kingdom.Diplomacy` + the `diplomacy` payload; (b)/(c) wait on FL-0125/FL-0126 |
+| Needs from others | FORGE-01: diplomacy remote + payload (handoff 2026-10-18-forge-03-to-forge-01-diplomacy-remote), Match.Spectate rows (FL-0125), wall rows (FL-0126). FORGE-05: review the FL-0129a PR. User: Studio U21. |
 
 ## Estimate to VS-1 (FORGE-03 rows, unverified, hours of FORGE-03 work)
 | Item | Hours | Notes |
 |---|---|---|
 | FL-0088 conversation + citizen card v2 | done (#52); gate in #66 | costs and risks before choosing |
 | FL-0089 reputation strip + screen | done (#44); 0.5 | text switches to the content library when FL-0083 lands |
-| FL-0060 army/objective panels, slice summary | done (#63) | doubles until FORGE-01's #70 |
-| FL-0105 refusal codes, crest, achievement toast | done (#86) | |
-| FL-0087 plot picker on `Fit.typesFor` | 1 | |
-| Swap doubles for FORGE-01's real services | 3 | contract mismatches show up here |
+| FL-0060 army/objective panels, slice summary | done (#63, #95) | runs against FORGE-01's real Army server (#70) |
+| FL-0105 refusal codes, crest, achievement toast | done (#86, #103) | emblems per D-039 |
+| FL-0087 plot picker on `Fit.typesFor` | done (#88) | |
+| Swap doubles for FORGE-01's real services | done | FORGE-05 ran Army (#70), conversation (#77) and plots (#89) end to end |
 | Fix round after the user's Studio playtest | 3 | depends on what the playtest finds |
-| **Remaining** | **7–8** | review rounds (0.5–1), FL-0087 switch (1), real-service swap (3), playtest fixes (3). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
+| **Remaining** | **3–4** | playtest fixes (3), review rounds (0.5–1). FL-0073 Crown Arena UI (P2, 18 h) is outside VS-1 |
 
 ## Last report
-- **Done:** merged #63 (army drawer, objective tracker, summary), #66 (conversation confirm step),
-  #86 (FL-0105: every server refusal code in words, including plots #89 and bunks D-041; crests drawn
-  as on the world banners, D-039; gem Crown Points; achievement toast), #95 (tracker waits for the Army
-  remotes; Choose refusals in words). FORGE-05's end-to-end runs against FORGE-01's real Army (#70) and
-  conversation (#77) servers worked.
-- **Verified:** check.sh exit 0 on each branch; mutations listed per PR; renders looked at.
-- **Unverified:** Studio (G6); the drawn emblems and the 💎/★/🏅 glyphs on each platform.
-- **Next:** #88 review; FL-0105 follow-ups PR; FL-0099 once FL-0097/FL-0098 exist.
+- **Done:** FL-0099 cinematic conversations (G13.8). The citizen's portrait (`Kit.portrait`) rises
+  from the bottom, with their question in a bubble and the answers beside it. Consequence chips show
+  after an answer, and the stage closes by itself. The world stays visible (dim ≤ 18 %). opened/closed
+  go to the camera, and `Kingdom.EndConversation` is called on every close. The FL-0088 panel is the
+  fallback. The renderer now draws ViewportFrames.
+- **Verified:** 32 specs, 30 mutations killed. On a local merge with #108/#84/#85: 1263/0, plus a real
+  payload → real portrait check. Renders were looked at on three sizes (REVIEW-stage.md).
+- **Unverified:** Studio (U16, FL-0101).
+- **Next:** FL-0101 fixes; `Costs.luau` tuning only after the user plays.
 
 ## Doubles in use
-- game-001 specs use local doubles for FORGE-01 services (`KingdomWorld`, `SlotDoubles`) and FORGE-04
+- game-001 specs use local doubles for FORGE-01 services (`KingdomWorld`, `SlotDoubles`, `ArmyDoubles`,
+  `CitizenDoubles` with #108's cinematic fields) and FORGE-02 (`PortraitDoubles` for #85), and FORGE-04
   controllers (`InputModeController.selected`); listed in each PR.

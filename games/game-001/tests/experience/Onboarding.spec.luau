@@ -10,6 +10,7 @@ local AnalyticsRouter = require("@game/ReplicatedStorage/Forge/Experience/Analyt
 local Onboarding = require("@game/ReplicatedStorage/Forge/Experience/Onboarding")
 local ExperienceRemotes = require("@game/ReplicatedStorage/Forge/Experience/Remotes")
 local OnboardingConfig = require("@game/ReplicatedStorage/Forge/Config/Onboarding")
+local Signals = require("@game/ReplicatedStorage/Game/Feedback/Signals")
 local PacingDef = require("@game/ServerScriptService/Game/Services/PacingService")
 local AnalyticsDef = require("@game/ServerScriptService/Forge/Services/AnalyticsService")
 local SettingsDef = require("@game/ServerScriptService/Forge/Services/SettingsService")
@@ -71,6 +72,16 @@ describe("game-001 VS-1 onboarding config", function()
 		expect(FLOW.version).toBe(2)
 	end)
 
+	it("VS-1 grants no rewards: no step reward, no completeReward, no firstRewardSec (BRIEF §7)", function()
+		for _, flow in OnboardingConfig.flows do
+			expect(flow.completeReward).toBeNil()
+			for _, step in flow.steps do
+				expect(step.reward).toBeNil()
+			end
+		end
+		expect((OnboardingConfig.limits or {}).firstRewardSec).toBeNil()
+	end)
+
 	it("client-reported steps grant nothing and are whitelisted; server steps use G9 events", function()
 		for _, step in FLOW.steps do
 			if step.trigger.client then
@@ -79,6 +90,9 @@ describe("game-001 VS-1 onboarding config", function()
 			end
 		end
 		expect(FLOW.steps[3].trigger.bus).toBe("BuildingPlaced")
+		-- FORGE-07 #124 L2: the answer is server-only (G9), and the client whitelist is exactly these two
+		expect(FLOW.steps[4].trigger).toEqual({ bus = "CitizenAnswered" })
+		expect(OnboardingConfig.clientActions).toEqual({ "GoalAcknowledged", "CitizenInspected" })
 		expect(FLOW.steps[3].hint.target).toEqual({ kind = "world", tag = "BuildSlot" }) -- G13.5 plot markers (FL-0081)
 		-- the Army rail button is the only Recruit control with an OnboardingTarget (ArmyPanelController)
 		expect(FLOW.steps[5].hint.target).toEqual({ kind = "ui", name = "HUD.ArmyButton" })
@@ -176,6 +190,11 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		return (remotes:call("Experience.OnboardingAction", player, "vs1", action))
 	end
 
+	-- G9 CitizenAnswered from ConversationService (FL-0107): the answering ruler, once per accepted Choose
+	local function answer(player)
+		bus.CitizenAnswered:fire(player, "crimson", 42, "handout_food", 30)
+	end
+
 	local function place(player, kingdom, id)
 		bus.BuildingPlaced:fire(
 			{ id = id, kingdom = kingdom, type = "house", level = 1, placedBy = player.UserId },
@@ -198,7 +217,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		join(p2, "crimson")
 		act(p1, "CitizenInspected")
 		place(p1, "crimson", 7)
-		act(p1, "CitizenAnswered")
+		answer(p1)
 		bus.UnitsRecruited:fire(p1, "crimson", 3)
 		bus.ObjectiveCaptured:fire("tower_1", "crimson")
 		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen", "Recruit", "Capture" })
@@ -207,21 +226,78 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		expect(steps(p2)).toEqual({ "Spawn" })
 		act(p2, "CitizenInspected")
 		place(p2, "crimson", 8)
-		act(p2, "CitizenAnswered")
+		answer(p2)
 		bus.UnitsRecruited:fire(p2, "crimson", 3)
 		expect(steps(p2)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen", "Recruit", "Capture" })
 	end)
 
+	it(
+		"AnswerCitizen follows G9 CitizenAnswered for the answering ruler only; a client report no longer counts (FL-0108)",
+		function()
+			boot(true)
+			join(p1, "crimson")
+			join(p2, "crimson")
+			act(p1, "CitizenInspected")
+			place(p1, "crimson", 21)
+			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
+			act(p1, "CitizenAnswered") -- not a client action any more (G11, D-044 (4)): ignored
+			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
+			answer(p2) -- a co-ruler's answer is theirs, not mine
+			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
+			answer(p1)
+			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
+			expect(passed(p1)).toEqual({}) -- a real answer, not passed over
+		end
+	)
+
 	it("a client action completes only the current step", function()
 		boot(true)
 		join(p1, "crimson")
-		act(p1, "CitizenAnswered") -- out of order: ignored
+		act(p1, "BuildingPlaced") -- not a whitelisted client action: ignored
 		expect(onboarding:state(p1, "vs1").stepId).toBe("InspectCitizen")
 		act(p1, "CitizenInspected")
 		expect(onboarding:state(p1, "vs1").stepId).toBe("BuildOnPlot")
 		act(p1, "CitizenInspected") -- repeats do nothing
 		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen" })
 	end)
+
+	it("answering before building (the likely Studio order) counts when the build comes (FORGE-07 #124 L3)", function()
+		boot(true)
+		join(p1, "crimson")
+		act(p1, "CitizenInspected")
+		answer(p1) -- before any building: remembered
+		expect(onboarding:state(p1, "vs1").stepId).toBe("BuildOnPlot")
+		place(p1, "crimson", 31)
+		expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
+		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen" })
+		expect(passed(p1)).toEqual({}) -- done for real, not passed over
+	end)
+
+	it(
+		"CitizenAnswered without secondsOpen (no request bubble) still completes; a nil player credits nobody (#124 L1)",
+		function()
+			boot(true)
+			join(p1, "crimson")
+			act(p1, "CitizenInspected")
+			place(p1, "crimson", 41)
+			bus.CitizenAnswered:fire(nil, "crimson", 42, "handout_food") -- no player: nobody
+			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
+			bus.CitizenAnswered:fire(p1, "crimson", 42, 7) -- 4 args, a non-string decision
+			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit")
+			expect(env.mock.threadErrors).toEqual({})
+			-- the resolver itself (Feedback/Signals): bad fields are dropped, the player stays
+			local resolve = Signals.subjects.CitizenAnswered
+			expect(resolve({ nil, "crimson", 42, "x", 3 })).toEqual({})
+			local subject = resolve({ p1, "crimson", 42, 7, 0 / 0 })[1]
+			expect(subject.player).toBe(p1)
+			expect(subject.info).toEqual({ kingdom = "crimson" }) -- no decision, no NaN secondsOpen
+			expect(resolve({ p1, "crimson", 42, "handout_food", 30 })[1].info).toEqual({
+				kingdom = "crimson",
+				decision = "handout_food",
+				secondsOpen = 30,
+			})
+		end
+	)
 
 	it("never credits a rival kingdom's capture or build", function()
 		boot(true)
@@ -234,7 +310,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		expect(onboarding:state(p1, "vs1").stepId).toBe("BuildOnPlot")
 		-- the rival's capture must not have been remembered for p1 either
 		place(p1, "crimson", 10)
-		act(p1, "CitizenAnswered")
+		answer(p1)
 		bus.UnitsRecruited:fire(p1, "crimson", 3)
 		expect(onboarding:state(p1, "vs1").stepId).toBe("Capture")
 		expect(onboarding:state(p1, "vs1").done).toBe(false)
@@ -274,18 +350,18 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 	end)
 
 	it(
-		"with ConversationService but no answer reported, AnswerCitizen moves on after autoAdvanceSec, logged as passed",
+		"with ConversationService but no answer, AnswerCitizen moves on after autoAdvanceSec, logged as passed",
 		function()
 			boot(true)
 			join(p1, "crimson")
 			act(p1, "CitizenInspected")
 			place(p1, "crimson", 12)
 			expect(onboarding:state(p1, "vs1").stepId).toBe("AnswerCitizen")
-			local answer = OnboardingConfig.flows[1].steps[4]
-			expect(answer.id).toBe("AnswerCitizen")
-			env.mock:advance(answer.nudgeAfterSec + 1)
+			local answerStep = OnboardingConfig.flows[1].steps[4]
+			expect(answerStep.id).toBe("AnswerCitizen")
+			env.mock:advance(answerStep.nudgeAfterSec + 1)
 			expect(onboarding:state(p1, "vs1").escalated).toBe(true) -- nudged first
-			env.mock:advance(answer.autoAdvanceSec - answer.nudgeAfterSec + 1)
+			env.mock:advance(answerStep.autoAdvanceSec - answerStep.nudgeAfterSec + 1)
 			expect(onboarding:state(p1, "vs1").stepId).toBe("Recruit") -- never stalls
 			expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen" })
 			expect(passed(p1)).toEqual({ "4:AnswerCitizen:timeout" })
@@ -297,7 +373,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		join(p1, "crimson")
 		act(p1, "CitizenInspected")
 		place(p1, "crimson", 13)
-		act(p1, "CitizenAnswered")
+		answer(p1)
 		expect(onboarding:state(p1, "vs1").done).toBe(true)
 		expect(passed(p1)).toEqual({ "5:Recruit:unavailable", "6:Capture:unavailable" })
 		local recruit = OnboardingConfig.flows[1].steps[5]
@@ -309,7 +385,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		join(p1, "crimson")
 		act(p1, "CitizenInspected")
 		place(p1, "crimson", 14)
-		act(p1, "CitizenAnswered")
+		answer(p1)
 		bus.UnitsRecruited:fire(p1, "crimson", 3)
 		bus.ObjectiveCaptured:fire("tower_1", "crimson")
 		expect(onboarding:state(p1, "vs1").done).toBe(true)
@@ -321,7 +397,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		bus.KingdomJoined:fire(p1, "crimson")
 		act(p1, "CitizenInspected")
 		place(p1, "crimson", 1)
-		act(p1, "CitizenAnswered")
+		answer(p1)
 		bus.UnitsRecruited:fire(p1, "crimson", 3)
 		bus.ObjectiveCaptured:fire("tower_1", "crimson")
 		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen", "Recruit" })

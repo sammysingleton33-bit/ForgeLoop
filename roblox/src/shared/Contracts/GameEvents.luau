@@ -26,12 +26,14 @@
 	| MatchPhaseChanged  | MatchService                   | (phase: string) |
 	| BuildingPlaced     | BuildingService                | (building: table, player?) — also BuildingCompleted, |
 	|   BuildingUpgraded, BuildingDestroyed                 | same payload |
+	| BuildingMoved      | BuildingService (G13.9)        | (building: table, player?, from: { position: Vector3, rot: number (the old yaw, radians; not Build.Place's quarter turns) }, slotId: string?) — once per accepted move; never re-fires BuildingPlaced (v0.4-g9i) |
 	| ResourceGathered   | Citizen/InteractionService     | (player?, kingdomId: string, resourceId: string, amount: number, source: "ruler" | "citizen") |
 	| UnitsRecruited     | MilitaryService                | (player, kingdomId: string, count: number) |
 	| ObjectiveCaptured  | ObjectiveService               | (objectiveId: string, kingdomId: string) |
 	| KingdomEliminated  | MatchService                   | (kingdomId: string, by: string?) |
 	| MatchEnded         | MatchService                   | ({ winner: string?, standings: { { kingdom: string, crownPoints: number } }, durationSec: number }) |
 	| CitizenAnswered    | ConversationService            | (player, kingdomId: string, citizenId: number, decisionId: string, secondsOpen: number?) — once per accepted Kingdom.Choose (D-044 (3)) |
+	| ConsequenceChanged | ConsequenceService (G13.3)     | (kingdomId: string, rule: "strike" | "shortage" | "riot" | "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number }) — once per start and once per end (v0.4-g10c) |
 	Payload types (interfaces §4) are exported here too: GameEvents.RoundState, GameEvents.RoundResult,
 	GameEvents.RewardResult (defined once in Contracts/Types, re-exported).
 
@@ -74,12 +76,14 @@ export type GameEvents = {
 	BuildingCompleted: SignalT,
 	BuildingUpgraded: SignalT,
 	BuildingDestroyed: SignalT,
+	BuildingMoved: SignalT,
 	ResourceGathered: SignalT,
 	UnitsRecruited: SignalT,
 	ObjectiveCaptured: SignalT,
 	KingdomEliminated: SignalT,
 	MatchEnded: SignalT,
 	CitizenAnswered: SignalT,
+	ConsequenceChanged: SignalT,
 	EVENT_NAMES: { string },
 	disconnectAll: () -> (),
 }
@@ -102,12 +106,14 @@ local EVENT_NAMES = table.freeze({
 	"BuildingCompleted",
 	"BuildingUpgraded",
 	"BuildingDestroyed",
+	"BuildingMoved",
 	"ResourceGathered",
 	"UnitsRecruited",
 	"ObjectiveCaptured",
 	"KingdomEliminated",
 	"MatchEnded",
 	"CitizenAnswered",
+	"ConsequenceChanged",
 })
 
 local events: { [string]: any } = {}

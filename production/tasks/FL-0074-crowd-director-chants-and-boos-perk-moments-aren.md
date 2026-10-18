@@ -3,11 +3,11 @@ id: FL-0074
 title: Crowd director, chants and boos, perk moments, arena camera and music, emotional payoff
 track: build
 owner: forge-04
-status: SPECIFIED
+status: READY
 priority: P2
 game: game-001
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-18
 depends_on: [FL-0071, FL-0072]
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 16
@@ -38,3 +38,4 @@ Lune specs for director rationing and tier mapping. Studio video or screenshots 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (READY).
 - 2026-10-13 forge-00: READY → SPECIFIED. FORGE-00 reconciliation 2026-10-13 (stale-status sweep): its dependencies are not built yet (FL-0018 economy core, or the Crown Arena FL-0070/FL-0071), so it is SPECIFIED, not READY.
+- 2026-10-18 forge-00: SPECIFIED → READY. Operation Crownfall (D-053): arena work starts now; FORGE-01 order FL-0125 → FL-0069 → FL-0070 → FL-0071; defaults from crown-arena.md §11 apply

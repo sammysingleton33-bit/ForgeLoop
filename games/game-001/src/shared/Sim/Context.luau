@@ -20,7 +20,8 @@
 			A copy of `base` (a kingdom ctx) plus occupation, citizen.loyalty / mood / chemistry / hunger /
 			obedience (extra.obedience), citizen.trait.<id>, citizen.memory.<tag> (G5 memory kinds and pinned
 			content memories, citizen.pinned), citizen.has_family / has_friend / has_rival.
-		Context.mood(citizen): number   -- 0..100 (well fed = high; the G5 / CitizenView mood)
+		Context.mood(citizen, now?): number   -- 0..100 (well fed = high, plus a ruler's recent visit; the G5 /
+		                                         CitizenView mood)
 ]]
 
 local Types = require("../Kingdom/Types")
@@ -29,8 +30,14 @@ export type Ctx = { [string]: any }
 
 local Context = {}
 
-function Context.mood(citizen: any): number
-	return math.clamp(math.floor((1 - math.min(1, citizen.hunger or 0)) * 100 + 0.5), 0, 100)
+-- 0..100: well fed is high, plus a recent ruler's visit (citizen.moodLift, G5) while `now` is before it ends
+function Context.mood(citizen: any, now: number?): number
+	local mood = (1 - math.min(1, citizen.hunger or 0)) * 100
+	local lift = citizen.moodLift
+	if lift and now and now < lift.untilTime then
+		mood += lift.amount
+	end
+	return math.clamp(math.floor(mood + 0.5), 0, 100)
 end
 
 function Context.kingdom(sim: any, kingdomId: string, extra: { [string]: any }?): Ctx
@@ -96,7 +103,7 @@ function Context.citizen(sim: any, citizen: any, base: Ctx?, extra: { [string]: 
 	local profile = citizen.profile
 	ctx.occupation = if profile then profile.occupation else citizen.job
 	ctx["citizen.loyalty"] = citizen.loyalty or 50
-	ctx["citizen.mood"] = Context.mood(citizen)
+	ctx["citizen.mood"] = Context.mood(citizen, sim.time)
 	ctx["citizen.chemistry"] = citizen.chemistry or 0
 	ctx["citizen.hunger"] = citizen.hunger or 0
 	if extra and extra.obedience ~= nil then

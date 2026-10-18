@@ -7,9 +7,12 @@
 	BuildModel.menu(store, { category, selected? }) -> View
 		View = { loading, category, tabs, rows: { Row }, selected: string?, detail: Detail? }
 		Row = { id (BuildingType), name, icon, category, built, ok, costs: { { currency, amount, short } } }
-	BuildModel.placeDetail(store, type, { slot?, pending? }?) -> Detail?
-		with a slot (G13.5 plot) the CTA reads "Build <name> here" and action is "slot"
-	BuildModel.plotMenu(store, { slot, selected?, pending? }) -> View?   the plot picker (FL-0087):
+	BuildModel.placeDetail(store, type, { slot?, pending?, turn? }?) -> Detail?
+		with a slot (G13.5 plot) the CTA reads "Build <name> here" and action is "slot"; when the server
+		takes a turn (UI/Turns, CONTRACTS v0.4-g9h) the detail also has
+		turn = { value, allowed: { integer }, label, canTurn }: value is opts.turn when it fits, else
+		the first turn that fits
+	BuildModel.plotMenu(store, { slot, selected?, pending?, turn? }) -> View?   the plot picker (FL-0087):
 		one tab named after the plot size, BuildModel.plotTypes(slot.size)
 	BuildModel.plotTypes(size) -> { BuildingType }   what the picker offers on a plot of that size:
 		FORGE-01's Build/Fit.typesFor(size) (the one fit rule, G13.5; Build.PlaceSlot calls it too),
@@ -39,6 +42,7 @@ local Resources = require("@game/ReplicatedStorage/Forge/Config/Resources")
 local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local Text = require("./Text")
+local Turns = require("./Turns")
 
 local BuildModel = {}
 
@@ -102,7 +106,24 @@ local function sizeText(size: Vector2?): string?
 	return if size then `{math.floor(size.X)} × {math.floor(size.Y)} studs` else nil
 end
 
-function BuildModel.placeDetail(store: any, buildingType: string, opts: { slot: any?, pending: boolean? }?): any
+-- The Facing row of a plot detail, or nil while the server takes no turn (v0.4-g9h).
+local function turnOf(buildingType: string, slot: any, wanted: number?): any
+	if not Turns.supported() then
+		return nil
+	end
+	local allowed = Turns.allowed(buildingType, slot.size)
+	local value = allowed[1] or 0
+	if wanted ~= nil and table.find(allowed, wanted) then
+		value = wanted
+	end
+	return { value = value, allowed = allowed, label = Turns.label(value), canTurn = #allowed > 1 }
+end
+
+function BuildModel.placeDetail(
+	store: any,
+	buildingType: string,
+	opts: { slot: any?, pending: boolean?, turn: number? }?
+): any
 	local info = Buildings.get(buildingType)
 	if info == nil then
 		return nil
@@ -147,6 +168,7 @@ function BuildModel.placeDetail(store: any, buildingType: string, opts: { slot: 
 		meta = table.concat(meta, " · "),
 		action = if slot then "slot" else "place",
 		slotId = if slot then slot.id else nil,
+		turn = if slot then turnOf(buildingType, slot, if opts then opts.turn else nil) else nil,
 		level = 1,
 		buildSeconds = if entry then entry.buildSeconds else nil,
 		footprint = footprint,
@@ -249,7 +271,7 @@ function BuildModel.plotTypes(size: any): { string }
 	return out
 end
 
-function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, pending: boolean? }): any
+function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, pending: boolean?, turn: number? }): any
 	local slot = input.slot
 	if slot == nil then
 		return nil
@@ -272,7 +294,7 @@ function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, 
 		rows = rows,
 		selected = selected,
 		detail = if selected
-			then BuildModel.placeDetail(store, selected, { slot = slot, pending = input.pending })
+			then BuildModel.placeDetail(store, selected, { slot = slot, pending = input.pending, turn = input.turn })
 			else nil,
 	}
 end

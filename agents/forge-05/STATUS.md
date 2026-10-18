@@ -6,10 +6,10 @@ _Maintained by the worker. Keep it short and current._
 |---|---|
 | Session branch | `forge/05-integration` (PR branches `forge/05-*`); cloud session 2026-10-12 |
 | Open PR | #102 (pacing probe spec; not ★, waits for FORGE-07). #120 merged (`0d71eff`) |
-| Current task | D-030 / D-034 / FL-0093: merge in dependency order and ship numbered builds. B11 (`38526a4`) delivered by FORGE-00. Since then: #117 (`1d4c076`, spec only) and **#49 (`21904e4`, FL-0062 feedback layer, ★)**, the B12 candidate, sha sent to FORGE-00. D-040 fallback verdicts on FORGE-00's ★ list while FORGE-07 is paused |
-| Last verified check | #120 on main `53186d8`: check.sh OVERALL PASS (framework 517/0, game-001 1213/0), PR CI run 38418573537 3/3. Post-merge self-check of 19 D-040 review sets on main 962984f: no regressions. Main CI green for #117 and #49 |
-| Blockers | none. Process note: #79, #76, #75, #42 merged minutes after D-037 without FORGE-07 verdicts (FORGE-00: no reverts, post-merge verdicts) |
-| In review / queued | No ★ PRs open. Not ★ (wait for FORGE-07 unless promoted): #118 (nil-in-list spec fix), #108, #111 (FL-0107), #113 (FL-0050 remainder), #110, #96, #102 (mine). #100 on hold |
+| Current task | **B19 cut (2026-10-16 02:33): main `2923bd1`** (artifact `forgeloop-game001-2923bd1`, 12021438224), sent to FORGE-00 with the studio-runs row and asks. Headline: consequences read from the air (#175: riot placard, fire VFX, start/end notices; #173 server event), Waiting on the rail (#168, #170, #174); specs/docs #165, #167, #110. Fire/placard visuals unverified (E13), crackle silent (`kingdom.fire` needed). B18 = `f3298dd` |
+| Last verified check | B19: main `5804293` + #175 ced7a55 (tree = `2923bd1` but FORGE-07 STATUS): check.sh PASS (framework 551/0, game-001 1707/0, Selene 0/0, StyLua 527, place checks PASS; sim#1/2 368 s, world 265 s, sim#2/2 145 s); FL-0091 63/63; on `2923bd1` B14/B15 probes 11/11 |
+| Blockers | none. Lesson: long gates (check + four mutation runners) exceed the 30-min background default: pass a longer `timeout`, and restore any mutated file in the test worktree if a run is killed |
+| In review / queued | Next cycle: #118, #100 (held), #90. Low for FORGE-03: economy.md:90/:100 still says the ruler caps are not applied (they are, `RulerGather.perMinute`) |
 | Merge gates I hold | Conversation lane: #77 after B1/M1/M2 fixes (#87 client already on main) → B8 |
 | Needs from others | User: run B6/B7 and send Output/FPS/screenshots (via FORGE-00). FORGE-01: #68 M1 upgrade credit, #91 M1 reseed looks, #89 M1 slot reservation + M3 lumber/quarry level bonus. FORGE-03: #86 M1 (ui-economy.md U4 text), #86 L5/L6 (Overview 👑 icon, gem.png upload). FORGE-04: onboarding hints `BuildOnPlot` → `BuildSlot`, `Recruit` → `HUD.ArmyButton`. FORGE-00: #89 L3 walls/gates on plots; pacing probe numbers (next) |
 
@@ -110,6 +110,63 @@ _Maintained by the worker. Keep it short and current._
 | #117 | FORGE-01 #115 L1 spec: rebuilt tower keeps its pivot, a second capture, no leak (★, spec-only) | `1d4c076` |
 | #49 | FORGE-04 FL-0062 VS-1 feedback layer: announcer, kingdom effects, work feedback, phase music (★) | `21904e4` |
 | #120 | FORGE-05 MockEnv installs EngineStubs once per process (Lune has no ParticleEmitter:Emit); Boot spec celebration case | `0d71eff` |
+| #92 | FORGE-04 D-038 (7) per-feature mutation rows, Studio-test history, analytics taxonomy (★, D-046) | `13acf26` |
+| #113 | FORGE-01 FL-0050 remainder: D-045 births, keep-L2 celebration, ruler visit, decision budget (★, D-046) | `cac9522` |
+| #97 | FORGE-01 FL-0106 Match.Ended for late joiners during Results (★, D-046) | `681f38c` |
+| #111 | FORGE-01 FL-0107 G9 CitizenAnswered (★, D-046) | `003e180` |
+| #122 | FORGE-00 reputation notices for soldiers_recruited / wall_built (★, B13) | `196b1df` |
+| #119 | FORGE-04 FL-0062 follow-up: the summary owns the result line (★, D-046) | `d65fb2e` |
+| #93 | FORGE-01 FL-0049 replication hardening (★, D-046; M1 fixed) | `7694638` |
+| #85 | FORGE-02 FL-0098 `Kit.portrait` (B14) | `76396d1` |
+| #108 | FORGE-01 FL-0097 conversation server, g9f hold (B14) | `787f24e` |
+| #84 | FORGE-04 FL-0100 (1/2) conversation camera (B14) | `5eba538` |
+| #121 | FORGE-04 FL-0100 (2/2) reaction poses (B14) | `2bffebf` |
+| #126 | FORGE-03 FL-0099 cinematic conversation UI (B14 = this sha) | `3691475` |
+| #131 | FORGE-01 FL-0112 farm and plot clearance (B15) | `81f9637` |
+| #134 | FORGE-04 B14 Studio probes (docs) | `c651ff4` |
+| #133 | FORGE-04 FL-0115 bubble readability (B15) | `d5587b7` |
+| #132 | FORGE-01 FL-0113 PlaceSlot turn (B15) | `f36b1f0` |
+| #137 | FORGE-04 FL-0115 hover and selection outlines (B15) | `e7ab2f5` |
+| #135 | FORGE-03 FL-0114 rotation UI (B15 = this sha) | `b2e3164` |
+| #96 | FORGE-00 FL-0083 SPEC v1.5 / CONTRACTS g10 | `3add643` |
+| #128 #94 #82 #64 #98 #102 | FORGE-07 READY set (combined gate) | `f11817c` … `9d02bc2` |
+| #141 | FORGE-02 FL-0117 interim environment art (B16) | `d9bb32a` |
+| #143 | FORGE-04 hover-clear spec | `c2f1e7b` |
+| #136 | FORGE-01 wallGap (B16) | `dffa488` |
+| #139 | FORGE-03 pad turn R1/L1 (B16 = this sha) | `e447364` |
+| #145 | FORGE-01 FL-0122 server hardening (D-050) | `c3c6b8a` |
+| #130 | FORGE-04 InputModeController.back | `e639c79` |
+| #151 | FORGE-02 FL-0117 round 2 trees (interim art) | `968a24a` |
+| #142 | FORGE-04 FL-0121 edit mode input and camera | `520988e` |
+| #150 | FORGE-01 STATUS refresh | `e57b198` |
+| #152 | FORGE-01 FL-0112 farm clearance by drawn extent | `9983ed4` |
+| #154 | FORGE-01 cheer pose clears the head | `7918184` |
+| #149 | FORGE-04 FL-0115 request badges | `33f1e4e` |
+| #127 | FORGE-01 FL-0109 paged GetEntities | `41d6b46` |
+| #129 | FORGE-01 History text | `5653a97` |
+| #124 | FORGE-04 FL-0108 (1/2) | `a6a514e` |
+| #144 | FORGE-04 FL-0092 hint targets (House) | `f8c85ac` |
+| #158 | FORGE-01 cheer pose for tool assemblies | `8f27511` |
+| #123 | FORGE-04 FL-0103 settings panel | `98698c4` |
+| #146 | FORGE-04 FL-0108 (2/2) | `7f22ab4` |
+| #159 | FORGE-02 FL-0116 world trim (interim art) | `93e41e6` |
+| #157 | FORGE-04 E12 Move flow, no edit-mode pan | `3b159e2` |
+| #148 | FORGE-03 FL-0120 base editing UI | `08f1d63` |
+| #140 | FORGE-01 FL-0119 base editing server | `43895b9` |
+| #147 | FORGE-04 FL-0063 analytics review items | `9b0de55` |
+| #163 | FORGE-04 FL-0025 completeReward rule | `99ef428` |
+| #161 | FORGE-01 Pose.spec tip sign | `d982a33` |
+| #160 | FORGE-02 FL-0124 world nodes out of farms (B17 cut) | `41a70e8` |
+| #138 | FORGE-02 FL-0118 phase 1 citizens (interim art) | `8682686` |
+| #162 | FORGE-03 FL-0059 back key | `4bb9039` |
+| #164 | FORGE-04 isTap + E11 | `fde793d` |
+| #153 | FORGE-02 FL-0118 phase 1b (interim art) | `8eca5f5` |
+| #125 | FORGE-01 FL-0082 consequences | `61eea1d` |
+| #156 | FORGE-01 FL-0110 presentation tags | `ad790b6` |
+| #155 | FORGE-02 FL-0118 phase 2 tools (interim art) | `5fbc515` |
+| #169 | FORGE-02 Kit shoulder pivots | `f6cb4c1` |
+| #171 | FORGE-05 harness shards (B18 cut) | `f3298dd` |
+| #172 | FORGE-02 STATUS refresh | `bdc8b69` |
 
 Closed: #2 (sandbox map, superseded by the AI Kingdoms brief); #13 and #19 (replaced by #24 and #25).
 

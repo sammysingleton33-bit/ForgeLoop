@@ -7,7 +7,7 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0080]
 context: [games/game-001/design/living-kingdom.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md, games/game-001/content/SPEC.md]
 estimate_h: 4
@@ -15,6 +15,7 @@ evidence:
   - bash roblox/scripts/check.sh OVERALL PASS (see PR)
   - ReputationModel.spec (16) + ReputationUI.spec (16, end to end over RemoteService and ReputationDoubles); 7 mutations + the M1 no-rebuild check each fail a spec
   - games/game-001/design/ui/screenshots/luau rep-* (14) and design/ui/screenshots rep-* prototype (5), reviewed; FL-0059/FL-0087 drawer scenes re-shot for the moved drawer
+  - "scratchpad fl0089/Fl0089E2E.spec.luau: 4/5 pass, the 5th fails on the soldiers_recruited history text (headless, not Studio)"
 ---
 
 # Reputation screen, HUD reputation strip and kingdom conditions (G13.4)
@@ -41,3 +42,4 @@ UI specs for formatting and history order. Prototype screenshots. Studio: a deci
 - 2026-10-12 forge-00: created for the production priorities update (D-030) (READY).
 - 2026-10-12 forge-03: READY → BUILDING. FORGE-03 (subagent): reputation strip, ReputationPanelController screen, kingdom conditions on G13.4 with a ReputationDoubles server double
 - 2026-10-12 forge-03: BUILDING → REVIEW. PR stacked on #25/#34/#41: strip + screen + conditions; text only from the content library (FL-0083 pending); Studio steps for the user in the handoff
+- 2026-10-13 forge-05: REVIEW → REVIEW. D-046 end-to-end check (FORGE-05): real server + real client controllers in one MockEnv on main 55fe909. Join: strip, screen and Kingdom-tab conditions equal the server's values and bands; a real fireAction(ObjectiveCaptured), vs1.repLow/repHigh through ForgeDebug.Run and the server's own FoodShortage each reach the strip, bars, Delta floats and History (plain text, order, time labels) on the next push; no error logs. Defect found (not FORGE-03's code): a recruit while fed shows 'soldiers_recruited' in History because actions.csv soldiers_recruited (and wall_built) has an empty notice_text and ReputationService.noticeOf falls back to the action id; reported to FORGE-00 (content) and FORGE-01 (fallback). REVIEW, only G6 pending plus that tracked defect.

@@ -9,7 +9,7 @@
 
 	API
 		Replication.new(): Tracker                 -- remembers last positions for facing and movement
-		tracker:frame(sim, groundY?): { records: { Record }, identity: { [id]: { kind, job, kingdom, look? } } }
+		tracker:frame(sim, groundY?): { records: { Record } (ascending id), identity: { [id]: { kind, job, kingdom, look? } } }
 		                                           -- every live entity in id order; updates facing
 		Replication.entityState(sim, id): EntityState?   -- G4 EntityState (a copy)
 		Replication.actionOf(sim, entity): string  -- idle | walk | work | carry | fight | flee | dead
@@ -22,7 +22,8 @@
 		         Rest / Sleep / Idle pause: idle
 		soldier  attacked within the last second: fight · moved since the last frame: walk · else idle
 	Facing (yaw, radians, Roblox CFrame.Angles(0, yaw, 0) convention): the direction of the last move;
-	unchanged while standing still.
+	unchanged while standing still; a citizen held in a conversation faces the ruler (citizen.hold.yaw,
+	G13.8).
 ]]
 
 local Replication = {}
@@ -121,6 +122,9 @@ function Replication:frame(sim: any, groundY: number?): { records: { any }, iden
 				yaw = math.atan2(-dx, -dz)
 				moved = true
 			end
+		end
+		if e.hold and e.hold.yaw then
+			yaw = e.hold.yaw -- held in a conversation: facing the ruler (G13.8)
 		end
 		local y = flat
 		if surface then

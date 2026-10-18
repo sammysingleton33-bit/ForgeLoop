@@ -22,13 +22,22 @@
 		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
 		Kit.footprint(type, level) -> Vector2
 		Kit.character(kind, job, kingdomColor, look?, kingdom?) -> Model
-		                                                        -- ≤ 9 parts (Hair welded to the Head, D-032), Motor6Ds
+		                                                        -- ≤ 11 parts: 9 (Hair welded to the Head, D-032) + at most 2 detail parts (D-048, KitDetail), Motor6Ds
 		                                                        -- named after the moving part (Sim/Pose.JOINTS);
 		                                                        -- look: CitizenLook (G13.2), omitted = DEFAULT_LOOK;
 		                                                        -- kingdom: KingdomId (G13.2, D-033(3)): soldiers wear
 		                                                        -- its helmet crest (spire, square, plume, dome) as the
 		                                                        -- welded Hair, KitHeadwear "crest_<shape>"; omitted or
 		                                                        -- unknown = the plain helm; others ignore it
+		Kit.portrait(kind, job, kingdomColor, look?, kingdom?) -> Model
+		                                                        -- G13.8 (D-036): Kit.character's rig for the same
+		                                                        -- arguments, every part Anchored, motors and weld kept,
+		                                                        -- + Attachment Root.PortraitFocus = the camera pose
+		                                                        -- (head and shoulders, square ViewportFrame) with
+		                                                        -- attributes PortraitFov (30, vertical) and
+		                                                        -- PortraitDistance; model attribute KitPortrait
+		Kit.portraitCamera(portrait) -> (CFrame, number)        -- camera CFrame and FieldOfView from PortraitFocus
+		Kit.posePortrait(portrait, joints)                      -- places anchored parts for Sim/Pose joint transforms
 		Kit.regalia(kingdomColor) -> { Accessory }              -- crown + cape
 		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered, else stand-in
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
@@ -45,7 +54,8 @@
 		setKingdomColor also works on a container holding several Kit models (slots pair per model).
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
 		Kit.BUILDING_TYPES, Kit.partCount(model).
-	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.LOOK_RANGES,
+	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.CHARACTER_MAX_PARTS,
+		Kit.JOB_HEADWEAR, Kit.JOB_TOOLS, Kit.LOOK_RANGES,
 		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look, kingdom?) (soldiers: pass
 		the kingdom, the key gains ".<kingdom>"), Kit.SOLDIER_CRESTS (KingdomId → crest name).
 ]]
@@ -54,6 +64,7 @@ local Buildings = require("./Buildings")
 local Character = require("./Character")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
+local Portrait = require("./Portrait")
 local Props = require("./Props")
 
 local Kit = {}
@@ -83,6 +94,15 @@ Kit.BUILDING_TYPES = {
 	"shrine",
 }
 Kit.CHARACTER_ROOT_HEIGHT = Character.ROOT_HEIGHT -- 3.2: Root centre above the feet, rig and LOD alike
+Kit.CHARACTER_MAX_PARTS = Character.MAX_PARTS -- rig part cap the Kit specs enforce (11 = 9 + 2 detail parts, D-048)
+-- Job silhouettes (art pass): job -> KitHeadwear name of its hat / KitTool name of its tool (farmer, woodcutter,
+-- miner, builder wear a hat; hauler and idle keep the look's hair). Parts carrying the job's outfit colour
+-- (trousers, plus the torso or sleeves the outfit leaves neutral) have KitAccent = job.
+Kit.CHARACTER_BASE_PARTS = Character.BASE_PARTS -- 9: the D-032 rig; D-048 detail parts come on top
+Kit.CHARACTER_MAX_DETAIL = Character.MAX_DETAIL -- 2
+Kit.CHARACTER_DETAIL_ATTRIBUTE = Character.DETAIL_ATTRIBUTE -- "KitDetail" = true on every detail part (droppable beyond LOD)
+Kit.JOB_HEADWEAR = Character.JOB_HEADWEAR
+Kit.JOB_TOOLS = Character.JOB_TOOLS
 -- Citizen looks (G13.2): 1-based index counts FORGE-01's population generator samples from, the palettes
 -- behind them (skin and hairColor are Color3 lists; hair and outfit list style names), the default look,
 -- and the pool key (equal keys → identical rigs). Out-of-range values wrap; Kit never errors on a look.
@@ -99,6 +119,11 @@ Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
 Kit.character = Character.character
 Kit.regalia = Character.regalia
+-- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by Character.character, then anchored
+Kit.portrait = Portrait.portrait
+Kit.portraitCamera = Portrait.camera
+Kit.posePortrait = Portrait.pose
+Kit.PORTRAIT_FOV = Portrait.FOV
 Kit.characterLod = Character.lod -- one-part stand-in beyond 150 studs (G4), same Root height as the rig
 Kit.prop = Props.prop
 Kit.setAssetSource = Props.setAssetSource
