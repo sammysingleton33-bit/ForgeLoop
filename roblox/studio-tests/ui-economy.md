@@ -304,7 +304,9 @@ Before #140 the building panel shows no Move: expected.
    (grey) instead of Declare war; Confirm asks "Ask <senior> to declare war on <name>?", says "Asked
    your senior ruler for war on <name>" and sends a notice to the senior ruler; nothing changes until
    they declare; the senior ruler sees "<name> asks for war on <kingdom>". Their Accept peace is off with "<senior> decides". A ruler who joined mid-match sees
-   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. When the kingdom falls, or in
+   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. An ask stays on the rival's row ("<name> asks for
+   war · m:ss" for the senior ruler, with a "1" on the Kingdom button; "You asked for war · m:ss" for
+   the asker) until the senior declares or it runs out (60 s). When the kingdom falls, or in
    Results, every button is off ("Your kingdom has fallen" / "The match is over"). An offer that runs
    out takes the Kingdom bubble with it.
 7. Raid (needs FORGE-04's #183): when enemies enter our lands ("Enemies in your lands!"), a **Raid** button
