@@ -71,7 +71,7 @@ function WarWatch.keepHit(sim: any, building: any, attackerId: string)
 	siege.by[attackerId] = true
 end
 
-local function centroid(sim: any, threats: { any }): { x: number, z: number }
+local function centroid(threats: { any }): { x: number, z: number }
 	local x, z = 0, 0
 	for _, t in threats do
 		x += t.x
@@ -118,7 +118,7 @@ local function step(sim: any)
 			state = watchOf(sim, kid)
 			local raid = state.raid
 			if raid == nil then
-				raid = { lastSeen = sim.time, position = centroid(sim, threats), by = attackers(sim, threats) }
+				raid = { lastSeen = sim.time, position = centroid(threats), by = attackers(sim, threats) }
 				state.raid = raid
 				sim:emit("RaidChanged", {
 					kingdomId = kid,
@@ -129,7 +129,7 @@ local function step(sim: any)
 				})
 			else
 				raid.lastSeen = sim.time
-				raid.position = centroid(sim, threats)
+				raid.position = centroid(threats)
 				raid.by = attackers(sim, threats)
 				raid.count = #threats
 			end
