@@ -46,6 +46,7 @@ local PacingConfig = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local Fit = require("@game/ReplicatedStorage/Game/Build/Fit")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
 local MatchHost = require("@game/ReplicatedStorage/Game/Kingdom/MatchHost")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 
 local FULL = process.env.FORGE_PACING_FULL == "1"
 local SEEDS = if FULL then { 1, 2, 3, 4, 5 } else { 1, 2, 3 }
@@ -176,7 +177,12 @@ local function boot(seed: number, matchOverrides: { [string]: any }?)
 			return newHost(hostEnv, remotes, opts)
 		end
 	end
+	-- This probe measures the VS-1 slice: pin slice mode with PvP off while the services start (MatchService
+	-- reads the mode and Match reads pvp when they are built), whatever the default config is (D-053: match).
+	local savedMode, savedPvp = MatchConfig.mode, MatchConfig.pvp.enabled
+	MatchConfig.mode, MatchConfig.pvp.enabled = "slice", false
 	local ok, server = pcall(Loader.load, env, SERVER_DEFINITIONS)
+	MatchConfig.mode, MatchConfig.pvp.enabled = savedMode, savedPvp
 	MatchHost.new = newHost
 	assert(ok, tostring(server))
 	server:get("KingdomService").adapter = ADAPTER
