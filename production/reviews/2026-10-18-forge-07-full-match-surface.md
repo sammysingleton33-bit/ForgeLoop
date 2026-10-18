@@ -7,7 +7,7 @@ Date 2026-10-18. Main 4142265 (Operation Crownfall, D-053). **Evidence: a static
 |---|---|---|
 | #176 FL-0058 economy.md: ruler caps are enforced | READY TO MERGE (6887821) | FORGE-05; merge #177 before or with it (it cites #177) |
 | #177 FL-0061 PACING slice income targets | READY TO MERGE (906dc2f) | FORGE-05 |
-| #118 FL-0xxx nil-case specs | CHANGES REQUESTED, mechanical (b2c2bbb) | `docs/lessons-learned/gameplay.md` add/add conflict: take main's file and append the PR's last two bullets. The seven nil loops are still on main and every nil case returns `invalid_args` on today's validators |
+| #118 Specs: bad-argument lists really try nil | CHANGES REQUESTED, mechanical (b2c2bbb) | `docs/lessons-learned/gameplay.md` add/add conflict: take main's file and append the PR's last two bullets. The seven nil loops are still on main and every nil case returns `invalid_args` on today's validators |
 | #90 FL-0013 Blender pipeline | CHANGES REQUESTED, mechanical (81f129e) | `agents/forge-02/STATUS.md` conflict: take main's #172 version. My M1 (no Blender job in `ci.yml`) and M2 (36 of 38 manifest previews not committed) stay open as tracked follow-ups |
 
 ## 2. Client-to-server surface on main (what the Crownfall PRs extend)
@@ -32,8 +32,8 @@ Every command passes `Commands.executeFor`, which refuses an inactive sim (`matc
 
 ## 4. Checked on main and found sound (read, not run)
 - **Combat is gated on war.** `atWar` guards `Army.Command` attack and every target selection in `Military.luau` (lines 261, 400, 423, 679-818, 920, 1006).
-- **Elimination removes everything in one place.** `eliminate` (`Military.luau:541-607`) flips `alive`, pays the conqueror, plunders the treasury, removes citizens, units and buildings, resets every relation of the fallen kingdom to Peace, and emits one `KingdomEliminated`. `EntityService` despawns the removed ids by diffing its known set against the sim (`EntityService.luau:440-447`), after a short wait for the die cue, so clients do not keep ghost rigs.
-- **The match always has an end path.** Conquest ends it when one or no kingdom stands (`Match.luau:569`); phases advance on sim time (`:582`); `_finish` yields no winner when none stands, so a double elimination is a draw (`:508-515`); Results returns to Lobby with the same players after `resultsSec` (`:660-676`).
+- **Elimination removes everything in one place.** `eliminate` (`Military.luau:544-607`) flips `alive`, pays the conqueror, plunders the treasury, removes citizens, units and buildings, resets every relation of the fallen kingdom to Peace, and emits one `KingdomEliminated`. `EntityService` despawns the removed ids by diffing its known set against the sim (`EntityService.luau:440-447`), after a short wait for the die cue, so clients do not keep ghost rigs.
+- **The match always has an end path.** Conquest ends it when one or no kingdom stands (`Match.luau:569`); phases advance on sim time (`:582`); `_finish` yields no winner when none stands, so a double elimination is a draw (`:510`); Results returns to Lobby with the same players after `resultsSec` (`:615-626`).
 - **Joining.** `_room` returns 0 for a dead kingdom (`Match.luau:265-271`), so no joiner is seated in an eliminated kingdom; with no room anywhere `join` answers `match_full`.
 - **Argument validation** of the Diplomacy handlers: a non-string or over-long kingdom id answers `invalid_args` (`Diplomacy.luau:36`).
 
