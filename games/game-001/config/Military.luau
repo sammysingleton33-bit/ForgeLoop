@@ -8,6 +8,9 @@
 ]]
 
 return {
+	-- D-055 (1): at most this many standing soldiers (units, living + in training) per kingdom; Recruit answers
+	-- army_cap beyond it. 60 citizens + 15 soldiers = 75 per kingdom, 300 per server (BRIEF §14).
+	maxSoldiers = 15,
 	unitOrder = { "soldier", "archer", "knight", "ram" },
 	units = {
 		soldier = {

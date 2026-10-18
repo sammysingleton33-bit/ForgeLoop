@@ -13,15 +13,25 @@
 		MatchService.phaseChanged: Signal<(MatchPhase, { endsAt: number? })>   -- phase or countdown changes
 	Extra
 		MatchService.host                           -- the MatchHost (after start); simulation at host.match.sim
-		MatchService.mode                           -- "slice" | "match" (config Match.mode, PROVISIONAL)
+		MatchService.mode                           -- "slice" | "match" (config Match.mode: "match" by default, D-053)
 		MatchService.durationsSource                -- "pacing" | "defaults"
+	Crown Arena hooks (FL-0125; the ArenaService of FL-0071 plugs in, until then Crown Points decide the match)
+		MatchService:registerArena(handler?)        -- handler.beginArena(qualifiers: { KingdomId }): boolean and
+		                                              handler.cancelArena(reason)? ; when Endgame ends with two or more
+		                                              kingdoms standing the match calls beginArena with the top two by
+		                                              Crown Points: true = the duel runs and the match waits for
+		                                              arenaEnded; false (or an error) = the Crown Points result at once
+		MatchService:arenaEnded(winner: KingdomId?): boolean   -- the duel is over: the winner wins the match
+		                                              (reason "arena"); nil or a kingdom outside the duel = the Crown
+		                                              Points result. false = no duel was running
 	Dependencies: RemoteService. Optional (registry:find in start):
 		- PacingService (G11, FORGE-04): phase lengths from phaseDurations(mode); without it, or when it
 		  fails or returns lengths Match.checkDurations rejects, the built-in config Match.durations[mode]
 		  (same numbers as config Pacing) and a warning.
 		- TreasuryService (G7, FORGE-03): the simulation charges and deposits through it; until then the
 		  local TreasuryDouble.
-	Studio debug (FL-0068): command match.phase (Founding/Expansion/Conflict/Endgame).
+	Studio debug (FL-0068): command match.phase (Founding/Expansion/Conflict/Endgame); match.mode (slice/match)
+	restarts the match in that mode (D-053 (7): the VS-1 slice stays reachable, so its checklists still run).
 	Events: GameEvents.MatchPhaseChanged / KingdomEliminated / MatchEnded and the other G9 events are fired
 	exactly once by the host's event fan-out (see Game/Kingdom/MatchHost).
 ]]
@@ -43,12 +53,30 @@ local Def = { name = "MatchService", dependencies = { "RemoteService" } }
 -- many servers in one process, a real server boots one).
 local active: any = nil
 
-local function registerDebugCommands()
+local function isRegistered(name: string): boolean
 	for _, command in DebugCommands.list() do
-		if command.name == "match.phase" then
-			return
+		if command.name == name then
+			return true
 		end
 	end
+	return false
+end
+
+local function registerDebugCommands()
+	if isRegistered("match.phase") then
+		return
+	end
+	DebugCommands.register({
+		name = "match.mode",
+		label = "Restart the match in slice or match mode (the VS-1 slice or the full match)",
+		args = { Validate.enum({ "slice", "match" }) },
+		run = function(_player: any, mode: string): string?
+			if active == nil or active.host == nil then
+				return "no match is running"
+			end
+			return active:restartIn(mode)
+		end,
+	})
 	DebugCommands.register({
 		name = "match.phase",
 		label = "Set the match phase (Founding, Expansion, Conflict or Endgame)",
@@ -70,6 +98,7 @@ function Def.new(env: any, registry: any)
 	self._remotes = registry:get("RemoteService")
 	self.phaseChanged = Signal.new()
 	self.host = nil :: any
+	self._arena = nil :: any
 	self.mode = MatchConfig.mode
 	self.durationsSource = "defaults"
 	return self
@@ -106,6 +135,7 @@ function MatchService:start()
 		match = {
 			mode = self.mode,
 			phaseDurations = durations,
+			arena = self._arena,
 			minPlayers = MatchConfig.minPlayers,
 			treasury = treasury,
 			costs = Costs, -- FORGE-03's Costs.luau (G6/G7)
@@ -119,6 +149,27 @@ function MatchService:start()
 	self.host:start()
 	active = self
 	registerDebugCommands()
+end
+
+-- Studio debug (match.mode): throw the world away and start over in `mode`.
+function MatchService:restartIn(mode: string): string
+	self.mode = mode
+	local durations = self:_pacedDurations()
+	self.durationsSource = if durations then "pacing" else "defaults"
+	self.host.match:restart(mode, durations)
+	return `match restarted in {mode} mode`
+end
+
+-- Crown Arena hooks (see the header).
+function MatchService:registerArena(handler: any?)
+	self._arena = handler
+	if self.host then
+		self.host.match:setArenaHost(handler)
+	end
+end
+
+function MatchService:arenaEnded(winner: string?): boolean
+	return self.host ~= nil and self.host.match:arenaEnded(winner)
 end
 
 function MatchService:getPhase(): string

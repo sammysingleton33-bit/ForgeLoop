@@ -31,8 +31,13 @@ LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
 EXPECTED_STEPS=$((6 + 3 * ${#GAME_PROJECTS[@]})) # 6 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 # spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
-# "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600).
-SHARDS=("game-001/sim:2")
+# "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600); its 49 files
+# summed 584 s one by one on 2026-10-18 (ConversationService 138 s, ConsequenceService 113 s, MatchKingdomServices
+# 79 s), which the every-n-th split puts at 424 + 160 s with 2 shards and 253 + 109 + 221 s with 3.
+SHARDS=("game-001/sim:3")
+# sub-folders that run as their own Lune step and are left out of their parent folder's step(s) (run.luau
+# --exclude): "<game id>/<folder>/<sub>". game-001's sim/long holds the real-length full-match spec (FL-0125).
+SPLITS=("game-001/sim/long")
 
 NAMES=()
 RESULTS=()
@@ -176,6 +181,16 @@ for entry in "${GAME_PROJECTS[@]}"; do
 		if compgen -G "$game_specs/*.spec.luau" >/dev/null || [[ ${#chunks[@]} == 0 ]]; then
 			chunks=("$game_specs") # specs at the root (or no folders): the whole tree in one run, as before
 		fi
+		# a sub-folder listed in SPLITS (when it exists) is one more chunk, and its parent's runs exclude it
+		excludes=()
+		for split in "${SPLITS[@]}"; do
+			[[ ${split%%/*} == "$game_id" ]] || continue
+			sub="$game_specs/${split#*/}"
+			if [[ -d $sub ]]; then
+				chunks+=("$sub")
+				excludes+=("$(dirname "$sub")|$sub")
+			fi
+		done
 		# a folder listed in SHARDS runs as n steps: "<dir>|<i>/<n>"
 		runs=()
 		for chunk in "${chunks[@]}"; do
@@ -200,8 +215,12 @@ for entry in "${GAME_PROJECTS[@]}"; do
 			label="${label:-all}${shard:+#$shard}" # e.g. "sim#1/2": no space, the slowest list sorts on field 2
 			log="$LOG_DIR/$game_id-lune-${label//[\/#]/_}.log"
 			started=$SECONDS
+			exclude_args=()
+			for pair in ${excludes[@]+"${excludes[@]}"}; do
+				[[ ${pair%%|*} == "$chunk" ]] && exclude_args+=(--exclude "${pair#*|}")
+			done
 			run_step "$game_id specs ($label)" "$log" with_timeout lune run roblox/tests/harness/run.luau \
-				--project "$game_project" --specs "$chunk" ${shard:+--shard "$shard"}
+				--project "$game_project" --specs "$chunk" ${shard:+--shard "$shard"} ${exclude_args[@]+"${exclude_args[@]}"}
 			code=$?
 			times+=("$label $((SECONDS - started))s")
 			line="$(grep -E '^Lune tests:' "$log" | tail -1)"
@@ -218,6 +237,13 @@ for entry in "${GAME_PROJECTS[@]}"; do
 				fi
 			fi
 		done
+		# every spec file on disk ran exactly once across the shards and splits (a too-broad --exclude, a SPLITS
+		# entry without its own chunk, or a shard bug would otherwise still read PASS); same names as run.luau
+		expected=$(find "$game_specs" \( -name '*.spec.luau' -o -name '*.spec.lua' \) | wc -l | tr -d ' ')
+		if [[ $files -ne $expected ]]; then
+			ok=0
+			why="${why}${why:+; }$files of $expected spec files ran"
+		fi
 		summary="$passed passed, $failed failed, $broken broken file(s), $files spec file(s), $skipped skipped"
 		slowest="$(printf '%s\n' "${times[@]}" | sort -k2 -t' ' -rn | head -3 | paste -sd, - | sed 's/,/, /g')"
 		if [[ $ok == 1 ]]; then

@@ -23,8 +23,9 @@
 		                                 when an owner or progress changes, at most 2 per second;
 		                                 progress 0..1 rounded to 0.01
 	Army.Recruit reasons: not_in_match, match_not_active, kingdom_eliminated, not_found, not_owner,
-	not_barracks, barracks_not_ready, recruit_cap (no free bunk: soldiers sleep in the barracks, never in
-	house beds, D-041; population_cap is no longer sent), cannot_afford (and, unreachable for
+	not_barracks, barracks_not_ready, army_cap (the kingdom already has its 15 standing soldiers, living +
+	training: config Military.maxSoldiers, D-055), recruit_cap (no free bunk: soldiers sleep in the barracks,
+	never in house beds, D-041; population_cap is no longer sent), cannot_afford (and, unreachable for
 	"soldier" through this remote's validation: requires_barracks_level, invalid_args, unknown_unit). Army.Command
 	refusals (Sim/Military UnitOrder: no_units, no_objective, out_of_bounds, unknown_objective,
 	unknown_target, unknown_kingdom, not_at_war, ...) stay on the server.
