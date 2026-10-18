@@ -52,6 +52,19 @@ local function boot(opts)
 			end,
 		})
 	end
+	if opts.touchArea ~= nil then
+		table.insert(defs, {
+			name = "InputModeArenaController",
+			dependencies = {},
+			new = function()
+				return {
+					touchArea = function()
+						return opts.touchArea()
+					end,
+				}
+			end,
+		})
+	end
 	table.insert(defs, {
 		name = "AnnouncerController",
 		dependencies = {},
@@ -218,6 +231,44 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 		t.crowd:onEvents({ { kind = "hype", side = "b", data = { full = true } } })
 		-- no name for the AI champion's stand
 		expect(table.find(t.crowd:captions(), "Azure Kingdom: For the kingdom!") ~= nil).toBe(true)
+	end)
+end)
+
+describe("FeedbackCrowdController: where the subtitles sit (FL-0074 part 2a)", function()
+	it("bottom-centre, or left of and above the duel's touch buttons while they show (FORGE-03 on #199)", function()
+		local area = nil
+		local t = boot({
+			touchArea = function()
+				return area
+			end,
+		})
+		t.crowd:onArenaState(state("duel"))
+		t.crowd:onEvents({ { kind = "parry", side = "a" } })
+		local screen = t.gui:FindFirstChild(CrowdDef.GUI_NAME)
+		local a, b = screen:FindFirstChild("Caption_a"), screen:FindFirstChild("Caption_b")
+		expect(a.Position).toEqual(UDim2.fromScale(0.5, 0.8))
+		expect(b.Position).toEqual(UDim2.new(0.5, 0, 0.8, CrowdDef.LINE.step))
+		expect(a.Size).toEqual(UDim2.new(0.7, 0, 0, CrowdDef.LINE.height))
+		area = { left = 256, top = 224 } -- a phone's duel buttons (InputModeArenaController)
+		t.env.mock:advance(Crowd.majorGapSec)
+		t.crowd:onEvents({ { kind = "parry", side = "b" } })
+		expect(a.AnchorPoint).toEqual(Vector2.new(0, 1))
+		expect(a.Position).toEqual(UDim2.new(0, 16, 1, -232))
+		expect(b.Position).toEqual(UDim2.new(0, 16, 1, -262))
+		expect(a.Size).toEqual(UDim2.new(1, -280, 0, 28)) -- on 667 px: x 16..387, clear of the buttons at 411
+		area = nil -- the duel is over, the buttons are gone
+		t.env.mock:advance(Crowd.majorGapSec)
+		t.crowd:onEvents({ { kind = "parry", side = "a" } })
+		expect(a.Position).toEqual(UDim2.fromScale(0.5, 0.8))
+		local broken = boot({
+			touchArea = function()
+				error("not ready")
+			end,
+		})
+		broken.crowd:onArenaState(state("duel"))
+		broken.crowd:onEvents({ { kind = "parry", side = "a" } })
+		local caption = broken.gui:FindFirstChild(CrowdDef.GUI_NAME):FindFirstChild("Caption_a")
+		expect(caption.Position).toEqual(UDim2.fromScale(0.5, 0.8))
 	end)
 end)
 

@@ -22,6 +22,10 @@
 		  first subtitle: "<Kingdom name>: <caption>", shown CAPTION_SEC; a priority line (a perk, the
 		  ending) shows PRIORITY_SEC and is not replaced by a lesser line meanwhile. RichText is off, so a
 		  display name inside a chant is shown as typed.
+		- Where: bottom-centre (y 0.8, 0.7 wide; FORGE-03 keeps y 0.72–0.86 clear of the arena HUD).
+		  While the champion's duel touch buttons show (InputModeArenaController:touchArea), the lines
+		  move left of the buttons and above their top, which also keeps them off the thumbstick
+		  (FORGE-03 on #199: on a 667x375 phone the centred lines covered the buttons).
 		- reacted: Signal<(reaction, kingdomId?)>, for the stand figures (part 2b) and FORGE-03's HUD.
 	Studio preview (E17): in Studio only, the local player's attribute ForgeCrowdPreview = "tierA,tierB"
 	(for example "adoring,hostile") plays Def.PREVIEW, a short scripted duel, through the same path,
@@ -52,6 +56,7 @@ Def.CAPTION_SEC = 2.5
 Def.PRIORITY_SEC = 4
 Def.STEP_SEC = 0.25
 Def.GUI_NAME = "ForgeCrowdCaptions"
+Def.LINE = table.freeze({ height = 28, step = 30, edge = 16, clear = 8 }) -- px
 Def.DUEL_STAGES = table.freeze({ intro = true, duel = true })
 Def.END_PHASES = table.freeze({ Results = true, Lobby = true })
 Def.PREVIEW_ATTRIBUTE = "ForgeCrowdPreview"
@@ -348,12 +353,9 @@ function Controller:_render()
 			screen.Name = Def.GUI_NAME
 			screen.ResetOnSpawn = false
 			screen.DisplayOrder = 4
-			for index, stand in { "a", "b" } do
+			for _, stand in { "a", "b" } do
 				local label = env.newInstance("TextLabel")
 				label.Name = `Caption_{stand}`
-				label.AnchorPoint = Vector2.new(0.5, 1)
-				label.Position = UDim2.new(0.5, 0, 0.8, (index - 1) * 30)
-				label.Size = UDim2.new(0.7, 0, 0, 28)
 				label.BackgroundColor3 = Color3.fromRGB(16, 14, 20)
 				label.BackgroundTransparency = 0.35
 				label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -374,16 +376,40 @@ function Controller:_render()
 		gui = made
 		self._gui = gui
 	end
+	local area = self:_touchArea()
+	local rule = Def.LINE
 	pcall(function()
-		for _, stand in { "a", "b" } do
+		for index, stand in { "a", "b" } do
 			local label = gui:FindFirstChild(`Caption_{stand}`)
 			local line = self._lines[stand]
 			if label ~= nil then
+				if area ~= nil then -- left of the duel buttons and above them, stacking upwards
+					label.AnchorPoint = Vector2.new(0, 1)
+					label.Position = UDim2.new(0, rule.edge, 1, -(area.top + rule.clear) - (index - 1) * rule.step)
+					label.Size = UDim2.new(1, -(area.left + rule.clear + rule.edge), 0, rule.height)
+				else
+					label.AnchorPoint = Vector2.new(0.5, 1)
+					label.Position = UDim2.new(0.5, 0, 0.8, (index - 1) * rule.step)
+					label.Size = UDim2.new(0.7, 0, 0, rule.height)
+				end
 				label.Text = if line ~= nil then line.text else ""
 				label.Visible = line ~= nil
 			end
 		end
 	end)
+end
+
+-- The duel's touch buttons on screen (InputModeArenaController:touchArea: px from the bottom-right).
+function Controller:_touchArea(): { left: number, top: number }?
+	local arena = self._registry:find("InputModeArenaController")
+	if arena == nil or arena.touchArea == nil then
+		return nil
+	end
+	local ok, area = pcall(arena.touchArea, arena)
+	if ok and type(area) == "table" and type(area.left) == "number" and type(area.top) == "number" then
+		return area
+	end
+	return nil
 end
 
 function Controller:_clear()

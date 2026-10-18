@@ -64,4 +64,9 @@ M = [
  ("FL-0074", K2, '\tlocal tierA, tierB = nil, nil\n\tif type(spec) == "string" then\n\t\ttierA, tierB = string.match(spec, "^%s*(%a+)%s*,%s*(%a+)%s*$")\n\tend', '\tlocal tierA, tierB = if type(spec) == "string" then string.match(spec, "^%s*(%a+)%s*,%s*(%a+)%s*$") else nil', "CrowdClient", "the Studio preview plays the scripted duel", "game"),
  ("FL-0074", K2, '\tif self._pair ~= nil then\n\t\treturn false -- a real duel is never interrupted by the preview\n\tend\n', '', "CrowdClient", "the Studio preview plays the scripted duel", "game"),
  ("FL-0074", K2, 'if self._previewOwned then', 'if false then', "CrowdClient", "the Studio preview plays the scripted duel", "game"),
+ # subtitles keep clear of the duel's touch buttons (FORGE-03 on #199)
+ ("FL-0074", K2, 'if area ~= nil then -- left of the duel buttons', 'if false then -- left of the duel buttons', "CrowdClient", "left of and above the duel's touch buttons", "game"),
+ ("FL-0074", K2, 'label.Position = UDim2.new(0, rule.edge, 1, -(area.top + rule.clear) - (index - 1) * rule.step)', 'label.Position = UDim2.new(0, rule.edge, 1, -area.top - (index - 1) * rule.step)', "CrowdClient", "left of and above the duel's touch buttons", "game"),
+ ("FL-0074", K2, 'label.Size = UDim2.new(1, -(area.left + rule.clear + rule.edge), 0, rule.height)', 'label.Size = UDim2.new(1, -area.left, 0, rule.height)', "CrowdClient", "left of and above the duel's touch buttons", "game"),
+ ("FL-0074", K2, 'local ok, area = pcall(arena.touchArea, arena)', 'local ok, area = true, arena:touchArea()', "CrowdClient", "left of and above the duel's touch buttons", "game"),
 ]

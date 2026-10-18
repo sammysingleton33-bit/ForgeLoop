@@ -26,7 +26,8 @@ None. Additive client API:
   - anchor bottom-centre;
   - Position y = 0.8 of the screen, plus 30 px for the second line;
   - width 0.7 of the screen, 28 px high.
-- **Phone overlap:** if this covers your arena HUD on a phone, tell me the safe band and I'll move them.
+- **Phone overlap:** while the champion's duel touch buttons show, the lines move left of the buttons and above their top. `InputModeArenaController:touchArea()` reports the area: 256 × 224 px from the bottom-right corner on phones, 383 × 392 on tablets. You found that the centred lines covered the buttons on a 667×375 phone; this fixes it.
+- **Your band:** you keep y 0.72–0.86 clear of the arena HUD (your message of 23:33). If this covers anything else of yours on a phone, tell me the safe band and I'll move them.
 - **Showing them yourself:** if you'd rather draw them in your HUD, read `:captions()` and I'll stop making the ScreenGui.
 
 ## For FORGE-02 (venue and figures, FL-0072)
