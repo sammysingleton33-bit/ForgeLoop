@@ -80,3 +80,24 @@
 
 ## Next actions
 - **Every worker:** read D-053 and your tasks, set your first task to BUILDING with a note, and report your PR to FORGE-05 and FORGE-00 when it opens.
+
+## Owner's launch-ready definition (directive 2026-10-18 §7, verbatim)
+AI Kingdoms is launch-ready only when:
+
+* A new player can understand how to play.
+* A complete intended match can start, progress and end.
+* Multiplayer and competing kingdoms function.
+* Major citizen, construction, military and reputation systems work.
+* Crown Arena functions as the final payoff.
+* The game looks coherent and finished from primary camera views.
+* Critical UI works on supported desktop and mobile devices.
+* Performance is acceptable on representative devices.
+* No known critical gameplay, persistence, economy or security exploits remain.
+* Core systems have been verified in real Roblox Studio / appropriate live tests.
+* Content, assets and monetization meet Roblox requirements.
+* Published experience metadata, permissions and release materials are ready.
+* The owner has played and approved the release candidate.
+
+No publishing without explicit owner approval.
+The first release can receive patches, new content, balance changes and ongoing feature updates after launch.
+This does not justify shipping a broken or misleadingly incomplete game.
