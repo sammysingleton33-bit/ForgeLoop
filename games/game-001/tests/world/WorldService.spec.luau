@@ -332,7 +332,7 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		expect(worst).toBeLessThanOrEqual(svc.partsPerFrame + largest + 80)
 		-- D-047 / FL-0116: 6,540 dressing parts with the trimmed dressing (8,315 untrimmed; plot showcase, in-view stands and relocated decor stay);
 		-- restoring the density knob after a phone test means raising this with it, since the 27k all-built ceiling depends on it.
-		-- stats.parts also counts the Crown Arena (FL-0072: 331 neutral parts, Arena.PART_BUDGET.cap 900), which has its own cap.
+		-- stats.parts also counts the Crown Arena (FL-0072: 339 neutral parts, Arena.PART_BUDGET.cap 900), which has its own cap.
 		expect(svc.stats.parts - svc.stats.arenaParts).toBeLessThan(6700)
 		expect(svc.stats.arenaParts).toBeGreaterThan(0)
 		expect(svc.stats.arenaParts).toBeLessThanOrEqual(Kit.ARENA.PART_BUDGET.cap)
