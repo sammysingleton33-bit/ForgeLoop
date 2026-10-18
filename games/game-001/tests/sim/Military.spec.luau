@@ -9,6 +9,19 @@ local Objectives = require("@game/ReplicatedStorage/Game/Sim/Objectives")
 local WorldView = require("@game/ReplicatedStorage/Game/Sim/WorldView")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 
+-- (i, value) for every argument, nil ones included: a list literal drops its nil entries from `for in`
+local function each(...)
+	local cases = table.pack(...)
+	local i = 0
+	return function()
+		i += 1
+		if i <= cases.n then
+			return i, cases[i]
+		end
+		return nil
+	end
+end
+
 local RULER, RIVAL = 101, 201
 
 -- k1 (id "crimson") at the origin and k2 ("azure") 300 studs east, at Peace, Military installed.
@@ -103,10 +116,10 @@ describe("Kingdom/Military: recruiting", function()
 	it("rejects bad arguments (invalid_args) and unknown units (unknown_unit)", function()
 		local sim, k1 = world()
 		addBuilding(sim, k1, "barracks", 0, -40, 1)
-		for _, count in { 0, 11, 1.5, -1, 0 / 0, math.huge, "1", nil } do
+		for _, count in each(0, 11, 1.5, -1, 0 / 0, math.huge, "1", nil) do
 			expect(select(2, recruit(RULER, sim, "soldier", count))).toBe("invalid_args")
 		end
-		for _, kind in { nil, 5, {} } do
+		for _, kind in each(nil, 5, {}) do
 			expect(select(2, recruit(RULER, sim, kind, 1))).toBe("invalid_args")
 		end
 		expect(select(2, recruit(RULER, sim, "dragon", 1))).toBe("unknown_unit")
