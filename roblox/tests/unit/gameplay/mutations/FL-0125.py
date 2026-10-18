@@ -81,4 +81,9 @@ M = [
  ("FL-0125", HOST, '			table.insert(parts, `A:{a.kingdomId}:{a.from}:{a.target}`)', '			table.insert(parts, "A")', "sim/MatchKingdomServices", "state signature"),
  ("FL-0125", HOST, '		table.insert(parts, "L:" .. table.concat(locks, ","))', '		table.insert(parts, "L:")', "sim/MatchKingdomServices", "state signature"),
  ("FL-0125", HOST, '		table.insert(parts, "S:" .. table.concat(seniors, ","))', '		table.insert(parts, "S:")', "sim/MatchKingdomServices", "each diplomacy fact is in the state signature"),
+ # --- FORGE-07 review of #187: M1 (a turned-away player is seated in the next world), L1 (a host that reports from inside beginArena)
+ ("FL-0125", MATCH, '	for _, userId in waiting do\n		self:join(userId)\n	end', '', "sim/Match.spec", "seats a player who was turned away"),
+ ("FL-0125", MATCH, '		if not table.find(self.waiting, userId) then\n			table.insert(self.waiting, userId)\n		end\n		return false, "match_full"', '		return false, "match_full"', "sim/Match.spec", "seats a player who was turned away"),
+ ("FL-0125", MATCH, '	local waiting = table.find(self.waiting, userId)\n	if waiting then\n		table.remove(self.waiting, waiting)\n	end\n	self.sim:removeRuler(userId)', '	self.sim:removeRuler(userId)', "sim/Match.spec", "forgets a waiting player who leaves"),
+ ("FL-0125", MATCH, '	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }\n	local ok, begun = pcall(host.beginArena, qualifiers)', '	local ok, begun = pcall(host.beginArena, qualifiers)\n	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }', "sim/Match.spec", "hears a host that reports the result from inside beginArena"),
 ]

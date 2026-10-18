@@ -171,7 +171,7 @@ describe("UI/DiplomacyModel (FL-0129)", function()
 			end,
 		}
 		-- the senior ruler is someone else: Declare war becomes an ask, Accept is theirs
-		war.senior = 2
+		war.seniors = { crimson = 2, azure = 1 } -- azure's senior is not mine
 		local view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Conflict", 1000, me)
 		expect(view.senior).toBe("Mira")
 		local declare = action(rowOf(view, "emerald"), "declareWar")
@@ -184,7 +184,7 @@ describe("UI/DiplomacyModel (FL-0129)", function()
 		expect(action(rowOf(view, "azure"), "proposePeace").enabled).toBe(true) -- any ruler may propose
 		expect(view.incoming).toBe(1) -- still an offer to my kingdom
 		-- I am the senior ruler: everything is mine
-		war.senior = 1
+		war.seniors = { crimson = 1 }
 		view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Conflict", 1000, me)
 		expect(view.senior).toBeNil()
 		expect(action(rowOf(view, "emerald"), "declareWar").label).toBe("Declare war")
@@ -404,7 +404,7 @@ describe("The Rivals tab (FL-0129)", function()
 		world = newWorld()
 		world.diplomacy:setSenior(2)
 		world:advance(0.2)
-		world.diplomacy.state.senior = 1
+		world.diplomacy.state.seniors.crimson = 1
 		local azure = find(openRivals(world), "Rival_azure")
 		tap(find(azure, "Action_declareWar"))
 		world:advance(0.1)
@@ -416,7 +416,7 @@ describe("The Rivals tab (FL-0129)", function()
 		world:destroy()
 		-- the panel thinks I decide, but the server only asks the senior ruler
 		world = newWorld()
-		world.diplomacy.state.senior = 2
+		world.diplomacy.state.seniors.crimson = 2
 		tap(find(find(openRivals(world), "Rival_emerald"), "Action_declareWar"))
 		world:advance(0.1)
 		tap(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_emerald"), "Action_confirm"))
@@ -447,6 +447,20 @@ describe("The Rivals tab (FL-0129)", function()
 		expect(world.hud.store:diplomacy()).toBeNil()
 		local azure = find(openRivals(world), "Rival_azure")
 		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("peace")
+	end)
+
+	it("the senior ruler hears a co-ruler's ask for war, once, with where to answer (Kingdom.WarAsk)", function()
+		world = newWorld()
+		world.diplomacy:setSenior(1) -- I am senior
+		world:advance(0.2)
+		world.diplomacy:askFrom(2, "Mira", "azure", 1)
+		world:advance(0.2)
+		expect(texts(world.hud.guis.notices)).toContain("Mira asks for war on Frostmere")
+		expect(texts(world.hud.guis.notices)).toContain("Rivals to decide")
+		-- an unknown kingdom says nothing
+		world.diplomacy:askFrom(2, "Mira", "nowhere", 1)
+		world:advance(0.2)
+		expect(texts(world.hud.guis.notices)).never.toContain("nowhere")
 	end)
 
 	it("without the server's diplomacy remote there is no Rivals tab (dormant on today's main)", function()

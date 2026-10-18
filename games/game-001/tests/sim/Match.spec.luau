@@ -694,6 +694,54 @@ describe("Kingdom/Match: elimination and spectators", function()
 		expect(match:spectatorOf(21)).toBeNil() -- a full server is not an elimination: the host keeps them watching
 	end)
 
+	it("seats a player who was turned away (match_full) in the next match when a seat is free (FORGE-07 M1)", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		for userId = 1, 16 do
+			expect((match:join(userId))).toBe(true) -- 4 x 4
+		end
+		run(match, 3)
+		eliminate(match, "crimson", "azure") -- users 1, 5, 9, 13 become spectators
+		match:update(0.25)
+		match:leave(1)
+		match:leave(5)
+		expect({ match:join(100) }).toEqual({ false, "match_full" }) -- 12 rulers in 12 seats
+		eliminate(match, "azure", "gold")
+		eliminate(match, "emerald", "gold")
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		run(match, 30)
+		expect(match.state).toBe("Lobby")
+		expect(match:kingdomOf(100)).never.toBeNil() -- 16 seats, 14 players before them
+		expect(match:kingdomOf(9)).never.toBeNil()
+		expect(match:spectatorOf(9)).toBeNil()
+		local seated = 0
+		for _, kingdom in match.sim.kingdoms do
+			seated += #kingdom.rulers
+		end
+		expect(seated).toBe(15)
+		expect(#match.waiting).toBe(0)
+	end)
+
+	it("keeps those who still find no room waiting, in order, and forgets a waiting player who leaves", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		for userId = 1, 16 do
+			match:join(userId)
+		end
+		expect({ match:join(100) }).toEqual({ false, "match_full" })
+		expect({ match:join(101) }).toEqual({ false, "match_full" })
+		expect({ match:join(100) }).toEqual({ false, "match_full" }) -- asking again does not queue twice
+		expect(match.waiting).toEqual({ 100, 101 })
+		match:leave(101)
+		expect(match.waiting).toEqual({ 100 })
+		match:restart() -- a new world: 16 players fill it again, 100 still waits
+		expect(match:kingdomOf(100)).toBeNil()
+		expect(match.waiting).toEqual({ 100 })
+		match:leave(3)
+		match:restart()
+		expect(match:kingdomOf(100)).never.toBeNil()
+		expect(match.waiting).toEqual({})
+	end)
+
 	it("ends the match at once when one kingdom is left (conquest), ranking the fallen by who fell last", function()
 		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
 		match:join(1)
@@ -803,6 +851,33 @@ describe("Kingdom/Match: Crown Arena hooks", function()
 		match.sim:addCrownPoints("crimson", 10, "spec")
 		return match
 	end
+
+	it("hears a host that reports the result from inside beginArena (FORGE-07 L1)", function()
+		local match
+		local host = arenaHost(true)
+		host.beginArena = function(qualifiers)
+			table.insert(host.began, qualifiers)
+			expect(match:arenaEnded(qualifiers[2])).toBe(true)
+			return true
+		end
+		match = atEndgame(host)
+		run(match, 2 + 16 + 0.5)
+		expect(match.state).toBe("Results")
+		expect(match:summary().reason).toBe("arena")
+		expect(match:summary().winner).toBe("azure")
+		expect(match:inArena()).toBe(false)
+	end)
+
+	it("drops the arena again when the host declines or throws, so a later arenaEnded is refused", function()
+		for _, answer in { false, "throw" } do
+			local host = arenaHost(answer)
+			local match = atEndgame(host)
+			run(match, 2 + 16 + 0.5)
+			expect(match.state).toBe("Results")
+			expect(match:summary().reason).toBe("time")
+			expect(match:inArena()).toBe(false)
+		end
+	end)
 
 	it("asks the host to begin the duel between the top two by Crown Points, and waits for arenaEnded", function()
 		local host = arenaHost(true)

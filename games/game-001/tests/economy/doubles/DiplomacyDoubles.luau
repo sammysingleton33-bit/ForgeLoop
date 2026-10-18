@@ -28,6 +28,8 @@ DiplomacyDoubles.DECLARATION = {
 	rate = { burst = 3, perSecond = 1 },
 }
 
+DiplomacyDoubles.WAR_ASK = { name = "Kingdom.WarAsk", kind = "serverEvent" }
+
 function DiplomacyDoubles.remotes(base: { [string]: any }?): { [string]: any }
 	local out = {}
 	for area, decls in base or {} do
@@ -35,6 +37,7 @@ function DiplomacyDoubles.remotes(base: { [string]: any }?): { [string]: any }
 	end
 	out.Kingdom = out.Kingdom or {}
 	table.insert(out.Kingdom, DiplomacyDoubles.DECLARATION)
+	table.insert(out.Kingdom, DiplomacyDoubles.WAR_ASK)
 	return out
 end
 
@@ -46,6 +49,17 @@ function DiplomacyDoubles.service(_world)
 	return DiplomacyDoubles.def
 end
 
+-- The final contract (FORGE-01, 2026-10-18): `seniors = { [KingdomId] = UserId? }`, `lockedUntil` for
+-- the receiving player, and `Kingdom.WarAsk(requesterUserId, requesterName, target)` to the senior ruler.
+local function playerOf(env, userId)
+	for _, p in env.Players:GetPlayers() do
+		if p.UserId == userId then
+			return p
+		end
+	end
+	return nil
+end
+
 DiplomacyDoubles.def = {
 	name = "DiplomacyService",
 	dependencies = { "RemoteService", "KingdomService" },
@@ -53,7 +67,7 @@ DiplomacyDoubles.def = {
 		local remotes = registry:get("RemoteService")
 		local kingdoms = registry:get("KingdomService")
 		local svc = {
-			state = { relations = {}, proposals = {}, cooldowns = {}, graceEndsAt = nil },
+			state = { relations = {}, proposals = {}, cooldowns = {}, graceEndsAt = nil, seniors = {} },
 			calls = {},
 			asks = {},
 			refuse = nil :: string?,
@@ -105,9 +119,16 @@ DiplomacyDoubles.def = {
 			self.state.graceEndsAt = now() + seconds
 			publish()
 		end
-		function svc:setSenior(userId)
-			self.state.senior = userId
+		function svc:setSenior(userId, kingdomId)
+			self.state.seniors[kingdomId or "crimson"] = userId
 			publish()
+		end
+		-- a co-ruler asks the senior ruler (userId) for war on target: the server's notice to them
+		function svc:askFrom(fromUserId, fromName, target, seniorUserId)
+			local senior = playerOf(env, seniorUserId)
+			if senior then
+				remotes:fire("Kingdom.WarAsk", senior, fromUserId, fromName, target)
+			end
 		end
 		function svc:lock(seconds)
 			self.state.lockedUntil = now() + seconds
@@ -132,12 +153,16 @@ DiplomacyDoubles.def = {
 				if action ~= "proposePeace" and svc.state.lockedUntil and t < svc.state.lockedUntil then
 					return false, "newcomer_lock"
 				end
-				local senior = svc.state.senior
+				local senior = svc.state.seniors[mine]
 				if senior ~= nil and player.UserId ~= senior then
 					if action == "acceptPeace" then
 						return false, "not_senior"
 					elseif action == "declareWar" then
 						table.insert(svc.asks, { from = player.UserId, target = target })
+						local to = playerOf(env, senior)
+						if to then
+							remotes:fire("Kingdom.WarAsk", to, player.UserId, player.Name, target)
+						end
 						return true, "asked" -- the ask goes to the senior ruler as a server notice
 					end
 				end
