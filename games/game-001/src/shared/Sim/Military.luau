@@ -66,6 +66,7 @@
 		UnitKilled { kingdomId, unitId, unit, byKingdomId }
 		BuildingDestroyed { kingdomId, buildingId, kind, byKingdomId }
 		KingdomEliminated { kingdomId, byKingdomId, loot }
+		SiegeChanged / RaidChanged (Sim/WarWatch): one event per start and per end of a siege on the keep / enemies inside the territory
 	API (besides the commands)
 		Military.spawnUnit(sim, kingdom, kind, x, z): Unit      -- also used by specs
 		Military.rallyPoint(barracks, slot): (x, z)             -- slot 0 = the Rally itself, then sideways
@@ -77,6 +78,7 @@
 local Kit = require("../Kit/Kit")
 local Commands = require("./Commands")
 local Nav = require("./Nav")
+local WarWatch = require("./WarWatch")
 
 local Military = {}
 
@@ -796,6 +798,7 @@ local function hit(sim: any, u: any, def: any, target: any, kind: string)
 	else
 		target.hp -= math.floor(def.damage * def.siege + 0.5)
 		target.damagedAt = sim.time -- a building hit lately can't be moved out of reach (G13.9)
+		WarWatch.keepHit(sim, target, u.kingdomId)
 		if target.hp <= 0 then
 			destroyBuilding(sim, target, u.kingdomId)
 		end
@@ -1045,6 +1048,7 @@ function Military.install(sim: any)
 			stepDefences(s, dt)
 		end,
 	})
+	WarWatch.install(sim) -- after the units: it reads this tick's hits and threats
 end
 
 -- exposed for specs and the match host

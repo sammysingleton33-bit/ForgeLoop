@@ -55,6 +55,9 @@ local function boot(options: { [string]: any }?)
 	if opts.entities then
 		table.insert(definitions, service("EntityService"))
 	end
+	if opts.consequences then
+		table.insert(definitions, service("ConsequenceService"))
+	end
 	local savedMode = MatchConfig.mode
 	MatchConfig.mode = "slice" -- the VS-1 slice this spec was written for; the shipped default is the full match (D-053)
 	local registry = Loader.load(env, definitions)
@@ -1590,5 +1593,84 @@ describe("ConversationService: the keep falls mid-conversation (FL-0125)", funct
 		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
 		expect(#conversations:openRequests("crimson")).toBe(0)
 		env.mock:advance(20) -- long enough for every refresh and hold timer to run
+	end)
+end)
+
+-- FL-0134: the war moments raise the event tags the library's raid, riot, strike, war, siege and objective-lost
+-- scenes wait on; each holds for Society.conversation.eventSeconds, for the kingdom the event is about.
+describe("ConversationService: war and consequence event tags (FL-0134)", function()
+	local function tags(conversations, kingdomId)
+		return conversations:_eventTags(kingdomId)
+	end
+
+	local function setup(withConsequences: boolean?)
+		local env, conversations, match, registry = boot({ consequences = withConsequences })
+		seat(env, 1)
+		local host = match.host
+		return env, conversations, host, registry
+	end
+
+	it("raises war_declared for both sides of a declaration, and nobody else", function()
+		local env, conversations, host = setup()
+		host.events:fire("WarDeclared", { kingdomId = "crimson", targetId = "azure", by = 1 })
+		expect(tags(conversations, "crimson")).toEqual({ "war_declared" })
+		expect(tags(conversations, "azure")).toEqual({ "war_declared" })
+		expect(tags(conversations, "emerald")).toEqual({})
+	end)
+
+	it("raises siege and raid when they start, for that kingdom only; their end raises nothing new", function()
+		local env, conversations, host = setup()
+		host.events:fire(
+			"SiegeChanged",
+			{ kingdomId = "crimson", on = true, byKingdomIds = { "azure" }, buildingId = 1 }
+		)
+		host.events:fire(
+			"RaidChanged",
+			{ kingdomId = "azure", on = true, byKingdomIds = { "crimson" }, count = 2, position = { x = 0, z = 0 } }
+		)
+		expect(tags(conversations, "crimson")).toEqual({ "siege" })
+		expect(tags(conversations, "azure")).toEqual({ "raid" })
+		host.events:fire(
+			"RaidChanged",
+			{ kingdomId = "emerald", on = false, byKingdomIds = {}, count = 0, position = { x = 0, z = 0 } }
+		)
+		host.events:fire("SiegeChanged", { kingdomId = "emerald", on = false, byKingdomIds = {}, buildingId = 1 })
+		expect(tags(conversations, "emerald")).toEqual({})
+	end)
+
+	it("raises objective_lost for the previous owner of a captured objective", function()
+		local env, conversations, host = setup()
+		host.events:fire(
+			"ObjectiveCaptured",
+			{ objectiveId = "watchtower", kingdomId = "crimson", previousOwner = "azure" }
+		)
+		expect(tags(conversations, "crimson")).toEqual({ "objective_captured" })
+		expect(tags(conversations, "azure")).toEqual({ "objective_lost" })
+		host.events:fire("ObjectiveCaptured", { objectiveId = "ford", kingdomId = "gold" })
+		expect(tags(conversations, "gold")).toEqual({ "objective_captured" })
+	end)
+
+	it("raises strike and riot when ConsequenceService starts them, not when they end or for other rules", function()
+		local env, conversations, _, registry = setup(true)
+		local consequences = registry:find("ConsequenceService")
+		assert(consequences ~= nil, "this spec boots ConsequenceService")
+		consequences.changed:fire("crimson", "strike", true, {})
+		consequences.changed:fire("azure", "riot", true, {})
+		consequences.changed:fire("emerald", "shortage", true, {})
+		consequences.changed:fire("gold", "strike", false, {})
+		expect(tags(conversations, "crimson")).toEqual({ "strike" })
+		expect(tags(conversations, "azure")).toEqual({ "riot" })
+		expect(tags(conversations, "emerald")).toEqual({}) -- a shortage is not a strike or a riot
+		expect(tags(conversations, "gold")).toEqual({})
+	end)
+
+	it("a tag expires after Society.conversation.eventSeconds", function()
+		local env, conversations, host = setup()
+		host.events:fire("WarDeclared", { kingdomId = "crimson", targetId = "azure" })
+		local hold = Society.conversation.eventSeconds
+		env.mock:advance(hold - 5)
+		expect(tags(conversations, "crimson")).toEqual({ "war_declared" })
+		env.mock:advance(10)
+		expect(tags(conversations, "crimson")).toEqual({})
 	end)
 end)
