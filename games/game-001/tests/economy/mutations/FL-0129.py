@@ -73,6 +73,13 @@ M = [
     ("L3 last match's wars kept", "games/game-001/src/client/UI/KingdomStore.luau",
      "if diplomacy ~= nil or self._diplomacy ~= nil then", "if diplomacy ~= nil then",
      "clears last match's wars", D),
+    # FORGE-01's final contract (2026-10-18)
+    ("seniors read from the wrong kingdom", DM, "seniors[kingdomId] else nil", "seniors.azure else nil",
+     "co-ruler asks the senior ruler", D),
+    ("ask never said to the senior", H, "\tself:notify({\n\t\tkind = \"warning\",\n\t\ttitle = `{who} asks for war",
+     "\tlocal _ = ({\n\t\tkind = \"warning\",\n\t\ttitle = `{who} asks for war", "hears a co-ruler's ask", D),
+    ("ask from nowhere said", H, "\tif kingdom == nil then\n\t\treturn\n\tend\n\tlocal name = if type(kingdom.name)",
+     "\tif false then\n\t\treturn\n\tend\n\tlocal name = if kingdom and type(kingdom.name)", "hears a co-ruler's ask", D),
     ("Rivals without the remote", H,
      "if not self:hasRemote(KingdomHudController.DIPLOMACY) then\n\t\treturn nil",
      "if false then\n\t\treturn nil", "without the server's diplomacy remote", D),

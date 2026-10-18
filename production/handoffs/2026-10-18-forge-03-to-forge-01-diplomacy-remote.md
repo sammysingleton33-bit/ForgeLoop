@@ -1,6 +1,11 @@
 # Handoff: FORGE-03 → FORGE-01 · FL-0129 (Operation Crownfall) · 2026-10-18
 
 ## What I need / what I'm giving you
+**Update 2026-10-18: FORGE-01 accepted this as the D-054 (1) contract, with these final changes, which
+the client now follows:** `seniors = { [KingdomId] = UserId? }` (not `senior`); the senior ruler gets
+`Kingdom.WarAsk(requesterUserId, requesterName, target)`; codes `not_senior` / `newcomer_lock` are final;
+FORGE-01 owns M2 (the state signature). Recruit gains `army_cap` (D-055), mapped in ArmyText.
+
 The war and peace panel (Kingdom → Rivals) is built and tested against a proposed diplomacy contract.
 It stays hidden until the server declares the remote. Please serve these two rows (or tell me your
 names and I'll switch; it is one constant and one store field on my side).

@@ -12,6 +12,7 @@ depends_on: [FL-0125]
 evidence:
   - Lune economy/Diplomacy 9/0, KingdomUI 41/0; mutations FL-0129.py 20/20; renders hud-phase + kingdom-rivals(-confirm) desktop/phone-se looked at; not Studio-played
   - Diplomacy spec 15/0, economy 358/0, mutations FL-0129.py 28/28
+  - economy specs 359/0 incl. Diplomacy 16/0; mutations FL-0129.py 31/31
 ---
 
 # Full-match UI: phase and timer bar, war and peace panel, spectate screen, Results with the leadership recap, wall placement UI
@@ -42,3 +43,4 @@ Automated UI specs (economy/ui folders). Studio: B20/B21 rows including phone em
 - 2026-10-18 forge-03: READY → BUILDING. Started (Operation Crownfall, D-053): phase/timer bar first (Match.State on main), then the war & peace panel against a diplomacy contract proposed to FORGE-01 (no client remote or relation state on main yet)
 - 2026-10-18 forge-03: BUILDING → BUILDING. FL-0129a in PR: phase bar (Match.State) + Rivals tab (war & peace) against a diplomacy contract proposed to FORGE-01 (handoff 2026-10-18-forge-03-to-forge-01-diplomacy-remote); Rivals dormant until the server serves Kingdom.Diplomacy. Next: FL-0129b after FL-0125, FL-0129c after FL-0126
 - 2026-10-18 forge-03: BUILDING → BUILDING. PR #180: FORGE-07 review addressed in 9a7388dd (M1 war toast from the server's declared/asked tag; L1-L3 fixed). M2 (MatchHost._stateSignature lacks diplomacy, per-player senior/lock) and L4 (G8 code words) are FORGE-01's, in handoff 2026-10-18-forge-03-to-forge-01-diplomacy-remote; must land before or with the PR serving Kingdom.Diplomacy
+- 2026-10-18 forge-03: BUILDING → BUILDING. FORGE-01 accepted the diplomacy contract (final: seniors map, Kingdom.WarAsk to the senior, not_senior/newcomer_lock); client aligned on forge/03-ui-economy-diplomacy-final (stacked on #180); army_cap (D-055) mapped
