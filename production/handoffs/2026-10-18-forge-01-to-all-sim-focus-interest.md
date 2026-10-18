@@ -15,7 +15,7 @@ In the full match each player's `Sim.Snapshot` stream is filtered around where t
 **G4 / G8 (Sim area)**: `Sim.Focus(focus: Vector3)` as above. Interest only: it changes which entities a player's snapshots carry, never the simulation or what the player may do. Because a far entity's state change can be missed on its single send tick, it arrives with the entity's next round-robin refresh (≤ ~1 s).
 
 ## Evidence
-- GATE_PLACEHOLDER
+- `bash roblox/scripts/check.sh` on the branch before main (with #194) was merged in: 1827 specs pass, 1 fails (`experience/ConversationAnalytics`, FORGE-04's pin). After merging main (which carries #194) that spec passes on its own (1/0); the full gate was not re-run. Ownership PASS, `forge.py validate` 136 tasks 0 errors. `mutations.py FL-0125I`: 6/6 caught.
 - Bandwidth, headless, worst case (300 entities all moving every snapshot, 8 players, foci scattered over ±400): **33.2 KB/s per player in the slice, 15.5 KB/s in the full match** (BRIEF §14: ≤ 20 KB/s). CPU for the whole 0.1 s step (sim + encode, test harness included) 8.7 ms slice, 8.9 ms match: per-player encoding costs about what broadcast encoding did at 8 players. This is `INTEREST` in the spec output. Not a Studio measurement: the engine's own replication overhead and real character positions are not in it.
 - Everything is **headless**; no client was run.
 
