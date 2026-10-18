@@ -431,6 +431,36 @@ for _, ds in datasets do
 		end)
 
 		it(
+			"puts joint pivots where Pose expects them: hips 2.2 up, neck at the torso top, shoulders outside it",
+			function()
+				each(function(rig)
+					local torso = MeshKit.child(rig, "Torso")
+					local torsoBottom, torsoTop = MeshKit.bounds({ torso })
+					expect(MeshKit.jointWorld(MeshKit.motorOf(rig, "Torso")).Position.Y).toBeNear(2.2, 0.011) -- Pose's death fall
+					expect(torsoBottom.Y).toBeNear(2.2, 0.06)
+					for _, side in { "Left", "Right" } do
+						local leg = MeshKit.child(rig, `{side}Leg`)
+						local _, legTop = MeshKit.bounds({ leg })
+						local hip = MeshKit.jointWorld(MeshKit.motorOf(rig, `{side}Leg`)).Position
+						expect(hip.Y).toBeNear(legTop.Y, 0.06)
+						expect(hip.X).toBeNear(leg.CFrame.Position.X, 0.15)
+						local shoulder = MeshKit.jointWorld(MeshKit.motorOf(rig, `{side}Arm`)).Position
+						expect(shoulder.Y).toBeGreaterThan(torsoTop.Y - 0.6)
+						expect(shoulder.Y).toBeLessThan(torsoTop.Y)
+						-- outside the torso's side, on the arm's centre line, so a raised arm swings clear of the head
+						expect(math.abs(shoulder.X) - torso.Size.X / 2).toBeGreaterThan(0.2)
+						expect(math.abs(shoulder.X) - torso.Size.X / 2).toBeLessThan(0.8)
+					end
+					local neck = MeshKit.jointWorld(MeshKit.motorOf(rig, "Head")).Position
+					expect(neck.Y).toBeNear(torsoTop.Y, 0.1)
+					expect(neck.X).toBeNear(0, 0.011)
+					local headBottom = MeshKit.bounds({ MeshKit.child(rig, "Head") })
+					expect(math.abs(headBottom.Y - neck.Y)).toBeLessThan(0.2)
+				end)
+			end
+		)
+
+		it(
 			"places every MeshPart at the data's bbox centre and size, unrotated, joints where the data puts them",
 			function()
 				each(function(rig, c)
