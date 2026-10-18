@@ -5,7 +5,9 @@
 	Installed into a Simulation as a system plus three commands:
 		Military.install(sim)
 		Recruit(unitKind, count, barracksId?) -> { barracksId, count }   errors: unknown_unit, invalid_args,
-		                                      no_barracks, recruit_cap (no free bunks: soldiers sleep in the
+		                                      no_barracks, army_cap (the kingdom already has config
+		                                      Military.maxSoldiers standing soldiers, living + training, D-055),
+		                                      recruit_cap (no free bunks: soldiers sleep in the
 		                                      barracks, D-041), cannot_afford; with a
 		                                      barracksId also not_found, not_owner, not_barracks,
 		                                      barracks_not_ready (still being built), requires_barracks_level
@@ -153,6 +155,13 @@ end
 
 Military.recruitCap = recruitCap
 
+-- D-055 (1): the most standing soldiers a kingdom may have, bunks aside (config Military.maxSoldiers)
+local function armyCap(sim: any): number
+	return sim.catalog.tuning.maxSoldiers or math.huge
+end
+
+Military.armyCap = armyCap
+
 -- A standing barracks whose level trains `kind`: at least the unit's requiresBarracksLevel and, when the
 -- level lists `trains` (Buildings.luau), named there.
 local function trainsAt(sim: any, b: any, kind: string, def: any): boolean
@@ -216,6 +225,9 @@ local function recruit(
 	local best, refused = pickBarracks(sim, kingdom, kind, def, barracksId)
 	if best == nil then
 		return false, refused
+	end
+	if #kingdom.unitIds + queuedCount(sim, kingdom) + count > armyCap(sim) then
+		return false, "army_cap" -- D-055: the army this server can carry
 	end
 	if #kingdom.unitIds + queuedCount(sim, kingdom) + count > recruitCap(sim, kingdom) then
 		return false, "recruit_cap"

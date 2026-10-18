@@ -147,6 +147,126 @@ describe("Kingdom/RulerAI: who it rules", function()
 end)
 
 describe("Kingdom/RulerAI: decisions", function()
+	it(
+		"builds more bunks when they are all that hold the army back, so a war can ever be declared (FL-0125)",
+		function()
+			local sim, k1 = pair()
+			sim.time = 3 * sim.catalog.tuning.dayLength -- day 4: military
+			sim.rulerAI.aggression.crimson = 1 -- army target: floor(35% of 12 people) = 4
+			F.stock(sim, k1):add("wood", 400)
+			F.stock(sim, k1):add("stone", 400)
+			F.stock(sim, k1):add("food", 200)
+			local barracks = assert(sim:placeBuilding(k1, "barracks", 0, -40))
+			assert(sim:placeBuilding(k1, "house", -40, 0))
+			assert(sim:placeBuilding(k1, "farm", 0, 45))
+			sim:_completeInstantly(barracks)
+			for i = 1, 3 do
+				Military.spawnUnit(sim, k1, "soldier", k1.x + i, k1.z)
+			end
+			expect(Military.recruitCap(sim, k1)).toBe(4) -- 3 soldiers, a batch of 2 does not fit the 4 bunks
+			local calls = recordCommands(function()
+				expect(RulerAI.think(sim, k1)).toBe("UpgradeBuilding:barracks")
+			end)
+			expect(rejected(calls)).toEqual({})
+			expect(#callsNamed(calls, "Recruit")).toBe(0)
+			-- one upgrade at a time: the barracks is a construction site until it is done
+			expect(RulerAI.think(sim, k1)).never.toBe("UpgradeBuilding:barracks")
+			barracks.level = barracks.pendingLevel :: number -- the builders finish the upgrade
+			barracks.pendingLevel = nil
+			expect(Military.recruitCap(sim, k1)).toBe(8)
+			calls = recordCommands(function()
+				RulerAI.think(sim, k1)
+			end)
+			expect(#callsNamed(calls, "Recruit")).toBe(1) -- and with room it recruits again
+		end
+	)
+
+	it("does not upgrade the barracks for bunks it does not need, or cannot pay for", function()
+		local sim, k1 = pair()
+		sim.time = 3 * sim.catalog.tuning.dayLength
+		sim.rulerAI.aggression.crimson = 1
+		F.stock(sim, k1):add("wood", 400)
+		F.stock(sim, k1):add("stone", 400)
+		F.stock(sim, k1):add("food", 200)
+		local barracks = assert(sim:placeBuilding(k1, "barracks", 0, -40))
+		assert(sim:placeBuilding(k1, "house", -40, 0))
+		assert(sim:placeBuilding(k1, "farm", 0, 45))
+		sim:_completeInstantly(barracks)
+		for i = 1, 3 do
+			Military.spawnUnit(sim, k1, "soldier", k1.x + i, k1.z)
+		end
+		F.stock(sim, k1):take("stone", sim:balance(k1.id, "stone"))
+		expect(RulerAI.think(sim, k1)).never.toBe("UpgradeBuilding:barracks") -- no stone: the upgrade is not on offer
+		F.stock(sim, k1):add("stone", 400)
+		for i = 4, 5 do
+			Military.spawnUnit(sim, k1, "soldier", k1.x + i, k1.z)
+		end
+		-- 5 soldiers of 17 people: the army is at its target (35 %), so no more room is needed
+		expect(RulerAI.think(sim, k1)).never.toBe("UpgradeBuilding:barracks")
+	end)
+
+	it(
+		"rests for a minute after a placement search finds nothing, instead of walking the territory again (FL-0125)",
+		function()
+			local sim, k1 = pair()
+			local searches: { [string]: number } = {}
+			local original = RulerAI.findSpot
+			RulerAI.findSpot = function(_, _, kind)
+				searches[kind] = (searches[kind] or 0) + 1
+				return nil, nil
+			end
+			local ok, problem = pcall(function()
+				expect(sim:population(k1)).toBe(k1.popCap) -- wants a house
+				RulerAI.think(sim, k1)
+				expect(searches.house).toBe(1)
+				RulerAI.think(sim, k1)
+				RulerAI.think(sim, k1)
+				expect(searches.house).toBe(1) -- resting
+				sim.time += 59
+				RulerAI.think(sim, k1)
+				expect(searches.house).toBe(1)
+				sim.time += 2
+				RulerAI.think(sim, k1)
+				expect(searches.house).toBe(2) -- a minute later it looks again (land may have opened up)
+				-- another kind is its own search
+				expect(sim.rulerAI.noSpotUntil["crimson:house"]).never.toBeNil()
+				expect(searches.farm).toBe(2) -- each kind rests on its own
+			end)
+			RulerAI.findSpot = original
+			if not ok then
+				error(problem, 0)
+			end
+		end
+	)
+
+	it(
+		"never recruits past the army cap (D-055): its target and its batches stop at config Military.maxSoldiers",
+		function()
+			local sim, k1 = pair()
+			sim.catalog.tuning.maxSoldiers = 3
+			sim.time = 3 * sim.catalog.tuning.dayLength -- day 4: military
+			sim.rulerAI.aggression.crimson = 1
+			F.stock(sim, k1):add("wood", 400)
+			F.stock(sim, k1):add("stone", 400)
+			F.stock(sim, k1):add("food", 400)
+			local barracks = assert(sim:placeBuilding(k1, "barracks", 0, -40))
+			assert(sim:placeBuilding(k1, "house", -40, 0))
+			assert(sim:placeBuilding(k1, "farm", 0, 45))
+			sim:_completeInstantly(barracks)
+			barracks.level = 3 -- 12 bunks: only the cap holds the army back
+			local recruits = 0
+			for _ = 1, 8 do
+				local calls = recordCommands(function()
+					RulerAI.think(sim, k1)
+				end)
+				expect(rejected(calls)).toEqual({})
+				recruits += #callsNamed(calls, "Recruit")
+			end
+			expect(recruits).toBe(1) -- one batch of two; a second would make 4 > 3
+			expect(#barracks.queue + #k1.unitIds <= 3).toBe(true)
+		end
+	)
+
 	it("builds a House when population reaches the cap, and only one at a time", function()
 		local sim, k1 = pair()
 		expect(sim:population(k1)).toBe(k1.popCap)

@@ -34,6 +34,10 @@ local SERVICES =
 
 local booted = {}
 
+-- the mode the next setup() boots in: the VS-1 slice these specs were written for (the shipped default is the full
+-- match, D-053); the full-match tests set "match" around their setup
+local bootMode = "slice"
+
 local function boot()
 	local env = MockEnv.new({
 		seed = 8,
@@ -50,7 +54,10 @@ local function boot()
 	for _, name in SERVICES do
 		table.insert(definitions, service(name))
 	end
+	local savedMode = MatchConfig.mode
+	MatchConfig.mode = bootMode
 	local registry = Loader.load(env, definitions)
+	MatchConfig.mode = savedMode
 	table.insert(booted, { registry = registry, env = env })
 	registry:get("KingdomService").adapter = {
 		partyOf = function()
@@ -648,10 +655,9 @@ describe("ObjectiveService (G8)", function()
 
 	it("a tower rebuilt on capture keeps its pivot, a second kingdom still captures it, and nothing leaks", function()
 		-- the full match: in the slice the first capture ends the match, so nobody could capture it again
-		local savedMode = MatchConfig.mode
-		MatchConfig.mode = "match"
+		bootMode = "match"
 		local ok, env, s, _, sim, k = pcall(setup)
-		MatchConfig.mode = savedMode
+		bootMode = "slice"
 		assert(ok, env)
 		local waitedActive = 0
 		while not sim.active and waitedActive < 60 do -- past the Lobby countdown

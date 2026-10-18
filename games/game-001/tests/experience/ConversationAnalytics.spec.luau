@@ -12,6 +12,7 @@ local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
 local SimRemotes = require("@game/ReplicatedStorage/Game/Sim/Remotes")
@@ -46,7 +47,14 @@ local function boot()
 	do
 		table.insert(definitions, service(name))
 	end
-	local registry = Loader.load(env, definitions)
+	-- This spec probes the VS-1 slice (Founding on the first join, populate on join): pin slice mode with
+	-- PvP off while the services start (MatchService reads the mode and Match reads pvp when they are
+	-- built), whatever the default config is (D-053: match). The same pin as PacingProbe.spec (#179).
+	local savedMode, savedPvp = MatchConfig.mode, MatchConfig.pvp.enabled
+	MatchConfig.mode, MatchConfig.pvp.enabled = "slice", false
+	local ok, registry = pcall(Loader.load, env, definitions)
+	MatchConfig.mode, MatchConfig.pvp.enabled = savedMode, savedPvp
+	assert(ok, tostring(registry))
 	table.insert(booted, { registry = registry, env = env })
 	registry:get("KingdomService").adapter = {
 		partyOf = function(player)
