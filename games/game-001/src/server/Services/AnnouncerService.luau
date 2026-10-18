@@ -7,7 +7,8 @@
 	effects at the position; MusicController: phase music).
 
 	Dependencies: RemoteService (framework). Optional, found in start(): KingdomService (G3) for
-	members, kingdom names and each player's kingdom. Without it only the joiner and every-player
+	members, kingdom names and each player's kingdom; MatchService (G3 `mode`) and PacingService (G11
+	phaseDurations) for the phase lengths in the phase moments (FL-0130). Without it only the joiner and every-player
 	moments go out (phases, match end), and kingdom-scoped events reach nobody (logged once).
 	AnalyticsService (interfaces §8), optional: a sent moment that celebrates (Moments.present) logs
 	CelebrationShown (kind) for that player, here on the server at the G9 event and never on a client's
@@ -41,6 +42,11 @@ Def.EVENTS = table.freeze({
 	"MatchPhaseChanged",
 	"MatchEnded",
 	"ConsequenceChanged", -- FORGE-01's ConsequenceService (G9 v0.4-g10c)
+	"KingdomEliminated",
+	-- proposed G9 rows (FL-0130 handoff); Bus.connectAll waits for them until the bus declares them
+	"WarChanged",
+	"SiegeChanged",
+	"RaidChanged",
 })
 
 -- Sample moments for `fx.announce` (Studio): one per kind a player can see.
@@ -59,6 +65,39 @@ Def.SAMPLES = table.freeze({
 	strike = { kind = "consequence", rule = "strike", on = true, occupation = "farmer", count = 4 },
 	riot = { kind = "consequence", rule = "riot", on = true, count = 3, buildingType = "storehouse" },
 	riotOver = { kind = "consequence", rule = "riot", on = false, buildingType = "storehouse" },
+	-- FL-0130 war feedback
+	conflictTimed = { kind = "phase", phase = "Conflict", minutes = 15 },
+	fallen = { kind = "kingdomFell", kingdom = "crimson", kingdomName = "Emberhold", byName = "Frostmere" },
+	conquest = {
+		kind = "kingdomConquered",
+		kingdom = "crimson",
+		kingdomName = "Emberhold",
+		other = "azure",
+		otherName = "Frostmere",
+	},
+	rivalFell = { kind = "rivalFell", kingdom = "azure", kingdomName = "Frostmere", byName = "Emberhold" },
+	warOnYou = {
+		kind = "war",
+		role = "other",
+		on = true,
+		kingdom = "azure",
+		kingdomName = "Frostmere",
+		other = "crimson",
+		otherName = "Emberhold",
+	},
+	peace = {
+		kind = "war",
+		role = "self",
+		on = false,
+		kingdom = "crimson",
+		kingdomName = "Emberhold",
+		other = "azure",
+		otherName = "Frostmere",
+	},
+	siege = { kind = "siege", kingdom = "crimson", on = true, byName = "Frostmere" },
+	siegeLifted = { kind = "siege", kingdom = "crimson", on = false },
+	raid = { kind = "raid", kingdom = "crimson", on = true, count = 6, byName = "Frostmere" },
+	raidOver = { kind = "raid", kingdom = "crimson", on = false },
 })
 
 -- Debug commands are registered once per server (DebugCommands is module-level); they send through
@@ -90,6 +129,8 @@ function AnnouncerService:start()
 	current = self
 	self._kingdoms = self._registry:find("KingdomService")
 	self._analytics = self._registry:find("AnalyticsService")
+	self._match = self._registry:find("MatchService")
+	self._pacing = self._registry:find("PacingService")
 	local handlers = {}
 	for _, name in Def.EVENTS do
 		handlers[name] = function(...)
@@ -217,6 +258,19 @@ function AnnouncerService:_ctx(): any
 			end
 			local ok, id = pcall(kingdoms.getKingdomOf, kingdoms, player)
 			return if ok and type(id) == "string" then id else nil
+		end,
+		-- the phase's length for the match's mode, in whole minutes (nil: untimed or unknown)
+		phaseMinutes = function(phase: any): number?
+			local match, pacing = self._match, self._pacing
+			if match == nil or pacing == nil or type(match.mode) ~= "string" then
+				return nil
+			end
+			local ok, durations = pcall(pacing.phaseDurations, pacing, match.mode)
+			local seconds = if ok and type(durations) == "table" then durations[phase] else nil
+			if type(seconds) ~= "number" or seconds ~= seconds or seconds <= 0 or seconds == math.huge then
+				return nil
+			end
+			return math.floor(seconds / 60 + 0.5)
 		end,
 		-- a building's type from its world model (WorldView: BuildingId and Kind attributes)
 		buildingKind = function(buildingId: any): string?
