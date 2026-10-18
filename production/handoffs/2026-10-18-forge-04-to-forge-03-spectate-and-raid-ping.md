@@ -7,7 +7,7 @@ FL-0129's spectate screen needs "a camera target list (FORGE-04 provides the cam
 | Member | What it does |
 |---|---|
 | `active: boolean` | true while spectating |
-| `changed: Signal<(active)>` | Show or hide the spectate screen on this. It turns on when Kingdom.State says our kingdom is no longer alive (our last kingdom is remembered, so a `mine = nil` after the fall still counts), and off at Results or Lobby |
+| `changed: Signal<(active)>` | Show or hide the spectate screen on this. It turns on with FORGE-01's `Match.Spectate(true, info)` (FL-0125: eliminated, or every kingdom full), or when Kingdom.State says our kingdom is no longer alive (our last kingdom is remembered, so a `mine = nil` after the fall still counts). It turns off with `Match.Spectate(false)`, at Results or at Lobby |
 | `targets() -> { target }` | The list for the screen, re-read on every call: battles first (the places hit in the last 20 s), then the keeps of the kingdoms still standing. `target = { kind = "battle" \| "keep", position, kingdom?, kingdomName?, count? }` |
 | `select(index) -> target?` | The camera to one target (the screen's list) |
 | `cycle(1 \| -1) -> target?` | Next or previous, wrapping. The keys do the same: `.`/`,` (keyboard), R1/L1 (gamepad) |

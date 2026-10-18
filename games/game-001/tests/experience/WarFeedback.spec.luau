@@ -508,6 +508,22 @@ describe("RulerSpectateController (FL-0130 part 2)", function()
 		end
 	)
 
+	it("follows FL-0125's Match.Spectate: true starts it, false ends it, and its kingdom is never a target", function()
+		local spectate = boot()
+		spectate:onKingdomState({ mine = nil, kingdoms = kingdoms(nil, true).kingdoms }) -- a spectator: mine is nil
+		spectate:onSpectate(true, { reason = "eliminated", kingdomId = "crimson", by = "azure", standing = {} })
+		expect(spectate.active).toBe(true)
+		for _, target in spectate:targets() do
+			expect(target.kingdom == "crimson").toBe(false)
+		end
+		spectate:onSpectate(false)
+		expect(spectate.active).toBe(false)
+		spectate:onSpectate(true, { reason = "match_full", standing = {} })
+		expect(spectate.active).toBe(true)
+		spectate:onSpectate("yes")
+		expect(spectate.active).toBe(true)
+	end)
+
 	it("ends at Results and Lobby; a new match forgets the old kingdom", function()
 		local spectate = boot()
 		spectate:onKingdomState(kingdoms("crimson", false))

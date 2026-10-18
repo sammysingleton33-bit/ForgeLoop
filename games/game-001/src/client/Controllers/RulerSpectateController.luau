@@ -5,11 +5,12 @@
 	public API (setMode, focusOn); FORGE-03's spectate screen (FL-0129) shows the target list and calls this.
 
 	When
-		- starts when Kingdom.State (G8) says our kingdom is no longer alive. The last kingdom we had is
-		  remembered, so a state whose `mine` is nil after the fall still counts. setActive(true) starts
-		  it by hand, for FL-0125's `Match.Spectate` once it exists.
-		- ends at Results or Lobby (Match.State, G8): the match is over and control returns to the
-		  player; setActive(false) ends it by hand.
+		- starts on FORGE-01's `Match.Spectate(true, info)` (FL-0125: our kingdom fell, or every kingdom
+		  is full), or when Kingdom.State (G8) says our kingdom is no longer alive; the last kingdom we had
+		  is remembered, so a state whose `mine` is nil after the fall still counts. setActive(true)
+		  starts it by hand.
+		- ends on `Match.Spectate(false)` (seated again), at Results or Lobby (Match.State, G8): the
+		  match is over and control returns to the player; setActive(false) ends it by hand.
 	Targets, in this order (re-read on every cycle, so they follow the war):
 		1. battles: FeedbackWarController:hotspots(), the places hit in the last 20 s, newest first
 		2. the keeps of the kingdoms still standing (their `Kind = "keep"` model under
@@ -76,6 +77,12 @@ function Controller:start()
 			self:onPhase(phase)
 		end)
 	)
+	table.insert(
+		self._links,
+		RemoteLink.on(self._env, "Match.Spectate", function(spectating, info)
+			self:onSpectate(spectating, info)
+		end)
+	)
 	RemoteLink.request(self._env, "Kingdom.GetState", function(state)
 		if not self._destroyed then
 			self:onKingdomState(state)
@@ -113,6 +120,18 @@ function Controller:onKingdomState(state: any)
 	local mine = self:_kingdom(self._mine)
 	if mine ~= nil and mine.alive == false and not self.active then
 		self:setActive(true)
+	end
+end
+
+-- FL-0125's Match.Spectate(spectating, info?: { reason, kingdomId?, by?, standing })
+function Controller:onSpectate(spectating: any, info: any)
+	if type(info) == "table" and type(info.kingdomId) == "string" then
+		self._mine = info.kingdomId -- our fallen kingdom: never a target
+	end
+	if spectating == true then
+		self:setActive(true)
+	elseif spectating == false then
+		self:setActive(false)
 	end
 end
 

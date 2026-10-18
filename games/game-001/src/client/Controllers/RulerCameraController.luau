@@ -27,6 +27,11 @@
 		- Bounded to the map: the focus stays inside the Layout regions' box (G10.1) plus a margin.
 		- Streaming: when the focus moves far, the camera asks the server to stream around it
 		  (Player:RequestStreamAroundAsync, throttled; Player.ReplicationFocus is server-only).
+		- Interest focus (D-055 (5)): the overview reports its ground focus (clamped to the map) through
+		  FORGE-01's `Sim.Focus` remote, at most once per FOCUS.everySec (4 a second), and again after
+		  FOCUS.keepaliveSec even when it holds still, so the server's staleness fallback never kicks in
+		  while the player watches one spot. Walk mode reports nothing (the character is the fallback).
+		  Spectators report the same way. Interest only: the server never uses it for authority.
 		- The character's movement and jump keys are sunk (ContextActionService, High priority) and
 		  the touch thumbstick is hidden (GuiService.TouchControlsEnabled), so the ruler stays seated.
 	follow (walk mode, kept from FL-0053): Roblox's third-person camera with zoom follow.minZoom..
@@ -69,6 +74,7 @@
 ]]
 
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
 local ScreenLayout = require("../UI/Layout") -- FORGE-03's breakpoints (read only)
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
@@ -90,6 +96,8 @@ Def.FOLLOW_STUDS = 2 -- a citizen further than this from where the conversation 
 Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this (the hold starts at Converse)
 Def.MAX_GLIDE_SEC = 3 -- longest conversation glide (a NaN or infinite duration takes the default)
 Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
+Def.FOCUS_REMOTE = "Sim.Focus" -- FORGE-01's additive Sim remote (D-055 (5)); inert until it exists
+Def.FOCUS = table.freeze({ everySec = 0.25, keepaliveSec = 1, moveStuds = 2 })
 Def.PAN_KEYS = table.freeze({
 	[Enum.KeyCode.W] = Vector2.new(0, 1),
 	[Enum.KeyCode.Up] = Vector2.new(0, 1),
@@ -356,7 +364,7 @@ end
 -- ------------------------------------------------------------------ lifecycle
 
 -- opts (specs): { config, camera, player, actions, userInput, guiService, runService, layout, viewportHeight,
---   viewportWidth }
+--   viewportWidth, sendFocus = (Vector3) -> () }
 function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 	local options = opts or {}
 	local config = options.config or Def.DEFAULTS
@@ -388,6 +396,11 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_rendering = false,
 		_streamedAt = nil,
 		_streamedFocus = nil,
+		_focusSent = nil :: Vector3?,
+		_focusSentAt = nil :: number?,
+		_focusRemote = false,
+		_focusLookedAt = nil :: number?,
+		focusReports = 0,
 		mode = Def.DEFAULT_MODE,
 		changed = Signal.new(),
 	}, Controller)
@@ -846,6 +859,53 @@ function Controller:_stepOverview(dt: number, camera: any)
 		camera.CFrame = goal
 	end
 	self:_streamAround(target.focus)
+	self:_reportFocus(target.focus)
+end
+
+-- Sim.Focus (D-055 (5)): the overview's ground focus for the server's interest selection, throttled.
+function Controller:_reportFocus(focus: Vector3)
+	local now = self._env.clock()
+	local rule = Def.FOCUS
+	local sentAt = self._focusSentAt
+	if sentAt ~= nil then
+		if now - sentAt < rule.everySec then
+			return
+		end
+		local sent = self._focusSent :: Vector3
+		if (focus - sent).Magnitude < rule.moveStuds and now - sentAt < rule.keepaliveSec then
+			return
+		end
+	end
+	local send = self._opts.sendFocus
+	if send == nil and not self:_focusRemoteReady() then
+		return -- not declared yet (FORGE-01): never queue sends that would each wait out RemoteClient's timeout
+	end
+	self._focusSent, self._focusSentAt = focus, now
+	self.focusReports += 1
+	if send ~= nil then
+		send(focus)
+	else
+		RemoteLink.send(self._env, Def.FOCUS_REMOTE, focus)
+	end
+end
+
+-- ReplicatedStorage.ForgeRemotes.Sim.Focus exists (looked up at most once a second until found).
+function Controller:_focusRemoteReady(): boolean
+	if self._focusRemote then
+		return true
+	end
+	local now = self._env.clock()
+	if self._focusLookedAt ~= nil and now - self._focusLookedAt < 1 then
+		return false
+	end
+	self._focusLookedAt = now
+	local ok, found = pcall(function()
+		local root = self._env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
+		local area = root and root:FindFirstChild("Sim")
+		return area and area:FindFirstChild("Focus")
+	end)
+	self._focusRemote = ok and found ~= nil
+	return self._focusRemote
 end
 
 function Controller:_streamAround(focus: Vector3)

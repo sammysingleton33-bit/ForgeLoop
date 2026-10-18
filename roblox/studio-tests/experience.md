@@ -528,6 +528,7 @@ Needs:
 - Steps 2–5 need a real war on the build: FORGE-01's FL-0125, where AI kingdoms fight in Conflict. The `match.phase` jump also moves the war grace (D-054 (5)). Until then, write "blocked: needs FL-0125".
 - The hit flash needs FORGE-01 to send the G4 `hit` cue. The kneel needs FORGE-01's death pose. Handoff: `production/handoffs/2026-10-18-forge-04-to-forge-01-war-events.md`. Without the cue, write "no flash: no hit cue yet".
 - Every sound is silent until the owner picks assets (`war.hit`, `war.collapse`). Write "silent (no asset)".
+- The camera's interest focus report (`Sim.Focus`, D-055 (5)) has nothing visible. FORGE-05's bandwidth probe measures it once FORGE-01's remote exists.
 
 | Rule | Expected |
 |---|---|
