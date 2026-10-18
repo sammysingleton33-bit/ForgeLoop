@@ -360,7 +360,10 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 		expect(only(Moments.fromEvent("WarChanged", { "crimson", "azure", true, nil }, three), a1)).toEqual({ "war" })
 		-- peace: azure accepted crimson's proposal
 		local peace = Moments.fromEvent("WarChanged", { "azure", "crimson", false, 3 }, three)
-		expect(shown(b1, peace).title).toBe("Peace with Emberhold")
+		expect(shown(b1, peace)).toBeNil() -- Cat accepted it: FORGE-03's war panel answered her (#180)
+		expect(shown(b1, Moments.fromEvent("WarChanged", { "azure", "crimson", false }, three)).title).toBe(
+			"Peace with Emberhold"
+		) -- an AI acceptance: every member hears it
 		expect(shown(a1, peace).title).toBe("Peace with Frostmere")
 		expect(shown(c1, peace).title).toBe("Frostmere and Emberhold make peace")
 		-- a declaration and its peace are separate toasts, never one "×2"
@@ -441,7 +444,7 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 		local function body(phase, c)
 			return Moments.present(Moments.fromEvent("MatchPhaseChanged", { phase }, c)[1].moment).toast.body
 		end
-		expect(body("Conflict", timed)).toBe("For 15 minutes, kingdoms may declare war on each other.")
+		expect(body("Conflict", timed)).toBe("Kingdoms may now declare war. This phase lasts 15 minutes.")
 		expect(body("Endgame", timed)).toBe("10 minutes left. Every Crown Point counts.")
 		expect(body("Expansion", timed)).toBe("12 minutes to grow before kingdoms may go to war.")
 		expect(Moments.fromEvent("MatchPhaseChanged", { "Results" }, timed)[1].moment.minutes).toBeNil()
@@ -574,7 +577,7 @@ end)
 describe("AnnouncerService (FL-0062)", function()
 	local env, bus, remotes, registry, p1, p2, p3
 
-	local function boot(withKingdoms, analytics, mode)
+	local function boot(withKingdoms, analytics, mode, source)
 		local defs = {
 			{
 				name = "RemoteService",
@@ -602,7 +605,7 @@ describe("AnnouncerService (FL-0062)", function()
 			table.insert(defs, {
 				name = "MatchService",
 				new = function()
-					return { mode = mode }
+					return { mode = mode, durationsSource = source or "pacing" }
 				end,
 			})
 			table.insert(defs, { name = "PacingService", new = PacingDef.new })
@@ -690,10 +693,16 @@ describe("AnnouncerService (FL-0062)", function()
 		bus.MatchPhaseChanged:fire("Conflict")
 		local sent = remotes:sentTo("Feedback.Moment", p1)[1].args[1]
 		expect(sent.minutes).toBe(15) -- config Pacing match.Conflict = 15 * 60
-		expect(Moments.present(sent).toast.body).toBe("For 15 minutes, kingdoms may declare war on each other.")
+		expect(Moments.present(sent).toast.body).toBe("Kingdoms may now declare war. This phase lasts 15 minutes.")
 		registry:get("AnnouncerService"):destroy()
 		remotes = FakeRemoteService.new({ declarations = FeedbackRemotes })
 		boot(true, nil, "slice")
+		bus.MatchPhaseChanged:fire("Conflict")
+		expect(remotes:sentTo("Feedback.Moment", p1)[1].args[1].minutes).toBeNil()
+		-- MatchService rejected Pacing's lengths and runs on its defaults: no minutes are quoted (#178 L3)
+		registry:get("AnnouncerService"):destroy()
+		remotes = FakeRemoteService.new({ declarations = FeedbackRemotes })
+		boot(true, nil, "match", "defaults")
 		bus.MatchPhaseChanged:fire("Conflict")
 		expect(remotes:sentTo("Feedback.Moment", p1)[1].args[1].minutes).toBeNil()
 	end)
@@ -1398,6 +1407,16 @@ describe("client feedback controllers (FL-0062)", function()
 		controller:setAlert("siege", true)
 		controller:setPhase("Results")
 		expect(next(controller.alerts)).toBeNil()
+		-- a battle in view (any side, #178 L4): battle at once, back to the phase music after the hold
+		controller:setPhase("Conflict")
+		env.mock:advance(30)
+		controller:update()
+		expect(music[#music]).toBe("tension")
+		controller:combatNear()
+		expect(music[#music]).toBe("battle")
+		env.mock:advance(26) -- MusicDirector combatHoldSec 25
+		controller:update()
+		expect(music[#music]).toBe("tension")
 	end)
 
 	it("MusicController: the phase picks the music, the match result wins at once, ambience starts once", function()
