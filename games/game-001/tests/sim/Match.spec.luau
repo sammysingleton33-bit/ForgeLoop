@@ -3,6 +3,8 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local F = require("./KingdomFixtures")
 local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
+local PacingConfig = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Snapshot = require("@game/ReplicatedStorage/Game/Sim/Snapshot")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
@@ -134,7 +136,7 @@ describe("Kingdom/Match: phases", function()
 		for _, phase in { "Founding", "Expansion", "Conflict", "Endgame", "Results" } do
 			expect(slice.durations[phase]).toBe(math.huge)
 		end
-		expect(Match.new(plain).mode).toBe("slice") -- config Match.mode (PROVISIONAL VS-1 default)
+		expect(Match.new(plain).mode).toBe("match") -- config Match.mode: the full match is the default (D-053 (1))
 		expect(function()
 			Match.new({ random = Random.new(1), mode = "siege" })
 		end).toThrow("mode must be")
@@ -186,8 +188,11 @@ describe("Kingdom/Match: phases", function()
 		expect(seen.Results).toBe(true)
 	end)
 
-	it("keeps PvP off by default (PROVISIONAL, BRIEF §16.2): no war commands exist", function()
-		local match = newMatch({ phaseDurations = durations(10), aiRulers = false })
+	it("has PvP on by default (D-053 (2)); pvp = false is the VS-1 minimum: no war commands exist", function()
+		local on = newMatch({ phaseDurations = durations(10), aiRulers = false })
+		expect(on.options.pvp).toBe(true)
+		expect(on.sim.diplomacy).never.toBeNil()
+		local match = newMatch({ phaseDurations = durations(10), aiRulers = false, pvp = false })
 		match:join(1)
 		run(match, 25)
 		expect(match.state).toBe("Conflict")
@@ -608,5 +613,485 @@ describe("Kingdom/Match: a whole AI match", function()
 		local summary = match:summary()
 		expect(#summary.winnerKingdomIds).toBeGreaterThanOrEqual(1)
 		expect(match.sim.time <= 2700 + 0.25).toBe(true)
+	end)
+end)
+
+-- The rulers of a kingdom whose keep falls (D-053 (3), FL-0125). Military.eliminate is what a destroyed keep runs.
+describe("Kingdom/Match: elimination and spectators", function()
+	local function eliminate(match, kingdomId, by)
+		Military.eliminate(match.sim, match.sim.kingdoms[kingdomId], by)
+	end
+
+	local function names(match)
+		local out = {}
+		for _, e in match:drainEvents() do
+			table.insert(out, e.name)
+		end
+		return out
+	end
+
+	it(
+		"takes a fallen kingdom's rulers out of it as spectators: no commands, no way back in, the rest play on",
+		function()
+			local match = newMatch({ phaseDurations = durations(60), aiRulers = false, pvp = true })
+			for userId = 1, 3 do
+				match:join(userId) -- crimson, azure, emerald
+			end
+			run(match, 3)
+			match:drainEvents()
+			eliminate(match, "crimson", "azure")
+			match:update(0.25)
+			local events = match:drainEvents()
+			local fallen
+			for _, e in events do
+				if e.name == "RulerEliminated" then
+					fallen = e
+				end
+			end
+			expect(fallen).never.toBeNil()
+			expect(fallen.userId).toBe(1)
+			expect(fallen.kingdomId).toBe("crimson")
+			expect(fallen.byKingdomId).toBe("azure")
+			expect(match:kingdomOf(1)).toBeNil()
+			expect(match.sim.kingdoms.crimson.rulers).toEqual({})
+			local spectator = match:spectatorOf(1)
+			expect(spectator.kingdomId).toBe("crimson")
+			expect(spectator.by).toBe("azure")
+			expect(match:spectatorOf(2)).toBeNil()
+			-- no command rights; and no way back in, not by joining, not by leaving and joining again, not as a party
+			local ok = match:command(1, "SetAlarm", true)
+			expect(ok).toBe(false)
+			expect({ match:join(1) }).toEqual({ false, "eliminated" })
+			match:leave(1)
+			expect({ match:join(1) }).toEqual({ false, "eliminated" })
+			expect(match:joinParty({ 1 }, "azure")).toBe(true)
+			expect(match:kingdomOf(1)).toBeNil()
+			-- the others carry on, and the spectator is still one of the match's players
+			expect(match:kingdomOf(2)).toBe("azure")
+			expect(match:kingdomOf(3)).toBe("emerald")
+			expect(match.state).toBe("Founding")
+			run(match, 5)
+			expect(match.state).toBe("Founding")
+		end
+	)
+
+	it("seats late joiners only in kingdoms still standing, and answers match_full when none has room", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		match:join(1)
+		run(match, 3)
+		eliminate(match, "emerald")
+		match:update(0.25)
+		for userId = 10, 20 do
+			local ok, kingdomId = match:join(userId)
+			expect(ok).toBe(true)
+			expect(kingdomId).never.toBe("emerald") -- three standing kingdoms: 3 x 4 = 12 seats, user 1 has one
+		end
+		local rulers = #match.sim.kingdoms.crimson.rulers
+			+ #match.sim.kingdoms.azure.rulers
+			+ #match.sim.kingdoms.gold.rulers
+		expect(rulers).toBe(12)
+		expect({ match:join(21) }).toEqual({ false, "match_full" })
+		expect(match:spectatorOf(21)).toBeNil() -- a full server is not an elimination: the host keeps them watching
+	end)
+
+	it("seats a player who was turned away (match_full) in the next match when a seat is free (FORGE-07 M1)", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		for userId = 1, 16 do
+			expect((match:join(userId))).toBe(true) -- 4 x 4
+		end
+		run(match, 3)
+		eliminate(match, "crimson", "azure") -- users 1, 5, 9, 13 become spectators
+		match:update(0.25)
+		match:leave(1)
+		match:leave(5)
+		expect({ match:join(100) }).toEqual({ false, "match_full" }) -- 12 rulers in 12 seats
+		eliminate(match, "azure", "gold")
+		eliminate(match, "emerald", "gold")
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		run(match, 30)
+		expect(match.state).toBe("Lobby")
+		expect(match:kingdomOf(100)).never.toBeNil() -- 16 seats, 14 players before them
+		expect(match:kingdomOf(9)).never.toBeNil()
+		expect(match:spectatorOf(9)).toBeNil()
+		local seated = 0
+		for _, kingdom in match.sim.kingdoms do
+			seated += #kingdom.rulers
+		end
+		expect(seated).toBe(15)
+		expect(#match.waiting).toBe(0)
+	end)
+
+	it("keeps those who still find no room waiting, in order, and forgets a waiting player who leaves", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		for userId = 1, 16 do
+			match:join(userId)
+		end
+		expect({ match:join(100) }).toEqual({ false, "match_full" })
+		expect({ match:join(101) }).toEqual({ false, "match_full" })
+		expect({ match:join(100) }).toEqual({ false, "match_full" }) -- asking again does not queue twice
+		expect(match.waiting).toEqual({ 100, 101 })
+		match:leave(101)
+		expect(match.waiting).toEqual({ 100 })
+		match:restart() -- a new world: 16 players fill it again, 100 still waits
+		expect(match:kingdomOf(100)).toBeNil()
+		expect(match.waiting).toEqual({ 100 })
+		match:leave(3)
+		match:restart()
+		expect(match:kingdomOf(100)).never.toBeNil()
+		expect(match.waiting).toEqual({})
+	end)
+
+	it("ends the match at once when one kingdom is left (conquest), ranking the fallen by who fell last", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		match:join(1)
+		run(match, 3)
+		eliminate(match, "gold", "crimson")
+		match:update(0.25)
+		eliminate(match, "emerald", "crimson")
+		match:update(0.25)
+		expect(match.state).toBe("Founding")
+		eliminate(match, "azure", "crimson")
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		local summary = match:summary()
+		expect(summary.reason).toBe("conquest")
+		expect(summary.winner).toBe("crimson")
+		local order = {}
+		for _, row in summary.ranking do
+			table.insert(order, row.kingdomId)
+		end
+		expect(order).toEqual({ "crimson", "azure", "emerald", "gold" })
+		expect(summary.ranking[1].placement).toBe(1)
+	end)
+
+	it("lets every keep fall in one tick: a draw with no winner, still exactly one MatchEnded", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		match:join(1)
+		run(match, 3)
+		match:drainEvents()
+		for _, kid in match.sim.kingdomOrder do
+			eliminate(match, kid)
+		end
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		expect(match:summary().winner).toBeNil()
+		expect(#match:summary().winnerKingdomIds).toBe(0)
+		local ended = 0
+		for _, name in names(match) do
+			if name == "MatchEnded" then
+				ended += 1
+			end
+		end
+		expect(ended).toBe(1)
+		expect(match:result().winners).toEqual({})
+	end)
+
+	it("forgets the spectators when the next world begins: everyone is seated again", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false, resultsSec = 3 })
+		match:join(1)
+		match:join(2)
+		run(match, 3)
+		for _, kid in { "azure", "emerald", "gold" } do
+			eliminate(match, kid, "crimson")
+		end
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		expect(match:spectatorOf(2)).never.toBeNil()
+		run(match, 3.5)
+		expect(match.state).toBe("Lobby")
+		expect(match:spectatorOf(2)).toBeNil()
+		expect(match:kingdomOf(1)).never.toBeNil()
+		expect(match:kingdomOf(2)).never.toBeNil()
+		expect(match.sim.time).toBe(0)
+	end)
+
+	it("makes a command that arrives in the tick the keep falls a refusal, not a half-applied change", function()
+		local match = newMatch({ phaseDurations = durations(60), aiRulers = false })
+		match:join(1)
+		run(match, 3)
+		eliminate(match, "crimson", "azure")
+		local ok, err = match:command(1, "PlaceBuilding", "house", 30, 30)
+		expect(ok).toBe(false)
+		expect(err == "kingdom_eliminated" or err == "not_ruler").toBe(true)
+		expect(match.sim:balance("crimson", "wood")).toBe(0) -- plundered by the fall, and nothing charged after it
+		expect(#match.sim.kingdoms.crimson.buildingIds).toBe(0)
+		expect(match.sim.treasury:audit("crimson")).toBe(true)
+	end)
+end)
+
+-- The Crown Arena hooks (FL-0125); FL-0071's ArenaService is the real host.
+describe("Kingdom/Match: Crown Arena hooks", function()
+	-- a host that records what it is asked; `answer` is what beginArena returns
+	local function arenaHost(answer: any)
+		local host = { began = {}, cancelled = {} }
+		host.beginArena = function(qualifiers)
+			table.insert(host.began, qualifiers)
+			if answer == "throw" then
+				error("the arena is not ready")
+			end
+			return answer
+		end
+		host.cancelArena = function(reason)
+			table.insert(host.cancelled, reason)
+		end
+		return host
+	end
+
+	-- a one-human match run to the last second of Endgame, with Crown Points: gold 50 > azure 30 > crimson 10
+	local function atEndgame(host, extra)
+		local options = { phaseDurations = durations(4), aiRulers = false, arena = host }
+		for k, v in extra or {} do
+			options[k] = v
+		end
+		local match = newMatch(options)
+		match:join(1)
+		match.sim:addCrownPoints("gold", 50, "spec")
+		match.sim:addCrownPoints("azure", 30, "spec")
+		match.sim:addCrownPoints("crimson", 10, "spec")
+		return match
+	end
+
+	it("hears a host that reports the result from inside beginArena (FORGE-07 L1)", function()
+		local match
+		local host = arenaHost(true)
+		host.beginArena = function(qualifiers)
+			table.insert(host.began, qualifiers)
+			expect(match:arenaEnded(qualifiers[2])).toBe(true)
+			return true
+		end
+		match = atEndgame(host)
+		run(match, 2 + 16 + 0.5)
+		expect(match.state).toBe("Results")
+		expect(match:summary().reason).toBe("arena")
+		expect(match:summary().winner).toBe("azure")
+		expect(match:inArena()).toBe(false)
+	end)
+
+	it("drops the arena again when the host declines or throws, so a later arenaEnded is refused", function()
+		for _, answer in { false, "throw" } do
+			local host = arenaHost(answer)
+			local match = atEndgame(host)
+			run(match, 2 + 16 + 0.5)
+			expect(match.state).toBe("Results")
+			expect(match:summary().reason).toBe("time")
+			expect(match:inArena()).toBe(false)
+		end
+	end)
+
+	it("asks the host to begin the duel between the top two by Crown Points, and waits for arenaEnded", function()
+		local host = arenaHost(true)
+		local match = atEndgame(host)
+		run(match, 2 + 16 + 0.5)
+		expect(match.state).toBe("Endgame")
+		expect(host.began).toEqual({ { "gold", "azure" } })
+		expect(match:inArena()).toBe(true)
+		run(match, 30) -- the arena takes as long as it takes (up to arenaMaxSeconds): the match waits
+		expect(match.state).toBe("Endgame")
+		expect(#host.began).toBe(1) -- asked once, not every tick
+		match:drainEvents()
+		expect(match:arenaEnded("azure")).toBe(true)
+		expect(match.state).toBe("Results")
+		local summary = match:summary()
+		expect(summary.reason).toBe("arena")
+		expect(summary.winner).toBe("azure")
+		expect(summary.ranking[1].kingdomId).toBe("azure") -- the champion's kingdom first, whatever the points
+		expect(summary.ranking[1].placement).toBe(1)
+		expect(summary.ranking[2].kingdomId).toBe("gold")
+		expect(summary.ranking[2].placement).toBe(2)
+		expect(#summary.ranking).toBe(4)
+		expect(match:inArena()).toBe(false)
+		expect(match:arenaEnded("gold")).toBe(false) -- nothing is running any more
+	end)
+
+	it("falls back to the Crown Points result when the duel has no winner or names a kingdom outside it", function()
+		for _, winner in { "nobody", "crimson", "" } do
+			local match = atEndgame(arenaHost(true))
+			run(match, 2 + 16 + 0.5)
+			expect(match:inArena()).toBe(true)
+			expect(match:arenaEnded(winner)).toBe(true)
+			expect(match:summary().reason).toBe("time")
+			expect(match:summary().winner).toBe("gold") -- most Crown Points
+		end
+		local match = atEndgame(arenaHost(true))
+		run(match, 2 + 16 + 0.5)
+		expect(match:arenaEnded(nil)).toBe(true) -- a draw
+		expect(match:summary().winner).toBe("gold")
+	end)
+
+	it("gives the Crown Points result at once when there is no host, the host declines, or it fails", function()
+		for _, answer in { false, "throw", "yes" } do
+			local host = arenaHost(answer)
+			local match = atEndgame(host)
+			run(match, 2 + 16 + 0.5)
+			expect(match.state).toBe("Results")
+			expect(match:summary().reason).toBe("time")
+			expect(match:summary().winner).toBe("gold")
+			expect(#host.began).toBe(1)
+			expect(match:inArena()).toBe(false)
+		end
+		local none = atEndgame(nil)
+		run(none, 2 + 16 + 0.5)
+		expect(none.state).toBe("Results")
+		expect(none:summary().reason).toBe("time")
+	end)
+
+	it("cuts off an arena that never reports after arenaMaxSeconds, and tells the host", function()
+		local host = arenaHost(true)
+		local match = atEndgame(host, { arenaMaxSeconds = 20 })
+		run(match, 2 + 16 + 0.5)
+		expect(match:inArena()).toBe(true)
+		run(match, 19)
+		expect(match.state).toBe("Endgame")
+		run(match, 2)
+		expect(match.state).toBe("Results")
+		expect(match:summary().reason).toBe("time")
+		expect(match:summary().winner).toBe("gold")
+		expect(host.cancelled).toEqual({ "timeout" })
+	end)
+
+	it("ends by conquest, not by duel, when a kingdom takes the rest during the arena; the host is told", function()
+		local host = arenaHost(true)
+		local match = atEndgame(host)
+		run(match, 2 + 16 + 0.5)
+		expect(match:inArena()).toBe(true)
+		for _, kid in { "azure", "emerald", "crimson" } do
+			Military.eliminate(match.sim, match.sim.kingdoms[kid], "gold")
+		end
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		expect(match:summary().reason).toBe("conquest")
+		expect(match:summary().winner).toBe("gold")
+		expect(host.cancelled).toEqual({ "conquest" })
+		expect(match:arenaEnded("gold")).toBe(false)
+	end)
+
+	it("never asks for a duel when the match was already decided by conquest", function()
+		local host = arenaHost(true)
+		local match = atEndgame(host)
+		run(match, 3) -- past the Lobby countdown
+		for _, kid in { "azure", "emerald", "crimson" } do
+			Military.eliminate(match.sim, match.sim.kingdoms[kid], "gold")
+		end
+		match:update(0.25)
+		expect(match.state).toBe("Results")
+		expect(host.began).toEqual({})
+		expect(host.cancelled).toEqual({})
+	end)
+
+	it(
+		"never asks for a duel with fewer than two kingdoms standing (conquest off): the survivor takes it on points",
+		function()
+			local host = arenaHost(true)
+			local match = atEndgame(host, { victory = { conquest = false, crownPointsAtEnd = true } })
+			run(match, 3)
+			for _, kid in { "azure", "emerald", "crimson" } do
+				Military.eliminate(match.sim, match.sim.kingdoms[kid], "gold")
+			end
+			match:update(0.25)
+			expect(match.state).never.toBe("Results") -- with conquest off the match plays on to the end of Endgame
+			run(match, 2 + 16 + 0.5)
+			expect(match.state).toBe("Results")
+			expect(host.began).toEqual({})
+			expect(match:summary().reason).toBe("time")
+			expect(match:summary().winner).toBe("gold")
+		end
+	)
+
+	it("lets the host be set after the match is built, and a new world forgets the duel", function()
+		local host = arenaHost(true)
+		local match = atEndgame(nil, { resultsSec = 2 })
+		match:setArenaHost(host)
+		run(match, 2 + 16 + 0.5)
+		expect(#host.began).toBe(1)
+		expect(match:arenaEnded("gold")).toBe(true)
+		run(match, 2.5)
+		expect(match.state).toBe("Lobby")
+		expect(match:inArena()).toBe(false)
+		expect(#match:arenaQualifiers()).toBe(2) -- the fresh world has four kingdoms standing
+	end)
+end)
+
+describe("Kingdom/Match: restart and the debug phase jump", function()
+	it("restarts in another mode with a fresh world, the players seated again", function()
+		local match = newMatch({ phaseDurations = durations(60) }) -- the mode's own defaults: governors on
+		match:join(1)
+		match:join(2)
+		run(match, 30)
+		expect(match.state).toBe("Founding")
+		local oldSim = match.sim
+		match:drainEvents()
+		match:restart("slice")
+		expect(match.mode).toBe("slice")
+		expect(match.state).toBe("Lobby")
+		expect(rawequal(match.sim, oldSim)).toBe(false)
+		expect(match.sim.time).toBe(0)
+		expect(match:kingdomOf(1)).never.toBeNil()
+		expect(match:kingdomOf(2)).never.toBeNil()
+		expect(match.durations.Founding).toBe(math.huge)
+		expect(match.options.aiRulers).toBe(false) -- slice: the AI kingdoms stay idle
+		expect(match.options.pvp).toBe(true) -- (PvP is its own setting; the slice never reaches Conflict)
+		local flagged = false
+		for _, e in match:drainEvents() do
+			if e.name == "MatchPhaseChanged" and e.phase == "Lobby" and e.newWorld then
+				flagged = true -- the host rebuilds its view and teams on this
+			end
+		end
+		expect(flagged).toBe(true)
+		-- slice rules: starting citizens appear with the first ruler; Founding starts without the Endgame wait
+		run(match, 3) -- (the Lobby countdown of 2 s is this spec's countdownSec override)
+		expect(match.state).toBe("Founding")
+		-- and back to the full match: all four kingdoms populated, governors on, PvP on
+		match:restart("match")
+		expect(match.mode).toBe("match")
+		expect(match.options.aiRulers).toBe(true)
+		expect(match.options.pvp).toBe(true)
+		expect(match.sim.diplomacy).never.toBeNil()
+		for _, kid in match.sim.kingdomOrder do
+			expect(#match.sim.kingdoms[kid].citizenIds >= 12).toBe(true)
+		end
+		expect(function()
+			match:restart("siege")
+		end).toThrow("mode must be")
+	end)
+
+	it("moves Diplomacy's war grace with the phase jump: war is open the moment Conflict is jumped to", function()
+		local match = newMatch({ aiRulers = false, pvp = true })
+		match:join(1)
+		run(match, 3)
+		expect(match.state).toBe("Founding")
+		expect({ match:command(1, "DeclareWar", "azure") }).toEqual({ false, "grace_period" })
+		expect(match:debugSetPhase("Conflict")).toBe(true)
+		expect(match.state).toBe("Conflict")
+		expect(match:command(1, "DeclareWar", "azure")).toBe(true)
+		-- jumping back closes it again for a kingdom not yet at war
+		local other = newMatch({ aiRulers = false, pvp = true })
+		other:join(1)
+		run(other, 3)
+		other:debugSetPhase("Endgame")
+		other:debugSetPhase("Founding")
+		expect({ other:command(1, "DeclareWar", "azure") }).toEqual({ false, "grace_period" })
+	end)
+end)
+
+describe("Kingdom/Match: the shipped defaults (FL-0125, D-053)", function()
+	it("is the full match by default: match mode, PvP, governors, citizens in all four kingdoms", function()
+		expect(MatchConfig.mode).toBe("match")
+		expect(MatchConfig.pvp.enabled).toBe(true)
+		local match = Match.new({ random = Random.new(1) })
+		expect(match.mode).toBe("match")
+		expect(match.options.pvp).toBe(true)
+		expect(match.options.aiRulers).toBe(true)
+		expect(match.options.populateOnJoin).toBe(false)
+		expect(match.options.endOnFirstCapture).toBe(false)
+		expect(match.sim.diplomacy).never.toBeNil()
+		expect(match.sim.rulerAI).never.toBeNil()
+		for _, kid in match.sim.kingdomOrder do
+			expect(#match.sim.kingdoms[kid].citizenIds >= 12).toBe(true) -- Founding does not wait for a human
+		end
+		-- and the real phase lengths are Pacing's
+		for phase, seconds in PacingConfig.modes.match do
+			expect(match.durations[phase]).toBe(seconds)
+		end
 	end)
 end)

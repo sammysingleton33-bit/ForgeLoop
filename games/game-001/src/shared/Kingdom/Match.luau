@@ -32,6 +32,18 @@
 		  (ties: kingdom order). Joining only adds a ruler (and, in slice mode, the first ruler's
 		  starting citizens); no other kingdom state changes. Late joiners are seated in any phase.
 		- joinParty({ userIds }, preferred?) seats a party together when one kingdom has room for all.
+	Elimination (D-053, FL-0125): when a keep falls the simulation removes the kingdom's citizens, units and
+	buildings; the Match then takes its human rulers out of the kingdom and keeps them as spectators for the
+	rest of the match (they stay in the server; match:spectatorOf(userId) answers { kingdomId, by?, at } and a
+	join answers "eliminated" while the match lasts). A RulerEliminated event tells the host (-> Match.Spectate).
+	Crown Arena hooks (FL-0071 plugs in; until then Crown Points decide): match:setArenaHost(host) with
+	host.beginArena(qualifiers: { KingdomId }): boolean. When Endgame ends with an arena host and two or more
+	kingdoms standing, the match asks the host to begin the duel between the top two (Crown Points, then
+	kingdom order); true = the arena runs and the match waits in Endgame for match:arenaEnded(winner?), or until
+	options.arenaMaxSeconds pass (then the Crown Points result stands). false, no host, or fewer than two
+	kingdoms standing = the Crown Points result at once. The arena's winner ends the match (reason "arena").
+	match:restart(mode?, phaseDurations?) throws the world away and starts over in the Lobby (Studio debug
+	command match.mode).
 	State is per server and in memory; permanent progression goes through DataService only.
 
 	API
@@ -42,6 +54,7 @@
 			  maxRulersPerKingdom = 4, aiRulers = Governor.enabled and mode == "match",
 			  populateOnJoin = mode == "slice", endOnFirstCapture = mode == "slice",
 			  pvp = Match.pvp.enabled, victory = Match.victory, objectives = Layout.OBJECTIVES,
+			  arena? (the arena host), arenaMaxSeconds = config Match.arena.maxSeconds,
 			  catalog?, treasury?, costs?, people? }   -- defaults from config; people = Sim/People content
 			  (generated citizens, G13.2; a seed per world from `random`)
 		Match.durationsFor(mode): { [MatchPhase]: number }      -- config defaults (fresh table)
@@ -55,6 +68,10 @@
 		match:update(dt)
 		match:remaining(): number?    -- seconds left in the countdown / current phase / results; nil = untimed
 		match:debugSetPhase(phase): (boolean, string?)          -- Studio debug panel only (match.phase)
+		match:restart(mode?, phaseDurations?)                    -- Studio debug panel only (match.mode)
+		match:spectatorOf(userId): { kingdomId, by?, at }?      -- the fallen kingdom of an eliminated ruler
+		match:setArenaHost(host?)   match:arenaQualifiers(): { KingdomId }
+		match:arenaEnded(winner?): boolean   match:inArena(): boolean
 		match:setPeople(content)                                 -- options.people, now and for later worlds
 		match:command(userId, name, ...)                         -- Commands.execute on this simulation
 		match:result(): RoundResult?  -- framework Contracts/Types RoundResult, mode "kingdoms"
@@ -62,7 +79,7 @@
 		                   reason, winnerKingdomIds, ranking }   -- G9 MatchEnded payload (+ reason/ranking)
 		match:drainEvents(): { Event }  -- simulation events + MatchPhaseChanged { phase, previous, roundId }
 		                                   + CountdownChanged { running, seconds } + MatchEnded (summary fields)
-	Errors from join: match_full, already_joined. From choose: too_late, not_in_match, unknown_kingdom,
+	Errors from join: match_full, already_joined, eliminated. From choose: too_late, not_in_match, unknown_kingdom,
 	kingdom_full. From joinParty: party_too_large, match_full.
 ]]
 
@@ -119,9 +136,27 @@ end
 
 function Match.new(options: { [string]: any })
 	assert(options.random ~= nil, "Match.new: random is required")
-	local mode = options.mode or MatchConfig.mode
+	local self = setmetatable({}, Match)
+	self._raw = options
+	self:_configure(options.mode or MatchConfig.mode, options.phaseDurations)
+	self.state = "Lobby"
+	self.players = {} :: { number }
+	self.waiting = {} :: { number } -- turned away with match_full, in arrival order: seated first when a new world opens
+	self._matchCount = 0
+	self._events = {} :: { any }
+	self._phaseTime = 0
+	self._countdown = nil :: number?
+	self._arenaHost = options.arena :: any
+	self:_newWorld()
+	return self
+end
+
+-- Everything that follows from the mode: phase lengths, boundaries and the mode-dependent defaults (explicit
+-- options win). Match.new and match:restart (Studio debug command match.mode) run it.
+function Match:_configure(mode: string, phaseDurations: { [string]: number }?)
+	local options = self._raw
 	local durations = Match.durationsFor(mode)
-	for phase, seconds in options.phaseDurations or {} do
+	for phase, seconds in phaseDurations or {} do
 		assert(durations[phase] ~= nil, `Match.new: unknown phase '{tostring(phase)}' in phaseDurations`)
 		durations[phase] = seconds
 	end
@@ -129,7 +164,6 @@ function Match.new(options: { [string]: any })
 	durations.Results = options.resultsSec or durations.Results
 	local problem = Match.checkDurations(durations)
 	assert(problem == nil, `Match.new: {problem}`)
-	local self = setmetatable({}, Match)
 	self.mode = mode
 	self.durations = durations
 	self.options = {
@@ -150,10 +184,12 @@ function Match.new(options: { [string]: any })
 		endOnFirstCapture = if options.endOnFirstCapture == nil then mode == "slice" else options.endOnFirstCapture,
 		pvp = if options.pvp == nil then MatchConfig.pvp.enabled else options.pvp,
 		victory = options.victory or MatchConfig.victory,
+		arenaMaxSeconds = options.arenaMaxSeconds or MatchConfig.arena.maxSeconds,
 		objectives = options.objectives or Layout.OBJECTIVES,
 		catalog = options.catalog,
 		treasury = options.treasury,
 		costs = options.costs,
+		people = if self.options then self.options.people else options.people, -- setPeople survives a restart
 	}
 	-- phase boundaries in simulation seconds
 	local t = 0
@@ -162,14 +198,6 @@ function Match.new(options: { [string]: any })
 		t += durations[phase]
 		self.phaseEnds[phase] = t
 	end
-	self.state = "Lobby"
-	self.players = {} :: { number }
-	self._matchCount = 0
-	self._events = {} :: { any }
-	self._phaseTime = 0
-	self._countdown = nil :: number?
-	self:_newWorld()
-	return self
 end
 
 function Match:_newWorld()
@@ -222,6 +250,9 @@ function Match:_newWorld()
 	self.endedAt = nil :: number?
 	self._result = nil :: any
 	self._summary = nil :: any
+	self.spectators = {} :: { [number]: { kingdomId: string, by: string?, at: number } }
+	self._deadSeen = {} :: { [string]: boolean }
+	self._arena = nil :: { qualifiers: { string }, startedAt: number }?
 end
 
 -- Generated people (G13.2) for this world's citizens, from a seed drawn per world, once
@@ -239,14 +270,17 @@ function Match:setPeople(content: any)
 	self:_installPeople()
 end
 
-function Match:_setState(nextState: string)
+function Match:_setState(nextState: string, newWorld: boolean?)
 	local previous = self.state
 	self.state = nextState
 	self._phaseTime = 0
-	table.insert(
-		self._events,
-		{ name = "MatchPhaseChanged", phase = nextState, previous = previous, roundId = self.roundId }
-	)
+	table.insert(self._events, {
+		name = "MatchPhaseChanged",
+		phase = nextState,
+		previous = previous,
+		roundId = self.roundId,
+		newWorld = newWorld == true, -- a fresh world was built (host: rebuild the view, re-team everyone)
+	})
 end
 
 function Match:_setCountdown(seconds: number?)
@@ -301,6 +335,10 @@ function Match:_seat(userId: number, kingdomId: string)
 	if not table.find(self.players, userId) then
 		table.insert(self.players, userId)
 	end
+	local waiting = table.find(self.waiting, userId)
+	if waiting then
+		table.remove(self.waiting, waiting)
+	end
 	self.lastKingdom[userId] = kingdomId
 	local entry = self.participants[userId]
 	if entry == nil or entry.kingdomId ~= kingdomId then
@@ -314,12 +352,31 @@ function Match:join(userId: number, preferred: string?): (boolean, string)
 	if self.sim.rulerOf[userId] ~= nil then
 		return false, "already_joined"
 	end
+	if self.spectators[userId] ~= nil then
+		return false, "eliminated" -- a fallen ruler watches the rest of this match
+	end
 	local kingdomId = self:_pickKingdom(userId, preferred, 1)
 	if kingdomId == nil then
+		if not table.find(self.waiting, userId) then
+			table.insert(self.waiting, userId)
+		end
 		return false, "match_full"
 	end
 	self:_seat(userId, kingdomId)
 	return true, kingdomId
+end
+
+-- The players of the last world (seated again, in their old order) and then those who were turned away get a seat in
+-- the world that just opened; whoever still finds no room waits for the next one.
+function Match:_reseat(players: { number })
+	local waiting = self.waiting
+	self.waiting = {}
+	for _, userId in players do
+		self:join(userId)
+	end
+	for _, userId in waiting do
+		self:join(userId)
+	end
 end
 
 -- The kingdom that can take every mover (counting movers already seated there): the preferred one
@@ -362,7 +419,7 @@ function Match:joinParty(userIds: { number }, preferred: string?): (boolean, any
 	local regroup = self.state == "Lobby"
 	local movers = {}
 	for _, userId in userIds do
-		if self.sim.rulerOf[userId] == nil or regroup then
+		if self.spectators[userId] == nil and (self.sim.rulerOf[userId] == nil or regroup) then
 			table.insert(movers, userId)
 		end
 	end
@@ -392,6 +449,10 @@ function Match:leave(userId: number)
 	local i = table.find(self.players, userId)
 	if i then
 		table.remove(self.players, i)
+	end
+	local waiting = table.find(self.waiting, userId)
+	if waiting then
+		table.remove(self.waiting, waiting)
 	end
 	self.sim:removeRuler(userId)
 	local entry = self.participants[userId]
@@ -447,7 +508,8 @@ function Match:remaining(): number?
 	return nil
 end
 
-function Match:ranking(): { any }
+-- `winner` (the arena's champion) is placed first whatever the points; the rest follow by Crown Points.
+function Match:ranking(winner: string?): { any }
 	local sim = self.sim
 	local rows = {}
 	for _, kid in sim.kingdomOrder do
@@ -462,6 +524,9 @@ function Match:ranking(): { any }
 		})
 	end
 	table.sort(rows, function(a, b)
+		if winner ~= nil and (a.kingdomId == winner) ~= (b.kingdomId == winner) then
+			return a.kingdomId == winner
+		end
 		if a.alive ~= b.alive then
 			return a.alive
 		end
@@ -482,6 +547,9 @@ function Match:ranking(): { any }
 		if not self.options.victory.crownPointsAtEnd then
 			tie = true -- PROVISIONAL: without the Crown Points rule every standing kingdom shares the result
 		end
+		if winner ~= nil and (row.kingdomId == winner or (prev ~= nil and prev.kingdomId == winner)) then
+			tie = false -- the arena's champion stands alone on top
+		end
 		if prev and row.alive and prev.alive and tie then
 			placement = prev.placement
 		end
@@ -500,7 +568,8 @@ function Match:_finish(reason: string, winner: string?)
 	local sim = self.sim
 	sim.active = false
 	self.endedAt = self.options.now()
-	local ranking = self:ranking()
+	self._arena = nil
+	local ranking = self:ranking(if reason == "arena" then winner else nil)
 	local placementOf = {}
 	local winners: { string } = {}
 	local standings = {}
@@ -567,6 +636,7 @@ function Match:_checkVictory()
 		end
 	end
 	if self.options.victory.conquest and alive <= 1 and #sim.kingdomOrder > 1 then
+		self:_cancelArena("conquest")
 		self:_finish("conquest")
 		return
 	end
@@ -579,15 +649,130 @@ function Match:_checkVictory()
 			end
 		end
 	end
+	local arena = self._arena
+	if arena ~= nil then
+		-- a duel is running: it ends through arenaEnded, or by the clock, so a stuck arena can't hold the match
+		if sim.time - arena.startedAt >= self.options.arenaMaxSeconds then
+			self:_cancelArena("timeout")
+			self:_finish("time")
+		end
+		return
+	end
 	while isActive(self.state) and sim.time >= self.phaseEnds[self.state] - 1e-9 do
 		local index = table.find(Match.ACTIVE_PHASES, self.state) :: number
 		local nextPhase = Match.ACTIVE_PHASES[index + 1]
 		if nextPhase then
 			self:_setState(nextPhase)
-		else
+		elseif not self:_beginArena() then
 			self:_finish("time")
+		else
+			return -- the duel decides it
 		end
 	end
+end
+
+-- ---------------------------------------------------------------- elimination
+-- Rulers of a kingdom whose keep has fallen stop ruling and spectate the rest of the match (D-053 (3)). The
+-- simulation has already removed the kingdom's people and buildings (Military.eliminate).
+function Match:_eliminateRulers()
+	local sim = self.sim
+	for _, kid in sim.kingdomOrder do
+		local kingdom = sim.kingdoms[kid]
+		if not kingdom.alive and not self._deadSeen[kid] then
+			self._deadSeen[kid] = true
+			for _, userId in table.clone(kingdom.rulers) do
+				self.spectators[userId] =
+					{ kingdomId = kid, by = kingdom.eliminatedBy, at = kingdom.eliminatedAt or sim.time }
+				sim:removeRuler(userId)
+				table.insert(self._events, {
+					name = "RulerEliminated",
+					userId = userId,
+					kingdomId = kid,
+					byKingdomId = kingdom.eliminatedBy,
+				})
+			end
+		end
+	end
+end
+
+-- The fallen kingdom of a ruler who spectates this match, else nil.
+function Match:spectatorOf(userId: number): { kingdomId: string, by: string?, at: number }?
+	return self.spectators[userId]
+end
+
+-- ---------------------------------------------------------------- Crown Arena hooks (FL-0071 plugs in here)
+-- host.beginArena(qualifiers: { KingdomId }): boolean   host.cancelArena(reason: string)?  (optional)
+function Match:setArenaHost(host: any?)
+	self._arenaHost = host
+end
+
+-- The kingdoms that fight the final duel: the two standing kingdoms with the most Crown Points (ties: kingdom order).
+function Match:arenaQualifiers(): { string }
+	local out = {}
+	for _, row in self:ranking() do
+		if row.alive and #out < 2 then
+			table.insert(out, row.kingdomId)
+		end
+	end
+	return out
+end
+
+function Match:inArena(): boolean
+	return self._arena ~= nil
+end
+
+-- Endgame is over: asks the arena host to hold the final duel. false = no duel (no host, fewer than two kingdoms
+-- standing, or the host declined or failed): the Crown Points result stands.
+function Match:_beginArena(): boolean
+	local host = self._arenaHost
+	if host == nil then
+		return false
+	end
+	local qualifiers = self:arenaQualifiers()
+	if #qualifiers < 2 then
+		return false
+	end
+	-- the arena is on before the host is asked: a host that reports its result from inside beginArena is heard
+	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }
+	local ok, begun = pcall(host.beginArena, qualifiers)
+	if self._arena == nil then
+		return self.state ~= "Endgame" -- the host already reported (arenaEnded moved the match on)
+	end
+	if not ok or begun ~= true then
+		self._arena = nil
+		return false
+	end
+	return true
+end
+
+function Match:_cancelArena(reason: string)
+	local arena = self._arena
+	if arena == nil then
+		return
+	end
+	self._arena = nil
+	local host = self._arenaHost
+	if host ~= nil and host.cancelArena ~= nil then
+		pcall(host.cancelArena, reason)
+	end
+end
+
+-- The arena host reports the duel's result: `winner` (one of the qualifiers) wins the match; anything else (nil, a
+-- draw, a kingdom that was not in the duel) falls back to the Crown Points result. false = no duel was running.
+function Match:arenaEnded(winner: string?): boolean
+	local arena = self._arena
+	if arena == nil or self.state == "Results" then
+		return false
+	end
+	self._arena = nil
+	local champion = if winner ~= nil and table.find(arena.qualifiers, winner) ~= nil then winner else nil
+	local kingdom = if champion then self.sim.kingdoms[champion] else nil
+	if kingdom ~= nil and kingdom.alive then
+		self:_finish("arena", champion)
+	else
+		self:_finish("time")
+	end
+	return true
 end
 
 function Match:update(dt: number)
@@ -611,16 +796,15 @@ function Match:update(dt: number)
 		end
 	elseif isActive(self.state) then
 		self.sim:advance(dt)
+		self:_eliminateRulers()
 		self:_checkVictory()
 	elseif self.state == "Results" then
 		if self._phaseTime >= self.options.resultsSec then
 			local players = table.clone(self.players)
 			self:_newWorld()
 			self.players = {}
-			self:_setState("Lobby")
-			for _, userId in players do
-				self:join(userId)
-			end
+			self:_setState("Lobby", true)
+			self:_reseat(players)
 		end
 	end
 end
@@ -649,9 +833,27 @@ function Match:debugSetPhase(phase: string): (boolean, string?)
 				self.phaseEnds[name] = t
 			end
 		end
+		if self.sim.diplomacy then
+			-- war is open from Conflict on: the war grace ends where Expansion does (D-054 (5)); without this a
+			-- jump to Conflict would still answer grace_period until the clock reached the old Expansion end
+			self.sim.diplomacy.graceSeconds = self.phaseEnds.Expansion
+		end
+		self:_cancelArena("phase_jump")
 		self:_setState(phase)
 	end
 	return true, nil
+end
+
+-- Studio debug (command match.mode): throw the world away and start over in the Lobby, optionally in another mode
+-- ("slice" keeps the VS-1 checklists runnable, D-053 (7)). The players are seated again; spectators come back.
+function Match:restart(mode: string?, phaseDurations: { [string]: number }?)
+	local players = table.clone(self.players)
+	self:_setCountdown(nil)
+	self:_configure(mode or self.mode, phaseDurations)
+	self:_newWorld()
+	self.players = {}
+	self:_setState("Lobby", true)
+	self:_reseat(players)
 end
 
 function Match:_start()
