@@ -907,7 +907,45 @@ local function accessoryOf(l: CitizenLook): Accessory?
 	return if type(a) == "table" then a else nil
 end
 
+-- ------------------------------------------------------------------ paint for imported-mesh rigs (Kit/CharacterMesh)
+
+-- A mesh rig has no per-part paint table: each mesh piece declares how it is tinted (skin, hair, kingdom, cloth or
+-- fixed) and CharacterMesh asks for the colour here, so the part-built and the mesh rigs dye identically.
+
+-- The kingdom tint's per-individual shift (see `individual`): citizens only; soldiers and governors keep exact factors.
+function Character.tintShift(look: any): number
+	local l = Character.normalizeLook(look)
+	return TINT_SHIFT[(l.hairColor + l.skin - 2) % #TINT_SHIFT + 1]
+end
+
+-- Plain folk cloth for citizens without a job panel (idle) and for cloth pieces on soldiers and governors: the
+-- outfits' own linen, canvas and leather greys, and their trousers.
+local FOLK_PANELS: { Color3 } = { LINEN, C.canvas, Color3.fromRGB(196, 170, 128) }
+local FOLK_LEGS: { Color3 } = { Color3.fromRGB(110, 86, 60), Color3.fromRGB(78, 58, 40), Color3.fromRGB(88, 90, 98) }
+
+-- The dyed colour of a `cloth` piece: the job's panel (torso, sleeves, aprons...) or, for slot "leg", its trousers. Same
+-- rule as jobOutfit: the hair colour picks the palette entry and the dye factor (it is hidden under a job hat anyway).
+function Character.clothColor(job: string, slot: string, look: any): Color3
+	local l = Character.normalizeLook(look)
+	local style = JOBS[job]
+	local panels, legsSet = FOLK_PANELS, FOLK_LEGS
+	if style and style.panels and style.legsSet then
+		panels, legsSet = style.panels, style.legsSet
+	end
+	local set = if slot == "leg" then legsSet else panels
+	return dyed(set[(l.hairColor - 1) % #set + 1], DYE[l.hairColor])
+end
+
 -- ------------------------------------------------------------------ characters (≤ 9 parts)
+
+-- The rig style of a (kind, job): governors by kind, soldiers by kind or job (a drafted citizen is one), else citizens.
+-- Shared with Kit/CharacterMesh, so the part-built and the mesh rigs agree on who is a soldier.
+function Character.styleOf(kind: string, job: string): string
+	return if kind == "governor"
+		then "governor"
+		elseif kind == "soldier" or job == "soldier" then "soldier"
+		else "citizen"
+end
 
 -- kingdom (G13.2): a KingdomId; only soldiers use it (their helmet crest). nil/unknown = the plain helm.
 function Character.character(
@@ -918,10 +956,7 @@ function Character.character(
 	kingdom: string?
 ): Model
 	local l = Character.normalizeLook(look)
-	local style = if kind == "governor"
-		then "governor"
-		elseif kind == "soldier" or job == "soldier" then "soldier"
-		else "citizen"
+	local style = Character.styleOf(kind, job)
 	local skin, hairColor = SKIN[l.skin], HAIR_COLORS[l.hairColor]
 	local jobSpec = JOBS[job] or JOBS.idle
 	local crest = if style == "soldier" then crestOf(kingdom) else nil

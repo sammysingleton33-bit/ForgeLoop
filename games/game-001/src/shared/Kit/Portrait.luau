@@ -3,7 +3,8 @@
 	Kit/Portrait — Kit.portrait: a character rig for a UI ViewportFrame (CONTRACTS G13.8, D-036; FL-0098).
 
 	Portrait.portrait(kind, job, kingdomColor, look?, kingdom?) -> Model
-		Calls Character.character with the same arguments (never a copy of the rig code), so the portrait and
+		Calls Kit.character's builder (CharacterMesh.character: the imported-mesh rig when the kit is imported, else
+		Character.character) with the same arguments (never a copy of the rig code), so the portrait and
 		the world rig look identical: the same ≤ 9 parts with the same names, classes, sizes, colours,
 		materials, CFrames, look and soldier crest, and the same attributes (KitKind, KitJob, KitLook,
 		KitRootHeight; KitTint, KitHeadwear, KitTool). Portrait-only changes:
@@ -32,6 +33,7 @@
 ]]
 
 local Character = require("./Character")
+local CharacterMesh = require("./CharacterMesh")
 
 local Portrait = {}
 
@@ -74,7 +76,9 @@ local function frame(model: Model): (CFrame, number)
 		table.insert(worn, hair)
 	end
 	for _, d in model:GetChildren() do
-		local weld = if d:IsA("BasePart") then d:FindFirstChild("DetailWeld") else nil
+		-- DetailWeld: a part-built rig's detail; PieceWeld: any other extra of a mesh rig (Kit/CharacterMesh), e.g. a crown
+		-- or helm crest next to its Hair piece
+		local weld = if d:IsA("BasePart") then d:FindFirstChild("DetailWeld") or d:FindFirstChild("PieceWeld") else nil
 		if d:IsA("BasePart") and weld and (weld :: Weld).Part0 == head then
 			table.insert(worn, d)
 		end
@@ -105,7 +109,7 @@ function Portrait.portrait(
 	look: Character.CitizenLook?,
 	kingdom: string?
 ): Model
-	local model = Character.character(kind, job, kingdomColor, look, kingdom)
+	local model = CharacterMesh.character(kind, job, kingdomColor, look, kingdom)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			d.Anchored = true
