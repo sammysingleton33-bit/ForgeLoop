@@ -44,4 +44,8 @@ M = [
  ("FL-0075", A, 'if self._preview and not self._ours then', 'if false then', "DuelInput", "Studio preview (E16)", "game"),
  ("FL-0075", A, 'local wanted = self._ours or self._preview', 'local wanted = self._ours', "DuelInput", "Studio preview (E16)", "game"),
  ("FL-0075", A, 'if not self:_isStudio() then\n\t\treturn false\n\tend\n', '', "DuelInput", "never outside Studio", "game"),
+ # touchArea: other UI keeps clear of the duel's touch buttons (FORGE-03 on #199)
+ ("FL-0075", A, '\tif self._gui == nil then\n\t\treturn nil\n\tend\n\treturn Def.extent', '\treturn Def.extent', "DuelInput", "a touch device gets the buttons under PlayerGui only in arena mode", "game"),
+ ("FL-0075", A, '\t\tself._small = small\n', '', "DuelInput", "a touch device gets the buttons under PlayerGui only in arena mode", "game"),
+ ("FL-0075", A, 'left = math.max(left, math.abs(button.x) + button.size / 2)', 'left = math.max(left, math.abs(button.x))', "DuelInput", "a touch device gets the buttons under PlayerGui only in arena mode", "game"),
 ]

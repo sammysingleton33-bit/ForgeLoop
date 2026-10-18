@@ -50,6 +50,9 @@
 		controller:press(action, down, source?) -> boolean   -- every key, pad and touch button calls it;
 		                                              -- true when DuelController:act was called
 		controller:controls() -> { { action, keyboard, gamepad, touch } }
+		controller:touchArea() -> { left, top }?    -- while the touch buttons show: how far they reach
+		                                            -- from the bottom-right corner (px), so other UI
+		                                            -- (the crowd's subtitles) can keep clear; nil otherwise
 		controller:preview(on) -> boolean            -- Studio only (the attribute calls it)
 	Pure helpers (specs): Def.isDuellist(state, userId), Def.layout(small) -> { button }, Def.reach(button)
 ]]
@@ -171,6 +174,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_preview = false,
 		_bound = false,
 		_gui = nil :: any,
+		_small = false, -- the touch buttons' layout while they show
 		active = false,
 		changed = Signal.new(),
 	}, Controller)
@@ -540,9 +544,27 @@ function Controller:_mountTouch()
 	end)
 	if ok then
 		self._gui = gui
+		self._small = small
 	else
 		self:_warnOnce("touch", "warn", "InputModeArenaController: the touch buttons failed", { error = tostring(gui) })
 	end
+end
+
+-- Def.layout's extent: the farthest button edge left of and above the bottom-right corner (px).
+function Def.extent(small: boolean): { left: number, top: number }
+	local left, top = 0, 0
+	for _, button in Def.layout(small) do
+		left = math.max(left, math.abs(button.x) + button.size / 2)
+		top = math.max(top, math.abs(button.y) + button.size / 2)
+	end
+	return { left = left, top = top }
+end
+
+function Controller:touchArea(): { left: number, top: number }?
+	if self._gui == nil then
+		return nil
+	end
+	return Def.extent(self._small == true)
 end
 
 function Controller:_wireButton(view: any, action: string)

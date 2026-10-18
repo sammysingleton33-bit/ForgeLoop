@@ -400,19 +400,23 @@ describe("InputModeArenaController: touch buttons (FL-0075)", function()
 			expect(view.Position).toEqual(UDim2.new(1, button.x, 1, button.y))
 			expect(view.Text).toBe(button.label)
 		end
+		expect(t.arena:touchArea()).toEqual({ left = 256, top = 224 }) -- for other UI to keep clear
 		t.arena:onArenaState(state("crowning", duellist(ME), duellist(RIVAL)))
 		expect(gui:FindFirstChild(ArenaDef.GUI_NAME)).toBeNil()
+		expect(t.arena:touchArea()).toBeNil()
 
 		local tablet = boot({ touch = true, playerGui = gui, viewport = Vector2.new(1024, 768) })
 		tablet.arena:onArenaState(state("duel", duellist(ME), duellist(RIVAL)))
 		local light = gui:FindFirstChild(ArenaDef.GUI_NAME):FindFirstChild("Duel_light")
 		expect(light.Size.X.Offset).toBe(ArenaDef.TOUCH.large.light.size)
+		expect(tablet.arena:touchArea()).toEqual({ left = 383, top = 392 })
 		tablet.arena:onArenaState(state("done"))
 
 		local desk = boot({ touch = false, playerGui = gui })
 		desk.arena:onArenaState(state("duel", duellist(ME), duellist(RIVAL)))
 		expect(desk.input.mode).toBe("arena")
 		expect(gui:FindFirstChild(ArenaDef.GUI_NAME)).toBeNil()
+		expect(desk.arena:touchArea()).toBeNil() -- no buttons, nothing to keep clear of
 	end)
 end)
 
