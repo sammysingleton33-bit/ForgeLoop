@@ -95,7 +95,7 @@ No Studio run exists for any item above, and no local `check.sh` run. Sections 2
 ## 7. PR reviews so far (2026-10-18 night; each is a COMMENT review on the PR head named)
 Evidence labels: `headless` = Lune 0.11.0 built locally or the CI log; `render` = I opened the image; no `Studio (user)` for any of it.
 
-### FL-0125 PR 1, #187 (ebd32fca): CHANGES REQUESTED
+### FL-0125 PR 1, #187: CHANGES REQUESTED at ebd32fca; **READY at c0f109a7 on one condition** (#194 on main and in the head)
 | Checklist item | Result |
 |---|---|
 | 1 defaults flipped, slice reachable, war after the phase jump | holds: `match.mode` command (Studio only), `debugSetPhase` moves `graceSeconds`, specs for both. **B1: CI red**, `tests/experience/ConversationAnalytics.spec:119` still boots the default mode (FORGE-04's file; needs the slice pin; reproduced FAIL, then PASS with the pin) |
@@ -108,18 +108,21 @@ Evidence labels: `headless` = Lune 0.11.0 built locally or the CI log; `render` 
 | 38 Endgame spike | PR claims the cause (empty placement searches, now 60 s rest); CI p99 is 2.70 ms; the remaining slow ticks are 103 over 6 ms. Studio/private-server gate open |
 | CI | `roblox` job 13 m 58 s against `timeout-minutes: 15` (M2 for FORGE-05; #186 raises it to 25) |
 Mutation rows (`FL-0125.py`, 34 rows), run as one batch on ebd32fca in a scratch worktree (FORGE-01 had not re-run them as one batch after its last edit): **34 of 34 CAUGHT** by the runner, about 19 minutes, worktree restored afterwards. `headless`
+Re-review at c0f109a7 (FORGE-01's 504480c0 plus a merge of main): **M1 fixed**, `Match.waiting` records a `match_full` joiner, `_seat` and `leave` drop it, `_reseat` seats the old players first and then the waiting ones (Results to Lobby and `restart`); my repro now seats the watcher (15 seated, the one who left dropped, `waiting` 0). **L1 fixed**, `_arena` is set before `beginArena`, a synchronous `arenaEnded` is heard (Results, reason `arena`, one `MatchEnded`). `Match.spec` 54/0, `MatchKingdomServices.spec` 53/0, `FullMatch` 1/0 locally. **B1:** `ConversationAnalytics` fails on c0f109a7 alone and passes with FORGE-04's #194 merged in; #194 is the condition. Low, not asked: `waiting` drains only when a new world opens, so a watcher is never offered a seat freed mid-match. `headless`
 
 ### The rest of the night's queue
 | PR | Verdict | One line |
 |---|---|---|
 | #186 (c648a1f6) | READY | spec-count guard in (my M1), timeout 25 |
-| #189 (db17aa0d) | CHANGES REQUESTED | M1 spectate restarts in Results (Kingdom.State re-activates it; a late joiner gets State(Results) then Spectate(true)); reproduced; L1 pin the Sim.Focus shape (items 40 to 45 owed to FORGE-01's server PR; item 45 client side holds) |
-| #185 (9a52cdcc) | READY | pauses in Results/Lobby, modal layer for a real spectator (my L1, L2); new low: spectators lose the phase bar |
+| #189 (db17aa0d CHANGES REQUESTED; e450c701 READY) | READY | M1 spectate restarted in Results (Kingdom.State re-activated it; a late joiner got State(Results) then Spectate(true)): fixed with `_phase` and a pending flag, WarFeedback 16/0 and RulerCamera 37/0 locally; L1 Sim.Focus shape went to FORGE-01 (items 40 to 45 owed to its server PR; item 45 client side holds) |
+| #185 (d8abd973) | READY | pauses in Results/Lobby, modal layer for a real spectator (my L1, L2); phase bar kept for spectators (my L3); Spectate.spec 11/0 locally |
 | #188 (61534fd9) | READY | open asks on the Rivals rows; `diplomacy.asks` shape pinned in a handoff for FORGE-01's PR 2 |
 | #184 (014b157b) | READY | three outposts; merged with #187 the FullMatch result is identical (43,521 ticks, 3 wars, 532 kills, 0 fallen) |
 | #190 (8325f1c2) | READY | content lint; shipped-content lint output identical except the row suffix |
-| #191 (45edbb28) | READY | duel input, client only; owed on FL-0071: `Arena.Action` validation, block expiry on the server, quiet refusal outside the duel |
-| #192 (059448b2) | READY | "Your reign" recap; low: no spec for a fallen ruler's recap |
+| #191 (dda0325a) | READY | duel input, client only; E16 now tests a HUD click during the preview (my L1); owed on FL-0071: `Arena.Action` validation, block expiry on the server, quiet refusal outside the duel |
+| #192 (d6b175f7) | READY | "Your reign" recap; the fallen-ruler spec I asked for is in (Recap.spec 6/0 locally) |
+| #193 (d08adebc) | READY | FL-0074 crowd director; CrowdDirector.spec 13/0; low: `finish(nil)` leaves the crowd reacting after a duel with no winner (probed); sounds are all `needed` |
+| #194 (64e20974) | READY | FORGE-04's slice pin for `ConversationAnalytics`; no-op on main, turns #187's red spec green |
 | #90 (ad1cfe00) | READY TO MERGE | see section 1 |
 
 ### Still owed
