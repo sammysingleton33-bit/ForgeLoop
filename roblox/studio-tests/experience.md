@@ -569,7 +569,7 @@ Needs:
 
 Steps
 1. Play Solo. In the command bar run `game.Players:GetPlayers()[1]:SetAttribute("ForgeDuelPreview", true)` (server or client view both work: a player's attributes replicate to its client). The camera goes from the aerial view to the walk camera behind your ruler. WASD walks and Space jumps. V does nothing.
-2. Press each key in the table once. Output prints one `preview:` line per press with the right action. Hold F for 2 s, then release it: `block` on the press, `blockEnd` on the release, nothing in between. Q and E do not turn the camera; Backspace closes nothing.
+2. Press each key in the table once. Output prints one `preview:` line per press with the right action. Hold F for 2 s, then release it: `block` on the press, `blockEnd` on the release, nothing in between. Q and E do not turn the camera; Backspace closes nothing. Click a HUD button (for example the rail's **Settings**): it opens, and Output prints **no** `preview: light` for that click (FORGE-07's #191 L1: the left click is bound at High priority for the duel; a GUI click must stay the GUI's). If it does print, write it down: that is a bug.
 3. Gamepad (or Studio's gamepad emulator): R1, R2, L2 and B print light, heavy, parry and dodge. Holding L1 prints block, then blockEnd on release. The left stick walks.
 4. Phone emulator (667×375, then an iPad size). Five round buttons stand around Roblox's jump button, right side, none covering it or each other; the labels read clearly, and the thumbstick still shows on the left. Tap each: one `preview:` line each. Hold **Block** and slide the finger off before lifting it: `blockEnd` prints when the finger lifts. Screenshot **E16-1** (the phone layout) and **E16-2** (the iPad layout).
 5. Run `game.Players:GetPlayers()[1]:SetAttribute("ForgeDuelPreview", false)`. The buttons go, the aerial view comes back, V toggles the view again, and Q / E turn the view again.
@@ -580,3 +580,4 @@ Pass: steps 1–5 hold (6 and 7 when FL-0071 is on the build). Copy every red li
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0075; G12.6 DRAFT).
+- 2026-10-18 FORGE-04: step 2 checks that a HUD click is not also a light attack (FORGE-07's #191 L1).
