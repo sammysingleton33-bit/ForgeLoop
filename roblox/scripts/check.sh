@@ -237,6 +237,13 @@ for entry in "${GAME_PROJECTS[@]}"; do
 				fi
 			fi
 		done
+		# every spec file on disk ran exactly once across the shards and splits (a too-broad --exclude, a SPLITS
+		# entry without its own chunk, or a shard bug would otherwise still read PASS); same names as run.luau
+		expected=$(find "$game_specs" \( -name '*.spec.luau' -o -name '*.spec.lua' \) | wc -l | tr -d ' ')
+		if [[ $files -ne $expected ]]; then
+			ok=0
+			why="${why}${why:+; }$files of $expected spec files ran"
+		fi
 		summary="$passed passed, $failed failed, $broken broken file(s), $files spec file(s), $skipped skipped"
 		slowest="$(printf '%s\n' "${times[@]}" | sort -k2 -t' ' -rn | head -3 | paste -sd, - | sed 's/,/, /g')"
 		if [[ $ok == 1 ]]; then
