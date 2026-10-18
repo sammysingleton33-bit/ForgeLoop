@@ -781,9 +781,7 @@ end
 
 function KingdomHudController:confirmWar(kingdomId: string)
 	self.state.panel.confirmWar = nil
-	-- D-054 (2): a co-ruler's declaration is an ask to the senior ruler (the server sends it on)
-	local view = self:_rivals()
-	self:_diplomacy("declareWar", kingdomId, if view then view.senior else nil)
+	self:_diplomacy("declareWar", kingdomId)
 end
 
 function KingdomHudController:cancelWar()
@@ -791,9 +789,21 @@ function KingdomHudController:cancelWar()
 	self:render()
 end
 
+-- What a successful request did. War is told from the server's answer, never from the client's copy
+-- of who is senior (D-054: seniority can move while the panel is open; FORGE-07 M1 on #180):
+-- "declared" = war is declared, "asked" = the senior ruler was asked; anything else stays neutral.
+local WAR_DONE = table.freeze({
+	declared = function(name: string): string
+		return `War declared on {name}`
+	end,
+	asked = function(name: string): string
+		return `Asked your senior ruler for war on {name}`
+	end,
+})
+
 local DIPLOMACY_DONE = table.freeze({
 	declareWar = function(name: string): string
-		return `War declared on {name}`
+		return `War request sent: {name}`
 	end,
 	proposePeace = function(name: string): string
 		return `Peace offered to {name}`
@@ -803,7 +813,7 @@ local DIPLOMACY_DONE = table.freeze({
 	end,
 })
 
-function KingdomHudController:_diplomacy(action: string, kingdomId: string, askedOf: string?)
+function KingdomHudController:_diplomacy(action: string, kingdomId: string)
 	local p = self.state.panel
 	if p.diplomacyPending[kingdomId] then
 		return -- one request per rival at a time
@@ -821,8 +831,9 @@ function KingdomHudController:_diplomacy(action: string, kingdomId: string, aske
 			return
 		end
 		if called and ok == true then
-			local done = DIPLOMACY_DONE[action]
-			local title = if askedOf then `Asked {askedOf} for war on {name}` elseif done then done(name) else name
+			local war = if action == "declareWar" and type(reason) == "string" then WAR_DONE[reason] else nil
+			local done = war or DIPLOMACY_DONE[action]
+			local title = if done then done(name) else name
 			self:notify({ kind = "success", title = title })
 		else
 			self:notify({
@@ -1105,6 +1116,14 @@ function KingdomHudController:_tick()
 	-- the Rivals tab's countdowns (offers, truces, grace) tick: patched in place by RivalsList.paint
 	if self.state.menu == "kingdom" and self.state.panel.tab == "rivals" then
 		self:render()
+	end
+	-- an offer of peace runs out without a push: the Kingdom bubble follows the clock (FORGE-07 L2 on #180)
+	if self.store:diplomacy() ~= nil then
+		local view = self:_rivals()
+		local count = if view and view.incoming > 0 then view.incoming else nil
+		if count ~= self._railBadges.kingdom then
+			self:setRailBadge("kingdom", count)
+		end
 	end
 end
 

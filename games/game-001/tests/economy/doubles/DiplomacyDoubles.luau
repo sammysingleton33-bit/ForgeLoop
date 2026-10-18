@@ -138,7 +138,7 @@ DiplomacyDoubles.def = {
 						return false, "not_senior"
 					elseif action == "declareWar" then
 						table.insert(svc.asks, { from = player.UserId, target = target })
-						return true -- the ask goes to the senior ruler as a server notice
+						return true, "asked" -- the ask goes to the senior ruler as a server notice
 					end
 				end
 				if action == "declareWar" then
@@ -181,7 +181,7 @@ DiplomacyDoubles.def = {
 					)
 				end
 				publish()
-				return true
+				return true, if action == "declareWar" then "declared" else nil
 			end)
 		end
 		return svc

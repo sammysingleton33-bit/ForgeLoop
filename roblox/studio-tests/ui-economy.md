@@ -300,10 +300,13 @@ Before #140 the building panel shows no Move: expected.
    with "Truce for m:ss"; the bubble goes.
 5. A refusal (e.g. declaring during the grace period) is a warning in words, never "Something went
    wrong"; the row does not change.
-6. Two players in one kingdom (D-054): the one seated second sees **Ask <senior> to declare war** (grey) instead of
-   Declare war; Confirm asks "Ask <senior> to declare war on <name>?" and sends a notice to the senior
-   ruler; nothing changes until they declare. Their Accept peace is off with "<senior> decides". A ruler
-   who joined mid-match sees "New ruler · m:ss" under Declare war and Accept peace for 2 minutes.
+6. Two players in one kingdom (D-054): the one seated second sees **Ask <senior> to declare war**
+   (grey) instead of Declare war; Confirm asks "Ask <senior> to declare war on <name>?", says "Asked
+   your senior ruler for war on <name>" and sends a notice to the senior ruler; nothing changes until
+   they declare. Their Accept peace is off with "<senior> decides". A ruler who joined mid-match sees
+   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. When the kingdom falls, or in
+   Results, every button is off ("Your kingdom has fallen" / "The match is over"). An offer that runs
+   out takes the Kingdom bubble with it.
 7. Phone 667 × 375 (Device emulator): Kingdom tabs are icons only (the selected one framed in gold),
    Close fully visible; rival names whole, score "#1 · 20 pts"; Accept peace and Propose peace side by
    side, both fully inside the drawer; the confirm question on its own line. Touch and gamepad (A on a

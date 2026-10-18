@@ -86,8 +86,10 @@ function KingdomStore:applyKingdoms(payload: any)
 	self._byId = byId
 	self._mine = if type(payload.mine) == "string" then payload.mine else nil
 	self.changed:fire("kingdoms")
-	if type(payload.diplomacy) == "table" then
-		self._diplomacy = payload.diplomacy
+	-- Always taken, absent included: a payload without it clears last match's wars (FORGE-07 L3 on #180).
+	local diplomacy = if type(payload.diplomacy) == "table" then payload.diplomacy else nil
+	if diplomacy ~= nil or self._diplomacy ~= nil then
+		self._diplomacy = diplomacy
 		self.changed:fire("diplomacy")
 	end
 end

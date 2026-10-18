@@ -179,6 +179,20 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 			table.insert(rows, row)
 		end
 	end
+	-- A fallen kingdom (its rulers spectate) and a finished match make no war or peace: every button is
+	-- off with the reason the server would give (FORGE-07 L1 on #180).
+	local closed = if mine.alive == false
+		then "Your kingdom has fallen"
+		elseif phase == "Results" then "The match is over"
+		else nil
+	if closed then
+		for _, row in rows do
+			for _, a in row.actions do
+				a.enabled = false
+				a.reason = closed
+			end
+		end
+	end
 	table.sort(rows, function(x, y)
 		return (x.rank or math.huge) < (y.rank or math.huge)
 	end)

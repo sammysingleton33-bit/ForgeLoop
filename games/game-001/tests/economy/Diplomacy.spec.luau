@@ -199,6 +199,25 @@ describe("UI/DiplomacyModel (FL-0129)", function()
 		expect(action(rowOf(view, "emerald"), "declareWar").enabled).toBe(true)
 	end)
 
+	it(
+		"a fallen kingdom and a finished match make no war or peace: every button off, with why (FORGE-07 L1)",
+		function()
+			local war = { relations = { { a = "azure", b = "crimson", relation = "War" } } }
+			local fallen = table.clone(KINGDOMS)
+			fallen[1] = { id = "crimson", name = "Emberhold", crownPoints = 10, alive = false }
+			local view = DiplomacyModel.view(store(fallen, "crimson"), war, "Conflict", 1000)
+			for _, row in view.rows do
+				for _, a in row.actions do
+					expect(a.enabled).toBe(false)
+					expect(a.reason).toBe("Your kingdom has fallen")
+				end
+			end
+			view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Results", 1000)
+			expect(action(rowOf(view, "azure"), "proposePeace").reason).toBe("The match is over")
+			expect(action(rowOf(view, "emerald"), "declareWar").enabled).toBe(false)
+		end
+	)
+
 	it("every diplomacy refusal code reads in words, none as the generic fallback", function()
 		local generic = Text.reason("not_a_real_code")
 		for _, code in
@@ -375,8 +394,58 @@ describe("The Rivals tab (FL-0129)", function()
 		world:advance(0.3)
 		expect(#world.diplomacy.asks).toBe(1)
 		expect(world.diplomacy.asks[1].target).toBe("azure")
-		expect(texts(world.hud.guis.notices)).toContain("Asked Mira for war on Frostmere")
+		expect(texts(world.hud.guis.notices)).toContain("Asked your senior ruler for war on Frostmere")
 		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("peace")
+	end)
+
+	it("the war toast follows the server's answer, not the panel's copy of who is senior (FORGE-07 M1)", function()
+		-- the panel thinks Mira is senior, but seniority has moved to me on the server (not pushed yet)
+		world = newWorld()
+		world.diplomacy:setSenior(2)
+		world:advance(0.2)
+		world.diplomacy.state.senior = 1
+		local azure = find(openRivals(world), "Rival_azure")
+		tap(find(azure, "Action_declareWar"))
+		world:advance(0.1)
+		tap(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_azure"), "Action_confirm"))
+		world:advance(0.3)
+		expect(#world.diplomacy.asks).toBe(0)
+		expect(texts(world.hud.guis.notices)).toContain("War declared on Frostmere")
+		expect(texts(world.hud.guis.notices)).never.toContain("Asked")
+		world:destroy()
+		-- the panel thinks I decide, but the server only asks the senior ruler
+		world = newWorld()
+		world.diplomacy.state.senior = 2
+		tap(find(find(openRivals(world), "Rival_emerald"), "Action_declareWar"))
+		world:advance(0.1)
+		tap(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_emerald"), "Action_confirm"))
+		world:advance(0.3)
+		expect(#world.diplomacy.asks).toBe(1)
+		expect(texts(world.hud.guis.notices)).toContain("Asked your senior ruler for war on")
+		expect(texts(world.hud.guis.notices)).never.toContain("War declared")
+	end)
+
+	it("an offer that runs out takes the Kingdom bubble with it, without a push (FORGE-07 L2)", function()
+		world = newWorld()
+		world.diplomacy:setWar("crimson", "azure")
+		world.diplomacy:propose("azure", "crimson")
+		world:advance(0.3)
+		expect(find(find(world.hud.guis.hud, "Menu_kingdom"), "Badge")).toBeTruthy()
+		world:advance(DiplomacyDoubles.PROPOSAL_SEC + 2)
+		expect(find(find(world.hud.guis.hud, "Menu_kingdom"), "Badge")).toBeNil()
+	end)
+
+	it("a Kingdom.State without diplomacy clears last match's wars (FORGE-07 L3)", function()
+		world = newWorld()
+		world.diplomacy:setWar("crimson", "azure")
+		world:advance(0.3)
+		expect(world.hud.store:diplomacy()).toBeTruthy()
+		world.kingdoms.diplomacy = nil
+		world.kingdoms:publish()
+		world:advance(0.3)
+		expect(world.hud.store:diplomacy()).toBeNil()
+		local azure = find(openRivals(world), "Rival_azure")
 		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("peace")
 	end)
 
