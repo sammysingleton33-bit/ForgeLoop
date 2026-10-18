@@ -354,20 +354,15 @@ describe("Kit.portrait on a mesh rig (G13.8, D-036)", function()
 			expect(math.abs(hx)).toBeLessThan(0.1)
 			expect(math.abs(hy)).toBeLessThan(0.6)
 			expect(math.abs((cam.Position + cam.LookVector * dist).X - root.CFrame.Position.X)).toBeLessThan(1e-3)
-			-- the head and everything worn on it (the Hair piece, crowns, crests, hat details) entirely in view
+			-- the head and everything worn on it (the Hair piece, crowns, crests, hat details, even those welded to the hat) in view
 			local top = -math.huge
-			for _, p in MeshKit.parts(portrait) do
-				local weld = p:FindFirstChild("HairWeld")
-					or p:FindFirstChild("PieceWeld")
-					or p:FindFirstChild("AccessoryWeld")
-				if p == head or (weld and (weld :: Weld).Part0 == head) then
-					for _, w in MeshKit.corners(p) do
-						local x, y, depth = project(cam, fov, w)
-						expect(depth).toBeGreaterThan(0)
-						expect(math.abs(x)).toBeLessThanOrEqual(0.95)
-						expect(math.abs(y)).toBeLessThanOrEqual(1)
-						top = math.max(top, y)
-					end
+			for _, p in MeshKit.assembly(portrait, head) do -- welded to the head directly or through its hat
+				for _, w in MeshKit.corners(p) do
+					local x, y, depth = project(cam, fov, w)
+					expect(depth).toBeGreaterThan(0)
+					expect(math.abs(x)).toBeLessThanOrEqual(0.95)
+					expect(math.abs(y)).toBeLessThanOrEqual(1)
+					top = math.max(top, y)
 				end
 			end
 			expect(top).toBeLessThan(0.92)
