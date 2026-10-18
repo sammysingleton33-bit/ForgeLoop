@@ -13,8 +13,13 @@
 		- snapshot cost: wall-clock ms of EntityService:replicate (diff + SnapshotCodec/EventCodec encode + send)
 		  per 10 Hz snapshot tick. It runs on its own loop, NOT inside MatchHost:step, so a per-Heartbeat budget
 		  such as BRIEF §14's compares with host step + replicate, not with either alone.
-		- entities: citizens, soldiers and buildings per kingdom and in all, sampled once per virtual second;
-		  the peak and when it happened.
+		- rigs: citizens + soldiers (the replicated entities that clients render as rigs; BRIEF §14 budgets
+		  300 per server, about 75 per kingdom, and 150 rendered on screen), per kingdom and in all, sampled
+		  once per virtual second; the peak and when it happened. Buildings are counted beside them, not in them.
+		- bandwidth: bytes EntityService sends to the one human per phase (the Sim.Snapshot and Sim.Events
+		  buffers; every broadcast reaches every player, so this is the per-player rate), as KB/s next to
+		  BRIEF §14's ≈ 5 KB/s at 50 entities (VS-1 broadcast) and ≤ 20 KB/s (VS-2 interest tiers).
+		- the ten slowest simulation ticks per phase with their sim time, to tell a periodic cost from a one-off.
 		- parts: BaseParts under Workspace (the server's world view: Kit building models, ground), sampled
 		  every 30 virtual seconds.
 	Lune runs plain Luau without Roblox's native code generation or engine, so the ms are indicative only:
@@ -142,17 +147,22 @@ local function countParts(root: any): number
 	return n
 end
 
-local function entities(sim: any): (number, { [string]: string })
-	local total = 0
+-- rigs (citizens + soldiers, the replicated entities) and buildings in all, with a per-kingdom text
+local function entities(sim: any): (number, number, { [string]: string })
+	local rigs, buildings = 0, 0
 	local per = {}
 	for _, kid in sim.kingdomOrder do
 		local k = sim.kingdoms[kid]
 		local c, s, b = #k.citizenIds, #k.unitIds, #k.buildingIds
-		total += c + s + b
+		rigs += c + s
+		buildings += b
 		per[kid] = `c{c}/s{s}/b{b}`
 	end
-	return total, per
+	return rigs, buildings, per
 end
+
+local RIG_BUDGET = 300 -- BRIEF §14 / line 78: entities per server (about 75 per kingdom)
+local RIGS_ON_SCREEN = 150 -- BRIEF §14: rendered rigs on screen
 
 local function perText(per: { [string]: string }, order: { string }): string
 	local parts = {}
@@ -183,7 +193,9 @@ local function run(seed: number): any
 		simMs = {} :: { [string]: { number } },
 		hostMs = {} :: { [string]: { number } },
 		replicateMs = {} :: { [string]: { number } },
-		peak = { total = -1 },
+		peak = { rigs = -1 },
+		simT = {} :: { [string]: { number } }, -- sim time of each tick, parallel to simMs
+		bytes = {} :: { [string]: number }, -- bytes EntityService sent to the human, per phase
 		parts = {} :: { { t: number, n: number } },
 	}
 	local update = host.match.update
@@ -194,9 +206,11 @@ local function run(seed: number): any
 		if bucket == nil then
 			bucket = {}
 			result.simMs[self.state] = bucket
+			result.simT[self.state] = {}
 			table.insert(result.phases, self.state)
 		end
 		table.insert(bucket, (os.clock() - started) * 1000)
+		table.insert(result.simT[self.state], sim.time)
 	end
 	local step = host.step
 	host.step = function(self: any, dt: number)
@@ -209,10 +223,34 @@ local function run(seed: number): any
 	end
 
 	local entityService = server:get("EntityService")
+	-- count the bytes EntityService sends to the human (pass-through; only while replicate runs)
+	local counting = false
+	local remotes = entityService._remotes
+	local fire, fireAll = remotes.fire, remotes.fireAll
+	local SENT_BY_ENTITY_SERVICE = { ["Sim.Snapshot"] = true, ["Sim.Events"] = true }
+	local function count(name: any, payload: any)
+		if counting and SENT_BY_ENTITY_SERVICE[name] and type(payload) == "buffer" then
+			local phase = host.match.state
+			result.bytes[phase] = (result.bytes[phase] or 0) + buffer.len(payload)
+		end
+	end
+	remotes.fireAll = function(self: any, name: any, payload: any, ...: any)
+		count(name, payload) -- every player receives a broadcast
+		return fireAll(self, name, payload, ...)
+	end
+	remotes.fire = function(self: any, name: any, player: any, payload: any, ...: any)
+		local sent = fire(self, name, player, payload, ...)
+		if sent and player and player.UserId == USER_ID then
+			count(name, payload)
+		end
+		return sent
+	end
 	local replicate = entityService.replicate
 	entityService.replicate = function(self: any)
 		local started = os.clock()
+		counting = true
 		replicate(self)
+		counting = false
 		local phase = host.match.state
 		local bucket = result.replicateMs[phase] or {}
 		result.replicateMs[phase] = bucket
@@ -224,9 +262,9 @@ local function run(seed: number): any
 	local nextParts = 0
 	while sim.time < LIMIT and match:getPhase() ~= "Results" do
 		env.mock:advance(STEP)
-		local total, per = entities(sim)
-		if total > result.peak.total then
-			result.peak = { total = total, t = sim.time, phase = match:getPhase(), per = per }
+		local rigs, buildings, per = entities(sim)
+		if rigs > result.peak.rigs then
+			result.peak = { rigs = rigs, buildings = buildings, t = sim.time, phase = match:getPhase(), per = per }
 		end
 		if sim.time >= nextParts then
 			nextParts = sim.time + PART_EVERY
@@ -254,6 +292,23 @@ local function stats(values: { number }): string
 	return `mean {ms(mean(values))} p99 {ms(percentile(values, 0.99))} max {ms(percentile(values, 1))}`
 end
 
+-- the n slowest ticks as "ms@time", slowest first
+local function slowest(values: { number }, times: { number }, n: number): string
+	local order = {}
+	for i = 1, #values do
+		order[i] = i
+	end
+	table.sort(order, function(a: number, b: number): boolean
+		return values[a] > values[b]
+	end)
+	local parts = {}
+	for i = 1, math.min(n, #order) do
+		local k = order[i]
+		table.insert(parts, `{string.format("%.1f", values[k])}@{string.format("%.1f", times[k] or 0)}`)
+	end
+	return table.concat(parts, " ")
+end
+
 local function report(r: any)
 	local wall = string.format("%.1f", r.wallSeconds)
 	local human = tostring(r.kingdom)
@@ -263,12 +318,17 @@ local function report(r: any)
 	for _, phase in r.phases do
 		local s, h, rep = r.simMs[phase] or {}, r.hostMs[phase] or {}, r.replicateMs[phase] or {}
 		print(`PERF seed {r.seed} {phase}: ticks {#s}; sim ms {stats(s)}; host step ms {stats(h)}`)
-		print(`PERF seed {r.seed} {phase}: snapshots {#rep}; replicate ms {stats(rep)}`)
+		local seconds = #rep / 10 -- snapshots run at 10 Hz
+		local kbps = string.format("%.2f", if seconds > 0 then (r.bytes[phase] or 0) / 1024 / seconds else 0)
+		print(`PERF seed {r.seed} {phase}: snapshots {#rep}; replicate ms {stats(rep)}; to the human {kbps} KB/s`)
+		print(`PERF seed {r.seed} {phase}: slowest sim ticks (ms@sim s) {slowest(s, r.simT[phase] or {}, 10)}`)
 	end
 	local peak = r.peak
 	local at, phase = math.floor(peak.t or 0), tostring(peak.phase)
 	local per = perText(peak.per or {}, r.kingdomOrder)
-	print(`PERF seed {r.seed} entities peak {peak.total} at {at} s ({phase}): {per}`)
+	print(
+		`PERF seed {r.seed} rigs peak {peak.rigs} (budget {RIG_BUDGET} per server, {RIGS_ON_SCREEN} on screen) at {at} s ({phase}); buildings {peak.buildings}: {per}`
+	)
 	local maxParts, partsAt = 0, 0
 	for _, sample in r.parts do
 		if sample.n > maxParts then
@@ -285,7 +345,7 @@ describe("FORGE-05 match probe (headless performance; FL-0131, FL-0032)", functi
 			report(r)
 			expect(r.mode).toBe("match")
 			expect(#r.phases > 0).toBe(true)
-			expect(r.peak.total > 0).toBe(true)
+			expect(r.peak.rigs > 0).toBe(true)
 			if #r.errors > 0 then
 				print("PERF errors:\n  " .. table.concat(r.errors, "\n  "))
 			end
