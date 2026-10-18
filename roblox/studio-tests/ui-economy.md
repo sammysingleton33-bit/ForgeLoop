@@ -286,5 +286,21 @@ Before #140 the building panel shows no Move: expected.
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 
+## U22 — spectating after a fall (FL-0129; needs FORGE-01's FL-0125 Match.Spectate and FORGE-04's #183 camera)
+1. Full match, lose your keep (or use the debug elimination): a card at the top says "Fallen",
+   "<your kingdom> has fallen", "<rival> took your keep" and how many kingdoms still stand, with
+   **Stay and watch** and **Leave**. Any open drawer closes and the camera switches to spectating.
+2. Stay: the card goes and a **Watching** panel on the left lists battles first ("Battle · <kingdom>",
+   "N fighting" in red), then the standing keeps. Tap a row: the camera goes there and the row is
+   framed in gold. Prev / Next (and FORGE-04's keys . , / R1 L1) move along the list; the frame follows.
+   New battles appear in the list within a second or two.
+3. Leave asks "Leave this server?" with Leave / Cancel; Cancel keeps watching; Leave disconnects you
+   with "You left the match. Thanks for playing AI Kingdoms!".
+4. A full server (all kingdoms full): the card says "This match is full" / "Watch now. You can rule in
+   the next match".
+5. A new match (seated again): the card and panel go and the normal HUD returns.
+6. Phone 667 × 375: the card first, then (after Stay) the panel, never both; the panel stays above the
+   construction chips and its list scrolls. Touch and gamepad (A on a focused button) both work.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
