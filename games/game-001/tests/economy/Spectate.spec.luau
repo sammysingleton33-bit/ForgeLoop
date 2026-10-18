@@ -77,8 +77,9 @@ local function fall(world, info)
 	world:advance(0.3)
 end
 
+-- the modal layer: a spectator has no kingdom, and the HUD turns its other layers off without one
 local function menus(world)
-	return world.hud.guis.menus
+	return world.hud.guis.modals
 end
 
 describe("UI/SpectateModel (FL-0129)", function()
@@ -214,6 +215,37 @@ describe("The spectate screen (FL-0129)", function()
 		expect(find(menus(world), "WatchPanel")).toBeNil()
 		expect(find(menus(world), "FallenCard")).toBeNil()
 		expect(world.state.setActive).toBe(false)
+	end)
+
+	it("a real spectator (no kingdom, ours fallen): the HUD steps away but the screen is seen, at the top", function()
+		world = newWorld()
+		world.kingdoms.kingdoms.crimson.alive = false
+		world.kingdoms.members[world.player.UserId] = nil
+		world.kingdoms.members[2] = nil
+		world.kingdoms:publish()
+		fall(world)
+		expect(world.hud.guis.menus.Enabled).toBe(false) -- the kingdom HUD is gone (no kingdom)
+		expect(world.hud.guis.modals.Enabled).toBe(true)
+		expect(texts(find(menus(world), "FallenCard"))).toContain("Emberhold has fallen")
+		world.spectate:stay()
+		world:advance(0.1)
+		expect(find(menus(world), "WatchPanel").Position.Y.Offset).toBe(72)
+	end)
+
+	it("Results and the Lobby hide it; the next active phase brings it back while still spectating", function()
+		world = newWorld()
+		world.match:setPhase("Conflict", world.env.serverTimeNow() + 300)
+		fall(world)
+		world.spectate:stay()
+		world:advance(0.1)
+		expect(find(menus(world), "WatchPanel")).toBeTruthy()
+		world.match:setPhase("Results", world.env.serverTimeNow() + 30)
+		world:advance(0.3)
+		expect(find(menus(world), "WatchPanel")).toBeNil()
+		expect(world.spectate.spectating).toBe(true)
+		world.match:setPhase("Founding", world.env.serverTimeNow() + 300)
+		world:advance(0.3)
+		expect(find(menus(world), "WatchPanel")).toBeTruthy()
 	end)
 
 	it("the camera alone (no server remote, today's main): the card and list show, and go with the camera", function()

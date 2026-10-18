@@ -43,6 +43,11 @@ ROWS = [
      "the camera alone (no server remote"),
     ("phone shows card and list together", V, "local showPanel = not (phone and state.card)", "local showPanel = true",
      "never both"),
+    ("shown over the results", C, "if not self.spectating or KingdomHudSpectateController.PAUSED[phase] then",
+     "if not self.spectating then", "Results and the Lobby hide it"),
+    ("on a layer a spectator never sees", C, "self.view = self.view or SpectateScreen.new(hud.roots.modals)",
+     "self.view = self.view or SpectateScreen.new(hud.roots.menus)", "a real spectator"),
+    ("panel under a hidden stack", V, "local top = if state.stackHidden then", "local top = if false then", "a real spectator"),
     ("no empty-list words", V, 'text = "Nothing to watch yet",', 'text = "",', "the list says there is nothing yet"),
 ]
 bad = 0

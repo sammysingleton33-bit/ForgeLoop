@@ -33,7 +33,8 @@ local Def = { name = "KingdomHudSpectateController", dependencies = { "KingdomHu
 
 KingdomHudSpectateController.EVENT = "Match.Spectate"
 KingdomHudSpectateController.CAMERA = "RulerSpectateController"
-KingdomHudSpectateController.POLL_SEC = 1 -- targets() is re-read this often while spectating
+KingdomHudSpectateController.POLL_SEC = 1
+KingdomHudSpectateController.PAUSED = table.freeze({ Results = true, Lobby = true }) -- targets() is re-read this often while spectating
 KingdomHudSpectateController.GOODBYE = "You left the match. Thanks for playing AI Kingdoms!"
 
 function Def.new(env: any, registry: any)
@@ -241,17 +242,24 @@ end
 
 function KingdomHudSpectateController:render(metrics: any?)
 	local hud = self.hud
-	if self._destroyed or hud.roots.menus == nil then
+	if self._destroyed or hud.roots.modals == nil then
 		return -- not mounted yet (no PlayerGui)
 	end
-	self.view = self.view or SpectateScreen.new(hud.roots.menus)
-	if not self.spectating then
+	-- The modal layer: a real spectator has no kingdom (Kingdom.State.mine = nil), and the HUD turns its
+	-- other layers off without one (FORGE-07 L2 on #185 showed the screen would not be seen at all)
+	self.view = self.view or SpectateScreen.new(hud.roots.modals)
+	-- Results and the Lobby belong to the summary: the screen steps aside (and comes back in the next
+	-- active phase while the server's spectate still stands; FORGE-07 L1 on #185)
+	local phase = if hud.store.match then hud.store.match.phase else nil
+	if not self.spectating or KingdomHudSpectateController.PAUSED[phase] then
 		self.view:destroy()
 		return
 	end
 	local m = metrics or hud:metrics()
 	local model = SpectateModel.view(self.info, hud.store, self:_targets(), self._current)
-	self.view:render(model, m, self.state, {
+	local state = table.clone(self.state)
+	state.stackHidden = hud.store:mine() == nil -- no crest and pills above the panel: it moves up
+	self.view:render(model, m, state, {
 		onStay = function()
 			self:stay()
 		end,

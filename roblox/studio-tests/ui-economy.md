@@ -298,7 +298,10 @@ Before #140 the building panel shows no Move: expected.
    with "You left the match. Thanks for playing AI Kingdoms!".
 4. A full server (all kingdoms full): the card says "This match is full" / "Watch now. You can rule in
    the next match".
-5. A new match (seated again): the card and panel go and the normal HUD returns.
+5. Results and the Lobby: the card and panel step aside for the results summary; in the next match's
+   active phase they come back if you are still spectating, and go when you are seated again (the
+   normal HUD returns).
+   As a spectator the kingdom HUD (crest, pills, rail) is gone: the card and panel sit at the top left.
 6. Phone 667 × 375: the card first, then (after Stay) the panel, never both; the panel stays above the
    construction chips and its list scrolls. Touch and gamepad (A on a focused button) both work.
 

@@ -19,6 +19,11 @@ return function(ctx)
 		services = { FallenDoubles.service },
 	}, function(world, _hud)
 		world.match:setPhase("Conflict", world.env.serverTimeNow() + 420)
+		-- the state a real spectator gets (FL-0125, #187): our kingdom not alive, Kingdom.State.mine nil
+		world.kingdoms.kingdoms.crimson.alive = false
+		world.kingdoms.members[world.player.UserId] = nil
+		world.kingdoms.members[2] = nil
+		world.kingdoms:publish()
 		world.server:get("SpectateDouble"):send(world.player, true, {
 			reason = "eliminated",
 			kingdomId = "crimson",

@@ -193,14 +193,15 @@ end
 local function panel(model: any, m: any, state: any, ui: any): Frame
 	local phone = m.breakpoint == "phone"
 	local width = if phone then SpectateScreen.PANEL.phone else SpectateScreen.PANEL.desktop
-	local top = m.hud.bottom + 10
+	-- under the top-left stack, or (a real spectator: no kingdom, the stack hidden) under the top bar
+	local top = if state.stackHidden then (if phone then 58 else 72) else m.hud.bottom + 10
 	-- as tall as its rows (pad + head + list + foot + pad), at most to the bottom margin, so it never
 	-- reaches the construction chips with only a few targets
 	local n = math.max(1, #model.rows)
 	local listHeight = n * SpectateScreen.ROW + (n - 1) * 6 + 8
 	local content = 10 + 38 + listHeight + 6 + (if state.confirmLeave then 62 else 34) + 10
 	-- phones: stop above the construction chips (bottom centre reaches under the panel's right edge)
-	local floor = if phone and m.queue then m.queue.bottom + 48 else m.margin
+	local floor = if phone and m.queue and not state.stackHidden then m.queue.bottom + 48 else m.margin
 	local height = math.min(content, math.max(160, m.height - top - floor))
 	local frame = surface("WatchPanel", {
 		Position = UDim2.fromOffset(m.margin, top),
@@ -303,6 +304,7 @@ function SpectateScreen:render(model: any, metrics: any, state: any, ui: any)
 		bottom = metrics.hud.bottom,
 		card = showCard,
 		panel = showPanel,
+		stackHidden = state.stackHidden,
 		confirm = state.confirmLeave,
 	})
 	if key == self._key and self.instance ~= nil then
@@ -319,7 +321,13 @@ function SpectateScreen:render(model: any, metrics: any, state: any, ui: any)
 	}) :: Frame
 	if showPanel then
 		-- the panel's Leave confirms in the panel only while the card is gone
-		panel(model, metrics, { confirmLeave = state.confirmLeave and not showCard }, ui).Parent = root
+		panel(
+			model,
+			metrics,
+			{ confirmLeave = state.confirmLeave and not showCard, stackHidden = state.stackHidden },
+			ui
+		).Parent =
+			root
 	end
 	if showCard then
 		card(model, metrics, state, ui).Parent = root
