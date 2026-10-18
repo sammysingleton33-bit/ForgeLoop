@@ -28,6 +28,12 @@ Cloud / Linux (bpy wheel, see `tools/setup/cloud-setup.sh --blender-only`):
 ~/forge-bpy/bin/python blender/build.py --verify                            # reproducibility check
 bash blender/scripts/check.sh                                               # the gate (PASS/FAIL/SKIP)
 ```
+
+`manifest.json` is generated: it merges `manifest.d/<generator>.json` fragments plus the review verdicts. Two PRs that
+both build assets will both rewrite it, so when it conflicts never hand-edit it: resolve the fragments (they are
+per-generator and rarely clash), then run `~/forge-bpy/bin/python blender/build.py --merge-only` to regenerate it.
+`check.sh` prints a WARN (not a failure) for each preview path the manifest names that is not committed; previews are
+committed with the PR that renders them, `exports/` stays git-ignored.
 Windows desktop Blender 5.2.x (**unverified until the user runs it** — see `roblox/studio-tests/assets.md` A0):
 ```bat
 "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" -b -P blender\build.py -- --all --no-render

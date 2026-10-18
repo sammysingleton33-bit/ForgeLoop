@@ -25,7 +25,10 @@ if "$PY" -c "
 import sys; sys.path.insert(0, '.')
 from lib import manifest
 errs = manifest.check()
+warns = manifest.warnings()
 print('\n'.join(errs) if errs else 'ok')
+if warns:
+    print(f'WARN: {len(warns)} preview path(s) named in the manifest are not committed (not a failure; first: {warns[0]})')
 sys.exit(1 if errs else 0)"; then :; else fail=1; fi
 
 step "pytest"

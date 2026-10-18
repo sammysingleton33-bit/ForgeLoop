@@ -116,3 +116,14 @@ def check(manifest_path=MANIFEST):
         if not a["id"].startswith(a["category"] + "_"):
             errs.append(f"{a['id']}: id must start with its category {a['category']!r}")
     return errs
+
+
+def warnings(manifest_path=MANIFEST):
+    """Non-fatal findings printed by check.sh: previews the manifest names but the repo does not carry
+    (generators write them to blender/previews/ when someone runs a render; exports/ is gitignored)."""
+    data = json.loads(Path(manifest_path).read_text())
+    return [
+        f"{a['id']}: preview {a['preview']} is not committed"
+        for a in data.get("assets", [])
+        if a.get("preview") and not (ROOT / a["preview"]).exists()
+    ]
