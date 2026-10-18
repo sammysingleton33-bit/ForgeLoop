@@ -80,7 +80,9 @@ jobs:
     name: roblox (Lune, Selene, StyLua, Rojo, place check)
     if: github.event_name == 'push' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # check.sh runs each Lune step under STEP_TIMEOUT (600 s); the whole job took 13m58s on FL-0125 (#187) and
+    # 14m23s on #181 against the old 15, so 25 leaves room for the full-match spec without masking a hung step
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
         with:
