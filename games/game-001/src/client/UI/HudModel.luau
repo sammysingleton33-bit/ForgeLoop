@@ -84,6 +84,13 @@ function HudModel.members(store: any, nameOf: (number) -> string?, localUserId: 
 	return out
 end
 
+-- The full match's phases in order (CONTRACTS G3; D-053 (1)). A timed phase on this list gets the phase
+-- track and the next phase's name (FL-0129); any other phase (Lobby, an Arena phase not listed yet) shows
+-- only its name and clock. The slice's Founding is untimed, so the slice never shows the track.
+HudModel.PHASES = table.freeze({ "Founding", "Expansion", "Conflict", "Endgame", "Results" })
+-- What the next phase opens, said beside its name (D-053 (2): war from Conflict on).
+HudModel.NEXT_NOTE = table.freeze({ Conflict = "war opens" })
+
 function HudModel.timer(match: any, now: number): any
 	if match == nil then
 		return nil
@@ -91,7 +98,17 @@ function HudModel.timer(match: any, now: number): any
 	local phase = Text.phase(match.phase)
 	if match.endsAt then
 		local label = if match.phase == "Lobby" then "until the match starts" else "left"
-		return { phase = phase, clock = Format.clock(match.endsAt - now), label = label }
+		local step = table.find(HudModel.PHASES, match.phase)
+		local nextPhase = if step then HudModel.PHASES[step + 1] else nil
+		return {
+			phase = phase,
+			clock = Format.clock(match.endsAt - now),
+			label = label,
+			step = step, -- 1..#PHASES on the track; nil = no track
+			steps = if step then #HudModel.PHASES else nil,
+			next = if nextPhase then Text.phase(nextPhase) else nil,
+			nextNote = if nextPhase then HudModel.NEXT_NOTE[nextPhase] else nil,
+		}
 	elseif match.startedAt and match.phase ~= "Lobby" and match.phase ~= "Results" then
 		return { phase = phase, clock = Format.clock(now - match.startedAt), label = "match time" }
 	end

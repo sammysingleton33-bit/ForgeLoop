@@ -6,7 +6,9 @@
 
 	KingdomStore.new() -> store
 	Feeding (each call fires store.changed(what, ...)):
-		store:applyKingdoms(payload)              Kingdom.State / Kingdom.GetState { kingdoms, mine }
+		store:applyKingdoms(payload)              Kingdom.State / Kingdom.GetState { kingdoms, mine, diplomacy? }
+		                                          (diplomacy: FL-0129, UI/DiplomacyModel's state; kept when a
+		                                          payload has none, fires "diplomacy" when it changes)
 		store:applyMatch(phase, endsAt?, startedAt?)   Match.State / Match.GetState
 		store:applyTreasury(totals, deltas?)      Treasury.Changed / Treasury.Get (my kingdom's bag)
 		store:applyBuildings(list, full)          Build.GetBuildings (full = true) / Build.Buildings (changes)
@@ -47,6 +49,7 @@ function KingdomStore.new()
 		_kingdoms = {} :: { any },
 		_byId = {} :: { [string]: any },
 		_mine = nil :: string?,
+		_diplomacy = nil :: any, -- FL-0129: the server's diplomacy payload
 		_treasury = nil :: { [string]: number }?,
 		_buildings = {} :: { [number]: any },
 		_costs = nil :: any,
@@ -83,6 +86,17 @@ function KingdomStore:applyKingdoms(payload: any)
 	self._byId = byId
 	self._mine = if type(payload.mine) == "string" then payload.mine else nil
 	self.changed:fire("kingdoms")
+	-- Always taken, absent included: a payload without it clears last match's wars (FORGE-07 L3 on #180).
+	local diplomacy = if type(payload.diplomacy) == "table" then payload.diplomacy else nil
+	if diplomacy ~= nil or self._diplomacy ~= nil then
+		self._diplomacy = diplomacy
+		self.changed:fire("diplomacy")
+	end
+end
+
+-- War and peace between the kingdoms (FL-0129; UI/DiplomacyModel reads it); nil until the server sends it.
+function KingdomStore:diplomacy(): any
+	return self._diplomacy
 end
 
 function KingdomStore:applyMatch(phase: any, endsAt: any, startedAt: any)
@@ -230,6 +244,10 @@ end
 
 function KingdomStore:mine(): any
 	return if self._mine then self._byId[self._mine] else nil
+end
+
+function KingdomStore:kingdom(id: any): any
+	return self._byId[id]
 end
 
 function KingdomStore:kingdoms(): { any }

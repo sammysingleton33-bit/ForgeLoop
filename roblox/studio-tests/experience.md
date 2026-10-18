@@ -91,7 +91,7 @@ Needs:
 - sounds chosen or uploaded (user sounds handoff). Until then every sound is skipped on purpose, and the effects and toasts still show.
 
 The Studio debug panel (F8) has two commands for this section:
-- `fx.announce <kind>`: one sample moment. Kinds: buildingCompleted, buildingPlaced, defeat, keepUpgraded, kingdomFounded, objectiveCaptured, phase, rivalCaptured, unitsRecruited, victory.
+- `fx.announce <kind>`: one sample moment. The panel lists every kind (`AnnouncerService` SAMPLES), among them buildingCompleted, buildingPlaced, defeat, keepUpgraded, kingdomFounded, objectiveCaptured, phase, rivalCaptured, unitsRecruited, victory, and the war kinds of E14.
 - `fx.burst`: six notices at once.
 
 Rules under test (headless: `games/game-001/tests/experience/KingdomFeedback.spec.luau`):
@@ -488,3 +488,35 @@ Pass: steps 1–3 hold (4 and 5 when run). Copy every red line from Output.
 
 History:
 - 2026-10-16 FORGE-04: written (FL-0091; FORGE-01's FL-0082 handoff, G9 `ConsequenceChanged` v0.4-g10c/d).
+
+## E14 — War notices: a kingdom falls, war and peace, siege, raid, the full match's phases (FL-0130 part 1, game-001)
+
+Needs:
+- Steps 1–4 need nothing new: they use the `fx.announce` samples (F8).
+- Step 5 needs the full match on the build (FORGE-01's FL-0125, `Match.mode = "match"`).
+- Step 6 needs FORGE-01 to fire the proposed G9 events `WarChanged`, `SiegeChanged` and `RaidChanged` (handoff `production/handoffs/2026-10-18-forge-04-to-forge-01-war-events.md`). Until then, write "blocked: needs the war events" for step 6.
+- Every sound is silent until the owner picks assets. Write "silent (no asset)"; the toasts and celebrations still show.
+
+| Moment | Expected |
+|---|---|
+| `conflictTimed` | Toast "The age of war begins", body "For 15 minutes, kingdoms may declare war on each other." |
+| `fallen` | A celebration: "Your keep has fallen", "You can watch the rest of the match." |
+| `conquest` | A gold celebration: "You conquered Frostmere!", "Half its treasury is yours." |
+| `rivalFell` | Warning toast "Frostmere has fallen", "Emberhold took its keep." |
+| `warOnYou` | Warning toast "Frostmere declares war on you!", "Its soldiers may now attack your lands." |
+| `peace` | Toast "Peace with Frostmere". It is a separate toast from the declaration, never "… ×2" |
+| `siege` / `siegeLifted` | "Your keep is under siege!" with "Frostmere soldiers attack your keep.", then "The siege is lifted" as its own toast |
+| `raid` / `raidOver` | "Enemies in your lands!" with "6 Frostmere soldiers crossed your border.", then "Your lands are clear" |
+
+Steps
+1. Play Solo. In F8, run `fx.announce conflictTimed`, then `fallen`, then `conquest`. Each reads as in the table. The two celebrations are full celebrations, not plain toasts. Screenshot **E14-1** (the conquest).
+2. Run `warOnYou`, then `peace` within 5 s. Two toasts stand on screen; neither shows "×2". Then run `rivalFell`.
+3. Run `raid`, then `siege`. The music changes to battle when sounds exist (otherwise check Output for no errors). Run `raidOver`, wait 10 s, run `siegeLifted`: the music returns to the phase music about 8 s later. Screenshot **E14-2** (the raid and siege toasts).
+4. Phone emulator (667×375): run `raid` and `conquest`. Nothing is cut off.
+5. (Needs FL-0125.) Start a full match and play, or speed up the phases. Expansion, Conflict and Endgame each show their toast with the minutes from Pacing (12, 15, 10 in `match` mode). When an AI kingdom is eliminated, every other ruler sees "<Kingdom> has fallen".
+6. (Needs the war events.) Two players (Test → Local Server, 2 players) in different kingdoms. Player 1 declares war on player 2's kingdom. Player 1 gets no toast (the war panel answers them). Player 2 gets "<Kingdom> declares war on you!" with the horn. When player 2's lands are raided, player 2 gets "Enemies in your lands!".
+
+Pass: steps 1–4 hold (5 and 6 when their features are on the build). Copy every red line from Output.
+
+History:
+- 2026-10-18 FORGE-04: written (FL-0130 part 1; D-053, Operation Crownfall).

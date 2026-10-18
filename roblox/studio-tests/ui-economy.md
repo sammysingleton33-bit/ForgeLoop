@@ -283,6 +283,35 @@ Before #140 the building panel shows no Move: expected.
 4. Walking view (V): the button hides; back in the aerial view it comes back (FORGE-04's active(), #170).
 5. Phone: the button is the icon with the bubble (no word), 48 px, under the other rail buttons.
 
+## U21 — phase bar and Rivals (FL-0129, Operation Crownfall; Rivals needs FORGE-01's diplomacy remote)
+1. Full match, a timed phase (Founding → Results): the top timer pill shows the phase, the clock and a
+   track of five segments (done gold, now bright, ahead dim) with "Next: <phase>"; before Conflict it
+   says "Next: Conflict · war opens". The slice's untimed Founding and the Lobby show no track. Phone:
+   phase and clock only.
+2. With the server's `Kingdom.Diplomacy` remote: Kingdom → a fourth tab **Rivals** (crossed swords),
+   one row per rival by rank: crest, name, "#rank · N Crown Points", a chip (At peace / At war / Truce
+   / Fallen). Without the remote (today's main): no Rivals tab.
+3. Before Conflict: Declare war is greyed with "War opens in Conflict" under it. In Conflict: Declare war
+   → "Declare war on <name>?" with Confirm / Cancel; Cancel changes nothing; Confirm: a "War declared
+   on <name>" notice, the chip turns red "At war", the row offers Propose peace.
+4. Propose peace: "Offer sent · m:ss" counts down and the button stays off until it expires. A rival's
+   offer: one notice "<name> proposes peace", a "1" bubble on the Kingdom rail button, the row says
+   "Proposes peace · m:ss" with Accept peace. Accept: "Truce", "Truce · m:ss left", Declare war off
+   with "Truce for m:ss"; the bubble goes.
+5. A refusal (e.g. declaring during the grace period) is a warning in words, never "Something went
+   wrong"; the row does not change.
+6. Two players in one kingdom (D-054): the one seated second sees **Ask <senior> to declare war**
+   (grey) instead of Declare war; Confirm asks "Ask <senior> to declare war on <name>?", says "Asked
+   your senior ruler for war on <name>" and sends a notice to the senior ruler; nothing changes until
+   they declare. Their Accept peace is off with "<senior> decides". A ruler who joined mid-match sees
+   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. When the kingdom falls, or in
+   Results, every button is off ("Your kingdom has fallen" / "The match is over"). An offer that runs
+   out takes the Kingdom bubble with it.
+7. Phone 667 × 375 (Device emulator): Kingdom tabs are icons only (the selected one framed in gold),
+   Close fully visible; rival names whole, score "#1 · 20 pts"; Accept peace and Propose peace side by
+   side, both fully inside the drawer; the confirm question on its own line. Touch and gamepad (A on a
+   focused button) both work.
+
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 

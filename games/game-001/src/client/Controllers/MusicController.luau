@@ -10,7 +10,9 @@
 	Victory / defeat music only for a ruler who won or lost (a draw or a spectator keeps the phase music). The rules (minimum dwell, urgent states) are the framework's
 	Experience/MusicDirector; AudioController crossfades (1.5 s) and plays the registry tracks.
 	The day ambience bed (ambience.birds) starts with the first phase.
-	Combat music (battle) is VS-2: VS-1 has no fights.
+	Battle music (FL-0130) while our lands are raided or our keep is besieged: the raid and siege moments'
+	start and end (AnnouncerController), held while any is on and ringing out calmTailSec after the last
+	one ends; our keep falling, Results and a new match end them.
 
 		MusicController:setPhase(phase) / :setResult("won" | "lost") / :update() -> state?
 ]]
@@ -45,6 +47,7 @@ function Def.create(env: any, registry: any)
 		_ambience = false,
 		phase = nil :: string?,
 		result = nil :: string?,
+		alerts = {} :: { [string]: boolean }, -- raid / siege on (FL-0130)
 		state = nil :: string?,
 	}, MusicController)
 end
@@ -74,6 +77,10 @@ function MusicController:start()
 			announcer.moment:connect(function(moment)
 				if moment.kind == "phase" then
 					self:setPhase(moment.phase)
+				elseif moment.kind == "raid" or moment.kind == "siege" then
+					self:setAlert(moment.kind, moment.on == true)
+				elseif moment.kind == "kingdomFell" then
+					self:clearAlerts()
 				elseif moment.kind == "matchEnded" then
 					local outcome = moment.outcome or (if moment.won then "won" else "lost")
 					if outcome == "won" or outcome == "lost" then
@@ -114,11 +121,35 @@ function MusicController:setPhase(phase: any)
 	if phase ~= "Results" then
 		self.result = nil -- a new match
 	end
+	if phase == "Results" or phase == "Lobby" then
+		self:clearAlerts()
+	end
 	if not self._ambience and self._audio and self._audio.setAmbience then
 		self._ambience = true
 		self._audio:setAmbience(Def.AMBIENCE)
 	end
 	self:update()
+end
+
+-- A raid or siege started (on) or ended for our kingdom: battle music while any is on.
+function MusicController:setAlert(kind: string, on: boolean)
+	if on then
+		self.alerts[kind] = true
+		self._director:combat(self._env.clock())
+	elseif self.alerts[kind] then
+		self.alerts[kind] = nil
+		if next(self.alerts) == nil then
+			self._director:calm(self._env.clock())
+		end
+	end
+	self:update()
+end
+
+function MusicController:clearAlerts()
+	if next(self.alerts) ~= nil then
+		table.clear(self.alerts)
+		self._director:calm(self._env.clock())
+	end
 end
 
 function MusicController:setResult(result: string)
@@ -129,6 +160,9 @@ end
 function MusicController:update(): string?
 	if self.phase == nil then
 		return self.state
+	end
+	if next(self.alerts) ~= nil then
+		self._director:combat(self._env.clock()) -- a long raid keeps the battle music up
 	end
 	local state = self._director:update(self._env.clock(), {
 		phase = self.phase,
