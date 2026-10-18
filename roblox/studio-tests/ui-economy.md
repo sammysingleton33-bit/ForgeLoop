@@ -307,7 +307,10 @@ Before #140 the building panel shows no Move: expected.
    "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. When the kingdom falls, or in
    Results, every button is off ("Your kingdom has fallen" / "The match is over"). An offer that runs
    out takes the Kingdom bubble with it.
-7. Phone 667 × 375 (Device emulator): Kingdom tabs are icons only (the selected one framed in gold),
+7. Raid (needs FORGE-04's #183): when enemies enter our lands ("Enemies in your lands!"), a **Raid** button
+   (⚠) appears on the rail; a tap moves the aerial camera to the raid (also from walk mode). When the
+   lands are clear it goes. On a phone it is the only way to the raid (no G / D-pad).
+8. Phone 667 × 375 (Device emulator): Kingdom tabs are icons only (the selected one framed in gold),
    Close fully visible; rival names whole, score "#1 · 20 pts"; Accept peace and Propose peace side by
    side, both fully inside the drawer; the confirm question on its own line. Touch and gamepad (A on a
    focused button) both work.

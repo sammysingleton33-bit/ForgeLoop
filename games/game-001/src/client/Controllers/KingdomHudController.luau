@@ -86,6 +86,14 @@ KingdomHudController.TICK_SEC = 0.5
 KingdomHudController.DIPLOMACY = "Kingdom.Diplomacy"
 -- D-054 (2): the senior ruler hears a co-ruler's ask for war (FORGE-01's final contract, 2026-10-18)
 KingdomHudController.WAR_ASK = "Kingdom.WarAsk"
+-- "Raid" on the rail while enemies are in our lands (FORGE-04's FeedbackWarController.alert(), #183):
+-- a tap sends the aerial camera there (goToAlert). Keys have G / D-pad up; on a phone this is the way.
+KingdomHudController.RAID_RAIL = table.freeze({
+	id = "raid",
+	icon = "warning",
+	label = "Raid",
+	order = 45, -- after the built-in menus and Army, before Waiting
+})
 KingdomHudController.DONE_SEC = 1.6
 KingdomHudController.DEFAULT_VIEWPORT = Vector2.new(1280, 662)
 
@@ -746,6 +754,33 @@ end
 
 -- Diplomacy changed: the Kingdom rail button counts the peace offers waiting for my answer, and each new
 -- offer is said once ("Azure proposes peace").
+-- The Raid rail button follows FORGE-04's alert(): shown while a raid lasts, gone after (polled each tick;
+-- absent controller or a failing call = no button).
+function KingdomHudController:_syncRaid()
+	local war = self._registry:find("FeedbackWarController")
+	local raid = false
+	if war ~= nil and type(war.alert) == "function" then
+		local ok, alert = pcall(war.alert, war)
+		raid = ok and alert ~= nil
+	end
+	if raid == (self._raidShown == true) then
+		return
+	end
+	self._raidShown = raid
+	if not raid then
+		self:removeRailItem(KingdomHudController.RAID_RAIL.id)
+		return
+	end
+	local item = table.clone(KingdomHudController.RAID_RAIL)
+	item.onActivated = function()
+		local current = self._registry:find("FeedbackWarController")
+		if current ~= nil and type(current.goToAlert) == "function" then
+			pcall(current.goToAlert, current)
+		end
+	end
+	self:addRailItem(item)
+end
+
 -- Listens to Kingdom.WarAsk once the server declares it (now or when the diplomacy state first arrives;
 -- never before, so today's main logs no missing remote).
 function KingdomHudController:_followWarAsk()
@@ -1151,6 +1186,7 @@ function KingdomHudController:_tick()
 	if self.state.menu == "kingdom" and self.state.panel.tab == "rivals" then
 		self:render()
 	end
+	self:_syncRaid()
 	-- an offer of peace runs out without a push: the Kingdom bubble follows the clock (FORGE-07 L2 on #180)
 	if self.store:diplomacy() ~= nil then
 		local view = self:_rivals()
