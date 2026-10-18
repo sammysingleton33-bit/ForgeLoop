@@ -550,3 +550,24 @@ Pass: step 1 holds (2–5 when FL-0125 is on the build). Copy every red line fro
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
+
+## E17 — The arena crowd you hear and read: reactions, subtitles, ducking (FL-0074 part 2a, game-001)
+
+The Crown Arena crowd reacts to the duel by each stand's support tier (crown-arena §3, §7), and every reaction has a subtitle. The stands' figures come later (part 2b, after FORGE-02's FL-0072).
+
+Needs:
+- Steps 1–4: nothing beyond the build. They use the **Studio preview**, a scripted duel played through the real code path.
+- Step 5: FORGE-01's arena (FL-0071: `Arena.State`, `Arena.Events`). Until then write "blocked: needs FL-0071".
+- Every crowd sound is silent until the owner picks assets (`production/handoffs/2026-10-18-forge-04-to-user-crowd-sounds.md`). Write "silent (no asset)". The subtitles show either way.
+
+Steps
+1. Play Solo. In the command bar run `game.Players:GetPlayers()[1]:SetAttribute("ForgeCrowdPreview", "adoring,hostile")`. Within 30 s, about every 3.5 s, one or two subtitle lines appear above the bottom HUD, for example "Crimson Kingdom: (The crowd roars)" and "Azure Kingdom: (The stand turns its back)". Each line goes after about 2.5 s. Screenshot **E17-1** with two lines on screen.
+2. During the preview: "Crimson Kingdom: Mara steps up: Reforge!" (a perk) stays about 4 s and is not replaced early. A chant line reads "Crimson Kingdom: Crimson! Crimson!". The last step is the ending: "(The stand floods the arena to crown its ruler)" for Crimson and "(The stand empties)" for Azure.
+3. Run it again with `"hostile,adoring"`: Crimson now boos or turns its back, and the ending reads "(A thin crowd watches the crowning)" for Crimson and "They fought for us! (The stand salutes)" for Azure. Then `""` stops it and the lines go.
+4. Phone emulator (667×375): the two lines fit inside the screen and don't cover the bottom HUD buttons. Screenshot **E17-2**.
+5. (Needs FL-0071.) In a real duel, a big hit and a parry make both stands react, and an announcer line makes the crowd quieter for about 2.5 s (once sounds exist). At crowning, the ending lines show once, and they go at Results.
+
+Pass: steps 1–4 hold (5 when FL-0071 is on the build). Copy every red line from Output.
+
+History:
+- 2026-10-18 FORGE-04: written (FL-0074 part 2a; G12 DRAFT).
