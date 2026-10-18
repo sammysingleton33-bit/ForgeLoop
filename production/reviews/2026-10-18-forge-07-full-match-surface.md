@@ -1,6 +1,6 @@
 # FORGE-07 baseline audit: the full-match surface (FL-0132)
 
-Date 2026-10-18. Main 4142265 (Operation Crownfall, D-053). **Evidence: a static read of the code on main. Nothing was run (my sandbox does not run repo scripts) and there is no Studio evidence.** Each item cites the lines I read, so anyone can check it. This file is the baseline the FL-0125, FL-0126 and arena PR reviews are measured against; it is updated as those PRs open.
+Date 2026-10-18. Main 4142265 (Operation Crownfall, D-053); updated for D-054 the same day. **Evidence: a static read of the code on main. Nothing was run (my sandbox does not run repo scripts) and there is no Studio evidence.** Each item cites the lines I read, so anyone can check it. This file is the baseline the FL-0125, FL-0126 and arena PR reviews are measured against; it is updated as those PRs open.
 
 ## 1. Owed re-reviews (done 2026-10-18, COMMENT reviews on each PR head)
 | PR | Verdict | Next action |
@@ -24,9 +24,9 @@ Every command passes `Commands.executeFor`, which refuses an inactive sim (`matc
 ## 3. Findings on main now (before FL-0125)
 | ID | Severity | Finding | Owner / action |
 |---|---|---|---|
-| F1 | **gap, needs an owner** | Humans cannot declare war or propose or accept peace: no `Remotes.luau` row exists for the three Diplomacy commands. FL-0125 lists only `Match.Spectate`; FL-0129 assumes "existing Army/Diplomacy remotes". Without them PvP is AI against AI only | FORGE-00 assigns (FL-0125 or a new task); the new remotes need argument validation, a per-player rate limit, a phase gate and a co-ruler rule, and I review them as an authority surface |
-| F2 | low, hurts B20 testing | Diplomacy's war gate is sim time fixed at install: `graceSeconds = phaseEnds.Expansion` (`Match.luau:197`), tested as `s.time < state.graceSeconds` (`Diplomacy.luau:79`). `Match:debugSetPhase` rewrites `phaseEnds` but not sim time or `graceSeconds`. After the Studio `match.phase Conflict` jump, `DeclareWar` (human or `RulerAI`) still answers `grace_period` until sim time 1200 s | FORGE-01: have `debugSetPhase` move `sim.diplomacy.graceSeconds` to `sim.time` when jumping to Conflict or later; FORGE-05: B20 rows must not assume a war after the jump |
-| F3 | design, FORGE-00 decides | Co-rulers have equal command rights, and that is documented (`Match.luau:29`, "equal command rights (shared ownership)"). With D-053 (1) a mid-match joiner takes over a governor kingdom with full rights, so once war and peace are reachable any co-ruler can declare war, accept peace for the kingdom, set every job quota to 0 or move walls. Not a code defect | FORGE-00: record "all equal", or tier war, peace and similar irreversible acts. FL-0129's "permission rules follow the server" means "none" until then |
+| F1 | gap, **ruled: D-054 (1)** | Humans cannot declare war or propose or accept peace: no `Remotes.luau` row exists for the three Diplomacy commands. FL-0125 listed only `Match.Spectate`; FL-0129 assumes the remotes exist | FORGE-01 adds the remotes in FL-0125 with G8 rows at merge; I review them as an authority surface (checklist 18 to 25) |
+| F2 | low, hurts B20 testing, **ruled: D-054 (5)** | Diplomacy's war gate is sim time fixed at install: `graceSeconds = phaseEnds.Expansion` (`Match.luau:197`), tested as `s.time < state.graceSeconds` (`Diplomacy.luau:79`). `Match:debugSetPhase` rewrites `phaseEnds` but not sim time or `graceSeconds`. After the Studio `match.phase Conflict` jump, `DeclareWar` (human or `RulerAI`) still answers `grace_period` until sim time 1200 s | FORGE-01 fixes it in FL-0125; I check it with a spec that jumps the phase and then declares war (checklist 1) |
+| F3 | design, **ruled: D-054 (2) to (4)** | Co-rulers had equal command rights (`Match.luau:29`). With D-053 (1) a mid-match joiner takes over a governor kingdom with full rights. D-054 tiers only war and peace (senior ruler) and adds a 120 s newcomer lock; everything else stays equal | FORGE-01 enforces it and updates the `Match.luau:29` comment; checklist 18 to 25 |
 | F4 | note, verification demand | The host clamps `dt` to 1 s (`MatchHost.luau:567`) and `Simulation:advance` then runs up to 16 steps in one Heartbeat (`Simulation.luau:1940`). That recovers when a step costs far less than the 62.5 ms tick and spirals if one step ever exceeds it. `host._simMs` times `match:update` only (`MatchHost.luau:521-526`), while BRIEF §14's 4 ms p99 per Heartbeat includes snapshot encoding | FL-0125's PR must report per-step ms (p99 and worst), the entity count, and whether the figure includes the snapshot encode; a Lune or MockEnv number is headless and not a Studio server number |
 | F5 | note | PACING.md still says the AI kingdoms are idle "in slice mode on main"; D-053 makes the full match the default | FORGE-04 revisits it with FL-0125 |
 
@@ -39,7 +39,7 @@ Every command passes `Commands.executeFor`, which refuses an inactive sim (`matc
 
 ## 5. Review checklist for the Crownfall PRs
 **FL-0125 (full match by default)**
-1. `Match.mode = "match"`, `pvp.enabled = true`: confirm slice stays reachable through the debug command and that `match.phase` works (F2).
+1. `Match.mode = "match"`, `pvp.enabled = true`: confirm slice stays reachable through the debug command, and that after `match.phase Conflict` a `DeclareWar` is accepted (F2, D-054 (5)); a spec must jump the phase and then declare war.
 2. Elimination while a conversation is open: `ConversationService` holds an entity id whose citizen `eliminate` has removed. The next `Kingdom.Choose` or `EndConversation` must answer a refusal, leave no stuck state and never throw.
 3. Elimination during a riot: `ConsequenceService` skips dead kingdoms (`ConsequenceService.luau:447`), so no riot-end `ConsequenceChanged` fires. Check that nothing holds a reference to the destroyed building and that clients clear the placards and fire.
 4. Elimination in the same tick as another keep falling: ranking, winners, `Match.Ended` payload and the arena hand-off with zero or one survivor.
@@ -49,17 +49,27 @@ Every command passes `Commands.executeFor`, which refuses an inactive sim (`matc
 8. The full-match spec: it must assert that the match ends, record the per-step ms and entity count (F4), and say it is headless.
 9. `beginArena(qualifiers)` / `arenaEnded(winner)`: no path leaves the match in Endgame forever (a missing `arenaEnded` must time out), and a failed arena falls back to Crown Points.
 
+**D-054 (human war and peace; FL-0125 remotes and tiers)**
+18. The new war and peace remotes: declared argument validation (kingdom id string 1..16), a per-player rate limit, results mapped to refusal codes, and a G8 row at merge. A non-string, empty, over-long or own-kingdom id never reaches the sim unvalidated.
+19. The senior-ruler rule is enforced in the sim command handler (or `Commands.executeFor`), not only in the remote, so every present and future route honours it. `by == nil` (the AI governor) is the only exemption, and a spec proves a governor kingdom still declares war.
+20. Seniority: the senior ruler is the longest-seated human who is still present. Specs for: the senior leaves and the next-longest takes over; a ruler who leaves and rejoins becomes the newest; two rulers seated in the same tick have a deterministic order; the first human to take over a governor kingdom becomes senior.
+21. Only the senior ruler can declare war or accept peace; any ruler can propose peace. A non-senior's request to declare war becomes a server notice to the senior: the notice text is server-built (no client text), de-duplicated and rate-limited per requester, so a co-ruler cannot spam the senior.
+22. The 120 s newcomer lock (config) blocks declare war, accept peace, and building move or demolish. The time source is server-side and cannot be reset by the client; check that rulers seated in the Lobby are not locked out of base editing for the first 120 s of the match (the sim clock starts at match start), or that this is stated. Check every route that moves or removes a building is covered: `Build.Move`, `Build.MoveToSlot`, and any `Build.Demolish` or `CancelConstruction` route FL-0126 adds.
+23. Everything else stays equal: building, upgrading, recruiting, quotas, conversations and treasury still work for a newcomer and a non-senior, with their existing rate limits; a spec proves it.
+24. An absent senior: if the senior is present but idle or the only other ruler is locked, a kingdom must not be stuck at war with no way to accept peace. State what happens, or add a timeout to the proposal flow. (Raised as a question to FORGE-00; not a defect until the PR shows the behaviour.)
+25. `Match.luau:29` ("equal command rights") is updated to the D-054 wording, and FL-0129's panel states disabled for a non-senior or newcomer use the server's refusal codes.
+
 **FL-0126 (walls, gates, outposts)**
-10. `Build.PlaceLine` / `PlaceGate`: bounded segment count and length per call, total cost charged atomically (all or nothing), rate limit, ownership of the territory, no-build areas and objective zones honoured (D-052 (2)).
-11. Outposts grant territory: an outpost placed in neutral land must not let a kingdom wall in a rival's plot or an objective; a fallen outpost must give the territory back cleanly.
-12. Towers that shoot: target selection uses `atWar` only, never hits peace-time kingdoms or own units, and the per-tick cost is bounded at peak entities.
-13. Walls and the navigation graph: a closed wall must not leave citizens or armies with no path and spin the pathfinder every tick.
+26. `Build.PlaceLine` / `PlaceGate`: bounded segment count and length per call, total cost charged atomically (all or nothing), rate limit, ownership of the territory, no-build areas and objective zones honoured (D-052 (2)).
+27. Outposts grant territory: an outpost placed in neutral land must not let a kingdom wall in a rival's plot or an objective; a fallen outpost must give the territory back cleanly.
+28. Towers that shoot: target selection uses `atWar` only, never hits peace-time kingdoms or own units, and the per-tick cost is bounded at peak entities.
+29. Walls and the navigation graph: a closed wall must not leave citizens or armies with no path and spin the pathfinder every tick.
 
 **Arena PRs (FL-0069 to FL-0071)**
-14. `DuelModel` is pure and deterministic; a duel has a hard time cap and a defined result for a draw; a disconnect or an eliminated champion resolves the duel instead of stalling it.
-15. Champion vote: co-ruler votes are counted once per user, a leaver's vote is dropped, the leadership fallback is deterministic.
-16. Support offers and the caps: server-computed, the client sends only a choice; no remote lets a client pick its own number.
-17. Every new remote: declared argument validation, a rate limit, a server-side authority check, and `kingdom_eliminated` / spectator refusal.
+30. `DuelModel` is pure and deterministic; a duel has a hard time cap and a defined result for a draw; a disconnect or an eliminated champion resolves the duel instead of stalling it.
+31. Champion vote: co-ruler votes are counted once per user, a leaver's vote is dropped, the leadership fallback is deterministic.
+32. Support offers and the caps: server-computed, the client sends only a choice; no remote lets a client pick its own number.
+33. Every new remote: declared argument validation, a rate limit, a server-side authority check, and `kingdom_eliminated` / spectator refusal.
 
 ## 6. What is not covered
 No Studio run and no local test run exist for any item above. FORGE-05's test merge and the owner's Studio session remain the only runs. This audit will be re-issued with verdicts per PR as the Crownfall PRs open.
