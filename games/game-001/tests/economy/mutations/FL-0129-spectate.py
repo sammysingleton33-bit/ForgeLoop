@@ -48,6 +48,9 @@ ROWS = [
     ("on a layer a spectator never sees", C, "self.view = self.view or SpectateScreen.new(hud.roots.modals)",
      "self.view = self.view or SpectateScreen.new(hud.roots.menus)", "a real spectator"),
     ("panel under a hidden stack", V, "local top = if state.stackHidden then", "local top = if false then", "a real spectator"),
+    ("spectator loses the phase bar", "games/game-001/src/client/Controllers/KingdomHudController.luau",
+     "self.guis.topbar.Enabled = active or (store.match ~= nil and store.match.phase ~= nil)",
+     "self.guis.topbar.Enabled = active", "a real spectator"),
     ("no empty-list words", V, 'text = "Nothing to watch yet",', 'text = "",', "the list says there is nothing yet"),
 ]
 bad = 0
