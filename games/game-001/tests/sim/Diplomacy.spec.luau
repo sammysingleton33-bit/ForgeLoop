@@ -6,6 +6,19 @@ local Commands = require("@game/ReplicatedStorage/Game/Sim/Commands")
 local Diplomacy = require("@game/ReplicatedStorage/Game/Sim/Diplomacy")
 local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 
+-- (i, value) for every argument, nil ones included: a list literal drops its nil entries from `for in`
+local function each(...)
+	local cases = table.pack(...)
+	local i = 0
+	return function()
+		i += 1
+		if i <= cases.n then
+			return i, cases[i]
+		end
+		return nil
+	end
+end
+
 local A, B, RIVAL, THIRD = 101, 102, 201, 301 -- A and B rule crimson; RIVAL rules azure; THIRD rules emerald
 
 -- Three kingdoms 300 studs apart, no citizens (fast), Military installed for armies.
@@ -95,7 +108,7 @@ describe("Kingdom/Diplomacy: war", function()
 			expect(errorOf(sim, A, name, "")).toBe("unknown_kingdom")
 			expect(errorOf(sim, A, name, "emerald")).toBe("unknown_kingdom")
 			-- the documented contract: a non-string or over-long id is malformed input, not a kingdom
-			for _, id in { 2, nil, true, {}, string.rep("k", 17) } do
+			for _, id in each(2, nil, true, {}, string.rep("k", 17)) do
 				expect(errorOf(sim, A, name, id)).toBe("invalid_args")
 			end
 		end
