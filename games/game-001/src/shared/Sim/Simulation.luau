@@ -1757,8 +1757,8 @@ function Simulation:_stepPopulation(kingdom: any)
 	end
 	kingdom.nextBirthAt = self.time + self.catalog.tuning.birthInterval
 	local tuning = self.catalog.tuning
-	-- beds are for citizens only: soldiers sleep in the barracks (D-041)
-	if #kingdom.citizenIds >= kingdom.popCap then
+	-- beds are for citizens only: soldiers sleep in the barracks (D-041); and no more than the server can carry (D-055)
+	if #kingdom.citizenIds >= math.min(kingdom.popCap, tuning.maxPerKingdom or math.huge) then
 		return
 	end
 	if self.fedByUpkeep then

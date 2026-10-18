@@ -28,6 +28,12 @@ Rulers can fortify: draw a wall line along their territory, put a gate in it tha
 - RulerAI: governors build a wall ring and a gate after Keep level 2 when aggression ≥ 0.5, and march on outposts.
 - Every new remote validated server-side and rate-limited; specs for refusals (outside territory, no money, on a field, crossing another kingdom).
 
+- **Siege viability (added 2026-10-18, FORGE-07's #187 numbers):** in a 2,750 s AI-only match, three wars and 532 kills felled no kingdom. War must be able to decide something. Tune keep HP, siege (Ram) output and the governor's assault logic in config so that:
+  - a determined assault (a full army of 15 plus a ram, focused) can take an undefended keep in about 3–5 minutes;
+  - a defended, walled keep holds unless the attacker clearly outnumbers it.
+
+  Prove it with a headless probe: at least one kingdom falls in a typical AI-only match, without a snowball before Conflict. Record the numbers in the PR.
+
 ## Validation
 Automated specs for PlaceLine/PlaceGate/outposts and a mutation row per refusal. Studio: B21 rows (draw a wall, open a gate, capture an outpost).
 

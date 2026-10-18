@@ -12,6 +12,8 @@
 		--specs <dir>      directory searched for specs (default roblox/tests/unit)
 		--shard <i>/<n>    run only every n-th selected spec file, starting at the i-th (1 <= i <= n), so a
 		                   long folder can run as n shorter steps (roblox/scripts/check.sh SHARDS)
+		--exclude <dir>    leave out every spec file under <dir> (repeatable), so a sub-folder can run as its
+		                   own step (roblox/scripts/check.sh SPLITS); applied before --shard
 	Discovers every *.spec.luau and *.spec.lua under the spec directory (recursively, sorted), loads
 	each with a fresh ModuleLoader (Roblox require semantics; one module identity per file per spec
 	file; the global Random is that loader's MockRandom), runs it and prints failures with
@@ -43,11 +45,12 @@ local HARNESS_DIR = scriptDir()
 local ROOT = Path.normalize(HARNESS_DIR .. "/../../..")
 local specDirArg, projectArg, filter = nil, nil, nil
 local shardIndex, shardCount = 1, 1
+local excludeArgs = {} :: { string }
 do
 	local i = 1
 	while i <= #process.args do
 		local arg = process.args[i]
-		if arg == "--specs" or arg == "--project" then
+		if arg == "--specs" or arg == "--project" or arg == "--exclude" then
 			local value = process.args[i + 1]
 			if value == nil or string.sub(value, 1, 2) == "--" then
 				print(`run.luau: {arg} needs a path`)
@@ -55,8 +58,10 @@ do
 			end
 			if arg == "--specs" then
 				specDirArg = value
-			else
+			elseif arg == "--project" then
 				projectArg = value
+			else
+				table.insert(excludeArgs, value)
 			end
 			i += 2
 		elseif arg == "--shard" then
@@ -69,7 +74,9 @@ do
 			shardIndex, shardCount = index :: number, count :: number
 			i += 2
 		elseif string.sub(arg, 1, 2) == "--" then
-			print(`run.luau: unknown option {arg} (--project <file>, --specs <dir>, --shard <i>/<n>, [filter])`)
+			print(
+				`run.luau: unknown option {arg} (--project <file>, --specs <dir>, --shard <i>/<n>, --exclude <dir>, [filter])`
+			)
 			process.exit(2)
 		else
 			filter = arg
@@ -125,9 +132,25 @@ Test.root = ROOT -- absolute repository root, for specs that read files
 
 local misnamed = {}
 local allSpecs = findSpecs(UNIT_DIR, {}, misnamed)
+-- --exclude <dir>: every file under it is left out (it runs as its own step elsewhere)
+local excludeDirs = {} :: { string }
+for _, dir in excludeArgs do
+	table.insert(excludeDirs, Path.normalize(ROOT .. "/" .. dir) .. "/")
+end
+local function excluded(file: string): boolean
+	for _, prefix in excludeDirs do
+		if string.sub(file, 1, #prefix) == prefix then
+			return true
+		end
+	end
+	return false
+end
 local selected = {}
+local excludedCount = 0
 for _, file in allSpecs do
-	if filter == nil or string.find(Path.relative(ROOT, file), filter, 1, true) then
+	if excluded(file) then
+		excludedCount += 1
+	elseif filter == nil or string.find(Path.relative(ROOT, file), filter, 1, true) then
 		table.insert(selected, file)
 	end
 end
@@ -145,6 +168,9 @@ print(
 )
 if filter then
 	print(`  filter "{filter}": {#selected} of {#allSpecs} spec files selected`)
+end
+if #excludeArgs > 0 then
+	print(`  excluded {excludedCount} spec file(s) under {table.concat(excludeArgs, ", ")}`)
 end
 if shardCount > 1 then
 	print(`  shard {shardIndex}/{shardCount}: {#specs} of {#selected} spec files`)
