@@ -41,7 +41,7 @@ TINT = grey(1.0)  # tinted pieces are baked white; the corner shading keeps them
 class M:
     """Authoring mesh (rig axes). faces: tuples of vertex indices (CCW seen from outside)."""
 
-    __slots__ = ("v", "f", "c", "s", "k", "h")
+    __slots__ = ("v", "f", "c", "s", "k", "h", "cc")
 
     def __init__(self, verts=None, faces=None, color=(0.8, 0.8, 0.8), smooth=True, tag=""):
         self.v = [tuple(float(a) for a in p) for p in (verts or [])]
@@ -50,12 +50,14 @@ class M:
         self.s = [smooth] * len(self.f)
         self.k = [tag] * len(self.f)
         self.h = [1.0] * len(self.v)  # per-vertex shade multiplier (extra baked darkening, 1 = none)
+        self.cc = None  # optional per-face lists of per-corner colours (baked from a texture); overrides `c`
 
     # ---- bookkeeping
     def copy(self):
         m = M()
         m.v, m.f, m.c, m.s, m.k, m.h = (list(self.v), list(self.f), list(self.c), list(self.s), list(self.k),
                                         list(self.h))
+        m.cc = [list(c) for c in self.cc] if self.cc is not None else None
         return m
 
     @property
@@ -100,6 +102,8 @@ class M:
         """Reflect across x = 0 (right limb -> left limb); winding is flipped so normals stay outward."""
         self.v = [(-p[0], p[1], p[2]) for p in self.v]
         self.f = [tuple(reversed(f)) for f in self.f]
+        if self.cc is not None:
+            self.cc = [list(reversed(c)) for c in self.cc]
         return self
 
     # ---- colour / shading
@@ -144,12 +148,16 @@ class M:
                         + a[2] * (b[0] * c[1] - b[1] * c[0]))
         if vol < 0:
             self.f = [tuple(reversed(f)) for f in self.f]
+            if self.cc is not None:
+                self.cc = [list(reversed(c)) for c in self.cc]
         return self
 
     def triangulate(self):
         """Quads along the shorter diagonal, convex n-gons as fans. Per-face attributes follow."""
-        nf, nc, ns, nk = [], [], [], []
+        nf, nc, ns, nk, ncc = [], [], [], [], []
         for i, f in enumerate(self.f):
+            if self.cc is not None and len(f) != 3:
+                raise ValueError("corner-coloured meshes must be triangles")
             if len(f) == 3:
                 parts = [f]
             elif len(f) == 4:
@@ -165,7 +173,11 @@ class M:
                 nc.append(self.c[i])
                 ns.append(self.s[i])
                 nk.append(self.k[i])
+                if self.cc is not None:
+                    ncc.append(self.cc[i])
         self.f, self.c, self.s, self.k = nf, nc, ns, nk
+        if self.cc is not None:
+            self.cc = ncc
         return self
 
     def weld(self, eps=1e-5):
@@ -178,7 +190,7 @@ class M:
                 nv.append(p)
                 nh.append(self.h[i])
             remap.append(key[q])
-        nf, nc, ns, nk = [], [], [], []
+        nf, nc, ns, nk, ncc = [], [], [], [], []
         for i, f in enumerate(self.f):
             g = []
             for j in f:
@@ -193,7 +205,11 @@ class M:
             nc.append(self.c[i])
             ns.append(self.s[i])
             nk.append(self.k[i])
+            if self.cc is not None:
+                ncc.append(self.cc[i])
         self.v, self.h, self.f, self.c, self.s, self.k = nv, nh, nf, nc, ns, nk
+        if self.cc is not None:
+            self.cc = ncc
         return self
 
 
@@ -203,17 +219,23 @@ def _d2(a, b):
 
 def merge(*parts):
     out = M()
+    flat = []
     for p in parts:
         if p is None:
             continue
-        for q in (p if isinstance(p, (list, tuple)) else [p]):
-            o = len(out.v)
-            out.v += q.v
-            out.h += q.h
-            out.f += [tuple(i + o for i in f) for f in q.f]
-            out.c += q.c
-            out.s += q.s
-            out.k += q.k
+        flat += list(p) if isinstance(p, (list, tuple)) else [p]
+    if any(q.cc is not None for q in flat):
+        out.cc = []
+    for q in flat:
+        o = len(out.v)
+        out.v += q.v
+        out.h += q.h
+        out.f += [tuple(i + o for i in f) for f in q.f]
+        out.c += q.c
+        out.s += q.s
+        out.k += q.k
+        if out.cc is not None:
+            out.cc += q.cc if q.cc is not None else [[c] * len(f) for c, f in zip(q.c, q.f)]
     return out
 
 
@@ -369,6 +391,26 @@ def prism(poly, z0, z1, color=(0.8, 0.8, 0.8), smooth=False, tag="", scale1=1.0)
     return m.fix_winding()
 
 
+def torus(R, r, seg=10, tseg=5, y=0.0, color=(0.8, 0.8, 0.8), smooth=True, tag="", rz=None, ry=None, phase=0.0):
+    """Torus about the Y axis: major radius R (x; `rz` for z if different), minor radius r (`ry` vertical if different)."""
+    rz = R if rz is None else rz
+    ry = r if ry is None else ry
+    verts, faces = [], []
+    for i in range(seg):
+        a = phase + TAU * i / seg
+        ca, sa = math.cos(a), math.sin(a)
+        for j in range(tseg):
+            b = TAU * j / tseg
+            cb, sb = math.cos(b), math.sin(b)
+            verts.append(((R + r * cb) * ca, y + ry * sb, (rz + r * cb) * sa))
+    for i in range(seg):
+        i2 = (i + 1) % seg
+        for j in range(tseg):
+            j2 = (j + 1) % tseg
+            faces.append((i * tseg + j, i2 * tseg + j, i2 * tseg + j2, i * tseg + j2))
+    return M(verts, faces, color=color, smooth=smooth, tag=tag).fix_winding()
+
+
 def tube(path, radii, seg=6, caps=True, n=2.0, color=(0.8, 0.8, 0.8), smooth=True, tag="", rz_scale=1.0):
     """Sweep a circle along a 3D polyline with per-point radii (parallel-transport frames)."""
     from mathutils import Vector
@@ -450,6 +492,7 @@ def corner_colors(m, ao=0.22, facet=0.0, seed=0):
     out = []
     for i, f in enumerate(m.f):
         base = m.c[i]
+        ccs = m.cc[i] if m.cc is not None else None
         fn = _fnormal(m, f)
         ln = math.sqrt(fn[0] ** 2 + fn[1] ** 2 + fn[2] ** 2) or 1.0
         fny = fn[1] / ln
@@ -458,11 +501,12 @@ def corner_colors(m, ao=0.22, facet=0.0, seed=0):
             hsh = (i * 2654435761 + seed * 40503 + 12345) & 0xFFFF
             fv = 1.0 + facet * ((hsh / 65535.0) * 2.0 - 1.0)
         cs = []
-        for j in f:
+        for ci, j in enumerate(f):
             ny = vn[j][1] if m.s[i] else fny
             sh = (1.0 - ao) + ao * (0.5 + 0.5 * ny)
             k = sh * m.h[j] * fv
-            cs.append((min(1.0, base[0] * k), min(1.0, base[1] * k), min(1.0, base[2] * k)))
+            b = ccs[ci] if ccs is not None else base
+            cs.append((min(1.0, b[0] * k), min(1.0, b[1] * k), min(1.0, b[2] * k)))
         out.append(cs)
     return out
 

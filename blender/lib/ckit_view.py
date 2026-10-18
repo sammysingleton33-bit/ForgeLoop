@@ -25,7 +25,10 @@ QUICK = False  # Workbench engine: ~10x faster, no sun/sky (form + vertex colour
 
 
 def stage(w, h, samples=24, ground=GRASS, quick=None):
+    from . import kitparts
+
     rig.reset_scene()
+    kitparts.reset_cache()
     sc = rig.standard_stage(w, h, samples, ground_rgb=tuple(lin(c) for c in ground))
     sc.cycles.use_denoising = True
     if QUICK if quick is None else quick:

@@ -3,13 +3,14 @@ id: FL-0135
 title: "Citizen and ruler visual upgrade with licensed prebuilt assets: faces, hair, clothing, job identities, rulers, variation (D-057)"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-18
 updated: 2026-10-18
 depends_on: []
-evidence: []
+evidence:
+  - branch forge/02-blender-fl0135-meshes
 ---
 
 # Citizen and ruler visual upgrade with licensed prebuilt assets: faces, hair, clothing, job identities, rulers, variation (D-057)
@@ -49,3 +50,4 @@ In a playable build, citizens look professional and alive. Each has a face, hair
 
 ## Log
 - 2026-10-18 FORGE-00: created from the owner's visual-quality directive (D-057). It supersedes FL-0118.
+- 2026-10-18 forge-02: READY → BUILDING. FORGE-02 worker B: Blender mesh kit started (style comparison A smooth / B faceted / C KayKit-derived first, then the kit, rig.json, FBX, renders)
