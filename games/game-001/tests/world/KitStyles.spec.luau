@@ -515,22 +515,38 @@ local function tableViolations(): { string }
 	return out
 end
 
-local function allViolations(quick: boolean): { string }
+-- every check by name; a mutant is run against the checks that must catch it (and the baseline against all)
+local CHECKS: { [string]: (quick: boolean) -> { string } } = {
+	differences = function(quick)
+		return differenceViolations(if quick then QUICK_CASES else fullCases())
+	end,
+	silhouette = function()
+		return silhouetteViolations()
+	end,
+	cues = function()
+		return cueViolations()
+	end,
+	determinism = function(quick)
+		return determinismViolations(if quick then QUICK_CASES else fullCases())
+	end,
+	counts = function(quick)
+		return countViolations(if quick then QUICK_CASES else fullCases(), not quick)
+	end,
+	palette = function()
+		return paletteViolations()
+	end,
+	table = function()
+		return tableViolations()
+	end,
+}
+
+local function allViolations(quick: boolean, only: { string }?): { string }
 	local out = {}
-	local cases = if quick then QUICK_CASES else fullCases()
-	for _, list in
-		{
-			differenceViolations(cases),
-			silhouetteViolations(),
-			cueViolations(),
-			determinismViolations(if quick then QUICK_CASES else cases),
-			countViolations(if quick then QUICK_CASES else cases, not quick),
-			paletteViolations(),
-			tableViolations(),
-		}
-	do
-		for _, v in list do
-			table.insert(out, v)
+	for name, check in CHECKS do
+		if not only or table.find(only, name) then
+			for _, v in check(quick) do
+				table.insert(out, `[{name}] {v}`)
+			end
 		end
 	end
 	return out
@@ -656,10 +672,10 @@ describe("Kingdom style mutants are caught", function()
 		c.stone = table.clone(st.stone)
 		return c
 	end
-	local function caught(name: string, mutate: () -> ())
-		it(`catches: {name}`, function()
+	local function caught(name: string, by: { string }, mutate: () -> ())
+		it(`catches: {name} (by {table.concat(by, ", ")})`, function()
 			mutate()
-			local ok, list = pcall(allViolations, true)
+			local ok, list = pcall(allViolations, true, by)
 			restore()
 			if not ok then
 				error(`the mutant crashed instead of failing a check: {list}`)
@@ -674,19 +690,19 @@ describe("Kingdom style mutants are caught", function()
 		expectClean(allViolations(true))
 	end)
 
-	caught("style ignored (every kingdom builds in the neutral style)", function()
+	caught("style ignored (every kingdom builds in the neutral style)", { "differences" }, function()
 		for _, hue in KINGDOMS do
 			KingdomStyle.STYLES[hue] = KingdomStyle.NEUTRAL
 		end
 	end)
 
-	caught("two styles equal (Frostmere built as Thornwood)", function()
+	caught("two styles equal (Frostmere built as Thornwood)", { "differences" }, function()
 		local s = cloneStyle(KingdomStyle.STYLES.emerald)
 		s.id = "azure"
 		KingdomStyle.STYLES.azure = s
 	end)
 
-	caught("a style adds parts (every gable roof gets one more tile course)", function()
+	caught("a style adds parts (every gable roof gets one more tile course)", { "counts" }, function()
 		KingdomStyle.shapeRoof = function(style, r, a, b)
 			local out = original.shapeRoof(style, r, a, b)
 			if out ~= r and out.rows then
@@ -697,11 +713,11 @@ describe("Kingdom style mutants are caught", function()
 		end
 	end)
 
-	caught("palette pass skipped (timber, plaster and thatch stay neutral)", function()
+	caught("palette pass skipped (timber, plaster and thatch stay neutral)", { "palette" }, function()
 		KingdomStyle.paint = function() end
 	end)
 
-	caught("every roof the same pitch", function()
+	caught("every roof the same pitch", { "silhouette" }, function()
 		for _, hue in KINGDOMS do
 			local s = cloneStyle(KingdomStyle.STYLES[hue])
 			s.roof.pitch = 1
@@ -709,7 +725,7 @@ describe("Kingdom style mutants are caught", function()
 		end
 	end)
 
-	caught("merlon proportions ignored", function()
+	caught("merlon proportions ignored", { "silhouette" }, function()
 		for _, hue in KINGDOMS do
 			local s = cloneStyle(KingdomStyle.STYLES[hue])
 			s.merlon = { w = 1, h = 1 }
@@ -717,7 +733,7 @@ describe("Kingdom style mutants are caught", function()
 		end
 	end)
 
-	caught("banner tails ignored (every banner ends in the diamond)", function()
+	caught("banner tails ignored (every banner ends in the diamond)", { "silhouette" }, function()
 		for _, hue in KINGDOMS do
 			local s = cloneStyle(KingdomStyle.STYLES[hue])
 			s.banner.tip = "point"
@@ -725,7 +741,7 @@ describe("Kingdom style mutants are caught", function()
 		end
 	end)
 
-	caught("a style that is not deterministic (the pitch is drawn at random)", function()
+	caught("a style that is not deterministic (the pitch is drawn at random)", { "determinism" }, function()
 		KingdomStyle.shapeRoof = function(style, r, a, b)
 			local out = original.shapeRoof(style, r, a, b)
 			if out ~= r then
@@ -736,7 +752,7 @@ describe("Kingdom style mutants are caught", function()
 		end
 	end)
 
-	caught("the plinth accent stone equals the plain stone", function()
+	caught("the plinth accent stone equals the plain stone", { "table" }, function()
 		for _, hue in KINGDOMS do
 			local s = cloneStyle(KingdomStyle.STYLES[hue])
 			s.stone.accent = s.stone.light
@@ -744,7 +760,7 @@ describe("Kingdom style mutants are caught", function()
 		end
 	end)
 
-	caught("Sunspire built as Emberhold (the style lookup is remapped)", function()
+	caught("Sunspire built as Emberhold (the style lookup is remapped)", { "differences", "silhouette" }, function()
 		local get = original.get
 		KingdomStyle.get = function(style)
 			return get(if style == "gold" then "crimson" else style)
