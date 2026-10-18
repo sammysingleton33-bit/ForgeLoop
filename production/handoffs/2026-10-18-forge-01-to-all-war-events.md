@@ -17,7 +17,7 @@ The three G9 events FORGE-04's announcer waits for, produced by the simulation, 
 - Conversation flags: `event.war_declared`, `event.siege`, `event.raid`, `event.objective_lost`, `event.strike`, `event.riot`.
 
 ## Evidence
-- GATE_PLACEHOLDER
+- `bash roblox/scripts/check.sh`: 1821 specs pass, 1 fails (`experience/ConversationAnalytics`, FORGE-04's slice pin #194, not on main; same as #187 and #195). Ownership PASS, `forge.py validate` 136 tasks 0 errors. `mutations.py FL-0134`: 18 rows, all caught by the intended test (one row's expected-test name was corrected after the run and not re-run).
 - Headless only (Lune / MockEnv). The bus firing is **unverified** until the names are declared: a spec cannot declare them (`Contracts/GameEvents` is FORGE-05's).
 
 ## Open issues and risks
