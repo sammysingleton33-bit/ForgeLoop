@@ -18,7 +18,14 @@
 		  once per virtual second; the peak and when it happened. Buildings are counted beside them, not in them.
 		- bandwidth: bytes EntityService sends to the one human per phase (the Sim.Snapshot and Sim.Events
 		  buffers; every broadcast reaches every player, so this is the per-player rate), as KB/s next to
-		  BRIEF §14's ≈ 5 KB/s at 50 entities (VS-1 broadcast) and ≤ 20 KB/s (VS-2 interest tiers).
+		  BRIEF §14's ≈ 5 KB/s at 50 entities (VS-1 broadcast) and ≤ 20 KB/s (VS-2 interest tiers). Until
+		  EntityService sends through Sim/Interest (D-055 (2)), this measured figure is the "without Interest"
+		  one; beside it the probe estimates "with Interest" every virtual second: rigs within
+		  Interest.DEFAULT_NEAR of the human's keep count as near, the rest as far, priced by
+		  Interest.bytesPerSecond at 10 Hz. That formula prices every rig's record on its tick (no diffing,
+		  no events), so it is an upper bound; the probe prints the same formula without Interest (every rig
+		  near) beside it, and the ratio of the two is what Interest saves. The measured figure is lower
+		  than either because EntityService sends only what changed.
 		- the ten slowest simulation ticks per phase with their sim time, to tell a periodic cost from a one-off.
 		- parts: BaseParts under Workspace (the server's world view: Kit building models, ground), sampled
 		  every 30 virtual seconds.
@@ -38,6 +45,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
+local Interest = require("@game/ReplicatedStorage/Game/Sim/Interest")
 
 local FULL = process.env.FORGE_MATCH_PROBE == "1"
 local SEEDS = if FULL then { 1, 2 } else { 1 }
@@ -196,6 +204,8 @@ local function run(seed: number): any
 		peak = { rigs = -1 },
 		simT = {} :: { [string]: { number } }, -- sim time of each tick, parallel to simMs
 		bytes = {} :: { [string]: number }, -- bytes EntityService sent to the human, per phase
+		interestBps = {} :: { [string]: { number } }, -- per virtual second: bytes/s bound with Interest
+		broadcastBps = {} :: { [string]: { number } }, -- the same bound without Interest (every rig near)
 		parts = {} :: { { t: number, n: number } },
 	}
 	local update = host.match.update
@@ -263,6 +273,31 @@ local function run(seed: number): any
 	while sim.time < LIMIT and match:getPhase() ~= "Results" do
 		env.mock:advance(STEP)
 		local rigs, buildings, per = entities(sim)
+		local home = sim.kingdoms[host:kingdomOf(player) or ""]
+		if home then
+			local near, far = 0, 0
+			local nearSq = Interest.DEFAULT_NEAR * Interest.DEFAULT_NEAR
+			for _, kid in sim.kingdomOrder do
+				local k = sim.kingdoms[kid]
+				for _, list in { { k.citizenIds, sim.citizens }, { k.unitIds, sim.units } } do
+					for _, id in list[1] do
+						local e = list[2][id]
+						if e and e.x and (e.x - home.x) ^ 2 + (e.z - home.z) ^ 2 <= nearSq then
+							near += 1
+						else
+							far += 1
+						end
+					end
+				end
+			end
+			local phaseNow = match:getPhase()
+			local bucket = result.interestBps[phaseNow] or {}
+			result.interestBps[phaseNow] = bucket
+			table.insert(bucket, Interest.bytesPerSecond(near, far, 10))
+			local all = result.broadcastBps[phaseNow] or {}
+			result.broadcastBps[phaseNow] = all
+			table.insert(all, Interest.bytesPerSecond(near + far, 0, 10))
+		end
 		if rigs > result.peak.rigs then
 			result.peak = { rigs = rigs, buildings = buildings, t = sim.time, phase = match:getPhase(), per = per }
 		end
@@ -290,6 +325,12 @@ end
 
 local function stats(values: { number }): string
 	return `mean {ms(mean(values))} p99 {ms(percentile(values, 0.99))} max {ms(percentile(values, 1))}`
+end
+
+-- bytes-per-second samples as KB/s, mean and max
+local function kb(values: { number }): string
+	local meanKb, maxKb = mean(values) / 1024, percentile(values, 1) / 1024
+	return `mean {string.format("%.2f", meanKb)} max {string.format("%.2f", maxKb)}`
 end
 
 -- the n slowest ticks as "ms@time", slowest first
@@ -320,7 +361,11 @@ local function report(r: any)
 		print(`PERF seed {r.seed} {phase}: ticks {#s}; sim ms {stats(s)}; host step ms {stats(h)}`)
 		local seconds = #rep / 10 -- snapshots run at 10 Hz
 		local kbps = string.format("%.2f", if seconds > 0 then (r.bytes[phase] or 0) / 1024 / seconds else 0)
-		print(`PERF seed {r.seed} {phase}: snapshots {#rep}; replicate ms {stats(rep)}; to the human {kbps} KB/s`)
+		local with, without = kb(r.interestBps[phase] or {}), kb(r.broadcastBps[phase] or {})
+		print(
+			`PERF seed {r.seed} {phase}: snapshots {#rep}; replicate ms {stats(rep)}; measured to the human {kbps} KB/s`
+		)
+		print(`PERF seed {r.seed} {phase}: upper bound KB/s without Interest {without}; with Interest {with}`)
 		print(`PERF seed {r.seed} {phase}: slowest sim ticks (ms@sim s) {slowest(s, r.simT[phase] or {}, 10)}`)
 	end
 	local peak = r.peak
