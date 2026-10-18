@@ -132,13 +132,15 @@ local function kingdomServiceDef(world)
 				end
 				return out
 			end
+			-- FL-0129: the diplomacy payload (UI/DiplomacyModel's state) rides on Kingdom.State when set
+			-- (doubles/DiplomacyDoubles sets it), as proposed to FORGE-01 for the full match.
+			svc.diplomacy = nil :: any
+			function svc:payload(player)
+				return { kingdoms = self:list(), mine = self.members[player.UserId], diplomacy = self.diplomacy }
+			end
 			function svc:publish()
 				for _, player in world.env.Players:GetPlayers() do
-					remotes:fire(
-						"Kingdom.State",
-						player,
-						{ kingdoms = self:list(), mine = self.members[player.UserId] }
-					)
+					remotes:fire("Kingdom.State", player, self:payload(player))
 				end
 			end
 			-- quiet = true skips membershipChanged (TreasuryService's own push on join), modelling a
@@ -162,7 +164,7 @@ local function kingdomServiceDef(world)
 			end
 			function svc:start()
 				remotes:handle("Kingdom.GetState", function(player)
-					return { kingdoms = self:list(), mine = self.members[player.UserId] }
+					return self:payload(player)
 				end)
 			end
 			return svc

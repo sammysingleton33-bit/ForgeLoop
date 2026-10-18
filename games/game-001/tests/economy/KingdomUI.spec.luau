@@ -177,6 +177,31 @@ describe("Kingdom HUD (desktop)", function()
 		expect(texts(hud.guis.topbar)).never.toContain("match time")
 	end)
 
+	it(
+		"a timed match phase shows the phase track and the next phase; the slice's untimed Founding does not (FL-0129)",
+		function()
+			local ahead = find(hud.guis.topbar, "Ahead")
+			expect(ahead).toBeTruthy()
+			expect(ahead.Visible).toBe(false) -- slice: Founding is untimed
+			world.match:setPhase("Expansion", world.env.serverTimeNow() + 90)
+			world:advance(0.6)
+			expect(ahead.Visible).toBe(true)
+			expect(find(ahead, "Step_1"):GetAttribute("state")).toBe("done")
+			expect(find(ahead, "Step_2"):GetAttribute("state")).toBe("now")
+			expect(find(ahead, "Step_3"):GetAttribute("state")).toBe("ahead")
+			expect(find(ahead, "Next").Text).toBe("Next: Conflict · war opens")
+			world.match:setPhase("Endgame", world.env.serverTimeNow() + 60)
+			world:advance(0.6)
+			expect(find(ahead, "Step_4"):GetAttribute("state")).toBe("now")
+			expect(find(ahead, "Next").Text).toBe("Next: Results")
+			hud:setViewport(667, 375) -- phone: phase and clock only
+			world:advance(0.6)
+			expect(hud:metrics().breakpoint).toBe("phone")
+			expect(find(hud.guis.topbar, "Ahead").Visible).toBe(false)
+			expect(texts(hud.guis.topbar)).toContain("ENDGAME")
+		end
+	)
+
 	it("tapping a resource explains it and tells onboarding (ResourceInspected)", function()
 		tap(find(hud.view.pills.food.instance, "Hit"))
 		world:advance(0.1)
