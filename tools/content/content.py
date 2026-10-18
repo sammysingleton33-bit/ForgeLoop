@@ -59,6 +59,8 @@ PHASES = ("Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Arena", "Res
 EVENT_TAGS = (
     "raid", "shortage", "keep_upgraded", "building_completed", "objective_captured", "soldiers_recruited",
     "strike", "riot",
+    # FL-0134 (D-056 (3)): raised from G9 WarChanged / SiegeChanged and G13.4 ObjectiveLost
+    "war_declared", "siege", "objective_lost",
 )
 CONSEQUENCE_KINDS = (
     "productivity", "strike", "morale", "happiness", "stability", "loyalty", "resource_over_time",
