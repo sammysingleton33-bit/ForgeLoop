@@ -6,17 +6,23 @@
 	State (KingdomStore:diplomacy(), from the server's `diplomacy` payload; times are server time, the
 	G3 endsAt scale):
 		{ relations = { { a, b, relation = "Peace" | "War" } }, proposals = { { from, to, expiresAt } },
-		  cooldowns = { { a, b, untilAt } }, graceEndsAt? }
+		  cooldowns = { { a, b, untilAt } }, graceEndsAt?, senior: UserId?, lockedUntil: number? }
 	A pair that is not listed is at Peace (Sim/Diplomacy: every pair starts at Peace).
+	D-054, for the asking player: only my kingdom's senior ruler declares war or accepts peace (a
+	co-ruler's Declare war is an ask to them, "Ask for war"); a newly seated ruler waits until
+	lockedUntil for both. Without those fields every ruler may do everything (the server decides).
 
-		DiplomacyModel.view(store, diplomacy, phase, now) -> View?   nil without my kingdom
-			View = { rows: { Row }, incoming: number (peace offers waiting for my answer) }
+		DiplomacyModel.view(store, diplomacy, phase, now, me?) -> View?   nil without my kingdom
+			me = { userId: number?, nameOf: ((UserId) -> string?)? }   who is asking (D-054)
+			View = { rows: { Row }, incoming: number (peace offers waiting for my kingdom's answer),
+			         senior: string? (the senior ruler's name when that is not me: I can only ask) }
 			Row = { id, name, color, emblem, crownPoints, rank, alive,
 			        relation: "peace" | "war" | "truce" | "fallen", status: string (the chip's words),
 			        note: string? (a time-bound line: "Proposes peace · 0:42", "Truce · 1:20 left"),
 			        actions: { Action } }
 			Action = { id: "declareWar" | "proposePeace" | "acceptPeace", label, variant: "primary" |
-			           "secondary" | "danger", enabled: boolean, reason: string? (why it is disabled) }
+			           "secondary" | "danger", enabled: boolean, reason: string? (why it is disabled),
+			           ask: boolean? (a co-ruler's declareWar: an ask to the senior ruler) }
 		DiplomacyModel.relation(diplomacy, a, b) -> "Peace" | "War"
 		DiplomacyModel.WAR_FROM = "Conflict"   -- D-053 (2): war from Conflict on (the server decides; the
 		                                          client only says why the button is off)
@@ -68,6 +74,15 @@ local function truceUntil(diplomacy: any, a: string, b: string, now: number): nu
 	return nil
 end
 
+-- D-054 (3): a newly seated ruler may not declare war or accept peace yet.
+local function lockReason(diplomacy: any, now: number): string?
+	local untilAt = diplomacy and diplomacy.lockedUntil
+	if type(untilAt) == "number" and untilAt > now then
+		return `New ruler · {Format.clock(untilAt - now)}`
+	end
+	return nil
+end
+
 local function declareReason(diplomacy: any, phase: string?, now: number, truce: number?): string?
 	if truce then
 		return `Truce for {Format.clock(truce - now)}`
@@ -79,14 +94,24 @@ local function declareReason(diplomacy: any, phase: string?, now: number, truce:
 	if type(grace) == "number" and grace > now then
 		return `No war for {Format.clock(grace - now)}`
 	end
-	return nil
+	return lockReason(diplomacy, now)
 end
 
-function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: number): any
+-- The senior ruler's name when that is someone else (D-054 (2)); nil when it is me or unknown.
+local function seniorOther(diplomacy: any, me: any): string?
+	local senior = diplomacy and diplomacy.senior
+	if type(senior) ~= "number" or me == nil or me.userId == nil or senior == me.userId then
+		return nil
+	end
+	return (if me.nameOf then me.nameOf(senior) else nil) or "Your senior ruler"
+end
+
+function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: number, me: any?): any
 	local mine = store:mine()
 	if mine == nil then
 		return nil
 	end
+	local senior = seniorOther(diplomacy, me)
 	local ranks = {}
 	for _, s in HudModel.standings(store) do
 		ranks[s.id] = s.rank
@@ -121,11 +146,13 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 				if theirs then
 					incoming += 1
 					row.note = `Proposes peace · {Format.clock(theirs - now)}`
+					local reason = if senior then `{senior} decides` else lockReason(diplomacy, now)
 					table.insert(row.actions, {
 						id = "acceptPeace",
 						label = "Accept peace",
 						variant = "primary",
-						enabled = true,
+						enabled = reason == nil,
+						reason = reason,
 					})
 				end
 				table.insert(row.actions, {
@@ -142,10 +169,11 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 				local reason = declareReason(diplomacy, phase, now, truce)
 				table.insert(row.actions, {
 					id = "declareWar",
-					label = "Declare war",
-					variant = "danger",
+					label = if senior then "Ask for war" else "Declare war",
+					variant = if senior then "secondary" else "danger",
 					enabled = reason == nil,
 					reason = reason,
+					ask = if senior then true else nil,
 				})
 			end
 			table.insert(rows, row)
@@ -154,7 +182,7 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 	table.sort(rows, function(x, y)
 		return (x.rank or math.huge) < (y.rank or math.huge)
 	end)
-	return { rows = rows, incoming = incoming }
+	return { rows = rows, incoming = incoming, senior = senior }
 end
 
 return table.freeze(DiplomacyModel)

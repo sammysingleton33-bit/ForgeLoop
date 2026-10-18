@@ -66,6 +66,9 @@ local REASONS: { [string]: string } = {
 	peace_cooldown = "A truce holds. War can't be declared again yet",
 	not_at_war = "You're not at war with them",
 	no_proposal = "Their offer of peace has run out",
+	-- D-054 (proposed codes for FORGE-01's FL-0125 rows): senior ruler and newcomer lock
+	not_senior = "Only your kingdom's senior ruler can do that",
+	newcomer_lock = "New rulers wait a little before war or peace",
 }
 
 -- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of

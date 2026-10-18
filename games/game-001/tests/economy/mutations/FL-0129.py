@@ -38,7 +38,7 @@ M = [
     # the Rivals tab and the controller
     ("declare without asking", H, 'if action == "declareWar" then\n\t\tself.state.panel.confirmWar = kingdomId',
      'if false then\n\t\tself.state.panel.confirmWar = kingdomId', "declare war asks first", D),
-    ("confirm sends nothing", H, '\tself:_diplomacy("declareWar", kingdomId)', "\tself:render()",
+    ("confirm sends nothing", H, '\tself:_diplomacy("declareWar", kingdomId, if view then view.senior else nil)', "\tself:render()",
      "declare war asks first", D),
     ("offer never said", H, "\t\t\t\tif not seen[row.id] then", "\t\t\t\tif false then", "an offer of peace", D),
     ("bubble stays after the answer", U + "KingdomHud.luau", "button:update({ badge = count or 0 })",
@@ -54,6 +54,14 @@ M = [
      "\tif false then\n\t\tCreate(\"Frame\", {\n\t\t\tName = \"Slot_\"", "phone 667", D),
     ("tab labels crowd Close on phones", U + "KingdomPanel.luau", "if phone and #tabs > #KingdomPanel.TABS then",
      "if false then", "phone 667", D),
+    # D-054: senior ruler and newcomer lock
+    ("co-ruler declares outright", DM, 'label = if senior then "Ask for war" else "Declare war",',
+     'label = "Declare war",', "co-ruler asks the senior ruler", D),
+    ("co-ruler accepts peace", DM, "local reason = if senior then `{senior} decides` else lockReason(diplomacy, now)",
+     "local reason = lockReason(diplomacy, now)", "co-ruler asks the senior ruler", D),
+    ("lock ignored", DM, "\treturn lockReason(diplomacy, now)\nend", "\treturn nil\nend", "a new ruler waits", D),
+    ("ask said as a declaration", H, "local title = if askedOf then", "local title = if false then",
+     "an ask to the senior ruler", D),
     ("Rivals without the remote", H,
      "if not self:hasRemote(KingdomHudController.DIPLOMACY) then\n\t\treturn nil",
      "if false then\n\t\treturn nil", "without the server's diplomacy remote", D),

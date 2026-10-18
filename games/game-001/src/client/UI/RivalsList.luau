@@ -9,7 +9,8 @@
 			`relation`), "#rank · N Crown Points", a time-bound note ("Note") and the actions ("Action_<id>",
 			attribute `enabled`; a disabled action's reason is the "Reason" line). Declare war asks first:
 			while ui.confirm is that rival, the row shows "Declare war on <name>?" with "Confirm" and
-			"Cancel" instead.
+			"Cancel" instead. A co-ruler (D-054, view.senior set) asks: "Ask for war", then
+			"Ask <senior> to declare war on <name>?".
 		RivalsList.key(view, phone, confirm) -> string   what changes the rows' structure (rebuild);
 		                                         countdowns and scores are patched by paint (no flicker)
 		RivalsList.paint(body, view)             patches the texts that tick: notes, reasons, points
@@ -42,7 +43,7 @@ function RivalsList.key(view: any, phone: boolean, confirm: string?): string
 		end
 		rows[i] = { id = r.id, relation = r.relation, note = r.note ~= nil, actions = actions }
 	end
-	return Signature.of({ tab = "rivals", rows = rows, phone = phone, confirm = confirm })
+	return Signature.of({ tab = "rivals", rows = rows, phone = phone, confirm = confirm, senior = view.senior })
 end
 
 -- Phones (the 260 px drawer): "pts" for "Crown Points", so rank and score fit beside the chip.
@@ -103,7 +104,7 @@ local function line(frame: Instance, name: string, text: string, order: number, 
 	})
 end
 
-local function row(r: any, phone: boolean, ui: any, order: number): Frame
+local function row(r: any, phone: boolean, ui: any, order: number, senior: string?): Frame
 	local chipColor = Theme.color(RivalsList.CHIP[r.relation] or "textMuted")
 	local frame = Create("Frame", {
 		Name = "Rival_" .. r.id,
@@ -180,7 +181,8 @@ local function row(r: any, phone: boolean, ui: any, order: number): Frame
 	end
 	local confirming = ui.confirm == r.id
 	if confirming then
-		line(frame, "Question", `Declare war on {r.name}?`, 3, "textPrimary", true)
+		local question = if senior then `Ask {senior} to declare war on {r.name}?` else `Declare war on {r.name}?`
+		line(frame, "Question", question, 3, "textPrimary", true)
 	end
 	local actions = Create("Frame", {
 		Name = "Actions",
@@ -252,7 +254,7 @@ function RivalsList.build(parent: Instance, view: any, phone: boolean, ui: any):
 		})
 	end
 	for i, r in view.rows do
-		row(r, phone, ui, i).Parent = scroll
+		row(r, phone, ui, i, view.senior).Parent = scroll
 	end
 	return scroll
 end

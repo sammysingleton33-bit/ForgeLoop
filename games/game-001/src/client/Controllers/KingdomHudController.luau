@@ -733,7 +733,12 @@ function KingdomHudController:_rivals(): any
 	end
 	local store = self.store
 	local phase = if store.match then store.match.phase else nil
-	return DiplomacyModel.view(store, store:diplomacy(), phase, self._env.serverTimeNow())
+	return DiplomacyModel.view(store, store:diplomacy(), phase, self._env.serverTimeNow(), {
+		userId = self:_localUserId(),
+		nameOf = function(userId: number): string?
+			return self:_nameOf(userId)
+		end,
+	})
 end
 
 -- Diplomacy changed: the Kingdom rail button counts the peace offers waiting for my answer, and each new
@@ -754,7 +759,8 @@ function KingdomHudController:_onDiplomacy()
 					self:notify({
 						kind = "info",
 						title = `{row.name} proposes peace`,
-						body = "Open Kingdom → Rivals to answer",
+						-- D-054: a co-ruler sees the offer, but the senior ruler answers it
+						body = if view.senior then `{view.senior} decides` else "Open Kingdom → Rivals to answer",
 					})
 				end
 			end
@@ -775,7 +781,9 @@ end
 
 function KingdomHudController:confirmWar(kingdomId: string)
 	self.state.panel.confirmWar = nil
-	self:_diplomacy("declareWar", kingdomId)
+	-- D-054 (2): a co-ruler's declaration is an ask to the senior ruler (the server sends it on)
+	local view = self:_rivals()
+	self:_diplomacy("declareWar", kingdomId, if view then view.senior else nil)
 end
 
 function KingdomHudController:cancelWar()
@@ -795,7 +803,7 @@ local DIPLOMACY_DONE = table.freeze({
 	end,
 })
 
-function KingdomHudController:_diplomacy(action: string, kingdomId: string)
+function KingdomHudController:_diplomacy(action: string, kingdomId: string, askedOf: string?)
 	local p = self.state.panel
 	if p.diplomacyPending[kingdomId] then
 		return -- one request per rival at a time
@@ -814,7 +822,8 @@ function KingdomHudController:_diplomacy(action: string, kingdomId: string)
 		end
 		if called and ok == true then
 			local done = DIPLOMACY_DONE[action]
-			self:notify({ kind = "success", title = if done then done(name) else name })
+			local title = if askedOf then `Asked {askedOf} for war on {name}` elseif done then done(name) else name
+			self:notify({ kind = "success", title = title })
 		else
 			self:notify({
 				kind = "warning",

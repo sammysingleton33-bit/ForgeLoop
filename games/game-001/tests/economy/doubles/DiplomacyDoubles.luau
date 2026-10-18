@@ -7,7 +7,8 @@
 		DiplomacyDoubles.remotes(base?) -> remotes with Kingdom.Diplomacy added
 		DiplomacyDoubles.service(world) a server definition ("DiplomacyService") over KingdomWorld's
 		                                KingdomService: svc:setWar(a, b), svc:propose(from, to),
-		                                svc:setGrace(seconds), svc.refuse = code (answer it once), svc.calls
+		                                svc:setGrace(seconds), svc.refuse = code (answer it once), svc.calls;
+		                                D-054: svc:setSenior(userId) (others ask: svc.asks), svc:lock(seconds)
 		DiplomacyDoubles.PROPOSAL_SEC, DiplomacyDoubles.TRUCE_SEC   60 and 120, as Sim/Diplomacy
 ]]
 
@@ -54,6 +55,7 @@ DiplomacyDoubles.def = {
 		local svc = {
 			state = { relations = {}, proposals = {}, cooldowns = {}, graceEndsAt = nil },
 			calls = {},
+			asks = {},
 			refuse = nil :: string?,
 		}
 		local function now()
@@ -103,6 +105,14 @@ DiplomacyDoubles.def = {
 			self.state.graceEndsAt = now() + seconds
 			publish()
 		end
+		function svc:setSenior(userId)
+			self.state.senior = userId
+			publish()
+		end
+		function svc:lock(seconds)
+			self.state.lockedUntil = now() + seconds
+			publish()
+		end
 		function svc:start()
 			publish()
 			remotes:handle("Kingdom.Diplomacy", function(player, action, target)
@@ -118,6 +128,19 @@ DiplomacyDoubles.def = {
 					return false, "unknown_kingdom"
 				end
 				local t = now()
+				-- D-054: newcomer lock on war and accepting peace; only the senior ruler decides
+				if action ~= "proposePeace" and svc.state.lockedUntil and t < svc.state.lockedUntil then
+					return false, "newcomer_lock"
+				end
+				local senior = svc.state.senior
+				if senior ~= nil and player.UserId ~= senior then
+					if action == "acceptPeace" then
+						return false, "not_senior"
+					elseif action == "declareWar" then
+						table.insert(svc.asks, { from = player.UserId, target = target })
+						return true -- the ask goes to the senior ruler as a server notice
+					end
+				end
 				if action == "declareWar" then
 					if svc.state.graceEndsAt and t < svc.state.graceEndsAt then
 						return false, "grace_period"

@@ -159,10 +159,59 @@ describe("UI/DiplomacyModel (FL-0129)", function()
 		expect(action(rowOf(later, "emerald"), "proposePeace").enabled).toBe(true)
 	end)
 
+	it("D-054: a co-ruler asks the senior ruler for war and cannot accept peace; a new ruler waits", function()
+		local war = {
+			relations = { { a = "azure", b = "crimson", relation = "War" } },
+			proposals = { { from = "azure", to = "crimson", expiresAt = 1042 } },
+		}
+		local me = {
+			userId = 1,
+			nameOf = function(id)
+				return if id == 2 then "Mira" else nil
+			end,
+		}
+		-- the senior ruler is someone else: Declare war becomes an ask, Accept is theirs
+		war.senior = 2
+		local view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Conflict", 1000, me)
+		expect(view.senior).toBe("Mira")
+		local declare = action(rowOf(view, "emerald"), "declareWar")
+		expect(declare.label).toBe("Ask for war")
+		expect(declare.ask).toBe(true)
+		expect(declare.enabled).toBe(true)
+		local accept = action(rowOf(view, "azure"), "acceptPeace")
+		expect(accept.enabled).toBe(false)
+		expect(accept.reason).toBe("Mira decides")
+		expect(action(rowOf(view, "azure"), "proposePeace").enabled).toBe(true) -- any ruler may propose
+		expect(view.incoming).toBe(1) -- still an offer to my kingdom
+		-- I am the senior ruler: everything is mine
+		war.senior = 1
+		view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Conflict", 1000, me)
+		expect(view.senior).toBeNil()
+		expect(action(rowOf(view, "emerald"), "declareWar").label).toBe("Declare war")
+		expect(action(rowOf(view, "azure"), "acceptPeace").enabled).toBe(true)
+		-- newly seated: no war, no accepting peace, proposing is fine
+		war.lockedUntil = 1075
+		view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Conflict", 1000, me)
+		expect(action(rowOf(view, "emerald"), "declareWar").reason).toBe("New ruler · 1:15")
+		expect(action(rowOf(view, "azure"), "acceptPeace").reason).toBe("New ruler · 1:15")
+		expect(action(rowOf(view, "azure"), "proposePeace").enabled).toBe(true)
+		view = DiplomacyModel.view(store(KINGDOMS, "crimson"), war, "Conflict", 1080, me)
+		expect(action(rowOf(view, "emerald"), "declareWar").enabled).toBe(true)
+	end)
+
 	it("every diplomacy refusal code reads in words, none as the generic fallback", function()
 		local generic = Text.reason("not_a_real_code")
 		for _, code in
-			{ "unknown_kingdom", "grace_period", "already_at_war", "peace_cooldown", "not_at_war", "no_proposal" }
+			{
+				"unknown_kingdom",
+				"grace_period",
+				"already_at_war",
+				"peace_cooldown",
+				"not_at_war",
+				"no_proposal",
+				"not_senior",
+				"newcomer_lock",
+			}
 		do
 			expect(Text.reason(code)).never.toBe(generic)
 		end
@@ -305,6 +354,24 @@ describe("The Rivals tab (FL-0129)", function()
 		local tab = find(world.hud.guis.menus, "Tab_rivals")
 		expect(tab:GetAttribute("selected")).toBe(true)
 		expect(texts(tab)).never.toContain("Rivals")
+	end)
+
+	it("D-054: a co-ruler's Declare war is an ask to the senior ruler; it changes nothing yet", function()
+		world = newWorld()
+		world.diplomacy:setSenior(2) -- Mira, the second ruler, was seated first
+		world:advance(0.2)
+		local azure = find(openRivals(world), "Rival_azure")
+		tap(find(azure, "Action_declareWar"))
+		world:advance(0.1)
+		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		expect(texts(azure)).toContain("Ask Mira to declare war on Frostmere?")
+		tap(find(azure, "Action_confirm"))
+		world:advance(0.3)
+		expect(#world.diplomacy.asks).toBe(1)
+		expect(world.diplomacy.asks[1].target).toBe("azure")
+		expect(texts(world.hud.guis.notices)).toContain("Asked Mira for war on Frostmere")
+		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
+		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("peace")
 	end)
 
 	it("without the server's diplomacy remote there is no Rivals tab (dormant on today's main)", function()

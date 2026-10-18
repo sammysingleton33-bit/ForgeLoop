@@ -9,7 +9,8 @@ game: game-001
 created: 2026-10-18
 updated: 2026-10-18
 depends_on: [FL-0125]
-evidence: []
+evidence:
+  - Lune economy/Diplomacy 9/0, KingdomUI 41/0; mutations FL-0129.py 20/20; renders hud-phase + kingdom-rivals(-confirm) desktop/phone-se looked at; not Studio-played
 ---
 
 # Full-match UI: phase and timer bar, war and peace panel, spectate screen, Results with the leadership recap, wall placement UI
@@ -38,3 +39,4 @@ Automated UI specs (economy/ui folders). Studio: B20/B21 rows including phone em
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
 - 2026-10-18 forge-03: READY → BUILDING. Started (Operation Crownfall, D-053): phase/timer bar first (Match.State on main), then the war & peace panel against a diplomacy contract proposed to FORGE-01 (no client remote or relation state on main yet)
+- 2026-10-18 forge-03: BUILDING → BUILDING. FL-0129a in PR: phase bar (Match.State) + Rivals tab (war & peace) against a diplomacy contract proposed to FORGE-01 (handoff 2026-10-18-forge-03-to-forge-01-diplomacy-remote); Rivals dormant until the server serves Kingdom.Diplomacy. Next: FL-0129b after FL-0125, FL-0129c after FL-0126
