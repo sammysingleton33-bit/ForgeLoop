@@ -904,6 +904,25 @@ describe("Kingdom/Match: Crown Arena hooks", function()
 		expect(host.cancelled).toEqual({})
 	end)
 
+	it(
+		"never asks for a duel with fewer than two kingdoms standing (conquest off): the survivor takes it on points",
+		function()
+			local host = arenaHost(true)
+			local match = atEndgame(host, { victory = { conquest = false, crownPointsAtEnd = true } })
+			run(match, 3)
+			for _, kid in { "azure", "emerald", "crimson" } do
+				Military.eliminate(match.sim, match.sim.kingdoms[kid], "gold")
+			end
+			match:update(0.25)
+			expect(match.state).never.toBe("Results") -- with conquest off the match plays on to the end of Endgame
+			run(match, 2 + 16 + 0.5)
+			expect(match.state).toBe("Results")
+			expect(host.began).toEqual({})
+			expect(match:summary().reason).toBe("time")
+			expect(match:summary().winner).toBe("gold")
+		end
+	)
+
 	it("lets the host be set after the match is built, and a new world forgets the duel", function()
 		local host = arenaHost(true)
 		local match = atEndgame(nil, { resultsSec = 2 })

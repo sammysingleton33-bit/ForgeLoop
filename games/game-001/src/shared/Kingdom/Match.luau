@@ -805,6 +805,12 @@ function Match:debugSetPhase(phase: string): (boolean, string?)
 				self.phaseEnds[name] = t
 			end
 		end
+		if self.sim.diplomacy then
+			-- war is open from Conflict on: the war grace ends where Expansion does (D-054 (5)); without this a
+			-- jump to Conflict would still answer grace_period until the clock reached the old Expansion end
+			self.sim.diplomacy.graceSeconds = self.phaseEnds.Expansion
+		end
+		self:_cancelArena("phase_jump")
 		self:_setState(phase)
 	end
 	return true, nil

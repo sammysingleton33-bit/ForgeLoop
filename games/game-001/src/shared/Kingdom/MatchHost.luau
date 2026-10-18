@@ -180,10 +180,12 @@ end
 function MatchHost:assignTeam(player: any)
 	local kingdomId = self.match:kingdomOf(player.UserId)
 	local team = if kingdomId then self._teams[kingdomId] else nil
-	if player.Team ~= team then
+	if team ~= nil and player.Team ~= team then
 		player.Team = team
-		player.Neutral = team == nil
 	end
+	-- Neutral is what takes a player off every team (a spectator: eliminated, or no seat); Roblox leaves Player.Team
+	-- as it was while Neutral is true, so there is nothing to assign (and the engine takes no nil Team in a spec)
+	player.Neutral = team == nil
 end
 
 -- ---------------------------------------------------------------- players
@@ -567,7 +569,12 @@ function MatchHost:step(dt: number)
 		table.remove(self._simMs, 1)
 	end
 	for _, event in self.match:drainEvents() do
-		self:_handleEvent(event)
+		-- one event's handler failing must not drop the rest of this tick's events (a MatchEnded behind it, say):
+		-- they are already drained, and the match would otherwise sit in Results with the clients never told
+		local ok, err = pcall(self._handleEvent, self, event)
+		if not ok then
+			self._env.log("error", "KingdomHost: event handler failed", { event = event.name, error = tostring(err) })
+		end
 	end
 	if self._view then
 		self._view:sync(self.match.sim)

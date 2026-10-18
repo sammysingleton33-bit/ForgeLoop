@@ -20,6 +20,8 @@
 		          attacks once its army is large enough; it proposes peace when its army is gone and
 		          accepts peace when it is behind on score
 	Aggression is seeded per kingdom (0.3..1.0) so AI kingdoms differ but stay deterministic.
+	A placement search that finds nothing rests for NO_SPOT_RETRY seconds (a full territory walk is the most
+	expensive thing a think can do; the governors of a full-length match spent most of their tick budget on it).
 	The AI only issues commands the simulation will accept (checked by specs): it recruits with a
 	finished barracks, room for the batch and its full price; accepts only unexpired proposals; and
 	declares no war in the grace period or on a kingdom it is in a peace cooldown with.
@@ -109,13 +111,23 @@ function RulerAI.findSpot(sim: any, kingdom: any, kind: string, near: { x: numbe
 	return nil, nil
 end
 
+-- A search that finds no valid spot walks every ring of the territory (a few milliseconds of canPlace each), so a
+-- kingdom with no room for a farm would repeat it at every think. It rests for this long after an empty search.
+local NO_SPOT_RETRY = 60 -- seconds
+
 local function place(sim: any, kingdom: any, kind: string, near: { x: number, z: number }?): string?
 	local price = sim.costs.building(kind, 1)
 	if price == nil or not sim:canAfford(kingdom.id, price.cost) then
 		return nil
 	end
+	local resting = sim.rulerAI.noSpotUntil
+	local key = `{kingdom.id}:{kind}`
+	if resting[key] ~= nil and sim.time < resting[key] then
+		return nil
+	end
 	local x, z = RulerAI.findSpot(sim, kingdom, kind, near)
 	if x == nil then
+		resting[key] = sim.time + NO_SPOT_RETRY
 		return nil
 	end
 	local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", kind, x, z)
@@ -403,6 +415,7 @@ function RulerAI.install(sim: any, options: { [string]: any }?)
 		maxAggression = opts.maxAggression or 1.0,
 		interval = opts.interval or 6,
 		assistHumans = opts.assistHumans == true,
+		noSpotUntil = {} :: { [string]: number }, -- "kingdom:kind" -> sim time before which no new search is made
 		nextThink = {} :: { [string]: number },
 		aggression = {} :: { [string]: number },
 		lastAction = {} :: { [string]: string? },
