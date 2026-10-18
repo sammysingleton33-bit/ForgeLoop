@@ -101,7 +101,8 @@ local NEUTRAL = Color3.fromRGB(208, 200, 184) -- Kit.NEUTRAL_COLOR (Kit.luau req
 local SAND = Color3.fromRGB(230, 200, 146) -- pale: reads against grass, never as the gold kingdom
 local SAND_EDGE = Color3.fromRGB(200, 168, 118)
 local EMBER = Color3.fromRGB(255, 132, 44)
-local FLAME = Color3.fromRGB(255, 208, 70)
+local FLAME = Color3.fromRGB(255, 226, 120)
+local FLAME_MID = Color3.fromRGB(255, 176, 56)
 
 local function rowTop(k: number): number
 	return PODIUM_TOP + ROW_RISE * k
@@ -387,12 +388,13 @@ local function buildGate(ctx: Ctx, G: CFrame)
 	end
 end
 
--- A brazier: stone foot, iron bowl, flame and a bright tip. x, y0, z in the model frame.
+-- A brazier: stone foot, iron bowl, a flame of three stacked balls (ember, orange, bright tip). x, y0, z in the model frame.
 local function brazier(ctx: Ctx, x: number, y0: number, z: number)
 	column(ctx, "BrazierFoot", 0.75, 1.8, Vector3.new(x, y0, z), S.dark, M.Cobblestone)
 	column(ctx, "BrazierBowl", 1.35, 0.55, Vector3.new(x, y0 + 1.8, z), C.iron, M.Metal)
-	ball(ctx, "Flame", 2.0, Vector3.new(x, y0 + 3.0, z), EMBER, M.Neon)
-	ball(ctx, "FlameTip", 1.0, Vector3.new(x, y0 + 4.1, z), FLAME, M.SmoothPlastic)
+	ball(ctx, "Flame", 1.9, Vector3.new(x, y0 + 2.7, z), EMBER, M.Neon)
+	ball(ctx, "FlameMid", 1.3, Vector3.new(x, y0 + 3.55, z), FLAME_MID, M.SmoothPlastic)
+	ball(ctx, "FlameTip", 0.7, Vector3.new(x, y0 + 4.3, z), FLAME, M.SmoothPlastic)
 end
 
 -- ------------------------------------------------------------------ kingdom dress
@@ -465,7 +467,7 @@ local function buildDress(model: Model, root: BasePart, side: string, color: Col
 		up,
 		Vector3.new(0, -1, 0)
 	)
-	Pieces.emblemPlaque(ctx, rug, 6.2, color)
+	Pieces.emblemPlaque(ctx, rug, 7.4, color)
 
 	-- the champion's gate: a kingdom cap on each tower, a banner on each tower face and the crest over the passage
 	for _, tx in { -1, 1 } do

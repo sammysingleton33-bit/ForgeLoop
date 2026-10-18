@@ -82,14 +82,14 @@ type Look = {
 }
 local TAN = Color3.fromRGB(196, 158, 108)
 local LOOKS: { Look } = {
-	{ skin = 1, height = 1.0, width = 1.8, tilt = 0, lift = 0, body = 1, sleeve = LINEN },
-	{ skin = 3, height = 0.94, width = 1.6, tilt = 24, lift = 0.15, body = 0.88, sleeve = 1.2 },
-	{ skin = 2, height = 1.05, width = 1.95, tilt = -22, lift = 0.15, body = 1, sleeve = TAN },
-	{ skin = 4, height = 0.9, width = 1.7, tilt = 0, lift = 0, body = 0.88, sleeve = 0.72 },
-	{ skin = 1, height = 1.08, width = 1.85, tilt = 40, lift = 0, body = 1, sleeve = LINEN }, -- cheering: an arm thrown up
-	{ skin = 5, height = 0.97, width = 1.65, tilt = 20, lift = 0.1, body = 0.88, sleeve = TAN },
-	{ skin = 3, height = 1.02, width = 1.9, tilt = -26, lift = 0.2, body = 1, sleeve = 1.2 },
-	{ skin = 6, height = 0.92, width = 1.75, tilt = -40, lift = 0, body = 0.88, sleeve = LINEN }, -- cheering
+	{ skin = 1, height = 1.0, width = 1.55, tilt = 0, lift = 0, body = 1, sleeve = LINEN },
+	{ skin = 3, height = 0.94, width = 1.4, tilt = 24, lift = 0.15, body = 0.88, sleeve = 1.2 },
+	{ skin = 2, height = 1.05, width = 1.7, tilt = -22, lift = 0.15, body = 1, sleeve = TAN },
+	{ skin = 4, height = 0.9, width = 1.45, tilt = 0, lift = 0, body = 0.88, sleeve = 0.72 },
+	{ skin = 1, height = 1.08, width = 1.6, tilt = 40, lift = 0, body = 1, sleeve = LINEN }, -- cheering: an arm thrown up
+	{ skin = 5, height = 0.97, width = 1.35, tilt = 20, lift = 0.1, body = 0.88, sleeve = TAN },
+	{ skin = 3, height = 1.02, width = 1.65, tilt = -26, lift = 0.2, body = 1, sleeve = 1.2 },
+	{ skin = 6, height = 0.92, width = 1.5, tilt = -40, lift = 0, body = 0.88, sleeve = LINEN }, -- cheering
 }
 
 function Crowd.poolKey(color: Color3, role: string?, variant: number?): string
@@ -265,11 +265,11 @@ function Crowd.build(color: Color3, role: string?, variant: number?): Model
 		return s
 	end
 	local function arms(): Spec
-		local w = math.min(bodyW + 0.6, 2.35) -- inside the arena's 2.4-stud seat spacing
+		local w = math.min(bodyW + 0.8, 2.3) -- shoulders wider than the body, inside the arena's 2.4-stud seat spacing
 		local sleeve = look.sleeve
 		return {
 			name = "Arms",
-			size = Vector3.new(w, 0.8, 0.8),
+			size = Vector3.new(w, 0.9, 0.85),
 			cf = CFrame.new(0, shoulderY + look.lift * 1.5, 0.0) * CFrame.Angles(0, 0, rad(look.tilt)),
 			color = if type(sleeve) == "number" then kingdom(sleeve) else sleeve,
 			material = M.Fabric,

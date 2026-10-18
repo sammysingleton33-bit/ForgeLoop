@@ -90,6 +90,8 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 - **Human scale:** 5.5-stud characters, storeys of about 10–11 studs, sills 3.4 above the floor, fences and parapets 3–3.4 high.
 - **Front faces −Z** (the Model's LookVector). The pivot is at the base centre (PrimaryPart `Root` plus `PivotOffset`).
 
+- **Crown Arena (FL-0072, G12.6; `Kit/Arena.luau`, `Crowd.luau`, `Gear.luau`).** The final duel's venue is the one neutral landmark that must carry two competing kingdoms, so its structure is warm travertine (193,180,152 / 226,215,188 / 143,130,108, not the keeps' cold grey), timber and pale sand (230,200,146), and everything that carries a kingdom is a *dress* built per side: tower caps in the kingdom's silhouette (spire / pyramid / hoarding / dome, D-033), the kingdom emblem on every banner, plaque, flag, crest and the rug under the champion (D-039), cloth bands on the stand's risers, the royal roof. Never colour alone: a stand is told by its cap, its emblem and its crowd's crest shape. Stands are 4 rows rising 1.5 studs each on a rail podium; seats are attachments (72 a stand), figures are client-only: **crowd figures are 4 primitive parts** (tabard body, head, the kingdom's helmet crest as the soldiers wear it, an arms bar) in 8 variants, and the six key citizens swap the arms bar or the crest for a role prop that reads by silhouette (hammer T, satchel, plume, basket disc, tall staff, scales). Armour (light cap and vest / medium dome helm, mail, round cops / heavy great helm, plates, layered spaulders) and weapons (sword and shield, greatsword, spear, mace) are sidegrades: each shows kingdom colour in the same kinds of places (plume, comb, tabard, ribbon) and none is gold or jewelled.
+
 ## 5. Do / don't
 **Do:**
 - three levels of detail on every building: mass, then roofs/towers/trim, then props such as barrels, crates, flowers and log piles;
@@ -111,6 +113,7 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 - **World:** at most 25k parts at VS-2. WorldService logs the part count it builds.
 - **Per building:** budgets are documented in `Kit/Buildings.luau` and enforced by `tests/world/`.
 - **Rigs:** at most `Character.MAX_PARTS` parts: 11 = the 9 of D-032 (Root, Torso, Head, 2 arms, 2 legs, Tool, welded headwear) plus at most 2 rigid detail parts (D-048).
+- **Crown Arena:** target 700 parts, hard cap 900 (D-047 leaves about 1,000 of the 27k ceiling; the task's 1,500 is not affordable); **crowd figure:** at most 4 parts (client-only, 120 on screen).
 - **Props:** stand-ins of 3–25 parts. They are replaced by single imported MeshParts once the Blender batch is uploaded (FL-0057), which share the same asset ids.
 
 ## 7. How looks are judged

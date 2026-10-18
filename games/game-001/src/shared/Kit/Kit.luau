@@ -43,6 +43,17 @@
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
 		Kit.slotMarker(size: Vector2, kingdomColor) -> Model   -- G13.5 build slot marker (Root is the query target)
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
+	Crown Arena (FL-0072, G12.6; Kit/Arena.luau, Crowd.luau, Gear.luau have the contracts):
+		Kit.arena(kingdomA?, kingdomB?) -> Model       -- the venue: ring, two stands (72 seats each, StandA_Row<r>_Seat<s>,
+		                                                  StandA_Rail<n>, StandA_Royal<n>), royal boxes, gates (GateA / GateB),
+		                                                  SpawnA / SpawnB; neutral stone and timber + a DressA / DressB sub-model
+		                                                  per kingdom (cap silhouette AND emblem); <= 700 parts neutral, cap 900
+		Kit.arenaDress(model, kingdomA?, kingdomB?)    -- rebuild both dresses in place (ArenaService, at the Arena phase)
+		Kit.crowdFigure(kingdomColor, role?, variant?) -> Model  -- <= 4 parts, client-only, feet pivot, front -Z; role: KeyRole
+		Kit.armour(armour, kingdomColor) -> { Accessory }        -- "light" | "medium" | "heavy" on Hat / BodyFront / BodyBack / Collar
+		Kit.weapon(weapon, kingdomColor?) -> Tool                -- "swordShield" | "greatsword" | "spear" | "mace"
+		Kit.ARENA (dimensions, PART_BUDGET), Kit.CROWD_ROLES, CROWD_MAX_PARTS, CROWD_VARIANTS, CROWD_HEIGHT, crowdPoolKey,
+		Kit.ARMOURS, Kit.WEAPONS
 	Additive (emblems): Kit.EMBLEM_KINDS ({ [hue style]: kind }), Kit.emblemKind(color) -> kind?
 	Recolour: Kit.setKingdomColor recolours every KitTint part and re-forms every emblem to the new
 		colour's kind (a neutral colour removes them; a kingdom colour adds them on a neutral model). It
@@ -76,7 +87,7 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.4.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
+Kit.VERSION = "0.5.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques; 0.5: Crown Arena, crowd figures, duel gear
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",

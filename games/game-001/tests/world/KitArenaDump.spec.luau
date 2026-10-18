@@ -180,7 +180,9 @@ local function catalogue()
 			local k = kingdoms[(ai + wi) % 4 + 1]
 			add("gear", `gear_{armour}_{weapon}`, geared("R15", armour, weapon, CANON[k]), { kingdom = k })
 		end
-		-- R6 fit: the same armour with the mace, and bare-handed
+		-- armour alone, for the close-up views (front, side, back)
+		add("gear", `gear_{armour}_none`, geared("R15", armour, nil, CANON[kingdoms[ai]]), { kingdom = kingdoms[ai] })
+		-- R6 fit: the same armour with the mace
 		add("gear", `gear_r6_{armour}`, geared("R6", armour, "mace", CANON[kingdoms[ai]]), { kingdom = kingdoms[ai] })
 	end
 	return groups
