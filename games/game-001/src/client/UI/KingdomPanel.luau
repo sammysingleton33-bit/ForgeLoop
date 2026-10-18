@@ -9,14 +9,18 @@
 		Upgrade    the shared DetailView with the next level's costs (Build.Upgrade)
 		Jobs       (FL-0065) workers per job with − / + (Kingdom.SetJobQuota), the free pool (haulers)
 		           and soldiers, from UI/JobModel; prototype scenes "kingdom-jobs", "kingdom-jobs-full"
+		Rivals     (FL-0129) war and peace with each rival kingdom (UI/RivalsList, UI/DiplomacyModel);
+		           only when model.tabs lists it (the server serves the diplomacy remote)
 
 	KingdomPanel.new(parent) -> panel
 	panel:render(model, metrics, ui)
-		model = { tab: "overview" | "buildings" | "upgrade" | "jobs", banner, members, standings,
-		          buildings: { Row }, upgrade: BuildModel Detail?, jobs: JobModel View? }
+		model = { tab: "overview" | "buildings" | "upgrade" | "jobs" | "rivals", banner, members, standings,
+		          buildings: { Row }, upgrade: BuildModel Detail?, jobs: JobModel View?,
+		          tabs: { Tab }? (default KingdomPanel.TABS), rivals: DiplomacyModel View?, confirm: KingdomId? }
 			Row = { id, type, name, icon, category, level, state, progress, canUpgrade }
 		ui = { onTab(id), onUpgradeOpen(buildingId), onUpgrade(detail), onBack(), onClose(),
-		       onJob(jobId, delta: 1 | -1) }
+		       onJob(jobId, delta: 1 | -1), onDiplomacy(kingdomId, actionId), onConfirmWar(kingdomId),
+		       onCancelWar() }
 	panel:destroy()
 	Building rows are named "Building_<id>"; their Upgrade button "Upgrade". Job rows "Job_<id>" (plus
 	"Job_free" and "Job_soldier") carry the attribute `count`; their buttons "Minus" / "Plus".
@@ -34,6 +38,7 @@ local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
 local IconButton = require("@game/ReplicatedStorage/Forge/UI/Components/IconButton")
 local Panel = require("@game/ReplicatedStorage/Forge/UI/Components/Panel")
+local RivalsList = require("./RivalsList")
 local ProgressBar = require("@game/ReplicatedStorage/Forge/UI/Components/ProgressBar")
 local Signature = require("./Signature")
 local Style = require("@game/ReplicatedStorage/Forge/UI/Style")
@@ -49,6 +54,8 @@ KingdomPanel.TABS = table.freeze({
 	table.freeze({ id = "buildings", label = "Buildings", icon = "keep" }),
 	table.freeze({ id = "jobs", label = "Jobs", icon = "citizens" }),
 })
+-- The Rivals tab (FL-0129): added to model.tabs by the controller when the server serves diplomacy.
+KingdomPanel.RIVALS_TAB = table.freeze({ id = "rivals", label = "Rivals", icon = "army" })
 
 function KingdomPanel.new(parent: Instance)
 	return setmetatable(
@@ -601,8 +608,18 @@ function KingdomPanel:_frame(model: any, metrics: any)
 		Size = UDim2.fromScale(1, 1),
 	})
 	local selected = if model.tab == "upgrade" then "buildings" else model.tab
+	local tabs = model.tabs or KingdomPanel.TABS
+	if phone and #tabs > #KingdomPanel.TABS then
+		-- Four tabs and Close do not fit the phone drawer's header with the selected tab's label
+		-- (FL-0129 phone pass, 667x375): icons only; the selected tab keeps its gold frame and underline.
+		local iconsOnly = {}
+		for i, tab in tabs do
+			iconsOnly[i] = { id = tab.id, label = "", icon = tab.icon, disabled = tab.disabled }
+		end
+		tabs = iconsOnly
+	end
 	self.tabs = Tabs.new({
-		tabs = KingdomPanel.TABS,
+		tabs = tabs,
 		selected = selected,
 		compact = phone,
 		onSelect = function(id)
@@ -665,6 +682,7 @@ function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
 		breakpoint = metrics.breakpoint,
 		drawer = metrics.drawer,
 		tab = if model.tab == "upgrade" then "buildings" else model.tab,
+		tabs = #(model.tabs or KingdomPanel.TABS),
 	})
 	if self.panel == nil or frameKey ~= self._frameKey then
 		self:_frame(model, metrics)
@@ -711,6 +729,33 @@ function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
 			self.detail.instance.Parent = content
 			self:_setBody(self.detail.instance, key)
 		end
+	elseif model.tab == "rivals" and model.rivals then
+		local key = RivalsList.key(model.rivals, phone, model.confirm)
+		if key ~= self._bodyKey then
+			self:_clearBody()
+			self:_setBody(
+				RivalsList.build(content, model.rivals, phone, {
+					confirm = model.confirm,
+					onAction = function(kingdomId, actionId)
+						if self._ui.onDiplomacy then
+							self._ui.onDiplomacy(kingdomId, actionId)
+						end
+					end,
+					onConfirm = function(kingdomId)
+						if self._ui.onConfirmWar then
+							self._ui.onConfirmWar(kingdomId)
+						end
+					end,
+					onCancel = function()
+						if self._ui.onCancelWar then
+							self._ui.onCancelWar()
+						end
+					end,
+				}),
+				key
+			)
+		end
+		RivalsList.paint(self._body, model.rivals, phone)
 	elseif model.tab == "jobs" and model.jobs then
 		local key = jobsKey(model.jobs, phone)
 		if key ~= self._bodyKey then

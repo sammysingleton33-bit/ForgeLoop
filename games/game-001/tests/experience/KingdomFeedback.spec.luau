@@ -16,6 +16,7 @@ local Lines = require("@game/ReplicatedStorage/Game/Feedback/Lines")
 local Presets = require("@game/ReplicatedStorage/Game/Feedback/Presets")
 local FeedbackRemotes = require("@game/ReplicatedStorage/Game/Feedback/Remotes")
 local AnnouncerDef = require("@game/ServerScriptService/Game/Services/AnnouncerService")
+local PacingDef = require("@game/ServerScriptService/Game/Services/PacingService")
 local AnnouncerControllerDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/AnnouncerController")
 local FeedbackDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackController")
 local MusicDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/MusicController")
@@ -308,6 +309,151 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 		end
 	)
 
+	it(
+		"KingdomEliminated: the fallen rulers, the conqueror's and everyone else each get their own notice (FL-0130)",
+		function()
+			local c1 = { name = "Dan", userId = 4 }
+			local three = ctxWith({ crimson = { a1, a2 }, azure = { b1 }, emerald = { c1 } }, { a1, a2, b1, c1 })
+			local out = Moments.fromEvent("KingdomEliminated", { "azure", "crimson" }, three)
+			expect(only(out, b1)).toEqual({ "kingdomFell" })
+			expect(only(out, a1)).toEqual({ "kingdomConquered" })
+			expect(only(out, a2)).toEqual({ "kingdomConquered" })
+			expect(only(out, c1)).toEqual({ "rivalFell" })
+			expect(momentFor(out, b1).byName).toBe("Emberhold")
+			expect(Moments.present(momentFor(out, b1)).celebrate).toBe("fallen")
+			local won = momentFor(out, a1)
+			expect(won.kingdom).toBe("crimson")
+			expect(won.otherName).toBe("Frostmere")
+			expect(Moments.present(won).celebrate).toBe("conquest")
+			local rival = Moments.present(momentFor(out, c1))
+			expect(rival.toast.title).toBe("Frostmere has fallen")
+			expect(rival.toast.body).toBe("Emberhold took its keep.")
+			expect(rival.sound).toBe("kingdom.fallen")
+			-- no conqueror: nobody conquers, and the rivals' notice never reads " took its keep."
+			local alone = Moments.fromEvent("KingdomEliminated", { "azure", nil }, three)
+			expect(only(alone, a1)).toEqual({ "rivalFell" })
+			expect(Moments.present(momentFor(alone, a1)).toast.body).toBe("Its keep was destroyed.")
+			expect(momentFor(alone, b1).byName).toBeNil()
+			expect(only(Moments.fromEvent("KingdomEliminated", { "azure", "azure" }, three), b1)).toEqual({
+				"kingdomFell",
+			})
+			expect(Moments.fromEvent("KingdomEliminated", { nil, "crimson" }, three)).toEqual({})
+			-- the conquest celebration names the fallen kingdom
+			expect(Lines.CELEBRATIONS.conquest.toast.title).toBe("You conquered {otherName}!")
+		end
+	)
+
+	it("WarChanged (proposed G9): each side hears it in its own words, rivals hear the news (FL-0130)", function()
+		local c1 = { name = "Dan", userId = 4 }
+		local three = ctxWith({ crimson = { a1, a2 }, azure = { b1 }, emerald = { c1 } }, { a1, a2, b1, c1 })
+		local war = Moments.fromEvent("WarChanged", { "crimson", "azure", true, 1 }, three)
+		expect(only(war, a1)).toEqual({}) -- Ann declared it: FORGE-03's war panel answered her
+		local function shown(player, deliveries)
+			local moment = momentFor(deliveries or war, player)
+			return if moment then Moments.present(moment).toast else nil
+		end
+		expect(shown(a2).title).toBe("You declared war on Frostmere")
+		expect(shown(b1).title).toBe("Emberhold declares war on you!")
+		expect(Moments.present(momentFor(war, b1)).sound).toBe("kingdom.horn.war")
+		expect(shown(c1).title).toBe("Emberhold declares war on Frostmere")
+		-- an AI declaration (no ruler): every member of the declaring kingdom hears it
+		expect(only(Moments.fromEvent("WarChanged", { "crimson", "azure", true, nil }, three), a1)).toEqual({ "war" })
+		-- peace: azure accepted crimson's proposal
+		local peace = Moments.fromEvent("WarChanged", { "azure", "crimson", false, 3 }, three)
+		expect(shown(b1, peace).title).toBe("Peace with Emberhold")
+		expect(shown(a1, peace).title).toBe("Peace with Frostmere")
+		expect(shown(c1, peace).title).toBe("Frostmere and Emberhold make peace")
+		-- a declaration and its peace are separate toasts, never one "×2"
+		expect(shown(b1).key == shown(a1, peace).key).toBe(false)
+		expect(
+			shown(c1).key
+				== Moments.present(momentFor(Moments.fromEvent("WarChanged", { "crimson", "azure", false }, three), c1)).toast.key
+		).toBe(false)
+		for _, bad in
+			{
+				{ "crimson", "crimson", true },
+				{ "crimson", "azure", "yes" },
+				{ nil, "azure", true },
+				{ "crimson", nil, true },
+			}
+		do
+			expect(Moments.fromEvent("WarChanged", bad, three)).toEqual({})
+		end
+	end)
+
+	it(
+		"SiegeChanged and RaidChanged (proposed G9): the kingdom's rulers, per start and end; a raid carries its position",
+		function()
+			local siege = Moments.fromEvent(
+				"SiegeChanged",
+				{ "crimson", true, { byKingdomIds = { "azure" }, buildingId = 1 } },
+				ctx
+			)
+			expect(only(siege, a1)).toEqual({ "siege" })
+			expect(only(siege, a2)).toEqual({ "siege" })
+			expect(only(siege, b1)).toEqual({})
+			local started = Moments.present(siege[1].moment)
+			expect(started.toast.title).toBe("Your keep is under siege!")
+			expect(started.toast.body).toBe("Frostmere soldiers attack your keep.")
+			expect(started.sound).toBe("kingdom.horn.war")
+			local two =
+				Moments.fromEvent("SiegeChanged", { "crimson", true, { byKingdomIds = { "azure", "gold" } } }, ctx)
+			expect(Moments.present(two[1].moment).toast.body).toBe("Enemy soldiers attack your keep.")
+			local lifted = Moments.present(Moments.fromEvent("SiegeChanged", { "crimson", false, {} }, ctx)[1].moment)
+			expect(lifted.toast.title).toBe("The siege is lifted")
+			expect(lifted.toast.key == started.toast.key).toBe(false)
+
+			local at = Vector3.new(40, 0, -12)
+			local raid = Moments.fromEvent(
+				"RaidChanged",
+				{ "crimson", true, { byKingdomIds = { "azure" }, count = 6, position = at } },
+				ctx
+			)
+			expect(only(raid, b1)).toEqual({})
+			local moment = momentFor(raid, a1)
+			expect(moment.position).toBe(at)
+			local shown = Moments.present(moment)
+			expect(shown.toast.title).toBe("Enemies in your lands!")
+			expect(shown.toast.body).toBe("6 Frostmere soldiers crossed your border.")
+			expect(shown.sound).toBe("kingdom.alarm")
+			local one =
+				Moments.fromEvent("RaidChanged", { "crimson", true, { byKingdomIds = { "azure" }, count = 1 } }, ctx)
+			expect(Moments.present(one[1].moment).toast.body).toBe("A Frostmere soldier crossed your border.")
+			local unknown =
+				Moments.fromEvent("RaidChanged", { "crimson", true, { count = 0 / 0, position = "here" } }, ctx)
+			expect(unknown[1].moment.count).toBeNil()
+			expect(unknown[1].moment.position).toBeNil()
+			expect(Moments.present(unknown[1].moment).toast.body).toBe("Enemy soldiers crossed your border.")
+			local over = Moments.fromEvent("RaidChanged", { "crimson", false, { position = at, count = 2 } }, ctx)
+			expect(over[1].moment.position).toBeNil() -- nothing left to look at
+			expect(Moments.present(over[1].moment).toast.title).toBe("Your lands are clear")
+			expect(Moments.present(over[1].moment).toast.key == shown.toast.key).toBe(false)
+			expect(Moments.fromEvent("RaidChanged", { "crimson", "on", {} }, ctx)).toEqual({})
+			expect(Moments.fromEvent("SiegeChanged", { 7, true, {} }, ctx)).toEqual({})
+		end
+	)
+
+	it("phase moments carry the phase's length from Pacing when it has one (FL-0130)", function()
+		local timed = table.clone(ctx)
+		timed.phaseMinutes = function(phase)
+			return ({ Expansion = 12, Conflict = 15, Endgame = 10, Results = 0 })[phase]
+		end
+		local function body(phase, c)
+			return Moments.present(Moments.fromEvent("MatchPhaseChanged", { phase }, c)[1].moment).toast.body
+		end
+		expect(body("Conflict", timed)).toBe("For 15 minutes, kingdoms may declare war on each other.")
+		expect(body("Endgame", timed)).toBe("10 minutes left. Every Crown Point counts.")
+		expect(body("Expansion", timed)).toBe("12 minutes to grow before kingdoms may go to war.")
+		expect(Moments.fromEvent("MatchPhaseChanged", { "Results" }, timed)[1].moment.minutes).toBeNil()
+		-- untimed (the slice) or no Pacing: the plain line
+		expect(body("Conflict", ctx)).toBe("Kingdoms may now declare war on each other.")
+		timed.phaseMinutes = function()
+			error("pacing down")
+		end
+		expect(body("Endgame", timed)).toBe("Hold your towers to the end.")
+		expect(Moments.present({ kind = "phase", phase = "Conflict" }).toast.title).toBe("The age of war begins")
+	end)
+
 	it("gathering is never announced, and bad payloads produce nothing", function()
 		expect(Moments.fromEvent("ResourceGathered", { a1, "crimson", "wood", 3, "ruler" }, ctx)).toEqual({})
 		expect(Moments.fromEvent("BuildingPlaced", { "not a building" }, ctx)).toEqual({})
@@ -323,6 +469,13 @@ describe("Feedback/Moments audience and payload (FL-0062, G9 attribution)", func
 			{ "ObjectiveCaptured", { "tower_1", "crimson" } },
 			{ "MatchEnded", { { winner = "crimson", standings = {}, durationSec = 1 } } },
 			{ "ConsequenceChanged", { "crimson", "riot", true, { buildingId = 1, count = 2, entityIds = { 4 } } } },
+			{ "KingdomEliminated", { "azure", "crimson" } },
+			{ "WarChanged", { "crimson", "azure", true, 1 } },
+			{ "SiegeChanged", { "crimson", true, { byKingdomIds = { "azure" }, buildingId = 1 } } },
+			{
+				"RaidChanged",
+				{ "crimson", true, { byKingdomIds = { "azure" }, count = 3, position = Vector3.new(1, 0, 2) } },
+			},
 		}
 		for _, event in events do
 			for _, delivery in Moments.fromEvent(event[1], event[2], ctx) do
@@ -354,6 +507,9 @@ describe("Feedback/Lines presentation (FL-0062)", function()
 				rule = "strike",
 				on = true,
 				occupation = "miner",
+				role = "rival",
+				otherName = "Emberhold",
+				byName = "Sunspire",
 			}
 			local presentation = Moments.present(moment)
 			assert(presentation.toast or presentation.celebrate, `{kind} presents nothing`)
@@ -393,6 +549,21 @@ describe("Feedback/Lines presentation (FL-0062)", function()
 				check(`{rule}.{phase}`, line)
 			end
 		end
+		-- FL-0130: war, siege and raid lines; every title fits a toast and every end has its own key
+		local phased = { ["siege"] = Lines.SIEGE, ["raid"] = Lines.RAID }
+		for role, phases in Lines.WAR do
+			phased[`war.{role}`] = phases
+		end
+		for name, phases in phased do
+			for phase, line in phases do
+				check(`{name}.{phase}`, line)
+				assert(utf8.len(line.title) <= 60, `{name}.{phase}: title too long`)
+			end
+			assert(phases.start.key ~= phases.stop.key, `{name}: the end needs its own toast key`)
+		end
+		for phase, line in Lines.PHASE do
+			assert(line.timed == nil or string.find(line.timed, "{minutes}", 1, true), `{phase}: timed without minutes`)
+		end
 	end)
 
 	it("the kingdom presets fit the mobile budget", function()
@@ -403,7 +574,7 @@ end)
 describe("AnnouncerService (FL-0062)", function()
 	local env, bus, remotes, registry, p1, p2, p3
 
-	local function boot(withKingdoms, analytics)
+	local function boot(withKingdoms, analytics, mode)
 		local defs = {
 			{
 				name = "RemoteService",
@@ -426,6 +597,15 @@ describe("AnnouncerService (FL-0062)", function()
 					return analytics
 				end,
 			})
+		end
+		if mode then
+			table.insert(defs, {
+				name = "MatchService",
+				new = function()
+					return { mode = mode }
+				end,
+			})
+			table.insert(defs, { name = "PacingService", new = PacingDef.new })
 		end
 		if withKingdoms then
 			table.insert(defs, {
@@ -503,6 +683,60 @@ describe("AnnouncerService (FL-0062)", function()
 		local sent = remotes:sentTo("Feedback.Moment", p1)[1].args[1]
 		expect(sent.buildingType).toBe("storehouse")
 		expect(Moments.present(sent).toast.title).toBe("Riot at the storehouse!")
+	end)
+
+	it("phase moments carry the Pacing length for the match's mode; the slice has none (FL-0130)", function()
+		boot(true, nil, "match")
+		bus.MatchPhaseChanged:fire("Conflict")
+		local sent = remotes:sentTo("Feedback.Moment", p1)[1].args[1]
+		expect(sent.minutes).toBe(15) -- config Pacing match.Conflict = 15 * 60
+		expect(Moments.present(sent).toast.body).toBe("For 15 minutes, kingdoms may declare war on each other.")
+		registry:get("AnnouncerService"):destroy()
+		remotes = FakeRemoteService.new({ declarations = FeedbackRemotes })
+		boot(true, nil, "slice")
+		bus.MatchPhaseChanged:fire("Conflict")
+		expect(remotes:sentTo("Feedback.Moment", p1)[1].args[1].minutes).toBeNil()
+	end)
+
+	it("KingdomEliminated and the proposed war, siege and raid events reach the right rulers (FL-0130)", function()
+		bus = FakeBus.new({ extra = { "WarChanged", "SiegeChanged", "RaidChanged" } })
+		boot(true)
+		bus.WarChanged:fire("azure", "crimson", true, 3103)
+		expect(kindsFor(p1)).toEqual({ "war" })
+		expect(kindsFor(p3)).toEqual({}) -- Cat declared it: the war panel answered her
+		expect(Moments.present(remotes:sentTo("Feedback.Moment", p2)[1].args[1]).toast.title).toBe(
+			"Frostmere declares war on you!"
+		)
+		bus.RaidChanged:fire(
+			"crimson",
+			true,
+			{ byKingdomIds = { "azure" }, count = 4, position = Vector3.new(5, 0, 9) }
+		)
+		bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 1 })
+		expect(kindsFor(p1)).toEqual({ "war", "raid", "siege" })
+		expect(kindsFor(p3)).toEqual({})
+		expect(remotes:sentTo("Feedback.Moment", p2)[2].args[1].position).toBe(Vector3.new(5, 0, 9))
+		bus.KingdomEliminated:fire("azure", "crimson")
+		expect(kindsFor(p3)).toEqual({ "kingdomFell" })
+		expect(kindsFor(p1)[4]).toBe("kingdomConquered")
+	end)
+
+	it("the proposed events are waited for on the real bus, never an error (FL-0130)", function()
+		local service = AnnouncerDef.create(
+			env,
+			Loader.load(env, {
+				{
+					name = "RemoteService",
+					new = function()
+						return remotes
+					end,
+				},
+			}),
+			nil
+		)
+		service:start()
+		expect(env.mock:hasLog("info", "waiting for bus events not declared yet")).toBe(true)
+		service:destroy()
 	end)
 
 	it("without KingdomService: phases still reach everyone, kingdom moments reach nobody", function()
@@ -1130,6 +1364,41 @@ describe("client feedback controllers (FL-0062)", function()
 			expect(client.mock.threadErrors).toEqual({})
 		end
 	)
+
+	it("MusicController: a raid or a siege plays battle music until the last one ends (FL-0130)", function()
+		local defs = doubles({ notifications = false })
+		table.insert(defs, AnnouncerControllerDef)
+		table.insert(defs, MusicDef)
+		local registry = Loader.load(env, defs)
+		local controller = registry:get("MusicController")
+		local announcer = registry:get("AnnouncerController")
+		controller:setPhase("Conflict")
+		expect(music[#music]).toBe("tension")
+		announcer:onMoment({ kind = "raid", kingdom = "crimson", on = true, count = 3 })
+		expect(music[#music]).toBe("battle")
+		announcer:onMoment({ kind = "siege", kingdom = "crimson", on = true })
+		env.mock:advance(120) -- a long raid: the hold (25 s) never runs out while it is on
+		controller:update()
+		expect(music[#music]).toBe("battle")
+		announcer:onMoment({ kind = "raid", kingdom = "crimson", on = false })
+		env.mock:advance(30)
+		controller:update()
+		expect(music[#music]).toBe("battle") -- the siege is still on
+		announcer:onMoment({ kind = "siege", kingdom = "crimson", on = false })
+		env.mock:advance(10) -- calmTailSec 8
+		controller:update()
+		expect(music[#music]).toBe("tension")
+		announcer:onMoment({ kind = "raid", kingdom = "crimson", on = true })
+		expect(music[#music]).toBe("battle")
+		announcer:onMoment({ kind = "kingdomFell", kingdom = "crimson" }) -- no end ever comes for a fallen keep
+		expect(next(controller.alerts)).toBeNil()
+		env.mock:advance(10)
+		controller:update()
+		expect(music[#music]).toBe("tension")
+		controller:setAlert("siege", true)
+		controller:setPhase("Results")
+		expect(next(controller.alerts)).toBeNil()
+	end)
 
 	it("MusicController: the phase picks the music, the match result wins at once, ambience starts once", function()
 		local defs = doubles({ notifications = false })
