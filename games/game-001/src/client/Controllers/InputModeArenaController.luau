@@ -37,6 +37,10 @@
 		- A press reacts on touch-down; a held Block ends when that touch ends, on the button or off it.
 	Without a DuelController (before FL-0071 lands) a press sends nothing and logs one info line;
 	an act() that errors is logged once. Engine access is guarded (headless boot gate).
+	Studio preview (E16): in Studio only, the local player's attribute ForgeDuelPreview = true turns
+	the duel controls on without a duel (keys, pad, touch buttons, walk camera). A press then sends
+	nothing and logs "InputModeArenaController preview: <action>" instead, so every binding can be
+	checked before FL-0071; false turns it off. Outside Studio the attribute does nothing.
 
 	API
 		controller.active: boolean                    -- arena mode is on (ours)
@@ -46,6 +50,7 @@
 		controller:press(action, down, source?) -> boolean   -- every key, pad and touch button calls it;
 		                                              -- true when DuelController:act was called
 		controller:controls() -> { { action, keyboard, gamepad, touch } }
+		controller:preview(on) -> boolean            -- Studio only (the attribute calls it)
 	Pure helpers (specs): Def.isDuellist(state, userId), Def.layout(small) -> { button }, Def.reach(button)
 ]]
 
@@ -63,6 +68,7 @@ Def.HELD = table.freeze({ block = "blockEnd" }) -- held actions and what their r
 Def.END_PHASES = table.freeze({ Results = true, Lobby = true })
 Def.MIN_TOUCH_PX = 44
 Def.GUI_NAME = "ForgeDuelInput"
+Def.PREVIEW_ATTRIBUTE = "ForgeDuelPreview"
 
 -- ContextActionService bindings, one per action (keyboard + mouse first, then gamepad)
 Def.BINDINGS = table.freeze({
@@ -148,7 +154,8 @@ local function guarded(env: any, service: string, override: any, member: string)
 	return if ok then found else nil
 end
 
--- opts (specs): { actions, userInput, playerGui, touch: boolean?, viewport: Vector2?, userId: number? }
+-- opts (specs): { actions, userInput, playerGui, touch: boolean?, viewport: Vector2?, userId: number?,
+--   studio: boolean? }
 function Def.create(env: any, registry: any, opts: { [string]: any }?)
 	local options = opts or {}
 	return setmetatable({
@@ -161,6 +168,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_holding = {} :: { [string]: { [string]: boolean } },
 		_warned = {},
 		_ours = false,
+		_preview = false,
 		_bound = false,
 		_gui = nil :: any,
 		active = false,
@@ -204,6 +212,41 @@ function Controller:start()
 			self:onArenaState(state)
 		end
 	end
+	self:_watchPreview()
+end
+
+function Controller:_isStudio(): boolean
+	if self._opts.studio ~= nil then
+		return self._opts.studio == true
+	end
+	local ok, studio = pcall(function()
+		return self._env.RunService:IsStudio()
+	end)
+	return ok and studio == true
+end
+
+function Controller:_watchPreview()
+	if not self:_isStudio() then
+		return
+	end
+	pcall(function()
+		local player = self._env.Players.LocalPlayer
+		local function read()
+			self:preview(player:GetAttribute(Def.PREVIEW_ATTRIBUTE) == true)
+		end
+		table.insert(self._connections, player:GetAttributeChangedSignal(Def.PREVIEW_ATTRIBUTE):Connect(read))
+		read()
+	end)
+end
+
+-- Studio only: the duel controls without a duel; presses are logged, never sent.
+function Controller:preview(on: any): boolean
+	if not self:_isStudio() then
+		return false
+	end
+	self._preview = on == true
+	self:_follow()
+	return true
 end
 
 function Controller:destroy()
@@ -259,9 +302,10 @@ function Controller:_follow()
 	if input == nil then
 		return
 	end
-	if self._ours and input.mode ~= Def.MODE then
+	local wanted = self._ours or self._preview
+	if wanted and input.mode ~= Def.MODE then
 		input:set(Def.MODE)
-	elseif not self._ours and input.mode == Def.MODE then
+	elseif not wanted and input.mode == Def.MODE then
 		input:set("explore")
 	end
 end
@@ -271,7 +315,7 @@ function Controller:_onMode(mode: string, previous: string)
 		self:_bind(true)
 	elseif previous == Def.MODE then
 		self:_bind(false)
-		if self._ours and mode == "explore" then
+		if (self._ours or self._preview) and mode == "explore" then
 			self._input:set(Def.MODE) -- e.g. RulerController on a respawn: the duel is still ours
 		end
 	end
@@ -304,6 +348,10 @@ function Controller:_warnOnce(key: string, level: string, message: string, data:
 end
 
 function Controller:_send(action: string): boolean
+	if self._preview and not self._ours then
+		self._env.log("info", `InputModeArenaController preview: {action}`)
+		return true
+	end
 	local duel = self._registry:find("DuelController")
 	if duel == nil or duel.act == nil then
 		self:_warnOnce("missing", "info", "InputModeArenaController: no DuelController yet; duel input sends nothing")

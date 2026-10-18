@@ -57,6 +57,7 @@ local function boot(opts)
 		touch = opts.touch,
 		playerGui = opts.playerGui,
 		viewport = opts.viewport,
+		studio = opts.studio,
 	}
 	local extra = {
 		{
@@ -291,6 +292,33 @@ describe("InputModeArenaController: keys, gamepad and DuelController:act (FL-007
 		expect(t.duel.acts).toEqual({ "dodge" })
 		expect(t.env.mock.threadErrors).toEqual({})
 	end)
+
+	it(
+		"Studio preview (E16): the controls without a duel, presses logged and never sent; never outside Studio",
+		function()
+			local live = boot({ studio = false })
+			expect(live.arena:preview(true)).toBe(false)
+			expect(live.input.mode).toBe("explore")
+
+			local t = boot({ studio = true })
+			expect(t.arena:preview(true)).toBe(true)
+			expect(t.input.mode).toBe("arena")
+			t.input:set("explore") -- a respawn keeps the preview on
+			expect(t.input.mode).toBe("arena")
+			expect(t.arena:press("parry", true)).toBe(true)
+			expect(t.duel.acts).toEqual({})
+			expect(t.env.mock:hasLog("info", "InputModeArenaController preview: parry")).toBe(true)
+			-- a real duel takes over: presses are sent again, and its end does not end the preview
+			t.arena:onArenaState(state("duel", duellist(ME), duellist(RIVAL)))
+			t.arena:press("light", true)
+			expect(t.duel.acts).toEqual({ "light" })
+			t.arena:onArenaState(state("crowning", duellist(ME), duellist(RIVAL)))
+			expect(t.input.mode).toBe("arena")
+			t.arena:preview(false)
+			expect(t.input.mode).toBe("explore")
+			expect(t.arena.active).toBe(false)
+		end
+	)
 
 	it("controls() lists a keyboard, gamepad and touch hint for each of the five actions", function()
 		local t = boot()

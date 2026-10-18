@@ -40,4 +40,8 @@ M = [
  ("FL-0075", R, 'elseif Def.FOLLOW_MODES[previous] then', 'elseif false then', "DuelInput", "restores it after", "game"),
  ("FL-0075", R, 'self:_bindView(false) -- no View key', 'local _ = 0 -- no View key', "DuelInput", "switches to the walk camera for the duel", "game"),
  ("FL-0075", R, '\t\tself:_bindView(true)\n', '', "DuelInput", "restores it after", "game"),
+ # Studio preview (E16)
+ ("FL-0075", A, 'if self._preview and not self._ours then', 'if false then', "DuelInput", "Studio preview (E16)", "game"),
+ ("FL-0075", A, 'local wanted = self._ours or self._preview', 'local wanted = self._ours', "DuelInput", "Studio preview (E16)", "game"),
+ ("FL-0075", A, 'if not self:_isStudio() then\n\t\treturn false\n\tend\n', '', "DuelInput", "never outside Studio", "game"),
 ]
