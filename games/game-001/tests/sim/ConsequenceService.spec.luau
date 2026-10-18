@@ -15,6 +15,7 @@ local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
 local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Reputation = require("@game/ReplicatedStorage/Game/Kingdom/Reputation")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
@@ -567,6 +568,30 @@ describe("ConsequenceService: riots", function()
 			expect(target.hp < hp).toBe(true)
 			expect(#sentOf(w, "kcue", "cower")).toBe(1) -- the HUD / keep alarm
 			expect(w.service:active("crimson").riot.buildingId).toBe(target.id)
+		end
+	)
+
+	it(
+		"a keep falling in the middle of a riot ends it without errors and without a riot-end notice (FL-0125)",
+		function()
+			local w = boot(nil, Society)
+			content(w)
+			finishedBuilding(w, "house", 40, 0)
+			finishedBuilding(w, "farm", -60, 0)
+			local citizens = citizensOf(w)
+			citizens[3].loyalty = Society.consequences.riot.instigatorLoyaltyBelow - 5
+			w.k.conditions.stability = Society.consequences.riot.stabilityBelow - 1
+			w.env.mock:advance(Society.consequences.riot.sustainSeconds + 1)
+			local started = changesOf(w, "riot", true)
+			expect(#started).toBe(1)
+			local burning = w.sim.buildings[started[1].info.buildingId]
+			expect(burning.burning).toBe(true)
+			Military.eliminate(w.sim, w.k, "azure") -- the building and the rioters are removed with the kingdom
+			w.env.mock:advance(60) -- longer than the riot lasts: every timer of the service runs
+			expect(w.sim.buildings[burning.id]).toBeNil()
+			expect(#changesOf(w, "riot", false)).toBe(0) -- CONTRACTS g10d: a rule cut short by elimination fires no end
+			expect(#changesOf(w, "riot", true)).toBe(1) -- and nothing starts again in a fallen kingdom
+			expect(#citizensOf(w)).toBe(0)
 		end
 	)
 

@@ -15,7 +15,7 @@
 	The measured numbers are printed once per run, so the PR / FORGE-05's B20 record can quote them.
 ]]
 
-local T = require("../../../../roblox/tests/harness/Test")
+local T = require("../../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
 local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
@@ -28,9 +28,8 @@ local BUDGET_MS = 4 -- BRIEF §14: server sim <= 4 ms at p99 per tick at 300 ent
 -- the PR / B20 record long before it trips this.
 local CANARY_MS = 2 * BUDGET_MS
 local BUDGET_ENTITIES = 300 -- BRIEF §14: entities per server (about 75 per kingdom)
--- The full match overshoots BUDGET_ENTITIES (the AI economies grow past it, popCap by house level): a ratchet, until
--- FORGE-00 rules whether the sim caps the population or the budget moves (reported in the FL-0125 PR).
-local ENTITY_RATCHET = 400
+-- D-055: 60 citizens + 15 soldiers per kingdom keep the server at BUDGET_ENTITIES (4 x 75). The cap holds the line;
+-- raising it needs a measured Studio or private-test run, never a headless one.
 local BUSY_ENTITIES = 250 -- a tick counts as "peak" at this many citizens + soldiers
 
 local function percentile(sorted: { number }, p: number): number
@@ -54,7 +53,8 @@ describe("FullMatch: the shipped defaults play the real match (FL-0125, D-053)",
 		local ended = 0
 		local ms: { number } = {}
 		local busy: { number } = {}
-		local peakEntities, peakEntitiesMs = 0, 0
+		local peakEntities, peakEntitiesMs, peakBuildings = 0, 0, 0
+		local slowest: { { ms: number, time: number, entities: number } } = {}
 		local steps = 0
 		while match.state ~= "Results" and steps < 200000 do
 			local started = os.clock()
@@ -81,6 +81,10 @@ describe("FullMatch: the shipped defaults play the real match (FL-0125, D-053)",
 				end
 				if entities > peakEntities then
 					peakEntities, peakEntitiesMs = entities, cost
+				end
+				peakBuildings = math.max(peakBuildings, #sim.buildingOrder)
+				if cost > 6 then -- keep the few slow ones (for the report: when, and how many rigs)
+					table.insert(slowest, { ms = cost, time = sim.time, entities = entities })
 				end
 			end
 		end
@@ -147,7 +151,23 @@ describe("FullMatch: the shipped defaults play the real match (FL-0125, D-053)",
 				.. `with {BUSY_ENTITIES}+ entities (BRIEF {BUDGET_MS} ms p99 at {BUDGET_ENTITIES}), `
 				.. `median {string.format("%.2f", percentile(ms, 0.5))} ms; headless Lune, sim step only (no snapshot encode)`
 		)
+		table.sort(slowest, function(a, b)
+			return a.ms > b.ms
+		end)
+		local worstFive = {}
+		for i = 1, math.min(5, #slowest) do
+			table.insert(
+				worstFive,
+				`{string.format("%.1f", slowest[i].ms)} ms at sim {string.format("%.1f", slowest[i].time)} s ({slowest[i].entities} rigs)`
+			)
+		end
+		print(
+			`FullMatch: rigs (citizens + soldiers) peak {peakEntities}, buildings peak {peakBuildings}; `
+				.. `{#slowest} ticks over 6 ms; slowest: {if #worstFive > 0
+					then table.concat(worstFive, "; ")
+					else "none"}`
+		)
 		expect(p99 <= CANARY_MS).toBe(true)
-		expect(peakEntities <= ENTITY_RATCHET).toBe(true)
+		expect(peakEntities <= BUDGET_ENTITIES).toBe(true) -- D-055
 	end)
 end)

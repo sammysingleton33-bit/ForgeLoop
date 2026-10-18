@@ -361,7 +361,8 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			-- only what Recruit accepts: a finished barracks, bunks for the batch (queued units
 			-- count, and count toward the army) and its full price
 			local training = queuedUnits(sim, kingdom)
-			local target = math.max(2, math.floor(pop * (0.15 + 0.2 * aggression)))
+			-- (and never above the army this server can carry, D-055)
+			local target = math.min(math.max(2, math.floor(pop * (0.15 + 0.2 * aggression))), Military.armyCap(sim))
 			-- alternate soldiers and archers (archers only where Costs lists them)
 			local kind = if army % 2 == 0 or sim.costs.unit("archer") == nil then "soldier" else "archer"
 			local price = sim.costs.unit(kind) :: any
@@ -371,7 +372,7 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			end
 			if
 				count(sim, kingdom, "barracks", false) > 0
-				and army + training + 2 <= Military.recruitCap(sim, kingdom)
+				and army + training + 2 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim))
 				and army + training < target
 				and sim:canAfford(kingdom.id, cost)
 				and Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2)

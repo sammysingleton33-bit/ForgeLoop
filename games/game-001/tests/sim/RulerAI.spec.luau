@@ -239,6 +239,34 @@ describe("Kingdom/RulerAI: decisions", function()
 		end
 	)
 
+	it(
+		"never recruits past the army cap (D-055): its target and its batches stop at config Military.maxSoldiers",
+		function()
+			local sim, k1 = pair()
+			sim.catalog.tuning.maxSoldiers = 3
+			sim.time = 3 * sim.catalog.tuning.dayLength -- day 4: military
+			sim.rulerAI.aggression.crimson = 1
+			F.stock(sim, k1):add("wood", 400)
+			F.stock(sim, k1):add("stone", 400)
+			F.stock(sim, k1):add("food", 400)
+			local barracks = assert(sim:placeBuilding(k1, "barracks", 0, -40))
+			assert(sim:placeBuilding(k1, "house", -40, 0))
+			assert(sim:placeBuilding(k1, "farm", 0, 45))
+			sim:_completeInstantly(barracks)
+			barracks.level = 3 -- 12 bunks: only the cap holds the army back
+			local recruits = 0
+			for _ = 1, 8 do
+				local calls = recordCommands(function()
+					RulerAI.think(sim, k1)
+				end)
+				expect(rejected(calls)).toEqual({})
+				recruits += #callsNamed(calls, "Recruit")
+			end
+			expect(recruits).toBe(1) -- one batch of two; a second would make 4 > 3
+			expect(#barracks.queue + #k1.unitIds <= 3).toBe(true)
+		end
+	)
+
 	it("builds a House when population reaches the cap, and only one at a time", function()
 		local sim, k1 = pair()
 		expect(sim:population(k1)).toBe(k1.popCap)

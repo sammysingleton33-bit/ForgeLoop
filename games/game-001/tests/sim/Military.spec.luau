@@ -133,6 +133,31 @@ describe("Kingdom/Military: recruiting", function()
 		expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("recruit_cap") -- every bunk is taken
 	end)
 
+	it(
+		"caps standing soldiers (living + training) at config Military.maxSoldiers, ahead of the bunks (army_cap, D-055)",
+		function()
+			local sim, k1 = world()
+			sim.catalog.tuning.maxSoldiers = 3
+			stockUp(sim, k1, { food = 400, wood = 200 })
+			local barracks = addBuilding(sim, k1, "barracks", 0, -40, 1)
+			barracks.level = 2 -- 8 bunks
+			expect(Military.recruitCap(sim, k1)).toBe(8)
+			expect(Military.armyCap(sim)).toBe(3)
+			expect((recruit(RULER, sim, "soldier", 2))).toBe(true)
+			local before = sim:balance(k1.id, "food")
+			expect(select(2, recruit(RULER, sim, "soldier", 2))).toBe("army_cap") -- 2 queued + 2 > 3
+			expect(sim:balance(k1.id, "food")).toBe(before) -- refused: nothing charged
+			expect((recruit(RULER, sim, "soldier", 1))).toBe(true) -- exactly the cap
+			expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("army_cap")
+			sim:advance(30) -- trained: the living count against the cap the same way
+			expect(#k1.unitIds).toBe(3)
+			expect(select(2, recruit(RULER, sim, "soldier", 1))).toBe("army_cap")
+			-- a fallen soldier frees a place
+			Military.killUnit(sim, sim.units[k1.unitIds[1]], "azure")
+			expect((recruit(RULER, sim, "soldier", 1))).toBe(true)
+		end
+	)
+
 	it("caps soldiers (living + training) at the standing barracks' bunks (recruit_cap, D-041)", function()
 		local sim, k1 = world()
 		stockUp(sim, k1, { food = 400, wood = 200 })

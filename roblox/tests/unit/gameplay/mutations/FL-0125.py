@@ -10,6 +10,8 @@ MATCH = G + "src/shared/Kingdom/Match.luau"
 HOST = G + "src/shared/Kingdom/MatchHost.luau"
 SVC = G + "src/server/Services/MatchService.luau"
 AI = G + "src/shared/Sim/RulerAI.luau"
+SIM = G + "src/shared/Sim/Simulation.luau"
+MIL = G + "src/shared/Sim/Military.luau"
 M = [
  # --- the shipped defaults are the full match
  ("FL-0125", CFG, 'mode = "match", -- the full match is the default build', 'mode = "slice", -- the full match is the default build', "sim/Match.spec", "is the full match by default"),
@@ -45,4 +47,10 @@ M = [
  ("FL-0125", AI, 'if resting[key] ~= nil and sim.time < resting[key] then', 'if false then', "sim/RulerAI", "rests for a minute after a placement search finds nothing"),
  ("FL-0125", AI, 'resting[key] = sim.time + NO_SPOT_RETRY', 'resting[key] = sim.time', "sim/RulerAI", "rests for a minute after a placement search finds nothing"),
  ("FL-0125", AI, 'local NO_SPOT_RETRY = 60 -- seconds', 'local NO_SPOT_RETRY = 6000 -- seconds', "sim/RulerAI", "rests for a minute after a placement search finds nothing"),
+ # --- D-055: the per-kingdom caps (60 citizens, 15 soldiers)
+ ("FL-0125", SIM, 'math.min(kingdom.popCap, tuning.maxPerKingdom or math.huge)', 'kingdom.popCap', "sim/Simulation.spec", "stops births at config Citizens.maxPerKingdom"),
+ ("FL-0125", G + "config/Citizens.luau", 'maxPerKingdom = 60,', 'maxPerKingdom = 600,', "sim/Simulation.spec", "stops births at config Citizens.maxPerKingdom"),
+ ("FL-0125", G + "config/Military.luau", 'maxSoldiers = 15,', 'maxSoldiers = 150,', "sim/Simulation.spec", "stops births at config Citizens.maxPerKingdom"),
+ ("FL-0125", MIL, 'if #kingdom.unitIds + queuedCount(sim, kingdom) + count > armyCap(sim) then', 'if false then', "sim/Military.spec", "caps standing soldiers (living + training) at config Military.maxSoldiers"),
+ ("FL-0125", AI, 'and army + training + 2 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim))', 'and army + training + 2 <= Military.recruitCap(sim, kingdom)', "sim/RulerAI", "never recruits past the army cap"),
 ]

@@ -561,6 +561,20 @@ describe("Kingdom/Simulation: daily life", function()
 		expect(F.stock(sim, k):flows().expense.birth.food).toBe(20)
 	end)
 
+	it("stops births at config Citizens.maxPerKingdom even with beds to spare (D-055)", function()
+		local sim, k = F.kingdom({ tuning = { birthInterval = 10, birthFood = 5, maxPerKingdom = 14 } })
+		F.stock(sim, k):add("food", 400)
+		sim.catalog.buildings.keep.levels[1].popCap = 40 -- beds to spare: housing alone would allow 40
+		sim:_recompute(k)
+		expect(k.popCap).toBe(40)
+		sim:advance(300)
+		expect(#k.citizenIds).toBe(14) -- the cap, not the housing
+		expect(#F.events(sim, "CitizenBorn")).toBe(2)
+		-- the shipped number is the entity budget: 60 citizens + 15 soldiers per kingdom, 4 x 75 = 300
+		expect(F.catalog().tuning.maxPerKingdom).toBe(60)
+		expect(F.catalog().tuning.maxSoldiers).toBe(15)
+	end)
+
 	it("fed by the upkeep, a kingdom grows when well fed with a free bed and pays no food for it (D-045)", function()
 		local sim, k = F.kingdom({ tuning = { birthInterval = 10, birthFood = 5 } })
 		sim.fedByUpkeep = true
