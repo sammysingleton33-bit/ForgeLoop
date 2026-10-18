@@ -33,9 +33,9 @@
 		| KingdomEliminated | kingdomFell (byName?)                      | the conqueror's rulers:        |
 		|                   |                                            | kingdomConquered; the rest:    |
 		|                   |                                            | rivalFell (FL-0130)            |
-		| WarChanged *      | war role "self" (the declarer's rulers but | role "other" to the other      |
-		|                   | the declaring ruler; the acceptor's on     | kingdom's rulers; role "rival" |
-		|                   | peace), per declaration and per peace      | to everyone else               |
+		| WarChanged *      | war role "self" (the declarer's or the     | role "other" to the other      |
+		|                   | acceptor's rulers, but not the ruler who   | kingdom's rulers; role "rival" |
+		|                   | acted), per declaration and per peace      | to everyone else               |
 		| SiegeChanged *    | siege (on, byName?), per start and end     | —                              |
 		| RaidChanged *     | raid (on, count?, byName?, position?)      | —                              |
 		* proposed G9 rows (FL-0130 handoff); AnnouncerService waits for them until the bus declares them.
@@ -319,8 +319,9 @@ function Moments.fromEvent(eventName: string, args: { any }, ctx: any): { Delive
 		local actor = if type(by) == "number" then ctx.byUserId(by) else nil
 		local own = table.clone(moment)
 		own.role = "self"
-		-- the ruler who declared war already has FORGE-03's war panel answer; their co-rulers get this one
-		to(out, if atWar then except(mine, actor) else mine, own)
+		-- the ruler who declared war or accepted peace already has FORGE-03's war panel answer (#180);
+		-- their co-rulers get this one
+		to(out, except(mine, actor), own)
 		local target = table.clone(moment)
 		target.role = "other"
 		to(out, theirs, target)

@@ -101,3 +101,17 @@ AI Kingdoms is launch-ready only when:
 No publishing without explicit owner approval.
 The first release can receive patches, new content, balance changes and ongoing feature updates after launch.
 This does not justify shipping a broken or misleadingly incomplete game.
+
+## Update 2026-10-18: visual quality upgrade (D-057)
+The owner found the citizens and the general art unacceptable for launch. This is a priority correction, not a reset. Everyone except FORGE-02 keeps their current order.
+- **FORGE-02 now:**
+  1. **FL-0135 citizens and rulers (P0 art)** with licensed prebuilt assets: audit, pick one source and style, character kit with variation, import-ready batch, before/after.
+  2. FL-0127 outposts (#184) to merge.
+  3. **FL-0136 environment and architecture** with assets (absorbs FL-0117 and FL-0127 part 2's look).
+  4. FL-0072 arena venue.
+  5. FL-0128 war kit, in the new style.
+  - FL-0118 is superseded; its merged primitive rigs stay as the fallback.
+- **FORGE-04:** be ready to adapt the pose driver if FL-0135 picks skinned bones. The joint names stay the same.
+- **FORGE-05:** integrate the asset path. Builds without the owner's import must still pass the place check (Kit fallback). After the import, cut a build with the asset ids and the new studio-runs rows. Release checklist L6 cites D-057.
+- **FORGE-07:** asset safety review. Licences must come from primary sources. Nothing non-redistributable may be committed (the repo is public). No scripts may hide in imported or Creator Store models.
+- **B20 is not held for art.**

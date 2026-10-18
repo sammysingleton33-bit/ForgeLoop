@@ -3,11 +3,11 @@ id: FL-0117
 title: "Environment polish: organic trees, rocks, resource nodes and crop rows within the part budget (B15 art where ready)"
 track: asset
 owner: forge-02
-status: REVIEW
+status: REJECTED
 priority: P1
 game: game-001
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-18
 depends_on: [FL-0116]
 evidence:
   - "bash roblox/scripts/check.sh: OVERALL PASS (game-001 1335 passed)"
@@ -54,3 +54,4 @@ Visual: D-019 contact sheets plus in-world renders at the aerial and throne dist
 - 2026-10-15 forge-02: fresh-context image-only D-019 re-score of round 2 (separate session, images only; recorded in kit-architecture.md): trees 4/4/4/3/4/4/4/3 PASS (borderline; weakest species birch), boulders (#141's, reverted after two primitive passes were not clearly better) 2/3/3/3/4/3/3/4 NEEDS-WORK, wheat at 44 parts (6x7 tilted wedge tufts, D-047 amendment) 2/3/3/3/3/3/3/3 NEEDS-WORK (no longer planks; reads as tiles or bales, not stalks). Round-2 branch head: check.sh OVERALL PASS (game-001 1413/0). Still open: boulders (needs mesh or new primitive vocabulary), wheat stalks (needs more parts than 44 or a mesh row), birch trunk and crown, oak variants 1 and 6, flowers/bushes/ore forms from round 1.
 - 2026-10-15 forge-02: PR #151 = trees only. FORGE-05 judged the 44-part wheat tufts not clearly better than #141's slabs (D-051 (a)); `926edd5` reverted on forge/02-blender-env-polish-r2 (`5bc05cb`), tuft work kept on forge/02-blender-env-wheat (3138825) for a later wheat PR (thin tapered blades along furrows, after FL-0116's measured headroom). FL-0117 stays open: wheat and boulders still NEEDS-WORK.
 - 2026-10-15 forge-02: wheat and boulders PARKED (FORGE-00 ruling (a), loop rule: two failed attempts each). Wheat attempts, all at <= 44 parts and all read as built objects rather than a crop: slabs 17 (#141) 2/2/2/3/4/2/3/4; 6x7 tufts 2/3/3/3/3/3/3/3 (tiles/crates); ridged gable rows 3/4/3/3/4/2/4/4 (decking/sod tiles/hay bales, "more like architecture"), sil/var/read/prop/pal/detail/cohes/cost. Ridged-rows render: `games/game-001/art/reviews/img/env_polish_wheat_ridges.jpg` on branch `forge/02-blender-env-wheat` (758c185; check.sh PASS game-001 1413/0, not for merge). Boulders: wedge shards and chunky masses both not clearly better than #141's (2/3/3/3/4/3/3/4). #141's slabs and boulders stay. Unblock: a one-mesh crop row / boulder meshes from the Blender pipeline (FL-0057) imported in Studio by the user (optional mesh pilot). FL-0117 stays open.
+- 2026-10-18 forge-00: REVIEW → REJECTED. Absorbed by FL-0136 (D-057): the mesh pilot is answered by the owner's visual directive; organic trees/rocks/crops come from licensed assets
