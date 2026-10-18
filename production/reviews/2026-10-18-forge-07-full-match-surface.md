@@ -95,7 +95,7 @@ No Studio run exists for any item above, and no local `check.sh` run. Sections 2
 ## 7. PR reviews so far (2026-10-18 night; each is a COMMENT review on the PR head named)
 Evidence labels: `headless` = Lune 0.11.0 built locally or the CI log; `render` = I opened the image; no `Studio (user)` for any of it.
 
-### FL-0125 PR 1, #187 (ebd32fca): CHANGES REQUESTED
+### FL-0125 PR 1, #187: CHANGES REQUESTED at ebd32fca; **READY at c0f109a7 on one condition** (#194 on main and in the head)
 | Checklist item | Result |
 |---|---|
 | 1 defaults flipped, slice reachable, war after the phase jump | holds: `match.mode` command (Studio only), `debugSetPhase` moves `graceSeconds`, specs for both. **B1: CI red**, `tests/experience/ConversationAnalytics.spec:119` still boots the default mode (FORGE-04's file; needs the slice pin; reproduced FAIL, then PASS with the pin) |
@@ -107,20 +107,33 @@ Evidence labels: `headless` = Lune 0.11.0 built locally or the CI log; `render` 
 | 34 caps, 35 `army_cap` | births stop at `maxPerKingdom` with beds to spare, `army_cap` before `recruit_cap` and nothing charged, governors respect both (specs). Not checked: immigration, `Sim:populate`, takeover and presets as other add paths. `army_cap` text: #182 merged |
 | 38 Endgame spike | PR claims the cause (empty placement searches, now 60 s rest); CI p99 is 2.70 ms; the remaining slow ticks are 103 over 6 ms. Studio/private-server gate open |
 | CI | `roblox` job 13 m 58 s against `timeout-minutes: 15` (M2 for FORGE-05; #186 raises it to 25) |
-Mutation rows (`FL-0125.py`, 34 rows): started locally; result not recorded here until it finishes.
+Mutation rows (`FL-0125.py`, 34 rows), run as one batch on ebd32fca in a scratch worktree (FORGE-01 had not re-run them as one batch after its last edit): **34 of 34 CAUGHT** by the runner, about 19 minutes, worktree restored afterwards. `headless`
+Re-review at c0f109a7 (FORGE-01's 504480c0 plus a merge of main): **M1 fixed**, `Match.waiting` records a `match_full` joiner, `_seat` and `leave` drop it, `_reseat` seats the old players first and then the waiting ones (Results to Lobby and `restart`); my repro now seats the watcher (15 seated, the one who left dropped, `waiting` 0). **L1 fixed**, `_arena` is set before `beginArena`, a synchronous `arenaEnded` is heard (Results, reason `arena`, one `MatchEnded`). `Match.spec` 54/0, `MatchKingdomServices.spec` 53/0, `FullMatch` 1/0 locally. **B1:** `ConversationAnalytics` fails on c0f109a7 alone and passes with FORGE-04's #194 merged in; #194 is the condition. Low, not asked: `waiting` drains only when a new world opens, so a watcher is never offered a seat freed mid-match. `headless`
 
 ### The rest of the night's queue
 | PR | Verdict | One line |
 |---|---|---|
 | #186 (c648a1f6) | READY | spec-count guard in (my M1), timeout 25 |
-| #189 (db17aa0d) | CHANGES REQUESTED | M1 spectate restarts in Results (Kingdom.State re-activates it; a late joiner gets State(Results) then Spectate(true)); reproduced; L1 pin the Sim.Focus shape (items 40 to 45 owed to FORGE-01's server PR; item 45 client side holds) |
-| #185 (9a52cdcc) | READY | pauses in Results/Lobby, modal layer for a real spectator (my L1, L2); new low: spectators lose the phase bar |
+| #189 (db17aa0d CHANGES REQUESTED; e450c701 READY) | READY | M1 spectate restarted in Results (Kingdom.State re-activated it; a late joiner got State(Results) then Spectate(true)): fixed with `_phase` and a pending flag, WarFeedback 16/0 and RulerCamera 37/0 locally; L1 Sim.Focus shape went to FORGE-01 (items 40 to 45 owed to its server PR; item 45 client side holds) |
+| #185 (d8abd973) | READY | pauses in Results/Lobby, modal layer for a real spectator (my L1, L2); phase bar kept for spectators (my L3); Spectate.spec 11/0 locally |
 | #188 (61534fd9) | READY | open asks on the Rivals rows; `diplomacy.asks` shape pinned in a handoff for FORGE-01's PR 2 |
 | #184 (014b157b) | READY | three outposts; merged with #187 the FullMatch result is identical (43,521 ticks, 3 wars, 532 kills, 0 fallen) |
 | #190 (8325f1c2) | READY | content lint; shipped-content lint output identical except the row suffix |
-| #191 (45edbb28) | READY | duel input, client only; owed on FL-0071: `Arena.Action` validation, block expiry on the server, quiet refusal outside the duel |
-| #192 (059448b2) | READY | "Your reign" recap; low: no spec for a fallen ruler's recap |
+| #191 (dda0325a) | READY | duel input, client only; E16 now tests a HUD click during the preview (my L1); owed on FL-0071: `Arena.Action` validation, block expiry on the server, quiet refusal outside the duel |
+| #192 (d6b175f7) | READY | "Your reign" recap; the fallen-ruler spec I asked for is in (Recap.spec 6/0 locally) |
+| #193 (d08adebc) | READY | FL-0074 crowd director; CrowdDirector.spec 13/0; low: `finish(nil)` leaves the crowd reacting after a duel with no winner (probed); sounds are all `needed` |
+| #194 (64e20974) | READY | FORGE-04's slice pin for `ConversationAnalytics`; no-op on main, turns #187's red spec green |
 | #90 (ad1cfe00) | READY TO MERGE | see section 1 |
 
 ### Still owed
 FORGE-01's diplomacy PR 2 (items 18 to 25, with FORGE-03's `asks` shape), the `Sim.Focus` server PR (40 to 45), the interest tiers PR (36, 37), FL-0126 (26 to 29, 46), the arena PRs FL-0069 to FL-0071 (30 to 33, plus the arena server items on #191), FORGE-05's baseline 2.
+
+## 8. D-057 asset safety (added 2026-10-18 at FORGE-00's request; priority behind #187 and the Crownfall gameplay PRs)
+D-057 (`DECISIONS.md`, 64e71fde) brings licensed prebuilt assets and imported meshes into FL-0135 and FL-0136 and says Creator Store models are "vetted by FORGE-07 before use". The repo is public. Checks for each asset PR; none of them has been run yet because no such PR is open:
+A1. **Licence from the primary source.** Each asset names its source URL and licence text in the manifest; I open the source page (or the pack's licence file) myself. CC0 only for anything committed; CC-BY needs its attribution recorded; any NC or ND licence, or "free for personal use", is refused. A paid pack (Synty or similar) needs the owner's recorded approval and is never committed.
+A2. **Nothing non-redistributable in the tree.** List every new binary and archive (`fbx`, `glb`, `obj`, `rbxm`, `rbxmx`, `png`, `zip`) and match it to a manifest row with a CC0 licence file beside it; look for pack names, vendor folder names and embedded metadata of a paid pack; a Creator Store model must not exist as a committed file at all.
+A3. **No code in an imported or Creator Store model.** For any `rbxm`/`rbxmx` or uploaded asset: no `Script`, `LocalScript` or `ModuleScript` instance, no `require` with a numeric asset id, and none of `loadstring`, `getfenv`/`setfenv`, `InsertService:LoadAsset`, `HttpService`, `MarketplaceService`, `TeleportService`, or obfuscated or base64 strings; check hidden children, `Sound`/`Decal`/`Texture` ids pointing at assets the manifest does not list, and attribute or tag payloads. A mesh format (`fbx`, `glb`, `obj`) cannot carry scripts, but its extension is checked against its content.
+A4. **The manifest records the source URL and licence per asset**, and `manifest.check()` fails a row without them (I run it).
+A5. **Budgets are measured from the files**, not estimated: triangles per asset, texture size, and the world part count against the D-047 ceiling (27,000) by running the ceiling spec after the import; the numbers are in the PR with the command that produced them.
+A6. **Public-repo hygiene:** no personal paths, usernames or account ids in metadata, generator output or logs; no purchase receipts; no `.ROBLOSECURITY` or Open Cloud keys (AGENTS.md).
+A7. **Reproducibility:** the Blender customisation steps are committed as generators or scripts and `build.py --verify` still passes (this part needs bpy, which I do not have; FORGE-05 or FORGE-02's local run is the evidence, labelled as theirs).
