@@ -23,7 +23,7 @@ Everything marked *target* is a tuning goal for playtests, not a measured result
 | Founding | untimed | 480 (0–8 min) | slice: the first `ObjectiveCaptured` moves to Results / match: timer |
 | Expansion | untimed (not reached) | 720 (8–20 min) | timer |
 | Conflict | untimed (not reached) | 900 (20–35 min) | timer |
-| Endgame | untimed (not reached) | 600 (35–45 min) | timer. In VS-1 config, the PROVISIONAL G3 default (Match.luau `victory`) may end it early. From VS-2 (D-029), Endgame always leads to the Crown Arena; last keep standing becomes a coronation there |
+| Endgame | untimed (not reached) | 600 (35–45 min) | timer. Conquering every rival before Endgame ends the match early, with no duel (D-053 (3)). Otherwise Endgame leads to the Crown Arena (D-029); until the arena lands (FL-0071), most Crown Points wins |
 | Arena (VS-2; CONTRACTS G12.1 draft) | — | not in `match` until VS-2; BRIEF §3: 360 (38–44 min) | ArenaService stage `done` (crown-arena §2) |
 | Results | untimed (summary stays up) | 30 | timer |
 
@@ -50,7 +50,7 @@ The user prefers about 25 minutes of kingdom play, then a 5-minute final phase, 
 
 - Total: 1,820 s (30 min 20 s). `PacingService` checks that Founding..Arena lasts 25–35 minutes.
 - `phaseDurations("match30")` also returns `Arena`; `match` and `slice` have none until VS-2.
-- The default stays `slice` in VS-1 and `match` for the full match; `match30` runs only when deliberately selected. Selecting it needs a FORGE-01 change to `Match.durationsFor` and MatchService, plus an optional FORGE-05 debug preset; both are pending. Until MatchPhase gains Arena (G12.1), a `match30` run ends after Endgame (25 min) without the final phase.
+- The default is `match`, the full match (D-053 (1), #187). `slice` stays reachable with the Studio debug command `match.mode slice` (D-053 (7)), so the VS-1 checklists still run. `match30` runs only when deliberately selected. Selecting it needs a FORGE-01 change to `Match.durationsFor` and MatchService, plus an optional FORGE-05 debug preset; both are pending. Until MatchPhase gains Arena (G12.1), a `match30` run ends after Endgame (25 min) without the final phase.
 - Results is 30 s as in `design/living-kingdom.md` §6; BRIEF §3 implies about 60 s for the leadership recap. FORGE-00 settles this with FL-0096.
 
 ## 3. VS-1 slice, minute by minute (*targets*, from spawn; onboarding v2, D-030)
@@ -60,7 +60,7 @@ Assumptions (code on `main`; income **measured headless**, not played):
 - Costs (`config/Costs.luau`): starting treasury food 120 / wood 100 / stone 50; house 40 wood (20 builder-s); farm 50 wood (25 s); barracks 120 wood + 60 stone (**8 builder-s**, D-030); soldier 30 food + 10 wood (8 s, 1 food/min upkeep); keep L2 150 wood + 150 stone (60 s); upkeep 1 food per citizen per minute.
 - Starting population (FORGE-01): farmer 3, woodcutter 3, miner 2, builder 2, hauler 2.
 - Income: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`; every real server service in one MockEnv; not a Studio play test) measured an idle kingdom earning **food 86, wood 76–86 and stone 52 per minute** over 0–300 s. That is about 2× the slice targets in `design/economy.md` "Rates the slice needs" (FL-0058, FORGE-03's #110) for wood and stone, and about 5.7× for food. The targets are 12–13 wood per woodcutter (≈ 37 per minute from 3), 12–13 stone per miner (≈ 25 per minute from 2) and ≥ 5 food per farmer (≈ 15 per minute from 3); measured over target is wood 2.1–2.3×, stone 2.1×, food 5.7×, with `config/Jobs.luau` and `config/Citizens.luau` as they are. The targets are what a player who also upgrades the keep needs to finish rows 6–7 in about 6.5 minutes; below them, keep level 2 comes later (it is optional, D-044 (1)). Citizens make their first deposit at a median of 17 s, and sleep at night (90–120 s, 210–240 s, …), which slows slower players. Tuning waits for the user's play (FORGE-00); this section follows the code.
-- In slice mode on `main`, the AI kingdoms are idle (no citizens or rulers; probe), so a new player cannot lose the slice to an AI capture.
+- This section measures the **slice** (`match.mode slice`): the AI kingdoms are idle there (no citizens or rulers; probe), so a new player cannot lose the slice to an AI capture. In the **full match**, the default since #187 (D-053 (1)), every kingdom without a human has a governor from match start and PvP is on from Conflict. So the milestone times above are slice targets, and they hold for the full match only until a full-match probe measures them (FORGE-05's FL-0131 probe; FORGE-07's F5 on #177).
 - **Ruler gathering is optional (D-030): an accelerator, not a step.** The ruler starts seated on the throne in the aerial view (G13.6).
 
 | Time | Player does | Feedback (FL-0062, FL-0091) | Onboarding step | Analytics (FL-0063) |
@@ -101,8 +101,8 @@ Watch points (*unverified*):
 |---|---|---|---|---|
 | 0–2 | Founding | the slice flow above | founding, first answered request | — |
 | 2–8 | Founding | 3–5 new buildings; population grows with houses; keep level 2 (optional in the slice, D-044 (1); in the match whenever the player chooses, affordable within minutes at the measured income) | keep L2 (citizens cheer) | no war: diplomacy default is war only from Conflict (CONTRACTS G3 clarification) |
-| 8–20 | Expansion | outposts and neutral nodes claimed; walls start; ~25–40 citizens | first outpost captured | border contact is possible but there is no PvP damage until Conflict, and only when `pvp.enabled` |
-| 20 | Conflict starts | first armies (5–10 soldiers) | only when Match.luau `pvp.enabled` (BRIEF §16.2): "War is declared" announcement + horn. With PvP off (the shipped default): "The Conflict begins: rivals arm themselves" | only when `pvp.enabled`: **earliest raid ≈ minute 21–22**: soldiers must walk across the valley, so defenders have about 60 s of warning |
+| 8–20 | Expansion | outposts and neutral nodes claimed; walls start; ~25–40 citizens (at most 60 per kingdom, D-055) | first outpost captured | border contact is possible but there is no PvP damage until Conflict |
+| 20 | Conflict starts | first armies (5–10 soldiers, at most 15 per kingdom, D-055) | "The age of war begins" with the phase's minutes from Pacing (FL-0130). War is declared by a kingdom's senior ruler (D-054); the kingdom at war gets "<Kingdom> declares war on you!" with the horn | PvP is on (D-053 (2)): **earliest raid ≈ minute 21–22**. Soldiers must walk across the valley, so defenders have about 60 s of warning, and a raid rings the alarm with "Enemies in your lands!" (FL-0130) |
 | 20–32 | Conflict | raids on farms and stores (with PvP on); alliances form and break (VS-3) | first raid repelled / first raid landed | — |
 | 32–38 | Endgame | sieges; Crown Points decide who reaches the arena | siege, keep falls / holds | — |
 | 38–44 | Crown Arena (VS-2; format PROVISIONAL, BRIEF §16.9) | qualification → loadout → intro → duel → crowning, or a coronation if one keep stands | the duel and the crowning | — |
@@ -138,9 +138,9 @@ These are targets for pacing, not balance decisions. FORGE-03 owns the numbers a
 - FORGE-01: gather and trip times, AI governor aggression (VS-2), and citizen growth from houses.
 
 ## 9. Open questions (the user's decisions; nothing here assumes the answers)
-- BRIEF §16.3: can a match start with fewer than 4 human teams, and what is the mid-match join policy? This changes Lobby and early Founding.
-- BRIEF §16.4: the match ends in the Crown Arena (D-029). Still open: what eliminated players do. In VS-1 config, last keep standing may end the match early as a PROVISIONAL G3 default (Match.luau `victory`).
+- BRIEF §16.3: **decided by D-053 (1).** A match starts with one human, governors rule the rest, and a mid-match joiner takes over the standing kingdom with the fewest human rulers.
+- BRIEF §16.4: **decided by D-053 (3).** The match ends in the Crown Arena (D-029); conquering every rival before Endgame ends it early with no duel; eliminated rulers spectate (FL-0130's spectate camera).
 - BRIEF §16.9: Crown Arena format, champion choice, what the duel decides and support strength. A bracket changes the Arena length.
 - BRIEF §16.10 / FL-0096: match length, about 25 + 5 min (`match30`, evaluation only, FL-0092) or the BRIEF §3 timing. This doc does not choose. `modes.match` stays as configured until the user decides.
 - BRIEF §16.13: walk mode outside the arena. The VS-1 default is the throne and the aerial view (D-030), so no pacing step may require walking.
-- BRIEF §16.2: PvP intensity. Config ships `pvp.enabled = false` (PROVISIONAL); the first-conflict guard in §4 applies only when it is on (war from Conflict onward).
+- BRIEF §16.2: **decided by D-053 (2).** PvP is on: war from Conflict, peace by mutual consent, full raids and sieges. Alliances and betrayal stay VS-3. The first-conflict guard in §4 applies.
