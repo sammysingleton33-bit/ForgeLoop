@@ -46,6 +46,7 @@ local BARRACKS = { id = 5, kingdom = "crimson", type = "barracks", level = 1, st
 describe("ArmyText (FL-0060)", function()
 	it("turns reason codes into sentences and never shows an unknown code", function()
 		expect(ArmyText.reason("recruit_cap")).toBe("No free bunks. Upgrade the barracks or build another") -- D-041
+		expect(ArmyText.reason("army_cap")).never.toBe(ArmyText.GENERIC) -- D-055: 15 standing soldiers
 		expect(ArmyText.reason("cannot_afford")).toBe("Not enough resources")
 		expect(ArmyText.reason("barracks_not_ready")).toBe("Finish building the barracks first")
 		expect(ArmyText.reason("requires_barracks_level")).toBe("Upgrade the barracks first")

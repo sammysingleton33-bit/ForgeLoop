@@ -12,7 +12,9 @@
 	The day ambience bed (ambience.birds) starts with the first phase.
 	Battle music (FL-0130) while our lands are raided or our keep is besieged: the raid and siege moments'
 	start and end (AnnouncerController), held while any is on and ringing out calmTailSec after the last
-	one ends; our keep falling, Results and a new match end them.
+	one ends; our keep falling, Results and a new match end them. A battle in view (FeedbackWarController:
+	a hit flash or a building hit near the camera) also calls combatNear(), so an attacker hears it too;
+	it rings out after MusicDirector's combatHoldSec without another.
 
 		MusicController:setPhase(phase) / :setResult("won" | "lost") / :update() -> state?
 ]]
@@ -142,6 +144,12 @@ function MusicController:setAlert(kind: string, on: boolean)
 			self._director:calm(self._env.clock())
 		end
 	end
+	self:update()
+end
+
+-- A battle in view (any side): battle music now, held while more follow (MusicDirector combatHoldSec).
+function MusicController:combatNear()
+	self._director:combat(self._env.clock())
 	self:update()
 end
 
