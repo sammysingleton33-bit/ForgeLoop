@@ -1,6 +1,6 @@
 # AI Kingdoms — match pacing (FL-0061)
 
-_Owner: FORGE-04. Status: **revised after FORGE-00's review** (`production/handoffs/2026-10-13-forge-00-to-forge-04-doc-reviews.md` §2). Numbers: costs from `config/Costs.luau` (FL-0058). Income measured headless by FORGE-05's pacing probe (2026-10-13). Keep level 2 is optional in the slice (D-044 (1)). Last updated 2026-10-13._
+_Owner: FORGE-04. Status: **revised after FORGE-00's review** (`production/handoffs/2026-10-13-forge-00-to-forge-04-doc-reviews.md` §2). Numbers: costs from `config/Costs.luau` (FL-0058). Income measured headless by FORGE-05's pacing probe (2026-10-13). Keep level 2 is optional in the slice (D-044 (1)). Slice income targets from `design/economy.md` (FORGE-03's #110). Last updated 2026-10-16._
 
 Code:
 - config `games/game-001/config/Pacing.luau`;
@@ -59,7 +59,7 @@ EXPERIENCE.md §2 cites these numbers; this section holds them.
 Assumptions (code on `main`; income **measured headless**, not played):
 - Costs (`config/Costs.luau`): starting treasury food 120 / wood 100 / stone 50; house 40 wood (20 builder-s); farm 50 wood (25 s); barracks 120 wood + 60 stone (**8 builder-s**, D-030); soldier 30 food + 10 wood (8 s, 1 food/min upkeep); keep L2 150 wood + 150 stone (60 s); upkeep 1 food per citizen per minute.
 - Starting population (FORGE-01): farmer 3, woodcutter 3, miner 2, builder 2, hauler 2.
-- Income: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`; every real server service in one MockEnv; not a Studio play test) measured an idle kingdom earning **food 86, wood 76–86 and stone 52 per minute** over 0–300 s. That is 3–6× the FL-0058 per-worker targets (food about 5.7×) in `design/economy.md` (8 wood, ≥ 5 food, 8 stone per worker, so about 24 / 15 / 16 per minute), with `config/Jobs.luau` and `config/Citizens.luau` as they are. Citizens make their first deposit at a median of 17 s, and sleep at night (90–120 s, 210–240 s, …), which slows slower players. Tuning waits for the user's play (FORGE-00); this section follows the code.
+- Income: FORGE-05's headless pacing probe (`production/quality-gates/pacing-probe.md`; every real server service in one MockEnv; not a Studio play test) measured an idle kingdom earning **food 86, wood 76–86 and stone 52 per minute** over 0–300 s. That is about 2× the slice targets in `design/economy.md` "Rates the slice needs" (FL-0058, FORGE-03's #110) for wood and stone, and about 5.7× for food. The targets are 12–13 wood per woodcutter (≈ 37 per minute from 3), 12–13 stone per miner (≈ 25 per minute from 2) and ≥ 5 food per farmer (≈ 15 per minute from 3); measured over target is wood 2.1–2.3×, stone 2.1×, food 5.7×, with `config/Jobs.luau` and `config/Citizens.luau` as they are. The targets are what a player who also upgrades the keep needs to finish rows 6–7 in about 6.5 minutes; below them, keep level 2 comes later (it is optional, D-044 (1)). Citizens make their first deposit at a median of 17 s, and sleep at night (90–120 s, 210–240 s, …), which slows slower players. Tuning waits for the user's play (FORGE-00); this section follows the code.
 - In slice mode on `main`, the AI kingdoms are idle (no citizens or rulers; probe), so a new player cannot lose the slice to an AI capture.
 - **Ruler gathering is optional (D-030): an accelerator, not a step.** The ruler starts seated on the throne in the aerial view (G13.6).
 
@@ -89,7 +89,7 @@ Measured against this timeline (probe medians; seconds after spawn; targets 90 /
 
 The guided path above follows BRIEF §4 "First minutes guided": inspect a citizen → build on a plot → answer a citizen → recruit → capture. Its target length is **6–8 minutes** for a new player.
 
-**Keep level 2 in the slice: optional (D-044 (1)).** The onboarding order stays BRIEF §4's (inspect → build → answer → recruit → capture), and the capture still ends the slice (G3). At the measured income, keep L2 (150 wood + 150 stone after the barracks and soldiers) is affordable within about 2–3 minutes of the recruit (*inferred* from the probe's income, not measured), so a player can upgrade before pressing Send-to-capture; the Studio check of BRIEF §4 row 6 does exactly that (FORGE-05's STUDIO_PLAYTEST row). The slice stays **6–8 minutes**; FORGE-03 is asked to bring `design/economy.md` ("about 10 minutes") in line.
+**Keep level 2 in the slice: optional (D-044 (1)).** The onboarding order stays BRIEF §4's (inspect → build → answer → recruit → capture), and the capture still ends the slice (G3). At the measured income, keep L2 (150 wood + 150 stone after the barracks and soldiers) is affordable within about 2–3 minutes of the recruit (*inferred* from the probe's income, not measured), so a player can upgrade before pressing Send-to-capture; the Studio check of BRIEF §4 row 6 does exactly that (FORGE-05's STUDIO_PLAYTEST row). The slice stays **6–8 minutes**; `design/economy.md` says the same since FORGE-03's #110.
 
 Watch points (*unverified*):
 - **Food** is never the limit in the probe (86 food/min against about 15/min of upkeep after recruiting), before births (Citizens.luau `birthFood` 25 each) and meals (while `mealsChargeTreasury = true`).
@@ -113,7 +113,7 @@ Watch points (*unverified*):
 ## 5. Economy growth targets (for FORGE-03's balance sheet, FL-0058)
 | By minute | Population | Buildings (own) | Stockpile income (all resources) | Army |
 |---|---|---|---|---|
-| 2 | 12 | starting 5 + 1 | ~220/min, the measured 0–300 s average (86 food + ~80 wood + 52 stone; headless); the FL-0058 targets give ~55/min | 0 |
+| 2 | 12 | starting 5 + 1 | ~220/min, the measured 0–300 s average (86 food + ~80 wood + 52 stone; headless); the slice targets in `design/economy.md` give ~77/min (≈ 37 wood + 25 stone + 15 food) | 0 |
 | 8 | 18–22 | 8–10, keep L2 (optional, D-044 (1)) | ~150/min | 0–3 |
 | 20 | 25–40 | 12–16 | ~250/min | 5–10 |
 | 32 (Endgame starts) | 35–50 | 15–20, walls | ~300/min | 10–20 |
