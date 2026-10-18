@@ -53,4 +53,10 @@ M = [
  ("FL-0125", G + "config/Military.luau", 'maxSoldiers = 15,', 'maxSoldiers = 150,', "sim/Simulation.spec", "stops births at config Citizens.maxPerKingdom"),
  ("FL-0125", MIL, 'if #kingdom.unitIds + queuedCount(sim, kingdom) + count > armyCap(sim) then', 'if false then', "sim/Military.spec", "caps standing soldiers (living + training) at config Military.maxSoldiers"),
  ("FL-0125", AI, 'and army + training + 2 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim))', 'and army + training + 2 <= Military.recruitCap(sim, kingdom)', "sim/RulerAI", "never recruits past the army cap"),
+
+ # --- FORGE-07 review of #187: M1 (a turned-away player is seated in the next world), L1 (a host that reports from inside beginArena)
+ ("FL-0125", MATCH, '	for _, userId in waiting do\n		self:join(userId)\n	end', '', "sim/Match.spec", "seats a player who was turned away"),
+ ("FL-0125", MATCH, '		if not table.find(self.waiting, userId) then\n			table.insert(self.waiting, userId)\n		end\n		return false, "match_full"', '		return false, "match_full"', "sim/Match.spec", "seats a player who was turned away"),
+ ("FL-0125", MATCH, '	local waiting = table.find(self.waiting, userId)\n	if waiting then\n		table.remove(self.waiting, waiting)\n	end\n	self.sim:removeRuler(userId)', '	self.sim:removeRuler(userId)', "sim/Match.spec", "forgets a waiting player who leaves"),
+ ("FL-0125", MATCH, '	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }\n	local ok, begun = pcall(host.beginArena, qualifiers)', '	local ok, begun = pcall(host.beginArena, qualifiers)\n	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }', "sim/Match.spec", "hears a host that reports the result from inside beginArena"),
 ]

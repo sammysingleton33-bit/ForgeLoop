@@ -141,6 +141,7 @@ function Match.new(options: { [string]: any })
 	self:_configure(options.mode or MatchConfig.mode, options.phaseDurations)
 	self.state = "Lobby"
 	self.players = {} :: { number }
+	self.waiting = {} :: { number } -- turned away with match_full, in arrival order: seated first when a new world opens
 	self._matchCount = 0
 	self._events = {} :: { any }
 	self._phaseTime = 0
@@ -334,6 +335,10 @@ function Match:_seat(userId: number, kingdomId: string)
 	if not table.find(self.players, userId) then
 		table.insert(self.players, userId)
 	end
+	local waiting = table.find(self.waiting, userId)
+	if waiting then
+		table.remove(self.waiting, waiting)
+	end
 	self.lastKingdom[userId] = kingdomId
 	local entry = self.participants[userId]
 	if entry == nil or entry.kingdomId ~= kingdomId then
@@ -352,10 +357,26 @@ function Match:join(userId: number, preferred: string?): (boolean, string)
 	end
 	local kingdomId = self:_pickKingdom(userId, preferred, 1)
 	if kingdomId == nil then
+		if not table.find(self.waiting, userId) then
+			table.insert(self.waiting, userId)
+		end
 		return false, "match_full"
 	end
 	self:_seat(userId, kingdomId)
 	return true, kingdomId
+end
+
+-- The players of the last world (seated again, in their old order) and then those who were turned away get a seat in
+-- the world that just opened; whoever still finds no room waits for the next one.
+function Match:_reseat(players: { number })
+	local waiting = self.waiting
+	self.waiting = {}
+	for _, userId in players do
+		self:join(userId)
+	end
+	for _, userId in waiting do
+		self:join(userId)
+	end
 end
 
 -- The kingdom that can take every mover (counting movers already seated there): the preferred one
@@ -428,6 +449,10 @@ function Match:leave(userId: number)
 	local i = table.find(self.players, userId)
 	if i then
 		table.remove(self.players, i)
+	end
+	local waiting = table.find(self.waiting, userId)
+	if waiting then
+		table.remove(self.waiting, waiting)
 	end
 	self.sim:removeRuler(userId)
 	local entry = self.participants[userId]
@@ -707,11 +732,16 @@ function Match:_beginArena(): boolean
 	if #qualifiers < 2 then
 		return false
 	end
+	-- the arena is on before the host is asked: a host that reports its result from inside beginArena is heard
+	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }
 	local ok, begun = pcall(host.beginArena, qualifiers)
+	if self._arena == nil then
+		return self.state ~= "Endgame" -- the host already reported (arenaEnded moved the match on)
+	end
 	if not ok or begun ~= true then
+		self._arena = nil
 		return false
 	end
-	self._arena = { qualifiers = qualifiers, startedAt = self.sim.time }
 	return true
 end
 
@@ -774,9 +804,7 @@ function Match:update(dt: number)
 			self:_newWorld()
 			self.players = {}
 			self:_setState("Lobby", true)
-			for _, userId in players do
-				self:join(userId)
-			end
+			self:_reseat(players)
 		end
 	end
 end
@@ -825,9 +853,7 @@ function Match:restart(mode: string?, phaseDurations: { [string]: number }?)
 	self:_newWorld()
 	self.players = {}
 	self:_setState("Lobby", true)
-	for _, userId in players do
-		self:join(userId)
-	end
+	self:_reseat(players)
 end
 
 function Match:_start()
