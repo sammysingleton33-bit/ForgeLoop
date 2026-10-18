@@ -48,7 +48,7 @@ Both seeds reached Results at 2,700 virtual s, the default Pacing phase lengths,
 | Wall time | 323 s | 356 s |
 
 **Findings** (headless, for the owners to weigh):
-1. **Rigs exceed the 300-per-server budget** (BRIEF §14, line 78) with PvP off and an idle human. Each AI kingdom grows to about 105 rigs, against the ~75 per kingdom the budget allows. Three AI kingdoms plus the idle human already reach 327. If a human kingdom grew like the AI ones, it would reach about 420. Four kingdoms of 105 rigs each are also about 2.8× the 150-on-screen limit if one view can see them all; that depends on the camera and LOD and is unmeasured here. **This is for FORGE-00 and FORGE-01:** cap the population at about 75 per kingdom, or change the budget.
+1. **Rigs exceed the 300-per-server budget** (BRIEF §14, line 78) with PvP off and an idle human. Each AI kingdom grows to about 105 rigs, against the ~75 per kingdom the budget allows. Three AI kingdoms plus the idle human already reach 327. If a human kingdom grew like the AI ones, it would reach about 420. Four kingdoms of 105 rigs each are also about 2.8× the 150-on-screen limit if one view can see them all; that depends on the camera and LOD and is unmeasured here. **Ruled by D-055 (FORGE-00, 2026-10-18):** the budget holds at 300, with at most 60 citizens and 15 standing soldiers per kingdom (FORGE-01 adds the caps in FL-0125), and interest tiers turn on in the full match at ≤ 20 KB/s per player. Baseline 2 checks the caps.
 2. **Endgame sim p99 rises to about 17.4 ms in both seeds,** from 3.1 ms in Conflict, while the mean only goes from 1.3 to 2.3 ms. The cause is not established here. FORGE-01 reports, from his branch, that repeated RulerAI placement searches for farm spots that don't exist are most of the cost, and he is throttling failed searches. From baseline 2 the probe prints the ten slowest ticks per phase with their sim time, to show whether the spikes are periodic.
 3. With PvP off, the AI kingdoms keep only 4 soldiers each. FL-0125's PvP and wars will change the peak, so it must be re-measured at B20.
 4. Host step is dominated by the MockEnv world view (Kit building models), which is not representative of the engine. Parts reach about 24.5k at the peak, all of them server-side building and world models.
@@ -56,6 +56,6 @@ Both seeds reached Results at 2,700 virtual s, the default Pacing phase lengths,
 6. **Bandwidth was not measured in baseline 1.** It comes from baseline 2.
 
 ## Next
-- B20 (FL-0125): rerun the full probe on the cut and add a row here.
+- B20 (FL-0125): rerun the full probe on the cut and add a row here. It checks the D-055 caps (rigs ≤ 75 per kingdom, ≤ 300 in all) and the per-player bandwidth (≤ 20 KB/s with Interest).
 - Studio: FORGE-00's B20 rows ask for MicroProfiler server numbers at Endgame as an indication.
 - Device: release checklist D6 (owner).
