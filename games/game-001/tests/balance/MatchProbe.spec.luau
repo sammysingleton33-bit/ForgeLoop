@@ -206,6 +206,7 @@ local function run(seed: number): any
 		bytes = {} :: { [string]: number }, -- bytes EntityService sent to the human, per phase
 		interestBps = {} :: { [string]: { number } }, -- per virtual second: bytes/s bound with Interest
 		broadcastBps = {} :: { [string]: { number } }, -- the same bound without Interest (every rig near)
+		densestBps = {} :: { [string]: { number } }, -- the bound with Interest, viewer at the densest keep
 		parts = {} :: { { t: number, n: number } },
 	}
 	local update = host.match.update
@@ -275,28 +276,42 @@ local function run(seed: number): any
 		local rigs, buildings, per = entities(sim)
 		local home = sim.kingdoms[host:kingdomOf(player) or ""]
 		if home then
-			local near, far = 0, 0
-			local nearSq = Interest.DEFAULT_NEAR * Interest.DEFAULT_NEAR
+			-- every rig's position once, then the near count around each kingdom's keep: the human's own keep
+			-- (the best case) and the densest keep (a camera watching the busiest kingdom, D-055 (5))
+			local positions = {}
 			for _, kid in sim.kingdomOrder do
 				local k = sim.kingdoms[kid]
 				for _, list in { { k.citizenIds, sim.citizens }, { k.unitIds, sim.units } } do
 					for _, id in list[1] do
-						local e = list[2][id]
-						if e and e.x and (e.x - home.x) ^ 2 + (e.z - home.z) ^ 2 <= nearSq then
-							near += 1
-						else
-							far += 1
-						end
+						table.insert(positions, list[2][id])
 					end
 				end
 			end
+			local nearSq = Interest.DEFAULT_NEAR * Interest.DEFAULT_NEAR
+			local function nearOf(cx: number, cz: number): number
+				local n = 0
+				for _, e in positions do
+					if e and e.x and (e.x - cx) ^ 2 + (e.z - cz) ^ 2 <= nearSq then
+						n += 1
+					end
+				end
+				return n
+			end
+			local total = #positions
+			local nearHome, nearDensest = nearOf(home.x, home.z), 0
+			for _, kid in sim.kingdomOrder do
+				local k = sim.kingdoms[kid]
+				nearDensest = math.max(nearDensest, nearOf(k.x, k.z))
+			end
 			local phaseNow = match:getPhase()
-			local bucket = result.interestBps[phaseNow] or {}
-			result.interestBps[phaseNow] = bucket
-			table.insert(bucket, Interest.bytesPerSecond(near, far, 10))
-			local all = result.broadcastBps[phaseNow] or {}
-			result.broadcastBps[phaseNow] = all
-			table.insert(all, Interest.bytesPerSecond(near + far, 0, 10))
+			local function push(key: string, bps: number)
+				local bucket = result[key][phaseNow] or {}
+				result[key][phaseNow] = bucket
+				table.insert(bucket, bps)
+			end
+			push("interestBps", Interest.bytesPerSecond(nearHome, total - nearHome, 10))
+			push("densestBps", Interest.bytesPerSecond(nearDensest, total - nearDensest, 10))
+			push("broadcastBps", Interest.bytesPerSecond(total, 0, 10))
 		end
 		if rigs > result.peak.rigs then
 			result.peak = { rigs = rigs, buildings = buildings, t = sim.time, phase = match:getPhase(), per = per }
@@ -312,6 +327,13 @@ local function run(seed: number): any
 	result.endPhase = match:getPhase()
 	result.kingdomOrder = table.clone(sim.kingdomOrder)
 	result.kingdom = host:kingdomOf(player)
+	-- EntityService's own count: "Kingdom perf" logs bytes/s per player every 30 s (cross-check of the probe's)
+	result.servicePerf = {} :: { number }
+	for _, entry in env.mock.logs do
+		if entry.message == "Kingdom perf" and entry.fields and entry.fields.bytesPerSecond then
+			table.insert(result.servicePerf, entry.fields.bytesPerSecond)
+		end
+	end
 	result.errors = {}
 	for _, entry in env.mock.logs do
 		if entry.level == "error" then
@@ -365,9 +387,23 @@ local function report(r: any)
 		print(
 			`PERF seed {r.seed} {phase}: snapshots {#rep}; replicate ms {stats(rep)}; measured to the human {kbps} KB/s`
 		)
-		print(`PERF seed {r.seed} {phase}: upper bound KB/s without Interest {without}; with Interest {with}`)
+		local densest = kb(r.densestBps[phase] or {})
+		print(
+			`PERF seed {r.seed} {phase}: upper bound KB/s without Interest {without}; with Interest at own keep {with}`
+		)
+		print(`PERF seed {r.seed} {phase}: upper bound KB/s with Interest at the densest keep {densest}`)
 		print(`PERF seed {r.seed} {phase}: slowest sim ticks (ms@sim s) {slowest(s, r.simT[phase] or {}, 10)}`)
 	end
+	local totalBytes, totalSnapshots = 0, 0
+	for _, phase in r.phases do
+		totalBytes += r.bytes[phase] or 0
+		totalSnapshots += #(r.replicateMs[phase] or {})
+	end
+	local probeBps = math.floor((if totalSnapshots > 0 then totalBytes / (totalSnapshots / 10) else 0) + 0.5)
+	local serviceBps = math.floor(mean(r.servicePerf) + 0.5)
+	print(
+		`PERF seed {r.seed} bytes cross-check: probe {probeBps} B/s over the run; EntityService "Kingdom perf" mean {serviceBps} B/s over {#r.servicePerf} logs`
+	)
 	local peak = r.peak
 	local at, phase = math.floor(peak.t or 0), tostring(peak.phase)
 	local per = perText(peak.per or {}, r.kingdomOrder)
