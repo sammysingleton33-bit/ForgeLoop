@@ -9,8 +9,8 @@
 			`relation`), "#rank · N Crown Points", a time-bound note ("Note") and the actions ("Action_<id>",
 			attribute `enabled`; a disabled action's reason is the "Reason" line). Declare war asks first:
 			while ui.confirm is that rival, the row shows "Declare war on <name>?" with "Confirm" and
-			"Cancel" instead. A co-ruler (D-054, view.senior set) asks: "Ask for war", then
-			"Ask <senior> to declare war on <name>?".
+			"Cancel" instead. A co-ruler (D-054, view.senior set) asks instead: "Ask <senior> to
+			declare war", then "Ask <senior> to declare war on <name>?".
 		RivalsList.key(view, phone, confirm) -> string   what changes the rows' structure (rebuild);
 		                                         countdowns and scores are patched by paint (no flicker)
 		RivalsList.paint(body, view)             patches the texts that tick: notes, reasons, points
@@ -59,13 +59,21 @@ end
 
 -- Desktop: 132 px buttons in a row. Phones: two half-width slots ("Slot_<id>") so "Accept peace" and
 -- "Propose peace" both fit the narrow drawer (FL-0129 phone pass); the button fills its slot.
-local function actionButton(action: any, phone: boolean, order: number, parent: Instance, onActivated: () -> ())
+local function actionButton(
+	action: any,
+	phone: boolean,
+	order: number,
+	parent: Instance,
+	onActivated: () -> (),
+	alone: boolean?
+)
 	local button = Button.new({
 		text = action.label,
 		variant = action.variant,
 		state = if action.enabled then "default" else "disabled",
 		size = "small",
-		width = if phone then nil else 132,
+		-- a co-ruler's "Ask <senior> to declare war" (D-054) needs more room than "Declare war"
+		width = if phone then nil elseif action.ask then 240 else 132,
 		layoutOrder = order,
 		onActivated = onActivated,
 	})
@@ -75,7 +83,7 @@ local function actionButton(action: any, phone: boolean, order: number, parent: 
 		Create("Frame", {
 			Name = "Slot_" .. action.id,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(0.5, -4, 0, 0),
+			Size = if alone and action.ask then UDim2.fromScale(1, 0) else UDim2.new(0.5, -4, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			LayoutOrder = order,
 			Parent = parent,
@@ -217,7 +225,7 @@ local function row(r: any, phone: boolean, ui: any, order: number, senior: strin
 	for i, action in r.actions do
 		actionButton(action, phone, i, actions, function()
 			ui.onAction(r.id, action.id)
-		end)
+		end, #r.actions == 1)
 		if not action.enabled and action.reason and reason == nil then
 			reason = action.reason
 		end

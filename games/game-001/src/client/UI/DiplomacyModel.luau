@@ -9,7 +9,7 @@
 		  cooldowns = { { a, b, untilAt } }, graceEndsAt?, senior: UserId?, lockedUntil: number? }
 	A pair that is not listed is at Peace (Sim/Diplomacy: every pair starts at Peace).
 	D-054, for the asking player: only my kingdom's senior ruler declares war or accepts peace (a
-	co-ruler's Declare war is an ask to them, "Ask for war"); a newly seated ruler waits until
+	co-ruler's Declare war is an ask to them, "Ask <senior> to declare war"); a newly seated ruler waits until
 	lockedUntil for both. Without those fields every ruler may do everything (the server decides).
 
 		DiplomacyModel.view(store, diplomacy, phase, now, me?) -> View?   nil without my kingdom
@@ -169,7 +169,7 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 				local reason = declareReason(diplomacy, phase, now, truce)
 				table.insert(row.actions, {
 					id = "declareWar",
-					label = if senior then "Ask for war" else "Declare war",
+					label = if senior then `Ask {senior} to declare war` else "Declare war",
 					variant = if senior then "secondary" else "danger",
 					enabled = reason == nil,
 					reason = reason,
