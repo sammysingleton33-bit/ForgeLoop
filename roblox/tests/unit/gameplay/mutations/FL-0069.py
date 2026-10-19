@@ -21,7 +21,7 @@ M = [
  ("FL-0069", LG, 'if moment.kingdom == kingdom and (userId == nil or moment.userId == nil or moment.userId == userId) then', 'if (userId == nil or moment.userId == nil or moment.userId == userId) then', "sim/Ledger", "for that kingdom only"),
  ("FL-0069", LG, 'if #out >= count then', 'if #out > count then', "sim/Ledger", "at most the limit"),
  # --- the service
- ("FL-0069", LS, 'if k == nil then\n\t\treturn nil\n\tend\n\tlocal moment, reason', 'if false then\n\t\treturn nil\n\tend\n\tlocal moment, reason', "sim/LeadershipService", "refuses an unknown act, an unknown kingdom"),
+ ("FL-0069", LS, 'if k == nil then\n\t\treturn nil\n\tend\n\t-- An act for a ruler', 'if false then\n\t\treturn nil\n\tend\n\t-- An act for a ruler', "sim/LeadershipService", "refuses an unknown act, an unknown kingdom"),
  ("FL-0069", LS, 'if reason == "unknown_act" and not self._warned[act] then', 'if reason == "unknown_act" then', "sim/LeadershipService", "logging an unknown act once"),
  ("FL-0069", LS, 'self.acted:fire(kingdom, userId, act, moment.component, moment.delta)', 'self.acted:fire(kingdom, userId, act, moment.component, 0)', "sim/LeadershipService", "fires acted"),
  ("FL-0069", LS, 'stability = clamp100(if conditions then Consequences.effectiveStability(k) else NEUTRAL),', 'stability = clamp100(if conditions then conditions.stability or NEUTRAL else NEUTRAL),', "sim/LeadershipService", "stability net of unrest pressure"),
@@ -34,6 +34,6 @@ M = [
  ("FL-0069", LS, 'if match.roundId ~= self._round then', 'if false then', "sim/LeadershipService", "starts a new round with an empty ledger"),
  ("FL-0069", LG, 'local def = config.components[component]', 'local def = Support.components[component]', "sim/Ledger", "classifies a component by the ledger\'s config"),
  ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if false then', "sim/LeadershipService", "not seated in that kingdom"),
- ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if table.find(k.rulers, userId) == nil then', "sim/LeadershipService", "the kingdom itself too"),
+ ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if table.find(k.rulers, userId) == nil then', "sim/LeadershipService", "refuses an act for a ruler who is not seated"),
  ("FL-0069", LS, '		if not self._warned[key] then\n			self._warned[key] = true', '		if true then\n			self._warned[key] = true', "sim/LeadershipService", "logging it once"),
 ]
