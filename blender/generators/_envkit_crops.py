@@ -5,7 +5,7 @@ it), so the terrain field under it (40 x 30) and the placement clearance stay ex
 tapered clump of stalks with a leaning ear cap, each tuft its own height, lean and shade, so a field is never a wall of identical cones
 (the phase-1 reviewer's variation 2). How the game shows growth today (read for FL-0136): the world places a field once, ripe, for
 good (`farm_field_<crop>_NN`, NN = 1 + field index % 3); the only growth is the farm BUILDING's construction stages (furrows, shoots,
-young wheat). So 01-03 are three ripe plot variants and `farm_field_wheat_stage1` / `_stage2` are the earlier growth stages, ready for a
+young wheat). So 01-03 are three ripe plot variants and `farm_field_wheat_04` (shoots) / `_05` (green wheat) are the earlier growth stages (the Kit's id shape wants `_NN`), ready for a
 farm that grows a crop; nothing places them yet.
 """
 

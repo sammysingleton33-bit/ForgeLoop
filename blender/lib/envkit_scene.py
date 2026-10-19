@@ -77,7 +77,7 @@ def render_preview(fbx, env_json, out_jpg, samples=14, size=(1600, 560)):
     for pid, cx in xs:
         kit.spawn(pid, cx - x / 2, 0.0, 0.0)
     cam = scene_rig.add_camera(sc, 70)
-    ckit_scene.gameplay(cam, (0.0, 8.0, 0.0), x * 0.62, 24.0, fov=70)
+    ckit_scene.gameplay(cam, (0.0, 6.0, 0.0), x * 0.33, 30.0, fov=70)  # the row fills ~75% of the 1600 x 560 frame
     tmp = Path(out_jpg).with_suffix(".png")
     scene_rig.render(sc, tmp)
     im = Image.open(tmp).convert("RGB")

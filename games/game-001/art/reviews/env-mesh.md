@@ -182,8 +182,8 @@ How crops render today (read for this task): the world places ONE static, ripe f
 NN only changes the sheaf jitter of the stand-in (`Props.cropField`). There is **no crop-growth state** anywhere in `src` (searched growth / ripe / sprout / crop). The only growth in the game is the
 farm BUILDING's construction stages (`Buildings.buildStage`: furrows 0.35, shoots 0.9, young wheat 1.8 high) and its own wheat rows (2.2 + ears 1.3) beside the field; the buildings stay part-built (D-057 (18)).
 So the field ids cannot be growth stages without a runtime change. Decision: `farm_field_wheat_01..03` are three RIPE plot variants (placed: 01, 02), `farm_field_cabbage_01..03` three cabbage variants (placed: 03),
-and the growth stages are two extra ids, `farm_field_wheat_stage1` (furrows with the first shoots) and `farm_field_wheat_stage2` (green wheat), that nothing places yet: K (or a later farm-visual task)
-decides whether a farm that grows a crop uses them.
+and the growth stages are two extra ids, `farm_field_wheat_04` (furrows with the first shoots) and `farm_field_wheat_05` (green wheat; K's validator wants ids that end in `_NN`, so the stages are
+numbered after the three ripe variants), that nothing places yet: K (or a later farm-visual task) decides whether a farm that grows a crop uses them.
 
 Stand-ins replaced (per id; reach = what `PlotClearance` measures, `WorldPlan.CLEAR.radius` is that rounded up: oak 13.5, pine 11.7, birch 8.5, bush 5.2, flowers 3.4, boulder S/M/L 5.8 / 7.5 / 13.3, haystack 4.4):
 
@@ -259,4 +259,240 @@ Out of scope (untouched): bridges, banners, well, cart, goods (`prop_*`, `bridge
 
 Variants decided (every placed id exists, so a world never mixes a mesh with a stand-in of the same family): oak 8, pine 6, birch 6 (the full ranges `SPECIES_VARIANTS` draws from), bush 8, flowers 6,
 boulders S / M / L 3 each, stone nodes 3, ore nodes 6 (01-02 iron, 03-04 gold, 05-06 crystal as the stand-in's `variant` rule; 03 and 04 are the placed ones), wheat 3 + 2 growth stages, cabbage 3,
-haystack 1; spares that `KitProps.spec` knows but nothing places: cliff 2, wood nodes 2, fences 2. **67 meshes**.
+haystack 1; spares that `KitProps.spec` knows but nothing places: cliff 2, wood nodes 2, fences 2. **67 meshes: 52 ids the world places (kit 1) and 15 spares (kit 2)**, see section 2.
+
+## 2. The kit: what was built
+**67 style-B meshes in two FBX kits**, every mesh object named by its asset id, one material `M_envkit_vc`, vertex colours only (`Col`), flat normals, no textures, 1 unit = 1 stud, Y up / -Z forward, base on y = 0,
+object origin at the bounding-box centre (`env.json` `bbox_center` and `size` are relative to the base-centre pivot, as in the citizen kit). Everything is generated (no third-party mesh, licence `project-original`).
+
+| kit | files | ids | triangles (sum) | what it is |
+|---|---|---|---|---|
+| `env_kit_01` | `games/game-001/art/env_kit/env_kit.fbx` (875 KB) + `env.json` | **52** | 19,744 | exactly the ids the world places today (`Kit/EnvMeshData` is made from this) |
+| `env_kit_02` | `games/game-001/art/env_kit/env_kit_spares.fbx` (315 KB) + `env_spares.json` | **15** | 7,600 | finished spares nothing places yet; K's spec fails on an id the world never places, so they live in their own kit and are read by nothing until the world uses them |
+
+| group | ids | variants (how they differ) |
+|---|---|---|
+| oak | `tree_oak_01..08` | five archetypes (the stand-in's classes): dome 01 / 06, tall 02 / 07, wide 03 / 08, lopsided 04, twin crown 05; a trunk with root flare and one or two limbs, 10 or 11 faceted crown lobes plus rim clumps, painted deep blue-green underneath to lime on up-facing facets; 554 to 652 triangles, 15 to 24 studs wide, 24 to 26 high |
+| pine | `tree_pine_01..06` | per-id height 28 to 33 studs (the stand-in's), 7 stacked toothed tiers on odd ids and 6 on even ids, each with its own outline, tooth depth and a slight lean; 348 and 396 triangles; blue-green, lighter on top |
+| birch | `tree_birch_01..06` | slender white trunk with bark marks and a lighter crown of 5 or 6 lobes, 20 to 23 studs high; 318 and 366 triangles |
+| bush | `bush_01..08` | four silhouettes (round, low and wide, tall, twin mound) x three kinds by NN % 3: plain, white blossom (02, 05, 08), red berries (03, 06; `bush_03` is the world's food node so its berries must read from the aerial camera); 140 to 340 triangles |
+| flowers | `plant_flowers_01..06` | a leafy tuft with six large blooms; colours red, yellow, white, purple and two mixes; 228 to 312 triangles |
+| boulders | `rock_boulder_{s,m,l}_01..03` | three structures per size (a lumped mass with shaving-plane cuts, tipped masses, chips and pebbles), strata, moss tints; 116 to 268 triangles |
+| stone nodes | `resource_stone_01..03` | pale strata and cut blocks with rubble, the quarry's read is "worked stone"; 200 triangles each |
+| ore nodes | `resource_ore_03, 04` placed; `01, 02, 05, 06` spare | dark host rock with seven angular nuggets: iron (01-02), gold rgb(238, 172, 22) (03-04), crystal (05-06); 218 to 220 triangles |
+| spare rocks | `rock_cliff_01..02`, `resource_wood_01..02` (kit 2) | cliff massif; log pile + chopped stump + axe |
+| wheat | `farm_field_wheat_01..03` ripe plot variants (01, 02 placed), `04` shoots and `05` green wheat (kit 2) | 38 x 28 studs like the stand-in (the terrain field under it and the placement clearance stay as they are), ridge-topped soil rows with gradient blades: 01 rows along x, golden; 02 rows along z, amber with red poppies; 03 pale straw with a path and a scarecrow; 1,020 to 1,430 triangles |
+| cabbage | `farm_field_cabbage_01..03` (03 placed) | six ridges of eight frilly heads in three greens, a different offset and shade pattern per id; 1,332 triangles |
+| haystack | `farm_haystack_01` | round-shouldered stack, two darker bands, pitchfork; 196 triangles |
+| fences | `farm_fence_01..02` (kit 2) | five posts, one or two rails; 72 to 84 triangles |
+
+**Fit to the stand-in.** The world's keep-out, plot clearance and the camera tuning were made on the part-built stand-ins, so each mesh takes its stand-in's footprint and height (measured by `blender/scripts/envkit_standins.py` from the real Lune dump,
+`blender/lib/envkit_standins.json`). The generator's `fit_to` clamps footprint `max(x, z)` to 93 to 107 % of the stand-in's (resource nodes 88 to 100 %) and height to 90 to 110 %; K's validator allows 85 to 115 % (nodes 85 to 102 %) and 75 to 125 %.
+Result (table 3): footprints 93 to 107 % (88 % for two spare ore nodes), heights 89 to 113 % except the wheat fields (122 %, the ears stand above the old planks; the crops keep the stand-in's 38 x 28 footprint exactly), and three declared `fit_note`s in kit 2 (wheat 03 scarecrow 190 % high, shoots 50 %, green wheat 76 %: growth stages are meant to differ).
+**Sinks:** 20 props (rocks, boulders, nodes, cliffs) are sunk 0.40 to 0.54 studs below y = 0 on purpose so they sit on the uneven terrain without floating; the validator prints these as `warning: the base is at y = -0.4x, not 0`
+(14 in kit 1, 6 in kit 2; the generator allows at most 0.6). They are warnings by K's design, not errors.
+
+**Contract with K (worker K's `env_to_luau.py`, copied byte-identical from `forge/02-blender-fl0136-envrt` at 83695c53).** `python3 games/game-001/art/env_kit/env_to_luau.py --validate-only --in <json>` passes on both
+`env.json` (valid, 14 warnings) and `env_spares.json` (valid, 6 warnings); `--print-budget` prints the same limits the measured gate uses. Adopted from K: the seven families `tree | bush | rock | flower | crop | haystack | fence`
+(resource nodes are family `rock` with `node: true`), crop budget 40 to 1,500 triangles and haystack / fence 40 to 600, ids that end in `_NN` (so the growth stages are `farm_field_wheat_04` and `_05`, not `_stage1`),
+every id a world really places, `tint: fixed` (MeshPart.Color stays white; the baked vertex colours are the look; nothing here is kingdom-tinted). K's collider rule adds one invisible part to tree, rock, bush, haystack and fence models, which the relief below counts.
+
+## 3. Measured triangles (the gate reads the FBX bytes, not the generator's own count)
+`lib/fbxtris.py` counts triangles and the bounding box straight from the exported FBX; `lib/manifest.py` (`env_budget_errors`, `env_kit_errors`, run by `manifest.check()` and so by `check.sh`) fails the build if any mesh is outside its family budget,
+its declared `tris` or box differs from the measured one, a prop is missing from or extra in the FBX, an id is off the `_NN` shape, the fit window is broken without a `fit_note`, a prop sinks more than 0.6 studs, the `sha256` of the committed FBX differs
+from the row's, or the FBX text values name a home directory or user. `blender/tests/test_env_kit_budget.py` (25 tests) pins this with mutants (one per budget family, a wrong count, a missing and an extra prop, a bad id, a node over 102 %, a floating prop,
+a tampered `env.json`, a stale sha, a personal path replaced in place in the FBX bytes, a broken FBX) and runs K's validator on both json files.
+
+Family budgets and measured ranges (both kits), then every id:
+
+
+**env_kit_01 (env_kit.fbx, the ids the world places)**
+
+| family | meshes | triangles per mesh (min to max) | total | budget |
+|---|---|---|---|---|
+| tree | 20 | 318 to 652 | 9058 | 300 to 900 |
+| bush | 8 | 140 to 340 | 2000 | 40 to 400 |
+| flower | 6 | 228 to 312 | 1626 | 40 to 400 |
+| rock | 14 | 116 to 268 | 2740 | 40 to 400 |
+| crop | 3 | 1332 to 1430 | 4124 | 40 to 1500 |
+| haystack | 1 | 196 to 196 | 196 | 40 to 600 |
+
+**env_kit_02 (env_kit_spares.fbx, ids nothing places yet)**
+
+| family | meshes | triangles per mesh (min to max) | total | budget |
+|---|---|---|---|---|
+| rock | 8 | 132 to 220 | 1440 | 40 to 400 |
+| crop | 5 | 1020 to 1332 | 6004 | 40 to 1500 |
+| fence | 2 | 72 to 84 | 156 | 40 to 600 |
+
+**Table 3: env_kit_01, measured per id** (footprint = max(x, z) against the stand-in's, height against the stand-in's; node = a resource node, fit window 85 to 102 %)
+
+| asset id | family | triangles | bbox x, y, z (studs) | footprint vs stand-in | height vs stand-in | node | note |
+|---|---|---|---|---|---|---|---|
+| `tree_oak_01` | tree | 590 | 21.0, 25.8, 19.7 | 100% | 101% | yes |  |
+| `tree_oak_02` | tree | 588 | 15.7, 26.0, 16.6 | 98% | 106% |  |  |
+| `tree_oak_03` | tree | 604 | 21.6, 25.5, 22.7 | 100% | 100% | yes |  |
+| `tree_oak_04` | tree | 604 | 19.8, 25.8, 18.6 | 107% | 105% |  |  |
+| `tree_oak_05` | tree | 610 | 19.2, 25.7, 21.8 | 100% | 102% | yes |  |
+| `tree_oak_06` | tree | 554 | 19.8, 25.9, 21.5 | 101% | 104% |  |  |
+| `tree_oak_07` | tree | 572 | 15.9, 26.2, 15.3 | 107% | 101% |  |  |
+| `tree_oak_08` | tree | 652 | 23.7, 24.2, 24.0 | 107% | 98% |  |  |
+| `tree_pine_01` | tree | 396 | 16.2, 29.9, 16.5 | 101% | 101% |  |  |
+| `tree_pine_02` | tree | 348 | 16.4, 32.7, 15.7 | 100% | 101% | yes |  |
+| `tree_pine_03` | tree | 396 | 15.1, 30.3, 15.7 | 97% | 101% |  |  |
+| `tree_pine_04` | tree | 348 | 16.5, 33.0, 16.9 | 103% | 101% |  |  |
+| `tree_pine_05` | tree | 396 | 15.9, 30.6, 16.3 | 99% | 101% |  |  |
+| `tree_pine_06` | tree | 348 | 16.8, 28.3, 16.7 | 104% | 101% |  |  |
+| `tree_birch_01` | tree | 366 | 10.0, 22.1, 10.0 | 99% | 99% |  |  |
+| `tree_birch_02` | tree | 318 | 7.8, 19.9, 11.1 | 107% | 96% |  |  |
+| `tree_birch_03` | tree | 366 | 9.7, 22.2, 10.1 | 101% | 98% |  |  |
+| `tree_birch_04` | tree | 318 | 10.0, 20.6, 8.8 | 95% | 97% |  |  |
+| `tree_birch_05` | tree | 366 | 10.0, 22.6, 8.6 | 107% | 98% |  |  |
+| `tree_birch_06` | tree | 318 | 9.2, 20.7, 7.3 | 107% | 96% |  |  |
+| `bush_01` | bush | 160 | 6.9, 5.5, 6.9 | 93% | 105% |  |  |
+| `bush_02` | bush | 280 | 7.8, 4.7, 7.7 | 107% | 93% |  |  |
+| `bush_03` | bush | 280 | 6.4, 6.0, 6.2 | 95% | 110% | yes |  |
+| `bush_04` | bush | 220 | 7.2, 5.3, 7.0 | 106% | 109% |  |  |
+| `bush_05` | bush | 280 | 7.4, 5.6, 7.5 | 107% | 102% |  |  |
+| `bush_06` | bush | 300 | 6.9, 4.8, 7.1 | 107% | 92% |  |  |
+| `bush_07` | bush | 140 | 7.1, 5.7, 6.3 | 93% | 106% |  |  |
+| `bush_08` | bush | 340 | 6.1, 5.1, 7.4 | 107% | 97% |  |  |
+| `plant_flowers_01` | flower | 254 | 4.4, 3.1, 3.9 | 107% | 104% |  |  |
+| `plant_flowers_02` | flower | 280 | 3.3, 3.0, 4.0 | 106% | 102% |  |  |
+| `plant_flowers_03` | flower | 228 | 3.4, 3.1, 4.5 | 107% | 105% |  |  |
+| `plant_flowers_04` | flower | 312 | 4.1, 3.0, 3.9 | 93% | 101% |  |  |
+| `plant_flowers_05` | flower | 254 | 3.3, 3.1, 3.6 | 107% | 100% |  |  |
+| `plant_flowers_06` | flower | 298 | 3.2, 3.1, 4.0 | 107% | 106% |  |  |
+| `rock_boulder_s_01` | rock | 144 | 6.6, 3.8, 5.2 | 107% | 101% |  |  |
+| `rock_boulder_s_02` | rock | 116 | 6.5, 3.9, 6.8 | 107% | 103% |  |  |
+| `rock_boulder_s_03` | rock | 170 | 6.0, 3.9, 7.2 | 107% | 104% |  |  |
+| `rock_boulder_m_01` | rock | 160 | 7.8, 6.0, 8.2 | 93% | 113% |  |  |
+| `rock_boulder_m_02` | rock | 146 | 9.5, 5.9, 8.6 | 102% | 99% |  |  |
+| `rock_boulder_m_03` | rock | 190 | 9.0, 5.9, 9.0 | 93% | 98% |  |  |
+| `rock_boulder_l_01` | rock | 246 | 17.6, 8.7, 14.7 | 98% | 95% |  |  |
+| `rock_boulder_l_02` | rock | 264 | 15.4, 8.8, 18.1 | 96% | 96% |  |  |
+| `rock_boulder_l_03` | rock | 268 | 11.7, 9.1, 18.0 | 94% | 96% |  |  |
+| `resource_stone_01` | rock | 200 | 16.8, 8.0, 10.1 | 100% | 102% | yes |  |
+| `resource_stone_02` | rock | 200 | 16.5, 7.9, 10.5 | 98% | 102% | yes |  |
+| `resource_stone_03` | rock | 200 | 16.7, 7.9, 10.1 | 100% | 102% | yes |  |
+| `resource_ore_03` | rock | 218 | 11.0, 7.7, 8.1 | 96% | 96% | yes |  |
+| `resource_ore_04` | rock | 218 | 9.3, 7.7, 11.6 | 100% | 96% | yes |  |
+| `farm_field_wheat_01` | crop | 1362 | 38.0, 3.0, 28.0 | 100% | 122% |  |  |
+| `farm_field_wheat_02` | crop | 1430 | 38.1, 2.9, 28.0 | 100% | 122% |  |  |
+| `farm_field_cabbage_03` | crop | 1332 | 38.0, 2.8, 28.0 | 100% | 89% |  |  |
+| `farm_haystack_01` | haystack | 196 | 7.8, 6.1, 6.0 | 107% | 99% |  |  |
+
+**Table 3b: env_kit_02 (spares), measured per id**
+
+| asset id | family | triangles | bbox x, y, z (studs) | footprint vs stand-in | height vs stand-in | node | note |
+|---|---|---|---|---|---|---|---|
+| `rock_cliff_01` | rock | 138 | 14.3, 10.3, 10.5 | 93% | 98% |  |  |
+| `rock_cliff_02` | rock | 132 | 11.5, 10.5, 13.9 | 93% | 102% |  |  |
+| `resource_ore_01` | rock | 218 | 11.3, 7.7, 9.5 | 95% | 96% | yes |  |
+| `resource_ore_02` | rock | 220 | 10.5, 7.7, 9.4 | 92% | 96% | yes |  |
+| `resource_ore_05` | rock | 218 | 9.2, 8.1, 10.5 | 88% | 101% | yes |  |
+| `resource_ore_06` | rock | 218 | 10.2, 8.0, 11.5 | 88% | 99% | yes |  |
+| `resource_wood_01` | rock | 148 | 9.1, 4.1, 8.1 | 100% | 99% | yes |  |
+| `resource_wood_02` | rock | 148 | 9.1, 4.1, 8.3 | 100% | 97% | yes |  |
+| `farm_field_wheat_03` | crop | 1300 | 38.0, 4.6, 28.0 | 100% | 190% |  | fit_note |
+| `farm_field_wheat_04` | crop | 1020 | 38.0, 1.2, 28.0 | 100% | 50% |  | fit_note |
+| `farm_field_wheat_05` | crop | 1020 | 38.0, 1.8, 28.0 | 100% | 76% |  | fit_note |
+| `farm_field_cabbage_01` | crop | 1332 | 38.0, 2.8, 28.0 | 100% | 89% |  |  |
+| `farm_field_cabbage_02` | crop | 1332 | 38.0, 2.8, 28.0 | 100% | 89% |  |  |
+| `farm_fence_01` | fence | 72 | 16.5, 2.8, 0.5 | 100% | 100% |  |  |
+| `farm_fence_02` | fence | 84 | 16.5, 2.8, 0.5 | 100% | 100% |  |  |
+
+## 4. Look: renders, my own critique, fresh D-019 reviewers
+**Method.** Cycles renders through the `bpy` wheel (Blender, not Studio). "Before" = the part-built `Kit.prop` stand-ins rebuilt part by part from the Lune dump (`kitparts.build_model`), "after" = the SHIPPED `env_kit.fbx` / `env_kit_spares.fbx`
+(`lib/envkit_scene.py` imports the FBX the Studio import would use). Each scene uses the world's real placements (`EnvInventory.spec` dump) and the part-built keep, houses, farm, storehouse, lumber camp and quarry of the crimson and emerald plots
+(not replaced: D-057 (18)) next to four B-style citizens. Cameras: gameplay 82 studs, 44.3 degrees down; aerial 170 studs, 50 degrees; close 45 studs, 30 degrees; 70 degree vertical field of view. A lineup that did not fit the frame is widened and the sheet caption says so.
+Scenes (`blender/scripts/envnature_scenes.py`): settlement crimson / emerald (the whole plot with its surroundings), forest broadleaf / pine (the density-1.0 plan), trees lineup (all 20 trees) and close view, bushes and flowers, the nine boulders,
+resource nodes, crop fields, wheat in three growth stages. Review sheets: `games/game-001/art/reviews/img/d057-env-nature-r1/sheet_*.jpg` (11 JPEGs, each under 250 KB, blind: "SET A / SET B", column order flipped on alternate sheets).
+The manifest preview is `blender/previews/env_kit.jpg` (a lineup of representative props from the shipped FBX).
+
+**My own look (every sheet was opened).**
+- Trees: the B oaks are clearly different from each other (dome, tall, wide, lopsided, twin) and carry the citizens' faceted language, where the stand-in's 3 to 5 overlapping spheres look soft and balloon-like beside the angular keep and houses. The pines read as tall cones and
+  are easy to tell from oaks, but they are very dark and share one outline family; birches are small faceted lollipops on thin tilted trunks. At the aerial camera the trees read, bushes and birches shrink to specks.
+- Rocks and nodes: the boulders are lumpy, cut and moss-tinted, three different structures per size; gold ore reads as gold at 82 studs (it read cream before I deepened it); the three stone quarries differ mostly in tone and rubble (grey on grey).
+  At 170 studs rocks and nodes are a few grey pixels in both sets and the gold node cannot be seen: that is a scale or marker question, not a mesh question.
+- Crops: wheat is a field of peaked tufts in rows (not stalks), which reads as a crop and not as lumber, the two placed variants differ in orientation, density and colour; cabbage reads as leafy heads; the growth stages read ripe, green, shoots at 82 studs (shoots faint on the soil).
+  The haystack is small and low contrast against the grass. In the part-built set the three "stages" are the same field: nothing in the stand-ins shows growth.
+- Cohesion: faceted B props sit better beside the faceted citizens and the angular buildings than the soft spheres; the tan wheat is close to the beige roof colour of some buildings.
+
+**Fresh image-only D-019 reviewers (round 1; no round 2 was needed).** One fresh Claude Code session per family group (no memory of me), a sparse checkout of the image folder only, the rubric and the cost facts in `img/d057-env-nature-r1/review_prompt.md`.
+Blind: A / B letters fixed over all sheets, never named; the key (`img/d057-env-nature-r1/key.json`: **A = the part-built stand-ins, B = these meshes**) was withheld until the replies were saved. Replies verbatim with session ids: `img/d057-env-nature-r1/review.json`.
+
+| group (sheets) | session | SET B (these meshes): sil / var / read / prop / pal / det / coh / cost | SET B | SET A (stand-ins) |
+|---|---|---|---|---|
+| trees, bushes, flowers (settlement crimson, forest broadleaf, forest pine, trees lineup, trees close, bushes lineup) | `session_01LoutSfVRK1oYexT4X1j214` | 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4 | **PASS**, ship | NEEDS-WORK (4 / 3 / 4 / 3 / 4 / 4 / 3 / 3) |
+| rocks, boulders, resource nodes (settlement emerald, rocks lineup, nodes lineup) | `session_01AdaWs4n75YYboXVj6JCNp7` | 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4 | **PASS**, ship | NEEDS-WORK (3 / 2 / 3 / 3 / 3 / 3 / 3 / 5) |
+| crops (crops, wheat stages, settlement emerald) | `session_01XFzLWTYVSQFKXAP6nf2M8L` | 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3 | **PASS**, ship | NEEDS-WORK (2 / 2 / 2 / 3 / 3 / 2 / 3 / 5) |
+
+Pass rule: silhouette, variation and readability each at least 4 and the other five at least 3. Reviewer defects on B that I agree with (none blocking, all in `review.json` per sheet): very dark pines and oak shadow sides, near-identical birches, three similar plain bushes, small flower tufts,
+mildly varied quarries, spiky wheat, faint shoots stage, small low-contrast haystack, rocks and nodes tiny at 170 studs. The crops reviewer called the ~1.4k-triangle fields "the heaviest crop item, fine for a handful on screen" (cost 3).
+The pass is one session per group (no second opinion), and the cost scores were judged against the cost facts I wrote into the prompt (part counts of the stand-ins, triangle ranges of the meshes), not measured on a device.
+The reviewed geometry is the committed geometry (verified: see "Reproduce", the re-render check). `env_kit_02` (spares) is not reviewed: only its wheat stages 04 and 05 appeared on a sheet.
+
+## 5. Part-count relief (measured on the real WorldService, not estimated)
+`blender/scripts/lune/EnvRelief.spec.luau` boots the real `WorldService` in the Lune mock (recorded terrain) twice per density, once as today (part-built stand-ins) and once with K's runtime (`Kit/EnvMesh`, the fake Models of fixture `EnvMeshKit`: an invisible `Root`,
+a `Body` MeshPart and K's collider part for tree, rock, bush, haystack and fence) built from my `env.json`, wrapping `Kit.prop` to count parts per family. The same placements in both runs (417 / 616 props, plus the resource nodes), `WorldService.spec`'s pin (8,309 parts at density 1.0) asserted.
+It needs K's branch (`forge/02-blender-fl0136-envrt` at 83695c53, not merged here), so the numbers are the parts a world with the kit imported would build; a real Studio import (MeshPart count, draw calls) is unverified.
+
+| | parts today | parts with the mesh kit | fewer | placements |
+|---|---|---|---|---|
+| shipped density | **6,553** | **2,168** | 4,385 (67 %) | 417 + 38 nodes = 455 `Kit.prop` calls, 445 of them mesh props |
+| density 1.0 (the untrimmed valley) | **8,309** | **2,765** | 5,544 (67 %) | 616 + 38 nodes = 654 `Kit.prop` calls, 644 of them mesh props |
+
+Where it comes from (shipped density / density 1.0; "other" = bridges, banners, well, cart, goods, 106 parts, untouched by design):
+
+| family | placements | parts today | parts with meshes | relief |
+|---|---|---|---|---|
+| pine | 86 / 102 | 1,892 / 2,244 | 258 / 306 | 1,634 / 1,938 |
+| oak | 105 / 137 | 1,680 / 2,192 | 315 / 411 | 1,365 / 1,781 |
+| birch | 48 / 59 | 432 / 531 | 144 / 177 | 288 / 354 |
+| bush | 63 / 118 | 530 / 975 | 189 / 354 | 341 / 621 |
+| flowers | 31 / 31 | 279 / 279 | 62 / 62 | 217 / 217 |
+| crops (wheat, cabbage) | 12 / 12 | 396 / 396 | 24 / 24 | 372 / 372 |
+| boulders | 85 / 170 | 342 / 690 | 255 / 510 | 87 / 180 |
+| resource nodes (stone, ore) | 14 / 14 | 122 / 122 | 42 / 42 | 80 / 80 |
+| haystack | 1 / 1 | 4 / 4 | 3 / 3 | 1 / 1 |
+| other (not replaced) | 10 / 10 | 106 / 106 | 106 / 106 | 0 / 0 |
+| total | | 6,553 / 8,309 | 2,168 / 2,765 | 4,385 / 5,544 |
+
+The cost moves from parts to triangles: if every placement were drawn at once, the placed nature would be **171,472 triangles at shipped density and 230,594 at density 1.0** (placements x the measured triangles of table 3; trees 111k / 140k, rocks 19k / 36k, crops 16k, bushes 16k / 30k, flowers 8k),
+an average of 358 to 385 per placement, against about 12 triangles per primitive Part today. That is a worst case (streaming and culling cut it), and what a phone really pays for it is unverified.
+Reading: the relief is 67 % because the K wrapper keeps `Root` and `Body` (and a collider for the solid families); a flower tuft and a field cost two parts, a pine three instead of 22.
+Each placed mesh is also one draw call where each stand-in part was its own; that is the likely larger win and it is unverified (Studio).
+
+## 6. Not verified, limits
+- **Studio is unavailable here (Linux cloud session).** Unverified in Studio: the FBX import (MeshPart size, pivot and scale after import, the vertex-colour tint with `MeshPart.Color` white, `RenderFidelity`), collision with K's collider parts, draw calls, frame time and memory on a phone, the real part count of an imported world.
+  Everything above about looks is Blender (Cycles) evidence; the lighting, shadows and fog of the game are not reproduced.
+- One fresh reviewer session per family group, no second opinion; the cost score was judged against facts I supplied, not measured. The sheets were seen as 1550 px JPEGs, not at 1:1.
+- `env_kit_02` (15 spares: cliffs, wood nodes, ore 01/02/05/06, wheat 03 to 05, cabbage 01/02, fences) is built, measured and gated, but only its wheat stages appeared on a sheet; it is UNREVIEWED in the manifest.
+- Nothing places the growth stages or the spares today; whether a farm should show growth is a design call (and a runtime change) for K or a farm-visual task. The wheat stage ids exist and are measured so that task can start from them.
+- FBX bytes are not reproducible (Blender writes a timestamp); `build.py --verify` compares the geometry hash, and the manifest row carries the `sha256` of the committed FBX.
+- Fit: the `fit_to` clamp keeps footprints within 7 % and heights within 10 % of the stand-in (wheat 122 %); a Studio check of PlotClearance with the real MeshPart bounds is unverified. `reach_bbox` in `env.json` is the box-corner reach K's clearance uses (up to 1.41 x the radius).
+- Oak crowns, pine tiers and the berry or bloom sizes were tuned to read at 82 and 170 studs; a phone camera closer than 45 studs shows the faceting more than my close views do.
+- The Luau side (EnvMesh, EnvMeshData, fixtures) is worker K's; I wrote no runtime code and opened no PR.
+
+## 7. Reproduce
+```
+~/forge-bpy/bin/python blender/build.py --generator env_kit --no-render        # rebuild both kits; --verify compares geometry hashes (check.sh does)
+python3 games/game-001/art/env_kit/env_to_luau.py --validate-only --in games/game-001/art/env_kit/env.json         # K's validator (also env_spares.json; --print-budget)
+bash blender/scripts/check.sh                                                  # must end "blender check: PASS"
+python3 blender/scripts/envkit_report.py --relief /tmp/env_relief.json         # the tables of this section 3 and 5
+# inventory and standin table (section 1)
+FORGE_ENV_INVENTORY=/tmp/env_inventory.json lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs blender/scripts/lune EnvInventory
+python3 blender/scripts/envkit_standins.py /tmp/env_inventory.json            # writes blender/lib/envkit_standins.json
+# part-count relief (section 5): needs K's runtime; copy it, convert my env.json, run the spec there
+K=/tmp/envrt; mkdir -p $K && git -C <K's worktree> archive 83695c53 | tar -x -C $K     # branch forge/02-blender-fl0136-envrt
+python3 games/game-001/art/env_kit/env_to_luau.py --in games/game-001/art/env_kit/env.json --out $K/games/game-001/src/shared/Kit/EnvMeshData.luau
+mkdir -p $K/blender/scripts/lune && cp blender/scripts/lune/EnvRelief.spec.luau $K/blender/scripts/lune/
+(cd $K && FORGE_ENV_RELIEF=/tmp/env_relief.json lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs blender/scripts/lune EnvRelief)
+# renders and sheets (Cycles, about 40 s per view on 4 cores)
+~/forge-bpy/bin/python -I blender/scripts/envnature_scenes.py --inv /tmp/env_inventory.json --out /tmp/env/r1 --modes before,after --size 1280x720 --samples 24
+python3 blender/scripts/envnature_sheets.py --renders /tmp/env/r1 --out games/game-001/art/reviews/img/d057-env-nature-r1 --key-out /tmp/key.json
+~/forge-bpy/bin/python -m pytest -q -p no:warnings blender/tests/test_env_kit_budget.py
+```
+Re-render check (reviewed geometry == committed geometry): the final FBX was rebuilt at the end of the round (the deeper gold ore); I re-rendered eight non-ore scenes (bushes, rocks, crops, wheat stages, trees lineup and close, both forests) with the committed FBX at the same
+settings and compared every pixel with the renders the sheets were cut from: all 19 'after' views of the 11 sheet scenes (settlements, forests, lineups, bushes, rocks, nodes, crops, wheat stages; 8 scenes first, the 3 that hold ore nodes second) re-rendered with the committed FBX are **pixel-identical** (maximum difference 0 of 255, mean 0.0000) to the renders the sheets were cut from, so what the reviewers saw is the committed geometry (`env_kit_01` geometry hash `61bac208a4421907`, pinned in `blender/reviews/env_kit.json`). The 'before' views are the part-built stand-ins and do not depend on the FBX.
