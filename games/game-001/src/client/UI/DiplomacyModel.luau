@@ -19,6 +19,8 @@
 			Row = { id, name, color, emblem, crownPoints, rank, alive,
 			        relation: "peace" | "war" | "truce" | "fallen", status: string (the chip's words),
 			        note: string? (a time-bound line: "Proposes peace · 0:42", "Truce · 1:20 left"),
+			        ask: string? (an open ask for war on this rival: "Mira asks for war · 0:42" or
+			                      "You asked for war · 0:42"; the senior ruler counts it in `incoming`),
 			        actions: { Action } }
 			Action = { id: "declareWar" | "proposePeace" | "acceptPeace", label, variant: "primary" |
 			           "secondary" | "danger", enabled: boolean, reason: string? (why it is disabled),
@@ -52,6 +54,17 @@ function DiplomacyModel.relation(diplomacy: any, a: string, b: string): string
 		end
 	end
 	return "Peace"
+end
+
+-- The open ask for war on `target` (D-054; FORGE-01's `asks = { { from, fromName, target, expiresAt } }`,
+-- only my own kingdom's asks reach me), or nil.
+local function openAsk(diplomacy: any, target: string, now: number): any
+	for _, a in if diplomacy and type(diplomacy.asks) == "table" then diplomacy.asks else {} do
+		if type(a) == "table" and a.target == target and type(a.expiresAt) == "number" and a.expiresAt > now then
+			return a
+		end
+	end
+	return nil
 end
 
 local function proposal(diplomacy: any, from: string, to: string, now: number): number?
@@ -166,6 +179,18 @@ function DiplomacyModel.view(store: any, diplomacy: any, phase: string?, now: nu
 			elseif alive then
 				if truce then
 					row.note = `Truce · {Format.clock(truce - now)} left`
+				end
+				local ask = openAsk(diplomacy, kingdom.id, now)
+				if ask then
+					local mineAsk = me ~= nil and me.userId ~= nil and ask.from == me.userId
+					local who = if type(ask.fromName) == "string" and ask.fromName ~= ""
+						then ask.fromName
+						else "A ruler"
+					local left = Format.clock(ask.expiresAt - now)
+					row.ask = if mineAsk then `You asked for war · {left}` else `{who} asks for war · {left}`
+					if senior == nil and not mineAsk then
+						incoming += 1 -- the senior ruler's to answer (Declare war, or let it run out)
+					end
 				end
 				local reason = declareReason(diplomacy, phase, now, truce)
 				table.insert(row.actions, {

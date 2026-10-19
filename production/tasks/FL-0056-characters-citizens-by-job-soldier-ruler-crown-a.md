@@ -3,15 +3,16 @@ id: FL-0056
 title: "Characters: citizens by job, soldier, ruler crown and cape"
 track: asset
 owner: forge-02
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0054]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 4
-evidence: []
+evidence:
+  - KitCharacter specs on main (check.sh OVERALL PASS); character contact sheets rendered via render_kit.py and looked at
 ---
 
 # Characters: citizens by job, soldier, ruler crown and cape
@@ -38,3 +39,5 @@ Entities and rulers read clearly at gameplay distance in kingdom colours (VS-1 r
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): P0; ≤8-part Motor6D rigs instead of R15, regalia accessories, ahead of FL-0055
+- 2026-10-13 forge-02: READY → BUILDING. Kit.character, looks, regalia merged (#60); soldier crest in #81.
+- 2026-10-13 forge-02: BUILDING → REVIEW. Code merged (9-part D-032 rigs, looks, regalia); #81 adds the per-kingdom soldier crest. Only G6 (Studio screenshots) pending.

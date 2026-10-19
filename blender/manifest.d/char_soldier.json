@@ -1,0 +1,2035 @@
+{
+  "assets": [
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.351,
+              2.839,
+              0.02
+            ],
+            "name": "body",
+            "size": [
+              2.619,
+              5.678,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 5.622,
+        "y": 9.57,
+        "z": 1.759
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_01.fbx",
+        "validation": "exports/char_soldier_01.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "2eef25aebac4cd9c",
+      "id": "char_soldier_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_brown",
+        "kingdom": "red",
+        "role": "spearman",
+        "skin": "skin_1"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7000,
+      "sockets": {
+        "hand_l": [
+          -1.894,
+          2.042,
+          -0.038
+        ],
+        "hand_r": [
+          1.231,
+          2.576,
+          -0.58
+        ],
+        "head_top": [
+          -0.351,
+          7.073,
+          0.02
+        ],
+        "rig_ankle_l": [
+          -0.825,
+          0.418,
+          0.02
+        ],
+        "rig_ankle_r": [
+          0.122,
+          0.418,
+          0.02
+        ],
+        "rig_elbow_l": [
+          -1.63,
+          3.008,
+          0.12
+        ],
+        "rig_elbow_r": [
+          0.958,
+          3.008,
+          0.18
+        ],
+        "rig_head": [
+          -0.351,
+          4.781,
+          0.02
+        ],
+        "rig_hip_l": [
+          -0.774,
+          2.251,
+          0.02
+        ],
+        "rig_hip_r": [
+          0.072,
+          2.251,
+          0.02
+        ],
+        "rig_knee_l": [
+          -0.814,
+          1.295,
+          -0.03
+        ],
+        "rig_knee_r": [
+          0.112,
+          1.295,
+          -0.03
+        ],
+        "rig_neck": [
+          -0.351,
+          4.084,
+          0.02
+        ],
+        "rig_root": [
+          -0.351,
+          2.291,
+          0.02
+        ],
+        "rig_shoulder_l": [
+          -1.338,
+          3.785,
+          0.02
+        ],
+        "rig_shoulder_r": [
+          0.636,
+          3.785,
+          0.02
+        ],
+        "rig_waist": [
+          -0.351,
+          2.61,
+          0.02
+        ],
+        "rig_wrist_l": [
+          -1.832,
+          2.271,
+          -0.0
+        ],
+        "rig_wrist_r": [
+          1.16,
+          2.69,
+          -0.38
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2348,
+        "lod1": 820
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.655,
+              2.81,
+              0.055
+            ],
+            "name": "body",
+            "size": [
+              2.615,
+              5.619,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 6.333,
+        "y": 10.354,
+        "z": 1.719
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_02.fbx",
+        "validation": "exports/char_soldier_02.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "67817a51e2cdd701",
+      "id": "char_soldier_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_blond",
+        "kingdom": "blue",
+        "role": "spearman",
+        "skin": "skin_4"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7001,
+      "sockets": {
+        "hand_l": [
+          -2.196,
+          2.019,
+          -0.002
+        ],
+        "hand_r": [
+          0.926,
+          2.549,
+          -0.544
+        ],
+        "head_top": [
+          -0.655,
+          6.441,
+          0.055
+        ],
+        "rig_ankle_l": [
+          -1.127,
+          0.414,
+          0.055
+        ],
+        "rig_ankle_r": [
+          -0.182,
+          0.414,
+          0.055
+        ],
+        "rig_elbow_l": [
+          -1.932,
+          2.977,
+          0.155
+        ],
+        "rig_elbow_r": [
+          0.653,
+          2.977,
+          0.215
+        ],
+        "rig_head": [
+          -0.655,
+          4.732,
+          0.055
+        ],
+        "rig_hip_l": [
+          -1.077,
+          2.228,
+          0.055
+        ],
+        "rig_hip_r": [
+          -0.232,
+          2.228,
+          0.055
+        ],
+        "rig_knee_l": [
+          -1.117,
+          1.282,
+          0.005
+        ],
+        "rig_knee_r": [
+          -0.192,
+          1.282,
+          0.005
+        ],
+        "rig_neck": [
+          -0.655,
+          4.042,
+          0.055
+        ],
+        "rig_root": [
+          -0.655,
+          2.268,
+          0.055
+        ],
+        "rig_shoulder_l": [
+          -1.64,
+          3.746,
+          0.055
+        ],
+        "rig_shoulder_r": [
+          0.331,
+          3.746,
+          0.055
+        ],
+        "rig_waist": [
+          -0.655,
+          2.583,
+          0.055
+        ],
+        "rig_wrist_l": [
+          -2.133,
+          2.248,
+          0.035
+        ],
+        "rig_wrist_r": [
+          0.854,
+          2.662,
+          -0.345
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2214,
+        "lod1": 774
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.094,
+              2.873,
+              0.0
+            ],
+            "name": "body",
+            "size": [
+              2.656,
+              5.745,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 5.407,
+        "y": 8.968,
+        "z": 2.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_03.fbx",
+        "validation": "exports/char_soldier_03.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "9b25d1344bd58e60",
+      "id": "char_soldier_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_red",
+        "kingdom": "green",
+        "role": "spearman",
+        "skin": "skin_3"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7002,
+      "sockets": {
+        "hand_l": [
+          -1.658,
+          2.069,
+          -0.057
+        ],
+        "hand_r": [
+          1.511,
+          2.607,
+          -0.598
+        ],
+        "head_top": [
+          -0.094,
+          6.157,
+          0.0
+        ],
+        "rig_ankle_l": [
+          -0.574,
+          0.423,
+          0.0
+        ],
+        "rig_ankle_r": [
+          0.386,
+          0.423,
+          0.0
+        ],
+        "rig_elbow_l": [
+          -1.391,
+          3.044,
+          0.1
+        ],
+        "rig_elbow_r": [
+          1.234,
+          3.044,
+          0.16
+        ],
+        "rig_head": [
+          -0.094,
+          4.838,
+          0.0
+        ],
+        "rig_hip_l": [
+          -0.523,
+          2.278,
+          0.0
+        ],
+        "rig_hip_r": [
+          0.335,
+          2.278,
+          0.0
+        ],
+        "rig_knee_l": [
+          -0.564,
+          1.31,
+          -0.05
+        ],
+        "rig_knee_r": [
+          0.376,
+          1.31,
+          -0.05
+        ],
+        "rig_neck": [
+          -0.094,
+          4.133,
+          0.0
+        ],
+        "rig_root": [
+          -0.094,
+          2.318,
+          0.0
+        ],
+        "rig_shoulder_l": [
+          -1.095,
+          3.83,
+          0.0
+        ],
+        "rig_shoulder_r": [
+          0.907,
+          3.83,
+          0.0
+        ],
+        "rig_waist": [
+          -0.094,
+          2.641,
+          0.0
+        ],
+        "rig_wrist_l": [
+          -1.595,
+          2.298,
+          -0.02
+        ],
+        "rig_wrist_r": [
+          1.438,
+          2.721,
+          -0.4
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2470,
+        "lod1": 864
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.382,
+              2.887,
+              0.122
+            ],
+            "name": "body",
+            "size": [
+              2.574,
+              5.774,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 5.506,
+        "y": 9.58,
+        "z": 2.044
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_04.fbx",
+        "validation": "exports/char_soldier_04.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "63fc7f669f80b14b",
+      "id": "char_soldier_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_dark",
+        "kingdom": "yellow",
+        "role": "spearman",
+        "skin": "skin_2"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7003,
+      "sockets": {
+        "hand_l": [
+          -1.898,
+          2.08,
+          0.065
+        ],
+        "hand_r": [
+          1.173,
+          2.62,
+          -0.476
+        ],
+        "head_top": [
+          -0.382,
+          7.138,
+          0.122
+        ],
+        "rig_ankle_l": [
+          -0.848,
+          0.425,
+          0.122
+        ],
+        "rig_ankle_r": [
+          0.083,
+          0.425,
+          0.122
+        ],
+        "rig_elbow_l": [
+          -1.64,
+          3.059,
+          0.222
+        ],
+        "rig_elbow_r": [
+          0.905,
+          3.059,
+          0.282
+        ],
+        "rig_head": [
+          -0.382,
+          4.862,
+          0.122
+        ],
+        "rig_hip_l": [
+          -0.798,
+          2.289,
+          0.122
+        ],
+        "rig_hip_r": [
+          0.034,
+          2.289,
+          0.122
+        ],
+        "rig_knee_l": [
+          -0.838,
+          1.317,
+          0.072
+        ],
+        "rig_knee_r": [
+          0.073,
+          1.317,
+          0.072
+        ],
+        "rig_neck": [
+          -0.382,
+          4.153,
+          0.122
+        ],
+        "rig_root": [
+          -0.382,
+          2.33,
+          0.122
+        ],
+        "rig_shoulder_l": [
+          -1.352,
+          3.849,
+          0.122
+        ],
+        "rig_shoulder_r": [
+          0.588,
+          3.849,
+          0.122
+        ],
+        "rig_waist": [
+          -0.382,
+          2.654,
+          0.122
+        ],
+        "rig_wrist_l": [
+          -1.838,
+          2.31,
+          0.102
+        ],
+        "rig_wrist_r": [
+          1.103,
+          2.735,
+          -0.278
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2490,
+        "lod1": 870
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.098,
+              3.026,
+              -0.155
+            ],
+            "name": "body",
+            "size": [
+              2.462,
+              5.572,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 3.683,
+        "y": 5.756,
+        "z": 2.595
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_05.fbx",
+        "validation": "exports/char_soldier_05.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "8c77c620733ec3af",
+      "id": "char_soldier_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_brown",
+        "kingdom": "red",
+        "role": "archer",
+        "skin": "skin_2"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7004,
+      "sockets": {
+        "hand_l": [
+          -1.354,
+          2.24,
+          -0.213
+        ],
+        "hand_r": [
+          1.491,
+          2.185,
+          -0.361
+        ],
+        "head_top": [
+          0.098,
+          6.0,
+          -0.155
+        ],
+        "rig_ankle_l": [
+          -0.347,
+          0.651,
+          -0.155
+        ],
+        "rig_ankle_r": [
+          0.543,
+          0.651,
+          -0.155
+        ],
+        "rig_elbow_l": [
+          -1.104,
+          3.193,
+          -0.055
+        ],
+        "rig_elbow_r": [
+          1.281,
+          3.153,
+          -0.075
+        ],
+        "rig_head": [
+          0.098,
+          4.933,
+          -0.155
+        ],
+        "rig_hip_l": [
+          -0.3,
+          2.45,
+          -0.155
+        ],
+        "rig_hip_r": [
+          0.496,
+          2.45,
+          -0.155
+        ],
+        "rig_knee_l": [
+          -0.338,
+          1.511,
+          -0.205
+        ],
+        "rig_knee_r": [
+          0.534,
+          1.511,
+          -0.205
+        ],
+        "rig_neck": [
+          0.098,
+          4.248,
+          -0.155
+        ],
+        "rig_root": [
+          0.098,
+          2.489,
+          -0.155
+        ],
+        "rig_shoulder_l": [
+          -0.83,
+          3.955,
+          -0.155
+        ],
+        "rig_shoulder_r": [
+          1.026,
+          3.955,
+          -0.155
+        ],
+        "rig_waist": [
+          0.098,
+          2.802,
+          -0.155
+        ],
+        "rig_wrist_l": [
+          -1.294,
+          2.469,
+          -0.175
+        ],
+        "rig_wrist_r": [
+          1.442,
+          2.411,
+          -0.295
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2288,
+        "lod1": 800
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.01,
+              2.823,
+              -0.152
+            ],
+            "name": "body",
+            "size": [
+              2.487,
+              5.645,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 3.534,
+        "y": 5.928,
+        "z": 2.6
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_06.fbx",
+        "validation": "exports/char_soldier_06.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "8f736bb54a888891",
+      "id": "char_soldier_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_blond",
+        "kingdom": "blue",
+        "role": "archer",
+        "skin": "skin_1"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7005,
+      "sockets": {
+        "hand_l": [
+          -1.456,
+          2.029,
+          -0.21
+        ],
+        "hand_r": [
+          1.417,
+          1.973,
+          -0.358
+        ],
+        "head_top": [
+          0.01,
+          6.19,
+          -0.152
+        ],
+        "rig_ankle_l": [
+          -0.439,
+          0.416,
+          -0.152
+        ],
+        "rig_ankle_r": [
+          0.46,
+          0.416,
+          -0.152
+        ],
+        "rig_elbow_l": [
+          -1.204,
+          2.991,
+          -0.052
+        ],
+        "rig_elbow_r": [
+          1.206,
+          2.951,
+          -0.072
+        ],
+        "rig_head": [
+          0.01,
+          4.754,
+          -0.152
+        ],
+        "rig_hip_l": [
+          -0.391,
+          2.238,
+          -0.152
+        ],
+        "rig_hip_r": [
+          0.412,
+          2.238,
+          -0.152
+        ],
+        "rig_knee_l": [
+          -0.43,
+          1.287,
+          -0.202
+        ],
+        "rig_knee_r": [
+          0.45,
+          1.287,
+          -0.202
+        ],
+        "rig_neck": [
+          0.01,
+          4.06,
+          -0.152
+        ],
+        "rig_root": [
+          0.01,
+          2.278,
+          -0.152
+        ],
+        "rig_shoulder_l": [
+          -0.927,
+          3.763,
+          -0.152
+        ],
+        "rig_shoulder_r": [
+          0.948,
+          3.763,
+          -0.152
+        ],
+        "rig_waist": [
+          0.01,
+          2.595,
+          -0.152
+        ],
+        "rig_wrist_l": [
+          -1.396,
+          2.258,
+          -0.172
+        ],
+        "rig_wrist_r": [
+          1.369,
+          2.199,
+          -0.292
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2288,
+        "lod1": 800
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.1,
+              3.133,
+              -0.156
+            ],
+            "name": "body",
+            "size": [
+              2.448,
+              5.631,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 3.662,
+        "y": 6.687,
+        "z": 2.592
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_07.fbx",
+        "validation": "exports/char_soldier_07.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "8d96e6d81ba8b482",
+      "id": "char_soldier_07",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_red",
+        "kingdom": "green",
+        "role": "archer",
+        "skin": "skin_4"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7006,
+      "sockets": {
+        "hand_l": [
+          -1.343,
+          2.34,
+          -0.214
+        ],
+        "hand_r": [
+          1.485,
+          2.285,
+          -0.362
+        ],
+        "head_top": [
+          0.1,
+          6.559,
+          -0.156
+        ],
+        "rig_ankle_l": [
+          -0.343,
+          0.732,
+          -0.156
+        ],
+        "rig_ankle_r": [
+          0.542,
+          0.732,
+          -0.156
+        ],
+        "rig_elbow_l": [
+          -1.096,
+          3.301,
+          -0.056
+        ],
+        "rig_elbow_r": [
+          1.277,
+          3.261,
+          -0.076
+        ],
+        "rig_head": [
+          0.1,
+          5.059,
+          -0.156
+        ],
+        "rig_hip_l": [
+          -0.296,
+          2.55,
+          -0.156
+        ],
+        "rig_hip_r": [
+          0.495,
+          2.55,
+          -0.156
+        ],
+        "rig_knee_l": [
+          -0.333,
+          1.601,
+          -0.206
+        ],
+        "rig_knee_r": [
+          0.533,
+          1.601,
+          -0.206
+        ],
+        "rig_neck": [
+          0.1,
+          4.367,
+          -0.156
+        ],
+        "rig_root": [
+          0.1,
+          2.589,
+          -0.156
+        ],
+        "rig_shoulder_l": [
+          -0.823,
+          4.071,
+          -0.156
+        ],
+        "rig_shoulder_r": [
+          1.023,
+          4.071,
+          -0.156
+        ],
+        "rig_waist": [
+          0.1,
+          2.905,
+          -0.156
+        ],
+        "rig_wrist_l": [
+          -1.284,
+          2.57,
+          -0.176
+        ],
+        "rig_wrist_r": [
+          1.437,
+          2.51,
+          -0.296
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2412,
+        "lod1": 844
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.222,
+              2.851,
+              0.004
+            ],
+            "name": "body",
+            "size": [
+              2.502,
+              5.702,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 3.971,
+        "y": 5.988,
+        "z": 2.31
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_08.fbx",
+        "validation": "exports/char_soldier_08.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "5679c6d33da29e91",
+      "id": "char_soldier_08",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_dark",
+        "kingdom": "yellow",
+        "role": "archer",
+        "skin": "skin_3"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7007,
+      "sockets": {
+        "hand_l": [
+          -1.008,
+          2.818,
+          -0.851
+        ],
+        "hand_r": [
+          1.637,
+          1.995,
+          -0.201
+        ],
+        "head_top": [
+          0.222,
+          6.238,
+          0.004
+        ],
+        "rig_ankle_l": [
+          -0.23,
+          0.42,
+          0.004
+        ],
+        "rig_ankle_r": [
+          0.674,
+          0.42,
+          0.004
+        ],
+        "rig_elbow_l": [
+          -0.933,
+          3.001,
+          0.144
+        ],
+        "rig_elbow_r": [
+          1.425,
+          2.981,
+          0.084
+        ],
+        "rig_head": [
+          0.222,
+          4.802,
+          0.004
+        ],
+        "rig_hip_l": [
+          -0.182,
+          2.261,
+          0.004
+        ],
+        "rig_hip_r": [
+          0.626,
+          2.261,
+          0.004
+        ],
+        "rig_knee_l": [
+          -0.22,
+          1.3,
+          -0.046
+        ],
+        "rig_knee_r": [
+          0.665,
+          1.3,
+          -0.046
+        ],
+        "rig_neck": [
+          0.222,
+          4.102,
+          0.004
+        ],
+        "rig_root": [
+          0.222,
+          2.301,
+          0.004
+        ],
+        "rig_shoulder_l": [
+          -0.721,
+          3.801,
+          0.004
+        ],
+        "rig_shoulder_r": [
+          1.165,
+          3.801,
+          0.004
+        ],
+        "rig_waist": [
+          0.222,
+          2.621,
+          0.004
+        ],
+        "rig_wrist_l": [
+          -0.99,
+          2.861,
+          -0.616
+        ],
+        "rig_wrist_r": [
+          1.589,
+          2.221,
+          -0.136
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2392,
+        "lod1": 836
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.311,
+              3.39,
+              -0.218
+            ],
+            "name": "body",
+            "size": [
+              2.876,
+              5.943,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 4.84,
+        "y": 7.496,
+        "z": 2.597
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_09.fbx",
+        "validation": "exports/char_soldier_09.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "54bd0ac5e99cebd4",
+      "id": "char_soldier_09",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_brown",
+        "kingdom": "red",
+        "role": "knight",
+        "skin": "skin_3"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7008,
+      "sockets": {
+        "hand_l": [
+          -1.381,
+          2.568,
+          -0.274
+        ],
+        "hand_r": [
+          1.935,
+          2.508,
+          -0.421
+        ],
+        "head_top": [
+          0.311,
+          7.504,
+          -0.218
+        ],
+        "rig_ankle_l": [
+          -0.209,
+          0.857,
+          -0.218
+        ],
+        "rig_ankle_r": [
+          0.831,
+          0.857,
+          -0.218
+        ],
+        "rig_elbow_l": [
+          -1.094,
+          3.567,
+          -0.118
+        ],
+        "rig_elbow_r": [
+          1.694,
+          3.526,
+          -0.138
+        ],
+        "rig_head": [
+          0.311,
+          5.423,
+          -0.218
+        ],
+        "rig_hip_l": [
+          -0.154,
+          2.775,
+          -0.218
+        ],
+        "rig_hip_r": [
+          0.775,
+          2.775,
+          -0.218
+        ],
+        "rig_knee_l": [
+          -0.198,
+          1.774,
+          -0.268
+        ],
+        "rig_knee_r": [
+          0.82,
+          1.774,
+          -0.268
+        ],
+        "rig_neck": [
+          0.311,
+          4.694,
+          -0.218
+        ],
+        "rig_root": [
+          0.311,
+          2.817,
+          -0.218
+        ],
+        "rig_shoulder_l": [
+          -0.773,
+          4.381,
+          -0.218
+        ],
+        "rig_shoulder_r": [
+          1.395,
+          4.381,
+          -0.218
+        ],
+        "rig_waist": [
+          0.311,
+          3.15,
+          -0.218
+        ],
+        "rig_wrist_l": [
+          -1.315,
+          2.796,
+          -0.238
+        ],
+        "rig_wrist_r": [
+          1.882,
+          2.733,
+          -0.358
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2242,
+        "lod1": 784
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.273,
+              2.934,
+              -0.265
+            ],
+            "name": "body",
+            "size": [
+              2.893,
+              5.868,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 5.065,
+        "y": 6.54,
+        "z": 2.505
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_10.fbx",
+        "validation": "exports/char_soldier_10.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "52e1729f0c8cbaf9",
+      "id": "char_soldier_10",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_blond",
+        "kingdom": "blue",
+        "role": "knight",
+        "skin": "skin_2"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7009,
+      "sockets": {
+        "hand_l": [
+          -1.429,
+          2.119,
+          -0.321
+        ],
+        "hand_r": [
+          2.02,
+          2.664,
+          -0.86
+        ],
+        "head_top": [
+          0.273,
+          6.797,
+          -0.265
+        ],
+        "rig_ankle_l": [
+          -0.25,
+          0.432,
+          -0.265
+        ],
+        "rig_ankle_r": [
+          0.796,
+          0.432,
+          -0.265
+        ],
+        "rig_elbow_l": [
+          -1.14,
+          3.109,
+          -0.165
+        ],
+        "rig_elbow_r": [
+          1.72,
+          3.109,
+          -0.105
+        ],
+        "rig_head": [
+          0.273,
+          4.941,
+          -0.265
+        ],
+        "rig_hip_l": [
+          -0.194,
+          2.327,
+          -0.265
+        ],
+        "rig_hip_r": [
+          0.74,
+          2.327,
+          -0.265
+        ],
+        "rig_knee_l": [
+          -0.239,
+          1.338,
+          -0.315
+        ],
+        "rig_knee_r": [
+          0.785,
+          1.338,
+          -0.315
+        ],
+        "rig_neck": [
+          0.273,
+          4.221,
+          -0.265
+        ],
+        "rig_root": [
+          0.273,
+          2.368,
+          -0.265
+        ],
+        "rig_shoulder_l": [
+          -0.817,
+          3.912,
+          -0.265
+        ],
+        "rig_shoulder_r": [
+          1.363,
+          3.912,
+          -0.265
+        ],
+        "rig_waist": [
+          0.273,
+          2.697,
+          -0.265
+        ],
+        "rig_wrist_l": [
+          -1.363,
+          2.347,
+          -0.285
+        ],
+        "rig_wrist_r": [
+          1.942,
+          2.78,
+          -0.665
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2146,
+        "lod1": 750
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.114,
+              2.988,
+              -0.228
+            ],
+            "name": "body",
+            "size": [
+              2.794,
+              5.976,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 5.503,
+        "y": 7.419,
+        "z": 2.577
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_11.fbx",
+        "validation": "exports/char_soldier_11.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "edd6ed3513d529e2",
+      "id": "char_soldier_11",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_red",
+        "kingdom": "green",
+        "role": "knight",
+        "skin": "skin_1"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7010,
+      "sockets": {
+        "hand_l": [
+          -1.529,
+          2.161,
+          -0.284
+        ],
+        "hand_r": [
+          1.801,
+          2.713,
+          -0.824
+        ],
+        "head_top": [
+          0.114,
+          7.676,
+          -0.228
+        ],
+        "rig_ankle_l": [
+          -0.391,
+          0.44,
+          -0.228
+        ],
+        "rig_ankle_r": [
+          0.619,
+          0.44,
+          -0.228
+        ],
+        "rig_elbow_l": [
+          -1.251,
+          3.166,
+          -0.128
+        ],
+        "rig_elbow_r": [
+          1.511,
+          3.166,
+          -0.068
+        ],
+        "rig_head": [
+          0.114,
+          5.032,
+          -0.228
+        ],
+        "rig_hip_l": [
+          -0.337,
+          2.369,
+          -0.228
+        ],
+        "rig_hip_r": [
+          0.566,
+          2.369,
+          -0.228
+        ],
+        "rig_knee_l": [
+          -0.38,
+          1.363,
+          -0.278
+        ],
+        "rig_knee_r": [
+          0.609,
+          1.363,
+          -0.278
+        ],
+        "rig_neck": [
+          0.114,
+          4.298,
+          -0.228
+        ],
+        "rig_root": [
+          0.114,
+          2.411,
+          -0.228
+        ],
+        "rig_shoulder_l": [
+          -0.939,
+          3.984,
+          -0.228
+        ],
+        "rig_shoulder_r": [
+          1.168,
+          3.984,
+          -0.228
+        ],
+        "rig_waist": [
+          0.114,
+          2.747,
+          -0.228
+        ],
+        "rig_wrist_l": [
+          -1.466,
+          2.39,
+          -0.248
+        ],
+        "rig_wrist_r": [
+          1.726,
+          2.831,
+          -0.628
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2424,
+        "lod1": 848
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "character",
+      "category": "char",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.38,
+              2.988,
+              -0.302
+            ],
+            "name": "body",
+            "size": [
+              2.828,
+              5.977,
+              1.5
+            ]
+          }
+        ],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 4.53,
+        "y": 7.639,
+        "z": 2.43
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/char_soldier_12.fbx",
+        "validation": "exports/char_soldier_12.validation.json"
+      },
+      "generator": "char_soldier",
+      "generator_version": 1,
+      "geometry_hash": "3fc27e7f2470c29a",
+      "id": "char_soldier_12",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "hair": "hair_dark",
+        "kingdom": "yellow",
+        "role": "knight",
+        "skin": "skin_4"
+      },
+      "preview": "previews/char_soldier.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+        "review_file": "reviews/char_soldier.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 3,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7011,
+      "sockets": {
+        "hand_l": [
+          -1.284,
+          2.162,
+          -0.358
+        ],
+        "hand_r": [
+          1.977,
+          2.102,
+          -0.505
+        ],
+        "head_top": [
+          0.38,
+          7.646,
+          -0.302
+        ],
+        "rig_ankle_l": [
+          -0.132,
+          0.44,
+          -0.302
+        ],
+        "rig_ankle_r": [
+          0.891,
+          0.44,
+          -0.302
+        ],
+        "rig_elbow_l": [
+          -1.002,
+          3.167,
+          -0.202
+        ],
+        "rig_elbow_r": [
+          1.739,
+          3.125,
+          -0.222
+        ],
+        "rig_head": [
+          0.38,
+          5.033,
+          -0.302
+        ],
+        "rig_hip_l": [
+          -0.077,
+          2.37,
+          -0.302
+        ],
+        "rig_hip_r": [
+          0.836,
+          2.37,
+          -0.302
+        ],
+        "rig_knee_l": [
+          -0.121,
+          1.363,
+          -0.352
+        ],
+        "rig_knee_r": [
+          0.88,
+          1.363,
+          -0.352
+        ],
+        "rig_neck": [
+          0.38,
+          4.299,
+          -0.302
+        ],
+        "rig_root": [
+          0.38,
+          2.412,
+          -0.302
+        ],
+        "rig_shoulder_l": [
+          -0.686,
+          3.985,
+          -0.302
+        ],
+        "rig_shoulder_r": [
+          1.446,
+          3.985,
+          -0.302
+        ],
+        "rig_waist": [
+          0.38,
+          2.747,
+          -0.302
+        ],
+        "rig_wrist_l": [
+          -1.22,
+          2.391,
+          -0.322
+        ],
+        "rig_wrist_r": [
+          1.924,
+          2.328,
+          -0.442
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 2500,
+        "lod0": 2418,
+        "lod1": 846
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 12
+  },
+  "generator": "char_soldier",
+  "variation": {
+    "closest_pair": [
+      "char_soldier_05",
+      "char_soldier_07"
+    ],
+    "mean_pair_diff": 0.3283,
+    "min_pair_diff": 0.1207,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

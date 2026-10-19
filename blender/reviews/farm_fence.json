@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "farm_fence_01": {
+      "geometry_hash": "c9358650b2b4b920",
+      "verdict": "PASS"
+    },
+    "farm_fence_02": {
+      "geometry_hash": "8aad23a1f8b1bcfd",
+      "verdict": "PASS"
+    },
+    "farm_fence_03": {
+      "geometry_hash": "9577ea437d681d0e",
+      "verdict": "PASS"
+    },
+    "farm_fence_04": {
+      "geometry_hash": "4c776d22f470dbf4",
+      "verdict": "PASS"
+    },
+    "farm_fence_05": {
+      "geometry_hash": "6a4e1f7380940604",
+      "verdict": "PASS"
+    },
+    "farm_fence_06": {
+      "geometry_hash": "38d786207b8b0219",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "farm_fence",
+  "generator_version": 1,
+  "notes": "Five clearly distinct fence types (rail, picket, woven, gate, stone-base, X-brace) that all read as fences at 57 studs with chunky capped posts. Minor: 512-730 tris per 17-stud section is pricey for box rails that will be tiled heavily (fence_03 at 730).",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

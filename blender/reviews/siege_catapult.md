@@ -1,0 +1,81 @@
+# siege_catapult — author review log (D-019)
+
+Images: `previews/siege_catapult.jpg`, `renders/siege_catapult/siege_catapult_red_01_hero.png`,
+`renders/siege_catapult/siege_catapult_blue_01_hero.png`, `renders/siege_catapult/siege_catapult_yellow_01_hero.png`,
+`renders/siege_catapult/siege_catapult_gameplay.png` (overwritten each round).
+Rubric order: silhouette / variation / readability / proportions / palette / detail / kit cohesion / tris.
+
+Builds: red + green = torsion mangonel (rope skein, A-frame with padded stop beam), blue + yellow = hinged
+counterweight between two A-frame towers. Extras: red fire brazier, green front timber mantlet (Thornwood
+hoardings), yellow gilded domes on the towers (Sunspire), blue compact crisp frame.
+
+## Round 1 (first quick build)
+Scores: 4 / 4 / 3 / 4 / 3 / 4 / 4 / 4
+Problems seen:
+- Torsion arm lay almost flat at rail height: bucket and stone hidden behind the A-frame, so from the front 3/4
+  view the red/green engines read as a cart with a goal post.
+- Counterweight bucket sat low at the rear, hidden by the winch.
+- Kingdom colour only on small pennants/shields: at 40 studs all four engines are the same brown.
+- Shields on the counterweight rails were placed over the rear wheel hubs (intersection); stones were
+  20-tri icosahedra (too faceted).
+Changes: torsion arm cocked at 22-26 deg onto a rear rest trestle, bigger bucket + stone; counterweight tail
+raised onto a trestle; winch drums lowered onto bearing blocks; stones subdivided.
+
+## Round 2
+Scores: 4 / 4 / 4 / 4 / 3 / 4 / 4 / 4
+Problems seen:
+- Buckets and stones now visible above the frame, but kingdom identity still weak at gameplay distance.
+- Yellow pennant stuck out low at the front next to the wheel (read as debris).
+Changes: kingdom cloth drapes along both rails (three pointed tails, trim bands top/bottom) with the heater
+shields in front; yellow pennant moved to the top of a tower; wheel tyre profile simplified (6-point ring)
+and drape grid trimmed to stay under 4000.
+
+## Round 3
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3
+Seen: classic catapult silhouettes in two families, kingdom colour now reads from drapes + pennant + shields +
+pad/counterweight stripe; spoked iron-tyred wheels, iron straps, rope skein/winch rope all visible.
+Remaining weaknesses: tris 3574-3860 / 4000 leave little headroom (wheels are 1000 of it); the torsion arm is
+partly hidden by the stop beam in the front 3/4 view; no animation rig (static pose: cocked and loaded).
+
+## Round 4 (bug found while building the ballista/ram)
+Problem seen: the heater shields on the rails were rotated the wrong way, so the hero showed their plain
+trim-coloured backs (no emblem) facing outwards. Change: shield rotation sign fixed; star/flame/oak/sun
+shields now face out over the drapes (checked on `siege_catapult_blue_01_hero.png`). Scores unchanged
+(4 / 4 / 4 / 4 / 4 / 4 / 4 / 3), palette read improved.
+
+## Fresh-review round 2 (FORGE-02 lead: NEEDS-WORK, variation 3 / readability 3 / cohesion 3)
+Problems reported: red shield showed the retired flame; yellow shield sun read as a purple ring/crescent and
+sat behind the A-frame; red/green shared one low chassis and blue/yellow one A-frame; green_01 3956 tris.
+Changes:
+- Four chassis now: red = low 4-wheel frame (brazier); green = two big rear wheels (R 2.7) + front sled runners
+  with upturned noses and iron shoes (Thornwood), drapes dropped, mantlet kept (3416 tris);
+  blue = A-frame towers; yellow = tall vertical trestle towers with X-braces, raking struts, bronze cap straps
+  and gold ball finials (domes removed).
+- Crown on red, new sun (no purple), fields via `field()` / `border()`; side shields moved between the towers and
+  the rear wheels, plus a front shield on the nose beam of the counterweight engines.
+- Yellow trimmed (lower X-braces, guy ropes) to stay under budget; winch rope coil tagged as rope.
+Seen (`siege_catapult_yellow_01_hero.png`, sheet): four different silhouettes (min diff 0.42), every engine
+shows its emblem on a visible shield. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 3. Tris 3416-3982 / 4000.
+
+## Fresh-review round 3 (final; FORGE-02 lead notes)
+Problems reported: red brazier (red never uses a flame); shields too small and side-on to the front camera;
+sun gold-on-gold; oak read as a feather streak; yellow at 3982/4000; blue vs yellow not distinct enough.
+Changes:
+- Shared shield (`heater_shield`): border rim (ivory on emerald, bronze on gold), field never the emblem's
+  colour (gold kingdom: ivory field), emblem 56 % of the shield; new full symmetric oak leaf (4 lobes per
+  side, midrib, stem) in ivory on the saturated emerald field.
+- red: brazier removed, 3.6-stud crown shield on the front frame facing the camera.
+- Front shields 3.6 (about 1.5x), side shields 2.8 angled 45 deg toward the front camera.
+- Wheels: 10 rim segments, 6 spokes, no hub caps (about -10 to -12 % tris overall).
+- blue: squat wide A-frames (H top+6.6, spread 4.2) with slate-blue square-pyramid apex caps; yellow: tall
+  trestle towers (H top+10.2) with gold finials.
+Seen (`previews/siege_catapult.jpg`, gameplay strip): crown, star, oak and sun-on-ivory read on large shields;
+squat blue vs tall yellow. Tris 3174-3566 / 4000, min silhouette diff 0.34.
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/siege_catapult.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 3
+- Notes: Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).

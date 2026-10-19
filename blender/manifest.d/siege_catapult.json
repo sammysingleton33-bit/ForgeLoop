@@ -1,0 +1,307 @@
+{
+  "assets": [
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.553,
+        "y": 13.238,
+        "z": 16.894
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_blue_01.fbx",
+        "validation": "exports/siege_catapult_blue_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "05e3ea9ba07b1215",
+      "id": "siege_catapult_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "counterweight",
+        "kingdom": "blue"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
+        "review_file": "reviews/siege_catapult.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "crew_1": [
+          6.152,
+          -0.108,
+          6.986
+        ],
+        "crew_2": [
+          -4.177,
+          -0.108,
+          6.986
+        ],
+        "projectile": [
+          0.987,
+          6.292,
+          5.386
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3354,
+        "lod1": 1172
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.058,
+        "y": 13.114,
+        "z": 19.321
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_green_01.fbx",
+        "validation": "exports/siege_catapult_green_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "6d55a193dee79f24",
+      "id": "siege_catapult_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "torsion",
+        "kingdom": "green"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
+        "review_file": "reviews/siege_catapult.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "crew_1": [
+          5.404,
+          0.0,
+          8.06
+        ],
+        "crew_2": [
+          -5.404,
+          0.0,
+          8.06
+        ],
+        "projectile": [
+          -0.0,
+          8.885,
+          6.96
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3256,
+        "lod1": 1138
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.761,
+        "y": 12.631,
+        "z": 16.464
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_red_01.fbx",
+        "validation": "exports/siege_catapult_red_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "224d4fe2856e04d0",
+      "id": "siege_catapult_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "torsion",
+        "kingdom": "red"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
+        "review_file": "reviews/siege_catapult.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "crew_1": [
+          5.755,
+          -0.113,
+          6.632
+        ],
+        "crew_2": [
+          -4.38,
+          -0.113,
+          6.632
+        ],
+        "projectile": [
+          0.687,
+          8.017,
+          5.532
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3174,
+        "lod1": 1110
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.1,
+        "y": 18.273,
+        "z": 18.888
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_catapult_yellow_01.fbx",
+        "validation": "exports/siege_catapult_yellow_01.validation.json"
+      },
+      "generator": "siege_catapult",
+      "generator_version": 1,
+      "geometry_hash": "7e7f46f1b04a4558",
+      "id": "siege_catapult_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "counterweight",
+        "kingdom": "yellow"
+      },
+      "preview": "previews/siege_catapult.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Red wheeled mangonel, blue counterweight engine with cone-capped uprights, green mangonel on sled behind a spiked palisade, yellow tall A-frame trebuchet. All read distinctly at 40 studs and in grayscale. Shields carry clear crown/star/oak/sun. The sun is a rayed burst on a cream shield (reads as a sun; slightly low value contrast in grayscale but still legible). The red and green throwing mechanisms are the same type, so the silhouette difference rests on wheels vs sled + palisade. 3.2-3.5k of 4k (79-88%).",
+        "review_file": "reviews/siege_catapult.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7003,
+      "sockets": {
+        "crew_1": [
+          5.425,
+          -0.108,
+          7.983
+        ],
+        "crew_2": [
+          -5.425,
+          -0.108,
+          7.983
+        ],
+        "projectile": [
+          -0.0,
+          6.292,
+          6.383
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3518,
+        "lod1": 1230
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "siege_catapult",
+  "variation": {
+    "closest_pair": [
+      "siege_catapult_blue_01",
+      "siege_catapult_red_01"
+    ],
+    "mean_pair_diff": 0.4784,
+    "min_pair_diff": 0.3427,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

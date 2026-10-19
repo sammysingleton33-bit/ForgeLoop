@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_barracks_01": {
+      "geometry_hash": "1bbf266ad8a9880c",
+      "verdict": "PASS"
+    },
+    "building_barracks_02": {
+      "geometry_hash": "92ada1cdcf1f0a19",
+      "verdict": "PASS"
+    },
+    "building_barracks_03": {
+      "geometry_hash": "66269b38e98d60a8",
+      "verdict": "PASS"
+    },
+    "building_barracks_04": {
+      "geometry_hash": "7c1b8762011fd412",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_barracks_05": {
+      "geometry_hash": "e44e26ef998750c6",
+      "verdict": "PASS"
+    },
+    "building_barracks_06": {
+      "geometry_hash": "ab1c5270d79c41af",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "building_barracks",
+  "generator_version": 2,
+  "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. Strong silhouettes (towers, crenellated gatehouse, onion dome) and good military detail (dummies, targets, racks). Pairs 01/06 (timber, front gable, tower) and 02/05 (stone, gatehouse, flag, tower) share massing but differ in tower size and position in grayscale. 04 fails readability: sun emblems on door banners and gable shield are tiny gold suns in cream discs on gold; they read as dots or rosettes in grayscale even in the hero view. Fix: sun filling the banner width on a cream field in dark ochre for value contrast, plus a sun flag or sun finial on the dome. Notes: 03 oak flag reads as a lozenge at 144 studs (acceptable nearer 80); gold onion dome is a teardrop silhouette, top it with a sun finial so it cannot read as the retired flame; crowns plain cream here vs gold elsewhere; strip at 144 studs has buildings abutting. Tris 8734-11698 of 12000 (03 at 97.5%).",
+  "reviewer": "fresh-context subagent",
+  "round": 6,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}
