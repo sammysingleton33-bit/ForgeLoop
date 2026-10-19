@@ -41,7 +41,6 @@
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
 local Ledger = require("@game/ReplicatedStorage/Game/Arena/Ledger")
-local Consequences = require("@game/ReplicatedStorage/Game/Sim/Consequences")
 
 local LeadershipService = {}
 LeadershipService.__index = LeadershipService
@@ -100,6 +99,17 @@ function LeadershipService:record(kingdom: string, userId: number?, act: string,
 	if k == nil then
 		return nil
 	end
+	-- A ruler act (conduct, valour) with no ruler named, in a kingdom that has seated rulers, would move only the
+	-- "no ruler" level, which no sample reads while someone is seated: refuse it where a producer's mistake can be seen.
+	local def = self.config.acts[act]
+	if userId == nil and #k.rulers > 0 and def and Ledger.isRulerComponent(self._ledger, def.component) then
+		local key = `{kingdom}|-|{act}`
+		if not self._warned[key] then
+			self._warned[key] = true
+			self._env.log("warn", "LeadershipService: ruler act without a ruler", { kingdom = kingdom, act = act })
+		end
+		return nil
+	end
 	-- An act for a ruler who is not seated here would sit in a level no sample reads: refuse it where a producer's
 	-- mistake can be seen (logged once per kingdom and ruler).
 	if userId ~= nil and table.find(k.rulers, userId) == nil then
@@ -127,13 +137,14 @@ function LeadershipService:record(kingdom: string, userId: number?, act: string,
 end
 
 function LeadershipService:getMoments(kingdom: string, userId: number?, limit: number): { any }
-	self:_sim()
+	self:_sim() -- the list is new and the moments in it are frozen
 	return Ledger.moments(self._ledger, kingdom, userId, limit)
 end
 
 function LeadershipService:samples(kingdom: string, userId: number?): { any }
 	self:_sim()
-	return self._samples[sampleKey(kingdom, userId)] or {}
+	local list = self._samples[sampleKey(kingdom, userId)]
+	return if list then table.clone(list) else {} -- a copy of the list; the samples in it are frozen
 end
 
 function LeadershipService:leadership(kingdom: string, userId: number?): number
@@ -184,7 +195,10 @@ function LeadershipService:_kingdomComponents(sim: any, kingdom: string, k: any)
 	return {
 		reputation = self:_reputation(kingdom),
 		happiness = clamp100(if conditions then conditions.happiness or NEUTRAL else NEUTRAL),
-		stability = clamp100(if conditions then Consequences.effectiveStability(k) else NEUTRAL),
+		-- a conditions table without a stability reads as neutral, not as 0
+		stability = clamp100(
+			if conditions then (conditions.stability or NEUTRAL) - (k.unrestPressure or 0) else NEUTRAL
+		),
 		morale = clamp100(if conditions then conditions.morale or NEUTRAL else NEUTRAL),
 		loyalty = clamp100(meanLoyalty(sim, k)),
 	}
@@ -296,6 +310,8 @@ function LeadershipService:_store(kingdom: string, userId: number?, sample: any)
 		list = {}
 		self._samples[key] = list
 	end
+	table.freeze(sample.components)
+	table.freeze(sample)
 	table.insert(list, sample)
 	if #list > MAX_SAMPLES then
 		table.remove(list, 1)
@@ -343,7 +359,9 @@ function LeadershipService:start()
 	self._running = true
 	self._env.spawn(function()
 		while self._running do
-			self._env.wait(self.config.sampling.intervalSeconds)
+			-- poll in short wall-clock slices: sample() itself waits for a full interval of simulation time, which
+			-- runs behind the wall clock (the host clamps its step)
+			self._env.wait(self.config.sampling.pollSeconds)
 			if self._running then
 				local ok, err = pcall(self.sample, self)
 				if not ok then

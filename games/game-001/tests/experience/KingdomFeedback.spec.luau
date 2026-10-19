@@ -523,6 +523,8 @@ describe("Feedback/Lines presentation (FL-0062)", function()
 		end
 		expect(Moments.present({ kind = "phase", phase = "Lobby" }).toast).toBeNil() -- no lobby line
 		expect(samples.victory ~= nil).toBe(true)
+		-- the siege sample carries its keep's position, so fx.announce siege shows the beacon (E15)
+		expect(typeof(samples.siege.position)).toBe("Vector3")
 	end)
 
 	it("every sound and effect named in Lines exists, and no celebration is sound-only", function()
@@ -763,6 +765,29 @@ describe("AnnouncerService (FL-0062)", function()
 			local unknown = remotes:sentTo("Feedback.Moment", p1)[3].args[1]
 			expect(unknown.kind).toBe("siege")
 			expect(unknown.position).toBeNil()
+			-- FORGE-07 #235 L2: a siege with no building id never matches a model that has none either
+			local decor = roblox.Instance.new("Model")
+			local post = roblox.Instance.new("Part")
+			post.CFrame = CFrame.new(10, 1, 10)
+			post.Parent = decor
+			decor.PrimaryPart = post
+			decor.Parent = buildings -- no BuildingId attribute
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" } })
+			expect(remotes:sentTo("Feedback.Moment", p1)[4].args[1].position).toBeNil()
+			-- the keep's PrimaryPart wins over its other parts; without one, its first part is used
+			local keep2 = roblox.Instance.new("Model")
+			keep2:SetAttribute("BuildingId", 8)
+			local banner = roblox.Instance.new("Part")
+			banner.Name = "Banner"
+			banner.CFrame = CFrame.new(5, 9, 5)
+			banner.Parent = keep2
+			local base2 = roblox.Instance.new("Part")
+			base2.CFrame = CFrame.new(-50, 3, 0)
+			base2.Parent = keep2
+			keep2.PrimaryPart = base2
+			keep2.Parent = buildings
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 8 })
+			expect(remotes:sentTo("Feedback.Moment", p1)[5].args[1].position).toBe(Vector3.new(-50, 3, 0))
 		end
 	)
 

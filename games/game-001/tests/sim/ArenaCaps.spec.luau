@@ -125,6 +125,13 @@ describe("Arena/Caps: what is refused, and why", function()
 		expect((Caps.check({ wares, passive("damage", 0.02, true, "perk:other") }))).toBe(true)
 	end)
 
+	it("a slotted passive and a trigger from one source are refused in either order", function()
+		local wares = passive("damageReduction", 0.02, true, "perk:fineWares")
+		local same = trigger("perk:fineWares", "damage", 0.02)
+		refused({ wares, same }, "listed twice")
+		refused({ same, wares }, "listed twice")
+	end)
+
 	it("the same trigger listed twice, a bad duration, a modifier list that is not a list", function()
 		refused({ trigger("a", "damage", 0.05), trigger("a", "damage", 0.05) }, "twice")
 		refused(

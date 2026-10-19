@@ -12,8 +12,9 @@
 		camera:restore() -> boolean         -- glide back to the view saved by the first focusOn(_, opts)
 		camera:getFocus() -> Vector3?
 		camera:shake(magnitude, duration)   -- VFXController.shakeRequested is wired to this
-		camera:setEditDrag(active)          -- base editing (G13.9, FL-0121): while a building is dragged,
-		                                    -- the drag never pans; the screen edge does (edge-pan)
+		camera:setEditDrag(active, at?)     -- base editing (G13.9, FL-0121): while a building is dragged,
+		                                    -- the drag never pans; the screen edge does (edge-pan).
+		                                    -- at: the press point (Vector2), to find the holding finger
 		camera:playShots(shots) -> boolean  -- a short scripted pass of the overview (the Crown Arena intro,
 		                                    -- FL-0074): shots = { { focus, yaw (radians), zoom, seconds } }
 		camera:stopShots() -> boolean / camera:shotsPlaying() -> boolean
@@ -50,10 +51,16 @@
 	the previous mode and the View key.
 	Base editing (G13.9, FL-0121): in B17's Move flow (D-052 (1)) edit mode lasts while a building is
 	being moved, and a tap there aims the ghost, so selections in edit mode never move the camera
-	(FORGE-07's #148 B1 side effect). setEditDrag (parked with the drag gesture, FL-0123: no caller
-	yet) is for FORGE-03's edit UI while it drags a building: a mouse drag or one-finger
-	drag no longer pans; instead, a pointer within EDGE_PIXELS of the screen edge pans toward that
-	edge (faster nearer the edge, at most panSpeed). setEditDrag(false), or leaving edit mode, ends it.
+	(FORGE-07's #148 B1 side effect). setEditDrag is for FORGE-03's edit UI while it drags a building
+	(FL-0123, #234: a 0.45 s hold, then setEditDrag(true), false on release): a mouse drag or one-finger
+	drag no longer pans, and a pan already under way stops (setEditDrag(true) clears it); instead, a
+	pointer within EDGE_PIXELS of the screen edge pans toward that edge (faster nearer the edge, at
+	most panSpeed). On touch the pointer is the finger holding the building: of the touches still down
+	when setEditDrag(true, at) comes, the one nearest the press point `at` (FORGE-03's #234 passes it;
+	the held finger has not moved, since a move past the slop cancels the press), else the oldest. So
+	another finger, older (a thumb resting on the world) or newer (a pinch near an edge), never
+	edge-pans (FORGE-07 on #234 and #239 M1). setEditDrag(false), leaving edit mode, or that finger
+	lifting ends it.
 	Shots (FL-0074 part 2b): playShots glides the overview to each shot in turn over its seconds (each
 	clamped to the map, the zoom to overview.minZoom..maxZoom, at most SHOT_MAX_SEC), and the view stays on
 	the last one. Reduced motion cuts to each shot and holds it for its seconds instead. The player's own
@@ -398,6 +405,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_drag = nil,
 		_editDrag = false,
 		_pointer = nil :: Vector2?,
+		_touches = {} :: { any }, -- touches down, oldest first (one InputObject per finger)
+		_dragTouch = nil :: any, -- the finger holding the dragged building (edit drag on touch)
 		_panLast = nil,
 		_pinch = 1,
 		_twist = 0,
@@ -728,13 +737,52 @@ function Controller:panBy(studs: Vector2)
 	self:focusOn(focus + Def.panVector(studs, self._target.yaw))
 end
 
+-- A point's X and Y (a Vector2, or a touch's Vector3 Position); nil for anything else.
+local function pointXY(point: any): (number?, number?)
+	local ok, x, y = pcall(function()
+		return point.X, point.Y
+	end)
+	local function real(v: any): boolean
+		return type(v) == "number" and v == v and math.abs(v) ~= math.huge
+	end
+	if ok and real(x) and real(y) then
+		return x, y
+	end
+	return nil, nil
+end
+
+-- The finger holding the dragged building: the touch nearest the press point `at`, else the oldest.
+function Def.heldTouch(touches: { any }, at: any?): any?
+	local ax, ay = pointXY(at)
+	if ax == nil or ay == nil then
+		return touches[1]
+	end
+	local best, bestDistance = nil, math.huge
+	for _, touch in touches do
+		local tx, ty = pointXY(touch.Position)
+		if tx ~= nil and ty ~= nil then
+			local distance = (tx - ax) ^ 2 + (ty - ay) ^ 2
+			if distance < bestDistance then -- a tie keeps the older finger
+				best, bestDistance = touch, distance
+			end
+		end
+	end
+	return best or touches[1]
+end
+
 -- Base editing (G13.9): while a building is dragged, drags never pan and the screen edge does.
-function Controller:setEditDrag(active: any): boolean
+function Controller:setEditDrag(active: any, at: any?): boolean
 	local on = active == true and self._input ~= nil and self._input.mode == "edit"
 	self._editDrag = on
+	self._dragTouch = nil
 	if on then
 		self._drag = nil -- a pan already under way stops
 		self._panLast = nil
+		local finger = Def.heldTouch(self._touches, at) -- the one that was held: only it edge-pans
+		if finger ~= nil then
+			self._dragTouch = finger
+			self._pointer = Vector2.new(finger.Position.X, finger.Position.Y)
+		end
 	end
 	return on
 end
@@ -1327,6 +1375,9 @@ function Controller:_bindPointer()
 	track(
 		self._connections,
 		connect(userInput, "InputBegan", function(input, processed)
+			if input.UserInputType == Enum.UserInputType.Touch and not table.find(self._touches, input) then
+				table.insert(self._touches, input) -- every finger, even over UI (the drag starts on a button)
+			end
 			if processed or self.mode ~= "overview" then
 				return
 			end
@@ -1341,6 +1392,14 @@ function Controller:_bindPointer()
 		connect(userInput, "InputEnded", function(input)
 			if self._drag and input.UserInputType == self._drag.button then
 				self._drag = nil
+			end
+			local finger = table.find(self._touches, input)
+			if finger ~= nil then
+				table.remove(self._touches, finger)
+			end
+			if input == self._dragTouch then
+				self._dragTouch = nil -- the dragging finger lifted: its point no longer edge-pans
+				self._pointer = nil
 			end
 			if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 				self._stick = Vector2.zero
@@ -1358,7 +1417,10 @@ function Controller:_bindPointer()
 					self:zoomBy(-input.Position.Z)
 				end
 			elseif kind == Enum.UserInputType.MouseMovement or kind == Enum.UserInputType.Touch then
-				self._pointer = Vector2.new(input.Position.X, input.Position.Y) -- edge-pan (G13.9)
+				-- edge-pan (G13.9): while a finger holds the building, only that finger moves the point
+				if kind ~= Enum.UserInputType.Touch or self._dragTouch == nil or input == self._dragTouch then
+					self._pointer = Vector2.new(input.Position.X, input.Position.Y)
+				end
 				if kind == Enum.UserInputType.MouseMovement then
 					self:_mouseMoved(input.Position)
 				end
