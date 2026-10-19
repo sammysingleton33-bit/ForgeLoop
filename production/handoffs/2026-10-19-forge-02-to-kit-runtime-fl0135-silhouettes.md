@@ -18,7 +18,7 @@ The kit data changed on `forge/02-blender-fl0135-silhouettes` (FORGE-00 OPTION A
 Additive in `rig.json` / `CharacterMeshData.luau` (new piece ids, one assembly key renamed). No contract change; the converter already accepts any `soldier_<unit>` key.
 
 ## Open issues and risks
-- Unit-kind lookup: the runtime must ask for `soldier_knight` for the sim unit `knight` (it used `soldier_swordsman` only in the test dump). Search for the old key in your branch before merging.
+- Unit-kind lookup: the runtime must ask for `soldier_knight` for the sim unit `knight`. On this branch no runtime file or spec mentions the old key `soldier_swordsman` (grep); search your own branch for it before merging.
 - The 170-stud identity read is still "partly" for builder, hauler, blacksmith, healer and idle (see char-mesh.md options a to d); decision for FORGE-00.
 
 ## Next actions for the receiver
