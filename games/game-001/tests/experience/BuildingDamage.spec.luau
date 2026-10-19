@@ -1,0 +1,159 @@
+local T = require("../../../../roblox/tests/harness/Test")
+local describe, it, expect = T.describe, T.it, T.expect
+
+local roblox = require("@lune/roblox")
+local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
+local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local FeedbackDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackController")
+
+local CRIMSON = Color3.fromRGB(190, 40, 50)
+
+-- The real Kit, counting applyDamage calls.
+local function countingKit()
+	local calls = {}
+	local kit = setmetatable({
+		applyDamage = function(model)
+			table.insert(calls, model)
+			return Kit.applyDamage(model)
+		end,
+	}, { __index = Kit })
+	return kit, calls
+end
+
+local function boot(env, kit)
+	local defs = {
+		{
+			name = "FeedbackController",
+			new = function(e, r)
+				return FeedbackDef.create(e, r, { kit = kit, layout = { resourceNodes = {} } })
+			end,
+		},
+	}
+	return Loader.load(env, defs):get("FeedbackController")
+end
+
+-- Workspace.ForgeKingdoms/crimson/Buildings, as WorldView lays it out.
+local function buildingsFolder(env)
+	local root = roblox.Instance.new("Folder")
+	root.Name = "ForgeKingdoms"
+	local kingdom = roblox.Instance.new("Folder")
+	kingdom.Name = "crimson"
+	kingdom.Parent = root
+	local buildings = roblox.Instance.new("Folder")
+	buildings.Name = "Buildings"
+	buildings.Parent = kingdom
+	root.Parent = env.Workspace
+	return buildings
+end
+
+local function building(folder, kind, level, id, hp, maxHp)
+	local model = Kit.build(kind, level, "complete", CRIMSON)
+	model:SetAttribute("BuildingId", id)
+	model:SetAttribute("Hp", hp)
+	model:SetAttribute("MaxHp", maxHp)
+	model.Parent = folder
+	return model
+end
+
+local function signature(model)
+	local n = 0
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			n += 1
+		end
+	end
+	return n
+end
+
+describe("FeedbackController: building damage follows HP (FL-0143, FL-0128 war kit)", function()
+	it("Damage follows Hp/MaxHp; the parts change only when the damage state does; a repair restores them", function()
+		local env = MockEnv.new({ seed = 143, isServer = false, localPlayer = { userId = 1 } })
+		local kit, calls = countingKit()
+		local feedback = boot(env, kit)
+		local folder = buildingsFolder(env)
+		local wall = building(folder, "wall", 2, 21, 100, 100)
+		local whole = signature(wall)
+		expect(feedback:refreshDamage()).toBe(0) -- full HP: Damage 0, state 0, nothing to build
+		expect(wall:GetAttribute("Damage")).toBe(0)
+		expect(#calls).toBe(0)
+		wall:SetAttribute("Hp", 60) -- 0.4: state 1
+		expect(feedback:refreshDamage()).toBe(1)
+		expect(math.abs(wall:GetAttribute("Damage") - 0.4) < 1e-9).toBe(true)
+		expect(wall:GetAttribute("KitDamageState")).toBe(1)
+		expect(feedback:refreshDamage()).toBe(0) -- the same HP: nothing again
+		wall:SetAttribute("Hp", 55) -- 0.45: still state 1: the number moves, the parts do not
+		expect(feedback:refreshDamage()).toBe(0)
+		expect(math.abs(wall:GetAttribute("Damage") - 0.45) < 1e-9).toBe(true)
+		wall:SetAttribute("Hp", 10) -- 0.9: state 3
+		expect(feedback:refreshDamage()).toBe(1)
+		expect(wall:GetAttribute("KitDamageState")).toBe(3)
+		expect(#calls).toBe(2)
+		-- repaired: back to the model exactly as built
+		wall:SetAttribute("Hp", 100)
+		expect(feedback:refreshDamage()).toBe(1)
+		expect(wall:GetAttribute("Damage")).toBe(0)
+		expect(wall:GetAttribute("KitDamageState")).toBeNil()
+		expect(signature(wall)).toBe(whole)
+	end)
+
+	it(
+		"the poll does it (no per-frame work); a rebuilt model starts fresh; stand-ins and bad numbers are left alone",
+		function()
+			local env = MockEnv.new({ seed = 144, isServer = false, localPlayer = { userId = 1 } })
+			local kit, calls = countingKit()
+			boot(env, kit)
+			local folder = buildingsFolder(env)
+			local house = building(folder, "house", 1, 31, 20, 100) -- 0.8: state 3
+			env.mock:advance(FeedbackDef.BURN_POLL_SEC + 0.05) -- the poll started by start()
+			expect(house:GetAttribute("KitDamageState")).toBe(3)
+			expect(#calls).toBe(1)
+			env.mock:advance(FeedbackDef.BURN_POLL_SEC * 4) -- four more reads: no change, no call
+			expect(#calls).toBe(1)
+			-- WorldView rebuilds a building at a new level: a new model, no Damage yet
+			house:Destroy()
+			local rebuilt = building(folder, "house", 2, 31, 20, 100)
+			env.mock:advance(FeedbackDef.BURN_POLL_SEC)
+			expect(rebuilt:GetAttribute("KitDamageState")).toBe(3)
+			expect(#calls).toBe(2)
+			-- a plain-part stand-in, a model with no MaxHp, MaxHp 0 or a NaN Hp: untouched, no error
+			local part = roblox.Instance.new("Part")
+			part:SetAttribute("BuildingId", 40)
+			part:SetAttribute("Hp", 1)
+			part:SetAttribute("MaxHp", 100)
+			part.Parent = folder
+			local odd = {
+				building(folder, "house", 1, 41, 10, nil),
+				building(folder, "house", 1, 42, 10, 0),
+				building(folder, "house", 1, 43, 0 / 0, 100),
+			}
+			env.mock:advance(FeedbackDef.BURN_POLL_SEC)
+			expect(part:GetAttribute("Damage")).toBeNil()
+			for _, model in odd do
+				expect(model:GetAttribute("Damage")).toBeNil()
+			end
+			expect(#calls).toBe(2)
+			expect(env.mock.threadErrors).toEqual({})
+		end
+	)
+
+	it("an applyDamage that throws is logged and the poll goes on", function()
+		local env = MockEnv.new({ seed = 145, isServer = false, localPlayer = { userId = 1 } })
+		local broken = setmetatable({
+			applyDamage = function()
+				error("kit broke")
+			end,
+		}, { __index = Kit })
+		local feedback = boot(env, broken)
+		local folder = buildingsFolder(env)
+		building(folder, "house", 1, 51, 10, 100)
+		expect(feedback:refreshDamage()).toBe(0)
+		expect(env.mock:hasLog("warn", "FeedbackController: Kit.applyDamage failed")).toBe(true)
+		-- without the war kit at all, nothing happens
+		local none = boot(
+			MockEnv.new({ seed = 146, isServer = false }),
+			setmetatable({ applyDamage = false }, { __index = Kit })
+		)
+		expect(none:refreshDamage()).toBe(0)
+	end)
+end)

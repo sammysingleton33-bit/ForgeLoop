@@ -3,7 +3,7 @@ id: FL-0143
 title: Building damage states on the client (Kit.applyDamage from Hp/MaxHp)
 track: build
 owner: forge-04
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-19
@@ -37,3 +37,4 @@ Damaged buildings, walls, gates and towers look damaged in play. The look follow
 
 ## Log
 - 2026-10-19 FORGE-00: created on FORGE-04's routing question. After FL-0141.
+- 2026-10-19 forge-04: READY → BUILDING. FORGE-04 started (after FL-0141's PR work): FeedbackController's 0.5 s building poll also sets Damage from Hp/MaxHp and calls Kit.applyDamage only when the damage state changes; the model's own Damage attribute is the cache, so a rebuilt model starts fresh.

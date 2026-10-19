@@ -20,6 +20,14 @@
 	"kingdom.building.fire" effect (flames and smoke) and the looping "kingdom.fire" crackle above its roof;
 	both stop when the attribute goes or the model does. An effect the VFX budget skipped is tried again on
 	the next read.
+	Building damage (FL-0143; FORGE-00's ruling: this controller is the one writer of `Damage`, on the
+	client): on the same read, each building Model's `Damage` attribute follows its `Hp` and `MaxHp` (set by
+	WorldView) through Kit.damageFromHp, written only when the value changes, and Kit.applyDamage (FORGE-02's
+	FL-0128 war kit: cracks, soot, missing merlons, a collapsed corner) runs only when the damage state
+	(Kit.damageState: 0..4) changes. A repaired building (Hp back up) gets its parts back the same way; a
+	rebuilt one is a new model that starts undamaged. A building without both numbers, or with MaxHp <= 0,
+	is left alone, and so are the plain-part stand-ins (not Models). No per-frame work: one pass every
+	BURN_POLL_SEC.
 	Distances are measured from the overview's focus (RulerCameraController:getFocus() while mode is
 	"overview"), else from the camera (walk mode, whose focus would be the stale overview one), so a
 	zoomed-out overview (up to 220 studs) still hears and sees the citizens under the view. Floats
@@ -30,6 +38,7 @@
 	Every sound here has a visual counterpart (the effect or the float), the accessibility rule.
 ]]
 
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local Presets = require("@game/ReplicatedStorage/Game/Feedback/Presets")
 local VfxPresets = require("@game/ReplicatedStorage/Forge/Experience/VfxPresets")
@@ -110,7 +119,30 @@ function Def.burningBuildings(workspace: any): { [any]: any }
 	return out
 end
 
--- opts (specs): { layout, origin = () -> Vector3 }
+-- Building Models under Workspace.ForgeKingdoms/<kingdom>/Buildings that carry Hp and MaxHp.
+function Def.damageable(workspace: any): { any }
+	local out = {}
+	local root = workspace and workspace:FindFirstChild("ForgeKingdoms")
+	if root == nil then
+		return out
+	end
+	for _, kingdom in root:GetChildren() do
+		local buildings = kingdom:FindFirstChild("Buildings")
+		if buildings ~= nil then
+			for _, model in buildings:GetChildren() do
+				if model:IsA("Model") then
+					local hp, maxHp = model:GetAttribute("Hp"), model:GetAttribute("MaxHp")
+					if type(hp) == "number" and hp == hp and type(maxHp) == "number" and maxHp > 0 then
+						table.insert(out, model)
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- opts (specs): { layout, origin = () -> Vector3, kit }
 function Def.create(env: any, registry: any, opts: { [string]: any }?)
 	local options = opts or {}
 	local nodes = {}
@@ -123,6 +155,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_env = env,
 		_registry = registry,
 		_origin = options.origin,
+		_kit = options.kit or Kit,
 		_nodes = nodes,
 		_connections = {},
 		_attached = {} :: { [number]: { { effect: any, at: number } } },
@@ -169,6 +202,7 @@ function FeedbackController:start()
 	self._env.spawn(function()
 		while self._running do
 			self:refreshFires()
+			self:refreshDamage()
 			self._env.wait(Def.BURN_POLL_SEC)
 		end
 	end)
@@ -218,6 +252,37 @@ function FeedbackController:refreshFires()
 			self._fires[id] = entry
 		end
 	end
+end
+
+-- Each building's Damage follows its Hp (FL-0143): the attribute when its value changes, the parts
+-- (Kit.applyDamage) only when its damage state does. Returns how many models were re-dressed (specs).
+function FeedbackController:refreshDamage(): number
+	local kit = self._kit
+	if type(kit.applyDamage) ~= "function" or type(kit.damageFromHp) ~= "function" then
+		return 0
+	end
+	local ok, models = pcall(Def.damageable, self._env.Workspace)
+	if not ok then
+		return 0
+	end
+	local applied = 0
+	for _, model in models do
+		local damage = kit.damageFromHp(model:GetAttribute("Hp"), model:GetAttribute("MaxHp"))
+		local before = model:GetAttribute("Damage")
+		if before ~= damage then
+			model:SetAttribute("Damage", damage)
+			local was = if type(before) == "number" then before else 0
+			if kit.damageState(damage) ~= kit.damageState(was) then
+				local okApply, err = pcall(kit.applyDamage, model)
+				if okApply then
+					applied += 1
+				else
+					self._env.log("warn", "FeedbackController: Kit.applyDamage failed", { error = tostring(err) })
+				end
+			end
+		end
+	end
+	return applied
 end
 
 -- Buildings burning now, with their effect and sound (specs, debug).
