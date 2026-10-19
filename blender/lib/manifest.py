@@ -198,19 +198,19 @@ def kit_budget_errors(doc, measured, looks=None):
 
 # ---- FL-0136: the environment mesh kit (trees, bushes, rocks, nodes, crops) is gated the same way: every number env.json declares is MEASURED from the
 # shipped FBX. Constants here on purpose (D-057 (19): trees 300-900 triangles; the contract: bushes, rocks and flowers 40-400), independent of env.json.
-ENV_LIMITS = {"tree": (300, 900), "bush": (40, 400), "rock": (40, 400), "flower": (40, 400), "node": (40, 500), "crop": (200, 3000), "prop": (40, 400)}
+ENV_LIMITS = {"tree": (300, 900), "bush": (40, 400), "rock": (40, 400), "flower": (40, 400), "crop": (40, 1500), "haystack": (40, 600), "fence": (40, 600)}
 ENV_MESH_MAX = 20000
-ENV_FIT = {"radius": 0.15, "height": 0.25}  # the contract's fit window against the part-built stand-in, unless env.json gives the prop a `fit_note`
+ENV_FIT = {"footprint": (0.85, 1.15), "node": (0.85, 1.02), "height": (0.75, 1.25)}  # the Kit's rule (art/env_kit/env_to_luau.py): footprint max(x, z), unless env.json gives the prop a `fit_note`
 ENV_SINK_MAX = 0.6
 ENV_PATH_RE = re.compile(r"(/home/|/Users/|/root/|/tmp/|/mnt/|/var/folders/|(?<![A-Za-z0-9])[A-Za-z]:[\\/][A-Za-z0-9_.-]+)")  # applied to the FBX's text values only (fbxtris.strings)
-ENV_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+ENV_ID_RE = re.compile(r"^[a-z]+(?:_[a-z0-9]+)*_\d{2}$")  # the Kit validator's shape: lowercase, ends in _NN
 
 
 def env_budget_errors(doc, measured, bounds=None):
     """Errors of an env.json document against what the FBX holds ({object name: triangles}, optionally {object name: vertex box}).
 
     Every prop: present in both, id shape, known family, declared `tris` equals measured and sits inside its family's budget, mesh <= 20,000, base not sunk further than
-    0.6, the footprint within the contract's window of its stand-in (or explained by `fit_note`), the declared box equal to the measured one."""
+    0.6, the footprint and height within the Kit's window of its stand-in (or explained by `fit_note`), the declared box equal to the measured one."""
     errs = []
     props = doc.get("props", {})
     for k in sorted(set(props) - set(measured)):
@@ -236,10 +236,11 @@ def env_budget_errors(doc, measured, bounds=None):
             errs.append(f"prop {k}: base_y {p.get('base_y')} sinks further than {ENV_SINK_MAX}")
         f = p.get("fit")
         if f and not p.get("fit_note"):
-            if abs(f["radius_ratio"] - 1) > ENV_FIT["radius"]:
-                errs.append(f"prop {k}: footprint radius {f['radius']} vs stand-in {f['standin_radius']} is outside +-{ENV_FIT['radius']:.0%} and has no fit_note")
-            if abs(f["height_ratio"] - 1) > ENV_FIT["height"]:
-                errs.append(f"prop {k}: height {f['height']} vs stand-in {f['standin_height']} is outside +-{ENV_FIT['height']:.0%} and has no fit_note")
+            lo, hi = ENV_FIT["node"] if p.get("node") else ENV_FIT["footprint"]
+            if not lo <= f["footprint_ratio"] <= hi:
+                errs.append(f"prop {k}: footprint {f['footprint']} vs stand-in {f['standin_footprint']} is outside {lo:.0%}-{hi:.0%} and has no fit_note")
+            if not ENV_FIT["height"][0] <= f["height_ratio"] <= ENV_FIT["height"][1]:
+                errs.append(f"prop {k}: height {f['height']} vs stand-in {f['standin_height']} is outside {ENV_FIT['height'][0]:.0%}-{ENV_FIT['height'][1]:.0%} and has no fit_note")
         if bounds and k in bounds:
             (x0, y0, z0), (x1, y1, z1) = bounds[k]
             size = [x1 - x0, z1 - z0, y1 - y0]  # Blender object space (z up) -> rig axes

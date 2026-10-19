@@ -102,8 +102,22 @@ def oak(variant, rng, height=25.0):
     ymin = min(b.bounds()[0][1] for b in lobe_pts)
     ymax = max(b.bounds()[1][1] for b in lobe_pts)
     for b in lobe_pts:
-        S.paint_ramp(b, S.OAK_RAMP, rng, ymin, ymax, up=0.38, height=0.5, noise=0.09)
+        S.paint_ramp(b, S.OAK_RAMP, rng, ymin, ymax, up=0.30, height=0.48, noise=0.10)
     parts += lobe_pts
+    # leaf clumps on the crown's rim: small 20-facet lumps that break the silhouette up (a crown is bumpy, not a smooth cloud); lit like the lobe they sit on
+    ncl = 5 + (variant % 3)
+    for k in range(ncl):
+        base = lobes[rng.randrange(len(lobes))]
+        r, a, dy, rad, _ = base
+        ang = a + rng.uniform(-0.8, 0.8)
+        el = rng.uniform(-0.2, 0.9)
+        cr = rad * rng.uniform(0.34, 0.46)
+        px = ccx + math.cos(a) * r + math.cos(ang) * math.cos(el) * rad * 0.92
+        py = cy + dy + math.sin(el) * rad * 0.9
+        pz = ccz + math.sin(a) * r + math.sin(ang) * math.cos(el) * rad * 0.92
+        cl = S.ico(rng, cr, cr * 0.85, cr, px, py, pz, jitter=0.12, subdiv=0, color=S.LEAF, tag="clump")
+        S.paint_ramp(cl, S.OAK_RAMP, rng, ymin, ymax, up=0.30, height=0.48, noise=0.10)
+        parts.append(cl)
     # limbs: thick tapered boughs from the stem to the lobes that need one
     forked = arch in ("twin", "lopsided")
     for k, t in enumerate(limb_targets[:2]):
@@ -165,7 +179,7 @@ def pine(variant, rng, height=None):
     """tree_pine_NN: a short bare trunk and 6 to 7 stacked bough tiers with jagged skirts narrowing to a tip (blue-green, lighter on top)."""
     height = (PINE_H[(variant - 1) % 6] if height is None else height)
     tiers = 6 + (variant % 2)  # 6 or 7
-    lean = rng.uniform(0.012, 0.035)
+    lean = rng.uniform(0.004, 0.014)
     la = rng.uniform(0, math.tau)
     base_r = rng.uniform(7.6, 8.4)
 
@@ -188,7 +202,7 @@ def pine(variant, rng, height=None):
         yy = y + span * (t ** 0.95)
         teeth = 7 if t < 0.5 else 6 if t < 0.8 else 5
         ax = axis(yy)
-        tier = _tier(rng, yy, r0, h, teeth, rng.uniform(0.16, 0.26), rng.uniform(0, math.tau), 0.0, S.mix(S.PINE, S.PINE_MID, 0.1 + 0.4 * t),
+        tier = _tier(rng, yy, r0, h, teeth, rng.uniform(0.28, 0.4), rng.uniform(0, math.tau), 0.0, S.mix(S.PINE, S.PINE_MID, 0.1 + 0.4 * t),
                      S.mix(S.PINE_MID, S.PINE_LIGHT, 0.2 + 0.6 * t))
         tier.move(ax[0], 0, ax[1])
         parts.append(tier)
@@ -203,7 +217,7 @@ def pine(variant, rng, height=None):
 
 def birch(variant, rng, height=None):
     """tree_birch_NN: a slim white trunk with dark bark marks and a side stub, a crown of four to five yellow-green lobes."""
-    height = (BIRCH_H[(variant - 1) % 6] - 2.0) if height is None else height  # the crown rises about 2 above the nominal top
+    height = (BIRCH_H[(variant - 1) % 6] - 1.2) if height is None else height  # the crown rises about 1.2 above the nominal top
     lean = math.radians(rng.uniform(2.0, 5.0))
     la = rng.uniform(0, math.tau)
     ldir = (math.sin(lean) * math.cos(la), math.cos(lean), math.sin(lean) * math.sin(la))
@@ -238,14 +252,14 @@ def birch(variant, rng, height=None):
     for i in range(n_lobes):
         f = i / max(1, n_lobes - 1)
         ang = a0 + i * 2.2 + rng.uniform(-0.3, 0.3)
-        r = rng.uniform(0.7, 2.2) * (1 - 0.3 * f)
-        y = height - 5.4 + f * 4.6 + rng.uniform(-0.3, 0.3)
-        rad = rng.uniform(2.5, 3.2) * (1 - 0.15 * f)
+        r = rng.uniform(0.9, 2.5) * (1 - 0.3 * f)
+        y = height - 8.4 + f * 5.4 + rng.uniform(-0.3, 0.3)
+        rad = rng.uniform(3.0, 3.7) * (1 - 0.14 * f)
         p = at(y)
         pts = 20
         lobes.append(S.blob(rng, pts, rad, rad * 1.08, rad, p[0] + math.cos(ang) * r, y, p[2] + math.sin(ang) * r, jitter=0.12, squash_bottom=0.25,
                             color=S.BIRCH_LEAF, tag="canopy", yaw=rng.uniform(0, math.tau)))
-    side = S.blob(rng, 18, rng.uniform(2.1, 2.5), rng.uniform(1.9, 2.2), rng.uniform(2.1, 2.5), b[0] + math.cos(sa) * 0.6, b[1] + 0.8, b[2] + math.sin(sa) * 0.6,
+    side = S.blob(rng, 18, rng.uniform(2.4, 2.9), rng.uniform(2.2, 2.6), rng.uniform(2.4, 2.9), b[0] + math.cos(sa) * 0.6, b[1] + 0.8, b[2] + math.sin(sa) * 0.6,
                   jitter=0.12, squash_bottom=0.25, color=S.BIRCH_LEAF, tag="canopy", yaw=rng.uniform(0, math.tau))
     lobes.append(side)
     ymin = min(b_.bounds()[0][1] for b_ in lobes)

@@ -1,0 +1,743 @@
+{
+ "schema_version": 1,
+ "unit": "stud",
+ "generator": "blender/generators/env_kit.py",
+ "purpose": "spares: ids nothing places yet",
+ "style": "B",
+ "frame": "Roblox axes: +X right, +Y up, -Z front, studs. Every prop stands on y = 0 (the ground plane = the Model pivot plane) and is centred on x = z = 0 as the part-built stand-in is (a tree: its trunk); `base_y` <= 0 is how far a foot, root flare or rock sinks below it. `bbox_center` and `size` describe the mesh's bounding box RELATIVE to that pivot (the FBX object's origin sits at the box centre, as in the citizen kit). Blender authoring: (bx, by, bz) = (x, -z, y); the FBX is exported Y up / -Z forward, 1 unit = 1 stud.",
+ "radius_rule": "`radius_xz` is the true horizontal reach (farthest vertex from the pivot axis); `reach_bbox` is what a box-based check measures for a MeshPart (the farthest corner of the bounding box around the pivot): up to 1.41x the radius of a round prop. `standin_reach` is the figure tests/world/PlotClearance measures for the part-built prop (WorldPlan.CLEAR.radius is that rounded up).",
+ "tints": "every prop is `fixed`: MeshPart.Color stays white and the baked vertex colours are the look (nothing is kingdom-tinted). Unverified in Studio.",
+ "budget": {
+  "tree": {
+   "min": 300,
+   "max": 900
+  },
+  "bush": {
+   "min": 40,
+   "max": 400
+  },
+  "rock": {
+   "min": 40,
+   "max": 400
+  },
+  "flower": {
+   "min": 40,
+   "max": 400
+  },
+  "crop": {
+   "min": 40,
+   "max": 1500
+  },
+  "haystack": {
+   "min": 40,
+   "max": 600
+  },
+  "fence": {
+   "min": 40,
+   "max": 600
+  },
+  "mesh_max": 20000,
+  "materials": 1,
+  "texture_bytes": 0
+ },
+ "measured": {
+  "rock": {
+   "props": 8,
+   "tris_min": 132,
+   "tris_max": 218,
+   "tris_total": 1356,
+   "budget": [
+    40,
+    400
+   ]
+  },
+  "crop": {
+   "props": 5,
+   "tris_min": 1020,
+   "tris_max": 1332,
+   "tris_total": 6004,
+   "budget": [
+    40,
+    1500
+   ]
+  },
+  "fence": {
+   "props": 2,
+   "tris_min": 72,
+   "tris_max": 84,
+   "tris_total": 156,
+   "budget": [
+    40,
+    600
+   ]
+  }
+ },
+ "geometry_hash": "ae976f0fabc35663",
+ "standins": {
+  "kit_version": "0.5.0",
+  "source": "blender/lib/envkit_standins.json (from blender/scripts/lune/EnvInventory.spec.luau)"
+ },
+ "props": {
+  "rock_cliff_01": {
+   "family": "rock",
+   "bbox_center": [
+    -1.0871,
+    4.7082,
+    -0.6415
+   ],
+   "size": [
+    14.322,
+    10.3164,
+    10.4531
+   ],
+   "tris": 138,
+   "tint": "fixed",
+   "standin_size": [
+    13.57,
+    10.57,
+    15.4
+   ],
+   "node": false,
+   "verts": 77,
+   "placed": false,
+   "base_y": -0.45,
+   "radius_xz": 8.938,
+   "reach_bbox": 10.123,
+   "standin_reach": 10.26,
+   "standin_parts": 4,
+   "fit": {
+    "footprint": 14.32,
+    "standin_footprint": 15.4,
+    "footprint_ratio": 0.93,
+    "height": 10.32,
+    "standin_height": 10.57,
+    "height_ratio": 0.976
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "fit_scale": [
+    1.019,
+    1.0
+   ]
+  },
+  "rock_cliff_02": {
+   "family": "rock",
+   "bbox_center": [
+    0.0883,
+    4.8151,
+    0.8141
+   ],
+   "size": [
+    11.5394,
+    10.5302,
+    13.895
+   ],
+   "tris": 132,
+   "tint": "fixed",
+   "standin_size": [
+    13.17,
+    10.36,
+    14.92
+   ],
+   "node": false,
+   "verts": 74,
+   "placed": false,
+   "base_y": -0.45,
+   "radius_xz": 7.762,
+   "reach_bbox": 9.724,
+   "standin_reach": 9.8,
+   "standin_parts": 4,
+   "fit": {
+    "footprint": 13.89,
+    "standin_footprint": 14.92,
+    "footprint_ratio": 0.931,
+    "height": 10.53,
+    "standin_height": 10.36,
+    "height_ratio": 1.016
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  },
+  "resource_ore_01": {
+   "family": "rock",
+   "bbox_center": [
+    1.3565,
+    3.372,
+    0.5508
+   ],
+   "size": [
+    10.5248,
+    7.7639,
+    9.6471
+   ],
+   "tris": 176,
+   "tint": "fixed",
+   "standin_size": [
+    10.82,
+    8.06,
+    11.96
+   ],
+   "node": true,
+   "verts": 106,
+   "placed": false,
+   "base_y": -0.51,
+   "radius_xz": 7.186,
+   "reach_bbox": 8.526,
+   "standin_reach": 7.86,
+   "standin_parts": 10,
+   "fit": {
+    "footprint": 10.52,
+    "standin_footprint": 11.96,
+    "footprint_ratio": 0.88,
+    "height": 7.76,
+    "standin_height": 8.06,
+    "height_ratio": 0.963
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "variant_info": {
+    "kind": "iron"
+   },
+   "fit_scale": [
+    1.01,
+    1.275
+   ]
+  },
+  "resource_ore_02": {
+   "family": "rock",
+   "bbox_center": [
+    0.8772,
+    3.3788,
+    0.5744
+   ],
+   "size": [
+    10.4395,
+    7.7503,
+    9.353
+   ],
+   "tris": 178,
+   "tint": "fixed",
+   "standin_size": [
+    11.48,
+    8.06,
+    10.84
+   ],
+   "node": true,
+   "verts": 107,
+   "placed": false,
+   "base_y": -0.496,
+   "radius_xz": 6.991,
+   "reach_bbox": 8.046,
+   "standin_reach": 7.96,
+   "standin_parts": 10,
+   "fit": {
+    "footprint": 10.44,
+    "standin_footprint": 11.48,
+    "footprint_ratio": 0.909,
+    "height": 7.75,
+    "standin_height": 8.06,
+    "height_ratio": 0.962
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "variant_info": {
+    "kind": "iron"
+   },
+   "fit_scale": [
+    1.0,
+    1.241
+   ]
+  },
+  "resource_ore_05": {
+   "family": "rock",
+   "bbox_center": [
+    -0.7524,
+    3.7072,
+    -1.0781
+   ],
+   "size": [
+    9.2005,
+    8.2144,
+    10.516
+   ],
+   "tris": 218,
+   "tint": "fixed",
+   "standin_size": [
+    11.95,
+    8.06,
+    9.7
+   ],
+   "node": true,
+   "verts": 127,
+   "placed": false,
+   "base_y": -0.4,
+   "radius_xz": 7.051,
+   "reach_bbox": 8.294,
+   "standin_reach": 8.04,
+   "standin_parts": 10,
+   "fit": {
+    "footprint": 10.52,
+    "standin_footprint": 11.95,
+    "footprint_ratio": 0.88,
+    "height": 8.21,
+    "standin_height": 8.06,
+    "height_ratio": 1.019
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "variant_info": {
+    "kind": "crystal"
+   },
+   "fit_scale": [
+    1.047,
+    1.0
+   ]
+  },
+  "resource_ore_06": {
+   "family": "rock",
+   "bbox_center": [
+    0.0885,
+    3.6324,
+    1.7932
+   ],
+   "size": [
+    10.1907,
+    8.0649,
+    11.4576
+   ],
+   "tris": 218,
+   "tint": "fixed",
+   "standin_size": [
+    13.02,
+    8.06,
+    10.39
+   ],
+   "node": true,
+   "verts": 127,
+   "placed": false,
+   "base_y": -0.4,
+   "radius_xz": 7.573,
+   "reach_bbox": 9.135,
+   "standin_reach": 7.92,
+   "standin_parts": 10,
+   "fit": {
+    "footprint": 11.46,
+    "standin_footprint": 13.02,
+    "footprint_ratio": 0.88,
+    "height": 8.06,
+    "standin_height": 8.06,
+    "height_ratio": 1.001
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "variant_info": {
+    "kind": "crystal"
+   },
+   "fit_scale": [
+    1.075,
+    1.0
+   ]
+  },
+  "resource_wood_01": {
+   "family": "rock",
+   "bbox_center": [
+    1.8632,
+    2.0386,
+    0.5927
+   ],
+   "size": [
+    9.0736,
+    4.1372,
+    8.0962
+   ],
+   "tris": 148,
+   "tint": "fixed",
+   "standin_size": [
+    9.08,
+    4.18,
+    8.02
+   ],
+   "node": true,
+   "verts": 90,
+   "placed": false,
+   "base_y": -0.03,
+   "radius_xz": 6.938,
+   "reach_bbox": 7.906,
+   "standin_reach": 7.04,
+   "standin_parts": 14,
+   "fit": {
+    "footprint": 9.07,
+    "standin_footprint": 9.08,
+    "footprint_ratio": 0.999,
+    "height": 4.14,
+    "standin_height": 4.18,
+    "height_ratio": 0.99
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  },
+  "resource_wood_02": {
+   "family": "rock",
+   "bbox_center": [
+    1.8422,
+    2.0031,
+    0.6512
+   ],
+   "size": [
+    9.08,
+    4.0661,
+    8.2745
+   ],
+   "tris": 148,
+   "tint": "fixed",
+   "standin_size": [
+    9.08,
+    4.19,
+    7.91
+   ],
+   "node": true,
+   "verts": 90,
+   "placed": false,
+   "base_y": -0.03,
+   "radius_xz": 6.919,
+   "reach_bbox": 7.979,
+   "standin_reach": 7.04,
+   "standin_parts": 14,
+   "fit": {
+    "footprint": 9.08,
+    "standin_footprint": 9.08,
+    "footprint_ratio": 1.0,
+    "height": 4.07,
+    "standin_height": 4.19,
+    "height_ratio": 0.97
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "fit_scale": [
+    0.997,
+    1.0
+   ]
+  },
+  "farm_field_wheat_03": {
+   "family": "crop",
+   "bbox_center": [
+    0.0,
+    2.3,
+    0.0
+   ],
+   "size": [
+    38.0,
+    4.6,
+    28.0
+   ],
+   "tris": 1300,
+   "tint": "fixed",
+   "standin_size": [
+    38.0,
+    2.42,
+    28.0
+   ],
+   "node": false,
+   "verts": 964,
+   "placed": false,
+   "base_y": 0.0,
+   "radius_xz": 23.601,
+   "reach_bbox": 23.601,
+   "standin_reach": 28.05,
+   "standin_parts": 17,
+   "fit": {
+    "footprint": 38.0,
+    "standin_footprint": 38.0,
+    "footprint_ratio": 1.0,
+    "height": 4.6,
+    "standin_height": 2.42,
+    "height_ratio": 1.901
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "variant_info": {
+    "stage": 3,
+    "rows": 6,
+    "along": "x"
+   },
+   "fit_note": "the scarecrow reaches 4.2 studs (a citizen is 5.4) so it reads at 82 studs; the crop itself stands 2.9, the same row height as the farm building's own wheat beside it (2.2 + ears 1.3)"
+  },
+  "farm_field_wheat_04": {
+   "family": "crop",
+   "bbox_center": [
+    0.0,
+    0.5488,
+    0.0
+   ],
+   "size": [
+    38.0,
+    1.0976,
+    28.0
+   ],
+   "tris": 1020,
+   "tint": "fixed",
+   "standin_size": [
+    38.0,
+    2.42,
+    28.0
+   ],
+   "node": false,
+   "verts": 680,
+   "placed": true,
+   "base_y": 0.0,
+   "radius_xz": 23.601,
+   "reach_bbox": 23.601,
+   "standin_reach": 28.05,
+   "standin_parts": 17,
+   "fit": {
+    "footprint": 38.0,
+    "standin_footprint": 38.0,
+    "footprint_ratio": 1.0,
+    "height": 1.1,
+    "standin_height": 2.42,
+    "height_ratio": 0.454
+   },
+   "count_world": {
+    "density_1": 4,
+    "shipped": 4
+   },
+   "variant_info": {
+    "stage": 1,
+    "rows": 6,
+    "along": "x"
+   },
+   "fit_note": "a growth stage: shorter than the ripe field by design (stage 1 furrows and shoots, stage 2 green wheat)"
+  },
+  "farm_field_wheat_05": {
+   "family": "crop",
+   "bbox_center": [
+    0.0,
+    0.8811,
+    0.0
+   ],
+   "size": [
+    38.0,
+    1.7621,
+    28.0
+   ],
+   "tris": 1020,
+   "tint": "fixed",
+   "standin_size": [
+    38.0,
+    2.42,
+    28.0
+   ],
+   "node": false,
+   "verts": 680,
+   "placed": true,
+   "base_y": 0.0,
+   "radius_xz": 23.601,
+   "reach_bbox": 23.601,
+   "standin_reach": 28.05,
+   "standin_parts": 17,
+   "fit": {
+    "footprint": 38.0,
+    "standin_footprint": 38.0,
+    "footprint_ratio": 1.0,
+    "height": 1.76,
+    "standin_height": 2.42,
+    "height_ratio": 0.728
+   },
+   "count_world": {
+    "density_1": 4,
+    "shipped": 4
+   },
+   "variant_info": {
+    "stage": 2,
+    "rows": 6,
+    "along": "x"
+   },
+   "fit_note": "a growth stage: shorter than the ripe field by design (stage 1 furrows and shoots, stage 2 green wheat)"
+  },
+  "farm_field_cabbage_01": {
+   "family": "crop",
+   "bbox_center": [
+    0.0,
+    1.3989,
+    0.0
+   ],
+   "size": [
+    38.0,
+    2.7977,
+    28.0
+   ],
+   "tris": 1332,
+   "tint": "fixed",
+   "standin_size": [
+    38.0,
+    3.14,
+    28.0
+   ],
+   "node": false,
+   "verts": 872,
+   "placed": false,
+   "base_y": 0.0,
+   "radius_xz": 23.601,
+   "reach_bbox": 23.601,
+   "standin_reach": 29.04,
+   "standin_parts": 65,
+   "fit": {
+    "footprint": 38.0,
+    "standin_footprint": 38.0,
+    "footprint_ratio": 1.0,
+    "height": 2.8,
+    "standin_height": 3.14,
+    "height_ratio": 0.891
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  },
+  "farm_field_cabbage_02": {
+   "family": "crop",
+   "bbox_center": [
+    0.0,
+    1.4014,
+    0.0
+   ],
+   "size": [
+    38.0,
+    2.8029,
+    28.0
+   ],
+   "tris": 1332,
+   "tint": "fixed",
+   "standin_size": [
+    38.0,
+    3.15,
+    28.0
+   ],
+   "node": false,
+   "verts": 872,
+   "placed": false,
+   "base_y": 0.0,
+   "radius_xz": 23.601,
+   "reach_bbox": 23.601,
+   "standin_reach": 29.04,
+   "standin_parts": 65,
+   "fit": {
+    "footprint": 38.0,
+    "standin_footprint": 38.0,
+    "footprint_ratio": 1.0,
+    "height": 2.8,
+    "standin_height": 3.15,
+    "height_ratio": 0.89
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  },
+  "farm_fence_01": {
+   "family": "fence",
+   "bbox_center": [
+    0.0,
+    1.4,
+    0.0
+   ],
+   "size": [
+    16.5,
+    2.8,
+    0.5
+   ],
+   "tris": 72,
+   "tint": "fixed",
+   "standin_size": [
+    16.5,
+    2.8,
+    0.5
+   ],
+   "node": false,
+   "verts": 48,
+   "placed": false,
+   "base_y": 0.0,
+   "radius_xz": 8.254,
+   "reach_bbox": 8.254,
+   "standin_reach": 8.35,
+   "standin_parts": 7,
+   "fit": {
+    "footprint": 16.5,
+    "standin_footprint": 16.5,
+    "footprint_ratio": 1.0,
+    "height": 2.8,
+    "standin_height": 2.8,
+    "height_ratio": 1.0
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  },
+  "farm_fence_02": {
+   "family": "fence",
+   "bbox_center": [
+    0.0,
+    1.4,
+    0.0
+   ],
+   "size": [
+    16.5,
+    2.8,
+    0.5
+   ],
+   "tris": 84,
+   "tint": "fixed",
+   "standin_size": [
+    16.5,
+    2.8,
+    0.5
+   ],
+   "node": false,
+   "verts": 56,
+   "placed": false,
+   "base_y": 0.0,
+   "radius_xz": 8.254,
+   "reach_bbox": 8.254,
+   "standin_reach": 8.35,
+   "standin_parts": 8,
+   "fit": {
+    "footprint": 16.5,
+    "standin_footprint": 16.5,
+    "footprint_ratio": 1.0,
+    "height": 2.8,
+    "standin_height": 2.8,
+    "height_ratio": 1.0
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  }
+ },
+ "fbx_bytes": 282572,
+ "fbx_sha256": "86311fa15b6c4f7310b63faba44803ef32da847c033a0f5cd7adc476f2885a79",
+ "roundtrip": {
+  "objects": 15,
+  "mismatches": 0,
+  "pass": true
+ }
+}

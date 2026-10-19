@@ -9,7 +9,10 @@
 
 	Output JSON: { version, runs = { default | full = { parts, props, nodes, slots, byId = { id = { n, partsEach, features } } } },
 	               plan = { id = n } (cleared plan at FULL_DENSITY, dressed = all four kingdoms), nodes = { id = n }, clear = { prefix = r },
-	               subjects = { id = { parts, attachments } } }
+	               subjects = { id = { parts, attachments } },
+	               scene = { placements = [{ id, x, z, yaw, feature }] (the shipped world), placementsFull = same at density 1.0, nodeList = [{ id, assetId, resource, x, z, yaw }],
+	                         plots = { crimson | emerald = { keep = { x, z, yaw }, buildings = [{ name, x, z, yaw, model }] } } } }
+	`scene` is what blender/scripts/envnature_scenes.py renders: the real placements around a kingdom's keep and its starting buildings (part-built, Kit.build).
 ]]
 
 local T = require("../../../roblox/tests/harness/Test")
@@ -25,6 +28,13 @@ local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+
+local function yawOf(cf: CFrame): number
+	local look = cf.LookVector
+	return math.atan2(-look.X, -look.Z)
+end
 
 local function round(n: number): number
 	return math.floor(n * 1000 + 0.5) / 1000
@@ -148,6 +158,38 @@ describe("FL-0136 inventory of placed nature and crops", function()
 		end
 		expect(full.props).toBe(616)
 		expect(full.parts).toBe(8309) -- the pinned figure of WorldService.spec (density 1.0, crimson dressed)
+		-- the scene data: the shipped world's placements, the resource nodes, and two plots' starting buildings (part-built)
+		local placements = {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.density(Layout)) do
+			table.insert(placements, { id = p.assetId, x = round(p.cframe.X), z = round(p.cframe.Z), yaw = round(yawOf(p.cframe)), feature = p.feature })
+		end
+		local placementsFull = {}
+		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
+			table.insert(placementsFull, { id = p.assetId, x = round(p.cframe.X), z = round(p.cframe.Z), yaw = round(yawOf(p.cframe)), feature = p.feature })
+		end
+		local nodeList = {}
+		for _, n in Layout.resourceNodes do
+			table.insert(nodeList, { id = n.id, assetId = n.assetId, resource = n.resource, x = round(n.cframe.X), z = round(n.cframe.Z), yaw = round(yawOf(n.cframe)) })
+		end
+		local color: { [string]: Color3 } = {}
+		for _, identity in KingdomsConfig.identities do
+			color[identity.id] = Color3.fromRGB(identity.color[1], identity.color[2], identity.color[3])
+		end
+		local plots = {}
+		for _, k in { "crimson", "emerald" } do
+			local plot = Layout.plots[k]
+			local keep = plot.anchors.keep
+			local buildings = {}
+			for _, name in { "keep", "storehouse", "farm", "lumbercamp", "quarry" } do
+				local cf = plot.anchors[name]
+				table.insert(buildings, { name = name, x = round(cf.X), z = round(cf.Z), yaw = round(yawOf(cf)), model = serialise(Kit.build(name, 1, "complete", color[k])) })
+			end
+			for i = 1, 2 do
+				local slot = plot.buildSlots[i]
+				table.insert(buildings, { name = "house", x = round(slot.center.X), z = round(slot.center.Z), yaw = round(slot.rot), model = serialise(Kit.build("house", 1, "complete", color[k])) })
+			end
+			plots[k] = { keep = { x = round(keep.X), z = round(keep.Z), yaw = round(yawOf(keep)) }, buildings = buildings }
+		end
 		local o = process.env.FORGE_ENV_INVENTORY
 		if o and o ~= "" then
 			fs.writeFile(
@@ -160,6 +202,7 @@ describe("FL-0136 inventory of placed nature and crops", function()
 					clear = clear,
 					subjects = subjects,
 					slots = #Layout.plots.crimson.buildSlots * 4,
+					scene = { placements = placements, placementsFull = placementsFull, nodeList = nodeList, plots = plots },
 				}, false)
 			)
 			print(`env inventory: shipped parts {shipped.parts} (props {shipped.props}), full parts {full.parts} (props {full.props}), {#Layout.resourceNodes} nodes -> {o}`)

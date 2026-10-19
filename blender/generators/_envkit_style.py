@@ -53,8 +53,8 @@ SOIL_RIDGE = rgb(112, 82, 52)
 SOIL_DARK = rgb(78, 56, 36)
 WHEAT = rgb(230, 194, 90)
 
-OAK_RAMP = [mul(LEAF_DARK, 0.78), LEAF_DARK, LEAF, LEAF_LIGHT, OAK_SUN]
-PINE_RAMP = [mul(PINE, 0.85), PINE, PINE_MID, PINE_LIGHT]
+OAK_RAMP = [rgb(26, 74, 46), rgb(40, 100, 48), rgb(58, 130, 50), rgb(92, 164, 56), rgb(146, 202, 68)]  # blue-green shade up to a sunlit lime
+PINE_RAMP = [rgb(22, 62, 46), PINE, PINE_MID, PINE_LIGHT]
 BIRCH_RAMP = [mul(BIRCH_LEAF, 0.74), mul(BIRCH_LEAF, 0.9), BIRCH_LEAF, BIRCH_LEAF_LIGHT]
 BUSH_RAMP = [mul(LEAF_DARK, 0.95), LEAF, LEAF_LIGHT, mix(LEAF_LIGHT, OAK_SUN, 0.28)]
 ROCK_RAMP = [mul(ROCK_BASE, 0.84), ROCK_BASE, ROCK_MID, ROCK_TOP]
@@ -215,21 +215,22 @@ def radius_xz(m):
     return max(math.hypot(p[0], p[2]) for p in m.v)
 
 
-def fit_to(m, radius, height, tol=0.07):
-    """Bring a prop's footprint radius (half the mean of its x and z extents) and height (its top above y = 0) within `tol` of the stand-in's figures.
+def fit_to(m, footprint, height, fp_window=(0.93, 1.07), h_window=(0.9, 1.1)):
+    """Bring a prop's footprint (max(x extent, z extent), the figure the Kit's fit rule uses) and height (its top above y = 0) into a window around the stand-in's.
 
-    Only the outliers move, and only to the edge of the window (so natural variation inside it is kept): xz about the pivot axis, y about the ground plane.
+    Only outliers move, and only to the edge of the window (so natural variation inside it is kept): xz about the pivot axis, y about the ground plane.
     Returns (kr, kh), the scale factors applied (1.0 = untouched)."""
     (x0, y0, z0), (x1, y1, z1) = m.bounds()
-    r = (x1 - x0 + z1 - z0) / 4.0
+    fp = max(x1 - x0, z1 - z0)
     h = y1
-    kr = kh = 1.0
-    if r > 0 and radius:
-        q = r / radius
-        kr = (1 + tol) / q if q > 1 + tol else (1 - tol) / q if q < 1 - tol else 1.0
-    if h > 0 and height:
-        q = h / height
-        kh = (1 + tol) / q if q > 1 + tol else (1 - tol) / q if q < 1 - tol else 1.0
+
+    def factor(have, want, window):
+        if have <= 0 or not want:
+            return 1.0
+        q = have / want
+        return window[1] / q if q > window[1] else window[0] / q if q < window[0] else 1.0
+
+    kr, kh = factor(fp, footprint, fp_window), factor(h, height, h_window)
     if kr != 1.0 or kh != 1.0:
         m.map(lambda p: (p[0] * kr, p[1] * kh, p[2] * kr))
     return round(kr, 3), round(kh, 3)

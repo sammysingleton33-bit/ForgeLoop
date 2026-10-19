@@ -32,7 +32,7 @@ def _soil_bed(rng, w=FW, d=FD, tag="soil"):
     return m
 
 
-def _tuft(rng, x, z, h, w, d, stalk, ear, lean_deg=0.0, ears=True, ear_len=0.9, base=BED, tag="stalks"):
+def _tuft(rng, x, z, h, w, d, stalk, ear, lean_deg=0.0, ears=True, ear_len=0.8, base=BED, tag="stalks"):
     """One crop tuft: a tapered clump (wide at the ground, narrow at the top) and, when ripe, a leaning four-sided ear."""
     a, b = w / 2, d / 2
     sk = rng.uniform(0.35, 0.65)
@@ -48,7 +48,7 @@ def _tuft(rng, x, z, h, w, d, stalk, ear, lean_deg=0.0, ears=True, ear_len=0.9, 
     out = [c]
     if ears:
         r = rng.uniform(0.34, 0.46)
-        e = S.cone(r, ear_len, seg=4, y0=0.0, color=ear, smooth=False, tag="ear")
+        e = S.cone(r * 1.15, ear_len, seg=3, y0=0.0, color=ear, smooth=False, tag="ear")
         S.flat(e, "ear")
         for i, f in enumerate(e.f):
             n = S.face_normal(e, f)
@@ -77,7 +77,7 @@ def wheat(variant, rng, stage=3):
     pal = {1: (S.rgb(214, 170, 62), S.rgb(244, 208, 96)), 2: (S.rgb(206, 150, 52), S.rgb(238, 186, 72)), 3: (S.rgb(206, 182, 92), S.rgb(240, 222, 140))}
     if stage == 3:
         stalk, ear = pal[variant]
-        tuft_h, ears = {1: 1.55, 2: 1.6, 3: 1.45}[variant], True
+        tuft_h, ears = {1: 1.45, 2: 1.5, 3: 1.4}[variant], True
     elif stage == 2:
         stalk, ear = S.rgb(140, 180, 66), S.rgb(176, 200, 84)
         tuft_h, ears = 1.15, False
@@ -85,11 +85,11 @@ def wheat(variant, rng, stage=3):
         stalk, ear = S.rgb(112, 168, 70), S.rgb(142, 192, 84)
         tuft_h, ears = 0.55, False
     along_x = variant != 2 or stage != 3
-    rows = 6 if along_x else 9
+    rows = 6 if along_x else 8
     length = FW - 5.0 if along_x else FD - 4.0
     span = FD - 3.0 if along_x else FW - 3.4
     pitch = span / rows
-    ntuft = 15 if along_x else 11
+    ntuft = 13 if along_x else 9
     ridge_w = pitch * 0.55
     for r in range(rows):
         pos = -span / 2 + pitch * (r + 0.5)
@@ -123,10 +123,10 @@ def wheat(variant, rng, stage=3):
     if stage == 3:
         if variant == 1:
             for x in (-FW * 0.33, 0.0, FW * 0.33):
-                parts.append(_sheaf(rng, x + rng.uniform(-1, 1), FD / 2 - 0.9, 2.2, 0.95, S.rgb(226, 184, 82), S.rgb(186, 150, 64)))
+                parts.append(_sheaf(rng, x + rng.uniform(-1, 1), FD / 2 - 0.9, 2.0, 0.95, S.rgb(226, 184, 82), S.rgb(186, 150, 64)))
         elif variant == 2:
             for z in (-FD * 0.3, 0.0, FD * 0.3):
-                parts.append(_sheaf(rng, -FW / 2 + 0.9, z + rng.uniform(-1, 1), 2.3, 1.0, S.rgb(226, 170, 70), S.rgb(176, 128, 52)))
+                parts.append(_sheaf(rng, -FW / 2 + 0.9, z + rng.uniform(-1, 1), 2.1, 1.0, S.rgb(226, 170, 70), S.rgb(176, 128, 52)))
             for _ in range(7):  # poppies among the rows, on short stems
                 px, pz = rng.uniform(-FW / 2 + 3, FW / 2 - 3), rng.uniform(-FD / 2 + 3, FD / 2 - 3)
                 parts.append(S.flat(S.slab([(-0.07, -0.06), (0.07, -0.06), (0.0, 0.08)], BED, BED + tuft_h + 0.2, S.LEAF_DARK, tag="stem")).move(px, 0.0, pz))
@@ -145,8 +145,6 @@ def wheat(variant, rng, stage=3):
     if stage == 3 and variant == 3:
         info["fit_note"] = ("the scarecrow reaches 4.2 studs (a citizen is 5.4) so it reads at 82 studs; the crop itself stands 2.9, the same row height as the farm "
                             "building's own wheat beside it (2.2 + ears 1.3)")
-    elif stage == 3:
-        info["fit_note"] = "ears and sheaves stand 2.9-3.1 against the stand-in's flat 2.4 slab: the farm building's own wheat rows beside it are 3.5 (2.2 + ears 1.3)"
     elif stage < 3:
         info["fit_note"] = "a growth stage: shorter than the ripe field by design (stage 1 furrows and shoots, stage 2 green wheat)"
     return S.assemble(parts), info
@@ -154,12 +152,12 @@ def wheat(variant, rng, stage=3):
 
 def _cabbage(rng, x, z, d, light, y0=BED + 0.25):
     """One cabbage head: a faceted lump with two flat outer leaves."""
-    head = S.blob(rng, 12, d / 2, d * 0.42, d / 2, x, y0 + d * 0.38, z, jitter=0.1, squash_bottom=0.6, color=light, tag="cabbage", yaw=rng.uniform(0, math.tau))
+    head = S.ico(rng, d / 2, d * 0.42, d / 2, x, y0 + d * 0.38, z, jitter=0.07, subdiv=0, squash_bottom=0.5, color=light, tag="cabbage")
     for i, f in enumerate(head.f):
         n = S.face_normal(head, f)
         head.c[i] = S.mix(S.mul(light, 0.78), S.mix(light, (1, 1, 1), 0.12), min(1.0, 0.45 + 0.5 * n[1] + rng.uniform(-0.12, 0.12)))
     leaves = []
-    for q in range(2):
+    for q in range(1):
         a = rng.uniform(0, math.tau)
         w = d * 0.62
         leaf = S.hull([(math.cos(a + k * math.pi / 2) * w * (1.0 if k % 2 == 0 else 0.55) + x, y0 + (0.28 if k % 2 else 0.1) + 0.0, math.sin(a + k * math.pi / 2) * w *
@@ -172,17 +170,17 @@ def _cabbage(rng, x, z, d, light, y0=BED + 0.25):
 
 
 def cabbage(variant, rng):
-    """farm_field_cabbage_NN: seven ridges of eight cabbage heads in three greens (the placed id is 03)."""
+    """farm_field_cabbage_NN: six ridges of eight cabbage heads in three greens (the placed id is 03; the stand-in has seven rows of smaller balls)."""
     parts = [_soil_bed(rng)]
     shades = [S.rgb(150, 200, 90), S.rgb(112, 178, 70), S.rgb(88, 156, 62)]
-    for r in range(7):
-        z = -12.0 + r * 4.0
-        rb = S.box(34.0, 0.3, 2.2, color=S.SOIL_RIDGE, smooth=False, tag="ridge").move(0.0, BED + 0.1, z)
+    for r in range(6):
+        z = -10.5 + r * 4.2
+        rb = S.box(34.0, 0.3, 2.4, color=S.SOIL_RIDGE, smooth=False, tag="ridge").move(0.0, BED + 0.1, z)
         for i in range(len(rb.f)):
             rb.c[i] = S.mix(S.SOIL_DARK, S.SOIL_RIDGE, 0.5 + rng.uniform(-0.2, 0.3))
         parts.append(S.flat(rb))
         for k in range(8):
-            d = rng.uniform(2.0, 2.4)
+            d = rng.uniform(2.3, 2.7)
             x = (k - 3.5) * 4.2 + rng.uniform(-0.35, 0.35) + (1.0 if (r + variant) % 2 else -0.6)
             col = shades[(k + r + variant) % 3]
             parts += _cabbage(rng, x, z + rng.uniform(-0.2, 0.2), d, col)

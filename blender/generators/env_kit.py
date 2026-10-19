@@ -30,9 +30,9 @@ COLLISION = {"fidelity": "Box"}
 CHECKS = {}
 STYLE = "B"
 
-# family -> (min triangles, max triangles) per mesh. D-057 (19): trees 300-900; bushes, rocks and flowers 40-400 (contract); a resource node is a
-# composite (host rock + nuggets, strata + rubble) so it gets 500; a crop field is a plot of many tufts (budgets.json class `crop`: 3,000).
-FAMILY_BUDGET = {"tree": (300, 900), "bush": (40, 400), "rock": (40, 400), "flower": (40, 400), "node": (40, 500), "crop": (200, 3000), "prop": (40, 400)}
+# family -> (min triangles, max triangles) per mesh: the Kit's budget (games/game-001/art/env_kit/env_to_luau.py BUDGET = Kit/EnvMesh.BUDGET): trees 300-900 (D-057 (19)),
+# bushes, rocks (boulders, cliffs and the resource nodes: stone and ore) and flowers 40-400 (the contract), crops 40-1,500, haystack and fence 40-600.
+FAMILY_BUDGET = {"tree": (300, 900), "bush": (40, 400), "rock": (40, 400), "flower": (40, 400), "crop": (40, 1500), "haystack": (40, 600), "fence": (40, 600)}
 
 SEED = 7
 
@@ -80,20 +80,21 @@ def _plan():
     for i, pid in enumerate(_ids("rock_cliff", 2), 1):
         add(pid, "rock", lambda rng, i=i: RK.cliff(i, rng))
     for i, pid in enumerate(_ids("resource_stone", 3), 1):
-        add(pid, "node", lambda rng, i=i: RK.quarry(i, rng), node=True)
+        add(pid, "rock", lambda rng, i=i: RK.quarry(i, rng), node=True)
     for i, pid in enumerate(_ids("resource_ore", 6), 1):
-        add(pid, "node", lambda rng, i=i: RK.ore(i, rng), node=True)
+        add(pid, "rock", lambda rng, i=i: RK.ore(i, rng), node=True)
     for i, pid in enumerate(_ids("resource_wood", 2), 1):
-        add(pid, "node", lambda rng, i=i: RK.wood(i, rng), node=True)
+        add(pid, "rock", lambda rng, i=i: RK.wood(i, rng), node=True)
     for i, pid in enumerate(_ids("farm_field_wheat", 3), 1):
         add(pid, "crop", lambda rng, i=i: CR.wheat(i, rng, 3))
-    add("farm_field_wheat_stage1", "crop", lambda rng: CR.wheat(1, rng, 1))
-    add("farm_field_wheat_stage2", "crop", lambda rng: CR.wheat(1, rng, 2))
+    # the growth stages (nothing places them: the world's fields are static and ripe): 04 = stage 1 (furrows, first shoots), 05 = stage 2 (green wheat)
+    add("farm_field_wheat_04", "crop", lambda rng: CR.wheat(1, rng, 1))
+    add("farm_field_wheat_05", "crop", lambda rng: CR.wheat(1, rng, 2))
     for i, pid in enumerate(_ids("farm_field_cabbage", 3), 1):
         add(pid, "crop", lambda rng, i=i: CR.cabbage(i, rng))
-    add("farm_haystack_01", "prop", lambda rng: CR.haystack(1, rng))
+    add("farm_haystack_01", "haystack", lambda rng: CR.haystack(1, rng))
     for i, pid in enumerate(_ids("farm_fence", 2), 1):
-        add(pid, "prop", lambda rng, i=i: CR.fence(i, rng))
+        add(pid, "fence", lambda rng, i=i: CR.fence(i, rng))
     return plan
 
 
@@ -103,12 +104,14 @@ def all_ids():
 
 # families whose footprint and height are brought inside the stand-in's window by a small non-uniform scale when a design lands outside it
 # (crops are exact by construction; stage ids and the growth stages inherit the wheat stand-in)
-FIT_FAMILIES = ("tree", "bush", "rock", "flower", "node", "prop")
-FIT_TOL = 0.07
+FIT_FAMILIES = ("tree", "bush", "rock", "flower", "haystack", "fence")
+SEATED_FAMILIES = ("tree", "bush", "haystack")
+FIT_WINDOW = (0.93, 1.07)  # footprint max(x, z) and height against the stand-in: well inside the Kit's 85-115 % / 75-125 %
+FIT_WINDOW_NODE = (0.88, 1.0)  # an id the world also places as a resource node: the Kit allows 85-102 % of the footprint (selection and keep-out use it)
 
 
 def _standin_for(pid, standins):
-    return standins.get(pid) or standins.get("farm_field_wheat_01" if "wheat_stage" in pid else pid)
+    return standins.get(pid) or standins.get("farm_field_wheat_01" if pid in ("farm_field_wheat_04", "farm_field_wheat_05") else pid)
 
 
 def registry(seed=SEED, only=None):
@@ -123,8 +126,21 @@ def registry(seed=SEED, only=None):
         m, info = builder(S.rng_for(pid, seed))
         st = _standin_for(pid, standins)
         if st and family in FIT_FAMILIES:
-            kr, kh = S.fit_to(m, (st["size"][0] + st["size"][2]) / 4.0, st["size"][1], FIT_TOL)
+            is_node = bool(node or st["node"])
+            kr, kh = S.fit_to(m, max(st["size"][0], st["size"][2]), st["size"][1], FIT_WINDOW_NODE if is_node else FIT_WINDOW, (0.9, 1.1))
             if (kr, kh) != (1.0, 1.0):
                 info["fit_scale"] = [kr, kh]
+        if family in SEATED_FAMILIES:  # a trunk, bush or stack stands ON the ground: its lowest vertex sits 0.08 under it (rocks embed more, see below)
+            m.move(0.0, -0.08 - m.bounds()[0][1], 0.0)
         out[pid] = Prop(pid, family, m, node=bool(node or (st and st["node"])), info=info)  # node: the world places this id as a resource node too
     return out
+
+
+def split_placed(reg):
+    """(ids the world places, spare ids): the Kit's spec fails on an id the world never places, so only placed ids go in env.json / env_kit.fbx;
+    the rest (cliffs, wood nodes, the other ore kinds, wheat 03 and the growth stages, cabbage 01-02, fences) ship as a second kit that nothing reads yet."""
+    from lib import envkit_standin
+
+    st = envkit_standin.load()["standins"]
+    main = [pid for pid in reg if st.get(pid, {}).get("placed")]
+    return main, [pid for pid in reg if pid not in set(main)]

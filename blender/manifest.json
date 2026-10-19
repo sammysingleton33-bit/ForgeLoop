@@ -9484,7 +9484,7 @@
       },
       "dimensions_studs": {
         "x": 38.1,
-        "y": 33.021,
+        "y": 33.002,
         "z": 28.0
       },
       "double_sided": false,
@@ -9492,11 +9492,11 @@
         "env": "games/game-001/art/env_kit/env.json",
         "mesh": "exports/env_kit.fbx",
         "mesh_committed": "games/game-001/art/env_kit/env_kit.fbx",
-        "validation": "exports/env_kit.validation.json"
+        "validation": "exports/env_kit_01.validation.json"
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "f90cd04fb269e0a9",
+      "geometry_hash": "4e7e4ff6872b5274",
       "id": "env_kit_01",
       "kingdom": null,
       "kit": {
@@ -9508,10 +9508,10 @@
             "tris_total": 1616
           },
           "crop": {
-            "props": 8,
-            "tris_max": 2072,
-            "tris_min": 1164,
-            "tris_total": 13458
+            "props": 3,
+            "tris_max": 1430,
+            "tris_min": 1332,
+            "tris_total": 4124
           },
           "flower": {
             "props": 6,
@@ -9519,36 +9519,30 @@
             "tris_min": 254,
             "tris_total": 1524
           },
-          "node": {
-            "props": 11,
-            "tris_max": 218,
-            "tris_min": 148,
-            "tris_total": 2038
-          },
-          "prop": {
-            "props": 3,
+          "haystack": {
+            "props": 1,
             "tris_max": 196,
-            "tris_min": 72,
-            "tris_total": 352
+            "tris_min": 196,
+            "tris_total": 196
           },
           "rock": {
-            "props": 11,
+            "props": 14,
             "tris_max": 268,
             "tris_min": 116,
-            "tris_total": 1974
+            "tris_total": 2656
           },
           "tree": {
             "props": 20,
-            "tris_max": 490,
+            "tris_max": 630,
             "tris_min": 318,
-            "tris_total": 8042
+            "tris_total": 9022
           }
         },
-        "fbx_sha256": "54404443560f10d81be7b48a59206cb92749453892239862347e4f73bfcdebc4",
-        "max_mesh_tris": 2072,
-        "props": 67,
+        "fbx_sha256": "065a211f49d3b04ce55e3606547f440b8a8c37799e195f548c3060a71865ef28",
+        "max_mesh_tris": 1430,
+        "props": 52,
         "style": "B",
-        "total_tris": 29004
+        "total_tris": 19138
       },
       "license": "project-original",
       "material": "M_envkit_vc",
@@ -9557,12 +9551,12 @@
           "bush",
           "crop",
           "flower",
-          "node",
-          "prop",
+          "haystack",
           "rock",
           "tree"
         ],
-        "props": 67,
+        "kit": "the ids the world places",
+        "props": 52,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
@@ -9574,8 +9568,86 @@
       "sockets": {},
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
-        "budget_lod0": 3000,
-        "lod0": 2072,
+        "budget_lod0": 1500,
+        "lod0": 1430,
+        "lod1": 116
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "env_kit",
+      "category": "env",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 38.0,
+        "y": 10.53,
+        "z": 28.0
+      },
+      "double_sided": false,
+      "files": {
+        "env": "games/game-001/art/env_kit/env_spares.json",
+        "mesh": "exports/env_kit_spares.fbx",
+        "mesh_committed": "games/game-001/art/env_kit/env_kit_spares.fbx",
+        "validation": "exports/env_kit_02.validation.json"
+      },
+      "generator": "env_kit",
+      "generator_version": 1,
+      "geometry_hash": "ae976f0fabc35663",
+      "id": "env_kit_02",
+      "kingdom": null,
+      "kit": {
+        "families": {
+          "crop": {
+            "props": 5,
+            "tris_max": 1332,
+            "tris_min": 1020,
+            "tris_total": 6004
+          },
+          "fence": {
+            "props": 2,
+            "tris_max": 84,
+            "tris_min": 72,
+            "tris_total": 156
+          },
+          "rock": {
+            "props": 8,
+            "tris_max": 218,
+            "tris_min": 132,
+            "tris_total": 1356
+          }
+        },
+        "fbx_sha256": "86311fa15b6c4f7310b63faba44803ef32da847c033a0f5cd7adc476f2885a79",
+        "max_mesh_tris": 1332,
+        "props": 15,
+        "style": "B",
+        "total_tris": 7516
+      },
+      "license": "project-original",
+      "material": "M_envkit_vc",
+      "params": {
+        "families": [
+          "crop",
+          "fence",
+          "rock"
+        ],
+        "kit": "spares: ids nothing places yet",
+        "props": 15,
+        "style": "B"
+      },
+      "preview": "previews/env_kit.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7,
+      "sockets": {},
+      "texture": "none (vertex colours, 0 bytes of texture memory)",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1332,
         "lod1": 72
       },
       "validation_pass": true
