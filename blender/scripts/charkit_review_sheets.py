@@ -60,6 +60,24 @@ def aerial_pair(src, name, cx=645, cy=375):
     return out
 
 
+def lineup_panel(src, name, scale=3.75, x0=520, x1=762, y0=336, y1=382):
+    """The labelled lineup of the eleven identities at 170 studs: native pixels (left strip) and a `scale` x enlarged crop with names."""
+    import json
+
+    im = load(src, name)
+    labels = json.loads((Path(src) / f"{name}.png.labels.json").read_text())
+    crop = im.crop((x0, y0, x1, y1))
+    big = crop.resize((round(crop.width * scale), round(crop.height * scale)), Image.BICUBIC)
+    out = Image.new("RGB", (big.width, big.height + 18 + crop.height + 4), BG)
+    out.paste(big, (0, 0))
+    d = ImageDraw.Draw(out)
+    for job, (px, py) in labels.items():
+        d.text(((px - x0) * scale - 14, (py - y0) * scale + 6), job, fill=(255, 255, 255))
+    out.paste(crop, (0, big.height + 18))
+    d.text((crop.width + 8, big.height + 20), "<- the same strip at actual pixels (1:1)", fill=FG)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True)
@@ -111,6 +129,10 @@ def main():
                                             ("AFTER: the same from behind", load(s, "kingdoms_back")),
                                             ("AFTER: ruler (cape) from four sides", load(s, "turn_governor")),
                                             ("AFTER: hauler (sack) from four sides", load(s, "turn_hauler"))], 1100)
+    if (Path(s) / "lineup170_new.png").exists():
+        sheets["sheet_lineup170"] = stack([("BEFORE: the eleven identities at 170 studs, 50 deg down (3.75x crop, names under the feet; 1:1 strip below)",
+                                            lineup_panel(s, "lineup170_old")),
+                                           ("AFTER: the same eleven, same camera", lineup_panel(s, "lineup170_new"))], 905)
     for name, im in sheets.items():
         q = save(im, out / f"{name}.jpg", a.max_kb)
         print(f"{name}.jpg {im.width}x{im.height} quality {q} {(out / f'{name}.jpg').stat().st_size // 1024} KB")

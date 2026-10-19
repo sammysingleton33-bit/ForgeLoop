@@ -731,6 +731,41 @@ describe("AnnouncerService (FL-0062)", function()
 		expect(kindsFor(p1)[4]).toBe("kingdomConquered")
 	end)
 
+	it(
+		"a siege moment points at the besieged keep's model; its end and an unknown keep carry none (FL-0130)",
+		function()
+			bus = FakeBus.new({ extra = { "WarChanged", "SiegeChanged", "RaidChanged" } })
+			boot(true)
+			local root = roblox.Instance.new("Folder")
+			root.Name = "ForgeKingdoms"
+			local crimson = roblox.Instance.new("Folder")
+			crimson.Name = "crimson"
+			crimson.Parent = root
+			local buildings = roblox.Instance.new("Folder")
+			buildings.Name = "Buildings"
+			buildings.Parent = crimson
+			local keep = roblox.Instance.new("Model")
+			keep:SetAttribute("BuildingId", 7)
+			keep:SetAttribute("Kind", "keep")
+			local base = roblox.Instance.new("Part")
+			base.CFrame = CFrame.new(-100, 3, 0)
+			base.Parent = keep
+			keep.PrimaryPart = base
+			keep.Parent = buildings
+			root.Parent = env.Workspace
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 7 })
+			local sent = remotes:sentTo("Feedback.Moment", p1)
+			expect(sent[1].args[1].kind).toBe("siege")
+			expect(sent[1].args[1].position).toBe(Vector3.new(-100, 3, 0))
+			bus.SiegeChanged:fire("crimson", false, {})
+			expect(remotes:sentTo("Feedback.Moment", p1)[2].args[1].position).toBeNil()
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 99 })
+			local unknown = remotes:sentTo("Feedback.Moment", p1)[3].args[1]
+			expect(unknown.kind).toBe("siege")
+			expect(unknown.position).toBeNil()
+		end
+	)
+
 	it("the war events are declared on the real bus and connected, with no waiting (FL-0130, FL-0134)", function()
 		for _, name in { "RaidChanged", "SiegeChanged", "WarChanged" } do -- declared by #204
 			assert(table.find(GameEvents.EVENT_NAMES, name) ~= nil, `the bus declares {name}`)
@@ -1378,6 +1413,67 @@ describe("client feedback controllers (FL-0062)", function()
 			end
 			expect(loud).toEqual({})
 			expect(client.mock.threadErrors).toEqual({})
+		end
+	)
+
+	it(
+		"MusicController: the arena scene plays over battle music; Results ends it; the result still wins (FL-0074)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, MusicDef)
+			local controller = Loader.load(env, defs):get("MusicController")
+			controller:setPhase("Endgame")
+			controller:setAlert("raid", true)
+			expect(music[#music]).toBe("battle")
+			controller:setScene("arena")
+			expect(music[#music]).toBe("arena")
+			local musicCount = #music
+			controller:setScene("arena") -- the same scene again changes nothing
+			expect(#music).toBe(musicCount)
+			controller:setScene(nil)
+			expect(music[#music]).toBe("battle") -- the raid is still on
+			controller:setAlert("raid", false)
+			controller:setScene("arena")
+			expect(music[#music]).toBe("arena")
+			controller:setPhase("Results")
+			expect(controller.scene).toBeNil()
+			expect(music[#music] == "arena").toBe(false)
+			controller:setScene("arena")
+			controller:setResult("won")
+			expect(music[#music]).toBe("victory")
+		end
+	)
+
+	it(
+		"MusicController: while music.arena has no asset the arena scene leaves the match music playing (FORGE-07 #231 M1)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, MusicDef)
+			local registry = Loader.load(env, defs)
+			local controller = registry:get("MusicController")
+			local audio = registry:get("AudioController")
+			-- the game's own registry: is the state's track picked yet? (music.arena ships "needed")
+			local playable = { arena = false }
+			audio.hasMusic = function(_, state)
+				return playable[state] ~= false
+			end
+			controller:setPhase("Endgame")
+			controller:setAlert("raid", true)
+			expect(music[#music]).toBe("battle")
+			local before = #music
+			controller:setScene("arena")
+			expect(#music).toBe(before) -- no switch: the battle music goes on
+			expect(controller.scene).toBe("arena") -- the scene is remembered for when it can play
+			playable.arena = true
+			controller:update()
+			expect(music[#music]).toBe("arena")
+			-- a failing hasMusic counts as "cannot play"
+			audio.hasMusic = function()
+				error("boom")
+			end
+			controller:setScene(nil)
+			controller:setScene("arena")
+			expect(music[#music] == "arena").toBe(false)
 		end
 	)
 

@@ -86,6 +86,20 @@ def test_kit_pieces_and_assemblies_are_consistent():
         assert n in names, n
 
 
+def test_soldier_assembly_keys_are_sim_unit_kinds():
+    """`soldier_<unit>` keys must name a unit of config/Military.luau (read only): soldier, archer, knight (ram is a siege engine, FL-0128)."""
+    cfg = (REPO / "games/game-001/config/Military.luau").read_text()
+    units = re.search(r"unitOrder\s*=\s*\{([^}]*)\}", cfg).group(1)
+    kinds = set(re.findall(r'"([a-z_]+)"', units))
+    assert {"soldier", "archer", "knight"} <= kinds
+    doc = json.loads(RIG_JSON.read_text())
+    keys = {k for k in doc["assemblies"] if k == "soldier" or k.startswith("soldier_")}
+    assert keys == {"soldier", "soldier_archer", "soldier_knight"}, keys
+    for k in keys:
+        assert k == "soldier" or k.split("_", 1)[1] in kinds, k
+    assert "ram" not in "".join(doc["assemblies"]), "a ram is FL-0128, not a citizen mesh"
+
+
 @needs_bpy
 def test_budgets_hold_for_every_assembled_rig():
     from lib import ckit_kit

@@ -230,4 +230,23 @@ describe("Experience/MusicDirector", function()
 		expect(other:update(1, { inMatch = true, result = "lost" })).toBe("defeat")
 		expect(other:update(2, { inMatch = false })).toBe("calm")
 	end)
+
+	it("a scene plays at once, outranks battle, and ends without waiting for the dwell; the result wins", function()
+		local music = MusicDirector.new({ phaseStates = PHASES, minDwellSec = 20, combatHoldSec = 25 })
+		music:update(0, { inMatch = true, phase = "Conflict" })
+		music:combat(1)
+		expect(music:update(1, { inMatch = true, phase = "Conflict" })).toBe("battle")
+		expect(music:update(2, { inMatch = true, phase = "Conflict", scene = "arena" })).toBe("arena")
+		expect(music:update(3, { inMatch = true, phase = "Conflict", scene = "arena" })).toBeNil()
+		expect(music:update(60, { inMatch = true, phase = "Conflict" })).toBe("tension") -- scene over, dwell long past
+		music:update(61, { inMatch = true, phase = "Conflict", scene = "arena" })
+		expect(music:update(62, { inMatch = true, phase = "Conflict" })).toBe("tension") -- 1 s later: no dwell wait
+		expect(music:update(63, { inMatch = true, phase = "Conflict", scene = "arena", result = "won" })).toBe(
+			"victory"
+		)
+		local blank = MusicDirector.new({ phaseStates = PHASES })
+		expect(blank:update(0, { inMatch = true, phase = "Expansion", scene = "" })).toBe("build") -- "" is no scene
+		expect(MusicDirector.soundFor("battle")).toBe("music.battle")
+		expect(MusicDirector.soundFor("arena")).toBe("music.arena")
+	end)
 end)

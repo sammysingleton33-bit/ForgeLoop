@@ -94,6 +94,7 @@ KingdomHudController.RAID_RAIL = table.freeze({
 	id = "raid",
 	icon = "warning",
 	label = "Raid",
+	target = "HUD.RaidButton", -- OnboardingTarget for FORGE-04's FL-0137 raid tip (FL-0138)
 	order = 45, -- after the built-in menus and Army, before Waiting
 })
 KingdomHudController.DONE_SEC = 1.6
@@ -505,7 +506,11 @@ end
 function KingdomHudController:metrics(): any
 	local size = self:_safeArea()
 	-- The reputation strip's room only while it shows (ReputationPanelController sets the flag).
-	return Layout.compute(size.X, size.Y, { reputation = self.state.reputation == true })
+	return Layout.compute(
+		size.X,
+		size.Y,
+		{ reputation = self.state.reputation == true, support = self.state.support == true }
+	)
 end
 
 -- ------------------------------------------------------------------ menus and actions
@@ -1139,6 +1144,15 @@ function KingdomHudController:render()
 			onCancelWar = function()
 				self:cancelWar()
 			end,
+			-- "How to play" at the end of the Overview tab (FL-0138), when HowToPlayController is loaded
+			onHelp = if self._registry:find("HowToPlayController") ~= nil
+				then function()
+					local help = self._registry:find("HowToPlayController")
+					if help then
+						help:open()
+					end
+				end
+				else nil,
 		})
 	else
 		self.panel:destroy()

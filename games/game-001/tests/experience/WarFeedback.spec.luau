@@ -368,6 +368,31 @@ describe("FeedbackWarController (FL-0130 part 2)", function()
 		expect(war:alert()).toBeNil()
 	end)
 
+	it("a siege on our keep is an alert too: it outranks a raid, and each end clears only its own (FL-0130)", function()
+		local war = boot()
+		local raidAt = Vector3.new(60, 0, -30)
+		local keepAt = Vector3.new(-100, 0, 0)
+		war:onMoment({ kind = "raid", kingdom = "crimson", on = true, count = 4, position = raidAt })
+		war:onMoment({ kind = "siege", kingdom = "crimson", on = true, position = keepAt })
+		expect(count(effects, "war.raid.ping")).toBe(2) -- a beacon at each
+		expect(war:alert().kind).toBe("siege")
+		expect(war:alert().position).toBe(keepAt)
+		inputBegan:fire({ KeyCode = Enum.KeyCode.G }, false)
+		expect(focused[#focused]).toBe(keepAt) -- go defend the keep first
+		war:onMoment({ kind = "raid", kingdom = "crimson", on = false })
+		expect(war:alert().kind).toBe("siege") -- the raid's end leaves the siege
+		expect(#stopped).toBe(1)
+		war:onMoment({ kind = "raid", kingdom = "crimson", on = true, position = raidAt })
+		war:onMoment({ kind = "siege", kingdom = "crimson", on = false })
+		expect(war:alert().kind).toBe("raid")
+		expect(war:alert().position).toBe(raidAt)
+		war:onMoment({ kind = "siege", kingdom = "crimson", on = true, position = keepAt })
+		war:onMoment({ kind = "kingdomFell", kingdom = "crimson" })
+		expect(war:alert()).toBeNil()
+		war:onMoment({ kind = "siege", kingdom = "crimson", on = true }) -- no position: nothing to show
+		expect(war:alert()).toBeNil()
+	end)
+
 	it("hotspots merge within HOTSPOT_STUDS and expire after HOTSPOT_SEC", function()
 		local war = boot()
 		war:onEntityEvent(1, "hit", {}, rig(Vector3.new(0, 0, 0)))
