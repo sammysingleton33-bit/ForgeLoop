@@ -42,6 +42,7 @@
 ]]
 
 local Parts = require("./Parts")
+local KingdomStyle = require("./KingdomStyle")
 local Pieces = require("./Pieces")
 
 local C = Parts.C
@@ -133,6 +134,15 @@ local ROYAL_X = { -3, 0, 3 }
 -- Stand B is built at +Z facing the ring (-Z); every side is that turned about Y. Gates: the same, +Z outward.
 local FRAME_STAND = { A = CFrame.Angles(0, PI, 0), B = CFrame.new() }
 local FRAME_GATE = { A = CFrame.Angles(0, -PI / 2, 0), B = CFrame.Angles(0, PI / 2, 0) }
+
+-- A hanging banner's cloth hang, shortened so that the cloth, its kingdom-style length (KingdomStyle banner.length) and its tail
+-- (a long pennon hangs a full cloth-width below the cloth, the others about half) stay at or above the ground: the same hang the
+-- arena used before the kingdom styles must not reach below y = 0 now that Frostmere's tail and Emberhold's hang are longer.
+local function fitHang(style: string, y: number, h: number, width: number): number
+	local banner = KingdomStyle.get(style).banner
+	local tail = if banner.tip == "long" then width * 1.05 else width * 0.5
+	return math.min(h, math.max(1, (y - 0.15 - tail) / banner.length))
+end
 
 -- Yaw (degrees, Pieces.banner's `facing`) that turns a banner's front (-Z) to the direction d on the XZ plane.
 local function facingOf(d: Vector3): number
@@ -535,7 +545,7 @@ local function buildDress(model: Model, root: BasePart, side: string, color: Col
 	local out = F:VectorToWorldSpace(Vector3.new(0, 0, 1))
 	for _, x in { -21, -13, 13, 21 } do
 		local p = F:PointToWorldSpace(Vector3.new(x, 0, WALL_Z0 + 1.0 - 0.1))
-		Pieces.banner(ctx, p.X, 9.9, p.Z, facingOf(out), color, 7.5, style, 4.0)
+		Pieces.banner(ctx, p.X, 9.9, p.Z, facingOf(out), color, fitHang(style, 9.9, 7.5, 4.0), style, 4.0)
 	end
 
 	-- the champion's rug under the spawn mark: kingdom field, ivory border, emblem; emblem-up looks at the opponent
