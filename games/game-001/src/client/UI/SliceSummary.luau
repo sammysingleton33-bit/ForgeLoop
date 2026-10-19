@@ -13,7 +13,9 @@
 	tablet/desktop: one column, 460 wide.
 
 	SliceSummary.new(parent) -> view
-	view:render(model: UI/SummaryModel Summary, metrics, ui: { onContinue: () -> () })
+	view:render(model: UI/SummaryModel Summary, metrics, ui: { onContinue: () -> (), onRecap: (() -> ())? })
+		onRecap given: a "Your reign" button ("Recap"; FL-0129 leadership recap) beside Continue
+		(tablet/desktop) or above it (phones)
 	view:destroy()
 	view.instance: Frame "SliceSummary" (children "Scrim", "Panel")   view.continue: Button handle
 		(instance "Continue")   view.rows[kingdomId]: Frame "Standing_<id>" (attributes rank, mine, winner)
@@ -307,6 +309,21 @@ function SliceSummary:render(model: any, metrics: any, ui: { [string]: any })
 	self.continue.instance.Name = "Continue"
 	self.continue.instance.AnchorPoint = Vector2.new(0, 1)
 	self.continue.instance.Position = UDim2.fromScale(0, 1)
+	-- "Your reign" (FL-0129): the leadership recap, when the recap controller has one
+	self.recap = nil
+	if self._ui.onRecap then
+		self.recap = Button.new({
+			text = "Your reign",
+			icon = "laurel",
+			variant = "secondary",
+			onActivated = function()
+				if self._ui.onRecap then
+					self._ui.onRecap()
+				end
+			end,
+		})
+		self.recap.instance.Name = "Recap"
+	end
 	local left, right
 	if phone then
 		local leftWidth = SliceSummary.PHONE.left
@@ -324,6 +341,11 @@ function SliceSummary:render(model: any, metrics: any, ui: { [string]: any })
 			Parent = content,
 		})
 		self.continue.instance.Size = UDim2.new(1, 0, 0, 44)
+		if self.recap then
+			self.recap.instance.AnchorPoint = Vector2.new(0, 1)
+			self.recap.instance.Position = UDim2.new(0, 0, 1, -52)
+			self.recap.instance.Size = UDim2.new(1, 0, 0, 44)
+		end
 	else
 		left = content
 		right = Create("Frame", {
@@ -344,6 +366,16 @@ function SliceSummary:render(model: any, metrics: any, ui: { [string]: any })
 		d.Parent = left
 	end
 	self.continue.instance.Parent = left
+	if self.recap then
+		if not phone then
+			-- side by side under the standings: Continue left, Your reign right
+			self.continue.instance.Size = UDim2.new(0.5, -6, 0, 44)
+			self.recap.instance.AnchorPoint = Vector2.new(1, 1)
+			self.recap.instance.Position = UDim2.fromScale(1, 1)
+			self.recap.instance.Size = UDim2.new(0.5, -6, 0, 44)
+		end
+		self.recap.instance.Parent = left
+	end
 	standingsHeader().Parent = right
 	self.rows = {}
 	for i, row in model.standings do
@@ -378,6 +410,7 @@ function SliceSummary:destroy()
 	end
 	self.rows = {}
 	self.continue = nil
+	self.recap = nil
 	self.panel = nil
 end
 

@@ -1,0 +1,456 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 25.057,
+        "y": 24.235,
+        "z": 23.833
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_01.fbx",
+        "validation": "exports/building_smithy_01.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "fdc9aee6816a51e2",
+      "id": "building_smithy_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.6,
+        "W": 20.0,
+        "forge": -1,
+        "h1": 12.2,
+        "kingdom": "red",
+        "layout": "pent",
+        "walls": "timber"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7500,
+      "sockets": {
+        "forge": [
+          5.128,
+          4.38,
+          -2.716
+        ],
+        "interact": [
+          1.728,
+          1.08,
+          -9.866
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6736,
+        "lod1": 2356
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 24.142,
+        "y": 22.1,
+        "z": 21.751
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_02.fbx",
+        "validation": "exports/building_smithy_02.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "83c4f7ee5b59ce02",
+      "id": "building_smithy_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 14.5,
+        "W": 19.0,
+        "forge": 1,
+        "h1": 13.4,
+        "kingdom": "blue",
+        "layout": "shed",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7501,
+      "sockets": {
+        "forge": [
+          -4.591,
+          4.38,
+          -1.675
+        ],
+        "interact": [
+          -1.191,
+          1.08,
+          -8.825
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6512,
+        "lod1": 2278
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 23.058,
+        "y": 31.035,
+        "z": 23.295
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_03.fbx",
+        "validation": "exports/building_smithy_03.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "2ceaf8e487e54776",
+      "id": "building_smithy_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.4,
+        "W": 18.0,
+        "forge": 1,
+        "h1": 11.8,
+        "h2": 7.6,
+        "kingdom": "green",
+        "layout": "loft",
+        "walls": "timber"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7502,
+      "sockets": {
+        "forge": [
+          -4.049,
+          4.38,
+          -2.447
+        ],
+        "interact": [
+          -0.649,
+          1.08,
+          -9.597
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7652,
+        "lod1": 2678
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 26.429,
+        "y": 23.848,
+        "z": 23.285
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_04.fbx",
+        "validation": "exports/building_smithy_04.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "29ae2c8c91ca9f78",
+      "id": "building_smithy_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.9,
+        "W": 21.0,
+        "cross": true,
+        "forge": 1,
+        "h1": 12.4,
+        "kingdom": "yellow",
+        "layout": "pent",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7503,
+      "sockets": {
+        "forge": [
+          -5.735,
+          4.38,
+          -2.443
+        ],
+        "interact": [
+          -2.335,
+          1.08,
+          -9.593
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7236,
+        "lod1": 2532
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 25.585,
+        "y": 23.688,
+        "z": 22.064
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_05.fbx",
+        "validation": "exports/building_smithy_05.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "2f5a168ca6cfcc69",
+      "id": "building_smithy_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 14.6,
+        "W": 20.0,
+        "Ww": 8.6,
+        "forge": -1,
+        "h1": 7.2,
+        "h2": 5.4,
+        "kingdom": "red",
+        "layout": "ell",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7504,
+      "sockets": {
+        "forge": [
+          5.393,
+          4.38,
+          -1.832
+        ],
+        "interact": [
+          1.993,
+          1.08,
+          -8.982
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6540,
+        "lod1": 2288
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 25.16,
+        "y": 31.335,
+        "z": 23.723
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_smithy_06.fbx",
+        "validation": "exports/building_smithy_06.validation.json"
+      },
+      "generator": "building_smithy",
+      "generator_version": 1,
+      "geometry_hash": "6c5239ab4e2a6031",
+      "id": "building_smithy_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 15.6,
+        "W": 19.5,
+        "forge": -1,
+        "h1": 11.9,
+        "h2": 7.8,
+        "kingdom": "blue",
+        "layout": "loft",
+        "walls": "stone"
+      },
+      "preview": "previews/building_smithy.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+        "review_file": "reviews/building_smithy.md",
+        "reviewer": "fresh-context subagent",
+        "round": 6,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7505,
+      "sockets": {
+        "forge": [
+          5.18,
+          4.38,
+          -2.662
+        ],
+        "interact": [
+          1.78,
+          1.08,
+          -9.812
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7760,
+        "lod1": 2716
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "building_smithy",
+  "variation": {
+    "closest_pair": [
+      "building_smithy_03",
+      "building_smithy_06"
+    ],
+    "mean_pair_diff": 0.2963,
+    "min_pair_diff": 0.1392,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

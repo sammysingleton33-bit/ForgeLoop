@@ -820,7 +820,10 @@ WorldPlan.TRIM = table.freeze({
 	frameReach = 220, -- the view line runs from the plot centre (keep frame z -40) this far out of the keep's front,
 	-- where the throne and the default overview camera (behind the keep, looking out) see most
 	roadBand = 45, -- approach roads: studs either side of a road line; never thinned
-	heartRadius = 170, -- heartland: studs around each objective (the valley centre camera); never thinned
+	heartRadius = 170, -- heartland: studs around the central objective (the valley centre camera); never thinned
+	outpostRadius = 70, -- the neutral outposts (FL-0127): studs around each; never thinned (a full heartland radius
+	-- around three more objectives kept ~630 more parts and would eat the D-047 headroom)
+	spurBand = 20, -- road spurs to the outposts (marked `spur` in the layout): studs either side; never thinned
 	arenaReach = 60, -- the Crown Arena (FL-0072): studs around its footprint that are never thinned
 	jitter = 90, -- studs of deterministic noise on the score, so thinning fades in instead of cutting a line
 	standSpread = 1.6, -- a forest stand loses at most this times the forest cut (0.75 -> 40 %), so none goes bald
@@ -889,11 +892,13 @@ function WorldPlan.unseen(layout: any, x: number, z: number): number
 			math.min(attention, distToPolyline(x, z, { Vector2.new(a.X, a.Z), Vector2.new(b.X, b.Z) }) - t.frameRadius)
 	end
 	for _, road in layout.features.roads do
-		attention = math.min(attention, distToPolyline(x, z, road.points) - t.roadBand)
+		attention =
+			math.min(attention, distToPolyline(x, z, road.points) - (if road.spur then t.spurBand else t.roadBand))
 	end
 	for _, o in layout.objectives do
 		local p = o.cframe.Position
-		attention = math.min(attention, math.sqrt((x - p.X) ^ 2 + (z - p.Z) ^ 2) - t.heartRadius)
+		local reach = if o.regionId == "heartland" then t.heartRadius else t.outpostRadius
+		attention = math.min(attention, math.sqrt((x - p.X) ^ 2 + (z - p.Z) ^ 2) - reach)
 	end
 	return math.max(0, attention)
 end

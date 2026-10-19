@@ -79,8 +79,15 @@ describe("WorldService (G10)", function()
 		end
 		local objectives = tagged(env, "ObjectiveZone")
 		expect(#objectives).toBe(#Layout.objectives)
-		expect(objectives[1]:GetAttribute("ObjectiveId")).toBe(Layout.objectives[1].id)
-		expect(objectives[1]:GetAttribute("Radius")).toBe(Layout.objectives[1].radius)
+		-- every layout objective (the watchtower and the three outposts, FL-0127) has its zone, with its radius
+		local byId = {}
+		for _, zone in objectives do
+			byId[zone:GetAttribute("ObjectiveId")] = zone
+		end
+		for _, o in Layout.objectives do
+			expect(byId[o.id]).never.toBeNil()
+			expect(byId[o.id]:GetAttribute("Radius")).toBe(o.radius)
+		end
 		expect(#tagged(env, "KingdomPlot")).toBe(4)
 	end)
 
@@ -382,25 +389,25 @@ describe("Dressing density knob (D-047)", function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
 			expect(#plan).toBe(618)
-			expect(fingerprint(plan)).toBe(1250193570) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0072 (the Crown Arena's footprint is reserved ground: the generator keeps decor 4 studs off it, which re-seated 37 of 618 placements: 20 lone trees, 5 bushes, 12 rocks, as the PRNG stream shifts after the first rejected spot; forests, crops and plot dressing are unchanged) and before that for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
+			expect(fingerprint(plan)).toBe(1224127508) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0127 (three outposts: decor keeps radius + 14 off each, and the four road spurs; 618 placements before and after) together with FL-0072 (the Crown Arena's footprint is reserved ground: the generator keeps decor 4 studs off it, which re-seated 37 of 618 placements: 20 lone trees, 5 bushes, 12 rocks, as the PRNG stream shifts after the first rejected spot; forests, crops and plot dressing are unchanged) and before that for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(616)
-			expect(fingerprint(one)).toBe(1799453698)
+			expect(#one).toBe(615)
+			expect(fingerprint(one)).toBe(1319973902)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(643)
-			expect(fingerprint(all)).toBe(1244081709)
+			expect(#all).toBe(642)
+			expect(fingerprint(all)).toBe(1544930042)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(616)
-			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8315) -- the dressing; the arena is counted apart
+			expect(svc.stats.props).toBe(615)
+			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8271) -- the dressing; the arena is counted apart (8309 on main with the outposts; the arena keep-out re-seats decor)
 			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
 			local forests = Layout.features.forests
 			local floorOps = 0
@@ -440,8 +447,8 @@ describe("Dressing density knob (D-047)", function()
 	it(
 		"never thins bridges, crops or kingdom dressing, even far from every camera, and thins the rest there",
 		function()
-			local far = CFrame.new(-480, 0, 60) -- clear of every plot frame, road band and the heartland
-			expect(WorldPlan.unseen(Layout, -480, 60)).toBeGreaterThan(0)
+			local far = CFrame.new(-560, 0, -70) -- clear of every plot frame, road band, outpost and the heartland
+			expect(WorldPlan.unseen(Layout, -560, -70)).toBeGreaterThan(60) -- well past the jitter (a few studs is not enough)
 			local plan = {}
 			for _, feature in { "bridge", "crops", "dressing", "forest", "lone_tree", "bush", "rocks", "flowers" } do
 				table.insert(plan, { assetId = "x_01", cframe = far, feature = feature })
@@ -490,7 +497,10 @@ describe("Dressing density knob (D-047)", function()
 				end
 				for _, o in Layout.objectives do
 					local q = o.cframe.Position
-					near = near or Vector2.new(pos.X - q.X, pos.Z - q.Z).Magnitude < 120
+					-- the heartland keeps 170 studs around its objective (120 here, inside the jitter); an outpost keeps its lone
+					-- dressing within 70 (40 here: a forest stand next to an outpost thins radially like any other)
+					local reach = if o.regionId == "heartland" then 120 else 40
+					near = near or Vector2.new(pos.X - q.X, pos.Z - q.Z).Magnitude < reach
 				end
 				if gone and near then
 					table.insert(bad, `{p.assetId} ({p.feature}) at ({math.floor(pos.X)}, {math.floor(pos.Z)})`)

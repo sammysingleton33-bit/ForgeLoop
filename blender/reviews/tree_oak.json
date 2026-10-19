@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "tree_oak_01": {
+      "geometry_hash": "6a28a9768dc37ca5",
+      "verdict": "PASS"
+    },
+    "tree_oak_02": {
+      "geometry_hash": "a1f93b52b55862a8",
+      "verdict": "PASS"
+    },
+    "tree_oak_03": {
+      "geometry_hash": "3743668290d22b0a",
+      "verdict": "PASS"
+    },
+    "tree_oak_04": {
+      "geometry_hash": "ec4ab6788b2defb0",
+      "verdict": "PASS"
+    },
+    "tree_oak_05": {
+      "geometry_hash": "32d1361828b75780",
+      "verdict": "PASS"
+    },
+    "tree_oak_06": {
+      "geometry_hash": "2b7f02ea994b0b0f",
+      "verdict": "PASS"
+    },
+    "tree_oak_07": {
+      "geometry_hash": "42224ae75f2024e9",
+      "verdict": "PASS"
+    },
+    "tree_oak_08": {
+      "geometry_hash": "99f369305d86b05c",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "tree_oak",
+  "generator_version": 1,
+  "notes": "Clustered faceted canopy puffs (not primitive spheres) with root flares and distinct forms (spreading 02, tall 03, young 05, twin-trunk 06, gnarled 07) that read well at 80 studs. Minor: oak_02 is 3840 of 4000 tris, and the oak_08 ochre canopy shares the straw and wheat hue.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

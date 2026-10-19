@@ -1,0 +1,476 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_small",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 17.073,
+        "y": 14.637,
+        "z": 13.422
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_market_01.fbx",
+        "validation": "exports/building_market_01.validation.json"
+      },
+      "generator": "building_market",
+      "generator_version": 1,
+      "geometry_hash": "1ae36fde84fd3f51",
+      "id": "building_market_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 8.0,
+        "Ht": 8.6,
+        "W": 11.5,
+        "goods": "produce",
+        "icon": "apple",
+        "kingdom": "red",
+        "pitch": 38,
+        "shape": "gable",
+        "sign_side": 1
+      },
+      "preview": "previews/building_market.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+        "review_file": "reviews/building_market.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7300,
+      "sockets": {
+        "interact": [
+          0.249,
+          0.0,
+          -6.125
+        ],
+        "vendor": [
+          0.249,
+          0.85,
+          -1.425
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 5000,
+        "lod0": 4400,
+        "lod1": 1540
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_small",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 16.938,
+        "y": 14.256,
+        "z": 15.004
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_market_02.fbx",
+        "validation": "exports/building_market_02.validation.json"
+      },
+      "generator": "building_market",
+      "generator_version": 1,
+      "geometry_hash": "167a60443c00daae",
+      "id": "building_market_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 8.2,
+        "Ht": 7.9,
+        "W": 12.5,
+        "goods": "fish",
+        "icon": "fish",
+        "kingdom": "blue",
+        "pitch": 24,
+        "shape": "lean",
+        "sign_side": -1
+      },
+      "preview": "previews/building_market.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+        "review_file": "reviews/building_market.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7301,
+      "sockets": {
+        "interact": [
+          -0.749,
+          0.1,
+          -5.353
+        ],
+        "vendor": [
+          -0.749,
+          0.95,
+          -0.653
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 5000,
+        "lod0": 4372,
+        "lod1": 1530
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_small",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 17.655,
+        "y": 12.584,
+        "z": 14.804
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_market_03.fbx",
+        "validation": "exports/building_market_03.validation.json"
+      },
+      "generator": "building_market",
+      "generator_version": 1,
+      "geometry_hash": "8efb86a527fb04f3",
+      "id": "building_market_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 8.6,
+        "Ht": 8.0,
+        "W": 12.0,
+        "goods": "harvest",
+        "icon": "pumpkin",
+        "kingdom": "green",
+        "pitch": 0,
+        "shape": "vault",
+        "sign_side": 1
+      },
+      "preview": "previews/building_market.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+        "review_file": "reviews/building_market.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7302,
+      "sockets": {
+        "interact": [
+          0.64,
+          0.04,
+          -6.031
+        ],
+        "vendor": [
+          0.64,
+          0.89,
+          -1.331
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 5000,
+        "lod0": 4684,
+        "lod1": 1638
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_small",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 13.794,
+        "y": 17.172,
+        "z": 15.076
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_market_04.fbx",
+        "validation": "exports/building_market_04.validation.json"
+      },
+      "generator": "building_market",
+      "generator_version": 1,
+      "geometry_hash": "711918262d284bc2",
+      "id": "building_market_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 9.0,
+        "Ht": 8.2,
+        "W": 10.0,
+        "goods": "bread",
+        "icon": "sheaf",
+        "kingdom": "yellow",
+        "pitch": 44,
+        "shape": "pavilion",
+        "sign_side": -1
+      },
+      "preview": "previews/building_market.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+        "review_file": "reviews/building_market.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7303,
+      "sockets": {
+        "interact": [
+          -1.059,
+          0.068,
+          -6.016
+        ],
+        "vendor": [
+          -1.059,
+          0.918,
+          -1.316
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 5000,
+        "lod0": 4616,
+        "lod1": 1614
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_small",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 21.398,
+        "y": 15.789,
+        "z": 13.031
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_market_05.fbx",
+        "validation": "exports/building_market_05.validation.json"
+      },
+      "generator": "building_market",
+      "generator_version": 1,
+      "geometry_hash": "eb43fcfdc168d825",
+      "id": "building_market_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 7.8,
+        "Ht": 8.2,
+        "Ht2": 9.4,
+        "W": 8.4,
+        "W2": 7.4,
+        "goods": "pottery",
+        "goods2": "produce",
+        "icon": "jug",
+        "kingdom": "red",
+        "pitch": 36,
+        "shape": "double",
+        "sign_side": 1
+      },
+      "preview": "previews/building_market.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+        "review_file": "reviews/building_market.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7304,
+      "sockets": {
+        "interact": [
+          3.949,
+          0.0,
+          -6.024
+        ],
+        "interact_2": [
+          -3.951,
+          0.0,
+          -6.024
+        ],
+        "vendor": [
+          3.949,
+          0.85,
+          -1.324
+        ],
+        "vendor_2": [
+          -3.951,
+          0.85,
+          -1.324
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 5000,
+        "lod0": 4866,
+        "lod1": 1702
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_small",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 17.621,
+        "y": 16.753,
+        "z": 13.453
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_market_06.fbx",
+        "validation": "exports/building_market_06.validation.json"
+      },
+      "generator": "building_market",
+      "generator_version": 1,
+      "geometry_hash": "cd487472c8b6bc52",
+      "id": "building_market_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "D": 8.2,
+        "Ht": 8.8,
+        "W": 13.5,
+        "goods": "cloth",
+        "icon": "disc",
+        "kingdom": "blue",
+        "pitch": 38,
+        "shape": "pavilion",
+        "sign_side": -1
+      },
+      "preview": "previews/building_market.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+        "review_file": "reviews/building_market.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7305,
+      "sockets": {
+        "interact": [
+          -1.059,
+          0.0,
+          -6.327
+        ],
+        "vendor": [
+          -1.059,
+          0.85,
+          -1.627
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 5000,
+        "lod0": 4122,
+        "lod1": 1442
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "building_market",
+  "variation": {
+    "closest_pair": [
+      "building_market_01",
+      "building_market_06"
+    ],
+    "mean_pair_diff": 0.396,
+    "min_pair_diff": 0.2918,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

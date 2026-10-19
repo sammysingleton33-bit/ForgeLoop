@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "prop_well_01": {
+      "geometry_hash": "2b079e4db4d93703",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_well_02": {
+      "geometry_hash": "e1890bf219aa367e",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_well_03": {
+      "geometry_hash": "1ebda265418805d9",
+      "verdict": "NEEDS-WORK"
+    },
+    "prop_well_04": {
+      "geometry_hash": "00c489784eaa76ad",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "prop_well",
+  "generator_version": 1,
+  "notes": "Blue star finial is a tiny pale-silver star against a pale sky; at 40 studs it is a speck, so blue reads only through the fascia, not the emblem. Gold well is dominated by hay/khaki thatch (gold only on ridge cap and sun), and wells 01 and 04 share the same gable body.",
+  "reviewer": "fresh-context subagent",
+  "round": 3,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "tree_birch_01": {
+      "geometry_hash": "f6bba29dcf51100a",
+      "verdict": "NEEDS-WORK"
+    },
+    "tree_birch_02": {
+      "geometry_hash": "0daf472bdea51ab1",
+      "verdict": "NEEDS-WORK"
+    },
+    "tree_birch_03": {
+      "geometry_hash": "06328fab39a090bc",
+      "verdict": "NEEDS-WORK"
+    },
+    "tree_birch_04": {
+      "geometry_hash": "1f51a1d4c82ca556",
+      "verdict": "NEEDS-WORK"
+    },
+    "tree_birch_05": {
+      "geometry_hash": "63155736abc35d46",
+      "verdict": "NEEDS-WORK"
+    },
+    "tree_birch_06": {
+      "geometry_hash": "73941da9b28e72d1",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "tree_birch",
+  "generator_version": 3,
+  "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+  "reviewer": "fresh-context subagent",
+  "round": 3,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 3,
+    "palette": 4,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 3,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

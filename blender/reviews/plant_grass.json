@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "plant_grass_01": {
+      "geometry_hash": "84011b0eff4a9cbe",
+      "verdict": "PASS"
+    },
+    "plant_grass_02": {
+      "geometry_hash": "bbb959bae7702b99",
+      "verdict": "PASS"
+    },
+    "plant_grass_03": {
+      "geometry_hash": "491cf455b4c14264",
+      "verdict": "PASS"
+    },
+    "plant_grass_04": {
+      "geometry_hash": "fe28753ccc8c86f6",
+      "verdict": "PASS"
+    },
+    "plant_grass_05": {
+      "geometry_hash": "7adc8a9685a261d8",
+      "verdict": "PASS"
+    },
+    "plant_grass_06": {
+      "geometry_hash": "20de8af1933503d5",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "plant_grass",
+  "generator_version": 1,
+  "notes": "Good spread across green tufts, a dry tuft (04 straw tan, not gold), seed heads (05) and cattails (06). Thin needle-sharp blades are a harsher shape language than the puffy kit, the grass_01 base has odd green hexagonal pebble leaves, and 506-674 tris per tuft is expensive for the most-instanced asset.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

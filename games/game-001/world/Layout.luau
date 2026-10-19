@@ -10,7 +10,7 @@
 	face -Z (Kit), so each anchor CFrame turns that front towards the valley centre.
 
 	Ids: plots by KingdomId (crimson, azure, emerald, gold); regions "<kingdom>_home", "heartland";
-	nodes "<kingdom>_<resource><n>" and "heart_<resource><n>"; objective "watchtower";
+	nodes "<kingdom>_<resource><n>" and "heart_<resource><n>"; objectives "watchtower", "outpost_n", "outpost_s", "outpost_w";
 	build slots "<kingdom>_slot<n>" (G13.5: 10 per kingdom, 4 S + 4 M + 2 L, sizes in `slotSizes`).
 	Each plot is a small town: the keep at the back, an avenue from the keep door through the yard to the
 	gate, a cross street through the yard with the slots on it, the starting buildings on the flanks.
@@ -320,6 +320,18 @@ chain({ plotNav.crimson.gate, westN, bridgeN[1], bridgeN[2], bridgeN[3], hub })
 chain({ plotNav.emerald.gate, westS, bridgeS[1], bridgeS[2], bridgeS[3], hub })
 chain({ plotNav.azure.gate, eastN, hub })
 chain({ plotNav.gold.gate, eastS, hub })
+
+-- Neutral outposts (Operation Crownfall, FL-0127): three capture points besides the central watchtower, for FORGE-01's
+-- FL-0126 (it gives them config rows: territory radius, Crown Points, capture time; the world only places them).
+-- North and south stand on the valley's north and south edges between the two kingdoms of each side; the west outpost
+-- stands on the west bank, to balance the river the two western kingdoms must cross to reach the watchtower.
+-- Each is 330-365 studs from its nearest kingdoms and 80+ studs clear of every forest stand, hill and the river.
+local OUTPOST_N, OUTPOST_S, OUTPOST_W = v(40, -330), v(30, 315), v(-430, 10)
+local outN, outS, outW = node(OUTPOST_N.X, OUTPOST_N.Z), node(OUTPOST_S.X, OUTPOST_S.Z), node(OUTPOST_W.X, OUTPOST_W.Z)
+link(eastN, outN) -- the north outpost hangs off the azure road, the south one off the gold road
+link(eastS, outS)
+link(westN, outW) -- the west outpost joins both west-bank roads
+link(westS, outW)
 -- heartland stone + gold nodes near the tower (contested)
 table.insert(resourceNodes, {
 	id = "heart_stone1",
@@ -356,6 +368,19 @@ regions.heartland = {
 	},
 }
 
+-- one small neutral region per outpost (the sim maps an objective to its region for ownership)
+for id, at in { outpost_n = OUTPOST_N, outpost_s = OUTPOST_S, outpost_w = OUTPOST_W } do
+	regions[id] = {
+		kingdom = nil,
+		polygon = {
+			Vector2.new(at.X - 70, at.Z - 70),
+			Vector2.new(at.X + 70, at.Z - 70),
+			Vector2.new(at.X + 70, at.Z + 70),
+			Vector2.new(at.X - 70, at.Z + 70),
+		},
+	}
+end
+
 local objectives = {
 	{
 		id = "watchtower",
@@ -364,6 +389,31 @@ local objectives = {
 		radius = 26,
 		regionId = "heartland",
 		navNode = tower,
+	},
+	-- the outposts face the watchtower (their neutral tower's front looks at the valley centre)
+	{
+		id = "outpost_n",
+		kind = "capture",
+		cframe = facing(OUTPOST_N, CENTRE),
+		radius = 20,
+		regionId = "outpost_n",
+		navNode = outN,
+	},
+	{
+		id = "outpost_s",
+		kind = "capture",
+		cframe = facing(OUTPOST_S, CENTRE),
+		radius = 20,
+		regionId = "outpost_s",
+		navNode = outS,
+	},
+	{
+		id = "outpost_w",
+		kind = "capture",
+		cframe = facing(OUTPOST_W, CENTRE),
+		radius = 20,
+		regionId = "outpost_w",
+		navNode = outW,
 	},
 }
 
@@ -443,6 +493,27 @@ local features = {
 				Vector2.new(100, 90),
 				Vector2.new(20, 0),
 			}),
+		},
+		-- spurs to the neutral outposts (FL-0127)
+		{
+			width = 10,
+			spur = true, -- WorldPlan protects only a narrow band of a spur from the trim
+			points = { Vector2.new(230, -220), Vector2.new(140, -285), Vector2.new(OUTPOST_N.X, OUTPOST_N.Z) },
+		},
+		{
+			width = 10,
+			spur = true, -- WorldPlan protects only a narrow band of a spur from the trim
+			points = { Vector2.new(240, 230), Vector2.new(130, 280), Vector2.new(OUTPOST_S.X, OUTPOST_S.Z) },
+		},
+		{
+			width = 10,
+			spur = true, -- WorldPlan protects only a narrow band of a spur from the trim
+			points = { Vector2.new(-190, -230), Vector2.new(-320, -110), Vector2.new(OUTPOST_W.X, OUTPOST_W.Z) },
+		},
+		{
+			width = 10,
+			spur = true, -- WorldPlan protects only a narrow band of a spur from the trim
+			points = { Vector2.new(-190, 245), Vector2.new(-320, 130), Vector2.new(OUTPOST_W.X, OUTPOST_W.Z) },
 		},
 		{ width = 10, points = plotRoads.crimson_street },
 		{ width = 10, points = plotRoads.azure_street },

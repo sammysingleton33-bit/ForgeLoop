@@ -162,14 +162,18 @@ local function dump()
 		end
 	end
 	assets.watchtower_neutral = partsOf(Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR))
+	-- the neutral tower of every objective (FORGE-01's ObjectiveService builds them in the game: the watchtower and, since
+	-- FL-0127, the three outposts; the preview shows them all)
+	for _, obj in Layout.objectives do
+		local op = obj.cframe.Position
+		local ty = WorldPlan.groundHeight(Layout, op.X, op.Z)
+		table.insert(placements, {
+			assetId = "watchtower_neutral",
+			cframe = cf12(CFrame.new(op.X, ty, op.Z) * (obj.cframe - op)),
+			feature = "objective",
+		})
+	end
 	local o = Layout.objectives[1]
-	local op = o.cframe.Position
-	local ty = WorldPlan.groundHeight(Layout, op.X, op.Z)
-	table.insert(placements, {
-		assetId = "watchtower_neutral",
-		cframe = cf12(CFrame.new(op.X, ty, op.Z) * (o.cframe - op)),
-		feature = "objective",
-	})
 	-- the Crown Arena (WorldService builds it neutral; the preview dresses it for crimson against azure, as at the Arena phase,
 	-- unless FORGE_WORLD_ARENA=neutral)
 	local arena = Layout.arena
