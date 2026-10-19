@@ -264,6 +264,9 @@ function SupportModel.modifiers(
 	end
 	local picked: { [string]: boolean } = {}
 	for _, pick in picks do
+		if type(pick.trigger) ~= "string" then
+			error(`SupportModel: unknown trigger '{tostring(pick.trigger)}'`, 2)
+		end
 		if picked[pick.trigger] then
 			error(`SupportModel: '{tostring(pick.trigger)}' is picked twice; each trigger fires once per duel`, 2)
 		end

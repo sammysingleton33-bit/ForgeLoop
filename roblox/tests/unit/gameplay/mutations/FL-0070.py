@@ -25,6 +25,7 @@ M = [
  ("FL-0070", SM, 'local magnitude = if power == "pledged" or power == "empowered" then perk[power] else nil', 'local magnitude = if power == "pledged" then perk[power] else nil', "sim/SupportModel", "both powers is within Caps.check"),
  ("FL-0070", SM, 'if picked[pick.trigger] then', 'if false then', "sim/SupportModel", "refuses a repeated pick"),
  ("FL-0070", SM, '	if tierDef == nil then\n		error(`SupportModel: unknown tier \'{tostring(tier)}\'`, 2)\n	end\n	local offers', '	if false then\n		error(`SupportModel: unknown tier \'{tostring(tier)}\'`, 2)\n	end\n	local offers', "sim/SupportModel", "offers refuses an unknown tier"),
+ ("FL-0070", SM, 'if type(pick.trigger) ~= "string" then', 'if false then', "sim/SupportModel", "gets the module\'s own unknown-trigger message"),
  # --- the offers
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.pledgedLoyalty', 'citizen.loyalty > cfg.offer.pledgedLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.empoweredLoyalty', 'citizen.loyalty > cfg.offer.empoweredLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),
