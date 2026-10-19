@@ -10,12 +10,18 @@
 	card:render(model: CitizenModel Card, metrics: Layout Metrics, ui: {
 		color: Color3?,                  the avatar's kingdom colour
 		talk: { visible: boolean, state: "idle" | "loading" },
-		onTalk: () -> (), onClose: () -> () })
+		onTalk: () -> (), onClose: () -> (),
+		perk: PetitionModel Perk?,       the arena perk preview of a key citizen (FL-0073)
+		petition: { visible, model: PetitionModel Petition?, state: "idle" | "loading", error: string?,
+		            onFulfil } ? })   the open petition; visible only while Kingdom.FulfilPetition is served
 	card:destroy()
 	Names for specs and Studio: panel "CitizenCard"; "Avatar" (+ "Request" badge); "CitizenName",
 	"CitizenSub"; "Stat_<loyalty|mood|obedience>" with "Value" and a ProgressBar; "Intent"; "Traits"
 	with "Trait_<n>"; "Relation_<family|friends|rivals>" with "Names"; "Memories" with "LastMemory",
-	"Memory_<n>"; button "Talk" (face attribute `talk` = "request" | "ask" | "loading").
+	"Memory_<n>"; button "Talk" (face attribute `talk` = "request" | "ask" | "loading"); "Petition" (attribute
+	petitionId) with "PetitionText", "Cost_<id>", "Need", "Left", button "Fulfil" (face attribute `fulfil` = "ready" |
+	"blocked" | "loading"), "PetitionError"; "ArenaPerk" (attributes power, trigger) with "Headline", "Effect", "When",
+	"ToGo", "Next".
 ]]
 
 local Button = require("@game/ReplicatedStorage/Forge/UI/Components/Button")
@@ -24,6 +30,7 @@ local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
 local IconButton = require("@game/ReplicatedStorage/Forge/UI/Components/IconButton")
 local Panel = require("@game/ReplicatedStorage/Forge/UI/Components/Panel")
+local PetitionModel = require("./PetitionModel")
 local ProgressBar = require("@game/ReplicatedStorage/Forge/UI/Components/ProgressBar")
 local Style = require("@game/ReplicatedStorage/Forge/UI/Style")
 local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
@@ -399,6 +406,132 @@ local function memories(model: any, limit: number, order: number): Frame?
 	return frame
 end
 
+local function wrapped(name: string, s: string, size: number, color: Color3, weight: any, order: number): TextLabel
+	return Style.text({
+		text = s,
+		weight = weight,
+		size = size,
+		color = color,
+		wrap = true,
+		yAlign = "Top",
+		extra = {
+			Name = name,
+			Size = UDim2.new(1, 0, 0, 16),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			LayoutOrder = order,
+			LineHeight = CitizenModel.LINE_HEIGHT,
+		},
+	}) :: TextLabel
+end
+
+-- The open petition (FL-0073, UI/PetitionModel): what they ask, its cost (short entries in red), the time left and
+-- Fulfil (Kingdom.FulfilPetition). Shown only while the server serves the remote (ui.petition.visible).
+local function petitionBox(p: any, ui: any, order: number): Frame
+	local frame = box("Petition", order)
+	frame:SetAttribute("petitionId", p.id)
+	boxTitle("scroll", "Petition").Parent = frame
+	wrapped("PetitionText", p.text, 12, Theme.color("textPrimary"), Enum.FontWeight.SemiBold, 1).Parent = frame
+	local meta = Create("Frame", {
+		Name = "Meta",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 18),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 2,
+	}, { List = Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center) })
+	local metaList = meta:FindFirstChild("List") :: UIListLayout
+	metaList.Wraps = true
+	for i, c in p.cost do
+		local short = p.short[c.id] == true
+		local icon = Icon.new(c.icon, 14)
+		icon.LayoutOrder = i * 2 - 1
+		icon.Parent = meta
+		Style.text({
+			text = tostring(c.amount),
+			weight = Enum.FontWeight.ExtraBold,
+			size = 12,
+			color = if short then Theme.color("gules") else Theme.color("textPrimary"),
+			extra = {
+				Name = "Cost_" .. c.id,
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2.fromOffset(0, 18),
+				LayoutOrder = i * 2,
+				Parent = meta,
+			},
+		})
+	end
+	local note = if p.costUnknown then PetitionModel.COST_UNKNOWN else p.need
+	if note then
+		Style.text({
+			text = note,
+			weight = Enum.FontWeight.Bold,
+			size = 11,
+			color = Theme.color("gules"),
+			extra = {
+				Name = "Need",
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2.fromOffset(0, 18),
+				LayoutOrder = 100,
+				Parent = meta,
+			},
+		})
+	end
+	if p.left then
+		Style.text({
+			text = p.left,
+			weight = Enum.FontWeight.SemiBold,
+			size = 11,
+			color = if p.expired then Theme.color("gules") else Theme.color("textMuted"),
+			extra = {
+				Name = "Left",
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2.fromOffset(0, 18),
+				LayoutOrder = 101,
+				Parent = meta,
+			},
+		})
+	end
+	meta.Parent = frame
+	local state = ui.state or "idle"
+	local fulfil = Button.new({
+		text = PetitionModel.FULFIL,
+		icon = "check",
+		variant = "success",
+		size = "regular",
+		state = if state == "loading" then "loading" elseif p.canFulfil then "default" else "disabled",
+		onActivated = ui.onFulfil,
+	})
+	fulfil.instance.Name = "Fulfil"
+	fulfil.instance.LayoutOrder = 3
+	fulfil.face:SetAttribute(
+		"fulfil",
+		if state == "loading" then "loading" elseif p.canFulfil then "ready" else "blocked"
+	)
+	fulfil.instance.Parent = frame
+	if ui.error then
+		wrapped("PetitionError", ui.error, 11, Theme.color("gules"), Enum.FontWeight.Bold, 4).Parent = frame
+	end
+	return frame
+end
+
+-- The arena perk this key citizen lends at 80 / 95 loyalty (FL-0073, UI/PetitionModel.perk).
+local function perkBox(k: any, order: number): Frame
+	local frame = box("ArenaPerk", order)
+	frame:SetAttribute("power", k.power)
+	frame:SetAttribute("trigger", k.trigger)
+	boxTitle(k.icon, `{k.roleName} · arena perk`).Parent = frame
+	wrapped("Headline", k.headline, 12, Theme.color("textPrimary"), Enum.FontWeight.Bold, 1).Parent = frame
+	wrapped("Effect", k.effect, 12, Theme.color("gold300"), Enum.FontWeight.SemiBold, 2).Parent = frame
+	wrapped("When", k.when, 11, Theme.color("textSecondary"), Enum.FontWeight.SemiBold, 3).Parent = frame
+	if k.toGo then
+		wrapped("ToGo", `{k.toGo} more loyalty`, 11, Theme.color("textMuted"), Enum.FontWeight.SemiBold, 4).Parent =
+			frame
+	end
+	if k.next then
+		wrapped("Next", k.next, 11, Theme.color("textMuted"), Enum.FontWeight.SemiBold, 5).Parent = frame
+	end
+	return frame
+end
+
 local function column(name: string, parent: Instance, size: UDim2, position: UDim2): ScrollingFrame
 	return Create("ScrollingFrame", {
 		Name = name,
@@ -448,21 +581,29 @@ function CitizenCard:render(model: any, metrics: any, ui: { [string]: any })
 	local content = self.panel.content
 	local talk = ui.talk or { visible = false }
 	local footer = if talk.visible then 52 else 0
+	local pv = ui.petition
+	local petition = if pv and pv.visible and pv.model then petitionBox(pv.model, pv, if phone then 0 else 1) else nil
+	local perk = if ui.perk then perkBox(ui.perk, if phone then 3 else 2) else nil
 	if phone then
 		local body = column("Body", content, UDim2.new(1, 0, 1, -footer), UDim2.new())
+		-- an open petition comes first on phones: its Fulfil is the card's one action (FORGE-07 L2 on #227)
+		put(petition, body)
 		put(opinion(model, true, 1), body)
-		put(intent(model, 2), body)
-		put(traits(model, 3), body)
-		put(people(model, 4), body)
-		put(memories(model, 2, 5), body)
+		put(perk, body)
+		put(intent(model, 4), body)
+		put(traits(model, 5), body)
+		put(people(model, 6), body)
+		put(memories(model, 2, 7), body)
 	else
 		local left = column("Left", content, UDim2.new(0.5, -5, 1, -footer), UDim2.new())
 		local right = column("Right", content, UDim2.new(0.5, -5, 1, -footer), UDim2.new(0.5, 5, 0, 0))
 		put(opinion(model, false, 1), left)
 		put(intent(model, 2), left)
 		put(traits(model, 3), left)
-		put(people(model, 1), right)
-		put(memories(model, 4, 2), right)
+		put(petition, right)
+		put(perk, right)
+		put(people(model, 3), right)
+		put(memories(model, 4, 4), right)
 	end
 	self.talk = nil
 	if talk.visible then

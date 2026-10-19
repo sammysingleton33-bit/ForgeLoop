@@ -294,6 +294,24 @@ function KingdomPanel:_overview(content: Instance, model: any, phone: boolean): 
 		crest.Parent = row
 	end
 	standings.Parent = scroll
+	-- How to play (FL-0138): the rules in six cards, any time (KingdomHudController passes onHelp when it is loaded)
+	if self._ui.onHelp then
+		local help = Button.new({
+			text = "How to play",
+			icon = "info",
+			variant = "secondary",
+			size = "regular",
+			onActivated = function()
+				if self._ui.onHelp then
+					self._ui.onHelp()
+				end
+			end,
+		})
+		help.instance.Name = "HowToPlay"
+		help.instance.LayoutOrder = 4
+		help.instance.Size = UDim2.new(1, 0, 0, 44)
+		help.instance.Parent = scroll
+	end
 	return scroll
 end
 
@@ -698,6 +716,7 @@ function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
 			banner = model.banner,
 			members = model.members,
 			standings = model.standings,
+			help = ui.onHelp ~= nil,
 			phone = phone,
 		})
 		if key ~= self._bodyKey then

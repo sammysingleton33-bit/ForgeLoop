@@ -16,7 +16,11 @@
 	a hit flash or a building hit near the camera) also calls combatNear(), so an attacker hears it too;
 	it rings out after MusicDirector's combatHoldSec without another.
 
-		MusicController:setPhase(phase) / :setResult("won" | "lost") / :update() -> state?
+	The Crown Arena (FL-0074 part 2b): CrowdStageController sets the scene "arena" from the intro to the
+	end of the crowning, so music.arena plays over everything but the match result; Results and Lobby
+	end any scene left set.
+
+		MusicController:setPhase(phase) / :setResult("won" | "lost") / :setScene(scene?) / :update() -> state?
 ]]
 
 local MusicDirector = require("@game/ReplicatedStorage/Forge/Experience/MusicDirector")
@@ -50,6 +54,7 @@ function Def.create(env: any, registry: any)
 		phase = nil :: string?,
 		result = nil :: string?,
 		alerts = {} :: { [string]: boolean }, -- raid / siege on (FL-0130)
+		scene = nil :: string?, -- "arena" during the Crown Arena (FL-0074)
 		state = nil :: string?,
 	}, MusicController)
 end
@@ -125,6 +130,7 @@ function MusicController:setPhase(phase: any)
 	end
 	if phase == "Results" or phase == "Lobby" then
 		self:clearAlerts()
+		self.scene = nil
 	end
 	if not self._ambience and self._audio and self._audio.setAmbience then
 		self._ambience = true
@@ -160,9 +166,31 @@ function MusicController:clearAlerts()
 	end
 end
 
+-- A scene that outranks the phase and battle music while set (nil ends it); the result still wins.
+function MusicController:setScene(scene: string?)
+	local value = if type(scene) == "string" and scene ~= "" then scene else nil
+	if value == self.scene then
+		return
+	end
+	self.scene = value
+	self:update()
+end
+
 function MusicController:setResult(result: string)
 	self.result = result
 	self:update()
+end
+
+-- A scene plays only when its track can (FORGE-07 #231 M1): with no asset for it yet, switching to it
+-- would fade the match music out and leave the arena silent, so the phase and battle music go on.
+-- Without an AudioController that can tell (specs, a headless boot) the scene is passed on.
+function MusicController:_scenePlays(): boolean
+	local audio = self._audio
+	if self.scene == nil or audio == nil or type(audio.hasMusic) ~= "function" then
+		return self.scene ~= nil
+	end
+	local ok, plays = pcall(audio.hasMusic, audio, self.scene)
+	return ok and plays == true
 end
 
 function MusicController:update(): string?
@@ -176,6 +204,7 @@ function MusicController:update(): string?
 		phase = self.phase,
 		inMatch = self.phase ~= "Lobby",
 		result = self.result,
+		scene = if self:_scenePlays() then self.scene else nil,
 	})
 	if state ~= nil and state ~= self.state then
 		self.state = state
