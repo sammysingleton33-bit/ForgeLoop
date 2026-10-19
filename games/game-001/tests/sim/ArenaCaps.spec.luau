@@ -7,6 +7,7 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
 local Caps = require("@game/ReplicatedStorage/Game/Arena/Caps")
+local Duel = require("@game/ReplicatedStorage/Forge/Config/Duel")
 
 local function passive(stat: string, magnitude: number, slot: boolean?, source: string?)
 	return { source = source or `passive:{stat}`, kind = "passive", stat = stat, magnitude = magnitude, slot = slot }
@@ -84,16 +85,29 @@ describe("Arena/Caps: what is refused, and why", function()
 	end)
 
 	it("healing over 8 % a trigger or 10 % a duel", function()
-		refused({ { source = "a", kind = "heal", magnitude = 0.09, duration = 6 } }, "per trigger")
+		refused(
+			{ { source = "a", kind = "heal", magnitude = 0.09, duration = 6, condition = "hpBelow:0.5" } },
+			"per trigger"
+		)
 		refused({
-			{ source = "a", kind = "heal", magnitude = 0.06, duration = 6 },
-			{ source = "b", kind = "heal", magnitude = 0.06, duration = 6 },
+			{ source = "a", kind = "heal", magnitude = 0.06, duration = 6, condition = "hpBelow:0.5" },
+			{ source = "b", kind = "heal", magnitude = 0.06, duration = 6, condition = "hpBelow:0.5" },
 		}, "per duel")
 	end)
 
 	it("a trigger inside the quiet start, an effect on the opponent, a negative or non-finite bonus", function()
 		refused(
-			{ { source = "a", kind = "trigger", stat = "damage", magnitude = 0.05, duration = 6, earliest = 5 } },
+			{
+				{
+					source = "a",
+					kind = "trigger",
+					stat = "damage",
+					magnitude = 0.05,
+					duration = 6,
+					earliest = 5,
+					condition = "hype",
+				},
+			},
 			"first 10 s"
 		)
 		refused(
@@ -108,7 +122,10 @@ describe("Arena/Caps: what is refused, and why", function()
 
 	it("the same trigger listed twice, a bad duration, a modifier list that is not a list", function()
 		refused({ trigger("a", "damage", 0.05), trigger("a", "damage", 0.05) }, "twice")
-		refused({ { source = "a", kind = "trigger", stat = "damage", magnitude = 0.05, duration = 0 } }, "duration")
+		refused(
+			{ { source = "a", kind = "trigger", stat = "damage", magnitude = 0.05, duration = 0, condition = "hype" } },
+			"duration"
+		)
 		refused("nope" :: any, "list")
 	end)
 
@@ -117,5 +134,37 @@ describe("Arena/Caps: what is refused, and why", function()
 		expect(#problems >= 2).toBe(true)
 		local _, first = Caps.check({ passive("damage", 0.06), trigger("a", "damage", 0.11) })
 		expect(first).toBe(problems[1])
+	end)
+end)
+
+describe("Arena/Caps: what DuelModel can evaluate", function()
+	it("refuses an active effect with no condition, a malformed one or an HP share outside (0, 1]", function()
+		local function withCondition(condition: any)
+			local m = trigger("perk:a", "damageReduction", 0.05)
+			m.condition = condition
+			return { m }
+		end
+		refused(withCondition(nil), "needs a known condition")
+		refused(withCondition(""), "needs a known condition")
+		refused(withCondition("hpBelow:"), "needs a known condition")
+		refused(withCondition("hpBelow:abc"), "needs a known condition")
+		refused(withCondition("hpBelow:0"), "needs a known condition")
+		refused(withCondition("hpBelow:1.5"), "needs a known condition")
+		refused(withCondition("whenever"), "needs a known condition")
+		refused(withCondition(5), "needs a known condition")
+		for _, condition in { "hpBelow:0.5", "hpBelow:1", "hpBelow:0.35", "staminaOut", "hype", "opponentHeavy" } do
+			expect((Caps.check(withCondition(condition)))).toBe(true)
+		end
+		refused({ { source = "perk:heal", kind = "heal", magnitude = 0.05, duration = 4 } }, "needs a known condition")
+		refused(
+			{ { source = "perk:warning", kind = "telegraph", lead = 0.2, uses = 1, duration = 8 } },
+			"needs a known condition"
+		)
+		-- a passive needs none
+		expect((Caps.check({ passive("damage", 0.02) }))).toBe(true)
+	end)
+
+	it("the duel's quiet start is never earlier than the cap's", function()
+		expect(Duel.rules.quietStart >= Caps.NUMBERS.quietStartSeconds).toBe(true)
 	end)
 end)

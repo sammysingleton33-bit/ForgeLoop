@@ -5,8 +5,10 @@
 	are the ones FORGE-05's fairness harness already uses (tests/fairness/CapsCheck.luau, DuelDouble.luau).
 ]]
 
-export type KingdomId = string
-export type EntityId = number
+local KingdomTypes = require("../Kingdom/Types")
+
+export type KingdomId = KingdomTypes.KingdomId
+export type EntityId = KingdomTypes.EntityId
 
 export type SupportTier = "adoring" | "loyal" | "divided" | "restless" | "hostile"
 export type SupportComponent = "reputation" | "happiness" | "stability" | "morale" | "loyalty" | "conduct" | "valour"
