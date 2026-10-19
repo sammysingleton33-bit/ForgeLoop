@@ -43,7 +43,8 @@ M = [
  ("FL-0071R", DR, 'elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" then', 'elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" or kind == "miss" or kind == "dodged" then', "sim/DuelRunner", "a swing that misses is not relayed"),
  ("FL-0071R", DR, 'local winner = if model.winner == "a" or model.winner == "b" then model.winner else "draw"', 'local winner = "a"', "sim/DuelRunner", "play a duel to the end"),
  # --- forfeits
- ("FL-0071R", DR, 'local winner = if otherGone then "draw" else other', 'local winner = other', "sim/DuelRunner", "both champions gone is a draw"),
- ("FL-0071R", DR, 'local winner = if otherGone then "draw" else other', 'local winner = "draw"', "sim/DuelRunner", "a champion who leaves loses"),
- ("FL-0071R", DR, 'if self._result ~= nil then\n\t\treturn out\n\tend\n\tlocal side = if type(userId) == "number"', 'if false then\n\t\treturn out\n\tend\n\tlocal side = if type(userId) == "number"', "sim/DuelRunner", "a champion who leaves loses"),
+ ("FL-0071R", DR, 'and now - self._forfeitAt <= self._cfg.simultaneousSeconds', 'and false', "sim/DuelRunner", "both champions gone is a draw"),
+ ("FL-0071R", DR, 'and now - self._forfeitAt <= self._cfg.simultaneousSeconds', 'and true', "sim/DuelRunner", "after the moment has passed"),
+ ("FL-0071R", DR, 'and result.side == side\n', 'and true\n', "sim/DuelRunner", "both champions gone is a draw"),
+ ("FL-0071R", DR, 'self._result = { side = other, reason = "forfeit" }', 'self._result = { side = side, reason = "forfeit" }', "sim/DuelRunner", "a champion who leaves loses"),
 ]

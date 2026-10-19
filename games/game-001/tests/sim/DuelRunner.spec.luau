@@ -8,7 +8,10 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
 local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
+local ArenaFlow = require("@game/ReplicatedStorage/Game/Arena/ArenaFlow")
 local DuelRunner = require("@game/ReplicatedStorage/Game/Arena/DuelRunner")
+
+local DuelRunnerAI = ArenaFlow.AI_USER_ID
 
 local TICK = ArenaConfig.tick
 
@@ -86,9 +89,9 @@ describe("DuelRunner: actions", function()
 			ok, reason = runner:act(1, "light", 0)
 			expect(ok).toBe(true)
 			expect(reason).toBeNil()
-			local aiRunner = newRunner(human(1), ai(-2))
+			local aiRunner = newRunner(human(1), ai(DuelRunnerAI.b))
 			aiRunner:step(0)
-			ok, reason = aiRunner:act(-2, "light", 0)
+			ok, reason = aiRunner:act(DuelRunnerAI.b, "light", 0)
 			expect(reason).toBe("not_champion") -- nobody drives the AI from outside
 			run(runner, clock, 2)
 		end
@@ -119,7 +122,7 @@ describe("DuelRunner: actions", function()
 	end)
 
 	it("refuses actions after the duel is over", function()
-		local runner = newRunner(ai(-1, 1), ai(-2, 0))
+		local runner = newRunner(ai(DuelRunnerAI.a, 1), ai(DuelRunnerAI.b, 0))
 		local clock = { t = 0 }
 		run(runner, clock, 2000)
 		expect(runner:finished()).toBe(true)
@@ -233,7 +236,7 @@ describe("DuelRunner: geometry", function()
 				return { x = 0, z = 0, fx = 1, fz = 0 }
 			end
 			return nil
-		end, nil, ai(-2))
+		end, nil, ai(DuelRunnerAI.b))
 		expect(vs).toBe(1)
 		local noPose = swingOnce(nil)
 		expect(noPose).toBe(1)
@@ -538,7 +541,7 @@ describe("DuelRunner: forfeits", function()
 		expect(side).toBe("b")
 		expect(reason).toBe("forfeit")
 		expect(runner:finished()).toBe(true)
-		expect(#runner:forfeit(2, clock.t)).toBe(0) -- already over
+		expect(#runner:forfeit(1, clock.t)).toBe(0) -- already over
 		expect(#runner:step(clock.t + 1)).toBe(0)
 	end)
 
@@ -547,15 +550,29 @@ describe("DuelRunner: forfeits", function()
 		runner:step(0)
 		expect(#runner:forfeit(77, 0)).toBe(0)
 		expect(runner:finished()).toBe(false)
-		runner._sides.b.gone = true
-		local events = runner:forfeit(1, 0)
+		expect(runner:forfeit(1, 1)[1].side).toBe("b")
+		expect(#runner:forfeit(1, 1.1)).toBe(0) -- the one who already left cannot make it a draw
+		expect(#runner:forfeit(77, 1.1)).toBe(0)
+		local events = runner:forfeit(2, 1 + ArenaConfig.simultaneousSeconds) -- the same moment
+		expect(#events).toBe(1)
 		expect(events[1].side).toBe("draw")
+		local side, reason = runner:result()
+		expect(side).toBe("draw")
+		expect(reason).toBe("forfeit")
+	end)
+
+	it("the winner leaving after the moment has passed changes nothing", function()
+		local runner = newRunner(human(1), human(2))
+		runner:step(0)
+		runner:forfeit(1, 1)
+		expect(#runner:forfeit(2, 1 + ArenaConfig.simultaneousSeconds + 0.01)).toBe(0)
+		expect((runner:result())).toBe("b")
 	end)
 
 	it("an AI cannot forfeit", function()
-		local runner = newRunner(human(1), ai(-2))
+		local runner = newRunner(human(1), ai(DuelRunnerAI.b))
 		runner:step(0)
-		expect(#runner:forfeit(-2, 0)).toBe(0)
+		expect(#runner:forfeit(DuelRunnerAI.b, 0)).toBe(0)
 		expect(runner:finished()).toBe(false)
 	end)
 end)
