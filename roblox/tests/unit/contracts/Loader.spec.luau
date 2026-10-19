@@ -247,6 +247,31 @@ describe("Contracts/Loader", function()
 			expect(registry.order).toEqual({})
 			expect(registry.failed).toEqual({})
 		end)
+
+		it(
+			"loadClient and bootClient isolate (CLIENT_OPTIONS), and a failed name is absent to find and an error to get",
+			function()
+				local log = {}
+				local env = MockEnv.new()
+				expect(Loader.CLIENT_OPTIONS).toEqual({ isolate = true })
+				local registry = Loader.loadClient(env, {
+					def(log, "Aaa", nil, {
+						onStart = function()
+							error("start boom")
+						end,
+					}),
+					def(log, "Zzz"),
+				})
+				expect(registry.order).toEqual({ "Aaa", "Zzz" })
+				expect(registry.failed.Aaa).toContain("Aaa:start() failed")
+				expect(registry:find("Aaa")).toBeNil()
+				expect(registry:find("Zzz")).toBeTruthy()
+				expect(function()
+					registry:get("Aaa")
+				end).toThrow("failed to boot")
+				expect(Loader.bootClient(env, nil).failed).toEqual({})
+			end
+		)
 	end)
 
 	describe("registry", function()

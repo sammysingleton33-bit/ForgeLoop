@@ -60,6 +60,10 @@ export type LoadOptions = { isolate: boolean? }
 
 local Loader = {}
 
+-- The client's options (Main.client boots with them through Loader.bootClient; the Boot spec loads the same
+-- way through Loader.loadClient, so the two cannot drift apart).
+Loader.CLIENT_OPTIONS = table.freeze({ isolate = true }) :: LoadOptions
+
 local function describeList(names: { string }): string
 	if #names == 0 then
 		return "none"
@@ -246,6 +250,9 @@ function Loader.load(env: any, definitions: { Definition }, options: LoadOptions
 
 	local registry = { order = order, failed = failed }
 	function registry.get(_self: any, name: string): any
+		if failed[name] ~= nil then
+			error(`Loader: service '{name}' failed to boot ({failed[name]})`, 2)
+		end
 		local instance = instances[name]
 		if instance ~= nil then
 			if constructing and not table.find(constructing.dependencies or {}, name) then
@@ -264,6 +271,9 @@ function Loader.load(env: any, definitions: { Definition }, options: LoadOptions
 	function registry.find(_self: any, name: string): any
 		if constructing then
 			error(`Loader: {constructing.name}.new() called registry:find('{name}'); call find in start() or later`, 2)
+		end
+		if failed[name] ~= nil then
+			return nil -- constructed but never started, or skipped: absent to its peers (it is still destroyed)
 		end
 		return instances[name]
 	end
@@ -374,6 +384,15 @@ end
 function Loader.boot(env: any, folders: any?, requireModule: ((any) -> any)?, options: LoadOptions?): Registry
 	local list: { any } = if folders == nil then {} elseif type(folders) == "table" then folders else { folders }
 	return Loader.load(env, Loader.discoverAll(list, requireModule), options)
+end
+
+-- The client: Loader.load / Loader.boot with CLIENT_OPTIONS (start isolation).
+function Loader.loadClient(env: any, definitions: { Definition }): Registry
+	return Loader.load(env, definitions, Loader.CLIENT_OPTIONS)
+end
+
+function Loader.bootClient(env: any, folders: any?, requireModule: ((any) -> any)?): Registry
+	return Loader.boot(env, folders, requireModule, Loader.CLIENT_OPTIONS)
 end
 
 return Loader

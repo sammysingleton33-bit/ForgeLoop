@@ -159,8 +159,11 @@ function Env.live(): Env
 		local line = Env.formatLog(level, message, fields)
 		if level == "info" then
 			print(line)
-		else
+		elseif level == "warn" then
 			warn(line)
+		else
+			-- a red line in the Output without stopping the caller (FORGE-07 L3 on #283: `warn` printed errors yellow)
+			task.spawn(error, line, 0)
 		end
 	end
 
