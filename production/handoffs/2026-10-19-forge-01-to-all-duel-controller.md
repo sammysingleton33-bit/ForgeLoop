@@ -18,7 +18,7 @@ It is the only sender of `Arena.Action`. `InputModeArenaController` (FORGE-04) c
 The server decides everything (reach, facing, stamina, the result); the client only asks. A missing remote leaves the controller inert (RemoteLink logs one info line).
 
 ## Evidence (headless only; no Studio)
-- `experience/DuelController` 10 specs: state feed and junk, GetState at start, batch unpacking in order, send for a champion, nothing from a spectator / an AI seat / other stages / before a state, non-actions refused, the burst of 8 and the refill, a fresh duel's full bucket, inert without remotes, destroy.
+- `sim/DuelController` 10 specs: state feed and junk, GetState at start, batch unpacking in order, send for a champion, nothing from a spectator / an AI seat / other stages / before a state, non-actions refused, the burst of 8 and the refill, a fresh duel's full bucket, inert without remotes, destroy.
 - `FL-0071D.py` 14 rows, all caught.
 
 ## Not done
