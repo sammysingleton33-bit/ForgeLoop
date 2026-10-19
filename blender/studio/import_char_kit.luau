@@ -290,6 +290,15 @@ local function importCitizenKit(world, settings)
 					end
 				end
 				strip(piece)
+				-- attributes and tags on the piece itself are payload too: remove them and list what was removed
+				for name in pairs(piece:GetAttributes()) do
+					table.insert(report.stripped, string.format("Attribute %s on %s", name, piece:GetFullName()))
+					piece:SetAttribute(name, nil)
+				end
+				for _, tag in ipairs(piece:GetTags()) do
+					table.insert(report.stripped, string.format("Tag %s on %s", tag, piece:GetFullName()))
+					piece:RemoveTag(tag)
+				end
 				piece.Name = id
 				if existing and existing ~= piece then
 					existing:Destroy()

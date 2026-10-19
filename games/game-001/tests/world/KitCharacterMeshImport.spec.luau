@@ -332,39 +332,49 @@ describe("import_char_kit.luau: the Studio import script, against fake trees", f
 		).toBeNil()
 	end)
 
-	it("strips everything but a SurfaceAppearance from a piece (D-057 (13) asset safety), and lists what it stripped", function()
-		local place = newPlace(data)
-		local piece = place.scene:FindFirstChild("tool_axe")
-		local keep = Instance.new("SurfaceAppearance")
-		keep.Name = "Palette"
-		keep.Parent = piece
-		local hidden: { Instance } = {}
-		for _, class in { "ModuleScript", "LocalScript", "Sound", "Decal", "ObjectValue", "StringValue", "Attachment" } do
-			local d = Instance.new(class)
-			d.Name = `Hidden{class}`
-			d.Parent = piece
-			table.insert(hidden, d)
+	it(
+		"strips everything but a SurfaceAppearance from a piece (D-057 (13) asset safety), and lists what it stripped",
+		function()
+			local place = newPlace(data)
+			local piece = place.scene:FindFirstChild("tool_axe")
+			local keep = Instance.new("SurfaceAppearance")
+			keep.Name = "Palette"
+			keep.Parent = piece
+			piece:SetAttribute("Payload", "fetch me") -- attributes and tags on the piece itself are stripped from the copy
+			piece:AddTag("RemoteLoader")
+			local hidden: { Instance } = {}
+			for _, class in
+				{ "ModuleScript", "LocalScript", "Sound", "Decal", "ObjectValue", "StringValue", "Attachment" }
+			do
+				local d = Instance.new(class)
+				d.Name = `Hidden{class}`
+				d.Parent = piece
+				table.insert(hidden, d)
+			end
+			local nested = Instance.new("Folder") -- a folder hiding a script: both go, once each
+			nested.Name = "Pack"
+			nested.Parent = piece
+			local inner = Instance.new("Script")
+			inner.Name = "Inner"
+			inner.Parent = nested
+			local report = runScript(place)
+			local copy = folderOf(place):FindFirstChild("tool_axe") :: Instance
+			expect(copy:FindFirstChild("Palette")).never.toBeNil() -- the palette stays
+			expect(copy:GetAttribute("Payload")).toBeNil()
+			expect(#copy:GetTags()).toBe(0)
+			expect(piece:GetAttribute("Payload")).toBe("fetch me") -- the original is untouched
+			expect(#copy:GetDescendants()).toBe(1)
+			expect(#report.stripped).toBe(#hidden + 2 + 2) -- the seven, the folder and the script inside it, the attribute and the tag
+			expect(report.scriptsRemoved).toBe(3) -- ModuleScript, LocalScript, Script
+			local listed = table.concat(report.stripped, "\n")
+			for _, d in hidden do
+				expect(string.find(listed, d.ClassName, 1, true)).never.toBeNil()
+			end
+			for _, d in hidden do
+				expect(piece:FindFirstChild(d.Name)).never.toBeNil() -- the original in the scene is untouched
+			end
 		end
-		local nested = Instance.new("Folder") -- a folder hiding a script: both go, once each
-		nested.Name = "Pack"
-		nested.Parent = piece
-		local inner = Instance.new("Script")
-		inner.Name = "Inner"
-		inner.Parent = nested
-		local report = runScript(place)
-		local copy = folderOf(place):FindFirstChild("tool_axe") :: Instance
-		expect(copy:FindFirstChild("Palette")).never.toBeNil() -- the palette stays
-		expect(#copy:GetDescendants()).toBe(1)
-		expect(#report.stripped).toBe(#hidden + 2) -- the seven, the folder and the script inside it (the folder's child is not listed twice)
-		expect(report.scriptsRemoved).toBe(3) -- ModuleScript, LocalScript, Script
-		local listed = table.concat(report.stripped, "\n")
-		for _, d in hidden do
-			expect(string.find(listed, d.ClassName, 1, true)).never.toBeNil()
-		end
-		for _, d in hidden do
-			expect(piece:FindFirstChild(d.Name)).never.toBeNil() -- the original in the scene is untouched
-		end
-	end)
+	)
 
 	it("ignores MeshParts that are not in the kit, deletes scripts found inside pieces, and counts both", function()
 		local place = newPlace(data)

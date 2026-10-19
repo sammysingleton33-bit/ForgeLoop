@@ -951,8 +951,12 @@ describe("mesh rig textures: a palette texture is allowed, never required", func
 			script.Parent = kit[id]
 			Instance.new("Attachment").Parent = kit[id]
 		end
+		kit.torso_01:SetAttribute("Payload", "fetch me") -- attributes and tags on the imported piece are payload too
+		kit.torso_01:AddTag("RemoteLoader")
 		MeshKit.install(data, assets)
 		local rig = meshRig("citizen", "idle", AZURE, { skin = 1, hair = 1, hairColor = 1, outfit = 1 })
+		expect(rig.Torso:GetAttribute("Payload")).toBeNil()
+		expect(#rig.Torso:GetTags()).toBe(0)
 		expect(rig.Torso.TextureID).toBe("rbxassetid://424242")
 		expect(rig.Torso:FindFirstChildWhichIsA("SurfaceAppearance")).never.toBeNil()
 		expect(rig.Torso:FindFirstChildWhichIsA("Script")).toBeNil()

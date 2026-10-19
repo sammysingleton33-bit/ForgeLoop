@@ -753,6 +753,13 @@ function CharacterMesh.build(
 				child:Destroy()
 			end
 		end
+		-- attributes and tags on the imported piece itself go too (the Kit sets its own below)
+		for name in part:GetAttributes() do
+			part:SetAttribute(name, nil)
+		end
+		for _, tag in part:GetTags() do
+			part:RemoveTag(tag)
+		end
 		local centre = vec(def.bbox_center) :: Vector3
 		part.Name = item.name
 		part.CFrame = CFrame.new(if item.mirrored then -centre.X else centre.X, centre.Y, centre.Z)
