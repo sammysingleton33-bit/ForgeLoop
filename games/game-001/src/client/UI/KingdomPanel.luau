@@ -661,8 +661,11 @@ function KingdomPanel:_frame(model: any, metrics: any)
 	close.instance.Position = UDim2.fromScale(1, 0.5)
 	close.instance.Name = "Close"
 	close.instance.Parent = header
+	-- Tablet (1024x768, 1280x720: the 560 px drawer): "Kingdom" + four labelled tabs + Close leave the Rivals tab
+	-- touching Close (FL-0138 desktop audit), so the title goes, as on phones; the open rail button names the drawer.
+	local titled = not phone and not (metrics.breakpoint == "tablet" and #tabs > #KingdomPanel.TABS)
 	self.panel = Panel.new({
-		title = if phone then nil else "Kingdom",
+		title = if titled then "Kingdom" else nil,
 		header = header,
 		size = UDim2.fromOffset(d.width, d.height),
 		position = UDim2.fromOffset(d.x, d.y),
