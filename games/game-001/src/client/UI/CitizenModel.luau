@@ -235,6 +235,9 @@ local function costEntries(raw: any): ({ any }, boolean)
 	return out, unknown
 end
 
+-- Shared with UI/PetitionModel (a petition's `need` is a ResourceBag too, shown the same way).
+CitizenModel.costs = costEntries
+
 -- Risks keep the payload's order. A risk without text has nothing to show and is ignored; one with a
 -- bad chance is still shown (label "?"): the rule is that every risk is visible before choosing.
 local function riskEntries(raw: any): ({ any }, number)

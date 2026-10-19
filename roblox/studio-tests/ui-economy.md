@@ -373,5 +373,19 @@ phone emulator (667 × 375) and with a gamepad.
    phone emulator the strip stays clear of the duel buttons (bottom right) and the crowd captions.
 8. After the duel the strip goes and the kingdom HUD returns.
 
+## U26 — Citizen card: arena perk preview and petitions (FL-0073; needs FORGE-01's `role` / `petition` on Sim.Inspect and `Kingdom.FulfilPetition`)
+Run on a desktop window and the phone emulator (667 × 375).
+1. Open the card of a key citizen (the blacksmith, healer, captain, provisioner, elder or merchant). A box
+   "<Role> · arena perk" says "At 80 loyalty, <Name> will lend you <Perk>" (below 80, with "N more loyalty"), or
+   "<Name> stands with you: <Perk> (Pledged)" with an "At 95: …" line, or "(Empowered)". The effect and the "When …"
+   line match the loadout picker's card for that perk (U24). An ordinary citizen has no such box.
+2. A key citizen with an open petition shows a "Petition" box: their request, its cost, the time left and Fulfil.
+   Before FORGE-01 serves `Kingdom.FulfilPetition` there is no Petition box at all (check this on today's build).
+3. With the treasury short: the missing amount in red ("Need 500 Gold") and Fulfil greyed; nothing happens on a tap.
+4. With enough: Fulfil shows a busy state, then "Petition fulfilled"; the treasury drops by the cost, the Petition box
+   goes and loyalty rises. A second quick tap sends nothing more.
+5. Let a petition lapse, then press Fulfil: the reason ("That petition has lapsed.") appears under the button.
+6. Phone emulator: the card is one scrolling column; Petition comes before the perk box, Fulfil is 44 px tall.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
