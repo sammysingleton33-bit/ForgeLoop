@@ -628,9 +628,13 @@ function KingdomHudController:_placeToasts(m: any)
 		then free.width - 10
 		else m.width - m.rail.right - m.rail.button - 12
 	local top = Layout.toastTop(m, drawerOpen, self._stackBottom)
-	self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), m.toast.width)
+	-- left of a phone drawer the free band can be narrower than a toast (a 667-wide phone: ~200 px; L7 audit)
+	local width = if drawerOpen and m.breakpoint == "phone"
+		then math.min(m.toast.width, math.max(160, free.width - 20))
+		else m.toast.width
+	self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), width)
 	-- FORGE-04's stack goes to the same spot, in screen px (#74)
-	self:_placeNotifications(right, top, m.toast.width, m.scale)
+	self:_placeNotifications(right, top, width, m.scale)
 end
 
 function KingdomHudController:setPlacing(on: boolean)
