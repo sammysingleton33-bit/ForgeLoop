@@ -318,6 +318,40 @@ describe("InputModeArenaController: keys, gamepad and DuelController:act (FL-007
 		expect(count(sent, "blockEnd")).toBe(0)
 	end)
 
+	it("sent fires once for each action act() sent: never for a refused, a throwing or a preview press", function()
+		local t = boot({ realDuel = true })
+		local fired = {}
+		t.arena.sent:connect(function(action)
+			table.insert(fired, action)
+		end)
+		local duel = state("duel", duellist(ME), duellist(RIVAL))
+		t.duel:setState(duel)
+		t.arena:onArenaState(duel)
+		t.arena:press("block", true, "key")
+		t.arena:press("block", false, "key")
+		expect(fired).toEqual({ "block", "blockEnd" })
+		for _ = 1, t.duel.BURST do
+			t.arena:press("light", true)
+		end
+		expect(#fired).toBe(t.duel.BURST) -- the 9th light, refused by the bucket, fired nothing
+		local throwing = boot({ fails = true })
+		local none = 0
+		throwing.arena.sent:connect(function()
+			none += 1
+		end)
+		throwing.arena:onArenaState(state("duel", duellist(ME), duellist(RIVAL)))
+		throwing.arena:press("light", true)
+		expect(none).toBe(0)
+		local preview = boot({ studio = true })
+		local previewed = 0
+		preview.arena.sent:connect(function()
+			previewed += 1
+		end)
+		preview.arena:preview(true)
+		preview.arena:press("light", true)
+		expect(previewed).toBe(0) -- nothing was sent
+	end)
+
 	it("the refused blockEnd: sent within 0.1 s, and no act() call at all once the duel is over (#259 L1)", function()
 		local t = boot({ realDuel = true })
 		local calls, sentAt = {}, nil
