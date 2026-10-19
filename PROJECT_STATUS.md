@@ -5,6 +5,7 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
 - **Operation Crownfall (D-053, 2026-10-18):** the owner's full-game directive. The default build becomes the real four-kingdom match (FL-0125), then walls and outposts, four distinct kingdoms and the war kit (B21), then the Crown Arena (B22), then a release candidate (B23). Missions: `production/handoffs/2026-10-18-forge-00-to-all-operation-crownfall.md`.
+- **Latest build: B20.2**, main `d03fd70`, delivered 2026-10-19 01:32 UTC. **This is the build to test** (it replaces B20.1). It is B20.1 plus the war, siege and raid notices (G9 events live) and the far-entity interest tiers (Sim.Focus), re-landed by #213. FORGE-00 verified both are in with an ancestor check. Not yet run in Studio. Checklist: the B14 handoff, B15 to B20.2 sections.
 - **Latest build: B20.1**, main `2f6dc35`, delivered 2026-10-19 01:20 UTC. B14 to B20.1 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B20.1 sections.
   - **New since B20:** human war and peace with the senior-ruler and newcomer rules (#195); the spectate screen (#185); arena duel input (#191) and crowd captions (#199); four kingdom architecture styles in the Kit (#200); a two-tine pickaxe on the fallback rig (#197); war, siege and outpost-lost conversation triggers in content (#196).
   - **Not in B20.1, despite the cut note:** the G9 war, siege and raid events (#198) and Sim.Focus with interest tiers (#201). Both were merged into stacked branches, not main, so they are being re-landed for **B20.2**. Until then the war, siege and raid notices stay silent and distant entities aren't tiered.
@@ -307,14 +308,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
+e60b4a9e 2026-10-19 studio-runs: B20.2 = d03fd70 (B20.1 + #213 war events and interest tiers, ancestor-checked); integration-log #213
+d03fd70f 2026-10-18 Merge PR #213: [FORGE-01] re-land #198 + #201 into main (war events, Sim.Focus interest tiers)
+742ae19d 2026-10-18 FORGE-07 STATUS 01:30 UTC: B20.1 merged (cut 2f6dc35); #206 READY; #207 red on StyLua (one file); #210, #211 reviewed
+47da3f27 2026-10-19 B20.1 correction: #198 and #201 merged into stacked bases, not main; studio-runs row, integration-log, merge-checklist base and ancestor checks, lesson
+d35bac15 2026-10-19 [FORGE-00] B20.1 delivered (2f6dc35): Now (with the #198/#201 stacked-merge gap), checklist rows M1-M5
 e7759498 2026-10-19 studio-runs: B20.1 = 2f6dc35 (human war/peace, war notices, spectate screen, interest tiers) + asks; integration-log #199
 2f6dc35b 2026-10-18 Merge PR #199: [FORGE-04] FL-0074 part 2a: the arena crowd you hear and read
 cd1aae31 2026-10-19 integration-log: B20.1 batch 2 (#191 #197 #202 #195 #198 #201 #185 #196 #203 #205 #204 #200)
-8df67b0e 2026-10-19 Merge remote-tracking branch 'origin/main' into HEAD
-9ae54272 2026-10-19 [FORGE-00] CONTRACTS v0.4-g11b: G8 Kingdom.Diplomacy, Kingdom.WarAsk, Kingdom.State.diplomacy (#195, D-054)
-85d8dc57 2026-10-18 Merge PR #200: [FORGE-02] FL-0127 part 2A: four kingdom architecture styles in the Kit
-f5d690ea 2026-10-18 Merge PR #204: [FORGE-05] FL-0134 G9: declare WarChanged, SiegeChanged, RaidChanged on the bus
-6447733a 2026-10-18 Merge PR #205: [FORGE-04] KingdomFeedback.spec: the war-event bus check holds before and after #204
 ```
 
 <!-- forge:auto:end -->

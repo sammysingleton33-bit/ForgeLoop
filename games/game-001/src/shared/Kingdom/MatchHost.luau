@@ -549,6 +549,14 @@ function MatchHost:_player(userId: number?): any?
 	return if userId then self._env.Players:GetPlayerByUserId(userId) else nil
 end
 
+-- The war events are new on the bus (FL-0134): FORGE-05 declares their names in Contracts/GameEvents. Until it has,
+-- they are simply not fired (the guarded bus raises on an undeclared name).
+local function fireDeclared(name: string, ...: any)
+	if table.find(GameEvents.EVENT_NAMES, name) then
+		(GameEvents :: any)[name]:fire(...)
+	end
+end
+
 -- CONTRACTS G9: each simulation fact becomes exactly one framework GameEvents firing.
 function MatchHost:_fireGameEvent(event: any)
 	local name = event.name
@@ -590,6 +598,23 @@ function MatchHost:_fireGameEvent(event: any)
 		GameEvents.UnitsRecruited:fire(self:_player(event.by), event.kingdomId, event.count)
 	elseif name == "ObjectiveCaptured" then
 		GameEvents.ObjectiveCaptured:fire(event.objectiveId, event.kingdomId)
+	elseif name == "WarDeclared" then
+		-- G9 WarChanged (FL-0134): the declarer first, the target second; `by` is the ruler's userId (nil: a governor)
+		fireDeclared("WarChanged", event.kingdomId, event.targetId, true, event.by)
+	elseif name == "PeaceMade" then
+		-- the acceptor first, the proposer second
+		fireDeclared("WarChanged", event.kingdomId, event.targetId, false, event.by)
+	elseif name == "SiegeChanged" then
+		fireDeclared("SiegeChanged", event.kingdomId, event.on, {
+			byKingdomIds = table.clone(event.byKingdomIds),
+			buildingId = event.buildingId,
+		})
+	elseif name == "RaidChanged" then
+		fireDeclared("RaidChanged", event.kingdomId, event.on, {
+			byKingdomIds = table.clone(event.byKingdomIds),
+			count = event.count,
+			position = Vector3.new(event.position.x, 0, event.position.z),
+		})
 	end
 end
 
