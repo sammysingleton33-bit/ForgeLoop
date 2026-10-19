@@ -134,6 +134,121 @@ describe("Contracts/Loader", function()
 		end)
 	end)
 
+	describe("isolate (the client; FORGE-00 2026-10-19, interfaces §3 migration note)", function()
+		local function errorLogs(env)
+			local out = {}
+			for _, entry in env.mock.logs do
+				if entry.level == "error" then
+					table.insert(out, entry.message)
+				end
+			end
+			return out
+		end
+
+		it("a new() that throws is logged by name and the others still construct and start", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				def(log, "Aaa"),
+				{
+					name = "Bad",
+					new = function()
+						error("boom")
+					end,
+				},
+				def(log, "Ccc"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Aaa", "Ccc" })
+			expect(log).toEqual({ "new Aaa", "new Ccc", "start Aaa", "start Ccc" })
+			expect(registry.failed.Bad).toContain("Bad.new() failed")
+			expect(registry.failed.Bad).toContain("boom")
+			expect(#errorLogs(env)).toBe(1)
+			expect(errorLogs(env)[1]).toContain("Bad.new() failed")
+			expect(registry:find("Bad")).toBeNil()
+		end)
+
+		it("a dependent of a failed definition is skipped with its own error line, never built", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				{
+					name = "Bad",
+					new = function()
+						return nil
+					end,
+				},
+				def(log, "Needs", { "Bad" }),
+				def(log, "Later", { "Needs" }),
+				def(log, "Free"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Free" })
+			expect(log).toEqual({ "new Free", "start Free" })
+			expect(registry.failed.Bad).toContain("returned nil")
+			expect(registry.failed.Needs).toBe("Loader: Needs skipped: dependency Bad failed")
+			expect(registry.failed.Later).toBe("Loader: Later skipped: dependency Needs failed")
+			expect(#errorLogs(env)).toBe(3)
+		end)
+
+		it("a start() that throws is logged and the later starts still run; its dependents are not started", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				def(log, "Aaa", nil, {
+					onStart = function()
+						error("start boom")
+					end,
+				}),
+				def(log, "Bbb", { "Aaa" }),
+				def(log, "Ccc"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Aaa", "Bbb", "Ccc" }) -- all constructed
+			expect(log).toEqual({ "new Aaa", "new Bbb", "new Ccc", "start Aaa", "start Ccc" })
+			expect(registry.failed.Aaa).toContain("Aaa:start() failed")
+			expect(registry.failed.Bbb).toBe("Loader: Bbb skipped: dependency Aaa failed")
+			expect(registry.failed.Ccc).toBeNil()
+			expect(#errorLogs(env)).toBe(2)
+		end)
+
+		it("a new() that yields counts as a failure for that definition only", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				{
+					name = "Sleepy",
+					new = function()
+						coroutine.yield()
+						return {}
+					end,
+				},
+				def(log, "Zzz"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Zzz" })
+			expect(registry.failed.Sleepy).toContain("yielded")
+		end)
+
+		it("without the option one failure still stops the boot (the server), and nothing is logged", function()
+			local env = MockEnv.new()
+			expect(function()
+				Loader.load(env, {
+					{
+						name = "Bad",
+						new = function()
+							error("boom")
+						end,
+					},
+				})
+			end).toThrow("Bad.new() failed")
+			expect(#errorLogs(env)).toBe(0)
+		end)
+
+		it("boot passes the option through", function()
+			local env = MockEnv.new()
+			local registry = Loader.boot(env, nil, nil, { isolate = true })
+			expect(registry.order).toEqual({})
+			expect(registry.failed).toEqual({})
+		end)
+	end)
+
 	describe("registry", function()
 		it("get() returns declared dependencies during new() and errors for missing services", function()
 			local seen

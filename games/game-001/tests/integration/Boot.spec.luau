@@ -259,4 +259,45 @@ describe("game-001 headless join (FORGE-00 P0, 2026-10-19)", function()
 		client:destroy()
 		server:destroy()
 	end)
+
+	-- Client start isolation (FORGE-00, 2026-10-19; interfaces §3 migration note; Main.client boots with
+	-- { isolate = true }): a controller that throws in start() is logged by name and the HUD still mounts.
+	it("one controller throwing in start() is logged by name and the KingdomHUD still mounts, enabled", function()
+		local env = MockEnv.new({
+			seed = 1,
+			localPlayer = { userId = 1001, name = "Ruler" },
+			sharedModules = { Remotes = remotesByArea() },
+		})
+		local server = Loader.load(env, definitionsIn(SERVER_TREES))
+		server:get("KingdomService").adapter = characterAdapter(env)
+		local playerGui = env.newInstance("PlayerGui")
+		playerGui.Parent = env.Players.LocalPlayer
+		local definitions = definitionsIn(CLIENT_TREES)
+		-- sorts first by name among the dependency-free controllers, so it starts before the HUD
+		table.insert(definitions, {
+			name = "AaBrokenController",
+			dependencies = {},
+			new = function()
+				return {
+					start = function()
+						error("engine member missing (a Studio-only failure)")
+					end,
+				}
+			end,
+		})
+		local client = Loader.load(env, definitions, { isolate = true })
+		env.mock:advance(3)
+		expect(client.order[1]).toBe("AaBrokenController")
+		expect(client.failed.AaBrokenController).toContain("AaBrokenController:start() failed")
+		expect(client:get("KingdomHudController")._mounted).toBe(true)
+		local gui = playerGui:FindFirstChild("KingdomHUD")
+		expect(gui).toBeTruthy()
+		expect((gui :: any).Enabled).toBe(true)
+		local errors = errorLogs(env)
+		expect(#errors).toBe(1)
+		expect(errors[1]).toContain("AaBrokenController:start() failed")
+		expect(env.mock.threadErrors).toEqual({})
+		client:destroy()
+		server:destroy()
+	end)
 end)
