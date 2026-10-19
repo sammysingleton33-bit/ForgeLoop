@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g11d, 2026-10-19; G12 rows are effective as their PRs merge (#208: Types, Caps, DuelModel, config Duel), the rest is a draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11e, 2026-10-19; G12 rows are effective as their PRs merge (#208: Types, Caps, DuelModel, config Duel; #209: SupportModel, config Support), the rest is a draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -419,7 +419,7 @@ Kit.characterMeshStatus(): { pieces: number, assemblies: number, source: boolean
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
 
 ## G12. Crown Arena and support (D-029, D-053; design: `design/crown-arena.md`; effective row by row as the arena PRs merge)
-**Effective on main since #208 (v0.4-g11d):** the G12.1 type block, `DuelModel` and `Caps` in G12.2, config `Duel`, and G12.3. **Still a draft** (shapes to build against; a change is announced in a handoff): SupportModel (#209 pending), the G12.2 services, the G12.4 remotes, the G12.5 events and the G12.6 hooks. A row becomes effective when the PR that implements it merges (Crownfall handoff 2026-10-18).
+**Effective on main since #208 (v0.4-g11d):** the G12.1 type block, `DuelModel` and `Caps` in G12.2, config `Duel`, and G12.3. **Effective on main since #209 (v0.4-g11e):** `SupportModel` in G12.2 and config `Support`. **Still a draft** (shapes to build against; a change is announced in a handoff): the G12.2 services, the G12.4 remotes, the G12.5 events and the G12.6 hooks. A row becomes effective when the PR that implements it merges (Crownfall handoff 2026-10-18).
 
 ### G12.1 Types (`src/shared/Arena/Types.luau`, FORGE-01; on main since #208)
 ```lua
@@ -443,7 +443,7 @@ export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "d
 -- (v0.4-g11d) the duel types G12.2 names; FORGE-05's fairness harness uses the same shapes
 export type Modifier = { source: string, kind: string, stat: string?, magnitude: number?, duration: number?,
 	condition: string?, earliest: number?, lead: number?, uses: number?, slot: boolean?, affectsOpponent: boolean? }
-	-- one support effect on one duellist. source, e.g. "tier:adoring", "perk:reforge", "crowdRally", "fineWares";
+	-- one support effect on one duellist. source, e.g. "tier:adoring", "perk:reforge", "perk:fineWares", "crowdRally" (SupportModel's, v0.4-g11e);
 	--   modifiers with the same source are one trigger and one slot (Crowd Rally is two effects)
 	-- kind: "passive" | "trigger" | "heal" | "telegraph"; stat (passive, trigger): "damageReduction" | "damage" | "staminaRegen"
 	-- magnitude: a fraction (+6 % = 0.06; heal: of max HP); duration: seconds (trigger, heal, telegraph)
@@ -461,9 +461,38 @@ export type DuelEvent = { t: number, kind: string, side: string, data: { [string
 ### G12.2 Server APIs (FORGE-01)
 ```lua
 -- pure, deterministic, no Roblox APIs, injected clock/RNG where needed; FORGE-05's harness requires them directly
--- SupportModel: not on main yet (#209 pending)
-SupportModel.score(samples: { SupportSample }, ruler: RulerRecord, config): (number, SupportTier, { [SupportComponent]: number })
-SupportModel.offers(keyCitizens: { KeyCitizenRecord }, tier: SupportTier, config): ({ TriggerOffer }, slots: number)
+-- SupportModel (src/shared/Arena/SupportModel.luau, on main since #209): no clock and no randomness (v0.4-g11e)
+-- config? is a whole config Support table (not merged); nil = config Support. SupportModel exports two types:
+export type Sample = { t: number, components: { [string]: number } }   -- components: SupportComponent → 0..100
+export type KeyCitizen = { role: string, citizenId: number?, name: string?, loyalty: number, alive: boolean }   -- role: a KeyRole
+SupportModel.score(samples: { Sample }, ruler: { now: number }, config?): (number, SupportTier, { [string]: number })
+	-- (v0.4-g11e) only samples with a finite t ≤ now count, each equally, in any order. A missing, non-number or
+	-- non-finite value counts as 50; the rest is clamped 0..100. Per componentOrder component: wholeMatchShare × the mean
+	-- of those samples + (1 − wholeMatchShare) × the mean of those in (now − recentSeconds, now], or the whole mean alone
+	-- when none is that recent; no sample, or a non-finite now, gives 50. score = those values averaged by
+	-- components[c].weight, clamped 0..100; tier = tierOf(score); breakdown = each component's value
+SupportModel.tierOf(score: number, config?): SupportTier
+	-- (v0.4-g11e) the first tier in tierOrder whose min ≤ score, else the last; a non-finite score (NaN, ±inf) reads as 50
+SupportModel.trend(samples: { Sample }, ruler: { now: number }, config?): number
+	-- (v0.4-g11e) the mean one-sample score (that sample's weighted mean) in (now − trendSeconds, now] minus the mean in
+	-- (now − 2 × trendSeconds, now − trendSeconds]; 0 when either window is empty
+SupportModel.offers(keyCitizens: { KeyCitizen }, tier: SupportTier, config?): ({ TriggerOffer }, slots: number)
+	-- (v0.4-g11e) each role keeps its first living key citizen; in roleOrder, that citizen's perk is offered if their
+	-- loyalty ≥ offer.pledgedLoyalty (power "pledged", "empowered" from offer.empoweredLoyalty), with citizenId,
+	-- citizenName (= name), role and loyalty. condition is the perk's `when` text (not the modifier condition); effect
+	-- is its `effect` text with {magnitude} filled ("6 %"; a telegraph's lead "0.15"). Then, if the tier has crowdRally,
+	-- a crowdRally offer: no citizen, power "empowered", crowdRally's `when` and `effect`. Perks are offered at every
+	-- tier; slots is the tier's slot count (Hostile 0). An unknown tier errors.
+SupportModel.modifiers(tier: SupportTier, picks: { { trigger: string, power: string } }, config?): { Modifier }
+	-- (v0.4-g11e) the list for DuellistSetup.modifiers. First the tier's passive blessing: one passive per stat in its
+	-- `passive` (order damageReduction, damage, staminaRegen; source "tier:<tier>"; Adoring and Loyal have two, the rest
+	-- none). Then per pick, source "perk:<trigger>" and the perk's numbers, with perk[power] as magnitude or lead:
+	--   trigger: stat, magnitude, duration, condition; heal: magnitude, duration, condition;
+	--   telegraph: lead, uses, duration, condition (no magnitude); passive: stat, magnitude, slot = true.
+	-- crowdRally: source "crowdRally", two triggers (damageReduction, staminaRegen) with its duration and condition;
+	-- power is not read. No modifier has earliest (= the quiet start).
+	-- Errors on an unknown tier, more picks than slots, crowdRally on a tier without it, an unknown trigger, or a power
+	-- whose perk value is not a number. It does not run Caps.check, refuse a repeated pick or check picks against offers.
 -- DuelModel (src/shared/Arena/DuelModel.luau, on main since #208): no clock and no randomness; re-exports DuelInput, DuelEvent
 DuelModel.new(config?, a: DuellistSetup, b: DuellistSetup, seed: number): DuelState
 	-- (v0.4-g11d) config: config Duel `{ rules, weapons, armour }`, or its `rules` alone (weapons and armour then come from
@@ -490,7 +519,7 @@ Caps.NUMBERS                                                         -- G12.3 as
 	--   healPerTrigger, quietStartSeconds, stats = { "damageReduction", "damage", "staminaRegen" } }; bonuses and healing
 	--   are fractions (0.05 = +5 %), maxTriggers a count, the rest seconds
 -- services (not on main yet)
-LeadershipService:record(kingdom: KingdomId, userId: number?, act: string, magnitude: number?)  -- act ids from config Support.luau
+LeadershipService:record(kingdom: KingdomId, userId: number?, act: string, magnitude: number?)  -- act ids: the keys of config Support `acts` (v0.4-g11e)
 LeadershipService:getMoments(kingdom: KingdomId, userId: number?, limit: number): { LeadershipMoment }
 SupportService:getView(kingdom: KingdomId, userId: number): SupportView
 ArenaService:getState(): ArenaState
@@ -498,7 +527,7 @@ ArenaService.stageChanged: Signal<(ArenaState)>
 DuelService.events: Signal<(duelId: string, DuelEvent)>
 ```
 - Producers of acts (BuildingService, ProductionService, MilitaryService, CitizenService, Interaction) call `LeadershipService:record` through `registry:find` and never compute support themselves.
-- Support is computed only by SupportModel. DuelService runs `Caps.check` on each duellist's whole modifier list before `DuelModel.new`, because the caps are per duellist and per duel. A refusal is logged and the modifier dropped, never applied. DuelModel does not validate the modifiers it is given. `Caps.check` does not require a `condition`, but DuelModel's `step` errors as soon as a trigger, heal or telegraph without one may fire. So every non-passive modifier needs a `condition` (v0.4-g11d).
+- Support is computed only by SupportModel. DuelService (not built yet) builds each duellist's list with `SupportModel.modifiers` (v0.4-g11e). That function does not check picks against offers or refuse a repeated pick, so the caller enforces G12.4 `Arena.Choose` (triggers distinct, ⊆ own offers, ≤ slots). DuelService runs `Caps.check` on each duellist's whole modifier list before `DuelModel.new`, because the caps are per duellist and per duel. A refusal is logged and the modifier dropped, never applied. DuelModel does not validate the modifiers it is given. `Caps.check` does not require a `condition`, but DuelModel's `step` errors as soon as a trigger, heal or telegraph without one may fire. So every non-passive modifier needs a `condition` (v0.4-g11d). With config Support, every non-passive SupportModel modifier has one (v0.4-g11e).
 - Trigger conditions are evaluated inside DuelModel, from each modifier's `condition` (v0.4-g11d; this replaces "by DuelService from DuelModel events"):
   - **Latching.** Conditions latch per side and stay met. `staminaOut` and `hype` latch when they happen, also in the quiet start. `hpBelow:<share>` (HP share strictly below `<share>`) latches the first time it holds at a step where a trigger with that condition may fire. So a `staminaOut` or `hype` met in the quiet start fires as soon as the trigger may.
   - **`opponentHeavy`** is not latched. It fires on the opponent's first heavy wind-up once the trigger may fire.
@@ -513,6 +542,16 @@ DuelService.events: Signal<(duelId: string, DuelEvent)>
   - `armour`: `{ [Armour]: { reduction, regen, dodgeCost } }`
 
   Every number is PROVISIONAL and is tuned only from the fairness harness report (FL-0076). The caps are not in it, except `rules.quietStart`: that is G12.3's quiet start and must not be set below 10 s. Nothing checks this yet.
+- Config `Support.luau` (`ReplicatedStorage.Forge.Config.Support`, FORGE-01; v0.4-g11e) has this shape:
+  - `components`: `{ [SupportComponent]: { weight, scope } }` (weights add up to 100; `scope` is `"kingdom"`, or `"ruler"` for conduct and valour) and `componentOrder`
+  - `sampling`: `{ intervalSeconds, wholeMatchShare, recentSeconds }` and `trendSeconds`
+  - `tierOrder` and `tiers`: `{ [SupportTier]: { min, passive: { [stat]: fraction }, slots, crowdRally: boolean } }`
+  - `offer`: `{ pledgedLoyalty, empoweredLoyalty }`; `roleOrder` and `roles`: `{ [KeyRole]: { perk: TriggerId, building, petition } }`
+  - `perks` (every TriggerId but `crowdRally`): `{ kind, stat?, pledged, empowered, duration?, uses?, condition?, effect, when }`. `pledged`/`empowered` are the magnitude, or a telegraph's lead in seconds. `condition` is the DuelModel condition and `when` the player-facing text. `effect` is player-facing text with a `{magnitude}` placeholder; its other numbers ("for 6 s") are written out. `fineWares` (a passive) has no duration or condition.
+  - `crowdRally`: `{ duration, damageReduction, staminaRegen, condition, effect, when }` (`effect` is fixed text)
+  - `acts`: `{ [actId]: { component, delta, text } }` (the ruler decisions LeadershipService records; `delta` is signed, `text` pre-authored) and `valourCapPerMinute`
+
+  Every number is PROVISIONAL (BRIEF §16.9). Trim C (FORGE-00 ruling, FL-0076; pinned by `tests/sim/SupportModel.spec`): Adoring's passive equals Loyal's (+1 % damage reduction, +1 % stamina regeneration) and Field Remedy heals 3 % / 5 % of max HP. The same spec checks that every tier × set of distinct picks up to its slots × power (one power per set) passes `Caps.check`. SupportModel does not read `scope`, `intervalSeconds`, `roles[r].building`/`petition`, `acts` or `valourCapPerMinute`; they are for LeadershipService and SupportService (not built yet).
 - End of a duel (v0.4-g11d):
   - **KO** (`ko`): the side still above 0 HP wins. Defeat is a kneel and a yield (presentation).
   - **Time cap.** At `rules.timeCap` the higher HP wins (`timeCap`). A tie starts sudden death, with all damage × `rules.suddenDeathDamage`.
@@ -560,7 +599,7 @@ DuelModel events (`DuelEvent`; `t` is duel seconds; v0.4-g11d). `Arena.Events` (
 |---|---|---|
 | `Arena.State` / `Arena.GetState` | serverEvent / function | `ArenaState` (public to every player) |
 | `Arena.Vote` | function | `(candidateUserId: integer)` → `boolean`; co-rulers of a qualified kingdom, `vote` stage only |
-| `Arena.Choose` | function | `(weapon: enum Weapon, armour: enum Armour, triggers: array(enum TriggerId, 3))` → `(ok, reason?)`; champion only, `loadout` stage, triggers ⊆ own offers and ≤ slots |
+| `Arena.Choose` | function | `(weapon: enum Weapon, armour: enum Armour, triggers: array(enum TriggerId, 3))` → `(ok, reason?)`; champion only, `loadout` stage, triggers distinct, ⊆ own offers and ≤ slots (v0.4-g11e) |
 | `Arena.Action` | event | `(action: enum DuelAction)`; champion only, `duel` stage; burst 8, 12/s |
 | `Arena.Events` | serverEvent | batched `{ { t: number, kind: string, side: "a" \| "b" \| "draw", data: { [string]: any }? } }` (hit, parry, stagger, staminaOut, heavyWindup, triggerFired, hype, ended), built from DuelModel's events (G12.2), which also has `miss` and `dodged`. FORGE-00 ruling 2026-10-18 (v0.4-g11d): `ended` has side = the winner, or `"draw"` when the duel was cancelled or both champions dropped, and the match result then falls back to Crown Points (G3 `arenaEnded(nil)`). DuelModel's own `draw` and `hardCap` endings also have side `"draw"` (G12.2). `triggerFired` has `data = { trigger: TriggerId, citizenName: string? }`. DuelModel's `triggerFired` carries only `{ source }`, so the server adds both fields before sending (not built yet). The `data` of the other kinds is not fixed yet. |
 | `Kingdom.Support` / `Kingdom.GetSupport` | serverEvent to the ruler / function | the caller's `SupportView` (in-match meter, perk previews) |
@@ -784,6 +823,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11e (2026-10-19) FORGE-00: G12 follows #209 as merged (FORGE-01 FL-0070). `SupportModel` and config `Support` are effective. G12.2 replaces the draft SupportModel rows with the real ones: `score(samples: { Sample }, ruler: { now }, config?)`, `tierOf`, `trend`, `offers(keyCitizens: { KeyCitizen }, tier, config?)` and `modifiers(tier, picks, config?)`. `modifiers` builds the `{ Modifier }` list for `DuellistSetup.modifiers` (sources `tier:<tier>`, `perk:<trigger>`, `crowdRally`; no Caps, offer or repeat check). The draft types `SupportSample`, `RulerRecord` and `KeyCitizenRecord` were never in code; SupportModel exports `Sample` and `KeyCitizen`. G12.2 adds the config `Support` shape with trim C (FL-0076): Adoring's passive equals Loyal's (+1 %/+1 %) and Field Remedy heals 3 %/5 %. G12.1's `Modifier` source example reads `perk:fineWares`. `Arena/Types`, G12.3 and the draft services are unchanged. G12.4 `Arena.Choose` triggers must be distinct (draft row). Additive (the replaced rows were a draft).
 - v0.4-g11d (2026-10-19) FORGE-00: G12 follows #208 as merged. Its Types, Caps, DuelModel and config `Duel` rows are effective; the rest stays a draft (SupportModel #209 is not on main). G12.1 adds `Modifier`, `DuellistSetup`, `DuelInput` and `DuelEvent`. G12.2 has the real signatures (`DuelModel.new(config?)`, `view`, `snapshot`, `CONFIG`/`WEAPONS`/`ARMOUR`; `Caps.problems`, `Caps.NUMBERS`), DuelModel's event kinds and data, config `Duel` and the end-of-duel rules. G12.2 also corrects the wording: trigger conditions are evaluated inside DuelModel, not by DuelService, and every non-passive modifier needs a `condition`. G12.3 numbers are unchanged; new notes say which rows `Caps` checks and which DuelModel applies. G12.4 `Arena.Events` (FORGE-00 ruling 2026-10-18): `ended` side may be `"draw"` (Crown Points decide), and `triggerFired` data is `{ trigger, citizenName? }`. G12.5 `DuelEnded` ids are nil on a draw. Additive, except that `side: "draw"` is a new value consumers must handle.
 - v0.4-g11d (2026-10-19) FORGE-00: G10 imported-mesh rigs (D-057, FL-0135, #207). `Kit.character` and `Kit.portrait` return a segmented MeshPart rig (Root + ≤ 16 MeshParts, the same Motor6D names and tree) when the kit data has pieces and `Forge.Assets.CitizenKit` holds every piece that build needs. Otherwise they return the part-built rig, whole, chosen per build. The ≤ 11-part cap now applies to the part-built rig only. The converter and the specs check a per-rig triangle budget: citizens 1,000 (body 900, tool 150), soldiers and governors 1,500. G10 now documents `Kit.setAssetSource`, `Kit.characterMeshAvailable` and `Kit.characterMeshStatus`, and the client sets the source in `FeedbackKitController` (#211). G10's `Kit.character` line now shows G13.2's `look` and `kingdom`, and the G13.8 portrait and G4 rendering wording follow. No signature changed. The committed kit data is empty, so every rig is still part-built. Additive.
 - v0.4-g11c (2026-10-19) FORGE-00: G9 `WarChanged`, `SiegeChanged`, `RaidChanged` (FL-0134) and G8 `Sim.Focus` with the full-match interest tiers (`Match.interest`, D-055 (2), (5)). Additive. Re-landed on main by #213 (#198 + #201).
