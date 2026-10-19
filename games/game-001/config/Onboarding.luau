@@ -80,8 +80,8 @@ return table.freeze({
 	idleHints = {
 		Founding = "Tap a citizen with a request, or build on a free plot.",
 		Expansion = "Upgrade your keep from the kingdom panel.",
-		Conflict = "Declare war from the Kingdom panel, or recruit soldiers to guard your keep.",
-		Endgame = "Earn Crown Points: the top 2 kingdoms fight for the crown in the Crown Arena.",
+		Conflict = "Your kingdom can declare war from the Kingdom panel, or recruit soldiers.",
+		Endgame = "Earn Crown Points: they decide who takes the crown.", -- true with or without the arena
 	},
 	flows = {
 		{
@@ -173,7 +173,9 @@ return table.freeze({
 			match = { phase = "Conflict" },
 		}, { event = "WarChanged", match = { role = "declarer", atWar = true } }, {
 			title = "Conflict: war is open",
-			body = "Declare war on a rival from the Kingdom panel, or propose peace. Peace needs both sides to agree.",
+			-- "your kingdom": only the senior ruler declares; a junior ruler's request asks them (D-054)
+			body = "Your kingdom can now declare war or propose peace from the Kingdom panel.",
+			target = { kind = "ui", name = "HUD.KingdomButton" }, -- FORGE-03's Kingdom menu button (#232)
 		}),
 		tip("tip_war_on_you", "WarOnYou", {
 			event = "WarChanged",
@@ -181,20 +183,24 @@ return table.freeze({
 		}, { event = "WarChanged", match = { atWar = false } }, {
 			title = "A rival declared war on you",
 			body = "Recruit soldiers to guard your keep, or propose peace from the Kingdom panel.",
+			target = { kind = "ui", name = "HUD.KingdomButton" },
 		}),
 		tip("tip_siege", "DefendKeep", {
 			event = "SiegeChanged",
 			match = { role = "defender", on = true },
 		}, { event = "SiegeChanged", match = { role = "defender", on = false } }, {
 			title = "Your keep is under siege!",
-			body = "Press G or tap the alert button on the rail to see it, then send your soldiers to defend.",
+			-- the marked rail button is FORGE-03's alert item (labelled Raid until it reads Siege for a siege)
+			body = "Press G or tap the marked button to see it, then send soldiers to defend.",
+			target = { kind = "ui", name = "HUD.RaidButton" },
 		}),
 		tip("tip_raid", "StopRaid", {
 			event = "RaidChanged",
 			match = { role = "defender", on = true },
 		}, { event = "RaidChanged", match = { role = "defender", on = false } }, {
 			title = "Raiders in your lands!",
-			body = "Press G or tap the Raid button on the rail to see them, then send soldiers to drive them off.",
+			body = "Press G or tap the marked Raid button to see them, then send soldiers.",
+			target = { kind = "ui", name = "HUD.RaidButton" },
 		}),
 		tip("tip_ram", "BringRam", {
 			event = "SiegeChanged",
@@ -208,7 +214,7 @@ return table.freeze({
 			match = { phase = "Endgame" },
 		}, { event = "MatchEnded" }, {
 			title = "Endgame: the race for the crown",
-			body = "When time runs out, the 2 kingdoms with the most Crown Points fight one duel in the Crown Arena.",
-		}),
+			body = "When time runs out, the top 2 kingdoms by Crown Points duel in the Crown Arena.",
+		}, "ArenaService"), -- FORGE-01's arena (FL-0071): until it is on the server the tip is passed over
 	},
 })

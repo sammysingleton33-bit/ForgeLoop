@@ -58,4 +58,7 @@ M = [
  ("FL-0137", CF, '}, "MilitaryService"),', '}),', GS, "without FORGE-01's military the ram tip is passed over", "game"),
  ("FL-0137", CF, 'local TIP_SEC = 12', 'local TIP_SEC = 30', GS, "six full-match tips", "game"),
  ("FL-0137", CF, '\t\ttip = true,\n', '\n', GS, "six full-match tips", "game"),
+ # --- FORGE-07 #236 review: the arena tip waits for ArenaService; the war tips mark the Kingdom button
+ ("FL-0137", CF, '}, "ArenaService"),', '}),', GS, "without FORGE-01's ArenaService the Crown Arena tip", "game"),
+ ("FL-0137", CF, 'target = { kind = "ui", name = "HUD.KingdomButton" }, -- FORGE-03', 'target = nil, -- FORGE-03', GS, "six full-match tips", "game"),
 ]

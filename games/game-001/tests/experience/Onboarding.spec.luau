@@ -132,6 +132,16 @@ describe("game-001 VS-1 onboarding config", function()
 			match = { role = "defender", on = false },
 		})
 		expect(byId.tip_ram.steps[1].requires).toBe("MilitaryService")
+		expect(byId.tip_crown_arena.steps[1].requires).toBe("ArenaService") -- no arena on the server: no promise of one
+		-- war and siege tips mark FORGE-03's HUD buttons (#232: HUD.KingdomButton, HUD.RaidButton)
+		expect(byId.tip_war_open.steps[1].hint.target).toEqual({ kind = "ui", name = "HUD.KingdomButton" })
+		expect(byId.tip_war_on_you.steps[1].hint.target).toEqual({ kind = "ui", name = "HUD.KingdomButton" })
+		expect(byId.tip_siege.steps[1].hint.target).toEqual({ kind = "ui", name = "HUD.RaidButton" })
+		expect(byId.tip_raid.steps[1].hint.target).toEqual({ kind = "ui", name = "HUD.RaidButton" })
+		-- every body fits the card's two lines (about 80 characters; FORGE-07 #236 L1)
+		for _, flow in byId do
+			expect(#flow.steps[1].hint.body <= 80).toBe(true)
+		end
 	end)
 
 	it("client-reported steps grant nothing and are whitelisted; server steps use G9 events", function()
@@ -156,7 +166,7 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 
 	-- Stubs for the services the v2 steps require (FORGE-01's FL-0079 and FL-0052 are not on main yet);
 	-- `missing` lists the ones this server lacks.
-	local REQUIRED = { "ConversationService", "MilitaryService", "ObjectiveService" }
+	local REQUIRED = { "ConversationService", "MilitaryService", "ObjectiveService", "ArenaService" }
 	local function boot(withKingdoms, missing)
 		local defs = {
 			{
@@ -542,6 +552,19 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		expect(env.mock:hasLog("info", "onboarding tip dismissed")).toBe(true)
 		expect(steps(p1)).toEqual({ "Spawn" })
 	end)
+
+	it(
+		"without FORGE-01's ArenaService the Crown Arena tip is passed over: it never promises a duel (FL-0137)",
+		function()
+			boot(true, { "ArenaService" })
+			join(p1, "crimson")
+			bus.MatchPhaseChanged:fire("Endgame")
+			expect(onboarding:state(p1, "tip_crown_arena").done).toBe(true)
+			local shown = pushed(p1, "tip_crown_arena")
+			expect(#shown).toBe(1)
+			expect(shown[1].done).toBe(true)
+		end
+	)
 
 	it("without FORGE-01's military the ram tip is passed over: it never shows (FL-0137)", function()
 		boot(true, { "MilitaryService" })

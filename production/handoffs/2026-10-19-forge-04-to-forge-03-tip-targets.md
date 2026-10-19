@@ -9,14 +9,14 @@ FL-0137 adds six one-step tips to the onboarding card. They show once per player
 - your army at an enemy keep (the ram);
 - Endgame (the Crown Arena line).
 
-The tips are text only today. Two of them could point at your HUD the way the tutorial already points at `HUD.ArmyButton` (a gold stroke on the button), if the buttons carry an `OnboardingTarget` attribute. **This is optional; nothing waits on it.**
+Four of the tips point at your HUD the way the tutorial already points at `HUD.ArmyButton` (a gold stroke on the button), through these `OnboardingTarget` attributes. **FORGE-03 has added both in #232 (FL-0138), with these names; the tips use them.** Until #232 is on main the tips show without a mark.
 
-| Attribute value (proposed) | On | Used by |
+| Attribute value | On | Used by |
 |---|---|---|
-| `HUD.KingdomButton` | the Kingdom rail menu button (`KingdomHud.MENUS` "kingdom", next to the Build button's `HUD.BuildButton`) | `tip_war_open`, `tip_war_on_you` ("…from the Kingdom panel") |
-| `HUD.AlertButton` | the Raid rail item (`KingdomHudController.RAID_RAIL`) | `tip_siege`, `tip_raid` ("…tap the alert button on the rail") |
+| `HUD.KingdomButton` | the Kingdom rail menu button (`KingdomHud.MENUS` "kingdom") | `tip_war_open`, `tip_war_on_you` ("…from the Kingdom panel") |
+| `HUD.RaidButton` | the Raid / alert rail item (`KingdomHudController.RAID_RAIL`), shown for any alert | `tip_siege`, `tip_raid` ("…tap the marked button") |
 
-Related: once FORGE-04's siege alert lands (FL-0130 close-out), `FeedbackWarController:alert()` returns `kind = "siege"` as well as `"raid"`. Your rail item shows for both, so its "Raid" label could read "Siege" when `alert().kind == "siege"`. That is also optional.
+Related: once FORGE-04's siege alert lands (#235), `FeedbackWarController:alert()` returns `kind = "siege"` as well as `"raid"`. Your rail item shows for both; FORGE-03 plans to label it "Siege" when `alert().kind == "siege"` (a follow-up after #232). The siege tip says "the marked button", so it reads right either way.
 
 ## Done (with commits)
 - FL-0137 on branch `forge/04-experience-match-tips` (engine tip flows, the six tips in `games/game-001/config/Onboarding.luau`, the client card with "Got it").
@@ -28,7 +28,7 @@ Related: once FORGE-04's siege alert lands (FL-0130 close-out), `FeedbackWarCont
 None for you. `OnboardingTarget` is the existing G11 hook (`KingdomHud.luau` header).
 
 ## Open issues and risks
-- Until the attributes exist the tips have no arrow. Their text names the panel and the button, so they still work without them.
+- Until #232 is on main the tips have no mark. Their text names the panel and the button, so they still work without it.
 
 ## Next actions for the receiver
-1. If you agree, add the two attributes (your files) and tell me the names. I will add `target = { kind = "ui", name = ... }` to those four tips in a small follow-up.
+1. Done in #232 (FORGE-03, 2026-10-19). Nothing else; keep the two names stable, since the tips depend on them.
