@@ -238,33 +238,37 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		expect(music.scenes[#music.scenes]).toBe(false)
 	end)
 
-	it("without the arena model it uses Layout.arena; with neither the pass is skipped, the music still plays", function()
-		local saved = (Layout :: any).arena -- nil on main until FORGE-02's FL-0072 (#217) lands
-		local ok, err = pcall(function()
-			;(Layout :: any).arena = nil
-			boot()
-			controller:onArenaState(state("intro"))
-			expect(#camera.shots).toBe(0)
-			expect(music.scenes[#music.scenes]).toBe("arena")
-			expect(count(audio.played, "arena.horn")).toBe(1)
-			local logged = 0
-			for _, entry in env.mock.logs do
-				if string.find(entry.message, "intro pass skipped", 1, true) then
-					logged += 1
+	it(
+		"without the arena model it uses Layout.arena; with neither the pass is skipped, the music still plays",
+		function()
+			local layout = Layout :: any
+			local saved = layout.arena -- nil on main until FORGE-02's FL-0072 (#217) lands
+			local ok, err = pcall(function()
+				layout.arena = nil
+				boot()
+				controller:onArenaState(state("intro"))
+				expect(#camera.shots).toBe(0)
+				expect(music.scenes[#music.scenes]).toBe("arena")
+				expect(count(audio.played, "arena.horn")).toBe(1)
+				local logged = 0
+				for _, entry in env.mock.logs do
+					if string.find(entry.message, "intro pass skipped", 1, true) then
+						logged += 1
+					end
 				end
-			end
-			expect(logged).toBe(1)
-			;(Layout :: any).arena = { cframe = CFrame.new(CENTRE) }
-			controller:onPhase("Lobby")
-			controller:onArenaState(state("intro"))
-			local shots = camera.shots[1]
-			expect(#shots).toBe(3)
-			expect(near(shots[3].focus, CENTRE)).toBe(true)
-			expect(near(shots[1].focus, CENTRE + Vector3.new(0, 0, -StageDef.STAND_STUDS))).toBe(true) -- A at -Z
-		end)
-		;(Layout :: any).arena = saved
-		assert(ok, err)
-	end)
+				expect(logged).toBe(1)
+				layout.arena = { cframe = CFrame.new(CENTRE) }
+				controller:onPhase("Lobby")
+				controller:onArenaState(state("intro"))
+				local shots = camera.shots[1]
+				expect(#shots).toBe(3)
+				expect(near(shots[3].focus, CENTRE)).toBe(true)
+				expect(near(shots[1].focus, CENTRE + Vector3.new(0, 0, -StageDef.STAND_STUDS))).toBe(true) -- A at -Z
+			end)
+			layout.arena = saved
+			assert(ok, err)
+		end
+	)
 
 	it("Studio preview plays the intro as a or b or neutral, never outside Studio, never over a real stage", function()
 		arenaModel()
