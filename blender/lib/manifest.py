@@ -197,7 +197,7 @@ def kit_budget_errors(doc, measured, looks=None):
 
 
 # ---- FL-0136: the environment mesh kit (trees, bushes, rocks, nodes, crops) is gated the same way: every number env.json declares is MEASURED from the
-# shipped FBX. Constants here on purpose (D-057 (19): trees 300-900 triangles; the contract: bushes, rocks and flowers 40-400), independent of env.json.
+# shipped FBX. Constants here on purpose (D-057 (19): trees 300-900 triangles; bushes, rocks and flowers 40-400 as in env_to_luau.py's header), independent of env.json.
 ENV_LIMITS = {"tree": (300, 900), "bush": (40, 400), "rock": (40, 400), "flower": (40, 400), "crop": (40, 1500), "haystack": (40, 600), "fence": (40, 600)}
 ENV_MESH_MAX = 20000
 ENV_FIT = {"footprint": (0.85, 1.15), "node": (0.85, 1.02), "height": (0.75, 1.25)}  # the Kit's rule (art/env_kit/env_to_luau.py): footprint max(x, z), unless env.json gives the prop a `fit_note`

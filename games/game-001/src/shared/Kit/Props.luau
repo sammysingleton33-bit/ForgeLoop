@@ -844,7 +844,7 @@ Props._standIn = standIn
 
 -- A Model for the id in the asset source is cloned. The nature meshes (Kit/EnvMeshData lists their ids) are made ready by
 -- Kit/EnvMesh first and rejected, in favour of the stand-in, when they do not match their data (never an error); an id
--- the data does not list is cloned as it always was.
+-- the data does not list is cloned and passed through unchanged (nothing is checked).
 function Props.prop(assetId: string): Model
 	local found = EnvMesh.find(assetSource, assetId)
 	if found and found:IsA("Model") then
