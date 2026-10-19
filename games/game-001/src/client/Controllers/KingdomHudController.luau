@@ -94,6 +94,7 @@ KingdomHudController.RAID_RAIL = table.freeze({
 	id = "raid",
 	icon = "warning",
 	label = "Raid",
+	target = "HUD.RaidButton", -- OnboardingTarget for FORGE-04's FL-0137 raid tip (FL-0138)
 	order = 45, -- after the built-in menus and Army, before Waiting
 })
 KingdomHudController.DONE_SEC = 1.6
