@@ -528,3 +528,61 @@ four kingdoms, nothing butts into the quarry or the farm building, no new defect
 (crimson at the right build rectangle's corner, gold at the cabbage bed's corner): the decor clearance of FL-0116 (PR #159, which this branch does not contain) moves them; the two PRs together are the whole fix;
 (b) the lumber-camp trees stand about one tree-width from the left build rectangle (the forest edge behind the camp, by design; the spec guarantees ≥ 8 studs); (c) the lumber camp "overlapping" that rectangle in
 the render is perspective: the starting buildings' footprints at both levels overlap no slot and no field (probe). Verdict by the reviewer: farms clean **no** (a, b); by the spec and the author's reading of the renders: the world nodes are out. Studio unverified.
+
+## FL-0072 — Crown Arena venue, crowd figures, armour and weapons (G12.6; FORGE-02; Blender previews, not Studio)
+
+**Built** (`Kit/Arena.luau`, `Kit/Crowd.luau`, `Kit/Gear.luau`, `Kit.luau` exports, `world/Layout.luau` `arena`, `WorldPlan` keep-out and trim protection, `WorldService` places the neutral `CrownArena`):
+`Kit.arena(colorA?, colorB?)` is a warm-travertine venue 75 x 74 studs with a painted duel ring (radius 21), two facing stands of four rows (72 seat attachments each, `StandA_Row<r>_Seat<s>`; the design caps a stand at 60 figures), royal tribunes with
+banner-ready fronts, `GateA` / `GateB`, eight braziers and `SpawnA` / `SpawnB` marks that face each other. Everything that carries a kingdom is a per-side *dress* (`Kit.arenaDress`): tower caps in the kingdom's silhouette, emblems on banners, plaques,
+flags, crest and the rug under the champion. `Kit.crowdFigure(color, role?, variant?)` is 4 primitive parts, client-only, deterministic, eight variants; `Kit.armour(armour, color)` returns Accessories (light 9 parts, medium 12, heavy 17) and
+`Kit.weapon(weapon, color)` a Tool (spear 7, greatsword 8, mace 9, sword and shield 10 parts), both primitives only, no scripts, G12.1 names (FORGE-01's `Arena/Types.luau` was not on main when this was built).
+
+**Site (a deviation to know about).** The brief's "neutral map centre, at least 20 studs from tower, plaza, roads, nodes, outposts" has no solution at the exact centre (the hub plaza, the watchtower and the road crossing sit on it). A solver over the live geometry
+(`world/Layout.luau`, comment above `ARENA_AT`) put the arena at (141, -27): at least 20 studs from the watchtower zone, plaza, roads, nodes and outposts (nav edges 19.9 at the nearest, spec threshold 15), flat ground, inside the heartland's east edge; spawn B (x = 154) is
+4 studs outside the heartland polygon (x <= 150) and the east gate up to 28 studs outside (the spec says "centre inside, east edge within 30 studs"). The WorldPlan keep-out moved 37 of 618 decor placements (20 trees, 5 bushes, 12 rocks); the density-1.0 pins were re-pinned with that one-line reason.
+
+**Part budget** (target 700, hard cap 900; the brief's 1,500 is not affordable under D-047): neutral 339 (205 structure + 2 x 67 neutral dress); dressed pairs crimson x2 411, azure x2 459, gold x2 449, emerald x2 499 (worst). Crowd figure 4 parts for every role, variant and colour.
+
+**Evidence (headless, not Studio).** Specs under `tests/world`: KitArena 30, KitCrowdFigure 18, KitGear 23, ArenaLayout 20 tests, plus WorldService and the dump specs; one full `bash roblox/scripts/check.sh` exit 0 (551 + 5 + 140 + 361 + 256 + 15 + 15 + 425 + 326 + 299 tests, 0 failed).
+Mutation checks: 34 hand-made mutants (spawn yaw, stand mirror, gate misnamed, cap shape, budget junk, yielding dress, crowd part count and pivot, variants, grip, weapon shaft, layout site, keep-out, trim, round-body pivot, round bodies, scales width, spear head orientation, mace studs,
+sword blade, light cloak, pale sleeves ...) all killed, after three that first survived got new tests (floating-part probes, a direct `WorldPlan.clear()` test, an emblem-field count).
+
+**Renders** (Blender Cycles from Lune dumps of the real Kit parts; roblox materials only approximated: Metal is a soft 0.35 metallic here): `img/fl0072_aerial_crimson_azure.jpg`, `fl0072_aerial_emerald_gold.jpg` (native 1080p pixels at 170 studs / 50 deg, 960 x 540 crops), `fl0072_ruler_crimson_azure.jpg`,
+`fl0072_ruler_emerald_gold.jpg` (low camera just inside a gate), `fl0072_stands_crowd.jpg` (one stand per kingdom, 60 figures each), `fl0072_roles.jpg` (the six role figures, two kingdoms), `fl0072_gear_sheet.jpg` (3 armours x 4 weapons 3/4 view plus R6 fit), `fl0072_armour_close.jpg`,
+`fl0072_world_aerial.jpg`, `fl0072_world_centre.jpg` (the arena in the valley). All under 250 KB. I looked at every one before sending it to the reviewer.
+
+### D-019 fresh-context image-only review, round 1 (head d048b249; reviewer saw only the ten images)
+Scores sil/var/read (prop, pal, detail, cohes, cost >= 3 everywhere except where noted): arena aerial 4/4/4 PASS (marginal; emerald caps read like azure's), arena ruler 4/3/3 NEEDS-WORK (camera inside the gate tunnel: pillars and foreground torches filled the frame),
+crowd 3/3/4 NEEDS-WORK (identical bodies, white wedge arms read as shards), role props 3/3/2 NEEDS-WORK (4 of 6 readable), light/medium/heavy armour 4/4/3 each (pauldron clipped the arm, chrome medium helm, dark heavy set on dark legs, stray cream bits under the cap brim),
+sword and shield 3/4/3 (thin blade), greatsword 4/4/4, spear 4/4/4 (head read as a fork), mace 4/4/4 (a bomb on a stick). Verdict NEEDS-WORK.
+What the author checked and changed for round 2: the stray cream bits were the stand-in avatar's box head poking out of the cap (the stand-in now has a round R15 head; the cap sits higher); the spear head's two wedges had their tall edges facing outward (a fork), now facing the centre
+(a leaf); the ruler camera moved inside the ring; crowd and prop changes below.
+
+### Round 2 (head 9e5037c6): what changed
+Crowd: square tabards and round robes, heights 0.82 - 1.07, tabard shades 0.84 - 1.2 of the kingdom colour, sleeves in kingdom cloth or bare skin (no pale shards); props bigger: sledge 2.2 x 1.3, satchel 1.9 x 1.8, basket tray 2.9 wide, stout staff, brass scales with a 4.4-stud tilted beam.
+Gear: sword blade 0.62 wide with a dark fuller, leaf spear head, studded morning-star mace, a short kingdom cape for the light set (it was the plain set), lighter heavy plate, smaller medium cops, tighter heavy spaulders; the preview avatar wears linen and brown so dark plate reads; the gear sheet is now 3/4 with the weapon in the forward-raised hand.
+
+**Round 2 scores (fresh reviewer; sil / var / read; every other column >= 3 except pal/detail where noted):**
+
+| family | sil | var | read | result | reviewer's note |
+|---|---|---|---|---|---|
+| arena at the aerial camera | 4 | 4 | 4 | PASS | cap shapes, banners and floor tiles carry the kingdoms; the emerald crowd is the weak spot |
+| arena at the ruler / ring level | 4 | 4 | 4 | PASS | the crown tile reads like an envelope; the sand floor is a large blank |
+| crowd figures | 4 | **3** | **3** | NEEDS-WORK | hats differ strongly between kingdoms; "identical boxes" within a stand; at 170 studs a colour mass |
+| key-citizen props | **3** | 4 | **2** | NEEDS-WORK | hammer and tablet read, three of the six not named with confidence; none findable from the aerial camera |
+| light armour | **3** | 4 | **3** | NEEDS-WORK | "close to the bare avatar", weakest silhouette |
+| medium armour | 4 | 4 | 4 | PASS | pauldrons intersect the arm blocks |
+| heavy armour | 4 | 4 | 4 | PASS | the strongest silhouette; shoulder plates splay like wings |
+| sword and shield | 4 | 4 | 4 | PASS | the round shield identifies it |
+| greatsword | 4 | 3 | 4 | PASS | differs from the sword mainly by size |
+| spear | 5 | 4 | 5 | PASS | tallest, most readable |
+| mace | **2** | 3 | **2** | NEEDS-WORK | a small spiked head that overlaps the avatar's head in the 3/4 view; "reads as a horned hat" |
+
+Reviewer verdict: NEEDS-WORK; the venue, medium and heavy armour, sword and shield, greatsword and spear pass.
+**Rule applied: at most two author rounds, then stop and report the failing criteria.** Failing after round 2 (stated plainly, not argued away): crowd variation 3 and readability 3 (need 4); key-citizen props silhouette 3 and readability 2; light armour silhouette 3 and readability 3; mace silhouette 2 and readability 2.
+
+**Remaining weaknesses, honestly.** (1) Key citizens: the reviewer read the satchel as a tablet, the plume as a red slab, the staff as a plain pole, the basket as a drum and could not find them from the aerial camera; they need either more parts than the 4-part budget allows
+(a banner on the staff, a cross on the satchel, hanging pans on the scales) or a world-space cue (a ground ring or a small flag) that is not a Kit figure. (2) Crowd variety is bounded by 4 parts: bodies are two shapes in four shades and several heights; the reviewer still saw "identical boxes", and from 170 studs a stand is a colour mass with a hat-shape texture.
+(3) The mace's head sits at the avatar's face height in a 3/4 view because the arm is raised forward and the mace is short; it needs a longer haft or a lower grip. (4) The light set is the plain one by design (7 -> 9 parts); a hood or a tall cape would give it a silhouette. (5) Heavy's spaulders splay like wings and the medium cops intersect the arm blocks (a worn pauldron
+always overlaps the shoulder; the avatar in the preview is a block stand-in, a real R15 rig is unverified). (6) Emerald is the least readable kingdom: dark green on dark green, and the timber-hoarding cap reads as a pyramid at 170 studs. (7) The crown emblem (the shared D-039 piece) reads as an envelope on the rug at that size; changing it re-pins every building that carries it.
+(8) No road leads to the arena and the plinth meets the grass without a blend. (9) All of this is Blender, not Studio: lighting, materials (Roblox Metal and Fabric are only approximated), real R15 and R6 fit and the arena's look in the engine's lighting are unverified.

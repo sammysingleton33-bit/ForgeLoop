@@ -36,3 +36,4 @@ Lune specs for Kit part counts and attachments. Renders or Studio screenshots of
 
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (READY).
+- 2026-10-19 forge-02: branch forge/02-blender-fl0072-arena pushed (no PR): Kit.arena, crowdFigure, armour, weapon, Layout.arena, WorldService placement; headless gates green (check.sh exit 0); D-019 two rounds done, still NEEDS-WORK on crowd variation, key-citizen props, light armour and mace (see art/reviews/kit-architecture.md and the FL-0072 handoff); status unchanged.
