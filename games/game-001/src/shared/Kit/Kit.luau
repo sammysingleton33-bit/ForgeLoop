@@ -74,11 +74,13 @@
 
 local Buildings = require("./Buildings")
 local Character = require("./Character")
+local Damage = require("./Damage")
 local CharacterMesh = require("./CharacterMesh")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local Portrait = require("./Portrait")
 local Props = require("./Props")
+local Siege = require("./Siege")
 
 local Kit = {}
 
@@ -130,6 +132,15 @@ Kit.SOLDIER_CRESTS = Character.CRESTS
 
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
+-- FL-0128 war kit (additive): gate open/closed poses, siege engines and their pose helper
+Kit.setGateOpen = Buildings.setGateOpen -- (model, open: boolean): leaves and portcullis by CFrame only; attribute KitGateOpen
+Kit.siege = Siege.build -- (kind "ram", kingdomColor) -> Model: client entity rig with one Motor6D "Log"
+Kit.siegePose = Siege.pose -- (model, thrust 0..1): places the swinging log
+Kit.SIEGE_KINDS = Siege.KINDS
+Kit.applyDamage = Damage.apply -- (model): builds / removes damage parts from the model attribute `Damage` (0..1)
+Kit.damageState = Damage.stateOf -- (damage) -> 0..4
+Kit.damageFromHp = Damage.fromHp -- (hp, maxHp) -> 1 - hp / maxHp, clamped
+Kit.DAMAGE_THRESHOLDS = Damage.THRESHOLDS -- { 0.25, 0.5, 0.75, 0.95 }
 Kit.character = CharacterMesh.character -- the imported-mesh rig when the kit is imported and complete, else Character.character's
 Kit.regalia = Character.regalia
 -- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by CharacterMesh.character (the mesh rig, else Character.character), then anchored
@@ -218,6 +229,13 @@ function Kit.setKingdomColor(model: Model, color: Color3)
 			if type(f) == "number" then
 				d.Color = shade(color, f)
 			end
+		end
+	end
+	-- parts a damaged model has taken off (Kit.applyDamage) come back after a repair: recolour them too
+	for _, p in Damage.stashed(model) do
+		local f = p:GetAttribute("KitTint")
+		if type(f) == "number" then
+			p.Color = shade(color, f)
 		end
 	end
 	model:SetAttribute("KitColor", color)

@@ -1655,7 +1655,7 @@ end
 
 function Buildings.setGateOpen(model: Model, open: boolean)
 	local root = model.PrimaryPart
-	if root == nil then
+	if root == nil or model:GetAttribute("KitGateOpen") == nil then -- only a finished gate carries the attribute
 		return
 	end
 	local key = if open then "KitGateOpenCF" else "KitGateClosedCF"
@@ -1679,7 +1679,7 @@ local function palisade(ctx: Ctx, color: Color3, style: string, fp: Vector2)
 	local step = (w - 1.2) / n
 	for i = 0, n - 1 do
 		local x = -w / 2 + 0.6 + step * (i + 0.5)
-		local hh = 11 + jit(i * 3.7 + 1, 1.3)
+		local hh = 13.4 + jit(i * 3.7 + 1, 1.8)
 		column(
 			ctx,
 			"Palisade",
@@ -1690,21 +1690,21 @@ local function palisade(ctx: Ctx, color: Color3, style: string, fp: Vector2)
 			M.Wood
 		)
 	end
-	for _, ry in { 4.2, 8.6 } do
+	for _, ry in { 4.6, 9.8 } do
 		block(ctx, "Rail", Vector3.new(w - 0.4, 0.7, 0.7), CFrame.new(0, ry, -1.55), C.timber, M.Wood)
 	end
-	block(ctx, "Walkway", Vector3.new(w - 0.6, 0.6, 2.4), CFrame.new(0, 7.2, 2.5), C.woodLight, M.WoodPlanks)
+	block(ctx, "Walkway", Vector3.new(w - 0.6, 0.6, 2.4), CFrame.new(0, 8.2, 2.5), C.woodLight, M.WoodPlanks)
 	for _, sx in { -1, 1 } do
 		block(
 			ctx,
 			"PalisadePost",
-			Vector3.new(1.3, 13.4, 1.3),
-			CFrame.new(sx * (w / 2 - 0.8), 7.7, 1.2),
+			Vector3.new(1.3, 15.6, 1.3),
+			CFrame.new(sx * (w / 2 - 0.8), 8.8, 1.2),
 			C.timber,
 			M.Wood
 		)
 	end
-	banner(ctx, 0, 11, -1.95, 0, color, 4.2, style, 2.4)
+	banner(ctx, 0, 12.6, -1.95, 0, color, 4.2, style, 2.4)
 end
 
 BUILDERS.wall = function(ctx, level, color, style, fp)
