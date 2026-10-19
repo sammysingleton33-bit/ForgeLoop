@@ -11,11 +11,13 @@
 	    and its MeshParts at the data's bbox_center (relative to that pivot). Anything else in the clone is deleted: scripts,
 	    SurfaceAppearance, Decals, Welds, nested Models and Folders (the MeshParts are lifted out first), non-mesh parts,
 	    attributes and tags. Nothing in an imported Model can run, load or carry state.
-	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false with
-	    a Hull collision shape (raycasts), Root invisible. What the part-built props block (trunks, rocks, bushes, low
-	    parts: WorldService.decorate lets only parts above COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
-	    data (`collider`, else a family default: trees a trunk, rocks and haystacks their footprint, bushes a core, fences
-	    their length; flowers and crops block nothing), at most SOLID_HEIGHT (7, = WorldService.COLLIDE_HEIGHT) tall.
+	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false (their
+	    Hull collision shape for raycasts is set by the Studio import: a game script cannot write it), Root invisible. What
+	    the part-built props block (trunks, rocks, bushes, low parts: WorldService.decorate lets only parts above
+	    COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
+	    data (`collider`, used as given, else a family default: trees a trunk, rocks and haystacks 80 % of each footprint axis,
+	    bushes 60 % of each axis, fences their length; flowers and crops block nothing); the defaults are at most SOLID_HEIGHT
+	    (7, = WorldService.COLLIDE_HEIGHT) tall, a data collider over 7 is only warned about by the converter.
 	  * SIZE SANITY: the MeshParts' bounding box in the pivot frame must match the data's size (per axis within
 	    max(0.1, 0.5 %)) and centre (0.25). A Model that does not (a wrong import scale or axes, a moved pivot, a mesh gone)
 	    is rejected: Kit.prop builds the stand-in instead, and the reason is logged ONCE per asset id (never an error).

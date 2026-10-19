@@ -31,7 +31,7 @@ Studio session and place can import both kits: do the citizens first, then this 
 ## 3. Look at it (Play, F5) and measure
 **First, the Play-test check (a game script has fewer rights than the command bar, so a smoke test that passes in the command bar can still fall back
 in Play):** in the **server** Output there must be **no** line `Kit.prop: the imported ... is not used (...)`, and in the server command bar
-`print(require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus())` must show `accepted` equal to the number of props (56 with the dressing) and an empty `rejected`.
+`print(require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus())` must show an empty `rejected` and `accepted` above 0 once the world has been built (`accepted` counts every mesh prop the world built, hundreds of them, not the number of ids; the data lists 52 ids).
 (CollisionFidelity is set by the import script, not by the Kit: a game script cannot write it. Hull on each `Body` is in the saved `EnvKit.rbxm`.)
 If the Output has `not used` lines, stop and send them to FORGE-02: those ids are still the part-built stand-ins.
 

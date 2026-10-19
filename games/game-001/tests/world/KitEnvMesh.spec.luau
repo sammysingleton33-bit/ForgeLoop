@@ -88,7 +88,7 @@ describe("Kit.prop builds the stand-in unless a matching imported Model is there
 		end
 	)
 
-	it("is the committed state: valid data, no props until the real kit is generated", function()
+	it("is the committed state: valid data, and EnvMesh.has agrees with the listed ids", function()
 		expect(CommittedData.schema_version).toBe(1)
 		expect(CommittedData.unit).toBe("stud")
 		expect(type(CommittedData.props)).toBe("table")
