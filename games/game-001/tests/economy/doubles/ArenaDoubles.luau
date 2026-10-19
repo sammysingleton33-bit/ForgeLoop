@@ -77,7 +77,7 @@ local OFFERS = {
 		loyalty = 96,
 		power = "empowered",
 		condition = "Your HP first drops below 35%",
-		effect = "Heal 8% of max HP over 4 s",
+		effect = "Regain 5% of your HP over 4 s",
 	},
 	{
 		trigger = "heartyRations",

@@ -5,7 +5,9 @@
 
 		ArenaText.WEAPONS / ARMOUR    ordered rows { id, name, short, icon, blurb }: every option is a sidegrade
 		                              (design §5), so the blurbs say what each is good at, never that one is better
-		ArenaText.TIERS[tier]         { name, color (Theme token), slots, blessing } (design §3 table)
+		ArenaText.TIERS[tier]         { name, color (Theme token), slots, blessing } (slots and blessing from config
+		                              Support.tiers; design §3 table)
+		ArenaText.blessing(passive) -> "Blessing +1%"?   the largest passive fraction as a percent
 		ArenaText.TRIGGERS[id]        { name, icon, short } (design §4 table; the server's TriggerOffer carries the
 		                              exact effect and condition text)
 		ArenaText.weapon(id) / armour(id) / tier(tier) / trigger(id)   a row, or a neutral fallback for an
@@ -17,6 +19,8 @@
 		ArenaText.REASONS[code]       Arena.Choose refusals in words
 		ArenaText.SIDEGRADES          the one line that says no loadout is stronger overall
 ]]
+
+local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
 
 local ArenaText = {}
 
@@ -46,12 +50,37 @@ ArenaText.ARMOUR = table.freeze({
 
 ArenaText.SIDEGRADES = "Every weapon and armour is a sidegrade: none is stronger overall."
 
+-- The blessing text and slots come from FORGE-01's config Support (tiers[t].passive, .slots), so a tuning change never
+-- leaves the screen saying an old number (FORGE-07 L2 on #214; trim C made Adoring's +2 % a +1 %).
+function ArenaText.blessing(passive: any): string?
+	local best = 0
+	for _, v in if type(passive) == "table" then passive else {} do
+		if type(v) == "number" and v > best then
+			best = v
+		end
+	end
+	if best <= 0 then
+		return nil
+	end
+	return `Blessing +{math.floor(best * 100 + 0.5)}%`
+end
+
+local function tierRow(id: string, name: string, color: string): any
+	local t = Support.tiers[id] or {}
+	return table.freeze({
+		name = name,
+		color = color,
+		slots = if type(t.slots) == "number" then t.slots else 0,
+		blessing = ArenaText.blessing(t.passive),
+	})
+end
+
 ArenaText.TIERS = table.freeze({
-	adoring = table.freeze({ name = "Adoring", color = "gold400", slots = 3, blessing = "Blessing +2%" }),
-	loyal = table.freeze({ name = "Loyal", color = "vert", slots = 3, blessing = "Blessing +1%" }),
-	divided = table.freeze({ name = "Divided", color = "parchment300", slots = 2, blessing = nil }),
-	restless = table.freeze({ name = "Restless", color = "amber", slots = 1, blessing = nil }),
-	hostile = table.freeze({ name = "Hostile", color = "gules", slots = 0, blessing = nil }),
+	adoring = tierRow("adoring", "Adoring", "gold400"),
+	loyal = tierRow("loyal", "Loyal", "vert"),
+	divided = tierRow("divided", "Divided", "parchment300"),
+	restless = tierRow("restless", "Restless", "amber"),
+	hostile = tierRow("hostile", "Hostile", "gules"),
 })
 
 ArenaText.TRIGGERS = table.freeze({

@@ -117,6 +117,24 @@ describe("UI/LoadoutModel (FL-0073)", function()
 	end)
 end)
 
+describe("UI/ArenaText (FL-0073)", function()
+	it("each tier's blessing and slots follow config Support (no stale literal)", function()
+		local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
+		for _, id in Support.tierOrder do
+			local t = Support.tiers[id]
+			local best = 0
+			for _, v in t.passive do
+				best = math.max(best, v)
+			end
+			local expected = if best > 0 then `Blessing +{math.floor(best * 100 + 0.5)}%` else nil
+			expect(ArenaText.tier(id).blessing).toBe(expected)
+			expect(ArenaText.tier(id).slots).toBe(t.slots)
+		end
+		expect(ArenaText.blessing({ damageReduction = 0.02, staminaRegen = 0.01 })).toBe("Blessing +2%")
+		expect(ArenaText.blessing({})).toBeNil()
+	end)
+end)
+
 describe("UI/ArenaIntroModel (FL-0073)", function()
 	it("the local champion on the left; tier, three reasons, loadout and perks per side", function()
 		local st = arena("intro")

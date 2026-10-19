@@ -83,6 +83,8 @@ ROWS = [
      "a passive perk"),
     ("hints off on touch laptops", HC, "if touch and self.hud:metrics().breakpoint == \"phone\" then",
      "if touch then", "control hints for the champion"),
+    ("blessing not from config", "games/game-001/src/client/UI/ArenaText.luau",
+     "blessing = ArenaText.blessing(t.passive),", "blessing = \"Blessing +2%\",", "blessing and slots follow config"),
     ("events ignored", HC, "\t\tArenaHudModel.apply(self.track, event, now)", "\t\tlocal _ = event",
      "follows hits, snapshots and perks"),
 ]
