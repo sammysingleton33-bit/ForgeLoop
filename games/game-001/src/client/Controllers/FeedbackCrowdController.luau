@@ -1,17 +1,19 @@
 --!strict
 --[[
 	FeedbackCrowdController (game-001, FORGE-04, FL-0074 part 2a; CONTRACTS G12.4 / G12.6 DRAFT; design
-	crown-arena.md §7): the Crown Arena crowd you hear and read. It feeds Feedback/CrowdDirector from the
-	arena remotes and presents what it returns: the crowd's sound (ducked under the announcer and perk
-	stingers) and a subtitle for every reaction (accessibility, §7: no crowd sound without text). The
-	stands' figures (FORGE-02's Kit.arena / Kit.crowdFigure, FL-0072) are part 2b and listen to `reacted`.
+	crown-arena.md §7): the Crown Arena crowd you hear and read. It feeds Feedback/CrowdDirector from
+	DuelController's arena state and the Arena.Events remote, and presents what it returns: the crowd's
+	sound (ducked under the announcer and perk stingers) and a subtitle for every reaction
+	(accessibility, §7: no crowd sound without text). The stands' figures (CrowdFiguresController, on
+	FORGE-02's Kit.arena seats with Kit.crowdFigure, FL-0072) listen to `reacted`.
 
 	When
-		- A director is made when Arena.State first names both duellists (a and b) at the intro or duel
-		  stage; a different pair starts a new one. The state comes from FORGE-01's DuelController
+		- A director is made when the arena state first names both duellists (a and b) at the intro or
+		  duel stage; a different pair starts a new one. The state comes from FORGE-01's DuelController
 		  (a dependency; stateChanged and getState: it asks Arena.GetState once, so a client that
-		  joins or reloads mid-duel still gets its crowd). This controller never asks itself. Tiers, kingdoms and ruler names come from the state
-		  (an AI duellist has no name to chant, so its stand uses a line without one).
+		  joins or reloads mid-duel still gets its crowd). This controller never asks itself. Tiers,
+		  kingdoms and ruler names come from the state (an AI duellist has no name to chant, so its
+		  stand uses a line without one).
 		- Arena.Events (batched) feed it during the duel; events with no director are dropped.
 		- Crowning ends it: finish(the winner's side), or finish(nil) when `winner` names nobody. The
 		  director plays its ending once, so an `ended` event and the crowning never both play one.
@@ -33,7 +35,8 @@
 		  (InputModeArenaController:touchArea), the boxes move left of the buttons (all buttons are right
 		  of that edge) and sit just above Roblox's thumbstick (Def.LINE.thumbClear), well below the top
 		  HUD (FORGE-03 on #199: on a 667x375 phone the centred lines covered the buttons).
-		- reacted: Signal<(reaction, kingdomId?)>, for the stand figures (part 2b) and FORGE-03's HUD.
+		- reacted: Signal<(reaction, kingdomId?)>, for the stand figures (CrowdFiguresController) and
+		  FORGE-03's HUD.
 	Studio preview (E17): in Studio only, the local player's attribute ForgeCrowdPreview = "tierA,tierB"
 	(for example "adoring,hostile") plays Def.PREVIEW, a short scripted duel, through the same path,
 	one step every PREVIEW_STEP_SEC; any other value stops it. Outside Studio it does nothing.
@@ -132,14 +135,11 @@ end
 
 -- The arena state comes from FORGE-01's DuelController, the client's one door to the arena (G12.6;
 -- FORGE-00's ruling on FORGE-07's #256 M1): it asks Arena.GetState once and fires stateChanged for
--- the reply and every push, so this controller never asks itself (the remote answers 3 asks a second).
--- getState() at start seeds a client that joins or reloads mid-duel.
+-- the reply and every push, so this controller never asks itself (the remote allows a burst of 3
+-- asks, then 1 a second). getState() at start seeds a client that joins or reloads mid-duel. The
+-- Loader errors at load without the dependency, so there is no fallback here.
 function Controller:_followDuel()
 	local duel = self._registry:find("DuelController")
-	if duel == nil or type(duel.getState) ~= "function" or type(duel.stateChanged) ~= "table" then
-		self._env.log("warn", `{Def.name}: no DuelController; the arena crowd stays idle`)
-		return
-	end
 	table.insert(
 		self._connections,
 		duel.stateChanged:connect(function(state)

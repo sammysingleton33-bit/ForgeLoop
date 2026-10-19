@@ -7,6 +7,7 @@ local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
+local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local StageDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CrowdStageController")
 
 local CENTRE = Vector3.new(141, 2, -27)
@@ -19,7 +20,7 @@ local function near(a: Vector3, b: Vector3, eps: number?): boolean
 end
 
 describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stingers)", function()
-	local env, controller, camera, music, audio
+	local env, controller, camera, music, audio, duel
 
 	local function arenaModel()
 		local model = roblox.Instance.new("Model")
@@ -79,12 +80,44 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 			},
 			{
 				name = "CrowdStageController",
+				dependencies = StageDef.dependencies, -- DuelController
 				new = function(e, r)
 					return StageDef.create(e, r, { studio = opts.studio, player = { UserId = USER } })
 				end,
 			},
+			{
+				name = "DuelController", -- FORGE-01's real one: the stage's only source of the arena state
+				dependencies = DuelDef.dependencies,
+				new = DuelDef.new,
+			},
 		}
-		controller = Loader.load(env, defs):get("CrowdStageController")
+		if opts.beforeStart then
+			opts.beforeStart(env) -- remotes that exist before the controllers start (a client joining late)
+		end
+		local registry = Loader.load(env, defs)
+		controller = registry:get("CrowdStageController")
+		duel = registry:get("DuelController")
+	end
+
+	-- ForgeRemotes/Arena: GetState answers `answer` and counts the asks; State is the push remote.
+	local function arenaRemotes(e, asks, answer)
+		local root = e.newInstance("Folder")
+		root.Name = "ForgeRemotes"
+		root.Parent = e.ReplicatedStorage
+		local area = e.newInstance("Folder")
+		area.Name = "Arena"
+		area.Parent = root
+		local get = e.newInstance("RemoteFunction")
+		get.Name = "GetState"
+		get.Parent = area
+		get.OnServerInvoke = function()
+			asks.n += 1
+			return answer
+		end
+		local push = e.newInstance("RemoteEvent")
+		push.Name = "State"
+		push.Parent = area
+		return push
 	end
 
 	local function state(stage, extra)
@@ -212,6 +245,62 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		controller:onArenaState(state("intro"))
 		controller:onArenaState(state("duel"))
 		expect(#camera.shots).toBe(1) -- only the intro's pass
+	end)
+
+	it("a mid-duel joiner gets the music and the ring shot from DuelController's one GetState answer (g11k)", function()
+		expect(table.find(StageDef.dependencies, "DuelController") ~= nil).toBe(true) -- FORGE-00's g11k note
+		local asks = { n = 0 }
+		arenaModel()
+		boot({
+			beforeStart = function(e)
+				arenaRemotes(e, asks, state("duel")) -- the duel is on: the server pushes no Arena.State now
+			end,
+		})
+		env.mock:advance(1)
+		expect(asks.n).toBe(1) -- DuelController's one ask; the stage never asks itself
+		expect(controller.stage).toBe("duel")
+		expect(music.scenes[#music.scenes]).toBe("arena")
+		expect(#camera.shots).toBe(1)
+		expect(#camera.shots[1]).toBe(1)
+		expect(near(camera.shots[1][1].focus, CENTRE)).toBe(true) -- the ring shot alone
+		expect(count(audio.played, "arena.horn")).toBe(0)
+		-- the crowning push, through DuelController's handler
+		duel:setState(state("crowning", { winner = 101 }))
+		expect(count(audio.played, "arena.fanfare")).toBe(1)
+		duel:setState(state("crowning", { winner = 101 })) -- a repeat plays nothing twice
+		expect(count(audio.played, "arena.fanfare")).toBe(1)
+		duel:setState(state("done"))
+		expect(music.scenes[#music.scenes]).toBe(false)
+		-- after destroy, DuelController's states reach the stage no more
+		controller:destroy()
+		duel:setState(state("intro"))
+		expect(controller.stage).toBe("done")
+		expect(count(audio.played, "arena.horn")).toBe(0)
+	end)
+
+	it("a state DuelController already holds at start seeds the stage; it follows every later state", function()
+		arenaModel()
+		local asks = { n = 0 }
+		boot({
+			beforeStart = function(e)
+				arenaRemotes(e, asks, nil)
+			end,
+		})
+		duel:setState(state("intro"))
+		expect(controller.stage).toBe("intro")
+		expect(count(audio.played, "arena.horn")).toBe(1)
+		-- a second stage controller started after DuelController holds the duel stage: getState() seeds it
+		duel:setState(state("duel"))
+		local first = controller
+		local seeded = StageDef.create(env, {
+			find = function(_, name)
+				return if name == "DuelController" then duel else nil
+			end,
+		}, { player = { UserId = USER } })
+		seeded:start()
+		expect(seeded.stage).toBe("duel")
+		expect(first.stage).toBe("duel")
+		seeded:destroy()
 	end)
 
 	it("crowning: a fanfare for a winner, none when the duel is called off; done and Results end the music", function()
