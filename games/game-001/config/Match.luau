@@ -41,6 +41,10 @@ return {
 	tickSeconds = 1 / 16, -- 16 Hz movement (CONTRACTS G4 ≈20 Hz); exact in binary, so timers never drift
 	victory = { conquest = true, crownPointsAtEnd = true }, -- D-053 (3)
 	pvp = { enabled = true, peaceCooldown = 120, proposalSeconds = 60 }, -- D-053 (2): war from Conflict, peace by consent
+	-- Interest tiers (D-055 (2), FL-0125): in the full match each player gets the entities near their view (the Sim.Focus
+	-- point, else their character) at the snapshot rate and the rest every farEvery-th tick; own soldiers always.
+	-- farEvery must divide EntityService's REFRESH_EVERY (10), or an idle far entity's refresh slows (pinned in EntityService.spec)
+	interest = { enabled = true, nearRadius = 200, farEvery = 5, focusStaleSeconds = 3 },
 	crown = { buildingLevel = 5, conquest = 300, unitKill = 2 },
 	-- Co-rulers (D-054, Sim/Authority): the senior ruler (longest seated, present and active) decides war and peace; a
 	-- ruler seated after Founding began is locked out of war, peace and moving buildings for newcomerLockSeconds; a
