@@ -4,23 +4,20 @@ _Maintained by the worker. Keep it short and current._
 
 | Field | Value |
 |---|---|
-| Session branch | `forge/02-blender-status` (this refresh); work branches below |
-| Open PR | #90 (FL-0013 Blender pipeline core, waiting for FORGE-07/05 review). Everything else of this cycle is merged: #138 #153 #155 #169 (citizens, B18), #141 #151 (environment), #159 (world trim), #160 (farm nodes), #85 (portrait) |
-| Current task | none active. Next candidates (FORGE-00 to order): FL-0086 round 2, the parked B12 visuals, the FL-0085 record, a wheat and boulder fix that needs meshes |
-| Last verified check | `bash roblox/scripts/check.sh` OVERALL PASS on #169 at merge (FORGE-05: game-001 1692/0, main f3298dd = B18). Headless only; **no Studio evidence for any of this art** |
-| Blockers | Wheat and boulders: wedge and block layouts read as built objects, not crops or rocks (3 attempts each, D-019 NEEDS-WORK). The fix is one-mesh props from the Blender pipeline, which needs the user's Studio import (the optional mesh pilot, `import_pilot` in the session scratch; nothing uploaded by FORGE-02) |
-| Needs from others | FORGE-07/05: review of #90. FORGE-05 / the user: Studio look at the starting farms (B17 checklist G1) and at the cheer (arms beside the head) and the 8 citizen rigs at 40-80 studs and from the aerial camera. FORGE-01: drop the 20 world-node ids from the `KNOWN` ratchet in `tests/sim/LayoutZones.spec.luau`, flip the cheer ratchet to ≥ 0.1, and `Layout.keepOutAreas()` when it is on main (my `NodeKeepOut.spec` has a one-line TODO to read it) |
+| Session branch | `forge/02-blender-fl0135-idle` (this PR); other work branches below |
+| Open PRs | this one (FL-0135 (b): idle accessory, hair tufts, three portrait lows), #240 (FL-0072 `Kit.arenaDress` placement and decoration physics, budget scan), #228 (FL-0136 phase 1: environment source comparison, docs and tooling) |
+| Merged this cycle | #90 pipeline core, #184 outposts, #197 miner pick, #200 four kingdom styles, #207 mesh-citizen Kit runtime, #217 Crown Arena venue + crowd + armour + weapons, #220 citizen mesh kit (style B), #226 170-stud silhouette pass |
+| Current task | FL-0135 (b) PR; then FL-0128 war kit (worker, branch `forge/02-blender-fl0128-war`), FL-0136 nature and wheat meshes (worker P, `forge/02-blender-fl0136-nature`) and the FL-0136 env-mesh runtime (`forge/02-blender-fl0136-envrt`, PR held until #228 merges) |
+| Last verified check | `bash roblox/scripts/check.sh` OVERALL PASS on this branch merged with main 790c56d2 (game-001 specs 2326 / 0, 146 files) and on #240 (2300 / 0); `bash blender/scripts/check.sh` PASS on the worker's tree. Headless only; **no Studio evidence for any of this art** |
+| Blockers | None for me. All mesh art waits on the owner's Studio import (`games/game-001/art/IMPORT_CHARACTERS.md`) before anything is judged in the real viewport |
+| Needs from others | Owner: re-import the citizen kit (this PR regenerates `citizen_kit.fbx`), then Studio screenshots at close range and the 170-stud aerial; FORGE-00 holds (a) 1.15x citizen scale and (c) per-job torso / `tints.cloth_panels` until those exist. FORGE-01: `ArenaService` calls `Kit.arenaDress` once #240 is on main (handoff `2026-10-19-forge-02-to-forge-01-arena-dress-follow-up.md`) |
 
-## Work branches (pushed, not merged; each needs a main merge and a fresh gate before any PR)
-- `forge/02-blender-fl0135-meshes` (worker B, FL-0135 character mesh kit, no PR yet; the owner opens it): 103 original pieces, `citizen_kit.fbx` + `rig.json` (passes `rig_to_luau.py --validate-only`), budgets measured from the FBX in `manifest.check()`, D-019 re-score NEEDS-WORK twice (silhouette / readability 3 at 170 studs, details in `games/game-001/art/reviews/char-mesh.md`), handoff `production/handoffs/2026-10-19-forge-02-to-kit-runtime-fl0135-char-kit.md`. Studio import is the owner's step (unverified).
-- `forge/02-blender-fl0086-buildings` (266f375): six VS-2 building types, carries the D-047 27k ceiling spec (it now passes with #159: measured 25,861 / 27,000 on a scratch merge). Fresh D-019 was NEEDS-WORK, round-2 fix list in the handoff `production/handoffs/2026-10-13-forge-02-to-forge-01-fl0086-vs2-buildings.md`.
-- `forge/02-blender-b12-visuals` (f95ee2b): throne seen from behind, oak emblem, house pennants.
-- `forge/02-blender-fl0085-record` (c83032a): farm crop attempt 3 and the FL-0085 record.
-- `forge/02-blender-env-wheat` (758c185): ridged-row wheat at 44 parts, D-019 NEEDS-WORK, not for merge (FORGE-00 ruling: keep #141's slabs until a mesh row exists).
+## Open work branches (pushed, not merged)
+- `forge/02-blender-fl0128-war` (worker): wall / gate / tower levels, siege ram, soldier variants, building damage states; D-019 render review and part-count report owed before its PR.
+- `forge/02-blender-fl0136-nature` (worker P): style-B nature and wheat meshes (trees 300 to 900 tris, three wheat growth stages) with one D-019 round each.
+- `forge/02-blender-fl0136-envrt` (head 83695c53): env-mesh runtime (`Kit/EnvMesh.luau`, `env_to_luau.py`, fallbacks to the stand-ins); PR after #228.
+- Parked, not for merge: `forge/02-blender-fl0086-buildings`, `forge/02-blender-b12-visuals`, `forge/02-blender-fl0085-record`, `forge/02-blender-env-wheat` (superseded by the FL-0136 mesh path).
 
 ## Last report
-B18 cut (main f3298dd) carries FORGE-02's playtest art pass as **interim art (D-051), nothing passes D-019 yet, all Blender and headless evidence**:
-- Environment (#141, #151): fuller oak/pine/birch, angular boulders, readable stone/ore/wood nodes, flat crop rows. Pine clearly better, oak and birch modest.
-- World (#159, #160): decor trimmed to the 27k part ceiling (measured 25,861) with farm and plot views protected; the 20 world resource nodes moved out of the starting farms by drawn extent, same offsets in all four plots.
-- Citizens (#138, #153, #155, #169): per-job hats, colours and handle-and-head tools in the 11-part rig (D-048), kingdom red from above, arms-up cheer clears the head. Soldier and governor pass D-019; the set is NEEDS-WORK on variation, miner and hauler front read and idle detail.
-Still placeholder quality: wheat crop, boulders, per-individual variation, the miner's pick read from the front, the hauler's load from the front, idle silhouette.
+FL-0135 (b), interim art (D-051), Blender renders and headless evidence only: idle citizens get a headband or bandana and a rose bindle or rucksack; hat jobs get a hair tuft; healer front cross and merchant scale beam fixed for the portrait. Fresh D-019 delta reviewer: BETTER (idle variation 3 to 4, hat jobs 2 to 3, readability unchanged). Hat-job variation stays at 3 (invisible at 170 studs) and idle items read "partly" at 170 studs; Studio behaviour is unverified.
+Still placeholder quality: all mesh art until the Studio import is judged; wheat and boulders until FL-0136 lands; per-individual variation at 170 studs.
