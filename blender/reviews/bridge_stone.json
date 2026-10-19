@@ -1,0 +1,32 @@
+{
+  "assets": {
+    "bridge_stone_1arch_01": {
+      "geometry_hash": "c2fa1337d3b407df",
+      "verdict": "PASS"
+    },
+    "bridge_stone_2arch_01": {
+      "geometry_hash": "62f977b67d351888",
+      "verdict": "PASS"
+    },
+    "bridge_stone_3arch_01": {
+      "geometry_hash": "f06c6713f241f2ed",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "bridge_stone",
+  "generator_version": 1,
+  "notes": "1/2/3-arch progression reads clearly at 78 studs. 1arch_01 is a very steep hump with heavy flat spandrels, 3arch_01 stone is cold slate-blue (could be misread as blue-kingdom coded), and the large flat parapet planes are sparse for 3020-3828 tris.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 3,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "castle_keep_blue_01": {
+      "geometry_hash": "5b380f704e5ada3c",
+      "verdict": "PASS"
+    },
+    "castle_keep_green_01": {
+      "geometry_hash": "8b7287e62dcf5cdc",
+      "verdict": "PASS"
+    },
+    "castle_keep_red_01": {
+      "geometry_hash": "1e048857a33fb3ae",
+      "verdict": "PASS"
+    },
+    "castle_keep_yellow_01": {
+      "geometry_hash": "6f18083fce9cdf04",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_keep",
+  "generator_version": 1,
+  "notes": "Distinct grayscale silhouettes at 115 studs: red has a tall central cone spire plus cone turrets, blue square pyramids, green a half-timbered hall under a big emerald roof with hoarded corner towers and a lantern, yellow a central onion dome plus four onion turrets. No crescent: every gold finial is a spike or ball. Door banners are small at 115 studs, but the silhouette carries the identity. Red vs blue is the closest pair: both are stone blocks with pointed roofs, separated by cone vs pyramid and the red central spire. The green keep reads more manor than fortress (advisory). Tris 13306-14088/16000.",
+  "reviewer": "fresh-context subagent",
+  "round": 5,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 5,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

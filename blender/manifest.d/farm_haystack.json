@@ -1,0 +1,390 @@
+{
+  "assets": [
+    {
+      "budget_class": "prop",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.124,
+        "y": 10.855,
+        "z": 12.444
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_haystack_01.fbx",
+        "validation": "exports/farm_haystack_01.validation.json"
+      },
+      "generator": "farm_haystack",
+      "generator_version": 1,
+      "geometry_hash": "4f98d27478789b91",
+      "id": "farm_haystack_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "rick"
+      },
+      "preview": "previews/farm_haystack.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Strong varied set (beehive stack, round bales, bale pyramid, hay cart) with muted straw that does not read as kingdom gold. Fix haystack_05 (tiered cones with finials read as yellow pine trees at gameplay distance) and haystack_06 (low mound reads as a shapeless blob).",
+        "review_file": "reviews/farm_haystack.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7500,
+      "sockets": {
+        "interact": [
+          -2.181,
+          0.055,
+          -6.744
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1254,
+        "lod1": 438
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 8.454,
+        "y": 6.474,
+        "z": 8.555
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_haystack_02.fbx",
+        "validation": "exports/farm_haystack_02.validation.json"
+      },
+      "generator": "farm_haystack",
+      "generator_version": 1,
+      "geometry_hash": "1594cfc0d88b2da0",
+      "id": "farm_haystack_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "rounds"
+      },
+      "preview": "previews/farm_haystack.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Strong varied set (beehive stack, round bales, bale pyramid, hay cart) with muted straw that does not read as kingdom gold. Fix haystack_05 (tiered cones with finials read as yellow pine trees at gameplay distance) and haystack_06 (low mound reads as a shapeless blob).",
+        "review_file": "reviews/farm_haystack.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7501,
+      "sockets": {
+        "interact": [
+          1.278,
+          0.0,
+          -3.852
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1136,
+        "lod1": 396
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.508,
+        "y": 5.988,
+        "z": 5.513
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_haystack_03.fbx",
+        "validation": "exports/farm_haystack_03.validation.json"
+      },
+      "generator": "farm_haystack",
+      "generator_version": 1,
+      "geometry_hash": "1ffef190b3525e87",
+      "id": "farm_haystack_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "squares"
+      },
+      "preview": "previews/farm_haystack.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Strong varied set (beehive stack, round bales, bale pyramid, hay cart) with muted straw that does not read as kingdom gold. Fix haystack_05 (tiered cones with finials read as yellow pine trees at gameplay distance) and haystack_06 (low mound reads as a shapeless blob).",
+        "review_file": "reviews/farm_haystack.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7502,
+      "sockets": {
+        "interact": [
+          -0.09,
+          0.196,
+          -2.391
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 886,
+        "lod1": 310
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 13.9,
+        "y": 10.683,
+        "z": 7.303
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_haystack_04.fbx",
+        "validation": "exports/farm_haystack_04.validation.json"
+      },
+      "generator": "farm_haystack",
+      "generator_version": 1,
+      "geometry_hash": "60415f13b252879a",
+      "id": "farm_haystack_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "cart"
+      },
+      "preview": "previews/farm_haystack.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Strong varied set (beehive stack, round bales, bale pyramid, hay cart) with muted straw that does not read as kingdom gold. Fix haystack_05 (tiered cones with finials read as yellow pine trees at gameplay distance) and haystack_06 (low mound reads as a shapeless blob).",
+        "review_file": "reviews/farm_haystack.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7503,
+      "sockets": {
+        "hitch": [
+          6.9,
+          0.0,
+          0.054
+        ],
+        "interact": [
+          -2.1,
+          0.0,
+          -4.546
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 1172,
+        "lod1": 410
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.964,
+        "y": 11.233,
+        "z": 9.971
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_haystack_05.fbx",
+        "validation": "exports/farm_haystack_05.validation.json"
+      },
+      "generator": "farm_haystack",
+      "generator_version": 1,
+      "geometry_hash": "d068d21b6acc0a49",
+      "id": "farm_haystack_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "stogs"
+      },
+      "preview": "previews/farm_haystack.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Strong varied set (beehive stack, round bales, bale pyramid, hay cart) with muted straw that does not read as kingdom gold. Fix haystack_05 (tiered cones with finials read as yellow pine trees at gameplay distance) and haystack_06 (low mound reads as a shapeless blob).",
+        "review_file": "reviews/farm_haystack.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7504,
+      "sockets": {
+        "interact": [
+          -0.253,
+          0.033,
+          -3.292
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 936,
+        "lod1": 326
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "prop",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 13.319,
+        "y": 7.45,
+        "z": 8.963
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_haystack_06.fbx",
+        "validation": "exports/farm_haystack_06.validation.json"
+      },
+      "generator": "farm_haystack",
+      "generator_version": 1,
+      "geometry_hash": "6cabbadfa98800bd",
+      "id": "farm_haystack_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "pile"
+      },
+      "preview": "previews/farm_haystack.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Strong varied set (beehive stack, round bales, bale pyramid, hay cart) with muted straw that does not read as kingdom gold. Fix haystack_05 (tiered cones with finials read as yellow pine trees at gameplay distance) and haystack_06 (low mound reads as a shapeless blob).",
+        "review_file": "reviews/farm_haystack.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7505,
+      "sockets": {
+        "interact": [
+          0.975,
+          0.042,
+          -5.143
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1800,
+        "lod0": 886,
+        "lod1": 310
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "farm_haystack",
+  "variation": {
+    "closest_pair": [
+      "farm_haystack_01",
+      "farm_haystack_05"
+    ],
+    "mean_pair_diff": 0.5129,
+    "min_pair_diff": 0.3311,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

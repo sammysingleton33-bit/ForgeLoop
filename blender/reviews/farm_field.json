@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "farm_field_01": {
+      "geometry_hash": "30e81a98b6aea8b7",
+      "verdict": "NEEDS-WORK"
+    },
+    "farm_field_02": {
+      "geometry_hash": "06c9b9f0128d5183",
+      "verdict": "NEEDS-WORK"
+    },
+    "farm_field_03": {
+      "geometry_hash": "197a143684dfe7f7",
+      "verdict": "NEEDS-WORK"
+    },
+    "farm_field_04": {
+      "geometry_hash": "d34bac4e98c22afb",
+      "verdict": "NEEDS-WORK"
+    },
+    "farm_field_05": {
+      "geometry_hash": "a8d28b1db18cf13e",
+      "verdict": "NEEDS-WORK"
+    },
+    "farm_field_06": {
+      "geometry_hash": "9869fcb412ea7fba",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "farm_field",
+  "generator_version": 3,
+  "notes": "Silhouette fails: wheat in 01/02 is sparse, thin, knee-high spikes on tan beds that barely break the fence line, and 04/06 are flat slabs; only 05 (maize) and 03 (scarecrow) have vertical profile. Crops are tellable apart at the 88-stud strip (not the specified 60), but 01 and 02 merge and the 02 sheaves read as pale rocks.",
+  "reviewer": "fresh-context subagent",
+  "round": 3,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 4,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 3,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}
