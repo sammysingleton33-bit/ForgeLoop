@@ -153,6 +153,7 @@
       "geometry_hash": "2e4fb119b7ee6894",
       "id": "castle_gatehouse_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -368,6 +369,7 @@
       "geometry_hash": "a392fe21a3471e1d",
       "id": "castle_gatehouse_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -583,6 +585,7 @@
       "geometry_hash": "0808516571d38bff",
       "id": "castle_gatehouse_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -798,6 +801,7 @@
       "geometry_hash": "f97e731382456187",
       "id": "castle_gatehouse_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",

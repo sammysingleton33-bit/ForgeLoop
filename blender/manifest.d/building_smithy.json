@@ -22,6 +22,7 @@
       "geometry_hash": "fdc9aee6816a51e2",
       "id": "building_smithy_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.6,
@@ -94,6 +95,7 @@
       "geometry_hash": "83c4f7ee5b59ce02",
       "id": "building_smithy_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 14.5,
@@ -166,6 +168,7 @@
       "geometry_hash": "2ceaf8e487e54776",
       "id": "building_smithy_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.4,
@@ -239,6 +242,7 @@
       "geometry_hash": "29ae2c8c91ca9f78",
       "id": "building_smithy_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.9,
@@ -312,6 +316,7 @@
       "geometry_hash": "2f5a168ca6cfcc69",
       "id": "building_smithy_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 14.6,
@@ -386,6 +391,7 @@
       "geometry_hash": "6c5239ab4e2a6031",
       "id": "building_smithy_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.6,

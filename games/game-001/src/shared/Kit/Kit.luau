@@ -11,6 +11,12 @@
 	colour's hue (red → spires, blue → pyramids, green → timber hoardings, yellow/gold → domes;
 	unsaturated → neutral). Every kingdom-coloured part carries the attribute KitTint (shade
 	factor), so Kit.setKingdomColor recolours trims and banners in place.
+	Kingdom architecture (FL-0127, Operation Crownfall): Kit/KingdomStyle.luau is one table per hue style that Kit.build
+	consults, so the kingdoms differ in more than colour, tower cap and emblem: stone, timber, plaster, thatch and crop
+	palettes, roof pitch and tile courses (Emberhold steep red tile on dark stone, Frostmere snow-ridged slate-blue on
+	pale stone, Thornwood moss-striped green on mossy stone and ochre daub, Sunspire low gold roofs on sandstone and
+	whitewash), merlon proportions and banner tails. A style swaps colours, materials and proportions at the same part
+	count and never touches Kit.footprint (tests/world/KitStyles.spec.luau); the neutral style is the original look.
 	Emblems (D-033, D-039; colour-vision finding 3): the same hue map picks the kingdom emblem
 	(crimson crown, azure star, emerald oak leaf, gold sun; neutral none), so emblem and silhouette
 	always agree. Every banner, flag, pennant, shield, prop banner and slot sign carries it, and the
@@ -78,7 +84,7 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.4.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
+Kit.VERSION = "0.5.0" -- 0.5: kingdom architecture styles (FL-0127); 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",

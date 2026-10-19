@@ -22,6 +22,7 @@
       "geometry_hash": "ba5b34cf4987e5bc",
       "id": "resource_wood_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "stump",
@@ -90,6 +91,7 @@
       "geometry_hash": "8ab128554a334022",
       "id": "resource_wood_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "bucksaw",
@@ -158,6 +160,7 @@
       "geometry_hash": "2fe7b5a07b88bb40",
       "id": "resource_wood_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "rounds",
@@ -226,6 +229,7 @@
       "geometry_hash": "da06e8c07f3ec7aa",
       "id": "resource_wood_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "block",
@@ -294,6 +298,7 @@
       "geometry_hash": "623f62e42835d22d",
       "id": "resource_wood_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "barrow",
@@ -362,6 +367,7 @@
       "geometry_hash": "ccd96da95d913369",
       "id": "resource_wood_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "stump",

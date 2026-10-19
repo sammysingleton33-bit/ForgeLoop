@@ -19,6 +19,7 @@
     "prop": 1800,
     "banner": 800,
     "character": 2500,
+    "citizen_rig": 1000,
     "siege": 4000,
     "building_small": 5000,
     "building_medium": 8000,
