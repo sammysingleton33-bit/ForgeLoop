@@ -633,6 +633,47 @@ Pass: steps 1–3 hold (4 and 5 when FL-0071 is on the build). Copy every red li
 History:
 - 2026-10-19 FORGE-04: written (FL-0074 part 2b; G12 v0.4-g11e).
 
+## E19 — Full-match tips: war, siege, raid, ram and the Crown Arena (FL-0137, game-001)
+
+Needs:
+- The full match on the build (FORGE-01's FL-0125, `Match.mode = "match"`), with at least one AI rival.
+- The war events on the server: `WarChanged` (MatchHost), `SiegeChanged` and `RaidChanged` (Sim/WarWatch). These are on `main`.
+- For the siege tip's "Press G or tap the marked button": FORGE-04's siege alert (#235). Without it, G and the rail button answer raids only.
+- For the gold stroke on the Kingdom button and the Raid rail button: FORGE-03's `HUD.KingdomButton` and `HUD.RaidButton` (#232). Without them the tips show with no mark.
+- For the Crown Arena tip: FORGE-01's ArenaService (FL-0071). Without it that tip never shows (Output: `onboarding: a step's service is missing` for `tip_crown_arena`), because the build has no duel to promise.
+- For the ram tip: FORGE-01's MilitaryService. Without it the ram tip never shows (Output: `onboarding: a step's service is missing` for `tip_ram`).
+- DataService is not needed. Without it each tip shows once per session, not once ever (D-027).
+
+| Tip | Shows when | Card |
+|---|---|---|
+| `tip_war_open` | Conflict starts | "Conflict: war is open" |
+| `tip_war_on_you` | a rival declares war on your kingdom | "A rival declared war on you" |
+| `tip_siege` | your keep is besieged | "Your keep is under siege!" |
+| `tip_raid` | enemies enter your lands | "Raiders in your lands!" |
+| `tip_ram` | your soldiers besiege an enemy keep | "Your army is at their keep" |
+| `tip_crown_arena` | Endgame starts | "Endgame: the race for the crown" |
+
+Rules for every tip:
+- A tip uses the onboarding card. Its button reads "Got it", and it has no step counter.
+- A tip hides by itself after 12 s, or sooner when its situation ends (the siege lifted, the raid over, peace made, you declared war, you recruited).
+- A tip never freezes the camera, blocks taps or opens a panel.
+- A tip shows over an unfinished tutorial step, and the tutorial's card comes back when the tip ends.
+
+Steps
+1. Play Solo in a full match. Filter Output for `onboarding`. Speed up the phases, or play to Conflict. When Conflict starts, "Conflict: war is open" shows and hides by itself about 12 s later. You can pan, zoom and tap while it shows. Screenshot **E19-1**.
+2. Declare war on a rival from the Kingdom panel. If the war tip is still showing, it hides at once. Wait for (or provoke) a raid and a siege on your keep. "Raiders in your lands!" and "Your keep is under siege!" each show once. Press "Got it" on one: it hides at once, and Output shows `onboarding tip dismissed`. Screenshot **E19-2** (the siege tip).
+3. Let a second raid or siege come. No tip shows again.
+4. Send soldiers to an enemy keep. When the siege starts, "Your army is at their keep" shows (it needs MilitaryService). Recruit any unit: the tip hides.
+5. (Needs ArenaService.) Reach Endgame. "Endgame: the race for the crown" shows. On a 667×375 phone, its body and the Conflict tip's body each fit inside the card, on two lines (FORGE-07 #236 L1).
+6. Settings → turn hints off, then start a new session and repeat step 1. No tip shows. The tutorial card still shows.
+7. Phone emulator (667×375): repeat step 2. The tip and its "Got it" button are not cut off, and the button is easy to tap.
+8. (Two players, Test → Local Server, 2 players, different kingdoms.) Player 1 declares war on player 2's kingdom. Player 2 sees "A rival declared war on you"; player 1 does not.
+
+Pass: steps 1–7 hold (8 when two players can join). Write which tips you saw, and copy every red line from Output.
+
+History:
+- 2026-10-19 FORGE-04: written (FL-0137; D-053, Operation Crownfall).
+
 ## E20 — The people in the arena stands (FL-0074 part 2c, game-001)
 
 The two stands fill with each duellist's kingdom (Stand A for side a), as many as its citizens allow and as its support tier keeps in their seats. The figures cheer, sink or turn their backs with the crowd's reactions (E17).

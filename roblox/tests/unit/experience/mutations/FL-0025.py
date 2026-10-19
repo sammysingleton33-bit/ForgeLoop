@@ -10,7 +10,7 @@ M = [
  ("FL-0025", X+"Onboarding.luau", 'if future.trigger.bus and not state.satisfied[future.id] and busMatches(future, trigger) then', 'if false then', "Onboarding", "a later bus step done early", "fw"),
  ("FL-0025", S+"OnboardingService.luau", 'if flow == nil or not Onboarding.skip(flow, state, self._env.now()) then', 'if flow == nil then', "Onboarding", "skipping logs OnboardingSkipped", "fw"),
  ("FL-0025", S+"OnboardingService.luau", 'section.flows[flow.id] = Onboarding.persisted(state)', 'section.flows[flow.id] = nil', "Onboarding", "persists progress and resumes", "fw"),
- ("FL-0025", S+"OnboardingService.luau", 'if (flow.startOn or "PlayerReady") == eventName then', 'if eventName == "PlayerReady" then', "Onboarding", "starts on KingdomJoined (not PlayerReady)", "game"),
+ ("FL-0025", S+"OnboardingService.luau", 'if (flow.startOn or "PlayerReady") == eventName and Onboarding', 'if eventName == "PlayerReady" and Onboarding', "Onboarding", "starts on KingdomJoined (not PlayerReady)", "game"),
  ("FL-0025", C+"OnboardingController.luau", 'RemoteLink.send(self._env, "Experience.OnboardingSkip", state.flowId)', 'local _ = state.flowId', "OnboardingController", "Skip tells the server", "fw"),
  ("FL-0025", C+"OnboardingController.luau", 'if (position - origin).Magnitude >= Def.MOVE_STUDS then', 'if true then', "OnboardingController", "reports RulerMoved after the character walks", "fw"),
  ("FL-0025", C+"OnboardingController.luau", 'if distance < bestDistance then', 'if best == nil then', "OnboardingController", "marks the nearest tagged world object", "fw"),

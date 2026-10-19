@@ -86,6 +86,7 @@ describe("Raid on the rail (FL-0129, FORGE-04's raid ping)", function()
 		world.state.alert = { position = Vector3.new(10, 0, 5), kingdom = "azure", at = 1 }
 		world:advance(1.2)
 		expect(button(world)).toBeTruthy()
+		expect(button(world):GetAttribute("OnboardingTarget")).toBe("HUD.RaidButton") -- FL-0137 tips (FL-0138)
 		tap(button(world))
 		expect(world.state.went).toBe(1)
 		world.state.alert = nil

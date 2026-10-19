@@ -3,5 +3,7 @@
 	"phone": { "width": 844, "height": 390, "inset": { "left": 47, "right": 47, "top": 0, "bottom": 21 }, "topbar": 58, "controls": 104 },
 	"phone-se": { "width": 667, "height": 375, "inset": { "left": 0, "right": 0, "top": 0, "bottom": 0 }, "topbar": 58, "controls": 104 },
 	"tablet": { "width": 1024, "height": 768, "inset": { "left": 0, "right": 0, "top": 0, "bottom": 20 }, "topbar": 58, "controls": 104 },
-	"desktop": { "width": 1920, "height": 1080, "inset": { "left": 0, "right": 0, "top": 0, "bottom": 0 }, "topbar": 58, "controls": 104 }
+	"desktop": { "width": 1920, "height": 1080, "inset": { "left": 0, "right": 0, "top": 0, "bottom": 0 }, "topbar": 58, "controls": 104 },
+	"desktop-720": { "width": 1280, "height": 720, "inset": { "left": 0, "right": 0, "top": 0, "bottom": 0 }, "topbar": 58, "controls": 104 },
+	"desktop-1440": { "width": 2560, "height": 1440, "inset": { "left": 0, "right": 0, "top": 0, "bottom": 0 }, "topbar": 58, "controls": 104 }
 }

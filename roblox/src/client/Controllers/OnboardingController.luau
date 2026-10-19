@@ -7,9 +7,18 @@
 		OnboardingController:report(action) -> boolean   -- UI code reports client actions, e.g. FORGE-03's HUD:
 		                                                  -- "ResourceInspected" (resource bar tapped), "GoalAcknowledged"
 		OnboardingController:skip()                      -- the always-visible Skip button calls this
-		OnboardingController.state                       -- last snapshot from Experience.OnboardingState
-		OnboardingController.changed: Signal (state)
-	When a snapshot turns done (not skipped), NotificationController:celebrate("onboardingComplete").
+		OnboardingController:dismissTip()                -- the button while a tip shows ("Got it")
+		OnboardingController.state                       -- last tutorial snapshot from Experience.OnboardingState
+		OnboardingController.tip                         -- the tip on the card now (nil: none)
+		OnboardingController.changed: Signal (state)     -- tutorial snapshots only
+	When a tutorial snapshot turns done (not skipped), NotificationController:celebrate("onboardingComplete").
+	Tips (snapshot.tip, FL-0137): contextual one-step flows (a siege on my keep, a war declared on me).
+	Each tip flow keeps its own snapshot, so a tip never replaces the tutorial's state. The newest active
+	tip shows on the card for its few seconds, even over an unfinished tutorial step (a siege matters
+	more than "capture the tower", and a ruler stuck at a step must still see it); the tutorial's card
+	comes back when the tip ends. A tip has "Got it" (dismissTip: skips that tip flow, so it never shows
+	again) instead of "Skip tutorial", and no step counter. A tip never celebrates, and none shows while
+	the showHints setting is off (the server hides it by itself).
 
 	View (thin, built with Instances until FORGE-03's Panel/Button land; then only _render changes):
 	- one small card at the top centre (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9):
@@ -68,6 +77,9 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_marks = {},
 		_detectorToken = 0,
 		state = nil :: any,
+		tip = nil :: any,
+		_tips = {} :: { [string]: any }, -- flowId -> the active tip's snapshot
+		_tipOrder = {} :: { string }, -- active tips, oldest first (the newest shows)
 		changed = Signal.new(),
 	}, OnboardingController)
 end
@@ -108,6 +120,10 @@ function OnboardingController:apply(state: any)
 	if type(state) ~= "table" then
 		return
 	end
+	if state.tip == true then
+		self:_applyTip(state)
+		return
+	end
 	local wasActive = self.state ~= nil and not self.state.done
 	self.state = state
 	self:_render()
@@ -120,6 +136,60 @@ function OnboardingController:apply(state: any)
 		end
 	end
 	self.changed:fire(state)
+end
+
+-- A tip's snapshot: active tips are kept per flow; a done one leaves the list (FL-0137).
+function OnboardingController:_applyTip(state: any)
+	local id = state.flowId
+	if type(id) ~= "string" then
+		return
+	end
+	local at = table.find(self._tipOrder, id)
+	if at then
+		table.remove(self._tipOrder, at)
+	end
+	if state.done or state.hint == nil then
+		self._tips[id] = nil
+	else
+		self._tips[id] = state
+		table.insert(self._tipOrder, id)
+	end
+	self:_render()
+end
+
+function OnboardingController:_tutorialShowing(): boolean
+	local state = self.state
+	return state ~= nil and not state.done and state.hint ~= nil
+end
+
+-- The tip the card should show: the newest active one, unless hints are off. It shows over the tutorial.
+function OnboardingController:_shownTip(): any
+	if self._settings:get("showHints") == false then
+		return nil
+	end
+	local id = self._tipOrder[#self._tipOrder]
+	return if id then self._tips[id] else nil
+end
+
+function OnboardingController:dismissTip()
+	local tip = self.tip
+	if tip == nil then
+		return
+	end
+	RemoteLink.send(self._env, "Experience.OnboardingSkip", tip.flowId)
+	-- hide at once; the server's snapshot (skipped = true) follows
+	local hidden = table.clone(tip)
+	hidden.done, hidden.skipped = true, true
+	self:_applyTip(hidden)
+end
+
+-- The card's one button: "Got it" while a tip shows, else "Skip tutorial".
+function OnboardingController:_onButton()
+	if self.tip ~= nil then
+		self:dismissTip()
+	else
+		self:skip()
+	end
 end
 
 function OnboardingController:report(action: string): boolean
@@ -267,7 +337,7 @@ function OnboardingController:_build(): any
 	skip.Parent = card
 	pcall(function() -- GuiButton.Activated: real in Roblox; Lune instances have no events
 		skip.Activated:Connect(function()
-			self:skip()
+			self:_onButton()
 		end)
 	end)
 	return { gui = gui, card = card, stroke = stroke, title = title, body = body, counter = counter, skip = skip }
@@ -352,9 +422,12 @@ function OnboardingController:_mark(target: any, escalated: boolean)
 end
 
 function OnboardingController:_render()
-	local state = self.state
+	local tip = self:_shownTip()
+	self.tip = tip
+	local tutorial = tip == nil and self:_tutorialShowing()
+	local state = if tip then tip elseif tutorial then self.state else nil
 	self:_clearMarks()
-	if state == nil or state.done or state.hint == nil then
+	if state == nil then
 		if self._view then
 			self._view.gui.Enabled = false
 		end
@@ -370,7 +443,8 @@ function OnboardingController:_render()
 	self:_reserve(Def.CARD_RESERVE)
 	view.title.Text = state.hint.title or ""
 	view.body.Text = state.hint.body or ""
-	view.counter.Text = `{state.step}/{state.total}`
+	view.counter.Text = if tutorial then `{state.step}/{state.total}` else ""
+	view.skip.Text = if tutorial then "Skip tutorial" else "Got it"
 	view.stroke.Color = if state.escalated then GOLD else INK
 	view.stroke.Transparency = if state.escalated then 0 else 0.6
 	self:_mark(state.hint.target, state.escalated)
@@ -389,8 +463,8 @@ function OnboardingController:showIdleHint(phase: string): boolean
 	if text == nil or self._settings:get("showHints") == false then
 		return false
 	end
-	if self.state and not self.state.done then
-		return false -- the tutorial card is already guiding
+	if (self.state and not self.state.done) or self.tip ~= nil then
+		return false -- the tutorial card (or a tip) is already guiding
 	end
 	local notifications = self._registry:find("NotificationController")
 	if notifications then
