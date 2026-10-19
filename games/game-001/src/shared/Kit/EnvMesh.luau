@@ -83,7 +83,7 @@ function EnvMesh.setLogger(fn: ((string) -> ())?)
 end
 
 function EnvMesh.has(assetId: string): boolean
-	return type(propsOf(activeData())[assetId]) == "table"
+	return propsOf(activeData())[assetId] ~= nil
 end
 
 function EnvMesh.status(): Status
@@ -325,10 +325,15 @@ end
 
 function EnvMesh.accept(assetId: string, clone: Model): (Model?, string?)
 	local def = propsOf(activeData())[assetId]
-	if type(def) ~= "table" then
+	if def == nil then
 		return clone, nil
 	end
-	local ok, model, why = pcall(prepare, assetId, def, clone)
+	local ok, model, why
+	if type(def) == "table" then
+		ok, model, why = pcall(prepare, assetId, def, clone)
+	else
+		ok, model, why = true, nil, "its data entry is not a table"
+	end
 	if ok and model then
 		accepted += 1
 		return model, nil
