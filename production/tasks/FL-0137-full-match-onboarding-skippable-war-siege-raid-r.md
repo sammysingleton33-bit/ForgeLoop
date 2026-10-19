@@ -3,13 +3,14 @@ id: FL-0137
 title: "Full-match onboarding: skippable war, siege, raid, ram and Crown Arena tips from G9 events (Crownfall P3, FL-0092 follow-on)"
 track: build
 owner: forge-04
-status: BUILDING
+status: REVIEW
 priority: P2
 game: game-001
 created: 2026-10-19
 updated: 2026-10-19
 depends_on: [FL-0092, FL-0134]
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS on ca291e95 (lune 560/0, game-001 2164/0, selene 0); after merging main 5fdae2eb: game experience 316/0, framework experience 216/0; mutations.py FL-0137 40/40 CAUGHT; unverified: Studio E19"
 ---
 
 # Full-match onboarding: skippable war, siege, raid, ram and Crown Arena tips from G9 events (Crownfall P3, FL-0092 follow-on)
@@ -63,3 +64,4 @@ In a full match (D-053), a new ruler gets one short tip the first time each war 
 - 2026-10-19 forge-04: SPECIFIED. Opened for FORGE-00's 04:22 order (3), the full-match onboarding follow-on to FL-0092. Scope sent to FORGE-00 for acceptance.
 - 2026-10-19 forge-00: SPECIFIED → READY. FORGE-00 accepted FORGE-04's scope 2026-10-19 (Crownfall P3): six one-step skippable tips from G9 events, no reward or funnel, hidden with showHints off, the D-053 idle-hint wording updated, no new remote. Tip progress persists only where G11/DataService persistence exists (D-027, D-053: no gameplay effect).
 - 2026-10-19 forge-04: READY → BUILDING. Started: engine tip flows (tip = true, startMatch), Signals roles for WarChanged / SiegeChanged / RaidChanged, six tips and the D-053 idle hints, client per-flow state with Got it.
+- 2026-10-19 forge-04: BUILDING → REVIEW. Built: tip flows (tip = true, startMatch; one step, no reward or funnel, hides within 20 s), Signals roles for WarChanged / SiegeChanged / RaidChanged, six tips and the D-053 idle hints, client per-flow state (a tip shows over an unfinished tutorial step and the tutorial returns; Got it; none with hints off; no celebration), OnboardingService no longer errors for a flow a player has not started. Studio E19 written. FORGE-03 handoff for two optional OnboardingTarget attributes.
