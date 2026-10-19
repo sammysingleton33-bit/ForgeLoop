@@ -105,6 +105,7 @@
 	slot is never over-subscribed; iteration order is creation order (deterministic).
 ]]
 
+local Authority = require("./Authority")
 local Catalog = require("./Catalog")
 local CitizenActions = require("./CitizenActions")
 local CitizenBrain = require("./CitizenBrain")
@@ -525,6 +526,7 @@ function Simulation:addRuler(kingdomId: string, userId: number): (boolean, strin
 	end
 	table.insert(kingdom.rulers, userId)
 	self.rulerOf[userId] = kingdomId
+	Authority.seated(self, userId)
 	self:emit("RulerJoined", { kingdomId = kingdomId, userId = userId })
 	return true, nil
 end
@@ -541,8 +543,15 @@ function Simulation:removeRuler(userId: number): boolean
 	end
 	self.rulerOf[userId] = nil
 	self.rulerPositions[userId] = nil
+	Authority.left(self, userId)
 	self:emit("RulerLeft", { kingdomId = kingdomId, userId = userId })
 	return true
+end
+
+-- The ruler did something the server saw (a command, gathering, a conversation, walking): they count as active for
+-- the senior-ruler rule (Sim/Authority).
+function Simulation:touchRuler(userId: number)
+	Authority.touch(self, userId)
 end
 
 function Simulation:kingdomOfUser(userId: number): any?

@@ -1,0 +1,175 @@
+{
+  "assets": [
+    {
+      "budget_class": "citizen_rig",
+      "category": "char",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 4.074,
+        "y": 6.056,
+        "z": 3.24
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/citizen_kit.fbx",
+        "mesh_committed": "games/game-001/art/char_kit/citizen_kit.fbx",
+        "rig": "games/game-001/art/char_kit/rig.json",
+        "validation": "exports/char_kit.validation.json"
+      },
+      "generator": "char_kit",
+      "generator_version": 1,
+      "geometry_hash": "041cfd2aed652f88",
+      "id": "char_kit_01",
+      "kingdom": null,
+      "kit": {
+        "jobs": {
+          "blacksmith": {
+            "pieces_max": 13,
+            "tris_max": 764
+          },
+          "builder": {
+            "pieces_max": 14,
+            "tris_max": 830
+          },
+          "farmer": {
+            "pieces_max": 16,
+            "tris_max": 934
+          },
+          "governor": {
+            "pieces_max": 16,
+            "tris_max": 954
+          },
+          "hauler": {
+            "pieces_max": 15,
+            "tris_max": 940
+          },
+          "healer": {
+            "pieces_max": 15,
+            "tris_max": 982
+          },
+          "idle": {
+            "pieces_max": 14,
+            "tris_max": 826
+          },
+          "merchant": {
+            "pieces_max": 16,
+            "tris_max": 970
+          },
+          "miner": {
+            "pieces_max": 14,
+            "tris_max": 870
+          },
+          "soldier": {
+            "pieces_max": 15,
+            "tris_max": 900
+          },
+          "soldier_archer": {
+            "pieces_max": 15,
+            "tris_max": 978
+          },
+          "soldier_swordsman": {
+            "pieces_max": 15,
+            "tris_max": 964
+          },
+          "woodcutter": {
+            "pieces_max": 15,
+            "tris_max": 862
+          }
+        },
+        "max_citizen_tris": 982,
+        "max_ruler_tris": 978,
+        "pieces": 107,
+        "style": "B",
+        "total_piece_tris": 6906
+      },
+      "license": "project-original",
+      "material": "M_charkit_vc",
+      "params": {
+        "jobs": [
+          "blacksmith",
+          "builder",
+          "farmer",
+          "governor",
+          "hauler",
+          "healer",
+          "idle",
+          "merchant",
+          "miner",
+          "soldier",
+          "soldier_archer",
+          "soldier_swordsman",
+          "woodcutter"
+        ],
+        "pieces": 107,
+        "style": "B"
+      },
+      "preview": "previews/char_kit.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7,
+      "sockets": {
+        "Head": [
+          0.0,
+          3.9,
+          0.0
+        ],
+        "LeftArm": [
+          -1.46,
+          3.5,
+          0.0
+        ],
+        "LeftLeg": [
+          -0.5,
+          2.2,
+          0.0
+        ],
+        "RightArm": [
+          1.46,
+          3.5,
+          0.0
+        ],
+        "RightLeg": [
+          0.5,
+          2.2,
+          0.0
+        ],
+        "Tool": [
+          1.5889,
+          2.45,
+          0.0
+        ],
+        "Torso": [
+          0.0,
+          2.2,
+          0.0
+        ],
+        "TorsoTool": [
+          0.86,
+          3.8,
+          0.575
+        ]
+      },
+      "texture": "none (vertex colours, 0 bytes of texture memory)",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 982,
+        "lod1": 12
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 1
+  },
+  "generator": "char_kit",
+  "variation": {
+    "min_pair_diff": null,
+    "pass": true
+  }
+}

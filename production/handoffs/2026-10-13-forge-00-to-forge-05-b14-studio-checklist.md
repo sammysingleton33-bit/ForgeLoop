@@ -169,3 +169,47 @@ B20 starts the **full match** by default. To run the older B14–B19 rows in the
 | L5 | Let the match run out (or jump to Endgame and wait) | the match ends on Crown Points and Results shows. **Known:** the recap screen arrives in B20.1 |
 | L6 | Debug `match.mode slice` | the match restarts as the VS-1 slice; one B19 row still passes |
 | L7 | Output during an AI war, and Studio's Stats panel | no red errors; note FPS and anything that hitches |
+
+## B20.1 additions (main `2f6dc35`, BuildInfo `2f6dc35b36e1…`): you declare war and make peace
+**Known:** the war, siege and raid notices and the far-entity tiers are **not** in B20.1 (stacked-PR merge gap); they arrive in B20.2.
+
+| ID | Check | Pass |
+|---|---|---|
+| M1 | Debug `match.phase Conflict`, then open Kingdom, then Rivals, and press Declare war on one rival | after a confirm step, war is declared; the rival's row shows "at war"; their soldiers start fighting yours |
+| M2 | Propose peace; let the AI accept, or wait | the row shows the open proposal; once both agree, peace holds and the war stops |
+| M3 | 2-player Local Server, both in one kingdom | only the player who joined first can declare war or accept peace. The other sees "Ask <senior> to declare war"; pressing it gives the senior a notice |
+| M4 | Second player joins after Founding began | for 2 minutes they see "New ruler · m:ss" on war and Accept peace, and can't move buildings |
+| M5 | Let your kingdom fall (or force it) | the spectate screen shows who defeated you and a list of what to watch; Leave asks "Leave the match?" first |
+
+## B20.2 additions (main `d03fd70`, BuildInfo `d03fd70f6f1a…`): war notices and far-entity tiers
+Run the B20.1 rows (M1–M5) on B20.2, then:
+
+| ID | Check | Pass |
+|---|---|---|
+| N1 | Declare war, or let an AI declare on you | one "war declared" notice per declaration; the declaring senior ruler gets none, their co-rulers and the target do |
+| N2 | Let an enemy army hit your keep | a siege notice when it starts; an "ended" notice about 20 s after the last hit |
+| N3 | Enemy soldiers enter your territory | a raid notice and a "Go to the raid" button (phone too); it ends about 10 s after they leave |
+| N4 | Pan the camera far from your kingdom during an AI war | units under the camera move smoothly; far-off citizens step at about 2 Hz; your own soldiers never freeze |
+| N5 | MicroProfiler during Endgame | note server and client frame time (also gates #200's paint cost) |
+
+## B21 additions (main `ebdd564`, BuildInfo `ebdd56445476…`): sieges decide wars
+Run the B20.1 rows (M1–M5) and the B20.2 rows (N1–N5) on B21, then the B21 asks in `production/quality-gates/studio-runs.md` (asks 1–4), summarised here:
+
+| ID | Check | Pass |
+|---|---|---|
+| O1 | Play Solo, `match.phase Conflict`, watch from the aerial view | within about 10 minutes an AI governor builds rams, besieges a rival keep (siege notice) and takes it; note the time from Conflict to the first fall (screenshot B21-1) |
+| O2 | At war with an AI, keep soldiers at your keep | an assault of about your size breaks against it; note whether it held |
+| O3 | Recruit a ram (barracks level 2, wood 200) and attack a building | the ram hits buildings far harder than soldiers do (screenshot B21-2) |
+| O4 | Output window through a full match | copy every red line; citizens still use the part-built rig (no mesh data yet) |
+
+## B21.1 additions (main `ec52722`, BuildInfo `ec52722284aa…`): imported-mesh citizens (owner import), phone fit
+Run the B21 rows (O1–O4) on B21.1. Then do the import per `games/game-001/art/IMPORT_CHARACTERS.md` (Asset Privacy on BEFORE any upload), and the studio-runs B21.1 asks 1–6, summarised here:
+
+| ID | Check | Pass |
+|---|---|---|
+| P1 | Before the import, play | identical to B21 (part-built citizens) |
+| P2 | Bulk Import `citizen_kit.fbx`, run `import_char_kit.luau` in the Command Bar | Output ends `RESULT: OK`, `N imported, 0 missing`, no `stripped:` lines; paste the Output |
+| P3 | Play: citizens, ruler, soldiers of each kingdom, close and aerial | `KingdomEntities` citizens hold MeshParts; jobs, crest and kingdom colours read; walk and work animations play; screenshots close and aerial |
+| P4 | MicroProfiler at Endgame; Render Stats on a 667×375 phone | note FPS, triangles and draw calls at the population caps |
+| P5 | Phone 667×375: the drawer, spectate, Rivals and the recap | the drawer shows jobs, reputation, army and standings rows; buttons are easy to tap |
+| P6 | Output through a full match | copy every red line; delete `CitizenKit` to revert (IMPORT_CHARACTERS §4) |

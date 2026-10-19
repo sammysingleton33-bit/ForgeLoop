@@ -22,6 +22,7 @@
       "geometry_hash": "c5c1ebe10b632aed",
       "id": "building_storehouse_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 10.0,
@@ -100,6 +101,7 @@
       "geometry_hash": "f37f8fbdd5d6fa32",
       "id": "building_storehouse_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 21.0,
@@ -172,6 +174,7 @@
       "geometry_hash": "3b15a0a3b03a527d",
       "id": "building_storehouse_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 9.0,
@@ -250,6 +253,7 @@
       "geometry_hash": "44291241e9204268",
       "id": "building_storehouse_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 19.0,
@@ -322,6 +326,7 @@
       "geometry_hash": "11f6036c5dd89345",
       "id": "building_storehouse_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 10.0,
@@ -400,6 +405,7 @@
       "geometry_hash": "a1d2602021154cf4",
       "id": "building_storehouse_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 22.0,

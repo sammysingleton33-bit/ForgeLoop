@@ -5,7 +5,8 @@
 
 		local input = registry:find("InputModeController")
 		input:set("build")              -- FORGE-03's build menu, when placement starts
-		input.mode                      -- "explore" | "build" | "edit" (G13.9 base editing; "command" is VS-2)
+		input.mode                      -- "explore" | "build" | "edit" (G13.9 base editing) | "arena"
+	                                -- (the Crown Arena duel, FL-0075; "command" is VS-2)
 		input.changed:connect(function(mode, previous) ... end)
 		input:accepts("explore")        -- optional: true when a tap or click now belongs to that mode
 		input:isTap(downAt, upAt, heldSec) -> boolean   -- the same tap-or-drag rule selection uses
@@ -59,6 +60,12 @@
 		  change only. Phones have no hover. Over a GUI, in another mode or on leaving explore mode the
 		  hover is "none".
 
+	Arena (the Crown Arena duel, FL-0075; G12.6)
+		- InputModeArenaController sets it for the champion at the duel stage and sets explore after.
+		  While in it, taps select nothing, there is no hover and no "back", and the X / B leave keys
+		  are not bound (B is the gamepad's dodge). Only explore leaves it: build and edit are refused
+		  (logged once each), so no menu takes the champion's keys mid-duel.
+
 	Arbitration (specs: games/game-001/tests/experience/InputMode.spec.luau)
 		- One mode at a time, and each mode has one owner for taps and clicks:
 		    explore -> FORGE-01's InteractionController (gather, inspect a citizen)
@@ -77,14 +84,15 @@
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
-export type Mode = "explore" | "build" | "edit"
+export type Mode = "explore" | "build" | "edit" | "arena"
 
 local Def = {
 	name = "InputModeController",
 	dependencies = {},
 }
 
-Def.MODES = table.freeze({ "explore", "build", "edit" })
+Def.MODES = table.freeze({ "explore", "build", "edit", "arena" })
+Def.LEAVE_MODES = table.freeze({ build = true, edit = true }) -- X / gamepad B return to explore
 Def.LATER = table.freeze({ command = "VS-2" })
 Def.ACTION = "ForgeLeaveBuildMode"
 Def.KINDS = table.freeze({ "citizen", "building", "slot", "none" })
@@ -446,13 +454,16 @@ function Controller:set(mode: any): boolean
 		table.insert(self._queue, mode)
 		return true
 	end
+	if self:_duelHolds(mode) then
+		return false
+	end
 	local nextMode: any = mode
 	while nextMode ~= nil do
-		if nextMode ~= self.mode then
+		if nextMode ~= self.mode and not self:_duelHolds(nextMode) then
 			local previous = self.mode
 			self.mode = nextMode
 			self._changedAt = self._env.clock()
-			self:_bindLeave(nextMode ~= "explore") -- X / B leave build and edit mode
+			self:_bindLeave(Def.LEAVE_MODES[nextMode] == true) -- X / B leave build and edit mode
 			if nextMode ~= "explore" and self.selection.kind ~= "none" then
 				self:select("none", "") -- panels close while placing
 			end
@@ -464,6 +475,19 @@ function Controller:set(mode: any): boolean
 			self._firing = false
 		end
 		nextMode = table.remove(self._queue, 1)
+	end
+	return true
+end
+
+-- During the duel only explore leaves arena mode; build and edit are refused (logged once each).
+function Controller:_duelHolds(mode: string): boolean
+	if self.mode ~= "arena" or mode == "explore" or mode == "arena" then
+		return false
+	end
+	local key = `arena:{mode}`
+	if not self._refused[key] then
+		self._refused[key] = true
+		self._env.log("warn", `InputModeController: '{mode}' is refused during the arena duel`, { mode = mode })
 	end
 	return true
 end

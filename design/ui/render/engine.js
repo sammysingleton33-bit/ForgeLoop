@@ -732,7 +732,8 @@
 		if (r.s !== 1) transform += `scale(${r.s})`;
 		g.style.cssText = `left:${px(r.x)};top:${px(r.y)};width:${px(w)};height:${px(h)};${transform ? `transform:${transform};` : ""}`;
 		const me = { x: abs.x + abs.s * r.x, y: abs.y + abs.s * r.y, s: abs.s * r.s };
-		layout.push({ path: n.path, class: n.cls, x: +me.x.toFixed(2), y: +me.y.toFixed(2), w: +(w * me.s).toFixed(2), h: +(h * me.s).toFixed(2), rotation: rot || undefined });
+		n.__entry = { path: n.path, class: n.cls, x: +me.x.toFixed(2), y: +me.y.toFixed(2), w: +(w * me.s).toFixed(2), h: +(h * me.s).toFixed(2), rotation: rot || undefined };
+		layout.push(n.__entry);
 
 		const radius = n.cls === "ScrollingFrame" ? 0 : cornerRadius(n, w, h);
 		if (n.cls === "ScrollingFrame" && n.corner) warn(`${n.path}: UICorner does not apply to a ScrollingFrame (creator-docs) — ignored`);
@@ -1117,6 +1118,12 @@
 		const ch = Math.max(0, h - pad.t - pad.b);
 		const size = t.scaled ? fitTextSize(n, cw, ch) : t.size;
 		const lineH = size * t.lineFactor;
+		// the phone-fit audit (layout.json `clipped`): the text is wider (one line) or taller (wrapped) than its box,
+		// so Roblox cuts it or (TextTruncate) ends it with "…"
+		if (n.__entry && !t.scaled) {
+			const m = measure(t, size, t.wrapped ? cw : null);
+			if ((!t.wrapped && m.w > cw + 1) || (t.wrapped && m.h > ch + 1)) n.__entry.clipped = true;
+		}
 		const box = el(
 			"txt",
 			`padding:${px(pad.t)} ${px(pad.r)} ${px(pad.b)} ${px(pad.l)};justify-content:${t.ya === "Top" ? "flex-start" : t.ya === "Bottom" ? "flex-end" : "center"};` +

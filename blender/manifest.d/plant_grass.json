@@ -22,6 +22,7 @@
       "geometry_hash": "84011b0eff4a9cbe",
       "id": "plant_grass_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "short"
@@ -77,6 +78,7 @@
       "geometry_hash": "bbb959bae7702b99",
       "id": "plant_grass_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "tall"
@@ -132,6 +134,7 @@
       "geometry_hash": "491cf455b4c14264",
       "id": "plant_grass_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "meadow"
@@ -187,6 +190,7 @@
       "geometry_hash": "fe28753ccc8c86f6",
       "id": "plant_grass_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "dry"
@@ -242,6 +246,7 @@
       "geometry_hash": "7adc8a9685a261d8",
       "id": "plant_grass_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "seed"
@@ -297,6 +302,7 @@
       "geometry_hash": "20de8af1933503d5",
       "id": "plant_grass_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "reeds"

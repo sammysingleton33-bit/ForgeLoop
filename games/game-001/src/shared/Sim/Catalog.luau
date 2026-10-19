@@ -199,6 +199,7 @@ local function assemble(): Catalog
 	tuning.startCitizens = KingdomsConfig.startCitizens
 	tuning.startBuildings = KingdomsConfig.startBuildings
 	tuning.maxSoldiers = MilitaryConfig.maxSoldiers
+	tuning.rulers = table.clone(MatchConfig.rulers)
 	return {
 		resources = { "food", "wood", "stone", "gold" },
 		buildingOrder = BuildingsConfig.buildingOrder,

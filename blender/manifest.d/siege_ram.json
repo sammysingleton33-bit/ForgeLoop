@@ -22,6 +22,7 @@
       "geometry_hash": "6d6b3d7e767aa954",
       "id": "siege_ram_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -94,6 +95,7 @@
       "geometry_hash": "5ce00a94f8a71cac",
       "id": "siege_ram_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -166,6 +168,7 @@
       "geometry_hash": "c5483cb036c64c2b",
       "id": "siege_ram_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -238,6 +241,7 @@
       "geometry_hash": "dfb054abc06fc37c",
       "id": "siege_ram_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",

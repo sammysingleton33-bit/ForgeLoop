@@ -22,6 +22,7 @@
       "geometry_hash": "9e919989676e9aa9",
       "id": "building_tavern_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": 1,
@@ -95,6 +96,7 @@
       "geometry_hash": "a8fce00670f0bfcd",
       "id": "building_tavern_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": -1,
@@ -168,6 +170,7 @@
       "geometry_hash": "8268b584a166d726",
       "id": "building_tavern_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": -1,
@@ -241,6 +244,7 @@
       "geometry_hash": "b1f85ae88d1cf9a3",
       "id": "building_tavern_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": 1,
@@ -314,6 +318,7 @@
       "geometry_hash": "1b5ba371f731c6f0",
       "id": "building_tavern_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": -1,
@@ -387,6 +392,7 @@
       "geometry_hash": "124e2faf926cdbb7",
       "id": "building_tavern_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": 1,

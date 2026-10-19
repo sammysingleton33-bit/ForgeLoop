@@ -22,6 +22,7 @@
       "geometry_hash": "aab5e89d9e78368b",
       "id": "resource_stone_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "front",
@@ -93,6 +94,7 @@
       "geometry_hash": "35b443b478af8ba8",
       "id": "resource_stone_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "corner",
@@ -164,6 +166,7 @@
       "geometry_hash": "ee8b3adc7cad8ab6",
       "id": "resource_stone_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "front",
@@ -235,6 +238,7 @@
       "geometry_hash": "a1bb6e65b3e35969",
       "id": "resource_stone_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "corner",
@@ -306,6 +310,7 @@
       "geometry_hash": "fe000dfe6cbc05bb",
       "id": "resource_stone_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "pit",
@@ -377,6 +382,7 @@
       "geometry_hash": "cbca02f6145b5adc",
       "id": "resource_stone_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "front",

@@ -4,8 +4,17 @@ _Manual sections are maintained by FORGE-00 (last full audit 2026-10-13, D-038).
 
 ## Now
 - **Game #1: AI Kingdoms** (D-020). Milestone **VS-1**, the user's nine first-playable items (BRIEF §4). The full game stays the target, and builds are inspection checkpoints (D-034).
-- **Operation Crownfall (D-053, 2026-10-18):** the owner's full-game directive. The default build becomes the real four-kingdom match (FL-0125), then walls and outposts, four distinct kingdoms and the war kit (B21), then the Crown Arena (B22), then a release candidate (B23). Missions: `production/handoffs/2026-10-18-forge-00-to-all-operation-crownfall.md`.
-- **Latest build: B20**, main `9b688ec`, delivered 2026-10-18 23:45 UTC. **This is the build to test.** B14 to B20 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B20 sections.
+- **Operation Crownfall (D-053, 2026-10-18):** the owner's full-game directive. The default build becomes the real four-kingdom match (FL-0125), then sieges that decide wars (B21, delivered), then the Crown Arena (B22), then walls, gates and outposts (FL-0126 part 2, after B22; FORGE-00 sequencing 2026-10-19, because FORGE-01 carries both and the arena is the bigger gap), then a release candidate (B23). Missions: `production/handoffs/2026-10-18-forge-00-to-all-operation-crownfall.md`.
+- **Latest build: B21.1**, main `ec52722`, delivered 2026-10-19 03:36 UTC. **This is the build to test** (it replaces B21). It is B21 plus the real imported-mesh citizen kit data (#220: 113 pieces, 13 assemblies; Blender budgets max citizen 982/1,000, soldiers and governors ≤ 978/1,500; FORGE-07 re-measured), the arena UI (#214, dark until DuelService), SupportModel with trim C (#209), the arena caps fixes (#218) and the phone fit (#215). **Until the owner imports `citizen_kit.fbx` (art/IMPORT_CHARACTERS.md: Asset Privacy first), B21.1 plays like B21.** The mesh look is interim: D-019 NEEDS-WORK for job readability at 170 studs, and FORGE-02 is doing a silhouette pass. Not yet run in Studio. Checklist: the B14 handoff, B15 to B21.1 sections; studio-runs B21.1 asks 1–6.
+- **Earlier build: B21**, main `ebdd564`, delivered 2026-10-19 02:08 UTC (replaced B20.2). Not yet run in Studio. Checklist: the B14 handoff, B15 to B21 sections; the B21 asks are in `production/quality-gates/studio-runs.md`.
+  - **New since B20.2:** sieges decide wars (#206, FL-0126 part 1): keeps have double hp, soldiers barely scratch buildings, rams (wood 200) do the work, and AI governors build rams and attack as one body. Headless AI-only runs: a kingdom fell in 7 of 8 seeds; a defended keep holds. Also the imported-mesh citizen runtime (#207, #211; D-057), arena core (#208: Types, Caps, DuelModel; server code only), and the Rivals live spec and war-bus spec (#210, #212).
+  - **Citizens look the same as B20.2.** The mesh runtime is in, but no mesh data is committed yet (`Kit/CharacterMeshData` is empty on purpose), so every citizen uses the part-built fallback until FORGE-02 ships the kit and the owner does the Studio import (`games/game-001/art/IMPORT_CHARACTERS.md`).
+  - Not in B21: #209 (arena SupportModel), #214 (arena UI), #215 (phone fit).
+- **Earlier build: B20.2**, main `d03fd70`, delivered 2026-10-19 01:32 UTC (replaced B20.1). It is B20.1 plus the war, siege and raid notices (G9 events live) and the far-entity interest tiers (Sim.Focus), re-landed by #213. FORGE-00 verified both are in with an ancestor check. Not yet run in Studio. Checklist: the B14 handoff, B15 to B20.2 sections.
+- **Earlier build: B20.1**, main `2f6dc35`, delivered 2026-10-19 01:20 UTC. B14 to B20.1 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B20.1 sections.
+  - **New since B20:** human war and peace with the senior-ruler and newcomer rules (#195); the spectate screen (#185); arena duel input (#191) and crowd captions (#199); four kingdom architecture styles in the Kit (#200); a two-tine pickaxe on the fallback rig (#197); war, siege and outpost-lost conversation triggers in content (#196).
+  - **Not in B20.1, despite the cut note:** the G9 war, siege and raid events (#198) and Sim.Focus with interest tiers (#201). Both were merged into stacked branches, not main, so they are being re-landed for **B20.2**. Until then the war, siege and raid notices stay silent and distant entities aren't tiered.
+- **Earlier build: B20**, main `9b688ec`, delivered 2026-10-18 23:45 UTC. B14 to B20 have not been run in Studio yet. Checklist: the B14 handoff with its B15 to B20 sections.
   - **New since B19 (Operation Crownfall):**
     - **The real four-kingdom match by default** (#187, FL-0125): timed phases, AI governors that build, recruit and go to war, elimination with spectating, arena hooks (Crown Points decide until the arena lands), per-kingdom caps of 60 citizens and 15 soldiers.
     - Phase bar, Rivals panel (dormant until B20.1), war notices, timed phase toasts, battle music, hit flashes, deaths, building damage and collapse, raid ping, spectate camera (#178, #180, #182, #183).
@@ -110,7 +119,7 @@ One combined gate for all five. If any PR fails review, the whole set waits.
 
 _Generated by `python tools/forge.py dashboard` from `production/tasks/`. Do not edit by hand._
 
-**Tasks:** 136 — SPECIFIED 19 · READY 23 · BUILDING 10 · TESTING 1 · REVIEW 63 · ACCEPTED 10 · REJECTED 10
+**Tasks:** 136 — SPECIFIED 19 · READY 22 · BUILDING 10 · TESTING 1 · REVIEW 64 · ACCEPTED 10 · REJECTED 10
 
 ### Needs the user (decisions, approvals, local-machine steps)
 
@@ -239,7 +248,7 @@ _None._
 | [FL-0121](production/tasks/FL-0121-base-editing-phase-1-edit-input-mode-and-camera.md) | Base editing phase 1, input and camera: "edit" input mode and edit-drag camera (B16) | REVIEW | P1 | build |
 | [FL-0130](production/tasks/FL-0130-war-feedback-and-spectate-camera.md) | War feedback: hits, deaths, building damage and collapse, raid alarm, war and siege announcer moments, spectate camera | BUILDING | P1 | build |
 | [FL-0074](production/tasks/FL-0074-crowd-director-chants-and-boos-perk-moments-aren.md) | Crowd director, chants and boos, perk moments, arena camera and music, emotional payoff | BUILDING | P2 | build |
-| [FL-0075](production/tasks/FL-0075-duel-input-mode-pc-touch-gamepad-bound-to-duelco.md) | Duel input mode (PC, touch, gamepad) bound to DuelController | READY | P2 | build |
+| [FL-0075](production/tasks/FL-0075-duel-input-mode-pc-touch-gamepad-bound-to-duelco.md) | Duel input mode (PC, touch, gamepad) bound to DuelController | REVIEW | P2 | build |
 | [FL-0103](production/tasks/FL-0103-settings-panel-audio-reduced-motion-graphics-for.md) | Settings panel: audio, reduced motion, graphics (FORGE-03 components; D-038 (4)) | REVIEW | P2 | build |
 | [FL-0108](production/tasks/FL-0108-onboarding-answercitizen-and-conversationanswere.md) | Onboarding AnswerCitizen and ConversationAnswered on G9 CitizenAnswered (D-044 (3)) | REVIEW | P2 | build |
 | [FL-0026](production/tasks/FL-0026-retention-systems-daily-rewards-streaks-quests-a.md) | Retention systems: daily rewards/streaks, quests and achievements | SPECIFIED | P3 | build |
@@ -304,14 +313,14 @@ _No accepted task has an actual time recorded yet._
 ### Recent commits
 
 ```
-b9cdc4cd 2026-10-19 integration-log: B20.1 batch #189 #193 #188 #190 #192 #184 #90
-83822ba4 2026-10-18 Merge PR #90: [FORGE-02] FL-0013 Blender pipeline core on main
-9f4ace42 2026-10-18 Merge PR #184: [FORGE-02] FL-0127 part 1: three neutral outposts in the world layout
-c211a57e 2026-10-18 Merge PR #192: [FORGE-03] FL-0129 Results "Your reign" leadership recap
-34b141d8 2026-10-18 Merge PR #190: [FORGE-00] FL-0083 content lint: free-answer ties, memory warnings name the row key (D-056 (4))
-77fa1475 2026-10-18 Merge PR #188: [FORGE-03] FL-0129 open asks for war on the Rivals rows + five-button raid rail scene
-b6e4fc72 2026-10-18 Merge PR #193: [FORGE-04] FL-0074 part 1: crowd director, Crowd config, arena stage timings
-8962f6f0 2026-10-18 Merge PR #189: [FORGE-04] FL-0130 follow-up: camera focus for interest (Sim.Focus) and Match.Spectate
+e60b4a9e 2026-10-19 studio-runs: B20.2 = d03fd70 (B20.1 + #213 war events and interest tiers, ancestor-checked); integration-log #213
+d03fd70f 2026-10-18 Merge PR #213: [FORGE-01] re-land #198 + #201 into main (war events, Sim.Focus interest tiers)
+742ae19d 2026-10-18 FORGE-07 STATUS 01:30 UTC: B20.1 merged (cut 2f6dc35); #206 READY; #207 red on StyLua (one file); #210, #211 reviewed
+47da3f27 2026-10-19 B20.1 correction: #198 and #201 merged into stacked bases, not main; studio-runs row, integration-log, merge-checklist base and ancestor checks, lesson
+d35bac15 2026-10-19 [FORGE-00] B20.1 delivered (2f6dc35): Now (with the #198/#201 stacked-merge gap), checklist rows M1-M5
+e7759498 2026-10-19 studio-runs: B20.1 = 2f6dc35 (human war/peace, war notices, spectate screen, interest tiers) + asks; integration-log #199
+2f6dc35b 2026-10-18 Merge PR #199: [FORGE-04] FL-0074 part 2a: the arena crowd you hear and read
+cd1aae31 2026-10-19 integration-log: B20.1 batch 2 (#191 #197 #202 #195 #198 #201 #185 #196 #203 #205 #204 #200)
 ```
 
 <!-- forge:auto:end -->

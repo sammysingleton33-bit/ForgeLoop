@@ -243,6 +243,10 @@ def vocab():
         {"var": "citizen.memory.rulerVisited", "op": "=", "value": True},
         {"var": "citizen.chemistry", "op": ">", "value": -5}]),
     ("citizen.has_friend", [{"var": "citizen.has_friend", "op": "=", "value": True}]),
+    # FL-0134 / D-056 (3): the war, siege and objective-lost flags are conditions content can use
+    ("event.war_declared & event.siege & !event.objective_lost", [
+        {"var": "event.war_declared", "op": "=", "value": True}, {"var": "event.siege", "op": "=", "value": True},
+        {"var": "event.objective_lost", "op": "=", "value": False}]),
 ])
 def test_condition_parses_into_typed_clauses(text, expected):
     clauses, _ = content.parse_condition(text, vocab(), "citizen")

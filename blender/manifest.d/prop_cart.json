@@ -22,6 +22,7 @@
       "geometry_hash": "61b211da49a0bc4a",
       "id": "prop_cart_covered_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -89,6 +90,7 @@
       "geometry_hash": "ee8a80cadfb99cb9",
       "id": "prop_cart_handcart_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -156,6 +158,7 @@
       "geometry_hash": "b0e238ece4e0952e",
       "id": "prop_cart_haycart_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -223,6 +226,7 @@
       "geometry_hash": "1b9e147159979d1d",
       "id": "prop_cart_logcart_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -290,6 +294,7 @@
       "geometry_hash": "f4297d734b74af41",
       "id": "prop_cart_wagon_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",

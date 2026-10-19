@@ -3,8 +3,9 @@
 	Support (ReplicatedStorage.Forge.Config.Support) — the Crown Arena support score, tiers, key-citizen perks and the
 	ruler decisions that feed them (design `crown-arena.md` §3-§4; CONTRACTS G12). Owner: FORGE-01.
 
-	PROVISIONAL weights (BRIEF §16.9); every value is inside the G12.3 caps (Arena/Caps) and FORGE-05's caps spec asserts
-	that. Read by Arena/SupportModel (pure) and, later, LeadershipService / SupportService.
+	PROVISIONAL weights (BRIEF §16.9); every value is inside the G12.3 caps (Arena/Caps). tests/sim/SupportModel.spec
+	asserts that for every tier x pick set x power (FORGE-05's caps spec checks the design fixture, not this file).
+	Read by Arena/SupportModel (pure) and LeadershipService (acts, rules).
 
 	components[c].weight        share of the score (sums to 100)
 	sampling                    LeadershipService samples every `intervalSeconds`; the score weights the whole match
@@ -41,7 +42,7 @@ return {
 
 	tierOrder = { "adoring", "loyal", "divided", "restless", "hostile" },
 	tiers = {
-		adoring = { min = 85, passive = { damageReduction = 0.02, staminaRegen = 0.02 }, slots = 3, crowdRally = true },
+		adoring = { min = 85, passive = { damageReduction = 0.01, staminaRegen = 0.01 }, slots = 3, crowdRally = true },
 		loyal = { min = 65, passive = { damageReduction = 0.01, staminaRegen = 0.01 }, slots = 3, crowdRally = false },
 		divided = { min = 40, passive = {}, slots = 2, crowdRally = false },
 		restless = { min = 20, passive = {}, slots = 1, crowdRally = false },
@@ -71,8 +72,8 @@ return {
 		},
 		fieldRemedy = {
 			kind = "heal",
-			pledged = 0.05,
-			empowered = 0.08,
+			pledged = 0.03,
+			empowered = 0.05,
 			duration = 4,
 			condition = "hpBelow:0.35",
 			effect = "Regain {magnitude} of your HP over 4 s",

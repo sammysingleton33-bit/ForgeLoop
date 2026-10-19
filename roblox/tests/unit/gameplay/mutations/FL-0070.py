@@ -17,6 +17,15 @@ M = [
  ("FL-0070", SM, 'if finite(sample.t) and sample.t <= now then', 'if sample.t <= now then', "sim/SupportModel", "a NaN or infinite input is never evidence"),
  ("FL-0070", SM, 'if not finite(now) then\n\t\treturn NEUTRAL', 'if false then\n\t\treturn NEUTRAL', "sim/SupportModel", "a NaN or infinite input is never evidence"),
  ("FL-0070", SM, 'if not finite(score) then\n\t\tscore = NEUTRAL', 'if false then\n\t\tscore = NEUTRAL', "sim/SupportModel", "a NaN or infinite input is never evidence"),
+ ("FL-0070", CFG, 'adoring = { min = 85, passive = { damageReduction = 0.01, staminaRegen = 0.01 }', 'adoring = { min = 85, passive = { damageReduction = 0.02, staminaRegen = 0.01 }', "sim/SupportModel", "pins the FL-0076 trim"),
+ ("FL-0070", CFG, 'pledged = 0.03,\n\t\t\tempowered = 0.05,\n\t\t\tduration = 4,', 'pledged = 0.05,\n\t\t\tempowered = 0.05,\n\t\t\tduration = 4,', "sim/SupportModel", "pins the FL-0076 trim"),
+ ("FL-0070", CFG, 'pledged = 0.03,\n\t\t\tempowered = 0.05,\n\t\t\tduration = 4,', 'pledged = 0.03,\n\t\t\tempowered = 0.08,\n\t\t\tduration = 4,', "sim/SupportModel", "pins the FL-0076 trim"),
+ # --- FORGE-00 verifier (a)-(c)
+ ("FL-0070", SM, 'local magnitude = if power == "pledged" or power == "empowered" then perk[power] else nil', 'local magnitude = perk[power]', "sim/SupportModel", "accepts only the powers pledged and empowered"),
+ ("FL-0070", SM, 'local magnitude = if power == "pledged" or power == "empowered" then perk[power] else nil', 'local magnitude = if power == "pledged" then perk[power] else nil', "sim/SupportModel", "both powers is within Caps.check"),
+ ("FL-0070", SM, 'if picked[pick.trigger] then', 'if false then', "sim/SupportModel", "refuses a repeated pick"),
+ ("FL-0070", SM, '	if tierDef == nil then\n		error(`SupportModel: unknown tier \'{tostring(tier)}\'`, 2)\n	end\n	local offers', '	if false then\n		error(`SupportModel: unknown tier \'{tostring(tier)}\'`, 2)\n	end\n	local offers', "sim/SupportModel", "offers refuses an unknown tier"),
+ ("FL-0070", SM, 'if type(pick.trigger) ~= "string" then', 'if false then', "sim/SupportModel", "gets the module\'s own unknown-trigger message"),
  # --- the offers
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.pledgedLoyalty', 'citizen.loyalty > cfg.offer.pledgedLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.empoweredLoyalty', 'citizen.loyalty > cfg.offer.empoweredLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),
@@ -27,7 +36,7 @@ M = [
  ("FL-0070", SM, 'if #picks > tierDef.slots then', 'if false then', "sim/SupportModel", "refuses too many picks"),
  ("FL-0070", SM, 'if pick.trigger == "crowdRally" and not tierDef.crowdRally then', 'if false then', "sim/SupportModel", "refuses too many picks"),
  # --- the config stays inside the caps and its own shape
- ("FL-0070", CFG, 'adoring = { min = 85, passive = { damageReduction = 0.02, staminaRegen = 0.02 }', 'adoring = { min = 85, passive = { damageReduction = 0.04, staminaRegen = 0.02 }', "sim/SupportModel", "every tier x every pick set"),
+ ("FL-0070", CFG, 'adoring = { min = 85, passive = { damageReduction = 0.01, staminaRegen = 0.01 }', 'adoring = { min = 85, passive = { damageReduction = 0.04, staminaRegen = 0.01 }', "sim/SupportModel", "every tier x every pick set"),
  ("FL-0070", CFG, 'empowered = 0.10,\n\t\t\tduration = 6,', 'empowered = 0.12,\n\t\t\tduration = 6,', "sim/SupportModel", "every tier x every pick set"),
  ("FL-0070", CFG, 'loyalty = { weight = 20, scope = "kingdom" },', 'loyalty = { weight = 25, scope = "kingdom" },', "sim/SupportModel", "component weights add up to 100"),
 ]

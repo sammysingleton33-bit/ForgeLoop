@@ -952,3 +952,221 @@ describe("EntityService VS-1 reactions (CONTRACTS G5, FL-0050)", function()
 		end
 	end)
 end)
+
+-- FL-0125 (D-055 (2), (5)): in the full match each player's snapshots follow their Sim.Focus (else their character):
+-- near entities at the snapshot rate, the rest every farEvery-th tick, own soldiers always.
+describe("EntityService interest tiers and Sim.Focus (D-055)", function()
+	-- ids of the records each player got, per snapshot (a list of sets, oldest first)
+	local function snapshotsFor(env, player)
+		local out = {}
+		for _, entry in env.mock.remotes:sent(remote(env, "Sim.Snapshot")) do
+			if entry.player == player or entry.direction == "toAllClients" then
+				local set = {}
+				for _, r in assert(SnapshotCodec.decode(entry.args[1])).records do
+					set[r.id] = true
+				end
+				table.insert(out, set)
+			end
+		end
+		return out
+	end
+
+	local function focus(env, player, x, z)
+		env.mock.remotes:asClient(player, function()
+			remote(env, "Sim.Focus"):FireServer(Vector3.new(x, 0, z))
+		end)
+	end
+
+	-- one walking citizen near each pole of the world, so both are "moving" and selected every tick
+	local function twoCamps(_, entities)
+		local near = entities:spawn("citizen", "crimson", "hauler", Vector3.new(-600, 0, 0))
+		local far = entities:spawn("citizen", "azure", "hauler", Vector3.new(600, 0, 0))
+		local sim = entities:_sim()
+		sim.citizens[near].activity, sim.citizens[far].activity = "Walk", "Walk"
+		return near, far
+	end
+
+	it("sends the entities near each player's focus every tick and the rest every farEvery-th", function()
+		local env, entities = boot({ mode = "match" })
+		local a = env.mock.players:add({ userId = 1 })
+		local b = env.mock.players:add({ userId = 2 })
+		env.mock:advance(0.5)
+		local west, east = twoCamps(env, entities)
+		focus(env, a, -600, 0)
+		focus(env, b, 600, 0)
+		local before = #snapshotsFor(env, a)
+		env.mock:advance(2)
+		local forA, forB = snapshotsFor(env, a), snapshotsFor(env, b)
+		local ticks = #forA - before
+		expect(ticks >= 15).toBe(true)
+		local westA, eastA, westB, eastB = 0, 0, 0, 0
+		for i = before + 1, #forA do
+			westA += if forA[i][west] then 1 else 0
+			eastA += if forA[i][east] then 1 else 0
+		end
+		for i = #forB - ticks + 1, #forB do
+			westB += if forB[i][west] then 1 else 0
+			eastB += if forB[i][east] then 1 else 0
+		end
+		expect(westA).toBe(ticks) -- near A: every snapshot
+		expect(eastB).toBe(ticks) -- near B: every snapshot
+		expect(eastA < ticks / 2).toBe(true) -- far from A: about every fifth
+		expect(eastA >= 1).toBe(true)
+		expect(westB < ticks / 2).toBe(true)
+	end)
+
+	it("keeps a player's own soldiers in their snapshots wherever they look", function()
+		local env, entities = boot({ mode = "match" })
+		local a = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local mine = entities:spawn("soldier", "crimson", "soldier", Vector3.new(-600, 0, 0))
+		local theirs = entities:spawn("soldier", "azure", "soldier", Vector3.new(-600, 10, 0))
+		local sim = entities:_sim()
+		focus(env, a, 600, 0)
+		local before = #snapshotsFor(env, a)
+		for _ = 1, 20 do -- both soldiers shift a little every 0.1 s, so both are selected on every snapshot
+			sim.units[mine].x += 0.5
+			sim.units[theirs].x += 0.5
+			env.mock:advance(0.1)
+		end
+		local list = snapshotsFor(env, a)
+		local ownSeen, otherSeen = 0, 0
+		for i = before + 1, #list do
+			ownSeen += if list[i][mine] then 1 else 0
+			otherSeen += if list[i][theirs] then 1 else 0
+		end
+		expect(ownSeen).toBe(#list - before)
+		expect(otherSeen < (#list - before) / 2).toBe(true)
+		expect(otherSeen >= 1).toBe(true)
+	end)
+
+	it("a stale focus falls back to the character, and a missing character means everything is far", function()
+		local env, entities = boot({ mode = "match" })
+		local a = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local west = twoCamps(env, entities)
+		focus(env, a, -600, 0)
+		env.mock:advance(1)
+		local before = #snapshotsFor(env, a)
+		env.mock:advance(1)
+		local fresh = #snapshotsFor(env, a) - before
+		local seen = 0
+		for i = before + 1, #snapshotsFor(env, a) do
+			seen += if snapshotsFor(env, a)[i][west] then 1 else 0
+		end
+		expect(seen).toBe(fresh) -- a fresh focus: near
+		env.mock:advance(MatchConfig.interest.focusStaleSeconds + 1) -- no keepalive: the focus is ignored
+		local mid = #snapshotsFor(env, a)
+		env.mock:advance(2)
+		local list = snapshotsFor(env, a)
+		local stale = 0
+		for i = mid + 1, #list do
+			stale += if list[i][west] then 1 else 0
+		end
+		expect(stale < (#list - mid) / 2).toBe(true) -- no character in Lune: far
+	end)
+
+	it("the slice broadcasts everything to everyone, whatever the focus", function()
+		local env, entities = boot()
+		local a = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local _, east = twoCamps(env, entities)
+		focus(env, a, -600, 0)
+		local before = #snapshotsFor(env, a)
+		env.mock:advance(2)
+		local list = snapshotsFor(env, a)
+		local seen = 0
+		for i = before + 1, #list do
+			seen += if list[i][east] then 1 else 0
+		end
+		expect(seen).toBe(#list - before)
+	end)
+
+	it("ignores Y, clamps X and Z to the wire's range, and refuses what the validator refuses", function()
+		local env, entities = boot({ mode = "match" })
+		local a = env.mock.players:add({ userId = 1 })
+		focus(env, a, 1e9 % 3000, 0) -- a legal vector
+		env.mock.remotes:asClient(a, function()
+			remote(env, "Sim.Focus"):FireServer(Vector3.new(0, 1e6, 0)) -- longer than 4000 studs: refused
+			remote(env, "Sim.Focus"):FireServer("not a vector")
+		end)
+		local stored = entities._focus[1]
+		expect(stored).never.toBeNil()
+		expect(stored.z).toBe(0)
+		expect(math.abs(stored.x) <= SnapshotCodec.MAX_COORD).toBe(true)
+	end)
+	it("holds the bandwidth budget with 300 entities and 8 players: tiers cost far less than broadcast", function()
+		local function measure(mode: string)
+			local env, entities = boot({ mode = mode })
+			local players = {}
+			for userId = 1, 8 do
+				players[userId] = env.mock.players:add({ userId = userId })
+			end
+			env.mock:advance(0.5)
+			local rng = Random.new(5)
+			local ids = {}
+			for i = 1, 300 do
+				local kingdom = ({ "crimson", "azure", "emerald", "gold" })[i % 4 + 1]
+				table.insert(
+					ids,
+					entities:spawn(
+						"soldier",
+						kingdom,
+						"soldier",
+						Vector3.new(rng:NextNumber(-500, 500), 0, rng:NextNumber(-500, 500))
+					)
+				)
+			end
+			local sim = entities:_sim()
+			local base = 0
+			for _, entry in env.mock.remotes:sent(remote(env, "Sim.Snapshot")) do
+				base += buffer.len(entry.args[1])
+			end
+			local started = os.clock()
+			for step = 1, 100 do -- 10 s, every entity moving on every snapshot: the worst case
+				for _, id in ids do
+					sim.units[id].x += if step % 2 == 0 then 0.4 else -0.4
+				end
+				if step % 3 == 0 then
+					for _, player in players do
+						focus(env, player, rng:NextNumber(-400, 400), rng:NextNumber(-400, 400))
+					end
+				end
+				env.mock:advance(0.1)
+			end
+			local cpuMs = (os.clock() - started) * 1000 / 100
+			local total = -base
+			for _, entry in env.mock.remotes:sent(remote(env, "Sim.Snapshot")) do
+				total += buffer.len(entry.args[1])
+			end
+			-- the slice fires each buffer once to everybody; the full match fires one stream per player
+			return if mode == "slice" then total / 10 else total / 10 / 8, cpuMs
+		end
+		local sliceBytes, sliceMs = measure("slice")
+		local matchBytes, matchMs = measure("match")
+		print(
+			`INTEREST 300 moving entities, 8 players: bytes/s per player slice {math.floor(sliceBytes)}, match {math.floor(
+				matchBytes
+			)}; ms per 0.1 s step (sim + encode, headless) slice {math.floor(sliceMs * 100) / 100}, match {math.floor(
+				matchMs * 100
+			) / 100}`
+		)
+		expect(matchBytes < sliceBytes * 0.7).toBe(true)
+		expect(matchBytes <= 20000).toBe(true) -- BRIEF §14: <= 20 KB/s per player
+	end)
+	it("drops a player's focus when they leave (FORGE-07 L1)", function()
+		local env, entities = boot({ mode = "match" })
+		local a = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		focus(env, a, 10, 10)
+		expect(entities._focus[1]).never.toBeNil()
+		env.mock.players:remove(a)
+		env.mock:advance(0.5)
+		expect(entities._focus[1]).toBeNil()
+	end)
+
+	it("the far tier never slows an idle entity's refresh: farEvery divides REFRESH_EVERY (FORGE-07 L2)", function()
+		local Def = require("@game/ServerScriptService/Game/Services/EntityService")
+		expect(Def.REFRESH_EVERY % MatchConfig.interest.farEvery).toBe(0)
+	end)
+end)
