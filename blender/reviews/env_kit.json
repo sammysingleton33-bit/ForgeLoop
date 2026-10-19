@@ -1,20 +1,20 @@
 {
  "assets": {
   "env_kit_01": {
-   "geometry_hash": "61bac208a4421907",
+   "geometry_hash": "4aca7890499a3cb5",
    "verdict": "PASS"
   }
  },
  "generator": "env_kit",
  "generator_version": 1,
- "notes": "env_kit_01 (the 52 ids the world places): SET B (these meshes) PASS in all three groups; minimum over the groups shown (the crops reviewer scored cost 3 for the ~1.4k-triangle fields, trees/bushes and rocks/nodes scored 4). Renders are Blender, not Studio. env_kit_02 (15 spare ids nothing places yet) was only partly shown (wheat stages 04/05) and is not reviewed.",
- "reviewer": "fresh-context subagents, one per family group (images + rubric only); see games/game-001/art/reviews/img/d057-env-nature-r1/review.json",
+ "notes": "env_kit_01 (the 56 ids the world places: 52 as the part-built world does, 4 only as imported meshes: fences 01/02, cabbage variants 01/02): SET B (these meshes) PASS in all four groups; minimum over the groups shown (proportions 3 from the dressing reviewer, cost 3 from the crops reviewer). Of the 52 phase-2 ids, 51 are byte-identical to what was reviewed (subset hash 182b1116d1ceffea, unchanged); tree_oak_05 was trimmed 5 % horizontally in phase 3 round 2 (FORGE-00: out of its 8-stud node buffer), so the hash of the 52 changed from 61bac208a4421907 to d21f68e9d072bad8; one tree, a few percent, looked at in a render (indistinguishable apart from its size), no new fresh review. The 4 dressing ids were reviewed in phase 3 (their subset hash ce4e23d4363b96af is unchanged since). The rim cliffs of phase 3 round 1 are not in the kit any more (bench, env_kit_02). Renders are Blender, not Studio. The resource node markers are Kit-level parts, not in this FBX (img/d057-env-nodes-r1). env_kit_02 (11 spare ids nothing places) is not reviewed.",
+ "reviewer": "fresh-context subagents, one per family group (images + rubric only): phase 2 trees/bushes/flowers, rocks/boulders/nodes and crops for the first 52 ids (games/game-001/art/reviews/img/d057-env-nature-r1/review.json), phase 3 farm dressing for the 6 fence, cabbage-variant and cliff ids (img/d057-env-dressing-r1/review.json)",
  "round": 1,
  "scores": {
   "cohesion": 4,
   "detail_density": 4,
   "palette": 4,
-  "proportions": 4,
+  "proportions": 3,
   "readability": 4,
   "silhouette": 4,
   "triangle_cost": 3,

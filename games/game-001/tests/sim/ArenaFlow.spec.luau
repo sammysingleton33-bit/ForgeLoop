@@ -108,6 +108,44 @@ describe("ArenaFlow: champions", function()
 		expect(flow:state().a.userId).toBe(3) -- two votes beat leadership 99
 	end)
 
+	it("shows the vote stage: who may be voted for and who has voted, never for whom", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 3, 1, 2 }, azure = { 9, 8 } }), 0)
+		local vote = flow:state().vote
+		assert(vote, "a vote view in the vote stage")
+		expect(vote.a).toEqual({ kingdom = "crimson", candidates = { 1, 2, 3 }, voted = {} })
+		expect(vote.b).toEqual({ kingdom = "azure", candidates = { 8, 9 }, voted = {} })
+		flow:vote(2, 3)
+		flow:vote(9, 9)
+		vote = flow:state().vote
+		assert(vote, "still voting")
+		expect(vote.a.voted).toEqual({ 2 }) -- who voted, not whom: 3 is not named anywhere
+		expect(vote.b.voted).toEqual({ 9 })
+		flow:vote(2, 1) -- changing a vote changes nobody's standing in `voted`
+		expect(flow:state().vote.a.voted).toEqual({ 2 })
+		expect(flow:state().vote.a.candidates).toEqual({ 1, 2, 3 })
+	end)
+
+	it("lists only the sides that vote, and nothing once the vote has closed", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2 }, azure = { 9 } }), 0)
+		local vote = flow:state().vote
+		assert(vote, "a vote view")
+		expect(vote.a).never.toBeNil()
+		expect(vote.b).toBeNil() -- one candidate: no vote there
+		flow:step(ArenaConfig.voteSeconds)
+		expect(flow:state().vote).toBeNil()
+		expect(ArenaFlow.new(setup({ crimson = { 1 }, azure = { 9 } }), 0):state().vote).toBeNil() -- no vote stage at all
+	end)
+
+	it("drops a ruler who leaves during the vote from the candidates and from who has voted", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2, 3 }, azure = { 9 } }), 0)
+		flow:vote(2, 1)
+		flow:forfeit(2, 1)
+		local vote = flow:state().vote
+		assert(vote, "still voting")
+		expect(vote.a.candidates).toEqual({ 1, 3 })
+		expect(vote.a.voted).toEqual({})
+	end)
+
 	it("a repeat of the same vote or loadout changes nothing and bumps nothing", function()
 		local voting = ArenaFlow.new(setup({ crimson = { 1, 2 }, azure = { 9 } }), 0)
 		local rev = voting:rev()

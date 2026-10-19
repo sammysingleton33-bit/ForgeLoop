@@ -9496,7 +9496,7 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "61bac208a4421907",
+      "geometry_hash": "4aca7890499a3cb5",
       "id": "env_kit_01",
       "kingdom": null,
       "kit": {
@@ -9508,10 +9508,16 @@
             "tris_total": 2000
           },
           "crop": {
-            "props": 3,
+            "props": 5,
             "tris_max": 1430,
             "tris_min": 1332,
-            "tris_total": 4124
+            "tris_total": 6788
+          },
+          "fence": {
+            "props": 2,
+            "tris_max": 84,
+            "tris_min": 72,
+            "tris_total": 156
           },
           "flower": {
             "props": 6,
@@ -9538,11 +9544,11 @@
             "tris_total": 9058
           }
         },
-        "fbx_sha256": "3f470be00eb89f7d7866cf05af50491ba1b75a7929782fab50b4366c62c3c4f3",
+        "fbx_sha256": "38c1bb9e4760d16d9309e0ef293ecd21860c51686a4c1cc8510c380a686aefc3",
         "max_mesh_tris": 1430,
-        "props": 52,
+        "props": 56,
         "style": "B",
-        "total_tris": 19744
+        "total_tris": 22564
       },
       "license": "project-original",
       "material": "M_envkit_vc",
@@ -9550,27 +9556,28 @@
         "families": [
           "bush",
           "crop",
+          "fence",
           "flower",
           "haystack",
           "rock",
           "tree"
         ],
         "kit": "the ids the world places",
-        "props": 52,
+        "props": 56,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "env_kit_01 (the 52 ids the world places): SET B (these meshes) PASS in all three groups; minimum over the groups shown (the crops reviewer scored cost 3 for the ~1.4k-triangle fields, trees/bushes and rocks/nodes scored 4). Renders are Blender, not Studio. env_kit_02 (15 spare ids nothing places yet) was only partly shown (wheat stages 04/05) and is not reviewed.",
+        "notes": "env_kit_01 (the 56 ids the world places: 52 as the part-built world does, 4 only as imported meshes: fences 01/02, cabbage variants 01/02): SET B (these meshes) PASS in all four groups; minimum over the groups shown (proportions 3 from the dressing reviewer, cost 3 from the crops reviewer). Of the 52 phase-2 ids, 51 are byte-identical to what was reviewed (subset hash 182b1116d1ceffea, unchanged); tree_oak_05 was trimmed 5 % horizontally in phase 3 round 2 (FORGE-00: out of its 8-stud node buffer), so the hash of the 52 changed from 61bac208a4421907 to d21f68e9d072bad8; one tree, a few percent, looked at in a render (indistinguishable apart from its size), no new fresh review. The 4 dressing ids were reviewed in phase 3 (their subset hash ce4e23d4363b96af is unchanged since). The rim cliffs of phase 3 round 1 are not in the kit any more (bench, env_kit_02). Renders are Blender, not Studio. The resource node markers are Kit-level parts, not in this FBX (img/d057-env-nodes-r1). env_kit_02 (11 spare ids nothing places) is not reviewed.",
         "review_file": "reviews/env_kit.md",
-        "reviewer": "fresh-context subagents, one per family group (images + rubric only); see games/game-001/art/reviews/img/d057-env-nature-r1/review.json",
+        "reviewer": "fresh-context subagents, one per family group (images + rubric only): phase 2 trees/bushes/flowers, rocks/boulders/nodes and crops for the first 52 ids (games/game-001/art/reviews/img/d057-env-nature-r1/review.json), phase 3 farm dressing for the 6 fence, cabbage-variant and cliff ids (img/d057-env-dressing-r1/review.json)",
         "round": 1,
         "scores": {
           "cohesion": 4,
           "detail_density": 4,
           "palette": 4,
-          "proportions": 4,
+          "proportions": 3,
           "readability": 4,
           "silhouette": 4,
           "triangle_cost": 3,
@@ -9584,7 +9591,7 @@
       "triangles": {
         "budget_lod0": 1500,
         "lod0": 1430,
-        "lod1": 116
+        "lod1": 72
       },
       "validation_pass": true
     },
@@ -9609,22 +9616,16 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "9bae7f81ca87c259",
+      "geometry_hash": "13e93a3b0a8fc6da",
       "id": "env_kit_02",
       "kingdom": null,
       "kit": {
         "families": {
           "crop": {
-            "props": 5,
-            "tris_max": 1332,
+            "props": 3,
+            "tris_max": 1300,
             "tris_min": 1020,
-            "tris_total": 6004
-          },
-          "fence": {
-            "props": 2,
-            "tris_max": 84,
-            "tris_min": 72,
-            "tris_total": 156
+            "tris_total": 3340
           },
           "rock": {
             "props": 8,
@@ -9633,22 +9634,21 @@
             "tris_total": 1440
           }
         },
-        "fbx_sha256": "edc11e19206029b094131a42ad4b9a94ddb03daa62fd47c15d4080bfd26c8738",
-        "max_mesh_tris": 1332,
-        "props": 15,
+        "fbx_sha256": "d97d66336e551b4ea3ade43e9c2b6dda4df242d6a8e533719bb13beecada6181",
+        "max_mesh_tris": 1300,
+        "props": 11,
         "style": "B",
-        "total_tris": 7600
+        "total_tris": 4780
       },
       "license": "project-original",
       "material": "M_envkit_vc",
       "params": {
         "families": [
           "crop",
-          "fence",
           "rock"
         ],
         "kit": "spares: ids nothing places yet",
-        "props": 15,
+        "props": 11,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
@@ -9662,8 +9662,8 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1500,
-        "lod0": 1332,
-        "lod1": 72
+        "lod0": 1300,
+        "lod1": 132
       },
       "validation_pass": true
     },
