@@ -20,6 +20,8 @@ U = "games/game-001/src/client/Controllers/UpgradePanelController.luau"
 RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-001/default.project.json",
        "--specs", "games/game-001/tests", "economy/Drag"]
 ROWS = [
+    ("no press point for the camera", B, "\t\t\t\tself:_editDrag(true, press.at)\n", "\t\t\t\tself:_editDrag(true)\n",
+     "camera gets the press point"),
     ("second press while one is pending allowed", B, "if self.placing ~= nil or self._press ~= nil then",
      "if self.placing ~= nil then", "one press at a time"),
     ("hold timer fires for a replaced press", B, "\t\tif self._press == press then", "\t\tif self._press ~= nil then",
@@ -33,7 +35,7 @@ ROWS = [
     ("hold shorter than a tap", B, "BuildMenuController.DRAG_HOLD_SEC = 0.45", "BuildMenuController.DRAG_HOLD_SEC = 0.2",
      "longer than a tap"),
     ("no hold wait", B, "\t\tself._env.wait(BuildMenuController.DRAG_HOLD_SEC)\n", "", "hold picks it up"),
-    ("no edge-pan", B, "\t\t\t\tself:_editDrag(true)\n", "", "hold picks it up"),
+    ("no edge-pan", B, "\t\t\t\tself:_editDrag(true, press.at)\n", "", "hold picks it up"),
     ("edge-pan never ends", B, "\tself:_editDrag(false)\n\tlocal p = self.placing\n\tif p == nil or p.move == nil then",
      "\tlocal p = self.placing\n\tif p == nil or p.move == nil then", "bad spot"),
     ("drag does not aim", B, "\tif world ~= nil then\n\t\tself:aimAt(world)\n\tend\nend", "\tlocal _ = world\nend", "dragging moves the ghost"),

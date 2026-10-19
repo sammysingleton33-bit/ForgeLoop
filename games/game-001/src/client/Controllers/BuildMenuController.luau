@@ -470,14 +470,15 @@ function BuildMenuController:moveCooldownLeft(buildingId: any): number
 end
 
 -- FORGE-04's edge-pan while a building is dragged (RulerCameraController:setEditDrag, G13.9); optional.
-function BuildMenuController:_editDrag(on: boolean)
+-- `at` is the press point, so the camera follows the finger that holds the building, not another one (#239).
+function BuildMenuController:_editDrag(on: boolean, at: Vector2?)
 	if self.dragging == on then
 		return
 	end
 	self.dragging = on
 	local camera = self._registry:find("RulerCameraController")
 	if camera ~= nil and type(camera.setEditDrag) == "function" then
-		pcall(camera.setEditDrag, camera, on)
+		pcall(camera.setEditDrag, camera, on, if on then at else nil)
 	end
 end
 
@@ -508,7 +509,7 @@ function BuildMenuController:dragPress(buildingId: any, screen: Vector2): boolea
 		self._env.wait(BuildMenuController.DRAG_HOLD_SEC)
 		if self._press == press then
 			if self:startMove(press.id) then
-				self:_editDrag(true)
+				self:_editDrag(true, press.at)
 			else
 				self._press = nil
 			end

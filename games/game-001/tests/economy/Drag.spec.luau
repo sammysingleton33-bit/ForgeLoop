@@ -114,8 +114,9 @@ local function cameraDef(log)
 		name = "RulerCameraController",
 		new = function()
 			return {
-				setEditDrag = function(_, on)
+				setEditDrag = function(_, on, at)
 					table.insert(log, on)
+					log.at = at
 					return on
 				end,
 			}
@@ -277,6 +278,17 @@ describe("Drag a building (FL-0123)", function()
 		expect(editDrag[#editDrag]).toBe(true)
 		world.build:destroy()
 		expect(editDrag[#editDrag]).toBe(false)
+	end)
+
+	it("the camera gets the press point, so it follows the finger holding the building (#239)", function()
+		local id = house(world, Vector3.new(40, 0, 40))
+		world.build:dragPress(id, Vector2.new(400, 300))
+		world:advance(HOLD + 0.1)
+		expect(editDrag[#editDrag]).toBe(true)
+		expect(editDrag.at).toBe(Vector2.new(400, 300))
+		world.build:cancel()
+		expect(editDrag[#editDrag]).toBe(false)
+		expect(editDrag.at).toBeNil()
 	end)
 
 	it("one press at a time: a second finger on another building during the hold is ignored (FORGE-07 L1)", function()
