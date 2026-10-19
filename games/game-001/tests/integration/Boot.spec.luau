@@ -248,8 +248,12 @@ describe("game-001 headless join (FORGE-00 P0, 2026-10-19)", function()
 		expect(gui).toBeTruthy()
 		expect((gui :: any).ClassName).toBe("ScreenGui")
 		expect((gui :: any).Enabled).toBe(true)
+		-- the whole set, each switched on as render() leaves it for a ruler with a kingdom (FORGE-07 L1 on #282):
+		-- menus and backdrop follow the HUD, the topbar shows the phase, modals and notices are always on
 		for _, name in { "KingdomTopbar", "KingdomMenus", "KingdomModals", "KingdomNotices", "KingdomBackdrop" } do
-			expect(playerGui:FindFirstChild(name)).toBeTruthy()
+			local other = playerGui:FindFirstChild(name)
+			expect(other).toBeTruthy()
+			expect((other :: any).Enabled).toBe(true)
 		end
 		-- no Loader failure can hide behind a warning: a HUD that is mounted but dark is a failure too
 		env.mock:advance(30)
