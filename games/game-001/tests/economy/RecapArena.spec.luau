@@ -154,8 +154,8 @@ describe("UI/ArenaRecapModel (pure)", function()
 		expect(r.moments[1].deltaText).toBe("−5")
 		expect(r.moments[1].positive).toBe(false)
 		expect(r.moments[1].component).toBe("Your conduct")
-		expect(r.crowd.id).toBe("absent")
-		expect(r.perksText).toBe("Your kingdom had no champion")
+		expect(r.crowd.id).toBe("none") -- no duellist pair seen: no arena this match
+		expect(r.perksText).toBe("No duel this match")
 	end)
 
 	it("a new match key starts over", function()
@@ -186,6 +186,47 @@ describe("UI/ArenaRecapModel (pure)", function()
 		expect(outcome("hostile", "b")).toBe("emptied")
 		expect(outcome("adoring", "draw")).toBe("draw")
 		expect(outcome("adoring", nil)).toBe("pending")
+	end)
+
+	it("moments: the same text at another time counts twice, a zero delta not at all, deltas round", function()
+		local track = ArenaRecapModel.new()
+		local m = function(t, delta)
+			return { t = t, act = "petitionFulfilled", component = "conduct", delta = delta, text = "Heard a petition" }
+		end
+		ArenaRecapModel.observe(track, 1, { moments = { m(10, 3), m(20, 3), m(30, 0), m(40, 2.6) } }, nil, nil, "c")
+		local r = ArenaRecapModel.build(track)
+		expect(#r.moments).toBe(3)
+		expect(r.moments[1].deltaText).toBe("+3")
+		expect(r.moments[3].deltaText).toBe("+3") -- 2.6 rounds to 3 (t 40 is the smallest |delta|, last)
+	end)
+
+	it("perks: an emptied loadout reads 'No perks were chosen'; one perk is singular (FORGE-07 L1, L2)", function()
+		local track = ArenaRecapModel.new()
+		local d = function(triggers)
+			return { userId = 1, kingdom = "c", tier = "loyal", triggers = triggers }
+		end
+		ArenaRecapModel.observe(track, 1, nil, { stage = "loadout", a = d({ "reforge", "fieldRemedy" }) }, nil, "c")
+		ArenaRecapModel.observe(track, 1, nil, { stage = "loadout", a = d({}) }, nil, "c")
+		expect(ArenaRecapModel.build(track).perksText).toBe("No perks were chosen")
+		ArenaRecapModel.observe(track, 1, nil, { stage = "intro", a = d({ "reforge" }) }, nil, "c")
+		expect(ArenaRecapModel.build(track).perksText).toBe("0 of 1 perk fired")
+		-- before the loadout an empty list (not picked yet) does not clear what was seen
+		local early = ArenaRecapModel.new()
+		ArenaRecapModel.observe(early, 1, nil, { stage = "loadout", a = d({ "reforge" }) }, nil, "c")
+		ArenaRecapModel.observe(early, 1, nil, { stage = "vote", a = d({}) }, nil, "c")
+		expect(#ArenaRecapModel.build(early).perks).toBe(1)
+	end)
+
+	it("ArenaState.winner counts only once the duel is over (crowning / done)", function()
+		local track = ArenaRecapModel.new()
+		local arena = {
+			stage = "duel",
+			winner = 1,
+			a = { userId = 1, kingdom = "crimson", tier = "adoring", triggers = {} },
+			b = { userId = 7, kingdom = "azure", tier = "divided", triggers = {} },
+		}
+		ArenaRecapModel.observe(track, 1, nil, arena, nil, "crimson")
+		expect(ArenaRecapModel.build(track).crowd.id).toBe("pending")
 	end)
 
 	it("the result falls back to ArenaState.winner (a userId) once the duel is over", function()
@@ -256,7 +297,7 @@ describe("Leadership recap: Arena & support (FL-0073)", function()
 		expect(find(view, "PerksText").Text).toBe("0 of 3 perks fired")
 	end)
 
-	it("support seen but no champion: the page says so", function()
+	it("no arena this match (conquest or Crown Points): the page says so, not 'no champion' (FORGE-07 M1)", function()
 		world.rep:apply("compassion", 4, "You fed the farmers.")
 		supportOverMatch(world, "divided")
 		results(world)
@@ -264,8 +305,66 @@ describe("Leadership recap: Arena & support (FL-0073)", function()
 		world.recapper:setPage("arena")
 		world:advance(0.1)
 		local view = recapView(world)
+		expect(find(view, "Crowd"):GetAttribute("outcome")).toBe("none")
+		expect(find(view, "PerksText").Text).toBe("No duel this match")
+	end)
+
+	it("an arena held without my kingdom: Not in the arena", function()
+		world.rep:apply("compassion", 4, "You fed the farmers.")
+		supportOverMatch(world, "divided")
+		local a = ArenaDoubles.duellist(7, "azure", "loyal")
+		local b = ArenaDoubles.duellist(8, "emerald", "divided")
+		world.arena:setState({ stage = "duel", a = a, b = b })
+		world:advance(1.2)
+		results(world)
+		world.recapper:open()
+		world.recapper:setPage("arena")
+		world:advance(0.1)
+		local view = recapView(world)
 		expect(find(view, "Crowd"):GetAttribute("outcome")).toBe("absent")
 		expect(find(view, "PerksText").Text).toBe("Your kingdom had no champion")
+	end)
+
+	it("an unknown page name shows the reign page", function()
+		world.rep:apply("compassion", 4, "You fed the farmers.")
+		supportOverMatch(world, "adoring")
+		results(world)
+		world.recapper:open()
+		world.recapper:setPage("nonsense")
+		world:advance(0.1)
+		expect(world.recapper.page).toBe("reign")
+		expect(find(recapView(world), "Value_compassion")).toBeTruthy()
+	end)
+
+	it("a ruler whose kingdom fell keeps their champion's story", function()
+		world.rep:apply("compassion", 4, "You fed the farmers.")
+		supportOverMatch(world, "adoring")
+		local a = ArenaDoubles.duellist(1, "crimson", "adoring", { triggers = { "reforge" } })
+		local b = ArenaDoubles.duellist(7, "azure", "divided")
+		world.arena:setState({ stage = "duel", a = a, b = b })
+		world:advance(1.2)
+		-- the kingdom falls while the duel is still on (Kingdom.State.mine is nil from now on, as in Recap.spec):
+		-- the end of the duel must still count for this ruler
+		world.kingdoms.kingdoms.crimson.alive = false
+		world.kingdoms.members[world.player.UserId] = nil
+		world.kingdoms.members[2] = nil
+		world.kingdoms:publish()
+		world:advance(1.2)
+		expect(world.hud.store:mine()).toBeNil()
+		world.arena:events({
+			{ t = 1, kind = "triggerFired", side = "a", data = { trigger = "reforge" } },
+			{ t = 2, kind = "ended", side = "b", data = { winner = "b", reason = "ko" } },
+		})
+		world:advance(1.2)
+		world.arena:setState({ stage = "done", a = a, b = b })
+		world:advance(1.2)
+		results(world)
+		world.recapper:open()
+		world.recapper:setPage("arena")
+		world:advance(0.1)
+		local view = recapView(world)
+		expect(find(view, "Crowd"):GetAttribute("outcome")).toBe("saluted")
+		expect(find(view, "Perk_reforge"):GetAttribute("fired")).toBe(true)
 	end)
 
 	it("opening the recap again starts on the reign page", function()

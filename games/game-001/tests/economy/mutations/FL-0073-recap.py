@@ -41,6 +41,23 @@ ROWS = [
     ("phone columns over the buttons", V, "local footer = if phone and arena then 52 else 0", "local footer = 0", "phone 667"),
     ("Back half width without arena", V, "back.instance.Size = if arena then UDim2.new(0.5, -8, 0, 44) else UDim2.new(1, 0, 0, 44)",
      "back.instance.Size = UDim2.new(0.5, -8, 0, 44)", "without the arena"),
+    # FORGE-07 M1 / L1 / L2 on #229
+    ("no arena reads as no champion", M, "\tif not track.pairSeen then\n\t\treturn \"none\"", "\tif false then\n\t\treturn \"none\"",
+     "no arena this match"),
+    ("pair never marked", M, "\t\t\ttrack.pairSeen = true\n", "", "Not in the arena"),
+    ("emptied loadout kept", M, "(picked or #d.triggers > 0)", "(#d.triggers > 0)", "emptied loadout"),
+    ("early empty list clears", M, "(picked or #d.triggers > 0)", "(true)", "emptied loadout"),
+    ("dedupe by text only", M, "local id = `{m.t}|{m.act}|{m.text}`", "local id = m.text", "same text at another time"),
+    ("zero delta kept", M, "\t\tif m.delta ~= 0 then", "\t\tif true then", "same text at another time"),
+    ("delta not rounded", M, "local r = if n < 0 then -math.floor(-n + 0.5) else math.floor(n + 0.5)",
+     "local r = if n < 0 then -math.floor(-n) else math.floor(n)", "same text at another time"),
+    ("perk plural always", M, "perk{if #perks == 1 then \"\" else \"s\"} fired", "perks fired", "emptied loadout"),
+    ("winner read mid-duel", M, "\t\tand (arena.stage == \"crowning\" or arena.stage == \"done\")\n", "\t\tand true\n",
+     "only once the duel is over"),
+    ("any page accepted", K, "self.page = if page == \"arena\" then \"arena\" else \"reign\"", "self.page = page",
+     "unknown page name"),
+    ("fallen ruler loses the story", K, "if kingdom then kingdom.id else self._lastKingdom", "if kingdom then kingdom.id else nil",
+     "kingdom fell keeps"),
 ]
 bad = 0
 for name, path, old, new, expect in ROWS:
