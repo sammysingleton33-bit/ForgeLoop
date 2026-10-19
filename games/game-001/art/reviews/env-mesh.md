@@ -514,10 +514,13 @@ FORGE-00's decisions and what was done with each:
 | # | decision | done |
 |---|---|---|
 | 1 | wheat growth stages: only if the client has per-field state; it has none, so ship ripe only, no new contract | nothing places a stage: `farm_field_wheat_04` and `_05` stay on the bench in `env_kit_spares.fbx`, as does `_03` (a ripe variant with a scarecrow, not asked for) |
-| 2 | fences, cabbage and cliffs as dressing, within the D-047 ceiling; triangle totals in the PR | implemented as mesh-only dressing (3.3); parts and triangles in 3.3 and 3.5 |
+| 2 | fences, cabbage and cliffs as dressing, within the D-047 ceiling; triangle totals in the PR | fences and cabbage variants as mesh-only dressing (3.3); the cliffs were built into it and then dropped by FORGE-00 (round 2); parts and triangles in 3.3 and 3.5 |
 | 3 | iron and crystal ore: no, not game resources | `resource_ore_01/02/05/06` stay on the bench in `env_kit_spares.fbx` (kit 2), not in `env.json`, not in `Kit/EnvMeshData`, not promoted |
 | 4 | nodes readable at the 170-stud camera, visual only: mesh scale or a marker, no Layout or work spot change | a marker (3.2). Scaling is not available: the layout has 0.7 to 3.3 % of room around the quarry and ore |
 | 5 | one Studio row for performance | already in PR 247 |
+
+**Round 2 (FORGE-00's ruling on this phase, same branch): (a) the orb markers stay as an interim look (restyle to a flag only if the owner's Studio look says "toy"; a known placeholder); (b) the rim cliffs are dropped: no cliff is placed at any density and `rock_cliff_01/02` are back on the bench in `env_kit_spares.fbx`,
+so `env_kit_01` holds placed ids only (56); (c) no fence rework; (d) no scarecrow (wheat `_03` stays on the bench); (e) the NodeKeepOut box overage is accepted, but `tree_oak_05` is nudged out of its 8-stud buffer now (3.2). Everything below is restated for the final state; where round 1 said otherwise it says so.**
 
 ## 3.1 What the world has (measured)
 `blender/scripts/lune/EnvNodeFit.spec.luau` boots the real `Layout` and `WorldPlan.props` and measures every node with the stand-in and with the imported mesh (K's runtime, the real `Kit/EnvMeshData`, fake import Models).
@@ -534,7 +537,7 @@ among bushes and a 17 x 8 stud quarry stone are a few pixels, and nothing but po
 | `tree_oak_01` | wood | 11.59 | 12.59 | 16.33 | 18.21 | +44.7 % | 5 to 5 |
 | `tree_oak_03` | wood | 12.61 | 14.05 | 16.63 | 16.47 | +17.2 % | 5 to 5 |
 | `tree_pine_02` | wood | 8.51 | 8.58 | 11.49 | 11.36 | +32.3 % | 5 to 5 |
-| `tree_oak_05` | wood | 12.17 | 12.58 | 15.02 | 12.23 | -2.8 % | 5 to 5 |
+| `tree_oak_05` | wood | 12.17 | 11.96 | 14.27 | 12.23 | +2.3 % | 5 to 5 |
 | `resource_stone_01` | stone | 9.62 | 9.70 | 10.99 | 10.02 | +3.3 % | 5 to 5 |
 | `resource_stone_02` | stone | 9.62 | 9.65 | 10.58 | 9.90 | +2.6 % | 5 to 5 |
 | `resource_ore_03` | gold | 7.05 | 7.06 | 7.41 | 7.11 | +0.7 % | 5 to 5 |
@@ -543,9 +546,15 @@ among bushes and a 17 x 8 stud quarry stone are a few pixels, and nothing but po
 | `resource_ore_04` | gold | 6.94 | 6.85 | 8.31 | 300.24 | unbounded (heartland) | 7.21 to 10 |
 
 So a quarry stone can grow 2.6 to 3.3 %, the gold ore 0.7 %, a berry bush 9.7 % before a plot rule breaks (the limit is the quarry building, 5 studs, or the plot's last slot, 8 studs); a readable change is 30 % or more. Only the heartland nodes
-(no plot around them) could grow, and those are the contested ones the plots do not frame. Notes: (a) with the box measure the imported meshes are already 0.1 to 2.8 studs over the rule for 7 of the 8 plot node types (the real outline is not: only
-`tree_oak_05` is 0.35 stud into its 8-stud buffer, nothing touches a field, slot or building); NodeKeepOut runs on the stand-ins only, so nothing fails, but it is a number for FORGE-01 and K (3.7); (b) the work spots (3 per node, 5 studs from the pivot,
+(no plot around them) could grow, and those are the contested ones the plots do not frame. Notes: (a) **box measure**: with the NodeKeepOut measure applied to the mesh's bounding box the imported meshes are 0.1 to 2.0 studs over the rule for 7 of the 8 plot node types (`tree_oak_03` 0.16, `tree_pine_02` 0.13,
+`tree_oak_05` 2.04, stone 1 and 2 0.97 and 0.68, the gold ore 0.30, the berry bush 1.02); FORGE-00 accepted that overage (the box is conservative: a rounded rock's outline is inside it). **True outline** (the mesh's farthest vertex from the pivot, `radius_xz` in `env.json`): all eight plot node types are inside their buffers,
+by 5.6 (`tree_oak_01`), 2.4 (`tree_oak_03`), 2.8 (`tree_pine_02`), 0.32 and 0.25 (the stones), 0.35 (the berry bush) and 0.05 studs (the gold ore); see "tree_oak_05" below for the last. `NodeKeepOut.spec` runs on the stand-ins only, so nothing fails either way; (b) the work spots (3 per node, 5 studs from the pivot,
 7 to 10 in the heartland) are already inside the drawn reach of every node except the berry bush (the workers stand at the foot of the pile), so growing a node would put them deeper into it, not across a new line; (c) the decor measured around each node (the nearest flower tuft, bush or haystack is 2.6 to 11 studs outside the mesh's reach circle for the crimson plot's nodes but one, and `crimson_wood4`'s oak canopy is already 2.7 studs inside a flower tuft's circle) means the neighbours would overlap first. Option (i) needs Layout positions to move, which is FORGE-01's and not allowed here.
+
+**`tree_oak_05` (round 2, FORGE-00 (e)).** Its real outline reached 12.58 studs from the trunk against the 12.23 the keep-out rules allow at `crimson_wood4` (the limit is the starting quarry's 5-stud gap): 0.35 stud inside the buffer, with nothing touching a field, slot or building. Fixed the cheapest way, without moving `Layout` or a work spot:
+the generator trims that one mesh's x and z by 0.95 about its pivot after the fit window (`RADIAL_TRIM` in `generators/env_kit.py`; height untouched). Now: outline radius **11.955** (12.58 before), **0.275 stud inside** the buffer; footprint 95 % of the stand-in's (it was 100 %; the node window is 85 to 102 %), height 102 % (unchanged); box reach 14.27 (15.02), still 2.04 studs over the box rule (accepted). The other 51 phase-2 meshes are byte-identical:
+the subset hash of those 51 is 182b1116d1ceffea before and after (and `tree_oak_05` alone went from e7edbaa4e4c0a010 to 0859a1aff8472ea6). **I looked at it** (`blender/scripts/envkit_ab.py`, each version alone at the 45-stud camera): the same tree, 5 % less wide, nothing else visibly different, so no new fresh review; the pin changes (3.4). (The reviewed node and dressing sheets were rendered with the untrimmed tree and the 58-id kit of round 1: `review.json` records that kit's hash, 4a676b85217c85f3.)
+**This is a headless measure from `env.json` and the NodeKeepOut geometry (outline radius and box), on the stand-in-fitted layout; it is not a Studio check. Studio still needs one owner row: after the env import, look at the plots for node, building and field overlaps (the crimson lumber camp, quarry and the first crop field first).**
 
 **Option (ii), a marker on the node's Model: yes.** Looked at in Blender on the real placements (170 studs / 50 degrees, 82 studs / 44 degrees, with the real keep, houses, farm and citizens) before choosing; the comparison is
 `img/d057-env-nodes-candidates/candidates_aerial170.jpg` (crops at 1.7x of the 1280 x 720 aerial render):
@@ -577,32 +586,29 @@ A stone and gold with difficulty, food barely, wood never ("the wood-node trees 
 orange near the roofs and the wheat, markers shrink at 82 studs in the whole-settlement frame; not blocking (suggested: a flag or banner style, matte, a shorter post). **Round 2 was tried, not shipped**: a tilted faceted cube (3.8 studs) on a thicker, shorter post matches the chunky kit better but is clearly
 smaller at 170 studs, and a cube big enough to compete would reach 3.99 studs, past the berry bush's 3.6 (the marker would widen a node), so the round-1 orb stays; the marker code shipped is byte-identical to what was reviewed (the dumps compare equal).
 
-## 3.3 B. Dressing: cabbage variants, field fences and rim cliffs, only as imported meshes
-**Decision: placed only when the Kit would build the mesh** (`Kit.envMeshReady(id)`: a Model for the id in `Forge.Assets` that passes `EnvMesh`'s checks against `Kit/EnvMeshData`; silent, counts and logs nothing). Why not stand-ins: the part-built `farm_field_cabbage_01/02` are 65 parts each,
-a fence stand-in 7 to 8 parts (48 segments would be about 340 parts) and a cliff 4: about 1,000 parts for a world that sits at the D-047 ceiling, to draw something the mesh draws with 2 to 3 parts per prop. And the world without the imported kit (today's, every Lune spec, a Studio place before the import) stays
-exactly today's: same placements, same parts, the same fingerprints and pins (`WorldService.spec` 642 placements / fingerprint 1544930042, 615 props / 8,271 dressing parts at density 1.0, + 76 for the markers). A missing or rejected mesh means that piece of dressing is simply not placed.
-Implementation: `WorldPlan.meshDressing(layout, placements, ready)` (pure and deterministic, no PRNG; `WorldService` calls it after `WorldPlan.props`), `EnvMesh.ready`, `Kit.envMeshReady`. No Layout or Kingdom change (FORGE-01's); WorldPlan is the Kit's.
+## 3.3 B. Dressing: cabbage variants and field fences, only as imported meshes
+**Decision: placed only when the Kit would build the mesh** (`Kit.envMeshReady(id)`: a Model for the id in `Forge.Assets` that passes `EnvMesh`'s checks against `Kit/EnvMeshData`; silent, counts and logs nothing). Why not stand-ins: the part-built `farm_field_cabbage_01/02` are 65 parts each and a fence stand-in 7 to 8 parts
+(48 segments would be about 340): about 900 parts for a world that sits at the D-047 ceiling, to draw something the mesh draws with 2 to 3 parts per prop. And the world without the imported kit (today's, every Lune spec, a Studio place before the import) stays exactly today's: same placements, same parts, the same fingerprints and pins
+(`WorldService.spec` 642 placements / fingerprint 1544930042, 615 props / 8,271 dressing parts at density 1.0, + 76 for the markers). A missing or rejected mesh means that piece of dressing is simply not placed. Implementation: `WorldPlan.meshDressing(layout, placements, ready)` (pure and deterministic, no PRNG; `WorldService` calls it after `WorldPlan.props`),
+`EnvMesh.ready`, `Kit.envMeshReady`. No Layout or Kingdom change (FORGE-01's); WorldPlan is the Kit's.
 
 * **Cabbage variants.** The four cabbage fields were always `_03` (the id is `1 + field index % 3`, and the cabbage field is always the second of its plot). With the kit a cabbage field takes the variant of its kingdom: crimson `_01`, azure `_02`, emerald `_03`, gold `_01` (3 fields change, 1 stays). Wheat is untouched (`_01`, `_02`).
 * **Fences.** `farm_fence_01` (one rail, 72 triangles) and `_02` (two rails, 84), 16.5 studs long, along the outside of each plot's three crop fields (40 x 30 studs, 2.4 studs outside the field's edge): the back and the flanks, never a side that faces the keep (outward normal toward the keep above 0.35) or has another field
   within 8 studs. A segment is dropped (never nudged) when five samples along it touch a slot, a building, a build zone, the arena, a road or the river. Result: **12 segments per plot, 48 in the valley**, identical on the four plots. They stay out of the nodes' drawn extent and cross no nav edge (specs).
   K's collider rule makes a fence solid (16.5 x 4 x 0.8); decorate leaves it solid (below the 7-stud collide height).
-* **Cliffs.** `rock_cliff_01/02` (14.3 x 10.3 x 10.5 and 11.5 x 10.5 x 13.9, 138 and 132 triangles) on the flat ground 24 studs inside the foot of the mountain ring, one for every third ring mountain, slid along the foot so the line is irregular, facing the valley, only where the world's own clearance
-  (bounds with its 8-stud margin, river, roads, keep-out discs, the arena) and the placed props allow: **12 at the shipped density, 11 at 1.0** (a tree takes one site). Why the rim and not the quarry flank: a grey cliff beside the stone nodes could be mistaken for a node (FORGE-00: keep nodes distinct from decor rocks) and the plots' flanks have no room;
-  the rim is what the mountain ring already is. The price is that the cliffs stand 600 studs from every plot and are seen only when the camera goes to the edge. Sites (x, z): (-515, -626) (-347, 649) (-123, -594) (43, 629) (244, -600) (430, 641) (-641, -468) (679, -304) (-618, -105) (657, 76) (-629, 284) (675, 460).
+* **Cliffs: dropped (FORGE-00, round 2).** Round 1 placed 12 rock cliffs (11 at density 1.0) on the flat ground inside the foot of the mountain ring (180 - 144 = 36 parts, 1,620 triangles). They are gone: `WorldPlan.meshDressing` places no cliff at any density (a spec says so),
+  `rock_cliff_01/02` are back on the bench in `env_kit_spares.fbx` and out of `env.json` and `Kit/EnvMeshData`.
 
-Specs (`games/game-001/tests/world/KitEnvDressing.spec.luau`, 20; the checks are written independently of the implementation, with `Footprint` shapes built from the layout the way NodeKeepOut builds them): without the kit the placements are untouched (nil, none-ready and no-source predicates); `Kit.envMeshReady` is false without the kit
-and true with it and builds nothing, counts nothing, logs nothing, false for a wrong-scale import or a missing Model; no fence, cliff or `_01/_02` cabbage in a part-built world and 416 props; the cabbage renumbering by kingdom; 48 fences and 12 (11) cliffs; 12 fences per plot; every fence legal and hugging a field (shipped and 1.0); every cliff legal, on flat ground
-and off the other props; fences off the nodes and off the nav edges; a world built with the kit places 48 + 12 meshes with 3 parts each (180) and cabbages with 2; mutants: a fence on a slot, a road, the river, a building or a zone, a cliff on a road, the river, a plot, a node, the valley's edge, a tree or another cliff, a fence away from its field.
-`KitEnvMesh.spec` now counts the dressing ids as ids the world places; `WorldService.spec` pins +76.
+Specs (`games/game-001/tests/world/KitEnvDressing.spec.luau`, 16; the checks are written independently of the implementation, with `Footprint` shapes built from the layout the way NodeKeepOut builds them): without the kit the placements are untouched (nil, none-ready and no-source predicates); `Kit.envMeshReady` is false without the kit
+and true with it and builds nothing, counts nothing, logs nothing, false for a wrong-scale import or a missing Model; no fence or `_01/_02` cabbage in a part-built world and 416 props; the cabbage renumbering by kingdom; 48 fences at both densities and never a cliff or a bench id; 12 fences per plot; every fence legal and hugging a field (shipped and 1.0);
+fences off the nodes and off the nav edges; a world built with the kit places 48 fences with 3 parts each (144) and cabbages with 2; mutants: a fence on a slot, a road, the river, a building or a zone, a fence away from its field. `KitEnvMesh.spec` counts the dressing ids as ids the world places; `WorldService.spec` pins +76.
 
-**shipped density: part-built world 6945 parts (416 props), world with the imported kit 2770 parts (476 props)**
+**shipped density: part-built world 6945 parts (416 props), world with the imported kit 2734 parts (464 props)**
 
 | feature | placements | parts | triangles |
 |---|---|---|---|
 | bridge | 2 | 26 | 0 |
 | bush | 55 | 165 | 13700 |
-| cliff | 12 | 36 | 1620 |
 | crops | 12 | 24 | 16496 |
 | dressing | 9 | 83 | 196 |
 | fence | 48 | 144 | 3744 |
@@ -614,15 +620,14 @@ and off the other props; fences off the nodes and off the nav edges; a world bui
 | node:stone | 9 | 45 | 1800 |
 | node:wood | 16 | 80 | 8608 |
 | rocks | 84 | 252 | 15270 |
-| total (props and nodes) | | 1651 | 175076 |
+| total (props and nodes) | | 1615 | 173456 |
 
-**density 1.0: part-built world 8696 parts (615 props), world with the imported kit 3364 parts (674 props)**
+**density 1.0: part-built world 8696 parts (615 props), world with the imported kit 3331 parts (663 props)**
 
 | feature | placements | parts | triangles |
 |---|---|---|---|
 | bridge | 2 | 26 | 0 |
 | bush | 110 | 330 | 27740 |
-| cliff | 11 | 33 | 1482 |
 | crops | 12 | 24 | 16496 |
 | dressing | 9 | 83 | 196 |
 | fence | 48 | 144 | 3744 |
@@ -634,19 +639,18 @@ and off the other props; fences off the nodes and off the nav edges; a world bui
 | node:stone | 9 | 45 | 1800 |
 | node:wood | 16 | 80 | 8608 |
 | rocks | 169 | 507 | 31054 |
-| total (props and nodes) | | 2245 | 233894 |
+| total (props and nodes) | | 2212 | 232412 |
 
-Reading: with the kit the world has 476 placed props (shipped: 416 + 48 fences + 12 cliffs) and costs **2,770 parts against the part-built world's 6,945** (the same world with the markers); the dressing itself is **180 parts and 5,364 triangles** (144 + 36; 3,744 + 1,620).
-Gross relief of the phase-2 families against the part-built world is 4,355 parts at the shipped density; the table's total, 4,175, is net of the dressing's 180 (the 76 marker parts are in both columns):
+Reading: with the kit the world has 464 placed props (shipped: 416 + 48 fences) and costs **2,734 parts against the part-built world's 6,945** (the same world with the markers); the dressing itself is **144 parts and 3,744 triangles**. Relief of the phase-2 families against the part-built world is 4,355 parts at the shipped density; the table's total, 4,211, is net of the fences' 144
+(the 76 marker parts are in both columns; in round 1 the cliffs' 36 were in it too):
 
-**shipped density: 6945 -> 2770 parts (4175 fewer, 60%)**, same 416 placements
+**shipped density: 6945 -> 2734 parts (4211 fewer, 61%)**, same 416 placements
 
 | family | placements (incl. nodes) | parts today | parts with meshes | relief |
 |---|---|---|---|---|
 | birch | 51 | 459 | 153 | 306 |
 | boulders | 84 | 330 | 252 | 78 |
 | bush | 63 | 530 | 189 | 341 |
-| cliffs | 0 | 0 | 36 | -36 |
 | crops | 12 | 396 | 24 | 372 |
 | fences | 0 | 0 | 144 | -144 |
 | flowers | 31 | 279 | 62 | 217 |
@@ -655,16 +659,15 @@ Gross relief of the phase-2 families against the part-built world is 4,355 parts
 | other | 10 | 106 | 106 | 0 |
 | pine | 86 | 1892 | 258 | 1634 |
 | resource nodes | 14 | 122 | 42 | 80 |
-| total | | | | 4175 |
+| total | | | | 4211 |
 
-**density 1.0 (the untrimmed valley): 8696 -> 3364 parts (5332 fewer, 61%)**, same 615 placements
+**density 1.0 (the untrimmed valley): 8696 -> 3331 parts (5365 fewer, 62%)**, same 615 placements
 
 | family | placements (incl. nodes) | parts today | parts with meshes | relief |
 |---|---|---|---|---|
 | birch | 60 | 540 | 180 | 360 |
 | boulders | 169 | 664 | 507 | 157 |
 | bush | 118 | 970 | 354 | 616 |
-| cliffs | 0 | 0 | 33 | -33 |
 | crops | 12 | 396 | 24 | 372 |
 | fences | 0 | 0 | 144 | -144 |
 | flowers | 31 | 279 | 62 | 217 |
@@ -673,46 +676,50 @@ Gross relief of the phase-2 families against the part-built world is 4,355 parts
 | other | 10 | 106 | 106 | 0 |
 | pine | 102 | 2244 | 306 | 1938 |
 | resource nodes | 14 | 122 | 42 | 80 |
-| total | | | | 5332 |
+| total | | | | 5365 |
 
-**D-047 ceiling.** FORGE-00's all-built worst case is about 26.3k of 27k, which already contains the world's parts as they were (6,869 at the shipped density on this base). I did not rebuild an all-built case (no ceiling spec is on this branch; FL-0086's is not merged), so these are that figure plus my measured deltas:
-**without the kit** 26.3k + 76 markers = **about 26.4k** (about 0.6k of headroom, the nodes' markers are the only addition: fences, cabbage variants and cliffs are not placed); **with the kit** 26.3k - 6,869 + 2,770 = **about 22.2k** (4.1k lower, the dressing's 180 and the markers' 76 included).
-At density 1.0 the world is 8,696 parts part-built and 3,364 with the kit (no all-built figure was rebuilt for that either).
+**D-047 ceiling, combined with FL-0128's war kit.** Measured with `KitCeiling.spec` (the all-built worst case: WorldService, four kingdoms fully built at their top levels with wall level 3 x 12 and the gate at level 3, two building sites each, three neutral towers) on a throwaway worktree: `forge/02-blender-fl0128-war` at 74e2e953 with this branch merged (clean merge; nothing pushed to that branch; the worktree is removed):
+* **fallback world (no imported kit): WorldService 6,945 + kingdoms 19,015 + neutral towers 333 = 26,293 / 27,000** (headroom 707). The war branch alone is 26,217 (WorldService 6,869); the difference is exactly the 76 marker parts. No fence, cabbage variant or cliff exists in this world.
+* **mesh world (the kit imported): WorldService 2,734 + 19,015 + 333 = 22,082 / 27,000** (headroom 4,918; 4,211 fewer than the fallback), measured with a scratch copy of the same spec that installs the kit's fake import Models (K's fixture, the real `Kit/EnvMeshData`); fences included, no cliffs.
+At density 1.0 the world is 8,696 parts part-built and 3,331 with the kit; no all-built case was rebuilt for that.
 
-**Look (own critique; two sheets opened, both cameras plus the 45-stud lineup).** The fences make a U around the three fields (back and flanks), thin lines at 170 studs and readable posts and rails at 82; one lone segment on the east side of the first field looks purposeless (it is the field's own flank, the rule is "every exterior side that does not face the keep"); the back segments are identical repeats. The cabbage variants differ only by the heads' offset and shade, the three look alike.
-The cliffs read as grey boulders, not as a rock face, and are small beside the 50-stud keep; **I have no render of them on the mountain rim** (the Blender scene has no terrain), so how they sit against the slope is unverified. **Fresh image-only D-019 reviewer (round 1; SET A = the part-built world as it is today, SET B = the world with the meshes and the dressing; 2 sheets: the farm at 170 and 82 studs, a close lineup of the new ids; blind; `img/d057-env-dressing-r1/review.json`)**:
-SET B **PASS** (silhouette 4, variation 4, readability 4, proportions 3, palette 4, detail 4, cohesion 4, cost 5), SET A NEEDS-WORK (2 / 2 / 3 / 3 / 4 / 3 / 3 / 2). Reviewer notes on B, none blocking: fences thin and nearly invisible at 170 studs, identical repeats, the cliffs small and pale ("boulders, not rim cliffs"), the cabbage variants subtle,
-the wheat busy. Polish candidates (each changes the FBX and needs a new review): thicker or taller fences and varied segment lengths, bigger cliffs, more different cabbage variants.
+**Look (own critique; two sheets opened, both cameras plus the 45-stud lineup).** The fences make a U around the three fields (back and flanks), thin lines at 170 studs and readable posts and rails at 82; one lone segment on the east side of the first field looks purposeless (it is the field's own flank, the rule is "every exterior side that does not face the keep"); the back segments are identical repeats.
+The cabbage variants differ only by the heads' offset and shade, the three look alike. **Fresh image-only D-019 reviewer (round 1; SET A = the part-built world as it is today, SET B = the world with the meshes and the dressing; 2 sheets: the farm at 170 and 82 studs, a close lineup of the new ids; blind; `img/d057-env-dressing-r1/review.json`)**:
+SET B **PASS** (silhouette 4, variation 4, readability 4, proportions 3, palette 4, detail 4, cohesion 4, cost 5), SET A NEEDS-WORK (2 / 2 / 3 / 3 / 4 / 3 / 3 / 2). Reviewer notes on B, none blocking: fences thin and nearly invisible at 170 studs, identical repeats, the cabbage variants subtle, the wheat busy; FORGE-00: no fence rework.
+The lineup sheet also showed the two rock cliffs ("boulders, not rim cliffs", small and pale); they are not placed now, so nothing in the reviewed set depends on them.
 
 ## 3.4 What changed in the kit files (the owner re-imports `env_kit.fbx`)
-`env_kit_01` is now **58 ids** (the 52 the part-built world places, which are geometrically unchanged: the subset hash of those 52 is still 61bac208a4421907, so their phase-2 review stands; plus the 6 dressing ids promoted from the spares): `env_kit.fbx` 1,000,092 bytes (it was 874,652), `Kit/EnvMeshData.luau` regenerated (58 props, 16 sink warnings,
-none new in kind). `env_kit_02` (spares) is now **9 ids** (189,340 bytes): wood nodes 01/02, iron ore 01/02, crystal ore 05/06, wheat 03/04/05. **Ripe only** and the ore decision: nothing places a growth stage; iron and crystal stay on the bench, in kit 2 only.
-`IMPORT_ENVIRONMENT.md` says "58 ids". The manifest rows and the review pin follow (`blender/reviews/env_kit.json`: `env_kit_01` hash 4a676b85217c85f3, PASS, minimum scores 4 4 4 3 4 4 4 3).
+`env_kit_01` is now **56 ids**: the 52 the part-built world places (51 byte-identical to what was reviewed; `tree_oak_05` trimmed 5 % horizontally, 3.2) plus 4 promoted from the spares because the world places them as meshes: `farm_fence_01/02`, `farm_field_cabbage_01/02`. `env_kit.fbx` is 983,884 bytes (874,652 in PR 247); `Kit/EnvMeshData.luau` regenerated (56 props, 14 sink warnings: the same 14 as PR 247).
+**The owner re-imports `env_kit.fbx`: 4 new objects (`farm_fence_01/02`, `farm_field_cabbage_01/02`) and `tree_oak_05` 5 % narrower.** `env_kit_02` (spares) is **11 ids** (205,532 bytes): wood nodes 01/02, iron ore 01/02, crystal ore 05/06, wheat 03/04/05 and the rock cliffs 01/02. **Ripe only** and the ore decision stand: nothing places a growth stage; iron and crystal are not game resources and stay on the bench.
+`IMPORT_ENVIRONMENT.md` says "56 ids". Review pin (`blender/reviews/env_kit.json`): `env_kit_01` hash 4aca7890499a3cb5, PASS, minimum scores 4 4 4 3 4 4 4 3. **Honest hash bookkeeping:** the subset hash of the 52 phase-2 ids was 61bac208a4421907 when reviewed and is d21f68e9d072bad8 now, because of `tree_oak_05` alone: the other 51 are
+182b1116d1ceffea before and after, and the 4 dressing ids are ce4e23d4363b96af before and after. The oak_05 change is one tree, a few percent, looked at in a render, and does not get a new fresh review.
 
 ## 3.5 Totals (for the PR text)
-Triangles, measured from the FBX bytes (`manifest.check()` enforces the family budgets): **kit 1: 58 meshes, 22,834 triangles** (trees 20 / 9,058; bushes 8 / 2,000; flowers 6 / 1,626; rocks 16 / 3,010; crops 5 / 6,788; haystack 1 / 196; fences 2 / 156), largest mesh 1,430 (a wheat field); **kit 2: 9 meshes, 4,510 triangles** (rocks 6 / 1,170; crops 3 / 3,340).
-What the world draws with the kit, every placement counted at its measured triangles (placements x triangles, buildings, bridges, the arena and the kingdoms not included; a worst case, streaming and culling cut it): **175,076 triangles at the shipped density** (trees including the wood nodes 110.5k, rocks, cliffs and the stone and gold nodes 19.8k, crops 16.5k, bushes including the food nodes 15.9k, flowers 8.4k, fences 3.7k)
-and **233,894 at density 1.0**. Part count: shipped 6,945 part-built -> 2,770 with the kit (-4,175, -60 %), density 1.0 8,696 -> 3,364 (-5,332, -61 %). (Phase 2 alone was 171,472 and 230,594 on the base before main's arena keep-out.) The dressing adds 5,364 triangles and 180 parts. Phone cost of any of it is unverified.
+Triangles, measured from the FBX bytes (`manifest.check()` enforces the family budgets): **kit 1: 56 meshes, 22,564 triangles** (trees 20 / 9,058; bushes 8 / 2,000; flowers 6 / 1,626; rocks incl. nodes 14 / 2,740; crops 5 / 6,788; haystack 1 / 196; fences 2 / 156), largest mesh 1,430 (a wheat field); **kit 2: 11 meshes, 4,780 triangles** (rocks incl. cliffs 8 / 1,440; crops 3 / 3,340).
+What the world draws with the kit, every placement counted at its measured triangles (placements x triangles; buildings, bridges, the arena and the kingdoms not included; a worst case, streaming and culling cut it): **173,456 triangles at the shipped density** (trees including the wood nodes 110.5k, rocks and the stone and gold nodes 18.2k, crops 16.5k,
+bushes including the food nodes 15.9k, flowers 8.4k, fences 3.7k) and **232,412 at density 1.0**. Part count: shipped 6,945 part-built -> 2,734 with the kit (-4,211, -61 %), density 1.0 8,696 -> 3,331 (-5,365, -62 %). The dressing (fences only) adds 3,744 triangles and 144 parts. Phone cost of any of it is unverified.
 
 ## 3.6 Reproduce (Phase 3)
 ```
 bash blender/scripts/check.sh                                              # must end "blender check: PASS"
 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/world KitNodeMarker
 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/world KitEnvDressing
-FORGE_ENV_NODEFIT=/tmp/nodefit.json lune run ... --specs blender/scripts/lune EnvNodeFit            # the room around each node
+FORGE_ENV_NODEFIT=/tmp/nodefit.json lune run ... --specs blender/scripts/lune EnvNodeFit            # the room around each node (stand-in reach, mesh outline and box)
 FORGE_ENV_DRESSING=/tmp/dressing.json lune run ... --specs blender/scripts/lune EnvDressing         # parts and triangles with and without the kit, the dressing's placements
 FORGE_ENV_NODEMARKERS=/tmp/markers.json lune run ... --specs blender/scripts/lune EnvNodeMarkers    # the marker parts as the Kit builds them
 FORGE_ENV_RELIEF=/tmp/relief.json lune run ... --specs blender/scripts/lune EnvRelief
 python3 blender/scripts/envkit_report.py --relief /tmp/relief.json --nodefit /tmp/nodefit.json --dressing /tmp/dressing.json
+~/forge-bpy/bin/python -I blender/scripts/envkit_ab.py --id tree_oak_05 --a-fbx <older env_kit.fbx> --a-json <older env.json> --out /tmp/ab --only a   # and --only b: one prop from two kit versions
+# D-047 combined worst case: git worktree add --detach <dir> origin/forge/02-blender-fl0128-war; git -C <dir> merge forge/02-blender-fl0136-dressing; run KitCeiling there
+# (the mesh-world figure: a copy of that spec that installs the fixture's Forge.Assets and EnvMesh data, as EnvDressing.spec does); remove the worktree, push nothing
 ~/forge-bpy/bin/python -I blender/scripts/envnature_scenes.py --inv /tmp/inventory.json --out /tmp/nr1 --scenes nodes_east_crimson,nodes_wood_crimson,nodes_east_emerald,nodes_lineup,settlement_crimson --modes after,marked --markers /tmp/markers.json --size 1600x900
 ~/forge-bpy/bin/python -I blender/scripts/envnature_scenes.py --inv /tmp/inventory.json --out /tmp/dr1 --scenes farm_crimson --modes before,after --dressing /tmp/dressing.json --size 1600x900   # and dressing_lineup
 python3 blender/scripts/envnode_sheets.py --group nodes --renders /tmp/nr1 --out <folder> --key-out /tmp/key.json            # and --group dressing
 ```
 
 ## 3.7 Not verified, limits, and what FORGE-00 / K / the owner decide
-* **Studio is unavailable here.** Unverified in Studio: the Neon glow and bloom of the orbs, the markers' look against the real lighting, `OnboardingController`'s highlight and arrow on a node Model (they now include the marker and are taller), the real `MeshPart` bounds of the 6 new ids against `EnvMeshData`, fence collision (solid, 4 studs, 16.5 long) against a walking ruler, how a rim cliff sits on the mountain's foot, draw calls and frame time, the real part count of an imported world.
-* The cliffs have no render on the rim (no terrain in the Blender scene) and no D-019 sheet shows them in place; the rim sites are legal by the world's own clearance and flat ground, nothing more.
-* One reviewer session per group, no second opinion; the node reviewer found the markers cohesion 3 (balloons), the dressing reviewer found the fences thin. Both pass.
-* The 38 + 38 part figures and all-built ceiling numbers above are my deltas on FORGE-00's 26.3k, not a rebuilt all-built world.
-* `NodeKeepOut.spec` runs only on the stand-ins. With the imported meshes the box measure is 0.1 to 2.8 studs over the rule for 7 of the 9 plot node types and the real outline only 0.35 stud (`tree_oak_05`): K's fit window (nodes at most 102 % of the stand-in footprint) does not cover it. FORGE-00 / K: accept, or run NodeKeepOut with the meshes.
-* Asks for FORGE-00: (1) accept the orb marker as the node look (cohesion 3), or ask for a flag/banner restyle; (2) the cliffs on the rim are small and unseen: keep, scale up, or drop; (3) the fences are thin at 170 studs: thicken (a mesh change, new import); (4) wheat `_03` (scarecrow) as a third ripe plot variant: not done, say if wanted; (5) the lone east fence segment of each plot's first field: keep or drop.
+* **Studio is unavailable here.** Unverified in Studio: the Neon glow and bloom of the orbs, the markers' look against the real lighting (a known placeholder, FORGE-00 (a)), `OnboardingController`'s highlight and arrow on a node Model (now taller), the real `MeshPart` bounds of the 4 new ids against `EnvMeshData`, fence collision (solid, 4 studs, 16.5 long) against a walking ruler, draw calls and frame time, the real part count of an imported world.
+* **Node overlaps: Studio needs one owner row.** The NodeKeepOut figures above are headless: the mesh outline radius and bounding box from `env.json`, against the layout's keep-out rules; they say nothing about the real MeshPart outline or a placed model in Studio. After the env import the owner looks at each plot for node, building and field overlaps.
+* One reviewer session per group, no second opinion; the node reviewer found the markers cohesion 3 (balloons), the dressing reviewer found the fences thin. Both pass. `tree_oak_05` got no fresh review (one tree, 5 %).
+* The all-built figures are `KitCeiling.spec` on a scratch merge of the war kit (74e2e953) and this branch, plus a scratch mesh variant of it; they are headless Lune part counts, not Studio, and move with whatever else main adds.
+* Open for FORGE-00 / K: the NodeKeepOut box-measure overage is accepted (7 of 8 plot node types, 0.13 to 2.04 studs); the orb marker stays interim; wheat `_03` and the cliffs stay on the bench.

@@ -35,10 +35,13 @@ No author round 2 was needed (PASS on all three groups). The reviewed geometry i
 - Stage and plot variants of wheat/cabbage change the field as a whole (they are not per-plant meshes), so "ripe vs unripe" works only if the runtime places the stage ids.
 
 ## Phase 3 (FL-0136 follow-ups; branch forge/02-blender-fl0136-dressing)
-`env_kit_01` is now 58 ids: the 52 phase-2 ids (geometrically unchanged: subset hash 61bac208a4421907, so their round-1 review stands) plus the six the world places only as imported meshes (`WorldPlan.meshDressing`: `farm_fence_01/02`, `farm_field_cabbage_01/02`, `rock_cliff_01/02`).
-Geometry hash of the 58: `4a676b85217c85f3`, pinned in `env_kit.json`. `env_kit_02` is now 9 spare ids (wood nodes, iron and crystal ore, wheat 03 to 05), unreviewed.
+`env_kit_01` is now **56 ids**: the 52 phase-2 ids plus the four the world places only as imported meshes (`WorldPlan.meshDressing`: `farm_fence_01/02`, `farm_field_cabbage_01/02`). The rock cliffs were placed on the mountain rim in round 1 and dropped by FORGE-00 in round 2: they are back in `env_kit_02` (11 spare ids: wood nodes, iron and crystal ore, wheat 03 to 05, cliffs 01/02), unreviewed.
+Geometry hash of the 56: `4aca7890499a3cb5`, pinned in `env_kit.json`.
+
+**Hash bookkeeping (honest).** Of the 52 phase-2 ids, 51 are byte-identical to what was reviewed (their subset hash is 182b1116d1ceffea before and after). `tree_oak_05` was trimmed 5 % horizontally (generator `RADIAL_TRIM`, FORGE-00 round 2: out of its 8-stud node buffer), so the hash of the 52 changed from 61bac208a4421907 to d21f68e9d072bad8 because of that tree alone.
+I looked at the old and new tree in a render (indistinguishable apart from its size); one tree, a few percent: no new fresh review, the pin moved. The 4 dressing ids' subset hash is ce4e23d4363b96af before and after the round.
 
 Fresh D-019 reviewer, round 1 (one session, blind, image-only; `games/game-001/art/reviews/img/d057-env-dressing-r1/review.json`): SET B (the world with the meshes and the dressing) **PASS** 4 / 4 / 4 / 3 / 4 / 4 / 4 / 5 (silhouette / variation / readability / proportions / palette / detail / cohesion / cost), SET A (the part-built world) NEEDS-WORK 2 / 2 / 3 / 3 / 4 / 3 / 3 / 2.
-Non-blocking: fences thin and nearly invisible at 170 studs and identical repeats, the cliffs small and pale, the cabbage variants subtle, the wheat busy. No author round 2 was needed. The dressing renders were made from the committed FBX.
+Non-blocking: fences thin and nearly invisible at 170 studs and identical repeats, the cabbage variants subtle, the wheat busy (the sheet also showed the two cliffs, now unplaced). No author round 2 of the review was needed; FORGE-00: no fence rework. The dressing renders were made from the committed FBX of that round.
 
 The resource node markers (post and orb) are Kit-level parts, not in this FBX; their D-019 round is `img/d057-env-nodes-r1/review.json` (SET B PASS 4 / 4 / 4 / 3 / 4 / 4 / 3 / 4). Details, numbers and limits: `games/game-001/art/reviews/env-mesh.md` "Phase 3".

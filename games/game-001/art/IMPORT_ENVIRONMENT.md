@@ -10,8 +10,8 @@ Studio session and place can import both kits: do the citizens first, then this 
 
 ## 1. Files
 - `env_kit.fbx` from the Blender worker (expected at `games/game-001/art/env_kit/`, or the PR's CI artifact), one mesh object per prop, named by asset id.
-  Import only `env_kit.fbx` (58 ids: the 52 the part-built world places, plus 6 the world places **only as imported meshes**: `farm_fence_01/02` along the crop fields, `farm_field_cabbage_01/02` (the cabbage fields' variants) and `rock_cliff_01/02` at the foot of the mountain ring).
-  `env_kit_spares.fbx` (9 finished spares nothing places: wood nodes, iron and crystal ore (not game resources), wheat 03 and the two growth stages (the world has no growth)) is not needed. If an id is missing or rejected, the world simply does not place its dressing (`WorldPlan.meshDressing`) and builds nothing part-built in its place.
+  Import only `env_kit.fbx` (**56 ids**: the 52 the part-built world places, plus 4 the world places **only as imported meshes**: `farm_fence_01/02` along the crop fields and `farm_field_cabbage_01/02` (the cabbage fields' variants); `tree_oak_05` is 5 % narrower than in the first import). If you imported the 52-id file of the first FL-0136 round, import this one again: it has 4 new objects.
+  `env_kit_spares.fbx` (11 finished spares nothing places: wood nodes, iron and crystal ore (not game resources), wheat 03 and the two growth stages (the world has no growth), the rock cliffs (their rim placement was dropped)) is not needed. If an id is missing or rejected, the world simply does not place its dressing (`WorldPlan.meshDressing`) and builds nothing part-built in its place.
 - A place built from the repo: `rojo build games/game-001/default.project.json -o crownfall.rbxl`. It must contain
   `ReplicatedStorage.Game.Kit.EnvMeshData` (made by `python3 games/game-001/art/env_kit/env_to_luau.py`) and `ReplicatedStorage.Forge.Assets`.
 
