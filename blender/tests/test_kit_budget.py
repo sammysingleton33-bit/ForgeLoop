@@ -80,7 +80,7 @@ def test_mutant_a_mesh_over_20000_fails(real):
 
 def test_mutant_17_pieces_in_one_rig_fails(real):
     doc, measured = copy.deepcopy(real[0]), dict(real[1])
-    doc["assemblies"]["farmer"]["extras"] += ["apron_smith", "satchel_herb"]
+    doc["assemblies"]["farmer"]["extras"] += ["gear_smith", "gear_healer"]
     errs = manifest.kit_budget_errors(doc, measured, looks=LOOKS)
     assert any(e.startswith("farmer:") and "pieces over 16" in e for e in errs), errs
 
