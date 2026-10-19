@@ -174,9 +174,9 @@ describe("FL-0136 inventory of placed nature and crops", function()
 		for k, v in WorldPlan.CLEAR.radius do
 			clear[k] = v
 		end
-		-- the pinned figures of WorldService.spec (density 1.0, crimson dressed; the arena's parts are counted apart)
+		-- the pinned figures of WorldService.spec (density 1.0, crimson dressed; the arena's parts are counted apart): 8,271 + 76 resource-marker parts (FL-0136 phase 3)
 		expect(full.props).toBe(615)
-		expect(full.parts - full.arenaParts).toBe(8271)
+		expect(full.parts - full.arenaParts).toBe(8347)
 		-- the scene data: the shipped world's placements, the resource nodes, and two plots' starting buildings (part-built)
 		local placements = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.density(Layout)) do
