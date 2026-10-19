@@ -601,3 +601,38 @@ Reviewer verdict: NEEDS-WORK; the venue, medium and heavy armour, sword and shie
 (3) The mace's head sits at the avatar's face height in a 3/4 view because the arm is raised forward and the mace is short; it needs a longer haft or a lower grip. (4) The light set is the plain one by design (7 -> 9 parts); a hood or a tall cape would give it a silhouette. (5) Heavy's spaulders splay like wings and the medium cops intersect the arm blocks (a worn pauldron
 always overlaps the shoulder; the avatar in the preview is a block stand-in, a real R15 rig is unverified). (6) Emerald is the least readable kingdom: dark green on dark green, and the timber-hoarding cap reads as a pyramid at 170 studs. (7) The crown emblem (the shared D-039 piece) reads as an envelope on the rug at that size; changing it re-pins every building that carries it.
 (8) No road leads to the arena and the plinth meets the grass without a blend. (9) All of this is Blender, not Studio: lighting, materials (Roblox Metal and Fabric are only approximated), real R15 and R6 fit and the arena's look in the engine's lighting are unverified.
+
+### Round 3 (authorised by FORGE-00 after CONTRACTS v0.4-g11a; code head 62c68e10, images head 7d0690c1) — supersedes the numbers above where they differ
+
+G12.6 now lets the six key citizens use up to 8 parts (`Kit.CROWD_ROLE_MAX_PARTS`, the specs read it); every other figure stays at 4 (`Kit.CROWD_MAX_PARTS`).
+**What changed.** Key citizens (7 - 8 parts): sledge with peen and a dark apron (blacksmith); satchel with a red cross and a strap (healer); steel helm, tall plume, cape, sash and scabbard (captain); basket with a bridge handle and a loaf (provisioner);
+staff with a crossbar, a kingdom banner, a finial and a white beard (elder); brass scales held out in front with a pan under each beam end (merchant). Crowd: 12 variants (was 8) with round robes and square tabards, three head shapes (ball, block, drum), crest scale 0.9 - 1.15,
+five arm poses (level, waving, thrown up, one arm straight up, folded at the waist), heights 0.82 - 1.07. Mace: 5-stud haft, studded ball head held 2 studs clear above the wearer's head (reach 5.5). Light armour: long swept cape, wider mantle, a taller feather. Heavy spaulders hug the arm
+(no more than 0.45 stud past its outer edge); medium cops sit on the shoulder. Emerald's gate and royal-roof caps are an overhanging timber hoarding under a flat kingdom roof (`kingdomCap` in `Kit/Arena.luau`; the Kit's `towerCap` is unchanged). Ground blend: 10 parts (a sloped skirt on four sides,
+a sand ramp and a short path at each gate, never above the apron, at most 4 studs past the plate, clear of the decor by the existing keep-out).
+**Exact part counts now:** arena neutral 349 (215 structure including the 10-part ground blend + 2 x 67 neutral dress); dressed pairs crimson x2 421, azure x2 469, gold x2 459, emerald x2 487 (worst; was 499 with the pyramid caps). Crowd figure 4; key citizens: blacksmith 8, healer 8, captain 7, provisioner 8, elder 8, merchant 8.
+Armour: light 9, medium 12, heavy 17. Weapons: spear 7, greatsword 8, sword and shield 10, mace 10.
+**Evidence (headless):** KitArena 32, KitCrowdFigure 19, KitGear 23, ArenaLayout 21 tests; 44 mutants killed of 44 (10 new: crossed bars, no drum heads, no arm thrown up, tiny banner, scales without pans, mace head at face height, winged spaulders, the Kit pyramid on emerald, no ground blend, a skirt facing away).
+
+**Round 3 scores (fresh image-only reviewer, ten images plus the new ground-blend image; sil / var / read; every other column >= 3):**
+
+| family | sil | var | read | result |
+|---|---|---|---|---|
+| arena, aerial camera | 4 | 4 | 4 | PASS (marginal; emerald's side is dark) |
+| arena, ruler camera | 4 | 4 | 5 | PASS |
+| **crowd figures** | 4 | **3** | **3** | NEEDS-WORK |
+| key-citizen props (was 3 / 4 / 2) | 4 | 4 | 4 | PASS (marginal): all six told apart at ring level, none at the aerial camera; the captain is the weakest read |
+| light armour (was 3 / 4 / 3) | 4 | 4 | 4 | PASS (marginal): "cowboy hat", a floating red rod, a flat cape plank |
+| medium armour | 4 | 4 | 4 | PASS: the cops look detached at neck height |
+| heavy armour | 4 | 4 | 4 | PASS (marginal): shoulder plates "wing out" |
+| sword and shield | 4 | 4 | 4 | PASS |
+| **greatsword** | 4 | **3** | **3** | NEEDS-WORK: differs from the sword mainly by length, confusable with the spear as a thin vertical line |
+| spear | 5 | 4 | 4 | PASS |
+| **mace (was 2 / 3 / 2)** | **3** | 4 | **3** | NEEDS-WORK: a small cross-shaped head on a thin pole, gone at 45 studs |
+| ground blend and fit in the valley | 3 | 3 | 3 | NEEDS-WORK: the skirt is barely visible, the sand ramp a small low-contrast patch leading nowhere |
+
+Reviewer verdict: NEEDS-WORK overall; the arena venue and the key citizens pass, and so do all three armours and sword and shield and spear.
+**Rule applied: one more round, then stop.** Failing criteria after round 3, stated plainly: **crowd** variation 3 and readability 3 (at the aerial camera a stand is a single-colour regimented mass; emerald is the darkest and its swept plumes read as pipes; the crimson and emerald crowds merge by value in greyscale);
+**greatsword** variation 3 and readability 3; **mace** silhouette 3 and readability 3; the ground blend 3 / 3 / 3 (not a gating family).
+Other things the reviewer flagged, not argued away: the floor crown still reads as an envelope and the oak leaf as a cloud (the shared D-039 emblems), no hand visibly grips a weapon (the stand-in avatar has block arms), the armours form a visual ladder light < medium < heavy ("the opposite of a sidegrade"), the gate-front walls are blank planes, and no road leads to the arena.
+Where I read the images differently: the "cowboy hat" is the light cap's brim and feather (a leather cap with a plume is what the set is); "floating" weapons are the stand-in's raised forearm seen end-on. Fit on a real R15 or R6 avatar and every Roblox material are Studio-unverified.

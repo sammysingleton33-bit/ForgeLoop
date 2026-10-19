@@ -11,12 +11,12 @@ The Kit now builds the Crown Arena (`Kit.arena`), the crowd (`Kit.crowdFigure`),
 -- Kit (FORGE-02), games/game-001/src/shared/Kit/Kit.luau; all pure Part builders, no yields, no scripts
 Kit.arena(kingdomA: Color3?, kingdomB: Color3?): Model     -- neutral dress when a colour is nil
 Kit.arenaDress(model: Model, kingdomA: Color3?, kingdomB: Color3?)   -- rebuild both dresses in place (server)
-Kit.crowdFigure(kingdomColor: Color3, role: KeyRole?, variant: number?): Model   -- <= 4 parts, client-only
+Kit.crowdFigure(kingdomColor: Color3, role: KeyRole?, variant: number?): Model   -- <= 4 parts (<= 8 with a role, v0.4-g11a), client-only
 Kit.armour(armour: Armour, kingdomColor: Color3?): { Accessory }
 Kit.weapon(weapon: Weapon, kingdomColor: Color3?): Tool
 Kit.ARENA = { PART_BUDGET = { target = 700, cap = 900 }, FOOTPRINT = Vector2(75, 74), DUEL_RADIUS = 21, RING_RADIUS = 23,
               SPAWN_X = 13, SLAB_TOP = 0.8, FLOOR_TOP = 1.12, SEATS_PER_STAND = 72, SEAT_SPACING = 2.4, ... }
-Kit.CROWD_ROLES, Kit.CROWD_MAX_PARTS (4), Kit.CROWD_VARIANTS (8), Kit.CROWD_HEIGHT, Kit.crowdPoolKey(color, role?, variant?)
+Kit.CROWD_ROLES, Kit.CROWD_MAX_PARTS (4), Kit.CROWD_ROLE_MAX_PARTS (8), Kit.CROWD_VARIANTS (12), Kit.CROWD_HEIGHT, Kit.crowdPoolKey(color, role?, variant?)
 Kit.ARMOURS = { "light", "medium", "heavy" }, Kit.WEAPONS = { "swordShield", "greatsword", "spear", "mace" }  -- G12.1 names
 
 -- Layout (FORGE-02), games/game-001/world/Layout.luau
@@ -43,10 +43,10 @@ Layout.arena = { cframe: CFrame,      -- the arena frame on the ground: X = gate
 
 ### Crowd director (FORGE-04): how to seat figures
 1. Client only. Never build figures on the server. For each seat to fill: `local fig = Kit.crowdFigure(kingdomColor, role, variant)`; pool by `Kit.crowdPoolKey(color, role, variant)` (the crest shape follows the kingdom, so pool per kingdom); `fig:PivotTo(seatAttachment.WorldCFrame)`. The pivot is on the feet and the front is -Z, so the figure stands on the plank facing the ring.
-2. A stand holds 72 seats; the design caps a stand at 60 figures (design §7), so there are at least 12 empty places for the "Restless / Hostile" crowds. Suggested fill order: from the centre outwards by row, or any deterministic function of the match seed; use `variant = (row * 5 + seat * 3) % 8 + 1` for a varied crowd (every figure is deterministic from its three arguments).
+2. A stand holds 72 seats; the design caps a stand at 60 figures (design §7), so there are at least 12 empty places for the "Restless / Hostile" crowds. Suggested fill order: from the centre outwards by row, or any deterministic function of the match seed; use `variant = (row * 5 + seat * 3) % Kit.CROWD_VARIANTS + 1` for a varied crowd (every figure is deterministic from its three arguments).
 3. Key citizens: put the figure for role `KeyRole[n]` on `StandX_Rail<n>` with `Kit.crowdFigure(color, role, 1)` (they wear their role prop and replace the arms bar; the prop silhouettes are in `Kit/Crowd.luau`).
 4. Figures are anchored, non-colliding, 4 parts: bob/cheer by `PivotTo` offsets or by moving the parts; the arms bar (`Arms`) is a separate part and can be tilted for a cheer. Beyond the LOD distance the director may drop figures to billboards (design §7); the Kit has no billboard stand-in.
-5. 120 figures x 4 parts = 480 client parts; the arena's 339-499 parts are in the world budget, the figures are not.
+5. 120 ordinary figures x 4 parts + 12 key citizens x 7 - 8 parts = about 580 client parts; the arena's 349 - 487 parts are in the world budget, the figures are not.
 
 ### Gear (FORGE-01 DuelService / loadout)
 - `Kit.armour(armour, color)` returns Accessories named `KitLightCap`, `KitLightJerkin`, `KitLightCloak` (BodyBackAttachment), `KitMedium{Helm,Mail,PauldronLeft,PauldronRight}`, `KitHeavy{Helm,Plate,Back,PauldronLeft,PauldronRight}`; each has a `Handle` with one `Attachment` named for its body attachment (`HatAttachment`, `BodyFrontAttachment`, `BodyBackAttachment`, `LeftCollarAttachment`, `RightCollarAttachment`). Equip with `humanoid:AddAccessory(acc)` on the champion's character (R15 or R6).
@@ -60,8 +60,8 @@ Layout.arena = { cframe: CFrame,      -- the arena frame on the ground: X = gate
 
 ## Evidence
 - `lune ... --specs games/game-001/tests/world KitArena KitCrowdFigure KitGear ArenaLayout WorldService`: see the report for the counts and mutants (headless, **not Studio**).
-- Part counts (exact): arena neutral 339 (205 structure + 2 x 67 neutral dress); dressed 2 x crimson 411, 2 x azure 459, 2 x gold 449, 2 x emerald 499 (worst pairing, under the 700 target; hard cap 900); one kingdom's dress: crimson 103, azure 127, gold 122, emerald 147. Crowd figure 4 parts for every role, variant and colour. Armour (all pieces): light 9 (cap 3, jerkin 4, cloak 2), medium 12, heavy 17 parts; weapons 7 - 10 parts (spear 7, greatsword 8, mace 9, sword and shield 10).
-- D-047: WorldService `stats.parts` now includes the arena (`stats.arenaParts`); the last measured world ceiling on the FL-0086 branch was 25,861 / 27,000. Adding the neutral arena (+339) and the fourth neutral tower of FL-0127 (+115, estimate) gives about 26,315; dressed in the worst colours (+160) about 26,475, so about 525 parts of headroom remain before FL-0127 part 2 spends them. FORGE-05's ceiling spec (on the FL-0086 branch) sums `svc.stats.parts`, so it counts the arena by itself; it does not count the dress delta at the Arena phase (+0 to +160).
+- Part counts (exact, round 3): arena neutral 349 (215 structure including the 10-part ground blend + 2 x 67 neutral dress); dressed 2 x crimson 421, 2 x azure 469, 2 x gold 459, 2 x emerald 487 (worst pairing, under the 700 target; hard cap 900). Ordinary crowd figure 4 parts for every variant and colour; key citizens (role set, G12.6 v0.4-g11a): blacksmith 8, healer 8, captain 7, provisioner 8, elder 8, merchant 8. Armour (all pieces): light 9 (cap 3, jerkin 4, cloak 2), medium 12, heavy 17 parts; weapons: spear 7, greatsword 8, mace 10, sword and shield 10.
+- D-047: WorldService `stats.parts` includes the arena (`stats.arenaParts`); the last measured world ceiling on the FL-0086 branch was 25,861 / 27,000. Adding the neutral arena (+349) and the fourth neutral tower of FL-0127 (+115, estimate) gives about 26,325; dressed in the worst colours (+138) about 26,463, so about 535 parts of headroom remain before FL-0127 part 2 spends them. FORGE-05's ceiling spec sums `svc.stats.parts`, so it counts the arena by itself; it does not count the dress delta at the Arena phase (+0 to +138).
 
 ## Interfaces touched
 Additive only: `Layout.arena` (G12.6 names plus `footprint`, `regionId`), the Kit exports above, `WorldService.stats.arenaParts`, `WorldPlan.arenaRect`, `WorldPlan.TRIM.arenaReach`. No breaking change.
@@ -71,9 +71,9 @@ Additive only: `Layout.arena` (G12.6 names plus `footprint`, `regionId`), the Ki
 - The arena sits on the road-free ground between the azure and gold roads and the east hill; hub-azure nav edge passes 19.9 studs from its north-west corner. No road leads to it yet (a spur from the hub is a follow-up).
 - Armour and weapon fit on a real R15/R6 avatar, the Tool grip, and the accessory attachments are **unverified in Studio**; the specs use stand-in avatars with the attachment names from the Roblox attachment reference.
 - The shield of sword-and-shield rides the sword hand.
-- **D-019 is not passed.** Two fresh image-only rounds (details and scores in `games/game-001/art/reviews/kit-architecture.md`): the arena (aerial and ruler), medium and heavy armour, sword and shield, greatsword and spear PASS; crowd figures (variation 3, readability 3), the six key-citizen props (silhouette 3, readability 2), light armour (silhouette 3, readability 3) and the mace (silhouette 2, readability 2) still fail the >= 4 bars. The two-round limit is spent, so FL-0072's completion criterion ("visual review scored per D-019") is open.
-  Recommended follow-up for FORGE-00 to decide (G12.6 is a contract): let the six key citizens (12 figures in all) use up to 8 parts, so the staff gets a banner, the satchel a cross, the scales their pans and the basket a handle; keep the crowd at 4. A longer haft or lower grip for the mace, and a hood or a tall cape for the light set, are FORGE-02-only changes.
-- The crowd is a stylised 4-part person; the key-citizen props were judged from Blender renders only (the reviewer read the satchel as a tablet, the plume as a slab, the staff as a pole and the basket as a drum).
+- **D-019 is not passed (three fresh image-only rounds; scores in `games/game-001/art/reviews/kit-architecture.md`).** After round 3 the arena (aerial and ruler), the six key-citizen props, all three armours, sword and shield and the spear PASS; the crowd figures (variation 3, readability 3), the greatsword (variation 3, readability 3), the mace (silhouette 3, readability 3) and the ground blend (3 / 3 / 3, not a gating family) do not. FL-0072's completion criterion ("visual review scored per D-019") stays open; FORGE-00 opens the PR as interim art under D-051.
+  Next art round (FORGE-02-only unless noted): a larger studded mace head or a bigger kingdom-coloured mace flag; a wider guard or a different tip for the greatsword; a crowd that survives 20 px (more hat-height and value variety per stand, a lighter emerald crowd and a short upright emerald plume); a lighter floor crown and a lobed oak leaf (the shared D-039 emblems, so a Kit-wide change); the stand-in avatar needs hands to show grips. The ground blend wants a higher-contrast sand ramp and a road spur from the hub (a Layout change).
+- The crowd is a stylised 4-part person and the key citizens 7 - 8 parts; every look was judged from Blender renders only, never from Studio.
 
 ## Next actions for the receiver
 1. FORGE-01: ArenaService calls `Kit.arenaDress` at the Arena phase and reads `Layout.arena`; DuelService reads `duelRadius` and the spawn marks; loadout equips `Kit.armour` / `Kit.weapon`.
