@@ -32,6 +32,7 @@ Human rulers can declare war and make peace through a server-validated remote, w
 - The "ruler moved" touch is sampled from the clamped position in `MatchHost:_mirrorRulers`; not covered by a spec (headless has no characters), covered by the Studio step below.
 - `MoveBuilding` is locked for newcomers; `Demolish` is not (FL-0126 adds it).
 - Spectator rulers have no seat.
+- The newcomer lock beats seniority: a lone newcomer in a kingdom at war cannot AcceptPeace for up to 120 s, while a peace proposal lives 60 s (`pvp.proposalSeconds`); the proposer re-proposes. Any command counts as input for the idle-senior rule, including one that then fails validation (FORGE-07 L2, L3).
 
 ## Next actions for the receiver
 1. FORGE-03 (FL-0129b): build the war / peace panel on `Kingdom.Diplomacy` and `Kingdom.State.diplomacy`; show "asks" to the senior and the lock countdown to the newcomer. Run `economy/Diplomacy.spec`.
