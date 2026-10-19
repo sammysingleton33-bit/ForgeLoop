@@ -14,9 +14,9 @@ M = [
  ("FL-0071R", DR, 'if bucket.tokens < 1 then', 'if bucket.tokens < 0 then', "sim/DuelRunner", "rate limits a champion"),
  # --- geometry
  ("FL-0071R", DR, 'local inRange = distance <= self._cfg.reach', 'local inRange = true', "sim/DuelRunner", "a swing from too far away"),
- ("FL-0071R", DR, 'local inRange = distance <= self._cfg.reach', 'local inRange = distance < self._cfg.reach - 1', "sim/DuelRunner", "lands a swing when the duellists are close enough"),
+ ("FL-0071R", DR, 'local inRange = distance <= self._cfg.reach', 'local inRange = distance < self._cfg.reach - 1', "sim/DuelRunner", "a swing from too far away"),
  ("FL-0071R", DR, '>= self._cfg.facingMinDot', '>= -1', "sim/DuelRunner", "facing away"),
- ("FL-0071R", DR, '>= self._cfg.facingMinDot', '>= 0.99', "sim/DuelRunner", "lands a swing when the duellists are close enough"),
+ ("FL-0071R", DR, '>= self._cfg.facingMinDot', '>= 0.99', "sim/DuelRunner", "a swing 45 degrees off the line"),
  ("FL-0071R", DR, 'if missingHuman then\n\t\t\treturn false, false', 'if false then\n\t\t\treturn false, false', "sim/DuelRunner", "cannot hit"),
  ("FL-0071R", DR, 'if pose == nil then\n\t\treturn true, true', 'if pose == nil then\n\t\treturn false, false', "sim/DuelRunner", "virtual"),
  ("FL-0071R", DR, 'local missingHuman = (mine == nil and not self._sides[side].isAI)\n\t\t\tor (theirs == nil and not self._sides[other].isAI)', 'local missingHuman = (mine == nil and not self._sides[side].isAI)', "sim/DuelRunner", "cannot hit"),
