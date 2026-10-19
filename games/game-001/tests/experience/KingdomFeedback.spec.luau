@@ -1416,6 +1416,67 @@ describe("client feedback controllers (FL-0062)", function()
 		end
 	)
 
+	it(
+		"MusicController: the arena scene plays over battle music; Results ends it; the result still wins (FL-0074)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, MusicDef)
+			local controller = Loader.load(env, defs):get("MusicController")
+			controller:setPhase("Endgame")
+			controller:setAlert("raid", true)
+			expect(music[#music]).toBe("battle")
+			controller:setScene("arena")
+			expect(music[#music]).toBe("arena")
+			local musicCount = #music
+			controller:setScene("arena") -- the same scene again changes nothing
+			expect(#music).toBe(musicCount)
+			controller:setScene(nil)
+			expect(music[#music]).toBe("battle") -- the raid is still on
+			controller:setAlert("raid", false)
+			controller:setScene("arena")
+			expect(music[#music]).toBe("arena")
+			controller:setPhase("Results")
+			expect(controller.scene).toBeNil()
+			expect(music[#music] == "arena").toBe(false)
+			controller:setScene("arena")
+			controller:setResult("won")
+			expect(music[#music]).toBe("victory")
+		end
+	)
+
+	it(
+		"MusicController: while music.arena has no asset the arena scene leaves the match music playing (FORGE-07 #231 M1)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, MusicDef)
+			local registry = Loader.load(env, defs)
+			local controller = registry:get("MusicController")
+			local audio = registry:get("AudioController")
+			-- the game's own registry: is the state's track picked yet? (music.arena ships "needed")
+			local playable = { arena = false }
+			audio.hasMusic = function(_, state)
+				return playable[state] ~= false
+			end
+			controller:setPhase("Endgame")
+			controller:setAlert("raid", true)
+			expect(music[#music]).toBe("battle")
+			local before = #music
+			controller:setScene("arena")
+			expect(#music).toBe(before) -- no switch: the battle music goes on
+			expect(controller.scene).toBe("arena") -- the scene is remembered for when it can play
+			playable.arena = true
+			controller:update()
+			expect(music[#music]).toBe("arena")
+			-- a failing hasMusic counts as "cannot play"
+			audio.hasMusic = function()
+				error("boom")
+			end
+			controller:setScene(nil)
+			controller:setScene("arena")
+			expect(music[#music] == "arena").toBe(false)
+		end
+	)
+
 	it("MusicController: a raid or a siege plays battle music until the last one ends (FL-0130)", function()
 		local defs = doubles({ notifications = false })
 		table.insert(defs, AnnouncerControllerDef)

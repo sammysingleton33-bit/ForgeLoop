@@ -5,6 +5,7 @@
 		AudioController:play(soundId, opts?: { volume: number?, position: Vector3? }) -> Voice?   -- interfaces §8
 		AudioController:stop(voice)          AudioController:stopAll()
 		AudioController:setMusic(state)      -- Experience/MusicDirector state; 1.5 s crossfade; nil = silence
+		AudioController:hasMusic(state) -> boolean   -- the state's track is in the registry with an asset
 		AudioController:setAmbience({ id })  -- looping beds, at most BUDGET.ambience at once
 		AudioController.stats = { played, skipped = { [reason]: number } }
 	Skip reasons: unknown (id not in the registry), needed (no asset yet), cooldown, instances
@@ -335,7 +336,7 @@ function AudioController:setMusic(state: string?)
 	if previous then
 		self:_fade(previous.sound, previous.entry.volume, 0, true)
 	end
-	local id = if state then MusicDirector.STATE_SOUNDS[state] else nil
+	local id = if state then MusicDirector.soundFor(state) else nil
 	local entry = if id then self._registry:get(id) else nil
 	if entry == nil or entry.asset == nil then
 		if state ~= nil then
@@ -357,6 +358,16 @@ function AudioController:setMusic(state: string?)
 		category = "music",
 	}
 	self:_fade(sound, 0, entry.volume, false)
+end
+
+-- Whether setMusic(state) would play a track: its registry entry exists and has an asset. A state
+-- whose track is still "needed" would only fade the current music out (FORGE-07 #231 M1).
+function AudioController:hasMusic(state: string?): boolean
+	if type(state) ~= "string" then
+		return false
+	end
+	local entry = self._registry:get(MusicDirector.soundFor(state))
+	return entry ~= nil and entry.asset ~= nil
 end
 
 function AudioController:musicState(): string?
