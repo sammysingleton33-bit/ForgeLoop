@@ -7,7 +7,9 @@ One line per row: CAUGHT / NOT CAUGHT / NOT APPLIED. Exits 1 unless every row is
 ran counts as NOT CAUGHT. Rows: (name, file, old, new, expected failing test (substring of its name)).
 Left out as equivalent (another guard gives the same result): a bad pending verdict that still calls confirm()
 (confirm refuses a spot that is not "ok"), a press during a move (startMove already left explore mode, so the mode
-check refuses it) and destroy without setEditDrag(false) (destroy cancels the move first, which ends the drag).
+check refuses it), destroy without setEditDrag(false) (destroy cancels the move first, which ends the drag) and
+dropping dragPress's `state == "destroyed"` check (the client store drops destroyed buildings, KingdomUIModels.spec
+"drops destroyed buildings", so the `building == nil` guard refuses first; the Drag spec pins that path).
 UI/DragInput (the live mouse/touch adapter) has no rows: the harness has no UserInputService (Studio step U30).
 """
 import pathlib, subprocess, sys
@@ -18,6 +20,16 @@ U = "games/game-001/src/client/Controllers/UpgradePanelController.luau"
 RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-001/default.project.json",
        "--specs", "games/game-001/tests", "economy/Drag"]
 ROWS = [
+    ("second press while one is pending allowed", B, "if self.placing ~= nil or self._press ~= nil then",
+     "if self.placing ~= nil then", "one press at a time"),
+    ("hold timer fires for a replaced press", B, "\t\tif self._press == press then", "\t\tif self._press ~= nil then",
+     "released press's hold timer"),
+    ("config cooldown ignored", B, "cooldown = if type(cooldown) == \"number\" then cooldown else BuildMenuController.MOVE_COOLDOWN",
+     "cooldown = BuildMenuController.MOVE_COOLDOWN", "config Buildings.moveCooldown"),
+    ("no building record", B,
+     "presses belong to them\n\tend\n\tlocal store = self.hud.store\n\tlocal building = store:building(buildingId)\n\tlocal mine = store:mine()\n\tif building == nil or mine == nil",
+     "presses belong to them\n\tend\n\tlocal store = self.hud.store\n\tlocal building = store:building(buildingId)\n\tlocal mine = store:mine()\n\tif mine == nil",
+     "the store does not know"),
     ("hold shorter than a tap", B, "BuildMenuController.DRAG_HOLD_SEC = 0.45", "BuildMenuController.DRAG_HOLD_SEC = 0.2",
      "longer than a tap"),
     ("no hold wait", B, "\t\tself._env.wait(BuildMenuController.DRAG_HOLD_SEC)\n", "", "hold picks it up"),

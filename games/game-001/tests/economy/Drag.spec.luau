@@ -9,6 +9,7 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
 local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/BuildMenuController")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomWorld = require("./doubles/KingdomWorld")
@@ -277,6 +278,59 @@ describe("Drag a building (FL-0123)", function()
 		world.build:destroy()
 		expect(editDrag[#editDrag]).toBe(false)
 	end)
+
+	it("one press at a time: a second finger on another building during the hold is ignored (FORGE-07 L1)", function()
+		local a = house(world, Vector3.new(40, 0, 40))
+		local b = house(world, Vector3.new(80, 0, 40))
+		expect(world.build:dragPress(a, Vector2.new(400, 300))).toBe(true)
+		world:advance(0.1)
+		expect(world.build:dragPress(b, Vector2.new(600, 300))).toBe(false)
+		world:advance(HOLD)
+		expect(world.build.placing.move.id).toBe(a)
+	end)
+
+	it("a released press's hold timer never picks up the building pressed after it (FORGE-07 L1)", function()
+		local a = house(world, Vector3.new(40, 0, 40))
+		local b = house(world, Vector3.new(80, 0, 40))
+		world.build:dragPress(a, Vector2.new(400, 300))
+		world:advance(0.1)
+		world.build:dragRelease(nil)
+		world:advance(0.1)
+		world.build:dragPress(b, Vector2.new(600, 300))
+		world:advance(HOLD - 0.1) -- a's timer has run out, b's has not
+		expect(world.build.placing).toBeNil()
+		world:advance(0.2)
+		expect(world.build.placing.move.id).toBe(b)
+	end)
+
+	it("the cooldown comes from config Buildings.moveCooldown (FORGE-07 L1)", function()
+		local saved = BuildingsConfig.moveCooldown
+		BuildingsConfig.moveCooldown = 3
+		local id = house(world, Vector3.new(40, 0, 40))
+		world.build.movedAt[id] = world.env.clock()
+		local ok, err = pcall(function()
+			expect(world.build:moveCooldownLeft(id)).toBeGreaterThan(2.9)
+			world:advance(3.2)
+			expect(world.build:moveCooldownLeft(id)).toBe(0)
+		end)
+		BuildingsConfig.moveCooldown = saved
+		assert(ok, err)
+	end)
+
+	it(
+		"not on a destroyed building (the store drops it), nor on an id the store does not know yet (FORGE-07 L1)",
+		function()
+			local service = world.server:get("BuildingService")
+			local id = house(world, Vector3.new(40, 0, 40))
+			service.buildings[id].state = "destroyed"
+			service:push(id)
+			world:advance(0.1)
+			expect(world.build:dragPress(id, Vector2.new(1, 1))).toBe(false)
+			expect(world.build:dragPress("no-such-building", Vector2.new(1, 1))).toBe(false)
+			world:advance(HOLD)
+			expect(world.build.placing).toBeNil()
+		end
+	)
 
 	it("the upgrade panel's Move uses the same cooldown rule", function()
 		local id = house(world, Vector3.new(40, 0, 40))
