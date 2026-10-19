@@ -198,17 +198,17 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 			{
 				kind = "triggerFired",
 				side = "a",
-				data = { trigger = "reforge", triggerName = "Reforge", citizenName = "Mara" },
+				data = { source = "perk:reforge", trigger = "reforge", citizenName = "Mara" },
 			},
 		})
 		expect(t.crowd:captions()).toEqual({ "Crimson: Mara steps up: Reforge!" })
-		t.crowd:onEvents({ { kind = "hit", side = "a", data = { damage = 0.05 } } }) -- a minor in the same stand
+		t.crowd:onEvents({ { kind = "hit", side = "a", data = { damageShare = 0.05 } } }) -- a minor in the same stand
 		expect(t.crowd:captions()).toEqual({ "Crimson: Mara steps up: Reforge!" })
 		t.crowd:step(now + CrowdDef.PRIORITY_SEC + 0.01)
 		expect(#t.crowd:captions()).toBe(0)
 		local label = t.gui:FindFirstChild(CrowdDef.GUI_NAME):FindFirstChild("Caption_a")
 		expect(label.Visible).toBe(false)
-		t.crowd:onEvents({ { kind = "hit", side = "b", data = { damage = 0.05 } } })
+		t.crowd:onEvents({ { kind = "hit", side = "b", data = { damageShare = 0.05 } } })
 		local at = t.env.clock()
 		t.crowd:step(at + CrowdDef.CAPTION_SEC - 0.1)
 		expect(#t.crowd:captions()).toBe(1)
@@ -221,14 +221,14 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 		local s = state("duel")
 		s.b = duellist(B, "loyal", "azure", true)
 		t.crowd:onArenaState(s)
-		t.crowd:onEvents({ { kind = "hype", side = "a", data = { full = true } } })
+		t.crowd:onEvents({ { kind = "hype", side = "a" } })
 		t.env.mock:advance(Crowd.majorGapSec)
-		t.crowd:onEvents({ { kind = "hype", side = "a", data = { full = true } } })
+		t.crowd:onEvents({ { kind = "hype", side = "a" } })
 		expect(t.crowd:captions()[1]).toBe("Crimson: Burn bright, Sam!")
 		t.env.mock:advance(Crowd.majorGapSec)
-		t.crowd:onEvents({ { kind = "hype", side = "b", data = { full = true } } })
+		t.crowd:onEvents({ { kind = "hype", side = "b" } })
 		t.env.mock:advance(Crowd.majorGapSec)
-		t.crowd:onEvents({ { kind = "hype", side = "b", data = { full = true } } })
+		t.crowd:onEvents({ { kind = "hype", side = "b" } })
 		-- no name for the AI champion's stand
 		expect(table.find(t.crowd:captions(), "Azure: For the kingdom!") ~= nil).toBe(true)
 	end)
@@ -329,13 +329,13 @@ describe("FeedbackCrowdController: the ending (FL-0074 part 2a)", function()
 		expect(#e.crowd:captions()).toBe(2)
 	end)
 
-	it("a crowning with no winner ends the crowd quietly", function()
+	it("a crowning with no winner calls the duel off", function()
 		local t = boot()
 		t.crowd:onArenaState(state("duel"))
 		t.crowd:onArenaState(state("crowning"))
 		expect(t.crowd:captions()).toEqual({
-			"Crimson: (The stand is quiet)",
-			"Azure: (The stand is quiet)",
+			"Crimson: (The duel was called off)",
+			"Azure: (The duel was called off)",
 		})
 		t.crowd:onEvents({ { kind = "parry", side = "a" } })
 		expect(#t.plays).toBe(0)
