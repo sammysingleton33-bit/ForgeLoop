@@ -18,7 +18,9 @@
 	     plots' fields, buildings, slots and roads and thinned by the dressing density knob (world/Layout
 	     features.density, D-047; 1.0 = the untrimmed valley);
 	  6. fires `ready` and logs the build time in ms.
-	It never calls Kit.build: BuildingService and ObjectiveService build buildings (G6, G10).
+	It never calls Kit.build: Sim/WorldView builds the building models (Kit.build for each building in the simulation, placed with
+	WorldView.placeModel; BuildingService is only the server API and the Build.* remotes that put buildings into the simulation),
+	and ObjectiveService builds the objective watchtowers (G6, G10).
 	Tags are for visuals and client hints only; the sim reads Layout.
 
 	API

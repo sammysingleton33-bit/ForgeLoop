@@ -61,8 +61,8 @@
 		Kit.build("wall" | "gate", 1..3, ...)          -- wall 30/45/60 parts (L1 palisade, L2 stone, L3 its own outline: end piers,
 		                                                  buttresses, pedestal brazier), gate 90/120/150
 		                                                  (L1 timber leaves, L2 banded leaves + banners, L3 portcullis + braziers; open leaves
-		                                                  swing 65 degrees into the passage; L1 and L2 have a recessed Tympanum over
-		                                                  the leaves, the passage floor contrasts with each kingdom's wall);
+		                                                  swing 65 degrees into the passage; every level has a recessed Tympanum over
+		                                                  the leaves (at L3 behind the portcullis bars), the passage floor is mid-tone);
 		                                                  Buildings.PART_BUDGET_BY_LEVEL; footprints unchanged (32x8, 32x12)
 		Kit.build("watchtower", 2, ...)                -- war-ready: hoarding galleries, braziers, banner, more merlons; <= 130
 		Kit.setGateOpen(model, open)                   -- model attribute KitGateOpen (false as built); leaves and portcullis
@@ -81,6 +81,9 @@
 		                                                  with the kingdom crest; any other job = the spear soldier
 		Kit.applyDamage(model)                         -- reads the model attribute `Damage` (0..1) and builds or removes damage parts
 		                                                  at 0.25 / 0.5 / 0.75 / 0.95 (<= 14 extra parts, none at 0; repairable);
+		                                                  all of it in the model's own frame (the PrimaryPart's pivot), so a turned or
+		                                                  moved building damages like one at the origin, and the parts it takes off keep
+		                                                  their CFrame relative to the PrimaryPart (Kit/Damage.luau has the contract);
 		                                                  Kit.damageState(d), Kit.damageFromHp(hp, maxHp), Kit.DAMAGE_THRESHOLDS
 	Crown Arena (FL-0072, G12.6; Kit/Arena.luau, Crowd.luau, Gear.luau have the contracts):
 		Kit.arena(kingdomA?, kingdomB?) -> Model       -- the venue: ring, two stands (72 seats each, StandA_Row<r>_Seat<s>,
@@ -191,7 +194,8 @@ Kit.ARMOURS = Gear.ARMOURS
 Kit.WEAPONS = Gear.WEAPONS
 
 Kit.footprint = Buildings.footprint
-Kit.build = Buildings.build
+Kit.build = Buildings.build -- (type, level, stage, color, variant?): the level is clamped to 1..Kit.MAX_LEVEL[type] and KitLevel stores the clamped one
+Kit.MAX_LEVEL = Buildings.MAX_LEVEL
 -- FL-0128 war kit (additive): gate open/closed poses, siege engines and their pose helper
 -- (model, open: boolean): leaves and portcullis by CFrame only; attribute KitGateOpen. Leaves a damaged gate has lost
 -- (Kit.applyDamage) are posed too, so a repair brings them back in the current pose.

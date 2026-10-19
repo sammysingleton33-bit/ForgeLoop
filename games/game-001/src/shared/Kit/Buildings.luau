@@ -11,7 +11,8 @@
 
 	Buildings.build(type, level, stage, kingdomColor, variant?) — variant (default 1, deterministic) picks
 	one of the house archetypes (roof style, storeys/jetty, chimney side, door side, props); variants 5–8
-	mirror 1–4. Other types ignore it.
+	mirror 1–4. Other types ignore it. The level is clamped to 1..Buildings.MAX_LEVEL[type] before anything is built, and the
+	clamped level is what the model stores (attribute KitLevel) and is named after, so no consumer sees a level past the end.
 
 	G13 (FL-0085): the keep seats a Seat "Throne" on a dais on its open front terrace (G13.6); keep L1–3,
 	barracks L1–4, house L1–2 and farm L1–2 grow height and roof count with level (G13.5); mine, blacksmith,
@@ -24,8 +25,8 @@
 	WorldService props and region markers. The caps are ceilings, not targets: every model at its cap would
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
 	With the FL-0128 war kit the all-built worst case (every kingdom at its top levels, wall L3 x 12 and the gate at
-	L3) measures 26,313 of the D-047 ceiling 27,000: WorldService 6,869 + four kingdoms 19,111 (Emberhold 4,690,
-	Frostmere 4,804, Thornwood 4,895, Sunspire 4,722) + three neutral towers 333 (tests/world/KitCeiling.spec.luau).
+	L3) measures 26,326 of the D-047 ceiling 27,000: WorldService 6,869 + four kingdoms 19,121 (Emberhold 4,693,
+	Frostmere 4,807, Thornwood 4,896, Sunspire 4,725) + three neutral towers 336 (tests/world/KitCeiling.spec.luau).
 	If a later change goes over, cap the wall segments per kingdom in config before thinning the art.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
@@ -36,10 +37,11 @@
 		lumbercamp  130   46–59
 		quarry      130   51–64
 		barracks    260   119–248  (L1–L4)
-		watchtower  130   105–121  (L1 107–115, L2 105–121: the war-ready L2 of FL-0128)
-		wall         60   26–60    (per 32-stud segment; L1 26–30, L2 36–40, L3 52–60; per-level caps 30 / 45 / 60)
-		gate        150   71–131   (L1 71–76, L2 101–112, L3 120–131; per-level caps 90 / 120 / 150)
-		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (27–110, G13.5 stand-ins)
+		watchtower  130   105–122  (L1 106–116, L2 105–122: the war-ready L2 of FL-0128)
+		wall         60   23–60    (per 32-stud segment; L1 23–30, L2 33–40, L3 46–60; per-level caps 30 / 45 / 60)
+		gate        150   70–132   (L1 70–77, L2 92–113, L3 111–132; per-level caps 90 / 120 / 150)
+		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (27–110, G13.5 stand-ins: mine 36–49,
+		            blacksmith 81–88, market 72–85, infirmary 103–110, granary 38–51, shrine 27–32)
 		stages      110   29–85    (any type, stage 1..3)
 	Emblems (D-039, colour-vision finding 3) cost crown 3 / star 5 / oak 5 / sun 4 parts per banner, flag, pennant
 	or shield (the keep's two aerial plaques: field + border + emblem, the sun with 9). They were paid for by
@@ -52,6 +54,7 @@
 ]]
 
 local Parts = require("./Parts")
+local Damage = require("./Damage")
 local C = Parts.C
 local shade = Parts.shade
 local hueStyle = Parts.hueStyle
@@ -2560,15 +2563,46 @@ local function buildStage(ctx: Ctx, buildingType: string, level: number, stage: 
 	end
 end
 
+-- The highest level each type has a look for (or that the game builds it at). Kit.build clamps the level it is given to
+-- 1..this, builds that level and STORES it (the model attribute KitLevel and the model's name), so every consumer sees the level
+-- that was really built, never one past the end (Kit.applyDamage seeds its marks by KitLevel: a wall asked for at level 5 is a
+-- level 3 wall and damages like one). The VS-2 stand-ins have one look.
+Buildings.MAX_LEVEL = table.freeze({
+	keep = 3,
+	house = 2,
+	farm = 3,
+	storehouse = 2,
+	lumbercamp = 3,
+	quarry = 3,
+	barracks = 4,
+	watchtower = 2,
+	wall = 3,
+	gate = 3,
+	mine = 1,
+	blacksmith = 1,
+	market = 1,
+	infirmary = 1,
+	granary = 1,
+	shrine = 1,
+})
+
+local function clampLevel(buildingType: string, level: number): number
+	if type(level) ~= "number" or level ~= level then
+		return 1
+	end
+	return math.clamp(math.floor(level), 1, Buildings.MAX_LEVEL[buildingType] or 1)
+end
+
 function Buildings.build(
 	buildingType: string,
-	level: number,
+	askedLevel: number,
 	stage: number | string,
 	kingdomColor: Color3,
 	variant: number?
 ): Model
 	local builder = BUILDERS[buildingType]
 	assert(builder, `Kit.build: unknown building type {buildingType}`)
+	local level = clampLevel(buildingType, askedLevel)
 	local fp = Buildings.footprint(buildingType, level)
 	local stageName = if stage == "complete" then "complete" else tostring(stage)
 	local v = math.max(1, math.floor(variant or 1))
@@ -2587,6 +2621,8 @@ function Buildings.build(
 	end
 	-- stone, timber, wood, plaster and thatch take the kingdom's materials (the neutral palette is re-skinned)
 	KingdomStyle.paint(ctx.model, style)
+	-- the order of the parts as built: Kit.applyDamage chooses parts by walking it (Kit/Damage.luau)
+	Damage.register(ctx.model)
 	return ctx.model
 end
 

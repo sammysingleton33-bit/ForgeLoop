@@ -2,7 +2,8 @@
 	The all-built part ceiling with the war kit (FL-0128, D-047): BRIEF section 14 keeps 25k parts as the target of a
 	typical match and 27k as the hard ceiling of the all-built worst case. The worst case is the world WorldService builds
 	plus every kingdom fully built at its top levels (wall level 3 x 12, the gate at level 3, every other type at its
-	highest level, two building sites) plus the three neutral towers. Fails above 27k and prints the breakdown, so the war
+	highest level except farms (built at level 2: see TOP), two building sites) plus the three neutral towers (watchtowers at
+	level 2). Fails above 27k and prints the breakdown, so the war
 	kit's wall and gate levels cannot push the world past the ceiling; if it ever does, cap the wall segments per kingdom in
 	config (FORGE-00) before thinning the art.
 ]]
@@ -18,8 +19,13 @@ local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 
 local CEILING = 27000
 
--- the highest level of each type (the others have two levels; Kit.build clamps)
-local TOP = { keep = 3, barracks = 4, mine = 3, blacksmith = 3, wall = 3, gate = 3 }
+-- The level each type is built at: TOP[type] where listed (keep 3, barracks 4, wall 3, gate 3 are their highest levels), else 2
+-- (Kit.build clamps the level to Kit.MAX_LEVEL). So houses, storehouses and the watchtowers (a kingdom's two and the three NEUTRAL
+-- towers, every one at level 2) are at their highest level, lumber camps and quarries (one look at every level) and the stand-ins
+-- (mine, blacksmith, market, infirmary, granary, shrine: one look, clamped to level 1) cost the same at any level, but FARMS are
+-- built at level 2 while the game also builds them at level 3, which draws one more crop row: +3 parts each (3 per kingdom, 12 in
+-- all: +36, 26,362 of 27,000 against the 26,326 this spec prints, so the ceiling holds either way).
+local TOP = { keep = 3, barracks = 4, wall = 3, gate = 3 }
 -- { type, count, stage? } per kingdom: the kingdom in the Buildings.luau budget note
 local KINGDOM = {
 	{ "keep", 1 },

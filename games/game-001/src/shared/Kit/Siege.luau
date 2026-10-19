@@ -22,7 +22,8 @@
 	  THRUST_TRAVEL (3) studs forward with a 0.35-stud arc lift; Kit.siegePose sets the Transform. The kingdom colour is on
 	  the roof, its edge, the crest and the pennant (KitTint, so Kit.setKingdomColor recolours a pooled ram; the emblems
 	  re-form with it).
-	Budget: at most MAX_PARTS (45) BaseParts including the Root (measured 39-42, the emerald emblem costs most).
+	Budget: at most MAX_PARTS (45) BaseParts including the Root (measured 37-42 in the four kingdom colours: Emberhold 37,
+	Frostmere 41, Thornwood 42, Sunspire 39, the emerald emblem costs most; 31 in the neutral colour).
 	Wire: the unit kind does not reach the client yet (Replication sends job = "soldier" for every unit): see the handoff
 	production/handoffs/2026-10-19-forge-02-to-forge-00-04-fl0128-war-kit.md.
 ]]

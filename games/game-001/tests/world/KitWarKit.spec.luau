@@ -622,6 +622,28 @@ CHECKS.gateShape = function()
 					)
 				end
 			end
+			-- at L3 the door head stands BEHIND the portcullis: its front face is no further forward than the back of any bar, so the
+			-- grille shows against stone (a head in front of the bars would pass the sampling above and hide them)
+			if lv == 3 then
+				local head = named(m, "Tympanum")[1]
+				if head then
+					local headFront = rel(m, head).Z - head.Size.Z / 2
+					for _, q in parts(m) do
+						if q.Name == "PortcullisBar" or q.Name == "Portcullis" then
+							local barBack = rel(m, q).Z + q.Size.Z / 2
+							if barBack > headFront + 0.001 then
+								table.insert(
+									out,
+									`{tag}: the door head's front face ({r3(headFront)}) is in front of the back of a portcullis bar ({r3(
+										barBack
+									)}): the grille is hidden`
+								)
+								break
+							end
+						end
+					end
+				end
+			end
 			local leaf = named(m, "GateLeaf")[1]
 			if leaf and luminance(leaf.Color) < 0.3 then
 				table.insert(out, `{tag}: the leaves are dark ({r3(luminance(leaf.Color))})`)
@@ -1896,6 +1918,19 @@ describe("War kit structure mutants are caught", function()
 				for _, p in parts(m) do
 					if p.Name == "Tympanum" then
 						p:Destroy()
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("the L3 door head stands in front of the portcullis bars (the grille is hidden)", "gateShape", function()
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "gate" and lv == 3 then
+				for _, p in parts(m) do
+					if p.Name == "Tympanum" then
+						p.CFrame = p.CFrame - Vector3.new(0, 0, 1.15) -- -d/2 + 0.2 instead of -d/2 + 1.35
 					end
 				end
 			end
