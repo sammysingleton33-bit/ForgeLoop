@@ -79,8 +79,8 @@ function Def.pass(geometry: any, side: string?, seconds: number?, config: any): 
 	local away = if home == "a" then "b" else "a"
 	local order = if side == nil then { "a", "b" } else { away, home }
 	local full = 2 * intro.standSec + intro.ringSec
-	local budget = if finite(seconds) and (seconds :: number) > 0 then math.min(seconds :: number, full) else full
-	local scale = math.min(1, budget / full)
+	local budget = if finite(seconds) and (seconds :: number) > 0 then seconds :: number else full
+	local scale = math.min(1, budget / full) -- never longer than the full pass
 	local stand = math.max(intro.minShotSec, intro.standSec * scale)
 	local ring = math.max(intro.minShotSec, intro.ringSec * scale)
 	local shots = {}
