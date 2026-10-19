@@ -39,6 +39,12 @@ BEFORE_AS = {"farm_field_wheat_04": "farm_field_wheat_01", "farm_field_wheat_05"
 SCENES = {
     "settlement_crimson": dict(kind="plot", plot="crimson", kingdom="crimson", radius=215, cams=("gameplay82", "aerial170")),
     "settlement_emerald": dict(kind="plot", plot="emerald", kingdom="emerald", radius=215, cams=("gameplay82", "aerial170")),
+    # FL-0136 phase 3: the camera on the resource nodes (keep frame: x right, z back; the quarry, ore, berries and wood nodes stand at x -80..80, z -24..74) and on the crop fields (x -20..64, z 35..101)
+    "nodes_east_crimson": dict(kind="plot", plot="crimson", kingdom="crimson", radius=215, focus=(62.0, 30.0), cams=("gameplay82", "aerial170")),  # quarry, ore and berries
+    "nodes_wood_crimson": dict(kind="plot", plot="crimson", kingdom="crimson", radius=215, focus=(-58.0, 64.0), cams=("gameplay82", "aerial170")),  # the four wood nodes
+    "nodes_east_emerald": dict(kind="plot", plot="emerald", kingdom="emerald", radius=215, focus=(62.0, 30.0), cams=("gameplay82", "aerial170")),
+    "farm_crimson": dict(kind="plot", plot="crimson", kingdom="crimson", radius=215, focus=(22.0, 62.0), cams=("gameplay82", "aerial170")),
+    "farm_emerald": dict(kind="plot", plot="emerald", kingdom="emerald", radius=215, focus=(22.0, 62.0), cams=("gameplay82", "aerial170")),
     "forest_broadleaf": dict(kind="forest", center=(250.0, 60.0), radius=100, tgt=(250.0, 60.0), kingdom="crimson", cams=("gameplay82", "aerial170")),
     "forest_pine": dict(kind="forest", center=(-480.0, -170.0), radius=100, tgt=(-480.0, -170.0), kingdom="crimson", cams=("gameplay82", "aerial170")),
     "trees_lineup": dict(kind="lineup", ids=["tree_oak_01", "tree_oak_02", "tree_oak_03", "tree_oak_04", "tree_oak_05", "tree_oak_06", "tree_oak_07", "tree_oak_08",
@@ -49,7 +55,11 @@ SCENES = {
     "bushes_lineup": dict(kind="lineup", ids=[f"bush_0{i}" for i in range(1, 9)] + [f"plant_flowers_0{i}" for i in range(1, 7)], gap=2.5, cols=7, tgt_h=1.5, cams=("gameplay82", "close45")),
     "rocks_lineup": dict(kind="lineup", ids=[f"rock_boulder_{s}_0{i}" for s in "sml" for i in (1, 2, 3)], gap=3.0, cols=5, tgt_h=3.0, cams=("gameplay82", "close45")),
     "nodes_lineup": dict(kind="lineup", ids=["resource_stone_01", "resource_stone_02", "resource_stone_03", "resource_ore_03", "resource_ore_04", "tree_oak_01", "tree_pine_02", "bush_03"],
-                         gap=3.5, cols=4, tgt_h=3.0, cams=("gameplay82", "close45")),
+                         gap=3.5, cols=4, tgt_h=9.0, cams=("gameplay82", "close45"),
+                         resources={"resource_stone_01": "stone", "resource_stone_02": "stone", "resource_stone_03": "stone", "resource_ore_03": "gold", "resource_ore_04": "gold",
+                                    "tree_oak_01": "wood", "tree_pine_02": "wood", "bush_03": "food"}),
+    "dressing_lineup": dict(kind="lineup", ids=["rock_cliff_01", "rock_cliff_02", "farm_fence_01", "farm_fence_02", "farm_field_cabbage_01", "farm_field_cabbage_02", "farm_field_cabbage_03"],
+                            gap=4.0, cols=4, tgt_h=2.0, cams=("gameplay82", "close45")),
     "nodes_spares": dict(kind="lineup", ids=["resource_ore_01", "resource_ore_05", "resource_wood_01", "rock_cliff_01"], gap=3.5, cols=4, tgt_h=3.0, cams=("close45",)),
     "crops": dict(kind="lineup", ids=["farm_field_wheat_01", "farm_field_wheat_02", "farm_field_cabbage_03", "farm_haystack_01"], gap=4.0, cols=2, tgt_h=1.0, cams=("gameplay82", "aerial170")),
     "wheat_stages": dict(kind="lineup", ids=["farm_field_wheat_04", "farm_field_wheat_05", "farm_field_wheat_01"], gap=4.0, cols=3, tgt_h=1.0, cams=("gameplay82",)),
@@ -68,6 +78,8 @@ def parse(argv):
     ap.add_argument("--samples", type=int, default=20)
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--no-citizens", action="store_true")
+    ap.add_argument("--dressing", default="", help="dump of blender/scripts/lune/EnvDressing.spec.luau: adds the mesh-only dressing (cabbage variants, fences, cliffs) to the plot scenes' meshes")
+    ap.add_argument("--markers", default="", help="dump of blender/scripts/lune/EnvNodeMarkers.spec.luau: modes 'marked' (mesh + marker) and 'smarked' (stand-in + marker) draw the resource markers")
     return ap.parse_args(argv)
 
 
@@ -79,6 +91,11 @@ def plot_items(inv, spec):
     kx, kz, kyaw = plot["keep"]["x"], plot["keep"]["z"], plot["keep"]["yaw"]
     front = (-math.sin(kyaw), -math.cos(kyaw))  # the keep's front (-Z of its CFrame) in the world
     tx, tz = kx + front[0] * 38.0, kz + front[1] * 38.0  # the yard in front of the keep: where the camera looks
+    cits_at = (tx, tz)
+    if spec.get("focus"):  # a keep-frame offset (x right, z back) the camera looks at instead: the nodes or the fields
+        fx, fz = spec["focus"]
+        c, s_ = math.cos(kyaw), math.sin(kyaw)
+        tx, tz = kx + c * fx + s_ * fz, kz - s_ * fx + c * fz
     r = spec["radius"]
     items = []
     for p in sc["placements"]:
@@ -100,8 +117,26 @@ def plot_items(inv, spec):
     cits = []
     for i, (job, look) in enumerate(CITIZENS):
         off = (i - 1.5) * 6.0
-        cits.append((job, look, tx + front[1] * off * -1.0 + front[0] * 4.0, tz + front[0] * off + front[1] * 4.0, math.degrees(kyaw) + (i - 2) * 25))
+        cits.append((job, look, cits_at[0] + front[1] * off * -1.0 + front[0] * 4.0, cits_at[1] + front[0] * off + front[1] * 4.0, math.degrees(kyaw) + (i - 2) * 25))
     return items, dict(target=(tx, 9.0, tz), az=az, cits=cits, kingdom=spec["kingdom"])
+
+
+def apply_dressing(items, dressing, extra, spec, density="shipped"):
+    """WorldPlan.meshDressing's extras (blender/scripts/lune/EnvDressing.spec.luau): the renumbered cabbage fields and the added fence segments and cliffs near the camera."""
+    ex = dressing["extra"][density]
+    cx, cz = extra["target"][0], extra["target"][2]
+    crops = [e for e in ex if e["feature"] == "crops"]
+    out = []
+    for it in items:
+        if it["kind"] == "prop" and it.get("feature") == "crops":
+            hit = next((e for e in crops if abs(e["x"] - it["x"]) < 0.1 and abs(e["z"] - it["z"]) < 0.1), None)
+            if hit:
+                it = dict(it, id=hit["id"])
+        out.append(it)
+    for e in ex:
+        if e["feature"] in ("fence", "cliff") and math.hypot(e["x"] - cx, e["z"] - cz) <= spec.get("radius", 215):
+            out.append(dict(kind="prop", id=e["id"], x=e["x"], z=e["z"], yaw=e["yaw"], feature=e["feature"]))
+    return out
 
 
 def forest_items(inv, spec):
@@ -137,19 +172,22 @@ def lineup_items(inv, spec):
         r, c = divmod(i, cols)
         if c == 0 and r:
             zacc += rowd[r - 1] / 2 + spec["gap"] + rowd[r] / 2
-        items.append(dict(kind="prop", id=pid, x=xs[c], z=zacc, yaw=0.0, feature="lineup"))
+        res = spec.get("resources", {}).get(pid)
+        items.append(dict(kind="prop", id=pid, x=xs[c], z=zacc, yaw=0.0, feature=("node:" + res) if res else "lineup"))
     cits = [(job, look, -6.0 + i * 4.5, -max(rowd[0] / 2 + 5.0, 9.0), 10.0 * (i - 1)) for i, (job, look) in enumerate(CITIZENS[:3])]
     return items, dict(target=(0.0, spec["tgt_h"], zacc / 2), az=0.0, cits=cits, kingdom="crimson", width=tot, depth=zacc)
 
 
 # ------------------------------------------------------------------------------------------------ building the Blender scene
 
-def build(inv, spec, items, mode, size, samples, quick, citizens=True, extra=None):
+def build(inv, spec, items, mode, size, samples, quick, citizens=True, extra=None, markers=None):
     w, h = size
+    meshy = mode in ("after", "marked")  # the shipped style-B meshes; "before" and "smarked" are the part-built stand-ins
+    marked = mode in ("marked", "smarked")
     sc = ckit_view.stage(w, h, samples, quick=quick)
     col = sc.collection
     subjects = inv["subjects"]
-    kits = [envkit_scene.EnvKit(f, j) for f, j in KITS_ENV if f.exists()] if mode == "after" else []
+    kits = [envkit_scene.EnvKit(f, j) for f, j in KITS_ENV if f.exists()] if meshy else []
     n_mesh = n_parts = tris = 0
     ids = {}
     for it in items:
@@ -170,6 +208,12 @@ def build(inv, spec, items, mode, size, samples, quick, citizens=True, extra=Non
                 continue
             kitparts.build_model(ent, col, transform=ckit_scene.roblox_matrix(it["x"], 0, it["z"], yaw))
             n_parts += ent["partCount"]
+        feature = it.get("feature", "")
+        if marked and markers and feature.startswith("node:"):  # the node's resource marker (Kit.nodeMarker), the parts the Kit builds
+            ent = markers["markers"].get(f"{pid}|{feature[5:]}|{'mesh' if meshy else 'standin'}")
+            if ent is not None:
+                kitparts.build_model(ent, col, transform=ckit_scene.roblox_matrix(it["x"], 0, it["z"], yaw))
+                n_parts += ent["partCount"]
     ck = []
     if citizens and extra:
         ckit = ckit_rigload.Kit(FBX_CHAR, RIG_CHAR)
@@ -181,6 +225,8 @@ def build(inv, spec, items, mode, size, samples, quick, citizens=True, extra=Non
 def main(argv):
     a = parse(argv)
     inv = json.loads(Path(a.inv).read_text())
+    markers = json.loads(Path(a.markers).read_text()) if a.markers else None
+    dressing = json.loads(Path(a.dressing).read_text()) if a.dressing else None
     w, h = (int(v) for v in a.size.split("x"))
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -195,7 +241,8 @@ def main(argv):
             items, extra = lineup_items(inv, spec)
         report = {"cams": {}}
         for mode in a.modes.split(","):
-            sc, rep = build(inv, spec, items, mode, (w, h), a.samples, a.quick, not a.no_citizens, extra)
+            mode_items = apply_dressing(items, dressing, extra, spec) if dressing and spec["kind"] == "plot" and mode in ("after", "marked") else items
+            sc, rep = build(inv, spec, mode_items, mode, (w, h), a.samples, a.quick, not a.no_citizens, extra, markers)
             report[mode] = rep
             cam = rig.add_camera(sc, 70)
             for camname in (a.cams.split(",") if a.cams else spec["cams"]):

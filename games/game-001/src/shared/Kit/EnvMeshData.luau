@@ -2,8 +2,8 @@
 --[[
 	Kit/EnvMeshData — the imported nature meshes as data (FL-0136, D-057 (18)-(20)). GENERATED, do not edit by hand:
 		python3 games/game-001/art/env_kit/env_to_luau.py
-	source games/game-001/art/env_kit/env.json  sha256 2a77ae0dd6d87603bc8d28140aa073af02dd03e91dc2e70ef86b06d187f52751
-	52 props (10 also resource nodes).
+	source games/game-001/art/env_kit/env.json  sha256 5faf1cd17110151547352b219ac3ce7ec52d8a4773fff81dae6d2b11dd936282
+	56 props (10 also resource nodes).
 	Kit/EnvMesh.luau reads it; Kit.prop uses a Forge.Assets Model for these ids only when it matches, else the stand-in.
 ]]
 
@@ -20,6 +20,10 @@ return table.freeze({
 		bush_06 = { family = "bush", bbox_center = { 0.0936, 2.3025, -0.3114 }, size = { 6.9323, 4.7651, 7.1369 }, tris = 300, tint = "fixed", standin_size = { 6.67, 5.16, 6.51 }, node = false },
 		bush_07 = { family = "bush", bbox_center = { 0.1231, 2.7491, 0.4199 }, size = { 7.0587, 5.6583, 6.2912 }, tris = 140, tint = "fixed", standin_size = { 6.95, 5.33, 7.59 }, node = false },
 		bush_08 = { family = "bush", bbox_center = { 0.4756, 2.4575, 0.6327 }, size = { 6.0987, 5.075, 7.383 }, tris = 340, tint = "fixed", standin_size = { 6.9, 5.21, 6.52 }, node = false },
+		farm_fence_01 = { family = "fence", bbox_center = { 0, 1.4, 0 }, size = { 16.5, 2.8, 0.5 }, tris = 72, tint = "fixed", standin_size = { 16.5, 2.8, 0.5 }, node = false },
+		farm_fence_02 = { family = "fence", bbox_center = { 0, 1.4, 0 }, size = { 16.5, 2.8, 0.5 }, tris = 84, tint = "fixed", standin_size = { 16.5, 2.8, 0.5 }, node = false },
+		farm_field_cabbage_01 = { family = "crop", bbox_center = { 0, 1.3989, 0 }, size = { 38, 2.7977, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.14, 28 }, node = false },
+		farm_field_cabbage_02 = { family = "crop", bbox_center = { 0, 1.4014, 0 }, size = { 38, 2.8029, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.15, 28 }, node = false },
 		farm_field_cabbage_03 = { family = "crop", bbox_center = { 0, 1.3934, 0 }, size = { 38, 2.7868, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.14, 28 }, node = false },
 		farm_field_wheat_01 = { family = "crop", bbox_center = { 0, 1.4764, 0 }, size = { 38, 2.9527, 28 }, tris = 1362, tint = "fixed", standin_size = { 38, 2.42, 28 }, node = false },
 		farm_field_wheat_02 = { family = "crop", bbox_center = { -0.05, 1.4724, 0 }, size = { 38.1, 2.9449, 28 }, tris = 1430, tint = "fixed", standin_size = { 38, 2.42, 28 }, node = false },
@@ -54,7 +58,7 @@ return table.freeze({
 		tree_oak_02 = { family = "tree", bbox_center = { 0.9552, 12.9284, -0.1647 }, size = { 15.7439, 26.0167, 16.6199 }, tris = 588, tint = "fixed", standin_size = { 16.3, 24.56, 16.92 }, node = false },
 		tree_oak_03 = { family = "tree", bbox_center = { 1.2597, 12.6534, 0.0854 }, size = { 21.5885, 25.4668, 22.74 }, tris = 604, tint = "fixed", standin_size = { 20.79, 25.47, 22.74 }, node = true },
 		tree_oak_04 = { family = "tree", bbox_center = { 1.4562, 12.8024, 3.6492 }, size = { 19.8164, 25.7647, 18.5615 }, tris = 604, tint = "fixed", standin_size = { 18.52, 24.53, 17.35 }, node = false },
-		tree_oak_05 = { family = "tree", bbox_center = { -0.448, 12.7808, -0.252 }, size = { 19.1719, 25.7215, 21.84 }, tris = 610, tint = "fixed", standin_size = { 20.03, 25.2, 21.84 }, node = true },
+		tree_oak_05 = { family = "tree", bbox_center = { -0.4256, 12.7808, -0.2394 }, size = { 18.2133, 25.7215, 20.748 }, tris = 610, tint = "fixed", standin_size = { 20.03, 25.2, 21.84 }, node = true },
 		tree_oak_06 = { family = "tree", bbox_center = { -1.1759, 12.88, -0.299 }, size = { 19.7765, 25.92, 21.5289 }, tris = 554, tint = "fixed", standin_size = { 21.3, 24.88, 18.57 }, node = false },
 		tree_oak_07 = { family = "tree", bbox_center = { -0.4848, 12.9999, -0.7408 }, size = { 15.9216, 26.1598, 15.341 }, tris = 572, tint = "fixed", standin_size = { 14.29, 25.9, 14.88 }, node = false },
 		tree_oak_08 = { family = "tree", bbox_center = { -1.4969, 12.0352, -0.408 }, size = { 23.7333, 24.2304, 23.9894 }, tris = 652, tint = "fixed", standin_size = { 22.42, 24.7, 20.38 }, node = false },

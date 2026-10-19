@@ -856,6 +856,87 @@ function Props.prop(assetId: string): Model
 	return standIn(assetId)
 end
 
+-- Would Kit.prop(assetId) build the imported mesh (not the stand-in) from the registered asset source? (Kit.envMeshReady)
+function Props.meshReady(assetId: string): boolean
+	return EnvMesh.ready(assetId, assetSource)
+end
+
+-- ------------------------------------------------------------------ resource node markers (FL-0136 phase 3)
+
+-- A resource node (stone, gold ore, a wood node = a tree, a food node = a berry bush) is the same mesh as the decor of its kind, and at the
+-- 170-stud aerial camera a 17 x 8 stud quarry stone or a lone oak among its forest is a few pixels. The world therefore puts a MARKER on
+-- every node (WorldService, after Kit.prop): a slim post rising 4.5 studs above the node's highest drawn point, topped by a glowing orb in the
+-- resource's colour. Two parts, visual only (not collidable, touchable or queryable: selection and placement rays pass through), and it never
+-- widens the node's footprint: the orb's reach (2.5) is inside the smallest node's (a berry bush, 3.6), so the keep-out rules (NodeKeepOut,
+-- the plot clearance) and Layout (positions, work spots) are untouched. A ball, because it reads the same from every camera azimuth and pitch (a
+-- flag edge-on, or a plate at a grazing angle, does not; looked at in Blender before choosing: art/reviews/env-mesh.md "Phase 3").
+Props.NODE_MARKER_PARTS = 2 -- the budget (spec), per node
+Props.NODE_MARKER_LIFT = 4.5 -- studs from the node's top to the post's top
+Props.NODE_MARKER_ORB = 5 -- orb diameter
+Props.NODE_MARKER_POST = 0.3 -- post radius
+Props.NODE_MARKER_COLORS = table.freeze({
+	stone = Color3.fromRGB(214, 234, 255), -- ice white
+	gold = Color3.fromRGB(255, 206, 0), -- yellow
+	wood = Color3.fromRGB(255, 104, 24), -- orange
+	food = Color3.fromRGB(232, 40, 84), -- red-pink (hues 49, 18 and 345 degrees: yellow, orange, red apart)
+})
+
+-- Highest visible point of a prop above its pivot (studs): the post rises from there.
+local function drawnTop(model: Model, pivot: CFrame): number
+	local top = 0
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") and d.Transparency < 0.99 and d:GetAttribute("KitNodeMarker") == nil then
+			local h = d.Size / 2
+			for _, sx in { -1, 1 } do
+				for _, sy in { -1, 1 } do
+					for _, sz in { -1, 1 } do
+						top = math.max(
+							top,
+							pivot:PointToObjectSpace(d.CFrame * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z)).Y
+						)
+					end
+				end
+			end
+		end
+	end
+	return top
+end
+
+-- Puts the resource marker on a node's model (idempotent: a model that has one keeps it). False for a resource the markers do not know.
+function Props.nodeMarker(model: Model, resource: string): boolean
+	local color = Props.NODE_MARKER_COLORS[resource]
+	local root = model.PrimaryPart
+	if color == nil or root == nil then
+		return false
+	end
+	if model:GetAttribute("KitNodeMarker") ~= nil then
+		return true
+	end
+	local pivot = root.CFrame * root.PivotOffset -- the pivot, whatever the import did to the Root's CFrame
+	local height = drawnTop(model, pivot) + Props.NODE_MARKER_LIFT
+	local ctx: Parts.Ctx = { model = model, root = root, count = 0 }
+	local post =
+		column(ctx, "NodeMarkerPost", Props.NODE_MARKER_POST, height, Vector3.zero, C.woodDark, Enum.Material.Wood)
+	post.CFrame = pivot * post.CFrame
+	local orb = ball(
+		ctx,
+		"NodeMarkerOrb",
+		Props.NODE_MARKER_ORB,
+		(pivot * CFrame.new(0, height + Props.NODE_MARKER_ORB * 0.4, 0)).Position,
+		color,
+		Enum.Material.Neon
+	)
+	for _, part in { post, orb } do
+		part.CanCollide = false
+		part.CanTouch = false
+		part.CanQuery = false
+		part.CastShadow = false
+		part:SetAttribute("KitNodeMarker", resource)
+	end
+	model:SetAttribute("KitNodeMarker", resource)
+	return true
+end
+
 -- ------------------------------------------------------------------ build slot markers (G13.5)
 
 -- Ground marker for a free build slot: a cleared-earth pad inside a low timber sill, survey stakes with

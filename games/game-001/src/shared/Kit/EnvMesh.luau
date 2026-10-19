@@ -28,6 +28,7 @@
 	API
 		EnvMesh.accept(assetId, clone) -> (Model?, string?)   -- the clone made ready, or nil + why (the caller builds the stand-in)
 		EnvMesh.has(assetId) -> boolean                       -- the data lists this id
+		EnvMesh.ready(assetId, source) -> boolean             -- Kit.prop would build the mesh for this id from `source` (silent; the mesh-only dressing asks)
 		EnvMesh.find(source, assetId) -> Instance?            -- source[assetId] or source.EnvKit[assetId]
 		EnvMesh.measure(model) -> (center: Vector3, size: Vector3)?   -- MeshPart bounds in the pivot frame
 		EnvMesh.status() -> { props, accepted, rejected: { [id]: why } }
@@ -328,6 +329,27 @@ local function log(assetId: string, why: string)
 	elseif type(warn :: any) == "function" then
 		warn(message)
 	end
+end
+
+-- Would Kit.prop(assetId) build the imported mesh from `source` (a Model for the id that passes the checks against the data)?
+-- Used by the world's mesh-only dressing (WorldService: fences, cabbage variants, cliffs) so a world without the imported kit stays exactly
+-- the part-built one. Silent: no log line, no change to the accepted counter or the rejection list (status()).
+function EnvMesh.ready(assetId: string, source: Instance?): boolean
+	local def = propsOf(activeData())[assetId]
+	if type(def) ~= "table" then
+		return false
+	end
+	local found = EnvMesh.find(source, assetId)
+	if found == nil or not found:IsA("Model") then
+		return false
+	end
+	local clone = found:Clone()
+	if clone == nil then -- the template is not Archivable: it clones to nil
+		return false
+	end
+	local ok, model = pcall(prepare, assetId, def, clone :: Model)
+	clone:Destroy()
+	return ok and model ~= nil
 end
 
 function EnvMesh.accept(assetId: string, clone: Model?): (Model?, string?)

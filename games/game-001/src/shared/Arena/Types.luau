@@ -73,6 +73,13 @@ export type Duellist = {
 }
 
 export type ArenaStage = "qualify" | "vote" | "loadout" | "intro" | "duel" | "crowning" | "done"
+-- One side's vote (ArenaState.vote, the vote stage only, sides with two or more candidates): who may be voted for and
+-- who has voted. Never for whom.
+export type VoteSide = {
+	kingdom: KingdomId,
+	candidates: { number },
+	voted: { number },
+}
 export type ArenaState = {
 	stage: ArenaStage,
 	endsAt: number?,
@@ -80,6 +87,7 @@ export type ArenaState = {
 	b: Duellist?,
 	coronation: KingdomId?,
 	winner: number?,
+	vote: { [string]: VoteSide }?, -- "a" | "b" -> the side's vote; vote stage only
 }
 export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "dodge"
 

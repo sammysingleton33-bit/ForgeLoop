@@ -10,7 +10,8 @@ Studio session and place can import both kits: do the citizens first, then this 
 
 ## 1. Files
 - `env_kit.fbx` from the Blender worker (expected at `games/game-001/art/env_kit/`, or the PR's CI artifact), one mesh object per prop, named by asset id.
-  Import only `env_kit.fbx` (the 52 ids the world places today). `env_kit_spares.fbx` (15 finished spares nothing places yet) is not needed until the world uses them.
+  Import only `env_kit.fbx` (**56 ids**: the 52 the part-built world places, plus 4 the world places **only as imported meshes**: `farm_fence_01/02` along the crop fields and `farm_field_cabbage_01/02` (the cabbage fields' variants); `tree_oak_05` is 5 % narrower than in the first import). If you imported the 52-id file of the first FL-0136 round, import this one again: it has 4 new objects.
+  `env_kit_spares.fbx` (11 finished spares nothing places: wood nodes, iron and crystal ore (not game resources), wheat 03 and the two growth stages (the world has no growth), the rock cliffs (their rim placement was dropped)) is not needed. If an id is missing or rejected, the world simply does not place its dressing (`WorldPlan.meshDressing`) and builds nothing part-built in its place.
 - A place built from the repo: `rojo build games/game-001/default.project.json -o crownfall.rbxl`. It must contain
   `ReplicatedStorage.Game.Kit.EnvMeshData` (made by `python3 games/game-001/art/env_kit/env_to_luau.py`) and `ReplicatedStorage.Forge.Assets`.
 
@@ -48,7 +49,8 @@ If the Output has `not used` lines or Explorer shows stand-ins for ids you impor
 Forests, lone trees, bushes, rocks, flowers and the farm fields from the **aerial camera** and the **82-stud gameplay camera**, next to the kingdom buildings and the
 citizens (does it look like one world? are trunks and rocks solid for the ruler? do the resource nodes sit where the stand-ins did?). In Explorer, `Workspace.World.Props`
 holding Models with a `Body` MeshPart are the mesh props; the old multi-part Models are the stand-ins (the Kit falls back per id). Then the **300-citizen phone stress
-test** from `IMPORT_CHARACTERS.md` (Render Stats: FPS, triangles, draw calls) and screenshots at the **aerial** and **portrait** views.
+test** from `IMPORT_CHARACTERS.md` (Render Stats: FPS, triangles, draw calls) and screenshots at the **aerial** and **portrait** views. Also read the **physics memory** in Render Stats
+(or the Developer Console memory tab): the nature `Body` MeshParts are CanQuery true with up to 900 triangles each and, as CollisionFidelity is not saved, get the default (precise) query shape; if physics memory is high, tell FORGE-02: CanQuery false on the Bodies is the lever (the invisible Collider Parts do the blocking).
 
 ## 4. Revert
 Delete the `EnvKit` folder (and `roblox/assets/EnvKit.rbxm` from the repo): every prop is its part-built stand-in again at the next play or build.

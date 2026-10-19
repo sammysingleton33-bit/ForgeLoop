@@ -702,15 +702,37 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			local rig = DuelRig.scan(model) :: any
 			local shoulder = find(model, "RightShoulder")
 			local hip = find(model, "LeftHip")
+			local rightHip = find(model, "RightHip")
+			local rootJoint = find(model, "Root")
 			local animated = CFrame.Angles(math.rad(30), 0, 0) -- the Animator's value this frame
 			shoulder.Transform = animated
 			hip.Transform = animated
-			local swing = poseWith({ RightArm = { 90, 0, 0 }, LeftLeg = { 40, 0, 0 } })
+			rightHip.Transform = animated
+			rootJoint.Transform = animated
+			local swing = poseWith({
+				Root = { -20, 0, 0 },
+				RightArm = { 90, 0, 0 },
+				LeftLeg = { 40, 0, 0 },
+				RightLeg = { -40, 0, 0 },
+			})
 			swing.body = 0
 			DuelRig.apply(rig, swing)
 			local _, full = shoulder.Transform:ToAxisAngle()
 			expect(math.abs(math.deg(full) - 90) < 1e-3).toBe(true)
 			expect(DuelRig.same(hip.Transform, animated)).toBe(true) -- an upper-body swing leaves the walk on the legs
+			expect(DuelRig.same(rightHip.Transform, animated)).toBe(true)
+			expect(DuelRig.same(rootJoint.Transform, animated)).toBe(true) -- ... and the hips (Root) to the Animator
+			-- R6 too (no waist): the torso and the legs stay the Animator's
+			local old6 = r6()
+			local rig6 = DuelRig.scan(old6) :: any
+			local torso6, hip6, rightHip6 = find(old6, "RootJoint"), find(old6, "Left Hip"), find(old6, "Right Hip")
+			for _, j in { torso6, hip6, rightHip6 } do
+				j.Transform = animated
+			end
+			DuelRig.apply(rig6, swing)
+			for _, j in { torso6, hip6, rightHip6 } do
+				assert(DuelRig.same(j.Transform, animated), `R6 {j.Name} written under body 0`)
+			end
 			shoulder.Transform = animated -- the Animator writes again next frame
 			swing.weight = 0.5
 			DuelRig.apply(rig, swing)
@@ -732,7 +754,6 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			swing.weight = 0
 			DuelRig.apply(rig, swing)
 			expect(DuelRig.same(shoulder.Transform, ours)).toBe(true)
-			swing.weight = 1
 			-- release: a joint still holding our write goes back to rest; one the Animator wrote is left alone
 			swing.weight = 1
 			DuelRig.apply(rig, swing)
