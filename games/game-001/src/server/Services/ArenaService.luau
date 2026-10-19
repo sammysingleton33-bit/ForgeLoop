@@ -101,6 +101,13 @@ function ArenaService:poseOf(userId: number): { x: number, z: number, fx: number
 	return if ok then pose else nil
 end
 
+local function humanoidOf(character: any): any?
+	local ok, humanoid = pcall(function()
+		return character:FindFirstChildOfClass("Humanoid")
+	end)
+	return if ok then humanoid else nil
+end
+
 -- Puts a champion's character on the ring, facing the other.
 function ArenaService:_place(userId: number, x: number, z: number, towardX: number, towardZ: number, height: number?)
 	pcall(function()
@@ -115,6 +122,16 @@ function ArenaService:_place(userId: number, x: number, z: number, towardX: numb
 		-- through KingdomService's adapter, the one way this game moves a character (a spec observes it there)
 		local kingdoms = self._registry:find("KingdomService")
 		local adapter = kingdoms and kingdoms.adapter
+		-- a champion still seated (the ruler sits on the throne by default) is stood up first, as RulerController:standUp
+		-- does (the adapter drops the SeatWeld and clears Sit; a jump besides), so the move cannot drag the seat along
+		local seat = if adapter and adapter.seatOf and adapter.unseat then adapter.seatOf(character) else nil
+		if seat then
+			adapter.unseat(character, seat)
+			local humanoid = humanoidOf(character)
+			if humanoid then
+				humanoid.Jump = true
+			end
+		end
 		if adapter and adapter.pivot then
 			adapter.pivot(character, cframe)
 		else
@@ -126,13 +143,6 @@ end
 local function characterOf(env: any, userId: number): any?
 	local player = env.Players:GetPlayerByUserId(userId)
 	return if player then player.Character else nil
-end
-
-local function humanoidOf(character: any): any?
-	local ok, humanoid = pcall(function()
-		return character:FindFirstChildOfClass("Humanoid")
-	end)
-	return if ok then humanoid else nil
 end
 
 -- Where each side stands, and the ring around them: { a = mark, b = mark, ring = { x, z, radius, height? } } with a mark
