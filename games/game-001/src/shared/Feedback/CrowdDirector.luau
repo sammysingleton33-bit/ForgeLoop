@@ -11,6 +11,7 @@
 		CrowdDirector.ending(won, tier, config) -> "flood" | "thinCrowning" | "salute" | "empty"
 		CrowdDirector.chant(kingdom, index, rulerName, config) -> string   -- a pre-written line
 		local director = CrowdDirector.new(config, { a = { tier, kingdom }, b = { tier, kingdom } })
+		director:side(stand) -> { tier, kingdom }           -- the stand's setup (a copy; for the figures)
 		director:onEvent(event, now) -> { Reaction }           -- an Arena.Events entry (G12.4)
 		director:idle(stand) -> Reaction                       -- between moments
 		director:finish(winner?, now) -> { Reaction }          -- both stands' endings; always plays;
@@ -155,6 +156,12 @@ function CrowdDirector.new(config: any, setup: any)
 		_duckUntil = -math.huge,
 		_ended = false,
 	}, Director)
+end
+
+-- A stand's setup as the director uses it (an unknown tier already reads "divided"); a copy.
+function Director:side(stand: Stand): { tier: string, kingdom: string? }
+	local side = self._sides[stand] or self._sides.a
+	return { tier = side.tier, kingdom = side.kingdom }
 end
 
 function Director:_reaction(stand: Stand, kind: string, major: boolean, priority: boolean, data: any?): Reaction
