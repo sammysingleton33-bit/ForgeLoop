@@ -154,6 +154,17 @@ describe("DuelController: act", function()
 			count += 1
 		end
 		expect(count).toBe(6)
+		local row
+		for _, remote in ArenaRemotes do
+			if remote.name == "Arena.Action" then
+				row = remote
+			end
+		end
+		assert(row, "the Arena.Action remote")
+		for _, action in { "light", "heavy", "block", "blockEnd", "parry", "dodge" } do
+			expect((row.args[1](action))).toBe(true) -- the server's own check takes each of the six
+		end
+		expect((row.args[1]("taunt"))).toBe(false)
 	end)
 
 	it("lets the second champion (side b) act too", function()
