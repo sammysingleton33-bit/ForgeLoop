@@ -16,6 +16,11 @@
 	offer                       loyalty needed for a perk (pledged) and for the stronger one (empowered)
 	acts[id]                    a ruler decision LeadershipService records: component, signed delta, pre-authored text
 	valourCapPerMinute          valour gained per minute is capped, so fighting nonstop is not required
+	rules                       thresholds LeadershipService reads to record acts from the simulation's own state:
+	                            fedKept (fed ratio held at least `atLeast` through a whole phase in `phases` →
+	                            fedRatioKept), starvation (fed ratio below `below` for more than `seconds` →
+	                            starvation, once per episode), conscription (soldiers above `soldierShareAbove` of
+	                            soldiers + citizens for more than `seconds` → overConscription, once per episode)
 	reputationCategories        the ReputationService categories whose mean is the kingdom's reputation component
 	                            (fear is left out: a feared ruler is not a loved one)
 ]]
@@ -122,6 +127,11 @@ return {
 	},
 
 	valourCapPerMinute = 6,
+	rules = {
+		fedKept = { atLeast = 0.9, phases = { Expansion = true, Conflict = true, Endgame = true } },
+		starvation = { below = 0.5, seconds = 60 },
+		conscription = { soldierShareAbove = 0.35, seconds = 60 },
+	},
 	reputationCategories = { "compassion", "honor", "competence", "courage", "authority" },
 	acts = {
 		-- reputation (public acts)

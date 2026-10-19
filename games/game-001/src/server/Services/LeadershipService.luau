@@ -16,6 +16,12 @@
 		LeadershipService.acted: Signal<(kingdom, userId?, act, component, delta)>
 			(the G12.5 `LeadershipAct` event is fired on the GameEvents bus once FORGE-05 declares it)
 
+	Acts the service records by itself from the simulation (thresholds in config Support `rules`), for every ruler
+	seated in the kingdom (the "no ruler" series for an AI-held one), checked at each sample: starvation (fed ratio below
+	the bar for more than 60 s, once per episode), fedRatioKept (fed ratio never under 0.9 through a whole Expansion,
+	Conflict or Endgame, recorded when the phase changes) and overConscription (soldiers above 35 % of soldiers +
+	citizens for more than 60 s, once per episode). Phase edges are seen at sample resolution (30 s).
+
 	Components sampled: reputation = mean of ReputationService's kingdom categories (config reputationCategories) plus
 	the kingdom's reputation act offset; happiness / stability / morale = the kingdom's conditions (stability minus
 	unrest pressure); loyalty = the mean loyalty of the kingdom's living citizens; conduct / valour = the ruler's
@@ -59,6 +65,7 @@ function LeadershipService:_reset(round: any)
 	self._samples = {} :: { [string]: { any } } -- "kingdom|userId" -> samples
 	self._lastSampleAt = -math.huge
 	self._warned = {} :: { [string]: boolean }
+	self._watch = {} :: { [string]: any } -- kingdom -> what the act rules have seen so far
 end
 
 function LeadershipService:_sim(): any
@@ -149,6 +156,65 @@ function LeadershipService:_kingdomComponents(sim: any, kingdom: string, k: any)
 	}
 end
 
+-- Records `act` for every ruler seated in the kingdom (the unseated series when an AI holds it).
+function LeadershipService:_recordRulers(kingdom: string, k: any, act: string)
+	if #k.rulers == 0 then
+		self:record(kingdom, nil, act, 1)
+		return
+	end
+	for _, userId in k.rulers do
+		self:record(kingdom, userId, act, 1)
+	end
+end
+
+-- The acts the simulation's own state decides (config Support `rules`); see the header.
+function LeadershipService:_watchKingdom(kingdom: string, k: any, now: number)
+	local rules = self.config.rules
+	local w = self._watch[kingdom]
+	if w == nil then
+		w = { t = now, lowFor = 0, starving = false, soldiersFor = 0, conscripting = false, phase = nil, phaseMin = 1 }
+		self._watch[kingdom] = w
+	end
+	local dt = now - w.t
+	w.t = now
+	local fed = k.fedRatio or 1
+
+	if fed < rules.starvation.below then
+		w.lowFor += dt
+		if not w.starving and w.lowFor > rules.starvation.seconds then
+			w.starving = true
+			self:_recordRulers(kingdom, k, "starvation")
+		end
+	else
+		w.lowFor = 0
+		w.starving = false
+	end
+
+	local phase = self._match:getPhase()
+	if w.phase ~= phase then
+		if w.phase ~= nil and rules.fedKept.phases[w.phase] and w.phaseMin >= rules.fedKept.atLeast then
+			self:_recordRulers(kingdom, k, "fedRatioKept")
+		end
+		w.phase = phase
+		w.phaseMin = fed
+	else
+		w.phaseMin = math.min(w.phaseMin, fed)
+	end
+
+	local soldiers, citizens = #k.unitIds, #k.citizenIds
+	local share = if soldiers + citizens > 0 then soldiers / (soldiers + citizens) else 0
+	if share > rules.conscription.soldierShareAbove then
+		w.soldiersFor += dt
+		if not w.conscripting and w.soldiersFor > rules.conscription.seconds then
+			w.conscripting = true
+			self:_recordRulers(kingdom, k, "overConscription")
+		end
+	else
+		w.soldiersFor = 0
+		w.conscripting = false
+	end
+end
+
 function LeadershipService:_store(kingdom: string, userId: number?, sample: any)
 	local key = sampleKey(kingdom, userId)
 	local list = self._samples[key]
@@ -175,6 +241,7 @@ function LeadershipService:sample()
 	for _, kingdom in sim.kingdomOrder do
 		local k = sim.kingdoms[kingdom]
 		if k.alive and k.populated then
+			self:_watchKingdom(kingdom, k, now)
 			local shared = self:_kingdomComponents(sim, kingdom, k)
 			-- one series per seated ruler; an AI-held kingdom has one for the "no ruler" key
 			local rulers: { any } = if #k.rulers > 0 then table.clone(k.rulers) else { false }

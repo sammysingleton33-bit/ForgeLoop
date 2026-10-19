@@ -12,6 +12,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
+local Ledger = require("@game/ReplicatedStorage/Game/Arena/Ledger")
 local Reputation = require("@game/ReplicatedStorage/Game/Kingdom/Reputation")
 local SupportModel = require("@game/ReplicatedStorage/Game/Arena/SupportModel")
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
@@ -42,7 +43,7 @@ afterEach(function()
 	end
 end)
 
-local function boot(extra: { string }?)
+local function boot(extra: { string }?, config: any?)
 	local env = MockEnv.new({
 		seed = 8,
 		sharedModules = {
@@ -79,6 +80,11 @@ local function boot(extra: { string }?)
 		end,
 	}
 	local w = { env = env, registry = registry, service = registry:get("LeadershipService") }
+	if config then
+		w.service.config = config
+		w.service._ledger = Ledger.new(config)
+	end
+	w.interval = (config or Support).sampling.intervalSeconds
 	env.mock.players:add({ userId = 1 })
 	env.mock:advance(1)
 	w.sim = registry:get("MatchService").host.match.sim
@@ -293,4 +299,192 @@ describe("LeadershipService sampling", function()
 			expect(goodTier ~= badTier or goodScore > badScore).toBe(true)
 		end
 	)
+end)
+
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
+
+local function actsOf(w, act: string, userId: number?): { any }
+	local out = {}
+	for _, moment in w.service:getMoments("crimson", userId, 200) do
+		if moment.act == act then
+			table.insert(out, moment)
+		end
+	end
+	return out
+end
+
+-- The shipped waits (30 s samples, 60 s rules) with every wait shortened: each simulated second runs the whole match,
+-- so the act rules are specced on a short clock. The logic under test reads only the config.
+local FAST = table.clone(Support)
+FAST.sampling = table.clone(Support.sampling)
+FAST.sampling.intervalSeconds = 5
+FAST.rules = {
+	fedKept = Support.rules.fedKept,
+	starvation = { below = Support.rules.starvation.below, seconds = 12 },
+	conscription = { soldierShareAbove = Support.rules.conscription.soldierShareAbove, seconds = 12 },
+}
+
+-- one sample, then enough match time for the next one
+local function tick(w)
+	w.service:sample()
+	w.env.mock:advance(w.interval + 1)
+end
+
+describe("LeadershipService acts from the simulation", function()
+	it("records starvation once an episode after the fed ratio stays under the bar for more than the wait", function()
+		local w = boot(nil, FAST)
+		w.k.fedRatio = 0.2
+		tick(w) -- t0: starts counting
+		tick(w) -- 6 s
+		tick(w) -- 12 s: exactly the wait, not over it
+		expect(#actsOf(w, "starvation", 1)).toBe(0)
+		tick(w) -- 18 s: over the wait
+		local first = actsOf(w, "starvation", 1)
+		expect(#first).toBe(1)
+		expect(first[1].userId).toBe(1)
+		expect(first[1].component).toBe("conduct")
+		for _ = 1, 4 do
+			tick(w)
+		end
+		expect(#actsOf(w, "starvation", 1)).toBe(1) -- still the same episode
+		w.k.fedRatio = 1
+		tick(w)
+		w.k.fedRatio = 0.1
+		for _ = 1, 4 do
+			tick(w)
+		end
+		expect(#actsOf(w, "starvation", 1)).toBe(2) -- a new episode counts again
+	end)
+
+	it("does not record starvation for a short dip, or at exactly the bar", function()
+		local w = boot(nil, FAST)
+		w.k.fedRatio = 0.1
+		tick(w)
+		tick(w)
+		w.k.fedRatio = 0.9 -- recovered before the wait was up
+		for _ = 1, 4 do
+			tick(w)
+		end
+		w.k.fedRatio = Support.rules.starvation.below -- exactly at the bar is not starving
+		for _ = 1, 5 do
+			tick(w)
+		end
+		expect(#actsOf(w, "starvation", 1)).toBe(0)
+	end)
+
+	it("records fedRatioKept when a counted phase ends with the fed ratio never under 0.9", function()
+		local w = boot(nil, FAST)
+		local match = w.registry:get("MatchService").host.match
+		assert(match:debugSetPhase("Expansion"))
+		w.k.fedRatio = 1
+		tick(w)
+		w.k.fedRatio = Support.rules.fedKept.atLeast -- exactly at the bar still counts
+		tick(w)
+		expect(#actsOf(w, "fedRatioKept", 1)).toBe(0) -- the phase has not ended
+		assert(match:debugSetPhase("Conflict"))
+		w.service:sample()
+		local kept = actsOf(w, "fedRatioKept", 1)
+		expect(#kept).toBe(1)
+		expect(kept[1].component).toBe("conduct")
+	end)
+
+	it("does not record fedRatioKept after one dip under the bar, or for a phase that is not counted", function()
+		local w = boot(nil, FAST)
+		local match = w.registry:get("MatchService").host.match
+		assert(match:debugSetPhase("Expansion"))
+		w.k.fedRatio = 1
+		tick(w)
+		w.k.fedRatio = Support.rules.fedKept.atLeast - 0.01
+		tick(w)
+		w.k.fedRatio = 1
+		tick(w)
+		assert(match:debugSetPhase("Conflict"))
+		w.service:sample()
+		expect(#actsOf(w, "fedRatioKept", 1)).toBe(0)
+		-- Founding is not a counted phase: leaving it with a full belly records nothing
+		local fresh = boot(nil, FAST)
+		local freshMatch = fresh.registry:get("MatchService").host.match
+		assert(freshMatch:debugSetPhase("Founding"))
+		fresh.k.fedRatio = 1
+		tick(fresh)
+		assert(freshMatch:debugSetPhase("Expansion"))
+		fresh.service:sample()
+		expect(#actsOf(fresh, "fedRatioKept", 1)).toBe(0)
+	end)
+
+	it(
+		"records overConscription when soldiers stay above the share of soldiers + citizens for more than the wait",
+		function()
+			local w = boot(nil, FAST)
+			local citizens = #w.k.citizenIds
+			for i = 1, citizens * 2 do
+				Military.spawnUnit(w.sim, w.k, "soldier", 0, i)
+			end
+			tick(w)
+			tick(w)
+			expect(#actsOf(w, "overConscription", 1)).toBe(0)
+			tick(w)
+			w.service:sample()
+			expect(#actsOf(w, "overConscription", 1)).toBe(1)
+			for _ = 1, 3 do
+				tick(w)
+			end
+			expect(#actsOf(w, "overConscription", 1)).toBe(1) -- once an episode
+		end
+	)
+
+	it("does not record overConscription for an army at or under the share", function()
+		local w = boot(nil, FAST)
+		for _ = 1, 6 do
+			tick(w)
+		end
+		expect(#actsOf(w, "overConscription", 1)).toBe(0) -- the starting army is far under the share
+		w.k.unitIds = {}
+		for i = 1, 1 do
+			Military.spawnUnit(w.sim, w.k, "soldier", 0, i)
+		end
+		local soldiers, citizens = #w.k.unitIds, #w.k.citizenIds
+		expect(soldiers / (soldiers + citizens) <= Support.rules.conscription.soldierShareAbove).toBe(true)
+		for _ = 1, 6 do
+			tick(w)
+		end
+		expect(#actsOf(w, "overConscription", 1)).toBe(0)
+	end)
+
+	it("records for every seated ruler, and for the no-ruler series when an AI holds the kingdom", function()
+		local w = boot(nil, FAST)
+		w.sim:addRuler("crimson", 2)
+		w.k.fedRatio = 0.1
+		for _ = 1, 4 do
+			tick(w)
+		end
+		expect(#actsOf(w, "starvation", 1)).toBe(1)
+		expect(#actsOf(w, "starvation", 2)).toBe(1)
+		local ai = boot(nil, FAST)
+		ai.k.rulers = {}
+		ai.k.fedRatio = 0.1
+		for _ = 1, 4 do
+			tick(ai)
+		end
+		local moments = ai.service:getMoments("crimson", nil, 50)
+		local starvation = 0
+		for _, moment in moments do
+			if moment.act == "starvation" then
+				starvation += 1
+				expect(moment.userId).toBe(nil)
+			end
+		end
+		expect(starvation).toBe(1)
+	end)
+
+	it("lets the acts move the sampled conduct component", function()
+		local w = boot(nil, FAST)
+		w.k.fedRatio = 0.1
+		for _ = 1, 4 do
+			tick(w)
+		end
+		w.service:sample()
+		local series = w.service:samples("crimson", 1)
+		expect(series[#series].components.conduct < 50).toBe(true)
+	end)
 end)
