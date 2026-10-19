@@ -436,11 +436,9 @@ end
 function ArenaFlow:forfeit(userId: number, now: number): boolean
 	if self._stage == "crowning" and self._result and self._result.kind == "forfeit" and userId == self._winnerUser then
 		-- the second champion left within the same moment: nobody outlasted the other
-		if now - (self._crownedAt :: number) <= self._cfg.simultaneousSeconds then
-			local champion = self:_championOf(userId)
-			if champion then
-				champion.gone = true
-			end
+		local champion = self:_championOf(userId) -- a human champion only: an AI's id is not a leaver
+		if champion and now - (self._crownedAt :: number) <= self._cfg.simultaneousSeconds then
+			champion.gone = true
 			self:_crown(nil, nil, nil, { kind = "draw", reason = "both_left" }, self._crownedAt :: number)
 			return true
 		end

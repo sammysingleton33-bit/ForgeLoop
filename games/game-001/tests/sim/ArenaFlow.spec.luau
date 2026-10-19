@@ -417,6 +417,13 @@ describe("ArenaFlow: leavers and cancels", function()
 		expect(flow:result().kind).toBe("forfeit")
 	end)
 
+	it("an AI champion's id is not a leaver", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = {} }), 0)
+		expect(flow:forfeit(1, 2)).toBe(true)
+		expect(flow:forfeit(ArenaFlow.AI_USER_ID.b, 2.1)).toBe(false)
+		expect(flow:result().kind).toBe("forfeit")
+	end)
+
 	it("a trigger list that is not a plain array is refused", function()
 		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
 		local dictionary: any = { a = "x", b = "y", c = "z", d = "w", e = "v" }
