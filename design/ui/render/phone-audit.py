@@ -6,11 +6,19 @@
 For every out/<scene>-<device>.layout.json it lists:
   clipped    text wider (one line) or taller (wrapped) than its box (engine.js marks it), so Roblox cuts it
   offscreen  a GuiObject that reaches past the screen edge (inside a ScrollingFrame is fine: it scrolls)
-Exit 1 when anything is listed. A headless approximation (README "Known deviations"); Studio on a device decides.
+Exit 0 when nothing is listed (a gate), 1 when anything is, 2 when the pinned fonts are missing: without
+design/ui/node_modules/@fontsource (`npm ci` in design/ui) the renderer measures text in a fallback font and the
+"clipped" list is meaningless. Sheets that are not game UI (SKIP) are left out. A headless approximation (README
+"Known deviations"); Studio on a device decides.
 """
 import json, pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+SKIP = {"crests"}  # design sheets, not game UI
+FONTS = HERE.parent / "node_modules" / "@fontsource" / "montserrat" / "files"
+if not FONTS.is_dir():
+    print(f"phone-audit: the pinned fonts are missing ({FONTS}); run `npm ci` in design/ui and render again")
+    sys.exit(2)
 device = sys.argv[1] if len(sys.argv) > 1 else "phone-se"
 devices = json.loads((HERE / "devices.json").read_text())
 dev = devices.get(device) or {}
@@ -18,6 +26,8 @@ W, H = dev.get("width", 667), dev.get("height", 375)
 bad = 0
 for f in sorted((HERE / "out").glob(f"*-{device}.layout.json")):
     scene = f.name[: -len(f"-{device}.layout.json")]
+    if scene in SKIP:
+        continue
     items = json.loads(f.read_text())
     scrollers = [e["path"] + "." for e in items if e["class"] == "ScrollingFrame"]
     issues = []
