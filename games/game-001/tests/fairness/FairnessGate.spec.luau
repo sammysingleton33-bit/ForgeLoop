@@ -63,6 +63,22 @@ describe("Crown Arena fairness gate (real DuelModel, config Support)", function(
 		if not FULL then
 			-- The full sweep's closest cell to the noAutoWin bound is a loadout (novice, Adoring, greatsword/medium
 			-- 67.0 %; FORGE-07 M1 on #219), so the default gate also runs novice Adoring support with every loadout.
+			-- plus the next closest of the full sweep at average skill (greatsword over medium 64.5 %, heavy)
+			for _, armour in { "medium", "heavy" } do
+				table.insert(cells, {
+					id = `noAutoWin/average/loadout+adoring/greatsword/{armour}`,
+					bound = "noAutoWin",
+					a = {
+						skill = "average",
+						tier = "adoring",
+						perks = Harness.DEFAULT_ADORING_PERKS,
+						power = "empowered",
+						weapon = "greatsword",
+						armour = armour,
+					},
+					b = { skill = "average", tier = "hostile", perks = {} },
+				})
+			end
 			for _, loadout in Harness.allLoadouts() do
 				table.insert(cells, {
 					id = `noAutoWin/novice/loadout+adoring/{loadout.weapon}/{loadout.armour}`,
