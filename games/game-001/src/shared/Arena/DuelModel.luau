@@ -176,7 +176,11 @@ local function conditionHolds(state: any, side: any, condition: string): boolean
 	end
 	local threshold = string.match(condition, "^hpBelow:([%d%.]+)$")
 	if threshold then
-		if side.hp / state.config.maxHp < tonumber(threshold) :: number then
+		local limit = tonumber(threshold)
+		if limit == nil then
+			return false -- "hpBelow:." or "1.2.3" is no number; Caps refuses it, a model fed an unchecked setup never fires it
+		end
+		if side.hp / state.config.maxHp < limit then
 			side.latched[condition] = true
 		end
 		return side.latched[condition] == true

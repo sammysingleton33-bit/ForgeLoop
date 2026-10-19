@@ -81,6 +81,7 @@ function Caps.problems(modifiers: { Modifier }): { string }
 	local slotSources: { [string]: boolean } = {}
 	local slotCount = 0
 	local seenEffect: { [string]: boolean } = {}
+	local slottedPassive: { [string]: boolean } = {}
 	local function takeSlot(source: string)
 		if not slotSources[source] then
 			slotSources[source] = true
@@ -122,6 +123,7 @@ function Caps.problems(modifiers: { Modifier }): { string }
 				if slotSources[name] then
 					problem(`{name}: listed twice; a slotted passive counts once per duel`)
 				end
+				slottedPassive[name] = true
 				takeSlot(name)
 			end
 		elseif ACTIVE[m.kind] then
@@ -130,6 +132,9 @@ function Caps.problems(modifiers: { Modifier }): { string }
 				problem(`{name}: listed twice; each trigger fires at most once per duel`)
 			end
 			seenEffect[effect] = true
+			if slottedPassive[name] then -- the same refusal whichever of the two comes first
+				problem(`{name}: listed twice; a slotted passive counts once per duel`)
+			end
 			takeSlot(name)
 			if not validCondition(m.condition) then
 				problem(`{name}: needs a known condition (hpBelow:<share>, staminaOut, hype or opponentHeavy)`)

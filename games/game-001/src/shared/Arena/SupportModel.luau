@@ -20,7 +20,8 @@
 			slots is the tier's slot count; the usable count is min(slots, offers).
 		SupportModel.modifiers(tier, picks, config?): { Modifier }
 			picks { { trigger = TriggerId, power = "pledged" | "empowered" } }; the tier's passive blessing plus each perk's
-			modifiers. Errors on more picks than slots, an unknown trigger, or a Crowd Rally below Adoring.
+			modifiers. Errors on more picks than slots, a duplicate or unknown trigger, a perk the offers do not carry, a
+			non-power pick, or a Crowd Rally below Adoring.
 ]]
 
 local Support = require("@game/ReplicatedStorage/Forge/Config/Support")

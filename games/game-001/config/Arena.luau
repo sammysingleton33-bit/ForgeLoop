@@ -12,7 +12,13 @@
 	                       it first; if the clock still runs out the duel is a draw
 	crowningSeconds        the winner's coronation; the match ends when it does
 	simultaneousSeconds    a second champion leaving this soon after a forfeit makes it a draw (both_left)
-	ai                     an AI kingdom's champion: weapon and armour (the AI duellist's skill is DuelAI's)
+	ai                     an AI kingdom's champion: weapon, armour and skill 0..1 (DuelAI; the governor difficulty,
+	                       BRIEF §16.3, will set the skill)
+	enabled                false until the DuelController client, the ring bounds and the Studio gate land: the arena host
+	                       then answers no to beginArena and the match goes to the Crown Points result at once
+	site                   optional override of where the duel ring is; without it the champions stand on the marks of
+	                       WorldLayout.arena (FORGE-02), and only without that layout does a fallback at the origin apply: the centre
+	                       and the distance between the two duellists' starting places
 	defaultWeapon          what a human champion fights with if they never choose
 	defaultArmour
 	Last keep standing (one qualifier) skips straight to the crowning: a coronation, no duel.
@@ -40,7 +46,8 @@ return {
 	simultaneousSeconds = 0.5,
 	defaultWeapon = "swordShield",
 	defaultArmour = "medium",
-	ai = { weapon = "swordShield", armour = "medium" },
+	ai = { weapon = "swordShield", armour = "medium", skill = 0.5 },
+	enabled = false,
 	tick = 1 / 30,
 	maxCatchup = 0.25,
 	snapshotEvery = 0.2,

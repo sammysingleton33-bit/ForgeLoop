@@ -12,6 +12,8 @@
 			setup.qualifiers   { KingdomId }: 1 (coronation) or 2, side "a" first (the better Crown Points)
 			setup.rulersOf     (KingdomId) -> { userId }       the human rulers seated there
 			setup.leadership   (userId, KingdomId) -> number   valour + conduct, the tie-break for a champion
+			setup.citizens     (KingdomId) -> number?          optional: the kingdom's living citizens, read once per
+			                   champion when the arena starts and shown as Duellist.citizens
 			setup.support      (userId?, KingdomId) -> Support the champion's support: { score, tier, offers, slots,
 			                   reasons }; userId nil for an AI kingdom (SupportService turns samples into this)
 		Flow:state() -> ArenaState        the public picture (same table shape as Types.ArenaState); `rev` changes with it
@@ -185,7 +187,12 @@ function ArenaFlow:_pickChampions()
 			userId = best
 		end
 		local support = self._setup.support(userId, kingdom)
-		self._champions[side] = newChampion(side, kingdom, userId, support, self._cfg)
+		local champion = newChampion(side, kingdom, userId, support, self._cfg)
+		local citizens = if self._setup.citizens then self._setup.citizens(kingdom) else nil
+		champion.citizens = if type(citizens) == "number" and citizens == citizens
+			then math.max(0, math.floor(citizens))
+			else nil
+		self._champions[side] = champion
 	end
 end
 
@@ -254,6 +261,7 @@ local function duellist(champion: any): Duellist
 		triggers = table.clone(champion.triggers) :: any,
 		reasons = table.clone(champion.support.reasons),
 		triggerCitizens = if next(citizens) then citizens else nil,
+		citizens = champion.citizens,
 	}
 end
 

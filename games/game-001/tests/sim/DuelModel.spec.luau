@@ -298,6 +298,28 @@ local function reforge()
 end
 
 describe("Arena/DuelModel: support (CONTRACTS G12.3)", function()
+	it("a malformed hpBelow condition never fires and never throws", function()
+		for _, condition in { "hpBelow:.", "hpBelow:1.2.3", "hpBelow:" } do
+			local s = duel({
+				weapon = "swordShield",
+				armour = "medium",
+				modifiers = {
+					{
+						source = "perk:reforge",
+						kind = "trigger",
+						stat = "damageReduction",
+						magnitude = 0.08,
+						duration = 6,
+						condition = condition,
+					},
+				},
+			})
+			s.a.hp = 1
+			local fired = kinds(idle(s, 12), "triggerFired")
+			expect(#fired).toBe(0)
+		end
+	end)
+
 	it("a trigger never fires in the first 10 seconds, then fires once when its condition holds", function()
 		local s = duel({ modifiers = reforge() })
 		s.a.hp = 30 -- the condition holds from the start
