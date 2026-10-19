@@ -978,7 +978,7 @@ describe("EntityService interest tiers and Sim.Focus (D-055)", function()
 	end
 
 	-- one walking citizen near each pole of the world, so both are "moving" and selected every tick
-	local function twoCamps(env, entities)
+	local function twoCamps(_, entities)
 		local near = entities:spawn("citizen", "crimson", "hauler", Vector3.new(-600, 0, 0))
 		local far = entities:spawn("citizen", "azure", "hauler", Vector3.new(600, 0, 0))
 		local sim = entities:_sim()
