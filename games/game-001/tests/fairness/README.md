@@ -1,9 +1,9 @@
 # Crown Arena fairness harness (FL-0076, FORGE-05)
 
 Nobody has to trust that arena support is fair: these files measure it (design `crown-arena.md` §6, §9;
-CONTRACTS G12.3). **Status: scaffold.** It runs on a local duel double and the design numbers until
-FORGE-01's `Arena/DuelModel.luau` (FL-0070) and config `Support.luau` (FL-0071) land, so its numbers say
-how the harness behaves, not whether the game is fair.
+CONTRACTS G12.3). **Status: gate.** `FairnessGate.spec` runs FORGE-01's `Arena/DuelModel` with the game's
+config `Support` (through `Arena/SupportModel`) in every `check.sh` run and fails when an outcome bound breaks.
+The other specs prove the harness itself on a local duel double and the design numbers.
 
 | File | What it is |
 |---|---|
@@ -13,6 +13,8 @@ how the harness behaves, not whether the game is fair.
 | `DuelDouble.luau` | stand-in duel model with the G12.2 signatures (`new`, `step`) plus `view`; applies support the G12.3 way |
 | `Duellist.luau` | scripted duellists: novice / average / expert, +15 points of hit and parry accuracy per tier |
 | `Harness.luau` | Monte Carlo cells, 95 % Wilson intervals, bound checks, Markdown report |
+| `ConfigSupport.luau` | the game's support numbers (config `Support` via `SupportModel.modifiers`) behind the DesignSupport interface |
+| `FairnessGate.spec.luau` | **the merge gate**: real DuelModel + config Support, supportMatters and skillStillWins at 2000 duels per cell, every noAutoWin perk set, novice Adoring with every loadout and average Adoring with the greatsword at 400, a noAutoWin cell whose interval reaches 70 % re-run at 2000 (`FORGE_FAIRNESS_FULL=1`: 2000 on every cell and loadout, about 16 min); a negative case proves it fails on the pre-trim numbers; report in `roblox/build/fairness/report.md`, uploaded on main as the CI artifact `forgeloop-fairness-<sha>`; on pushes to main that touch the duel, support or the gate, CI's `fairness-full` job runs the full sweep and uploads `forgeloop-fairness-full-<sha>` |
 | `Caps.spec.luau`, `Fairness.spec.luau` | run in `check.sh` (game-001 specs); they prove the caps checks and the harness, each shown able to fail |
 | `run.luau` | the full measurement and report |
 
@@ -39,12 +41,18 @@ in even ones, so the model's resolution order cancels out (a mirror match measur
 A check FAILs when the measured rate breaks its bound. "Marginal" means the 95 % interval crosses the
 bound: run more duels before concluding anything.
 
-## When FL-0070/FL-0071 land
+## Results on the game (headless, scripted duellists)
 
-1. Point `Harness.run({ model = DuelModel })` at `@game/ReplicatedStorage/Game/Arena/DuelModel`. The CLI then
-   runs through the Lune harness (game requires), and the duellists get a small `view` adapter if the real
-   `DuelState` differs.
-2. Read support numbers from config `Support.luau` instead of `DesignSupport` (`options.support`).
-3. `Caps.spec` already checks `Arena/Caps.luau` against the same sets as soon as the file exists.
-4. Add a `game-001 fairness` step to `roblox/scripts/check.sh` (the merge gate, 2000 duels per cell) and
-   attach the report to the CI artifact.
+| Date | Config | supportMatters (novice / average / expert) | skillStillWins | worst noAutoWin |
+|---|---|---|---|---|
+| 2026-10-19 | design numbers (fieldRemedy 5/8 %, Adoring passive +2 %) | 65.8 / **67.7** / 67.0 % (FAIL) | 78.8 / 72.1 % | 69.8 % |
+| 2026-10-19 | trim C (#209: fieldRemedy 3/5 %, Adoring passive +1 %; FORGE-00 ruling) | 60.1 / 60.7 / 61.3 % | 81.8 / 77.2 % | 67.0 % (novice, Adoring, greatsword/medium; FORGE-07's full sweep 152/152 agrees) |
+
+These say the numbers keep support inside the bounds against scripted duellists. They do not say a duel feels fair to a
+player: that is the Studio arena script.
+
+## Still open (FL-0076)
+
+- `run.luau` (the standalone CLI) still runs on the duel double; the game numbers come from `FairnessGate.spec`
+  (`lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate`).
+- The Studio arena script (STUDIO_PLAYTEST) once FORGE-01's DuelService and FORGE-03's arena UI are in a build.

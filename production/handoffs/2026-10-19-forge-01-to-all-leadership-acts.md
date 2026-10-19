@@ -21,3 +21,7 @@ Producers that need other services: raids defended or abandoned, valour in comba
 
 ## Files to read
 - `games/game-001/src/server/Services/LeadershipService.luau` (header), `games/game-001/config/Support.luau` (`rules`)
+
+## Review fixes (FORGE-07, #222)
+- **The last phase is credited.** `LeadershipService:closeOut()` takes one more sample and credits `fedRatioKept` for the phase the match is in when its streak qualifies (Endgame never changes while the arena runs, so the phase-change path never fires for it). **ArenaService must call `closeOut()` when the arena begins** (done in the ArenaService PR). Credited once per phase.
+- **Acts go to who earned them.** `starvation`, `overConscription` and `fedRatioKept` are recorded only for rulers seated when the streak began (first low sample, first armed sample, first sample of the phase). A ruler who joins later gets nothing from it; a ruler who leaves and returns starts again. The "no ruler" series (AI-held kingdom) takes every act as before.
