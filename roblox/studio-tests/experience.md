@@ -696,3 +696,43 @@ Pass: steps 1–4 hold (5 when FL-0071 is on the build). Copy every red line fro
 
 History:
 - 2026-10-19 FORGE-04: written (FL-0074 part 2c; G12.6, FORGE-02's FL-0072 handoff).
+
+## E21 — The champions move with their actions (FL-0141, game-001)
+
+Every client poses both duel champions from the duel's events: light and heavy swings, the held guard, parry, dodge, a flinch when hit, a stagger, and the end (the loser kneels, the winner raises the weapon). The poses are self-made, written to the joints in code (no animation assets). They are laid over your avatar's own animation, so your legs keep walking under an upper-body swing.
+
+Needs:
+- Steps 1–3: nothing. They use the Studio preview (`ForgeDuelPreview`) on your own character.
+- Step 4: a match that reaches the arena, with you as a champion against an AI. Your body animates now. The AI's body needs FORGE-01's FL-0140 (an AI figure tagged `ArenaChampion`); write whether it was there.
+- Step 5: two players (Test → Clients and Servers, 2 players, plus a third client to watch if you can).
+- A held weapon needs FL-0140 (`Kit.weapon`). Before it, judge the arms and the hand; with a Tool equipped, judge the weapon too.
+
+Steps
+1. Play Solo. In the command bar (client): `game.Players.LocalPlayer:SetAttribute("ForgeDuelPreview", "swordShield")`. Output prints one line: `FeedbackDuelController: champion a is a r15 rig, 8 Motor6D joints` (or r6, or AnimationConstraint joints). Copy it. Over about 11 seconds your character then plays, in order:
+   - a light swing;
+   - a heavy wind-up (both arms high for about 0.8 s), then a chop;
+   - a raised guard that jolts once;
+   - a parry: a sweep across, then a flick out;
+   - two dodges, left then right;
+   - a small flinch, then a big one;
+   - a stagger: a stumble back;
+   - a KO: down on both knees, slumped.
+
+   Watch it from the aerial camera, then close up. Each action must be visible and different from the others. The arms and the upper body move, and nothing bends inside out or sinks into the ground. Screenshot **E21-1** (the heavy wind-up), **E21-2** (the guard) and **E21-3** (the KO).
+2. Run the preview again and walk with WASD while it plays. Your legs keep walking under the swings, the guard and the parry. The legs are posed only in a dodge, a flinch, the stagger and the KO. Run it with `"greatsword"`, `"spear"` and `"mace"` too: the greatsword uses both arms, and with a spear the arm thrusts straight forward.
+3. Settings → Reduced motion on, then run the preview again. Every pose still plays, but the stagger does not wobble and the ready stance does not breathe. Then run `""`: within a fraction of a second your character is back on its own animation, with no arm or leg left bent.
+4. A real duel against an AI. From the arena camera and from the aerial view, each action of yours shows on your body:
+   - light, heavy, block (hold the key), parry and dodge;
+   - a flinch when the AI hits you;
+   - at the end, the loser kneels and the winner raises the weapon.
+
+   Note the delay between your key press and the swing. Up to about 0.2 s plus ping is expected for light, block and dodge, which come from the duel's state every 0.2 s. Heavy, hits, parries and staggers come with their own events. With FL-0140, the AI's body does the same.
+5. Two players: each client sees both champions animate, and so does a watching third client. Join a client mid-duel: its champions animate from the next action.
+6. On a phone (Device emulator, a phone, landscape) at the arena camera: every action reads. Note any that does not.
+7. Performance: open the Microprofiler during a fast exchange. There must be no spike when actions arrive: the work is a few joints per champion per frame.
+8. After the crowning and Results, both bodies are back to normal: nothing frozen, no one left kneeling.
+
+Pass: steps 1–3 hold; 4–8 when a duel runs (4 with the AI body once FL-0140 lands). Copy every red line from Output.
+
+History:
+- 2026-10-19 FORGE-04: written (FL-0141; G12.4 Arena.Events, G12.6).

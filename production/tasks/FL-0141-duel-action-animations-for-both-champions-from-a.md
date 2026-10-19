@@ -3,7 +3,7 @@ id: FL-0141
 title: Duel action animations for both champions from Arena.Events
 track: build
 owner: forge-04
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-19
@@ -37,3 +37,4 @@ Players see the duel. Each champion swings, blocks, parries, dodges, staggers on
 
 ## Log
 - 2026-10-19 FORGE-00: created from the B22 review. P0 for B23 RC. Builds on FL-0140's AI figure; start with the human champion while FL-0140 lands.
+- 2026-10-19 forge-04: READY → BUILDING. FORGE-04 started: self-made procedural duel poses (D-026 (2); no animation assets, no upload), written to the champions' joints after the Animator's pass (PreSimulation). Kit rigs and the human champion's own avatar (R15 or R6, Motor6D or AnimationConstraint). Events: snapshot state (light, block, dodge, parry window), heavyWindup, hit, parry, stagger, ended. AI figure found by the ArenaChampion tag (asked FORGE-01 for FL-0140).
