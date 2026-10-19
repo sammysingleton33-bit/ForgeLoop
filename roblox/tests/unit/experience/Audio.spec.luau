@@ -246,6 +246,20 @@ describe("AudioController", function()
 		expect(audio.stats.skipped.unavailable).toBe(2)
 	end)
 
+	it("hasMusic: a state's track plays only with an asset in the registry (FORGE-07 #231 M1)", function()
+		expect(audio:hasMusic("arena")).toBe(true)
+		expect(audio:hasMusic("battle")).toBe(true)
+		expect(audio:hasMusic("nowhere")).toBe(false) -- music.nowhere is not registered
+		expect(audio:hasMusic(nil)).toBe(false)
+		local list = { entry({ id = "music.arena", category = "music", loop = true, status = "needed", asset = nil }) }
+		for state, id in MusicDirector.STATE_SOUNDS do
+			table.insert(list, entry({ id = id, category = "music", loop = true, volume = 0.5, description = state }))
+		end
+		bootWith(list)
+		expect(audio:hasMusic("arena")).toBe(false) -- "needed": switching to it would only fade the music out
+		expect(audio:hasMusic("battle")).toBe(true)
+	end)
+
 	it("setMusic(nil) fades to silence; a state without an asset is counted, not thrown", function()
 		audio:setMusic("calm")
 		env.wait(2)

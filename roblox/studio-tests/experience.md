@@ -616,14 +616,14 @@ At the arena's intro, everyone's overview camera passes over the two stands and 
 Needs:
 - Steps 1–3: FORGE-02's arena on the build (FL-0072, #217: `Workspace.World.Arena.CrownArena`). Without it, write "blocked: needs FL-0072". They use the **Studio preview**, the same pass the real intro plays.
 - Steps 4–5: FORGE-01's arena (FL-0071: `Arena.State`). Until then write "blocked: needs FL-0071".
-- The music and the stingers are silent until the owner picks them (`production/handoffs/2026-10-19-forge-04-to-user-arena-sounds.md`). Write "silent (no asset)".
+- The music and the stingers are silent until the owner picks them (`production/handoffs/2026-10-19-forge-04-to-user-arena-sounds.md`). Write "silent (no asset)". While `music.arena` has no asset, the arena keeps the match music (battle or phase) instead of going silent (FORGE-07 #231 M1).
 
 Steps
 1. Play Solo, aerial camera. In the command bar run `game.Players:GetPlayers()[1]:SetAttribute("ForgeArenaPreview", "a")`. The camera glides to stand **B** (about 4 s, the stand fills the view and its seats face the ring), then to stand **A**, then to the ring seen from stand A's side. It stops there; no snap back. Screenshot **E18-1** on each stand and on the ring.
 2. Run it again with `"b"`: A first, then B, then the ring from B's side. Then `"neutral"`: A, B, the ring from A's side. During a pass, drag the view, turn it (Q / E) or scroll: the pass stops at once and the camera is yours. `""` ends a preview.
 3. Settings → Reduced motion on, then the `"a"` preview: three cuts, each held about 4 s, with no gliding. Turn reduced motion off again.
 4. (Needs FL-0071.) In a real arena: at the intro the horn plays once and the pass runs behind FORGE-03's versus card, the card stays readable, and the pass ends on the ring before the duel starts (it fits the intro, at most 15 s). Watch it as a ruler of each duelling kingdom and of a third one.
-5. (Needs FL-0071.) The arena music plays from the intro and over any battle music, until the crowning ends. A crowning with a winner plays the fanfare once; a called-off duel shows "(The duel was called off)" and plays no fanfare. At Results the match's own music comes back.
+5. (Needs FL-0071.) The arena music plays from the intro and over any battle music, until the crowning ends. A crowning with a winner, or a single qualifier crowned without a duel, plays the fanfare once; a called-off duel shows "(The duel was called off)" and plays no fanfare. At Results the match's own music comes back.
 
 Pass: steps 1–3 hold (4 and 5 when FL-0071 is on the build). Copy every red line from Output.
 

@@ -23,7 +23,8 @@ The list now has **62 sounds**: 20 P0, 18 P1 and 24 P2. These 3 are P2: pick the
 None.
 
 ## Open issues and risks
-- `music.arena` and the crowd sounds play together. Their levels need one listen in Studio once the arena runs (E18 step 3, then E17 step 5).
+- `music.arena` and the crowd sounds play together. Their levels need one listen in Studio once the arena runs (E18 step 5, then E17 step 5).
+- Until `music.arena` is picked, the arena keeps the match music (battle or phase music) rather than going silent, so it is safe to pick it after the P0 and P1 music.
 
 ## Next actions for the receiver
 1. None now. Pick the P0 and P1 sounds first; these come with the arena (VS-2).

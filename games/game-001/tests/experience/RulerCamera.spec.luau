@@ -643,6 +643,14 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 				expect(controller:shotsPlaying()).toBe(false)
 				expect(controller._glide).toBeNil() -- handed over at once, not after the glide
 			end
+			-- a conversation ends the pass too: its own glide replaces the pass's
+			expect(controller:playShots({ { focus = a, yaw = 0, zoom = 60, seconds = 2 } })).toBe(true)
+			frames(3)
+			controller:focusOn(THRONE, { duration = 0.5 })
+			expect(controller:shotsPlaying()).toBe(false)
+			expect(controller._glide).never.toBeNil()
+			local goal = controller._glide.to.focus -- the conversation view (framed near the citizen)
+			expect((goal - THRONE).Magnitude < (goal - a).Magnitude).toBe(true)
 			-- bad shots are refused; zoom and seconds are clamped
 			expect(controller:playShots({})).toBe(false)
 			expect(controller:playShots("shots")).toBe(false)
@@ -651,6 +659,12 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 			expect(controller:playShots({ { focus = a, yaw = 0, zoom = 1000, seconds = 99 } })).toBe(true)
 			expect(controller._shots.list[1].zoom).toBe(O.maxZoom)
 			expect(controller._shots.list[1].seconds).toBe(CameraDef.SHOT_MAX_SEC)
+			-- a focus far off the map is clamped into the camera's bounds, like focusOn
+			local far = THRONE + Vector3.new(100000, 0, -100000)
+			expect(controller:playShots({ { focus = far, yaw = 0, zoom = 60, seconds = 1 } })).toBe(true)
+			local clamped = controller._shots.list[1].focus
+			expect(clamped.X < far.X and clamped.Z > far.Z).toBe(true)
+			expect(near(clamped, CameraDef.clampFocus(far, controller._bounds, O.boundsMargin), 1e-6)).toBe(true)
 			expect(controller:stopShots()).toBe(true)
 			expect(controller:stopShots()).toBe(false)
 		end

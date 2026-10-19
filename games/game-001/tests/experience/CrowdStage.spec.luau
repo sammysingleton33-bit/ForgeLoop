@@ -218,6 +218,12 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 	it("crowning: a fanfare for a winner, none when the duel is called off; done and Results end the music", function()
 		arenaModel()
 		boot()
+		-- the music scene starts with the intro, not before (qualify and vote keep the match music)
+		controller:onArenaState(state("qualify"))
+		controller:onArenaState(state("vote"))
+		controller:onArenaState(state("loadout"))
+		expect(count(music.scenes, "arena")).toBe(0) -- not even for one stage
+		expect(#camera.shots).toBe(0)
 		controller:onArenaState(state("intro"))
 		controller:onArenaState(state("duel"))
 		controller:onArenaState(state("crowning", { winner = 101 }))
@@ -233,6 +239,13 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		controller:onArenaState(state("intro"))
 		controller:onArenaState(state("crowning"))
 		expect(count(audio.played, "arena.fanfare")).toBe(1)
+		-- a single qualifier crowned without a duel (ArenaFlow: winner nil, coronation = the kingdom)
+		controller:onArenaState(state("intro"))
+		controller:onArenaState(state("crowning", { coronation = "emerald" }))
+		expect(count(audio.played, "arena.fanfare")).toBe(2)
+		controller:onArenaState(state("intro"))
+		controller:onArenaState(state("crowning", { coronation = "" }))
+		expect(count(audio.played, "arena.fanfare")).toBe(2)
 		expect(music.scenes[#music.scenes]).toBe("arena")
 		controller:onPhase("Lobby")
 		expect(music.scenes[#music.scenes]).toBe(false)
@@ -286,7 +299,9 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		expect(camera.stopped).toBe(1)
 		expect(controller:preview("neutral")).toBe(true)
 		expect(near(camera.shots[2][1].focus, STAND_A)).toBe(true)
+		local stopped = camera.stopped
 		controller:onArenaState(state("intro")) -- the real arena takes over
+		expect(camera.stopped).toBe(stopped + 1) -- the preview's pass is stopped first
 		expect(#camera.shots).toBe(3)
 		expect(controller:preview("a")).toBe(false)
 		expect(#camera.shots).toBe(3)

@@ -181,6 +181,18 @@ function MusicController:setResult(result: string)
 	self:update()
 end
 
+-- A scene plays only when its track can (FORGE-07 #231 M1): with no asset for it yet, switching to it
+-- would fade the match music out and leave the arena silent, so the phase and battle music go on.
+-- Without an AudioController that can tell (specs, a headless boot) the scene is passed on.
+function MusicController:_scenePlays(): boolean
+	local audio = self._audio
+	if self.scene == nil or audio == nil or type(audio.hasMusic) ~= "function" then
+		return self.scene ~= nil
+	end
+	local ok, plays = pcall(audio.hasMusic, audio, self.scene)
+	return ok and plays == true
+end
+
 function MusicController:update(): string?
 	if self.phase == nil then
 		return self.state
@@ -192,7 +204,7 @@ function MusicController:update(): string?
 		phase = self.phase,
 		inMatch = self.phase ~= "Lobby",
 		result = self.result,
-		scene = self.scene,
+		scene = if self:_scenePlays() then self.scene else nil,
 	})
 	if state ~= nil and state ~= self.state then
 		self.state = state

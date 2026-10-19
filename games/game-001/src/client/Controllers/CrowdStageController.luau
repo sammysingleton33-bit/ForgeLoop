@@ -13,8 +13,10 @@
 		  follows them in the arena input mode (FL-0075), which ends any pass.
 		- Music: the scene "arena" (MusicController:setScene, music.arena) from the intro to the end of the
 		  crowning; any other stage, Results and Lobby end it.
-		- Crowning: the fanfare (arena.fanfare) once, when ArenaState.winner names a champion. A duel that
-		  is called off (no winner) gets none (FORGE-00's draw ruling).
+		- Crowning: the fanfare (arena.fanfare) once, when ArenaState.winner names a champion (a duel or a
+		  forfeit) or ArenaState.coronation names a kingdom crowned without a duel (a single qualifier;
+		  FORGE-07 #231 L1). A duel that is called off (a draw: neither is set) gets none (FORGE-00's draw
+		  ruling).
 	Where: FORGE-02's arena model (CollectionService tag "CrownArena"; attachments on its Root:
 	StandA_RoyalBox, StandB_RoyalBox, Centre), else Layout.arena's frame (Stand A at -Z, B at +Z,
 	Def.STAND_STUDS from the centre). With neither, the pass is skipped (one info line); the music and the
@@ -192,7 +194,8 @@ function Controller:onArenaState(state: any)
 			self:_ringShot(state) -- a late joiner missed the intro
 		end
 	elseif stage == "crowning" then
-		if type(state.winner) == "number" then
+		local crowned = type(state.coronation) == "string" and state.coronation ~= ""
+		if type(state.winner) == "number" or crowned then
 			self:_play(Def.FANFARE)
 		end
 	end
