@@ -16,6 +16,8 @@ RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-
        "--specs", "games/game-001/tests", "economy/SupportUI"]
 M, V, P, K = U + "SupportMeterModel.luau", U + "SupportMeter.luau", U + "SupportPanel.luau", C + "SupportMeterController.luau"
 ROWS = [
+    ("room kept after losing the kingdom", K, "\t\tself:apply(nil, false) -- no kingdom", "\t\tlocal _ = nil -- no kingdom",
+     "losing my kingdom hides the chip"),
     ("model shows before a view", M, "if type(sv) ~= \"table\" or type(sv.score) ~= \"number\" then\n\t\treturn nil",
      "if type(sv) ~= \"table\" then\n\t\treturn nil", "is nil until the server"),
     ("score not rounded", M, "math.clamp(math.floor(sv.score + 0.5), 0, 100)", "math.clamp(math.floor(sv.score), 0, 100)",
