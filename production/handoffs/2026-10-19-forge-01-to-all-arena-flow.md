@@ -7,7 +7,7 @@ The Crown Arena's stage machine and the AI champion, headless and deterministic,
 
 ## Done
 - `Arena/ArenaFlow`: `vote -> loadout -> intro -> duel -> crowning -> done`, producing the G12.1 `ArenaState`.
-  - Champion rule (design §2): the most votes; a tie or no votes goes to the higher leadership (valour + conduct), then the lower userId. A kingdom with no human ruler fields an AI champion (userId -1 for side a, -2 for side b, `isAI = true`).
+  - Champion rule (design §2): the most votes; a tie or no votes goes to the higher leadership (valour + conduct), then the lower userId. A kingdom with no human ruler fields an AI champion (`isAI = true`; userId `ArenaFlow.AI_USER_ID.a` = -1000000001 for side a, `.b` = -1000000002 for side b: ids no player can have).
   - Stages with nothing to decide are skipped: no vote when no kingdom has two or more rulers (the vote also closes early once every contested ruler has voted), no loadout when both champions are AI. One qualifier = last keep standing: straight to the crowning with `coronation` set, no duel.
   - `choose(userId, weapon, armour, triggers)`: champion only, loadout stage only, weapon and armour from config Duel, triggers distinct, a subset of the champion's own offers and at most min(slots, 3). A champion who never chooses fights with the config defaults and the offered perks in order up to their slots.
   - Leavers: `forfeit` before the crowning gives the other side the win (both gone = draw); a ruler leaving during the vote drops out (nobody left = AI). `cancel` ends the arena with no winner (Crown Points decide).

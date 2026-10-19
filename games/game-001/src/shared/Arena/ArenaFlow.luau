@@ -15,10 +15,11 @@
 			setup.support      (userId?, KingdomId) -> Support the champion's support: { score, tier, offers, slots,
 			                   reasons }; userId nil for an AI kingdom (SupportService turns samples into this)
 		Flow:state() -> ArenaState        the public picture (same table shape as Types.ArenaState); `rev` changes with it
-		Flow:champion(side) -> Champion?  { userId, kingdom, isAI, offers, slots, weapon, armour, triggers }
+		Flow:champion(side) -> Champion?  { side, kingdom, userId, isAI, support, weapon, armour, triggers, chosen, gone }
 		Flow:vote(userId, candidate) -> (ok, reason?)
 			vote stage only; the voter is a seated human ruler of a qualified kingdom, the candidate one of that
-			kingdom's rulers; the latest vote counts; closes the stage early when every ruler has voted
+			kingdom's rulers; the latest vote counts; the stage closes early when every kingdom with more than one
+			candidate has had all its candidates vote (a kingdom with one ruler has nothing to vote on)
 		Flow:choose(userId, weapon, armour, triggers) -> (ok, reason?)
 			loadout stage only; the champion only; weapon and armour from Duel config, triggers distinct, a subset of
 			the champion's own offers, at most min(slots, 3); the latest choice counts

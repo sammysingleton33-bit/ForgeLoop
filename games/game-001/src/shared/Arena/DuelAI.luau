@@ -44,7 +44,9 @@ function DuelAI.new(side: string, skill: number, seed: number, config: any?): an
 	self._other = if side == "a" then "b" else "a"
 	self._skill = s
 	self._rules = rules
-	self._rng = (math.floor(math.abs(seed)) % 2147483646) + 1
+	local seedNumber = if type(seed) == "number" and seed == seed and math.abs(seed) < math.huge then seed else 1
+	self._rng = (math.floor(math.abs(seedNumber)) % 2147483646) + 1
+	self._armours = (config or Duel).armour
 	self._reaction = 0.30 - 0.18 * s
 	self._seeAndAnswer = 0.35 + 0.55 * s
 	self._parryBias = 0.25 + 0.6 * s
@@ -72,7 +74,9 @@ function DuelAI:_defence(me: any): string
 	if me.stamina >= rules.parryCost and nextRandom(self) < self._parryBias then
 		return "parry"
 	end
-	if me.stamina >= 25 and nextRandom(self) < 0.5 then
+	local armour = self._armours[me.armour]
+	local dodgeCost = if armour then armour.dodgeCost else 25
+	if me.stamina >= dodgeCost and nextRandom(self) < 0.5 then
 		return "dodge"
 	end
 	return "block"

@@ -87,6 +87,35 @@ describe("Arena/DuelModel: attacks", function()
 		expect(hit.data.damage > DuelModel.WEAPONS.swordShield.light).toBe(true)
 	end)
 
+	it("the telegraphed impact time is the time the heavy actually lands", function()
+		local s = duel()
+		local events = act(s, "a", "heavy", 1.2)
+		local windup = kinds(events, "heavyWindup")[1]
+		local hit = kinds(events, "hit")[1]
+		expect(math.abs(hit.t - windup.data.impactAt) < 1e-6).toBe(true)
+		-- and not by one tick, at any step size
+		for _, dt in { 1 / 60, 1 / 30, 0.05 } do
+			local state = DuelModel.new(
+				nil,
+				{ weapon = "swordShield", armour = "medium" },
+				{ weapon = "swordShield", armour = "medium" },
+				1
+			)
+			local first = DuelModel.step(state, { a = input("heavy") }, dt)
+			local telegraph = kinds(first, "heavyWindup")[1]
+			local landed
+			for _ = 1, math.floor(2 / dt) do
+				for _, e in DuelModel.step(state, {}, dt) do
+					if e.kind == "hit" and landed == nil then
+						landed = e
+					end
+				end
+			end
+			assert(landed, "the heavy lands")
+			expect(math.abs(landed.t - telegraph.data.impactAt) < dt * 0.51).toBe(true)
+		end
+	end)
+
 	it("misses when the target is out of range or the attacker is not facing it", function()
 		local s = duel()
 		local events = DuelModel.step(s, { a = input("light", false, true) }, DT)
