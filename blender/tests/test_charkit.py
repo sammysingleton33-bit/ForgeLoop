@@ -271,3 +271,17 @@ def test_budget_script_passes_on_the_shipped_files():
     r = subprocess.run([sys.executable, "-I", str(BLENDER / "scripts" / "charkit_budget.py")], capture_output=True, text=True, timeout=300)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-1000:]
     assert "charkit budget: PASS" in r.stdout
+
+
+@needs_bpy
+def test_committed_kit_passes_the_ported_runtime_spec_checks():
+    """Torso at the hips, highest body point < 7.2, death-fall margin, tool-to-head clearance (KitCharacterMesh / KitCharacterMeshPose)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("charkit_runtime_checks", BLENDER / "scripts" / "charkit_runtime_checks.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    doc = json.loads(RIG_JSON.read_text())
+    bad, worst = mod.check(doc)
+    assert not bad, bad[:5]
+    assert worst["height"] < 7.2 and worst["fall"] > -0.25 and worst["tool_head"] >= 0.1

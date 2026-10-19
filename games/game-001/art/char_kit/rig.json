@@ -286,17 +286,17 @@
    "joint": "Head",
    "weld_to": "Head",
    "bbox_center": [
-    0.0485,
+    0.0286,
     5.13,
-    0.1616
+    0.2433
    ],
    "size": [
-    1.8629,
+    1.8627,
     1.62,
-    1.877
+    1.8001
    ],
-   "tris": 122,
-   "verts": 71,
+   "tris": 68,
+   "verts": 44,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -3247,9 +3247,9 @@
    "pieces_default": 14,
    "tris_default": 814,
    "pieces_max": 15,
-   "tris_max": 976,
+   "tris_max": 940,
    "tool_tris": 94,
-   "body_tris": 882,
+   "body_tris": 846,
    "budget": 1000,
    "draw_calls_est": 15,
    "texture_bytes": 0,
@@ -3295,11 +3295,11 @@
    "pieces_default": 12,
    "tris_default": 676,
    "pieces_max": 14,
-   "tris_max": 838,
+   "tris_max": 826,
    "tool_tris": 0,
-   "body_tris": 838,
+   "body_tris": 826,
    "budget": 1000,
-   "draw_calls_est": 13,
+   "draw_calls_est": 14,
    "texture_bytes": 0,
    "pass": true
   },
@@ -3352,6 +3352,6 @@
    "pass": true
   }
  },
- "geometry_hash": "d9e186c4c174db71",
- "fbx_bytes": 498428
+ "geometry_hash": "041cfd2aed652f88",
+ "fbx_bytes": 497436
 }

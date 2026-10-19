@@ -7306,7 +7306,7 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "d9e186c4c174db71",
+      "geometry_hash": "041cfd2aed652f88",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
@@ -7329,7 +7329,7 @@
           },
           "hauler": {
             "pieces_max": 15,
-            "tris_max": 976
+            "tris_max": 940
           },
           "healer": {
             "pieces_max": 15,
@@ -7337,7 +7337,7 @@
           },
           "idle": {
             "pieces_max": 14,
-            "tris_max": 838
+            "tris_max": 826
           },
           "merchant": {
             "pieces_max": 16,
@@ -7368,7 +7368,7 @@
         "max_ruler_tris": 978,
         "pieces": 107,
         "style": "B",
-        "total_piece_tris": 6960
+        "total_piece_tris": 6906
       },
       "license": "project-original",
       "material": "M_charkit_vc",

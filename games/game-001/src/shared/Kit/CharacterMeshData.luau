@@ -2,7 +2,7 @@
 --[[
 	Kit/CharacterMeshData — the imported-mesh citizen kit as data (FL-0135, D-057). GENERATED, do not edit by hand:
 		python3 games/game-001/art/char_kit/rig_to_luau.py
-	source games/game-001/art/char_kit/rig.json  sha256 72cfc06ecb83b99658617822fa82b927118e7a611fa256b8e4a33511d9e09667
+	source games/game-001/art/char_kit/rig.json  sha256 9bcefc3f90cb95737d56b7eb6666b88d4d65624694f6b8b578e8c50f91f6fe43
 	113 pieces (107 with a mesh), 13 assemblies, 8 joints.
 	Kit/CharacterMesh.luau reads it; with no pieces (or a CitizenKit folder that lacks one) Kit.character falls back.
 ]]
@@ -52,7 +52,7 @@ return table.freeze({
 		hair_02 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.9666, 0.0012 }, size = { 1.714, 1.1869, 1.5947 }, tris = 46, tint = "hair", slot = "hair", tags = { "hair" } },
 		hair_03 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.52, 0.201 }, size = { 1.6144, 2.04, 1.8583 }, tris = 90, tint = "hair", slot = "hair", tags = { "hair" } },
 		hair_04 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.7908, -0.0651 }, size = { 1.8677, 1.5583, 1.6057 }, tris = 46, tint = "hair", slot = "hair", tags = { "hair" } },
-		hair_05 = { joint = "Head", weld_to = "Head", bbox_center = { 0.0485, 5.13, 0.1616 }, size = { 1.8629, 1.62, 1.877 }, tris = 122, tint = "hair", slot = "hair", tags = { "hair" } },
+		hair_05 = { joint = "Head", weld_to = "Head", bbox_center = { 0.0286, 5.13, 0.2433 }, size = { 1.8627, 1.62, 1.8001 }, tris = 68, tint = "hair", slot = "hair", tags = { "hair" } },
 		hair_06 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.6479, 0.3072 }, size = { 1.5867, 1.7843, 1.9656 }, tris = 58, tint = "hair", slot = "hair", tags = { "hair" } },
 		hair_07 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.222, 0.0348 }, size = { 1.5825, 1.3959, 1.431 }, tris = 54, tint = "hair", slot = "hair", tags = { "hair" } },
 		hair_08 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.7495, 0.0284 }, size = { 2.3999, 1.581, 1.4455 }, tris = 86, tint = "hair", slot = "hair", tags = { "hair" } },

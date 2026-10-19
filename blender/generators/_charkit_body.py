@@ -180,9 +180,9 @@ def build_hair(S, R):
                    seg=seg, n=n, caps=(True, True), phase=ph(S, seg), color=TINT, smooth=sm, tag="hair")
     reg("hair_03", merge(_cap(S, 0.07, 4.7, -0.3, thick=0.1), curtain))
     reg("hair_04", _cap(S, 0.1, 4.45, -0.5, rim_flare=0.1, thick=0.13))
-    puff = [sphere(0.98, 0.7, 0.92, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 5.02, 0.12)]
+    puff = [sphere(0.98, 0.7, 0.92, seg=S.seg(10, 7), rings=S.seg(4, 3), color=TINT, smooth=sm, tag="hair").move(0, 5.02, 0.12)]
     for (x, y, z, r) in ((-0.66, 4.74, 0.28, 0.3), (0.66, 4.74, 0.28, 0.3), (0.0, 5.64, 0.1, 0.3), (0.0, 4.7, 0.82, 0.34)):
-        puff.append(sphere(r, seg=S.seg(6, 5), rings=3, color=TINT, smooth=sm, tag="hair").move(x, y, z))
+        puff.append(sphere(r, seg=S.seg(6, 5), rings=2, color=TINT, smooth=sm, tag="hair").move(x, y, z))
     reg("hair_05", merge(*puff))
     tail = tube([(0, 5.0, 0.6), (0, 4.78, 0.98), (0, 4.28, 1.12), (0, 3.78, 0.98)], [0.17, 0.2, 0.17, 0.09], seg=S.seg(6, 4),
                 n=2.0, color=TINT, smooth=sm, tag="hair")
