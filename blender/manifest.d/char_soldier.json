@@ -36,6 +36,7 @@
       "geometry_hash": "2eef25aebac4cd9c",
       "id": "char_soldier_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -204,6 +205,7 @@
       "geometry_hash": "67817a51e2cdd701",
       "id": "char_soldier_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -372,6 +374,7 @@
       "geometry_hash": "9b25d1344bd58e60",
       "id": "char_soldier_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -540,6 +543,7 @@
       "geometry_hash": "63fc7f669f80b14b",
       "id": "char_soldier_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -708,6 +712,7 @@
       "geometry_hash": "8c77c620733ec3af",
       "id": "char_soldier_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -876,6 +881,7 @@
       "geometry_hash": "8f736bb54a888891",
       "id": "char_soldier_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -1044,6 +1050,7 @@
       "geometry_hash": "8d96e6d81ba8b482",
       "id": "char_soldier_07",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -1212,6 +1219,7 @@
       "geometry_hash": "5679c6d33da29e91",
       "id": "char_soldier_08",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -1380,6 +1388,7 @@
       "geometry_hash": "54bd0ac5e99cebd4",
       "id": "char_soldier_09",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -1548,6 +1557,7 @@
       "geometry_hash": "52e1729f0c8cbaf9",
       "id": "char_soldier_10",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -1716,6 +1726,7 @@
       "geometry_hash": "edd6ed3513d529e2",
       "id": "char_soldier_11",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -1884,6 +1895,7 @@
       "geometry_hash": "3fc27e7f2470c29a",
       "id": "char_soldier_12",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",

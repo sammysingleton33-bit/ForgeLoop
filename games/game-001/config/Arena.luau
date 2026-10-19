@@ -11,6 +11,7 @@
 	duelMaxSeconds         the safety clock of the duel stage: the duel's own caps (Duel rules timeCap and hardCap) end
 	                       it first; if the clock still runs out the duel is a draw
 	crowningSeconds        the winner's coronation; the match ends when it does
+	simultaneousSeconds    a second champion leaving this soon after a forfeit makes it a draw (both_left)
 	ai                     an AI kingdom's champion: weapon, armour and skill 0..1 (DuelAI; the governor difficulty,
 	                       BRIEF §16.3, will set the skill)
 	site                   where the duel ring is until the world layout has one (WorldLayout.arena, FORGE-02): the centre
@@ -38,6 +39,7 @@ return {
 	introSeconds = 12,
 	duelMaxSeconds = 195,
 	crowningSeconds = 15,
+	simultaneousSeconds = 0.5,
 	defaultWeapon = "swordShield",
 	defaultArmour = "medium",
 	ai = { weapon = "swordShield", armour = "medium", skill = 0.5 },

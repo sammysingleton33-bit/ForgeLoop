@@ -22,6 +22,7 @@
       "geometry_hash": "078a1cb5a572aef8",
       "id": "prop_banner_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "star",
@@ -91,6 +92,7 @@
       "geometry_hash": "371e1bc049bfd40c",
       "id": "prop_banner_blue_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "star",
@@ -160,6 +162,7 @@
       "geometry_hash": "ffc553b57c006d59",
       "id": "prop_banner_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "oak",
@@ -229,6 +232,7 @@
       "geometry_hash": "f437abb3e0c4fbf6",
       "id": "prop_banner_green_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "oak",
@@ -298,6 +302,7 @@
       "geometry_hash": "b1fb92952605a3e7",
       "id": "prop_banner_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "crown",
@@ -367,6 +372,7 @@
       "geometry_hash": "e9882550e94c5d3f",
       "id": "prop_banner_red_02",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "crown",
@@ -436,6 +442,7 @@
       "geometry_hash": "3e63b8f23a9f323e",
       "id": "prop_banner_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "sun",
@@ -505,6 +512,7 @@
       "geometry_hash": "caca0f2ab7df7a00",
       "id": "prop_banner_yellow_02",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "sun",

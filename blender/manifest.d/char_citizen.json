@@ -36,6 +36,7 @@
       "geometry_hash": "c79dde301b16b3de",
       "id": "char_citizen_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -204,6 +205,7 @@
       "geometry_hash": "b61342066234b91b",
       "id": "char_citizen_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -372,6 +374,7 @@
       "geometry_hash": "297bcde466364faa",
       "id": "char_citizen_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -540,6 +543,7 @@
       "geometry_hash": "210a9b633e9b0be5",
       "id": "char_citizen_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -708,6 +712,7 @@
       "geometry_hash": "8c9e7ebb3531156a",
       "id": "char_citizen_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -876,6 +881,7 @@
       "geometry_hash": "91fb4dd7a87058a8",
       "id": "char_citizen_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",

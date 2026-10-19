@@ -22,6 +22,7 @@
       "geometry_hash": "5b99062938815a12",
       "id": "rock_boulder_l_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -81,6 +82,7 @@
       "geometry_hash": "2759a8863346f365",
       "id": "rock_boulder_l_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -140,6 +142,7 @@
       "geometry_hash": "4825917bd069027e",
       "id": "rock_boulder_l_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -199,6 +202,7 @@
       "geometry_hash": "f77c76709f111b53",
       "id": "rock_boulder_m_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -258,6 +262,7 @@
       "geometry_hash": "e5d6f2d27b870c3a",
       "id": "rock_boulder_m_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -317,6 +322,7 @@
       "geometry_hash": "888d1c4cae738c9d",
       "id": "rock_boulder_m_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -376,6 +382,7 @@
       "geometry_hash": "51850113dc88710c",
       "id": "rock_boulder_s_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -435,6 +442,7 @@
       "geometry_hash": "684bebcc0b19f9c2",
       "id": "rock_boulder_s_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -494,6 +502,7 @@
       "geometry_hash": "c9a7ae1dfb201dc7",
       "id": "rock_boulder_s_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,

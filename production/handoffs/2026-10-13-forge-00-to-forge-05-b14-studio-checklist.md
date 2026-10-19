@@ -201,3 +201,15 @@ Run the B20.1 rows (M1–M5) and the B20.2 rows (N1–N5) on B21, then the B21 a
 | O2 | At war with an AI, keep soldiers at your keep | an assault of about your size breaks against it; note whether it held |
 | O3 | Recruit a ram (barracks level 2, wood 200) and attack a building | the ram hits buildings far harder than soldiers do (screenshot B21-2) |
 | O4 | Output window through a full match | copy every red line; citizens still use the part-built rig (no mesh data yet) |
+
+## B21.1 additions (main `ec52722`, BuildInfo `ec52722284aa…`): imported-mesh citizens (owner import), phone fit
+Run the B21 rows (O1–O4) on B21.1. Then do the import per `games/game-001/art/IMPORT_CHARACTERS.md` (Asset Privacy on BEFORE any upload), and the studio-runs B21.1 asks 1–6, summarised here:
+
+| ID | Check | Pass |
+|---|---|---|
+| P1 | Before the import, play | identical to B21 (part-built citizens) |
+| P2 | Bulk Import `citizen_kit.fbx`, run `import_char_kit.luau` in the Command Bar | Output ends `RESULT: OK`, `N imported, 0 missing`, no `stripped:` lines; paste the Output |
+| P3 | Play: citizens, ruler, soldiers of each kingdom, close and aerial | `KingdomEntities` citizens hold MeshParts; jobs, crest and kingdom colours read; walk and work animations play; screenshots close and aerial |
+| P4 | MicroProfiler at Endgame; Render Stats on a 667×375 phone | note FPS, triangles and draw calls at the population caps |
+| P5 | Phone 667×375: the drawer, spectate, Rivals and the recap | the drawer shows jobs, reputation, army and standings rows; buttons are easy to tap |
+| P6 | Output through a full match | copy every red line; delete `CitizenKit` to revert (IMPORT_CHARACTERS §4) |

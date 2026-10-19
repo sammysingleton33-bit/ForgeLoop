@@ -22,6 +22,7 @@
       "geometry_hash": "2b079e4db4d93703",
       "id": "prop_well_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": false,
@@ -88,6 +89,7 @@
       "geometry_hash": "e1890bf219aa367e",
       "id": "prop_well_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": true,
@@ -154,6 +156,7 @@
       "geometry_hash": "1ebda265418805d9",
       "id": "prop_well_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": false,
@@ -220,6 +223,7 @@
       "geometry_hash": "d26608f0d3b5515f",
       "id": "prop_well_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": false,

@@ -127,6 +127,7 @@
       "geometry_hash": "4fee346ee0c3da99",
       "id": "farm_barn_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "banner": "left",
@@ -318,6 +319,7 @@
       "geometry_hash": "fedb9b8f00a1b234",
       "id": "farm_barn_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cupola": false,
@@ -508,6 +510,7 @@
       "geometry_hash": "f2f1133b558ed1d0",
       "id": "farm_barn_03",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cupola": false,
@@ -698,6 +701,7 @@
       "geometry_hash": "56eee46604e329bb",
       "id": "farm_barn_04",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cupola": true,

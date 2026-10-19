@@ -36,6 +36,7 @@
       "geometry_hash": "c9358650b2b4b920",
       "id": "farm_fence_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "rail"
@@ -116,6 +117,7 @@
       "geometry_hash": "8aad23a1f8b1bcfd",
       "id": "farm_fence_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "picket"
@@ -196,6 +198,7 @@
       "geometry_hash": "9577ea437d681d0e",
       "id": "farm_fence_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "wattle"
@@ -289,6 +292,7 @@
       "geometry_hash": "4c776d22f470dbf4",
       "id": "farm_fence_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "gate"
@@ -374,6 +378,7 @@
       "geometry_hash": "6a4e1f7380940604",
       "id": "farm_fence_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "stonewall"
@@ -454,6 +459,7 @@
       "geometry_hash": "38d786207b8b0219",
       "id": "farm_fence_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "xbrace"

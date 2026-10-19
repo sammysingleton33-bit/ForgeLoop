@@ -23,7 +23,7 @@
 		Runner:step(now) -> { RelayEvent }
 			advances the duel by the real time since the last step in fixed ticks (at most maxCatchup seconds at a
 			time); returns the events for Arena.Events. The first call starts the clock.
-		Runner:forfeit(userId, now) -> { RelayEvent }   the champion leaves: the other side wins, both gone = draw
+		Runner:forfeit(userId, now) -> { RelayEvent }   the champion leaves: the other side wins; the other leaving within Arena.simultaneousSeconds makes it a draw
 		Runner:finished() -> boolean       Runner:result() -> ("a" | "b" | "draw", reason)?
 		Runner:snapshot() -> the public picture (DuelModel.snapshot)
 		RelayEvent = { t, kind, side, data? }, shares only, nothing about the opponent that a spectator cannot see:
@@ -110,7 +110,7 @@ function DuelRunner.new(setup: any, config: any?): any
 	self._acc = 0
 	self._nextSnapshot = 0
 	self._started = false
-	self._forfeited = nil :: { winner: string, reason: string }?
+	self._forfeitAt = nil :: number?
 	self._result = nil :: { side: string, reason: string }?
 	return self
 end
@@ -303,21 +303,31 @@ function DuelRunner:step(now: number): { any }
 	return out
 end
 
-function DuelRunner:forfeit(userId: number, _now: number): { any }
+function DuelRunner:forfeit(userId: number, now: number): { any }
 	local out: { any } = {}
-	if self._result ~= nil then
-		return out
-	end
 	local side = if type(userId) == "number" then self:_sideOf(userId) else nil
 	if side == nil then
 		return out
 	end
+	if self._result ~= nil then
+		-- the winner leaving within the same moment as the loser: nobody outlasted the other
+		local result = self._result
+		if
+			self._forfeitAt ~= nil
+			and result.side == side
+			and now - self._forfeitAt <= self._cfg.simultaneousSeconds
+		then
+			self._sides[side].gone = true
+			self._result = { side = "draw", reason = "forfeit" }
+			table.insert(out, { t = self._model.t, kind = "ended", side = "draw", data = { reason = "forfeit" } })
+		end
+		return out
+	end
+	self._forfeitAt = now
 	local other = if side == "a" then "b" else "a"
-	local otherGone = self._sides[other].gone == true
 	self._sides[side].gone = true
-	local winner = if otherGone then "draw" else other
-	self._result = { side = winner, reason = "forfeit" }
-	table.insert(out, { t = self._model.t, kind = "ended", side = winner, data = { reason = "forfeit" } })
+	self._result = { side = other, reason = "forfeit" }
+	table.insert(out, { t = self._model.t, kind = "ended", side = other, data = { reason = "forfeit" } })
 	return out
 end
 

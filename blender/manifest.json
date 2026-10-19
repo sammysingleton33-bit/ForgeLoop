@@ -22,6 +22,7 @@
       "geometry_hash": "c2fa1337d3b407df",
       "id": "bridge_stone_1arch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "arches": 1,
@@ -90,6 +91,7 @@
       "geometry_hash": "62f977b67d351888",
       "id": "bridge_stone_2arch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "arches": 2,
@@ -158,6 +160,7 @@
       "geometry_hash": "f06c6713f241f2ed",
       "id": "bridge_stone_3arch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "arches": 3,
@@ -226,6 +229,7 @@
       "geometry_hash": "b93fbd5fe2c984eb",
       "id": "bridge_wood_humped_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "length": 40.0,
@@ -293,6 +297,7 @@
       "geometry_hash": "0064c86bc374b97d",
       "id": "bridge_wood_plank_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "length": 32.0,
@@ -360,6 +365,7 @@
       "geometry_hash": "7abd4b80d4d534ca",
       "id": "bridge_wood_trestle_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "length": 44.0,
@@ -427,6 +433,7 @@
       "geometry_hash": "1bbf266ad8a9880c",
       "id": "building_barracks_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "gable",
@@ -504,6 +511,7 @@
       "geometry_hash": "92ada1cdcf1f0a19",
       "id": "building_barracks_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "keep",
@@ -581,6 +589,7 @@
       "geometry_hash": "66269b38e98d60a8",
       "id": "building_barracks_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "keep",
@@ -658,6 +667,7 @@
       "geometry_hash": "7c1b8762011fd412",
       "id": "building_barracks_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "gable",
@@ -735,6 +745,7 @@
       "geometry_hash": "e44e26ef998750c6",
       "id": "building_barracks_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "keep",
@@ -812,6 +823,7 @@
       "geometry_hash": "ab1c5270d79c41af",
       "id": "building_barracks_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "gable",
@@ -889,6 +901,7 @@
       "geometry_hash": "1ae36fde84fd3f51",
       "id": "building_market_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.0,
@@ -963,6 +976,7 @@
       "geometry_hash": "167a60443c00daae",
       "id": "building_market_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.2,
@@ -1037,6 +1051,7 @@
       "geometry_hash": "8efb86a527fb04f3",
       "id": "building_market_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.6,
@@ -1111,6 +1126,7 @@
       "geometry_hash": "711918262d284bc2",
       "id": "building_market_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 9.0,
@@ -1185,6 +1201,7 @@
       "geometry_hash": "eb43fcfdc168d825",
       "id": "building_market_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 7.8,
@@ -1272,6 +1289,7 @@
       "geometry_hash": "cd487472c8b6bc52",
       "id": "building_market_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.2,
@@ -1346,6 +1364,7 @@
       "geometry_hash": "fdc9aee6816a51e2",
       "id": "building_smithy_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.6,
@@ -1418,6 +1437,7 @@
       "geometry_hash": "83c4f7ee5b59ce02",
       "id": "building_smithy_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 14.5,
@@ -1490,6 +1510,7 @@
       "geometry_hash": "2ceaf8e487e54776",
       "id": "building_smithy_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.4,
@@ -1563,6 +1584,7 @@
       "geometry_hash": "29ae2c8c91ca9f78",
       "id": "building_smithy_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.9,
@@ -1636,6 +1658,7 @@
       "geometry_hash": "2f5a168ca6cfcc69",
       "id": "building_smithy_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 14.6,
@@ -1710,6 +1733,7 @@
       "geometry_hash": "6c5239ab4e2a6031",
       "id": "building_smithy_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 15.6,
@@ -1783,6 +1807,7 @@
       "geometry_hash": "c5c1ebe10b632aed",
       "id": "building_storehouse_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 10.0,
@@ -1861,6 +1886,7 @@
       "geometry_hash": "f37f8fbdd5d6fa32",
       "id": "building_storehouse_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 21.0,
@@ -1933,6 +1959,7 @@
       "geometry_hash": "3b15a0a3b03a527d",
       "id": "building_storehouse_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 9.0,
@@ -2011,6 +2038,7 @@
       "geometry_hash": "44291241e9204268",
       "id": "building_storehouse_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 19.0,
@@ -2083,6 +2111,7 @@
       "geometry_hash": "11f6036c5dd89345",
       "id": "building_storehouse_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 10.0,
@@ -2161,6 +2190,7 @@
       "geometry_hash": "a1d2602021154cf4",
       "id": "building_storehouse_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 22.0,
@@ -2233,6 +2263,7 @@
       "geometry_hash": "9e919989676e9aa9",
       "id": "building_tavern_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": 1,
@@ -2306,6 +2337,7 @@
       "geometry_hash": "a8fce00670f0bfcd",
       "id": "building_tavern_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": -1,
@@ -2379,6 +2411,7 @@
       "geometry_hash": "8268b584a166d726",
       "id": "building_tavern_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": -1,
@@ -2452,6 +2485,7 @@
       "geometry_hash": "b1f85ae88d1cf9a3",
       "id": "building_tavern_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": 1,
@@ -2525,6 +2559,7 @@
       "geometry_hash": "1b5ba371f731c6f0",
       "id": "building_tavern_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": -1,
@@ -2598,6 +2633,7 @@
       "geometry_hash": "124e2faf926cdbb7",
       "id": "building_tavern_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "chimney": 1,
@@ -2671,6 +2707,7 @@
       "geometry_hash": "fb85de305dd76c20",
       "id": "building_workshop_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bays": 2,
@@ -2744,6 +2781,7 @@
       "geometry_hash": "ff3ab522b48db16a",
       "id": "building_workshop_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bays": 2,
@@ -2817,6 +2855,7 @@
       "geometry_hash": "938e45a1fa5def40",
       "id": "building_workshop_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bays": 3,
@@ -2890,6 +2929,7 @@
       "geometry_hash": "d1782ad83d6e6542",
       "id": "building_workshop_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bays": 3,
@@ -2963,6 +3003,7 @@
       "geometry_hash": "1a7b2c4eb969b96e",
       "id": "building_workshop_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bays": 3,
@@ -3036,6 +3077,7 @@
       "geometry_hash": "c713c6154e41b716",
       "id": "building_workshop_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bays": 2,
@@ -3109,6 +3151,7 @@
       "geometry_hash": "e4a220a578f2b1f1",
       "id": "bush_berry_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [
@@ -3180,6 +3223,7 @@
       "geometry_hash": "08d2f1f807398759",
       "id": "bush_berry_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [
@@ -3252,6 +3296,7 @@
       "geometry_hash": "94a71383841358e3",
       "id": "bush_flowering_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [
@@ -3319,6 +3364,7 @@
       "geometry_hash": "97407c842d2ec9fc",
       "id": "bush_flowering_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [
@@ -3387,6 +3433,7 @@
       "geometry_hash": "5ac350564d24d6d9",
       "id": "bush_hedge_07",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [],
@@ -3451,6 +3498,7 @@
       "geometry_hash": "3e7fab13e6e4a060",
       "id": "bush_hedge_08",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [
@@ -3518,6 +3566,7 @@
       "geometry_hash": "ad1d2cb921f48aaf",
       "id": "bush_round_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [],
@@ -3582,6 +3631,7 @@
       "geometry_hash": "7142bffb8e511d09",
       "id": "bush_round_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "accents": [],
@@ -3777,6 +3827,7 @@
       "geometry_hash": "2e4fb119b7ee6894",
       "id": "castle_gatehouse_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -3992,6 +4043,7 @@
       "geometry_hash": "a392fe21a3471e1d",
       "id": "castle_gatehouse_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -4207,6 +4259,7 @@
       "geometry_hash": "0808516571d38bff",
       "id": "castle_gatehouse_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -4422,6 +4475,7 @@
       "geometry_hash": "f97e731382456187",
       "id": "castle_gatehouse_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -4519,6 +4573,7 @@
       "geometry_hash": "5b380f704e5ada3c",
       "id": "castle_keep_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue"
@@ -4590,6 +4645,7 @@
       "geometry_hash": "8b7287e62dcf5cdc",
       "id": "castle_keep_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green"
@@ -4661,6 +4717,7 @@
       "geometry_hash": "1e048857a33fb3ae",
       "id": "castle_keep_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red"
@@ -4732,6 +4789,7 @@
       "geometry_hash": "6f18083fce9cdf04",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow"
@@ -4803,6 +4861,7 @@
       "geometry_hash": "7acd5d64107e3e60",
       "id": "castle_tower_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "pyramid_big",
@@ -4887,6 +4946,7 @@
       "geometry_hash": "e889d06203126994",
       "id": "castle_tower_blue_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "bartizans",
@@ -4971,6 +5031,7 @@
       "geometry_hash": "98d32b9aadac8212",
       "id": "castle_tower_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "hoarding",
@@ -5055,6 +5116,7 @@
       "geometry_hash": "4524e210e7cbacca",
       "id": "castle_tower_green_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "hoarding_lookout",
@@ -5139,6 +5201,7 @@
       "geometry_hash": "923de8a68aed96a3",
       "id": "castle_tower_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "spire_big",
@@ -5223,6 +5286,7 @@
       "geometry_hash": "7888f06cf4bd5a27",
       "id": "castle_tower_red_02",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "spire_turret",
@@ -5307,6 +5371,7 @@
       "geometry_hash": "e04ab1ffee8fb06d",
       "id": "castle_tower_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "onion",
@@ -5391,6 +5456,7 @@
       "geometry_hash": "cf239f5efc12ef10",
       "id": "castle_tower_yellow_02",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "kiosks",
@@ -5475,6 +5541,7 @@
       "geometry_hash": "936e9c6b40b7bec0",
       "id": "castle_wall_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "curtain",
@@ -5563,6 +5630,7 @@
       "geometry_hash": "5215ba6b8def5af3",
       "id": "castle_wall_blue_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "bastion",
@@ -5661,6 +5729,7 @@
       "geometry_hash": "bec91a1ec22c99d6",
       "id": "castle_wall_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "curtain",
@@ -5749,6 +5818,7 @@
       "geometry_hash": "c0cad51e17156733",
       "id": "castle_wall_green_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "bastion",
@@ -5847,6 +5917,7 @@
       "geometry_hash": "778a0b9a69915f15",
       "id": "castle_wall_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "curtain",
@@ -5935,6 +6006,7 @@
       "geometry_hash": "ac1899cf6900aee6",
       "id": "castle_wall_red_02",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "bastion",
@@ -6033,6 +6105,7 @@
       "geometry_hash": "67cfbc16b4f1f79a",
       "id": "castle_wall_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "curtain",
@@ -6121,6 +6194,7 @@
       "geometry_hash": "dd4d80a0c5cd169c",
       "id": "castle_wall_yellow_02",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "bastion",
@@ -6233,6 +6307,7 @@
       "geometry_hash": "c79dde301b16b3de",
       "id": "char_citizen_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -6401,6 +6476,7 @@
       "geometry_hash": "b61342066234b91b",
       "id": "char_citizen_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -6569,6 +6645,7 @@
       "geometry_hash": "297bcde466364faa",
       "id": "char_citizen_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -6737,6 +6814,7 @@
       "geometry_hash": "210a9b633e9b0be5",
       "id": "char_citizen_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -6905,6 +6983,7 @@
       "geometry_hash": "8c9e7ebb3531156a",
       "id": "char_citizen_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -7073,6 +7152,7 @@
       "geometry_hash": "91fb4dd7a87058a8",
       "id": "char_citizen_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -7206,6 +7286,168 @@
       "validation_pass": true
     },
     {
+      "budget_class": "citizen_rig",
+      "category": "char",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 4.074,
+        "y": 6.056,
+        "z": 3.24
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/citizen_kit.fbx",
+        "mesh_committed": "games/game-001/art/char_kit/citizen_kit.fbx",
+        "rig": "games/game-001/art/char_kit/rig.json",
+        "validation": "exports/char_kit.validation.json"
+      },
+      "generator": "char_kit",
+      "generator_version": 1,
+      "geometry_hash": "041cfd2aed652f88",
+      "id": "char_kit_01",
+      "kingdom": null,
+      "kit": {
+        "jobs": {
+          "blacksmith": {
+            "pieces_max": 13,
+            "tris_max": 764
+          },
+          "builder": {
+            "pieces_max": 14,
+            "tris_max": 830
+          },
+          "farmer": {
+            "pieces_max": 16,
+            "tris_max": 934
+          },
+          "governor": {
+            "pieces_max": 16,
+            "tris_max": 954
+          },
+          "hauler": {
+            "pieces_max": 15,
+            "tris_max": 940
+          },
+          "healer": {
+            "pieces_max": 15,
+            "tris_max": 982
+          },
+          "idle": {
+            "pieces_max": 14,
+            "tris_max": 826
+          },
+          "merchant": {
+            "pieces_max": 16,
+            "tris_max": 970
+          },
+          "miner": {
+            "pieces_max": 14,
+            "tris_max": 870
+          },
+          "soldier": {
+            "pieces_max": 15,
+            "tris_max": 900
+          },
+          "soldier_archer": {
+            "pieces_max": 15,
+            "tris_max": 978
+          },
+          "soldier_swordsman": {
+            "pieces_max": 15,
+            "tris_max": 964
+          },
+          "woodcutter": {
+            "pieces_max": 15,
+            "tris_max": 862
+          }
+        },
+        "max_citizen_tris": 982,
+        "max_ruler_tris": 978,
+        "pieces": 107,
+        "style": "B",
+        "total_piece_tris": 6906
+      },
+      "license": "project-original",
+      "material": "M_charkit_vc",
+      "params": {
+        "jobs": [
+          "blacksmith",
+          "builder",
+          "farmer",
+          "governor",
+          "hauler",
+          "healer",
+          "idle",
+          "merchant",
+          "miner",
+          "soldier",
+          "soldier_archer",
+          "soldier_swordsman",
+          "woodcutter"
+        ],
+        "pieces": 107,
+        "style": "B"
+      },
+      "preview": "previews/char_kit.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7,
+      "sockets": {
+        "Head": [
+          0.0,
+          3.9,
+          0.0
+        ],
+        "LeftArm": [
+          -1.46,
+          3.5,
+          0.0
+        ],
+        "LeftLeg": [
+          -0.5,
+          2.2,
+          0.0
+        ],
+        "RightArm": [
+          1.46,
+          3.5,
+          0.0
+        ],
+        "RightLeg": [
+          0.5,
+          2.2,
+          0.0
+        ],
+        "Tool": [
+          1.5889,
+          2.45,
+          0.0
+        ],
+        "Torso": [
+          0.0,
+          2.2,
+          0.0
+        ],
+        "TorsoTool": [
+          0.86,
+          3.8,
+          0.575
+        ]
+      },
+      "texture": "none (vertex colours, 0 bytes of texture memory)",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 982,
+        "lod1": 12
+      },
+      "validation_pass": true
+    },
+    {
       "budget_class": "character",
       "category": "char",
       "collision": {
@@ -7241,6 +7483,7 @@
       "geometry_hash": "2eef25aebac4cd9c",
       "id": "char_soldier_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -7409,6 +7652,7 @@
       "geometry_hash": "67817a51e2cdd701",
       "id": "char_soldier_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -7577,6 +7821,7 @@
       "geometry_hash": "9b25d1344bd58e60",
       "id": "char_soldier_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -7745,6 +7990,7 @@
       "geometry_hash": "63fc7f669f80b14b",
       "id": "char_soldier_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -7913,6 +8159,7 @@
       "geometry_hash": "8c77c620733ec3af",
       "id": "char_soldier_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -8081,6 +8328,7 @@
       "geometry_hash": "8f736bb54a888891",
       "id": "char_soldier_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -8249,6 +8497,7 @@
       "geometry_hash": "8d96e6d81ba8b482",
       "id": "char_soldier_07",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -8417,6 +8666,7 @@
       "geometry_hash": "5679c6d33da29e91",
       "id": "char_soldier_08",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -8585,6 +8835,7 @@
       "geometry_hash": "54bd0ac5e99cebd4",
       "id": "char_soldier_09",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_brown",
@@ -8753,6 +9004,7 @@
       "geometry_hash": "52e1729f0c8cbaf9",
       "id": "char_soldier_10",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_blond",
@@ -8921,6 +9173,7 @@
       "geometry_hash": "edd6ed3513d529e2",
       "id": "char_soldier_11",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_red",
@@ -9089,6 +9342,7 @@
       "geometry_hash": "3fc27e7f2470c29a",
       "id": "char_soldier_12",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "hair": "hair_dark",
@@ -9348,6 +9602,7 @@
       "geometry_hash": "4fee346ee0c3da99",
       "id": "farm_barn_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "banner": "left",
@@ -9539,6 +9794,7 @@
       "geometry_hash": "fedb9b8f00a1b234",
       "id": "farm_barn_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cupola": false,
@@ -9729,6 +9985,7 @@
       "geometry_hash": "f2f1133b558ed1d0",
       "id": "farm_barn_03",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cupola": false,
@@ -9919,6 +10176,7 @@
       "geometry_hash": "56eee46604e329bb",
       "id": "farm_barn_04",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cupola": true,
@@ -10005,6 +10263,7 @@
       "geometry_hash": "c9358650b2b4b920",
       "id": "farm_fence_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "rail"
@@ -10085,6 +10344,7 @@
       "geometry_hash": "8aad23a1f8b1bcfd",
       "id": "farm_fence_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "picket"
@@ -10165,6 +10425,7 @@
       "geometry_hash": "9577ea437d681d0e",
       "id": "farm_fence_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "wattle"
@@ -10258,6 +10519,7 @@
       "geometry_hash": "4c776d22f470dbf4",
       "id": "farm_fence_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "gate"
@@ -10343,6 +10605,7 @@
       "geometry_hash": "6a4e1f7380940604",
       "id": "farm_fence_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "stonewall"
@@ -10423,6 +10686,7 @@
       "geometry_hash": "38d786207b8b0219",
       "id": "farm_fence_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "style": "xbrace"
@@ -10555,6 +10819,7 @@
       "geometry_hash": "30e81a98b6aea8b7",
       "id": "farm_field_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -10691,6 +10956,7 @@
       "geometry_hash": "06c9b9f0128d5183",
       "id": "farm_field_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -10827,6 +11093,7 @@
       "geometry_hash": "197a143684dfe7f7",
       "id": "farm_field_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "stones",
@@ -10964,6 +11231,7 @@
       "geometry_hash": "d34bac4e98c22afb",
       "id": "farm_field_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -11101,6 +11369,7 @@
       "geometry_hash": "a8d28b1db18cf13e",
       "id": "farm_field_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -11237,6 +11506,7 @@
       "geometry_hash": "9869fcb412ea7fba",
       "id": "farm_field_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -11308,6 +11578,7 @@
       "geometry_hash": "4f98d27478789b91",
       "id": "farm_haystack_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "rick"
@@ -11369,6 +11640,7 @@
       "geometry_hash": "1594cfc0d88b2da0",
       "id": "farm_haystack_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "rounds"
@@ -11430,6 +11702,7 @@
       "geometry_hash": "1ffef190b3525e87",
       "id": "farm_haystack_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "squares"
@@ -11491,6 +11764,7 @@
       "geometry_hash": "60415f13b252879a",
       "id": "farm_haystack_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "cart"
@@ -11557,6 +11831,7 @@
       "geometry_hash": "d068d21b6acc0a49",
       "id": "farm_haystack_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "stogs"
@@ -11618,6 +11893,7 @@
       "geometry_hash": "6cabbadfa98800bd",
       "id": "farm_haystack_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "pile"
@@ -11679,6 +11955,7 @@
       "geometry_hash": "6ecea280c4d5bc20",
       "id": "farm_windmill_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 12,
@@ -11750,6 +12027,7 @@
       "geometry_hash": "75c939539865d331",
       "id": "farm_windmill_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 40,
@@ -11821,6 +12099,7 @@
       "geometry_hash": "9f68cd1650c248c9",
       "id": "farm_windmill_03",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 0,
@@ -11892,6 +12171,7 @@
       "geometry_hash": "c0c11f639e395b7d",
       "id": "farm_windmill_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "angle": 28,
@@ -11963,6 +12243,7 @@
       "geometry_hash": "89d94e32e045ad0f",
       "id": "house_cottage_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -12022,6 +12303,7 @@
       "geometry_hash": "60f789137014c0ff",
       "id": "house_cottage_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -12081,6 +12363,7 @@
       "geometry_hash": "f919c1c2062c8417",
       "id": "house_cottage_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -12140,6 +12423,7 @@
       "geometry_hash": "755c02dc562455ac",
       "id": "house_cottage_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": true,
@@ -12199,6 +12483,7 @@
       "geometry_hash": "eb679db1456e9f3f",
       "id": "house_cottage_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -12258,6 +12543,7 @@
       "geometry_hash": "e7848bc0fdf3fb2a",
       "id": "house_cottage_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -12317,6 +12603,7 @@
       "geometry_hash": "46744b18a65536df",
       "id": "plant_flowers_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "wildflowers"
@@ -12378,6 +12665,7 @@
       "geometry_hash": "98f88f3e75ae4720",
       "id": "plant_flowers_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "tulips"
@@ -12439,6 +12727,7 @@
       "geometry_hash": "69692887bcb7b241",
       "id": "plant_flowers_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "daisies"
@@ -12500,6 +12789,7 @@
       "geometry_hash": "8ffc9ce3ac8af636",
       "id": "plant_flowers_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "sunflowers"
@@ -12561,6 +12851,7 @@
       "geometry_hash": "30843e52dcfafe20",
       "id": "plant_flowers_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "lavender"
@@ -12622,6 +12913,7 @@
       "geometry_hash": "41b4907fcdf89878",
       "id": "plant_flowers_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "poppies"
@@ -12683,6 +12975,7 @@
       "geometry_hash": "84011b0eff4a9cbe",
       "id": "plant_grass_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "short"
@@ -12738,6 +13031,7 @@
       "geometry_hash": "bbb959bae7702b99",
       "id": "plant_grass_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "tall"
@@ -12793,6 +13087,7 @@
       "geometry_hash": "491cf455b4c14264",
       "id": "plant_grass_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "meadow"
@@ -12848,6 +13143,7 @@
       "geometry_hash": "fe28753ccc8c86f6",
       "id": "plant_grass_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "dry"
@@ -12903,6 +13199,7 @@
       "geometry_hash": "7adc8a9685a261d8",
       "id": "plant_grass_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "seed"
@@ -12958,6 +13255,7 @@
       "geometry_hash": "20de8af1933503d5",
       "id": "plant_grass_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "reeds"
@@ -13013,6 +13311,7 @@
       "geometry_hash": "078a1cb5a572aef8",
       "id": "prop_banner_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "star",
@@ -13082,6 +13381,7 @@
       "geometry_hash": "371e1bc049bfd40c",
       "id": "prop_banner_blue_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "star",
@@ -13151,6 +13451,7 @@
       "geometry_hash": "ffc553b57c006d59",
       "id": "prop_banner_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "oak",
@@ -13220,6 +13521,7 @@
       "geometry_hash": "f437abb3e0c4fbf6",
       "id": "prop_banner_green_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "oak",
@@ -13289,6 +13591,7 @@
       "geometry_hash": "b1fb92952605a3e7",
       "id": "prop_banner_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "crown",
@@ -13358,6 +13661,7 @@
       "geometry_hash": "e9882550e94c5d3f",
       "id": "prop_banner_red_02",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "crown",
@@ -13427,6 +13731,7 @@
       "geometry_hash": "3e63b8f23a9f323e",
       "id": "prop_banner_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "sun",
@@ -13496,6 +13801,7 @@
       "geometry_hash": "caca0f2ab7df7a00",
       "id": "prop_banner_yellow_02",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "emblem": "sun",
@@ -13565,6 +13871,7 @@
       "geometry_hash": "61b211da49a0bc4a",
       "id": "prop_cart_covered_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -13632,6 +13939,7 @@
       "geometry_hash": "ee8a80cadfb99cb9",
       "id": "prop_cart_handcart_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -13699,6 +14007,7 @@
       "geometry_hash": "b0e238ece4e0952e",
       "id": "prop_cart_haycart_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -13766,6 +14075,7 @@
       "geometry_hash": "1b9e147159979d1d",
       "id": "prop_cart_logcart_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -13833,6 +14143,7 @@
       "geometry_hash": "f4297d734b74af41",
       "id": "prop_cart_wagon_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -13900,6 +14211,7 @@
       "geometry_hash": "5b16465b4dbed5da",
       "id": "prop_goods_barrels_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -13962,6 +14274,7 @@
       "geometry_hash": "4ec783e2dc9e233c",
       "id": "prop_goods_crates_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -14024,6 +14337,7 @@
       "geometry_hash": "ede846e17b0f54bd",
       "id": "prop_goods_merchant_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -14086,6 +14400,7 @@
       "geometry_hash": "fd1d8875d68d9650",
       "id": "prop_goods_produce_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -14148,6 +14463,7 @@
       "geometry_hash": "df49ab43697f1bcd",
       "id": "prop_goods_sacks_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -14210,6 +14526,7 @@
       "geometry_hash": "6e5b8a5dd6294066",
       "id": "prop_goods_storehouse_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -14272,6 +14589,7 @@
       "geometry_hash": "2b079e4db4d93703",
       "id": "prop_well_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": false,
@@ -14338,6 +14656,7 @@
       "geometry_hash": "e1890bf219aa367e",
       "id": "prop_well_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": true,
@@ -14404,6 +14723,7 @@
       "geometry_hash": "1ebda265418805d9",
       "id": "prop_well_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": false,
@@ -14470,6 +14790,7 @@
       "geometry_hash": "d26608f0d3b5515f",
       "id": "prop_well_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "apron": false,
@@ -14524,6 +14845,7 @@
       "geometry_hash": "f9d91807187c1d3e",
       "id": "resource_ore_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "iron",
@@ -14593,6 +14915,7 @@
       "geometry_hash": "7619c727872f5043",
       "id": "resource_ore_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "iron",
@@ -14662,6 +14985,7 @@
       "geometry_hash": "f9ce9c2dab1d0d00",
       "id": "resource_ore_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "gold",
@@ -14731,6 +15055,7 @@
       "geometry_hash": "bdeabb63ac995a69",
       "id": "resource_ore_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "gold",
@@ -14800,6 +15125,7 @@
       "geometry_hash": "abf52327d5603ec5",
       "id": "resource_ore_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "crystal",
@@ -14869,6 +15195,7 @@
       "geometry_hash": "88d430dd351708f5",
       "id": "resource_ore_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "crystal",
@@ -14938,6 +15265,7 @@
       "geometry_hash": "aab5e89d9e78368b",
       "id": "resource_stone_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "front",
@@ -15009,6 +15337,7 @@
       "geometry_hash": "35b443b478af8ba8",
       "id": "resource_stone_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "corner",
@@ -15080,6 +15409,7 @@
       "geometry_hash": "ee8b3adc7cad8ab6",
       "id": "resource_stone_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "front",
@@ -15151,6 +15481,7 @@
       "geometry_hash": "a1bb6e65b3e35969",
       "id": "resource_stone_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "corner",
@@ -15222,6 +15553,7 @@
       "geometry_hash": "fe000dfe6cbc05bb",
       "id": "resource_stone_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "pit",
@@ -15293,6 +15625,7 @@
       "geometry_hash": "cbca02f6145b5adc",
       "id": "resource_stone_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "cut": "front",
@@ -15364,6 +15697,7 @@
       "geometry_hash": "ba5b34cf4987e5bc",
       "id": "resource_wood_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "stump",
@@ -15432,6 +15766,7 @@
       "geometry_hash": "8ab128554a334022",
       "id": "resource_wood_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "bucksaw",
@@ -15500,6 +15835,7 @@
       "geometry_hash": "2fe7b5a07b88bb40",
       "id": "resource_wood_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "rounds",
@@ -15568,6 +15904,7 @@
       "geometry_hash": "da06e8c07f3ec7aa",
       "id": "resource_wood_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "block",
@@ -15636,6 +15973,7 @@
       "geometry_hash": "623f62e42835d22d",
       "id": "resource_wood_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "barrow",
@@ -15704,6 +16042,7 @@
       "geometry_hash": "ccd96da95d913369",
       "id": "resource_wood_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "extra": "stump",
@@ -15772,6 +16111,7 @@
       "geometry_hash": "5b99062938815a12",
       "id": "rock_boulder_l_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -15831,6 +16171,7 @@
       "geometry_hash": "2759a8863346f365",
       "id": "rock_boulder_l_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -15890,6 +16231,7 @@
       "geometry_hash": "4825917bd069027e",
       "id": "rock_boulder_l_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -15949,6 +16291,7 @@
       "geometry_hash": "f77c76709f111b53",
       "id": "rock_boulder_m_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -16008,6 +16351,7 @@
       "geometry_hash": "e5d6f2d27b870c3a",
       "id": "rock_boulder_m_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -16067,6 +16411,7 @@
       "geometry_hash": "888d1c4cae738c9d",
       "id": "rock_boulder_m_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -16126,6 +16471,7 @@
       "geometry_hash": "51850113dc88710c",
       "id": "rock_boulder_s_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -16185,6 +16531,7 @@
       "geometry_hash": "684bebcc0b19f9c2",
       "id": "rock_boulder_s_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": false,
@@ -16244,6 +16591,7 @@
       "geometry_hash": "c9a7ae1dfb201dc7",
       "id": "rock_boulder_s_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "moss": true,
@@ -16303,6 +16651,7 @@
       "geometry_hash": "407bfcec4384b755",
       "id": "rock_cliff_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "d": 11,
@@ -16363,6 +16712,7 @@
       "geometry_hash": "c99b509c075395b2",
       "id": "rock_cliff_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "d": 13,
@@ -16423,6 +16773,7 @@
       "geometry_hash": "2cb093b6313e0259",
       "id": "rock_cliff_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "d": 11,
@@ -16483,6 +16834,7 @@
       "geometry_hash": "626295dd98f90d16",
       "id": "rock_cliff_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "d": 12,
@@ -16543,6 +16895,7 @@
       "geometry_hash": "ccc859f9cf058127",
       "id": "rock_cliff_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "d": 12,
@@ -16603,6 +16956,7 @@
       "geometry_hash": "7e030b17dce04a57",
       "id": "siege_ballista_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -16675,6 +17029,7 @@
       "geometry_hash": "655b2162fa77b13c",
       "id": "siege_ballista_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -16747,6 +17102,7 @@
       "geometry_hash": "b47258eae23d2ba3",
       "id": "siege_ballista_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -16819,6 +17175,7 @@
       "geometry_hash": "adef094331d3f41e",
       "id": "siege_ballista_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -16891,6 +17248,7 @@
       "geometry_hash": "05e3ea9ba07b1215",
       "id": "siege_catapult_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "counterweight",
@@ -16963,6 +17321,7 @@
       "geometry_hash": "6d55a193dee79f24",
       "id": "siege_catapult_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "torsion",
@@ -17035,6 +17394,7 @@
       "geometry_hash": "224d4fe2856e04d0",
       "id": "siege_catapult_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "torsion",
@@ -17107,6 +17467,7 @@
       "geometry_hash": "7e7f46f1b04a4558",
       "id": "siege_catapult_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "counterweight",
@@ -17179,6 +17540,7 @@
       "geometry_hash": "6d6b3d7e767aa954",
       "id": "siege_ram_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -17251,6 +17613,7 @@
       "geometry_hash": "5ce00a94f8a71cac",
       "id": "siege_ram_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -17323,6 +17686,7 @@
       "geometry_hash": "c5483cb036c64c2b",
       "id": "siege_ram_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -17395,6 +17759,7 @@
       "geometry_hash": "dfb054abc06fc37c",
       "id": "siege_ram_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -17481,6 +17846,7 @@
       "geometry_hash": "f6bba29dcf51100a",
       "id": "tree_birch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -17562,6 +17928,7 @@
       "geometry_hash": "0daf472bdea51ab1",
       "id": "tree_birch_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -17643,6 +18010,7 @@
       "geometry_hash": "06328fab39a090bc",
       "id": "tree_birch_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -17724,6 +18092,7 @@
       "geometry_hash": "1f51a1d4c82ca556",
       "id": "tree_birch_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -17805,6 +18174,7 @@
       "geometry_hash": "63155736abc35d46",
       "id": "tree_birch_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -17886,6 +18256,7 @@
       "geometry_hash": "73941da9b28e72d1",
       "id": "tree_birch_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch_gold",
@@ -17967,6 +18338,7 @@
       "geometry_hash": "6a28a9768dc37ca5",
       "id": "tree_oak_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -18048,6 +18420,7 @@
       "geometry_hash": "a1f93b52b55862a8",
       "id": "tree_oak_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -18129,6 +18502,7 @@
       "geometry_hash": "3743668290d22b0a",
       "id": "tree_oak_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -18210,6 +18584,7 @@
       "geometry_hash": "ec4ab6788b2defb0",
       "id": "tree_oak_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -18291,6 +18666,7 @@
       "geometry_hash": "32d1361828b75780",
       "id": "tree_oak_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -18372,6 +18748,7 @@
       "geometry_hash": "2b7f02ea994b0b0f",
       "id": "tree_oak_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "autumn_orange",
@@ -18453,6 +18830,7 @@
       "geometry_hash": "42224ae75f2024e9",
       "id": "tree_oak_07",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "summer",
@@ -18534,6 +18912,7 @@
       "geometry_hash": "99f369305d86b05c",
       "id": "tree_oak_08",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "autumn_yellow",
@@ -18615,6 +18994,7 @@
       "geometry_hash": "53de0abb67a646b5",
       "id": "tree_pine_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "pine",
@@ -18697,6 +19077,7 @@
       "geometry_hash": "408d34a462c22a47",
       "id": "tree_pine_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "pine",
@@ -18779,6 +19160,7 @@
       "geometry_hash": "6301b1b6533d55d3",
       "id": "tree_pine_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "pine",
@@ -18861,6 +19243,7 @@
       "geometry_hash": "c9192d1f06b9d245",
       "id": "tree_pine_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "pine",
@@ -18943,6 +19326,7 @@
       "geometry_hash": "8ad9c5f7dc7d4212",
       "id": "tree_pine_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "pine_blue",
@@ -19025,6 +19409,7 @@
       "geometry_hash": "5e98e6b589944891",
       "id": "tree_pine_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "pine",

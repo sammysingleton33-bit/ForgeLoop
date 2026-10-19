@@ -22,6 +22,7 @@
       "geometry_hash": "1ae36fde84fd3f51",
       "id": "building_market_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.0,
@@ -96,6 +97,7 @@
       "geometry_hash": "167a60443c00daae",
       "id": "building_market_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.2,
@@ -170,6 +172,7 @@
       "geometry_hash": "8efb86a527fb04f3",
       "id": "building_market_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.6,
@@ -244,6 +247,7 @@
       "geometry_hash": "711918262d284bc2",
       "id": "building_market_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 9.0,
@@ -318,6 +322,7 @@
       "geometry_hash": "eb43fcfdc168d825",
       "id": "building_market_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 7.8,
@@ -405,6 +410,7 @@
       "geometry_hash": "cd487472c8b6bc52",
       "id": "building_market_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "D": 8.2,

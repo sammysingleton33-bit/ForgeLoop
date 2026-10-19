@@ -21,6 +21,10 @@
 
 	Champions are placed on the duel ring at the start of the intro (config Arena `site`; WorldLayout.arena when FORGE-02
 	adds it). `site` and `poseOf` can be replaced by specs.
+
+	Clocks: every time handed to ArenaFlow and DuelRunner is `env.serverTimeNow()` seconds, because ArenaState.endsAt is
+	compared by clients against the same clock. DuelRunner only ever steps forward (it clamps a backward or long jump to
+	`maxCatchup`), so a server clock correction cannot rewind a duel.
 	Dependencies: MatchService, RemoteService, SupportService, LeadershipService.
 ]]
 
@@ -105,9 +109,10 @@ end
 
 function ArenaService:_placeChampions()
 	local site = self.config.site
-	local place = self.placeAt or function(userId: number, x: number, z: number, toX: number, toZ: number)
-		self:_place(userId, x, z, toX, toZ)
-	end
+	local place = self.placeAt
+		or function(userId: number, x: number, z: number, toX: number, toZ: number)
+			self:_place(userId, x, z, toX, toZ)
+		end
 	local half = site.separation / 2
 	local a, b = self._flow:champion("a"), self._flow:champion("b")
 	if a and not a.isAI then
