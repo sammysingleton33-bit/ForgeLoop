@@ -25,4 +25,6 @@ M = [
  ("FL-0071D", DC, '\tdodge = true,\n', '', "sim/DuelController", "sends all six actions"),
  ("FL-0071D", DC, 'DuelController.BURST = 8', 'DuelController.BURST = 4', "sim/DuelController", "mirrors the server's rate row"),
  ("FL-0071D", DC, 'DuelController.PER_SECOND = 12', 'DuelController.PER_SECOND = 6', "sim/DuelController", "mirrors the server's rate row"),
+ ("FL-0071D", G + "src/shared/Arena/Remotes.luau", 'local ACTIONS = { "light", "heavy", "block", "blockEnd", "parry", "dodge" }', 'local ACTIONS = { "light", "heavy", "block", "blockEnd", "parry" }', "sim/DuelController", "sends all six actions"),
+ ("FL-0071D", G + "src/shared/Arena/Remotes.luau", 'local ACTIONS = { "light", "heavy", "block", "blockEnd", "parry", "dodge" }', 'local ACTIONS = { "light", "heavy", "block", "blockEnd", "parry", "dodge", "taunt" }', "sim/DuelController", "sends all six actions"),
 ]
