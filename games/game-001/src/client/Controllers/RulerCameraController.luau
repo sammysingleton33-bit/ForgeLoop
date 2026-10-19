@@ -26,7 +26,8 @@
 		- Zoom: mouse wheel, pinch, or zoomBy(); overview.minZoom..maxZoom studs (≈ 40–220, G13.6)
 		  from the focus. The pitch follows the zoom: flatter close up, steeper far out. The view starts
 		  at overview.startZoom (70) with overview.fieldOfView (55°), so a citizen stands about 6 % of
-		  the screen's height (the owner's B22 review: at 120 and 70° one was 2 %, 8 pt on a phone).
+		  the screen's height (the owner's B22 review: at 120 and 70° one was 2 %, 8 pt on a phone),
+		  centred on the yard overview.startAhead (40) studs in front of the ruler's throne.
 		  Walk mode and the duel keep Roblox's own field of view (fieldOfView, 70°).
 		- Rotate: Q / E, right-mouse drag, a two-finger twist, or the right stick. Q / E are not bound
 		  in build or edit mode: there FORGE-03's placement and move take Q (cancel) and R / Shift+R
@@ -147,6 +148,7 @@ Def.DEFAULTS = table.freeze({
 		maxZoom = 220,
 		startZoom = 70, -- 42.5° pitch (FORGE-00's 2026-10-19 approval; it was 120)
 		fieldOfView = 55, -- degrees, vertical (it was 70: the narrower view makes citizens read)
+		startAhead = 40, -- studs: the first view centres the yard in front of the keep, not the throne (FORGE-00)
 		minPitchDeg = 38, -- at minZoom
 		maxPitchDeg = 65, -- at maxZoom
 		zoomStep = 14, -- studs per wheel notch / zoomBy(1)
@@ -227,6 +229,16 @@ end
 function Def.ease(t: number): number
 	local x = Def.clamp(t, 0, 1)
 	return x * x * (3 - 2 * x)
+end
+
+-- The first view's focus: `ahead` studs in front of the ruler on the throne (the keep's yard), on its
+-- level ground line, so the village and its citizens fill the centre rather than the keep's roof (D-059).
+function Def.startFocus(root: CFrame, ahead: number): Vector3
+	local look = Vector3.new(root.LookVector.X, 0, root.LookVector.Z)
+	if look.Magnitude < 1e-3 then
+		return root.Position
+	end
+	return root.Position + look.Unit * ahead
 end
 
 -- Pitch (degrees below the horizon) for a zoom distance: flatter close up, steeper far out.
@@ -1140,7 +1152,7 @@ function Controller:_apply()
 		self._shots = nil
 		local root = self._ruler and self._ruler:getRoot()
 		if self._target.focus == nil and root ~= nil then
-			self:focusOn(root.CFrame.Position)
+			self:focusOn(Def.startFocus(root.CFrame, self._config.overview.startAhead or 0))
 		end
 		if camera ~= nil then
 			self._target.yaw = yawOf(camera.CFrame.LookVector)
@@ -1191,7 +1203,7 @@ function Controller:_onCharacter(character: any)
 	end
 	local root = self._ruler and self._ruler:getRoot()
 	if root ~= nil and self._target.focus == nil then
-		self:focusOn(root.CFrame.Position) -- the throne: the first view is the player's own keep
+		self:focusOn(Def.startFocus(root.CFrame, self._config.overview.startAhead or 0)) -- the yard before the keep
 	end
 	self:_applyFollow()
 end

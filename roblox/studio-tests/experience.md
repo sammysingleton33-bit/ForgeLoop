@@ -749,12 +749,12 @@ History:
 
 ## E22 — The default aerial framing (D-059, FL-0145, game-001)
 
-The owner's B22 review found citizens barely recognisable from the start view. At zoom 120 and a 70° field of view, a citizen stood about 2 % of the screen's height: about 23 px at 1080p and 8 pt on a phone. The overview now starts at **zoom 70** with a **55° field of view** (pitch 42.5°), so a citizen stands about 6 %. The zoom limits (40–220) and the player's own zoom are unchanged. Walk mode and the duel keep Roblox's 70°. The conversation shot and the arena intro shots were re-tuned so they frame what they did.
+The owner's B22 review found citizens barely recognisable from the start view. At zoom 120 and a 70° field of view, a citizen stood about 2 % of the screen's height: about 23 px at 1080p and 8 pt on a phone. The overview now starts at **zoom 70** with a **55° field of view** (pitch 42.5°), so a citizen stands about 6 %. The view is centred on the **yard 40 studs in front of your throne**, not the throne itself, so the village and its people fill the middle rather than the keep's roof. The zoom limits (40–220) and the player's own zoom are unchanged. Walk mode and the duel keep Roblox's 70°. The conversation shot and the arena intro shots were re-tuned so they frame what they did.
 
 Needs: nothing (Play Solo). FORGE-02's FL-0145 pass 1 changes the look at the same time; judge the framing (how big and readable things are), not the art.
 
 Steps
-1. Play Solo on a desktop window (about 1920×1080). At spawn you see your keep from the aerial view. Citizens near the keep are clearly people: you can tell head, body and what they carry. Screenshot **E22-1**, and compare it with your B22 screenshot from the same spot.
+1. Play Solo on a desktop window (about 1920×1080). At spawn the aerial view is centred on the yard in front of your keep, with the keep at the edge of the picture. Citizens are clearly people: you can tell head, body and what they carry. Screenshot **E22-1**, and compare it with your B22 screenshot from the same spot.
 2. Device emulator, a phone in landscape (for example 750×311, or the smallest phone you have). Repeat step 1. Citizens are small but readable, and tapping one is easy. Screenshot **E22-2**.
 3. Zoom all the way out with the wheel or a pinch: it still goes as far as before (220 studs), and the whole kingdom fits. Zoom all the way in: it still stops at 40.
 4. Press V for walk mode. The view looks like Roblox's normal third-person camera, with no narrow "tunnel" feel. Press V again: the aerial view comes back with no jump.
@@ -764,4 +764,4 @@ Steps
 Pass: steps 1–5 hold (6 when an arena runs). Write what you think of the closer start view: too close, right, or still too far.
 
 History:
-- 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing).
+- 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing and the yard focus).

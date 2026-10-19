@@ -73,6 +73,16 @@ describe("RulerCameraController pure rules (FL-0053, FL-0090)", function()
 		end
 	)
 
+	it(
+		"startFocus() is `ahead` studs along the root's level facing; a root facing straight down keeps its place",
+		function()
+			local root = CFrame.lookAt(Vector3.new(0, 3, 0), Vector3.new(10, -2, 0)) -- facing +X, a little down
+			expect(near(CameraDef.startFocus(root, 40), Vector3.new(40, 3, 0), 1e-4)).toBe(true)
+			local down = CFrame.lookAt(Vector3.new(5, 3, 5), Vector3.new(5, -10, 5.000001))
+			expect(near(CameraDef.startFocus(down, 40), Vector3.new(5, 3, 5), 1e-3)).toBe(true)
+		end
+	)
+
 	it("panVector() maps screen right/forward onto the ground at any yaw; worldPerPixel scales with zoom", function()
 		expect(near(CameraDef.panVector(Vector2.new(0, 1), 0), Vector3.new(0, 0, -1))).toBe(true)
 		expect(near(CameraDef.panVector(Vector2.new(1, 0), 0), Vector3.new(1, 0, 0))).toBe(true)
@@ -163,26 +173,35 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		}
 	end)
 
-	it("starts in the overview over the throne; move and jump keys are sunk and the thumbstick hidden", function()
-		boot()
-		expect(controller.mode).toBe("overview")
-		expect(camera.CameraType).toBe(Enum.CameraType.Scriptable)
-		expect(controller:getFocus()).toBe(THRONE)
-		expect(gui.TouchControlsEnabled).toBe(false)
-		local pan = actions.bound[CameraDef.PAN_ACTION]
-		local seat = actions.bound[CameraDef.SEAT_ACTION]
-		assert(pan and seat, "pan and seat actions bound")
-		expect(pan.priority).toBe(Enum.ContextActionPriority.High.Value)
-		expect(#pan.keys).toBe(8)
-		expect(seat.keys).toEqual({ Enum.KeyCode.Space, Enum.KeyCode.ButtonA })
-		expect(key(CameraDef.PAN_ACTION, Enum.KeyCode.W)).toBe(Enum.ContextActionResult.Sink)
-		key(CameraDef.PAN_ACTION, Enum.KeyCode.W, Enum.UserInputState.End)
-		expect(key(CameraDef.SEAT_ACTION, Enum.KeyCode.Space)).toBe(Enum.ContextActionResult.Sink)
-		settle()
-		local goal = CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, O.startZoom, O)
-		expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
-		expect(math.abs(camera.FieldOfView - O.fieldOfView) < 1e-3).toBe(true) -- the overview's own
-	end)
+	it(
+		"starts in the overview over the yard before the throne; move and jump keys are sunk, the thumbstick hidden",
+		function()
+			boot()
+			expect(controller.mode).toBe("overview")
+			expect(camera.CameraType).toBe(Enum.CameraType.Scriptable)
+			local root = registry:get("RulerController"):getRoot()
+			expect(controller:getFocus()).toBe(CameraDef.startFocus(root.CFrame, O.startAhead))
+			local ahead = (controller:getFocus() :: Vector3) - THRONE
+			local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+			expect(ahead.Magnitude >= 30 and math.abs(ahead.Y) < 1e-6).toBe(true) -- the yard, level, not the throne
+			expect(ahead.Unit:Dot(facing) > 0.999).toBe(true) -- out of the keep door, the way the ruler faces
+			expect(gui.TouchControlsEnabled).toBe(false)
+			local pan = actions.bound[CameraDef.PAN_ACTION]
+			local seat = actions.bound[CameraDef.SEAT_ACTION]
+			assert(pan and seat, "pan and seat actions bound")
+			expect(pan.priority).toBe(Enum.ContextActionPriority.High.Value)
+			expect(#pan.keys).toBe(8)
+			expect(seat.keys).toEqual({ Enum.KeyCode.Space, Enum.KeyCode.ButtonA })
+			expect(key(CameraDef.PAN_ACTION, Enum.KeyCode.W)).toBe(Enum.ContextActionResult.Sink)
+			key(CameraDef.PAN_ACTION, Enum.KeyCode.W, Enum.UserInputState.End)
+			expect(key(CameraDef.SEAT_ACTION, Enum.KeyCode.Space)).toBe(Enum.ContextActionResult.Sink)
+			settle()
+			local goal =
+				CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, O.startZoom, O)
+			expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+			expect(math.abs(camera.FieldOfView - O.fieldOfView) < 1e-3).toBe(true) -- the overview's own
+		end
+	)
 
 	it("the start view frames a citizen at about 6 % of the screen's height (the owner's B22 review)", function()
 		local pitch = math.rad(CameraDef.pitchFor(O.startZoom, O))
