@@ -223,6 +223,10 @@ CHECKS.damage = function(quick: boolean?)
 				elseif not (bt == "wall" and lv == 1) then
 					table.insert(out, `{stag}: no wall to crack`)
 				end
+				-- the stump (a slab on a tower whose cap fell): none before the corner collapses, at most one after
+				if extras(m, "stump") > (if s >= 3 then 1 else 0) then
+					table.insert(out, `{stag}: {extras(m, "stump")} stump parts`)
+				end
 				if extras(m, "smoke") ~= smoke[s] then
 					table.insert(out, `{stag}: smoke {extras(m, "smoke")}, want {smoke[s]}`)
 				end
@@ -262,7 +266,7 @@ CHECKS.damage = function(quick: boolean?)
 							and not (shapeOf(p) == "ball" and p.Transparency >= 0.4 and p.Transparency < 1)
 						then
 							table.insert(out, `{stag}: smoke is not a translucent ball`)
-						elseif kind == "rubble" and shapeOf(p) ~= "box" then
+						elseif (kind == "rubble" or kind == "stump") and shapeOf(p) ~= "box" then
 							table.insert(out, `{stag}: rubble is not a block`)
 						end
 					end

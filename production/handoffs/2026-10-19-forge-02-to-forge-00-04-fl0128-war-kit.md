@@ -17,7 +17,7 @@ Branch `forge/02-blender-fl0128-war` (worktree `forge-wt/fl0128`; no PR, the coo
 
 ## Evidence
 Headless only (Lune, Selene, StyLua, Blender Cycles previews of Lune dumps); nothing was seen in Studio.
-- Part counts (all four kingdoms, measured by `Kit.partCount`): wall L1/L2/L3 26-30 / 36-40 / 52-60 (caps 30 / 45 / 60); gate 71-76 / 101-112 / 120-131 (caps 90 / 120 / 150); watchtower L2 105-121 (cap 130); ram 38-43 (cap 45); soldier, knight, archer 11 with the kingdom crest (cap 11), 9-10 without; damage at most 13 extra parts (cap 14), none at Damage 0.
+- Part counts (all four kingdoms, measured by `Kit.partCount`): wall L1/L2/L3 26-30 / 36-40 / 52-60 (caps 30 / 45 / 60); gate 71-76 / 101-112 / 120-131 (caps 90 / 120 / 150); watchtower L2 105-121 (cap 130); ram 38-43 (cap 45); soldier, knight, archer 11 with the kingdom crest (cap 11), 9-10 without; damage at most 14 extra parts (cap 14), none at Damage 0.
 - All-built worst case (D-047, 27,000): see the worker report for the measured number and the command (`tests/world/KitCeiling.spec.luau`).
 - Specs, run headless: see the worker report for the counts per folder.
 
@@ -41,7 +41,7 @@ All additive; nothing existing changes meaning. Proposed CONTRACTS G10 rows:
 | model attribute `Damage` | number 0..1 | set by the client (for example `Kit.damageFromHp(Hp, MaxHp)` from the `Hp` and `MaxHp` attributes WorldView already writes) | read by `Kit.applyDamage` only |
 | `Kit.applyDamage(model)` | function | builds or removes the damage parts for the model's `Damage`; idempotent; call again after every change | stage models (`KitStage ~= "complete"`) and models without a PrimaryPart ignore it |
 | model attribute `KitDamageState` | number 1..4 | absent at state 0 | written by `Kit.applyDamage` |
-| part attributes `KitDamage` (true), `KitDamageKind` ("crack" / "rubble" / "smoke") | on the added parts | direct children of the model | anchored like every building part; `CanCollide`, `CanTouch` and `CanQuery` are false |
+| part attributes `KitDamage` (true), `KitDamageKind` ("crack" / "rubble" / "smoke" / "stump") | on the added parts | direct children of the model | anchored like every building part; `CanCollide`, `CanTouch` and `CanQuery` are false |
 | `Kit.damageState(d)` -> 0..4, `Kit.damageFromHp(hp, maxHp)` -> 0..1, `Kit.DAMAGE_THRESHOLDS` | functions / table | `{ 0.25, 0.5, 0.75, 0.95 }` | |
 
 Damage states (cumulative; totals at that state; budgets pinned by `KitDamage.spec`):
@@ -54,7 +54,7 @@ Damage states (cumulative; totals at that state; budgets pinned by `KitDamage.sp
 | 3 | >= 0.75 | 6 | 3 | 2 | 8 | + the top of the front-right corner (caps, merlons, roof parts) |
 | 4 | >= 0.95 | 7 | 3 | 3 | 10 | the same, more smoke |
 
-At most 14 extra parts (13 at state 4, 0 at state 0). Cracks are thin dark wedges placed on the outermost exposed wall block (nothing in front of them); rubble is blocks in the wall's own colour at the corner's foot; smoke is translucent grey Balls kept inside the model's bounding box. Removed parts are picked by a deterministic shuffle seeded from `KitType | KitLevel | KitVariant`, so state 2 keeps what state 1 took, a repair gives the exact model back and the same `Damage` gives the same parts on any client in any order.
+At most 14 extra parts (13 at state 4 plus one "stump" slab when a tower cap fell, which covers the bare top of the tower; 0 at state 0). Cracks are thin dark wedges placed on the outermost exposed wall block (nothing in front of them); rubble is blocks in the wall's own colour at the corner's foot; smoke is translucent grey Balls kept inside the model's bounding box. Removed parts are picked by a deterministic shuffle seeded from `KitType | KitLevel | KitVariant`, so state 2 keeps what state 1 took, a repair gives the exact model back and the same `Damage` gives the same parts on any client in any order.
 
 ## How Damage and Burning coexist (FORGE-04)
 - `Burning` stays what it is: a model attribute that FeedbackController reads, with the flames at the top of `model:GetBoundingBox()`. `Kit.applyDamage` never reads, writes or clears `Burning`, `Hp` or `MaxHp`.

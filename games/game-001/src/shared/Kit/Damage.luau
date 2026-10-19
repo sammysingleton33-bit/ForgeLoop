@@ -10,7 +10,7 @@
 		Kit.damageFromHp(hp, maxHp) -> number   1 - hp / maxHp, clamped
 		Kit.DAMAGE_THRESHOLDS = { 0.25, 0.5, 0.75, 0.95 }
 	Model attribute written: KitDamageState (1..4; absent at state 0). Every added part carries the attribute
-	KitDamage = true and KitDamageKind = "crack" | "rubble" | "smoke"; they are direct children of the model.
+	KitDamage = true and KitDamageKind = "crack" | "rubble" | "smoke" | "stump"; they are direct children of the model.
 
 	States (cumulative; the numbers are the totals at that state)
 		state  Damage   cracks  rubble  smoke  roof / merlon parts removed        collapse
@@ -19,7 +19,7 @@
 		  2    >= 0.5     4       0       1     5
 		  3    >= 0.75    6       3       2     8                                  the top of one front corner
 		  4    >= 0.95    7       3       3     10                                 the same, with more smoke
-	At most MAX_EXTRA_PARTS (14) parts are added (13 at state 4); none at state 0. Removed parts are the merlons, roof tiles,
+	At most MAX_EXTRA_PARTS (14) parts are added (13 at state 4, 14 with the stump below); none at state 0. Removed parts are the merlons, roof tiles,
 	thatch, lean-to roofs and palisade logs of the model (never a banner, emblem, crest, door, window, throne or the
 	kingdom caps outside the collapsed corner), picked by a deterministic shuffle seeded from the model's type, level
 	and variant, so state 2 keeps what state 1 removed. The collapsed corner removes the caps, merlons and roof parts in
@@ -31,7 +31,9 @@
 	first (up to 4), then the right face; a crack that finds no such site goes on the biggest wall. Rubble is three blocks
 	in the colour of the biggest wall at the corner's foot (with its tint, so a recolour follows); smoke is up to three
 	translucent light-grey Balls rising from the corner, kept inside the model's bounding box (the client may tween them:
-	they are anchored, non-colliding parts).
+	they are anchored, non-colliding parts). The stump (state 3 and 4, only when a tower cap fell: Drum, Dome, Spire ...) is one
+	tilted slab of broken masonry where the lowest cap part stood, so the bare top of the tower (flat, often flush with its
+	corbel) does not show.
 
 	Compatibility
 	- Burning (FORGE-04's FeedbackController reads the model attribute `Burning` and the model's bounding box top): this module
@@ -68,6 +70,9 @@ local BODY =
 local MISSING =
 	{ Merlon = true, RoofTiles = true, Thatch = true, ThatchLayer = true, LeanToRoof = true, Palisade = true }
 Damage.MISSING = MISSING -- the part names that can go missing (tests read it)
+-- the parts of a tower cap (the stump marks where the lowest of them stood)
+local CAP =
+	{ Drum = true, DrumBand = true, Dome = true, Spire = true, SpireEave = true, CapEave = true, Hoarding = true }
 local CORNER = {
 	Merlon = true,
 	RoofTiles = true,
@@ -197,7 +202,7 @@ local function make(kind: string, part: BasePart): BasePart
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
-	part.CastShadow = kind == "rubble"
+	part.CastShadow = kind == "rubble" or kind == "stump"
 	return part
 end
 
@@ -311,6 +316,7 @@ function Damage.apply(model: Model)
 
 	-- 2. the corner: the top of the front-right corner falls (state 3 and 4)
 	local cornerX, cornerZ, cornerY = hi.X - 0.15 * width, lo.Z + 0.15 * depth, lo.Y + 0.72 * height
+	local stump: Box? = nil -- the lowest tower cap part that fell: the broken top of what stands under it
 	if state >= 3 then
 		local fallen = 0
 		for _, p in kids do
@@ -320,6 +326,12 @@ function Damage.apply(model: Model)
 			if CORNER[p.Name] and p ~= topPart and p.Parent == model then
 				local c = p.CFrame.Position
 				if c.X >= hi.X - 0.3 * width and c.Z <= lo.Z + 0.3 * depth and c.Y >= lo.Y + 0.5 * height then
+					if CAP[p.Name] then
+						local box = boxOf(p)
+						if stump == nil or box.cy - box.hy < stump.cy - stump.hy then
+							stump = box
+						end
+					end
 					take(p)
 					fallen += 1
 				end
@@ -435,6 +447,34 @@ function Damage.apply(model: Model)
 				if type(bodyTint) == "number" then bodyTint * 0.78 else nil -- a tinted wall's rubble recolours with it
 			)
 			make("rubble", rubble)
+		end
+		-- 4b. the stump: a tilted slab of broken masonry on the top of what stands under the cap that fell (the highest
+		-- part below the lowest cap part's centre that spans it), so the bare top (flat, often flush with its corbel) does
+		-- not show
+		if stump then
+			local supportY = -math.huge
+			for _, b in boxes do
+				if math.abs(stump.cx - b.cx) < b.hx and math.abs(stump.cz - b.cz) < b.hz then
+					local top = b.cy + b.hy
+					if top <= stump.cy and top > supportY then
+						supportY = top
+					end
+				end
+			end
+			if supportY > -math.huge then
+				local w, d = math.min(2 * stump.hx, 7.5) * 0.95, math.min(2 * stump.hz, 7.5) * 0.95
+				local slab = Parts.block(
+					ctx,
+					"DamageStump",
+					Vector3.new(w, 1.0, d),
+					CFrame.new(stump.cx, supportY + 0.5, stump.cz)
+						* CFrame.Angles((rand() - 0.5) * 0.2, rand() * math.pi, (rand() - 0.5) * 0.2),
+					Parts.shade(body.Color, 0.7),
+					M.Slate,
+					if type(bodyTint) == "number" then bodyTint * 0.7 else nil
+				)
+				make("stump", slab)
+			end
 		end
 	end
 
