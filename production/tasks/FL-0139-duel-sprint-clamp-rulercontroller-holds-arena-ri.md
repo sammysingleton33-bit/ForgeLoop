@@ -3,13 +3,14 @@ id: FL-0139
 title: "Duel sprint clamp: RulerController holds Arena.ring.walkSpeed while champion"
 track: build
 owner: forge-04
-status: BUILDING
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-19
 updated: 2026-10-19
 depends_on: []
-evidence: []
+evidence:
+  - "headless: check.sh OVERALL PASS on 06437255 (lune 562/0, game-001 2560/0); FL-0139 7/7 and FL-0075 39/39 CAUGHT; Ruler spec also 16/0 on a scratch merge with #255. Studio E16 step 8 not run"
 ---
 
 # Duel sprint clamp: RulerController holds Arena.ring.walkSpeed while champion
@@ -38,3 +39,4 @@ A champion in a Crown Arena duel moves at the ring's fixed walk speed and cannot
 ## Log
 - 2026-10-19 FORGE-00: created from #255 review M1. Does not hold B22; lands in B22.1 or with #256 if ready before gate 8i.
 - 2026-10-19 forge-04: READY → BUILDING. Started (FORGE-00 10:41, from FORGE-07's #255 M1): RulerController holds WalkSpeed at config Arena ring.walkSpeed while DuelController:isChampion(), sprint ignored; the controller's own walkSpeed if the ring config is missing (so it is correct before and after #255); normal sprint after the duel. Separate PR, not in #256.
+- 2026-10-19 forge-04: BUILDING → REVIEW. PR open: RulerController holds WalkSpeed at config Arena ring.walkSpeed while DuelController:isChampion() (own walkSpeed before #255), sprint ignored, normal after the duel. Same PR, separate commit: FORGE-00's #249 fix in InputModeArenaController (press reports act()'s answer; a refused blockEnd is retried until sent).
