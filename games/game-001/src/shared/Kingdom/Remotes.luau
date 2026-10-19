@@ -47,6 +47,8 @@
 		Kingdom.Population({ total, byJob, cap, quotas, quotaRev })   to a kingdom's members on change (G13.2;
 		                                       quotaRev +1 per accepted quota change, FL-0109)
 		Kingdom.Reputation(same payload as GetReputation)   to the ruler when it changes (G13.4)
+		Kingdom.Support(SupportView)   to a ruler after every leadership sample (G12.4; SupportService)
+	Client -> server (G12.4): Kingdom.GetSupport() -> SupportView?   the caller's own view; nil for a non-ruler
 	Implemented by Kingdom/MatchHost; GetPopulation/Population by CitizenService; GetReputation/Reputation
 	by ReputationService; Converse/Choose by ConversationService. Match phases are the "Match" area (Match/Remotes.luau).
 ]]
@@ -110,4 +112,6 @@ return {
 		rate = { burst = 4, perSecond = 2 },
 	},
 	{ name = "Kingdom.Reputation", kind = "serverEvent" },
+	{ name = "Kingdom.GetSupport", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } },
+	{ name = "Kingdom.Support", kind = "serverEvent" },
 }

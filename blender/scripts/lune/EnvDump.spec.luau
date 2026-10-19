@@ -83,14 +83,30 @@ local function catalogue()
 		add(`keep_L1_crimson_stage{stage}`, Kit.build("keep", 1, stage, CANON.crimson))
 		add(`house_L1_crimson_stage{stage}`, Kit.build("house", 1, stage, CANON.crimson))
 	end
-	for _, id in {
-		"tree_oak_01", "tree_oak_02", "tree_oak_03", "tree_oak_04", "tree_oak_05",
-		"tree_pine_01", "tree_pine_02", "tree_pine_03", "tree_pine_04",
-		"tree_birch_01", "tree_birch_02", "tree_birch_03",
-		"bush_01", "bush_02",
-		"rock_boulder_m_01", "rock_boulder_m_02", "rock_boulder_l_01", "rock_boulder_s_01",
-		"farm_field_wheat_01", "farm_field_wheat_02",
-	} do
+	for _, id in
+		{
+			"tree_oak_01",
+			"tree_oak_02",
+			"tree_oak_03",
+			"tree_oak_04",
+			"tree_oak_05",
+			"tree_pine_01",
+			"tree_pine_02",
+			"tree_pine_03",
+			"tree_pine_04",
+			"tree_birch_01",
+			"tree_birch_02",
+			"tree_birch_03",
+			"bush_01",
+			"bush_02",
+			"rock_boulder_m_01",
+			"rock_boulder_m_02",
+			"rock_boulder_l_01",
+			"rock_boulder_s_01",
+			"farm_field_wheat_01",
+			"farm_field_wheat_02",
+		}
+	do
 		add(id, Kit.prop(id))
 	end
 	return out

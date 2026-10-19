@@ -15,7 +15,9 @@
 		Ledger.offset(ledger, kingdom, component) -> number            kingdom components: -20..20, start 0
 		Ledger.moments(ledger, kingdom, userId, limit) -> { LeadershipMoment }
 			newest first; userId nil = the kingdom's moments for every ruler; a userId = that ruler's and the kingdom's own
-	The ledger keeps the last `MAX_TOTAL` moments (oldest dropped); the levels are not affected by the trimming.
+	The ledger keeps the last `MAX_PER_KINGDOM` moments of each kingdom (that kingdom's oldest dropped, so a busy kingdom
+	never pushes out a quiet one's); the levels are not affected by the trimming. Moments are frozen.
+		Ledger.isRulerComponent(ledger, component) -> boolean    conduct and valour belong to a ruler, reputation to the kingdom
 ]]
 
 local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
@@ -29,13 +31,14 @@ export type Ledger = {
 	levels: { [string]: number },
 	offsets: { [string]: number },
 	valour: { [string]: { { t: number, amount: number } } },
+	counts: { [string]: number }, -- kingdom -> moments kept
 }
 
 local Ledger = {}
 
 Ledger.START_LEVEL = 50
 Ledger.MAX_OFFSET = 20
-Ledger.MAX_TOTAL = 1600
+Ledger.MAX_PER_KINGDOM = 400
 local VALOUR_WINDOW = 60
 
 local function clamp(x: number, lo: number, hi: number): number
@@ -51,6 +54,10 @@ local function isRulerComponent(config: any, component: string): boolean
 	return def ~= nil and def.scope == "ruler"
 end
 
+function Ledger.isRulerComponent(ledger: Ledger, component: string): boolean
+	return isRulerComponent(ledger.config, component)
+end
+
 function Ledger.new(config: any?): Ledger
 	return {
 		config = config or Support,
@@ -58,6 +65,7 @@ function Ledger.new(config: any?): Ledger
 		levels = {},
 		offsets = {},
 		valour = {},
+		counts = {},
 	}
 end
 
@@ -130,10 +138,19 @@ function Ledger.record(
 		delta = delta,
 		text = def.text,
 	}
+	table.freeze(moment)
 	table.insert(ledger.moments, moment)
-	if #ledger.moments > Ledger.MAX_TOTAL then
-		table.remove(ledger.moments, 1)
+	local kept = (ledger.counts[kingdom] or 0) + 1
+	if kept > Ledger.MAX_PER_KINGDOM then
+		for index, old in ledger.moments do
+			if old.kingdom == kingdom then
+				table.remove(ledger.moments, index)
+				kept -= 1
+				break
+			end
+		end
 	end
+	ledger.counts[kingdom] = kept
 	return moment, nil
 end
 

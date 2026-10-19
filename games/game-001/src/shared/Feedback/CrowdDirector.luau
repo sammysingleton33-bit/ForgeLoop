@@ -11,6 +11,7 @@
 		CrowdDirector.ending(won, tier, config) -> "flood" | "thinCrowning" | "salute" | "empty"
 		CrowdDirector.chant(kingdom, index, rulerName, config) -> string   -- a pre-written line
 		local director = CrowdDirector.new(config, { a = { tier, kingdom }, b = { tier, kingdom } })
+		director:side(stand) -> { tier, kingdom }           -- the stand's setup (a copy; for the figures)
 		director:onEvent(event, now) -> { Reaction }           -- an Arena.Events entry (G12.4)
 		director:idle(stand) -> Reaction                       -- between moments
 		director:finish(winner?, now) -> { Reaction }          -- both stands' endings; always plays;
@@ -157,6 +158,12 @@ function CrowdDirector.new(config: any, setup: any)
 	}, Director)
 end
 
+-- A stand's setup as the director uses it (an unknown tier already reads "divided"); a copy.
+function Director:side(stand: Stand): { tier: string, kingdom: string? }
+	local side = self._sides[stand] or self._sides.a
+	return { tier = side.tier, kingdom = side.kingdom }
+end
+
 function Director:_reaction(stand: Stand, kind: string, major: boolean, priority: boolean, data: any?): Reaction
 	local entry = self._config.reactions[kind] or {}
 	local caption = entry.caption
@@ -272,7 +279,10 @@ function Director:onEvent(event: any, now: number): { Reaction }
 		return {
 			self:_reaction(side, if trigger == "crowdRally" then "rally" else "perk", true, true, {
 				trigger = config.triggerNames[trigger] or "their pledge",
-				citizen = if type(data.citizenName) == "string" then data.citizenName else "A citizen",
+				-- an empty or blank name reads as no name, as chant does for rulerName (FORGE-00 2026-10-19)
+				citizen = if type(data.citizenName) == "string" and string.find(data.citizenName, "%S")
+					then data.citizenName
+					else "A citizen",
 			}),
 		}
 	elseif kind == "hype" then

@@ -33,7 +33,7 @@ ACTIONS = ("idle", "walk", "carry", "work", "fight", "celebrate", "flee")
 STEPS = 40
 MIN_CLEARANCE = 0.1
 KINGDOMS = ("crimson", "azure", "emerald", "gold")
-JOBS = ("idle", "farmer", "woodcutter", "miner", "builder", "hauler")
+JOBS = ("idle", "farmer", "woodcutter", "miner", "builder", "hauler", "blacksmith", "merchant", "healer")  # the specs cover the first six
 
 
 def seeded_look(seed):

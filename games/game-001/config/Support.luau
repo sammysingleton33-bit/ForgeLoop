@@ -8,7 +8,8 @@
 	Read by Arena/SupportModel (pure) and LeadershipService (acts, rules).
 
 	components[c].weight        share of the score (sums to 100)
-	sampling                    LeadershipService samples every `intervalSeconds`; the score weights the whole match
+	sampling                    LeadershipService samples every `intervalSeconds` of simulation time, checking every
+	                            `pollSeconds` of wall time; the score weights the whole match
 	                            `wholeMatchShare` and the last `recentSeconds` the rest (later samples count more)
 	tiers[t]                    min score, passive blessing (stat -> fraction), trigger slots, the Crowd Rally flag
 	roles[r]                    the key citizen's perk, the building that brings them, and the petition text
@@ -37,7 +38,7 @@ return {
 		valour = { weight = 10, scope = "ruler" },
 	},
 	componentOrder = { "reputation", "happiness", "stability", "morale", "loyalty", "conduct", "valour" },
-	sampling = { intervalSeconds = 30, wholeMatchShare = 0.4, recentSeconds = 900 },
+	sampling = { intervalSeconds = 30, pollSeconds = 2, wholeMatchShare = 0.4, recentSeconds = 900 },
 	trendSeconds = 300, -- the trend compares the last 5 minutes with the 5 before them
 
 	tierOrder = { "adoring", "loyal", "divided", "restless", "hostile" },

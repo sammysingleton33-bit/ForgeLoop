@@ -215,3 +215,58 @@ lowest fall corner -0.133 (limit -0.25), highest body point 7.17 (< 7.2); `chark
 portraits, 36 looks), and the 11-identity jobs strip from the front and behind. **Weak / unverified:** everything about Studio (importer scale and axes, vertex-colour
 multiplication, real lighting and FOV, draw-call cost in a crowd); Blender renders are not Studio renders; the blacksmith's anvil reads from behind and above
 only; the healer's cross is about 2 px at 170 studs, the white wing and the green tabard carry the read; the hat jobs show no hair.
+
+### Variation pass (b) (FL-0135, branch `forge/02-blender-fl0135-idle`, stacked on `forge/02-blender-fl0135-silhouettes` 135edc6d, 2026-10-19): idle accessory, hair under hats, three FORGE-07 lows
+Brief (FORGE-00 "fold (b) into the next kit PR"): give the idle citizen a visible accessory that is deterministic from the look and not another job's gear, let
+the hat jobs keep a hair tuft / sideburn / ponytail so one job varies by look, inside the budgets, runtime specs unchanged. Kit change only
+(`blender/generators/_charkit_gear.py`, `_charkit_rig.py`); `citizen_kit.fbx`, `rig.json` and `Kit/CharacterMeshData.luau` regenerated, no runtime code touched.
+
+**What changed.** (1) Idle: head slot `acc_01` (none, 1/3 of looks), `acc_02` pale headband with a knot, `acc_03` bandana with a knot (cloth tint, Head, 38 / 40
+tris); new torso slot `pack` (`pack_01`, `pack_02` empty, `pack_03` rose bindle on a stick, `pack_04` small rose rucksack with two straps; 48 to 50 tris, tint
+fixed; rose is not used by any job, the bundle is smaller than the hauler sack, the merchant pack, the builder planks). Probabilities over all 1,728 looks:
+1/6 bare, 2/3 a head item, 1/2 a pack. The new `pack` assembly key is new for the runtime (see the handoff). (2) Hair under hats: `tuft_01` to `tuft_06`
+(sideburns + nape fringe, side locks, five curls, ponytail, longer locks, bob; 26 to 44 tris, hair tint, Head) on farmer, miner, builder, hauler, merchant as
+`hair`, on the blacksmith as `tuft` (its `hair` key is the beard); the style follows `look.hair` and the colour `look.hairColor` (same rule as before for hair).
+The tufts are separate hair pieces welded to the Head, not baked into the hats (baked tufts grew the hat AABB and failed the Lune "headwear" carry spec by
+0.03 studs, so I reverted that). To fit 16 pieces the farmer lost its `hat_ribbon` (kingdom ribbon; the kingdom colour is still on the torso strap) and
+`hat_feather` merged into `hat_merchant`; the woodcutter (beanie + pompom) and the healer (coif) have no tuft. (3) FORGE-07 lows: the healer coif has a
+small cross that stands on the FRONT of the hood (tilted 24 degrees about X to face the Kit.portrait camera: 30 degrees FOV, about 6 degrees above), the flat top
+cross stays for the aerial read; the merchant scale beam is 4.0 studs, held low in front of the chest on a 1.25 stud forward arm, so it no longer crosses the
+head in the portrait; the knight body 906: see below.
+
+**Measured** (`~/forge-bpy/bin/python -I blender/scripts/charkit_budget.py`, from the FBX bytes, 1,728 looks x 4 kingdoms; FBX 542,732 bytes, 118 mesh
+objects, 7,518 triangles, largest mesh 188). Triangles default / max (cap), before in brackets: farmer 868 / 940 [858 / 928], woodcutter 840 / 910 [840 / 910],
+miner 858 / 930 [820 / 890], builder 830 / 902 [792 / 862], hauler 880 / 952 [842 / 912], blacksmith 834 / 862 [796 / 822], merchant 962 / 990 [912 / 938]
+(tightest), healer 960 / 986 [940 / 966], idle 698 / 876 [660 / 810]; all under the 1,000 citizen cap. Body max 898 (healer) of 900, tool max 114 of 150,
+pieces 14 to 16 (woodcutter, farmer, miner, builder, hauler, merchant and governor at 16). Soldiers (cap 1,500): soldier 854 / 900, soldier_knight 898 / 964, soldier_archer
+932 / 978, governor 928 / 954. `charkit budget: PASS`; `rig_to_luau.py`: 0 warnings (323 lines); `charkit_runtime_checks.py` (Lune spec ports): 0 violations,
+worst tool-head clearance 0.204 (limit 0.1, tool no closer to headwear than at rest in any Pose action, including the new tufts and idle items), lowest fall
+corner -0.133 (limit -0.25), highest body point 7.17 (< 7.2), hips 2.2 unchanged; `charkit_clearance.py`: 0 over tolerance (idle accessories included in the
+shell check); whole `games/game-001/tests/world` Lune suite 318 passed / 0 failed (20 files); `blender/tests` 58 passed (new pieces in the watertight and
+joint tests); `bash blender/scripts/check.sh` PASS; `tools/forge.py validate` and `tools/check_ownership.py` PASS.
+
+**Soldier body figure (FORGE-07 low 3).** The "body <= 900" figure is the citizen budget only. Soldiers and the governor have the 1,500 total cap and no
+separate body limit; `soldier_knight` body is 906 (total 898 default, 964 max) and was 906 before this branch. I looked for free triangles in the knight's
+body pieces (breastplate, skirt, greaves) and found none that did not remove visible detail or break watertightness, so it stays 906. `rig_to_luau.py` has
+`BUDGET["soldier"] = {"total": 1500}` and warns about a body over 900 for citizens only.
+
+**Review (ONE fresh image-only D-019 reviewer, variation / readability delta only, not a re-score;** six sheets in `img/d057-var-review-r1/`, BEFORE =
+silhouettes kit 135edc6d, AFTER = this branch, same looks, portrait / 40 studs front and behind / 170 studs; verbatim reply in `review.json`). Verdict BETTER.
+Variation before to after: idle 3 to 4; farmer, builder, hauler, merchant 2 to 3 (healer not scored for variation; no tuft). Readability unchanged: farmer,
+builder, hauler 5 to 5; idle, merchant, healer 4 to 4. Healer: cross on the front of the hood visible in the portrait, yes; merchant: head clear in the
+portrait, yes. Idle accessory reads "partly" at 40 and at 170 studs, and does not look like another job.
+
+**Honest status.** The hat-job variation gain is real in the portrait and only marginal at 40 studs (small tufts at the sides of the face; from behind the
+planks, sacks and packs hide the hair) and invisible at 170 studs, so variation on those jobs stays at 3, under the pass bar of 4. The tuft is a portrait /
+close-up cue, not an aerial one; the aerial identity remains the hat colour, tool and back gear. The idle items are small and pale: the bandana, headband and
+bundle blend into cream shirts at 40 and are 1 to 3 px at 170. Merchant scale at 170 studs reads "partly" (the lowered beam merges with its shadow; the BEFORE
+tall pole and plume were a little more distinct from above): that is the price of keeping the beam off the face. The reviewer counted "about five of ten idle
+looks accessory-free" from the front: the pack sits on the back, so a pack-only look shows nothing from the front. My own count of the ten looks on the
+sheet: 1 is bare (look 3), 9 carry a head item or a pack; and all ten sheet looks have `skin` 1 (the `idle_looks()` selection fills its quota from the first
+skin; skin variety is shown on the hat-job sheets, not here). Farmer lost its kingdom ribbon. Not done: a rose-contrast pass on the idle head items, or a
+tuft on the woodcutter / healer (the piece budget is full), because each costs a hat or a tool detail. Everything about Studio is unverified (importer scale
+and axes, vertex-colour multiplication, lighting, FOV, crowd draw calls); Blender renders are not Studio renders.
+
+Reproduce: `~/forge-bpy/bin/python -I blender/scripts/charkit_variation.py render --fbx F --rig R --out DIR` once with the BEFORE snapshot (`git show
+135edc6d:games/game-001/art/char_kit/citizen_kit.fbx` and `rig.json`) and once with this branch's files, then `... sheets --before DIR_OLD --after DIR_NEW --out
+games/game-001/art/reviews/img/d057-var-review-r1`.
