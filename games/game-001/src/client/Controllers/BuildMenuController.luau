@@ -31,6 +31,16 @@
 		and the plot picker then leave taps on my buildings and plots to the move (FORGE-07 B1 on #148).
 		build.movedAt[buildingId] = env.clock() of my last accepted move (the panel's cooldown).
 
+	Dragging a building (FL-0123, D-052 (1), CONTRACTS G13.9): besides Move → ghost → Move here, press and hold one of
+	my buildings for DRAG_HOLD_SEC (longer than a tap, so the tap that opens the upgrade panel never also drags) and
+	it is picked up: startMove, and FORGE-04's RulerCameraController:setEditDrag(true) (a drag no longer pans; the
+	screen edge does). Moving the pointer moves the ghost; letting go drops it: Move here when the spot is good (or
+	as soon as the pending check says so), else the move stays open with the reason on the bar. Moving more than
+	DRAG_SLOP px before the hold is a camera pan, not a drag. The same checks as the Move button apply (mine, not
+	the keep, not destroyed, Build.Move served, the move cooldown). setEditDrag(false) when the drag ends, the move
+	ends or the controller goes. Live input: UI/DragInput (mouse and touch); specs drive dragPress / dragMove /
+	dragRelease.
+
 	Depends on KingdomHudController (store, remotes, menus, layout, notifications).
 	Optional: InputModeController (FORGE-04). Live input: UI/PlacementInput (mouse, touch, R/Q keys).
 
@@ -39,6 +49,8 @@
 		build:startPlacement(type)  build:aimAt(position: Vector3)  build:rotate(step?: 1 | -1)
 		build:confirm()  build:cancel()
 		build:startMove(buildingId)
+		build:dragPress(buildingId, screen: Vector2) -> boolean   build:dragMove(screen: Vector2, world: Vector3?)
+		build:dragRelease(world: Vector3?)   build.dragging   build:moveCooldownLeft(buildingId) -> seconds
 		build.state = { category, selected, phoneView }   build.placing = { type, rot, position?,
 		    status ("pending" | "ok" | "bad"), reason?, busy, footprint, room?,
 		    move: { id, slot: { id, frame, allowed }?, turn, aim: Vector3? }? }?
@@ -48,6 +60,8 @@
 local BuildModel = require("../UI/BuildModel")
 local BuildMenu = require("../UI/BuildMenu")
 local Buildings = require("../UI/Buildings")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
+local DragInput = require("../UI/DragInput")
 local Ghost = require("../UI/Ghost")
 local Placement = require("../UI/Placement")
 local PlacementBar = require("../UI/PlacementBar")
@@ -61,6 +75,10 @@ BuildMenuController.__index = BuildMenuController
 
 local Def = { name = "BuildMenuController", dependencies = { "KingdomHudController" } }
 
+BuildMenuController.DRAG_HOLD_SEC = 0.45 -- above InputModeController's tapSec (0.4): a hold is never also a tap
+BuildMenuController.DRAG_SLOP = 8 -- px, InputModeController's tapPixels: more before the hold is a camera pan
+BuildMenuController.MOVE_COOLDOWN = 10 -- seconds, when config Buildings has no moveCooldown
+
 -- Used when Kit has no footprint for a type (never for the G2 types; a guard, not a rule).
 BuildMenuController.FALLBACK_FOOTPRINT = Vector2.new(16, 16)
 
@@ -73,6 +91,8 @@ function Def.new(env: any, registry: any)
 		placing = nil :: any,
 		ghost = nil :: any,
 		movedAt = {} :: { [number]: number },
+		dragging = false,
+		_press = nil :: any,
 	}, BuildMenuController)
 end
 
@@ -151,6 +171,26 @@ function BuildMenuController:start()
 	}, function()
 		return self:_exclude()
 	end)
+	self._disconnectDrag = DragInput.connect(env, {
+		mine = function()
+			local kingdom = hud.store:mine()
+			return if kingdom then kingdom.id else nil
+		end,
+		press = function(buildingId, screen)
+			return self:dragPress(buildingId, screen)
+		end,
+		move = function(screen, world)
+			self:dragMove(screen, world)
+		end,
+		release = function(world)
+			self:dragRelease(world)
+		end,
+		active = function()
+			return self._press ~= nil
+		end,
+	}, function()
+		return self:_exclude()
+	end)
 end
 
 function BuildMenuController:destroy()
@@ -163,6 +203,11 @@ function BuildMenuController:destroy()
 	if self._disconnectInput then
 		self._disconnectInput()
 	end
+	if self._disconnectDrag then
+		self._disconnectDrag()
+	end
+	self._press = nil
+	self:_editDrag(false)
 	if self.menu then
 		self.menu:destroy()
 	end
@@ -416,6 +461,100 @@ function BuildMenuController:startMove(buildingId: any): boolean
 	return true
 end
 
+-- Seconds until `buildingId` may move again (config Buildings.moveCooldown, else MOVE_COOLDOWN); 0 when it may.
+function BuildMenuController:moveCooldownLeft(buildingId: any): number
+	local cooldown = (BuildingsConfig :: any).moveCooldown
+	cooldown = if type(cooldown) == "number" then cooldown else BuildMenuController.MOVE_COOLDOWN
+	local movedAt = self.movedAt[buildingId]
+	return if movedAt then math.max(0, cooldown - (self._env.clock() - movedAt)) else 0
+end
+
+-- FORGE-04's edge-pan while a building is dragged (RulerCameraController:setEditDrag, G13.9); optional.
+function BuildMenuController:_editDrag(on: boolean)
+	if self.dragging == on then
+		return
+	end
+	self.dragging = on
+	local camera = self._registry:find("RulerCameraController")
+	if camera ~= nil and type(camera.setEditDrag) == "function" then
+		pcall(camera.setEditDrag, camera, on)
+	end
+end
+
+-- Press on one of my buildings (FL-0123): it is picked up after DRAG_HOLD_SEC unless the pointer moved or let go.
+function BuildMenuController:dragPress(buildingId: any, screen: Vector2): boolean
+	if self.placing ~= nil or self._press ~= nil then
+		return false -- a move under way keeps the Move flow's own pointer rules
+	end
+	local input = self._inputMode
+	if input ~= nil and input.mode ~= nil and input.mode ~= "explore" then
+		return false -- walking, a conversation, the arena: presses belong to them
+	end
+	local store = self.hud.store
+	local building = store:building(buildingId)
+	local mine = store:mine()
+	if building == nil or mine == nil or building.kingdom ~= mine.id or building.type == "keep" then
+		return false
+	end
+	if building.state == "destroyed" or not self.hud:hasRemote("Build.Move") then
+		return false
+	end
+	if self:moveCooldownLeft(buildingId) > 0 then
+		return false
+	end
+	local press = { id = buildingId, at = screen }
+	self._press = press
+	self._env.spawn(function()
+		self._env.wait(BuildMenuController.DRAG_HOLD_SEC)
+		if self._press == press then
+			if self:startMove(press.id) then
+				self:_editDrag(true)
+			else
+				self._press = nil
+			end
+		end
+	end)
+	return true
+end
+
+function BuildMenuController:dragMove(screen: Vector2, world: Vector3?)
+	local press = self._press
+	if press == nil then
+		return
+	end
+	if not self.dragging then
+		if (screen - press.at).Magnitude > BuildMenuController.DRAG_SLOP then
+			self._press = nil -- a camera pan, not a drag
+		end
+		return
+	end
+	if world ~= nil then
+		self:aimAt(world)
+	end
+end
+
+-- Let go: drop the ghost (Move here when the spot is good, or when its pending check says so).
+function BuildMenuController:dragRelease(world: Vector3?)
+	local was = self.dragging
+	self._press = nil
+	if not was then
+		return
+	end
+	if world ~= nil then
+		self:aimAt(world)
+	end
+	self:_editDrag(false)
+	local p = self.placing
+	if p == nil or p.move == nil then
+		return
+	end
+	if p.status == "ok" then
+		self:confirm()
+	elseif p.status == "pending" then
+		p.dropWhenOk = p.key
+	end
+end
+
 -- A building is picked up (FL-0120). Selection handlers leave edit-mode taps to the move (FORGE-07 B1).
 function BuildMenuController:moving(): boolean
 	return self.placing ~= nil and self.placing.move ~= nil
@@ -507,6 +646,12 @@ function BuildMenuController:_onVerdict(key: string, ok: boolean, reason: string
 	p.reason = if ok then nil else Text.reason(reason, if p.move then "move" else nil)
 	self:_refreshGhost()
 	self.hud:render()
+	if p.dropWhenOk == key then
+		p.dropWhenOk = nil
+		if ok then
+			self:confirm() -- the drag was let go while this spot was being checked
+		end
+	end
 end
 
 function BuildMenuController:confirm()
@@ -568,6 +713,8 @@ function BuildMenuController:cancel()
 end
 
 function BuildMenuController:_stop()
+	self._press = nil
+	self:_editDrag(false)
 	self._checker:cancel()
 	self:_undim()
 	if self.ghost then
@@ -652,5 +799,9 @@ function BuildMenuController:render(metrics: any)
 		self.bar:destroy()
 	end
 end
+
+-- the drag constants on the definition too, for specs that hold before a controller exists
+Def.DRAG_HOLD_SEC = BuildMenuController.DRAG_HOLD_SEC
+Def.DRAG_SLOP = BuildMenuController.DRAG_SLOP
 
 return Def
