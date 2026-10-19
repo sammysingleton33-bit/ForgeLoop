@@ -9,6 +9,7 @@ local DuelPoses = require("@game/ReplicatedStorage/Game/Feedback/DuelPoses")
 local DuelRig = require("@game/ReplicatedStorage/Game/Feedback/DuelRig")
 local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local AnimDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackDuelController")
+local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 
 local ME, RIVAL = 4101, 4102
 local CF = CFrame.new
@@ -116,6 +117,14 @@ local function boot(opts)
 			end,
 		},
 	}
+	if opts.sent ~= nil then -- InputModeArenaController's sent signal (a double)
+		table.insert(defs, {
+			name = "InputModeArenaController",
+			new = function()
+				return { sent = opts.sent }
+			end,
+		})
+	end
 	if opts.reduced ~= nil then
 		table.insert(defs, {
 			name = "SettingsController",
@@ -229,6 +238,24 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		local perFrame = t.counts.sets - sets
 		expect(perFrame <= 2 * 10).toBe(true) -- at most the joints of two avatars, once each
 		expect(perFrame > 0).toBe(true)
+	end)
+
+	it("your own sent press animates your champion at once; a spectator's press does nothing", function()
+		local sent = Signal.new()
+		local me = avatar()
+		local t = boot({ characters = { [ME] = me, [RIVAL] = avatar() }, sent = sent })
+		t.duel:setState({ stage = "duel", a = duellist(RIVAL), b = duellist(ME) }) -- we are champion b
+		frames(t, 0.2)
+		sent:fire("heavy") -- InputModeArenaController: DuelController:act("heavy") returned true
+		expect(t.anim.poses.b.name).toBe("heavy")
+		expect(t.anim.poses.a.name).toBeNil()
+		frames(t, 0.3)
+		expect(angleOf(joint(me, "RightShoulder").Transform) > 120).toBe(true) -- raised, no 0.2 s wait
+		-- watching another pair: our presses (if any reached here) animate nobody
+		t.duel:setState({ stage = "duel", a = duellist(RIVAL), b = duellist(9999) })
+		sent:fire("light")
+		expect(t.anim.poses.a.name).toBeNil()
+		expect(t.anim.poses.b.name).toBeNil()
 	end)
 
 	it("a late joiner starts from DuelController's state and animates from the next event", function()

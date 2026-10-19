@@ -726,7 +726,7 @@ Steps
    - a flinch when the AI hits you;
    - at the end, the loser kneels and the winner raises the weapon.
 
-   Note the delay between your key press and the swing. Up to about 0.2 s plus ping is expected for light, block and dodge, which come from the duel's state every 0.2 s. Heavy, hits, parries and staggers come with their own events. With FL-0140, the AI's body does the same.
+   Your own presses show on your body at once, with no wait for the server. A press the server refuses stops within half a second: try a heavy with an empty stamina bar. The guard stays up exactly while you hold the key. The opponent's light, block and dodge show up to about 0.2 s plus ping late, because they come from the duel's state every 0.2 s; their heavies, hits, parries and staggers come with their own events. With FL-0140, the AI's body moves too.
 5. Two players: each client sees both champions animate, and so does a watching third client. Join a client mid-duel: its champions animate from the next action.
 6. On a phone (Device emulator, a phone, landscape) at the arena camera: every action reads. Note any that does not.
 7. Performance: open the Microprofiler during a fast exchange. There must be no spike when actions arrive: the work is a few joints per champion per frame.

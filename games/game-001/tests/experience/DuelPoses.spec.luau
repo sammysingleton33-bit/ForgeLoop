@@ -5,6 +5,7 @@ local roblox = require("@lune/roblox")
 local DuelPoses = require("@game/ReplicatedStorage/Game/Feedback/DuelPoses")
 local DuelRig = require("@game/ReplicatedStorage/Game/Feedback/DuelRig")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Duel = require("@game/ReplicatedStorage/Forge/Config/Duel")
 
 local NOW = 100
 
@@ -254,6 +255,116 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 		local sword = DuelPoses.keys("light", "slash") :: any
 		expect(spear[3].pose.RightArm[1]).toBe(95)
 		expect(sword[3].pose.RightArm[3] < 0).toBe(true)
+	end)
+
+	it(
+		"your own press plays at once with the weapon's windup; the server's state confirms it, never restarts it",
+		function()
+			local duel = DuelPoses.newDuel()
+			duel:start(NOW)
+			duel:onEvent({
+				kind = "snapshot",
+				side = "a",
+				data = { a = { state = "idle", weapon = "greatsword", staminaShare = 1 } },
+			}, NOW)
+			expect(duel:predict("a", "light", NOW)).toBe(true)
+			expect(duel.a.name).toBe("light")
+			expect(duel.a._anim.windup).toBe(Duel.weapons.greatsword.lightWindup) -- config Duel's own windup
+			local first = duel.a._anim
+			duel:onEvent(
+				{ kind = "snapshot", side = "a", data = { a = { state = "windup", weapon = "greatsword" } } },
+				NOW + 0.15
+			)
+			expect(duel.a._anim).toBe(first) -- confirmed, not restarted
+			expect(first.predicted).toBeNil()
+			run(duel.a, NOW, NOW + DuelPoses.CONFIRM_SEC + 0.02)
+			expect(duel.a.name).toBe("light") -- a confirmed swing runs to its end
+			-- a heavy: the heavyWindup event confirms it and the wind-up goes on
+			duel:onEvent({ kind = "snapshot", side = "a", data = { a = { state = "idle" } } }, NOW + 1)
+			expect(duel:predict("a", "heavy", NOW + 1)).toBe(true)
+			local heavy = duel.a._anim
+			expect(heavy.windup).toBe(Duel.weapons.greatsword.heavyWindup)
+			duel:onEvent({ kind = "heavyWindup", side = "a", data = { impactIn = 0.8 } }, NOW + 1.1)
+			expect(duel.a._anim).toBe(heavy)
+			expect(heavy.predicted).toBeNil()
+			-- a hit from us confirms a swing too
+			duel:onEvent({ kind = "snapshot", side = "a", data = { a = { state = "idle" } } }, NOW + 3)
+			duel:predict("a", "light", NOW + 3)
+			duel:onEvent({ kind = "hit", side = "a", data = { heavy = false } }, NOW + 3.05)
+			expect(duel.a._anim.predicted).toBeNil()
+		end
+	)
+
+	it(
+		"an unconfirmed press stops after CONFIRM_SEC; one the state, the stamina or a busy body refuses never plays",
+		function()
+			local duel = DuelPoses.newDuel()
+			expect(duel:predict("a", "light", NOW)).toBe(false) -- no duel on
+			duel:start(NOW)
+			local function view(state, stamina, armour)
+				duel:onEvent({
+					kind = "snapshot",
+					side = "a",
+					data = { a = { state = state, staminaShare = stamina, armour = armour } },
+				}, NOW)
+			end
+			view("idle", 1)
+			expect(duel:predict("a", "heavy", NOW)).toBe(true)
+			run(duel.a, NOW, NOW + DuelPoses.CONFIRM_SEC - 0.02)
+			expect(duel.a.name).toBe("heavy")
+			run(duel.a, NOW + DuelPoses.CONFIRM_SEC - 0.02, NOW + DuelPoses.CONFIRM_SEC + 0.02)
+			expect(duel.a.name).toBeNil() -- refused or lost: it stops
+			expect(duel:predict("a", "kick", NOW)).toBe(false)
+			expect(duel:predict("c", "light", NOW)).toBe(false)
+			view("stagger", 1)
+			expect(duel:predict("a", "light", NOW)).toBe(false) -- DuelModel: a swing starts only from idle
+			duel.a:reset() -- (the stagger state also played a stagger, which keeps the body busy)
+			duel:start(NOW)
+			view("block", 1)
+			expect(duel:predict("a", "light", NOW)).toBe(false)
+			expect(duel:predict("a", "dodge", NOW)).toBe(true) -- a dodge may start from the guard
+			duel.a:reset()
+			duel:start(NOW)
+			view("idle", 0.05)
+			expect(duel:predict("a", "heavy", NOW)).toBe(false) -- 22 stamina needed
+			expect(duel:predict("a", "parry", NOW)).toBe(false) -- 6 needed
+			expect(duel:predict("a", "block", NOW)).toBe(true) -- free
+			duel.a:reset()
+			duel:start(NOW)
+			view("idle", 0.2, "heavy")
+			expect(duel:predict("a", "dodge", NOW)).toBe(false) -- heavy armour: 24
+			view("idle", 0.2, "light")
+			expect(duel:predict("a", "dodge", NOW)).toBe(true) -- light armour: 14
+			expect(duel:predict("a", "light", NOW)).toBe(false) -- busy dodging
+			duel:onEvent({ kind = "ended", side = "b", data = { reason = "ko" } }, NOW)
+			expect(duel:predict("a", "parry", NOW + 1)).toBe(false) -- the end
+		end
+	)
+
+	it("your own guard holds from the press to the release; the release lowers it at once", function()
+		local duel = DuelPoses.newDuel()
+		duel:start(NOW)
+		duel:onEvent(snapshot("idle", "idle"), NOW)
+		expect(duel:predict("a", "block", NOW)).toBe(true)
+		duel:onEvent({ kind = "hit", side = "b", data = { heavy = true } }, NOW + 0.05) -- before the server's state
+		expect(duel.a.name).toBe("guardHit") -- the guard is up: a jolt, not a flinch
+		duel:onEvent(snapshot("block", "idle"), NOW + 0.15) -- the server confirms
+		run(duel.a, NOW, NOW + 2)
+		expect(duel.a.name).toBe("block")
+		expect(duel:predict("a", "blockEnd", NOW + 2)).toBe(true)
+		expect(duel.a.name).toBeNil() -- lowered at once
+		duel:onEvent(snapshot("block", "idle"), NOW + 2.1) -- stale: sent before the server had the release
+		run(duel.a, NOW + 2, NOW + 2.2)
+		expect(duel.a.name).toBeNil()
+		duel:onEvent(snapshot("block", "idle"), NOW + 2 + DuelPoses.RELEASE_GRACE + 0.05) -- still blocking: it shows
+		expect(duel.a.name).toBe("block")
+		-- a guard the server never confirms drops after CONFIRM_SEC
+		local lone = DuelPoses.newDuel()
+		lone:start(NOW)
+		lone:predict("b", "block", NOW)
+		run(lone.b, NOW, NOW + DuelPoses.CONFIRM_SEC + 0.05)
+		expect(lone.b.name).toBeNil()
+		expect(lone.b._holding).toBe(false)
 	end)
 
 	it("every key pose stays within LIMITS and Root's offsets within 1.5 studs", function()

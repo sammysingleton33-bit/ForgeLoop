@@ -13,6 +13,10 @@
 		  A new pair of duellists resets both. Any other stage fades the poses out over DuelPoses.XFADE,
 		  then gives each avatar back to its Animator (a Kit rig goes back to rest).
 		- A late joiner animates from the next event (the next snapshot, at most 0.2 s away).
+		- Your own presses play at once (FORGE-00's ruling): InputModeArenaController.sent fires for each
+		  action DuelController:act() sent, and the local champion's track predicts it (DuelPoses
+		  predict: a cosmetic guess on this client; the server's next state or event confirms it, or it
+		  stops after DuelPoses.CONFIRM_SEC). Everyone else's actions come from the events.
 	Who
 		- A human champion (ArenaState a/b, isAI false): that player's Character.
 		- An AI champion: the Model tagged ArenaChampion whose attribute ArenaSide is its side (FORGE-01's
@@ -34,6 +38,7 @@
 	API
 		controller.poses                          -- the Feedback/DuelPoses duel
 		controller:onArenaState(state) / :onEvent(event)
+		controller:onPress(action)                -- the local champion's own sent press
 		controller:step(now?)                     -- one frame; PreSimulation calls it live
 		controller:rig(side) -> DuelRig.Rig?      -- the side's rig, if found
 		controller:preview(spec) -> boolean       -- Studio only
@@ -150,6 +155,15 @@ function Controller:start()
 	if ok and state ~= nil then
 		self:onArenaState(state)
 	end
+	local input = self._registry:find("InputModeArenaController")
+	if input ~= nil and type(input.sent) == "table" then
+		table.insert(
+			self._connections,
+			input.sent:connect(function(action)
+				self:onPress(action)
+			end)
+		)
+	end
 	local runService = self._env.RunService
 	if runService ~= nil then
 		local frame = function()
@@ -219,6 +233,42 @@ function Controller:onEvent(event: any)
 		return -- the Studio preview owns the poses until a real stage arrives
 	end
 	self.poses:onEvent(event, self:_now())
+end
+
+function Controller:_userId(): number?
+	if type(self._opts.userId) == "number" then
+		return self._opts.userId
+	end
+	local ok, id = pcall(function()
+		return self._env.Players.LocalPlayer.UserId
+	end)
+	return if ok and type(id) == "number" then id else nil
+end
+
+-- The side the local player champions (not an AI namesake), nil for a spectator.
+function Controller:_localSide(): string?
+	local state, me = self._state, self:_userId()
+	if type(state) ~= "table" or me == nil then
+		return nil
+	end
+	for _, side in { "a", "b" } do
+		local duellist = state[side]
+		if type(duellist) == "table" and duellist.userId == me and duellist.isAI ~= true then
+			return side
+		end
+	end
+	return nil
+end
+
+-- The local champion's own press, sent: it plays at once on this client (DuelPoses predict).
+function Controller:onPress(action: any)
+	if not self._running or self._preview ~= nil or type(action) ~= "string" then
+		return
+	end
+	local side = self:_localSide()
+	if side ~= nil then
+		self.poses:predict(side, action, self:_now())
+	end
 end
 
 -- ------------------------------------------------------------------ finding the champions

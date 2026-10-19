@@ -22,6 +22,12 @@
 		                          weapon; side "draw" with reason "draw" (both at 0 HP): both slump;
 		                          a forfeit: the champion who stayed raises the weapon. Then nothing more.
 	A late joiner starts from the next event: the next snapshot gives each side's state.
+	The local champion's own presses play at once (FORGE-00's ruling on FL-0141): track:predict(action) when
+	DuelController:act() sent one. It is a cosmetic guess on this client only: a press the last state or the
+	stamina would refuse (DuelModel.step's rules, config Duel's costs) does not play; the server's next state
+	or event confirms it (windup or recover for a swing, heavyWindup, a hit, block, parry, dodge); unconfirmed
+	after CONFIRM_SEC it stops. A predicted guard holds from the press to the release (blockEnd), and a stale
+	"block" state just after the release does not raise it again (RELEASE_GRACE).
 	Priorities: the ending 4 > stagger 3 > an action (light, heavy, parry, dodge) 2 > a flinch or a guard
 	jolt 1 > the held guard 0. A new animation replaces the current one when its priority is at least as
 	high or the current one has finished. Every change crossfades over XFADE seconds.
@@ -44,6 +50,7 @@
 
 	API
 		DuelPoses.newDuel() -> Duel                     both sides' tracks
+		duel:predict(side, action, now) -> boolean     the local champion's own sent press (above)
 		duel:onEvent(event, now)                        one Arena.Events entry (G12.1 DuelEvent)
 		duel:start(now) / duel:stop(now) / duel:reset() a duel's ready stances on; fade out; forget all
 		duel.a, duel.b: Track
@@ -55,6 +62,8 @@
 		DuelPoses.pose(numbers, out?) -> { [joint]: CFrame }        numbers → CFrames
 		DuelPoses.JOINTS, LIMITS, STYLE, PRIORITY, FULL, LENGTH, XFADE, LIGHT_WINDUP, HEAVY_WINDUP
 ]]
+
+local DuelConfig = require("@game/ReplicatedStorage/Forge/Config/Duel")
 
 local DuelPoses = {}
 
@@ -99,6 +108,24 @@ DuelPoses.HEAVY_WINDUP = table.freeze({ default = 0.8, min = 0.25, max = 1.5 })
 DuelPoses.HEAVY_STRIKE = 0.16
 DuelPoses.HEAVY_RECOVER = 0.45
 DuelPoses.RECENT_STRIKE = 0.5 -- a recover state or a hit this soon after a strike is the same swing
+DuelPoses.CONFIRM_SEC = 0.5 -- a predicted press the server has not confirmed by then stops (ping + 0.2 s snapshots)
+DuelPoses.RELEASE_GRACE = 0.35 -- after your own release, a stale "block" state does not raise the guard again
+-- DuelModel.step: the states each action may start from (light, heavy, block from idle; parry, dodge from block too)
+DuelPoses.STARTS_FROM = table.freeze({
+	light = table.freeze({ idle = true }),
+	heavy = table.freeze({ idle = true }),
+	block = table.freeze({ idle = true }),
+	parry = table.freeze({ idle = true, block = true }),
+	dodge = table.freeze({ idle = true, block = true }),
+})
+-- the server states and events that confirm a predicted animation
+local CONFIRMS = table.freeze({
+	windup = table.freeze({ light = true, heavy = true }),
+	recover = table.freeze({ light = true, heavy = true }),
+	block = table.freeze({ block = true }),
+	parry = table.freeze({ parry = true }),
+	dodge = table.freeze({ dodge = true }),
+})
 DuelPoses.HOLD = table.freeze({ ko = 5, yield = 5, victory = 3 }) -- seconds an ending pose holds
 DuelPoses.LENGTH = table.freeze({
 	parry = 0.35,
@@ -400,7 +427,10 @@ function DuelPoses.keys(name: string, style: string?, windup: number?, dir: numb
 	elseif name == "block" then
 		return { { t = 0, pose = ready }, { t = 0.12, pose = BLOCK[s] } }
 	elseif name == "light" then
-		local w, strike = DuelPoses.LIGHT_WINDUP, DuelPoses.LIGHT_WINDUP + DuelPoses.LIGHT_STRIKE
+		local w = if type(windup) == "number" and windup == windup
+			then math.clamp(windup, 0.1, 0.6)
+			else DuelPoses.LIGHT_WINDUP
+		local strike = w + DuelPoses.LIGHT_STRIKE
 		return {
 			{ t = 0, pose = ready },
 			{ t = w, pose = LIGHT[s][1] },
@@ -460,6 +490,32 @@ function DuelPoses.keys(name: string, style: string?, windup: number?, dir: numb
 		return { { t = 0, pose = ready }, { t = DuelPoses.LENGTH.victory, pose = VICTORY } }
 	end
 	return nil
+end
+
+-- The stamina share an action needs (config Duel: a cost over maxStamina; a dodge's cost is the armour's).
+function DuelPoses.cost(action: string, armour: string?): number
+	local rules = DuelConfig.rules
+	local max = rules.maxStamina
+	if action == "light" then
+		return rules.lightCost / max
+	elseif action == "heavy" then
+		return rules.heavyCost / max
+	elseif action == "parry" then
+		return rules.parryCost / max
+	elseif action == "dodge" then
+		local kind = DuelConfig.armour[armour or "medium"] or DuelConfig.armour.medium
+		return kind.dodgeCost / max
+	end
+	return 0
+end
+
+-- A predicted swing's windup: the weapon's own (config Duel), nil for any other action or an unknown weapon.
+function DuelPoses.windup(action: string, weapon: string?): number?
+	local stats = DuelConfig.weapons[weapon or ""]
+	if stats == nil then
+		return nil
+	end
+	return if action == "light" then stats.lightWindup elseif action == "heavy" then stats.heavyWindup else nil
 end
 
 -- ------------------------------------------------------------------ sampling
@@ -542,6 +598,11 @@ local function newTrack()
 		_weight = 0,
 		_body = 0,
 		_stopAt = nil :: number?,
+		weapon = nil :: string?, -- the snapshot's weapon, armour and stamina share (the press echo's checks)
+		armour = nil :: string?,
+		stamina = nil :: number?,
+		_holding = false, -- the local champion holds the guard (a predicted block until the release)
+		_releasedAt = nil :: number?,
 	}, Track)
 end
 
@@ -549,6 +610,19 @@ function Track:reset()
 	self.name, self.state, self.active, self.final = nil, nil, false, false
 	self._anim, self._lastStrike, self._dodges, self._source, self._stopAt = nil, -math.huge, 0, nil, nil
 	self._weight, self._body, self._fromWeight, self._fromBody, self._fromAt = 0, 0, 0, 0, -math.huge
+	self.weapon, self.armour, self.stamina, self._holding, self._releasedAt = nil, nil, nil, false, nil
+end
+
+-- The guard is up: held by the local champion, or the server's state says block (except just after our
+-- own release, while that state may still be stale).
+function Track:_guarding(now: number): boolean
+	if self._holding then
+		return true
+	end
+	if self.state ~= "block" then
+		return false
+	end
+	return self._releasedAt == nil or now - self._releasedAt >= DuelPoses.RELEASE_GRACE
 end
 
 function Track:_ended(now: number): boolean
@@ -556,17 +630,23 @@ function Track:_ended(now: number): boolean
 	if anim == nil then
 		return true
 	end
+	if anim.predicted ~= nil and now - anim.predicted > DuelPoses.CONFIRM_SEC then
+		return true -- the server never confirmed our press (refused, or lost)
+	end
 	if anim.name == "block" then
-		return self.state ~= "block" -- held while the snapshot says block
+		return not self:_guarding(now) -- held while the guard is up
 	end
 	return now >= anim.start + anim.length + (anim.hold or 0)
 end
 
 function Track:_current(now: number): any
 	if self._anim ~= nil and self:_ended(now) then
+		if self._anim.predicted ~= nil and self._anim.name == "block" then
+			self._holding = false -- an unconfirmed guard is not held any more
+		end
 		self._anim = nil
 		self.name = nil
-		if self.state == "block" and not self.final then
+		if self:_guarding(now) and not self.final then
 			-- back to the held guard (after a guard jolt, say), already raised: no dip to the ready stance
 			self:play("block", now, { start = now - 0.12 })
 		end
@@ -592,7 +672,7 @@ function Track:play(name: string, now: number, opts: { windup: number?, start: n
 	local keys = DuelPoses.keys(name, self.style, options.windup, dir) :: { Key }
 	local windup = nil
 	if name == "light" then
-		windup = DuelPoses.LIGHT_WINDUP
+		windup = keys[2].t -- the windup the keys were built with
 	elseif name == "heavy" then
 		windup = heavyWindup(options.windup)
 	end
@@ -620,6 +700,7 @@ end
 function Track:strike(heavy: boolean?, now: number)
 	local anim = self:_attack(now)
 	if anim ~= nil then
+		anim.predicted = nil -- a hit confirms our own press
 		if now < anim.start + anim.windup then
 			anim.start = now - anim.windup
 			self._lastStrike = now
@@ -641,6 +722,10 @@ function Track:onState(state: any, now: number)
 		return
 	end
 	self.state = state
+	local current = self._anim
+	if current ~= nil and current.predicted ~= nil and CONFIRMS[state] and CONFIRMS[state][current.name] then
+		current.predicted = nil -- the server confirms our own press
+	end
 	if self.final then
 		return
 	end
@@ -652,7 +737,7 @@ function Track:onState(state: any, now: number)
 		self:strike(nil, now)
 	elseif state == "block" then
 		local anim = self:_current(now)
-		if anim == nil then
+		if anim == nil and self:_guarding(now) then
 			self:play("block", now)
 		end
 	elseif state == "parry" or state == "dodge" or state == "stagger" then
@@ -668,11 +753,46 @@ function Track:hitBy(heavy: boolean, now: number)
 	if self.final then
 		return
 	end
-	if self.state == "block" then
+	if self:_guarding(now) then
 		self:play("guardHit", now)
 	else
 		self:play(if heavy then "flinchHeavy" else "flinch", now)
 	end
+end
+
+-- The local champion's own press, sent (see the header): true when it plays.
+function Track:predict(action: string, now: number): boolean
+	if self.final or not self.active then
+		return false
+	end
+	if action == "blockEnd" then
+		self._holding = false
+		self._releasedAt = now
+		local anim = self:_current(now)
+		if anim ~= nil and anim.name == "block" then
+			self._anim, self.name = nil, nil -- lowered at once
+		end
+		return true
+	end
+	local from = DuelPoses.STARTS_FROM[action]
+	if from == nil or (self.state ~= nil and not from[self.state]) then
+		return false -- the server would refuse it from this state
+	end
+	if type(self.stamina) == "number" and self.stamina < DuelPoses.cost(action, self.armour) then
+		return false -- not enough stamina
+	end
+	local current = self:_current(now)
+	if current ~= nil and current.priority >= DuelPoses.PRIORITY.light then
+		return false -- busy: an action, a stagger or the end
+	end
+	if not self:play(action, now, { windup = DuelPoses.windup(action, self.weapon) }) then
+		return false
+	end
+	self._anim.predicted = now
+	if action == "block" then
+		self._holding, self._releasedAt = true, nil
+	end
+	return true
 end
 
 function Track:finish(name: string?, now: number)
@@ -773,6 +893,11 @@ function Duel:stop(now: number)
 	end
 end
 
+function Duel:predict(side: string, action: string, now: number): boolean
+	local track = if side == "a" or side == "b" then self[side] else nil
+	return track ~= nil and track:predict(action, now)
+end
+
 function Duel:onEvent(event: any, now: number)
 	if type(event) ~= "table" or type(event.kind) ~= "string" then
 		return
@@ -789,13 +914,25 @@ function Duel:onEvent(event: any, now: number)
 				local t = self[s]
 				if type(view.weapon) == "string" then
 					t.style = DuelPoses.STYLE[view.weapon] or "slash"
+					t.weapon = view.weapon
+				end
+				if type(view.armour) == "string" then
+					t.armour = view.armour
+				end
+				if type(view.staminaShare) == "number" and view.staminaShare == view.staminaShare then
+					t.stamina = view.staminaShare
 				end
 				t:onState(view.state, now)
 			end
 		end
 	elseif kind == "heavyWindup" and track ~= nil then
 		local impactIn = if type(data) == "table" then data.impactIn else nil
-		track:play("heavy", now, { windup = impactIn })
+		local current = track:_attack(now)
+		if current ~= nil and current.name == "heavy" then
+			current.predicted = nil -- our own press, confirmed: the swing goes on, never restarted
+		else
+			track:play("heavy", now, { windup = impactIn })
+		end
 	elseif kind == "hit" and track ~= nil then
 		local heavy = type(data) == "table" and data.heavy == true
 		track:strike(heavy, now)

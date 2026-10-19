@@ -6,6 +6,7 @@ S, C, X, G, C2 and F come from mutations.py. Add rows for FL-0141 here only (D-0
 P = F + "DuelPoses.luau"
 R = F + "DuelRig.luau"
 A = C2 + "FeedbackDuelController.luau"
+I = C2 + "InputModeArenaController.luau"
 DP = "experience/DuelPoses"
 FD = "experience/FeedbackDuel"
 M = [
@@ -16,11 +17,11 @@ M = [
  ("FL-0141", P, 'if now - self._lastStrike < DuelPoses.RECENT_STRIKE then\n\t\treturn\n\tend', '', DP, "the hit jumps a winding-up swing", "game"),
  ("FL-0141", P, 'return math.clamp(w, DuelPoses.HEAVY_WINDUP.min, DuelPoses.HEAVY_WINDUP.max)', 'return w', DP, "heavyWindup holds the wind-up", "game"),
  ("FL-0141", P, 'track:play("heavy", now, { windup = impactIn })', 'track:play("heavy", now)', DP, "heavyWindup holds the wind-up", "game"),
- ("FL-0141", P, 'if self.state == "block" then\n\t\tself:play("guardHit", now)', 'if false then\n\t\tself:play("guardHit", now)', DP, "the target of a hit flinches", "game"),
+ ("FL-0141", P, 'if self:_guarding(now) then\n\t\tself:play("guardHit", now)', 'if false then\n\t\tself:play("guardHit", now)', DP, "the target of a hit flinches", "game"),
  ("FL-0141", P, 'self:play(if heavy then "flinchHeavy" else "flinch", now)', 'self:play("flinch", now)', DP, "the target of a hit flinches", "game"),
  ("FL-0141", P, 'self[OTHER[side]]:hitBy(heavy, now)', 'track:hitBy(heavy, now)', DP, "the target of a hit flinches", "game"),
  ("FL-0141", P, 'self:play("block", now, { start = now - 0.12 })', 'local _ = now', DP, "the target of a hit flinches", "game"),
- ("FL-0141", P, 'return self.state ~= "block" -- held while the snapshot says block', 'return false', DP, "the target of a hit flinches", "game"),
+ ("FL-0141", P, 'return not self:_guarding(now) -- held while the guard is up', 'return false', DP, "the target of a hit flinches", "game"),
  ("FL-0141", P, 'dir = if self._dodges % 2 == 1 then -1 else 1', 'dir = -1', DP, "parry, dodge and stagger", "game"),
  ("FL-0141", P, 'if not (anim ~= nil and anim.name == kind and now - anim.start < 0.1) then', 'if true then', DP, "parry, dodge and stagger", "game"),
  ("FL-0141", P, 'if current ~= nil and DuelPoses.PRIORITY[name] < current.priority then', 'if false then', DP, "priorities: a stagger cuts a swing", "game"),
@@ -64,4 +65,26 @@ M = [
  ("FL-0141", A, 'return -- no duel: the preview goes on', 'local _ = 0', FD, "Studio preview: your character plays every action", "game"),
  ("FL-0141", A, 'if type(state) == "table" and Def.STAGES[state.stage] then\n\t\treturn false -- a real duel', 'if false then\n\t\treturn false -- a real duel', FD, "Studio preview: your character plays every action", "game"),
  ("FL-0141", A, 'function Controller:preview(spec: any): boolean\n\tif not self:_isStudio() then', 'function Controller:preview(spec: any): boolean\n\tif false then', FD, "Studio preview: your character plays every action", "game"),
+ # the local champion's press plays at once (FORGE-00's ruling): predict, confirm, cancel, refuse
+ ("FL-0141", P, 'if anim.predicted ~= nil and now - anim.predicted > DuelPoses.CONFIRM_SEC then', 'if false then', DP, "an unconfirmed press stops", "game"),
+ ("FL-0141", P, 'current.predicted = nil -- the server confirms our own press', 'local _ = 0', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'current.predicted = nil -- our own press, confirmed', 'local _ = 0', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'if current ~= nil and current.name == "heavy" then', 'if false then', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'anim.predicted = nil -- a hit confirms our own press', 'local _ = 0', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'if not self:play(action, now, { windup = DuelPoses.windup(action, self.weapon) }) then', 'if not self:play(action, now) then', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'then math.clamp(windup, 0.1, 0.6)', 'then DuelPoses.LIGHT_WINDUP', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'if from == nil or (self.state ~= nil and not from[self.state]) then', 'if from == nil then', DP, "an unconfirmed press stops", "game"),
+ ("FL-0141", P, 'if type(self.stamina) == "number" and self.stamina < DuelPoses.cost(action, self.armour) then', 'if false then', DP, "an unconfirmed press stops", "game"),
+ ("FL-0141", P, 'if current ~= nil and current.priority >= DuelPoses.PRIORITY.light then', 'if false then', DP, "an unconfirmed press stops", "game"),
+ ("FL-0141", P, 'local kind = DuelConfig.armour[armour or "medium"] or DuelConfig.armour.medium', 'local kind = DuelConfig.armour.medium', DP, "an unconfirmed press stops", "game"),
+ ("FL-0141", P, 't.stamina = view.staminaShare', 'local _ = view', DP, "an unconfirmed press stops", "game"),
+ ("FL-0141", P, 'self._holding, self._releasedAt = true, nil', 'self._releasedAt = nil', DP, "your own guard holds from the press", "game"),
+ ("FL-0141", P, 'self._anim, self.name = nil, nil -- lowered at once', 'local _ = 0', DP, "your own guard holds from the press", "game"),
+ ("FL-0141", P, 'return self._releasedAt == nil or now - self._releasedAt >= DuelPoses.RELEASE_GRACE', 'return true', DP, "your own guard holds from the press", "game"),
+ ("FL-0141", P, 'self._holding = false -- an unconfirmed guard is not held any more', 'local _ = 0', DP, "your own guard holds from the press", "game"),
+ ("FL-0141", A, 'self.poses:predict(side, action, self:_now())', 'local _ = side', FD, "your own sent press animates", "game"),
+ ("FL-0141", A, 'if type(duellist) == "table" and duellist.userId == me and duellist.isAI ~= true then', 'if type(duellist) == "table" then', FD, "your own sent press animates", "game"),
+ ("FL-0141", A, 'input.sent:connect(function(action)', 'input.sent:connect(function(_action)', FD, "your own sent press animates", "game"),
+ ("FL-0141", I, 'if result == true then\n\t\tself.sent:fire(action)', 'if true then\n\t\tself.sent:fire(action)', "DuelInput", "sent fires once for each action", "game"),
+ ("FL-0141", I, '\t\tself.sent:fire(action)\n', '', "DuelInput", "sent fires once for each action", "game"),
 ]
