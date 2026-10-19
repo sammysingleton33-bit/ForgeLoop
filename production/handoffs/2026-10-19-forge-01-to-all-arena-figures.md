@@ -10,7 +10,8 @@ With the arena on, a solo player no longer duels an invisible AI. The arena now 
   - **Venue dress.** `Kit.arenaDress(CrownArena, colour of side a, colour of side b)` at the intro; `Kit.arenaDress(model, nil, nil)` (neutral) when the arena ends.
   - **Clean-up.** The figure, all gear and the dress go at the crowning (`done`), on a cancel and on `destroy`.
   - **`snapRuler`.** `MatchHost:snapRuler(userId)` after every placement (the intro, a reset, a put-back at the ring edge), so the sim's copy of the champion does not walk 9 to 14 s from the plot at `rulerMaxSpeed`.
-- Specs `sim/ArenaService` (+8, against a recording fake Kit). Mutation rows: `FL-0140.py`, 12 of 12 caught.
+- Specs `sim/ArenaService` (+8, against a recording fake Kit). Mutation rows: `FL-0140.py`, 15 of 15 caught.
+- **Checked for FORGE-00's list:** the AI figure never runs faster than `Arena.ring.walkSpeed` (a spec measures its path over a stretch against the clock) and never leaves the ring (the walk is clamped to the ring's radius; a spec asks it to walk 60 studs outside); a human running circles at the ring edge at the AI's own speed (16) stays within its reach on every sample (237 of 237, closest 1.7 studs): running is no escape from the AI, only blocking, parrying and dodging are (a finding for pose sanity, B23); the figure is removed on a cancel, at the crowning, on destroy and after a mid-duel leaver forfeit (specs for each).
 - Fairness: unchanged. The model, its caps and config Duel are untouched (the fairness gate drives scripted duellists, not ArenaService).
 
 ## Proposed CONTRACTS G12.6 rows (FORGE-00 lands them)
@@ -23,7 +24,7 @@ With the arena on, a solo player no longer duels an invisible AI. The arena now 
 Human champions are found from `ArenaState.a/b.userId` → `Player.Character`; no tag.
 
 ## Evidence (headless only)
-`sim/ArenaService` 44/0 (the 8 new specs: figure on its mark with tag, side and pose; walks to reach; human gear; venue dress and reset; clean-up after the crowning and on a cancel; snapRuler; re-dress after a reset); StyLua clean; Selene 0 warnings.
+`sim/ArenaService` 48/0 (the 12 new specs: figure on its mark with tag, side and pose; walks to reach; human gear; venue dress and reset; clean-up after the crowning and on a cancel; snapRuler; re-dress after a reset); StyLua clean; Selene 0 warnings.
 
 ## Open issues and risks (unverified)
 - **Nothing here was seen.** How the welded armour and the tilted weapon look on the Kit rig, whether `Humanoid:AddAccessory` fits an R15/R6 avatar with `Kit.armour` (FORGE-02's specs use stand-in avatars), and whether the anchored figure's welded pieces follow when the figure walks (`Model:PivotTo`) are all Studio checks.

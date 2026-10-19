@@ -17,4 +17,7 @@ M = [
  ("FL-0140", FG, 'pcall(kit.character, "governor", "idle", spec.color, spec.look, spec.kingdom)', 'pcall(kit.character, "citizen", "idle", spec.color, spec.look, spec.kingdom)', "sim/ArenaService", "stands an AI champion on its mark"),
  ("FL-0140", FG, '\tmodel:SetAttribute("ArenaSide", spec.side)\n', '', "sim/ArenaService", "stands an AI champion on its mark"),
  ("FL-0140", FG, '\t\t\tself._collection:AddTag(model, "ArenaChampion")\n', '\t\t\tlocal _ = model\n', "sim/ArenaService", "stands an AI champion on its mark"),
+ ("FL-0140", AS, 'local step = dt * self.config.ring.walkSpeed\n', 'local step = dt * self.config.ring.walkSpeed * 2\n', "sim/ArenaService", "never moves the AI figure faster than the fixed WalkSpeed"),
+ ("FL-0140", FG, '\t\t\tif out > ring.radius then', '\t\t\tif false then', "sim/ArenaService", "keeps the AI figure inside the ring"),
+ ("FL-0140", AS, 'figures:approach(champion.userId, target.x, target.z, step, self.config.reach * 0.7, ring)', 'figures:approach(champion.userId, target.x, target.z, step, self.config.reach * 3, ring)', "sim/ArenaService", "stays within its reach"),
 ]

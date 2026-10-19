@@ -843,6 +843,84 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 		expect(gap() < config.reach).toBe(true)
 	end)
 
+	it("never moves the AI figure faster than the fixed WalkSpeed", function()
+		local world = boot({ 1 })
+		world.arena.config.site = { x = 0, z = 0, separation = 20 }
+		reachSolo(world)
+		advanceTo(world, "duel")
+		local state = world.arena:state()
+		local aiId = if state.a.isAI then state.a.userId else state.b.userId
+		local humanRoot = world.players[1].Character.HumanoidRootPart
+		local ring = world.arena:_layout().ring
+		local walkSpeed = world.arena.config.ring.walkSpeed
+		-- the human stands at the far edge of the ring: the AI has all the room to run
+		humanRoot.CFrame = CFrame.new(ring.x, 5, ring.z + ring.radius)
+		world.env.mock:advance(0.05) -- the walk's clock starts
+		local from = assert(world.arena:poseOf(aiId))
+		local elapsed = 0
+		for _ = 1, 5 do
+			world.env.mock:advance(0.05)
+			elapsed += 0.05
+		end
+		local to = assert(world.arena:poseOf(aiId))
+		local moved = math.sqrt((to.x - from.x) ^ 2 + (to.z - from.z) ^ 2)
+		expect(moved > 0).toBe(true)
+		-- stepped once a tick, so over a stretch it can run at most one tick ahead of the clock
+		expect(moved <= walkSpeed * (elapsed + world.arena.config.tick) + 1e-6).toBe(true)
+	end)
+
+	it("keeps the AI figure inside the ring, whatever it is asked to walk towards", function()
+		local world = boot({ 1 })
+		world.arena.config.site = { x = 0, z = 0, separation = 20 }
+		reachSolo(world)
+		advanceTo(world, "intro")
+		local state = world.arena:state()
+		local aiId = if state.a.isAI then state.a.userId else state.b.userId
+		local ring = world.arena:_layout().ring
+		world.arena._figures:approach(aiId, ring.x + 60, ring.z, 100, 0, ring)
+		local pose = assert(world.arena:poseOf(aiId))
+		local out = math.sqrt((pose.x - ring.x) ^ 2 + (pose.z - ring.z) ^ 2)
+		expect(out <= ring.radius + 1e-6).toBe(true)
+		expect(out > ring.radius - 1e-3).toBe(true) -- and it did walk to the edge
+	end)
+
+	it("a human running circles round the ring edge at the AI's own speed stays within its reach", function()
+		local world = boot({ 1 })
+		world.arena.config.site = { x = 0, z = 0, separation = 20 }
+		reachSolo(world)
+		advanceTo(world, "duel")
+		local state = world.arena:state()
+		local aiId = if state.a.isAI then state.a.userId else state.b.userId
+		local humanRoot = world.players[1].Character.HumanoidRootPart
+		local ring = world.arena:_layout().ring
+		local walkSpeed = world.arena.config.ring.walkSpeed
+		local orbit = ring.radius - 1
+		local angle = 0
+		local samples, inReach, closest = 0, 0, math.huge
+		for _ = 1, 300 do
+			angle += walkSpeed * 0.05 / orbit
+			humanRoot.CFrame = CFrame.new(ring.x + orbit * math.cos(angle), 5, ring.z + orbit * math.sin(angle))
+			world.env.mock:advance(0.05)
+			if world.arena:state().stage ~= "duel" then
+				break
+			end
+			local ai, me =
+				world.arena:poseOf(aiId), world.arena:poseOf(state.a.isAI and state.b.userId or state.a.userId)
+			if ai and me then
+				local gap = math.sqrt((ai.x - me.x) ^ 2 + (ai.z - me.z) ^ 2)
+				samples += 1
+				closest = math.min(closest, gap)
+				if gap <= world.arena.config.reach then
+					inReach += 1
+				end
+			end
+		end
+		-- measured (headless): the AI is within reach on every sample, and gets as close as ~1.7 studs; running is no escape
+		expect(samples > 100).toBe(true)
+		expect(inReach >= samples * 0.9).toBe(true)
+		expect(closest < world.arena.config.reach).toBe(true)
+	end)
+
 	it("puts the loadout's weapon and armour on a human champion, in the kingdom's colour", function()
 		local world = boot({ 1 })
 		reachSolo(world)
@@ -899,6 +977,21 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 		for _, child in world.players[1].Character:GetChildren() do
 			expect(child:IsA("Tool")).toBe(false)
 		end
+	end)
+
+	it("takes the figure away when the only human leaves mid-duel and the AI is crowned", function()
+		local world = boot({ 1 })
+		reachSolo(world)
+		advanceTo(world, "duel")
+		local folder = world.env.Workspace:FindFirstChild("ArenaFigures")
+		assert(folder, "the figures folder")
+		expect(#folder:GetChildren()).toBe(1)
+		world.env.mock.players:remove(world.players[1])
+		world.env.mock:advance(0.5)
+		advanceTo(world, "done", world.arena.config.crowningSeconds + 5)
+		world.env.mock:advance(0.2)
+		expect(#folder:GetChildren()).toBe(0)
+		expect(#logged(world, "dress")).toBe(2)
 	end)
 
 	it("takes the figure away when the match calls the arena off", function()

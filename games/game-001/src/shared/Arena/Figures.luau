@@ -21,8 +21,9 @@
 			weapon as a Tool in the hand (Humanoid:EquipTool). spec { color, weapon, armour }
 		figures:poseOf(userId) -> { x, z, fx, fz }?
 			where an AI figure stands and which way it faces (the same shape as ArenaService:poseOf); nil for anyone else
-		figures:approach(userId, tx, tz, step, standoff) -> boolean
-			walks an AI figure up to `step` studs towards (tx, tz), stopping `standoff` short, turned to face it
+		figures:approach(userId, tx, tz, step, standoff, ring?) -> boolean
+			walks an AI figure up to `step` studs towards (tx, tz), stopping `standoff` short, turned to face it, and
+			never beyond ring { x, z, radius }
 		figures:dress(arenaModel, colorA?, colorB?)
 			Kit.arenaDress; `reset()` puts the venue back to neutral. Both remember nothing: ArenaService owns the model.
 		figures:clear()
@@ -282,7 +283,14 @@ end
 -- Walks an AI figure up to `step` studs towards (tx, tz), stopping `standoff` studs short of it, and turns it to face
 -- there. The duel measures reach and facing from where the figure stands, so an AI champion has to close in on its
 -- opponent as a player would. Returns true when it moved.
-function Figures:approach(userId: number, tx: number, tz: number, step: number, standoff: number): boolean
+function Figures:approach(
+	userId: number,
+	tx: number,
+	tz: number,
+	step: number,
+	standoff: number,
+	ring: { x: number, z: number, radius: number }?
+): boolean
 	local model = self._figures[userId]
 	local root = if model then model.PrimaryPart else nil
 	if root == nil then
@@ -297,6 +305,14 @@ function Figures:approach(userId: number, tx: number, tz: number, step: number, 
 		end
 		local travel = math.clamp(distance - standoff, 0, step)
 		local x, z = position.X + dx / distance * travel, position.Z + dz / distance * travel
+		if ring ~= nil then
+			-- the figure stays inside the ring, as the champions do
+			local rx, rz = x - ring.x, z - ring.z
+			local out = math.sqrt(rx * rx + rz * rz)
+			if out > ring.radius then
+				x, z = ring.x + rx / out * ring.radius, ring.z + rz / out * ring.radius
+			end
+		end
 		local cframe = CFrame.lookAt(Vector3.new(x, position.Y, z), Vector3.new(tx, position.Y, tz))
 		local placed = pcall(function()
 			model:PivotTo(cframe)

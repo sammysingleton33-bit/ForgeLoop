@@ -294,12 +294,13 @@ function ArenaService:_walkFigures(now: number)
 	end
 	local dt = math.clamp(now - last, 0, self.config.maxCatchup)
 	local step = dt * self.config.ring.walkSpeed
+	local ring = self:_layout().ring
 	for side, other in { a = "b", b = "a" } do
 		local champion, opponent = flow:champion(side), flow:champion(other)
 		if champion and opponent and champion.isAI and figures:has(champion.userId) then
 			local target = self:poseOf(opponent.userId)
 			if target then
-				figures:approach(champion.userId, target.x, target.z, step, self.config.reach * 0.7)
+				figures:approach(champion.userId, target.x, target.z, step, self.config.reach * 0.7, ring)
 			end
 		end
 	end
