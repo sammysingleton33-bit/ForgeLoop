@@ -1,0 +1,56 @@
+{
+  "assets": {
+    "rock_boulder_l_01": {
+      "geometry_hash": "5b99062938815a12",
+      "verdict": "PASS"
+    },
+    "rock_boulder_l_02": {
+      "geometry_hash": "2759a8863346f365",
+      "verdict": "PASS"
+    },
+    "rock_boulder_l_03": {
+      "geometry_hash": "4825917bd069027e",
+      "verdict": "PASS"
+    },
+    "rock_boulder_m_01": {
+      "geometry_hash": "f77c76709f111b53",
+      "verdict": "PASS"
+    },
+    "rock_boulder_m_02": {
+      "geometry_hash": "e5d6f2d27b870c3a",
+      "verdict": "PASS"
+    },
+    "rock_boulder_m_03": {
+      "geometry_hash": "888d1c4cae738c9d",
+      "verdict": "PASS"
+    },
+    "rock_boulder_s_01": {
+      "geometry_hash": "51850113dc88710c",
+      "verdict": "PASS"
+    },
+    "rock_boulder_s_02": {
+      "geometry_hash": "684bebcc0b19f9c2",
+      "verdict": "PASS"
+    },
+    "rock_boulder_s_03": {
+      "geometry_hash": "c9a7ae1dfb201dc7",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "rock_boulder",
+  "generator_version": 2,
+  "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+  "reviewer": "fresh-context subagent",
+  "round": 2,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

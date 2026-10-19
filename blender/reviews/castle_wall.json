@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "castle_wall_blue_01": {
+      "geometry_hash": "936e9c6b40b7bec0",
+      "verdict": "PASS"
+    },
+    "castle_wall_blue_02": {
+      "geometry_hash": "5215ba6b8def5af3",
+      "verdict": "PASS"
+    },
+    "castle_wall_green_01": {
+      "geometry_hash": "bec91a1ec22c99d6",
+      "verdict": "PASS"
+    },
+    "castle_wall_green_02": {
+      "geometry_hash": "c0cad51e17156733",
+      "verdict": "PASS"
+    },
+    "castle_wall_red_01": {
+      "geometry_hash": "778a0b9a69915f15",
+      "verdict": "PASS"
+    },
+    "castle_wall_red_02": {
+      "geometry_hash": "ac1899cf6900aee6",
+      "verdict": "PASS"
+    },
+    "castle_wall_yellow_01": {
+      "geometry_hash": "67cfbc16b4f1f79a",
+      "verdict": "PASS"
+    },
+    "castle_wall_yellow_02": {
+      "geometry_hash": "dd4d80a0c5cd169c",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_wall",
+  "generator_version": 1,
+  "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+  "reviewer": "fresh-context subagent",
+  "round": 4,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

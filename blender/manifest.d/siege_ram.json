@@ -1,0 +1,307 @@
+{
+  "assets": [
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 9.4,
+        "y": 12.057,
+        "z": 15.32
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_blue_01.fbx",
+        "validation": "exports/siege_ram_blue_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "6d6b3d7e767aa954",
+      "id": "siege_ram_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "roof": "tortoise"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
+        "review_file": "reviews/siege_ram.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          3.903
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          3.903
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -7.66
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2740,
+        "lod1": 958
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.235,
+        "y": 16.355,
+        "z": 17.036
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_green_01.fbx",
+        "validation": "exports/siege_ram_green_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "5ce00a94f8a71cac",
+      "id": "siege_ram_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "roof": "planks"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
+        "review_file": "reviews/siege_ram.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.244
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.244
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -8.518
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3808,
+        "lod1": 1332
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.235,
+        "y": 14.667,
+        "z": 16.393
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_red_01.fbx",
+        "validation": "exports/siege_ram_red_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "c5483cb036c64c2b",
+      "id": "siege_ram_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "roof": "hides"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
+        "review_file": "reviews/siege_ram.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.175
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.175
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -8.197
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3484,
+        "lod1": 1218
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 10.2,
+        "y": 12.928,
+        "z": 16.416
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ram_yellow_01.fbx",
+        "validation": "exports/siege_ram_yellow_01.validation.json"
+      },
+      "generator": "siege_ram",
+      "generator_version": 1,
+      "geometry_hash": "dfb054abc06fc37c",
+      "id": "siege_ram_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "roof": "cloak"
+      },
+      "preview": "previews/siege_ram.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four roof forms (red open hide-covered gable, blue A-frame tortoise, green steep plank shed, yellow hide box with gold skirt) and large kingdom shields that read well at 40 and in grayscale. The sun shield is a clear sunburst. Weakness: the ram log barely protrudes past the front frame, and on blue/green/yellow the head reads as a grey boulder inside a shed, so the object reads as a covered wagon or hut on wheels before it reads as a ram. Extend the log 2-3 studs beyond the frame with a shaped iron head like red_01. green_01 is 3808/4000 (95%) of budget.",
+        "review_file": "reviews/siege_ram.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7003,
+      "sockets": {
+        "crew_1": [
+          1.6,
+          -0.086,
+          4.021
+        ],
+        "crew_2": [
+          -1.6,
+          -0.086,
+          4.021
+        ],
+        "ram_head": [
+          -0.0,
+          4.214,
+          -8.208
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3444,
+        "lod1": 1204
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "siege_ram",
+  "variation": {
+    "closest_pair": [
+      "siege_ram_green_01",
+      "siege_ram_red_01"
+    ],
+    "mean_pair_diff": 0.3744,
+    "min_pair_diff": 0.2685,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

@@ -1,0 +1,763 @@
+{
+  "assets": [
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 42.25,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_blue_01.fbx",
+        "validation": "exports/castle_wall_blue_01.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "936e9c6b40b7bec0",
+      "id": "castle_wall_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "curtain",
+        "kingdom": "blue",
+        "profile": "caps"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7502,
+      "sockets": {
+        "archer_1": [
+          11.429,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -2.286,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -11.429,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2030,
+        "lod1": 710
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 39.65,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_blue_02.fbx",
+        "validation": "exports/castle_wall_blue_02.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "5215ba6b8def5af3",
+      "id": "castle_wall_blue_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "bastion",
+        "kingdom": "blue",
+        "profile": "caps"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7503,
+      "sockets": {
+        "archer_1": [
+          11.429,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -2.286,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -11.429,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "stair_bottom": [
+          -16.8,
+          0.0,
+          6.2
+        ],
+        "stair_top": [
+          7.5,
+          24.0,
+          6.2
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2438,
+        "lod1": 852
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 34.113,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_green_01.fbx",
+        "validation": "exports/castle_wall_green_01.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "bec91a1ec22c99d6",
+      "id": "castle_wall_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "curtain",
+        "kingdom": "green",
+        "profile": "hoarding"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7504,
+      "sockets": {
+        "archer_1": [
+          11.429,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -2.286,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -11.429,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2740,
+        "lod1": 958
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 35.3,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_green_02.fbx",
+        "validation": "exports/castle_wall_green_02.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "c0cad51e17156733",
+      "id": "castle_wall_green_02",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "bastion",
+        "kingdom": "green",
+        "profile": "hoarding"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7505,
+      "sockets": {
+        "archer_1": [
+          11.429,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -2.286,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -11.429,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "stair_bottom": [
+          -16.8,
+          0.0,
+          6.2
+        ],
+        "stair_top": [
+          7.5,
+          24.0,
+          6.2
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2788,
+        "lod1": 974
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 42.85,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_red_01.fbx",
+        "validation": "exports/castle_wall_red_01.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "778a0b9a69915f15",
+      "id": "castle_wall_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "curtain",
+        "kingdom": "red",
+        "profile": "mach"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7500,
+      "sockets": {
+        "archer_1": [
+          11.429,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -2.286,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -11.429,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2312,
+        "lod1": 808
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 42.85,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_red_02.fbx",
+        "validation": "exports/castle_wall_red_02.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "ac1899cf6900aee6",
+      "id": "castle_wall_red_02",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "bastion",
+        "kingdom": "red",
+        "profile": "mach"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7501,
+      "sockets": {
+        "archer_1": [
+          11.429,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -2.286,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -11.429,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "stair_bottom": [
+          -16.8,
+          0.0,
+          6.2
+        ],
+        "stair_top": [
+          7.5,
+          24.0,
+          6.2
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2760,
+        "lod1": 966
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 39.25,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_yellow_01.fbx",
+        "validation": "exports/castle_wall_yellow_01.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "67cfbc16b4f1f79a",
+      "id": "castle_wall_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "curtain",
+        "kingdom": "yellow",
+        "profile": "talus"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7506,
+      "sockets": {
+        "archer_1": [
+          12.0,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -0.0,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -12.0,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2224,
+        "lod1": 778
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_wall",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.0,
+        "y": 39.25,
+        "z": 16.8
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_wall_yellow_02.fbx",
+        "validation": "exports/castle_wall_yellow_02.validation.json"
+      },
+      "generator": "castle_wall",
+      "generator_version": 1,
+      "geometry_hash": "dd4d80a0c5cd169c",
+      "id": "castle_wall_yellow_02",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kind": "bastion",
+        "kingdom": "yellow",
+        "profile": "talus"
+      },
+      "preview": "previews/castle_wall.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "At 124 studs each kingdom reads from the parapet line alone, in grayscale too: red cone bartizan, blue pyramid tower + cone-capped merlons, green roofed timber hoarding, yellow onion bartizan + rounded merlons + battered base. Parapet heights match within each pair, so they tile. The single banner per segment is small at range but the emblem still reads (sun = rayed roundel, not a C). Yellow bartizans use spike finials (no crescent issue). The slender onion bartizan is the most minaret-like shape in the kit, but it is engaged and short; keep it chunky. Within-pair variation is modest (02 = buttresses + moved turret). 2.0-2.8k of 3k per 32-stud segment; fine alone, but it adds up across a perimeter.",
+        "review_file": "reviews/castle_wall.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7507,
+      "sockets": {
+        "archer_1": [
+          12.0,
+          24.0,
+          -2.0
+        ],
+        "archer_2": [
+          -0.0,
+          24.0,
+          -2.0
+        ],
+        "archer_3": [
+          -12.0,
+          24.0,
+          -2.0
+        ],
+        "end_left": [
+          16.0,
+          24.0,
+          0.0
+        ],
+        "end_right": [
+          -16.0,
+          24.0,
+          0.0
+        ],
+        "stair_bottom": [
+          -16.8,
+          0.0,
+          6.2
+        ],
+        "stair_top": [
+          7.5,
+          24.0,
+          6.2
+        ],
+        "walk_center": [
+          -0.0,
+          24.0,
+          0.25
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2508,
+        "lod1": 876
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 8
+  },
+  "generator": "castle_wall",
+  "variation": {
+    "closest_pair": [
+      "castle_wall_red_02",
+      "castle_wall_yellow_02"
+    ],
+    "mean_pair_diff": 0.1973,
+    "min_pair_diff": 0.1012,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

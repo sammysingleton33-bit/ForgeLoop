@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "castle_gatehouse_blue_01": {
+      "geometry_hash": "2e4fb119b7ee6894",
+      "verdict": "PASS"
+    },
+    "castle_gatehouse_green_01": {
+      "geometry_hash": "a392fe21a3471e1d",
+      "verdict": "PASS"
+    },
+    "castle_gatehouse_red_01": {
+      "geometry_hash": "0808516571d38bff",
+      "verdict": "PASS"
+    },
+    "castle_gatehouse_yellow_01": {
+      "geometry_hash": "f97e731382456187",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "castle_gatehouse",
+  "generator_version": 1,
+  "notes": "Clear kingdom reads at 78 studs in grayscale: red twin cone spires, blue central pyramid keep with flanking pyramids, green timber hoardings, yellow onion domes. The yellow dome finials are a ball + spike with no crescent reading. The sun emblem matches the kit design (gold disc + 8 rays on a cream roundel) on the parapet roundel, both side banners and the door shield, and it reads as a sun, not a star or cog. The oak leaf is ivory with a midrib and stem, the best oak rendition in the kit. All four share the same twin-tower + arch base, so variation comes from the tops only (acceptable for one per kingdom). Minor: the flag is visible only on the blue variant at gameplay distance (the yellow flag hides behind its merlons in the hero shot). Tris 7558-8470/9000.",
+  "reviewer": "fresh-context subagent",
+  "round": 5,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 5,
+    "silhouette": 5,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}
