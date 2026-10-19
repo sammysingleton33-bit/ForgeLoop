@@ -12,9 +12,10 @@
 local fs = require("@lune/fs")
 
 local T = require("../../../../roblox/tests/harness/Test")
-local describe, it, expect = T.describe, T.it, T.expect
+local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
+local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local GameConfig = require("@game/ReplicatedStorage/Forge/Config/Game")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 
@@ -172,5 +173,90 @@ describe("game-001 headless boot (FL-0046)", function()
 		expect(env.mock.threadErrors).toEqual({})
 		expect(errorLogs(env)).toEqual({})
 		registry:destroy()
+	end)
+end)
+
+-- The character adapter KingdomService needs outside Roblox (the Spectate spec's; a Model with a HumanoidRootPart).
+local function characterAdapter(env)
+	return {
+		partyOf = function()
+			return nil
+		end,
+		load = function(player)
+			local character = env.newInstance("Model")
+			local root = env.newInstance("Part")
+			root.Name = "HumanoidRootPart"
+			root.CFrame = CFrame.new()
+			root.Parent = character
+			character.Parent = env.Workspace
+			player.Character = character
+			return character
+		end,
+		pivot = function(character, cframe)
+			character.HumanoidRootPart.CFrame = cframe
+		end,
+		attach = function(character, accessory)
+			accessory.Parent = character
+		end,
+		onDied = function()
+			return { Disconnect = function() end }
+		end,
+		respawnDelay = function()
+			return 5
+		end,
+		sit = function() end,
+		seatOf = function()
+			return nil
+		end,
+		occupant = function()
+			return nil
+		end,
+		unseat = function() end,
+	}
+end
+
+-- FORGE-00's P0 after the owner's B22 Studio run (2026-10-19): the kingdom loaded but the management HUD was
+-- missing, and the boot cases above could not see it. They boot the client alone, and MockEnv's player has no
+-- PlayerGui, so KingdomHudController gives up after 10 s with a *warning*, every remote fails with a warning, and
+-- the gate passes. This case boots both trees in one env, as a real server and a joined client, gives the player
+-- a PlayerGui, and requires the HUD to be there and switched on. A missing HUD fails the gate.
+describe("game-001 headless join (FORGE-00 P0, 2026-10-19)", function()
+	local previous
+	beforeEach(function()
+		previous = Create.useTestConnector() -- Lune has no TextButton.Activated; the HUD connects it at mount
+	end)
+	afterEach(function()
+		Create.setConnector(previous)
+	end)
+
+	it("a joined player's PlayerGui holds the KingdomHUD, enabled, with a kingdom in the store", function()
+		local env = MockEnv.new({
+			seed = 1,
+			localPlayer = { userId = 1001, name = "Ruler" },
+			sharedModules = { Remotes = remotesByArea() },
+		})
+		local server = Loader.load(env, definitionsIn(SERVER_TREES))
+		server:get("KingdomService").adapter = characterAdapter(env)
+		local playerGui = env.newInstance("PlayerGui")
+		playerGui.Parent = env.Players.LocalPlayer
+		local client = Loader.load(env, definitionsIn(CLIENT_TREES))
+		env.mock:advance(3) -- the join, the kingdom assignment and the first Kingdom.GetState reply
+		local hud = client:get("KingdomHudController")
+		expect(hud._mounted).toBe(true)
+		expect(hud.store:mine()).never.toBeNil()
+		local gui = playerGui:FindFirstChild("KingdomHUD")
+		expect(gui).toBeTruthy()
+		expect((gui :: any).ClassName).toBe("ScreenGui")
+		expect((gui :: any).Enabled).toBe(true)
+		for _, name in { "KingdomTopbar", "KingdomMenus", "KingdomModals", "KingdomNotices", "KingdomBackdrop" } do
+			expect(playerGui:FindFirstChild(name)).toBeTruthy()
+		end
+		-- no Loader failure can hide behind a warning: a HUD that is mounted but dark is a failure too
+		env.mock:advance(30)
+		expect((gui :: any).Enabled).toBe(true)
+		expect(env.mock.threadErrors).toEqual({})
+		expect(errorLogs(env)).toEqual({})
+		client:destroy()
+		server:destroy()
 	end)
 end)
