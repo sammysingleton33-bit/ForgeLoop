@@ -39,7 +39,8 @@ If the Output has `not used` lines, stop and send them to FORGE-02: those ids ar
 Forests, lone trees, bushes, rocks, flowers and the farm fields from the **aerial camera** and the **82-stud gameplay camera**, next to the kingdom buildings and the
 citizens (does it look like one world? are trunks and rocks solid for the ruler? do the resource nodes sit where the stand-ins did?). In Explorer, `Workspace.World.Props`
 holding Models with a `Body` MeshPart are the mesh props; the old multi-part Models are the stand-ins (the Kit falls back per id). Then the **300-citizen phone stress
-test** from `IMPORT_CHARACTERS.md` (Render Stats: FPS, triangles, draw calls) and screenshots at the **aerial** and **portrait** views.
+test** from `IMPORT_CHARACTERS.md` (Render Stats: FPS, triangles, draw calls) and screenshots at the **aerial** and **portrait** views. Also read the **physics memory** in Render Stats
+(or the Developer Console memory tab): the nature `Body` MeshParts are CanQuery true with up to 900 triangles each and, as CollisionFidelity is not saved, get the default (precise) query shape; if physics memory is high, tell FORGE-02: CanQuery false on the Bodies is the lever (the invisible Collider Parts do the blocking).
 
 ## 4. Revert
 Delete the `EnvKit` folder (and `roblox/assets/EnvKit.rbxm` from the repo): every prop is its part-built stand-in again at the next play or build.
