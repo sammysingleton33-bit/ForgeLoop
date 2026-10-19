@@ -3,8 +3,10 @@
 	Kit — part-built medieval architecture, characters, regalia and prop stand-ins for AI Kingdoms.
 	Owner: FORGE-02. Contract: games/game-001/CONTRACTS.md G10 (D-021 as amended by D-026).
 
-	Rules (D-026): primitive Parts only (Part Block/Cylinder/Ball, WedgePart, CornerWedgePart);
-	no CSG / PartOperation; nothing yields. Models are built at the origin with the pivot at the
+	Rules (D-026, amended by D-057 for art): the part-built models are primitive Parts only (Part Block/Cylinder/Ball,
+	WedgePart, CornerWedgePart); citizens (Kit.character, Kit.portrait) are Blender MeshPart rigs once the owner has imported the
+	kit and the generated data is committed (Kit/CharacterMesh, else today's part-built rigs, whole); no CSG / PartOperation;
+	nothing yields. Models are built at the origin with the pivot at the
 	base centre (PrimaryPart "Root" + PivotOffset); front faces -Z (the Model's LookVector).
 
 	Kingdom identity: Kit.build only receives a Color3, so the silhouette cue is picked from the
@@ -130,7 +132,7 @@ Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
 Kit.character = CharacterMesh.character -- the imported-mesh rig when the kit is imported and complete, else Character.character's
 Kit.regalia = Character.regalia
--- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by Character.character, then anchored
+-- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by CharacterMesh.character (the mesh rig, else Character.character), then anchored
 Kit.portrait = Portrait.portrait
 Kit.portraitCamera = Portrait.camera
 Kit.posePortrait = Portrait.pose

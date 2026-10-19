@@ -333,7 +333,7 @@ describe("import_char_kit.luau: the Studio import script, against fake trees", f
 	end)
 
 	it(
-		"strips everything but a SurfaceAppearance from a piece (D-057 (13) asset safety), and lists what it stripped",
+		"strips everything from a piece, a SurfaceAppearance included (D-057 (13), (17)), and lists what it stripped",
 		function()
 			local place = newPlace(data)
 			local piece = place.scene:FindFirstChild("tool_axe")
@@ -359,12 +359,12 @@ describe("import_char_kit.luau: the Studio import script, against fake trees", f
 			inner.Parent = nested
 			local report = runScript(place)
 			local copy = folderOf(place):FindFirstChild("tool_axe") :: Instance
-			expect(copy:FindFirstChild("Palette")).never.toBeNil() -- the palette stays
+			expect(copy:FindFirstChild("Palette")).toBeNil() -- no PBR: the SurfaceAppearance goes too
 			expect(copy:GetAttribute("Payload")).toBeNil()
 			expect(#copy:GetTags()).toBe(0)
 			expect(piece:GetAttribute("Payload")).toBe("fetch me") -- the original is untouched
-			expect(#copy:GetDescendants()).toBe(1)
-			expect(#report.stripped).toBe(#hidden + 2 + 2) -- the seven, the folder and the script inside it, the attribute and the tag
+			expect(#copy:GetDescendants()).toBe(0)
+			expect(#report.stripped).toBe(#hidden + 1 + 2 + 2) -- the seven, the SurfaceAppearance, the folder and the script inside it, the attribute and the tag
 			expect(report.scriptsRemoved).toBe(3) -- ModuleScript, LocalScript, Script
 			local listed = table.concat(report.stripped, "\n")
 			for _, d in hidden do
