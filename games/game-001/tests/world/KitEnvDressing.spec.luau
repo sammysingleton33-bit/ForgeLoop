@@ -86,27 +86,21 @@ local function shapes(): { { name: string, kind: string, shape: any } }
 	end
 	local out = {}
 	for i, field in Layout.features.fields do
-		table.insert(
-			out,
-			{
-				name = `field {i}`,
-				kind = "field",
-				shape = Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw),
-			}
-		)
+		table.insert(out, {
+			name = `field {i}`,
+			kind = "field",
+			shape = Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw),
+		})
 	end
 	for _, kid in KINGDOMS do
 		local plot = Layout.plots[kid]
 		local keepYaw = yawOf(plot.anchors.keep)
 		for _, zone in plot.buildZones do
-			table.insert(
-				out,
-				{
-					name = zone.id,
-					kind = "zone",
-					shape = Footprint.rect(zone.size, zone.center.X, zone.center.Z, keepYaw),
-				}
-			)
+			table.insert(out, {
+				name = zone.id,
+				kind = "zone",
+				shape = Footprint.rect(zone.size, zone.center.X, zone.center.Z, keepYaw),
+			})
 		end
 		for _, slot in plot.buildSlots do
 			table.insert(out, {
@@ -124,14 +118,11 @@ local function shapes(): { { name: string, kind: string, shape: any } }
 		end
 	end
 	local arena = Layout.arena
-	table.insert(
-		out,
-		{
-			name = "arena",
-			kind = "arena",
-			shape = Footprint.rect(arena.footprint, arena.cframe.Position.X, arena.cframe.Position.Z, 0),
-		}
-	)
+	table.insert(out, {
+		name = "arena",
+		kind = "arena",
+		shape = Footprint.rect(arena.footprint, arena.cframe.Position.X, arena.cframe.Position.Z, 0),
+	})
 	shapeCache = out
 	return out
 end
@@ -270,14 +261,11 @@ describe("a world without the imported kit is exactly today's world", function()
 		function()
 			EnvKit.install(
 				Data,
-				EnvKit.assets(
-					Data,
-					{
-						folder = true,
-						per = { farm_fence_01 = { scale = Vector3.new(2, 1, 1) } },
-						omit = { rock_cliff_02 = true },
-					}
-				)
+				EnvKit.assets(Data, {
+					folder = true,
+					per = { farm_fence_01 = { scale = Vector3.new(2, 1, 1) } },
+					omit = { rock_cliff_02 = true },
+				})
 			)
 			expect(Kit.envMeshReady("farm_fence_01")).toBe(false)
 			expect(Kit.envMeshReady("rock_cliff_02")).toBe(false)
