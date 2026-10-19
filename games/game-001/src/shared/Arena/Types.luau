@@ -2,7 +2,7 @@
 --[[
 	Arena/Types — the Crown Arena and support types (CONTRACTS G12.1, D-029; design `design/crown-arena.md`).
 	Owner: FORGE-01. Types only: nothing here runs. The shapes are the contract's; `Modifier` and the duel types below
-	are the ones FORGE-05's fairness harness already uses (tests/fairness/CapsCheck.luau, DuelDouble.luau).
+	are the ones FORGE-05's fairness harness reads (tests/fairness).
 ]]
 
 local KingdomTypes = require("../Kingdom/Types")
