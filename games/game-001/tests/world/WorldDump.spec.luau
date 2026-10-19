@@ -6,8 +6,8 @@
 
 	The surface materials are read from WorldPlan.terrainOps themselves (the last op that covers a point decides, as in the game), so
 	a new terrain feature shows in the preview without a second copy of its rules. The dump also carries the world/Lighting preset
-	(`lighting`) for the preview's sun, haze and colour grade, and a few citizens at work around the plots (FORGE_WORLD_CITIZENS=0 leaves
-	them out) so the views at the default gameplay camera show how readable they are. FORGE_WORLD_STEP=<studs> sets the heightfield grid
+	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=12, the default, is the start of a kingdom
+	(config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2); 40 is a mid-game kingdom; 0 leaves them out) so the views at the default gameplay camera show how readable they are. FORGE_WORLD_STEP=<studs> sets the heightfield grid
 	(6 by default; 3 for the camera views).
 
 	Always: asserts the dump is consistent. With FORGE_WORLD_DUMP=<path.json>: writes it.
@@ -133,20 +133,32 @@ local function plain(v: any): any
 	return v
 end
 
--- A few citizens at work around a plot, for the default-camera views: (job, anchor, how many, ring radius). Deterministic.
-local CITIZEN_JOBS = {
-	{ "farmer", "farm", 5, 16 },
-	{ "woodcutter", "lumbercamp", 4, 12 },
-	{ "miner", "quarry", 4, 12 },
-	{ "hauler", "storehouse", 3, 12 },
-	{ "idle", "keep", 5, 22 },
-	{ "builder", "storehouse", 2, 18 },
+-- Citizens at work around a plot, for the default-camera views: { job, anchor, how many, ring radius } per kingdom. "12" is the
+-- start of a kingdom (config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2: the first view the owner judges),
+-- "40" a mid-game kingdom. Farmers stand at the crop fields, woodcutters at the lumber camp, miners at the quarry, haulers at the
+-- storehouse, builders and idle ones in the keep's yard. Deterministic (the golden angle, never random).
+local CITIZEN_SETS = {
+	["12"] = {
+		{ "farmer", "farm", 3, 12 },
+		{ "woodcutter", "lumbercamp", 3, 10 },
+		{ "miner", "quarry", 2, 10 },
+		{ "builder", "keep", 2, 26 },
+		{ "hauler", "storehouse", 2, 12 },
+	},
+	["40"] = {
+		{ "farmer", "farm", 9, 16 },
+		{ "woodcutter", "lumbercamp", 8, 14 },
+		{ "miner", "quarry", 6, 12 },
+		{ "builder", "keep", 6, 28 },
+		{ "hauler", "storehouse", 6, 16 },
+		{ "idle", "keep", 5, 22 },
+	},
 }
 
-local function citizensAround(kingdom: string, color: Color3, assets: any, placements: any)
+local function citizensAround(set: string, kingdom: string, color: Color3, assets: any, placements: any)
 	local plot = Layout.plots[kingdom]
 	local n = 0
-	for _, job in CITIZEN_JOBS do
+	for _, job in CITIZEN_SETS[set] do
 		local anchor = plot.anchors[job[2]]
 		if anchor then
 			local id = `citizen_{job[1]}_{kingdom}`
@@ -211,9 +223,10 @@ local function dump()
 			)
 		end
 	end
-	if process.env.FORGE_WORLD_CITIZENS ~= "0" then
+	local citizenSet = process.env.FORGE_WORLD_CITIZENS or "12"
+	if CITIZEN_SETS[citizenSet] then
 		for kingdom, color in KINGDOM_COLORS do
-			citizensAround(kingdom, color, assets, placements)
+			citizensAround(citizenSet, kingdom, color, assets, placements)
 		end
 	end
 	-- build slot markers (WorldService, G13.5) and, on crimson, a few slots built up to preview a grown town
