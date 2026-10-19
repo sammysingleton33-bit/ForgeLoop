@@ -41,17 +41,22 @@ M = [
  ("FL-0071R", DR, 'elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" then', 'elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" or kind == "miss" or kind == "dodged" then', "sim/DuelRunner", "a swing that misses is not relayed"),
  ("FL-0071R", DR, 'local winner = if model.winner == "a" or model.winner == "b" then model.winner else "draw"', 'local winner = "a"', "sim/DuelRunner", "play a duel to the end"),
  # --- forfeits
- ("FL-0071R", DR, 'and now - self._forfeitAt <= self._cfg.simultaneousSeconds', 'and false', "sim/DuelRunner", "both champions gone is a draw"),
- ("FL-0071R", DR, 'and now - self._forfeitAt <= self._cfg.simultaneousSeconds', 'and true', "sim/DuelRunner", "after the moment has passed"),
- ("FL-0071R", DR, 'and result.side == side\n', 'and true\n', "sim/DuelRunner", "both champions gone is a draw"),
- ("FL-0071R", DR, 'self._result = { side = other, reason = "forfeit" }', 'self._result = { side = side, reason = "forfeit" }', "sim/DuelRunner", "a champion who leaves loses"),
  # --- a champion the world cannot find
  ("FL-0071R", DR, 'if self:_poseLost(elapsed, now, out) then\n\t\treturn out\n\tend', 'if false then\n\t\treturn out\n\tend', "sim/DuelRunner", "pauses the duel"),
  ("FL-0071R", DR, 'if self._pose(duellist.userId) == nil then', 'if false then', "sim/DuelRunner", "pauses the duel"),
  ("FL-0071R", DR, 'self._poseLostFor[side] = 0\n', 'self._poseLostFor[side] += 0\n', "sim/DuelRunner", "pauses the duel"),
- ("FL-0071R", DR, 'if self._poseLostFor[side] >= self._cfg.poseGraceSeconds then', 'if self._poseLostFor[side] >= self._cfg.poseGraceSeconds * 100 then', "sim/DuelRunner", "forfeits that champion"),
  ("FL-0071R", DR, 'if duellist.isAI or duellist.gone then', 'if duellist.gone then', "sim/DuelRunner", "needs no pose"),
  ("FL-0071R", DR, 'local length = math.sqrt(mine.fx * mine.fx + mine.fz * mine.fz)', 'local length = 1', "sim/DuelRunner", "shorter than a unit vector"),
  ("FL-0071R", DR, 'hpShare = view.hpShare,', 'hpShare = view.hpShare, hp = view.hp,', "sim/DuelRunner", "public snapshot"),
  ("FL-0071R", DR, 'staminaShare = math.clamp(view.staminaShare, 0, 1),', 'staminaShare = view.staminaShare, stamina = view.stamina,', "sim/DuelRunner", "public snapshot"),
+ # --- settling a forfeit, and the pose budget
+ ("FL-0071R", DR, 'now - pending.at <= self._cfg.simultaneousSeconds', 'false', "sim/DuelRunner", "both champions gone is a draw"),
+ ("FL-0071R", DR, 'now - pending.at <= self._cfg.simultaneousSeconds', 'true', "sim/DuelRunner", "after the moment has passed"),
+ ("FL-0071R", DR, 'if pending.winner == side and', 'if', "sim/DuelRunner", "already left cannot turn it into a draw"),
+ ("FL-0071R", DR, 'if now - pending.at > self._cfg.simultaneousSeconds then', 'if true then', "sim/DuelRunner", "a champion who leaves loses"),
+ ("FL-0071R", DR, 'pending.winner = "draw"', 'pending.winner = pending.winner', "sim/DuelRunner", "both champions gone is a draw"),
+ ("FL-0071R", DR, '{ winner = if side == "a" then "b" else "a", at = now }', '{ winner = side, at = now }', "sim/DuelRunner", "a champion who leaves loses"),
+ ("FL-0071R", DR, 'self._poseLostFor[side] >= self._cfg.poseGraceSeconds\n', 'false\n', "sim/DuelRunner", "forfeits that champion"),
+ ("FL-0071R", DR, 'self._poseLostTotal[side] >= 2 * self._cfg.poseGraceSeconds', 'false', "sim/DuelRunner", "keeps flickering"),
+ ("FL-0071R", DR, 'self._poseLostTotal[side] += elapsed', 'self._poseLostTotal[side] += 0', "sim/DuelRunner", "keeps flickering"),
 ]

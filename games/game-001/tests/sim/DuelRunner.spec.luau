@@ -429,6 +429,24 @@ describe("DuelRunner: a champion the world cannot find", function()
 		expect(runner:snapshot().t).toBe(0) -- the duel itself never ran
 	end)
 
+	it("a pose that keeps flickering spends a total budget and forfeits", function()
+		local lost: { [number]: boolean } = {}
+		local runner = newRunner(human(1), human(2), { pose = located(lost) })
+		local clock = { t = 0 }
+		runner:step(0)
+		local grace = ArenaConfig.poseGraceSeconds
+		for _ = 1, 3 do -- gone for most of the grace, back for a moment: never one long run
+			lost[1] = true
+			run(runner, clock, math.floor(30 * (grace - 1)))
+			lost[1] = nil
+			run(runner, clock, 6)
+		end
+		run(runner, clock, 30 * 2)
+		local side, reason = runner:result()
+		expect(side).toBe("b")
+		expect(reason).toBe("forfeit")
+	end)
+
 	it("both champions lost together is a draw", function()
 		local runner = newRunner(human(1), human(2), { pose = located({ [1] = true, [2] = true }) })
 		local clock = { t = 0 }
@@ -600,12 +618,18 @@ describe("DuelRunner: AI hands and the end", function()
 end)
 
 describe("DuelRunner: forfeits", function()
-	it("a champion who leaves loses: the other side wins, with a forfeit ending", function()
+	local window = ArenaConfig.simultaneousSeconds
+
+	it("a champion who leaves loses: one ended event once the window has passed", function()
 		local runner = newRunner(human(1), human(2))
 		local clock = { t = 0 }
 		runner:step(0)
 		run(runner, clock, 30)
-		local events = runner:forfeit(1, clock.t)
+		local before = runner:snapshot().t
+		expect(#runner:forfeit(1, clock.t)).toBe(0)
+		expect(runner:finished()).toBe(false) -- the other champion may still leave in the same moment
+		expect(#runner:step(clock.t + window / 2)).toBe(0)
+		local events = runner:step(clock.t + window + 0.01)
 		expect(#events).toBe(1)
 		expect(events[1].kind).toBe("ended")
 		expect(events[1].side).toBe("b")
@@ -614,19 +638,21 @@ describe("DuelRunner: forfeits", function()
 		expect(side).toBe("b")
 		expect(reason).toBe("forfeit")
 		expect(runner:finished()).toBe(true)
-		expect(#runner:forfeit(1, clock.t)).toBe(0) -- already over
-		expect(#runner:step(clock.t + 1)).toBe(0)
+		expect(runner:snapshot().t).toBe(before) -- the duel stood still while it settled
+		expect(#runner:forfeit(2, clock.t + 1)).toBe(0) -- already over
+		expect(#runner:step(clock.t + 2)).toBe(0)
 	end)
 
 	it("both champions gone is a draw; a stranger leaving changes nothing", function()
 		local runner = newRunner(human(1), human(2))
 		runner:step(0)
-		expect(#runner:forfeit(77, 0)).toBe(0)
+		runner:forfeit(77, 0)
 		expect(runner:finished()).toBe(false)
-		expect(runner:forfeit(1, 1)[1].side).toBe("b")
-		expect(#runner:forfeit(1, 1.1)).toBe(0) -- the one who already left cannot make it a draw
-		expect(#runner:forfeit(77, 1.1)).toBe(0)
-		local events = runner:forfeit(2, 1 + ArenaConfig.simultaneousSeconds) -- the same moment
+		runner:forfeit(1, 1)
+		runner:forfeit(1, 1.1) -- the one who already left cannot make it a draw
+		runner:forfeit(77, 1.1)
+		runner:forfeit(2, 1 + window) -- the same moment
+		local events = runner:step(1 + window + 0.01)
 		expect(#events).toBe(1)
 		expect(events[1].side).toBe("draw")
 		local side, reason = runner:result()
@@ -634,11 +660,22 @@ describe("DuelRunner: forfeits", function()
 		expect(reason).toBe("forfeit")
 	end)
 
+	it("the champion who already left cannot turn it into a draw by leaving again", function()
+		local runner = newRunner(human(1), human(2))
+		runner:step(0)
+		runner:forfeit(1, 1)
+		runner:forfeit(1, 1.1)
+		runner:step(1 + window + 0.01)
+		expect((runner:result())).toBe("b")
+	end)
+
 	it("the winner leaving after the moment has passed changes nothing", function()
 		local runner = newRunner(human(1), human(2))
 		runner:step(0)
 		runner:forfeit(1, 1)
-		expect(#runner:forfeit(2, 1 + ArenaConfig.simultaneousSeconds + 0.01)).toBe(0)
+		runner:forfeit(2, 1 + window + 0.01)
+		local events = runner:step(1 + window + 0.02)
+		expect(events[1].side).toBe("b")
 		expect((runner:result())).toBe("b")
 	end)
 

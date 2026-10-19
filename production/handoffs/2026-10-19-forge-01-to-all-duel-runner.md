@@ -46,3 +46,5 @@ Headless only. Local: `sim/DuelRunner` 28/0, selene 0 warnings. `mutations.py FL
 - **Snapshot event is shares only** (no raw `hp` / `stamina`, stamina share clamped).
 - **Facing** is normalised in the runner; a zero vector is not facing.
 - AI champion ids come from `ArenaFlow.AI_USER_ID`.
+- **A forfeit settles before it is final** (FORGE-07 L2): `forfeit` returns nothing; the duel stands still and `finished()` stays false for `Arena.simultaneousSeconds`, then the first `step` returns the single `ended` event (side b/a, or `draw` when the winner left within the window; both poses lost together = one `draw`). The service must call `Runner:forfeit` for leavers in the duel stage and end the flow when `finished()` turns true on a later `step` — one forfeit path.
+- **Pose budget** (L1): a champion also forfeits when the pose has been missing for `2 x poseGraceSeconds` in total (a respawn loop), not only in one run.

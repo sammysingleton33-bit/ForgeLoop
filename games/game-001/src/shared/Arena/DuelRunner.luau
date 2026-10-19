@@ -24,7 +24,10 @@
 		Runner:step(now) -> { RelayEvent }
 			advances the duel by the real time since the last step in fixed ticks (at most maxCatchup seconds at a
 			time); returns the events for Arena.Events. The first call starts the clock.
-		Runner:forfeit(userId, now) -> { RelayEvent }   the champion leaves: the other side wins; the other leaving within Arena.simultaneousSeconds makes it a draw
+		Runner:forfeit(userId, now) -> {}
+			the champion leaves: the other side wins, unless that side leaves within Arena.simultaneousSeconds of
+			it, which makes it a draw. Nothing is decided inside that window: the duel stands still, `finished()` stays
+			false and the one `ended` event (forfeit, side b/a/draw) comes from the first `step` after it.
 		Runner:finished() -> boolean       Runner:result() -> ("a" | "b" | "draw", reason)?
 		Runner:snapshot() -> the public picture (DuelModel.snapshot)
 		RelayEvent = { t, kind, side, data? }, shares only, nothing about the opponent that a spectator cannot see:
@@ -111,8 +114,9 @@ function DuelRunner.new(setup: any, config: any?): any
 	self._acc = 0
 	self._nextSnapshot = 0
 	self._started = false
-	self._forfeitAt = nil :: number?
+	self._pending_forfeit = nil :: { winner: string, at: number }?
 	self._poseLostFor = { a = 0, b = 0 }
+	self._poseLostTotal = { a = 0, b = 0 }
 	self._result = nil :: { side: string, reason: string }?
 	return self
 end
@@ -299,7 +303,7 @@ function DuelRunner:_tick(out: { any })
 end
 
 -- A human champion the pose provider cannot find (a reset, a respawn gap) pauses the duel instead of becoming a target
--- nobody can hit; after `poseGraceSeconds` without a pose that champion forfeits. True while the duel is paused.
+-- nobody can hit; after `poseGraceSeconds` without a pose (or twice that over the whole duel) that champion forfeits. True while the duel is paused.
 function DuelRunner:_poseLost(elapsed: number, now: number, out: { any }): boolean
 	if self._pose == nil then
 		return false
@@ -313,6 +317,7 @@ function DuelRunner:_poseLost(elapsed: number, now: number, out: { any }): boole
 		if self._pose(duellist.userId) == nil then
 			paused = true
 			self._poseLostFor[side] += elapsed
+			self._poseLostTotal[side] += elapsed
 		else
 			self._poseLostFor[side] = 0
 		end
@@ -321,10 +326,12 @@ function DuelRunner:_poseLost(elapsed: number, now: number, out: { any }): boole
 		return false
 	end
 	for _, side in { "a", "b" } do
-		if self._poseLostFor[side] >= self._cfg.poseGraceSeconds then
-			for _, event in self:forfeit(self._sides[side].userId, now) do
-				table.insert(out, event)
-			end
+		-- one run of missing poses, or the sum of many short ones (a respawn loop), spends the budget
+		if
+			self._poseLostFor[side] >= self._cfg.poseGraceSeconds
+			or self._poseLostTotal[side] >= 2 * self._cfg.poseGraceSeconds
+		then
+			self:forfeit(self._sides[side].userId, now)
 		end
 	end
 	return true
@@ -338,6 +345,19 @@ function DuelRunner:step(now: number): { any }
 	if not self._started then
 		self._started = true
 		self._last = now
+		return out
+	end
+	local pending = self._pending_forfeit
+	if pending then
+		-- the duel stands still while a forfeit settles; `finished()` and the one `ended` event wait out the window so
+		-- a leave by the other champion in the same moment can still make it a draw
+		if now - pending.at > self._cfg.simultaneousSeconds then
+			self._result = { side = pending.winner, reason = "forfeit" }
+			table.insert(
+				out,
+				{ t = self._model.t, kind = "ended", side = pending.winner, data = { reason = "forfeit" } }
+			)
+		end
 		return out
 	end
 	local elapsed = math.min(math.max(0, now - (self._last :: number)), self._cfg.maxCatchup)
@@ -357,28 +377,20 @@ end
 function DuelRunner:forfeit(userId: number, now: number): { any }
 	local out: { any } = {}
 	local side = if type(userId) == "number" then self:_sideOf(userId) else nil
-	if side == nil then
+	if side == nil or self._result ~= nil then
 		return out
 	end
-	if self._result ~= nil then
+	local pending = self._pending_forfeit
+	if pending then
 		-- the winner leaving within the same moment as the loser: nobody outlasted the other
-		local result = self._result
-		if
-			self._forfeitAt ~= nil
-			and result.side == side
-			and now - self._forfeitAt <= self._cfg.simultaneousSeconds
-		then
+		if pending.winner == side and now - pending.at <= self._cfg.simultaneousSeconds then
 			self._sides[side].gone = true
-			self._result = { side = "draw", reason = "forfeit" }
-			table.insert(out, { t = self._model.t, kind = "ended", side = "draw", data = { reason = "forfeit" } })
+			pending.winner = "draw"
 		end
 		return out
 	end
-	self._forfeitAt = now
-	local other = if side == "a" then "b" else "a"
 	self._sides[side].gone = true
-	self._result = { side = other, reason = "forfeit" }
-	table.insert(out, { t = self._model.t, kind = "ended", side = other, data = { reason = "forfeit" } })
+	self._pending_forfeit = { winner = if side == "a" then "b" else "a", at = now }
 	return out
 end
 
