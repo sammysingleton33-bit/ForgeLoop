@@ -28,7 +28,7 @@ GAME_PROJECTS=("game-001:games/game-001/default.project.json:games/game-001/test
 LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
-EXPECTED_STEPS=$((6 + 3 * ${#GAME_PROJECTS[@]})) # 6 framework steps + (specs, build, place check) per game
+EXPECTED_STEPS=$((7 + 3 * ${#GAME_PROJECTS[@]})) # 7 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 # spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
 # "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600); its 49 files
@@ -143,6 +143,18 @@ if command -v stylua >/dev/null 2>&1; then
 	fi
 else
 	record "stylua" "FAIL" "stylua not found"
+fi
+
+# ---------------------------------------------------------------- plugin-only property writes
+# Game code may not write Plugin-security properties (MeshPart.CollisionFidelity, MeshId, ...): Roblox refuses
+# the write in a live game, a pcall hides it, and Lune lets it through, so no spec can see it (2026-10-19).
+if command -v lune >/dev/null 2>&1; then
+	run_step "plugin props" "$LOG_DIR/plugin-props.log" with_timeout lune run roblox/scripts/check_plugin_props.luau
+	code=$?
+	summary="$(grep -E '^plugin props:' "$LOG_DIR/plugin-props.log" | tail -1 | sed -E 's/^plugin props: ((PASS|FAIL) — )?//')"
+	if [[ $code == 0 ]]; then record "plugin props" "PASS" "$summary"; else record "plugin props" "FAIL" "$summary"; fi
+else
+	record "plugin props" "FAIL" "lune not found"
 fi
 
 # ---------------------------------------------------------------- Rojo build
