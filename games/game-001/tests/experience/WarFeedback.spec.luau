@@ -393,6 +393,20 @@ describe("FeedbackWarController (FL-0130 part 2)", function()
 		expect(war:alert()).toBeNil()
 	end)
 
+	it("a second alert of the same kind replaces the first and stops its beacon (FORGE-07 #235 L1)", function()
+		local war = boot()
+		local first, second = Vector3.new(-100, 0, 0), Vector3.new(-40, 0, 20)
+		war:onMoment({ kind = "siege", kingdom = "crimson", on = true, position = first })
+		local before = #stopped
+		war:onMoment({ kind = "siege", kingdom = "crimson", on = true, position = second })
+		expect(#stopped).toBe(before + 1) -- the first beacon does not linger
+		expect(war:alert().position).toBe(second)
+		war:onMoment({ kind = "raid", kingdom = "crimson", on = true, position = first })
+		before = #stopped
+		war:onMoment({ kind = "raid", kingdom = "crimson", on = true, position = second })
+		expect(#stopped).toBe(before + 1)
+	end)
+
 	it("hotspots merge within HOTSPOT_STUDS and expire after HOTSPOT_SEC", function()
 		local war = boot()
 		war:onEntityEvent(1, "hit", {}, rig(Vector3.new(0, 0, 0)))

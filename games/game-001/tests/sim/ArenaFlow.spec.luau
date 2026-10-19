@@ -45,6 +45,30 @@ local function setup(rulers: any, leadership: any?, slots: number?)
 	}
 end
 
+describe("ArenaFlow: the stands", function()
+	it("shows each kingdom's living citizens when the arena starts, and nothing without a source", function()
+		local plain = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
+		expect(plain:state().a.citizens).toBeNil()
+		local counts = { crimson = 41, azure = 17.8 }
+		local withCount = setup({ crimson = { 1 }, azure = { 2 } })
+		withCount.citizens = function(kingdom: string)
+			return counts[kingdom]
+		end
+		local flow = ArenaFlow.new(withCount, 0)
+		expect(flow:state().a.citizens).toBe(41)
+		expect(flow:state().b.citizens).toBe(17) -- whole citizens
+		counts.crimson = 3
+		expect(flow:state().a.citizens).toBe(41) -- read once, when the arena starts
+		local odd = setup({ crimson = { 1 }, azure = { 2 } })
+		odd.citizens = function(kingdom: string): any
+			return if kingdom == "crimson" then -5 else 0 / 0
+		end
+		local clamped = ArenaFlow.new(odd, 0)
+		expect(clamped:state().a.citizens).toBe(0)
+		expect(clamped:state().b.citizens).toBeNil()
+	end)
+end)
+
 local function stageNames(flow: any, from: number, to: number, step: number): { string }
 	local out = {}
 	local last = ""

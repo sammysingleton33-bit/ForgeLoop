@@ -29,7 +29,7 @@
 	triggerNames: the perk names a `triggerFired` caption shows, by TriggerId (design §4 table; G12.1).
 	intro: the intro's camera pass over the stands (CrowdStageController, design §7 "Intro"): each stand
 	  shot at `standZoom` studs for `standSec`, then the ring at `ringZoom` for `ringSec`; the pass
-	  shrinks to fit a shorter intro (Pacing.arena.intro at most), never below `minShotSec` a shot.
+	  shrinks to fit a shorter intro (ArenaState.endsAt), never below `minShotSec` a shot.
 ]]
 
 return table.freeze({

@@ -91,4 +91,9 @@ M = [
  ("FL-0130", C2+"FeedbackWarController.luau", 'Def.ALERT_ORDER = table.freeze({ "siege", "raid" })', 'Def.ALERT_ORDER = table.freeze({ "raid", "siege" })', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'if alert ~= nil and (kind == nil or kind == name) then', 'if alert ~= nil then', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'if kind == "raid" or kind == "siege" then', 'if kind == "raid" then', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
+ # --- FORGE-07 #235 lows: a repeated alert stops the old beacon; a siege without a building id; keep position; sample
+ ("FL-0130", C2+"FeedbackWarController.luau", '\t\t\tself:_clearAlert(kind)\n\t\t\tself._alerts[kind] = {', '\t\t\tself._alerts[kind] = {', "WarFeedback", "a second alert of the same kind", "game"),
+ ("FL-0130", F+"Moments.luau", 'if details.buildingId == nil or ctx.buildingPosition == nil then', 'if ctx.buildingPosition == nil then', "KingdomFeedback", "a siege moment points at the besieged keep", "game"),
+ ("FL-0130", G+"src/server/Services/AnnouncerService.luau", 'local part = model.PrimaryPart\n', 'local part = nil\n', "KingdomFeedback", "a siege moment points at the besieged keep", "game"),
+ ("FL-0130", G+"src/server/Services/AnnouncerService.luau", 'byName = "Frostmere", position = Vector3.new(0, 0, 40) }', 'byName = "Frostmere" }', "KingdomFeedback", "every moment kind presents", "game"),
 ]

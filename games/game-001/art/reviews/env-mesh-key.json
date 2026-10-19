@@ -1,0 +1,116 @@
+{
+ "letters": {
+  "S2": "A",
+  "B": "B",
+  "S1": "C",
+  "S3": "D"
+ },
+ "sheets": {
+  "sheet_keep_L1": {
+   "letters_left_to_right": [
+    "D",
+    "A",
+    "C"
+   ],
+   "sources": {
+    "D": "S3",
+    "A": "S2",
+    "C": "S1"
+   }
+  },
+  "sheet_keep_L3": {
+   "letters_left_to_right": [
+    "D",
+    "A",
+    "C"
+   ],
+   "sources": {
+    "D": "S3",
+    "A": "S2",
+    "C": "S1"
+   }
+  },
+  "sheet_house": {
+   "letters_left_to_right": [
+    "A",
+    "C",
+    "D"
+   ],
+   "sources": {
+    "A": "S2",
+    "C": "S1",
+    "D": "S3"
+   }
+  },
+  "sheet_barracks": {
+   "letters_left_to_right": [
+    "A",
+    "D",
+    "C"
+   ],
+   "sources": {
+    "A": "S2",
+    "D": "S3",
+    "C": "S1"
+   }
+  },
+  "sheet_watchtower": {
+   "letters_left_to_right": [
+    "D",
+    "A",
+    "C"
+   ],
+   "sources": {
+    "D": "S3",
+    "A": "S2",
+    "C": "S1"
+   }
+  },
+  "sheet_nature": {
+   "letters_left_to_right": [
+    "D",
+    "A",
+    "C"
+   ],
+   "sources": {
+    "D": "S3",
+    "A": "S2",
+    "C": "S1"
+   }
+  },
+  "sheet_wheat": {
+   "letters_left_to_right": [
+    "C",
+    "B",
+    "D"
+   ],
+   "sources": {
+    "C": "S1",
+    "B": "B",
+    "D": "S3"
+   }
+  },
+  "sheet_stages": {
+   "letters_left_to_right": [
+    "D",
+    "A"
+   ],
+   "sources": {
+    "D": "S3",
+    "A": "S2"
+   }
+  },
+  "sheet_town": {
+   "letters_left_to_right": [
+    "A",
+    "D",
+    "C"
+   ],
+   "sources": {
+    "A": "S2",
+    "D": "S3",
+    "C": "S1"
+   }
+  }
+ }
+}

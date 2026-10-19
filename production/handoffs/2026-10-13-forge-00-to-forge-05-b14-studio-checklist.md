@@ -222,3 +222,15 @@ Run the B21 rows (O1–O4) and the B21.1 rows (P1–P6) on B21.2, importing **th
 | Q1 | Aerial view of the map centre, then walk to the arena gate | the venue stands at the neutral centre the whole match: stands, royal boxes, gate and duel ring; it reads as an arena from the air (screenshot) |
 | Q2 | After the import, the aerial view at 170 studs over a busy kingdom | each job reads as a differently coloured shape (farmer, merchant and soldier clearly; the others at least partly); note any you can't tell apart |
 | Q3 | Output through a full match | copy every red line |
+
+## B21.3 additions (main `5a74e42`, BuildInfo `5a74e4228072…`): tips, How to play, siege alert, drag, desktop
+Run the B21.2 rows (Q1–Q3) on B21.3, importing **this build's** `citizen_kit.fbx`, then the studio-runs B21.3 asks. Summary:
+
+| ID | Check | Pass |
+|---|---|---|
+| R1 | Kingdom menu → How to play, on desktop and in the 667×375 emulator | six short cards, Back and Next work, the phase lengths look right; the Crown Arena card describes B22 (not playable yet) |
+| R2 | Play into Conflict and get besieged (or `match.phase Conflict`, then let an AI attack) | a war or siege tip shows once, "Got it" closes it, and it never blocks play; a siege alert names your keep and the "Siege" rail button jumps there |
+| R3 | Move a building: press and hold, then drag to the screen edge | it follows your finger or mouse, the camera edge-pans, and the drop snaps to a slot |
+| R4 | Desktop at 1280×720 and 1920×1080 | the Kingdom drawer's Rivals tab no longer touches Close; nothing is clipped |
+| R5 | After the import: idle citizens and hat jobs at 40 and 170 studs | idle citizens wear a headband and pack; hat jobs show a hair tuft (screenshot) |
+| R6 | Output through a full match | copy every red line |

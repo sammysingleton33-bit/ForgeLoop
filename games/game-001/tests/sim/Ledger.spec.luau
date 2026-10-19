@@ -195,3 +195,39 @@ describe("Ledger.moments", function()
 		expect(run()).toEqual(run())
 	end)
 end)
+
+describe("Ledger.moments cap", function()
+	it("keeps the last moments of each kingdom: a busy kingdom does not push out a quiet one's", function()
+		local ledger = Ledger.new()
+		Ledger.record(ledger, "azure", 9, "fedRatioKept", 1, 1)
+		Ledger.record(ledger, "azure", 9, "starvation", 1, 2)
+		for i = 1, Ledger.MAX_PER_KINGDOM + 50 do
+			Ledger.record(ledger, "crimson", 7, if i % 2 == 0 then "fedRatioKept" else "starvation", 1, 10 + i)
+		end
+		expect(#Ledger.moments(ledger, "crimson", nil, 10000)).toBe(Ledger.MAX_PER_KINGDOM)
+		expect(#Ledger.moments(ledger, "azure", nil, 10000)).toBe(2)
+		local newest = Ledger.moments(ledger, "crimson", nil, 1)[1]
+		expect(newest.t).toBe(10 + Ledger.MAX_PER_KINGDOM + 50) -- the oldest went, not the newest
+		expect(Ledger.moments(ledger, "crimson", nil, 10000)[Ledger.MAX_PER_KINGDOM].t).toBe(10 + 51)
+		-- the levels are not touched by the trimming
+		expect(Ledger.level(ledger, "azure", 9, "conduct")).toBe(
+			50 + Support.acts.fedRatioKept.delta + Support.acts.starvation.delta
+		)
+	end)
+
+	it("hands out frozen moments", function()
+		local ledger = Ledger.new()
+		local moment = Ledger.record(ledger, "crimson", 7, "fedRatioKept", 1, 5)
+		assert(moment, "a moment")
+		expect(table.isfrozen(moment)).toBe(true)
+		expect(table.isfrozen(Ledger.moments(ledger, "crimson", 7, 5)[1])).toBe(true)
+	end)
+
+	it("knows which components belong to a ruler", function()
+		local ledger = Ledger.new()
+		expect(Ledger.isRulerComponent(ledger, "conduct")).toBe(true)
+		expect(Ledger.isRulerComponent(ledger, "valour")).toBe(true)
+		expect(Ledger.isRulerComponent(ledger, "reputation")).toBe(false)
+		expect(Ledger.isRulerComponent(ledger, "nonsense")).toBe(false)
+	end)
+end)

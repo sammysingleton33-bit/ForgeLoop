@@ -131,7 +131,7 @@ end)
 describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 	local env, registry, controller, requests, focused, selected, input, talk, userInput, playerGui, keysDown, camera
 
-	local function boot(withBubbles)
+	local function boot(withBubbles, hud)
 		local defs = {
 			{
 				name = "RulerCameraController",
@@ -166,6 +166,14 @@ describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 				end,
 			},
 		}
+		if hud ~= nil then
+			table.insert(defs, {
+				name = "KingdomHudController",
+				new = function()
+					return hud
+				end,
+			})
+		end
 		if withBubbles ~= false then
 			table.insert(defs, {
 				name = "CitizenBubbleController",
@@ -275,7 +283,39 @@ describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
 			expect(insets.top - radius >= (m.hud.y + m.hud.crest) * m.scale).toBe(true)
 			expect(size.Y - insets.bottom + radius <= size.Y - (m.place.bottom + m.place.height) * m.scale).toBe(true)
 			expect(corner.Y - radius >= m.hud.bottom * m.scale).toBe(true) -- below the top-left stack
+			-- with FORGE-03's support chip showing, the corner reaches below and right of the chip too
+			local ms = Layout.compute(size.X, size.Y, { support = true })
+			local _, withChip = IndicatorDef.insets(size, true)
+			local chip = ms.hud.support
+			expect(withChip.Y - radius >= (chip.y + chip.height) * ms.scale).toBe(true)
+			expect(withChip.X - radius >= (chip.x + chip.width) * ms.scale).toBe(true)
+			expect(withChip.Y > corner.Y).toBe(true)
 		end
+	end)
+
+	it("reads the HUD's support chip when placing badges (dark until Kingdom.Support is served)", function()
+		local hud = { state = { support = false } }
+		boot(true, hud)
+		expect(controller:_supportShown()).toBe(false)
+		hud.state.support = true
+		expect(controller:_supportShown()).toBe(true)
+		-- refresh places the badges with the HUD's chip state
+		local seen = {}
+		local original = IndicatorDef.insets
+		IndicatorDef.insets = function(size, support)
+			table.insert(seen, support)
+			return original(size, support)
+		end
+		local ok, err = pcall(function()
+			controller:refresh()
+			hud.state.support = false
+			controller:refresh()
+		end)
+		IndicatorDef.insets = original
+		assert(ok, err)
+		expect(seen).toEqual({ true, false })
+		boot(true, nil)
+		expect(controller:_supportShown()).toBe(false) -- no HUD: no chip
 	end)
 
 	it("requests close together share one badge with a count; at most MAX badges", function()
