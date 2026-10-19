@@ -14,4 +14,8 @@ M = [
  ("FL-0139", R, 'local ok, champion = pcall(duel.isChampion, duel)', 'local ok, champion = true, duel:isChampion()', "experience/Ruler.", "a champion check that errors", "game"),
  ("FL-0139", R, 'return self._config.walkSpeed -- no ring config', 'return nil -- no ring config', "experience/Ruler.", "without config Arena's ring", "game"),
  ("FL-0139", R, 'local ring = if type(self._arena) == "table" then self._arena.ring else nil', 'local ring = nil', "experience/Ruler.", "a champion walks at ring.walkSpeed", "game"),
+ # FORGE-07 #259 L2: a bad ring speed and a missing isChampion
+ ("FL-0139", R, 'if type(speed) == "number" and speed > 0 and speed ~= math.huge then', 'if type(speed) == "number" and speed ~= math.huge then', "experience/Ruler.", "a ring speed of 0, NaN or infinity", "game"),
+ ("FL-0139", R, 'if type(speed) == "number" and speed > 0 and speed ~= math.huge then', 'if type(speed) == "number" and speed > 0 then', "experience/Ruler.", "a ring speed of 0, NaN or infinity", "game"),
+ ("FL-0139", R, 'local ok, champion = pcall(duel.isChampion, duel)', 'local ok, champion = true, duel.isChampion(duel)', "experience/Ruler.", "a DuelController without isChampion", "game"),
 ]
