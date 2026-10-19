@@ -139,6 +139,24 @@ describe("LeadershipService.record", function()
 		expect(warnings).toBe(1)
 	end)
 
+	it("refuses an act for a ruler who is not seated in that kingdom, logging it once", function()
+		local w = boot()
+		expect(w.service:record("crimson", 99, "fedRatioKept", 1)).toBe(nil)
+		expect(w.service:record("crimson", 99, "starvation", 1)).toBe(nil)
+		expect(#w.service:getMoments("crimson", 99, 10)).toBe(0)
+		local other = w.service:record("azure", 1, "fedRatioKept", 1) -- seated in crimson, not in azure
+		expect(other).toBe(nil)
+		local warnings = 0
+		for _, entry in w.env.mock.logs do
+			if entry.level == "warn" and entry.message == "LeadershipService: act for a ruler who is not seated" then
+				warnings += 1
+			end
+		end
+		expect(warnings).toBe(2) -- one per kingdom and ruler
+		expect(w.service:record("crimson", 1, "fedRatioKept", 1) ~= nil).toBe(true) -- a seated ruler still records
+		expect(w.service:record("crimson", nil, "keepUpgraded", 1) ~= nil).toBe(true) -- the kingdom itself too
+	end)
+
 	it("starts a new round with an empty ledger", function()
 		local w = boot()
 		w.service:record("crimson", 1, "fedRatioKept", 1)
@@ -362,7 +380,14 @@ describe("LeadershipService acts from the simulation", function()
 		tick(w)
 		tick(w)
 		w.k.fedRatio = 0.9 -- recovered before the wait was up
-		for _ = 1, 4 do
+		tick(w)
+		-- a second short dip starts from nothing: 6 + 6 + 6 s apart is not one 18 s dip
+		w.k.fedRatio = 0.1
+		tick(w)
+		tick(w)
+		tick(w)
+		w.k.fedRatio = 0.9
+		for _ = 1, 3 do
 			tick(w)
 		end
 		w.k.fedRatio = Support.rules.starvation.below -- exactly at the bar is not starving
@@ -434,6 +459,26 @@ describe("LeadershipService acts from the simulation", function()
 	)
 
 	it("does not record overConscription for an army at or under the share", function()
+		-- an army sized to exactly the bar: the bar is set to this kingdom's own ratio, so it is "at", not "above"
+		local probe = boot(nil, FAST)
+		local citizens = #probe.k.citizenIds
+		local atBar = table.clone(FAST)
+		atBar.rules = table.clone(FAST.rules)
+		atBar.rules.conscription = table.clone(FAST.rules.conscription)
+		atBar.rules.conscription.soldierShareAbove = 3 / (3 + citizens)
+		local exact = boot(nil, atBar)
+		exact.k.unitIds = {}
+		for i = 1, 3 do
+			Military.spawnUnit(exact.sim, exact.k, "soldier", 0, i)
+		end
+		for _ = 1, 6 do
+			while #exact.k.unitIds < 3 do
+				Military.spawnUnit(exact.sim, exact.k, "soldier", 0, 9) -- hold the ratio as the world moves on
+			end
+			tick(exact)
+		end
+		expect(#exact.k.citizenIds).toBe(citizens)
+		expect(#actsOf(exact, "overConscription", 1)).toBe(0)
 		local w = boot(nil, FAST)
 		for _ = 1, 6 do
 			tick(w)

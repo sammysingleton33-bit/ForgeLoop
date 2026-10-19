@@ -128,6 +128,26 @@ describe("Ledger.record", function()
 	end)
 end)
 
+describe("Ledger with its own config", function()
+	it("classifies a component by the ledger's config, not the shipped one", function()
+		local config = {
+			components = { custom = { scope = "ruler" }, wide = { scope = "kingdom" } },
+			acts = {
+				x = { component = "custom", delta = 5, text = "t" },
+				y = { component = "wide", delta = 5, text = "u" },
+			},
+			valourCapPerMinute = 6,
+		}
+		local ledger = Ledger.new(config)
+		Ledger.record(ledger, "k", 1, "x", 1, 10)
+		Ledger.record(ledger, "k", nil, "y", 1, 11)
+		expect(Ledger.level(ledger, "k", 1, "custom")).toBe(55) -- a ruler level
+		expect(Ledger.offset(ledger, "k", "custom")).toBe(0)
+		expect(Ledger.offset(ledger, "k", "wide")).toBe(5) -- a kingdom offset
+		expect(Ledger.level(ledger, "k", nil, "wide")).toBe(50)
+	end)
+end)
+
 describe("Ledger.moments", function()
 	it("returns newest first, at most the limit, for that kingdom only", function()
 		local ledger = Ledger.new()

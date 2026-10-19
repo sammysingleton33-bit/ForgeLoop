@@ -6,8 +6,9 @@
 	themselves; the score is computed only by Arena/SupportModel from what this service samples.
 
 		LeadershipService:record(kingdom, userId?, act, magnitude?): LeadershipMoment?
-			act is an id of config Support `acts`; an unknown act, a capped valour gain or a kingdom that is not in the
-			match is refused (nil) and logged at most once per act. Fires `acted`.
+			act is an id of config Support `acts`; an unknown act, a capped valour gain, a kingdom that is not in the
+			match or a userId who is not a ruler seated there is refused (nil); an unknown act and an unseated ruler
+			are logged at most once. userId nil records for the kingdom itself. Fires `acted`.
 		LeadershipService:getMoments(kingdom, userId?, limit): { LeadershipMoment }      newest first (Arena/Ledger)
 		LeadershipService:samples(kingdom, userId?): { { t, components } }
 			one sample per `Support.sampling.intervalSeconds` of match time, oldest first, all seven components 0..100
@@ -88,6 +89,20 @@ function LeadershipService:record(kingdom: string, userId: number?, act: string,
 	end
 	local k = sim.kingdoms[kingdom]
 	if k == nil then
+		return nil
+	end
+	-- An act for a ruler who is not seated here would sit in a level no sample reads: refuse it where a producer's
+	-- mistake can be seen (logged once per kingdom and ruler).
+	if userId ~= nil and table.find(k.rulers, userId) == nil then
+		local key = `{kingdom}|{tostring(userId)}`
+		if not self._warned[key] then
+			self._warned[key] = true
+			self._env.log(
+				"warn",
+				"LeadershipService: act for a ruler who is not seated",
+				{ kingdom = kingdom, act = act }
+			)
+		end
 		return nil
 	end
 	local moment, reason = Ledger.record(self._ledger, kingdom, userId, act, magnitude, sim.time)
@@ -172,21 +187,20 @@ function LeadershipService:_watchKingdom(kingdom: string, k: any, now: number)
 	local rules = self.config.rules
 	local w = self._watch[kingdom]
 	if w == nil then
-		w = { t = now, lowFor = 0, starving = false, soldiersFor = 0, conscripting = false, phase = nil, phaseMin = 1 }
+		w = { lowSince = nil, starving = false, armedSince = nil, conscripting = false, phase = nil, phaseMin = 1 }
 		self._watch[kingdom] = w
 	end
-	local dt = now - w.t
-	w.t = now
 	local fed = k.fedRatio or 1
 
+	-- an episode runs from the first sample under the bar; it counts once it has lasted more than `seconds`
 	if fed < rules.starvation.below then
-		w.lowFor += dt
-		if not w.starving and w.lowFor > rules.starvation.seconds then
+		w.lowSince = w.lowSince or now
+		if not w.starving and now - w.lowSince > rules.starvation.seconds then
 			w.starving = true
 			self:_recordRulers(kingdom, k, "starvation")
 		end
 	else
-		w.lowFor = 0
+		w.lowSince = nil
 		w.starving = false
 	end
 
@@ -204,13 +218,13 @@ function LeadershipService:_watchKingdom(kingdom: string, k: any, now: number)
 	local soldiers, citizens = #k.unitIds, #k.citizenIds
 	local share = if soldiers + citizens > 0 then soldiers / (soldiers + citizens) else 0
 	if share > rules.conscription.soldierShareAbove then
-		w.soldiersFor += dt
-		if not w.conscripting and w.soldiersFor > rules.conscription.seconds then
+		w.armedSince = w.armedSince or now
+		if not w.conscripting and now - w.armedSince > rules.conscription.seconds then
 			w.conscripting = true
 			self:_recordRulers(kingdom, k, "overConscription")
 		end
 	else
-		w.soldiersFor = 0
+		w.armedSince = nil
 		w.conscripting = false
 	end
 end
