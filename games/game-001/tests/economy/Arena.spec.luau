@@ -146,6 +146,48 @@ describe("Crown Arena: loadout and perk picker (FL-0073)", function()
 		expect(world.arenaServer.choices[2].weapon).toBe("mace")
 	end)
 
+	it("a change made while Arena.Choose is in flight is sent when it answers, before Ready shows", function()
+		world = newWorld()
+		loadout(world, "adoring")
+		-- a 300 ms round trip for Arena.Choose (FORGE-07 M1's repro)
+		local remotes = world.hud.remotes
+		local invoke = remotes.invoke
+		remotes.invoke = function(self, name, ...)
+			if name == "Arena.Choose" then
+				world.env.wait(0.3)
+			end
+			return invoke(self, name, ...)
+		end
+		tap(find(modals(world), "Weapon_spear"))
+		tap(find(modals(world), "Ready"))
+		world:advance(0.05)
+		tap(find(modals(world), "Weapon_mace")) -- while the first call is in flight
+		world:advance(2)
+		local choices = world.arenaServer.choices
+		expect(#choices).toBe(2)
+		expect(choices[#choices].weapon).toBe("mace") -- the server holds what the screen shows
+		expect(texts(find(modals(world), "LoadoutPicker"))).toContain("Ready ✓")
+		remotes.invoke = invoke
+	end)
+
+	it("a new deadline for the same pair keeps the accepted choice (no reseed, no auto-send over it)", function()
+		world = newWorld()
+		loadout(world, "adoring", 6)
+		tap(find(modals(world), "Offer_heartyRations")) -- drop one
+		tap(find(modals(world), "Offer_crowdRally"))
+		tap(find(modals(world), "Ready"))
+		world:advance(0.2)
+		expect(#world.arenaServer.choices).toBe(1)
+		local st = world.arenaServer.state
+		world.arenaServer:setState({ stage = "loadout", endsAt = st.endsAt + 5, a = st.a, b = st.b })
+		world:advance(0.3)
+		local picker = find(modals(world), "LoadoutPicker")
+		expect(find(picker, "Offer_crowdRally"):GetAttribute("selected")).toBe(true)
+		expect(find(picker, "Offer_heartyRations"):GetAttribute("selected")).toBe(false)
+		world:advance(9)
+		expect(#world.arenaServer.choices).toBe(1) -- nothing sent over it
+	end)
+
 	it("nothing chosen: the current choice is sent before the time runs out", function()
 		world = newWorld()
 		loadout(world, "loyal", 4)
@@ -284,6 +326,21 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 		expect(find(left, "Stamina"):GetAttribute("share")).toBe(0.5)
 		expect(find(left, "Perk_reforge"):GetAttribute("state")).toBe("active")
 		expect(find(left, "Perk_crowdRally"):GetAttribute("state")).toBe("armed")
+		-- numbers alone are patched in place: the same bar instances, new fills (FORGE-07 M2)
+		local hp = find(find(modals(world), "Side_left"), "Hp")
+		world.arenaServer:events({
+			{
+				t = 13,
+				kind = "snapshot",
+				side = "a",
+				data = { a = { hpShare = 0.15, staminaShare = 0.4 }, b = { hpShare = 0.9, staminaShare = 0.8 } },
+			},
+		})
+		world:advance(0.3)
+		expect(find(find(modals(world), "Side_left"), "Hp")).toBe(hp)
+		expect(hp:GetAttribute("share")).toBe(0.15)
+		expect(math.abs(hp:FindFirstChild("Fill").Size.X.Scale - 0.15) < 1e-4).toBe(true)
+		expect(texts(hp)).toBe("15%")
 		world:advance(7)
 		expect(find(find(modals(world), "ArenaHud"), "Perk_reforge"):GetAttribute("state")).toBe("spent")
 		-- placement: the strip ends above the crowd captions band (y 0.72) and the duel buttons (bottom right)

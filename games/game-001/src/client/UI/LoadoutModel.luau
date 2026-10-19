@@ -4,8 +4,8 @@
 	G12.1 ArenaState / SupportView / TriggerOffer, G12.4 Arena.Choose). Pure; no instances. UI/LoadoutPicker draws it.
 
 		LoadoutModel.side(arena, userId) -> "a" | "b" | nil       which duellist the local player is
-		LoadoutModel.choice(duellist?, support?) -> Choice        the starting choice: the duellist's weapon and armour
-		                         when the server has them (else the defaults), and the first offers up to the slots
+		LoadoutModel.choice(duellist?, support?) -> Choice        the starting choice: the duellist's weapon, armour and
+		                         triggers when the server has them (else the defaults and the first offers up to the slots)
 		                         (so a timeout still takes perks; the player changes them)
 		LoadoutModel.toggle(choice, trigger, support) -> Choice   a perk in or out; a full set refuses a new one
 		LoadoutModel.view(arena, support, userId, choice, now, sent?) -> View?   nil unless the stage is "loadout"
@@ -63,11 +63,20 @@ end
 function LoadoutModel.choice(duellist: any?, support: any?): any
 	local d = if type(duellist) == "table" then duellist else {}
 	local triggers = {}
-	for _, o in offered(support) do
-		if #triggers >= slots(support) then
-			break
+	if type(d.triggers) == "table" and #d.triggers > 0 then
+		-- what the server already holds for this duellist (an earlier Arena.Choose): keep it (FORGE-07 L1)
+		for _, t in d.triggers do
+			if #triggers < slots(support) then
+				table.insert(triggers, t)
+			end
 		end
-		table.insert(triggers, o.trigger)
+	else
+		for _, o in offered(support) do
+			if #triggers >= slots(support) then
+				break
+			end
+			table.insert(triggers, o.trigger)
+		end
 	end
 	return {
 		weapon = if ArenaText.weapon(d.weapon).id ~= "" then d.weapon else ArenaText.WEAPONS[1].id,

@@ -13,7 +13,7 @@
 	ArenaHud.TOP (px from the top) and ArenaHud.height(metrics) give FORGE-04 the strip's bottom edge.
 
 	ArenaHud.new(parent) -> view
-	view:render(model, metrics)   view:destroy()   view.instance: Frame "ArenaHud"
+	view:render(model, metrics)   view:update(model) (the numbers only)   view:destroy()   view.instance: Frame "ArenaHud"
 ]]
 
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -293,6 +293,41 @@ function ArenaHud:render(model: any, m: any)
 	end
 	self.instance = strip
 	strip.Parent = self._parent
+end
+
+-- Same structure, new numbers (FORGE-07 M2): the HP and stamina fills, the HP text and the clock, in place.
+function ArenaHud:update(model: any)
+	local strip = self.instance
+	if strip == nil then
+		return
+	end
+	for _, pair in { { "Side_left", model.left }, { "Side_right", model.right } } do
+		local frame = strip:FindFirstChild(pair[1])
+		local s = pair[2]
+		if frame then
+			for _, bar in { { "Hp", s.hp, s.hpText }, { "Stamina", s.stamina, nil } } do
+				local b = frame:FindFirstChild(bar[1])
+				local fill = b and b:FindFirstChild("Fill")
+				if b and bar[2] ~= nil then
+					b:SetAttribute("share", bar[2])
+					if fill then
+						fill.Size = UDim2.fromScale(math.clamp(bar[2], 0, 1), 1)
+					end
+					local label = b:FindFirstChild("Label")
+					if label and bar[3] then
+						label.Text = bar[3]
+					end
+				end
+			end
+		end
+	end
+	local clock = strip:FindFirstChild("Clock")
+	local time = clock and clock:FindFirstChild("Time")
+	if clock and time then
+		time.Text = model.clock or ""
+		time.TextColor3 = Theme.color(if model.urgent then "gules" else "gold300")
+		clock:SetAttribute("urgent", model.urgent)
+	end
 end
 
 function ArenaHud:destroy()

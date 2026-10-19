@@ -212,6 +212,23 @@ describe("UI/ArenaHudModel (FL-0073)", function()
 		expect(ArenaHudModel.view(track, arena("intro"), LOOKUP, 1, 60)).toBeNil()
 	end)
 
+	it("a passive perk (Fine Wares) is active from the start: it never fires", function()
+		local st = arena("duel")
+		st.a.triggers = { "fineWares", "reforge" }
+		local view = ArenaHudModel.view(ArenaHudModel.new(), st, LOOKUP, 1, 0)
+		expect(view.left.triggers[1].state).toBe("active")
+		expect(view.left.triggers[2].state).toBe("armed")
+	end)
+
+	it("a new deadline keeps the triggers the server already holds", function()
+		local support = ArenaDoubles.support("adoring", 1)
+		local d = ArenaDoubles.duellist(1, "crimson", "adoring", { triggers = { "crowdRally" }, weapon = "mace" })
+		local c = LoadoutModel.choice(d, support)
+		expect(c.weapon).toBe("mace")
+		expect(#c.triggers).toBe(1)
+		expect(c.triggers[1]).toBe("crowdRally")
+	end)
+
 	it("ended and sudden death are carried; an unknown trigger source is ignored", function()
 		local st = arena("duel")
 		local track = ArenaHudModel.new()

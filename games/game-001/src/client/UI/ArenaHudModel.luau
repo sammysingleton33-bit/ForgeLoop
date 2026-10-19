@@ -34,6 +34,26 @@ local ArenaHudModel = {}
 ArenaHudModel.ACTIVE_SEC = 6 -- a fired trigger glows this long (the longest G12.3 trigger lasts 8 s)
 ArenaHudModel.LOW = 0.25
 ArenaHudModel.URGENT_SEC = 15
+ArenaHudModel.PASSIVE = table.freeze({ fineWares = true }) -- a whole-duel bonus: shown active from the start
+
+-- The part of a view that needs a rebuild when it changes (names, tiers, perk states, sudden death, whether stamina
+-- is known); the bars, the HP text and the clock are patched in place (UI/ArenaHud:update; FORGE-07 M2).
+function ArenaHudModel.structure(view: any): any
+	local function side(s: any): any
+		local out = table.clone(s)
+		out.hp, out.hpText, out.stamina = nil, nil, nil
+		out.staminaKnown = s.stamina ~= nil
+		return out
+	end
+	return {
+		left = side(view.left),
+		right = side(view.right),
+		suddenDeath = view.suddenDeath,
+		ended = view.ended,
+		hints = view.hints,
+		mine = view.mine,
+	}
+end
 
 local function fresh(): any
 	return { hp = 1, stamina = nil :: number?, fired = {} :: { [string]: number } }
@@ -109,8 +129,9 @@ local function sideView(track: any, id: string, d: any, lookup: any, now: number
 	for _, trig in if type(d.triggers) == "table" then d.triggers else {} do
 		local info = ArenaText.trigger(trig)
 		local firedAt = t.fired[trig]
-		local state = if firedAt == nil
-			then "armed"
+		local state = if ArenaHudModel.PASSIVE[trig]
+			then "active" -- always on, never fires (DuelModel applies it as a passive; FORGE-07 L3)
+			elseif firedAt == nil then "armed"
 			elseif now - firedAt < ArenaHudModel.ACTIVE_SEC then "active"
 			else "spent"
 		table.insert(triggers, { id = trig, name = info.name, icon = info.icon, state = state })

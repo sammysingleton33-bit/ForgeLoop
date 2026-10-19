@@ -29,6 +29,7 @@ local ArenaHud = require("../UI/ArenaHud")
 local ArenaHudModel = require("../UI/ArenaHudModel")
 local LoadoutModel = require("../UI/LoadoutModel")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Signature = require("../UI/Signature")
 
 local ArenaHudController = {}
 ArenaHudController.__index = ArenaHudController
@@ -290,12 +291,26 @@ function ArenaHudController:render(metrics: any?)
 	local model = ArenaHudModel.view(self.track, self.state, self:lookup(), self:userId(), now)
 	if model == nil then
 		self.view:destroy()
+		self._key = nil
 		return
 	end
 	if model.mine then
 		model.hints = self:_hints(now)
 	end
-	self.view:render(model, metrics or hud:metrics())
+	-- rebuild only when the structure changes; the bars and the clock move in place (5 Hz snapshots, 4 Hz poll)
+	local m = metrics or hud:metrics()
+	local key = Signature.of({
+		s = ArenaHudModel.structure(model),
+		breakpoint = m.breakpoint,
+		width = m.width,
+		height = m.height,
+	})
+	if key == self._key and self.view.instance ~= nil then
+		self.view:update(model)
+		return
+	end
+	self._key = key
+	self.view:render(model, m)
 end
 
 return Def

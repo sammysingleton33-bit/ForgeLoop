@@ -95,7 +95,7 @@ function LoadoutController:destroy()
 	end
 end
 
--- A new loadout stage (another pair, another deadline) starts a fresh choice.
+-- A new loadout stage (another pair) starts a fresh choice; a new deadline for the same pair keeps it (FORGE-07 L1).
 function LoadoutController:_roundKey(): string?
 	local st = self.arena.state
 	if type(st) ~= "table" or st.stage ~= "loadout" then
@@ -103,7 +103,7 @@ function LoadoutController:_roundKey(): string?
 	end
 	local a = if type(st.a) == "table" then st.a.userId else nil
 	local b = if type(st.b) == "table" then st.b.userId else nil
-	return `{a}|{b}|{st.endsAt}`
+	return `{a}|{b}`
 end
 
 function LoadoutController:_duellist(): any
@@ -149,8 +149,8 @@ function LoadoutController:model(): any
 end
 
 function LoadoutController:_changed()
-	if self.sent and self.sent.ok then
-		self:ready() -- already Ready: the new choice goes out at once
+	if self.sent and (self.sent.ok or self.sent.pending) then
+		self:ready() -- already Ready (or sending): the new choice goes out as soon as it can
 	else
 		self:render()
 	end
@@ -189,7 +189,11 @@ end
 
 function LoadoutController:ready()
 	self:_ensure()
-	if self.choice == nil or (self.sent and self.sent.pending) then
+	if self.choice == nil then
+		return
+	end
+	if self.sent and self.sent.pending then
+		self:render() -- one call in flight: its answer resends if the choice moved on (FORGE-07 M1)
 		return
 	end
 	if not self.hud:hasRemote(LoadoutController.CHOOSE) then
@@ -197,7 +201,8 @@ function LoadoutController:ready()
 	end
 	local round = self._round
 	local weapon, armour, triggers = LoadoutModel.args(self.choice)
-	self.sent = { pending = true }
+	local sentKey = Signature.of(self.choice)
+	self.sent = { pending = true, auto = self.sent ~= nil and self.sent.auto == true }
 	self:render()
 	self._env.spawn(function()
 		local called, ok, reason = pcall(function()
@@ -208,6 +213,13 @@ function LoadoutController:ready()
 		end
 		local auto = self.sent ~= nil and self.sent.auto == true -- an automatic send is tried once
 		self.sent = { ok = called and ok == true, reason = if called then reason else "invalid_args", auto = auto }
+		if Signature.of(self.choice) ~= sentKey then
+			-- the player changed it while this call was in flight: what the server holds is not what the screen
+			-- shows, so send the screen's (until they match), never "Ready" over a stale loadout (FORGE-07 M1)
+			self.sent = { pending = false, auto = auto }
+			self:ready()
+			return
+		end
 		self:render()
 	end)
 end
