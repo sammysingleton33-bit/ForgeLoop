@@ -13,6 +13,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local ArenaFlow = require("@game/ReplicatedStorage/Game/Arena/ArenaFlow")
+local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local ArenaRemotes = require("@game/ReplicatedStorage/Game/Arena/Remotes")
@@ -37,6 +38,7 @@ local function shortConfig(): any
 	config.introSeconds = 2
 	config.duelMaxSeconds = 30
 	config.crowningSeconds = 3
+	config.enabled = true
 	config.site = { x = 0, z = 0, separation = 3 }
 	return config
 end
@@ -153,8 +155,8 @@ local function boot(humans: { number }, parties: { [number]: string }?): any
 		end,
 	}
 	-- the placement hook: record, and stand the character there so the server's geometry sees it
-	world.arena.placeAt = function(userId: number, x: number, z: number, toX: number, toZ: number)
-		table.insert(world.placed, { userId = userId, x = x, z = z, toX = toX, toZ = toZ })
+	world.arena.placeAt = function(userId: number, x: number, z: number, toX: number, toZ: number, height: number?)
+		table.insert(world.placed, { userId = userId, x = x, z = z, toX = toX, toZ = toZ, height = height })
 		local player = env.Players:GetPlayerByUserId(userId)
 		local root = player.Character.HumanoidRootPart
 		local dx, dz = toX - x, toZ - z
@@ -245,6 +247,18 @@ describe("ArenaService: the host", function()
 		expect(living > 0).toBe(true)
 		expect(state.a.citizens).toBe(living)
 		expect(state.b.citizens > 0).toBe(true)
+	end)
+
+	it("ships switched off: the match goes to Crown Points at once, as with no host", function()
+		local world = boot({ 1, 2 })
+		world.arena.config = ArenaConfig -- the shipped config
+		expect(ArenaConfig.enabled).toBe(false)
+		local phases = watchPhases(world)
+		reachArena(world)
+		expect(world.arena:state().stage).toBe("done")
+		expect(world.arena._flow).toBeNil()
+		world.env.mock:advance(MatchConfig.tickSeconds * 3)
+		expect(phases.Results).toBe(true)
 	end)
 
 	it("publishes the state to everyone on every change, and answers Arena.GetState", function()
@@ -342,6 +356,35 @@ describe("ArenaService: the duel", function()
 		reachArena(world)
 		advanceTo(world, "duel")
 	end
+
+	it("without a site override the champions stand on the venue's marks, at their height", function()
+		local world = boot({ 1, 2 })
+		local config = shortConfig()
+		config.site = nil
+		world.arena.config = config
+		reachArena(world)
+		advanceTo(world, "intro")
+		local marks = WorldLayout.arena
+		expect(#world.placed).toBe(2)
+		local first, second = world.placed[1], world.placed[2]
+		expect(math.abs(first.x - marks.spawnA.Position.X) < 1e-6).toBe(true)
+		expect(math.abs(first.z - marks.spawnA.Position.Z) < 1e-6).toBe(true)
+		expect(math.abs(first.toX - marks.spawnB.Position.X) < 1e-6).toBe(true)
+		expect(math.abs(second.x - marks.spawnB.Position.X) < 1e-6).toBe(true)
+		expect(math.abs(second.toX - marks.spawnA.Position.X) < 1e-6).toBe(true)
+		expect(math.abs(first.height - marks.spawnA.Position.Y) < 1e-6).toBe(true)
+	end)
+
+	it("takes the champions' support into the duel: the tier's blessing reaches the model", function()
+		local world = boot({ 1, 2 })
+		world.support.forChampion = function(): any
+			return { score = 95, tier = "adoring", offers = {}, slots = 0, reasons = {} }
+		end
+		toDuel(world)
+		local model = world.arena._runner._model
+		expect(model.a.passive.damageReduction > 0).toBe(true)
+		expect(model.b.passive.damageReduction > 0).toBe(true)
+	end)
 
 	it("places both champions on the ring, facing each other, at the start of the intro", function()
 		local world = boot({ 1, 2 })

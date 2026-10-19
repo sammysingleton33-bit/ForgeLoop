@@ -19,8 +19,11 @@
 	perk from the offer, never from the client), every duellist's modifier list is checked against the caps by DuelRunner,
 	`inRange` and `facing` come from where the characters stand on the server, and a player who leaves forfeits.
 
-	Champions are placed on the duel ring at the start of the intro (config Arena `site`; WorldLayout.arena when FORGE-02
-	adds it). `site` and `poseOf` can be replaced by specs.
+	The host answers beginArena with false unless config Arena `enabled` is true (it ships false until the client, the ring
+	bounds and the Studio gate land), so the match goes to Crown Points exactly as with no host.
+	Champions are placed on the marks of WorldLayout.arena (position, height, facing) at the start of the intro; a config
+	`site` overrides it, and a fallback at the origin serves a world with neither. `site`, `placeAt` and `poseOf` can be
+	replaced by specs.
 
 	Clocks: every time handed to ArenaFlow and DuelRunner is `env.serverTimeNow()` seconds, because ArenaState.endsAt is
 	compared by clients against the same clock. DuelRunner only ever steps forward (it clamps a backward or long jump to
@@ -29,6 +32,7 @@
 ]]
 
 local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
+local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local ArenaFlow = require("@game/ReplicatedStorage/Game/Arena/ArenaFlow")
 local DuelRunner = require("@game/ReplicatedStorage/Game/Arena/DuelRunner")
@@ -36,6 +40,9 @@ local SupportModel = require("@game/ReplicatedStorage/Game/Arena/SupportModel")
 
 local ArenaService = {}
 ArenaService.__index = ArenaService
+
+-- Where the ring is when neither a config override nor WorldLayout.arena exists (a bare test world).
+local FALLBACK_SITE = { x = 0, z = 0, separation = 8 }
 
 local Def = {
 	name = "ArenaService",
@@ -94,7 +101,7 @@ function ArenaService:poseOf(userId: number): { x: number, z: number, fx: number
 end
 
 -- Puts a champion's character on the ring, facing the other.
-function ArenaService:_place(userId: number, x: number, z: number, towardX: number, towardZ: number)
+function ArenaService:_place(userId: number, x: number, z: number, towardX: number, towardZ: number, height: number?)
 	pcall(function()
 		local player = self._env.Players:GetPlayerByUserId(userId)
 		local character = player and player.Character
@@ -102,19 +109,32 @@ function ArenaService:_place(userId: number, x: number, z: number, towardX: numb
 		if root == nil then
 			return
 		end
-		local y = root.CFrame.Position.Y
+		local y = height or root.CFrame.Position.Y
 		character:PivotTo(CFrame.lookAt(Vector3.new(x, y, z), Vector3.new(towardX, y, towardZ)))
 	end)
 end
 
 function ArenaService:_placeChampions()
-	local site = self.config.site
 	local place = self.placeAt
-		or function(userId: number, x: number, z: number, toX: number, toZ: number)
-			self:_place(userId, x, z, toX, toZ)
+		or function(userId: number, x: number, z: number, toX: number, toZ: number, height: number?)
+			self:_place(userId, x, z, toX, toZ, height)
 		end
-	local half = site.separation / 2
 	local a, b = self._flow:champion("a"), self._flow:champion("b")
+	local site = self.config.site
+	local marks = if site == nil then WorldLayout.arena else nil
+	if marks then
+		-- the venue's own marks: position, height and facing (each faces the other)
+		local from, to = marks.spawnA.Position, marks.spawnB.Position
+		if a and not a.isAI then
+			place(a.userId, from.X, from.Z, to.X, to.Z, from.Y)
+		end
+		if b and not b.isAI then
+			place(b.userId, to.X, to.Z, from.X, from.Z, to.Y)
+		end
+		return
+	end
+	site = site or FALLBACK_SITE
+	local half = site.separation / 2
 	if a and not a.isAI then
 		place(a.userId, site.x - half, site.z, site.x + half, site.z)
 	end
@@ -348,6 +368,9 @@ function ArenaService:start()
 	self._running = true
 	self._match:registerArena({
 		beginArena = function(qualifiers: { string }): boolean
+			if not self.config.enabled then
+				return false -- not switched on yet: the match settles on Crown Points at once
+			end
 			return self:_begin(qualifiers)
 		end,
 		cancelArena = function(reason: string)
