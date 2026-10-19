@@ -61,22 +61,6 @@ local function fallsBack(rig: Model)
 	end
 end
 
-local function pieceOf(rig: Model, name: string): BasePart?
-	return rig:FindFirstChild(name) :: BasePart?
-end
-
-local function pieceIds(rig: Model): { string }
-	local out = {}
-	for _, p in MeshKit.parts(rig) do
-		local id = p:GetAttribute("KitPiece")
-		if id then
-			table.insert(out, id)
-		end
-	end
-	table.sort(out)
-	return out
-end
-
 -- the joint a built part rides: a base piece is named after its motor, a mirrored extra "<id>_<joint>"
 local function ridesOf(p: BasePart, def: any): string
 	local name = p.Name
@@ -89,10 +73,6 @@ end
 
 local function shadeOf(color: Color3, f: number): Color3
 	return Parts.shade(color, f)
-end
-
-local function sameColor(a: Color3, b: Color3): boolean
-	return a:ToHex() == b:ToHex()
 end
 
 -- ------------------------------------------------------------------ fallback
@@ -314,7 +294,7 @@ for _, ds in datasets do
 		it(
 			"is a Root plus MeshParts only, within the 16-piece budget, non-colliding, massless, only the Root anchored",
 			function()
-				each(function(rig, c)
+				each(function(rig)
 					local root = rig.PrimaryPart :: BasePart
 					expect(root.Name).toBe("Root")
 					expect(root.ClassName).toBe("Part")
@@ -331,7 +311,6 @@ for _, ds in datasets do
 							expect(p.Transparency).toBe(0)
 							expect(p.Material).toBe(Enum.Material.SmoothPlastic)
 							expect(p.CollisionFidelity).toBe(Enum.CollisionFidelity.Box)
-							expect(p.Locked).toBe(true)
 							expect(p.Reflectance).toBe(0)
 							for _, child in p:GetChildren() do
 								expect(child:IsA("Weld") or child:IsA("Motor6D")).toBe(true) -- nothing from the import rides along
@@ -365,7 +344,7 @@ for _, ds in datasets do
 				for _, j in Pose.JOINTS do
 					known[j] = true
 				end
-				each(function(rig, c)
+				each(function(rig)
 					local seen = {}
 					local torso = MeshKit.child(rig, "Torso")
 					for _, m in MeshKit.motors(rig) do
@@ -463,7 +442,7 @@ for _, ds in datasets do
 		it(
 			"places every MeshPart at the data's bbox centre and size, unrotated, joints where the data puts them",
 			function()
-				each(function(rig, c)
+				each(function(rig)
 					for _, p in MeshKit.parts(rig) do
 						local id = p:GetAttribute("KitPiece")
 						if p ~= rig.PrimaryPart then
@@ -498,7 +477,7 @@ for _, ds in datasets do
 		it(
 			"welds extras rigidly to their joint's piece: Hair/HairWeld, Accessory/AccessoryWeld, the rest PieceWeld",
 			function()
-				each(function(rig, c)
+				each(function(rig)
 					local moved: { [BasePart]: boolean } = {}
 					for _, m in MeshKit.motors(rig) do
 						moved[m.Part1 :: BasePart] = true
@@ -571,7 +550,7 @@ for _, ds in datasets do
 		)
 
 		it("stands on the ground: the lowest body point is at y = 0, the highest about a citizen tall", function()
-			each(function(rig, c)
+			each(function(rig)
 				local body = {}
 				for _, p in MeshKit.parts(rig) do
 					if

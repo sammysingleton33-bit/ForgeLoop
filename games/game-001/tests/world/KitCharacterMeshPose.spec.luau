@@ -268,16 +268,6 @@ describe("Kit.portrait on a mesh rig (G13.8, D-036)", function()
 	local data = MeshKit.fixture()
 	local assets = MeshKit.assets(data)
 
-	local function cases()
-		local out = {}
-		for _, c in MeshKit.cases() do
-			if c.kind == "citizen" and (c.look == nil or MeshKit.CITIZEN_JOBS[1]) then
-				table.insert(out, c)
-			end
-		end
-		return out
-	end
-
 	local function byName(model: Model): { [string]: BasePart }
 		local out = {}
 		for _, p in MeshKit.parts(model) do

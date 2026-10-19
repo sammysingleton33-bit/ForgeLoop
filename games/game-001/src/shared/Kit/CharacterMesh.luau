@@ -31,7 +31,9 @@
 		                digits for the token, in numeric order; the axis picks one
 		%kingdom%       crimson | azure | emerald | gold from the kingdom argument or the colour's hue (Parts.hueStyle), else neutral
 	Pieces: a base piece (no weld_to) is the rigid body of its joint and carries the Motor6D; every other piece is a Weld-ed
-	extra. `weld_to` is a joint name (its base piece in this assembly) or a piece id. `mirror` pieces stand for both sides
+	extra (pieces of slot hair, hat, boot, sleeve, cape, acc are always extras: without weld_to they weld to their joint's
+	base piece). `weld_to` is a joint name (its base piece in this assembly) or a piece id (a base piece that the assembly
+	swaps for another variant of its joint is followed to the variant). `mirror` pieces stand for both sides
 	of a Left/Right joint (the other side is the same mesh at mirrored x: it must be left-right symmetric). `empty` pieces
 	have no mesh (a bald variant). Placement: MeshPart.CFrame = CFrame.new(bbox_center); nothing relies on PivotOffset.
 
@@ -760,7 +762,6 @@ function CharacterMesh.build(
 		part.CanQuery = false
 		part.Massless = true
 		part.CastShadow = true
-		part.Locked = true
 		part.Transparency = 0
 		part.Reflectance = 0
 		part.Material = Enum.Material.SmoothPlastic
