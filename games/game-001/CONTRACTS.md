@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g11, 2026-10-18; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11a, 2026-10-19; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -447,7 +447,7 @@ DuelService.events: Signal<(duelId: string, DuelEvent)>
 
 ### G12.6 Client and asset hooks
 - FORGE-01 `src/client/Controllers/DuelController.luau`: `act(action: DuelAction)`, `getState(): ArenaState`, `events: Signal<(ArenaEvent)>`. It is the only sender of `Arena.Action`. FORGE-04's InputMode binds keys, touch and gamepad to `act`; FORGE-03's arena HUD and FORGE-04's crowd director read `events`.
-- FORGE-02 Kit additions: `Kit.arena(): Model` (two stands with `StandA`/`StandB` seat attachments, royal boxes, gate, duel ring), `Kit.crowdFigure(kingdomColor, role: KeyRole?): Model` (≤ 4 parts, client-only), `Kit.armour(armour: Armour, kingdomColor): { Accessory }`, `Kit.weapon(weapon: Weapon): Tool`. Layout gains `arena = { cframe: CFrame, duelRadius: number, spawnA: CFrame, spawnB: CFrame }` at the neutral map centre, visible during the whole match.
+- FORGE-02 Kit additions: `Kit.arena(): Model` (two stands with `StandA`/`StandB` seat attachments, royal boxes, gate, duel ring), `Kit.crowdFigure(kingdomColor, role: KeyRole?): Model` (≤ 4 parts, client-only; a figure with a `role`, i.e. one of the six key citizens, may have ≤ 8 parts for its readable prop, v0.4-g11a), `Kit.armour(armour: Armour, kingdomColor): { Accessory }`, `Kit.weapon(weapon: Weapon): Tool`. Layout gains `arena = { cframe: CFrame, duelRadius: number, spawnA: CFrame, spawnB: CFrame }` at the neutral map centre, visible during the whole match.
 - Crowd figures and reactions are client-only (FORGE-04). The server sends no per-figure data; the crowd is derived from `ArenaState`, `Arena.Events` and kingdom population.
 
 ## G13. Living kingdom (D-030; design `design/living-kingdom.md`; content `content/SPEC.md`)
@@ -647,6 +647,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11a (2026-10-19) FORGE-00: G12.6 key-citizen crowd figures (with a `role`) may have up to 8 parts, so the six key props (satchel, plume, staff, basket, scales, banner) read. That is 12 figures, about +48 parts in the arena-phase budget; other crowd figures stay at 4 (FORGE-02 FL-0072 D-019 finding). Additive.
 - v0.4-g11 (2026-10-18) FORGE-00: G3 full match by default (match mode, PvP, governors, elimination, the D-055 caps, `match.mode` debug), Crown Arena hooks (`registerArena`/`arenaEnded`, `Match.arena.maxSeconds`), `MatchEnded.reason`, the `Match.waiting` seat queue. G8 `Match.Spectate` and `Army.Recruit` `army_cap`. Additive. Rows from FORGE-01's FL-0125 handoff (#187).
 - v0.4-g10d (2026-10-16) FORGE-00: G9 `ConsequenceChanged` wording: a rebellion fires only its start; a rule cut short by elimination or a world reset fires no end (FORGE-07 L1/L2 on #173). Wording only.
 - v0.4-g10c (2026-10-15) FORGE-00: G13.3 a `strike` with occupation `riot` marks a riot (rioters are not strikers); burning building models carry `Burning`. G9 gains `ConsequenceChanged` (start and end of strike, shortage, riot, rebellion). Additive. Owed at #125's merge (D-052 (5)).
