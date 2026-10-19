@@ -848,11 +848,7 @@ Props._standIn = standIn
 function Props.prop(assetId: string): Model
 	local found = EnvMesh.find(assetSource, assetId)
 	if found and found:IsA("Model") then
-		local clone = found:Clone()
-		if not EnvMesh.has(assetId) then
-			return clone
-		end
-		local ready = EnvMesh.accept(assetId, clone)
+		local ready = EnvMesh.accept(assetId, found:Clone()) -- the clone itself for an id the data does not list
 		if ready then
 			return ready
 		end
