@@ -7,6 +7,7 @@
 
 		DuelModel.new(config?, a: DuellistSetup, b: DuellistSetup, seed: number): DuelState
 		DuelModel.step(state, inputs: { a: DuelInput?, b: DuelInput? }, dt: number): { DuelEvent }
+			dt must be a finite number > 0; anything else steps nothing, and dt is clamped to 1 s
 		DuelModel.view(state, side: "a" | "b") -> { t, hp, stamina, canAct, blocking, opponentHp }
 		DuelModel.snapshot(state) -> the public picture of the duel for the HUD and the crowd (no hidden state)
 		DuelModel.CONFIG, DuelModel.WEAPONS, DuelModel.ARMOUR     config Duel (rules / weapons / armour)
@@ -36,6 +37,8 @@ export type DuelInput = Types.DuelInput
 export type DuelEvent = Types.DuelEvent
 
 local DuelModel = {}
+
+local MAX_STEP = 1 -- seconds; the service steps at 1/30 s or so
 
 DuelModel.CONFIG = Duel.rules
 DuelModel.WEAPONS = Duel.weapons
@@ -354,6 +357,12 @@ function DuelModel.step(state: any, inputs: { a: DuelInput?, b: DuelInput? }, dt
 	if state.ended then
 		return events
 	end
+	-- A bad step (NaN, infinite, zero or negative) lets no time pass: a NaN clock would never reach a cap, a negative one
+	-- would rewind. A long step is clamped, so one stall cannot end the duel in a single call.
+	if not (dt > 0 and dt < math.huge) then
+		return events
+	end
+	dt = math.min(dt, MAX_STEP)
 	state.t += dt
 	local a, b = state.a, state.b
 	applyInput(state, a, inputs.a, events)
