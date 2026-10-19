@@ -1,4 +1,4 @@
-"""FL-0071D mutation rows (the client DuelController: Controllers/DuelController, spec experience/DuelController).
+"""FL-0071D mutation rows (the client DuelController: Controllers/DuelController, spec sim/DuelController).
 Run by ../mutations.py (`mutations.py FL-0071D`). One row: (task, file, old, new, spec filter, expected failing test).
 G is games/game-001/.
 """
