@@ -429,5 +429,17 @@ Desktop window and the phone emulator (667 × 375); screenshot each card on both
    steps back a card, then closes. Gamepad D-pad left/right also work.
 6. Phone emulator: the panel sits below the Roblox top bar; Back and Next are thumb-sized.
 
+## U29 — desktop window sizes (FL-0138; headless renders + desktop-audit.py are an approximation, this decides)
+Studio's Device emulator (custom sizes) or a resizable Play window, one client, match in Conflict with the diplomacy
+remote (Rivals tab) and the Arena debug preset for step 3.
+1. 1280 × 720 (the tablet breakpoint): HUD stack top left, rail on the right edge, construction chip at the bottom
+   centre; nothing overlaps. Open Build, Kingdom (each tab), Reputation, a citizen card and a conversation: each fits
+   between the HUD stack and the bottom edge, left of the rail.
+2. 1280 × 720 and 1024 × 768, Kingdom → Rivals: no "Kingdom" title in the drawer header; the four labelled tabs keep a
+   clear gap before the close button. Before the Rivals tab exists (no diplomacy remote) the title shows.
+3. 1920 × 1080 and 2560 × 1440: same checks as step 1; at 2560 × 1440 the UI is 1.5× (not tiny), the drawers keep the
+   "Kingdom" title with four tabs, and Results / Your reign, Spectate, the loadout picker, intro card and duel strip
+   sit centred (top-centre for the duel strip), not stuck in a corner.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
