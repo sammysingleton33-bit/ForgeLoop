@@ -631,7 +631,7 @@ Rules for every tip:
 - A tip uses the onboarding card. Its button reads "Got it", and it has no step counter.
 - A tip hides by itself after 12 s, or sooner when its situation ends (the siege lifted, the raid over, peace made, you declared war, you recruited).
 - A tip never freezes the camera, blocks taps or opens a panel.
-- While the tutorial card shows, a tip waits behind it.
+- A tip shows over an unfinished tutorial step, and the tutorial's card comes back when the tip ends.
 
 Steps
 1. Play Solo in a full match. Filter Output for `onboarding`. Speed up the phases, or play to Conflict. When Conflict starts, "Conflict: war is open" shows and hides by itself about 12 s later. You can pan, zoom and tap while it shows. Screenshot **E19-1**.

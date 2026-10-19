@@ -269,25 +269,31 @@ describe("OnboardingController (client)", function()
 		return gui:FindFirstChild("ForgeOnboarding"):FindFirstChild("Card")
 	end
 
-	it("a tip waits while the tutorial card shows, then shows with Got it and no counter (FL-0137)", function()
-		controller:apply(state())
-		controller:apply(tipState("tip_siege"))
-		expect(card():FindFirstChild("Title").Text).toBe("Walk to the landmark") -- the tutorial wins
-		expect(controller.state.flowId).toBe("first_session") -- the tip never replaces the tutorial's state
-		expect(controller.tip).toBeNil()
-		controller:apply(state({ done = true, hint = nil }))
-		expect(card():FindFirstChild("Title").Text).toBe("tip tip_siege")
-		expect(card():FindFirstChild("Skip").Text).toBe("Got it")
-		expect(card():FindFirstChild("Counter").Text).toBe("")
-		expect(controller.tip.flowId).toBe("tip_siege")
-		expect(gui:FindFirstChild("ForgeOnboarding").Enabled).toBe(true)
-		expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{OnboardingDef.CARD_RESERVE}`)
-		expect(controller:showIdleHint("Expansion")).toBe(false) -- the tip is already guiding
-		-- the tutorial is back (a new snapshot): its own label and counter return
-		controller:apply(state())
-		expect(card():FindFirstChild("Skip").Text).toBe("Skip tutorial")
-		expect(card():FindFirstChild("Counter").Text).toBe("2/9")
-	end)
+	it(
+		"a tip shows over an unfinished tutorial step with Got it and no counter; the tutorial comes back (FL-0137)",
+		function()
+			controller:apply(state())
+			controller:apply(tipState("tip_siege"))
+			expect(card():FindFirstChild("Title").Text).toBe("tip tip_siege") -- the siege matters more
+			expect(card():FindFirstChild("Skip").Text).toBe("Got it")
+			expect(card():FindFirstChild("Counter").Text).toBe("")
+			expect(controller.state.flowId).toBe("first_session") -- the tip never replaces the tutorial's state
+			expect(controller.tip.flowId).toBe("tip_siege")
+			expect(gui:FindFirstChild("ForgeOnboarding").Enabled).toBe(true)
+			expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{OnboardingDef.CARD_RESERVE}`)
+			-- the tip ends: the tutorial's own card, label and counter return
+			controller:apply(tipState("tip_siege", { done = true, completed = 1, step = nil, hint = nil }))
+			expect(card():FindFirstChild("Title").Text).toBe("Walk to the landmark")
+			expect(card():FindFirstChild("Skip").Text).toBe("Skip tutorial")
+			expect(card():FindFirstChild("Counter").Text).toBe("2/9")
+			expect(controller.tip).toBeNil()
+			-- after the tutorial, a tip still shows, and no idle hint talks over it
+			controller:apply(state({ done = true, hint = nil }))
+			controller:apply(tipState("tip_raid"))
+			expect(card():FindFirstChild("Title").Text).toBe("tip tip_raid")
+			expect(controller:showIdleHint("Expansion")).toBe(false) -- the tip is already guiding
+		end
+	)
 
 	it(
 		"the newest tip shows; when it ends the older one comes back; a finished tip never celebrates (FL-0137)",
@@ -319,15 +325,18 @@ describe("OnboardingController (client)", function()
 			expect(#env.mock.remotes:sent(remotes.skip, "toServer")).toBe(1)
 			controller:skip() -- no tutorial: Skip sends nothing either
 			expect(#env.mock.remotes:sent(remotes.skip, "toServer")).toBe(1)
-			-- the card's button: Got it for a tip, Skip tutorial while the tutorial shows
+			-- the card's button: Got it while a tip shows (even over the tutorial), else Skip tutorial
 			controller:apply(tipState("tip_siege"))
 			controller:_onButton()
 			expect(env.mock.remotes:sent(remotes.skip, "toServer")[2].args[1]).toBe("tip_siege")
-			controller:apply(tipState("tip_ram"))
 			controller:apply(state())
+			controller:apply(tipState("tip_ram"))
 			controller:_onButton()
-			expect(env.mock.remotes:sent(remotes.skip, "toServer")[3].args[1]).toBe("first_session")
-			expect(controller.tip.flowId).toBe("tip_ram") -- skipping the tutorial leaves the tip to show
+			expect(env.mock.remotes:sent(remotes.skip, "toServer")[3].args[1]).toBe("tip_ram")
+			expect(controller.state.done).toBe(false) -- Got it never skips the tutorial
+			expect(card():FindFirstChild("Title").Text).toBe("Walk to the landmark")
+			controller:_onButton()
+			expect(env.mock.remotes:sent(remotes.skip, "toServer")[4].args[1]).toBe("first_session")
 		end
 	)
 

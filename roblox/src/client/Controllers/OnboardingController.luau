@@ -13,10 +13,12 @@
 		OnboardingController.changed: Signal (state)     -- tutorial snapshots only
 	When a tutorial snapshot turns done (not skipped), NotificationController:celebrate("onboardingComplete").
 	Tips (snapshot.tip, FL-0137): contextual one-step flows (a siege on my keep, a war declared on me).
-	Each tip flow keeps its own snapshot, so a tip never replaces the tutorial's state. The tutorial card
-	wins; otherwise the newest active tip shows on the same card, with "Got it" (dismissTip: skips that
-	tip flow, so it never shows again) instead of "Skip tutorial", and no step counter. A tip never
-	celebrates, and none shows while the showHints setting is off (the server hides it by itself).
+	Each tip flow keeps its own snapshot, so a tip never replaces the tutorial's state. The newest active
+	tip shows on the card for its few seconds, even over an unfinished tutorial step (a siege matters
+	more than "capture the tower", and a ruler stuck at a step must still see it); the tutorial's card
+	comes back when the tip ends. A tip has "Got it" (dismissTip: skips that tip flow, so it never shows
+	again) instead of "Skip tutorial", and no step counter. A tip never celebrates, and none shows while
+	the showHints setting is off (the server hides it by itself).
 
 	View (thin, built with Instances until FORGE-03's Panel/Button land; then only _render changes):
 	- one small card at the top centre (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9):
@@ -160,9 +162,9 @@ function OnboardingController:_tutorialShowing(): boolean
 	return state ~= nil and not state.done and state.hint ~= nil
 end
 
--- The tip the card should show: the newest active one, unless the tutorial shows or hints are off.
+-- The tip the card should show: the newest active one, unless hints are off. It shows over the tutorial.
 function OnboardingController:_shownTip(): any
-	if self:_tutorialShowing() or self._settings:get("showHints") == false then
+	if self._settings:get("showHints") == false then
 		return nil
 	end
 	local id = self._tipOrder[#self._tipOrder]
@@ -181,12 +183,12 @@ function OnboardingController:dismissTip()
 	self:_applyTip(hidden)
 end
 
--- The card's one button: "Skip tutorial" while the tutorial shows, else "Got it" for the tip.
+-- The card's one button: "Got it" while a tip shows, else "Skip tutorial".
 function OnboardingController:_onButton()
-	if self:_tutorialShowing() then
-		self:skip()
-	else
+	if self.tip ~= nil then
 		self:dismissTip()
+	else
+		self:skip()
 	end
 end
 
@@ -420,10 +422,10 @@ function OnboardingController:_mark(target: any, escalated: boolean)
 end
 
 function OnboardingController:_render()
-	local tutorial = self:_tutorialShowing()
 	local tip = self:_shownTip()
 	self.tip = tip
-	local state = if tutorial then self.state else tip
+	local tutorial = tip == nil and self:_tutorialShowing()
+	local state = if tip then tip elseif tutorial then self.state else nil
 	self:_clearMarks()
 	if state == nil then
 		if self._view then
