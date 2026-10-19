@@ -62,6 +62,7 @@ local BODY =
 	{ Walls = true, Hall = true, Donjon = true, Shaft = true, Curtain = true, GateTower = true, BarnWalls = true }
 local MISSING =
 	{ Merlon = true, RoofTiles = true, Thatch = true, ThatchLayer = true, LeanToRoof = true, Palisade = true }
+Damage.MISSING = MISSING -- the part names that can go missing (tests read it)
 local CORNER = {
 	Merlon = true,
 	RoofTiles = true,
@@ -115,6 +116,26 @@ local function isDamage(inst: Instance): boolean
 	return inst:GetAttribute(Damage.PART_ATTRIBUTE) == true
 end
 
+-- The model's own parts (not the Root, not the damage parts) in an order that depends only on what they are, never on
+-- the order they were parented in: a repair puts removed parts back at the end of the children, and the same Damage must
+-- then pick the same parts as on a fresh model.
+local function ownParts(model: Model): { BasePart }
+	local list: { BasePart } = {}
+	local keys: { [BasePart]: string } = {}
+	for _, p in model:GetChildren() do
+		if p:IsA("BasePart") and p ~= model.PrimaryPart and not isDamage(p) then
+			local part = p :: BasePart
+			local at, s = part.CFrame.Position, part.Size
+			keys[part] = string.format("%s|%.2f,%.2f,%.2f|%.2f,%.2f,%.2f", part.Name, at.X, at.Y, at.Z, s.X, s.Y, s.Z)
+			table.insert(list, part)
+		end
+	end
+	table.sort(list, function(a, b)
+		return keys[a] < keys[b]
+	end)
+	return list
+end
+
 -- Deterministic pseudo-random numbers in [0, 1) from a string seed (a Park-Miller generator, exact in doubles).
 local function rng(seed: string)
 	local h = 7
@@ -150,11 +171,10 @@ local function isBlock(p: BasePart): boolean
 end
 
 -- the wall the cracks go on: the biggest named wall block, else the biggest tall block that is not the ground
-local function bodyOf(model: Model): BasePart?
+local function bodyOf(model: Model, kids: { BasePart }): BasePart?
 	local best, bestVol, fallback, fallbackVol = nil, 0, nil, 0
-	for _, p in model:GetChildren() do
-		if p:IsA("BasePart") and p ~= model.PrimaryPart and isBlock(p :: BasePart) and not isDamage(p) then
-			local part = p :: BasePart
+	for _, part in kids do
+		if part.Parent == model and isBlock(part) then
 			local vol = part.Size.X * part.Size.Y * part.Size.Z
 			if BODY[part.Name] and vol > bestVol then
 				best, bestVol = part, vol
@@ -217,16 +237,17 @@ function Damage.apply(model: Model)
 	local width, depth, height = hi.X - lo.X, hi.Z - lo.Z, hi.Y - lo.Y
 
 	-- 1. parts that go missing (a deterministic shuffle: state 2 keeps what state 1 took)
+	local kids = ownParts(model)
 	local pool: { BasePart } = {}
 	local topPart, topY = nil, -math.huge
-	for _, p in model:GetChildren() do
-		if p:IsA("BasePart") and p ~= root then
-			if p.CFrame.Position.Y + p.Size.Y / 2 > topY then
-				topPart, topY = p :: BasePart, p.CFrame.Position.Y + p.Size.Y / 2
-			end
-			if MISSING[p.Name] then
-				table.insert(pool, p :: BasePart)
-			end
+	for _, p in kids do
+		if p.CFrame.Position.Y + p.Size.Y / 2 > topY then
+			topPart, topY = p, p.CFrame.Position.Y + p.Size.Y / 2
+		end
+	end
+	for _, p in kids do
+		if MISSING[p.Name] and p ~= topPart then -- the highest part stays: the Burning look reads the model's top
+			table.insert(pool, p)
 		end
 	end
 	for i = #pool, 2, -1 do
@@ -249,14 +270,14 @@ function Damage.apply(model: Model)
 	local cornerX, cornerZ, cornerY = hi.X - 0.15 * width, lo.Z + 0.15 * depth, lo.Y + 0.55 * height
 	if state >= 3 then
 		local fallen = 0
-		for _, p in model:GetChildren() do
+		for _, p in kids do
 			if fallen >= 14 then
 				break
 			end
-			if p:IsA("BasePart") and CORNER[p.Name] and p ~= topPart then
+			if CORNER[p.Name] and p ~= topPart and p.Parent == model then
 				local c = p.CFrame.Position
 				if c.X >= hi.X - 0.3 * width and c.Z <= lo.Z + 0.3 * depth and c.Y >= lo.Y + 0.5 * height then
-					take(p :: BasePart)
+					take(p)
 					fallen += 1
 				end
 			end
@@ -267,7 +288,7 @@ function Damage.apply(model: Model)
 	end
 
 	-- 3. cracks: thin dark wedges on the biggest wall, the front face first, then the right face
-	local body = bodyOf(model)
+	local body = bodyOf(model, kids)
 	if body then
 		local cf, size = body.CFrame, body.Size
 		for i = 1, Damage.CRACKS[state] do
@@ -292,6 +313,7 @@ function Damage.apply(model: Model)
 			make("crack", crack)
 		end
 		-- 4. rubble at the corner's foot, in the wall's own colour
+		local bodyTint = body:GetAttribute("KitTint")
 		for i = 1, Damage.RUBBLE[state] do
 			local s = Vector3.new(2.6 - i * 0.5, 1.8 - i * 0.3, 2.2 - i * 0.4)
 			local rubble = Parts.block(
@@ -301,7 +323,8 @@ function Damage.apply(model: Model)
 				CFrame.new(cornerX - (i - 1) * 1.9, s.Y / 2 - 0.2, lo.Z - 0.2 - (i % 2) * 0.9)
 					* CFrame.Angles(0, rand() * math.pi, 0),
 				Parts.shade(body.Color, 0.78),
-				M.Slate
+				M.Slate,
+				if type(bodyTint) == "number" then bodyTint * 0.78 else nil -- a tinted wall's rubble recolours with it
 			)
 			make("rubble", rubble)
 		end

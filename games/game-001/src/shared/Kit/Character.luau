@@ -443,9 +443,11 @@ local ARCHER_OUTFIT: Outfit = { name = "jerkin", torso = LEATHER, sleeves = 0.8,
 -- Unit kinds of the part-built soldier (FL-0128). The kind rides in Kit.character's `job`; any job but "knight" and
 -- "archer" builds today's spear soldier.
 local EMBLEM_IVORY_FIXED = Color3.fromRGB(240, 232, 212) -- the emblems' ivory (Pieces.EMBLEM_IVORY)
-local SHIELD_SIZE = Vector3.new(1.5, 2.3, 0.22)
-local SHIELD_OFFSET = CFrame.new(-0.62, -0.05, -0.52) * CFrame.Angles(0, math.rad(32), 0) -- in the LeftArm frame: outside the
--- arm, turned 32 degrees out of the front, so it clears the torso and the head through the swing and the cheer
+local SHIELD_SIZE = Vector3.new(1.3, 2.0, 0.22)
+-- In the LeftArm frame: held out in front of the forearm (a gap of 0.28 to the arm, so that the cheer, which folds the arm up
+-- and out about the shoulder, never sweeps it through the torso), outside the arm and below the shoulder, facing forward.
+-- tests/world/KitUnitKinds.spec sweeps every Pose action for its clearance to the head, torso, legs and the other arm.
+local SHIELD_OFFSET = CFrame.new(-0.3, -0.5, -0.8)
 local SHIELD: PartSpec = {
 	name = "shield",
 	class = "Part",

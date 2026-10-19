@@ -1470,6 +1470,8 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 		{ "citizen", "builder", nil },
 		{ "citizen", "hauler", nil },
 		{ "soldier", "soldier", "crimson" },
+		{ "soldier", "knight", "crimson" }, -- FL-0128 unit kinds: the sword, and the bow with its string
+		{ "soldier", "archer", "crimson" },
 		{ "governor", "idle", "crimson" },
 	}
 	local TOOL_HEAD_EXACT = 0.1 -- studs of free space between every tool part and every head part, exact shapes

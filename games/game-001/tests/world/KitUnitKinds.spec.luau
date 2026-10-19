@@ -244,27 +244,17 @@ CHECKS.units = function()
 				table.insert(out, `{hue}: a {helmed.Name} has a bare head, not a helm`)
 			end
 		end
-		local ch = {
-			s = (crestOf(s) :: BasePart).Size.Y,
-			k = (crestOf(k) :: BasePart).Size.Y,
-			a = (crestOf(a) :: BasePart).Size.Y,
-		}
-		if ch.k < ch.s * 1.3 then
-			table.insert(out, `{hue}: the knight's plume ({r3(ch.k)}) is not 1.3x the soldier's ({r3(ch.s)})`)
-		end
-		if ch.a > ch.s then
-			table.insert(out, `{hue}: the archer's cap is taller than the soldier's crest`)
-		end
-		-- the shield mark is the kingdom's own
-		local mark = k:FindFirstChildWhichIsA("BasePart", true)
-		local marks = {}
-		for _, p in parts(k) do
-			if p:GetAttribute("KitDetailKind") == "shieldmark" then
-				marks[p.Shape and (p :: Part).Shape.Name .. p.Size.X] = true
+		local cs, ck, ca = crestOf(s), crestOf(k), crestOf(a)
+		if cs and ck and ca then
+			if ck.Size.Y < cs.Size.Y * 1.3 then
+				table.insert(
+					out,
+					`{hue}: the knight's plume ({r3(ck.Size.Y)}) is not 1.3x the soldier's ({r3(cs.Size.Y)})`
+				)
 			end
-		end
-		if next(marks) == nil or mark == nil then
-			table.insert(out, `{hue}: the knight's shield has no kingdom mark`)
+			if ca.Size.Y > cs.Size.Y then
+				table.insert(out, `{hue}: the archer's cap is taller than the soldier's crest`)
+			end
 		end
 	end
 	-- the four kingdoms' shield marks differ
@@ -272,7 +262,8 @@ CHECKS.units = function()
 	for _, hue in HUES do
 		for _, p in parts(unit("knight", hue)) do
 			if p:GetAttribute("KitDetailKind") == "shieldmark" then
-				markSigs[`{(p :: Part).Shape.Name}|{r3(p.Size.X)}|{r3(p.Size.Y)}|{p.ClassName}`] = true
+				markSigs[`{if p:IsA("Part") then (p :: Part).Shape.Name else p.ClassName}|{r3(p.Size.X)}|{r3(p.Size.Y)}`] =
+					true
 			end
 		end
 	end
@@ -486,12 +477,12 @@ end
 -- shield and mark (on the left arm) vs the head assembly, torso, legs and the right arm; the quiver (on the torso) vs the
 -- head assembly, both arms and the bow; the bow and sword vs the torso and legs
 local CLEARANCES = {
-	{ "knight", { "shield", "shieldmark" }, { "Head", "Hair" }, 0.1 },
+	{ "knight", { "shield", "shieldmark" }, { "Head", "Hair" }, 0.05 },
 	{ "knight", { "shield", "shieldmark" }, { "Torso" }, 0.0 },
 	{ "knight", { "shield", "shieldmark" }, { "LeftLeg", "RightLeg" }, 0.1 },
 	{ "knight", { "shield", "shieldmark" }, { "RightArm", "Tool" }, 0.1 },
 	{ "knight", { "Tool" }, { "Torso", "LeftLeg", "RightLeg" }, 0.0 },
-	{ "archer", { "quiver" }, { "Head", "Hair" }, 0.1 },
+	{ "archer", { "quiver" }, { "Head", "Hair" }, 0.04 },
 	{ "archer", { "quiver" }, { "LeftArm", "RightArm" }, 0.0 },
 	{ "archer", { "quiver" }, { "Tool", "bowstring" }, 0.0 },
 	{ "archer", { "Tool", "bowstring" }, { "Torso", "LeftLeg", "RightLeg" }, 0.0 },

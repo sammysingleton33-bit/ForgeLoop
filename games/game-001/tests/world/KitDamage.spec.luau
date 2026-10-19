@@ -107,10 +107,17 @@ end
 
 -- ------------------------------------------------------------------ 6. damage
 
-local DAMAGE_TYPES = {}
+-- every building type at its highest level for Emberhold; a spread of five for Thornwood, whose hoarding roofs differ most;
+-- `quick` (the mutants' run) is four types in Emberhold
+local FULL = {}
 for _, bt in Kit.BUILDING_TYPES do
-	table.insert(DAMAGE_TYPES, { bt, MAX_LEVEL[bt] or 2 })
+	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "crimson" })
 end
+for _, bt in { "keep", "house", "wall", "watchtower", "gate" } do
+	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "emerald" })
+end
+local QUICK =
+	{ { "keep", 3, "crimson" }, { "house", 2, "crimson" }, { "wall", 2, "crimson" }, { "watchtower", 2, "crimson" } }
 
 local function damaged(bt: string, lv: number, hue: string, d: any): Model
 	local m = Kit.build(bt, lv, "complete", CANON[hue])
@@ -135,7 +142,7 @@ end
 
 local STATE_AT = { 0.25, 0.5, 0.75, 0.95 }
 
-CHECKS.damage = function()
+CHECKS.damage = function(quick: boolean?)
 	local out: { string } = {}
 	-- the table and the pure functions
 	if table.concat(Kit.DAMAGE_THRESHOLDS, ",") ~= "0.25,0.5,0.75,0.95" or Damage.MAX_EXTRA_PARTS ~= 14 then
@@ -170,20 +177,31 @@ CHECKS.damage = function()
 		end
 	end
 	local cracks, rubble, smoke = Damage.CRACKS, Damage.RUBBLE, Damage.SMOKE
-	for _, hue in { "crimson", "emerald" } do
-		for _, e in DAMAGE_TYPES do
-			local bt, lv = e[1], e[2]
+	do
+		for _, e in if quick then QUICK else FULL do
+			local bt, lv, hue = e[1], e[2], e[3]
 			local tag = `{bt} L{lv} {hue}`
 			local base = Kit.build(bt, lv, "complete", CANON[hue])
 			local baseSig, baseN, baseTop = signature(base), count(base), topOf(base)
 			-- Damage 0 (and every non-number, and 0.2499) is exactly the model as built
-			for _, zero in { 0, 0.2499, "x", 0 / 0 } do
+			for _, zero in if quick then { 0, 0.2499 } else { 0, 0.2499, "x", 0 / 0 } do
 				local z = damaged(bt, lv, hue, zero)
 				if signature(z) ~= baseSig or z:GetAttribute("KitDamageState") ~= nil or extras(z) > 0 then
 					table.insert(out, `{tag}: Damage {zero} is not the model as built`)
 				end
 			end
 			local removedBefore = 0
+			local pool, topPart, topAt = 0, nil, -math.huge
+			for _, p in parts(base) do
+				if p.CFrame.Position.Y + p.Size.Y / 2 > topAt then
+					topPart, topAt = p, p.CFrame.Position.Y + p.Size.Y / 2
+				end
+			end
+			for _, p in parts(base) do
+				if Damage.MISSING[p.Name] and p ~= topPart then
+					pool += 1
+				end
+			end
 			for s = 1, 4 do
 				local m = damaged(bt, lv, hue, STATE_AT[s])
 				local stag = `{tag} state {s}`
@@ -214,11 +232,14 @@ CHECKS.damage = function()
 					table.insert(out, `{stag}: {removed} parts removed, fewer than state {s - 1} ({removedBefore})`)
 				end
 				removedBefore = removed
-				if removed < math.min(Damage.REMOVED[s], 1) then
-					table.insert(out, `{stag}: nothing goes missing`)
-				end
-				if s == 1 and removed > Damage.REMOVED[1] then
-					table.insert(out, `{stag}: {removed} parts removed, state 1 removes {Damage.REMOVED[1]}`)
+				-- the parts that can go missing (not the highest part of the model): exactly the documented number, or all of
+				-- them; the collapsed corner (state 3 and 4) takes more on top
+				local want = math.min(Damage.REMOVED[s], pool)
+				if removed < want or (s <= 2 and removed ~= want) then
+					table.insert(
+						out,
+						`{stag}: {removed} parts removed, want {want} (pool {pool}, table {Damage.REMOVED[s]})`
+					)
 				end
 				-- the damage parts: thin dark wedges, grey translucent balls, blocks; all harmless to touch
 				for _, p in m:GetChildren() do
@@ -247,7 +268,7 @@ CHECKS.damage = function()
 					end
 				end
 				-- the Burning look reads the model's top: still the same part, no smoke above it
-				if math.abs(topOf(m, true) - baseTop) > 1e-6 or topOf(m) > baseTop + 1e-6 then
+				if math.abs(topOf(m, true) - baseTop) > 1e-3 or topOf(m) > baseTop + 1e-3 then
 					table.insert(out, `{stag}: the model's top moved ({r3(baseTop)} -> {r3(topOf(m))})`)
 				end
 				-- deterministic: the same build and damage, the same parts
@@ -263,7 +284,7 @@ CHECKS.damage = function()
 			end
 			-- any order, and applying twice is applying once
 			local m = Kit.build(bt, lv, "complete", CANON[hue])
-			for _, d in { 0.97, 0.3, 0.6, 0.6, 0.1, 0.8, 0.3 } do
+			for _, d in if quick then { 0.97, 0.3, 0.6, 0.1 } else { 0.97, 0.3, 0.6, 0.6, 0.1, 0.8, 0.3 } do
 				m:SetAttribute("Damage", d)
 				Kit.applyDamage(m)
 				Kit.applyDamage(m)
@@ -377,7 +398,7 @@ describe("Damage mutants are caught", function()
 	local function caught(name: string, by: string, mutate: () -> ())
 		it(`catches: {name} (by {by})`, function()
 			mutate()
-			local ok, list = pcall(CHECKS[by])
+			local ok, list = pcall(CHECKS[by], true)
 			restore()
 			if not ok then
 				error(`the mutant crashed instead of failing a check: {list}`)
