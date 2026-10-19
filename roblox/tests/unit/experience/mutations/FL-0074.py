@@ -174,4 +174,11 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", 'local ok, state = pcall(duel.getState, duel)', 'local ok, state = false, nil', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'duel.stateChanged:connect(function(state)', 'duel.stateChanged:connect(function(_state)', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'dependencies = { "FeedbackCrowdController", "DuelController" }', 'dependencies = { "FeedbackCrowdController" }', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
+ # FORGE-00's g11k notes: a reaction never seats (one batch a step); CrowdStage follows DuelController (mid-duel joiner)
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'self:_follow() -- the director may be new since the last step; only step seats (one batch a frame)', 'self:refresh()', 'CrowdFigures', 'a burst of reactions builds no figures', 'game'),
+ ("FL-0074", ST, '\tself:_followDuel()\n', '', 'CrowdStage', 'a mid-duel joiner gets the music and the ring shot', 'game'),
+ ("FL-0074", ST, 'local ok, state = pcall(duel.getState, duel)', 'local ok, state = false, nil', 'CrowdStage', 'a state DuelController already holds at start seeds the stage', 'game'),
+ ("FL-0074", ST, 'duel.stateChanged:connect(function(state)', 'duel.stateChanged:connect(function(_state)', 'CrowdStage', 'a mid-duel joiner gets the music and the ring shot', 'game'),
+ ("FL-0074", ST, 'dependencies = { "DuelController" }', 'dependencies = {}', 'CrowdStage', 'a mid-duel joiner gets the music and the ring shot', 'game'),
+ ("FL-0074", ST, 'connection:disconnect() -- a Forge Signal (DuelController.stateChanged)', 'connection:Disconnect()', 'CrowdStage', 'a mid-duel joiner gets the music and the ring shot', 'game'),
 ]

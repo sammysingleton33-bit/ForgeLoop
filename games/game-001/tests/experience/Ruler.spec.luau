@@ -279,6 +279,33 @@ describe("RulerController in a Crown Arena duel (FL-0139, FORGE-07 #255 M1)", fu
 		expect(humanoid.WalkSpeed).toBe(if type(ring) == "table" then ring.walkSpeed else C.walkSpeed)
 	end)
 
+	it("a ring speed of 0, NaN or infinity reads as missing: a champion walks at the walk speed (#259 L2)", function()
+		for _, bad in { 0, -4, 0 / 0, math.huge, "12" } do
+			boot({ ring = { walkSpeed = bad } })
+			local character, humanoid = D.character()
+			player.CharacterAdded:Fire(character)
+			humanoid.MoveDirection = EAST
+			duel.champion = true
+			actions:press(RulerDef.ACTION, Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+			sprintFor(30)
+			expect(humanoid.WalkSpeed).toBe(C.walkSpeed)
+			expect(ruler.sprinting).toBe(false)
+		end
+	end)
+
+	it("a DuelController without isChampion reads as no duel: movement as usual (#259 L2)", function()
+		boot({ ring = { walkSpeed = 12 } })
+		duel.isChampion = nil -- an older or partial DuelController
+		duel.champion = true
+		local character, humanoid = D.character()
+		player.CharacterAdded:Fire(character)
+		humanoid.MoveDirection = EAST
+		actions:press(RulerDef.ACTION, Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+		sprintFor(30)
+		expect(humanoid.WalkSpeed).toBe(C.sprintSpeed)
+		expect(ruler.sprinting).toBe(true)
+	end)
+
 	it("a champion check that errors reads as no duel: movement as usual", function()
 		boot({ ring = { walkSpeed = 12 } })
 		local character, humanoid = D.character()
