@@ -190,6 +190,17 @@ tracker on the phone, the summary on the phone and on desktop.
 8. Report: whether the soldier count, the bars and the summary always matched what happened in the
    world (the client shows only what the server sends).
 
+## U23 — Results and "Your reign" (FL-0129; the full match's end, FL-0125)
+1. Play a match to the end (or the debug phase jump to Results): the Results summary shows the winner,
+   the standings and how long it lasted, with **Continue** and **Your reign** side by side (phone: Your
+   reign above Continue).
+2. Your reign: the six reputation values from the start of the match to its end with each change
+   (green up, red down, grey none), "Key decisions" (the three history lines that moved a value most,
+   each with the value and change) and "Citizens N → M" with how many more or fewer. Back to results
+   returns to the summary; Continue closes both.
+3. A second match: Your reign shows only that match's decisions and its own start values.
+4. Phone 667 × 375: the recap sits in the summary's own box (two columns), clear of the Roblox top bar.
+
 ## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
 1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free
    citizens row, Farmers, Woodcutters, Miners, Builders, each with a **number** and − / + (44 px on a
