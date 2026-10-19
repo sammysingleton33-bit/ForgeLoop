@@ -84,7 +84,7 @@ export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "d
 -- One support effect on one duellist (the shape Caps.check and DuelModel read; CONTRACTS G12.2 names the type, this
 -- defines it). See Arena/Caps for the rules.
 export type Modifier = {
-	source: string, -- "tier:adoring", "perk:reforge", "crowdRally", "fineWares"
+	source: string, -- "tier:adoring", "perk:reforge", "perk:fineWares", "crowdRally"
 	kind: string, -- "passive" | "trigger" | "heal" | "telegraph"
 	stat: string?, -- passive and trigger: damageReduction | damage | staminaRegen
 	magnitude: number?, -- a fraction (+6 % = 0.06); heal: a fraction of max HP

@@ -331,4 +331,48 @@ describe("Arena/SupportModel: duel modifiers pass the caps", function()
 			SupportModel.modifiers("emperor" :: any, {})
 		end).toThrow("unknown tier")
 	end)
+
+	it("accepts only the powers pledged and empowered: no other key of a perk is a power", function()
+		for _, power in { "duration", "uses", "lead", "kind", "effect", "when", "", 5 } do
+			expect(function()
+				SupportModel.modifiers("loyal", { { trigger = "calledWarning", power = power :: any } })
+			end).toThrow("power must be")
+		end
+		expect(function()
+			SupportModel.modifiers("loyal", { { trigger = "calledWarning", power = nil :: any } })
+		end).toThrow("power must be")
+	end)
+
+	it("refuses a repeated pick, so one slot can never count a perk twice, and Caps stays the safety net", function()
+		expect(function()
+			SupportModel.modifiers("loyal", {
+				{ trigger = "fineWares", power = "pledged" },
+				{ trigger = "fineWares", power = "pledged" },
+			})
+		end).toThrow("picked twice")
+		expect(function()
+			SupportModel.modifiers("adoring", {
+				{ trigger = "crowdRally", power = "empowered" },
+				{ trigger = "crowdRally", power = "empowered" },
+			})
+		end).toThrow("picked twice")
+		-- the same list built by hand is refused by Caps too
+		local once = SupportModel.modifiers("loyal", { { trigger = "fineWares", power = "pledged" } })
+		local twice = table.clone(once)
+		table.insert(twice, once[#once])
+		local ok, reason = Caps.check(twice)
+		expect(ok).toBe(false)
+		expect(string.find(reason :: string, "listed twice", 1, true)).never.toBeNil()
+		-- different triggers are still fine
+		expect(#SupportModel.modifiers("loyal", {
+			{ trigger = "fineWares", power = "pledged" },
+			{ trigger = "reforge", power = "pledged" },
+		}) > 0).toBe(true)
+	end)
+
+	it("offers refuses an unknown tier with the same clean error as modifiers", function()
+		expect(function()
+			SupportModel.offers({}, "emperor" :: any)
+		end).toThrow("unknown tier")
+	end)
 end)

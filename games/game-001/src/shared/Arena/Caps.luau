@@ -119,6 +119,9 @@ function Caps.problems(modifiers: { Modifier }): { string }
 			passive[m.stat :: string] = (passive[m.stat :: string] or 0) + mag
 			passiveTotal += mag
 			if m.slot then
+				if slotSources[name] then
+					problem(`{name}: listed twice; a slotted passive counts once per duel`)
+				end
 				takeSlot(name)
 			end
 		elseif ACTIVE[m.kind] then

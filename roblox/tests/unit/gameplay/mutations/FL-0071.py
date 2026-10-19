@@ -15,6 +15,7 @@ M = [
  ("FL-0071", DM, 'if type(condition) ~= "string" then\n\t\treturn false', 'if false then\n\t\treturn false', "sim/DuelModel", "never fires and never throws"),
  ("FL-0071", DM, 'lead = effect.lead or 0,', 'lead = effect.lead,', "sim/DuelModel", "reports warned = 0, never nil"),
  ("FL-0071", DUEL, 'quietStart = 10,', 'quietStart = 5,', "sim/ArenaCaps", "quiet start is never earlier"),
+ ("FL-0071", CAPS, 'if slotSources[name] then\n\t\t\t\t\tproblem(`{name}: listed twice; a slotted passive counts once per duel`)', 'if false then\n\t\t\t\t\tproblem(`{name}: listed twice; a slotted passive counts once per duel`)', "sim/ArenaCaps", "a slotted passive listed twice"),
  # --- the duel
  ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if false then', "sim/DuelModel", "a bad step"),
  ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if not (dt < math.huge) then', "sim/DuelModel", "a bad step"),

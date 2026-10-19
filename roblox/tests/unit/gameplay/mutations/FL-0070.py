@@ -20,6 +20,11 @@ M = [
  ("FL-0070", CFG, 'adoring = { min = 85, passive = { damageReduction = 0.01, staminaRegen = 0.01 }', 'adoring = { min = 85, passive = { damageReduction = 0.02, staminaRegen = 0.01 }', "sim/SupportModel", "pins the FL-0076 trim"),
  ("FL-0070", CFG, 'pledged = 0.03,\n\t\t\tempowered = 0.05,\n\t\t\tduration = 4,', 'pledged = 0.05,\n\t\t\tempowered = 0.05,\n\t\t\tduration = 4,', "sim/SupportModel", "pins the FL-0076 trim"),
  ("FL-0070", CFG, 'pledged = 0.03,\n\t\t\tempowered = 0.05,\n\t\t\tduration = 4,', 'pledged = 0.03,\n\t\t\tempowered = 0.08,\n\t\t\tduration = 4,', "sim/SupportModel", "pins the FL-0076 trim"),
+ # --- FORGE-00 verifier (a)-(c)
+ ("FL-0070", SM, 'local magnitude = if power == "pledged" or power == "empowered" then perk[power] else nil', 'local magnitude = perk[power]', "sim/SupportModel", "accepts only the powers pledged and empowered"),
+ ("FL-0070", SM, 'local magnitude = if power == "pledged" or power == "empowered" then perk[power] else nil', 'local magnitude = if power == "pledged" then perk[power] else nil', "sim/SupportModel", "accepts only the powers pledged and empowered"),
+ ("FL-0070", SM, 'if picked[pick.trigger] then', 'if false then', "sim/SupportModel", "refuses a repeated pick"),
+ ("FL-0070", SM, '	if tierDef == nil then\n		error(`SupportModel: unknown tier \'{tostring(tier)}\'`, 2)\n	end\n	local offers', '	if false then\n		error(`SupportModel: unknown tier \'{tostring(tier)}\'`, 2)\n	end\n	local offers', "sim/SupportModel", "offers refuses an unknown tier"),
  # --- the offers
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.pledgedLoyalty', 'citizen.loyalty > cfg.offer.pledgedLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.empoweredLoyalty', 'citizen.loyalty > cfg.offer.empoweredLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),

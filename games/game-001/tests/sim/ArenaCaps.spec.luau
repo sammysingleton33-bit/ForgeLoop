@@ -96,20 +96,17 @@ describe("Arena/Caps: what is refused, and why", function()
 	end)
 
 	it("a trigger inside the quiet start, an effect on the opponent, a negative or non-finite bonus", function()
-		refused(
+		refused({
 			{
-				{
-					source = "a",
-					kind = "trigger",
-					stat = "damage",
-					magnitude = 0.05,
-					duration = 6,
-					earliest = 5,
-					condition = "hype",
-				},
+				source = "a",
+				kind = "trigger",
+				stat = "damage",
+				magnitude = 0.05,
+				duration = 6,
+				earliest = 5,
+				condition = "hype",
 			},
-			"first 10 s"
-		)
+		}, "first 10 s")
 		refused(
 			{ { source = "a", kind = "passive", stat = "damage", magnitude = 0.01, affectsOpponent = true } },
 			"opponent"
@@ -118,6 +115,14 @@ describe("Arena/Caps: what is refused, and why", function()
 		refused({ passive("damage", 0 / 0) }, "finite")
 		refused({ passive("armourPierce", 0.01) }, "unknown stat")
 		refused({ { source = "a", kind = "stun", magnitude = 0.01 } }, "unknown kind")
+	end)
+
+	it("a slotted passive listed twice counts once, not twice", function()
+		local wares = passive("damageReduction", 0.02, true, "perk:fineWares")
+		refused({ wares, wares }, "listed twice")
+		expect((Caps.check({ wares }))).toBe(true)
+		-- two different slotted passives are fine
+		expect((Caps.check({ wares, passive("damage", 0.02, true, "perk:other") }))).toBe(true)
 	end)
 
 	it("the same trigger listed twice, a bad duration, a modifier list that is not a list", function()
