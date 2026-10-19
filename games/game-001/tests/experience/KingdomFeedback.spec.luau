@@ -731,6 +731,41 @@ describe("AnnouncerService (FL-0062)", function()
 		expect(kindsFor(p1)[4]).toBe("kingdomConquered")
 	end)
 
+	it(
+		"a siege moment points at the besieged keep's model; its end and an unknown keep carry none (FL-0130)",
+		function()
+			bus = FakeBus.new({ extra = { "WarChanged", "SiegeChanged", "RaidChanged" } })
+			boot(true)
+			local root = roblox.Instance.new("Folder")
+			root.Name = "ForgeKingdoms"
+			local crimson = roblox.Instance.new("Folder")
+			crimson.Name = "crimson"
+			crimson.Parent = root
+			local buildings = roblox.Instance.new("Folder")
+			buildings.Name = "Buildings"
+			buildings.Parent = crimson
+			local keep = roblox.Instance.new("Model")
+			keep:SetAttribute("BuildingId", 7)
+			keep:SetAttribute("Kind", "keep")
+			local base = roblox.Instance.new("Part")
+			base.CFrame = CFrame.new(-100, 3, 0)
+			base.Parent = keep
+			keep.PrimaryPart = base
+			keep.Parent = buildings
+			root.Parent = env.Workspace
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 7 })
+			local sent = remotes:sentTo("Feedback.Moment", p1)
+			expect(sent[1].args[1].kind).toBe("siege")
+			expect(sent[1].args[1].position).toBe(Vector3.new(-100, 3, 0))
+			bus.SiegeChanged:fire("crimson", false, {})
+			expect(remotes:sentTo("Feedback.Moment", p1)[2].args[1].position).toBeNil()
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 99 })
+			local unknown = remotes:sentTo("Feedback.Moment", p1)[3].args[1]
+			expect(unknown.kind).toBe("siege")
+			expect(unknown.position).toBeNil()
+		end
+	)
+
 	it("the war events are declared on the real bus and connected, with no waiting (FL-0130, FL-0134)", function()
 		for _, name in { "RaidChanged", "SiegeChanged", "WarChanged" } do -- declared by #204
 			assert(table.find(GameEvents.EVENT_NAMES, name) ~= nil, `the bus declares {name}`)

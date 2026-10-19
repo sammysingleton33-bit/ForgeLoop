@@ -85,4 +85,10 @@ M = [
  ("FL-0130", C2+"RulerSpectateController.luau", '\t\tself._pending = false\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
  ("FL-0130", C2+"RulerCameraController.luau", 'keepaliveSec = 1, moveStuds = 10 })', 'keepaliveSec = 1, moveStuds = 0 })', "RulerCamera", "reports the overview's focus for interest", "game"),
  ("FL-0130", G+A, '\t"WarChanged",\n\t"SiegeChanged",', '\t"WarChangedX",\n\t"SiegeChanged",', "KingdomFeedback", "the war events are declared on the real bus", "game"),
+ ("FL-0130", F+"Moments.luau", 'position = if on then alertPosition(kind, details, ctx) else nil,', 'position = if on and kind == "raid" then alertPosition(kind, details, ctx) else nil,', 'KingdomFeedback', 'a siege moment points at the besieged keep', "game"),
+ ("FL-0130", G+A, 'return part and part.CFrame.Position', 'return part and Vector3.zero', 'KingdomFeedback', 'a siege moment points at the besieged keep', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'Def.ALERT_ORDER = table.freeze({ "siege", "raid" })', 'Def.ALERT_ORDER = table.freeze({ "raid", "siege" })', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'if alert ~= nil and (kind == nil or kind == name) then', 'if alert ~= nil then', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'if kind == "raid" or kind == "siege" then', 'if kind == "raid" then', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", '\telseif kind == "kingdomFell" then\n\t\tself:_clearAlert()\n', '\telseif kind == "kingdomFell" then\n\t\tlocal _ = 0\n', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
 ]
