@@ -104,7 +104,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 	local env, actions, userInput, player, camera, gui, registry, controller, input, humanoid, vfx
 	local THRONE = Vector3.new(120, 3, -40)
 
-	local function boot(extra, config, layout)
+	local function boot(extra, config, layout, sendFocus)
 		registry = D.boot(env, {
 			input = { actions = actions },
 			ruler = { actions = actions, player = player },
@@ -117,6 +117,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 				config = config,
 				layout = layout,
 				viewportHeight = 720,
+				sendFocus = sendFocus,
 			},
 			extra = extra,
 		})
@@ -300,6 +301,54 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		env.mock:advance(O.streamEverySec)
 		frames(1)
 		expect(#requests).toBe(2)
+	end)
+
+	it(
+		"reports the overview's focus for interest at most 4 a second, kept alive, never in walk mode (D-055 (5))",
+		function()
+			local sent = {}
+			boot(nil, nil, nil, function(focus)
+				table.insert(sent, focus)
+			end)
+			frames(1)
+			expect(#sent).toBe(1)
+			expect(sent[1]).toEqual(controller:getFocus()) -- the clamped ground focus, not a free number
+			controller:panBy(Vector2.new(20, 0))
+			frames(5) -- the virtual clock has not moved: inside FOCUS.everySec
+			expect(#sent).toBe(1)
+			env.mock:advance(CameraDef.FOCUS.everySec)
+			frames(1)
+			expect(#sent).toBe(2)
+			env.mock:advance(CameraDef.FOCUS.everySec)
+			frames(1)
+			expect(#sent).toBe(2) -- held still: no report until the keepalive
+			env.mock:advance(CameraDef.FOCUS.keepaliveSec)
+			frames(1)
+			expect(#sent).toBe(3)
+			for _ = 1, 40 do -- two virtual seconds of panning: never more than 4 a second
+				controller:panBy(Vector2.new(30, 0))
+				env.mock:advance(0.05)
+				frames(1)
+			end
+			expect(#sent - 3 <= 2 * 4 + 1).toBe(true)
+			local before = #sent
+			expect(controller:setMode("follow")).toBe(true)
+			for _ = 1, 10 do
+				env.mock:advance(1)
+				frames(1)
+			end
+			expect(#sent).toBe(before) -- walk mode reports nothing; the character is the server's fallback
+		end
+	)
+
+	it("without the Sim.Focus remote it sends nothing and logs nothing (FORGE-01 declares it)", function()
+		boot()
+		for _ = 1, 20 do
+			env.mock:advance(0.3)
+			frames(1)
+		end
+		expect(controller.focusReports).toBe(0)
+		expect(env.mock:hasLog("warn", "could not send")).toBe(false)
 	end)
 
 	it("follow (walk mode) stands the ruler up, shows the thumbstick and tunes Roblox's camera", function()

@@ -397,6 +397,27 @@ describe("The Rivals tab (FL-0129)", function()
 		expect(texts(world.hud.guis.notices)).toContain("Asked your senior ruler for war on Frostmere")
 		azure = find(find(world.hud.guis.menus, "Rivals"), "Rival_azure")
 		expect(find(azure, "Relation"):GetAttribute("relation")).toBe("peace")
+		-- the open ask stays on the row (diplomacy.asks) until answered or expired, for the asker too
+		expect(texts(azure)).toContain("You asked for war · 1:00")
+		world:advance(DiplomacyDoubles.ASK_SEC + 1)
+		expect(texts(find(find(world.hud.guis.menus, "Rivals"), "Rival_azure"))).never.toContain("asked for war")
+	end)
+
+	it("the senior ruler sees an open ask on the rival's row and in the Kingdom bubble until it runs out", function()
+		world = newWorld()
+		world.diplomacy:setSenior(1) -- I decide
+		world.diplomacy:askFrom(2, "Mira", "azure", 1)
+		world:advance(0.3)
+		local azure = find(openRivals(world), "Rival_azure")
+		expect(find(azure, "Ask").Text).toBe("Mira asks for war · 1:00")
+		expect(find(find(world.hud.guis.hud, "Menu_kingdom"), "Badge").Text).toBe("1")
+		local line = find(azure, "Ask")
+		world:advance(2)
+		expect(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_azure"), "Ask")).toBe(line) -- patched, not rebuilt
+		expect(line.Text).toBe("Mira asks for war · 0:58")
+		world:advance(DiplomacyDoubles.ASK_SEC + 1)
+		expect(find(find(find(world.hud.guis.menus, "Rivals"), "Rival_azure"), "Ask")).toBeNil()
+		expect(find(find(world.hud.guis.hud, "Menu_kingdom"), "Badge")).toBeNil()
 	end)
 
 	it("the war toast follows the server's answer, not the panel's copy of who is senior (FORGE-07 M1)", function()
