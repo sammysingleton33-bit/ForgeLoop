@@ -12,6 +12,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 STANDINS_JSON = HERE / "envkit_standins.json"
+# Ids the world places only as imported meshes (Kit/WorldPlan.meshDressing, FL-0136 phase 3): fence segments along the crop fields, cabbage field variants
+# 01 and 02, rock cliffs at the foot of the mountain ring. The part-built world places none of them, so the inventory lists them as unplaced.
+MESH_DRESSING = ("farm_fence_01", "farm_fence_02", "farm_field_cabbage_01", "farm_field_cabbage_02", "rock_cliff_01", "rock_cliff_02")
 
 
 def _axes(c):

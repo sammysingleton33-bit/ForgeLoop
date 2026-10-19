@@ -21,7 +21,7 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "61bac208a4421907",
+      "geometry_hash": "4a676b85217c85f3",
       "id": "env_kit_01",
       "kingdom": null,
       "kit": {
@@ -33,10 +33,16 @@
             "tris_total": 2000
           },
           "crop": {
-            "props": 3,
+            "props": 5,
             "tris_max": 1430,
             "tris_min": 1332,
-            "tris_total": 4124
+            "tris_total": 6788
+          },
+          "fence": {
+            "props": 2,
+            "tris_max": 84,
+            "tris_min": 72,
+            "tris_total": 156
           },
           "flower": {
             "props": 6,
@@ -51,10 +57,10 @@
             "tris_total": 196
           },
           "rock": {
-            "props": 14,
+            "props": 16,
             "tris_max": 268,
             "tris_min": 116,
-            "tris_total": 2740
+            "tris_total": 3010
           },
           "tree": {
             "props": 20,
@@ -63,11 +69,11 @@
             "tris_total": 9058
           }
         },
-        "fbx_sha256": "3f470be00eb89f7d7866cf05af50491ba1b75a7929782fab50b4366c62c3c4f3",
+        "fbx_sha256": "06efc1aa638ffb157a4ab649755212b8f46b213f551d4e26a30375d555cbf7f5",
         "max_mesh_tris": 1430,
-        "props": 52,
+        "props": 58,
         "style": "B",
-        "total_tris": 19744
+        "total_tris": 22834
       },
       "license": "project-original",
       "material": "M_envkit_vc",
@@ -75,33 +81,22 @@
         "families": [
           "bush",
           "crop",
+          "fence",
           "flower",
           "haystack",
           "rock",
           "tree"
         ],
         "kit": "the ids the world places",
-        "props": 52,
+        "props": 58,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "env_kit_01 (the 52 ids the world places): SET B (these meshes) PASS in all three groups; minimum over the groups shown (the crops reviewer scored cost 3 for the ~1.4k-triangle fields, trees/bushes and rocks/nodes scored 4). Renders are Blender, not Studio. env_kit_02 (15 spare ids nothing places yet) was only partly shown (wheat stages 04/05) and is not reviewed.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/env_kit.md",
-        "reviewer": "fresh-context subagents, one per family group (images + rubric only); see games/game-001/art/reviews/img/d057-env-nature-r1/review.json",
-        "round": 1,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 4,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7,
       "sockets": {},
@@ -109,7 +104,7 @@
       "triangles": {
         "budget_lod0": 1500,
         "lod0": 1430,
-        "lod1": 116
+        "lod1": 72
       },
       "validation_pass": true
     },
@@ -122,7 +117,7 @@
       },
       "dimensions_studs": {
         "x": 38.0,
-        "y": 10.53,
+        "y": 8.114,
         "z": 28.0
       },
       "double_sided": false,
@@ -134,46 +129,39 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "9bae7f81ca87c259",
+      "geometry_hash": "b1b069c2842d6373",
       "id": "env_kit_02",
       "kingdom": null,
       "kit": {
         "families": {
           "crop": {
-            "props": 5,
-            "tris_max": 1332,
+            "props": 3,
+            "tris_max": 1300,
             "tris_min": 1020,
-            "tris_total": 6004
-          },
-          "fence": {
-            "props": 2,
-            "tris_max": 84,
-            "tris_min": 72,
-            "tris_total": 156
+            "tris_total": 3340
           },
           "rock": {
-            "props": 8,
+            "props": 6,
             "tris_max": 220,
-            "tris_min": 132,
-            "tris_total": 1440
+            "tris_min": 148,
+            "tris_total": 1170
           }
         },
-        "fbx_sha256": "edc11e19206029b094131a42ad4b9a94ddb03daa62fd47c15d4080bfd26c8738",
-        "max_mesh_tris": 1332,
-        "props": 15,
+        "fbx_sha256": "13f3ec31bb9b3573fbe5c810f992d53072f25554696002c8e6c33ca2d6a57d87",
+        "max_mesh_tris": 1300,
+        "props": 9,
         "style": "B",
-        "total_tris": 7600
+        "total_tris": 4510
       },
       "license": "project-original",
       "material": "M_envkit_vc",
       "params": {
         "families": [
           "crop",
-          "fence",
           "rock"
         ],
         "kit": "spares: ids nothing places yet",
-        "props": 15,
+        "props": 9,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
@@ -187,8 +175,8 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1500,
-        "lod0": 1332,
-        "lod1": 72
+        "lod0": 1300,
+        "lod1": 148
       },
       "validation_pass": true
     }

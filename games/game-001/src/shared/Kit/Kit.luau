@@ -183,6 +183,8 @@ end
 Kit.characterMeshAvailable = CharacterMesh.available -- () -> boolean: kit data + a CitizenKit folder are present
 Kit.characterMeshStatus = CharacterMesh.status -- () -> diagnostics (pieces, missing, mesh vs fallback builds, last fallback reason)
 Kit.envMeshStatus = EnvMesh.status -- () -> { props, accepted, rejected = { [assetId] = why } }: the FL-0136 nature meshes behind Kit.prop
+Kit.envMeshReady = Props.meshReady -- (assetId) -> boolean: Kit.prop would build the imported mesh for this id (FL-0136 mesh-only dressing)
+Kit.nodeMarker = Props.nodeMarker -- (model, resource) -> boolean: the FL-0136 resource marker (WorldService puts it on every node)
 Kit.regionMarkers = Props.regionMarkers
 Kit.slotMarker = Props.slotMarker -- G13.5 build slot ground marker (WorldService)
 Kit._hueStyle = Parts.hueStyle

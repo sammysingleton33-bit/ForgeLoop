@@ -613,7 +613,16 @@ if next(CommittedData.props) ~= nil then
 	describe("the committed env kit (Kit/EnvMeshData) against the world and the part-built props", function()
 		local worldIds: { [string]: boolean } = {}
 		local dressed = { crimson = true, azure = true, emerald = true, gold = true }
-		for _, placement in WorldPlan.props(Layout, dressed, WorldPlan.FULL_DENSITY) do
+		local planned = WorldPlan.props(Layout, dressed, WorldPlan.FULL_DENSITY)
+		for _, placement in planned do
+			worldIds[placement.assetId] = true
+		end
+		-- and what the world adds when the Kit builds the imported meshes (FL-0136 phase 3: fences, cabbage variants, rim cliffs)
+		for _, placement in
+			WorldPlan.meshDressing(Layout, planned, function(_: string): boolean
+				return true
+			end)
+		do
 			worldIds[placement.assetId] = true
 		end
 		local nodeIds: { [string]: boolean } = {}

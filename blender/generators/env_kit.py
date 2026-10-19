@@ -138,9 +138,11 @@ def registry(seed=SEED, only=None):
 
 def split_placed(reg):
     """(ids the world places, spare ids): the Kit's spec fails on an id the world never places, so only placed ids go in env.json / env_kit.fbx;
-    the rest (cliffs, wood nodes, the other ore kinds, wheat 03 and the growth stages, cabbage 01-02, fences) ship as a second kit that nothing reads yet."""
+    the rest (wood nodes, the iron and crystal ore, wheat 03 and the growth stages) ship as a second kit that nothing reads: the world places no
+    growth stage (crop fields are static dressing, FORGE-00 2026-10-19) and iron and crystal are not game resources. The mesh-only dressing ids
+    (envkit_standin.MESH_DRESSING) are placed, so they ship with the main kit."""
     from lib import envkit_standin
 
     st = envkit_standin.load()["standins"]
-    main = [pid for pid in reg if st.get(pid, {}).get("placed")]
+    main = [pid for pid in reg if st.get(pid, {}).get("placed") or pid in envkit_standin.MESH_DRESSING]
     return main, [pid for pid in reg if pid not in set(main)]

@@ -86,7 +86,7 @@ local function run(density: { [string]: number }?)
 	env.mock:advance(30)
 	Kit.prop = original
 	expect(svc.stats.error).toBeNil()
-	local out = { parts = svc.stats.parts, props = svc.stats.props, byId = byId }
+	local out = { parts = svc.stats.parts, arenaParts = svc.stats.arenaParts, props = svc.stats.props, byId = byId }
 	svc:destroy()
 	return out
 end
@@ -156,8 +156,8 @@ describe("FL-0136 inventory of placed nature and crops", function()
 		for k, v in WorldPlan.CLEAR.radius do
 			clear[k] = v
 		end
-		expect(full.props).toBe(616)
-		expect(full.parts).toBe(8309) -- the pinned figure of WorldService.spec (density 1.0, crimson dressed)
+		expect(full.props).toBe(615) -- the pinned figures of WorldService.spec on main since the arena keep-out (it was 616 / 8,309 before it)
+		expect(full.parts - full.arenaParts).toBe(8271) -- the dressing at density 1.0, crimson dressed; the arena is counted apart
 		-- the scene data: the shipped world's placements, the resource nodes, and two plots' starting buildings (part-built)
 		local placements = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.density(Layout)) do

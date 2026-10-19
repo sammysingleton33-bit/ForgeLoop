@@ -2,8 +2,8 @@
 --[[
 	Kit/EnvMeshData — the imported nature meshes as data (FL-0136, D-057 (18)-(20)). GENERATED, do not edit by hand:
 		python3 games/game-001/art/env_kit/env_to_luau.py
-	source games/game-001/art/env_kit/env.json  sha256 2a77ae0dd6d87603bc8d28140aa073af02dd03e91dc2e70ef86b06d187f52751
-	52 props (10 also resource nodes).
+	source games/game-001/art/env_kit/env.json  sha256 4b9f8e293ce196906c146593144e29d01c9238dc8270c14a034620f5de789db5
+	58 props (10 also resource nodes).
 	Kit/EnvMesh.luau reads it; Kit.prop uses a Forge.Assets Model for these ids only when it matches, else the stand-in.
 ]]
 
@@ -20,6 +20,10 @@ return table.freeze({
 		bush_06 = { family = "bush", bbox_center = { 0.0936, 2.3025, -0.3114 }, size = { 6.9323, 4.7651, 7.1369 }, tris = 300, tint = "fixed", standin_size = { 6.67, 5.16, 6.51 }, node = false },
 		bush_07 = { family = "bush", bbox_center = { 0.1231, 2.7491, 0.4199 }, size = { 7.0587, 5.6583, 6.2912 }, tris = 140, tint = "fixed", standin_size = { 6.95, 5.33, 7.59 }, node = false },
 		bush_08 = { family = "bush", bbox_center = { 0.4756, 2.4575, 0.6327 }, size = { 6.0987, 5.075, 7.383 }, tris = 340, tint = "fixed", standin_size = { 6.9, 5.21, 6.52 }, node = false },
+		farm_fence_01 = { family = "fence", bbox_center = { 0, 1.4, 0 }, size = { 16.5, 2.8, 0.5 }, tris = 72, tint = "fixed", standin_size = { 16.5, 2.8, 0.5 }, node = false },
+		farm_fence_02 = { family = "fence", bbox_center = { 0, 1.4, 0 }, size = { 16.5, 2.8, 0.5 }, tris = 84, tint = "fixed", standin_size = { 16.5, 2.8, 0.5 }, node = false },
+		farm_field_cabbage_01 = { family = "crop", bbox_center = { 0, 1.3989, 0 }, size = { 38, 2.7977, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.14, 28 }, node = false },
+		farm_field_cabbage_02 = { family = "crop", bbox_center = { 0, 1.4014, 0 }, size = { 38, 2.8029, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.15, 28 }, node = false },
 		farm_field_cabbage_03 = { family = "crop", bbox_center = { 0, 1.3934, 0 }, size = { 38, 2.7868, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.14, 28 }, node = false },
 		farm_field_wheat_01 = { family = "crop", bbox_center = { 0, 1.4764, 0 }, size = { 38, 2.9527, 28 }, tris = 1362, tint = "fixed", standin_size = { 38, 2.42, 28 }, node = false },
 		farm_field_wheat_02 = { family = "crop", bbox_center = { -0.05, 1.4724, 0 }, size = { 38.1, 2.9449, 28 }, tris = 1430, tint = "fixed", standin_size = { 38, 2.42, 28 }, node = false },
@@ -44,6 +48,8 @@ return table.freeze({
 		rock_boulder_s_01 = { family = "rock", bbox_center = { -0.0202, 1.5172, -0.1214 }, size = { 6.634, 3.8344, 5.1934 }, tris = 144, tint = "fixed", standin_size = { 6.2, 3.78, 4.95 }, node = false },
 		rock_boulder_s_02 = { family = "rock", bbox_center = { 0.2692, 1.4374, 0.4615 }, size = { 6.548, 3.8932, 6.8266 }, tris = 116, tint = "fixed", standin_size = { 6.38, 3.76, 5.27 }, node = false },
 		rock_boulder_s_03 = { family = "rock", bbox_center = { -0.0026, 1.4285, 0.1796 }, size = { 6.0126, 3.875, 7.2332 }, tris = 170, tint = "fixed", standin_size = { 6.76, 3.74, 5.68 }, node = false },
+		rock_cliff_01 = { family = "rock", bbox_center = { -1.0871, 4.7082, -0.6415 }, size = { 14.322, 10.3164, 10.4531 }, tris = 138, tint = "fixed", standin_size = { 13.57, 10.57, 15.4 }, node = false },
+		rock_cliff_02 = { family = "rock", bbox_center = { 0.0883, 4.8151, 0.8141 }, size = { 11.5394, 10.5302, 13.895 }, tris = 132, tint = "fixed", standin_size = { 13.17, 10.36, 14.92 }, node = false },
 		tree_birch_01 = { family = "tree", bbox_center = { -0.642, 10.9578, 0.1295 }, size = { 10.009, 22.0755, 10.0249 }, tris = 366, tint = "fixed", standin_size = { 10.1, 22.2, 8.14 }, node = false },
 		tree_birch_02 = { family = "tree", bbox_center = { 0.0056, 9.8685, 0.134 }, size = { 7.8213, 19.897, 11.0531 }, tris = 318, tint = "fixed", standin_size = { 8.23, 20.81, 10.33 }, node = false },
 		tree_birch_03 = { family = "tree", bbox_center = { 0.6258, 11.0149, 0.8655 }, size = { 9.7051, 22.1897, 10.1226 }, tris = 366, tint = "fixed", standin_size = { 8.8, 22.61, 10 }, node = false },
