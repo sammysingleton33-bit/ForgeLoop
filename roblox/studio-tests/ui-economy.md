@@ -373,6 +373,19 @@ phone emulator (667 × 375) and with a gamepad.
    phone emulator the strip stays clear of the duel buttons (bottom right) and the crowd captions.
 8. After the duel the strip goes and the kingdom HUD returns.
 
+## U25 — Support meter and breakdown (FL-0073; needs FORGE-01's SupportService serving `Kingdom.Support` / `Kingdom.GetSupport`)
+Without those remotes nothing shows and the HUD keeps no gap (dark launch): check that first on today's build.
+Then, with SupportService on, run a desktop window and the phone emulator (667 × 375).
+1. Under the reputation strip a chip reads "Support <Tier> <score>" with a coloured dot and a trend arrow (▲ green,
+   ▼ red, ▬ steady); on the phone it drops the word "Support". The tier is always written, never colour alone.
+2. Tap it: the drawer "Support" opens with "<Tier> support · <score>", the trend ("Rising +3 in 5 min"), the points to
+   the next tier, the arena line ("Blessing +1% · 3 perk slots in the arena"), "What it is made of" (seven rows: icon,
+   name, bar, share in %, value) and "What moved it" (latest first, signed and coloured). Tap the chip again: it closes.
+3. Do something that moves support (let food run out; fulfil a petition): within a push the chip's score and arrow
+   move and the moment appears at the top of the open drawer without it jumping back to the top of its scroll.
+4. Treasury income ticking does not flicker the chip or reset the drawer's scroll.
+5. Phone emulator: the chip stays clear of the pills and the objective tracker; the drawer scrolls to the last moment.
+
 ## U28 — How to play (FL-0138; runs on today's build)
 Desktop window and the phone emulator (667 × 375); screenshot each card on both.
 1. During the Lobby countdown a "Rules" rail button (an "i" on phones) opens the cards; it is gone once Founding

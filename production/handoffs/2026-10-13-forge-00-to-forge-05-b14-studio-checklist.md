@@ -213,3 +213,12 @@ Run the B21 rows (O1–O4) on B21.1. Then do the import per `games/game-001/art/
 | P4 | MicroProfiler at Endgame; Render Stats on a 667×375 phone | note FPS, triangles and draw calls at the population caps |
 | P5 | Phone 667×375: the drawer, spectate, Rivals and the recap | the drawer shows jobs, reputation, army and standings rows; buttons are easy to tap |
 | P6 | Output through a full match | copy every red line; delete `CitizenKit` to revert (IMPORT_CHARACTERS §4) |
+
+## B21.2 additions (main `6a738d7`, BuildInfo `6a738d71cdae…`): arena venue, silhouettes
+Run the B21 rows (O1–O4) and the B21.1 rows (P1–P6) on B21.2, importing **this build's** `citizen_kit.fbx`. Then:
+
+| ID | Check | Pass |
+|---|---|---|
+| Q1 | Aerial view of the map centre, then walk to the arena gate | the venue stands at the neutral centre the whole match: stands, royal boxes, gate and duel ring; it reads as an arena from the air (screenshot) |
+| Q2 | After the import, the aerial view at 170 studs over a busy kingdom | each job reads as a differently coloured shape (farmer, merchant and soldier clearly; the others at least partly); note any you can't tell apart |
+| Q3 | Output through a full match | copy every red line |

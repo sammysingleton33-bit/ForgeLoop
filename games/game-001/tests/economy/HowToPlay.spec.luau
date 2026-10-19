@@ -36,7 +36,7 @@ local function newWorld(opts)
 	if not o.noHelp then
 		table.insert(defs, HowToPlayDef)
 	end
-	local world = KingdomWorld.new({ clientDefinitions = defs })
+	local world = KingdomWorld.new({ clientDefinitions = defs, envServices = o.services })
 	world.hud = world.client:get("KingdomHudController")
 	world.help = if o.noHelp then nil else world.client:get("HowToPlayController")
 	world.hud:setViewport(o.width or 1920, o.height or 1022)
@@ -63,6 +63,16 @@ describe("HowToPlayModel (pure)", function()
 			end
 		end
 		expect(table.concat(ids, ",")).toBe("match,crown,kingdom,war,arena,fall")
+	end)
+
+	it("Crown Points card names the sources the simulation has (FORGE-07 L1)", function()
+		local body = string.lower(HowToPlayModel.cards()[2].body)
+		for _, source in { "buildings", "objectives", "enemy units", "keeps" } do
+			expect(string.find(body, source, 1, true)).toBeTruthy()
+		end
+		for _, missing in { "land", "raids" } do
+			expect(string.find(body, missing, 1, true)).toBeNil()
+		end
 	end)
 
 	it("phase lengths come from config Pacing for Match.mode", function()
@@ -193,6 +203,14 @@ describe("How to play (desktop)", function()
 		expect(panel(world):GetAttribute("index")).toBe(3)
 	end)
 
+	it("Close goes back to the Kingdom menu only; opened from another menu it just closes (FORGE-07 L3)", function()
+		world.hud:setMenu("build")
+		world:advance(0.05)
+		world.help:open()
+		world.help:close()
+		expect(world.hud.state.menu).toBeNil()
+	end)
+
 	it("the back key steps a card back, then closes", function()
 		world.help:open()
 		world.help:next()
@@ -254,6 +272,52 @@ describe("How to play: Lobby, phone, without the controller", function()
 		world.help:close()
 		world.match:setPhase("Founding", world.env.serverTimeNow() + 480)
 		world:advance(0.2)
+		expect(find(world.hud.guis.hud, "Menu_howto")).toBeNil()
+		world:destroy()
+	end)
+
+	it(
+		"keys go through ContextActionService above the camera, on key down only, sunk when handled (FORGE-07 L3)",
+		function()
+			local actions = { bound = {}, unbound = 0 }
+			function actions:BindActionAtPriority(name, handler, _touch, priority, ...)
+				self.bound[name] = { handler = handler, priority = priority, keys = { ... } }
+			end
+			function actions:UnbindAction(name)
+				self.bound[name] = nil
+				self.unbound += 1
+			end
+			local world = newWorld({ services = { ContextActionService = actions } })
+			world.help:open()
+			world:advance(0.05)
+			local entry = actions.bound.ForgeHowToPlay
+			expect(entry).toBeTruthy()
+			expect(entry.priority).toBe(Enum.ContextActionPriority.High.Value + 10)
+			expect(table.find(entry.keys, Enum.KeyCode.Right)).toBeTruthy()
+			expect(table.find(entry.keys, Enum.KeyCode.Left)).toBeTruthy()
+			local Begin, End = Enum.UserInputState.Begin, Enum.UserInputState.End
+			local Sink, Pass = Enum.ContextActionResult.Sink, Enum.ContextActionResult.Pass
+			expect(entry.handler("x", Begin, { KeyCode = Enum.KeyCode.Right })).toBe(Sink)
+			expect(world.help.index).toBe(2)
+			expect(entry.handler("x", End, { KeyCode = Enum.KeyCode.Right })).toBe(Sink)
+			expect(world.help.index).toBe(2) -- key up does not step again
+			expect(entry.handler("x", Begin, { KeyCode = Enum.KeyCode.Q })).toBe(Pass)
+			world.help:close()
+			world:advance(0.05)
+			expect(actions.bound.ForgeHowToPlay).toBeNil()
+			expect(actions.unbound).toBe(1)
+			world:destroy()
+		end
+	)
+
+	it("destroy takes the Lobby rail button away (FORGE-07 L3)", function()
+		local world = newWorld()
+		world.match:setPhase("Lobby", world.env.serverTimeNow() + 20)
+		world:advance(0.2)
+		expect(find(world.hud.guis.hud, "Menu_howto")).toBeTruthy()
+		world.help:destroy()
+		world.hud:render()
+		world:advance(0.1)
 		expect(find(world.hud.guis.hud, "Menu_howto")).toBeNil()
 		world:destroy()
 	end)

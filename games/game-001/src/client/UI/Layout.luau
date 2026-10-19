@@ -13,9 +13,11 @@
 		desktop  width >= 1400 and height >= 760     scale = clamp(height / 850, 1, 1.5)
 		tablet   otherwise                           scale = clamp(height / 630, 1, 1.25)
 
-	Layout.compute(width, height, { reputation: boolean? }?) -> Metrics
+	Layout.compute(width, height, { reputation: boolean?, support: boolean? }?) -> Metrics
 		reputation = false: the strip is hidden (no reputation from the server yet), so `bottom` and
 		everything placed under it ignore its room; omitted means shown
+		support = true: the support meter chip sits under the strip (hud.support = { x, y, width, height }) and
+		`bottom` under it; omitted means none (FL-0073: dark until Kingdom.Support is served)
 		{ breakpoint, scale, width, height (logical), margin, touch,
 		  hud = { x, y, crest, compact, pills = { x, y }, members = { x, y }?,
 		          reputation = { x, y, width, height, columns, item = { width, height }, gap = { x, y }, pad },
@@ -98,6 +100,11 @@ Layout.MEMBERS_HEIGHT = 22
 -- Reputation strip (FL-0089): six items; phones one row, tablet/desktop three columns.
 Layout.REPUTATION_ITEMS = 6
 Layout.REPUTATION_ITEM_HEIGHT = 22
+-- Support meter (FL-0073): one chip under the reputation strip.
+Layout.SUPPORT_HEIGHT = 30
+Layout.SUPPORT_HEIGHT_PHONE = 26
+Layout.SUPPORT_WIDTH = 220
+Layout.SUPPORT_WIDTH_PHONE = 150
 -- Objective tracker (FL-0060): width per breakpoint; it keeps clear of the bottom chips (36 px + gap).
 Layout.OBJECTIVES_WIDTH_PHONE = 224
 Layout.OBJECTIVES_WIDTH = 272
@@ -146,7 +153,7 @@ function Layout.reputationStrip(phone: boolean, x: number, top: number, maxWidth
 	}
 end
 
-function Layout.compute(width: number, height: number, options: { reputation: boolean? }?): Metrics
+function Layout.compute(width: number, height: number, options: { reputation: boolean?, support: boolean? }?): Metrics
 	assert(width > 0 and height > 0, "Layout.compute: size must be positive")
 	-- The strip's room is reserved only while it shows (it is hidden until the server sends
 	-- reputation): otherwise tablet/desktop drawers and phone toasts would sit under an empty gap.
@@ -193,6 +200,15 @@ function Layout.compute(width: number, height: number, options: { reputation: bo
 		elseif members then members.y + Layout.MEMBERS_HEIGHT
 		elseif phone then math.max(y + 36, pills.y + pills.height)
 		else y + 36
+	-- The support meter (FL-0073, SupportMeterController): one chip under the stack while the server sends a
+	-- SupportView (dark until Kingdom.Support is served); `bottom` moves under it only then.
+	local support = nil
+	if options ~= nil and options.support == true then
+		local h = if phone then Layout.SUPPORT_HEIGHT_PHONE else Layout.SUPPORT_HEIGHT
+		local w = if phone then Layout.SUPPORT_WIDTH_PHONE else Layout.SUPPORT_WIDTH
+		support = { x = x, y = bottom + 6, width = w, height = h }
+		bottom = support.y + h
+	end
 	if not phone then
 		local w = if bp == "tablet" then 560 else 620
 		local maxH = if bp == "tablet" then 470 else 480
@@ -226,6 +242,7 @@ function Layout.compute(width: number, height: number, options: { reputation: bo
 			pills = pills,
 			members = members,
 			reputation = reputation,
+			support = support,
 			bottom = bottom,
 			objectives = objectives,
 		},

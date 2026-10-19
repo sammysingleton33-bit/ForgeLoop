@@ -92,7 +92,7 @@ function HowToPlayModel.cards(cfg: any?): { any }
 			title = "Crown Points",
 			icon = "crest",
 			picture = "laurel",
-			body = "Earn Crown Points with buildings, land, objectives and raids. Your total sits by your crest; the Kingdom menu shows every kingdom's standing. When Endgame ends, the two kingdoms with the most Crown Points meet in the Crown Arena.",
+			body = "Earn Crown Points with buildings, objectives, enemy units defeated and rival keeps taken. Your total sits by your crest; the Kingdom menu shows every kingdom's standing. When Endgame ends, the two kingdoms with the most Crown Points meet in the Crown Arena.",
 		},
 		{
 			id = "kingdom",

@@ -3,11 +3,11 @@ id: FL-0123
 title: Base editing, drag gesture: press-and-drag a building with edge-pan (setEditDrag), on top of the Move flow
 track: build
 owner: forge-03
-status: SPECIFIED
+status: READY
 priority: P2
 game: game-001
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-19
 depends_on: [FL-0120, FL-0121]
 evidence: []
 ---
@@ -36,3 +36,4 @@ Automated: specs and mutations. Studio: the E12 drag rows.
 
 ## Log
 - 2026-10-15 FORGE-00: created from FORGE-07's B17 review round (D-052).
+- 2026-10-19 forge-00: SPECIFIED → READY. FORGE-00 2026-10-19: unblocked (FL-0120 and FL-0121 merged, Studio pending). FORGE-03 picks it up after FL-0138 and FL-0073 review rounds, before FL-0129c (walls, after FL-0126 part 2). Phone and desktop audits apply.

@@ -16,6 +16,16 @@ RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-
 M, V, K = U + "HowToPlayModel.luau", U + "HowToPlay.luau", C + "HowToPlayController.luau"
 H = "economy/HowToPlay"
 ROWS = [
+    ("Crown Points copy drifts", M, "buildings, objectives, enemy units defeated and rival keeps taken", "buildings, land, objectives and raids", H,
+     "sources the simulation has"),
+    ("keys never bound", K, "\tself:_bind(open)", "\tself:_bind(false)", H, "through ContextActionService"),
+    ("handled keys passed through", K, "\t\t\t\t\tthen Enum.ContextActionResult.Sink\n\t\t\t\t\telse Enum.ContextActionResult.Pass",
+     "\t\t\t\t\tthen Enum.ContextActionResult.Pass\n\t\t\t\t\telse Enum.ContextActionResult.Sink", H, "through ContextActionService"),
+    ("keys act on key up too", K, "if state ~= Enum.UserInputState.Begin then", "if false then", H, "through ContextActionService"),
+    ("destroy leaves the rail button", K, "\t\tself.hud:removeRailItem(HowToPlayController.RAIL.id)\n\t\tself._railShown = false",
+     "\t\tself._railShown = false", H, "destroy takes the Lobby rail button"),
+    ("close returns to any menu", K, "self._returnTo = if from == \"kingdom\" then from else nil", "self._returnTo = from", H,
+     "Kingdom menu only"),
     ("phases hard-coded", M, "local fromPacing = c.pacing.modes and c.pacing.modes[mode]", "local fromPacing = Pacing.modes.match",
      H, "follows a changed config"),
     ("minutes floored", M, "math.max(1, math.floor(seconds / 60 + 0.5))", "math.max(1, math.floor(seconds / 60))", H,
