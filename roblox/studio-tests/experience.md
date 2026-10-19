@@ -580,12 +580,14 @@ Steps
 5. Run `game.Players:GetPlayers()[1]:SetAttribute("ForgeDuelPreview", false)`. The buttons go, the aerial view comes back, V toggles the view again, and Q / E turn the view again.
 6. (Needs FL-0071.) Two players (Test → Local Server, 2 players) qualify for the arena. At the `duel` stage both get the walk camera and the controls; every action works against the other champion. A third player watching gets neither the controls nor the buttons.
 7. (Needs FL-0071.) Hold block when the duel ends: at `crowning` the controls and buttons go and the aerial view returns. Output shows no error.
+8. (Needs FL-0071 and #255, FL-0139.) Two champions in a duel (Test → Local Server, 2 players). Player 1 holds Left Shift (or toggles sprint with L3 / the Sprint button) and walks; player 2 walks without sprint. Both move at the same speed: in the client's Explorer, each champion's `Humanoid.WalkSpeed` reads config Arena `ring.walkSpeed` (16) the whole duel, never 24, and neither pulls away from the other. After the crowning (or a cancelled duel) player 1's sprint works again (WalkSpeed eases to 24 while held).
 
-Pass: steps 1–5 hold (6 and 7 when FL-0071 is on the build). Copy every red line from Output. Write down any button that is hard to reach with the right thumb on the phone emulator.
+Pass: steps 1–5 hold (6 to 8 when FL-0071 is on the build). Copy every red line from Output. Write down any button that is hard to reach with the right thumb on the phone emulator.
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0075; G12.6 DRAFT).
 - 2026-10-18 FORGE-04: step 2 checks that a HUD click is not also a light attack (FORGE-07's #191 L1).
+- 2026-10-19 FORGE-04: step 8, a sprinting champion moves at the ring's speed (FL-0139, FORGE-07 #255 M1).
 
 ## E17 — The arena crowd you hear and read: reactions, subtitles, ducking (FL-0074 part 2a, game-001)
 
