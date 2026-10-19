@@ -3,6 +3,8 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local F = require("./KingdomFixtures")
 local Layout = require("@game/ReplicatedStorage/Game/Kingdom/Layout")
+local EventCodec = require("@game/ReplicatedStorage/Game/Sim/EventCodec")
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 
@@ -131,5 +133,32 @@ describe("Kingdom/Layout.groundY (world plots)", function()
 		end)
 		WorldPlan.groundHeight = original
 		assert(ok, err)
+	end)
+end)
+
+describe("Sim/Replication: the unit kind is the job on the wire", function()
+	it("sends soldier, archer, knight and ram as the job of a unit, and a citizen's job as before", function()
+		local sim, k = F.kingdom()
+		local ids = {}
+		for i, kind in { "soldier", "archer", "knight", "ram" } do
+			ids[kind] = Military.spawnUnit(sim, k, kind, 100 + i * 4, 100).id
+		end
+		local frame = Replication.new():frame(sim)
+		for kind, id in ids do
+			expect(frame.identity[id].job).toBe(kind)
+			expect(frame.identity[id].kind).toBe("soldier") -- the entity kind stays
+			expect(Replication.entityState(sim, id).job).toBe(kind)
+		end
+		local citizen = sim.citizens[k.citizenIds[1]]
+		expect(frame.identity[citizen.id].job).toBe(citizen.job)
+	end)
+
+	it("survives the spawn event's wire format for every unit kind", function()
+		for _, kind in { "soldier", "archer", "knight", "ram" } do
+			local buf =
+				EventCodec.encode(1, { { type = "spawn", id = 7, kind = "soldier", job = kind, kingdom = "crimson" } })
+			local batch = assert(EventCodec.decode(buf))
+			expect(batch.events[1].job).toBe(kind)
+		end
 	end)
 end)
