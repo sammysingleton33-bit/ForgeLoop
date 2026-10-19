@@ -15,7 +15,7 @@ The pure support half of the Crown Arena: the score, the tier, the key-citizen t
 None new beyond G12.2's `SupportModel.score / offers` (signatures as in CONTRACTS, `ruler` = `{ now }`) and the added `tierOf`, `trend`, `modifiers`.
 
 ## Evidence
-- GATE_PLACEHOLDER
+- `bash roblox/scripts/check.sh`: OVERALL PASS (selene 0/0/0, game-001 specs 1868 passed, 0 failed); `forge.py validate` 136 tasks 0 errors; `check_ownership.py --base origin/forge/01-arena-duel-model --owner forge-01` PASS; mutation rows FL-0070: 16/16 caught.
 - Headless only. Nothing here has been balanced: the weights and numbers are the design's provisional ones.
 
 ## Open issues and risks
