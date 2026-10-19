@@ -94,8 +94,8 @@ describe("HowToPlayModel (pure)", function()
 		local caps = table.clone(Caps.NUMBERS)
 		caps.passivePerStat = 0.04
 		caps.maxTriggers = 2
-		local arena = { voteSeconds = 30, duelMaxSeconds = 90 }
-		local cards = HowToPlayModel.cards({ pacing = pacing, match = match, caps = caps, arena = arena })
+		pacing.arena = { duel = 60, intro = 60 }
+		local cards = HowToPlayModel.cards({ pacing = pacing, match = match, caps = caps, arena = {} })
 		expect(cards[1].body).toContain("Founding 2 min, Expansion 3 min, Conflict 4 min, Endgame 5 min")
 		expect(cards[1].body).toContain("about 2 min")
 		expect(cards[4].body).toContain("45 seconds")
@@ -103,17 +103,27 @@ describe("HowToPlayModel (pure)", function()
 		expect(cards[5].body).toContain("up to 2 short perks")
 	end)
 
-	it("the arena's length is config Arena's stages (what ArenaService runs), else Pacing.arena (#237)", function()
-		local total = 0
-		for _, key in HowToPlayModel.ARENA_STAGES do
-			total += ArenaConfig[key] or 0
+	it("the arena's length is Pacing.arena (the expected duel), else config Arena's stages (#237, #244)", function()
+		local paced = 0
+		for _, sec in Pacing.arena or {} do
+			paced += sec
 		end
-		expect(total).toBeGreaterThan(0)
+		local staged = 0
+		for _, key in HowToPlayModel.ARENA_STAGES do
+			staged += ArenaConfig[key] or 0
+		end
+		local expected = if paced > 0 then paced else staged
+		expect(expected).toBeGreaterThan(0)
 		local body = HowToPlayModel.cards()[1].body
-		expect(body).toContain(`about {math.floor(total / 60 + 0.5)} min`)
+		expect(body).toContain(`about {math.floor(expected / 60 + 0.5)} min`)
 		expect(body).never.toContain("a few min")
-		local fallback = HowToPlayModel.cards({ arena = {}, pacing = { modes = Pacing.modes, arena = { duel = 180 } } })
-		expect(fallback[1].body).toContain("about 3 min")
+		local both = HowToPlayModel.cards({
+			arena = { duelMaxSeconds = 600 },
+			pacing = { modes = Pacing.modes, arena = { duel = 180 } },
+		})
+		expect(both[1].body).toContain("about 3 min") -- Pacing.arena wins over config Arena
+		local fallback = HowToPlayModel.cards({ arena = { duelMaxSeconds = 240 }, pacing = { modes = Pacing.modes } })
+		expect(fallback[1].body).toContain("about 4 min")
 		local none = HowToPlayModel.cards({ arena = {}, pacing = { modes = Pacing.modes } })
 		expect(none[1].body).toContain("a few min")
 	end)

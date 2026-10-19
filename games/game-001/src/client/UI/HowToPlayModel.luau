@@ -7,7 +7,7 @@
 			Card = { id, title, icon, picture (an icon name drawn large), body (plain words, < WORD_LIMIT words) }
 			cfg = { pacing, match, caps, arena } (defaults: config Pacing, config Match, Arena/Caps, config Arena), so
 			every number is the game's own: the phase lengths of Match.mode from Pacing (else Match.durations), the
-			arena's length from config Arena's stage seconds (what ArenaService runs; else Pacing.arena),
+			arena's length from Pacing.arena (else config Arena's stage seconds),
 			the newcomer lock and the support caps. Nothing here is bought or sold (D-053: no monetization).
 		HowToPlayModel.phases(cfg?) -> string   "Founding 8 min, Expansion 12 min, Conflict 15 min, Endgame 10 min"
 		HowToPlayModel.words(s) -> number        the word count a spec checks
@@ -60,21 +60,22 @@ function HowToPlayModel.phases(cfg: any?): string
 	return table.concat(parts, ", ")
 end
 
--- The stages ArenaService runs (config Arena, FORGE-01): vote, loadout, intro, the duel's safety clock, crowning.
+-- The arena's length: Pacing.arena (FORGE-04, one source per FORGE-00: config Arena's stage seconds plus the
+-- expected duel), else config Arena's own stages (FORGE-01: vote, loadout, intro, the duel's safety clock, crowning).
 HowToPlayModel.ARENA_STAGES =
 	table.freeze({ "voteSeconds", "loadoutSeconds", "introSeconds", "duelMaxSeconds", "crowningSeconds" })
 
 local function arenaMinutes(c: any): string
 	local total = 0
-	for _, key in HowToPlayModel.ARENA_STAGES do
-		local s = c.arena[key]
-		if type(s) == "number" then
-			total += s
-		end
+	for _, s in c.pacing.arena or {} do
+		total += s
 	end
-	if total <= 0 then -- no config Arena stages: the older Pacing.arena table, when it is there
-		for _, s in c.pacing.arena or {} do
-			total += s
+	if total <= 0 then
+		for _, key in HowToPlayModel.ARENA_STAGES do
+			local s = c.arena[key]
+			if type(s) == "number" then
+				total += s
+			end
 		end
 	end
 	return minutes(total) or "a few min"
