@@ -51,6 +51,12 @@ ROWS = [
     ("spectator loses the phase bar", "games/game-001/src/client/Controllers/KingdomHudController.luau",
      "self.guis.topbar.Enabled = active or (store.match ~= nil and store.match.phase ~= nil)",
      "self.guis.topbar.Enabled = active", "a real spectator"),
+    ("watcher never gets a pill", "games/game-001/src/client/UI/KingdomHud.luau", "\t\tif not show then\n\t\t\treturn\n\t\tend\n\t\tself:_buildTimer()",
+     "\t\treturn", "a match_full watcher"),
+    ("no waiting note", C, "local waiting = self.spectating and", "local waiting = false and", "a match_full watcher"),
+    ("waiting note for the fallen too", C, "and self.info.reason == \"match_full\"", "", "without the waiting note"),
+    ("note stays after seating", "games/game-001/src/client/UI/KingdomHud.luau", "self._noteLabel.Visible = show and self._note ~= nil", "self._noteLabel.Visible = show",
+     "a match_full watcher"),
     ("no empty-list words", V, 'text = "Nothing to watch yet",', 'text = "",', "the list says there is nothing yet"),
 ]
 bad = 0

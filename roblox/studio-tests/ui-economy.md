@@ -329,7 +329,8 @@ Before #140 the building panel shows no Move: expected.
 3. Leave asks "Leave the match?" with Leave / Cancel; Cancel keeps watching; Leave disconnects you
    with "You left the match. Thanks for playing AI Kingdoms!".
 4. A full server (all kingdoms full): the card says "This match is full" / "Watch now. You can rule in
-   the next match".
+   the next match". The phase pill at the top shows the phase and time left with "You'll join the next
+   match" under it; there is no crest, resource row, Build/Kingdom rail or Rivals tab.
 5. Results and the Lobby: the card and panel step aside for the results summary; in the next match's
    active phase they come back if you are still spectating, and go when you are seated again (the
    normal HUD returns).

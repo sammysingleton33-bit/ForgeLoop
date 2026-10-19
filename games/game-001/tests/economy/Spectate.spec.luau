@@ -58,6 +58,7 @@ local function newWorld(opts)
 		clientDefinitions = defs,
 		remotes = if o.noRemote then nil else REMOTES,
 		services = if o.noRemote then nil else { spectateService },
+		kingdom = if o.unseated then false else nil, -- never seated: no kingdom HUD was ever built
 	})
 	world.state = state
 	world.hud = world.client:get("KingdomHudController")
@@ -272,6 +273,43 @@ describe("The spectate screen (FL-0129)", function()
 		expect(panel).toBeTruthy()
 		expect(panel.Size.X.Offset).toBe(224)
 		expect(find(menus(world), "FallenCard")).toBeNil()
+	end)
+
+	it("a match_full watcher (never seated) gets the phase pill with a note; no kingdom controls", function()
+		world = newWorld({ unseated = true })
+		world.match:setPhase("Expansion", world.env.serverTimeNow() + 300)
+		world:advance(1.2)
+		expect(world.hud.store:mine()).toBeNil()
+		fall(world, { reason = "match_full", standing = { "crimson", "azure", "emerald", "gold" } })
+		world:advance(1.2)
+		local topbar = world.hud.guis.topbar
+		expect(topbar.Enabled).toBe(true)
+		local timer = find(topbar, "Timer")
+		expect(timer).toBeTruthy()
+		expect(timer.Visible).toBe(true)
+		expect(texts(timer)).toContain("EXPANSION")
+		local note = find(topbar, "TimerNote")
+		expect(note.Visible).toBe(true)
+		expect(note.Text).toBe("You'll join the next match")
+		-- the controls a watcher cannot use stay off: rail (Build, Kingdom → Rivals), menus, backdrop
+		expect(world.hud.guis.hud.Enabled).toBe(false)
+		expect(world.hud.guis.menus.Enabled).toBe(false)
+		expect(texts(find(menus(world), "FallenCard"))).toContain("This match is full")
+		-- seated in the next match: the note goes
+		world.server_:send(world.player, false)
+		world:advance(1.2)
+		expect(find(topbar, "TimerNote").Visible).toBe(false)
+	end)
+
+	it("an eliminated ruler keeps the pill without the waiting note", function()
+		world = newWorld()
+		world.match:setPhase("Conflict", world.env.serverTimeNow() + 300)
+		world:advance(1.2)
+		fall(world)
+		world:advance(1.2)
+		expect(find(world.hud.guis.topbar, "Timer").Visible).toBe(true)
+		local note = find(world.hud.guis.topbar, "TimerNote")
+		expect(note == nil or note.Visible == false).toBe(true)
 	end)
 
 	it("without FORGE-04's camera the card still shows and the list says there is nothing yet", function()

@@ -20,7 +20,9 @@
 		spectate:stay()  spectate:leave()  spectate:confirmLeave()  spectate:cancelLeave()
 		spectate:select(index)  spectate:cycle(step)
 		spectate.spectating  spectate.info  spectate.state = { card, confirmLeave }  spectate.view
-		KingdomHudSpectateController.EVENT = "Match.Spectate"   .POLL_SEC   .GOODBYE
+		KingdomHudSpectateController.EVENT = "Match.Spectate"   .POLL_SEC   .GOODBYE   .WAITING
+	A match_full watcher (never seated) keeps the phase pill with WAITING under it; the kingdom HUD's
+	controls (rail, Rivals, build) are off for anyone without a kingdom.
 ]]
 
 local SpectateModel = require("../UI/SpectateModel")
@@ -36,6 +38,7 @@ KingdomHudSpectateController.CAMERA = "RulerSpectateController"
 KingdomHudSpectateController.POLL_SEC = 1
 KingdomHudSpectateController.PAUSED = table.freeze({ Results = true, Lobby = true }) -- targets() is re-read this often while spectating
 KingdomHudSpectateController.GOODBYE = "You left the match. Thanks for playing AI Kingdoms!"
+KingdomHudSpectateController.WAITING = "You'll join the next match" -- under the phase pill (match_full)
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -251,6 +254,12 @@ function KingdomHudSpectateController:render(metrics: any?)
 	-- Results and the Lobby belong to the summary: the screen steps aside (and comes back in the next
 	-- active phase while the server's spectate still stands; FORGE-07 L1 on #185)
 	local phase = if hud.store.match then hud.store.match.phase else nil
+	-- a match_full watcher waits for a seat: the phase pill (which the HUD keeps on while a match runs)
+	-- says so (FORGE-00, 2026-10-19)
+	local waiting = self.spectating and type(self.info) == "table" and self.info.reason == "match_full"
+	if hud.view and type(hud.view.setTimerNote) == "function" then
+		hud.view:setTimerNote(if waiting then KingdomHudSpectateController.WAITING else nil)
+	end
 	if not self.spectating or KingdomHudSpectateController.PAUSED[phase] then
 		self.view:destroy()
 		return
