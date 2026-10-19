@@ -11,8 +11,10 @@
 	  3. Puts each one, named by its piece id, under ReplicatedStorage.Forge.Assets.CitizenKit (a Folder it creates if
 	     needed). CLONES by default (the originals stay in Workspace for you to delete); MOVE = true moves them.
 	  4. Checks every piece: it is a MeshPart, has a MeshId (Studio uploaded its mesh), has the size the data says
-	     (+/- 0.1 stud: a wrong Scale Unit or axis shows here), and is not rotated (the Kit places pieces unrotated). Scripts
-	     found inside a piece are deleted from the copy.
+	     (+/- 0.1 stud: a wrong Scale Unit or axis shows here), and is not rotated (the Kit places pieces unrotated). Everything
+	     inside a piece except a SurfaceAppearance (the shared palette) is deleted from the copy and listed in the report:
+	     scripts (Script, LocalScript, ModuleScript) and anything that carries a remote id or state (Sound, Decal, Texture,
+	     ParticleEmitter, Animation, ObjectValue, StringValue, Attachment...). report.stripped has "<ClassName> <full name>".
 	  5. Prints a report: counts, missing pieces, wrong sizes, rotated pieces, duplicates, stray MeshParts. Triangle counts
 	     are NOT available from Studio: the triangle figures are the Blender export's (rig.json `tris`, the manifest).
 	  Idempotent: run it again and it replaces the folder's pieces with the same result; pieces already in the folder that
@@ -51,6 +53,7 @@ local function importCitizenKit(world, settings)
 		duplicates = {},
 		stray = {},
 		scriptsRemoved = 0,
+		stripped = {}, -- every non-SurfaceAppearance descendant removed from a piece copy: "<ClassName> <full name>"
 		layout = "unchecked",
 		dryRun = settings.dryRun,
 		ok = false,
@@ -265,12 +268,28 @@ local function importCitizenKit(world, settings)
 			local checked = problems(source, expected[id])
 			if not settings.dryRun then
 				local piece = if settings.move then source else source:Clone()
-				for _, child in ipairs(piece:GetDescendants()) do
-					if child:IsA("LuaSourceContainer") then
-						child:Destroy()
-						report.scriptsRemoved += 1
+				-- Only a SurfaceAppearance (the shared palette) may ride along on a piece. Everything else is removed from the
+				-- copy and logged: scripts (Script, LocalScript, ModuleScript), and anything that fetches or carries a remote
+				-- id or state (Sound, Decal, Texture, ParticleEmitter, Animation, ObjectValue, StringValue, Attachment...).
+				-- walk before destroying: nothing is read from an instance after it was destroyed
+				local function strip(parent: Instance)
+					for _, child in ipairs(parent:GetChildren()) do
+						if child:IsA("SurfaceAppearance") then
+							strip(child)
+						else
+							local doomed = child:GetDescendants()
+							table.insert(doomed, 1, child)
+							for _, d in ipairs(doomed) do
+								if d:IsA("LuaSourceContainer") then
+									report.scriptsRemoved += 1
+								end
+								table.insert(report.stripped, string.format("%s %s", d.ClassName, d:GetFullName()))
+							end
+							child:Destroy()
+						end
 					end
 				end
+				strip(piece)
 				piece.Name = id
 				if existing and existing ~= piece then
 					existing:Destroy()
@@ -332,13 +351,21 @@ local function importCitizenKit(world, settings)
 	listOf("ROTATED (the Kit places pieces unrotated: re-import with Forward -Z, Up Y)", report.rotated)
 	listOf("duplicate sources", report.duplicates)
 	listOf("MeshParts that are not in the kit's data (ignored)", report.stray, 8)
-	if report.scriptsRemoved > 0 then
+	if #report.stripped > 0 then
 		log(
 			string.format(
-				"import_char_kit: %d script(s) found inside imported pieces were deleted from the copies",
+				"import_char_kit: %d instance(s) found inside imported pieces were deleted from the copies (%d of them scripts); only a SurfaceAppearance may stay:",
+				#report.stripped,
 				report.scriptsRemoved
 			)
 		)
+		for i, line in ipairs(report.stripped) do
+			if i > 12 then
+				log(string.format("  ... and %d more", #report.stripped - 12))
+				break
+			end
+			log("  stripped: " .. line)
+		end
 	end
 	report.ok = #report.missing == 0 and #report.wrongSize == 0 and #report.noMesh == 0 and #report.rotated == 0
 	log(

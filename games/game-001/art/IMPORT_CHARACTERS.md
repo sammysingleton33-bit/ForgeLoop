@@ -29,6 +29,9 @@ match, stop and report what you see. Nothing here costs money or needs an API ke
 3. Read the Output. **Good: `RESULT: OK`**, `N imported, 0 missing`. Not good: `MISSING`, `WRONG SIZE` (a scale/unit
    mistake), `NO MESH` (the upload failed), `ROTATED` (axes): do not continue, send the Output to FORGE-02. Triangle counts
    are not available in Studio: the figures are Blender's (`rig.json`, the manifest).
+   The script also deletes from its copies everything inside a piece except a `SurfaceAppearance` (scripts, Sounds, Decals,
+   ObjectValues, Attachments... anything that executes, fetches or carries an id) and lists each in the Output as
+   `stripped:`. A clean import prints none: if you see any, paste them to FORGE-02 before saving the `.rbxm`.
 4. The script selects `CitizenKit`. Right-click it > **Save to File...** > `roblox/assets/CitizenKit.rbxm` in the
    checkout (a few KB: it holds mesh ids, not meshes). Commit it in a PR (FORGE-05/02): that is what makes `rojo build`
    include the kit. Rojo cannot live-sync mesh ids: use `rojo build`, not `rojo serve`, to see the meshes.
