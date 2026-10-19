@@ -19,6 +19,17 @@ local OnboardingDef = require("@game/ServerScriptService/Forge/Services/Onboardi
 local KNOWN = AnalyticsRouter.knownEvents(GameEvents)
 local FLOW = OnboardingConfig.flows[1]
 
+-- The full-match tips (FL-0137): every flow after the tutorial, by id.
+local function tips(): { [string]: any }
+	local out = {}
+	for _, flow in OnboardingConfig.flows do
+		if flow.tip then
+			out[flow.id] = flow
+		end
+	end
+	return out
+end
+
 -- G3 KingdomService double: getKingdom(id).rulers (userIds) and getKingdomOf(player)
 local function fakeKingdoms()
 	local rulers = { crimson = {}, azure = {} }
@@ -80,6 +91,47 @@ describe("game-001 VS-1 onboarding config", function()
 			end
 		end
 		expect((OnboardingConfig.limits or {}).firstRewardSec).toBeNil()
+	end)
+
+	it("six full-match tips, each one step started by a G9 event, hiding by itself within 20 s (FL-0137)", function()
+		local byId = tips()
+		local ids = {}
+		for id in byId do
+			table.insert(ids, id)
+		end
+		table.sort(ids)
+		expect(ids).toEqual({ "tip_crown_arena", "tip_raid", "tip_ram", "tip_siege", "tip_war_on_you", "tip_war_open" })
+		expect(OnboardingConfig.flows[1].tip).toBeNil() -- the tutorial stays first and is not a tip
+		local starts = {}
+		for id, flow in byId do
+			expect(#flow.steps).toBe(1)
+			expect(flow.funnel).toBeNil()
+			expect(table.find(KNOWN, flow.startOn) ~= nil).toBe(true)
+			expect(flow.steps[1].autoAdvanceSec <= Onboarding.TIP_MAX_SEC).toBe(true)
+			starts[id] = `{flow.startOn}:{flow.startMatch.role or flow.startMatch.phase}`
+			local text = `{flow.steps[1].hint.title} {flow.steps[1].hint.body}`
+			for _, word in { "allian", "ally", "allies", "betray" } do
+				expect(string.find(string.lower(text), word, 1, true)).toBeNil() -- VS-3
+			end
+		end
+		expect(starts).toEqual({
+			tip_war_open = "MatchPhaseChanged:Conflict",
+			tip_war_on_you = "WarChanged:target",
+			tip_siege = "SiegeChanged:defender",
+			tip_raid = "RaidChanged:defender",
+			tip_ram = "SiegeChanged:attacker",
+			tip_crown_arena = "MatchPhaseChanged:Endgame",
+		})
+		-- a siege or raid tip ends when its situation does; the ram tip waits for the Barracks' units
+		expect(byId.tip_siege.steps[1].trigger).toEqual({
+			bus = "SiegeChanged",
+			match = { role = "defender", on = false },
+		})
+		expect(byId.tip_raid.steps[1].trigger).toEqual({
+			bus = "RaidChanged",
+			match = { role = "defender", on = false },
+		})
+		expect(byId.tip_ram.steps[1].requires).toBe("MilitaryService")
 	end)
 
 	it("client-reported steps grant nothing and are whitelisted; server steps use G9 events", function()
@@ -403,6 +455,162 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 		expect(steps(p1)).toEqual({ "Spawn", "InspectCitizen", "BuildOnPlot", "AnswerCitizen", "Recruit" })
 		expect(env.mock:hasLog("warn", "subjects resolver")).toBe(false)
 	end)
+
+	-- The snapshots pushed to a player for one flow (Experience.OnboardingState).
+	local function pushed(player, flowId)
+		local out = {}
+		for _, entry in remotes:sentTo("Experience.OnboardingState", player) do
+			if entry.args[1].flowId == flowId then
+				table.insert(out, entry.args[1])
+			end
+		end
+		return out
+	end
+
+	local function customEvents(name)
+		local out = {}
+		for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
+			if call.args[1] == name then
+				table.insert(out, call)
+			end
+		end
+		return out
+	end
+
+	it(
+		"a siege shows the siege tip to the defenders and the ram tip to the attackers; it ends with the siege, once (FL-0137)",
+		function()
+			boot(true)
+			join(p1, "crimson")
+			join(p2, "azure")
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 3 })
+			expect(onboarding:state(p1, "tip_siege").stepId).toBe("DefendKeep")
+			expect(onboarding:state(p2, "tip_siege")).toBeNil()
+			expect(onboarding:state(p2, "tip_ram").stepId).toBe("BringRam")
+			expect(onboarding:state(p1, "tip_ram")).toBeNil()
+			local shown = pushed(p1, "tip_siege")
+			expect(#shown).toBe(1)
+			expect(shown[1].tip).toBe(true)
+			expect(shown[1].hint.title).toBe("Your keep is under siege!")
+			bus.SiegeChanged:fire("crimson", false, { byKingdomIds = { "azure" }, buildingId = 3 })
+			expect(onboarding:state(p1, "tip_siege").done).toBe(true)
+			bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 3 })
+			expect(onboarding:state(p1, "tip_siege").done).toBe(true) -- a second siege: no second tip
+			expect(#pushed(p1, "tip_siege")).toBe(2) -- shown, then hidden
+			bus.UnitsRecruited:fire(p2, "azure", 1) -- the attacker recruits: the ram tip has done its job
+			expect(onboarding:state(p2, "tip_ram").done).toBe(true)
+			expect(steps(p1)).toEqual({ "Spawn" }) -- tips never log the tutorial funnel
+		end
+	)
+
+	it(
+		"a war declared on me shows the war tip to the target only; peace ends it; Conflict's tip ends when I declare (FL-0137)",
+		function()
+			boot(true)
+			join(p1, "crimson")
+			join(p2, "azure")
+			bus.MatchPhaseChanged:fire("Conflict")
+			expect(onboarding:state(p1, "tip_war_open").stepId).toBe("WarOpen")
+			expect(onboarding:state(p2, "tip_war_open").stepId).toBe("WarOpen")
+			bus.WarChanged:fire("azure", "crimson", true, p2.UserId) -- azure declares war on crimson
+			expect(onboarding:state(p2, "tip_war_open").done).toBe(true) -- the declarer did it
+			expect(onboarding:state(p1, "tip_war_open").done).toBe(false)
+			expect(onboarding:state(p1, "tip_war_on_you").stepId).toBe("WarOnYou")
+			expect(onboarding:state(p2, "tip_war_on_you")).toBeNil()
+			bus.WarChanged:fire("crimson", "azure", false, p1.UserId) -- crimson accepts azure's peace
+			expect(onboarding:state(p1, "tip_war_on_you").done).toBe(true)
+		end
+	)
+
+	it("tips hide by themselves; Got it dismisses one for good; neither logs a tutorial event (FL-0137)", function()
+		boot(true)
+		join(p1, "crimson")
+		bus.MatchPhaseChanged:fire("Endgame")
+		local crown = tips().tip_crown_arena.steps[1]
+		expect(onboarding:state(p1, "tip_crown_arena").stepId).toBe("CrownArena")
+		env.mock:advance(crown.autoAdvanceSec + 1)
+		expect(onboarding:state(p1, "tip_crown_arena").done).toBe(true)
+		bus.RaidChanged:fire("crimson", true, { byKingdomIds = { "azure" }, count = 4, position = Vector3.zero })
+		expect(onboarding:state(p1, "tip_raid").stepId).toBe("StopRaid")
+		expect((remotes:call("Experience.OnboardingSkip", p1, "tip_raid"))).toBe(true)
+		local raid = onboarding:state(p1, "tip_raid")
+		expect(raid.done and raid.skipped).toBe(true)
+		bus.RaidChanged:fire("crimson", true, { byKingdomIds = { "azure" }, count = 4, position = Vector3.zero })
+		expect(onboarding:state(p1, "tip_raid").skipped).toBe(true)
+		expect(#customEvents("OnboardingSkipped")).toBe(0)
+		expect(#customEvents("OnboardingCompleted")).toBe(0)
+		expect(env.mock:hasLog("info", "onboarding tip dismissed")).toBe(true)
+		expect(steps(p1)).toEqual({ "Spawn" })
+	end)
+
+	it("without FORGE-01's military the ram tip is passed over: it never shows (FL-0137)", function()
+		boot(true, { "MilitaryService" })
+		join(p1, "crimson")
+		join(p2, "azure")
+		bus.SiegeChanged:fire("crimson", true, { byKingdomIds = { "azure" }, buildingId = 3 })
+		expect(onboarding:state(p2, "tip_ram").done).toBe(true)
+		local shown = pushed(p2, "tip_ram")
+		expect(#shown).toBe(1)
+		expect(shown[1].done).toBe(true)
+		expect(onboarding:state(p1, "tip_siege").done).toBe(false) -- the siege tip needs no service
+	end)
+
+	it(
+		"Signals: war, siege and raid roles; each attacking kingdom once; bad payloads credit nobody (FL-0137)",
+		function()
+			kingdoms.join(p1, "crimson")
+			kingdoms.join(p2, "azure")
+			local ctx = {
+				byUserId = function(id)
+					return env.Players:GetPlayerByUserId(id)
+				end,
+				all = function()
+					return env.Players:GetPlayers()
+				end,
+				registry = {
+					find = function(_, name)
+						return if name == "KingdomService" then kingdoms else nil
+					end,
+				},
+			}
+			local function roles(list)
+				local out = {}
+				for _, s in list do
+					local flag = if s.info.on ~= nil then s.info.on else s.info.atWar
+					table.insert(
+						out,
+						`{s.player.UserId}:{s.info.role}:{tostring(flag)}:{s.info.kingdom}>{tostring(s.info.other)}`
+					)
+				end
+				table.sort(out)
+				return out
+			end
+			local subjects = Signals.subjects
+			expect(roles(subjects.WarChanged({ "azure", "crimson", true, 1102 }, ctx))).toEqual({
+				"1101:target:true:crimson>azure",
+				"1102:declarer:true:azure>crimson",
+			})
+			expect(roles(subjects.WarChanged({ "crimson", "azure", false }, ctx))).toEqual({
+				"1101:acceptor:false:crimson>azure",
+				"1102:proposer:false:azure>crimson",
+			})
+			local siege = { byKingdomIds = { "azure", "azure", "crimson" }, buildingId = 1 }
+			expect(roles(subjects.SiegeChanged({ "crimson", true, siege }, ctx))).toEqual({
+				"1101:defender:true:crimson>azure",
+				"1102:attacker:true:azure>crimson",
+			})
+			expect(roles(subjects.RaidChanged({ "crimson", false, { byKingdomIds = { "azure" } } }, ctx))).toEqual({
+				"1101:defender:false:crimson>azure",
+				"1102:attacker:false:azure>crimson",
+			})
+			expect(roles(subjects.SiegeChanged({ "crimson", true, nil }, ctx))).toEqual({
+				"1101:defender:true:crimson>nil",
+			})
+			expect(subjects.WarChanged({ nil, "crimson", true }, ctx)).toEqual({})
+			expect(subjects.WarChanged({ "azure", 7, true }, ctx)).toEqual({})
+			expect(subjects.RaidChanged({ 7, true, {} }, ctx)).toEqual({})
+		end
+	)
 
 	it("skipping logs OnboardingSkipped and no later funnel step", function()
 		boot(true)

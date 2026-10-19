@@ -244,4 +244,100 @@ describe("OnboardingController (client)", function()
 		settings:set("showHints", false)
 		expect(controller:showIdleHint("Conflict")).toBe(false)
 	end)
+
+	-- A tip's snapshot (FL-0137): one step, no client action.
+	local function tipState(id, fields)
+		local base = {
+			flowId = id,
+			tip = true,
+			total = 1,
+			completed = 0,
+			step = 1,
+			stepId = "Tip",
+			hint = { title = `tip {id}`, body = "Press G." },
+			escalated = false,
+			done = false,
+			skipped = false,
+		}
+		for k, v in fields or {} do
+			base[k] = v
+		end
+		return base
+	end
+
+	local function card()
+		return gui:FindFirstChild("ForgeOnboarding"):FindFirstChild("Card")
+	end
+
+	it("a tip waits while the tutorial card shows, then shows with Got it and no counter (FL-0137)", function()
+		controller:apply(state())
+		controller:apply(tipState("tip_siege"))
+		expect(card():FindFirstChild("Title").Text).toBe("Walk to the landmark") -- the tutorial wins
+		expect(controller.state.flowId).toBe("first_session") -- the tip never replaces the tutorial's state
+		expect(controller.tip).toBeNil()
+		controller:apply(state({ done = true, hint = nil }))
+		expect(card():FindFirstChild("Title").Text).toBe("tip tip_siege")
+		expect(card():FindFirstChild("Skip").Text).toBe("Got it")
+		expect(card():FindFirstChild("Counter").Text).toBe("")
+		expect(controller.tip.flowId).toBe("tip_siege")
+		expect(gui:FindFirstChild("ForgeOnboarding").Enabled).toBe(true)
+		expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{OnboardingDef.CARD_RESERVE}`)
+		expect(controller:showIdleHint("Expansion")).toBe(false) -- the tip is already guiding
+		-- the tutorial is back (a new snapshot): its own label and counter return
+		controller:apply(state())
+		expect(card():FindFirstChild("Skip").Text).toBe("Skip tutorial")
+		expect(card():FindFirstChild("Counter").Text).toBe("2/9")
+	end)
+
+	it(
+		"the newest tip shows; when it ends the older one comes back; a finished tip never celebrates (FL-0137)",
+		function()
+			controller:apply(tipState("tip_war_open"))
+			controller:apply(tipState("tip_war_on_you"))
+			expect(card():FindFirstChild("Title").Text).toBe("tip tip_war_on_you")
+			controller:apply(tipState("tip_war_on_you", { done = true, completed = 1, step = nil, hint = nil }))
+			expect(card():FindFirstChild("Title").Text).toBe("tip tip_war_open")
+			controller:apply(tipState("tip_war_open", { done = true, completed = 1, step = nil, hint = nil }))
+			expect(gui:FindFirstChild("ForgeOnboarding").Enabled).toBe(false)
+			expect(notifications.reserved[#notifications.reserved]).toBe("onboarding:nil")
+			expect(#notifications.celebrated).toBe(0)
+			expect(controller.state).toBeNil()
+		end
+	)
+
+	it(
+		"Got it dismisses the tip on the server and hides it at once; the button keeps Skip for the tutorial (FL-0137)",
+		function()
+			controller:apply(tipState("tip_raid"))
+			controller:dismissTip()
+			local sent = env.mock.remotes:sent(remotes.skip, "toServer")
+			expect(#sent).toBe(1)
+			expect(sent[1].args[1]).toBe("tip_raid")
+			expect(gui:FindFirstChild("ForgeOnboarding").Enabled).toBe(false)
+			expect(controller.tip).toBeNil()
+			controller:dismissTip() -- nothing shows: nothing sent
+			expect(#env.mock.remotes:sent(remotes.skip, "toServer")).toBe(1)
+			controller:skip() -- no tutorial: Skip sends nothing either
+			expect(#env.mock.remotes:sent(remotes.skip, "toServer")).toBe(1)
+			-- the card's button: Got it for a tip, Skip tutorial while the tutorial shows
+			controller:apply(tipState("tip_siege"))
+			controller:_onButton()
+			expect(env.mock.remotes:sent(remotes.skip, "toServer")[2].args[1]).toBe("tip_siege")
+			controller:apply(tipState("tip_ram"))
+			controller:apply(state())
+			controller:_onButton()
+			expect(env.mock.remotes:sent(remotes.skip, "toServer")[3].args[1]).toBe("first_session")
+			expect(controller.tip.flowId).toBe("tip_ram") -- skipping the tutorial leaves the tip to show
+		end
+	)
+
+	it("no tip shows while showHints is off (FL-0137)", function()
+		settings:set("showHints", false)
+		controller:apply(tipState("tip_raid"))
+		local screen = gui:FindFirstChild("ForgeOnboarding")
+		expect(screen == nil or screen.Enabled == false).toBe(true)
+		expect(controller.tip).toBeNil()
+		controller:apply(state()) -- the tutorial itself is not a hint: it still shows
+		expect(card():FindFirstChild("Title").Text).toBe("Walk to the landmark")
+	end)
 end)
