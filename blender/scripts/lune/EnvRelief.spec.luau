@@ -27,8 +27,15 @@ local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local EnvKit = require("../../../games/game-001/tests/world/fixtures/EnvMeshKit")
 
 local FAMILIES = {
-	{ "tree_oak", "oak" }, { "tree_pine", "pine" }, { "tree_birch", "birch" }, { "bush", "bush" }, { "plant_flowers", "flowers" }, { "rock_boulder", "boulders" },
-	{ "resource_", "resource nodes" }, { "farm_field", "crops" }, { "farm_haystack", "haystack" },
+	{ "tree_oak", "oak" },
+	{ "tree_pine", "pine" },
+	{ "tree_birch", "birch" },
+	{ "bush", "bush" },
+	{ "plant_flowers", "flowers" },
+	{ "rock_boulder", "boulders" },
+	{ "resource_", "resource nodes" },
+	{ "farm_field", "crops" },
+	{ "farm_haystack", "haystack" },
 }
 
 local function family(id: string): string
@@ -70,7 +77,13 @@ local function run(withMeshes: boolean, density: { [string]: number }?)
 	env.mock:advance(30)
 	Kit.prop = original
 	expect(svc.stats.error).toBeNil()
-	local out = { parts = svc.stats.parts, props = svc.stats.props, byFamily = by, meshModels = meshModels }
+	local out = {
+		parts = svc.stats.parts,
+		arenaParts = svc.stats.arenaParts,
+		props = svc.stats.props,
+		byFamily = by,
+		meshModels = meshModels,
+	}
 	svc:destroy()
 	EnvKit.uninstall()
 	return out
@@ -82,12 +95,14 @@ describe("FL-0136 part-count relief", function()
 			shipped = { plain = run(false, nil), mesh = run(true, nil) },
 			full = { plain = run(false, WorldPlan.FULL_DENSITY), mesh = run(true, WorldPlan.FULL_DENSITY) },
 		}
-		expect(runs.full.plain.parts).toBe(8309) -- the pinned figure of WorldService.spec
+		expect(runs.full.plain.parts - runs.full.plain.arenaParts).toBe(8271) -- the dressing, the pinned figure of WorldService.spec (the arena is counted apart)
 		expect(runs.full.mesh.parts).toBeLessThan(runs.full.plain.parts)
 		local o = process.env.FORGE_ENV_RELIEF
 		if o and o ~= "" then
 			fs.writeFile(o, serde.encode("json", { runs = runs }, false))
-			print(`relief: shipped {runs.shipped.plain.parts} -> {runs.shipped.mesh.parts}, density 1.0 {runs.full.plain.parts} -> {runs.full.mesh.parts} -> {o}`)
+			print(
+				`relief: shipped {runs.shipped.plain.parts} -> {runs.shipped.mesh.parts}, density 1.0 {runs.full.plain.parts} -> {runs.full.mesh.parts} -> {o}`
+			)
 		end
 	end)
 end)

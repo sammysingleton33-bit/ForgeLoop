@@ -1,19 +1,69 @@
 --!strict
 --[[
-	Kit/EnvMeshData — the imported nature meshes (trees, bushes, rocks, resource nodes, flowers, crops) as data (FL-0136,
-	D-057 (18)-(20)). GENERATED, do not edit by hand:
+	Kit/EnvMeshData — the imported nature meshes as data (FL-0136, D-057 (18)-(20)). GENERATED, do not edit by hand:
 		python3 games/game-001/art/env_kit/env_to_luau.py
-	reads games/game-001/art/env_kit/env.json (written with the Blender env kit, schema_version 1) and rewrites this file.
-
-	This committed version has NO props on purpose: until the real kit is generated and the owner has imported env_kit.fbx
-	into Studio, Kit.prop builds the part-built stand-ins for every asset id (Kit/EnvMesh accepts a Model from
-	Forge.Assets only for the ids listed here, and falls back to the stand-in when a Model does not match its entry).
+	source games/game-001/art/env_kit/env.json  sha256 2a77ae0dd6d87603bc8d28140aa073af02dd03e91dc2e70ef86b06d187f52751
+	52 props (10 also resource nodes).
+	Kit/EnvMesh.luau reads it; Kit.prop uses a Forge.Assets Model for these ids only when it matches, else the stand-in.
 ]]
 
 -- stylua: ignore start
 return table.freeze({
 	schema_version = 1,
 	unit = "stud",
-	props = {},
+	props = {
+		bush_01 = { family = "bush", bbox_center = { -0.227, 2.6455, 0.0586 }, size = { 6.9099, 5.4511, 6.8681 }, tris = 160, tint = "fixed", standin_size = { 7.43, 5.18, 6.87 }, node = false },
+		bush_02 = { family = "bush", bbox_center = { -0.0635, 2.2684, -0.0043 }, size = { 7.7896, 4.6967, 7.6929 }, tris = 280, tint = "fixed", standin_size = { 7.28, 5.07, 6.96 }, node = false },
+		bush_03 = { family = "bush", bbox_center = { -0.4595, 2.9282, -0.3476 }, size = { 6.3757, 6.0163, 6.213 }, tris = 280, tint = "fixed", standin_size = { 6.09, 5.47, 6.69 }, node = true },
+		bush_04 = { family = "bush", bbox_center = { 0.2172, 2.562, -0.8988 }, size = { 7.1741, 5.284, 6.9653 }, tris = 220, tint = "fixed", standin_size = { 6.71, 4.85, 6.79 }, node = false },
+		bush_05 = { family = "bush", bbox_center = { -0.1666, 2.7187, -0.171 }, size = { 7.3915, 5.5974, 7.5007 }, tris = 280, tint = "fixed", standin_size = { 6.99, 5.51, 7.01 }, node = false },
+		bush_06 = { family = "bush", bbox_center = { 0.0936, 2.3025, -0.3114 }, size = { 6.9323, 4.7651, 7.1369 }, tris = 300, tint = "fixed", standin_size = { 6.67, 5.16, 6.51 }, node = false },
+		bush_07 = { family = "bush", bbox_center = { 0.1231, 2.7491, 0.4199 }, size = { 7.0587, 5.6583, 6.2912 }, tris = 140, tint = "fixed", standin_size = { 6.95, 5.33, 7.59 }, node = false },
+		bush_08 = { family = "bush", bbox_center = { 0.4756, 2.4575, 0.6327 }, size = { 6.0987, 5.075, 7.383 }, tris = 340, tint = "fixed", standin_size = { 6.9, 5.21, 6.52 }, node = false },
+		farm_field_cabbage_03 = { family = "crop", bbox_center = { 0, 1.3934, 0 }, size = { 38, 2.7868, 28 }, tris = 1332, tint = "fixed", standin_size = { 38, 3.14, 28 }, node = false },
+		farm_field_wheat_01 = { family = "crop", bbox_center = { 0, 1.4764, 0 }, size = { 38, 2.9527, 28 }, tris = 1362, tint = "fixed", standin_size = { 38, 2.42, 28 }, node = false },
+		farm_field_wheat_02 = { family = "crop", bbox_center = { -0.05, 1.4724, 0 }, size = { 38.1, 2.9449, 28 }, tris = 1430, tint = "fixed", standin_size = { 38, 2.42, 28 }, node = false },
+		farm_haystack_01 = { family = "haystack", bbox_center = { 0.8761, 2.9901, -0.0999 }, size = { 7.8003, 6.1402, 6.0005 }, tris = 196, tint = "fixed", standin_size = { 7.29, 6.2, 6.2 }, node = false },
+		plant_flowers_01 = { family = "flower", bbox_center = { -0.5451, 1.5626, -0.2884 }, size = { 4.3709, 3.1251, 3.9275 }, tris = 254, tint = "fixed", standin_size = { 4.09, 3.01, 2.95 }, node = false },
+		plant_flowers_02 = { family = "flower", bbox_center = { 0.0598, 1.5233, 0.4302 }, size = { 3.3309, 3.0467, 3.9752 }, tris = 280, tint = "fixed", standin_size = { 3.74, 2.98, 3.67 }, node = false },
+		plant_flowers_03 = { family = "flower", bbox_center = { -0.3376, 1.5336, 0.2267 }, size = { 3.3813, 3.0673, 4.5368 }, tris = 228, tint = "fixed", standin_size = { 4.24, 2.93, 3.45 }, node = false },
+		plant_flowers_04 = { family = "flower", bbox_center = { -0.2677, 1.505, 0.2911 }, size = { 4.0548, 3.01, 3.8531 }, tris = 312, tint = "fixed", standin_size = { 4.36, 2.97, 3.09 }, node = false },
+		plant_flowers_05 = { family = "flower", bbox_center = { -0.0573, 1.5403, -0.0266 }, size = { 3.3214, 3.0806, 3.5845 }, tris = 254, tint = "fixed", standin_size = { 3.35, 3.08, 2.95 }, node = false },
+		plant_flowers_06 = { family = "flower", bbox_center = { -0.1045, 1.5661, -0.0611 }, size = { 3.1827, 3.1323, 3.959 }, tris = 298, tint = "fixed", standin_size = { 3.48, 2.96, 3.7 }, node = false },
+		resource_ore_03 = { family = "rock", bbox_center = { -0.6133, 3.3897, -0.1571 }, size = { 10.9851, 7.7285, 8.0687 }, tris = 218, tint = "fixed", standin_size = { 11.38, 8.06, 9.9 }, node = true },
+		resource_ore_04 = { family = "rock", bbox_center = { 0.0833, 3.3892, -1.0523 }, size = { 9.257, 7.7297, 11.59 }, tris = 218, tint = "fixed", standin_size = { 11.59, 8.06, 9.04 }, node = true },
+		resource_stone_01 = { family = "rock", bbox_center = { 0.9617, 3.54, -0.69 }, size = { 16.83, 7.959, 10.0856 }, tris = 200, tint = "fixed", standin_size = { 16.83, 7.82, 10.68 }, node = true },
+		resource_stone_02 = { family = "rock", bbox_center = { -0.5133, 3.5574, -0.6805 }, size = { 16.488, 7.9414, 10.5101 }, tris = 200, tint = "fixed", standin_size = { 16.79, 7.82, 11.35 }, node = true },
+		resource_stone_03 = { family = "rock", bbox_center = { 0.8977, 3.5395, -0.731 }, size = { 16.74, 7.9456, 10.1355 }, tris = 200, tint = "fixed", standin_size = { 16.74, 7.79, 10.53 }, node = true },
+		rock_boulder_l_01 = { family = "rock", bbox_center = { 0.6317, 3.8573, 1.2065 }, size = { 17.5658, 8.6655, 14.7037 }, tris = 246, tint = "fixed", standin_size = { 17.98, 9.1, 14.3 }, node = false },
+		rock_boulder_l_02 = { family = "rock", bbox_center = { 0.329, 3.9433, 0.0609 }, size = { 15.401, 8.7867, 18.0894 }, tris = 264, tint = "fixed", standin_size = { 18.75, 9.17, 15.91 }, node = false },
+		rock_boulder_l_03 = { family = "rock", bbox_center = { 0.0653, 4.0215, -0.8603 }, size = { 11.7141, 9.1291, 17.9654 }, tris = 268, tint = "fixed", standin_size = { 19.02, 9.54, 17.15 }, node = false },
+		rock_boulder_m_01 = { family = "rock", bbox_center = { -0.0047, 2.6127, 0.4878 }, size = { 7.7593, 6.0254, 8.2491 }, tris = 160, tint = "fixed", standin_size = { 6.2, 5.34, 8.87 }, node = false },
+		rock_boulder_m_02 = { family = "rock", bbox_center = { -0.3726, 2.5517, -0.3721 }, size = { 9.4934, 5.9034, 8.6439 }, tris = 146, tint = "fixed", standin_size = { 6.38, 5.98, 9.27 }, node = false },
+		rock_boulder_m_03 = { family = "rock", bbox_center = { -0.0236, 2.4781, 1.2663 }, size = { 8.9893, 5.8799, 9.021 }, tris = 190, tint = "fixed", standin_size = { 7.32, 6.02, 9.7 }, node = false },
+		rock_boulder_s_01 = { family = "rock", bbox_center = { -0.0202, 1.5172, -0.1214 }, size = { 6.634, 3.8344, 5.1934 }, tris = 144, tint = "fixed", standin_size = { 6.2, 3.78, 4.95 }, node = false },
+		rock_boulder_s_02 = { family = "rock", bbox_center = { 0.2692, 1.4374, 0.4615 }, size = { 6.548, 3.8932, 6.8266 }, tris = 116, tint = "fixed", standin_size = { 6.38, 3.76, 5.27 }, node = false },
+		rock_boulder_s_03 = { family = "rock", bbox_center = { -0.0026, 1.4285, 0.1796 }, size = { 6.0126, 3.875, 7.2332 }, tris = 170, tint = "fixed", standin_size = { 6.76, 3.74, 5.68 }, node = false },
+		tree_birch_01 = { family = "tree", bbox_center = { -0.642, 10.9578, 0.1295 }, size = { 10.009, 22.0755, 10.0249 }, tris = 366, tint = "fixed", standin_size = { 10.1, 22.2, 8.14 }, node = false },
+		tree_birch_02 = { family = "tree", bbox_center = { 0.0056, 9.8685, 0.134 }, size = { 7.8213, 19.897, 11.0531 }, tris = 318, tint = "fixed", standin_size = { 8.23, 20.81, 10.33 }, node = false },
+		tree_birch_03 = { family = "tree", bbox_center = { 0.6258, 11.0149, 0.8655 }, size = { 9.7051, 22.1897, 10.1226 }, tris = 366, tint = "fixed", standin_size = { 8.8, 22.61, 10 }, node = false },
+		tree_birch_04 = { family = "tree", bbox_center = { -1.3698, 10.2176, 0.4924 }, size = { 10.0442, 20.5953, 8.8373 }, tris = 318, tint = "fixed", standin_size = { 10.54, 21.21, 9 }, node = false },
+		tree_birch_05 = { family = "tree", bbox_center = { 1.164, 11.2371, 1.0117 }, size = { 10.0259, 22.6342, 8.6184 }, tris = 366, tint = "fixed", standin_size = { 8.59, 23.01, 9.37 }, node = false },
+		tree_birch_06 = { family = "tree", bbox_center = { 1.7052, 10.2786, -0.8436 }, size = { 9.1592, 20.7172, 7.3411 }, tris = 318, tint = "fixed", standin_size = { 8.56, 21.62, 8.32 }, node = false },
+		tree_oak_01 = { family = "tree", bbox_center = { 1.9652, 12.8231, 0.7427 }, size = { 20.97, 25.8062, 19.6593 }, tris = 590, tint = "fixed", standin_size = { 18.87, 25.51, 20.97 }, node = true },
+		tree_oak_02 = { family = "tree", bbox_center = { 0.9552, 12.9284, -0.1647 }, size = { 15.7439, 26.0167, 16.6199 }, tris = 588, tint = "fixed", standin_size = { 16.3, 24.56, 16.92 }, node = false },
+		tree_oak_03 = { family = "tree", bbox_center = { 1.2597, 12.6534, 0.0854 }, size = { 21.5885, 25.4668, 22.74 }, tris = 604, tint = "fixed", standin_size = { 20.79, 25.47, 22.74 }, node = true },
+		tree_oak_04 = { family = "tree", bbox_center = { 1.4562, 12.8024, 3.6492 }, size = { 19.8164, 25.7647, 18.5615 }, tris = 604, tint = "fixed", standin_size = { 18.52, 24.53, 17.35 }, node = false },
+		tree_oak_05 = { family = "tree", bbox_center = { -0.448, 12.7808, -0.252 }, size = { 19.1719, 25.7215, 21.84 }, tris = 610, tint = "fixed", standin_size = { 20.03, 25.2, 21.84 }, node = true },
+		tree_oak_06 = { family = "tree", bbox_center = { -1.1759, 12.88, -0.299 }, size = { 19.7765, 25.92, 21.5289 }, tris = 554, tint = "fixed", standin_size = { 21.3, 24.88, 18.57 }, node = false },
+		tree_oak_07 = { family = "tree", bbox_center = { -0.4848, 12.9999, -0.7408 }, size = { 15.9216, 26.1598, 15.341 }, tris = 572, tint = "fixed", standin_size = { 14.29, 25.9, 14.88 }, node = false },
+		tree_oak_08 = { family = "tree", bbox_center = { -1.4969, 12.0352, -0.408 }, size = { 23.7333, 24.2304, 23.9894 }, tris = 652, tint = "fixed", standin_size = { 22.42, 24.7, 20.38 }, node = false },
+		tree_pine_01 = { family = "tree", bbox_center = { 0.3952, 14.8725, -0.014 }, size = { 16.241, 29.9051, 16.512 }, tris = 396, tint = "fixed", standin_size = { 16.4, 29.64, 16.4 }, node = false },
+		tree_pine_02 = { family = "tree", bbox_center = { -0.0092, 16.2672, -0.161 }, size = { 16.4, 32.6944, 15.7486 }, tris = 348, tint = "fixed", standin_size = { 16.4, 32.31, 16.4 }, node = true },
+		tree_pine_03 = { family = "tree", bbox_center = { -0.2215, 15.0757, -0.0987 }, size = { 15.1221, 30.3114, 15.655 }, tris = 396, tint = "fixed", standin_size = { 16.08, 29.97, 16.08 }, node = false },
+		tree_pine_04 = { family = "tree", bbox_center = { 0.2454, 16.4208, 0.0908 }, size = { 16.5406, 33.0017, 16.9349 }, tris = 348, tint = "fixed", standin_size = { 16.37, 32.63, 16.37 }, node = false },
+		tree_pine_05 = { family = "tree", bbox_center = { -0.2241, 15.2244, 0.2197 }, size = { 15.9338, 30.6089, 16.3218 }, tris = 396, tint = "fixed", standin_size = { 16.43, 30.3, 16.43 }, node = false },
+		tree_pine_06 = { family = "tree", bbox_center = { -0.0706, 14.0734, 0.408 }, size = { 16.8108, 28.3067, 16.6605 }, tris = 348, tint = "fixed", standin_size = { 16.14, 27.96, 16.14 }, node = false },
+	},
 })
 -- stylua: ignore end

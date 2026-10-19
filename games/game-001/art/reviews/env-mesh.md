@@ -484,7 +484,11 @@ python3 blender/scripts/envkit_report.py --relief /tmp/env_relief.json         #
 # inventory and standin table (section 1)
 FORGE_ENV_INVENTORY=/tmp/env_inventory.json lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs blender/scripts/lune EnvInventory
 python3 blender/scripts/envkit_standins.py /tmp/env_inventory.json            # writes blender/lib/envkit_standins.json
-# part-count relief (section 5): needs K's runtime; copy it, convert my env.json, run the spec there
+# part-count relief (section 5): since the runtime and the data are on the same branch (FL-0136 env PR) run it in place:
+FORGE_ENV_RELIEF=/tmp/env_relief.json lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs blender/scripts/lune EnvRelief
+# measured on the merged tree (main 790c56d2 + arena): shipped density 6,869 -> 2,514 parts (-4,355), density 1.0 8,620 -> 3,111 (-5,509); the arena's 349 parts are in both
+# (the older steps below, with K's copy at 83695c53, gave 6,553 -> 2,168 and 8,309 -> 2,765 before the arena and the outposts changed the plain world)
+# (older recipe, kept for the record): needs K's runtime; copy it, convert my env.json, run the spec there
 K=/tmp/envrt; mkdir -p $K && git -C <K's worktree> archive 83695c53 | tar -x -C $K     # branch forge/02-blender-fl0136-envrt
 python3 games/game-001/art/env_kit/env_to_luau.py --in games/game-001/art/env_kit/env.json --out $K/games/game-001/src/shared/Kit/EnvMeshData.luau
 mkdir -p $K/blender/scripts/lune && cp blender/scripts/lune/EnvRelief.spec.luau $K/blender/scripts/lune/

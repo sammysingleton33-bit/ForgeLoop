@@ -673,7 +673,12 @@ if next(CommittedData.props) ~= nil then
 						error(`{id}: height is {math.floor(height * 100)} % of the stand-in's`)
 					end
 				end
-				expect(def.bbox_center[2] - def.size[2] / 2).toBeNear(0, 0.5)
+				-- the base stands on the ground: rocks, boulders and nodes sink a little on purpose (the kit's rule and the
+				-- converter's: from 1.0 stud below y = 0 up to 0.5 above it, the same window env_to_luau.py validates)
+				local base = def.bbox_center[2] - def.size[2] / 2
+				if base < -1.0 or base > 0.5 then
+					error(`{id}: the base is at y = {base}, a prop stands on y = 0 (-1.0 to 0.5)`)
+				end
 			end
 		end)
 

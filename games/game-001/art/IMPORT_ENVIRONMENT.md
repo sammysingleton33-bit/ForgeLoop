@@ -10,6 +10,7 @@ Studio session and place can import both kits: do the citizens first, then this 
 
 ## 1. Files
 - `env_kit.fbx` from the Blender worker (expected at `games/game-001/art/env_kit/`, or the PR's CI artifact), one mesh object per prop, named by asset id.
+  Import only `env_kit.fbx` (the 52 ids the world places today). `env_kit_spares.fbx` (15 finished spares nothing places yet) is not needed until the world uses them.
 - A place built from the repo: `rojo build games/game-001/default.project.json -o crownfall.rbxl`. It must contain
   `ReplicatedStorage.Game.Kit.EnvMeshData` (made by `python3 games/game-001/art/env_kit/env_to_luau.py`) and `ReplicatedStorage.Forge.Assets`.
 
