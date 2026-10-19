@@ -35,7 +35,7 @@
 	FORGE-03's How to Play card (the arena's length) and the Crowd config spec.
 ]]
 
-local Arena = require("@game/ReplicatedStorage/Forge/Config/Arena")
+local Arena = require("./Arena") -- FORGE-01's config (FL-0071)
 
 local UNTIMED = math.huge
 
