@@ -14,7 +14,7 @@ The other specs prove the harness itself on a local duel double and the design n
 | `Duellist.luau` | scripted duellists: novice / average / expert, +15 points of hit and parry accuracy per tier |
 | `Harness.luau` | Monte Carlo cells, 95 % Wilson intervals, bound checks, Markdown report |
 | `ConfigSupport.luau` | the game's support numbers (config `Support` via `SupportModel.modifiers`) behind the DesignSupport interface |
-| `FairnessGate.spec.luau` | **the merge gate**: real DuelModel + config Support, supportMatters and skillStillWins at 2000 duels per cell, every noAutoWin cell at 400 (`FORGE_FAIRNESS_FULL=1`: 2000 and every loadout, about 10 min); a negative case proves it fails on the pre-trim numbers; report in `roblox/build/fairness/report.md`, uploaded on main as the CI artifact `forgeloop-fairness-<sha>` |
+| `FairnessGate.spec.luau` | **the merge gate**: real DuelModel + config Support, supportMatters and skillStillWins at 2000 duels per cell, every noAutoWin perk set plus novice Adoring with every loadout at 400, a noAutoWin cell whose interval reaches 70 % re-run at 2000 (`FORGE_FAIRNESS_FULL=1`: 2000 on every cell and loadout, about 16 min); a negative case proves it fails on the pre-trim numbers; report in `roblox/build/fairness/report.md`, uploaded on main as the CI artifact `forgeloop-fairness-<sha>` |
 | `Caps.spec.luau`, `Fairness.spec.luau` | run in `check.sh` (game-001 specs); they prove the caps checks and the harness, each shown able to fail |
 | `run.luau` | the full measurement and report |
 
@@ -46,7 +46,7 @@ bound: run more duels before concluding anything.
 | Date | Config | supportMatters (novice / average / expert) | skillStillWins | worst noAutoWin |
 |---|---|---|---|---|
 | 2026-10-19 | design numbers (fieldRemedy 5/8 %, Adoring passive +2 %) | 65.8 / **67.7** / 67.0 % (FAIL) | 78.8 / 72.1 % | 69.8 % |
-| 2026-10-19 | trim C (#209: fieldRemedy 3/5 %, Adoring passive +1 %; FORGE-00 ruling) | 60.1 / 60.7 / 61.3 % | 81.8 / 77.2 % | 65.9 % (400 per cell) |
+| 2026-10-19 | trim C (#209: fieldRemedy 3/5 %, Adoring passive +1 %; FORGE-00 ruling) | 60.1 / 60.7 / 61.3 % | 81.8 / 77.2 % | 67.0 % (novice, Adoring, greatsword/medium; FORGE-07's full sweep 152/152 agrees) |
 
 These say the numbers keep support inside the bounds against scripted duellists. They do not say a duel feels fair to a
 player: that is the Studio arena script.

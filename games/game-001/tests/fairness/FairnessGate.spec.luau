@@ -5,8 +5,9 @@
 --   supportMatters  Adoring vs Hostile at equal skill wins 55-65 %
 --   skillStillWins  one skill tier better with Hostile beats Adoring support >= 60 %
 --   noAutoWin       no tier or perk set wins more than 70 % against the equal-skill Hostile baseline
--- Duels per cell: supportMatters and skillStillWins 2000 (the merge gate), noAutoWin 400 (every cell; the 2000-duel
--- sweep of all cells and loadouts is FORGE_FAIRNESS_FULL=1, about 10 min). Seeds are fixed, so a run is reproducible.
+-- Duels per cell: supportMatters and skillStillWins 2000 (the merge gate), noAutoWin 400 (every perk set, plus novice
+-- Adoring with every loadout), re-run at 2000 when its 95 % interval reaches 70 %; the 2000-duel sweep of every cell
+-- and loadout is FORGE_FAIRNESS_FULL=1 (about 16 min). Seeds are fixed, so a run is reproducible.
 -- The report goes to roblox/build/fairness/report.md (and the CI artifact). Headless, scripted duellists: this says the
 -- numbers keep support inside the bounds, not that a duel feels fair to a player.
 local fs = require("@lune/fs")
@@ -17,6 +18,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local DuelModel = require("@game/ReplicatedStorage/Game/Arena/DuelModel")
 local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
+local CapsContract = require("./CapsContract")
 local ConfigSupport = require("./ConfigSupport")
 local Harness = require("./Harness")
 
@@ -57,10 +59,38 @@ describe("Crown Arena fairness gate (real DuelModel, config Support)", function(
 			support = support,
 			loadouts = if FULL then Harness.allLoadouts() else nil,
 		}
+		local cells = Harness.plan(options)
+		if not FULL then
+			-- The full sweep's closest cell to the noAutoWin bound is a loadout (novice, Adoring, greatsword/medium
+			-- 67.0 %; FORGE-07 M1 on #219), so the default gate also runs novice Adoring support with every loadout.
+			for _, loadout in Harness.allLoadouts() do
+				table.insert(cells, {
+					id = `noAutoWin/novice/loadout+adoring/{loadout.weapon}/{loadout.armour}`,
+					bound = "noAutoWin",
+					a = {
+						skill = "novice",
+						tier = "adoring",
+						perks = Harness.DEFAULT_ADORING_PERKS,
+						power = "empowered",
+						weapon = loadout.weapon,
+						armour = loadout.armour,
+					},
+					b = { skill = "novice", tier = "hostile", perks = {} },
+				})
+			end
+		end
 		local results = {}
-		for _, cell in Harness.plan(options) do
+		local escalated = 0
+		for _, cell in cells do
 			local n = if cell.bound == "noAutoWin" then SWEEP_N else GATE_N
-			table.insert(results, Harness.runCell(cell, n, options))
+			local result = Harness.runCell(cell, n, options)
+			-- A noAutoWin cell whose 95 % interval reaches the bound is measured again at the gate size, so a set that
+			-- truly wins 71 % cannot pass on a lucky 400-duel sample (FORGE-07 L1 on #219).
+			if cell.bound == "noAutoWin" and n < GATE_N and result.hi > CapsContract.outcome.noAutoWin then
+				result = Harness.runCell(cell, GATE_N, options)
+				escalated += 1
+			end
+			table.insert(results, result)
 		end
 		local checks = Harness.evaluate(results)
 		local report = Harness.report(results, checks, {
@@ -83,7 +113,8 @@ describe("Crown Arena fairness gate (real DuelModel, config Support)", function(
 		print(
 			`fairness: {#checks} bounds; supportMatters {table.concat(worst.supportMatters, " / ")} %, `
 				.. `skillStillWins min {string.format("%.1f", worst.skillStillWins * 100)} %, `
-				.. `noAutoWin max {string.format("%.1f", worst.noAutoWin * 100)} % (report {REPORT_DIR}/report.md)`
+				.. `noAutoWin max {string.format("%.1f", worst.noAutoWin * 100)} %, {escalated} cell(s) re-run at {GATE_N} `
+				.. `(report {REPORT_DIR}/report.md)`
 		)
 		expect(failures(checks)).toEqual({})
 	end)
