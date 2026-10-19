@@ -155,4 +155,7 @@ def split_placed(reg):
 
     st = envkit_standin.load()["standins"]
     main = [pid for pid in reg if st.get(pid, {}).get("placed") or pid in envkit_standin.MESH_DRESSING]
-    return main, [pid for pid in reg if pid not in set(main)]
+    spares = [pid for pid in reg if pid not in set(main)]
+    for pid in spares:
+        reg[pid].placed = False  # the data files say so too (the growth stages wheat_04 / _05 used to read "placed": true)
+    return main, spares

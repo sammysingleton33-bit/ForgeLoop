@@ -39,8 +39,9 @@ ENV.JSON v1 (what Kit/EnvMesh reads; the FL-0136 contract plus the clarification
                (a non-empty string saying why the role needs it).
   node         true if the id is also used as a resource NODE (Layout.resourceNodes: trees, bushes, rocks, ore and stone)
   collider     [+] optional [w, h, d] of the invisible solid box at the base centre, or false for none. Default by family: tree a trunk
-               (20 % of the wider side, 1.4-3.4 studs, up to 7 high), rock and haystack 80 % of the footprint up to 7 high, bush
-               60 % up to 3 high, fence its length 4 high, flower and crop none. Height is capped at 7 (WorldService.COLLIDE_HEIGHT).
+               (20 % of the wider side, 1.4-3.4 studs, up to 7 high), rock and haystack 80 % of each footprint axis (64 % of the area) up to
+               7 high, bush 60 % of each axis up to 3 high, fence its length 4 high, flower and crop none. The DEFAULT heights stop at
+               7 (WorldService.COLLIDE_HEIGHT); an explicit collider is used as given, and a height over 7 is only warned about.
   fit_note     [+] optional string, see standin_size
   One body mesh per prop (budget: 1 MeshPart), vertex colours only, one material, no textures, no PBR. The Studio import script
   deletes everything but the geometry (scripts, SurfaceAppearance, attributes, tags, children) and Kit.prop does it again.
@@ -171,7 +172,7 @@ def validate(data) -> tuple[list[str], list[str]]:
         if abs(center[0]) > 0.5 * size[0] or abs(center[2]) > 0.5 * size[2]:
             errors.append(f"{where}: bbox_center {center} is far off the base centre for size {size} (is the pivot at the base centre?)")
         if p.get("collider") is not False and is_vec(p.get("collider"), positive=True) and p["collider"][1] > 7:
-            warnings.append(f"{where}: collider is {p['collider'][1]} high: the Kit caps solids at 7 (WorldService.COLLIDE_HEIGHT)")
+            warnings.append(f"{where}: collider is {p['collider'][1]} high: over 7 (WorldService.COLLIDE_HEIGHT); the Kit uses an explicit collider as given, only the family defaults stop at 7")
         # fit to the stand-in it replaces
         if is_vec(p.get("standin_size"), positive=True) and "fit_note" not in p:
             ss = p["standin_size"]
@@ -400,8 +401,8 @@ def selftest() -> int:
     check(warns(unknown_prefix, "no known id prefix"), "an id with an unknown prefix is warned about")
     check(warns(family_mismatch, "unusual for rock_"), "a family that does not match the id prefix is warned about")
     check(warns(a_bit_low, "not 0"), "a base 0.1-0.5 off the ground is warned about")
-    check(warns(tall_collider, "caps solids at 7"), "a collider taller than 7 is warned about")
-    check(BUDGET["tree"] == {"min": 300, "max": 900} and BUDGET["bush"] == {"min": 40, "max": 400}, "the budget constants are the contract's")
+    check(warns(tall_collider, "over 7"), "a collider taller than 7 is warned about")
+    check(BUDGET["tree"] == {"min": 300, "max": 900} and BUDGET["bush"] == {"min": 40, "max": 400}, "the budget constants are the documented ones (D-057 (19), this header)")
     print(f"selftest: {'FAIL' if failures else 'PASS'} ({len(failures)} failure(s))")
     return 1 if failures else 0
 

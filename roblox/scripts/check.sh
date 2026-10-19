@@ -35,8 +35,9 @@ STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): 
 # summed 584 s one by one on 2026-10-18 (ConversationService 138 s, ConsequenceService 113 s, MatchKingdomServices
 # 79 s), which the every-n-th split puts at 424 + 160 s with 2 shards and 253 + 109 + 221 s with 3. game-001's
 # world/ took 565 s of 600 on 2026-10-19 (gate 7: #217 arena venue, #226 citizen mesh kit), so it runs as 2 shards too;
-# with FORGE-02's war kit (#260: KitWarKit, KitCeiling, KitDamage) world shard 1/2 took 678 s run alone, so 3 shards.
-SHARDS=("game-001/sim:3" "game-001/world:3")
+# with FORGE-02's war kit (#260: KitWarKit, KitCeiling, KitDamage) world shard 1/2 took 678 s run alone, so 3 shards;
+# gate 8n (+#268) put world#2/3 at 496 s, past FORGE-00's 480 s split line (KitEmblems alone ~176 s), so 4.
+SHARDS=("game-001/sim:3" "game-001/world:4")
 # sub-folders that run as their own Lune step and are left out of their parent folder's step(s) (run.luau
 # --exclude): "<game id>/<folder>/<sub>". game-001's sim/long holds the real-length full-match spec (FL-0125).
 SPLITS=("game-001/sim/long")

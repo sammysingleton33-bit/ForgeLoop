@@ -279,6 +279,26 @@ def test_the_generator_is_deterministic_and_matches_the_committed_hash():
         assert envkit_build.canon_hash({k: reg[k] for k in spare}) == json.loads(ENV_SPARES.read_text())["geometry_hash"]
 
 
+def test_spares_are_never_marked_placed_in_the_registry_nor_in_the_data():
+    """wheat_04 / _05 (growth stages) map to wheat_01's stand-in, which is placed: the record used to say placed true for them, and a regen undid the data fix."""
+    pytest.importorskip("bpy")
+    from generators import env_kit
+    from lib import envkit_build, envkit_standin
+
+    ids = {"farm_field_wheat_01", "farm_field_wheat_04", "farm_field_wheat_05"}
+    reg = env_kit.registry(only=ids)
+    main, spare = env_kit.split_placed(reg)
+    assert "farm_field_wheat_01" in main and {"farm_field_wheat_04", "farm_field_wheat_05"} <= set(spare)
+    assert all(reg[k].placed for k in main) and not any(reg[k].placed for k in spare)
+    standins = envkit_standin.load()["standins"]
+    for pid in ("farm_field_wheat_04", "farm_field_wheat_05"):
+        assert envkit_build.prop_record(reg[pid], env_kit._standin_for(pid, standins))["placed"] is False
+    assert envkit_build.prop_record(reg["farm_field_wheat_01"], env_kit._standin_for("farm_field_wheat_01", standins))["placed"] is True
+    # the committed data agrees
+    assert all(not p["placed"] for p in json.loads(ENV_SPARES.read_text())["props"].values())
+    assert all(p["placed"] for p in json.loads(ENV.read_text())["props"].values())
+
+
 def test_a_floating_part_is_refused():
     pytest.importorskip("bpy")
     from generators import _envkit_style as S

@@ -3,13 +3,14 @@ id: FL-0142
 title: Arena co-ruler vote panel (Arena.Vote) and How to play text
 track: build
 owner: forge-03
-status: READY
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-19
 updated: 2026-10-19
 depends_on: []
-evidence: []
+evidence:
+  - economy/ 548/0; ArenaVote 15/0; FL-0142-vote.py 21/21; FL-0138-howto.py 36/36; renders arena-vote* phone-se+desktop opened; Studio U32 unverified
 ---
 
 # Arena co-ruler vote panel (Arena.Vote) and How to play text
@@ -37,3 +38,5 @@ When a kingdom with two or more seated rulers qualifies, its rulers vote for the
 
 ## Log
 - 2026-10-19 FORGE-00: created from the v0.4-g11k pass. P1, B23.
+- 2026-10-19 forge-03: READY → BUILDING. Vote panel against a proposed additive ArenaState.vote field (asked FORGE-01/FORGE-00: vote-stage state has no candidates on main); dark until served
+- 2026-10-19 forge-03: BUILDING → REVIEW. Vote panel built; dark until FORGE-01 adds ArenaState.vote (handoff 2026-10-19-forge-03-to-forge-01-arena-vote)
