@@ -14,9 +14,9 @@ M = [
  # when: champion only, duel stage only, leaves after, re-enters on a respawn
  ("FL-0075", A, 'if type(side) == "table" and side.userId == userId and side.isAI ~= true then', 'if type(side) == "table" and side.userId == userId then', "DuelInput", "an AI namesake", "game"),
  ("FL-0075", A, 'self._ours = state.stage == "duel" and Def.isDuellist(state, self:_userId())', 'self._ours = Def.isDuellist(state, self:_userId())', "DuelInput", "the champion enters arena mode at the duel stage", "game"),
- ("FL-0075", A, 'elseif not self._ours and input.mode == Def.MODE then', 'elseif false then', "DuelInput", "leaves at crowning or done", "game"),
+ ("FL-0075", A, 'elseif not wanted and input.mode == Def.MODE then', 'elseif false then', "DuelInput", "leaves at crowning or done", "game"),
  ("FL-0075", A, 'if type(phase) == "string" and Def.END_PHASES[phase] then', 'if false then', "DuelInput", "leaves at crowning or done", "game"),
- ("FL-0075", A, 'if self._ours and mode == "explore" then', 'if false then', "DuelInput", "a respawn's explore re-enters arena mode", "game"),
+ ("FL-0075", A, 'if (self._ours or self._preview) and mode == "explore" then', 'if false then', "DuelInput", "a respawn's explore re-enters arena mode", "game"),
  ("FL-0075", A, 'local ok, state = pcall(duel.getState, duel)', 'local ok, state = false, nil', "DuelInput", "starts from DuelController:getState()", "game"),
  # keys and gamepad
  ("FL-0075", A, 'end, false, high, table.unpack(binding.keys))', 'end, false, 1, table.unpack(binding.keys))', "DuelInput", "binds the five actions at High priority", "game"),
