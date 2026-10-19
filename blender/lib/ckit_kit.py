@@ -18,8 +18,10 @@ TOOL_TRIS = 150
 BODY_TRIS = 900
 MAX_PIECES = 16  # contract: pieces per assembled rig
 ROBLOX_MAX_TRIS = 20000
-BIG_RIGS = ("soldier", "soldier_sword", "soldier_bow", "governor")
-TOOL_SLOTS = ("tool", "toolband", "shield")
+BIG_RIGS = ("soldier", "soldier_swordsman", "soldier_archer", "governor")
+# the runtime contract (art/char_kit/rig_to_luau.py) knows these slots; the kit's finer slots keep their name in `kit_slot`
+SLOT_MAP = {"hatband": "hat", "crest": "hat", "toolband": "tool", "extra": "acc", "shield": "acc"}
+TOOL_JOINTS = ("Tool", "TorsoTool")  # what counts as "the hand tool or sack" against the <= 150 budget (as rig_to_luau.py)
 
 
 def tri_count(m):
@@ -42,7 +44,7 @@ def canon_hash(pieces):
     return h.hexdigest()[:16]
 
 
-def piece_records(R, hand):
+def piece_records(R, hand, rig=None):
     """name -> dict with the contract fields (bbox in rig frame, tris, joint, tint, slot, tags)."""
     out = {}
     for name, p in R.pieces.items():
@@ -50,17 +52,19 @@ def piece_records(R, hand):
         (x0, y0, z0), (x1, y1, z1) = m.bounds()
         out[name] = {
             "joint": p.joint,
-            "weld_to": p.weld,
+            "weld_to": p.joint if p.weld else None,  # the contract: null = the base piece of its joint, else the joint it is welded to
             "bbox_center": [round((x0 + x1) / 2, 4), round((y0 + y1) / 2, 4), round((z0 + z1) / 2, 4)],
             "size": [round(x1 - x0, 4), round(y1 - y0, 4), round(z1 - z0, 4)],
             "tris": m.tris,
             "verts": len(m.v),
             "tint": p.tint,
-            "slot": p.slot,
+            "slot": SLOT_MAP.get(p.slot, p.slot),
             "tags": sorted(set(p.tags)),
         }
-        if "kit_tint" in p.info:
-            out[name]["kit_tint"] = p.info["kit_tint"]
+        if p.slot in SLOT_MAP:
+            out[name]["kit_slot"] = p.slot
+        if p.tint == "kingdom" and rig is not None:
+            out[name]["tint_factor"] = rig.KIT_TINT.get(name[:-2] if name.endswith(("_l", "_r")) else name, 0.85)
         if "width" in p.info:
             out[name]["width"] = p.info["width"]
     return out
@@ -75,41 +79,39 @@ def rig_measure(R, rig, jobs=None, kingdoms=None):
     for job in jobs:
         a = rig.ASSEMBLIES[job]
         default = rig.names_for(job)
-        worst, worst_names = 0, default
         looks = _all_looks()
+        worst, worst_names, pmax, tool_max, body_max = 0, default, 0, 0, 0
         for kd in kingdoms:
             for lk in looks:
                 names = rig.names_for(job, lk, kd)
                 t = sum(tris[n] for n in names)
+                tl = sum(tris[n] for n in names if R.pieces[n].joint in TOOL_JOINTS)
+                pmax = max(pmax, len(names))
+                tool_max, body_max = max(tool_max, tl), max(body_max, t - tl)
                 if t > worst:
                     worst, worst_names = t, names
-        tool_t = sum(tris[n] for n in worst_names if R.pieces[n].slot in TOOL_SLOTS)
+        tool_t = tool_max
         budget = RULER_TRIS if job in BIG_RIGS else CITIZEN_TRIS
         table[job] = {
             "pieces_default": len(default),
             "tris_default": sum(tris[n] for n in default),
-            "pieces_max": max(len(rig.names_for(job, lk, kd)) for kd in kingdoms for lk in looks[:6]),
+            "pieces_max": pmax,
             "tris_max": worst,
             "tool_tris": tool_t,
-            "body_tris": worst - tool_t,
+            "body_tris": body_max,
             "budget": budget,
             "draw_calls_est": len(worst_names),  # one MeshPart per piece; identical MeshContent instances into fewer
             "texture_bytes": 0,
-            "pass": worst <= budget and len(worst_names) <= MAX_PIECES,
+            "pass": worst <= budget and pmax <= MAX_PIECES and (job in BIG_RIGS or (body_max <= BODY_TRIS and tool_max <= TOOL_TRIS)),
             "worst_pieces": worst_names,
         }
     return table
 
 
 def _all_looks():
-    # a spread of looks: every face x every hair set entry x every outfit (6 x 12 x 6 collapses to the distinct piece combinations)
-    out = []
-    for hc in (1, 5):
-        for hair in range(1, 7):
-            for outfit in range(1, 7):
-                for skin in range(1, 7):
-                    out.append({"skin": skin, "hair": hair, "hairColor": hc, "outfit": outfit})
-    return out
+    from . import manifest
+
+    return manifest.kit_looks()  # every look of G13.2: the same set the manifest check measures
 
 
 def build_objects(R, collection=None):
@@ -171,15 +173,16 @@ def kit_dependency_hash(R):
 
 
 def rig_json(R, rig, style_name, hand, extra=None):
-    """The contract document (schema_version 1) plus additive sections (looks, palettes, measured table)."""
+    """The contract document (schema_version 1, validated by games/game-001/art/char_kit/rig_to_luau.py) plus additive sections
+    (tints for the Blender-side renders, budgets, the measured table)."""
     joints = {}
     for k, v in rig.JOINTS.items():
         pos = v["pos"] if v["pos"] is not None else [round(hand[0], 4), round(hand[1], 4), round(hand[2], 4)]
         joints[k] = {"parent": v["parent"], "pos": pos}
-    pieces = piece_records(R, hand)
-    assemblies = {}
-    for job, a in rig.ASSEMBLIES.items():
-        assemblies[job] = {k: v for k, v in a.items()}
+    pieces = piece_records(R, hand, rig)
+    for pid, e in rig.EMPTY_PIECES.items():  # variants that mean "none": no mesh, no FBX object
+        pieces[pid] = {"joint": e["joint"], "empty": True, "tint": e["tint"], "slot": e["slot"], "tags": list(e["tags"])}
+    assemblies = {job: {k: (list(v) if isinstance(v, list) else v) for k, v in a.items()} for job, a in rig.ASSEMBLIES.items()}
     doc = {
         "schema_version": 1,
         "unit": "stud",
@@ -189,39 +192,30 @@ def rig_json(R, rig, style_name, hand, extra=None):
         "frame": "Roblox rig axes: +X right, +Y up, -Z front, feet at y = 0, centred on x = 0, z = 0 (studs). Blender authoring: "
                  "(bx, by, bz) = (x, -z, y); FBX exported Y up / -Z forward, 1 unit = 1 stud.",
         "joints": joints,
-        "sided_slots": list(rig.SIDED),
-        "side_suffix": {"left": "_l", "right": "_r"},
-        "left_joint_x_sign": -1,
         "pieces": pieces,
         "assemblies": assemblies,
         "looks": {
-            "faces": rig.FACES,
-            "face_rule": "faces[(look.hair + 2 * look.outfit + look.skin) % 6]",
-            "hair_sets": rig.HAIR_SETS,
-            "hair_rule": "set = hairColor <= 4 ? hair_sets[0] : hair_sets[1]; piece = set[(look.hair - 1) % 6]; a job hat or fixed hair "
-                         "(blacksmith: beard) replaces the hair slot; 'hat_hood' is a hood worn instead of hair",
-            "torso_variants": rig.TORSO_VARIANTS,
-            "torso_rule": "assembly torso '%torso%' = torso_variants[job][(look.outfit - 1) % 6]; soldiers and the governor keep theirs",
-            "boots": rig.BOOTS,
-            "boot_rule": "boots[job or 'default'][(look.outfit + look.skin) % len]",
-            "accessories": rig.ACCESSORIES,
-            "accessory_rule": "idle citizens: extras '%accessory%' = accessories[(look.outfit + 2 * look.hair + 3 * look.skin) % 6] (None = no piece)",
+            "rule": "Templates in `assemblies` are resolved exactly like Kit/CharacterMesh.luau (blender/lib/ckit_resolve.py is the "
+                    "Python port): %look.<axis>% picks one of the numbered variants (prefix + digits + suffix, numeric order) by the look "
+                    "(skin / hair / hairColor / outfit follow the field and spill over extra variants; face / boots / acc mix the look), "
+                    "%kingdom% is crimson | azure | emerald | gold. Variants: head_01..06 faces, hair_01..10 (10 = a kingdom hood) and "
+                    "hair_beard, torso_01..06 cuts, boot_01..03_l/_r, acc_01 (none) / acc_02 (headband).",
             "kingdoms": list(rig.KINGDOMS),
         },
         "tints": {
-            "rule": "MeshPart.Color = skin | hair | shade(kingdomColor, kit_tint) | cloth | white (fixed); baked vertex colours are "
-                    "multiplied by it. Unverified in Studio.",
+            "rule": "MeshPart.Color = skin | hair | shade(kingdomColor, tint_factor) | cloth | white (fixed); baked vertex colours are "
+                    "multiplied by it. Unverified in Studio. The Blender renders use the values below, which mirror Kit/Character.luau.",
             "skin": [[242, 201, 160], [255, 222, 196], [210, 156, 112], [162, 108, 70], [110, 70, 44], [78, 50, 34]],
             "hair": [[92, 58, 32], [36, 28, 24], [150, 94, 48], [222, 178, 92], [178, 74, 34], [206, 204, 198], [62, 42, 30],
                      [242, 224, 166]],
             "kingdom": {"crimson": [190, 40, 50], "azure": [40, 110, 210], "gold": [235, 185, 16], "emerald": [35, 128, 95]},
-            "kit_tint": rig.KIT_TINT,
-            "kit_tint_rule": "factor = kit_tint[piece name without the _l/_r suffix] (default 0.85); Color = shade(kingdomColor, factor)",
-            "cloth_variants": rig.CLOTH_VARIANTS,
-            "cloth_rule": "colour = cloth_variants[job][(look.hairColor - 1) % len][piece slot or 'default'] x dye[look.hairColor - 1]",
-            "dye": rig.DYE,
             "tint_shift": rig.TINT_SHIFT,
-            "tint_shift_rule": "torso and sleeve kingdom factors get + tint_shift[(look.hairColor + look.skin - 2) % 8], clamped to 0.5..1",
+            "tint_shift_rule": "soldier sleeves only: factor + tint_shift[(look.hairColor + look.skin - 2) % 8], clamped to 0.5..1 "
+                               "(an approximation of the runtime's per-individual shift)",
+            "cloth_panels": {k: [list(c) for c in v] for k, v in rig.CLOTH_PANELS.items()},
+            "cloth_legs": {k: [list(c) for c in v] for k, v in rig.CLOTH_LEGS.items()},
+            "cloth_rule": "cloth piece colour = (slot 'leg' ? cloth_legs : cloth_panels)[job or 'folk'][(look.hairColor - 1) % 3] x dye[look.hairColor - 1]",
+            "dye": rig.DYE,
         },
     }
     if extra:
@@ -264,7 +258,7 @@ def roundtrip_fbx(fbx_path, doc, tol=0.02):
             bad.append((o.name, f"centre off by {dc:.3f}, size off by {ds:.3f}"))
         if len(o.data.color_attributes) < 1:
             bad.append((o.name, "no vertex colours after import"))
-    missing = sorted(set(doc["pieces"]) - {o.name for o in bpy.context.scene.objects if o.type == "MESH"})
+    missing = sorted({k for k, v in doc["pieces"].items() if not v.get("empty")} - {o.name for o in bpy.context.scene.objects if o.type == "MESH"})
     return {"objects": n, "mismatches": bad, "missing": missing, "pass": not bad and not missing}
 
 

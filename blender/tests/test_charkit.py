@@ -79,10 +79,10 @@ def test_kit_pieces_and_assemblies_are_consistent():
     assert sum(1 for p in R.pieces.values() if p.slot == "head") >= 4
     assert sum(1 for p in R.pieces.values() if p.slot == "hair") >= 8
     assert len({n.rsplit("_", 1)[0] for n, p in R.pieces.items() if p.slot == "boot"}) >= 2
-    for n in ("hat_straw", "hat_beanie", "hat_miner", "hat_builder", "hat_hood", "hat_merchant", "hat_coif", "hat_headband", "hat_helm",
-              "tool_hoe", "tool_axe", "tool_pick", "tool_mallet", "tool_hammer", "tool_scale", "tool_staff_healer", "tool_sack",
+    for n in ("hat_straw", "hat_beanie", "hat_miner", "hat_builder", "hair_10", "hat_merchant", "hat_coif", "acc_02", "hat_helm",
+              "hat_smith", "tool_hoe", "tool_axe", "tool_pick", "tool_mallet", "tool_hammer", "tool_scale", "tool_staff_healer", "tool_sack",
               "tool_spear", "tool_sword", "tool_bow", "hat_crown", "cape", "crest_crimson", "crest_azure", "crest_emerald",
-              "crest_gold", "shield_crimson", "shield_gold", "quiver"):
+              "crest_gold", "crest_neutral", "shield_crimson", "shield_gold", "shield_neutral", "quiver", "mantle_kingdom"):
         assert n in names, n
 
 
@@ -146,16 +146,17 @@ def test_committed_rig_json_matches_a_rebuild():
     doc = json.loads(RIG_JSON.read_text())
     R, rig, hand = _registry()
     assert doc["geometry_hash"] == ckit_kit.canon_hash(R.pieces), "rig.json is stale: rebuild with build.py --generator char_kit"
-    assert set(doc["pieces"]) == set(R.pieces)
     assert doc["schema_version"] == 1 and doc["unit"] == "stud" and doc["root_height"] == 3.2
     for j in ("Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg", "Tool", "TorsoTool"):
         assert j in doc["joints"]
+    assert {k for k, v in doc["pieces"].items() if not v.get("empty")} == set(R.pieces)
     assert doc["joints"]["Torso"]["pos"] == [0.0, 2.2, 0.0] and doc["joints"]["Head"]["pos"] == [0.0, 3.9, 0.0]
 
 
 @needs_bpy
-def test_rig_json_rules_reproduce_the_generator_assemblies():
-    """lib/ckit_rigload.names_from_doc reads rig.json only; it must agree with the generator's own look rules for every look."""
+def test_rig_json_assemblies_resolve_like_the_generator_and_the_runtime_contract():
+    """lib/ckit_rigload.names_from_doc reads rig.json only; it must agree with the generator's own resolution for every look,
+    every id it names exists, nothing is left over budget."""
     from lib import ckit_kit, ckit_rigload
 
     R, rig, hand = _registry()
@@ -173,7 +174,7 @@ def test_rig_json_rules_reproduce_the_generator_assemblies():
                             assert a == b, (job, look, kd, a, b)
                             assert len(a) <= ckit_kit.MAX_PIECES
                             for name in a:
-                                assert name in doc["pieces"]
+                                assert name in doc["pieces"] and not doc["pieces"][name].get("empty")
                                 c = ckit_rigload.tint_from_doc(doc, name, job, look, kd)
                                 assert all(0.0 <= v <= 1.0 for v in c)
                             n += 1
@@ -181,23 +182,40 @@ def test_rig_json_rules_reproduce_the_generator_assemblies():
 
 
 @needs_bpy
+def test_variant_resolution_matches_the_luau_port():
+    """Spot values of CharacterMesh.luau's axisIndex / mix (hand-computed from the Luau source)."""
+    from lib import ckit_resolve as RS
+
+    look = {"skin": 3, "hair": 5, "hairColor": 2, "outfit": 4}
+    assert RS.mix(11, 3, 2, 5, 4) == ((((11 * 31 + 3) * 31 + 2) * 31 + 5) * 31 + 4) % 2147483629
+    assert RS.axis_index(look, "outfit", 6) == 3  # direct axis, no spill: outfit - 1
+    assert RS.axis_index(look, "hair", 10) == (4 + ((3 + 4) % 2) * 6) % 10  # 10 hair styles over a range of 6: spill by skin + outfit
+    assert RS.axis_index(look, "unknown", 3) is None
+    ids = ["torso_02", "torso_01", "torso_smith", "torso_10", "head_01"]
+    assert RS.variants_of(ids, "torso_", "") == ["torso_01", "torso_02", "torso_10"]
+
+
+@needs_bpy
 def test_looks_make_visibly_different_citizens():
-    """>= 4 faces, >= 8 hair styles and >= 3 torsos per working job are reachable from the six look fields."""
+    """>= 4 faces, >= 8 hair styles and >= 5 torso cuts per worker job are reachable from the four look fields."""
+    from lib import ckit_resolve as RS
+
     R, rig, hand = _registry()
     faces, hairs = set(), set()
-    torsos = {j: set() for j in rig.TORSO_VARIANTS}
+    torsos = {j: set() for j in ("farmer", "woodcutter", "miner", "builder", "hauler", "idle")}
     for skin in range(1, 7):
         for hair in range(1, 7):
             for hc in (1, 5):
                 for outfit in range(1, 7):
                     look = {"skin": skin, "hair": hair, "hairColor": hc, "outfit": outfit}
-                    faces.add(rig.face_for(look))
-                    hairs.add(rig.hair_for(look))
+                    names = rig.names_for("idle", look, "crimson")
+                    faces.update(n for n in names if n.startswith("head_"))
+                    hairs.update(n for n in names if n.startswith("hair_"))
                     for j in torsos:
-                        torsos[j].add(rig.torso_for(j, look))
+                        torsos[j].update(n for n in rig.names_for(j, look, "crimson") if n.startswith("torso_"))
     assert len(faces) >= 4 and len(hairs) >= 8, (faces, hairs)
     for j, t in torsos.items():
-        assert len(t) >= 3, (j, t)
+        assert len(t) >= 5, (j, t)
 
 
 @needs_bpy

@@ -61,6 +61,7 @@ def new_pieces(option, kaykit=""):
     R = K.Registry(S)
     B.build_body(S, R)
     G.build_gear(S, R)
+    RIG.set_pieces(R.pieces)
     if option == "C":
         from generators import _charkit_kaykit as KKit
 
@@ -88,8 +89,10 @@ def place_option(option, job, face, hair, kingdom, x, z, yaw, state):
                 hw = max(hw, (abs(cf[0]) + abs(cf[3]) * sx / 2 + abs(cf[5]) * sy / 2 + abs(cf[4]) * sz / 2) * 1.15)
         return objs, top, hw
     S, pieces = state
-    ctx = {"skin": 0, "hairColor": 0, "kingdom": kingdom, "cloth": RIG.CLOTH.get(job, {})}
-    names = C_NAMES[job] if option == "C" else RIG.names_for(job, kingdom=kingdom, face=face, hair=hair)
+    panels, legs = RIG.CLOTH_PANELS.get(job, RIG.CLOTH_PANELS["folk"]), RIG.CLOTH_LEGS.get(job, RIG.CLOTH_LEGS["folk"])
+    ctx = {"skin": 0, "hairColor": 0, "kingdom": kingdom, "kit_tint": RIG.KIT_TINT,
+           "cloth": {"leg": legs[0], "default": panels[0], "torso": panels[0], "sleeve": panels[0]}}
+    names = C_NAMES[job] if option == "C" else [face if n.startswith("head_") else n for n in RIG.names_for(job, None, kingdom)]
     objs = ckit_assemble.build(pieces, names, ctx, facet=S.facet, location=(x, 0, z), yaw=yaw, tag=f"{job}_")
     top, hw = 0.0, 1.5
     for n in names:

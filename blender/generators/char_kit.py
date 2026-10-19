@@ -42,4 +42,5 @@ def registry():
     R = K.Registry(S)
     B.build_body(S, R)
     G.build_gear(S, R)
+    RIG.set_pieces(R.pieces)
     return R, RIG, G.HAND

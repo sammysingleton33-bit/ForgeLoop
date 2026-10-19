@@ -174,88 +174,92 @@ def build_hair(S, R):
         m.paint(TINT)
         R.add(name, m, "Head", "hair", "hair", weld="head", tags=("hair",))
 
-    reg("hair_crop", _cap(S, 0.05, 4.76, -0.34, thick=0.1))
-    reg("hair_bowl", _cap(S, 0.08, 4.62, -0.3, rim_flare=0.04, thick=0.12))
+    reg("hair_01", _cap(S, 0.05, 4.76, -0.34, thick=0.1))
+    reg("hair_02", _cap(S, 0.08, 4.62, -0.3, rim_flare=0.04, thick=0.12))
     curtain = loft([(3.5, 0.55, 0.16, 0.0, 0.98), (4.0, 0.76, 0.22, 0.0, 0.9), (4.5, 0.86, 0.28, 0.0, 0.64), (5.0, 0.8, 0.2, 0.0, 0.64)],
                    seg=seg, n=n, caps=(True, True), phase=ph(S, seg), color=TINT, smooth=sm, tag="hair")
-    reg("hair_long", merge(_cap(S, 0.07, 4.7, -0.3, thick=0.1), curtain))
-    reg("hair_bob", _cap(S, 0.1, 4.45, -0.5, rim_flare=0.1, thick=0.13))
+    reg("hair_03", merge(_cap(S, 0.07, 4.7, -0.3, thick=0.1), curtain))
+    reg("hair_04", _cap(S, 0.1, 4.45, -0.5, rim_flare=0.1, thick=0.13))
     puff = [sphere(0.98, 0.7, 0.92, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 5.02, 0.12)]
     for (x, y, z, r) in ((-0.66, 4.74, 0.28, 0.3), (0.66, 4.74, 0.28, 0.3), (0.0, 5.64, 0.1, 0.3), (0.0, 4.7, 0.82, 0.34)):
         puff.append(sphere(r, seg=S.seg(6, 5), rings=3, color=TINT, smooth=sm, tag="hair").move(x, y, z))
-    reg("hair_curls", merge(*puff))
+    reg("hair_05", merge(*puff))
     tail = tube([(0, 5.0, 0.6), (0, 4.78, 0.98), (0, 4.28, 1.12), (0, 3.78, 0.98)], [0.17, 0.2, 0.17, 0.09], seg=S.seg(6, 4),
                 n=2.0, color=TINT, smooth=sm, tag="hair")
-    reg("hair_ponytail", merge(_cap(S, 0.05, 4.8, -0.34, thick=0.1), tail))
+    reg("hair_06", merge(_cap(S, 0.05, 4.8, -0.34, thick=0.1), tail))
     bun = sphere(0.34, 0.3, 0.34, seg=S.seg(8, 6), rings=S.seg(4, 3), color=TINT, smooth=sm, tag="hair").move(0, 5.62, 0.14)
-    reg("hair_bun", merge(_cap(S, 0.05, 4.78, -0.34, thick=0.1), bun))
+    reg("hair_07", merge(_cap(S, 0.05, 4.78, -0.34, thick=0.1), bun))
     tails = [tube([(sx * 0.7, 4.72, 0.12), (sx * 0.98, 4.5, 0.12), (sx * 1.04, 4.2, 0.1), (sx * 0.98, 3.98, 0.1)],
                   [0.2, 0.19, 0.16, 0.08], seg=S.seg(6, 4), n=2.0, color=TINT, smooth=sm, tag="hair") for sx in (-1, 1)]
-    reg("hair_pigtails", merge(_cap(S, 0.05, 4.76, -0.3, thick=0.1), *tails))
+    reg("hair_08", merge(_cap(S, 0.05, 4.76, -0.3, thick=0.1), *tails))
     chin = sphere(0.74, 0.34, 0.64, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 4.22, -0.1)
     must = [sphere(0.22, 0.09, 0.1, seg=S.seg(8, 6), rings=2, color=TINT, smooth=sm, tag="hair").rot(sx * -14, "z").move(sx * 0.17, 4.36, -0.73)
             for sx in (-1, 1)]
     reg("hair_beard", merge(chin, *must))
     band = torus(0.8, 0.17, seg=seg, tseg=S.seg(5, 4), y=4.88, rz=0.77, color=TINT, smooth=sm, tag="hair", phase=ph(S, seg))
-    reg("hair_tonsure", band)
+    reg("hair_09", band)
 
 
 # ================================================================== torso (tint kingdom unless noted)
 
-def _torso(S, rings, bands=(), n=None):
+def _torso(S, rings, bands=(), n=None, color=TINT):
     """Torso shell from (y, rx, rz) rings; `bands` are (y0, y1, colour) faces painted by height (belts, collars)."""
     seg = S.seg(10, 8)
-    m = loft(rings, seg=seg, n=n or (S.n if S.A else 2.5), caps=(True, True), phase=ph(S, seg), color=TINT, smooth=S.smooth, tag="cloth")
+    m = loft(rings, seg=seg, n=n or (S.n if S.A else 2.5), caps=(True, True), phase=ph(S, seg), color=color, smooth=S.smooth, tag="cloth")
     for (y0, y1, c) in bands:
         m.paint(c, where=lambda x, y, z, y0=y0, y1=y1: y0 <= y <= y1)
     return m
 
 
 def build_torsos(S, R):
-    def reg(name, m, tint="kingdom", width=2.0, tags=()):
+    def reg(name, m, tint="cloth", width=2.0, tags=()):
         R.add(name, m, "Torso", "torso", tint, weld=None, tags=tags, info={"width": width})
 
     BELT = LEATHER_DARK
 
     # tunic: hip length, belted, flared hem
-    reg("torso_tunic", _torso(S, [(2.0, 0.98, 0.62), (2.58, 0.8, 0.5), (2.76, 0.8, 0.5), (3.2, 0.92, 0.55), (3.62, 0.98, 0.54),
+    reg("torso_01", _torso(S, [(2.0, 0.98, 0.62), (2.58, 0.8, 0.5), (2.76, 0.8, 0.5), (3.2, 0.92, 0.55), (3.62, 0.98, 0.54),
                                   (3.88, 0.51, 0.38)],
                               bands=[(2.55, 2.8, BELT), (3.8, 4.0, DARK)]), width=2.0, tags=("tunic",))
     # work: broad, wide leather belt
-    reg("torso_work", _torso(S, [(2.04, 1.04, 0.66), (2.56, 0.88, 0.52), (2.82, 0.9, 0.52), (3.2, 0.99, 0.56), (3.62, 1.06, 0.56),
+    reg("torso_02", _torso(S, [(2.04, 1.04, 0.66), (2.56, 0.88, 0.52), (2.82, 0.9, 0.52), (3.2, 0.99, 0.56), (3.62, 1.06, 0.56),
                                  (3.88, 0.54, 0.40)],
                              bands=[(2.5, 2.86, BELT), (3.8, 4.0, DARK)]), width=2.2, tags=("work",))
     # vest: shirt (light) under a darker vest, an open front stripe
     v = _torso(S, [(2.06, 0.98, 0.62), (2.72, 0.8, 0.5), (3.2, 0.92, 0.55), (3.62, 0.98, 0.54), (3.88, 0.51, 0.38)])
     v.paint(DARK)
     v.paint(TINT, where=lambda x, y, z: abs(x) < 0.34 and z < 0 and 2.75 < y < 3.78)
-    reg("torso_vest", v, tint="cloth", width=2.0, tags=("vest",))
+    reg("torso_04", v, tint="cloth", width=2.0, tags=("vest",))
     # jerkin: leather jerkin with a laced front
     j = _torso(S, [(2.0, 0.99, 0.63), (2.68, 0.84, 0.52), (3.2, 0.94, 0.57), (3.62, 1.0, 0.57), (3.88, 0.53, 0.40)],
                bands=[(3.8, 4.0, DARK)])
     j = merge(j, *[box(0.12, 0.05, 0.05, color=LEATHER_DARK, tag="lace").move(0, yy, -0.57) for yy in (3.5, 3.1, 2.75)])
-    reg("torso_jerkin", j, width=2.1, tags=("jerkin",))
+    reg("torso_03", j, width=2.1, tags=("jerkin",))
     # sleeveless: a tank, narrow shoulders (bare arms)
-    reg("torso_sleeveless", _torso(S, [(2.04, 0.92, 0.58), (2.7, 0.76, 0.48), (3.2, 0.84, 0.52), (3.62, 0.86, 0.5), (3.88, 0.48, 0.36),
+    reg("torso_05", _torso(S, [(2.04, 0.92, 0.58), (2.7, 0.76, 0.48), (3.2, 0.84, 0.52), (3.62, 0.86, 0.5), (3.88, 0.48, 0.36),
                                        (3.9, 0.34, 0.3)], bands=[(3.7, 4.0, DARK)]), width=1.8, tags=("sleeveless",))
-    # robe: long robe to y 1.5 with a sash
-    reg("torso_robe", _torso(S, [(1.5, 1.14, 0.8), (2.1, 0.96, 0.66), (2.56, 0.84, 0.54), (2.76, 0.84, 0.54), (3.22, 0.95, 0.57),
-                                 (3.62, 1.0, 0.56), (3.88, 0.54, 0.40)],
-                             bands=[(2.5, 2.8, DARK), (3.8, 4.0, DARK)]), width=2.1, tags=("robe",))
-    # smock: to the knee-ish, a patch pocket (healer)
-    sm = _torso(S, [(1.82, 1.06, 0.7), (2.4, 0.9, 0.6), (3.0, 0.84, 0.55), (3.4, 0.95, 0.57), (3.64, 1.0, 0.56), (3.88, 0.53, 0.40)], bands=[(3.8, 4.0, DARK)])
-    reg("torso_smock", merge(sm, box(0.5, 0.34, 0.1, color=mix(TINT, (0.78, 0.78, 0.78), 0.8), smooth=False,
-                                     tag="pocket").move(0.38, 2.4, -0.62)), width=2.1, tags=("smock",))
+    # robe: long robe to y 1.5 with a sash (the numbered cut 06; the merchant's coat is the same cut in his own colour)
+    robe_rings = [(1.5, 1.14, 0.8), (2.1, 0.96, 0.66), (2.56, 0.84, 0.54), (2.76, 0.84, 0.54), (3.22, 0.95, 0.57), (3.62, 1.0, 0.56),
+                  (3.88, 0.54, 0.40)]
+    reg("torso_06", _torso(S, robe_rings, bands=[(2.5, 2.8, DARK), (3.8, 4.0, DARK)]), width=2.1, tags=("robe",))
+    reg("torso_merchant", _torso(S, robe_rings, color=(0.46, 0.25, 0.6), bands=[(2.5, 2.8, (0.2, 0.12, 0.26)), (3.8, 4.0, (0.86, 0.7, 0.2))]),
+        tint="fixed", width=2.1, tags=("merchant",))
+    # smock: to the knee-ish, a patch pocket (healer): white linen, baked in the healer's colour
+    sm = _torso(S, [(1.82, 1.06, 0.7), (2.4, 0.9, 0.6), (3.0, 0.84, 0.55), (3.4, 0.95, 0.57), (3.64, 1.0, 0.56), (3.88, 0.53, 0.40)],
+                bands=[(3.8, 4.0, (0.62, 0.62, 0.6))], color=(0.96, 0.95, 0.91))
+    reg("torso_smock", merge(sm, box(0.5, 0.34, 0.1, color=(0.82, 0.82, 0.78), smooth=False, tag="pocket").move(0.38, 2.4, -0.62)),
+        tint="fixed", width=2.1, tags=("smock",))
     # tabard: soldier, broad shoulders, skirt to 1.84
     reg("torso_tabard", _torso(S, [(1.84, 1.04, 0.66), (2.3, 0.98, 0.6), (2.56, 0.86, 0.54), (2.8, 0.86, 0.54), (3.22, 1.0, 0.58),
                                    (3.62, 1.06, 0.58), (3.88, 0.59, 0.41)],
-                               bands=[(2.5, 2.84, BELT), (3.8, 4.0, DARK)]), width=2.2, tags=("tabard", "soldier"))
+                               bands=[(2.5, 2.84, BELT), (3.8, 4.0, DARK)]), tint="kingdom", width=2.2, tags=("tabard", "soldier"))
     # regal: the ruler's long robe, high collar
     reg("torso_regal", _torso(S, [(1.66, 1.18, 0.82), (2.1, 1.02, 0.7), (2.56, 0.9, 0.58), (2.8, 0.9, 0.58), (3.22, 1.02, 0.6),
                                   (3.64, 1.1, 0.6), (3.88, 0.61, 0.43)],
-                              bands=[(2.5, 2.84, DARK), (3.8, 4.0, (0.7, 0.7, 0.7))]), width=2.3, tags=("regal", "governor"))
-    # smith: bare-chested harness look (cloth tint), very broad
-    reg("torso_smith", _torso(S, [(2.06, 1.0, 0.64), (2.72, 0.86, 0.52), (3.2, 0.98, 0.58), (3.62, 1.08, 0.58), (3.88, 0.56, 0.41)], bands=[(3.8, 4.0, DARK)]), tint="cloth", width=2.2, tags=("smith",))
+                              bands=[(2.5, 2.84, DARK), (3.8, 4.0, (0.7, 0.7, 0.7))]), tint="kingdom", width=2.3, tags=("regal", "governor"))
+    # smith: sooty charcoal work shirt, very broad shoulders (baked colour: the smith has no job panel in Character.luau)
+    reg("torso_smith", _torso(S, [(2.06, 1.0, 0.64), (2.72, 0.86, 0.52), (3.2, 0.98, 0.58), (3.62, 1.08, 0.58), (3.88, 0.56, 0.41)],
+                              bands=[(3.8, 4.0, (0.14, 0.13, 0.13))], color=(0.27, 0.25, 0.26)), tint="fixed", width=2.2, tags=("smith",))
 
 
 # ================================================================== arms / sleeves / legs / boots
@@ -354,10 +358,10 @@ def build_boots(S, R):
     def reg(name, m, tags):
         R.add_sided(name, m.move(LEG_X, 0, 0), "boot", "fixed", "leg", tags=tags)
 
-    reg("boot_low", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.14, 0.45, 0.66, 0, -0.14), (0.7, 0.42, 0.47, 0, 0.0)], LEATHER, soleC), ("low",))
-    reg("boot_high", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.14, 0.46, 0.68, 0, -0.14), (0.7, 0.43, 0.49, 0, 0.0), (1.3, 0.49, 0.52, 0, 0.0)],
+    reg("boot_01", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.14, 0.45, 0.66, 0, -0.14), (0.7, 0.42, 0.47, 0, 0.0)], LEATHER, soleC), ("low",))
+    reg("boot_03", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.14, 0.46, 0.68, 0, -0.14), (0.7, 0.43, 0.49, 0, 0.0), (1.3, 0.49, 0.52, 0, 0.0)],
                            LEATHER, soleC), ("high",))
-    reg("boot_work", _boot(S, [(0.0, 0.38, 0.58, 0, -0.12), (0.18, 0.48, 0.7, 0, -0.14), (0.84, 0.45, 0.5, 0, 0.0)], rgb(96, 64, 40), soleC),
+    reg("boot_02", _boot(S, [(0.0, 0.38, 0.58, 0, -0.12), (0.18, 0.48, 0.7, 0, -0.14), (0.84, 0.45, 0.5, 0, 0.0)], rgb(96, 64, 40), soleC),
         ("work",))
     reg("boot_plate", _boot(S, [(0.0, 0.36, 0.58, 0, -0.14), (0.14, 0.45, 0.7, 0, -0.18), (0.92, 0.44, 0.49, 0, 0.0)], STEEL_DARK,
                             rgb(40, 40, 46)), ("plate", "soldier"))

@@ -15,7 +15,7 @@ from pathlib import Path
 import bpy
 from mathutils import Matrix, Vector
 
-from . import ckit_pose, ckit_view
+from . import ckit_pose, ckit_resolve, ckit_view
 
 C = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))  # rig -> authoring (Blender) axes
 CI = C.inverted()
@@ -46,7 +46,7 @@ class Kit:
             o.hide_render = True
             o.hide_viewport = True
         self.rest = {n: o.matrix_world.copy() for n, o in self.src.items()}
-        missing = sorted(set(self.doc["pieces"]) - set(self.src))
+        missing = sorted({k for k, v in self.doc["pieces"].items() if not v.get("empty")} - set(self.src))
         if missing:
             raise ValueError(f"FBX lacks pieces named in rig.json: {missing}")
 
@@ -95,42 +95,16 @@ def _carrier(joint):
 
 
 def names_from_doc(d, job, look=None, kingdom="crimson"):
-    """Piece names of one citizen from rig.json alone (assemblies + look rules)."""
-    lk = look or {"skin": 1, "hair": 1, "hairColor": 1, "outfit": 1}
-    L = d["looks"]
-    face = L["faces"][(lk["hair"] + 2 * lk["outfit"] + lk["skin"]) % len(L["faces"])]
-    hs = L["hair_sets"][0 if lk["hairColor"] <= 4 else 1]
-    hair = hs[(lk["hair"] - 1) % len(hs)]
-    tv = L["torso_variants"].get(job)
-    torso_id = tv[(lk["outfit"] - 1) % len(tv)] if tv else ""
-    acc = L["accessories"][(lk["outfit"] + 2 * lk["hair"] + 3 * lk["skin"]) % len(L["accessories"])] or ""
-    out = []
-    for slot, val in d["assemblies"][job].items():
-        if slot == "extras":
-            for v in val:
-                v = v.replace("%kingdom%", kingdom).replace("%accessory%", acc)
-                if v:
-                    out.append(v)
-            continue
-        if val is None:
-            continue
-        val = val.replace("%face%", face).replace("%kingdom%", kingdom).replace("%hair%", hair).replace("%torso%", torso_id)
-        if slot == "boot" and job in L["boots"]:
-            lst = L["boots"][job]
-            val = lst[(lk["outfit"] + lk["skin"]) % len(lst)]
-        if slot in d["sided_slots"]:
-            out += [val + "_l", val + "_r"]
-        else:
-            out.append(val)
-    return out
+    """Piece ids of one citizen from rig.json alone (assemblies + the runtime's variant rules, lib/ckit_resolve.py)."""
+    return ckit_resolve.resolve_assembly(d["assemblies"], d["pieces"], job, look, kingdom)
 
 
 def tint_from_doc(d, name, job, look, kingdom):
-    """MeshPart.Color the Kit sets for piece `name` (sRGB 0..1), from rig.json alone."""
+    """MeshPart.Color the Kit sets for piece `name` (sRGB 0..1), from rig.json alone (mirrors Kit/CharacterMesh + Character.luau)."""
     p = d["pieces"][name]
     t = p["tint"]
     T = d["tints"]
-    lk = look or {"skin": 1, "hair": 1, "hairColor": 1, "outfit": 1}
+    lk = ckit_resolve.normalize(look)
     if t in (None, "fixed"):
         return (1.0, 1.0, 1.0)
     if t == "skin":
@@ -138,15 +112,15 @@ def tint_from_doc(d, name, job, look, kingdom):
     if t == "hair":
         return c01(T["hair"][(lk["hairColor"] - 1) % len(T["hair"])])
     if t == "kingdom":
-        base = name[:-2] if name.endswith(("_l", "_r")) else name
-        f = T["kit_tint"].get(base, p.get("kit_tint", 0.85))
-        if p["slot"] in ("torso", "sleeve"):
+        f = p.get("tint_factor", 0.85)
+        if p["slot"] == "sleeve" and name.startswith("sleeve_soldier"):
             f = min(1.0, max(0.5, f + T["tint_shift"][(lk["hairColor"] + lk["skin"] - 2) % len(T["tint_shift"])]))
         return tuple(min(1.0, v * f) for v in c01(T["kingdom"][kingdom]))
     if t == "cloth":
-        variants = T["cloth_variants"].get(job) or T["cloth_variants"]["idle"]
-        pal = variants[(lk["hairColor"] - 1) % len(variants)]
-        c = pal.get(p["slot"]) or pal.get("default") or (200, 200, 200)
-        dye = T["dye"][(lk["hairColor"] - 1) % len(T["dye"])]
+        key = job if job in T["cloth_panels"] else "folk"
+        table = T["cloth_legs"] if p["slot"] == "leg" else T["cloth_panels"]
+        pal = table[key]
+        c = pal[(lk["hairColor"] - 1) % len(pal)]
+        dye = T["dye"][lk["hairColor"] - 1]
         return tuple(min(1.0, v * dye) for v in c01(c))
     return (1.0, 1.0, 1.0)

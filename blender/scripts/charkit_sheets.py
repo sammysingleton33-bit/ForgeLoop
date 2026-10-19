@@ -37,7 +37,8 @@ def main(argv):
     from generators import char_kit
 
     R, rig, hand = char_kit.registry()
-    ctx = {"skin": 0, "hairColor": 1, "kingdom": "crimson", "cloth": {"default": (190, 170, 130), "leg": (110, 90, 60)}}
+    ctx = {"skin": 0, "hairColor": 1, "kingdom": "crimson", "kit_tint": rig.KIT_TINT,
+           "cloth": {"default": (190, 170, 130), "leg": (110, 90, 60)}}
     ckit_view.QUICK = a.quick
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)

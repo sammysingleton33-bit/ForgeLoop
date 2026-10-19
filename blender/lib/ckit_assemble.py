@@ -34,7 +34,8 @@ def tint_for(piece, ctx):
     if t == "hair":
         return c01(HAIR[ctx.get("hairColor", 0)])
     if t == "kingdom":
-        f = piece.info.get("kit_tint") or TINT_FACTOR.get(piece.slot, 0.85)
+        base = piece.name[:-2] if piece.name.endswith(("_l", "_r")) else piece.name
+        f = ctx.get("kit_tint", {}).get(base) or TINT_FACTOR.get(piece.slot, 0.85)
         return shade(c01(KINGDOM[ctx.get("kingdom", "crimson")]), f)
     if t == "cloth":
         palette = ctx.get("cloth", {})
