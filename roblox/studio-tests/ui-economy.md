@@ -417,5 +417,17 @@ the phone emulator (667 × 375).
 5. "Your reign" switches back; closing and reopening the recap starts on the reign page.
 6. Phone emulator: moments left (scroll to the fifth), perks and crowd right, both buttons 44 px in the bottom row.
 
+## U28 — How to play (FL-0138; runs on today's build)
+Desktop window and the phone emulator (667 × 375); screenshot each card on both.
+1. During the Lobby countdown a "Rules" rail button (an "i" on phones) opens the cards; it is gone once Founding
+   starts.
+2. Kingdom menu → Overview → "How to play" (end of the tab) opens the cards; Close returns to the Kingdom menu.
+3. Six cards: The match (the phase lengths match the phase bar), Crown Points, Build and lead, War, peace and sieges,
+   The Crown Arena, Falling and watching. Each is short plain text with a picture; nothing mentions buying anything.
+4. Back is greyed on the first card; Next walks through; the last card's button reads "Done" and closes.
+5. Keyboard: Right arrow or Enter go on, Left goes back, and the camera does not pan meanwhile; Backspace / gamepad B
+   steps back a card, then closes. Gamepad D-pad left/right also work.
+6. Phone emulator: the panel sits below the Roblox top bar; Back and Next are thumb-sized.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.

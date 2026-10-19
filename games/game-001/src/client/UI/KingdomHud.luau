@@ -26,7 +26,8 @@
 	                                         "Waiting", the citizens with an open request)
 	hud.pills[resourceId] -> CurrencyPill handle      hud.rail[id] -> IconButton handle
 	Onboarding hooks (FORGE-04, G11): the pill row has OnboardingTarget = "HUD.Resources" and the
-	Build button OnboardingTarget = "HUD.BuildButton".
+	Build button OnboardingTarget = "HUD.BuildButton", the Kingdom button "HUD.KingdomButton" (FL-0138 for FORGE-04's
+	FL-0137 tips; the Raid rail button is "HUD.RaidButton", KingdomHudController.RAID_RAIL).
 ]]
 
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -46,7 +47,7 @@ KingdomHud.__index = KingdomHud
 
 KingdomHud.MENUS = table.freeze({
 	table.freeze({ id = "build", icon = "build", label = "Build", target = "HUD.BuildButton" }),
-	table.freeze({ id = "kingdom", icon = "kingdom", label = "Kingdom" }),
+	table.freeze({ id = "kingdom", icon = "kingdom", label = "Kingdom", target = "HUD.KingdomButton" }),
 })
 
 function KingdomHud.new(root: Instance, topbar: Instance, motion: any)
