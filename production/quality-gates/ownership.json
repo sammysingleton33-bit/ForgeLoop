@@ -221,6 +221,7 @@
     "games/game-001/src/client/Controllers/ReputationPanel*": "forge-03",
     "games/game-001/src/client/Controllers/PlotPicker*": "forge-03",
     "games/game-001/src/client/Controllers/UpgradePanel*": "forge-03",
+    "games/game-001/src/client/Controllers/HowToPlay*": "forge-03",
     "games/game-001/src/shared/Feedback/**": "forge-04",
     "games/game-001/src/server/Services/Pacing*": "forge-04",
     "games/game-001/src/server/Services/Announcer*": "forge-04",

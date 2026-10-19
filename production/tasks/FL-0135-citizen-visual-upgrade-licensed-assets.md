@@ -13,6 +13,7 @@ evidence:
   - "headless: KitCharacterMesh* 65/0, KitCharacter 59/0, KitPortrait 5/0, converter selftest PASS, validate 136/0, ownership PASS; no Studio"
   - branch forge/02-blender-fl0135-meshes
   - bash blender/scripts/check.sh PASS; pytest blender/tests 55+ passed; charkit_budget.py PASS (max citizen 954/1000, soldiers/governor 934/1500); rig_to_luau.py --validate-only valid 0 warnings; renders games/game-001/art/reviews/img/d057-kit-review-r2/
+  - bash blender/scripts/check.sh PASS; lune world suite 318 passed (Kit filter 248); blender pytest 58 passed; rig_to_luau 0 warnings; charkit_runtime_checks 0 violations; sheets games/game-001/art/reviews/img/d057-sil-review-r1/ and -r2/ (review.json verbatim); Blender renders, not Studio
 ---
 
 # Citizen and ruler visual upgrade with licensed prebuilt assets: faces, hair, clothing, job identities, rulers, variation (D-057)
@@ -56,3 +57,4 @@ In a playable build, citizens look professional and alive. Each has a face, hair
 - 2026-10-19 forge-02: READY → BUILDING. Kit runtime for the imported-mesh citizen rig landed on forge/02-blender-fl0135-runtime (Kit/CharacterMesh, converter, Studio import script, owner page, handoffs); mesh kit itself on forge/02-blender-fl0135-meshes; style pick B recorded (games/game-001/art/reviews/char-mesh.md).
 - 2026-10-18 forge-02: READY → BUILDING. FORGE-02 worker B: Blender mesh kit started (style comparison A smooth / B faceted / C KayKit-derived first, then the kit, rig.json, FBX, renders)
 - 2026-10-19 forge-02: BUILDING → BUILDING. mesh kit built and pushed (103 pieces, FBX + rig.json valid for rig_to_luau.py, budgets measured from the FBX in manifest.check); D-019 fresh re-score NEEDS-WORK twice (silhouette / readability 3, variation 4), author rounds used; handoff to the runtime worker written; Studio import and a decision on the 170-stud read are open
+- 2026-10-19 forge-02: BUILDING → BUILDING. silhouettes branch forge/02-blender-fl0135-silhouettes (FORGE-00 OPTION A, bolder job silhouettes in the kit): two author rounds + two fresh D-019 reviewers, both NEEDS-WORK (After sil 3 / var 3 / read 3, bar 4). 170-stud identity read: r1 2 yes / 3 no, r2 3 yes (farmer, merchant, soldier) / 1 no (idle); PR #220 kit was 2 yes / 4 no. Blocker reported in char-mesh.md with options a-d for FORGE-00. Also: soldier_swordsman renamed soldier_knight (FORGE-07 review of #220). Budgets: citizen max 966/1000, soldier/governor <= 978/1500.
