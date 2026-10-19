@@ -6,6 +6,10 @@ DM = G + "src/shared/Arena/DuelModel.luau"
 CAPS = G + "src/shared/Arena/Caps.luau"
 M = [
  # --- the duel
+ ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if false then', "sim/DuelModel", "a bad step"),
+ ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if not (dt < math.huge) then', "sim/DuelModel", "a bad step"),
+ ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if not (dt > 0) then', "sim/DuelModel", "a bad step"),
+ ("FL-0071", DM, 'dt = math.min(dt, MAX_STEP)', 'dt = dt', "sim/DuelModel", "clamps a long step"),
  ("FL-0071", DM, 'damage *= cfg.suddenDeathDamage', 'damage *= 1', "sim/DuelModel", "a tie at the cap is sudden death"),
  ("FL-0071", DM, 'damage *= state.weapons[defender.weapon].blockFactor', 'damage *= 1', "sim/DuelModel", "a block lets only blockFactor"),
  ("FL-0071", DM, 'state.t >= math.max(state.config.quietStart, trigger.earliest or 0)', 'state.t >= (trigger.earliest or 0)', "sim/DuelModel", "a trigger never fires in the first 10 seconds"),

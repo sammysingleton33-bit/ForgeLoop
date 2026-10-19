@@ -7,7 +7,7 @@ status: BUILDING
 priority: P2
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-19
 depends_on: [FL-0070, FL-0071]
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 12
@@ -40,3 +40,5 @@ D-029; design §6, §9; CONTRACTS G12.3. Build the harness scaffold now in slack
 ## Log
 - 2026-10-12 forge-00: created for the Crown Arena (D-029, VS-2) (READY).
 - 2026-10-12 forge-05: READY → BUILDING. Scaffold against a local DuelModel double and the design numbers (DuelDouble, DesignSupport); caps spec checks CapsContract against CONTRACTS G12.3 row by row and FORGE-01's Arena/Caps.luau once it exists. Merge-gate step in check.sh and the report artifact wait for FL-0070/FL-0071 (the double's own numbers are not the game's). Handoff to FORGE-01: arena-harness-needs.
+- 2026-10-19 forge-05: first run on the real DuelModel (main ebdd564, #208) with the design §3/§4 support fixture (config Support, #209, not on main yet), 2000 duels per cell: supportMatters novice 65.8 % [63.6, 67.8], average 67.7 % [65.6, 69.7], expert 67.0 % [64.9, 69.0] vs 55-65 % (average FAIL, the others marginal FAIL); skillStillWins 78.8 % and 72.1 % PASS (>= 60 %); worst noAutoWin 69.8 % [67.7, 71.7] marginal PASS (<= 70 %); mirror 49.2-50.6 %. Sent to FORGE-01 and FORGE-00. Next: run on config Support (#209), add the check.sh fairness step. Headless, scripted duellists.
+- 2026-10-19 forge-05: FORGE-01's three support trims on the real DuelModel (DesignSupport fixture + trim; supportMatters and skillStillWins 2000 duels, every noAutoWin cell 1000): all pass G12.3. A (fieldRemedy 0.03/0.05): supportMatters 62.0/63.4/62.9 %, worst noAutoWin 68.2 %; B (A + reforge 0.05/0.08): 61.6/62.9/62.4 %, 68.0 %; C (A + Adoring passive 0.01): 60.1/60.7/61.3 %, 64.5 %, skillStillWins 81.8/77.2 %. Recommended C, the only one inside FORGE-00's targets (supportMatters about 60-63 %, noAutoWin worst <= 68 %). Headless, scripted duellists.

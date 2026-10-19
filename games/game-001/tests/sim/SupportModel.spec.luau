@@ -192,7 +192,7 @@ describe("Arena/SupportModel: offers", function()
 		expect(empowered[1].power).toBe("empowered")
 		expect(empowered[1].effect).toBe("Damage taken -10 % for 6 s")
 		expect(empowered[2].trigger).toBe("fieldRemedy")
-		expect(empowered[2].effect).toBe("Regain 8 % of your HP over 4 s")
+		expect(empowered[2].effect).toBe("Regain 5 % of your HP over 4 s")
 	end)
 
 	it("a dead key citizen offers nothing; one key citizen per role", function()
@@ -274,13 +274,35 @@ describe("Arena/SupportModel: duel modifiers pass the caps", function()
 		expect(checked > 100).toBe(true)
 	end)
 
+	it(
+		"pins the FL-0076 trim (FORGE-00 ruling): Adoring's passive equals Loyal's, the field remedy heals 3 % / 5 %",
+		function()
+			expect(Support.tiers.adoring.passive).toEqual({ damageReduction = 0.01, staminaRegen = 0.01 })
+			expect(Support.tiers.adoring.passive).toEqual(Support.tiers.loyal.passive)
+			expect(Support.perks.fieldRemedy.pledged).toBe(0.03)
+			expect(Support.perks.fieldRemedy.empowered).toBe(0.05)
+			local offers = SupportModel.offers(
+				{ { role = "healer", citizenId = 7, name = "Mara", loyalty = 97, alive = true } },
+				"loyal"
+			)
+			local heal = SupportModel.modifiers("loyal", { { trigger = "fieldRemedy", power = offers[1].power } })
+			local healing = 0
+			for _, m in heal do
+				if m.kind == "heal" then
+					healing = m.magnitude
+				end
+			end
+			expect(healing).toBe(0.05)
+		end
+	)
+
 	it("the tier's passive blessing comes first; the Crowd Rally is one source with two effects", function()
 		local mods = SupportModel.modifiers("adoring", { { trigger = "crowdRally", power = "empowered" } })
 		expect(mods[1]).toEqual({
 			source = "tier:adoring",
 			kind = "passive",
 			stat = "damageReduction",
-			magnitude = 0.02,
+			magnitude = 0.01,
 		})
 		local rally = {}
 		for _, m in mods do

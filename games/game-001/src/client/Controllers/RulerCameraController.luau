@@ -41,6 +41,10 @@
 	Switching: V / gamepad Y / the touch "View" button. overviewInBuild: build mode and base editing
 	("edit", G13.9) always use the overview, and leaving them restores the previous mode unless the
 	player chose one meanwhile.
+	The arena duel (InputMode "arena", FL-0075): the champion walks and fights, so the camera switches
+	to follow for it (whatever overviewInBuild says), refuses any other mode meanwhile, unbinds V / Y
+	and the View touch button (it would sit among the duel's buttons), and leaving the duel restores
+	the previous mode and the View key.
 	Base editing (G13.9, FL-0121): in B17's Move flow (D-052 (1)) edit mode lasts while a building is
 	being moved, and a tap there aims the ghost, so selections in edit mode never move the camera
 	(FORGE-07's #148 B1 side effect). setEditDrag (parked with the drag gesture, FL-0123: no caller
@@ -159,6 +163,7 @@ Def.DEFAULTS = table.freeze({
 
 -- Input modes that keep the aerial overview (G13.6 build, G13.9 edit).
 Def.OVERVIEW_MODES = table.freeze({ build = true, edit = true })
+Def.FOLLOW_MODES = table.freeze({ arena = true }) -- the duel walks (FL-0075)
 Def.EDGE_PIXELS = 48 -- edge-pan band while dragging a building (G13.9)
 
 -- Edge-pan direction for a pointer on screen: x = right, y = forward (screen up), each -1..1,
@@ -504,6 +509,9 @@ end
 -- ------------------------------------------------------------------ public API
 
 function Controller:setMode(mode: any): boolean
+	if self._input ~= nil and Def.FOLLOW_MODES[self._input.mode] and mode ~= "follow" then
+		return false -- the duel needs the walk camera
+	end
 	if self._input ~= nil and Def.OVERVIEW_MODES[self._input.mode] then
 		self._autoFrom = nil -- the player chose a view while building or editing: keep it afterwards
 	end
@@ -1035,6 +1043,25 @@ function Controller:_onCharacter(character: any)
 end
 
 function Controller:_onInputMode(mode: string, previous: string)
+	if Def.FOLLOW_MODES[mode] then
+		self:setEditDrag(false)
+		self:_bindView(false) -- no View key, and no View touch button over the duel's buttons
+		if self.mode ~= "follow" then
+			self._autoFrom = self.mode
+			self:_setMode("follow")
+		end
+		return
+	elseif Def.FOLLOW_MODES[previous] then
+		self:_bindView(true)
+		local restore = self._autoFrom
+		self._autoFrom = nil
+		if restore ~= nil then
+			self:_setMode(restore)
+		end
+		if Def.OVERVIEW_MODES[mode] == nil then
+			return
+		end
+	end
 	if not Def.OVERVIEW_MODES[mode] then
 		self:_bindRotateKeys(self.mode == "overview")
 	else
@@ -1069,9 +1096,15 @@ end
 
 -- ------------------------------------------------------------------ input bindings
 
-function Controller:_bindView()
+function Controller:_bindView(on: boolean?)
 	local actions = self._actions
 	if actions == nil then
+		return
+	end
+	if on == false then
+		pcall(function()
+			actions:UnbindAction(Def.ACTION)
+		end)
 		return
 	end
 	pcall(function()

@@ -265,8 +265,12 @@ function ReputationPanelController:render(metrics: any?)
 	local active = HudModel.banner(hud.store) ~= nil
 	local open = active and hud.state.menu == ReputationPanelController.MENU
 	self.strip = self.strip or ReputationStrip.new(hud.roots.hud, self._motion)
+	-- a narrow phone's conversation starts under the pills, over the strip (StageModel; L7 audit): hide it meanwhile,
+	-- so no sliver of it shows between the speech bubble and the answers
+	local narrow = m.hud.pills ~= nil and (m.hud.pills.rows or 1) > 1
+	local talking = narrow and hud.state.menu == "conversation"
 	self.strip:render({
-		visible = active and self.data.known,
+		visible = active and self.data.known and not talking,
 		items = ReputationModel.strip(self.data, self._provider),
 		open = open,
 		onOpen = function()

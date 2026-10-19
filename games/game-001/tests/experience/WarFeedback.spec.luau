@@ -582,4 +582,24 @@ describe("RulerSpectateController (FL-0130 part 2)", function()
 		end
 		expect(#spectate:targets()).toBe(2)
 	end)
+
+	it("the Lobby forgets our old kingdom: in the new match it is a target again (#203 L1)", function()
+		local spectate = boot()
+		spectate:onKingdomState(kingdoms("crimson", false))
+		expect(spectate.active).toBe(true)
+		spectate:onPhase("Results")
+		spectate:onPhase("Lobby")
+		spectate:onPhase("Founding")
+		spectate:onKingdomState(kingdoms(nil, true)) -- not seated this match; crimson is someone else's
+		expect(spectate.active).toBe(false)
+		expect(spectate:setActive(true)).toBe(true)
+		local crimson = false
+		for _, target in spectate:targets() do
+			if target.kingdom == "crimson" then
+				crimson = true
+			end
+		end
+		expect(crimson).toBe(true)
+		expect(#spectate:targets()).toBe(3)
+	end)
 end)

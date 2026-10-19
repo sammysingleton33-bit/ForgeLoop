@@ -41,7 +41,7 @@ return {
 
 	tierOrder = { "adoring", "loyal", "divided", "restless", "hostile" },
 	tiers = {
-		adoring = { min = 85, passive = { damageReduction = 0.02, staminaRegen = 0.02 }, slots = 3, crowdRally = true },
+		adoring = { min = 85, passive = { damageReduction = 0.01, staminaRegen = 0.01 }, slots = 3, crowdRally = true },
 		loyal = { min = 65, passive = { damageReduction = 0.01, staminaRegen = 0.01 }, slots = 3, crowdRally = false },
 		divided = { min = 40, passive = {}, slots = 2, crowdRally = false },
 		restless = { min = 20, passive = {}, slots = 1, crowdRally = false },
@@ -71,8 +71,8 @@ return {
 		},
 		fieldRemedy = {
 			kind = "heal",
-			pledged = 0.05,
-			empowered = 0.08,
+			pledged = 0.03,
+			empowered = 0.05,
 			duration = 4,
 			condition = "hpBelow:0.35",
 			effect = "Regain {magnitude} of your HP over 4 s",

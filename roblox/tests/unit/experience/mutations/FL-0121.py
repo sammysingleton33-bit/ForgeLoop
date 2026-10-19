@@ -4,8 +4,8 @@ One row: (task, file, old, new, spec filter, expected failing test, project). Th
 S, C, X, G, C2 and F come from mutations.py. Add rows for FL-0121 here only (D-038 (7)).
 """
 M = [
- ("FL-0121", C2+"InputModeController.luau", 'Def.MODES = table.freeze({ "explore", "build", "edit" })', 'Def.MODES = table.freeze({ "explore", "build" })', 'InputMode', 'edit mode (G13.9) is a mode', "game"),
- ("FL-0121", C2+"InputModeController.luau", 'self:_bindLeave(nextMode ~= "explore")', 'self:_bindLeave(nextMode == "build")', 'InputMode', 'edit mode (G13.9) is a mode', "game"),
+ ("FL-0121", C2+"InputModeController.luau", 'Def.MODES = table.freeze({ "explore", "build", "edit", "arena" })', 'Def.MODES = table.freeze({ "explore", "build", "arena" })', 'InputMode', 'edit mode (G13.9) is a mode', "game"),
+ ("FL-0121", C2+"InputModeController.luau", 'Def.LEAVE_MODES = table.freeze({ build = true, edit = true })', 'Def.LEAVE_MODES = table.freeze({ build = true })', 'InputMode', 'edit mode (G13.9) is a mode', "game"),
  ("FL-0121", C2+"InputModeController.luau", 'if nextMode ~= "explore" and self.selection.kind ~= "none" then', 'if nextMode == "build" and self.selection.kind ~= "none" then', 'InputMode', 'edit mode (G13.9) is a mode', "game"),
  ("FL-0121", C2+"InputModeController.luau", 'if ok and owner ~= nil and owner == mine then', 'if ok then', 'InputMode', 'edit mode (G13.9): a tap selects only your own', "game"),
  ("FL-0121", C2+"InputModeController.luau", 'kind, id = Def.resolveEdit(hit, self:_hasTag(), self:_kingdom())', 'kind, id = Def.resolveHit(hit, self:_hasTag())', 'InputMode', 'edit mode (G13.9): a tap selects only your own', "game"),
