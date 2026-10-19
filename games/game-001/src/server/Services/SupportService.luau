@@ -12,11 +12,14 @@
 			newest of equals), each text once
 		Remote Kingdom.GetSupport() -> SupportView?    the caller's own view; nil for anyone who rules no kingdom
 		Remote Kingdom.Support(SupportView)            pushed to every seated ruler after each leadership sample
+		SupportService:enabled() -> boolean            config Arena `enabled`; while false GetSupport answers nil and nothing is
+		                                               pushed (the support meter stays dark until the arena is real)
 
 	A ruler only ever sees their own view (userId comes from the sender, never from an argument).
 	Dependencies: MatchService, RemoteService, LeadershipService.
 ]]
 
+local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
 local SupportModel = require("@game/ReplicatedStorage/Game/Arena/SupportModel")
 
 local SupportService = {}
@@ -41,6 +44,14 @@ end
 
 function SupportService:_sim(): any
 	return self._match.host.match.sim
+end
+
+-- The support meter stays dark until the arena is real: one switch (config Arena `enabled`, read from ArenaService so a
+-- spec that swaps its config swaps both) rules the arena and what leads to it. getView and forChampion are unaffected.
+function SupportService:enabled(): boolean
+	local arena = self._registry:find("ArenaService")
+	local config = if arena and arena.config then arena.config else ArenaConfig
+	return config.enabled == true
 end
 
 function SupportService:getView(kingdom: string, userId: number?): any?
@@ -114,6 +125,9 @@ function SupportService:_rulerOf(player: any): (string?, number?)
 end
 
 function SupportService:_push()
+	if not self:enabled() then
+		return
+	end
 	local sim = self:_sim()
 	for _, player in self._env.Players:GetPlayers() do
 		local kingdom, userId = self:_rulerOf(player)
@@ -128,6 +142,9 @@ end
 
 function SupportService:start()
 	self._remotes:handle("Kingdom.GetSupport", function(player: any): any?
+		if not self:enabled() then
+			return nil
+		end
 		local kingdom, userId = self:_rulerOf(player)
 		if kingdom == nil then
 			return nil

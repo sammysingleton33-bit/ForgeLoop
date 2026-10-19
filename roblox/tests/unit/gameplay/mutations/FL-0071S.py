@@ -13,7 +13,7 @@ M = [
  ("FL-0071S", AS, 'runner:act(player.UserId, action, self:_now())', 'runner:act(1, action, self:_now())', "sim/ArenaService", "drops an action from a stranger"),
  ("FL-0071S", AS, 'self._match:arenaEnded(winner)', 'self._match:arenaEnded(nil)', "sim/ArenaService", "can win the match by the duel"),
  ("FL-0071S", AS, 'place(a.userId, site.x - half, site.z, site.x + half, site.z)', 'place(a.userId, site.x + half, site.z, site.x - half, site.z)', "sim/ArenaService", "places both champions on the ring"),
- ("FL-0071S", AS, 'if a and not a.isAI then', 'if false then', "sim/ArenaService", "places both champions on the ring"),
+ ("FL-0071S", AS, 'site = site or FALLBACK_SITE\n\tlocal half = site.separation / 2\n\tif a and not a.isAI then', 'site = site or FALLBACK_SITE\n\tlocal half = site.separation / 2\n\tif false then', "sim/ArenaService", "places both champions on the ring"),
  ("FL-0071S", AS, 'if self._runner ~= nil and flow:stage() == "duel" then', 'if false then', "sim/ArenaService", "a player who leaves during the duel forfeits"),
  ("FL-0071S", AS, 'if rev == self._rev then\n\t\treturn\n\tend', 'if false then\n\t\treturn\n\tend', "sim/ArenaService", "does not push the state again"),
  ("FL-0071S", AS, 'self:_cancel(reason)', 'local _ = reason', "sim/ArenaService", "a cancel from the match clears the arena"),
@@ -29,4 +29,8 @@ M = [
  ("FL-0071S", AS, 'place(a.userId, from.X, from.Z, to.X, to.Z, from.Y)', 'place(a.userId, from.X, from.Z, to.X, to.Z)', "sim/ArenaService", "stand on the venue's marks"),
  ("FL-0071S", AS, 'place(b.userId, to.X, to.Z, from.X, from.Z, to.Y)', 'place(b.userId, to.X, to.Z, from.X, from.Z)', "sim/ArenaService", "stand on the venue's marks"),
  ("FL-0071S", AS, 'modifiers = self:_modifiers(champion),', 'modifiers = {},', "sim/ArenaService", "takes the champions' support into the duel"),
+ # --- the support meter stays dark while the arena is off
+ ("FL-0071S", SS, 'return config.enabled == true', 'return true', "sim/ArenaService", "stays dark while the arena is switched off"),
+ ("FL-0071S", SS, 'function SupportService:_push()\n\tif not self:enabled() then\n\t\treturn\n\tend', 'function SupportService:_push()\n\tif false then\n\t\treturn\n\tend', "sim/ArenaService", "stays dark while the arena is switched off"),
+ ("FL-0071S", SS, 'if not self:enabled() then\n\t\t\treturn nil\n\t\tend', 'if false then\n\t\t\treturn nil\n\t\tend', "sim/ArenaService", "stays dark while the arena is switched off"),
 ]
