@@ -33,4 +33,14 @@ M = [
  ("FL-0071S", SS, 'return config.enabled == true', 'return true', "sim/ArenaService", "stays dark while the arena is switched off"),
  ("FL-0071S", SS, 'function SupportService:_push()\n\tif not self:enabled() then\n\t\treturn\n\tend', 'function SupportService:_push()\n\tif false then\n\t\treturn\n\tend', "sim/ArenaService", "stays dark while the arena is switched off"),
  ("FL-0071S", SS, 'if not self:enabled() then\n\t\t\treturn nil\n\t\tend', 'if false then\n\t\t\treturn nil\n\t\tend', "sim/ArenaService", "stays dark while the arena is switched off"),
+ # --- the ring (FORGE-00's B22 ruling): bounds, WalkSpeed, re-place on reset
+ ("FL-0071S", AS, 'if distance > limit then', 'if false then', "sim/ArenaService", "puts a champion who walks out of the ring back"),
+ ("FL-0071S", AS, 'local scale = ring.radius / distance', 'local scale = 1', "sim/ArenaService", "puts a champion who walks out of the ring back"),
+ ("FL-0071S", AS, 'local limit = ring.radius + self.config.ring.margin', 'local limit = ring.radius', "sim/ArenaService", "puts a champion who walks out of the ring back"),
+ ("FL-0071S", AS, 'local limit = ring.radius + self.config.ring.margin', 'local limit = ring.radius + 1000', "sim/ArenaService", "puts a champion who walks out of the ring back"),
+ ("FL-0071S", AS, '\t\t\thumanoid.WalkSpeed = self.config.ring.walkSpeed\n', '', "sim/ArenaService", "fixes the champions' WalkSpeed"),
+ ("FL-0071S", AS, 'held.humanoid.WalkSpeed = held.walkSpeed', 'local _ = held', "sim/ArenaService", "fixes the champions' WalkSpeed"),
+ ("FL-0071S", AS, 'elseif next(self._held) ~= nil then\n\t\tself:_releaseAll()', 'elseif false then\n\t\tself:_releaseAll()', "sim/ArenaService", "fixes the champions' WalkSpeed"),
+ ("FL-0071S", AS, 'if held == nil or held.character ~= character then', 'if held == nil then', "sim/ArenaService", "a champion who resets is placed on their mark again"),
+ ("FL-0071S", AS, 'ring = { x = centre.X, z = centre.Z, radius = venue.duelRadius, height = from.Y },', 'ring = { x = centre.X, z = centre.Z, radius = 1000, height = from.Y },', "sim/ArenaService", "bounds a champion by the venue ring"),
 ]

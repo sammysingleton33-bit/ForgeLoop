@@ -67,6 +67,7 @@ function Def.new(env: any, registry: any)
 	self._running = false
 	self._looping = false
 	self._connections = {} :: { any }
+	self._held = {} :: { [number]: any } -- userId -> { character, humanoid, walkSpeed } while a champion is held to the ring
 	self.config = ArenaConfig -- specs may swap in a table of their own (short stages)
 	self.placeAt = nil :: ((userId: number, x: number, z: number, toX: number, toZ: number) -> ())?
 	return self
@@ -114,32 +115,123 @@ function ArenaService:_place(userId: number, x: number, z: number, towardX: numb
 	end)
 end
 
-function ArenaService:_placeChampions()
-	local place = self.placeAt
-		or function(userId: number, x: number, z: number, toX: number, toZ: number, height: number?)
-			self:_place(userId, x, z, toX, toZ, height)
-		end
-	local a, b = self._flow:champion("a"), self._flow:champion("b")
+local function characterOf(env: any, userId: number): any?
+	local player = env.Players:GetPlayerByUserId(userId)
+	return if player then player.Character else nil
+end
+
+local function humanoidOf(character: any): any?
+	local ok, humanoid = pcall(function()
+		return character:FindFirstChildOfClass("Humanoid")
+	end)
+	return if ok then humanoid else nil
+end
+
+-- Where each side stands, and the ring around them: { a = mark, b = mark, ring = { x, z, radius, height? } } with a mark
+-- { x, z, toX, toZ, height? }. The venue's own marks when there is no `site` override (position, height and facing).
+function ArenaService:_layout(): any
 	local site = self.config.site
-	local marks = if site == nil then WorldLayout.arena else nil
-	if marks then
-		-- the venue's own marks: position, height and facing (each faces the other)
-		local from, to = marks.spawnA.Position, marks.spawnB.Position
-		if a and not a.isAI then
-			place(a.userId, from.X, from.Z, to.X, to.Z, from.Y)
-		end
-		if b and not b.isAI then
-			place(b.userId, to.X, to.Z, from.X, from.Z, to.Y)
-		end
-		return
+	local venue = if site == nil then WorldLayout.arena else nil
+	if venue then
+		local from, to = venue.spawnA.Position, venue.spawnB.Position
+		local centre = venue.cframe.Position
+		return {
+			a = { x = from.X, z = from.Z, toX = to.X, toZ = to.Z, height = from.Y },
+			b = { x = to.X, z = to.Z, toX = from.X, toZ = from.Z, height = to.Y },
+			ring = { x = centre.X, z = centre.Z, radius = venue.duelRadius, height = from.Y },
+		}
 	end
 	site = site or FALLBACK_SITE
 	local half = site.separation / 2
-	if a and not a.isAI then
-		place(a.userId, site.x - half, site.z, site.x + half, site.z)
+	return {
+		a = { x = site.x - half, z = site.z, toX = site.x + half, toZ = site.z },
+		b = { x = site.x + half, z = site.z, toX = site.x - half, toZ = site.z },
+		ring = { x = site.x, z = site.z, radius = self.config.ring.fallbackRadius },
+	}
+end
+
+function ArenaService:_placer(): (number, number, number, number, number, number?) -> ()
+	return self.placeAt
+		or function(userId: number, x: number, z: number, toX: number, toZ: number, height: number?)
+			self:_place(userId, x, z, toX, toZ, height)
+		end
+end
+
+function ArenaService:_placeChampions()
+	local place = self:_placer()
+	local layout = self:_layout()
+	for _, side in { "a", "b" } do
+		local champion = self._flow:champion(side)
+		if champion and not champion.isAI then
+			local mark = layout[side]
+			place(champion.userId, mark.x, mark.z, mark.toX, mark.toZ, mark.height)
+			local character = characterOf(self._env, champion.userId)
+			if character ~= nil then
+				self:_hold(champion.userId, character) -- from here on they are held to the ring
+			end
+		end
 	end
-	if b and not b.isAI then
-		place(b.userId, site.x + half, site.z, site.x - half, site.z)
+end
+
+-- ---------------------------------------------------------------- keeping the champions in the ring
+-- Fixes WalkSpeed for the duel (remembering the old one) on a champion's current character.
+function ArenaService:_hold(userId: number, character: any)
+	local held = self._held[userId]
+	local humanoid = humanoidOf(character)
+	local original = if held and held.humanoid == humanoid then held.walkSpeed else nil
+	if humanoid ~= nil then
+		pcall(function()
+			original = original or humanoid.WalkSpeed
+			humanoid.WalkSpeed = self.config.ring.walkSpeed
+		end)
+	end
+	self._held[userId] = { character = character, humanoid = humanoid, walkSpeed = original }
+end
+
+-- Gives every champion's WalkSpeed back.
+function ArenaService:_releaseAll()
+	for _, held in self._held do
+		if held.humanoid ~= nil and held.walkSpeed ~= nil then
+			pcall(function()
+				held.humanoid.WalkSpeed = held.walkSpeed
+			end)
+		end
+	end
+	table.clear(self._held)
+end
+
+-- Once a tick, from the intro to the end of the duel: a champion whose character is new (a reset) goes back to their
+-- mark with the fixed WalkSpeed; one beyond the ring's radius plus the margin is put back at the edge.
+function ArenaService:_guard()
+	local flow = self._flow
+	local layout = self:_layout()
+	local place = self:_placer()
+	local ring = layout.ring
+	local limit = ring.radius + self.config.ring.margin
+	for _, side in { "a", "b" } do
+		local champion = flow:champion(side)
+		if champion == nil or champion.isAI or champion.gone then
+			continue
+		end
+		local character = characterOf(self._env, champion.userId)
+		local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+		if character == nil or root == nil then
+			continue -- no body to place; the runner's pose-loss pause covers it
+		end
+		local held = self._held[champion.userId]
+		if held == nil or held.character ~= character then
+			local mark = layout[side]
+			place(champion.userId, mark.x, mark.z, mark.toX, mark.toZ, mark.height)
+			self:_hold(champion.userId, character)
+			continue
+		end
+		local position = root.CFrame.Position
+		local dx, dz = position.X - ring.x, position.Z - ring.z
+		local distance = math.sqrt(dx * dx + dz * dz)
+		if distance > limit then
+			local scale = ring.radius / distance
+			place(champion.userId, ring.x + dx * scale, ring.z + dz * scale, ring.x, ring.z, ring.height)
+		end
 	end
 end
 
@@ -222,6 +314,7 @@ function ArenaService:_cancel(reason: string)
 	end
 	flow:cancel(reason)
 	self:_publish()
+	self:_releaseAll()
 	self._flow, self._runner = nil, nil
 	self._remotes:fireAll("Arena.State", IDLE_STATE)
 end
@@ -285,6 +378,7 @@ function ArenaService:_finish()
 	local flow = self._flow
 	local winner = flow:winnerKingdom()
 	self:_publish()
+	self:_releaseAll()
 	self._flow, self._runner = nil, nil
 	self._remotes:fireAll("Arena.State", IDLE_STATE)
 	self._match:arenaEnded(winner)
@@ -301,6 +395,11 @@ function ArenaService:step()
 	if stage == "intro" and not self._placed then
 		self._placed = true
 		self:_placeChampions()
+	end
+	if stage == "intro" or stage == "duel" then
+		self:_guard()
+	elseif next(self._held) ~= nil then
+		self:_releaseAll() -- the duel is over (or called off): WalkSpeed goes back
 	end
 	if stage == "duel" then
 		if self._runner == nil then
@@ -417,6 +516,7 @@ end
 
 function ArenaService:destroy()
 	self._running = false
+	self:_releaseAll()
 	self.stageChanged:disconnectAll()
 	for _, connection in self._connections do
 		connection:Disconnect()
