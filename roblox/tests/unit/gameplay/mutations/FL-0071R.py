@@ -42,7 +42,7 @@ M = [
  ("FL-0071R", DR, 'local winner = if model.winner == "a" or model.winner == "b" then model.winner else "draw"', 'local winner = "a"', "sim/DuelRunner", "play a duel to the end"),
  # --- forfeits
  # --- a champion the world cannot find
- ("FL-0071R", DR, 'if self:_poseLost(elapsed, now, out) then\n\t\treturn out\n\tend', 'if false then\n\t\treturn out\n\tend', "sim/DuelRunner", "pauses the duel"),
+ ("FL-0071R", DR, 'if self:_poseLost(elapsed, now) then\n\t\treturn out\n\tend', 'if false then\n\t\treturn out\n\tend', "sim/DuelRunner", "pauses the duel"),
  ("FL-0071R", DR, 'if self._pose(duellist.userId) == nil then', 'if false then', "sim/DuelRunner", "pauses the duel"),
  ("FL-0071R", DR, 'self._poseLostFor[side] = 0\n', 'self._poseLostFor[side] += 0\n', "sim/DuelRunner", "pauses the duel"),
  ("FL-0071R", DR, 'if duellist.isAI or duellist.gone then', 'if duellist.gone then', "sim/DuelRunner", "needs no pose"),

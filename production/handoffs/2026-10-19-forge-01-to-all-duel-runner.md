@@ -25,13 +25,13 @@ One duel as the server will run it, and the exact `Arena.Events` payload the cli
   - Fixed 1/30 s ticks whatever the frame rate; a stall catches up at most `maxCatchup` (0.25 s).
   - AI champions play through `DuelAI`.
   - Forfeit: the other side wins (`ended` reason "forfeit", sent by the first `step` after `simultaneousSeconds`); both gone within the window = `draw` with reason "forfeit".
-- Specs `sim/DuelRunner` (28); mutation rows `FL-0071R.py` (35).
+- Specs `sim/DuelRunner` (36); mutation rows `FL-0071R.py` (46).
 
 ## Not yet
 ArenaService (remotes, MatchService wiring, the real `pose` provider from player characters), the support view.
 
 ## Evidence
-Headless only. Local: `sim/DuelRunner` 28/0, selene 0 warnings. `mutations.py FL-0071R`: 35 rows; the last full run caught 33 and flagged 2 whose labels named the wrong test (labels corrected; both mutants are killed by the geometry specs, checked individually). The full gate is CI's.
+Headless only. Local: `sim/DuelRunner` 36/0, `sim/ArenaFlow` 33/0, `selene games roblox` 0 warnings (the first push of the settling change had one unused `out`; fixed in b083e530), StyLua clean. `mutations.py FL-0071R`: 46 rows, all caught (the "pauses the duel" row re-anchored after the `out` parameter went and checked on its own). Not Studio.
 
 ## Open issues and risks
 - The provider contract is mine: FORGE-04, tell me if your input path wants positions from somewhere else.
