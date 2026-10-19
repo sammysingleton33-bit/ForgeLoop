@@ -143,3 +143,17 @@ guesses; the cloth colours of workers follow the runtime's old job panels, not a
 Reproduce: `~/forge-bpy/bin/python blender/build.py --generator char_kit`, `blender/scripts/charkit_scenes.py` (scenes crowd170 / crowd40 / jobs /
 looks / kingdoms / turntable / poses / portraits, `--silhouette`, `--yaw`, `--old`), `blender/scripts/charkit_review_sheets.py`,
 `blender/scripts/charkit_clearance.py`, `blender/scripts/charkit_budget.py`.
+
+### Runtime fit (integration branch forge/02-blender-fl0135-kit, 2026-10-19)
+The Kit runtime specs (`KitCharacterMesh`, `KitCharacterMeshPose`, `KitCharacterMeshImport`) run on the real data and found four Blender-side defects; fixed
+without touching the specs: (1) base torsos started at y 1.5..2.06 instead of the hip joint 2.2: every torso is now clipped at the hips and the hems of
+robe / coat / smock / tabard / regal robe are separate `skirt_*` pieces (`skirt_%look.outfit%` with five empty variants + `skirt_06`, `skirt_merchant`,
+`skirt_smock`, `skirt_tabard`, `skirt_regal`), leg tops sit at 2.24; (2) soldier crests rose to 7.67 studs: emblems are now 1.24 tall, highest body point
+7.17 (< 7.2); (3) the death fall followed from (1) (lowest torso corner -0.133, was -0.2509); (4) the bounding boxes of hoe, pick and mallet came within
+0.09 stud (pick and mallet overlapped) of the head: hoe upright, pick one-sided (long curved end outward, short blunt end inward, a mattock),
+mallet head front to back, so every posed tool keeps >= 0.228 stud (limit 0.1) from the head in all seven actions and no closer to the headwear than at rest.
+The ermine collar is merged into `trim_regal` to keep the governor at 16 pieces; curls hair trimmed so the converter's static worst case
+has 0 warnings. Measured again from the FBX: max citizen 982 / 1,000 (healer; body <= 894), soldiers and governor <= 978 / 1,500. Ported checks:
+`blender/scripts/charkit_runtime_checks.py` (also a pytest). Look check (opened): `img/d057-kit-runtime-fit/after_jobs.jpg`, `after_portraits.jpg`,
+`after_kingdoms.jpg` against the r2 sheets: same identities, hats, colours; the pick now shows its long end outward and its blunt end on the front view,
+the mallet head is seen end-on from the front. The D-019 verdict is unchanged (NEEDS-WORK at 170 studs, accepted as interim by the coordinator under D-051).
