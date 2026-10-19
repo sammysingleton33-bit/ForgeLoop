@@ -453,5 +453,12 @@ Mouse on a desktop window, then touch in the phone emulator (or a real phone).
 5. Right after a move the same house cannot be dragged until the move cooldown passes (its panel says "Moved").
 6. Touch: one finger holds and drags; a second finger still pinches/rotates the camera.
 
+## U31 — Siege on the rail (FORGE-04's siege alert, #235)
+Desktop window and the phone emulator.
+1. Let raiders into your lands: the rail shows "Raid" (a warning icon on the phone); a tap moves the aerial camera there.
+2. Bring an enemy army to your keep: the same button now reads "Siege" (a siege ranks ahead of a raid); a tap goes to
+   the keep. FORGE-04's siege tip marks this button.
+3. Drive the attackers off the keep while raiders remain: it reads "Raid" again; once the lands are clear it is gone.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
