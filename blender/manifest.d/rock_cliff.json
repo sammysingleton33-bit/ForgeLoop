@@ -1,0 +1,319 @@
+{
+  "assets": [
+    {
+      "budget_class": "cliff",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Default"
+      },
+      "dimensions_studs": {
+        "x": 24.624,
+        "y": 19.431,
+        "z": 17.402
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_cliff_01.fbx",
+        "validation": "exports/rock_cliff_01.validation.json"
+      },
+      "generator": "rock_cliff",
+      "generator_version": 2,
+      "geometry_hash": "407bfcec4384b755",
+      "id": "rock_cliff_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "d": 11,
+        "h": 18,
+        "plan": "straight",
+        "spur": true,
+        "tone": "grey",
+        "w": 24
+      },
+      "preview": "previews/rock_cliff.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All five read as built masonry or layer cake, not fractured rock: cliff_04 and the right tower of cliff_02 are stacks of equal-height horizontal slabs, cliff_05 is a grid of rectangular blocks and cliff_03 reads as a ruined wall with a doorway gap. Moss on cliff_01/03/05 is thick flat pads (lids) in a cooler, more saturated green (hue ~95) than the boulder moss (~80), so the set does not match the boulder kit.",
+        "review_file": "reviews/rock_cliff.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 3,
+          "silhouette": 2,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7100,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1038,
+        "lod1": 362
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "cliff",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Default"
+      },
+      "dimensions_studs": {
+        "x": 33.975,
+        "y": 26.792,
+        "z": 17.656
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_cliff_02.fbx",
+        "validation": "exports/rock_cliff_02.validation.json"
+      },
+      "generator": "rock_cliff",
+      "generator_version": 2,
+      "geometry_hash": "c99b509c075395b2",
+      "id": "rock_cliff_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "d": 13,
+        "h": 26,
+        "plan": "straight",
+        "spur": false,
+        "tone": "dark",
+        "w": 34
+      },
+      "preview": "previews/rock_cliff.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All five read as built masonry or layer cake, not fractured rock: cliff_04 and the right tower of cliff_02 are stacks of equal-height horizontal slabs, cliff_05 is a grid of rectangular blocks and cliff_03 reads as a ruined wall with a doorway gap. Moss on cliff_01/03/05 is thick flat pads (lids) in a cooler, more saturated green (hue ~95) than the boulder moss (~80), so the set does not match the boulder kit.",
+        "review_file": "reviews/rock_cliff.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 3,
+          "silhouette": 2,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7101,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 962,
+        "lod1": 336
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "cliff",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Default"
+      },
+      "dimensions_studs": {
+        "x": 32.889,
+        "y": 17.369,
+        "z": 17.417
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_cliff_03.fbx",
+        "validation": "exports/rock_cliff_03.validation.json"
+      },
+      "generator": "rock_cliff",
+      "generator_version": 2,
+      "geometry_hash": "2cb093b6313e0259",
+      "id": "rock_cliff_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "d": 11,
+        "h": 16,
+        "plan": "curved",
+        "spur": false,
+        "tone": "warm",
+        "w": 30
+      },
+      "preview": "previews/rock_cliff.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All five read as built masonry or layer cake, not fractured rock: cliff_04 and the right tower of cliff_02 are stacks of equal-height horizontal slabs, cliff_05 is a grid of rectangular blocks and cliff_03 reads as a ruined wall with a doorway gap. Moss on cliff_01/03/05 is thick flat pads (lids) in a cooler, more saturated green (hue ~95) than the boulder moss (~80), so the set does not match the boulder kit.",
+        "review_file": "reviews/rock_cliff.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 3,
+          "silhouette": 2,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7102,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 988,
+        "lod1": 344
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "cliff",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Default"
+      },
+      "dimensions_studs": {
+        "x": 22.912,
+        "y": 29.63,
+        "z": 16.996
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_cliff_04.fbx",
+        "validation": "exports/rock_cliff_04.validation.json"
+      },
+      "generator": "rock_cliff",
+      "generator_version": 2,
+      "geometry_hash": "626295dd98f90d16",
+      "id": "rock_cliff_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "d": 12,
+        "h": 28,
+        "plan": "bluff",
+        "spur": true,
+        "tone": "grey",
+        "w": 22
+      },
+      "preview": "previews/rock_cliff.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All five read as built masonry or layer cake, not fractured rock: cliff_04 and the right tower of cliff_02 are stacks of equal-height horizontal slabs, cliff_05 is a grid of rectangular blocks and cliff_03 reads as a ruined wall with a doorway gap. Moss on cliff_01/03/05 is thick flat pads (lids) in a cooler, more saturated green (hue ~95) than the boulder moss (~80), so the set does not match the boulder kit.",
+        "review_file": "reviews/rock_cliff.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 3,
+          "silhouette": 2,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7103,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 844,
+        "lod1": 294
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "cliff",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Default"
+      },
+      "dimensions_studs": {
+        "x": 39.19,
+        "y": 21.716,
+        "z": 17.567
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_cliff_05.fbx",
+        "validation": "exports/rock_cliff_05.validation.json"
+      },
+      "generator": "rock_cliff",
+      "generator_version": 2,
+      "geometry_hash": "ccc859f9cf058127",
+      "id": "rock_cliff_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "d": 12,
+        "h": 20,
+        "plan": "straight",
+        "spur": true,
+        "tone": "warm",
+        "w": 38
+      },
+      "preview": "previews/rock_cliff.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All five read as built masonry or layer cake, not fractured rock: cliff_04 and the right tower of cliff_02 are stacks of equal-height horizontal slabs, cliff_05 is a grid of rectangular blocks and cliff_03 reads as a ruined wall with a doorway gap. Moss on cliff_01/03/05 is thick flat pads (lids) in a cooler, more saturated green (hue ~95) than the boulder moss (~80), so the set does not match the boulder kit.",
+        "review_file": "reviews/rock_cliff.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 2,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 2,
+          "readability": 3,
+          "silhouette": 2,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7104,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1244,
+        "lod1": 434
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 5
+  },
+  "generator": "rock_cliff",
+  "variation": {
+    "closest_pair": [
+      "rock_cliff_02",
+      "rock_cliff_05"
+    ],
+    "mean_pair_diff": 0.3729,
+    "min_pair_diff": 0.298,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
