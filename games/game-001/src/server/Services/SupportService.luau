@@ -83,6 +83,17 @@ function SupportService:forChampion(userId: number?, kingdom: string): any?
 		return nil
 	end
 	local moments = self._leadership:getMoments(kingdom, userId, REASON_POOL)
+	if userId == nil then
+		-- an AI champion answers for the kingdom, not for a human ruler who held it before: only the moments no ruler
+		-- owns (a kingdom act, or an act of the unseated series)
+		local own = {}
+		for _, moment in moments do
+			if moment.userId == nil then
+				table.insert(own, moment)
+			end
+		end
+		moments = own
+	end
 	-- newest first already; a stable sort by the size of the change keeps the newest of equals first
 	local ranked = {}
 	for index, moment in moments do

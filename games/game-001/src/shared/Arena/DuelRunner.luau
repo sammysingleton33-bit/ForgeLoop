@@ -160,6 +160,9 @@ function DuelRunner:act(userId: number, action: string, now: number): (boolean, 
 	if type(action) ~= "string" or not ACTIONS[action] then
 		return false, "bad_action"
 	end
+	if type(now) ~= "number" or now ~= now or math.abs(now) == math.huge then
+		return false, "bad_arguments" -- a nil or NaN clock would poison the champion's bucket for good
+	end
 	local rate = self._cfg.rate
 	local bucket = self._bucket[side]
 	if bucket == nil then

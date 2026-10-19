@@ -1,0 +1,107 @@
+{
+ "review": "D-019 fresh image-only reviewer, FL-0136 phase 3, author round 1: resource node markers (Kit.nodeMarker: a post and a glowing orb in the resource colour on every resource node)",
+ "date": "2026-10-19",
+ "branch": "forge/02-blender-fl0136-dressing (stacked on PR 247, forge/02-blender-fl0136-env at 8c26e2a8)",
+ "geometry_hash_env_kit_01": "4a676b85217c85f3",
+ "method": "one fresh Claude Code session (no memory of the author), sparse checkout of this image folder only, told to open the listed JPEGs and apply the rubric in review_prompt.md; blind: the sheets say SET A / SET B only, the column order flips on alternate sheets, the key (key.json) was withheld until the reply was saved",
+ "sets": {
+  "A": "the nature meshes as PR 247 ships them (env_kit.fbx, no marker)",
+  "B": "the same meshes with the resource markers"
+ },
+ "prompt": "review_prompt.md (the template; __FOLDER__ and __IMAGES__ were filled with this folder and the image list below)",
+ "session": "session_01JoYRkg3PGGLrCYxwdwxmN9",
+ "images": [
+  "sheet_nodes_east.jpg",
+  "sheet_nodes_wood.jpg",
+  "sheet_nodes_east_emerald.jpg",
+  "sheet_nodes_lineup.jpg",
+  "sheet_settlement.jpg"
+ ],
+ "scores": {
+  "A": {
+   "silhouette": 3,
+   "variation": 2,
+   "readability": 2,
+   "proportions": 4,
+   "palette": 4,
+   "detail": 4,
+   "cohesion": 5,
+   "cost": 5
+  },
+  "B": {
+   "silhouette": 4,
+   "variation": 4,
+   "readability": 4,
+   "proportions": 3,
+   "palette": 4,
+   "detail": 4,
+   "cohesion": 3,
+   "cost": 4
+  }
+ },
+ "verdict": {
+  "A": "NEEDS-WORK",
+  "B": "PASS"
+ },
+ "best_overall": "B",
+ "ship": {
+  "A": false,
+  "B": true
+ },
+ "per_sheet_defects": {
+  "sheet_nodes_east.jpg": [
+   "A: berry bush and stone piles blend into decor at 170 studs; wood absent from the view",
+   "B: balloons look like detached party balloons with floating shadows; gold balloon is close in hue to the wheat plots"
+  ],
+  "sheet_nodes_wood.jpg": [
+   "A: wood-node trees are indistinguishable from the other oaks and the pine, so wood cannot be found",
+   "B: thin posts poke through the canopy; orange sits close to the roof and wheat hues"
+  ],
+  "sheet_nodes_east_emerald.jpg": [
+   "A: nodes are faint against the muted emerald palette",
+   "B: markers keep the same colours across palettes and look pasted on"
+  ],
+  "sheet_nodes_lineup.jpg": [
+   "A: berry bush and wood trees look exactly like decor",
+   "B: balloons are as big as the rocks at close range; the pale blue-white stone balloon reads oddly next to a grey rock; glossy flat spheres clash with the matte chunky kit"
+  ],
+  "sheet_settlement.jpg": [
+   "A: nodes disappear among the buildings and farm at both cameras",
+   "B: markers shrink to small dots at 82 studs, though still findable"
+  ]
+ },
+ "fixes_for_the_weaker_set": [
+  "Add a marker that is visible at 170 studs for every resource (a banner, flag or colour cue), especially wood and food, which are currently identical to decor",
+  "Make the stone and gold piles larger or add a distinct ground ring or patch so they stand out from boulders",
+  "Give the berry bush more or brighter berries and a larger footprint than decor bushes",
+  "Mark the wood-node trees (a cut stump, axe marks, or a log pile beside them) so they differ from the other oaks"
+ ],
+ "notes": "SET A fails readability and variation because wood and food nodes are not distinguishable from decor, and stone and gold are only marginal at the far camera. SET B passes: all four resources can be found and told apart at both cameras, at a trivial cost of 76 parts against a 25,000 budget. B's weak point is cohesion, since the glossy balloons on thin posts do not match the chunky matte kit. A cohesion pass (a flag or banner style marker, matte material, a shorter post, a ground-contact shadow) would be worth doing later but does not block shipping.",
+ "identified": {
+  "A": {
+   "aerial170": [
+    "stone",
+    "gold"
+   ],
+   "gameplay82": [
+    "stone",
+    "gold"
+   ]
+  },
+  "B": {
+   "aerial170": [
+    "stone",
+    "gold",
+    "food",
+    "wood"
+   ],
+   "gameplay82": [
+    "stone",
+    "gold",
+    "food",
+    "wood"
+   ]
+  }
+ },
+ "reply_verbatim": "I opened all five sheets. Sheets 2 (wood) and 4 (lineup) have SET B on the left and SET A on the right, and I scored by the panel labels.\n\n**Per-sheet defects**\n- **sheet_nodes_east.jpg:**\n  - SET A: the quarry, gold and berry bush are small grey, yellow and green lumps. At 170 studs the berry bush is a few red dots, no different from the decor flower clumps beside it. The stone piles read as decor boulders.\n  - SET B: the balloons make all three findable. They float with detached shadows and look like party balloons rather than a worked-in marker. The gold balloon is only slightly more saturated than the orange wheat plots at the top right.\n- **sheet_nodes_wood.jpg:**\n  - SET A: nothing tells the four wood-node trees from the other oaks and the pine. At either camera they are decor, so the wood resource cannot be found.\n  - SET B: the orange balloons find the trees, but the posts poke through the canopy as thin sticks. The orange is close to the crimson roof and the wheat in hue, so it sits in the same warm band.\n- **sheet_nodes_east_emerald.jpg:** the same as sheet 1. SET A's stone and gold are faint against the desaturated emerald palette. SET B is readable, but the balloons keep the same colours while the buildings shift, so they feel pasted on.\n- **sheet_nodes_lineup.jpg:**\n  - SET A: shapes are fine up close, with the stone, the gold nuggets and the berry bush all clearly different. The berry bush and the oak/pine look exactly like ordinary decor.\n  - SET B: at 45 studs the balloons are as large as the rocks. The stone balloon is pale blue-white and reads oddly next to the grey rock. Posts are thin and the spheres are glossy and flat, unlike the matte chunky kit.\n- **sheet_settlement.jpg:**\n  - SET A: the nodes vanish into the settlement at both cameras. The quarry and gold sit beside the farm and keep like props.\n  - SET B: markers are legible, but at 82 studs they shrink to small dots. A second red balloon sits near the farm and another bush, so food is clear.\n\n**Identified nodes**\n- **SET A, aerial170:** stone and gold, with difficulty because they are small. The food bush is barely visible and could pass for a flower clump. Wood is not identifiable.\n- **SET A, gameplay82:** stone and gold, with the food bush marginal. Wood is not identifiable.\n- **SET B, aerial170:** all four. Stone is a pale balloon, gold yellow, food red and wood orange.\n- **SET B, gameplay82:** all four, though the balloons get small in the settlement frame.\n- **Mistaken for something else:**\n  - In SET A the stone piles look like boulder decor, the berry bush looks like a flower bush, and the wood trees look like ordinary trees.\n  - In SET B only the wood node's orange balloon is slightly ambiguous next to the orange wheat plots.\n\n```json\n{\"scores\": {\"A\": {\"silhouette\": 3, \"variation\": 2, \"readability\": 2, \"proportions\": 4, \"palette\": 4, \"detail\": 4, \"cohesion\": 5, \"cost\": 5}, \"B\": {\"silhouette\": 4, \"variation\": 4, \"readability\": 4, \"proportions\": 3, \"palette\": 4, \"detail\": 4, \"cohesion\": 3, \"cost\": 4}},\n \"verdict\": {\"A\": \"NEEDS-WORK\", \"B\": \"PASS\"}, \"best_overall\": \"B\",\n \"identified\": {\"A\": {\"aerial170\": [\"stone\", \"gold\"], \"gameplay82\": [\"stone\", \"gold\"]}, \"B\": {\"aerial170\": [\"stone\", \"gold\", \"food\", \"wood\"], \"gameplay82\": [\"stone\", \"gold\", \"food\", \"wood\"]}},\n \"per_sheet_defects\": {\"sheet_nodes_east.jpg\": [\"A: berry bush and stone piles blend into decor at 170 studs; wood absent from the view\", \"B: balloons look like detached party balloons with floating shadows; gold balloon is close in hue to the wheat plots\"], \"sheet_nodes_wood.jpg\": [\"A: wood-node trees are indistinguishable from the other oaks and the pine, so wood cannot be found\", \"B: thin posts poke through the canopy; orange sits close to the roof and wheat hues\"], \"sheet_nodes_east_emerald.jpg\": [\"A: nodes are faint against the muted emerald palette\", \"B: markers keep the same colours across palettes and look pasted on\"], \"sheet_nodes_lineup.jpg\": [\"A: berry bush and wood trees look exactly like decor\", \"B: balloons are as big as the rocks at close range; the pale blue-white stone balloon reads oddly next to a grey rock; glossy flat spheres clash with the matte chunky kit\"], \"sheet_settlement.jpg\": [\"A: nodes disappear among the buildings and farm at both cameras\", \"B: markers shrink to small dots at 82 studs, though still findable\"]},\n \"fixes_for_the_weaker_set\": [\"Add a marker that is visible at 170 studs for every resource (a banner, flag or colour cue), especially wood and food, which are currently identical to decor\", \"Make the stone and gold piles larger or add a distinct ground ring or patch so they stand out from boulders\", \"Give the berry bush more or brighter berries and a larger footprint than decor bushes\", \"Mark the wood-node trees (a cut stump, axe marks, or a log pile beside them) so they differ from the other oaks\"], \n \"ship\": {\"A\": false, \"B\": true}, \"notes\": \"SET A fails readability and variation because wood and food nodes are not distinguishable from decor, and stone and gold are only marginal at the far camera. SET B passes: all four resources can be found and told apart at both cameras, at a trivial cost of 76 parts against a 25,000 budget. B's weak point is cohesion, since the glossy balloons on thin posts do not match the chunky matte kit. A cohesion pass (a flag or banner style marker, matte material, a shorter post, a ground-contact shadow) would be worth doing later but does not block shipping.\"}\n```"
+}

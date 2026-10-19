@@ -318,6 +318,134 @@ describe("InputModeArenaController: keys, gamepad and DuelController:act (FL-007
 		expect(count(sent, "blockEnd")).toBe(0)
 	end)
 
+	it("sent fires once for each action act() sent: never for a refused, a throwing or a preview press", function()
+		local t = boot({ realDuel = true })
+		local fired = {}
+		t.arena.sent:connect(function(action)
+			table.insert(fired, action)
+		end)
+		local duel = state("duel", duellist(ME), duellist(RIVAL))
+		t.duel:setState(duel)
+		t.arena:onArenaState(duel)
+		t.arena:press("block", true, "key")
+		t.arena:press("block", false, "key")
+		expect(fired).toEqual({ "block", "blockEnd" })
+		for _ = 1, t.duel.BURST do
+			t.arena:press("light", true)
+		end
+		expect(#fired).toBe(t.duel.BURST) -- the 9th light, refused by the bucket, fired nothing
+		local throwing = boot({ fails = true })
+		local none = 0
+		throwing.arena.sent:connect(function()
+			none += 1
+		end)
+		throwing.arena:onArenaState(state("duel", duellist(ME), duellist(RIVAL)))
+		throwing.arena:press("light", true)
+		expect(none).toBe(0)
+		local preview = boot({ studio = true })
+		local previewed = 0
+		preview.arena.sent:connect(function()
+			previewed += 1
+		end)
+		preview.arena:preview(true)
+		preview.arena:press("light", true)
+		expect(previewed).toBe(0) -- nothing was sent
+	end)
+
+	it("the refused blockEnd: sent within 0.1 s, and no act() call at all once the duel is over (#259 L1)", function()
+		local t = boot({ realDuel = true })
+		local calls, sentAt = {}, nil
+		local realAct = t.duel.act
+		t.duel.act = function(self, action)
+			local ok = realAct(self, action)
+			table.insert(calls, { action = action, ok = ok, at = t.env.clock() })
+			if ok and action == "blockEnd" then
+				sentAt = t.env.clock()
+			end
+			return ok
+		end
+		local duel = state("duel", duellist(ME), duellist(RIVAL))
+		t.duel:setState(duel)
+		t.arena:onArenaState(duel)
+		t.arena:press("block", true, "key")
+		for _ = 2, t.duel.BURST do
+			t.arena:press("light", true) -- the bucket is now empty
+		end
+		local t0 = t.env.clock()
+		expect(t.arena:press("block", false, "key")).toBe(false) -- refused for now
+		for _ = 1, 12 do
+			t.env.mock:advance(1 / 120)
+		end
+		-- a token returns after 1/12 s (12 a second); the next retry, at most RETRY_SEC later, sends it
+		assert(sentAt ~= nil, "the blockEnd went out within 0.1 s")
+		expect(sentAt - t0 <= 1 / 12 + ArenaDef.RETRY_SEC + 1e-6).toBe(true)
+		-- again, with the duel over before a token returns: the retry stops without calling act() again
+		t = boot({ realDuel = true })
+		calls = {}
+		realAct = t.duel.act
+		t.duel.act = function(self, action)
+			table.insert(calls, action)
+			return realAct(self, action)
+		end
+		t.duel:setState(duel)
+		t.arena:onArenaState(duel)
+		t.arena:press("block", true, "key")
+		for _ = 2, t.duel.BURST do
+			t.arena:press("light", true)
+		end
+		t.arena:press("block", false, "key")
+		local before = #calls
+		local over = table.clone(duel)
+		over.stage = "crowning"
+		t.duel:setState(over)
+		t.arena:onArenaState(over)
+		t.env.mock:advance(1)
+		expect(#calls).toBe(before) -- no act() after the crowning, not even a refused one
+	end)
+
+	it("an act() that throws on the release is logged once and not retried (#259 L1)", function()
+		local env = MockEnv.new({ seed = 76, isServer = false, localPlayer = { userId = ME } })
+		local actions = D.actions()
+		local calls = 0
+		local throwing = {
+			name = "DuelController",
+			dependencies = {},
+			new = function()
+				return {
+					act = function()
+						calls += 1
+						error("arena remote missing")
+					end,
+					getState = function()
+						return nil
+					end,
+				}
+			end,
+		}
+		local registry = D.boot(env, {
+			input = { actions = actions },
+			ruler = { actions = actions },
+			camera = false,
+			extra = {
+				throwing,
+				{
+					name = "InputModeArenaController",
+					dependencies = { "InputModeController" },
+					new = function(e, r)
+						return ArenaDef.create(e, r, { actions = actions })
+					end,
+				},
+			},
+		})
+		local arena = registry:get("InputModeArenaController")
+		arena:onArenaState(state("duel", duellist(ME), duellist(RIVAL)))
+		expect(arena:press("block", true, "key")).toBe(false)
+		expect(arena:press("block", false, "key")).toBe(false)
+		env.mock:advance(1)
+		expect(calls).toBe(2) -- the press and the release, never a retry loop of throws
+		expect(env.mock:hasLog("warn", "DuelController:act('blockEnd') failed")).toBe(true)
+	end)
+
 	it("press() sends nothing outside arena mode or for an unknown action", function()
 		local t = boot()
 		expect(t.arena:press("light", true)).toBe(false)

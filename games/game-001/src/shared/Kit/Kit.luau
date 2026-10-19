@@ -56,6 +56,35 @@
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
 		Kit.slotMarker(size: Vector2, kingdomColor) -> Model   -- G13.5 build slot marker (Root is the query target)
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
+	War kit (FL-0128, Operation Crownfall; additive, the contract rows are in
+	production/handoffs/2026-10-19-forge-02-to-forge-00-04-fl0128-war-kit.md; part-built, D-026):
+		Kit.build("wall" | "gate", 1..3, ...)          -- wall 30/45/60 parts (L1 palisade, L2 stone, L3 its own outline: end piers,
+		                                                  buttresses, pedestal brazier), gate 90/120/150
+		                                                  (L1 timber leaves, L2 banded leaves + banners, L3 portcullis + braziers; open leaves
+		                                                  swing 65 degrees into the passage; every level has a recessed Tympanum over
+		                                                  the leaves (at L3 behind the portcullis bars), the passage floor is mid-tone);
+		                                                  Buildings.PART_BUDGET_BY_LEVEL; footprints unchanged (32x8, 32x12)
+		Kit.build("watchtower", 2, ...)                -- war-ready: hoarding galleries, braziers, banner, more merlons; <= 130
+		Kit.setGateOpen(model, open)                   -- model attribute KitGateOpen (false as built); leaves and portcullis
+		                                                  move by CFrame alone (no part added), relative to the Root; open, the
+		                                                  portcullis is raised into the lintel; also poses leaves a damaged gate
+		                                                  has parked (they come back posed)
+		Kit.siege("ram", kingdomColor) -> Model        -- client entity rig, <= 45 parts, Root anchored and invisible, feet pivot,
+		                                                  front -Z, ONE Motor6D "Log" (the pale log with its iron wedge head, 7 studs
+		                                                  past a low pent roof; the roof alone carries the kingdom); Kit.SIEGE_KINDS
+		Kit.siegePose(model, thrust 0..1)              -- sets the Log joint; Kit.siegeTransform(thrust) -> CFrame is the same
+		                                                  value for a driver with its own Transform adapter
+		Kit.character("soldier", "knight" | "archer", ...) -- unit kinds by job (soldier = spear (1.3x body height) and pennant, knight = sword,
+		                                                  bulky, a large kingdom-coloured shield with a flat mark, a broad great helm with
+		                                                  a big crest, archer = short curved bow with a string held below the chin, round
+		                                                  head, no quiver); still <= 11 parts
+		                                                  with the kingdom crest; any other job = the spear soldier
+		Kit.applyDamage(model)                         -- reads the model attribute `Damage` (0..1) and builds or removes damage parts
+		                                                  at 0.25 / 0.5 / 0.75 / 0.95 (<= 14 extra parts, none at 0; repairable);
+		                                                  all of it in the model's own frame (the PrimaryPart's pivot), so a turned or
+		                                                  moved building damages like one at the origin, and the parts it takes off keep
+		                                                  their CFrame relative to the PrimaryPart (Kit/Damage.luau has the contract);
+		                                                  Kit.damageState(d), Kit.damageFromHp(hp, maxHp), Kit.DAMAGE_THRESHOLDS
 	Crown Arena (FL-0072, G12.6; Kit/Arena.luau, Crowd.luau, Gear.luau have the contracts):
 		Kit.arena(kingdomA?, kingdomB?) -> Model       -- the venue: ring, two stands (72 seats each, StandA_Row<r>_Seat<s>,
 		                                                  StandA_Rail<n>, StandA_Royal<n>), royal boxes, gates (GateA / GateB),
@@ -87,6 +116,7 @@
 local Arena = require("./Arena")
 local Buildings = require("./Buildings")
 local Character = require("./Character")
+local Damage = require("./Damage")
 local CharacterMesh = require("./CharacterMesh")
 local Crowd = require("./Crowd")
 local EnvMesh = require("./EnvMesh")
@@ -95,6 +125,7 @@ local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local Portrait = require("./Portrait")
 local Props = require("./Props")
+local Siege = require("./Siege")
 
 local Kit = {}
 
@@ -163,7 +194,22 @@ Kit.ARMOURS = Gear.ARMOURS
 Kit.WEAPONS = Gear.WEAPONS
 
 Kit.footprint = Buildings.footprint
-Kit.build = Buildings.build
+Kit.build = Buildings.build -- (type, level, stage, color, variant?): the level is clamped to 1..Kit.MAX_LEVEL[type] and KitLevel stores the clamped one
+Kit.MAX_LEVEL = Buildings.MAX_LEVEL
+-- FL-0128 war kit (additive): gate open/closed poses, siege engines and their pose helper
+-- (model, open: boolean): leaves and portcullis by CFrame only; attribute KitGateOpen. Leaves a damaged gate has lost
+-- (Kit.applyDamage) are posed too, so a repair brings them back in the current pose.
+function Kit.setGateOpen(model: Model, open: boolean)
+	Buildings.setGateOpen(model, open, Damage.stashed(model))
+end
+Kit.siege = Siege.build -- (kind "ram", kingdomColor) -> Model: client entity rig with one Motor6D "Log"
+Kit.siegePose = Siege.pose -- (model, thrust 0..1): places the swinging log
+Kit.siegeTransform = Siege.thrustTransform -- (thrust 0..1) -> CFrame: the Log joint's Transform (for a pose driver with its own adapter)
+Kit.SIEGE_KINDS = Siege.KINDS
+Kit.applyDamage = Damage.apply -- (model): builds / removes damage parts from the model attribute `Damage` (0..1)
+Kit.damageState = Damage.stateOf -- (damage) -> 0..4
+Kit.damageFromHp = Damage.fromHp -- (hp, maxHp) -> 1 - hp / maxHp, clamped
+Kit.DAMAGE_THRESHOLDS = Damage.THRESHOLDS -- { 0.25, 0.5, 0.75, 0.95 }
 Kit.character = CharacterMesh.character -- the imported-mesh rig when the kit is imported and complete, else Character.character's
 Kit.regalia = Character.regalia
 -- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by CharacterMesh.character (the mesh rig, else Character.character), then anchored
@@ -183,6 +229,8 @@ end
 Kit.characterMeshAvailable = CharacterMesh.available -- () -> boolean: kit data + a CitizenKit folder are present
 Kit.characterMeshStatus = CharacterMesh.status -- () -> diagnostics (pieces, missing, mesh vs fallback builds, last fallback reason)
 Kit.envMeshStatus = EnvMesh.status -- () -> { props, accepted, rejected = { [assetId] = why } }: the FL-0136 nature meshes behind Kit.prop
+Kit.envMeshReady = Props.meshReady -- (assetId) -> boolean: Kit.prop would build the imported mesh for this id (FL-0136 mesh-only dressing)
+Kit.nodeMarker = Props.nodeMarker -- (model, resource) -> boolean: the FL-0136 resource marker (WorldService puts it on every node)
 Kit.regionMarkers = Props.regionMarkers
 Kit.slotMarker = Props.slotMarker -- G13.5 build slot ground marker (WorldService)
 Kit._hueStyle = Parts.hueStyle
@@ -253,6 +301,13 @@ function Kit.setKingdomColor(model: Model, color: Color3)
 			if type(f) == "number" then
 				d.Color = shade(color, f)
 			end
+		end
+	end
+	-- parts a damaged model has taken off (Kit.applyDamage) come back after a repair: recolour them too
+	for _, p in Damage.stashed(model) do
+		local f = p:GetAttribute("KitTint")
+		if type(f) == "number" then
+			p.Color = shade(color, f)
 		end
 	end
 	model:SetAttribute("KitColor", color)

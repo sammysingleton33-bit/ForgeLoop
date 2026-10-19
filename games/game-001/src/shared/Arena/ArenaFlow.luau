@@ -17,10 +17,11 @@
 			setup.support      (userId?, KingdomId) -> Support the champion's support: { score, tier, offers, slots,
 			                   reasons }; userId nil for an AI kingdom (SupportService turns samples into this)
 		Flow:state() -> ArenaState        the public picture (same table shape as Types.ArenaState); `rev` changes with it
-		Flow:champion(side) -> Champion?  { userId, kingdom, isAI, offers, slots, weapon, armour, triggers }
+		Flow:champion(side) -> Champion?  { side, kingdom, userId, isAI, support, weapon, armour, triggers, chosen, gone }
 		Flow:vote(userId, candidate) -> (ok, reason?)
 			vote stage only; the voter is a seated human ruler of a qualified kingdom, the candidate one of that
-			kingdom's rulers; the latest vote counts; closes the stage early when every ruler has voted
+			kingdom's rulers; the latest vote counts; the stage closes early when every kingdom with more than one
+			candidate has had all its candidates vote (a kingdom with one ruler has nothing to vote on)
 		Flow:choose(userId, weapon, armour, triggers) -> (ok, reason?)
 			loadout stage only; the champion only; weapon and armour from Duel config, triggers distinct, a subset of
 			the champion's own offers, at most min(slots, 3); the latest choice counts
@@ -44,6 +45,7 @@ local Caps = require("./Caps")
 local Types = require("./Types")
 
 type ArenaState = Types.ArenaState
+type VoteSide = Types.VoteSide
 type Duellist = Types.Duellist
 type TriggerOffer = Types.TriggerOffer
 
@@ -264,6 +266,28 @@ local function duellist(champion: any): Duellist
 	}
 end
 
+-- The vote stage's public view (CONTRACTS G12.4): for each side with two or more candidates, who may be voted for and who
+-- has voted, never for whom (the ballot is secret).
+function ArenaFlow:_voteView(): { [string]: VoteSide }?
+	if self._stage ~= "vote" then
+		return nil
+	end
+	local view: { [string]: VoteSide } = {}
+	for _, side in self._sides do
+		local kingdom, candidates = self._kingdoms[side], self._candidates[side]
+		if kingdom and candidates and #candidates > 1 then
+			local voted = {}
+			for _, candidate in candidates do
+				if self._votes[candidate] ~= nil then
+					table.insert(voted, candidate)
+				end
+			end
+			view[side] = { kingdom = kingdom, candidates = table.clone(candidates), voted = voted }
+		end
+	end
+	return if next(view) ~= nil then view else nil
+end
+
 function ArenaFlow:state(): ArenaState
 	local a, b = self._champions.a, self._champions.b
 	return {
@@ -273,6 +297,7 @@ function ArenaFlow:state(): ArenaState
 		b = if b then duellist(b) else nil,
 		coronation = self._coronation,
 		winner = self._winnerUser,
+		vote = self:_voteView(),
 	}
 end
 
@@ -318,8 +343,10 @@ function ArenaFlow:vote(userId: number, candidate: number): (boolean, string?)
 			if not contains(candidates, candidate) then
 				return false, "not_a_candidate"
 			end
-			self._votes[userId] = candidate
-			self._rev += 1
+			if self._votes[userId] ~= candidate then -- the same vote again changes nothing, so nothing is broadcast
+				self._votes[userId] = candidate
+				self._rev += 1
+			end
 			return true, nil
 		end
 	end
@@ -373,11 +400,20 @@ function ArenaFlow:choose(userId: number, weapon: string, armour: string, trigge
 		end
 		table.insert(chosen, trigger)
 	end
+	local changed = not champion.chosen
+		or champion.weapon ~= weapon
+		or champion.armour ~= armour
+		or #champion.triggers ~= #chosen
+	for index, trigger in chosen do
+		changed = changed or champion.triggers[index] ~= trigger
+	end
 	champion.weapon = weapon
 	champion.armour = armour
 	champion.triggers = chosen
 	champion.chosen = true
-	self._rev += 1
+	if changed then -- the same loadout again changes nothing, so nothing is broadcast
+		self._rev += 1
+	end
 	return true, nil
 end
 

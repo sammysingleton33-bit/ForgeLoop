@@ -88,7 +88,7 @@ describe("Kit.prop builds the stand-in unless a matching imported Model is there
 		end
 	)
 
-	it("is the committed state: valid data, no props until the real kit is generated", function()
+	it("is the committed state: valid data, and EnvMesh.has agrees with the listed ids", function()
 		expect(CommittedData.schema_version).toBe(1)
 		expect(CommittedData.unit).toBe("stud")
 		expect(type(CommittedData.props)).toBe("table")
@@ -98,7 +98,7 @@ describe("Kit.prop builds the stand-in unless a matching imported Model is there
 		)
 	end)
 
-	it("clones an id the data does not list exactly as before, whatever it holds", function()
+	it("clones an id the data does not list and passes it through unchanged, whatever it holds", function()
 		local assets = EnvKit.assets(data, { all = { dirty = true } })
 		EnvKit.install({ schema_version = 1, unit = "stud", props = {} }, assets)
 		local template = assets.tree_oak_01 :: Model
@@ -631,7 +631,16 @@ if next(CommittedData.props) ~= nil then
 	describe("the committed env kit (Kit/EnvMeshData) against the world and the part-built props", function()
 		local worldIds: { [string]: boolean } = {}
 		local dressed = { crimson = true, azure = true, emerald = true, gold = true }
-		for _, placement in WorldPlan.props(Layout, dressed, WorldPlan.FULL_DENSITY) do
+		local planned = WorldPlan.props(Layout, dressed, WorldPlan.FULL_DENSITY)
+		for _, placement in planned do
+			worldIds[placement.assetId] = true
+		end
+		-- and what the world adds when the Kit builds the imported meshes (FL-0136 phase 3: fences, cabbage variants, rim cliffs)
+		for _, placement in
+			WorldPlan.meshDressing(Layout, planned, function(_: string): boolean
+				return true
+			end)
+		do
 			worldIds[placement.assetId] = true
 		end
 		local nodeIds: { [string]: boolean } = {}

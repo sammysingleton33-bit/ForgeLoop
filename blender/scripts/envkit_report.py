@@ -3,7 +3,8 @@
   python3 blender/scripts/envkit_report.py [--relief /tmp/env_relief.json]
 
 Prints: the per-id measured table of env.json (triangles, bounding box, footprint and height against the stand-in, node flag), the family summary of both kits and,
-with --relief (the dump of blender/scripts/lune/EnvRelief.spec.luau), the part-count relief per family.
+with --relief (the dump of blender/scripts/lune/EnvRelief.spec.luau), the part-count relief per family; with --nodefit (EnvNodeFit.spec.luau) the room each resource
+node has (phase 3 A); with --dressing (EnvDressing.spec.luau) the mesh-only dressing's placements, parts and triangles (phase 3 B).
 """
 
 import argparse
@@ -50,8 +51,42 @@ def relief(path):
         print(f"| total | | | | {tot} |")
 
 
+def nodefit(path):
+    data = json.loads(Path(path).read_text())
+    env = json.loads((KIT / "env.json").read_text())["props"]
+    by = {}
+    for n in data["nodes"]:
+        by.setdefault(n["assetId"], []).append(n)
+    print("\n| node asset | resource | stand-in reach | mesh outline radius | mesh box reach | room (smallest over the plots) | growth room | work spots from the pivot |")
+    print("|---|---|---|---|---|---|---|---|")
+    for aid, ns in by.items():
+        allowed = min(n["allowed"] for n in ns)
+        radius = env[aid]["radius_xz"]
+        spots = f"{min(n['spots']['distMin'] for n in ns):g} to {max(n['spots']['distMax'] for n in ns):g}"
+        grow = (allowed / radius - 1) * 100 if allowed < 100 else float("inf")
+        growth = "unbounded (heartland)" if grow == float("inf") else f"{grow:+.1f} %"
+        print(f"| `{aid}` | {ns[0]['resource']} | {ns[0]['standin']['reach']:.2f} | {radius:.2f} | {ns[0]['mesh']['reach']:.2f} | {allowed:.2f} | {growth} | {spots} |")
+
+
+def dressing(path):
+    runs = json.loads(Path(path).read_text())["runs"]
+    for dens, label in (("shipped", "shipped density"), ("full", "density 1.0")):
+        p, m = runs[dens]["plain"], runs[dens]["mesh"]
+        print(f"\n**{label}: part-built world {p['parts']} parts ({p['props']} props), world with the imported kit {m['parts']} parts ({m['props']} props)**\n")
+        print("| feature | placements | parts | triangles |")
+        print("|---|---|---|---|")
+        tp = tt = 0
+        for f, e in sorted(m["byFeature"].items()):
+            print(f"| {f} | {e['n']} | {e['parts']} | {e['tris']} |")
+            tp += e["parts"]
+            tt += e["tris"]
+        print(f"| total (props and nodes) | | {tp} | {tt} |")
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--nodefit", default="")
+    ap.add_argument("--dressing", default="")
     ap.add_argument("--relief", default="")
     a = ap.parse_args()
     main_doc = json.loads((KIT / "env.json").read_text())
@@ -62,6 +97,10 @@ def main():
     table(spare_doc, "env_kit_02: measured per id")
     if a.relief:
         relief(a.relief)
+    if a.nodefit:
+        nodefit(a.nodefit)
+    if a.dressing:
+        dressing(a.dressing)
 
 
 if __name__ == "__main__":

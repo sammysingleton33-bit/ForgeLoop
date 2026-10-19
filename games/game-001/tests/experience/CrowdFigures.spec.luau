@@ -189,6 +189,33 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		expect(#env.Workspace:FindFirstChild(FiguresDef.FOLDER):GetChildren()).toBe(120)
 	end)
 
+	it("a burst of reactions builds no figures: only step seats, one batch a step (FORGE-00 g11k)", function()
+		boot({ model = arena })
+		crowd.director = director("loyal", "crimson", "loyal", "azure") -- 60 + 60
+		-- a mid-duel join: the director is new and the first Arena.Events batch carries several reactions
+		for _, kind in { "roar", "cheer", "gasp", "boo" } do
+			crowd.reacted:fire({ stand = "a", kind = kind }, "crimson")
+			crowd.reacted:fire({ stand = "b", kind = kind }, "azure")
+		end
+		expect(#controller.figures.a + #controller.figures.b).toBe(0) -- the reactions followed the director only
+		expect(controller._pending).toBe(true)
+		controller:step(0)
+		expect(#controller.figures.a + #controller.figures.b).toBe(FiguresDef.BUILD_PER_STEP)
+		for _, kind in { "roar", "cheer", "gasp" } do
+			crowd.reacted:fire({ stand = "a", kind = kind }, "crimson") -- seats still pending
+		end
+		expect(#controller.figures.a + #controller.figures.b).toBe(FiguresDef.BUILD_PER_STEP)
+		controller:step(0)
+		expect(#controller.figures.a + #controller.figures.b).toBe(2 * FiguresDef.BUILD_PER_STEP)
+		-- a new pair seen first by a reaction clears the stands; the next step builds its first batch
+		crowd.director = director("adoring", "gold", "loyal", "azure")
+		crowd.reacted:fire({ stand = "a", kind = "roar" }, "gold")
+		expect(#controller.figures.a + #controller.figures.b).toBe(0)
+		expect(controller._motions.a ~= nil).toBe(true) -- the roar still plays, on the new stand
+		controller:step(0)
+		expect(#controller.figures.a + #controller.figures.b).toBe(FiguresDef.BUILD_PER_STEP)
+	end)
+
 	it("a seat attachment the arena lacks stays empty, with one warning per controller (FORGE-00 B22)", function()
 		arena.Root:FindFirstChild("StandA_Row1_Seat9"):Destroy()
 		boot({ model = arena })

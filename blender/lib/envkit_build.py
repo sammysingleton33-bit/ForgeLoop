@@ -68,7 +68,9 @@ def prop_record(p, standin):
         "standin_size": standin["size"] if standin else None,
         "node": bool(p.node),
         "verts": len(m.v),
-        "placed": bool(standin and standin["placed"]),
+        # a spare (split_placed) is never placed, whatever its stand-in says; the mesh-only dressing ids have no stand-in to be placed by,
+        # the world places them (WorldPlan.meshDressing) once the mesh is imported
+        "placed": bool(getattr(p, "placed", True) and ((standin and standin["placed"]) or p.id in envkit_standin.MESH_DRESSING)),
         "base_y": round(y0, 3),
         "radius_xz": round(radius, 3),
         "reach_bbox": round(corner, 3),

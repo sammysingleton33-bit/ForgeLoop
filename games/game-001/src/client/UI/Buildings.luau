@@ -102,7 +102,7 @@ local LIST: { Info } = {
 		icon = "wall",
 		category = "military",
 		buildable = true,
-		description = "A stone wall segment to close your borders.",
+		description = "A wall to close your borders: a timber palisade at first, stone as you upgrade it.",
 	},
 	{
 		type = "gate",
@@ -110,7 +110,7 @@ local LIST: { Info } = {
 		icon = "gate",
 		category = "military",
 		buildable = true,
-		description = "A gate in your walls that your people can pass.",
+		description = "A strong gate that closes the way through your walls.",
 	},
 }
 

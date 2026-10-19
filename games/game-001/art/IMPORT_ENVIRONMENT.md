@@ -10,7 +10,8 @@ Studio session and place can import both kits: do the citizens first, then this 
 
 ## 1. Files
 - `env_kit.fbx` from the Blender worker (expected at `games/game-001/art/env_kit/`, or the PR's CI artifact), one mesh object per prop, named by asset id.
-  Import only `env_kit.fbx` (the 52 ids the world places today). `env_kit_spares.fbx` (15 finished spares nothing places yet) is not needed until the world uses them.
+  Import only `env_kit.fbx` (**56 ids**: the 52 the part-built world places, plus 4 the world places **only as imported meshes**: `farm_fence_01/02` along the crop fields and `farm_field_cabbage_01/02` (the cabbage fields' variants); `tree_oak_05` is 5 % narrower than in the first import). If you imported the 52-id file of the first FL-0136 round, import this one again: it has 4 new objects.
+  `env_kit_spares.fbx` (11 finished spares nothing places: wood nodes, iron and crystal ore (not game resources), wheat 03 and the two growth stages (the world has no growth), the rock cliffs (their rim placement was dropped)) is not needed. If an id is missing or rejected, the world simply does not place its dressing (`WorldPlan.meshDressing`) and builds nothing part-built in its place.
 - A place built from the repo: `rojo build games/game-001/default.project.json -o crownfall.rbxl`. It must contain
   `ReplicatedStorage.Game.Kit.EnvMeshData` (made by `python3 games/game-001/art/env_kit/env_to_luau.py`) and `ReplicatedStorage.Forge.Assets`.
 
@@ -29,16 +30,25 @@ Studio session and place can import both kits: do the citizens first, then this 
 5. Delete the leftover `env_kit` model from Workspace, **File > Save**, and Publish if you play from Roblox.
 
 ## 3. Look at it (Play, F5) and measure
-**First, the Play-test check (a game script has fewer rights than the command bar, so a smoke test that passes in the command bar can still fall back
-in Play):** in the **server** Output there must be **no** line `Kit.prop: the imported ... is not used (...)`, and in the server command bar
-`print(require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus())` must show `accepted` equal to the number of props (56 with the dressing) and an empty `rejected`.
-(CollisionFidelity is set by the import script, not by the Kit: a game script cannot write it. Hull on each `Body` is in the saved `EnvKit.rbxm`.)
-If the Output has `not used` lines, stop and send them to FORGE-02: those ids are still the part-built stand-ins.
+**First, check that the meshes are really in use (a game script has fewer rights than the command bar, so an import that passes the command-bar smoke test can still
+fall back in Play; and a quiet Output also looks fine when nothing was imported at all):**
+1. **Explorer first.** In Play, open `Workspace.World.Props` and `Workspace.World.ResourceNodes`: a tree, bush, rock or crop field that is a Model holding just `Root`
+   (an invisible Part), `Body` (a **MeshPart**) and sometimes `Collider` is the mesh prop; a Model with many small Parts is the part-built stand-in. Most of the trees, rocks and
+   fields should be the mesh kind. (Nothing is wrong if a few ids are still stand-ins because they were not in the kit: say which.)
+2. The **server** Output (View > Output, Server) has **no** line `Kit.prop: the imported ... is not used (...)`.
+3. In the server command bar: `local s = require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus(); print(s.props, s.accepted, next(s.rejected))` must print
+   props = 52, `accepted` above 0 and **no rejected id** (`rejected` empty). `accepted` counts every mesh prop the world has built (hundreds), not the ids. The command bar can hand
+   you a fresh copy of the module (accepted 0, and the Kit has no asset source): if `accepted` is 0, trust step 1 (Explorer), and tell FORGE-02 what you saw in both.
+4. **CollisionFidelity (expected to be Default after saving).** The import script sets Hull on every `Body` in the open place (scripts cannot manipulate the property at runtime, the API
+   reference says; the API dump lists it as not saved and not replicated). So `EnvKit.rbxm` and a `rojo build` will show **Default**: that is expected and nothing depends on it (the meshes do not
+   collide and raycasts hit the default shape). If you want to look, select a `Body` right after the import: Hull. Tell FORGE-02 only if the Output says the script could not set it.
+If the Output has `not used` lines or Explorer shows stand-ins for ids you imported, stop and send both to FORGE-02: those ids are still the part-built stand-ins.
 
 Forests, lone trees, bushes, rocks, flowers and the farm fields from the **aerial camera** and the **82-stud gameplay camera**, next to the kingdom buildings and the
 citizens (does it look like one world? are trunks and rocks solid for the ruler? do the resource nodes sit where the stand-ins did?). In Explorer, `Workspace.World.Props`
 holding Models with a `Body` MeshPart are the mesh props; the old multi-part Models are the stand-ins (the Kit falls back per id). Then the **300-citizen phone stress
-test** from `IMPORT_CHARACTERS.md` (Render Stats: FPS, triangles, draw calls) and screenshots at the **aerial** and **portrait** views.
+test** from `IMPORT_CHARACTERS.md` (Render Stats: FPS, triangles, draw calls) and screenshots at the **aerial** and **portrait** views. Also read the **physics memory** in Render Stats
+(or the Developer Console memory tab): the nature `Body` MeshParts are CanQuery true with up to 900 triangles each and, as CollisionFidelity is not saved, get the default (precise) query shape; if physics memory is high, tell FORGE-02: CanQuery false on the Bodies is the lever (the invisible Collider Parts do the blocking).
 
 ## 4. Revert
 Delete the `EnvKit` folder (and `roblox/assets/EnvKit.rbxm` from the repo): every prop is its part-built stand-in again at the next play or build.

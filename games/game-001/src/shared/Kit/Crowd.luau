@@ -11,8 +11,10 @@
 	and Kit.CROWD_HEIGHT is its nominal height. Deterministic: the same (colour, role, variant) always builds the same figure.
 
 	Ordinary figure (4 parts): Body (the kingdom-colour tabard: a square block or a round robe), Head (a skin-tone ball, block or
-	drum), Crest (the kingdom's helmet crest in the kingdom colour: spire / square / plume / dome, as the soldiers' Character.CRESTS,
-	so the stand reads by shape as well as colour: D-033) and Arms (one part: a bar across the shoulders level or tilted to wave,
+	drum), Crest (the kingdom's crest in the kingdom colour, one of the soldiers' four silhouettes by NAME (Crowd.CREST_NAMES = the
+	names of Character.CRESTS: spire / square / plume / dome) but its own primitive and size: a 1.0 x 1.7 spire CornerWedge, a 1.65
+	square kepi, a plume that is a 0.7 cylinder swept back (the soldiers' plume is an upright wedge fin) and a 1.5 dome ball; the
+	neutral colour a flat cap; so the stand reads by shape as well as colour: D-033) and Arms (one part: a bar across the shoulders level or tilted to wave,
 	one arm thrown straight up, or the arms folded at the waist).
 	`variant` (default 1, wraps over 12) varies skin, height (0.82 - 1.07), width, body shape, head shape, crest size, tabard shade
 	(the kingdom colour 0.84 - 1.2 times), arm pose and sleeve, so a stand is not a row of clones.

@@ -3,13 +3,15 @@ id: FL-0141
 title: Duel action animations for both champions from Arena.Events
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-19
 updated: 2026-10-19
 depends_on: []
-evidence: []
+evidence:
+  - check.sh OVERALL PASS on b017b7f6 (game-001 2749/0, framework 573/0); DuelPoses 22/22, FeedbackDuel 7/7, DuelInput 18/18; mutations FL-0141 73/73, FL-0075 39/39; pose renders of the real Kit rig checked (headless)
+  - after #269 merged (aed52998, gate 8p): check.sh OVERALL PASS on d212ef6d (main 7b992a11; game-001 2794/0, framework 573/0); DuelPoses 22/22, FeedbackDuel 7/7, DuelInput 20/20 (#266's two #259 L1 tests included); FORGE-07's #269 L1-L3 pinned, 7 new FL-0141 rows 7/7 CAUGHT; FL-0075 42/42 on aed52998 (FORGE-07's count). Headless; E21 not run in Studio
 ---
 
 # Duel action animations for both champions from Arena.Events
@@ -37,3 +39,6 @@ Players see the duel. Each champion swings, blocks, parries, dodges, staggers on
 
 ## Log
 - 2026-10-19 FORGE-00: created from the B22 review. P0 for B23 RC. Builds on FL-0140's AI figure; start with the human champion while FL-0140 lands.
+- 2026-10-19 forge-04: READY → BUILDING. FORGE-04 started: self-made procedural duel poses (D-026 (2); no animation assets, no upload), written to the champions' joints after the Animator's pass (PreSimulation). Kit rigs and the human champion's own avatar (R15 or R6, Motor6D or AnimationConstraint). Events: snapshot state (light, block, dodge, parry window), heavyWindup, hit, parry, stagger, ended. AI figure found by the ArenaChampion tag (asked FORGE-01 for FL-0140).
+- 2026-10-19 forge-04: BUILDING → REVIEW. PR open on forge/04-experience-duel-anim: procedural duel poses for both champions from DuelController.events (snapshot state, heavyWindup, hit, parry, stagger, ended), Kit / R15 (Motor6D or AnimationConstraint) / R6 rigs, laid over the Animator in PreSimulation; the local champion's own presses play at once (FORGE-00's ruling), confirmed by the server or stopped after 0.5 s. AI figure by the ArenaChampion tag (FL-0140). Studio E21 written; nothing seen in Studio.
+- 2026-10-19 forge-04: REVIEW (unchanged). Evidence brought up to date for the merged head (FORGE-00's #269 CONTRACTS note 5), with FORGE-07's #269 lows pinned in the follow-up PR on forge/04-experience-duel-lows. Added by hand: set-status refuses REVIEW -> REVIEW.
