@@ -480,6 +480,97 @@ describe("WorldService places the Crown Arena (G12.6, D-047)", function()
 		end
 	)
 
+	it("Kit.arenaDress keeps the new dress where the arena stands (not at the world origin)", function()
+		local env, svc = boot()
+		svc:start()
+		env.mock:advance(30)
+		local model = env.CollectionService:GetTagged("CrownArena")[1]
+		local root = model.PrimaryPart :: BasePart
+		local pivot = root.CFrame * root.PivotOffset
+		local function centreOf(dress: Instance): Vector3
+			local lo, hi = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+			for _, d in dress:GetDescendants() do
+				if d:IsA("BasePart") then
+					local h = halfExtents(d)
+					local c = d.CFrame.Position
+					lo = Vector3.new(math.min(lo.X, c.X - h.X), math.min(lo.Y, c.Y - h.Y), math.min(lo.Z, c.Z - h.Z))
+					hi = Vector3.new(math.max(hi.X, c.X + h.X), math.max(hi.Y, c.Y + h.Y), math.max(hi.Z, c.Z + h.Z))
+				end
+			end
+			return (lo + hi) / 2
+		end
+		local before = {
+			A = centreOf(model:FindFirstChild("DressA") :: Instance),
+			B = centreOf(model:FindFirstChild("DressB") :: Instance),
+		}
+		Kit.arenaDress(model, Color3.fromRGB(190, 40, 50), Color3.fromRGB(40, 110, 210))
+		for _, side in { "A", "B" } do
+			local dress = model:FindFirstChild(`Dress{side}`) :: Instance
+			local after = centreOf(dress)
+			-- the verifier's repro moved DressA's centre from (140.8, 13.7, -40.2) to (0, 15.5, -13.7): about 141 studs
+			expect(Vector2.new(after.X - before[side].X, after.Z - before[side].Z).Magnitude).toBeLessThan(1.5)
+			expect(math.abs(after.Y - before[side].Y)).toBeLessThan(3)
+			for _, d in dress:GetDescendants() do
+				if d:IsA("BasePart") then
+					local local_ = pivot:PointToObjectSpace(d.CFrame.Position) -- inside the venue's footprint round its pivot
+					expect(math.abs(local_.X)).toBeLessThan(ARENA.footprint.X / 2 + 8)
+					expect(math.abs(local_.Z)).toBeLessThan(ARENA.footprint.Y / 2 + 8)
+				end
+			end
+		end
+		expect((root.CFrame * root.PivotOffset).Position.X).toBeNear(pivot.Position.X, 1e-6) -- the venue itself did not move
+		svc:destroy()
+	end)
+
+	it(
+		"Kit.arenaDress gives the rebuilt dress the decoration physics WorldService gave the rest (nothing touchable, the high parts walk-through)",
+		function()
+			local env, svc = boot()
+			svc:start()
+			env.mock:advance(30)
+			local model = env.CollectionService:GetTagged("CrownArena")[1]
+			Kit.arenaDress(model, Color3.fromRGB(35, 128, 95), Color3.fromRGB(235, 185, 16))
+			local function states(): { [Instance]: string }
+				local out = {}
+				for _, d in model:GetDescendants() do
+					if d:IsA("BasePart") then
+						out[d] = `{d.CanTouch}/{d.CanCollide}/{d.CanQuery}`
+					end
+				end
+				return out
+			end
+			local dressParts, solid, through = 0, 0, 0
+			for _, side in { "A", "B" } do
+				for _, d in (model:FindFirstChild(`Dress{side}`) :: Instance):GetDescendants() do
+					if d:IsA("BasePart") then
+						dressParts += 1
+						expect(d.CanTouch).toBe(false)
+						if
+							d.CFrame.Position.Y - d.Size.Y / 2
+							> (model:GetAttribute("KitDecorBase") :: number) + svc.COLLIDE_HEIGHT
+						then
+							expect(d.CanCollide).toBe(false)
+							through += 1
+						else
+							solid += 1
+						end
+					end
+				end
+			end
+			expect(dressParts).toBeGreaterThan(150)
+			expect(through).toBeGreaterThan(0)
+			expect(solid).toBeGreaterThan(0)
+			-- WorldService's own decorate step changes nothing on the dressed model: the dress already follows its rules
+			local before = states()
+			svc._decorate(model, model:GetAttribute("KitDecorBase") :: number)
+			local after = states()
+			for d, was in before do
+				expect(after[d]).toBe(was)
+			end
+			svc:destroy()
+		end
+	)
+
 	it("builds one arena when start() is called twice", function()
 		local env, svc = boot()
 		svc:start()

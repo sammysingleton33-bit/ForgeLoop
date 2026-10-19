@@ -694,6 +694,32 @@ function Arena.dress(model: Model, colorA: Color3?, colorB: Color3?)
 	end
 	buildDress(model, root, "A", ca)
 	buildDress(model, root, "B", cb)
+	-- buildDress builds in the Kit's frame (the pivot at the origin); the model may stand elsewhere (WorldService places the
+	-- CrownArena about (141, 0, -27)), so move the new dress to where the model's pivot is now, and give it the decoration physics
+	-- WorldService gave the rest of the model (it records them as KitDecorBase and KitCollideHeight): nothing touchable, and the
+	-- parts above the collide height walk-through. Without those attributes (Kit previews, specs) the dress keeps the Kit's physics.
+	local pivot = root.CFrame * root.PivotOffset
+	local moved = pivot ~= CFrame.identity -- a model still in the Kit's frame keeps its dress exactly as built
+	local base, collideHeight = model:GetAttribute("KitDecorBase"), model:GetAttribute("KitCollideHeight")
+	local decorate = type(base) == "number" and type(collideHeight) == "number"
+	for _, side in { "A", "B" } do
+		local dress = model:FindFirstChild(`Dress{side}`)
+		if dress then
+			for _, d in dress:GetDescendants() do
+				if d:IsA("BasePart") then
+					if moved then
+						d.CFrame = pivot * d.CFrame
+					end
+					if decorate then
+						d.CanTouch = false
+						if d.CFrame.Position.Y - d.Size.Y / 2 > (base :: number) + (collideHeight :: number) then
+							d.CanCollide = false
+						end
+					end
+				end
+			end
+		end
+	end
 	addDressAttributes(model, ca, cb)
 end
 
