@@ -68,6 +68,8 @@ ROWS = [
      "if type(controls) ~= \"table\" then", "control hints for the champion"),
     ("hints for spectators", HC, "\tif model.mine then\n\t\tmodel.hints", "\tif true then\n\t\tmodel.hints",
      "control hints for the champion"),
+    ("hints on a touch device with a pad", HC, "touch = self._env.UserInputService.TouchEnabled == true",
+     "touch = false", "control hints for the champion"),
     ("events ignored", HC, "\t\tArenaHudModel.apply(self.track, event, now)", "\t\tlocal _ = event",
      "follows hits, snapshots and perks"),
 ]

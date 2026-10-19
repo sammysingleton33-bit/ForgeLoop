@@ -258,6 +258,15 @@ function ArenaHudController:_hints(now: number): string?
 	if now >= (self._hintUntil or 0) then
 		return nil
 	end
+	-- a touch device shows FORGE-04's labelled duel buttons whatever the last input (a phone with a pad), and its
+	-- captions sit just under the strip there (y 135 on 667 × 375): no hint line on it
+	local touch = false
+	pcall(function()
+		touch = self._env.UserInputService.TouchEnabled == true
+	end)
+	if touch then
+		return nil
+	end
 	local input = self._registry:find(ArenaHudController.INPUT)
 	local ok, controls = pcall(function()
 		return input:controls()
