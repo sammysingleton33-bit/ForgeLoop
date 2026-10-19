@@ -41,7 +41,7 @@
 	Motor6D ("Torso", "Head", "LeftArm", ...; "Tool"), the "hair" key's piece "Hair" (HairWeld, KitHeadwear), the "acc"
 	key's "Accessory" (AccessoryWeld, KitAccessory); other extras take their piece id (plus the joint for mirrored ones) and
 	a Weld named "PieceWeld". Every part: CanCollide/CanTouch/CanQuery false, Massless, SmoothPlastic (colour = the baked vertex colours
-	or palette texture, if any, times MeshPart.Color; TextureID and a SurfaceAppearance child are kept as imported, never
+	or palette texture, if any, times MeshPart.Color; a TextureID (a shared palette texture) is kept as imported, never
 	required); CollisionFidelity Box. Colour per piece `tint`:
 		skin   Character.LOOK_PALETTES.skin[look.skin]        hair   ...hairColor[look.hairColor]
 		kingdom shade(kingdomColor, f), attribute KitTint = f (so Kit.setKingdomColor recolours exactly); f = tint_factor
@@ -96,7 +96,7 @@ export type Status = {
 CharacterMesh.FOLDER_NAME = "CitizenKit"
 CharacterMesh.SIZE_TOLERANCE = 0.1 -- studs per axis between an imported MeshPart.Size and the data (a unit or axis mistake is far bigger)
 CharacterMesh.MAX_PIECES = 16 -- D-057 (5): pieces (draw calls) per assembled rig
--- THE triangle budget per assembled rig (D-057 amendment (9)); the specs and the converter read these numbers and nothing else.
+-- THE triangle budget per assembled rig (D-057 amendment (15)); the specs and the converter read these numbers and nothing else.
 -- Citizens: 1,000 in all, of which the body (everything but the hand tool and its heads) <= 900 and the tool <= 150.
 -- Soldiers and rulers carry armour, a crest and a weapon: up to 1,500 in all.
 CharacterMesh.BUDGET = table.freeze({
@@ -747,11 +747,9 @@ function CharacterMesh.build(
 		local def = item.def
 		local part = templates[item.id]:Clone()
 		for _, child in part:GetChildren() do
-			-- nothing from the import rides along but a SurfaceAppearance (a shared palette texture is allowed, never
-			-- required); scripts, attachments, constraints and the like go
-			if not child:IsA("SurfaceAppearance") then
-				child:Destroy()
-			end
+			-- nothing from the import rides along: a SurfaceAppearance (PBR) goes too (D-057 (17)); the colour comes from the baked
+			-- vertex colours, an optional shared palette TextureID and MeshPart.Color, and scripts, attachments, constraints and the like go
+			child:Destroy()
 		end
 		-- attributes and tags on the imported piece itself go too (the Kit sets its own below)
 		for name in part:GetAttributes() do

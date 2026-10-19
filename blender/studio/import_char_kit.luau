@@ -12,9 +12,9 @@
 	     needed). CLONES by default (the originals stay in Workspace for you to delete); MOVE = true moves them.
 	  4. Checks every piece: it is a MeshPart, has a MeshId (Studio uploaded its mesh), has the size the data says
 	     (+/- 0.1 stud: a wrong Scale Unit or axis shows here), and is not rotated (the Kit places pieces unrotated). Everything
-	     inside a piece except a SurfaceAppearance (the shared palette) is deleted from the copy and listed in the report:
-	     scripts (Script, LocalScript, ModuleScript) and anything that carries a remote id or state (Sound, Decal, Texture,
-	     ParticleEmitter, Animation, ObjectValue, StringValue, Attachment...). report.stripped has "<ClassName> <full name>".
+	     inside a piece is deleted from the copy and listed in the report (D-057 (17): no PBR, so a SurfaceAppearance goes too):
+	     scripts (Script, LocalScript, ModuleScript) and anything that carries a remote id or state (SurfaceAppearance, Sound, Decal,
+	     Texture, ParticleEmitter, Animation, ObjectValue, StringValue, Attachment...). report.stripped has "<ClassName> <full name>".
 	  5. Prints a report: counts, missing pieces, wrong sizes, rotated pieces, duplicates, stray MeshParts. Triangle counts
 	     are NOT available from Studio: the triangle figures are the Blender export's (rig.json `tris`, the manifest).
 	  Idempotent: run it again and it replaces the folder's pieces with the same result; pieces already in the folder that
@@ -53,7 +53,7 @@ local function importCitizenKit(world, settings)
 		duplicates = {},
 		stray = {},
 		scriptsRemoved = 0,
-		stripped = {}, -- every non-SurfaceAppearance descendant removed from a piece copy: "<ClassName> <full name>"
+		stripped = {}, -- every descendant removed from a piece copy: "<ClassName> <full name>"
 		layout = "unchecked",
 		dryRun = settings.dryRun,
 		ok = false,
@@ -268,25 +268,22 @@ local function importCitizenKit(world, settings)
 			local checked = problems(source, expected[id])
 			if not settings.dryRun then
 				local piece = if settings.move then source else source:Clone()
-				-- Only a SurfaceAppearance (the shared palette) may ride along on a piece. Everything else is removed from the
-				-- copy and logged: scripts (Script, LocalScript, ModuleScript), and anything that fetches or carries a remote
-				-- id or state (Sound, Decal, Texture, ParticleEmitter, Animation, ObjectValue, StringValue, Attachment...).
+				-- Nothing may ride along on a piece (the colour is baked vertex colour, an optional shared palette TextureID and
+				-- MeshPart.Color). Everything is removed from the copy and logged: scripts (Script, LocalScript, ModuleScript), PBR
+				-- (SurfaceAppearance, D-057 (17)) and anything that fetches or carries a remote id or state (Sound, Decal, Texture,
+				-- ParticleEmitter, Animation, ObjectValue, StringValue, Attachment...).
 				-- walk before destroying: nothing is read from an instance after it was destroyed
 				local function strip(parent: Instance)
 					for _, child in ipairs(parent:GetChildren()) do
-						if child:IsA("SurfaceAppearance") then
-							strip(child)
-						else
-							local doomed = child:GetDescendants()
-							table.insert(doomed, 1, child)
-							for _, d in ipairs(doomed) do
-								if d:IsA("LuaSourceContainer") then
-									report.scriptsRemoved += 1
-								end
-								table.insert(report.stripped, string.format("%s %s", d.ClassName, d:GetFullName()))
+						local doomed = child:GetDescendants()
+						table.insert(doomed, 1, child)
+						for _, d in ipairs(doomed) do
+							if d:IsA("LuaSourceContainer") then
+								report.scriptsRemoved += 1
 							end
-							child:Destroy()
+							table.insert(report.stripped, string.format("%s %s", d.ClassName, d:GetFullName()))
 						end
+						child:Destroy()
 					end
 				end
 				strip(piece)
@@ -363,7 +360,7 @@ local function importCitizenKit(world, settings)
 	if #report.stripped > 0 then
 		log(
 			string.format(
-				"import_char_kit: %d instance(s) found inside imported pieces were deleted from the copies (%d of them scripts); only a SurfaceAppearance may stay:",
+				"import_char_kit: %d instance(s) found inside imported pieces were deleted from the copies (%d of them scripts); nothing may stay on a piece:",
 				#report.stripped,
 				report.scriptsRemoved
 			)

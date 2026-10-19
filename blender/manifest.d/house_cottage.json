@@ -22,6 +22,7 @@
       "geometry_hash": "89d94e32e045ad0f",
       "id": "house_cottage_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -81,6 +82,7 @@
       "geometry_hash": "60f789137014c0ff",
       "id": "house_cottage_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -140,6 +142,7 @@
       "geometry_hash": "f919c1c2062c8417",
       "id": "house_cottage_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -199,6 +202,7 @@
       "geometry_hash": "755c02dc562455ac",
       "id": "house_cottage_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": true,
@@ -258,6 +262,7 @@
       "geometry_hash": "eb679db1456e9f3f",
       "id": "house_cottage_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
@@ -317,6 +322,7 @@
       "geometry_hash": "e7848bc0fdf3fb2a",
       "id": "house_cottage_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "catslide": false,
