@@ -3,13 +3,14 @@ id: FL-0128
 title: "War kit: wall, gate and tower levels, siege ram, kingdom soldier variants and weapons, damaged and burning building states"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 depends_on: [FL-0127]
-evidence: []
+evidence:
+  - tests/world 29 spec files green (KitWarKit, KitUnitKinds, KitDamage, KitCeiling new); all-built worst case 26,313 of 27,000
 ---
 
 # War kit: wall, gate and tower levels, siege ram, kingdom soldier variants and weapons, damaged and burning building states
@@ -35,3 +36,6 @@ Automated Kit specs and part counts. Visual D-019. Studio rows with FORGE-05.
 
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
+- 2026-10-19 forge-02: READY → BUILDING. built on forge/02-blender-fl0128-war (head see worker report): wall and gate L1-3, Kit.setGateOpen, watchtower L2 war-ready, Kit.siege ram, soldier kinds, Kit.applyDamage; handoff production/handoffs/2026-10-19-forge-02-to-forge-00-04-fl0128-war-kit.md; D-019 sheets art/reviews/img/kit_fl0128_*.jpg (not yet reviewed by a fresh reviewer; Studio unverified)
+- 2026-10-19 forge-02: FIX ROUND after the first fresh D-019 review (every family NEEDS-WORK): all-built worst case 26,217; wall L3 own outline, gate open leaves/portcullis/shape, ram log silhouette, damage with real geometry loss, unit kinds reworked; new 170-stud sheets and a BEFORE/AFTER sheet (art/reviews/img/kit_fl0128_*.jpg); second fresh review is the coordinator's (headless evidence only, Studio unverified)
+- 2026-10-19 forge-02: DEFECT-ONLY ROUND after the second fresh review (FORGE-00 ruling): gate tympanum and contrasting floor, lit-brown soot and cracks with chips, seated tower caps and whole-cap collapse, broken gate leaf at 0.9, unit weapons at the fist, stepped wall L3 buttresses, one dark L1 palisade; all-built 26,322 of 27,000; sheets regenerated (headless evidence only, Studio unverified); see art/reviews/kit-architecture.md 'defect-only round'
