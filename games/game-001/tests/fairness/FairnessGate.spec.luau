@@ -102,6 +102,60 @@ describe("Crown Arena fairness gate (real DuelModel, config Support)", function(
 		expect(checks[1].status).toBe("FAIL")
 	end)
 
+	-- A perk picked twice must be refused or count once: a second copy of the same perk is never more support
+	-- (FORGE-00, the Fine Wares double-count FORGE-01 fixed). Checked for every perk and both powers.
+	it("never stacks a repeated pick", function()
+		local support = ConfigSupport.new()
+		local function key(m: any): string
+			return `{m.source}|{m.kind}|{tostring(m.stat)}|{tostring(m.magnitude)}|{tostring(m.lead)}|{tostring(
+				m.condition
+			)}`
+		end
+		local function counts(mods: { any }): { [string]: number }
+			local out = {}
+			for _, m in mods do
+				out[key(m)] = (out[key(m)] or 0) + 1
+			end
+			return out
+		end
+		local stacked = {}
+		for name in Support.perks do
+			for _, power in { "pledged", "empowered" } do
+				local ok, twice = pcall(support.modifiers, "adoring", { name, name }, power)
+				if ok then
+					local once = support.modifiers("adoring", { name }, power)
+					local a, b = counts(once), counts(twice)
+					for k, n in b do
+						if (a[k] or 0) ~= n then
+							table.insert(stacked, `{name} ({power}): {k} x{n}`)
+						end
+					end
+				end
+			end
+		end
+		table.sort(stacked)
+		expect(stacked).toEqual({})
+	end)
+
+	it("a repeated-pick loadout stays under noAutoWin", function()
+		local support = ConfigSupport.new()
+		local side = { skill = "average", tier = "adoring", perks = { "fineWares", "fineWares", "fieldRemedy" } }
+		local ok = pcall(support.modifiers, side.tier, side.perks, "empowered")
+		if not ok then
+			return -- refused at the source: nothing to measure
+		end
+		local cell = {
+			id = "noAutoWin/average/adoring/fineWares+fineWares+fieldRemedy",
+			bound = "noAutoWin",
+			a = side,
+			b = { skill = "average", tier = "hostile", perks = {} },
+		}
+		local result = Harness.runCell(cell, SWEEP_N, { model = DuelModel, support = support })
+		local checks = Harness.evaluate({ result })
+		print(`fairness: repeated pick {cell.id} {string.format("%.1f", result.rate * 100)} %`)
+		expect(checks[1].status).toBe("PASS")
+	end)
+
 	it("reads the game's support numbers, not the design fixture", function()
 		local support = ConfigSupport.new()
 		local mods = support.modifiers("adoring", { "fieldRemedy" }, "empowered")
