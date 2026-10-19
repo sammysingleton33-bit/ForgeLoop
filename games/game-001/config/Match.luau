@@ -41,7 +41,22 @@ return {
 	tickSeconds = 1 / 16, -- 16 Hz movement (CONTRACTS G4 ≈20 Hz); exact in binary, so timers never drift
 	victory = { conquest = true, crownPointsAtEnd = true }, -- D-053 (3)
 	pvp = { enabled = true, peaceCooldown = 120, proposalSeconds = 60 }, -- D-053 (2): war from Conflict, peace by consent
+	-- Interest tiers (D-055 (2), FL-0125): in the full match each player gets the entities near their view (the Sim.Focus
+	-- point, else their character) at the snapshot rate and the rest every farEvery-th tick; own soldiers always.
+	-- farEvery must divide EntityService's REFRESH_EVERY (10), or an idle far entity's refresh slows (pinned in EntityService.spec)
+	interest = { enabled = true, nearRadius = 200, farEvery = 5, focusStaleSeconds = 3 },
 	crown = { buildingLevel = 5, conquest = 300, unitKill = 2 },
+	-- Co-rulers (D-054, Sim/Authority): the senior ruler (longest seated, present and active) decides war and peace; a
+	-- ruler seated after Founding began is locked out of war, peace and moving buildings for newcomerLockSeconds; a
+	-- senior with no command or input for idleSeniorSeconds yields to the next active ruler; a non-senior's war
+	-- request is an ask to the senior (open askSeconds, at most maxAsks per kingdom, askCooldownSeconds apart).
+	rulers = {
+		newcomerLockSeconds = 120,
+		idleSeniorSeconds = 90,
+		askSeconds = 60,
+		askCooldownSeconds = 30,
+		maxAsks = 3,
+	},
 	-- the Crown Arena (FL-0071): the longest the final duel may hold the match before the Crown Points result stands
 	arena = { maxSeconds = 600 },
 	-- The server never trusts a ruler's reported position further than it could have walked (D-050 (6b), FL-0122):

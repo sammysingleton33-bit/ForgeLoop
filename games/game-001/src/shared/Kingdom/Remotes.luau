@@ -33,8 +33,17 @@
 		                                     loyalty when asked, band "base" | "high" | "low", tags allowlisted)
 		                                     reasons: not_in_match, unknown_citizen, phase, not_offered,
 		                                     unknown_response, not_eligible, cost (ConversationService)
+		Kingdom.Diplomacy(action: "declareWar"|"proposePeace"|"acceptPeace", target: KingdomId(1,16)) -> (ok, tag?)
+		                                  D-054. declareWar: (true,"declared") from the senior ruler, (true,"asked") from
+		                                  another ruler (the senior gets Kingdom.WarAsk); proposePeace: (true) from any
+		                                  ruler; acceptPeace: (true) | (false,"not_senior"). A ruler seated after Founding
+		                                  began is locked from declareWar/acceptPeace: (false,"newcomer_lock"). Sim codes
+		                                  pass through: invalid_args, unknown_kingdom, grace_period, already_at_war,
+		                                  peace_cooldown, not_at_war, no_proposal, not_in_match, match_not_active,
+		                                  kingdom_eliminated
 	Server -> client
-		Kingdom.State({ kingdoms, mine })    on change (to every player) and to each arriving player
+		Kingdom.WarAsk(requesterUserId, requesterName, target: KingdomId)   to the senior ruler: a co-ruler asks for war
+		Kingdom.State({ kingdoms, mine, diplomacy? })    on change (to every player) and to each arriving player
 		Kingdom.Population({ total, byJob, cap, quotas, quotaRev })   to a kingdom's members on change (G13.2;
 		                                       quotaRev +1 per accepted quota change, FL-0109)
 		Kingdom.Reputation(same payload as GetReputation)   to the ruler when it changes (G13.4)
@@ -71,6 +80,13 @@ return {
 		args = { Validate.enum(keysOf(catalog.jobOrder, "hauler")), Validate.integer(0, 50) },
 		rate = { burst = 10, perSecond = 4 },
 	},
+	{
+		name = "Kingdom.Diplomacy",
+		kind = "function",
+		args = { Validate.enum({ "declareWar", "proposePeace", "acceptPeace" }), Validate.string(1, 16) },
+		rate = { burst = 3, perSecond = 1 },
+	},
+	{ name = "Kingdom.WarAsk", kind = "serverEvent" },
 	{ name = "Kingdom.State", kind = "serverEvent" },
 	{ name = "Kingdom.GetPopulation", kind = "function", args = {}, rate = { burst = 5, perSecond = 2 } },
 	{ name = "Kingdom.Population", kind = "serverEvent" },

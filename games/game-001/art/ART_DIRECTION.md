@@ -72,6 +72,19 @@ It must read at RTS-ish camera distances and on phones. Nothing shown to players
 
   The same caps appear on keep turrets, barracks turrets, the gatehouse, soldiers' helmets in the Blender set, and the watchtower once it is captured.
   Part-built Kit soldiers given their kingdom (CONTRACTS G13.2, D-033(3)) wear a one-part helmet crest in the same style, so they read apart without colour: crimson a tall spire, azure a flat square plate overhanging the helm, emerald a plume swept back, gold a dome knob.
+- **Kingdom architecture (FL-0127, Operation Crownfall).** From the overview camera a kingdom must read as its own place: silhouette first, then colour value, then detail, and never colour alone (D-033). `Kit/KingdomStyle.luau` is the single table, keyed by the same hue style as the caps and the emblem, that every building builder consults. A style swaps colours, materials and proportions at the same part count and never changes a footprint; `tests/world/KitStyles.spec.luau` pins that and catches mutants of the table.
+
+  | | Emberhold (crimson) | Frostmere (azure) | Thornwood (emerald) | Sunspire (gold) |
+  |---|---|---|---|---|
+  | Stone (value, L* of the wall stone) | dark basalt, 41 | pale cool grey, 82 | mossy grey-green, 54 | sandstone, 71 |
+  | Roofs | steep (pitch ×1.32), tight eaves, red tile, bold dark ridge | pitch ×1.12, slate-blue tile with a snow course and snow ridge, wide gable reach | pitch ×0.98, kingdom green striped with moss courses, widest gable reach | low (pitch ×0.55), gold tile, terracotta ridge |
+  | Walls, timber, thatch | sooty cream daub, blackened timber, dark thatch | cool white plaster, grey-brown timber, frosted thatch | ochre wattle-and-daub, heavy dark oak, mossy thatch | whitewash, sun-bleached timber, warm straw thatch |
+  | Fields | dark rye | pale oats | green barley | bright wheat |
+  | Merlons | tall and narrow (×1.3 high, ×0.82 wide) | low and broad (×0.82, ×1.14); stout keep turrets (−1.5) | as built | low (×0.8), a little broader |
+  | Banner tail | diamond, long hang, bolder red | slashed pennon wedge | diamond with ivory border | half-disc |
+  | Plinth accent stone | charcoal | snow white | moss | terracotta |
+
+  Roof pitch, tile courses (snow, moss, ridge colour), merlons, banner tails and the plinth accent stones are geometry or colour the builders choose through `ctx.style`; stone, timber, wood, plaster, thatch and crop colours are painted in the neutral palette and re-skinned by `KingdomStyle.paint` once at the end of `Kit.build`, so the stand-ins and construction stages follow without a call. Kingdom-coloured parts (`KitTint`) are never repainted, so `Kit.setKingdomColor` still works. The neutral style (outposts, uncaptured towers, props) is the original look. Limits found while building it: eaves cannot grow past the house footprints (the L1 townhouse's roof already reaches 8.0 of 8 studs), and any taller keep turret hides the roof plaque the overview camera reads (`KitEmblems` gate: 80 % visible).
 - **Job silhouettes (citizens, after the first Studio playtest).** Jobs read without colour, at gameplay distance and from the overview camera, where a citizen is a 6–10 px blob and only the hat and the tool still carry a shape. Each working job gets one hat in a different primitive, one tool in a different primitive and value, a trouser and panel accent, and a body width:
 
   | Job | Hat (KitHeadwear) | Tool | Accent (trousers / panel) | Torso width |

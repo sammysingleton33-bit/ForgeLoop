@@ -6,7 +6,7 @@ S, C, X, G, C2 and F come from mutations.py. Add rows for FL-0053 here only (D-0
 M = [
  ("FL-0053", C2+"InputModeController.luau", 'if self._firing then', 'if false then', "InputMode", "applies a set() made inside a changed handler", "game"),
  ("FL-0053", C2+"InputModeController.luau", 'return self.mode == mode and self._env.clock() - self._changedAt >= self._config.settleSec', 'return self.mode == mode', "InputMode", "accepts() gives a tap", "game"),
- ("FL-0053", C2+"InputModeController.luau", 'self:_bindLeave(nextMode ~= "explore")', 'self:_bindLeave(true)', "InputMode", "binds X / gamepad B only while in build mode", "game"),
+ ("FL-0053", C2+"InputModeController.luau", 'self:_bindLeave(Def.LEAVE_MODES[nextMode] == true)', 'self:_bindLeave(true)', "InputMode", "binds X / gamepad B only while in build mode", "game"),
  ("FL-0053", C2+"InputModeController.luau", 'if not table.find(Def.MODES, mode) then', 'if mode == nil then', "InputMode", "refuses unknown modes", "game"),
  ("FL-0053", C2+"RulerController.luau", 'return { held = state.held, toggled = toggled }, moving and (state.held or toggled)', 'return { held = state.held, toggled = toggled }, state.held or toggled', "Ruler", "standing still never sprints", "game"),
  ("FL-0053", C2+"RulerController.luau", 'local toggled = state.toggled and moving', 'local toggled = state.toggled', "Ruler", "the toggle ends when the ruler stops", "game"),

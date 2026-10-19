@@ -27,14 +27,19 @@
 		SetAlarm(on)                         { on }                   -- citizens shelter in the keep
 		(+ Recruit, ArmyOrder from Military; DeclareWar, ProposePeace, AcceptPeace from Diplomacy)
 
+	Co-rulers (D-054, Sim/Authority): only the senior ruler's DeclareWar / AcceptPeace take effect; a non-senior's
+	DeclareWar becomes an ask to the senior (true, nil, { outcome = "asked" }); a ruler seated after Founding
+	began is refused DeclareWar, AcceptPeace and MoveBuilding for 120 s (newcomer_lock); AI (by == nil) is exempt.
 	Error codes: match_not_active, not_ruler, kingdom_eliminated, unknown_command, invalid_args,
 	unknown_building, not_placeable, requires_keep_level, limit_reached, out_of_bounds,
 	out_of_territory, blocked, cannot_afford, not_found, not_owner, busy, max_level,
-	nothing_to_cancel, unknown_job, unknown_resource, not_movable, alarm, under_attack, cooldown
+	nothing_to_cancel, unknown_job, unknown_resource, not_movable, alarm, under_attack, cooldown,
+	not_senior, newcomer_lock
 	(+ those of registered commands).
 	Building ids are positive integers (CONTRACTS G2); building kinds and jobs are contract ids.
 ]]
 
+local Authority = require("./Authority")
 local Catalog = require("./Catalog")
 
 type Handler = (sim: any, kingdom: any, by: number?, ...any) -> (boolean, string?, any?)
@@ -185,6 +190,24 @@ function Commands.executeFor(sim: any, kingdom: any, by: number?, name: any, ...
 	end
 	if handler == nil then
 		return false, "unknown_command"
+	end
+	if by ~= nil then
+		Authority.touch(sim, by) -- any command is input (the senior-ruler rule counts it)
+		local gate = Authority.gate(sim, kingdom, by, name :: string)
+		if gate == "newcomer_lock" or gate == "not_senior" then
+			return false, gate
+		elseif gate == "ask" then
+			-- a co-ruler who is not the senior asks for war: same validation as the declaration, then a notice
+			local check = sim.diplomacy and sim.diplomacy.checkDeclare
+			if check == nil then
+				return false, "unknown_command"
+			end
+			local target, err = check(sim, kingdom, (...))
+			if target == nil then
+				return false, err
+			end
+			return Authority.ask(sim, kingdom, by, target.id)
+		end
 	end
 	return handler(sim, kingdom, by, ...)
 end
