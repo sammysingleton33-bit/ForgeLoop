@@ -768,10 +768,7 @@ function Track:predict(action: string, now: number): boolean
 	if action == "blockEnd" then
 		self._holding = false
 		self._releasedAt = now
-		local anim = self:_current(now)
-		if anim ~= nil and anim.name == "block" then
-			self._anim, self.name = nil, nil -- lowered at once
-		end
+		self:_current(now) -- the guard is down now (a stale "block" state is ignored): the block ends at once
 		return true
 	end
 	local from = DuelPoses.STARTS_FROM[action]

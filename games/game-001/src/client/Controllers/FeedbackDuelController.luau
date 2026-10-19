@@ -104,10 +104,10 @@ end
 
 local function disconnect(connection: any)
 	pcall(function()
-		if connection.disconnect then
-			connection:disconnect()
+		if type(connection) == "table" and connection.disconnect ~= nil then
+			connection:disconnect() -- a Forge Signal (DuelController, InputModeArenaController)
 		else
-			connection:Disconnect()
+			connection:Disconnect() -- an engine connection (RunService, the preview attribute)
 		end
 	end)
 end

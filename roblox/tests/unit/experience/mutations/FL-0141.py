@@ -68,7 +68,7 @@ M = [
  # the local champion's press plays at once (FORGE-00's ruling): predict, confirm, cancel, refuse
  ("FL-0141", P, 'if anim.predicted ~= nil and now - anim.predicted > DuelPoses.CONFIRM_SEC then', 'if false then', DP, "an unconfirmed press stops", "game"),
  ("FL-0141", P, 'current.predicted = nil -- the server confirms our own press', 'local _ = 0', DP, "your own press plays at once", "game"),
- ("FL-0141", P, 'current.predicted = nil -- our own press, confirmed', 'local _ = 0', DP, "your own press plays at once", "game"),
+ ("FL-0141", P, 'current.predicted = nil -- our own press, confirmed', 'local _ = nil -- our own press, confirmed', DP, "your own press plays at once", "game"),
  ("FL-0141", P, 'if current ~= nil and current.name == "heavy" then', 'if false then', DP, "your own press plays at once", "game"),
  ("FL-0141", P, 'anim.predicted = nil -- a hit confirms our own press', 'local _ = 0', DP, "your own press plays at once", "game"),
  ("FL-0141", P, 'if not self:play(action, now, { windup = DuelPoses.windup(action, self.weapon) }) then', 'if not self:play(action, now) then', DP, "your own press plays at once", "game"),
@@ -79,7 +79,7 @@ M = [
  ("FL-0141", P, 'local kind = DuelConfig.armour[armour or "medium"] or DuelConfig.armour.medium', 'local kind = DuelConfig.armour.medium', DP, "an unconfirmed press stops", "game"),
  ("FL-0141", P, 't.stamina = view.staminaShare', 'local _ = view', DP, "an unconfirmed press stops", "game"),
  ("FL-0141", P, 'self._holding, self._releasedAt = true, nil', 'self._releasedAt = nil', DP, "your own guard holds from the press", "game"),
- ("FL-0141", P, 'self._anim, self.name = nil, nil -- lowered at once', 'local _ = 0', DP, "your own guard holds from the press", "game"),
+ ("FL-0141", P, 'self:_current(now) -- the guard is down now', 'local _ = now -- the guard is down now', DP, "your own guard holds from the press", "game"),
  ("FL-0141", P, 'return self._releasedAt == nil or now - self._releasedAt >= DuelPoses.RELEASE_GRACE', 'return true', DP, "your own guard holds from the press", "game"),
  ("FL-0141", P, 'self._holding = false -- an unconfirmed guard is not held any more', 'local _ = 0', DP, "your own guard holds from the press", "game"),
  ("FL-0141", A, 'self.poses:predict(side, action, self:_now())', 'local _ = side', FD, "your own sent press animates", "game"),
